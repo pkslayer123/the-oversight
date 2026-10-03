@@ -244,3 +244,14 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   - **Exile (the darkest mirror):** go dark enough, rob enough travelers — come home to a closed gate. The village decides it doesn't need *you*.
 - **Other villages run the same sim** (simplified). Encounters are with real situations — thriving, starving, fracturing, dangerous — not set dressing. Some villages are better than others, and you'll know why when you meet them.
 - **Endings branch on the village:** haven (loved), fortress (feared), embassy, cautionary tale — or the gate closed. "The village no longer needs heroes" now has teeth: it might decide it doesn't need you specifically, and that's its own ending.
+
+## 2026-10-03 — Villages are independent; the scholar is free
+
+- **Decision:** Decouple scholar from village. Villages are independent entities running their sim on the expedition clock whether you're there or not. The scholar's relationship to any village is a *status* (member, leader, guest, exile, stranger), not an identity. Your starting village doesn't have to be your ending one.
+- **Why:** Steve: this is how it feels like a truly open world. Playstyles: settled leader, nomad, or mix. The world doesn't pause when you leave the room.
+- **Architecture (from day one):** `state.villages = {id: villageState}` — multi-village in the data model from the start, even though Book 1's UI shows one. `scholar.standing = {villageId: status}`. Single-village now would mean rewriting state.js later.
+- **The delegation mechanic:** absent leader appoints a second — an NPC with their own leanings who won't do what you would. Leave the demagogue in charge for a month and find out.
+- **News, not omniscience:** away villages report via traders/travelers — delayed, possibly wrong. Full state only when present. The "while you were gone" digest (3-5 bullets, not a log) is a core UI piece.
+- **The Codex travels with you.** Villages hold degraded copies (telephone game); yours is the master. Teaching/learning knowledge is a mechanic.
+- **Endings branch:** the village you claim at the end — or the nomad ending: no village claims you, but the roads are safe because of you. You belong everywhere and nowhere.
+- **Succession:** on scholar death, the mantle passes from your strongest-bond village. Exiled everywhere? The run gets interesting.
