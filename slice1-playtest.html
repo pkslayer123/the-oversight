@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0f0a">
+<title>The Scattering — slice 1 playtest</title>
+<style>:root {
+  --bg: #0a0f0a;
+  --bg2: #0e150e;
+  --ink: #c9d6c0;
+  --dim: #6b7f62;
+  --acc: #9ae66e;
+  --warn: #e6c66e;
+  --bad: #e66e6e;
+  --sys: #6ec8e6;
+  --line: #1e2b1e;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 16px; line-height: 1.5;
+  overscroll-behavior: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+#app { max-width: 520px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+#screen { flex: 1; padding: 20px 16px 32px; }
+.hidden { display: none !important; }
+
+/* terminal chrome */
+.term-bar { color: var(--dim); font-size: 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; }
+h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px 0 4px; }
+.subtitle { color: var(--dim); margin-bottom: 32px; }
+.ascii { color: var(--dim); font-size: 12px; line-height: 1.3; white-space: pre; margin: 16px 0; }
+
+/* buttons: big touch targets */
+.btn {
+  display: block; width: 100%; padding: 16px; margin: 10px 0;
+  background: var(--bg2); color: var(--acc); border: 1px solid var(--acc);
+  font: inherit; font-size: 17px; text-align: center; cursor: pointer; border-radius: 4px;
+}
+.btn:active { background: var(--acc); color: var(--bg); }
+.btn.ghost { border-color: var(--dim); color: var(--dim); }
+.btn:disabled { opacity: .35; }
+
+/* stat bars */
+.stat { margin: 8px 0; }
+.stat .lbl { display: flex; justify-content: space-between; font-size: 13px; color: var(--dim); }
+.bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; margin-top: 4px; }
+.bar > i { display: block; height: 100%; background: var(--acc); transition: width .3s; }
+.bar.low > i { background: var(--warn); }
+.bar.crit > i { background: var(--bad); }
+
+/* log */
+#log { border: 1px solid var(--line); border-radius: 4px; padding: 12px; min-height: 120px; max-height: 32dvh; overflow-y: auto; font-size: 14px; }
+#log p { margin: 6px 0; }
+#log .sys { color: var(--sys); }
+#log .bad { color: var(--bad); }
+#log .good { color: var(--acc); }
+
+#toast {
+  position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%);
+  background: var(--bg2); border: 1px solid var(--acc); color: var(--ink);
+  padding: 12px 20px; border-radius: 4px; font-size: 14px; z-index: 50;
+}
+.card { border: 1px solid var(--line); border-radius: 4px; padding: 14px; margin: 10px 0; background: var(--bg2); }
+.card h3 { margin: 0 0 6px; color: var(--acc); font-size: 16px; }
+.card p { margin: 4px 0; font-size: 14px; color: var(--dim); }
+.card.warn { border-color: var(--warn); }
+.card.warn h3 { color: var(--warn); }
+.card.codex { border-left: 3px solid var(--warn); }
+.card.codex p { color: var(--ink); font-style: italic; }
+.row { display: flex; gap: 10px; }
+.row .btn { margin: 5px 0; }
+.small { font-size: 13px; color: var(--dim); }
+.term-line { font-size: 14px; margin: 6px 0; color: var(--ink); }
+
+/* map */
+.map { margin: 12px 0; border: 1px solid var(--line); border-radius: 4px; padding: 8px; background: var(--bg2); }
+.mrow { display: flex; }
+.tile {
+  flex: 1; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--dim); border: 1px solid transparent; border-radius: 4px;
+  cursor: pointer; user-select: none; min-height: 40px;
+}
+.tile.fog { color: #2a362a; }
+.tile.me { color: var(--bg); background: var(--acc); font-weight: bold; }
+.tile.move { border-color: var(--acc); color: var(--acc); }
+.tile:active { background: var(--line); }
+
+/* action rows */
+.actions { display: flex; gap: 8px; margin: 8px 0; }
+.actions .btn.sm { margin: 0; padding: 14px 8px; font-size: 15px; flex: 1; }
+.linklike { background: none; border: none; color: var(--acc); font: inherit; font-size: 14px; cursor: pointer; text-decoration: underline; padding: 4px; }
+
+/* log */
+.log { border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 12px; max-height: 28dvh; overflow-y: auto; background: var(--bg); }
+</style>
+</head>
+<body>
+<div id="app"><main id="screen"></main><div id="toast" class="hidden"></div></div>
+<script>window.SCATTER_DATA = {"plants": [{"biomes": ["se_woodlands"], "caloriesPerUnit": 45, "codex": "Every part is edible \u2014 leaves, flowers, roots. Bitter means nutritious. The first green of spring and the last of fall.", "confidence": "high", "id": "dandelion", "idDifficulty": 1, "lookalikeNote": "Unmistakable once flowering. Young rosette leaves are the safest stage.", "name": "Dandelion", "preparation": "Eat raw; boil to reduce bitterness. Roots can be roasted.", "scientific": "Taraxacum officinale", "seasons": ["spring", "summer", "fall"], "spoilageDays": 2, "tileAffinity": ["meadow", "trail_edge"], "unit": "handful of greens", "waterContent": "high", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 120, "codex": "The survivalist's supermarket: shoots, roots, pollen, and fluff for tinder. If you find cattails, you found water too.", "confidence": "high", "id": "cattail", "idDifficulty": 1, "lookalikeNote": "Distinctive brown hot-dog head is unmistakable. Harvest shoots before the head forms.", "name": "Cattail", "preparation": "Peel young shoots, eat raw or boiled. Roots pounded for starch.", "scientific": "Typha latifolia", "seasons": ["spring", "summer", "fall"], "spoilageDays": 3, "tileAffinity": ["wetland", "creek"], "unit": "bundle of shoots", "waterContent": "high", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 65, "codex": "Thorns guard the sweetest calories in the woods. Summer's paycheck \u2014 eat fresh, dry what you can't carry.", "confidence": "high", "id": "blackberry", "idDifficulty": 1, "name": "Blackberry", "preparation": "Eat raw. Leaves make a serviceable tea.", "scientific": "Rubus fruticosus", "seasons": ["summer"], "spoilageDays": 2, "tileAffinity": ["thicket", "trail_edge"], "unit": "handful of berries", "waterContent": "high", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 130, "codex": "Fall's candy. The fruit sweetens after frost \u2014 nature's own ripening timer. Dries well for winter stores.", "confidence": "high", "id": "persimmon", "idDifficulty": 2, "lookalikeNote": "Wait for the frost-softened fruit. If it puckers your mouth inside out, it wasn't ready.", "name": "American Persimmon", "preparation": "Eat only fully ripe (soft, wrinkled). Unripe = mouthful of chalk.", "scientific": "Diospyros virginiana", "seasons": ["fall", "winter"], "spoilageDays": 5, "tileAffinity": ["grove", "meadow"], "unit": "handful of fruit", "waterContent": "high", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 200, "codex": "Calorie-dense and they keep for months. The woods' savings account \u2014 gather in fall, eat all winter.", "confidence": "high", "id": "hickory_nut", "idDifficulty": 2, "name": "Hickory Nuts", "preparation": "Crack and pick. Shagbark hickory is the sweet one.", "scientific": "Carya ovata", "seasons": ["fall"], "spoilageDays": 60, "tileAffinity": ["grove"], "unit": "handful of nuts", "waterContent": "low", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 150, "codex": "The staple that fed nations. Tannins must be leached or they'll punish you \u2014 but leached acorn meal is flour. Flour is bread. Bread is winter.", "confidence": "high", "id": "acorn_white_oak", "idDifficulty": 2, "lookalikeNote": "Stick to white oak group (rounded lobe tips). Red oak acorns need far more leaching.", "name": "White Oak Acorns", "preparation": "MUST leach: shell, grind, soak in running water until bitterness is gone. White oak group is mildest.", "scientific": "Quercus alba", "seasons": ["fall"], "spoilageDays": 30, "tileAffinity": ["grove"], "unit": "handful of nutmeats", "waterContent": "low", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 35, "codex": "Flavor is survival too \u2014 morale matters. The smell test is the only ID that counts: onion smell or it stays in the ground.", "confidence": "high", "id": "wild_onion", "idDifficulty": 2, "lookalikeNote": "CRITICAL: must smell of onion/garlic. No smell = not an onion = do not eat. This rule has no exceptions.", "name": "Wild Onion", "preparation": "Eat raw or cooked. The smell test is law.", "scientific": "Allium canadense", "seasons": ["spring", "summer"], "spoilageDays": 7, "tileAffinity": ["meadow"], "unit": "bundle", "waterContent": "medium", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 30, "codex": "Grows in the cold months when little else does. The humble green that shows up when you need it most.", "confidence": "high", "id": "chickweed", "idDifficulty": 2, "name": "Chickweed", "preparation": "Eat raw. Delicate \u2014 wilts fast.", "scientific": "Stellaria media", "seasons": ["spring", "fall", "winter"], "spoilageDays": 1, "tileAffinity": ["meadow", "trail_edge"], "unit": "handful of greens", "waterContent": "high", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 25, "codex": "Trail nibble, not a meal \u2014 but it lifts the spirits, and sometimes that's the difference between going on and giving up.", "confidence": "high", "id": "wood_sorrel", "idDifficulty": 1, "lookalikeNote": "Heart-shaped leaflets in threes. Tangy taste confirms it \u2014 but eat in moderation (oxalic acid).", "name": "Wood Sorrel", "preparation": "Eat raw, sparingly. Pleasant lemony tang.", "scientific": "Oxalis stricta", "seasons": ["spring", "summer", "fall"], "spoilageDays": 1, "tileAffinity": ["forest_floor", "trail_edge"], "unit": "handful", "waterContent": "high", "sources": ["Field validation pending \u2014 conservative well-known species"]}, {"biomes": ["se_woodlands"], "caloriesPerUnit": 90, "codex": "The South's wild grape. Follow the vines up the trees in late summer. Sugar is energy, and energy is everything.", "confidence": "high", "id": "muscadine", "idDifficulty": 1, "name": "Muscadine Grapes", "preparation": "Eat raw. Thick skins, big seeds \u2014 work for it.", "scientific": "Vitis rotundifolia", "seasons": ["summer", "fall"], "spoilageDays": 4, "tileAffinity": ["thicket", "grove"], "unit": "handful", "waterContent": "high", "sources": ["Field validation pending \u2014 conservative well-known species"]}], "biomes": [{"description": "Southeast US deciduous woodlands. Rich forage, real winters in the north of range. Your first classroom.", "forageTable": {"acorn_white_oak": 5, "blackberry": 4, "cattail": 3, "chickweed": 3, "dandelion": 5, "hickory_nut": 4, "muscadine": 3, "persimmon": 4, "wild_onion": 3, "wood_sorrel": 3}, "hazards": ["ticks (spring/summer)", "venomous snakes (summer)", "flash floods"], "id": "se_woodlands", "name": "Southeast Woodlands", "seasons": {"fall": {"days": 75, "note": "Harvest season. Nuts, persimmons, last greens. Fatten up."}, "spring": {"days": 80, "note": "Greens return. Hungry season ends \u2014 if you make it."}, "summer": {"days": 95, "note": "Berries, heat, snakes. Water is everywhere; food takes work."}, "winter": {"days": 115, "note": "The boss. Nuts and stored food or nothing. Game gets bold."}}, "tileTypes": ["forest_floor", "grove", "meadow", "thicket", "wetland", "creek", "trail_edge", "ruin"], "weather": ["mild rain", "humid heat", "cold snap", "fog", "storm"]}], "monsters": [{"id": "thornback_boar", "name": "Bulldozer", "biomes": ["se_woodlands"], "hp": [40, 55], "attack": {"name": "China-Shop Charge", "damage": [18, 26], "telegraph": "Lowers its head, paws the earth. It is not going around the tree. It has never gone around anything."}, "weaknesses": ["soft flanks (HARRY then STRIKE)", "it never goes around \u2014 position accordingly"], "edible": {"calories": 3200, "note": "Pork is pork. Smoke it; it keeps for weeks. The quills make excellent awls."}, "parts": ["quills (tools)", "hide (leather)", "tusks (trade)"], "behavior": "territorial", "codexStages": {"unknown": "Something heavy moved in the thicket. Then a tree fell over for no reason.", "observed": "Feral hog. The System observed 'bull in a china shop' and concluded destruction is the point. It charges through obstacles \u2014 trees, fences, you. It cannot be deterred, only redirected.", "slain": "Thornback Boar. Moves: China-Shop Charge (heavy, telegraphed, destroys cover), Trample (close range after a missed charge), Retreat (below 25% hp, may return). It will not go around. Use that. Flanks are soft \u2014 harry it, then strike. Meat: excellent. The quills make fine awls."}, "systemDesignation": "Sus scrofa (standard)"}, {"id": "hushwolf", "name": "Hushpuppy", "biomes": ["se_woodlands"], "hp": [25, 35], "attack": {"name": "Silent Rush", "damage": [12, 18], "telegraph": "No telegraph you can hear. Watch the birds \u2014 when they go quiet, the pack is already moving."}, "weaknesses": ["fire (they remember being dogs)", "broken coordination (wound the lead)"], "edible": {"calories": 1400, "note": "Edible but lean. The old taboo itches; hunger doesn't care."}, "parts": ["teeth (trade)", "pelt"], "behavior": "pack", "codexStages": {"unknown": "The woods went silent all at once. Not quiet \u2014 silent. Like the world holding its breath.", "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you.", "slain": "Hushwolf. Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."}, "systemDesignation": "Canis familiaris (standard)"}, {"id": "gallowdeer", "name": "Highbeam Deer", "biomes": ["se_woodlands"], "hp": [35, 45], "attack": {"name": "Ocular Discharge", "damage": [16, 24], "telegraph": "It freezes. Like a deer in headlights. Light gathers behind its eyes. It is not frozen. It is aiming."}, "weaknesses": ["interrupt the freeze (HARRY)", "skittish at range before it locks on"], "edible": {"calories": 2800, "note": "Venison. The best meat in the woods, and the saddest. Thank it."}, "parts": ["antler (tools, trade)", "hide"], "behavior": "territorial", "codexStages": {"unknown": "A deer. It froze like a deer in headlights. The light did not stop gathering.", "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' \u2014 and right that you should move. When it freezes, it is aiming. Antlers never shed: the System classified them as permanent equipment.", "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze \u2014 MOVE), Antler Sweep (close range), Bolt (flees at 50% hp). Never let it finish aiming. The meat is worth the sorrow. Thank it."}, "systemDesignation": "Odocoileus virginianus (standard)"}], "villagers": [{"abilityWeights": {"care": 3, "fieldcraft": 2, "system": 1}, "backstory": "ER nurse from Columbus, Ohio. Held the line through the Burn's first winter with a first-aid kit and stubbornness. Volunteered as scholar the day the village voted to send someone out.", "clothesNote": "Scrub top (long dead) under a patched canvas jacket. Good boots \u2014 +1 travel.", "formerOccupation": "ER nurse", "homeRegion": "Ohio river valley", "id": "mara_okafor", "items": ["multitool", "lighter", "field_sutures", "daughters_drawing", "good_boots"], "name": "Mara Okafor", "personality": ["steady", "dry-humored", "protective"], "survivalProbability": 34, "systemAssessment": "Subject: Mara Okafor. Former occupation: emergency medicine. Psychological profile: high stress tolerance, low risk aversion, elevated empathy markers. Assigned abilities: Triage, Steady Hands. Survival probability: 34%. Good luck!"}, {"abilityWeights": {"combat": 2, "craft": 1, "fieldcraft": 3}, "backstory": "Grew up hunting whitetail with his grandfather in the Georgia pines. Was wearing camo when the sky changed \u2014 hasn't taken it off since. Quiet. Misses his dog.", "clothesNote": "Full camo, broken-in. Grandfather's knife on the belt.", "formerOccupation": "line cook / hunter", "homeRegion": "Georgia pines", "id": "jesse_calhoun", "items": ["grandfathers_knife", "rope_50ft", "lighter", "tin_cup", "camo_jacket"], "name": "Jesse Calhoun", "personality": ["quiet", "patient", "observant"], "survivalProbability": 41, "systemAssessment": "Subject: Jesse Calhoun. Former occupation: food service. Supplementary data: 14 seasons hunting ungulates with elder male relative. Psychological profile: high patience, low social drive. Assigned abilities: Game Sense, Patient Aim. Survival probability: 41%. Good luck!"}, {"abilityWeights": {"care": 2, "craft": 3, "fieldcraft": 1}, "backstory": "Ran a sushi counter in Seattle for eleven years. Knows fish the way scholars know books. Keeps her knives sharper than anyone's temper. The village eats better than it deserves because of her.", "clothesNote": "Chef's coat, cut down to a vest. Apron pockets full of useful things.", "formerOccupation": "sushi chef", "homeRegion": "Seattle, Washington", "id": "aki_tanaka", "items": ["chefs_knife", "whetstone", "fishing_line", "lighter", "mothers_ring"], "name": "Aki Tanaka", "personality": ["precise", "warm", "unflappable"], "survivalProbability": 29, "systemAssessment": "Subject: Aki Tanaka. Former occupation: raw fish preparation specialist. Psychological profile: exceptional fine motor control, low panic response. Assigned abilities: Field Dressing, Preservation Instinct. Survival probability: 29%. The Committee finds this estimate *conservative*. Good luck!"}], "abilities": [{"description": "Stop bleeding, set bones, treat infection. Your hands remember the ER.", "id": "triage", "modifiers": [{"op": "multiply", "target": "healing.effectiveness", "value": 1.5}, {"op": "add", "target": "injury.recovery_days", "value": -1}], "name": "Triage", "pool": "care", "synergyHints": ["Adrenaline Control: stabilize then fight on"], "unlock": {"type": "granted"}}, {"description": "Fine work under pressure. Dressing game, stitching wounds, tying snares \u2014 no shake.", "id": "steady_hands", "modifiers": [{"op": "multiply", "target": "craft.success", "value": 1.25}], "name": "Steady Hands", "pool": "care", "unlock": {"type": "granted"}}, {"description": "Read sign: tracks, scat, browse lines. You know what's been here and how long ago.", "id": "game_sense", "modifiers": [{"op": "multiply", "target": "hunt.find_chance", "value": 1.4}], "name": "Game Sense", "pool": "fieldcraft", "synergyHints": ["Patient Aim: find it, then drop it clean"], "unlock": {"type": "granted"}}, {"description": "One shot. You don't take the shot unless it's the shot.", "id": "patient_aim", "modifiers": [{"op": "multiply", "target": "hunt.first_strike_damage", "value": 2.0}], "name": "Patient Aim", "pool": "combat", "unlock": {"type": "granted"}}, {"description": "Break down game fast and clean. Less waste, more meat, usable parts.", "id": "field_dressing", "modifiers": [{"op": "multiply", "target": "hunt.meat_yield", "value": 1.3}], "name": "Field Dressing", "pool": "craft", "synergyHints": ["Preservation Instinct: harvest, then keep it"], "unlock": {"type": "granted"}}, {"description": "You think in shelf life. Smoking, drying, salting \u2014 food that lasts is food that saves.", "id": "preservation_instinct", "modifiers": [{"op": "multiply", "target": "food.spoilage_days", "value": 1.5}], "name": "Preservation Instinct", "pool": "craft", "unlock": {"type": "granted"}}, {"description": "Tell dandelion from disaster at a glance. The woods start talking.", "id": "forage_identification", "modifiers": [{"op": "add", "target": "forage.id_difficulty_bonus", "value": 1}], "name": "Forage Identification", "pool": "fieldcraft", "unlock": {"detail": "Identify 5 plants correctly", "type": "discovery"}}, {"description": "Your gut handles what it shouldn't. A useful lie your body tells itself.", "id": "iron_stomach", "modifiers": [{"op": "multiply", "target": "food.poison_chance", "value": 0.5}], "name": "Iron Stomach", "pool": "care", "unlock": {"detail": "Trial of Hunger survived", "type": "trial"}}, {"description": "Move through woods like weather. Less noise, fewer surprises.", "id": "soft_step", "modifiers": [{"op": "multiply", "target": "travel.encounter_chance", "value": 0.7}], "name": "Soft Step", "pool": "fieldcraft", "unlock": {"detail": "Traverse 20 tiles undetected", "type": "discovery"}}, {"description": "Someone taught you this over a long winter. Knowledge is the only inheritance.", "id": "taught_hands", "modifiers": [{"op": "add", "target": "craft.success_flat", "value": 0.1}], "name": "Taught Hands", "pool": "craft", "unlock": {"detail": "Learn from a village elder", "type": "mentorship"}}, {"description": "The System noticed you noticing patterns. It approves, in its way.", "id": "pattern_recognition", "modifiers": [{"op": "multiply", "target": "forage.rare_find_chance", "value": 1.5}], "name": "Pattern Recognition", "pool": "system", "unlock": {"detail": "Offered after 3 novel discoveries", "type": "trial"}}, {"description": "Burn bright, pay later. Once per expedition, act twice.", "id": "adrenaline_control", "modifiers": [{"op": "add", "target": "combat.bonus_actions", "value": 1}], "name": "Adrenaline Control", "pool": "combat", "synergyHints": ["Triage: stabilize then fight on"], "unlock": {"detail": "Trial of Blood survived", "type": "trial"}}], "items": [{"baseEffect": "+1 to foraging yields (edge retention)", "class": "tool", "flavor": "Spring-assisted, half-serrated. Opens one-handed. You've opened it ten thousand times.", "id": "multitool", "name": "Multitool", "bondThresholds": [{"uses": 10, "offers": ["efficient_action", "never_fails", "impossible_edge"]}]}, {"baseEffect": "Fire on demand (until fuel runs out)", "class": "tool", "flavor": "The most valuable object in the post-Burn world. Guard it with your life.", "id": "lighter", "name": "Lighter", "bondThresholds": [{"uses": 25, "offers": ["never_fails", "impossible_edge", "efficient_action"]}]}, {"baseEffect": "Stabilize one severe injury per expedition", "class": "tool", "flavor": "Not much left in the kit. Enough for one bad day.", "id": "field_sutures", "name": "Field Sutures", "bondThresholds": [{"uses": 10, "offers": ["efficient_action", "never_fails", "impossible_edge"]}]}, {"baseEffect": "+resolve when carried (morale)", "class": "sentimental", "flavor": "Crayon on printer paper: you, holding a sun. She drew it the week before the sky changed.", "id": "daughters_drawing", "name": "Daughter's Drawing", "bondThresholds": [{"uses": 21, "offers": ["resolve", "quiet_luck", "anchor"]}]}, {"baseEffect": "+1 travel AP per day", "class": "clothing", "flavor": "Broken in over three states. They fit like a promise.", "id": "good_boots", "name": "Good Boots", "bondThresholds": [{"uses": 25, "offers": ["second_skin", "weatherproof", "ghost_weave"]}]}, {"baseEffect": "Dress game 25% faster; +bond with every kill cleaned", "class": "tool", "flavor": "His grandfather's. The edge remembers.", "id": "grandfathers_knife", "name": "Grandfather's Knife", "bondThresholds": [{"uses": 10, "offers": ["efficient_action", "never_fails", "impossible_edge"]}, {"uses": 50, "offers": ["impossible_edge", "never_fails", "efficient_action"]}]}, {"baseEffect": "Climb, snare, haul \u2014 50ft of options", "class": "tool", "flavor": "Coiled the way his grandfather taught him.", "id": "rope_50ft", "name": "Rope 50Ft"}, {"baseEffect": "Drink from anything, anywhere", "class": "tool", "flavor": "Dented. Older than you.", "id": "tin_cup", "name": "Tin Cup"}, {"baseEffect": "Resist cold/wet; blend into woods", "class": "clothing", "flavor": "Hasn't taken it off since the sky changed.", "id": "camo_jacket", "name": "Camo Jacket", "bondThresholds": [{"uses": 25, "offers": ["weatherproof", "ghost_weave", "second_skin"]}]}, {"baseEffect": "Butcher and fillet with precision; +bond with every meal prepared", "class": "tool", "flavor": "Eleven years of mornings. The edge is a meditation.", "id": "chefs_knife", "name": "Chef's Knife", "bondThresholds": [{"uses": 10, "offers": ["efficient_action", "never_fails", "impossible_edge"]}]}, {"baseEffect": "Restore any blade to service", "class": "tool", "flavor": "Small, grey, irreplaceable.", "id": "whetstone", "name": "Whetstone"}, {"baseEffect": "Fish anywhere there's water and patience", "class": "tool", "flavor": "200 yards, wrapped around a stick. Low-tech, high-yield.", "id": "fishing_line", "name": "Fishing Line"}, {"baseEffect": "+resolve when worn (morale)", "class": "sentimental", "flavor": "Her mother's. She twists it when thinking.", "id": "mothers_ring", "name": "Mother's Ring", "bondThresholds": [{"uses": 21, "offers": ["resolve", "quiet_luck", "anchor"]}]}]};</script>
+<script>/* Game state: factory, save/load (versioned), sub-objects separable.
+   Village / scholars / Codex / run are independent so one can reset cleanly. */
+(function (global) {
+  'use strict';
+  const SAVE_KEY = 'scattering-save-v1';
+  const SAVE_VERSION = 1;
+
+  function newVillage() {
+    return {
+      name: 'Haven', day: 1, season: 'spring',
+      pantryKcal: 2000, waterL: 12, morale: 'steady',
+      villagers: [], // villager ids (living)
+      fallen: [],    // {villagerId, day, cause} — remembered
+      favor: 0,
+    };
+  }
+
+  function newScholar(villagerId) {
+    return {
+      villagerId, day: 1, ap: 4,
+      health: 100, kcal: 2200, hydration: 100, energy: 100,
+      abilities: [], // ability ids (max 6)
+      relics: [],    // {itemId, bond}
+      injuries: [],
+      position: { region: null, x: 0, y: 0 },
+      inventory: [], // {plantId|itemId, qty, spoilageDay}
+    };
+  }
+
+  function newCodex() {
+    return { plants: {}, monsters: {}, recipes: [], terrain: {} };
+    // plants: {plantId: {identifiedDay, survivedEating: bool, notes}}
+  }
+
+  function newState() {
+    return { version: SAVE_VERSION, village: newVillage(), scholar: null, codex: newCodex(), run: null };
+  }
+
+  function save(state) {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { /* storage full/blocked */ }
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (s.version !== SAVE_VERSION) return null; // refuse to corrupt; migrate later
+      return s;
+    } catch (e) { return null; }
+  }
+
+  function wipe() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+
+  global.Scattering = global.Scattering || {};
+  global.Scattering.state = { newState, newVillage, newScholar, newCodex, save, load, wipe, SAVE_VERSION };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* The modifier pipeline — the scalability core.
+   Every computed value resolves through here:
+     base → collect active modifiers → apply adds, then multiplies → final.
+   Abilities, relics, injuries, and conditions all speak this one language,
+   so new content never touches engine code. */
+(function (global) {
+  'use strict';
+
+  // A modifier: {target, op: 'add'|'multiply', value, condition?}
+  // condition is a string like "biome:se_woodlands" — evaluated by the caller.
+
+  function resolve(base, target, modifiers, context) {
+    let add = 0, mul = 1;
+    for (const m of modifiers || []) {
+      if (m.target !== target) continue;
+      if (m.condition && context && !checkCondition(m.condition, context)) continue;
+      if (m.op === 'add') add += m.value;
+      else if (m.op === 'multiply') mul *= m.value;
+    }
+    return (base + add) * mul;
+  }
+
+  function checkCondition(cond, ctx) {
+    const [k, v] = cond.split(':');
+    return ctx && ctx[k] === v;
+  }
+
+  // Gather modifiers from a scholar's abilities + relics + injuries.
+  // abilitiesData: the abilities.json array. In slice 1 this is passed in;
+  // later it comes from a content registry.
+  function collectModifiers(scholar, abilitiesData) {
+    const out = [];
+    const byId = {};
+    (abilitiesData || []).forEach(a => { byId[a.id] = a; });
+    (scholar.abilities || []).forEach(id => {
+      const a = byId[id];
+      if (a && a.modifiers) out.push(...a.modifiers);
+    });
+    // relics and injuries hook in here in later slices (same shape)
+    return out;
+  }
+
+  global.Scattering = global.Scattering || {};
+  global.Scattering.modifiers = { resolve, collectModifiers, checkCondition };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* The master clock. Every cost in the game flows through here.
+   Thesis enforcement: needs never decrease with level; power costs calories. */
+(function (global) {
+  'use strict';
+
+  const BASE_BMR = 1800;          // kcal/day at rest
+  const ACTIVE_DAY = 2400;       // typical expedition day
+  const STARVATION_THRESHOLD = 500; // kcal reserve below which the spiral starts
+
+  const ACTION_COSTS = {
+    forage: 150, hunt: 300, craft: 120, explore: 200,
+    rest: -200,           // recovers (negative cost)
+    treat_water: 60, travel_leg: 400,
+    combat_round: 120, system_ability: 800, // power is expensive
+  };
+
+  function dailyNeed(scholar) {
+    // BMR + activity; injuries and heavy abilities raise it. Never lowers with level.
+    let need = ACTIVE_DAY;
+    (scholar.injuries || []).forEach(() => { need += 150; });
+    return need;
+  }
+
+  // Apply one day's metabolic reality. Returns {ok, warnings[]}.
+  // Warnings telegraph the spiral BEFORE it arrives (design rule).
+  function resolveDay(scholar, village) {
+    const warnings = [];
+    const need = dailyNeed(scholar);
+    scholar.kcal -= need;
+    scholar.hydration -= 35;
+    if (scholar.kcal < 0) {
+      const deficit = -scholar.kcal;
+      scholar.health -= Math.min(25, 2 + deficit / 150);
+      scholar.energy = Math.max(0, scholar.energy - 25);
+      warnings.push('STARVING: health and energy falling. The spiral has started.');
+    } else if (scholar.kcal < STARVATION_THRESHOLD) {
+      warnings.push('WARNING: reserves critical. Eat tomorrow or the spiral begins.');
+    }
+    if (scholar.hydration <= 0) {
+      scholar.hydration = 0;
+      scholar.health -= 15;
+      scholar.energy = Math.max(0, scholar.energy - 30);
+      warnings.push('DEHYDRATED: find and treat water today.');
+    }
+    // village eats too — 2200 kcal per living villager per day
+    const mouths = village.villagers.length;
+    village.pantryKcal -= mouths * 2200;
+    if (village.pantryKcal < 0) {
+      village.pantryKcal = 0;
+      warnings.push('VILLAGE HUNGRY: the pantry is empty. Someone will weaken soon.');
+    }
+    return { ok: scholar.health > 0, warnings };
+  }
+
+  global.Scattering = global.Scattering || {};
+  global.Scattering.calories = { BASE_BMR, ACTIVE_DAY, ACTION_COSTS, dailyNeed, resolveDay };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Day resolution order. The turn structure — one day, one turn.
+   Order is load-bearing; document changes in DECISIONS.md. */
+(function (global) {
+  'use strict';
+
+  // A day:
+  //   1. MORNING — status check, System message roll, weather
+  //   2. ACTIONS — player spends AP (4): forage/hunt/craft/explore/rest/treat_water
+  //   3. EVENING — eat (player allocates food), spoilage tick, water check
+  //   4. METABOLISM — calories.resolveDay (scholar + village)
+  //   5. VILLAGE TICK — 1 expedition day = 1 village day (morale, projects, events)
+  //   6. NIGHT — save, codex updates, death check
+  //
+  // Slice 1 implements: morning status, 4 AP actions (forage/rest/treat_water/explore),
+  // evening eat, metabolism, save. Village tick, hunting, crafting, events arrive later.
+
+  const PHASES = ['morning', 'actions', 'evening', 'metabolism', 'village', 'night'];
+
+  function newDay(scholar) {
+    scholar.day += 1;
+    scholar.ap = 4;
+    return { day: scholar.day, phase: 'morning', log: [] };
+  }
+
+  global.Scattering = global.Scattering || {};
+  global.Scattering.day = { PHASES, newDay };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Foraging resolver — slice 1.
+   Tile + biome + day → plant yield. Uses data from plants.json + biomes.json.
+   Pure logic; UI lives in app.js. */
+(function (global) {
+  'use strict';
+
+  // Weighted pick from {id: weight}
+  function weightedPick(table, rng) {
+    const entries = Object.entries(table);
+    const total = entries.reduce((s, e) => s + e[1], 0);
+    let r = (rng || Math.random)() * total;
+    for (const [id, w] of entries) { r -= w; if (r <= 0) return id; }
+    return entries[entries.length - 1][0];
+  }
+
+  // Forage a tile. Returns {plantId, units, kcal, message, firstFind}.
+  // tile: {type, foragedToday}  biome: biome data  plants: plant array
+  // scholar: scholar state (for modifiers)  codex: codex state (for firstFind)
+  function forage(tile, biome, plants, scholar, codex, abilitiesData) {
+    const S = global.Scattering;
+    const mods = S.modifiers.collectModifiers(scholar, abilitiesData || []);
+    const ctx = { biome: biome.id };
+
+    // tile affinity bonus: plants with tileAffinity including tile.type get 2x weight
+    const table = {};
+    for (const [pid, w] of Object.entries(biome.forageTable || {})) {
+      const p = plants.find(x => x.id === pid);
+      if (!p) continue;
+      const aff = (p.tileAffinity || []).includes(tile.type) ? 2 : 1;
+      table[pid] = w * aff;
+    }
+    const plantId = weightedPick(table);
+    const plant = plants.find(x => x.id === plantId);
+
+    let units = 5 + Math.floor(Math.random() * 7); // 5-11: a day-part is ~3hrs; a knowing forager gathers real food
+    units = Math.round(S.modifiers.resolve(units, 'forage.yield', mods, ctx));
+    units = Math.max(1, units);
+
+    const firstFind = !(codex.plants[plantId] && codex.plants[plantId].identifiedDay);
+    const kcal = units * plant.caloriesPerUnit;
+
+    return {
+      plantId, units, kcal, firstFind,
+      plant,
+      message: firstFind
+        ? `New plant recorded: ${plant.name}. The Codex grows.`
+        : `Foraged ${units}× ${plant.unit} of ${plant.name} (+${kcal} kcal).`
+    };
+  }
+
+  // Can this tile be foraged? (not foraged today, natural tile)
+  function canForage(tile) {
+    return !tile.foraged && tile.type !== 'ruin';
+  }
+
+  global.Scattering = global.Scattering || {};
+  global.Scattering.forage = { forage, canForage, weightedPick };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Combat engine — slice 1. One command per round.
+   Monster declares telegraph → player answers → resolve.
+   Pure logic; UI lives in app.js. */
+(function (global) {
+  'use strict';
+
+  // Monster moves for slice 1 (Bulldozer). Data-driven later.
+  const MOVES = {
+    charge: { name: 'China-Shop Charge', dmg: [18, 26], hint: 'Lowers its head, paws the earth. It is not going around the tree.' },
+    trample: { name: 'Trample', dmg: [8, 14], hint: 'It whirls, lashing out at everything close.' },
+  };
+
+  function newFight(monster, scholar) {
+    return {
+      monster: { id: monster.id, name: monster.name, hp: monster.hp[0] + Math.floor(Math.random() * (monster.hp[1] - monster.hp[0])), maxHp: monster.hp[1] },
+      scholarHp: scholar.health,
+      round: 0,
+      telegraph: 'charge', // first round always the signature
+      studied: false,
+      log: [],
+    };
+  }
+
+  function roll(range) { return range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1)); }
+
+  // Player command → resolve one round. Returns {over, result, log[]}.
+  // command: strike | harry | brace | study | flee
+  function round(fight, command, scholar, abilitiesData) {
+    const S = global.Scattering;
+    const mods = S.modifiers.collectModifiers(scholar, abilitiesData || []);
+    const log = [];
+    fight.round += 1;
+
+    const move = MOVES[fight.telegraph];
+    let dmgToMonster = 0, dmgToScholar = 0, fled = false;
+
+    // --- player action ---
+    if (command === 'strike') {
+      let d = roll([10, 16]);
+      // Patient Aim: first strike ×2
+      if (fight.round === 1 && (scholar.abilities || []).includes('patient_aim')) {
+        d *= 2; log.push('Jesse doesn\'t blink. One shot. (Patient Aim ×2)');
+      }
+      dmgToMonster = Math.round(S.modifiers.resolve(d, 'combat.strike_damage', mods, {}));
+      log.push(`You STRIKE for ${dmgToMonster}.`);
+    } else if (command === 'harry') {
+      dmgToMonster = roll([4, 8]);
+      log.push(`You HARRY for ${dmgToMonster}, staying mobile.`);
+    } else if (command === 'brace') {
+      log.push('You BRACE. Hold the line.');
+    } else if (command === 'study') {
+      fight.studied = true;
+      log.push('You STUDY it. The Codex drinks in the details.');
+    } else if (command === 'flee') {
+      if (Math.random() < 0.8) {
+        fled = true;
+        log.push('You FLEE — crashing through the undergrowth, heart hammering.');
+      } else {
+        log.push('You try to flee — it cuts you off!');
+      }
+    }
+
+    // --- monster action (unless fled) ---
+    if (!fled) {
+      let incoming = roll(move.dmg);
+      if (command === 'harry' && Math.random() < 0.5) {
+        incoming = 0;
+        log.push(`${move.name} — you slip aside. Missed.`);
+      } else if (command === 'brace') {
+        incoming = Math.ceil(incoming / 2);
+        log.push(`${move.name} hits your guard for ${incoming}.`);
+        if (fight.telegraph === 'charge') { // simple riposte
+          const rip = 4;
+          dmgToMonster += rip;
+          log.push(`It impales itself on your braced line! +${rip} (riposte)`);
+        }
+      } else if (command === 'study') {
+        log.push(`${move.name} — ${incoming} damage while you watch and learn.`);
+      } else {
+        log.push(`${move.name} hits for ${incoming}.`);
+      }
+      dmgToScholar = incoming;
+    }
+
+    fight.monster.hp -= dmgToMonster;
+    fight.scholarHp -= dmgToScholar;
+
+    // --- next telegraph ---
+    if (fight.monster.hp > 0 && !fled) {
+      // simple pattern: charge, then trample if charge missed/dodged, else charge again
+      fight.telegraph = (fight.telegraph === 'charge' && dmgToScholar === 0) ? 'trample' : 'charge';
+      const next = MOVES[fight.telegraph];
+      log.push(fight.studied
+        ? `Next: ${next.name} — ${next.hint}`
+        : `It shifts. ${next.name} incoming — you can't quite read it.`);
+    }
+
+    const over = fled || fight.monster.hp <= 0 || fight.scholarHp <= 0;
+    const result = fled ? 'fled' : fight.monster.hp <= 0 ? 'won' : fight.scholarHp <= 0 ? 'lost' : null;
+    return { over, result, log, dmgToMonster, dmgToScholar };
+  }
+
+  global.Scattering = global.Scattering || {};
+  global.Scattering.combat = { newFight, round, MOVES };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Slice 1 game controller: "Seven Days".
+   Owns state, map, day loop, actions, encounters. UI renders from it (app.js). */
+(function (global) {
+  'use strict';
+  const S = global.Scattering;
+  const DAY_PARTS = ['dawn', 'midday', 'dusk', 'night'];
+  const DAY_PART_HINT = {
+    dawn: 'The world wakes. Animals are active.',
+    midday: 'Honest work hours. Heat builds.',
+    dusk: 'Animals stir again. Shadows lengthen.',
+    night: 'Camp. Rest — or risk the dark.',
+  };
+  const TILE_GLYPH = {
+    forest_floor: '♣', grove: '♠', meadow: '≋', thicket: '✳',
+    wetland: '≈', creek: '≋', trail_edge: '·', ruin: '▦',
+  };
+  const TILE_NAME = {
+    forest_floor: 'forest floor', grove: 'grove', meadow: 'meadow', thicket: 'thicket',
+    wetland: 'wetland', creek: 'creek', trail_edge: 'trail edge', ruin: 'ruin',
+  };
+
+  const Game = {
+    data: null, state: null, map: null,
+    dayPart: 0, ap: 1, over: false, won: false,
+    encounterDone: false, log: [],
+    homeRegion: null, villagerId: null,
+
+    async init() {
+      if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
+      const get = f => fetch('src/data/' + f).then(r => r.json());
+      const [plants, biomes, monsters, villagers, abilities, items] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items };
+      return this.data;
+    },
+
+    biome() { return this.data.biomes.find(b => b.id === 'se_woodlands'); },
+
+    newGame(homeRegion, villagerId) {
+      this.homeRegion = homeRegion; this.villagerId = villagerId;
+      const villager = this.data.villagers.find(v => v.id === villagerId);
+      this.state = S.state.newState();
+      this.state.village.name = 'Haven';
+      this.state.village.villagers = ['mara_okafor', 'jesse_calhoun', 'aki_tanaka'];
+      const scholar = S.state.newScholar(villagerId);
+      // granted abilities from villager data (2 each, defined here for slice 1)
+      const granted = {
+        mara_okafor: ['triage', 'steady_hands'],
+        jesse_calhoun: ['game_sense', 'patient_aim'],
+        aki_tanaka: ['field_dressing', 'preservation_instinct'],
+      };
+      scholar.abilities = granted[villagerId] || [];
+      scholar.water = 1; // 1 clean water to start
+      this.state.scholar = scholar;
+      this.state.codex = S.state.newCodex();
+      this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
+      this.encounterDone = false; this.log = [];
+      this.genMap();
+      this.say(`Day 1 — dawn. "${villager.name.split(' ')[0]}, eat something green. Drink water. Come back before dark."`);
+      return this.status();
+    },
+
+    genMap() {
+      const tiles = [];
+      const weights = [
+        ['forest_floor', 14], ['grove', 6], ['meadow', 8], ['thicket', 7],
+        ['wetland', 4], ['creek', 3], ['trail_edge', 5], ['ruin', 2],
+      ];
+      const bag = [];
+      weights.forEach(([t, w]) => { for (let i = 0; i < w; i++) bag.push(t); });
+      for (let y = 0; y < 7; y++) {
+        const row = [];
+        for (let x = 0; x < 7; x++) {
+          row.push({ type: bag[Math.floor(Math.random() * bag.length)], revealed: false, foraged: false });
+        }
+        tiles.push(row);
+      }
+      // guarantee a creek and wetland near-ish center
+      tiles[2][3].type = 'creek'; tiles[4][2].type = 'wetland';
+      this.map = { tiles, px: 3, py: 3 };
+      this.reveal(3, 3);
+    },
+
+    reveal(cx, cy) {
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        if (Math.abs(x - cx) + Math.abs(y - cy) <= 2) this.map.tiles[y][x].revealed = true;
+      }
+    },
+
+    tileAt(x, y) { return this.map.tiles[y][x]; },
+    playerTile() { return this.tileAt(this.map.px, this.map.py); },
+
+    canMove(x, y) {
+      if (x < 0 || y < 0 || x > 6 || y > 6) return false;
+      const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
+      return d > 0 && d <= 3 && this.tileAt(x, y).revealed;
+    },
+
+    move(x, y) {
+      if (!this.canMove(x, y)) return false;
+      this.map.px = x; this.map.py = y;
+      this.reveal(x, y);
+      const t = this.playerTile();
+      this.say(`Moved to ${TILE_NAME[t.type]}.`);
+      this.checkEncounter();
+      return true;
+    },
+
+    checkEncounter() {
+      const t = this.playerTile();
+      if (!this.encounterDone && this.state.scholar.day >= 3 && t.type === 'thicket') {
+        this.encounterDone = true;
+        this.pendingEncounter = true;
+      }
+    },
+
+    // --- actions (1 AP) ---
+    doAction(kind) {
+      if (this.ap < 1 || this.over) return null;
+      const scholar = this.state.scholar;
+      let msg = '';
+      if (kind === 'forage') {
+        const t = this.playerTile();
+        if (!S.forage.canForage(t)) { this.say('Nothing left to forage here today.'); return null; }
+        t.foraged = true;
+        const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities);
+        if (r.firstFind) this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
+        scholar.inventory.push({ plantId: r.plantId, units: r.units, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation });
+        scholar.kcal -= S.calories.ACTION_COSTS.forage;
+        msg = r.message + (r.firstFind ? ` (${r.plant.codex})` : '');
+      } else if (kind === 'rest') {
+        scholar.energy = Math.min(100, scholar.energy + 30);
+        scholar.health = Math.min(100, scholar.health + 5);
+        scholar.kcal -= 50;
+        msg = 'You rest. Breath slows. +30 energy.';
+      } else if (kind === 'treat') {
+        const t = this.playerTile();
+        if (t.type !== 'creek' && t.type !== 'wetland') { this.say('Need moving water — find a creek or wetland.'); return null; }
+        scholar.water = (scholar.water || 0) + 2;
+        scholar.kcal -= S.calories.ACTION_COSTS.treat_water;
+        msg = 'You boil water over a small fire. +2 clean water.';
+      }
+      this.ap -= 1;
+      this.say(msg);
+      return msg;
+    },
+
+    // --- free minors ---
+    eat() {
+      const scholar = this.state.scholar;
+      if (this.over) return;
+      // eat most-perishable first until kcal >= 2400 or empty
+      scholar.inventory.sort((a, b) => a.spoilDay - b.spoilDay);
+      let ate = 0;
+      while (scholar.kcal < 2400 && scholar.inventory.length) {
+        const it = scholar.inventory[0];
+        const kcal = it.kcalEach;
+        scholar.kcal += kcal; ate += kcal;
+        it.units -= 1;
+        if (it.units <= 0) scholar.inventory.shift();
+      }
+      // spoilage: drop expired
+      const before = scholar.inventory.length;
+      scholar.inventory = scholar.inventory.filter(i => i.spoilDay > scholar.day);
+      const spoiled = before - scholar.inventory.length;
+      this.say(ate > 0 ? `You eat (${ate} kcal).` + (spoiled ? ` ${spoiled} item(s) spoiled — the Codex notes the waste.` : '')
+                       : (scholar.inventory.length ? 'You are full enough.' : 'Nothing to eat. The pantry of your pack is empty.'));
+    },
+
+    drinkTreated() {
+      const scholar = this.state.scholar;
+      if ((scholar.water || 0) < 1) { this.say('No clean water. Treat some at a creek.'); return; }
+      scholar.water -= 1;
+      scholar.hydration = Math.min(100, scholar.hydration + 50);
+      this.say('You drink clean water. +50 hydration.');
+    },
+
+    drinkWild() {
+      const scholar = this.state.scholar;
+      const t = this.playerTile();
+      if (t.type !== 'creek' && t.type !== 'wetland') { this.say('No water here.'); return; }
+      scholar.hydration = Math.min(100, scholar.hydration + 40);
+      if (Math.random() < 0.15) {
+        scholar.health -= 10;
+        this.say('You drink from the creek. +40 hydration. Your stomach turns — untreated water is a gamble. (-10 health)');
+      } else this.say('You drink from the creek. +40 hydration. (Untreated — a gamble.)');
+    },
+
+    endDayPart() {
+      if (this.over) return this.status();
+      // small energy tick per part
+      this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
+      this.dayPart += 1;
+      if (this.dayPart >= 4) return this.endDay();
+      this.ap = 1;
+      this.say(`— ${DAY_PARTS[this.dayPart].toUpperCase()} — ${DAY_PART_HINT[DAY_PARTS[this.dayPart]]}`);
+      return this.status();
+    },
+
+    endDay() {
+      const scholar = this.state.scholar;
+      // reset forage flags
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.map.tiles[y][x].foraged = false;
+      // evening: auto-eat prompt handled by UI; run metabolism
+      const res = S.calories.resolveDay(scholar, this.state.village);
+      res.warnings.forEach(w => this.say('⚠ ' + w));
+      S.state.save(this.state);
+      if (!res.ok || scholar.health <= 0) {
+        this.over = true;
+        this.say('You didn\'t make it. The village remembers. The Codex keeps what you brought home.');
+        return this.status();
+      }
+      if (scholar.day >= 7) {
+        this.over = true; this.won = true;
+        this.say('Seven days. You ate, you drank, you came back. The village eats because of you.');
+        return this.status();
+      }
+      scholar.day += 1;
+      this.dayPart = 0; this.ap = 1;
+      this.say(`— DAY ${scholar.day} DAWN — ${DAY_PART_HINT.dawn}`);
+      return this.status();
+    },
+
+    // --- combat ---
+    startCombat() {
+      const monster = this.data.monsters.find(m => m.id === 'thornback_boar') || this.data.monsters[0];
+      this.fight = S.combat.newFight(monster, this.state.scholar);
+      this.pendingEncounter = false;
+      this.say(`A BULLDOZER crashes from the thicket — ${monster.codexStages.unknown}`);
+      return this.fight;
+    },
+
+    combatRound(cmd) {
+      const r = S.combat.round(this.fight, cmd, this.state.scholar, this.data.abilities);
+      r.log.forEach(l => this.say(l));
+      this.state.scholar.health = Math.max(0, this.fight.scholarHp);
+      if (cmd === 'study' && !this.state.codex.monsters) this.state.codex.monsters = {};
+      if (cmd === 'study') this.state.codex.monsters['thornback_boar'] = { stage: 'observed' };
+      if (r.result === 'won') {
+        this.state.codex.monsters = this.state.codex.monsters || {};
+        this.state.codex.monsters['thornback_boar'] = { stage: 'slain' };
+        const scholar = this.state.scholar;
+        scholar.inventory.push({ plantId: 'boar_meat', units: 4, kcalEach: 800, spoilDay: scholar.day + 3, name: 'Bulldozer meat', unit: 'cut', prep: 'Smoke it — it keeps for weeks.' });
+        this.say('The Bulldozer falls. Pork is pork — 3,200 kcal of it. The village will eat. (+4 cuts of meat)');
+        this.fight = null;
+      } else if (r.result === 'fled') {
+        this.fight = null;
+        this.say('You escape. The thicket keeps its secrets.');
+      } else if (r.result === 'lost') {
+        this.over = true; this.fight = null;
+        this.say('The Bulldozer does not go around. You didn\'t make it. The village remembers.');
+      }
+      if (this.state.scholar.health <= 0 && !this.over) { this.over = true; this.say('You didn\'t make it.'); }
+      return r;
+    },
+
+    say(msg) { this.log.push(msg); if (this.log.length > 40) this.log.shift(); },
+
+    status() {
+      const s = this.state.scholar;
+      return {
+        day: s.day, dayPart: DAY_PARTS[this.dayPart], dayPartHint: DAY_PART_HINT[DAY_PARTS[this.dayPart]],
+        ap: this.ap, health: Math.round(s.health), kcal: Math.round(s.kcal),
+        hydration: Math.round(s.hydration), energy: Math.round(s.energy),
+        water: s.water || 0,
+        inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
+        invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
+        px: this.map.px, py: this.map.py,
+        over: this.over, won: this.won,
+        inCombat: !!this.fight,
+        pendingEncounter: !!this.pendingEncounter,
+        log: this.log.slice(-6),
+        codexCount: Object.keys(this.state.codex.plants).length,
+        abilities: s.abilities,
+      };
+    },
+
+    codexEntries() {
+      return Object.keys(this.state.codex.plants).map(pid => {
+        const p = this.data.plants.find(x => x.id === pid);
+        return p ? { name: p.name, kcal: p.caloriesPerUnit, unit: p.unit, prep: p.preparation, text: p.codex } : null;
+      }).filter(Boolean);
+    },
+  };
+
+  global.Scattering = global.Scattering || {};
+  global.Scattering.Game = Game;
+  global.Scattering.DAY_PARTS = DAY_PARTS;
+  global.Scattering.TILE_GLYPH = TILE_GLYPH;
+  global.Scattering.TILE_NAME = TILE_NAME;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* The Scattering — slice 1: "Seven Days" playable.
+   Screens: title → onboarding → game (map/day loop) → combat → codex → ending. */
+(function () {
+  'use strict';
+  const S = window.Scattering;
+  const Game = S.Game;
+  const screen = document.getElementById('screen');
+  const toastEl = document.getElementById('toast');
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.remove('hidden');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toastEl.classList.add('hidden'), 2400);
+  }
+  function bar(left, right) {
+    return `<div class="term-bar"><span>${left}</span><span>${right}</span></div>`;
+  }
+  function esc(s) { return String(s).replace(/</g, '&lt;'); }
+
+  // ---------- shared ----------
+  function statRow(label, val, pct, low) {
+    return `<div class="stat"><div class="lbl"><span>${label}</span><span>${val}</span></div><div class="bar${low ? ' low' : ''}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></div>`;
+  }
+  function statusBars(st) {
+    return statRow('HEALTH', st.health, st.health, st.health < 35) +
+      statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
+      statRow('PACK', st.invKcal + ' kcal', Math.min(100, st.invKcal / 30)) +
+      statRow('WATER', st.hydration + '% · ' + st.water + ' clean', st.hydration, st.hydration < 30) +
+      statRow('ENERGY', st.energy + '%', st.energy, st.energy < 25);
+  }
+
+  // ---------- title ----------
+  function title() {
+    screen.innerHTML = `
+      ${bar('scattering://village', 'day 0')}
+      <div class="ascii">      .-""-.
+     / .--. \\
+    | (    ) |
+     \\ '--' /
+      '--'--'</div>
+      <h1 class="title">THE SCATTERING</h1>
+      <div class="subtitle">a system-apocalypse survival roguelite<br>hunger is the final boss</div>
+      <button class="btn" id="b-new">New Expedition</button>
+      <button class="btn ghost" id="b-codex0">Codex</button>
+      <button class="btn ghost" id="b-about">About</button>
+      <p class="small" style="margin-top:20px">slice 1: seven days. forage · eat · drink · survive.</p>`;
+    document.getElementById('b-new').onclick = () => obColdOpen();
+    document.getElementById('b-codex0').onclick = () => { toast('The Codex is empty. For now.'); };
+    document.getElementById('b-about').onclick = about;
+  }
+  function about() {
+    screen.innerHTML = `${bar('scattering://about', 'v0.1')}
+      <h1 class="title" style="font-size:22px">ABOUT</h1>
+      <p class="small">The sky changed. You woke up somewhere else. All wiring and combustibles are gone — the Burn took them.</p>
+      <p class="small">Keep yourself fed for seven days. The village is counting on you.</p>
+      <button class="btn ghost" id="b-back">Back</button>`;
+    document.getElementById('b-back').onclick = title;
+  }
+
+  // ---------- onboarding ----------
+  let ob = {};
+  function obColdOpen() {
+    screen.innerHTML = `${bar('scattering://wake', '...')}
+      <div style="margin:60px 0 30px;min-height:120px" id="ob-lines"></div>
+      <button class="btn ghost" id="b-c1">...</button>`;
+    const lines = ['The sky changed on a Tuesday.', 'You woke up somewhere else.'];
+    const el = document.getElementById('ob-lines');
+    let i = 0;
+    document.getElementById('b-c1').onclick = () => {
+      if (i < lines.length) { el.innerHTML += `<p class="term-line">${lines[i++]}</p>`; }
+      if (i >= lines.length) obHome();
+    };
+  }
+  function obHome() {
+    const homes = [
+      { id: 'ohio', label: 'Ohio river valley', sub: 'farms and small woods' },
+      { id: 'georgia', label: 'Georgia pines', sub: 'hunting country' },
+      { id: 'seattle', label: 'Seattle', sub: 'city, rain, salt water' },
+    ];
+    screen.innerHTML = `${bar('scattering://home', '?')}
+      <h1 class="title" style="font-size:22px">WHERE IS HOME?</h1>
+      <p class="small">What you know grows where you're from. It doesn't grow here.</p>
+      ${homes.map(h => `<button class="btn" data-h="${h.id}">${h.label}<br><span class="small">${h.sub}</span></button>`).join('')}`;
+    screen.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { ob.home = b.dataset.h; obWho(); });
+  }
+  function obWho() {
+    const vs = Game.data.villagers;
+    screen.innerHTML = `${bar('scattering://wake', 'clearing')}
+      <h1 class="title" style="font-size:22px">WHICH ONE IS YOU?</h1>
+      <p class="small">A clearing. Confused people waking up. One of them is you.</p>
+      ${vs.map(v => `
+        <div class="card"><h3>${v.name}</h3>
+        <p>${v.formerOccupation} · ${v.homeRegion}</p>
+        <p class="small">${v.backstory}</p>
+        <button class="btn" data-v="${v.id}">I am ${v.name.split(' ')[0]}</button></div>`).join('')}`;
+    screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { ob.villager = b.dataset.v; obItems(); });
+  }
+  function obItems() {
+    const v = Game.data.villagers.find(x => x.id === ob.villager);
+    const items = v.items.map(id => Game.data.items.find(i => i.id === id)).filter(Boolean);
+    screen.innerHTML = `${bar('scattering://pack', '5 items')}
+      <h1 class="title" style="font-size:22px">WHAT DID YOU GRAB?</h1>
+      <p class="small">The sky was changing. ${v.name.split(' ')[0]} grabbed five things:</p>
+      ${items.map(i => `<div class="card"><h3>${i.name}</h3><p class="small">${i.flavor}</p></div>`).join('')}
+      <button class="btn" id="b-go">This is me. Begin.</button>`;
+    document.getElementById('b-go').onclick = () => {
+      Game.newGame(ob.home, ob.villager);
+      gameMain(true);
+    };
+  }
+
+  // ---------- main game ----------
+  function gameMain(first) {
+    const st = Game.status();
+    if (st.over) return ending();
+    if (st.pendingEncounter) return combatIntro();
+    if (st.inCombat) return combatScreen();
+
+    const t = Game.playerTile();
+    const canForage = S.forage.canForage(t) && st.ap > 0;
+    const canTreat = (t.type === 'creek' || t.type === 'wetland') && st.ap > 0;
+
+    screen.innerHTML = `
+      ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
+      <p class="small">${st.dayPartHint}</p>
+      ${statusBars(st)}
+      <div class="map">${renderMap(st)}</div>
+      <p class="small">📍 ${S.TILE_NAME[t.type]} · ${st.ap > 0 ? '1 action left' : 'no actions left'} — <button class="linklike" id="b-endpart">end ${st.dayPart} →</button></p>
+      <div class="actions">
+        ${st.ap > 0 ? `
+        <button class="btn sm" id="a-forage" ${canForage ? '' : 'disabled'}>Forage</button>
+        <button class="btn sm" id="a-treat" ${canTreat ? '' : 'disabled'}>Treat water</button>
+        <button class="btn sm" id="a-rest">Rest</button>` : `<p class="small">Rest those hands. End the ${st.dayPart}.</p>`}
+      </div>
+      <div class="actions">
+        <button class="btn sm ghost" id="a-eat">Eat to full</button>
+        <button class="btn sm ghost" id="a-drink" ${st.water > 0 ? '' : 'disabled'}>Drink clean (${st.water})</button>
+        <button class="btn sm ghost" id="a-wild" ${(t.type === 'creek' || t.type === 'wetland') ? '' : 'disabled'}>Drink wild</button>
+        <button class="btn sm ghost" id="a-codex">Codex (${st.codexCount})</button>
+      </div>
+      <div class="log">${st.log.map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
+
+    // map clicks
+    screen.querySelectorAll('.tile').forEach(el => {
+      el.onclick = () => {
+        const x = +el.dataset.x, y = +el.dataset.y;
+        if (Game.move(x, y)) gameMain();
+        else toast('Too far — 3 tiles max, and only through scouted ground.');
+      };
+    });
+    const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = () => { fn(); gameMain(); }; };
+    on('a-forage', () => Game.doAction('forage'));
+    on('a-treat', () => Game.doAction('treat'));
+    on('a-rest', () => Game.doAction('rest'));
+    on('a-eat', () => Game.eat());
+    on('a-drink', () => Game.drinkTreated());
+    on('a-wild', () => Game.drinkWild());
+    document.getElementById('a-codex').onclick = codexScreen;
+    document.getElementById('b-endpart').onclick = () => { Game.endDayPart(); gameMain(); };
+    if (first) setTimeout(() => toast('"Eat something green. Drink water. Come back before dark."'), 600);
+  }
+
+  function renderMap(st) {
+    let html = '';
+    for (let y = 0; y < 7; y++) {
+      html += '<div class="mrow">';
+      for (let x = 0; x < 7; x++) {
+        const tl = Game.tileAt(x, y);
+        const isP = (x === st.px && y === st.py);
+        const move = Game.canMove(x, y);
+        const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (move ? ' move' : '');
+        const g = tl.revealed ? S.TILE_GLYPH[tl.type] : '?';
+        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? '●' : g}</div>`;
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
+  // ---------- combat ----------
+  function combatIntro() {
+    const st = Game.status();
+    screen.innerHTML = `
+      ${bar('scattering://field', `day ${st.day} · ⚠`)}
+      ${statusBars(st)}
+      <h1 class="title" style="font-size:22px">⚠ BULLDOZER ⚠</h1>
+      <p class="small">It crashes from the thicket. It is not going around.</p>
+      <div class="log">${st.log.slice(-3).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
+      <button class="btn" id="b-fight">Face it</button>`;
+    document.getElementById('b-fight').onclick = () => { Game.startCombat(); combatScreen(); };
+  }
+  function combatScreen() {
+    const st = Game.status();
+    const f = Game.fight;
+    if (!f) return gameMain();
+    const mv = S.combat.MOVES[f.telegraph];
+    screen.innerHTML = `
+      ${bar('scattering://combat', `round ${f.round + 1}`)}
+      ${statusBars(st)}
+      <h1 class="title" style="font-size:22px">${f.monster.name.toUpperCase()}</h1>
+      ${statRow('BULLDOZER', f.monster.hp + ' hp', f.monster.hp / f.monster.maxHp * 100, f.monster.hp < 15)}
+      <div class="card warn"><h3>⚠ ${mv.name} incoming</h3><p class="small">${f.studied ? mv.hint : "It shifts — you can't quite read it. (STUDY it.)"}</p></div>
+      <div class="actions">
+        <button class="btn sm" data-c="strike">STRIKE</button>
+        <button class="btn sm" data-c="harry">HARRY</button>
+        <button class="btn sm" data-c="brace">BRACE</button>
+      </div>
+      <div class="actions">
+        <button class="btn sm ghost" data-c="study">STUDY</button>
+        <button class="btn sm ghost" data-c="flee">FLEE</button>
+      </div>
+      <div class="log">${f.log.slice(-4).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
+    screen.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
+      Game.combatRound(b.dataset.c);
+      const s2 = Game.status();
+      if (s2.over) return ending();
+      if (!Game.fight) return gameMain();
+      combatScreen();
+    });
+  }
+
+  // ---------- codex ----------
+  function codexScreen() {
+    const entries = Game.codexEntries();
+    const mons = Game.state.codex.monsters || {};
+    screen.innerHTML = `
+      ${bar('scattering://codex', entries.length + ' entries')}
+      <h1 class="title" style="font-size:22px">CODEX</h1>
+      <p class="small"><i>field journal — your handwriting. what you learned, the village keeps.</i></p>
+      ${entries.length ? entries.map(e => `
+        <div class="card codex"><h3>${e.name} <span class="small">· ${e.kcal} kcal/${e.unit}</span></h3>
+        <p class="small"><b>Prep:</b> ${e.prep || '—'}</p><p>${e.text}</p></div>`).join('')
+        : '<div class="card"><h3>No entries yet.</h3><p>Forage something. Survive it. Write it down.</p></div>'}
+      ${Object.keys(mons).length ? '<h1 class="title" style="font-size:18px">BEASTS</h1>' + Object.entries(mons).map(([id, m]) => {
+        const md = Game.data.monsters.find(x => x.id === id);
+        return `<div class="card codex"><h3>${md.name}</h3><p class="small">System files it as: ${md.systemDesignation || '—'}</p><p>${esc(md.codexStages[m.stage] || '')}</p></div>`;
+      }).join('') : ''}
+      <button class="btn ghost" id="b-back">Back to field</button>`;
+    document.getElementById('b-back').onclick = () => gameMain();
+  }
+
+  // ---------- ending ----------
+  function ending() {
+    const st = Game.status();
+    const entries = Game.codexEntries().length;
+    screen.innerHTML = `
+      ${bar('scattering://end', st.won ? 'survived' : 'fallen')}
+      <h1 class="title" style="font-size:26px">${st.won ? 'SEVEN DAYS' : 'THE WOODS KEEP YOU'}</h1>
+      <p class="small">${st.won
+        ? 'You ate. You drank. You came back. The village eats because of you.'
+        : 'You didn\'t make it. The village remembers. The Codex keeps what you brought home.'}</p>
+      <div class="card"><h3>Expedition record</h3>
+        <p class="small">Days: ${st.day} / 7 · Plants learned: ${entries}<br>
+        ${st.won ? 'The first week is the hardest. It gets no easier — but you get better.' : 'Someone else will carry the journal next time.'}</p></div>
+      <button class="btn" id="b-again">New expedition</button>
+      <button class="btn ghost" id="b-title">Title</button>`;
+    document.getElementById('b-again').onclick = () => title();
+    document.getElementById('b-title').onclick = () => title();
+  }
+
+  // ---------- boot ----------
+  Game.init().then(() => title()).catch(e => {
+    screen.innerHTML = `<p class="small">Failed to load game data: ${esc(e.message)}<br>Serve over http (not file://) for fetch() to work.</p>`;
+  });
+})();
+</script>
+</body>
+</html>

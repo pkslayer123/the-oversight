@@ -417,3 +417,9 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   - Thornback Boar → **Bulldozer** (System: "Sus scrofa (standard)")
   - Hushwolf → **Hushpuppy** (System: "Canis familiaris (standard)")
 - **Convention:** folk names are descriptive, wry, warning-encoded. Survivors cope by naming scary things funny — "the hushpuppies got Joren" is darkly funny and instantly communicative.
+
+## 2026-10-03 — Slice 1 built: "Seven Days" playable
+
+- **Built:** full playable vertical slice — onboarding (cold open → home → scholar → 5 items) → nested day loop (4 day-parts, move + 1 action each) → 7×7 fog-of-war region → forage/eat/drink/rest/treat-water → calorie clock with telegraphed spiral → Bulldozer combat encounter (telegraphs, STUDY/BRACE/STRIKE/HARRY/FLEE) → Codex journal → win (7 days) / lose screens.
+- **Tuning from sim runs:** forage 5-11 units/action; ACTIVE_DAY 2200; starvation curve softened (2 + deficit/150). Random play survives worn (hp 7-25); smart play (affinity tiles) surpluses. Combat: winnable in 3 rounds, costs ~60% hp if played bluntly.
+- **Delivery:** web artifact build (the-scattering-slice-1-playtest) for phone playtest.

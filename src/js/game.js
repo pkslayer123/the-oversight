@@ -26,6 +26,7 @@
     homeRegion: null, villagerId: null,
 
     async init() {
+      if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
       const [plants, biomes, monsters, villagers, abilities, items] = await Promise.all(
         ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json'].map(get));
