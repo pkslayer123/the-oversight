@@ -10,16 +10,16 @@
       55
     ],
     "attack": {
-      "name": "Gore Charge",
+      "name": "China-Shop Charge",
       "damage": [
         18,
         26
       ],
-      "telegraph": "Lowers its head, paws the earth. The quills lie flat \u2014 then rise."
+      "telegraph": "Lowers its head, paws the earth. It is not going around the tree. It has never gone around anything."
     },
     "weaknesses": [
       "soft flanks (HARRY then STRIKE)",
-      "broken charge (BRACE with Riposte)"
+      "it never goes around \u2014 position accordingly"
     ],
     "edible": {
       "calories": 3200,
@@ -32,9 +32,9 @@
     ],
     "behavior": "territorial",
     "codexStages": {
-      "unknown": "Something heavy moved in the thicket. The birds went quiet first.",
-      "observed": "Feral hog, twisted: fused bristle grown into quills. Charges in straight lines \u2014 it cannot turn quickly. Territorial; it warns once.",
-      "slain": "Thornback Boar. Moves: Gore Charge (heavy, telegraphed), Trample (close range, after a missed charge), Retreat (below 25% hp, may return). Flanks are soft \u2014 harry it, then strike. Meat: excellent. Do not waste it."
+      "unknown": "Something heavy moved in the thicket. Then a tree fell over for no reason.",
+      "observed": "Feral hog. The System observed 'bull in a china shop' and concluded destruction is the point. It charges through obstacles \u2014 trees, fences, you. It cannot be deterred, only redirected.",
+      "slain": "Thornback Boar. Moves: China-Shop Charge (heavy, telegraphed, destroys cover), Trample (close range after a missed charge), Retreat (below 25% hp, may return). It will not go around. Use that. Flanks are soft \u2014 harry it, then strike. Meat: excellent. The quills make fine awls."
     }
   },
   {
@@ -70,8 +70,8 @@
     "behavior": "pack",
     "codexStages": {
       "unknown": "The woods went silent all at once. Not quiet \u2014 silent. Like the world holding its breath.",
-      "observed": "Feral dogs, twisted into silence: no barks, no whines, no growls. They coordinate without sound \u2014 watch the lead animal's ears. Pack of 3-5.",
-      "slain": "Hushwolf. Moves: Silent Rush (ambush opener, heavy), Harass (pack members circle, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
+      "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you.",
+      "slain": "Hushwolf. Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
     }
   },
   {
@@ -85,16 +85,16 @@
       45
     ],
     "attack": {
-      "name": "Antler Sweep",
+      "name": "Ocular Discharge",
       "damage": [
-        14,
-        20
+        16,
+        24
       ],
-      "telegraph": "Stamps once. Lowers the crown. It does not bluff."
+      "telegraph": "It freezes. Like a deer in headlights. Light gathers behind its eyes. It is not frozen. It is aiming."
     },
     "weaknesses": [
-      "skittish at range (Patient Aim)",
-      "exhausts quickly (HARRY)"
+      "interrupt the freeze (HARRY)",
+      "skittish at range before it locks on"
     ],
     "edible": {
       "calories": 2800,
@@ -106,9 +106,9 @@
     ],
     "behavior": "territorial",
     "codexStages": {
-      "unknown": "A deer. Wrong season for the rut, wrong look in its eye. It saw you first.",
-      "observed": "Whitetail, twisted: antlers that never shed, aggression without season. It is still, underneath, a deer \u2014 and it knows the woods better than you.",
-      "slain": "Gallowdeer. Moves: Antler Sweep (telegraphed, heavy), Bolt (flees at 50% hp \u2014 let it go or track it), Trample (only if cornered). Skittish at range; exhausts fast. The meat is worth the sorrow."
+      "unknown": "A deer. It froze like a deer in headlights. The light did not stop gathering.",
+      "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' \u2014 and right that you should move. When it freezes, it is aiming. Antlers never shed: the System classified them as permanent equipment.",
+      "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze \u2014 MOVE), Antler Sweep (close range), Bolt (flees at 50% hp). Never let it finish aiming. The meat is worth the sorrow. Thank it."
     }
   }
 ]

@@ -395,3 +395,15 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **The wrongness catalog (twist themes for content):** silence (predators that don't vocalize) / coordination (pack tactics beyond nature) / persistence (they don't give up) / seasonlessness (rut/migration/hibernation broken) / size-density (muscle, quills, plates) / sensory (it knew you were there) / hunger-boldness (winter makes everything braver).
 - **Rules:** threat comes from situation (ambush, pack, territory, winter hunger), not level numbers. Usually edible — big calorie yields; but *some* twisted fauna isn't safe, and "is it food?" is itself a Codex discovery. 2-3 telegraphed moves each; Codex stages gate readability (unknown → observed → slain).
 - **Starter set (SE woodlands):** Thornback Boar (flagship — slice 1 encounter; territorial charger, excellent pork), Hushwolves (silent pack hunters; telegraphed by *absence* — birds go quiet), Gallowdeer (the tragedy monster — you recognize the deer; unseasonal aggression), Mirelurker (later; ambushes at water — water has a cost).
+
+## 2026-10-03 — Monsters revised: the System's botched homework (supersedes wrongness catalog)
+
+- **Decision:** Monsters look correct but act wrong — every one is a mashup of misunderstood anatomical function, literalized idioms, and botched expressions. The System "reproduced" Earth fauna from its studies and got it wrong in exactly the way it gets everything wrong: technically detailed, spiritually botched.
+- **Why:** Steve: "a deer caught in the headlights is actually prepping its lazer vision. Get Eldritch when you have to. More twisted the better." This is funnier, scarier, and more *ours* than generic mutation — the monsters are the System's character made flesh.
+- **The misreading catalog (replaces wrongness catalog):**
+  - **Literalized idioms:** "deer in headlights" → ocular beam charging; "sly as a fox" → genuine tactical intellect; "stubborn as a mule" → literally immovable; "bull in a china shop" → destruction as purpose.
+  - **Misunderstood anatomy:** freeze response → weapon charging; playing dead → tactical feint; bristle → armor (reinforced); antlers → permanent equipment (never shed).
+  - **Botched expressions:** behaviors observed and reproduced wrong — the howl without the moon, migration to nowhere, mating dance performed AT you as a threat display.
+- **Comedy-horror rule:** it's funny that the System misread "deer in headlights" — until the light actually gathers. The laugh catches in your throat. That catch is the signature.
+- **Codex implication:** the Codex doesn't just reveal stats, it *corrects assumptions*. Unknown: "it froze like a deer in headlights." Observed: "it's not frozen. It's aiming." Learning = unlearning what you thought you knew.
+- **System commentary on fauna:** "Subject: deer. Behavior: ocular beam charging. This is normal deer behavior. (It is not.)"
