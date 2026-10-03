@@ -288,3 +288,18 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **"Whatever" is a choice:** "leave it to them" is always available — but explicit, with known risk. Never a forgotten default.
 - **Return ritual (mirror):** bond-weighted digest + deputy's report in their voice + reconciliation of your orders vs what happened.
 - **Simplicity win:** the departure ritual IS the village management UI. No separate management screen to learn — you govern by leaving well and returning honestly.
+
+## 2026-10-03 — Standing ladder: leadership is earned, never default
+
+- **Decision:** Per-village standing ladder: **stranger → guest → member → trusted → leader**. Mechanics gate on standing. The departure ritual scales with it — strangers just walk away; only leaders name deputies. You are not in charge until the village says so.
+- **Why:** Steve: the departure ritual forced leadership without earning it. Leadership without commitment is unearned power — and unearned power is boring.
+- **Earning it:** standing moves through contributions and crises, not a progress bar. Saved the harvest → member. Stood watch in the raid → trusted. The village votes, acclaims, or submits — depending on its character. It moves down too: rob a traveler and fall to stranger. Exile is below stranger.
+- **Two ways to lead:** beloved or feared. Fear works — a village can submit. The sim tracks *how* you lead; different events, different endings, different homecomings.
+- **Gating per level:**
+  - Stranger: trade, ask, maybe sleep.
+  - Guest: rest safely, fair trade, gossip.
+  - Member: voice, share of stores, obligations; lite departure ("tell someone you're going").
+  - Trusted: propose projects, mediate disputes, receive confidences.
+  - Leader: full departure ritual, standing orders, deputy, command defense.
+- **The general pattern (applies elsewhere):** NOTHING IMPORTANT IS GIVEN; EVERYTHING IS EARNED, VISIBLY. Status gates mechanics across systems: System trust gates trial tiers; audience Favor gates shop tiers; scholar trust mirrors the village ladder; the Codex withholds advanced entries until basics are earned ("you're not ready for this section"); relic bonding already works this way. The player always knows what would raise standing — villages *tell* you, in words, not hidden numbers.
+- **Tutorial bonus:** the departure ritual grows with standing, so players learn the full system by climbing toward it. No front-loaded complexity.
