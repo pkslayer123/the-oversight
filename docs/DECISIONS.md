@@ -347,3 +347,19 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   8. **Foreshadowing:** strange light on horizon, flickering glyph, feeling watched. Planted, never explained. (Book 1: no fake mystery — the scattering is obviously unnatural; the question is survival, not what happened.)
 - **Starting standing:** member (thin). You arrived together. The village already has a leader (NPC) — leadership is earned later via the ladder, and the leader's existence powers resentment/delegation dynamics. Departure ritual starts lite.
 - **Explicitly excluded:** System UI, trial offers, Favor, shop, audience — all Book 2+. Book 1 is pure survival; the other shoe drops later.
+
+## 2026-10-03 — Onboarding revised: fully simulate the beginning (day zero)
+
+- **Decision:** Revised onboarding: no established village, no reputations, no Codex — the player witnesses (and participates in) the village being *born*. Supersedes the earlier onboarding spec's "meet the village" framing.
+- **Why:** Steve: the choose-scholar beat "makes it sound like this has gone on awhile." Day zero means strangers, confusion, no institutions.
+- **Revised beats:**
+  1. **Cold open** (unchanged): "The sky changed on a Tuesday." / "You woke up somewhere else."
+  2. **Waking up:** a clearing, confused people. Observations, not introductions: "A woman in scrubs is checking pulses." "A man in camo hasn't let go of his knife."
+  3. **Where is home** (unchanged): region picker; home Codex thick, here thin.
+  4. **"Which one is you?"** (replaces choose-scholar): 1 of 3 waking people — first-person, not roster. Backstory = your past; ability kit follows the person.
+  5. **Five items:** "What did you grab?" Hybrid — derived from backstory, tap any to swap from the catalog. Personal, not gamey; agency without a shopping trip. (Tunable: full choice vs derived.)
+  6. **The Codex is founded** (new): nobody has it yet. Someone says "we should write down what we learn." Your scholar volunteers (or is volunteered) — the Codex is your field journal, which is why you, the player, see it.
+  7. **The village forms** (replaces "meet the village"): the group decides to stay together. A name emerges. A leader emerges — not elected, just the one who started giving orders and people listened. First-night decisions: watch rotation, where to sleep.
+  8. **First dawn:** the tutorial line comes from a fellow confused person, not an authority: "Eat something green. Drink water. Come back before dark." — said by the woman in scrubs who doesn't know if she's right.
+  9. **Foreshadowing** (unchanged): strange light, flickering glyph, feeling watched.
+- **Standing at day zero:** "founding" — member-equivalent but unearned (you were just there). The ladder still governs everything after; leadership emerges and can later be earned/challenged.
