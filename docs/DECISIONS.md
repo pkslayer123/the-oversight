@@ -435,3 +435,9 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   - **Mirelurker (later) — ambush:** stationary at water; strikes when you drink.
 - **Alive in all ways (the set):** wandering monsters + ambient wildlife signs (tracks/scat as tile flavor; rabbits flee) + moving weather (affects visibility/forage) + day-part map changes + plant regrowth + village sims + (Book 3+) roaming scholars.
 - **Slice 1:** Bulldozer wanders from day 3 (visible glyph, patrol behavior, encounter on contact). Ambient signs + regrowth in the iteration after playtest.
+
+## 2026-10-03 — Pack weight + finite ruin pantries
+
+- **Decision:** 15 kg pack capacity. Forage/scavenge blocked when full ("eat something, or leave it"). Ruins contain 3-5 cans (300-500 kcal, no spoilage) — finite, deplete permanently.
+- **Why:** Steve: pack weight mechanic; ruins as a real strategy (canned goods). The finite pantry *is* the thesis in miniature: the houses feed you until they don't, and then you have to actually learn the land. Early game has an easy calorie source; it runs out.
+- **Biomes:** map tiles reflect their biome (SE woodlands = woods, correctly). Non-woods biomes arrive with new regions (Book 2+); the region-node system is built for exactly this.
