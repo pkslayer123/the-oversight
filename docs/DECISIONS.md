@@ -331,3 +331,19 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Abilities create moments, not buttons.** Diverse kits plug in as: (a) passive pipeline modifiers, always on; (b) triggered payoffs on correct matches ("BRACE vs CHARGE: reflect 50%"); (c) setup/payoff chains ("two HARRYs → next STRIKE crits"). When they fire, the combat log *spotlights* them: "Jesse doesn't blink. One shot. (Patient Aim ×2)" — the player feels the build working.
 - **The biggest timing decision happens before the fight:** choosing the engagement — dawn/dusk, trap set (1 AP), full Codex, rested party. Preparation shifts the matchup (first strike, revealed intents). The System rates it: "Hunt preparation: EXEMPLARY!" The survivalist beats the button-masher before round one.
 - **Mastery =** reading 2-3 move patterns (earned via Codex) and matching correctly under pressure, with a build assembled to punish the matches. Pattern recognition, not reflexes.
+
+## 2026-10-03 — Onboarding flow (first ~15 minutes)
+
+- **Decision:** Cold open → where is home → meet the village → choose scholar → five items → placement → first dawn. Playable within ~5 minutes; no System UI until Book 2.
+- **Why:** First impression carries the thesis. Every beat earns its place: hook, loss, people, inheritance, displacement, survival.
+- **Beats:**
+  1. **Cold open:** black screen, terminal lines: "The sky changed on a Tuesday." / "You woke up somewhere else." Hook before chrome.
+  2. **Where is home:** region picker (v1). Mechanical: home biome = thick starting Codex. Emotional: the game remembers what you lost. Home entries later show greyed: "not here. Not anymore."
+  3. **Meet the village:** 3-4 villagers, one line each. The Codex-holder named. Village presented with generated name; rename optional (one tap).
+  4. **Choose scholar:** pick 1 of 3 presented villagers (backstory, personality, 2 granted abilities, System-free assessment — no System yet, so the assessment is the Codex-holder's honest read). People-not-classes moment: you read the person.
+  5. **Five items:** "The sky is changing. What did [Name] carry out of their old life?" Guided catalog pick by class; suggestions flavored to backstory, never enforced.
+  6. **Placement:** "Southeast Woodlands. Not home." Displacement beat: thin local Codex vs thick home Codex.
+  7. **First dawn:** tutorial day — day-parts shown, 3 obvious actions (forage, eat, rest). The Codex-holder's whole tutorial, diegetic, one line: "Eat something green. Drink water. Come back before dark." Qud test: survive day 1 on obvious buttons.
+  8. **Foreshadowing:** strange light on horizon, flickering glyph, feeling watched. Planted, never explained. (Book 1: no fake mystery — the scattering is obviously unnatural; the question is survival, not what happened.)
+- **Starting standing:** member (thin). You arrived together. The village already has a leader (NPC) — leadership is earned later via the ladder, and the leader's existence powers resentment/delegation dynamics. Departure ritual starts lite.
+- **Explicitly excluded:** System UI, trial offers, Favor, shop, audience — all Book 2+. Book 1 is pure survival; the other shoe drops later.
