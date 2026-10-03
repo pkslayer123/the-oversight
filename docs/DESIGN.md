@@ -1,64 +1,62 @@
-# DESIGN — decided mechanics (2026-10-03)
+# DESIGN — consolidated mechanics (2026-10-03)
 
 Living record. New decisions go in DECISIONS.md with dates; this file holds the current consolidated state.
 
 ## Core loop
 
-**Village → Expedition → Return (or death) → Village → next scholar.**
+**Village → Departure ritual → Expedition → Return ritual (or death) → Village → next scholar.**
 
-- **Village (hub):** menus between runs — check pantry, assign tasks, consult the Codex-holder, choose next scholar, resupply. Living sim on expedition clock.
-- **Expedition:** region node map (branching paths, StS-readable). Each region is a small fog-of-war tile grid explored day by day. Travel legs between regions cost days + food.
-- **Day = 1 turn.** 4 action points (proposed). Actions: Forage / Hunt / Craft / Explore / Rest / Treat Water (1 AP each, some 2). Evening: eat, manage spoilage, resolve events.
+- **Day structure (nested):** 4 day-parts (DAWN / MIDDAY / DUSK / NIGHT), 1 AP each for major actions (forage, hunt, craft, travel, treat water, rest). Nodes afford free *minor* actions (drink at water, tend fire at camp — maintenance, never production). Travel between adjacent nodes costs 1 AP. Day-part character: dawn/dusk favor hunting, midday heat drains, night is camp-only (or risky).
+- **Evening:** eat ("eat to full," game picks sensibly), spoilage tick, water check.
+- **Metabolism:** the master clock (`src/js/engine/calories.js`). Missed meals → the spiral, telegraphed before it arrives.
 
 ## Survival systems
 
 - **Stats:** Health, Hunger (kcal), Hydration, Energy, Morale. Hunger/water are the primary pressures.
-- **Calorie economy:** everything costs energy — travel, combat, crafting, System abilities. Needs never decrease with level; powerful abilities cost serious kcal.
-- **Foraging:** target known plants (Codex, safe, lower yield) vs unknown (risk/reward). Yield depends on biome + season + skill + tile. Misidentification is a fictional minigame — the game never presents real dangerous plants as safe.
-- **Water:** separate axis — find, carry (capacity-limited), purify (fire/time/tablets). Not "hunger but blue."
-- **Spoilage & seasons:** food rots; winter is the big bad. Preservation (smoking, drying, fermentation, root cellars) is the real tech tree.
-- **Death spiral:** missed meals → fewer AP → failed checks → harder recovery. Attritional, honest, telegraphed before it arrives.
+- **Foraging:** target known plants (Codex, safe, lower yield) vs unknown (risk/reward). Yield = biome + season + skill + tile, through the modifier pipeline. Misidentification is a fictional minigame — real dangerous plants are never presented as safe.
+- **Water:** separate axis — find, carry (capacity-limited), purify. Not "hunger but blue."
+- **Spoilage & preservation:** food rots; preservation (smoking, drying, fermentation) is the real tech tree. One-tap crafting — the decision is the AP and materials, never the process.
+- **Starter content:** 10 real SE-woodland plants, conservative and safe (`src/data/plants.json`).
 
-## Combat
+## Combat (spec pending — concept agreed)
 
-- Turn-based, StS-style telegraphed intents, ~3 actions/round. Secondary to survival.
-- **High stakes, high reward, usually avoidable.** Sneak/flee/go around are always options; fighting is a decision.
-- **Monster Codex** parallels the plant Codex: first encounter, intents obscured (*"the creature shifts — you can't read it"*); survive/observe/kill to fill it in. Knowledge compounds.
-- **Monsters are food.** Big kills = top-tier calories + crafting materials. Combat is hunting with consequences. Injuries persist (mauled leg = −AP for days).
-- XP weighting: discoveries + survival days > kills, so combat never becomes the "real" progression.
+- Turn-based, telegraphed intents, usually avoidable, high stakes/high reward. Injuries persist. Monsters are food — big kills = top-tier calories. Monster Codex parallels plant Codex (unknown → observed → slain). XP: discoveries + survival days > kills.
 
-## People & abilities
+## People, abilities, items
 
-- No classes. Each villager: backstory + personality + 5 personal items + favorite clothes, System-assessed kit of 2–4 abilities drawn from pools (Fieldcraft, Combat, Craft, Care, System/weird), weighted by situation/personality.
-- **Ability cap: 6.** New earns past the cap force a choice: release one. System-granted abilities are releasable too — no sacred cows.
-- **Earning abilities:** Trials (survive events → System offers a pick of 3), Discovery (ability combos surface hidden ones), Mentorship (villagers teach each other over time).
-- **Parties:** up to 3 per expedition. More AP, task-splitting — but every member eats (~2,500 kcal/day each). Solo = efficient/fragile; party = capable/hungry.
-- **Utility lives:** some scholars' kits make their run a different game (the cook's run: keep everyone fed through the cold snap). Win conditions per life vary.
+- **No classes.** Villagers: backstory + personality + 5 personal items + favorite clothes, System-assessed kit from pools (Fieldcraft, Combat, Craft, Care, System), weighted by situation.
+- **Ability cap: 6.** Earned via trials (pick 1 of 3), discovery, mentorship. Releasing one is required past the cap — no sacred cows.
+- **The Five Items** (full spec: `docs/ITEMS.md`): onboarding pick — *"The sky is changing. You can carry five things."* Classes (tool/clothing/sentimental) determine enhancement pools. **Relic bonding:** passive bond through use (+1/day meaningful use; sentimental bonds by keeping + story moments); thresholds at 10/25/50 → System offers optimization, pick 1 of 3. Loss happens at story moments, never durability bars.
+- **Loot taxonomy:** bonded relics (grown) / System awards (attuned) / fan packages (attuned, wacky, never dinner) / scavenged-taken (base effects only; re-bondable from 0 with awkward System provenance note). **Bond is non-transferable.**
+- **Broken builds:** ability + relic combos may break a single dimension; never the stomach.
 
-## The Codex
+## Villages (character, not base)
 
-- Village artifact held by one NPC (the Codex-holder, a character with opinions).
-- Entries: plants (real info, conservative), monsters, recipes, terrain. Earned by correct identification + survival.
-- Persists across deaths — the roguelite meta-progression. *You*, the player, are genuinely learning.
+- **Independent sims:** `state.villages = {id: villageState}` — multi-village in the data model from day one. Each ticks 1 expedition day/day, present or not. Stats: population, stores, water, cohesion, morale, defense, leadership.
+- **Internal threats:** the hoarder, the demagogue, resentment of absence, despair, succession, exile. The village has agency — it can close the gate.
+- **Standing ladder (per village):** stranger → guest → member → trusted → leader. Mechanics gate on standing. Earned through contributions and crises, visibly, in words. Two ways to lead: beloved or feared.
+- **Departure ritual** (scales with standing): deputy (leanings visible) + 2-3 standing orders + party/supplies + expected return date. The game asks; the player never remembers. **Reliability contract:** legible sim, no punishment without a traceable choice. "Whatever" is an explicit choice.
+- **Return ritual:** bond-weighted digest (critical/notable/ambient tiers) + deputy's report + orders vs reality. The System doubles as messenger for critical news.
+- **News, not omniscience:** away villages report via traders — delayed, possibly wrong. Full truth only when present.
+- **Delegation:** absent leaders appoint a second with their own leanings.
+- **The Codex travels with you;** villages hold degraded copies.
 
-## The System (litRPG layer)
+## Party system
 
-- Arrives at the **Integration** — proposed: after 7 days of pure pre-System survival (tutorial as before/after contrast).
-- Grants: stats, levels, ability assessments, trial offers. Cold alien voice, survival-probability estimates.
-- Late game: abilities that look like magic; the game winks. Magic ≡ sufficiently advanced alien tech.
+- You + 2 max. Companions are people: they eat (~2200 kcal/day — every member is a calorie decision), opine, refuse, bond, die permanently. You lead, not micromanage: abilities join your pipeline, voices surface at decisions. Recruitment is relational. The System names your group without asking; fans have favorites.
 
-## World & content
+## The System & broadcast layer
 
-- **Biomes (v1):** Southeast woodlands, Pacific Northwest, Southwest desert. Real plant data per biome + season (~15–20 plants each to start, conservative and safe).
-- **The Scattering (onboarding):** player states real home region → System places village in a *different* biome deliberately. Home biome = thick starting Codex; placed biome = thin. Knowledge vs. displacement is the opening tension.
-- **Village cast:** displaced people (sushi chef from Seattle, rancher from Texas...), each with 5 personal items (mechanical effects) + sentimental items (morale mechanics).
-- **Seasons/year:** full year = campaign arc. Winter is the boss.
-- **Endgame:** survive the year + uncover why the aliens forgot survival basics → credits → endless mode (deeper alien zones, harsher biomes).
+- **Voice:** earnest alien, cheerful game-show host, technically-right-spiritually-wrong. Knows your resting heart rate; can't understand why you're crying.
+- **Overlay UI:** literal second visual layer over the grounded terminal — slides over post-Integration, never replaces, works around the hunger meter. Occasional untranslated-glyph glitches.
+- **Favor (currency):** earned via entertainment (dramatic wins, close calls, novel solutions). **Galactic shop:** fan care packages — wacky, never dinner.
+- **Audience votes** (event rooms), **spotlight elites** (opt-in broadcast fights), **sponsor conditions** (packages with strings), **rerun episodes** (seeded dailies), **unauthorized companion** (the pet the System keeps trying to optimize), **syndication** (ascension-framed endless mode).
+- **Temperament profile:** prosocial vs dominance markers, visible only through the System's commentary. Trials customize to the student. No good/evil meter.
+
+## Content architecture
+
+- **Everything is data** (`src/data/`, schemas in `src/data/schemas.json`). **Validator gate** (`scripts/validate-data.js`) fails on bad fields, ranges, dup ids, dangling refs. **Modifier pipeline** (`src/js/engine/modifiers.js`): abilities declare `{target, op, value}` — new abilities never touch engine code. Safety rules encoded: plants require `confidence: high`; shop items can't carry calories. Full guide: `docs/CONTENT.md`, `docs/ARCHITECTURE.md`.
 
 ## Platform & tech
 
-- Mobile-first PWA: installable, offline-capable, fullscreen. No app store for v1.
-- Deploy: Vercel, preview URL per push for phone testing.
-- Aesthetic: modern terminal — monospace, restrained color, ASCII flourishes. Zero art pipeline.
-- Static site, no backend for v1. State in localStorage. Turn-based structure kept async-friendly for potential future multiplayer.
-- App Store later: wrap with Capacitor, no rewrite.
+- Mobile-first PWA, offline-capable, one-thumb, 3-5 minute days. Terminal aesthetic + System overlay. Vercel deploys; Capacitor later for app stores. localStorage saves, versioned. Async-friendly turn structure.
