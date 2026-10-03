@@ -1,1 +1,114 @@
-[]
+[
+  {
+    "id": "thornback_boar",
+    "name": "Thornback Boar",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      40,
+      55
+    ],
+    "attack": {
+      "name": "Gore Charge",
+      "damage": [
+        18,
+        26
+      ],
+      "telegraph": "Lowers its head, paws the earth. The quills lie flat \u2014 then rise."
+    },
+    "weaknesses": [
+      "soft flanks (HARRY then STRIKE)",
+      "broken charge (BRACE with Riposte)"
+    ],
+    "edible": {
+      "calories": 3200,
+      "note": "Pork is pork. Smoke it; it keeps for weeks. The quills make excellent awls."
+    },
+    "parts": [
+      "quills (tools)",
+      "hide (leather)",
+      "tusks (trade)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "Something heavy moved in the thicket. The birds went quiet first.",
+      "observed": "Feral hog, twisted: fused bristle grown into quills. Charges in straight lines \u2014 it cannot turn quickly. Territorial; it warns once.",
+      "slain": "Thornback Boar. Moves: Gore Charge (heavy, telegraphed), Trample (close range, after a missed charge), Retreat (below 25% hp, may return). Flanks are soft \u2014 harry it, then strike. Meat: excellent. Do not waste it."
+    }
+  },
+  {
+    "id": "hushwolf",
+    "name": "Hushwolf",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      25,
+      35
+    ],
+    "attack": {
+      "name": "Silent Rush",
+      "damage": [
+        12,
+        18
+      ],
+      "telegraph": "No telegraph you can hear. Watch the birds \u2014 when they go quiet, the pack is already moving."
+    },
+    "weaknesses": [
+      "fire (they remember being dogs)",
+      "broken coordination (wound the lead)"
+    ],
+    "edible": {
+      "calories": 1400,
+      "note": "Edible but lean. The old taboo itches; hunger doesn't care."
+    },
+    "parts": [
+      "teeth (trade)",
+      "pelt"
+    ],
+    "behavior": "pack",
+    "codexStages": {
+      "unknown": "The woods went silent all at once. Not quiet \u2014 silent. Like the world holding its breath.",
+      "observed": "Feral dogs, twisted into silence: no barks, no whines, no growls. They coordinate without sound \u2014 watch the lead animal's ears. Pack of 3-5.",
+      "slain": "Hushwolf. Moves: Silent Rush (ambush opener, heavy), Harass (pack members circle, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
+    }
+  },
+  {
+    "id": "gallowdeer",
+    "name": "Gallowdeer",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      35,
+      45
+    ],
+    "attack": {
+      "name": "Antler Sweep",
+      "damage": [
+        14,
+        20
+      ],
+      "telegraph": "Stamps once. Lowers the crown. It does not bluff."
+    },
+    "weaknesses": [
+      "skittish at range (Patient Aim)",
+      "exhausts quickly (HARRY)"
+    ],
+    "edible": {
+      "calories": 2800,
+      "note": "Venison. The best meat in the woods, and the saddest. Thank it."
+    },
+    "parts": [
+      "antler (tools, trade)",
+      "hide"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "A deer. Wrong season for the rut, wrong look in its eye. It saw you first.",
+      "observed": "Whitetail, twisted: antlers that never shed, aggression without season. It is still, underneath, a deer \u2014 and it knows the woods better than you.",
+      "slain": "Gallowdeer. Moves: Antler Sweep (telegraphed, heavy), Bolt (flees at 50% hp \u2014 let it go or track it), Trample (only if cornered). Skittish at range; exhausts fast. The meat is worth the sorrow."
+    }
+  }
+]

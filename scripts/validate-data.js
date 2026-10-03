@@ -30,10 +30,10 @@ function checkType(val, spec, where) {
   if (s === 'string[5..5]') return Array.isArray(val) && val.length === 5 && val.every(v => typeof v === 'string');
   if (s === 'string[3..3]') return Array.isArray(val) && val.length === 3 && val.every(v => typeof v === 'string');
   const arr = s.match(/^string\[\]$/); if (arr) return Array.isArray(val);
-  const rng = s.match(/^number\[(\d+)\.\.(\d+)\]$/);
-  if (rng) return typeof val === 'number' && val >= +rng[1] && val <= +rng[2];
   const tup2 = s.match(/^number\[2\.\.2\]$/);
   if (tup2) return Array.isArray(val) && val.length === 2 && val.every(v => typeof v === 'number');
+  const rng = s.match(/^number\[(\d+)\.\.(\d+)\]$/);
+  if (rng) return typeof val === 'number' && val >= +rng[1] && val <= +rng[2];
   if (Array.isArray(spec)) return false; // handled as enum below
   return true;
 }

@@ -387,3 +387,11 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   - **The fiction enforces the pedagogy:** the System *can't* teach survival — its blind spot is your classroom. The game never hands answers; the world does.
   - **Editorial process:** `confidence: high` is the floor. Schema gains `sources[]` — real citations per plant. Expansion biomes get expert review (foragers, survival instructors).
 - **Long-term:** the player's Codex becomes a *real personal field guide* — exportable, readable outside the game. Play a year, own 50 plants you actually learned. The product beyond the game.
+
+## 2026-10-03 — Monster design: recognition + wrongness
+
+- **Decision:** Monsters are Earth's own fauna, twisted — never imported aliens. Every monster starts as a real animal; the horror is recognition plus wrongness. Twists follow an ecological catalog, 1-2 per monster; restraint is scarier than excess.
+- **Why:** "Earth is a bit twisted; monsters and challenges come alive." Imported aliens would betray the thesis (the danger must be *of this world*). The System altered biology with purpose — or by accident, which is worse, because it doesn't fully understand what it did.
+- **The wrongness catalog (twist themes for content):** silence (predators that don't vocalize) / coordination (pack tactics beyond nature) / persistence (they don't give up) / seasonlessness (rut/migration/hibernation broken) / size-density (muscle, quills, plates) / sensory (it knew you were there) / hunger-boldness (winter makes everything braver).
+- **Rules:** threat comes from situation (ambush, pack, territory, winter hunger), not level numbers. Usually edible — big calorie yields; but *some* twisted fauna isn't safe, and "is it food?" is itself a Codex discovery. 2-3 telegraphed moves each; Codex stages gate readability (unknown → observed → slain).
+- **Starter set (SE woodlands):** Thornback Boar (flagship — slice 1 encounter; territorial charger, excellent pork), Hushwolves (silent pack hunters; telegraphed by *absence* — birds go quiet), Gallowdeer (the tragedy monster — you recognize the deer; unseasonal aggression), Mirelurker (later; ambushes at water — water has a cost).
