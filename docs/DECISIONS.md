@@ -230,3 +230,17 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   - **5→6 Seat:** the choice — you declare yourself ready (dark: you take it; light: you're invited).
 - **No fake mystery in Book 1:** the scattering is obviously unnatural from minute one. Book 1's question isn't "are there aliens" — it's "what happened, where am I, how do I eat." Seed foreshadowing instead: strange lights, a glyph that appears and vanishes, the feeling of being watched (you are — the audience is already there). The System's arrival is the other shoe dropping, and the dread is the point.
 - **Compatibility with anti-speedrun:** thresholds take as long as they take. Power crosses stability faster, but truth requires investigation and the seat requires becoming someone. Time is the medium, not the gate.
+
+## 2026-10-03 — The village is a character, not a base
+
+- **Decision:** The village is NOT a guaranteed safe haven. It runs a living sim (cohesion, stores, morale, population, defense) with internal threats as likely as external ones. It has needs, opinions, memory, and agency — it can love you, fear you, need you, or reject you.
+- **Why:** Steve: "Should it be a certainty? Or are some villages better than others... Internal threats are just as likely as external." A guaranteed haven is a resource sink, not a story. A village with agency is the primary mirror of the temperament path.
+- **Internal threats (the set):**
+  - **The hoarder:** someone's skimming the pantry. Confront, exile, or let it slide? The System is fascinated.
+  - **The demagogue:** charismatic, reasonable-sounding, corrosive. "Why does the scholar eat our best food and leave?"
+  - **Resentment of absence:** you're gone for weeks while they do the work. What exactly are you *for*?
+  - **Despair:** low morale isn't a number — people stop working, stop eating, leave.
+  - **Succession:** villagers die. Who takes the roles? Not everyone is suited.
+  - **Exile (the darkest mirror):** go dark enough, rob enough travelers — come home to a closed gate. The village decides it doesn't need *you*.
+- **Other villages run the same sim** (simplified). Encounters are with real situations — thriving, starving, fracturing, dangerous — not set dressing. Some villages are better than others, and you'll know why when you meet them.
+- **Endings branch on the village:** haven (loved), fortress (feared), embassy, cautionary tale — or the gate closed. "The village no longer needs heroes" now has teeth: it might decide it doesn't need you specifically, and that's its own ending.
