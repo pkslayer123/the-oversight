@@ -30,7 +30,7 @@
     scholar.hydration -= 35;
     if (scholar.kcal < 0) {
       const deficit = -scholar.kcal;
-      scholar.health -= Math.min(30, 5 + deficit / 100);
+      scholar.health -= Math.min(25, 2 + deficit / 150);
       scholar.energy = Math.max(0, scholar.energy - 25);
       warnings.push('STARVING: health and energy falling. The spiral has started.');
     } else if (scholar.kcal < STARVATION_THRESHOLD) {

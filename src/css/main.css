@@ -61,6 +61,32 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .card { border: 1px solid var(--line); border-radius: 4px; padding: 14px; margin: 10px 0; background: var(--bg2); }
 .card h3 { margin: 0 0 6px; color: var(--acc); font-size: 16px; }
 .card p { margin: 4px 0; font-size: 14px; color: var(--dim); }
+.card.warn { border-color: var(--warn); }
+.card.warn h3 { color: var(--warn); }
+.card.codex { border-left: 3px solid var(--warn); }
+.card.codex p { color: var(--ink); font-style: italic; }
 .row { display: flex; gap: 10px; }
 .row .btn { margin: 5px 0; }
 .small { font-size: 13px; color: var(--dim); }
+.term-line { font-size: 14px; margin: 6px 0; color: var(--ink); }
+
+/* map */
+.map { margin: 12px 0; border: 1px solid var(--line); border-radius: 4px; padding: 8px; background: var(--bg2); }
+.mrow { display: flex; }
+.tile {
+  flex: 1; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--dim); border: 1px solid transparent; border-radius: 4px;
+  cursor: pointer; user-select: none; min-height: 40px;
+}
+.tile.fog { color: #2a362a; }
+.tile.me { color: var(--bg); background: var(--acc); font-weight: bold; }
+.tile.move { border-color: var(--acc); color: var(--acc); }
+.tile:active { background: var(--line); }
+
+/* action rows */
+.actions { display: flex; gap: 8px; margin: 8px 0; }
+.actions .btn.sm { margin: 0; padding: 14px 8px; font-size: 15px; flex: 1; }
+.linklike { background: none; border: none; color: var(--acc); font: inherit; font-size: 14px; cursor: pointer; text-decoration: underline; padding: 4px; }
+
+/* log */
+.log { border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 12px; max-height: 28dvh; overflow-y: auto; background: var(--bg); }
