@@ -363,3 +363,14 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   8. **First dawn:** the tutorial line comes from a fellow confused person, not an authority: "Eat something green. Drink water. Come back before dark." — said by the woman in scrubs who doesn't know if she's right.
   9. **Foreshadowing** (unchanged): strange light, flickering glyph, feeling watched.
 - **Standing at day zero:** "founding" — member-equivalent but unearned (you were just there). The ladder still governs everything after; leadership emerges and can later be earned/challenged.
+
+## 2026-10-03 — Codex: extract-to-save, knowledge diplomacy, skill + repository
+
+- **Decision:** Three-layer Codex model:
+  1. **Field notes** (vulnerable): everything learned exists as notes on your person until transcribed. Die in the field → notes drop with you. A surviving companion can carry them back; a later expedition can recover your remains (recovery mission hook).
+  2. **Codex skill** (personal ability): held by the scholar — accurate field recording and transcription. Without it, field notes are *unreliable* (occasionally wrong — the game may lie to you, honestly labeled as uncertain). Teachable via mentorship; this is how the mantle passes on death.
+  3. **Codex repository** (village feature): the physical archive. Knowledge is only *safe* once transcribed here — return to the village or die in it. Villages can build/improve it as a project.
+- **Why:** Steve: knowledge recorded only on return-or-village-death; shareable with non-hostile villages; liked the Codex-as-ability idea / village-hub ability.
+- **The risk loop:** the further you go, the more you know, the more you stand to lose. Every expedition is a bet; the return journey is the most dangerous part. This is the roguelite extraction tension, native to the fiction.
+- **Knowledge diplomacy:** share/copy entries with non-hostile villages (Book 3+). Copies degrade (telephone game). Strategic choice: raise all boats or hoard your edge. Teaching builds standing; the System watches either way: "Knowledge-sharing metrics: EXEMPLARY!" / "Knowledge-hoarding detected! Strategic! The Committee approves of BOTH!"
+- **Stealing:** dark path can steal another village's Codex. The System is *enthralled*.
