@@ -11,8 +11,8 @@
     night: 'Camp. Rest — or risk the dark.',
   };
   const TILE_GLYPH = {
-    forest_floor: '♣', grove: '◈', meadow: '≡', thicket: '✳',
-    wetland: '≈', creek: '≋', trail_edge: '·', ruin: '▦',
+    forest_floor: '🟫', grove: '🌳', meadow: '🌾', thicket: '🌿',
+    wetland: '💧', creek: '🌊', trail_edge: '🟨', ruin: '🏚️',
   };
   const TILE_NAME = {
     forest_floor: 'forest floor', grove: 'grove', meadow: 'meadow', thicket: 'thicket',
@@ -20,10 +20,10 @@
   };
   // scavenged goods (ruins) — finite. the houses feed you until they don't.
   const SCAVENGED = [
-    { id: 'can_beans', name: 'Canned beans', kcal: 450, kg: 0.4, text: 'Dusty can, intact seal. Someone\'s pantry, a lifetime ago.' },
-    { id: 'can_corn', name: 'Canned corn', kcal: 380, kg: 0.4, text: 'The label is gone. The corn doesn\'t care.' },
-    { id: 'can_soup', name: 'Canned soup', kcal: 300, kg: 0.35, text: 'Chicken soup. Tastes like before.' },
-    { id: 'jar_peaches', name: 'Jarred peaches', kcal: 500, kg: 0.5, text: 'Home-canned. Whoever sealed this knew what they were doing.' },
+    { id: 'can_beans', name: 'Canned beans', kcal: 650, kg: 0.4, text: 'Dusty can, intact seal. Someone\'s pantry, a lifetime ago.' },
+    { id: 'can_corn', name: 'Canned corn', kcal: 550, kg: 0.4, text: 'The label is gone. The corn doesn\'t care.' },
+    { id: 'can_soup', name: 'Canned soup', kcal: 450, kg: 0.35, text: 'Chicken soup. Tastes like before.' },
+    { id: 'jar_peaches', name: 'Jarred peaches', kcal: 700, kg: 0.5, text: 'Home-canned. Whoever sealed this knew what they were doing.' },
   ];
   // first-visit arrival moments — destinations reveal something
   const ARRIVAL = {
@@ -192,7 +192,7 @@
         map: this.map, dayPart: this.dayPart, location: this.location,
         departed: this.departed, log: this.log.slice(-40),
         homeRegion: this.homeRegion, villagerId: this.villagerId,
-        encounterDone: this.encounterDone, wanderer: this.wanderer || null,
+        encounterDone: this.encounterDone, wanderer: this.wanderer || null, telemetry: this.state.telemetry || [],
         talkIdx: this.state.talkIdx || {}, fireIdx: this.state.fireIdx || 0,
         questGiven: !!this.state.questGiven,
       };
@@ -225,7 +225,7 @@
       const tiles = [];
       for (let y = 0; y < 7; y++) {
         const row = [];
-        for (let x = 0; x < 7; x++) row.push({ type: 'forest_floor', revealed: false, foraged: false, visited: false });
+        for (let x = 0; x < 7; x++) row.push({ type: 'forest_floor', revealed: false, stock: 1, maxStock: 1, visited: false });
         tiles.push(row);
       }
       const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < 7 && y < 7) tiles[y][x].type = t; };
@@ -287,6 +287,21 @@
           break;
         }
       }
+      // stock: rich ground gives more pulls. number of times depends on the biome.
+      // (computed inline — this.map doesn't exist yet during gen)
+      const RICH = { grove: 1.5, wetland: 1.4, creek: 1.3, meadow: 1.3, thicket: 1.2, trail_edge: 1.0, forest_floor: 0.8 };
+      for (let yy = 0; yy < 7; yy++) for (let xx = 0; xx < 7; xx++) {
+        let r = RICH[tiles[yy][xx].type] || 1;
+        for (let dy = -1; dy <= 1 && r < 1.8; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = xx + dx, ny = yy + dy;
+          if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+          const nt = tiles[ny][nx].type;
+          if (nt === 'creek' || nt === 'wetland') { r += 0.3; break; }
+        }
+        tiles[yy][xx].maxStock = r >= 1.5 ? 3 : r >= 1.0 ? 2 : 1;
+        tiles[yy][xx].stock = tiles[yy][xx].maxStock;
+      }
       this.map = { tiles, px: 3, py: 3 };
       this.reveal(3, 3);
       const start = this.tileAt(3, 3);
@@ -319,7 +334,7 @@
       this.map.px = x; this.map.py = y;
       this.reveal(x, y);
       const tile = this.playerTile();
-      this.state.scholar.kcal -= 40 * t.d; // distance has a metabolic price
+      this.state.scholar.kcal -= 30 * t.d; // distance has a metabolic price
       let msg = `Travel ${t.d} tile${t.d > 1 ? 's' : ''} to ${S.TILE_NAME[tile.type]}.`;
       if (!tile.visited) {
         tile.visited = true;
@@ -402,8 +417,8 @@
       const arr = ARRIVAL[t.type];
       const here = [];
       if (t.type === 'ruin') here.push((t.loot || []).length ? `${t.loot.length} can(s) left` : 'picked clean');
-      else if (S.forage.canForage(t)) here.push('forageable');
-      else if (t.foraged) here.push('foraged clean');
+      else if ((t.stock || 0) > 0) here.push(t.stock >= 3 ? 'rich pickings' : t.stock === 2 ? 'good foraging' : 'a little left');
+      else here.push('picked clean for today');
       if (t.bountyKnown && t.knownPlant) {
         const kp = this.data.plants.find(p => p.id === t.knownPlant);
         if (kp) here.push(`${kp.name.toLowerCase()} country`);
@@ -482,25 +497,28 @@
           scholar.inventory.push({ plantId: lootId, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg });
           scholar.kcal -= 100;
           msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
-          this.say(msg); return this.endDayPart();
+          this.say(msg);
+          this.tele('scavenge', { item: item.name, kcal: item.kcal, lootLeft: t.loot.length, packKg: Math.round(this.packWeight() * 10) / 10 });
+          return this.endDayPart();
         }
-        if (!S.forage.canForage(t)) { this.say('Nothing left to forage here today.'); return null; }
-        t.foraged = true;
+        if (!S.forage.canForage(t)) { this.say('Nothing left to take here today.'); return null; }
+        t.stock -= 1;
         const bounty = this.bountyFor(this.map.px, this.map.py);
         const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty);
         const kg = r.units * 0.1;
-        if (!this.canCarry(kg)) { t.foraged = false; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
+        if (!this.canCarry(kg)) { t.stock += 1; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
         if (r.firstFind) this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
         // the Codex labels the place: what grows here is now written on the map
         t.knownPlant = r.plantId; t.bountyKnown = true;
         if (bounty && bounty.why) this.say(`Codex: ${bounty.why}`);
         scholar.inventory.push({ plantId: r.plantId, units: r.units, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
-        msg = r.message + (r.firstFind ? ` (${r.plant.codex})` : '');
+        msg = r.message + ` (${r.kcal} kcal to your pack — eat up.)` + (r.firstFind ? ` (${r.plant.codex})` : '');
+        this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
       } else if (kind === 'rest') {
         scholar.energy = Math.min(100, scholar.energy + 30);
         scholar.health = Math.min(100, scholar.health + 5);
-        scholar.kcal -= 50;
+        scholar.kcal -= 40;
         msg = 'You rest. Breath slows. +30 energy.';
       } else if (kind === 'wait') {
         msg = 'You wait. The light changes. Nothing asks anything of you.';
@@ -536,6 +554,7 @@
       const spoiled = before - scholar.inventory.length;
       this.say(ate > 0 ? `You eat (${ate} kcal).` + (spoiled ? ` ${spoiled} item(s) spoiled — the Codex notes the waste.` : '')
                        : (scholar.inventory.length ? 'You are full enough.' : 'Nothing to eat. The pantry of your pack is empty.'));
+      if (ate > 0) this.tele('eat', { ateKcal: ate, spoiled });
     },
 
     drinkTreated() {
@@ -591,8 +610,8 @@
 
     endDay() {
       const scholar = this.state.scholar;
-      // reset forage flags
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.map.tiles[y][x].foraged = false;
+      // regrow: stock resets daily. natural goods are renewable; cans are not.
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.map.tiles[y][x].stock = this.map.tiles[y][x].maxStock;
       // evening: run metabolism
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
@@ -656,6 +675,19 @@
     },
 
     say(msg) { this.log.push(msg); if (this.log.length > 40) this.log.shift(); },
+
+    // --- telemetry: every meaningful event, with state deltas. for diagnosing playtests. ---
+    tele(type, data) {
+      this.state.telemetry = this.state.telemetry || [];
+      const s = this.state.scholar || {};
+      this.state.telemetry.push(Object.assign({
+        t: Date.now(), day: s.day || 0, part: DAY_PARTS[this.dayPart] || '?', type,
+        kcal: Math.round(s.kcal || 0), hp: Math.round(s.health || 0),
+        packKcal: (this.state.scholar ? this.state.scholar.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0) : 0),
+        pantry: Math.round(this.state.village ? this.state.village.pantryKcal : 0),
+      }, data || {}));
+      if (this.state.telemetry.length > 300) this.state.telemetry.splice(0, this.state.telemetry.length - 300);
+    },
 
     status() {
       const s = this.state.scholar;

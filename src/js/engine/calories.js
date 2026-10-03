@@ -8,10 +8,10 @@
   const STARVATION_THRESHOLD = 500; // kcal reserve below which the spiral starts
 
   const ACTION_COSTS = {
-    forage: 150, hunt: 300, craft: 120, explore: 200,
+    forage: 120, hunt: 240, craft: 100, explore: 160,
     rest: -200,           // recovers (negative cost)
-    treat_water: 60, travel_leg: 400,
-    combat_round: 120, system_ability: 800, // power is expensive
+    treat_water: 50, travel_leg: 320,
+    combat_round: 100, system_ability: 800, // power is expensive
   };
 
   function dailyNeed(scholar) {
