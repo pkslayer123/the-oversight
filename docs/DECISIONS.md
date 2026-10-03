@@ -303,3 +303,17 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   - Leader: full departure ritual, standing orders, deputy, command defense.
 - **The general pattern (applies elsewhere):** NOTHING IMPORTANT IS GIVEN; EVERYTHING IS EARNED, VISIBLY. Status gates mechanics across systems: System trust gates trial tiers; audience Favor gates shop tiers; scholar trust mirrors the village ladder; the Codex withholds advanced entries until basics are earned ("you're not ready for this section"); relic bonding already works this way. The player always knows what would raise standing — villages *tell* you, in words, not hidden numbers.
 - **Tutorial bonus:** the departure ritual grows with standing, so players learn the full system by climbing toward it. No front-loaded complexity.
+
+## 2026-10-03 — Combat spec: one command per round, knowledge is the depth
+
+- **Decision:** No grid. Combat is **one command per round** — you lead the party, not puppeteer it. Party members' abilities modify the command; their agency shows in execution, occasionally unprompted.
+- **Why:** Steve asked grid vs per-member choices. Grid is a second game to learn (violates simplicity, fiddly on phone). Per-member orders is micromanagement (violates "you lead, don't micromanage"). One command keeps a fight to ~2 minutes, one thumb.
+- **Round structure:**
+  1. **Read the telegraph** (StS-style intents; obscured for unknown monsters: "the creature shifts — you can't read it").
+  2. **One command:** STRIKE (all-in) / HARRY (skirmish, safer, builds advantage) / BRACE (defend, protect injured) / TRAP (if prepared — big payoff) / STUDY (observe: fills Codex, reveals intent) / FLEE (always available, has a cost).
+  3. **Resolution** — party output vs monster action, injuries assigned sensibly.
+  4. Repeat, typically 2-4 rounds.
+- **Knowledge is the depth:** unknown → intents hidden; observed → readable + one weakness; slain → full Codex, hunts become efficient. Preparation (traps/bait set pre-combat for 1 AP) + full Codex turns a terror into a harvest. This mechanizes "killing an unknown monster costs knowledge comparable to discovering a food source."
+- **Stakes:** injuries persist via modifier pipeline. Death possible but always telegraphed — lethal intent shows before it lands; FLEE was always there. Combat deaths feel like decisions, not surprises.
+- **The System commentates:** combat is content. "OH! A bold STRIKE! The audience is ON ITS FEET!" Spotlight fights earn Favor.
+- **Monsters are food:** kills yield top-tier calories + materials. Combat is hunting with consequences.
