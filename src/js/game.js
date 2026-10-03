@@ -76,9 +76,52 @@
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
       this.encounterDone = false; this.log = [];
       this.location = 'village'; this.departed = false;
+      this.wipe();
       this.genMap();
       this.say('Haven. Twelve people. The fire is lit.');
       return this.status();
+    },
+
+    // --- village: people to talk to, things to do ---
+    talkTo(vid) {
+      const v = this.data.villagers.find(x => x.id === vid);
+      if (!v || !v.talk || !v.talk.length) return null;
+      this.state.talkIdx = this.state.talkIdx || {};
+      const i = (this.state.talkIdx[vid] || 0) % v.talk.length;
+      this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
+      const line = v.talk[i];
+      this.say(`${v.name.split(' ')[0]}: "${line}"`);
+      return line;
+    },
+
+    getQuest() {
+      // Mara's quest, once, on first arrival — the intro into the narrative
+      if (this.state.questGiven) return null;
+      const mara = this.data.villagers.find(x => x.id === 'mara_okafor');
+      this.state.questGiven = true;
+      this.save();
+      return { from: mara.name.split(' ')[0], lines: mara.quest };
+    },
+
+    villageAction(kind) {
+      const scholar = this.state.scholar;
+      if (kind === 'water') {
+        scholar.water = 4;
+        const msg = 'You fill your skin from the well. Cold. Clean. Home water.';
+        this.say(msg); this.save(); return msg;
+      }
+      if (kind === 'fire') {
+        const lines = [
+          'The fire pops. Nobody talks for a while. It\'s enough.',
+          'Someone throws another branch on. The sparks go up like they have somewhere to be.',
+          'Twelve people around one fire. It doesn\'t feel small. It feels like a decision.',
+          'The fire is the one thing the Burn couldn\'t take. Think about that.',
+        ];
+        this.state.fireIdx = (this.state.fireIdx || 0) + 1;
+        const msg = lines[(this.state.fireIdx - 1) % lines.length];
+        this.say(msg); return msg;
+      }
+      return null;
     },
 
     // --- village node ---
@@ -105,6 +148,7 @@
       const first = this.data.villagers.find(x => x.id === this.villagerId).name.split(' ')[0];
       this.say(`You tell the others you're heading out. Someone nods. "Come back before dark."`);
       this.say(`— DAY 1 DAWN — ${DAY_PART_HINT.dawn}`);
+      this.save();
       return this.status();
     },
 
@@ -113,10 +157,55 @@
       const s = this.state.scholar;
       const brought = s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0);
       const entries = Object.keys(this.state.codex.plants).length;
-      if (this.won) this.say(`You walk back into Haven with ${Math.round(brought)} kcal of food and ${entries} Codex entries. Someone sees the pack and smiles. The village eats because of you.`);
-      else if (s.health <= 0) this.say(`You don't come back. The clearing is quieter. The Codex keeps what you wrote down.`);
+      const hasGreens = s.inventory.some(i => i.unit === 'handful' || i.unit === 'cup' || i.unit === 'oz');
+      // the loop closes: what you carried feeds the village
+      if (brought > 0) {
+        this.state.village.pantryKcal += brought;
+        s.inventory = [];
+      }
+      if (this.won) {
+        this.say(`You walk back into Haven with ${Math.round(brought)} kcal of food and ${entries} Codex entries. The pantry is fuller than when you left.`);
+        this.say(`Mara: "Seven days. Thinner and smarter."`);
+        this.say(`Jesse: "Back. That's the whole test, really."`);
+        this.say(hasGreens ? `Aki: "You brought something green! I knew it."` : `Aki: "You're back. That's enough."`);
+      }
+      else if (s.health <= 0) {
+        this.say(`You don't come back. The clearing is quieter. The Codex keeps what you wrote down.`);
+        this.say(`Mara: "We buried what the woods sent back."`);
+      }
       else this.say(`You walk back into Haven early. ${entries} Codex entries. The village is glad to see you.`);
+      this.wipe(); // expedition over — no continuing a finished run
       return this.status();
+    },
+
+    // --- autosave: the phone kills background tabs. a 7-day run must survive a refresh. ---
+    save() {
+      if (this.over) return;
+      try {
+        localStorage.setItem('scattering-save-v1', JSON.stringify({
+          state: this.state, map: this.map, dayPart: this.dayPart, ap: this.ap,
+          location: this.location, departed: this.departed, log: this.log.slice(-40),
+          homeRegion: this.homeRegion, villagerId: this.villagerId,
+          encounterDone: this.encounterDone,
+        }));
+      } catch (e) { /* storage full or unavailable — play on without it */ }
+    },
+    hasSave() {
+      try { return !!localStorage.getItem('scattering-save-v1'); } catch (e) { return false; }
+    },
+    load() {
+      let raw = null;
+      try { raw = localStorage.getItem('scattering-save-v1'); } catch (e) { return false; }
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      this.state = d.state; this.map = d.map; this.dayPart = d.dayPart; this.ap = d.ap;
+      this.location = d.location; this.departed = d.departed; this.log = d.log || [];
+      this.homeRegion = d.homeRegion; this.villagerId = d.villagerId;
+      this.encounterDone = d.encounterDone; this.over = false; this.won = false;
+      return true;
+    },
+    wipe() {
+      try { localStorage.removeItem('scattering-save-v1'); } catch (e) {}
     },
 
     genMap() {
@@ -322,6 +411,7 @@
       }
       this.ap -= 1;
       this.say(msg);
+      this.save();
       return msg;
     },
 
@@ -375,6 +465,7 @@
       if (this.dayPart >= 4) return this.endDay();
       this.ap = 1;
       this.say(`— ${DAY_PARTS[this.dayPart].toUpperCase()} — ${DAY_PART_HINT[DAY_PARTS[this.dayPart]]}`);
+      this.save();
       return this.status();
     },
 

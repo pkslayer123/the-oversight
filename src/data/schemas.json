@@ -149,7 +149,9 @@
       "clothesNote": "string?",
       "abilityWeights": "object",
       "systemAssessment": "string",
-      "survivalProbability": "number[1..99]?"
+      "survivalProbability": "number[1..99]?",
+      "talk": "string[]",
+      "quest": "string[]?"
     }
   },
   "item": {

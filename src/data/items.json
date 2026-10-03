@@ -68,7 +68,7 @@
     ]
   },
   {
-    "baseEffect": "+1 travel AP per day",
+    "baseEffect": "Quiet, broken-in, still holding. (Bond to unlock more.)",
     "class": "clothing",
     "flavor": "Broken in over three states. They fit like a promise.",
     "id": "good_boots",
@@ -110,7 +110,7 @@
     ]
   },
   {
-    "baseEffect": "Climb, snare, haul \u2014 50ft of options",
+    "baseEffect": "Climb, snare, haul — 50ft of options",
     "class": "tool",
     "flavor": "Coiled the way his grandfather taught him.",
     "id": "rope_50ft",

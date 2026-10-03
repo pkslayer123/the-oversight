@@ -441,3 +441,10 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Decision:** 15 kg pack capacity. Forage/scavenge blocked when full ("eat something, or leave it"). Ruins contain 3-5 cans (300-500 kcal, no spoilage) — finite, deplete permanently.
 - **Why:** Steve: pack weight mechanic; ruins as a real strategy (canned goods). The finite pantry *is* the thesis in miniature: the houses feed you until they don't, and then you have to actually learn the land. Early game has an easy calorie source; it runs out.
 - **Biomes:** map tiles reflect their biome (SE woodlands = woods, correctly). Non-woods biomes arrive with new regions (Book 2+); the region-node system is built for exactly this.
+
+## 2026-10-03 — Haven comes alive (village v1)
+
+- **Decision:** The village is now a place, not a lobby. Mara gives a 5-line quest on first arrival (stakes: pantry won't last the month; role: scholar; job: 7 days, learn what's edible, bring back food, write it down). Each villager has rotating talk dialogue (tips + character, not just flavor). Village actions: fill water at the well, sit by the fire. Return deposits pack kcal into the pantry and triggers villager reactions (Aki's "bring me something green" pays off).
+- **Why:** Steve: "Haven isn't alive yet. Nothing to do there. Nothing to talk to. No real intro into the narrative." The quest is the narrative intro the cold open was missing — it answers *why seven days*.
+- **Also:** localStorage autosave (save on action/day-part/depart, Continue on title, wipe on game over). Phones kill background tabs; a 7-day run must survive a refresh. Builder's "sessionSave P0" was a misread — there was no save at all. Now there is.
+- **Also:** fixed stale "Good boots +1 travel AP" text (never implemented) in villagers.json + items.json.

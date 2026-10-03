@@ -42,10 +42,13 @@
       <h1 class="title">THE SCATTERING</h1>
       <div class="subtitle">a system-apocalypse survival roguelite<br>hunger is the final boss</div>
       <button class="btn" id="b-new">New Expedition</button>
+      ${Game.hasSave() ? '<button class="btn" id="b-cont">Continue Expedition</button>' : ''}
       <button class="btn ghost" id="b-codex0">Codex</button>
       <button class="btn ghost" id="b-about">About</button>
       <p class="small" style="margin-top:20px">slice 1: seven days. forage · eat · drink · survive.</p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
+    const bc = document.getElementById('b-cont');
+    if (bc) bc.onclick = () => { if (Game.load()) { Game.status().location === 'village' ? villageScreen() : gameMain(); } };
     document.getElementById('b-codex0').onclick = () => { toast('The Codex is empty. For now.'); };
     document.getElementById('b-about').onclick = about;
   }
@@ -111,9 +114,45 @@
   }
 
   // ---------- village node ----------
+  function questOverlay(cb) {
+    const q = Game.getQuest();
+    if (!q) { cb(); return; }
+    let i = 0;
+    const render = () => {
+      screen.innerHTML = `${bar('scattering://village', 'mara')}
+        <div class="card" style="margin-top:40px">
+          <h3>${q.from}</h3>
+          <p style="font-size:17px;line-height:1.6">"${q.lines[i]}"</p>
+          <button class="btn" id="b-qnext">${i < q.lines.length - 1 ? '...' : 'Understood.'}</button>
+        </div>`;
+      document.getElementById('b-qnext').onclick = () => {
+        i++;
+        if (i < q.lines.length) render(); else cb();
+      };
+    };
+    render();
+  }
+
+  function talkOverlay(vid) {
+    const v = Game.data.villagers.find(x => x.id === vid);
+    const line = Game.talkTo(vid);
+    screen.innerHTML = `${bar('scattering://village', v.name.split(' ')[0].toLowerCase())}
+      <div class="card" style="margin-top:40px">
+        <h3>${v.name}</h3>
+        <p class="small">${v.formerOccupation} · ${v.homeRegion}</p>
+        <p style="font-size:17px;line-height:1.6">"${line}"</p>
+        <button class="btn sm" id="b-tagain">Say more</button>
+        <button class="btn ghost sm" id="b-tback">Back to the fire</button>
+      </div>`;
+    document.getElementById('b-tagain').onclick = () => talkOverlay(vid);
+    document.getElementById('b-tback').onclick = () => villageScreen();
+  }
+
   function villageScreen() {
     const st = Game.status();
     if (st.over) return ending();
+    // first arrival: Mara gives the quest — the intro into the narrative
+    if (!st.departed && !Game.state.questGiven) { questOverlay(() => villageScreen()); return; }
     const v = Game.villageInfo();
     const vs = Game.data.villagers;
     screen.innerHTML = `
@@ -128,22 +167,31 @@
       ${statRow('PANTRY', v.pantryKcal + ' kcal', Math.min(100, v.pantryKcal / 100), v.pantryKcal < 5000)}
       ${statRow('CODEX', v.codexN + ' entries', Math.min(100, v.codexN * 10))}
       <div class="card"><h3>Who's here</h3>
-        ${vs.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}</p>`).join('')}
+        ${vs.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
+          <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`).join('')}
       </div>
       <div class="card"><h3>🗺 Nodes</h3>
         <p class="small">● <b>Haven</b> — you are here</p>
         <p class="small">○ <b>The Wilds</b> — 7×7 region, fog-of-war, one bulldozer (probably)</p>
       </div>
       ${st.departed
-        ? `<div class="log">${st.log.slice(-4).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
+        ? `<div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
            <button class="btn" id="b-end">Rest by the fire</button>`
-        : `<p class="small">${v.scholarName.split(' ')[0]}, eat something green. Drink water. Come back before dark.</p>
-           <button class="btn" id="b-depart">Depart on expedition</button>`}
+        : `<div class="btnrow">
+             <button class="btn sm" id="b-water">Fill water</button>
+             <button class="btn sm" id="b-fire">Sit by the fire</button>
+           </div>
+           <button class="btn" id="b-depart">Head into the wilds</button>`}
       <button class="btn ghost" id="b-codex2">Codex (${v.codexN})</button>`;
+    screen.querySelectorAll('[data-talk]').forEach(b => b.onclick = () => talkOverlay(b.dataset.talk));
     const dep = document.getElementById('b-depart');
     if (dep) dep.onclick = () => { Game.depart(); gameMain(true); };
     const end = document.getElementById('b-end');
     if (end) end.onclick = () => ending();
+    const wat = document.getElementById('b-water');
+    if (wat) wat.onclick = () => { Game.villageAction('water'); toast('Skin full. Cold. Clean.'); villageScreen(); };
+    const fir = document.getElementById('b-fire');
+    if (fir) fir.onclick = () => { Game.villageAction('fire'); villageScreen(); };
     document.getElementById('b-codex2').onclick = codexScreen;
   }
 

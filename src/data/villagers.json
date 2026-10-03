@@ -5,8 +5,8 @@
       "fieldcraft": 2,
       "system": 1
     },
-    "backstory": "ER nurse from Columbus. When the sky changed, she was already moving toward the screaming \u2014 old habits. She checked pulses in the clearing while everyone else stared at the sky.",
-    "clothesNote": "Scrub top (long dead) under a patched canvas jacket. Good boots \u2014 +1 travel.",
+    "backstory": "ER nurse from Columbus. When the sky changed, she was already moving toward the screaming — old habits. She checked pulses in the clearing while everyone else stared at the sky.",
+    "clothesNote": "Scrub top (long dead) under a patched canvas jacket. Good boots — broken-in, quiet. They have outlived two worlds.",
     "formerOccupation": "ER nurse",
     "homeRegion": "Ohio river valley",
     "id": "mara_okafor",
@@ -24,7 +24,21 @@
       "protective"
     ],
     "survivalProbability": 34,
-    "systemAssessment": "The others notice: steady hands, dry humor, the one already taking charge of the wounded."
+    "systemAssessment": "The others notice: steady hands, dry humor, the one already taking charge of the wounded.",
+    "quest": [
+      "You're awake. Good — we need you. All of us, but you especially.",
+      "The pantry won't last the month. Twelve mouths, and every house for a mile is picked clean.",
+      "You're our scholar. You read the land like the rest of us read faces. Or you will. That's the job now.",
+      "Seven days out there. Learn what's edible. Bring back what you can carry. Write it down — the Codex is the only thing we get to keep.",
+      "Eat something green. Drink water. Come back before dark."
+    ],
+    "talk": [
+      "Dandelion: root, leaf, flower — the whole plant is food. Bitter means it's working.",
+      "Clear water isn't clean water. Treat everything. Your gut will thank you on day three.",
+      "The Bulldozer doesn't go around things. So don't be a thing. Climb, or be somewhere else.",
+      "I was an ER nurse. Now I'm the woman who tells grown adults to eat their greens. Funny.",
+      "Write it all down. The Codex remembers what hunger makes you forget."
+    ]
   },
   {
     "abilityWeights": {
@@ -32,7 +46,7 @@
       "craft": 1,
       "fieldcraft": 3
     },
-    "backstory": "Grew up hunting whitetail with his grandfather in the Georgia pines. Was wearing camo when the sky changed \u2014 hasn't taken it off since. Quiet. Misses his dog.",
+    "backstory": "Grew up hunting whitetail with his grandfather in the Georgia pines. Was wearing camo when the sky changed — hasn't taken it off since. Quiet. Misses his dog.",
     "clothesNote": "Full camo, broken-in. Grandfather's knife on the belt.",
     "formerOccupation": "line cook / hunter",
     "homeRegion": "Georgia pines",
@@ -51,7 +65,14 @@
       "observant"
     ],
     "survivalProbability": 41,
-    "systemAssessment": "The others notice: quiet, patient, watching the treeline instead of the sky."
+    "systemAssessment": "The others notice: quiet, patient, watching the treeline instead of the sky.",
+    "talk": [
+      "Bulldozer sign: torn-up ground in straight lines. It doesn't wander, it commutes.",
+      "You get meat, you smoke it. Low rack, slow fire. Keeps for weeks.",
+      "The creek is the map. Everything drinks. Follow it.",
+      "Granddad said the woods provide, but they don't deliver. You go to them.",
+      "I miss my dog."
+    ]
   },
   {
     "abilityWeights": {
@@ -78,6 +99,12 @@
       "unflappable"
     ],
     "survivalProbability": 29,
-    "systemAssessment": "The others notice: precise, warm, unflappable. Already inventorying what the group carried."
+    "systemAssessment": "The others notice: precise, warm, unflappable. Already inventorying what the group carried.",
+    "talk": [
+      "The creek has fish — I can smell them. No hooks, no wire. The Burn took the wire. We'll figure it out.",
+      "Bring me back something green? Anything. I want to remember what fresh tastes like.",
+      "Eleven years behind a sushi counter. Now I dream about rice. Just rice.",
+      "Water's edge is where everything happens. Fish, frogs, the good roots. Stay near the creek."
+    ]
   }
 ]
