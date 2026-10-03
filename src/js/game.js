@@ -12,11 +12,11 @@
   };
   const TILE_GLYPH = {
     forest_floor: '🟫', grove: '🌳', meadow: '🌾', thicket: '🌿',
-    wetland: '💧', creek: '🌊', trail_edge: '🟨', ruin: '🏚️',
+    wetland: '💧', creek: '🌊', trail_edge: '🟨', ruin: '🏚️', haven: '🏠',
   };
   const TILE_NAME = {
     forest_floor: 'forest floor', grove: 'grove', meadow: 'meadow', thicket: 'thicket',
-    wetland: 'wetland', creek: 'creek', trail_edge: 'trail edge', ruin: 'ruin',
+    wetland: 'wetland', creek: 'creek', trail_edge: 'trail edge', ruin: 'ruin', haven: 'Haven',
   };
   // scavenged goods (ruins) — finite. the houses feed you until they don't.
   const SCAVENGED = [
@@ -35,6 +35,7 @@
     creek: { title: 'Moving water', text: 'Cold, clear, moving. The best thing you\'ve seen all day.' },
     trail_edge: { title: 'An old trail', text: 'Something walked here regularly, before. The path remembers even if no one does.' },
     ruin: { title: 'Pre-Burn ruin', text: '' }, // ruinStory fills this
+    haven: { title: 'Haven', text: 'Canvas, cookfire, twelve people who are glad you\'re back. Home is a tile on the map like any other — it just matters more.' },
   };
 
   const Game = {
@@ -142,8 +143,8 @@
     },
 
     depart() {
-      // departure lite (member standing): tell someone you're going
-      this.location = 'wilds'; this.departed = true;
+      // departure lite (member standing): tell someone you're going. no location switch — Haven is a tile.
+      this.departed = true;
       this.dayPart = 0; this.ap = 1;
       const first = this.data.villagers.find(x => x.id === this.villagerId).name.split(' ')[0];
       this.say(`You tell the others you're heading out. Someone nods. "Come back before dark."`);
@@ -153,15 +154,16 @@
     },
 
     returnToVillage() {
-      this.location = 'village';
+      // walking onto the Haven tile: the loop closes. what you carried feeds the village.
+      // no day advance here — endDay owns the clock. this is just coming home.
       const s = this.state.scholar;
       const brought = s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0);
       const entries = Object.keys(this.state.codex.plants).length;
       const hasGreens = s.inventory.some(i => i.unit === 'handful' || i.unit === 'cup' || i.unit === 'oz');
-      // the loop closes: what you carried feeds the village
       if (brought > 0) {
         this.state.village.pantryKcal += brought;
         s.inventory = [];
+        this.say(`You unload ${Math.round(brought)} kcal into Haven's pantry.`);
       }
       if (this.won) {
         this.say(`You walk back into Haven with ${Math.round(brought)} kcal of food and ${entries} Codex entries. The pantry is fuller than when you left.`);
@@ -302,6 +304,10 @@
         tiles[yy][xx].maxStock = r >= 1.5 ? 3 : r >= 1.0 ? 2 : 1;
         tiles[yy][xx].stock = tiles[yy][xx].maxStock;
       }
+      // Haven is a tile, not a separate screen. home is a place you walk to.
+      tiles[3][3].type = 'haven';
+      tiles[3][3].stock = 0; tiles[3][3].maxStock = 0;
+      tiles[3][3].revealed = true; tiles[3][3].visited = true;
       this.map = { tiles, px: 3, py: 3 };
       this.reveal(3, 3);
       const start = this.tileAt(3, 3);
@@ -344,6 +350,7 @@
         if (tile.type === 'grove') this.noteCodex('grove', 'Nut trees. The Codex does the math.');
       }
       this.say(msg);
+      if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
       // travel consumes the day-part — time passes, no separate "end part" tap
       return this.endDayPart();
@@ -353,6 +360,7 @@
     // a grove by the creek is not the same place as a grove by the wetland
     nodeEpithet(x, y) {
       const t = this.tileAt(x, y);
+      if (t.type === 'haven') return 'Haven';
       const nb = new Set();
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         if (!dx && !dy) continue;
@@ -377,6 +385,7 @@
     // richness has a floor from the terrain itself + a bonus for good neighbors.
     // every map grows food; the skilled player finds the BEST food.
     bountyFor(x, y) {
+      if (this.tileAt(x, y).type === 'haven') return null;
       const t = this.tileAt(x, y);
       const epithet = this.nodeEpithet(x, y);
       const FAVORED = {
@@ -415,6 +424,12 @@
     nodeDetail() {
       const t = this.playerTile();
       const arr = ARRIVAL[t.type];
+      if (t.type === 'haven') {
+        return {
+          type: 'haven', title: arr.title, epithet: 'Haven', text: arr.text, here: ['home'],
+          isRuin: false, isHaven: true, canForage: false, canTreat: false,
+        };
+      }
       const here = [];
       if (t.type === 'ruin') here.push((t.loot || []).length ? `${t.loot.length} can(s) left` : 'picked clean');
       else if ((t.stock || 0) > 0) here.push(t.stock >= 3 ? 'rich pickings' : t.stock === 2 ? 'good foraging' : 'a little left');
@@ -612,33 +627,9 @@
       const scholar = this.state.scholar;
       // regrow: stock resets daily. natural goods are renewable; cans are not.
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.map.tiles[y][x].stock = this.map.tiles[y][x].maxStock;
-      // evening: run metabolism
-      const res = S.calories.resolveDay(scholar, this.state.village);
-      res.warnings.forEach(w => this.say('⚠ ' + w));
-      // the village eats whether you're there or not — every day you're out, twelve mouths
-      this.villageEats();
-      if (this.villageLost) { return this.status(); } // no home to return to
-      if (this.over) { this.returnToVillage(); return this.status(); }
-      if (!res.ok || scholar.health <= 0) {
-        this.over = true;
-        this.say('You didn\'t make it. The village remembers. The Codex keeps what you brought home.');
-        this.returnToVillage();
-        return this.status();
-      }
-      scholar.day += 1;
-      this.dayPart = 0; this.ap = 1;
-      this.say(`— DAY ${scholar.day} DAWN — ${DAY_PART_HINT.dawn}`);
+      if (this.over) this.wipe(); // finished runs don't continue
       this.save();
       return this.status();
-    },
-
-    // walk home: consumes the rest of the day. the walk takes the light.
-    walkHome() {
-      if (this.over || this.location !== 'wilds') return null;
-      this.say('You turn toward home. The walk takes the rest of the light.');
-      this.returnToVillage();
-      if (this.over) return this.status();
-      return this.endDay();
     },
 
     // --- combat ---

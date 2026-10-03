@@ -49,7 +49,7 @@
       <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
     const bc = document.getElementById('b-cont');
-    if (bc) bc.onclick = () => { if (Game.load()) { Game.status().location === 'village' ? villageScreen() : gameMain(); } };
+    if (bc) bc.onclick = () => { if (Game.load()) expeditionScreen(); };
     document.getElementById('b-codex0').onclick = () => { toast('The Codex is empty. For now.'); };
     const bt = document.getElementById('b-tel');
     if (bt) bt.onclick = () => telemetryScreen();
@@ -112,7 +112,8 @@
       <button class="btn" id="b-go">This is me. Begin.</button>`;
     document.getElementById('b-go').onclick = () => {
       Game.newGame(ob.home, ob.villager);
-      villageScreen();
+      // Mara's intro, then you're standing in Haven — which is a tile now.
+      questOverlay(() => { Game.depart(); expeditionScreen(); });
     };
   }
 
@@ -148,178 +149,126 @@
         <button class="btn ghost sm" id="b-tback">Back to the fire</button>
       </div>`;
     document.getElementById('b-tagain').onclick = () => talkOverlay(vid);
-    document.getElementById('b-tback').onclick = () => villageScreen();
+    document.getElementById('b-tback').onclick = () => expeditionScreen();
   }
 
-  function villageScreen() {
+  // ---------- the one screen ----------
+  // map + here-panel, always together. no view switching: the panel adapts to
+  // where you stand (haven / wild node / ruin / combat). travel = tap a tile.
+  function expeditionScreen() {
     const st = Game.status();
     if (st.over) return ending();
-    // first arrival: Mara gives the quest — the intro into the narrative
-    if (!st.departed && !Game.state.questGiven) { questOverlay(() => villageScreen()); return; }
-    const v = Game.villageInfo();
-    const vs = Game.data.villagers;
-    screen.innerHTML = `
-      ${bar('scattering://village', 'haven')}
-      <div class="ascii">      .-""-.
-     / .--. \\
-    | (    ) |
-     \\ '--' /
-      '--'--'</div>
-      <h1 class="title">HAVEN</h1>
-      <p><i>${v.atmos}</i></p>
-      ${statRow('PANTRY', v.pantryKcal + ' kcal', Math.min(100, v.pantryKcal / 100), v.pantryKcal < 5000)}
-      ${statRow('CODEX', v.codexN + ' entries', Math.min(100, v.codexN * 10))}
-      <div class="card"><h3>Who's here</h3>
-        ${vs.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
-          <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`).join('')}
-      </div>
-      <div class="card"><h3>🗺 Nodes</h3>
-        <p class="small">● <b>Haven</b> — you are here</p>
-        <p class="small">○ <b>The Wilds</b> — 7×7 region, fog-of-war, one bulldozer (probably)</p>
-      </div>
-      ${st.log.length ? `<div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>` : ''}
-      <div class="btnrow">
-        <button class="btn sm" id="b-water">Fill water</button>
-        <button class="btn sm" id="b-fire">Sit by the fire</button>
-      </div>
-      <button class="btn" id="b-depart">Head into the wilds</button>
-      <button class="btn ghost" id="b-codex2">Codex (${v.codexN})</button>`;
-    screen.querySelectorAll('[data-talk]').forEach(b => b.onclick = () => talkOverlay(b.dataset.talk));
-    const dep = document.getElementById('b-depart');
-    if (dep) dep.onclick = () => { Game.depart(); gameMain(); };
-    const wat = document.getElementById('b-water');
-    if (wat) wat.onclick = () => { Game.villageAction('water'); toast('Skin full. Cold. Clean.'); villageScreen(); };
-    const fir = document.getElementById('b-fire');
-    if (fir) fir.onclick = () => { Game.villageAction('fire'); villageScreen(); };
-    document.getElementById('b-codex2').onclick = codexScreen;
-  }
-
-  // ---------- main game ----------
-  // ---------- main game: the map is the decision screen ----------
-  // tap a highlighted tile → travel there (time passes) → node detail
-  // tap your ● → node detail. every action consumes the day-part; no "end part" button.
-  function gameMain() {
-    const st = Game.status();
-    if (st.over) return ending();
-    if (st.pendingEncounter) return combatIntro();
-    if (st.inCombat) return combatScreen();
-
     const targets = Game.travelTargets();
     const tset = new Set(targets.map(t => t.x + ',' + t.y));
-    const t = Game.playerTile();
+    const n = Game.nodeDetail();
 
     screen.innerHTML = `
       ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
       <p class="small">${st.dayPartHint}</p>
       ${statusBars(st)}
       <div class="map">${renderMap(st, tset)}</div>
-      <p class="small">📍 ${S.TILE_NAME[t.type]} — tap a highlighted tile to travel (1 part · 30 kcal/tile); tap ● to look around</p>
-      <p class="small">🏠 Haven pantry: ${st.pantryKcal} kcal (${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      <p class="small">tap a highlighted tile to travel (1 part · 30 kcal/tile)</p>
+      ${panelFor(st, n)}
       <div class="actions">
-        <button class="btn sm" id="a-home">🏠 Walk home</button>
-        <button class="btn sm ghost" id="a-codex">Codex (${st.codexCount})</button>
+        <button class="btn sm ghost" id="x-codex">Codex (${st.codexCount})</button>
       </div>
       <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
 
     screen.querySelectorAll('.tile').forEach(el => {
       el.onclick = () => {
         const x = +el.dataset.x, y = +el.dataset.y;
-        const s2 = Game.status();
-        if (x === s2.px && y === s2.py) { nodeScreen(); return; }
+        if (x === st.px && y === st.py) return;
         if (!Game.travelTo(x, y)) { toast('Not reachable — 3 tiles max, through scouted ground.'); return; }
-        const s3 = Game.status();
-        if (s3.over) return ending();
-        if (s3.pendingEncounter) return combatIntro();
-        if (s3.inCombat) return combatScreen();
-        nodeScreen(true);
+        rerender();
       };
     });
-    document.getElementById('a-codex').onclick = codexScreen;
-    document.getElementById('a-home').onclick = () => {
-      Game.walkHome();
-      const s2 = Game.status();
-      if (s2.over) return ending();
-      villageScreen();
-    };
+    document.getElementById('x-codex').onclick = codexScreen;
+    wirePanel(st, n);
   }
 
-  // ---------- node detail: each tile is a node; this is its detail screen ----------
-  function nodeScreen(arrived) {
+  function rerender() {
     const st = Game.status();
     if (st.over) return ending();
-    if (st.pendingEncounter) return combatIntro();
-    if (st.inCombat) return combatScreen();
-    const n = Game.nodeDetail();
-
-    screen.innerHTML = `
-      ${bar('scattering://node', n.type)}
-      <h1 class="title" style="font-size:22px">${esc(n.epithet).toUpperCase()}</h1>
-      <p class="small">${esc(n.title)}</p>
-      ${renderCloseup(st)}
-      ${arrived ? `<p><i>${esc(n.text)}</i></p>` : ''}
-      <p class="small">Here: ${n.here.length ? esc(n.here.join(' · ')) : 'nothing obvious'}</p>
-      ${statusBars(st)}
-      <div class="actions">
-        <button class="btn sm" id="n-act" ${n.canForage ? '' : 'disabled'}>${n.isRuin ? 'Scavenge' : 'Forage'}<br><span class="cost">1 part · 120 kcal</span></button>
-        <button class="btn sm" id="n-treat" ${n.canTreat ? '' : 'disabled'}>Treat water<br><span class="cost">1 part · 50 kcal</span></button>
-        <button class="btn sm" id="n-rest">Rest<br><span class="cost">1 part · 40 kcal</span></button>
-        <button class="btn sm" id="n-wait">Wait<br><span class="cost">1 part</span></button>
-      </div>
-      <div class="actions">
-        <button class="btn sm ghost" id="n-eat">Eat to full</button>
-        <button class="btn sm ghost" id="n-drink" ${st.water > 0 ? '' : 'disabled'}>Drink clean (${st.water})</button>
-        <button class="btn sm ghost" id="n-wild" ${n.canTreat ? '' : 'disabled'}>Drink wild</button>
-        <button class="btn sm ghost" id="n-codex">Codex (${st.codexCount})</button>
-      </div>
-      <button class="btn ghost" id="n-map">Back to map</button>
-      <div class="log">${st.log.slice(-4).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
-
-    // actions consume the day-part — but you stay HERE. the node is where you live.
-    // tap "back to map" or travel when you want to move. failed actions show their message.
-    const go = (kind) => {
-      Game.doAction(kind);
-      const s2 = Game.status();
-      if (s2.over) return ending();
-      if (s2.pendingEncounter) return combatIntro();
-      if (s2.inCombat) return combatScreen();
-      nodeScreen();
-    };
-    const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
-    on('n-act', () => go('forage'));
-    on('n-treat', () => go('treat'));
-    on('n-rest', () => go('rest'));
-    on('n-wait', () => go('wait'));
-    on('n-eat', () => { Game.eat(); nodeScreen(); });
-    on('n-drink', () => { Game.drinkTreated(); nodeScreen(); });
-    on('n-wild', () => { Game.drinkWild(); nodeScreen(); });
-    on('n-codex', () => codexScreen());
-    on('n-map', () => gameMain());
+    expeditionScreen();
   }
 
-  // close-up: 5x5 neighborhood centered on the player — the detailed view you actually follow
-  function renderCloseup(st) {
-    let html = '<div class="closeup">';
-    for (let dy = -2; dy <= 2; dy++) {
-      html += '<div class="mrow">';
-      for (let dx = -2; dx <= 2; dx++) {
-        const x = st.px + dx, y = st.py + dy;
-        if (x < 0 || y < 0 || x > 6 || y > 6) { html += '<div class="tile offmap">·</div>'; continue; }
-        const tl = Game.tileAt(x, y);
-        const isMe = dx === 0 && dy === 0;
-        const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
-        const cls = 'tile' + (isMe ? ' here' : '') + (tl.revealed ? '' : ' fog') + (isW ? ' beast' : '') + ((tl.maxStock - (tl.stock || 0) > 0) && tl.revealed ? ' spent' : '');
-        const g = isW ? '🐗' : (isMe ? '●' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?'));
-        // the Codex labels the land: places you've learned show what grows there
-        let label = '';
-        if (tl.revealed && tl.knownPlant && !isW) {
-          const kp = Game.data.plants.find(pp => pp.id === tl.knownPlant);
-          if (kp) label = `<div class="tlabel">${esc(kp.name)}</div>`;
-        }
-        html += `<div class="${cls}">${g}${label}</div>`;
-      }
-      html += '</div>';
-    }
-    return html + '</div>';
+  function panelFor(st, n) {
+    if (st.pendingEncounter) return `
+      <div class="card warn"><h3>⚠ BULLDOZER</h3>
+      <p class="small">It crashes from the thicket. It is not going around.</p>
+      <button class="btn sm" id="p-face">Face it</button></div>`;
+    if (st.inCombat || Game.fight) return panelCombat(st);
+    if (n.isHaven) return panelHaven(st);
+    return panelNode(st, n);
+  }
+
+  function panelHaven(st) {
+    const v = Game.villageInfo();
+    const vs = Game.data.villagers;
+    return `
+      <div class="card"><h3>🏠 HAVEN</h3>
+      <p class="small"><i>${v.atmos}</i></p>
+      <p class="small">Pantry: ${st.pantryKcal} kcal (${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      ${vs.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
+        <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`).join('')}
+      <div class="btnrow">
+        <button class="btn sm" id="p-water">Fill water</button>
+        <button class="btn sm" id="p-fire">Sit by the fire</button>
+      </div></div>`;
+  }
+
+  function panelNode(st, n) {
+    return `
+      <div class="card"><h3>${esc(n.epithet).toUpperCase()}</h3>
+      <p class="small">${esc(n.title)}</p>
+      <p class="small">Here: ${n.here.length ? esc(n.here.join(' · ')) : 'nothing obvious'}</p>
+      <div class="actions">
+        <button class="btn sm" id="p-act" ${n.canForage ? '' : 'disabled'}>${n.isRuin ? 'Scavenge' : 'Forage'}<br><span class="cost">1 part · 120 kcal</span></button>
+        <button class="btn sm" id="p-treat" ${n.canTreat ? '' : 'disabled'}>Treat water<br><span class="cost">1 part · 50 kcal</span></button>
+        <button class="btn sm" id="p-rest">Rest<br><span class="cost">1 part · 40 kcal</span></button>
+        <button class="btn sm" id="p-wait">Wait<br><span class="cost">1 part</span></button>
+      </div>
+      <div class="actions">
+        <button class="btn sm ghost" id="p-eat">Eat to full</button>
+        <button class="btn sm ghost" id="p-drink" ${st.water > 0 ? '' : 'disabled'}>Drink clean (${st.water})</button>
+        <button class="btn sm ghost" id="p-wild" ${n.canTreat ? '' : 'disabled'}>Drink wild</button>
+      </div></div>`;
+  }
+
+  function panelCombat(st) {
+    const f = Game.fight;
+    if (!f) return '';
+    const mv = S.combat.MOVES[f.telegraph];
+    return `
+      <div class="card warn"><h3>${f.monster.name.toUpperCase()} — round ${f.round + 1}</h3>
+      ${statRow('BULLDOZER', f.monster.hp + ' hp', f.monster.hp / f.monster.maxHp * 100, f.monster.hp < 15)}
+      <p class="small">⚠ ${mv.name} incoming — ${f.studied ? mv.hint : "you can't quite read it. (STUDY it.)"}</p>
+      <div class="actions">
+        <button class="btn sm" data-c="strike">STRIKE</button>
+        <button class="btn sm" data-c="harry">HARRY</button>
+        <button class="btn sm" data-c="brace">BRACE</button>
+      </div>
+      <div class="actions">
+        <button class="btn sm ghost" data-c="study">STUDY</button>
+        <button class="btn sm ghost" data-c="flee">FLEE</button>
+      </div></div>`;
+  }
+
+  function wirePanel(st, n) {
+    const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
+    on('p-face', () => { Game.startCombat(); rerender(); });
+    screen.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Game.combatRound(b.dataset.c); rerender(); });
+    const go = (kind) => { Game.doAction(kind); rerender(); };
+    on('p-act', () => go('forage'));
+    on('p-treat', () => go('treat'));
+    on('p-rest', () => go('rest'));
+    on('p-wait', () => go('wait'));
+    on('p-eat', () => { Game.eat(); rerender(); });
+    on('p-drink', () => { Game.drinkTreated(); rerender(); });
+    on('p-wild', () => { Game.drinkWild(); rerender(); });
+    screen.querySelectorAll('[data-talk]').forEach(b => b.onclick = () => talkOverlay(b.dataset.talk));
+    on('p-water', () => { Game.villageAction('water'); toast('Skin full. Cold. Clean.'); rerender(); });
+    on('p-fire', () => { Game.villageAction('fire'); rerender(); });
   }
 
   function renderMap(st, tset) {
@@ -332,54 +281,12 @@
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
         const isT = tset.has(x + ',' + y);
         const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + ((tl.maxStock - (tl.stock || 0) > 0) && tl.revealed ? ' spent' : '');
-        const g = isW ? '⚠' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
+        const g = isW ? '🐗' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? '●' : g}</div>`;
       }
       html += '</div>';
     }
     return html;
-  }
-
-  // ---------- combat ----------
-  function combatIntro() {
-    const st = Game.status();
-    screen.innerHTML = `
-      ${bar('scattering://field', `day ${st.day} · ⚠`)}
-      ${statusBars(st)}
-      <h1 class="title" style="font-size:22px">⚠ BULLDOZER ⚠</h1>
-      <p class="small">It crashes from the thicket. It is not going around.</p>
-      <div class="log">${st.log.slice(-3).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
-      <button class="btn" id="b-fight">Face it</button>`;
-    document.getElementById('b-fight').onclick = () => { Game.startCombat(); combatScreen(); };
-  }
-  function combatScreen() {
-    const st = Game.status();
-    const f = Game.fight;
-    if (!f) return gameMain();
-    const mv = S.combat.MOVES[f.telegraph];
-    screen.innerHTML = `
-      ${bar('scattering://combat', `round ${f.round + 1}`)}
-      ${statusBars(st)}
-      <h1 class="title" style="font-size:22px">${f.monster.name.toUpperCase()}</h1>
-      ${statRow('BULLDOZER', f.monster.hp + ' hp', f.monster.hp / f.monster.maxHp * 100, f.monster.hp < 15)}
-      <div class="card warn"><h3>⚠ ${mv.name} incoming</h3><p class="small">${f.studied ? mv.hint : "It shifts — you can't quite read it. (STUDY it.)"}</p></div>
-      <div class="actions">
-        <button class="btn sm" data-c="strike">STRIKE</button>
-        <button class="btn sm" data-c="harry">HARRY</button>
-        <button class="btn sm" data-c="brace">BRACE</button>
-      </div>
-      <div class="actions">
-        <button class="btn sm ghost" data-c="study">STUDY</button>
-        <button class="btn sm ghost" data-c="flee">FLEE</button>
-      </div>
-      <div class="log">${f.log.slice(-4).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
-    screen.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
-      Game.combatRound(b.dataset.c);
-      const s2 = Game.status();
-      if (s2.over) return ending();
-      if (!Game.fight) return gameMain();
-      combatScreen();
-    });
   }
 
   // ---------- codex ----------
@@ -399,10 +306,7 @@
         return `<div class="card codex"><h3>${md.name}</h3><p class="small">System files it as: ${md.systemDesignation || '—'}</p><p>${esc(md.codexStages[m.stage] || '')}</p></div>`;
       }).join('') : ''}
       <button class="btn ghost" id="b-back">Back</button>`;
-    document.getElementById('b-back').onclick = () => {
-      const st = Game.status();
-      if (st.location === 'village') villageScreen(); else gameMain();
-    };
+    document.getElementById('b-back').onclick = () => expeditionScreen();
   }
 
   // ---------- telemetry: the playtest flight recorder ----------
@@ -413,10 +317,7 @@
       <p class="small">Every action, every change. If something felt wrong, it's in here.</p>
       ${tel.map(e => `<p class="term-line small">d${e.day} ${e.part} <b>${e.type}</b> ${e.epithet || e.tile || ''} ${e.plant || e.item || ''}${e.units ? ' x' + e.units : ''}${e.kcal ? ' +' + e.kcal + 'kcal' : ''}${e.ateKcal ? ' ate ' + e.ateKcal : ''} → you ${e.kcal}kcal / pack ${e.packKcal} / pantry ${e.pantry}</p>`).join('') || '<p class="small">No events yet.</p>'}
       <button class="btn ghost" id="b-tback">Back</button>`;
-    document.getElementById('b-tback').onclick = () => {
-      const st = Game.status();
-      if (st.location === 'village') villageScreen(); else gameMain();
-    };
+    document.getElementById('b-tback').onclick = () => expeditionScreen();
   }
 
   // ---------- ending ----------
