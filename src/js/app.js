@@ -208,6 +208,7 @@
       <div class="card"><h3>🏠 HAVEN</h3>
       <p class="small"><i>${v.atmos}</i></p>
       <p class="small">Pantry: ${st.pantryKcal} kcal (${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      <p class="small">Haven survives when: Codex 8+ (${st.codexCount}) · Pantry 5000+ (${st.pantryKcal})</p>
       ${vs.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
         <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`).join('')}
       <div class="btnrow">
