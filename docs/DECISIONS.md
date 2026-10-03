@@ -174,3 +174,45 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   3. **Fan packages** — galactic shop. Sent *for you*; attuned, wacky, never dinner.
   4. **Scavenged/taken** — ruins, other scholars. Base effects only, no bond. Can be re-bonded from 0 — with the System's awkward provenance note: "Unit K-NIFE has been reassigned. Previous attachment data: [REDACTED]. Please form your own attachment."
 - **Other scholars as danger (new):** encounters in the wild — trade, share info, compete, rob, walk away. The System stages these for entertainment (audience votes spike). A desperate scholar with nothing to lose is the most dangerous monster in the game, and the most human. The village hears what you did; the Codex records it; the audience reacts (the audience loves a heel turn — Favor rewards for villainy, which is delightfully dark).
+
+## 2026-10-03 — The worthiness exam: dark path and light path
+
+- **Decision:** The Integration is not just harvesting data — it is conducting a moral evaluation. The System subtly guides each scholar toward becoming the kind of member of the species *worth inheriting the earth and taking a council seat*. Two paths: **cooperation** or **anarchy**. Both are valid. Both can win.
+- **Why:** Steve: the game should guide you toward becoming "the member of the species worth inheriting the earth and taking a seat at the council." This braids the third thread into the win condition (survive the year + uncover the truth + become seat-worthy).
+- **The System doesn't judge — that's the horror.** It builds a temperament profile (prosocial vs dominance markers, trust given/broken, lives saved/taken) and comments on both with equal cheer: "Prosocial behavior detected! The Committee is taking notes!" / "Dominance display detected! The Committee is ALSO taking notes!" It is writing your character reference, not grading your morals. It finds your villain arc as fascinating as your hero arc.
+- **Mechanical expression:**
+  - Temperament is visible only through the System's running commentary — no good/evil meter UI. The mirror is literary, not gamey.
+  - Trials customize to the student: the light path is offered trials of sacrifice; the dark path, trials of cunning.
+  - The village reflects you: a cooperative scholar builds a haven; a dark scholar builds a fortress that fears them.
+  - The scholar-at-the-creek encounter is the recurring exam question: trade or rob? The System keeps asking, in new forms, all game.
+- **Endings (both earned, neither a fail state):**
+  - Light: the Council recognizes humanity as a cooperative species. Seat granted. The village becomes an embassy.
+  - Dark: the Council recognizes humanity as an apex species. Seat granted — under observation. The village becomes a cautionary tale with diplomatic immunity.
+
+## 2026-10-03 — Arc structure + anti-speedrun rule
+
+- **Decision:** The campaign is structured as major arcs, each a large endeavor and a sequential release unit. Proposed skeleton:
+  - **Arc 0 — The Scattering:** onboarding. Home, five items, placement. Short.
+  - **Arc 1 — Seven Days:** pure survival, no System. Prove the loop. (Vertical slice 1.)
+  - **Arc 2 — Integration:** the System arrives. Abilities, trials, audience. The game gets weird.
+  - **Arc 3 — The Neighbors:** other scholars, creek encounters, trade/rob, village politics. Temperament sharpens.
+  - **Arc 4 — The Harvest:** preservation is everything. Stockpile or starve. Galactic shop opens.
+  - **Arc 5 — The Long Dark:** the truth, final trials, the council seat. Endings.
+  - **Epilogue — Syndication:** endless mode.
+- **Anti-speedrun rule:** power buys comfort, never time. Arcs are gated by time and story (the village year is 365 expedition days — you cannot skip winter), not by power. An OP build makes you safe and stylish; the story still takes its year. Each arc adds ONE system (progressive disclosure).
+- **Process (Steve asked):** skeleton first, chapters one at a time. Lock now: pillars, arc list, what carries between arcs (village, Codex, relics, temperament). Do NOT lock now: arc 3+ details, numbers, content volume. Slice 1 will invalidate detailed plans — that's the point of building it first.
+
+## 2026-10-03 — Restructured: the campaign as books (series-scale)
+
+- **Decision:** Replaced the season-chunked arc skeleton with **books** — each a full arc defined by transformation, not time. Steve: arcs 1-4 were a single arc; the story deserves litRPG-series scale.
+- **Why:** An arc is a transformation + a mechanical addition + a question raised and answered. Seasons are pacing, not story. Each book is a sequential release unit with its own climax.
+- **The books:**
+  - **Book 1 — The Scattering:** victim → survivor. Arrive, learn to eat, the village forms. Climax: survive the first season. Ends as the sky changes again.
+  - **Book 2 — Integration:** survivor → contestant. The System's joyous tune, abilities, trials, audience. Climax: first evaluation. The temperament question asked explicitly.
+  - **Book 3 — The Neighbors:** contestant → citizen. Other villages, other scholars, trade/politics/robbery. The dark/light path truly diverges — it's about people now. Climax: the first moot, or the first war.
+  - **Book 4 — The Deep Wilds:** citizen → power. New biomes, bigger monsters, build comes online, relic bonding deepens. Climax: the first real clue about the System.
+  - **Book 5 — The Truth:** power → understanding. The alien end goal unfolds — the Burn, the scattering, the council. The earnest mask slips (or doesn't, which is worse). Climax: you know. Now choose.
+  - **Book 6 — The Seat:** understanding → judgment. The final evaluation, the Long Dark as crucible, dark and light converge on the council. Endings. The village's fate.
+  - **Epilogue — Syndication:** endless mode.
+- **Refinement:** the campaign spans multiple expedition years, not one. "Survive the first year" becomes Book 1's climax, not the game's win. The win remains the council seat — earned over years, not months. This is also the deeper anti-speedrun: even OP builds take years; power buys comfort and style, never time.
+- **Each book answers a question and raises a bigger one:** Can I eat? → What is the game? → Who are my people? → What's out there? → Why? → What will I do?
