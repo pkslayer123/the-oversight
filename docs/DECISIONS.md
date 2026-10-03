@@ -505,3 +505,16 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   - **Stage 4 — Full tileset:** only if earned. The game must prove it needs it.
 - **Triggers (v1, provisional):** stage advances on Codex depth + days survived, never on timers. HUD elements unlock with systems: the energy/mana bar appears when the mana system arrives, combat maneuvers appear with the first technique, Haven panel gains depth as relationships grow.
 - **Why:** Steve: "Start simple, but it would be cool if as you progress, the game graphics and interface keep getting better and better." Solo-dev finishable stays the constraint — each stage is a contained art task, never a rewrite. And the real leverage: staging lets us put more into the later stages *if* the game catches people's interest — art investment follows validated interest, not the other way around.
+
+## 2026-10-03 — Simulation pass: the economy was broken, now it's honest
+
+- **Built:** `scripts/simulate.js` — bots play the full loop (random vs greedy), plus a per-tile EV table from 2000 real forage samples. Answers: win rate, days, pantry trajectory, and the actual math of every tile.
+- **Found (bugs):**
+  - Yields were 5x too high (grove ~3000 kcal/forage). A random button-masher won 50% on day one. Cut units 10-18 → 5-8. Grove now ~1140/forage, stock 3.
+  - `villageLost` never reset in `newGame` — lose once, every later run broken without refresh. Fixed (also reset wanderer/fight/pendingEncounter).
+  - (My own surgery briefly gutted `endDay`; restored from commit. The sim caught it.)
+- **Found (design):** Map gen was pure RNG — a bad roll could doom you with no good land near home. Fixed thematically: Haven was built where the land is good; a grove is now guaranteed adjacent to home (the breadbasket). Twelve people didn't settle on barren ground.
+- **The math (EV per forage):** grove 1144 (stock 3) > wetland 789 (2) > creek 758 (2) > thicket 532 (2) > meadow 515 (2) > forest floor 483 (1) > trail 361 (2). Daily need: 3000 (2200 scholar + 800 village). A good day (3x grove + travel) nets ~+1200 to pantry. Win (8 codex + 5000 pantry) takes ~5-7 good days.
+- **Results:** greedy bot 23% win / 14 days; random 0%. The bot doesn't learn; a human with Codex memory should beat it. Balance is "earned, not given" — in range for slice 1.
+- **Visible stakes:** Haven panel now shows the win condition (Codex 8+, Pantry 5000+) with live progress. You can't want what you can't see.
+- **Why:** Steve asked for the math behind the cadences and whether this analysis was needed. It was — the sim found the game had no economic tension at all, just UI confusion masquerading as difficulty.

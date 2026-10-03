@@ -352,8 +352,7 @@
         tile.visited = true;
         const arr = ARRIVAL[tile.type];
         msg += `\n— ${arr.title} —\n${tile.ruinStory || arr.text}`;
-        if (tile.type === 'creek') this.noteCodex('water', 'Moving water. The Codex notes: safer than still.');
-        if (tile.type === 'grove') this.noteCodex('grove', 'Nut trees. The Codex does the math.');
+        // no free lessons on arrival — the land teaches when you work it, not when you walk in.
       }
       this.say(msg);
       if (tile.type === 'haven') this.returnToVillage();
@@ -371,6 +370,25 @@
       const codex = Object.keys(this.state.codex.plants || {}).length;
       if (codex >= 8) return 1;
       return 0;
+    },
+
+    // the journal becomes the Codex at four entries. before that it's just your handwriting.
+    journalName() {
+      return Object.keys(this.state.codex.plants || {}).length >= 4 ? 'Codex' : 'Journal';
+    },
+
+    // tap a close-up tile: what do you know about this ground?
+    tileInfo(x, y) {
+      const t = this.tileAt(x, y);
+      if (!t.revealed) return { name: 'Unknown ground', text: 'Fog. You haven\'t seen this ground yet.' };
+      const epithet = this.nodeEpithet(x, y);
+      if (t.type === 'haven') return { name: 'Haven', text: 'Home. Twelve people, one fire.' };
+      if (t.type === 'ruin') return { name: epithet, text: (t.loot || []).length ? 'Pre-Burn ruin. There might be cans left.' : 'Pre-Burn ruin. Picked clean.' };
+      if (t.knownPlant) {
+        const kp = this.data.plants.find(p => p.id === t.knownPlant);
+        if (kp) return { name: epithet, text: `${kp.name} country — you found ${kp.name.toLowerCase()} here. Your ${this.journalName().toLowerCase()} remembers.` };
+      }
+      return { name: epithet, text: `${S.TILE_NAME[t.type]}. You haven't worked this ground — no idea what's edible here yet.` };
     },
 
     nodeEpithet(x, y) {
@@ -537,10 +555,18 @@
         const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty);
         const kg = r.units * 0.1;
         if (!this.canCarry(kg)) { t.stock += 1; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
-        if (r.firstFind) this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
-        // the Codex labels the place: what grows here is now written on the map
-        t.knownPlant = r.plantId; t.bountyKnown = true;
-        if (bounty && bounty.why) this.say(`Codex: ${bounty.why}`);
+        if (r.firstFind) {
+          this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
+          // the journal becomes a CODEX at four entries — the System notices, names it.
+          if (Object.keys(this.state.codex.plants).length === 4)
+            this.say('SYSTEM: Journal designated CODEX. Four entries. What you write, the village keeps.');
+        }
+        // discovery labels the place: the FIRST thing you found here is what the map remembers.
+        // the land's "why" comes after you've found something, not before.
+        if (!t.knownPlant) {
+          t.knownPlant = r.plantId; t.bountyKnown = true;
+          if (bounty && bounty.why) this.say(`Journal: ${bounty.why}`);
+        }
         scholar.inventory.push({ plantId: r.plantId, units: r.units, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         msg = r.message + ` (${r.kcal} kcal to your pack — eat up.)` + (r.firstFind ? ` (${r.plant.codex})` : '');

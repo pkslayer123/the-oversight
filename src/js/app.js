@@ -165,20 +165,35 @@
       ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
       <p class="small">${st.dayPartHint}</p>
       ${statusBars(st)}
-      <div class="map">${renderMap(st, tset)}</div>
-      <p class="small">tap a highlighted tile to travel (1 part · 30 kcal/tile)</p>
+      <p class="small">👁 ${esc(Game.nodeDetail().epithet)} — tap a tile to inspect it</p>
+      <div class="closeup">${renderCloseup(st)}</div>
+      <div id="tileinfo"></div>
+      <p class="small">🗺 travel — tap a highlighted tile (1 part · 30 kcal/tile)</p>
+      <div class="map minimap">${renderMap(st, tset)}</div>
       ${panelFor(st, n)}
       <div class="actions">
-        <button class="btn sm ghost" id="x-codex">Codex (${st.codexCount})</button>
+        <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
       </div>
       <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
 
-    screen.querySelectorAll('.tile').forEach(el => {
+    screen.querySelectorAll('.minimap .tile').forEach(el => {
       el.onclick = () => {
         const x = +el.dataset.x, y = +el.dataset.y;
         if (x === st.px && y === st.py) return;
         if (!Game.travelTo(x, y)) { toast('Not reachable — 3 tiles max, through scouted ground.'); return; }
         rerender();
+      };
+    });
+    // the close-up is for looking, not walking: tap a tile to inspect what you know
+    screen.querySelectorAll('.closeup .tile').forEach(el => {
+      el.onclick = () => {
+        const x = +el.dataset.x, y = +el.dataset.y;
+        if (x < 0 || y < 0) return;
+        const info = Game.tileInfo(x, y);
+        document.getElementById('tileinfo').innerHTML = `
+          <div class="card"><h3>${esc(info.name)}</h3><p class="small">${esc(info.text)}</p>
+          <button class="btn ghost sm" id="ti-close">Put it down</button></div>`;
+        document.getElementById('ti-close').onclick = () => { document.getElementById('tileinfo').innerHTML = ''; };
       };
     });
     document.getElementById('x-codex').onclick = codexScreen;
@@ -269,6 +284,31 @@
     on('p-fire', () => { Game.villageAction('fire'); rerender(); });
   }
 
+  // close-up: 5x5 neighborhood, the world you actually inhabit. tap to inspect.
+  function renderCloseup(st) {
+    let html = '';
+    for (let dy = -2; dy <= 2; dy++) {
+      html += '<div class="mrow">';
+      for (let dx = -2; dx <= 2; dx++) {
+        const x = st.px + dx, y = st.py + dy;
+        if (x < 0 || y < 0 || x > 6 || y > 6) { html += '<div class="tile offmap">·</div>'; continue; }
+        const tl = Game.tileAt(x, y);
+        const isMe = dx === 0 && dy === 0;
+        const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
+        const cls = 'tile' + (isMe ? ' here' : '') + (tl.revealed ? '' : ' fog') + (isW ? ' beast' : '') + ((tl.maxStock - (tl.stock || 0) > 0) && tl.revealed ? ' spent' : '');
+        const g = isW ? '🐗' : (isMe ? '●' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?'));
+        let label = '';
+        if (tl.revealed && tl.knownPlant && !isW) {
+          const kp = Game.data.plants.find(pp => pp.id === tl.knownPlant);
+          if (kp) label = `<div class="tlabel">${esc(kp.name)}</div>`;
+        }
+        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}${label}</div>`;
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
   function renderMap(st, tset) {
     let html = '';
     for (let y = 0; y < 7; y++) {
@@ -293,8 +333,8 @@
     const mons = Game.state.codex.monsters || {};
     screen.innerHTML = `
       ${bar('scattering://codex', entries.length + ' entries')}
-      <h1 class="title" style="font-size:22px">CODEX</h1>
-      <p class="small"><i>field journal — your handwriting. what you learned, the village keeps.</i></p>
+      <h1 class="title" style="font-size:22px">${Game.journalName().toUpperCase()}</h1>
+      <p class="small"><i>${Game.journalName() === 'Codex' ? 'the village keeps what you write. the System is watching.' : 'field journal — your handwriting. what you learned, so far just yours.'}</i></p>
       ${entries.length ? entries.map(e => `
         <div class="card codex"><h3>${e.name} <span class="small">· ${e.kcal} kcal/${e.unit}</span></h3>
         <p class="small"><b>Prep:</b> ${e.prep || '—'}</p><p>${e.text}</p></div>`).join('')

@@ -87,6 +87,9 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .tile.spent { opacity: .45; }
 .tile:active { background: var(--line); }
 .cost { font-size: 10px; opacity: .7; font-weight: normal; }
+.closeup .tile { width: 44px; height: 44px; font-size: 22px; }
+.minimap .tile { width: 26px; height: 26px; font-size: 13px; }
+.minimap .tlabel { display: none; }
 
 /* close-up: the node you're on, zoomed — 5x5 neighborhood, you at the center */
 .closeup { margin: 12px 0; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: var(--bg2); }

@@ -31,14 +31,10 @@
       const fav = (bounty && bounty.favored === pid) ? 4 : 1;
       table[pid] = w * aff * fav;
     }
-    // first touch at a bounty: you find what the land promised. the Codex said hickory country — it's hickory.
-    let plantId;
-    if (bounty && bounty.favored && !tile.bountySampled && table[bounty.favored]) {
-      plantId = bounty.favored;
-      tile.bountySampled = true;
-    } else {
-      plantId = weightedPick(table);
-    }
+    // discovery, not given: the first forage is pure luck. AFTER you find something,
+    // you know where to look — the known plant gets 3x weight on later visits.
+    if (tile.knownPlant && table[tile.knownPlant]) table[tile.knownPlant] *= 3;
+    const plantId = weightedPick(table);
     const plant = plants.find(x => x.id === plantId);
 
     let units = 5 + Math.floor(Math.random() * 4); // 5-8: a day-part is ~3hrs of volume work; a knowing forager gathers real food, not a truckload
