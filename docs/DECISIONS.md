@@ -465,3 +465,11 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 
 - **Decision:** Each epithet maps to a bounty (favored plant 3x weight + richness 0.7-1.4x yield + a "why"). Real ecology: edge thickets → blackberries (edge effect), creekside → cattails (riparian), old pasture → dandelions (disturbed ground), deep grove → hickory (mast), forest floor → poor (deep shade). The why is taught via Codex on first forage. Foraging a tile labels it: tile.knownPlant renders as a tiny Codex label on the close-up map, and the node "Here:" line reads "dandelion country".
 - **Why:** Steve: geographic persistence should intelligently assign forage chances; the Codex should label the detailed map. The player who learns WHERE to look is learning real foraging. Stats: favored plant 14/40 picks; rich ground yields ~2x poor.
+
+## 2026-10-03 — Open expeditions: no fixed length
+
+- **Decision:** Removed the 7-day timer entirely. Expeditions are player-length: depart, roam, walk home when you choose (costs the rest of the day). The village eats 800 kcal/day while you're out (the pantry clock is the arc). 3 hungry days → Haven scatters (lose). Win: 8+ Codex entries + 5000+ pantry on return — "Haven will make it." Earned, not timed.
+- **Why:** Steve: "An expedition shouldn't be forced to a fixed length, not even the first one." The fixed timer contradicted our own rule (gates earned, never timed).
+- **Economy:** richness now has a type-based floor (grove 1.5, wetland 1.4...) + water bonus, so every map grows food; skill finds the best food. Top richness 1.8, favored plant 4x weight. Skilled play nets ~+200/day over the 3000 need — tight but positive. Real scarcity.
+- **Save:** unified on the engine's versioned S.state.save (state.run holds map/dayPart/location/log). Fixed a real collision: two writers, one key, incompatible formats. Also removed the engine's duplicate village-eating (6600/day!) — game.js villageEats is the single owner.
+- **Quest/title:** Mara's quest no longer says "seven days"; title says "open expeditions."

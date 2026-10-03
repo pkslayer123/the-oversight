@@ -45,7 +45,7 @@
       ${Game.hasSave() ? '<button class="btn" id="b-cont">Continue Expedition</button>' : ''}
       <button class="btn ghost" id="b-codex0">Codex</button>
       <button class="btn ghost" id="b-about">About</button>
-      <p class="small" style="margin-top:20px">slice 1: seven days. forage · eat · drink · survive.</p>`;
+      <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
     const bc = document.getElementById('b-cont');
     if (bc) bc.onclick = () => { if (Game.load()) { Game.status().location === 'village' ? villageScreen() : gameMain(); } };
@@ -174,20 +174,16 @@
         <p class="small">● <b>Haven</b> — you are here</p>
         <p class="small">○ <b>The Wilds</b> — 7×7 region, fog-of-war, one bulldozer (probably)</p>
       </div>
-      ${st.departed
-        ? `<div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
-           <button class="btn" id="b-end">Rest by the fire</button>`
-        : `<div class="btnrow">
-             <button class="btn sm" id="b-water">Fill water</button>
-             <button class="btn sm" id="b-fire">Sit by the fire</button>
-           </div>
-           <button class="btn" id="b-depart">Head into the wilds</button>`}
+      ${st.log.length ? `<div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>` : ''}
+      <div class="btnrow">
+        <button class="btn sm" id="b-water">Fill water</button>
+        <button class="btn sm" id="b-fire">Sit by the fire</button>
+      </div>
+      <button class="btn" id="b-depart">Head into the wilds</button>
       <button class="btn ghost" id="b-codex2">Codex (${v.codexN})</button>`;
     screen.querySelectorAll('[data-talk]').forEach(b => b.onclick = () => talkOverlay(b.dataset.talk));
     const dep = document.getElementById('b-depart');
     if (dep) dep.onclick = () => { Game.depart(); gameMain(); };
-    const end = document.getElementById('b-end');
-    if (end) end.onclick = () => ending();
     const wat = document.getElementById('b-water');
     if (wat) wat.onclick = () => { Game.villageAction('water'); toast('Skin full. Cold. Clean.'); villageScreen(); };
     const fir = document.getElementById('b-fire');
@@ -215,7 +211,9 @@
       ${statusBars(st)}
       <div class="map">${renderMap(st, tset)}</div>
       <p class="small">📍 ${S.TILE_NAME[t.type]} — tap a highlighted tile to travel (costs the ${st.dayPart}); tap ● to look around</p>
+      <p class="small">🏠 Haven pantry: ${st.pantryKcal} kcal (${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <div class="actions">
+        <button class="btn sm" id="a-home">🏠 Walk home</button>
         <button class="btn sm ghost" id="a-codex">Codex (${st.codexCount})</button>
       </div>
       <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
@@ -234,6 +232,12 @@
       };
     });
     document.getElementById('a-codex').onclick = codexScreen;
+    document.getElementById('a-home').onclick = () => {
+      Game.walkHome();
+      const s2 = Game.status();
+      if (s2.over) return ending();
+      villageScreen();
+    };
   }
 
   // ---------- node detail: each tile is a node; this is its detail screen ----------

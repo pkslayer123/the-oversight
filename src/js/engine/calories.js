@@ -42,13 +42,8 @@
       scholar.energy = Math.max(0, scholar.energy - 30);
       warnings.push('DEHYDRATED: find and treat water today.');
     }
-    // village eats too — 2200 kcal per living villager per day
-    const mouths = village.villagers.length;
-    village.pantryKcal -= mouths * 2200;
-    if (village.pantryKcal < 0) {
-      village.pantryKcal = 0;
-      warnings.push('VILLAGE HUNGRY: the pantry is empty. Someone will weaken soon.');
-    }
+    // village metabolism lives in game.js (villageEats) — single owner, tuned net drain.
+    // the engine only runs the scholar's own body here.
     return { ok: scholar.health > 0, warnings };
   }
 

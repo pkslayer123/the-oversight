@@ -173,40 +173,51 @@
         this.say(`You don't come back. The clearing is quieter. The Codex keeps what you wrote down.`);
         this.say(`Mara: "We buried what the woods sent back."`);
       }
-      else this.say(`You walk back into Haven early. ${entries} Codex entries. The village is glad to see you.`);
-      this.wipe(); // expedition over — no continuing a finished run
+      else {
+        this.say(`You walk back into Haven. ${entries} Codex entries. The village is glad to see you.`);
+        // win: the Codex is substantial and the pantry is secure — Haven will make it. earned, not timed.
+        if (entries >= 8 && this.state.village.pantryKcal >= 5000 && !this.over) {
+          this.over = true; this.won = true;
+          this.say('Mara looks at the pantry, then at the Codex, then at you. "We\'re going to make it." Haven will survive — because someone learned the land, and wrote it down.');
+        }
+      }
+      if (this.over) this.wipe(); // finished runs don't continue
       return this.status();
     },
 
-    // --- autosave: the phone kills background tabs. a 7-day run must survive a refresh. ---
+    // --- autosave: one writer, one format. run data lives in state.run ---
+    // the phone kills background tabs; an expedition must survive a refresh.
+    syncRun() {
+      this.state.run = {
+        map: this.map, dayPart: this.dayPart, location: this.location,
+        departed: this.departed, log: this.log.slice(-40),
+        homeRegion: this.homeRegion, villagerId: this.villagerId,
+        encounterDone: this.encounterDone, wanderer: this.wanderer || null,
+        talkIdx: this.state.talkIdx || {}, fireIdx: this.state.fireIdx || 0,
+        questGiven: !!this.state.questGiven,
+      };
+    },
     save() {
       if (this.over) return;
-      try {
-        localStorage.setItem('scattering-save-v1', JSON.stringify({
-          state: this.state, map: this.map, dayPart: this.dayPart, ap: this.ap,
-          location: this.location, departed: this.departed, log: this.log.slice(-40),
-          homeRegion: this.homeRegion, villagerId: this.villagerId,
-          encounterDone: this.encounterDone,
-        }));
-      } catch (e) { /* storage full or unavailable — play on without it */ }
+      this.syncRun();
+      S.state.save(this.state);
     },
     hasSave() {
-      try { return !!localStorage.getItem('scattering-save-v1'); } catch (e) { return false; }
+      try { return !!S.state.load(); } catch (e) { return false; }
     },
     load() {
-      let raw = null;
-      try { raw = localStorage.getItem('scattering-save-v1'); } catch (e) { return false; }
-      if (!raw) return false;
-      const d = JSON.parse(raw);
-      this.state = d.state; this.map = d.map; this.dayPart = d.dayPart; this.ap = d.ap;
-      this.location = d.location; this.departed = d.departed; this.log = d.log || [];
-      this.homeRegion = d.homeRegion; this.villagerId = d.villagerId;
-      this.encounterDone = d.encounterDone; this.over = false; this.won = false;
+      const s = S.state.load();
+      if (!s || !s.run) return false;
+      this.state = s;
+      const r = s.run;
+      this.map = r.map; this.dayPart = r.dayPart; this.location = r.location;
+      this.departed = r.departed; this.log = r.log || [];
+      this.homeRegion = r.homeRegion; this.villagerId = r.villagerId;
+      this.encounterDone = r.encounterDone; this.wanderer = r.wanderer || null;
+      this.over = false; this.won = false;
       return true;
     },
-    wipe() {
-      try { localStorage.removeItem('scattering-save-v1'); } catch (e) {}
-    },
+    wipe() { S.state.wipe(); },
 
     genMap() {
       // Procedural with logic: creek flows, wetlands hug water, groves cluster,
@@ -348,27 +359,41 @@
     },
 
     // --- bounty: the land's character drives what's findable. real ecology. ---
-    // edge effect, riparian zones, disturbed ground, mast — the player who learns
-    // WHERE to look is learning actual foraging, not RNG.
-    bountyFor(epithet) {
-      const B = {
-        'creekside grove': { favored: 'cattail', richness: 1.4, why: 'Riparian ground. Water means life, and lunch.' },
-        'drowned grove': { favored: 'cattail', richness: 1.3, why: 'Wet feet, full pantry.' },
-        'deep grove': { favored: 'hickory_nut', richness: 1.4, why: 'Mast country. The old trees feed everything.' },
-        'orchard ruin': { favored: 'persimmon', richness: 1.2, why: 'Someone planted food here once. The trees remember.' },
-        'old pasture': { favored: 'dandelion', richness: 1.4, why: 'Disturbed ground grows good weeds.' },
-        'creek meadow': { favored: 'wild_onion', richness: 1.2, why: 'Open ground by water — the onion beds.' },
-        'open meadow': { favored: 'wild_onion', richness: 1.0 },
-        'creek bend': { favored: 'cattail', richness: 1.2, why: 'Slow water. The cattails stand thick.' },
-        'the shallows': { favored: 'cattail', richness: 1.3 },
-        'creekmouth marsh': { favored: 'cattail', richness: 1.4, why: 'Where the creek spreads out, the starch grows.' },
-        'still marsh': { favored: 'cattail', richness: 1.2 },
-        'edge thicket': { favored: 'blackberry', richness: 1.4, why: 'Edge habitat. Berries grow where the light gets in.' },
-        'heart thicket': { favored: 'muscadine', richness: 1.1 },
-        'the old trail': { favored: 'chickweed', richness: 1.0, why: 'Trampled ground. The humble weeds win.' },
-        'forest floor': { favored: 'wood_sorrel', richness: 0.7, why: 'Deep shade. The floor keeps its secrets.' },
+    // richness has a floor from the terrain itself + a bonus for good neighbors.
+    // every map grows food; the skilled player finds the BEST food.
+    bountyFor(x, y) {
+      const t = this.tileAt(x, y);
+      const epithet = this.nodeEpithet(x, y);
+      const FAVORED = {
+        'creekside grove': ['cattail', 'Riparian ground. Water means life, and lunch.'],
+        'drowned grove': ['cattail', 'Wet feet, full pantry.'],
+        'deep grove': ['hickory_nut', 'Mast country. The old trees feed everything.'],
+        'orchard ruin': ['persimmon', 'Someone planted food here once. The trees remember.'],
+        'old pasture': ['dandelion', 'Disturbed ground grows good weeds.'],
+        'creek meadow': ['wild_onion', 'Open ground by water — the onion beds.'],
+        'open meadow': ['wild_onion', null],
+        'creek bend': ['cattail', 'Slow water. The cattails stand thick.'],
+        'the shallows': ['cattail', null],
+        'creekmouth marsh': ['cattail', 'Where the creek spreads out, the starch grows.'],
+        'still marsh': ['cattail', null],
+        'edge thicket': ['blackberry', 'Edge habitat. Berries grow where the light gets in.'],
+        'heart thicket': ['muscadine', null],
+        'the old trail': ['chickweed', 'Trampled ground. The humble weeds win.'],
+        'forest floor': ['wood_sorrel', 'Deep shade. The floor keeps its secrets.'],
       };
-      return B[epithet] || null;
+      const base = { grove: 1.5, wetland: 1.4, creek: 1.3, meadow: 1.3, thicket: 1.2, trail_edge: 1.0, forest_floor: 0.8 }[t.type] || 1.0;
+      // water bonus: neighbors with creek/wetland
+      let bonus = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+        const nt = this.tileAt(nx, ny).type;
+        if (nt === 'creek' || nt === 'wetland') { bonus = 0.3; break; }
+      }
+      const f = FAVORED[epithet];
+      if (!f) return null;
+      return { favored: f[0], richness: Math.round((base + bonus) * 10) / 10, why: f[1] };
     },
 
     // --- node detail: each tile is a node; arriving reveals its detail ---
@@ -461,7 +486,7 @@
         }
         if (!S.forage.canForage(t)) { this.say('Nothing left to forage here today.'); return null; }
         t.foraged = true;
-        const bounty = this.bountyFor(this.nodeEpithet(this.map.px, this.map.py));
+        const bounty = this.bountyFor(this.map.px, this.map.py);
         const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty);
         const kg = r.units * 0.1;
         if (!this.canCarry(kg)) { t.foraged = false; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
@@ -545,30 +570,56 @@
       return this.status();
     },
 
+    // village metabolism: 12 people, tight rations, net 800 kcal/day from the pantry.
+    // expeditions are open-ended — the pantry clock is the arc, not a timer.
+    villageEats() {
+      const v = this.state.village;
+      v.pantryKcal = Math.max(0, v.pantryKcal - 800);
+      if (v.pantryKcal <= 0) {
+        v.hungryDays = (v.hungryDays || 0) + 1;
+        this.say(`⚠ Haven's pantry is empty. Day ${v.hungryDays} of hunger.`);
+        if (v.hungryDays >= 3) {
+          this.over = true; this.villageLost = true;
+          this.say('Haven couldn\'t hold. On the third hungry day, people started walking — in different directions. The scattering, again.');
+          this.wipe();
+        }
+      } else {
+        if (v.hungryDays) this.say('Haven eats again. The hollow look fades.');
+        v.hungryDays = 0;
+      }
+    },
+
     endDay() {
       const scholar = this.state.scholar;
       // reset forage flags
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.map.tiles[y][x].foraged = false;
-      // evening: auto-eat prompt handled by UI; run metabolism
+      // evening: run metabolism
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
-      S.state.save(this.state);
+      // the village eats whether you're there or not — every day you're out, twelve mouths
+      this.villageEats();
+      if (this.villageLost) { return this.status(); } // no home to return to
+      if (this.over) { this.returnToVillage(); return this.status(); }
       if (!res.ok || scholar.health <= 0) {
         this.over = true;
         this.say('You didn\'t make it. The village remembers. The Codex keeps what you brought home.');
         this.returnToVillage();
         return this.status();
       }
-      if (scholar.day >= 7) {
-        this.over = true; this.won = true;
-        this.say('Seven days. You ate, you drank, you came back. The village eats because of you.');
-        this.returnToVillage();
-        return this.status();
-      }
       scholar.day += 1;
       this.dayPart = 0; this.ap = 1;
       this.say(`— DAY ${scholar.day} DAWN — ${DAY_PART_HINT.dawn}`);
+      this.save();
       return this.status();
+    },
+
+    // walk home: consumes the rest of the day. the walk takes the light.
+    walkHome() {
+      if (this.over || this.location !== 'wilds') return null;
+      this.say('You turn toward home. The walk takes the rest of the light.');
+      this.returnToVillage();
+      if (this.over) return this.status();
+      return this.endDay();
     },
 
     // --- combat ---
@@ -615,6 +666,9 @@
         water: s.water || 0,
         inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
         invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
+        pantryKcal: Math.round(this.state.village.pantryKcal),
+        pantryDays: (this.state.village.pantryKcal / 800).toFixed(1),
+        hungryDays: this.state.village.hungryDays || 0,
         packKg: Math.round(this.packWeight() * 10) / 10,
         packCap: this.packCapacity(),
         px: this.map.px, py: this.map.py,

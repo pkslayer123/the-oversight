@@ -28,13 +28,13 @@
       const p = plants.find(x => x.id === pid);
       if (!p) continue;
       const aff = (p.tileAffinity || []).includes(tile.type) ? 2 : 1;
-      const fav = (bounty && bounty.favored === pid) ? 3 : 1;
+      const fav = (bounty && bounty.favored === pid) ? 4 : 1;
       table[pid] = w * aff * fav;
     }
     const plantId = weightedPick(table);
     const plant = plants.find(x => x.id === plantId);
 
-    let units = 8 + Math.floor(Math.random() * 9); // 8-16: a day-part is ~3hrs of volume work; a knowing forager gathers real food
+    let units = 10 + Math.floor(Math.random() * 9); // 10-18: a day-part is ~3hrs of volume work; a knowing forager gathers real food
     if (bounty && bounty.richness) units = Math.round(units * bounty.richness); // rich ground feeds better
     units = Math.round(S.modifiers.resolve(units, 'forage.yield', mods, ctx));
     units = Math.max(1, units);
