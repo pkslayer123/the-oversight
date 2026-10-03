@@ -302,12 +302,11 @@
     },
 
     travelTo(x, y) {
-      if (this.ap < 1 || this.over) return null;
+      if (this.over) return null;
       const t = this.travelTargets().find(t => t.x === x && t.y === y);
       if (!t) return null;
       this.map.px = x; this.map.py = y;
       this.reveal(x, y);
-      this.ap -= 1;
       const tile = this.playerTile();
       this.state.scholar.kcal -= 40 * t.d; // distance has a metabolic price
       let msg = `Travel ${t.d} tile${t.d > 1 ? 's' : ''} to ${S.TILE_NAME[tile.type]}.`;
@@ -320,7 +319,26 @@
       }
       this.say(msg);
       this.checkEncounter();
-      return msg;
+      // travel consumes the day-part — time passes, no separate "end part" tap
+      return this.endDayPart();
+    },
+
+    // --- node detail: each tile is a node; arriving reveals its detail ---
+    nodeDetail() {
+      const t = this.playerTile();
+      const arr = ARRIVAL[t.type];
+      const here = [];
+      if (t.type === 'ruin') here.push((t.loot || []).length ? `${t.loot.length} can(s) left` : 'picked clean');
+      else if (S.forage.canForage(t)) here.push('forageable');
+      else if (t.foraged) here.push('foraged clean');
+      if (t.type === 'creek' || t.type === 'wetland') here.push('water to treat');
+      if (this.wanderer && this.wanderer.x === this.map.px && this.wanderer.y === this.map.py) here.push('⚠ something big is here');
+      return {
+        type: t.type, title: arr.title, text: t.ruinStory || arr.text, here,
+        isRuin: t.type === 'ruin',
+        canForage: t.type === 'ruin' ? (t.loot || []).length > 0 : S.forage.canForage(t),
+        canTreat: t.type === 'creek' || t.type === 'wetland',
+      };
     },
 
     noteCodex(kind, text) {
@@ -370,9 +388,9 @@
     },
     canCarry(kg) { return this.packWeight() + kg <= this.packCapacity(); },
 
-    // --- actions (1 AP) ---
+    // --- actions: each one consumes the day-part and advances time ---
     doAction(kind) {
-      if (this.ap < 1 || this.over) return null;
+      if (this.over) return null;
       const scholar = this.state.scholar;
       let msg = '';
       if (kind === 'forage') {
@@ -386,7 +404,7 @@
           scholar.inventory.push({ plantId: lootId, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg });
           scholar.kcal -= 100;
           msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
-          this.ap -= 1; this.say(msg); return msg;
+          this.say(msg); return this.endDayPart();
         }
         if (!S.forage.canForage(t)) { this.say('Nothing left to forage here today.'); return null; }
         t.foraged = true;
@@ -402,6 +420,8 @@
         scholar.health = Math.min(100, scholar.health + 5);
         scholar.kcal -= 50;
         msg = 'You rest. Breath slows. +30 energy.';
+      } else if (kind === 'wait') {
+        msg = 'You wait. The light changes. Nothing asks anything of you.';
       } else if (kind === 'treat') {
         const t = this.playerTile();
         if (t.type !== 'creek' && t.type !== 'wetland') { this.say('Need moving water — find a creek or wetland.'); return null; }
@@ -409,10 +429,9 @@
         scholar.kcal -= S.calories.ACTION_COSTS.treat_water;
         msg = 'You boil water over a small fire. +2 clean water.';
       }
-      this.ap -= 1;
       this.say(msg);
-      this.save();
-      return msg;
+      // the action took the day-part — time passes, no separate "end part" tap
+      return this.endDayPart();
     },
 
     // --- free minors ---

@@ -448,3 +448,10 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Why:** Steve: "Haven isn't alive yet. Nothing to do there. Nothing to talk to. No real intro into the narrative." The quest is the narrative intro the cold open was missing — it answers *why seven days*.
 - **Also:** localStorage autosave (save on action/day-part/depart, Continue on title, wipe on game over). Phones kill background tabs; a 7-day run must survive a refresh. Builder's "sessionSave P0" was a misread — there was no save at all. Now there is.
 - **Also:** fixed stale "Good boots +1 travel AP" text (never implemented) in villagers.json + items.json.
+
+## 2026-10-03 — Nodes redesign: tiles are the nodes, travel consumes time
+
+- **Decision:** Steve corrected the model: the 7x7 tiles ARE the nodes. Tapping a highlighted tile travels there immediately — travel consumes the day-part and advances time automatically. Each node has a detail screen (title, description, what's here, contextual actions). All actions (forage/scavenge/treat/rest/wait) happen on the node and auto-advance. Removed: travel mode toggle, END DAY PART button, AP checks.
+- **Why:** "Having to select travel and then end the day is pretty annoying." "Everything else you should just be able to do on each node. We want less friction, just watching stocks/supplies and making decisions." The map is now a pure decision screen: status + map + log. Every tap is a decision; every decision moves time.
+- **Wait:** explicit WAIT action (passes the part, no cost/benefit) replaces END PART. Rest is the recovery choice (costs kcal).
+- **Sim check:** 4/6 wins with a no-combat bot; deaths on days 5-6, close. Difficulty feels right for slice 1.

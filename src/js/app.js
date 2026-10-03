@@ -185,7 +185,7 @@
       <button class="btn ghost" id="b-codex2">Codex (${v.codexN})</button>`;
     screen.querySelectorAll('[data-talk]').forEach(b => b.onclick = () => talkOverlay(b.dataset.talk));
     const dep = document.getElementById('b-depart');
-    if (dep) dep.onclick = () => { Game.depart(); gameMain(true); };
+    if (dep) dep.onclick = () => { Game.depart(); gameMain(); };
     const end = document.getElementById('b-end');
     if (end) end.onclick = () => ending();
     const wat = document.getElementById('b-water');
@@ -196,59 +196,92 @@
   }
 
   // ---------- main game ----------
-  let travelMode = false;
-  function gameMain(first) {
+  // ---------- main game: the map is the decision screen ----------
+  // tap a highlighted tile → travel there (time passes) → node detail
+  // tap your ● → node detail. every action consumes the day-part; no "end part" button.
+  function gameMain() {
     const st = Game.status();
     if (st.over) return ending();
     if (st.pendingEncounter) return combatIntro();
     if (st.inCombat) return combatScreen();
 
-    const t = Game.playerTile();
-    const canForage = S.forage.canForage(t) && st.ap > 0;
-    const canTreat = (t.type === 'creek' || t.type === 'wetland') && st.ap > 0;
-    const targets = travelMode ? Game.travelTargets() : [];
+    const targets = Game.travelTargets();
     const tset = new Set(targets.map(t => t.x + ',' + t.y));
+    const t = Game.playerTile();
 
     screen.innerHTML = `
       ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
-      <p class="small">${travelMode ? 'Where to? (tap a highlighted tile — travel costs this ' + st.dayPart + ')' : st.dayPartHint}</p>
+      <p class="small">${st.dayPartHint}</p>
       ${statusBars(st)}
       <div class="map">${renderMap(st, tset)}</div>
-      <p class="small">📍 ${S.TILE_NAME[t.type]}${t.foraged ? ' · foraged' : ''} · ${st.ap > 0 ? '1 action left' : 'no actions left'} — <button class="linklike" id="b-endpart">end ${st.dayPart} →</button></p>
+      <p class="small">📍 ${S.TILE_NAME[t.type]} — tap a highlighted tile to travel (costs the ${st.dayPart}); tap ● to look around</p>
       <div class="actions">
-        ${st.ap > 0 ? `
-        <button class="btn sm" id="a-travel">${travelMode ? 'Cancel' : 'Travel'}</button>
-        <button class="btn sm" id="a-forage" ${canForage || (t.type === 'ruin' && st.ap > 0) ? '' : 'disabled'}>${t.type === 'ruin' ? 'Scavenge' : 'Forage'}</button>
-        <button class="btn sm" id="a-treat" ${canTreat ? '' : 'disabled'}>Treat water</button>
-        <button class="btn sm" id="a-rest">Rest</button>` : `<p class="small">Rest those hands. End the ${st.dayPart}.</p>`}
-      </div>
-      <div class="actions">
-        <button class="btn sm ghost" id="a-eat">Eat to full</button>
-        <button class="btn sm ghost" id="a-drink" ${st.water > 0 ? '' : 'disabled'}>Drink clean (${st.water})</button>
-        <button class="btn sm ghost" id="a-wild" ${(t.type === 'creek' || t.type === 'wetland') ? '' : 'disabled'}>Drink wild</button>
         <button class="btn sm ghost" id="a-codex">Codex (${st.codexCount})</button>
       </div>
-      <div class="log">${st.log.map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
+      <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
 
-    // map clicks: only in travel mode
     screen.querySelectorAll('.tile').forEach(el => {
       el.onclick = () => {
-        if (!travelMode) return;
         const x = +el.dataset.x, y = +el.dataset.y;
-        if (Game.travelTo(x, y)) { travelMode = false; gameMain(); }
-        else toast('Not reachable — 3 tiles max, through scouted ground.');
+        const s2 = Game.status();
+        if (x === s2.px && y === s2.py) { nodeScreen(); return; }
+        if (!Game.travelTo(x, y)) { toast('Not reachable — 3 tiles max, through scouted ground.'); return; }
+        const s3 = Game.status();
+        if (s3.over) return ending();
+        if (s3.pendingEncounter) return combatIntro();
+        if (s3.inCombat) return combatScreen();
+        nodeScreen(true);
       };
     });
-    const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = () => { fn(); gameMain(); }; };
-    on('a-travel', () => { travelMode = !travelMode; });
-    on('a-forage', () => Game.doAction('forage'));
-    on('a-treat', () => Game.doAction('treat'));
-    on('a-rest', () => Game.doAction('rest'));
-    on('a-eat', () => Game.eat());
-    on('a-drink', () => Game.drinkTreated());
-    on('a-wild', () => Game.drinkWild());
     document.getElementById('a-codex').onclick = codexScreen;
-    document.getElementById('b-endpart').onclick = () => { travelMode = false; Game.endDayPart(); gameMain(); };
+  }
+
+  // ---------- node detail: each tile is a node; this is its detail screen ----------
+  function nodeScreen(arrived) {
+    const st = Game.status();
+    if (st.over) return ending();
+    if (st.pendingEncounter) return combatIntro();
+    if (st.inCombat) return combatScreen();
+    const n = Game.nodeDetail();
+
+    screen.innerHTML = `
+      ${bar('scattering://node', n.type)}
+      <h1 class="title" style="font-size:22px">${esc(n.title).toUpperCase()}</h1>
+      ${arrived ? `<p><i>${esc(n.text)}</i></p>` : ''}
+      <p class="small">Here: ${n.here.length ? esc(n.here.join(' · ')) : 'nothing obvious'}</p>
+      ${statusBars(st)}
+      <div class="actions">
+        <button class="btn sm" id="n-act" ${n.canForage ? '' : 'disabled'}>${n.isRuin ? 'Scavenge' : 'Forage'}</button>
+        <button class="btn sm" id="n-treat" ${n.canTreat ? '' : 'disabled'}>Treat water</button>
+        <button class="btn sm" id="n-rest">Rest</button>
+        <button class="btn sm" id="n-wait">Wait</button>
+      </div>
+      <div class="actions">
+        <button class="btn sm ghost" id="n-eat">Eat to full</button>
+        <button class="btn sm ghost" id="n-drink" ${st.water > 0 ? '' : 'disabled'}>Drink clean (${st.water})</button>
+        <button class="btn sm ghost" id="n-wild" ${n.canTreat ? '' : 'disabled'}>Drink wild</button>
+        <button class="btn sm ghost" id="n-codex">Codex (${st.codexCount})</button>
+      </div>
+      <button class="btn ghost" id="n-map">Back to map</button>
+      <div class="log">${st.log.slice(-4).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
+
+    // actions consume the day-part → back to the map for the next decision.
+    // failed actions (null) didn't take time → stay here, message is in the log.
+    const go = (kind) => {
+      const r = Game.doAction(kind);
+      if (r === null) nodeScreen();
+      else gameMain();
+    };
+    const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
+    on('n-act', () => go('forage'));
+    on('n-treat', () => go('treat'));
+    on('n-rest', () => go('rest'));
+    on('n-wait', () => go('wait'));
+    on('n-eat', () => { Game.eat(); nodeScreen(); });
+    on('n-drink', () => { Game.drinkTreated(); nodeScreen(); });
+    on('n-wild', () => { Game.drinkWild(); nodeScreen(); });
+    on('n-codex', () => codexScreen());
+    on('n-map', () => gameMain());
   }
 
   function renderMap(st, tset) {
