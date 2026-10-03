@@ -255,3 +255,26 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **The Codex travels with you.** Villages hold degraded copies (telephone game); yours is the master. Teaching/learning knowledge is a mechanic.
 - **Endings branch:** the village you claim at the end — or the nomad ending: no village claims you, but the roads are safe because of you. You belong everywhere and nowhere.
 - **Succession:** on scholar death, the mantle passes from your strongest-bond village. Exiled everywhere? The run gets interesting.
+
+## 2026-10-03 — Smart digest: bond-weighted news, never miss what matters
+
+- **Decision:** The "while you were gone" digest is bond-weighted and tiered. The game tracks who/what you care about (bond values, time, choices) and prioritizes news accordingly. Simplicity rule: the right amount of information — never useless, never overwhelming, never silent on what matters.
+- **Why:** Steve: correct amount of info so the player doesn't feel lost, overwhelmed, or — worst — blindsided about people they bonded with.
+- **Three tiers:**
+  - CRITICAL (always surfaces, interrupts): someone you love died, your village starves, you've been exiled, your deputy betrayed you.
+  - NOTABLE (in the digest): harvest failed, new leader, faction tension.
+  - AMBIENT (village screen only): gossip, minor quarrels.
+- **The System as messenger:** it's watching everyone and loves delivering dramatic news. "We thought you'd want to know: Haven's pantry is empty. The Committee is WORRIED! (The Committee is never worried.)" Bond guarantees delivery — the game never lets a bond go uninformed.
+- **FOMO without punishment:** news informs so you can choose; it never punishes you for being elsewhere. Missing out is the nomad's cost, and the game respects it.
+
+## 2026-10-03 — Party system
+
+- **Decision:** Parties of up to 3 (you + 2). Companions are people, not units — they eat, opine, refuse, bond, die permanently. You lead them; you don't micromanage them.
+- **Why:** Steve: don't neglect the party system. It's where the game's emotional weight lives.
+- **The core tension is caloric:** every member costs ~2200 kcal/day + water. The party is a *calorie decision*. Bring the hunter and you might out-eat the extra mouth. Every expedition asks: is this person worth feeding?
+- **Agency:** companions have opinions about your choices — the dark path costs you good people; they leave. They get tired, argue, bond with each other. They can refuse: "Mara's not doing that. You know she's not doing that."
+- **Permanent death:** they die, they stay dead. The village mourns, the Codex records, the surviving companion remembers — and might blame you.
+- **Simplicity:** party screen = faces + kcal share + status. In the field, companions are modifiers (their abilities join your pipeline) + voices (opinions at decision points). One tap to assign; depth is in who you brought.
+- **Recruitment is relational:** they join from loyalty, debt, boredom, because you asked. Never a "recruit" button.
+- **The party-village tension:** every companion in the field is a worker not at home. The village notices. The demagogue notices.
+- **The System loves parties:** more cast = better television. It names your group without asking: "The Committee has designated your unit: TEAM PERSEVERANCE! Merchandise available!" Fans have favorites; companions earn Favor too.
