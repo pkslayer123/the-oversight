@@ -374,3 +374,16 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **The risk loop:** the further you go, the more you know, the more you stand to lose. Every expedition is a bet; the return journey is the most dangerous part. This is the roguelite extraction tension, native to the fiction.
 - **Knowledge diplomacy:** share/copy entries with non-hostile villages (Book 3+). Copies degrade (telephone game). Strategic choice: raise all boats or hoard your edge. Teaching builds standing; the System watches either way: "Knowledge-sharing metrics: EXEMPLARY!" / "Knowledge-hoarding detected! Strategic! The Committee approves of BOTH!"
 - **Stealing:** dark path can steal another village's Codex. The System is *enthralled*.
+
+## 2026-10-03 — Codex overlay + the teaching mission
+
+- **Decision:** Codex knowledge manifests as **marginalia overlay** — the game annotates the world with what *you* learned. Known plant on a tile: "Forage dandelion (known: safe, 45 kcal)" with prep hints as one-tap options. Unknown: "Forage unknown greens (unidentified — risk?)". Rendered as warm human handwriting-style notes, visually distinct from the cold System overlay: your memory vs their broadcast.
+- **Why:** Steve: Codex should unlock an overlay for correct actions; wants players to actually learn survival from the game.
+- **The overlay remembers; it doesn't play.** It shows what you earned. New biome, thin Codex → the overlay goes quiet. Displacement made visible: your knowledge doesn't travel, but the system does.
+- **The teaching mission (design rules):**
+  - **"Would this work in the woods?" test:** every survival mechanic must model real causal structure (wet wood doesn't burn, moving water is safer). Decisions, not chores — true principles, not fiddly details.
+  - **Real identification:** the ID minigame uses real distinguishing features. Know it in life → know it here. Learn it here → know it in life.
+  - **Failure teaches:** eat wrong → sick, and the Codex records *why* ("no milky sap — note the difference"). Mistakes are safe lessons.
+  - **The fiction enforces the pedagogy:** the System *can't* teach survival — its blind spot is your classroom. The game never hands answers; the world does.
+  - **Editorial process:** `confidence: high` is the floor. Schema gains `sources[]` — real citations per plant. Expansion biomes get expert review (foragers, survival instructors).
+- **Long-term:** the player's Codex becomes a *real personal field guide* — exportable, readable outside the game. Play a year, own 50 plants you actually learned. The product beyond the game.

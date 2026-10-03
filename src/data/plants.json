@@ -1,1 +1,276 @@
-[{"biomes":["se_woodlands"],"caloriesPerUnit":45,"codex":"Every part is edible — leaves, flowers, roots. Bitter means nutritious. The first green of spring and the last of fall.","confidence":"high","id":"dandelion","idDifficulty":1,"lookalikeNote":"Unmistakable once flowering. Young rosette leaves are the safest stage.","name":"Dandelion","preparation":"Eat raw; boil to reduce bitterness. Roots can be roasted.","scientific":"Taraxacum officinale","seasons":["spring","summer","fall"],"spoilageDays":2,"tileAffinity":["meadow","trail_edge"],"unit":"handful of greens","waterContent":"high"},{"biomes":["se_woodlands"],"caloriesPerUnit":120,"codex":"The survivalist's supermarket: shoots, roots, pollen, and fluff for tinder. If you find cattails, you found water too.","confidence":"high","id":"cattail","idDifficulty":1,"lookalikeNote":"Distinctive brown hot-dog head is unmistakable. Harvest shoots before the head forms.","name":"Cattail","preparation":"Peel young shoots, eat raw or boiled. Roots pounded for starch.","scientific":"Typha latifolia","seasons":["spring","summer","fall"],"spoilageDays":3,"tileAffinity":["wetland","creek"],"unit":"bundle of shoots","waterContent":"high"},{"biomes":["se_woodlands"],"caloriesPerUnit":65,"codex":"Thorns guard the sweetest calories in the woods. Summer's paycheck — eat fresh, dry what you can't carry.","confidence":"high","id":"blackberry","idDifficulty":1,"name":"Blackberry","preparation":"Eat raw. Leaves make a serviceable tea.","scientific":"Rubus fruticosus","seasons":["summer"],"spoilageDays":2,"tileAffinity":["thicket","trail_edge"],"unit":"handful of berries","waterContent":"high"},{"biomes":["se_woodlands"],"caloriesPerUnit":130,"codex":"Fall's candy. The fruit sweetens after frost — nature's own ripening timer. Dries well for winter stores.","confidence":"high","id":"persimmon","idDifficulty":2,"lookalikeNote":"Wait for the frost-softened fruit. If it puckers your mouth inside out, it wasn't ready.","name":"American Persimmon","preparation":"Eat only fully ripe (soft, wrinkled). Unripe = mouthful of chalk.","scientific":"Diospyros virginiana","seasons":["fall","winter"],"spoilageDays":5,"tileAffinity":["grove","meadow"],"unit":"handful of fruit","waterContent":"high"},{"biomes":["se_woodlands"],"caloriesPerUnit":200,"codex":"Calorie-dense and they keep for months. The woods' savings account — gather in fall, eat all winter.","confidence":"high","id":"hickory_nut","idDifficulty":2,"name":"Hickory Nuts","preparation":"Crack and pick. Shagbark hickory is the sweet one.","scientific":"Carya ovata","seasons":["fall"],"spoilageDays":60,"tileAffinity":["grove"],"unit":"handful of nuts","waterContent":"low"},{"biomes":["se_woodlands"],"caloriesPerUnit":150,"codex":"The staple that fed nations. Tannins must be leached or they'll punish you — but leached acorn meal is flour. Flour is bread. Bread is winter.","confidence":"high","id":"acorn_white_oak","idDifficulty":2,"lookalikeNote":"Stick to white oak group (rounded lobe tips). Red oak acorns need far more leaching.","name":"White Oak Acorns","preparation":"MUST leach: shell, grind, soak in running water until bitterness is gone. White oak group is mildest.","scientific":"Quercus alba","seasons":["fall"],"spoilageDays":30,"tileAffinity":["grove"],"unit":"handful of nutmeats","waterContent":"low"},{"biomes":["se_woodlands"],"caloriesPerUnit":35,"codex":"Flavor is survival too — morale matters. The smell test is the only ID that counts: onion smell or it stays in the ground.","confidence":"high","id":"wild_onion","idDifficulty":2,"lookalikeNote":"CRITICAL: must smell of onion/garlic. No smell = not an onion = do not eat. This rule has no exceptions.","name":"Wild Onion","preparation":"Eat raw or cooked. The smell test is law.","scientific":"Allium canadense","seasons":["spring","summer"],"spoilageDays":7,"tileAffinity":["meadow"],"unit":"bundle","waterContent":"medium"},{"biomes":["se_woodlands"],"caloriesPerUnit":30,"codex":"Grows in the cold months when little else does. The humble green that shows up when you need it most.","confidence":"high","id":"chickweed","idDifficulty":2,"name":"Chickweed","preparation":"Eat raw. Delicate — wilts fast.","scientific":"Stellaria media","seasons":["spring","fall","winter"],"spoilageDays":1,"tileAffinity":["meadow","trail_edge"],"unit":"handful of greens","waterContent":"high"},{"biomes":["se_woodlands"],"caloriesPerUnit":25,"codex":"Trail nibble, not a meal — but it lifts the spirits, and sometimes that's the difference between going on and giving up.","confidence":"high","id":"wood_sorrel","idDifficulty":1,"lookalikeNote":"Heart-shaped leaflets in threes. Tangy taste confirms it — but eat in moderation (oxalic acid).","name":"Wood Sorrel","preparation":"Eat raw, sparingly. Pleasant lemony tang.","scientific":"Oxalis stricta","seasons":["spring","summer","fall"],"spoilageDays":1,"tileAffinity":["forest_floor","trail_edge"],"unit":"handful","waterContent":"high"},{"biomes":["se_woodlands"],"caloriesPerUnit":90,"codex":"The South's wild grape. Follow the vines up the trees in late summer. Sugar is energy, and energy is everything.","confidence":"high","id":"muscadine","idDifficulty":1,"name":"Muscadine Grapes","preparation":"Eat raw. Thick skins, big seeds — work for it.","scientific":"Vitis rotundifolia","seasons":["summer","fall"],"spoilageDays":4,"tileAffinity":["thicket","grove"],"unit":"handful","waterContent":"high"}]
+[
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 45,
+    "codex": "Every part is edible \u2014 leaves, flowers, roots. Bitter means nutritious. The first green of spring and the last of fall.",
+    "confidence": "high",
+    "id": "dandelion",
+    "idDifficulty": 1,
+    "lookalikeNote": "Unmistakable once flowering. Young rosette leaves are the safest stage.",
+    "name": "Dandelion",
+    "preparation": "Eat raw; boil to reduce bitterness. Roots can be roasted.",
+    "scientific": "Taraxacum officinale",
+    "seasons": [
+      "spring",
+      "summer",
+      "fall"
+    ],
+    "spoilageDays": 2,
+    "tileAffinity": [
+      "meadow",
+      "trail_edge"
+    ],
+    "unit": "handful of greens",
+    "waterContent": "high",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 120,
+    "codex": "The survivalist's supermarket: shoots, roots, pollen, and fluff for tinder. If you find cattails, you found water too.",
+    "confidence": "high",
+    "id": "cattail",
+    "idDifficulty": 1,
+    "lookalikeNote": "Distinctive brown hot-dog head is unmistakable. Harvest shoots before the head forms.",
+    "name": "Cattail",
+    "preparation": "Peel young shoots, eat raw or boiled. Roots pounded for starch.",
+    "scientific": "Typha latifolia",
+    "seasons": [
+      "spring",
+      "summer",
+      "fall"
+    ],
+    "spoilageDays": 3,
+    "tileAffinity": [
+      "wetland",
+      "creek"
+    ],
+    "unit": "bundle of shoots",
+    "waterContent": "high",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 65,
+    "codex": "Thorns guard the sweetest calories in the woods. Summer's paycheck \u2014 eat fresh, dry what you can't carry.",
+    "confidence": "high",
+    "id": "blackberry",
+    "idDifficulty": 1,
+    "name": "Blackberry",
+    "preparation": "Eat raw. Leaves make a serviceable tea.",
+    "scientific": "Rubus fruticosus",
+    "seasons": [
+      "summer"
+    ],
+    "spoilageDays": 2,
+    "tileAffinity": [
+      "thicket",
+      "trail_edge"
+    ],
+    "unit": "handful of berries",
+    "waterContent": "high",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 130,
+    "codex": "Fall's candy. The fruit sweetens after frost \u2014 nature's own ripening timer. Dries well for winter stores.",
+    "confidence": "high",
+    "id": "persimmon",
+    "idDifficulty": 2,
+    "lookalikeNote": "Wait for the frost-softened fruit. If it puckers your mouth inside out, it wasn't ready.",
+    "name": "American Persimmon",
+    "preparation": "Eat only fully ripe (soft, wrinkled). Unripe = mouthful of chalk.",
+    "scientific": "Diospyros virginiana",
+    "seasons": [
+      "fall",
+      "winter"
+    ],
+    "spoilageDays": 5,
+    "tileAffinity": [
+      "grove",
+      "meadow"
+    ],
+    "unit": "handful of fruit",
+    "waterContent": "high",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 200,
+    "codex": "Calorie-dense and they keep for months. The woods' savings account \u2014 gather in fall, eat all winter.",
+    "confidence": "high",
+    "id": "hickory_nut",
+    "idDifficulty": 2,
+    "name": "Hickory Nuts",
+    "preparation": "Crack and pick. Shagbark hickory is the sweet one.",
+    "scientific": "Carya ovata",
+    "seasons": [
+      "fall"
+    ],
+    "spoilageDays": 60,
+    "tileAffinity": [
+      "grove"
+    ],
+    "unit": "handful of nuts",
+    "waterContent": "low",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 150,
+    "codex": "The staple that fed nations. Tannins must be leached or they'll punish you \u2014 but leached acorn meal is flour. Flour is bread. Bread is winter.",
+    "confidence": "high",
+    "id": "acorn_white_oak",
+    "idDifficulty": 2,
+    "lookalikeNote": "Stick to white oak group (rounded lobe tips). Red oak acorns need far more leaching.",
+    "name": "White Oak Acorns",
+    "preparation": "MUST leach: shell, grind, soak in running water until bitterness is gone. White oak group is mildest.",
+    "scientific": "Quercus alba",
+    "seasons": [
+      "fall"
+    ],
+    "spoilageDays": 30,
+    "tileAffinity": [
+      "grove"
+    ],
+    "unit": "handful of nutmeats",
+    "waterContent": "low",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 35,
+    "codex": "Flavor is survival too \u2014 morale matters. The smell test is the only ID that counts: onion smell or it stays in the ground.",
+    "confidence": "high",
+    "id": "wild_onion",
+    "idDifficulty": 2,
+    "lookalikeNote": "CRITICAL: must smell of onion/garlic. No smell = not an onion = do not eat. This rule has no exceptions.",
+    "name": "Wild Onion",
+    "preparation": "Eat raw or cooked. The smell test is law.",
+    "scientific": "Allium canadense",
+    "seasons": [
+      "spring",
+      "summer"
+    ],
+    "spoilageDays": 7,
+    "tileAffinity": [
+      "meadow"
+    ],
+    "unit": "bundle",
+    "waterContent": "medium",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 30,
+    "codex": "Grows in the cold months when little else does. The humble green that shows up when you need it most.",
+    "confidence": "high",
+    "id": "chickweed",
+    "idDifficulty": 2,
+    "name": "Chickweed",
+    "preparation": "Eat raw. Delicate \u2014 wilts fast.",
+    "scientific": "Stellaria media",
+    "seasons": [
+      "spring",
+      "fall",
+      "winter"
+    ],
+    "spoilageDays": 1,
+    "tileAffinity": [
+      "meadow",
+      "trail_edge"
+    ],
+    "unit": "handful of greens",
+    "waterContent": "high",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 25,
+    "codex": "Trail nibble, not a meal \u2014 but it lifts the spirits, and sometimes that's the difference between going on and giving up.",
+    "confidence": "high",
+    "id": "wood_sorrel",
+    "idDifficulty": 1,
+    "lookalikeNote": "Heart-shaped leaflets in threes. Tangy taste confirms it \u2014 but eat in moderation (oxalic acid).",
+    "name": "Wood Sorrel",
+    "preparation": "Eat raw, sparingly. Pleasant lemony tang.",
+    "scientific": "Oxalis stricta",
+    "seasons": [
+      "spring",
+      "summer",
+      "fall"
+    ],
+    "spoilageDays": 1,
+    "tileAffinity": [
+      "forest_floor",
+      "trail_edge"
+    ],
+    "unit": "handful",
+    "waterContent": "high",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  },
+  {
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 90,
+    "codex": "The South's wild grape. Follow the vines up the trees in late summer. Sugar is energy, and energy is everything.",
+    "confidence": "high",
+    "id": "muscadine",
+    "idDifficulty": 1,
+    "name": "Muscadine Grapes",
+    "preparation": "Eat raw. Thick skins, big seeds \u2014 work for it.",
+    "scientific": "Vitis rotundifolia",
+    "seasons": [
+      "summer",
+      "fall"
+    ],
+    "spoilageDays": 4,
+    "tileAffinity": [
+      "thicket",
+      "grove"
+    ],
+    "unit": "handful",
+    "waterContent": "high",
+    "sources": [
+      "Field validation pending \u2014 conservative well-known species"
+    ]
+  }
+]
