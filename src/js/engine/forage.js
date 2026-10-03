@@ -41,7 +41,7 @@
     }
     const plant = plants.find(x => x.id === plantId);
 
-    let units = 10 + Math.floor(Math.random() * 9); // 10-18: a day-part is ~3hrs of volume work; a knowing forager gathers real food
+    let units = 5 + Math.floor(Math.random() * 4); // 5-8: a day-part is ~3hrs of volume work; a knowing forager gathers real food, not a truckload
     if (bounty && bounty.richness) units = Math.round(units * bounty.richness); // rich ground feeds better
     units = Math.round(S.modifiers.resolve(units, 'forage.yield', mods, ctx));
     units = Math.max(1, units);

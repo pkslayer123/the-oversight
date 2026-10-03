@@ -75,6 +75,7 @@
       this.state.scholar = scholar;
       this.state.codex = S.state.newCodex();
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
+      this.villageLost = false; this.wanderer = null; this.fight = null; this.pendingEncounter = false;
       this.encounterDone = false; this.log = [];
       this.location = 'village'; this.departed = false;
       this.wipe();
@@ -304,6 +305,11 @@
         tiles[yy][xx].maxStock = r >= 1.5 ? 3 : r >= 1.0 ? 2 : 1;
         tiles[yy][xx].stock = tiles[yy][xx].maxStock;
       }
+      // Haven was built where the land is good — guarantee a breadbasket by the door.
+      // twelve people didn't settle on barren ground, and the first lesson shouldn't be a bad map roll.
+      const doors = [[2, 3], [4, 3], [3, 2], [3, 4]];
+      const door = doors[Math.floor(Math.random() * doors.length)];
+      if (tiles[door[1]][door[0]].type !== 'ruin') tiles[door[1]][door[0]].type = 'grove';
       // Haven is a tile, not a separate screen. home is a place you walk to.
       tiles[3][3].type = 'haven';
       tiles[3][3].stock = 0; tiles[3][3].maxStock = 0;
@@ -636,7 +642,22 @@
       const scholar = this.state.scholar;
       // regrow: stock resets daily. natural goods are renewable; cans are not.
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.map.tiles[y][x].stock = this.map.tiles[y][x].maxStock;
-      if (this.over) this.wipe(); // finished runs don't continue
+      // evening: run metabolism
+      const res = S.calories.resolveDay(scholar, this.state.village);
+      res.warnings.forEach(w => this.say('⚠ ' + w));
+      // the village eats whether you're there or not — every day you're out, twelve mouths
+      this.villageEats();
+      if (this.villageLost) { return this.status(); } // no home to return to
+      if (this.over) { this.returnToVillage(); return this.status(); }
+      if (!res.ok || scholar.health <= 0) {
+        this.over = true;
+        this.say('You didn\'t make it. The village remembers. The Codex keeps what you brought home.');
+        this.returnToVillage();
+        return this.status();
+      }
+      scholar.day += 1;
+      this.dayPart = 0; this.ap = 1;
+      this.say(`— DAY ${scholar.day} DAWN — ${DAY_PART_HINT.dawn}`);
       this.save();
       return this.status();
     },
