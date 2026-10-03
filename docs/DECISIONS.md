@@ -493,3 +493,15 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 
 - **Decision:** Energy bar removed from HUD; Rest button removed from the node panel (without energy it was a worse Wait). The scholar.energy field stays for save compat but is dormant. FUTURE DESIGN (not slice 1): eating past full (2400 kcal cap) charges ENERGY as mana; energy fuels skill uses — combat maneuvers (powerful blow, dodge), later abilities. Introduce alongside the skill/combat systems, not before.
 - **Why:** Steve: "I would rather we introduce it like a mana system later. Eating more than what gets you to full adds to your energy bar for skill uses."
+
+## 2026-10-03 — Visual progression: the HUD fills out as you progress (CONFIRMED)
+
+- **Decision:** Start simple; graphics and interface get better as the player progresses. The interface is a reward — it mirrors the scholar learning the land (and the System learning the scholar). Stages are independently shippable; each must earn its keep in playtesting before the next.
+- **The ladder:**
+  - **Stage 0 — Terminal (now):** emoji map, text panels, basic bars. Readable, finishable.
+  - **Stage 1 — Annotated:** the Codex starts writing on the world. Plant labels on learned tiles, epithet headers, bounty hints. (Partially live.)
+  - **Stage 2 — Pixel entities:** the ● becomes a scholar sprite, 🐗 a pixel boar, 🏠 a pixel camp. Bounded sprites only — no tileset yet.
+  - **Stage 3 — Arrival vignettes:** small pixel scenes on first visit per biome/epithet. A deep grove *looks* like a deep grove once.
+  - **Stage 4 — Full tileset:** only if earned. The game must prove it needs it.
+- **Triggers (v1, provisional):** stage advances on Codex depth + days survived, never on timers. HUD elements unlock with systems: the energy/mana bar appears when the mana system arrives, combat maneuvers appear with the first technique, Haven panel gains depth as relationships grow.
+- **Why:** Steve: "Start simple, but it would be cool if as you progress, the game graphics and interface keep getting better and better." Solo-dev finishable stays the constraint — each stage is a contained art task, never a rewrite.

@@ -358,6 +358,15 @@
 
     // --- node identity: the dominant biome/character of the tile + its neighbors ---
     // a grove by the creek is not the same place as a grove by the wetland
+    // visual stage: the interface gets better as you progress. the Codex writes on the world.
+    // 0: terminal/emoji (now). 1: annotated. 2: pixel entities. 3: arrival vignettes. 4: tileset.
+    // each stage must earn its keep in playtesting before the next ships.
+    visualStage() {
+      const codex = Object.keys(this.state.codex.plants || {}).length;
+      if (codex >= 8) return 1;
+      return 0;
+    },
+
     nodeEpithet(x, y) {
       const t = this.tileAt(x, y);
       if (t.type === 'haven') return 'Haven';
