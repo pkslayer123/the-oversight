@@ -168,9 +168,10 @@
       for (let x = 0; x < 7; x++) {
         const tl = Game.tileAt(x, y);
         const isP = (x === st.px && y === st.py);
+        const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
         const move = Game.canMove(x, y);
-        const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (move ? ' move' : '');
-        const g = tl.revealed ? S.TILE_GLYPH[tl.type] : '?';
+        const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (move ? ' move' : '') + (isW ? ' beast' : '');
+        const g = isW ? '⚠' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? '●' : g}</div>`;
       }
       html += '</div>';

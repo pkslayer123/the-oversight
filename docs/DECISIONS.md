@@ -423,3 +423,15 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Built:** full playable vertical slice — onboarding (cold open → home → scholar → 5 items) → nested day loop (4 day-parts, move + 1 action each) → 7×7 fog-of-war region → forage/eat/drink/rest/treat-water → calorie clock with telegraphed spiral → Bulldozer combat encounter (telegraphs, STUDY/BRACE/STRIKE/HARRY/FLEE) → Codex journal → win (7 days) / lose screens.
 - **Tuning from sim runs:** forage 5-11 units/action; ACTIVE_DAY 2200; starvation curve softened (2 + deficit/150). Random play survives worn (hp 7-25); smart play (affinity tiles) surpluses. Combat: winnable in 3 rounds, costs ~60% hp if played bluntly.
 - **Delivery:** web artifact build (the-scattering-slice-1-playtest) for phone playtest.
+
+## 2026-10-03 — Living world: monsters wander, behaviors read
+
+- **Decision:** Monsters are visible map entities with observable behavior patterns, not encounter triggers. They move on their own schedule; the player reads them through the Codex. The world must feel alive in all ways.
+- **Why:** Steve: "Monsters must wander, display behavior patterns etc." A trigger tile is a jump scare; a visible Bulldozer pacing its thicket is a *decision* (go around, wait, engage).
+- **Behavior patterns (Codex-gated readability):**
+  - **Bulldozer — patrol:** loops its territory; charges anything in its path. Unknown: "something big moving." Observed: marginalia "pacing — territorial. Don't be in the way."
+  - **Hushpuppy — hunt:** pack moves toward the player when close, spreads then converges. Observed: "spreading out — they're hunting."
+  - **Highbeam — graze/aim:** drifts between meadows; freezes when approached. Unknown: "a deer." Observed: "it's not frozen. It's aiming. Move."
+  - **Mirelurker (later) — ambush:** stationary at water; strikes when you drink.
+- **Alive in all ways (the set):** wandering monsters + ambient wildlife signs (tracks/scat as tile flavor; rabbits flee) + moving weather (affects visibility/forage) + day-part map changes + plant regrowth + village sims + (Book 3+) roaming scholars.
+- **Slice 1:** Bulldozer wanders from day 3 (visible glyph, patrol behavior, encounter on contact). Ambient signs + regrowth in the iteration after playtest.

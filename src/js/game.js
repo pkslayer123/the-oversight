@@ -107,10 +107,37 @@
     },
 
     checkEncounter() {
-      const t = this.playerTile();
-      if (!this.encounterDone && this.state.scholar.day >= 3 && t.type === 'thicket') {
+      // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
+      const scholar = this.state.scholar;
+      if (scholar.day >= 3 && !this.wanderer && !this.encounterDone) {
+        // spawn at a random revealed-edge thicket, or near player
+        const spots = [];
+        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+          if (this.map.tiles[y][x].type === 'thicket') spots.push({ x, y });
+        }
+        const s = spots.length ? spots[Math.floor(Math.random() * spots.length)] : { x: 5, y: 5 };
+        this.wanderer = { x: s.x, y: s.y, dir: Math.random() < 0.5 ? 1 : -1, monsterId: 'thornback_boar' };
+        this.say('Something big is moving in the woods. The birds went quiet.');
+      }
+      if (this.wanderer && this.map.px === this.wanderer.x && this.map.py === this.wanderer.y) {
         this.encounterDone = true;
         this.pendingEncounter = true;
+        this.wanderer = null;
+      }
+    },
+
+    // wanderer patrols: pace back and forth along its row, 1 tile per day-part
+    moveWanderer() {
+      const w = this.wanderer;
+      if (!w) return;
+      const nx = w.x + w.dir;
+      if (nx < 0 || nx > 6) { w.dir *= -1; return; }
+      w.x = nx;
+      // contact check after it moves (it can walk into you)
+      if (w.x === this.map.px && w.y === this.map.py && !this.encounterDone) {
+        this.encounterDone = true;
+        this.pendingEncounter = true;
+        this.wanderer = null;
       }
     },
 
@@ -190,6 +217,7 @@
       if (this.over) return this.status();
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
+      this.moveWanderer();
       this.dayPart += 1;
       if (this.dayPart >= 4) return this.endDay();
       this.ap = 1;
@@ -269,6 +297,7 @@
         over: this.over, won: this.won,
         inCombat: !!this.fight,
         pendingEncounter: !!this.pendingEncounter,
+        wanderer: this.wanderer ? { x: this.wanderer.x, y: this.wanderer.y } : null,
         log: this.log.slice(-6),
         codexCount: Object.keys(this.state.codex.plants).length,
         abilities: s.abilities,
