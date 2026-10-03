@@ -187,5 +187,77 @@
         ]
       }
     ]
+  },
+  {
+    "id": "tote_bag",
+    "name": "Tote Bag",
+    "class": "sentimental",
+    "flavor": "Canvas, thirty-one years of bus routes. Currently holds: everything.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
+  },
+  {
+    "id": "reading_glasses",
+    "name": "Reading Glasses",
+    "class": "sentimental",
+    "flavor": "For the ledger and the fine print on cans. The apocalypse has fine print.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
+  },
+  {
+    "id": "bus_schedule",
+    "name": "Bus Schedule",
+    "class": "sentimental",
+    "flavor": "The 42, laminated. Ruth keeps it to remind the universe about punctuality.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
+  },
+  {
+    "id": "hard_candy",
+    "name": "Hard Candy",
+    "class": "sentimental",
+    "flavor": "Butterscotch. Ruth doles them out like medals.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
+  },
+  {
+    "id": "spare_socks",
+    "name": "Spare Socks",
+    "class": "sentimental",
+    "flavor": "Dry socks are civilization. Ruth has always known this.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
+  },
+  {
+    "id": "dead_phone",
+    "name": "Dead Phone",
+    "class": "sentimental",
+    "flavor": "Cracked screen, 2% forever. Theo keeps it the way sailors kept compasses.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
+  },
+  {
+    "id": "hoodie",
+    "name": "Hoodie",
+    "class": "sentimental",
+    "flavor": "Smells like dorm laundry and rain. Armor, basically.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
+  },
+  {
+    "id": "energy_bar_wrapper",
+    "name": "Energy Bar Wrapper",
+    "class": "sentimental",
+    "flavor": "Empty. Theo reads the nutrition label when he misses numbers.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
+  },
+  {
+    "id": "notebook",
+    "name": "Notebook",
+    "class": "sentimental",
+    "flavor": "Half speedrun notes, half apocalypse patch notes. Theo's magnum opus.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": []
   }
 ]

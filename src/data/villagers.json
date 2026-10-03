@@ -26,17 +26,21 @@
     "survivalProbability": 34,
     "systemAssessment": "The others notice: steady hands, dry humor, the one already taking charge of the wounded.",
     "quest": [
-      "You're awake. Good — we need you. All of us, but you especially.",
-      "The pantry won't last the month. Twelve mouths, and every house for a mile is picked clean.",
-      "You're our scholar. You read the land like the rest of us read faces. Or you will. That's the job now.",
-      "Go out. Learn what's edible. Bring back what you can carry. Come home when your pack is full or your gut says so — every day you're out, twelve mouths eat.",
-      "Write it down — the Codex is the only thing we get to keep. Eat something green. Drink water. Come back before dark."
+      "You're awake. Don't sit up fast — you were out a full day, and we carried you, so you owe us.",
+      "We counted the pantry this morning. Nine days. Twelve mouths. Priya did the math twice because she doesn't trust her own handwriting anymore.",
+      "Here's the part I can't stop thinking about: the System gave me a field-surgery kit. It gave Jesse a hunter's hands. It gave Aki a nose for fish. And it forgot to give anyone the part where we know what's food.",
+      "It forgot. The thing that moved the sky forgot dinner. So that's your job now — you're the scholar. You read the land like the rest of us read faces. Or you will.",
+      "Go out. Learn what's edible. Bring back what you can carry. Come home when your pack is full or your gut says so.",
+      "Write it down — the Codex is the only thing we get to keep. And scholar? Eat something green. I mean it."
     ],
     "talk": [
+      "You're awake. Don't sit up fast — you were out a full day and we carried you, so you owe us.",
+      "The System gave me a field-surgery kit. Lovely. It did not give anyone a list of what's food. Priorities.",
       "Dandelion: root, leaf, flower — the whole plant is food. Bitter means it's working.",
+      "I was an ER nurse. Now I'm the woman who tells grown adults to eat their greens. Funny.",
+      "Theo asked if grief has a half-life. I told him to ask Priya, she'll make a spreadsheet.",
       "Clear water isn't clean water. Treat everything. Your gut will thank you on day three.",
       "The Bulldozer doesn't go around things. So don't be a thing. Climb, or be somewhere else.",
-      "I was an ER nurse. Now I'm the woman who tells grown adults to eat their greens. Funny.",
       "Write it all down. The Codex remembers what hunger makes you forget."
     ]
   },
@@ -71,7 +75,10 @@
       "You get meat, you smoke it. Low rack, slow fire. Keeps for weeks.",
       "The creek is the map. Everything drinks. Follow it.",
       "Granddad said the woods provide, but they don't deliver. You go to them.",
-      "I miss my dog."
+      "I miss my dog. Biscuit. He'd have this whole place mapped by smell by now.",
+      "Ruth says I wear camo so the woods won't notice me. I wear it because it's paid for.",
+      "Theo tried to name the Bulldozer. I told him naming it won't make it slower.",
+      "You ever field-dress anything? Didn't think so. Stick with the plants for now."
     ]
   },
   {
@@ -103,8 +110,123 @@
     "talk": [
       "The creek has fish — I can smell them. No hooks, no wire. The Burn took the wire. We'll figure it out.",
       "Bring me back something green? Anything. I want to remember what fresh tastes like.",
-      "Eleven years behind a sushi counter. Now I dream about rice. Just rice.",
-      "Water's edge is where everything happens. Fish, frogs, the good roots. Stay near the creek."
+      "Eleven years behind a sushi counter. Now I dream about rice. Just rice. A bowl of it, steam on my face.",
+      "Water's edge is where everything happens. Fish, frogs, the good roots. Stay near the creek.",
+      "In Seattle it rained sideways. People complained. I'd give anything for sideways rain and a bus that comes.",
+      "Priya asked me to cost out a fish. I told her the fish is priceless and she wrote that down. She's serious.",
+      "My hands remember the knife work. Eleven years. The hands don't care that the world ended.",
+      "You find ginger — real wild ginger — you run home. Don't walk. Run."
+    ]
+  },
+  {
+    "id": "ruth_delgado",
+    "name": "Ruth Delgado",
+    "formerOccupation": "city bus driver (retired)",
+    "homeRegion": "Ohio river valley",
+    "personality": [
+      "dry",
+      "unimpressed",
+      "warm-underneath"
+    ],
+    "backstory": "Drove the 42 crosstown for thirty-one years through floods, a riot, and one very determined goose. Retired in March. The sky changed in April. She has opinions about the scheduling.",
+    "clothesNote": "Transit windbreaker, orthopedic shoes, a tote bag that has everything.",
+    "survivalProbability": 68,
+    "systemAssessment": "The others notice: unbothered, funny, the only one sleeping through the night.",
+    "abilityWeights": {
+      "combat": 1,
+      "craft": 2,
+      "fieldcraft": 2
+    },
+    "items": [
+      "tote_bag",
+      "reading_glasses",
+      "bus_schedule",
+      "hard_candy",
+      "spare_socks"
+    ],
+    "talk": [
+      "Drove the 42 through two floods and a riot. This? This is just weather with ambition.",
+      "Thirty-one years of passengers. I can tell who's going to be trouble by how they sit down. You're fine. Theo sits like trouble.",
+      "Everybody's so serious. We're camping. Badly. With stakes.",
+      "My knees tell me when rain's coming. They've never been wrong. Knee says: eat something today.",
+      "The System moved the sky and couldn't pack a lunch. Men. It's always men. Present company excluded, scholar.",
+      "You know what I miss? Complaints. Nobody complains about the bus being late anymore. I miss being complained at.",
+      "Jesse's quiet is a good quiet. Theo's quiet means he's planning something. Learn the difference.",
+      "Sit. Rest your feet. The woods aren't going anywhere, and neither are we — that's rather the problem."
+    ]
+  },
+  {
+    "id": "theo_park",
+    "name": "Theo Park",
+    "formerOccupation": "college dropout",
+    "homeRegion": "Seattle",
+    "personality": [
+      "feral",
+      "perceptive",
+      "annoying-about-it"
+    ],
+    "backstory": "Washed out of a CS degree, got very good at speedrunning old games instead. Treats the apocalypse like a new release: reads patch notes nobody else can see. Often right. Never humble about it.",
+    "clothesNote": "Hoodie, cracked phone (dead, kept anyway), sneakers held together by hope.",
+    "survivalProbability": 35,
+    "systemAssessment": "The others notice: watches everything, names everything, wrong about people, right about patterns.",
+    "abilityWeights": {
+      "combat": 1,
+      "craft": 3,
+      "fieldcraft": 1
+    },
+    "items": [
+      "dead_phone",
+      "hoodie",
+      "energy_bar_wrapper",
+      "multitool",
+      "notebook"
+    ],
+    "talk": [
+      "Okay so the Bulldozer has a patrol route. That's just a mob with a leash range. Don't pull it.",
+      "I've been timing the pantry. Priya hates that I've been timing the pantry. It's fine, we're fine. Probably.",
+      "The System's tutorial is SO bad. No tooltips. No quest markers. One star.",
+      "You ever notice the birds go quiet in a circle around it? That's an aggro radius. I'm telling you.",
+      "Ruth says I sit like trouble. Ruth sits like a queen. We all have our thing.",
+      "If this is a roguelite I am NOT doing permadeath. Just putting that out there.",
+      "Aki's fish thing — no hooks, right? But thorns? Bone? I'm prototyping. Don't tell Mara.",
+      "The Codex is basically a wiki. You're the only editor. No pressure."
+    ]
+  },
+  {
+    "id": "priya_nair",
+    "name": "Priya Nair",
+    "formerOccupation": "tax accountant",
+    "homeRegion": "Columbus",
+    "personality": [
+      "precise",
+      "anxious",
+      "secretly-funny"
+    ],
+    "backstory": "Did taxes for eleven years. Now does the pantry: every calorie in, every calorie out, depreciating the canned goods. The only reason anyone knows how bad things are is that she'll say the number out loud.",
+    "clothesNote": "Cardigan, ledger book, three pens (one is a backup, one is a backup for the backup).",
+    "survivalProbability": 52,
+    "systemAssessment": "The others notice: counting everything, sleeping little, the reason the pantry math works.",
+    "abilityWeights": {
+      "combat": 1,
+      "craft": 2,
+      "fieldcraft": 2
+    },
+    "items": [
+      "lighter",
+      "tin_cup",
+      "good_boots",
+      "daughters_drawing",
+      "rope_50ft"
+    ],
+    "talk": [
+      "Pantry's at nine days. Eight, if Theo keeps 'taste-testing.' I've started logging the taste-tests.",
+      "I'm depreciating our canned goods. The peaches are our most valuable asset. Don't tell the peaches.",
+      "Mara says eat something green. I say log it first, then eat it. We can do both.",
+      "Eleven years of tax season. April fifteenths. This is just April sixteenth, forever.",
+      "Ruth asked me to do her taxes for the apocalypse. I said the standard deduction is survival. She laughed for a full minute.",
+      "Aki asked me to cost out a fish. I wrote 'priceless.' He thinks I'm joking. I'm not joking.",
+      "If you bring back food, tell me the weight. Estimating is how pantries die.",
+      "Theo's timing the pantry. I know. Let him. His numbers are wrong but his worry is right."
     ]
   }
 ]

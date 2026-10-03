@@ -473,3 +473,23 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Economy:** richness now has a type-based floor (grove 1.5, wetland 1.4...) + water bonus, so every map grows food; skill finds the best food. Top richness 1.8, favored plant 4x weight. Skilled play nets ~+200/day over the 3000 need — tight but positive. Real scarcity.
 - **Save:** unified on the engine's versioned S.state.save (state.run holds map/dayPart/location/log). Fixed a real collision: two writers, one key, incompatible formats. Also removed the engine's duplicate village-eating (6600/day!) — game.js villageEats is the single owner.
 - **Quest/title:** Mara's quest no longer says "seven days"; title says "open expeditions."
+
+## 2026-10-03 — One screen: Haven is a tile, no view switching
+
+- **Decision:** Deleted villageScreen/gameMain/nodeScreen/renderCloseup/combatIntro/combatScreen. One expeditionScreen: status bars + 7x7 map + context panel + log. The panel adapts (Haven / node / ruin / encounter / combat). Haven is the center tile (type 'haven', glyph 🏠) — walking onto it deposits pack→pantry, triggers villager reactions + win check. No location split; walkHome() deleted (walking home = tapping 🏠). depart() no longer switches location. Travel and actions re-render the same screen.
+- **Why:** Steve: "I kinda hate changing views. Ideally we find a system that works for everything in game. One mobile screen."
+
+## 2026-10-03 — Action costs: time and/or calories, never AP
+
+- **Decision:** Every cost is time, time+calories, or calories. Buttons show explicit costs ("1 part · 120 kcal"). Node stock (3/2/1 by richness) sets how many times a place can be worked — the biome sets pulls and results. Natural goods regrow daily; cans are finite.
+- **Why:** Steve: "Everything should either cost time, time and calories, or just calories. Number of times and results of you doing them depends on the biome."
+
+## 2026-10-03 — Cast expansion: people, not survival archetypes
+
+- **Decision:** 6 villagers. Added Ruth Delgado (67, retired bus driver — dry, unimpressed, funny), Theo Park (19, dropout speedrunner — sees patterns, treats it like a game), Priya Nair (34, tax accountant — ledgers the pantry, secretly funny). Talk lines are people-first (grief, humor, boredom, quirks); survival advice is at most half. Mara's quest rewritten: opens with a scene ("you were out a full day, and we carried you, so you owe us"), names the System's failure ("it forgot dinner"), gives the scholar job, ends with character.
+- **Why:** Steve: survivors only talked about survival; dialog actions weak; story start weak. A village of only useful people isn't a village.
+
+## 2026-10-03 — Energy deferred: future mana system, not a dead bar
+
+- **Decision:** Energy bar removed from HUD; Rest button removed from the node panel (without energy it was a worse Wait). The scholar.energy field stays for save compat but is dormant. FUTURE DESIGN (not slice 1): eating past full (2400 kcal cap) charges ENERGY as mana; energy fuels skill uses — combat maneuvers (powerful blow, dodge), later abilities. Introduce alongside the skill/combat systems, not before.
+- **Why:** Steve: "I would rather we introduce it like a mana system later. Eating more than what gets you to full adds to your energy bar for skill uses."

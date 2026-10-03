@@ -26,8 +26,7 @@
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
       statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
       statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
-      statRow('WATER', st.hydration + '% · ' + st.water + ' clean', st.hydration, st.hydration < 30) +
-      statRow('ENERGY', st.energy + '%', st.energy, st.energy < 25);
+      statRow('WATER', st.hydration + '% · ' + st.water + ' clean', st.hydration, st.hydration < 30);
   }
 
   // ---------- title ----------
@@ -225,7 +224,6 @@
       <div class="actions">
         <button class="btn sm" id="p-act" ${n.canForage ? '' : 'disabled'}>${n.isRuin ? 'Scavenge' : 'Forage'}<br><span class="cost">1 part · 120 kcal</span></button>
         <button class="btn sm" id="p-treat" ${n.canTreat ? '' : 'disabled'}>Treat water<br><span class="cost">1 part · 50 kcal</span></button>
-        <button class="btn sm" id="p-rest">Rest<br><span class="cost">1 part · 40 kcal</span></button>
         <button class="btn sm" id="p-wait">Wait<br><span class="cost">1 part</span></button>
       </div>
       <div class="actions">
@@ -261,7 +259,6 @@
     const go = (kind) => { Game.doAction(kind); rerender(); };
     on('p-act', () => go('forage'));
     on('p-treat', () => go('treat'));
-    on('p-rest', () => go('rest'));
     on('p-wait', () => go('wait'));
     on('p-eat', () => { Game.eat(); rerender(); });
     on('p-drink', () => { Game.drinkTreated(); rerender(); });
