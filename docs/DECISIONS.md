@@ -455,3 +455,8 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Why:** "Having to select travel and then end the day is pretty annoying." "Everything else you should just be able to do on each node. We want less friction, just watching stocks/supplies and making decisions." The map is now a pure decision screen: status + map + log. Every tap is a decision; every decision moves time.
 - **Wait:** explicit WAIT action (passes the part, no cost/benefit) replaces END PART. Rest is the recovery choice (costs kcal).
 - **Sim check:** 4/6 wins with a no-combat bot; deaths on days 5-6, close. Difficulty feels right for slice 1.
+
+## 2026-10-03 — Node identity: epithets + close-up map
+
+- **Decision:** Each node gets a generated epithet from its dominant type + neighbors (creekside grove vs drowned grove vs deep grove; old pasture; creekmouth marsh; the shallows). The node screen now leads with the epithet and renders a 5x5 close-up map (player centered, larger tiles) — the detailed view players actually follow. The 7x7 stays as the click-through navigation geography.
+- **Why:** Steve: nodes should represent the dominant biome/land structure as a consistent clear geography; the close-up is what most people follow. Pacing confirmed: 1/4 day per node = 28 node-visits per 7-day expedition.

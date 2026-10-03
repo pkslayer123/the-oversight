@@ -323,6 +323,30 @@
       return this.endDayPart();
     },
 
+    // --- node identity: the dominant biome/character of the tile + its neighbors ---
+    // a grove by the creek is not the same place as a grove by the wetland
+    nodeEpithet(x, y) {
+      const t = this.tileAt(x, y);
+      const nb = new Set();
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+        nb.add(this.tileAt(nx, ny).type);
+      }
+      const has = (...ts) => ts.some(t => nb.has(t));
+      switch (t.type) {
+        case 'grove': return has('creek') ? 'creekside grove' : has('wetland') ? 'drowned grove' : has('ruin') ? 'orchard ruin' : 'deep grove';
+        case 'meadow': return has('ruin') ? 'old pasture' : has('creek') ? 'creek meadow' : 'open meadow';
+        case 'creek': return has('wetland') ? 'the shallows' : 'creek bend';
+        case 'wetland': return has('creek') ? 'creekmouth marsh' : 'still marsh';
+        case 'thicket': return (x === 0 || y === 0 || x === 6 || y === 6) ? 'edge thicket' : 'heart thicket';
+        case 'ruin': return 'the old place';
+        case 'trail_edge': return 'the old trail';
+        default: return 'forest floor';
+      }
+    },
+
     // --- node detail: each tile is a node; arriving reveals its detail ---
     nodeDetail() {
       const t = this.playerTile();
@@ -334,7 +358,8 @@
       if (t.type === 'creek' || t.type === 'wetland') here.push('water to treat');
       if (this.wanderer && this.wanderer.x === this.map.px && this.wanderer.y === this.map.py) here.push('⚠ something big is here');
       return {
-        type: t.type, title: arr.title, text: t.ruinStory || arr.text, here,
+        type: t.type, title: arr.title, epithet: this.nodeEpithet(this.map.px, this.map.py),
+        text: t.ruinStory || arr.text, here,
         isRuin: t.type === 'ruin',
         canForage: t.type === 'ruin' ? (t.loot || []).length > 0 : S.forage.canForage(t),
         canTreat: t.type === 'creek' || t.type === 'wetland',

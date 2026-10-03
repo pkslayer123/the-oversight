@@ -246,7 +246,9 @@
 
     screen.innerHTML = `
       ${bar('scattering://node', n.type)}
-      <h1 class="title" style="font-size:22px">${esc(n.title).toUpperCase()}</h1>
+      <h1 class="title" style="font-size:22px">${esc(n.epithet).toUpperCase()}</h1>
+      <p class="small">${esc(n.title)}</p>
+      ${renderCloseup(st)}
       ${arrived ? `<p><i>${esc(n.text)}</i></p>` : ''}
       <p class="small">Here: ${n.here.length ? esc(n.here.join(' · ')) : 'nothing obvious'}</p>
       ${statusBars(st)}
@@ -282,6 +284,26 @@
     on('n-wild', () => { Game.drinkWild(); nodeScreen(); });
     on('n-codex', () => codexScreen());
     on('n-map', () => gameMain());
+  }
+
+  // close-up: 5x5 neighborhood centered on the player — the detailed view you actually follow
+  function renderCloseup(st) {
+    let html = '<div class="closeup">';
+    for (let dy = -2; dy <= 2; dy++) {
+      html += '<div class="mrow">';
+      for (let dx = -2; dx <= 2; dx++) {
+        const x = st.px + dx, y = st.py + dy;
+        if (x < 0 || y < 0 || x > 6 || y > 6) { html += '<div class="tile offmap">·</div>'; continue; }
+        const tl = Game.tileAt(x, y);
+        const isMe = dx === 0 && dy === 0;
+        const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
+        const cls = 'tile' + (isMe ? ' here' : '') + (tl.revealed ? '' : ' fog') + (isW ? ' beast' : '') + (tl.foraged && tl.revealed ? ' spent' : '');
+        const g = isW ? '⚠' : (isMe ? '●' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?'));
+        html += `<div class="${cls}">${g}</div>`;
+      }
+      html += '</div>';
+    }
+    return html + '</div>';
   }
 
   function renderMap(st, tset) {

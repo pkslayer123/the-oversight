@@ -87,6 +87,12 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .tile.spent { opacity: .45; }
 .tile:active { background: var(--line); }
 
+/* close-up: the node you're on, zoomed — 5x5 neighborhood, you at the center */
+.closeup { margin: 12px 0; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: var(--bg2); }
+.closeup .tile { font-size: 30px; min-height: 56px; cursor: default; }
+.closeup .tile.here { border: 2px solid var(--acc); border-radius: 8px; }
+.closeup .tile.offmap { visibility: hidden; }
+
 /* action rows */
 .actions { display: flex; gap: 8px; margin: 8px 0; }
 .actions .btn.sm { margin: 0; padding: 14px 8px; font-size: 15px; flex: 1; }
