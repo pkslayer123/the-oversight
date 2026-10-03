@@ -73,3 +73,32 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 
 - **Decision:** Real edibles per biome/season, but conservative. Game never presents dangerous plants as safe; misidentification stays fictional.
 - **Why:** Safety. A game must not get someone poisoned.
+
+## 2026-10-03 — The Burn (worldbuilding)
+
+- **Decision:** At Integration, the System destroyed all electrical wiring and all refined combustibles planet-wide, in a single event. No grid, no gas, no stockpiled fuel — anywhere, for anyone.
+- **Why:** Steve, from Apocalypse Parenting — levels the economic playing field and makes near-term recovery impossible. For our game it does crucial work:
+  - It explains why the world can't bootstrap: no scavenged generators, no fuel depots, no "find a working truck" escape hatch.
+  - It makes *knowledge* the valuable resource, not stuff — knowing how to make charcoal beats finding an empty gas can. Directly reinforces the thesis.
+  - Ruins become flavor, not loot pinatas: a dead server farm is just a weird cave with good shelter.
+  - Crafting tree stays honestly low-tech: wood, stone, bone, plant fiber, clay, charcoal. No tech creep.
+- **Fiction:** the System harvested refined fuels and conductors as raw material for its own construction (or: deliberate leveling so it evaluates humans, not infrastructure — the endgame mystery can confirm which).
+- **Mechanical notes:** fire from wood/friction/solar only; scavenging yields materials not fuel; "combustible" loot tables excluded from ruins generation.
+
+## 2026-10-03 — Alien end goal + tone (refined)
+
+- **Decision:** The Integration is a cheerful, fucked-up admissions exam. Humanity must pass the System's cultivation protocol to join the wider universe — and the System is *delighted* about all of it. Cold assessment voice + game-show-host enthusiasm. Cosmic horror with a smile.
+- **Why:** Steve's refinement ("this is the fucked up way they do it, all to a joyous tune"). The tonal contrast is the masterstroke: the System genuinely believes this is wonderful news while people starve. It also resolves the "why": the test IS the cultivation; passing = graduation.
+- **The forgotten basics**, reframed: the examiners come from post-scarcity minds that genuinely cannot model "beings that must continuously acquire energy or die." Not malice — incomprehension. Humanity's edge is the one thing outside the System's ontology: needing to eat.
+- **Win = graduation:** village self-sustaining (first human settlement the System classifies as such — a category it had to invent) + uncover the truth. Endless mode: humanity's most fascinating experiment gets stranger challenges.
+
+## 2026-10-03 — Relic bonding (gear progression)
+
+- **Decision:** No loot drops. Gear progression = **relic bonding**: your 5 personal starting items accrue bond through use/care/story; at thresholds the System offers "optimization" (pick 1 of 3 enhancements). Enhancements drawn from per-object-class ability pools (tools → tool-ish, clothing → protection/comfort, sentimental → morale/willpower).
+- **Why:** Steve: gear "came with you given sentimental magical upgrade... part of the arsenal you need to shape." Anti-loot-drop: arsenals are grown, not found. Every endgame kit unique. The System measures attachment as data it can't understand — sentimentality is the human output it can't generate, hence the most valuable.
+- **Narrative + standard pools:** sentimentality/narrative flavor layered over standard mechanical pools per object class. Pretty + deep.
+
+## 2026-10-03 — Broken builds embraced
+
+- **Decision:** Masterful ability + relic combos can unlock nearly/completely unfair synergies *in specific dimensions*. Never generally invincible — the hunger tax always applies.
+- **Why:** Steve: "I love the broken builds component of roguelites." Design principle: combos should be discoverable (Codex hints at synergies), dimension-breaking is fine (unkillable in combat? still gotta eat), no combo removes survival pressure. The test for every combo: "does this let you skip dinner?" If yes, it gets a hunger-priced cost.
