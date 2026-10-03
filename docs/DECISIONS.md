@@ -278,3 +278,13 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Recruitment is relational:** they join from loyalty, debt, boredom, because you asked. Never a "recruit" button.
 - **The party-village tension:** every companion in the field is a worker not at home. The village notices. The demagogue notices.
 - **The System loves parties:** more cast = better television. It names your group without asking: "The Committee has designated your unit: TEAM PERSEVERANCE! Merchandise available!" Fans have favorites; companions earn Favor too.
+
+## 2026-10-03 — Departure ritual + the reliability contract
+
+- **Decision:** Leaving a village triggers a **departure ritual** — the game asks, the player never has to remember. Steps: name a deputy (leanings visible), 2-3 standing orders, party selection, supplies split, expected return date. Overdue return triggers worry, then events.
+- **Why:** Steve: "a person shouldn't have to worry about remembering to set a deputy... We must manage dependencies with sophistication and reliability."
+- **The reliability contract:** the village sim is deterministic-ish and legible, not random. Do everything right (deputy, supplies, orders, return on time) and the village *will* be okay for the expected duration. Problems trace to: staying too long, appointing badly, declining to choose, or genuine telegraphed crises. The game never punishes what you couldn't see or decide.
+- **Dependencies are explicit and chainable:** deputy quality → cohesion → work output → stores → morale → cohesion. The player can reason about the chain. Surprises come from *character* (the deputy's leanings), never from *noise*.
+- **"Whatever" is a choice:** "leave it to them" is always available — but explicit, with known risk. Never a forgotten default.
+- **Return ritual (mirror):** bond-weighted digest + deputy's report in their voice + reconciliation of your orders vs what happened.
+- **Simplicity win:** the departure ritual IS the village management UI. No separate management screen to learn — you govern by leaving well and returning honestly.
