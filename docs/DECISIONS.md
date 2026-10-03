@@ -102,3 +102,31 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 
 - **Decision:** Masterful ability + relic combos can unlock nearly/completely unfair synergies *in specific dimensions*. Never generally invincible — the hunger tax always applies.
 - **Why:** Steve: "I love the broken builds component of roguelites." Design principle: combos should be discoverable (Codex hints at synergies), dimension-breaking is fine (unkillable in combat? still gotta eat), no combo removes survival pressure. The test for every combo: "does this let you skip dinner?" If yes, it gets a hunger-priced cost.
+
+## 2026-10-03 — System voice: alien, earnest, out of touch
+
+- **Decision:** The System is truly alien and completely out of touch — but it *really tried*. It studied humanity exhaustively and got every detail technically right and spiritually wrong. Cheerful game-show host delivering cosmic horror. Never malicious; worse — earnest.
+- **Why:** Steve: "they really tried their best to get all the details right, they just simply aren't human." The comedy-horror contrast is the game's signature tone. Examples live in VISION.md tone section (expand).
+- **Interface:** RPG "overlay" as a literal second visual layer. Pre-Integration: grounded terminal (earthy greens/ambers, monospace grit). Post-Integration: the System overlay slides OVER it — cold blues/whites, too-clean geometry, rounded corners that feel wrong. It never replaces the survival UI; it covers part of it and works around the hunger meter (still the biggest element — a visual joke about priorities). Occasional glitches reveal untranslated alien script underneath.
+- **Rule:** the System knows everything about you and nothing about you. Resting heart rate: known. Grandmother's maiden name: known. Why you're crying: [FIELD NOT FOUND].
+
+## 2026-10-03 — Roguelite staples, reskinned (the broadcast layer)
+
+- **Decision:** Classic roguelite mechanics return as broadcast-show mechanics. The System has an *audience* (other species watching); contestants earn **Favor** (second currency) by being entertaining. All broadcast-layer mechanics are optional spice, never core loop.
+- **Why:** Steve: galactic shop / care packages "from fans." The audience framing makes every staple native to the fiction instead of pasted on.
+- **The set:**
+  - **Favor & Galactic Shop:** earn Favor via engagement (dramatic wins, close calls, novel solutions — the System scores entertainment). Spend between regions on fan care packages. Inventory is wacky and earnest ("Premium Dirt — artisanal, pre-Burn!").
+  - **Audience Votes (StS ?-rooms):** viewers vote on your next event; offered 3 options with vote percentages. "The audience has voted! 67% want you to fight the thing!"
+  - **Spotlight Elites:** the System spotlights a fight for broadcast — tougher enemy, cameras visible, audience showers Favor on the winner. Opt-in by engaging.
+  - **Sponsor Conditions (curses+):** a fan sponsors you — take the package, accept the condition (no resting 3 encounters, etc.). Optional, wacky.
+  - **Rerun Episodes (seeded dailies):** the System rebroadcasts classic scenarios; same seed for everyone, scholar leaderboards.
+  - **Unauthorized Companion (pets):** a stray animal adopts you. The System classifies it as equipment, keeps trying to optimize it. Charm + minor utility (danger sense, scrap finding).
+  - **Syndication (ascension):** post-campaign endless mode framed as rebroadcast with escalating modifiers.
+- **Rule:** broadcast mechanics never touch the calorie economy's integrity. Favor buys conveniences and novelties, never dinner.
+
+## 2026-10-03 — Content architecture: data-driven + validated
+
+- **Decision:** All content is JSON in `src/data/` conforming to `src/data/schemas.json`. Engine (`src/js/engine/`) reads data, never hardcodes content. `scripts/validate-data.js` is the gate: fails on missing/unknown fields, type/range mismatches, duplicate ids, dangling references.
+- **Why:** Steve: "when we want to add something, it should be to a list with known structure... make this thing scalable." The modifier pipeline (`modifiers.js`) is the scalability core: abilities/relics/injuries declare `{target, op, value}` and the engine resolves every computed value through it. New abilities never touch engine code.
+- **Safety rules encoded:** plants require `confidence: high`; shop items may not carry calories (Favor buys conveniences, never dinner).
+- **Starter content:** 10 SE-woodland plants (real, conservative), 1 biome, 3 villagers with backstories, 13 items, 12 abilities, 15 System lines. Monsters/events/shop/trials stubbed as empty arrays.

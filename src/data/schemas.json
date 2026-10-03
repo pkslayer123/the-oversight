@@ -1,0 +1,89 @@
+{
+  "$comment": "The law. Every file in src/data/ is validated against these schemas by scripts/validate-data.js. Unknown fields fail. Out-of-range numbers fail. Dangling references fail.",
+  "plant": {
+    "required": ["id", "name", "biomes", "seasons", "caloriesPerUnit", "unit", "idDifficulty", "confidence", "codex"],
+    "types": {
+      "id": "string", "name": "string", "scientific": "string?",
+      "biomes": "string[]", "seasons": ["spring", "summer", "fall", "winter"],
+      "caloriesPerUnit": "number[0..2000]", "unit": "string",
+      "waterContent": ["low", "medium", "high"] ,
+      "idDifficulty": "number[1..5]",
+      "preparation": "string?", "spoilageDays": "number[0..60]?",
+      "confidence": ["high"],
+      "lookalikeNote": "string?", "codex": "string", "tileAffinity": "string[]?"
+    }
+  },
+  "monster": {
+    "required": ["id", "name", "biomes", "hp", "attack", "behavior", "codexStages"],
+    "types": {
+      "id": "string", "name": "string", "biomes": "string[]",
+      "hp": "number[2..2]", "attack": {"name": "string", "damage": "number[2..2]", "telegraph": "string"},
+      "weaknesses": "string[]?", "edible": {"calories": "number[0..8000]", "note": "string"},
+      "parts": "string[]?", "behavior": ["ambush", "territorial", "pack", "passive"],
+      "codexStages": {"unknown": "string", "observed": "string", "slain": "string"}
+    }
+  },
+  "ability": {
+    "required": ["id", "name", "pool", "description", "unlock"],
+    "types": {
+      "id": "string", "name": "string",
+      "pool": ["fieldcraft", "combat", "craft", "care", "system"],
+      "description": "string",
+      "modifiers": [{"target": "string", "op": ["add", "multiply"], "value": "number", "condition": "string?"}],
+      "unlock": {"type": ["granted", "trial", "discovery", "mentorship"], "detail": "string?"},
+      "synergyHints": "string[]?"
+    }
+  },
+  "villager": {
+    "required": ["id", "name", "homeRegion", "formerOccupation", "personality", "backstory", "items", "abilityWeights", "systemAssessment"],
+    "types": {
+      "id": "string", "name": "string", "homeRegion": "string", "formerOccupation": "string",
+      "personality": "string[]", "backstory": "string",
+      "items": "string[5..5]", "clothesNote": "string?",
+      "abilityWeights": "object", "systemAssessment": "string", "survivalProbability": "number[1..99]?"
+    }
+  },
+  "item": {
+    "required": ["id", "name", "class", "flavor"],
+    "types": {
+      "id": "string", "name": "string",
+      "class": ["tool", "clothing", "sentimental"],
+      "baseEffect": "string?", "flavor": "string",
+      "bondThresholds": [{"uses": "number[1..500]", "offers": "string[]"}]
+    }
+  },
+  "gameEvent": {
+    "required": ["id", "type", "trigger", "choices"],
+    "types": {
+      "id": "string", "type": ["audience_vote", "sponsor", "encounter", "discovery"],
+      "trigger": "string",
+      "choices": [{"text": "string", "requirements": "string?", "outcomes": [{"effects": "string[]?", "text": "string"}]}]
+    }
+  },
+  "systemMessage": {
+    "required": ["id", "trigger", "text"],
+    "types": {"id": "string", "trigger": "string", "text": "string", "tone": ["cheerful"]}
+  },
+  "shopItem": {
+    "required": ["id", "name", "favorCost", "description"],
+    "types": {
+      "id": "string", "name": "string", "favorCost": "number[1..100]",
+      "description": "string", "effect": "string?", "wackiness": "number[1..5]?",
+      "caloriesPerUnit": "number[0..0]?"
+    },
+    "$comment": "Shop items may not provide calories. Favor buys conveniences, never dinner."
+  },
+  "trial": {
+    "required": ["id", "trigger", "offers", "systemText"],
+    "types": {"id": "string", "trigger": "string", "offers": "string[3..3]", "systemText": "string"}
+  },
+  "biome": {
+    "required": ["id", "name", "description", "tileTypes", "forageTable", "seasons"],
+    "types": {
+      "id": "string", "name": "string", "description": "string",
+      "tileTypes": "string[]", "forageTable": "object",
+      "weather": "string[]?", "hazards": "string[]?",
+      "seasons": "object"
+    }
+  }
+}

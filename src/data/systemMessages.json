@@ -1,0 +1,77 @@
+[
+  {
+    "text": "Good morning, Scholar! Your caloric deficit has entered the OPTIMAL SUFFERING BAND \u2014 the Committee is literally applauding!",
+    "trigger": "morning_starving",
+    "id": "sys_morning_starving_0"
+  },
+  {
+    "text": "We noticed you have not consumed water in 14 hours. Hydration reminder! Also: your despair levels are BEAUTIFUL today. Such range!",
+    "trigger": "dehydrated",
+    "id": "sys_dehydrated_1"
+  },
+  {
+    "text": "Your pair-bonded companion unit has expired. A moment of silence has been scheduled (0.8 seconds). Grief counseling module: [NOT INSTALLED]. Have you considered acquiring a replacement?",
+    "trigger": "companion_death",
+    "id": "sys_companion_death_2"
+  },
+  {
+    "text": "Unit K-NIFE has ceased function. We are SO sorry. It was a good knife. It is being memorialized in the Hall of Adequate Tools.",
+    "trigger": "relic_broken",
+    "id": "sys_relic_broken_3"
+  },
+  {
+    "text": "We understand this is a difficult 'Monday'! Please enjoy this cake-equivalent positive notification in lieu of cake, which is unavailable due to the Burn.",
+    "trigger": "morning",
+    "id": "sys_morning_4"
+  },
+  {
+    "text": "Happy approximate birth anniversary! We calculated this from your dental records. Please celebrate responsibly: you have 1,200 kcal remaining today.",
+    "trigger": "birthday",
+    "id": "sys_birthday_5"
+  },
+  {
+    "text": "ACHIEVEMENT UNLOCKED: Watched A Friend Die (empathy metrics +12! The Committee found it very moving.)",
+    "trigger": "achievement_death_witness",
+    "id": "sys_achievement_death_witness_6"
+  },
+  {
+    "text": "ACHIEVEMENT UNLOCKED: Third Day Without Food (persistence quotient rising! Only 64% of integrated species survive this phase. You're doing AMAZING.)",
+    "trigger": "achievement_hunger_3",
+    "id": "sys_achievement_hunger_3_7"
+  },
+  {
+    "text": "TRIAL COMPLETE: Trial of Hunger survived. Your suffering was statistically significant! Select one enhancement:",
+    "trigger": "trial_offer",
+    "id": "sys_trial_offer_8"
+  },
+  {
+    "text": "Unauthorized companion unit detected. Attempting optimization... optimization failed. It bit me. Affection metrics rising. Classification: friend.",
+    "trigger": "pet_adopted",
+    "id": "sys_pet_adopted_9"
+  },
+  {
+    "text": "The audience has voted! 67% want you to FIGHT THE THING. 22% want you to run. 11% want you to try to befriend it (the 11% are rooting for you).",
+    "trigger": "audience_vote",
+    "id": "sys_audience_vote_10"
+  },
+  {
+    "text": "SPONSORSHIP OFFER from Xylthax-9: Enjoy the premium jerky! Condition: no resting for the next 3 encounters. The fans want to see you TIRED!",
+    "trigger": "sponsor_offer",
+    "id": "sys_sponsor_offer_11"
+  },
+  {
+    "text": "Integration complete! Your village has been classified as CANDIDATE-SET 4419. Survival probability across all members: 23%. The Committee is SO excited to watch!",
+    "trigger": "integration",
+    "id": "sys_integration_12"
+  },
+  {
+    "text": "Your Codex entry has been reviewed by the Committee. Verdict: ADEQUATE. (This is high praise. The Committee rarely praises.)",
+    "trigger": "codex_entry",
+    "id": "sys_codex_entry_13"
+  },
+  {
+    "text": "Statistical extinction is ONLY 67%! Hang in there!",
+    "trigger": "poster",
+    "id": "sys_poster_14"
+  }
+]

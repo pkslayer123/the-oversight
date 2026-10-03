@@ -1,0 +1,45 @@
+/* The modifier pipeline — the scalability core.
+   Every computed value resolves through here:
+     base → collect active modifiers → apply adds, then multiplies → final.
+   Abilities, relics, injuries, and conditions all speak this one language,
+   so new content never touches engine code. */
+(function (global) {
+  'use strict';
+
+  // A modifier: {target, op: 'add'|'multiply', value, condition?}
+  // condition is a string like "biome:se_woodlands" — evaluated by the caller.
+
+  function resolve(base, target, modifiers, context) {
+    let add = 0, mul = 1;
+    for (const m of modifiers || []) {
+      if (m.target !== target) continue;
+      if (m.condition && context && !checkCondition(m.condition, context)) continue;
+      if (m.op === 'add') add += m.value;
+      else if (m.op === 'multiply') mul *= m.value;
+    }
+    return (base + add) * mul;
+  }
+
+  function checkCondition(cond, ctx) {
+    const [k, v] = cond.split(':');
+    return ctx && ctx[k] === v;
+  }
+
+  // Gather modifiers from a scholar's abilities + relics + injuries.
+  // abilitiesData: the abilities.json array. In slice 1 this is passed in;
+  // later it comes from a content registry.
+  function collectModifiers(scholar, abilitiesData) {
+    const out = [];
+    const byId = {};
+    (abilitiesData || []).forEach(a => { byId[a.id] = a; });
+    (scholar.abilities || []).forEach(id => {
+      const a = byId[id];
+      if (a && a.modifiers) out.push(...a.modifiers);
+    });
+    // relics and injuries hook in here in later slices (same shape)
+    return out;
+  }
+
+  global.Scattering = global.Scattering || {};
+  global.Scattering.modifiers = { resolve, collectModifiers, checkCondition };
+})(typeof window !== 'undefined' ? window : globalThis);
