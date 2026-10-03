@@ -216,3 +216,17 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   - **Epilogue — Syndication:** endless mode.
 - **Refinement:** the campaign spans multiple expedition years, not one. "Survive the first year" becomes Book 1's climax, not the game's win. The win remains the council seat — earned over years, not months. This is also the deeper anti-speedrun: even OP builds take years; power buys comfort and style, never time.
 - **Each book answers a question and raises a bigger one:** Can I eat? → What is the game? → Who are my people? → What's out there? → Why? → What will I do?
+
+## 2026-10-03 — Book transitions are earned, never timed
+
+- **Decision:** Every book transition is triggered by player-earned thresholds (knowledge gained, stability achieved, contact made, choice declared) — never by the calendar. Seasons provide texture; they never gate story.
+- **Why:** Steve: phases "should be triggered by a certain event or level unlocked, knowledge gained" — and players will know something's up from the start, so the System's arrival must feel responsive, not scheduled.
+- **The principle:** GATES ARE EARNED, NEVER TIMED.
+- **Triggers (first pass):**
+  - **1→2 Integration:** the village achieves baseline viability (pantry stable N days, or first crisis survived). The System was watching all along — you earned its attention: "CANDIDATE-SET 4419 has achieved baseline viability! Integration commencing! The Committee is SO excited!"
+  - **2→3 Neighbors:** first contact — you find another scholar, or the System introduces you "for entertainment purposes." The audience wants crossover episodes.
+  - **3→4 Deep Wilds:** you've outgrown the local — Codex maps the region, or the village must expand. The world opens because you earned a bigger one.
+  - **4→5 Truth:** knowledge threshold — enough truth fragments assembled, or the System judges your temperament mature. Revelation is investigated, not delivered.
+  - **5→6 Seat:** the choice — you declare yourself ready (dark: you take it; light: you're invited).
+- **No fake mystery in Book 1:** the scattering is obviously unnatural from minute one. Book 1's question isn't "are there aliens" — it's "what happened, where am I, how do I eat." Seed foreshadowing instead: strange lights, a glyph that appears and vanishes, the feeling of being watched (you are — the audience is already there). The System's arrival is the other shoe dropping, and the dread is the point.
+- **Compatibility with anti-speedrun:** thresholds take as long as they take. Power crosses stability faster, but truth requires investigation and the seat requires becoming someone. Time is the medium, not the gate.
