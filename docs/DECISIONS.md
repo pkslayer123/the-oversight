@@ -130,3 +130,36 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Why:** Steve: "when we want to add something, it should be to a list with known structure... make this thing scalable." The modifier pipeline (`modifiers.js`) is the scalability core: abilities/relics/injuries declare `{target, op, value}` and the engine resolves every computed value through it. New abilities never touch engine code.
 - **Safety rules encoded:** plants require `confidence: high`; shop items may not carry calories (Favor buys conveniences, never dinner).
 - **Starter content:** 10 SE-woodland plants (real, conservative), 1 biome, 3 villagers with backstories, 13 items, 12 abilities, 15 System lines. Monsters/events/shop/trials stubbed as empty arrays.
+
+## 2026-10-03 — Simplicity doctrine: decisions, not chores
+
+- **Decision:** The core design law is **decisions, not chores**. Tedium = executing a plan you already made (click 47 times to craft). Fun = making the choice. Every AP spent must feel like a decision, never an errand.
+- **Why:** Steve bounced off Caves of Qud — too much to learn. The game must feel like an endless world rewarding real survival skills, not another crafting game. Depth lives in *which* of 4 daily choices you make, not in how many steps each takes.
+- **The rules:**
+  - **4 AP = 4 decisions.** The action budget IS the simplicity engine. You cannot be overwhelmed because you cannot do more than 4 things.
+  - **One tap per action.** Forage a tile: one tap, result + Codex update. Depth is in *which tile* (fog-of-war grid), not a foraging minigame. Eat: "eat to full," game picks sensibly, override optional. Craft: one tap — the decision is the AP and materials, never the process.
+  - **The Codex is the tutorial.** No manuals. Knowledge unlocks UI: find cattails → game offers "boil roots?" → you learned cooking. A real-world forager should be good at this game immediately.
+  - **Fail forward.** Eat the unknown berry → sick, but the Codex learns. Curiosity is never punished with a run-ender early. The lesson is the reward.
+  - **No inventory tetris, no durability micromanagement.** Food = kcal + carried. Relics don't degrade from use; they change at story moments.
+  - **Two-minute readability.** Any game state must be legible on a phone in under two minutes: where am I, what do I need most, what are my options?
+  - **One-thumb, 3-5 minute days.** Sessions are "one more day," not "one more hour."
+- **How we find the line (ongoing):** slice-1 playtest is the instrument. Tedium signals: repeated identical actions with no decision, UI requiring counting, any system needing a wiki. The 30-second test: if the core loop takes longer to explain, it's too complex. The Qud test: can a new player survive day 1 pressing only obvious buttons?
+
+## 2026-10-03 — Day structure: nested (4 parts × node affordances)
+
+- **Decision:** Days are nested, not flat. 4 day-parts (DAWN / MIDDAY / DUSK / NIGHT), each with 1 AP for a major action. Current node affords unlimited FREE minor actions. Travel between adjacent nodes costs 1 AP — movement is the AP economy's backbone.
+- **Why:** Steve: 4 flat AP isn't granular enough for a full day; nesting gives rhythm. A day should feel lived (dawn at the creek, midday in the grove, dusk on the trail, night at camp), not clicked through.
+- **The line:** minors are MAINTENANCE, never production. Drink/refill at water, tend fire/check snares/eat from stores at camp, read Codex anywhere — free. Harvesting, hunting, crafting, treating water always cost AP. Production is never free.
+- **Day-part character (contextual, not mechanical):**
+  - DAWN: hunt find +25%, world waking up
+  - MIDDAY: heat — energy drain up (summer), honest work hours
+  - DUSK: hunt find +25%, travel encounters up (things hunt at dusk too)
+  - NIGHT: camp only; night foraging possible at 2× encounter risk (the audience votes for this)
+- **Typical day:** travel out (1) → work (1) → travel back (1) → camp work (1). Or push deeper and camp out — the map is the game.
+- **Still simple:** the player just picks what to do; modifiers are contextual. Complexity in the world, not the interface.
+
+## 2026-10-03 — The Five Items (system spec)
+
+- **Decision:** Full spec in `docs/ITEMS.md`. Five personal items + favorite clothes, no loot drops. Classes (tool/clothing/sentimental) determine enhancement pools. Bond accrues passively (1/day meaningful use; sentimental bonds by keeping + story moments). Thresholds at 10/25/50 → System offers optimization, pick 1 of 3. Loss happens at story moments, never durability bars.
+- **Why:** Steve asked for a stab at the 5 items per existing directives. Honors: relic bonding, per-class pools, simplicity (passive bond, no grind), broken builds (combos break one dimension, never dinner), System voice.
+- **Data:** `src/data/relicEnhancements.json` (9 enhancements, each with earnest-alien systemCommentary), bond thresholds on 9 items, schema + validator support. Gate green.

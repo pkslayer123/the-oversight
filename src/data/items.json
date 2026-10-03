@@ -4,42 +4,110 @@
     "class": "tool",
     "flavor": "Spring-assisted, half-serrated. Opens one-handed. You've opened it ten thousand times.",
     "id": "multitool",
-    "name": "Multitool"
+    "name": "Multitool",
+    "bondThresholds": [
+      {
+        "uses": 10,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
   },
   {
     "baseEffect": "Fire on demand (until fuel runs out)",
     "class": "tool",
     "flavor": "The most valuable object in the post-Burn world. Guard it with your life.",
     "id": "lighter",
-    "name": "Lighter"
+    "name": "Lighter",
+    "bondThresholds": [
+      {
+        "uses": 25,
+        "offers": [
+          "never_fails",
+          "impossible_edge",
+          "efficient_action"
+        ]
+      }
+    ]
   },
   {
     "baseEffect": "Stabilize one severe injury per expedition",
     "class": "tool",
     "flavor": "Not much left in the kit. Enough for one bad day.",
     "id": "field_sutures",
-    "name": "Field Sutures"
+    "name": "Field Sutures",
+    "bondThresholds": [
+      {
+        "uses": 10,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
   },
   {
     "baseEffect": "+resolve when carried (morale)",
     "class": "sentimental",
     "flavor": "Crayon on printer paper: you, holding a sun. She drew it the week before the sky changed.",
     "id": "daughters_drawing",
-    "name": "Daughter's Drawing"
+    "name": "Daughter's Drawing",
+    "bondThresholds": [
+      {
+        "uses": 21,
+        "offers": [
+          "resolve",
+          "quiet_luck",
+          "anchor"
+        ]
+      }
+    ]
   },
   {
     "baseEffect": "+1 travel AP per day",
     "class": "clothing",
     "flavor": "Broken in over three states. They fit like a promise.",
     "id": "good_boots",
-    "name": "Good Boots"
+    "name": "Good Boots",
+    "bondThresholds": [
+      {
+        "uses": 25,
+        "offers": [
+          "second_skin",
+          "weatherproof",
+          "ghost_weave"
+        ]
+      }
+    ]
   },
   {
     "baseEffect": "Dress game 25% faster; +bond with every kill cleaned",
     "class": "tool",
     "flavor": "His grandfather's. The edge remembers.",
     "id": "grandfathers_knife",
-    "name": "Grandfather's Knife"
+    "name": "Grandfather's Knife",
+    "bondThresholds": [
+      {
+        "uses": 10,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      },
+      {
+        "uses": 50,
+        "offers": [
+          "impossible_edge",
+          "never_fails",
+          "efficient_action"
+        ]
+      }
+    ]
   },
   {
     "baseEffect": "Climb, snare, haul \u2014 50ft of options",
@@ -60,14 +128,34 @@
     "class": "clothing",
     "flavor": "Hasn't taken it off since the sky changed.",
     "id": "camo_jacket",
-    "name": "Camo Jacket"
+    "name": "Camo Jacket",
+    "bondThresholds": [
+      {
+        "uses": 25,
+        "offers": [
+          "weatherproof",
+          "ghost_weave",
+          "second_skin"
+        ]
+      }
+    ]
   },
   {
     "baseEffect": "Butcher and fillet with precision; +bond with every meal prepared",
     "class": "tool",
     "flavor": "Eleven years of mornings. The edge is a meditation.",
     "id": "chefs_knife",
-    "name": "Chef's Knife"
+    "name": "Chef's Knife",
+    "bondThresholds": [
+      {
+        "uses": 10,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
   },
   {
     "baseEffect": "Restore any blade to service",
@@ -88,6 +176,16 @@
     "class": "sentimental",
     "flavor": "Her mother's. She twists it when thinking.",
     "id": "mothers_ring",
-    "name": "Mother's Ring"
+    "name": "Mother's Ring",
+    "bondThresholds": [
+      {
+        "uses": 21,
+        "offers": [
+          "resolve",
+          "quiet_luck",
+          "anchor"
+        ]
+      }
+    ]
   }
 ]

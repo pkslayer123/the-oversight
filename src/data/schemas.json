@@ -85,5 +85,15 @@
       "weather": "string[]?", "hazards": "string[]?",
       "seasons": "object"
     }
+  },
+  "relicEnhancement": {
+    "required": ["id", "name", "class", "description", "systemCommentary"],
+    "types": {
+      "id": "string", "name": "string",
+      "class": ["tool", "clothing", "sentimental"],
+      "description": "string",
+      "effect": {"target": "string", "op": ["add", "multiply"], "value": "number"},
+      "systemCommentary": "string"
+    }
   }
 }

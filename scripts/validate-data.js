@@ -17,6 +17,7 @@ const FILES = {
   'villagers.json': 'villager', 'items.json': 'item', 'events.json': 'gameEvent',
   'systemMessages.json': 'systemMessage', 'shop.json': 'shopItem',
   'trials.json': 'trial', 'biomes.json': 'biome',
+  'relicEnhancements.json': 'relicEnhancement',
 };
 
 function checkType(val, spec, where) {
@@ -77,6 +78,13 @@ function validateEntry(entry, schema, file, idx) {
       } else if (field === 'unlock') {
         if (!['granted', 'trial', 'discovery', 'mentorship'].includes(val.type))
           err(file, `${where}: unlock.type invalid`);
+      } else if (field === 'effect') {
+        for (const [k, ks] of Object.entries(spec)) {
+          if (Array.isArray(ks)) {
+            if (val[k] !== undefined && !ks.includes(val[k]))
+              err(file, `${where}: 'effect.${k}' not in enum ${JSON.stringify(ks)}`);
+          } else if (!checkType(val[k], ks, where)) err(file, `${where}: 'effect.${k}' type/range mismatch (spec ${ks})`);
+        }
       }
       continue;
     }
@@ -116,6 +124,7 @@ function main() {
   get('plants.json').forEach(pl => (pl.biomes || []).forEach(b => ref('plants.json', pl.id, 'biome', b)));
   get('monsters.json').forEach(m => (m.biomes || []).forEach(b => ref('monsters.json', m.id, 'biome', b)));
   get('trials.json').forEach(t => (t.offers || []).forEach(id => ref('trials.json', t.id, 'ability', id)));
+  get('items.json').forEach(it => (it.bondThresholds || []).forEach(bt => (bt.offers || []).forEach(id => ref('items.json', it.id, 'relicEnhancement', id))));
   get('events.json').forEach(e => (e.choices || []).forEach(c => (c.outcomes || []).forEach(() => {}))); // effects are freeform strings for now
 
   if (errors.length) {
