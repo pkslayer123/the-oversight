@@ -25,7 +25,7 @@
   function statusBars(st) {
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
       statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
-      statRow('PACK', st.invKcal + ' kcal', Math.min(100, st.invKcal / 30)) +
+      statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
       statRow('WATER', st.hydration + '% · ' + st.water + ' clean', st.hydration, st.hydration < 30) +
       statRow('ENERGY', st.energy + '%', st.energy, st.energy < 25);
   }
@@ -170,7 +170,7 @@
       <div class="actions">
         ${st.ap > 0 ? `
         <button class="btn sm" id="a-travel">${travelMode ? 'Cancel' : 'Travel'}</button>
-        <button class="btn sm" id="a-forage" ${canForage ? '' : 'disabled'}>Forage</button>
+        <button class="btn sm" id="a-forage" ${canForage || (t.type === 'ruin' && st.ap > 0) ? '' : 'disabled'}>${t.type === 'ruin' ? 'Scavenge' : 'Forage'}</button>
         <button class="btn sm" id="a-treat" ${canTreat ? '' : 'disabled'}>Treat water</button>
         <button class="btn sm" id="a-rest">Rest</button>` : `<p class="small">Rest those hands. End the ${st.dayPart}.</p>`}
       </div>

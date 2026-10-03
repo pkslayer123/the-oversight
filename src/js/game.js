@@ -18,6 +18,13 @@
     forest_floor: 'forest floor', grove: 'grove', meadow: 'meadow', thicket: 'thicket',
     wetland: 'wetland', creek: 'creek', trail_edge: 'trail edge', ruin: 'ruin',
   };
+  // scavenged goods (ruins) — finite. the houses feed you until they don't.
+  const SCAVENGED = [
+    { id: 'can_beans', name: 'Canned beans', kcal: 450, kg: 0.4, text: 'Dusty can, intact seal. Someone\'s pantry, a lifetime ago.' },
+    { id: 'can_corn', name: 'Canned corn', kcal: 380, kg: 0.4, text: 'The label is gone. The corn doesn\'t care.' },
+    { id: 'can_soup', name: 'Canned soup', kcal: 300, kg: 0.35, text: 'Chicken soup. Tastes like before.' },
+    { id: 'jar_peaches', name: 'Jarred peaches', kcal: 500, kg: 0.5, text: 'Home-canned. Whoever sealed this knew what they were doing.' },
+  ];
   // first-visit arrival moments — destinations reveal something
   const ARRIVAL = {
     forest_floor: { title: 'Under the canopy', text: 'Leaf litter, birdcall, the smell of rot becoming soil. The woods, being the woods.' },
@@ -173,6 +180,10 @@
           tiles[y][x].ruinStory = ['A collapsed barn. Pre-Burn. The wiring is gone — everything is gone — but the stones remember the shape of work.',
             'A farmhouse foundation. Someone\'s kitchen. The Burn took the wires from the walls; the walls kept standing out of spite.',
             'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(Math.random() * 3)];
+          // finite pantry: 3-5 cans. the houses feed you until they don't.
+          const nLoot = 3 + Math.floor(Math.random() * 3);
+          tiles[y][x].loot = [];
+          for (let i = 0; i < nLoot; i++) tiles[y][x].loot.push(SCAVENGED[Math.floor(Math.random() * SCAVENGED.length)].id);
           break;
         }
       }
@@ -263,6 +274,13 @@
       }
     },
 
+    // --- pack weight: 15 kg. distance has a price; so does carrying. ---
+    packCapacity() { return 15; },
+    packWeight() {
+      return this.state.scholar.inventory.reduce((t, i) => t + (i.units * (i.kg || 0.1)), 0);
+    },
+    canCarry(kg) { return this.packWeight() + kg <= this.packCapacity(); },
+
     // --- actions (1 AP) ---
     doAction(kind) {
       if (this.ap < 1 || this.over) return null;
@@ -270,11 +288,24 @@
       let msg = '';
       if (kind === 'forage') {
         const t = this.playerTile();
+        // ruins: scavenge finite loot, not plants
+        if (t.type === 'ruin') {
+          if (!t.loot || !t.loot.length) { this.say('Picked clean. The houses fed someone — not you.'); return null; }
+          const lootId = t.loot.shift();
+          const item = SCAVENGED.find(s => s.id === lootId);
+          if (!this.canCarry(item.kg)) { t.loot.unshift(lootId); this.say('Too heavy — your pack can\'t take it. Eat something or leave it.'); return null; }
+          scholar.inventory.push({ plantId: lootId, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg });
+          scholar.kcal -= 100;
+          msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
+          this.ap -= 1; this.say(msg); return msg;
+        }
         if (!S.forage.canForage(t)) { this.say('Nothing left to forage here today.'); return null; }
         t.foraged = true;
         const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities);
+        const kg = r.units * 0.1;
+        if (!this.canCarry(kg)) { t.foraged = false; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
         if (r.firstFind) this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
-        scholar.inventory.push({ plantId: r.plantId, units: r.units, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation });
+        scholar.inventory.push({ plantId: r.plantId, units: r.units, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         msg = r.message + (r.firstFind ? ` (${r.plant.codex})` : '');
       } else if (kind === 'rest') {
@@ -392,7 +423,7 @@
         this.state.codex.monsters = this.state.codex.monsters || {};
         this.state.codex.monsters['thornback_boar'] = { stage: 'slain' };
         const scholar = this.state.scholar;
-        scholar.inventory.push({ plantId: 'boar_meat', units: 4, kcalEach: 800, spoilDay: scholar.day + 3, name: 'Bulldozer meat', unit: 'cut', prep: 'Smoke it — it keeps for weeks.' });
+        scholar.inventory.push({ plantId: 'boar_meat', units: 4, kcalEach: 800, spoilDay: scholar.day + 3, name: 'Bulldozer meat', unit: 'cut', prep: 'Smoke it — it keeps for weeks.', kg: 0.8 });
         this.say('The Bulldozer falls. Pork is pork — 3,200 kcal of it. The village will eat. (+4 cuts of meat)');
         this.fight = null;
       } else if (r.result === 'fled') {
@@ -417,6 +448,8 @@
         water: s.water || 0,
         inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
         invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
+        packKg: Math.round(this.packWeight() * 10) / 10,
+        packCap: this.packCapacity(),
         px: this.map.px, py: this.map.py,
         over: this.over, won: this.won,
         location: this.location, departed: this.departed,
