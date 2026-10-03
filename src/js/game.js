@@ -35,6 +35,8 @@
     dayPart: 0, ap: 1, over: false, won: false,
     encounterDone: false, log: [],
     homeRegion: null, villagerId: null,
+    location: 'village', // 'village' | 'wilds' — nodes access consistent maps
+    departed: false,
 
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
@@ -66,8 +68,47 @@
       this.state.codex = S.state.newCodex();
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
       this.encounterDone = false; this.log = [];
+      this.location = 'village'; this.departed = false;
       this.genMap();
-      this.say(`Day 1 — dawn. "${villager.name.split(' ')[0]}, eat something green. Drink water. Come back before dark."`);
+      this.say('Haven. Twelve people. The fire is lit.');
+      return this.status();
+    },
+
+    // --- village node ---
+    villageInfo() {
+      const v = this.state.village;
+      const codexN = Object.keys(this.state.codex.plants).length;
+      const atmos = [
+        'The fire is lit. Someone is mending something. It smells like smoke and rain.',
+        'Morning in Haven. Twelve people, one fire, no plan beyond today.',
+        'The clearing is quiet. A child is stacking stones. It feels like a beginning.',
+      ];
+      return {
+        name: v.name, pop: 12, pantryKcal: Math.round(v.pantryKcal),
+        atmos: atmos[this.state.scholar.day % atmos.length],
+        codexN,
+        scholarName: this.data.villagers.find(x => x.id === this.villagerId).name,
+      };
+    },
+
+    depart() {
+      // departure lite (member standing): tell someone you're going
+      this.location = 'wilds'; this.departed = true;
+      this.dayPart = 0; this.ap = 1;
+      const first = this.data.villagers.find(x => x.id === this.villagerId).name.split(' ')[0];
+      this.say(`You tell the others you're heading out. Someone nods. "Come back before dark."`);
+      this.say(`— DAY 1 DAWN — ${DAY_PART_HINT.dawn}`);
+      return this.status();
+    },
+
+    returnToVillage() {
+      this.location = 'village';
+      const s = this.state.scholar;
+      const brought = s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0);
+      const entries = Object.keys(this.state.codex.plants).length;
+      if (this.won) this.say(`You walk back into Haven with ${Math.round(brought)} kcal of food and ${entries} Codex entries. Someone sees the pack and smiles. The village eats because of you.`);
+      else if (s.health <= 0) this.say(`You don't come back. The clearing is quieter. The Codex keeps what you wrote down.`);
+      else this.say(`You walk back into Haven early. ${entries} Codex entries. The village is glad to see you.`);
       return this.status();
     },
 
@@ -317,11 +358,13 @@
       if (!res.ok || scholar.health <= 0) {
         this.over = true;
         this.say('You didn\'t make it. The village remembers. The Codex keeps what you brought home.');
+        this.returnToVillage();
         return this.status();
       }
       if (scholar.day >= 7) {
         this.over = true; this.won = true;
         this.say('Seven days. You ate, you drank, you came back. The village eats because of you.');
+        this.returnToVillage();
         return this.status();
       }
       scholar.day += 1;
@@ -376,6 +419,7 @@
         invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
         px: this.map.px, py: this.map.py,
         over: this.over, won: this.won,
+        location: this.location, departed: this.departed,
         inCombat: !!this.fight,
         pendingEncounter: !!this.pendingEncounter,
         wanderer: this.wanderer ? { x: this.wanderer.x, y: this.wanderer.y } : null,

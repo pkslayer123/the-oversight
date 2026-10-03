@@ -106,8 +106,45 @@
       <button class="btn" id="b-go">This is me. Begin.</button>`;
     document.getElementById('b-go').onclick = () => {
       Game.newGame(ob.home, ob.villager);
-      gameMain(true);
+      villageScreen();
     };
+  }
+
+  // ---------- village node ----------
+  function villageScreen() {
+    const st = Game.status();
+    if (st.over) return ending();
+    const v = Game.villageInfo();
+    const vs = Game.data.villagers;
+    screen.innerHTML = `
+      ${bar('scattering://village', 'haven')}
+      <div class="ascii">      .-""-.
+     / .--. \\
+    | (    ) |
+     \\ '--' /
+      '--'--'</div>
+      <h1 class="title">HAVEN</h1>
+      <p><i>${v.atmos}</i></p>
+      ${statRow('PANTRY', v.pantryKcal + ' kcal', Math.min(100, v.pantryKcal / 100), v.pantryKcal < 5000)}
+      ${statRow('CODEX', v.codexN + ' entries', Math.min(100, v.codexN * 10))}
+      <div class="card"><h3>Who's here</h3>
+        ${vs.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}</p>`).join('')}
+      </div>
+      <div class="card"><h3>🗺 Nodes</h3>
+        <p class="small">● <b>Haven</b> — you are here</p>
+        <p class="small">○ <b>The Wilds</b> — 7×7 region, fog-of-war, one bulldozer (probably)</p>
+      </div>
+      ${st.departed
+        ? `<div class="log">${st.log.slice(-4).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
+           <button class="btn" id="b-end">Rest by the fire</button>`
+        : `<p class="small">${v.scholarName.split(' ')[0]}, eat something green. Drink water. Come back before dark.</p>
+           <button class="btn" id="b-depart">Depart on expedition</button>`}
+      <button class="btn ghost" id="b-codex2">Codex (${v.codexN})</button>`;
+    const dep = document.getElementById('b-depart');
+    if (dep) dep.onclick = () => { Game.depart(); gameMain(true); };
+    const end = document.getElementById('b-end');
+    if (end) end.onclick = () => ending();
+    document.getElementById('b-codex2').onclick = codexScreen;
   }
 
   // ---------- main game ----------
@@ -164,7 +201,6 @@
     on('a-wild', () => Game.drinkWild());
     document.getElementById('a-codex').onclick = codexScreen;
     document.getElementById('b-endpart').onclick = () => { travelMode = false; Game.endDayPart(); gameMain(); };
-    if (first) setTimeout(() => toast('"Eat something green. Drink water. Come back before dark."'), 600);
   }
 
   function renderMap(st, tset) {
@@ -243,8 +279,11 @@
         const md = Game.data.monsters.find(x => x.id === id);
         return `<div class="card codex"><h3>${md.name}</h3><p class="small">System files it as: ${md.systemDesignation || '—'}</p><p>${esc(md.codexStages[m.stage] || '')}</p></div>`;
       }).join('') : ''}
-      <button class="btn ghost" id="b-back">Back to field</button>`;
-    document.getElementById('b-back').onclick = () => gameMain();
+      <button class="btn ghost" id="b-back">Back</button>`;
+    document.getElementById('b-back').onclick = () => {
+      const st = Game.status();
+      if (st.location === 'village') villageScreen(); else gameMain();
+    };
   }
 
   // ---------- ending ----------
