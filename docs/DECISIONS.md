@@ -317,3 +317,17 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Stakes:** injuries persist via modifier pipeline. Death possible but always telegraphed — lethal intent shows before it lands; FLEE was always there. Combat deaths feel like decisions, not surprises.
 - **The System commentates:** combat is content. "OH! A bold STRIKE! The audience is ON ITS FEET!" Spotlight fights earn Favor.
 - **Monsters are food:** kills yield top-tier calories + materials. Combat is hunting with consequences.
+
+## 2026-10-03 — Combat timing: decisional, not reflexive
+
+- **Decision:** Well-timed decisions are rewarded through **telegraph-response matching**, not reflexes. The monster declares intent → you match the right command → abilities amplify correct reads into devastating ones. No quick-time events, ever — our players are on phones, possibly on a bus. Decisional timing includes them; reflexive timing excludes them.
+- **Why:** Steve: how do we reward well-timed decisions without clunkiness? The telegraph system already *is* a timing mechanic — it just needed the payoff structure made explicit.
+- **The matchup (Codex-gated; unknown monsters hide the left column):**
+  - CHARGE (heavy, single) → BRACE. Riposte abilities punish the correct read.
+  - STALK (setting up) → STRIKE/HARRY. Hit it before it's ready.
+  - FRENZY (multi light) → HARRY/FLEE. Don't trade into volume.
+  - FEINT (tricky) → STUDY. Don't commit blind.
+  - FLEEING → STRIKE (free hit) or let it go (conserve).
+- **Abilities create moments, not buttons.** Diverse kits plug in as: (a) passive pipeline modifiers, always on; (b) triggered payoffs on correct matches ("BRACE vs CHARGE: reflect 50%"); (c) setup/payoff chains ("two HARRYs → next STRIKE crits"). When they fire, the combat log *spotlights* them: "Jesse doesn't blink. One shot. (Patient Aim ×2)" — the player feels the build working.
+- **The biggest timing decision happens before the fight:** choosing the engagement — dawn/dusk, trap set (1 AP), full Codex, rested party. Preparation shifts the matchup (first strike, revealed intents). The System rates it: "Hunt preparation: EXEMPLARY!" The survivalist beats the button-masher before round one.
+- **Mastery =** reading 2-3 move patterns (earned via Codex) and matching correctly under pressure, with a build assembled to punish the matches. Pattern recognition, not reflexes.
