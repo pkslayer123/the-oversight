@@ -407,3 +407,13 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Comedy-horror rule:** it's funny that the System misread "deer in headlights" — until the light actually gathers. The laugh catches in your throat. That catch is the signature.
 - **Codex implication:** the Codex doesn't just reveal stats, it *corrects assumptions*. Unknown: "it froze like a deer in headlights." Observed: "it's not frozen. It's aiming." Learning = unlearning what you thought you knew.
 - **System commentary on fauna:** "Subject: deer. Behavior: ocular beam charging. This is normal deer behavior. (It is not.)"
+
+## 2026-10-03 — Folk names: humans name the monsters
+
+- **Decision:** Monsters carry **folk names** given by humans; the System uses clinical (wrong) designations because it doesn't know it messed up. The Codex lists the folk name primary; the System designation appears as footnote comedy. New rule: **the discoverer names the animal** — completing a Codex entry grants naming rights (player-facing reward; starter set pre-named by earlier survivors).
+- **Why:** Steve: "Maybe the humans name the animals? The aliens don't know they messed up." The naming contrast IS the joke, and folk names encode warnings ("HIGHBEAM!" means move).
+- **Renames:**
+  - Gallowdeer → **Highbeam Deer** (System: "Odocoileus virginianus (standard)")
+  - Thornback Boar → **Bulldozer** (System: "Sus scrofa (standard)")
+  - Hushwolf → **Hushpuppy** (System: "Canis familiaris (standard)")
+- **Convention:** folk names are descriptive, wry, warning-encoded. Survivors cope by naming scary things funny — "the hushpuppies got Joren" is darkly funny and instantly communicative.

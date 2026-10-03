@@ -51,7 +51,8 @@
       "hp",
       "attack",
       "behavior",
-      "codexStages"
+      "codexStages",
+      "systemDesignation"
     ],
     "types": {
       "id": "string",
@@ -79,7 +80,8 @@
         "unknown": "string",
         "observed": "string",
         "slain": "string"
-      }
+      },
+      "systemDesignation": "string?"
     }
   },
   "ability": {

@@ -1,7 +1,7 @@
 [
   {
     "id": "thornback_boar",
-    "name": "Thornback Boar",
+    "name": "Bulldozer",
     "biomes": [
       "se_woodlands"
     ],
@@ -35,11 +35,12 @@
       "unknown": "Something heavy moved in the thicket. Then a tree fell over for no reason.",
       "observed": "Feral hog. The System observed 'bull in a china shop' and concluded destruction is the point. It charges through obstacles \u2014 trees, fences, you. It cannot be deterred, only redirected.",
       "slain": "Thornback Boar. Moves: China-Shop Charge (heavy, telegraphed, destroys cover), Trample (close range after a missed charge), Retreat (below 25% hp, may return). It will not go around. Use that. Flanks are soft \u2014 harry it, then strike. Meat: excellent. The quills make fine awls."
-    }
+    },
+    "systemDesignation": "Sus scrofa (standard)"
   },
   {
     "id": "hushwolf",
-    "name": "Hushwolf",
+    "name": "Hushpuppy",
     "biomes": [
       "se_woodlands"
     ],
@@ -72,11 +73,12 @@
       "unknown": "The woods went silent all at once. Not quiet \u2014 silent. Like the world holding its breath.",
       "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you.",
       "slain": "Hushwolf. Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
-    }
+    },
+    "systemDesignation": "Canis familiaris (standard)"
   },
   {
     "id": "gallowdeer",
-    "name": "Gallowdeer",
+    "name": "Highbeam Deer",
     "biomes": [
       "se_woodlands"
     ],
@@ -109,6 +111,7 @@
       "unknown": "A deer. It froze like a deer in headlights. The light did not stop gathering.",
       "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' \u2014 and right that you should move. When it freezes, it is aiming. Antlers never shed: the System classified them as permanent equipment.",
       "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze \u2014 MOVE), Antler Sweep (close range), Bolt (flees at 50% hp). Never let it finish aiming. The meat is worth the sorrow. Thank it."
-    }
+    },
+    "systemDesignation": "Odocoileus virginianus (standard)"
   }
 ]
