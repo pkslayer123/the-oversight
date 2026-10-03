@@ -299,7 +299,13 @@
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
         const cls = 'tile' + (isMe ? ' here' : '') + (tl.revealed ? '' : ' fog') + (isW ? ' beast' : '') + (tl.foraged && tl.revealed ? ' spent' : '');
         const g = isW ? '⚠' : (isMe ? '●' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?'));
-        html += `<div class="${cls}">${g}</div>`;
+        // the Codex labels the land: places you've learned show what grows there
+        let label = '';
+        if (tl.revealed && tl.knownPlant && !isW) {
+          const kp = Game.data.plants.find(pp => pp.id === tl.knownPlant);
+          if (kp) label = `<div class="tlabel">${esc(kp.name)}</div>`;
+        }
+        html += `<div class="${cls}">${g}${label}</div>`;
       }
       html += '</div>';
     }

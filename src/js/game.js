@@ -347,6 +347,30 @@
       }
     },
 
+    // --- bounty: the land's character drives what's findable. real ecology. ---
+    // edge effect, riparian zones, disturbed ground, mast — the player who learns
+    // WHERE to look is learning actual foraging, not RNG.
+    bountyFor(epithet) {
+      const B = {
+        'creekside grove': { favored: 'cattail', richness: 1.4, why: 'Riparian ground. Water means life, and lunch.' },
+        'drowned grove': { favored: 'cattail', richness: 1.3, why: 'Wet feet, full pantry.' },
+        'deep grove': { favored: 'hickory_nut', richness: 1.4, why: 'Mast country. The old trees feed everything.' },
+        'orchard ruin': { favored: 'persimmon', richness: 1.2, why: 'Someone planted food here once. The trees remember.' },
+        'old pasture': { favored: 'dandelion', richness: 1.4, why: 'Disturbed ground grows good weeds.' },
+        'creek meadow': { favored: 'wild_onion', richness: 1.2, why: 'Open ground by water — the onion beds.' },
+        'open meadow': { favored: 'wild_onion', richness: 1.0 },
+        'creek bend': { favored: 'cattail', richness: 1.2, why: 'Slow water. The cattails stand thick.' },
+        'the shallows': { favored: 'cattail', richness: 1.3 },
+        'creekmouth marsh': { favored: 'cattail', richness: 1.4, why: 'Where the creek spreads out, the starch grows.' },
+        'still marsh': { favored: 'cattail', richness: 1.2 },
+        'edge thicket': { favored: 'blackberry', richness: 1.4, why: 'Edge habitat. Berries grow where the light gets in.' },
+        'heart thicket': { favored: 'muscadine', richness: 1.1 },
+        'the old trail': { favored: 'chickweed', richness: 1.0, why: 'Trampled ground. The humble weeds win.' },
+        'forest floor': { favored: 'wood_sorrel', richness: 0.7, why: 'Deep shade. The floor keeps its secrets.' },
+      };
+      return B[epithet] || null;
+    },
+
     // --- node detail: each tile is a node; arriving reveals its detail ---
     nodeDetail() {
       const t = this.playerTile();
@@ -355,6 +379,10 @@
       if (t.type === 'ruin') here.push((t.loot || []).length ? `${t.loot.length} can(s) left` : 'picked clean');
       else if (S.forage.canForage(t)) here.push('forageable');
       else if (t.foraged) here.push('foraged clean');
+      if (t.bountyKnown && t.knownPlant) {
+        const kp = this.data.plants.find(p => p.id === t.knownPlant);
+        if (kp) here.push(`${kp.name.toLowerCase()} country`);
+      }
       if (t.type === 'creek' || t.type === 'wetland') here.push('water to treat');
       if (this.wanderer && this.wanderer.x === this.map.px && this.wanderer.y === this.map.py) here.push('⚠ something big is here');
       return {
@@ -433,10 +461,14 @@
         }
         if (!S.forage.canForage(t)) { this.say('Nothing left to forage here today.'); return null; }
         t.foraged = true;
-        const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities);
+        const bounty = this.bountyFor(this.nodeEpithet(this.map.px, this.map.py));
+        const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty);
         const kg = r.units * 0.1;
         if (!this.canCarry(kg)) { t.foraged = false; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
         if (r.firstFind) this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
+        // the Codex labels the place: what grows here is now written on the map
+        t.knownPlant = r.plantId; t.bountyKnown = true;
+        if (bounty && bounty.why) this.say(`Codex: ${bounty.why}`);
         scholar.inventory.push({ plantId: r.plantId, units: r.units, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         msg = r.message + (r.firstFind ? ` (${r.plant.codex})` : '');

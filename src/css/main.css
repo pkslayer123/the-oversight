@@ -92,6 +92,8 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .closeup .tile { font-size: 30px; min-height: 56px; cursor: default; }
 .closeup .tile.here { border: 2px solid var(--acc); border-radius: 8px; }
 .closeup .tile.offmap { visibility: hidden; }
+.closeup .tile { flex-direction: column; }
+.tlabel { font-size: 9px; line-height: 1.2; color: var(--warn); margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* action rows */
 .actions { display: flex; gap: 8px; margin: 8px 0; }

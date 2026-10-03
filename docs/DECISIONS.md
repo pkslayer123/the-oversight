@@ -460,3 +460,8 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 
 - **Decision:** Each node gets a generated epithet from its dominant type + neighbors (creekside grove vs drowned grove vs deep grove; old pasture; creekmouth marsh; the shallows). The node screen now leads with the epithet and renders a 5x5 close-up map (player centered, larger tiles) — the detailed view players actually follow. The 7x7 stays as the click-through navigation geography.
 - **Why:** Steve: nodes should represent the dominant biome/land structure as a consistent clear geography; the close-up is what most people follow. Pacing confirmed: 1/4 day per node = 28 node-visits per 7-day expedition.
+
+## 2026-10-03 — Geographic bounty: the land's character drives forage
+
+- **Decision:** Each epithet maps to a bounty (favored plant 3x weight + richness 0.7-1.4x yield + a "why"). Real ecology: edge thickets → blackberries (edge effect), creekside → cattails (riparian), old pasture → dandelions (disturbed ground), deep grove → hickory (mast), forest floor → poor (deep shade). The why is taught via Codex on first forage. Foraging a tile labels it: tile.knownPlant renders as a tiny Codex label on the close-up map, and the node "Here:" line reads "dandelion country".
+- **Why:** Steve: geographic persistence should intelligently assign forage chances; the Codex should label the detailed map. The player who learns WHERE to look is learning real foraging. Stats: favored plant 14/40 picks; rich ground yields ~2x poor.

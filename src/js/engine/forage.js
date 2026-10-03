@@ -16,23 +16,26 @@
   // Forage a tile. Returns {plantId, units, kcal, message, firstFind}.
   // tile: {type, foragedToday}  biome: biome data  plants: plant array
   // scholar: scholar state (for modifiers)  codex: codex state (for firstFind)
-  function forage(tile, biome, plants, scholar, codex, abilitiesData) {
+  function forage(tile, biome, plants, scholar, codex, abilitiesData, bounty) {
     const S = global.Scattering;
     const mods = S.modifiers.collectModifiers(scholar, abilitiesData || []);
     const ctx = { biome: biome.id };
 
-    // tile affinity bonus: plants with tileAffinity including tile.type get 2x weight
+    // tile affinity: plants with tileAffinity including tile.type get 2x weight.
+    // place bounty: the node's favored plant gets 3x — the land's character decides.
     const table = {};
     for (const [pid, w] of Object.entries(biome.forageTable || {})) {
       const p = plants.find(x => x.id === pid);
       if (!p) continue;
       const aff = (p.tileAffinity || []).includes(tile.type) ? 2 : 1;
-      table[pid] = w * aff;
+      const fav = (bounty && bounty.favored === pid) ? 3 : 1;
+      table[pid] = w * aff * fav;
     }
     const plantId = weightedPick(table);
     const plant = plants.find(x => x.id === plantId);
 
     let units = 8 + Math.floor(Math.random() * 9); // 8-16: a day-part is ~3hrs of volume work; a knowing forager gathers real food
+    if (bounty && bounty.richness) units = Math.round(units * bounty.richness); // rich ground feeds better
     units = Math.round(S.modifiers.resolve(units, 'forage.yield', mods, ctx));
     units = Math.max(1, units);
 
