@@ -163,3 +163,14 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Decision:** Full spec in `docs/ITEMS.md`. Five personal items + favorite clothes, no loot drops. Classes (tool/clothing/sentimental) determine enhancement pools. Bond accrues passively (1/day meaningful use; sentimental bonds by keeping + story moments). Thresholds at 10/25/50 → System offers optimization, pick 1 of 3. Loss happens at story moments, never durability bars.
 - **Why:** Steve asked for a stab at the 5 items per existing directives. Honors: relic bonding, per-class pools, simplicity (passive bond, no grind), broken builds (combos break one dimension, never dinner), System voice.
 - **Data:** `src/data/relicEnhancements.json` (9 enhancements, each with earnest-alien systemCommentary), bond thresholds on 9 items, schema + validator support. Gate green.
+
+## 2026-10-03 — Loot exists; the magic is in the relationship
+
+- **Decision:** Revised "no loot drops" → loot exists from four sources, but **bond is non-transferable**. A bonded relic in a stranger's hands is just stuff — the enhancements were tied to *their* story, not the object. The magic was never in the knife.
+- **Why:** Steve: no loot drops "seems odd." This revision is stronger than the original: the loot system now *proves* the thesis instead of just avoiding the question.
+- **Loot taxonomy:**
+  1. **Bonded relics** (your 5) — grown, not found. The core.
+  2. **System awards** — trials, achievements, audience milestones. Attuned to you; work fully.
+  3. **Fan packages** — galactic shop. Sent *for you*; attuned, wacky, never dinner.
+  4. **Scavenged/taken** — ruins, other scholars. Base effects only, no bond. Can be re-bonded from 0 — with the System's awkward provenance note: "Unit K-NIFE has been reassigned. Previous attachment data: [REDACTED]. Please form your own attachment."
+- **Other scholars as danger (new):** encounters in the wild — trade, share info, compete, rob, walk away. The System stages these for entertainment (audience votes spike). A desperate scholar with nothing to lose is the most dangerous monster in the game, and the most human. The village hears what you did; the Codex records it; the audience reacts (the audience loves a heel turn — Favor rewards for villainy, which is delightfully dark).

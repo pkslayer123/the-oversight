@@ -1,6 +1,13 @@
 # THE FIVE ITEMS
 
-Everyone arrives with five personally important/reliable items plus favorite clothes. No loot drops exist in this game — these five are your entire material inheritance, and through relic bonding they become your endgame arsenal. Gear is grown, not found.
+Everyone arrives with five personally important/reliable items plus favorite clothes. These five are your material inheritance, and through relic bonding they become your endgame arsenal. Gear is grown, not found — **but loot exists.** The rule: **bond is non-transferable.** A bonded relic in a stranger's hands is just stuff. The magic was never in the knife.
+
+## Loot taxonomy
+
+1. **Bonded relics** (your 5) — grown, not found. The core.
+2. **System awards** — trials, achievements, audience milestones. Attuned to you; work fully.
+3. **Fan packages** — galactic shop. Sent *for you*; attuned, wacky, never dinner.
+4. **Scavenged/taken** — ruins, other scholars. Base effects only, no bond. Can be re-bonded from zero — with the System's awkward provenance note: *"Unit K-NIFE has been reassigned. Previous attachment data: [REDACTED]. Please form your own attachment."*
 
 ## Acquisition (onboarding, v1)
 
