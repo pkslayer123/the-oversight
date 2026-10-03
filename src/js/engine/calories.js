@@ -4,7 +4,7 @@
   'use strict';
 
   const BASE_BMR = 1800;          // kcal/day at rest
-  const ACTIVE_DAY = 2400;       // typical expedition day
+  const ACTIVE_DAY = 2200;       // typical expedition day
   const STARVATION_THRESHOLD = 500; // kcal reserve below which the spiral starts
 
   const ACTION_COSTS = {

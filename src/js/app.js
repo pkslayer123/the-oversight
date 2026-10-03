@@ -111,6 +111,7 @@
   }
 
   // ---------- main game ----------
+  let travelMode = false;
   function gameMain(first) {
     const st = Game.status();
     if (st.over) return ending();
@@ -120,15 +121,18 @@
     const t = Game.playerTile();
     const canForage = S.forage.canForage(t) && st.ap > 0;
     const canTreat = (t.type === 'creek' || t.type === 'wetland') && st.ap > 0;
+    const targets = travelMode ? Game.travelTargets() : [];
+    const tset = new Set(targets.map(t => t.x + ',' + t.y));
 
     screen.innerHTML = `
       ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
-      <p class="small">${st.dayPartHint}</p>
+      <p class="small">${travelMode ? 'Where to? (tap a highlighted tile — travel costs this ' + st.dayPart + ')' : st.dayPartHint}</p>
       ${statusBars(st)}
-      <div class="map">${renderMap(st)}</div>
-      <p class="small">📍 ${S.TILE_NAME[t.type]} · ${st.ap > 0 ? '1 action left' : 'no actions left'} — <button class="linklike" id="b-endpart">end ${st.dayPart} →</button></p>
+      <div class="map">${renderMap(st, tset)}</div>
+      <p class="small">📍 ${S.TILE_NAME[t.type]}${t.foraged ? ' · foraged' : ''} · ${st.ap > 0 ? '1 action left' : 'no actions left'} — <button class="linklike" id="b-endpart">end ${st.dayPart} →</button></p>
       <div class="actions">
         ${st.ap > 0 ? `
+        <button class="btn sm" id="a-travel">${travelMode ? 'Cancel' : 'Travel'}</button>
         <button class="btn sm" id="a-forage" ${canForage ? '' : 'disabled'}>Forage</button>
         <button class="btn sm" id="a-treat" ${canTreat ? '' : 'disabled'}>Treat water</button>
         <button class="btn sm" id="a-rest">Rest</button>` : `<p class="small">Rest those hands. End the ${st.dayPart}.</p>`}
@@ -141,15 +145,17 @@
       </div>
       <div class="log">${st.log.map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
 
-    // map clicks
+    // map clicks: only in travel mode
     screen.querySelectorAll('.tile').forEach(el => {
       el.onclick = () => {
+        if (!travelMode) return;
         const x = +el.dataset.x, y = +el.dataset.y;
-        if (Game.move(x, y)) gameMain();
-        else toast('Too far — 3 tiles max, and only through scouted ground.');
+        if (Game.travelTo(x, y)) { travelMode = false; gameMain(); }
+        else toast('Not reachable — 3 tiles max, through scouted ground.');
       };
     });
     const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = () => { fn(); gameMain(); }; };
+    on('a-travel', () => { travelMode = !travelMode; });
     on('a-forage', () => Game.doAction('forage'));
     on('a-treat', () => Game.doAction('treat'));
     on('a-rest', () => Game.doAction('rest'));
@@ -157,11 +163,11 @@
     on('a-drink', () => Game.drinkTreated());
     on('a-wild', () => Game.drinkWild());
     document.getElementById('a-codex').onclick = codexScreen;
-    document.getElementById('b-endpart').onclick = () => { Game.endDayPart(); gameMain(); };
+    document.getElementById('b-endpart').onclick = () => { travelMode = false; Game.endDayPart(); gameMain(); };
     if (first) setTimeout(() => toast('"Eat something green. Drink water. Come back before dark."'), 600);
   }
 
-  function renderMap(st) {
+  function renderMap(st, tset) {
     let html = '';
     for (let y = 0; y < 7; y++) {
       html += '<div class="mrow">';
@@ -169,8 +175,8 @@
         const tl = Game.tileAt(x, y);
         const isP = (x === st.px && y === st.py);
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
-        const move = Game.canMove(x, y);
-        const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (move ? ' move' : '') + (isW ? ' beast' : '');
+        const isT = tset.has(x + ',' + y);
+        const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (tl.foraged && tl.revealed ? ' spent' : '');
         const g = isW ? '⚠' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? '●' : g}</div>`;
       }

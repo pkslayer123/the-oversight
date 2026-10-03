@@ -83,6 +83,8 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .tile.beast { color: var(--bad); border-color: var(--bad); animation: pulse 1.6s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 .tile.move { border-color: var(--acc); color: var(--acc); }
+.tile.dest { border-color: var(--warn); color: var(--warn); animation: pulse 1.2s infinite; cursor: pointer; }
+.tile.spent { opacity: .45; }
 .tile:active { background: var(--line); }
 
 /* action rows */

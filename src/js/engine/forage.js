@@ -32,7 +32,7 @@
     const plantId = weightedPick(table);
     const plant = plants.find(x => x.id === plantId);
 
-    let units = 5 + Math.floor(Math.random() * 7); // 5-11: a day-part is ~3hrs; a knowing forager gathers real food
+    let units = 8 + Math.floor(Math.random() * 9); // 8-16: a day-part is ~3hrs of volume work; a knowing forager gathers real food
     units = Math.round(S.modifiers.resolve(units, 'forage.yield', mods, ctx));
     units = Math.max(1, units);
 

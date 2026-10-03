@@ -11,12 +11,23 @@
     night: 'Camp. Rest — or risk the dark.',
   };
   const TILE_GLYPH = {
-    forest_floor: '♣', grove: '♠', meadow: '≋', thicket: '✳',
+    forest_floor: '♣', grove: '◈', meadow: '≡', thicket: '✳',
     wetland: '≈', creek: '≋', trail_edge: '·', ruin: '▦',
   };
   const TILE_NAME = {
     forest_floor: 'forest floor', grove: 'grove', meadow: 'meadow', thicket: 'thicket',
     wetland: 'wetland', creek: 'creek', trail_edge: 'trail edge', ruin: 'ruin',
+  };
+  // first-visit arrival moments — destinations reveal something
+  const ARRIVAL = {
+    forest_floor: { title: 'Under the canopy', text: 'Leaf litter, birdcall, the smell of rot becoming soil. The woods, being the woods.' },
+    grove: { title: 'Nut trees', text: 'Hickories and oaks, heavy with mast. This is a pantry that grows.' },
+    meadow: { title: 'Open ground', text: 'Grasses head-high. Good greens, good visibility, nowhere to hide.' },
+    thicket: { title: 'Thick brush', text: 'Thorns and tangle. Things live in here that don\'t want to be seen.' },
+    wetland: { title: 'Still water, cattails', text: 'Cattails mean starch. Still water means boil it first — the Codex insists.' },
+    creek: { title: 'Moving water', text: 'Cold, clear, moving. The best thing you\'ve seen all day.' },
+    trail_edge: { title: 'An old trail', text: 'Something walked here regularly, before. The path remembers even if no one does.' },
+    ruin: { title: 'Pre-Burn ruin', text: '' }, // ruinStory fills this
   };
 
   const Game = {
@@ -61,24 +72,73 @@
     },
 
     genMap() {
+      // Procedural with logic: creek flows, wetlands hug water, groves cluster,
+      // thickets edge, meadows open, one ruin with a story.
       const tiles = [];
-      const weights = [
-        ['forest_floor', 14], ['grove', 6], ['meadow', 8], ['thicket', 7],
-        ['wetland', 4], ['creek', 3], ['trail_edge', 5], ['ruin', 2],
-      ];
-      const bag = [];
-      weights.forEach(([t, w]) => { for (let i = 0; i < w; i++) bag.push(t); });
       for (let y = 0; y < 7; y++) {
         const row = [];
-        for (let x = 0; x < 7; x++) {
-          row.push({ type: bag[Math.floor(Math.random() * bag.length)], revealed: false, foraged: false });
-        }
+        for (let x = 0; x < 7; x++) row.push({ type: 'forest_floor', revealed: false, foraged: false, visited: false });
         tiles.push(row);
       }
-      // guarantee a creek and wetland near-ish center
-      tiles[2][3].type = 'creek'; tiles[4][2].type = 'wetland';
+      const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < 7 && y < 7) tiles[y][x].type = t; };
+      const at = (x, y) => (x >= 0 && y >= 0 && x < 7 && y < 7) ? tiles[y][x].type : null;
+
+      // creek: random walk top→bottom
+      let cx = 1 + Math.floor(Math.random() * 5), cy = 0;
+      set(cx, cy, 'creek');
+      while (cy < 6) {
+        const mv = Math.random();
+        if (mv < 0.45) cy++;
+        else if (mv < 0.7) cx = Math.max(0, cx - 1);
+        else cx = Math.min(6, cx + 1);
+        set(cx, cy, 'creek');
+      }
+      // wetlands: adjacent to creek
+      let placed = 0, guard = 0;
+      while (placed < 3 && guard++ < 60) {
+        const x = Math.floor(Math.random() * 7), y = Math.floor(Math.random() * 7);
+        if (at(x, y) !== 'forest_floor') continue;
+        const nearWater = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy) === 'creek');
+        if (nearWater) { set(x, y, 'wetland'); placed++; }
+      }
+      // groves: two clusters
+      const blob = (sx, sy, t, n) => {
+        let p = 0, g = 0;
+        while (p < n && g++ < 40) {
+          const x = sx + Math.floor(Math.random() * 3) - 1, y = sy + Math.floor(Math.random() * 3) - 1;
+          if (at(x, y) === 'forest_floor') { set(x, y, t); p++; }
+        }
+      };
+      blob(1 + Math.floor(Math.random() * 2), 1 + Math.floor(Math.random() * 2), 'grove', 4);
+      blob(4 + Math.floor(Math.random() * 2), 4 + Math.floor(Math.random() * 2), 'grove', 4);
+      // meadow: one open blob
+      blob(2 + Math.floor(Math.random() * 3), 2 + Math.floor(Math.random() * 3), 'meadow', 5);
+      // thickets: edges
+      placed = 0; guard = 0;
+      while (placed < 5 && guard++ < 60) {
+        const edge = Math.random() < 0.5;
+        const x = edge ? (Math.random() < 0.5 ? 0 : 6) : Math.floor(Math.random() * 7);
+        const y = edge ? Math.floor(Math.random() * 7) : (Math.random() < 0.5 ? 0 : 6);
+        if (at(x, y) === 'forest_floor') { set(x, y, 'thicket'); placed++; }
+      }
+      // trail: center cross
+      for (let i = 1; i < 6; i++) { if (at(3, i) === 'forest_floor') set(3, i, 'trail_edge'); }
+      // ruin: one, deliberate, with a story
+      guard = 0;
+      while (guard++ < 60) {
+        const x = Math.floor(Math.random() * 7), y = Math.floor(Math.random() * 7);
+        if (at(x, y) === 'forest_floor' && at(x + 1, y) !== 'creek' && at(x - 1, y) !== 'creek') {
+          set(x, y, 'ruin');
+          tiles[y][x].ruinStory = ['A collapsed barn. Pre-Burn. The wiring is gone — everything is gone — but the stones remember the shape of work.',
+            'A farmhouse foundation. Someone\'s kitchen. The Burn took the wires from the walls; the walls kept standing out of spite.',
+            'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(Math.random() * 3)];
+          break;
+        }
+      }
       this.map = { tiles, px: 3, py: 3 };
       this.reveal(3, 3);
+      const start = this.tileAt(3, 3);
+      start.visited = true;
     },
 
     reveal(cx, cy) {
@@ -90,20 +150,41 @@
     tileAt(x, y) { return this.map.tiles[y][x]; },
     playerTile() { return this.tileAt(this.map.px, this.map.py); },
 
-    canMove(x, y) {
-      if (x < 0 || y < 0 || x > 6 || y > 6) return false;
-      const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
-      return d > 0 && d <= 3 && this.tileAt(x, y).revealed;
+    // --- travel: costs the day-part's action. destinations are decisions. ---
+    travelTargets() {
+      const out = [];
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
+        if (d > 0 && d <= 3 && this.tileAt(x, y).revealed) out.push({ x, y, d });
+      }
+      return out;
     },
 
-    move(x, y) {
-      if (!this.canMove(x, y)) return false;
+    travelTo(x, y) {
+      if (this.ap < 1 || this.over) return null;
+      const t = this.travelTargets().find(t => t.x === x && t.y === y);
+      if (!t) return null;
       this.map.px = x; this.map.py = y;
       this.reveal(x, y);
-      const t = this.playerTile();
-      this.say(`Moved to ${TILE_NAME[t.type]}.`);
+      this.ap -= 1;
+      const tile = this.playerTile();
+      this.state.scholar.kcal -= 40 * t.d; // distance has a metabolic price
+      let msg = `Travel ${t.d} tile${t.d > 1 ? 's' : ''} to ${S.TILE_NAME[tile.type]}.`;
+      if (!tile.visited) {
+        tile.visited = true;
+        const arr = ARRIVAL[tile.type];
+        msg += `\n— ${arr.title} —\n${tile.ruinStory || arr.text}`;
+        if (tile.type === 'creek') this.noteCodex('water', 'Moving water. The Codex notes: safer than still.');
+        if (tile.type === 'grove') this.noteCodex('grove', 'Nut trees. The Codex does the math.');
+      }
+      this.say(msg);
       this.checkEncounter();
-      return true;
+      return msg;
+    },
+
+    noteCodex(kind, text) {
+      this.state.codex.terrain[kind] = text;
+      this.say(`Codex: ${text}`);
     },
 
     checkEncounter() {
