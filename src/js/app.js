@@ -256,16 +256,17 @@
     };
   }
   function obWho() {
-    // 6 fresh randomized characters per expedition. Real people, not stat blocks.
-    const vs = Game.genRoster();
+    // Candidates are generated FROM your origin — the character IS you.
+    // Pick the life you're about to live.
+    const vs = Game.genRoster(ob.home).filter(v => v.candidate !== false);
     screen.innerHTML = `${bar('scattering://wake', 'clearing')}
       <h1 class="title" style="font-size:22px">WHICH ONE IS YOU?</h1>
-      <p class="small">A clearing. Confused people waking up. One of them is you.</p>
+      <p class="small">People from ${esc(ob.home)} are waking up in a clearing. One of them is you.</p>
       ${vs.map(v => {
         const lang = Game.langLabel(v.languages);
         return `
         <div class="card"><h3>${v.name}</h3>
-        <p>${v.formerOccupation} · from ${v.homeRegion}</p>
+        <p>${v.formerOccupation}, ${v.age} · from ${v.homeRegion}</p>
         <p class="small">🗣 ${lang}</p>
         <p class="small">${v.backstory}</p>
         <p class="small" style="opacity:.7">${v.personality.temperament}, ${v.personality.sharing} · ${v.systemAssessment}</p>

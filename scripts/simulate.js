@@ -120,7 +120,7 @@ function randomPart() {
 }
 
 function runOnce(policy, maxDays = 60) {
-  Game.genRoster();
+  Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
   const pantry = [];
@@ -150,7 +150,7 @@ function runOnce(policy, maxDays = 60) {
   const runs = parseInt(args[0] || '30', 10);
 
   console.log('=== PER-TILE EV (kcal per forage, 2000 samples) ===');
-  Game.genRoster();
+  Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   const ev = process.env.SKIP_EV ? {} : evTable();
   for (const [ty, r] of Object.entries(ev))

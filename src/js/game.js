@@ -123,17 +123,31 @@
       };
     },
 
+    // cultureForOrigin: origin label -> culture id (nameCultures.originToCulture).
+    // Falls back to a country-substring match for custom-typed origins.
+    cultureForOrigin(origin) {
+      const nc = this.data.nameCultures || {};
+      const o2c = nc.originToCulture || {};
+      if (o2c[origin]) return o2c[origin];
+      const lower = String(origin || '').toLowerCase();
+      for (const [label, cid] of Object.entries(o2c)) {
+        const country = label.split(',').pop().trim().toLowerCase();
+        if (country && lower.includes(country)) return cid;
+      }
+      return null;
+    },
+
     // genNameForOrigin: names match origins. Japanese names from Japan, Nigerian from Nigeria.
     // 80% correlated, 20% mismatch — people move, diaspora exists. But the default is sensible.
-    genNameForOrigin(origin) {
+    // forceMatch skips the diaspora roll: the player's own character IS from where they said.
+    genNameForOrigin(origin, forceMatch) {
       const pick = a => a[Math.floor(Math.random() * a.length)];
       const nc = this.data.nameCultures || {};
       const cultures = nc.cultures || {};
-      const o2c = nc.originToCulture || {};
       const cg = this.data.characterGen || {};
-      let cultureId = o2c[origin];
+      let cultureId = this.cultureForOrigin(origin);
       // 20% chance: mismatch (immigrant, diaspora, mixed heritage)
-      if (cultureId && Math.random() < 0.2) {
+      if (cultureId && !forceMatch && Math.random() < 0.2) {
         const allCultures = Object.keys(cultures).filter(c => c !== cultureId);
         cultureId = pick(allCultures);
       }
@@ -145,30 +159,41 @@
       return pick(cg.firstNames || ['Sam']) + ' ' + pick(cg.lastNames || ['Reyes']);
     },
 
-    // genRoster: 6 fresh randomized characters per expedition.
-    // Names, occupations, personalities, origins, languages, heritages.
-    // Real people, not stat blocks. The player's own origin is typed, not rolled.
-    genRoster() {
+    // genCultureLanguages: what someone from this culture natively speaks.
+    // { native, english: 0|1|2 }. English fluency rolls — the roster guarantees
+    // at least one fully-fluent candidate so the player always has a playable pick.
+    genCultureLanguages(cultureId) {
+      const nc = this.data.nameCultures || {};
+      const native = ((nc.cultures || {})[cultureId] || {}).language || 'english';
+      if (native === 'english') return { native, english: 2 };
+      const r = Math.random();
+      return { native, english: r < 0.25 ? 0 : r < 0.7 ? 1 : 2 };
+    },
+
+    // genCharacter: one full person. The origin is authoritative — name, native
+    // language, knowledge tags, and heritage all derive from it.
+    // opts: { origin, forceCultureMatch, candidate, usedNames, usedOccs }
+    genCharacter(opts) {
+      const { origin, forceCultureMatch, candidate, usedNames, usedOccs } = opts || {};
       const cg = this.data.characterGen || {};
       const pick = a => a[Math.floor(Math.random() * a.length)];
-      // sims call newGame repeatedly in one process — clear last expedition's cast
-      this.data.villagers = (this.data.villagers || []).filter(v => !(v.id || '').startsWith('gen_'));
-      const usedNames = new Set();
       const fears = ['being forgotten', 'the dark between the trees', 'being a burden', 'losing another one', 'the quiet ones watching from the treeline', 'never seeing home again'];
-      const chars = [];
-      for (let i = 0; i < 6; i++) {
-        const occ = pick(cg.occupations || []);
-        // NAMES MATCH ORIGINS: pick origin first, then a culturally-appropriate name.
-        // 80% match (Japanese name from Japan), 20% mismatch — people move.
-        const origin = pick(cg.sampleOrigins || ['somewhere']);
-        let name, guard = 0;
-        do {
-          name = this.genNameForOrigin(origin);
-          guard++;
-        } while (usedNames.has(name) && guard < 50);
-        usedNames.add(name);
-        const first = name.split(' ')[0];
-        const pro = pick(['they', 'she', 'he']);
+      // distinct occupations across a candidate set when the pool allows it
+      const occPool = cg.occupations || [];
+      let occ = null, oguard = 0;
+      do {
+        occ = pick(occPool) || {};
+        oguard++;
+      } while (usedOccs && occ.id && usedOccs.has(occ.id) && oguard < 30 && occPool.length > 4);
+      if (occ && usedOccs && occ.id) usedOccs.add(occ.id);
+      let name, guard = 0;
+      do {
+        name = this.genNameForOrigin(origin, forceCultureMatch);
+        guard++;
+      } while (usedNames.has(name) && guard < 50);
+      usedNames.add(name);
+      const first = name.split(' ')[0];
+      const pro = pick(['they', 'she', 'he']);
         const their = pro === 'they' ? 'their' : pro === 'she' ? 'her' : 'his';
         const them = pro === 'they' ? 'them' : pro === 'she' ? 'her' : 'him';
         const They = pro === 'they' ? 'They' : pro === 'she' ? 'She' : 'He';
@@ -197,19 +222,49 @@
         const tt = [...(cg.talkTemplates || [])];
         while (talk.length < 3 && tt.length) talk.push(fill(tt.splice(Math.floor(Math.random() * tt.length), 1)[0]));
         const quest = (cg.questTemplates || []).map(fill);
-        const langs = this.genLanguages();
-        chars.push({
+        const langs = this.genCultureLanguages(this.cultureForOrigin(origin));
+        const age = 19 + Math.floor(Math.random() * 44); // 19-62. Real people have ages.
+        const char = {
           id: 'gen_' + Math.random().toString(36).slice(2, 9),
           name, formerOccupation: occ.name || 'survivor', homeRegion: origin,
           originTags: parsed.tags, heritage: this.heritageFor(parsed.tags),
-          backstory, personality: { temperament, sharing, curiosity },
+          backstory, personality: { temperament, sharing, curiosity }, age,
           abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
           items: this.genItemCandidates(occ),
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
           survivalProbability: 25 + Math.floor(Math.random() * 21),
           systemAssessment: `${first} reads as ${temperament} and ${sharing} with strangers. The others find this ${temperament === 'cautious' ? 'reassuring' : temperament === 'bold' ? 'exhausting' : 'worth watching'}.`,
           secretFear: pick(fears), languages: langs, occupationId: occ.id || null,
-        });
+          candidate: candidate !== false,
+        };
+        return char;
+    },
+
+    // genRoster(playerOrigin): the character-select cast.
+    // The player picks an origin FIRST, then gets 4 candidates FROM that origin —
+    // name, native language, background, and knowledge all match. The character
+    // IS the player, not a stranger wearing their hometown.
+    // Plus 2 extra villagers from random origins so Haven stays international.
+    genRoster(playerOrigin) {
+      const cg = this.data.characterGen || {};
+      const pick = a => a[Math.floor(Math.random() * a.length)];
+      // sims call newGame repeatedly in one process — clear last expedition's cast
+      this.data.villagers = (this.data.villagers || []).filter(v => !(v.id || '').startsWith('gen_'));
+      const origin = playerOrigin || pick(cg.sampleOrigins || ['somewhere']);
+      const usedNames = new Set();
+      const usedOccs = new Set();
+      const chars = [];
+      for (let i = 0; i < 4; i++) {
+        chars.push(this.genCharacter({ origin, forceCultureMatch: true, candidate: true, usedNames, usedOccs }));
+      }
+      // Language is a real choice on the cards — but the player must always have
+      // at least one fully-fluent pick. No trapped protagonists.
+      if (!chars.some(c => (c.languages || {}).english === 2)) {
+        chars[0].languages.english = 2;
+      }
+      for (let i = 0; i < 2; i++) {
+        const npcOrigin = pick(cg.sampleOrigins || ['somewhere']);
+        chars.push(this.genCharacter({ origin: npcOrigin, forceCultureMatch: false, candidate: false, usedNames, usedOccs }));
       }
       for (const c of chars) this.data.villagers.push(c);
       this.generatedRoster = chars;
@@ -293,12 +348,18 @@
     },
 
     // commLevel: shared language? full. A few words? halved. None? quarter + misunderstandings.
+    // Communication is limited by the WEAKER party's English — a non-fluent player
+    // character can't lean on a villager's fluency.
     commLevel(vid) {
       const v = (this.data.villagers || []).find(x => x.id === vid) || {};
       const vl = v.languages || { native: 'english', english: 2 };
       const playerLangs = (this.state.scholar && this.state.scholar.languages) || ['english'];
-      if (vl.english === 2 || playerLangs.includes(vl.native)) return { level: 'full', mult: 1, lang: vl.native };
-      if (vl.english === 1) return { level: 'partial', mult: 0.5, lang: vl.native };
+      const playerEnglish = (this.state.scholar && this.state.scholar.englishLevel != null)
+        ? this.state.scholar.englishLevel : 2;
+      if (playerLangs.includes(vl.native)) return { level: 'full', mult: 1, lang: vl.native };
+      const shared = Math.min(vl.english || 0, playerEnglish);
+      if (shared === 2) return { level: 'full', mult: 1, lang: 'english' };
+      if (shared === 1) return { level: 'partial', mult: 0.5, lang: 'english' };
       return { level: 'none', mult: 0.25, lang: vl.native };
     },
 
@@ -412,17 +473,19 @@
       this.state.startLocationName = loc.name || null;
       this.state.spawnType = loc.spawnType || 'countryside';
       this.state.runName = (runName && String(runName).trim()) || null;
-      // roster: 6 freshly generated characters per expedition (genRoster), not fixed mains.
-      if (!this.generatedRoster || !this.generatedRoster.length) this.genRoster();
+      // roster: candidates generated FROM the player's origin (genRoster) — the
+      // character IS the player. No origin override needed; it already matches.
+      if (!this.generatedRoster || !this.generatedRoster.length) this.genRoster(homeRegionText);
       const playerChar = this.generatedRoster.find(c => c.id === villagerId) || this.generatedRoster[0];
       this.villagerId = playerChar.id;
-      // YOUR origin is yours: override the rolled one on the character you pick.
+      // Refresh tags from the authoritative origin text (covers custom-typed origins).
       playerChar.homeRegion = parsed.raw;
       playerChar.originTags = parsed.tags;
       playerChar.heritage = this.heritageFor(parsed.tags);
       const cg = this.data.characterGen || {};
       const occ = (cg.occupations || []).find(o => o.id === playerChar.occupationId) || {};
-      playerChar.languages = { native: 'english', english: 2 };
+      // Languages stay as generated: native culture tongue + rolled English.
+      // A non-fluent protagonist is an informed choice — the card shows it.
       const villager = playerChar;
       this.state.village.name = 'Haven';
       // Starting pantry: REAL FOOD, not a number. 3-4 days for the group.
@@ -540,8 +603,12 @@
       scholar.week1 = { forage: 0, hunt: 0, talk: 0, cook: 0, donate: 0, scavenge: 0 };
       // PLAYSTYLE: the game notices who you are — cautious, bold, generous... behavior, not stats.
       scholar.playstyle = {};
-      // LANGUAGES: you speak English. Your past may have given you more.
-      scholar.languages = ['english'].concat(occ.polyglot || []);
+      // LANGUAGES: your native tongue, plus whatever English you have, plus any
+      // polyglot bonus from your occupation. Your origin is real now — and so is
+      // the barrier when you don't share a language. (englishLevel drives commLevel.)
+      const pl = villager.languages || { native: 'english', english: 2 };
+      scholar.languages = [...new Set([pl.native].concat(occ.polyglot || []))];
+      scholar.englishLevel = pl.english != null ? pl.english : 2;
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
       // RELIC BOND: your five are bonded relics. Grown, not found.
       // Bond accrues through use; the System offers enhancements at 10/25/50.

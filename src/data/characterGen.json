@@ -115,6 +115,56 @@
       "icon": "🇭🇹",
       "id": "haitian_creole",
       "name": "Haitian Creole"
+    },
+    {
+      "icon": "🇯🇵",
+      "id": "japanese",
+      "name": "Japanese"
+    },
+    {
+      "icon": "🇩🇪",
+      "id": "german",
+      "name": "German"
+    },
+    {
+      "icon": "🇹🇭",
+      "id": "thai",
+      "name": "Thai"
+    },
+    {
+      "icon": "🇹🇷",
+      "id": "turkish",
+      "name": "Turkish"
+    },
+    {
+      "icon": "🇵🇱",
+      "id": "polish",
+      "name": "Polish"
+    },
+    {
+      "icon": "🇺🇦",
+      "id": "ukrainian",
+      "name": "Ukrainian"
+    },
+    {
+      "icon": "🇧🇩",
+      "id": "bengali",
+      "name": "Bengali"
+    },
+    {
+      "icon": "🇪🇹",
+      "id": "amharic",
+      "name": "Amharic"
+    },
+    {
+      "icon": "🇮🇩",
+      "id": "indonesian",
+      "name": "Indonesian"
+    },
+    {
+      "icon": "🇳🇴",
+      "id": "norwegian",
+      "name": "Norwegian"
     }
   ],
   "lastNames": [

@@ -23,7 +23,7 @@ function freeCell() {
 }
 
 function setup() {
-  Game.genRoster();
+  Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
   // move to a wild node for room: use current node, place player centrally
