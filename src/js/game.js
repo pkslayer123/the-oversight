@@ -1074,18 +1074,9 @@
       // INTERACTION MODEL: the world is physical and consistent.
       // blocks: you can't walk through. interact: what you can do from adjacent.
       // tree blocks AND feeds (nuts). water blocks AND quenches. wall just blocks.
-      const CELL_PROPS = {
-        wall: { blocks: 1 }, water: { blocks: 1, interact: 'drink' },
-        bigtree: { blocks: 1, interact: 'forage' }, tree: { blocks: 1, interact: 'forage' },
-        bush: { interact: 'forage' }, plant: { interact: 'forage' },
-        tent: { blocks: 1, interact: 'rest' }, fire: { blocks: 1, interact: 'cook' },
-        rubble: { interact: 'scavenge', cost: 20 },
-        bridge: {}, door: {}, gym: {}, class: {}, hall: {}, office: {},
-        bay: {}, dock: {}, sanct: {}, base: {}, grass: {}, dirt: {},
-      };
       const detail = this.genDetail(this.map.px, this.map.py);
       const cell = detail[cy] && detail[cy][cx];
-      const props = CELL_PROPS[cell] || {};
+      const props = this.cellProps(cell);
       if (props.blocks) return false; // can't walk through, but might interact (see cellInteract)
       const cost = props.cost || 10;
       // Movement is baseline. Power doesn't tax walking.
@@ -1259,18 +1250,49 @@
     },
 
     // HUNT: adjacent to animal, tap it. Success by difficulty and your condition.
-    // armorBonus: best protection in inventory. Bark (10) to military vest (40).
+    // EQUIPMENT SLOTS: weapon, armor. Equipped, not "best in backpack."
+    // You can't carry 3 spears for triple bonus. One slot, one item.
+    equip(itemIdx, slot) {
+      const item = this.state.scholar.inventory[itemIdx];
+      if (!item) return null;
+      const def = this.data.items.find(i => i.id === (item.itemId || item.id));
+      if (!def) return null;
+      // validate slot
+      if (slot === 'weapon' && def.class !== 'weapon') { this.say('That\'s not a weapon.'); return null; }
+      if (slot === 'armor' && !def.armor) { this.say('That\'s not armor.'); return null; }
+      this.state.scholar.equipped = this.state.scholar.equipped || {};
+      // unequip current (back to inventory, stays there)
+      // equip new (remove from inventory, set slot)
+      this.state.scholar.equipped[slot] = { itemId: def.id, name: def.name };
+      // remove from inventory (it's worn, not carried)
+      this.state.scholar.inventory.splice(itemIdx, 1);
+      this.say(`Equipped ${def.name} (${slot}).`);
+      return null;
+    },
+    unequip(slot) {
+      const eq = (this.state.scholar.equipped || {})[slot];
+      if (!eq) return null;
+      // back to inventory
+      this.state.scholar.inventory.push({ itemId: eq.itemId, name: eq.name, units: 1, kg: 0.5 });
+      delete this.state.scholar.equipped[slot];
+      this.say(`Unequipped ${eq.name}.`);
+      return null;
+    },
     armorBonus() {
-      let prot = 0;
-      for (const item of (this.state.scholar.inventory || [])) {
-        const def = this.data.items.find(i => i.id === (item.itemId || item.id));
-        if (def && def.armor) {
-          prot = Math.max(prot, def.armor.protection);
-        }
-      }
-      return prot;
+      const eq = (this.state.scholar.equipped || {}).armor;
+      if (!eq) return 0;
+      const def = this.data.items.find(i => i.id === eq.itemId);
+      return (def && def.armor) ? def.armor.protection : 0;
     },
 
+    isWeapon(item) {
+      const def = this.data.items.find(i => i.id === (item.itemId || item.id));
+      return def && def.class === 'weapon' && def.weapon;
+    },
+    isArmor(item) {
+      const def = this.data.items.find(i => i.id === (item.itemId || item.id));
+      return def && def.armor;
+    },
     // isUsable: can you USE this item? (first aid, etc.)
     isUsable(item) {
       const name = (item.name || '').toLowerCase();
@@ -1294,6 +1316,20 @@
       return null;
     },
 
+    // cellProps: shared. What blocks, what you can do.
+    cellProps(cell) {
+      const P = {
+        wall: { blocks: 1 }, water: { blocks: 1, interact: 'drink' },
+        bigtree: { blocks: 1, interact: 'forage' }, tree: { blocks: 1, interact: 'forage' },
+        bush: { interact: 'forage' }, plant: { interact: 'forage' },
+        tent: { blocks: 1, interact: 'rest' }, fire: { blocks: 1, interact: 'cook' },
+        rubble: { interact: 'scavenge', cost: 20 },
+        bridge: {}, door: {}, gym: {}, class: {}, hall: {}, office: {},
+        bay: {}, dock: {}, sanct: {}, base: {}, grass: {}, dirt: {},
+      };
+      return P[cell] || {};
+    },
+
     // findPath: BFS shortest path avoiding blocked cells. Returns list of [x,y] or null.
     findPath(sx, sy, tx, ty) {
       const detail = this.genDetail(this.map.px, this.map.py);
@@ -1308,7 +1344,7 @@
           if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
           if (visited.has(key(nx, ny))) continue;
           const cell = detail[ny] && detail[ny][nx];
-          const props = CELL_PROPS[cell] || {};
+          const props = this.cellProps(cell);
           if (props.blocks) continue;
           visited.add(key(nx, ny));
           queue.push([nx, ny, path.concat([[nx, ny]])]);
@@ -1417,16 +1453,12 @@
       return null;
     },
 
-    // weaponBonus: best weapon in inventory. A spear beats bare hands.
+    // weaponBonus: from EQUIPPED weapon. One slot.
     weaponBonus() {
-      let bonus = 0;
-      for (const item of (this.state.scholar.inventory || [])) {
-        const def = this.data.items.find(i => i.id === (item.itemId || item.id));
-        if (def && def.class === 'weapon' && def.weapon) {
-          bonus = Math.max(bonus, def.weapon.bonus);
-        }
-      }
-      return bonus;
+      const eq = (this.state.scholar.equipped || {}).weapon;
+      if (!eq) return 0;
+      const def = this.data.items.find(i => i.id === eq.itemId);
+      return (def && def.weapon) ? def.weapon.bonus : 0;
     },
 
     huntAnimal() {
@@ -2063,15 +2095,17 @@
       scholar.inventory.sort((a, b) => a.spoilDay - b.spoilDay);
       let ate = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
-      // BUGFIX: only eat things with calories. Gear (knife, rope) has undefined kcalEach.
-      scholar.inventory = scholar.inventory.filter(i => i.kcalEach !== undefined);
-      while (scholar.kcal < target && scholar.inventory.length) {
-        const it = scholar.inventory[0];
+      // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
+      while (scholar.kcal < target) {
+        // find the most perishable FOOD (not gear)
+        const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0);
+        if (foodIdx === -1) break; // no food left
+        const it = scholar.inventory[foodIdx];
         const kcal = it.kcalEach;
         scholar.kcal += kcal; ate += kcal;
         if (it.plantId) tasted[it.plantId] = (tasted[it.plantId] || 0) + 1;
         it.units -= 1;
-        if (it.units <= 0) scholar.inventory.shift();
+        if (it.units <= 0) scholar.inventory.splice(foodIdx, 1);
       }
       // LEVEL 3: Uses. Eat it 3 times, you learn what it does to you.
       // Vitamin C, medicine, energy. "Have you tasted it?" Yes. Now you know.

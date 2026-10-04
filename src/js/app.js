@@ -318,7 +318,8 @@
     screen.innerHTML = `${bar('scattering://pack', st.invCount + ' items')}
       <div class="card" style="margin-top:40px">
         <h3>Pack</h3>
-        ${inv.length ? inv.map((i, idx) => `<p class="small"><b>${i.name}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${(() => { const eq = Game.state.scholar.equipped || {}; const parts = []; if (eq.weapon) parts.push(`⚔️ ${eq.weapon.name}`); if (eq.armor) parts.push(`🛡️ ${eq.armor.name}`); return parts.length ? `<p class="small"><b>Equipped:</b> ${parts.join(' · ')}</p>` : ''; })()}
+        ${inv.length ? inv.map((i, idx) => `<p class="small"><b>${i.name}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}
         <button class="btn ghost sm" id="b-iback">Back</button>
@@ -329,6 +330,8 @@
     screen.querySelectorAll('[data-read]').forEach(b => b.onclick = () => { Game.readBook(b.dataset.read); invPopup(); });
     screen.querySelectorAll('[data-use]').forEach(b => b.onclick = () => { Game.useItem(+b.dataset.use); invPopup(); });
     screen.querySelectorAll('[data-cook]').forEach(b => b.onclick = () => { Game.cookFood(+b.dataset.cook); invPopup(); });
+    screen.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = () => { Game.equip(+b.dataset.equipW, 'weapon'); invPopup(); });
+    screen.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = () => { Game.equip(+b.dataset.equipA, 'armor'); invPopup(); });
   }
 
   function talkOverlay(vid) {
