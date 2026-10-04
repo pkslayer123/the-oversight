@@ -57,7 +57,7 @@
 
     biome() { return this.data.biomes.find(b => b.id === 'se_woodlands'); },
 
-    newGame(homeRegion, villagerId) {
+    newGame(homeRegion, villagerId, pickedItems) {
       this.homeRegion = homeRegion; this.villagerId = villagerId;
       const villager = this.data.villagers.find(v => v.id === villagerId);
       this.state = S.state.newState();
@@ -71,6 +71,8 @@
       this.state.village.roster = mains.concat(bg);
       this.state.village.villagers = mains; // mains have dialogue; background have one-liners
       const scholar = S.state.newScholar(villagerId);
+      const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
+      scholar.inventory = gear.map(id => ({ itemId: id, qty: 1 }));
       // granted abilities from villager data (2 each, defined here for slice 1)
       const granted = {
         mara_okafor: ['triage', 'steady_hands'],
@@ -851,7 +853,7 @@
         inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
         invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
         pantryKcal: Math.round(this.state.village.pantryKcal),
-        pantryDays: (this.state.village.pantryKcal / Math.max(1, (this.state.village.lastEat || 800) - (this.state.village.lastGive || 0))).toFixed(1),
+        pantryDays: Math.floor(this.state.village.pantryKcal / Math.max(1, (this.state.village.lastEat || 800) - (this.state.village.lastGive || 0))),
         villageEat: Math.round(this.state.village.lastEat || 800),
         villageGive: Math.round(this.state.village.lastGive || 0),
         villageProviders: this.state.village.lastProviders || [],

@@ -104,16 +104,28 @@
   function obItems() {
     const v = Game.data.villagers.find(x => x.id === ob.villager);
     const items = v.items.map(id => Game.data.items.find(i => i.id === id)).filter(Boolean);
-    screen.innerHTML = `${bar('scattering://pack', '5 items')}
+    const picked = new Set();
+    const render = () => {
+      screen.innerHTML = `${bar('scattering://pack', picked.size + '/5')}
       <h1 class="title" style="font-size:22px">WHAT DID YOU GRAB?</h1>
-      <p class="small">The sky was changing. ${v.name.split(' ')[0]} grabbed five things:</p>
-      ${items.map(i => `<div class="card"><h3>${i.name}</h3><p class="small">${i.flavor}</p></div>`).join('')}
-      <button class="btn" id="b-go">This is me. Begin.</button>`;
-    document.getElementById('b-go').onclick = () => {
-      Game.newGame(ob.home, ob.villager);
-      // Mara's intro, then you're standing in Haven — which is a tile now.
-      questOverlay(() => { Game.depart(); expeditionScreen(); });
+      <p class="small">The sky was changing. ${v.name.split(' ')[0]} could carry five things. Choose:</p>
+      ${items.map(i => `<div class="card itempick${picked.has(i.id) ? ' sel' : ''}" data-i="${i.id}"><h3>${picked.has(i.id) ? '✓ ' : ''}${i.name}</h3><p class="small">${i.flavor}</p></div>`).join('')}
+      <button class="btn" id="b-go" ${picked.size !== 5 ? 'disabled style="opacity:.4"' : ''}>${picked.size === 5 ? 'This is me. Begin.' : `Pick ${5 - picked.size} more`}</button>`;
+      screen.querySelectorAll('.itempick').forEach(el => {
+        el.onclick = () => {
+          const id = el.dataset.i;
+          if (picked.has(id)) picked.delete(id);
+          else if (picked.size < 5) picked.add(id);
+          render();
+        };
+      });
+      const go = document.getElementById('b-go');
+      if (picked.size === 5) go.onclick = () => {
+        Game.newGame(ob.home, ob.villager, [...picked]);
+        questOverlay(() => { Game.depart(); expeditionScreen(); });
+      };
     };
+    render();
   }
 
   // ---------- village node ----------
@@ -287,6 +299,9 @@
     on('p-drink', () => { Game.drinkTreated(); rerender(); });
     on('p-wild', () => { Game.drinkWild(); rerender(); });
     screen.querySelectorAll('[data-talk]').forEach(b => b.onclick = () => talkOverlay(b.dataset.talk));
+    screen.querySelectorAll('.bgsurv').forEach(el => {
+      el.onclick = () => { screen.querySelector('#bgsay').textContent = '\u201C' + el.dataset.line + '\u201D'; };
+    });
     on('p-water', () => { Game.villageAction('water'); toast('Skin full. Cold. Clean.'); rerender(); });
     on('p-fire', () => { Game.villageAction('fire'); rerender(); });
   }

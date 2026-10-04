@@ -145,7 +145,7 @@
       "formerOccupation": "string",
       "personality": "string[]",
       "backstory": "string",
-      "items": "string[5..5]",
+      "items": "string[8..8]",
       "clothesNote": "string?",
       "abilityWeights": "object",
       "systemAssessment": "string",

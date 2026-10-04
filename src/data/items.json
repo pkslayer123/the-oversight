@@ -110,7 +110,7 @@
     ]
   },
   {
-    "baseEffect": "Climb, snare, haul — 50ft of options",
+    "baseEffect": "Climb, snare, haul \u2014 50ft of options",
     "class": "tool",
     "flavor": "Coiled the way his grandfather taught him.",
     "id": "rope_50ft",
@@ -259,5 +259,107 @@
     "flavor": "Half speedrun notes, half apocalypse patch notes. Theo's magnum opus.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": []
+  },
+  {
+    "id": "stethoscope",
+    "name": "Stethoscope",
+    "flavor": "Hear a heartbeat through anything. Useful for people. Useless for the System.",
+    "class": "tool"
+  },
+  {
+    "id": "bandana",
+    "name": "Bandana",
+    "flavor": "Sling, bandage, filter, flag. The most versatile square of cloth ever made.",
+    "class": "tool"
+  },
+  {
+    "id": "protein_bar",
+    "name": "Protein bar",
+    "flavor": "Tastes like cardboard. 200 kcal of cardboard.",
+    "class": "tool"
+  },
+  {
+    "id": "snare_wire",
+    "name": "Snare wire",
+    "flavor": "Thin, strong, patient. The rabbit doesn't know it's there until it does.",
+    "class": "tool"
+  },
+  {
+    "id": "trail_mix",
+    "name": "Trail mix",
+    "flavor": "Nuts, raisins, chocolate. The chocolate is gone. The hope remains.",
+    "class": "tool"
+  },
+  {
+    "id": "binoculars",
+    "name": "Binoculars",
+    "flavor": "See far. The far is mostly trees. But sometimes it's dinner.",
+    "class": "tool"
+  },
+  {
+    "id": "chopsticks",
+    "name": "Chopsticks",
+    "flavor": "Not just for eating. For picking, probing, and pointing at things.",
+    "class": "tool"
+  },
+  {
+    "id": "soy_packets",
+    "name": "Soy packets",
+    "flavor": "Six little packets. Salt is civilization.",
+    "class": "tool"
+  },
+  {
+    "id": "bus_map",
+    "name": "Bus map",
+    "flavor": "Every route she ever drove. None of them go here.",
+    "class": "tool"
+  },
+  {
+    "id": "phone_charger",
+    "name": "Phone charger",
+    "flavor": "No phone, no outlet. But it's a really good cable.",
+    "class": "tool"
+  },
+  {
+    "id": "energy_drink",
+    "name": "Energy drink",
+    "flavor": "300mg of caffeine. For emergencies. Everything is an emergency.",
+    "class": "tool"
+  },
+  {
+    "id": "dice_set",
+    "name": "Dice set",
+    "flavor": "For when decisions need to be fast and blame needs to be random.",
+    "class": "tool"
+  },
+  {
+    "id": "calculator",
+    "name": "Calculator",
+    "flavor": "The pantry math must be exact. Estimating is how pantries die.",
+    "class": "tool"
+  },
+  {
+    "id": "pen_set",
+    "name": "Pen set",
+    "flavor": "Blue, black, red. For writing, underlining, and correcting.",
+    "class": "tool"
+  },
+  {
+    "id": "tasting_spoon",
+    "name": "Tasting spoon",
+    "flavor": "A chef tastes everything. Even the apocalypse.",
+    "class": "tool"
+  },
+  {
+    "id": "thermos",
+    "name": "Thermos",
+    "flavor": "Keeps things hot. Hot is a memory now.",
+    "class": "tool"
+  },
+  {
+    "id": "photo_album",
+    "name": "Photo album",
+    "flavor": "Faces from before. The most valuable thing she owns.",
+    "class": "sentimental"
   }
 ]

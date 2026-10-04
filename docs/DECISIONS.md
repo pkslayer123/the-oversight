@@ -523,3 +523,11 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 
 - **Decision:** (1) The 5x5 close-up is back — inline on the one screen, larger tiles, tappable. The 7x7 shrinks to a travel minimap. Tap a close-up tile → what you know about that ground (or "you haven't worked this ground"). (2) The Codex starts as a **Journal** (your handwriting). At 4 plant entries, the System designates it a CODEX — diegetic upgrade with a log ceremony. (3) Knowledge is earned: removed the guaranteed first favored plant and the free arrival Codex lessons. First forage is pure RNG; whatever you find labels the tile ("hickory country" = YOU found hickory here). After discovery, the known plant gets 3x weight — you know where to look. The land's "why" is told after you find something, not before.
 - **Why:** Steve: the close-up made it feel like a world (node panel alone was abstract); the game gave away information instead of letting it be discovered; symbols should be tappable for codex info and eventually direct effort. The journal→codex beat makes the interface itself a progression reward.
+
+## 2026-10-03 — the village has a metabolism
+- Roster: 6 mains (story, dialogue) + 6 drawn from 36 background survivors (variety). Different faces each run.
+- Every villager has kcalPerDay (consumption) and providesPerDay (a few contribute: Jesse's snares, Aki's lines, etc.).
+- villageEats sums the rates. Pantry display shows the math: "12 mouths eat 883/day · Jesse, Aki bring in 250."
+- Net drain 612-722/day (was flat 800). Variation between runs is a feature.
+- Quest giver: random main who isn't the player. Mara isn't the only intro.
+- Roster UI: mains with Talk buttons, background as compact "Name (occupation)" — info, not management.

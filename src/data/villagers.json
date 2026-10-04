@@ -5,8 +5,8 @@
       "fieldcraft": 2,
       "system": 1
     },
-    "backstory": "ER nurse from Columbus. When the sky changed, she was already moving toward the screaming — old habits. She checked pulses in the clearing while everyone else stared at the sky.",
-    "clothesNote": "Scrub top (long dead) under a patched canvas jacket. Good boots — broken-in, quiet. They have outlived two worlds.",
+    "backstory": "ER nurse from Columbus. When the sky changed, she was already moving toward the screaming \u2014 old habits. She checked pulses in the clearing while everyone else stared at the sky.",
+    "clothesNote": "Scrub top (long dead) under a patched canvas jacket. Good boots \u2014 broken-in, quiet. They have outlived two worlds.",
     "formerOccupation": "ER nurse",
     "homeRegion": "Ohio river valley",
     "id": "mara_okafor",
@@ -15,7 +15,10 @@
       "lighter",
       "field_sutures",
       "daughters_drawing",
-      "good_boots"
+      "good_boots",
+      "stethoscope",
+      "bandana",
+      "protein_bar"
     ],
     "name": "Mara Okafor",
     "personality": [
@@ -26,17 +29,17 @@
     "survivalProbability": 34,
     "systemAssessment": "The others notice: steady hands, dry humor, the one already taking charge of the wounded.",
     "quest": [
-      "You're awake. Don't sit up fast — you were out a full day, and we carried you, so you owe us.",
+      "You're awake. Don't sit up fast \u2014 you were out a full day, and we carried you, so you owe us.",
       "We counted the pantry this morning. Nine days. Twelve mouths. Priya did the math twice because she doesn't trust her own handwriting anymore.",
       "Here's the part I can't stop thinking about: the System gave me a field-surgery kit. It gave Jesse a hunter's hands. It gave Aki a nose for fish. And it forgot to give anyone the part where we know what's food.",
-      "It forgot. The thing that moved the sky forgot dinner. So that's your job now — you're the scholar. You read the land like the rest of us read faces. Or you will.",
+      "It forgot. The thing that moved the sky forgot dinner. So that's your job now \u2014 you're the scholar. You read the land like the rest of us read faces. Or you will.",
       "Go out. Learn what's edible. Bring back what you can carry. Come home when your pack is full or your gut says so.",
-      "Write it down — the Codex is the only thing we get to keep. And scholar? Eat something green. I mean it."
+      "Write it down \u2014 the Codex is the only thing we get to keep. And scholar? Eat something green. I mean it."
     ],
     "talk": [
-      "You're awake. Don't sit up fast — you were out a full day and we carried you, so you owe us.",
+      "You're awake. Don't sit up fast \u2014 you were out a full day and we carried you, so you owe us.",
       "The System gave me a field-surgery kit. Lovely. It did not give anyone a list of what's food. Priorities.",
-      "Dandelion: root, leaf, flower — the whole plant is food. Bitter means it's working.",
+      "Dandelion: root, leaf, flower \u2014 the whole plant is food. Bitter means it's working.",
       "I was an ER nurse. Now I'm the woman who tells grown adults to eat their greens. Funny.",
       "Theo asked if grief has a half-life. I told him to ask Priya, she'll make a spreadsheet.",
       "Clear water isn't clean water. Treat everything. Your gut will thank you on day three.",
@@ -53,7 +56,7 @@
       "craft": 1,
       "fieldcraft": 3
     },
-    "backstory": "Grew up hunting whitetail with his grandfather in the Georgia pines. Was wearing camo when the sky changed — hasn't taken it off since. Quiet. Misses his dog.",
+    "backstory": "Grew up hunting whitetail with his grandfather in the Georgia pines. Was wearing camo when the sky changed \u2014 hasn't taken it off since. Quiet. Misses his dog.",
     "clothesNote": "Full camo, broken-in. Grandfather's knife on the belt.",
     "formerOccupation": "line cook / hunter",
     "homeRegion": "Georgia pines",
@@ -63,7 +66,10 @@
       "rope_50ft",
       "lighter",
       "tin_cup",
-      "camo_jacket"
+      "camo_jacket",
+      "snare_wire",
+      "trail_mix",
+      "binoculars"
     ],
     "name": "Jesse Calhoun",
     "personality": [
@@ -89,7 +95,7 @@
     "quest": [
       "You're up. Good. Mara said to let you sleep but the pantry doesn't care about sleep.",
       "Here's the truth: the woods are full of food and we don't know which is which. The System gave me hunter's hands and forgot the menu.",
-      "You're the scholar. Learn what's edible, bring it back, write it down. And stay away from the Bulldozer's line — it commutes."
+      "You're the scholar. Learn what's edible, bring it back, write it down. And stay away from the Bulldozer's line \u2014 it commutes."
     ]
   },
   {
@@ -108,7 +114,10 @@
       "whetstone",
       "fishing_line",
       "lighter",
-      "mothers_ring"
+      "mothers_ring",
+      "chopsticks",
+      "soy_packets",
+      "tasting_spoon"
     ],
     "name": "Aki Tanaka",
     "personality": [
@@ -119,14 +128,14 @@
     "survivalProbability": 29,
     "systemAssessment": "The others notice: precise, warm, unflappable. Already inventorying what the group carried.",
     "talk": [
-      "The creek has fish — I can smell them. No hooks, no wire. The Burn took the wire. We'll figure it out.",
+      "The creek has fish \u2014 I can smell them. No hooks, no wire. The Burn took the wire. We'll figure it out.",
       "Bring me back something green? Anything. I want to remember what fresh tastes like.",
       "Eleven years behind a sushi counter. Now I dream about rice. Just rice. A bowl of it, steam on my face.",
       "Water's edge is where everything happens. Fish, frogs, the good roots. Stay near the creek.",
       "In Seattle it rained sideways. People complained. I'd give anything for sideways rain and a bus that comes.",
       "Priya asked me to cost out a fish. I told her the fish is priceless and she wrote that down. She's serious.",
       "My hands remember the knife work. Eleven years. The hands don't care that the world ended.",
-      "You find ginger — real wild ginger — you run home. Don't walk. Run."
+      "You find ginger \u2014 real wild ginger \u2014 you run home. Don't walk. Run."
     ],
     "kcalPerDay": 72,
     "providesPerDay": 60,
@@ -134,7 +143,7 @@
     "quest": [
       "You're awake. Good. I was dreaming about rice again. Just rice.",
       "The creek has fish, the woods have... something. The System gave me a nose for fish and forgot everything else.",
-      "You're the scholar. Learn what's food, bring it home, write it down. And if you find ginger — run home. Don't walk."
+      "You're the scholar. Learn what's food, bring it home, write it down. And if you find ginger \u2014 run home. Don't walk."
     ]
   },
   {
@@ -161,7 +170,10 @@
       "reading_glasses",
       "bus_schedule",
       "hard_candy",
-      "spare_socks"
+      "spare_socks",
+      "bus_map",
+      "thermos",
+      "photo_album"
     ],
     "talk": [
       "Drove the 42 through two floods and a riot. This? This is just weather with ambition.",
@@ -171,7 +183,7 @@
       "The System moved the sky and couldn't pack a lunch. Men. It's always men. Present company excluded, scholar.",
       "You know what I miss? Complaints. Nobody complains about the bus being late anymore. I miss being complained at.",
       "Jesse's quiet is a good quiet. Theo's quiet means he's planning something. Learn the difference.",
-      "Sit. Rest your feet. The woods aren't going anywhere, and neither are we — that's rather the problem."
+      "Sit. Rest your feet. The woods aren't going anywhere, and neither are we \u2014 that's rather the problem."
     ],
     "kcalPerDay": 65,
     "providesPerDay": 0,
@@ -179,7 +191,7 @@
     "quest": [
       "Oh good, you're awake. I was about to start charging rent for that spot by the fire.",
       "Twelve mouths, nine days of food, and the System forgot to pack a lunch. Men. Present company excluded, scholar.",
-      "You read the land, you write it down, you bring it home. That's the job. Now eat something — you look peaky."
+      "You read the land, you write it down, you bring it home. That's the job. Now eat something \u2014 you look peaky."
     ]
   },
   {
@@ -206,7 +218,10 @@
       "hoodie",
       "energy_bar_wrapper",
       "multitool",
-      "notebook"
+      "notebook",
+      "phone_charger",
+      "energy_drink",
+      "dice_set"
     ],
     "talk": [
       "Okay so the Bulldozer has a patrol route. That's just a mob with a leash range. Don't pull it.",
@@ -215,7 +230,7 @@
       "You ever notice the birds go quiet in a circle around it? That's an aggro radius. I'm telling you.",
       "Ruth says I sit like trouble. Ruth sits like a queen. We all have our thing.",
       "If this is a roguelite I am NOT doing permadeath. Just putting that out there.",
-      "Aki's fish thing — no hooks, right? But thorns? Bone? I'm prototyping. Don't tell Mara.",
+      "Aki's fish thing \u2014 no hooks, right? But thorns? Bone? I'm prototyping. Don't tell Mara.",
       "The Codex is basically a wiki. You're the only editor. No pressure."
     ],
     "kcalPerDay": 72,
@@ -251,7 +266,10 @@
       "tin_cup",
       "good_boots",
       "daughters_drawing",
-      "rope_50ft"
+      "rope_50ft",
+      "calculator",
+      "notebook",
+      "pen_set"
     ],
     "talk": [
       "Pantry's at nine days. Eight, if Theo keeps 'taste-testing.' I've started logging the taste-tests.",
@@ -267,7 +285,7 @@
     "providesPerDay": 0,
     "providesWhat": "",
     "quest": [
-      "You're awake. Good — I've updated the ledger. Nine days of pantry, twelve mouths. I've done the math twice.",
+      "You're awake. Good \u2014 I've updated the ledger. Nine days of pantry, twelve mouths. I've done the math twice.",
       "The System gave us tools but forgot the most important data: what's edible. That's your column now, scholar.",
       "Bring back food, tell me the weight, and write it down. Estimating is how pantries die."
     ]

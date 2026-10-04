@@ -113,3 +113,5 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 
 /* log */
 .log { border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 12px; max-height: 28dvh; overflow-y: auto; background: var(--bg); }
+.itempick { cursor: pointer; }
+.itempick.sel { border-color: #7fd67f; background: #1a2f1a; }
