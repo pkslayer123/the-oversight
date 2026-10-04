@@ -542,3 +542,11 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
   bring X, visit Y. Rewards: pantry, knowledge (+integration), or barter.
   System quests come later (not yet implemented).
 - HUD shows SYSTEM integration %. Active quest shows in expedition screen.
+
+## 2026-10-03 — find the part you need to play
+- Knowledge feeds: each codex entry +80 kcal/day village-wide. The scholar's contribution isn't always calories.
+- Big days: 5% chance someone brings 1500-2500 (two days of food from one person).
+- Death: 3 wounds = gone. Starvation (2+ days empty pantry) kills the weakest. Roster shrinks.
+- Depletion: every 7 days, maxStock -1 (min 1). The easy food dries up.
+- Role hint: Haven panel shows what the village needs from you right now.
+  Not always the forager — sometimes the scholar.

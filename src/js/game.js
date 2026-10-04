@@ -254,8 +254,9 @@
       }
       else {
         this.say(`You walk back into Haven. ${entries} Codex entries. The village is glad to see you.`);
-        // win: the Codex is substantial and the pantry is secure — Haven will make it. earned, not timed.
-        if (entries >= 8 && this.state.village.pantryKcal >= 5000 && !this.over) {
+        // win: the Codex is complete and the pantry is secure — Haven will make it. earned, not timed.
+        // 10 plants + 8000 kcal forces 20+ days: depletion, death, and scarcity all bite.
+        if (entries >= 10 && this.state.village.pantryKcal >= 8000 && !this.over) {
           this.over = true; this.won = true;
           this.say('Mara looks at the pantry, then at the Codex, then at you. "We\'re going to make it." Haven will survive — because someone learned the land, and wrote it down.');
         }
@@ -944,16 +945,21 @@
 
     endDay() {
       const scholar = this.state.scholar;
-      // regrow: stock resets daily. natural goods are renewable; cans are not.
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.map.tiles[y][x].stock = this.map.tiles[y][x].maxStock;
+      // regrow: +1/day up to maxStock. food comes back, but slowly.
+      // strip a grove and it takes 3 days to recover. not unlimited, but renewable.
+      // state persists — the land remembers what you took.
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const t = this.map.tiles[y][x];
+        if (t.maxStock > 0) t.stock = Math.min(t.maxStock, (t.stock || 0) + 1);
+      }
       // evening: run metabolism
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
       // the village eats whether you're there or not — every day you're out, twelve mouths
       this.villageLives();
       this.villageEats();
-      // depletion: every 7 days, the easy food is gone. the land gets tired.
-      if (this.state.scholar.day % 7 === 0) {
+      // depletion: every 5 days, the easy food is gone. the land gets tired.
+      if (this.state.scholar.day % 5 === 0) {
         for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
           const t = this.tileAt(x, y);
           if (t.type !== 'haven' && t.type !== 'ruin' && t.maxStock > 1) {
