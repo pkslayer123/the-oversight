@@ -1,0 +1,110 @@
+{
+  "cellTypes": {
+    "tree": {
+      "name": "Tree",
+      "blocks": true,
+      "interact": "forage",
+      "modifiers": {
+        "species": {"values": ["oak", "hickory", "pine"], "weights": [0.4, 0.3, 0.3], "visible": true},
+        "health": {"values": ["healthy", "diseased"], "weights": [0.75, 0.25], "visible": true},
+        "ivy": {"values": [true, false], "weights": [0.3, 0.7], "visible": true}
+      },
+      "synthesis": "healthy oak no ivy = 3, diseased or ivy = reduced. ivy + diseased = 0."
+    },
+    "bigtree": {
+      "name": "Big tree",
+      "blocks": true,
+      "interact": "forage",
+      "modifiers": {
+        "species": {"values": ["oak", "hickory"], "weights": [0.6, 0.4], "visible": true},
+        "health": {"values": ["healthy", "diseased"], "weights": [0.8, 0.2], "visible": true},
+        "ivy": {"values": [true, false], "weights": [0.2, 0.8], "visible": true},
+        "hollow": {"values": [true, false], "weights": [0.2, 0.8], "visible": false, "discover": "examine"}
+      },
+      "synthesis": "Bigger yield (4-5). Hollow might hold something (cache, animal)."
+    },
+    "bush": {
+      "name": "Bush",
+      "blocks": false,
+      "interact": "forage",
+      "modifiers": {
+        "berry": {"values": ["blackberry", "raspberry", "none"], "weights": [0.4, 0.3, 0.3], "visible": true},
+        "ripeness": {"values": ["unripe", "ripe", "overripe"], "weights": [0.3, 0.5, 0.2], "visible": true},
+        "thorns": {"values": [true, false], "weights": [0.5, 0.5], "visible": true}
+      },
+      "synthesis": "Ripe berries = food. Unripe = wait. Overripe = less. Thorns = costs health to pick."
+    },
+    "plant": {
+      "name": "Plant",
+      "blocks": false,
+      "interact": "forage",
+      "modifiers": {
+        "maturity": {"values": ["sprout", "mature", "seeding"], "weights": [0.3, 0.5, 0.2], "visible": true},
+        "soil": {"values": ["rich", "poor"], "weights": [0.5, 0.5], "visible": false, "discover": "examine"}
+      },
+      "synthesis": "Mature in rich soil = max. Sprout = little. Seeding = you can replant."
+    },
+    "water": {
+      "name": "Water",
+      "blocks": true,
+      "interact": "drink",
+      "modifiers": {
+        "flow": {"values": ["running", "stagnant"], "weights": [0.5, 0.5], "visible": true, "fromTile": {"creek": "running", "wetland": "stagnant"}},
+        "clarity": {"values": ["clear", "murky"], "weights": [0.6, 0.4], "visible": true},
+        "source": {"values": ["spring", "creek", "pond"], "weights": [0.2, 0.4, 0.4], "visible": false, "discover": "examine"},
+        "depth": {"values": ["shallow", "deep"], "weights": [0.6, 0.4], "visible": true}
+      },
+      "synthesis": "Running clear spring: safe. Stagnant murky: poison risk. Deep = can not wade, need bridge."
+    },
+    "rubble": {
+      "name": "Rubble",
+      "blocks": false,
+      "interact": "scavenge",
+      "cost": 20,
+      "modifiers": {
+        "loot": {"values": ["none", "cans", "tools", "cloth"], "weights": [0.4, 0.3, 0.2, 0.1], "visible": false, "discover": "search"},
+        "stability": {"values": ["stable", "shifting"], "weights": [0.7, 0.3], "visible": true}
+      },
+      "synthesis": "Search reveals loot. Shifting = risk of injury."
+    },
+    "tent": {
+      "name": "Tent",
+      "blocks": true,
+      "interact": "rest",
+      "modifiers": {
+        "condition": {"values": ["good", "shredded", "packable"], "weights": [0.5, 0.3, 0.2], "visible": false, "discover": "examine"}
+      },
+      "synthesis": "Good = rest. Shredded = nothing. Packable = take it."
+    },
+    "fire": {
+      "name": "Fire",
+      "blocks": true,
+      "interact": "cook",
+      "modifiers": {
+        "size": {"values": ["embers", "campfire", "bonfire"], "weights": [0.3, 0.5, 0.2], "visible": true},
+        "fuel": {"values": ["low", "good"], "weights": [0.4, 0.6], "visible": false, "discover": "examine"}
+      },
+      "synthesis": "Bigger fire = more cooking, more warmth, more visible (monsters?). Low fuel = dies soon."
+    },
+    "wall": {"name": "Wall", "blocks": true, "modifiers": {}},
+    "bridge": {"name": "Bridge", "blocks": false, "modifiers": {}},
+    "door": {"name": "Door", "blocks": false, "modifiers": {}},
+    "grass": {
+      "name": "Grass",
+      "blocks": false,
+      "modifiers": {
+        "soil": {"values": ["rich", "poor"], "weights": [0.5, 0.5], "visible": false, "discover": "examine"}
+      },
+      "synthesis": "Rich soil = plants regrow faster nearby."
+    },
+    "dirt": {"name": "Dirt", "blocks": false, "modifiers": {}}
+  },
+  "buildingRooms": {
+    "gym": {"name": "Gym floor", "modifiers": {}},
+    "class": {"name": "Classroom", "modifiers": {"supplies": {"values": ["empty", "papers", "firstaid"], "weights": [0.6, 0.3, 0.1], "visible": false, "discover": "search"}}},
+    "office": {"name": "Office", "modifiers": {"supplies": {"values": ["empty", "papers", "tools"], "weights": [0.5, 0.3, 0.2], "visible": false, "discover": "search"}}},
+    "bay": {"name": "Warehouse bay", "modifiers": {"pallets": {"values": ["empty", "goods", "machinery"], "weights": [0.4, 0.4, 0.2], "visible": true}}},
+    "sanct": {"name": "Sanctuary", "modifiers": {}},
+    "base": {"name": "Basement", "modifiers": {"stores": {"values": ["empty", "cans", "water"], "weights": [0.5, 0.3, 0.2], "visible": false, "discover": "search"}}}
+  }
+}

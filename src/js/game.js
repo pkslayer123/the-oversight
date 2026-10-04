@@ -49,9 +49,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs };
       return this.data;
     },
 
@@ -577,6 +577,27 @@
       t.secrets = t.secrets || {};
       t.modifiers = t.modifiers || {};
       const rnd2 = this.detailRand(this.detailSeed(x, y) + 999);
+      // CELL DEFS: data-driven modifiers. see src/data/cell_defs.json.
+      // to add variety: edit the JSON, not the code.
+      const cellDefs = this.data.cellDefs ? this.data.cellDefs.cellTypes : null;
+      const rollMod = (def) => {
+        if (!def || !def.modifiers) return null;
+        const out = { known: false };
+        for (const [mkey, mdef] of Object.entries(def.modifiers)) {
+          // fromTile override (e.g., creek -> running water)
+          if (mdef.fromTile && mdef.fromTile[t.type]) {
+            out[mkey] = mdef.fromTile[t.type];
+          } else {
+            const r = rnd2();
+            let acc = 0;
+            for (let i = 0; i < mdef.values.length; i++) {
+              acc += mdef.weights[i];
+              if (r < acc) { out[mkey] = mdef.values[i]; break; }
+            }
+          }
+        }
+        return out;
+      };
       for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
         const key = cx + ',' + cy;
         const c = cells[cy][cx];
@@ -608,6 +629,20 @@
         } else if (c === 'tent') {
           const r = rnd2();
           t.secrets[key] = { condition: r < 0.5 ? 'good' : r < 0.8 ? 'shredded' : 'packable', known: false };
+        } else if (cellDefs && (c === 'bush' || c === 'plant' || c === 'rubble' || c === 'fire')) {
+          // data-driven: roll from cell_defs.json. easy to iterate.
+          const mod = rollMod(cellDefs[c]);
+          if (mod) t.modifiers[key] = mod;
+          // synthesize secrets from modifiers
+          if (c === 'bush' && mod) {
+            // ripe blackberry no thorns = best. unripe or thorns = less/harm.
+            const has = mod.berry !== 'none' && mod.ripeness === 'ripe';
+            t.secrets[key] = { yield: has ? 2 : (mod.berry !== 'none' ? 1 : 0), thorns: mod.thorns, known: false };
+          } else if (c === 'plant' && mod) {
+            t.secrets[key] = { yield: mod.maturity === 'mature' ? 2 : mod.maturity === 'seeding' ? 1 : 0, known: false };
+          } else if (c === 'rubble' && mod) {
+            t.secrets[key] = { loot: mod.loot, amount: mod.loot === 'none' ? 0 : 1 + Math.floor(rnd2() * 2), known: false };
+          }
         }
       }
       // STOCK FROM THE WORLD: count forageable cells. what exists is what you can take.
@@ -770,12 +805,46 @@
         }
         return this.doAction('rest');
       }
-      // PLANT/BUSH: straightforward (for now — they might have secrets later)
-      if (cell === 'plant' || cell === 'bush') return this.doAction('forage');
+      // BUSH: thorns hurt. you learn to be careful.
+      if (cell === 'bush') {
+        const mod = t.modifiers && t.modifiers[key];
+        if (mod) mod.known = true;
+        if (secret) secret.known = true;
+        if (secret && secret.thorns) {
+          this.state.scholar.kcal -= 20; // thorns scratch
+          this.say('Thorns. You get the berries, but they take a little blood. (-20 kcal)');
+        }
+        return this.doAction('forage');
+      }
+      if (cell === 'plant') {
+        const mod = t.modifiers && t.modifiers[key];
+        if (mod) mod.known = true;
+        if (secret) secret.known = true;
+        return this.doAction('forage');
+      }
       // FIRE: warm
       if (cell === 'fire') { this.say('You warm your hands. The fire pops.'); return true; }
-      // RUBBLE: scavenge
-      if (cell === 'rubble') return this.doAction('forage');
+      // RUBBLE: might have loot. shifting rubble is dangerous.
+      if (cell === 'rubble') {
+        const mod = t.modifiers && t.modifiers[key];
+        if (mod) mod.known = true;
+        if (secret) secret.known = true;
+        if (mod && mod.stability === 'shifting') {
+          this.say('The rubble shifts under you. Careful.');
+          // 20% chance of minor injury
+          if (Math.random() < 0.2) {
+            this.state.scholar.kcal -= 50;
+            this.say('A stone slips — your ankle twists. (-50 kcal)');
+          }
+        }
+        if (secret && secret.loot && secret.loot !== 'none') {
+          this.say(`You find ${secret.amount} ${secret.loot}.`);
+        } else if (secret) {
+          this.say('Picked clean. Nothing.');
+          return true;
+        }
+        return this.doAction('forage');
+      }
       return null;
     },
 

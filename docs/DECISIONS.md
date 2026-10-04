@@ -653,3 +653,19 @@ KNOWLEDGE STICKS: secret.known = true persists in save. The grid shows what you\
 - You don\'t waste time re-checking. The world remembers what you know.
 
 INTERACTION: tap to examine/use. First touch reveals the secret. Then you decide.
+
+## 2026-10-03 — Modifiers synthesize (Steve)
+Steve: "Remember that running water was supposed to be better than stagnant? Every space
+needs a host of modifiers that impact the ultimate results. You must synthesize on the fly."
+
+SYSTEM: each cell has modifiers (t.modifiers[key]). They combine to produce the result.
+- Water: flow (running/stagnant) + clarity (clear/murky) + source (spring/creek/pond/runoff).
+  Running clear spring: safe. Stagnant murky runoff: poison. Stagnant is risky (30% poison).
+  Creek tiles = running. Wetland = stagnant.
+- Tree: species (oak/hickory/pine) + health (healthy/diseased) + ivy (true/false).
+  Healthy oak, no ivy: 3. Diseased pine, ivy: 0. You SEE the modifiers.
+
+VISIBLE: examine reveals "Oak, healthy" or "Running, clear, creek." You learn the SYSTEM,
+not just facts. Running water is better than stagnant — you see why.
+
+SYNTHESIS, not lookup: the result emerges from the factors combining.
