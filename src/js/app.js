@@ -1162,7 +1162,7 @@
     if (!vp) { slot.innerHTML = ''; inlineView = null; return; }
     const sys = !!Game.state.systemArrived;
     const known = sys || Game.nameKnown(villagerId);
-    const titleName = known ? vp.name.split(' ')[0] : Game.personDescriptor(villagerId);
+    const titleName = known ? vp.name : Game.personDescriptor(villagerId);
     const trust = (Game.state.village.trust && Game.state.village.trust[villagerId]) || 10;
     const health = (Game.state.village.health && Game.state.village.health[villagerId] !== undefined)
       ? Game.state.village.health[villagerId] : 100;
@@ -1474,10 +1474,10 @@
     }
     if (trust < 20) body += `<p class="small" style="color:#e88">"I don't take orders from strangers." (Need 20+ trust.)</p>`;
     body += `<p class="small" style="opacity:.6;margin-top:8px">They'll report back at the end of this part. Dangerous work can get people hurt.</p>`;
-    // METHOD: how you ask matters. Just ask (default), sweeten with food
-    // (costs 1 edible unit, +30 effective trust), or appeal to what they want
-    // (requires knowing their goal). Contextual — not always available.
-    const method = view.method || 'ask';
+    // NO METHOD TOGGLE. Steve's rule: bribery isn't a perpetual button — it's
+    // an opportunity that appears when someone says no. You ask. If they're
+    // reluctant, THEN food or an appeal to what they want becomes an option.
+    // Discovered through doing, not through a menu.
     const hasFood = (() => { try {
       const day = Game.state.scholar.day;
       return !!(Game.state.scholar.inventory || []).find(i =>
@@ -1486,17 +1486,29 @@
     } catch (e) { return false; } })();
     const goalKnown = (() => { try { return Game.goalKnown(villagerId); } catch (e) { return false; } })();
     const goalWant = (() => { try { return Game.goalWant(villagerId); } catch (e) { return null; } })();
-    let methodBtns = `<button class="btn sm${method === 'ask' ? '' : ' ghost'}" data-method="ask">💬 Just ask</button>`;
-    methodBtns += ` <button class="btn sm${method === 'deal' ? '' : ' ghost'}" data-method="deal"${hasFood ? '' : ' disabled title="No food to offer"'}>🤝 Offer food${hasFood ? '' : ' (none)'}</button>`;
-    methodBtns += ` <button class="btn sm${method === 'appeal' ? '' : ' ghost'}" data-method="appeal"${goalKnown ? '' : ' disabled title="Learn what they want first (Ask about…)"'}>🎯 Appeal${goalKnown && goalWant ? ` (${esc(goalWant)})` : ''}</button>`;
-    const btns = `<div class="inline-btns" style="margin-bottom:6px">${methodBtns}</div>` +
-      Object.entries(tasks).map(([tid, t]) => {
-      const comp = Game.villagerCompetence(villagerId, tid);
-      const compTag = tid === 'rest' ? '' : comp >= 1.3 ? ' ⭐ natural' : comp <= 0.8 ? ' ⚠ not their strength' : '';
-      const isCurrent = current && current.task === tid;
-      const ask = askPhrases[tid] || t.name;
-      return `<button class="btn sm${isCurrent ? '' : ' ghost'}" data-task="${tid}">${t.icon} "${esc(ask)}"${compTag}${isCurrent ? ' ✓' : ''}</button>`;
-    }).join('') + ` <button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
+    // REFUSAL: they said no. The opportunity emerges HERE — not before.
+    let btns;
+    if (view.refused && view.refusedTask) {
+      const rtask = view.refusedTask;
+      const rname = (tasks[rtask] || {}).name || rtask;
+      const reason = ((Game.state.village.lastRefusal || {}).reason) || 'They shook their head.';
+      body = `<p style="font-size:15px;line-height:1.5">"No."</p>
+        <p class="small" style="opacity:.7">${esc(reason)}</p>
+        <p class="small" style="opacity:.6;margin-top:8px">They won't ${esc(rname.toLowerCase())} just because you asked. Now what?</p>`;
+      btns = '';
+      if (hasFood) btns += `<button class="btn sm" data-refuse="deal">🤝 Offer food <span class="small" style="opacity:.6">(1 unit)</span></button> `;
+      if (goalKnown) btns += `<button class="btn sm" data-refuse="appeal">🎯 Appeal <span class="small" style="opacity:.6">${goalWant ? '— ' + esc(goalWant) : ''}</span></button> `;
+      if (!hasFood && !goalKnown) btns += `<p class="small" style="opacity:.6">You have nothing to sweeten this with — no food to offer, and you don't know what they want yet. (Talk to them. Learn.)</p>`;
+      btns += `<button class="btn sm ghost" data-refuse="leave">← Leave it</button>`;
+    } else {
+      btns = Object.entries(tasks).map(([tid, t]) => {
+        const comp = Game.villagerCompetence(villagerId, tid);
+        const compTag = tid === 'rest' ? '' : comp >= 1.3 ? ' ⭐ natural' : comp <= 0.8 ? ' ⚠ not their strength' : '';
+        const isCurrent = current && current.task === tid;
+        const ask = askPhrases[tid] || t.name;
+        return `<button class="btn sm${isCurrent ? '' : ' ghost'}" data-task="${tid}">${t.icon} "${esc(ask)}"${compTag}${isCurrent ? ' ✓' : ''}</button>`;
+      }).join('') + ` <button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
+    }
 
     slot.innerHTML = `<div class="inlinecard">
       ${inlineHead('\uD83D\uDDE3\uFE0F Ask ' + esc(dname) + ' for help' + viaLabel)}
@@ -1509,29 +1521,39 @@
       inlineView = { kind: 'person', vid: villagerId, line: view.line, result: null, nvMode: null, mapKey: inlineMapKey() };
       refresh();
     };
-    slot.querySelectorAll('[data-method]').forEach(b => {
-      b.onclick = () => {
-        inlineView = { kind: 'assign', vid: villagerId, line: view.line, result: view.result, via, method: b.dataset.method, mapKey: inlineMapKey() };
-        refresh();
-      };
-    });
     slot.querySelectorAll('[data-task]').forEach(b => {
       b.onclick = () => {
         const tid = b.dataset.task;
-        const m = view.method || 'ask';
+        // You just ask. If they're reluctant, the refusal opens the door —
+        // deal and appeal emerge THEN, not as a perpetual toggle.
+        const r = Game.assignTask(villagerId, tid, { via });
+        if (r && r.ok) {
+          const ask = askPhrases[tid] || tasks[tid].name;
+          inlineView = { kind: 'person', vid: villagerId, line: view.line, result: `"${ask}" — they'll report back.`, nvMode: null, mapKey: inlineMapKey() };
+        } else if (r && r.refused) {
+          // They said no. Now — and only now — do the other options appear.
+          inlineView = { kind: 'assign', vid: villagerId, line: view.line, result: null, via, refused: true, refusedTask: tid, mapKey: inlineMapKey() };
+        } else {
+          inlineView = { kind: 'person', vid: villagerId, line: view.line, result: null, nvMode: null, mapKey: inlineMapKey() };
+        }
+        refresh();
+      };
+    });
+    slot.querySelectorAll('[data-refuse]').forEach(b => {
+      b.onclick = () => {
+        const how = b.dataset.refuse;
+        const tid = view.refusedTask;
         let resultMsg;
-        if (m === 'deal') {
+        if (how === 'deal') {
           const r = Game.offerDeal(villagerId, tid);
           resultMsg = r && r.ok ? `"${askPhrases[tid] || tasks[tid].name}" — sealed with food.` :
             (r && r.refused ? `They took the food. Still no.` : `No deal.`);
-        } else if (m === 'appeal') {
+        } else if (how === 'appeal') {
           const r = Game.appealToGoal(villagerId, tid);
           resultMsg = r && r.ok ? `"${askPhrases[tid] || tasks[tid].name}" — for what they want.` :
             `The appeal didn't land.`;
         } else {
-          Game.assignTask(villagerId, tid, { via });
-          const ask = askPhrases[tid] || tasks[tid].name;
-          resultMsg = `"${ask}" — they'll report back.`;
+          resultMsg = null; // leave it — walk away from the ask
         }
         inlineView = { kind: 'person', vid: villagerId, line: view.line, result: resultMsg, nvMode: null, mapKey: inlineMapKey() };
         refresh();
@@ -1952,6 +1974,13 @@
     renderInlineSlot(st);
     // Pending offers (ability/relic choices) queue as sheets — no screen takeover.
     processPendingSheets();
+    // SCROLL PIN (restore): keep the world where the player's eyes were.
+    try {
+      if (typeof window !== 'undefined' && Math.abs(window.scrollY - _savedY) > 2) window.scrollTo(0, _savedY);
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => {
+        try { if (Math.abs(window.scrollY - _savedY) > 2) window.scrollTo(0, _savedY); } catch (e) {}
+      });
+    } catch (e) {}
   }
 
   // processPendingSheets: ability/relic offers become queued sheets.
@@ -2332,7 +2361,7 @@
               if (pos.mx === cx && pos.my === cy) {
                 const vp = Game.data.villagers.find(v => v.id === rid) || Game.data.background_survivors.find(v => v.id === rid);
                 const showName = Game.state.systemArrived || Game.nameKnown(rid);
-                const fname = showName ? (vp ? vp.name.split(' ')[0] : '?').slice(0, 7) : '';
+                const fname = showName ? (vp ? vp.name.split(' ')[0] : '?') : '';
                 g = `<span class="vtoken">🧍</span>` + (fname ? `<span class="vname">${esc(fname)}</span>` : '');
                 cls += ' villager';
                 break;
