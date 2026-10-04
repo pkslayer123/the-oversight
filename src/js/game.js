@@ -1350,6 +1350,15 @@
       return null;
     },
 
+    // nearFire: is there a fire in the current detail grid?
+    nearFire() {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        if (detail[y] && detail[y][x] === 'fire') return true;
+      }
+      return false;
+    },
+
     // cookAll: cook everything raw in inventory (at a fire).
     cookAll() {
       let n = 0;
