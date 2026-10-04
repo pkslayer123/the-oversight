@@ -3471,7 +3471,7 @@
           this.say('The village looks to you. You\'re the scholar. You\'re supposed to know things.');
         }
       }
-      const brought = s.inventory.reduce((t, i) => t + (i.units || 0) * (i.kcalEach || 0), 0);
+      const brought = s.inventory.reduce((t, i) => t + (((i.kcalEach || 0) > 0 && !this.isUnprocessed(i)) ? (i.units || 0) * (i.kcalEach || 0) : 0), 0);
       const entries = Object.keys(this.state.codex.plants).length;
       const hasGreens = s.inventory.some(i => i.unit === 'handful' || i.unit === 'cup' || i.unit === 'oz');
       if (brought > 0) {
@@ -3480,8 +3480,11 @@
         // move the ACTUAL food into the real pantry — not a phantom number.
         // non-food (bonded relics, tools, materials, books) stays in your pack.
         // (this used to wipe the whole inventory AND evaporate the haul overnight.)
+        // PREP STASH: only FINISHED food goes to the pantry. Unprocessed hauls
+        // (lumps, carcasses, in-shell nuts, raw meat) land on the kitchen
+        // counter — the prep stash — with their spoilage clocks ticking.
         for (const item of s.inventory) {
-          if ((item.kcalEach || 0) > 0 && (item.units || 0) > 0) {
+          if ((item.kcalEach || 0) > 0 && (item.units || 0) > 0 && !this.isUnprocessed(item)) {
             vv.pantry.push({ name: item.name || 'Foraged food', plantId: item.plantId,
               kcalEach: item.kcalEach, units: item.units,
               spoilDay: item.spoilDay || 9999, unit: item.unit,
@@ -3491,24 +3494,21 @@
               needsCooking: item.needsCooking, rawKcal: item.rawKcal, cookedKcal: item.cookedKcal });
           }
         }
-        // FOOD REALITY: inedible ingredients ride along too — carcasses, unknown
-        // hauls, in-shell nuts. The pantry is where specialists transform them.
-        // (Pantry cap counts food value; raw ingredients store free.)
-        let ingredients = 0;
-        for (const item of s.inventory) {
-          if (item.edible === false && (item.units || 0) > 0 && item.foodKind) {
-            vv.pantry.push({ name: item.name || 'Unprocessed haul', plantId: item.plantId,
-              kcalEach: 0, units: item.units, hiddenKcal: item.hiddenKcal,
-              spoilDay: item.spoilDay || 9999, unit: item.unit,
-              safe: true, kg: item.kg || 0.2, prep: item.prep,
-              foodKind: item.foodKind, foodState: item.foodState, edible: false,
-              diseaseRisk: item.diseaseRisk, needsCooking: item.needsCooking });
-            ingredients++;
+        // PREP STASH: unprocessed hauls ride to the counter, not the pantry.
+        // (The pantry is where food waits to be eaten; the stash is where raw
+        // becomes food.)
+        let staged = 0;
+        for (let i = s.inventory.length - 1; i >= 0; i--) {
+          const item = s.inventory[i];
+          if (this.isUnprocessed(item) && (item.units || 0) > 0) {
+            this.prepStash().push(item);
+            s.inventory.splice(i, 1);
+            staged++;
           }
         }
-        s.inventory = s.inventory.filter(i => !(((i.kcalEach || 0) > 0 && (i.units || 0) > 0) || (i.edible === false && (i.units || 0) > 0 && i.foodKind)));
+        s.inventory = s.inventory.filter(i => !((i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !this.isUnprocessed(i)));
         vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
-        this.say(`You unload ${Math.round(brought)} kcal into Haven's pantry.` + (ingredients ? ` Plus ${ingredients} unprocessed haul${ingredients > 1 ? 's' : ''} for the specialists.` : ''));
+        this.say(`You unload ${Math.round(brought)} kcal into Haven's pantry.` + (staged ? ` ${staged} unprocessed haul${staged > 1 ? 's' : ''} onto the counter — the clock is ticking.` : ''));
         // TEACHING MOMENT: you show your haul. they gather. someone might know something.
         // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
         // find a villager who knows something you don't, and trusts you enough to share
@@ -5018,6 +5018,39 @@
       return true;
     },
 
+    // cleanWaterForCooking: clean liters reachable for cooking right now.
+    // YOUR bottles anywhere; the village well only when you're AT haven.
+    cleanWaterForCooking() {
+      const s = this.state.scholar;
+      let n = (s.water || []).filter(b => b.quality === 'clean').length;
+      let atHaven = this.location === 'haven';
+      try { const t = this.playerTile(); if (t && t.type === 'haven') atHaven = true; } catch (e) {}
+      if (atHaven) n += Math.floor((this.state.village.water || {}).clean || 0);
+      return n;
+    },
+    // spendCleanWater(liters): water for cooking. YOUR bottles first — you hauled it.
+    // The village well backs you up only when you're AT haven. Cooking in the field
+    // never drains Haven's well from miles away. Check cleanWaterForCooking() first.
+    // Returns {fromBottles, fromWell}.
+    spendCleanWater(liters) {
+      const s = this.state.scholar;
+      s.water = s.water || [];
+      let need = liters, fromBottles = 0, fromWell = 0;
+      for (let i = s.water.length - 1; i >= 0 && need > 0; i--) {
+        if (s.water[i].quality === 'clean') { s.water.splice(i, 1); need--; fromBottles++; }
+      }
+      if (need > 0) {
+        let atHaven = this.location === 'haven';
+        try { const t = this.playerTile(); if (t && t.type === 'haven') atHaven = true; } catch (e) {}
+        if (atHaven) {
+          const vw = this.state.village.water = this.state.village.water || { clean: 0, dirty: 0 };
+          const take = Math.min(need, Math.floor(vw.clean));
+          vw.clean -= take; need -= take; fromWell = take;
+        }
+      }
+      return { fromBottles, fromWell };
+    },
+
     // cookFood: at a fire, raw -> cooked. More calories, safer.
     // Requires: fire nearby, knowledge (L3 tells you it needs cooking).
     cookFood(idx) {
@@ -5035,19 +5068,23 @@
       const cookLvl1 = this.abilityLevel('camp_cook');
       const waterMult1 = cookLvl1 >= 2 ? 0 : cookLvl1 >= 1 ? 0.5 : 1;
       const kcalMult1 = cookLvl1 >= 3 ? 1.25 : cookLvl1 >= 1 ? 1.1 : 1.0;
-      const water = this.state.village.water || { clean: 0 };
       const units = item.units || 1;
       const cost1 = Math.ceil(units * waterMult1);
-      if (item.needsCooking && water.clean < cost1) {
-        this.say(`Need ${cost1}L clean water to cook ${item.name}.`);
+      if (item.needsCooking && this.cleanWaterForCooking() < cost1) {
+        this.say(`Need ${cost1}L clean water to cook ${item.name} — haul water first.`);
         return null;
       }
-      if (item.needsCooking) water.clean -= cost1;
       // cook it: rawKcal -> kcalEach (cooked)
       item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult1);
       item.rawKcal = null; // it's cooked now
       item.safe = true; // cooking kills the risk (mostly)
-      this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now${item.needsCooking && cost1 > 0 ? ` (-${cost1}L water)` : ''}.`);
+      if (item.needsCooking && cost1 > 0) {
+        const spent = this.spendCleanWater(cost1);
+        const src = spent.fromWell > 0 ? `${spent.fromBottles}L bottles + ${spent.fromWell}L haven well` : `${spent.fromBottles}L from your bottles`;
+        this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now (-${cost1}L water: ${src}).`);
+      } else {
+        this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now.`);
+      }
       // ACTION CLOCK: cooking = 1 chunk (32 ticks, tending the fire).
       this.tickAction(32);
       return null;
@@ -5055,17 +5092,20 @@
 
     // drinkWater: drink from a water source. Hydrates.
     // fillWater: fill ONE bottle (1L). Quality depends on source.
-    // Creek water is risky (unknown). Haven well is clean.
+    // Haven well is clean. Creek and any wild source are risky (unknown) —
+    // boil it at a fire, or drink it raw and roll the dice.
     fillWater() {
       const s = this.state.scholar;
       s.water = s.water || [];
       // HAULING WATER IS WORK. 10 kcal per liter. (nothing is free)
       s.kcal = Math.max(0, (s.kcal || 0) - 10);
-      // Where are you? Creek = risky, Haven = clean.
+      // Where are you? Only the Haven well is clean. Everything wild is unknown.
       const t = this.playerTile();
       const isCreek = t && t.type === 'creek';
-      const quality = isCreek ? 'risky' : 'clean';
-      const source = isCreek ? 'Creek (unknown)' : 'Haven well';
+      let atHaven = this.location === 'haven';
+      try { if (t && t.type === 'haven') atHaven = true; } catch (e) {}
+      const quality = atHaven ? 'clean' : 'risky';
+      const source = atHaven ? 'Haven well' : isCreek ? 'Creek (unknown)' : 'Wild source (unknown)';
       s.water.push({ liters: 1, quality, source });
       this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).`);
       // ACTION CLOCK: filling a bottle = 1 tick.
@@ -5156,23 +5196,22 @@
     // COSTS WATER: 1L per item. Beans and rice need water. No pots, just fire + water.
     // Tradeoff: spend water, get safe + more calories. Or eat raw and risk sickness.
     cookAll() {
-      const water = this.state.village.water || { clean: 0 };
       // camp_cook: L1 half water + 10% kcal, L2 no water, L3 +25% kcal.
       const cookLvl = this.abilityLevel('camp_cook');
       const waterMult = cookLvl >= 2 ? 0 : cookLvl >= 1 ? 0.5 : 1;
       const kcalMult = cookLvl >= 3 ? 1.25 : cookLvl >= 1 ? 1.1 : 1.0;
-      let n = 0, waterUsed = 0;
+      let n = 0, waterUsed = 0, wellUsed = 0;
       for (const item of (this.state.scholar.inventory || [])) {
         if (item.rawKcal) {
           // needs water? 1L per UNIT (5 beans = 5L), discounted by camp_cook.
           const needsWater = item.needsCooking; // beans, rice
           const units = item.units || 1;
           const cost = Math.ceil(units * waterMult);
-          if (needsWater && water.clean < cost) {
-            this.say(`Not enough clean water to cook ${item.name}. Need ${cost}L, have ${Math.floor(water.clean)}.`);
+          if (needsWater && this.cleanWaterForCooking() < cost) {
+            this.say(`Not enough clean water to cook ${item.name}. Need ${cost}L — haul water first.`);
             continue;
           }
-          if (needsWater) { water.clean -= cost; waterUsed += cost; }
+          if (needsWater) { const spent = this.spendCleanWater(cost); waterUsed += cost; wellUsed += spent.fromWell; }
           // RELIC — impossible_edge: physics-defying prep. +10% cooked kcal.
           const relicCook = S.modifiers.resolve(1, 'cook.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities), {});
           item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult * relicCook);
@@ -5181,7 +5220,7 @@
           n++;
         }
       }
-      this.say(n ? `Cooked ${n} item${n > 1 ? 's' : ''}${waterUsed ? ` (-${waterUsed}L water)` : ''}.` : 'Nothing raw to cook.');
+      this.say(n ? `Cooked ${n} item${n > 1 ? 's' : ''}${waterUsed ? ` (-${waterUsed}L water${wellUsed ? `, incl. ${wellUsed}L haven well` : ' from your bottles'})` : ''}.` : 'Nothing raw to cook.');
       if (n > 0 && this.state.scholar.week1) this.state.scholar.week1.cook++;
       if (n > 0) this.noteToolUse(); // RELIC BOND: the knife, the pot, the fire kit.
       this.gainAbilityXP('camp_cook', 1);
@@ -9040,12 +9079,17 @@
             this.say('SYSTEM: You know this plant the way it knows itself. Concerning. Impressive.');
           }
         } else if (!learned) {
-          // progressive: description, not name. Two clean templates — never
-          // spliced ("You take looks familiar" / "like the a low plant" bit us).
+          // LUMPED UNKNOWNS: the field message never leaks species. One line,
+          // one lump — "unfamiliar shoots," into the bag. The game tracks the
+          // truth underneath; the tile's "here" list keeps place-memory.
+          // (1/3)-style per-species counters would leak; instead a familiarity
+          // hint when you're close to placing it.
+          const formName = (this.lumpFormName ? this.lumpFormName(plant) : null) || 'unfamiliar shoots';
           if (newEnc === 1) {
-            this.say(`You take ${plant.description || 'a plant you don\'t recognize'}. Not sure what it is yet. (1/${threshold})`);
+            this.say(`You gather ${formName}. Not sure what's what yet — into the bag. (Unknowns lump together; sort them at camp.)`);
           } else {
-            this.say(`This looks familiar — like ${plant.description || 'that plant'} from before. Not sure what it is yet. (${newEnc}/${threshold})`);
+            const close = newEnc >= threshold - 1;
+            this.say(`More ${formName} for the bag.${close ? ' Some of these are starting to look familiar — you\'re close to placing them.' : ''}`);
           }
         }
         // squirrel_friend: sometimes they leave you nuts. Random gifts, real food.
@@ -9085,8 +9129,15 @@
         const finalKcal = finalUnits * r.plant.caloriesPerUnit;
         // FOOD REALITY: knowledge-gated recognition. Unknown plants aren't
         // food until identified; nuts need shelling. foodForageItem owns it.
-        const invItem = this.foodForageItem(r.plant, isKnown, finalUnits, finalKcal, scholar.day);
-        scholar.inventory.push(invItem);
+        // LUMPED UNKNOWNS: unknowns merge into one stack per form — the game
+        // tracks true composition underneath; the player sees only the lump.
+        let invItem = null;
+        if (!isKnown) {
+          this.addUnknownToLump(r.plant, finalUnits, scholar.day);
+        } else {
+          invItem = this.foodForageItem(r.plant, isKnown, finalUnits, finalKcal, scholar.day);
+          scholar.inventory.push(invItem);
+        }
         // RELIC BOND: tools cut, clothing kept you moving.
         this.noteToolUse(); this.noteTrailUse();
         // MATERIALS: byproducts for crafting. vine from bush, stick from tree, stone from rubble.
@@ -9103,14 +9154,22 @@
         // IDENTITY: rare_herb is a true species (Ghost Pipe) — honest naming.
         if (r.rareFind) {
           const rp = this.data.plants.find(p => p.id === r.rareFind.plantId);
-          scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: rp ? (this.plantKnown(rp.id) ? rp.name : (rp.description || 'unfamiliar plant')) : 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
+          if (rp && !this.plantKnown(rp.id)) {
+            // LUMPED UNKNOWNS: even the rare find lumps until identified.
+            this.addUnknownToLump(rp, 1, scholar.day);
+            this.say('Something unusual in the undergrowth — carefully into the bag. You\'ll know it when someone names it.');
+          } else {
+            scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: rp ? (this.plantKnown(rp.id) ? rp.name : (rp.description || 'unfamiliar plant')) : 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
+          }
         }
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         // FOOD REALITY: unknown hauls aren't food yet — say so honestly.
         // Known nuts show gross kcal (shelling comes later, net < gross).
         const gateNote = !isKnown ? ` (not food until identified)` : (invItem.foodState === 'in_shell' ? ` (needs shelling — net < gross)` : '');
         const kcalNote = !isKnown ? 'unknown value' : finalKcal + ' kcal';
-        msg = `Packed ${finalUnits}× ${r.plant.unit} of ${this.plantDisplayName(r.plantId)} (${kcalNote})${gateNote}.`;
+        // LUMPED UNKNOWNS: the packed message never names the species.
+        const packedName = !isKnown ? this.lumpFormName(r.plant) : this.plantDisplayName(r.plantId);
+        msg = `Packed ${finalUnits}× ${packedName} (${kcalNote})${gateNote}.`;
         // RECOGNITION: gathered here before? Say so, with current knowledge.
         if (prevSeen && prevSeen.n >= 1) msg += ' ' + this.speciesRecognition(r.plantId);
         if (plantCell) msg += ` The ${plantCell.cell === 'plant' ? 'patch' : plantCell.cell} is picked clean — it'll recover in a few days.`;

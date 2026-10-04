@@ -84,6 +84,14 @@
     acornRaw: { p: 0.10, dmg: 5, note: 'raw acorn (white oak is mildest — red oak would be worse)' },
   };
 
+  // Lump forms: one opaque stack per form. The field bag, honestly lumped.
+  const LUMP_FORMS = {
+    shoots: { name: 'unknown shoots', unit: 'handful' },
+    berries: { name: 'unknown berries', unit: 'handful' },
+    roots: { name: 'unknown roots', unit: 'piece' },
+    nuts: { name: 'unknown nuts', unit: 'handful' },
+  };
+
   const methods = {
 
     // ---------- technique knowledge ----------
@@ -179,11 +187,131 @@
       return inv.some(i => /knife|machete|sharpened|blade/i.test(String(i.name || '') + ' ' + String(i.recipeId || '')));
     },
 
+    // ---------- lumped unknowns ----------
+    //
+    // Steve's rule: unknown forageables do NOT split into per-species piles.
+    // Same-form unknowns lump into ONE stack ("unknown shoots ×12"), like
+    // reality. The stack secretly tracks its true species composition; the
+    // player can't see through it in the field. Identification happens back
+    // at camp, by people with knowledge — emptying the bag is a ritual.
+
+    // One stack per form. The field bag is honest: you don't know what's what.
+    // (Form comes from plants.json; falls back to shoots.)
+
+    lumpFormOf(plant) {
+      const f = plant && plant.form;
+      return (f && LUMP_FORMS[f]) ? f : 'shoots';
+    },
+
+    lumpFormName(plant) {
+      const f = this.lumpFormOf(plant);
+      return (LUMP_FORMS[f] && LUMP_FORMS[f].name) || 'unfamiliar shoots';
+    },
+
+    findLump(container, form) {
+      return (container || []).find(it => it && it.foodState === 'unknown' && it.lump && it.lumpForm === form) || null;
+    },
+
+    // addUnknownToLump: the game never loses track of what is what, even
+    // though the player sees one opaque stack.
+    addUnknownToLump(plant, units, day, container) {
+      const cont = container || this.state.scholar.inventory;
+      const form = this.lumpFormOf(plant);
+      const F = LUMP_FORMS[form];
+      let lump = this.findLump(cont, form);
+      if (!lump) {
+        lump = {
+          plantId: null, lumpForm: form, name: F.name,
+          units: 0, unit: F.unit, foodKind: 'plant', foodState: 'unknown',
+          edible: false, kcalEach: 0, kg: 0.1,
+          spoilDay: day + (plant.spoilageDays || 2),
+          lump: {},
+          prep: 'Lumped together the way you gathered them. No telling what\'s what out here — sort it at camp with someone who knows plants.',
+        };
+        cont.push(lump);
+      }
+      const comp = lump.lump;
+      const e = comp[plant.id] || { units: 0, day };
+      e.units += units;
+      e.day = Math.min(e.day, day);
+      comp[plant.id] = e;
+      lump.units += units;
+      lump.spoilDay = Math.min(lump.spoilDay, day + (plant.spoilageDays || 2));
+      lump.kg = Math.max(0.1, Math.round(lump.units * 0.1 * 10) / 10);
+      return lump;
+    },
+
+    // splitLumpOut: a species is identified — pull its units out of the lump
+    // as a real item. The remainder stays lumped, composition updated.
+    splitLumpOut(lump, pid, container) {
+      if (!lump || !lump.lump) return null;
+      const comp = lump.lump;
+      const e = comp[pid];
+      if (!e || e.units <= 0) return null;
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return null;
+      const cont = container || this.state.scholar.inventory;
+      const isNut = NUT_IDS[pid] || NUT_RE.test(p.preparation || '');
+      const notFood = (p.edibility || 'safe') === 'avoid';
+      const item = {
+        plantId: pid, units: e.units, kg: 0.1, unit: p.unit,
+        spoilDay: e.day + (p.spoilageDays || 2),
+        foodKind: isNut ? 'nut' : 'plant',
+        foodState: isNut ? 'in_shell' : 'ready',
+        edible: !isNut && !notFood,
+        kcalEach: (isNut || notFood) ? 0 : p.caloriesPerUnit,
+        hiddenKcal: isNut ? p.caloriesPerUnit : null,
+        name: isNut ? p.name + ' (in shell)' : p.name,
+        prep: notFood
+          ? (p.preparation || 'Identified — not food. But nothing is trash; the Codex knows its uses.')
+          : isNut ? 'Needs shelling — crack and pick the nutmeats.'
+          : (p.preparation || 'Edible. The Codex knows it now.'),
+      };
+      if (!isNut && !notFood && MUST_COOK_RE.test(p.preparation || '')) {
+        item.needsCooking = true;
+        item.diseaseRisk = Object.assign({}, RISK.mustCook);
+        item.prep += ' \u26A0\uFE0F Risky raw — cook it.';
+      }
+      delete comp[pid];
+      lump.units -= e.units;
+      let minSpoil = Infinity;
+      for (const cpid of Object.keys(comp)) {
+        const cp = (this.data.plants || []).find(x => x.id === cpid);
+        if (cp && comp[cpid]) minSpoil = Math.min(minSpoil, comp[cpid].day + (cp.spoilageDays || 2));
+      }
+      lump.spoilDay = isFinite(minSpoil) ? minSpoil : this.state.scholar.day;
+      lump.kg = Math.max(0.1, Math.round(lump.units * 0.1 * 10) / 10);
+      cont.push(item);
+      if (lump.units <= 0) {
+        const ix = cont.indexOf(lump);
+        if (ix >= 0) cont.splice(ix, 1);
+      }
+      return item;
+    },
+
+    // migrateLumps: old saves have per-species "unfamiliar plant" piles.
+    // Fold them into lumps once.
+    migrateLumps() {
+      const s = this.state.scholar;
+      if (!s || s._lumpsMigrated) return;
+      s._lumpsMigrated = true;
+      const inv = s.inventory || [];
+      const olds = inv.filter(it => it && it.foodState === 'unknown' && !it.lump && it.plantId);
+      for (const it of olds) {
+        const p = (this.data.plants || []).find(x => x.id === it.plantId);
+        if (!p) continue;
+        const ix = inv.indexOf(it);
+        if (ix >= 0) inv.splice(ix, 1);
+        const lump = this.addUnknownToLump(p, it.units || 1, s.day, inv);
+        if (it.spoilDay) lump.spoilDay = Math.min(lump.spoilDay, it.spoilDay);
+      }
+    },
+
     // ---------- processing ----------
 
     // SHELL: hands or a stone. Net < gross — shells weigh.
-    shellNuts(idx) {
-      const inv = this.state.scholar.inventory;
+    shellNuts(idx, container) {
+      const inv = container || this.state.scholar.inventory;
       const targets = (idx === undefined ? inv.map((it, i) => i) : [idx])
         .filter(i => inv[i] && inv[i].foodKind === 'nut' && inv[i].foodState === 'in_shell');
       if (!targets.length) { this.say('No unshelled nuts.'); return null; }
@@ -205,8 +333,8 @@
     },
 
     // CLEAN: gutting. Needs a knife + knowing how. Blind attempts are messy but teach.
-    cleanCarcass(idx) {
-      const inv = this.state.scholar.inventory;
+    cleanCarcass(idx, container) {
+      const inv = container || this.state.scholar.inventory;
       const targets = (idx === undefined ? inv.map((it, i) => i) : [idx])
         .filter(i => inv[i] && inv[i].foodState === 'carcass');
       if (!targets.length) { this.say('No carcasses to clean.'); return null; }
@@ -242,9 +370,9 @@
     },
 
     // PRESERVE: smoking/drying. Needs fire + knowing how. ~a month of safety.
-    preserveFood(idx) {
+    preserveFood(idx, container) {
       if (!this.nearFire()) { this.say('Need a fire to smoke meat.'); return null; }
-      const inv = this.state.scholar.inventory;
+      const inv = container || this.state.scholar.inventory;
       const targets = (idx === undefined ? inv.map((it, i) => i) : [idx])
         .filter(i => inv[i] && inv[i].foodKind === 'meat' && (inv[i].foodState === 'cleaned' || inv[i].foodState === 'cooked'));
       if (!targets.length) { this.say('Nothing to preserve (cleaned or cooked meat).'); return null; }
@@ -341,14 +469,15 @@
 
     // Ask a specialist to process your item. They're better at it than you.
     // Costs your time (hauling, watching); watching twice teaches you.
-    askSpecialist(vid, idx) {
-      const inv = this.state.scholar.inventory;
+    askSpecialist(vid, idx, container, forceTask) {
+      const inv = container || this.state.scholar.inventory;
       const it = inv[idx];
       if (!it) return null;
-      const task = it.foodState === 'carcass' ? 'butcher'
+      const task = forceTask
+        || (it.foodState === 'carcass' ? 'butcher'
         : (it.foodKind === 'meat' && (it.foodState === 'cleaned' || it.foodState === 'cooked')) ? 'preserver'
         : (it.rawKcal || it.needsCooking || (it.foodKind === 'meat' && it.foodState === 'cleaned')) ? 'cook'
-        : null;
+        : null);
       if (!task) { this.say('Nothing a specialist would do with that.'); return null; }
       const spec = this.specialistsHere(task).find(s => s.id === vid)
         || this.specialistsHere(task)[0];
@@ -422,6 +551,334 @@
     // village's own overnight cooking/processing.)
     villageHasSpecialty(task) {
       return this.villagePeople().some(p => this.specialistSkill(p, task) > 0);
+    },
+
+    // ---------- the camp ritual: sorting the bag ----------
+    //
+    // Steve's rule: identification happens BACK AT CAMP, by people with
+    // knowledge. Emptying the bag is a ritual — a knowledgeable person picks
+    // through the lump and names things. They identify what THEY know; the
+    // player learns by watching (teaching, per the knowledge design).
+    // Staring at the pile does nothing. Identification requires an ACTION.
+
+    atCamp() {
+      const v = this.state.village;
+      return v && this.map.px === v.x && this.map.py === v.y;
+    },
+
+    // villagerKnowsPlants(vid): background knowledge — the seed that breaks
+    // the chicken-and-egg. Someone arrived knowing things.
+    villagerKnowsPlants(vid) {
+      const v = this.state.village;
+      return (v && v.plantKnowledge && v.plantKnowledge[vid]) || [];
+    },
+
+    // seedBackgroundPlantKnowledge: the 12 arrive with what they know.
+    // Relevant backgrounds know local plants; anyone might know one.
+    // Called once at game start. The player seeds via their codex.
+    seedBackgroundPlantKnowledge() {
+      const v = this.state.village;
+      if (!v || v.plantKnowledge) return;
+      v.plantKnowledge = {};
+      const plants = this.data.plants || [];
+      if (!plants.length) return;
+      const pick = (n) => {
+        const pool = plants.slice();
+        const out = [];
+        for (let i = 0; i < n && pool.length; i++) {
+          out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
+        }
+        return out;
+      };
+      for (const id of (v.roster || [])) {
+        if (id === this.villagerId) continue;
+        let person = null;
+        try { person = this.villagePeople().find(p => p.id === id); } catch (e) {}
+        const occ = String((person && person.formerOccupation) || '').toLowerCase();
+        let n = 0;
+        if (/botanist|herbalist/.test(occ)) n = 3;
+        else if (/forager|farmer|gardener|park ranger|hiker/.test(occ)) n = 2;
+        else if (/chef|cook/.test(occ)) n = 1;
+        else if (Math.random() < 0.15) n = 1;
+        if (n > 0) v.plantKnowledge[id] = pick(n);
+      }
+      // the player arrives with it too, if their background warrants
+      try {
+        const me = this.villagePeople().find(p => p.id === this.villagerId);
+        const occ = String((me && me.formerOccupation) || '').toLowerCase();
+        let n = 0;
+        if (/botanist|herbalist/.test(occ)) n = 3;
+        else if (/forager|farmer|gardener|park ranger|hiker/.test(occ)) n = 2;
+        if (n > 0) {
+          const mine = pick(n);
+          for (const pid of mine) {
+            if (!this.plantKnown(pid)) {
+              this.state.codex.plants[pid] = { identifiedDay: 0, level: 1, harvests: 0, tastings: 0, by: 'background' };
+            }
+          }
+          const names = mine.map(pid => { const p = plants.find(x => x.id === pid); return p ? p.name : pid; });
+          this.say(`You arrive knowing a few things your old life taught you: ${names.join(', ')}.`);
+        }
+      } catch (e) {}
+    },
+
+    // whoKnowsLump(lump): villagers HERE (camp) who know >=1 species in it.
+    whoKnowsLump(lump) {
+      const comp = (lump && lump.lump) || {};
+      const pids = Object.keys(comp);
+      const out = [];
+      for (const p of this.villagePeople()) {
+        const known = this.villagerKnowsPlants(p.id);
+        const knows = pids.filter(pid => known.includes(pid));
+        if (!knows.length) continue;
+        let node = null;
+        try { node = this.npcNode(p.id); } catch (e) {}
+        if (node && (node.nx !== this.map.px || node.ny !== this.map.py)) continue;
+        out.push({ id: p.id, name: p.name, knows: knows.length, occupation: p.formerOccupation });
+      }
+      out.sort((a, b) => b.knows - a.knows);
+      return out;
+    },
+
+    // sortBag(vid, idx, container): the camp ritual. vid null = you sort alone.
+    // The sorter names what THEY know; you learn by watching.
+    sortBag(vid, idx, container) {
+      const cont = container || this.state.scholar.prepStash || [];
+      const lump = cont[idx];
+      if (!lump || !lump.lump) { this.say('Nothing to sort there.'); return null; }
+      if (!this.atCamp()) { this.say('Sorting takes a flat surface and good light — do it at camp.'); return null; }
+      const comp = lump.lump;
+      const pids = Object.keys(comp);
+      if (!pids.length) { this.say('The bag is already empty.'); return null; }
+      let sorterName, knowsFn;
+      if (!vid) {
+        sorterName = 'You';
+        knowsFn = (pid) => this.plantKnown(pid);
+      } else {
+        let person = null;
+        try { person = this.villagePeople().find(p => p.id === vid); } catch (e) {}
+        if (!person) { this.say("They're not here."); return null; }
+        sorterName = person.name;
+        const known = this.villagerKnowsPlants(vid);
+        knowsFn = (pid) => known.includes(pid);
+      }
+      const named = [], taught = [];
+      for (const pid of pids.slice()) {
+        if (knowsFn(pid)) {
+          const item = this.splitLumpOut(lump, pid, cont);
+          if (item) {
+            named.push(pid);
+            if (!this.plantKnown(pid)) {
+              this.identifyPlant(pid, 'taught');
+              taught.push(pid);
+            }
+          }
+        }
+      }
+      this.tickAction(8);
+      const pName = (pid) => { const p = (this.data.plants || []).find(x => x.id === pid); return p ? p.name : pid; };
+      if (!named.length) {
+        const remaining = Object.keys(lump.lump || {}).length;
+        // unskilled sorting: you notice the plurality, but that's all.
+        let alike = '';
+        if (!vid && remaining) {
+          let bestPid = null, bestN = 0;
+          for (const [cpid, ce] of Object.entries(lump.lump)) {
+            if (ce.units > bestN) { bestN = ce.units; bestPid = cpid; }
+          }
+          if (bestN >= 3) alike = ` ${bestN} of the shoots look identical — probably the same plant, whatever it is.`;
+        }
+        this.say(`${sorterName} ${vid ? 'picks' : 'pick'} through the bag, frowning. Nothing ${vid ? 'they' : 'you'} can name with confidence.${alike} (8 ticks)`);
+        return null;
+      }
+      const bits = named.map(pid => pName(pid) + (taught.includes(pid) ? ' \u2605' : ''));
+      this.say(`${sorterName} spread${vid ? 's' : ''} the bag on a flat stone and ${vid ? 'starts' : 'start'} naming: ${bits.join(', ')}.`);
+      if (taught.length) this.say(`You watch closely — ${taught.map(pName).join(', ')} ${taught.length > 1 ? 'are' : 'is'} yours now too.`);
+      const left = lump.units || 0;
+      if (left > 0) this.say(`${left} shoot${left > 1 ? 's' : ''} still a mystery.`);
+      else this.say('The bag is empty. Everything named.');
+      return null;
+    },
+
+    // ---------- breaking the chicken-and-egg ----------
+    //
+    // Steve's rule: the specialist may not exist. Staring at the pile doesn't
+    // identify it. Knowledge must ENTER the system: cautious testing (always
+    // available), watching animals (a hint, not proof), arriving with it
+    // (backgrounds), books. The System names but never feeds.
+
+    // testCautiously(idx, opts): the universal edibility test, gamified.
+    // Real protocol: inspect -> skin -> lips -> taste -> meal, with waits.
+    // Costs an afternoon. Small honest risks; rushing raises them a lot.
+    // Targets the lump's plurality species ("a few that look alike").
+    testCautiously(idx, opts, container) {
+      opts = opts || {};
+      const rush = !!opts.rush;
+      const cont = container || this.state.scholar.inventory;
+      const lump = cont[idx];
+      if (!lump || !lump.lump) { this.say('Nothing to test there.'); return null; }
+      const comp = lump.lump;
+      const pids = Object.keys(comp);
+      if (!pids.length) { this.say('The bag is empty.'); return null; }
+      let pid = pids[0], best = -1;
+      for (const c of pids) { if (comp[c].units > best) { best = comp[c].units; pid = c; } }
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return null;
+      if (this.plantKnown(pid)) { this.say('You already know this one — no need to test.'); return null; }
+      const ed = p.edibility || 'safe';
+      const hint = lump.hint;
+      let riskMult = 1;
+      if (hint) {
+        const correct = (hint.kind === 'safe' && (ed === 'safe' || ed === 'caution')) ||
+                        (hint.kind === 'avoid' && (ed === 'avoid' || ed === 'cook'));
+        riskMult = correct ? 0.5 : 1.6;
+      }
+      if (rush) riskMult *= 2.5;
+      const R = (base) => Math.random() < base * riskMult;
+
+      const s = this.state.scholar;
+      const queasy = (severe) => {
+        // honest failure: nausea, a bad day. Not death.
+        const eLoss = severe ? 40 : 20;
+        s.energy = Math.max(0, (s.energy || 100) - eLoss);
+        s.kcal = Math.max(0, (s.kcal || 0) - 200);
+        this.say(severe
+          ? 'By evening you are thoroughly, educationally sick. The lesson is learned the hard way. (-40 energy, -200 kcal)'
+          : 'Your stomach knots an hour later. Not dangerous — educational. (-20 energy)');
+      };
+      const identifyAs = (verdict) => {
+        // verdict: 'safe' | 'caution' | 'cook' | 'avoid'
+        this.identifyPlant(pid, 'tested');
+        const entry = this.state.codex.plants[pid];
+        if (entry) entry.tested = verdict;
+        const item = this.splitLumpOut(lump, pid, cont);
+        if (item && verdict === 'avoid') {
+          item.prep = (p.preparation || '') + ' NOT food — your body told you so. The Codex keeps it for its other uses.';
+        } else if (item && verdict === 'cook') {
+          item.prep = (item.prep || '') + ' Your test says: cook it, or else.';
+        }
+        return item;
+      };
+
+      if (rush) {
+        this.say('You skip the waits — impatience with a side of hubris. Straight to tasting.');
+        this.tickAction(16);
+        // rushed: no early warnings; straight to the dangerous part
+        if (ed === 'avoid' && R(0.55)) {
+          queasy(true);
+          this.say('That was a mistake. But now you KNOW: not food.');
+          identifyAs('avoid');
+          return null;
+        }
+        if (ed === 'cook' && R(0.45)) {
+          queasy(false);
+          this.say('Raw was wrong. Cooked, it might be fine — your gut is fairly sure.');
+          identifyAs('cook');
+          return null;
+        }
+        if (ed === 'caution' && R(0.25)) { queasy(false); }
+        this.say(`No disaster. ${ed === 'safe' ? 'It sits fine. Food.' : ed === 'cook' ? 'Edible — but your gut says cook it first.' : ed === 'caution' ? 'Edible, in care.' : 'You feel off. Not food.'}`);
+        identifyAs(ed === 'avoid' ? 'avoid' : ed);
+        return null;
+      }
+
+      // the careful protocol
+      this.say('You set aside an afternoon. Inspect, skin, lips, taste, meal — with waits between. This is how you learn without dying.');
+      this.tickAction(4);
+      this.say('Inspect: color, smell, bruising. Nothing alarming. (The dangerous ones rarely announce themselves.)');
+      this.tickAction(12);
+      if (ed === 'avoid' && R(0.3)) {
+        this.say('Skin test: where you rubbed it, the skin itches and reddens. Bad sign. You stop — wisely.');
+        queasy(false);
+        identifyAs('avoid');
+        return null;
+      }
+      this.say('Skin test: two hours, no reaction. So far so good.');
+      this.tickAction(8);
+      if (ed === 'avoid' && R(0.35)) {
+        this.say('Lips: numbness, spreading. You spit it out. NOT food — and now you know its name the hard way.');
+        queasy(false);
+        identifyAs('avoid');
+        return null;
+      }
+      this.say('Lips: no numbness, no burn. Cautiously onward.');
+      this.tickAction(16);
+      if ((ed === 'avoid' && R(0.4)) || (ed === 'cook' && R(0.3)) || (ed === 'caution' && R(0.15))) {
+        queasy(ed === 'avoid');
+        this.say(ed === 'cook'
+          ? 'Taste: your stomach objects. Raw is wrong — but cooked, this might be fine. Knowledge, purchased fairly.'
+          : 'Taste: no. Your body votes no.');
+        identifyAs(ed === 'avoid' ? 'avoid' : ed);
+        return null;
+      }
+      this.say('Taste: a tiny nibble, chewed slowly. Nothing happens. The hardest part is waiting.');
+      this.tickAction(24);
+      if ((ed === 'avoid' && R(0.5)) || (ed === 'cook' && R(0.4)) || (ed === 'caution' && R(0.2))) {
+        queasy(ed !== 'caution');
+        this.say('The small meal disagrees with you. Lesson learned — honestly, not fatally.');
+        identifyAs(ed === 'avoid' ? 'avoid' : ed);
+        return null;
+      }
+      this.say(`The meal sits fine. ${ed === 'safe' ? 'Food. Real food, and now it has a name.' : ed === 'cook' ? 'Food — but your gut is clear: cook it.' : 'Edible, with care.'} (64 ticks, an afternoon honestly spent)`);
+      identifyAs(ed);
+      return null;
+    },
+
+    // watchFauna(idx): spend time watching what the animals eat. A HINT, not
+    // proof — animals tolerate things you can't. Sometimes wrong. The game
+    // says so.
+    watchFauna(idx, container) {
+      const cont = container || this.state.scholar.inventory;
+      const lump = cont[idx];
+      if (!lump || !lump.lump) { this.say('Nothing to watch there.'); return null; }
+      const comp = lump.lump;
+      const pids = Object.keys(comp);
+      if (!pids.length) { this.say('The bag is empty.'); return null; }
+      let pid = pids[0], best = -1;
+      for (const c of pids) { if (comp[c].units > best) { best = comp[c].units; pid = c; } }
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return null;
+      this.tickAction(16);
+      const ed = p.edibility || 'safe';
+      const trulySafe = (ed === 'safe' || ed === 'caution');
+      // 80% the hint is right, 20% it's wrong. You never know which.
+      const correct = Math.random() < 0.8;
+      const hintKind = correct ? (trulySafe ? 'safe' : 'avoid') : (trulySafe ? 'avoid' : 'safe');
+      lump.hint = { kind: hintKind, day: this.state.scholar.day };
+      if (hintKind === 'safe') {
+        this.say('You spend a while watching. Deer browse leaves like these; a rabbit works a patch without hesitation. Suggestive — not proof. Animals tolerate things you can\'t. (16 ticks)');
+      } else {
+        this.say('You spend a while watching. Nothing touches the stuff like this — not deer, not rabbits, not even the bold squirrel. Suspicious. Suggestive — not proof. (16 ticks)');
+      }
+      this.say('A hint upgrades your testing odds. It doesn\'t replace testing.');
+      return null;
+    },
+
+    // askSystemAbout(idx): post-Day 7. The System names perfectly and feeds
+    // never. Characterization, not a help system.
+    askSystemAbout(idx, container) {
+      if (!this.state.systemArrived) { this.say('The sky is quiet. Nothing to ask yet.'); return null; }
+      const cont = container || this.state.scholar.inventory;
+      const lump = cont[idx];
+      if (!lump || !lump.lump) { this.say('Nothing to ask about.'); return null; }
+      const comp = lump.lump;
+      const pids = Object.keys(comp);
+      if (!pids.length) { this.say('The bag is empty.'); return null; }
+      let pid = pids[0], best = -1;
+      for (const c of pids) { if (comp[c].units > best) { best = comp[c].units; pid = c; } }
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return null;
+      const sci = p.scientific || 'unclassified';
+      const lines = [
+        `SYSTEM: Oh! *${sci}*. Widespread in this biome. Fascinating vascular structure.`,
+        'YOU: ...is it edible?',
+        'SYSTEM: Edible? Why do you keep asking about putting things in the face-hole?',
+        'SYSTEM: Have you considered fusion? ANY matter works. Rocks. Dirt. Regolith.',
+        'SYSTEM: The audience finds the face-hole question ENDLESSLY funny, by the way.',
+      ];
+      for (const l of lines) this.say(l);
+      this.tickAction(2);
+      return null;
     },
 
     // ---------- pantry & water capacity ----------
@@ -647,6 +1104,266 @@
       return lost;
     },
 
+    // ---------- the prep stash: the kitchen counter ----------
+    //
+    // Steve's rule: everything unprocessed lands in the stash FIRST — the
+    // lumped "unknown shoots," the carcass, unshelled nuts — each with a
+    // visible spoilage clock. Only correctly identified, prepped food goes
+    // to the pantry. The stash UI auto-sorts by urgency (what's rotting
+    // first). This is the mission board, not a storage dump.
+    //
+    // Prep is three decisions, never chores:
+    //   1. WHAT FIRST (triage): the stash shows spoilage urgency; you pick
+    //      the order. One decision for the pile, not per-item babysitting.
+    //   2. WHO (delegation): you do it (fast, worse yield, you LEARN) or
+    //      "Ask {specialist}" (slower, better yield, they might be busy).
+    //      Trade-off stated upfront, never forced.
+    //   3. HOW FAR (depth): raw now (fast, risky, low yield) / cook (safe,
+    //      full, ~5d) / smoke (90-95%, ~30d, more time + fire). Yield, time,
+    //      and shelf life stated BEFORE committing.
+
+    prepStash() {
+      const s = this.state.scholar;
+      if (!s.prepStash) s.prepStash = [];
+      return s.prepStash;
+    },
+
+    // isUnprocessed: belongs on the counter, not in the pantry.
+    isUnprocessed(it) {
+      if (!it || !it.foodKind) return false;
+      if (it.foodState === 'unknown') return true;
+      if (it.foodState === 'carcass') return true;
+      if (it.foodState === 'in_shell') return true;
+      if (it.foodState === 'cleaned') return true; // raw meat: the how-far decision
+      if (it.needsCooking) return true;
+      return false;
+    },
+
+    // isFinishedFood: correctly identified, prepped — pantry-worthy.
+    isFinishedFood(it) {
+      if (!it || (it.kcalEach || 0) <= 0) return false;
+      if (it.edible === false) return false;
+      if (this.isUnprocessed(it)) return false;
+      return true;
+    },
+
+    // stageForPrep: unprocessed items move pack -> prep stash. Batch.
+    stageForPrep() {
+      const s = this.state.scholar;
+      const stash = this.prepStash();
+      const inv = s.inventory || [];
+      let n = 0;
+      for (let i = inv.length - 1; i >= 0; i--) {
+        const it = inv[i];
+        if (!this.isUnprocessed(it)) continue;
+        if (it.lump) {
+          const target = this.findLump(stash, it.lumpForm);
+          if (target) {
+            for (const pid of Object.keys(it.lump)) {
+              const e = it.lump[pid];
+              const te = target.lump[pid] || { units: 0, day: e.day };
+              te.units += e.units;
+              te.day = Math.min(te.day, e.day);
+              target.lump[pid] = te;
+            }
+            target.units += it.units;
+            target.spoilDay = Math.min(target.spoilDay, it.spoilDay);
+            target.kg = Math.max(0.1, Math.round(target.units * 0.1 * 10) / 10);
+          } else {
+            stash.push(it);
+          }
+        } else {
+          stash.push(it);
+        }
+        inv.splice(i, 1);
+        n++;
+      }
+      if (n) this.say(`You lay ${n} unprocessed haul${n > 1 ? 's' : ''} on the counter — the clock is ticking on each.`);
+      else this.say('Nothing unprocessed to stage.');
+      return null;
+    },
+
+    // stashUrgency: the triage order — what's rotting first.
+    stashUrgency() {
+      const day = this.state.scholar.day;
+      return this.prepStash()
+        .map((it, idx) => ({ it, idx, left: (it.spoilDay ?? 9999) - day }))
+        .sort((a, b) => a.left - b.left);
+    },
+
+    // prepNeeds(it): the mission-board "needs" line — short, honest.
+    prepNeeds(it) {
+      const needs = [];
+      if (it.lump) needs.push('identify — sort it');
+      if (it.foodState === 'carcass') {
+        needs.push('clean');
+        if (!this.hasCuttingTool()) needs.push('a knife');
+        if (!this.knowsTechnique('clean')) needs.push('know-how (or ask)');
+      }
+      if (it.foodState === 'in_shell') needs.push('shell');
+      if (it.foodState === 'cleaned') needs.push('decide: raw / cook / smoke');
+      if (it.needsCooking) needs.push('cook');
+      if (!this.nearFire() && (it.foodState === 'cleaned' || it.needsCooking || it.foodState === 'carcass')) needs.push('fire nearby');
+      if (it.hint) needs.push(`hint: ${it.hint.kind === 'safe' ? 'animals eat it' : 'animals avoid it'}`);
+      return needs.length ? needs.join(' · ') : 'ready to put away';
+    },
+
+    // stashClock(it): the visible spoilage clock.
+    stashClock(it) {
+      const left = (it.spoilDay ?? 9999) - this.state.scholar.day;
+      if (left < 0) return 'spoiled';
+      if (left === 0) return 'SPOILING TODAY';
+      if (left === 1) return 'spoils tomorrow';
+      return `spoils in ${left}d`;
+    },
+
+    // putAwayFinished: batch — finished food goes to the pantry.
+    putAwayFinished() {
+      const stash = this.prepStash();
+      let n = 0, kcal = 0;
+      for (let i = stash.length - 1; i >= 0; i--) {
+        const it = stash[i];
+        if (!this.isFinishedFood(it)) continue;
+        this.pantryAdd(it);
+        kcal += (it.kcalEach || 0) * (it.units || 1);
+        stash.splice(i, 1);
+        n++;
+      }
+      if (n) this.say(`Put away: ${n} finished batch${n > 1 ? 'es' : ''} (${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'}) → pantry. The counter breathes.`);
+      else this.say('Nothing finished to put away — the counter is all work-in-progress.');
+      return null;
+    },
+
+    // eatStashOne: eat a single unit from the stash — the "raw now" depth
+    // option. Honest risk, honest feedback, one bite.
+    eatStashOne(idx) {
+      const stash = this.prepStash();
+      const it = stash[idx];
+      if (!it || (it.kcalEach || 0) <= 0 || it.edible === false) { this.say('Nothing edible there.'); return null; }
+      const s = this.state.scholar;
+      if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
+        s.health = Math.max(0, (s.health || 100) - it.diseaseRisk.dmg);
+        this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
+      }
+      const kcal = it.kcalEach;
+      if (this.blendKcalQuality) this.blendKcalQuality(kcal, this.mealQuality ? this.mealQuality(it) : 1);
+      s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + kcal);
+      it.units -= 1;
+      this.say(`You eat it raw, fast. ${kcal} kcal.${it.diseaseRisk ? ' Risky — you knew the odds.' : ''} (2 ticks)`);
+      if (it.units <= 0) stash.splice(idx, 1);
+      this.tickAction(2);
+      return null;
+    },
+
+    // pantryAdd: one finished item into the real pantry (shared shape).
+    pantryAdd(item) {
+      const vv = this.state.village;
+      vv.pantry = vv.pantry || [];
+      vv.pantry.push({
+        name: item.name || 'Finished food', plantId: item.plantId,
+        kcalEach: item.kcalEach, units: item.units,
+        spoilDay: item.spoilDay || 9999, unit: item.unit,
+        safe: item.safe !== false, kg: item.kg || 0.2, prep: item.prep,
+        foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
+        diseaseRisk: item.diseaseRisk, needsCooking: item.needsCooking,
+        wellMade: item.wellMade,
+      });
+      vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+    },
+
+    // howFarOptions(it): the depth decision — stated BEFORE committing.
+    // Returns [{id, label, detail}] for the UI.
+    howFarOptions(it) {
+      const opts = [];
+      const day = this.state.scholar.day;
+      if (it.foodKind === 'meat' && it.foodState === 'cleaned') {
+        const total = (it.hiddenKcal || Math.round(it.kcalEach * 2.5 * (it.units || 1)));
+        const units = it.units || 1;
+        const cookKcal = Math.round((this.knowsTechnique('cook') ? total : Math.round(total * 0.85)) / units);
+        const smokeKcal = Math.round(cookKcal * (this.knowsTechnique('preserve') ? 0.95 : 0.80));
+        opts.push({
+          id: 'raw',
+          label: 'Eat raw now',
+          detail: `fast, no time · risky (35% sick) · ${it.kcalEach}/portion · spoils in ${(it.spoilDay ?? day) - day}d`,
+        });
+        opts.push({
+          id: 'cook',
+          label: this.knowsTechnique('cook') ? 'Cook it' : 'Cook it (you\'re learning)',
+          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}32 ticks${this.nearFire() ? '' : ''} · safe · ~${cookKcal}/portion · keeps ~5d`,
+          blocked: !this.nearFire() ? 'needs fire' : null,
+        });
+        opts.push({
+          id: 'smoke',
+          label: this.knowsTechnique('preserve') ? 'Smoke it' : 'Smoke it (you\'re learning)',
+          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}16 ticks · safe · ~${smokeKcal}/portion · keeps ~${this.knowsTechnique('preserve') ? 30 : 15}d`,
+          blocked: !this.nearFire() ? 'needs fire' : null,
+        });
+      } else if (it.needsCooking) {
+        opts.push({
+          id: 'raw',
+          label: 'Eat raw now',
+          detail: `fast · risky (${it.diseaseRisk ? Math.round(it.diseaseRisk.p * 100) : 25}% sick) · ${it.kcalEach} kcal each`,
+        });
+        opts.push({
+          id: 'cook',
+          label: 'Cook it',
+          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}safe · full calories · keeps longer`,
+          blocked: !this.nearFire() ? 'needs fire' : null,
+        });
+      }
+      return opts;
+    },
+
+    // whoOptions(it, task): the delegation decision — stated upfront.
+    // Returns [{id, label, detail}] — you vs the best specialist here.
+    whoOptions(it, task) {
+      const opts = [];
+      const specs = this.specialistsHere(task);
+      const spec = specs[0] || null;
+      const TASK_VERB = { butcher: 'Clean it', cook: 'Cook it', preserver: 'Smoke it', shell: 'Shell them' };
+      const verb = TASK_VERB[task] || 'Do it';
+      if (task === 'butcher') {
+        const gross = it.hiddenKcal || 0;
+        const youKcal = Math.round(gross * (this.knowsTechnique('clean') ? 0.40 : 0.30));
+        const specKcal = spec ? Math.round(gross * (0.40 + 0.04 * spec.skill)) : 0;
+        opts.push({
+          id: 'you',
+          label: `${verb} yourself`,
+          detail: `8 ticks · ~${youKcal} kcal · ${this.knowsTechnique('clean') ? 'practiced' : 'messy, but you LEARN'}`,
+          blocked: !this.hasCuttingTool() ? 'needs a knife' : (!this.knowsTechnique('clean') ? null : null),
+        });
+        if (spec) {
+          opts.push({
+            id: 'spec:' + spec.id,
+            label: `Ask ${spec.name}`,
+            detail: `8 ticks of your time · ~${specKcal} kcal · better hands (${spec.occupation})`,
+          });
+        } else {
+          opts.push({ id: 'nospec', label: 'Ask a specialist', detail: 'no butcher here — (find one, or do it yourself)', blocked: 'no butcher here' });
+        }
+      } else if (task === 'cook' || task === 'preserver') {
+        const tech = task === 'preserver' ? 'preserve' : 'cook';
+        opts.push({
+          id: 'you',
+          label: `${verb} yourself`,
+          detail: `${task === 'cook' ? '32' : '16'} ticks · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
+          blocked: !this.nearFire() ? 'needs fire' : null,
+        });
+        if (spec) {
+          opts.push({
+            id: 'spec:' + spec.id,
+            label: `Ask ${spec.name}`,
+            detail: `8 ticks of your time · ${task === 'cook' ? '+5%/level, safer' : 'keeps longer'} (${spec.occupation})`,
+          });
+        } else {
+          opts.push({ id: 'nospec', label: 'Ask a specialist', detail: `no ${task === 'cook' ? 'cook' : 'preserver'} here`, blocked: 'none here' });
+        }
+      } else if (task === 'shell') {
+        opts.push({ id: 'you', label: 'Shell them', detail: '4 ticks · net 75% of gross · everyone knows how' });
+      }
+      return opts;
+    },
+
     // migrateReserve: one-time fold of the old separate reserve pool into the
     // single kcal bar. (2026-10-04: the reserve became the bank.)
     migrateReserve() {
@@ -731,8 +1448,9 @@
 
   // cookFood (per-item): also handles cleaned meat.
   const origCookFood = G.cookFood;
-  G.cookFood = function (idx) {
-    const item = this.state.scholar.inventory[idx];
+  G.cookFood = function (idx, container) {
+    const inv = container || this.state.scholar.inventory;
+    const item = inv[idx];
     if (item && item.foodKind === 'meat' && item.foodState === 'cleaned') {
       if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
       // hiddenKcal is TOTAL; kcalEach is per unit.
@@ -753,16 +1471,27 @@
       this.tickAction(32);
       return null;
     }
+    if (item && item.needsCooking && item.diseaseRisk) {
+      if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
+      item.diseaseRisk = null; item.safe = true; item.needsCooking = false;
+      item.foodState = 'cooked';
+      item.prep = ((item.prep || '').replace(/\u26A0\uFE0F Risky raw \u2014 cook it\./, '').trim() + ' Cooked. Safe.').trim();
+      item.spoilDay = this.state.scholar.day + 5;
+      this.say(`Cooked ${item.name}. Safe now. (16 ticks)`);
+      this.tickAction(16);
+      return null;
+    }
     return origCookFood.call(this, idx);
   };
 
   // refreshItemNames: identification flips unknown hauls into real food.
+  // LUMPED UNKNOWNS: also splits identified species out of lumps (pack + stash).
   const origRefresh = G.refreshItemNames;
   G.refreshItemNames = function (pid) {
     const r = origRefresh.call(this, pid);
     const p = this.data.plants.find(x => x.id === pid);
     if (!p) return r;
-    let flipped = 0;
+    let flipped = 0, lumped = 0;
     for (const it of (this.state.scholar.inventory || [])) {
       if (it.plantId === pid && it.foodState === 'unknown') {
         const isNut = NUT_IDS[pid] || NUT_RE.test(p.preparation || '');
@@ -780,7 +1509,16 @@
         flipped++;
       }
     }
+    for (const cont of [this.state.scholar.inventory || [], this.state.scholar.prepStash || []]) {
+      for (const it of cont.slice()) {
+        if (it.lump && it.lump[pid]) {
+          this.splitLumpOut(it, pid, cont);
+          lumped++;
+        }
+      }
+    }
     if (flipped) this.say(`Your pack's unfamiliar haul resolves into ${p.name} — food now, not mystery.`);
+    if (lumped) this.say(`From the lumped bag: ${p.name} — named, and out.`);
     return r;
   };
 
@@ -817,6 +1555,15 @@
       return null;
     }
     return origFill.call(this);
+  };
+
+  // newGame: seed background plant knowledge once the roster exists.
+  // Someone arrived knowing things — the chicken-and-egg breaker.
+  const origNewGame = G.newGame;
+  G.newGame = function (...args) {
+    const r = origNewGame.apply(this, args);
+    try { this.seedBackgroundPlantKnowledge(); } catch (e) {}
+    return r;
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = methods;

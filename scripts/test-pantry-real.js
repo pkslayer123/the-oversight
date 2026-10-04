@@ -81,12 +81,14 @@ function freshGame() {
   // stand adjacent to (5,4): scholar at (4,4)
   Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
   Game.cellInteract(5, 4);
-  const oakItem = Game.state.scholar.inventory.find(i => i.plantId === 'acorn_white_oak');
-  ok('oak tree yields acorns', !!oakItem);
+  // LUMPED UNKNOWNS: unknown nuts land in the "unknown nuts" lump; the game
+  // tracks true composition underneath.
+  const nutLump = () => Game.state.scholar.inventory.find(i => i.lumpForm === 'nuts');
+  ok('oak tree yields acorns', !!nutLump() && !!nutLump().lump.acorn_white_oak);
   // walk adjacent to (3,4): stand at (4,4) is distance 1 from (3,4)? |4-3|=1 yes
   Game.cellInteract(3, 4);
-  const hickItem = Game.state.scholar.inventory.find(i => i.plantId === 'hickory_nut');
-  ok('hickory tree yields hickory nuts', !!hickItem);
+  ok('hickory tree yields hickory nuts', !!nutLump() && !!nutLump().lump.hickory_nut);
+  ok('nut lump is one stack', Game.state.scholar.inventory.filter(i => i.lumpForm === 'nuts').length === 1);
 
   // 6. PINE does not promise nuts it can't deliver.
   freshGame();

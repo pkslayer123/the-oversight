@@ -51,7 +51,9 @@
         "minLevel": 3,
         "note": "vitamin C, diuretic — eat regularly for health"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "safe"
   },
   {
     "biomes": [
@@ -109,7 +111,9 @@
         "minLevel": 3,
         "note": "leaves weave into mats and cordage"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "safe"
   },
   {
     "biomes": [
@@ -164,7 +168,9 @@
         "minLevel": 3,
         "note": "deep purple-black dye from the juice"
       }
-    ]
+    ],
+    "form": "berries",
+    "edibility": "safe"
   },
   {
     "biomes": [
@@ -215,7 +221,9 @@
         "minLevel": 3,
         "note": "sweet pulp draws animals to snares"
       }
-    ]
+    ],
+    "form": "berries",
+    "edibility": "caution"
   },
   {
     "biomes": [
@@ -263,7 +271,9 @@
         "minLevel": 3,
         "note": "shaggy bark strips make fine tinder"
       }
-    ]
+    ],
+    "form": "nuts",
+    "edibility": "safe"
   },
   {
     "biomes": [
@@ -313,7 +323,9 @@
         "minLevel": 3,
         "note": "tannin brown dye from the shells"
       }
-    ]
+    ],
+    "form": "nuts",
+    "edibility": "cook"
   },
   {
     "biomes": [
@@ -364,7 +376,9 @@
         "minLevel": 3,
         "note": "wild seasoning — a little goes far"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "safe"
   },
   {
     "biomes": [
@@ -416,7 +430,9 @@
         "minLevel": 3,
         "note": "poultice cools skin irritation"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "safe"
   },
   {
     "biomes": [
@@ -469,7 +485,9 @@
         "minLevel": 3,
         "note": "sour seasoning for bland meals"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "caution"
   },
   {
     "biomes": [
@@ -518,7 +536,9 @@
         "minLevel": 3,
         "note": "fallen fruit baits traps well"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "safe"
   },
   {
     "id": "elderberry",
@@ -571,7 +591,9 @@
         "minLevel": 3,
         "note": "cooked berry syrup and flower tea for colds"
       }
-    ]
+    ],
+    "form": "berries",
+    "edibility": "cook"
   },
   {
     "id": "pawpaw",
@@ -623,7 +645,9 @@
         "minLevel": 3,
         "note": "strong scent draws animals"
       }
-    ]
+    ],
+    "form": "berries",
+    "edibility": "safe"
   },
   {
     "id": "ramps",
@@ -675,7 +699,9 @@
         "minLevel": 3,
         "note": "dried and ground, seasons for months"
       }
-    ]
+    ],
+    "form": "roots",
+    "edibility": "caution"
   },
   {
     "id": "lambs_quarters",
@@ -729,7 +755,9 @@
         "minLevel": 3,
         "note": "leaf poultice for bites and stings"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "caution"
   },
   {
     "id": "purslane",
@@ -781,7 +809,9 @@
         "minLevel": 3,
         "note": "cooling poultice for minor burns"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "safe"
   },
   {
     "id": "black_walnut",
@@ -832,7 +862,9 @@
         "minLevel": 3,
         "note": "the famous dark walnut dye — stains everything"
       }
-    ]
+    ],
+    "form": "nuts",
+    "edibility": "safe"
   },
   {
     "id": "sassafras",
@@ -891,7 +923,9 @@
         "minLevel": 3,
         "note": "mild traditional tonic"
       }
-    ]
+    ],
+    "form": "roots",
+    "edibility": "avoid"
   },
   {
     "id": "yarrow",
@@ -944,7 +978,9 @@
         "minLevel": 3,
         "note": "bitter flower tea breaks fever"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "avoid"
   },
   {
     "id": "plantain_leaf",
@@ -998,7 +1034,9 @@
         "minLevel": 3,
         "note": "young leaves edible — stringy but honest"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "safe"
   },
   {
     "id": "jewelweed",
@@ -1051,7 +1089,9 @@
         "minLevel": 3,
         "note": "orange-yellow dye from the flowers"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "avoid"
   },
   {
     "id": "wild_strawberry",
@@ -1103,7 +1143,9 @@
         "minLevel": 3,
         "note": "leaf tea, mild and pleasant"
       }
-    ]
+    ],
+    "form": "berries",
+    "edibility": "safe"
   },
   {
     "id": "staghorn_sumac",
@@ -1161,7 +1203,9 @@
         "minLevel": 3,
         "note": "red-brown dye from cones and leaves"
       }
-    ]
+    ],
+    "form": "berries",
+    "edibility": "safe"
   },
   {
     "id": "burdock",
@@ -1219,7 +1263,9 @@
         "minLevel": 3,
         "note": "tough stalk fiber for rough cordage"
       }
-    ]
+    ],
+    "form": "roots",
+    "edibility": "safe"
   },
   {
     "id": "goldenrod",
@@ -1275,7 +1321,9 @@
         "minLevel": 3,
         "note": "traditional kidney and urinary support"
       }
-    ]
+    ],
+    "form": "shoots",
+    "edibility": "avoid"
   },
   {
     "id": "mayapple",
@@ -1327,7 +1375,9 @@
         "minLevel": 3,
         "note": "root resin is potent medicine — expert use only, small doses"
       }
-    ]
+    ],
+    "form": "berries",
+    "edibility": "caution"
   },
   {
     "id": "rare_herb",
@@ -1376,6 +1426,8 @@
       "2": "Parts: the whole above-ground pipe. Dry it — do not eat fresh in quantity.",
       "3": "Uses: nerve tonic and pain remedy in tiny doses. The System wants a sample.",
       "4": "Mastery: harvest after rain when pipes stand tall. Dry whole, tincture in anything strong."
-    }
+    },
+    "form": "shoots",
+    "edibility": "avoid"
   }
 ]

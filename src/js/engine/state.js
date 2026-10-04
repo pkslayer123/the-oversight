@@ -26,6 +26,7 @@
       injuries: [],
       position: { region: null, x: 0, y: 0 },
       inventory: [], // {plantId|itemId, qty, spoilageDay}
+      prepStash: [], // the kitchen counter: unprocessed hauls awaiting prep, with spoilage clocks
     };
   }
 

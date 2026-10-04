@@ -277,31 +277,33 @@ const origRandom = Math.random;
     ok('fillWater blocked at cap', /full/.test(said));
   }
 
-  // ---- 8. HAUL-TO-PANTRY LOOP (specialist economy) ----
+  // ---- 8. HAUL-TO-STASH LOOP (prep staging) ----
+  // PREP STASH: unprocessed hauls land on the counter, not in the pantry.
+  // Only correctly identified, prepped food goes to the pantry.
   freshGame();
   {
     const s = Game.state.scholar;
     const turkey = animal('wild_turkey');
     const dand = plant('dandelion');
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
-    s.inventory.push(Game.foodForageItem(dand, false, 6, 270, s.day));
+    Game.addUnknownToLump(dand, 6, s.day);
     s.inventory.push(Object.assign(Game.foodForageItem(dand, true, 6, 270, s.day), { spoilDay: s.day + 5 }));
     Game.say = () => {};
     Game.state.village.pantry = [];
     Game.returnToVillage();
     const pan = Game.state.village.pantry;
-    ok('carcass unloads to pantry', pan.some(i => i.foodState === 'carcass'));
-    ok('unknown haul unloads to pantry', pan.some(i => i.foodState === 'unknown'));
-    ok('pantry cap ignores ingredients (0 kcal)', Game.pantryKcal() === 270);
+    const stash = Game.prepStash();
+    ok('carcass stages to prep stash', stash.some(i => i.foodState === 'carcass'));
+    ok('unknown lump stages to prep stash', stash.some(i => i.lump));
+    ok('finished food unloads to pantry', pan.some(i => i.plantId === 'dandelion' && i.foodState === 'ready'));
+    ok('pantry counts finished only', Game.pantryKcal() === 270);
     ok('pack cleared of hauls', !s.inventory.some(i => i.foodKind));
 
-    // take the carcass back out: state survives the round trip
-    const cIdx = pan.findIndex(i => i.foodState === 'carcass');
-    Game.takeFromPantryBulk({ [cIdx]: 1 });
-    const back = s.inventory.find(i => i.foodState === 'carcass');
-    ok('pantry round trip keeps carcass state', !!back && back.hiddenKcal === 3000 && back.edible === false);
+    // carcass keeps state on the counter
+    const staged = stash.find(i => i.foodState === 'carcass');
+    ok('stash round trip keeps carcass state', !!staged && staged.hiddenKcal === 3000 && staged.edible === false);
 
-    // villageEats doesn't crash on ingredient pantry, skips 0-kcal
+    // villageEats doesn't crash on weird pantry, skips 0-kcal
     Game.state.village.pantry = [Game.foodCarcass(turkey, 3000, s.day, 'hunted')];
     try { Game.villageEats(); ok('villageEats tolerates carcass pantry', true); }
     catch (e) { ok('villageEats tolerates carcass pantry', false); }

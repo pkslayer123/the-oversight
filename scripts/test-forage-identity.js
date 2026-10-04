@@ -111,6 +111,7 @@ function freshGame() {
 
   // 5. NO AMNESIA: speciesSeen survives and recognition tracks knowledge growth.
   freshGame();
+  delete Game.state.codex.plants['jewelweed']; // background seeding may know it; control for the test
   const t2 = Game.playerTile();
   t2.speciesSeen = { 'jewelweed': { day: 1, n: 3 } };
   const before = Game.speciesHereLine('jewelweed');

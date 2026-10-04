@@ -2431,6 +2431,99 @@
   // invSheet: what are you carrying? Non-modal sheet - always accessible, never hidden.
   // Crafting, abilities, equipment - all here. The ability bar on the main
   // screen covers quick activation; this is the full inventory view.
+  // PREP STASH: the kitchen counter. Mission board, not a storage dump.
+  // Unprocessed hauls, auto-sorted by what's rotting first. Three decisions
+  // per batch: WHAT FIRST (triage), WHO (you vs specialist), HOW FAR
+  // (raw / cook / smoke) — every cost stated before committing.
+  function stashSectionHtml() {
+    if (!Game.prepStash || !Game.atCamp) return '';
+    const atCamp = Game.atCamp();
+    const stash = Game.prepStash();
+    const order = Game.stashUrgency ? Game.stashUrgency() : stash.map((it, idx) => ({ it, idx, left: 99 }));
+    let html = `<h3 style="margin-top:12px">\uD83C\uDF73 Prep stash — the counter</h3>`;
+    if (!atCamp) {
+      html += `<p class="small" style="opacity:.7">Your counter is back at camp.</p>`;
+      return html;
+    }
+    html += `<p class="small" style="opacity:.7">Unprocessed hauls, rotting-first. Pick your battles.</p>`;
+    if (!order.length) {
+      html += `<p class="small" style="opacity:.6">Counter's clear.</p>`;
+    }
+    for (const { it, idx, left } of order) {
+      const clock = Game.stashClock ? Game.stashClock(it) : '';
+      const urgent = left <= 0;
+      const needs = Game.prepNeeds ? Game.prepNeeds(it) : '';
+      html += `<p class="small"><b>${esc(Game.itemDisplayName(it))}</b> ×${it.units || 1} — <span${urgent ? ' style="color:#e5484d;font-weight:bold"' : ''}>${esc(clock)}</span><br>`;
+      html += `<span style="opacity:.7">needs: ${esc(needs)}</span><br>`;
+      html += stashActionsHtml(it, idx);
+      html += `</p>`;
+    }
+    html += `<p class="small"><button class="btn ghost sm" data-stash-stage>Stage unprocessed</button> <button class="btn ghost sm" data-stash-putaway>Put away finished food</button></p>`;
+    return html;
+  }
+
+  // Per-entry action row: the three decisions, honestly stated.
+  function stashActionsHtml(it, idx) {
+    let html = '';
+    const stash = Game.prepStash();
+    if (it.lump) {
+      html += `<button class="btn ghost sm" data-stash-sort="${idx}">Sort the bag</button>`;
+      try {
+        const knowers = Game.whoKnowsLump(it) || [];
+        if (knowers.length) {
+          html += ` <button class="btn ghost sm" data-stash-sortask="${idx}" data-vid="${knowers[0].id}">Ask ${esc(knowers[0].name)}</button>`;
+        }
+      } catch (e) {}
+      html += ` <button class="btn ghost sm" data-stash-test="${idx}">Test cautiously</button>`;
+      html += ` <button class="btn ghost sm" data-stash-rush="${idx}">Rush it</button>`;
+      html += ` <button class="btn ghost sm" data-stash-watch="${idx}">Watch the fauna</button>`;
+      if (Game.state.systemArrived) {
+        html += ` <button class="btn ghost sm" data-stash-system="${idx}">Ask the System</button>`;
+      }
+      if (it.hint) {
+        html += ` <span class="small" style="opacity:.6">(hint: animals ${it.hint.kind === 'safe' ? 'eat it' : 'avoid it'} — not proof)</span>`;
+      }
+    }
+    if (it.foodState === 'carcass') {
+      try {
+        const who = Game.whoOptions(it, 'butcher') || [];
+        for (const o of who) {
+          if (o.id === 'you') {
+            html += ` <button class="btn ghost sm" data-stash-clean="${idx}"${o.blocked ? ' disabled' : ''}>${esc(o.label)}</button> <span class="small" style="opacity:.6">${esc(o.detail)}${o.blocked ? ' (' + esc(o.blocked) + ')' : ''}</span>`;
+          } else if (o.id && o.id.indexOf('spec:') === 0) {
+            html += ` <button class="btn ghost sm" data-stash-askclean="${idx}" data-vid="${o.id.slice(5)}">${esc(o.label)}</button> <span class="small" style="opacity:.6">${esc(o.detail)}</span>`;
+          } else if (o.blocked) {
+            html += ` <span class="small" style="opacity:.6">(${esc(o.label)}: ${esc(o.blocked)})</span>`;
+          }
+        }
+      } catch (e) {}
+    }
+    if (it.foodState === 'in_shell') {
+      html += ` <button class="btn ghost sm" data-stash-shell="${idx}">Shell them</button> <span class="small" style="opacity:.6">4 ticks · net 75%</span>`;
+    }
+    if ((it.foodKind === 'meat' && it.foodState === 'cleaned') || it.needsCooking) {
+      try {
+        const how = Game.howFarOptions(it) || [];
+        for (const o of how) {
+          if (o.id === 'raw') {
+            html += ` <button class="btn ghost sm" data-stash-raw="${idx}">${esc(o.label)}</button> <span class="small" style="opacity:.6">${esc(o.detail)}</span>`;
+          } else if (o.id === 'cook') {
+            const specs = Game.specialistsHere('cook') || [];
+            html += ` <button class="btn ghost sm" data-stash-cook="${idx}"${o.blocked ? ' disabled' : ''}>Cook — you</button>`;
+            if (specs.length) html += ` <button class="btn ghost sm" data-stash-askcook="${idx}" data-vid="${specs[0].id}">Cook — ask ${esc(specs[0].name)}</button>`;
+            html += ` <span class="small" style="opacity:.6">${esc(o.detail)}${o.blocked ? ' (' + esc(o.blocked) + ')' : ''}</span>`;
+          } else if (o.id === 'smoke') {
+            const specs = Game.specialistsHere('preserver') || [];
+            html += ` <button class="btn ghost sm" data-stash-smoke="${idx}"${o.blocked ? ' disabled' : ''}>Smoke — you</button>`;
+            if (specs.length) html += ` <button class="btn ghost sm" data-stash-asksmoke="${idx}" data-vid="${specs[0].id}">Smoke — ask ${esc(specs[0].name)}</button>`;
+            html += ` <span class="small" style="opacity:.6">${esc(o.detail)}${o.blocked ? ' (' + esc(o.blocked) + ')' : ''}</span>`;
+          }
+        }
+      } catch (e) {}
+    }
+    return html;
+  }
+
   // inventory: your pack. Inline — one screen, no overlay hopping.
   function renderInvInline(slot, view) {
     const st = Game.status();
@@ -2479,6 +2572,7 @@
           } catch (e) {}
           return `<p class="small">${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${stashSectionHtml()}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> \u2014 ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}`;
@@ -2501,6 +2595,24 @@
     slot.querySelectorAll('[data-clean]').forEach(b => b.onclick = rewire(() => Game.cleanCarcass(+b.dataset.clean), 'Cleaned.'));
     slot.querySelectorAll('[data-preserve]').forEach(b => b.onclick = rewire(() => Game.preserveFood(+b.dataset.preserve), 'Smoked.'));
     slot.querySelectorAll('[data-ask]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.ask), 'A specialist handles it.'));
+    // PREP STASH: the kitchen counter. Every action confirms, panel re-renders.
+    const stashOf = () => Game.prepStash();
+    slot.querySelectorAll('[data-stash-stage]').forEach(b => b.onclick = rewire(() => Game.stageForPrep(), 'Staged.'));
+    slot.querySelectorAll('[data-stash-putaway]').forEach(b => b.onclick = rewire(() => Game.putAwayFinished(), 'Put away.'));
+    slot.querySelectorAll('[data-stash-sort]').forEach(b => b.onclick = rewire(() => Game.sortBag(null, +b.dataset.stashSort, stashOf()), 'Sorted.'));
+    slot.querySelectorAll('[data-stash-sortask]').forEach(b => b.onclick = rewire(() => Game.sortBag(b.dataset.vid, +b.dataset.stashSortask, stashOf()), 'Sorted.'));
+    slot.querySelectorAll('[data-stash-test]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.stashTest, {}, stashOf()), 'Tested.'));
+    slot.querySelectorAll('[data-stash-rush]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.stashRush, { rush: true }, stashOf()), 'Rushed.'));
+    slot.querySelectorAll('[data-stash-watch]').forEach(b => b.onclick = rewire(() => Game.watchFauna(+b.dataset.stashWatch, stashOf()), 'Watched.'));
+    slot.querySelectorAll('[data-stash-system]').forEach(b => b.onclick = rewire(() => Game.askSystemAbout(+b.dataset.stashSystem, stashOf()), 'Asked.'));
+    slot.querySelectorAll('[data-stash-clean]').forEach(b => b.onclick = rewire(() => Game.cleanCarcass(+b.dataset.stashClean, stashOf()), 'Cleaned.'));
+    slot.querySelectorAll('[data-stash-askclean]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAskclean, stashOf()), 'A specialist handles it.'));
+    slot.querySelectorAll('[data-stash-shell]').forEach(b => b.onclick = rewire(() => Game.shellNuts(+b.dataset.stashShell, stashOf()), 'Shelled.'));
+    slot.querySelectorAll('[data-stash-raw]').forEach(b => b.onclick = rewire(() => Game.eatStashOne(+b.dataset.stashRaw), 'Eaten raw.'));
+    slot.querySelectorAll('[data-stash-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.stashCook, stashOf()), 'Cooked.'));
+    slot.querySelectorAll('[data-stash-askcook]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAskcook, stashOf(), 'cook'), 'A specialist handles it.'));
+    slot.querySelectorAll('[data-stash-smoke]').forEach(b => b.onclick = rewire(() => Game.preserveFood(+b.dataset.stashSmoke, stashOf()), 'Smoked.'));
+    slot.querySelectorAll('[data-stash-asksmoke]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAsksmoke, stashOf(), 'preserver'), 'A specialist handles it.'));
     slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipW, 'weapon'), 'Equipped.'));
     slot.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipA, 'armor'), 'Worn.'));
     slot.querySelectorAll('[data-donate]').forEach(b => b.onclick = rewire(() => Game.donateToPantry(+b.dataset.donate), 'Donated to the pantry.'));
