@@ -1109,6 +1109,9 @@
   // openSheet() remains ONLY for modal System offers (ability/relic choices):
   // the System doesn't ask politely.
   let inlineView = null; // {kind:'person'|'assign'|'remote'|'pantry', vid, line, result, nvMode, via, mapKey}
+  // lastPersonTap: tapping a person's tile while already adjacent steps onto
+  // their tile (explicit). Any movement elsewhere invalidates it.
+  let lastPersonTap = null; // {vid, px, py}
 
   function inlineMapKey() {
     return (Game.map ? Game.map.px + ',' + Game.map.py : '?') + ':' +
@@ -1176,7 +1179,7 @@
       const hb = health >= 70 ? '\uD83D\uDFE2' : health >= 40 ? '\uD83D\uDFE1' : '\uD83D\uDD34';
       infoHtml = `<p class="small">${esc(vp.formerOccupation || '')}${vp.homeRegion ? ' · ' + esc(vp.homeRegion) : ''}</p>
         <p class="small">${hb} Health ${health}/100 · ${tone}</p>
-        <p class="small" style="opacity:.7">🗣 ${esc(Game.langLabel(vp.languages))}</p>
+        <p class="small" style="opacity:.7">🗣 ${esc(Game.langLabel(Game.npcLangs(villagerId)))}</p>
         ${(() => { const w = Game.goalWant(villagerId); return w ? `<p class="small" style="opacity:.7">🎯 Wants ${esc(w)}.</p>` : ''; })()}
         <p class="small" style="opacity:.7">👁 Sees you as: ${esc(Game.repWords(villagerId))}.</p>
         ${(() => { const pers = vp.personality || {}; const bits = [];
@@ -1869,6 +1872,42 @@
         const vpos = Game.state.village && Game.state.village.positions;
         if (vpos) for (const rid of Object.keys(vpos)) {
           if (vpos[rid].mx === cx && vpos[rid].my === cy) { villagerThere = rid; break; }
+        }
+        // PEOPLE: tap a person → walk NEXT TO them, not onto their tile.
+        // Standing inside someone feels wrong, even though NPCs don't block.
+        // (Tap their tile again while adjacent = explicit step onto it.)
+        if (villagerThere && !Game.tbfight) {
+          const vdist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
+          if (vdist > 1) {
+            // path to the nearest walkable tile adjacent to them
+            let best = null, bestD = 999;
+            for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+              const nx = cx + dx, ny = cy + dy;
+              if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+              if (Game.cellProps(detail[ny] && detail[ny][nx]).blocks) continue;
+              const path = Game.findPath(px, py, nx, ny);
+              if (!path || !path.length) continue;
+              if (path.length < bestD) { bestD = path.length; best = [nx, ny]; }
+            }
+            let moved = false;
+            if (best) moved = Game.movePath(best[0], best[1]);
+            else moved = Game.movePath(cx, cy); // surrounded — walk through as before
+            expeditionScreen();
+            if (moved) personSheet(villagerThere);
+            else cellPopup(cx, cy); // couldn't move — popup explains why
+            return;
+          }
+          // adjacent: a second tap on the same person (without moving away)
+          // is an explicit step onto their tile.
+          if (lastPersonTap && lastPersonTap.vid === villagerThere &&
+              lastPersonTap.px === px && lastPersonTap.py === py) {
+            lastPersonTap = null;
+            if (Game.microMove(cx, cy)) { expeditionScreen(); personSheet(villagerThere); return; }
+          }
+          lastPersonTap = { vid: villagerThere, px, py };
+          expeditionScreen();
+          personSheet(villagerThere);
+          return;
         }
         // walkable? GO. adjacent = step, distant = path. no confirmation, no popup.
         if (!Game.cellProps(cell).blocks) {

@@ -164,6 +164,8 @@
     // genNameForOrigin: names match origins. Japanese names from Japan, Nigerian from Nigeria.
     // 80% correlated, 20% mismatch — people move, diaspora exists. But the default is sensible.
     // forceMatch skips the diaspora roll: the player's own character IS from where they said.
+    // Returns { name, cultureId } — the cultureId matters: a name-culture that differs
+    // from the origin culture is a heritage story (and a heritage language).
     genNameForOrigin(origin, forceMatch) {
       const pick = a => a[Math.floor(Math.random() * a.length)];
       const nc = this.data.nameCultures || {};
@@ -177,10 +179,90 @@
       }
       const culture = cultures[cultureId];
       if (culture && culture.first && culture.last) {
-        return pick(culture.first) + ' ' + pick(culture.last);
+        return { name: pick(culture.first) + ' ' + pick(culture.last), cultureId };
       }
       // fallback: legacy flat lists
-      return pick(cg.firstNames || ['Sam']) + ' ' + pick(cg.lastNames || ['Reyes']);
+      return { name: pick(cg.firstNames || ['Sam']) + ' ' + pick(cg.lastNames || ['Reyes']), cultureId };
+    },
+
+    // NAME_GENDER: first names we're confident about. Curated, not guessed —
+    // these are common names whose gender is unambiguous across their culture.
+    // Everything else goes through ending rules; unknowns get they/them.
+    NAME_GENDER: {
+      // american
+      james: 'm', john: 'm', robert: 'm', michael: 'm', william: 'm', david: 'm', joseph: 'm', thomas: 'm', charles: 'm', daniel: 'm',
+      matthew: 'm', anthony: 'm', mark: 'm', donald: 'm', steven: 'm', paul: 'm', andrew: 'm', joshua: 'm', kevin: 'm', brian: 'm',
+      george: 'm', edward: 'm', ronald: 'm', timothy: 'm', jason: 'm', jeffrey: 'm', ryan: 'm', jacob: 'm', gary: 'm', nicholas: 'm',
+      eric: 'm', jonathan: 'm', stephen: 'm', larry: 'm', justin: 'm', scott: 'm', brandon: 'm', benjamin: 'm', samuel: 'm', frank: 'm',
+      gregory: 'm', raymond: 'm', alexander: 'm', patrick: 'm', jack: 'm', dennis: 'm', jerry: 'm', marcus: 'm', darius: 'm', tom: 'm',
+      leo: 'm', sam: 'm', bill: 'm', hank: 'm', ray: 'm', carl: 'm', earl: 'm',
+      mary: 'f', patricia: 'f', jennifer: 'f', linda: 'f', elizabeth: 'f', barbara: 'f', susan: 'f', jessica: 'f', sarah: 'f', karen: 'f',
+      nancy: 'f', lisa: 'f', betty: 'f', margaret: 'f', sandra: 'f', ashley: 'f', dorothy: 'f', kimberly: 'f', emily: 'f', donna: 'f',
+      michelle: 'f', laura: 'f', carol: 'f', amanda: 'f', deborah: 'f', stephanie: 'f', rebecca: 'f', sharon: 'f',
+      cynthia: 'f', kathryn: 'f', amy: 'f', shirley: 'f', angela: 'f', helen: 'f', anna: 'f', brenda: 'f', pamela: 'f', nicole: 'f',
+      emma: 'f', samantha: 'f', katherine: 'f', christine: 'f', debora: 'f', rachel: 'f', carolyn: 'f', virginia: 'f',
+      maya: 'f', ruth: 'f', elena: 'f', aisha: 'f', grace: 'f', rosa: 'f', kate: 'f', pearl: 'f', joyce: 'f', june: 'f',
+      // nigerian
+      chidi: 'm', olumide: 'm', tunde: 'm', emeka: 'm', ifeanyi: 'm', babatunde: 'm', segun: 'm', obinna: 'm', olusegun: 'm',
+      abiodun: 'm', chukwuemeka: 'm', oluwafemi: 'm', oluwaseyi: 'm',
+      adaeze: 'f', ngozi: 'f', funke: 'f', amina: 'f', zainab: 'f', halima: 'f', chiamaka: 'f', folake: 'f', yetunde: 'f',
+      nkiru: 'f', chinwe: 'f', hadiza: 'f', nneka: 'f', uzoamaka: 'f',
+      // misc common
+      hugo: 'm',
+      // ghanaian (day names are gendered)
+      kwame: 'm', kofi: 'm', yaw: 'm', kwesi: 'm', kojo: 'm', fiifi: 'm', kweku: 'm', kwadwo: 'm', kwabena: 'm', ekow: 'm',
+      ama: 'f', abena: 'f', akosua: 'f', efua: 'f', adwoa: 'f', esi: 'f', araba: 'f', akua: 'f', yaa: 'f', afua: 'f', aba: 'f',
+      // irish
+      conor: 'm', liam: 'm', sean: 'm', declan: 'm', cian: 'm', eamon: 'm', brendan: 'm', kieran: 'm', donal: 'm', malachy: 'm', tiernan: 'm',
+      saoirse: 'f', niamh: 'f', aoife: 'f', ciara: 'f', grainne: 'f', maeve: 'f', roisin: 'f', siobhan: 'f', orla: 'f', fiona: 'f',
+      sinead: 'f', una: 'f', bridget: 'f',
+      // norwegian
+      lars: 'm', erik: 'm', magnus: 'm', ole: 'm', henrik: 'm', anders: 'm', bjorn: 'm', jakob: 'm', lucas: 'm',
+      ingrid: 'f', astrid: 'f', solveig: 'f', freya: 'f', sigrid: 'f', liv: 'f', kari: 'f', nora: 'f', maja: 'f', emilie: 'f',
+      // turkish
+      mehmet: 'm', emre: 'm', burak: 'm', can: 'm', alp: 'm', doruk: 'm', ahmet: 'm', mustafa: 'm', huseyin: 'm', hasan: 'm',
+      ibrahim: 'm', omer: 'm', kerem: 'm',
+      elif: 'f', zeynep: 'f', selin: 'f', ayse: 'f', defne: 'f', gizem: 'f', fatma: 'f', hatice: 'f', emine: 'f', meryem: 'f', rabia: 'f',
+      // rule exceptions (names that break the ending rules)
+      kuba: 'm', aditya: 'm', hamza: 'm', taha: 'm', krishna: 'm', ravi: 'm', nikita: 'm',
+      andrea: 'm',
+    },
+
+    // guessNameGender: does this first name read male or female? Conservative:
+    // curated map first, then high-precision per-culture ending rules.
+    // Returns 'm' | 'f' | null. Null = can't tell (unfamiliar name) — the
+    // character gets they/them. Strangers' pronouns aren't assumed.
+    guessNameGender(first, cultureId) {
+      const key = String(first || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (this.NAME_GENDER[key]) return this.NAME_GENDER[key];
+      const n = key;
+      const ROMANCE = ['mexican', 'argentine', 'colombian', 'peruvian', 'venezuelan', 'brazilian', 'filipino'];
+      const SLAVIC = ['polish', 'ukrainian'];
+      const ARABIC = ['moroccan', 'egyptian'];
+      if (ROMANCE.includes(cultureId)) {
+        if (n.endsWith('o')) return 'm';
+        if (n.endsWith('a')) return 'f';
+        return null;
+      }
+      if (cultureId === 'japanese') {
+        if (n.endsWith('hiko')) return 'm';
+        if (n.endsWith('ko')) return 'f';
+        if (/(shi|ta|rou|go|mu|to)$/.test(n)) return 'm';
+        return null;
+      }
+      if (SLAVIC.includes(cultureId)) { if (n.endsWith('a')) return 'f'; return null; }
+      if (ARABIC.includes(cultureId)) { if (n.endsWith('a')) return 'f'; return null; }
+      if (cultureId === 'german') { if (n.endsWith('a')) return 'f'; return null; }
+      if (cultureId === 'indian' || cultureId === 'bangladeshi') {
+        if (n.endsWith('a') || n.endsWith('i')) return 'f';
+        return null;
+      }
+      if (cultureId === 'korean') {
+        if (n.endsWith('a')) return 'f';
+        if (/(jun|hoon|woo|seok|hyun)$/.test(n)) return 'm';
+        return null;
+      }
+      return null;
     },
 
     // levelsOf: normalize any language shape to {id: level 0|1|2}.
@@ -207,29 +289,79 @@
       return lv;
     },
 
-    // genCultureLanguages: what someone from this culture speaks.
-    // { native, levels: {lang: 0|1|2} }. Native is fluent; English rolls;
-    // ~30% pick up a third tongue (travelers, border towns), 8% a fourth.
-    // Occupation polyglots (interpreters, ESL teachers) speak their claimed tongues.
-    genCultureLanguages(cultureId, occ) {
+    // genCultureLanguages: what someone speaks, and WHY. Every non-native tongue
+    // needs a story: heritage (diaspora family), work (occupation polyglots),
+    // or a life event (service, aid work, years abroad). No random bolt-ons —
+    // if the backstory can't explain it, they don't speak it. Most people are
+    // monolingual. Returns { native, levels, reasons } — reasons are backstory
+    // sentences with {They}/{they}/{their}/{them}/{first} placeholders.
+    // opts: { heritageCultureId, age }
+    genCultureLanguages(homeCultureId, occ, opts) {
+      opts = opts || {};
       const nc = this.data.nameCultures || {};
-      const native = ((nc.cultures || {})[cultureId] || {}).language || 'english';
+      const cg = this.data.characterGen || {};
+      const native = ((nc.cultures || {})[homeCultureId] || {}).language || 'english';
       const levels = { [native]: 2 };
-      const pick = a => a[Math.floor(Math.random() * a.length)];
+      const reasons = [];
+      const langName = id => { const d = (cg.languages || []).find(l => l.id === id); return d ? d.name : id; };
+      const placeFor = cid => {
+        const o2c = nc.originToCulture || {};
+        const labels = Object.keys(o2c).filter(k => o2c[k] === cid);
+        if (labels.length) return labels[Math.floor(Math.random() * labels.length)].split(',')[0].trim();
+        return 'the old country';
+      };
+      // English for non-natives: school, media, the lingua franca. Plausible, keep.
       if (native !== 'english') {
         const r = Math.random();
         const eng = r < 0.3 ? 0 : r < 0.75 ? 1 : 2;
         if (eng) levels.english = eng;
       }
-      const pool = ['spanish', 'french', 'arabic', 'mandarin', 'portuguese', 'hindi', 'russian', 'swahili', 'korean', 'german'];
-      const avail = () => pool.filter(l => l !== native && !levels[l]);
-      if (avail().length && Math.random() < 0.3) {
-        const l3 = pick(avail());
-        levels[l3] = Math.random() < 0.3 ? 2 : 1;
+      // HERITAGE: the name's culture differs from home — diaspora family.
+      // Someone named Gonzalez born in Chicago grew up hearing Spanish. That's a story.
+      const hc = opts.heritageCultureId;
+      if (hc && hc !== homeCultureId) {
+        const hl = ((nc.cultures || {})[hc] || {}).language;
+        if (hl && hl !== native && !levels[hl]) {
+          const lv = Math.random() < 0.35 ? 2 : 1;
+          levels[hl] = lv;
+          const rel = Math.random() < 0.5 ? 'parents' : 'grandparents';
+          reasons.push(`{Their} ${rel} came from ${placeFor(hc)}; {they} grew up hearing ${langName(hl)} at home${lv === 1 ? ', and still understand more than {they} can say' : ''}.`);
+        }
       }
-      if (avail().length && Math.random() < 0.08) levels[pick(avail())] = 1;
-      for (const l of ((occ && occ.polyglot) || [])) levels[l] = 2;
-      return { native, levels };
+      // WORK: interpreters, ESL teachers, and the like speak their claimed tongues.
+      // The occupation IS the reason.
+      for (const l of ((occ && occ.polyglot) || [])) {
+        if (!levels[l]) {
+          levels[l] = 2;
+          reasons.push(`{They} learned ${langName(l)} for work — {their} ${occ.name || 'job'} demanded it.`);
+        }
+      }
+      // LIFE EVENT (~7%, adults only): service, aid work, years abroad.
+      // Rare, and always storied — never a silent stat.
+      const age = opts.age || 30;
+      if (age >= 21 && Math.random() < 0.07) {
+        const cids = Object.keys(nc.cultures || {}).filter(c => {
+          const l = ((nc.cultures || {})[c] || {}).language;
+          return l && l !== native && !levels[l];
+        });
+        if (cids.length) {
+          const ec = cids[Math.floor(Math.random() * cids.length)];
+          const el = ((nc.cultures || {})[ec] || {}).language;
+          const place = placeFor(ec);
+          const yrs = 1 + Math.floor(Math.random() * 3);
+          const fluent = Math.random() < 0.3;
+          levels[el] = fluent ? 2 : 1;
+          const q = fluent ? langName(el) : `enough ${langName(el)} to get by`;
+          const evs = [
+            `{They} did ${yrs} year${yrs > 1 ? 's' : ''} abroad with the service and came home with ${q}.`,
+            `A ${yrs}-year stint doing aid work near ${place} left {them} with ${q}.`,
+            `{They} spent ${yrs} year${yrs > 1 ? 's' : ''} working overseas and picked up ${q}.`,
+            `{They} studied near ${place} for ${yrs} year${yrs > 1 ? 's' : ''} and never quite lost the ${langName(el)}.`,
+          ];
+          reasons.push(evs[Math.floor(Math.random() * evs.length)]);
+        }
+      }
+      return { native, levels, reasons };
     },
 
     // genCharacter: one full person. The origin is authoritative — name, native
@@ -239,7 +371,6 @@
       const { origin, forceCultureMatch, candidate, usedNames, usedOccs } = opts || {};
       const cg = this.data.characterGen || {};
       const pick = a => a[Math.floor(Math.random() * a.length)];
-      const fears = (cg.fears && cg.fears.length) ? cg.fears : ['being forgotten'];
       // distinct occupations across a candidate set when the pool allows it
       const occPool = cg.occupations || [];
       let occ = null, oguard = 0;
@@ -248,15 +379,23 @@
         oguard++;
       } while (usedOccs && occ.id && usedOccs.has(occ.id) && oguard < 30 && occPool.length > 4);
       if (occ && usedOccs && occ.id) usedOccs.add(occ.id);
-      let name, guard = 0;
+      let nameRes, name, guard = 0;
       do {
-        name = this.genNameForOrigin(origin, forceCultureMatch);
+        nameRes = this.genNameForOrigin(origin, forceCultureMatch);
+        name = nameRes.name;
         guard++;
         // no duplicate first names in one cast — "June" twice breaks the fiction
       } while ((usedNames.has(name) || [...usedNames].some(n => n.split(' ')[0] === name.split(' ')[0])) && guard < 50);
       usedNames.add(name);
       const first = name.split(' ')[0];
-      const pro = pick(['they', 'she', 'he']);
+      // PRONOUNS follow the name, not a dice roll. "Kurt" is a he, "Tabea" is a
+      // she — contradicting the name is the fastest way to break a real person.
+      // Unfamiliar names get they/them: strangers' pronouns aren't assumed.
+      const nameGender = this.guessNameGender(first, nameRes.cultureId);
+      const pro = nameGender === 'm' ? 'he' : nameGender === 'f' ? 'she' : 'they';
+      // parsed origin + short city name, up front — backstories need both.
+      const parsed = this.parseOrigin(origin);
+      const city = String(origin).split(',')[0].trim() || origin;
         const their = pro === 'they' ? 'their' : pro === 'she' ? 'her' : 'his';
         const them = pro === 'they' ? 'them' : pro === 'she' ? 'her' : 'him';
         const They = pro === 'they' ? 'They' : pro === 'she' ? 'She' : 'He';
@@ -279,22 +418,67 @@
           .replaceAll('{they}', pro)
           .replaceAll('{occ}', occ.name || 'survivor')
           .replaceAll('{origin}', origin)
+          .replaceAll('{city}', city)
           .replaceAll('{skill}', skill);
+        // COHERENCE: a 19-year-old isn't a retired general. Occupations carry
+        // a sensible age band; the character's age is drawn from it.
+        // (Age is computed before backstory: variants with work durations need it.)
+        const ageMin = occ.minAge || 19, ageMax = Math.max(ageMin, occ.maxAge || 62);
+        const age = ageMin + Math.floor(Math.random() * (ageMax - ageMin + 1));
         const backstoryVariants = occ.backstories || [occ.backstory || '{first} is here.'];
-        // prefer a backstory variant not yet used this expedition
+        // AGE-GATE variants: "fifteen summers" of roofing at 20 is a lie.
+        // Durations imply a working life started around 16; "two tours" needs 20.
+        const variantMinAge = t => {
+          let min = 0;
+          const words = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, fifteen: 15, twenty: 20, thirty: 30 };
+          const re = /\b(a|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|\d+)\s+(summer|year|decade)s?\b/gi;
+          let m;
+          while ((m = re.exec(t))) {
+            const raw = m[1].toLowerCase();
+            let n = raw === 'a' ? 1 : (words[raw] != null ? words[raw] : parseInt(raw, 10));
+            if (m[2].toLowerCase().startsWith('decade')) n *= 10;
+            if (n > 0) min = Math.max(min, n + 16);
+          }
+          if (/\btwo tours\b/i.test(t)) min = Math.max(min, 20);
+          return min;
+        };
+        // prefer a backstory variant not yet used this expedition AND old enough to have lived
         const ubs = this._usedBackstories || new Set();
         const occKey = occ.id || occ.name || 'survivor';
-        let bi = backstoryVariants.findIndex((_, i) => !ubs.has(occKey + ':' + i));
+        let bi = backstoryVariants.findIndex((_, i) => !ubs.has(occKey + ':' + i) && variantMinAge(backstoryVariants[i]) <= age);
+        if (bi < 0) bi = backstoryVariants.findIndex((_, i) => variantMinAge(backstoryVariants[i]) <= age);
         if (bi < 0) bi = Math.floor(Math.random() * backstoryVariants.length);
         ubs.add(occKey + ':' + bi);
-        const backstory = fillPronouns(backstoryVariants[bi]);
+        // LANGUAGES: story-driven, generated before the backstory so the reasons
+        // can be woven in. A tongue without a story doesn't get spoken.
+        const homeCulture = this.cultureForOrigin(origin);
+        const langs = this.genCultureLanguages(homeCulture, occ, { heritageCultureId: nameRes.cultureId, age });
+        let backstory = fillPronouns(backstoryVariants[bi]);
+        if (langs.reasons.length) backstory += ' ' + langs.reasons.map(fillPronouns).join(' ');
+        // MARITIME DRIFT: a sailor from landlocked Vermont is a contradiction —
+        // unless they left. People move; the story says so.
+        const MARITIME = ['sailor', 'fisher', 'fisherman', 'deckhand', 'longshoreman', 'marine_biologist', 'naval_officer'];
+        if (MARITIME.includes(occ.id) && !(parsed.tags || []).includes('coast')) {
+          backstory += ' ' + fillPronouns(`{They} left ${city} young to work the water and never really came back.`);
+        }
         const temperament = pick(cg.temperaments || ['steady']);
         const sharing = pick(cg.sharingStyles || ['fair']);
         const curiosity = pick(cg.curiosities || ['practical']);
-        // personality axes: quirks, habits, hopes — everyone had a life.
-        const quirk = (cg.quirks && cg.quirks.length) ? pick(cg.quirks) : null;
-        const habit = (cg.habits && cg.habits.length) ? pick(cg.habits) : null;
-        const hope = (cg.hopes && cg.hopes.length) ? pick(cg.hopes) : null;
+        // personality axes: quirks, habits, hopes, fears — everyone had a life.
+        // DEDUPED per expedition: two cast members "memorizing the stars" breaks
+        // the fiction faster than any single wrong trait.
+        const _ut = this._usedTraits || (this._usedTraits = { quirk: new Set(), habit: new Set(), hope: new Set(), fear: new Set() });
+        const pickFresh = (pool, setName) => {
+          const set = _ut[setName];
+          const fresh = (pool || []).filter(x => !set.has(x));
+          const src = fresh.length ? fresh : (pool || []);
+          const c = src.length ? src[Math.floor(Math.random() * src.length)] : null;
+          if (c) set.add(c);
+          return c;
+        };
+        const quirk = pickFresh(cg.quirks, 'quirk');
+        const habit = pickFresh(cg.habits, 'habit');
+        const hope = pickFresh(cg.hopes, 'hope');
         // GOALS: everyone wants something. People have agendas, not just traits.
         // 'lead' is rare — genRoster guarantees 1-2 contenders per village.
         const goalDefs = cg.goals || [];
@@ -304,18 +488,13 @@
           for (let i = 0; i < w; i++) goalPool.push(g.id);
         }
         const goal = goalPool.length ? pick(goalPool) : null;
-        const parsed = this.parseOrigin(origin);
         const fill = t => t.replaceAll('{first}', first).replaceAll('{occ}', occ.name || 'survivor')
-          .replaceAll('{origin}', origin).replaceAll('{skill}', skill);
+          .replaceAll('{origin}', origin).replaceAll('{city}', city).replaceAll('{skill}', skill);
         const talk = [];
         const tt = [...(cg.talkTemplates || [])];
         while (talk.length < 3 && tt.length) talk.push(fill(tt.splice(Math.floor(Math.random() * tt.length), 1)[0]));
         const quest = (cg.questTemplates || []).map(fill);
-        const langs = this.genCultureLanguages(this.cultureForOrigin(origin), occ);
-        // COHERENCE: a 19-year-old isn't a retired general. Occupations carry
-        // a sensible age band; the character's age is drawn from it.
-        const ageMin = occ.minAge || 19, ageMax = Math.max(ageMin, occ.maxAge || 62);
-        const age = ageMin + Math.floor(Math.random() * (ageMax - ageMin + 1));
+        const secretFear = pickFresh(cg.fears && cg.fears.length ? cg.fears : ['being forgotten'], 'fear');
         const char = {
           id: 'gen_' + Math.random().toString(36).slice(2, 9),
           name, formerOccupation: occ.name || 'survivor', homeRegion: origin,
@@ -326,7 +505,7 @@
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
           survivalProbability: 25 + Math.floor(Math.random() * 21),
           systemAssessment: `${first} reads as ${temperament} and ${sharing} with strangers. The others find this ${temperament === 'cautious' ? 'reassuring' : temperament === 'bold' ? 'exhausting' : 'worth watching'}.`,
-          secretFear: pick(fears), languages: langs, occupationId: occ.id || null,
+          secretFear, languages: langs, occupationId: occ.id || null,
           candidate: candidate !== false, pro,
         };
         return char;
@@ -349,6 +528,9 @@
       // within an expedition. newGame's background-survivor draw consults these too.
       this._usedNames = usedNames;
       this._usedBackstories = new Set();
+      // personality dedupe registries: quirks, habits, hopes, fears shouldn't
+      // repeat within an expedition either. Reset per roster.
+      this._usedTraits = { quirk: new Set(), habit: new Set(), hope: new Set(), fear: new Set() };
       const chars = [];
       for (let i = 0; i < 4; i++) {
         chars.push(this.genCharacter({ origin, forceCultureMatch: true, candidate: true, usedNames, usedOccs }));
@@ -379,16 +561,6 @@
       return chars;
     },
 
-    // genLanguages: not everyone speaks English. { native, english: 0|1|2 }
-    genLanguages() {
-      const cg = this.data.characterGen || {};
-      const langs = cg.languages || [{ id: 'english' }];
-      if (Math.random() < 0.55) return { native: 'english', english: 2 };
-      const nonEn = langs.filter(l => l.id !== 'english');
-      const native = nonEn.length ? nonEn[Math.floor(Math.random() * nonEn.length)].id : 'spanish';
-      const r = Math.random();
-      return { native, english: r < 0.3 ? 0 : r < 0.75 ? 1 : 2 };
-    },
 
     // genItemCandidates: 8 personal items per character from class pools,
     // biased by occupation. The player picks 5. Combinations surprise.
@@ -455,12 +627,22 @@
       return conflicts;
     },
 
+    // npcLangs: per-run languages for any villager id. The generated cast carry
+    // their own; background survivors get a per-run draw in village.bgLangs
+    // (static data has none — without this they all default to fluent English).
+    npcLangs(vid) {
+      const v = this.state && this.state.village;
+      if (v && v.bgLangs && v.bgLangs[vid]) return v.bgLangs[vid];
+      const person = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      return person.languages;
+    },
+
     // commLevel: do you share ANY language? Best shared tongue wins, limited by
     // the weaker party — a non-fluent player can't lean on a villager's fluency.
     // full (2): normal. partial (1): halved. none: quarter + misunderstandings.
     commLevel(vid) {
-      const v = (this.data.villagers || []).find(x => x.id === vid) || {};
-      const vl = this.levelsOf(v.languages);
+      const vl = this.levelsOf(this.npcLangs(vid));
       const s = this.state.scholar || {};
       const pl = this.levelsOf(s.languages, s.englishLevel);
       let best = 0, bestLang = null;
@@ -470,7 +652,8 @@
           if (m > best) { best = m; bestLang = id; }
         }
       }
-      const native = (v.languages && v.languages.native) || 'english';
+      const nl = this.npcLangs(vid);
+      const native = (nl && nl.native) || 'english';
       if (best >= 2) return { level: 'full', mult: 1, lang: bestLang };
       if (best === 1) return { level: 'partial', mult: 0.5, lang: bestLang };
       return { level: 'none', mult: 0.25, lang: native };
@@ -495,8 +678,7 @@
     langNote(vid) {
       const met = (this.state.village.met || {})[vid];
       if (!met) return null;
-      const v = (this.data.villagers || []).find(x => x.id === vid) || {};
-      return this.langLabel(v.languages);
+      return this.langLabel(this.npcLangs(vid));
     },
 
     conflictNote(c, id) {
@@ -642,6 +824,27 @@
         usedFirsts.add(String(drawn.name || '').split(' ')[0]);
         if (this._usedNames) this._usedNames.add(drawn.name);
         bg.push(drawn.id);
+      }
+      // background survivors get per-run languages from the same story-driven
+      // generator. Static data carries none — without this, levelsOf defaults
+      // everyone to fluent English and language barriers never happen.
+      this.state.village.bgLangs = {};
+      {
+        const cg = this.data.characterGen || {};
+        const pick = a => a[Math.floor(Math.random() * a.length)];
+        const nc = this.data.nameCultures || {};
+        const cids = Object.keys(nc.cultures || {});
+        for (const id of bg) {
+          const person = (this.data.background_survivors || []).find(s => s.id === id) || {};
+          const bOrigin = pick(cg.sampleOrigins || ['somewhere']);
+          const bHome = this.cultureForOrigin(bOrigin);
+          const bHeritage = (bHome && Math.random() < 0.2 && cids.length)
+            ? cids[Math.floor(Math.random() * cids.length)] : null;
+          const bOcc = (cg.occupations || []).find(o => o.name === String(person.formerOccupation || '').toLowerCase()) || null;
+          this.state.village.bgLangs[id] = this.genCultureLanguages(bHome, bOcc, {
+            heritageCultureId: bHeritage, age: person.age || 35,
+          });
+        }
       }
       this.state.village.roster = [this.villagerId].concat(otherGen, bg);
       this.state.village.villagers = [this.villagerId].concat(otherGen); // generated have dialogue; background have one-liners
@@ -5847,6 +6050,24 @@
       if (part === 0 || part === 2) return act === 'crepuscular' ? 3 : act === 'nocturnal' ? 0.5 : 1;
       return act === 'diurnal' ? 3 : act === 'nocturnal' ? 0.15 : 1;
     },
+    // MONSTER WAVES: which monsters can spawn right now.
+    // Wave 1: calibration fauna — the System's first draft, always present.
+    // Wave 2: advanced fauna — deployed at System arrival (day 7).
+    // Wave 3: reserved for deep integration (80+) — the System's final draft.
+    // Earlier waves never leave the pool; the ecosystem only gets richer.
+    monsterWavePool() {
+      const all = this.data.monsters || [];
+      const s = this.state.scholar || {};
+      const arrived = !!this.state.systemArrived;
+      const deep = (s.integration || 0) >= 80;
+      return all.filter(m => {
+        const w = m.wave || 1;
+        if (w <= 1) return true;
+        if (w === 2) return arrived;
+        if (w >= 3) return arrived && deep;
+        return true;
+      });
+    },
     pickByActivity(list) {
       if (!list || !list.length) return null;
       const weights = list.map(d => this.creatureWeight(d));
@@ -6542,7 +6763,10 @@
         return;
       }
       if (Math.random() < chance && !scholar.monster) {
-        const mdefs = this.data.monsters;
+        // MONSTER WAVES: the System escalates. Wave 1 (calibration fauna) is
+        // always in the pool. Wave 2 (advanced fauna) joins after System arrival.
+        // Wave 3+ hook: gate on integration thresholds (see monsterWavePool).
+        const mdefs = this.monsterWavePool();
         // NIGHT ECOLOGY: the cast shifts after dark. Nocturnal things own the night;
         // diurnal things own the day. Weighted — nothing vanishes entirely.
         const mdef = this.pickByActivity(mdefs) || mdefs[Math.floor(Math.random() * mdefs.length)];
@@ -6658,6 +6882,12 @@
         this.say('"LOOK! You can SEE their HEALTH now! Isn\'t that NEAT?! Green means GO! Red means... oh, you know what red means! It\'s very intuitive!"');
         this.say('"We gave you EVERYONE\'S name! Even the ones you never talked to! No need to thank us! (Please thank us. The audience loves gratitude.)"');
         this.say('It feels invasive. The names you learned yourself — by talking, by listening — those felt earned. These just... appeared.');
+        // WAVE 2: the System escalates. The calibration fauna was just the opener.
+        // "Oh, you survived those? Let's try THESE."
+        this.say('\U0001F43E "OH! One more thing! The animals! The ones from last week — the charging ones, the humming ones, the glowy ones? Those were CALIBRATION fauna! First drafts! The audience has NOTES!"');
+        this.say('"So we made BETTER ones! Advanced fauna! They\'re smarter! They\'re scarier! One of them does PERFORMANCE REVIEWS! The audience is going to LOVE the performance reviews!"');
+        this.say('"Don\'t worry! The old ones are still out there! We didn\'t remove anything! The ecosystem is just... richer now! More DIVERSE! More DANGEROUS! You\'re welcome!"');
+        this.say('Somewhere in the treeline, something new is crying in a voice you almost recognize.');
         this.scheduleSystemEvents();
         // If you're NOT at Haven, the village talks about it without you.
         // When you return, they'll tell you what happened. (Drama: you missed it.)
