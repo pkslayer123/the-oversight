@@ -2013,6 +2013,54 @@
       }
     },
 
+    // SLICE 2: THE SYSTEM ARRIVES (day 7).
+    // The aliens finally notice they forgot survival basics.
+    // Interface shifts: journal -> game overlay. Abilities unlock.
+    // Timed events: challenges, new monsters, world-building drama.
+    checkSystemArrival() {
+      const s = this.state.scholar;
+      if (s.day >= 7 && !this.state.systemArrived) {
+        this.state.systemArrived = true;
+        this.say('\U0001F31F THE SYSTEM HAS ARRIVED.');
+        this.say('A voice in your head, cheerful and utterly alien: "Oh! Oh no. We forgot the food thing. And the water thing. We\'re SO sorry!"');
+        this.say('Your journal shimmers. It\'s... a game interface now? Quests? Abilities? What is happening?');
+        s.abilities = s.abilities || [];
+        s.systemQuests = [];
+        this.scheduleSystemEvents();
+      }
+    },
+    scheduleSystemEvents() {
+      const s = this.state.scholar;
+      s.timedEvents = s.timedEvents || [];
+      s.timedEvents.push({ day: 8, type: 'challenge', id: 'first_hunt', done: false });
+      s.timedEvents.push({ day: 9, type: 'drama', id: 'stranger', done: false });
+      s.timedEvents.push({ day: 10, type: 'monster', id: 'hushwolf_pack', done: false });
+      s.timedEvents.push({ day: 12, type: 'quest', id: 'system_task', done: false });
+    },
+    checkTimedEvents() {
+      const s = this.state.scholar;
+      if (!s.timedEvents) return;
+      for (const ev of s.timedEvents) {
+        if (!ev.done && s.day >= ev.day) {
+          ev.done = true;
+          this.triggerEvent(ev);
+        }
+      }
+    },
+    triggerEvent(ev) {
+      if (ev.id === 'first_hunt') {
+        this.say('\U0001F4E2 SYSTEM CHALLENGE: "Catch something! Anything! We want to see how you do it!" (Hunt an animal today for a reward.)');
+        this.state.scholar.activeChallenge = { id: 'first_hunt', desc: 'Hunt an animal', reward: 'Ability point' };
+      } else if (ev.id === 'stranger') {
+        this.say('\U0001F6B6 A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
+      } else if (ev.id === 'hushwolf_pack') {
+        this.say('\U0001F43A HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
+      } else if (ev.id === 'system_task') {
+        this.say('\U0001F4DC SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Bring us a plant you\'ve fully identified (Codex L3)."');
+        this.state.scholar.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
+      }
+    },
+
     // --- pack weight: 15 kg. distance has a price; so does carrying. ---
     packCapacity() { return 15; },
     packWeight() {
@@ -2559,6 +2607,9 @@
           }
         }
       }
+      // SLICE 2: System arrival and timed events.
+      this.checkSystemArrival();
+      this.checkTimedEvents();
       // evening: run metabolism
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
