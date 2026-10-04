@@ -2172,6 +2172,7 @@
         <div class="game-col-main">
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
           <div class="detail ord-grid">${renderDetail(st)}</div>
+          ${st.inCombat ? `<div class="ord-combatpanel">${panelCombat(st)}</div>` : ''}
           ${perceiveHTML()}
           <div id="inlineslot" class="ord-inline"></div>
           <div class="ord-status">${statusBars(st)}</div>
