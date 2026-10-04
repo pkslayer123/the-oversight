@@ -94,6 +94,19 @@
       }
       // you trust yourself
       this.state.village.trust[villagerId] = 100;
+      // TEACHERS: everyone knows a few plants (from their old life).
+      // mains know 2, background know 1. what they know, they can teach.
+      this.state.village.taught = {};
+      const plantIds = this.data.plants.map(p => p.id);
+      for (const rid of this.state.village.roster) {
+        const isMain = this.data.villagers.find(m => m.id === rid);
+        const n = isMain ? 2 : 1;
+        const known = [];
+        for (let i = 0; i < n && plantIds.length; i++) {
+          known.push(plantIds[Math.floor(Math.random() * plantIds.length)]);
+        }
+        this.state.village.taught[rid] = [...new Set(known)]; // dedupe
+      }
       const scholar = S.state.newScholar(villagerId);
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
       scholar.inventory = gear.map(id => ({ itemId: id, units: 1, kg: 0.2, name: (this.data.items.find(i => i.id === id) || {}).name || id }));
@@ -133,6 +146,46 @@
       const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
       this.say(`${v.name.split(' ')[0]}${tone}: "${line}"`);
       return line;
+    },
+
+    // TEACH: "show me what an oak leaf looks like."
+    // Good education: they show you a picture, you get it. Instant level 1.
+    // Bad education: "it looks a bit like that" — partial (+1 encounter, not full).
+    // Teacher quality: occupation matters. A cook teaches food well. A nurse teaches medicine.
+    teachPlant(vid, plantId) {
+      const teacher = this.data.villagers.find(x => x.id === vid) || this.data.background_survivors.find(x => x.id === vid);
+      const plant = this.data.plants.find(p => p.id === plantId);
+      if (!teacher || !plant) return null;
+      // does the teacher know it?
+      const teacherKnows = (this.state.village.taught && this.state.village.taught[vid] || []).includes(plantId);
+      // (for now, mains know 2 random plants; background know 1)
+      if (!teacherKnows) {
+        this.say(`${teacher.name.split(' ')[0]} doesn\'t know that one either.`);
+        return null;
+      }
+      const occ = (teacher.formerOccupation || '').toLowerCase();
+      // good teacher: relevant occupation, high trust
+      const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
+      const isGoodTeacher = (occ.includes('cook') || occ.includes('chef') || occ.includes('hunter')) && trust > 40;
+      const isMedicTeacher = occ.includes('nurse') && plant.medicinal && trust > 40;
+      this.state.codex.encounters = this.state.codex.encounters || {};
+      if (isGoodTeacher || isMedicTeacher) {
+        // good education: instant unlock
+        this.state.codex.plants[plantId] = { identifiedDay: this.state.scholar.day, level: 1, harvests: 0, tastings: 0 };
+        this.state.codex.encounters[plantId] = 99; // learned
+        this.say(`${teacher.name.split(' ')[0]} shows you — a leaf, a picture scratched in dirt. You get it. ${plant.name}.`);
+        this.integrate(2, 'taught');
+      } else {
+        // bad education: partial
+        const enc = (this.state.codex.encounters[plantId] || 0) + 1;
+        this.state.codex.encounters[plantId] = enc;
+        this.say(`${teacher.name.split(' ')[0]} tries to explain. "It looks... a bit like that?" You\'re not sure. (${enc} encounters)`);
+      }
+      // teaching builds trust
+      if (this.state.village.trust) {
+        this.state.village.trust[vid] = Math.min(100, ((this.state.village.trust[vid] || 10) + 8));
+      }
+      return true;
     },
 
     // give food: the fastest way to earn trust. sharing is the social contract.
@@ -1113,9 +1166,19 @@
         this.state.codex.encounters[r.plantId] = newEnc;
         const learned = newEnc >= threshold;
         if (learned && !this.state.codex.plants[r.plantId]) {
-          this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
+          // LEVEL 1: Named. You know what it is. Basic yield.
+          this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day, level: 1, harvests: 0, tastings: 0 };
           this.integrate(3, 'discovery');
-          this.say(`You know this now. ${plant.name}. ${plant.codex}`);
+          this.say(`You know this now. ${plant.name}. ${plant.knowledgeLevels['1']}`);
+        } else if (learned && this.state.codex.plants[r.plantId]) {
+          // LEVEL 2: Parts. Harvest 5 more times, you notice the parts.
+          // Later you realize: roots AND leaves AND petals. Yield increases.
+          const entry = this.state.codex.plants[r.plantId];
+          entry.harvests = (entry.harvests || 0) + 1;
+          if (entry.level === 1 && entry.harvests >= 5) {
+            entry.level = 2;
+            this.say(`Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['2']} (Yield +50%)`);
+          }
         } else if (!learned) {
           // progressive: description, not name
           const stage = newEnc === 1 ? plant.description || 'a plant you don\'t recognize' :
@@ -1136,7 +1199,11 @@
           if (isNew && bounty && bounty.why) this.say(`Journal: ${bounty.why}`);
           else if (!isNew) this.say(`Journal updated: ${r.plant.name} grows here too — better than ${prevBest.name.toLowerCase()}.`);
         }
-        scholar.inventory.push({ plantId: r.plantId, units: r.units, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
+        // KNOWLEDGE = YIELD. Level 2 (parts) gives 50% more. You know what to take.
+        const entry = this.state.codex.plants[r.plantId];
+        const levelMult = entry && entry.level >= 2 ? 1.5 : 1.0;
+        const finalUnits = Math.ceil(r.units * levelMult);
+        scholar.inventory.push({ plantId: r.plantId, units: finalUnits, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         msg = r.message + ` (${r.kcal} kcal to your pack — eat up.)` + (r.firstFind ? ` (${r.plant.codex})` : '');
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
@@ -1204,12 +1271,29 @@
       // eat most-perishable first until kcal >= 2400 or empty
       scholar.inventory.sort((a, b) => a.spoilDay - b.spoilDay);
       let ate = 0;
+      const tasted = {}; // plantId -> units eaten (for knowledge level 3)
       while (scholar.kcal < 2400 && scholar.inventory.length) {
         const it = scholar.inventory[0];
         const kcal = it.kcalEach;
         scholar.kcal += kcal; ate += kcal;
+        if (it.plantId) tasted[it.plantId] = (tasted[it.plantId] || 0) + 1;
         it.units -= 1;
         if (it.units <= 0) scholar.inventory.shift();
+      }
+      // LEVEL 3: Uses. Eat it 3 times, you learn what it does to you.
+      // Vitamin C, medicine, energy. "Have you tasted it?" Yes. Now you know.
+      for (const [pid, count] of Object.entries(tasted)) {
+        const entry = this.state.codex.plants[pid];
+        if (entry && entry.level === 2) {
+          entry.tastings = (entry.tastings || 0) + count;
+          if (entry.tastings >= 3) {
+            entry.level = 3;
+            const plant = this.data.plants.find(p => p.id === pid);
+            this.say(`Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['3']} (+5 health when eaten)`);
+            // level 3 benefit: eating gives health
+            scholar.kcal = Math.min(scholar.kcal + 50, 3000); // nourished
+          }
+        }
       }
       // spoilage: drop expired
       const before = scholar.inventory.length;

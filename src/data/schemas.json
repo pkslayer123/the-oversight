@@ -42,7 +42,8 @@
       "tileAffinity": "string[]?",
       "sources": "string[]?",
       "regions": "string[]",
-      "description": "string"
+      "description": "string",
+      "knowledgeLevels": "object"
     }
   },
   "monster": {

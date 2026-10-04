@@ -33,7 +33,13 @@
       "pacific_nw",
       "columbus"
     ],
-    "description": "a plant with jagged leaves and a yellow flower"
+    "description": "a plant with jagged leaves and a yellow flower",
+    "knowledgeLevels": {
+      "1": "Name: Dandelion. You grab the whole plant.",
+      "2": "Parts: roots (roast like coffee), leaves (salad), petals (tea). Selective harvest yields more.",
+      "3": "Uses: vitamin C (prevents scurvy), diuretic, liver support. Eating gives +5 health.",
+      "4": "Mastery: roots best roasted, leaves best young, petals for wine. 2x yield when prepared right."
+    }
   },
   {
     "biomes": [
@@ -68,7 +74,13 @@
       "georgia",
       "pacific_nw"
     ],
-    "description": "tall reeds with brown sausage-shaped heads"
+    "description": "tall reeds with brown sausage-shaped heads",
+    "knowledgeLevels": {
+      "1": "Name: Cattail. The brown sausage heads.",
+      "2": "Parts: rhizomes (starch), shoots (like asparagus), pollen (flour).",
+      "3": "Uses: high starch, good calories. Rhizomes are survival food.",
+      "4": "Mastery: harvest rhizomes in fall, shoots in spring. Process for max calories."
+    }
   },
   {
     "biomes": [
@@ -100,7 +112,13 @@
       "georgia",
       "pacific_nw"
     ],
-    "description": "a thorny bush with dark berries"
+    "description": "a thorny bush with dark berries",
+    "knowledgeLevels": {
+      "1": "Name: Blackberry. Basic identification.",
+      "2": "Parts: you learn which parts of blackberry are usable.",
+      "3": "Uses: nutritional and medicinal properties of blackberry.",
+      "4": "Mastery: optimal preparation of blackberry."
+    }
   },
   {
     "biomes": [
@@ -133,7 +151,13 @@
       "ohio",
       "georgia"
     ],
-    "description": "a tree with orange fruit, soft when ripe"
+    "description": "a tree with orange fruit, soft when ripe",
+    "knowledgeLevels": {
+      "1": "Name: American Persimmon. Basic identification.",
+      "2": "Parts: you learn which parts of american persimmon are usable.",
+      "3": "Uses: nutritional and medicinal properties of american persimmon.",
+      "4": "Mastery: optimal preparation of american persimmon."
+    }
   },
   {
     "biomes": [
@@ -163,7 +187,13 @@
       "ohio",
       "georgia"
     ],
-    "description": "a tree with compound leaves and hard nuts"
+    "description": "a tree with compound leaves and hard nuts",
+    "knowledgeLevels": {
+      "1": "Name: Hickory Nuts. Basic identification.",
+      "2": "Parts: you learn which parts of hickory nuts are usable.",
+      "3": "Uses: nutritional and medicinal properties of hickory nuts.",
+      "4": "Mastery: optimal preparation of hickory nuts."
+    }
   },
   {
     "biomes": [
@@ -195,7 +225,13 @@
       "georgia",
       "columbus"
     ],
-    "description": "a tree with lobed leaves and acorns"
+    "description": "a tree with lobed leaves and acorns",
+    "knowledgeLevels": {
+      "1": "Name: White Oak Acorns. Basic identification.",
+      "2": "Parts: you learn which parts of white oak acorns are usable.",
+      "3": "Uses: nutritional and medicinal properties of white oak acorns.",
+      "4": "Mastery: optimal preparation of white oak acorns."
+    }
   },
   {
     "biomes": [
@@ -228,7 +264,13 @@
       "georgia",
       "pacific_nw"
     ],
-    "description": "grass-like leaves that smell like onion"
+    "description": "grass-like leaves that smell like onion",
+    "knowledgeLevels": {
+      "1": "Name: Wild Onion. Basic identification.",
+      "2": "Parts: you learn which parts of wild onion are usable.",
+      "3": "Uses: nutritional and medicinal properties of wild onion.",
+      "4": "Mastery: optimal preparation of wild onion."
+    }
   },
   {
     "biomes": [
@@ -262,7 +304,13 @@
       "columbus",
       "pacific_nw"
     ],
-    "description": "a low plant with tiny white flowers"
+    "description": "a low plant with tiny white flowers",
+    "knowledgeLevels": {
+      "1": "Name: Chickweed. Basic identification.",
+      "2": "Parts: you learn which parts of chickweed are usable.",
+      "3": "Uses: nutritional and medicinal properties of chickweed.",
+      "4": "Mastery: optimal preparation of chickweed."
+    }
   },
   {
     "biomes": [
@@ -297,7 +345,13 @@
       "georgia",
       "pacific_nw"
     ],
-    "description": "clover-like leaves, tangy taste"
+    "description": "clover-like leaves, tangy taste",
+    "knowledgeLevels": {
+      "1": "Name: Wood Sorrel. Basic identification.",
+      "2": "Parts: you learn which parts of wood sorrel are usable.",
+      "3": "Uses: nutritional and medicinal properties of wood sorrel.",
+      "4": "Mastery: optimal preparation of wood sorrel."
+    }
   },
   {
     "biomes": [
@@ -328,6 +382,12 @@
     "regions": [
       "georgia"
     ],
-    "description": "a vine with thick-skinned grapes"
+    "description": "a vine with thick-skinned grapes",
+    "knowledgeLevels": {
+      "1": "Name: Muscadine Grapes. Basic identification.",
+      "2": "Parts: you learn which parts of muscadine grapes are usable.",
+      "3": "Uses: nutritional and medicinal properties of muscadine grapes.",
+      "4": "Mastery: optimal preparation of muscadine grapes."
+    }
   }
 ]

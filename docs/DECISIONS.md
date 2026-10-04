@@ -689,3 +689,19 @@ FLESHED OUT:
 - building rooms: supplies, pallets, stores.
 
 TO ITERATE: edit the JSON. No code changes. Weights, values, visibility — all data.
+
+## 2026-10-03 — Capacity to learn (Steve)
+Steve: "Foraging may get you nuts but not all nuts are created equal. If you aren\'t from
+the area it should be harder than for other people. You might not have any of the names.
+Maybe they aren\'t a nature person so they need to be shown what an oak leaf is."
+
+SYSTEM: who you are changes what you know.
+- REGIONAL: plants have regions. If it grows where you\'re from, start at 1 encounter.
+  Ohio plants for Ohio people. Georgia plants are foreign.
+- OCCUPATION: hunter/cook/chef learns food in 2 encounters. Nurse learns medicinals in 2.
+  Bus driver/accountant/dropout: 4 encounters. They\'re not nature people.
+- PROGRESSIVE: 0=unknown, 1=description ("jagged leaves, yellow flower"), 2=recognition
+  ("looks familiar"), 3=name ("Dandelion"). The Codex earns names, doesn\'t start with them.
+- Not all nuts equal: oak vs hickory vs pine have different yields (in cell modifiers).
+
+You don\'t know "oak" until someone shows you the leaf, or you figure it out yourself.
