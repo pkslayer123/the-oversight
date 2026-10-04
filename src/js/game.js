@@ -9829,6 +9829,7 @@
       if (hasSand) this.say('You fling a handful of grit into its eyes. (pocket_sand: blinded)');
       this.say('Turn-based now. Tap a tile to move — speed is squares. Then act.');
       this.audioEvent('combatStart');
+      if (/highbeam/i.test(mdef.name || '')) this.audioEvent('deerNotice'); // distant, wrong-sounding call
       this.sysSay(`COMBAT! ${mdef.name.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
       this.tbBeginTurn();
       return this.tbfight;
@@ -10236,7 +10237,7 @@
           try { this.addTrauma(this.traumaForKill(t.villagerId)); } catch (e) {}
           try { this.villageEvent('murder', { victim: t.villagerId }); } catch (e) {}
         }
-        else this.say(`The ${t.name} falls.`);
+        else { this.say(`The ${t.name} falls.`); if (/highbeam/i.test(t.name || '')) this.audioEvent('deerDown'); }
       }
     },
 
@@ -10320,11 +10321,46 @@
       // how long — but the cue escalates and the heartbeat tells you).
       if (m.telegraph) {
         const tg = m.telegraph;
+        const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
+        // LIVE FIRE: the beam is up and sweeping. It stands frozen, committed —
+        // no move, no new attack. The lane redraws every tick.
+        if (sweepBeam && tg.firing > 0) {
+          this.tbBeamSweepTick(m, tg);
+          tg.firing -= 1;
+          if (tg.firing <= 0) {
+            m.telegraph = null;
+            this.tbLearnPattern(m);
+            this.audioEvent('beamSweepStop');
+            this.say(`The beam gutters out. ${m.name} blinks — and the light starts gathering again.`);
+          }
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
+          return;
+        }
         tg.turnsLeft -= 1;
         if (tg.turnsLeft > 0) {
           // still winding up — holds position, committed. No move, no new attack.
           this.tbRefreshTelegraphUI();
-          this.audioEvent('telegraph', { urgency: tg.turnsLeft });
+          this.audioEvent('telegraph', { urgency: tg.turnsLeft, windupTick: true });
+          return;
+        }
+        // IGNITE: a sweeping beam doesn't resolve instantly — it goes live and
+        // sweeps for fireTurns. Everything else resolves as before.
+        if (sweepBeam) {
+          const p0 = this.tbFighter('p');
+          tg.aim = tg.aim || { x: p0 ? p0.mx : m.mx, y: p0 ? p0.my : m.my };
+          tg.aimKey = tg.aimKey || 'p';
+          tg.firing = (tg.pattern || {}).fireTurns || 2;
+          this.say(`💥 ${tg.attackName}! The beam is LIVE — and it's sweeping toward you. MOVE.`);
+          this.audioEvent('impact', { beam: (tg.pattern || {}).type === 'beam', highbeam: /highbeam/i.test(m.name || '') });
+          this.tbBeamSweepTick(m, tg);
+          tg.firing -= 1;
+          if (tg.firing <= 0) {
+            m.telegraph = null;
+            this.tbLearnPattern(m);
+          }
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
           return;
         }
         // RESOLVE. A BEAM or LINE locks its aim when declared — it was aiming
@@ -10357,6 +10393,7 @@
           // beam dies against the trees. That's not a miss. That's the plan.
           if (!tg.cells.length && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line')) {
             this.say(`💥 ${tg.attackName}! The light shreds leaves and dies against the trees. Cover works. Remember that.`);
+            this.audioEvent('beamBlocked');
           } else {
           this.say(`💥 ${tg.attackName}!`);}
           const hitKeys = new Set(tg.cells.map(c => c.cx + ',' + c.cy));
@@ -10459,16 +10496,25 @@
           m.telegraph = { kind: 'direct', targetKey: foe.f.key, dmg: atk.damage,
             attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1 };
           this.say('⚠ ' + this.tbTelegraphCue(m));
-          this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft });
+          this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct', highbeam: /highbeam/i.test(m.name || '') });
         } else {
           this.say(`The ${m.name} stalks closer. ${atk.telegraph || ''}`);
         }
       } else {
         let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
-        // BEAM/LINE: trees and rocks block the shot. The lane ends at the
-        // first blocking terrain — break line of sight, break the beam.
-        // (Fighters never block: the beam goes through them. That's the point.)
-        if (pat.type === 'beam' || pat.type === 'line') {
+        let aim = null, bdir = null, aimKey = null;
+        if (pat.sweep && (pat.type === 'beam' || pat.type === 'line')) {
+          // SWEEPING BEAM: locks onto its target's position at declare, then
+          // tracks while it fires. Only walls and real structures stop it —
+          // trees shred, and it travels to the edge of the node.
+          // (Fighters never block: the beam goes through them. That's the point.)
+          const r = this.tbBeamCells(m.mx, m.my, foe.f.mx, foe.f.my);
+          cells = r.cells; bdir = r.dir;
+          aim = { x: foe.f.mx, y: foe.f.my }; aimKey = foe.f.key;
+        } else if (pat.type === 'beam' || pat.type === 'line') {
+          // BEAM/LINE: trees and rocks block the shot. The lane ends at the
+          // first blocking terrain — break line of sight, break the beam.
+          // (Fighters never block: the beam goes through them. That's the point.)
           const detail = this.genDetail(this.map.px, this.map.py);
           const cut = [];
           for (const c of cells) {
@@ -10481,9 +10527,10 @@
         const p0 = this.tbFighter('p');
         m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
           attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
-          threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)) };
+          threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
+          aim, dir: bdir, aimKey, firing: 0 };
         this.say('⚠ ' + this.tbTelegraphCue(m));
-        this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft });
+        this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: /highbeam/i.test(m.name || '') });
       }
       this.tbRefreshTelegraphUI();
       this.tbEndCheck();

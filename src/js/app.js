@@ -165,7 +165,7 @@
       </div>
       <p class="small" id="install-hint" style="display:none;opacity:.7"></p>
       <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>
-      <p class="small" style="opacity:.45;margin-top:14px"><span id="build-tag" style="cursor:pointer" title="tap to check for updates">build ${esc(window.BUILD_VERSION || 'dev')}</span> <span id="b-debug" style="cursor:pointer;opacity:.35;font-size:11px" title="toggle debug tools">🐞</span></p>`;
+      <p class="small" style="opacity:.45;margin-top:14px"><span id="build-tag" style="cursor:pointer" title="tap to check for updates">build ${esc(window.BUILD_VERSION || 'dev')}</span> <span id="b-debug" style="cursor:pointer;opacity:.35;font-size:11px" title="toggle debug tools">🐞</span> <span id="b-sound" style="cursor:pointer;opacity:.5;font-size:11px" title="toggle sound">🔊</span></p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
     const savesDiv = document.getElementById('saves');
     if (savesDiv) renderSaves(savesDiv);
@@ -239,6 +239,13 @@
     if (bdbg) {
       if (DEBUG) bdbg.style.opacity = '1';
       bdbg.onclick = () => { toggleDebug(); };
+    }
+    // 🔊 sound toggle: mutes the Web Audio terror system. Persists.
+    const bsnd = document.getElementById('b-sound');
+    if (bsnd && Game.audio) {
+      const paintSnd = () => { bsnd.textContent = Game.audio.isMuted() ? '🔇' : '🔊'; };
+      paintSnd();
+      bsnd.onclick = () => { try { Game.audio.toggleMute(); } catch (e) {} paintSnd(); };
     }
   }
   function about() {
@@ -1094,14 +1101,63 @@
   // Web Audio, all synthesized, no assets. Heartbeat during telegraphs
   // (speeds up as the attack charges), silence-then-impact, stings.
   // AudioContext requires a user gesture — the game is tap-driven, so taps init it.
+  // Highbeam Deer sound design (Steve: "the beam should be terrifying"):
+  //   heartbeat = base dread layer · deerCall = wrong-sounding bellow ·
+  //   beamCharge = Shepard-rise whine that never resolves ·
+  //   beamFire = sub-bass drop + noise roar + crackle · beamSweep = searing
+  //   hum that pans as the beam hunts you.
+  // Master chain: hbBus + sfxBus -> master -> DynamicsCompressor -> out.
+  // The compressor is the seatbelt: the beam must never clip phone speakers.
+  // HOOK CONTRACT for the sweep sibling (game.js calls Game.audioEvent(name, data),
+  // which dispatches to Game.audio[name](data)):
+  //   deerNotice()            — deer becomes aware (distant, wrong call)
+  //   telegraph({beam, highbeam, urgency, windupTick}) — charge declare / windup tick
+  //   impact({beam, highbeam}) — beam resolves (fire) or normal hit
+  //   beamSweep(pan, heat)    — per sweep turn: pan -1..1 follows beam, heat 0..1 as it closes in
+  //   beamSweepStop()         — beam ends / combat ends
+  //   beamBlocked()           — beam dies against cover (fizzle, not bang)
+  //   deerDown()              — the deer dies (bellow collapses)
   const CombatAudio = (() => {
     let ctx = null, hbTimer = null;
+    let master = null, hbBus = null, sfxBus = null;
+    let muted = false;
+    try { muted = (typeof localStorage !== 'undefined') && localStorage.getItem('oversight_mute') === '1'; } catch (e) {}
+    let charge = null;   // active beam-charge stopper
+    let sweep = null;    // sustained beam hum {set, stop}
+    let noiseBuf = null;
+
     function ensure() {
       if (!ctx) {
         try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return false; }
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -18; comp.knee.value = 22; comp.ratio.value = 12;
+        comp.attack.value = 0.003; comp.release.value = 0.25;
+        master = ctx.createGain();
+        master.gain.value = muted ? 0.0001 : 0.9;
+        hbBus = ctx.createGain(); sfxBus = ctx.createGain();
+        hbBus.connect(master); sfxBus.connect(master);
+        master.connect(comp);
+        try { comp.connect(ctx.destination); } catch (e) {}
       }
-      if (ctx && ctx.state === 'suspended') ctx.resume();
+      if (ctx && ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
       return !!ctx;
+    }
+    function noise(seconds) {
+      if (!ctx) return null;
+      if (!noiseBuf) {
+        const len = Math.max(1, Math.floor(ctx.sampleRate * 2));
+        noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = noiseBuf; src.loop = true;
+      return src;
+    }
+    function adsr(g, t, peak, attack, decay) {
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
     }
     function thump(when, vol) {
       const o = ctx.createOscillator(), g = ctx.createGain();
@@ -1109,7 +1165,7 @@
       g.gain.setValueAtTime(0.0001, when);
       g.gain.exponentialRampToValueAtTime(vol, when + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, when + 0.25);
-      o.connect(g); g.connect(ctx.destination);
+      o.connect(g); g.connect(hbBus);
       o.start(when); o.stop(when + 0.3);
     }
     function heartbeat(bpm) {
@@ -1127,6 +1183,17 @@
     function stopHeartbeat() {
       if (hbTimer) { clearInterval(hbTimer); hbTimer = null; }
     }
+    // duckHeartbeat: the blast is louder than your pulse. It comes back.
+    function duckHeartbeat(downTo, downTime, recoverTime) {
+      if (!ctx || !hbBus) return;
+      const t = ctx.currentTime;
+      try {
+        hbBus.gain.cancelScheduledValues(t);
+        hbBus.gain.setValueAtTime(hbBus.gain.value, t);
+        hbBus.gain.linearRampToValueAtTime(downTo, t + downTime);
+        hbBus.gain.linearRampToValueAtTime(1.0, t + downTime + recoverTime);
+      } catch (e) {}
+    }
     function boom() {
       if (!ensure()) return;
       stopHeartbeat();
@@ -1140,7 +1207,7 @@
         o.frequency.exponentialRampToValueAtTime(28, t + 0.45);
         g.gain.setValueAtTime(0.7, t);
         g.gain.exponentialRampToValueAtTime(0.0001, t + 0.65);
-        o.connect(g); g.connect(ctx.destination);
+        o.connect(g); g.connect(sfxBus);
         o.start(t); o.stop(t + 0.7);
       }, 280);
     }
@@ -1156,20 +1223,275 @@
         g.gain.setValueAtTime(0.0001, st);
         g.gain.exponentialRampToValueAtTime(0.3, st + 0.03);
         g.gain.exponentialRampToValueAtTime(0.0001, st + 0.45);
-        o.connect(g); g.connect(ctx.destination);
+        o.connect(g); g.connect(sfxBus);
         o.start(st); o.stop(st + 0.5);
       });
     }
+    // deerCall: a rutting-buck bellow, synthesized wrong on purpose.
+    // FM guttural growl (detuned twin = the beating that says "not a deer"),
+    // irregular struggle wobble, a strained overtone almost like a deer,
+    // breath huff underneath. intensity 0..1: distant notice -> killing bellow.
+    function deerCall(intensity, dying) {
+      if (!ensure()) return;
+      intensity = Math.max(0, Math.min(1, intensity == null ? 0.5 : intensity));
+      const t = ctx.currentTime;
+      const dur = 1.0 + intensity * 0.7;
+      const out = ctx.createGain();
+      out.gain.value = 0.14 + intensity * 0.22;
+      if (intensity < 0.35) { // distant: muffled, wrong in the dark
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 650;
+        out.connect(lp); lp.connect(sfxBus);
+      } else out.connect(sfxBus);
+      const baseF = 68 + intensity * 22;
+      const car = ctx.createOscillator(), car2 = ctx.createOscillator();
+      car.type = 'sine'; car2.type = 'sine';
+      car.frequency.value = baseF; car2.frequency.value = baseF * 1.009;
+      const mod = ctx.createOscillator(), modG = ctx.createGain();
+      mod.type = 'sine'; mod.frequency.value = 24 + intensity * 10;
+      modG.gain.value = 48;
+      const wob = ctx.createOscillator(), wobG = ctx.createGain();
+      wob.type = 'sine'; wob.frequency.value = 0.63;
+      wobG.gain.value = 22;
+      wob.connect(wobG); wobG.connect(modG.gain);
+      const vib = ctx.createOscillator(), vibG = ctx.createGain();
+      vib.type = 'triangle'; vib.frequency.value = 5.1;
+      vibG.gain.value = 6;
+      vib.connect(vibG); vibG.connect(car.frequency); vibG.connect(car2.frequency);
+      mod.connect(modG); modG.connect(car.frequency); modG.connect(car2.frequency);
+      const cg = ctx.createGain();
+      adsr(cg, t, 0.8, 0.09, dur);
+      car.connect(cg); car2.connect(cg); cg.connect(out);
+      if (dying) { // death rattle: the bellow collapses
+        car.frequency.setValueAtTime(baseF, t + dur * 0.4);
+        car.frequency.exponentialRampToValueAtTime(28, t + dur + 0.5);
+        car2.frequency.setValueAtTime(baseF * 1.009, t + dur * 0.4);
+        car2.frequency.exponentialRampToValueAtTime(29, t + dur + 0.5);
+      }
+      const ov = ctx.createOscillator(), ovF = ctx.createBiquadFilter(), ovG = ctx.createGain();
+      ov.type = 'sawtooth';
+      ov.frequency.setValueAtTime(330, t);
+      ov.frequency.exponentialRampToValueAtTime(dying ? 120 : 225, t + dur);
+      ovF.type = 'bandpass'; ovF.frequency.value = 950; ovF.Q.value = 3;
+      adsr(ovG, t, 0.10 + intensity * 0.10, 0.12, dur);
+      ov.connect(ovF); ovF.connect(ovG); ovG.connect(out);
+      const nz = noise(dur), nzF = ctx.createBiquadFilter(), nzG = ctx.createGain();
+      if (nz) {
+        nzF.type = 'bandpass'; nzF.frequency.value = 380; nzF.Q.value = 1.2;
+        adsr(nzG, t, 0.10, 0.06, dur);
+        nz.connect(nzF); nzF.connect(nzG); nzG.connect(out);
+        nz.start(t); nz.stop(t + dur + 0.2);
+      }
+      [car, car2, mod, wob, vib, ov].forEach(o => { o.start(t); o.stop(t + dur + 0.9); });
+    }
+    function stopCharge() {
+      if (!charge) return;
+      try { charge(); } catch (e) {}
+      charge = null;
+    }
+    // beamCharge: the windup whine. A Shepard rise — four voices climbing an
+    // octave each, gains bell-shaped so the rise feels endless and never
+    // resolves. The top of the climb is pure dread. Idempotent.
+    function beamCharge(durSec) {
+      if (!ensure() || charge) return;
+      const t = ctx.currentTime;
+      const dur = Math.max(0.9, Math.min(3.2, durSec || 1.6));
+      const stoppers = [];
+      const base = 196;
+      for (let i = 0; i < 4; i++) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(base * Math.pow(2, i), t);
+        o.frequency.exponentialRampToValueAtTime(base * Math.pow(2, i + 1), t + dur);
+        const peak = 0.055 - i * 0.010;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(peak, t + dur * 0.55);
+        g.gain.linearRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur + 0.05);
+        stoppers.push(o);
+      }
+      const sub = ctx.createOscillator(), subG = ctx.createGain();
+      sub.type = 'sine'; sub.frequency.value = 48;
+      subG.gain.setValueAtTime(0.0001, t);
+      subG.gain.exponentialRampToValueAtTime(0.16, t + dur);
+      subG.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.1);
+      sub.connect(subG); subG.connect(sfxBus);
+      sub.start(t); sub.stop(t + dur + 0.15);
+      stoppers.push(sub);
+      const sh = ctx.createOscillator(), shG = ctx.createGain();
+      sh.type = 'sine'; sh.frequency.setValueAtTime(4900, t);
+      sh.frequency.exponentialRampToValueAtTime(6400, t + dur);
+      shG.gain.setValueAtTime(0.0001, t);
+      shG.gain.exponentialRampToValueAtTime(0.012, t + dur * 0.7);
+      shG.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      sh.connect(shG); shG.connect(sfxBus);
+      sh.start(t); sh.stop(t + dur + 0.05);
+      stoppers.push(sh);
+      const done = () => { stoppers.forEach(o => { try { o.stop(); } catch (e) {} }); };
+      const timer = setTimeout(() => { if (charge === done) charge = null; }, dur * 1000 + 200);
+      charge = () => { clearTimeout(timer); done(); };
+    }
+    // beamFire: the Discharge. Sub-bass drop (physical on phone speakers) +
+    // broadband roar + crackle as the air tears. Ducks the heartbeat, then
+    // hands off to the sustained sweep hum.
+    function beamFire() {
+      if (!ensure()) return;
+      stopCharge();
+      duckHeartbeat(0.12, 0.06, 1.6);
+      const t = ctx.currentTime;
+      const sub = ctx.createOscillator(), subG = ctx.createGain();
+      sub.type = 'sine';
+      sub.frequency.setValueAtTime(130, t);
+      sub.frequency.exponentialRampToValueAtTime(26, t + 0.55);
+      subG.gain.setValueAtTime(0.95, t);
+      subG.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+      sub.connect(subG); subG.connect(sfxBus);
+      sub.start(t); sub.stop(t + 1.0);
+      const nz = noise(1.6), nzF = ctx.createBiquadFilter(), nzG = ctx.createGain();
+      if (nz) {
+        nzF.type = 'lowpass';
+        nzF.frequency.setValueAtTime(3400, t);
+        nzF.frequency.exponentialRampToValueAtTime(170, t + 1.3);
+        nzG.gain.setValueAtTime(0.8, t);
+        nzG.gain.exponentialRampToValueAtTime(0.0001, t + 1.35);
+        nz.connect(nzF); nzF.connect(nzG); nzG.connect(sfxBus);
+        nz.start(t); nz.stop(t + 1.5);
+      }
+      for (let i = 0; i < 14; i++) {
+        const st = t + Math.random() * 0.7;
+        const c = noise(0.08), cf = ctx.createBiquadFilter(), cg = ctx.createGain();
+        if (!c) continue;
+        cf.type = 'highpass'; cf.frequency.value = 2400 + Math.random() * 2000;
+        const v = 0.08 + Math.random() * 0.22;
+        cg.gain.setValueAtTime(0.0001, st);
+        cg.gain.exponentialRampToValueAtTime(v, st + 0.008);
+        cg.gain.exponentialRampToValueAtTime(0.0001, st + 0.05 + Math.random() * 0.04);
+        c.connect(cf); cf.connect(cg); cg.connect(sfxBus);
+        c.start(st); c.stop(st + 0.15);
+      }
+      beamSweep(0, 1); // the beam keeps burning — the sweep hum takes over
+    }
+    // beamSweep: the sustained sear while the beam is live. pan (-1..1) follows
+    // the beam across the stereo field; heat (0..1) lifts the pitch as it closes in.
+    function beamSweep(pan, heat) {
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      if (!sweep) {
+        const o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
+        o1.type = 'sawtooth'; o2.type = 'sawtooth';
+        o1.frequency.value = 82; o2.frequency.value = 123;
+        const sg = ctx.createGain();
+        const nz = noise(2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        nf.type = 'bandpass'; nf.frequency.value = 1400; nf.Q.value = 0.8;
+        ng.gain.value = 0.05;
+        const wob = ctx.createOscillator(), wobG = ctx.createGain();
+        wob.type = 'sine'; wob.frequency.value = 0.9; wobG.gain.value = 480;
+        wob.connect(wobG); wobG.connect(nf.frequency);
+        o1.connect(sg); o2.connect(sg);
+        if (nz) { nz.connect(nf); nf.connect(ng); ng.connect(sg); }
+        let panner = null;
+        if (ctx.createStereoPanner) {
+          panner = ctx.createStereoPanner();
+          sg.connect(panner); panner.connect(sfxBus);
+        } else sg.connect(sfxBus);
+        sg.gain.setValueAtTime(0.0001, t);
+        sg.gain.exponentialRampToValueAtTime(0.16, t + 0.18);
+        [o1, o2, wob].forEach(o => o.start(t));
+        if (nz) nz.start(t);
+        sweep = {
+          set(p, h) {
+            const tt = ctx.currentTime;
+            if (panner) panner.pan.setTargetAtTime(Math.max(-1, Math.min(1, p || 0)), tt, 0.08);
+            const f = 82 + (h || 0) * 26;
+            o1.frequency.setTargetAtTime(f, tt, 0.08);
+            o2.frequency.setTargetAtTime(f * 1.5, tt, 0.08);
+          },
+          stop() {
+            const tt = ctx.currentTime;
+            try {
+              sg.gain.cancelScheduledValues(tt);
+              sg.gain.setValueAtTime(sg.gain.value, tt);
+              sg.gain.exponentialRampToValueAtTime(0.0001, tt + 0.25);
+              [o1, o2, wob].forEach(o => o.stop(tt + 0.35));
+              if (nz) nz.stop(tt + 0.35);
+            } catch (e) {}
+          }
+        };
+      }
+      sweep.set(pan, heat);
+    }
+    function beamSweepStop() {
+      if (!sweep) return;
+      try { sweep.stop(); } catch (e) {}
+      sweep = null;
+    }
+    // beamBlocked: the beam dies against something real. Fizzle, not bang.
+    function beamBlocked() {
+      if (!ensure()) return;
+      stopCharge(); beamSweepStop();
+      const t = ctx.currentTime;
+      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass';
+        nf.frequency.setValueAtTime(1400, t);
+        nf.frequency.exponentialRampToValueAtTime(180, t + 0.45);
+        ng.gain.setValueAtTime(0.42, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.6);
+      }
+      const th = ctx.createOscillator(), thG = ctx.createGain();
+      th.type = 'sine';
+      th.frequency.setValueAtTime(95, t);
+      th.frequency.exponentialRampToValueAtTime(38, t + 0.3);
+      thG.gain.setValueAtTime(0.35, t);
+      thG.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      th.connect(thG); thG.connect(sfxBus);
+      th.start(t); th.stop(t + 0.45);
+    }
+    function toggleMute() {
+      muted = !muted;
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem('oversight_mute', muted ? '1' : '0'); } catch (e) {}
+      if (ctx && master) {
+        const t = ctx.currentTime;
+        try {
+          master.gain.cancelScheduledValues(t);
+          master.gain.setValueAtTime(master.gain.value, t);
+          master.gain.linearRampToValueAtTime(muted ? 0.0001 : 0.9, t + 0.15);
+        } catch (e) {}
+      }
+      return muted;
+    }
     return {
+      ensureAudio() { return ensure(); },
       combatStart() { heartbeat(72); },
       telegraph(d) {
         // urgency = turnsLeft. 2+ = slow dread (80bpm), 1 = frantic (145bpm).
         heartbeat((d && d.urgency >= 2) ? 80 : 145);
+        if (d && d.windupTick) return; // charge already rising from declare
+        if (d && d.beam) beamCharge(Math.max(0.9, (d.urgency || 1) * 1.5));
+        if (d && d.highbeam) deerCall(0.85);
       },
-      impact() { boom(); },
+      impact(d) {
+        if (d && d.beam) beamFire();
+        else boom();
+      },
+      beamBlocked() { beamBlocked(); },
+      deerNotice() { deerCall(0.22); },
+      deerDown() { deerCall(0.95, true); },
+      deerCall(i, dying) { deerCall(i, dying); },
+      beamCharge(s) { beamCharge(s); },
+      beamFire() { beamFire(); },
+      beamSweep(pan, heat) {
+        if (pan && typeof pan === 'object') { heat = pan.heat; pan = pan.pan; } // audioEvent passes one data arg
+        beamSweep(pan, heat);
+      },
+      beamSweepStop() { beamSweepStop(); },
       victory() { sting('victory'); },
       defeat() { sting('defeat'); },
-      combatEnd() { stopHeartbeat(); },
+      combatEnd() { stopHeartbeat(); stopCharge(); beamSweepStop(); },
+      toggleMute() { return toggleMute(); },
+      isMuted() { return muted; },
       round() { /* hook reserved */ },
     };
   })();
