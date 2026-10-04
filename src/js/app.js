@@ -108,7 +108,7 @@
       </div>
       <p class="small" id="install-hint" style="display:none;opacity:.7"></p>
       <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>
-      <p class="small" id="build-tag" style="opacity:.45;margin-top:14px;cursor:pointer" title="tap to check for updates">build ${esc(window.BUILD_VERSION || 'dev')}</p>`;
+      <p class="small" style="opacity:.45;margin-top:14px"><span id="build-tag" style="cursor:pointer" title="tap to check for updates">build ${esc(window.BUILD_VERSION || 'dev')}</span> <span id="b-debug" style="cursor:pointer;opacity:.35;font-size:11px" title="toggle debug tools">🐞</span></p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
     const savesDiv = document.getElementById('saves');
     if (savesDiv) renderSaves(savesDiv);
@@ -175,6 +175,13 @@
             : 'build ' + (window.BUILD_VERSION || 'dev') + ' (latest)';
         }).catch(() => { btag.textContent = 'update check failed — reload the page'; });
       };
+    }
+    // 🐞 debug toggle: subtle, next to the build tag. Tap to enable the
+    // floating debug button (spawn monsters, combat, day 7, abilities…).
+    const bdbg = document.getElementById('b-debug');
+    if (bdbg) {
+      if (DEBUG) bdbg.style.opacity = '1';
+      bdbg.onclick = () => { toggleDebug(); };
     }
   }
   function about() {
@@ -1814,11 +1821,12 @@
     document.getElementById('b-title').onclick = () => title();
   }
 
-  // ============ DEBUG MODE (dev only, hidden from players) ============
-  // ?debug=1 in the URL → 🐞 button, bottom-right. Spawn monsters, trigger
+  // ============ DEBUG MODE (dev only, subtle for players) ============
+  // ?debug=1 in the URL enables it at boot; otherwise tap the tiny 🐞
+  // next to the build tag on the title screen. Spawn monsters, trigger
   // combat, skip to day 7, grant abilities, teleport, heal. For testing
   // combat without wandering the woods hoping to get mauled.
-  const DEBUG = /[?&]debug=1/.test(location.search);
+  let DEBUG = /[?&]debug=1/.test(location.search);
   function debugPanel() {
     let el = document.getElementById('debug-panel');
     if (el) { el.remove(); return; }
@@ -1923,6 +1931,16 @@
     b.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:9999;font-size:22px;background:#111;border:2px solid #f90;border-radius:50%;width:44px;height:44px;';
     b.onclick = debugPanel;
     document.body.appendChild(b);
+  }
+  // Toggle the floating debug button from the title screen's 🐞 toggle.
+  function toggleDebug() {
+    DEBUG = !DEBUG;
+    const b = document.getElementById('debug-btn');
+    if (DEBUG) { maybeDebugButton(); }
+    else if (b) { b.remove(); const p = document.getElementById('debug-panel'); if (p) p.remove(); }
+    const t = document.getElementById('b-debug');
+    if (t) t.style.opacity = DEBUG ? '1' : '.35';
+    return DEBUG;
   }
 
   // ---------- boot ----------
