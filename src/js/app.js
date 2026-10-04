@@ -165,8 +165,8 @@
       ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
       <p class="small">${st.dayPartHint}</p>
       ${statusBars(st)}
-      <p class="small">👁 ${esc(Game.nodeDetail().epithet)} — tap a tile to inspect it</p>
-      <div class="closeup">${renderCloseup(st)}</div>
+      <p class="small">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
+      <div class="detail">${renderDetail(st)}</div>
       <div id="tileinfo"></div>
       <p class="small">🗺 travel — tap a highlighted tile (1 part · 30 kcal/tile)</p>
       <div class="map minimap">${renderMap(st, tset)}</div>
@@ -184,16 +184,17 @@
         rerender();
       };
     });
-    // the close-up is for looking, not walking: tap a tile to inspect what you know
-    screen.querySelectorAll('.closeup .tile').forEach(el => {
+    // tap the detail grid's edge to walk that way — the world continues
+    screen.querySelectorAll('.detail .cell').forEach(el => {
       el.onclick = () => {
-        const x = +el.dataset.x, y = +el.dataset.y;
-        if (x < 0 || y < 0) return;
-        const info = Game.tileInfo(x, y);
-        document.getElementById('tileinfo').innerHTML = `
-          <div class="card"><h3>${esc(info.name)}</h3><p class="small">${esc(info.text)}</p>
-          <button class="btn ghost sm" id="ti-close">Put it down</button></div>`;
-        document.getElementById('ti-close').onclick = () => { document.getElementById('tileinfo').innerHTML = ''; };
+        const cx = +el.dataset.cx, cy = +el.dataset.cy;
+        let dx = 0, dy = 0;
+        if (cx <= 1) dx = -1; else if (cx >= 7) dx = 1;
+        if (cy <= 1) dy = -1; else if (cy >= 7) dy = 1;
+        if (!dx && !dy) return; // interior — nothing to walk to
+        const nx = st.px + dx, ny = st.py + dy;
+        if (!Game.travelTo(nx, ny)) { toast('Not reachable — through scouted ground.'); return; }
+        rerender();
       };
     });
     document.getElementById('x-codex').onclick = codexScreen;
@@ -284,25 +285,38 @@
     on('p-fire', () => { Game.villageAction('fire'); rerender(); });
   }
 
-  // close-up: 5x5 neighborhood, the world you actually inhabit. tap to inspect.
-  function renderCloseup(st) {
+  // detail grid: 9x9 cells, the world INSIDE the tile. one continuous world —
+  // edges blend into neighbors, so walking east shows the same water and trees.
+  // plant cells show 🌱 until you've discovered what's there, then the real thing.
+  const PLANT_GLYPH = {
+    hickory_nut: '🌰', acorn_white_oak: '🌰', blackberry: '🫐', dandelion: '🌼',
+    cattail: '🌾', persimmon: '🍑', muscadine: '🍇', wild_onion: '🧅',
+    chickweed: '🌱', wood_sorrel: '☘️',
+  };
+  const CELL_GLYPH = {
+    tree: '🌳', bigtree: '🌲', bush: '🌿', water: '💧', rubble: '🧱',
+    wall: '⬛', tent: '⛺', fire: '🔥',
+  };
+  function renderDetail(st) {
+    const cells = Game.genDetail(st.px, st.py);
+    const tile = Game.playerTile();
+    const known = tile.knownPlant;
     let html = '';
-    for (let dy = -2; dy <= 2; dy++) {
-      html += '<div class="mrow">';
-      for (let dx = -2; dx <= 2; dx++) {
-        const x = st.px + dx, y = st.py + dy;
-        if (x < 0 || y < 0 || x > 6 || y > 6) { html += '<div class="tile offmap">·</div>'; continue; }
-        const tl = Game.tileAt(x, y);
-        const isMe = dx === 0 && dy === 0;
-        const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
-        const cls = 'tile' + (isMe ? ' here' : '') + (tl.revealed ? '' : ' fog') + (isW ? ' beast' : '') + ((tl.maxStock - (tl.stock || 0) > 0) && tl.revealed ? ' spent' : '');
-        const g = isW ? '🐗' : (isMe ? '●' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?'));
-        let label = '';
-        if (tl.revealed && tl.knownPlant && !isW) {
-          const kp = Game.data.plants.find(pp => pp.id === tl.knownPlant);
-          if (kp) label = `<div class="tlabel">${esc(kp.name)}</div>`;
+    for (let cy = 0; cy < 9; cy++) {
+      html += '<div class="drow">';
+      for (let cx = 0; cx < 9; cx++) {
+        const cell = cells[cy][cx];
+        const isMe = cx === 4 && cy === 4;
+        let g, cls = 'cell';
+        if (isMe) { g = '🧍'; cls += ' me'; }
+        else if (cell === 'plant') {
+          g = known && PLANT_GLYPH[known] ? PLANT_GLYPH[known] : '🌱';
+          cls += ' plantcell';
         }
-        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}${label}</div>`;
+        else if (cell === 'grass') { g = ''; cls += ' grass'; }
+        else if (cell === 'dirt') { g = ''; cls += ' dirt'; }
+        else { g = CELL_GLYPH[cell] || ''; }
+        html += `<div class="${cls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }

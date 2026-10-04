@@ -320,6 +320,74 @@
       start.visited = true;
     },
 
+    // --- detail grid: the world inside a tile ---
+    // 9x9 cells per tile. generated lazily, seeded by position (stable across visits).
+    // edges blend toward neighbor types: a grove by a creek has water on the creek side.
+    // walk to the next tile and the boundary matches — one continuous world.
+    detailSeed(x, y) {
+      let h = (this.homeRegion || 'x').length * 7919 + x * 104729 + y * 1299709;
+      h = (h ^ (h >> 13)) * 1274126177;
+      return (h ^ (h >> 16)) >>> 0;
+    },
+    detailRand(seed) {
+      let s = seed >>> 0;
+      return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+    },
+    genDetail(x, y) {
+      const t = this.tileAt(x, y);
+      if (t.detail) return t.detail;
+      const rnd = this.detailRand(this.detailSeed(x, y));
+      const N = 9;
+      const cells = [];
+      const nType = (dx, dy) => {
+        const nx = x + dx, ny = y + dy;
+        return (nx < 0 || ny < 0 || nx > 6 || ny > 6) ? t.type : this.tileAt(nx, ny).type;
+      };
+      // base cell picker by tile type
+      const pick = (type) => {
+        const r = rnd();
+        switch (type) {
+          case 'grove': return r < 0.35 ? 'tree' : r < 0.5 ? 'bush' : r < 0.58 ? 'plant' : r < 0.85 ? 'grass' : 'dirt';
+          case 'meadow': return r < 0.55 ? 'grass' : r < 0.72 ? 'plant' : r < 0.82 ? 'bush' : 'dirt';
+          case 'thicket': return r < 0.45 ? 'bush' : r < 0.6 ? 'plant' : r < 0.75 ? 'grass' : 'dirt';
+          case 'wetland': return r < 0.28 ? 'water' : r < 0.5 ? 'plant' : r < 0.8 ? 'grass' : 'dirt';
+          case 'creek': return r < 0.3 ? 'water' : r < 0.55 ? 'grass' : r < 0.65 ? 'plant' : 'dirt';
+          case 'forest_floor': return r < 0.25 ? 'tree' : r < 0.35 ? 'plant' : r < 0.6 ? 'dirt' : 'grass';
+          case 'trail_edge': return r < 0.4 ? 'dirt' : r < 0.7 ? 'grass' : r < 0.8 ? 'plant' : 'bush';
+          case 'ruin': return r < 0.25 ? 'rubble' : r < 0.4 ? 'wall' : r < 0.5 ? 'plant' : r < 0.75 ? 'dirt' : 'grass';
+          case 'haven': return r < 0.2 ? 'tent' : r < 0.3 ? 'fire' : r < 0.55 ? 'dirt' : 'grass';
+          default: return 'grass';
+        }
+      };
+      for (let cy = 0; cy < N; cy++) {
+        const row = [];
+        for (let cx = 0; cx < N; cx++) {
+          let cell = pick(t.type);
+          // edge blending: 2 outer rows/cols lean toward the neighbor's type
+          const edgeN = cy < 2 ? nType(0, -1) : null;
+          const edgeS = cy > 6 ? nType(0, 1) : null;
+          const edgeW = cx < 2 ? nType(-1, 0) : null;
+          const edgeE = cx > 6 ? nType(1, 0) : null;
+          const edge = edgeN || edgeS || edgeW || edgeE;
+          if (edge && edge !== t.type && rnd() < 0.55) cell = pick(edge);
+          // creek carves a channel; trail cuts a path (only if actually that type)
+          if (t.type === 'creek' && cx >= 3 && cx <= 5) cell = rnd() < 0.8 ? 'water' : 'grass';
+          if (t.type === 'trail_edge' && cy >= 3 && cy <= 5) cell = 'dirt';
+          row.push(cell);
+        }
+        cells.push(row);
+      }
+      // big trees: 2x2 clusters that can straddle edges — the "splits biomes" feel
+      const bigTrees = Math.floor(rnd() * 3);
+      for (let i = 0; i < bigTrees; i++) {
+        const bx = Math.floor(rnd() * 8), by = Math.floor(rnd() * 8);
+        cells[by][bx] = 'bigtree'; cells[by][bx + 1] = 'bigtree';
+        cells[by + 1][bx] = 'bigtree'; cells[by + 1][bx + 1] = 'bigtree';
+      }
+      t.detail = cells;
+      return cells;
+    },
+
     reveal(cx, cy) {
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
         if (Math.abs(x - cx) + Math.abs(y - cy) <= 2) this.map.tiles[y][x].revealed = true;

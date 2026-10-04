@@ -518,3 +518,8 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - **Results:** greedy bot 23% win / 14 days; random 0%. The bot doesn't learn; a human with Codex memory should beat it. Balance is "earned, not given" — in range for slice 1.
 - **Visible stakes:** Haven panel now shows the win condition (Codex 8+, Pantry 5000+) with live progress. You can't want what you can't see.
 - **Why:** Steve asked for the math behind the cadences and whether this analysis was needed. It was — the sim found the game had no economic tension at all, just UI confusion masquerading as difficulty.
+
+## 2026-10-03 — Discovery, not given: the close-up, the journal, earned knowledge
+
+- **Decision:** (1) The 5x5 close-up is back — inline on the one screen, larger tiles, tappable. The 7x7 shrinks to a travel minimap. Tap a close-up tile → what you know about that ground (or "you haven't worked this ground"). (2) The Codex starts as a **Journal** (your handwriting). At 4 plant entries, the System designates it a CODEX — diegetic upgrade with a log ceremony. (3) Knowledge is earned: removed the guaranteed first favored plant and the free arrival Codex lessons. First forage is pure RNG; whatever you find labels the tile ("hickory country" = YOU found hickory here). After discovery, the known plant gets 3x weight — you know where to look. The land's "why" is told after you find something, not before.
+- **Why:** Steve: the close-up made it feel like a world (node panel alone was abstract); the game gave away information instead of letting it be discovered; symbols should be tappable for codex info and eventually direct effort. The journal→codex beat makes the interface itself a progression reward.

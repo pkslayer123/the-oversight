@@ -90,6 +90,13 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .closeup .tile { width: 44px; height: 44px; font-size: 22px; }
 .minimap .tile { width: 26px; height: 26px; font-size: 13px; }
 .minimap .tlabel { display: none; }
+.detail { margin: 8px 0; }
+.drow { display: flex; justify-content: center; }
+.cell { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.cell.grass { background: #1a2f1a; }
+.cell.dirt { background: #2f241a; }
+.cell.me { outline: 2px solid #fff; }
+.cell.plantcell { cursor: default; }
 
 /* close-up: the node you're on, zoomed — 5x5 neighborhood, you at the center */
 .closeup { margin: 12px 0; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: var(--bg2); }
