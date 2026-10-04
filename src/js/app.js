@@ -396,6 +396,35 @@
     document.getElementById('b-cback').onclick = () => expeditionScreen();
   }
 
+  // systemArrivalAnimation: the sky splits. Animated. Dramatic.
+  // Full-screen overlay, crack grows, text types out, windows slide in.
+  function systemArrivalAnimation(callback) {
+    const overlay = document.createElement('div');
+    overlay.className = 'system-arrival-overlay';
+    overlay.innerHTML = `
+      <div class="system-crack"></div>
+      <div class="system-text">🌟 THE SKY SPLITS OPEN 🌟</div>
+      <div class="system-window">
+        <div class="system-text system-typewriter">A voice in your head, cheerful and utterly alien:
+"Oh! Oh no. We forgot the food thing. And the water thing. We're SO sorry!"</div>
+      </div>
+      <div class="system-window" style="animation-delay: 1s">
+        <div class="system-text">"We've been watching! You're all so... small! And hungry!"</div>
+      </div>
+      <div class="system-window" style="animation-delay: 2s">
+        <div class="system-text">Your journal shimmers. It becomes... interface.</div>
+      </div>
+      <button class="btn" id="b-arrival-ok" style="margin-top: 20px; z-index: 1001;">...what?</button>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('b-arrival-ok').onclick = () => {
+      overlay.remove();
+      if (callback) callback();
+    };
+    // Auto-dismiss after 10s (in case they don't click).
+    setTimeout(() => { if (overlay.parentNode) { overlay.remove(); if (callback) callback(); } }, 10000);
+  }
+
   // abilityPopup: the System offers you a choice. Pick one.
   function abilityPopup() {
     const choices = Game.state.scholar.abilityChoices;
@@ -528,6 +557,19 @@
         }
       };
     });
+    // System arrival? Play the animation (once).
+    if (Game.state.systemArrived && !Game.state.systemAnimationShown) {
+      Game.state.systemAnimationShown = true;
+      systemArrivalAnimation(() => {
+        // After animation, show ability choice if available.
+        if (Game.state.scholar.abilityChoices && Game.state.scholar.abilityChoices.length) {
+          abilityPopup();
+        } else {
+          expeditionScreen();
+        }
+      });
+      return;
+    }
     // System ability choice? Show it.
     if (Game.state.scholar.abilityChoices && Game.state.scholar.abilityChoices.length) {
       abilityPopup();

@@ -115,3 +115,52 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .log { border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 12px; max-height: 28dvh; overflow-y: auto; background: var(--bg); }
 .itempick { cursor: pointer; }
 .itempick.sel { border-color: #7fd67f; background: #1a2f1a; }
+
+/* SYSTEM ARRIVAL: the sky splits open. Animated. */
+.system-arrival-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: #000; z-index: 1000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  animation: skySplit 3s ease-out forwards;
+  overflow: hidden;
+}
+@keyframes skySplit {
+  0% { background: #000; }
+  30% { background: linear-gradient(to bottom, #000 45%, #0ff 50%, #000 55%); }
+  60% { background: linear-gradient(to bottom, #001 40%, #0ff 50%, #001 60%); }
+  100% { background: #001; }
+}
+.system-crack {
+  position: absolute; top: 0; bottom: 0; left: 50%;
+  width: 2px; background: #0ff;
+  box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+  animation: crackGrow 2s ease-out forwards;
+}
+@keyframes crackGrow {
+  0% { transform: scaleY(0); opacity: 0; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+.system-text {
+  color: #0ff; font-family: monospace; text-align: center;
+  font-size: 1.2em; margin: 10px; max-width: 80%;
+  animation: textFlicker 0.5s infinite alternate;
+  text-shadow: 0 0 10px #0ff;
+}
+@keyframes textFlicker {
+  0% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+.system-window {
+  border: 1px solid #0ff; padding: 10px; margin: 5px;
+  background: rgba(0, 255, 255, 0.05);
+  animation: windowSlide 1s ease-out;
+  max-width: 80%;
+}
+@keyframes windowSlide {
+  0% { transform: translateY(-20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.system-typewriter {
+  overflow: hidden; white-space: pre-wrap;
+  animation: typewriter 4s steps(100) forwards;
+}
