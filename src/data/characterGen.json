@@ -6,31 +6,31 @@
         "id": "bone_sorter",
         "quirk": "collects small bones and arranges them by size",
         "note": "{They} got quiet once, lining up bird bones on a flat stone, smallest to largest. {They} said it helps {them} think. Nobody asked what about.",
-        "assessment": "Hobby: osteology. Threat level: negligible. Entertainment value: moderate. The audience finds the bone rows soothing."
+        "assessment": "The bone rows are very neat, smallest to largest. Nobody knows what to say about that, so nobody says anything."
       },
       {
         "id": "night_counter",
         "quirk": "counts things under their breath: steps, heartbeats, birds",
         "note": "On the third night {they} were heard counting heartbeats — {their} own, then everyone else's, in the dark. {They} laughed it off in the morning. A little too quickly.",
-        "assessment": "Self-soothing numeracy. The fans have started counting along. Weirdly wholesome. Keep."
+        "assessment": "The counting is soft, almost soothing \u2014 until you notice they're counting heartbeats. Yours."
       },
       {
         "id": "stone_friend",
         "quirk": "keeps a smooth stone they talk to like an old friend",
         "note": "{Their} pack has one smooth river stone, carried since before. {They} were seen explaining the day's events to it, carefully, like it was taking minutes.",
-        "assessment": "Attachment object: geological. Coping mechanism, non-violent. The sponsors sent a second stone. It was rejected. Loyalty!"
+        "assessment": "Someone offered them a second stone, as a joke. They declined politely. The first one is apparently specific."
       },
       {
         "id": "face_away",
         "quirk": "never sleeps facing the fire — always facing out",
         "note": "{They} bed down at the edge of the light, back to the warmth, eyes on the dark. When asked {they} said {they} sleep better knowing what's behind {them}. Nobody sleeps better.",
-        "assessment": "Hypervigilance, outward-facing. Useful on watch. Slightly unnerving at breakfast. Net positive."
+        "assessment": "Useful on watch. Slightly unnerving at breakfast."
       },
       {
         "id": "whisper_self",
         "quirk": "whispers to themselves when they think no one is listening",
         "note": "Twice now {they} have been caught mid-whisper, mid-conversation with no one, and both times {they} covered it with a cough that fooled nobody.",
-        "assessment": "Internal dialogue: externalized. The microphones love it. Content gold, threat zero."
+        "assessment": "Everyone talks to themselves sometimes. Nobody else does it in the middle of a conversation, though."
       }
     ],
     "malicious": [
@@ -38,25 +38,25 @@
         "id": "long_smile",
         "quirk": "smiles a beat too long when someone gets hurt",
         "note": "When the pot tipped and scalded Mara's hand, everyone flinched — except {first}, who smiled. Just a beat too long. {They} covered it by fetching water, quick and helpful.",
-        "assessment": "Affect anomaly detected during pain events. Flagged for observation. The audience is TAKING NOTES. (So are we.)"
+        "assessment": "Nobody can quite forget the smile. Nobody mentions it either."
       },
       {
         "id": "hand_watcher",
         "quirk": "watches people's hands, not their faces — like appraising tools",
         "note": "{They} don't look at faces in conversation. {They} watch hands — what they're holding, how steady they are, what they could do. {They} notice everything except the person.",
-        "assessment": "Instrumental gaze pattern. Hands as tools, people as holders. Risk factor: elevated. Watch this one."
+        "assessment": "You find yourself checking your own hands after talking to them. Seeing what they saw."
       },
       {
         "id": "still_pleasant",
         "quirk": "goes very still and pleasant right before disagreeing",
         "note": "Right before the argument about the food stores, {they} went completely still — pleasant, almost sweet. Then {they} dismantled the plan piece by piece, smiling the whole time.",
-        "assessment": "Conflict precursor: unnatural calm. Correlates with calculated opposition. Do not turn your back during ration disputes."
+        "assessment": "The calm before a disagreement is the worst part. People have started bracing when they go quiet."
       },
       {
         "id": "ledger_mind",
         "quirk": "remembers exactly what everyone owes them, to the calorie",
         "note": "{They} keep a mental ledger nobody asked for. Three weeks ago you took an extra strip of jerky — {they} remember. {They} smile when {they} remind you. It's always a smile.",
-        "assessment": "Reciprocity tracking: pathological precision. Debt-based leverage risk. The gamblers are already running odds on when this pays off."
+        "assessment": "Nobody likes being remembered that precisely. It feels less like memory and more like evidence."
       }
     ]
   },

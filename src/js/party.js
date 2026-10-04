@@ -366,6 +366,10 @@
       // Desperation: a starving person does starving-person math.
       if (needs && (needs.hunger || 0) > 80) score += 25;
       if (needs && (needs.fear || 0) > 85) score += 10;
+      // DARK: the malicious ones were already doing this math. The benign
+      // ones never do — they're unsettling, not dangerous.
+      const dark = this.npcDark ? this.npcDark(vid) : null;
+      if (dark && dark.kind === 'malicious') score += 45;
       // NOTE: trust is deliberately NOT a factor. High trust doesn't protect you.
       // The System finds this hilarious.
       const roll = Math.random() * 100;
@@ -550,7 +554,7 @@
         betrayal: true, betrayer: vid, aggressor: opts.aggressor || 'npc',
       };
       try { this.villageEvent('betrayal'); } catch (e) {}
-      try { this.observe(opts.aggressor === 'player' ? 'murder' : 'fight'); } catch (e) {}
+      try { this.observe(opts.aggressor === 'player' ? 'murder' : 'fight', { target: vid }); } catch (e) {}
       this.say(`⚔ BETRAYAL. ${opts.aggressor === 'player' ? 'You started this.' : 'They started this.'} Turn-based now.`);
       this.sysSay(opts.aggressor === 'player'
         ? 'OH!!! THE PLAYER IS DOING A MURDER!!! The audience is LOSING ITS MIND!!!'
@@ -577,7 +581,7 @@
       const witnesses = (f.witnesses || []).filter(id => (v.roster || []).includes(id));
       if (aggressor === 'player') {
         if (witnesses.length) {
-          this.seedGossip('murder', { honest: -40, generous: -25, brave: -10, competent: -5 }, witnesses);
+          this.seedGossip('murder', this.murderDims(betrayer), witnesses);
           this.say(`They saw. ${witnesses.map(id => this.displayName(id)).join(', ')} saw what you did. The village will hear.`);
         } else {
           // No witnesses. But the journal knows.
