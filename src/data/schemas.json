@@ -1,423 +1,424 @@
 {
- "$comment": "The law. Every file in src/data/ is validated against these schemas by scripts/validate-data.js. Unknown fields fail. Out-of-range numbers fail. Dangling references fail.",
- "plant": {
-  "required": [
-   "id",
-   "name",
-   "biomes",
-   "seasons",
-   "caloriesPerUnit",
-   "unit",
-   "idDifficulty",
-   "confidence",
-   "codex",
-   "sources"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "scientific": "string?",
-   "biomes": "string[]",
-   "seasons": [
-    "spring",
-    "summer",
-    "fall",
-    "winter"
-   ],
-   "caloriesPerUnit": "number[0..2000]",
-   "unit": "string",
-   "waterContent": [
-    "low",
-    "medium",
-    "high"
-   ],
-   "idDifficulty": "number[1..5]",
-   "preparation": "string?",
-   "spoilageDays": "number[0..60]?",
-   "confidence": [
-    "high",
-    "medium",
-    "low"
-   ],
-   "lookalikeNote": "string?",
-   "codex": "string",
-   "tileAffinity": "string[]?",
-   "sources": "string[]?",
-   "regions": "string[]",
-   "description": "string",
-   "knowledgeLevels": "object"
-  }
- },
- "monster": {
-  "required": [
-   "id",
-   "name",
-   "biomes",
-   "hp",
-   "attack",
-   "behavior",
-   "codexStages",
-   "systemDesignation"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "biomes": "string[]",
-   "hp": "number[2..2]",
-   "attack": {
-    "name": "string",
-    "damage": "number[2..2]",
-    "telegraph": "string"
-   },
-   "weaknesses": "string[]?",
-   "edible": {
-    "calories": "number[0..8000]",
-    "note": "string"
-   },
-   "parts": "string[]?",
-   "behavior": [
-    "ambush",
-    "territorial",
-    "pack",
-    "passive",
-    "curious",
-    "swarm",
-    "drifter"
-   ],
-   "codexStages": {
-    "unknown": "string",
-    "observed": "string",
-    "slain": "string"
-   },
-   "systemDesignation": "string?",
-   "aggression": "string",
-   "follows": "boolean",
-   "fear": "string"
-  }
- },
- "ability": {
-  "required": [
-   "id",
-   "name",
-   "pool",
-   "description",
-   "unlock"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "pool": [
-    "fieldcraft",
-    "combat",
-    "craft",
-    "care",
-    "system",
-    "fallback"
-   ],
-   "description": "string",
-   "modifiers": [
-    {
-     "target": "string",
-     "op": [
-      "add",
-      "multiply"
-     ],
-     "value": "number",
-     "condition": "string?",
-     "scale": "string?"
-    }
-   ],
-   "unlock": {
-    "type": [
-     "granted",
-     "trial",
-     "discovery",
-     "mentorship",
-     "system_offer",
-     "fallback"
+  "$comment": "The law. Every file in src/data/ is validated against these schemas by scripts/validate-data.js. Unknown fields fail. Out-of-range numbers fail. Dangling references fail.",
+  "plant": {
+    "required": [
+      "id",
+      "name",
+      "biomes",
+      "seasons",
+      "caloriesPerUnit",
+      "unit",
+      "idDifficulty",
+      "confidence",
+      "codex",
+      "sources"
     ],
-    "detail": "string?"
-   },
-   "synergyHints": "string[]?",
-   "tier": [
-    "utility",
-    "wacky",
-    "vile",
-    "overpowered",
-    "underpowered",
-    "body_horror",
-    "risky",
-    "combat",
-    "social"
-   ],
-   "flavor": "string",
-   "metabolic": {
-    "daily": "number?",
-    "eatMult": "number?"
-   }
-  }
- },
- "villager": {
-  "required": [
-   "id",
-   "name",
-   "homeRegion",
-   "formerOccupation",
-   "personality",
-   "backstory",
-   "items",
-   "abilityWeights",
-   "systemAssessment"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "homeRegion": "string",
-   "formerOccupation": "string",
-   "personality": "object",
-   "backstory": "string",
-   "items": "string[8..8]",
-   "clothesNote": "string?",
-   "abilityWeights": "object",
-   "systemAssessment": "string",
-   "survivalProbability": "number[1..99]?",
-   "talk": "string[]",
-   "quest": "string[]?",
-   "kcalPerDay": "number?",
-   "providesPerDay": "number?",
-   "providesWhat": "string?"
-  }
- },
- "item": {
-  "required": [
-   "id",
-   "name",
-   "class",
-   "flavor"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "class": [
-    "tool",
-    "clothing",
-    "sentimental",
-    "weapon",
-    "food"
-   ],
-   "baseEffect": "string?",
-   "flavor": "string",
-   "bondThresholds": [
-    {
-     "uses": "number[1..500]",
-     "offers": "string[]"
+    "types": {
+      "id": "string",
+      "name": "string",
+      "scientific": "string?",
+      "biomes": "string[]",
+      "seasons": [
+        "spring",
+        "summer",
+        "fall",
+        "winter"
+      ],
+      "caloriesPerUnit": "number[0..2000]",
+      "unit": "string",
+      "waterContent": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "idDifficulty": "number[1..5]",
+      "preparation": "string?",
+      "spoilageDays": "number[0..60]?",
+      "confidence": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "lookalikeNote": "string?",
+      "codex": "string",
+      "tileAffinity": "string[]?",
+      "sources": "string[]?",
+      "regions": "string[]",
+      "description": "string",
+      "knowledgeLevels": "object"
     }
-   ],
-   "weapon": "object",
-   "craftable": "boolean",
-   "materials": "object",
-   "findable": "boolean",
-   "armor": "object",
-   "carryBonus": "number",
-   "kcalEach": "number",
-   "kg": "number",
-   "spoilDay": "number",
-   "secretEvolution": "string?"
-  }
- },
- "gameEvent": {
-  "required": [
-   "id",
-   "type",
-   "trigger",
-   "choices"
-  ],
-  "types": {
-   "id": "string",
-   "type": [
-    "audience_vote",
-    "sponsor",
-    "encounter",
-    "discovery"
-   ],
-   "trigger": "string",
-   "choices": [
-    {
-     "text": "string",
-     "requirements": "string?",
-     "outcomes": [
-      {
-       "effects": "string[]?",
-       "text": "string"
-      }
-     ]
-    }
-   ]
-  }
- },
- "systemMessage": {
-  "required": [
-   "id",
-   "trigger",
-   "text"
-  ],
-  "types": {
-   "id": "string",
-   "trigger": "string",
-   "text": "string",
-   "tone": [
-    "cheerful"
-   ]
-  }
- },
- "shopItem": {
-  "required": [
-   "id",
-   "name",
-   "favorCost",
-   "description"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "favorCost": "number[1..100]",
-   "description": "string",
-   "effect": "string?",
-   "wackiness": "number[1..5]?",
-   "caloriesPerUnit": "number[0..0]?"
   },
-  "$comment": "Shop items may not provide calories. Favor buys conveniences, never dinner."
- },
- "trial": {
-  "required": [
-   "id",
-   "trigger",
-   "offers",
-   "systemText"
-  ],
-  "types": {
-   "id": "string",
-   "trigger": "string",
-   "offers": "string[3..3]",
-   "systemText": "string"
-  }
- },
- "biome": {
-  "required": [
-   "id",
-   "name",
-   "description",
-   "tileTypes",
-   "forageTable",
-   "seasons"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "description": "string",
-   "tileTypes": "string[]",
-   "forageTable": "object",
-   "weather": "string[]?",
-   "hazards": "string[]?",
-   "seasons": "object"
-  }
- },
- "relicEnhancement": {
-  "required": [
-   "id",
-   "name",
-   "class",
-   "description",
-   "systemCommentary"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "class": [
-    "tool",
-    "clothing",
-    "sentimental"
-   ],
-   "description": "string",
-   "effect": {
-    "target": "string",
-    "op": [
-     "add",
-     "multiply"
+  "monster": {
+    "required": [
+      "id",
+      "name",
+      "biomes",
+      "hp",
+      "attack",
+      "behavior",
+      "codexStages",
+      "systemDesignation"
     ],
-    "value": "number"
-   },
-   "systemCommentary": "string",
-   "hidden": "boolean?",
-   "rare": "number?",
-   "affinity": "object?",
-   "secret": "boolean?",
-   "minBond": "number?"
+    "types": {
+      "id": "string",
+      "name": "string",
+      "biomes": "string[]",
+      "hp": "number[2..2]",
+      "attack": {
+        "name": "string",
+        "damage": "number[2..2]",
+        "telegraph": "string"
+      },
+      "weaknesses": "string[]?",
+      "edible": {
+        "calories": "number[0..8000]",
+        "note": "string"
+      },
+      "parts": "string[]?",
+      "behavior": [
+        "ambush",
+        "territorial",
+        "pack",
+        "passive",
+        "curious",
+        "swarm",
+        "drifter"
+      ],
+      "codexStages": {
+        "unknown": "string",
+        "observed": "string",
+        "slain": "string"
+      },
+      "systemDesignation": "string?",
+      "aggression": "string",
+      "follows": "boolean",
+      "fear": "string"
+    }
+  },
+  "ability": {
+    "required": [
+      "id",
+      "name",
+      "pool",
+      "description",
+      "unlock"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "pool": [
+        "fieldcraft",
+        "combat",
+        "craft",
+        "care",
+        "system",
+        "fallback"
+      ],
+      "description": "string",
+      "modifiers": [
+        {
+          "target": "string",
+          "op": [
+            "add",
+            "multiply"
+          ],
+          "value": "number",
+          "condition": "string?",
+          "scale": "string?"
+        }
+      ],
+      "unlock": {
+        "type": [
+          "granted",
+          "trial",
+          "discovery",
+          "mentorship",
+          "system_offer",
+          "fallback"
+        ],
+        "detail": "string?"
+      },
+      "synergyHints": "string[]?",
+      "tier": [
+        "utility",
+        "wacky",
+        "vile",
+        "overpowered",
+        "underpowered",
+        "body_horror",
+        "risky",
+        "combat",
+        "social"
+      ],
+      "flavor": "string",
+      "metabolic": {
+        "daily": "number?",
+        "eatMult": "number?"
+      }
+    }
+  },
+  "villager": {
+    "required": [
+      "id",
+      "name",
+      "homeRegion",
+      "formerOccupation",
+      "personality",
+      "backstory",
+      "items",
+      "abilityWeights",
+      "systemAssessment"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "homeRegion": "string",
+      "formerOccupation": "string",
+      "personality": "object",
+      "backstory": "string",
+      "items": "string[8..8]",
+      "clothesNote": "string?",
+      "abilityWeights": "object",
+      "systemAssessment": "string",
+      "survivalProbability": "number[1..99]?",
+      "talk": "string[]",
+      "quest": "string[]?",
+      "kcalPerDay": "number?",
+      "providesPerDay": "number?",
+      "providesWhat": "string?"
+    }
+  },
+  "item": {
+    "required": [
+      "id",
+      "name",
+      "class",
+      "flavor"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "class": [
+        "tool",
+        "clothing",
+        "sentimental",
+        "weapon",
+        "food",
+        "material"
+      ],
+      "baseEffect": "string?",
+      "flavor": "string",
+      "bondThresholds": [
+        {
+          "uses": "number[1..500]",
+          "offers": "string[]"
+        }
+      ],
+      "weapon": "object",
+      "craftable": "boolean",
+      "materials": "object",
+      "findable": "boolean",
+      "armor": "object",
+      "carryBonus": "number",
+      "kcalEach": "number",
+      "kg": "number",
+      "spoilDay": "number",
+      "secretEvolution": "string?"
+    }
+  },
+  "gameEvent": {
+    "required": [
+      "id",
+      "type",
+      "trigger",
+      "choices"
+    ],
+    "types": {
+      "id": "string",
+      "type": [
+        "audience_vote",
+        "sponsor",
+        "encounter",
+        "discovery"
+      ],
+      "trigger": "string",
+      "choices": [
+        {
+          "text": "string",
+          "requirements": "string?",
+          "outcomes": [
+            {
+              "effects": "string[]?",
+              "text": "string"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "systemMessage": {
+    "required": [
+      "id",
+      "trigger",
+      "text"
+    ],
+    "types": {
+      "id": "string",
+      "trigger": "string",
+      "text": "string",
+      "tone": [
+        "cheerful"
+      ]
+    }
+  },
+  "shopItem": {
+    "required": [
+      "id",
+      "name",
+      "favorCost",
+      "description"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "favorCost": "number[1..100]",
+      "description": "string",
+      "effect": "string?",
+      "wackiness": "number[1..5]?",
+      "caloriesPerUnit": "number[0..0]?"
+    },
+    "$comment": "Shop items may not provide calories. Favor buys conveniences, never dinner."
+  },
+  "trial": {
+    "required": [
+      "id",
+      "trigger",
+      "offers",
+      "systemText"
+    ],
+    "types": {
+      "id": "string",
+      "trigger": "string",
+      "offers": "string[3..3]",
+      "systemText": "string"
+    }
+  },
+  "biome": {
+    "required": [
+      "id",
+      "name",
+      "description",
+      "tileTypes",
+      "forageTable",
+      "seasons"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "description": "string",
+      "tileTypes": "string[]",
+      "forageTable": "object",
+      "weather": "string[]?",
+      "hazards": "string[]?",
+      "seasons": "object"
+    }
+  },
+  "relicEnhancement": {
+    "required": [
+      "id",
+      "name",
+      "class",
+      "description",
+      "systemCommentary"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "class": [
+        "tool",
+        "clothing",
+        "sentimental"
+      ],
+      "description": "string",
+      "effect": {
+        "target": "string",
+        "op": [
+          "add",
+          "multiply"
+        ],
+        "value": "number"
+      },
+      "systemCommentary": "string",
+      "hidden": "boolean?",
+      "rare": "number?",
+      "affinity": "object?",
+      "secret": "boolean?",
+      "minBond": "number?"
+    }
+  },
+  "background_survivor": {
+    "required": [
+      "id",
+      "name",
+      "age",
+      "formerOccupation",
+      "line",
+      "kcalPerDay"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "age": "number",
+      "formerOccupation": "string",
+      "line": "string",
+      "kcalPerDay": "number",
+      "providesPerDay": "number?",
+      "personality": "object"
+    }
+  },
+  "animal": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "calories": "number",
+      "difficulty": "string",
+      "knowledgeLevels": "object",
+      "description": "string",
+      "biomes": "string[]",
+      "scientific": "string",
+      "method": "string[]"
+    }
+  },
+  "recipe": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "uses": "number",
+      "description": "string",
+      "materials": "object",
+      "catches": "string[]",
+      "knowledgeLevels": "object"
+    }
+  },
+  "book": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "description": "string",
+      "unlocks": "object",
+      "flavor": "string"
+    }
   }
- },
- "background_survivor": {
-  "required": [
-   "id",
-   "name",
-   "age",
-   "formerOccupation",
-   "line",
-   "kcalPerDay"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "age": "number",
-   "formerOccupation": "string",
-   "line": "string",
-   "kcalPerDay": "number",
-   "providesPerDay": "number?",
-   "personality": "object"
-  }
- },
- "animal": {
-  "required": [
-   "id",
-   "name"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "calories": "number",
-   "difficulty": "string",
-   "knowledgeLevels": "object",
-   "description": "string",
-   "biomes": "string[]",
-   "scientific": "string",
-   "method": "string[]"
-  }
- },
- "recipe": {
-  "required": [
-   "id",
-   "name"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "uses": "number",
-   "description": "string",
-   "materials": "object",
-   "catches": "string[]",
-   "knowledgeLevels": "object"
-  }
- },
- "book": {
-  "required": [
-   "id",
-   "name"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "description": "string",
-   "unlocks": "object",
-   "flavor": "string"
-  }
- }
 }

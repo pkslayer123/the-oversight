@@ -1084,5 +1084,20 @@
     "metabolic": {
       "daily": 0
     }
+  },
+  {
+    "id": "swimmer",
+    "name": "Swimmer",
+    "description": "Cross water freely. Rivers are roads to you.",
+    "flavor": "WE NEVER THOUGHT OF SWIMMING. The water is just... there? And you go IN it?",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    },
+    "modifiers": [],
+    "metabolic": {
+      "daily": 40
+    }
   }
 ]

@@ -18,6 +18,9 @@
   }
   function esc(s) { return String(s).replace(/</g, '&lt;'); }
 
+  // TWO-CLICK TRAVEL: first tap selects, second tap confirms. Travel is deliberate.
+  let pendingTravel = null;
+
   // ---------- shared ----------
   function statRow(label, val, pct, low) {
     return `<div class="stat"><div class="lbl"><span>${label}</span><span>${val}</span></div><div class="bar${low ? ' low' : ''}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></div>`;
@@ -186,6 +189,46 @@
   // cellPopup: click any space, see your options.
   // what it is, what you know about it, what you can do, why you can't.
   // you click your way through the world.
+  // BLOCKED PATH: show what's in the way and every way through.
+  // Always multiple solutions: work through it, bridge it, swim it, or go around.
+  function showBlockage(block) {
+    const info = document.getElementById('tileinfo');
+    if (!info) return;
+    const { x, y, blockType } = block;
+    const wood = Game.woodCount();
+    const canSwim = (Game.state.scholar.abilities || []).some(a => (a.id || a) === 'swimmer') ||
+                    (Game.state.scholar.backgroundAbilities || []).some(a => (a.id || a) === 'swimmer');
+    let html = '';
+    const goAround = `<button class="btn sm ghost" data-act="around">Go around</button>`;
+    if (blockType === 'fallen_tree') {
+      html = `<div class="card"><p>🪵 A fallen tree blocks the path.</p><div class="actions">
+        <button class="btn sm" data-act="cut">🪓 Cut through (1 part, 60 kcal, +2 wood)</button>${goAround}</div></div>`;
+    } else if (blockType === 'rubble') {
+      html = `<div class="card"><p>🧱 Rubble chokes the path.</p><div class="actions">
+        <button class="btn sm" data-act="clear">🧹 Clear rubble (1 part, 40 kcal)</button>${goAround}</div></div>`;
+    } else if (blockType === 'washed_out' || blockType === 'creek') {
+      const label = blockType === 'creek' ? 'The creek runs fast here.' : 'The path is washed out.';
+      html = `<div class="card"><p>🌊 ${label}</p><div class="actions">
+        <button class="btn sm" data-act="bridge" ${wood < 4 ? 'disabled' : ''}>🌉 Build bridge (4 wood — you have ${wood})</button>`;
+      if (canSwim) html += `<button class="btn sm" data-act="swim">🏊 Swim across</button>`;
+      html += `${goAround}</div><p class="small">No bridge, no swim? Pick another tile — there's always another way.</p></div>`;
+    }
+    info.innerHTML = html;
+    info.querySelectorAll('button').forEach(b => {
+      b.onclick = () => {
+        const act = b.dataset.act;
+        if (act === 'cut' || act === 'clear') { Game.clearBlockage(x, y); }
+        else if (act === 'bridge') { if (!Game.buildBridge(x, y)) { refresh(); return; } }
+        else if (act === 'swim') { Game.state.scholar.kcal = Math.max(0, Game.state.scholar.kcal - 20); Game.say('You swim across, cold and grinning.'); Game.travelTo(x, y, true); refresh(); return; }
+        else { pendingTravel = null; refresh(); return; } // go around: just close
+        // after clearing/building, travel through
+        const res = Game.travelTo(x, y);
+        if (res && res.kind === 'blockage') { showBlockage(res); return; }
+        refresh();
+      };
+    });
+  }
+
   function cellPopup(cx, cy) {
     const detail = Game.genDetail(Game.map.px, Game.map.py);
     const cell = detail[cy] && detail[cy][cx];
@@ -286,6 +329,8 @@
         if (cell === 'tree' || cell === 'bigtree') {
           if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
           else if (sec.yield > 0) actions.push(['Forage nuts', () => Game.cellInteract(cx, cy)]);
+          // TERRAFORMING: fell it. costs a day-part + 80 kcal, yields wood.
+          actions.push(['🪓 Cut down', () => { Game.cutTree(cx, cy); refresh(); }]);
         } else if (cell === 'water') {
           if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
           else if (sec.safe) actions.push(['Drink', () => Game.cellInteract(cx, cy)]);
@@ -327,6 +372,8 @@
           }
         }
         if (cell === 'plant' || cell === 'bush') actions.push(['Forage', () => Game.cellInteract(cx, cy)]);
+        // TERRAFORMING: clear brush for brushwood. costs a day-part + 40 kcal.
+        if (cell === 'bush') actions.push(['🧹 Clear brush', () => { Game.clearBrush(cx, cy); refresh(); }]);
         else if (cell === 'rubble') actions.push(['Scavenge', () => Game.cellInteract(cx, cy)]);
         else if (cell === 'bridge') desc += ' The only way across.';
         else if (cell === 'door') desc += ' Leads outside.';
@@ -352,6 +399,9 @@
     // remember what we're looking at so actions can refresh the panel
     info.dataset.cx = cx; info.dataset.cy = cy;
   }
+
+  // refresh: full expedition screen re-render after an action.
+  function refresh() { expeditionScreen(); }
 
   // refreshTilePanel: re-render the inline panel after an action (stays in context)
   function refreshTilePanel() {
@@ -618,14 +668,43 @@
     screen.querySelectorAll('.minimap .tile').forEach(el => {
       el.onclick = () => {
         const x = +el.dataset.x, y = +el.dataset.y;
-        if (x === st.px && y === st.py) return;
+        const info = document.getElementById('tileinfo');
+        if (x === st.px && y === st.py) { pendingTravel = null; return; }
         const d = Math.abs(x - st.px) + Math.abs(y - st.py);
         const tl = Game.tileAt(x, y);
-        if (!Game.travelTo(x, y)) {
-          // Explain WHY, not just "no". Fog of war is the usual reason.
-          if (!tl.revealed && d > 1) toast('Unexplored — walk to an adjacent tile first, then push into the fog.');
+        const isTarget = tset.has(x + ',' + y);
+        // FOG: tap an unexplored tile for a rough guess. No commitment.
+        if (!isTarget) {
+          pendingTravel = null;
+          if (!tl.revealed && info) {
+            info.innerHTML = `<div class="card"><p>🔭 ${esc(tl.guess || 'unknown ground')}.<br><span class="small">You'll know when you get there. Walk to an adjacent tile first.</span></p></div>`;
+          } else if (!tl.revealed && d > 1) toast('Unexplored — walk to an adjacent tile first.');
           else if (d > 3) toast('Too far — 3 tiles max per trip.');
           else toast('Not reachable from here.');
+          return;
+        }
+        // TWO-CLICK: first tap selects, second tap confirms.
+        if (!pendingTravel || pendingTravel.x !== x || pendingTravel.y !== y) {
+          pendingTravel = { x, y };
+          const kcal = Math.round(30 * d);
+          const name = tl.revealed ? (S.TILE_NAME[tl.type] || tl.type) : `unknown (${esc(tl.guess || '??')})`;
+          const block = Game.travelBlockage(x, y);
+          let warn = '';
+          if (block) {
+            const BT = { fallen_tree: '🪵 fallen tree blocks the way', rubble: '🧱 rubble blocks the way', washed_out: '🌊 washed out — needs a bridge', creek: '🌊 fast water — needs a bridge or a swimmer' };
+            warn = `<br><span style="color:#e0a040">⚠ ${BT[block.blockType] || 'blocked'}</span>`;
+          }
+          if (info) info.innerHTML = `<div class="card"><p>🧭 Travel to <b>${esc(name)}</b> — ${d} tile${d > 1 ? 's' : ''}, ${kcal} kcal.${warn}<br><span class="small">Tap again to go.</span></p></div>`;
+          else toast(`Tap again to travel (${kcal} kcal).`);
+          return;
+        }
+        // second tap: go.
+        pendingTravel = null;
+        const res = Game.travelTo(x, y);
+        if (res && res.blocked === undefined && res.kind === 'blockage') { showBlockage(res); return; }
+        if (!res && res !== undefined) {
+          // travelTo returned null/undefined without blockage info — shouldn't happen
+          toast('Not reachable from here.');
           return;
         }
         rerender();

@@ -1268,6 +1268,41 @@
       tiles[3][3].type = 'haven';
       tiles[3][3].stock = 0; tiles[3][3].maxStock = 0;
       tiles[3][3].revealed = true; tiles[3][3].visited = true;
+      // FOG OF WAR: every tile gets a vague guess. You don't know until you go.
+      // BLOCKED ROADS: some paths in are obstructed. Always multiple solutions:
+      // cut (fallen tree), clear (rubble), bridge (washed out / hard creek), swim, or go around.
+      // CONSTRUCTION (future): tile.structures[] holds anything built here — walls, palisades, etc.
+      const GUESSES = {
+        forest_floor: ['looks like woods', 'trees, probably', 'green and dark that way'],
+        grove: ['denser canopy', 'big trees, maybe', 'dark crowns on the horizon'],
+        meadow: ['open ground, maybe', 'lighter ahead', 'could be a clearing'],
+        thicket: ['dark and tangled looking', 'dense brush', 'hard to see through'],
+        wetland: ['low and wet looking', 'mist hanging', 'soft ground ahead'],
+        creek: ['something glints — water?', 'you hear water', 'a shine through the trees'],
+        trail_edge: ['a line through the land?', 'looks walked-on', 'something regular'],
+        ruin: ['unnatural shapes', 'something built, once', 'straight lines where they shouldn\'t be'],
+        haven: ['home'],
+      };
+      const DIRS = [[0,-1],[1,0],[0,1],[-1,0]]; // n,e,s,w
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const t = tiles[y][x];
+        t.structures = []; // future: walls, palisades, shelters
+        const g = GUESSES[t.type] || ['unknown ground'];
+        t.guess = g[Math.floor(Math.random() * g.length)];
+        // blockages: ~12% of wild tiles have one obstructed approach.
+        // never block haven, never block the ruin approach (scavengers need in).
+        if (t.type !== 'haven' && t.type !== 'ruin' && Math.random() < 0.12) {
+          const [dx, dy] = DIRS[Math.floor(Math.random() * 4)];
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+          if (tiles[ny][nx].type === 'haven') continue;
+          const roll = Math.random();
+          // -dx,-dy: the direction you'd be coming FROM to enter this tile
+          t.blockFrom = { dx: -dx, dy: -dy, type: roll < 0.4 ? 'fallen_tree' : roll < 0.7 ? 'rubble' : 'washed_out' };
+        }
+        // hard creek crossings: ~35% of creek tiles need a bridge or a swimmer.
+        if (t.type === 'creek' && Math.random() < 0.35) t.needsBridge = true;
+      }
       this.map = { tiles, px: 3, py: 3 };
       this.reveal(3, 3);
       // high ground sees farther: ridgelines start with the surroundings mapped
@@ -1649,6 +1684,76 @@
     tileAt(x, y) { return this.map.tiles[y][x]; },
     playerTile() { return this.tileAt(this.map.px, this.map.py); },
 
+    // --- WOOD: the building material. Terraforming yields it, construction spends it. ---
+    // CONSTRUCTION (future): walls, palisades, shelters hook in here.
+    // tile.structures[] is the foundation — anything built on a tile lives there.
+    woodCount() {
+      const inv = this.state.scholar.inventory || [];
+      const w = inv.find(i => i.itemId === 'wood' || i.id === 'wood');
+      return w ? (w.units || 0) : 0;
+    },
+    addWood(n) {
+      const inv = this.state.scholar.inventory || [];
+      let w = inv.find(i => i.itemId === 'wood' || i.id === 'wood');
+      if (w) w.units = (w.units || 0) + n;
+      else inv.push({ itemId: 'wood', id: 'wood', name: 'Wood log', units: n, kg: 2.0, unit: 'log' });
+    },
+    spendWood(n) {
+      const inv = this.state.scholar.inventory || [];
+      const w = inv.find(i => i.itemId === 'wood' || i.id === 'wood');
+      if (!w || (w.units || 0) < n) return false;
+      w.units -= n;
+      if (w.units <= 0) inv.splice(inv.indexOf(w), 1);
+      return true;
+    },
+
+    // --- TERRAFORMING: cut trees, clear brush. The land remembers what you did. ---
+    // Costs a day-part + calories. Yields wood. The cell changes permanently.
+    cutTree(cx, cy) {
+      if (this.over) return null;
+      const t = this.playerTile();
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[cy] && detail[cy][cx];
+      if (cell !== 'tree' && cell !== 'bigtree') { this.say('Nothing to cut there.'); return null; }
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      if (Math.max(Math.abs(cx - px), Math.abs(cy - py)) > 1) { this.say('Too far. Step closer.'); return null; }
+      const big = cell === 'bigtree';
+      // Felling a tree is real work.
+      this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 80);
+      const wood = big ? 4 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 3);
+      this.addWood(wood);
+      // The tree is gone. The tile remembers.
+      detail[cy][cx] = 'dirt';
+      const key = cx + ',' + cy;
+      if (t.secrets) delete t.secrets[key];
+      if (t.modifiers) delete t.modifiers[key];
+      // stock recount: one less forageable
+      if (t.stock > 0) t.stock--;
+      this.say(`${big ? 'The big tree' : 'The tree'} comes down with a crack that echoes. +${wood} wood. The ground is clear now.`);
+      this.checkQuest('terraform');
+      return this.endDayPart();
+    },
+    clearBrush(cx, cy) {
+      if (this.over) return null;
+      const t = this.playerTile();
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[cy] && detail[cy][cx];
+      if (cell !== 'bush') { this.say('Nothing to clear there.'); return null; }
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      if (Math.max(Math.abs(cx - px), Math.abs(cy - py)) > 1) { this.say('Too far. Step closer.'); return null; }
+      this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 40);
+      this.addWood(1); // brushwood
+      detail[cy][cx] = 'grass';
+      const key = cx + ',' + cy;
+      if (t.secrets) delete t.secrets[key];
+      if (t.modifiers) delete t.modifiers[key];
+      if (t.bushSpecies) delete t.bushSpecies[key];
+      if (t.stock > 0) t.stock--;
+      this.say('You clear the brush. +1 wood (brushwood). Easier walking here now.');
+      this.checkQuest('terraform');
+      return this.endDayPart();
+    },
+
     // --- travel: costs the day-part's action. destinations are decisions. ---
     // FOG OF WAR: you can walk into "?" — the unknown. Adjacent unrevealed tiles are valid.
     // You don't know what's there until you arrive. Hope nothing's waiting.
@@ -1663,12 +1768,69 @@
       return out;
     },
 
-    travelTo(x, y) {
+    // BLOCKED PATHS: returns {blocked} info instead of traveling, so the UI
+    // can offer solutions. Multiple ways through, always: cut, clear, bridge,
+    // swim, or go around. Never one mandatory path.
+    travelBlockage(x, y) {
+      const dest = this.tileAt(x, y);
+      const dx = Math.sign(x - this.map.px), dy = Math.sign(y - this.map.py);
+      // tile-entry blockage (fallen tree, rubble, washed out)
+      const bf = dest.blockFrom;
+      if (bf && bf.dx === -dx && bf.dy === -dy) {
+        return { kind: 'blockage', blockType: bf.type, x, y };
+      }
+      // hard creek crossing: bridge it, swim it, or go around
+      if (dest.type === 'creek' && dest.needsBridge && !dest.bridged) {
+        const canSwim = (this.state.scholar.abilities || []).some(a => (a.id || a) === 'swimmer') ||
+                        (this.state.scholar.backgroundAbilities || []).some(a => (a.id || a) === 'swimmer');
+        if (!canSwim) return { kind: 'blockage', blockType: 'creek', x, y };
+      }
+      return null;
+    },
+    // clear a blockage by work. fallen_tree -> cut (yields wood!), rubble -> clear.
+    // costs a day-part. the path stays clear.
+    clearBlockage(x, y) {
+      const dest = this.tileAt(x, y);
+      const bf = dest.blockFrom;
+      if (!bf) return false;
+      if (bf.type === 'fallen_tree') {
+        this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 60);
+        this.addWood(2);
+        this.say('You cut through the fallen tree. +2 wood. The path is clear.');
+      } else if (bf.type === 'rubble') {
+        this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 40);
+        this.say('You clear the rubble, stone by stone. The path is clear.');
+      } else if (bf.type === 'washed_out') {
+        return this.buildBridge(x, y); // washed out needs a bridge
+      }
+      delete dest.blockFrom;
+      return this.endDayPart();
+    },
+    // build a bridge: 4 wood, permanent. for washed-out paths and hard creeks.
+    // CONSTRUCTION (future): walls/palisades will use the same pattern — spend wood, tile.structures[].
+    buildBridge(x, y) {
+      const dest = this.tileAt(x, y);
+      if (this.woodCount() < 4) { this.say('Need 4 wood to build a bridge.'); return false; }
+      this.spendWood(4);
+      dest.bridged = true;
+      if (dest.blockFrom && dest.blockFrom.type === 'washed_out') delete dest.blockFrom;
+      dest.structures = dest.structures || [];
+      dest.structures.push({ type: 'bridge', builtDay: this.state.scholar.day });
+      this.say('You lash logs together. A rough bridge spans the gap. It\'ll hold.');
+      return this.endDayPart();
+    },
+    travelTo(x, y, force) {
       const dest = this.tileAt(x, y);
       const wasUnknown = !dest.revealed;
       if (this.over) return null;
       const t = this.travelTargets().find(t => t.x === x && t.y === y);
       if (!t) return null;
+      // blocked? don't travel — return the blockage so the UI can offer solutions.
+      // (force bypasses: swimming doesn't fix the path, it just gets you across.)
+      if (!force) {
+        const block = this.travelBlockage(x, y);
+        if (block) return block;
+      }
       const odx = Math.sign(x - this.map.px), ody = Math.sign(y - this.map.py);
       this.map.px = x; this.map.py = y;
       this.state.scholar.facing = { x: odx || 0, y: ody || 1 };
@@ -2458,11 +2620,15 @@
       if (cell === 'tree' || cell === 'bigtree' || cell === 'tent') {
         if (!sec || !sec.known) actions.push('Examine');
         else actions.push('Use');
+        // TERRAFORMING: trees can be felled. costs a day-part, yields wood.
+        if (cell === 'tree' || cell === 'bigtree') actions.push('Cut down');
       } else if (cell === 'water') {
         actions.push('Drink');
         actions.push('Fill water (+2L)');
       } else if (cell === 'plant' || cell === 'bush' || cell === 'rubble') {
         actions.push('Forage');
+        // TERRAFORMING: brush can be cleared. costs a day-part, yields brushwood.
+        if (cell === 'bush') actions.push('Clear brush');
       } else if (cell === 'fire') {
         actions.push('Warm hands');
         // If you have raw food, you can cook here. (Knowledge tells you what needs it.)
