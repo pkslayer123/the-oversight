@@ -1522,6 +1522,7 @@
       }
       this.say(n ? `Cooked ${n} item${n > 1 ? 's' : ''}${waterUsed ? ` (-${waterUsed}L water)` : ''}.` : 'Nothing raw to cook.');
       if (n > 0 && this.state.scholar.week1) this.state.scholar.week1.cook++;
+      this.gainAbilityXP('camp_cook', 1);
       return null;
     },
 
@@ -1549,6 +1550,7 @@
       v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + Math.min(10, Math.floor(kcal / 500)));
       this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${Math.min(10, Math.floor(kcal / 500))}. They'll remember this.`);
       if (this.state.scholar.week1) this.state.scholar.week1.donate++;
+      this.gainAbilityXP('generous', 1);
       return null;
     },
 
@@ -2080,10 +2082,51 @@
       const choice = (s.abilityChoices || []).find(c => c.id === id);
       if (!choice) return null;
       s.abilities = s.abilities || [];
-      s.abilities.push({ id: choice.id, name: choice.name, desc: choice.desc });
-      s.abilityChoices = null; // chosen
-      this.say(`✨ Ability gained: ${choice.name}. ${choice.desc}`);
+      // Ability slots: integration unlocks more. Start 1, max 6.
+      const maxSlots = this.abilitySlots();
+      if (s.abilities.length >= maxSlots) {
+        this.say(`No free ability slots (${s.abilities.length}/${maxSlots}). Increase System integration to unlock more.`);
+        return null;
+      }
+      s.abilities.push({ id: choice.id, name: choice.name, desc: choice.description || choice.desc, level: 1, xp: 0 });
+      s.abilityChoices = null;
+      this.say(`✨ Ability gained: ${choice.name} (L1). ${choice.description || choice.desc}`);
+      if (choice.flavor) this.say(`"${choice.flavor}"`);
       return null;
+    },
+    // abilitySlots: how many abilities can you hold? Integration-based.
+    abilitySlots() {
+      const integ = this.state.scholar.integration || 5;
+      if (integ >= 80) return 6;
+      if (integ >= 60) return 4;
+      if (integ >= 40) return 3;
+      if (integ >= 20) return 2;
+      return 1;
+    },
+    // abilityXP: using an ability (or its related action) grants XP. Level up at thresholds.
+    // L1 -> L2: 10 uses. L2 -> L3: 25 uses. L3 is max (for now — evolution coming).
+    gainAbilityXP(abilityId, amount) {
+      const s = this.state.scholar;
+      const ab = (s.abilities || []).find(a => a.id === abilityId);
+      if (!ab || ab.level >= 3) return;
+      ab.xp = (ab.xp || 0) + (amount || 1);
+      const need = ab.level === 1 ? 10 : 25;
+      if (ab.xp >= need) {
+        ab.level++;
+        ab.xp = 0;
+        const bonus = this.abilityLevelBonus(ab.id, ab.level);
+        this.say(`⬆️ ${ab.name} evolved to L${ab.level}! ${bonus}`);
+      }
+    },
+    // abilityLevelBonus: what does leveling up give? (Per ability.)
+    abilityLevelBonus(id, level) {
+      const bonuses = {
+        green_thumb: { 2: '+100% yield (was +50%).', 3: 'You sense rich ground. Forage spots glow.' },
+        tracker: { 2: '+50% hunt success (was +30%).', 3: 'You see tracks from 2 tiles away.' },
+        diplomat: { 2: 'Trust builds 3x (was 2x).', 3: 'Villagers tell you secrets unprompted.' },
+        camp_cook: { 2: 'No water needed for cooking.', 3: '+25% kcal (was +10%).' },
+      };
+      return (bonuses[id] && bonuses[id][level]) || 'Stronger. The System is pleased.';
     },
     scheduleSystemEvents() {
       const s = this.state.scholar;
@@ -2267,6 +2310,7 @@
         msg = r.message + ` (${r.kcal} kcal to your pack — eat up.)` + (r.firstFind ? ` (${r.plant.codex})` : '');
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
         if (scholar.week1) scholar.week1.forage++;
+        this.gainAbilityXP('green_thumb', 1);
       } else if (kind === 'rest') {
         scholar.energy = Math.min(100, scholar.energy + 30);
         scholar.health = Math.min(100, scholar.health + 5);
