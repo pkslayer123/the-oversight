@@ -2054,12 +2054,9 @@
         if (Math.random() < trapChance) {
           const catchId = recipe.catches[Math.floor(Math.random() * recipe.catches.length)];
           const animal = this.data.animals.find(a => a.id === catchId);
-          this.state.scholar.inventory.push({
-            plantId: 'meat_' + animal.id, units: 1, kcalEach: animal.calories,
-            spoilDay: this.state.scholar.day + 1, name: animal.name + ' (trapped)',
-            unit: 'carcass', prep: 'Cook before eating.', kg: animal.calories / 1000
-          });
-          this.say(`Your ${recipe.name} caught a ${animal.name}! ${animal.calories} kcal.`);
+          // FOOD REALITY: trapped game is a carcass too — clean it, don't just eat it.
+          this.state.scholar.inventory.push(this.foodCarcass(animal, animal.calories, this.state.scholar.day, 'trapped'));
+          this.say(`Your ${recipe.name} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife).`);
           trap.uses -= 1;
           if (trap.uses <= 0) {
             this.say(`The ${recipe.name} broke. You\'ll need another.`);
@@ -3445,12 +3442,30 @@
             vv.pantry.push({ name: item.name || 'Foraged food', plantId: item.plantId,
               kcalEach: item.kcalEach, units: item.units,
               spoilDay: item.spoilDay || 9999, unit: item.unit,
-              safe: item.safe !== false, kg: item.kg || 0.2, prep: item.prep });
+              safe: item.safe !== false, kg: item.kg || 0.2, prep: item.prep,
+              foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
+              hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk,
+              needsCooking: item.needsCooking, rawKcal: item.rawKcal, cookedKcal: item.cookedKcal });
           }
         }
-        s.inventory = s.inventory.filter(i => !((i.kcalEach || 0) > 0 && (i.units || 0) > 0));
+        // FOOD REALITY: inedible ingredients ride along too — carcasses, unknown
+        // hauls, in-shell nuts. The pantry is where specialists transform them.
+        // (Pantry cap counts food value; raw ingredients store free.)
+        let ingredients = 0;
+        for (const item of s.inventory) {
+          if (item.edible === false && (item.units || 0) > 0 && item.foodKind) {
+            vv.pantry.push({ name: item.name || 'Unprocessed haul', plantId: item.plantId,
+              kcalEach: 0, units: item.units, hiddenKcal: item.hiddenKcal,
+              spoilDay: item.spoilDay || 9999, unit: item.unit,
+              safe: true, kg: item.kg || 0.2, prep: item.prep,
+              foodKind: item.foodKind, foodState: item.foodState, edible: false,
+              diseaseRisk: item.diseaseRisk, needsCooking: item.needsCooking });
+            ingredients++;
+          }
+        }
+        s.inventory = s.inventory.filter(i => !(((i.kcalEach || 0) > 0 && (i.units || 0) > 0) || (i.edible === false && (i.units || 0) > 0 && i.foodKind)));
         vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
-        this.say(`You unload ${Math.round(brought)} kcal into Haven's pantry.`);
+        this.say(`You unload ${Math.round(brought)} kcal into Haven's pantry.` + (ingredients ? ` Plus ${ingredients} unprocessed haul${ingredients > 1 ? 's' : ''} for the specialists.` : ''));
         // TEACHING MOMENT: you show your haul. they gather. someone might know something.
         // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
         // find a villager who knows something you don't, and trusts you enough to share
@@ -4765,6 +4780,16 @@
           a.alerted = true;
           if (Math.random() < 0.5) this.say(`The ${aname} freezes — ears up, deciding about you.`);
         }
+        // FOOD REALITY: the wary ones sometimes decide early and bolt.
+        // Stalkers (tracker) get closer; the clumsy watch lunch leave.
+        const wP = this.preyWariness ? this.preyWariness(adef) * 0.30 - this.abilityLevel('tracker') * 0.07 : 0;
+        if (wP > 0 && Math.random() < wP) {
+          a.bolted = true;
+          this.say(`The ${aname} decides you're trouble and bolts!`);
+          const dx2 = Math.sign(a.mx - px), dy2 = Math.sign(a.my - py);
+          tryMove(a.mx + dx2 * 2, a.my + dy2 * 2) || tryMove(a.mx + dx2, a.my + dy2);
+          if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) s.animal = null;
+        }
       } else {
         // bolt: away, fast.
         if (!a.bolted) { a.bolted = true; this.say(`The ${aname} bolts!`); }
@@ -5265,7 +5290,9 @@
         const inv = this.state.scholar.inventory;
         const existing = inv.find(i => i.name === item.name);
         if (existing) existing.units += canTake;
-        else inv.push({ name: item.name, kcalEach: item.kcalEach, units: canTake, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking });
+        else inv.push({ name: item.name, kcalEach: item.kcalEach, units: canTake, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking,
+          // FOOD REALITY: keep processing state — the haul stays workable.
+          plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, prep: item.prep });
         totalKcal += canTake * item.kcalEach;
         totalKg += canTake * (item.kg || 0);
         totalUnits += canTake;
@@ -5392,7 +5419,10 @@
       this.gainAbilityXP('tracker', 1);
       const px = s.mx ?? 4, py = s.my ?? 4;
       const dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
-      if (dist > 1) { this.say('Too far. Get closer.'); return null; }
+      // FOOD REALITY: weapon range is real (bow 5, sling 4, spear 2, melee 1).
+      // Hunting is stalking — the animal still gets its reaction (see preyReaction).
+      const range = this.equippedWeapon().range || 1;
+      if (dist > range) { this.say(`Too far. Get closer${range > 1 ? ` (your ${this.equippedWeapon().name} reaches ${range})` : ''}.`); return null; }
       const animal = this.data.animals.find(x => x.id === a.id);
       // success: easy 70%, medium 40%, hard 15%. Costs 100 kcal (chasing is work).
       // hunter background: +20%.
@@ -5426,8 +5456,9 @@
         s.animal = null;
         // field_dressing: you know where the meat is. More yield per kill.
         const kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories));
-        s.inventory.push({ plantId: 'meat_' + animal.id, units: 1, kcalEach: kcal, spoilDay: s.day + 1, name: animal.name + ' (dressed)', unit: 'carcass', prep: 'Cook before eating.', kg: kcal / 1000 });
-        this.say(`Got it! ${animal.name}. ${kcal} kcal of meat. Gut it quickly.`);
+        // FOOD REALITY: a kill is a carcass, not food. Clean it (knife) quickly.
+        s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted'));
+        this.say(`Got it! ${animal.name}. About ${kcal} kcal of meat on the bone — gut it quickly (knife). It spoils fast.`);
         // knowledge: encounters
         this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
         this.state.codex.animalEncounters[animal.id] = (this.state.codex.animalEncounters[animal.id] || 0) + 1;
@@ -8761,8 +8792,10 @@
         const thumbMult = thumbLvl >= 2 ? 2.0 : thumbLvl >= 1 ? 1.5 : 1.0;
         const finalUnits = Math.ceil(r.units * levelMult * thumbMult);
         const isKnown = this.plantKnown(r.plantId);
-        const invItem = { plantId: r.plantId, units: finalUnits, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: isKnown ? r.plant.name : (r.plant.description || 'unfamiliar plant'), unit: r.plant.unit, kg: 0.1 };
-        if (isKnown && r.plant.preparation) invItem.prep = r.plant.preparation;
+        const finalKcal = finalUnits * r.plant.caloriesPerUnit;
+        // FOOD REALITY: knowledge-gated recognition. Unknown plants aren't
+        // food until identified; nuts need shelling. foodForageItem owns it.
+        const invItem = this.foodForageItem(r.plant, isKnown, finalUnits, finalKcal, scholar.day);
         scholar.inventory.push(invItem);
         // RELIC BOND: tools cut, clothing kept you moving.
         this.noteToolUse(); this.noteTrailUse();
@@ -8781,9 +8814,11 @@
           scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
         }
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
-        // report the ACTUAL haul (post knowledge/ability multipliers), not the raw roll.
-        const finalKcal = finalUnits * r.plant.caloriesPerUnit;
-        msg = `Packed ${finalUnits}× ${r.plant.unit} of ${this.plantDisplayName(r.plantId)} (${finalKcal} kcal).`;
+        // FOOD REALITY: unknown hauls aren't food yet — say so honestly.
+        // Known nuts show gross kcal (shelling comes later, net < gross).
+        const gateNote = !isKnown ? ` (not food until identified)` : (invItem.foodState === 'in_shell' ? ` (needs shelling — net < gross)` : '');
+        const kcalNote = !isKnown ? 'unknown value' : finalKcal + ' kcal';
+        msg = `Packed ${finalUnits}× ${r.plant.unit} of ${this.plantDisplayName(r.plantId)} (${kcalNote})${gateNote}.`;
         if (plantCell) msg += ` The ${plantCell.cell === 'plant' ? 'patch' : plantCell.cell} is picked clean — it'll recover in a few days.`;
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: finalUnits, kcal: finalKcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
         if (scholar.week1) scholar.week1.forage++;
@@ -8897,7 +8932,8 @@
       // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
       while (scholar.kcal < target) {
         // find the most perishable FOOD (not gear)
-        const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0);
+        // FOOD REALITY: unknown / unprocessed food isn't food yet — skip it.
+        const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false);
         if (foodIdx === -1) break; // no food left
         const it = scholar.inventory[foodIdx];
         const kcal = it.kcalEach;
@@ -8914,6 +8950,12 @@
             scholar.health = Math.max(0, scholar.health - 5);
             this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
           }
+        }
+        // FOOD REALITY: state-based disease risk. Raw meat, must-cook plants.
+        // Shown honestly before eating ("Risky: raw") — the gamble is informed.
+        if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
+          scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
+          this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
         scholar.kcal += kcal; ate += kcal;
         if (it.plantId) tasted[it.plantId] = (tasted[it.plantId] || 0) + 1;
@@ -8939,10 +8981,24 @@
       // preservation_instinct: you store food right. +days before it turns.
       const spoilBonus = Math.round(this.modTarget('food.spoilage_days', 0));
       const before = scholar.inventory.length;
+      // FOOD REALITY: name what spoiled — waste should be visible, not a count.
+      const spoiledNames = scholar.inventory
+        .filter(i => i.spoilDay !== undefined && i.spoilDay !== null && (i.spoilDay + spoilBonus) <= scholar.day)
+        .map(i => i.name);
       scholar.inventory = scholar.inventory.filter(i => i.spoilDay === undefined || i.spoilDay === null || (i.spoilDay + spoilBonus) > scholar.day);
       const spoiled = before - scholar.inventory.length;
-      this.say(ate > 0 ? `You eat (${ate} kcal).` + (spoiled ? ` ${spoiled} item(s) spoiled — the Codex notes the waste.` : '')
-                       : (scholar.inventory.length ? 'You are full enough.' : 'Nothing to eat. The pantry of your pack is empty.'));
+      const spoilNote = spoiled ? ` Spoiled and discarded: ${[...new Set(spoiledNames)].join(', ')}. The Codex notes the waste.` : '';
+      // FOOD REALITY: distinguish "full" from "nothing edible" (unknown/
+      // unprocessed food doesn't count, and the player should know why).
+      const stillHungry = scholar.kcal < target;
+      const inedible = stillHungry ? scholar.inventory.filter(i => i.edible === false && (i.units || 0) > 0) : [];
+      const nothingEdible = ate === 0 && stillHungry && inedible.length > 0 && !scholar.inventory.some(i => (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && i.edible !== false);
+      const inedibleNote = inedible.length
+        ? ` (${[...new Set(inedible.map(i => i.name))].join(', ')} — not food yet: ${inedible[0].foodState === 'unknown' ? 'identify it first' : inedible[0].prep || 'process it'}.)`
+        : '';
+      this.say(ate > 0 ? `You eat (${ate} kcal).` + spoilNote
+                       : (nothingEdible ? 'Nothing edible.' + inedibleNote + spoilNote
+                       : (scholar.inventory.length ? 'You are full enough.' + spoilNote : 'Nothing to eat. The pantry of your pack is empty.' + spoilNote)));
       // loud_chewer: eating is 2x louder. Monsters hear you. But +5 energy — morale is real.
       if (ate > 0) {
         scholar.energy = Math.min(100, scholar.energy + 5);
@@ -9448,7 +9504,14 @@
         const kcalEach = item.kcalEach || 0;
         if (kcalEach <= 0) continue;
         // villagers cook raw food if they know how (abstracted: they get cooked value if any villager knows)
-        const effectiveKcal = item.rawKcal ? (item.cookedKcal || item.rawKcal * 1.5) : kcalEach;
+        let effectiveKcal = item.rawKcal ? (item.cookedKcal || item.rawKcal * 1.5) : kcalEach;
+        // FOOD REALITY: raw cleaned meat in the pantry gets cooked value only if
+        // someone (a cook-specialist villager, or you) actually knows cooking.
+        // Otherwise the village eats it raw — at raw value. Specialists matter.
+        if (item.foodKind === 'meat' && item.foodState === 'cleaned' && item.hiddenKcal) {
+          const cooks = (this.villageHasSpecialty && this.villageHasSpecialty('cook')) || (this.knowsTechnique && this.knowsTechnique('cook'));
+          effectiveKcal = cooks ? item.hiddenKcal : kcalEach;
+        }
         const itemTotal = effectiveKcal * (item.units || 1);
         if (itemTotal <= need) {
           need -= itemTotal;

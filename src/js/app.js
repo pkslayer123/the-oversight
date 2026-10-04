@@ -504,6 +504,7 @@
     if (label === 'Clear brush (a while)') { Game.clearBrush(cx, cy); return; }
     if (label === 'Fill water (+2L)') { Game.fillWater(); return; }
     if (label.startsWith('Cook (')) { Game.cookAll(); return; }
+    if (label.startsWith('Smoke ')) { Game.preserveFood(); return; }
     if (label === 'Step outside') { Game.exitBuilding(); return; }
     if (label === 'Go inside') { Game.enterBuilding(); return; }
     if (label === 'Rest' || label === 'Rest (a while)') { Game.doAction('rest'); return; }
@@ -823,8 +824,12 @@
         } else if (cell === 'fire') {
           actions.push(['Warm hands', () => Game.cellInteract(cx, cy)]);
           // Cook raw food here. (Your Codex tells you what needs cooking.)
-          const raw = Game.state.scholar.inventory.filter(i => i.rawKcal);
+          // FOOD REALITY: cleaned meat + must-cook plants join the raw pile.
+          const raw = Game.state.scholar.inventory.filter(i => i.rawKcal || (i.foodKind === 'meat' && i.foodState === 'cleaned') || (i.foodKind === 'plant' && i.needsCooking && i.diseaseRisk));
           if (raw.length) actions.push([`Cook ${raw.length} raw`, () => Game.cookAll()]);
+          // Smoke/preserve: cleaned or cooked meat, low and slow.
+          const smokable = Game.state.scholar.inventory.filter(i => i.foodKind === 'meat' && (i.foodState === 'cleaned' || i.foodState === 'cooked'));
+          if (smokable.length) actions.push([`Smoke ${smokable.length} (preserve)`, () => { Game.preserveFood(); refresh(); }]);
           // Boil risky water -> clean (kills bacteria, not chemicals).
           const risky = (Game.state.scholar.water || []).filter(b => b.quality === 'risky').length;
           if (risky) actions.push([`Boil ${risky}L water`, () => { Game.boilWater(); refresh(); }]);
@@ -2086,7 +2091,41 @@
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)</p>`; })()}
         ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)</p>`; })()}
-        ${inv.length ? inv.map((i, idx) => `<p class="small">${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${inv.length ? inv.map((i, idx) => {
+          // FOOD REALITY: per-item processing buttons + state markers.
+          let foodBtns = '';
+          let foodMark = '';
+          try {
+            const fm = Game.foodMarker ? Game.foodMarker(i) : '';
+            if (fm) foodMark = ` <span class="small" style="opacity:.75">${fm}</span>`;
+            // going bad tomorrow — visible, not silent
+            if (i.spoilDay !== undefined && i.spoilDay !== null && i.spoilDay === st.day + 1 && (i.kcalEach || 0) > 0) {
+              foodMark += ` <span class="small" style="opacity:.75">going bad</span>`;
+            }
+            if (i.foodKind === 'nut' && i.foodState === 'in_shell') {
+              foodBtns += ` <button class="btn ghost sm" data-shell="${idx}">Shell</button>`;
+            }
+            if (i.foodState === 'carcass') {
+              if (Game.knowsTechnique && Game.knowsTechnique('clean')) {
+                foodBtns += Game.hasCuttingTool()
+                  ? ` <button class="btn ghost sm" data-clean="${idx}">Clean</button>`
+                  : ` <span class="small" style="opacity:.6">(needs a knife)</span>`;
+              } else {
+                const butchers = Game.specialistsHere ? Game.specialistsHere('butcher') : [];
+                foodBtns += butchers.length
+                  ? ` <button class="btn ghost sm" data-ask="${idx}" data-vid="${butchers[0].id}">Ask ${butchers[0].name}</button>`
+                  : ` <span class="small" style="opacity:.6">(find a butcher)</span>`;
+              }
+            }
+            const cookable = (i.rawKcal || (i.foodKind === 'meat' && i.foodState === 'cleaned')) && Game.nearFire();
+            if (i.foodKind === 'meat' && (i.foodState === 'cleaned' || i.foodState === 'cooked') && Game.nearFire()) {
+              foodBtns += ` <button class="btn ghost sm" data-preserve="${idx}">Smoke</button>`;
+            }
+            // note: data-cook below covers cookable via the extended condition
+            i._cookable = cookable;
+          } catch (e) {}
+          return `<p class="small">${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
+        }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> \u2014 ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}`;
@@ -2104,6 +2143,11 @@
     slot.querySelectorAll('[data-read]').forEach(b => b.onclick = rewire(() => Game.readBook(b.dataset.read), 'You read.'));
     slot.querySelectorAll('[data-use]').forEach(b => b.onclick = rewire(() => Game.useItem(+b.dataset.use), 'Used.'));
     slot.querySelectorAll('[data-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.cook), 'Cooked.'));
+    // FOOD REALITY: processing buttons.
+    slot.querySelectorAll('[data-shell]').forEach(b => b.onclick = rewire(() => Game.shellNuts(+b.dataset.shell), 'Shelled.'));
+    slot.querySelectorAll('[data-clean]').forEach(b => b.onclick = rewire(() => Game.cleanCarcass(+b.dataset.clean), 'Cleaned.'));
+    slot.querySelectorAll('[data-preserve]').forEach(b => b.onclick = rewire(() => Game.preserveFood(+b.dataset.preserve), 'Smoked.'));
+    slot.querySelectorAll('[data-ask]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.ask), 'A specialist handles it.'));
     slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipW, 'weapon'), 'Equipped.'));
     slot.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipA, 'armor'), 'Worn.'));
     slot.querySelectorAll('[data-donate]').forEach(b => b.onclick = rewire(() => Game.donateToPantry(+b.dataset.donate), 'Donated to the pantry.'));
@@ -2417,6 +2461,17 @@
     const bodyHtml = `
       <p class="small">Slide to pack. Carrying ${carry.toFixed(1)}/${maxCarry} kg.</p>
       ${fairShareHtml}
+      ${(() => { try {
+        // FOOD REALITY: storage has real caps. Expand them with materials + labor.
+        const cap = Game.pantryCapKcal ? Game.pantryCapKcal() : 0;
+        const wcap = Game.waterCapL ? Game.waterCapL() : 0;
+        const pkcal = Game.pantryKcal ? Game.pantryKcal() : 0;
+        const wtot = (vWater.clean || 0) + (vWater.dirty || 0);
+        const tier = Game.storageTier ? Game.storageTier() : 0;
+        const builders = Game.specialistsHere ? Game.specialistsHere('builder') : [];
+        return `<p class="small" style="opacity:.8">\uD83D\uDCE6 Pantry ${Math.round(pkcal).toLocaleString()} / ${Math.round(cap).toLocaleString()} kcal \u00B7 \uD83D\uDCA7 Water ${wtot} / ${wcap}L \u00B7 Storage tier ${tier}</p>
+        <p><button class="btn ghost sm" data-expand-storage>Expand storage${builders.length ? ` (${builders[0].name} can help)` : ''}</button></p>`;
+      } catch (e) { return ''; } })()}
       ${waterRow}
       <div id="packlist">
       ${pantry.length ? pantry.map((p, idx) => {
@@ -2424,7 +2479,7 @@
         const unit = p.unit || 'item';
         return `<div class="card" style="margin:6px 0;padding:8px 10px">
           <p class="small"><b>${p.name}</b> \u00D7${p.units} ${unit}s
-          ${p.safe ? '' : ' \u26A0 UNSAFE'}${p.spoilDay <= st.day ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \uD83C\uDF73 needs cooking' : ''}<br>
+          ${p.safe ? '' : ' \u26A0 UNSAFE'}${p.spoilDay <= st.day ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \uD83C\uDF73 needs cooking' : ''}${(() => { try { const fm = Game.foodMarker ? Game.foodMarker(p) : ''; return fm ? ' \u00B7 ' + fm : ''; } catch (e) { return ''; } })()}<br>
           <span style="opacity:.7">${p.kcalEach} kcal/${unit} \u00B7 ${p.kg} kg/${unit} \u00B7 <b>${density} kcal/kg</b></span></p>
           <div style="display:flex;align-items:center;gap:8px">
             <input type="range" min="0" max="${p.units}" value="0" data-pack="${idx}" style="flex:1">
@@ -2476,6 +2531,9 @@
     };
     slot.querySelectorAll('[data-pack]').forEach(sl => { sl.oninput = update; });
     update();
+    // FOOD REALITY: expand storage from the pantry view.
+    const expBtn = slot.querySelector('[data-expand-storage]');
+    if (expBtn) expBtn.onclick = () => { Game.expandStorage(); refresh(); };
     slot.querySelector('#pack-btn').onclick = () => {
       const sel = {};
       slot.querySelectorAll('[data-pack]').forEach(sl => { if (+sl.value > 0) sel[sl.dataset.pack] = +sl.value; });
