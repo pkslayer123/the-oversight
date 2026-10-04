@@ -71,6 +71,22 @@
     });
   }
 
+  // SHARE: native share sheet on mobile, clipboard fallback on desktop.
+  // Used by the title screen button and the persistent in-game footer link.
+  function shareGame() {
+    const url = 'https://pkslayer123.github.io/the-oversight/';
+    const text = "I'm surviving The Oversight — a roguelite survival game where aliens forgot to give us food. Think you can last a week?";
+    if (navigator.share) {
+      navigator.share({ title: 'The Oversight', text, url }).catch(() => {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text + ' ' + url)
+        .then(() => toast('Link copied — send it to someone who can survive.'))
+        .catch(() => toast(url));
+    } else {
+      toast(url);
+    }
+  }
+
   function title() {
     screen.innerHTML = `
       ${bar('scattering://village', 'day 0')}
@@ -86,6 +102,11 @@
       <button class="btn ghost" id="b-codex0">Codex</button>
       ${(Game.state && Game.state.telemetry && Game.state.telemetry.length) ? '<button class="btn ghost" id="b-tel">📊 Telemetry</button>' : ''}
       <button class="btn ghost" id="b-about">About</button>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn ghost" id="b-share" style="flex:1;margin:10px 0">📤 Share</button>
+        <button class="btn ghost" id="b-install" style="flex:1;margin:10px 0;display:none">📲 Install</button>
+      </div>
+      <p class="small" id="install-hint" style="display:none;opacity:.7"></p>
       <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>
       <p class="small" id="build-tag" style="opacity:.45;margin-top:14px;cursor:pointer" title="tap to check for updates">build ${esc(window.BUILD_VERSION || 'dev')}</p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
@@ -95,6 +116,52 @@
     const bt = document.getElementById('b-tel');
     if (bt) bt.onclick = () => telemetryScreen();
     document.getElementById('b-about').onclick = about;
+    // SHARE: native share sheet on mobile, clipboard fallback on desktop.
+    document.getElementById('b-share').onclick = shareGame;
+    // INSTALL: prompt on Android/Chrome, instructions on iOS.
+    // Don't nag: hidden if already installed or previously dismissed.
+    (function wireInstall() {
+      const btn = document.getElementById('b-install');
+      const hint = document.getElementById('install-hint');
+      if (!btn) return;
+      const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+      if (isStandalone || window.navigator.standalone) return; // already installed
+      let dismissed = false;
+      try { dismissed = localStorage.getItem('oversight-install-dismissed') === '1'; } catch (e) {}
+      if (dismissed) return;
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const showBtn = (label, onTap) => {
+        btn.style.display = '';
+        btn.textContent = label;
+        btn.onclick = onTap;
+      };
+      const dismiss = () => {
+        try { localStorage.setItem('oversight-install-dismissed', '1'); } catch (e) {}
+        btn.style.display = 'none';
+        if (hint) hint.style.display = 'none';
+      };
+      if (window.__deferredInstallPrompt) {
+        // Android/Chrome: we caught beforeinstallprompt — real install flow.
+        showBtn('📲 Install', () => {
+          const p = window.__deferredInstallPrompt;
+          window.__deferredInstallPrompt = null;
+          if (p && p.prompt) p.prompt();
+          dismiss();
+        });
+      } else if (isIOS) {
+        // iOS: no beforeinstallprompt — show the manual steps once.
+        showBtn('📲 Install', () => {
+          if (hint) {
+            hint.style.display = '';
+            hint.innerHTML = 'On iPhone: tap <b>Share</b> in Safari, then <b>Add to Home Screen</b>. <a href="#" id="install-dx" style="color:inherit">dismiss</a>';
+            const dx = document.getElementById('install-dx');
+            if (dx) dx.onclick = (e) => { e.preventDefault(); dismiss(); };
+          }
+        });
+      }
+      // else: desktop Chrome will get beforeinstallprompt on a later visit;
+      // nothing to show right now.
+    })();
     // Build tag: tap to force an update check (diagnostic + escape hatch).
     const btag = document.getElementById('build-tag');
     if (btag && 'serviceWorker' in navigator) {
@@ -467,6 +534,14 @@
       } else if (inside) {
         desc += ' You\'re inside the hall. To leave Haven: tap the 🚪 door, step outside, walk to the edge of the grounds, then tap yourself.';
       }
+      // someone's standing with you? you walked up to them — talk is right here.
+      if (villagerId) {
+        const vp = Game.data.villagers.find(v => v.id === villagerId) || Game.data.background_survivors.find(v => v.id === villagerId);
+        const vname = vp ? vp.name.split(' ')[0] : 'Someone';
+        desc += ` ${vname} is here with you.`;
+        actions.push(['💬 Talk to ' + vname, () => Game.talkTo(villagerId)]);
+        actions.push(['Give food', () => Game.giveFood(villagerId)]);
+      }
     } else if (isMon) {
       desc = 'Something big. It sees you.';
       if (dist <= 1) actions.push(['Fight', () => Game.startCombat(mon.id)]);
@@ -821,6 +896,12 @@
   window.addEventListener('pagehide', () => {
     try { Game.save(); } catch (e) {}
   });
+  // PWA install: capture beforeinstallprompt so the title screen can offer
+  // a real install flow (Android/Chrome). iOS gets manual instructions instead.
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.__deferredInstallPrompt = e;
+  });
   // Also save every 30 seconds (in case the above don't fire).
   setInterval(() => { try { Game.save(); } catch (e) {} }, 30000);
 
@@ -906,7 +987,8 @@
       <div class="actions">
         <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
       </div>
-      <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
+      <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
+      <p class="small" style="opacity:.4;text-align:center;margin-top:14px"><a href="#" id="x-share" style="color:inherit">📤 share the oversight</a></p>`;
 
     // MINIMAP IS A MAP, NOT A TELEPORTER. Tap a tile for a fog-of-war guess.
     // Travel happens on foot: walk to the edge of the 9x9, tap yourself, head out.
@@ -927,7 +1009,9 @@
     });
     // detail grid: TAP A TILE = GO THERE. That's the whole interaction model.
     // Walkable tile → you move there (step if adjacent, path if distant). One tap.
-    // Person/monster/animal → popup (talk/fight/hunt). Blocked thing → popup (examine/use).
+    // Monster/animal → popup (fight/hunt). Blocked thing → popup (examine/use).
+    // VILLAGERS DON'T BLOCK. Tapping a person walks up to them, then their
+    // popup opens (talk/give/teach). People are not walls.
     // Popups are for EXAMINING, never for movement.
     screen.querySelectorAll('.detail .cell').forEach(el => {
       el.onclick = () => {
@@ -936,15 +1020,17 @@
         if (cx === px && cy === py) { cellPopup(cx, cy); return; } // yourself: info/travel panel
         const detail = Game.genDetail(Game.map.px, Game.map.py);
         const cell = detail[cy] && detail[cy][cx];
-        // someone (or something) there? popup — don't step onto people.
+        // monster/animal? popup — you don't stroll through a boar.
         const mon = Game.state.scholar.monster;
         const ani = Game.state.scholar.animal;
         if ((mon && mon.mx === cx && mon.my === cy) || (ani && ani.mx === cx && ani.my === cy)) {
           cellPopup(cx, cy); return;
         }
+        // someone here? (villagers never block pathing — only terrain does.)
+        let villagerThere = null;
         const vpos = Game.state.village && Game.state.village.positions;
         if (vpos) for (const rid of Object.keys(vpos)) {
-          if (vpos[rid].mx === cx && vpos[rid].my === cy) { cellPopup(cx, cy); return; }
+          if (vpos[rid].mx === cx && vpos[rid].my === cy) { villagerThere = rid; break; }
         }
         // walkable? GO. adjacent = step, distant = path. no confirmation, no popup.
         if (!Game.cellProps(cell).blocks) {
@@ -952,7 +1038,13 @@
           let moved = false;
           if (dist <= 1) moved = Game.microMove(cx, cy);
           else moved = Game.movePath(cx, cy);
-          if (moved) { expeditionScreen(); return; }
+          if (moved) {
+            // walked up to someone? their popup opens — talk is right there.
+            // (re-render first so the grid shows your new position.)
+            expeditionScreen();
+            if (villagerThere) cellPopup(cx, cy);
+            return;
+          }
           // couldn't move (no path / not enough kcal) — popup explains why.
         }
         // blocked or unpathable: popup for examine/interact.
@@ -983,6 +1075,8 @@
       return;
     }
     document.getElementById('x-codex').onclick = codexScreen;
+    const xShare = document.getElementById('x-share');
+    if (xShare) xShare.onclick = (e) => { e.preventDefault(); shareGame(); };
     const pantryBtn = document.getElementById('x-pantry');
     if (pantryBtn) pantryBtn.onclick = () => pantryPopup();
     wirePanel(st, n);
@@ -1252,12 +1346,13 @@
           if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
           else if (ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; }
           else {
-            // villagers: show 🧍 with name (first name only, small)
+            // villagers: 🧍 with a TINY name label underneath.
+            // (names were rendering at full size and swallowing the grid.)
             for (const [rid, pos] of Object.entries(vpos)) {
               if (pos.mx === cx && pos.my === cy) {
                 const vp = Game.data.villagers.find(v => v.id === rid) || Game.data.background_survivors.find(v => v.id === rid);
-                const fname = vp ? vp.name.split(' ')[0] : '?';
-                g = `🧍<span class="vname">${fname}</span>`;
+                const fname = (vp ? vp.name.split(' ')[0] : '?').slice(0, 7);
+                g = `<span class="vtoken">🧍</span><span class="vname">${esc(fname)}</span>`;
                 cls += ' villager';
                 break;
               }

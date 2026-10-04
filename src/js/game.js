@@ -537,8 +537,12 @@
 
     // --- village: people to talk to, things to do ---
     talkTo(vid) {
-      const v = this.data.villagers.find(x => x.id === vid);
-      if (!v || !v.talk || !v.talk.length) return null;
+      // villagers = generated chars (in data.villagers). background survivors have
+      // one-liners in data.background_survivors — they're talkable too.
+      const v = this.data.villagers.find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid);
+      const lines = (v && v.talk && v.talk.length) ? v.talk : (v && v.line ? [v.line] : null);
+      if (!v || !lines) return null;
       // TALKING COSTS ENERGY. socializing is work — 20 kcal.
       // (prevents infinite free diplomat-XP farming)
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 20);
@@ -557,9 +561,9 @@
         this.say(`...and then it lands: ${v.name.split(' ')[0]} doesn't speak English. ${comm.level === 'partial' ? 'A few words. Gestures. Patience.' : 'Not really. Not at all.'} (${label})`);
       }
       this.state.talkIdx = this.state.talkIdx || {};
-      const i = (this.state.talkIdx[vid] || 0) % v.talk.length;
+      const i = (this.state.talkIdx[vid] || 0) % lines.length;
       this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
-      let line = v.talk[i];
+      let line = lines[i];
       if (comm.level === 'none' && Math.random() < 0.35) {
         const cg = this.data.characterGen || {};
         const tmps = cg.misunderstandTemplates || ['{first} smiles and nods.'];
@@ -2649,11 +2653,12 @@
       if (v.positions && Object.keys(v.positions).length > 0) return; // already placed
       v.positions = {};
       const detail = this.genDetail(3, 3);
-      // find passable cells (not wall, not player spawn)
+      // find passable cells: anything that doesn't block movement.
+      // (was: only excluded 'wall' — villagers spawned on fire/tents/trees.)
       const free = [];
       for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
         const c = detail[cy] && detail[cy][cx];
-        if (c && !['wall'].includes(c) && !(cx === 4 && cy === 4)) free.push({x: cx, y: cy});
+        if (c && !this.cellProps(c).blocks && !(cx === 4 && cy === 4)) free.push({x: cx, y: cy});
       }
       for (const rid of (v.roster || [])) {
         if (rid === this.villagerId) continue; // you're the player, not an NPC
@@ -2691,7 +2696,8 @@
         const nx = Math.max(0, Math.min(8, pos.mx + dx));
         const ny = Math.max(0, Math.min(8, pos.my + dy));
         const cell = detail[ny] && detail[ny][nx];
-        if (cell && cell !== 'wall') {
+        // wander only onto walkable cells — never into walls, fire, tents.
+        if (cell && !this.cellProps(cell).blocks) {
           pos.mx = nx; pos.my = ny;
         }
       }
