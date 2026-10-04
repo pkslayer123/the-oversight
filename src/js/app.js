@@ -310,6 +310,89 @@
     document.getElementById('b-cback').onclick = () => expeditionScreen();
   }
 
+  // confirmMove: >3 steps is a commitment. Confirm the cost.
+  function confirmMove(cx, cy, steps) {
+    const cost = steps * 10;
+    const screen = document.getElementById('screen');
+    screen.innerHTML = `
+      <div class="card">
+        <h3>Walk ${steps} squares?</h3>
+        <p class="small">That's ${cost} kcal. You're committing to the walk.</p>
+        <div class="btnrow">
+          <button class="btn sm" id="b-walk">Walk (${cost} kcal)</button>
+          <button class="btn ghost sm" id="b-cback">Back</button>
+        </div>
+      </div>`;
+    document.getElementById('b-walk').onclick = () => { Game.movePath(cx, cy); expeditionScreen(); };
+    document.getElementById('b-cback').onclick = () => expeditionScreen();
+  }
+
+  // moveOrActPopup: destination is interactable. Step here, OR step here and do the thing.
+  function moveOrActPopup(cx, cy, steps, actions) {
+    const detail = Game.genDetail(Game.map.px, Game.map.py);
+    const cell = detail[cy] && detail[cy][cx];
+    const CELL_NAME = {
+      tree: 'Tree', bigtree: 'Big tree', bush: 'Bush', plant: 'Plant',
+      water: 'Water', wall: 'Wall', rubble: 'Rubble', tent: 'Tent', fire: 'Fire',
+      bridge: 'Bridge', door: 'Door',
+    };
+    const name = CELL_NAME[cell] || cell || 'Ground';
+    const screen = document.getElementById('screen');
+    // Build "step and act" options: for each action, offer to walk there and do it.
+    const stepActs = actions.map(a => [`Step here and ${a.toLowerCase()}`, () => {
+      // walk to adjacent (can't stand on blocked cells)
+      const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+      // find adjacent walkable cell
+      let best = null, bestD = 99;
+      for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+        const c = detail[ny] && detail[ny][nx];
+        if (Game.cellProps(c).blocks) continue;
+        const d = Math.abs(nx - px) + Math.abs(ny - py);
+        if (d < bestD) { bestD = d; best = [nx, ny]; }
+      }
+      if (best) Game.movePath(best[0], best[1]);
+      // then do the action (via cellPopup logic — for now, open the popup)
+      cellPopup(cx, cy);
+    }]);
+    screen.innerHTML = `
+      <div class="card">
+        <h3>${name}</h3>
+        <p class="small">${steps > 0 ? `It's ${steps} squares away.` : `You're here.`} What do you want to do?</p>
+        <div class="btnrow">
+          <button class="btn sm" id="b-step">Step here</button>
+          ${stepActs.map((a, i) => `<button class="btn sm" data-act="${i}">${a[0]}</button>`).join('')}
+          <button class="btn ghost sm" id="b-cback">Back</button>
+        </div>
+      </div>`;
+    document.getElementById('b-step').onclick = () => {
+      // step to adjacent if blocked, else to the cell
+      const c = detail[cy] && detail[cy][cx];
+      if (Game.cellProps(c).blocks) {
+        // find adjacent
+        const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+        let best = null, bestD = 99;
+        for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+          const cc = detail[ny] && detail[ny][nx];
+          if (Game.cellProps(cc).blocks) continue;
+          const d = Math.abs(nx - px) + Math.abs(ny - py);
+          if (d < bestD) { bestD = d; best = [nx, ny]; }
+        }
+        if (best) Game.movePath(best[0], best[1]);
+      } else {
+        Game.movePath(cx, cy);
+      }
+      expeditionScreen();
+    };
+    stepActs.forEach((a, i) => {
+      document.querySelector(`[data-act="${i}"]`).onclick = () => a[1]();
+    });
+    document.getElementById('b-cback').onclick = () => expeditionScreen();
+  }
+
   // invPopup: what are you carrying? always accessible, not hidden.
   // Crafting lives here too — supplies to feed yourself.
   function invPopup() {
@@ -402,11 +485,19 @@
       el.onclick = () => {
         const cx = +el.dataset.cx, cy = +el.dataset.cy;
         const actions = Game.cellActions(cx, cy); // what decisions exist here?
+        const path = Game.findPath(Game.state.scholar.mx ?? 4, Game.state.scholar.my ?? 4, cx, cy);
+        const steps = path ? path.length : 0;
         if (actions.length === 0) {
-          Game.movePath(cx, cy); // walk the path, pay per square
-          expeditionScreen(); // refresh
+          // Just ground. But >3 steps? Confirm (it's a commitment).
+          if (steps > 3) {
+            confirmMove(cx, cy, steps);
+          } else {
+            Game.movePath(cx, cy);
+            expeditionScreen();
+          }
         } else {
-          cellPopup(cx, cy); // consequential — show options
+          // Interactable destination. Popup: step here, OR step here + do the thing.
+          moveOrActPopup(cx, cy, steps, actions);
         }
       };
     });
