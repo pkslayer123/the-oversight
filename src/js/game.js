@@ -10447,6 +10447,14 @@
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
       }
+      // BOSS GATE: a sweeping-beam monster refuses to fall before its first
+      // Discharge. Burst damage can't skip the fight — the beam WILL fire.
+      // (Gate lifts the moment the beam goes live.)
+      const tPat = t.kind === 'monster' && t.mdef && t.mdef.attack && t.mdef.attack.pattern;
+      if (tPat && tPat.sweep && !t.hasFired && t.hp > 0 && t.hp - final <= 0) {
+        final = t.hp - 1;
+        this.say(`It should be dead — but the light in ${t.name}'s eyes won't go out. Not before it fires.`);
+      }
       t.hp -= final;
       if (t.kind === 'player') {
         this.state.scholar.health = Math.max(0, t.hp);
@@ -10619,6 +10627,7 @@
           tg.aim = tg.aim || { x: p0 ? p0.mx : m.mx, y: p0 ? p0.my : m.my };
           tg.aimKey = tg.aimKey || 'p';
           tg.firing = (tg.pattern || {}).fireTurns || 2;
+          m.hasFired = true; // the boss gate lifts — it got its shot off
           this.say(`💥 ${tg.attackName}! The beam is LIVE — and it's sweeping toward you. MOVE.`);
           this.audioEvent('impact', { beam: (tg.pattern || {}).type === 'beam', highbeam: /highbeam/i.test(m.name || '') });
           this.tbBeamSweepTick(m, tg);
