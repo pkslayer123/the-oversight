@@ -70,9 +70,11 @@
       this.state.village.pantry = []; // list of food items
       this.state.village.pantryKcal = 0; // (kept for compat, computed from pantry)
       // Fill with staples: dried beans, rice, canned goods (safe, long spoil).
+      // Staples: beans are RAW (need cooking, 150 raw -> 300 cooked).
+      // If you don't know to cook them, they're half the food. Knowledge is calories.
       const staples = [
-        { name: 'Dried beans', kcalEach: 300, units: 20, spoilDay: 9999, safe: true, kg: 0.5 },
-        { name: 'Rice', kcalEach: 350, units: 15, spoilDay: 9999, safe: true, kg: 0.5 },
+        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 20, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true },
+        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 15, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true },
         { name: 'Canned soup', kcalEach: 250, units: 10, spoilDay: 9999, safe: true, kg: 0.4 },
       ];
       let kcal = 0;
@@ -1325,6 +1327,27 @@
       this.say(`Walked ${path.length} squares (${cost} kcal).`);
       this.ensureVillagerPositions();
       return true;
+    },
+
+    // cookFood: at a fire, raw -> cooked. More calories, safer.
+    // Requires: fire nearby, knowledge (L3 tells you it needs cooking).
+    cookFood(idx) {
+      const item = this.state.scholar.inventory[idx];
+      if (!item) return null;
+      // need fire (in detail grid)
+      const detail = this.genDetail(this.map.px, this.map.py);
+      let hasFire = false;
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        if (detail[y] && detail[y][x] === 'fire') hasFire = true;
+      }
+      if (!hasFire) { this.say('Need a fire to cook.'); return null; }
+      if (!item.rawKcal) { this.say('Nothing to cook there.'); return null; }
+      // cook it: rawKcal -> kcalEach (cooked)
+      item.kcalEach = item.cookedKcal || item.rawKcal * 1.5;
+      item.rawKcal = null; // it's cooked now
+      item.safe = true; // cooking kills the risk (mostly)
+      this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now.`);
+      return null;
     },
 
     // takeFromPantry: pack food before going out. Weight matters (20kg max).

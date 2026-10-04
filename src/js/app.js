@@ -304,7 +304,7 @@
     screen.innerHTML = `${bar('scattering://pack', st.invCount + ' items')}
       <div class="card" style="margin-top:40px">
         <h3>Pack</h3>
-        ${inv.length ? inv.map((i, idx) => `<p class="small"><b>${i.name}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${inv.length ? inv.map((i, idx) => `<p class="small"><b>${i.name}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}
         <button class="btn ghost sm" id="b-iback">Back</button>
@@ -314,6 +314,7 @@
     screen.querySelectorAll('[data-settrap]').forEach(b => b.onclick = () => { Game.setTrap(b.dataset.settrap); expeditionScreen(); });
     screen.querySelectorAll('[data-read]').forEach(b => b.onclick = () => { Game.readBook(b.dataset.read); invPopup(); });
     screen.querySelectorAll('[data-use]').forEach(b => b.onclick = () => { Game.useItem(+b.dataset.use); invPopup(); });
+    screen.querySelectorAll('[data-cook]').forEach(b => b.onclick = () => { Game.cookFood(+b.dataset.cook); invPopup(); });
   }
 
   function talkOverlay(vid) {
@@ -419,7 +420,7 @@
       <h2>Pantry</h2>
       <p class="small">Take what you need. Carrying ${carry.toFixed(1)}/20 kg.</p>
       <p class="small">💧 ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
-      ${pantry.length ? pantry.map((p, idx) => `<p class="small"><b>${p.name}</b> x${p.units} (${p.kcalEach * p.units} kcal)${p.safe ? '' : ' ⚠ UNSAFE'}${p.spoilDay <= st.day ? ' ⚠ SPOILED' : ''} <button class="btn ghost sm" data-take="${idx}">Take 1</button></p>`).join('') : '<p class="small">Empty.</p>'}
+      ${pantry.length ? pantry.map((p, idx) => `<p class="small"><b>${p.name}</b> x${p.units} (${p.kcalEach * p.units} kcal)${p.safe ? '' : ' ⚠ UNSAFE'}${p.needsCooking ? ' (cook it)' : ''}${p.spoilDay <= st.day ? ' ⚠ SPOILED' : ''} <button class="btn ghost sm" data-take="${idx}">Take 1</button></p>`).join('') : '<p class="small">Empty.</p>'}
       <button class="btn" id="x-back">Back</button>`;
     screen.querySelectorAll('[data-take]').forEach(b => b.onclick = () => { Game.takeFromPantry(+b.dataset.take); pantryPopup(); });
     document.getElementById('x-back').onclick = () => expeditionScreen();
