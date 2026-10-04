@@ -214,7 +214,7 @@
       const dipLvl = this.abilityLevel('diplomat');
       const dipMult = dipLvl >= 2 ? 3 : dipLvl >= 1 ? 2 : 1;
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
-      const newTrust = Math.min(40, trust + 3 * dipMult);
+      const newTrust = trust >= 40 ? trust : Math.min(40, trust + 3 * dipMult);
       if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
       // the tone shifts with trust (not the number — you feel it)
       const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
