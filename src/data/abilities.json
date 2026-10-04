@@ -360,8 +360,8 @@
   {
     "id": "lucky_rock",
     "name": "Lucky Rock",
-    "description": "You have a lucky rock. (+1% to everything. It's the thought that counts.)",
-    "flavor": "The rock! It is lucky! We can feel the luck! (We can't. But you can!)",
+    "description": "Your lucky rock. +5% to everything. (It's not the rock. It's you believing in the rock. The System finds this adorable and helps a little.)",
+    "flavor": "The rock! It is lucky! We checked! It's... a rock! But YOU believe! Belief is power! (We added 4%.)",
     "pool": "system",
     "tier": "underpowered",
     "unlock": {
@@ -371,10 +371,186 @@
   {
     "id": "bird_whisperer",
     "name": "Bird Whisperer",
-    "description": "Birds land on you sometimes. (No effect. But birds.)",
-    "flavor": "The sky-flappers trust you! We are jealous!",
+    "description": "Birds land on you. They also warn you: +20% chance to detect monsters before they detect you. (The birds see everything.)",
+    "flavor": "The sky-flappers are your spies! They tell you secrets! Mostly about breadcrumbs! But sometimes about TEETH!",
     "pool": "system",
     "tier": "underpowered",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "chitin_skin",
+    "name": "Chitin Skin",
+    "description": "Your skin hardens into plates. +30 armor, but -20% trust (you look wrong).",
+    "flavor": "You are becoming the beetle! The beetle is strong! The beetle is... lonely! But strong!",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "extra_stomach",
+    "name": "Extra Stomach",
+    "description": "You grow a second stomach. Eat 2x food, but you need 2x food. (It's always hungry.)",
+    "flavor": "Two tummies! Twice the hunger! Twice the... we didn't think this through! But WOW!",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "eyes_in_back",
+    "name": "Eyes in the Back",
+    "description": "You see behind you. Can't be ambushed. But you see... things. (-5 morale when alone.)",
+    "flavor": "You see the behind! We see the... we don't want to see the behind! Too many teeth!",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "molt",
+    "name": "Molt",
+    "description": "Once per week, shed your skin. Heal to full, but lose all equipped gear (it's stuck in the old skin).",
+    "flavor": "You peel! Like the fruit! The new you is shiny! The old you is... leave it! Run!",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "blood_magic",
+    "name": "Blood Price",
+    "description": "Spend 10 HP to gain 500 kcal. (Your body eats itself. It's efficient. It's horrifying.)",
+    "flavor": "You burn the red! The red becomes food! We are... concerned! But the math works!",
+    "pool": "system",
+    "tier": "risky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "rage",
+    "name": "Berserker Rage",
+    "description": "+100% damage, but you attack the nearest thing (friend or foe). Lasts 3 rounds.",
+    "flavor": "ANGRY! SO ANGRY! Hit the... oh no! That was a friend! ...they'll understand! Maybe!",
+    "pool": "system",
+    "tier": "risky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "cannibal_frenzy",
+    "name": "Red Hunger",
+    "description": "When starving, you can eat anything (even people). +1000 kcal, but -30 trust permanently.",
+    "flavor": "The hunger is LOUD! It says 'eat the... oh! OH! We didn't mean THEM! But... you did!'",
+    "pool": "system",
+    "tier": "risky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "pact",
+    "name": "Pact with Static",
+    "description": "Gain a random overpowered ability, but lose a random utility ability. (The Static gives. The Static takes.)",
+    "flavor": "You whisper to the between! It answers! It ALWAYS answers! That's the problem!",
+    "pool": "system",
+    "tier": "risky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "scream_cheese",
+    "name": "Scream Cheese",
+    "description": "You can scream so loud it curdles milk (and stuns monsters for 1 round). 1/day.",
+    "flavor": "AAAAA! The milk is cheese now! The monsters are dizzy! Your throat hurts! Worth it!",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "pocket_sand",
+    "name": "Pocket Sand",
+    "description": "Throw sand in eyes. Blinds for 2 rounds. (You always have sand. Don't ask where.)",
+    "flavor": "SAND! In the eyes! It's in YOUR pocket! How?! We don't know! But it's there!",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "taste_vision",
+    "name": "Taste Vision",
+    "description": "You can taste colors. (Reveals hidden loot: +30% find chance in ruins. The walls taste like secrets.)",
+    "flavor": "The red tastes like... copper! The blue tastes like... hiding places! Lick the walls!",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "poisoner",
+    "name": "Poisoner",
+    "description": "You can poison food/water. (Useful against monsters. Or... others.)",
+    "flavor": "The food is spicy now! The spicy is... death! We are worried about you! But impressed!",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "fear_aura",
+    "name": "Dread",
+    "description": "Villagers and monsters are uneasy around you. -10 trust, but monsters hesitate (+1 round before attacking).",
+    "flavor": "You are the scary! We are scared! The monsters are scared! Everyone is scared! ...fun!",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "grave_robber",
+    "name": "Grave Robber",
+    "description": "You can loot the dead (villagers, monsters). Good gear. -15 trust if seen.",
+    "flavor": "The dead don't need the shiny! You need the shiny! The living... disagree!",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "time_skip",
+    "name": "Time Skip",
+    "description": "Skip to the next day part instantly. (Ages you 1 day. The time has to come from somewhere.)",
+    "flavor": "You jump the time! The time jumps you back! You are older! But... faster!",
+    "pool": "system",
+    "tier": "overpowered",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "hive_mind",
+    "name": "Hive Mind",
+    "description": "You know what all villagers are doing (map reveals). But they know what YOU'RE doing too. (-10 trust.)",
+    "flavor": "All the brains touch! It's cozy! It's invasive! It's... both! We love it!",
+    "pool": "system",
+    "tier": "overpowered",
     "unlock": {
       "type": "system_offer"
     }
