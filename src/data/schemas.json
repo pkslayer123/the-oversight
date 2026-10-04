@@ -84,7 +84,10 @@
         "observed": "string",
         "slain": "string"
       },
-      "systemDesignation": "string?"
+      "systemDesignation": "string?",
+      "aggression": "string",
+      "follows": "boolean",
+      "fear": "string"
     }
   },
   "ability": {

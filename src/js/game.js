@@ -978,16 +978,22 @@
     playerTile() { return this.tileAt(this.map.px, this.map.py); },
 
     // --- travel: costs the day-part's action. destinations are decisions. ---
+    // FOG OF WAR: you can walk into "?" — the unknown. Adjacent unrevealed tiles are valid.
+    // You don't know what's there until you arrive. Hope nothing's waiting.
     travelTargets() {
       const out = [];
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
         const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
-        if (d > 0 && d <= 3 && this.tileAt(x, y).revealed) out.push({ x, y, d });
+        const t = this.tileAt(x, y);
+        // revealed within 3, OR adjacent unrevealed (walking into fog)
+        if (d > 0 && (d <= 3 && t.revealed || d === 1)) out.push({ x, y, d, unknown: !t.revealed });
       }
       return out;
     },
 
     travelTo(x, y) {
+      const dest = this.tileAt(x, y);
+      const wasUnknown = !dest.revealed;
       if (this.over) return null;
       const t = this.travelTargets().find(t => t.x === x && t.y === y);
       if (!t) return null;
@@ -1002,11 +1008,29 @@
         msg += `\n— ${arr.title} —\n${tile.ruinStory || arr.text}`;
         // no free lessons on arrival — the land teaches when you work it, not when you walk in.
       }
+      // WALKING INTO FOG: if it was unknown, something might be waiting.
+      if (wasUnknown && Math.random() < 0.3) {
+        // 30%: a monster was already here. surprise.
+        const mdefs = this.data.monsters;
+        const mdef = mdefs[Math.floor(Math.random() * mdefs.length)];
+        this.state.scholar.monster = { id: mdef.id, x: 4 + Math.floor(Math.random() * 3) - 1, y: 4 + Math.floor(Math.random() * 3) - 1 };
+        this.say(`Something was waiting. A ${mdef.name} looks up at you.`);
+      }
       this.say(msg);
       // arrive at the center of the new tile's detail grid. you're IN the world now.
       this.state.scholar.mx = 4; this.state.scholar.my = 4;
-      this.state.scholar.monster = null; // monsters don't follow you between tiles
-      this.state.scholar.animal = null; // animals don't either
+      // MONSTERS FOLLOW (if they want to). Territorial and hungry ones do. Skittish ones don't.
+      const oldMonster = this.state.scholar.monster;
+      if (oldMonster) {
+        const mdef = this.data.monsters.find(m => m.id === oldMonster.id);
+        if (mdef && mdef.follows) {
+          // it followed you. it's in the new tile's grid.
+          this.say(`It followed you. The ${mdef.name} is here.`);
+        } else {
+          this.state.scholar.monster = null; // it didn't care enough to follow
+        }
+      }
+      this.state.scholar.animal = null; // animals don't follow
       if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
       this.checkAnimals();
@@ -1269,8 +1293,19 @@
         const pos = v.positions[rid];
         // 50% chance to move (downtime), else stay
         if (Math.random() > 0.5) continue;
-        const dx = Math.floor(Math.random() * 3) - 1;
-        const dy = Math.floor(Math.random() * 3) - 1;
+        // FLEE: trust < 20 and you're close? They move AWAY. Strangers are scary.
+        const trust = (v.trust && v.trust[rid]) || 0;
+        const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+        const dist = Math.abs(pos.mx - px) + Math.abs(pos.my - py);
+        let dx, dy;
+        if (trust < 20 && dist <= 3 && Math.random() < 0.6) {
+          // run from you
+          dx = Math.sign(pos.mx - px); dy = Math.sign(pos.my - py);
+          if (dx === 0 && dy === 0) { dx = 1; }
+        } else {
+          dx = Math.floor(Math.random() * 3) - 1;
+          dy = Math.floor(Math.random() * 3) - 1;
+        }
         const nx = Math.max(0, Math.min(8, pos.mx + dx));
         const ny = Math.max(0, Math.min(8, pos.my + dy));
         const cell = detail[ny] && detail[ny][nx];

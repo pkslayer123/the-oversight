@@ -822,3 +822,21 @@ PRINCIPLE: Every ability is benefit ↔ cost. No pure penalties.
 - Conservation of energy: you pay for what you get. Nothing is free, nothing is pure tax.
 - (Implementation: metabolicMult exists but should only apply when the ability grants
   a proportional benefit. Don\'t scale cost without scaling use.)
+
+## 2026-10-03 — Other villages (Steve)
+Steve: "Do other villages exist yet? How do we handle spawning a village that wasn\'t on
+original generated map but now it\'s halfway through the game and it shouldn\'t be a fresh
+village? Basically run some sort of sim of all the days since when you walk up to them?
+Only the first ones you spawn near provide competition until the others are generated and
+then continued simulating from there?"
+
+IMPLEMENTED:
+- genVillages(): 2-3 villages placed on 7x7 (away from Haven, away from each other).
+- Each: name, population 8-12, pantry, knowledge, day=0, generated=false.
+- catchUpSim(village): when you get within 2 tiles, simulate all days since game start.
+  - They forage (depleting the WORLD — competition!), eat 2000/person, starve if empty.
+  - Population can shrink. Knowledge grows. They\'ve been living.
+- checkVillageProximity(): hooked into endDayPart. "You see smoke on the horizon."
+- Map shows 🏘️ for generated villages.
+- Near villages (within 2 of spawn): they\'re competing from day 1 (depleteRandomTile).
+- Far villages: generated on approach, catch-up sim to current day. Not fresh.

@@ -36,7 +36,10 @@
       "observed": "Feral hog. The System observed 'bull in a china shop' and concluded destruction is the point. It charges through obstacles \u2014 trees, fences, you. It cannot be deterred, only redirected.",
       "slain": "Thornback Boar. Moves: China-Shop Charge (heavy, telegraphed, destroys cover), Trample (close range after a missed charge), Retreat (below 25% hp, may return). It will not go around. Use that. Flanks are soft \u2014 harry it, then strike. Meat: excellent. The quills make fine awls."
     },
-    "systemDesignation": "Sus scrofa (standard)"
+    "systemDesignation": "Sus scrofa (standard)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "fire"
   },
   {
     "id": "hushwolf",
@@ -74,7 +77,10 @@
       "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you.",
       "slain": "Hushwolf. Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
     },
-    "systemDesignation": "Canis familiaris (standard)"
+    "systemDesignation": "Canis familiaris (standard)",
+    "aggression": "hungry",
+    "follows": true,
+    "fear": "numbers"
   },
   {
     "id": "gallowdeer",
@@ -112,6 +118,9 @@
       "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' \u2014 and right that you should move. When it freezes, it is aiming. Antlers never shed: the System classified them as permanent equipment.",
       "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze \u2014 MOVE), Antler Sweep (close range), Bolt (flees at 50% hp). Never let it finish aiming. The meat is worth the sorrow. Thank it."
     },
-    "systemDesignation": "Odocoileus virginianus (standard)"
+    "systemDesignation": "Odocoileus virginianus (standard)",
+    "aggression": "skittish",
+    "follows": false,
+    "fear": "movement"
   }
 ]
