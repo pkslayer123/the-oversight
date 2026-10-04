@@ -284,6 +284,14 @@
           { id: 'leave', label: '(walk away)' },
         ];
       }
+      // TRADE THREAD: focused. They've laid out terms; you decide.
+      if (c.thread === 'trade' && c.pendingTrade) {
+        return [
+          { id: 'trade_yes', label: '"Deal."' },
+          { id: 'trade_no', label: '"Another time, maybe."' },
+          { id: 'leave', label: '"I should go."' },
+        ];
+      }
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
       const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
       const asked = c.askedTopics || [];
@@ -293,7 +301,47 @@
       if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: '"How\'s everyone holding up?"' });
       if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: '"What\'s your plan for tomorrow?"' });
       for (const a of asks) if (a.id !== threadAsk && choices.length < 4) choices.push(a);
-      if (this.goalKnown(vid) && !c.offeredHelp && choices.length < 5) choices.push({ id: 'offer_help', label: '"I could help with that."' });
+      // PROMISES are discovered, not menued. Before you've learned the
+      // concept, the offer only surfaces when they've really opened up
+      // (deep in their goal thread). After that, any known goal will do.
+      // The handler makes a FORMAL tracked promise — keep it or break it.
+      const alreadyPromised = !!((this.state.village.promises || {})[vid]);
+      if (this.goalKnown(vid) && !c.offeredHelp && !alreadyPromised && choices.length < 5) {
+        const openedUp = c.thread === 'goal' && (c.depth || 0) >= 2;
+        if (this.hasDiscovered('promise') || openedUp) choices.push({ id: 'offer_help', label: '"I could help with that."' });
+      }
+      // KNOWLEDGE TRADING is discovered through conversation: traders seed it
+      // by mentioning it; once learned, you can raise it with any trader.
+      if (choices.length < 5) {
+        try {
+          const isTrader = this.isKnowledgeTrader && this.isKnowledgeTrader(vid);
+          const tradeable = isTrader ? (this.traderKnowledge(vid) || []) : [];
+          if (isTrader && tradeable.length && (this.hasDiscovered('trade') || c.traderMentioned)) {
+            choices.push({ id: 'trade', label: '"You know things. I know things. Shall we trade?"' });
+          }
+        } catch (e) {}
+      }
+      // TEACHING happens in conversation now — show, don't menu.
+      if (choices.length < 5) {
+        try {
+          const youKnow = Object.keys(this.state.codex.plants || {});
+          const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
+          if (youKnow.some(pid => theyKnow.indexOf(pid) === -1)) {
+            choices.push({ id: 'teach', label: this.hasDiscovered('teach') ? '"Let me show you something."' : '"Could I show you something?"' });
+          }
+        } catch (e) {}
+      }
+      // PARTY INVITES live in conversation, not on a button. Discovered via
+      // the System unlock. You ask people. Like a person.
+      if (choices.length < 5) {
+        try {
+          if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
+              !this.inParty(vid) && !this.partyFull()) {
+            const trust = (this.state.village.trust || {})[vid] || 10;
+            if (this.hasDiscovered('party') && trust >= 20) choices.push({ id: 'invite_party', label: '"Want to come with me?"' });
+          }
+        } catch (e) {}
+      }
       // THEORIZE: think TOGETHER. Not info-vending — joint discovery.
       // System talk only makes sense after it arrives; before that, the
       // scattering itself and the monsters are the mystery.
@@ -322,6 +370,7 @@
       c.thread = null; c.depth = 0; c.transcript = []; c.pendingQ = null;
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
       c.qAskedThisConvo = false; c.theorized = [];
+      c.traderMentioned = false; c.pendingTrade = null;
       c.count++; c.lastDay = this.state.scholar.day;
       // TALKING COSTS ENERGY — 20 kcal per conversation, not per line.
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 20);
@@ -358,6 +407,15 @@
       c.thread = op.thread; c.depth = 1;
       c.transcript.push({ who: 'them', text: op.line });
       this.say(`${this.displayName(vid)}: "${op.line}"`);
+      // SEEDING: knowledge traders mention their trade in conversation — the
+      // mechanic is discovered by talking, not by a button. Once you've
+      // learned the concept, you can bring it up with any trader yourself.
+      if (this.isKnowledgeTrader && this.isKnowledgeTrader(vid) && !this.hasDiscovered('trade') && Math.random() < 0.5) {
+        const seed = '"...I should say, I trade in what I know. My knowledge for yours. Or food, if you\'re short on secrets."';
+        c.transcript.push({ who: 'them', text: seed });
+        this.say(`${this.displayName(vid)}: ${seed}`);
+        c.traderMentioned = true;
+      }
       return { line: op.line, choices: this.convoChoices(vid), transcript: c.transcript.slice(), ended: false };
     },
 
@@ -400,14 +458,79 @@
         done(this.convoAskTopic(vid, topic), labels[topic] || null);
       } else if (choiceId === 'offer_help') {
         c.offeredHelp = true;
-        const l = this.convoPick(vid, 'offerhelp', [
-          '"You\'d do that? ...Thank you. Really."',
-          '"I won\'t forget you said that."',
-          '"Okay. Okay — that means something, you know that?"',
-        ]) || '"Thank you."';
-        const t = this.state.village.trust || {};
-        t[vid] = Math.min(100, (t[vid] || 10) + 2);
-        done(l, '"I could help with that."');
+        // A promise is a FORMAL tracked commitment now — not just +2 trust.
+        // This is the conversation path to promiseHelp (the button is gone).
+        // Keep it or break it: they remember.
+        const pr = this.promiseHelp(vid);
+        if (pr && pr.ok) {
+          done('"...Thank you. Really."', '"I could help with that."');
+        } else {
+          const l = this.convoPick(vid, 'offerhelp', [
+            '"You\'d do that? ...Thank you. Really."',
+            '"I won\'t forget you said that."',
+            '"Okay. Okay — that means something, you know that?"',
+          ]) || '"Thank you."';
+          const t = this.state.village.trust || {};
+          t[vid] = Math.min(100, (t[vid] || 10) + 2);
+          done(l, '"I could help with that."');
+        }
+      } else if (choiceId === 'trade') {
+        // Knowledge trading, discovered through conversation. They lay out
+        // what they know and the price; you decide. No button was ever here.
+        const tradeable = (this.traderKnowledge && this.traderKnowledge(vid)) || [];
+        if (!tradeable.length) {
+          done('"Nothing I know that you don\'t — right now. The green world keeps its secrets."', '"You know things. I know things. Shall we trade?"');
+        } else {
+          const pid = tradeable[0];
+          const p = (this.data.plants || []).find(x => x.id === pid) || {};
+          const pname = (this.plantKnown && this.plantKnown(pid)) ? p.name : (p.description || 'a plant');
+          const trust = (this.state.village.trust || {})[vid] || 10;
+          const price = trust >= 60 ? 'trust' : (trust >= 30 ? 'food' : 'knowledge');
+          const priceLine = price === 'trust'
+            ? '"For you? Just remember who taught you."'
+            : price === 'food'
+              ? `"${pname} — I know it deep. 300 kcal of food and it's yours."`
+              : `"${pname}. Deep knowledge. ...What do YOU know that's worth it?"`;
+          c.thread = 'trade'; c.depth = 1;
+          c.pendingTrade = { pid, price };
+          done(`"Ah. A fellow collector." ${priceLine}`, '"You know things. I know things. Shall we trade?"');
+        }
+      } else if (choiceId === 'trade_yes') {
+        const pt = c.pendingTrade;
+        c.pendingTrade = null; c.thread = null;
+        if (pt) {
+          const before = ((this.state.codex.plants || {})[pt.pid] || {}).level || 0;
+          this.tradeKnowledge(vid, pt.pid);
+          const after = ((this.state.codex.plants || {})[pt.pid] || {}).level || 0;
+          done(after > before ? '"Pleasure doing business."' : '"...Come back when you can pay."', '"Deal."');
+        } else {
+          done('"..."', '"Deal."');
+        }
+      } else if (choiceId === 'trade_no') {
+        c.pendingTrade = null; c.thread = null;
+        done('"Another time, then. Knowledge keeps."', '"Another time, maybe."');
+      } else if (choiceId === 'teach') {
+        // Teaching happens in conversation now — show, don't menu.
+        const youKnow = Object.keys(this.state.codex.plants || {});
+        const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
+        const teachable = youKnow.filter(pid => theyKnow.indexOf(pid) === -1);
+        if (!teachable.length) {
+          done('"Huh — looks like we\'re even on the green stuff."', '"Let me show you something."');
+        } else {
+          const pid = teachable[0];
+          this.state.village.taught[vid] = this.state.village.taught[vid] || [];
+          this.state.village.taught[vid].push(pid);
+          const pname = ((this.data.plants || []).find(p => p.id === pid) || {}).name || pid;
+          this.discover('teach');
+          const t = this.state.village.trust || {};
+          t[vid] = Math.min(100, (t[vid] || 10) + 2);
+          try { this.socialTick(vid); } catch (e) {}
+          try { this.tickAction(3); } catch (e) {}
+          done(`You show them ${pname} — where it grows, how to tell it apart. Their eyes widen. "I never knew that."`, '"Let me show you something."');
+        }
+      } else if (choiceId === 'invite_party') {
+        const r = (this.inviteToParty && this.inviteToParty(vid)) || { ok: false, msg: '...' };
+        done(`"${r.msg || '...'}"`, '"Want to come with me?"');
       } else if (choiceId === 'theorize') {
         // Think TOGETHER. Topic order: the System (if it's here), the monsters,
         // the situation. Each NPC theorizes in their intelligence voice — and

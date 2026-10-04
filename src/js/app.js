@@ -1278,6 +1278,16 @@
     }
     // LEADERSHIP CHALLENGE: they're confronting you about who's in charge.
     // This conversation is about one thing. Yield a domain or hold your ground.
+    // === PARTY ===
+    // Formal parties are a System unlock. Pre-System, followers are informal.
+    try { btns += Game.partyButtonHtml(villagerId); } catch (e) {}
+    // === ATTACK: deliberate, two-tap. Violence against people is always a choice.
+    // Not an accident, not a misclick. You tap once, it asks. You tap again, it's done.
+    if (view.confirmAttack === villagerId) {
+      btns += ` <button class="btn sm" data-act="attackConfirm" style="border-color:#e05c5c;color:#e05c5c">⚔ Attack ${esc(titleName)}? Tap again — this can't be undone.</button>`;
+    } else {
+      btns += ` <button class="btn sm ghost" data-act="attackAsk" style="opacity:.55">⚔ Attack</button>`;
+    }
     const chal = (Game.state.village.challenge || {});
     let challengeHtml = '';
     if (chal.cid === villagerId) {
@@ -1402,6 +1412,28 @@
     else if (act === 'confront') {
       const r = Game.confrontGossip(vid);
       view.result = r ? 'You confronted them.' : null;
+    }
+    else if (act === 'inviteParty') {
+      const r = Game.inviteToParty(vid);
+      view.result = r ? r.msg : null;
+    }
+    else if (act === 'dismissParty') {
+      const r = Game.dismissFromParty(vid);
+      view.result = r ? r.msg : null;
+    }
+    else if (act === 'attackAsk') {
+      // First tap: arm the choice. Deliberate, not accidental.
+      view.confirmAttack = vid;
+    }
+    else if (act === 'attackConfirm') {
+      // Second tap: it's done. There is no third tap.
+      view.confirmAttack = null;
+      Game.playerAttacks(vid);
+      view.result = null; // playerAttacks says its own terrible things
+    }
+    else if (act === 'attackPerson') {
+      // legacy path — route through confirm
+      view.confirmAttack = vid;
     }
     refresh();
   }
@@ -1793,7 +1825,7 @@
     const n = Game.nodeDetail();
 
     screen.innerHTML = `
-      ${bar('scattering://field', `${dialHTML(st)}<span>day ${st.day} · ${st.dayPart}<br><span style="font-size:11px;opacity:.7">${esc(st.dayPartHint)}</span></span>`)}
+      ${bar('scattering://field', `${dialHTML(st)}<span>day ${st.day} · ${st.dayPart}<br><span style="font-size:11px;opacity:.7">${esc(st.dayPartHint)}</span></span>${Game.partyHud()}`)}
       ${dayTickBar(st)}
       <div class="game-cols">
         <div class="game-col-main">
@@ -2161,7 +2193,9 @@
       const pct = Math.max(0, Math.round(m.hp / m.maxHp * 100));
       return `<p class="small">${m.emoji} <b>${esc(m.name)}</b> — ${Math.max(0, Math.round(m.hp))}/${m.maxHp} HP ${m.telegraph ? '⚠ winding up…' : ''}</p>`;
     }).join('');
-    const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= 1) : [];
+    const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= (Game.equippedWeapon ? Game.equippedWeapon().range : 1)) : [];
+    const wrange = Game.equippedWeapon ? Game.equippedWeapon().range : 1;
+    const wname = Game.equippedWeapon ? Game.equippedWeapon().name : '';
     const canScream = Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day;
     const yourTurn = Game.tbIsPlayerTurn();
     return `
@@ -2170,7 +2204,7 @@
       ${monRows}
       ${yourTurn && p ? `<p class="small">Your turn — <b>${p.moveLeft}</b> move left${p.acted ? ' · acted' : ''}. Tap a tile to move.</p>
       <div class="actions">
-        <button class="btn sm" id="c-strike" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
+        <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${wrange > 1 ? ` (${wrange})` : ''}${adj.length > 1 ? '…' : ''}</button>
         <button class="btn sm" id="c-study" ${p.acted ? 'disabled' : ''}>👁 STUDY</button>
         ${canScream ? `<button class="btn sm" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀 SCREAM</button>` : ''}
       </div>
@@ -2191,8 +2225,9 @@
       const tf = Game.tbfight;
       if (!tf) return;
       const p = Game.tbFighter('p');
+      const wr = Game.equippedWeapon ? Game.equippedWeapon().range : 1;
       const adj = tf.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled
-        && Math.max(Math.abs(x.mx - p.mx), Math.abs(x.my - p.my)) <= 1);
+        && Math.max(Math.abs(x.mx - p.mx), Math.abs(x.my - p.my)) <= wr);
       if (!adj.length) return;
       if (adj.length === 1) { Game.tbPlayerStrike(adj[0].key); rerender(); return; }
       enterTargeting({

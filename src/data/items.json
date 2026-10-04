@@ -371,7 +371,8 @@
     "name": "Sharpened stick",
     "weapon": {
       "bonus": 10,
-      "type": "melee"
+      "type": "melee",
+      "range": 1
     },
     "craftable": true,
     "materials": {
@@ -385,7 +386,8 @@
     "name": "Stone knife",
     "weapon": {
       "bonus": 20,
-      "type": "melee"
+      "type": "melee",
+      "range": 1
     },
     "craftable": true,
     "materials": {
@@ -400,7 +402,8 @@
     "name": "Hunting spear",
     "weapon": {
       "bonus": 30,
-      "type": "melee"
+      "type": "melee",
+      "range": 2
     },
     "craftable": true,
     "materials": {
@@ -416,7 +419,8 @@
     "name": "Kitchen knife",
     "weapon": {
       "bonus": 15,
-      "type": "melee"
+      "type": "melee",
+      "range": 1
     },
     "findable": true,
     "class": "weapon",
@@ -474,7 +478,9 @@
     "baseEffect": "Ranged. Bonus +15. Quiet.",
     "weapon": {
       "bonus": 15,
-      "type": "ranged"
+      "type": "ranged",
+      "range": 4,
+      "ammo": "stone"
     },
     "craftable": true,
     "materials": {
@@ -500,7 +506,8 @@
     "baseEffect": "Melee. Bonus +25.",
     "weapon": {
       "bonus": 25,
-      "type": "melee"
+      "type": "melee",
+      "range": 2
     },
     "craftable": true,
     "materials": {
@@ -525,7 +532,8 @@
     "baseEffect": "Melee. Bonus +25. Also a tool.",
     "weapon": {
       "bonus": 25,
-      "type": "melee"
+      "type": "melee",
+      "range": 1
     },
     "findable": true,
     "bondThresholds": [
@@ -547,7 +555,8 @@
     "baseEffect": "Melee. Bonus +35.",
     "weapon": {
       "bonus": 35,
-      "type": "melee"
+      "type": "melee",
+      "range": 1
     },
     "findable": true,
     "bondThresholds": [
@@ -569,7 +578,9 @@
     "baseEffect": "Ranged. Bonus +40.",
     "weapon": {
       "bonus": 40,
-      "type": "ranged"
+      "type": "ranged",
+      "range": 5,
+      "ammo": "arrow"
     },
     "craftable": true,
     "materials": {
@@ -828,7 +839,8 @@
     "baseEffect": "Melee. Bonus +20. Pries things open.",
     "weapon": {
       "bonus": 20,
-      "type": "melee"
+      "type": "melee",
+      "range": 1
     },
     "findable": true,
     "bondThresholds": [
@@ -961,5 +973,16 @@
     "flavor": "A solid log. Building material. Future walls start here.",
     "kg": 2.0,
     "findable": false
+  },
+  {
+    "id": "arrow",
+    "name": "Arrow",
+    "class": "ammo",
+    "flavor": "straight, fletched, meant for something living",
+    "craftable": true,
+    "materials": {
+      "stick": 1
+    },
+    "craftYield": 3
   }
 ]

@@ -2057,6 +2057,8 @@
       if (!food) { this.say("You have nothing to offer."); return null; }
       const tasks = this.delegateTasks();
       if (!tasks[task]) return null;
+      // you learned the concept the moment you tried it — refused or not.
+      this.discover('deal');
       food.units -= 1;
       if (food.units <= 0) this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
       const first = this.displayName(vid);
@@ -2113,6 +2115,8 @@
       // appeal adds effective trust: 10 + 10 per affinity point
       const bonus = 10 + aff * 10;
       const trust = ((this.state.village.trust || {})[vid] || 10) + bonus;
+      // framing a request through what they want — you learn this by doing it.
+      this.discover('appeal');
       const lines = {
         feed: `"Think about it — full bellies. That's what this gets us."`,
         protect: `"This keeps people safe. That's what you want, isn't it?"`,
@@ -2219,6 +2223,35 @@
     goalKnown(vid) {
       if (this.state.systemArrived) return true;
       return !!((this.state.village.goalsKnown || {})[vid]);
+    },
+
+    // DISCOVERIES: social mechanics are learned through conversation, not
+    // menus. Steve's rule: "Not a default action but something to discover
+    // via intentional conversation." Once you've done it once — traded
+    // knowledge, taught someone, made a promise, cut a deal — you know the
+    // concept, and it becomes proactively available in conversation.
+    // Before that, NPCs can seed it by bringing it up themselves.
+    discover(kind) {
+      const v = this.state.village;
+      v.discoveries = v.discoveries || {};
+      if (v.discoveries[kind]) return false;
+      v.discoveries[kind] = { day: this.state.scholar.day };
+      const notes = {
+        trade: '💡 Learned: some people trade knowledge — for food, favors, or knowledge in return. Bring it up when you talk.',
+        teach: '💡 Learned: you can teach people what you know, if you talk it through with them.',
+        promise: "💡 Learned: you can promise to help with what someone wants. They'll remember — keep it or break it.",
+        party: '💡 Learned: PARTY SYSTEM. You can invite people to travel and fight beside you. Ask — in conversation, like a person.',
+        deal: "💡 Learned: when someone won't do what you ask, food can change minds. It's not bribery if it's honest. (It's bribery.)",
+        appeal: "💡 Learned: frame a request through what THEY want, and it lands differently.",
+      };
+      const note = notes[kind] || '';
+      if (note) this.say(note);
+      try { this.remember(this.villagerId, 'discovery_' + kind, note); } catch (e) {}
+      this.save();
+      return true;
+    },
+    hasDiscovered(kind) {
+      return !!((this.state.village.discoveries || {})[kind]);
     },
 
     // comfort: for the scared and the grieving. No cost but time and presence.
@@ -2405,6 +2438,7 @@
         survive: `"We make it. All of us. That's the deal."`,
       };
       v.promises[vid] = { goal, day: this.state.scholar.day, kept: false };
+      this.discover('promise');
       this.say(`${first} looks at you for a long moment. ${promiseLines[goal] || `"I'll help. I mean it."`} Something in them settles — hope is a heavy thing to carry alone.`);
       this.remember(vid, 'promise', 'promised to help: ' + goal);
       const t = v.trust || (v.trust = {});
@@ -4084,6 +4118,10 @@
       } else if (bf.type === 'rubble') {
         this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 40);
         this.say('You clear the rubble, stone by stone. The path is clear.');
+        // STONE: rubble yields sling ammo / crafting material.
+        const n = 1 + Math.floor(Math.random() * 3);
+        this.state.scholar.inventory.push({ material: 'stone', units: n, name: 'Stone', kcalEach: 0, spoilDay: 9999, kg: 0.3 });
+        this.say(`You pocket ${n} good throwing stone${n > 1 ? 's' : ''}. (sling ammo)`);
       } else if (bf.type === 'washed_out') {
         return this.buildBridge(x, y); // washed out needs a bridge
       }
@@ -4951,6 +4989,42 @@
       return (def && def.weapon) ? def.weapon.bonus : 0;
     },
 
+    // equippedWeapon: full weapon profile — range, type, ammo. Unarmed fallback.
+    // WEAPON RANGE: melee=1, spear=2, sling=4, bow=5. You can't knife someone
+    // across the clearing. Range is real and the grid enforces it.
+    equippedWeapon() {
+      const eq = (this.state.scholar.equipped || {}).weapon;
+      if (!eq) return { name: 'your hands', bonus: 0, type: 'melee', range: 1, ammo: null, unarmed: true };
+      const def = this.data.items.find(i => i.id === eq.itemId);
+      const w = (def && def.weapon) || {};
+      return {
+        name: eq.name || (def && def.name) || 'weapon',
+        bonus: w.bonus || 0,
+        type: w.type || 'melee',
+        range: w.range || 1,
+        ammo: w.ammo || null,
+        unarmed: false,
+      };
+    },
+
+    // ammoCount / spendAmmo: ranged weapons eat stones and arrows.
+    ammoCount(mat) {
+      const inv = this.state.scholar.inventory || [];
+      return inv.filter(i => i.material === mat).reduce((t, i) => t + (i.units || 0), 0);
+    },
+    spendAmmo(mat, n) {
+      let left = n || 1;
+      const inv = this.state.scholar.inventory || [];
+      for (const item of inv) {
+        if (item.material !== mat || left <= 0) continue;
+        const take = Math.min(item.units || 0, left);
+        item.units -= take; left -= take;
+      }
+      // clean empties
+      this.state.scholar.inventory = inv.filter(i => (i.units || 0) > 0 || !i.material);
+      return left <= 0;
+    },
+
     huntAnimal() {
       const s = this.state.scholar;
       const a = s.animal;
@@ -5168,6 +5242,9 @@
         promise: { honest: 2, generous: 1 },
         coalition: { competent: 2, honest: -1 },
         confront: { brave: 2, honest: 1 },
+        // MURDER: attacking a non-hostile person. Witnesses don't admire this.
+        // There is no brave reading. There is horror, and there is fear of you.
+        murder: { honest: -30, generous: -20, brave: -5, competent: 0 },
       }[action];
       if (!AX) return;
       const roster = ((this.state.village || {}).roster || []).filter(id => id !== this.villagerId);
@@ -5438,6 +5515,18 @@
         v.grief = 3;
         for (const rid of (v.roster || [])) { if (rid !== this.villagerId) { const n = this.npcNeeds(rid); n.fear = Math.min(100, n.fear + 25); n.social = Math.min(100, n.social + 20); } }
         this.say('Nobody\'s talking much. The fire feels smaller tonight.');
+      } else if (type === 'murder') {
+        // YOU killed someone. Everyone knows. The village is afraid of YOU now.
+        v.grief = 5;
+        for (const rid of (v.roster || [])) {
+          if (rid !== this.villagerId) {
+            const n = this.npcNeeds(rid); n.fear = Math.min(100, n.fear + 45); n.social = Math.min(100, n.social + 30);
+            // trust craters: you are dangerous now
+            const t = (v.trust && v.trust[rid]) || 10;
+            if (v.trust) v.trust[rid] = Math.max(0, t - 15);
+          }
+        }
+        this.say('They look at you differently now. The fire feels smaller, and you are the reason.');
       } else if (type === 'donation') {
         v.cheer = Math.max(v.cheer || 0, 2);
         for (const rid of (v.roster || [])) { if (rid !== this.villagerId) this.npcNeeds(rid).hunger = Math.max(0, this.npcNeeds(rid).hunger - 25); }
@@ -5910,6 +5999,7 @@
       this.bumpTrust(vid, 3);
       // combination: their depth + your experience might unlock more
       this.combineKnowledge(pid);
+      this.discover('trade');
       return null;
     },
 
@@ -6453,7 +6543,24 @@
       s.health = Math.min(this.maxHealth(), Math.round(s.health || 0) + prev.heal);
       s.energy = 100;
       const rested = prev.quality === 'bunk' ? 'deeply rested' : prev.quality === 'ground' ? 'stiff and cold' : 'rested';
-      this.say(`Dawn. You wake ${rested}. (+${prev.heal} health, energy restored.${conservedNote} ${prev.note})`);
+      // NIGHTMARES: trauma follows you into sleep. You did things. The dark replays them.
+      let nightmareNote = '';
+      const trauma = s.trauma || 0;
+      if (trauma >= 30 && Math.random() < Math.min(0.8, trauma / 100)) {
+        const halved = Math.floor(prev.heal / 2);
+        s.health = Math.max(0, s.health - (prev.heal - halved)); // nightmare steals half the healing
+        const dreams = [
+          'You dream of hands. Yours. What they did. You wake gasping.',
+          'In the dream they get up. They ask why. You have no answer. You wake.',
+          'You hear the sound again — the one they made. It follows you out of sleep.',
+        ];
+        nightmareNote = ' ' + dreams[Math.floor(Math.random() * dreams.length)] + ` (nightmare: healing halved)`;
+        // trauma fades slowly, one bad night at a time
+        s.trauma = Math.max(0, trauma - 5);
+      } else if (trauma > 0) {
+        s.trauma = Math.max(0, trauma - 2); // time dulls it, slightly
+      }
+      this.say(`Dawn. You wake ${rested}. (+${prev.heal} health, energy restored.${conservedNote} ${prev.note})${nightmareNote}`);
       return this.status();
     },
     clearDialGlitch() { this.state.dialGlitch = false; },
@@ -8977,22 +9084,65 @@
       if (p.acted) { this.say('Already acted this turn.'); return false; }
       const t = this.tbFighter(targetKey);
       if (!t || !t.alive || (t.kind !== 'monster' && t.kind !== 'hostile')) return false;
-      if (Math.max(Math.abs(t.mx - p.mx), Math.abs(t.my - p.my)) > 1) { this.say('Too far to strike.'); return false; }
-      let d = S.combat.roll([10, 16]);
+      const w = this.equippedWeapon();
+      const d0 = Math.max(Math.abs(t.mx - p.mx), Math.abs(t.my - p.my));
+      if (d0 > w.range) {
+        this.say(w.unarmed
+          ? `Too far to reach. (unarmed: range 1)`
+          : `${w.name} can't reach that far. (range ${w.range})`);
+        return false;
+      }
+      // RANGED: no ammo, no shot.
+      if (w.ammo) {
+        if (this.ammoCount(w.ammo) < 1) {
+          this.say(`No ${w.ammo} left. Your ${w.name} is a stick you hold wrong.`);
+          return false;
+        }
+        this.spendAmmo(w.ammo, 1);
+      }
+      let d = S.combat.roll([10, 16]) + w.bonus;
       const hpFrac = p.hp / p.maxHp;
       if (this.hasAbility('rage') && hpFrac < 0.5) { d *= 2; this.say('RAGE: +100% damage.'); }
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
       if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
       d = Math.round(d);
       p.acted = true;
-      this.say(`You STRIKE the ${t.name} for ${d}.`);
+      const isHuman = t.kind === 'hostile';
+      if (isHuman) {
+        // HUMAN COMBAT IS NOT FUN. It's traumatic. No cool moves, no style points.
+        // The text says what happened. Your hands did it. You live with it.
+        const wtxt = w.unarmed ? 'your hands' : `the ${w.name}`;
+        const lines = [
+          `You hurt ${t.name} with ${wtxt}. They make a sound you will hear again tonight.`,
+          `Your hands move before you decide. Blood. ${t.name} is staring at you like you're a stranger.`,
+          `${wtxt} connects. ${t.name} gasps — surprised, more than anything. Like they didn't think you'd really do it.`,
+        ];
+        this.say(lines[Math.floor(Math.random() * lines.length)]);
+        // Trauma accrues. The game remembers that you did this.
+        try { this.addTrauma(8); } catch (e) {}
+      } else {
+        const wtxt = w.unarmed ? '' : ` (${w.name})`;
+        this.say(`You STRIKE the ${t.name} for ${d}${wtxt}.`);
+        this.tbStyle(5, 'solid hit');
+      }
       this.tbDamage(t.key, d, 'you');
-      this.tbStyle(5, 'solid hit');
       const tAfter = this.tbFighter(t.key);
-      if (tAfter && !tAfter.alive) this.tbStyle(20, `dropped the ${tAfter.name}!`);
+      if (tAfter && !tAfter.alive && !isHuman) this.tbStyle(20, `dropped the ${tAfter.name}!`);
       this.tbAfterPlayerAction();
       return true;
     },
+
+    // TRAUMA: hurting people leaves marks on you. Not a debuff — a haunting.
+    // Trauma degrades sleep (nightmares), and the village can feel it on you.
+    addTrauma(n) {
+      const s = this.state.scholar;
+      s.trauma = Math.min(100, (s.trauma || 0) + (n || 5));
+      if (s.trauma >= 30 && !s._nightmareWarned) {
+        s._nightmareWarned = true;
+        this.say('You will dream about this. You already know.');
+      }
+    },
+    traumaLevel() { return this.state.scholar.trauma || 0; },
 
     tbPlayerStudy() {
       const f = this.tbfight;
@@ -9110,11 +9260,37 @@
         this.state.scholar.health = Math.max(0, t.hp);
         if (final > 0) this.noteAbilityUse('chitin_skin');
       }
-      this.say(`${sourceLabel === 'you' ? 'You hit' : sourceLabel + ' hits'} ${t.kind === 'player' ? 'you' : t.name} for ${final}.`);
+      const tIsHuman = t.kind === 'hostile';
+      if (tIsHuman) {
+        // HUMAN DAMAGE: not numbers. What it looks like to hurt a person.
+        if (sourceLabel === 'you') {
+          const dl = [
+            `${t.name} takes it and doesn't scream. That's worse.`,
+            `Blood on your hands now. ${t.name} is holding their side, breathing wrong.`,
+            `${t.name} staggers. For a second they look like someone you knew.`,
+          ];
+          this.say(dl[Math.floor(Math.random() * dl.length)]);
+        } else {
+          this.say(`${sourceLabel} hurts ${t.kind === 'player' ? 'you' : t.name}. It isn't clean. It isn't quick.`);
+        }
+      } else {
+        this.say(`${sourceLabel === 'you' ? 'You hit' : sourceLabel + ' hits'} ${t.kind === 'player' ? 'you' : t.name} for ${final}.`);
+      }
       if (t.hp <= 0) {
         t.alive = false;
         if (t.kind === 'player') this.say('You go down.');
         else if (t.kind === 'villager') { this.say(`☠ ${t.name} falls.`); this.tbVillagerFalls(t); }
+        else if (t.kind === 'hostile') {
+          // KILLING A PERSON: this is the worst thing in the game. Say so.
+          const kl = [
+            `☠ ${t.name} stops moving. The clearing is very quiet. Your hands won't stop shaking.`,
+            `☠ ${t.name} is dead. You did that. No one is clapping, whatever the System says.`,
+            `☠ It's over. ${t.name} lies still. You keep waiting for them to get up.`,
+          ];
+          this.say(kl[Math.floor(Math.random() * kl.length)]);
+          try { this.addTrauma(25); } catch (e) {}
+          try { this.villageEvent('murder'); } catch (e) {}
+        }
         else this.say(`The ${t.name} falls.`);
       }
     },
