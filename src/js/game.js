@@ -2198,6 +2198,33 @@
       return P[cell] || {};
     },
 
+    // === LINE OF SIGHT ===
+    // Walls, trees, and tents block vision. Monsters don't aggro what they
+    // can't see. Stealth is a valid strategy: break line of sight, slip away.
+    // If it can't see you for a while, it loses your trail entirely.
+    sightBlocked(x, y) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[y] && detail[y][x];
+      return cell === 'wall' || cell === 'tree' || cell === 'bigtree' || cell === 'tent';
+    },
+
+    canSee(ax, ay, bx, by) {
+      // Bresenham line; blocked if any intermediate cell blocks sight
+      let x0 = ax, y0 = ay;
+      const dx = Math.abs(bx - ax), dy = Math.abs(by - ay);
+      const sx = ax < bx ? 1 : -1, sy = ay < by ? 1 : -1;
+      let err = dx - dy, guard = 0;
+      while (!(x0 === bx && y0 === by) && guard++ < 30) {
+        const e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx) { err += dx; y0 += sy; }
+        if (x0 === bx && y0 === by) break;
+        if (x0 < 0 || x0 > 8 || y0 < 0 || y0 > 8) return false;
+        if (this.sightBlocked(x0, y0)) return false;
+      }
+      return true;
+    },
+
     // findPath: BFS shortest path avoiding blocked cells. Returns list of [x,y] or null.
     // 8-directional to match microMove/tap adjacency (Chebyshev): a diagonal step
     // is one square, not two. No corner-cutting through blocked cells.
@@ -2824,6 +2851,27 @@
       const m = s.monster;
       if (!m || m.mx === undefined) return;
       const px = s.mx ?? 4, py = s.my ?? 4;
+      // LINE OF SIGHT: it can't hunt what it can't see.
+      if (!this.canSee(m.mx, m.my, px, py)) {
+        m.lostSight = (m.lostSight || 0) + 1;
+        if (m.lostSight > 6) {
+          s.monster = null;
+          this.say('You hold still behind cover. After a while, the sounds fade. It lost your trail.');
+          return;
+        }
+        // it wanders, searching — drift randomly
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        const [dx, dy] = dirs[Math.floor(Math.random() * dirs.length)];
+        const nx = m.mx + dx, ny = m.my + dy;
+        if (nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8) {
+          const detail = this.genDetail(this.map.px, this.map.py);
+          const cell = detail[ny] && detail[ny][nx];
+          if (!this.cellProps(cell).blocks) { m.mx = nx; m.my = ny; }
+        }
+        if (m.mx === px && m.my === py) this.startCombat(m.id); // bumped into you in the dark
+        return;
+      }
+      m.lostSight = 0;
       const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
       if (Math.abs(px - m.mx) >= Math.abs(py - m.my)) m.mx += dx;
       else m.my += dy;
@@ -4573,40 +4621,666 @@
     },
 
     // --- combat ---
+    // === TURN-BASED GRID COMBAT ===
+    // Combat happens on the 9x9 detail grid. Everyone acts in speed order.
+    // Movement is turn-limited (speed squares), not day-part limited.
+    //
+    // KNOWLEDGE PHILOSOPHY: attacks are NEVER shown as red squares.
+    // The monster gives BEHAVIORAL CUES ("It freezes. Light gathers behind
+    // its eyes.") — that's the telegraph. You must LEARN what each cue means
+    // by surviving it. The Codex records patterns you've lived through, and
+    // only then does the cue come with understanding.
+    //
+    // Party: nearby villagers join and act on their own AI (brave/cautious/
+    // helpful from temperament). They don't just follow you.
+
+    playerSpeed() { return 4; },
+
     startCombat(monsterId) {
-      const monster = this.data.monsters.find(m => m.id === (monsterId || 'thornback_boar')) || this.data.monsters[0];
-      this.fight = S.combat.newFight(monster, this.state.scholar);
+      const s = this.state.scholar;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      const mdef = this.data.monsters.find(m => m.id === (monsterId || 'thornback_boar')) || this.data.monsters[0];
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const terrainBlocked = (x, y) => {
+        const cell = detail[y] && detail[y][x];
+        return this.cellProps(cell).blocks;
+      };
+      const freeSpotNear = (cx, cy) => {
+        for (let r = 1; r <= 4; r++) {
+          for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+            const nx = cx + dx, ny = cy + dy;
+            if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || (nx === px && ny === py)) continue;
+            if (!terrainBlocked(nx, ny)) return { x: nx, y: ny };
+          }
+        }
+        return { x: cx, y: cy };
+      };
+
+      const fighters = [];
+      fighters.push({
+        key: 'p', kind: 'player', name: 'You', emoji: '🧑',
+        hp: s.health, maxHp: this.maxHealth ? this.maxHealth() : 100,
+        speed: this.playerSpeed(), mx: px, my: py,
+        alive: true, fled: false, moveLeft: 0, acted: false, aimed: false,
+      });
+      // party: villagers within 4 squares join the fight (nearest 4 — no zerg)
+      const vpos = (this.state.village && this.state.village.positions) || {};
+      const roster = (this.state.village && this.state.village.roster) || [];
+      const candidates = [];
+      for (const rid of roster) {
+        const pos = vpos[rid];
+        if (!pos) continue;
+        const d = Math.max(Math.abs(pos.mx - px), Math.abs(pos.my - py));
+        if (d > 4) continue;
+        candidates.push({ rid, pos, d });
+      }
+      candidates.sort((a, b) => a.d - b.d);
+      for (const { rid, pos } of candidates.slice(0, 4)) {
+        const vp = (this.data.villagers || []).find(v => v.id === rid)
+          || (this.data.background_survivors || []).find(v => v.id === rid);
+        if (!vp) continue;
+        const temp = (vp.personality && vp.personality.temperament) || 'steady';
+        const ai = temp === 'bold' ? 'brave' : temp === 'cautious' ? 'cautious' : 'helpful';
+        fighters.push({
+          key: 'v_' + rid, kind: 'villager', villagerId: rid,
+          name: (vp.name || 'Someone').split(' ')[0], emoji: '🧍',
+          hp: 30, maxHp: 30, speed: 3, mx: pos.mx, my: pos.my,
+          alive: true, fled: false, ai, helped: false,
+        });
+      }
+      // monsters: behavior drives count (pack/swarm bring friends)
+      const count = mdef.pack || 1;
+      const srcMx = (s.monster && s.monster.mx !== undefined) ? s.monster.mx : px;
+      const srcMy = (s.monster && s.monster.my !== undefined) ? s.monster.my : py;
+      const hasFear = this.hasAbility('fear_aura');
+      const hasSand = this.hasAbility('pocket_sand');
+      for (let i = 0; i < count; i++) {
+        const spot = i === 0 ? { x: srcMx, y: srcMy } : freeSpotNear(srcMx, srcMy);
+        const hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
+        fighters.push({
+          key: 'm_' + i, kind: 'monster', monsterId: mdef.id,
+          name: mdef.name + (count > 1 ? ' ' + (i + 1) : ''), emoji: mdef.emoji || '👹',
+          hp, maxHp: hp, speed: mdef.speed || 3, mx: spot.x, my: spot.y,
+          alive: true, fled: false, telegraph: null, mdef,
+          hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
+        });
+      }
+
+      this.tbfight = {
+        fighters,
+        order: S.combat.turnOrder(fighters),
+        turnIdx: 0, round: 1,
+        over: false, result: null,
+      };
+      this.fight = null; // old menu combat retired
       this.pendingEncounter = false;
-      this.state.scholar.monster = null; // it's in your face now, not on the grid
-      this.say(`A BULLDOZER crashes from the thicket — ${monster.codexStages.unknown}`);
-      return this.fight;
+      s.monster = null; // it's in the fight now, not wandering
+      const partyNames = fighters.filter(f => f.kind === 'villager').map(f => f.name);
+      this.say(`⚔ ${mdef.name.toUpperCase()}!${count > 1 ? ` (${count} of them!)` : ''} ${partyNames.length ? partyNames.join(', ') + (partyNames.length > 1 ? ' join' : ' joins') + ' you!' : "You're on your own."}`);
+      if (hasFear) this.say('Something about you is wrong. It hesitates. (fear_aura)');
+      if (hasSand) this.say('You fling a handful of grit into its eyes. (pocket_sand: blinded)');
+      this.say('Turn-based now. Tap a tile to move — speed is squares. Then act.');
+      this.audioEvent('combatStart');
+      this.sysSay(`COMBAT! ${mdef.name.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
+      this.tbBeginTurn();
+      return this.tbfight;
     },
 
-    combatRound(cmd) {
-      const r = S.combat.round(this.fight, cmd, this.state.scholar, this.data.abilities);
-      r.log.forEach(l => this.say(l));
-      const hpBefore = this.state.scholar.health;
-      this.state.scholar.health = Math.max(0, this.fight.scholarHp);
-      // SYNERGY passive: chitin_skin "used" when you take damage (it absorbs).
-      if (this.fight.scholarHp < hpBefore) this.noteAbilityUse('chitin_skin');
-      if (cmd === 'study' && !this.state.codex.monsters) this.state.codex.monsters = {};
-      if (cmd === 'study') this.state.codex.monsters['thornback_boar'] = { stage: 'observed' };
-      if (r.result === 'won') {
+    tbFighter(key) {
+      const f = this.tbfight;
+      return f ? f.fighters.find(x => x.key === key) : null;
+    },
+
+    tbCurrent() {
+      const f = this.tbfight;
+      if (!f || f.over) return null;
+      return this.tbFighter(f.order[f.turnIdx]);
+    },
+
+    tbIsPlayerTurn() {
+      const c = this.tbCurrent();
+      return !!(c && c.kind === 'player');
+    },
+
+    tbBeginTurn() {
+      const c = this.tbCurrent();
+      if (!c) return;
+      if (c.kind === 'player') { c.moveLeft = c.speed; c.acted = false; }
+      this.tbRefreshTelegraphUI();
+    },
+
+    // === earned knowledge ===
+    // Pattern descriptions: what the Codex writes after you've SURVIVED an attack.
+    tbPatternDesc(pattern) {
+      const t = (pattern && pattern.type) || 'burst';
+      return {
+        beam: 'fires in a straight line from itself',
+        charge: 'charges in a straight line, trampling everything in its path',
+        line: 'strikes in a straight line',
+        burst: 'hits everything close around it',
+        direct: "locks onto one target — moving won't dodge it",
+        rush: 'gives no warning — it just moves and hits',
+        ambush: 'strikes without warning when you get close',
+      }[t] || 'hits an area around it';
+    },
+
+    tbPatternKnown(monsterId, attackName) {
+      const c = (this.state.codex.monsters || {})[monsterId];
+      return !!(c && c.patterns && c.patterns[attackName]);
+    },
+
+    // Called when an attack resolves and you live to think about it.
+    // Knowledge is earned, not given.
+    tbLearnPattern(m) {
+      const p = this.tbFighter('p');
+      if (!p || !p.alive) return; // the dead learn nothing
+      const atk = m.mdef.attack || {};
+      if (!atk.name) return;
+      this.state.codex.monsters = this.state.codex.monsters || {};
+      const c = this.state.codex.monsters[m.mdef.id] || (this.state.codex.monsters[m.mdef.id] = {});
+      c.patterns = c.patterns || {};
+      if (!c.patterns[atk.name]) {
+        c.patterns[atk.name] = this.tbPatternDesc(atk.pattern);
+        this.say(`📖 Codex: ${atk.name} — ${c.patterns[atk.name]}. You won't forget this.`);
+      }
+    },
+
+    // The telegraph cue: behavioral text ALWAYS. Learned understanding only if earned.
+    // Escalates as the windup counts down — you can FEEL it coming.
+    tbTelegraphCue(m) {
+      const tg = m.telegraph;
+      const atk = m.mdef.attack || {};
+      let cue = atk.telegraph || 'It shifts. Something is coming.';
+      if (tg && tg.turnsLeft === 1) cue += " It's about to loose!";
+      else if (tg && tg.turnsLeft > 1) cue += ' It is still gathering itself…';
+      if (this.tbPatternKnown(m.mdef.id, atk.name)) {
+        cue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
+      }
+      return cue;
+    },
+
+    // audioEvent: optional hook for the Web Audio terror system (app.js).
+    // If no audio system is attached, this is a silent no-op.
+    audioEvent(name, data) {
+      if (this.audio && typeof this.audio[name] === 'function') {
+        try { this.audio[name](data || {}); } catch (e) {}
+      }
+    },
+
+    // System commentary: after day 7, combat is TELEVISED. The System narrates,
+    // the gamblers react, style points are tracked. Combat becomes a show.
+    sysSay(text) {
+      if (this.state.systemArrived) this.say(`📺 SYSTEM: "${text}"`);
+    },
+
+    tbStyle(points, why) {
+      const f = this.tbfight;
+      if (!f) return;
+      f.style = (f.style || 0) + points;
+      if (this.state.systemArrived && why) this.say(`📺 +${points} style — ${why}`);
+    },
+    tbRefreshTelegraphUI() {
+      const f = this.tbfight;
+      if (!f) { if (this.clearTelegraph) this.clearTelegraph(); return; }
+      const cues = [];
+      for (const m of f.fighters) {
+        if (m.kind !== 'monster' || !m.alive || !m.telegraph) continue;
+        cues.push(this.tbTelegraphCue(m));
+      }
+      if (!cues.length) { if (this.clearTelegraph) this.clearTelegraph(); return; }
+      if (this.showTelegraph) this.showTelegraph(cues.join(' '));
+    },
+
+    // --- player turn ---
+    tbPlayerMove(cx, cy) {
+      const f = this.tbfight;
+      if (!f || f.over || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (!p || p.moveLeft <= 0) { this.say('No movement left this turn.'); return false; }
+      const path = this.findPath(p.mx, p.my, cx, cy);
+      if (!path || !path.length) { this.say('No path there.'); return false; }
+      if (path.length > p.moveLeft) { this.say(`Too far — ${p.moveLeft} squares left.`); return false; }
+      for (const o of f.fighters) {
+        if ((o.kind === 'monster' || o.kind === 'hostile') && o.alive && o.mx === cx && o.my === cy) {
+          this.say("You don't stroll through a " + o.name + '.'); return false;
+        }
+      }
+      p.moveLeft -= path.length;
+      p.mx = cx; p.my = cy;
+      this.state.scholar.mx = cx; this.state.scholar.my = cy;
+      const [lx, ly] = path[path.length - 1];
+      const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [p.mx, p.my];
+      this.state.scholar.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
+      return true;
+    },
+
+    tbPlayerStrike(targetKey) {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (p.acted) { this.say('Already acted this turn.'); return false; }
+      const t = this.tbFighter(targetKey);
+      if (!t || !t.alive || (t.kind !== 'monster' && t.kind !== 'hostile')) return false;
+      if (Math.max(Math.abs(t.mx - p.mx), Math.abs(t.my - p.my)) > 1) { this.say('Too far to strike.'); return false; }
+      let d = S.combat.roll([10, 16]);
+      const hpFrac = p.hp / p.maxHp;
+      if (this.hasAbility('rage') && hpFrac < 0.5) { d *= 2; this.say('RAGE: +100% damage.'); }
+      if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
+      if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
+      d = Math.round(d);
+      p.acted = true;
+      this.say(`You STRIKE the ${t.name} for ${d}.`);
+      this.tbDamage(t.key, d, 'you');
+      this.tbStyle(5, 'solid hit');
+      const tAfter = this.tbFighter(t.key);
+      if (tAfter && !tAfter.alive) this.tbStyle(20, `dropped the ${tAfter.name}!`);
+      this.tbAfterPlayerAction();
+      return true;
+    },
+
+    tbPlayerStudy() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (p.acted) { this.say('Already acted this turn.'); return false; }
+      p.acted = true;
+      const mons = f.fighters.filter(x => x.kind === 'monster' && x.alive);
+      for (const m of mons) {
         this.state.codex.monsters = this.state.codex.monsters || {};
-        this.state.codex.monsters['thornback_boar'] = { stage: 'slain' };
-        const scholar = this.state.scholar;
-        scholar.inventory.push({ plantId: 'boar_meat', units: 4, kcalEach: 800, spoilDay: scholar.day + 3, name: 'Bulldozer meat', unit: 'cut', prep: 'Smoke it — it keeps for weeks.', kg: 0.8 });
-        this.say('The Bulldozer falls. Pork is pork — 3,200 kcal of it. The village will eat. (+4 cuts of meat)');
-        // PLAYSTYLE: you stood your ground. The game notices boldness too.
+        const cur = this.state.codex.monsters[m.mdef.id];
+        if (!cur || cur.stage !== 'slain') this.state.codex.monsters[m.mdef.id] = Object.assign(cur || {}, { stage: 'observed' });
+        const atk = m.mdef.attack || {};
+        // Study names the attack and sharpens the cue — but the PATTERN stays
+        // unknown until you survive it. Watching isn't surviving.
+        this.say(`STUDY: ${m.name} — it favors ${atk.name || 'violence'}.${m.telegraph ? ' Right now: ' + this.tbTelegraphCue(m) : ''}`);
+      }
+      if (this.hasAbility('dead_aim')) { p.aimed = true; this.say('DEAD AIM armed: your next strike crits.'); }
+      this.tbAfterPlayerAction();
+      return true;
+    },
+
+    tbPlayerScream() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      const s = this.state.scholar;
+      if (p.acted) { this.say('Already acted this turn.'); return false; }
+      if (!this.hasAbility('scream_cheese') || s.screamDay === s.day) { this.say('Your throat is raw. No scream left today.'); return false; }
+      p.acted = true;
+      s.screamDay = s.day;
+      let n = 0;
+      for (const m of f.fighters) {
+        if (m.kind !== 'monster' || !m.alive) continue;
+        m.stunned = 1;
+        if (m.telegraph) { m.telegraph = null; n++; }
+      }
+      this.say(`You SCREAM. Milk curdles somewhere.${n ? ' Its focus shatters — the attack fizzles.' : ''} It freezes. (stunned)`);
+      this.tbRefreshTelegraphUI();
+      this.tbAfterPlayerAction();
+      return true;
+    },
+
+    tbPlayerFlee() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (p.acted) { this.say('Already acted this turn.'); return false; }
+      if (this.hasAbility('rage') && (p.hp / p.maxHp) < 0.5) {
+        this.say('RAGE: flee? FLEE? The thought dies before it finishes.');
+        return false;
+      }
+      p.acted = true;
+      if (Math.random() < 0.8) {
+        p.fled = true;
+        this.say('You FLEE — crashing through the undergrowth, heart hammering.');
+        this.tbEnd('fled');
+      } else {
+        this.say('You try to flee — it cuts you off!');
+        this.tbAfterPlayerAction();
+      }
+      return true;
+    },
+
+    // an activatable ability used during combat counts as the turn's action
+    tbPlayerActed() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return;
+      const p = this.tbFighter('p');
+      if (p && !p.acted) { p.acted = true; this.tbAfterPlayerAction(); }
+    },
+
+    tbPlayerEndTurn() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return;
+      this.tbAdvance();
+    },
+
+    tbAfterPlayerAction() {
+      this.tbAdvance();
+    },
+
+    // --- turn advancement: run AI turns until it's the player's turn ---
+    tbAdvance() {
+      const f = this.tbfight;
+      if (!f || f.over) return;
+      let guard = 0;
+      while (guard++ < 60) {
+        f.turnIdx++;
+        if (f.turnIdx >= f.order.length) {
+          f.turnIdx = 0; f.round++;
+          this.sysSay(`ROUND ${f.round}!`);
+          this.audioEvent('round', { round: f.round });
+        }
+        const c = this.tbFighter(f.order[f.turnIdx]);
+        if (!c || !c.alive || c.fled) continue;
+        if (c.kind === 'player') { this.tbBeginTurn(); return; }
+        if (c.kind === 'villager') this.tbVillagerTurn(c);
+        else this.tbMonsterTurn(c);
+        if (this.tbEndCheck()) return;
+      }
+    },
+
+    tbDamage(targetKey, dmg, sourceLabel, sourceKey) {
+      const t = this.tbFighter(targetKey);
+      if (!t || !t.alive) return;
+      let final = Math.max(0, Math.round(dmg));
+      if (t.kind === 'player' && typeof this.armorBonus === 'function') {
+        const prot = this.armorBonus();
+        if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
+      }
+      t.hp -= final;
+      if (t.kind === 'player') {
+        this.state.scholar.health = Math.max(0, t.hp);
+        if (final > 0) this.noteAbilityUse('chitin_skin');
+      }
+      this.say(`${sourceLabel === 'you' ? 'You hit' : sourceLabel + ' hits'} ${t.kind === 'player' ? 'you' : t.name} for ${final}.`);
+      if (t.hp <= 0) {
+        t.alive = false;
+        if (t.kind === 'player') this.say('You go down.');
+        else if (t.kind === 'villager') { this.say(`☠ ${t.name} falls.`); this.tbVillagerFalls(t); }
+        else this.say(`The ${t.name} falls.`);
+      }
+    },
+
+    tbVillagerFalls(t) {
+      const v = this.state.village;
+      if (v.positions) delete v.positions[t.villagerId];
+      v.fallen = v.fallen || [];
+      v.fallen.push({ villagerId: t.villagerId, day: this.state.scholar.day, cause: 'combat' });
+      if (v.roster) v.roster = v.roster.filter(id => id !== t.villagerId);
+      if (v.villagers) v.villagers = v.villagers.filter(id => id !== t.villagerId);
+    },
+
+    tbVillagerSyncPos(v) {
+      const vpos = this.state.village && this.state.village.positions;
+      if (vpos && vpos[v.villagerId]) { vpos[v.villagerId].mx = v.mx; vpos[v.villagerId].my = v.my; }
+    },
+
+    // true danger cells — for AI instincts only. NEVER shown to the player.
+    // (Direct-target telegraphs have no cells — the AI can't dodge those either.)
+    tbDangerCells(excludeKey) {
+      const f = this.tbfight, set = new Set();
+      for (const m of f.fighters) {
+        if (m.kind !== 'monster' || !m.alive || !m.telegraph || m.key === excludeKey) continue;
+        if (!m.telegraph.cells) continue;
+        for (const c of m.telegraph.cells) set.add(c.cx + ',' + c.cy);
+      }
+      return set;
+    },
+
+    tbBlocked(x, y) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[y] && detail[y][x];
+      if (this.cellProps(cell).blocks) return true;
+      const f = this.tbfight;
+      if (f) for (const o of f.fighters) {
+        if (o.alive && !o.fled && o.mx === x && o.my === y) return true;
+      }
+      return false;
+    },
+
+    tbVillagerTurn(v) {
+      const f = this.tbfight;
+      const danger = this.tbDangerCells(); // instinct, not knowledge
+      const blocked = (x, y) => this.tbBlocked(x, y) && !(x === v.mx && y === v.my);
+      const dec = S.combat.villagerDecide(v, f.fighters, blocked, danger);
+      for (const [nx, ny] of dec.moves) { v.mx = nx; v.my = ny; }
+      if (dec.moves.length) this.tbVillagerSyncPos(v);
+      const a = dec.action;
+      if (a.type === 'strike' || a.type === 'harry') {
+        const t = this.tbFighter(a.target);
+        if (t && t.alive) {
+          const dmg = a.type === 'strike' ? S.combat.roll([4, 8]) : S.combat.roll([2, 4]);
+          this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${t.name}.`);
+          this.tbDamage(t.key, dmg, v.name);
+        }
+      } else if (a.type === 'help') {
+        const t = this.tbFighter(a.target);
+        if (t && t.alive && !v.helped) {
+          v.helped = true;
+          t.hp = Math.min(t.maxHp, t.hp + 12);
+          if (t.kind === 'player') this.state.scholar.health = Math.max(0, t.hp);
+          this.say(`${v.name} patches you up (+12 HP). "Hold still!"`);
+        }
+      } else if (a.type === 'flee') {
+        v.fled = true;
+        this.say(`${v.name} runs for it!`);
+      }
+    },
+
+    tbMonsterTurn(m) {
+      const f = this.tbfight;
+      // stunned: no move, no new attack. (Pending telegraph was canceled by the scream.)
+      if (m.stunned > 0) {
+        m.stunned -= 1;
+        this.say(`The ${m.name} is still frozen from your scream.`);
+        if (this.tbEndCheck()) return;
+        return;
+      }
+      // 1. pending telegraph: count down, then resolve.
+      // Heavy attacks wind up over multiple rounds (you don't know exactly
+      // how long — but the cue escalates and the heartbeat tells you).
+      if (m.telegraph) {
+        const tg = m.telegraph;
+        tg.turnsLeft -= 1;
+        if (tg.turnsLeft > 0) {
+          // still winding up — holds position, committed. No move, no new attack.
+          this.tbRefreshTelegraphUI();
+          this.audioEvent('telegraph', { urgency: tg.turnsLeft });
+          return;
+        }
+        // RESOLVE. Tracking attacks re-aim at who you are NOW, not where you
+        // were. Knowledge tells you the shape; positioning saves you.
+        m.telegraph = null;
+        if (tg.kind === 'squares') {
+          const foe = S.combat.nearestEnemy(f.fighters, m);
+          if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
+        }
+        this.audioEvent('impact');
+        if (tg.kind === 'direct') {
+          const t = this.tbFighter(tg.targetKey);
+          if (t && t.alive) {
+            let dmg = S.combat.roll(tg.dmg), missed = false;
+            if (m.blind > 0 && Math.random() < 0.5) { missed = true; }
+            if (missed) this.say(`${m.name}'s ${tg.attackName} swipes at sand-ghosts. Missed. (pocket_sand)`);
+            else {
+              this.say(`💥 ${m.name}'s ${tg.attackName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
+              this.tbDamage(t.key, dmg, m.name);
+            }
+          }
+        } else {
+          this.say(`💥 ${tg.attackName}!`);
+          const hitKeys = new Set(tg.cells.map(c => c.cx + ',' + c.cy));
+          let playerHit = false;
+          for (const o of f.fighters) {
+            if (!o.alive || o.fled || o.key === m.key) continue;
+            if (hitKeys.has(o.mx + ',' + o.my)) {
+              if (m.blind > 0 && Math.random() < 0.5) {
+                this.say(`${m.name} lashes at sand-ghosts near ${o.kind === 'player' ? 'you' : o.name}. Missed. (pocket_sand)`);
+                continue;
+              }
+              if (o.kind === 'player') playerHit = true;
+              this.tbDamage(o.key, S.combat.roll(tg.dmg), m.name + "'s " + tg.attackName);
+            }
+          }
+          // DODGED: you were in the path when it was declared, and you're not
+          // there now. That's not luck. That's reading the monster.
+          const p1 = this.tbFighter('p');
+          if (tg.threatenedPlayer && !playerHit && p1 && p1.alive) {
+            this.say('You\'re not where it landed. Clean dodge.');
+            this.tbStyle(15, `dodged the ${tg.attackName}!`);
+          }
+          if ((m.mdef.attack.pattern || {}).type === 'charge') {
+            const last = tg.cells[tg.cells.length - 1];
+            if (last && !this.tbBlocked(last.cx, last.cy)) { m.mx = last.cx; m.my = last.cy; }
+          }
+        }
+        if (m.blind > 0) m.blind -= 1;
+        this.tbLearnPattern(m);
+        this.tbRefreshTelegraphUI();
+        if (this.tbEndCheck()) return;
+      }
+      if (!m.alive || f.over) return;
+      // 2. hesitate (fear_aura): it doesn't act this turn
+      if (m.hesitate > 0) {
+        m.hesitate -= 1;
+        this.say(`The ${m.name} hesitates. Something about you is wrong. (fear_aura)`);
+        if (this.tbEndCheck()) return;
+        return;
+      }
+      // 3. flee check (codex: bulldozer retreats <25%, deer bolts <50%, etc.)
+      const fleeAt = m.mdef.fleeAt || 0;
+      if (fleeAt > 0 && m.hp / m.maxHp < fleeAt && Math.random() < 0.7) {
+        m.fled = true;
+        this.say(`The ${m.name} breaks and runs!`);
+        this.tbEndCheck();
+        return;
+      }
+      // 4. act by pattern
+      const foe = S.combat.nearestEnemy(f.fighters, m);
+      if (!foe) return;
+      const pat = (m.mdef.attack && m.mdef.attack.pattern) || { type: 'burst', radius: 1 };
+      const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
+      const danger = this.tbDangerCells(m.key);
+      const atk = m.mdef.attack;
+      if (pat.type === 'ambush') {
+        // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
+        if (foe.d <= 1) {
+          const cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
+          this.say(`💥 The ${m.name} SNAPS! No warning. There never is.`);
+          const hitKeys = new Set(cells.map(c => c.cx + ',' + c.cy));
+          for (const o of f.fighters) {
+            if (!o.alive || o.fled || o.key === m.key) continue;
+            if (hitKeys.has(o.mx + ',' + o.my)) this.tbDamage(o.key, S.combat.roll(atk.damage), m.name);
+          }
+          this.tbLearnPattern(m);
+        }
+        this.tbEndCheck();
+        return;
+      }
+      if (pat.type === 'rush') {
+        // hushpuppy: NO telegraph. Moves adjacent and hits NOW.
+        for (let i = 0; i < m.speed; i++) {
+          if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) break;
+          const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+          if (!s) break;
+          m.mx = s.x; m.my = s.y;
+        }
+        if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) {
+          this.say(`The ${m.name} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
+          this.tbDamage(foe.f.key, S.combat.roll(atk.damage), m.name);
+          this.tbLearnPattern(m);
+        }
+        this.tbEndCheck();
+        return;
+      }
+      // standard: advance into range, then DECLARE (behavioral cue only).
+      // The attack lands at the start of this monster's next turn. That's the dodge window.
+      for (let i = 0; i < m.speed; i++) {
+        const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
+        const want = pat.type === 'direct' ? (pat.range || 3) : 4;
+        if (d <= want) break;
+        const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+        if (!s) break;
+        m.mx = s.x; m.my = s.y;
+      }
+      if (pat.type === 'direct') {
+        const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
+        if (d <= (pat.range || 3)) {
+          m.telegraph = { kind: 'direct', targetKey: foe.f.key, dmg: atk.damage,
+            attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1 };
+          this.say('⚠ ' + this.tbTelegraphCue(m));
+          this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft });
+        } else {
+          this.say(`The ${m.name} stalks closer. ${atk.telegraph || ''}`);
+        }
+      } else {
+        const cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
+        const p0 = this.tbFighter('p');
+        m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
+          attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
+          threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)) };
+        this.say('⚠ ' + this.tbTelegraphCue(m));
+        this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft });
+      }
+      this.tbRefreshTelegraphUI();
+      this.tbEndCheck();
+    },
+
+    tbEndCheck() {
+      const f = this.tbfight;
+      if (!f || f.over) return f ? f.over : false;
+      const p = this.tbFighter('p');
+      const monstersFighting = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled);
+      const monstersAlive = f.fighters.some(x => x.kind === 'monster' && x.alive);
+      if (!monstersFighting.length) { this.tbEnd(monstersAlive ? 'routed' : 'won'); return true; }
+      if (p && (!p.alive || p.fled)) {
+        if (!p.alive) {
+          this.state.scholar.health = Math.max(0, p.hp);
+          if (this.maybeCheatDeath()) {
+            p.hp = this.state.scholar.health;
+            if (p.hp > 0) { p.alive = true; this.say('You refuse to stay down. The fight goes on.'); return false; }
+          }
+          this.tbEnd('lost');
+        } else {
+          this.tbEnd('fled');
+        }
+        return true;
+      }
+      return false;
+    },
+
+    tbEnd(result) {
+      const f = this.tbfight;
+      if (!f || f.over) return;
+      f.over = true; f.result = result;
+      if (this.clearTelegraph) this.clearTelegraph();
+      const s = this.state.scholar;
+      const p = this.tbFighter('p');
+      if (p) s.health = Math.max(0, p.hp);
+      for (const v of f.fighters) {
+        if (v.kind === 'villager' && v.alive && !v.fled) this.tbVillagerSyncPos(v);
+      }
+      if (result === 'won') {
+        const mdef = f.fighters.find(x => x.kind === 'monster').mdef;
+        this.state.codex.monsters = this.state.codex.monsters || {};
+        const cur = this.state.codex.monsters[mdef.id] || {};
+        this.state.codex.monsters[mdef.id] = Object.assign(cur, { stage: 'slain' });
+        this.audioEvent('victory');
+        this.sysSay(`WINNER! Style score: ${f.style || 0}. The gamblers ${((f.style || 0) >= 40) ? 'are ecstatic!' : 'nod approvingly.'}`);
+        if (mdef.edible) {
+          const kcal = mdef.edible.calories || 1000;
+          const cuts = Math.max(1, Math.round(kcal / 800));
+          s.inventory.push({ plantId: mdef.id + '_meat', units: cuts, kcalEach: Math.round(kcal / cuts), spoilDay: s.day + 3, name: mdef.name + ' meat', unit: 'cut', prep: mdef.edible.note || 'Cook it.', kg: 0.8 });
+          this.say(`${mdef.edible.note || ''} (+${cuts} cuts, ${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'})`);
+        }
         this.notePlaystyle('bold');
-        // grave_robber: you loot the dead. Good gear. Out here, only the trees watch.
         if (this.hasAbility('grave_robber') && Math.random() < 0.5) {
           const gear = ['bone knife', 'cracked helm', 'war horn', 'tooth necklace'];
           const g = gear[Math.floor(Math.random() * gear.length)];
-          scholar.inventory.push({ name: g, kcalEach: 0, units: 1, spoilDay: 9999, unit: 'trophy', kg: 0.5 });
+          s.inventory.push({ name: g, kcalEach: 0, units: 1, spoilDay: 9999, unit: 'trophy', kg: 0.5 });
           this.say(`Grave robber: you take its ${g}. The dead don't need it.`);
         }
-        // RELIC BOND: you survived the thing you were afraid of, holding what matters.
         for (const r of this.relicItems()) {
           const rdef = this.data.items.find(i => i.id === (r.itemId || r.id));
           if (rdef && rdef.class === 'sentimental') {
@@ -4614,23 +5288,30 @@
             this.say(`You clutch your ${r.name}. You're still here. (Bond +3)`);
           }
         }
-        this.fight = null;
-      } else if (r.result === 'fled') {
-        this.fight = null;
+      } else if (result === 'routed') {
         this.notePlaystyle('cautious');
+        this.audioEvent('combatEnd');
+        this.say('It got away. No meat, no trophy — but you\'re breathing, and now you know its moves.');
+        this.sysSay(`It RAN! Style score: ${f.style || 0}. The gamblers wanted blood, but they'll settle for drama.`);
+      } else if (result === 'fled') {
+        this.notePlaystyle('cautious');
+        this.audioEvent('combatEnd');
+        // survivors scatter; monsters melt back into the woods
         this.say('You escape. The thicket keeps its secrets.');
-      } else if (r.result === 'lost') {
-        // second_wind / phoenix / molt get a vote before death is final.
-        if (this.maybeCheatDeath()) { this.fight = null; }
-        else {
-          this.over = true; this.fight = null;
-          this.say('The Bulldozer does not go around. You didn\'t make it. The village remembers.');
-        }
+        this.sysSay('And they\'re GONE! The gamblers who bet on a fight are furious. The ones who bet on running are rich.');
+      } else if (result === 'lost') {
+        this.audioEvent('defeat');
+        this.sysSay('OH. Oh no. ...The gamblers are very quiet.');
+        if (!this.over) { this.over = true; this.say("You didn't make it. The village remembers."); }
       }
-      if (this.state.scholar.health <= 0 && !this.over && !this.maybeCheatDeath()) { this.over = true; this.say('You didn\'t make it.'); }
-      return r;
+      this.tbfight = null;
     },
 
+    combatRound(cmd) {
+      // OLD menu combat retired — the grid is the combat now.
+      // Kept as a no-op shim so any stale caller doesn't crash.
+      return null;
+    },
     say(msg) { this.log.push(msg); if (this.log.length > 40) this.log.shift(); },
 
     // maybeCheatDeath: second_wind / phoenix_clause / molt. Called BEFORE death is final.
@@ -4737,7 +5418,7 @@
         px: this.map.px, py: this.map.py,
         over: this.over, won: this.won,
         location: this.location, departed: this.departed,
-        inCombat: !!this.fight,
+        inCombat: !!this.tbfight,
         pendingEncounter: !!this.pendingEncounter,
         wanderer: this.wanderer ? { x: this.wanderer.x, y: this.wanderer.y } : null,
         log: this.log.slice(-6),

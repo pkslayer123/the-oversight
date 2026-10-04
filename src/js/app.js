@@ -415,7 +415,7 @@
   function nearbyActionItems() {
     const items = [];
     if (Game.state.over) return items;
-    if (Game.state.scholar && (Game.state.scholar.inCombat || Game.fight)) return items;
+    if (Game.tbfight) return items;
     const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
     const seen = new Set();
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -487,6 +487,8 @@
           return;
         }
         Game.activateAbility(id);
+        // in combat, an ability IS your action for the turn
+        if (Game.tbfight) Game.tbPlayerActed();
         refresh();
       };
     });
@@ -859,19 +861,21 @@
 
   // ============ TELEGRAPHED DANGER ============
   // Combat is rare but high-stakes. Big threats (laser beam deer, bulldozers)
-  // TELEGRAPH their attacks: cells about to be hit glow red. You see it charging,
-  // you have a moment to MOVE. Position matters. Cover matters.
-  // This is the UI hook — the combat engine calls showTelegraph() with the
-  // danger cells, and clearTelegraph() when the attack resolves.
-  let dangerCells = new Set();
-  let dangerLabel = '';
+  // TELEGRAPH their attacks BEHAVIORALLY: "It freezes. Light gathers behind
+  // its eyes. It is not frozen. It is aiming."
+  //
+  // NO RED SQUARES. EVER. You don't get to see where the attack lands.
+  // You must LEARN what each cue means by surviving it — the Codex records
+  // patterns you've lived through, and only then does the cue come with
+  // understanding. Knowledge is earned, not given.
+  // The engine calls showTelegraph(cueText); clearTelegraph() when it resolves.
+  let dangerCue = '';
 
-  function showTelegraph(cells, label) {
-    // cells: [{cx, cy}] about to be hit. label: what's coming ("beam charging…")
-    dangerCells = new Set((cells || []).map(c => c.cx + ',' + c.cy));
-    dangerLabel = label || 'DANGER — move!';
+  function showTelegraph(cue) {
+    // cue: behavioral text. That's all the warning you get.
+    dangerCue = cue || 'Something is coming.';
     // A telegraph overrides everything. Sheets close, targeting cancels.
-    // The ONLY thing that matters is getting out of the red.
+    // The ONLY thing that matters is reading the monster and moving.
     exitTargeting(true);
     sheetQueue = sheetQueue.filter(s => s.modal && s.priority >= 80);
     renderSheets();
@@ -879,15 +883,103 @@
   }
 
   function clearTelegraph() {
-    dangerCells = new Set();
-    dangerLabel = '';
+    dangerCue = '';
     refresh();
   }
 
   function dangerBarHTML() {
-    if (!dangerCells.size) return '';
-    return `<div class="dangerbar">\u26A0 ${esc(dangerLabel)}</div>`;
+    if (!dangerCue) return '';
+    return `<div class="dangerbar">\u26A0 ${esc(dangerCue)}</div>`;
   }
+
+  // exposed so the combat engine can cue/clear
+  Game.showTelegraph = showTelegraph;
+  Game.clearTelegraph = clearTelegraph;
+
+  // ============ COMBAT AUDIO: THE TERROR ============
+  // Web Audio, all synthesized, no assets. Heartbeat during telegraphs
+  // (speeds up as the attack charges), silence-then-impact, stings.
+  // AudioContext requires a user gesture — the game is tap-driven, so taps init it.
+  const CombatAudio = (() => {
+    let ctx = null, hbTimer = null;
+    function ensure() {
+      if (!ctx) {
+        try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return false; }
+      }
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      return !!ctx;
+    }
+    function thump(when, vol) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 55;
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.exponentialRampToValueAtTime(vol, when + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + 0.25);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(when); o.stop(when + 0.3);
+    }
+    function heartbeat(bpm) {
+      stopHeartbeat();
+      if (!ensure()) return;
+      const interval = 60000 / bpm;
+      const beat = () => {
+        if (!ctx) return;
+        const t = ctx.currentTime;
+        thump(t, 0.5); thump(t + 0.18, 0.35); // lub-dub
+      };
+      beat();
+      hbTimer = setInterval(beat, interval);
+    }
+    function stopHeartbeat() {
+      if (hbTimer) { clearInterval(hbTimer); hbTimer = null; }
+    }
+    function boom() {
+      if (!ensure()) return;
+      stopHeartbeat();
+      // SILENCE, then impact. The quiet is the scary part.
+      setTimeout(() => {
+        if (!ctx) return;
+        const t = ctx.currentTime;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(120, t);
+        o.frequency.exponentialRampToValueAtTime(28, t + 0.45);
+        g.gain.setValueAtTime(0.7, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.65);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t); o.stop(t + 0.7);
+      }, 280);
+    }
+    function sting(kind) {
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const notes = kind === 'victory' ? [392, 523, 659] : kind === 'defeat' ? [220, 174, 130] : [330];
+      notes.forEach((fq, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq;
+        const st = t + i * 0.16;
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.3, st + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.45);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(st); o.stop(st + 0.5);
+      });
+    }
+    return {
+      combatStart() { heartbeat(72); },
+      telegraph(d) {
+        // urgency = turnsLeft. 2+ = slow dread (80bpm), 1 = frantic (145bpm).
+        heartbeat((d && d.urgency >= 2) ? 80 : 145);
+      },
+      impact() { boom(); },
+      victory() { sting('victory'); },
+      defeat() { sting('defeat'); },
+      combatEnd() { stopHeartbeat(); },
+      round() { /* hook reserved */ },
+    };
+  })();
+  Game.audio = CombatAudio;
 
   // villagersNear: everyone within `range` of the player (Chebyshev).
   function villagersNear(range) {
@@ -1137,16 +1229,20 @@
     const st = Game.status();
     if (st.over) return ending();
     // COMBAT MODE: the action system gets out of the way. Dodge-first.
-    // Non-modal sheets close instantly, targeting cancels. No dialogs blocking
-    // movement, no "are you sure?" — when something is charging a laser beam
-    // at you, the only UI that matters is WHERE YOU ARE and WHERE IT ISN'T.
-    if (st.inCombat || Game.fight) {
-      exitTargeting(true);
+    // Non-modal sheets close instantly. No dialogs blocking movement, no
+    // "are you sure?" — when something is winding up an attack, the only UI
+    // that matters is WHERE YOU ARE and WHAT IT'S DOING.
+    // (Targeting is NOT canceled here — showTelegraph cancels it when a real
+    // telegraph lands. Strike targeting must survive re-renders.)
+    if (st.inCombat) {
       if (sheetQueue.some(s => !s.modal)) {
         sheetQueue = sheetQueue.filter(s => s.modal);
         renderSheets();
       }
     }
+    // MODE SHIFT: combat gets its own visual skin — darkened edges,
+    // claustrophobic grid. You FEEL the game change.
+    try { document.body.classList.toggle('in-combat', !!st.inCombat); } catch (e) {}
     const targets = Game.travelTargets();
     const tset = new Set(targets.map(t => t.x + ',' + t.y));
     const n = Game.nodeDetail();
@@ -1203,6 +1299,15 @@
         // TARGETING MODE: tap a highlighted target to pick it. Anything else is ignored.
         if (targeting) { pickTarget(cx, cy); return; }
         const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+        // COMBAT: tap = move (up to speed squares). No popups, no examining.
+        // Your turn is for moving and acting — the panel below has your actions.
+        if (Game.tbfight) {
+          if (!Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); refresh(); return; }
+          if (cx === px && cy === py) return; // tapping yourself: nothing
+          Game.tbPlayerMove(cx, cy);
+          expeditionScreen();
+          return;
+        }
         if (cx === px && cy === py) { cellPopup(cx, cy); return; } // yourself: info/travel panel
         const detail = Game.genDetail(Game.map.px, Game.map.py);
         const cell = detail[cy] && detail[cy][cx];
@@ -1283,7 +1388,7 @@
       <div class="card warn"><h3>⚠ BULLDOZER</h3>
       <p class="small">It crashes from the thicket. It is not going around.</p>
       <button class="btn sm" id="p-face">Face it</button></div>`;
-    if (st.inCombat || Game.fight) return panelCombat(st);
+    if (st.inCombat) return panelCombat(st);
     if (n.isHaven) return panelHaven(st);
     return panelNode(st, n);
   }
@@ -1425,29 +1530,69 @@
   }
 
   function panelCombat(st) {
-    const f = Game.fight;
-    if (!f) return '';
-    const mv = S.combat.MOVES[f.telegraph];
+    const tf = Game.tbfight;
+    if (!tf) return '';
+    const cur = Game.tbCurrent();
+    const p = Game.tbFighter('p');
+    const orderHtml = tf.order.map(k => {
+      const f = Game.tbFighter(k);
+      if (!f) return '';
+      const label = f.kind === 'player' ? 'You' : `${f.emoji} ${esc(f.name)}`;
+      const dead = !f.alive ? ' ☠' : f.fled ? ' 🏃' : '';
+      const active = cur && cur.key === k;
+      return active ? `<b style="color:#4df3ff">${label}${dead}</b>` : `<span style="opacity:.6">${label}${dead}</span>`;
+    }).join(' → ');
+    const mons = tf.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
+    const monRows = mons.map(m => {
+      const pct = Math.max(0, Math.round(m.hp / m.maxHp * 100));
+      return `<p class="small">${m.emoji} <b>${esc(m.name)}</b> — ${Math.max(0, Math.round(m.hp))}/${m.maxHp} HP ${m.telegraph ? '⚠ winding up…' : ''}</p>`;
+    }).join('');
+    const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= 1) : [];
+    const canScream = Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day;
+    const yourTurn = Game.tbIsPlayerTurn();
     return `
-      <div class="card warn"><h3>${f.monster.name.toUpperCase()} — round ${f.round + 1}</h3>
-      ${statRow('BULLDOZER', f.monster.hp + ' hp', f.monster.hp / f.monster.maxHp * 100, f.monster.hp < 15)}
-      <p class="small">⚠ ${mv.name} incoming — ${f.studied ? mv.hint : "you can't quite read it. (STUDY it.)"}</p>
+      <div class="card warn"><h3>⚔ COMBAT — round ${tf.round}</h3>
+      <p class="small" style="opacity:.8">${orderHtml}</p>
+      ${monRows}
+      ${yourTurn && p ? `<p class="small">Your turn — <b>${p.moveLeft}</b> move left${p.acted ? ' · acted' : ''}. Tap a tile to move.</p>
       <div class="actions">
-        <button class="btn sm" data-c="strike">STRIKE</button>
-        <button class="btn sm" data-c="harry">HARRY</button>
-        <button class="btn sm" data-c="brace">BRACE</button>
-        ${Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day ? '<button class="btn sm" data-c="scream">🧀 SCREAM</button>' : ''}
+        <button class="btn sm" id="c-strike" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
+        <button class="btn sm" id="c-study" ${p.acted ? 'disabled' : ''}>👁 STUDY</button>
+        ${canScream ? `<button class="btn sm" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀 SCREAM</button>` : ''}
       </div>
       <div class="actions">
-        <button class="btn sm ghost" data-c="study">STUDY</button>
-        <button class="btn sm ghost" data-c="flee">FLEE</button>
-      </div></div>`;
+        <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃 FLEE</button>
+        <button class="btn sm ghost" id="c-endturn">⏭ END TURN</button>
+      </div>` : `<p class="small">${cur ? esc(cur.kind === 'player' ? 'You' : cur.name) + ' is acting…' : ''}</p>`}
+      </div>`;
+  }
+
+  function wireCombatPanel() {
+    const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
+    on('c-endturn', () => { Game.tbPlayerEndTurn(); rerender(); });
+    on('c-study', () => { Game.tbPlayerStudy(); rerender(); });
+    on('c-scream', () => { Game.tbPlayerScream(); rerender(); });
+    on('c-flee', () => { Game.tbPlayerFlee(); rerender(); });
+    on('c-strike', () => {
+      const tf = Game.tbfight;
+      if (!tf) return;
+      const p = Game.tbFighter('p');
+      const adj = tf.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled
+        && Math.max(Math.abs(x.mx - p.mx), Math.abs(x.my - p.my)) <= 1);
+      if (!adj.length) return;
+      if (adj.length === 1) { Game.tbPlayerStrike(adj[0].key); rerender(); return; }
+      enterTargeting({
+        prompt: '⚔ Strike which?',
+        targets: adj.map(m => ({ key: m.key, cx: m.mx, cy: m.my, label: m.name })),
+        onPick: (t) => { Game.tbPlayerStrike(t.key); rerender(); },
+      });
+    });
   }
 
   function wirePanel(st, n) {
     const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
     on('p-face', () => { Game.startCombat(); rerender(); });
-    screen.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Game.combatRound(b.dataset.c); rerender(); });
+    wireCombatPanel();
     const go = (kind) => { Game.doAction(kind); rerender(); };
     on('p-wait', () => go('wait'));
     on('p-eat', () => { Game.eat(); rerender(); });
@@ -1545,9 +1690,20 @@
         // ENTITIES OVERLAY: player, monster, animal, villager — always visible,
         // never overwritten by the cell underneath. People are not grass.
         if (!isMe) {
-          if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
-          else if (ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; }
-          else {
+          // turn-based combat: fighters render from the fight, not scholar.monster
+          const tbf = Game.tbfight;
+          let drawn = false;
+          if (tbf) {
+            for (const mf of tbf.fighters) {
+              if (mf.kind !== 'monster' && mf.kind !== 'hostile') continue;
+              if (!mf.alive || mf.fled || mf.mx !== cx || mf.my !== cy) continue;
+              g = esc(mf.emoji || '👹'); cls += ' monster';
+              drawn = true; break;
+            }
+          }
+          if (!drawn && mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; drawn = true; }
+          if (!drawn && ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; drawn = true; }
+          if (!drawn) {
             // villagers: 🧍 with a TINY name label underneath.
             // (names were rendering at full size and swallowing the grid.)
             for (const [rid, pos] of Object.entries(vpos)) {
@@ -1561,7 +1717,7 @@
             }
           }
         }
-        html += `<div class="${cls}${targetingCells().has(cx + ',' + cy) ? ' targetable' : ''}${dangerCells.has(cx + ',' + cy) ? ' danger' : ''}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        html += `<div class="${cls}${targetingCells().has(cx + ',' + cy) ? ' targetable' : ''}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }
@@ -1646,8 +1802,119 @@
     document.getElementById('b-title').onclick = () => title();
   }
 
+  // ============ DEBUG MODE (dev only, hidden from players) ============
+  // ?debug=1 in the URL → 🐞 button, bottom-right. Spawn monsters, trigger
+  // combat, skip to day 7, grant abilities, teleport, heal. For testing
+  // combat without wandering the woods hoping to get mauled.
+  const DEBUG = /[?&]debug=1/.test(location.search);
+  function debugPanel() {
+    let el = document.getElementById('debug-panel');
+    if (el) { el.remove(); return; }
+    el = document.createElement('div');
+    el.id = 'debug-panel';
+    el.style.cssText = 'position:fixed;bottom:60px;right:8px;z-index:9999;background:#111;border:2px solid #f90;border-radius:8px;padding:10px;max-width:260px;max-height:70vh;overflow:auto;font-size:13px;';
+    const monsters = (Game.data.monsters || []).map(m =>
+      `<option value="${m.id}">${m.name}</option>`).join('');
+    const abilities = (Game.data.abilities || []).map(a =>
+      `<option value="${a.id}">${a.name || a.id}</option>`).join('');
+    el.innerHTML = `<b>🐞 DEBUG</b> <button id="dbg-x" style="float:right">✕</button>
+      <p><select id="dbg-mon">${monsters}</select>
+      <button id="dbg-spawn">Spawn</button>
+      <button id="dbg-fight">Fight!</button></p>
+      <p><button id="dbg-day7">Skip to day 7</button>
+      <button id="dbg-heal">Heal+feed</button></p>
+      <p><select id="dbg-ab">${abilities}</select>
+      <button id="dbg-grant">Grant ability</button></p>
+      <p><button id="dbg-haven">Teleport: haven</button>
+      <button id="dbg-kill">Kill foes</button>
+      <button id="dbg-endc">End combat</button></p>`;
+    document.body.appendChild(el);
+    const q = (id) => el.querySelector(id);
+    q('#dbg-x').onclick = () => el.remove();
+    q('#dbg-spawn').onclick = () => {
+      const id = q('#dbg-mon').value;
+      const s = Game.state.scholar;
+      // walkable cell a few squares away
+      const detail = Game.genDetail(Game.map.px, Game.map.py);
+      outer:
+      for (let r = 2; r <= 5; r++) {
+        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+          const nx = (s.mx ?? 4) + dx, ny = (s.my ?? 4) + dy;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const cell = detail[ny] && detail[ny][nx];
+          if (!Game.cellProps(cell).blocks) {
+            s.monster = { id, mx: nx, my: ny };
+            Game.say(`🐞 DEBUG: ${id} spawned at ${nx},${ny}.`);
+            break outer;
+          }
+        }
+      }
+      refresh();
+    };
+    q('#dbg-fight').onclick = () => {
+      const id = q('#dbg-mon').value;
+      const s = Game.state.scholar;
+      if (!s.monster || s.monster.id !== id) q('#dbg-spawn').onclick();
+      Game.startCombat(id);
+      refresh();
+    };
+    q('#dbg-day7').onclick = () => {
+      Game.state.scholar.day = 7;
+      Game.checkSystemArrival();
+      Game.say('🐞 DEBUG: jumped to day 7. The System has arrived.');
+      refresh();
+    };
+    q('#dbg-heal').onclick = () => {
+      const s = Game.state.scholar;
+      s.health = 100; s.kcal = 2500; s.hydration = 100; s.energy = 100;
+      Game.say('🐞 DEBUG: healed + fed.');
+      refresh();
+    };
+    q('#dbg-grant').onclick = () => {
+      const id = q('#dbg-ab').value;
+      const s = Game.state.scholar;
+      s.abilities = s.abilities || [];
+      if (!s.abilities.includes(id)) s.abilities.push(id);
+      Game.say(`🐞 DEBUG: granted ${id}.`);
+      refresh();
+    };
+    q('#dbg-haven').onclick = () => {
+      Game.map.px = Game.state.village.x ?? 3;
+      Game.map.py = Game.state.village.y ?? 3;
+      Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
+      Game.say('🐞 DEBUG: teleported to haven.');
+      refresh();
+    };
+    q('#dbg-kill').onclick = () => {
+      const tf = Game.tbfight;
+      if (!tf) { Game.say('🐞 DEBUG: no combat running.'); return; }
+      for (const m of tf.fighters) {
+        if ((m.kind === 'monster' || m.kind === 'hostile') && m.alive) {
+          m.hp = 0; m.alive = false;
+          Game.say(`🐞 DEBUG: ${m.name} smote.`);
+        }
+      }
+      Game.tbEndCheck();
+      refresh();
+    };
+    q('#dbg-endc').onclick = () => {
+      if (Game.tbfight) { Game.tbEnd('fled'); Game.say('🐞 DEBUG: combat ended.'); }
+      refresh();
+    };
+  }
+  function maybeDebugButton() {
+    if (!DEBUG || document.getElementById('debug-btn')) return;
+    const b = document.createElement('button');
+    b.id = 'debug-btn';
+    b.textContent = '🐞';
+    b.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:9999;font-size:22px;background:#111;border:2px solid #f90;border-radius:50%;width:44px;height:44px;';
+    b.onclick = debugPanel;
+    document.body.appendChild(b);
+  }
+
   // ---------- boot ----------
-  Game.init().then(() => title()).catch(e => {
+  Game.init().then(() => { maybeDebugButton(); title(); }).catch(e => {
     screen.innerHTML = `<p class="small">Failed to load game data: ${esc(e.message)}<br>Serve over http (not file://) for fetch() to work.</p>`;
   });
 })();

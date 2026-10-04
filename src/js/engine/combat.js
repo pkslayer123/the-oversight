@@ -1,166 +1,181 @@
-/* Combat engine — slice 1. One command per round.
-   Monster declares telegraph → player answers → resolve.
-   Pure logic; UI lives in app.js. */
+/* Turn-based grid combat engine — pure helpers.
+   Combat happens on the 9x9 detail grid. Everyone acts in speed order.
+   Attacks typically target SQUARES (telegraphed — dodge by moving).
+   Some attacks target fighters directly (unavoidable by movement).
+   Stateful turn logic lives in Game (game.js); geometry + AI live here. */
 (function (global) {
   'use strict';
 
-  // Monster moves for slice 1 (Bulldozer). Data-driven later.
-  const MOVES = {
-    charge: { name: 'China-Shop Charge', dmg: [18, 26], hint: 'Lowers its head, paws the earth. It is not going around the tree.' },
-    trample: { name: 'Trample', dmg: [8, 14], hint: 'It whirls, lashing out at everything close.' },
-  };
+  function roll(range) { return range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1)); }
+  function cheb(ax, ay, bx, by) { return Math.max(Math.abs(ax - bx), Math.abs(ay - by)); }
+  function key(x, y) { return x + ',' + y; }
+  function inGrid(x, y) { return x >= 0 && x <= 8 && y >= 0 && y <= 8; }
 
-  function newFight(monster, scholar) {
-    const S = global.Scattering;
-    return {
-      monster: { id: monster.id, name: monster.name, hp: monster.hp[0] + Math.floor(Math.random() * (monster.hp[1] - monster.hp[0])), maxHp: monster.hp[1] },
-      scholarHp: scholar.health,
-      round: 0,
-      telegraph: 'charge', // first round always the signature
-      studied: false,
-      aimed: false,   // dead_aim: studied round 1 -> crit round 2
-      blind: S.hasAbility(scholar, 'pocket_sand') ? 2 : 0,   // pocket_sand: blinded 2 rounds
-      hesitate: S.hasAbility(scholar, 'fear_aura') ? 1 : 0,   // fear_aura: monsters hesitate
-      stunned: 0,     // scream_cheese: stunned rounds
-      log: [],
-    };
+  // turnOrder: speed desc. Ties: player first, then villagers, then monsters.
+  function turnOrder(fighters) {
+    const rank = { player: 0, villager: 1, monster: 2 };
+    return fighters
+      .filter(f => f.alive && !f.fled)
+      .slice()
+      .sort((a, b) => (b.speed - a.speed) || (rank[a.kind] - rank[b.kind]) || (Math.random() - 0.5))
+      .map(f => f.key);
   }
 
-  function roll(range) { return range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1)); }
-
-  // Player command → resolve one round. Returns {over, result, log[]}.
-  // command: strike | harry | brace | study | flee
-  function round(fight, command, scholar, abilitiesData) {
-    const S = global.Scattering;
-    const mods = S.modifiers.collectModifiers(scholar, abilitiesData || []);
-    const log = [];
-    fight.round += 1;
-
-    const move = MOVES[fight.telegraph];
-    let dmgToMonster = 0, dmgToScholar = 0, fled = false;
-
-    // --- player action ---
-    const hpFrac = scholar.maxHealth ? scholar.health / 100 : scholar.health / 100;
-    if (command === 'strike') {
-      let d = roll([10, 16]);
-      // patient_aim now lives in the modifier pipeline (combat.strike_damage, condition round:1).
-      // rage: below half health, +100% damage. You attack the nearest thing — friend or foe.
-      // (In the wilds there's only foe. The System notes your restraint. For now.)
-      if (S.hasAbility(scholar, 'rage') && hpFrac < 0.5) {
-        d *= 2; scholar.kcal = Math.max(0, (scholar.kcal || 0) - 20);
-        log.push('RAGE: +100% damage. (-20 kcal)');
-      }
-      // cornered_rat: below 30% health, desperation is a weapon. +100% damage.
-      if (S.hasAbility(scholar, 'cornered_rat') && hpFrac < 0.3) {
-        d *= 2; log.push('CORNERED RAT: desperation is a weapon. +100% damage.');
-      }
-      // dead_aim: studied round 1, thunder round 2. Guaranteed critical.
-      if (fight.aimed) {
-        d = Math.round(d * 2.5); fight.aimed = false;
-        log.push('DEAD AIM: patience, then thunder. Critical ×2.5.');
-      }
-      dmgToMonster = Math.round(S.modifiers.resolve(d, 'combat.strike_damage', mods, { round: fight.round }));
-      log.push(`You STRIKE for ${dmgToMonster}.`);
-    } else if (command === 'scream') {
-      // scream_cheese: so loud it curdles milk. Stuns 1 round. 1/day.
-      const today = scholar.day;
-      if (S.hasAbility(scholar, 'scream_cheese') && scholar.screamDay !== today) {
-        scholar.screamDay = today; fight.stunned = 1;
-        log.push('You SCREAM. Milk curdles somewhere. The monster freezes. (stunned 1 round)');
-      } else log.push('Your throat is raw. No scream left today.');
-      dmgToMonster = 0;
-    } else if (command === 'harry') {
-      dmgToMonster = roll([4, 8]);
-      log.push(`You HARRY for ${dmgToMonster}, staying mobile.`);
-    } else if (command === 'brace') {
-      log.push('You BRACE. Hold the line.');
-    } else if (command === 'study') {
-      fight.studied = true;
-      if (fight.round === 1 && S.hasAbility(scholar, 'dead_aim')) {
-        fight.aimed = true;
-        log.push('You STUDY it. Breath slow. The shot is already taken — it just hasn\'t happened yet. (dead_aim armed)');
-      } else log.push('You STUDY it. The Codex drinks in the details.');
-    } else if (command === 'flee') {
-      // rage: you don't flee. The very idea is insulting.
-      if (S.hasAbility(scholar, 'rage') && hpFrac < 0.5) {
-        log.push('RAGE: flee? FLEE? The thought dies before it finishes.');
-      } else if (Math.random() < 0.8) {
-        fled = true;
-        log.push('You FLEE — crashing through the undergrowth, heart hammering.');
-      } else {
-        log.push('You try to flee — it cuts you off!');
-      }
-    }
-
-    // --- monster action (unless fled) ---
-    if (!fled) {
-      let incoming = roll(move.dmg);
-      let handled = false; // stun/hesitate/blind fully resolve the monster's turn
-      // scream_cheese: stunned. It doesn't act.
-      if (fight.stunned > 0) {
-        fight.stunned -= 1; incoming = 0; handled = true;
-        log.push(`${move.name} — it's still frozen from your scream.`);
-      }
-      // fear_aura: it hesitates. One round, on the house.
-      else if (fight.hesitate > 0) {
-        fight.hesitate -= 1; incoming = 0; handled = true;
-        log.push(`${move.name} — it hesitates. Something about you is wrong. (fear_aura)`);
-      }
-      // pocket_sand: blinded. 50% miss.
-      else if (fight.blind > 0) {
-        fight.blind -= 1;
-        if (Math.random() < 0.5) { incoming = 0; handled = true; log.push(`${move.name} — it swings at sand-ghosts. Missed. (pocket_sand)`); }
-      }
-      // harry dodge: base 50%, adrenaline_control/cornered_rat add more.
-      let dodge = S.modifiers.resolve(0.5, 'combat.dodge_chance', mods, {});
-      if (S.hasAbility(scholar, 'cornered_rat') && hpFrac < 0.3) dodge += 0.25;
-      if (!handled && command === 'harry' && Math.random() < Math.min(0.95, dodge)) {
-        incoming = 0;
-        log.push(`${move.name} — you slip aside. Missed.`);
-      } else if (!handled && command === 'brace') {
-        incoming = Math.ceil(incoming / 2);
-        log.push(`${move.name} hits your guard for ${incoming}.`);
-        if (fight.telegraph === 'charge') { // simple riposte
-          const rip = 4;
-          dmgToMonster += rip;
-          log.push(`It impales itself on your braced line! +${rip} (riposte)`);
+  // patternCells: squares an attack will hit, given attacker pos + target pos.
+  // pattern: {type, length, width, radius, range}
+  function patternCells(pattern, ax, ay, tx, ty) {
+    const cells = [];
+    const type = pattern.type;
+    if (type === 'beam' || type === 'line' || type === 'charge') {
+      // straight line from attacker toward target
+      const dx = Math.sign(tx - ax), dy = Math.sign(ty - ay);
+      const len = pattern.length || 5, w = pattern.width || 1;
+      for (let i = 1; i <= len; i++) {
+        const cx = ax + dx * i, cy = ay + dy * i;
+        if (!inGrid(cx, cy)) break;
+        cells.push({ cx, cy });
+        // width: perpendicular spread
+        if (w > 1 && dx !== 0 && dy !== 0) {
+          // diagonal beam: widen orthogonally
+          if (inGrid(cx + 1, cy)) cells.push({ cx: cx + 1, cy });
+          if (inGrid(cx, cy + 1)) cells.push({ cx, cy: cy + 1 });
+        } else if (w > 1) {
+          const px = dy !== 0 ? 1 : 0, py = dx !== 0 ? 1 : 0;
+          if (inGrid(cx + px, cy + py)) cells.push({ cx: cx + px, cy: cy + py });
+          if (inGrid(cx - px, cy - py)) cells.push({ cx: cx - px, cy: cy - py });
         }
-      } else if (!handled && command === 'study') {
-        log.push(`${move.name} — ${incoming} damage while you watch and learn.`);
-      } else if (!handled) {
-        log.push(`${move.name} hits for ${incoming}.`);
       }
-      dmgToScholar = incoming;
+    } else if (type === 'burst' || type === 'ambush') {
+      const r = pattern.radius || 1;
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        if (cheb(0, 0, dx, dy) > r) continue;
+        const cx = ax + dx, cy = ay + dy;
+        if (inGrid(cx, cy)) cells.push({ cx, cy });
+      }
     }
+    // dedupe
+    const seen = new Set(), out = [];
+    for (const c of cells) { const k = key(c.cx, c.cy); if (!seen.has(k)) { seen.add(k); out.push(c); } }
+    return out;
+  }
 
-    // ARMOR: best protection in inventory reduces damage.
-    // Bark (10) -> military vest (40). The System will make these obsolete.
-    let protection = 0;
-    // (scholar items don't carry defs here — check via global Game if available)
-    if (typeof Game !== 'undefined' && Game.armorBonus) {
-      protection = Game.armorBonus();
+  // nearestEnemy: closest living fighter of an opposing side.
+  // sides: player+villager vs monster. (hostile survivors count as monsters.)
+  function isFoe(a, b) {
+    if (a.kind === 'monster' || a.kind === 'hostile') return b.kind !== 'monster' && b.kind !== 'hostile';
+    return b.kind === 'monster' || b.kind === 'hostile';
+  }
+  function nearestEnemy(fighters, f) {
+    let best = null, bestD = 99;
+    for (const o of fighters) {
+      if (!o.alive || o.fled || o.key === f.key) continue;
+      if (!isFoe(f, o)) continue;
+      const d = cheb(f.mx, f.my, o.mx, o.my);
+      if (d < bestD) { bestD = d; best = o; }
     }
-    dmgToScholar = Math.max(0, dmgToScholar - protection);
-    if (protection > 0 && incoming > 0) log.push(`Armor absorbs ${Math.min(incoming, protection)}.`);
+    return best ? { f: best, d: bestD } : null;
+  }
 
-    fight.monster.hp -= dmgToMonster;
-    fight.scholarHp -= dmgToScholar;
-
-    // --- next telegraph ---
-    if (fight.monster.hp > 0 && !fled) {
-      // simple pattern: charge, then trample if charge missed/dodged, else charge again
-      fight.telegraph = (fight.telegraph === 'charge' && dmgToScholar === 0) ? 'trample' : 'charge';
-      const next = MOVES[fight.telegraph];
-      log.push(fight.studied
-        ? `Next: ${next.name} — ${next.hint}`
-        : `It shifts. ${next.name} incoming — you can't quite read it.`);
+  // stepToward: one step (8-dir) reducing Chebyshev distance, avoiding blocked cells.
+  // blocked(x,y): callback. avoidCells: Set of "x,y" to avoid (telegraphs).
+  function stepToward(fx, fy, tx, ty, blocked, avoidCells) {
+    let best = null, bestD = cheb(fx, fy, tx, ty);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const nx = fx + dx, ny = fy + dy;
+      if (!inGrid(nx, ny) || blocked(nx, ny)) continue;
+      const d = cheb(nx, ny, tx, ty);
+      const danger = avoidCells && avoidCells.has(key(nx, ny));
+      if (d < bestD && !danger) { bestD = d; best = { x: nx, y: ny }; }
     }
+    // if every improving step is dangerous, take the least-bad improving step anyway
+    if (!best) {
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = fx + dx, ny = fy + dy;
+        if (!inGrid(nx, ny) || blocked(nx, ny)) continue;
+        if (cheb(nx, ny, tx, ty) < cheb(fx, fy, tx, ty)) { best = { x: nx, y: ny }; break; }
+      }
+    }
+    return best;
+  }
 
-    const over = fled || fight.monster.hp <= 0 || fight.scholarHp <= 0;
-    const result = fled ? 'fled' : fight.monster.hp <= 0 ? 'won' : fight.scholarHp <= 0 ? 'lost' : null;
-    return { over, result, log, dmgToMonster, dmgToScholar };
+  function stepAway(fx, fy, tx, ty, blocked, avoidCells) {
+    let best = null, bestD = -1;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const nx = fx + dx, ny = fy + dy;
+      if (!inGrid(nx, ny) || blocked(nx, ny)) continue;
+      const d = cheb(nx, ny, tx, ty);
+      const danger = avoidCells && avoidCells.has(key(nx, ny)) ? -100 : 0;
+      if (d + danger > bestD) { bestD = d + danger; best = { x: nx, y: ny }; }
+    }
+    return best;
+  }
+
+  // villager AI: personality -> behavior. Returns {moves:[[x,y]..], action}.
+  // action: {type:'strike', target} | {type:'harry', target} | {type:'help', target} | {type:'flee'} | {type:'wait'}
+  function villagerDecide(f, fighters, blocked, dangerCells) {
+    const moves = [];
+    let fx = f.mx, fy = f.my;
+    const foe = nearestEnemy(fighters, f);
+    const moveTo = (tx, ty, toward) => {
+      for (let i = 0; i < f.speed; i++) {
+        const s = toward ? stepToward(fx, fy, tx, ty, blocked, dangerCells)
+                         : stepAway(fx, fy, tx, ty, blocked, dangerCells);
+        if (!s) break;
+        fx = s.x; fy = s.y; moves.push([fx, fy]);
+      }
+    };
+    const ally = (kind) => fighters.find(o => o.alive && !o.fled && o.kind === kind && o.key !== f.key);
+    const player = ally('player');
+
+    if (f.ai === 'brave') {
+      if (!foe) return { moves, action: { type: 'wait' } };
+      if (cheb(fx, fy, foe.f.mx, foe.f.my) <= 1) {
+        return { moves, action: { type: 'strike', target: foe.f.key } };
+      }
+      moveTo(foe.f.mx, foe.f.my, true);
+      const d2 = cheb(fx, fy, foe.f.mx, foe.f.my);
+      if (d2 <= 1) return { moves, action: { type: 'strike', target: foe.f.key } };
+      if (d2 <= 3) return { moves, action: { type: 'harry', target: foe.f.key } }; // thrown rock
+      return { moves, action: { type: 'wait' } };
+    }
+    if (f.ai === 'cautious') {
+      // flee if hurt or if a monster is close
+      if ((f.hp / f.maxHp) < 0.5 || (foe && foe.d <= 2)) {
+        if (foe) moveTo(foe.f.mx, foe.f.my, false);
+        return { moves, action: { type: 'flee' } };
+      }
+      // otherwise keep distance from the fight
+      if (foe && foe.d <= 4) moveTo(foe.f.mx, foe.f.my, false);
+      return { moves, action: { type: 'wait' } };
+    }
+    // helpful: stick near the player, patch them up, harry monsters
+    if (player && (player.hp / player.maxHp) < 0.7 && !f.helped) {
+      if (cheb(fx, fy, player.mx, player.my) <= 1) {
+        return { moves, action: { type: 'help', target: player.key } };
+      }
+      moveTo(player.mx, player.my, true);
+      if (cheb(fx, fy, player.mx, player.my) <= 1) return { moves, action: { type: 'help', target: player.key } };
+      return { moves, action: { type: 'wait' } };
+    }
+    if (foe && cheb(fx, fy, foe.f.mx, foe.f.my) <= 1) {
+      return { moves, action: { type: 'harry', target: foe.f.key } };
+    }
+    if (foe && foe.d <= 3) {
+      // close in to harry, but don't stand in telegraphs
+      moveTo(foe.f.mx, foe.f.my, true);
+      if (cheb(fx, fy, foe.f.mx, foe.f.my) <= 1) return { moves, action: { type: 'harry', target: foe.f.key } };
+    } else if (player) {
+      moveTo(player.mx, player.my, true);
+    }
+    return { moves, action: { type: 'wait' } };
   }
 
   global.Scattering = global.Scattering || {};
-  global.Scattering.combat = { newFight, round, MOVES };
+  global.Scattering.combat = {
+    roll, cheb, key, inGrid, turnOrder, patternCells,
+    isFoe, nearestEnemy, stepToward, stepAway, villagerDecide,
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

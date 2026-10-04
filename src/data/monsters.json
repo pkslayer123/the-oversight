@@ -1,412 +1,482 @@
 [
-  {
-    "id": "thornback_boar",
-    "name": "Bulldozer",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      40,
-      55
-    ],
-    "attack": {
-      "name": "China-Shop Charge",
-      "damage": [
-        18,
-        26
-      ],
-      "telegraph": "Lowers its head, paws the earth. It is not going around the tree. It has never gone around anything."
-    },
-    "weaknesses": [
-      "soft flanks (HARRY then STRIKE)",
-      "it never goes around \u2014 position accordingly"
-    ],
-    "edible": {
-      "calories": 3200,
-      "note": "Pork is pork. Smoke it; it keeps for weeks. The quills make excellent awls."
-    },
-    "parts": [
-      "quills (tools)",
-      "hide (leather)",
-      "tusks (trade)"
-    ],
-    "behavior": "territorial",
-    "codexStages": {
-      "unknown": "Something heavy moved in the thicket. Then a tree fell over for no reason.",
-      "observed": "Feral hog. The System observed 'bull in a china shop' and concluded destruction is the point. It charges through obstacles \u2014 trees, fences, you. It cannot be deterred, only redirected.",
-      "slain": "Thornback Boar. Moves: China-Shop Charge (heavy, telegraphed, destroys cover), Trample (close range after a missed charge), Retreat (below 25% hp, may return). It will not go around. Use that. Flanks are soft \u2014 harry it, then strike. Meat: excellent. The quills make fine awls."
-    },
-    "systemDesignation": "Sus scrofa (standard)",
-    "aggression": "territorial",
-    "follows": true,
-    "fear": "fire"
+ {
+  "id": "thornback_boar",
+  "name": "Bulldozer",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   40,
+   55
+  ],
+  "attack": {
+   "name": "China-Shop Charge",
+   "damage": [
+    18,
+    26
+   ],
+   "telegraph": "Lowers its head, paws the earth. It is not going around the tree. It has never gone around anything.",
+   "pattern": {
+    "type": "charge",
+    "length": 5,
+    "width": 1
+   }
   },
-  {
-    "id": "hushwolf",
-    "name": "Hushpuppy",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      25,
-      35
-    ],
-    "attack": {
-      "name": "Silent Rush",
-      "damage": [
-        12,
-        18
-      ],
-      "telegraph": "No telegraph you can hear. Watch the birds \u2014 when they go quiet, the pack is already moving."
-    },
-    "weaknesses": [
-      "fire (they remember being dogs)",
-      "broken coordination (wound the lead)"
-    ],
-    "edible": {
-      "calories": 1400,
-      "note": "Edible but lean. The old taboo itches; hunger doesn't care."
-    },
-    "parts": [
-      "teeth (trade)",
-      "pelt"
-    ],
-    "behavior": "pack",
-    "codexStages": {
-      "unknown": "The woods went silent all at once. Not quiet \u2014 silent. Like the world holding its breath.",
-      "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you.",
-      "slain": "Hushwolf. Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
-    },
-    "systemDesignation": "Canis familiaris (standard)",
-    "aggression": "hungry",
-    "follows": true,
-    "fear": "numbers"
+  "weaknesses": [
+   "soft flanks (HARRY then STRIKE)",
+   "it never goes around — position accordingly"
+  ],
+  "edible": {
+   "calories": 3200,
+   "note": "Pork is pork. Smoke it; it keeps for weeks. The quills make excellent awls."
   },
-  {
-    "id": "gallowdeer",
-    "name": "Highbeam Deer",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      35,
-      45
-    ],
-    "attack": {
-      "name": "Ocular Discharge",
-      "damage": [
-        16,
-        24
-      ],
-      "telegraph": "It freezes. Like a deer in headlights. Light gathers behind its eyes. It is not frozen. It is aiming."
-    },
-    "weaknesses": [
-      "interrupt the freeze (HARRY)",
-      "skittish at range before it locks on"
-    ],
-    "edible": {
-      "calories": 2800,
-      "note": "Venison. The best meat in the woods, and the saddest. Thank it."
-    },
-    "parts": [
-      "antler (tools, trade)",
-      "hide"
-    ],
-    "behavior": "territorial",
-    "codexStages": {
-      "unknown": "A deer. It froze like a deer in headlights. The light did not stop gathering.",
-      "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' \u2014 and right that you should move. When it freezes, it is aiming. Antlers never shed: the System classified them as permanent equipment.",
-      "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze \u2014 MOVE), Antler Sweep (close range), Bolt (flees at 50% hp). Never let it finish aiming. The meat is worth the sorrow. Thank it."
-    },
-    "systemDesignation": "Odocoileus virginianus (standard)",
-    "aggression": "skittish",
-    "follows": false,
-    "fear": "movement"
+  "parts": [
+   "quills (tools)",
+   "hide (leather)",
+   "tusks (trade)"
+  ],
+  "behavior": "territorial",
+  "codexStages": {
+   "unknown": "Something heavy moved in the thicket. Then a tree fell over for no reason.",
+   "observed": "Feral hog. The System observed 'bull in a china shop' and concluded destruction is the point. It charges through obstacles — trees, fences, you. It cannot be deterred, only redirected.",
+   "slain": "Thornback Boar. Moves: China-Shop Charge (heavy, telegraphed, destroys cover), Trample (close range after a missed charge), Retreat (below 25% hp, may return). It will not go around. Use that. Flanks are soft — harry it, then strike. Meat: excellent. The quills make fine awls."
   },
-  {
-    "id": "mirrormoth",
-    "name": "Flashbulb Moth",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      15,
-      22
-    ],
-    "attack": {
-      "name": "Wing Flash",
-      "damage": [
-        8,
-        14
-      ],
-      "telegraph": "It lands. It folds its wings. The light in the clearing changes, like someone adjusting a lamp."
-    },
-    "weaknesses": [
-      "attack from behind (it must face you to flash)",
-      "overcast days dull the wings"
-    ],
-    "edible": {
-      "calories": 120,
-      "note": "Mostly wing. Crunchy. Tastes like dust and regret."
-    },
-    "parts": [
-      "reflective wing scales (trade, signal mirrors)"
-    ],
-    "behavior": "drifter",
-    "codexStages": {
-      "unknown": "A light in the trees that wasn't the sun. Then spots in your vision.",
-      "observed": "Luna moth. The System classified its wings as 'under-visible' and coated them in retroreflectors. It flashes to stun \u2014 not to hunt, just because it can. It doesn't want you. It wants to be SEEN.",
-      "slain": "Flashbulb Moth. Moves: Wing Flash (blinds 1 round, must be facing you), Drift (moves randomly, hard to predict). Kill it from behind or on cloudy days. The wing scales make excellent signal mirrors."
-    },
-    "systemDesignation": "Actias luna (enhanced visibility)",
-    "aggression": "skittish",
-    "follows": false,
-    "fear": "darkness"
+  "systemDesignation": "Sus scrofa (standard)",
+  "aggression": "territorial",
+  "follows": true,
+  "fear": "fire",
+  "speed": 3,
+  "emoji": "🐗",
+  "fleeAt": 0.25
+ },
+ {
+  "id": "hushwolf",
+  "name": "Hushpuppy",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   25,
+   35
+  ],
+  "attack": {
+   "name": "Silent Rush",
+   "damage": [
+    12,
+    18
+   ],
+   "telegraph": "No telegraph you can hear. Watch the birds — when they go quiet, the pack is already moving.",
+   "pattern": {
+    "type": "rush"
+   }
   },
-  {
-    "id": "belltoad",
-    "name": "Choir Toad",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      20,
-      30
-    ],
-    "attack": {
-      "name": "Resonant Croak",
-      "damage": [
-        10,
-        16
-      ],
-      "telegraph": "Its throat swells. The air goes thick. Every frog for a mile answers at once."
-    },
-    "weaknesses": [
-      "deafened by its own chorus (loud noises scatter the pack)",
-      "slow on land"
-    ],
-    "edible": {
-      "calories": 300,
-      "note": "Legs are fine. The throat sac is not food. Do not eat the throat sac."
-    },
-    "parts": [
-      "throat sac (waterskin)",
-      "legs"
-    ],
-    "behavior": "pack",
-    "codexStages": {
-      "unknown": "Frogs. Too many frogs. All croaking the same note, like a rehearsal.",
-      "observed": "Bullfrog. The System classified croaking as 'inefficient communication' and amplified it into resonance. They croak in chorus now \u2014 one croak, and the pack knows where you are. The sound carries for miles.",
-      "slain": "Choir Toad. Moves: Resonant Croak (sonic, calls the pack), Lunge (short range, clumsy). They hunt by sound \u2014 stay quiet or stay loud enough to break the chorus. The throat sac makes a fine waterskin."
-    },
-    "systemDesignation": "Lithobates catesbeianus (amplified)",
-    "aggression": "hungry",
-    "follows": true,
-    "fear": "loud noise"
+  "weaknesses": [
+   "fire (they remember being dogs)",
+   "broken coordination (wound the lead)"
+  ],
+  "edible": {
+   "calories": 1400,
+   "note": "Edible but lean. The old taboo itches; hunger doesn't care."
   },
-  {
-    "id": "lockpick_raccoon",
-    "name": "Lockpick",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      18,
-      26
-    ],
-    "attack": {
-      "name": "Disassemble",
-      "damage": [
-        10,
-        15
-      ],
-      "telegraph": "It sits up. Its hands move too fast to follow. Something you own is suddenly in its hands."
-    },
-    "weaknesses": [
-      "distract with food (it cannot resist)",
-      "it steals before it fights \u2014 guard your pack"
-    ],
-    "edible": {
-      "calories": 900,
-      "note": "Greasy. Fine in a stew. Wash your hands after handling \u2014 it touched everything you own."
-    },
-    "parts": [
-      "dexterous paws (trade)",
-      "pelt"
-    ],
-    "behavior": "curious",
-    "codexStages": {
-      "unknown": "Your pack was open. You didn't open it. Something small is holding your knife.",
-      "observed": "Raccoon. The System observed tool use and concluded the hands were 'under-articulated.' It gave them more joints. It can now pick locks, untie knots, and disassemble a snare in seconds. It doesn't want to hurt you. It wants your stuff.",
-      "slain": "Lockpick. Moves: Disassemble (steals an item, may disarm traps), Bite (only if cornered). It steals FIRST and fights second \u2014 secure your pack. Distract it with food; it cannot resist food."
-    },
-    "systemDesignation": "Procyon lotor (enhanced articulation)",
-    "aggression": "curious",
-    "follows": true,
-    "fear": "dogs"
+  "parts": [
+   "teeth (trade)",
+   "pelt"
+  ],
+  "behavior": "pack",
+  "codexStages": {
+   "unknown": "The woods went silent all at once. Not quiet — silent. Like the world holding its breath.",
+   "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound — watch the lead animal's ears. They are still loyal. Just not to you.",
+   "slain": "Hushwolf. Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire — they remember being dogs. Wound the lead and the pack breaks."
   },
-  {
-    "id": "white_noise_heron",
-    "name": "White Noise",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      30,
-      40
-    ],
-    "attack": {
-      "name": "Spearfish Strike",
-      "damage": [
-        16,
-        24
-      ],
-      "telegraph": "The heron is gone. No \u2014 it's there. It was always there. You just couldn't see it until it moved."
-    },
-    "weaknesses": [
-      "it casts no shadow \u2014 watch the water, not the bird",
-      "it commits to the strike (dodge sideways)"
-    ],
-    "edible": {
-      "calories": 1100,
-      "note": "Fishy. Obviously. Everything about it is fishy."
-    },
-    "parts": [
-      "spear beak (tool)",
-      "plumes (trade)"
-    ],
-    "behavior": "territorial",
-    "codexStages": {
-      "unknown": "A heron-shaped absence by the creek. Then a beak where your hand was.",
-      "observed": "Great blue heron. The System classified shadows as 'visual noise' and removed the bird's. It is hardest to see when it is stillest \u2014 which is always. It strikes like a spear. It was always there. You just couldn't see it.",
-      "slain": "White Noise. Moves: Spearfish Strike (devastating lunge, telegraphed by stillness), Stalk (repositions unseen). Watch the water's surface, not the bird. When it commits, move sideways \u2014 it can't correct mid-strike."
-    },
-    "systemDesignation": "Ardea herodias (shadow removed)",
-    "aggression": "territorial",
-    "follows": false,
-    "fear": "fire"
+  "systemDesignation": "Canis familiaris (standard)",
+  "aggression": "hungry",
+  "follows": true,
+  "fear": "numbers",
+  "speed": 5,
+  "emoji": "🐕",
+  "fleeAt": 0.3,
+  "pack": 3
+ },
+ {
+  "id": "gallowdeer",
+  "name": "Highbeam Deer",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   35,
+   45
+  ],
+  "attack": {
+   "name": "Ocular Discharge",
+   "damage": [
+    16,
+    24
+   ],
+   "telegraph": "It freezes. Like a deer in headlights. Light gathers behind its eyes. It is not frozen. It is aiming.",
+   "pattern": {
+    "type": "beam",
+    "length": 6,
+    "width": 1,
+    "windup": 2
+   }
   },
-  {
-    "id": "hummice",
-    "name": "Hummice",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      12,
-      18
-    ],
-    "attack": {
-      "name": "Swarm Hum",
-      "damage": [
-        6,
-        12
-      ],
-      "telegraph": "A low hum rises from the grass. It harmonizes with itself. Your teeth ache."
-    },
-    "weaknesses": [
-      "the hum needs the swarm \u2014 scatter them",
-      "cats (ordinary cats terrify them)"
-    ],
-    "edible": {
-      "calories": 150,
-      "note": "One mouse is a snack. Fifty mice is a meal. Do the math."
-    },
-    "parts": [
-      "none worth taking"
-    ],
-    "behavior": "swarm",
-    "codexStages": {
-      "unknown": "The grass hummed. Like a refrigerator. Like a choir warming up underground.",
-      "observed": "Field mice. The System networked them \u2014 a hive hum for coordination. Individually harmless. Together they vibrate at a frequency that loosens teeth and resolve. They don't bite so much as... overwhelm.",
-      "slain": "Hummice. Moves: Swarm Hum (stacking damage, worse the longer you stand in it), Nibble Tide (many small bites). Don't stand still. Scatter them \u2014 the hum needs the swarm. A cat would end this in minutes."
-    },
-    "systemDesignation": "Peromyscus spp. (networked)",
-    "aggression": "hungry",
-    "follows": true,
-    "fear": "cats"
+  "weaknesses": [
+   "interrupt the freeze (HARRY)",
+   "skittish at range before it locks on"
+  ],
+  "edible": {
+   "calories": 2800,
+   "note": "Venison. The best meat in the woods, and the saddest. Thank it."
   },
-  {
-    "id": "speedbump_turtle",
-    "name": "Speedbump",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      50,
-      70
-    ],
-    "attack": {
-      "name": "Snap Decision",
-      "damage": [
-        20,
-        30
-      ],
-      "telegraph": "It doesn't move. It hasn't moved in an hour. Its head is suddenly somewhere else."
-    },
-    "weaknesses": [
-      "it cannot chase (it is a turtle)",
-      "flip it (good luck)",
-      "just walk around"
-    ],
-    "edible": {
-      "calories": 1800,
-      "note": "Excellent soup. Getting to the meat requires tools, patience, and forgiveness."
-    },
-    "parts": [
-      "shell (shield, bowl)",
-      "claws (tools)"
-    ],
-    "behavior": "territorial",
-    "codexStages": {
-      "unknown": "A rock by the trail. The rock had opinions about your ankle.",
-      "observed": "Snapping turtle. The System classified its shell as 'inadequate coverage' and plated the gaps. It is now functionally a bunker with a bad attitude. It cannot chase you. It doesn't need to \u2014 you walked to it.",
-      "slain": "Speedbump. Moves: Snap Decision (blinding fast head strike, short range), Bunker (withdraws, nearly invulnerable). It can't follow. Walk around it. If you must fight: flip it, or don't. The soup is worth it."
-    },
-    "systemDesignation": "Chelydra serpentina (up-armored)",
-    "aggression": "territorial",
-    "follows": false,
-    "fear": "being flipped"
+  "parts": [
+   "antler (tools, trade)",
+   "hide"
+  ],
+  "behavior": "territorial",
+  "codexStages": {
+   "unknown": "A deer. It froze like a deer in headlights. The light did not stop gathering.",
+   "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' — and right that you should move. When it freezes, it is aiming. Antlers never shed: the System classified them as permanent equipment.",
+   "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze — MOVE), Antler Sweep (close range), Bolt (flees at 50% hp). Never let it finish aiming. The meat is worth the sorrow. Thank it."
   },
-  {
-    "id": "nightlight_catfish",
-    "name": "Nightlight",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      22,
-      32
-    ],
-    "attack": {
-      "name": "Lure and Grasp",
-      "damage": [
-        12,
-        20
-      ],
-      "telegraph": "A soft green glow under the water. Pretty. That's the problem \u2014 it's pretty."
-    },
-    "weaknesses": [
-      "don't wade at night (obvious, ignored)",
-      "the glow gives it away in dark water"
-    ],
-    "edible": {
-      "calories": 1000,
-      "note": "Good eating. The glow fades after death. Mostly."
-    },
-    "parts": [
-      "lure organ (light source, trade)",
-      "barbels"
-    ],
-    "behavior": "ambush",
-    "codexStages": {
-      "unknown": "Something glowed in the creek at dusk. You reached for it. That was the idea.",
-      "observed": "Channel catfish. The System classified its lure as 'under-visible' and made it bioluminescent. It glows to attract \u2014 curious hands, small fish, you. The glow is beautiful. The teeth are not.",
-      "slain": "Nightlight. Moves: Lure and Grasp (ambush from dark water), Barb Lash (close range). Don't wade at night. If you must: the glow betrays it \u2014 strike where the light is, not where you think the fish is."
-    },
-    "systemDesignation": "Ictalurus punctatus (illuminated)",
-    "aggression": "hungry",
-    "follows": false,
-    "fear": "daylight"
-  }
+  "systemDesignation": "Odocoileus virginianus (standard)",
+  "aggression": "skittish",
+  "follows": false,
+  "fear": "movement",
+  "speed": 4,
+  "emoji": "🦌",
+  "fleeAt": 0.5
+ },
+ {
+  "id": "mirrormoth",
+  "name": "Flashbulb Moth",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   15,
+   22
+  ],
+  "attack": {
+   "name": "Wing Flash",
+   "damage": [
+    8,
+    14
+   ],
+   "telegraph": "It lands. It folds its wings. The light in the clearing changes, like someone adjusting a lamp.",
+   "pattern": {
+    "type": "burst",
+    "radius": 2
+   }
+  },
+  "weaknesses": [
+   "attack from behind (it must face you to flash)",
+   "overcast days dull the wings"
+  ],
+  "edible": {
+   "calories": 120,
+   "note": "Mostly wing. Crunchy. Tastes like dust and regret."
+  },
+  "parts": [
+   "reflective wing scales (trade, signal mirrors)"
+  ],
+  "behavior": "drifter",
+  "codexStages": {
+   "unknown": "A light in the trees that wasn't the sun. Then spots in your vision.",
+   "observed": "Luna moth. The System classified its wings as 'under-visible' and coated them in retroreflectors. It flashes to stun — not to hunt, just because it can. It doesn't want you. It wants to be SEEN.",
+   "slain": "Flashbulb Moth. Moves: Wing Flash (blinds 1 round, must be facing you), Drift (moves randomly, hard to predict). Kill it from behind or on cloudy days. The wing scales make excellent signal mirrors."
+  },
+  "systemDesignation": "Actias luna (enhanced visibility)",
+  "aggression": "skittish",
+  "follows": false,
+  "fear": "darkness",
+  "speed": 4,
+  "emoji": "🦋"
+ },
+ {
+  "id": "belltoad",
+  "name": "Choir Toad",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   20,
+   30
+  ],
+  "attack": {
+   "name": "Resonant Croak",
+   "damage": [
+    10,
+    16
+   ],
+   "telegraph": "Its throat swells. The air goes thick. Every frog for a mile answers at once.",
+   "pattern": {
+    "type": "burst",
+    "radius": 2
+   }
+  },
+  "weaknesses": [
+   "deafened by its own chorus (loud noises scatter the pack)",
+   "slow on land"
+  ],
+  "edible": {
+   "calories": 300,
+   "note": "Legs are fine. The throat sac is not food. Do not eat the throat sac."
+  },
+  "parts": [
+   "throat sac (waterskin)",
+   "legs"
+  ],
+  "behavior": "pack",
+  "codexStages": {
+   "unknown": "Frogs. Too many frogs. All croaking the same note, like a rehearsal.",
+   "observed": "Bullfrog. The System classified croaking as 'inefficient communication' and amplified it into resonance. They croak in chorus now — one croak, and the pack knows where you are. The sound carries for miles.",
+   "slain": "Choir Toad. Moves: Resonant Croak (sonic, calls the pack), Lunge (short range, clumsy). They hunt by sound — stay quiet or stay loud enough to break the chorus. The throat sac makes a fine waterskin."
+  },
+  "systemDesignation": "Lithobates catesbeianus (amplified)",
+  "aggression": "hungry",
+  "follows": true,
+  "fear": "loud noise",
+  "speed": 2,
+  "emoji": "🐸",
+  "pack": 2
+ },
+ {
+  "id": "lockpick_raccoon",
+  "name": "Lockpick",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   18,
+   26
+  ],
+  "attack": {
+   "name": "Disassemble",
+   "damage": [
+    10,
+    15
+   ],
+   "telegraph": "It sits up. Its hands move too fast to follow. Something you own is suddenly in its hands.",
+   "pattern": {
+    "type": "direct",
+    "range": 2
+   }
+  },
+  "weaknesses": [
+   "distract with food (it cannot resist)",
+   "it steals before it fights — guard your pack"
+  ],
+  "edible": {
+   "calories": 900,
+   "note": "Greasy. Fine in a stew. Wash your hands after handling — it touched everything you own."
+  },
+  "parts": [
+   "dexterous paws (trade)",
+   "pelt"
+  ],
+  "behavior": "curious",
+  "codexStages": {
+   "unknown": "Your pack was open. You didn't open it. Something small is holding your knife.",
+   "observed": "Raccoon. The System observed tool use and concluded the hands were 'under-articulated.' It gave them more joints. It can now pick locks, untie knots, and disassemble a snare in seconds. It doesn't want to hurt you. It wants your stuff.",
+   "slain": "Lockpick. Moves: Disassemble (steals an item, may disarm traps), Bite (only if cornered). It steals FIRST and fights second — secure your pack. Distract it with food; it cannot resist food."
+  },
+  "systemDesignation": "Procyon lotor (enhanced articulation)",
+  "aggression": "curious",
+  "follows": true,
+  "fear": "dogs",
+  "speed": 5,
+  "emoji": "🦝"
+ },
+ {
+  "id": "white_noise_heron",
+  "name": "White Noise",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   30,
+   40
+  ],
+  "attack": {
+   "name": "Spearfish Strike",
+   "damage": [
+    16,
+    24
+   ],
+   "telegraph": "The heron is gone. No — it's there. It was always there. You just couldn't see it until it moved.",
+   "pattern": {
+    "type": "line",
+    "length": 4,
+    "width": 1,
+    "windup": 2
+   }
+  },
+  "weaknesses": [
+   "it casts no shadow — watch the water, not the bird",
+   "it commits to the strike (dodge sideways)"
+  ],
+  "edible": {
+   "calories": 1100,
+   "note": "Fishy. Obviously. Everything about it is fishy."
+  },
+  "parts": [
+   "spear beak (tool)",
+   "plumes (trade)"
+  ],
+  "behavior": "territorial",
+  "codexStages": {
+   "unknown": "A heron-shaped absence by the creek. Then a beak where your hand was.",
+   "observed": "Great blue heron. The System classified shadows as 'visual noise' and removed the bird's. It is hardest to see when it is stillest — which is always. It strikes like a spear. It was always there. You just couldn't see it.",
+   "slain": "White Noise. Moves: Spearfish Strike (devastating lunge, telegraphed by stillness), Stalk (repositions unseen). Watch the water's surface, not the bird. When it commits, move sideways — it can't correct mid-strike."
+  },
+  "systemDesignation": "Ardea herodias (shadow removed)",
+  "aggression": "territorial",
+  "follows": false,
+  "fear": "fire",
+  "speed": 3,
+  "emoji": "🐦"
+ },
+ {
+  "id": "hummice",
+  "name": "Hummice",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   12,
+   18
+  ],
+  "attack": {
+   "name": "Swarm Hum",
+   "damage": [
+    6,
+    12
+   ],
+   "telegraph": "A low hum rises from the grass. It harmonizes with itself. Your teeth ache.",
+   "pattern": {
+    "type": "burst",
+    "radius": 2
+   }
+  },
+  "weaknesses": [
+   "the hum needs the swarm — scatter them",
+   "cats (ordinary cats terrify them)"
+  ],
+  "edible": {
+   "calories": 150,
+   "note": "One mouse is a snack. Fifty mice is a meal. Do the math."
+  },
+  "parts": [
+   "none worth taking"
+  ],
+  "behavior": "swarm",
+  "codexStages": {
+   "unknown": "The grass hummed. Like a refrigerator. Like a choir warming up underground.",
+   "observed": "Field mice. The System networked them — a hive hum for coordination. Individually harmless. Together they vibrate at a frequency that loosens teeth and resolve. They don't bite so much as... overwhelm.",
+   "slain": "Hummice. Moves: Swarm Hum (stacking damage, worse the longer you stand in it), Nibble Tide (many small bites). Don't stand still. Scatter them — the hum needs the swarm. A cat would end this in minutes."
+  },
+  "systemDesignation": "Peromyscus spp. (networked)",
+  "aggression": "hungry",
+  "follows": true,
+  "fear": "cats",
+  "speed": 6,
+  "emoji": "🐭",
+  "pack": 4
+ },
+ {
+  "id": "speedbump_turtle",
+  "name": "Speedbump",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   50,
+   70
+  ],
+  "attack": {
+   "name": "Snap Decision",
+   "damage": [
+    20,
+    30
+   ],
+   "telegraph": "It doesn't move. It hasn't moved in an hour. Its head is suddenly somewhere else.",
+   "pattern": {
+    "type": "ambush",
+    "radius": 1
+   }
+  },
+  "weaknesses": [
+   "it cannot chase (it is a turtle)",
+   "flip it (good luck)",
+   "just walk around"
+  ],
+  "edible": {
+   "calories": 1800,
+   "note": "Excellent soup. Getting to the meat requires tools, patience, and forgiveness."
+  },
+  "parts": [
+   "shell (shield, bowl)",
+   "claws (tools)"
+  ],
+  "behavior": "territorial",
+  "codexStages": {
+   "unknown": "A rock by the trail. The rock had opinions about your ankle.",
+   "observed": "Snapping turtle. The System classified its shell as 'inadequate coverage' and plated the gaps. It is now functionally a bunker with a bad attitude. It cannot chase you. It doesn't need to — you walked to it.",
+   "slain": "Speedbump. Moves: Snap Decision (blinding fast head strike, short range), Bunker (withdraws, nearly invulnerable). It can't follow. Walk around it. If you must fight: flip it, or don't. The soup is worth it."
+  },
+  "systemDesignation": "Chelydra serpentina (up-armored)",
+  "aggression": "territorial",
+  "follows": false,
+  "fear": "being flipped",
+  "speed": 1,
+  "emoji": "🐢"
+ },
+ {
+  "id": "nightlight_catfish",
+  "name": "Nightlight",
+  "biomes": [
+   "se_woodlands"
+  ],
+  "hp": [
+   22,
+   32
+  ],
+  "attack": {
+   "name": "Lure and Grasp",
+   "damage": [
+    12,
+    20
+   ],
+   "telegraph": "A soft green glow under the water. Pretty. That's the problem — it's pretty.",
+   "pattern": {
+    "type": "direct",
+    "range": 3
+   }
+  },
+  "weaknesses": [
+   "don't wade at night (obvious, ignored)",
+   "the glow gives it away in dark water"
+  ],
+  "edible": {
+   "calories": 1000,
+   "note": "Good eating. The glow fades after death. Mostly."
+  },
+  "parts": [
+   "lure organ (light source, trade)",
+   "barbels"
+  ],
+  "behavior": "ambush",
+  "codexStages": {
+   "unknown": "Something glowed in the creek at dusk. You reached for it. That was the idea.",
+   "observed": "Channel catfish. The System classified its lure as 'under-visible' and made it bioluminescent. It glows to attract — curious hands, small fish, you. The glow is beautiful. The teeth are not.",
+   "slain": "Nightlight. Moves: Lure and Grasp (ambush from dark water), Barb Lash (close range). Don't wade at night. If you must: the glow betrays it — strike where the light is, not where you think the fish is."
+  },
+  "systemDesignation": "Ictalurus punctatus (illuminated)",
+  "aggression": "hungry",
+  "follows": false,
+  "fear": "daylight",
+  "speed": 2,
+  "emoji": "💡"
+ }
 ]

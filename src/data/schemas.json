@@ -67,8 +67,13 @@
       "attack": {
         "name": "string",
         "damage": "number[2..2]",
-        "telegraph": "string"
+        "telegraph": "string",
+        "pattern": "object?"
       },
+      "speed": "number?",
+      "emoji": "string?",
+      "fleeAt": "number?",
+      "pack": "number?",
       "weaknesses": "string[]?",
       "edible": {
         "calories": "number[0..8000]",

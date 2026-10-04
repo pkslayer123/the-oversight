@@ -388,3 +388,25 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   animation: dangerpulse .5s ease-in-out infinite;
 }
 .dangerbar:empty { display: none; }
+
+/* ============ COMBAT MODE SHIFT: the game changes ============ */
+body.in-combat #screen::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 60;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(140, 10, 10, 0.5) 100%);
+  animation: combatBreathe 2.2s ease-in-out infinite;
+}
+@keyframes combatBreathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+body.in-combat .detail {
+  filter: saturate(0.75) contrast(1.1);
+}
+body.in-combat .dangerbar {
+  animation: dangerPulse 0.9s ease-in-out infinite;
+  border-color: #ff3b3b;
+}
+@keyframes dangerPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,59,59,0); }
+  50% { transform: scale(1.015); box-shadow: 0 0 18px rgba(255,59,59,.45); }
+}
