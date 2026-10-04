@@ -1342,11 +1342,18 @@
       }
       if (!hasFire) { this.say('Need a fire to cook.'); return null; }
       if (!item.rawKcal) { this.say('Nothing to cook there.'); return null; }
+      // water cost
+      const water = this.state.village.water || { clean: 0 };
+      if (item.needsCooking && water.clean < 1) {
+        this.say(`Need 1L clean water to cook ${item.name}.`);
+        return null;
+      }
+      if (item.needsCooking) water.clean -= 1;
       // cook it: rawKcal -> kcalEach (cooked)
       item.kcalEach = item.cookedKcal || item.rawKcal * 1.5;
       item.rawKcal = null; // it's cooked now
       item.safe = true; // cooking kills the risk (mostly)
-      this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now.`);
+      this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now${item.needsCooking ? ' (-1L water)' : ''}.`);
       return null;
     },
 
@@ -1360,17 +1367,27 @@
     },
 
     // cookAll: cook everything raw in inventory (at a fire).
+    // COSTS WATER: 1L per item. Beans and rice need water. No pots, just fire + water.
+    // Tradeoff: spend water, get safe + more calories. Or eat raw and risk sickness.
     cookAll() {
-      let n = 0;
+      const water = this.state.village.water || { clean: 0 };
+      let n = 0, waterUsed = 0;
       for (const item of (this.state.scholar.inventory || [])) {
         if (item.rawKcal) {
+          // needs water?
+          const needsWater = item.needsCooking; // beans, rice
+          if (needsWater && water.clean < 1) {
+            this.say(`Not enough clean water to cook ${item.name}. Need 1L.`);
+            continue;
+          }
+          if (needsWater) { water.clean -= 1; waterUsed++; }
           item.kcalEach = item.cookedKcal || item.rawKcal * 1.5;
           item.rawKcal = null;
           item.safe = true;
           n++;
         }
       }
-      this.say(n ? `Cooked ${n} item${n > 1 ? 's' : ''}.` : 'Nothing raw to cook.');
+      this.say(n ? `Cooked ${n} item${n > 1 ? 's' : ''}${waterUsed ? ` (-${waterUsed}L water)` : ''}.` : 'Nothing raw to cook.');
       return null;
     },
 
