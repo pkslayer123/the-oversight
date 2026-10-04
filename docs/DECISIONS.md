@@ -669,3 +669,23 @@ VISIBLE: examine reveals "Oak, healthy" or "Running, clear, creek." You learn th
 not just facts. Running water is better than stagnant — you see why.
 
 SYNTHESIS, not lookup: the result emerges from the factors combining.
+
+## 2026-10-03 — Data-driven modifiers (Steve: "easy to iterate")
+Steve: "Flesh out more deeply for every type of block and object. Actually look at
+basically all our classes and see where we are missing variety or sufficient complexity.
+This stuff should be easy to iterate on in the future."
+
+NEW: src/data/cell_defs.json — defines every cell type:
+- modifiers (with weights, visibility, fromTile overrides)
+- blocks/interact/cost
+- synthesis notes (how factors combine)
+
+FLESHED OUT:
+- bush: berry (blackberry/raspberry/none) + ripeness + thorns. Thorns cost 20 kcal.
+- plant: maturity (sprout/mature/seeding) + soil. Seeding = replantable.
+- rubble: loot (cans/tools/cloth/none) + stability. Shifting = 20% injury.
+- fire: size (embers/campfire/bonfire) + fuel.
+- bigtree: hollow (might hold cache).
+- building rooms: supplies, pallets, stores.
+
+TO ITERATE: edit the JSON. No code changes. Weights, values, visibility — all data.

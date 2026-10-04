@@ -1093,9 +1093,36 @@
         const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty);
         const kg = r.units * 0.1;
         if (!this.canCarry(kg)) { t.stock += 1; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
-        if (r.firstFind) {
+        // LEARNING: encounters build familiarity. who you are matters.
+        // regional: plant from home? start at 1. occupation: hunter/cook learns food in 2, others in 3-4.
+        const plant = this.data.plants.find(p => p.id === r.plantId);
+        const villager = this.data.villagers.find(v => v.id === this.villagerId);
+        const homeRegion = (villager && villager.homeRegion || '').toLowerCase();
+        const plantRegions = (plant.regions || []).map(x => x.toLowerCase());
+        const isLocal = plantRegions.some(pr => homeRegion.includes(pr) || pr.includes(homeRegion.split(' ')[0]));
+        const occupation = (villager && villager.formerOccupation || '').toLowerCase();
+        // learning threshold: how many encounters to learn the name
+        let threshold = 3;
+        if (occupation.includes('hunter') || occupation.includes('cook') || occupation.includes('chef')) threshold = 2;
+        if (occupation.includes('nurse') && plant.medicinal) threshold = 2;
+        if (occupation.includes('bus driver') || occupation.includes('accountant') || occupation.includes('dropout')) threshold = 4;
+        this.state.codex.encounters = this.state.codex.encounters || {};
+        const enc = this.state.codex.encounters[r.plantId] || 0;
+        // regional familiarity: start at 1 if it's from home
+        const newEnc = enc === 0 && isLocal ? 1 : enc + 1;
+        this.state.codex.encounters[r.plantId] = newEnc;
+        const learned = newEnc >= threshold;
+        if (learned && !this.state.codex.plants[r.plantId]) {
           this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
           this.integrate(3, 'discovery');
+          this.say(`You know this now. ${plant.name}. ${plant.codex}`);
+        } else if (!learned) {
+          // progressive: description, not name
+          const stage = newEnc === 1 ? plant.description || 'a plant you don\'t recognize' :
+                        `looks familiar — like the ${plant.description || 'plant'} from before`;
+          this.say(`You take ${stage}. Not sure what it is yet. (${newEnc}/${threshold})`);
+        }
+        if (r.firstFind) {
           // the journal becomes a CODEX at four entries — the System notices, names it.
           if (Object.keys(this.state.codex.plants).length === 4)
             this.say('SYSTEM: Journal designated CODEX. Four entries. What you write, the village keeps.');

@@ -4,7 +4,7 @@
       "se_woodlands"
     ],
     "caloriesPerUnit": 45,
-    "codex": "Every part is edible \u2014 leaves, flowers, roots. Bitter means nutritious. The first green of spring and the last of fall.",
+    "codex": "Every part is edible — leaves, flowers, roots. Bitter means nutritious. The first green of spring and the last of fall.",
     "confidence": "high",
     "id": "dandelion",
     "idDifficulty": 1,
@@ -25,8 +25,15 @@
     "unit": "handful of greens",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw",
+      "columbus"
+    ],
+    "description": "a plant with jagged leaves and a yellow flower"
   },
   {
     "biomes": [
@@ -54,15 +61,21 @@
     "unit": "bundle of shoots",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw"
+    ],
+    "description": "tall reeds with brown sausage-shaped heads"
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 65,
-    "codex": "Thorns guard the sweetest calories in the woods. Summer's paycheck \u2014 eat fresh, dry what you can't carry.",
+    "codex": "Thorns guard the sweetest calories in the woods. Summer's paycheck — eat fresh, dry what you can't carry.",
     "confidence": "high",
     "id": "blackberry",
     "idDifficulty": 1,
@@ -80,15 +93,21 @@
     "unit": "handful of berries",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw"
+    ],
+    "description": "a thorny bush with dark berries"
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 130,
-    "codex": "Fall's candy. The fruit sweetens after frost \u2014 nature's own ripening timer. Dries well for winter stores.",
+    "codex": "Fall's candy. The fruit sweetens after frost — nature's own ripening timer. Dries well for winter stores.",
     "confidence": "high",
     "id": "persimmon",
     "idDifficulty": 2,
@@ -108,15 +127,20 @@
     "unit": "handful of fruit",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "description": "a tree with orange fruit, soft when ripe"
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 200,
-    "codex": "Calorie-dense and they keep for months. The woods' savings account \u2014 gather in fall, eat all winter.",
+    "codex": "Calorie-dense and they keep for months. The woods' savings account — gather in fall, eat all winter.",
     "confidence": "high",
     "id": "hickory_nut",
     "idDifficulty": 2,
@@ -133,15 +157,20 @@
     "unit": "handful of nuts",
     "waterContent": "low",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "description": "a tree with compound leaves and hard nuts"
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 150,
-    "codex": "The staple that fed nations. Tannins must be leached or they'll punish you \u2014 but leached acorn meal is flour. Flour is bread. Bread is winter.",
+    "codex": "The staple that fed nations. Tannins must be leached or they'll punish you — but leached acorn meal is flour. Flour is bread. Bread is winter.",
     "confidence": "high",
     "id": "acorn_white_oak",
     "idDifficulty": 2,
@@ -159,15 +188,21 @@
     "unit": "handful of nutmeats",
     "waterContent": "low",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "georgia",
+      "columbus"
+    ],
+    "description": "a tree with lobed leaves and acorns"
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 35,
-    "codex": "Flavor is survival too \u2014 morale matters. The smell test is the only ID that counts: onion smell or it stays in the ground.",
+    "codex": "Flavor is survival too — morale matters. The smell test is the only ID that counts: onion smell or it stays in the ground.",
     "confidence": "high",
     "id": "wild_onion",
     "idDifficulty": 2,
@@ -186,8 +221,14 @@
     "unit": "bundle",
     "waterContent": "medium",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw"
+    ],
+    "description": "grass-like leaves that smell like onion"
   },
   {
     "biomes": [
@@ -199,7 +240,7 @@
     "id": "chickweed",
     "idDifficulty": 2,
     "name": "Chickweed",
-    "preparation": "Eat raw. Delicate \u2014 wilts fast.",
+    "preparation": "Eat raw. Delicate — wilts fast.",
     "scientific": "Stellaria media",
     "seasons": [
       "spring",
@@ -214,19 +255,25 @@
     "unit": "handful of greens",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "columbus",
+      "pacific_nw"
+    ],
+    "description": "a low plant with tiny white flowers"
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 25,
-    "codex": "Trail nibble, not a meal \u2014 but it lifts the spirits, and sometimes that's the difference between going on and giving up.",
+    "codex": "Trail nibble, not a meal — but it lifts the spirits, and sometimes that's the difference between going on and giving up.",
     "confidence": "high",
     "id": "wood_sorrel",
     "idDifficulty": 1,
-    "lookalikeNote": "Heart-shaped leaflets in threes. Tangy taste confirms it \u2014 but eat in moderation (oxalic acid).",
+    "lookalikeNote": "Heart-shaped leaflets in threes. Tangy taste confirms it — but eat in moderation (oxalic acid).",
     "name": "Wood Sorrel",
     "preparation": "Eat raw, sparingly. Pleasant lemony tang.",
     "scientific": "Oxalis stricta",
@@ -243,8 +290,14 @@
     "unit": "handful",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw"
+    ],
+    "description": "clover-like leaves, tangy taste"
   },
   {
     "biomes": [
@@ -256,7 +309,7 @@
     "id": "muscadine",
     "idDifficulty": 1,
     "name": "Muscadine Grapes",
-    "preparation": "Eat raw. Thick skins, big seeds \u2014 work for it.",
+    "preparation": "Eat raw. Thick skins, big seeds — work for it.",
     "scientific": "Vitis rotundifolia",
     "seasons": [
       "summer",
@@ -270,7 +323,11 @@
     "unit": "handful",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
-    ]
+      "Field validation pending — conservative well-known species"
+    ],
+    "regions": [
+      "georgia"
+    ],
+    "description": "a vine with thick-skinned grapes"
   }
 ]

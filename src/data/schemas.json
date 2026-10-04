@@ -40,7 +40,9 @@
       "lookalikeNote": "string?",
       "codex": "string",
       "tileAffinity": "string[]?",
-      "sources": "string[]?"
+      "sources": "string[]?",
+      "regions": "string[]",
+      "description": "string"
     }
   },
   "monster": {
