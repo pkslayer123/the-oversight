@@ -840,3 +840,23 @@ IMPLEMENTED:
 - Map shows 🏘️ for generated villages.
 - Near villages (within 2 of spawn): they\'re competing from day 1 (depleteRandomTile).
 - Far villages: generated on approach, catch-up sim to current day. Not fresh.
+
+## 2026-10-03 — Fog, followers, runners (Steve)
+Steve: "Let\'s fog of war the 7x7 everywhere you haven\'t been to. Question mark until you
+click it and go, hope there isn\'t an unfriendly looking at you on the other side. Also
+monsters and enemies should be able to follow but may not necessarily want to. It should
+depend on the person or monster. Some people may run from you etc."
+
+FOG OF WAR:
+- travelTargets(): adjacent unrevealed tiles are valid destinations (marked unknown).
+- You can walk into "?". You don\'t know what\'s there.
+- 30% on unknown arrival: a monster was waiting. Surprise.
+
+MONSTERS FOLLOW:
+- monsters.json: aggression, follows (bool), fear.
+- Thornback (territorial) and Hushwolf (hungry): follow. Gallowdeer (skittish): doesn\'t.
+- travelTo(): if monster.follows, it comes with you. "It followed you."
+
+PEOPLE RUN:
+- villagerTurn(): trust < 20 and you\'re within 3? 60% they move AWAY.
+- Strangers are scary. Earn trust before they stop flinching.

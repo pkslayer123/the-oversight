@@ -1065,9 +1065,8 @@
       // Movement is baseline. Power doesn't tax walking.
       s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
-      this.monsterTurn();
-      this.animalTurn();
-      this.villagerTurn();
+      // A step is not a decision. The world doesn't advance because you shifted your weight.
+      // Monsters, animals, and villagers move on their own schedule (or when you ACT).
       this.ensureVillagerPositions();
       return true;
     },
@@ -1076,6 +1075,10 @@
     // tree might have nuts or be ivy. water might be poison. tent might be shredded.
     // knowledge sticks: once you know, you know.
     cellInteract(cx, cy) {
+      // ACTIONS move the world. Steps don't.
+      this.monsterTurn();
+      this.animalTurn();
+      this.villagerTurn();
       const t = this.playerTile();
       const detail = this.genDetail(this.map.px, this.map.py);
       const cell = detail[cy] && detail[cy][cx];
@@ -2053,7 +2056,9 @@
         invCount: s.inventory.reduce((t, i) => t + (i.units || 1), 0),
         invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
         pantryKcal: Math.round(this.state.village.pantryKcal),
-        pantryDays: Math.floor(this.state.village.pantryKcal / Math.max(1, (this.state.village.lastEat || 800) - (this.state.village.lastGive || 0))),
+        // PANTRY DAYS: honest math. kcal divided by what 12 people actually need (2000 each).
+        // The old formula (lastEat - lastGive) lied when the village was starving.
+        pantryDays: Math.floor(this.state.village.pantryKcal / Math.max(1, this.state.village.villagers.length * 2000)),
         villageEat: Math.round(this.state.village.lastEat || 800),
         villageGive: Math.round(this.state.village.lastGive || 0),
         villageProviders: this.state.village.lastProviders || [],
