@@ -659,7 +659,9 @@
         const vname = Game.displayName(villagerId);
         desc += ` ${vname} is here with you.`;
         actions.push(['💬 Talk to ' + vname, () => openPerson(villagerId)]);
-        actions.push(['Give food', () => Game.giveFood(villagerId)]);
+        // CARE IS A DECISION: open the person card to the give-food choices
+        // (how much? the world decides public/private). No more one-click.
+        actions.push(['🎁 Give food…', () => { inlineView = { kind: 'givefood', vid: villagerId, line: null, result: null, mapKey: inlineMapKey() }; refresh(); }]);
       }
     } else if (isMon) {
       // AMBIGUITY: name hidden until the Codex knows it.
@@ -764,6 +766,12 @@
         } else if (cell === 'wall') {
           desc += ' It\'s a wall.';
         }
+        // EXAMINE: the exploration verb. Deep inspection — the story behind
+        // the surface. Different from cellInteract (which reveals + acts).
+        // Examining is deliberate looking: tracks, scars, stories, secrets.
+        if (['tree','bigtree','water','tent','rubble'].includes(cell)) {
+          actions.push(['🔍 Examine closely', () => { Game.examineCell(cx, cy); refresh(); }]);
+        }
       } else {
         // passable
         if (dist <= 1 && !isMe) {
@@ -795,6 +803,11 @@
         else if (cell === 'bunk') {
           desc += ' A bunk. Rest here.';
           actions.push(['😴 Rest', () => { Game.doAction('rest'); refresh(); }]);
+        }
+        // EXAMINE on passable ground: tracks, old camps, strange growths.
+        // The ground has stories. You have to stop and look.
+        if (['dirt','grass','bush','plant','rubble'].includes(cell)) {
+          actions.push(['🔍 Examine closely', () => { Game.examineCell(cx, cy); refresh(); }]);
         }
       }
     }
@@ -1162,6 +1175,8 @@
     else if (inlineView.kind === 'askabout') renderAskAboutInline(slot, inlineView);
     else if (inlineView.kind === 'pantry') renderPantryInline(slot, inlineView);
     else if (inlineView.kind === 'caches') renderCachesInline(slot, inlineView);
+    else if (inlineView.kind === 'givefood') renderGiveFoodInline(slot, inlineView);
+    else if (inlineView.kind === 'comfort') renderComfortInline(slot, inlineView);
     else if (inlineView.kind === 'inv') renderInvInline(slot, inlineView);
     else slot.innerHTML = '';
   }
@@ -1382,8 +1397,7 @@
       return;
     }
     else if (act === 'give') {
-      const gave = Game.giveFood(vid);
-      view.result = gave ? 'You gave them food.' : 'You have no food to give.';
+      inlineView = { kind: 'givefood', vid, line: view.line, result: null, mapKey: inlineMapKey() };
     }
     else if (act === 'ask') { inlineView = { kind: 'assign', vid, line: view.line, result: null, via: 'in-person', mapKey: inlineMapKey() }; }
     else if (act === 'read') { Game.nonverbalRead(vid); view.result = 'You study them.'; }
@@ -1421,8 +1435,7 @@
       inlineView = { kind: 'askabout', vid, line: view.line, result: null, mapKey: inlineMapKey() };
     }
     else if (act === 'comfort') {
-      const r = Game.comfort(vid);
-      view.result = r ? 'You sat with them.' : null;
+      inlineView = { kind: 'comfort', vid, line: view.line, result: null, mapKey: inlineMapKey() };
     }
     else if (act === 'amends') {
       const r = Game.makeAmends(vid);
@@ -1502,6 +1515,98 @@
         const r = Game.askAbout(villagerId, b.dataset.topic);
         const labels = { goal: 'what they want', gossip: 'what they\u2019ve heard', village: 'how everyone\u2019s doing' };
         view.result = r ? `You asked about ${labels[b.dataset.topic] || 'it'}.` : null;
+        refresh();
+      };
+    });
+  }
+
+  // GIVE FOOD — a decision, not a button. How much? The world (witnesses)
+  // decides public/private. Each amount has real tradeoffs.
+  function renderGiveFoodInline(slot, view) {
+    const villagerId = view.vid;
+    const vp = (Game.data.villagers || []).find(v => v.id === villagerId) ||
+               (Game.data.background_survivors || []).find(v => v.id === villagerId);
+    if (!vp) { slot.innerHTML = ''; inlineView = null; return; }
+    const dname = Game.displayName(villagerId);
+    const opts = Game.giveFoodOptions ? Game.giveFoodOptions() : [];
+    const n = Game.npcNeeds(villagerId);
+    const hunger = (n && n.hunger) || 0;
+    const hungerNote = hunger > 70 ? ' They look hungry — really hungry.'
+      : hunger > 40 ? ' They could eat.' : ' They seem okay for now.';
+    let witNote = '';
+    try {
+      const wit = (Game.witnesses(3) || []).filter(id => id !== villagerId && id !== Game.villagerId);
+      witNote = wit.length
+        ? `<p class="small" style="opacity:.7">Others are watching. This will be seen — generosity, and the expectation it creates.</p>`
+        : `<p class="small" style="opacity:.7">No one else is here. Just you and ${esc(dname)}. A private gift cuts deeper.</p>`;
+    } catch (e) {}
+    const btns = opts.map(o =>
+      `<button class="btn sm" data-amount="${o.id}">${esc(o.label)}<br><span class="small" style="opacity:.65">${esc(o.desc)}</span></button>`
+    ).join('') + ` <button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('\uD83C\uDF81 Give food to ' + esc(dname))}
+      ${view.result ? `<p class="inline-result">\u2713 ${esc(view.result)}</p>` : ''}
+      <div class="inline-body"><p class="small" style="opacity:.7">How much?${esc(hungerNote)}</p>${witNote}</div>
+      <div class="inline-btns">${btns || '<p class="small">You have no food to give.</p>'}</div>
+    </div>`;
+    wireInlineX(slot);
+    const back = slot.querySelector('[data-act="back"]');
+    if (back) back.onclick = () => {
+      inlineView = { kind: 'person', vid: villagerId, line: view.line, result: null, nvMode: null, mapKey: inlineMapKey() };
+      refresh();
+    };
+    slot.querySelectorAll('[data-amount]').forEach(b => {
+      b.onclick = () => {
+        const r = Game.giveFood(villagerId, b.dataset.amount);
+        if (r && r.ok) {
+          inlineView = { kind: 'person', vid: villagerId, line: view.line, result: `You gave ${r.units} portion${r.units > 1 ? 's' : ''}${r.public ? ' — the village saw' : ', privately'}.`, nvMode: null, mapKey: inlineMapKey() };
+        } else {
+          view.result = 'You have no food to give.';
+        }
+        refresh();
+      };
+    });
+  }
+
+  // COMFORT — what do you SAY? Approach matters. Personality matching matters.
+  function renderComfortInline(slot, view) {
+    const villagerId = view.vid;
+    const vp = (Game.data.villagers || []).find(v => v.id === villagerId) ||
+               (Game.data.background_survivors || []).find(v => v.id === villagerId);
+    if (!vp) { slot.innerHTML = ''; inlineView = null; return; }
+    const dname = Game.displayName(villagerId);
+    const mood = Game.npcMood(villagerId);
+    const moodNote = mood === 'grieving'
+      ? `${esc(dname)} is grieving. They're not scared — they're sad. Reassurance misses the point; presence doesn't.`
+      : mood === 'scared'
+      ? `${esc(dname)} is scared. Fear wants either a plan or a hand to hold.`
+      : `${esc(dname)} is struggling.`;
+    const opts = Game.comfortOptions ? Game.comfortOptions(villagerId) : [];
+    const btns = opts.map(o =>
+      `<button class="btn sm" data-approach="${o.id}">${esc(o.label)}<br><span class="small" style="opacity:.65">${esc(o.desc)}</span></button>`
+    ).join('') + ` <button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('\uD83E\uDD17 Comfort ' + esc(dname))}
+      ${view.result ? `<p class="inline-result">\u2713 ${esc(view.result)}</p>` : ''}
+      <div class="inline-body"><p class="small" style="opacity:.7">${moodNote}</p>
+      <p class="small" style="opacity:.7">What do you do? There's no safe answer — only honest ones.</p></div>
+      <div class="inline-btns">${btns}</div>
+    </div>`;
+    wireInlineX(slot);
+    const back = slot.querySelector('[data-act="back"]');
+    if (back) back.onclick = () => {
+      inlineView = { kind: 'person', vid: villagerId, line: view.line, result: null, nvMode: null, mapKey: inlineMapKey() };
+      refresh();
+    };
+    slot.querySelectorAll('[data-approach]').forEach(b => {
+      b.onclick = () => {
+        const r = Game.comfort(villagerId, b.dataset.approach);
+        const labels = { silent: 'sat with them in silence', reassure: 'tried to reassure them', practical: 'gave them a plan', share: 'shared your own fear', space: 'gave them space' };
+        if (r && r.ok) {
+          inlineView = { kind: 'person', vid: villagerId, line: view.line, result: `You ${labels[b.dataset.approach] || 'were there'}.`, nvMode: null, mapKey: inlineMapKey() };
+        } else {
+          view.result = null;
+        }
         refresh();
       };
     });
