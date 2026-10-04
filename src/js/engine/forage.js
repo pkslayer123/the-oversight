@@ -53,14 +53,18 @@
       units += 0; // bonus is separate, not in the main haul
     }
 
+    // NAMES ARE EARNED: until L1, the engine only knows descriptors.
+    const entry = (codex.plants || {})[plantId];
+    const known = !!(entry && entry.level >= 1);
+    const label = known ? plant.name : (plant.description || 'an unfamiliar plant');
     const firstFind = !(codex.plants[plantId] && codex.plants[plantId].identifiedDay);
     const kcal = units * plant.caloriesPerUnit;
 
     return {
-      plantId, units, kcal, firstFind, rareFind,
+      plantId, units, kcal, firstFind, rareFind, known,
       plant,
-      message: (firstFind
-        ? `New plant recorded: ${plant.name}. The Codex grows.`
+      message: (!known
+        ? `You gather ${label}. Unfamiliar — noted, not named.`
         : `Foraged ${units}× ${plant.unit} of ${plant.name} (+${kcal} kcal).`)
         + (rareFind ? ` And something rare — a hidden patch. (+${rareFind.kcal} kcal)` : '')
     };

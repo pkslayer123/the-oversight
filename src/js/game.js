@@ -646,11 +646,10 @@
       const isMedicTeacher = (occ.includes('nurse') || occ.includes('medic')) && plant.medicinal && trust > 40 && comm.level === 'full';
       this.state.codex.encounters = this.state.codex.encounters || {};
       if (isGoodTeacher || isMedicTeacher) {
-        // good education: instant unlock
-        this.state.codex.plants[plantId] = { identifiedDay: this.state.scholar.day, level: 1, harvests: 0, tastings: 0 };
-        this.state.codex.encounters[plantId] = 99; // learned
-        this.say(`${teacher.name.split(' ')[0]} shows you — a leaf, a picture scratched in dirt. You get it. ${plant.name}.`);
-        this.integrate(2, 'taught');
+        // good education: instant unlock — one path
+        if (this.identifyPlant(plantId, 'taught')) {
+          this.say(`${teacher.name.split(' ')[0]} shows you — a leaf, a picture scratched in dirt. You get it.`);
+        }
       } else {
         // bad education: partial
         const enc = (this.state.codex.encounters[plantId] || 0) + 1;
@@ -789,8 +788,9 @@
         const level = unlocks.level || 1;
         this.state.codex.plants[pid] = { identifiedDay: this.state.scholar.day, level, harvests: 0, tastings: 0 };
         this.state.codex.encounters[pid] = 99;
+        this.refreshItemNames(pid);
         const plant = this.data.plants.find(p => p.id === pid);
-        this.say(`Learned: ${plant.name} (Level ${level}). ${plant.knowledgeLevels[String(level)]}`);
+        this.say(`\u2605 Learned: ${plant.name} (Level ${level}). ${plant.knowledgeLevels[String(level)]}`);
       }
       // recipes
       for (const rid of (unlocks.recipes || [])) {
@@ -2556,7 +2556,10 @@
       if (t.type === 'ruin') return { name: epithet, text: (t.loot || []).length ? 'Pre-Burn ruin. There might be cans left.' : 'Pre-Burn ruin. Picked clean.' };
       if (t.knownPlant) {
         const kp = this.data.plants.find(p => p.id === t.knownPlant);
-        if (kp) return { name: epithet, text: `${kp.name} country — you found ${kp.name.toLowerCase()} here. Your ${this.journalName().toLowerCase()} remembers.` };
+        if (kp) {
+          if (this.plantKnown(t.knownPlant)) return { name: epithet, text: `${kp.name} country — you found ${kp.name.toLowerCase()} here. Your ${this.journalName().toLowerCase()} remembers.` };
+          return { name: epithet, text: `${kp.description || 'An unnamed plant'} country — something grows here. You haven't named it yet.` };
+        }
       }
       return { name: epithet, text: `${S.TILE_NAME[t.type]}. You haven't worked this ground — no idea what's edible here yet.` };
     },
@@ -2639,7 +2642,7 @@
       else here.push('picked clean for today');
       if (t.bountyKnown && t.knownPlant) {
         const kp = this.data.plants.find(p => p.id === t.knownPlant);
-        if (kp) here.push(`${kp.name.toLowerCase()} country`);
+        if (kp) here.push(`${this.plantDisplayName(t.knownPlant).toLowerCase()} country`);
       }
       if (t.type === 'creek' || t.type === 'wetland') here.push('water to treat');
       if (this.wanderer && this.wanderer.x === this.map.px && this.wanderer.y === this.map.py) here.push('⚠ something big is here');
@@ -3388,11 +3391,12 @@
         const newEnc = enc === 0 && isLocal ? 1 : enc + 1;
         this.state.codex.encounters[r.plantId] = newEnc;
         const learned = newEnc >= threshold;
-        if (learned && !this.state.codex.plants[r.plantId]) {
-          // LEVEL 1: Named. You know what it is. Basic yield.
-          this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day, level: 1, harvests: 0, tastings: 0 };
-          this.integrate(3, 'discovery');
-          this.say(`You know this now. ${plant.name}. ${plant.knowledgeLevels['1']}`);
+        // remember the threshold so the Codex UI can show encounter progress
+        this.state.codex.learnThreshold = this.state.codex.learnThreshold || {};
+        if (!this.state.codex.learnThreshold[r.plantId]) this.state.codex.learnThreshold[r.plantId] = threshold;
+        if (learned && !this.plantKnown(r.plantId)) {
+          // LEVEL 1: Named. One path — the identification event.
+          this.identifyPlant(r.plantId, 'observation');
         } else if (learned && this.state.codex.plants[r.plantId]) {
           // LEVEL 2: Parts. Harvest 5 more times, you notice the parts.
           // Later you realize: roots AND leaves AND petals. Yield increases.
@@ -3400,7 +3404,13 @@
           entry.harvests = (entry.harvests || 0) + 1;
           if (entry.level === 1 && entry.harvests >= 5) {
             entry.level = 2;
-            this.say(`Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['2']} (Yield +50%)`);
+            this.say(`\u2605 Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['2']} (Yield +50%)`);
+          }
+          // LEVEL 4: Mastery. Long use teaches timing — roots in fall, leaves in spring.
+          if (entry.level === 3 && entry.harvests >= 15) {
+            entry.level = 4;
+            this.say(`\u2605\u2605 MASTERY: ${plant.name}. ${plant.knowledgeLevels['4']} (Yield 2x)`);
+            this.say('SYSTEM: You know this plant the way it knows itself. Concerning. Impressive.');
           }
         } else if (!learned) {
           // progressive: description, not name
@@ -3426,16 +3436,19 @@
           const isNew = !t.knownPlant;
           t.knownPlant = r.plantId; t.bountyKnown = true;
           if (isNew && bounty && bounty.why) this.say(`Journal: ${bounty.why}`);
-          else if (!isNew) this.say(`Journal updated: ${r.plant.name} grows here too — better than ${prevBest.name.toLowerCase()}.`);
+          else if (!isNew) this.say(`Journal updated: ${this.plantDisplayName(r.plantId)} grows here too — better than ${this.plantDisplayName(prevBest.id).toLowerCase()}.`);
         }
         // KNOWLEDGE = YIELD. Level 2 (parts) gives 50% more. You know what to take.
         const entry = this.state.codex.plants[r.plantId];
-        const levelMult = entry && entry.level >= 2 ? 1.5 : 1.0;
+        const levelMult = !entry ? 1.0 : entry.level >= 4 ? 2.0 : entry.level >= 2 ? 1.5 : 1.0;
         // green_thumb: the System's gift. L1 +50%, L2 +100%.
         const thumbLvl = this.abilityLevel('green_thumb');
         const thumbMult = thumbLvl >= 2 ? 2.0 : thumbLvl >= 1 ? 1.5 : 1.0;
         const finalUnits = Math.ceil(r.units * levelMult * thumbMult);
-        scholar.inventory.push({ plantId: r.plantId, units: finalUnits, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
+        const isKnown = this.plantKnown(r.plantId);
+        const invItem = { plantId: r.plantId, units: finalUnits, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: isKnown ? r.plant.name : (r.plant.description || 'unfamiliar plant'), unit: r.plant.unit, kg: 0.1 };
+        if (isKnown && r.plant.preparation) invItem.prep = r.plant.preparation;
+        scholar.inventory.push(invItem);
         // RELIC BOND: tools cut, clothing kept you moving.
         this.noteToolUse(); this.noteTrailUse();
         // MATERIALS: byproducts for crafting. vine from bush, stick from tree, stone from rubble.
@@ -3453,7 +3466,7 @@
           scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
         }
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
-        msg = r.message + ` (${r.kcal} kcal to your pack — eat up.)` + (r.firstFind ? ` (${r.plant.codex})` : '');
+        msg = `Packed ${r.units}× ${r.plant.unit} of ${this.plantDisplayName(r.plantId)} (${r.kcal} kcal).`;
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
         if (scholar.week1) scholar.week1.forage++;
         this.gainAbilityXP('green_thumb', 1);
@@ -3696,8 +3709,9 @@
           const undiscovered = this.data.plants.filter(p => !this.state.codex.plants[p.id]);
           if (undiscovered.length && Math.random() < 0.3) {
             const p = undiscovered[Math.floor(Math.random() * undiscovered.length)];
-            this.state.codex.plants[p.id] = { identifiedDay: this.state.scholar.day, by: first };
-            this.say(`${first} found ${p.name}! They brought you a sample. The ${this.journalName()} grows.`);
+            if (this.identifyPlant(p.id, first)) {
+              this.say(`${first} brought you a sample. The ${this.journalName()} grows.`);
+            }
           } else {
             this.say(`${first}: "${person.line}"`);
           }
@@ -4214,10 +4228,67 @@
       }));
     },
 
+    // KNOWLEDGE DISPLAY: names are earned, not given. Until L1, plants are descriptors.
+    plantKnown(pid) {
+      const e = (this.state.codex.plants || {})[pid];
+      return !!(e && e.level >= 1);
+    },
+    plantDisplayName(pid) {
+      const p = this.data.plants.find(x => x.id === pid);
+      if (!p) return 'unfamiliar plant matter';
+      if (this.plantKnown(pid)) return p.name;
+      return p.description || 'an unfamiliar plant';
+    },
+    itemDisplayName(it) {
+      if (it && it.plantId) return this.plantDisplayName(it.plantId);
+      return (it && it.name) || 'something';
+    },
+    // when a plant is identified, update any inventory stacks still showing descriptors
+    refreshItemNames(pid) {
+      const p = this.data.plants.find(x => x.id === pid);
+      if (!p) return;
+      for (const it of (this.state.scholar.inventory || [])) {
+        if (it.plantId === pid) { it.name = p.name; if (p.preparation) it.prep = p.preparation; }
+      }
+    },
+    // THE identification event. One path, every source. Names are earned here.
+    identifyPlant(pid, source) {
+      const p = this.data.plants.find(x => x.id === pid);
+      if (!p || this.plantKnown(pid)) return false;
+      this.state.codex.plants[pid] = { identifiedDay: this.state.scholar.day, level: 1, harvests: 0, tastings: 0, by: source || 'observation' };
+      this.state.codex.encounters[pid] = 99;
+      this.refreshItemNames(pid);
+      this.integrate(source === 'taught' ? 2 : 3, source === 'taught' ? 'taught' : 'discovery');
+      // celebration: identification is an EVENT, not a log line
+      this.say(`\u2605 IDENTIFIED: ${p.name}. ${p.knowledgeLevels['1']}`);
+      const sys = [
+        'SYSTEM: Naming things. Very human. The audience approves.',
+        'SYSTEM: Oh! It has a NAME. You all love names.',
+        'SYSTEM: Catalogued. The Codex grows teeth.',
+        'SYSTEM: Identification complete. You are 0.3% less lost.',
+      ];
+      this.say(sys[Math.floor(Math.random() * sys.length)]);
+      return true;
+    },
     codexEntries() {
       return Object.keys(this.state.codex.plants).map(pid => {
         const p = this.data.plants.find(x => x.id === pid);
-        return p ? { name: p.name, kcal: p.caloriesPerUnit, unit: p.unit, prep: p.preparation, text: p.codex } : null;
+        const e = this.state.codex.plants[pid];
+        if (!p || !e) return null;
+        const lvl = e.level || 1;
+        return { pid, name: p.name, level: lvl, kcal: p.caloriesPerUnit, unit: p.unit,
+          prep: p.preparation, text: p.codex, knowledge: (p.knowledgeLevels || {})[String(lvl)] || '',
+          harvests: e.harvests || 0, tastings: e.tastings || 0 };
+      }).filter(Boolean);
+    },
+    // plants you've met but not yet named — the Codex tracks your progress
+    codexInProgress() {
+      const th = (this.state.codex.learnThreshold || {});
+      return Object.keys(this.state.codex.encounters || {}).filter(pid => !this.plantKnown(pid)).map(pid => {
+        const p = this.data.plants.find(x => x.id === pid);
+        if (!p) return null;
+        return { pid, descriptor: p.description || 'an unfamiliar plant',
+          enc: this.state.codex.encounters[pid] || 0, threshold: th[pid] || 3 };
       }).filter(Boolean);
     },
   };
