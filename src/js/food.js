@@ -563,7 +563,7 @@
 
     atCamp() {
       const v = this.state.village;
-      return v && this.map.px === v.x && this.map.py === v.y;
+      return v && this.map.px === (v.px ?? 3) && this.map.py === (v.py ?? 3);
     },
 
     // villagerKnowsPlants(vid): background knowledge — the seed that breaks

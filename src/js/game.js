@@ -3458,6 +3458,8 @@
       // walking onto the Haven tile: the loop closes. what you carried feeds the village.
       // no day advance here — endDay owns the clock. this is just coming home.
       const s = this.state.scholar;
+      // PIN: you are at the village now (safe even when called without walking).
+      try { this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3; } catch (e) {}
       // PENDING VILLAGE EVENT: if something happened while you were away, they tell you.
       if (s.pendingVillageEvent) {
         const ev = s.pendingVillageEvent;
@@ -11372,7 +11374,7 @@
           this.say('PHOENIX CLAUSE: you EXPLODE — 60 damage to everything nearby.');
         }
         s.health = 1; s.kcal = 500;
-        this.map.px = this.state.village.x ?? 3; this.map.py = this.state.village.y ?? 3;
+        this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3;
         s.mx = 4; s.my = 4; this.fight = null; s.monster = null;
         this.say('You wake at Haven, 1 HP, ash in your mouth. The audience applauds. (phoenix_clause: once per run)');
         this.noteAbilityUse('phoenix_clause');

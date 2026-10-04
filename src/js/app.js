@@ -3597,8 +3597,8 @@
       refresh();
     };
     q('#dbg-haven').onclick = () => {
-      Game.map.px = Game.state.village.x ?? 3;
-      Game.map.py = Game.state.village.y ?? 3;
+      Game.map.px = Game.state.village.px ?? 3;
+      Game.map.py = Game.state.village.py ?? 3;
       Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
       Game.say('🐞 DEBUG: teleported to haven.');
       refresh();

@@ -39,7 +39,7 @@ function freshGame() {
   // 2. Integration: bury near and far, run batches, far survives more often.
   freshGame();
   const v = Game.state.village;
-  const hx = v.x || 0, hy = v.y || 0;
+  const hx = v.px ?? 3, hy = v.py ?? 3;
   Game.playerCaches().push({ id: 'near', node: { x: hx, y: hy }, desc: '', label: 'near', items: [{ name: 'x' }], found: false, day: 0 });
   Game.playerCaches().push({ id: 'far', node: { x: hx + 10, y: hy + 10 }, desc: '', label: 'far', items: [{ name: 'x' }], found: false, day: 0 });
   let nearFound = 0, farFound = 0;

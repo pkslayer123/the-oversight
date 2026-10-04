@@ -501,7 +501,7 @@
       // falls with distance from any village/haven — bury far from people,
       // safer from people. ~0.8%/batch at the haven's doorstep → ~0.05%/batch far wild.
       const spots = [];
-      if (this.state.village && this.state.village.x != null) spots.push(this.state.village);
+      if (this.state.village) spots.push({ x: this.state.village.px ?? 3, y: this.state.village.py ?? 3 });
       for (const ov of (this.state.otherVillages || [])) spots.push(ov);
       for (const c of this.playerCaches()) {
         if (c.found) continue;
