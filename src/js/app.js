@@ -326,6 +326,7 @@
     tree: '🌳', bigtree: '🌲', bush: '🌿', water: '💧', rubble: '🧱',
     wall: '🧱', tent: '⛺', fire: '🔥',
     gym: '🏀', class: '🏫', hall: '🚪', door: '🚪', bridge: '🌉',
+    office: '🗄️', bay: '📦', dock: '🚚', sanct: '⛪', base: '🕯️',
   };
   function renderDetail(st) {
     const cells = Game.genDetail(st.px, st.py);

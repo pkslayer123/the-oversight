@@ -30,12 +30,12 @@
     "systemAssessment": "The others notice: steady hands, dry humor, the one already taking charge of the wounded.",
     "quest": [
       "You're awake. Don't sit up fast — you were out a full day.",
-      "I woke up on a cot in the school gym. Twelve cots. Eleven strangers. I don't know any of them.",
+      "I woke up on a cot in there. Twelve cots. Eleven strangers. I don't know any of them.",
       "We have to decide: do we do this together, or do we all starve separately? I'm a nurse, not a leader. But someone has to say it."
     ],
     "talk": [
       "I don't know you. But you're here, so... we figure it out.",
-      "In the gym, I found a first-aid kit under the bleachers. I kept it. I'm not proud. I'm practical.",
+      "In there, I found a first-aid kit under the bleachers. I kept it. I'm not proud. I'm practical.",
       "If we do this — the sharing thing — I need to know you're serious."
     ],
     "kcalPerDay": 2000,
@@ -73,7 +73,7 @@
     "systemAssessment": "The others notice: quiet, patient, watching the treeline instead of the sky.",
     "talk": [
       "Don't sneak up on me. Sorry. Habit.",
-      "Found a wrench in the gym's utility closet. It's mine. Everything's... we're figuring out what's shared.",
+      "Found a wrench in the utility closet. It's mine. Everything's... we're figuring out what's shared.",
       "You hunt? No? Then we need to talk about what you DO do."
     ],
     "kcalPerDay": 2200,
@@ -81,7 +81,7 @@
     "providesWhat": "snares",
     "quest": [
       "Up. Good. You were in the bus depot, I think. I was in the garage.",
-      "Woke up in the school gym. Twelve of us. Strangers. Something dropped us here and forgot the food part.",
+      "Woke up in there. Twelve of us. Strangers. Something dropped us here and forgot the food part.",
       "I can hunt. But I don't know if I trust these people yet. Do you?"
     ]
   },
@@ -115,7 +115,7 @@
     "survivalProbability": 29,
     "systemAssessment": "The others notice: precise, warm, unflappable. Already inventorying what the group carried.",
     "talk": [
-      "The gym's vending machine had coffee. Real coffee. I drank it all. I'm not sorry.",
+      "The vending machine had coffee. Real coffee. I drank it all. I'm not sorry.",
       "I miss the ocean. I miss knowing where I am. I don't know any of you.",
       "If you're kind, I'll know. If you're not, I'll know faster."
     ],
@@ -124,7 +124,7 @@
     "providesWhat": "fish lines",
     "quest": [
       "You're awake. I was in the diner. Dreaming about rice.",
-      "The school gym. I woke up dreaming about rice. Eleven strangers around me. I don't know if they're kind.",
+      "In there. I woke up dreaming about rice. Eleven strangers around me. I don't know if they're kind.",
       "I'm Aki. I can fish. But I won't starve for people I don't trust. Will you?"
     ]
   },
@@ -167,7 +167,7 @@
     "providesWhat": "",
     "quest": [
       "Oh, you're up. I was in the school. You were... somewhere.",
-      "I woke up in the school gym. You were on the cot next to mine. Twelve strangers under one roof.",
+      "I woke up in there. You were on the cot next to mine. Twelve strangers under one roof.",
       "I'm Ruth. I drove a bus for thirty years. I know people. And I don't know these people. Yet."
     ]
   },
@@ -210,7 +210,7 @@
     "providesWhat": "",
     "quest": [
       "Whoa, you're up. Okay. So. Twelve of us. Random spawn. No tutorial.",
-      "Woke up in the school gym. Twelve cots. Everyone's a stranger. And there's this... voice? Like a tutorial that doesn't know it's a tutorial.",
+      "Woke up in there. Twelve cots. Everyone's a stranger. And there's this... voice? Like a tutorial that doesn't know it's a tutorial.",
       "We gotta figure out if we're a party or just twelve solo players. What's your build?"
     ]
   },
@@ -245,7 +245,7 @@
     ],
     "talk": [
       "I've been watching. You work. That's good. I notice who works.",
-      "There's a bookshelf in the gym's office. Found a field guide. It's mine. I haven't decided if I share it.",
+      "There's a bookshelf in the office. Found a field guide. It's mine. I haven't decided if I share it.",
       "Trust is earned. I'm not cruel about it. I'm just... careful."
     ],
     "kcalPerDay": 1900,
@@ -253,7 +253,7 @@
     "providesWhat": "",
     "quest": [
       "You're awake. I was in the library. You were in... does it matter?",
-      "The school gym. Twelve cots. I've counted the food twice. It's not enough for twelve strangers.",
+      "In there. Twelve cots. I've counted the food twice. It's not enough for twelve strangers.",
       "The question isn't what we have. It's whether we share it. I'm Priya. I don't trust easily."
     ]
   }

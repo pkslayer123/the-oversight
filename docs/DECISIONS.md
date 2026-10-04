@@ -596,3 +596,10 @@ STILL NEEDED:
 - Forage targeting specific cells (not tile-level).
 - Monster spawning in detail grid (currently macro-level wanderer).
 - Forage/examine/fight actions on specific cells.
+
+## 2026-10-03 — Blocking terrain (Steve: "essential world building")
+- BLOCKS movement: wall, water (deep), bigtree, tree, tent, fire.
+- DIFFICULT: rubble (20 kcal/step vs 10).
+- RIVERS: creek tiles get a continuous meandering river (2 wide), not random puddles.
+  One bridge (🌉) is the only crossing. Water blocks; bridge is passable.
+- The world is physical. You go around, or you cross at the bridge.

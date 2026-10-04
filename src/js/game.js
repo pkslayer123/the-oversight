@@ -71,11 +71,23 @@
       this.state.village.roster = mains.concat(bg);
       this.state.village.villagers = mains; // mains have dialogue; background have one-liners
       // ACT 0: trust starts low. you're 12 strangers from all over the world.
-      // everyone woke up in the SAME building — the school gymnasium.
-      // twelve cots. fluorescent lights buzzing. nobody knows anybody.
+      // everyone woke up in the SAME building — but WHICH building varies.
+      // by location, and by run. even ohio isn't always a school.
       // the drama is proximity: you're stuck with these people. figure it out.
       this.state.village.trust = {};
-      this.state.village.spawnBuilding = 'the school gymnasium';
+      const buildingPools = {
+        ohio: ['school', 'warehouse', 'church'],
+        // other locations get their own pools as they're built
+      };
+      const bpool = buildingPools[this.state.scholar.home] || ['school', 'warehouse'];
+      const buildingType = bpool[Math.floor(Math.random() * bpool.length)];
+      this.state.village.buildingType = buildingType;
+      const buildingNames = {
+        school: 'the school gymnasium',
+        warehouse: 'the warehouse loading bay',
+        church: 'the church basement',
+      };
+      this.state.village.spawnBuilding = buildingNames[buildingType];
       for (const rid of this.state.village.roster) {
         // trust 5-20: strangers. it's earned.
         this.state.village.trust[rid] = 5 + Math.floor(Math.random() * 16);
@@ -438,22 +450,49 @@
     genDetail(x, y) {
       const t = this.tileAt(x, y);
       if (t.detail) return t.detail;
-      // HAVEN IS A SCHOOL. Fixed layout — a scale model, not procedural.
-      // 12 cots in the gym. Walls are walls. The door leads outside.
+      // HAVEN IS A BUILDING. The type varies by location and run.
+      // Each is a scale model: walls are walls, the door leads outside.
+      // Long-term: satellite imagery to build to scale from reality.
       if (t.type === 'haven') {
-        const school = [
-          ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-          ['wall','class','class','wall','wall','wall','class','class','wall'],
-          ['wall','class','class','wall','wall','wall','class','class','wall'],
-          ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
-          ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
-          ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
-          ['wall','wall','wall','wall','door','wall','wall','wall','wall'],
-          ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
-          ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-        ];
-        t.detail = school;
-        return school;
+        const bt = (this.state.village && this.state.village.buildingType) || 'school';
+        const layouts = {
+          school: [
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','class','class','wall','wall','wall','class','class','wall'],
+            ['wall','class','class','wall','wall','wall','class','class','wall'],
+            ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
+            ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
+            ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
+            ['wall','wall','wall','wall','door','wall','wall','wall','wall'],
+            ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+          ],
+          warehouse: [
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','office','office','wall','bay','bay','bay','bay','wall'],
+            ['wall','office','office','wall','bay','bay','bay','bay','wall'],
+            ['wall','wall','wall','wall','bay','bay','bay','bay','wall'],
+            ['wall','dock','dock','door','bay','bay','bay','bay','wall'],
+            ['wall','dock','dock','wall','bay','bay','bay','bay','wall'],
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+          ],
+          church: [
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','office','wall','sanct','sanct','sanct','wall','office','wall'],
+            ['wall','office','wall','sanct','sanct','sanct','wall','office','wall'],
+            ['wall','wall','wall','sanct','sanct','sanct','wall','wall','wall'],
+            ['wall','wall','wall','sanct','sanct','sanct','wall','wall','wall'],
+            ['wall','wall','wall','wall','door','wall','wall','wall','wall'],
+            ['wall','base','base','base','base','base','base','base','wall'],
+            ['wall','base','base','base','base','base','base','base','wall'],
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+          ],
+        };
+        const layout = layouts[bt] || layouts.school;
+        t.detail = layout;
+        return layout;
       }
       const rnd = this.detailRand(this.detailSeed(x, y));
       const N = 9;
