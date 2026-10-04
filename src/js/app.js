@@ -2867,7 +2867,12 @@
       `<option value="${m.id}">${m.name}</option>`).join('');
     const abilities = (Game.data.abilities || []).map(a =>
       `<option value="${a.id}">${a.name || a.id}</option>`).join('');
+    const scenBtns = (typeof Game.debugScenarioList === 'function' ? Game.debugScenarioList() : [])
+      .map(([id, label]) => `<button class="dbg-scen" data-scen="${id}" style="display:block;width:100%;text-align:left;margin:3px 0;padding:8px;font-size:14px">${label}</button>`).join('');
     el.innerHTML = `<b>🐞 DEBUG</b> <button id="dbg-x" style="float:right">✕</button>
+      <p style="margin:8px 0 4px"><b>SCENARIOS</b> <span style="opacity:.6;font-size:11px">one tap, fresh run</span></p>
+      <div id="dbg-scenarios">${scenBtns}</div>
+      <p style="margin:10px 0 4px;border-top:1px solid #f90;padding-top:8px"><b>CHEATS</b></p>
       <p><select id="dbg-mon">${monsters}</select>
       <button id="dbg-spawn">Spawn</button>
       <button id="dbg-fight">Fight!</button></p>
@@ -2881,6 +2886,13 @@
     document.body.appendChild(el);
     const q = (id) => el.querySelector(id);
     q('#dbg-x').onclick = () => el.remove();
+    el.querySelectorAll('.dbg-scen').forEach(b => {
+      b.onclick = () => {
+        const ok = Game.debugScenario(b.dataset.scen);
+        el.remove();
+        if (ok) refresh();
+      };
+    });
     q('#dbg-spawn').onclick = () => {
       const id = q('#dbg-mon').value;
       const s = Game.state.scholar;
