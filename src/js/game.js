@@ -165,7 +165,13 @@
         jesse_calhoun: ['game_sense', 'patient_aim'],
         aki_tanaka: ['field_dressing', 'preservation_instinct'],
       };
-      scholar.abilities = granted[villagerId] || [];
+      // BACKGROUND ABILITIES: separate from System slots. This is YOU — your past.
+      // Some characters are just lucky. These level with use, like System abilities.
+      scholar.backgroundAbilities = (granted[villagerId] || []).map(id => {
+        const def = this.data.abilities.find(a => a.id === id);
+        return { id, name: def ? def.name : id, desc: def ? def.description : '', level: 1, xp: 0, background: true };
+      });
+      scholar.abilities = []; // System abilities (slot-limited) start empty.
       // WATER BOTTLES: 1L each, 1kg each. Assume you have bottles.
       // Quality matters: clean vs risky. Source is retained.
       scholar.water = [
@@ -2137,7 +2143,9 @@
     // L1 -> L2: 10 uses. L2 -> L3: 25 uses. L3 is max (for now — evolution coming).
     gainAbilityXP(abilityId, amount) {
       const s = this.state.scholar;
-      const ab = (s.abilities || []).find(a => a.id === abilityId);
+      // Check both background and System abilities.
+      const ab = (s.backgroundAbilities || []).find(a => a.id === abilityId) ||
+                 (s.abilities || []).find(a => a.id === abilityId);
       if (!ab || ab.level >= 3) return;
       ab.xp = (ab.xp || 0) + (amount || 1);
       const need = ab.level === 1 ? 10 : 25;
