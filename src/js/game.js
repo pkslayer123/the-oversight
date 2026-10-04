@@ -2211,6 +2211,48 @@
       }
     },
 
+    // CODEX NETWORKING: codexes talk within friendly organizations.
+    // BALANCE: sharing gives AWARENESS (L1), not MASTERY (L2/L3).
+    // Another village can tell you "that's edible." They can't tell you
+    // how it feels, how to prepare it, what it does to you. That's yours to learn.
+    // Trust gates WHAT they share. Reciprocity gates HOW FAST.
+    shareCodexKnowledge(villageId) {
+      const v = (this.state.otherVillages || []).find(x => x.id === villageId);
+      if (!v || !v.codex) return null;
+      const trust = v.trust || 0;
+      // Trust < 30: they share nothing (don't know you).
+      // 30-60: basics (common plants, L1 only).
+      // 60+: deeper (uncommon, still L1 only — mastery is personal).
+      if (trust < 30) {
+        this.say(`${v.name} doesn't share their knowledge yet. (Trust ${trust}/100.)`);
+        return null;
+      }
+      const theirPlants = Object.keys(v.codex.plants || {});
+      let shared = 0;
+      for (const pid of theirPlants) {
+        // Only L1 (awareness). Never L2/L3.
+        if (!this.state.codex.plants[pid]) {
+          const plant = this.data.plants.find(p => p.id === pid);
+          // Trust 30-60: only common plants. 60+: anything.
+          const isCommon = plant && (plant.rarity || 'common') === 'common';
+          if (trust < 60 && !isCommon) continue;
+          this.state.codex.plants[pid] = {
+            identifiedDay: this.state.scholar.day,
+            level: 1, // AWARENESS ONLY. You know the name. That's it.
+            harvests: 0, tastings: 0,
+            viaShare: villageId, // you didn't discover this yourself
+          };
+          shared++;
+        }
+      }
+      if (shared > 0) {
+        this.say(`\U0001F4D6 ${v.name} shares ${shared} plant${shared > 1 ? 's' : ''} with your Codex. (L1 awareness — you know the names. Mastery is still yours to earn.)`);
+      } else {
+        this.say(`${v.name} has nothing new to share. (Or you already know it all.)`);
+      }
+      return null;
+    },
+
     // --- pack weight: 15 kg. distance has a price; so does carrying. ---
     packCapacity() { return 15; },
     packWeight() {
