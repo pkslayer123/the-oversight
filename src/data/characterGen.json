@@ -1,1 +1,3461 @@
-{"_comment": "Character generation pools for The Oversight. Names, occupations, personalities, origins, languages. The player types their own origin (free text); everything else randomizes.", "curiosities": ["curious", "practical", "wary"], "firstNames": ["Maya", "Darius", "Priya", "Tomás", "June", "Malik", "Sofia", "Ellis", "Nadia", "Ruth", "Kenji", "Alba", "Marcus", "Wren", "Ibrahim", "Lucia", "Theo", "Amara", "Jesse", "Yuki", "Rafael", "Nora", "Deshawn", "Ines", "Peter", "Aisha", "Cole", "Fatima", "Hank", "Mei", "Oscar", "Talia", "Victor", "Zoe", "Sam", "Lena", "Omar", "Grace", "Dmitri", "Hana", "Felix", "Rosa", "Andre", "Kira", "Ben", "Sanne", "Tariq", "Elena"], "languages": [{"icon": "🇺🇸", "id": "english", "name": "English"}, {"icon": "🇪🇸", "id": "spanish", "name": "Spanish"}, {"icon": "🇨🇳", "id": "mandarin", "name": "Mandarin"}, {"icon": "🇸🇦", "id": "arabic", "name": "Arabic"}, {"icon": "🇫🇷", "id": "french", "name": "French"}, {"icon": "🇮🇳", "id": "hindi", "name": "Hindi"}, {"icon": "🇧🇷", "id": "portuguese", "name": "Portuguese"}, {"icon": "🇷🇺", "id": "russian", "name": "Russian"}, {"icon": "🇻🇳", "id": "vietnamese", "name": "Vietnamese"}, {"icon": "🇰🇷", "id": "korean", "name": "Korean"}, {"icon": "🇵🇭", "id": "tagalog", "name": "Tagalog"}, {"icon": "🇭🇹", "id": "haitian_creole", "name": "Haitian Creole"}, {"icon": "🇯🇵", "id": "japanese", "name": "Japanese"}, {"icon": "🇩🇪", "id": "german", "name": "German"}, {"icon": "🇹🇭", "id": "thai", "name": "Thai"}, {"icon": "🇹🇷", "id": "turkish", "name": "Turkish"}, {"icon": "🇵🇱", "id": "polish", "name": "Polish"}, {"icon": "🇺🇦", "id": "ukrainian", "name": "Ukrainian"}, {"icon": "🇧🇩", "id": "bengali", "name": "Bengali"}, {"icon": "🇪🇹", "id": "amharic", "name": "Amharic"}, {"icon": "🇮🇩", "id": "indonesian", "name": "Indonesian"}, {"icon": "🇳🇴", "id": "norwegian", "name": "Norwegian"}, {"icon": "🇳🇬", "id": "yoruba", "name": "Yoruba"}, {"icon": "🇬🇭", "id": "twi", "name": "Twi"}, {"icon": "🇰🇪", "id": "swahili", "name": "Swahili"}], "lastNames": ["Okafor", "Reyes", "Kim", "Novak", "Haddad", "Lindqvist", "Moreau", "Tanaka", "Delgado", "Park", "Nair", "Calhoun", "Weber", "Silva", "Osei", "Kowalski", "Nguyen", "Ali", "Brooks", "Sato", "Mendez", "Ibrahim", "Costa", "Rhee", "Dubois", "Petrov", "Garcia", "Hassan", "Fischer", "Adeyemi", "Larsen", "Cohen", "Murphy", "Zhang", "Olsen", "Rossi", "Khan", "Baker", "Santos", "Weiss", "Diallo", "Frost", "Marsh", "Vega", "Lund", "Ortiz", "Nakamura", "Ford"], "misunderstandTemplates": ["{first} smiles and nods vigorously. You have no idea what was just agreed to.", "You gesture. {first} gestures back. Somewhere in the exchange, something important was lost.", "{first} says something urgent-sounding in {lang}. You catch one word. Probably.", "You try to explain. {first} looks more confused than before. You both laugh. It helps, a little.", "{first} draws a picture in the dirt. It's either a plant or a warning. You choose to believe plant."], "occupations": [{"abilityWeights": {"care": 3, "fieldcraft": 1, "system": 1}, "backstory": "{first} worked the night shift at a county ER. When the sky changed, {they} were already moving toward the screaming — old habits. {They} checked pulses in the clearing while everyone else stared up.", "granted": ["triage", "steady_hands"], "id": "er_nurse", "itemBias": {"clothing": ["good_boots"], "sentimental": ["daughters_drawing", "notebook"], "tool": ["field_sutures", "multitool", "stethoscope"]}, "kcalPerDay": 2000, "name": "ER nurse", "plantsKnown": 2, "teachTags": ["medicinal"]}, {"abilityWeights": {"care": 2, "fieldcraft": 2, "system": 1}, "backstory": "{first} ran the fry station at a diner off the interstate. {They} can tell when oil is ready by the sound. Now {they} stare at raw roots and do the same math {they} always did: what feeds people, fast.", "granted": ["preservation_instinct"], "id": "line_cook", "itemBias": {"sentimental": ["mixtape", "notebook"], "tool": ["chefs_knife", "camp_pot", "whetstone"]}, "kcalPerDay": 2100, "name": "line cook", "plantsKnown": 2, "teachTags": ["food"]}, {"abilityWeights": {"care": 1, "fieldcraft": 3, "system": 1}, "backstory": "{first} guided deer hunters through bottomland for eleven seasons. {They} read sign the way other people read headlines. The woods here are wrong, but wrong woods still have tracks.", "granted": ["game_sense", "patient_aim"], "id": "hunting_guide", "itemBias": {"clothing": ["camo_jacket"], "tool": ["rope_50ft", "grandfathers_knife"], "weapon": ["hunting_spear", "crude_bow", "hatchet"]}, "kcalPerDay": 2200, "knowsSnare": true, "name": "hunting guide", "plantsKnown": 2, "teachTags": ["food"]}, {"abilityWeights": {"care": 1, "fieldcraft": 2, "system": 2}, "backstory": "{first} wired houses for a living. {They} keep reaching for tools that don't exist anymore and getting angry about it, then {they} build something out of sticks and it works, and {they} look surprised every time.", "granted": ["steady_hands"], "id": "electrician", "itemBias": {"clothing": ["work_gloves", "canvas_pants"], "tool": ["multitool", "crowbar", "hand_saw"]}, "kcalPerDay": 2100, "name": "electrician", "plantsKnown": 1, "teachTags": []}, {"abilityWeights": {"care": 3, "fieldcraft": 1, "system": 1}, "backstory": "{first} taught English to newcomers — patient, gesturing, endlessly rephrasing. In a clearing full of strangers who don't share words, {they} are suddenly the most important person alive.", "granted": ["diplomat"], "id": "esl_teacher", "itemBias": {"sentimental": ["notebook", "paperback", "photo_album"], "tool": ["reading_glasses"]}, "kcalPerDay": 1900, "name": "ESL teacher", "plantsKnown": 1, "polyglot": ["spanish", "mandarin"], "teachTags": []}, {"abilityWeights": {"care": 2, "fieldcraft": 1, "system": 2}, "backstory": "{first} interpreted at hospitals and courts — the person in the middle of every hard conversation. {They} speak four languages and read faces in all of them.", "granted": ["diplomat"], "id": "interpreter", "itemBias": {"sentimental": ["notebook", "locket"], "tool": ["dead_phone"]}, "kcalPerDay": 1900, "name": "interpreter", "plantsKnown": 1, "polyglot": ["spanish", "arabic"], "teachTags": []}, {"abilityWeights": {"care": 1, "fieldcraft": 2, "system": 2}, "backstory": "{first} fixed diesel engines. {Their} hands know the shape of every bolt ever made. Nothing here has bolts. {They} are learning the shape of everything else.", "granted": ["steady_hands"], "id": "mechanic", "itemBias": {"clothing": ["work_gloves", "denim_jacket"], "tool": ["multitool", "crowbar", "whetstone"]}, "kcalPerDay": 2100, "name": "mechanic", "plantsKnown": 1, "teachTags": []}, {"abilityWeights": {"care": 3, "fieldcraft": 2, "system": 1}, "backstory": "{first} ran 911 calls for six years. {They} have seen people at their worst and their bravest, often in the same hour. The clearing is just another scene to work.", "granted": ["triage"], "id": "paramedic", "itemBias": {"clothing": ["good_boots", "rain_poncho"], "tool": ["field_sutures", "multitool"]}, "kcalPerDay": 2100, "name": "paramedic", "plantsKnown": 1, "teachTags": ["medicinal"]}, {"abilityWeights": {"care": 2, "fieldcraft": 3, "system": 1}, "backstory": "{first} grew soy and sweet corn on two hundred acres. {They} know soil by smell and weather by the ache in {their} knees. This ground is strange, but ground is ground.", "granted": ["preservation_instinct"], "id": "farmer", "itemBias": {"clothing": ["work_gloves", "flannel_shirt"], "tool": ["hand_saw", "rope_50ft", "tin_cup"]}, "kcalPerDay": 2200, "name": "farmer", "plantsKnown": 3, "teachTags": ["food"]}, {"abilityWeights": {"care": 1, "fieldcraft": 2, "system": 2}, "backstory": "{first} framed houses. {They} can look at a tree and see the shelter inside it. {Their} hands are already building before {their} brain catches up.", "granted": ["steady_hands"], "id": "carpenter", "itemBias": {"clothing": ["canvas_pants", "leather_jacket"], "tool": ["hand_saw", "hatchet", "rope_50ft"]}, "kcalPerDay": 2100, "name": "carpenter", "plantsKnown": 2, "teachTags": []}, {"abilityWeights": {"care": 2, "fieldcraft": 1, "system": 2}, "backstory": "{first} ran the reference desk at a branch library. {They} know where every kind of knowledge lives. Now the library is gone and {they} are the reference desk.", "granted": ["diplomat"], "id": "librarian", "itemBias": {"sentimental": ["paperback", "notebook", "reading_glasses"], "tool": ["tin_cup"]}, "kcalPerDay": 1900, "name": "librarian", "plantsKnown": 2, "teachTags": []}, {"abilityWeights": {"care": 1, "fieldcraft": 3, "system": 1}, "backstory": "{first} led a trail crew in the national forest — six months a year of crosscut saws, switchbacks, and weather. {They} have slept under worse sky than this.", "granted": ["patient_aim"], "id": "trail_crew", "itemBias": {"clothing": ["good_boots", "rain_shell"], "tool": ["hand_saw", "rope_50ft", "fishing_line"], "weapon": ["hatchet"]}, "kcalPerDay": 2300, "name": "trail crew lead", "plantsKnown": 3, "teachTags": ["food"]}, {"abilityWeights": {"care": 3, "fieldcraft": 2, "system": 1}, "backstory": "{first} was a combat medic — two tours, more field dressings than {they} can count. {They} stay calm because {they} have practiced calm the way other people practice scales.", "granted": ["triage", "steady_hands"], "id": "army_medic", "itemBias": {"clothing": ["camo_jacket", "good_boots"], "sentimental": ["dog_tags"], "tool": ["field_sutures", "grandfathers_knife"]}, "kcalPerDay": 2200, "name": "army medic", "plantsKnown": 1, "teachTags": ["medicinal"]}, {"abilityWeights": {"care": 1, "fieldcraft": 3, "system": 1}, "backstory": "{first} guided fly fishermen on cold rivers. {They} read water like print. The creek here is wrong in ways {they} can't name, but water is water, and fish are honest.", "granted": ["game_sense", "patient_aim"], "id": "fishing_guide", "itemBias": {"clothing": ["rain_poncho", "wool_socks"], "tool": ["fishing_line", "grandfathers_knife", "tin_cup"]}, "kcalPerDay": 2100, "name": "fishing guide", "plantsKnown": 2, "teachTags": ["food"]}, {"abilityWeights": {"care": 3, "fieldcraft": 2, "system": 1}, "backstory": "{first} ran the community garden behind the church — forty plots, a hundred neighbors, every weed known by name. {They} talk to plants. The plants here listen stranger than most.", "granted": ["preservation_instinct"], "id": "gardener", "itemBias": {"clothing": ["flannel_shirt", "knit_cap"], "sentimental": ["lucky_coin"], "tool": ["hand_saw", "sewing_kit"]}, "kcalPerDay": 2000, "name": "community gardener", "plantsKnown": 3, "teachTags": ["food", "medicinal"]}], "originKeywords": {"alabama": ["alabama", "southeast", "temperate", "woodlands"], "alaska": ["alaska", "arctic", "wilderness"], "albuquerque": ["new mexico", "desert", "city"], "arctic": ["arctic"], "arizona": ["arizona", "southwest", "desert"], "atlanta": ["georgia", "southeast", "city"], "australia": ["australia", "desert", "coast"], "brazil": ["brazil", "tropics"], "brooklyn": ["new york", "city"], "california": ["california", "west", "coast", "mediterranean"], "canada": ["canada", "temperate", "woodlands"], "carolina": ["carolina", "southeast", "temperate", "woodlands", "coast"], "chicago": ["illinois", "midwest", "city"], "china": ["china", "temperate"], "city": ["city"], "coast": ["coast"], "colorado": ["colorado", "mountains", "west"], "columbus": ["ohio", "midwest", "city"], "dakota": ["dakota", "plains", "temperate"], "denver": ["colorado", "mountains", "city"], "desert": ["desert"], "egypt": ["egypt", "desert"], "england": ["england", "temperate"], "farm": ["rural", "plains"], "florida": ["florida", "southeast", "subtropics", "coast"], "france": ["france", "temperate"], "georgia": ["georgia", "southeast", "temperate", "woodlands"], "germany": ["germany", "temperate", "woodlands"], "hawaii": ["hawaii", "tropics", "coast"], "houston": ["texas", "city", "coast"], "idaho": ["idaho", "mountains", "pacific_nw"], "illinois": ["illinois", "midwest", "plains"], "india": ["india", "tropics", "subtropics"], "italy": ["italy", "mediterranean"], "japan": ["japan", "temperate", "coast"], "kansas": ["kansas", "plains", "midwest"], "kentucky": ["kentucky", "southeast", "temperate", "woodlands"], "kenya": ["kenya", "tropics", "plains"], "korea": ["korea", "temperate"], "louisiana": ["louisiana", "southeast", "subtropics", "wetland"], "maine": ["maine", "northeast", "temperate", "woodlands", "coast"], "mexico": ["mexico", "desert", "mountains"], "miami": ["florida", "southeast", "city", "coast"], "minnesota": ["minnesota", "midwest", "temperate", "woodlands"], "mississippi": ["mississippi", "southeast", "temperate"], "montana": ["montana", "mountains", "west"], "mountains": ["mountains"], "nashville": ["tennessee", "southeast", "city"], "nebraska": ["nebraska", "plains", "midwest"], "nevada": ["nevada", "desert", "west"], "new england": ["northeast", "temperate", "woodlands"], "new mexico": ["new mexico", "southwest", "desert", "mountains"], "new orleans": ["louisiana", "southeast", "city"], "new york": ["new york", "northeast", "city"], "nigeria": ["nigeria", "tropics"], "ohio": ["ohio", "midwest", "temperate", "woodlands"], "oklahoma": ["oklahoma", "plains", "south"], "oregon": ["oregon", "pacific_nw", "temperate", "woodlands", "coast"], "pennsylvania": ["pennsylvania", "northeast", "temperate", "woodlands"], "philippines": ["philippines", "tropics", "coast"], "phoenix": ["arizona", "desert", "city"], "plains": ["plains"], "portland": ["oregon", "pacific_nw", "city"], "rural": ["rural"], "seattle": ["washington", "pacific_nw", "city", "coast"], "spain": ["spain", "mediterranean"], "suburb": ["suburb"], "tennessee": ["tennessee", "southeast", "temperate", "woodlands", "mountains"], "texas": ["texas", "south", "plains", "desert"], "tropics": ["tropics"], "tucson": ["arizona", "desert", "city"], "utah": ["utah", "desert", "mountains", "west"], "vermont": ["vermont", "northeast", "temperate", "woodlands", "mountains"], "vietnam": ["vietnam", "tropics"], "virginia": ["virginia", "southeast", "temperate", "woodlands"], "washington": ["washington", "pacific_nw", "temperate", "woodlands", "coast"], "london": ["england", "temperate", "urban", "europe"], "paris": ["france", "temperate", "urban", "europe"], "berlin": ["germany", "temperate", "urban", "europe"], "madrid": ["spain", "mediterranean", "urban", "europe"], "rome": ["italy", "mediterranean", "urban", "europe"], "moscow": ["russia", "continental", "urban", "europe"], "kyiv": ["ukraine", "continental", "urban", "europe"], "warsaw": ["poland", "continental", "urban", "europe"], "amsterdam": ["netherlands", "temperate", "urban", "europe"], "stockholm": ["sweden", "boreal", "urban", "europe"], "tokyo": ["japan", "temperate", "urban", "asia"], "osaka": ["japan", "temperate", "urban", "asia"], "beijing": ["china", "continental", "urban", "asia"], "shanghai": ["china", "temperate", "urban", "asia"], "delhi": ["india", "tropical", "urban", "asia"], "mumbai": ["india", "tropical", "urban", "asia"], "bangkok": ["thailand", "tropical", "urban", "asia"], "jakarta": ["indonesia", "tropical", "urban", "asia"], "manila": ["philippines", "tropical", "urban", "asia"], "seoul": ["korea", "temperate", "urban", "asia"], "cairo": ["egypt", "desert", "urban", "africa"], "lagos": ["nigeria", "tropical", "urban", "africa"], "nairobi": ["kenya", "savanna", "urban", "africa"], "johannesburg": ["south africa", "temperate", "urban", "africa"], "tel aviv": ["israel", "mediterranean", "urban", "middle east"], "jerusalem": ["israel", "mediterranean", "urban", "middle east"], "gaza": ["palestine", "mediterranean", "urban", "middle east"], "ramallah": ["palestine", "mediterranean", "urban", "middle east"], "istanbul": ["turkey", "mediterranean", "urban", "middle east"], "riyadh": ["saudi arabia", "desert", "urban", "middle east"], "baghdad": ["iraq", "desert", "urban", "middle east"], "tehran": ["iran", "desert", "urban", "middle east"], "mexico city": ["mexico", "highlands", "urban", "north america"], "sao paulo": ["brazil", "tropical", "urban", "south america"], "são paulo": ["brazil", "tropical", "urban", "south america"], "buenos aires": ["argentina", "temperate", "urban", "south america"], "lima": ["peru", "desert", "urban", "south america"], "bogota": ["colombia", "tropical", "urban", "south america"], "bogotá": ["colombia", "tropical", "urban", "south america"], "sydney": ["australia", "temperate", "urban", "oceania"], "melbourne": ["australia", "temperate", "urban", "oceania"], "israel": ["israel", "mediterranean", "middle east"], "palestine": ["palestine", "mediterranean", "middle east"], "ukraine": ["ukraine", "continental", "europe"]}, "questTemplates": ["You're awake. Don't sit up fast — you were out a full day.", "I woke up in a clearing with eleven strangers. I don't know any of them. One of them is you, I guess.", "We have to decide: do we do this together, or do we all starve separately? I'm {occ}, not a leader. But someone has to say it."], "wakeUpSpeeches": {"warm": ["Hey. Hey, you're awake. Don't sit up fast — you were out cold when we found you.", "I'm {first}. I was a {occ}, back in {origin}. Whatever's going on, none of us understand it either.", "There's food by the fire and water in the clay pots. Eat first, questions later. You're safe here — well. Safer than out there."], "debt": ["Up. Good. I dragged your useless ass out of a creek bed half a mile that way, so listen.", "Name's {first}. Was a {occ} in {origin}. Now I'm in the rescue business, which is a terrible career change.", "You owe me. When you can walk: bring me three handfuls of dandelion greens from outside. For the pot. Then we're square."], "suspicious": ["Don't move. ...Okay. You're awake, you're breathing, you're not bleeding on my floor. Good enough.", "I'm {first}. I don't know you, I don't know where 'here' is, and I don't know why we all woke up in the same building.", "Nobody touches my pack. Nobody goes through my things. We clear? ...There's stew by the fire. But we clear?"], "scared": ["Oh— oh god, you're awake. Okay. Okay, that's good, that's— hi.", "I'm {first}, I was a {occ} in {origin}, I don't— I don't know what's happening. None of us do. We all just woke up here.", "Please don't be weird. Please just be normal. There's water by the door if you need it. Just— be normal, okay?"], "practical": ["You're awake. Sit up slow. You've been out about a day.", "{first}. {occ}, {origin}. Here's what matters: water's in the clay pots by the door, food's by the fire, don't drink from the creek without boiling it.", "Eat, drink, rest. We'll figure out the rest when you can stand. One thing at a time."], "curious": ["You're awake! Finally. I've been waiting to ask — where are you from? I'm {first}, I was a {occ} in {origin}.", "Did you see anything before you blacked out? Lights? Sounds? Nobody here remembers anything useful and it's driving me insane.", "Sorry. Rude. Food's by the fire, water's by the door. But later — I want to hear everything you remember."], "gruff": ["Up. Good. Less dead weight.", "{first}. Don't care what you were before. Here you're hands. We eat because people work.", "Fire's there. Food's there when you've earned it. Sleep when it's dark. That's the whole orientation."], "overwhelmed": ["You're— okay, you're awake, that's one more, that's— hi. I'm {first}.", "I was a {occ}. In {origin}. I think. That was... yesterday? Last week? I don't know anything anymore.", "Someone put food by the fire. Someone put water by the door. I don't know who. Just take what you need. We're all just... taking what we need."]}, "sampleOrigins": ["Portland, Oregon", "Miami, Florida", "Chicago, Illinois", "rural Vermont", "Houston, Texas", "New Orleans, Louisiana", "Brooklyn, New York", "Tucson, Arizona", "Tokyo, Japan", "Lagos, Nigeria", "São Paulo, Brazil", "Cairo, Egypt", "Mumbai, India", "Berlin, Germany", "Seoul, South Korea", "Mexico City, Mexico", "Jakarta, Indonesia", "Nairobi, Kenya", "Buenos Aires, Argentina", "Istanbul, Turkey", "Bangkok, Thailand", "Manila, Philippines", "Lima, Peru", "Warsaw, Poland", "Accra, Ghana", "Hanoi, Vietnam", "Bogotá, Colombia", "Kyiv, Ukraine", "Addis Ababa, Ethiopia", "Dhaka, Bangladesh", "Caracas, Venezuela", "rural Ireland", "Oslo, Norway", "Marrakech, Morocco", "Auckland, New Zealand"], "sharingStyles": ["generous", "fair", "selfish"], "talkTemplates": ["I don't know you. But you're here, so... we figure it out.", "Back home I was {occ}. Doesn't mean much now, does it? Means something. Just not much.", "You ever notice how quiet it gets out here at night? Like the world's holding its breath.", "I'm from {origin}. The plants here don't look like home. I'm learning. Slowly.", "We should stick together. Twelve strangers is better than one stranger. Math.", "I keep thinking about what I left behind. Then I get hungry and stop thinking.", "The others look to me for {skill}. Fine. Someone has to know something.", "Don't eat anything {first} hasn't looked at first. That's my rule. It's a good rule."], "temperaments": ["steady", "bold", "cautious", "warm", "prickly"], "heritageMap": [["desert", "the dryland clans"], ["coast", "the coastal towns"], ["mountains", "the highland villages"], ["city", "the city wards"], ["plains", "the plains communes"], ["woodlands", "the timber settlements"], ["wetland", "the bayou families"], ["tropics", "the island peoples"], ["arctic", "the northern reaches"], ["suburb", "the cul-de-sac diaspora"], ["rural", "the farm belts"]], "grievances": ["water rights, three generations back", "a border drawn by people who never lived there", "a harvest that was never shared", "a fire nobody claims", "a road that cut a village in two", "a well that went dry the year after the treaty"]}
+{
+  "_comment": "Character generation pools for The Oversight. Names, occupations, personalities, origins, languages. The player types their own origin (free text); everything else randomizes.",
+  "curiosities": [
+    "curious",
+    "practical",
+    "wary",
+    "skeptical",
+    "hungry-to-learn",
+    "indifferent"
+  ],
+  "firstNames": [
+    "Maya",
+    "Darius",
+    "Priya",
+    "Tomás",
+    "June",
+    "Malik",
+    "Sofia",
+    "Ellis",
+    "Nadia",
+    "Ruth",
+    "Kenji",
+    "Alba",
+    "Marcus",
+    "Wren",
+    "Ibrahim",
+    "Lucia",
+    "Theo",
+    "Amara",
+    "Jesse",
+    "Yuki",
+    "Rafael",
+    "Nora",
+    "Deshawn",
+    "Ines",
+    "Peter",
+    "Aisha",
+    "Cole",
+    "Fatima",
+    "Hank",
+    "Mei",
+    "Oscar",
+    "Talia",
+    "Victor",
+    "Zoe",
+    "Sam",
+    "Lena",
+    "Omar",
+    "Grace",
+    "Dmitri",
+    "Hana",
+    "Felix",
+    "Rosa",
+    "Andre",
+    "Kira",
+    "Ben",
+    "Sanne",
+    "Tariq",
+    "Elena"
+  ],
+  "languages": [
+    {
+      "icon": "🇺🇸",
+      "id": "english",
+      "name": "English"
+    },
+    {
+      "icon": "🇪🇸",
+      "id": "spanish",
+      "name": "Spanish"
+    },
+    {
+      "icon": "🇨🇳",
+      "id": "mandarin",
+      "name": "Mandarin"
+    },
+    {
+      "icon": "🇸🇦",
+      "id": "arabic",
+      "name": "Arabic"
+    },
+    {
+      "icon": "🇫🇷",
+      "id": "french",
+      "name": "French"
+    },
+    {
+      "icon": "🇮🇳",
+      "id": "hindi",
+      "name": "Hindi"
+    },
+    {
+      "icon": "🇧🇷",
+      "id": "portuguese",
+      "name": "Portuguese"
+    },
+    {
+      "icon": "🇷🇺",
+      "id": "russian",
+      "name": "Russian"
+    },
+    {
+      "icon": "🇻🇳",
+      "id": "vietnamese",
+      "name": "Vietnamese"
+    },
+    {
+      "icon": "🇰🇷",
+      "id": "korean",
+      "name": "Korean"
+    },
+    {
+      "icon": "🇵🇭",
+      "id": "tagalog",
+      "name": "Tagalog"
+    },
+    {
+      "icon": "🇭🇹",
+      "id": "haitian_creole",
+      "name": "Haitian Creole"
+    },
+    {
+      "icon": "🇯🇵",
+      "id": "japanese",
+      "name": "Japanese"
+    },
+    {
+      "icon": "🇩🇪",
+      "id": "german",
+      "name": "German"
+    },
+    {
+      "icon": "🇹🇭",
+      "id": "thai",
+      "name": "Thai"
+    },
+    {
+      "icon": "🇹🇷",
+      "id": "turkish",
+      "name": "Turkish"
+    },
+    {
+      "icon": "🇵🇱",
+      "id": "polish",
+      "name": "Polish"
+    },
+    {
+      "icon": "🇺🇦",
+      "id": "ukrainian",
+      "name": "Ukrainian"
+    },
+    {
+      "icon": "🇧🇩",
+      "id": "bengali",
+      "name": "Bengali"
+    },
+    {
+      "icon": "🇪🇹",
+      "id": "amharic",
+      "name": "Amharic"
+    },
+    {
+      "icon": "🇮🇩",
+      "id": "indonesian",
+      "name": "Indonesian"
+    },
+    {
+      "icon": "🇳🇴",
+      "id": "norwegian",
+      "name": "Norwegian"
+    },
+    {
+      "icon": "🇳🇬",
+      "id": "yoruba",
+      "name": "Yoruba"
+    },
+    {
+      "icon": "🇬🇭",
+      "id": "twi",
+      "name": "Twi"
+    },
+    {
+      "icon": "🇰🇪",
+      "id": "swahili",
+      "name": "Swahili"
+    }
+  ],
+  "lastNames": [
+    "Okafor",
+    "Reyes",
+    "Kim",
+    "Novak",
+    "Haddad",
+    "Lindqvist",
+    "Moreau",
+    "Tanaka",
+    "Delgado",
+    "Park",
+    "Nair",
+    "Calhoun",
+    "Weber",
+    "Silva",
+    "Osei",
+    "Kowalski",
+    "Nguyen",
+    "Ali",
+    "Brooks",
+    "Sato",
+    "Mendez",
+    "Ibrahim",
+    "Costa",
+    "Rhee",
+    "Dubois",
+    "Petrov",
+    "Garcia",
+    "Hassan",
+    "Fischer",
+    "Adeyemi",
+    "Larsen",
+    "Cohen",
+    "Murphy",
+    "Zhang",
+    "Olsen",
+    "Rossi",
+    "Khan",
+    "Baker",
+    "Santos",
+    "Weiss",
+    "Diallo",
+    "Frost",
+    "Marsh",
+    "Vega",
+    "Lund",
+    "Ortiz",
+    "Nakamura",
+    "Ford"
+  ],
+  "misunderstandTemplates": [
+    "{first} smiles and nods vigorously. You have no idea what was just agreed to.",
+    "You gesture. {first} gestures back. Somewhere in the exchange, something important was lost.",
+    "{first} says something urgent-sounding in {lang}. You catch one word. Probably.",
+    "You try to explain. {first} looks more confused than before. You both laugh. It helps, a little.",
+    "{first} draws a picture in the dirt. It's either a plant or a warning. You choose to believe plant."
+  ],
+  "occupations": [
+    {
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 1,
+        "system": 1
+      },
+      "backstory": "{first} worked the night shift at a county ER. When the sky changed, {they} were already moving toward the screaming — old habits. {They} checked pulses in the clearing while everyone else stared up.",
+      "granted": [
+        "triage",
+        "steady_hands"
+      ],
+      "id": "er_nurse",
+      "itemBias": {
+        "clothing": [
+          "good_boots"
+        ],
+        "sentimental": [
+          "daughters_drawing",
+          "notebook"
+        ],
+        "tool": [
+          "field_sutures",
+          "multitool",
+          "stethoscope"
+        ]
+      },
+      "kcalPerDay": 2000,
+      "name": "ER nurse",
+      "plantsKnown": 2,
+      "teachTags": [
+        "medicinal"
+      ],
+      "backstories": [
+        "{first} worked the night shift at a county ER. When the sky changed, {they} were already moving toward the screaming — old habits. {They} checked pulses in the clearing while everyone else stared up.",
+        "{first} spent a decade telling families it would be okay, whether or not {they} believed it. {They} have a voice that makes panicking people sit down. It still works.",
+        "{first} learned medicine in hallways and parking lots as much as wards. {They} can improvise a splint from almost anything and have strong opinions about other people's bandaging.",
+        "{first} worked the children's wing, where every shot came with a sticker and a negotiation. {They} have coaxed terrified kids through worse — and terrified adults aren't that different.",
+        "{first} ran triage during flu season — thirty people, four beds, one whiteboard. {They} have a talent for deciding who waits and making the wait feel like care.",
+        "{first} covered psych nights, talking people off ledges and out of locked bathrooms. {They} know how to be the calmest person in a room that isn't calm at all."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "backstory": "{first} ran the fry station at a diner off the interstate. {They} can tell when oil is ready by the sound. Now {they} stare at raw roots and do the same math {they} always did: what feeds people, fast.",
+      "granted": [
+        "preservation_instinct"
+      ],
+      "id": "line_cook",
+      "itemBias": {
+        "sentimental": [
+          "mixtape",
+          "notebook"
+        ],
+        "tool": [
+          "chefs_knife",
+          "camp_pot",
+          "whetstone"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "name": "line cook",
+      "plantsKnown": 2,
+      "teachTags": [
+        "food"
+      ],
+      "backstories": [
+        "{first} ran the fry station at a diner off the interstate. {They} can tell when oil is ready by the sound. Now {they} stare at raw roots and do the same math {they} always did: what feeds people, fast.",
+        "{first} worked the line through two restaurant fires and one health inspector with a grudge. {They} talk fast, move faster, and treat hunger like a personal insult.",
+        "{first} learned to feed a hundred covers with a broken fryer and no prep cook. {They} look at the village stores the way a general looks at a map.",
+        "{first} cooked out of a food truck with a kitchen the size of a closet. {They} do more with one flat-top than some restaurants do with six.",
+        "{first} plated wedding dinners for two hundred at a time — everything hot, everything at once. {They} stay calm when the tickets won't stop, because the tickets never stopped.",
+        "{first} did bakery prep at 3 a.m., feeding a wood-fired oven all night. {They} know dough by feel and {they} have strong opinions about campfire heat — strong enough to hear about daily."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "backstory": "{first} guided deer hunters through bottomland for eleven seasons. {They} read sign the way other people read headlines. The woods here are wrong, but wrong woods still have tracks.",
+      "granted": [
+        "game_sense",
+        "patient_aim"
+      ],
+      "id": "hunting_guide",
+      "itemBias": {
+        "clothing": [
+          "camo_jacket"
+        ],
+        "tool": [
+          "rope_50ft",
+          "grandfathers_knife"
+        ],
+        "weapon": [
+          "hunting_spear",
+          "crude_bow",
+          "hatchet"
+        ]
+      },
+      "kcalPerDay": 2200,
+      "knowsSnare": true,
+      "name": "hunting guide",
+      "plantsKnown": 2,
+      "teachTags": [
+        "food"
+      ],
+      "backstories": [
+        "{first} guided deer hunters through bottomland for eleven seasons. {They} read sign the way other people read headlines. The woods here are wrong, but wrong woods still have tracks.",
+        "{first} once tracked a wounded boar for three days through rain. {They} do not get lost; {they} get delayed. Patience is the whole job.",
+        "{first} taught rich tourists to sit still and rich kids to listen. {They} speak quietly because the woods punish loud.",
+        "{first} packed elk out of canyons — two miles of quartered animal on {their} back. {They} know what a real haul costs. {They} do not romanticize it.",
+        "{first} guided night hunts for hogs, reading heat and sound instead of sign. {They} are comfortable in dark woods and {they} stay quieter than the crickets.",
+        "{first} trained bird dogs and guided quail hunts behind them. {They} read a dog's body the way sailors read clouds."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstory": "{first} wired houses for a living. {They} keep reaching for tools that don't exist anymore and getting angry about it, then {they} build something out of sticks and it works, and {they} look surprised every time.",
+      "granted": [
+        "steady_hands"
+      ],
+      "id": "electrician",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "canvas_pants"
+        ],
+        "tool": [
+          "multitool",
+          "crowbar",
+          "hand_saw"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "name": "electrician",
+      "plantsKnown": 1,
+      "teachTags": [],
+      "backstories": [
+        "{first} wired houses for a living. {They} keep reaching for tools that don't exist anymore and getting angry about it, then {they} build something out of sticks and it works, and {they} look surprised every time.",
+        "{first} rewired a hundred-year-old farmhouse without burning it down. {They} respect current the way sailors respect weather. Everything else is just details.",
+        "{first} did commercial fit-outs — miles of conduit, endless panels. {They} stare at a problem until it confesses. It usually does.",
+        "{first} installed rooftop solar — conduit runs in the rain, panels up before the storm hit. {They} are used to working against the weather instead of waiting on it.",
+        "{first} climbed poles for the storm crews, restoring power at 2 a.m. in freezing rain. {They} keep going when the work is miserable because {they} know the lights come back on.",
+        "{first} did maintenance at a paper mill, keeping hundred-year-old machines alive on scavenged parts. {They} have fixed things the manufacturer stopped supporting decades ago."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 1,
+        "system": 1
+      },
+      "backstory": "{first} taught English to newcomers — patient, gesturing, endlessly rephrasing. In a clearing full of strangers who don't share words, {they} are suddenly the most important person alive.",
+      "granted": [
+        "diplomat"
+      ],
+      "id": "esl_teacher",
+      "itemBias": {
+        "sentimental": [
+          "notebook",
+          "paperback",
+          "photo_album"
+        ],
+        "tool": [
+          "reading_glasses"
+        ]
+      },
+      "kcalPerDay": 1900,
+      "name": "ESL teacher",
+      "plantsKnown": 1,
+      "polyglot": [
+        "spanish",
+        "mandarin"
+      ],
+      "teachTags": [],
+      "backstories": [
+        "{first} taught English to newcomers — patient, gesturing, endlessly rephrasing. In a clearing full of strangers who don't share words, {they} are suddenly the most important person alive.",
+        "{first} taught night classes to people who worked all day and still showed up. {They} know that everyone understands more than they can say.",
+        "{first} once taught a whole class using only a whiteboard and charades. {They} are fluent in the pause before understanding.",
+        "{first} taught bilingual kindergarten — songs, picture cards, twenty five-year-olds. {They} have the patience of a saint and the reflexes of a goalkeeper.",
+        "{first} ran citizenship prep, coaching nervous adults through the interview. {They} know the exact moment someone stops translating in {their} head.",
+        "{first} tutored refugees over video calls across three time zones. {They} talk through bad connections and worse days with the same steady voice."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 2
+      },
+      "backstory": "{first} interpreted at hospitals and courts — the person in the middle of every hard conversation. {They} speak four languages and read faces in all of them.",
+      "granted": [
+        "diplomat"
+      ],
+      "id": "interpreter",
+      "itemBias": {
+        "sentimental": [
+          "notebook",
+          "locket"
+        ],
+        "tool": [
+          "dead_phone"
+        ]
+      },
+      "kcalPerDay": 1900,
+      "name": "interpreter",
+      "plantsKnown": 1,
+      "polyglot": [
+        "spanish",
+        "arabic"
+      ],
+      "teachTags": [],
+      "backstories": [
+        "{first} interpreted at hospitals and courts — the person in the middle of every hard conversation. {They} speak four languages and read faces in all of them.",
+        "{first} interpreted asylum interviews — the heaviest listening there is. {They} have heard the worst days of a thousand lives and kept {their} face still.",
+        "{first} worked conference booths, whispering translations while delegates argued. {They} talk like {they} are always slightly ahead of the conversation.",
+        "{first} interpreted for troops on deployment — patrols, councils, bad news delivered exactly. {They} know how to say the unsayable in a steady voice.",
+        "{first} led walking tours for foreign visitors through {origin}. {They} speak the whole history of a street corner in two languages at once.",
+        "{first} worked the on-call phone line — hospitals, police, 2 a.m. emergencies. {They} are wide awake inside someone else's worst night, translating it calmly."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstory": "{first} fixed diesel engines. {Their} hands know the shape of every bolt ever made. Nothing here has bolts. {They} are learning the shape of everything else.",
+      "granted": [
+        "steady_hands"
+      ],
+      "id": "mechanic",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "denim_jacket"
+        ],
+        "tool": [
+          "multitool",
+          "crowbar",
+          "whetstone"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "name": "mechanic",
+      "plantsKnown": 1,
+      "teachTags": [],
+      "backstories": [
+        "{first} fixed diesel engines. {Their} hands know the shape of every bolt ever made. Nothing here has bolts. {They} are learning the shape of everything else.",
+        "{first} kept a fleet of delivery vans alive past 300,000 miles each. {They} believe everything can be fixed and have the scarred knuckles to prove it.",
+        "{first} specialized in the jobs other shops turned away. {They} read a broken thing like a confession and never charge for the diagnosis.",
+        "{first} ran the custom bike shop — Harleys, choppers, chrome everything. {They} have an eye for what a machine wants to be, not just what it is.",
+        "{first} fixed small engines: mowers, chainsaws, generators, the things everyone else threw away. {They} keep other people's trash running and {they} do not understand the word 'totaled'.",
+        "{first} was an airframe mechanic at a regional airport — logbooks, torque specs, no shortcuts. {They} are meticulous in a way that keeps people alive."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "backstory": "{first} ran 911 calls for six years. {They} have seen people at their worst and their bravest, often in the same hour. The clearing is just another scene to work.",
+      "granted": [
+        "triage"
+      ],
+      "id": "paramedic",
+      "itemBias": {
+        "clothing": [
+          "good_boots",
+          "rain_poncho"
+        ],
+        "tool": [
+          "field_sutures",
+          "multitool"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "name": "paramedic",
+      "plantsKnown": 1,
+      "teachTags": [
+        "medicinal"
+      ],
+      "backstories": [
+        "{first} ran 911 calls for six years. {They} have seen people at their worst and their bravest, often in the same hour. The clearing is just another scene to work.",
+        "{first} worked the overnight shift in a city that never slept it off. {They} can sleep anywhere, wake instantly, and stay kind on no sleep at all.",
+        "{first} was the one who stayed with the scared ones while the crew worked. {They} know that calm is a skill you practice, not a trait you're born with.",
+        "{first} volunteered at the firehouse in a town of nine hundred. {They} have loaded every neighbor onto a stretcher at least once, and everyone waves at the ambulance.",
+        "{first} patrolled the slopes, hauling toboggans down runs {they} know blindfolded. {They} stay cheerful in a whiteout and {they} do the work anyway.",
+        "{first} worked event standby — rodeos, concerts, county fairs. {They} have treated more drunk injuries than {they} have fingers, and {they} keep {their} humor about all of them."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "backstory": "{first} grew soy and sweet corn on two hundred acres. {They} know soil by smell and weather by the ache in {their} knees. This ground is strange, but ground is ground.",
+      "granted": [
+        "preservation_instinct"
+      ],
+      "id": "farmer",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "flannel_shirt"
+        ],
+        "tool": [
+          "hand_saw",
+          "rope_50ft",
+          "tin_cup"
+        ]
+      },
+      "kcalPerDay": 2200,
+      "name": "farmer",
+      "plantsKnown": 3,
+      "teachTags": [
+        "food"
+      ],
+      "backstories": [
+        "{first} grew soy and sweet corn on two hundred acres. {They} know soil by smell and weather by the ache in {their} knees. This ground is strange, but ground is ground.",
+        "{first} farmed through two droughts and a flood that took the barn. {They} plant anyway. That is the entire philosophy.",
+        "{first} grew up walking beans before school. {They} can tell you what the sky will do by the smell of the air at dawn.",
+        "{first} ran an almond orchard — ten thousand trees, bees trucked in every spring. {They} know more about bee labor negotiations than most union reps.",
+        "{first} ran a CSA — two hundred families, a box every week, no excuses. {They} have apologized for ugly carrots more times than {they} have counted.",
+        "{first} milked cows twice a day for fifteen years, no days off. {They} are up before dawn because {they} have always been up before dawn."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstory": "{first} framed houses. {They} can look at a tree and see the shelter inside it. {Their} hands are already building before {their} brain catches up.",
+      "granted": [
+        "steady_hands"
+      ],
+      "id": "carpenter",
+      "itemBias": {
+        "clothing": [
+          "canvas_pants",
+          "leather_jacket"
+        ],
+        "tool": [
+          "hand_saw",
+          "hatchet",
+          "rope_50ft"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "name": "carpenter",
+      "plantsKnown": 2,
+      "teachTags": [],
+      "backstories": [
+        "{first} framed houses. {They} can look at a tree and see the shelter inside it. {Their} hands are already building before {their} brain catches up.",
+        "{first} did finish carpentry — the fussy kind, where a sixteenth of an inch matters. {They} have strong feelings about plumb.",
+        "{first} built decks, then additions, then a whole cabin alone one summer. {They} measure twice because {they} have learned what once costs.",
+        "{first} built wooden boats — ribs, planks, and patience. {They} know how wood moves when it gets wet — {they} build to forgive it.",
+        "{first} raised log cabins — scribing, notching, chinking. {They} look at a pile of logs and see the walls already.",
+        "{first} built theater sets — a whole street that only had to last one season. {They} are fast, theatrical about safety — and {they} do not weep over beautiful things that get struck."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 2
+      },
+      "backstory": "{first} ran the reference desk at a branch library. {They} know where every kind of knowledge lives. Now the library is gone and {they} are the reference desk.",
+      "granted": [
+        "diplomat"
+      ],
+      "id": "librarian",
+      "itemBias": {
+        "sentimental": [
+          "paperback",
+          "notebook",
+          "reading_glasses"
+        ],
+        "tool": [
+          "tin_cup"
+        ]
+      },
+      "kcalPerDay": 1900,
+      "name": "librarian",
+      "plantsKnown": 2,
+      "teachTags": [],
+      "backstories": [
+        "{first} ran the reference desk at a branch library. {They} know where every kind of knowledge lives. Now the library is gone and {they} are the reference desk.",
+        "{first} ran story hour for toddlers and tax help for seniors, sometimes in the same afternoon. {They} believe every question deserves a real answer.",
+        "{first} weeded the collection every spring — deciding what stays is the job. {They} remember where everything was, even now.",
+        "{first} ran the children's floor — story times for a hundred kids at a stretch. {They} have a voice that quiets a room and {they} keep a pocket full of stickers, just in case.",
+        "{first} drove the bookmobile to towns the library forgot. {They} know every back road in the county and {they} talk to the regulars at each stop.",
+        "{first} was the university archivist — boxes of old letters, maps nobody had opened in decades. {They} read other people's handwriting like weather and {they} have strong feelings about lost knowledge."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "backstory": "{first} led a trail crew in the national forest — six months a year of crosscut saws, switchbacks, and weather. {They} have slept under worse sky than this.",
+      "granted": [
+        "patient_aim"
+      ],
+      "id": "trail_crew",
+      "itemBias": {
+        "clothing": [
+          "good_boots",
+          "rain_shell"
+        ],
+        "tool": [
+          "hand_saw",
+          "rope_50ft",
+          "fishing_line"
+        ],
+        "weapon": [
+          "hatchet"
+        ]
+      },
+      "kcalPerDay": 2300,
+      "name": "trail crew lead",
+      "plantsKnown": 3,
+      "teachTags": [
+        "food"
+      ],
+      "backstories": [
+        "{first} led a trail crew in the national forest — six months a year of crosscut saws, switchbacks, and weather. {They} have slept under worse sky than this.",
+        "{first} spent six seasons building trail through country most people only fly over. {They} have carried everything {they} own on {their} back and liked it.",
+        "{first} taught teenagers to swing a Pulaski without hitting each other. {They} lead by doing the worst job first.",
+        "{first} built boardwalks through swamps — sinking posts where the ground swallowed them. {They} have strong opinions about drainage and {they} do not trust dry-looking ground.",
+        "{first} worked the alpine crew at twelve thousand feet, where weather kills. {They} keep {their} pack light and {they} do not argue with lightning.",
+        "{first} ran volunteer trail days — herding weekend warriors with shovels. {They} talk a stranger into loving hard work within the hour."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "backstory": "{first} was a combat medic — two tours, more field dressings than {they} can count. {They} stay calm because {they} have practiced calm the way other people practice scales.",
+      "granted": [
+        "triage",
+        "steady_hands"
+      ],
+      "id": "army_medic",
+      "itemBias": {
+        "clothing": [
+          "camo_jacket",
+          "good_boots"
+        ],
+        "sentimental": [
+          "dog_tags"
+        ],
+        "tool": [
+          "field_sutures",
+          "grandfathers_knife"
+        ]
+      },
+      "kcalPerDay": 2200,
+      "name": "army medic",
+      "plantsKnown": 1,
+      "teachTags": [
+        "medicinal"
+      ],
+      "backstories": [
+        "{first} was a combat medic — two tours, more field dressings than {they} can count. {They} stay calm because {they} have practiced calm the way other people practice scales.",
+        "{first} learned triage in dust and noise. {They} decide fast and live with it. Hesitation kills more surely than mistakes.",
+        "{first} was the one everyone looked at when it went bad. {They} got used to being looked at. It never got comfortable.",
+        "{first} taught combat lifesaver courses to new recruits — tourniquets, airways, calm. {They} have yelled 'keep pressure on it' in three languages of profanity.",
+        "{first} ran the aid station at basic training — heat casualties, blisters, homesick eighteen-year-olds. {They} stay unflappable when the waiting room fills with limping teenagers.",
+        "{first} worked nights at the base hospital ER — car wrecks, training accidents, bad decisions. {They} know the difference between urgent and important at 3 a.m."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "backstory": "{first} guided fly fishermen on cold rivers. {They} read water like print. The creek here is wrong in ways {they} can't name, but water is water, and fish are honest.",
+      "granted": [
+        "game_sense",
+        "patient_aim"
+      ],
+      "id": "fishing_guide",
+      "itemBias": {
+        "clothing": [
+          "rain_poncho",
+          "wool_socks"
+        ],
+        "tool": [
+          "fishing_line",
+          "grandfathers_knife",
+          "tin_cup"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "name": "fishing guide",
+      "plantsKnown": 2,
+      "teachTags": [
+        "food"
+      ],
+      "backstories": [
+        "{first} guided fly fishermen on cold rivers. {They} read water like print. The creek here is wrong in ways {they} can't name, but water is water, and fish are honest.",
+        "{first} rowed clients through water {they} could read blindfolded. {They} talk little on the river; the river does the talking.",
+        "{first} tied flies all winter and tested them all spring. {They} have opinions about current speed that {they} will share unprompted.",
+        "{first} ran a charter boat offshore — tuna, weather windows, seasick clients. {They} read the water forty miles out and {they} have never lost a boat to a bad call.",
+        "{first} guided ice fishing — augers, tip-ups, a shack on a frozen lake. {They} stare at a hole in the ice all day and {they} stay warm doing it.",
+        "{first} guided surf casting at dawn — reading tides, mending line, wading out. {They} know the beach the way {they} know {their} own hands."
+      ]
+    },
+    {
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "backstory": "{first} ran the community garden behind the church — forty plots, a hundred neighbors, every weed known by name. {They} talk to plants. The plants here listen stranger than most.",
+      "granted": [
+        "preservation_instinct"
+      ],
+      "id": "gardener",
+      "itemBias": {
+        "clothing": [
+          "flannel_shirt",
+          "knit_cap"
+        ],
+        "sentimental": [
+          "lucky_coin"
+        ],
+        "tool": [
+          "hand_saw",
+          "sewing_kit"
+        ]
+      },
+      "kcalPerDay": 2000,
+      "name": "community gardener",
+      "plantsKnown": 3,
+      "teachTags": [
+        "food",
+        "medicinal"
+      ],
+      "backstories": [
+        "{first} ran the community garden behind the church — forty plots, a hundred neighbors, every weed known by name. {They} talk to plants. The plants here listen stranger than most.",
+        "{first} turned a vacant lot into food while the city argued about permits. {They} do not wait for permission to plant.",
+        "{first} taught kids to eat cherry tomatoes warm off the vine. {They} believe a garden is an argument that hunger can lose.",
+        "{first} worked the conservatory at the botanical garden — orchids, climate control, misting schedules. {They} know what plants want before the plants do.",
+        "{first} landscaped a mansion estate — formal hedges, ruthless symmetry. {They} have strong feelings about pruning and {they} keep {their} shears sharp enough to shave with.",
+        "{first} worked the nursery — grafting apple trees, mixing soil, starting ten thousand seedlings. {They} talk to cuttings and {they} do not care who hears."
+      ]
+    },
+    {
+      "id": "midwife",
+      "name": "Midwife",
+      "teachTags": [
+        "medicinal"
+      ],
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 1,
+        "system": 2
+      },
+      "kcalPerDay": 2100,
+      "plantsKnown": 2,
+      "granted": [
+        "triage",
+        "steady_hands"
+      ],
+      "itemBias": {
+        "tool": [
+          "stethoscope",
+          "field_sutures"
+        ],
+        "clothing": [
+          "wool_socks",
+          "rain_shell"
+        ],
+        "sentimental": [
+          "notebook",
+          "locket"
+        ]
+      },
+      "minAge": 22,
+      "maxAge": 60,
+      "backstories": [
+        "{first} delivered babies in farmhouse kitchens and cramped apartment bedrooms for twelve years. {They} know how to stay calm when everyone else is screaming.",
+        "{first} learned the trade from {their} grandmother, who caught three generations of babies in the same county. {They} have steady hands and strong opinions about where laboring mothers should walk.",
+        "{first} ran a birth center out of a converted Victorian near {origin}. {They} keep a handwritten log of all four hundred babies.",
+        "{first} spent {their} twenties as a labor-and-delivery nurse before going independent. {They} are the person other people hand the flashlight to when things get bad."
+      ],
+      "backstory": "{first} delivered babies in farmhouse kitchens and cramped apartment bedrooms for twelve years. {They} know how to stay calm when everyone else is screaming."
+    },
+    {
+      "id": "dentist",
+      "name": "Dentist",
+      "teachTags": [
+        "medicinal"
+      ],
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "kcalPerDay": 1950,
+      "plantsKnown": 0,
+      "granted": [
+        "steady_hands",
+        "patient_aim"
+      ],
+      "itemBias": {
+        "tool": [
+          "pen_set",
+          "multitool"
+        ],
+        "clothing": [
+          "running_shoes",
+          "wool_socks"
+        ],
+        "sentimental": [
+          "reading_glasses",
+          "notebook"
+        ]
+      },
+      "minAge": 24,
+      "maxAge": 65,
+      "backstories": [
+        "{first} ran a two-chair practice above the hardware store in {origin}. {They} have pulled teeth by flashlight during blackouts and never flinched.",
+        "{first} did free dental days at the county clinic every third Saturday. {They} know the exact sound a cracked molar makes before the patient says a word.",
+        "{first} paid off {their} student loans doing extractions at a prison infirmary. {They} keep {their} stories short and {their} instruments sharp.",
+        "{first} specialized in kids who were terrified of the chair, which was most of them. {They} talk people through pain the way some people talk dogs off ledges."
+      ],
+      "backstory": "{first} ran a two-chair practice above the hardware store in {origin}. {They} have pulled teeth by flashlight during blackouts and never flinched."
+    },
+    {
+      "id": "pharmacist",
+      "name": "Pharmacist",
+      "teachTags": [
+        "medicinal"
+      ],
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "kcalPerDay": 1900,
+      "plantsKnown": 3,
+      "granted": [
+        "forage_identification",
+        "open_book"
+      ],
+      "itemBias": {
+        "tool": [
+          "calculator",
+          "pen_set"
+        ],
+        "clothing": [
+          "flannel_shirt",
+          "rain_poncho"
+        ],
+        "sentimental": [
+          "paperback",
+          "notebook"
+        ]
+      },
+      "minAge": 22,
+      "maxAge": 65,
+      "backstories": [
+        "{first} ran the counter at an independent pharmacy in {origin} for fifteen years. {They} know which drugs interact, which ones lie on the label, and which ones people actually need.",
+        "{first} caught a prescribing error that would have killed a regular, and the doctor sent flowers. {They} read every label twice and trust no one's math but {their} own.",
+        "{first} compounded creams and tinctures in the back room because the chains would not. {They} have a notebook of formulas going back twenty years.",
+        "{first} worked the overnight window, the only pharmacist awake in the county at 3 a.m. {They} are used to being the last line of defense."
+      ],
+      "backstory": "{first} ran the counter at an independent pharmacy in {origin} for fifteen years. {They} know which drugs interact, which ones lie on the label, and which ones people actually need."
+    },
+    {
+      "id": "veterinarian",
+      "name": "Veterinarian",
+      "teachTags": [
+        "medicinal"
+      ],
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "kcalPerDay": 2200,
+      "plantsKnown": 2,
+      "granted": [
+        "field_dressing",
+        "taught_hands"
+      ],
+      "itemBias": {
+        "tool": [
+          "field_dressing_kit",
+          "rope_50ft"
+        ],
+        "clothing": [
+          "work_gloves",
+          "good_boots"
+        ],
+        "sentimental": [
+          "photo_album",
+          "lucky_coin"
+        ]
+      },
+      "minAge": 24,
+      "maxAge": 60,
+      "backstories": [
+        "{first} doctored cattle, horses, and the occasional very angry goat across three counties. {They} know how to read an animal that cannot tell you where it hurts.",
+        "{first} ran a small-animal clinic in {origin} and a weekend large-animal route. {They} have stitched up everything from parakeets to draft horses.",
+        "{first} volunteered at the wildlife rehab center, tube-feeding owls and splinting deer. {They} talk to animals like colleagues and to owners like children.",
+        "{first} was the vet on call for the county fair, which meant everything from heatstroke pigs to kicked 4-H kids. {They} stay calm when something large is bleeding."
+      ],
+      "backstory": "{first} doctored cattle, horses, and the occasional very angry goat across three counties. {They} know how to read an animal that cannot tell you where it hurts."
+    },
+    {
+      "id": "physical_therapist",
+      "name": "physical therapy aide",
+      "teachTags": [
+        "medicinal"
+      ],
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "kcalPerDay": 2100,
+      "plantsKnown": 1,
+      "granted": [
+        "taught_hands",
+        "second_wind"
+      ],
+      "itemBias": {
+        "tool": [
+          "rope_50ft",
+          "thermos"
+        ],
+        "clothing": [
+          "running_shoes",
+          "canvas_pants"
+        ],
+        "sentimental": [
+          "mixtape",
+          "notebook"
+        ]
+      },
+      "minAge": 24,
+      "maxAge": 60,
+      "backstories": [
+        "{first} rebuilt knees, shoulders, and backs at a sports clinic outside {origin}. {They} know exactly how far to push a healing body and when to stop.",
+        "{first} worked with stroke patients relearning how to walk, one hallway at a time. {They} have the patience of someone who measures progress in inches.",
+        "{first} did home visits for elderly patients who refused to leave their houses. {They} talk people into doing the hard exercises with jokes and stubbornness.",
+        "{first} treated ranch hands and roofers, people who broke themselves for a living. {They} are fluent in the language of 'it'll be fine' and know when it won't be."
+      ],
+      "backstory": "{first} rebuilt knees, shoulders, and backs at a sports clinic outside {origin}. {They} know exactly how far to push a healing body and when to stop."
+    },
+    {
+      "id": "firefighter",
+      "name": "Firefighter",
+      "teachTags": [],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 2
+      },
+      "kcalPerDay": 2600,
+      "plantsKnown": 1,
+      "granted": [
+        "adrenaline_control",
+        "second_wind"
+      ],
+      "itemBias": {
+        "tool": [
+          "torch",
+          "hand_drill"
+        ],
+        "clothing": [
+          "work_gloves",
+          "good_boots"
+        ],
+        "sentimental": [
+          "dog_tags",
+          "lucky_coin"
+        ]
+      },
+      "minAge": 20,
+      "maxAge": 55,
+      "backstories": [
+        "{first} ran into burning buildings for the {origin} department for eleven years. {They} know what fear sounds like in {their} own head and how to walk through it.",
+        "{first} worked wildland crews in the summers, digging line ahead of crown fires. {They} have watched a hillside turn to torchlight and kept digging.",
+        "{first} was the probie who never panicked, so the captain kept {them} on the nozzle. {They} are still surprised by how quiet {their} mind gets under pressure.",
+        "{first} drove the ladder truck and knew every hydrant in the district by heart. {They} go toward the smoke because standing still feels worse."
+      ],
+      "backstory": "{first} ran into burning buildings for the {origin} department for eleven years. {They} know what fear sounds like in {their} own head and how to walk through it."
+    },
+    {
+      "id": "police_officer",
+      "name": "Police officer",
+      "teachTags": [],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 2
+      },
+      "kcalPerDay": 2300,
+      "plantsKnown": 1,
+      "granted": [
+        "mediator",
+        "adrenaline_control"
+      ],
+      "itemBias": {
+        "tool": [
+          "torch",
+          "binoculars"
+        ],
+        "clothing": [
+          "rain_shell",
+          "good_boots"
+        ],
+        "sentimental": [
+          "dog_tags",
+          "wedding_ring"
+        ]
+      },
+      "minAge": 21,
+      "maxAge": 55,
+      "backstories": [
+        "{first} walked a beat in {origin} for nine years and knew the regulars by name. {They} talk first and reach for {their} belt last.",
+        "{first} worked domestic calls, the ones nobody wants and everybody needs. {They} have a voice that can lower the temperature of a room.",
+        "{first} directed traffic, broke up bar fights, and once talked a jumper off the overpass. {They} know that most emergencies are really just people at the end of their rope.",
+        "{first} was two years from the pension when everything stopped mattering. {They} keep {their} cool by habit, and habits are hard to break."
+      ],
+      "backstory": "{first} walked a beat in {origin} for nine years and knew the regulars by name. {They} talk first and reach for {their} belt last."
+    },
+    {
+      "id": "dispatcher_911",
+      "name": "911 dispatcher",
+      "teachTags": [],
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "kcalPerDay": 1900,
+      "plantsKnown": 0,
+      "granted": [
+        "pattern_recognition",
+        "open_book"
+      ],
+      "itemBias": {
+        "tool": [
+          "pen_set",
+          "calculator"
+        ],
+        "clothing": [
+          "flannel_shirt",
+          "wool_socks"
+        ],
+        "sentimental": [
+          "dead_phone",
+          "notebook"
+        ]
+      },
+      "minAge": 20,
+      "maxAge": 65,
+      "backstories": [
+        "{first} took emergency calls for the county dispatch center, twelve-hour shifts of other people's worst days. {They} know how to keep a caller breathing while the ambulance is still miles out.",
+        "{first} could tell a heart attack from a panic attack by the breathing on the line. {They} have talked people through childbirth, CPR, and house fires without ever leaving {their} chair.",
+        "{first} trained new dispatchers, teaching them to type while listening to someone scream. {They} are the calmest person in any room, which is a job requirement.",
+        "{first} worked the overnight board when the whole county went quiet except the drunks and the desperate. {They} read maps, monitors, and human panic like a second language."
+      ],
+      "backstory": "{first} took emergency calls for the county dispatch center, twelve-hour shifts of other people's worst days. {They} know how to keep a caller breathing while the ambulance is still miles out."
+    },
+    {
+      "id": "social_worker",
+      "name": "Social worker",
+      "teachTags": [],
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 1,
+        "system": 2
+      },
+      "kcalPerDay": 1950,
+      "plantsKnown": 1,
+      "granted": [
+        "generous",
+        "mediator"
+      ],
+      "itemBias": {
+        "tool": [
+          "bus_map",
+          "pen_set"
+        ],
+        "clothing": [
+          "denim_jacket",
+          "rain_poncho"
+        ],
+        "sentimental": [
+          "tote_bag",
+          "paperback"
+        ]
+      },
+      "minAge": 22,
+      "maxAge": 65,
+      "backstories": [
+        "{first} carried a caseload of forty families in {origin} and knew every one of their stories. {They} know how to get help to people who have stopped asking for it.",
+        "{first} placed foster kids, which meant knowing which homes were safe and which were not. {They} have a sixth sense for when a situation is about to turn.",
+        "{first} ran the intake desk at a shelter, the first face people saw at rock bottom. {They} speak softly and write everything down, because details save lives.",
+        "{first} did home visits in neighborhoods the police drove through fast. {They} go where people actually live, and {they} stay until someone trusts {them}."
+      ],
+      "backstory": "{first} carried a caseload of forty families in {origin} and knew every one of their stories. {They} know how to get help to people who have stopped asking for it."
+    },
+    {
+      "id": "mortician",
+      "name": "Mortician",
+      "teachTags": [],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 3
+      },
+      "kcalPerDay": 1950,
+      "plantsKnown": 0,
+      "granted": [
+        "field_dressing",
+        "fear_aura"
+      ],
+      "itemBias": {
+        "tool": [
+          "sewing_kit",
+          "pen_set"
+        ],
+        "clothing": [
+          "flannel_shirt",
+          "canvas_pants"
+        ],
+        "sentimental": [
+          "photo_album",
+          "locket"
+        ]
+      },
+      "minAge": 20,
+      "maxAge": 65,
+      "backstories": [
+        "{first} ran the family funeral home in {origin}, third generation. {They} know the human body the way a mechanic knows an engine.",
+        "{first} prepared the dead and sat with the living, often in the same afternoon. {They} have a steady hand and no fear of quiet rooms.",
+        "{first} learned embalming from {their} father, who learned it from his. {They} keep the trade's old tools oiled and {their} composure oiled better.",
+        "{first} handled the county's unclaimed dead, giving strangers dignified endings. {They} look at death the way farmers look at weather: it comes, you deal with it."
+      ],
+      "backstory": "{first} ran the family funeral home in {origin}, third generation. {They} know the human body the way a mechanic knows an engine."
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstories": [
+        "{first} was the plumber everyone called when the other plumbers gave up. {They} have a sixth sense for where water goes when it shouldn't.",
+        "{first} spent twenty years snaking drains in {origin} apartment blocks. {They} know every sound a pipe makes before it bursts, and {they} have heard most of them.",
+        "{first} replumbed a whole farmhouse with nothing but a pickup bed of salvaged copper. {They} do {their} best thinking under a sink, flashlight in {their} teeth.",
+        "{first} was an apprentice at seventeen, a master at twenty-six. {They} keep a mental map of every building on {their} old route, and {they} talk to pipes like colleagues."
+      ],
+      "backstory": "{first} was the plumber everyone called when the other plumbers gave up. {They} have a sixth sense for where water goes when it shouldn't.",
+      "granted": [
+        "dowsing",
+        "taught_hands"
+      ],
+      "id": "plumber",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "rain_poncho"
+        ],
+        "sentimental": [
+          "photo_album",
+          "lucky_coin"
+        ],
+        "tool": [
+          "hand_drill",
+          "multitool"
+        ]
+      },
+      "kcalPerDay": 2300,
+      "maxAge": 65,
+      "minAge": 20,
+      "name": "plumber",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "backstories": [
+        "{first} the locksmith could open anything except a conversation about fees. {They} have a feather touch and a shop full of key blanks older than {their} customers.",
+        "{first} learned locks in {their} grandfather's shop, cutting keys by hand at twelve. {They} read a lock the way other people read faces — pins, springs, and lies.",
+        "{first} did emergency lockouts at 3 a.m. for a decade. {They} know the sound of a pin tumbler the way musicians know middle C.",
+        "{first} once opened a bank vault with a paperclip and a prayer — at least, that's the story. {They} stare at any closed thing — door, box, jaw — until {they} know how it opens."
+      ],
+      "backstory": "{first} the locksmith could open anything except a conversation about fees. {They} have a feather touch and a shop full of key blanks older than {their} customers.",
+      "granted": [
+        "taught_hands",
+        "pattern_recognition"
+      ],
+      "id": "locksmith",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "canvas_pants"
+        ],
+        "sentimental": [
+          "notebook",
+          "mixtape"
+        ],
+        "tool": [
+          "whetstone",
+          "multitool"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "maxAge": 70,
+      "minAge": 19,
+      "name": "locksmith",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstories": [
+        "{first} was a welder on the pipeline crews up north. {They} have burns in the shape of every mistake made along the way, and {they} do not repeat mistakes.",
+        "{first} welded pressure vessels — the kind that explode if you're wrong. {They} keep {their} hood down and {their} mouth shut, and {their} beads run like corduroy.",
+        "{first} learned to weld fixing farm equipment that couldn't wait for town. {They} are patient with metal and impatient with everything else.",
+        "{first} built {their} own smoker, {their} own trailer, {their} own everything. {They} look at two broken things. {They} know one of them is the fix."
+      ],
+      "backstory": "{first} was a welder on the pipeline crews up north. {They} have burns in the shape of every mistake made along the way, and {they} do not repeat mistakes.",
+      "granted": [
+        "steady_hands",
+        "adrenaline_control"
+      ],
+      "id": "welder",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "denim_jacket"
+        ],
+        "sentimental": [
+          "dog_tags",
+          "wedding_ring"
+        ],
+        "tool": [
+          "lighter",
+          "torch"
+        ]
+      },
+      "kcalPerDay": 2400,
+      "maxAge": 60,
+      "minAge": 20,
+      "name": "welder",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "backstories": [
+        "{first} was a roofer for fifteen summers in {origin}. {They} have never been afraid of heights, only of Mondays.",
+        "{first} could shingle a whole garage in a day and be home by five. {They} do the steep pitches nobody else will touch.",
+        "{first} started roofing at nineteen with plans to quit by thirty. {They} are forty-one and still up there, because the view never got old.",
+        "{first} patched hurricane damage two counties over, three seasons running. {They} know exactly how much wind a nail can hold, and {they} stare down every storm cloud."
+      ],
+      "backstory": "{first} was a roofer for fifteen summers in {origin}. {They} have never been afraid of heights, only of Mondays.",
+      "granted": [
+        "soft_step",
+        "survivor"
+      ],
+      "id": "roofer",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "knit_cap"
+        ],
+        "sentimental": [
+          "mixtape",
+          "hard_candy"
+        ],
+        "tool": [
+          "rope_50ft",
+          "multitool"
+        ]
+      },
+      "kcalPerDay": 2500,
+      "maxAge": 60,
+      "minAge": 19,
+      "name": "roofer",
+      "plantsKnown": 1,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstories": [
+        "{first} was a mason — stone, brick, block, in that order of love. {They} have laid walls that will outlive {their} grandchildren.",
+        "{first} restored a hundred-year-old courthouse, matching mortar the old men forgot. {They} keep a trowel older than {their} marriage and treat both with respect.",
+        "{first} learned masonry from {their} uncles, all of them, all yelling. {They} are the quiet one now, and {their} corners come out square.",
+        "{first} built dry-stack walls that held back a hillside for a decade. {They} talk to stone the way {they} talk to old friends — not much, and it counts."
+      ],
+      "backstory": "{first} was a mason — stone, brick, block, in that order of love. {They} have laid walls that will outlive {their} grandchildren.",
+      "granted": [
+        "taught_hands",
+        "steady_hands"
+      ],
+      "id": "mason",
+      "itemBias": {
+        "clothing": [
+          "canvas_pants",
+          "work_gloves"
+        ],
+        "sentimental": [
+          "mothers_ring",
+          "paperback"
+        ],
+        "tool": [
+          "whetstone",
+          "hand_saw"
+        ]
+      },
+      "kcalPerDay": 2500,
+      "maxAge": 70,
+      "minAge": 21,
+      "name": "mason",
+      "plantsKnown": 1,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "backstories": [
+        "{first} was an HVAC tech — summers on rooftops, winters in crawlspaces. {They} have heard every noise a compressor can make, and {they} know what each one costs.",
+        "{first} kept a hospital's chillers alive through a heat wave that made the news. {They} do not panic — {they} read gauges first, and {they} talk about feelings later.",
+        "{first} could diagnose a dying furnace over the phone, from the description of the smell. {They} know airflow like a sailor knows wind.",
+        "{first} installed {their} first full HVAC setup at twenty-two, alone, in August. {They} were soaked, exhausted, and exactly right about the ductwork."
+      ],
+      "backstory": "{first} was an HVAC tech — summers on rooftops, winters in crawlspaces. {They} have heard every noise a compressor can make, and {they} know what each one costs.",
+      "granted": [
+        "pattern_recognition",
+        "scrounger"
+      ],
+      "id": "hvac_tech",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "rain_shell"
+        ],
+        "sentimental": [
+          "notebook",
+          "dead_phone"
+        ],
+        "tool": [
+          "multitool",
+          "hand_drill"
+        ]
+      },
+      "kcalPerDay": 2300,
+      "maxAge": 65,
+      "minAge": 19,
+      "name": "HVAC tech",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "backstories": [
+        "{first} was an appliance repair tech — washers, dryers, the sad symphony of dying compressors. {They} have fixed machines other techs wrote off as corpses.",
+        "{first} could tell what was wrong with a fridge from the hum it made. {They} know the inside of a dishwasher better than {their} own kitchen.",
+        "{first} ran house calls across three counties, six stops a day. {They} talk to nervous homeowners while {their} hands work, and both leave calmer.",
+        "{first} learned the trade from a grumpy master who never explained anything twice. {They} keep every screw in labeled jars. {They} have opinions about planned obsolescence."
+      ],
+      "backstory": "{first} was an appliance repair tech — washers, dryers, the sad symphony of dying compressors. {They} have fixed machines other techs wrote off as corpses.",
+      "granted": [
+        "pattern_recognition",
+        "steady_hands"
+      ],
+      "id": "appliance_repair",
+      "itemBias": {
+        "clothing": [
+          "canvas_pants",
+          "flannel_shirt"
+        ],
+        "sentimental": [
+          "reading_glasses",
+          "photo_album"
+        ],
+        "tool": [
+          "multitool",
+          "pen_set"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "maxAge": 65,
+      "minAge": 18,
+      "name": "appliance repair tech",
+      "plantsKnown": 1,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "backstories": [
+        "{first} was a blacksmith — real forge, real anvil, weekends at the Renaissance fair and weekdays fixing plows. {They} have the forearms of a statue and the patience of a river.",
+        "{first} forged {their} own wedding rings from a railroad spike. {They} know exactly how hot steel needs to be by its color, the way cooks know a steak.",
+        "{first} apprenticed under a farrier, then went solo at twenty-five. {They} are happiest with coal smoke in {their} lungs and a problem that yields to hammering.",
+        "{first} made ornamental gates for rich people's driveways and horseshoes for everyone else. {They} do not hurry the metal. {They} stay patient until the color says go."
+      ],
+      "backstory": "{first} was a blacksmith — real forge, real anvil, weekends at the Renaissance fair and weekdays fixing plows. {They} have the forearms of a statue and the patience of a river.",
+      "granted": [
+        "taught_hands",
+        "adrenaline_control"
+      ],
+      "id": "blacksmith",
+      "itemBias": {
+        "clothing": [
+          "flannel_shirt",
+          "work_gloves"
+        ],
+        "sentimental": [
+          "lucky_coin",
+          "wedding_ring"
+        ],
+        "tool": [
+          "whetstone",
+          "lighter"
+        ]
+      },
+      "kcalPerDay": 2600,
+      "maxAge": 70,
+      "minAge": 22,
+      "name": "blacksmith",
+      "plantsKnown": 1,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "backstories": [
+        "{first} was an exterminator — roaches, wasps, the things in the walls. {They} have crawled through spaces {their} customers wouldn't look into.",
+        "{first} could read a house for pests from the driveway. {They} know where the mice get in, where the ants march, and what the scratching means.",
+        "{first} cleared a restaurant of German roaches in one night, twice. {They} do the jobs other people gag at, and {they} do them right.",
+        "{first} started in termite inspections, ended up the county's wasp whisperer. {They} stare at a wall until {they} know what's moving behind it."
+      ],
+      "backstory": "{first} was an exterminator — roaches, wasps, the things in the walls. {They} have crawled through spaces {their} customers wouldn't look into.",
+      "granted": [
+        "poisoner",
+        "tracker"
+      ],
+      "id": "exterminator",
+      "itemBias": {
+        "clothing": [
+          "canvas_pants",
+          "rain_poncho"
+        ],
+        "sentimental": [
+          "daughters_drawing",
+          "bus_schedule"
+        ],
+        "tool": [
+          "torch",
+          "binoculars"
+        ]
+      },
+      "kcalPerDay": 2200,
+      "maxAge": 60,
+      "minAge": 18,
+      "name": "exterminator",
+      "plantsKnown": 2,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstories": [
+        "{first} was a glazier — windows, storefronts, the occasional shattered sliding door. {They} have handled enough glass to be gentle with everything.",
+        "{first} cut glass for custom frames in a shop that smelled of putty. {They} know the exact pressure that scores without shattering.",
+        "{first} glazed high-rise windows, clipped in forty stories up. {They} are calm at heights and fussy about seals.",
+        "{first} replaced every window in {their} own house twice, just for practice. {They} talk to {their} tape measure more than to {their} coworkers."
+      ],
+      "backstory": "{first} was a glazier — windows, storefronts, the occasional shattered sliding door. {They} have handled enough glass to be gentle with everything.",
+      "granted": [
+        "steady_hands",
+        "soft_step"
+      ],
+      "id": "glazier",
+      "itemBias": {
+        "clothing": [
+          "work_gloves",
+          "denim_jacket"
+        ],
+        "sentimental": [
+          "tote_bag",
+          "paperback"
+        ],
+        "tool": [
+          "whetstone",
+          "rope_coil"
+        ]
+      },
+      "kcalPerDay": 2200,
+      "maxAge": 65,
+      "minAge": 20,
+      "name": "glazier",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "id": "beekeeper",
+      "name": "Beekeeper",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "kcalPerDay": 2100,
+      "plantsKnown": 2,
+      "granted": [
+        "taught_hands",
+        "pattern_recognition"
+      ],
+      "itemBias": {
+        "tool": [
+          "torch",
+          "multitool"
+        ],
+        "clothing": [
+          "work_gloves",
+          "canvas_pants"
+        ],
+        "sentimental": [
+          "paperback",
+          "hard_candy"
+        ]
+      },
+      "minAge": 25,
+      "maxAge": 70,
+      "backstories": [
+        "{first} kept twelve hives on the edge of town and {they} know the smell of a queenright colony. {They} know that cool smoke keeps a hive calm, not scared.",
+        "{first} learned beekeeping from {their} grandfather and {they} have the sting-scarred hands to prove it. {They} keep a smoker lit through the morning rounds, slow and steady.",
+        "{first} once ran a pollination service, hauling hives between orchards all spring. {They} talk softly around the frames because a calm keeper keeps a calm hive.",
+        "Every fall {first} rendered wax and bottled honey for the county fair. {They} have a recipe for propolis salve and {they} do not share it lightly."
+      ],
+      "backstory": "{first} kept twelve hives on the edge of town and {they} know the smell of a queenright colony. {They} know that cool smoke keeps a hive calm, not scared."
+    },
+    {
+      "id": "butcher",
+      "name": "Butcher",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "kcalPerDay": 2400,
+      "plantsKnown": 1,
+      "granted": [
+        "field_dressing",
+        "steady_hands"
+      ],
+      "itemBias": {
+        "tool": [
+          "grandfathers_knife",
+          "whetstone"
+        ],
+        "clothing": [
+          "flannel_shirt",
+          "work_gloves"
+        ],
+        "sentimental": [
+          "photo_album",
+          "lucky_coin"
+        ]
+      },
+      "minAge": 20,
+      "maxAge": 60,
+      "backstories": [
+        "{first} broke down whole animals at a family butcher shop, primals to retail cuts in under an hour. {They} know where every cut comes from and what it is good for.",
+        "{first} spent years teaching apprentices that a sharp knife is the safe knife. {They} keep {their} whetstone close and {they} have opinions about your honing angle.",
+        "At the county lockers {first} watched whole sides of beef go in and meal plans come out. {They} do the math in {their} head: yield, waste, what feeds a family all winter.",
+        "{first} learned that nose-to-tail is not a trend but how people used to survive. {They} talk about rendering tallow and {they} are right."
+      ],
+      "backstory": "{first} broke down whole animals at a family butcher shop, primals to retail cuts in under an hour. {They} know where every cut comes from and what it is good for."
+    },
+    {
+      "id": "baker",
+      "name": "Baker",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 1
+      },
+      "kcalPerDay": 2100,
+      "plantsKnown": 2,
+      "granted": [
+        "camp_cook",
+        "taught_hands"
+      ],
+      "itemBias": {
+        "tool": [
+          "camp_pot",
+          "tasting_spoon"
+        ],
+        "clothing": [
+          "flannel_shirt",
+          "work_gloves"
+        ],
+        "sentimental": [
+          "notebook",
+          "mixtape"
+        ]
+      },
+      "minAge": 22,
+      "maxAge": 65,
+      "backstories": [
+        "{first} baked for a bakery that milled its own flour, dawn to dusk. {They} know dough by touch — when it is alive and when it needs to rest.",
+        "{first} kept a sourdough starter older than {their} marriage. {They} talk about hydration like weather and {they} have revived starters that should have died.",
+        "In the bakery {first} learned that a hot hearth forgives a lot of mistakes. {They} build a good fire first and {they} do everything else after.",
+        "{first} once fed a whole wedding on bread baked in a brick oven out back. {They} are the reason nobody in this camp goes hungry for long."
+      ],
+      "backstory": "{first} baked for a bakery that milled its own flour, dawn to dusk. {They} know dough by touch — when it is alive and when it needs to rest."
+    },
+    {
+      "id": "fisherman",
+      "name": "Fisherman",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "kcalPerDay": 2300,
+      "plantsKnown": 1,
+      "granted": [
+        "swimmer",
+        "game_sense"
+      ],
+      "itemBias": {
+        "tool": [
+          "fishing_line",
+          "gill_net"
+        ],
+        "clothing": [
+          "rain_poncho",
+          "wool_socks"
+        ],
+        "sentimental": [
+          "photo_album",
+          "lucky_coin"
+        ]
+      },
+      "minAge": 20,
+      "maxAge": 65,
+      "backstories": [
+        "{first} fished the coast for twenty years, longlining and running pots. {They} read the water like print and {they} know where the fish run when the tide turns.",
+        "{first} learned to mend nets as a kid, years before anyone let {them} drive. {They} keep a gill net folded in {their} pack and {they} have strong feelings about mesh size.",
+        "On the boat {first} was the one who filleted the catch before it hit the deck. {They} talk about bleeding and icing fish and {they} are worth listening to.",
+        "{first} once rode out a storm that should have sunk the boat. {They} have a healthy respect for the water and {they} do not take stupid risks."
+      ],
+      "backstory": "{first} fished the coast for twenty years, longlining and running pots. {They} read the water like print and {they} know where the fish run when the tide turns."
+    },
+    {
+      "id": "rancher",
+      "name": "Rancher",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "kcalPerDay": 2400,
+      "plantsKnown": 1,
+      "granted": [
+        "game_sense",
+        "tracker"
+      ],
+      "itemBias": {
+        "tool": [
+          "rope_50ft",
+          "grandfathers_knife"
+        ],
+        "clothing": [
+          "denim_jacket",
+          "good_boots"
+        ],
+        "sentimental": [
+          "dog_tags",
+          "photo_album"
+        ]
+      },
+      "minAge": 22,
+      "maxAge": 65,
+      "backstories": [
+        "{first} ran cattle on open range, calving season to branding. {They} know livestock like {they} know {their} own family, maybe better.",
+        "{first} learned that a good fence and patience fix most problems. {They} build fence that lasts and {they} read an animal's mood at a glance.",
+        "On the ranch {first} was the one up at four checking on calving heifers. {They} have delivered more calves than most ranchers see in a lifetime and {they} stay calm through all of it.",
+        "{first} once drove a herd three days through a dry spell to water. {They} know where water hides in this country and {they} are not afraid to go looking for it."
+      ],
+      "backstory": "{first} ran cattle on open range, calving season to branding. {They} know livestock like {they} know {their} own family, maybe better."
+    },
+    {
+      "id": "chef",
+      "name": "Chef",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 1
+      },
+      "kcalPerDay": 2100,
+      "plantsKnown": 2,
+      "granted": [
+        "camp_cook",
+        "taste_vision"
+      ],
+      "itemBias": {
+        "tool": [
+          "chefs_knife",
+          "tasting_spoon"
+        ],
+        "clothing": [
+          "flannel_shirt",
+          "knit_cap"
+        ],
+        "sentimental": [
+          "notebook",
+          "mixtape"
+        ]
+      },
+      "minAge": 24,
+      "maxAge": 60,
+      "backstories": [
+        "{first} ran a busy kitchen through the dinner rush for a decade. {They} know how to feed forty people from almost nothing and {they} stay calm when the fire is high.",
+        "{first} trained under chefs who tasted everything twice. {They} have a palate that remembers meals years later and {they} talk about seasoning like it is a language.",
+        "{first} once turned a bare pantry into a banquet for a hundred guests. {They} do more with less than anyone {they} know — and {they} know a lot of cooks.",
+        "In {their} kitchen, nothing went to waste — stock from bones, meals from scraps. {They} are the one who keeps the pot full here."
+      ],
+      "backstory": "{first} ran a busy kitchen through the dinner rush for a decade. {They} know how to feed forty people from almost nothing and {they} stay calm when the fire is high."
+    },
+    {
+      "id": "forager",
+      "name": "Wild food forager",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "kcalPerDay": 2200,
+      "plantsKnown": 3,
+      "granted": [
+        "forage_identification",
+        "scrounger"
+      ],
+      "itemBias": {
+        "tool": [
+          "hiking_backpack",
+          "binoculars"
+        ],
+        "clothing": [
+          "rain_shell",
+          "wool_socks"
+        ],
+        "sentimental": [
+          "paperback",
+          "notebook"
+        ]
+      },
+      "minAge": 20,
+      "maxAge": 70,
+      "backstories": [
+        "{first} filled baskets with wild greens and berries every season for market. {They} know the deadly look-alikes and {they} are serious about teaching it first.",
+        "{first} learned foraging from {their} grandmother, plant by plant, walk by walk. {They} have a memory full of leaves and {they} look at every trailside like a menu.",
+        "In the woods {first} could find dinner in an hour with empty hands. {They} read the ground for mushrooms after rain and {they} know which trees mean nuts.",
+        "{first} once lived a whole summer eating mostly what the woods gave {them}. {They} are thinner for the wisdom and {they} go quietly where the food is."
+      ],
+      "backstory": "{first} filled baskets with wild greens and berries every season for market. {They} know the deadly look-alikes and {they} are serious about teaching it first."
+    },
+    {
+      "id": "vintner",
+      "name": "Vintner",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 1
+      },
+      "kcalPerDay": 2000,
+      "plantsKnown": 2,
+      "granted": [
+        "preservation_instinct",
+        "taught_hands"
+      ],
+      "itemBias": {
+        "tool": [
+          "multitool",
+          "tin_cup"
+        ],
+        "clothing": [
+          "canvas_pants",
+          "good_boots"
+        ],
+        "sentimental": [
+          "notebook",
+          "mixtape"
+        ]
+      },
+      "minAge": 25,
+      "maxAge": 65,
+      "backstories": [
+        "{first} made wine in a valley vineyard, crush to barrel. {They} know fermentation like weather and {they} have saved more batches than {they} have lost.",
+        "{first} learned that the yeast does the work if you let it. {They} talk about patience and {they} are the reason the cellar always smelled like possibility.",
+        "At harvest {first} tasted grapes every morning until they were ready. {They} do not rush the fruit and {they} do not rush anything else either.",
+        "{first} once turned a frost-damaged vintage into something people paid good money for. {They} know that even a bad year can be useful."
+      ],
+      "backstory": "{first} made wine in a valley vineyard, crush to barrel. {They} know fermentation like weather and {they} have saved more batches than {they} have lost."
+    },
+    {
+      "id": "mushroom_grower",
+      "name": "Mushroom grower",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "kcalPerDay": 2000,
+      "plantsKnown": 3,
+      "granted": [
+        "forage_identification",
+        "compost_king"
+      ],
+      "itemBias": {
+        "tool": [
+          "hand_drill",
+          "tin_cup"
+        ],
+        "clothing": [
+          "work_gloves",
+          "rain_poncho"
+        ],
+        "sentimental": [
+          "notebook",
+          "paperback"
+        ]
+      },
+      "minAge": 22,
+      "maxAge": 60,
+      "backstories": [
+        "{first} grew mushrooms in a converted barn, logs stacked to the ceiling. {They} know mycelium like a friend and {they} talk to the logs daily.",
+        "{first} learned that mushrooms want darkness, damp, and to be left alone. {They} keep the barn cool and wet and {they} have a spore print for everything.",
+        "In the woods {first} could read a rotting log and tell you what it would feed. {They} look for the right decay and {they} know which shelf fungi are dinner.",
+        "{first} once fruited a crop in January when everyone said it was impossible. {They} are stubborn about fungi and {they} do not quit when it gets cold."
+      ],
+      "backstory": "{first} grew mushrooms in a converted barn, logs stacked to the ceiling. {They} know mycelium like a friend and {they} talk to the logs daily."
+    },
+    {
+      "id": "sailor",
+      "name": "Sailor",
+      "teachTags": [
+        "food"
+      ],
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 1
+      },
+      "kcalPerDay": 2300,
+      "plantsKnown": 1,
+      "granted": [
+        "swimmer",
+        "dowsing"
+      ],
+      "itemBias": {
+        "tool": [
+          "rope_coil",
+          "binoculars"
+        ],
+        "clothing": [
+          "rain_shell",
+          "wool_socks"
+        ],
+        "sentimental": [
+          "mixtape",
+          "lucky_coin"
+        ]
+      },
+      "minAge": 20,
+      "maxAge": 60,
+      "backstories": [
+        "{first} crewed cargo ships and read the tide tables like scripture. {They} read the water and the sky together and {they} have a feel for weather coming.",
+        "{first} learned knots as a kid, long before algebra. {They} keep a coil of rope handy and {they} talk about the sea like an old friend.",
+        "On watch {first} once spotted a squall three hours before it hit. {They} know that the ocean feeds you if you respect it and {they} do respect it.",
+        "{first} spent a season fishing between ports, hook and line off the stern. {They} have eaten everything the sea throws up and {they} are not picky."
+      ],
+      "backstory": "{first} crewed cargo ships and read the tide tables like scripture. {They} read the water and the sky together and {they} have a feel for weather coming."
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "backstories": [
+        "{first} spent nine years writing routing software for a freight company. {They} know how logistics chains fail, which is exactly why {they} have no illusions about rescue.",
+        "{first} debugged code for a living and lived on delivery food. {They} have memorized every keyboard shortcut and can still type at ninety words a minute.",
+        "{first} ran a two-person dev shop out of a garage, building apps for local businesses. {They} are good at reading documentation nobody else wants to read.",
+        "{first} was a backend engineer who never once fixed anything with {their} hands. {They} keep a notebook of system failures and have started a new page."
+      ],
+      "backstory": "{first} spent nine years writing routing software for a freight company. {They} know how logistics chains fail, which is exactly why {they} have no illusions about rescue.",
+      "granted": [
+        "pattern_recognition",
+        "time_skip"
+      ],
+      "id": "programmer",
+      "itemBias": {
+        "clothing": [
+          "running_shoes",
+          "denim_jacket"
+        ],
+        "sentimental": [
+          "dead_phone",
+          "hoodie"
+        ],
+        "tool": [
+          "calculator",
+          "phone_charger"
+        ]
+      },
+      "kcalPerDay": 1850,
+      "maxAge": 65,
+      "minAge": 20,
+      "name": "programmer",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstories": [
+        "{first} drove refrigerated freight across eleven states for fifteen years. {They} know every truck stop on I-80 by the quality of its coffee.",
+        "{first} ran overnight produce hauls and slept in {their} cab four nights a week. {They} have stayed awake thirty-six hours straight and do not recommend it.",
+        "{first} hauled diesel tankers and could change a fuel filter in the dark. {They} keep a mental map of which exits had diesel, back when that mattered.",
+        "{first} drove a box truck for a moving company, carrying other people's lives up three flights of stairs. {They} are stronger than {they} look and have the back problems to prove it."
+      ],
+      "backstory": "{first} drove refrigerated freight across eleven states for fifteen years. {They} know every truck stop on I-80 by the quality of its coffee.",
+      "granted": [
+        "second_wind",
+        "eyes_in_back"
+      ],
+      "id": "truck_driver",
+      "itemBias": {
+        "clothing": [
+          "flannel_shirt",
+          "work_gloves"
+        ],
+        "sentimental": [
+          "mixtape",
+          "photo_album"
+        ],
+        "tool": [
+          "thermos",
+          "energy_drink"
+        ]
+      },
+      "kcalPerDay": 2300,
+      "maxAge": 68,
+      "minAge": 21,
+      "name": "truck driver",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstories": [
+        "{first} painted murals under highway overpasses for a decade and never once got permission. {They} know how to make a gallon of paint last a month.",
+        "{first} sold portraits in a subway station and could read a stranger's face in ninety seconds. {They} have a sketchbook full of people who never sat still.",
+        "{first} did paste-ups and wheat-paste collages across three cities. {They} are used to working fast, in the dark, while someone might be watching.",
+        "{first} taught after-school art to kids who had never held a brush. {They} talk about color the way other people talk about weather."
+      ],
+      "backstory": "{first} painted murals under highway overpasses for a decade and never once got permission. {They} know how to make a gallon of paint last a month.",
+      "granted": [
+        "third_eye",
+        "scrounger"
+      ],
+      "id": "artist",
+      "itemBias": {
+        "clothing": [
+          "denim_jacket",
+          "knit_cap"
+        ],
+        "sentimental": [
+          "mixtape",
+          "tote_bag"
+        ],
+        "tool": [
+          "pen_set",
+          "tin_cup"
+        ]
+      },
+      "kcalPerDay": 2000,
+      "maxAge": 60,
+      "minAge": 18,
+      "name": "street artist",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 1,
+        "system": 1
+      },
+      "backstories": [
+        "{first} played bass in wedding bands for twelve years and could fake any song by the second chorus. {They} have perfect pitch and a left ear that rings constantly.",
+        "{first} toured the Midwest in a van that broke down in four states. {They} know how to sleep anywhere and are weirdly calm when things fall apart.",
+        "{first} busked outside train stations, learning which songs made commuters stop. {They} talk to crowds the way farmers talk to weather — reading the room, always.",
+        "{first} taught piano to kids and played funerals on weekends. {They} have played through power outages, hecklers, and one small fire."
+      ],
+      "backstory": "{first} played bass in wedding bands for twelve years and could fake any song by the second chorus. {They} have perfect pitch and a left ear that rings constantly.",
+      "granted": [
+        "diplomat",
+        "scream_cheese"
+      ],
+      "id": "musician",
+      "itemBias": {
+        "clothing": [
+          "denim_jacket",
+          "running_shoes"
+        ],
+        "sentimental": [
+          "mixtape",
+          "notebook"
+        ],
+        "tool": [
+          "multitool",
+          "pen_set"
+        ]
+      },
+      "kcalPerDay": 1950,
+      "maxAge": 65,
+      "minAge": 18,
+      "name": "musician",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "backstories": [
+        "{first} covered city hall for a metro daily for eight years. {They} know how to get a straight answer out of someone who is paid to dodge.",
+        "{first} was a foreign correspondent who learned three languages badly and one well. {They} have interviewed warlords and mayors and are unimpressed by both.",
+        "{first} wrote obituaries, then crime, then the Sunday feature desk. {They} keep every notebook filled since 2009 and have started a fresh one.",
+        "{first} reported on food deserts and knew which neighborhoods the trucks skipped. {They} are good at asking the question nobody else thought to ask."
+      ],
+      "backstory": "{first} covered city hall for a metro daily for eight years. {They} know how to get a straight answer out of someone who is paid to dodge.",
+      "granted": [
+        "open_book",
+        "diplomat"
+      ],
+      "id": "journalist",
+      "itemBias": {
+        "clothing": [
+          "rain_shell",
+          "canvas_pants"
+        ],
+        "sentimental": [
+          "notebook",
+          "reading_glasses"
+        ],
+        "tool": [
+          "pen_set",
+          "binoculars"
+        ]
+      },
+      "kcalPerDay": 1950,
+      "maxAge": 70,
+      "minAge": 22,
+      "name": "journalist",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 1,
+        "system": 3
+      },
+      "backstories": [
+        "{first} did legal aid housing cases for a decade, arguing evictions in front of tired judges. {They} know the difference between what is fair and what wins.",
+        "{first} was a public defender with two hundred open files and no time. {They} have talked frightened people into trusting {them} in under five minutes.",
+        "{first} drafted contracts for a mid-size firm and read fine print for sport. {They} are fluent in the kind of language designed to bore people into signing.",
+        "{first} mediated divorces and business splits nobody else wanted to touch. {They} keep a calm voice for rooms that are about to explode."
+      ],
+      "backstory": "{first} did legal aid housing cases for a decade, arguing evictions in front of tired judges. {They} know the difference between what is fair and what wins.",
+      "granted": [
+        "mediator",
+        "open_book"
+      ],
+      "id": "lawyer",
+      "itemBias": {
+        "clothing": [
+          "flannel_shirt",
+          "running_shoes"
+        ],
+        "sentimental": [
+          "reading_glasses",
+          "wedding_ring"
+        ],
+        "tool": [
+          "pen_set",
+          "calculator"
+        ]
+      },
+      "kcalPerDay": 1900,
+      "maxAge": 70,
+      "minAge": 26,
+      "name": "lawyer",
+      "plantsKnown": 0,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 2,
+        "fieldcraft": 1,
+        "system": 2
+      },
+      "backstories": [
+        "{first} ran a dry-cleaner and alteration shop for twenty years. {They} know how to take in a jacket, let out a waist, and hide a stain with a seam.",
+        "{first} apprenticed under {their} grandmother, who sewed wedding dresses in a two-room flat. {They} have steady fingers and strong opinions about thread.",
+        "{first} did costume work for a regional theater, building whole wardrobes from thrift-store finds. {They} are used to making something from almost nothing.",
+        "{first} mended uniforms for a hotel staff of two hundred. {They} keep a tin of buttons sorted by size and have never thrown away a zipper."
+      ],
+      "backstory": "{first} ran a dry-cleaner and alteration shop for twenty years. {They} know how to take in a jacket, let out a waist, and hide a stain with a seam.",
+      "granted": [
+        "taught_hands",
+        "steady_hands"
+      ],
+      "id": "tailor",
+      "itemBias": {
+        "clothing": [
+          "wool_socks",
+          "flannel_shirt"
+        ],
+        "sentimental": [
+          "mothers_ring",
+          "paperback"
+        ],
+        "tool": [
+          "sewing_kit",
+          "multitool"
+        ]
+      },
+      "kcalPerDay": 1900,
+      "maxAge": 75,
+      "minAge": 20,
+      "name": "tailor",
+      "plantsKnown": 1,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 3,
+        "system": 1
+      },
+      "backstories": [
+        "{first} did two tours as infantry and came home knowing how to sleep in the rain. {They} have carried a pack farther than anyone here will ever have to.",
+        "{first} was a squad leader who counted heads every night like a ritual. {They} know what it costs to keep people alive when the plan falls apart.",
+        "{first} trained recruits at a base in Georgia and could field-strip a rifle blindfolded. {They} are calm in a way that makes other people calmer.",
+        "{first} drove supply convoys and learned that logistics win wars. {They} keep track of who has eaten and who is lying about it."
+      ],
+      "backstory": "{first} did two tours as infantry and came home knowing how to sleep in the rain. {They} have carried a pack farther than anyone here will ever have to.",
+      "granted": [
+        "adrenaline_control",
+        "cornered_rat"
+      ],
+      "id": "soldier",
+      "itemBias": {
+        "clothing": [
+          "camo_jacket",
+          "good_boots"
+        ],
+        "sentimental": [
+          "dog_tags",
+          "lucky_coin"
+        ],
+        "tool": [
+          "multitool",
+          "rope_coil"
+        ]
+      },
+      "kcalPerDay": 2500,
+      "maxAge": 45,
+      "minAge": 19,
+      "name": "infantry soldier",
+      "plantsKnown": 1,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 1,
+        "fieldcraft": 2,
+        "system": 2
+      },
+      "backstories": [
+        "{first} flew mail and medicine to villages with no roads for fourteen years. {They} know weather the way sailors know tides — by reading it, constantly.",
+        "{first} was a crop duster who could land on a strip shorter than a driveway. {They} have put a plane down in crosswinds that grounded everyone else.",
+        "{first} ferried tourists over the Alaskan bush and learned which passengers panicked. {They} are good at sounding calm on a bad radio.",
+        "{first} flew fire-spotter runs in summer, circling smoke for eight hours straight. {They} keep one eye on the horizon even when there is nothing to see."
+      ],
+      "backstory": "{first} flew mail and medicine to villages with no roads for fourteen years. {They} know weather the way sailors know tides — by reading it, constantly.",
+      "granted": [
+        "wanderer",
+        "third_eye"
+      ],
+      "id": "pilot",
+      "itemBias": {
+        "clothing": [
+          "rain_shell",
+          "wool_socks"
+        ],
+        "sentimental": [
+          "lucky_coin",
+          "photo_album"
+        ],
+        "tool": [
+          "binoculars",
+          "multitool"
+        ]
+      },
+      "kcalPerDay": 2100,
+      "maxAge": 65,
+      "minAge": 25,
+      "name": "bush pilot",
+      "plantsKnown": 1,
+      "teachTags": []
+    },
+    {
+      "abilityWeights": {
+        "care": 3,
+        "fieldcraft": 1,
+        "system": 1
+      },
+      "backstories": [
+        "{first} tended bar at a neighborhood joint for eleven years and heard every story twice. {They} know when someone needs a drink and when they need to talk.",
+        "{first} worked the late shift at a hotel bar, pouring for travelers who would never come back. {They} have a memory for faces and a talent for forgetting names on purpose.",
+        "{first} ran a cocktail program downtown and could name forty herbs by smell. {They} are the reason this village knows what mint looks like.",
+        "{first} bounced weekends at a dive and broke up fights with a look and a free round. {They} talk people down for a living and have the scars to prove it."
+      ],
+      "backstory": "{first} tended bar at a neighborhood joint for eleven years and heard every story twice. {They} know when someone needs a drink and when they need to talk.",
+      "granted": [
+        "open_book",
+        "generous"
+      ],
+      "id": "bartender",
+      "itemBias": {
+        "clothing": [
+          "flannel_shirt",
+          "denim_jacket"
+        ],
+        "sentimental": [
+          "lucky_coin",
+          "photo_album"
+        ],
+        "tool": [
+          "tasting_spoon",
+          "thermos"
+        ]
+      },
+      "kcalPerDay": 2000,
+      "maxAge": 65,
+      "minAge": 21,
+      "name": "bartender",
+      "plantsKnown": 1,
+      "teachTags": []
+    }
+  ],
+  "originKeywords": {
+    "alabama": [
+      "alabama",
+      "southeast",
+      "temperate",
+      "woodlands"
+    ],
+    "alaska": [
+      "alaska",
+      "arctic",
+      "wilderness"
+    ],
+    "albuquerque": [
+      "new mexico",
+      "desert",
+      "city"
+    ],
+    "arctic": [
+      "arctic"
+    ],
+    "arizona": [
+      "arizona",
+      "southwest",
+      "desert"
+    ],
+    "atlanta": [
+      "georgia",
+      "southeast",
+      "city"
+    ],
+    "australia": [
+      "australia",
+      "desert",
+      "coast"
+    ],
+    "brazil": [
+      "brazil",
+      "tropics"
+    ],
+    "brooklyn": [
+      "new york",
+      "city"
+    ],
+    "california": [
+      "california",
+      "west",
+      "coast",
+      "mediterranean"
+    ],
+    "canada": [
+      "canada",
+      "temperate",
+      "woodlands"
+    ],
+    "carolina": [
+      "carolina",
+      "southeast",
+      "temperate",
+      "woodlands",
+      "coast"
+    ],
+    "chicago": [
+      "illinois",
+      "midwest",
+      "city"
+    ],
+    "china": [
+      "china",
+      "temperate"
+    ],
+    "city": [
+      "city"
+    ],
+    "coast": [
+      "coast"
+    ],
+    "colorado": [
+      "colorado",
+      "mountains",
+      "west"
+    ],
+    "columbus": [
+      "ohio",
+      "midwest",
+      "city"
+    ],
+    "dakota": [
+      "dakota",
+      "plains",
+      "temperate"
+    ],
+    "denver": [
+      "colorado",
+      "mountains",
+      "city"
+    ],
+    "desert": [
+      "desert"
+    ],
+    "egypt": [
+      "egypt",
+      "desert"
+    ],
+    "england": [
+      "england",
+      "temperate"
+    ],
+    "farm": [
+      "rural",
+      "plains"
+    ],
+    "florida": [
+      "florida",
+      "southeast",
+      "subtropics",
+      "coast"
+    ],
+    "france": [
+      "france",
+      "temperate"
+    ],
+    "georgia": [
+      "georgia",
+      "southeast",
+      "temperate",
+      "woodlands"
+    ],
+    "germany": [
+      "germany",
+      "temperate",
+      "woodlands"
+    ],
+    "hawaii": [
+      "hawaii",
+      "tropics",
+      "coast"
+    ],
+    "houston": [
+      "texas",
+      "city",
+      "coast"
+    ],
+    "idaho": [
+      "idaho",
+      "mountains",
+      "pacific_nw"
+    ],
+    "illinois": [
+      "illinois",
+      "midwest",
+      "plains"
+    ],
+    "india": [
+      "india",
+      "tropics",
+      "subtropics"
+    ],
+    "italy": [
+      "italy",
+      "mediterranean"
+    ],
+    "japan": [
+      "japan",
+      "temperate",
+      "coast"
+    ],
+    "kansas": [
+      "kansas",
+      "plains",
+      "midwest"
+    ],
+    "kentucky": [
+      "kentucky",
+      "southeast",
+      "temperate",
+      "woodlands"
+    ],
+    "kenya": [
+      "kenya",
+      "tropics",
+      "plains"
+    ],
+    "korea": [
+      "korea",
+      "temperate"
+    ],
+    "louisiana": [
+      "louisiana",
+      "southeast",
+      "subtropics",
+      "wetland"
+    ],
+    "maine": [
+      "maine",
+      "northeast",
+      "temperate",
+      "woodlands",
+      "coast"
+    ],
+    "mexico": [
+      "mexico",
+      "desert",
+      "mountains"
+    ],
+    "miami": [
+      "florida",
+      "southeast",
+      "city",
+      "coast"
+    ],
+    "minnesota": [
+      "minnesota",
+      "midwest",
+      "temperate",
+      "woodlands"
+    ],
+    "mississippi": [
+      "mississippi",
+      "southeast",
+      "temperate"
+    ],
+    "montana": [
+      "montana",
+      "mountains",
+      "west"
+    ],
+    "mountains": [
+      "mountains"
+    ],
+    "nashville": [
+      "tennessee",
+      "southeast",
+      "city"
+    ],
+    "nebraska": [
+      "nebraska",
+      "plains",
+      "midwest"
+    ],
+    "nevada": [
+      "nevada",
+      "desert",
+      "west"
+    ],
+    "new england": [
+      "northeast",
+      "temperate",
+      "woodlands"
+    ],
+    "new mexico": [
+      "new mexico",
+      "southwest",
+      "desert",
+      "mountains"
+    ],
+    "new orleans": [
+      "louisiana",
+      "southeast",
+      "city"
+    ],
+    "new york": [
+      "new york",
+      "northeast",
+      "city"
+    ],
+    "nigeria": [
+      "nigeria",
+      "tropics"
+    ],
+    "ohio": [
+      "ohio",
+      "midwest",
+      "temperate",
+      "woodlands"
+    ],
+    "oklahoma": [
+      "oklahoma",
+      "plains",
+      "south"
+    ],
+    "oregon": [
+      "oregon",
+      "pacific_nw",
+      "temperate",
+      "woodlands",
+      "coast"
+    ],
+    "pennsylvania": [
+      "pennsylvania",
+      "northeast",
+      "temperate",
+      "woodlands"
+    ],
+    "philippines": [
+      "philippines",
+      "tropics",
+      "coast"
+    ],
+    "phoenix": [
+      "arizona",
+      "desert",
+      "city"
+    ],
+    "plains": [
+      "plains"
+    ],
+    "portland": [
+      "oregon",
+      "pacific_nw",
+      "city"
+    ],
+    "rural": [
+      "rural"
+    ],
+    "seattle": [
+      "washington",
+      "pacific_nw",
+      "city",
+      "coast"
+    ],
+    "spain": [
+      "spain",
+      "mediterranean"
+    ],
+    "suburb": [
+      "suburb"
+    ],
+    "tennessee": [
+      "tennessee",
+      "southeast",
+      "temperate",
+      "woodlands",
+      "mountains"
+    ],
+    "texas": [
+      "texas",
+      "south",
+      "plains",
+      "desert"
+    ],
+    "tropics": [
+      "tropics"
+    ],
+    "tucson": [
+      "arizona",
+      "desert",
+      "city"
+    ],
+    "utah": [
+      "utah",
+      "desert",
+      "mountains",
+      "west"
+    ],
+    "vermont": [
+      "vermont",
+      "northeast",
+      "temperate",
+      "woodlands",
+      "mountains"
+    ],
+    "vietnam": [
+      "vietnam",
+      "tropics"
+    ],
+    "virginia": [
+      "virginia",
+      "southeast",
+      "temperate",
+      "woodlands"
+    ],
+    "washington": [
+      "washington",
+      "pacific_nw",
+      "temperate",
+      "woodlands",
+      "coast"
+    ],
+    "london": [
+      "england",
+      "temperate",
+      "urban",
+      "europe"
+    ],
+    "paris": [
+      "france",
+      "temperate",
+      "urban",
+      "europe"
+    ],
+    "berlin": [
+      "germany",
+      "temperate",
+      "urban",
+      "europe"
+    ],
+    "madrid": [
+      "spain",
+      "mediterranean",
+      "urban",
+      "europe"
+    ],
+    "rome": [
+      "italy",
+      "mediterranean",
+      "urban",
+      "europe"
+    ],
+    "moscow": [
+      "russia",
+      "continental",
+      "urban",
+      "europe"
+    ],
+    "kyiv": [
+      "ukraine",
+      "continental",
+      "urban",
+      "europe"
+    ],
+    "warsaw": [
+      "poland",
+      "continental",
+      "urban",
+      "europe"
+    ],
+    "amsterdam": [
+      "netherlands",
+      "temperate",
+      "urban",
+      "europe"
+    ],
+    "stockholm": [
+      "sweden",
+      "boreal",
+      "urban",
+      "europe"
+    ],
+    "tokyo": [
+      "japan",
+      "temperate",
+      "urban",
+      "asia"
+    ],
+    "osaka": [
+      "japan",
+      "temperate",
+      "urban",
+      "asia"
+    ],
+    "beijing": [
+      "china",
+      "continental",
+      "urban",
+      "asia"
+    ],
+    "shanghai": [
+      "china",
+      "temperate",
+      "urban",
+      "asia"
+    ],
+    "delhi": [
+      "india",
+      "tropical",
+      "urban",
+      "asia"
+    ],
+    "mumbai": [
+      "india",
+      "tropical",
+      "urban",
+      "asia"
+    ],
+    "bangkok": [
+      "thailand",
+      "tropical",
+      "urban",
+      "asia"
+    ],
+    "jakarta": [
+      "indonesia",
+      "tropical",
+      "urban",
+      "asia"
+    ],
+    "manila": [
+      "philippines",
+      "tropical",
+      "urban",
+      "asia"
+    ],
+    "seoul": [
+      "korea",
+      "temperate",
+      "urban",
+      "asia"
+    ],
+    "cairo": [
+      "egypt",
+      "desert",
+      "urban",
+      "africa"
+    ],
+    "lagos": [
+      "nigeria",
+      "tropical",
+      "urban",
+      "africa"
+    ],
+    "nairobi": [
+      "kenya",
+      "savanna",
+      "urban",
+      "africa"
+    ],
+    "johannesburg": [
+      "south africa",
+      "temperate",
+      "urban",
+      "africa"
+    ],
+    "tel aviv": [
+      "israel",
+      "mediterranean",
+      "urban",
+      "middle east"
+    ],
+    "jerusalem": [
+      "israel",
+      "mediterranean",
+      "urban",
+      "middle east"
+    ],
+    "gaza": [
+      "palestine",
+      "mediterranean",
+      "urban",
+      "middle east"
+    ],
+    "ramallah": [
+      "palestine",
+      "mediterranean",
+      "urban",
+      "middle east"
+    ],
+    "istanbul": [
+      "turkey",
+      "mediterranean",
+      "urban",
+      "middle east"
+    ],
+    "riyadh": [
+      "saudi arabia",
+      "desert",
+      "urban",
+      "middle east"
+    ],
+    "baghdad": [
+      "iraq",
+      "desert",
+      "urban",
+      "middle east"
+    ],
+    "tehran": [
+      "iran",
+      "desert",
+      "urban",
+      "middle east"
+    ],
+    "mexico city": [
+      "mexico",
+      "highlands",
+      "urban",
+      "north america"
+    ],
+    "sao paulo": [
+      "brazil",
+      "tropical",
+      "urban",
+      "south america"
+    ],
+    "são paulo": [
+      "brazil",
+      "tropical",
+      "urban",
+      "south america"
+    ],
+    "buenos aires": [
+      "argentina",
+      "temperate",
+      "urban",
+      "south america"
+    ],
+    "lima": [
+      "peru",
+      "desert",
+      "urban",
+      "south america"
+    ],
+    "bogota": [
+      "colombia",
+      "tropical",
+      "urban",
+      "south america"
+    ],
+    "bogotá": [
+      "colombia",
+      "tropical",
+      "urban",
+      "south america"
+    ],
+    "sydney": [
+      "australia",
+      "temperate",
+      "urban",
+      "oceania"
+    ],
+    "melbourne": [
+      "australia",
+      "temperate",
+      "urban",
+      "oceania"
+    ],
+    "israel": [
+      "israel",
+      "mediterranean",
+      "middle east"
+    ],
+    "palestine": [
+      "palestine",
+      "mediterranean",
+      "middle east"
+    ],
+    "ukraine": [
+      "ukraine",
+      "continental",
+      "europe"
+    ]
+  },
+  "questTemplates": [
+    "You're awake. Don't sit up fast — you were out a full day.",
+    "I woke up in a clearing with eleven strangers. I don't know any of them. One of them is you, I guess.",
+    "We have to decide: do we do this together, or do we all starve separately? I'm {occ}, not a leader. But someone has to say it."
+  ],
+  "wakeUpSpeeches": {
+    "warm": [
+      "Hey. Hey, you're awake. Don't sit up fast — you were out cold when we found you.",
+      "I'm {first}. I was a {occ}, back in {origin}. Whatever's going on, none of us understand it either.",
+      "There's food by the fire and water in the clay pots. Eat first, questions later. You're safe here — well. Safer than out there."
+    ],
+    "debt": [
+      "Up. Good. I dragged your useless ass out of a creek bed half a mile that way, so listen.",
+      "Name's {first}. Was a {occ} in {origin}. Now I'm in the rescue business, which is a terrible career change.",
+      "You owe me. When you can walk: bring me three handfuls of dandelion greens from outside. For the pot. Then we're square."
+    ],
+    "suspicious": [
+      "Don't move. ...Okay. You're awake, you're breathing, you're not bleeding on my floor. Good enough.",
+      "I'm {first}. I don't know you, I don't know where 'here' is, and I don't know why we all woke up in the same building.",
+      "Nobody touches my pack. Nobody goes through my things. We clear? ...There's stew by the fire. But we clear?"
+    ],
+    "scared": [
+      "Oh— oh god, you're awake. Okay. Okay, that's good, that's— hi.",
+      "I'm {first}, I was a {occ} in {origin}, I don't— I don't know what's happening. None of us do. We all just woke up here.",
+      "Please don't be weird. Please just be normal. There's water by the door if you need it. Just— be normal, okay?"
+    ],
+    "practical": [
+      "You're awake. Sit up slow. You've been out about a day.",
+      "{first}. {occ}, {origin}. Here's what matters: water's in the clay pots by the door, food's by the fire, don't drink from the creek without boiling it.",
+      "Eat, drink, rest. We'll figure out the rest when you can stand. One thing at a time."
+    ],
+    "curious": [
+      "You're awake! Finally. I've been waiting to ask — where are you from? I'm {first}, I was a {occ} in {origin}.",
+      "Did you see anything before you blacked out? Lights? Sounds? Nobody here remembers anything useful and it's driving me insane.",
+      "Sorry. Rude. Food's by the fire, water's by the door. But later — I want to hear everything you remember."
+    ],
+    "gruff": [
+      "Up. Good. Less dead weight.",
+      "{first}. Don't care what you were before. Here you're hands. We eat because people work.",
+      "Fire's there. Food's there when you've earned it. Sleep when it's dark. That's the whole orientation."
+    ],
+    "overwhelmed": [
+      "You're— okay, you're awake, that's one more, that's— hi. I'm {first}.",
+      "I was a {occ}. In {origin}. I think. That was... yesterday? Last week? I don't know anything anymore.",
+      "Someone put food by the fire. Someone put water by the door. I don't know who. Just take what you need. We're all just... taking what we need."
+    ]
+  },
+  "sampleOrigins": [
+    "Portland, Oregon",
+    "Miami, Florida",
+    "Chicago, Illinois",
+    "rural Vermont",
+    "Houston, Texas",
+    "New Orleans, Louisiana",
+    "Brooklyn, New York",
+    "Tucson, Arizona",
+    "Tokyo, Japan",
+    "Lagos, Nigeria",
+    "São Paulo, Brazil",
+    "Cairo, Egypt",
+    "Mumbai, India",
+    "Berlin, Germany",
+    "Seoul, South Korea",
+    "Mexico City, Mexico",
+    "Jakarta, Indonesia",
+    "Nairobi, Kenya",
+    "Buenos Aires, Argentina",
+    "Istanbul, Turkey",
+    "Bangkok, Thailand",
+    "Manila, Philippines",
+    "Lima, Peru",
+    "Warsaw, Poland",
+    "Accra, Ghana",
+    "Hanoi, Vietnam",
+    "Bogotá, Colombia",
+    "Kyiv, Ukraine",
+    "Addis Ababa, Ethiopia",
+    "Dhaka, Bangladesh",
+    "Caracas, Venezuela",
+    "rural Ireland",
+    "Oslo, Norway",
+    "Marrakech, Morocco",
+    "Auckland, New Zealand"
+  ],
+  "sharingStyles": [
+    "generous",
+    "fair",
+    "selfish",
+    "transactional",
+    "secretive"
+  ],
+  "talkTemplates": [
+    "I don't know you. But you're here, so... we figure it out.",
+    "Back home I was {occ}. Doesn't mean much now, does it? Means something. Just not much.",
+    "You ever notice how quiet it gets out here at night? Like the world's holding its breath.",
+    "I'm from {origin}. The plants here don't look like home. I'm learning. Slowly.",
+    "We should stick together. Twelve strangers is better than one stranger. Math.",
+    "I keep thinking about what I left behind. Then I get hungry and stop thinking.",
+    "The others look to me for {skill}. Fine. Someone has to know something.",
+    "Don't eat anything {first} hasn't looked at first. That's my rule. It's a good rule."
+  ],
+  "temperaments": [
+    "steady",
+    "bold",
+    "cautious",
+    "warm",
+    "prickly",
+    "restless",
+    "dry",
+    "gentle",
+    "intense",
+    "withdrawn"
+  ],
+  "heritageMap": [
+    [
+      "desert",
+      "the dryland clans"
+    ],
+    [
+      "coast",
+      "the coastal towns"
+    ],
+    [
+      "mountains",
+      "the highland villages"
+    ],
+    [
+      "city",
+      "the city wards"
+    ],
+    [
+      "plains",
+      "the plains communes"
+    ],
+    [
+      "woodlands",
+      "the timber settlements"
+    ],
+    [
+      "wetland",
+      "the bayou families"
+    ],
+    [
+      "tropics",
+      "the island peoples"
+    ],
+    [
+      "arctic",
+      "the northern reaches"
+    ],
+    [
+      "suburb",
+      "the cul-de-sac diaspora"
+    ],
+    [
+      "rural",
+      "the farm belts"
+    ]
+  ],
+  "grievances": [
+    "water rights, three generations back",
+    "a border drawn by people who never lived there",
+    "a harvest that was never shared",
+    "a fire nobody claims",
+    "a road that cut a village in two",
+    "a well that went dry the year after the treaty"
+  ],
+  "quirks": [
+    "counts things when nervous",
+    "hums while working",
+    "talks to plants",
+    "sharpens everything",
+    "never sits with back to a door",
+    "names their tools",
+    "collects interesting stones",
+    "sleeps with shoes on",
+    "whistles tunelessly",
+    "folds everything twice",
+    "taps three times before entering",
+    "laughs at bad jokes a second too late",
+    "repeats people's names back to them",
+    "smells food before eating",
+    "stacks twigs into neat little piles",
+    "mumbles the plan out loud",
+    "polishes the same spot on their knife",
+    "never walks in a straight line",
+    "keeps a pebble in their pocket to fidget with",
+    "arranges gear by size every night"
+  ],
+  "habits": [
+    "does push-ups at dawn",
+    "checks the treeline every hour",
+    "tends the fire without being asked",
+    "writes everything down",
+    "paces while thinking",
+    "wakes before anyone else",
+    "rinses their cup twice",
+    "sits apart to eat",
+    "oils their boots on rest days",
+    "memorizes the stars",
+    "saves the best bite for last",
+    "greets everyone by name each morning",
+    "cleans up other people's messes quietly",
+    "checks everyone's shoes for wear",
+    "sleeps in short shifts"
+  ],
+  "hopes": [
+    "to see the ocean again",
+    "to find their sister",
+    "to taste real coffee once more",
+    "to be useful",
+    "to plant something and watch it grow",
+    "to hear their own language spoken again",
+    "to sleep without dreaming",
+    "to build a real door with a latch",
+    "to teach someone something worth knowing",
+    "to find out what happened to the dog",
+    "to sit under a roof during rain",
+    "to taste bread again",
+    "to be forgiven for something",
+    "to make someone laugh on purpose",
+    "to die of old age"
+  ],
+  "fears": [
+    "being forgotten",
+    "the dark between the trees",
+    "being a burden",
+    "losing another one",
+    "the quiet ones watching from the treeline",
+    "never seeing home again",
+    "the fire going out",
+    "waking up alone",
+    "the ground swallowing them whole",
+    "being the reason someone dies",
+    "the water turning bad",
+    "running out of winter before the cold does",
+    "someone stealing their name",
+    "the smell of smoke that is not a fire",
+    "children going quiet",
+    "teeth loosening in their head",
+    "the river changing course",
+    "being buried somewhere unnamed",
+    "their hands shaking at the wrong moment",
+    "the laughter that sounds almost human"
+  ],
+  "goals": [
+    {
+      "id": "lead",
+      "want": "to be in charge",
+      "lines": [
+        "Someone has to make decisions here. I'm just saying — it might as well be someone who knows how.",
+        "You give a lot of orders for someone nobody elected. I'm keeping track. So are others.",
+        "I've led people before. Real people, real stakes. Watch me work and tell me I'm wrong."
+      ]
+    },
+    {
+      "id": "family",
+      "want": "to find their family",
+      "lines": [
+        "My sister was in {origin} when the sky changed. I don't know if — I have to believe she's out there.",
+        "Every stranger on the road could know something. I ask. I always ask. You would too.",
+        "I'm not staying here forever. The moment I can travel, I'm going looking."
+      ]
+    },
+    {
+      "id": "prove",
+      "want": "to prove they're useful",
+      "lines": [
+        "Give me something to do. Anything. I can't stand sitting here wondering if I'm dead weight.",
+        "Back home I was {occ}. Let me show you what that means out here.",
+        "Did you see what I brought back? Tell the others. Please — tell them."
+      ]
+    },
+    {
+      "id": "alone",
+      "want": "to be left alone",
+      "lines": [
+        "I'm fine on my own. I was fine before all this. Don't take it personally.",
+        "Groups make decisions slow and loud. I'll help. From over there.",
+        "You need something? Ask. Otherwise I've got my corner and my thoughts."
+      ]
+    },
+    {
+      "id": "feed",
+      "want": "to keep everyone fed",
+      "lines": [
+        "Nobody goes hungry on my watch. That's the whole plan. Everything else is details.",
+        "I counted the stores twice today. We need more. We always need more.",
+        "You eat first. No — don't argue. I already ate. (I hadn't.)"
+      ]
+    },
+    {
+      "id": "understand",
+      "want": "to understand what happened",
+      "lines": [
+        "The sky split and nobody wants to talk about WHY. I do. I need to know.",
+        "I've been writing down everything strange. Patterns. Dates. Someone should.",
+        "Whatever did this — it had a reason. Reasons can be found. That's what I believe."
+      ]
+    },
+    {
+      "id": "protect",
+      "want": "to protect the group",
+      "lines": [
+        "Sleep. I'll take the watch. I don't mind the dark as much as I mind what could come out of it.",
+        "Stick close to the fire after sundown. That's not a suggestion.",
+        "Nobody touches this group. Not while I'm standing."
+      ]
+    },
+    {
+      "id": "escape",
+      "want": "to leave and find somewhere better",
+      "lines": [
+        "This place is a camp, not a home. There's somewhere better. There has to be.",
+        "I've been mapping the roads out. Quietly. When I go, I'm going prepared.",
+        "You feel it too, right? That we're just... waiting here? I can't wait."
+      ]
+    },
+    {
+      "id": "remember",
+      "want": "to preserve who they were",
+      "lines": [
+        "I was {occ} in {origin}. Say it back to me sometime. I need to hear it stays true.",
+        "I keep my old routines. Coffee at dawn — well, hot water at dawn. It's the shape of it that matters.",
+        "If we forget who we were, then what survived? Just bodies. I want more than that."
+      ]
+    },
+    {
+      "id": "belong",
+      "want": "to belong somewhere",
+      "lines": [
+        "I've never really had people. Maybe this is — maybe this is my chance to have people.",
+        "Tell me about yourself. Anything. I want to know who I'm surviving with.",
+        "If there's a job nobody wants, I'll take it. That's how you earn a place, right?"
+      ]
+    },
+    {
+      "id": "survive",
+      "want": "to survive, whatever it takes",
+      "lines": [
+        "I'm not dying for anyone's principles. I do what keeps me breathing. Remember that.",
+        "Share when it's smart. Keep when it's smarter. That's not selfish, that's arithmetic.",
+        "You look like someone who survives. Stick with me and we both keep surviving."
+      ]
+    },
+    {
+      "id": "heal",
+      "want": "to fix what's broken",
+      "lines": [
+        "Everything's broken — bodies, tools, people. I fix things. It's what I'm for.",
+        "Show me what's hurt. Doesn't matter if it's a leg or a water pump. I'll look.",
+        "Broken isn't the same as ruined. Remember that."
+      ]
+    }
+  ],
+  "temperamentTalk": {
+    "bold": [
+      "I'll say what everyone's thinking: we need a plan, and we need it today.",
+      "Fortune favors the ones who move first. I move first."
+    ],
+    "cautious": [
+      "Let's think about this before anyone does anything... permanent.",
+      "I watch for a while before I trust. It's nothing personal. It's survival."
+    ],
+    "warm": [
+      "Hey. You look like you could use someone to just... listen. I'm here.",
+      "We're going to be okay. I don't know that, but I believe it, and belief counts."
+    ],
+    "prickly": [
+      "What do you want? I'm busy. I'm always busy. It's a lifestyle.",
+      "I'm not rude, I'm efficient. There's a difference. Most people miss it."
+    ],
+    "steady": [
+      "One thing at a time. That's how you get through impossible things.",
+      "Panic is a luxury. I deal in what's next."
+    ],
+    "restless": [
+      "I can't sit still. Sitting still is how you get caught by whatever's coming.",
+      "There's got to be something I can do. Point me at it."
+    ],
+    "dry": [
+      "Well. This is all extremely normal and fine.",
+      "I've seen worse. I haven't, but saying it helps."
+    ],
+    "gentle": [
+      "Are you alright? Really? You don't have to perform okay for me.",
+      "Soft doesn't mean weak. The willow bends. The oak snaps. Remember that."
+    ],
+    "intense": [
+      "Look at me. This matters. Everything matters now, do you understand?",
+      "I don't do small talk. The world ended. Let's talk about THAT."
+    ],
+    "withdrawn": [
+      "...Sorry. I was somewhere else. What did you need?",
+      "I think better alone. Doesn't mean I'm not listening."
+    ]
+  },
+  "moodTalk": {
+    "grieving": [
+      "Don't. Not today. I can't do today.",
+      "They'd know what to say right now. I don't. I just don't."
+    ],
+    "scared": [
+      "Did you hear that? Don't tell me you didn't hear that.",
+      "I keep telling myself it's nothing. It's not working."
+    ],
+    "cheerful": [
+      "Okay, but — good news: the soup's actually edible today. Progress!",
+      "You know what? We're alive. That's genuinely funny, when you think about it."
+    ],
+    "lonely": [
+      "It's strange. Twelve people, and I've never felt so... separate.",
+      "Sit with me a while? You don't have to talk."
+    ],
+    "weary": [
+      "I'm running on fumes and spite at this point. Mostly spite.",
+      "Remind me why we do all this walking. Oh right. Food. Carry on."
+    ]
+  }
+}

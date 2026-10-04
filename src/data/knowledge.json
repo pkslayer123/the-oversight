@@ -9,8 +9,25 @@
       "2": "At altitude, boil 3 minutes. Pre-filter through cloth to remove sediment — saves fuel.",
       "3": "A rolling boil is overkill for clear water; a bare simmer for 5 minutes does it with less wood."
     },
-    "mechanical": { "1": { "unlock": "boil_water" }, "2": { "fuel_save": 0.2 }, "3": { "fuel_save": 0.4 } },
-    "backgrounds": ["chef", "cook", "camper", "scout", "nurse", "hiker"],
+    "mechanical": {
+      "1": {
+        "unlock": "boil_water"
+      },
+      "2": {
+        "fuel_save": 0.2
+      },
+      "3": {
+        "fuel_save": 0.4
+      }
+    },
+    "backgrounds": [
+      "chef",
+      "cook",
+      "camper",
+      "scout",
+      "nurse",
+      "hiker"
+    ],
     "abilitySynergies": []
   },
   {
@@ -23,8 +40,17 @@
       "2": "Paint half the bottle black — heats faster, kills more. Shake first to oxygenate.",
       "3": "Works even on cloudy days if you double the time. The System finds this clever."
     },
-    "mechanical": { "1": { "unlock": "solar_purify" } },
-    "backgrounds": ["scientist", "engineer", "peace corps", "aid worker"],
+    "mechanical": {
+      "1": {
+        "unlock": "solar_purify"
+      }
+    },
+    "backgrounds": [
+      "scientist",
+      "engineer",
+      "peace corps",
+      "aid worker"
+    ],
     "abilitySynergies": []
   },
   {
@@ -37,9 +63,34 @@
       "2": "Birch bark burns wet. Pine resin is nature's firestarter. Look for fatwood in old stumps.",
       "3": "Build a platform first, then a teepee, then a lean-to over it. Fire reflects off a rock wall — doubles the heat."
     },
-    "mechanical": { "1": { "unlock": "fire_wet" }, "2": { "fire_success": 0.25 }, "3": { "fire_success": 0.5, "fire_heat": 2 } },
-    "backgrounds": ["camper", "scout", "hunter", "ranger", "soldier"],
-    "abilitySynergies": [{ "ability": "pyrokinesis", "minLevel": 2, "technique": "Steam Veil", "effect": "Your fire burns even in downpour. Rain hisses off you." }]
+    "mechanical": {
+      "1": {
+        "unlock": "fire_wet"
+      },
+      "2": {
+        "fire_success": 0.25
+      },
+      "3": {
+        "fire_success": 0.5,
+        "fire_heat": 2
+      }
+    },
+    "backgrounds": [
+      "camper",
+      "scout",
+      "hunter",
+      "ranger",
+      "soldier",
+      "firefighter"
+    ],
+    "abilitySynergies": [
+      {
+        "ability": "pyrokinesis",
+        "minLevel": 2,
+        "technique": "Steam Veil",
+        "effect": "Your fire burns even in downpour. Rain hisses off you."
+      }
+    ]
   },
   {
     "id": "weather_read",
@@ -51,9 +102,30 @@
       "2": "Falling pressure = weather coming. Your joints ache? That's a barometer. So are the birds — silent birds mean storm.",
       "3": "Mare's tails (high cirrus) 24h before a front. A halo around the moon means rain in 24-48h. You can plan around this."
     },
-    "mechanical": { "1": { "unlock": "weather_sense" }, "3": { "storm_warning": 1 } },
-    "backgrounds": ["sailor", "fisherman", "farmer", "pilot", "hiker"],
-    "abilitySynergies": [{ "ability": "stormcall", "minLevel": 1, "technique": "Front Runner", "effect": "You feel storms 12 hours out. Your storm abilities charge faster before rain." }]
+    "mechanical": {
+      "1": {
+        "unlock": "weather_sense"
+      },
+      "3": {
+        "storm_warning": 1
+      }
+    },
+    "backgrounds": [
+      "sailor",
+      "fisherman",
+      "farmer",
+      "pilot",
+      "hiker",
+      "fishing guide"
+    ],
+    "abilitySynergies": [
+      {
+        "ability": "stormcall",
+        "minLevel": 1,
+        "technique": "Front Runner",
+        "effect": "You feel storms 12 hours out. Your storm abilities charge faster before rain."
+      }
+    ]
   },
   {
     "id": "shelter_debris",
@@ -65,8 +137,27 @@
       "2": "The debris hut: ridgepole, ribs, 2 feet of leaves. Survived -40° in testing. Really.",
       "3": "Face the opening away from wind, toward morning sun. A fire reflector doubles warmth."
     },
-    "mechanical": { "1": { "unlock": "build_shelter" }, "2": { "shelter_warmth": 2 }, "3": { "shelter_warmth": 3 } },
-    "backgrounds": ["camper", "scout", "soldier", "homeless"],
+    "mechanical": {
+      "1": {
+        "unlock": "build_shelter"
+      },
+      "2": {
+        "shelter_warmth": 2
+      },
+      "3": {
+        "shelter_warmth": 3
+      }
+    },
+    "backgrounds": [
+      "camper",
+      "scout",
+      "soldier",
+      "homeless",
+      "roofer",
+      "glazier",
+      "hvac",
+      "trail crew"
+    ],
     "abilitySynergies": []
   },
   {
@@ -79,9 +170,34 @@
       "2": "Gait tells story: walking (alternating), running (grouped), injured (drag marks). Count toes, measure stride.",
       "3": "You can tell species, size, speed, and mood from tracks. A nervous animal drags its feet. A confident one doesn't."
     },
-    "mechanical": { "1": { "unlock": "track" }, "2": { "hunt_find": 0.15 }, "3": { "hunt_find": 0.3, "hunt_success": 0.1 } },
-    "backgrounds": ["hunter", "tracker", "ranger", "soldier"],
-    "abilitySynergies": [{ "ability": "tracker", "minLevel": 2, "technique": "Ghost Trail", "effect": "You read tracks so well it's almost seeing the past. Hunt finds +25%." }]
+    "mechanical": {
+      "1": {
+        "unlock": "track"
+      },
+      "2": {
+        "hunt_find": 0.15
+      },
+      "3": {
+        "hunt_find": 0.3,
+        "hunt_success": 0.1
+      }
+    },
+    "backgrounds": [
+      "hunter",
+      "tracker",
+      "ranger",
+      "soldier",
+      "hunting guide",
+      "trail crew"
+    ],
+    "abilitySynergies": [
+      {
+        "ability": "tracker",
+        "minLevel": 2,
+        "technique": "Ghost Trail",
+        "effect": "You read tracks so well it's almost seeing the past. Hunt finds +25%."
+      }
+    ]
   },
   {
     "id": "animal_behavior",
@@ -93,8 +209,24 @@
       "2": "Predators test: they approach, watch, decide. Prey freezes or bolts. Learn which you're looking at.",
       "3": "You can read intent — ears, posture, gaze direction. You know before it moves whether it will charge or run."
     },
-    "mechanical": { "2": { "animal_calm": 1 }, "3": { "ambush_avoid": 0.3 } },
-    "backgrounds": ["veterinarian", "farmer", "hunter", "zoologist"],
+    "mechanical": {
+      "2": {
+        "animal_calm": 1
+      },
+      "3": {
+        "ambush_avoid": 0.3
+      }
+    },
+    "backgrounds": [
+      "veterinarian",
+      "farmer",
+      "hunter",
+      "zoologist",
+      "exterminator",
+      "rancher",
+      "hunting guide",
+      "fishing guide"
+    ],
     "abilitySynergies": []
   },
   {
@@ -107,8 +239,20 @@
       "2": "The sun is a clock: east at dawn, south at noon (northern hemisphere), west at dusk. Shadows tell time.",
       "3": "You can navigate by stars alone, night after night. The System is impressed you still look up."
     },
-    "mechanical": { "1": { "unlock": "navigate_night" }, "3": { "travel_lost": -0.5 } },
-    "backgrounds": ["sailor", "pilot", "astronomer", "soldier"],
+    "mechanical": {
+      "1": {
+        "unlock": "navigate_night"
+      },
+      "3": {
+        "travel_lost": -0.5
+      }
+    },
+    "backgrounds": [
+      "sailor",
+      "pilot",
+      "astronomer",
+      "soldier"
+    ],
     "abilitySynergies": []
   },
   {
@@ -121,11 +265,42 @@
       "2": "Honey is antibacterial. Sugar packs wounds. Yarrow stops bleeding. The old ways work.",
       "3": "You can triage: what needs stitches, what needs pressure, what needs to be left alone. You save lives with scraps."
     },
-    "mechanical": { "1": { "unlock": "treat_wound" }, "2": { "heal_bonus": 5 }, "3": { "heal_bonus": 12, "unlock": "field_surgery" } },
-    "backgrounds": ["nurse", "doctor", "paramedic", "soldier", "veterinarian"],
+    "mechanical": {
+      "1": {
+        "unlock": "treat_wound"
+      },
+      "2": {
+        "heal_bonus": 5
+      },
+      "3": {
+        "heal_bonus": 12,
+        "unlock": "field_surgery"
+      }
+    },
+    "backgrounds": [
+      "nurse",
+      "doctor",
+      "paramedic",
+      "soldier",
+      "veterinarian",
+      "dentist",
+      "pharmacist",
+      "mortician",
+      "army medic"
+    ],
     "abilitySynergies": [
-      { "ability": "healing", "minLevel": 1, "technique": "Precise Mend", "effect": "Your healing knows where to go. +50% effectiveness." },
-      { "ability": "leech", "minLevel": 2, "technique": "Clean Transfer", "effect": "You take wounds cleanly. No infection risk when you absorb damage." }
+      {
+        "ability": "healing",
+        "minLevel": 1,
+        "technique": "Precise Mend",
+        "effect": "Your healing knows where to go. +50% effectiveness."
+      },
+      {
+        "ability": "leech",
+        "minLevel": 2,
+        "technique": "Clean Transfer",
+        "effect": "You take wounds cleanly. No infection risk when you absorb damage."
+      }
     ]
   },
   {
@@ -138,10 +313,32 @@
       "2": "Pressure points: brachial, femoral, carotid. You can stop bleeding or drop someone with a thumb.",
       "3": "You see bodies as systems. You know exactly how much damage something does and where it lands."
     },
-    "mechanical": { "2": { "combat_crit": 0.1 }, "3": { "combat_crit": 0.2, "heal_bonus": 8 } },
-    "backgrounds": ["doctor", "nurse", "paramedic", "butcher", "martial artist"],
+    "mechanical": {
+      "2": {
+        "combat_crit": 0.1
+      },
+      "3": {
+        "combat_crit": 0.2,
+        "heal_bonus": 8
+      }
+    },
+    "backgrounds": [
+      "doctor",
+      "nurse",
+      "paramedic",
+      "butcher",
+      "martial artist",
+      "physical therapist",
+      "mortician",
+      "physical therapy"
+    ],
     "abilitySynergies": [
-      { "ability": "healing", "minLevel": 2, "technique": "Surgical Grace", "effect": "You heal like a surgeon with infinite tools. Critical heals." }
+      {
+        "ability": "healing",
+        "minLevel": 2,
+        "technique": "Surgical Grace",
+        "effect": "You heal like a surgeon with infinite tools. Critical heals."
+      }
     ]
   },
   {
@@ -154,8 +351,23 @@
       "2": "You know dosages, preparations, contraindications. This is real medicine, just old.",
       "3": "You can treat infections, pain, inflammation, and digestive issues with what's growing nearby."
     },
-    "mechanical": { "1": { "unlock": "herbal_remedy" }, "3": { "disease_resist": 0.3 } },
-    "backgrounds": ["herbalist", "nurse", "botanist", "midwife"],
+    "mechanical": {
+      "1": {
+        "unlock": "herbal_remedy"
+      },
+      "3": {
+        "disease_resist": 0.3
+      }
+    },
+    "backgrounds": [
+      "herbalist",
+      "nurse",
+      "botanist",
+      "midwife",
+      "pharmacist",
+      "forager",
+      "gardener"
+    ],
     "abilitySynergies": []
   },
   {
@@ -168,8 +380,23 @@
       "2": "Set the loop at head height for the target species. Anchor it solid. Camouflage the wire.",
       "3": "You read trails like a book and set snares like punctuation. Your traps rarely sit empty."
     },
-    "mechanical": { "1": { "unlock": "make_snare" }, "2": { "trap_success": 0.2 }, "3": { "trap_success": 0.4 } },
-    "backgrounds": ["trapper", "hunter", "soldier", "poacher"],
+    "mechanical": {
+      "1": {
+        "unlock": "make_snare"
+      },
+      "2": {
+        "trap_success": 0.2
+      },
+      "3": {
+        "trap_success": 0.4
+      }
+    },
+    "backgrounds": [
+      "trapper",
+      "hunter",
+      "soldier",
+      "poacher"
+    ],
     "abilitySynergies": []
   },
   {
@@ -182,8 +409,28 @@
       "2": "Cold smoking (under 90°F) preserves without cooking. Jerky done right lasts months.",
       "3": "You can preserve anything: ferment vegetables, salt meat, dry fruit, smoke fish. Nothing rots on your watch."
     },
-    "mechanical": { "1": { "unlock": "preserve" }, "2": { "spoil_slow": 0.5 }, "3": { "spoil_slow": 0.75 } },
-    "backgrounds": ["chef", "cook", "farmer", "homesteader"],
+    "mechanical": {
+      "1": {
+        "unlock": "preserve"
+      },
+      "2": {
+        "spoil_slow": 0.5
+      },
+      "3": {
+        "spoil_slow": 0.75
+      }
+    },
+    "backgrounds": [
+      "chef",
+      "cook",
+      "farmer",
+      "homesteader",
+      "baker",
+      "vintner",
+      "mushroom grower",
+      "butcher",
+      "gardener"
+    ],
     "abilitySynergies": []
   },
   {
@@ -196,8 +443,19 @@
       "2": "Pressure flaking shapes edges precisely. You can make knives, scrapers, and points.",
       "3": "Your stone tools rival steel for sharpness. You knap like your ancestors did — because you are."
     },
-    "mechanical": { "1": { "unlock": "knap_tool" }, "3": { "craft_quality": 2 } },
-    "backgrounds": ["archaeologist", "blacksmith", "survivalist"],
+    "mechanical": {
+      "1": {
+        "unlock": "knap_tool"
+      },
+      "3": {
+        "craft_quality": 2
+      }
+    },
+    "backgrounds": [
+      "archaeologist",
+      "blacksmith",
+      "survivalist"
+    ],
     "abilitySynergies": []
   },
   {
@@ -210,8 +468,18 @@
       "2": "Reverse-wrap technique makes rope strong enough to hold weight. Braid for more strength.",
       "3": "You can make rope, nets, and bindings from almost any fibrous plant. The village never runs out of string."
     },
-    "mechanical": { "1": { "unlock": "make_cordage" } },
-    "backgrounds": ["sailor", "weaver", "survivalist", "farmer"],
+    "mechanical": {
+      "1": {
+        "unlock": "make_cordage"
+      }
+    },
+    "backgrounds": [
+      "sailor",
+      "weaver",
+      "survivalist",
+      "farmer",
+      "trail crew"
+    ],
     "abilitySynergies": []
   },
   {
@@ -224,9 +492,37 @@
       "2": "You can tell when someone's lying, scared, or hiding something. It's in the shoulders.",
       "3": "You read rooms like books. You know who's allied, who's lying, who's about to break — before they do."
     },
-    "mechanical": { "1": { "trust_read": 1 }, "2": { "lie_detect": 0.5 }, "3": { "lie_detect": 0.9, "trust_gain": 0.2 } },
-    "backgrounds": ["therapist", "detective", "salesperson", "teacher", "bartender"],
-    "abilitySynergies": [{ "ability": "open_book", "minLevel": 1, "technique": "Deep Read", "effect": "You don't just read trust — you read intent. Know what they'll do next." }]
+    "mechanical": {
+      "1": {
+        "trust_read": 1
+      },
+      "2": {
+        "lie_detect": 0.5
+      },
+      "3": {
+        "lie_detect": 0.9,
+        "trust_gain": 0.2
+      }
+    },
+    "backgrounds": [
+      "therapist",
+      "detective",
+      "salesperson",
+      "teacher",
+      "bartender",
+      "journalist",
+      "social worker",
+      "barber",
+      "interpreter"
+    ],
+    "abilitySynergies": [
+      {
+        "ability": "open_book",
+        "minLevel": 1,
+        "technique": "Deep Read",
+        "effect": "You don't just read trust — you read intent. Know what they'll do next."
+      }
+    ]
   },
   {
     "id": "calm_panic",
@@ -238,8 +534,23 @@
       "2": "You can talk someone down from a full panic attack. Voice low, steady, certain. You are the calm.",
       "3": "Groups panic differently than individuals. You can steady a whole room. Leaders are made here."
     },
-    "mechanical": { "1": { "unlock": "calm" }, "3": { "morale_boost": 2 } },
-    "backgrounds": ["therapist", "paramedic", "nurse", "teacher", "soldier"],
+    "mechanical": {
+      "1": {
+        "unlock": "calm"
+      },
+      "3": {
+        "morale_boost": 2
+      }
+    },
+    "backgrounds": [
+      "therapist",
+      "paramedic",
+      "nurse",
+      "teacher",
+      "soldier",
+      "dispatcher",
+      "army medic"
+    ],
     "abilitySynergies": []
   },
   {
@@ -252,9 +563,31 @@
       "2": "Find the interest behind the position. They're not fighting about the thing — they're fighting about respect.",
       "3": "You can resolve conflicts that seemed impossible. The village trusts you with its worst moments."
     },
-    "mechanical": { "2": { "conflict_resolve": 0.3 }, "3": { "conflict_resolve": 0.6 } },
-    "backgrounds": ["therapist", "lawyer", "diplomat", "teacher", "manager"],
-    "abilitySynergies": [{ "ability": "diplomat", "minLevel": 2, "technique": "Peaceweaver", "effect": "Your mediation is almost supernatural. Conflicts dissolve." }]
+    "mechanical": {
+      "2": {
+        "conflict_resolve": 0.3
+      },
+      "3": {
+        "conflict_resolve": 0.6
+      }
+    },
+    "backgrounds": [
+      "therapist",
+      "lawyer",
+      "diplomat",
+      "teacher",
+      "manager",
+      "social worker",
+      "interpreter"
+    ],
+    "abilitySynergies": [
+      {
+        "ability": "diplomat",
+        "minLevel": 2,
+        "technique": "Peaceweaver",
+        "effect": "Your mediation is almost supernatural. Conflicts dissolve."
+      }
+    ]
   },
   {
     "id": "tactics_small",
@@ -266,8 +599,24 @@
       "2": "Bounding overwatch: one moves, one covers. Ambushes need kill zones. Retreats need rally points.",
       "3": "You think in three dimensions and four moves ahead. Your party fights like a unit, not a mob."
     },
-    "mechanical": { "1": { "party_coord": 1 }, "2": { "party_damage": 0.15 }, "3": { "party_damage": 0.3, "ambush_avoid": 0.3 } },
-    "backgrounds": ["soldier", "marine", "police", "martial artist"],
+    "mechanical": {
+      "1": {
+        "party_coord": 1
+      },
+      "2": {
+        "party_damage": 0.15
+      },
+      "3": {
+        "party_damage": 0.3,
+        "ambush_avoid": 0.3
+      }
+    },
+    "backgrounds": [
+      "soldier",
+      "marine",
+      "police",
+      "martial artist"
+    ],
     "abilitySynergies": []
   },
   {
@@ -280,8 +629,21 @@
       "2": "You see weapons in the environment: choke points, heavy objects, things that burn.",
       "3": "You turn the battlefield into an arsenal. The System finds this deeply entertaining."
     },
-    "mechanical": { "2": { "combat_damage": 0.15 }, "3": { "combat_damage": 0.3 } },
-    "backgrounds": ["soldier", "bouncer", "martial artist", "prison guard"],
+    "mechanical": {
+      "2": {
+        "combat_damage": 0.15
+      },
+      "3": {
+        "combat_damage": 0.3
+      }
+    },
+    "backgrounds": [
+      "soldier",
+      "bouncer",
+      "martial artist",
+      "prison guard",
+      "police"
+    ],
     "abilitySynergies": []
   },
   {
@@ -294,8 +656,23 @@
       "2": "You can function through terror. Your hands shake but they work. This is a trained skill.",
       "3": "You transmute fear into focus. The more scared you should be, the clearer you think."
     },
-    "mechanical": { "2": { "fear_resist": 0.5 }, "3": { "fear_resist": 0.9, "combat_focus": 1 } },
-    "backgrounds": ["soldier", "firefighter", "paramedic", "pilot", "therapist"],
+    "mechanical": {
+      "2": {
+        "fear_resist": 0.5
+      },
+      "3": {
+        "fear_resist": 0.9,
+        "combat_focus": 1
+      }
+    },
+    "backgrounds": [
+      "soldier",
+      "firefighter",
+      "paramedic",
+      "pilot",
+      "therapist",
+      "army medic"
+    ],
     "abilitySynergies": []
   },
   {
@@ -308,8 +685,24 @@
       "2": "Rituals matter: shared meals, stories, songs. You're not just feeding bodies.",
       "3": "You can hold a group together through the unsurvivable. They follow you because you make it bearable."
     },
-    "mechanical": { "2": { "village_morale": 1 }, "3": { "village_morale": 2, "desertion_resist": 1 } },
-    "backgrounds": ["teacher", "coach", "manager", "therapist", "clergy"],
+    "mechanical": {
+      "2": {
+        "village_morale": 1
+      },
+      "3": {
+        "village_morale": 2,
+        "desertion_resist": 1
+      }
+    },
+    "backgrounds": [
+      "teacher",
+      "coach",
+      "manager",
+      "therapist",
+      "clergy",
+      "musician",
+      "bartender"
+    ],
     "abilitySynergies": []
   },
   {
@@ -322,8 +715,19 @@
       "2": "You understand what it wants: narrative, growth, surprise. You can perform for it deliberately.",
       "3": "You've glimpsed the shape of the watchers. They're not cruel. They're just... very, very bored. And you're the show."
     },
-    "mechanical": { "2": { "system_favor": 0.2 }, "3": { "system_favor": 0.5 } },
-    "backgrounds": ["clergy", "philosopher", "theologian"],
+    "mechanical": {
+      "2": {
+        "system_favor": 0.2
+      },
+      "3": {
+        "system_favor": 0.5
+      }
+    },
+    "backgrounds": [
+      "clergy",
+      "philosopher",
+      "theologian"
+    ],
     "abilitySynergies": []
   },
   {
@@ -336,8 +740,19 @@
       "2": "Shared rituals bind groups tighter than shared goals. You create meaning on purpose.",
       "3": "Your rituals give people something the System can't televise: genuine sacredness."
     },
-    "mechanical": { "2": { "grief_recover": 0.5 }, "3": { "village_morale": 1 } },
-    "backgrounds": ["clergy", "therapist", "artist"],
+    "mechanical": {
+      "2": {
+        "grief_recover": 0.5
+      },
+      "3": {
+        "village_morale": 1
+      }
+    },
+    "backgrounds": [
+      "clergy",
+      "therapist",
+      "artist"
+    ],
     "abilitySynergies": []
   },
   {
@@ -350,8 +765,21 @@
       "2": "You can tell how many, how fast, how loaded. You read a group's story from the ground.",
       "3": "You can track across rock and stream. Almost nothing moves without you knowing."
     },
-    "mechanical": { "2": { "scout_find": 0.2 }, "3": { "scout_find": 0.4 } },
-    "backgrounds": ["tracker", "soldier", "detective", "ranger"],
+    "mechanical": {
+      "2": {
+        "scout_find": 0.2
+      },
+      "3": {
+        "scout_find": 0.4
+      }
+    },
+    "backgrounds": [
+      "tracker",
+      "soldier",
+      "detective",
+      "ranger",
+      "police"
+    ],
     "abilitySynergies": []
   },
   {
@@ -364,7 +792,11 @@
       "2": "You understand the integration: how it reads you, what it can't see, where the blind spots are.",
       "3": "You know how to be uninteresting on purpose. Invisibility through boredom. The ultimate defense."
     },
-    "mechanical": { "3": { "system_hide": 1 } },
+    "mechanical": {
+      "3": {
+        "system_hide": 1
+      }
+    },
     "backgrounds": [],
     "abilitySynergies": []
   },
@@ -378,8 +810,221 @@
       "2": "You can spot cache sites by architecture and habit. Every ruin has secrets if you know where to look.",
       "3": "You find things others walk past. The old world left supplies for those who know how to ask."
     },
-    "mechanical": { "2": { "scavenge_find": 0.3 }, "3": { "scavenge_find": 0.6 } },
+    "mechanical": {
+      "2": {
+        "scavenge_find": 0.3
+      },
+      "3": {
+        "scavenge_find": 0.6
+      }
+    },
     "backgrounds": [],
+    "abilitySynergies": []
+  },
+  {
+    "id": "hive_craft",
+    "name": "Beekeeping",
+    "domain": "nature",
+    "rarity": "uncommon",
+    "levels": {
+      "1": "Smoke calms bees. Work slow, work covered, never swat.",
+      "2": "Read the colony: orientation flights mean a healthy queen; silence at noon means trouble.",
+      "3": "Harvest honey without destroying the hive — take frames, leave winter stores."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "beekeeper"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "lock_mechanisms",
+    "name": "Locks & Mechanisms",
+    "domain": "crafting",
+    "rarity": "uncommon",
+    "levels": {
+      "1": "A pin tumbler is just springs and patience. Understand the mechanism before you touch it.",
+      "2": "Improvise picks from wire and tin. Tension first, then teeth, one pin at a time.",
+      "3": "Feel the mechanism through your hands. Rushed hands break picks; patient hands open doors."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "locksmith"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "water_systems",
+    "name": "Pipes & Waterworks",
+    "domain": "crafting",
+    "rarity": "uncommon",
+    "levels": {
+      "1": "Water follows gravity and the path of least resistance. Find the line, find the water.",
+      "2": "Siphons, seals, and fall rates — move water without power using grade alone.",
+      "3": "Build a working gravity-fed system from scrap pipe, hose, and salvaged fittings."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "plumber"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "electrical",
+    "name": "Wiring & Circuits",
+    "domain": "crafting",
+    "rarity": "rare",
+    "levels": {
+      "1": "Volts, amps, and why you respect both. Safe splices, real grounds, no shortcuts.",
+      "2": "12V systems: batteries, charge controllers, and what you can actually run off a car battery.",
+      "3": "Generators: small-engine power, load balancing, and keeping the lights on without burning the place down."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "electrician",
+      "engineer",
+      "appliance repair"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "engine_repair",
+    "name": "Engines",
+    "domain": "crafting",
+    "rarity": "uncommon",
+    "levels": {
+      "1": "Air, fuel, spark. Every dead engine is missing one of the three — diagnose in that order.",
+      "2": "Diesel: compression ignition, glow plugs, and why bad fuel kills injectors.",
+      "3": "Improvised fuel and field repairs — keep a machine alive with what the ruins provide."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "mechanic",
+      "truck driver"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "signal_tech",
+    "name": "Radios & Signals",
+    "domain": "crafting",
+    "rarity": "rare",
+    "levels": {
+      "1": "Continuity, batteries, and solder. Most dead electronics are just broken connections.",
+      "2": "Radios: frequencies, antennas, and why height beats power every time.",
+      "3": "Improvise antennas and repeaters from scrap — throw a signal over the next ridge."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "programmer",
+      "engineer",
+      "electrician",
+      "pilot"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "sewing",
+    "name": "Sewing & Textiles",
+    "domain": "crafting",
+    "rarity": "common",
+    "levels": {
+      "1": "Mend tears so they hold: backstitch, small stitches, match the grain.",
+      "2": "Patch and reinforce — layered cloth, waxed thread, stress points doubled.",
+      "3": "Make clothing from scrap: measure twice, cut once, and blankets become coats."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "tailor"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "woodcraft",
+    "name": "Fine Woodworking",
+    "domain": "crafting",
+    "rarity": "common",
+    "levels": {
+      "1": "Joints that hold without nails: mortise, tenon, and the humble dovetail.",
+      "2": "Furniture and tool handles — shape wood to the hand, not the eye.",
+      "3": "Structural work: beams, frames, and joinery that survives weather and weight."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "carpenter"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "weld",
+    "name": "Welding & Metalwork",
+    "domain": "crafting",
+    "rarity": "rare",
+    "levels": {
+      "1": "Join metal with heat: clean the joint, mind the arc, let it cool slow.",
+      "2": "Forge basics — heat, hammer, quench. Shape steel the old way.",
+      "3": "Toolmaking: edges, springs, and hardware from scrap stock. The village stops breaking things."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "welder",
+      "blacksmith"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "stonework",
+    "name": "Stone & Masonry",
+    "domain": "crafting",
+    "rarity": "uncommon",
+    "levels": {
+      "1": "Stack stone so it stands: batter the wall, heart it with rubble, cap it well.",
+      "2": "Mortar: lime, sand, and patience. A good joint outlives the builder.",
+      "3": "Build ovens, hearths, and walls that hold heat and hold back weather."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "mason"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "research",
+    "name": "Research & Records",
+    "domain": "social",
+    "rarity": "uncommon",
+    "levels": {
+      "1": "Find information fast: indexes, archives, and asking the right question.",
+      "2": "Cross-reference sources — one account is a rumor, three are a pattern.",
+      "3": "Build the archive yourself: the village's memory, organized, retrievable."
+    },
+    "mechanical": {
+      "1": {}
+    },
+    "backgrounds": [
+      "librarian",
+      "journalist"
+    ],
     "abilitySynergies": []
   }
 ]

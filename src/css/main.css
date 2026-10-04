@@ -415,3 +415,56 @@ body.in-combat .dangerbar {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,59,59,0); }
   50% { transform: scale(1.015); box-shadow: 0 0 18px rgba(255,59,59,.45); }
 }
+
+/* ============ INLINE INTERACTION SLOT: one screen, no overlays ============ */
+#inlineslot { margin: 10px 0; }
+#inlineslot:empty { display: none; }
+.inlinecard {
+  border: 1px solid #4a4a3a; border-radius: 10px; background: #14140f;
+  padding: 10px 12px; margin: 8px 0;
+  animation: inlinein .18s ease-out;
+}
+@keyframes inlinein {
+  from { transform: translateY(8px); opacity: .5; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.inline-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 4px;
+}
+.inline-head b { font-size: 15px; }
+.inline-body p { margin: 6px 0; }
+.inline-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+/* action feedback: obvious confirmation, no wondering "did that work?" */
+.inline-result {
+  color: #7fd67f; font-weight: bold; font-size: 14px; margin: 6px 0;
+  border-left: 3px solid #7fd67f; padding-left: 8px;
+  animation: resultflash .3s ease-out;
+}
+@keyframes resultflash {
+  from { background: rgba(127,214,127,.25); }
+  to { background: transparent; }
+}
+
+/* ============ SYSTEM-LIVE: the overlay creeps into your perception ============ */
+/* Post-day-7, the interface gains System styling. Glowing borders, overlay
+   accents, game-like chrome. You should FEEL the System integrating. */
+body.system-live .inlinecard {
+  border-color: rgba(0,255,200,.45);
+  box-shadow: 0 0 18px rgba(0,255,200,.10), inset 0 0 30px rgba(0,255,200,.03);
+}
+body.system-live .card {
+  border-color: rgba(0,255,200,.25);
+}
+body.system-live .sheet {
+  border-top: 2px solid rgba(0,255,200,.6);
+  box-shadow: 0 -8px 32px rgba(0,255,200,.15);
+}
+body.system-live #announce {
+  border-bottom: 1px solid rgba(0,255,200,.4);
+  text-shadow: 0 0 8px rgba(0,255,200,.25);
+}
+body.system-live .btn:not(.ghost) {
+  border-color: rgba(0,255,200,.5);
+  box-shadow: 0 0 10px rgba(0,255,200,.12);
+}

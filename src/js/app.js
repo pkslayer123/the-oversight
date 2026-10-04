@@ -601,9 +601,9 @@
       // someone's standing with you? you walked up to them — talk is right here.
       if (villagerId) {
         const vp = Game.data.villagers.find(v => v.id === villagerId) || Game.data.background_survivors.find(v => v.id === villagerId);
-        const vname = vp ? vp.name.split(' ')[0] : 'Someone';
+        const vname = Game.displayName(villagerId);
         desc += ` ${vname} is here with you.`;
-        actions.push(['💬 Talk to ' + vname, () => Game.talkTo(villagerId)]);
+        actions.push(['💬 Talk to ' + vname, () => openPerson(villagerId)]);
         actions.push(['Give food', () => Game.giveFood(villagerId)]);
       }
     } else if (isMon) {
@@ -627,7 +627,7 @@
       // VILLAGER: people get sheets, not tile panels. Open the person sheet directly.
       // (cellPopup was called for a distant villager tap — walkCloser handles approach.)
       const vp = Game.data.villagers.find(v => v.id === villagerId) || Game.data.background_survivors.find(v => v.id === villagerId);
-      const name = vp ? vp.name : villagerId;
+      const name = Game.displayName(villagerId);
       if (dist <= 2) {
         const info = document.getElementById('tileinfo');
         if (info) info.innerHTML = ''; // people get sheets, not panels
@@ -1038,7 +1038,7 @@
       if (Math.max(Math.abs(p.mx - px), Math.abs(p.my - py)) <= range) {
         const vp = (Game.data.villagers || []).find(v => v.id === rid) ||
                    (Game.data.background_survivors || []).find(v => v.id === rid);
-        out.push({ id: rid, cx: p.mx, cy: p.my, label: vp ? vp.name.split(' ')[0] : rid });
+        out.push({ id: rid, cx: p.mx, cy: p.my, label: Game.displayName(rid) });
       }
     }
     return out;
@@ -1059,106 +1059,240 @@
   // ============ PERSON SHEET ============
   // People get sheets, not tile panels. Talk / give / teach, all in one place.
   // Talk updates the sheet in place ("say more") — no screen takeover.
-  function personSheet(villagerId) {
+  // ============ INLINE INTERACTION SLOT ============
+  // ONE SCREEN. Person panels, assignment, remote assign, pantry — everything
+  // renders into #inlineslot in the main flow. No overlays, no screen hopping.
+  // The game comes to you.
+  // openSheet() remains ONLY for modal System offers (ability/relic choices):
+  // the System doesn't ask politely.
+  let inlineView = null; // {kind:'person'|'assign'|'remote'|'pantry', vid, line, result, nvMode, via, mapKey}
+
+  function inlineMapKey() {
+    return (Game.map ? Game.map.px + ',' + Game.map.py : '?') + ':' +
+      (Game.state.scholar ? Game.state.scholar.day + '.' + Game.state.scholar.dayPart : '');
+  }
+
+  function scrollInlineIntoView() {
+    const slot = document.getElementById('inlineslot');
+    if (slot) { try { slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {} }
+  }
+
+  // openPerson: tap a person → their card appears inline, in the main screen.
+  // Dialogue, buttons, everything — no screen transition. Their opening line
+  // fires once per open (talking costs energy; re-renders must not re-charge).
+  function openPerson(villagerId) {
+    const line = Game.talkTo(villagerId);
+    inlineView = { kind: 'person', vid: villagerId, line, result: null, nvMode: null, mapKey: inlineMapKey() };
+    refresh();
+    scrollInlineIntoView();
+  }
+
+  // personSheet is now openPerson — alias so no call site breaks.
+  function personSheet(villagerId) { openPerson(villagerId); }
+
+  function renderInlineSlot(st) {
+    const slot = document.getElementById('inlineslot');
+    if (!slot) return;
+    // stale? new tile, new day part, or combat started → clear.
+    if (inlineView && inlineView.mapKey !== inlineMapKey()) inlineView = null;
+    if (!inlineView || (st && st.inCombat)) { slot.innerHTML = ''; return; }
+    if (inlineView.kind === 'person') renderPersonInline(slot, inlineView);
+    else if (inlineView.kind === 'assign') renderAssignInline(slot, inlineView);
+    else if (inlineView.kind === 'remote') renderRemoteInline(slot, inlineView);
+    else if (inlineView.kind === 'pantry') renderPantryInline(slot, inlineView);
+    else if (inlineView.kind === 'inv') renderInvInline(slot, inlineView);
+    else slot.innerHTML = '';
+  }
+
+  function inlineHead(title) {
+    return `<div class="inline-head"><b>${title}</b><button class="sheet-x" data-x aria-label="Close">\u2715</button></div>`;
+  }
+
+  function wireInlineX(slot) {
+    const x = slot.querySelector('[data-x]');
+    if (x) x.onclick = () => { inlineView = null; refresh(); };
+  }
+
+  function renderPersonInline(slot, view) {
+    const villagerId = view.vid;
     const vp = (Game.data.villagers || []).find(v => v.id === villagerId) ||
                (Game.data.background_survivors || []).find(v => v.id === villagerId);
-    if (!vp) return;
-    const name = vp.name;
-    const first = name.split(' ')[0];
+    if (!vp) { slot.innerHTML = ''; inlineView = null; return; }
+    const sys = !!Game.state.systemArrived;
+    const known = sys || Game.nameKnown(villagerId);
+    const titleName = known ? vp.name.split(' ')[0] : Game.personDescriptor(villagerId);
     const trust = (Game.state.village.trust && Game.state.village.trust[villagerId]) || 10;
     const health = (Game.state.village.health && Game.state.village.health[villagerId] !== undefined)
       ? Game.state.village.health[villagerId] : 100;
-    const tone = trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.';
-    const hb = health >= 70 ? '\U0001F7E2' : health >= 40 ? '\U0001F7E1' : '\U0001F534';
-    const lang = `<p class="small" style="opacity:.7">🗣 ${esc(Game.langLabel(vp.languages))}</p>`;
+    const comm = Game.commLevel(villagerId);
+    let infoHtml;
+    if (sys) {
+      const tone = trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.';
+      const hb = health >= 70 ? '\uD83D\uDFE2' : health >= 40 ? '\uD83D\uDFE1' : '\uD83D\uDD34';
+      infoHtml = `<p class="small">${esc(vp.formerOccupation || '')}${vp.homeRegion ? ' · ' + esc(vp.homeRegion) : ''}</p>
+        <p class="small">${hb} Health ${health}/100 · ${tone}</p>
+        <p class="small" style="opacity:.7">🗣 ${esc(Game.langLabel(vp.languages))}</p>
+        ${(() => { const w = Game.goalWant(villagerId); return w ? `<p class="small" style="opacity:.7">🎯 Wants ${esc(w)}.</p>` : ''; })()}
+        <p class="small" style="opacity:.7">👁 Sees you as: ${esc(Game.repWords(villagerId))}.</p>
+        ${(() => { const pers = vp.personality || {}; const bits = [];
+          if (pers.quirk) bits.push(pers.quirk.charAt(0).toUpperCase() + pers.quirk.slice(1));
+          if (pers.hope) bits.push('Hopes ' + pers.hope);
+          return bits.length ? `<p class="small" style="opacity:.7">💭 ${esc(bits.join('. '))}.</p>` : ''; })()}`;
+    } else {
+      // PRE-SYSTEM: observed info only. No names unless earned, no health
+      // bars, no stats. You're just a person meeting strangers.
+      const commNote = comm.level === 'none' ? 'You share no words.'
+        : comm.level === 'partial' ? 'A few shared words. Gestures. Patience.' : 'You can talk.';
+      const rough = health < 40 ? " They look rough — hurt or sick, you can't tell which." : '';
+      infoHtml = `<p class="small">${esc(Game.personActivityLine(villagerId))}${rough}</p>
+        <p class="small" style="opacity:.7">${esc(commNote)}${known ? '' : " You don't know their name yet."}</p>`;
+    }
     const conf = vp.conflictNote ? `<p class="small" style="opacity:.7">${esc(vp.conflictNote)}</p>` : '';
+    const said = view.line || '';
     const youKnow = Object.keys(Game.state.codex.plants || {});
     const theyKnow = (Game.state.village.taught && Game.state.village.taught[villagerId]) || [];
     const teachable = youKnow.filter(pid => !theyKnow.includes(pid));
-    const said = Game.talkTo(villagerId); // returns their line, logs it too
 
-    const body = `
-      <p class="small">${esc(vp.formerOccupation || '')}${vp.homeRegion ? ' · ' + esc(vp.homeRegion) : ''}</p>
-      <p class="small">${hb} Health ${health}/100 · ${tone}</p>
-      ${lang}${conf}
-      <p style="font-size:16px;line-height:1.6;margin-top:10px">\u201C${esc(said)}\u201D</p>
-      <p class="small" id="psaid-extra" style="opacity:.7"></p>`;
-
-    const buttons = [
-      { label: '\U0001F4AC Talk', primary: true, keepOpen: true, onClick: () => {
-          const line = Game.talkTo(villagerId);
-          const el = document.querySelector('#sheet-root .sheet-body p[style*="font-size:16px"]');
-          if (el) el.innerHTML = '\u201C' + esc(line) + '\u201D';
-          refresh();
-        } },
-      { label: '\U0001F381 Give food', keepOpen: true, onClick: () => { Game.giveFood(villagerId); refresh(); } },
-      { label: '\U0001F5E3\U000FE0F Ask for help', keepOpen: true, onClick: () => { assignTaskSheet(villagerId); } },
-    ];
-    if (teachable.length) {
-      buttons.push({ label: `\U0001F4D6 Teach (${teachable.length})`, keepOpen: true, onClick: () => {
-        const pid = teachable[0];
-        if (!Game.state.village.taught[villagerId]) Game.state.village.taught[villagerId] = [];
-        Game.state.village.taught[villagerId].push(pid);
-        const pname = (Game.data.plants.find(p => p.id === pid) || {}).name || pid;
-        Game.say(`You teach ${first} about ${pname}.`);
-        personSheet(villagerId); // re-render with updated teachable list
-      } });
+    let btns = `<button class="btn sm" data-act="talk">\uD83D\uDCAC Talk</button>
+      <button class="btn sm ghost" data-act="give"${Game.edibleCount() ? '' : ' disabled'}>\uD83C\uDF81 Give food${Game.edibleCount() ? '' : ' (none)'}</button>
+      <button class="btn sm ghost" data-act="ask">\uD83D\uDDE3\uFE0F Ask for help</button>`;
+    if (comm.level === 'none') {
+      if (view.nvMode === 'gesture') {
+        const intents = [['friendly', '\uD83D\uDC4B Wave hello'], ['food', '\uD83C\uDF56 Mime eating'],
+          ['follow', '\u27A1\uFE0F Beckon: follow me'], ['danger', '\u26A0\uFE0F Warn: danger'], ['count', '\uD83D\uDD22 Hold up fingers']];
+        btns = intents.map(([intent, label]) => `<button class="btn sm" data-act="g:${intent}">${label}</button>`).join('') +
+          `<button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
+      } else if (view.nvMode === 'draw') {
+        const concepts = [['food', '\uD83C\uDF56 Food'], ['water', '\uD83D\uDCA7 Water'], ['danger', '\u26A0\uFE0F Danger'], ['shelter', '\uD83C\uDFE0 Shelter']];
+        btns = concepts.map(([concept, label]) => `<button class="btn sm" data-act="d:${concept}">${label}</button>`).join('') +
+          `<button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
+      } else {
+        btns += `<button class="btn sm ghost" data-act="read">\uD83D\uDC41 Read them</button>
+          <button class="btn sm ghost" data-act="gesture">\uD83D\uDC4B Gesture \u25B8</button>
+          <button class="btn sm ghost" data-act="draw">\u2710\uFE0F Draw \u25B8</button>`;
+      }
     }
-
-    // LIVING WORLD: knowledge traders. They know things deeply. Trade for it.
+    if (teachable.length) btns += ` <button class="btn sm ghost" data-act="teach">\uD83D\uDCD6 Teach (${teachable.length})</button>`;
     if (Game.isKnowledgeTrader && Game.isKnowledgeTrader(villagerId)) {
       const tradeable = Game.traderKnowledge(villagerId);
-      const tradeLabel = tradeable.length ? `\U0001F504 Trade knowledge (${tradeable.length})` : `\U0001F504 Trade knowledge`;
-      buttons.push({ label: tradeLabel, keepOpen: true, onClick: () => {
-        if (!tradeable.length) {
-          Game.say(`${first} knows nothing you don't. "Come back when you've seen more green."`);
-          return;
-        }
+      btns += ` <button class="btn sm ghost" data-act="trade">\uD83D\uDD04 Trade knowledge${tradeable.length ? ` (${tradeable.length})` : ''}</button>`;
+    }
+    // LEADERSHIP CHALLENGE: they're confronting you about who's in charge.
+    // This conversation is about one thing. Yield a domain or hold your ground.
+    const chal = (Game.state.village.challenge || {});
+    let challengeHtml = '';
+    if (chal.cid === villagerId) {
+      const taskName = (Game.delegateTasks()[chal.task] || {}).name || chal.task || 'work';
+      challengeHtml = `<div class="card" style="border-left:3px solid #e05c5c;margin:8px 0">
+        <p class="small"><b>⚠ ${esc(titleName)} is challenging your lead.</b><br>
+        "Let ME run the ${esc(taskName)}. People listen to me. You know they do."</p></div>`;
+      btns = `<button class="btn sm" data-act="yield">Let them lead ${esc(taskName)}</button>
+        <button class="btn sm ghost" data-act="stand">Hold your ground</button>`;
+    }
+
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('\uD83D\uDC64 ' + esc(titleName))}
+      ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
+      ${challengeHtml}
+      <div class="inline-body">${infoHtml}${conf}
+        ${said ? `<p style="font-size:16px;line-height:1.6;margin-top:10px">\u201C${esc(said)}\u201D</p>` : ''}
+      </div>
+      <div class="inline-btns">${btns}</div>
+    </div>`;
+    wireInlineX(slot);
+    slot.querySelectorAll('[data-act]').forEach(b => { b.onclick = () => personAct(view, b.dataset.act); });
+  }
+
+  // personAct: every action confirms visibly. The result line ("✓ ...") plus
+  // updated numbers — no wondering whether the tap worked.
+  function personAct(view, act) {
+    const vid = view.vid;
+    const vp = (Game.data.villagers || []).find(v => v.id === vid) ||
+               (Game.data.background_survivors || []).find(v => v.id === vid) || {};
+    const dname = Game.displayName(vid);
+    if (act === 'talk') { view.line = Game.talkTo(vid); view.result = null; view.nvMode = null; }
+    else if (act === 'give') {
+      const gave = Game.giveFood(vid);
+      view.result = gave ? 'You gave them food.' : 'You have no food to give.';
+    }
+    else if (act === 'ask') { inlineView = { kind: 'assign', vid, line: view.line, result: null, via: 'in-person', mapKey: inlineMapKey() }; }
+    else if (act === 'read') { Game.nonverbalRead(vid); view.result = 'You study them.'; }
+    else if (act === 'gesture') { view.nvMode = 'gesture'; }
+    else if (act === 'draw') { view.nvMode = 'draw'; }
+    else if (act === 'back') { view.nvMode = null; }
+    else if (act === 'yield') {
+      const chal = Game.state.village.challenge || {};
+      const task = chal.task || 'forage';
+      const taskName = (Game.delegateTasks()[task] || {}).name || task;
+      Game.state.village.taskLeads = Game.state.village.taskLeads || {};
+      Game.state.village.taskLeads[task] = vid;
+      const t = Game.state.village.trust || (Game.state.village.trust = {});
+      t[vid] = Math.min(100, (t[vid] || 10) + 10);
+      Game.state.village.heat = Game.state.village.heat || {};
+      Game.state.village.heat[vid] = 0;
+      Game.state.village.challenge = null;
+      Game.say(`${dname} nods slowly. "Good call." They start organizing the ${taskName} crews their way.`);
+      view.result = `You let them lead ${taskName}. They'll work it every part — and build their own base doing it.`;
+    }
+    else if (act === 'stand') {
+      const t = Game.state.village.trust || (Game.state.village.trust = {});
+      t[vid] = Math.max(0, (t[vid] || 10) - 5);
+      Game.state.village.heat = Game.state.village.heat || {};
+      Game.state.village.heat[vid] = 0;
+      Game.state.village.challenge = null;
+      Game.say(`${dname} holds your gaze, then looks away. "Fine. Your funeral." This isn't over — but it's quiet. For now.`);
+      view.result = 'You held your ground.';
+    }
+    else if (act.startsWith('g:')) { Game.nonverbalGesture(vid, act.slice(2)); view.nvMode = null; view.result = 'You tried gestures.'; }
+    else if (act.startsWith('d:')) { Game.nonverbalDraw(vid, act.slice(2)); view.nvMode = null; view.result = 'You drew in the dirt.'; }
+    else if (act === 'teach') {
+      const youKnow = Object.keys(Game.state.codex.plants || {});
+      const theyKnow = (Game.state.village.taught && Game.state.village.taught[vid]) || [];
+      const teachable = youKnow.filter(pid => !theyKnow.includes(pid));
+      if (teachable.length) {
+        const pid = teachable[0];
+        if (!Game.state.village.taught[vid]) Game.state.village.taught[vid] = [];
+        Game.state.village.taught[vid].push(pid);
+        const pname = (Game.data.plants.find(p => p.id === pid) || {}).name || pid;
+        Game.say(`You teach ${dname} about ${pname}.`);
+        view.result = `You taught them about ${pname}.`;
+      }
+    }
+    else if (act === 'trade') {
+      const tradeable = Game.traderKnowledge(vid);
+      if (!tradeable.length) {
+        Game.say(`${dname} knows nothing you don't. "Come back when you've seen more green."`);
+      } else {
         const pid = tradeable[0];
         const p = (Game.data.plants || []).find(x => x.id === pid) || {};
         const pname = Game.plantKnown(pid) ? p.name : (p.description || 'a plant');
-        Game.say(`${first} leans in. "I can teach you about ${pname} — deep knowledge. What'll you give me?"`);
-        Game.tradeKnowledge(villagerId, pid);
-        personSheet(villagerId);
-      } });
+        Game.say(`${dname} leans in. "I can teach you about ${pname} — deep knowledge. What'll you give me?"`);
+        Game.tradeKnowledge(vid, pid);
+        view.result = 'You traded knowledge.';
+      }
     }
-
-    openSheet({
-      id: 'person-' + villagerId,
-      title: '\U0001F464 ' + esc(first),
-      html: body,
-      buttons,
-      priority: 40, modal: false, dismissible: true,
-    });
+    refresh();
   }
 
-  // LEADER: task assignment sheet. Pick a villager, pick a task, they go do it.
-  // "This game is what you want it to be." — including a leader who never fights.
-  // LEADER: ask for help. This lives in the talk menu — you're TALKING to them,
+  // LEADER: ask for help. This lives in the talk flow — you're TALKING to them,
   // asking them to do something. Not a management UI. A conversation.
-  // Remote assignment (shout, runner, System ping) unlocks via abilities — see Game.canAssignRemote.
-  function assignTaskSheet(villagerId, via) {
+  // Remote assignment (shout, runner, System ping) unlocks via abilities.
+  function renderAssignInline(slot, view) {
+    const villagerId = view.vid;
+    const via = view.via || 'in-person';
     const vp = (Game.data.villagers || []).find(v => v.id === villagerId) ||
                (Game.data.background_survivors || []).find(v => v.id === villagerId);
-    if (!vp) return;
-    const first = (vp.name || 'Someone').split(' ')[0];
+    if (!vp) { slot.innerHTML = ''; inlineView = null; return; }
+    const dname = Game.displayName(villagerId);
     const trust = (Game.state.village.trust && Game.state.village.trust[villagerId]) || 10;
     const tasks = Game.delegateTasks();
     const current = Game.assignmentFor(villagerId);
-    via = via || 'in-person';
     const viaLabel = via === 'in-person' ? '' : ` <span class="small" style="opacity:.6">via ${esc(via)}</span>`;
-
-    // Conversational framing: you're asking, not ordering.
     const askPhrases = {
-      forage: `Could you go forage?`,
-      hunt: `Could you hunt for us?`,
-      wood: `Could you gather wood?`,
-      water: `Could you fetch water?`,
-      scout: `Could you scout around?`,
-      patrol: `Could you patrol for threats?`,
+      forage: `Could you go forage?`, hunt: `Could you hunt for us?`, wood: `Could you gather wood?`,
+      water: `Could you fetch water?`, scout: `Could you scout around?`, patrol: `Could you patrol for threats?`,
       rest: `You should rest.`,
     };
-
     let body = '';
     if (current && tasks[current.task]) {
       body += `<p class="small" style="opacity:.8">"I'm on it — ${tasks[current.task].icon} ${esc(tasks[current.task].name).toLowerCase()}." — out until next part.</p>`;
@@ -1166,66 +1300,88 @@
       body += `<p style="font-size:15px;line-height:1.5">"What do you need?"</p>`;
       body += `<p class="small" style="opacity:.6">Trust: ${trust}/100.</p>`;
     }
-    if (trust < 20) {
-      body += `<p class="small" style="color:#e88">"I don't take orders from strangers." (Need 20+ trust.)</p>`;
-    }
+    if (trust < 20) body += `<p class="small" style="color:#e88">"I don't take orders from strangers." (Need 20+ trust.)</p>`;
     body += `<p class="small" style="opacity:.6;margin-top:8px">They'll report back at the end of this part. Dangerous work can get people hurt.</p>`;
-
-    const buttons = Object.entries(tasks).map(([tid, t]) => {
+    const btns = Object.entries(tasks).map(([tid, t]) => {
       const comp = Game.villagerCompetence(villagerId, tid);
       const compTag = tid === 'rest' ? '' : comp >= 1.3 ? ' ⭐ natural' : comp <= 0.8 ? ' ⚠ not their strength' : '';
       const isCurrent = current && current.task === tid;
       const ask = askPhrases[tid] || t.name;
-      return {
-        label: `${t.icon} "${ask}"${compTag}${isCurrent ? ' ✓' : ''}`,
-        keepOpen: false,
-        onClick: () => {
-          Game.assignTask(villagerId, tid, { via });
-          refresh();
-        },
+      return `<button class="btn sm${isCurrent ? '' : ' ghost'}" data-task="${tid}">${t.icon} "${esc(ask)}"${compTag}${isCurrent ? ' ✓' : ''}</button>`;
+    }).join('') + ` <button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
+
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('\uD83D\uDDE3\uFE0F Ask ' + esc(dname) + ' for help' + viaLabel)}
+      ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
+      <div class="inline-body">${body}</div>
+      <div class="inline-btns">${btns}</div>
+    </div>`;
+    wireInlineX(slot);
+    slot.querySelector('[data-act="back"]').onclick = () => {
+      inlineView = { kind: 'person', vid: villagerId, line: view.line, result: null, nvMode: null, mapKey: inlineMapKey() };
+      refresh();
+    };
+    slot.querySelectorAll('[data-task]').forEach(b => {
+      b.onclick = () => {
+        const tid = b.dataset.task;
+        Game.assignTask(villagerId, tid, { via });
+        const ask = askPhrases[tid] || tasks[tid].name;
+        inlineView = { kind: 'person', vid: villagerId, line: view.line, result: `"${ask}" — they'll report back.`, nvMode: null, mapKey: inlineMapKey() };
+        refresh();
       };
     });
+  }
 
-    openSheet({
-      id: 'assign-' + villagerId,
-      title: '\U0001F5E3\U000FE0F Ask ' + esc(first) + ' for help' + viaLabel,
-      html: body,
-      buttons,
-      priority: 45, modal: false, dismissible: true,
+  // assignTaskSheet is now inline — alias so no call site breaks.
+  function assignTaskSheet(villagerId, via) {
+    inlineView = { kind: 'assign', vid: villagerId, line: null, result: null, via: via || 'in-person', mapKey: inlineMapKey() };
+    refresh();
+    scrollInlineIntoView();
+  }
+
+  // Remote assignment: abilities unlock assigning without face-to-face.
+  function renderRemoteInline(slot, view) {
+    const v = Game.state.village;
+    const roster = (v.roster || []).filter(id => id !== Game.villagerId);
+    const methods = Game.remoteAssignMethods ? Game.remoteAssignMethods() : [];
+    if (!roster.length || !methods.length) { slot.innerHTML = ''; inlineView = null; return; }
+    const m = methods[0];
+    const btns = roster.map(vid => {
+      const cur = Game.assignmentFor(vid);
+      return `<button class="btn sm ghost" data-vid="${vid}">\uD83D\uDCE3 ${esc(Game.displayName(vid))}${cur ? ' (busy)' : ''}</button>`;
+    }).join('');
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('\uD83D\uDCE3 Remote assign (' + esc(m.name) + ')')}
+      <div class="inline-body"><p class="small" style="opacity:.7">${esc(m.desc)} Who do you want to reach?</p></div>
+      <div class="inline-btns">${btns}</div>
+    </div>`;
+    wireInlineX(slot);
+    slot.querySelectorAll('[data-vid]').forEach(b => {
+      b.onclick = () => {
+        inlineView = { kind: 'assign', vid: b.dataset.vid, line: null, result: null, via: m.id, mapKey: inlineMapKey() };
+        refresh();
+      };
     });
   }
+
+  function remoteAssignSheet() {
+    const methods = Game.remoteAssignMethods ? Game.remoteAssignMethods() : [];
+    if (!methods.length) { Game.say("You need to be face-to-face to ask for help. (Abilities can unlock remote assignment.)"); refresh(); return; }
+    inlineView = { kind: 'remote', mapKey: inlineMapKey() };
+    refresh();
+    scrollInlineIntoView();
+  }
+
+
+  // LEADER: task assignment sheet. Pick a villager, pick a task, they go do it.
+  // "This game is what you want it to be." — including a leader who never fights.
+  // LEADER: ask for help. This lives in the talk menu — you're TALKING to them,
+  // asking them to do something. Not a management UI. A conversation.
+  // Remote assignment (shout, runner, System ping) unlocks via abilities — see Game.canAssignRemote.
 
   // Remote assignment: abilities unlock assigning without face-to-face.
   // Future abilities: "Shout" (village-wide), "Runner" (send someone), "System Ping" (post-day-7).
   // This is the UI entry point — Game.canAssignRemote gates it.
-  function remoteAssignSheet() {
-    const v = Game.state.village;
-    const roster = (v.roster || []).filter(id => id !== Game.villagerId);
-    if (!roster.length) { Game.say("No one to assign."); return; }
-    const methods = Game.remoteAssignMethods ? Game.remoteAssignMethods() : [];
-    if (!methods.length) { Game.say("You need to be face-to-face to ask for help. (Abilities can unlock remote assignment.)"); return; }
-    // For now: pick a method, then pick a person, then pick a task.
-    // Future: this becomes a full remote command UI.
-    const m = methods[0]; // use the best available method
-    const buttons = roster.map(vid => {
-      const vp = (Game.data.villagers || []).find(x => x.id === vid) ||
-                 (Game.data.background_survivors || []).find(x => x.id === vid) || {};
-      const first = (vp.name || 'Someone').split(' ')[0];
-      const cur = Game.assignmentFor(vid);
-      return {
-        label: `${esc(first)}${cur ? ' (busy)' : ''}`,
-        keepOpen: true,
-        onClick: () => { assignTaskSheet(vid, m.id); },
-      };
-    });
-    openSheet({
-      id: 'remote-assign',
-      title: '\U0001F4E3 Remote assign (' + esc(m.name) + ')',
-      html: `<p class="small" style="opacity:.7">${esc(m.desc)} Who do you want to reach?</p>`,
-      buttons,
-      priority: 45, modal: false, dismissible: true,
-    });
-  }
 
 
   // systemArrivalAnimation: the sky splits. Animated. Dramatic.
@@ -1340,47 +1496,52 @@
   // invSheet: what are you carrying? Non-modal sheet - always accessible, never hidden.
   // Crafting, abilities, equipment - all here. The ability bar on the main
   // screen covers quick activation; this is the full inventory view.
-  function invSheet() {
+  // inventory: your pack. Inline — one screen, no overlay hopping.
+  function renderInvInline(slot, view) {
     const st = Game.status();
     const inv = st.inventory;
     const tools = Game.state.scholar.tools || [];
     const recipes = Game.data.recipes || [];
     const knownRecipes = recipes.filter(r => (Game.state.codex.recipes || {})[r.id] && Game.state.codex.recipes[r.id].level >= 3);
     const bodyHtml = `
-        ${(() => { const eq = Game.state.scholar.equipped || {}; const parts = []; if (eq.weapon) parts.push(`\u2694\uFE0F ${eq.weapon.name}`); if (eq.armor) parts.push(`\U0001F6E1\uFE0F ${eq.armor.name}`); return parts.length ? `<p class="small"><b>Equipped:</b> ${parts.join(' \u00B7 ')}</p>` : ''; })()}
+        ${(() => { const eq = Game.state.scholar.equipped || {}; const parts = []; if (eq.weapon) parts.push(`\u2694\uFE0F ${eq.weapon.name}`); if (eq.armor) parts.push(`\uD83D\uDEE1\uFE0F ${eq.armor.name}`); return parts.length ? `<p class="small"><b>Equipped:</b> ${parts.join(' \u00B7 ')}</p>` : ''; })()}
         ${(() => { const bg = Game.state.scholar.backgroundAbilities || []; if (!bg.length) return ''; return `<p class="small"><b>Background:</b> ${bg.map(a => `${a.name} L${a.level}`).join(', ')}</p>`; })()}
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)</p>`; })()}
         ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
-        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; return `<p class="small"><b>\U0001F4A7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)</p>`; })()}
+        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)</p>`; })()}
         ${inv.length ? inv.map((i, idx) => `<p class="small">${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> \u2014 ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}`;
 
-    const wire = (sheetEl) => {
-      const rewire = (fn) => (e) => { fn(e); invSheet(); refresh(); };
-      sheetEl.querySelectorAll('[data-craft]').forEach(b => b.onclick = rewire(() => Game.craft(b.dataset.craft)));
-      sheetEl.querySelectorAll('[data-settrap]').forEach(b => b.onclick = (e) => { Game.setTrap(b.dataset.settrap); closeSheet('inv'); refresh(); });
-      sheetEl.querySelectorAll('[data-read]').forEach(b => b.onclick = rewire(() => Game.readBook(b.dataset.read)));
-      sheetEl.querySelectorAll('[data-use]').forEach(b => b.onclick = rewire(() => Game.useItem(+b.dataset.use)));
-      sheetEl.querySelectorAll('[data-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.cook)));
-      sheetEl.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipW, 'weapon')));
-      sheetEl.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipA, 'armor')));
-      sheetEl.querySelectorAll('[data-donate]').forEach(b => b.onclick = rewire(() => Game.donateToPantry(+b.dataset.donate)));
-      sheetEl.querySelectorAll('[data-activate]').forEach(b => b.onclick = (e) => {
-        Game.activateAbility(b.dataset.activate); invSheet(); refresh();
-      });
-    };
-
-    openSheet({
-      id: 'inv',
-      title: '\U0001F392 Pack (' + st.invCount + ' items)',
-      html: bodyHtml,
-      buttons: [],
-      priority: 20, modal: false, dismissible: true,
-      onRender: wire,
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('\uD83C\uDF92 Pack (' + st.invCount + ' items)')}
+      ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
+      <div class="inline-body">${bodyHtml}</div>
+    </div>`;
+    wireInlineX(slot);
+    // obvious feedback: every action confirms, then the panel re-renders fresh.
+    const rewire = (fn, ok) => (e) => { fn(e); inlineView.result = ok; refresh(); };
+    slot.querySelectorAll('[data-craft]').forEach(b => b.onclick = rewire(() => Game.craft(b.dataset.craft), 'Crafted.'));
+    slot.querySelectorAll('[data-settrap]').forEach(b => b.onclick = (e) => { Game.setTrap(b.dataset.settrap); inlineView.result = 'Trap set.'; refresh(); });
+    slot.querySelectorAll('[data-read]').forEach(b => b.onclick = rewire(() => Game.readBook(b.dataset.read), 'You read.'));
+    slot.querySelectorAll('[data-use]').forEach(b => b.onclick = rewire(() => Game.useItem(+b.dataset.use), 'Used.'));
+    slot.querySelectorAll('[data-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.cook), 'Cooked.'));
+    slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipW, 'weapon'), 'Equipped.'));
+    slot.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipA, 'armor'), 'Worn.'));
+    slot.querySelectorAll('[data-donate]').forEach(b => b.onclick = rewire(() => Game.donateToPantry(+b.dataset.donate), 'Donated to the pantry.'));
+    slot.querySelectorAll('[data-activate]').forEach(b => b.onclick = (e) => {
+      Game.activateAbility(b.dataset.activate); inlineView.result = 'Activated.'; refresh();
     });
   }
+
+  // invSheet is now inline — alias so no call site breaks.
+  function invSheet() {
+    inlineView = { kind: 'inv', result: null, mapKey: inlineMapKey() };
+    refresh();
+    scrollInlineIntoView();
+  }
+
 
   // ---------- the one screen ----------
   // map + here-panel, always together. no view switching: the panel adapts to
@@ -1422,6 +1583,7 @@
       ${dangerBarHTML()}
       ${abilityBarHTML()}
       <div id="tileinfo"></div>
+      <div id="inlineslot"></div>
       <p class="small">👆 tap a tile to walk there · 🗺 walk to the edge, tap yourself, head out (1 part · 30 kcal/tile)</p>
       <div class="map minimap">${renderMap(st, tset)}</div>
       ${panelFor(st, n)}
@@ -1522,6 +1684,11 @@
     wireContextBar();
     wireAbilityBar();
     wireTargetBar();
+    // THE SYSTEM INTEGRATING INTO YOUR PERCEPTION: post-day-7, the interface
+    // gains System styling — glowing borders, overlay accents. You FEEL it.
+    try { document.body.classList.toggle('system-live', !!Game.state.systemArrived); } catch (e) {}
+    // Inline interaction slot: person panels, assignment, pantry — no overlays.
+    renderInlineSlot(st);
     // Pending offers (ability/relic choices) queue as sheets — no screen takeover.
     processPendingSheets();
   }
@@ -1557,14 +1724,15 @@
 
   // pantrySheet: pack for the day. Non-modal sheet - the world stays visible.
   // Food and water, same sliders, one stockpile.
-  function pantrySheet() {
+  // pantry: pack for the day. Inline — food and water, same sliders, one stockpile.
+  function renderPantryInline(slot, view) {
     const st = Game.status();
     const pantry = Game.state.village.pantry || [];
     const vWater = Game.state.village.water || { clean: 0, dirty: 0 };
     const carry = st.carryKg;
     const maxCarry = Game.carryCapacity();
     const waterRow = vWater.clean > 0 ? `<div class="card" style="margin:6px 0;padding:8px 10px;border-left:3px solid #4df3ff">
-        <p class="small"><b>\U0001F4A7 Water (clean)</b> \u00D7${vWater.clean} L<br>
+        <p class="small"><b>\uD83D\uDCA7 Water (clean)</b> \u00D7${vWater.clean} L<br>
         <span style="opacity:.7">0 kcal/L \u00B7 1 kg/L \u00B7 from the Haven well</span></p>
         <div style="display:flex;align-items:center;gap:8px">
           <input type="range" min="0" max="${vWater.clean}" value="0" data-pack="water" style="flex:1">
@@ -1580,7 +1748,7 @@
         const unit = p.unit || 'item';
         return `<div class="card" style="margin:6px 0;padding:8px 10px">
           <p class="small"><b>${p.name}</b> \u00D7${p.units} ${unit}s
-          ${p.safe ? '' : ' \u26A0 UNSAFE'}${p.spoilDay <= st.day ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \U0001F373 needs cooking' : ''}<br>
+          ${p.safe ? '' : ' \u26A0 UNSAFE'}${p.spoilDay <= st.day ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \uD83C\uDF73 needs cooking' : ''}<br>
           <span style="opacity:.7">${p.kcalEach} kcal/${unit} \u00B7 ${p.kg} kg/${unit} \u00B7 <b>${density} kcal/kg</b></span></p>
           <div style="display:flex;align-items:center;gap:8px">
             <input type="range" min="0" max="${p.units}" value="0" data-pack="${idx}" style="flex:1">
@@ -1591,64 +1759,65 @@
       </div>
       <div class="card" id="packsummary" style="border-left:3px solid #7fd67f">
         <p class="small"><b>Packing:</b> <span id="ps-items">nothing yet</span></p>
-        <p class="small">\u2696\uFE0F <span id="ps-kg">0.0</span> kg \u00B7 \U0001F525 <span id="ps-kcal">0 kcal</span> \u00B7 \U0001F4A7 <span id="ps-water">0 L</span></p>
+        <p class="small">\u2696\uFE0F <span id="ps-kg">0.0</span> kg \u00B7 \uD83D\uDD25 <span id="ps-kcal">0 kcal</span> \u00B7 \uD83D\uDCA7 <span id="ps-water">0 L</span></p>
       </div>`;
 
-    const wireSliders = (sheetEl) => {
-      const update = () => {
-        let kg = 0, kcal = 0, wl = 0;
-        const parts = [];
-        sheetEl.querySelectorAll('[data-pack]').forEach(sl => {
-          const key = sl.dataset.pack, q = +sl.value;
-          const qEl = sheetEl.querySelector('#packq-' + key);
-          if (key === 'water') {
-            if (qEl) qEl.textContent = q + ' L';
-            if (q > 0) { kg += q; wl += q; parts.push(`${q}L water`); }
-            return;
-          }
-          const idx = +key;
-          if (qEl) qEl.textContent = q;
-          if (q > 0) {
-            const p = pantry[idx];
-            kg += q * (p.kg || 0);
-            kcal += q * p.kcalEach;
-            parts.push(`${q} ${p.name}`);
-          }
-        });
-        sheetEl.querySelector('#ps-items').textContent = parts.length ? parts.join(', ') : 'nothing yet';
-        sheetEl.querySelector('#ps-kg').textContent = kg.toFixed(1);
-        sheetEl.querySelector('#ps-kcal').textContent = Game.fmtKcal(kcal);
-        sheetEl.querySelector('#ps-water').textContent = wl + ' L';
-        const over = carry + kg > maxCarry;
-        sheetEl.querySelector('#ps-kg').style.color = over ? '#e05c5c' : '';
-        const packBtn = sheetEl.parentElement.querySelector('[data-sheetbtn="0"]');
-        if (packBtn) packBtn.disabled = !parts.length || over;
-      };
-      sheetEl.querySelectorAll('[data-pack]').forEach(sl => sl.oninput = update);
-      update();
-      // stash the pack action for the sheet button
-      sheetEl._doPack = () => {
-        const sel = {};
-        sheetEl.querySelectorAll('[data-pack]').forEach(sl => { if (+sl.value > 0) sel[sl.dataset.pack] = +sl.value; });
-        Game.takeFromPantryBulk(sel);
-        closeSheet('pantry');
-        pantrySheet(); // re-open fresh
-        refresh();
-      };
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('\uD83C\uDF75 Pantry — pack for the day')}
+      ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
+      <div class="inline-body">${bodyHtml}</div>
+      <div class="inline-btns"><button class="btn sm" data-act="pack" id="pack-btn" disabled>Pack it</button></div>
+    </div>`;
+    wireInlineX(slot);
+    const update = () => {
+      let kg = 0, kcal = 0, wl = 0;
+      const parts = [];
+      slot.querySelectorAll('[data-pack]').forEach(sl => {
+        const key = sl.dataset.pack, q = +sl.value;
+        const qEl = slot.querySelector('#packq-' + key);
+        if (key === 'water') {
+          if (qEl) qEl.textContent = q + ' L';
+          if (q > 0) { kg += q; wl += q; parts.push(`${q}L water`); }
+          return;
+        }
+        const idx = +key;
+        if (qEl) qEl.textContent = q;
+        if (q > 0) {
+          const p = pantry[idx];
+          kg += q * (p.kg || 0);
+          kcal += q * p.kcalEach;
+          parts.push(`${q} ${p.name}`);
+        }
+      });
+      slot.querySelector('#ps-items').textContent = parts.length ? parts.join(', ') : 'nothing yet';
+      slot.querySelector('#ps-kg').textContent = kg.toFixed(1);
+      slot.querySelector('#ps-kcal').textContent = Game.fmtKcal(kcal);
+      slot.querySelector('#ps-water').textContent = wl + ' L';
+      const over = carry + kg > maxCarry;
+      slot.querySelector('#ps-kg').style.color = over ? '#e05c5c' : '';
+      const packBtn = slot.querySelector('#pack-btn');
+      if (packBtn) packBtn.disabled = !parts.length || over;
     };
-
-    openSheet({
-      id: 'pantry',
-      title: '\U0001F375 Pantry — pack for the day',
-      html: bodyHtml,
-      buttons: [{ label: 'Pack it', primary: true, keepOpen: true, onClick: () => {
-        const sheetEl = document.querySelector('#sheet-root .sheet');
-        if (sheetEl && sheetEl._doPack) sheetEl._doPack();
-      } }],
-      priority: 20, modal: false, dismissible: true,
-      onRender: wireSliders,
-    });
+    slot.querySelectorAll('[data-pack]').forEach(sl => { sl.oninput = update; });
+    update();
+    slot.querySelector('#pack-btn').onclick = () => {
+      const sel = {};
+      slot.querySelectorAll('[data-pack]').forEach(sl => { if (+sl.value > 0) sel[sl.dataset.pack] = +sl.value; });
+      Game.takeFromPantryBulk(sel);
+      // obvious feedback: packed, sliders reset, summary confirms.
+      const n = Object.values(sel).reduce((a, b) => a + b, 0);
+      inlineView = { kind: 'pantry', result: `Packed ${n} item${n === 1 ? '' : 's'}.`, mapKey: inlineMapKey() };
+      refresh();
+    };
   }
+
+  // pantrySheet is now inline — alias so no call site breaks.
+  function pantrySheet() {
+    inlineView = { kind: 'pantry', result: null, mapKey: inlineMapKey() };
+    refresh();
+    scrollInlineIntoView();
+  }
+
 
   function panelHaven(st) {
     const v = Game.villageInfo();
@@ -1886,8 +2055,9 @@
             for (const [rid, pos] of Object.entries(vpos)) {
               if (pos.mx === cx && pos.my === cy) {
                 const vp = Game.data.villagers.find(v => v.id === rid) || Game.data.background_survivors.find(v => v.id === rid);
-                const fname = (vp ? vp.name.split(' ')[0] : '?').slice(0, 7);
-                g = `<span class="vtoken">🧍</span><span class="vname">${esc(fname)}</span>`;
+                const showName = Game.state.systemArrived || Game.nameKnown(rid);
+                const fname = showName ? (vp ? vp.name.split(' ')[0] : '?').slice(0, 7) : '';
+                g = `<span class="vtoken">🧍</span>` + (fname ? `<span class="vname">${esc(fname)}</span>` : '');
                 cls += ' villager';
                 break;
               }

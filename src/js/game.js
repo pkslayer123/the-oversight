@@ -215,7 +215,7 @@
       const { origin, forceCultureMatch, candidate, usedNames, usedOccs } = opts || {};
       const cg = this.data.characterGen || {};
       const pick = a => a[Math.floor(Math.random() * a.length)];
-      const fears = ['being forgotten', 'the dark between the trees', 'being a burden', 'losing another one', 'the quiet ones watching from the treeline', 'never seeing home again'];
+      const fears = (cg.fears && cg.fears.length) ? cg.fears : ['being forgotten'];
       // distinct occupations across a candidate set when the pool allows it
       const occPool = cg.occupations || [];
       let occ = null, oguard = 0;
@@ -240,21 +240,47 @@
         // the verb that follows {They}/{they} for she/he. "They keep" but "She keeps".
         // Only listed verbs are touched — everything else passes through unchanged.
         const conj = { keep: 'keeps', build: 'builds', look: 'looks', know: 'knows', stare: 'stares', read: 'reads', speak: 'speaks', talk: 'talks', stay: 'stays', are: 'is', have: 'has', were: 'was', do: 'does', go: 'goes' };
+        // skill/occ/origin are substituted in backstories too — defined before
+        // fillPronouns runs (was a TDZ crash: fillPronouns is called at line ~262).
+        const skill = (occ.teachTags || []).includes('medicinal') ? 'patching people up'
+          : (occ.teachTags || []).includes('food') ? 'finding food' : 'making do';
         const fillPronouns = t => t
           .replaceAll('{first}', first)
           .replaceAll('{their}', their)
+          .replaceAll('{Their}', their.charAt(0).toUpperCase() + their.slice(1))
           .replaceAll('{them}', them)
           .replace(/\{They\} ([A-Za-z]+)/g, (m, vb) => They + ' ' + (pro === 'they' ? vb : (conj[vb] || vb)))
           .replace(/\{they\} ([A-Za-z]+)/g, (m, vb) => pro + ' ' + (pro === 'they' ? vb : (conj[vb] || vb)))
           .replaceAll('{They}', They)
-          .replaceAll('{they}', pro);
-        const backstory = fillPronouns(occ.backstory || '{first} is here.');
+          .replaceAll('{they}', pro)
+          .replaceAll('{occ}', occ.name || 'survivor')
+          .replaceAll('{origin}', origin)
+          .replaceAll('{skill}', skill);
+        const backstoryVariants = occ.backstories || [occ.backstory || '{first} is here.'];
+        // prefer a backstory variant not yet used this expedition
+        const ubs = this._usedBackstories || new Set();
+        const occKey = occ.id || occ.name || 'survivor';
+        let bi = backstoryVariants.findIndex((_, i) => !ubs.has(occKey + ':' + i));
+        if (bi < 0) bi = Math.floor(Math.random() * backstoryVariants.length);
+        ubs.add(occKey + ':' + bi);
+        const backstory = fillPronouns(backstoryVariants[bi]);
         const temperament = pick(cg.temperaments || ['steady']);
         const sharing = pick(cg.sharingStyles || ['fair']);
         const curiosity = pick(cg.curiosities || ['practical']);
+        // personality axes: quirks, habits, hopes — everyone had a life.
+        const quirk = (cg.quirks && cg.quirks.length) ? pick(cg.quirks) : null;
+        const habit = (cg.habits && cg.habits.length) ? pick(cg.habits) : null;
+        const hope = (cg.hopes && cg.hopes.length) ? pick(cg.hopes) : null;
+        // GOALS: everyone wants something. People have agendas, not just traits.
+        // 'lead' is rare — genRoster guarantees 1-2 contenders per village.
+        const goalDefs = cg.goals || [];
+        const goalPool = [];
+        for (const g of goalDefs) {
+          const w = g.id === 'lead' ? 1 : g.id === 'survive' ? 2 : 3;
+          for (let i = 0; i < w; i++) goalPool.push(g.id);
+        }
+        const goal = goalPool.length ? pick(goalPool) : null;
         const parsed = this.parseOrigin(origin);
-        const skill = (occ.teachTags || []).includes('medicinal') ? 'patching people up'
-          : (occ.teachTags || []).includes('food') ? 'finding food' : 'making do';
         const fill = t => t.replaceAll('{first}', first).replaceAll('{occ}', occ.name || 'survivor')
           .replaceAll('{origin}', origin).replaceAll('{skill}', skill);
         const talk = [];
@@ -262,19 +288,22 @@
         while (talk.length < 3 && tt.length) talk.push(fill(tt.splice(Math.floor(Math.random() * tt.length), 1)[0]));
         const quest = (cg.questTemplates || []).map(fill);
         const langs = this.genCultureLanguages(this.cultureForOrigin(origin), occ);
-        const age = 19 + Math.floor(Math.random() * 44); // 19-62. Real people have ages.
+        // COHERENCE: a 19-year-old isn't a retired general. Occupations carry
+        // a sensible age band; the character's age is drawn from it.
+        const ageMin = occ.minAge || 19, ageMax = Math.max(ageMin, occ.maxAge || 62);
+        const age = ageMin + Math.floor(Math.random() * (ageMax - ageMin + 1));
         const char = {
           id: 'gen_' + Math.random().toString(36).slice(2, 9),
           name, formerOccupation: occ.name || 'survivor', homeRegion: origin,
           originTags: parsed.tags, heritage: this.heritageFor(parsed.tags),
-          backstory, personality: { temperament, sharing, curiosity }, age,
+          backstory, personality: { temperament, sharing, curiosity, quirk, habit, hope }, age, goal,
           abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
           items: this.genItemCandidates(occ),
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
           survivalProbability: 25 + Math.floor(Math.random() * 21),
           systemAssessment: `${first} reads as ${temperament} and ${sharing} with strangers. The others find this ${temperament === 'cautious' ? 'reassuring' : temperament === 'bold' ? 'exhausting' : 'worth watching'}.`,
           secretFear: pick(fears), languages: langs, occupationId: occ.id || null,
-          candidate: candidate !== false,
+          candidate: candidate !== false, pro,
         };
         return char;
     },
@@ -292,6 +321,10 @@
       const origin = playerOrigin || pick(cg.sampleOrigins || ['somewhere']);
       const usedNames = new Set();
       const usedOccs = new Set();
+      // game-level dedup registries: names + backstory variants shouldn't repeat
+      // within an expedition. newGame's background-survivor draw consults these too.
+      this._usedNames = usedNames;
+      this._usedBackstories = new Set();
       const chars = [];
       for (let i = 0; i < 4; i++) {
         chars.push(this.genCharacter({ origin, forceCultureMatch: true, candidate: true, usedNames, usedOccs }));
@@ -309,6 +342,15 @@
         chars.push(this.genCharacter({ origin: npcOrigin, forceCultureMatch: false, candidate: false, usedNames, usedOccs }));
       }
       for (const c of chars) this.data.villagers.push(c);
+      // LEADERSHIP: every village gets 1-2 contenders. Someone always wants
+      // to be in charge — that's what makes it a village, not a backdrop.
+      const leads = chars.filter(c => c.goal === 'lead');
+      if (!leads.length) {
+        const cand = chars.find(c => ['bold', 'prickly', 'intense'].includes((c.personality || {}).temperament)) || chars[0];
+        if (cand) cand.goal = 'lead';
+      } else if (leads.length > 2) {
+        for (let i = 2; i < leads.length; i++) leads[i].goal = 'prove';
+      }
       this.generatedRoster = chars;
       return chars;
     },
@@ -472,7 +514,7 @@
             c.known = true;
             const va = (this.data.villagers || []).find(x => x.id === c.a) || {};
             const vb = (this.data.villagers || []).find(x => x.id === c.b) || {};
-            this.say(`You've started noticing: ${(va.name || '?').split(' ')[0]} and ${(vb.name || '?').split(' ')[0]} never speak. It's not new. (Something old lives in Haven.)`);
+            this.say(`You've started noticing: ${this.displayName(c.a)} and ${this.displayName(c.b)} never speak. It's not new. (Something old lives in Haven.)`);
           }
         }
         if (c.known && c.tension > 40 && Math.random() < 0.10) this.conflictIncident(c);
@@ -481,7 +523,7 @@
           c.resolved = true; c.tension = 0;
           const va = (this.data.villagers || []).find(x => x.id === c.a) || {};
           const vb = (this.data.villagers || []).find(x => x.id === c.b) || {};
-          this.say(`${(va.name || '?').split(' ')[0]} nodded at ${(vb.name || '?').split(' ')[0]} today. First time. Whatever it was, it's loosening. Haven breathes easier.`);
+          this.say(`${this.displayName(c.a)} nodded at ${this.displayName(c.b)} today. First time. Whatever it was, it's loosening. Haven breathes easier.`);
         }
         if (c.tension > 30) c.tension -= 1;
       }
@@ -494,7 +536,7 @@
       const trust = v.trust = v.trust || {};
       const va = (this.data.villagers || []).find(x => x.id === c.a) || {};
       const vb = (this.data.villagers || []).find(x => x.id === c.b) || {};
-      const fa = (va.name || '?').split(' ')[0], fb = (vb.name || '?').split(' ')[0];
+      const fa = this.displayName(c.a), fb = this.displayName(c.b);
       const incidents = [
         () => { this.say(`You find ${fa} and ${fb} in a sharp, quiet argument. It stops when you approach. Neither explains.`); c.tension = Math.min(100, c.tension + 5); },
         () => { this.say(`${fa} corners you by the fire: "Don't share your haul with ${fb}." It's not a request.`); trust[c.a] = Math.min(100, (trust[c.a] || 10) + 2); trust[c.b] = Math.max(0, (trust[c.b] || 10) - 2); },
@@ -567,7 +609,16 @@
       const otherGen = this.generatedRoster.filter(c => c.id !== this.villagerId).map(c => c.id);
       const pool = [...this.data.background_survivors];
       const bg = [];
-      for (let i = 0; i < 6 && pool.length; i++) bg.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
+      // avoid first-name collisions with the generated cast — "two Marias" breaks the fiction
+      const usedFirsts = new Set([...(this._usedNames || [])].map(n => String(n).split(' ')[0]));
+      for (let i = 0; i < 6 && pool.length; i++) {
+        let idx = pool.findIndex(s => !usedFirsts.has(String(s.name || '').split(' ')[0]));
+        if (idx < 0) idx = Math.floor(Math.random() * pool.length);
+        const drawn = pool.splice(idx, 1)[0];
+        usedFirsts.add(String(drawn.name || '').split(' ')[0]);
+        if (this._usedNames) this._usedNames.add(drawn.name);
+        bg.push(drawn.id);
+      }
       this.state.village.roster = [this.villagerId].concat(otherGen, bg);
       this.state.village.villagers = [this.villagerId].concat(otherGen); // generated have dialogue; background have one-liners
       // persist the generated cast (they don't exist in the JSON — the save carries them)
@@ -575,6 +626,33 @@
       for (const c of this.generatedRoster) this.state.village.rosterChars[c.id] = c;
       // who has met whom: language barriers are discovered in conversation, not listed
       this.state.village.met = {};
+      // background survivors get per-run goals (static data can't hold them).
+      // Contenders come from the generated cast — bg survivors don't start
+      // wanting the throne (they can still gossip, grumble, and take sides).
+      const goalIds = (this.data.characterGen.goals || []).map(g => g.id).filter(id => id !== 'lead');
+      this.state.village.bgGoals = {};
+      for (const id of bg) {
+        if (goalIds.length) this.state.village.bgGoals[id] = goalIds[Math.floor(Math.random() * goalIds.length)];
+      }
+      // LEADERSHIP: 1-2 NPC contenders — never the scholar (you can't compete
+      // with yourself). The genRoster fix-up might have crowned the character
+      // the player picked; this guarantees the VILLAGE has its contenders.
+      {
+        const npcIds = this.state.village.roster.filter(id => id !== this.villagerId);
+        const setGoal = (id, g) => {
+          const vp = this.data.villagers.find(x => x.id === id);
+          if (vp) vp.goal = g;
+          else this.state.village.bgGoals[id] = g;
+        };
+        let npcLeads = npcIds.filter(id => this.npcGoal(id) === 'lead');
+        if (!npcLeads.length) {
+          const cand = npcIds.find(id => ['bold', 'prickly', 'intense'].includes(this.npcTemper(id))) || npcIds[0];
+          if (cand) { setGoal(cand, 'lead'); npcLeads = [cand]; }
+        }
+        if (npcLeads.length > 2) npcLeads.slice(2).forEach(id => setGoal(id, 'prove'));
+      }
+      // SOCIAL GROUPS: informal circles. Your actions ripple through them.
+      this.genGroups();
       // OLD WOUNDS: deep conflicts between peoples, hidden at first. They simmer.
       const npcIds = this.state.village.roster.filter(id => id !== this.villagerId);
       this.state.village.conflicts = this.genConflicts(npcIds);
@@ -748,17 +826,46 @@
       if (firstMet && comm.level !== 'full') {
         const langName = ((this.data.characterGen || {}).languages || []).find(l => l.id === comm.lang);
         const label = langName ? `${langName.icon} ${langName.name}` : comm.lang;
-        this.say(`...and then it lands: ${v.name.split(' ')[0]} speaks ${label}. ${comm.level === 'partial' ? 'A few shared words. Gestures. Patience.' : 'You share no language at all.'}`);
+        this.say(`...and then it lands: ${this.displayName(vid)} speaks ${label}. ${comm.level === 'partial' ? 'A few shared words. Gestures. Patience.' : 'You share no language at all.'}`);
       }
-      this.state.talkIdx = this.state.talkIdx || {};
-      const i = (this.state.talkIdx[vid] || 0) % lines.length;
-      this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
-      let line = lines[i];
+      // NAMES ARE EARNED SOCIALLY: first real conversation, they tell you —
+      // but only if you share enough language for an introduction.
+      if (firstMet && !this.state.systemArrived && comm.level !== 'none') {
+        this.revealName(vid, 'intro');
+      }
+      // DIALOGUE: character-driven, never repeated until the pool is exhausted.
+      // Who they are (temperament), what they want (goal), how they feel (mood),
+      // and what they think of YOU (reputation) all shape what they say.
+      // A grieving person doesn't crack jokes. A bold person doesn't hedge.
+      const pool = [];
+      const pushLines = (arr, weight) => {
+        for (const l of (arr || [])) for (let i = 0; i < (weight || 1); i++) pool.push(l);
+      };
+      pushLines(lines, 2);
+      const goalDef = (this.data.characterGen.goals || []).find(g => g.id === this.npcGoal(vid));
+      pushLines(goalDef && goalDef.lines, 3);
+      pushLines((this.data.characterGen.temperamentTalk || {})[this.npcTemper(vid)], 2);
+      const moodNow = this.npcMood(vid);
+      pushLines((this.data.characterGen.moodTalk || {})[moodNow], (moodNow === 'grieving' || moodNow === 'scared') ? 3 : 1);
+      pushLines(this.repTalkLines(vid), 2);
+      this.state.talkSaid = this.state.talkSaid || {};
+      const said = this.state.talkSaid[vid] || (this.state.talkSaid[vid] = []);
+      let fresh = pool.filter(l => !said.includes(l));
+      if (!fresh.length) { said.length = 0; fresh = pool.slice(); }
+      let line = fresh[Math.floor(Math.random() * fresh.length)];
+      said.push(line);
+      line = this.fillTalkLine(line, v);
+      // THEY asked to talk: their reason leads the conversation, once.
+      const treq = (village.talkRequests || {})[vid];
+      if (treq && !treq.delivered) {
+        treq.delivered = true;
+        line = treq.line.replace(/ \(Talk to .*?\.\)$/, '');
+      }
       if (comm.level === 'none' && Math.random() < 0.35) {
         const cg = this.data.characterGen || {};
         const tmps = cg.misunderstandTemplates || ['{first} smiles and nods.'];
         const langName = ((cg.languages || []).find(l => l.id === comm.lang) || {}).name || comm.lang;
-        line = tmps[Math.floor(Math.random() * tmps.length)].replaceAll('{first}', v.name.split(' ')[0]).replaceAll('{lang}', langName);
+        line = tmps[Math.floor(Math.random() * tmps.length)].replaceAll('{first}', this.displayName(vid)).replaceAll('{lang}', langName);
       }
       // ALIVE: talking eases loneliness — for them, not just you.
       try { this.npcNeeds(vid).social = Math.max(0, this.npcNeeds(vid).social - 40); } catch (e) {}
@@ -775,7 +882,10 @@
       if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
       // the tone shifts with trust (not the number — you feel it)
       const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
-      this.say(`${v.name.split(' ')[0]}${tone}: "${line}"`);
+      this.say(`${this.displayName(vid)}${tone}: "${line}"`);
+      // they form opinions of you even in small talk — but talk alone
+      // doesn't move trust (the 40-cap rule stands).
+      try { this.observe('talk', { noTrust: true }); } catch (e) {}
       // OLD WOUNDS: favoritism is noticed. If you're close to one side of a conflict,
       // the other side keeps score — even if you don't know there's a score being kept.
       for (const c of (this.state.village.conflicts || [])) {
@@ -785,25 +895,199 @@
           const ot = this.state.village.trust;
           ot[other] = Math.max(0, (ot[other] || 10) - 2);
           const on = ((this.data.villagers || []).find(x => x.id === other) || {}).name || 'someone';
-          if (c.known) this.say(`${on.split(' ')[0]} saw how close you've gotten to ${v.name.split(' ')[0]}. Old history has long eyes. (-2 trust)`);
-          else this.say(`${on.split(' ')[0]} has been colder to you lately. You don't know why.`);
+          if (c.known) this.say(`${this.displayName(other)} saw how close you've gotten to ${this.displayName(vid)}. Old history has long eyes. (-2 trust)`);
+          else this.say(`${this.displayName(other)} has been colder to you lately. You don't know why.`);
         }
         // HISTORY UNFOLDS through trust — slowly, partially, maybe never fully.
         if (c.known && c.kind === 'old_wound') {
           const t = (this.state.village.trust || {})[vid] || 0;
           if (c.stage === 0 && t >= 45) {
             c.stage = 1;
-            this.say(`Late, quiet, ${v.name.split(' ')[0]} tells you: "${c.history[1]}"`);
+            this.say(`Late, quiet, ${this.displayName(vid)} tells you: "${c.history[1]}"`);
           } else if (c.stage === 1 && t >= 70) {
             c.stage = 2;
-            this.say(`${v.name.split(' ')[0]} looks away. "${c.history[2]}" That's all you get. Maybe that's all there is.`);
+            this.say(`${this.displayName(vid)} looks away. "${c.history[2]}" That's all you get. Maybe that's all there is.`);
           }
         }
       }
       return line;
     },
 
+    // ============ NON-VERBAL COMMUNICATION ============
+    // No shared language isn't a wall — it's a different game. Body language,
+    // hand signals, drawings in dirt. Crude tools, real results, and the
+    // occasional glorious misunderstanding. You're never fully locked out.
+
+    // dominantNeed: what the body is actually saying, mechanically.
+    dominantNeed(vid) {
+      const n = this.npcNeeds(vid);
+      const mood = this.npcMood(vid);
+      if (mood === 'grieving') return 'grief';
+      if (n.fear > 70) return 'fear';
+      if (n.hunger > 70) return 'hunger';
+      if (n.social > 78) return 'loneliness';
+      if (n.energy < 20) return 'exhaustion';
+      if (mood === 'grateful') return 'gratitude';
+      if (mood === 'cheerful') return 'ease';
+      return 'calm';
+    },
+
+    // nvTrust: non-verbal trust moves. Same 40 cap as talk — gestures earn
+    // familiarity, not devotion. For that, do something real.
+    nvTrust(vid, gain) {
+      const t = this.state.village.trust || (this.state.village.trust = {});
+      const cur = t[vid] || 10;
+      t[vid] = cur >= 40 ? cur : Math.min(40, cur + gain);
+      return t[vid];
+    },
+
+    // nonverbalRead: study their body language. read_people skill matters most;
+    // diplomat helps a little. Success reveals their true state. Failure gives
+    // you a confident, WRONG read — which the game remembers.
+    nonverbalRead(vid) {
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid);
+      if (!v) return null;
+      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
+      const first = this.displayName(vid);
+      const readLvl = ((this.state.codex.skills || {}).read_people || {}).level || 0;
+      const dipLvl = this.abilityLevel('diplomat');
+      const chance = Math.min(0.95, 0.35 + readLvl * 0.22 + dipLvl * 0.05);
+      const need = this.dominantNeed(vid);
+      const vlg = this.state.village;
+      vlg.misreads = vlg.misreads || {};
+
+      const TRUE_READS = {
+        fear: `${first} keeps glancing at the treeline. Shoulders up around the ears. Hands won't stay still. Scared — properly scared.`,
+        hunger: `${first} is watching the cookpot the way a drowning person watches a rope. It's hunger. Plain and simple.`,
+        loneliness: `${first} hovers at the edge of every conversation, never quite joining. Not hostile — lonely.`,
+        exhaustion: `${first} moves like they're wading through something thick. Not lazy. Empty.`,
+        grief: `${first} goes quiet whenever someone laughs. There's a hollow where something used to be.`,
+        gratitude: `${first} keeps finding reasons to be near you. Small smiles. They owe you and it sits warm on them.`,
+        ease: `${first} is loose-shouldered, unhurried. Whatever was wrong, right now it's fine.`,
+        calm: `${first} gives nothing away. Breathing even, eyes steady. Either genuinely calm or very good at this.`,
+      };
+      // wrong, but plausible. The game says it like it's true — because to you, it is.
+      const MISREADS = {
+        fear: { as: 'angry', text: `${first}'s jaw is tight, arms crossed hard. They look furious. (You read anger. It's fear.)` },
+        hunger: { as: 'sick', text: `${first} is pale and slow-moving. They look ill. (You read sickness. It's hunger.)` },
+        loneliness: { as: 'hostile', text: `${first} keeps their distance from everyone. They clearly want to be left alone. (You read hostility. It's loneliness.)` },
+        exhaustion: { as: 'lazy', text: `${first} can barely be bothered to move. Some people just don't pull their weight. (You read laziness. It's exhaustion.)` },
+        grief: { as: 'angry', text: `${first} flinches at laughter like it's an insult. Something's eating them — probably you. (You read anger. It's grief.)` },
+        gratitude: { as: 'nervous', text: `${first} keeps hovering, fidgeting. They seem on edge around you. (You read nerves. It's gratitude.)` },
+        ease: { as: 'suspicious', text: `${first} is a little too relaxed. Nobody's that calm here. They're hiding something. (You read suspicion. It's just ease.)` },
+        calm: { as: 'suspicious', text: `${first} gives nothing away — which is exactly what someone hiding something would do. (You read suspicion. It's just calm.)` },
+      };
+
+      if (Math.random() < chance) {
+        // true read — and if you misread them before, own it
+        const was = vlg.misreads[vid];
+        delete vlg.misreads[vid];
+        this.say(`👁 ${TRUE_READS[need] || TRUE_READS.calm}`);
+        if (was) this.say(`Wait. Last time you were sure they were ${was}. You had it backwards. People are harder than plants.`);
+        this.nvTrust(vid, 2); // being truly seen feels good
+        // observation teaches: three good reads and it starts to click
+        const s = this.state.scholar;
+        s.readXP = (s.readXP || 0) + 1;
+        if (s.readXP >= 3 && !this.skillKnown('read_people', 1)) {
+          this.learnSkill('read_people', 1, 'watching people');
+        }
+        return { ok: true, need };
+      }
+      const mis = MISREADS[need] || MISREADS.calm;
+      vlg.misreads[vid] = mis.as;
+      this.say(`👁 ${mis.text}`);
+      return { ok: false, need, misreadAs: mis.as };
+    },
+
+    // nonverbalGesture: hand signals. intent in friendly|food|follow|danger|count.
+    // Concrete beats abstract. Misunderstandings have consequences.
+    nonverbalGesture(vid, intent) {
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid);
+      if (!v) return null;
+      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
+      const first = this.displayName(vid);
+      const n = this.npcNeeds(vid);
+      const CHANCE = { friendly: 0.7, food: 0.6, follow: 0.55, danger: 0.6, count: 0.8 };
+      const chance = CHANCE[intent] || 0.5;
+      const ok = Math.random() < chance;
+
+      const SUCCESS = {
+        friendly: () => { this.nvTrust(vid, 2);
+          // no shared language? a friendly exchange can still trade names.
+          // They point at themself, say it slowly, twice.
+          if (!this.state.systemArrived && !this.nameKnown(vid) && Math.random() < 0.5) {
+            this.revealName(vid, 'gesture');
+          }
+          return `👋 You wave, open-handed, smiling. ${first} hesitates — then waves back, a real one. Some things don't need translating.`; },
+        food: () => {
+          if (n.hunger > 50) { this.nvTrust(vid, 3); n.social = Math.max(0, n.social - 20);
+            return `🍖 You mime eating — hand to mouth, chewing. ${first}'s whole face changes. Nodding, pointing at their own mouth, then at you. Yes. Food. Please.`; }
+          this.nvTrust(vid, 1);
+          return `🍖 You mime eating. ${first} looks confused, then politely mimes it back, eyebrows up: why? Not hungry — but the game of it lands. A small laugh.`; },
+        follow: () => { this.nvTrust(vid, 2);
+          return `➡️ You beckon — come with me — and point where you're going. ${first} glances at the others, then falls in beside you. Trust, in motion.`; },
+        danger: () => { n.fear = Math.min(100, n.fear + 15); this.nvTrust(vid, 1);
+          return `⚠️ You point hard at the treeline, then slash a hand across your throat. ${first} goes still. Eyes wide. They look where you pointed. They believe you.`; },
+        count: () => { this.nvTrust(vid, 1);
+          return `🔢 You hold up fingers, slowly. One. Two. Three. ${first} counts along, then holds up their own number. You've agreed on something. You're not sure what, but you've agreed.`; },
+      };
+      const FAIL = {
+        friendly: () => { this.nvTrust(vid, -1);
+          return `👋 You wave big and friendly. ${first} narrows their eyes — in some places that gesture means something else entirely. They turn away.`; },
+        food: () => { n.fear = Math.min(100, n.fear + 10);
+          return `🍖 You mime eating. ${first} goes pale — they think you're talking about THEM. About who's for dinner. They back up a step.`; },
+        follow: () => { n.social = Math.min(100, n.social + 10);
+          return `➡️ You beckon. ${first} shakes their head sharply and steps back. Whatever you want, they want no part of it. Not yet.`; },
+        danger: () => { n.fear = Math.max(0, n.fear - 5);
+          return `⚠️ You do your best alarm — pointing, wide eyes. ${first} laughs. Actually laughs. They think you're playing. They're not ready, and now they never will be.`; },
+        count: () => {
+          return `🔢 You hold up three fingers. ${first} points at themselves, then you, then the third person by the fire. Oh. They think you're counting PEOPLE.`; },
+      };
+      const msg = (ok ? SUCCESS[intent] : FAIL[intent])();
+      this.say(msg);
+      return { ok, intent };
+    },
+
+    // nonverbalDraw: scratch symbols in dirt. concept in food|water|danger|shelter.
+    // Slower, more deliberate than gestures — and it leaves a mark they can study.
+    nonverbalDraw(vid, concept) {
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid);
+      if (!v) return null;
+      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
+      const first = this.displayName(vid);
+      const readLvl = ((this.state.codex.skills || {}).read_people || {}).level || 0;
+      const chance = Math.min(0.9, 0.5 + (readLvl >= 1 ? 0.15 : 0));
+      const need = this.dominantNeed(vid);
+      const conceptNeed = { food: 'hunger', water: 'hunger', danger: 'fear', shelter: 'exhaustion' };
+      const ok = Math.random() < chance;
+      const ICON = { food: '🍖', water: '💧', danger: '⚠️', shelter: '🏠' }[concept] || '✏️';
+
+      if (ok) {
+        let msg = `${ICON} You crouch and draw in the dirt — slow, clear strokes. ${first} watches, head tilted... then their eyes widen. They point at the drawing, then at the real thing. Got it.`;
+        if (conceptNeed[concept] === need) {
+          this.nvTrust(vid, 4);
+          msg += ` And it was exactly what they needed. ${first} grabs your wrist — not hard. Grateful.`;
+        } else {
+          this.nvTrust(vid, 2);
+        }
+        this.say(msg);
+        return { ok: true, concept };
+      }
+      this.say(`${ICON} You draw your best ${concept}. ${first} studies it for a long time. Tilts their head the other way. Points at it, raises their eyebrows: ...a circle? With lines? You try again. It's worse.`);
+      return { ok: false, concept };
+    },
+
     // TEACH: "show me what an oak leaf looks like."
+
+    // nonverbalDrawCheck: silent version for teachPlant — no UI spam, just odds.
+    nonverbalDrawCheck(vid) {
+      const readLvl = ((this.state.codex.skills || {}).read_people || {}).level || 0;
+      return Math.random() < Math.min(0.85, 0.45 + readLvl * 0.15);
+    },
+
     // Good education: they show you a picture, you get it. Instant level 1.
     // Bad education: "it looks a bit like that" — partial (+1 encounter, not full).
     // Teacher quality: occupation matters. A cook teaches food well. A nurse teaches medicine.
@@ -815,15 +1099,20 @@
       const teacherKnows = (this.state.village.taught && this.state.village.taught[vid] || []).includes(plantId);
       // (for now, mains know 2 random plants; background know 1)
       if (!teacherKnows) {
-        this.say(`${teacher.name.split(' ')[0]} doesn\'t know that one either.`);
+        this.say(`${this.displayName(vid)} doesn\'t know that one either.`);
         return null;
       }
-      // LANGUAGE: no shared words, no teaching. You can gesture at a plant all day —
-      // without words, it's just pointing. (Unless your past gave you their tongue.)
+      // LANGUAGE: no shared words? Try DRAWING. A picture of the plant, an arrow
+      // to the mouth, a skull for the bad ones. Crude — but sometimes enough.
+      // Success here teaches at "bad education" level (partial, not instant).
       const comm = this.commLevel(vid);
       if (comm.level === 'none') {
-        this.say(`${teacher.name.split(' ')[0]} tries — gestures, dirt drawings, growing frustration. The words aren't there. Maybe with patience. Maybe never.`);
-        return null;
+        if (this.nonverbalDrawCheck(vid)) {
+          this.say(`${this.displayName(vid)} studies your dirt drawing for a long time... then nods slowly. Not words — but something got through.`);
+        } else {
+          this.say(`${this.displayName(vid)} tries — gestures, dirt drawings, growing frustration. The words aren't there. Maybe with patience. Maybe never.`);
+          return null;
+        }
       }
       const occ = (teacher.formerOccupation || '').toLowerCase();
       // good teacher: relevant occupation, high trust — AND words to teach with.
@@ -835,13 +1124,13 @@
       if (isGoodTeacher || isMedicTeacher) {
         // good education: instant unlock — one path
         if (this.identifyPlant(plantId, 'taught')) {
-          this.say(`${teacher.name.split(' ')[0]} shows you — a leaf, a picture scratched in dirt. You get it.`);
+          this.say(`${this.displayName(vid)} shows you — a leaf, a picture scratched in dirt. You get it.`);
         }
       } else {
         // bad education: partial
         const enc = (this.state.codex.encounters[plantId] || 0) + 1;
         this.state.codex.encounters[plantId] = enc;
-        this.say(`${teacher.name.split(' ')[0]} tries to explain. "It looks... a bit like that?" You\'re not sure. (${enc} encounters)`);
+        this.say(`${this.displayName(vid)} tries to explain. "It looks... a bit like that?" You\'re not sure. (${enc} encounters)`);
       }
       // teaching builds trust — BUT with diminishing returns.
       // Talk gets you to 40. Beyond that, you need ACTIONS, not words.
@@ -859,6 +1148,8 @@
         }
         // Above 40: talking doesn't build trust. Do something real.
       }
+      // teaching is observed: generosity + competence, through each lens.
+      try { this.observe('share_knowledge', { target: vid }); } catch (e) {}
       return true;
     },
 
@@ -1003,11 +1294,25 @@
     },
 
     // give food: the fastest way to earn trust. sharing is the social contract.
+    // edibleCount: how many distinct edible stacks are in the pack.
+    // Same definition as giveFood: kcalEach > 0, not bonded, not spoiled.
+    edibleCount() {
+      const day = this.state.scholar.day;
+      return (this.state.scholar.inventory || []).filter(i =>
+        (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
+        !(i.spoilDay !== undefined && i.spoilDay <= day)).length;
+    },
+
     giveFood(vid) {
       const v = this.data.villagers.find(x => x.id === vid) || this.data.background_survivors.find(x => x.id === vid);
       if (!v) return null;
-      // find food in inventory
-      const food = this.state.scholar.inventory.find(i => i.plantId && i.units > 0);
+      // find food in inventory: ANY edible item — foraged plants (plantId),
+      // packed food (itemId), cooked meals. Same definition as eating:
+      // kcalEach > 0. Not bonded relics, not spoiled.
+      const day = this.state.scholar.day;
+      const food = this.state.scholar.inventory.find(i =>
+        (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
+        !(i.spoilDay !== undefined && i.spoilDay <= day));
       if (!food) { this.say("You have no food to give."); return null; }
       food.units -= 1;
       if (food.units <= 0) this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
@@ -1019,12 +1324,13 @@
       if (req && req.type === 'food') {
         delete this.state.village.requests[vid];
         this.remember(vid, 'gift', 'answered their hunger');
-        this.say(`${v.name.split(' ')[0]} eats like it's the first time. "Thank you," they say, quiet. "I won't forget this."`);
+        this.say(`${this.displayName(vid)} eats like it's the first time. "Thank you," they say, quiet. "I won't forget this."`);
       } else {
         this.remember(vid, 'gift', 'unasked-for food');
       }
       this.npcNeeds(vid).hunger = Math.max(0, this.npcNeeds(vid).hunger - 60);
-      this.say(`You give ${v.name.split(' ')[0]} some ${food.name}. They look at you differently now.`);
+      this.say(`You give ${this.displayName(vid)} some ${food.name}. They look at you differently now.`);
+      this.observe('give_food', { target: vid });
       return true;
     },
 
@@ -1061,9 +1367,9 @@
       const mains = this.data.villagers.filter(v => v.id !== this.villagerId);
       const giver = mains[Math.floor(Math.random() * mains.length)];
       const quests = [
-        { type: 'bring', plant: 'dandelion', qty: 3, reward: 'pantry', text: `${giver.name.split(' ')[0]} needs ${3} dandelion. "For tea. For morale. For reasons."` },
-        { type: 'visit', tileType: 'creek', reward: 'knowledge', text: `${giver.name.split(' ')[0]} wants to know what's by the creek. "Just look. Come back and tell me."` },
-        { type: 'bring', plant: 'blackberry', qty: 2, reward: 'item', text: `${giver.name.split(' ')[0]} is craving blackberries. "I'll trade you something good."` },
+        { type: 'bring', plant: 'dandelion', qty: 3, reward: 'pantry', text: `${this.displayName(giver.id)} needs ${3} dandelion. "For tea. For morale. For reasons."` },
+        { type: 'visit', tileType: 'creek', reward: 'knowledge', text: `${this.displayName(giver.id)} wants to know what's by the creek. "Just look. Come back and tell me."` },
+        { type: 'bring', plant: 'blackberry', qty: 2, reward: 'item', text: `${this.displayName(giver.id)} is craving blackberries. "I'll trade you something good."` },
       ];
       const q = quests[Math.floor(Math.random() * quests.length)];
       q.giver = giver.id; q.giverName = giver.name.split(' ')[0];
@@ -1108,6 +1414,8 @@
       const lines = templates.map(t => String(t)
         .replaceAll('{first}', first).replaceAll('{occ}', occ).replaceAll('{origin}', origin));
       // the finder remembers finding you. small trust bump.
+      // the wake-up speech introduces them ("I'm {first}") — that's a meeting.
+      v.knownNames = v.knownNames || {}; v.knownNames[giverId] = true;
       v.foundBy = giverId;
       v.trust[giverId] = Math.min(100, (v.trust[giverId] || 10) + 5);
       // the debt-collector's ask is a real quest: bring greens, debt cleared.
@@ -1208,7 +1516,7 @@
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
       const vp = (this.data.villagers || []).find(v => v.id === vid)
         || (this.data.background_survivors || []).find(v => v.id === vid) || {};
-      const first = (vp.name || 'Someone').split(' ')[0];
+      const first = this.displayName(vid);
       if (trust < 20) {
         const lines = [
           `${first} looks at you flatly. "Why should I listen to you?" (Trust too low.)`,
@@ -1245,7 +1553,7 @@
       if (!tasks[task]) return null;
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         || (this.data.background_survivors || []).find(x => x.id === vid) || {};
-      const first = (vp.name || 'Someone').split(' ')[0];
+      const first = this.displayName(vid);
       if (task === 'rest') {
         delete v.assignments[vid];
         this.say(`${first} rests at Haven.`);
@@ -1262,6 +1570,10 @@
       const compNote = comp >= 1.3 ? ' (a natural — good pick)' : comp <= 0.8 ? ' (not their strength...) ' : '';
       const eager = (ob.trust >= 70) ? ` ${first} nods eagerly.` : '';
       this.say(`📋 ${first} — ${tasks[task].icon} ${tasks[task].name}.${compNote}${eager} They'll report back by next part.`);
+      // THE VILLAGE WATCHES: ordering people around is observed, and
+      // contenders push back. Nothing you do is neutral.
+      this.observe('order', { target: vid, task });
+      this.leadershipFriction(vid, task);
       // System notices delegators.
       if (this.state.systemArrived && (this.state.scholar.playstyle || {}).leader >= 3 && !this.state.village.leaderNoticed) {
         this.state.village.leaderNoticed = true;
@@ -1311,9 +1623,17 @@
     // executes. Results reported. Danger is real.
     resolveAssignments() {
       const v = this.state.village;
+      // TASK LEADS: domains you yielded run themselves. The lead works their
+      // domain every part — building their own power base, on your behalf.
+      // That's the trade you made.
+      for (const [task, leadVid] of Object.entries(v.taskLeads || {})) {
+        if (leadVid === this.villagerId) continue;
+        if (!(v.roster || []).includes(leadVid)) { delete v.taskLeads[task]; continue; }
+        if ((v.assignments || {})[leadVid]) continue;
+        try { this.resolveOneAssignment(leadVid, { task }); } catch (e) {}
+      }
       const asg = v.assignments || {};
       const ids = Object.keys(asg);
-      if (!ids.length) return;
       for (const vid of ids) {
         const a = asg[vid];
         // must be alive and still in roster
@@ -1321,12 +1641,28 @@
         try { this.resolveOneAssignment(vid, a); } catch (e) { delete asg[vid]; }
         delete asg[vid]; // one part per assignment — reassign to continue
       }
+      // CHALLENGES AGE: ignore a contender's confrontation and they stop
+      // asking. After ~2 days they just TAKE the domain. Agendas don't wait.
+      const ch = v.challenge;
+      if (ch) {
+        ch.age = (ch.age || 0) + 1;
+        if (ch.age >= 8) {
+          v.taskLeads = v.taskLeads || {};
+          v.taskLeads[ch.task || 'forage'] = ch.cid;
+          v.challenge = null;
+          const tname = (this.delegateTasks()[ch.task] || {}).name || 'work';
+          this.say(`${this.displayName(ch.cid)} stopped asking. They just started organizing the ${tname} crews. Nobody stopped them.`);
+        }
+      }
+      // GOSSIP SPREADS: what happened this part travels along social lines,
+      // distorting as it goes.
+      try { this.spreadGossip(); } catch (e) {}
     },
 
     resolveOneAssignment(vid, a) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         || (this.data.background_survivors || []).find(x => x.id === vid) || {};
-      const first = (vp.name || 'Someone').split(' ')[0];
+      const first = this.displayName(vid);
       const comp = this.villagerCompetence(vid, a.task);
       const tmult = this.trustTaskMult(vid);
       const eff = comp * tmult;
@@ -3272,6 +3608,7 @@
       const trustGain = Math.min(10, Math.floor(kcal / 500)) * genMult;
       v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + trustGain);
       this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${trustGain}. They'll remember this.`);
+      this.observe('donate');
       if (this.state.scholar.week1) this.state.scholar.week1.donate++;
       // GENEROUS XP needs a REAL gift (>= 200 kcal). token 1-kcal donations don't count.
       // (prevents donate-take-back XP farming)
@@ -3352,6 +3689,7 @@
       if (net < -5000) {
         v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
         if (Math.random() < 0.3) this.say('Someone watches you load up. They say nothing.');
+        this.observe('hoard');
       }
       this.say(`Packed: ${taken.join(', ')}. (${this.fmtKcal(totalKcal)}, ${totalKg.toFixed(1)} kg)`);
       return null;
@@ -3500,6 +3838,356 @@
         || (this.data.background_survivors || []).find(x => x.id === rid);
       return vp ? vp.name.split(' ')[0] : 'Someone';
     },
+
+    // ============ STRANGERS → PEOPLE ============
+    // Pre-System, villagers are strangers: no names, no stats, no scanning.
+    // You're just a person meeting strangers. A name is earned socially:
+    // they tell you ("I'm Mei"), or you hear someone else mention them.
+    // Post-System (day 7), the overlay just GIVES you names — invasive by
+    // contrast with the human way you learned the first few.
+    // Every user-facing reference to a person goes through displayName() —
+    // raw IDs (gen_a1b2c3) must NEVER reach the UI.
+    nameKnown(vid) {
+      return !!((this.state.village.knownNames || {})[vid]);
+    },
+    revealName(vid, how) {
+      const village = this.state.village;
+      village.knownNames = village.knownNames || {};
+      if (village.knownNames[vid] || this.state.systemArrived) return false;
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid);
+      const first = v ? v.name.split(' ')[0] : 'Someone';
+      village.knownNames[vid] = true;
+      if (how === 'intro') this.say(`"${first}," they say, touching their chest. "I'm ${first}." You'll remember that.`);
+      else if (how === 'overheard') this.say(`A name drifts over from the fire: ${first}. That's the ${this.descriptorBase(vid)} — now they have a name.`);
+      else if (how === 'gesture') this.say(`They point at themself and say it slowly, twice. It sounds like a name: ${first}.`);
+      return true;
+    },
+    _hashStr(s) {
+      let h = 0;
+      for (let i = 0; i < String(s).length; i++) h = (h * 31 + String(s).charCodeAt(i)) >>> 0;
+      return h;
+    },
+    // descriptorBase: what you'd actually observe. "woman, maybe 30s".
+    // Stable per villager (not random each call) so you can recognize them.
+    descriptorBase(vid) {
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      let pro = v.pro;
+      if (!pro) pro = ['she', 'he', 'they'][this._hashStr(vid) % 3];
+      const age = v.age || 30;
+      const band = age < 25 ? '20s' : age < 35 ? '30s' : age < 45 ? '40s' : age < 55 ? '50s' : '60s';
+      const who = pro === 'she' ? 'woman' : pro === 'he' ? 'man' : 'person';
+      return `${who}, maybe ${band}`;
+    },
+    personDescriptor(vid) {
+      return 'A ' + this.descriptorBase(vid);
+    },
+    // displayName: THE funnel. Names pre-System only if earned socially.
+    displayName(vid) {
+      if (this.state.systemArrived || this.nameKnown(vid)) return this.npcName(vid);
+      return this.personDescriptor(vid);
+    },
+
+    // ============ GOALS ============
+    npcGoal(vid) {
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      if (v.goal) return v.goal;
+      return (this.state.village.bgGoals || {})[vid] || null;
+    },
+    goalWant(vid) {
+      const g = (this.data.characterGen.goals || []).find(x => x.id === this.npcGoal(vid));
+      return g ? g.want : null;
+    },
+
+    // ============ REPUTATION ============
+    // Multidimensional, per-villager, filtered through personality, goals,
+    // and groups. The village watches everything you do — and everyone
+    // interprets it differently. Nothing is neutral.
+    repOf(vid) {
+      const v = this.state.village;
+      v.rep = v.rep || {};
+      return v.rep[vid] || (v.rep[vid] = { generous: 0, brave: 0, honest: 0, competent: 0 });
+    },
+    // repWords: how they see you, in plain language. Post-System display.
+    repWords(vid) {
+      const r = this.repOf(vid);
+      const dim = (val, hi, lo) => val >= 25 ? hi : val <= -25 ? lo : null;
+      const words = [dim(r.generous, 'generous', 'stingy'), dim(r.brave, 'brave', 'cowardly'),
+        dim(r.honest, 'straight with people', 'scheming'), dim(r.competent, 'capable', 'useless')]
+        .filter(Boolean);
+      return words.length ? words.join(', ') : 'still making up their mind';
+    },
+    // repTalkLines: they talk about what they think of YOU. Earned opinions.
+    repTalkLines(vid) {
+      const r = this.repOf(vid);
+      const out = [];
+      if (r.generous >= 30) out.push("You always share. People notice. I notice.");
+      if (r.generous <= -30) out.push("You keep a tight grip on your pack. I've seen it.");
+      if (r.brave >= 30) out.push("What you did out there — that took guts. I won't forget it.");
+      if (r.brave <= -30) out.push("You run when it matters. Everyone saw.");
+      if (r.honest <= -30) out.push("Why are you being so nice lately? What's the angle? There's always an angle.");
+      if (r.honest >= 30) out.push("You're straight with people. That's rarer than food out here.");
+      if (r.competent >= 30) out.push("You know what you're doing. That's rare. That's good.");
+      if (r.competent <= -30) out.push("No offense, but I'm not following you into the treeline.");
+      return out;
+    },
+    // observe: the village watches you act. Every villager interprets the act
+    // through their own lens — temperament, goal, relationship to the target.
+    // opts: {target, task, noTrust}
+    // observe: the village watches you act. Every villager interprets the act
+    // through their own lens — temperament, goal, relationship to the target.
+    // PROXIMITY MATTERS: only witnesses (nearby) see it directly. Everyone
+    // else hears about it secondhand — distorted — or not at all.
+    // opts: {target, task, noTrust, noGossip}
+    observe(action, opts) {
+      opts = opts || {};
+      const AX = {
+        give_food: { generous: 6, competent: 1 },
+        donate: { generous: 5, competent: 2 },
+        order: { competent: 3, honest: -1 },
+        fight: { brave: 10, competent: 2 },
+        flee: { brave: -8 },
+        talk: { honest: 1 },
+        hoard: { generous: -6, honest: -2 },
+        share_knowledge: { generous: 3, competent: 3 },
+      }[action];
+      if (!AX) return;
+      const roster = ((this.state.village || {}).roster || []).filter(id => id !== this.villagerId);
+      // witnesses see it directly; the 9x9 grid means range 3 is "there",
+      // beyond that it's hearsay.
+      const wit = this.witnesses(3);
+      const hasPositions = wit !== null;
+      // those who weren't there hear about it later — secondhand, distorted.
+      if (hasPositions && !opts.noGossip) {
+        const heardBy = wit.filter(id => id !== this.villagerId);
+        if (heardBy.length < roster.length) this.seedGossip(action, AX, heardBy, opts.noTrust);
+      }
+      for (const vid of roster) {
+        const temp = this.npcTemper(vid);
+        const goal = this.npcGoal(vid);
+        const isTarget = opts.target === vid;
+        const isWitness = !hasPositions || isTarget || wit.includes(vid);
+        if (!isWitness) continue; // they'll hear it secondhand, distorted
+        const dims = { ...AX };
+        // THE LENS: the same act means different things to different people.
+        if (action === 'give_food') {
+          if (isTarget) dims.generous += 4; // the recipient is grateful
+          else if (goal === 'lead') { dims.generous = 2; dims.honest = -6; } // buying loyalty
+          if (isTarget && (temp === 'prickly' || goal === 'prove')) dims.generous = -4; // charity resented
+          if (!isTarget && (goal === 'lead' || goal === 'survive' || temp === 'cautious')) dims.honest = -3; // what's she after?
+        }
+        if (action === 'fight') {
+          if (temp === 'bold') dims.brave += 4; // respect
+          if (temp === 'cautious') dims.brave = -4; // reckless
+          if (goal === 'lead') dims.competent = -4; // showing off
+        }
+        if (action === 'order') {
+          if (goal === 'lead') dims.honest = -5; // power grab
+          if (isTarget && temp === 'prickly') dims.honest = -3;
+        }
+        if (action === 'donate' && goal === 'lead') dims.honest = -3;
+        this.applyRep(vid, dims, isTarget ? 1 : 0.8, opts.noTrust);
+      }
+    },
+    // witnesses: who was close enough to SEE it. Information follows eyes,
+    // not broadcast. Returns null when position data is unavailable.
+    witnesses(range) {
+      const v = this.state.village;
+      const pos = v.positions;
+      const s = this.state.scholar;
+      if (!pos || s.mx === undefined || s.mx === null) return null;
+      const out = [];
+      for (const [rid, p] of Object.entries(pos)) {
+        if (rid === this.villagerId) continue;
+        if (Math.max(Math.abs(p.mx - s.mx), Math.abs(p.my - s.my)) <= (range || 6)) out.push(rid);
+      }
+      return out;
+    },
+    // seedGossip: those who weren't there hear about it later — secondhand,
+    // distorted, traveling along social lines. "She gave me food" becomes
+    // "she's giving away all the supplies" by the third retelling.
+    seedGossip(action, dims, heardBy, noTrust) {
+      const v = this.state.village;
+      v.gossip = v.gossip || [];
+      const partKey = this.state.scholar.day + ':' + this.dayPart;
+      if (v.gossip.some(g => g.action === action && g.partKey === partKey)) return;
+      v.gossip.push({
+        action, dims: { ...dims }, heard: [...(heardBy || [])],
+        distortion: 0, day: this.state.scholar.day, partKey, noTrust: !!noTrust,
+      });
+    },
+    // spreadGossip: each part, hearers tell non-hearers — preferring their own
+    // circle. Gossips spread fast; private people don't. Stories mutate.
+    spreadGossip() {
+      const v = this.state.village;
+      v.gossip = v.gossip || [];
+      for (const g of v.gossip) {
+        for (const teller of [...g.heard]) {
+          if (!(v.roster || []).includes(teller)) continue;
+          const temp = this.npcTemper(teller);
+          const rate = temp === 'warm' ? 0.5 : (temp === 'prickly' || temp === 'withdrawn') ? 0.08 : 0.22;
+          if (Math.random() > rate) continue;
+          const candidates = (v.roster || []).filter(id =>
+            id !== this.villagerId && id !== teller && !g.heard.includes(id));
+          if (!candidates.length) continue;
+          // information follows social lines: group members first
+          const mates = new Set();
+          for (const gr of (v.groups || [])) if (gr.members.includes(teller)) gr.members.forEach(m => mates.add(m));
+          candidates.sort((a, b) => (mates.has(b) ? 1 : 0) - (mates.has(a) ? 1 : 0));
+          const listener = candidates[0];
+          g.heard.push(listener);
+          g.distortion++;
+          const dims = { ...g.dims };
+          if (g.distortion >= 2 && Math.random() < 0.45) {
+            const keys = Object.keys(dims);
+            const k = keys[Math.floor(Math.random() * keys.length)];
+            dims[k] = Math.round(dims[k] * 1.6 + (Math.random() < 0.25 ? -Math.sign(dims[k] || 1) * 5 : 0));
+            if (Math.random() < 0.3) {
+              this.say(`You catch fragments by the fire — ${this.displayName(teller)} telling ${this.displayName(listener)} about you. The story's getting bigger than what happened.`);
+            }
+          }
+          this.applyRep(listener, dims, 0.4, g.noTrust);
+        }
+      }
+      // stories fade after ~3 days
+      v.gossip = v.gossip.filter(g => (this.state.scholar.day - g.day) < 3);
+    },
+    // talkReason: why THEY want to talk to YOU. Villagers initiate because
+    // they heard something, want something, or are worried.
+    talkReason(rid) {
+      const v = this.state.village;
+      const d = this.displayName(rid);
+      for (const g of (v.gossip || [])) {
+        if (!g.heard.includes(rid)) continue;
+        const neg = Object.entries(g.dims).some(([k, val]) => val < -3);
+        if (neg && Math.random() < 0.6) {
+          return { line: `"Can we talk?" ${d} glances around first. "People are saying things. About you. Is any of it true?"` };
+        }
+      }
+      const goal = this.npcGoal(rid);
+      const pantryLow = (v.pantryKcal || 0) < 4000;
+      const roll = Math.random();
+      if (goal === 'prove' && roll < 0.5) return { line: `"Can we talk?" ${d} shifts their weight. "I need something to do. Anything. Please."` };
+      if (goal === 'alone' && roll < 0.4) return { line: `"Can we talk?" ${d} sighs. "I need some space. A corner nobody needs me in. Is that okay?"` };
+      if (goal === 'family' && roll < 0.4) return { line: `"Can we talk? Have you seen anyone on the roads? Anyone at all? I'm asking everyone."` };
+      if (goal === 'lead' && (v.heat || {})[rid] > 0 && roll < 0.5) return { line: `"Can we talk?" ${d} doesn't wait for an answer. "We need to discuss how things are run here."` };
+      if (pantryLow && roll < 0.35) return { line: `"Can we talk?" ${d} keeps their voice low. "The stores. Have you looked at the stores? We're running thin."` };
+      if (roll < 0.25) return { line: `"Can we talk?" ${d} sits down near you. "Just... talk. Like people used to."` };
+      return null;
+    },
+    // applyRep: write the dims, drift trust, ripple through their group.
+    applyRep(vid, dims, weight, noTrust) {
+      const r = this.repOf(vid);
+      let dTrust = 0;
+      for (const k of Object.keys(dims)) {
+        const delta = Math.round((dims[k] || 0) * (weight || 1));
+        if (!delta) continue;
+        r[k] = Math.max(-100, Math.min(100, (r[k] || 0) + delta));
+        dTrust += delta * 0.6;
+      }
+      const t = this.state.village.trust || (this.state.village.trust = {});
+      if (!noTrust && dTrust !== 0) {
+        // WORDS ONLY GO SO FAR applies to talk; real acts can move trust far.
+        t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + Math.round(dTrust)));
+      }
+      // RIPPLES: their circle feels it too, at 40%.
+      for (const g of (this.state.village.groups || [])) {
+        if (!g.members.includes(vid)) continue;
+        for (const mid of g.members) {
+          if (mid === vid || mid === this.villagerId) continue;
+          const mr = this.repOf(mid);
+          for (const k of Object.keys(dims)) {
+            const rd = Math.round((dims[k] || 0) * (weight || 1) * 0.4);
+            if (rd) mr[k] = Math.max(-100, Math.min(100, (mr[k] || 0) + rd));
+          }
+          if (!noTrust && dTrust !== 0) {
+            t[mid] = Math.max(0, Math.min(100, (t[mid] || 10) + Math.round(dTrust * 0.4)));
+          }
+        }
+      }
+    },
+    // genGroups: informal circles — friends, confidants, factions.
+    // Your action toward one person ripples through their group.
+    genGroups() {
+      const v = this.state.village;
+      const ids = ((v.roster || []).filter(id => id !== this.villagerId));
+      const order = [...ids].sort(() => Math.random() - 0.5);
+      const kinds = ['friends', 'confidants', 'faction'];
+      const groups = [];
+      let i = 0, gi = 0;
+      while (i < order.length) {
+        const size = Math.min(2 + Math.floor(Math.random() * 3), order.length - i);
+        if (size < 2) break;
+        groups.push({ id: 'g' + (gi), kind: kinds[gi % kinds.length], members: order.slice(i, i + size) });
+        i += size; gi++;
+      }
+      v.groups = groups;
+    },
+    // fillTalkLine: shared dialogue data carries {first}/{occ}/{origin}/{skill}.
+    fillTalkLine(line, v) {
+      const first = ((v && v.name) || 'Someone').split(' ')[0];
+      return String(line).replaceAll('{first}', first)
+        .replaceAll('{occ}', (v && v.formerOccupation) || 'survivor')
+        .replaceAll('{origin}', (v && v.homeRegion) || 'somewhere')
+        .replaceAll('{skill}', 'making do');
+    },
+    // ============ LEADERSHIP COMPETITION ============
+    // Contenders (goal 'lead') push back when you delegate. Heat builds;
+    // at 3 they confront you. Yield and they run a domain — building their
+    // own base. Hold your ground and they back down... for now. Ignore them
+    // and they stop asking and just TAKE it.
+    leadershipFriction(vid, task) {
+      const v = this.state.village;
+      v.heat = v.heat || {};
+      const contenders = (v.roster || []).filter(id =>
+        id !== this.villagerId && id !== vid && this.npcGoal(id) === 'lead');
+      for (const cid of contenders) {
+        const temp = this.npcTemper(cid);
+        if ((temp === 'bold' || temp === 'prickly' || temp === 'intense') && Math.random() < 0.4) {
+          v.heat[cid] = (v.heat[cid] || 0) + 1;
+          const d = this.displayName(cid);
+          const lines = [
+            `${d} watches you give the order. "Interesting. Nobody asked me."`,
+            `"Why are YOU giving orders?" ${d} doesn't raise their voice. That's worse.`,
+            `${d} folds their arms. "Sure. Your call. For now."`,
+          ];
+          this.say(lines[Math.floor(Math.random() * lines.length)]);
+          const t = v.trust || (v.trust = {});
+          t[cid] = Math.max(0, (t[cid] || 10) - 2);
+          if (v.heat[cid] >= 3 && !v.challenge) {
+            v.challenge = { cid, task, age: 0 };
+            this.say(`${d} steps closer. "We need to talk. About who's actually running things here."`);
+          }
+        }
+      }
+    },
+    // personActivityLine: what they're doing, in plain observed language.
+    // For the pre-System person sheet — no stats, just eyes.
+    personActivityLine(vid) {
+      const need = this.dominantNeed(vid);
+      const mood = this.npcMood(vid);
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      const pro = v.pro || (['she', 'he', 'they'][this._hashStr(vid) % 3]);
+      const They = pro === 'they' ? 'They' : pro === 'she' ? 'She' : 'He';
+      const keep = pro === 'they' ? 'keep' : 'keeps';
+      const are = pro === 'they' ? 'are' : 'is';
+      const map = {
+        fear: `${They} ${keep} glancing at the treeline.`,
+        hunger: `${They} ${keep} rubbing their stomach, trying not to show it.`,
+        loneliness: `${They} ${are} sitting a little apart from the others.`,
+        exhaustion: `${They} move${pro === 'they' ? '' : 's'} slowly, like everything costs.`,
+        grief: `${They} stare${pro === 'they' ? '' : 's'} at nothing for a long time.`,
+        gratitude: `${They} ${keep} nodding at people, smiling tiredly.`,
+        ease: `${They} look${pro === 'they' ? '' : 's'} almost relaxed. Almost.`,
+        calm: `${They} ${are} by the fire, watching it.`,
+      };
+      let line = map[need] || map.calm;
+      if (mood === 'grieving' && need !== 'grief') line = `${They} went quiet a while ago. Nobody's asked.`;
+      return line;
+    },
     npcMood(rid) {
       // mood is derived, not stored — dominant need + village weather wins.
       const v = this.state.village;
@@ -3569,7 +4257,7 @@
           const t = (v.trust || {})[rid] || 10;
           if (v.trust) v.trust[rid] = Math.max(0, t - 2);
           const temp = this.npcTemper(rid);
-          if (temp === 'prickly' || temp === 'bold') this.say(`${this.npcName(rid)} stops asking. The look says enough.`);
+          if (temp === 'prickly' || temp === 'bold') this.say(`${this.displayName(rid)} stops asking. The look says enough.`);
         }
       }
     },
@@ -3595,7 +4283,7 @@
         if (d > 5) continue;
         const n = this.npcNeeds(rid);
         const mood = this.npcMood(rid);
-        const first = this.npcName(rid);
+        const first = this.displayName(rid);
         const temp = this.npcTemper(rid);
         const stepToward = () => {
           const dx = Math.sign(px - pos.mx), dy = Math.sign(py - pos.my);
@@ -3632,20 +4320,39 @@
           stepToward(); done();
           n.social = Math.max(0, n.social - 45);
           const others = order.filter(o => o !== rid);
-          const other = others.length ? this.npcName(others[Math.floor(Math.random() * others.length)]) : 'someone';
+          const otherId = others.length ? others[Math.floor(Math.random() * others.length)] : null;
+          // The speaker knows the other's name — villagers know each other.
+          // YOU might not. That's the gap the overheard line closes.
+          const otherSaid = otherId ? this.npcName(otherId) : 'someone';
           const lines = [
-            `${first} wanders over, just to talk. "You hear what ${other} said about the creek? ...Never mind. How are you holding up?"`,
+            `${first} wanders over, just to talk. "You hear what ${otherSaid} said about the creek? ...Never mind. How are you holding up?"`,
             `"Can't sleep," ${first} admits, sitting near you. "Tell me something from before. Anything."`,
             `${first} has opinions about the firewood situation and needs you to hear them.`,
             mood === 'grieving'
               ? `${first} sits near you, quiet a while. "I keep setting out an extra bowl. Stupid."`
               : `${first} wants company more than conversation. That's fine. You're company.`,
           ];
-          this.say(lines[Math.floor(Math.random() * lines.length)]);
+          const picked = lines[Math.floor(Math.random() * lines.length)];
+          this.say(picked);
+          // OVERHEARD: they mentioned someone by name — that's how names
+          // travel. You learn it without ever talking to them.
+          if (otherId && !this.state.systemArrived && picked.includes(otherSaid) && otherSaid !== 'someone') this.revealName(otherId, 'overheard');
           // talking helps a little: trust +2, capped the same as talk
           const t = (v.trust || {})[rid] || 10;
           if (v.trust && t < 40) v.trust[rid] = Math.min(40, t + 2);
           return;
+        }
+        // THEY COME TO YOU: "can we talk?" — they've heard something, want
+        // something, or are worried. You're not always the initiator.
+        if (Math.random() < 0.16) {
+          const reason = this.talkReason(rid);
+          if (reason) {
+            stepToward(); done();
+            v.talkRequests = v.talkRequests || {};
+            v.talkRequests[rid] = { line: reason.line };
+            this.say(reason.line + ` (Talk to ${this.displayName(rid)}.)`);
+            return;
+          }
         }
         if (mood === 'grateful' && Math.random() < 0.15) {
           stepToward(); done();
@@ -3682,7 +4389,7 @@
       const pick = () => npcs[Math.floor(Math.random() * npcs.length)];
       const a = pick(); let b = pick(); let guard = 0;
       while (b === a && guard++ < 10) b = pick();
-      const fa = this.npcName(a), fb = this.npcName(b);
+      const fa = this.displayName(a), fb = this.displayName(b);
       const ta = this.npcTemper(a), tb = this.npcTemper(b);
       const grief = (v.grief || 0) > 0, cheer = (v.cheer || 0) > 0;
       let line;
@@ -3731,7 +4438,7 @@
       // someone shares what they learned, by the fire, in words
       const pid = taught[Math.floor(Math.random() * taught.length)];
       const entry = shared[pid];
-      const teacher = this.npcName(entry.discoveredBy);
+      const teacher = this.displayName(entry.discoveredBy);
       const p = (this.data.plants || []).find(x => x.id === pid);
       if (!p) return;
       const pname = this.plantKnown(pid) ? p.name : (p.description || 'a plant');
@@ -3797,7 +4504,7 @@
     tradeKnowledge(vid, pid) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         || (this.data.background_survivors || []).find(x => x.id === vid) || {};
-      const first = (vp.name || 'Someone').split(' ')[0];
+      const first = this.displayName(vid);
       const p = (this.data.plants || []).find(x => x.id === pid);
       if (!p) return null;
       const trust = (this.state.village.trust || {})[vid] || 10;
@@ -4699,6 +5406,18 @@
         this.say('Your journal shimmers. The handwriting doesn\'t disappear — it gets... absorbed. The Codex has your notes. All of them. Even the smudged ones. Especially the smudged ones.');
         this.say('"We kept the smudges! They\'re charming! You\'re welcome!"');
         s.codexUnlocked = true;
+        // THE OVERLAY: names, health bars, stats. The System doesn't ask —
+        // it labels. Everyone you've met is suddenly tagged. It feels invasive
+        // next to the names you earned by talking and listening.
+        const village = this.state.village;
+        village.knownNames = village.knownNames || {};
+        for (const vid of (village.roster || [])) village.knownNames[vid] = true;
+        // UNHINGED TUTORIAL: 3-4 lines, then you're on your own.
+        this.say('"OH WAIT. Your EYES. We haven\'t fixed your eyes yet! Hold still —"');
+        this.say('Something clicks behind your vision. Names. Floating over heads. Little bars. The System labeled everyone while you blinked.');
+        this.say('"LOOK! You can SEE their HEALTH now! Isn\'t that NEAT?! Green means GO! Red means... oh, you know what red means! It\'s very intuitive!"');
+        this.say('"We gave you EVERYONE\'S name! Even the ones you never talked to! No need to thank us! (Please thank us. The audience loves gratitude.)"');
+        this.say('It feels invasive. The names you learned yourself — by talking, by listening — those felt earned. These just... appeared.');
         this.scheduleSystemEvents();
         // If you're NOT at Haven, the village talks about it without you.
         // When you return, they'll tell you what happened. (Drama: you missed it.)
@@ -4974,7 +5693,8 @@
           const lose = utils[Math.floor(Math.random() * utils.length)];
           const lid = (lose && lose.id) || lose;
           s.abilities = s.abilities.filter(e => ((e && e.id) || e) !== lid);
-          this.say(`PACT: the Static takes — ${lid} is gone.`);
+          const lname = ((this.data.abilities || []).find(a => a.id === lid) || {}).name || lid;
+          this.say(`PACT: the Static takes — ${lname} is gone.`);
           this.recomputeActiveSynergies();
         }
       } else if (id === 'chitin_skin') {
@@ -5483,12 +6203,12 @@
           this.state.scholar.activeQuest = null;
           if (q.reward === 'pantry') {
             this.state.village.pantryKcal += 500;
-            this.say(`✅ ${q.giverName} takes the ${q.plant}. "+500 kcal to the pantry. You're good people."`);
+            this.say(`✅ ${this.displayName(q.giver)} takes the ${q.plant}. "+500 kcal to the pantry. You're good people."`);
           } else if (q.reward === 'knowledge') {
             this.integrate(5, 'quest');
-            this.say(`✅ ${q.giverName} listens carefully. You understand the land a little better. (+integration)`);
+            this.say(`✅ ${this.displayName(q.giver)} listens carefully. You understand the land a little better. (+integration)`);
           } else {
-            this.say(`✅ ${q.giverName} grins. "Pleasure doing business." (The barter economy grows.)`);
+            this.say(`✅ ${this.displayName(q.giver)} grins. "Pleasure doing business." (The barter economy grows.)`);
             this.integrate(2, 'barter');
           }
         }
@@ -5496,7 +6216,7 @@
         if (this.playerTile().type === q.tileType) {
           this.state.scholar.activeQuest = null;
           this.integrate(5, 'quest');
-          this.say(`✅ You saw the ${q.tileType}. ${q.giverName} nods. "Good. Now we know." (+integration)`);
+          this.say(`✅ You saw the ${q.tileType}. ${this.displayName(q.giver)} nods. "Good. Now we know." (+integration)`);
         }
       }
     },
@@ -6071,7 +6791,7 @@
           if (v.health[rid] <= 0) {
             const vp = this.data.villagers.find(m => m.id === rid) || this.data.background_survivors.find(p => p.id === rid);
             v.roster = v.roster.filter(r => r !== rid);
-            this.say(`💀 ${(vp && vp.name) || rid} starved. Slowly. The village is ${v.roster.length} now.`);
+            this.say(`💀 ${this.displayName(rid)} starved. Slowly. The village is ${v.roster.length} now.`);
             delete v.health[rid];
           }
         }
@@ -6305,7 +7025,7 @@
         const ai = temp === 'bold' ? 'brave' : temp === 'cautious' ? 'cautious' : 'helpful';
         fighters.push({
           key: 'v_' + rid, kind: 'villager', villagerId: rid,
-          name: (vp.name || 'Someone').split(' ')[0], emoji: '🧍',
+          name: this.displayName(rid), emoji: '🧍',
           hp: 30, maxHp: 30, speed: 3, mx: pos.mx, my: pos.my,
           alive: true, fled: false, ai, helped: false,
         });
@@ -6336,6 +7056,9 @@
       };
       // ALIVE: the village hears it. fear is contagious.
       try { this.villageEvent('monster_attack'); } catch (e) {}
+      // REPUTATION: fighting is observed. Brave villagers respect it,
+      // cautious ones call it reckless, rivals call it showing off.
+      try { this.observe('fight'); } catch (e) {}
       this.fight = null; // old menu combat retired
       this.pendingEncounter = false;
       // face to face: the ambiguity ends. you know what it is now.
@@ -6559,6 +7282,7 @@
       if (Math.random() < 0.8) {
         p.fled = true;
         this.say('You FLEE — crashing through the undergrowth, heart hammering.');
+        try { this.observe('flee'); } catch (e) {}
         this.tbEnd('fled');
       } else {
         this.say('You try to flee — it cuts you off!');
