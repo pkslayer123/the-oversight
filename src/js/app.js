@@ -261,6 +261,10 @@
           else if (sec.condition === 'packable') actions.push(['Pack up', () => Game.cellInteract(cx, cy)]);
         } else if (cell === 'fire') {
           actions.push(['Warm hands', () => Game.cellInteract(cx, cy)]);
+        } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
+          // BUILDING ROOMS: Search = examine + loot in one. No two-step.
+          if (!sec || !sec.searched) actions.push(['Search', () => Game.searchRoom(cx, cy)]);
+          else desc = 'Searched. Nothing left.';
         } else if (cell === 'wall') {
           desc += ' It\'s a wall.';
         }
@@ -302,7 +306,7 @@
         <h3>Pack</h3>
         ${inv.length ? inv.map(i => `<p class="small"><b>${i.name}</b> x${i.units} (${i.kcalEach * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
-        ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : '<p class="small" style="opacity:.7">No recipes known yet. Learn by doing, or ask Jesse.</p>'}
+        ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}
         <button class="btn ghost sm" id="b-iback">Back</button>
       </div>`;
     document.getElementById('b-iback').onclick = () => expeditionScreen();
@@ -345,6 +349,7 @@
 
     screen.innerHTML = `
       ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
+      <div id="announce" style="position:sticky;top:0;background:#1a1a1a;border-bottom:1px solid #444;padding:6px 8px;font-size:13px;z-index:100;">${esc(st.log[st.log.length - 1] || '')}</div>
       <p class="small">${st.dayPartHint}</p>
       ${statusBars(st)}
       <p class="small">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
@@ -368,11 +373,19 @@
       };
     });
     // detail grid: tap a cell to see your options. the popup tells you what it is,
-    // what you know, what you can do, and why you can't. click your way through the world.
+    // Click a cell: if there's a DECISION (forage, drink, fight, talk), popup.
+    // If it's just ground, STEP there. No bubble asking to confirm walking.
+    // Steps cost kcal (not free), but they're not decisions.
     screen.querySelectorAll('.detail .cell').forEach(el => {
       el.onclick = () => {
         const cx = +el.dataset.cx, cy = +el.dataset.cy;
-        cellPopup(cx, cy);
+        const actions = Game.cellActions(cx, cy); // what decisions exist here?
+        if (actions.length === 0) {
+          Game.moveMicro(cx, cy); // just walk
+          expeditionScreen(); // refresh
+        } else {
+          cellPopup(cx, cy); // consequential — show options
+        }
       };
     });
     document.getElementById('x-codex').onclick = codexScreen;

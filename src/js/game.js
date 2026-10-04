@@ -212,7 +212,8 @@
       const recipe = this.data.recipes.find(r => r.id === recipeId);
       if (!recipe) return null;
       const known = (this.state.codex.recipes || {})[recipeId];
-      if (!known || known.level < 3) {
+      // L2: you understand it. Attempting it (succeed or fail) teaches L3.
+      if (!known || known.level < 2) {
         this.say(`You don\'t know how to make a ${recipe.name} yet.`);
         return null;
       }
@@ -1316,6 +1317,68 @@
           pos.mx = nx; pos.my = ny;
         }
       }
+    },
+
+    // searchRoom: examine + loot in ONE action. You look, you take what's there.
+    searchRoom(cx, cy) {
+      const key = `${this.map.px},${this.map.py},${cx},${cy}`;
+      this.state.searchedRooms = this.state.searchedRooms || {};
+      if (this.state.searchedRooms[key]) { this.say('Already searched.'); return null; }
+      this.state.searchedRooms[key] = true;
+      this.monsterTurn(); this.animalTurn(); this.villagerTurn();
+      // 40%: find something useful
+      if (Math.random() < 0.4) {
+        const finds = [
+          { name: 'First aid kit', kcalEach: 0, units: 1 },
+          { name: 'Canned beans', kcalEach: 300, units: 2 },
+          { name: 'Bottled water', kcalEach: 0, units: 1, water: true },
+        ];
+        const found = finds[Math.floor(Math.random() * finds.length)];
+        this.state.scholar.inventory.push({
+          ...found, spoilDay: 9999, unit: 'item', prep: 'Use as needed.', kg: 0.5
+        });
+        this.say(`You search the room. Found: ${found.name}.`);
+      } else {
+        this.say('You search the room. Nothing useful.');
+      }
+      return this.endDayPart();
+    },
+
+    // cellActions: returns list of decision labels at a cell. Empty = just walk there.
+    // Used by UI to decide: popup (decisions) vs step (no decisions).
+    cellActions(cx, cy) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[cy] && detail[cy][cx];
+      if (!cell) return [];
+      const t = this.playerTile();
+      const sec = (t.secrets || {})[cx + ',' + cy];
+      const actions = [];
+      // monster here? decision.
+      const mon = this.state.scholar.monster;
+      if (mon && mon.x === cx && mon.y === cy) actions.push('Fight');
+      // animal here? decision.
+      const an = this.state.scholar.animal;
+      if (an && an.x === cx && an.y === cy) actions.push('Hunt');
+      // villager here? decision.
+      const v = this.state.village;
+      if (v && v.positions) {
+        for (const rid of Object.keys(v.positions)) {
+          const pos = v.positions[rid];
+          if (pos.mx === cx && pos.my === cy) { actions.push('Talk'); break; }
+        }
+      }
+      // interactive cells? decision.
+      if (cell === 'tree' || cell === 'bigtree' || cell === 'water' || cell === 'tent') {
+        if (!sec || !sec.known) actions.push('Examine');
+        else actions.push('Use');
+      } else if (cell === 'plant' || cell === 'bush' || cell === 'rubble') {
+        actions.push('Forage');
+      } else if (cell === 'fire') {
+        actions.push('Warm hands');
+      } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
+        if (!sec || !sec.searched) actions.push('Search');
+      }
+      return actions;
     },
 
     // depleteRandomTile: when villagers forage, the world loses stock.
