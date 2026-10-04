@@ -72,10 +72,13 @@
       // Fill with staples: dried beans, rice, canned goods (safe, long spoil).
       // Staples: beans are RAW (need cooking, 150 raw -> 300 cooked).
       // If you don't know to cook them, they're half the food. Knowledge is calories.
+      // 1.5 days for 12 people = 36,000 kcal. (12 * 2000 * 1.5)
+      // Was 8,500. Starvation was mathematically inevitable. Fixed.
       const staples = [
-        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 20, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true },
-        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 15, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true },
-        { name: 'Canned soup', kcalEach: 250, units: 10, spoilDay: 9999, safe: true, kg: 0.4 },
+        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 60, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true },
+        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 50, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true },
+        { name: 'Canned soup', kcalEach: 250, units: 30, spoilDay: 9999, safe: true, kg: 0.4 },
+        { name: 'Dried meat', kcalEach: 400, units: 20, spoilDay: 9999, safe: true, kg: 0.3 },
       ];
       let kcal = 0;
       for (const s of staples) {
@@ -830,6 +833,9 @@
           ],
         };
         const layout = layouts[bt] || layouts.school;
+        // FIRE: every Haven has a campfire in the common area (hall row 7, center).
+        // This is where you cook. No fire = no cooking.
+        if (layout[7] && layout[7][4]) layout[7][4] = 'fire';
         t.detail = layout;
         return layout;
       }
@@ -1396,6 +1402,19 @@
       return null;
     },
 
+    // drinkWater: drink from a water source. Hydrates.
+    drinkWater() {
+      this.state.scholar.kcal += 0; // water has no calories, but you need it
+      this.say('You drink. Cold and clean.');
+      return null;
+    },
+    // fillWater: collect 2L clean water into village storage.
+    fillWater() {
+      const w = this.state.village.water = this.state.village.water || { clean: 20, dirty: 10 };
+      w.clean += 2;
+      this.say('Filled +2L clean water.');
+      return null;
+    },
     // nearFire: is there a fire in the current detail grid?
     nearFire() {
       const detail = this.genDetail(this.map.px, this.map.py);
@@ -1605,9 +1624,12 @@
         }
       }
       // interactive cells? decision.
-      if (cell === 'tree' || cell === 'bigtree' || cell === 'water' || cell === 'tent') {
+      if (cell === 'tree' || cell === 'bigtree' || cell === 'tent') {
         if (!sec || !sec.known) actions.push('Examine');
         else actions.push('Use');
+      } else if (cell === 'water') {
+        actions.push('Drink');
+        actions.push('Fill water (+2L)');
       } else if (cell === 'plant' || cell === 'bush' || cell === 'rubble') {
         actions.push('Forage');
       } else if (cell === 'fire') {

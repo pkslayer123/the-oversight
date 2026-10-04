@@ -270,6 +270,9 @@
           if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
           else if (sec.condition === 'good') actions.push(['Rest', () => Game.cellInteract(cx, cy)]);
           else if (sec.condition === 'packable') actions.push(['Pack up', () => Game.cellInteract(cx, cy)]);
+        } else if (cell === 'water') {
+          actions.push(['Drink', () => { Game.drinkWater(); refresh(); }]);
+          actions.push(['Fill water (+2L)', () => { Game.fillWater(); refresh(); }]);
         } else if (cell === 'fire') {
           actions.push(['Warm hands', () => Game.cellInteract(cx, cy)]);
           // Cook raw food here. (Your Codex tells you what needs cooking.)
