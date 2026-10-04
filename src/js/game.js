@@ -46,6 +46,26 @@
     location: 'village', // 'village' | 'wilds' — nodes access consistent maps
     departed: false,
 
+    // ============ TIME ECONOMY ============
+    // How the world moves when you do. ALL TUNABLE IN ONE PLACE.
+    // Playtested for "real feel" — see docs/TIME-ECONOMY.md.
+    //
+    // The model:
+    // - You move freely within a node. Steps are exploration, not time.
+    // - Every NPC_BATCH_MOVES of your squares, NPCs take a BATCH turn:
+    //   they wander at their own speed, pursue wants, live their lives.
+    // - Moving between nodes is the big time step: the world moves
+    //   (NPC batch + needs + gossip) without consuming your action budget.
+    // - Combat switches to strict turn-based (separate system, untouched).
+    TIME: {
+      NPC_BATCH_MOVES: 32,   // your squares within a node before NPCs batch
+      NPC_BATCH_WANDER: 8,   // base wander squares per NPC per batch (× speed)
+      PLAYER_SPEED: 1.0,     // baseline: your speed. NPC speed is relative.
+      // Node travel doesn't cost a day-part (see travelTimeStep). It moves
+      // the world: NPC batch + needs tick + one gossip hop. Tunable via
+      // npcBatchTurn and tickNeeds, not a separate constant.
+    },
+
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
@@ -3035,6 +3055,27 @@
       this.checkEncounter();
       this.checkAnimals();
       this.checkQuest('travel');
+      // TIME ECONOMY: moving between nodes is the BIG time step.
+      // Time passes — NPCs act, needs grow, gossip spreads — but it doesn't
+      // consume a day-part. The 4-part action economy (forage = 1 part) is
+      // the player's action budget; travel taxes the WORLD, not the budget.
+      // (Tuning: if travel feels free, raise the needs tick / energy cost
+      // in travelTimeStep. If punishing, lower it. A full part cost was
+      // playtested and broke pacing — see docs/TIME-ECONOMY.md.)
+      this.state.scholar.moveClock = 0;
+      this.travelTimeStep();
+    },
+
+    // travelTimeStep: the world moves while you travel. NPCs take a full
+    // batch turn at their own speed, wants grow, gossip spreads one hop.
+    // This is "a portion of the day" passing — visible in the world,
+    // not deducted from your 4 actions.
+    travelTimeStep() {
+      this.npcBatchTurn();
+      try { this.tickNeeds(); } catch (e) {}
+      try { this.spreadGossip(); } catch (e) {}
+      // travel is tiring: small energy cost
+      this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 2);
     },
 
     // micro-move: step to an adjacent cell in the 9x9. costs calories, not time.
@@ -3062,7 +3103,9 @@
       s.mx = cx; s.my = cy;
       // A step is not a decision. The world doesn't advance because you shifted your weight.
       // Monsters, animals, and villagers move on their own schedule (or when you ACT).
+      // But steps ACCUMULATE: every NPC_BATCH_MOVES squares, NPCs take a batch turn.
       this.ensureVillagerPositions();
+      this.tickMoveClock(1);
       return true;
     },
 
@@ -3414,6 +3457,8 @@
       s.mx = tx; s.my = ty;
       this.say(`Walked ${path.length} squares (${cost} kcal).`);
       this.ensureVillagerPositions();
+      // committed walks are real movement: they advance the background clock
+      this.tickMoveClock(path.length);
       return true;
     },
 
@@ -4767,6 +4812,75 @@
 
     // villagers wander (turn-based). they go about their day.
     // they don't block you. they're just living.
+    // ============ NPC TIME ECONOMY ============
+    // NPCs move at their own speed — a real stat, relative to you (1.0).
+    // Young and bold are fast. Old and cautious are slow.
+    // Visible in batch turns: faster NPCs cover more ground.
+    npcSpeed(vid) {
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      let s = 1.0;
+      const age = v.age || 35;
+      if (age < 30) s += 0.2;
+      else if (age > 55) s -= 0.25;
+      else if (age > 45) s -= 0.1;
+      const temp = (v.personality && v.personality.temperament) || this.npcTemper(vid);
+      if (temp === 'bold' || temp === 'intense') s += 0.15;
+      if (temp === 'cautious' || temp === 'withdrawn') s -= 0.15;
+      return Math.max(0.5, Math.min(1.5, Math.round(s * 20) / 20));
+    },
+
+    // tickMoveClock: every square you walk advances background time.
+    // NPCs don't act on every step — they batch. When your move counter
+    // hits NPC_BATCH_MOVES, they take their turn all at once.
+    tickMoveClock(n) {
+      if (this.tbfight) return; // combat has its own strict turns
+      const s = this.state.scholar;
+      s.moveClock = (s.moveClock || 0) + (n || 1);
+      if (s.moveClock >= this.TIME.NPC_BATCH_MOVES) {
+        s.moveClock = 0;
+        this.npcBatchTurn();
+      }
+    },
+
+    // npcBatchTurn: the background-life beat. NPCs wander at their own speed,
+    // pursue initiative, wants tick. The world isn't frozen while you explore —
+    // it's living at its own pace, catching up in batches.
+    npcBatchTurn() {
+      const v = this.state.village;
+      if (!v.positions) return;
+      // only the node you're on has a live grid
+      const detail = this.genDetail(this.map.px, this.map.py);
+      for (const rid of Object.keys(v.positions)) {
+        if (rid === this.villagerId) continue;
+        const pos = v.positions[rid];
+        const speed = this.npcSpeed(rid);
+        // wander: base squares scaled by relative speed.
+        // speed 1.5 -> 12 squares, speed 0.5 -> 4. You can SEE who's fast.
+        const steps = Math.max(1, Math.round(this.TIME.NPC_BATCH_WANDER * speed));
+        for (let i = 0; i < steps; i++) {
+          if (Math.random() > 0.6) continue; // meandering, not marching
+          const dx = Math.floor(Math.random() * 3) - 1;
+          const dy = Math.floor(Math.random() * 3) - 1;
+          const nx = Math.max(0, Math.min(8, pos.mx + dx));
+          const ny = Math.max(0, Math.min(8, pos.my + dy));
+          const cell = detail[ny] && detail[ny][nx];
+          if (cell && !this.cellProps(cell).blocks) { pos.mx = nx; pos.my = ny; }
+        }
+      }
+      // initiative: they come to you, on their schedule
+      try { this.villagerInitiative(); } catch (e) {}
+      // time passed: wants grew a little
+      try {
+        for (const rid of Object.keys(v.positions)) {
+          if (rid === this.villagerId) continue;
+          const n = this.npcNeeds(rid);
+          n.hunger = Math.min(100, (n.hunger || 0) + 3);
+          n.social = Math.min(100, (n.social || 0) + 2);
+        }
+      } catch (e) {}
+    },
+
     villagerTurn() {
       const v = this.state.village;
       if (this.map.px !== 3 || this.map.py !== 3) return;
