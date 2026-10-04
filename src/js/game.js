@@ -49,9 +49,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker };
       return this.data;
     },
 
@@ -123,6 +123,28 @@
       };
     },
 
+    // genNameForOrigin: names match origins. Japanese names from Japan, Nigerian from Nigeria.
+    // 80% correlated, 20% mismatch — people move, diaspora exists. But the default is sensible.
+    genNameForOrigin(origin) {
+      const pick = a => a[Math.floor(Math.random() * a.length)];
+      const nc = this.data.nameCultures || {};
+      const cultures = nc.cultures || {};
+      const o2c = nc.originToCulture || {};
+      const cg = this.data.characterGen || {};
+      let cultureId = o2c[origin];
+      // 20% chance: mismatch (immigrant, diaspora, mixed heritage)
+      if (cultureId && Math.random() < 0.2) {
+        const allCultures = Object.keys(cultures).filter(c => c !== cultureId);
+        cultureId = pick(allCultures);
+      }
+      const culture = cultures[cultureId];
+      if (culture && culture.first && culture.last) {
+        return pick(culture.first) + ' ' + pick(culture.last);
+      }
+      // fallback: legacy flat lists
+      return pick(cg.firstNames || ['Sam']) + ' ' + pick(cg.lastNames || ['Reyes']);
+    },
+
     // genRoster: 6 fresh randomized characters per expedition.
     // Names, occupations, personalities, origins, languages, heritages.
     // Real people, not stat blocks. The player's own origin is typed, not rolled.
@@ -136,8 +158,14 @@
       const chars = [];
       for (let i = 0; i < 6; i++) {
         const occ = pick(cg.occupations || []);
+        // NAMES MATCH ORIGINS: pick origin first, then a culturally-appropriate name.
+        // 80% match (Japanese name from Japan), 20% mismatch — people move.
+        const origin = pick(cg.sampleOrigins || ['somewhere']);
         let name, guard = 0;
-        do { name = pick(cg.firstNames || ['Sam']) + ' ' + pick(cg.lastNames || ['Reyes']); guard++; } while (usedNames.has(name) && guard < 50);
+        do {
+          name = this.genNameForOrigin(origin);
+          guard++;
+        } while (usedNames.has(name) && guard < 50);
         usedNames.add(name);
         const first = name.split(' ')[0];
         const pro = pick(['they', 'she', 'he']);
@@ -160,7 +188,6 @@
         const temperament = pick(cg.temperaments || ['steady']);
         const sharing = pick(cg.sharingStyles || ['fair']);
         const curiosity = pick(cg.curiosities || ['practical']);
-        const origin = pick(cg.sampleOrigins || ['somewhere']);
         const parsed = this.parseOrigin(origin);
         const skill = (occ.teachTags || []).includes('medicinal') ? 'patching people up'
           : (occ.teachTags || []).includes('food') ? 'finding food' : 'making do';
@@ -551,6 +578,13 @@
       scholar.facing = { x: 0, y: 1 };
       this.state.scholar = scholar;
       this.state.codex = S.state.newCodex();
+      // KNOWLEDGE TAXONOMY: your occupation IS knowledge. Not flavor — mechanical.
+      // An electrician knows circuits. A nurse knows wound care. Day 1, real Codex entries.
+      // This is the "background = starting knowledge" principle.
+      const bgCount = this.grantBackgroundKnowledge(villager);
+      if (bgCount > 0) {
+        this.say(`📖 Your old life taught you things. ${bgCount} skill${bgCount > 1 ? 's' : ''} from your past — check your Journal.`);
+      }
       // YOUR starting knowledge: what your old life taught you — if this land resembles it.
       // Arizona -> Georgia creek: you start knowing almost nothing. That's the point.
       for (const pid of (this.state.village.taught[this.villagerId] || [])) {
@@ -842,6 +876,12 @@
         this.say(`Learned: ${animal.name}.`);
       }
       this.integrate(5, 'book');
+      // KNOWLEDGE TAXONOMY: books can unlock skills too, not just plants.
+      // Jackpot moments — a book is a vein of knowledge.
+      const skillUnlocks = this.jackpotBook(book);
+      if (skillUnlocks) {
+        this.say(`📚 This book taught you skills, not just facts. Jackpot.`);
+      }
       // remove the book (you've absorbed it)
       this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.bookId !== bookId);
       return true;
@@ -1076,8 +1116,14 @@
     },
 
     // assign a task. Returns message. This is the leader's core verb.
-    assignTask(vid, task) {
+    // assignTask: the leader's core verb. Now accepts opts.via for remote assignment.
+    // via: 'in-person' (default, talk menu), 'shout', 'runner', 'system-ping' (future abilities).
+    // The foundation is simple: delegateTasks() is the single source of truth for task types.
+    // Future features (new tasks, abilities, social mechanics) plug into delegateTasks()
+    // and resolveOneAssignment() — no UI rebuild needed.
+    assignTask(vid, task, opts) {
       const v = this.state.village;
+      const via = (opts && opts.via) || 'in-person';
       v.assignments = v.assignments || {};
       if (vid === this.villagerId) { this.say("You're the leader. Lead."); return null; }
       const tasks = this.delegateTasks();
@@ -1093,7 +1139,7 @@
       // obedience check
       const ob = this.checkObedience(vid);
       if (!ob.ok) { this.say(ob.reason); return null; }
-      v.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart };
+      v.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart, via };
       // THE GAME NOTICES: leadership is a playstyle axis.
       this.notePlaystyle('leader');
       this.notePlaystyle('social');
@@ -1113,6 +1159,37 @@
     assignmentFor(vid) {
       const a = (this.state.village.assignments || {})[vid];
       return a || null;
+    },
+
+    // === REMOTE ASSIGNMENT: leadership abilities ===
+    // Base case is in-person (talk menu). Abilities unlock remote methods.
+    // Future abilities plug in here:
+    //   - "Shout" / "Rally Cry": village-wide, in-person range extended to whole haven
+    //   - "Runner": send a villager to deliver orders to someone far away
+    //   - "System Ping" (post-day-7): the System relays your orders. Televised leadership.
+    // Ability design contract: an ability with `remoteAssign: {id, name, desc, range}`
+    // in its data automatically appears in remoteAssignMethods(). No engine changes needed.
+    canAssignRemote() {
+      return this.remoteAssignMethods().length > 0;
+    },
+
+    remoteAssignMethods() {
+      const methods = [];
+      // check abilities for remoteAssign capability
+      for (const ab of (this.state.scholar.abilities || [])) {
+        const def = (this.data.abilities || []).find(a => a.id === (ab.id || ab));
+        if (def && def.remoteAssign) {
+          methods.push({
+            id: def.remoteAssign.id || def.id,
+            name: def.remoteAssign.name || def.name,
+            desc: def.remoteAssign.desc || '',
+            abilityId: def.id,
+          });
+        }
+      }
+      // System ping: post-day-7, the System can relay orders (if player has the perk)
+      // TODO: unlock via System favor or specific ability
+      return methods;
     },
 
     // resolve all assignments at end of day-part. Each assigned villager
@@ -1142,21 +1219,42 @@
       const R = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
 
       if (a.task === 'forage') {
-        const kcal = Math.round(R(300, 600) * eff);
+        // LIVING WORLD: villagers deplete REAL tiles in their personality zone.
+        // 5 foragers working the same area STRIP it. The village must branch out.
+        const depleteCount = Math.max(1, Math.round(R(2, 4) * eff));
+        const dep = this.villagerDepleteTiles(vid, depleteCount);
+        const kcal = Math.round(R(300, 600) * eff * (dep.depleted > 0 ? 1 : 0.3));
+        // less to find when the land is stripped — scarcity is real
         this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + kcal;
+        let landNote = '';
+        if (dep.depleted === 0) {
+          landNote = ` The ${dep.zone} are picked clean — ${first} found scraps. The village needs new ground.`;
+        } else if (dep.barren > 0) {
+          landNote = ` ${dep.barren} area${dep.barren > 1 ? 's' : ''} stripped bare ${dep.zone}.`;
+        }
         // KNOWLEDGE: foragers learn. What they learn, the village learns.
         let learned = '';
         if (Math.random() < 0.25 && this.data.plants.length) {
           const p = this.data.plants[Math.floor(Math.random() * this.data.plants.length)];
           v.sharedKnowledge = v.sharedKnowledge || {};
           if (!v.sharedKnowledge[p.id] && !(this.state.codex.plants || {})[p.id]) {
-            v.sharedKnowledge[p.id] = { discoveredBy: vid, day: this.state.scholar.day };
+            // LIVING WORLD: track the level they learned. Foragers learn L1 (recognition).
+            // Experts (botanists, herbalists) might learn L2 (which parts).
+            const vp2 = (this.data.villagers || []).find(x => x.id === vid)
+              || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+            const occ2 = (vp2.formerOccupation || '').toLowerCase();
+            const deepLearner = ['botanist', 'herbalist', 'cook', 'chef', 'forager'].some(w => occ2.includes(w));
+            v.sharedKnowledge[p.id] = {
+              discoveredBy: vid,
+              day: this.state.scholar.day,
+              level: deepLearner ? 2 : 1, // experts learn deeper
+            };
             const pname = p.name || p.id;
             learned = ` ${first} also learned to recognize ${pname} — village knowledge grows.`;
             if (this.state.systemArrived) this.flowVillageKnowledge();
           }
         }
-        this.say(`🌿 ${first} returns with foraged food: +${kcal} kcal to the pantry.${learned}`);
+        this.say(`🌿 ${first} returns with foraged food: +${kcal} kcal to the pantry.${landNote}${learned}`);
         this.bumpTrust(vid, 2);
       } else if (a.task === 'hunt') {
         const kcal = Math.round(R(400, 900) * eff);
@@ -1285,6 +1383,76 @@
       v.trust = v.trust || {};
       const cur = v.trust[vid] || 10;
       v.trust[vid] = Math.max(0, Math.min(100, cur + n));
+    },
+
+    // ============ LIVING WORLD: the land remembers ============
+    // Tiles have carrying capacity. Foraging depletes them. They regrow slowly.
+    // A village that strips its home turf MUST branch out, learn new foods, or starve.
+    // The player SEES the impact: lush → picked-over → barren.
+
+    // depletion level: how stripped is this tile?
+    depletionLevel(t) {
+      if (!t || !t.maxStock || t.maxStock <= 0) return 'lush';
+      const ratio = (t.stock || 0) / t.maxStock;
+      if (ratio >= 0.75) return 'lush';
+      if (ratio >= 0.25) return 'picked';
+      return 'barren';
+    },
+
+    // CSS class for the minimap. The land shows what you've taken.
+    depletionClass(t) {
+      if (!t || !t.revealed) return '';
+      const lvl = this.depletionLevel(t);
+      if (lvl === 'picked') return 'depleted-picked';
+      if (lvl === 'barren') return 'depleted-barren';
+      return '';
+    },
+
+    // forage zone: which ring does this villager work? Personality-driven, not random.
+    // bold pushes far for better yields (more danger). cautious stays close (safe, depletes fast).
+    // This is why villages MUST expand — cautious foragers strip the home turf first.
+    forageZone(vid) {
+      const vp = (this.data.villagers || []).find(v => v.id === vid)
+        || (this.data.background_survivors || []).find(v => v.id === vid) || {};
+      const temp = (vp.personality && vp.personality.temperament) || 'steady';
+      // rings are Manhattan distance from haven (3,3). Ring 0 = haven itself (no forage).
+      if (temp === 'bold') return { min: 2, max: 3, label: 'far afield' };
+      if (temp === 'cautious') return { min: 1, max: 1, label: 'close to home' };
+      return { min: 1, max: 2, label: 'the near wilds' };
+    },
+
+    // find forageable tiles in a villager's zone. Returns tiles with stock, nearest-first.
+    forageTilesInZone(zone, count) {
+      const hx = 3, hy = 3; // haven
+      const candidates = [];
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        if (x === hx && y === hy) continue;
+        const dist = Math.abs(x - hx) + Math.abs(y - hy);
+        if (dist < zone.min || dist > zone.max) continue;
+        const t = this.tileAt(x, y);
+        if (!t || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
+        candidates.push({ t, x, y, dist });
+      }
+      // nearest first — they work outward from haven, stripping close tiles first
+      candidates.sort((a, b) => a.dist - b.dist);
+      return candidates.slice(0, count);
+    },
+
+    // deplete specific tiles when a villager forages. The world remembers.
+    // Returns {depleted: n, barren: n} for messaging.
+    villagerDepleteTiles(vid, amount) {
+      const zone = this.forageZone(vid);
+      const tiles = this.forageTilesInZone(zone, amount);
+      let barren = 0;
+      for (const { t, x, y } of tiles) {
+        t.stock = Math.max(0, (t.stock || 0) - 1);
+        // traces: this tile has been worked. Worn paths form.
+        t.foragePressure = (t.foragePressure || 0) + 1;
+        t.foragedToday = true; // pressure doesn't decay on days it's worked
+        if (t.foragePressure >= 5) t.wornPath = true;
+        if ((t.stock || 0) === 0) barren++;
+      }
+      return { depleted: tiles.length, barren, zone: zone.label };
     },
 
     // === VILLAGE KNOWLEDGE POOL ===
@@ -1550,10 +1718,17 @@
 
     // catchUpSim: when you approach a village, simulate all days since game start.
     // They're not fresh — they've been living, foraging, competing.
+    // LIVING WORLD: their knowledge EMERGES from who they are, where they are,
+    // and what they've actually been doing. A fishing village knows fish.
+    // A farming village knows crops. This isn't assigned — it's simulated.
     catchUpSim(village) {
       const targetDay = this.state.scholar.day;
       const daysToSim = targetDay - village.day;
       if (daysToSim <= 0) return;
+      // generate their knowledge profile on first sim (geography + people)
+      if (!village.knowledgeProfile) {
+        village.knowledgeProfile = this.genVillageKnowledgeProfile(village);
+      }
       // Fast sim: each day, they forage (depleting the world), eat, maybe grow.
       for (let d = 0; d < daysToSim; d++) {
         // forage: 400-800 per person, depletes world
@@ -1570,11 +1745,99 @@
             village.population--;
           }
         }
-        // knowledge grows slowly
-        if (Math.random() < 0.2) village.knowledge++;
+        // knowledge grows: they learn what they forage. SLOWLY, like real people.
+        // each day, small chance to deepen knowledge of a plant from their profile.
+        if (Math.random() < 0.3) {
+          this.villageLearn(village);
+        }
         village.day++;
       }
       village.generated = true;
+    },
+
+    // genVillageKnowledgeProfile: what does this village know?
+    // From three sources: GEOGRAPHY (what grows near them), PEOPLE (occupations),
+    // and HISTORY (what they've foraged — built up during sim).
+    genVillageKnowledgeProfile(village) {
+      const plants = this.data.plants || [];
+      const profile = {
+        // village "occupation" — determines knowledge bias. Emergent, not assigned.
+        // Pick from their geography: near water = fishers, near forest = foragers, etc.
+        focus: 'forager', // default
+        plants: {}, // pid -> {level, learnedDay}
+      };
+      // GEOGRAPHY: check what tile types surround them
+      const tileTypes = {};
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const tx = village.x + dx, ty = village.y + dy;
+        if (tx < 0 || tx > 6 || ty < 0 || ty > 6) continue;
+        const t = this.tileAt(tx, ty);
+        if (t) tileTypes[t.type] = (tileTypes[t.type] || 0) + 1;
+      }
+      // determine focus from geography
+      if ((tileTypes['water'] || 0) + (tileTypes['creek'] || 0) >= 3) {
+        profile.focus = 'fisher';
+      } else if ((tileTypes['forest'] || 0) + (tileTypes['grove'] || 0) >= 4) {
+        profile.focus = 'forager';
+      } else if ((tileTypes['meadow'] || 0) + (tileTypes['field'] || 0) >= 4) {
+        profile.focus = 'farmer';
+      } else if ((tileTypes['ruin'] || 0) >= 2) {
+        profile.focus = 'scavenger';
+      }
+      // PEOPLE: generate 2-3 "expert" villagers whose occupations shape knowledge
+      const focusOccs = {
+        fisher: ['fisherman', 'sailor', 'angler'],
+        forager: ['botanist', 'herbalist', 'forager', 'cook'],
+        farmer: ['farmer', 'gardener', 'cook'],
+        scavenger: ['scavenger', 'handyman', 'mechanic'],
+      };
+      profile.experts = (focusOccs[profile.focus] || ['forager']).slice(0, 2);
+      // SEED KNOWLEDGE: they start knowing 2-4 plants related to their focus.
+      // Plants with matching tileAffinity or focus-relevant traits.
+      const focusPlants = plants.filter(p => {
+        const aff = (p.tileAffinity || []).join(' ').toLowerCase();
+        if (profile.focus === 'fisher') return aff.includes('water') || aff.includes('creek') || aff.includes('wetland');
+        if (profile.focus === 'farmer') return aff.includes('meadow') || aff.includes('field');
+        if (profile.focus === 'forager') return aff.includes('forest') || aff.includes('grove') || aff.includes('meadow');
+        return true; // scavengers know a bit of everything
+      });
+      const nSeed = 2 + Math.floor(Math.random() * 3); // 2-4
+      for (let i = 0; i < nSeed && focusPlants.length; i++) {
+        const p = focusPlants[Math.floor(Math.random() * focusPlants.length)];
+        if (!profile.plants[p.id]) {
+          profile.plants[p.id] = { level: 1 + Math.floor(Math.random() * 2), learnedDay: 0 }; // L1-L2
+        }
+      }
+      // village.codex mirrors the profile for shareCodexKnowledge compatibility
+      village.codex = village.codex || { plants: {} };
+      for (const [pid, e] of Object.entries(profile.plants)) {
+        village.codex.plants[pid] = { level: e.level, identifiedDay: 0 };
+      }
+      return profile;
+    },
+
+    // villageLearn: during sim, villages learn what they actually forage.
+    // Slow, like real people. Their knowledge reflects their history.
+    villageLearn(village) {
+      const prof = village.knowledgeProfile;
+      if (!prof) return;
+      const plants = this.data.plants || [];
+      if (!plants.length) return;
+      // pick a random plant, weighted toward their focus
+      const p = plants[Math.floor(Math.random() * plants.length)];
+      const existing = prof.plants[p.id];
+      if (existing) {
+        // deepen: L1 -> L2 -> L3 over many days
+        if (existing.level < 3 && Math.random() < 0.3) {
+          existing.level++;
+          village.codex.plants[p.id] = village.codex.plants[p.id] || {};
+          village.codex.plants[p.id].level = existing.level;
+        }
+      } else if (Math.random() < 0.4) {
+        // new discovery! They found something new.
+        prof.plants[p.id] = { level: 1, learnedDay: village.day };
+        village.codex.plants[p.id] = { level: 1, identifiedDay: village.day };
+      }
     },
 
     // checkVillageProximity: when player gets within 2 tiles, generate + catch up.
@@ -1584,7 +1847,14 @@
         const dist = Math.abs(v.x - px) + Math.abs(v.y - py);
         if (dist <= 2 && !v.generated) {
           this.catchUpSim(v);
-          this.say(`You see smoke on the horizon. ${v.name} — ${v.population} people, ${v.day} days in. They've been here the whole time.`);
+          const prof = v.knowledgeProfile || {};
+          const nPlants = Object.keys(prof.plants || {}).length;
+          const focusWord = { fisher: 'fishing folk', forager: 'foragers', farmer: 'farmers', scavenger: 'scavengers' }[prof.focus] || 'survivors';
+          // LIVING WORLD: their knowledge is a content unlock. What do they know that you don't?
+          const yourPlants = Object.keys(this.state.codex.plants || {});
+          const theirNew = Object.keys(prof.plants || {}).filter(pid => !yourPlants.includes(pid)).length;
+          const knowNote = nPlants > 0 ? ` They know ${nPlants} plants${theirNew > 0 ? ` — ${theirNew} you haven't seen` : ''}.` : '';
+          this.say(`You see smoke on the horizon. ${v.name} — ${v.population} people, ${v.day} days in. ${focusWord}, by the look of it.${knowNote} They've been here the whole time.`);
         }
       }
     },
@@ -3333,6 +3603,346 @@
       this.say(line);
     },
 
+    // firesideTeaching: knowledge moves human-to-human, BEFORE the System.
+    // Villagers teach each other what they've learned. The player can learn by listening.
+    // This is the Journal era — informal, spoken, real. The System doesn't create
+    // the Codex later; it FORMALIZES what the group already knows.
+    firesideTeaching() {
+      const v = this.state.village;
+      if (!v.roster || Math.random() > 0.35) return; // not every part
+      const shared = v.sharedKnowledge || {};
+      const taught = Object.keys(shared).filter(pid => !shared[pid].taughtAround);
+      if (!taught.length) return;
+      // someone shares what they learned, by the fire, in words
+      const pid = taught[Math.floor(Math.random() * taught.length)];
+      const entry = shared[pid];
+      const teacher = this.npcName(entry.discoveredBy);
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return;
+      const pname = this.plantKnown(pid) ? p.name : (p.description || 'a plant');
+      // mark it shared — the village knows now, human-to-human
+      entry.taughtAround = true;
+      entry.taughtDay = this.state.scholar.day;
+      const journalWord = this.state.systemArrived ? 'Codex' : 'journal';
+      const lines = [
+        `${teacher} is showing everyone ${pname} by the fire. "See the leaves? Like that. Don't mix it up." The ${journalWord} grows — the human way.`,
+        `Fireside lesson: ${teacher} passes around ${pname}. Someone asks a dumb question. Nobody minds. That's how you learn.`,
+        `${teacher} drew ${pname} in the dirt for the others. It'll wash away. The knowledge won't.`,
+      ];
+      this.say(lines[Math.floor(Math.random() * lines.length)]);
+      // YOU can learn by being there. If you don't know it yet, this is your chance.
+      if (!this.plantKnown(pid) && Math.random() < 0.6) {
+        this.identifyPlant(pid, 'fireside');
+        this.say(`You were listening. Now you know ${p.name} too.`);
+      }
+      // knowledge combination: if someone else knows MORE about this plant,
+      // the fireside conversation unlocks deeper levels. Overlap computes depth.
+      this.combineKnowledge(pid);
+    },
+
+    // isKnowledgeTrader: some people trade in knowledge. They know things deeply
+    // and they'll share — for food, favors, or knowledge in return.
+    // "I'll tell you what's safe to eat in the north field, if you tell me
+    //  what you found by the creek."
+    isKnowledgeTrader(vid) {
+      const vp = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      const occ = (vp.formerOccupation || '').toLowerCase();
+      // natural traders: people whose old life was about knowing things
+      if (['librarian', 'teacher', 'professor', 'botanist', 'herbalist', 'scout', 'tracker',
+           'journalist', 'researcher', 'scholar', 'guide'].some(w => occ.includes(w))) return true;
+      // explicit flag
+      if (vp.trader) return true;
+      return false;
+    },
+
+    // what does this trader know that you don't? Returns plant IDs they can teach.
+    traderKnowledge(vid) {
+      const vp = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      // traders know 2-3 plants deeply. Generate deterministically from their ID.
+      const plants = this.data.plants || [];
+      if (!plants.length) return [];
+      let h = 0;
+      for (const c of vid) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      const known = [];
+      const n = 2 + (h % 2); // 2-3 plants
+      for (let i = 0; i < n; i++) {
+        const p = plants[(h + i * 7) % plants.length];
+        if (p && !known.includes(p.id)) known.push(p.id);
+      }
+      // filter to things YOU don't know yet (or know shallowly)
+      return known.filter(pid => {
+        const e = (this.state.codex.plants || {})[pid];
+        return !e || (e.level || 1) < 3; // they know deeper than you
+      });
+    },
+
+    // tradeKnowledge: the deal. Food, favor, or knowledge for knowledge.
+    tradeKnowledge(vid, pid) {
+      const vp = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      const first = (vp.name || 'Someone').split(' ')[0];
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return null;
+      const trust = (this.state.village.trust || {})[vid] || 10;
+      // price: food, or knowledge in return, or just trust
+      const price = trust >= 60 ? 'trust' : (trust >= 30 ? 'food' : 'knowledge');
+      if (price === 'food') {
+        const cost = 300;
+        if ((this.state.scholar.kcal || 0) < cost) {
+          this.say(`${first} wants ${cost} kcal of food for the secret of ${p.name}. You don't have it.`);
+          return null;
+        }
+        this.state.scholar.kcal -= cost;
+        this.say(`${first} takes your food, nods. "Okay. ${p.name}. Here's what I know..."`);
+      } else if (price === 'knowledge') {
+        // they want something YOU know that they don't
+        const yourPlants = Object.keys(this.state.codex.plants || {});
+        const theirKnown = this.traderKnowledge(vid); // what they'd teach
+        // find something you know that isn't in their teach pool
+        const trade = yourPlants.find(yPid => !theirKnown.includes(yPid) && yPid !== pid);
+        if (!trade) {
+          this.say(`${first} wants knowledge in trade, but you have nothing they don't already know. (Learn more plants first.)`);
+          return null;
+        }
+        const tp = (this.data.plants || []).find(x => x.id === trade);
+        this.say(`Trade: you teach ${first} about ${tp ? tp.name : trade}. They teach you about ${p.name}. Knowledge for knowledge.`);
+      } else {
+        this.say(`${first} trusts you. "Come here. Let me tell you about ${p.name}..." (High trust — free.)`);
+      }
+      // the teaching: they know it DEEP. You get L2 immediately, L3 if you had L1.
+      const cur = (this.state.codex.plants || {})[pid];
+      const curLevel = cur ? (cur.level || 1) : 0;
+      const newLevel = curLevel >= 1 ? 3 : 2;
+      if (!cur) {
+        this.identifyPlant(pid, 'traded');
+      }
+      this.state.codex.plants[pid] = this.state.codex.plants[pid] || {};
+      this.state.codex.plants[pid].level = Math.max(this.state.codex.plants[pid].level || 1, newLevel);
+      this.state.codex.plants[pid].viaTrade = vid;
+      this.say(`📚 TRADED KNOWLEDGE: ${p.name} — Level ${newLevel}. ${first} knew it deep. ${p.knowledgeLevels[String(newLevel)] || ''}`);
+      this.bumpTrust(vid, 3);
+      // combination: their depth + your experience might unlock more
+      this.combineKnowledge(pid);
+      return null;
+    },
+
+    // combineKnowledge: when multiple people know different things about the same
+    // plant, the OVERLAP computes deeper knowledge.
+    // "You know it's safe. She knows the roots are the best part.
+    //  Together, you figure out how to prepare it."
+    combineKnowledge(pid) {
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return false;
+      const mine = (this.state.codex.plants || {})[pid];
+      if (!mine) return false; // you need at least L1 to combine
+      const myLevel = mine.level || 1;
+      if (myLevel >= 4) return false; // already mastered
+      // gather what others know: village shared + traders + other villages
+      let deepestOther = 0;
+      const sources = [];
+      const v = this.state.village;
+      // village shared knowledge
+      const shared = (v.sharedKnowledge || {})[pid];
+      if (shared && shared.level) {
+        deepestOther = Math.max(deepestOther, shared.level);
+        sources.push('the village');
+      }
+      // check traders in roster
+      for (const rid of (v.roster || [])) {
+        if (rid === this.villagerId) continue;
+        if (this.isKnowledgeTrader(rid)) {
+          // traders know everything they teach at L3
+          const tk = this.traderKnowledge(rid);
+          // if this plant was in their pool, they know it deep
+          // (we check the full pool, not just what they'd teach you now)
+          deepestOther = Math.max(deepestOther, 2);
+          if (!sources.includes('a trader')) sources.push('a trader');
+        }
+      }
+      // other villages you've learned from
+      for (const ov of (this.state.otherVillages || [])) {
+        const oe = (ov.codex && ov.codex.plants || {})[pid];
+        if (oe && oe.level > deepestOther) {
+          deepestOther = oe.level;
+          sources.push(ov.name);
+        }
+      }
+      // combination: if others know deeper, and you have experience (harvests),
+      // the overlap unlocks the next level
+      const harvests = mine.harvests || 0;
+      if (deepestOther > myLevel && harvests >= 3) {
+        const newLevel = Math.min(4, deepestOther);
+        mine.level = newLevel;
+        mine.combinedFrom = sources;
+        this.say(`💡 KNOWLEDGE COMBINES: ${p.name} — Level ${newLevel}. You knew it was safe. ${sources.join(' and ')} knew the rest. Together, it's deeper. ${p.knowledgeLevels[String(newLevel)] || ''}`);
+        // JACKPOT: combining knowledge can trigger sudden insight.
+        // "Everything you've learned suddenly connects."
+        if (Math.random() < 0.15) {
+          this.jackpot('insight');
+        }
+        return true;
+      } else if (deepestOther > myLevel && harvests < 3) {
+        // hint: you're close, but need more hands-on experience
+        this.say(`💡 ${p.name}: ${sources.join(' and ')} know${sources.length > 1 ? '' : 's'} more than you do. Harvest it a few more times (${harvests}/3) and it'll click.`);
+      }
+      return false;
+    },
+
+    // ============ KNOWLEDGE TAXONOMY: knowledge about ANYTHING ============
+    // Not just plants. Water purification, tracking, wound care, calming panic,
+    // star navigation, tactics, reading people. The Codex has MANY flavors.
+    // Domains: survival, nature, medical, crafting, social, combat,
+    //          psychological, spiritual, navigation.
+
+    // skillKnown: do you know this skill at this level?
+    skillKnown(skillId, minLevel) {
+      const e = (this.state.codex.skills || {})[skillId];
+      return !!(e && (e.level || 0) >= (minLevel || 1));
+    },
+
+    // learnSkill: gain knowledge. One path, every source. Like identifyPlant for skills.
+    learnSkill(skillId, level, via) {
+      const k = (this.data.knowledge || []).find(x => x.id === skillId);
+      if (!k) return false;
+      this.state.codex.skills = this.state.codex.skills || {};
+      const cur = this.state.codex.skills[skillId];
+      const curLevel = cur ? (cur.level || 0) : 0;
+      const newLevel = Math.max(curLevel, level || 1);
+      if (newLevel <= curLevel && cur) return false; // no downgrade, no repeat
+      this.state.codex.skills[skillId] = {
+        level: newLevel,
+        learnedDay: this.state.scholar.day,
+        via: via || 'discovery',
+      };
+      const journalWord = this.state.systemArrived ? 'Codex' : 'Journal';
+      this.say(`📖 LEARNED: ${k.name} (Level ${newLevel}). ${k.levels[String(newLevel)] || ''}`);
+      // knowledge-ability synergy check: does this unlock a technique?
+      this.checkKnowledgeAbilitySynergy(skillId, newLevel);
+      return true;
+    },
+
+    // backgroundKnowledge: your occupation IS knowledge. Not flavor — mechanical.
+    // An electrician knows circuits. A nurse knows wound care. Day 1, real Codex entries.
+    grantBackgroundKnowledge(villager) {
+      const occ = (villager.formerOccupation || '').toLowerCase();
+      const knowledge = this.data.knowledge || [];
+      let granted = 0;
+      for (const k of knowledge) {
+        const bgs = (k.backgrounds || []).map(b => b.toLowerCase());
+        if (bgs.some(bg => occ.includes(bg))) {
+          // background grants L1, or L2 for core occupational skills
+          const isCore = bgs.some(bg => occ === bg || occ.startsWith(bg));
+          const level = isCore ? 2 : 1;
+          if (this.learnSkill(k.id, level, 'background')) granted++;
+        }
+      }
+      return granted;
+    },
+
+    // jackpot: rare, huge knowledge gains. Books, strangers, insight moments.
+    // "Occasionally you hit a vein." This should feel EXCITING, not routine.
+    jackpot(type, source) {
+      const knowledge = this.data.knowledge || [];
+      const journalWord = this.state.systemArrived ? 'Codex' : 'Journal';
+      if (type === 'book') {
+        // books now unlock SKILLS too, not just plants
+        // (existing readBook handles plants; this extends it)
+        return this.jackpotBook(source);
+      } else if (type === 'stranger') {
+        // a knowledgeable stranger: rare encounter, teaches 2-3 skills deeply
+        const unlearned = knowledge.filter(k =>
+          !this.skillKnown(k.id) && k.rarity !== 'legendary'
+        );
+        if (!unlearned.length) return false;
+        // weight by rarity: common more likely
+        const weights = { common: 3, uncommon: 2, rare: 1 };
+        const pool = [];
+        for (const k of unlearned) {
+          const w = weights[k.rarity] || 1;
+          for (let i = 0; i < w; i++) pool.push(k);
+        }
+        const n = 2 + Math.floor(Math.random() * 2); // 2-3 skills
+        const taught = [];
+        const pickedIds = new Set();
+        let attempts = 0;
+        while (taught.length < n && pool.length && attempts < 20) {
+          attempts++;
+          const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+          if (pickedIds.has(k.id)) continue; // no duplicates
+          pickedIds.add(k.id);
+          const level = k.rarity === 'rare' ? 1 : 2;
+          if (this.learnSkill(k.id, level, 'stranger')) taught.push(k.name);
+        }
+        if (taught.length) {
+          this.say(`🌟 JACKPOT: A stranger by the road knows things. They talk for an hour. You learn: ${taught.join(', ')}. Your ${journalWord} overflows.`);
+          return true;
+        }
+      } else if (type === 'insight') {
+        // sudden realization: combining what you know into something new
+        // requires: 3+ skills at L2+, or 5+ plants at L2+
+        const skills = Object.entries(this.state.codex.skills || {}).filter(([id, e]) => (e.level || 0) >= 2);
+        const plants = Object.entries(this.state.codex.plants || {}).filter(([id, e]) => (e.level || 0) >= 2);
+        if (skills.length + plants.length < 5) return false;
+        // insight grants a random rare skill
+        const rares = knowledge.filter(k => k.rarity === 'rare' && !this.skillKnown(k.id));
+        if (!rares.length) return false;
+        const k = rares[Math.floor(Math.random() * rares.length)];
+        this.say(`💡 INSIGHT: It clicks. Everything you've learned suddenly connects. You understand ${k.name} now — really understand it.`);
+        return this.learnSkill(k.id, 2, 'insight');
+      }
+      return false;
+    },
+
+    jackpotBook(book) {
+      // extended book reading: books can unlock skills too
+      const unlocks = book.unlocks || {};
+      let learned = 0;
+      for (const sid of (unlocks.skills || [])) {
+        const level = unlocks.skillLevel || 1;
+        if (this.learnSkill(sid, level, 'book')) learned++;
+      }
+      // legendary books unlock legendary skills
+      for (const sid of (unlocks.legendarySkills || [])) {
+        if (this.learnSkill(sid, 1, 'legendary book')) {
+          this.say(`🌟 LEGENDARY KNOWLEDGE: This book contains secrets almost no one knows.`);
+          learned++;
+        }
+      }
+      return learned > 0;
+    },
+
+    // checkKnowledgeAbilitySynergy: deep knowledge + related ability = new technique.
+    // "Know about water pressure + have water manipulation = Pressure Jet."
+    // Knowledge AMPLIFIES powers. They're not separate systems.
+    checkKnowledgeAbilitySynergy(skillId, level) {
+      const k = (this.data.knowledge || []).find(x => x.id === skillId);
+      if (!k || !k.abilitySynergies) return;
+      for (const syn of k.abilitySynergies) {
+        if (level < (syn.minLevel || 1)) continue;
+        if (!this.hasAbility(syn.ability)) continue;
+        // check if already unlocked
+        this.state.codex.techniques = this.state.codex.techniques || {};
+        const techId = `${skillId}_${syn.ability}`;
+        if (this.state.codex.techniques[techId]) continue;
+        this.state.codex.techniques[techId] = {
+          skill: skillId, ability: syn.ability,
+          name: syn.technique, effect: syn.effect,
+          unlockedDay: this.state.scholar.day,
+        };
+        this.say(`⚡ TECHNIQUE UNLOCKED: ${syn.technique}! ${syn.effect} (Your knowledge of ${k.name} amplifies your ${syn.ability}.)`);
+        if (this.state.systemArrived) {
+          this.sysSay(`"OH! OH! ${syn.technique.toUpperCase()}! The audience did NOT see that coming! Knowledge AMPLIFIES power! The gamblers are recalculating EVERYTHING!"`);
+        }
+      }
+    },
+
+    // techniques: list your unlocked knowledge-ability techniques
+    techniqueList() {
+      return Object.values(this.state.codex.techniques || {});
+    },
+
     // villagers wander (turn-based). they go about their day.
     // they don't block you. they're just living.
     villagerTurn() {
@@ -4395,6 +5005,21 @@
       s.timedEvents.push({ day: 9, type: 'drama', id: 'stranger', done: false });
       s.timedEvents.push({ day: 10, type: 'monster', id: 'hushwolf_pack', done: false });
       s.timedEvents.push({ day: 12, type: 'quest', id: 'system_task', done: false });
+      // JACKPOT: knowledgeable stranger. Rare, exciting, memorable.
+      // Not scheduled — random chance each day after day 5 (5% per day).
+      // "Occasionally you hit a vein."
+    },
+
+    // maybeJackpotStranger: daily roll for a knowledgeable stranger encounter.
+    // Called from endDay. Rare — that's what makes it a jackpot.
+    maybeJackpotStranger() {
+      if (this.state.scholar.day < 5) return;
+      if (Math.random() > 0.05) return; // 5% per day
+      // don't repeat too often
+      const last = this.state.village.lastStrangerJackpot || 0;
+      if (this.state.scholar.day - last < 7) return;
+      this.state.village.lastStrangerJackpot = this.state.scholar.day;
+      this.jackpot('stranger');
     },
     checkTimedEvents() {
       const s = this.state.scholar;
@@ -4882,6 +5507,8 @@
       if (!v.roster) return;
       // ALIVE: the village talks when you're not the topic.
       try { this.ambientSocial(); } catch (e) {}
+      // LIVING WORLD: knowledge moves human-to-human, by the fire.
+      try { this.firesideTeaching(); } catch (e) {}
       const bg = v.roster.filter(id => !this.data.villagers.find(m => m.id === id));
       if (!bg.length) return;
       // LEADER: assigned villagers are out working — they don't do random things.
@@ -4988,6 +5615,28 @@
     },
     abilityLevel(id) {
       return (globalThis.Scattering && globalThis.Scattering.abilityLevel(this.state.scholar, id)) || 0;
+    },
+
+    // allModifiers: abilities + relics + KNOWLEDGE. One pipeline.
+    // Knowledge isn't separate from powers — it amplifies them.
+    allModifiers() {
+      const S = globalThis.Scattering;
+      const base = S.modifiers.collectModifiers(this.state.scholar, this.data.abilities);
+      const know = S.modifiers.collectKnowledgeModifiers(
+        (this.state.codex || {}).skills,
+        this.data.knowledge
+      );
+      return base.concat(know);
+    },
+
+    // hasKnowledgeUnlock: does your knowledge unlock this action?
+    hasKnowledgeUnlock(unlockId) {
+      const S = globalThis.Scattering;
+      return S.modifiers.hasKnowledgeUnlock(
+        (this.state.codex || {}).skills,
+        this.data.knowledge,
+        unlockId
+      );
     },
 
     // ============ ABILITY SYNERGIES ============
@@ -5337,9 +5986,22 @@
       // regrow: +1/day up to maxStock. food comes back, but slowly.
       // strip a grove and it takes 3 days to recover. not unlimited, but renewable.
       // state persists — the land remembers what you took.
+      // LIVING WORLD: heavily pressured land recovers SLOWER. Hammer a tile
+      // repeatedly and it stays barren longer. The land needs rest.
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
         const t = this.map.tiles[y][x];
-        if (t.maxStock > 0) t.stock = Math.min(t.maxStock, (t.stock || 0) + 1);
+        if (t.maxStock > 0) {
+          const pressure = t.foragePressure || 0;
+          // pressure suppresses regrow: 0-4 = full, 5-9 = half (every other day), 10+ = none
+          // pressure decays by 1/day when not foraged (land rests)
+          let regrow = 1;
+          if (pressure >= 10) regrow = 0;
+          else if (pressure >= 5) regrow = (this.state.scholar.day % 2 === 0) ? 1 : 0;
+          if (regrow > 0) t.stock = Math.min(t.maxStock, (t.stock || 0) + regrow);
+          // pressure decays slowly — the land forgives, eventually
+          if (pressure > 0 && !t.foragedToday) t.foragePressure = Math.max(0, pressure - 1);
+          t.foragedToday = false;
+        }
         // detail cells regrow: the plant you picked comes back in 3 days.
         if (t.detail && t.detailRegrow) {
           for (const key of Object.keys(t.detailRegrow)) {
@@ -5430,6 +6092,8 @@
       this.villageLives();
       this.villageEats();
       this.checkTraps();
+      // JACKPOT: rare knowledgeable stranger. "Occasionally you hit a vein."
+      try { this.maybeJackpotStranger(); } catch (e) {}
       // SOCIAL SIMMER: old wounds surface slowly. The village has a life you only partly see.
       this.socialSimmer();
       // depletion: every 5 days, the easy food is gone. the land gets tired.

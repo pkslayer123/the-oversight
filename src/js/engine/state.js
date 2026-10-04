@@ -30,8 +30,9 @@
   }
 
   function newCodex() {
-    return { plants: {}, monsters: {}, recipes: [], terrain: {} };
+    return { plants: {}, monsters: {}, recipes: [], terrain: {}, skills: {} };
     // plants: {plantId: {identifiedDay, survivedEating: bool, notes}}
+    // skills: {skillId: {level, learnedDay, via}} — knowledge about ANYTHING, not just plants
   }
 
   function newState() {

@@ -119,8 +119,80 @@
     return e ? (e.level || 1) : 0;
   }
 
+  // KNOWLEDGE MODIFIERS: skills from the knowledge taxonomy feed the same pipeline.
+  // Knowledge isn't separate from powers — it AMPLIFIES them.
+  // Takes codex.skills {skillId: {level}} and knowledge data, returns modifier objects.
+  // Mechanical keys map to modifier targets (same language as abilities/relics).
+  const KNOWLEDGE_MOD_MAP = {
+    // key in knowledge.json mechanical -> modifier target
+    'fuel_save': (v) => [{ target: 'fire.fuel', op: 'multiply', value: 1 - v }],
+    'fire_success': (v) => [{ target: 'fire.success', op: 'add', value: v }],
+    'fire_heat': (v) => [{ target: 'fire.heat', op: 'add', value: v }],
+    'heal_bonus': (v) => [{ target: 'heal.amount', op: 'add', value: v }],
+    'hunt_find': (v) => [{ target: 'hunt.find', op: 'add', value: v }],
+    'hunt_success': (v) => [{ target: 'hunt.success', op: 'add', value: v }],
+    'trap_success': (v) => [{ target: 'trap.success', op: 'add', value: v }],
+    'combat_crit': (v) => [{ target: 'combat.crit', op: 'add', value: v }],
+    'combat_damage': (v) => [{ target: 'combat.damage', op: 'multiply', value: 1 + v }],
+    'spoil_slow': (v) => [{ target: 'food.spoil', op: 'multiply', value: 1 - v }],
+    'trust_gain': (v) => [{ target: 'trust.gain_mult', op: 'multiply', value: 1 + v }],
+    'lie_detect': (v) => [{ target: 'social.lie_detect', op: 'add', value: v }],
+    'conflict_resolve': (v) => [{ target: 'social.conflict_resolve', op: 'add', value: v }],
+    'fear_resist': (v) => [{ target: 'psych.fear_resist', op: 'add', value: v }],
+    'village_morale': (v) => [{ target: 'village.morale', op: 'add', value: v }],
+    'storm_warning': (v) => [{ target: 'weather.warning', op: 'add', value: v }],
+    'ambush_avoid': (v) => [{ target: 'combat.ambush_avoid', op: 'add', value: v }],
+    'scout_find': (v) => [{ target: 'scout.find', op: 'add', value: v }],
+    'scavenge_find': (v) => [{ target: 'scavenge.find', op: 'add', value: v }],
+    'travel_lost': (v) => [{ target: 'travel.lost', op: 'add', value: v }],
+    'party_damage': (v) => [{ target: 'party.damage', op: 'multiply', value: 1 + v }],
+    'party_coord': (v) => [{ target: 'party.coord', op: 'add', value: v }],
+    'disease_resist': (v) => [{ target: 'health.disease_resist', op: 'add', value: v }],
+    'system_favor': (v) => [{ target: 'system.favor', op: 'add', value: v }],
+    'shelter_warmth': (v) => [{ target: 'shelter.warmth', op: 'add', value: v }],
+  };
+
+  function collectKnowledgeModifiers(codexSkills, knowledgeData) {
+    const out = [];
+    if (!codexSkills || !knowledgeData) return out;
+    for (const [skillId, entry] of Object.entries(codexSkills)) {
+      const k = knowledgeData.find(x => x.id === skillId);
+      if (!k || !k.mechanical) continue;
+      const level = (entry && entry.level) || 1;
+      // mechanical effects are keyed by level: {"1": {...}, "2": {...}}
+      // apply all levels up to current (cumulative)
+      for (let l = 1; l <= level; l++) {
+        const mech = k.mechanical[String(l)];
+        if (!mech) continue;
+        for (const [key, val] of Object.entries(mech)) {
+          if (key === 'unlock') continue; // unlocks are handled separately, not as modifiers
+          const mapper = KNOWLEDGE_MOD_MAP[key];
+          if (mapper) {
+            out.push(...mapper(val).map(m => Object.assign({ source: 'knowledge:' + skillId }, m)));
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  // hasKnowledgeUnlock: does the scholar's knowledge unlock a specific action?
+  function hasKnowledgeUnlock(codexSkills, knowledgeData, unlockId) {
+    if (!codexSkills || !knowledgeData) return false;
+    for (const [skillId, entry] of Object.entries(codexSkills)) {
+      const k = knowledgeData.find(x => x.id === skillId);
+      if (!k || !k.mechanical) continue;
+      const level = (entry && entry.level) || 1;
+      for (let l = 1; l <= level; l++) {
+        const mech = k.mechanical[String(l)];
+        if (mech && mech.unlock === unlockId) return true;
+      }
+    }
+    return false;
+  }
+
   global.Scattering = global.Scattering || {};
-  global.Scattering.modifiers = { resolve, collectModifiers, checkCondition };
+  global.Scattering.modifiers = { resolve, collectModifiers, checkCondition, collectKnowledgeModifiers, hasKnowledgeUnlock };
   global.Scattering.hasAbility = hasAbility;
   global.Scattering.abilityLevel = abilityLevel;
 })(typeof window !== 'undefined' ? window : globalThis);

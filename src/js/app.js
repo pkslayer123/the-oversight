@@ -208,21 +208,52 @@
     };
   }
   function obHome() {
-    // WHERE ARE YOU FROM? Free text, typed by the player. Stored raw —
-    // someday characters trek home, and we'll need to know the way.
-    // It also decides what you know: Arizona -> Georgia creek means almost nothing is familiar.
+    // WHERE ARE YOU FROM? Visual picker — tap a place. No typing.
+    // Still stores the same origin string downstream (parseOrigin handles it).
+    // What you know grows where you're from. It doesn't grow here.
+    const picker = Game.data.originPicker || { regions: [] };
+    const allOrigins = [];
+    for (const r of picker.regions) for (const o of r.origins) allOrigins.push({ ...o, region: r.name });
+
+    const render = (filter) => {
+      const f = (filter || '').toLowerCase();
+      const shown = f ? allOrigins.filter(o => o.label.toLowerCase().includes(f) || o.region.toLowerCase().includes(f)) : allOrigins;
+      const byRegion = {};
+      for (const o of shown) { (byRegion[o.region] = byRegion[o.region] || []).push(o); }
+      let html = '';
+      for (const r of picker.regions) {
+        const list = byRegion[r.name];
+        if (!list || !list.length) continue;
+        html += `<h3 class="small" style="opacity:.7;margin:14px 0 6px">${esc(r.name).toUpperCase()}</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`;
+        for (const o of list) {
+          html += `<button class="btn ghost origin-pick" data-origin="${esc(o.label)}" style="padding:14px 10px;font-size:15px;text-align:left"><span style="font-size:20px">${o.flag}</span> ${esc(o.label)}</button>`;
+        }
+        html += '</div>';
+      }
+      if (!html) html = '<p class="small" style="opacity:.6">No matches. Try another search.</p>';
+      document.getElementById('origin-list').innerHTML = html;
+      document.querySelectorAll('.origin-pick').forEach(b => b.onclick = () => {
+        ob.home = b.dataset.origin;
+        obWho();
+      });
+    };
+
     screen.innerHTML = `${bar('scattering://home', '?')}
       <h1 class="title" style="font-size:22px">WHERE ARE YOU FROM?</h1>
-      <p class="small">Type it. A town, a state, a country — anything. What you know grows where you're from. It doesn't grow here.</p>
-      <input id="ob-origin" type="text" maxlength="60" placeholder="e.g. Tucson, Arizona" autocomplete="off"
+      <p class="small">Tap where you're from. What you know grows there — it doesn't grow here.</p>
+      <input id="ob-origin-search" type="text" placeholder="🔍 Search places..." autocomplete="off"
         style="width:100%;padding:12px;margin:12px 0;background:#0a0f0a;color:#c9d4c0;border:1px solid #3a4a3a;font-size:16px">
-      <p class="small" style="opacity:.6">This is stored with your character. It matters.</p>
-      <button class="btn" id="b-home-go">This is where I'm from</button>`;
-    const input = document.getElementById('ob-origin');
-    input.focus();
-    const go = () => { ob.home = input.value.trim() || 'somewhere unremembered'; obWho(); };
-    document.getElementById('b-home-go').onclick = go;
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+      <div id="origin-list"></div>
+      <p class="small" style="opacity:.6;margin-top:12px">Don't see it? <a href="#" id="ob-origin-custom" style="color:#8a9a8a">Type it instead</a>.</p>`;
+    render('');
+    const search = document.getElementById('ob-origin-search');
+    search.addEventListener('input', () => render(search.value));
+    // escape hatch: free text for places not listed
+    document.getElementById('ob-origin-custom').onclick = (e) => {
+      e.preventDefault();
+      const v = prompt("Where are you from? (town, state, country)");
+      if (v && v.trim()) { ob.home = v.trim(); obWho(); }
+    };
   }
   function obWho() {
     // 6 fresh randomized characters per expedition. Real people, not stat blocks.
@@ -1060,7 +1091,7 @@
           refresh();
         } },
       { label: '\U0001F381 Give food', keepOpen: true, onClick: () => { Game.giveFood(villagerId); refresh(); } },
-      { label: '\U0001F4CB Assign task', keepOpen: true, onClick: () => { assignTaskSheet(villagerId); } },
+      { label: '\U0001F5E3\U000FE0F Ask for help', keepOpen: true, onClick: () => { assignTaskSheet(villagerId); } },
     ];
     if (teachable.length) {
       buttons.push({ label: `\U0001F4D6 Teach (${teachable.length})`, keepOpen: true, onClick: () => {
@@ -1070,6 +1101,24 @@
         const pname = (Game.data.plants.find(p => p.id === pid) || {}).name || pid;
         Game.say(`You teach ${first} about ${pname}.`);
         personSheet(villagerId); // re-render with updated teachable list
+      } });
+    }
+
+    // LIVING WORLD: knowledge traders. They know things deeply. Trade for it.
+    if (Game.isKnowledgeTrader && Game.isKnowledgeTrader(villagerId)) {
+      const tradeable = Game.traderKnowledge(villagerId);
+      const tradeLabel = tradeable.length ? `\U0001F504 Trade knowledge (${tradeable.length})` : `\U0001F504 Trade knowledge`;
+      buttons.push({ label: tradeLabel, keepOpen: true, onClick: () => {
+        if (!tradeable.length) {
+          Game.say(`${first} knows nothing you don't. "Come back when you've seen more green."`);
+          return;
+        }
+        const pid = tradeable[0];
+        const p = (Game.data.plants || []).find(x => x.id === pid) || {};
+        const pname = Game.plantKnown(pid) ? p.name : (p.description || 'a plant');
+        Game.say(`${first} leans in. "I can teach you about ${pname} — deep knowledge. What'll you give me?"`);
+        Game.tradeKnowledge(villagerId, pid);
+        personSheet(villagerId);
       } });
     }
 
@@ -1084,7 +1133,10 @@
 
   // LEADER: task assignment sheet. Pick a villager, pick a task, they go do it.
   // "This game is what you want it to be." — including a leader who never fights.
-  function assignTaskSheet(villagerId) {
+  // LEADER: ask for help. This lives in the talk menu — you're TALKING to them,
+  // asking them to do something. Not a management UI. A conversation.
+  // Remote assignment (shout, runner, System ping) unlocks via abilities — see Game.canAssignRemote.
+  function assignTaskSheet(villagerId, via) {
     const vp = (Game.data.villagers || []).find(v => v.id === villagerId) ||
                (Game.data.background_survivors || []).find(v => v.id === villagerId);
     if (!vp) return;
@@ -1092,27 +1144,42 @@
     const trust = (Game.state.village.trust && Game.state.village.trust[villagerId]) || 10;
     const tasks = Game.delegateTasks();
     const current = Game.assignmentFor(villagerId);
+    via = via || 'in-person';
+    const viaLabel = via === 'in-person' ? '' : ` <span class="small" style="opacity:.6">via ${esc(via)}</span>`;
+
+    // Conversational framing: you're asking, not ordering.
+    const askPhrases = {
+      forage: `Could you go forage?`,
+      hunt: `Could you hunt for us?`,
+      wood: `Could you gather wood?`,
+      water: `Could you fetch water?`,
+      scout: `Could you scout around?`,
+      patrol: `Could you patrol for threats?`,
+      rest: `You should rest.`,
+    };
 
     let body = '';
     if (current && tasks[current.task]) {
-      body += `<p class="small" style="opacity:.8">Currently: ${tasks[current.task].icon} <b>${esc(tasks[current.task].name)}</b> — out until next part.</p>`;
+      body += `<p class="small" style="opacity:.8">"I'm on it — ${tasks[current.task].icon} ${esc(tasks[current.task].name).toLowerCase()}." — out until next part.</p>`;
     } else {
-      body += `<p class="small" style="opacity:.7">${esc(first)} is at Haven, waiting. Trust: ${trust}/100.</p>`;
+      body += `<p style="font-size:15px;line-height:1.5">"What do you need?"</p>`;
+      body += `<p class="small" style="opacity:.6">Trust: ${trust}/100.</p>`;
     }
     if (trust < 20) {
-      body += `<p class="small" style="color:#e88">⚠ Trust too low — ${esc(first)} won't take orders yet. (Need 20+.)</p>`;
+      body += `<p class="small" style="color:#e88">"I don't take orders from strangers." (Need 20+ trust.)</p>`;
     }
-    body += `<p class="small" style="opacity:.6;margin-top:8px">They'll report back at the end of this part. Dangerous tasks can get people hurt.</p>`;
+    body += `<p class="small" style="opacity:.6;margin-top:8px">They'll report back at the end of this part. Dangerous work can get people hurt.</p>`;
 
     const buttons = Object.entries(tasks).map(([tid, t]) => {
       const comp = Game.villagerCompetence(villagerId, tid);
-      const compTag = tid === 'rest' ? '' : comp >= 1.3 ? ' ⭐ natural' : comp <= 0.8 ? ' ⚠ weak' : '';
+      const compTag = tid === 'rest' ? '' : comp >= 1.3 ? ' ⭐ natural' : comp <= 0.8 ? ' ⚠ not their strength' : '';
       const isCurrent = current && current.task === tid;
+      const ask = askPhrases[tid] || t.name;
       return {
-        label: `${t.icon} ${t.name}${compTag}${isCurrent ? ' ✓' : ''}`,
+        label: `${t.icon} "${ask}"${compTag}${isCurrent ? ' ✓' : ''}`,
         keepOpen: false,
         onClick: () => {
-          Game.assignTask(villagerId, tid);
+          Game.assignTask(villagerId, tid, { via });
           refresh();
         },
       };
@@ -1120,8 +1187,40 @@
 
     openSheet({
       id: 'assign-' + villagerId,
-      title: '\U0001F4CB Assign: ' + esc(first),
+      title: '\U0001F5E3\U000FE0F Ask ' + esc(first) + ' for help' + viaLabel,
       html: body,
+      buttons,
+      priority: 45, modal: false, dismissible: true,
+    });
+  }
+
+  // Remote assignment: abilities unlock assigning without face-to-face.
+  // Future abilities: "Shout" (village-wide), "Runner" (send someone), "System Ping" (post-day-7).
+  // This is the UI entry point — Game.canAssignRemote gates it.
+  function remoteAssignSheet() {
+    const v = Game.state.village;
+    const roster = (v.roster || []).filter(id => id !== Game.villagerId);
+    if (!roster.length) { Game.say("No one to assign."); return; }
+    const methods = Game.remoteAssignMethods ? Game.remoteAssignMethods() : [];
+    if (!methods.length) { Game.say("You need to be face-to-face to ask for help. (Abilities can unlock remote assignment.)"); return; }
+    // For now: pick a method, then pick a person, then pick a task.
+    // Future: this becomes a full remote command UI.
+    const m = methods[0]; // use the best available method
+    const buttons = roster.map(vid => {
+      const vp = (Game.data.villagers || []).find(x => x.id === vid) ||
+                 (Game.data.background_survivors || []).find(x => x.id === vid) || {};
+      const first = (vp.name || 'Someone').split(' ')[0];
+      const cur = Game.assignmentFor(vid);
+      return {
+        label: `${esc(first)}${cur ? ' (busy)' : ''}`,
+        keepOpen: true,
+        onClick: () => { assignTaskSheet(vid, m.id); },
+      };
+    });
+    openSheet({
+      id: 'remote-assign',
+      title: '\U0001F4E3 Remote assign (' + esc(m.name) + ')',
+      html: `<p class="small" style="opacity:.7">${esc(m.desc)} Who do you want to reach?</p>`,
       buttons,
       priority: 45, modal: false, dismissible: true,
     });
@@ -1810,7 +1909,9 @@
         const isP = (x === st.px && y === st.py);
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
         const isT = tset.has(x + ',' + y);
-        const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + ((tl.maxStock - (tl.stock || 0) > 0) && tl.revealed ? ' spent' : '');
+        const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && tl.revealed) ? ' spent' : '');
+        const pathCls = (tl.wornPath && tl.revealed) ? 'worn-path' : '';
+        const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '');
         // other villages: show 🏘️ if generated (you've been near)
         const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
         const g = isW ? '🐗' : otherV ? '🏘️' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
@@ -1829,6 +1930,14 @@
     const inprog = Game.codexInProgress();
     const mons = Game.state.codex.monsters || {};
     const LVL = { 1: 'L1 · Named', 2: 'L2 · Parts', 3: 'L3 · Uses', 4: 'L4 · Mastery' };
+    // KNOWLEDGE TAXONOMY: skills section — knowledge about ANYTHING, not just plants
+    const skills = Object.entries(Game.state.codex.skills || {}).map(([sid, e]) => {
+      const k = (Game.data.knowledge || []).find(x => x.id === sid);
+      if (!k) return null;
+      return { sid, name: k.name, domain: k.domain, level: e.level || 1,
+               text: (k.levels || {})[String(e.level || 1)] || '', via: e.via || '' };
+    }).filter(Boolean);
+    const techniques = Game.techniqueList ? Game.techniqueList() : [];
     screen.innerHTML = `
       ${bar('scattering://codex', entries.length + ' entries')}
       <h1 class="title" style="font-size:22px">${Game.journalName().toUpperCase()}</h1>
@@ -1838,6 +1947,11 @@
         <p class="small"><b>Prep:</b> ${e.level >= 2 ? (e.prep || '—') : '<i>unidentified uses — reach L2</i>'}</p>
         <p class="small"><i>${e.knowledge || ''}</i></p><p>${e.level >= 1 ? e.text : ''}</p></div>`).join('')
         : '<div class="card"><h3>No entries yet.</h3><p>Forage something. Survive it. Write it down.</p></div>'}
+      ${skills.length ? '<h1 class="title" style="font-size:18px">SKILLS</h1><p class="small"><i>knowledge about anything — not just plants. your old life, books, strangers, hard lessons.</i></p>' + skills.map(s => `
+        <div class="card codex"><h3>${esc(s.name)} <span class="small" style="opacity:.7">[L${s.level} · ${esc(s.domain)}]</span></h3>
+        <p class="small"><i>${esc(s.text)}</i></p>${s.via ? `<p class="small" style="opacity:.5">via ${esc(s.via)}</p>` : ''}</div>`).join('') : ''}
+      ${techniques.length ? '<h1 class="title" style="font-size:18px">TECHNIQUES</h1><p class="small"><i>where knowledge meets power.</i></p>' + techniques.map(t => `
+        <div class="card codex"><h3>⚡ ${esc(t.name)}</h3><p class="small">${esc(t.effect)}</p></div>`).join('') : ''}
       ${inprog.length ? '<h1 class="title" style="font-size:18px">UNIDENTIFIED</h1><p class="small"><i>seen, not named. keep looking.</i></p>' + inprog.map(u => `
         <div class="card"><h3 style="opacity:.75">${u.descriptor}</h3>
         <p class="small">encounters: ${u.enc}/${u.threshold} ${u.enc >= u.threshold - 1 ? '— <b>almost there</b>' : ''}</p></div>`).join('') : ''}

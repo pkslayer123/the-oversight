@@ -85,6 +85,11 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .tile.move { border-color: var(--acc); color: var(--acc); }
 .tile.dest { border-color: var(--warn); color: var(--warn); animation: pulse 1.2s infinite; cursor: pointer; }
 .tile.spent { opacity: .45; }
+/* LIVING WORLD: depletion states — the land shows what you've taken. */
+.tile.depleted-lush { /* full stock: normal, no extra styling */ }
+.tile.depleted-picked { opacity: .7; filter: sepia(.4) saturate(.7); }
+.tile.depleted-barren { opacity: .45; filter: grayscale(.6) sepia(.3); border: 1px dashed #4a3f30; }
+.tile.worn-path { border-bottom: 2px solid #6b5b3e; }
 .tile:active { background: var(--line); }
 .cost { font-size: 10px; opacity: .7; font-weight: normal; }
 .closeup .tile { width: 44px; height: 44px; font-size: 22px; }
