@@ -570,21 +570,41 @@
         cells[by + 1][bx] = 'bigtree'; cells[by + 1][bx + 1] = 'bigtree';
       }
       t.detail = cells;
-      // HIDDEN STATE: every interactable gets secrets. you learn by getting close.
-      // tree: yield 0-3 (0 = ivy-covered, nothing). water: safe or poison. tent: good/shredded/packable.
-      // knowledge sticks — stored per-cell, persists in the save.
+      // MODIFIERS: every space has factors. they synthesize on the fly.
+      // Water: flow + clarity + source. Running clear spring: best. Stagnant murky runoff: poison.
+      // Tree: species + health + ivy. You SEE the modifiers (murky, ivy). You learn the system.
+      // Knowledge sticks — stored per-cell, persists.
       t.secrets = t.secrets || {};
+      t.modifiers = t.modifiers || {};
       const rnd2 = this.detailRand(this.detailSeed(x, y) + 999);
       for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
         const key = cx + ',' + cy;
-        if (t.secrets[key]) continue; // already known
         const c = cells[cy][cx];
+        if (t.modifiers[key]) continue;
         if (c === 'tree' || c === 'bigtree') {
-          // 70% have nuts (1-3), 30% are ivy-covered (0)
-          t.secrets[key] = { yield: rnd2() < 0.7 ? 1 + Math.floor(rnd2() * 3) : 0, known: false };
+          const species = rnd2() < 0.4 ? 'oak' : rnd2() < 0.7 ? 'hickory' : 'pine';
+          const health = rnd2() < 0.75 ? 'healthy' : 'diseased';
+          const ivy = rnd2() < 0.3;
+          t.modifiers[key] = { species, health, ivy, known: false };
+          // yield synthesizes: healthy oak no ivy = 3, diseased pine with ivy = 0
+          let yield_ = 0;
+          if (!ivy && health === 'healthy') yield_ = species === 'oak' ? 3 : species === 'hickory' ? 2 : 1;
+          else if (!ivy && health === 'diseased') yield_ = 1;
+          t.secrets[key] = { yield: yield_, known: false };
         } else if (c === 'water') {
-          // 80% safe, 20% poison (stagnant, wrong color, you learn the hard way or by examining)
-          t.secrets[key] = { safe: rnd2() < 0.8, known: false };
+          // flow from tile type: creek = running, wetland = stagnant, else random
+          const flow = t.type === 'creek' ? 'running' : t.type === 'wetland' ? 'stagnant' : (rnd2() < 0.5 ? 'running' : 'stagnant');
+          const clarity = rnd2() < 0.6 ? 'clear' : 'murky';
+          const source = t.type === 'creek' ? 'creek' : t.type === 'wetland' ? 'pond' : (rnd2() < 0.3 ? 'spring' : 'pond');
+          // near ruin? runoff (poison risk)
+          const nearRuin = false; // TODO: check neighbors
+          t.modifiers[key] = { flow, clarity, source: nearRuin ? 'runoff' : source, known: false };
+          // safety synthesizes: running+clear+spring = safe. stagnant+murky+runoff = poison.
+          let safe = true;
+          if (flow === 'stagnant' && clarity === 'murky') safe = false;
+          if (source === 'runoff') safe = false;
+          if (flow === 'stagnant' && rnd2() < 0.3) safe = false; // stagnant is risky
+          t.secrets[key] = { safe, known: false };
         } else if (c === 'tent') {
           const r = rnd2();
           t.secrets[key] = { condition: r < 0.5 ? 'good' : r < 0.8 ? 'shredded' : 'packable', known: false };
@@ -693,31 +713,37 @@
       const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
       if (dist > 1) { this.say('Too far. Step closer.'); return null; }
 
-      // TREE: maybe nuts, maybe ivy.
+      // TREE: modifiers synthesize. you see species, health, ivy. you learn the system.
       if (cell === 'tree' || cell === 'bigtree') {
+        const mod = t.modifiers && t.modifiers[key];
         if (secret && !secret.known) {
           secret.known = true;
+          if (mod) mod.known = true;
+          const desc = mod ? `${mod.species}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'a tree';
           if (secret.yield === 0) {
-            this.say('This tree is covered in ivy. Nothing to take. You note it — you won\'t waste time here again.');
+            this.say(`This ${desc}. Nothing to take. You note it — you won\'t waste time here again.`);
             return true;
           } else {
-            this.say(`This tree has nuts — about ${secret.yield} worth. You take them.`);
+            this.say(`This ${desc}. Nuts — about ${secret.yield} worth. You take them.`);
           }
         } else if (secret && secret.known && secret.yield === 0) {
-          this.say('Ivy. You already checked. Nothing.');
+          this.say('You already checked. Nothing.');
           return true;
         }
         return this.doAction('forage');
       }
-      // WATER: maybe safe, maybe poison.
+      // WATER: flow + clarity + source synthesize. running is better than stagnant.
       if (cell === 'water') {
+        const mod = t.modifiers && t.modifiers[key];
         if (secret && !secret.known) {
           secret.known = true;
+          if (mod) mod.known = true;
+          const desc = mod ? `${mod.flow}, ${mod.clarity}, ${mod.source}` : 'water';
           if (!secret.safe) {
-            this.say('This water is wrong — stagnant, green film. Poison. You mark it in your mind. Don\'t drink.');
+            this.say(`This water is ${desc}. Wrong. Poison. You mark it. Don\'t drink.`);
             return true;
           } else {
-            this.say('Clear water. Safe. You drink.');
+            this.say(`Water: ${desc}. Safe. You drink.`);
           }
         } else if (secret && secret.known && !secret.safe) {
           this.say('Poison water. You know better.');

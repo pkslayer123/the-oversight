@@ -157,6 +157,7 @@
     const cell = detail[cy] && detail[cy][cx];
     const t = Game.playerTile();
     const sec = (t.secrets || {})[cx + ',' + cy];
+    const mod = (t.modifiers || {})[cx + ',' + cy];
     const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
     const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
     const isMe = (cx === px && cy === py);
@@ -181,12 +182,22 @@
       if (dist <= 1) actions.push(['Fight', () => Game.startCombat(mon.id)]);
       actions.push(['Back away', () => {}]);
     } else {
-      // what you know (secrets)
-      if (sec && sec.known) {
+      // what you know: modifiers + synthesized result.
+      if (mod && mod.known) {
+        if ((cell === 'tree' || cell === 'bigtree')) {
+          desc = `${mod.species}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}. `;
+          desc += sec && sec.yield === 0 ? 'Nothing.' : `Nuts (about ${sec ? sec.yield : '?'}).`;
+        } else if (cell === 'water') {
+          desc = `${mod.flow}, ${mod.clarity}, ${mod.source}. `;
+          desc += sec && sec.safe ? 'Safe.' : 'POISON.';
+        } else {
+          desc = 'Examined.';
+        }
+      } else if (sec && sec.known) {
         if ((cell === 'tree' || cell === 'bigtree')) {
           desc = sec.yield === 0 ? 'Ivy-covered. Nothing.' : `Has nuts (about ${sec.yield} worth).`;
         } else if (cell === 'water') {
-          desc = sec.safe ? 'Clear. Safe to drink.' : 'POISON. Don\'t drink.';
+          desc = sec.safe ? 'Safe to drink.' : 'POISON. Don\'t drink.';
         } else if (cell === 'tent') {
           desc = sec.condition === 'shredded' ? 'Shredded. Useless.' :
                  sec.condition === 'packable' ? 'Intact and light. You could take it.' : 'Good condition. Dry inside.';
