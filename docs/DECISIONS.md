@@ -777,3 +777,25 @@ FOOD DYNAMICS:
 - Codex grows → village forages better (less scarce).
 - But power users need 4x → more demand.
 - The balance shifts. Success creates new pressures.
+
+## 2026-10-03 — Alive world (Steve)
+Steve: "Other villages or even your own villagers can beat you to goods if you let them.
+People are potentially selfish or community oriented. We want people to feel alive.
+Every mix of new personalities and new location is a whole new game. Spawning in a city
+should feel different from a Countryside."
+
+PERSONALITIES (villagers.json, background_survivors.json):
+- sharing: selfish (keeps 50%), generous (shares all), pragmatic (80%).
+- temperament: bold (1.3x haul, more wounds), cautious (0.7x, safer), steady.
+- curiosity: curious vs practical (affects learning).
+
+COMPETITION:
+- Villagers deplete REAL tiles when they forage (depleteRandomTile).
+- The world is shared. If you don\'t take it, they might.
+- Selfish villagers keep some back ("Kept some back, you suspect.").
+
+CITY vs COUNTRYSIDE:
+- spawnType: 30% city, 70% countryside. Set in genMap.
+- City buildings: apartment, office, warehouse. Countryside: school, church, warehouse.
+- City: (TODO) more ruins, less nature. Different feel.
+- Every personality × location mix = new game.

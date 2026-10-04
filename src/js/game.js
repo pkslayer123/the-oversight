@@ -966,9 +966,8 @@
       const props = CELL_PROPS[cell] || {};
       if (props.blocks) return false; // can't walk through, but might interact (see cellInteract)
       const cost = props.cost || 10;
-      // POWER BURNS: metabolic mult applies. A fire god pays 4x per step.
-      const mult = this.metabolicMult(s.abilities);
-      s.kcal = Math.max(0, s.kcal - cost * mult);
+      // Movement is baseline. Power doesn't tax walking.
+      s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
       this.monsterTurn();
       this.animalTurn();
@@ -1617,11 +1616,14 @@
     eat() {
       const scholar = this.state.scholar;
       if (this.over) return;
-      // eat most-perishable first until kcal >= 2400 or empty
+      // POWER NEEDS FOOD: target scales with metabolic mult. Fire god eats to 9600.
+      const mult = this.metabolicMult(scholar.abilities);
+      const target = Math.round(2400 * mult);
+      // eat most-perishable first until kcal >= target or empty
       scholar.inventory.sort((a, b) => a.spoilDay - b.spoilDay);
       let ate = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
-      while (scholar.kcal < 2400 && scholar.inventory.length) {
+      while (scholar.kcal < target && scholar.inventory.length) {
         const it = scholar.inventory[0];
         const kcal = it.kcalEach;
         scholar.kcal += kcal; ate += kcal;
@@ -1751,6 +1753,21 @@
     // KNOWLEDGE FEEDS: each codex entry teaches the village what's edible.
     // they forage better because of you. the scholar's contribution isn't always calories.
     // expeditions are open-ended — the pantry clock is the arc, not a timer.
+    // metabolicMult: conservation of energy. Your kcal pool is your mana.
+    // Abilities convert stored calories to effects. No free power.
+    // A fire god needs 4x DAILY (8000 vs 2000) — body burns hot just existing.
+    // (Abilities don't have tiers yet — infer from name. TODO: add tier to JSON.)
+    metabolicMult(abilities) {
+      if (!abilities || !abilities.length) return 1;
+      let mult = 1;
+      for (const aid of abilities) {
+        const ab = this.data.abilities.find(a => a.id === aid);
+        const isPowerful = ab && (ab.name.toLowerCase().includes('fire') || ab.name.toLowerCase().includes('god'));
+        if (isPowerful) mult = Math.max(mult, 4);
+      }
+      return mult;
+    },
+
     villageEats() {
       const v = this.state.village;
       let eat = 0, give = 0;
