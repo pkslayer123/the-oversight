@@ -8737,7 +8737,7 @@
       // feels spent, not skipped — two presses move the world one batch turn.
       // rest 3 chunks, treat 1 chunk, wait = however long until the part turns.
       const T = this.TIME;
-      let ticks = T.TICKS_PER_PART;
+      let ticks = 0;
       if (kind === 'forage') {
         ticks = 16;
       } else if (kind === 'rest') ticks = 96;
@@ -8745,6 +8745,10 @@
       else if (kind === 'wait') {
         const rem = (this.state.scholar.dayTicks || 0) % T.TICKS_PER_PART;
         ticks = rem === 0 ? T.TICKS_PER_PART : T.TICKS_PER_PART - rem;
+      } else if (kind !== 'drink') {
+        // SAFETY: unknown kinds used to default to a full part (128 ticks) —
+        // a silent time-burn landmine. Unknown = 1 tick + warned, never taxed.
+        try { console.warn('[doAction] unknown kind:', kind); } catch (e) {}
       }
       return this.tickAction(ticks) || this.status();
     },

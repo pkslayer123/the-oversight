@@ -63,7 +63,7 @@ Every action is priced in up to three currencies:
 | Craft a tool | 32 (1 chunk) | 0 | Hand work, not heavy labor |
 | Cook a meal | 32 (1 chunk) | 0 | Tending the fire |
 | Node travel (`travelTo`) | 32 (1 chunk) | 30 kcal × distance | The "bigger tick" |
-| Forage | 32–64 (1–2 chunks) | 120 kcal | Rich tiles take longer — more to gather. Snappy, not a time-skip |
+| Forage | 16 (half a chunk) | 60 kcal | Quick beat, small yield (~200-650 kcal). Two presses = one NPC batch. Time feels spent, not skipped |
 | Fell a tree (`cutTree`) | 96 (3 chunks) | 80 kcal | Felling a tree is serious work |
 | Build a bridge | 96 (3 chunks) | 60 kcal | Construction is work |
 | Search a ruin (scavenge) | 64 (2 chunks) | 100 kcal | Tossing a house takes time |
@@ -117,6 +117,47 @@ brake; caps and depletion are the systemic brakes.
 - (See `npcSpeed` in game.js for the full table.)
 
 Faster NPCs wander more squares per batch. You can SEE who's fast.
+
+## Day-budget verification (2026-10-04, time-economy review)
+
+**Method:** 5 archetype bots × 4 random seeds = 20 simulated days, plus 15
+target-day runs. Each bot plays a full itinerary; we track tick spending by
+category and whether the day ends (squeeze) or not (slack).
+
+**Archetypes:**
+- **Forager:** travels to rich grounds, 10-14 targeted forages, banks at Haven
+- **Explorer:** 4 node travels, 12 examines, 6-8 opportunistic forages
+- **Social:** 6 deep conversations (8 exchanges each)
+- **Survivalist:** forage + boil water + clear brush + cook + rest + forage
+- **Speedrunner:** mixed — forage, travel, examine, 3 convos, boil water
+
+**Results (successful runs):**
+
+| Archetype | Ticks used | % of 512 | Day ends? |
+|---|---|---|---|
+| Forager | 224-226 | 44% | No |
+| Explorer | 277-324 | 54-63% | No |
+| Social | 36 | 7% | No |
+| Survivalist | 177-288 | 35-56% | No |
+| Speedrunner | 159-300 | 31-59% | No |
+
+**Target day** (5 forages, 3 travels, 3 examines, 3 convos, eat/drink/boil, rest):
+228-342 ticks (45-67%), always fits with 170-280 slack.
+
+**Verdict:** No squeeze anywhere. The 16-tick forage fix resolved Steve's
+"foraging takes too much time" — the old 64-96 tick cost consumed 78% of the
+day on foraging alone. The current economy fits foraging + travel + exploration
+with comfortable slack, as specified. Slack is intentional: it's room for the
+unexpected (NPC initiatives, monsters, opportunities, blockage detours), not
+empty time. Individual costs are fictionally grounded (32 ticks ≈ 30 min;
+a day = 8 active hours).
+
+**Bugs caught during measurement:**
+- `doAction` with an unknown kind silently burned 128 ticks (a full day-part).
+  Fixed: unknown kinds now cost 1 tick + console warning. (The UI never hit
+  this — `cookFood` is called directly — but it was a landmine.)
+- Creek blockages correctly stop travel (intended "blocked paths" gameplay);
+  bots that don't handle blockages get stuck, players get UI solutions.
 
 ## Tuning notes
 
