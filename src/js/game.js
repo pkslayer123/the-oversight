@@ -458,6 +458,23 @@
       const rnd = this.detailRand(this.detailSeed(x, y));
       const N = 9;
       const cells = [];
+      // RIVER: for creek tiles, a continuous meandering river (2 wide) with one bridge.
+      // it blocks the whole way besides the bridge. you go around, or you cross there.
+      let river = null, bridge = null;
+      if (t.type === 'creek') {
+        const horizontal = rnd() < 0.5;
+        const base = 3 + Math.floor(rnd() * 3); // river center line (3-5)
+        river = { horizontal, cells: [] };
+        for (let i = 0; i < 9; i++) {
+          const meander = Math.floor((rnd() - 0.5) * 3); // -1 to +1
+          const c = Math.max(1, Math.min(7, base + meander));
+          river.cells.push(c);
+        }
+        // one bridge: a random position along the river, ON the river (not adjacent).
+        const bi = Math.floor(rnd() * 9);
+        const rc = river.cells[bi];
+        bridge = horizontal ? { x: bi, y: rc } : { x: rc, y: bi };
+      }
       const nType = (dx, dy) => {
         const nx = x + dx, ny = y + dy;
         return (nx < 0 || ny < 0 || nx > 6 || ny > 6) ? t.type : this.tileAt(nx, ny).type;
@@ -470,7 +487,7 @@
           case 'meadow': return r < 0.55 ? 'grass' : r < 0.72 ? 'plant' : r < 0.82 ? 'bush' : 'dirt';
           case 'thicket': return r < 0.45 ? 'bush' : r < 0.6 ? 'plant' : r < 0.75 ? 'grass' : 'dirt';
           case 'wetland': return r < 0.28 ? 'water' : r < 0.5 ? 'plant' : r < 0.8 ? 'grass' : 'dirt';
-          case 'creek': return r < 0.3 ? 'water' : r < 0.55 ? 'grass' : r < 0.65 ? 'plant' : 'dirt';
+          case 'creek': return r < 0.55 ? 'grass' : r < 0.65 ? 'plant' : 'dirt'; // river is the water, not random puddles
           case 'forest_floor': return r < 0.25 ? 'tree' : r < 0.35 ? 'plant' : r < 0.6 ? 'dirt' : 'grass';
           case 'trail_edge': return r < 0.4 ? 'dirt' : r < 0.7 ? 'grass' : r < 0.8 ? 'plant' : 'bush';
           case 'ruin': return r < 0.25 ? 'rubble' : r < 0.4 ? 'wall' : r < 0.5 ? 'plant' : r < 0.75 ? 'dirt' : 'grass';
@@ -482,6 +499,16 @@
         const row = [];
         for (let cx = 0; cx < N; cx++) {
           let cell = pick(t.type);
+          // river overrides: water (blocks), bridge (passable)
+          if (river) {
+            const horiz = river.horizontal;
+            const rc = river.cells[horiz ? cx : cy];
+            const isRiver = horiz ? (cy === rc || cy === rc + 1) : (cx === rc || cx === rc + 1);
+            if (isRiver) {
+              const isBridge = bridge && cx === bridge.x && cy === bridge.y;
+              cell = isBridge ? 'bridge' : 'water';
+            }
+          }
           // edge blending: 2 outer rows/cols lean toward the neighbor's type
           const edgeN = cy < 2 ? nType(0, -1) : null;
           const edgeS = cy > 6 ? nType(0, 1) : null;
@@ -557,11 +584,14 @@
       const dx = Math.abs(cx - px), dy = Math.abs(cy - py);
       if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) return false;
       if (cx < 0 || cx > 8 || cy < 0 || cy > 8) return false;
-      // walls block. the school is real — you can't walk through walls.
+      // the world is physical. walls, water, big trees, tents, fire: you can't walk through.
+      // rubble is difficult (20 kcal). everything else is 10.
+      const BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
       const detail = this.genDetail(this.map.px, this.map.py);
       const cell = detail[cy] && detail[cy][cx];
-      if (cell === 'wall') return false;
-      s.kcal = Math.max(0, s.kcal - 10); // walking is work
+      if (BLOCKS[cell]) return false;
+      const cost = (cell === 'rubble') ? 20 : 10;
+      s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
       this.monsterTurn();
       return true;
