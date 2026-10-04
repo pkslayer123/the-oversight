@@ -246,9 +246,17 @@
         this.state.codex.encounters[plantId] = enc;
         this.say(`${teacher.name.split(' ')[0]} tries to explain. "It looks... a bit like that?" You\'re not sure. (${enc} encounters)`);
       }
-      // teaching builds trust
+      // teaching builds trust — BUT with diminishing returns.
+      // Talk gets you to 40. Beyond that, you need ACTIONS, not words.
+      // (Prevents endless talk-spam to max trust.)
       if (this.state.village.trust) {
-        this.state.village.trust[vid] = Math.min(100, ((this.state.village.trust[vid] || 10) + 8));
+        const cur = this.state.village.trust[vid] || 10;
+        if (cur < 40) {
+          // Diminishing: +8 at 10, +4 at 20, +2 at 30, +1 at 35...
+          const gain = Math.max(1, Math.floor(8 * (1 - cur / 50)));
+          this.state.village.trust[vid] = Math.min(40, cur + gain);
+        }
+        // Above 40: talking doesn't build trust. Do something real.
       }
       return true;
     },
@@ -1602,6 +1610,13 @@
         v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
         if (Math.random() < 0.3) this.say('Someone watches you take food. They say nothing, but you feel it.');
       }
+      // EXPLOIT: donate-then-take-back. If net goes negative after donating, big penalty.
+      // (They remember you gave. They remember you took it back. That's worse.)
+      const gave = v.gives[vid] || 0;
+      if (gave > 0 && net < 0) {
+        v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 5);
+        this.say('You took back what you gave. They noticed. Trust -5.');
+      }
       // add to inventory (merge if same)
       const inv = this.state.scholar.inventory;
       const existing = inv.find(i => i.name === item.name);
@@ -2212,43 +2227,48 @@
     },
 
     // CODEX NETWORKING: codexes talk within friendly organizations.
-    // BALANCE: sharing gives AWARENESS (L1), not MASTERY (L2/L3).
-    // Another village can tell you "that's edible." They can't tell you
-    // how it feels, how to prepare it, what it does to you. That's yours to learn.
-    // Trust gates WHAT they share. Reciprocity gates HOW FAST.
+    // KNOWLEDGE HAS TWO PARTS:
+    // - IDENTIFICATION (what is it?) — shareable. L1/L2.
+    // - SKILL (how do YOU use it?) — personal practice. But a good teacher accelerates it.
+    // L3 CAN be shared, but only if the teacher actually knows it deeply.
+    // (A medic who knows willow bark treats pain? They'll tell you. Most won't know.)
     shareCodexKnowledge(villageId) {
       const v = (this.state.otherVillages || []).find(x => x.id === villageId);
       if (!v || !v.codex) return null;
       const trust = v.trust || 0;
-      // Trust < 30: they share nothing (don't know you).
-      // 30-60: basics (common plants, L1 only).
-      // 60+: deeper (uncommon, still L1 only — mastery is personal).
       if (trust < 30) {
         this.say(`${v.name} doesn't share their knowledge yet. (Trust ${trust}/100.)`);
         return null;
       }
-      const theirPlants = Object.keys(v.codex.plants || {});
-      let shared = 0;
-      for (const pid of theirPlants) {
-        // Only L1 (awareness). Never L2/L3.
+      const theirPlants = v.codex.plants || {};
+      let shared = 0, deepShared = 0;
+      for (const [pid, theirEntry] of Object.entries(theirPlants)) {
+        const plant = this.data.plants.find(p => p.id === pid);
+        const isCommon = plant && (plant.rarity || 'common') === 'common';
+        // Trust gates BREADTH: 30-60 = common only, 60+ = anything.
+        if (trust < 60 && !isCommon) continue;
         if (!this.state.codex.plants[pid]) {
-          const plant = this.data.plants.find(p => p.id === pid);
-          // Trust 30-60: only common plants. 60+: anything.
-          const isCommon = plant && (plant.rarity || 'common') === 'common';
-          if (trust < 60 && !isCommon) continue;
+          // They know L3 deeply? (Medicinal experts, etc.) They can share it.
+          // But it's rare — most villagers don't have L3.
+          const theyKnowDeep = theirEntry.level >= 3;
+          const shareLevel = theyKnowDeep && trust >= 70 ? 3 : trust >= 60 ? 2 : 1;
           this.state.codex.plants[pid] = {
             identifiedDay: this.state.scholar.day,
-            level: 1, // AWARENESS ONLY. You know the name. That's it.
+            level: shareLevel,
             harvests: 0, tastings: 0,
-            viaShare: villageId, // you didn't discover this yourself
+            viaShare: villageId,
+            // SKILL component: shared knowledge gives you a head start, not mastery.
+            // You still need to USE it to truly know it. (XP to next level is halved.)
+            sharedHeadStart: true,
           };
           shared++;
+          if (shareLevel >= 3) deepShared++;
         }
       }
       if (shared > 0) {
-        this.say(`\U0001F4D6 ${v.name} shares ${shared} plant${shared > 1 ? 's' : ''} with your Codex. (L1 awareness — you know the names. Mastery is still yours to earn.)`);
+        this.say(`\U0001F4D6 ${v.name} shares ${shared} plant${shared > 1 ? 's' : ''}.${deepShared ? ` (${deepShared} with deep medicinal knowledge!)` : ''} You have a head start, but skill comes from doing.`);
       } else {
-        this.say(`${v.name} has nothing new to share. (Or you already know it all.)`);
+        this.say(`${v.name} has nothing new to share.`);
       }
       return null;
     },
