@@ -77,7 +77,7 @@ const say = (m) => log.push(`D${day} ${m}`);
     let fills = 0;
     while (bottles() < 5 && s().day === day) { Game.fillWater(); fills++; if (fills > 8) break; }
     const wellAfter = wellClean();
-    say(`filled ${fills}L via UI fillWater; well ${wellBefore}L -> ${wellAfter}L (bypass? ${wellBefore === wellAfter})`);
+    if (fills > 0) say(`filled ${fills}L at haven; cistern ${wellBefore}L -> ${wellAfter}L`);
 
     // 3. Cook raw beans at the haven fire (cooking water comes from the VILLAGE well).
     if (hasFireHere()) {
