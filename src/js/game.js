@@ -199,6 +199,9 @@
     talkTo(vid) {
       const v = this.data.villagers.find(x => x.id === vid);
       if (!v || !v.talk || !v.talk.length) return null;
+      // TALKING COSTS ENERGY. socializing is work — 20 kcal.
+      // (prevents infinite free diplomat-XP farming)
+      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 20);
       if (this.state.scholar.week1) this.state.scholar.week1.talk++;
       this.gainAbilityXP('diplomat', 1);
       this.state.talkIdx = this.state.talkIdx || {};
@@ -206,11 +209,12 @@
       this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
       const line = v.talk[i];
       // trust builds through talking. strangers warm up slowly.
-      // diplomat: the System's gift. L1 2x trust, L2 3x.
+      // WORDS ONLY GO SO FAR: talk caps at 40. beyond that, do something real.
+      // diplomat: the System's gift. L1 2x trust, L2 3x (still capped at 40).
       const dipLvl = this.abilityLevel('diplomat');
       const dipMult = dipLvl >= 2 ? 3 : dipLvl >= 1 ? 2 : 1;
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
-      const newTrust = Math.min(100, trust + 3 * dipMult);
+      const newTrust = Math.min(40, trust + 3 * dipMult);
       if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
       // the tone shifts with trust (not the number — you feel it)
       const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
@@ -1538,6 +1542,8 @@
     fillWater() {
       const s = this.state.scholar;
       s.water = s.water || [];
+      // HAULING WATER IS WORK. 10 kcal per liter. (nothing is free)
+      s.kcal = Math.max(0, (s.kcal || 0) - 10);
       // Where are you? Creek = risky, Haven = clean.
       const t = this.playerTile();
       const isCreek = t && t.type === 'creek';
@@ -1551,6 +1557,8 @@
     // Does NOT fix chemical contamination.
     boilWater() {
       const s = this.state.scholar;
+      // NEED FIRE. you can't boil water with wishes.
+      if (!this.nearFire()) { this.say('Need a fire to boil water.'); return null; }
       s.water = s.water || [];
       let n = 0;
       for (const b of s.water) {
@@ -1559,6 +1567,10 @@
           b.source += ' (boiled)';
           n++;
         }
+      }
+      if (n > 0) {
+        // TENDING A FIRE IS WORK. 30 kcal. (prevents free infinite purification)
+        s.kcal = Math.max(0, (s.kcal || 0) - 30);
       }
       this.say(n ? `Boiled ${n}L. Bacteria dead.${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
       return null;
@@ -1660,7 +1672,9 @@
       v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + trustGain);
       this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${trustGain}. They'll remember this.`);
       if (this.state.scholar.week1) this.state.scholar.week1.donate++;
-      this.gainAbilityXP('generous', 1);
+      // GENEROUS XP needs a REAL gift (>= 200 kcal). token 1-kcal donations don't count.
+      // (prevents donate-take-back XP farming)
+      if (kcal >= 200) this.gainAbilityXP('generous', 1);
       return null;
     },
 
@@ -1716,7 +1730,7 @@
       // EXPLOIT: donate-then-take-back. If net goes negative after donating, big penalty.
       // (They remember you gave. They remember you took it back. That's worse.)
       const gave = v.gives[vid] || 0;
-      if (gave > 0 && net < 0) {
+      if (gave > 0 && net <= 0) {
         v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 5);
         this.say('You took back what you gave. They noticed. Trust -5.');
       }
