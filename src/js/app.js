@@ -1324,6 +1324,15 @@
     } catch (e) {}
     // LEADERSHIP CHALLENGE: they're confronting you about who's in charge.
     // This conversation is about one thing. Yield a domain or hold your ground.
+    // === VILLAGE JUSTICE: they're confronting you about what you've done.
+    // Answer here — pay restitution, or refuse and face the vote.
+    try {
+      if (Game.justicePendingConfront && Game.justicePendingConfront(villagerId)) {
+        const owed = Game.justiceRestitutionOwed ? Game.justiceRestitutionOwed() : 0;
+        btns += ` <button class="btn sm" data-act="justicePay" style="border-color:#e0a55c">💰 Pay restitution (~${owed > 1000 ? Math.round(owed / 1000) + 'k' : owed} kcal food)</button>`;
+        btns += ` <button class="btn sm ghost" data-act="justiceRefuse">✖ Refuse</button>`;
+      }
+    } catch (e) {}
     // === PARTY ===
     // Formal parties are a System unlock. Pre-System, followers are informal.
     try { btns += Game.partyButtonHtml(villagerId); } catch (e) {}
@@ -1456,6 +1465,14 @@
     else if (act === 'confront') {
       const r = Game.confrontGossip(vid);
       view.result = r ? 'You confronted them.' : null;
+    }
+    else if (act === 'justicePay') {
+      const r = Game.justiceRespond('pay');
+      view.result = r ? (r.enough ? 'You paid restitution. It\'s over — for now.' : 'Not enough. They didn\'t accept it.') : null;
+    }
+    else if (act === 'justiceRefuse') {
+      Game.justiceRespond('refuse');
+      view.result = 'You refused. The village will decide without you.';
     }
     else if (act === 'dismissParty') {
       const r = Game.dismissFromParty(vid);
@@ -2204,8 +2221,17 @@
           <span class="small" id="packq-water" style="min-width:44px;text-align:right">0 L</span>
         </div>
       </div>` : '';
+    // FAIR SHARE NORM: the village's expectation, shown not enforced. Take
+    // what you want — but everyone knows what "fair" looks like, and blatant
+    // theft with witnesses present gets confronted. (fairShareNote in game.js.)
+    let fairShareHtml = '';
+    try {
+      const fsn = Game.fairShareNote();
+      if (fsn) fairShareHtml = `<p class="small" style="opacity:.65">Fair share is ~${fsn.perPerson} kcal/day each. The pantry holds ~${fsn.daysLeft} days at that pace. Take what you need — people notice what you take.</p>`;
+    } catch (e) {}
     const bodyHtml = `
       <p class="small">Slide to pack. Carrying ${carry.toFixed(1)}/${maxCarry} kg.</p>
+      ${fairShareHtml}
       ${waterRow}
       <div id="packlist">
       ${pantry.length ? pantry.map((p, idx) => {
@@ -2410,12 +2436,14 @@
       <div class="actions">
         <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${wrange > 1 ? ` (${wrange})` : ''}${adj.length > 1 ? '…' : ''}</button>
         <button class="btn sm" id="c-study" ${p.acted ? 'disabled' : ''}>👁 STUDY</button>
+        <button class="btn sm" id="c-talk" ${(p.acted || !mons.some(m => m.kind === 'hostile')) ? 'disabled' : ''}>💬 TALK</button>
         ${canScream ? `<button class="btn sm" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀 SCREAM</button>` : ''}
       </div>
       <div class="actions">
         <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃 FLEE</button>
         <button class="btn sm ghost" id="c-endturn">⏭ END TURN</button>
-      </div>` : `<p class="small">${cur ? esc(cur.kind === 'player' ? 'You' : cur.name) + ' is acting…' : ''}</p>`}
+      </div>
+      <div class="actions" id="c-talkrow" style="display:none"></div>` : `<p class="small">${cur ? esc(cur.kind === 'player' ? 'You' : cur.name) + ' is acting…' : ''}</p>`}
       </div>`;
   }
 
@@ -2425,6 +2453,35 @@
     on('c-study', () => { Game.tbPlayerStudy(); rerender(); });
     on('c-scream', () => { Game.tbPlayerScream(); rerender(); });
     on('c-flee', () => { Game.tbPlayerFlee(); rerender(); });
+    // TALK: words are actions too. Pick who, then how.
+    const showTalkRow = (targetKey) => {
+      const row = document.getElementById('c-talkrow');
+      if (!row) return;
+      const tactics = Game.tbTalkTactics ? Game.tbTalkTactics() : [];
+      row.innerHTML = tactics.map(t => `<button class="btn sm ghost" data-tactic="${t.id}">${esc(t.label)}</button>`).join('') +
+        ` <button class="btn sm ghost" data-tactic="">✖</button>`;
+      row.style.display = '';
+      row.querySelectorAll('[data-tactic]').forEach(b => {
+        b.onclick = () => {
+          row.style.display = 'none';
+          if (b.dataset.tactic) { Game.tbPlayerTalk(targetKey, b.dataset.tactic); }
+          rerender();
+        };
+      });
+    };
+    on('c-talk', () => {
+      const tf = Game.tbfight;
+      if (!tf) return;
+      const p = Game.tbFighter('p');
+      const hostiles = tf.fighters.filter(x => x.kind === 'hostile' && x.alive && !x.fled);
+      if (!hostiles.length || !p || p.acted) return;
+      if (hostiles.length === 1) { showTalkRow(hostiles[0].key); return; }
+      enterTargeting({
+        prompt: '💬 Talk to whom?',
+        targets: hostiles.map(h => ({ key: h.key, cx: h.mx, cy: h.my, label: h.name })),
+        onPick: (t) => { showTalkRow(t.key); },
+      });
+    });
     on('c-strike', () => {
       const tf = Game.tbfight;
       if (!tf) return;

@@ -2296,6 +2296,24 @@
         return { ok: true, goal };
       }
       if (topic === 'gossip') {
+        // PEOPLE TALK ABOUT EACH OTHER: before the generic gossip, NPCs share
+        // what they know about specific villagers — and sometimes what they
+        // say contradicts a lie. (npcGossipAbout lives in truth.js; guarded.)
+        // This is the village as an information network, not a broadcast.
+        try {
+          if (this.npcGossipAbout && Math.random() < 0.5) {
+            const others = (this.state.village.roster || []).filter(id =>
+              id !== vid && id !== this.villagerId);
+            if (others.length) {
+              const target = others[Math.floor(Math.random() * others.length)];
+              const gg = this.npcGossipAbout(vid, target);
+              if (gg && gg.line) {
+                this.say(`${first} lowers their voice. ${gg.line}`);
+                return { ok: true, gossipAbout: target };
+              }
+            }
+          }
+        } catch (e) {}
         // DARK GOSSIP: the village talks about the weird one. Unease for the
         // benign, quiet warnings for the malicious — and some defend them.
         // ("He's just different." The most chilling sentence in the village.)
@@ -5074,6 +5092,57 @@
       return cap;
     },
 
+    // THEFT IS ALLOWED. Nothing stops your hand — but the village has eyes.
+    // Take more than your fair share while witnesses are present and someone
+    // may confront you directly. Take when no one's looking and it's just
+    // gossip later. The pantry is TAKE WHAT YOU WANT; the consequences are social.
+    theftConfrontation(totalKcal) {
+      const v = this.state.village;
+      const wit = (this.witnesses && this.witnesses(6)) || [];
+      const present = wit.filter(id => id !== this.villagerId && (v.roster || []).includes(id));
+      if (!present.length) return; // no one saw. the gossip may still find you.
+      // fair share norm: ~2000 kcal/day. Blatant theft = 2x+ in one take.
+      if (totalKcal < 4000) return;
+      // once per day — they said their piece, they won't nag
+      const dayKey = 'theftConf' + this.state.scholar.day;
+      v[dayKey] = v[dayKey] || {};
+      if (v[dayKey][this.state.scholar.villagerId]) return;
+      v[dayKey][this.state.scholar.villagerId] = true;
+      // who confronts? boldest witness, or the one who trusts you least
+      let confronter = null, best = -999;
+      for (const id of present) {
+        const temp = this.npcTemper(id);
+        const trust = ((v.trust || {})[id]) || 10;
+        let score = (temp === 'bold' ? 30 : temp === 'prickly' ? 20 : 0) - trust;
+        score += Math.random() * 20;
+        if (score > best) { best = score; confronter = id; }
+      }
+      if (!confronter || Math.random() < 0.35) return; // they let it slide. this time.
+      const first = this.displayName(confronter);
+      const lines = [
+        `"Hey." ${first} steps closer. "That's a lot you're taking. More than your share. People are counting."`,
+        `"We all see the pantry, you know." ${first} doesn't look away. "Take what you need. But that's not need — that's hoarding."`,
+        `${first} watches you load up, then says it loud enough for the fire to hear: "Must be nice, taking double while the rest of us count bites."`,
+      ];
+      this.say(lines[Math.floor(Math.random() * lines.length)]);
+      const tr = v.trust || {};
+      tr[confronter] = Math.max(0, (tr[confronter] || 10) - 8);
+      // the whole village hears about this one
+      try { this.observe('hoard', {}); } catch (e) {}
+      try { this.remember(confronter, 'confronted_theft', 'called you out for taking too much'); } catch (e) {}
+    },
+
+    // fairShareNote: the social norm, shown in the pantry UI. Not a limit —
+    // information. Everyone knows what "fair" looks like. Violating it visibly
+    // has consequences; the UI just makes the norm legible.
+    fairShareNote() {
+      const v = this.state.village;
+      const pop = ((v.roster || []).length) || 1;
+      const pantryKcal = (v.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0);
+      const daysLeft = pantryKcal / Math.max(1, pop * 2000);
+      return { perPerson: 2000, daysLeft: daysLeft.toFixed(1), pantryKcal: Math.round(pantryKcal) };
+    },
+
     // takeFromPantryBulk: pack multiple items at once (slider UI).
     // selections: {idx: qty}. Respects weight, applies trust cost once.
     takeFromPantryBulk(selections) {
@@ -5128,6 +5197,9 @@
         if (Math.random() < 0.3) this.say('Someone watches you load up. They say nothing.');
         this.observe('hoard');
       }
+      // BLATANT THEFT with witnesses present: direct confrontation.
+      // Nothing stops your hand — but someone may stop your nerve.
+      try { this.theftConfrontation(totalKcal); } catch (e) {}
       this.say(`Packed: ${taken.join(', ')}. (${this.fmtKcal(totalKcal)}, ${totalKg.toFixed(1)} kg)`);
       return null;
     },
@@ -5161,6 +5233,8 @@
         v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
         if (Math.random() < 0.3) this.say('Someone watches you take food. They say nothing, but you feel it.');
       }
+      // Single takes add up: check the running total for blatant theft.
+      try { this.theftConfrontation((v.takes[vid] || 0)); } catch (e) {}
       // EXPLOIT: donate-then-take-back. If net goes negative after donating, big penalty.
       // (They remember you gave. They remember you took it back. That's worse.)
       const gave = v.gives[vid] || 0;
@@ -6893,7 +6967,7 @@
       const v = this.state.village;
       if (this.isNight() || this._sleeping || this.tbfight) return;
       v.lastOverheard = (v.lastOverheard || 0) + 1;
-      if (v.lastOverheard < 4 || Math.random() > 0.35) return; // rare enough to feel like life
+      if (v.lastOverheard < 3 || Math.random() > 0.45) return; // often enough to feel alive
       v.lastOverheard = 0;
       const near = Object.keys(v.positions || {}).filter(rid =>
         rid !== this.villagerId && !this.isEngaged(rid));
@@ -6901,6 +6975,23 @@
       const a = near[Math.floor(Math.random() * near.length)];
       let b = near[Math.floor(Math.random() * near.length)];
       if (b === a) b = near[(near.indexOf(a) + 1) % near.length];
+      // SOMETIMES THEY TALK ABOUT A THIRD PERSON — and sometimes what they
+      // say doesn't match the story. The village polices its own lies.
+      // (npcGossipAbout lives in truth.js; guarded in case it's absent.)
+      try {
+        if (this.npcGossipAbout && Math.random() < 0.30) {
+          const others = (v.roster || []).filter(id =>
+            id !== a && id !== b && id !== this.villagerId);
+          if (others.length) {
+            const target = others[Math.floor(Math.random() * others.length)];
+            const gg = this.npcGossipAbout(a, target);
+            if (gg && gg.line && gg.contradictsLie) {
+              this.say(`👂 Overheard — ${this.displayName(a)} (to ${this.displayName(b)}): ${gg.line}`);
+              return;
+            }
+          }
+        }
+      } catch (e) {}
       const ia = this.npcIntel(a).primary, ib = this.npcIntel(b).primary;
       const oh = (this.data.characterGen || {}).overheard || {};
       const openers = (oh.openers || {})[ia] || [];
@@ -6908,8 +6999,26 @@
       if (!openers.length || !replies.length) return;
       const op = openers[Math.floor(Math.random() * openers.length)];
       const rp = replies[Math.floor(Math.random() * replies.length)];
+      // SOMETIMES THEY PULL YOU IN: the village doesn't just perform around
+      // you — sometimes they want you in the conversation.
+      const pullIn = Math.random() < 0.18;
       this.say(`👂 Overheard — ${this.displayName(a)}: ${op}`);
       this.say(`👂 Overheard — ${this.displayName(b)}: ${rp}`);
+      if (pullIn) {
+        const invites = [
+          `"Hey — come here. You should hear this."`,
+          `"You. Yeah, you. What do you make of this?"`,
+          `"Don't just stand there — you've got opinions, right?"`,
+        ];
+        const who = Math.random() < 0.5 ? a : b;
+        this.say(`👂 ${this.displayName(who)} ${invites[Math.floor(Math.random() * invites.length)]}`);
+        // they actually want to talk: use the existing talk-request system
+        // so the player sees "can we talk?" on their person card.
+        try {
+          v.talkRequests = v.talkRequests || {};
+          v.talkRequests[who] = { line: `${this.displayName(who)} wants you to join the conversation.` };
+        } catch (e) {}
+      }
       // Overhearing sharp minds teaches a little. The village is a classroom
       // you didn't enroll in.
       if ((ia === 'analytical' || ib === 'analytical') && Math.random() < 0.4) {

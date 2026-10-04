@@ -403,26 +403,52 @@
           }
         } catch (e) {}
       }
+      // DEPTH GATING: what they'll talk about depends on how well they know
+      // you. Little hits over time, like real people. Defined once, used by
+      // theorize and the topic asks below.
+      const trustNow = (this.state.village.trust || {})[vid] || 10;
+      const convoCount = c.count || 0;
       // THEORIZE comes before the topic asks: it's a signature mechanic
       // (joint discovery), not small talk — it shouldn't be starved by
       // the discovery choices above or the asks below.
+      // GATED: thinking together is intimate. Trust 30+ or 2nd conversation.
       // System talk only makes sense after it arrives; before that, the
       // scattering itself and the monsters are the mystery.
       const theorized = c.theorized || [];
       const sysUp = !!this.state.systemArrived;
+      const theorizeOpen = trustNow >= 30 || convoCount >= 2;
       const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
         theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
-      if (topicsLeft.length && choices.length < 5) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
+      if (theorizeOpen && topicsLeft.length && choices.length < 5) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
+      // WATCH THEM: the detective's tool. Spend time observing — behavior may
+      // contradict story. Available once you've talked enough to have a baseline
+      // (2nd conversation+), or if you already have doubts about them.
+      // (observePerson lives in truth.js; guarded in case that module is absent.)
+      if (choices.length < 5 && typeof this.observePerson === 'function') {
+        const hasDoubts = this.getDoubts && this.getDoubts(vid).length > 0;
+        if (convoCount >= 2 || hasDoubts) {
+          choices.push({ id: 'observe', label: hasDoubts ? '"I\'ve been watching you. Keep talking."' : '(watch them for a while)' });
+        }
+      }
       // TOPIC ASKS fill remaining slots after the meaningful actions.
+      // GATED BY TRUST AND FAMILIARITY: you don't get someone's life story
+      // in the first conversation. Little hits over time, like real people.
+      // - village, plans: always (safe small talk)
+      // - past: trust 25+ or 2nd conversation
+      // - goal: trust 40+ or 3rd conversation (what they really want)
+      // - theorize: trust 30+ or 2nd conversation (thinking together is intimate)
       // DEFLECTORS offer fewer doors: withdrawn/prickly/restless people don't
       // volunteer every topic — you get two, and you earn the rest.
       const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
       const asked = c.askedTopics || [];
       const tempNow = this.npcTemper(vid);
       const topicCap = (tempNow === 'withdrawn' || tempNow === 'prickly' || tempNow === 'restless') ? 2 : 5;
+      // Depth gating uses trustNow/convoCount defined above with theorize.
+      const pastOpen = trustNow >= 25 || convoCount >= 2;
+      const goalOpen = trustNow >= 40 || convoCount >= 3;
       const asks = [];
-      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
-      if (asked.indexOf('past') === -1) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
+      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
+      if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
       if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
       if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
       // Cap counts TOPIC asks, not total choices — deflectors get fewer doors,
@@ -540,6 +566,11 @@
       } else if (choiceId.indexOf('ask:') === 0) {
         const topic = choiceId.slice(4);
         done(this.convoAskTopic(vid, topic), this.convoLabel(vid, topic));
+      } else if (choiceId === 'observe') {
+        // WATCH THEM: the detective's tool. Costs time, may reveal that
+        // behavior doesn't match story. (observePerson lives in truth.js.)
+        const r = this.observePerson(vid);
+        done(r.text, r.found ? '"I\'ve been watching you. Keep talking."' : '(watch them for a while)');
       } else if (choiceId === 'offer_help') {
         c.offeredHelp = true;
         // A promise is a FORMAL tracked commitment now — not just +2 trust.

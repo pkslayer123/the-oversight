@@ -61,7 +61,10 @@
 
     genLies(vp) {
       const lies = {};
-      let p = 0.12; // base: most people don't lie about who they are
+      // base: ~1 in 5 people bend the truth about who they are. Enough liars
+      // that an active detective finds threads; few enough that most villagers
+      // are just people. (Raised from 0.12 — dead villages teach nothing.)
+      let p = 0.20;
       const dark = vp.personality && vp.personality.dark;
       if (dark && dark.kind === 'malicious') p += 0.50;
       if (dark && dark.kind === 'benign') p += 0.15;
@@ -585,6 +588,40 @@
     finally { for (const [k, val] of swaps) vp[k] = val; }
     // track the false claim (may trigger contradiction doubt)
     this.trackClaim(vid, lie.field, lie.told);
+    // BAD LIARS SLIP IN CONVERSATION: non-pathological liars sometimes get
+    // careless mid-answer — a wrong detail, a correction that's worse than
+    // the slip. The better the liar, the rarer this is. This is how verbal
+    // contradictions actually fire: not from perfect consistency, but from
+    // imperfect people failing to maintain the story.
+    const isPathological = lie.motive === 'pathological';
+    const isManipulative = lie.motive === 'manipulation';
+    let slipP = isPathological ? 0.02 : isManipulative ? 0.06 : 0.14;
+    // stress makes liars worse: low trust, recent confrontation, fear
+    try {
+      const trust = ((this.state.village.trust || {})[vid]) || 10;
+      if (trust < 20) slipP += 0.06;
+      const mem = ((this.state.village.memory || {})[vid]) || [];
+      if (mem.some(m => m.t === 'confronted' || m.t === 'deflected')) slipP += 0.08;
+      if ((this.npcNeeds(vid).fear || 0) > 60) slipP += 0.06;
+    } catch (e) {}
+    if (Math.random() < slipP) {
+      const first = String(this.displayName(vid)).split(' ')[0];
+      const truthWord = lie.truth;
+      const anTruth = /^[aeiou]/i.test(truthWord) ? 'an' : 'a';
+      const slips = [
+        ' ...' + first + ' catches themself mid-sentence. "I mean \u2014 ' + lie.told + '. That\u2019s what I said." The correction lands wrong.',
+        ' A detail doesn\u2019t fit. ' + first + ' said "' + lie.told + '" \u2014 but then mentions something that only makes sense for ' + anTruth + ' ' + truthWord + '. They don\u2019t notice. You do.',
+        ' "' + lie.told + '." ' + first + ' says it a little too firmly. Like they\u2019re convincing themself, not you.',
+      ];
+      const slipText = slips[Math.floor(Math.random() * slips.length)];
+      line = line + slipText;
+      // this IS a contradiction: they just undermined their own claim
+      this.addDoubt(vid, 'slip',
+        this.doubtText(vid, 'slip', { text: first + ' told you "' + lie.told + '" \u2014 but something they just said doesn\u2019t fit. A wrong detail, a bad correction.' }),
+        ['claimed "' + lie.told + '"', 'slipped mid-conversation (day ' + day() + ')']);
+      try { this.remember(vid, 'slip', 'said something revealing'); } catch (e) {}
+      return line;
+    }
     // liars sometimes over-explain — a tiny tell
     if (Math.random() < 0.12) {
       const tells = [' A beat too long on that answer.', ' They smile when they say it. It doesn\'t reach their eyes.'];
@@ -695,11 +732,14 @@
         if (!lies) continue;
         for (const lie of Object.values(lies)) {
           if (lie.confessed) continue;
-          // slips are rare but inevitable — lies decay
-          if (Math.random() < 0.06) this.truthSlip(vid, lie);
+          // slips are rare but inevitable — lies decay. Bad liars decay faster.
+          // (Pathological liars are good at this; everyone else leaks.)
+          const slipRate = lie.motive === 'pathological' ? 0.05
+            : lie.motive === 'manipulation' ? 0.09 : 0.14;
+          if (Math.random() < slipRate) this.truthSlip(vid, lie);
         }
-        // behavior observations: goal vs actions (rare, ambient)
-        if (Math.random() < 0.04) this.behaviorCheck(vid);
+        // behavior observations: goal vs actions (ambient, more common now)
+        if (Math.random() < 0.08) this.behaviorCheck(vid);
       }
     } catch (e) {}
     return r;

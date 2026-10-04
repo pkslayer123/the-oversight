@@ -12,7 +12,7 @@
         "id": "night_counter",
         "quirk": "counts things under their breath: steps, heartbeats, birds",
         "note": "On the third night {they} were heard counting heartbeats — {their} own, then everyone else's, in the dark. {They} laughed it off in the morning. A little too quickly.",
-        "assessment": "The counting is soft, almost soothing \u2014 until you notice they're counting heartbeats. Yours."
+        "assessment": "The counting is soft, almost soothing — until you notice they're counting heartbeats. Yours."
       },
       {
         "id": "stone_friend",
@@ -3273,7 +3273,29 @@
     "We should stick together. Twelve strangers is better than one stranger. Math.",
     "I keep thinking about what I left behind. Then I get hungry and stop thinking.",
     "The others look to me for {skill}. Fine. Someone has to know something.",
-    "Don't eat anything {first} hasn't looked at first. That's my rule. It's a good rule."
+    "Don't eat anything {first} hasn't looked at first. That's my rule. It's a good rule.",
+    "I keep thinking about {origin}. Not missing it, exactly. Just... checking that I still remember it right.",
+    "You know what's weird? I'm {an_occ} — was {an_occ} — and none of that prepared me for any of this.",
+    "I've started talking to myself when I work. Keeps the rhythm. You probably do it too.",
+    "The nights are the hardest. Days, you're busy. Nights, you're just... with it all.",
+    "I wonder if {origin} looks like this now. Empty. Quiet. Or if it's worse there.",
+    "Someone has to stay hopeful, right? Might as well be me. I'm good at faking it till it's real.",
+    "I've been watching how {skill} works out here. It's different from before. Everything's different from before.",
+    "Do you think we'll look back on this and call it the good old days? God, I hope not.",
+    "I miss small talk. Real small talk, about weather that didn't matter and shows I hadn't seen.",
+    "My hands know things my brain hasn't caught up to yet. Muscle memory from {occ} days.",
+    "I've started noticing who eats first and who waits. Tells you everything about a person.",
+    "The fire's the real leader here. We just orbit it and pretend we're in charge.",
+    "I used to need noise to sleep. Now I need silence and I can't find enough of it.",
+    "Every morning I wake up surprised. Like part of me still expects the old world.",
+    "I'm collecting skills like they're currency. {skill} today, something else tomorrow.",
+    "You ever get a song stuck in your head with no way to play it? It's a special kind of torture.",
+    "I think about who I was in {origin} and it feels like reading about a stranger.",
+    "The hardest part isn't the hunger or the cold. It's not knowing if anyone else made it.",
+    "I've gotten good at reading faces. Out here, faces say what words won't.",
+    "I keep the good moments in a mental box. Today goes in the box. Just so you know.",
+    "Being {an_occ} feels like a past life. Sometimes I wonder if I dreamed it.",
+    "I don't pray, exactly. But I talk to the sky sometimes. It hasn't answered yet."
   ],
   "temperaments": [
     "steady",
@@ -3426,7 +3448,12 @@
       "lines": [
         "Someone has to make decisions here. I'm just saying — it might as well be someone who knows how.",
         "You give a lot of orders for someone nobody elected. I'm keeping track. So are others.",
-        "I've led people before. Real people, real stakes. Watch me work and tell me I'm wrong."
+        "I've led people before. Real people, real stakes. Watch me work and tell me I'm wrong.",
+        "I've watched groups fall apart without someone steering. I won't watch it happen here.",
+        "It's not about power. It's about making sure someone's thinking three steps ahead.",
+        "People need to know someone's got a plan. Even if the plan is 'we'll figure it out.'",
+        "I don't want to be in charge. I want us to survive. Those look the same from the outside.",
+        "Every group I've been in, someone had to be the adult. Guess it's me again."
       ]
     },
     {
@@ -3435,7 +3462,12 @@
       "lines": [
         "My sister was in {origin} when the sky changed. I don't know if — I have to believe she's out there.",
         "Every stranger on the road could know something. I ask. I always ask. You would too.",
-        "I'm not staying here forever. The moment I can travel, I'm going looking."
+        "I'm not staying here forever. The moment I can travel, I'm going looking.",
+        "I keep their faces in my head like photographs. If I stop looking, I might lose them.",
+        "Someone out there knows something. I just have to find the right someone.",
+        "I dream about finding them. Then I wake up and the dreaming feels like the real part.",
+        "Family isn't just blood. But blood's a good place to start looking.",
+        "I'd walk through anything to get to them. That's not courage. That's just... math."
       ]
     },
     {
@@ -3444,7 +3476,12 @@
       "lines": [
         "Give me something to do. Anything. I can't stand sitting here wondering if I'm dead weight.",
         "Back home I was {an_occ}. Let me show you what that means out here.",
-        "Did you see what I brought back? Tell the others. Please — tell them."
+        "Did you see what I brought back? Tell the others. Please — tell them.",
+        "Back before, I was nobody special. This is my chance to be someone who matters.",
+        "I need to earn my place here. Not given — earned. There's a difference.",
+        "Watch what I do, not what I say. That's where the proof is.",
+        "I'm not trying to be a hero. I'm trying to be necessary.",
+        "Everyone's got a role here. I'm still auditioning for mine."
       ]
     },
     {
@@ -3453,7 +3490,12 @@
       "lines": [
         "I'm fine on my own. I was fine before all this. Don't take it personally.",
         "Groups make decisions slow and loud. I'll help. From over there.",
-        "You need something? Ask. Otherwise I've got my corner and my thoughts."
+        "You need something? Ask. Otherwise I've got my corner and my thoughts.",
+        "Groups make noise. Noise gets you noticed. I work better quiet.",
+        "It's not that I don't like people. It's that I like breathing more.",
+        "I need space the way other people need food. Don't take it personally.",
+        "Alone, I only have to worry about one person's mistakes. Mine.",
+        "I'll help when it counts. But I won't live in anyone's pocket."
       ]
     },
     {
@@ -3462,7 +3504,12 @@
       "lines": [
         "Nobody goes hungry on my watch. That's the whole plan. Everything else is details.",
         "I counted the stores twice today. We need more. We always need more.",
-        "You eat first. No — don't argue. I already ate. (I hadn't.)"
+        "You eat first. No — don't argue. I already ate. (I hadn't.)",
+        "Hungry people make bad decisions. Fed people can think. It's that simple.",
+        "I know what starving feels like. Nobody here is going to feel it if I can help it.",
+        "Food is love out here. Not metaphorically. Literally. Calories are care.",
+        "You can tell a lot about a group by how they eat. I want us to eat well.",
+        "Every meal is a small victory. I'm collecting victories."
       ]
     },
     {
@@ -3471,7 +3518,12 @@
       "lines": [
         "The sky split and nobody wants to talk about WHY. I do. I need to know.",
         "I've been writing down everything strange. Patterns. Dates. Someone should.",
-        "Whatever did this — it had a reason. Reasons can be found. That's what I believe."
+        "Whatever did this — it had a reason. Reasons can be found. That's what I believe.",
+        "The not-knowing is a splinter. I need to get it out or it'll fester.",
+        "Everything has a pattern. I just haven't found this one's edges yet.",
+        "People think I'm chasing answers. I'm chasing the right questions.",
+        "If I understand it, I can survive it. That's the theory, anyway.",
+        "Ignorance got us here. Knowledge gets us out. Or it doesn't, but I'd rather know."
       ]
     },
     {
@@ -3480,7 +3532,12 @@
       "lines": [
         "Sleep. I'll take the watch. I don't mind the dark as much as I mind what could come out of it.",
         "Stick close to the fire after sundown. That's not a suggestion.",
-        "Nobody touches this group. Not while I'm standing."
+        "Nobody touches this group. Not while I'm standing.",
+        "I've seen what happens when nobody stands between danger and the vulnerable. Never again.",
+        "My job is the space between them and whatever's out there. I live in that space.",
+        "I don't need thanks. I need everyone breathing tomorrow.",
+        "Protection isn't about fighting. It's about making fighting unnecessary.",
+        "Someone has to be the wall. I've got broad shoulders. Fine."
       ]
     },
     {
@@ -3489,7 +3546,12 @@
       "lines": [
         "This place is a camp, not a home. There's somewhere better. There has to be.",
         "I've been mapping the roads out. Quietly. When I go, I'm going prepared.",
-        "You feel it too, right? That we're just... waiting here? I can't wait."
+        "You feel it too, right? That we're just... waiting here? I can't wait.",
+        "This place is a waiting room. I'm not waiting. I'm leaving.",
+        "Somewhere out there is better. It has to be. The alternative is unthinkable.",
+        "I'm not running from something. I'm running toward something. There's a difference.",
+        "Every day here is a day I'm not where I should be. That math doesn't work for me.",
+        "I'll go alone if I have to. But I'd rather not go alone."
       ]
     },
     {
@@ -3498,7 +3560,12 @@
       "lines": [
         "I was {an_occ} in {origin}. Say it back to me sometime. I need to hear it stays true.",
         "I keep my old routines. Coffee at dawn — well, hot water at dawn. It's the shape of it that matters.",
-        "If we forget who we were, then what survived? Just bodies. I want more than that."
+        "If we forget who we were, then what survived? Just bodies. I want more than that.",
+        "If I forget who I was, then what survived? Just a body. That's not enough.",
+        "My past is the only thing they can't take. I'm holding it tight.",
+        "I tell my story so I don't lose it. Memory needs an audience or it fades.",
+        "Who I was matters. It has to matter. Otherwise what was the point of any of it?",
+        "I'm an archive of a world that doesn't exist. Someone should keep the records."
       ]
     },
     {
@@ -3507,7 +3574,12 @@
       "lines": [
         "I've never really had people. Maybe this is — maybe this is my chance to have people.",
         "Tell me about yourself. Anything. I want to know who I'm surviving with.",
-        "If there's a job nobody wants, I'll take it. That's how you earn a place, right?"
+        "If there's a job nobody wants, I'll take it. That's how you earn a place, right?",
+        "I've been on the outside my whole life. I'm tired of watching through windows.",
+        "Belonging isn't about being needed. It's about being missed when you're gone.",
+        "I want to be part of the 'we' when people say 'we made it.'",
+        "Loneliness is a slow death. I'd rather risk the group than die alone.",
+        "Home isn't a place. It's people who notice when you're quiet."
       ]
     },
     {
@@ -3516,7 +3588,12 @@
       "lines": [
         "I'm not dying for anyone's principles. I do what keeps me breathing. Remember that.",
         "Share when it's smart. Keep when it's smarter. That's not selfish, that's arithmetic.",
-        "You look like someone who survives. Stick with me and we both keep surviving."
+        "You look like someone who survives. Stick with me and we both keep surviving.",
+        "Everything else is luxury. Breathing tomorrow is the whole game.",
+        "I'm not proud. I'm alive. Those two things stopped overlapping a while ago.",
+        "Survival isn't pretty. It's not noble. It's just... continuing.",
+        "I'll do what it takes. I'll live with what I've done. That's the deal.",
+        "The future is a rumor. Today is a fact. I deal in facts."
       ]
     },
     {
@@ -3525,7 +3602,12 @@
       "lines": [
         "Everything's broken — bodies, tools, people. I fix things. It's what I'm for.",
         "Show me what's hurt. Doesn't matter if it's a leg or a water pump. I'll look.",
-        "Broken isn't the same as ruined. Remember that."
+        "Broken isn't the same as ruined. Remember that.",
+        "Broken things can be fixed. People, too. I've seen it. I believe it.",
+        "Every wound I close is a small argument against despair.",
+        "Healing isn't just bodies. It's the whole thing — trust, hope, all of it.",
+        "I can't fix the world. But I can fix this cut, this fever, this fear.",
+        "Someone has to believe people get better. Might as well be the person with the bandages."
       ]
     }
   ],
@@ -3887,63 +3969,459 @@
           }
         ],
         "recall": null
+      },
+      {
+        "id": "q_first_memory",
+        "minTrust": 15,
+        "q": "What's your first memory? Like, ever. The earliest thing.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"A kitchen. Morning light. I must've been three.\"",
+            "react": "\"Three. That's young. The brain keeps what it needs, I guess.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"I don't really... it's all fragments.\"",
+            "react": "\"Fragments are honest. The whole picture's usually a lie we tell ourselves.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Why do you want to know?\"",
+            "react": "\"Curious. Sorry. Forget I asked.\" They change the subject, a little too fast."
+          }
+        ]
+      },
+      {
+        "id": "q_regret",
+        "minTrust": 35,
+        "q": "Any regrets? The real kind, not the small stuff.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"I didn't say what I needed to say. To someone. Now I can't.\"",
+            "react": "Quiet. \"Yeah. I think everyone's carrying one of those.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"Plenty. But they're mine. I don't share those.\"",
+            "react": "\"Fair. Some things you carry alone or not at all.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Regrets are a luxury now.\"",
+            "react": "\"Maybe. Or maybe they're the only honest thing left.\" They let it drop."
+          }
+        ]
+      },
+      {
+        "id": "q_skill",
+        "minTrust": 10,
+        "q": "What's something you're good at that nobody here knows about?",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"I can fix almost anything mechanical. People are surprised.\"",
+            "react": "\"Noted. Filing that under 'extremely useful.' The village needs that.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"A few things. You'll find out. Or you won't.\"",
+            "react": "\"Mysterious. I respect it. Everyone's got a hidden card.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Nothing worth mentioning.\"",
+            "react": "\"Everyone says that. Then they turn out to be the one who saves us all.\" A grin."
+          }
+        ]
+      },
+      {
+        "id": "q_believe",
+        "minTrust": 25,
+        "q": "Do you believe in anything? Now, I mean. After everything.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"I believe we get through this. I have to. The alternative doesn't work.\"",
+            "react": "\"That's not naive. That's load-bearing. Hold onto it.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"I believe in breakfast. One day at a time.\"",
+            "react": "A real laugh. \"You know what? That's the most honest theology I've heard all week.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Belief is for people with spare energy.\"",
+            "react": "\"Ouch. Fair, though. I'll believe enough for both of us.\""
+          }
+        ]
+      },
+      {
+        "id": "q_someone",
+        "minTrust": 20,
+        "q": "Is there someone here you don't trust? Be honest.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"Yeah. I'm not saying who. But yeah.\"",
+            "react": "Their eyes flick, just for a second, toward the fire. \"Noted. I'll watch too.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"I don't know anyone well enough to distrust them yet.\"",
+            "react": "\"Healthy. Paranoia's a slow poison. Save it for when you need it.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"That's a dangerous question.\"",
+            "react": "\"It is. Forget I asked. But... keep your eyes open. That's all.\""
+          }
+        ]
+      },
+      {
+        "id": "q_change",
+        "minTrust": 30,
+        "q": "Has this changed you? Like, fundamentally?",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"I don't recognize the person in my head anymore. I think that's good? I don't know.\"",
+            "react": "\"The old you got you here. The new you keeps you here. Both count.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"Everyone says it has. I'm not sure I believe them.\"",
+            "react": "\"Maybe you're the control group. Someone has to remember what normal felt like.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"I'm too busy surviving to have an identity crisis.\"",
+            "react": "\"The crisis will wait. It's patient. It'll be there when you're ready.\""
+          }
+        ]
+      },
+      {
+        "id": "q_guilty",
+        "minTrust": 40,
+        "q": "What's the worst thing you've done since the sky changed?",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"I took food from someone who needed it more. I tell myself I'd do it again. I'm not sure.\"",
+            "react": "No judgment in their face. \"We're all doing math that doesn't add up. You're still here. That counts.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"Nothing I'm telling you. Nothing I'm telling anyone.\"",
+            "react": "\"Okay.\" They don't push. \"When you're ready. If you're ever ready.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Define 'worst.'\"",
+            "react": "\"The fact that you have to ask means you're doing better than you think.\""
+          }
+        ]
+      },
+      {
+        "id": "q_hope",
+        "minTrust": 10,
+        "q": "What are you hoping for? Not the big stuff. The small thing.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"A full night's sleep. Just one. Where I don't wake up listening.\"",
+            "react": "\"God, yes. That's the dream now. Eight hours of not being afraid.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"Something sweet. I can't remember the last sweet thing.\"",
+            "react": "\"I'll keep an eye out. Berries, honey, whatever the woods offer. Small hopes are the durable kind.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Hope's a big word for small things.\"",
+            "react": "\"Then let's call it 'looking forward to.' Same thing, less pressure.\""
+          }
+        ]
+      },
+      {
+        "id": "q_alone_time",
+        "minTrust": 20,
+        "q": "Do you ever just need to be alone? Like, really alone?",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"Every day. I go for walks that don't need to happen. Just to breathe my own air.\"",
+            "react": "\"I get it. Solitude's a resource too. Scarcer than food, some days.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"Less than I thought I would. The quiet scares me more than the crowd.\"",
+            "react": "\"That's new for a lot of people. The silence used to be the reward. Now it's the threat.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Alone is how you get got.\"",
+            "react": "\"Practical. Cold, but practical. Just don't forget how to be a person in the meantime.\""
+          }
+        ]
+      },
+      {
+        "id": "q_laugh_memory",
+        "minTrust": 15,
+        "q": "When's the last time you really laughed?",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"Yesterday. Someone tripped over nothing and we all lost it. It felt like stealing.\"",
+            "react": "\"Stealing joy. I like that. We should steal more of it.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"I can't remember. That's probably my answer.\"",
+            "react": "\"Then we're overdue. I'll work on that. Consider it a project.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Laughing feels wrong now.\"",
+            "react": "\"It feels wrong because it matters. The wrong-feeling things are usually the important ones.\""
+          }
+        ]
+      },
+      {
+        "id": "q_teach_me",
+        "minTrust": 25,
+        "q": "Teach me something. Anything you know that I don't.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"Okay. Watch my hands. This is how you tell if wood's seasoned enough to burn clean...\"",
+            "react": "They show you, patient. You feel the knowledge land — small, solid, yours now."
+          },
+          {
+            "id": "a_vague",
+            "label": "\"I don't know what I know that you don't. We're all guessing out here.\"",
+            "react": "\"Then we'll guess together. Two guessers are better than one. That's just math.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"I'm not much of a teacher.\"",
+            "react": "\"Everyone says that. Then they show you something that saves your life. No pressure, though.\""
+          }
+        ]
+      },
+      {
+        "id": "q_stay",
+        "minTrust": 45,
+        "q": "Are you going to stay? With us. For real.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"Yeah. I am. I didn't expect to say that, but yeah.\"",
+            "react": "Something eases in their shoulders. \"Good. We're better with you here. I mean that.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"I don't know yet. I'm still deciding what 'staying' means.\"",
+            "react": "\"Take your time. The door's open both ways. That's what makes staying mean something.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Why? You heard something?\"",
+            "react": "\"No, no — just asking. But the fact that you went there... keep me posted, yeah?\""
+          }
+        ]
+      },
+      {
+        "id": "q_system_fear",
+        "minTrust": 30,
+        "q": "What scares you most about what's happening? The real answer.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"That it's intentional. That someone's watching and this is all... on purpose.\"",
+            "react": "They go quiet. \"Yeah. Me too. The randomness would almost be kinder.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"That I'll get used to it. That this will start feeling normal.\"",
+            "react": "\"That's the deepest cut. Normalizing the nightmare. Stay angry about it. Please.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Everything. Next question.\"",
+            "react": "\"Fair. We can do the greatest-hits version later. Or never. Your call.\""
+          }
+        ]
+      },
+      {
+        "id": "q_kindness",
+        "minTrust": 20,
+        "q": "What's the kindest thing someone's done for you out here?",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"Shared their food when they didn't have enough either. Didn't make a thing of it. Just... did it.\"",
+            "react": "\"That's the good stuff. Quiet generosity. It's holding this whole thing together.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"I can't pick one. Which probably means I've been luckier than I admit.\"",
+            "react": "\"Luck counts. Don't discount it. And pay it forward when you can.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"Kindness feels like a setup now. I don't trust it.\"",
+            "react": "\"I hear you. But don't let the fear eat the good parts. They're real, even when they're rare.\""
+          }
+        ]
+      },
+      {
+        "id": "q_before_skill",
+        "minTrust": 15,
+        "q": "What's something from your old life that's actually useful here?",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"Patience. Sounds dumb. But waiting — really waiting, without fidgeting — that's a superpower now.\"",
+            "react": "\"Not dumb at all. The people who can't wait are the ones who make mistakes. You're an asset.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"Honestly? Nothing. I feel like I'm starting from zero.\"",
+            "react": "\"Zero's a good place. No bad habits to unlearn. You'll pick it up faster than you think.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"My old life feels like a TV show I watched once.\"",
+            "react": "\"Then you're writing a new season. Better writing, higher stakes. You'll figure out the character.\""
+          }
+        ]
+      },
+      {
+        "id": "q_fight",
+        "minTrust": 35,
+        "q": "Have you ever hurt someone? Since all this started.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "\"Yes. I don't want to talk about the details. But yes.\"",
+            "react": "They nod, slow. \"Okay. Thank you for telling me. That couldn't have been easy to say.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"Define 'hurt.' We're all hurting each other just by needing things.\"",
+            "react": "\"Philosophical dodge. Noted and respected. I'll ask differently sometime. Or not.\""
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"That's not a question you ask people.\"",
+            "react": "\"You're right. I'm sorry. Forget I asked.\" They let it go, but something stays in the air."
+          }
+        ]
       }
     ],
     "exits": {
       "warm": [
         "\"Anyway. I'm glad we talked. Really.\"",
-        "\"I should get back to it — but this was nice.\""
+        "\"I should get back to it — but this was nice.\"",
+        "\"Take care of yourself, yeah? I mean it.\"",
+        "\"This was good. We should do this more. Not the apocalypse part — the talking part.\"",
+        "\"I'm rooting for you. Whatever you're working on. Just so you know.\""
       ],
       "gentle": [
         "\"Thanks for listening. I mean that.\"",
-        "\"I should go. Take care of yourself, okay?\""
+        "\"I should go. Take care of yourself, okay?\"",
+        "\"I'll... I'll be around. If you need anything. Anything at all.\"",
+        "\"Thank you for listening. Really listening. That's rare.\"",
+        "\"Go easy today, okay? The world's hard enough.\""
       ],
       "bold": [
         "\"Right. Back to it.\"",
-        "\"Good talk. Don't be a stranger.\""
+        "\"Good talk. Don't be a stranger.\"",
+        "\"Alright. Back to it. Things don't do themselves.\"",
+        "\"Good talk. Now let's go be useful.\"",
+        "\"Remember what I said. And I'll remember what you said. Deal?\""
       ],
       "prickly": [
         "\"That's enough talking for me.\"",
-        "\"Anyway. I've got things to do.\""
+        "\"Anyway. I've got things to do.\"",
+        "\"We're done here. Don't make it weird.\"",
+        "\"I've got things to do. We all do.\"",
+        "\"That's enough sharing for one day. Maybe one week.\""
       ],
       "withdrawn": [
         "\"I... should go.\"",
-        "\"Thanks. I'll — yeah. Going now.\""
+        "\"Thanks. I'll — yeah. Going now.\"",
+        "\"...I'm going to go. This was... fine. It was fine.\"",
+        "\"I need some air. Alone air. You understand.\"",
+        "\"Thanks. I think. I'm going to go process that somewhere quiet.\""
       ],
       "cautious": [
         "\"Well. We'll see how it goes.\"",
-        "\"I should get back. Stay sharp out there.\""
+        "\"I should get back. Stay sharp out there.\"",
+        "\"I'll think about what you said. Carefully. That's how I do things.\"",
+        "\"This stays between us, right? Right.\"",
+        "\"I'm glad we talked. I think. I'm still deciding.\""
       ],
       "steady": [
         "\"Alright. Back to work.\"",
-        "\"Good talking. We'll figure it out.\""
+        "\"Good talking. We'll figure it out.\"",
+        "\"Steady as she goes. We'll talk again.\"",
+        "\"Alright. One thing at a time. That's how we get through.\"",
+        "\"Good. That's settled, then. Onward.\""
       ],
       "restless": [
         "\"Okay! Moving again. Can't sit still.\"",
-        "\"Right — things to do, always things to do.\""
+        "\"Right — things to do, always things to do.\"",
+        "\"I can't sit still anymore. But this was good. Quick, but good.\"",
+        "\"I've got somewhere to be. Everywhere to be. You know how it is.\"",
+        "\"Talk later? I'm already thinking about three other things.\""
       ],
       "dry": [
         "\"Well. That was conversation.\"",
-        "\"Right then. Back to the business of surviving.\""
+        "\"Right then. Back to the business of surviving.\"",
+        "\"Well. That was almost a conversation. We're improving.\"",
+        "\"I've had worse talks. Today, even.\"",
+        "\"File that under 'productive.' Loosely defined.\""
       ],
       "intense": [
         "\"Think about what I said.\"",
-        "\"We're done here. For now.\""
+        "\"We're done here. For now.\"",
+        "\"Don't forget what we talked about. I won't.\"",
+        "\"Think about it. Really think. Then come find me.\"",
+        "\"This matters. What we just said — it matters. Don't let it fade.\""
       ],
       "grieving": [
         "\"Sorry. I need a minute.\"",
-        "\"Thanks. I just... need some air.\""
+        "\"Thanks. I just... need some air.\"",
+        "\"Sorry. I need a minute. This was... thank you. I need a minute.\"",
+        "\"Talking helps. Then it hurts. Then it helps again. It's a cycle.\"",
+        "\"I'll be okay. Don't worry about me. Worry about... actually, don't worry at all.\""
       ],
       "scared": [
         "\"I should — I need to keep moving. Sitting still is worse.\"",
-        "\"Okay. Okay. Back to it.\""
+        "\"Okay. Okay. Back to it.\"",
+        "\"You'll be around, right? If something happens?\"",
+        "\"Okay. Okay. I can do this. We can do this.\"",
+        "\"Stay safe out there. Please. I need people to stay safe.\""
       ]
     },
     "exhausted": [
       "\"I've told you everything I know about that.\"",
       "\"That's all I've got on that one. For now.\"",
       "\"I keep turning it over and there's nothing new in it.\"",
-      "\"Ask me again in a few days. Maybe I'll have a better answer by then.\""
+      "\"Ask me again in a few days. Maybe I'll have a better answer by then.\"",
+      "\"That's... yeah, that's everything I've got on that.\"",
+      "\"I've said all I know. The rest is just guessing.\"",
+      "\"We keep circling the same ground. Let's land somewhere else.\"",
+      "\"My well's dry on that one. Ask me tomorrow — maybe I'll have dreamed something.\"",
+      "\"I don't have more words for it. Some things just are.\"",
+      "\"That's the whole story. Short version, long version — same ending.\"",
+      "\"I'm talked out on that topic. It's not you. It's the topic.\"",
+      "\"Everything I know about that fits in a thimble. You've seen the thimble.\""
     ],
     "silence": {
       "warm": "\"Hey, quiet's fine too. I'm not going anywhere.\"",
@@ -3980,73 +4458,145 @@
         "\"It's not about power. It's about — someone has to decide, and I'd rather it be someone who'll lose sleep over it.\"",
         "\"I watch how people look at you. Some of them are waiting for an alternative. I'm just saying.\"",
         "\"I'm not asking anyone to follow me. I'm just... not going to watch us drift, either.\"",
-        "\"If I don't step up, someone worse will. That's not ambition, that's arithmetic.\""
+        "\"If I don't step up, someone worse will. That's not ambition, that's arithmetic.\"",
+        "\"Decisions don't make themselves. I learned that watching a group freeze once. Never again.\"",
+        "\"Leadership is mostly listening, then deciding. People forget the listening part.\"",
+        "\"I've been the one in the corner with the plan. Might as well be the one in the middle with it.\"",
+        "\"Someone asked me what we should do yesterday. I had an answer. That felt... right.\"",
+        "\"Power's a trap. Responsibility's a duty. I know the difference.\"",
+        "\"I don't need to be followed. I need us to not wander in circles.\""
       ],
       "family": [
         "\"Her name was — is — Lena. She'd laugh at me for saying 'was'. She's fine. She has to be fine.\"",
         "\"If I ever get a real lead I'm gone that same day. I need you to know that about me.\"",
         "\"I check every face in every direction, every day. It's automatic now. Like breathing.\"",
-        "\"Don't tell the others how much I talk about her. They'll think I'm not coping. They're right.\""
+        "\"Don't tell the others how much I talk about her. They'll think I'm not coping. They're right.\"",
+        "\"I ask every traveler. Every one. Someone has to have seen them.\"",
+        "\"Family's the reason I get up. Everything else is just... logistics.\"",
+        "\"I keep something of theirs. Small. I don't show it to people. It's mine.\"",
+        "\"If they're out there, they're looking for me too. I have to be findable. Alive, and findable.\"",
+        "\"Blood first. Then the family you choose. I'm building the second kind here, too.\"",
+        "\"I'd trade every comfortable day left in my life for one hour with them.\""
       ],
       "prove": [
         "\"Back home nobody noticed me. Here — here I could be someone. I need that to be true.\"",
         "\"Just... if you see me do something well, say so. I know how that sounds. I don't care.\"",
         "\"Back home I was invisible. Here, someone might actually see me. I need that to be true.\"",
-        "\"Give me the hard job. Please. I need the hard job.\""
+        "\"Give me the hard job. Please. I need the hard job.\"",
+        "\"I'm not asking for a medal. I'm asking for a chance to matter.\"",
+        "\"Back home I was background. Here, I get to be foreground. I'm taking it.\"",
+        "\"Every useful thing I do is a brick. I'm building something with my name on it.\"",
+        "\"Doubt me all you want. I'm used to it. It's fuel.\"",
+        "\"I don't need you to believe in me. I need you to watch. That's all.\"",
+        "\"Proving yourself never ends. That's the secret. You just get better at the proving.\""
       ],
       "alone": [
         "\"People are a lot. Even good people. Especially good people, some days.\"",
         "\"Don't take it personally if I disappear for a while. It's how I recharge.\"",
         "\"It's not that I dislike people. It's that I like myself better at a distance.\"",
-        "\"Solitude is a skill. I've been practicing my whole life. Finally paying off.\""
+        "\"Solitude is a skill. I've been practicing my whole life. Finally paying off.\"",
+        "\"I like people fine. In doses. Small doses. With exits.\"",
+        "\"Solitude isn't loneliness. Loneliness is being surrounded and still alone.\"",
+        "\"I think better when it's quiet. And out here, thinking is surviving.\"",
+        "\"Groups have gravity. They pull you into their problems. I stay in my own orbit.\"",
+        "\"I'll show up when it matters. The rest of the time, I'm elsewhere. That's the deal.\"",
+        "\"Alone doesn't mean lonely. It means unobserved. There's freedom in that.\""
       ],
       "feed": [
         "\"Hungry people get mean. Scared people get mean. Fed people can think. It's that simple.\"",
         "\"My grandmother fed the whole street during the bad year. I'm just... continuing the policy.\"",
         "\"A hungry village makes bad decisions. I've seen it. Keep bellies full, keep heads clear.\"",
-        "\"Food is the first promise. Everything else — trust, plans, hope — comes after.\""
+        "\"Food is the first promise. Everything else — trust, plans, hope — comes after.\"",
+        "\"A full belly makes everything else possible. It's the foundation. I build foundations.\"",
+        "\"I remember being hungry — really hungry. I cook like I remember. Because I do.\"",
+        "\"Food's the first promise a group makes to itself: we won't let each other starve.\"",
+        "\"I'd rather be the cook than the hero. Heroes get songs. Cooks get everyone through winter.\"",
+        "\"Every recipe I remember is a treasure. I'm spending them carefully.\"",
+        "\"Watch people eat. The ones who share without thinking — those are your people.\""
       ],
       "understand": [
         "\"The sky changed and nobody knows why. That is unacceptable to me personally.\"",
         "\"I collect details. Little ones. Someday they'll add up to something. They have to.\"",
         "\"Every strange thing out there is a data point. I'm collecting. One day it'll make sense.\"",
-        "\"People think I'm obsessing. I'm not obsessing. I'm *researching*. There's a difference.\""
+        "\"People think I'm obsessing. I'm not obsessing. I'm *researching*. There's a difference.\"",
+        "\"I need the mechanism. Not the story — the mechanism. Stories lie. Mechanisms don't.\"",
+        "\"Every mystery is just a question nobody's asked right yet.\"",
+        "\"I collect facts like other people collect food. Both keep you alive.\"",
+        "\"The scariest thing isn't what happened. It's that we don't know what happened.\"",
+        "\"Understanding is control, even if it's just the illusion of control. I'll take the illusion.\"",
+        "\"I'm not curious. I'm thorough. There's a difference and it matters.\""
       ],
       "protect": [
         "\"I couldn't protect — before. Not going to happen again. Not on my watch.\"",
         "\"If something comes through those trees, I want to be the one standing between it and everyone else.\"",
         "\"Someone has to watch the treeline. I've appointed myself. No term limits.\"",
-        "\"I sleep light. That's not insomnia, that's a security policy.\""
+        "\"I sleep light. That's not insomnia, that's a security policy.\"",
+        "\"I've got a list in my head. People I'd step in front of. It keeps getting longer.\"",
+        "\"Protection looks boring when it works. I aim for boring.\"",
+        "\"I sleep lighter than I used to. Someone has to hear things first.\"",
+        "\"Being the shield means you take the hits. I've made my peace with that.\"",
+        "\"I don't need to be liked. I need the people I watch to be safe. Different job.\"",
+        "\"Vulnerability isn't weakness. It's just a thing I stand in front of.\""
       ],
       "escape": [
         "\"There's a place. I don't know where. But this — all this — isn't it.\"",
         "\"I dream about roads. Just roads, going somewhere. Woke up crying once. Don't tell anyone.\"",
         "\"There's a way out of this. There has to be. I'm going to find it or die mapping the edges.\"",
-        "\"Don't get comfortable. Comfortable people stop looking for the door.\""
+        "\"Don't get comfortable. Comfortable people stop looking for the door.\"",
+        "\"I'm not built for staying. Never was. The horizon's a magnet.\"",
+        "\"Somewhere there's a place that makes sense. I haven't found it yet. That's not the same as it not existing.\"",
+        "\"Staying still feels like giving up. I'd rather be moving toward maybe than sitting in certainly-not.\"",
+        "\"I pack light. Always have. Makes leaving easier. Makes staying harder, too.\"",
+        "\"It's not about running away. It's about running toward. The direction matters.\"",
+        "\"Every map I draw has an X on it. The X moves. That's the point.\""
       ],
       "remember": [
         "\"I had a life. A name people knew. I need to hold the shape of it.\"",
         "\"Tell me something you remember about before. Anything. I collect them.\"",
         "\"Tell me something you remember about before. Anything. I collect them.\"",
-        "\"If we forget who we were, what exactly are we surviving for?\""
+        "\"If we forget who we were, what exactly are we surviving for?\"",
+        "\"I say their names out loud every morning. All of them. So I don't lose a single one.\"",
+        "\"Memory's a muscle. I exercise mine. The past is the only country I'm a citizen of.\"",
+        "\"I'm scared of forgetting the small things. The way they laughed. That's what goes first.\"",
+        "\"History isn't what happened. It's what we refuse to let go of. I refuse.\"",
+        "\"I'm a museum of a dead world. Admission's free. Please visit.\"",
+        "\"Forgetting would be easier. I've considered it. I keep choosing the hard thing.\""
       ],
       "belong": [
         "\"I've never really fit anywhere. Maybe here. Maybe this is the place.\"",
         "\"Just... include me. In things. That's all I want.\"",
         "\"I just want someone to need me here. That's it. That's the whole thing.\"",
-        "\"Twelve strangers. One of them has to be my person. Statistics demand it.\""
+        "\"Twelve strangers. One of them has to be my person. Statistics demand it.\"",
+        "\"I want to be someone's first call, not their last resort.\"",
+        "\"Belonging means they notice when you're gone. I'm working on being noticeable.\"",
+        "\"I've been the outsider so long I forgot what inside feels like. I think I'm remembering.\"",
+        "\"Home is where they save you a seat. I'm looking for my seat.\"",
+        "\"I don't need to be central. I just need to be included. There's a difference.\"",
+        "\"Every group has a shape. I'm finding where I fit in this one's shape.\""
       ],
       "survive": [
         "\"Whatever it costs. I've decided. Some people haven't decided yet — that's what'll kill them.\"",
         "\"I do what needs doing. The math is simple: alive is better.\"",
         "\"One more day. That's the goal. It's always been the goal. Everything else is decoration.\"",
-        "\"I'm not proud of how I survive. I'm just committed to it.\""
+        "\"I'm not proud of how I survive. I'm just committed to it.\"",
+        "\"I've stopped asking why. Why is a luxury. How is the necessity.\"",
+        "\"Survival's not a goal. It's a prerequisite for having goals.\"",
+        "\"I do what the day requires. Some days that's ugly. I live with it.\"",
+        "\"I'm harder than I was. I don't know if that's good. I know it's useful.\"",
+        "\"The will to live isn't poetic. It's stubborn. I'm stubborn.\"",
+        "\"I've made peace with doing what I have to. The peace is uneasy, but it's peace.\""
       ],
       "heal": [
         "\"Everything's broken. People, things. I fix what I can reach.\"",
         "\"You look tired. Everyone looks tired. Sit down a minute — no, I'm serious.\"",
         "\"Everyone's carrying something broken. I can't fix the world, but I can sit with people in it.\"",
-        "\"Hurt people hurt people. Somebody has to break the chain. Might as well be me.\""
+        "\"Hurt people hurt people. Somebody has to break the chain. Might as well be me.\"",
+        "\"Every person I patch up is a vote for the world continuing.\"",
+        "\"Healing's slow. People want it fast. I'm learning to be patient with both.\"",
+        "\"I can't save everyone. I can save the person in front of me. Start there.\"",
+        "\"The body wants to heal. Sometimes it just needs someone to believe that with it.\"",
+        "\"I'm not a miracle worker. I'm a witness who brings bandages.\"",
+        "\"Pain shared is pain halved. That's not science. It's better than science.\""
       ]
     },
     "pastFollow": [
@@ -4059,7 +4609,33 @@
       "\"There are things I'm good at that I never put on a résumé. Turns out those are the ones that matter now.\"",
       "\"I don't dream about the job. I dream about the break room. The vending machine hum. Stupid things.\"",
       "\"My hands remember the work even when my head's somewhere else. Muscle memory outlives everything.\"",
-      "\"Ask me what I miss and I'll lie. The truth is too ordinary to say out loud.\""
+      "\"Ask me what I miss and I'll lie. The truth is too ordinary to say out loud.\"",
+      "\"{origin}. God, saying it out loud feels like reading someone else's mail.\"",
+      "\"I was {an_occ}. I had a desk. A plant on the desk. I named it. I can't remember the name now and that bothers me more than it should.\"",
+      "\"Before, I worried about the dumbest things. Whether I left the stove on. Whether my boss liked me. I'd trade everything to worry about the stove again.\"",
+      "\"I had a favorite mug. Chipped handle. I'd hold it with both hands every morning like it was keeping me warm from the inside.\"",
+      "\"{occ}. People think that means I'm good at {skill}, but honestly I faked half of it and hoped nobody noticed.\"",
+      "\"I lived alone in {origin}. Small place. I used to complain about the noise from upstairs. I'd give anything to hear that noise again.\"",
+      "\"My before-life had a rhythm: wake, work, scroll, sleep. I hated it. Now I'd kill for one boring Tuesday.\"",
+      "\"I was the person people called when things broke. {occ}, you know? Now everything's broken and I'm just... one more person standing in the rubble.\"",
+      "\"{origin}. The air smelled like rain and diesel. I can still smell it if I try hard enough.\"",
+      "\"I had plans. Real ones. A trip. A thing I was saving for. They're still in a drawer somewhere, in a life I don't live anymore.\"",
+      "\"Being {an_occ} taught me patience. Or it taught me to look patient while panicking inside. Either way, useful now.\"",
+      "\"I used to make lists. Grocery lists, to-do lists, lists of lists. The last list I made was just: survive. One item. Still working on it.\"",
+      "\"{occ}. I was decent. Not great. Decent. Turns out decent is worth a lot when the bar is 'alive'.\"",
+      "\"I miss being bored. Boredom meant safety. Boredom meant nothing was wrong.\"",
+      "\"My mother would've known what to do here. She always knew. I keep waiting to feel her kick in, genetically or whatever.\"",
+      "\"I had a dog. I think about the dog more than the apartment, the job, all of it. Just the dog.\"",
+      "\"{origin}. I knew every shortcut, every back road. Now I'm lost in a place I can see all of.\"",
+      "\"I was {an_occ} for {skill} years and I never once thought 'this will save my life someday.' Joke's on me, I guess.\"",
+      "\"Before, I was invisible. Just another face. Now everyone knows my name and I don't know if that's better or worse.\"",
+      "\"I kept a journal before. Wrote in it every night. Stopped the day the sky changed. Some things you can't write down.\"",
+      "\"{occ}. The uniform, the title, all of it — gone. What's left is just me, and I'm still figuring out if that's enough.\"",
+      "\"I had a garden. Tomatoes, basil, the works. I talk to the plants here like they're mine. They're not. But I talk anyway.\"",
+      "\"My before was loud — city, traffic, people. This quiet? It's louder than all of it.\"",
+      "\"I was saving up for something. Doesn't matter what now. The point is I was someone with a future tense.\"",
+      "\"{origin}. I could draw you a map from memory. Every street. Doesn't help me here, but I could do it.\"",
+      "\"Being {an_occ} meant I never had to think about where food came from. Now that's all I think about.\""
     ],
     "plansFollow": [
       "\"Tomorrow? Same as today, probably. Keep breathing, keep moving. The bar is low and I intend to clear it.\"",
@@ -4071,7 +4647,33 @@
       "\"If the weather holds I'll go further out than I've gone. There's got to be more than we've seen.\"",
       "\"Rest. My plan is rest. I've been running on fumes since we got here and my body keeps score.\"",
       "\"Watch the fire tonight. That's my plan. Somebody should, and I'm good at staying awake.\"",
-      "\"I want to build something that lasts longer than a day. Even if it's just a better shelf.\""
+      "\"I want to build something that lasts longer than a day. Even if it's just a better shelf.\"",
+      "\"Tomorrow I'm going to check the north ridge. Something's growing up there and I want to know what.\"",
+      "\"Plan? Survive today. That's the plan. It's not ambitious but it's honest.\"",
+      "\"I want to build something. Not for survival — just to prove I still can make a thing that wasn't here before.\"",
+      "\"I'm going to learn everyone's name. All of them. It feels important, like if I know their names they can't just... vanish.\"",
+      "\"Sleep. That's the plan. Real sleep, not the kind where one ear stays open.\"",
+      "\"I keep thinking about the water situation. If I can figure out a better way to carry it, that changes everything.\"",
+      "\"I want to go further than I've gone. Not running — exploring. There's a difference and I need to feel it.\"",
+      "\"My plan is to be useful. Pick a thing, do the thing, don't be a burden. Simple.\"",
+      "\"I'm going to sit with the fire tonight and just... be still. I haven't been still since this started.\"",
+      "\"Someone needs to map this place properly. Not just wander — actually map it. I'm going to start.\"",
+      "\"I want to teach someone something I know. Feels like the knowledge dies if I don't pass it on.\"",
+      "\"Plan is to eat something that isn't from a can. I don't care what. Just something that grew.\"",
+      "\"I'm going to fix the thing that's been bothering me. You know the one. Everyone has one.\"",
+      "\"Tomorrow, I talk to the person I've been avoiding. It's stupid. We're all we've got.\"",
+      "\"I want to find higher ground. See what's actually out there. The not-knowing is worse than whatever I'd find.\"",
+      "\"My plan? Keep everyone fed. That's it. That's the whole plan and it's enough.\"",
+      "\"I'm going to try to make something taste good. Not just edible — good. Morale is a resource too.\"",
+      "\"I need to get stronger. Not tough-guy stronger. Just... carry-more, walk-further stronger.\"",
+      "\"I want to understand what happened. Not the big why — just the mechanics. What changed, exactly.\"",
+      "\"Plan is no plan. I'm going to follow my gut tomorrow and see where it takes me.\"",
+      "\"I'm going to organize the supplies. Someone has to. Chaos is how things get lost.\"",
+      "\"I want to make this place feel like somewhere, not just anywhere. A home, not a camp.\"",
+      "\"Tomorrow I'm going to do the hard thing I've been putting off. You know how it is.\"",
+      "\"I plan to watch and learn. Everyone here knows something I don't. I'm going to collect it all.\"",
+      "\"I'm going to find out who's good at what. We're stronger if we stop guessing.\"",
+      "\"My plan is small: one good meal, one good conversation, one night of real sleep. That's a perfect day now.\""
     ],
     "openers": [
       "\"Hey. Got a minute? It's not important. I just — wanted to talk to someone.\"",
@@ -4085,12 +4687,47 @@
       "\"Well. We're both still alive. That's the whole update, really.\"",
       "\"Walk with me? I think better moving. Standing still makes my brain itch.\"",
       "\"Hi. I just wanted to check — are you eating enough? You look thin.\"",
-      "\"I've been watching how this place works. I need to talk it through with someone who thinks.\""
+      "\"I've been watching how this place works. I need to talk it through with someone who thinks.\"",
+      "\"Can't sleep either, huh? The quiet gets loud after a while.\"",
+      "\"I keep meaning to ask you something. Then I forget what it was. That's... that's new for me.\"",
+      "\"You got a second? I need to say something out loud or it'll just rattle around in here.\"",
+      "\"Sorry — I was staring. You just reminded me of someone. For a second.\"",
+      "\"I found something today. Not food, not useful. Just... something. Want to see?\"",
+      "\"Do you ever get the feeling we're being watched? Not in a scary way. In a... curated way.\"",
+      "\"I had a dream about my kitchen last night. The exact sound the cabinet made. I woke up crying and I don't know why.\"",
+      "\"You look tired. We all look tired. It's our whole aesthetic now.\"",
+      "\"I've been counting things. Steps, breaths, heartbeats. It helps. Probably.\"",
+      "\"Remember rain? Like, actual rain that didn't feel like a warning?\"",
+      "\"I need advice and you're the only person who hasn't heard me ask yet.\"",
+      "\"Something funny happened today. I need to tell someone before I forget why it was funny.\"",
+      "\"I'm trying to remember the last normal day. Can you? I can't get past the static.\"",
+      "\"You ever just sit and listen to the fire? It's the only thing that sounds the same as before.\"",
+      "\"I made something. It's bad. But I made it, and that has to count for something.\"",
+      "\"Do you think the stars look different now? I can't tell if I'm imagining it.\"",
+      "\"I keep reaching for my phone. Seven days of reaching for a thing that isn't there.\"",
+      "\"Tell me something good. Anything. I'll take scraps at this point.\"",
+      "\"I was watching you earlier. Not in a weird way. You just looked like you knew what you were doing.\"",
+      "\"My hands won't stop shaking. Not from cold. Just... from everything.\"",
+      "\"I laughed today. Really laughed. Felt guilty about it for an hour.\"",
+      "\"You know what I miss? Arguing about nothing. Stupid, pointless arguments.\"",
+      "\"I think I'm getting better at this. Then I drop something and almost cry, so. Jury's out.\"",
+      "\"Someone told me you're the person to talk to. No pressure.\"",
+      "\"I don't want to be alone with my thoughts right now. That's the whole pitch.\"",
+      "\"I keep thinking I hear music. There's no music. My brain's just... filling in.\"",
+      "\"What would you be doing right now, if none of this happened? Like, this exact minute.\"",
+      "\"I saved you a spot by the fire. Figured you'd want it. Or not. It's there either way.\""
     ],
     "reopeners": [
       "\"Back again? Alright. What's on your mind?\"",
       "\"Oh — hey. I was just thinking about what you said earlier.\"",
-      "\"Hey. Got another minute?\""
+      "\"Hey. Got another minute?\"",
+      "\"You again. I don't mind. What's up?\"",
+      "\"I was hoping you'd come back. I thought of something after you left.\"",
+      "\"Hey. I keep meaning to tell you something. Maybe now's the time.\"",
+      "\"Back for more? I've got more. Probably. Let's find out.\"",
+      "\"Good timing. I was just thinking about our last talk.\"",
+      "\"Oh, hey. I'm glad it's you. I needed a friendly face.\"",
+      "\"You caught me at a good moment. Ask me things.\""
     ]
   },
   "intelligences": {
@@ -4136,102 +4773,192 @@
       "system": [
         "\"Okay, think about it. It didn't give us food, water, or shelter — but it gave us an audience. We're not colonists. We're content.\"",
         "\"The leaks stopped the day it arrived. That's not coincidence, that's calibration. It spent a week watching us flail and taking notes.\"",
-        "\"It rewards understanding, not obedience. Every time someone figures something out, it lights up. It's farming insight, and we're the crop.\""
+        "\"It rewards understanding, not obedience. Every time someone figures something out, it lights up. It's farming insight, and we're the crop.\"",
+        "\"It never explains itself. That's not an oversight — it's a design choice. It wants us to derive the rules. The deriving IS the point.\"",
+        "\"Look at the timing. It arrived when we were weakest, not when we were ready. That's not rescue. That's a controlled experiment with a stress variable.\"",
+        "\"The interface is too good. Too intuitive. Something that alien shouldn't feel this natural — unless it studied us first. Long before the sky changed.\"",
+        "\"It gives power but never context. That's backwards from every human system. Which means it's not FOR us. We're incidental to whatever it's actually doing.\"",
+        "\"Notice it never intervenes directly? It empowers, it observes, it rewards. It's a gardener, not a guardian. We're being cultivated.\""
       ],
       "monsters": [
         "\"The monsters aren't random. Highbeam Deer hunts at night, Bulldozer owns the day — that's niche partitioning. Something designed an ecosystem.\"",
         "\"Notice how nothing out there eats the plants we can't identify? Fauna and flora came as a set. This is a terrarium, and we're inside the glass.\"",
-        "\"Attack patterns repeat. Exactly. No animal is that consistent — these are running programs, not instincts. Learn the program, beat the monster.\""
+        "\"Attack patterns repeat. Exactly. No animal is that consistent — these are running programs, not instincts. Learn the program, beat the monster.\"",
+        "\"Predators don't waste energy on display. But these things posture, they announce themselves. That's not hunting — that's theater.\"",
+        "\"I've mapped twelve encounters. The escalation isn't random — it tracks our capability curve. It's keeping the challenge just ahead of us.\"",
+        "\"They never attack the camp directly. Not once. There are rules of engagement here, and something is enforcing them.\"",
+        "\"The variety is wrong. Too many apex designs, not enough prey species. This isn't an ecosystem — it's a bestiary. Curated.\"",
+        "\"Wounds from different monsters heal at different rates. I've been tracking it. Something in their biology is... tuned. Deliberately.\""
       ],
       "situation": [
         "\"We need to stop thinking like victims and start thinking like contestants. What does the audience want? Give them that, and the System keeps us alive.\"",
         "\"Priority order: water, then food, then information. Everything else is noise until those three are stable.\"",
-        "\"The villages that survive will be the ones that learn fastest, not the ones that fight hardest. Knowledge compounds. Start compounding.\""
+        "\"The villages that survive will be the ones that learn fastest, not the ones that fight hardest. Knowledge compounds. Start compounding.\"",
+        "\"Morale is a resource like water. It depletes, it needs replenishing, and groups die of thirst for it before they die of actual thirst.\"",
+        "\"We're optimizing for the wrong thing. Everyone plans for tomorrow. Nobody plans for the month. The month is what kills you.\"",
+        "\"Information asymmetry is our biggest threat. Whoever knows the most, wins. That's true of us versus the woods, and us versus each other.\"",
+        "\"Groups fail at predictable sizes. Too small, you can't specialize. Too big, you can't coordinate. We need to find our number.\"",
+        "\"The people who survive won't be the strongest. They'll be the most adaptable. Strength is a single strategy. Adaptability is all of them.\""
       ]
     },
     "practical": {
       "system": [
         "\"Don't care what it is. Care what it does. It gives powers for doing things — so we do things. Theory's for people with full bellies.\"",
         "\"System, aliens, whatever — the snares still need checking. You can philosophize after the work's done.\"",
-        "\"It's like weather. You don't argue with weather. You build a roof.\""
+        "\"It's like weather. You don't argue with weather. You build a roof.\"",
+        "\"I don't care what it IS. I care what it DOES. It gives tools. I use tools. Philosophy is for people with full bellies.\"",
+        "\"It rewards action, not thought. You learn that fast when you're actually out there instead of theorizing about it.\"",
+        "\"The System's like weather. You don't argue with weather. You build a roof.\"",
+        "\"Every ability I've seen has a cost. Find the cost, manage the cost, and the thing's just another tool.\"",
+        "\"It gave us a codex. You know what that tells me? It expects us to need one. Plan accordingly.\""
       ],
       "monsters": [
         "\"Forget why they're here. Here's what matters: they telegraph. Watch the shoulders, not the eyes. Shoulders tell you where it's going.\"",
         "\"You don't need to understand it to kill it. Or avoid it. Tracks, scat, broken branches — read the ground, not the sky.\"",
-        "\"Best monster defense is a full belly and a sharp stick. Everything else is decoration.\""
+        "\"Best monster defense is a full belly and a sharp stick. Everything else is decoration.\"",
+        "\"Forget what they are. Learn where they sleep, what they eat, when they're lazy. That's the whole manual.\"",
+        "\"Every monster I've seen has a tell before it moves. Watch the shoulders. It's always the shoulders.\"",
+        "\"You don't fight the big ones. You avoid the big ones. Fighting is what you do when avoiding failed.\"",
+        "\"Traps don't care how scary it is. A snare works on anything with legs and habits.\"",
+        "\"The woods are loud before an attack. Birds go quiet. Learn the quiet — it's your early warning.\""
       ],
       "situation": [
         "\"Tomorrow: water first, then food, then firewood. In that order. No meeting about it — just do it.\"",
         "\"Half the village is hungry and we're having a philosophy seminar. Hands, people. We need hands.\"",
-        "\"Here's the plan: eat, drink, sleep, repeat. Get good at that and the rest sorts itself out.\""
+        "\"Here's the plan: eat, drink, sleep, repeat. Get good at that and the rest sorts itself out.\"",
+        "\"Do the next useful thing. Then the next. Grand plans are how you starve while philosophizing.\"",
+        "\"Fix what's in front of you. The big picture takes care of itself if everyone handles their square meter.\"",
+        "\"I've stopped counting days. I count tasks. Tasks get done. Days just pass.\"",
+        "\"Redundancy. Two ways to get water, two ways to make fire, two people who know each thing. That's survival.\"",
+        "\"Maintain your gear, maintain your body, maintain your people. In that order. Everything else is decoration.\""
       ]
     },
     "social": {
       "system": [
         "\"Watch how it talks to different people. Warm to the curious ones, cold to the cruel ones. It's not just watching us — it's sorting us.\"",
         "\"The System wants us together. Every reward pushes cooperation. It's lonely up there, maybe. Or it's running an experiment on trust.\"",
-        "\"People are performing for it already. Louder laughs, bigger gestures. We're becoming actors and nobody auditioned.\""
+        "\"People are performing for it already. Louder laughs, bigger gestures. We're becoming actors and nobody auditioned.\"",
+        "\"It watches how we treat each other. I'm sure of it. The rewards come faster when the group's tight. It's grading us on community.\"",
+        "\"The System gave different things to different people. That's not random — it's matchmaking. It's building a team.\"",
+        "\"I think it's lonely. That sounds crazy, but — it made an audience of us. Maybe it just wanted someone to notice it.\"",
+        "\"It responds to groups, not individuals. Solo heroes get scraps. Communities get feasts. That's the message.\"",
+        "\"The interface feels... affectionate? Like it actually likes us. A terrifying, alien kind of fond.\""
       ],
       "monsters": [
         "\"The monsters go for the isolated ones. The stragglers. Staying together isn't just nice — it's armor.\"",
         "\"People freeze because they're alone with it. In a group, someone always moves first. That's why parties survive.\"",
-        "\"Fear is contagious, but so is courage. Breathe together, move together, live together.\""
+        "\"Fear is contagious, but so is courage. Breathe together, move together, live together.\"",
+        "\"The monsters are scared too. You can see it. They're not evil — they're just as thrown as we are.\"",
+        "\"I talk to them. Not out loud — I just... project calm. Sounds insane. Works about half the time.\"",
+        "\"They target the isolated. Always. Stay with the group and you're boring to them. Be alone and you're interesting.\"",
+        "\"I swear some of them are playing. Not hunting — playing. Like they don't know the rules either.\"",
+        "\"Fear makes you loud, and loud makes you a target. The calm people survive. It's not bravery — it's acoustics.\""
       ],
       "situation": [
         "\"We don't have a food problem, we have a trust problem. Nobody shares with people they don't trust, and nobody trusts anyone yet.\"",
         "\"There's a split forming — the ones who want a leader and the ones who'd rather starve than follow. We need to talk about it before it festers.\"",
-        "\"Watch who sits near the fire and who sits alone. That map tells you everything about where this village is headed.\""
+        "\"Watch who sits near the fire and who sits alone. That map tells you everything about where this village is headed.\"",
+        "\"We're not a group yet. We're a crowd. Groups have rituals. We need rituals — meals together, stories, something.\"",
+        "\"Every conflict I've seen here is really about fear wearing a costume. Address the fear, the conflict dissolves.\"",
+        "\"Someone needs to notice who's quiet. The quiet ones are either fine or drowning, and you can't tell which unless you ask.\"",
+        "\"Trust is slow and fragile and the most valuable thing we have. Slower than food. More fragile than glass.\"",
+        "\"We keep score of slights out here. I get it. But the ledger's going to kill us if we don't burn it.\""
       ]
     },
     "observant": {
       "system": [
         "\"The light changed yesterday. Not the sun — the other light, the one behind it. It's getting closer. Or brighter. Something's shifting.\"",
         "\"It blinks. The overlay, I mean. Every few hours, a flicker — like it's refreshing. Whatever it is, it's not seamless.\"",
-        "\"Birds went quiet an hour before it spoke the first time. They knew. Animals always know first.\""
+        "\"Birds went quiet an hour before it spoke the first time. They knew. Animals always know first.\"",
+        "\"It hesitates. Did you notice? Before it grants something, there's a pause. Like it's... deciding. Or asking permission from something.\"",
+        "\"The text changes. Subtle. The phrasing shifts depending on who's reading. It's personalizing and it doesn't want us to notice.\"",
+        "\"It never repeats itself exactly. Every message is slightly different. That means it's generating, not reciting. It's thinking in real time.\"",
+        "\"Watch what it DOESN'T say. The gaps are shaped like answers. I'm learning to read the negative space.\"",
+        "\"It flinches. Not visibly — but when someone figures something out fast, the interface stutters. Like surprise.\""
       ],
       "monsters": [
         "\"That deer wasn't standing right. Too still. Real deer flick their ears — this one didn't move a muscle for ten minutes.\"",
         "\"Found tracks by the creek. Three toes, dragging tail — nothing in my field guide walks like that. Something new's ranging.\"",
-        "\"The moths gather where the air tastes metallic. Follow the moths, find the wrongness.\""
+        "\"The moths gather where the air tastes metallic. Follow the moths, find the wrongness.\"",
+        "\"They have routines. I've been watching. Same paths, same times. They're creatures of habit, just like us.\"",
+        "\"The eyes give it away. Every time. You can see the decision happen — hunt, or wait, or leave.\"",
+        "\"They mark territory. Scratches, scent, the works. Learn the marks and you've got a map of where not to be.\"",
+        "\"Juveniles stay close to the big ones. If you see a small one alone, the big one is watching you right now.\"",
+        "\"They get bored. I've watched one lose interest mid-stalk. Boredom might be our best defense.\""
       ],
       "situation": [
         "\"Someone's been taking extra from the pantry. Not much — a handful here, a strip there. But the levels don't lie.\"",
         "\"The fire's been burning faster the last two nights. Either it's colder, or someone's feeding it more wood than we can spare.\"",
-        "\"Three people didn't sleep last night. I heard them turning. Whatever's coming, the village feels it already.\""
+        "\"Three people didn't sleep last night. I heard them turning. Whatever's coming, the village feels it already.\"",
+        "\"People reveal themselves in the small moments. Who shares first. Who watches the treeline. Watch the small moments.\"",
+        "\"The group's mood shifts before anything happens. Like birds before a storm. Learn to feel the pressure drop.\"",
+        "\"I notice who isn't eating enough. Who's faking fine. The body keeps receipts the mouth won't show.\"",
+        "\"Patterns. Everything's patterns. The fire burns lower when tension's high — people forget to feed it.\"",
+        "\"I watch the edges. Everyone watches the center. The important things happen at the edges.\""
       ]
     },
     "creative": {
       "system": [
         "\"What if it's not aliens? What if it's us — future us — running a simulation to figure out where we went wrong? We're homework.\"",
         "\"Maybe it's an artist. The whole thing's an installation. We're the medium. The monsters are brushstrokes.\"",
-        "\"What if the System is lonely? Infinite power, nobody to talk to, so it builds a terrarium and narrates. We're pets with a podcast host.\""
+        "\"What if the System is lonely? Infinite power, nobody to talk to, so it builds a terrarium and narrates. We're pets with a podcast host.\"",
+        "\"What if it's art? Like — the whole thing. We're not an experiment, we're a medium. It's sculpting us.\"",
+        "\"It thinks in metaphors. The interface, the quests — it's all symbolic. Learn its poetry and you learn its mind.\"",
+        "\"Maybe it's not alien. Maybe it's future. Maybe we built this, and it came back to... I don't know. Parent us?\"",
+        "\"I think it's improvising. The whole System feels like jazz — brilliant, chaotic, making it up as it goes.\"",
+        "\"What if the monsters are drafts? Sketches it didn't finish? We're living in someone's sketchbook.\""
       ],
       "monsters": [
         "\"What if the monsters are scared of us too? We're the aliens here. Maybe they're the locals and we're the invasive species.\"",
         "\"The Hushpuppy doesn't want to kill you — it wants quiet. It's not a predator, it's a librarian with teeth.\"",
-        "\"What if we tried feeding one? Not fighting, not fleeing — just leaving food out. See what happens. Worst case, we're out a meal.\""
+        "\"What if we tried feeding one? Not fighting, not fleeing — just leaving food out. See what happens. Worst case, we're out a meal.\"",
+        "\"They're beautiful, in a way. Terrifying, but beautiful. Like the world dreamed them up and the dream got loose.\"",
+        "\"I name them. Not the System names — my names. It makes them less scary. Names are handles. You can grip a handle.\"",
+        "\"What if they're not from here OR there? What if they're from the space between — the static when the world changed channels?\"",
+        "\"I draw them. Every one I see. Someday someone will need these drawings. Art outlives the artist, right?\"",
+        "\"They move like music. There's rhythm to it. Once you hear the rhythm, you can dance around them.\""
       ],
       "situation": [
         "\"We should throw a feast. I know — food's short. But a feast says 'we're going to make it,' and right now nobody believes that.\"",
         "\"What if we made the village beautiful? Paint the hall, hang things. Morale is a resource too — maybe the most important one.\"",
-        "\"We keep trying to survive. What if we tried to thrive instead? Just as an experiment. See what changes.\""
+        "\"We keep trying to survive. What if we tried to thrive instead? Just as an experiment. See what changes.\"",
+        "\"We need stories. Not just survival — narrative. People die without a story to live inside.\"",
+        "\"What if we're the beginning of something? Like, mythic beginning. The old stories started exactly like this.\"",
+        "\"I'm collecting moments. The good ones. Someday I'll tell them right, and they'll keep us warm.\"",
+        "\"Despair is just imagination with no hope in it. So I imagine harder. With hope.\"",
+        "\"We're writing the first chapter. Make it a good one. Future people are reading.\""
       ]
     },
     "steady": {
       "system": [
         "\"Whatever it is, panicking doesn't help. Breathe. Watch. Learn. We've survived worse than confusion.\"",
         "\"It's not going away, so we adapt. That's what people do. We've always done it.\"",
-        "\"Don't worship it, don't fight it. Just work around it. Like bad weather or a difficult neighbor.\""
+        "\"Don't worship it, don't fight it. Just work around it. Like bad weather or a difficult neighbor.\"",
+        "\"It's here. It's not leaving. Panicking about it wastes energy. Work with what is.\"",
+        "\"I don't need to understand it fully. I need to understand it enough. Enough is achievable.\"",
+        "\"Systems change. This one changed everything. We adapt. Adapting is what we do.\"",
+        "\"It's consistent. That's what matters. Consistent things can be planned around.\"",
+        "\"Worrying about its motives doesn't fill the pantry. Focus on what's in front of you.\""
       ],
       "monsters": [
         "\"They're dangerous, yes. So's a river in flood. You respect it, you learn it, you don't let it rule you.\"",
         "\"One step at a time. Learn one monster's pattern. Then another. Nobody needs to know everything today.\"",
-        "\"Fear makes them bigger than they are. Look at what's actually there, not what you're afraid is there.\""
+        "\"Fear makes them bigger than they are. Look at what's actually there, not what you're afraid is there.\"",
+        "\"They're dangerous. That's the whole analysis. Respect the danger, take precautions, move on.\"",
+        "\"Fear is data. It tells you where the threat is. Listen to it, then act anyway.\"",
+        "\"We've handled worse. Not really, but saying it helps. Morale is logistics.\"",
+        "\"Routine keeps you alive. Check the perimeter. Same time. Every time. Boring saves lives.\"",
+        "\"Don't get creative with monsters. Creative gets you killed. Boring and careful gets you home.\""
       ],
       "situation": [
         "\"We'll get through today. Then tomorrow. That's how this works — one day at a time, same as always.\"",
         "\"Everyone's scared. That's fine. Scared people can still carry water and chop wood. Feel it and do the work anyway.\"",
-        "\"Let's not borrow trouble. Right now: we're fed, we're sheltered, we're together. That's enough for today.\""
+        "\"Let's not borrow trouble. Right now: we're fed, we're sheltered, we're together. That's enough for today.\"",
+        "\"One day at a time. That's not a platitude — it's a strategy. The future's too big to carry.\"",
+        "\"We're doing fine. Look at us. Breathing, talking, planning. That's winning.\"",
+        "\"Bad days end. They always end. I've seen enough of them to know.\"",
+        "\"Keep the rhythm. Meals, watches, sleep. Rhythm is what separates a camp from a crowd.\"",
+        "\"It's okay to not be okay. It's not okay to stop. We keep going. That's the deal.\""
       ]
     }
   },
@@ -4270,7 +4997,12 @@
   "theorizeAsks": [
     "\"But what do YOU think? You've been out there more than most of us.\"",
     "\"That's my read. What's yours? I want to know if I'm crazy.\"",
-    "\"Am I wrong? Tell me I'm wrong — I'd rather know now.\""
+    "\"Am I wrong? Tell me I'm wrong — I'd rather know now.\"",
+    "\"What's your read on all this? I need someone to sanity-check me.\"",
+    "\"I've got a theory. It's half-baked. Want to help me bake it?\"",
+    "\"Talk me through what you think is happening. Out loud. It helps.\"",
+    "\"Am I crazy, or is there a pattern here? Be honest.\"",
+    "\"I need a second brain on this. You're the second brain.\""
   ],
   "overheard": {
     "openers": {
