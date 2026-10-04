@@ -637,3 +637,19 @@ No abstract numbers. A grove with 26 trees has 26 forages. The grid is the inven
 Depleted cells regrow in 3 days (tracked per-cell).
 
 TESTED: move (10 kcal), wall blocks, too-far blocks, tree blocks but forages, stock=26 from grid.
+
+## 2026-10-03 — Maybes, not guarantees (Steve)
+Steve: "But all of these are maybes. Tree might have something to forage or be covered
+in ivy. Water could be poisonous. Tent might be shredded when you get up close...
+Knowledge obtained about your world sticks with you."
+
+HIDDEN STATE per interactable cell (t.secrets[key]):
+- tree/bigtree: yield 0-3 (70% have nuts, 30% ivy-covered/0). You learn by checking.
+- water: safe (80%) or poison (20%). You learn by examining or the hard way.
+- tent: good (50%), shredded (30%), packable (20%). Shredded = useless. Packable = you take it.
+
+KNOWLEDGE STICKS: secret.known = true persists in save. The grid shows what you\'ve learned:
+- Ivy tree: 🌿 (not 🌳). Poison water: ☠️. Shredded tent: 💨.
+- You don\'t waste time re-checking. The world remembers what you know.
+
+INTERACTION: tap to examine/use. First touch reveals the secret. Then you decide.

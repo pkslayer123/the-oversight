@@ -149,6 +149,100 @@
     render();
   }
 
+  // cellPopup: click any space, see your options.
+  // what it is, what you know about it, what you can do, why you can't.
+  // you click your way through the world.
+  function cellPopup(cx, cy) {
+    const detail = Game.genDetail(Game.map.px, Game.map.py);
+    const cell = detail[cy] && detail[cy][cx];
+    const t = Game.playerTile();
+    const sec = (t.secrets || {})[cx + ',' + cy];
+    const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+    const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
+    const isMe = (cx === px && cy === py);
+    const mon = Game.state.scholar.monster;
+    const isMon = mon && cx === mon.mx && cy === mon.my;
+
+    const CELL_NAME = {
+      tree: 'Tree', bigtree: 'Big tree', bush: 'Bush', plant: 'Plant',
+      water: 'Water', wall: 'Wall', rubble: 'Rubble', tent: 'Tent', fire: 'Fire',
+      bridge: 'Bridge', door: 'Door', gym: 'Gym floor', class: 'Classroom', hall: 'Hallway',
+      office: 'Office', bay: 'Warehouse bay', dock: 'Loading dock', sanct: 'Sanctuary', base: 'Basement',
+      grass: 'Grass', dirt: 'Dirt',
+    };
+    const name = CELL_NAME[cell] || cell;
+    let desc = '';
+    let actions = [];
+
+    if (isMe) {
+      desc = 'You are here.';
+    } else if (isMon) {
+      desc = 'Something big. It sees you.';
+      if (dist <= 1) actions.push(['Fight', () => Game.startCombat(mon.id)]);
+      actions.push(['Back away', () => {}]);
+    } else {
+      // what you know (secrets)
+      if (sec && sec.known) {
+        if ((cell === 'tree' || cell === 'bigtree')) {
+          desc = sec.yield === 0 ? 'Ivy-covered. Nothing.' : `Has nuts (about ${sec.yield} worth).`;
+        } else if (cell === 'water') {
+          desc = sec.safe ? 'Clear. Safe to drink.' : 'POISON. Don\'t drink.';
+        } else if (cell === 'tent') {
+          desc = sec.condition === 'shredded' ? 'Shredded. Useless.' :
+                 sec.condition === 'packable' ? 'Intact and light. You could take it.' : 'Good condition. Dry inside.';
+        }
+      } else {
+        desc = 'You haven\'t examined this closely yet.';
+      }
+
+      // what you can do
+      const BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
+      const blocks = BLOCKS[cell];
+      if (dist > 1) {
+        desc += ' (Too far to reach.)';
+      } else if (blocks) {
+        desc += ' (Blocked — can\'t walk through.)';
+        // but you can USE it
+        if (cell === 'tree' || cell === 'bigtree') {
+          if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
+          else if (sec.yield > 0) actions.push(['Forage nuts', () => Game.cellInteract(cx, cy)]);
+        } else if (cell === 'water') {
+          if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
+          else if (sec.safe) actions.push(['Drink', () => Game.cellInteract(cx, cy)]);
+        } else if (cell === 'tent') {
+          if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
+          else if (sec.condition === 'good') actions.push(['Rest', () => Game.cellInteract(cx, cy)]);
+          else if (sec.condition === 'packable') actions.push(['Pack up', () => Game.cellInteract(cx, cy)]);
+        } else if (cell === 'fire') {
+          actions.push(['Warm hands', () => Game.cellInteract(cx, cy)]);
+        } else if (cell === 'wall') {
+          desc += ' It\'s a wall.';
+        }
+      } else {
+        // passable
+        if (dist <= 1 && !isMe) actions.push(['Step here', () => Game.microMove(cx, cy)]);
+        if (cell === 'plant' || cell === 'bush') actions.push(['Forage', () => Game.cellInteract(cx, cy)]);
+        else if (cell === 'rubble') actions.push(['Scavenge', () => Game.cellInteract(cx, cy)]);
+        else if (cell === 'bridge') desc += ' The only way across.';
+        else if (cell === 'door') desc += ' Leads outside.';
+      }
+    }
+
+    screen.innerHTML = `${bar('scattering://look', name.toLowerCase())}
+      <div class="card" style="margin-top:40px">
+        <h3>${name}</h3>
+        <p class="small">${desc}</p>
+        <div class="btnrow">
+          ${actions.map((a, i) => `<button class="btn sm" data-act="${i}">${a[0]}</button>`).join('')}
+          <button class="btn ghost sm" id="b-cback">Back</button>
+        </div>
+      </div>`;
+    actions.forEach((a, i) => {
+      document.querySelector(`[data-act="${i}"]`).onclick = () => { a[1](); expeditionScreen(); };
+    });
+    document.getElementById('b-cback').onclick = () => expeditionScreen();
+  }
+
   function talkOverlay(vid) {
     const v = Game.data.villagers.find(x => x.id === vid);
     const line = Game.talkTo(vid);
@@ -205,16 +299,12 @@
         rerender();
       };
     });
-    // detail grid: tap a cell to interact with the world.
-    // adjacent + passable: STEP there. adjacent + blocking-but-useful: USE it (forage tree, drink water).
-    // the macro map below is for travel between tiles. this is for being IN the world.
+    // detail grid: tap a cell to see your options. the popup tells you what it is,
+    // what you know, what you can do, and why you can't. click your way through the world.
     screen.querySelectorAll('.detail .cell').forEach(el => {
       el.onclick = () => {
         const cx = +el.dataset.cx, cy = +el.dataset.cy;
-        if (Game.microMove(cx, cy)) { rerender(); return; }
-        // didn't move — try interacting (tree, water, tent, fire)
-        if (Game.cellInteract(cx, cy)) { rerender(); return; }
-        toast('Can\'t get there — blocked or too far.');
+        cellPopup(cx, cy);
       };
     });
     document.getElementById('x-codex').onclick = codexScreen;
