@@ -531,3 +531,14 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - Net drain 612-722/day (was flat 800). Variation between runs is a feature.
 - Quest giver: random main who isn't the player. Mara isn't the only intro.
 - Roster UI: mains with Talk buttons, background as compact "Name (occupation)" — info, not management.
+
+## 2026-10-03 — the village lives, the System integrates
+- villageLives(): each day, 1-2 background villagers do something. Bring food (+100-300 kcal),
+  get wounded, discover plants (adds to YOUR codex!), or barter. They're at risk too.
+- integration (0-100): starts at 5. Grows with discovery (+3), quests (+5), barter (+2).
+  Thresholds: 20 (system messages), 40 (quest protocol), 60 (codex/inventory overlay), 80 (deep integration).
+  The UI will shift from journal → video game overlay as the System integrates into your neural pathways.
+- Passive quests: village asks (human) before integration 40. One at a time, simple:
+  bring X, visit Y. Rewards: pantry, knowledge (+integration), or barter.
+  System quests come later (not yet implemented).
+- HUD shows SYSTEM integration %. Active quest shows in expedition screen.

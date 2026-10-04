@@ -839,8 +839,8 @@
         const first = person.name.split(' ')[0];
         const r = Math.random();
         if (r < 0.35) {
-          // brings food
-          const kcal = 100 + Math.floor(Math.random() * 200);
+          // brings food: a real haul (400-800 kcal), not a snack. this is their work, made visible.
+          const kcal = 400 + Math.floor(Math.random() * 401);
           v.pantryKcal += kcal;
           this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {

@@ -24,7 +24,7 @@
     "formerOccupation": "botanist",
     "line": "Knows Latin names for everything. The plants don't care.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1880
+    "providesPerDay": 1840
   },
   {
     "id": "james_okonkwo",
@@ -150,7 +150,7 @@
     "formerOccupation": "gardener",
     "line": "Growing things in cans. Optimist.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1890
+    "providesPerDay": 1840
   },
   {
     "id": "raj_patel",
@@ -195,7 +195,7 @@
     "formerOccupation": "park ranger",
     "line": "Knows tracks. Quiet like Jesse, but different.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1900
+    "providesPerDay": 1840
   },
   {
     "id": "ava_garcia",
@@ -285,7 +285,7 @@
     "formerOccupation": "hiker",
     "line": "Yes, really. No, he won't change it.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1880
+    "providesPerDay": 1840
   },
   {
     "id": "aria_thompson",
@@ -303,7 +303,7 @@
     "formerOccupation": "farmer",
     "line": "Grows food. The most important job.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1910
+    "providesPerDay": 1840
   },
   {
     "id": "nora_wilson",

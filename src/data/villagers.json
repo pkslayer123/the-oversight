@@ -90,7 +90,7 @@
       "You ever field-dress anything? Didn't think so. Stick with the plants for now."
     ],
     "kcalPerDay": 2200,
-    "providesPerDay": 2450,
+    "providesPerDay": 2274,
     "providesWhat": "snares",
     "quest": [
       "You're up. Good. Mara said to let you sleep but the pantry doesn't care about sleep.",
@@ -138,7 +138,7 @@
       "You find ginger \u2014 real wild ginger \u2014 you run home. Don't walk. Run."
     ],
     "kcalPerDay": 2000,
-    "providesPerDay": 2150,
+    "providesPerDay": 1990,
     "providesWhat": "fish lines",
     "quest": [
       "You're awake. Good. I was dreaming about rice again. Just rice.",
@@ -186,7 +186,7 @@
       "Sit. Rest your feet. The woods aren't going anywhere, and neither are we \u2014 that's rather the problem."
     ],
     "kcalPerDay": 1700,
-    "providesPerDay": 1560,
+    "providesPerDay": 1564,
     "providesWhat": "",
     "quest": [
       "Oh good, you're awake. I was about to start charging rent for that spot by the fire.",
@@ -282,7 +282,7 @@
       "Theo's timing the pantry. I know. Let him. His numbers are wrong but his worry is right."
     ],
     "kcalPerDay": 1900,
-    "providesPerDay": 1750,
+    "providesPerDay": 1748,
     "providesWhat": "",
     "quest": [
       "You're awake. Good \u2014 I've updated the ledger. Nine days of pantry, twelve mouths. I've done the math twice.",
