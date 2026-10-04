@@ -2782,7 +2782,11 @@
     villageAction(kind) {
       const scholar = this.state.scholar;
       if (kind === 'water') {
-        scholar.water = 4;
+        // WATER BOTTLES are {liters, quality, source} objects — never assign a
+        // bare number here; the status bar stringifies the array and you'd get
+        // "[object Object]". (This bit the live build once.)
+        scholar.water = scholar.water || [];
+        for (let i = 0; i < 4; i++) scholar.water.push({ liters: 1, quality: 'clean', source: 'Haven well' });
         const msg = 'You fill your skin from the well. Cold. Clean. Home water.';
         this.say(msg); this.save(); return msg;
       }
@@ -4544,7 +4548,7 @@
           this.say('You already checked. Nothing.');
           return true;
         }
-        return this.doAction('forage');
+        return this.doAction('forage', { cx, cy });
       }
       // WATER: flow + clarity + source synthesize. running is better than stagnant.
       if (cell === 'water') {
@@ -4596,13 +4600,13 @@
           this.state.scholar.kcal -= 20; // thorns scratch
           this.say('Thorns. You get the berries, but they take a little blood. (-20 kcal)');
         }
-        return this.doAction('forage');
+        return this.doAction('forage', { cx, cy });
       }
       if (cell === 'plant') {
         const mod = t.modifiers && t.modifiers[key];
         if (mod) mod.known = true;
         if (secret) secret.known = true;
-        return this.doAction('forage');
+        return this.doAction('forage', { cx, cy });
       }
       // FIRE: warm
       if (cell === 'fire') { this.say('You warm your hands. The fire pops.'); return true; }
@@ -4625,7 +4629,7 @@
           this.say('Picked clean. Nothing.');
           return true;
         }
-        return this.doAction('forage');
+        return this.doAction('forage', { cx, cy });
       }
       return null;
     },
@@ -8468,7 +8472,7 @@
     canCarry(kg) { return this.packWeight() + kg <= this.packCapacity(); },
 
     // --- actions: each one consumes the day-part and advances time ---
-    doAction(kind) {
+    doAction(kind, opts) {
       if (this.over) return null;
       const scholar = this.state.scholar;
       let msg = '';
@@ -8482,12 +8486,23 @@
         // check your cell and adjacent for anything forageable: plant, bush, tree, bigtree.
         // trees feed you (nuts). bushes feed you (berries). you don't walk through them, you take from them.
         const FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
-        for (let dy = -1; dy <= 1 && !plantCell; dy++) {
-          for (let dx = -1; dx <= 1 && !plantCell; dx++) {
-            const cx = mx + dx, cy = my + dy;
-            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
-            const c = detail[cy] && detail[cy][cx];
-            if (FORAGEABLE[c]) plantCell = { x: cx, y: cy, cell: c };
+        // TARGETED: when you tapped a specific cell (via cellInteract), you
+        // forage THAT cell — not whatever the scan finds first. Three presses
+        // on one bush deplete one bush, visibly. No identity-switching.
+        if (opts && opts.cx !== undefined && opts.cy !== undefined) {
+          const tc = detail[opts.cy] && detail[opts.cy][opts.cx];
+          if (FORAGEABLE[tc] && Math.max(Math.abs(opts.cx - mx), Math.abs(opts.cy - my)) <= 1) {
+            plantCell = { x: opts.cx, y: opts.cy, cell: tc };
+          }
+        }
+        if (!plantCell) {
+          for (let dy = -1; dy <= 1 && !plantCell; dy++) {
+            for (let dx = -1; dx <= 1 && !plantCell; dx++) {
+              const cx = mx + dx, cy = my + dy;
+              if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+              const c = detail[cy] && detail[cy][cx];
+              if (FORAGEABLE[c]) plantCell = { x: cx, y: cy, cell: c };
+            }
           }
         }
         if (!plantCell && t.type !== 'ruin') {
@@ -8551,22 +8566,28 @@
           return this.tickAction(64) || this.status();
         }
         if (!S.forage.canForage(t)) { this.say('Nothing left to take here today.'); return null; }
+        // TARGETED HARVEST: a bush you've identified gives its own fruit.
+        // You tapped a blackberry bush — you get blackberries.
+        let forcePlantId = null;
+        if (plantCell && plantCell.cell === 'bush' && t.bushSpecies && t.bushSpecies[plantCell.x + ',' + plantCell.y]) {
+          forcePlantId = t.bushSpecies[plantCell.x + ',' + plantCell.y];
+        }
+        const bounty = this.bountyFor(this.map.px, this.map.py);
+        const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty, { forcePlantId });
+        const kg = r.units * 0.1;
+        if (!this.canCarry(kg)) { this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
         t.stock -= 1;
         // deplete the specific cell you harvested. it regrows in 3 days.
-        // trees/bushes don't disappear — they're picked clean (become 'dirt' visually, but the tree remains conceptually).
-        // actually: trees stay trees, just depleted. track it separately.
+        // plants become dirt (visible). trees/bushes stay standing but are
+        // picked clean — tracked in detailRegrow so the grid can show it
+        // (dimmed/wilted) until it recovers.
         if (plantCell) {
           const origCell = plantCell.cell;
-          // trees and bushes stay (they're perennial), plants become dirt
           detail[plantCell.y][plantCell.x] = (origCell === 'plant') ? 'dirt' : origCell;
           t.detailRegrow = t.detailRegrow || {};
           // store what it was, so it regrows correctly
           t.detailRegrow[plantCell.x + ',' + plantCell.y] = { day: scholar.day + 3, was: origCell };
         }
-        const bounty = this.bountyFor(this.map.px, this.map.py);
-        const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty);
-        const kg = r.units * 0.1;
-        if (!this.canCarry(kg)) { t.stock += 1; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
         // LEARNING: encounters build familiarity. who you are matters.
         // regional: plant from home? start at 1. occupation: hunter/cook learns food in 2, others in 3-4.
         const plant = this.data.plants.find(p => p.id === r.plantId);
@@ -8614,10 +8635,13 @@
             this.say('SYSTEM: You know this plant the way it knows itself. Concerning. Impressive.');
           }
         } else if (!learned) {
-          // progressive: description, not name
-          const stage = newEnc === 1 ? plant.description || 'a plant you don\'t recognize' :
-                        `looks familiar — like the ${plant.description || 'plant'} from before`;
-          this.say(`You take ${stage}. Not sure what it is yet. (${newEnc}/${threshold})`);
+          // progressive: description, not name. Two clean templates — never
+          // spliced ("You take looks familiar" / "like the a low plant" bit us).
+          if (newEnc === 1) {
+            this.say(`You take ${plant.description || 'a plant you don\'t recognize'}. Not sure what it is yet. (1/${threshold})`);
+          } else {
+            this.say(`This looks familiar — like ${plant.description || 'that plant'} from before. Not sure what it is yet. (${newEnc}/${threshold})`);
+          }
         }
         // squirrel_friend: sometimes they leave you nuts. Random gifts, real food.
         const giftChance = this.modTarget('forage.gift_chance', 0);
@@ -8667,8 +8691,11 @@
           scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
         }
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
-        msg = `Packed ${r.units}× ${r.plant.unit} of ${this.plantDisplayName(r.plantId)} (${r.kcal} kcal).`;
-        this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
+        // report the ACTUAL haul (post knowledge/ability multipliers), not the raw roll.
+        const finalKcal = finalUnits * r.plant.caloriesPerUnit;
+        msg = `Packed ${finalUnits}× ${r.plant.unit} of ${this.plantDisplayName(r.plantId)} (${finalKcal} kcal).`;
+        if (plantCell) msg += ` The ${plantCell.cell === 'plant' ? 'patch' : plantCell.cell} is picked clean — it'll recover in a few days.`;
+        this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: finalUnits, kcal: finalKcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
         if (scholar.week1) scholar.week1.forage++;
         this.gainAbilityXP('green_thumb', 1);
         // SYNERGY passives: photosynthesis works in daylight; third_eye/pattern see patterns.
@@ -8706,15 +8733,13 @@
       this.checkQuest(kind);
       this.maybeOfferQuest();
       // ACTION CLOCK: variable cost by fictional weight. 1 chunk = 32 ticks.
-      // Forage 1-2 chunks (a rich tile takes longer — more to gather).
-      // Snappy, not a time-skip: 1 batch turn fires, not 3. The world
-      // shouldn't lurch forward from a single button press.
+      // Forage is a QUICK beat: 16 ticks (half a batch), small yield. Time
+      // feels spent, not skipped — two presses move the world one batch turn.
       // rest 3 chunks, treat 1 chunk, wait = however long until the part turns.
       const T = this.TIME;
       let ticks = T.TICKS_PER_PART;
       if (kind === 'forage') {
-        const b = this.bountyFor(this.map.px, this.map.py);
-        ticks = (b && b.richness >= 1.3) ? 64 : 32;
+        ticks = 16;
       } else if (kind === 'rest') ticks = 96;
       else if (kind === 'treat') ticks = 32;
       else if (kind === 'wait') {
@@ -10530,8 +10555,14 @@
       this.state.codex.encounters[pid] = 99;
       this.refreshItemNames(pid);
       this.integrate(source === 'taught' ? 2 : 3, source === 'taught' ? 'taught' : 'discovery');
-      // celebration: identification is an EVENT, not a log line
-      this.say(`\u2605 IDENTIFIED: ${p.name}. ${p.knowledgeLevels['1']}`);
+      // celebration: identification is an EVENT, not a log line.
+      // knowledgeLevels['1'] often starts with the name ("Chickweed. Low, tiny
+      // white flowers.") — strip it so we don't print "Chickweed. Chickweed."
+      let kl1 = p.knowledgeLevels['1'] || '';
+      const namePrefix = p.name + '. ';
+      if (kl1.startsWith(namePrefix)) kl1 = kl1.slice(namePrefix.length);
+      else if (kl1.startsWith(p.name)) kl1 = kl1.slice(p.name.length).replace(/^[.\s:—-]+/, '');
+      this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1}`);
       const sys = [
         'SYSTEM: Naming things. Very human. The audience approves.',
         'SYSTEM: Oh! It has a NAME. You all love names.',

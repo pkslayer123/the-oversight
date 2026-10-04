@@ -8,7 +8,7 @@
   const STARVATION_THRESHOLD = 500; // kcal reserve below which the spiral starts
 
   const ACTION_COSTS = {
-    forage: 120, hunt: 240, craft: 100, explore: 160,
+    forage: 60, hunt: 240, craft: 100, explore: 160, // forage is a quick 16-tick beat now: 60 kcal effort, not 120
     rest: -200,           // recovers (negative cost)
     treat_water: 50, travel_leg: 320,
     combat_round: 100, system_ability: 800, // power is expensive

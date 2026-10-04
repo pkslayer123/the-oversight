@@ -106,19 +106,21 @@
       }
     } catch (e) {}
 
-    // ---- RESOURCE: trees and water, tool-aware ----
+    // ---- RESOURCE: trees, water, and forageables, tool-aware ----
     try {
       const detail = this.genDetail(this.map.px, this.map.py);
       const tile = this.playerTile ? this.playerTile() : null;
       const mods = (tile && tile.modifiers) || {};
-      let treeSaid = false, waterSaid = false;
-      for (let dy = -1; dy <= 1 && !(treeSaid && waterSaid); dy++) {
-        for (let dx = -1; dx <= 1 && !(treeSaid && waterSaid); dx++) {
+      const regrow = (tile && tile.detailRegrow) || {};
+      let treeSaid = false, waterSaid = false, forageSaid = false;
+      for (let dy = -1; dy <= 1 && !(treeSaid && waterSaid && forageSaid); dy++) {
+        for (let dx = -1; dx <= 1 && !(treeSaid && waterSaid && forageSaid); dx++) {
           const cx = px + dx, cy = py + dy;
           if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
           const row = detail[cy];
           const cell = row && row[cx];
           const mod = mods[cx + ',' + cy] || {};
+          const depleted = !!regrow[cx + ',' + cy];
           if (!treeSaid && cell === 'bigtree') {
             const species = mod.species || 'tree';
             let t;
@@ -144,6 +146,28 @@
               push(`The water here looks ${w}.`, 45);
               waterSaid = true;
             }
+          } else if (!forageSaid && (cell === 'plant' || cell === 'bush' || cell === 'tree')) {
+            // FORAGEABLES: the most common thing you notice. Quiet, specific.
+            // Depleted ones read as picked-clean, not as bounty.
+            if (depleted) {
+              push(cell === 'plant' ? `Picked-over ground here. It needs time.` : `This ${cell} is picked clean. It'll recover.`, 42);
+            } else if (cell === 'bush') {
+              const bs = (tile.bushSpecies || {})[cx + ',' + cy];
+              const codex = (this.state.codex || {}).plants || {};
+              if (bs && codex[bs] && codex[bs].level >= 1) {
+                const pdef = (this.data.plants || []).find(p => p.id === bs) || {};
+                push(`A ${pdef.name || bs} bush, heavy with fruit.`, 48);
+              } else if (bs) {
+                push(`A berry bush. You don't know which kind yet.`, 48);
+              } else {
+                push(`A bush with berries. Worth a closer look.`, 44);
+              }
+            } else if (cell === 'plant') {
+              push(`Something green and low-growing. Might be edible.`, 44);
+            } else {
+              push(`A ${mod.species || 'nut tree'}. There might be nuts.`, 44);
+            }
+            forageSaid = true;
           }
         }
       }

@@ -122,8 +122,12 @@ Faster NPCs wander more squares per batch. You can SEE who's fast.
 
 - If small actions feel too "expensive," the knob is individual tick costs,
   not the clock — the clock is structural.
+- Forage is a quick 16-tick beat (half an NPC batch), ~5-8 units (~200-550 kcal
+  typical). Granular and tactile: two presses move the world one batch turn.
+  Time should feel spent, not skipped. (Was 64-96 ticks, then 32 — both felt
+  like time-skips. Steve: "not sure it should take a whole batch.")
 - If big actions feel off, adjust chunks (32-tick units), keeping the
-  2–3 chunk band for forage/chop.
+  2–3 chunk band for chop/terraform.
 - `TICKS_PER_DAY = 512` with 4 derived parts preserves the playtested
   day structure while making every moment cost something.
 - Sims: `node scripts/simulate.js [runs] [policy]`; clock unit tests:

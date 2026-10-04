@@ -258,6 +258,14 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 
 .emptybush { opacity: 0.4; filter: grayscale(50%); }
 
+/* DEPLETED: a foraged bush/tree, picked clean but recovering. Dimmed and
+   wilted — you can SEE what you've taken. Clears when it regrows. */
+.cell.depleted { opacity: 0.45; filter: grayscale(55%) sepia(.25); }
+.cell.depleted::after {
+  content: '·'; position: absolute; bottom: 1px; right: 3px;
+  font-size: 10px; color: var(--dim); opacity: .8;
+}
+
 /* PWA update banner: subtle top strip, appears only when a newer build is ready. */
 #update-banner {
   position: fixed; top: 0; left: 0; right: 0; z-index: 60;

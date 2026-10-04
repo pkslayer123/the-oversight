@@ -679,7 +679,7 @@
       office: 'Office', bay: 'Warehouse bay', dock: 'Loading dock', sanct: 'Sanctuary', base: 'Basement',
       grass: 'Grass', dirt: 'Dirt',
     };
-    const name = CELL_NAME[cell] || cell;
+    let name = CELL_NAME[cell] || cell;
     let desc = '';
     let actions = [];
 
@@ -737,14 +737,16 @@
       // VILLAGER: people get sheets, not tile panels. Open the person sheet directly.
       // (cellPopup was called for a distant villager tap — walkCloser handles approach.)
       const vp = Game.data.villagers.find(v => v.id === villagerId) || Game.data.background_survivors.find(v => v.id === villagerId);
-      const name = Game.displayName(villagerId);
+      const vname = Game.displayName(villagerId);
       if (dist <= 2) {
         const info = document.getElementById('inlineslot');
         if (info) info.innerHTML = ''; // people get sheets, not panels
         personSheet(villagerId);
         return;
       } else {
-        desc = `${name.split(' ')[0]} is over there. (Too far to talk.)`;
+        // title AND body agree: it's a person over there, not a plant.
+        name = vname;
+        desc = `${vname.split(' ')[0]} is over there. (Too far to talk.)`;
         actions.push(walkCloser(cx, cy));
       }
     } else {
@@ -2603,6 +2605,12 @@
           entityHere = true;
         }
         // CELL GLYPH: what the ground itself looks like. Entities overlay after.
+        // DEPLETED: a foraged bush/tree stays standing but is picked clean —
+        // detailRegrow tracks it until it recovers. Show it dimmed/wilted so
+        // the player SEES what they've taken. (Plants become dirt instead.)
+        const deplKey = cx + ',' + cy;
+        const isDepleted = tile.detailRegrow && tile.detailRegrow[deplKey] &&
+          (typeof tile.detailRegrow[deplKey].day === 'number' ? tile.detailRegrow[deplKey].day > (Game.state.scholar.day || 0) : true);
         if (cell === 'plant') {
           g = known && PLANT_GLYPH[known] ? PLANT_GLYPH[known] : '🌱';
           cls += ' plantcell';
@@ -2619,6 +2627,11 @@
           } else {
             g = '🌿';
           }
+          if (isDepleted) { cls += ' depleted'; }
+        } else if (cell === 'tree' || cell === 'bigtree') {
+          g = CELL_GLYPH[cell] || '';
+          if (cell) cls += ' c-' + cell;
+          if (isDepleted) { cls += ' depleted'; }
         }
         else if (cell === 'grass') { g = ''; cls += ' grass'; }
         else if (cell === 'dirt') {
