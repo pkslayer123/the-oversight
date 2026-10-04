@@ -610,6 +610,7 @@
       this.say(msg);
       // arrive at the center of the new tile's detail grid. you're IN the world now.
       this.state.scholar.mx = 4; this.state.scholar.my = 4;
+      this.state.scholar.monster = null; // monsters don't follow you between tiles
       if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
       this.checkQuest('travel');
@@ -788,8 +789,16 @@
         this.say('Something big is moving in the woods. The birds went quiet.');
       }
       if (this.wanderer && this.map.px === this.wanderer.x && this.map.py === this.wanderer.y) {
+        // the monster is HERE, in the grid with you. spawn at a distance, not on top of you.
+        const px = scholar.mx ?? 4, py = scholar.my ?? 4;
+        let mx, my, tries = 0;
+        do {
+          mx = Math.floor(Math.random() * 9); my = Math.floor(Math.random() * 9);
+          tries++;
+        } while (tries < 20 && Math.abs(mx - px) + Math.abs(my - py) < 4);
+        scholar.monster = { id: this.wanderer.monsterId, mx, my };
+        this.say('Something big is HERE. In the grid with you. You can see it. It can see you.');
         this.encounterDone = true;
-        this.pendingEncounter = true;
         this.wanderer = null;
       }
     },
@@ -823,6 +832,23 @@
       let msg = '';
       if (kind === 'forage') {
         const t = this.playerTile();
+        // PHYSICAL: you must be on (or next to) a plant cell to forage it.
+        // walk to the 🌱, then take it. the world is not a slot machine.
+        const mx = scholar.mx ?? 4, my = scholar.my ?? 4;
+        const detail = this.genDetail(this.map.px, this.map.py);
+        let plantCell = null;
+        // check your cell and adjacent
+        for (let dy = -1; dy <= 1 && !plantCell; dy++) {
+          for (let dx = -1; dx <= 1 && !plantCell; dx++) {
+            const cx = mx + dx, cy = my + dy;
+            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+            if (detail[cy] && detail[cy][cx] === 'plant') plantCell = { x: cx, y: cy };
+          }
+        }
+        if (!plantCell && t.type !== 'ruin') {
+          this.say('No plants within reach. Walk to the 🌱 first.');
+          return null;
+        }
         // ruins: scavenge finite loot, not plants
         if (t.type === 'ruin') {
           if (!t.loot || !t.loot.length) { this.say('Picked clean. The houses fed someone — not you.'); return null; }
@@ -838,6 +864,12 @@
         }
         if (!S.forage.canForage(t)) { this.say('Nothing left to take here today.'); return null; }
         t.stock -= 1;
+        // deplete the specific cell you harvested. it regrows in 3 days.
+        if (plantCell) {
+          detail[plantCell.y][plantCell.x] = 'dirt';
+          t.detailRegrow = t.detailRegrow || {};
+          t.detailRegrow[plantCell.x + ',' + plantCell.y] = scholar.day + 3;
+        }
         const bounty = this.bountyFor(this.map.px, this.map.py);
         const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty);
         const kg = r.units * 0.1;
@@ -1099,6 +1131,16 @@
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
         const t = this.map.tiles[y][x];
         if (t.maxStock > 0) t.stock = Math.min(t.maxStock, (t.stock || 0) + 1);
+        // detail cells regrow: the plant you picked comes back in 3 days.
+        if (t.detail && t.detailRegrow) {
+          for (const key of Object.keys(t.detailRegrow)) {
+            if (t.detailRegrow[key] <= this.state.scholar.day) {
+              const [cx, cy] = key.split(',').map(Number);
+              if (t.detail[cy] && t.detail[cy][cx] === 'dirt') t.detail[cy][cx] = 'plant';
+              delete t.detailRegrow[key];
+            }
+          }
+        }
       }
       // evening: run metabolism
       const res = S.calories.resolveDay(scholar, this.state.village);
@@ -1133,10 +1175,11 @@
     },
 
     // --- combat ---
-    startCombat() {
-      const monster = this.data.monsters.find(m => m.id === 'thornback_boar') || this.data.monsters[0];
+    startCombat(monsterId) {
+      const monster = this.data.monsters.find(m => m.id === (monsterId || 'thornback_boar')) || this.data.monsters[0];
       this.fight = S.combat.newFight(monster, this.state.scholar);
       this.pendingEncounter = false;
+      this.state.scholar.monster = null; // it's in your face now, not on the grid
       this.say(`A BULLDOZER crashes from the thicket — ${monster.codexStages.unknown}`);
       return this.fight;
     },

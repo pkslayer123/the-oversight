@@ -333,6 +333,7 @@
     const tile = Game.playerTile();
     const known = tile.knownPlant;
     const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
+    const mon = Game.state.scholar.monster;
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
       html += '<div class="drow">';
@@ -341,6 +342,7 @@
         const isMe = (cx === pmx && cy === pmy);
         let g, cls = 'cell';
         if (isMe) { g = '🧍'; cls += ' me'; }
+        else if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
         else if (cell === 'plant') {
           g = known && PLANT_GLYPH[known] ? PLANT_GLYPH[known] : '🌱';
           cls += ' plantcell';

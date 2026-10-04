@@ -603,3 +603,14 @@ STILL NEEDED:
 - RIVERS: creek tiles get a continuous meandering river (2 wide), not random puddles.
   One bridge (🌉) is the only crossing. Water blocks; bridge is passable.
 - The world is physical. You go around, or you cross at the bridge.
+
+## 2026-10-03 — Spawn buildings vary (Steve)
+Steve: "Should people always spawn in a gym? It should be different all over the world.
+Random like the location. Even choosing the same location shouldn't guarantee the same things.
+We should aspire to use satellite imagery to build out our locations to scale from reality."
+
+- Building pools per location. Ohio: school, warehouse, church. Random per run.
+- Each building is a 9x9 scale model: school (gym/classrooms), warehouse (bay/dock/office),
+  church (sanctuary/basement/office).
+- Intros are building-agnostic ("in there"). The UI shows the actual building name.
+- LONG-TERM: satellite imagery to build locations to scale from reality. Hand-made for now.
