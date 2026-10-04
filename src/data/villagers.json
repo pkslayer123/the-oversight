@@ -46,8 +46,8 @@
       "The Bulldozer doesn't go around things. So don't be a thing. Climb, or be somewhere else.",
       "Write it all down. The Codex remembers what hunger makes you forget."
     ],
-    "kcalPerDay": 75,
-    "providesPerDay": 0,
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840,
     "providesWhat": ""
   },
   {
@@ -89,8 +89,8 @@
       "Theo tried to name the Bulldozer. I told him naming it won't make it slower.",
       "You ever field-dress anything? Didn't think so. Stick with the plants for now."
     ],
-    "kcalPerDay": 78,
-    "providesPerDay": 100,
+    "kcalPerDay": 2200,
+    "providesPerDay": 2450,
     "providesWhat": "snares",
     "quest": [
       "You're up. Good. Mara said to let you sleep but the pantry doesn't care about sleep.",
@@ -137,8 +137,8 @@
       "My hands remember the knife work. Eleven years. The hands don't care that the world ended.",
       "You find ginger \u2014 real wild ginger \u2014 you run home. Don't walk. Run."
     ],
-    "kcalPerDay": 72,
-    "providesPerDay": 60,
+    "kcalPerDay": 2000,
+    "providesPerDay": 2150,
     "providesWhat": "fish lines",
     "quest": [
       "You're awake. Good. I was dreaming about rice again. Just rice.",
@@ -185,8 +185,8 @@
       "Jesse's quiet is a good quiet. Theo's quiet means he's planning something. Learn the difference.",
       "Sit. Rest your feet. The woods aren't going anywhere, and neither are we \u2014 that's rather the problem."
     ],
-    "kcalPerDay": 65,
-    "providesPerDay": 0,
+    "kcalPerDay": 1700,
+    "providesPerDay": 1560,
     "providesWhat": "",
     "quest": [
       "Oh good, you're awake. I was about to start charging rent for that spot by the fire.",
@@ -233,8 +233,8 @@
       "Aki's fish thing \u2014 no hooks, right? But thorns? Bone? I'm prototyping. Don't tell Mara.",
       "The Codex is basically a wiki. You're the only editor. No pressure."
     ],
-    "kcalPerDay": 72,
-    "providesPerDay": 0,
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840,
     "providesWhat": "",
     "quest": [
       "Okay so you're the scholar. Cool. Cool cool cool. The tutorial is SO bad, right?",
@@ -281,8 +281,8 @@
       "If you bring back food, tell me the weight. Estimating is how pantries die.",
       "Theo's timing the pantry. I know. Let him. His numbers are wrong but his worry is right."
     ],
-    "kcalPerDay": 70,
-    "providesPerDay": 0,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1750,
     "providesWhat": "",
     "quest": [
       "You're awake. Good \u2014 I've updated the ledger. Nine days of pantry, twelve mouths. I've done the math twice.",

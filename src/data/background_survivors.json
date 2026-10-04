@@ -5,8 +5,8 @@
     "age": 34,
     "formerOccupation": "ER doctor",
     "line": "Mara's old colleague. Triages everything, including arguments.",
-    "kcalPerDay": 77,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "marcus_webb",
@@ -14,8 +14,8 @@
     "age": 41,
     "formerOccupation": "electrician",
     "line": "Keeps trying to fix things that don't need wires anymore.",
-    "kcalPerDay": 80,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "sofia_chen",
@@ -23,8 +23,8 @@
     "age": 29,
     "formerOccupation": "botanist",
     "line": "Knows Latin names for everything. The plants don't care.",
-    "kcalPerDay": 74,
-    "providesPerDay": 40
+    "kcalPerDay": 2000,
+    "providesPerDay": 1880
   },
   {
     "id": "james_okonkwo",
@@ -32,8 +32,8 @@
     "age": 52,
     "formerOccupation": "carpenter",
     "line": "Building furniture from fallen trees. It's good. It's weird.",
-    "kcalPerDay": 78,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "emma_larsen",
@@ -41,8 +41,8 @@
     "age": 24,
     "formerOccupation": "veterinary tech",
     "line": "Treats people like nervous animals. It works.",
-    "kcalPerDay": 72,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "david_kim",
@@ -50,8 +50,8 @@
     "age": 38,
     "formerOccupation": "plumber",
     "line": "Water is water. He'll find it, move it, or apologize to it.",
-    "kcalPerDay": 79,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "rosa_mendez",
@@ -59,8 +59,8 @@
     "age": 61,
     "formerOccupation": "cafeteria manager",
     "line": "Feeds twelve like she fed four hundred. Portions are law.",
-    "kcalPerDay": 70,
-    "providesPerDay": 0
+    "kcalPerDay": 1700,
+    "providesPerDay": 1564
   },
   {
     "id": "tom_baker",
@@ -68,8 +68,8 @@
     "age": 45,
     "formerOccupation": "truck driver",
     "line": "Drove through the Burn. Doesn't talk about it. Drives nowhere now.",
-    "kcalPerDay": 81,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "yuki_mori",
@@ -77,8 +77,8 @@
     "age": 31,
     "formerOccupation": "librarian",
     "line": "Cataloging the Codex. Dewey Decimal for the apocalypse.",
-    "kcalPerDay": 73,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "sam_wilson",
@@ -86,8 +86,8 @@
     "age": 19,
     "formerOccupation": "barista",
     "line": "Makes acorn coffee. It's terrible. He knows.",
-    "kcalPerDay": 75,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "nina_petrova",
@@ -95,8 +95,8 @@
     "age": 27,
     "formerOccupation": "mechanic",
     "line": "Fixes what can't be fixed. Morale is a machine too.",
-    "kcalPerDay": 74,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "carlos_diaz",
@@ -104,8 +104,8 @@
     "age": 55,
     "formerOccupation": "fisherman",
     "line": "Aki's rival. They argue about knots. It's friendly. Mostly.",
-    "kcalPerDay": 76,
-    "providesPerDay": 90
+    "kcalPerDay": 2000,
+    "providesPerDay": 1930
   },
   {
     "id": "grace_obi",
@@ -113,8 +113,8 @@
     "age": 43,
     "formerOccupation": "teacher",
     "line": "Teaches the kids. Curriculum: everything.",
-    "kcalPerDay": 72,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "henry_zhang",
@@ -122,8 +122,8 @@
     "age": 36,
     "formerOccupation": "accountant",
     "line": "Priya's deputy. They reconcile the pantry. It's intense.",
-    "kcalPerDay": 77,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "fatima_hassan",
@@ -131,8 +131,8 @@
     "age": 48,
     "formerOccupation": "nurse",
     "line": "Mara's right hand. Calm is a skill.",
-    "kcalPerDay": 74,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "leo_martin",
@@ -140,8 +140,8 @@
     "age": 16,
     "formerOccupation": "student",
     "line": "Theo's sidekick. Learning speedrunning. Of what, unclear.",
-    "kcalPerDay": 67,
-    "providesPerDay": 0
+    "kcalPerDay": 1600,
+    "providesPerDay": 1472
   },
   {
     "id": "mia_andersson",
@@ -149,8 +149,8 @@
     "age": 22,
     "formerOccupation": "gardener",
     "line": "Growing things in cans. Optimist.",
-    "kcalPerDay": 70,
-    "providesPerDay": 50
+    "kcalPerDay": 2000,
+    "providesPerDay": 1890
   },
   {
     "id": "raj_patel",
@@ -158,8 +158,8 @@
     "age": 50,
     "formerOccupation": "pharmacist",
     "line": "Rations medicine like it's gold. It is.",
-    "kcalPerDay": 76,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "ella_johnson",
@@ -167,8 +167,8 @@
     "age": 67,
     "formerOccupation": "retired teacher",
     "line": "Ruth's card partner. Cheats. Everyone knows.",
-    "kcalPerDay": 67,
-    "providesPerDay": 0
+    "kcalPerDay": 1700,
+    "providesPerDay": 1564
   },
   {
     "id": "victor_lopez",
@@ -176,8 +176,8 @@
     "age": 39,
     "formerOccupation": "construction worker",
     "line": "Builds. That's it. He builds.",
-    "kcalPerDay": 82,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "hannah_kim",
@@ -185,8 +185,8 @@
     "age": 28,
     "formerOccupation": "chef",
     "line": "Jesse's kitchen rival. The cookoff is ongoing.",
-    "kcalPerDay": 73,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "owen_smith",
@@ -194,8 +194,8 @@
     "age": 33,
     "formerOccupation": "park ranger",
     "line": "Knows tracks. Quiet like Jesse, but different.",
-    "kcalPerDay": 78,
-    "providesPerDay": 60
+    "kcalPerDay": 2000,
+    "providesPerDay": 1900
   },
   {
     "id": "ava_garcia",
@@ -203,8 +203,8 @@
     "age": 26,
     "formerOccupation": "artist",
     "line": "Drawing the new world. It's all she can do.",
-    "kcalPerDay": 71,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "lucas_brown",
@@ -212,8 +212,8 @@
     "age": 44,
     "formerOccupation": "police officer",
     "line": "Keeps the peace. There's mostly peace.",
-    "kcalPerDay": 80,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "chloe_dubois",
@@ -221,8 +221,8 @@
     "age": 30,
     "formerOccupation": "translator",
     "line": "Speaks four languages. The System speaks none.",
-    "kcalPerDay": 72,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "elijah_scott",
@@ -230,8 +230,8 @@
     "age": 58,
     "formerOccupation": "pastor",
     "line": "Holds services. Attendance varies.",
-    "kcalPerDay": 74,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "zoe_adams",
@@ -239,8 +239,8 @@
     "age": 21,
     "formerOccupation": "college student",
     "line": "Studies. Of what, she won't say.",
-    "kcalPerDay": 70,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "nathan_lee",
@@ -248,8 +248,8 @@
     "age": 47,
     "formerOccupation": "engineer",
     "line": "Designs water systems. Useful.",
-    "kcalPerDay": 78,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "ivy_wang",
@@ -257,8 +257,8 @@
     "age": 25,
     "formerOccupation": "photographer",
     "line": "Documents everything. The Codex has pictures now.",
-    "kcalPerDay": 71,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "caleb_jones",
@@ -266,8 +266,8 @@
     "age": 35,
     "formerOccupation": "firefighter",
     "line": "Keeps the fire. It's a whole job.",
-    "kcalPerDay": 81,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "maya_singh",
@@ -275,8 +275,8 @@
     "age": 32,
     "formerOccupation": "doctor",
     "line": "Not that Maya. This one fixes bones.",
-    "kcalPerDay": 75,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "ethan_hunt",
@@ -284,8 +284,8 @@
     "age": 29,
     "formerOccupation": "hiker",
     "line": "Yes, really. No, he won't change it.",
-    "kcalPerDay": 76,
-    "providesPerDay": 40
+    "kcalPerDay": 2000,
+    "providesPerDay": 1880
   },
   {
     "id": "aria_thompson",
@@ -293,8 +293,8 @@
     "age": 23,
     "formerOccupation": "musician",
     "line": "Plays a cracked guitar. Morale.",
-    "kcalPerDay": 69,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "liam_davis",
@@ -302,8 +302,8 @@
     "age": 42,
     "formerOccupation": "farmer",
     "line": "Grows food. The most important job.",
-    "kcalPerDay": 79,
-    "providesPerDay": 70
+    "kcalPerDay": 2000,
+    "providesPerDay": 1910
   },
   {
     "id": "nora_wilson",
@@ -311,8 +311,8 @@
     "age": 56,
     "formerOccupation": "seamstress",
     "line": "Mends clothes. Mends people, too.",
-    "kcalPerDay": 70,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   },
   {
     "id": "oliver_moore",
@@ -320,7 +320,7 @@
     "age": 37,
     "formerOccupation": "veterinarian",
     "line": "Emma's boss. The animals are fine. It's the people.",
-    "kcalPerDay": 77,
-    "providesPerDay": 0
+    "kcalPerDay": 2000,
+    "providesPerDay": 1840
   }
 ]

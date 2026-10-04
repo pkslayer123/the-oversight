@@ -239,8 +239,8 @@
     return `
       <div class="card"><h3>🏠 HAVEN — ${st.rosterCount} souls</h3>
       <p class="small"><i>${v.atmos}</i></p>
-      <p class="small">Pantry: ${st.pantryKcal} kcal (${st.pantryDays} days at ${net}/day)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
-      <p class="small" style="opacity:.75">12 mouths eat ${st.villageEat}/day${st.villageGive ? ` · ${st.villageProviders.join(', ')} bring in ${st.villageGive}` : ''}</p>
+      <p class="small">Pantry: ${st.pantryKcal} kcal (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      <p class="small" style="opacity:.75">12 mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day — that's you</p>
       <p class="small">Haven survives when: ${Game.journalName()} 8+ (${st.codexCount}) · Pantry 5000+ (${st.pantryKcal})</p>
       ${mains.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
         <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`).join('')}

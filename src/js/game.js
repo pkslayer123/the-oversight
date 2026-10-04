@@ -72,7 +72,7 @@
       this.state.village.villagers = mains; // mains have dialogue; background have one-liners
       const scholar = S.state.newScholar(villagerId);
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
-      scholar.inventory = gear.map(id => ({ itemId: id, qty: 1 }));
+      scholar.inventory = gear.map(id => ({ itemId: id, units: 1, kg: 0.2, name: (this.data.items.find(i => i.id === id) || {}).name || id }));
       // granted abilities from villager data (2 each, defined here for slice 1)
       const granted = {
         mara_okafor: ['triage', 'steady_hands'],
