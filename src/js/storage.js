@@ -306,6 +306,11 @@
       s.caches = s.caches || [];
       return s.caches;
     },
+    // cacheTheftChance(dist): Steve's rule — personal-cache theft risk falls
+    // with Manhattan distance from the nearest village/haven.
+    cacheTheftChance(dist) {
+      return 0.008 * Math.max(0.06, 1 - dist / 12);
+    },
     // buryCache(kind, key, qty): kind 'material' (key = mat id) or 'food' (key = inventory idx).
     buryCache(kind, key, qty) {
       qty = Math.floor(qty || 0);
@@ -492,10 +497,23 @@
           this.observe('stole');
         }
       }
-      // CACHES: buried things are safer, not safe. ~0.4%/batch ≈ 6%/day.
+      // CACHES: buried things are safer, not safe. Steve's rule: theft risk
+      // falls with distance from any village/haven — bury far from people,
+      // safer from people. ~0.8%/batch at the haven's doorstep → ~0.05%/batch far wild.
+      const spots = [];
+      if (this.state.village && this.state.village.x != null) spots.push(this.state.village);
+      for (const ov of (this.state.otherVillages || [])) spots.push(ov);
       for (const c of this.playerCaches()) {
         if (c.found) continue;
-        if (Math.random() < 0.004) {
+        const cn = c.node || {};
+        let nearest = Infinity;
+        for (const s of spots) {
+          const d = Math.abs((s.x || 0) - (cn.x || 0)) + Math.abs((s.y || 0) - (cn.y || 0));
+          if (d < nearest) nearest = d;
+        }
+        if (!isFinite(nearest)) nearest = 5;
+        const p = this.cacheTheftChance(nearest);
+        if (Math.random() < p) {
           c.found = true;
           c.items = [];
           this.say('You check your cache. Disturbed earth. Empty. Someone found it.');
