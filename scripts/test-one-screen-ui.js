@@ -26,9 +26,18 @@ check('no scrollIntoView in app.js', !appJs.includes('scrollIntoView'));
 const gridIdx = appJs.indexOf('class="detail ord-grid"');
 const slotIdx = appJs.indexOf('id="inlineslot"');
 const ctxIdx = appJs.indexOf('class="ord-ctx"');
+const selfIdx = appJs.indexOf('class="ord-self"');
+const statusIdx = appJs.indexOf('class="ord-status"');
 check('inlineslot exists', slotIdx > 0);
 check('inlineslot after grid', slotIdx > gridIdx);
 check('inlineslot before context bar', slotIdx < ctxIdx);
+// 2b. Action order (Steve): status bars -> personal actions -> environment.
+// DOM order matches so the sequence holds even if flex ordering fails.
+check('status bar before self bar in DOM', statusIdx > 0 && statusIdx < selfIdx);
+check('self bar before context bar in DOM', selfIdx < ctxIdx);
+check('CSS: ord-status order 1', /\.ord-status\s*\{\s*order:\s*1/.test(css));
+check('CSS: ord-self before ord-ctx', /\.ord-self\s*\{\s*order:\s*5\.5/.test(css) && /\.ord-ctx\s*\{\s*order:\s*6/.test(css));
+check('CSS: self buttons 48px touch targets', css.includes('min-height: 48px'));
 
 // 3. Killed elements
 check('no #announce in game screen', !appJs.includes('id="announce"'));

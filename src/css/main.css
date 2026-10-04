@@ -563,15 +563,20 @@ body.system-live .btn:not(.ghost) {
 .ord-perceive { order: 4.5; }
 .ord-inline { order: 5; }
 .ord-ctx { order: 6; }
-/* SELF BAR: your persistent body-actions. Sits right under the contextual
-   actions — always above the fold, never duplicated below the minimap.
-   Badges are peripheral: a quiet dot, no animation, no nagging. */
-.ord-self { order: 6.5; }
-.selfbar { display: flex; gap: 6px; margin: 6px 6px 0; align-items: center; }
+/* SELF BAR: your persistent body-actions (Eat, Sleep, Pack, Wait). Personal
+   actions FIRST — they sit at the top of the action area, right below the
+   status bars, with the environment/contextual actions beneath them.
+   DOM order matches (status → self → ctx) so the sequence holds even if
+   flex ordering fails. Badges are peripheral: a quiet dot, no animation,
+   no nagging. */
+.ord-self { order: 5.5; }
+.selfbar { display: flex; gap: 8px; margin: 10px 6px 0; align-items: stretch; }
 .selfbar:empty { display: none; }
+.selfbar .ctx-label { align-self: center; }
 .self-btn {
-  position: relative; flex: 1; padding: 8px 4px; font-size: 13px;
-  border: 1px solid var(--line); border-radius: 8px;
+  position: relative; flex: 1; padding: 12px 6px; font-size: 14px;
+  min-height: 48px;
+  border: 1px solid var(--line); border-radius: 10px;
   background: var(--bg2); color: inherit; cursor: pointer;
   white-space: nowrap;
 }

@@ -2174,8 +2174,9 @@
           <div class="detail ord-grid">${renderDetail(st)}</div>
           ${perceiveHTML()}
           <div id="inlineslot" class="ord-inline"></div>
-          <div class="ord-ctx">${contextBarHTML()}</div>
+          <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-self">${selfBarHTML(st)}</div>
+          <div class="ord-ctx">${contextBarHTML()}</div>
           <div class="ord-target">${targetBarHTML()}</div>
           <div class="ord-danger">${dangerBarHTML()}</div>
           <div class="ord-ability">${abilityBarHTML()}</div>
@@ -2183,7 +2184,6 @@
           <div class="map minimap ord-minimap">${renderMap(st, tset)}</div>
         </div>
         <div class="game-col-side">
-          <div class="ord-status">${statusBars(st)}</div>
           ${st.activeQuest ? `<p class="small ord-quest" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
           <div class="ord-panel">${panelFor(st, n)}</div>
           <div class="actions ord-codex">
