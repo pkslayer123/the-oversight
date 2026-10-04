@@ -457,6 +457,23 @@
       // Trust builds through contribution, dialogue, sharing.
       // This determines your meal share, whether they share knowledge, etc.
       this.state.village.trust[this.villagerId] = 15;
+      // ALIVE: needs-driven villagers. Behavior from wants, not dice.
+      // hunger/fear/social/energy per NPC; moods derived; memory of what you did.
+      this.state.village.needs = {};
+      this.state.village.memory = {};
+      this.state.village.requests = {}; // rid -> {type, day, part}: an ask awaiting answer
+      this.state.village.grief = 0;  // days of village-wide grief (death)
+      this.state.village.cheer = 0;  // days of village-wide cheer (victory, donation)
+      for (const rid of this.state.village.roster) {
+        if (rid === this.villagerId) continue;
+        this.state.village.needs[rid] = {
+          hunger: 20 + Math.floor(Math.random() * 20),
+          fear: 15 + Math.floor(Math.random() * 20),   // everyone woke up scared
+          social: 30 + Math.floor(Math.random() * 30),
+          energy: 60 + Math.floor(Math.random() * 30),
+        };
+        this.state.village.memory[rid] = [];
+      }
       // (Jesse's snare is granted after newCodex below — order matters.)
       // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
       // they wander turn-based. you see them. you tap them.
@@ -591,6 +608,8 @@
         const langName = ((cg.languages || []).find(l => l.id === comm.lang) || {}).name || comm.lang;
         line = tmps[Math.floor(Math.random() * tmps.length)].replaceAll('{first}', v.name.split(' ')[0]).replaceAll('{lang}', langName);
       }
+      // ALIVE: talking eases loneliness — for them, not just you.
+      try { this.npcNeeds(vid).social = Math.max(0, this.npcNeeds(vid).social - 40); } catch (e) {}
       // trust builds through talking. strangers warm up slowly.
       // WORDS ONLY GO SO FAR: talk caps at 40. beyond that, do something real.
       // diplomat: the System's gift. L1 2x trust, L2 3x (still capped at 40).
@@ -837,6 +856,16 @@
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
       const newTrust = Math.min(100, trust + 12);
       if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
+      // ALIVE: they remember. hunger eases. an answered ask is gratitude.
+      const req = (this.state.village.requests || {})[vid];
+      if (req && req.type === 'food') {
+        delete this.state.village.requests[vid];
+        this.remember(vid, 'gift', 'answered their hunger');
+        this.say(`${v.name.split(' ')[0]} eats like it's the first time. "Thank you," they say, quiet. "I won't forget this."`);
+      } else {
+        this.remember(vid, 'gift', 'unasked-for food');
+      }
+      this.npcNeeds(vid).hunger = Math.max(0, this.npcNeeds(vid).hunger - 60);
       this.say(`You give ${v.name.split(' ')[0]} some ${food.name}. They look at you differently now.`);
       return true;
     },
@@ -2116,15 +2145,36 @@
       const a = s.animal;
       if (!a || a.mx === undefined) return;
       const px = s.mx ?? 4, py = s.my ?? 4;
-      // flee: move away from player (1 cell)
-      const dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
-      // don't flee off the grid or into walls/water
-      const nx = Math.max(0, Math.min(8, a.mx + dx));
-      const ny = Math.max(0, Math.min(8, a.my + dy));
+      const dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
       const detail = this.genDetail(this.map.px, this.map.py);
-      const cell = detail[ny] && detail[ny][nx];
       const BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
-      if (!BLOCKS[cell]) { a.mx = nx; a.my = ny; }
+      const tryMove = (nx, ny) => {
+        nx = Math.max(0, Math.min(8, nx)); ny = Math.max(0, Math.min(8, ny));
+        const cell = detail[ny] && detail[ny][nx];
+        if (!BLOCKS[cell]) { a.mx = nx; a.my = ny; return true; }
+        return false;
+      };
+      // ALIVE: animals are animals. graze when calm, freeze when wary, bolt when scared.
+      const adef = (this.data.animals || []).find(x => x.id === a.id) || {};
+      const aname = (adef.name || 'animal').toLowerCase();
+      if (dist >= 4) {
+        // grazing. it doesn't know you're here. or doesn't care yet.
+        a.alerted = false;
+        if (Math.random() < 0.3) {
+          tryMove(a.mx + Math.floor(Math.random() * 3) - 1, a.my + Math.floor(Math.random() * 3) - 1);
+        }
+      } else if (dist >= 2) {
+        // wary: freeze, assess. you can feel it deciding.
+        if (!a.alerted) {
+          a.alerted = true;
+          if (Math.random() < 0.5) this.say(`The ${aname} freezes — ears up, deciding about you.`);
+        }
+      } else {
+        // bolt: away, fast.
+        if (!a.bolted) { a.bolted = true; this.say(`The ${aname} bolts!`); }
+        const dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
+        tryMove(a.mx + dx * 2, a.my + dy * 2) || tryMove(a.mx + dx, a.my + dy);
+      }
       // if it gets to the edge, it escapes (despawns)
       if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
         s.animal = null;
@@ -2704,6 +2754,239 @@
       }
     },
 
+    // ============ ALIVE: needs-driven villagers ============
+    // Behavior from wants, not dice. A hungry villager seeks food because
+    // they're hungry. A scared one seeks the fire. Moods shift with events.
+    // They remember what you did — kindness and indifference both.
+    npcNeeds(rid) {
+      const v = this.state.village;
+      v.needs = v.needs || {};
+      if (!v.needs[rid]) v.needs[rid] = { hunger: 30, fear: 20, social: 40, energy: 70 };
+      return v.needs[rid];
+    },
+    npcName(rid) {
+      const vp = (this.data.villagers || []).find(x => x.id === rid)
+        || (this.data.background_survivors || []).find(x => x.id === rid);
+      return vp ? vp.name.split(' ')[0] : 'Someone';
+    },
+    npcMood(rid) {
+      // mood is derived, not stored — dominant need + village weather wins.
+      const v = this.state.village;
+      const n = this.npcNeeds(rid);
+      if ((v.grief || 0) > 0) return 'grieving';
+      const mem = (v.memory || {})[rid] || [];
+      const recent = mem.filter(m => (this.state.scholar.day - (m.day || 0)) <= 2);
+      if (n.fear > 70) return 'scared';
+      if (n.hunger > 70) return 'hungry';
+      if (recent.some(m => m.t === 'gift' || m.t === 'saved')) return 'grateful';
+      if (recent.some(m => m.t === 'ignored')) return 'cold';
+      if ((v.cheer || 0) > 0) return 'cheerful';
+      if (n.social > 78) return 'lonely';
+      if (n.energy < 20) return 'weary';
+      return 'steady';
+    },
+    remember(rid, type, note) {
+      const v = this.state.village;
+      v.memory = v.memory || {}; v.memory[rid] = v.memory[rid] || [];
+      v.memory[rid].push({ t: type, day: this.state.scholar.day, note: note || '' });
+      if (v.memory[rid].length > 20) v.memory[rid].shift();
+    },
+    // villageEvent: the village feels things together.
+    villageEvent(type) {
+      const v = this.state.village;
+      const atHaven = this.map.px === 3 && this.map.py === 3;
+      if (type === 'monster_attack') {
+        if (!atHaven) return;
+        for (const rid of (v.roster || [])) { if (rid !== this.villagerId) this.npcNeeds(rid).fear = Math.min(100, this.npcNeeds(rid).fear + 35); }
+        this.say('The village is rattled. Everyone\'s jumpy — eyes on the treeline.');
+      } else if (type === 'death') {
+        v.grief = 3;
+        for (const rid of (v.roster || [])) { if (rid !== this.villagerId) { const n = this.npcNeeds(rid); n.fear = Math.min(100, n.fear + 25); n.social = Math.min(100, n.social + 20); } }
+        this.say('Nobody\'s talking much. The fire feels smaller tonight.');
+      } else if (type === 'donation') {
+        v.cheer = Math.max(v.cheer || 0, 2);
+        for (const rid of (v.roster || [])) { if (rid !== this.villagerId) this.npcNeeds(rid).hunger = Math.max(0, this.npcNeeds(rid).hunger - 25); }
+        this.say('Full bellies change the weather inside people. The haven feels warmer.');
+      } else if (type === 'victory') {
+        if (!atHaven) return;
+        v.cheer = Math.max(v.cheer || 0, 1);
+        for (const rid of (v.roster || [])) { if (rid !== this.villagerId) this.npcNeeds(rid).fear = Math.max(0, this.npcNeeds(rid).fear - 20); }
+        this.say('You came back bloody. Nobody asks. Someone saves you the good seat by the fire.');
+      }
+    },
+    // tickNeeds: wants grow with time. called every day part.
+    tickNeeds() {
+      const v = this.state.village;
+      if (!v.roster) return;
+      for (const rid of v.roster) {
+        if (rid === this.villagerId) continue;
+        const n = this.npcNeeds(rid);
+        n.hunger = Math.min(100, n.hunger + 8);
+        n.social = Math.min(100, n.social + 6);
+        n.fear = Math.max(0, n.fear - 8);
+        n.energy = Math.min(100, n.energy + 4);
+      }
+      if ((v.grief || 0) > 0) v.grief--;
+      if ((v.cheer || 0) > 0) v.cheer--;
+      // unanswered requests curdle: asked, ignored, remembered.
+      const reqs = v.requests || {};
+      for (const rid of Object.keys(reqs)) {
+        const r = reqs[rid];
+        if ((this.state.scholar.day - (r.day || 0)) >= 1) {
+          delete reqs[rid];
+          this.remember(rid, 'ignored', r.type);
+          const t = (v.trust || {})[rid] || 10;
+          if (v.trust) v.trust[rid] = Math.max(0, t - 2);
+          const temp = this.npcTemper(rid);
+          if (temp === 'prickly' || temp === 'bold') this.say(`${this.npcName(rid)} stops asking. The look says enough.`);
+        }
+      }
+    },
+    npcTemper(rid) {
+      const vp = (this.data.villagers || []).find(x => x.id === rid)
+        || (this.data.background_survivors || []).find(x => x.id === rid);
+      return (vp && vp.personality && vp.personality.temperament) || 'steady';
+    },
+    // villagerInitiative: they come to YOU. wants with legs.
+    // one initiative per day part max — they're people, not popups.
+    villagerInitiative() {
+      const v = this.state.village;
+      if (this.map.px !== 3 || this.map.py !== 3 || !v.positions) return;
+      const partKey = this.state.scholar.day + ':' + this.dayPart;
+      if (v.lastInitPart === partKey) return;
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      const order = (v.roster || []).filter(rid => rid !== this.villagerId && v.positions[rid]);
+      // shuffle so the same loud NPC doesn't always win
+      for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[order[i], order[j]] = [order[j], order[i]]; }
+      for (const rid of order) {
+        const pos = v.positions[rid];
+        const d = Math.max(Math.abs(pos.mx - px), Math.abs(pos.my - py));
+        if (d > 5) continue;
+        const n = this.npcNeeds(rid);
+        const mood = this.npcMood(rid);
+        const first = this.npcName(rid);
+        const temp = this.npcTemper(rid);
+        const stepToward = () => {
+          const dx = Math.sign(px - pos.mx), dy = Math.sign(py - pos.my);
+          const nx = pos.mx + dx, ny = pos.my + dy;
+          if (nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8) {
+            const detail = this.genDetail(3, 3);
+            const cell = detail[ny] && detail[ny][nx];
+            if (cell && !this.cellProps(cell).blocks) { pos.mx = nx; pos.my = ny; }
+          }
+        };
+        const done = () => { v.lastInitPart = partKey; };
+        if (n.hunger > 70 && (v.requests || {})[rid] === undefined && Math.random() < 0.3) {
+          stepToward(); done();
+          v.requests = v.requests || {}; v.requests[rid] = { type: 'food', day: this.state.scholar.day, part: this.dayPart };
+          const lines = [
+            `${first} sidles up. "Got anything to eat? The pot's been thin and my stomach's filing complaints."`,
+            `${first} hovers near you. "I hate asking. I'm asking anyway — anything to spare?"`,
+            `"Don't suppose you've got food," ${first} says, trying for casual and missing.`,
+          ];
+          this.say(lines[Math.floor(Math.random() * lines.length)]);
+          return;
+        }
+        if (n.fear > 70 && Math.random() < 0.3) {
+          stepToward(); done();
+          const lines = [
+            `${first} sticks close to the fire. "Can I... just stay here a while? The dark's been loud today."`,
+            `${first} won't go far from the group. "Something's out there. I can feel it looking."`,
+            `${first} keeps glancing at the treeline. "Tell me you heard that too."`,
+          ];
+          this.say(lines[Math.floor(Math.random() * lines.length)]);
+          return;
+        }
+        if (n.social > 78 && Math.random() < 0.22) {
+          stepToward(); done();
+          n.social = Math.max(0, n.social - 45);
+          const others = order.filter(o => o !== rid);
+          const other = others.length ? this.npcName(others[Math.floor(Math.random() * others.length)]) : 'someone';
+          const lines = [
+            `${first} wanders over, just to talk. "You hear what ${other} said about the creek? ...Never mind. How are you holding up?"`,
+            `"Can't sleep," ${first} admits, sitting near you. "Tell me something from before. Anything."`,
+            `${first} has opinions about the firewood situation and needs you to hear them.`,
+            mood === 'grieving'
+              ? `${first} sits near you, quiet a while. "I keep setting out an extra bowl. Stupid."`
+              : `${first} wants company more than conversation. That's fine. You're company.`,
+          ];
+          this.say(lines[Math.floor(Math.random() * lines.length)]);
+          // talking helps a little: trust +2, capped the same as talk
+          const t = (v.trust || {})[rid] || 10;
+          if (v.trust && t < 40) v.trust[rid] = Math.min(40, t + 2);
+          return;
+        }
+        if (mood === 'grateful' && Math.random() < 0.15) {
+          stepToward(); done();
+          // gratitude with hands: shares something useful
+          const acts = [];
+          const untaught = (v.taught[rid] || []).filter(pid => !(this.state.codex.plants || {})[pid]);
+          if (untaught.length) acts.push('teach');
+          acts.push('encourage', 'chore');
+          const act = acts[Math.floor(Math.random() * acts.length)];
+          if (act === 'teach') {
+            const pid = untaught[0];
+            const plant = (this.data.plants || []).find(p => p.id === pid);
+            this.say(`${first} presses something into your hand. "${plant ? plant.name : 'This'} — for what you did. Look for the ${plant ? (plant.leaf || 'leaves') : 'sign'}. You'll know it."`);
+            this.identifyPlant(pid, first);
+          } else if (act === 'encourage') {
+            this.state.scholar.energy = Math.min(100, (this.state.scholar.energy || 0) + 15);
+            this.say(`${first} claps your shoulder. "You're doing better than you think." (+15 energy — morale is real.)`);
+          } else {
+            v.pantryKcal = (v.pantryKcal || 0) + 150;
+            this.say(`${first} quietly adds to the pantry without being asked. "For later. All of us." (+150 kcal)`);
+          }
+          // gratitude spent, not forgotten
+          return;
+        }
+      }
+    },
+    // ambientSocial: the village talks when you're not the topic.
+    // personality-driven beats between NPCs. called from villageLives.
+    ambientSocial() {
+      const v = this.state.village;
+      if (!v.roster || Math.random() > 0.7) return;
+      const npcs = v.roster.filter(rid => rid !== this.villagerId);
+      if (npcs.length < 2) return;
+      const pick = () => npcs[Math.floor(Math.random() * npcs.length)];
+      const a = pick(); let b = pick(); let guard = 0;
+      while (b === a && guard++ < 10) b = pick();
+      const fa = this.npcName(a), fb = this.npcName(b);
+      const ta = this.npcTemper(a), tb = this.npcTemper(b);
+      const grief = (v.grief || 0) > 0, cheer = (v.cheer || 0) > 0;
+      let line;
+      const r = Math.random();
+      if (grief) {
+        line = [
+          'The fire is quiet tonight. Nobody\'s talking much.',
+          `${fa} set out an extra bowl before catching themself. Nobody mentioned it.`,
+          `Someone is crying, quietly, in one of the bunks. ${fb} goes to sit with them.`,
+        ][Math.floor(Math.random() * 3)];
+      } else if (r < 0.2 && (ta === 'bold' || tb === 'bold')) {
+        line = `${fa} and ${fb} are arguing about the watch rotation. Again. It's almost comforting.`;
+      } else if (r < 0.35) {
+        line = [
+          `Someone told a joke by the fire. You hear ${fa} laugh — a real one.`,
+          `${fb} is humming something. It stops when they notice you listening.`,
+          `${fa} is showing ${fb} how to tie a snare. Hands patient. It takes three tries.`,
+          `${fa} and ${fb} are comparing scars like trading cards.`,
+        ][Math.floor(Math.random() * 4)];
+      } else if (r < 0.5 && cheer) {
+        line = `${fa} got the fire going big tonight. There's almost a party feeling. Almost.`;
+      } else if (r < 0.6) {
+        // practical: someone does something useful, visibly
+        v.pantryKcal = (v.pantryKcal || 0) + 100;
+        line = `${fa} came back with an armful of something edible, unprompted. (+100 kcal pantry)`;
+      } else {
+        line = [
+          `${fa} is staring into the fire like it owes them answers.`,
+          `${fb} paces the hall, restless, then sits. Then paces.`,
+          `Quiet mending sounds from the bunks — ${fa} fixing something.`,
+        ][Math.floor(Math.random() * 3)];
+      }
+      this.say(line);
+    },
+
     // villagers wander (turn-based). they go about their day.
     // they don't block you. they're just living.
     villagerTurn() {
@@ -2736,6 +3019,8 @@
           pos.mx = nx; pos.my = ny;
         }
       }
+      // ALIVE: they come to you. wants with legs.
+      try { this.villagerInitiative(); } catch (e) {}
     },
 
     // searchRoom: examine + loot in ONE action. You look, you take what's there.
@@ -2866,6 +3151,70 @@
       }
     },
 
+    // ============ ALIVE: monsters are animals (alien ones) ============
+    // Ambiguity first: you don't know what it is until you've learned it.
+    // "Is that a deer or a Highbeam Deer? You don't want to get close enough
+    // to find out." The descriptor system covers beasts too.
+    monsterKnown(mid) {
+      const st = (this.state.codex.monsters || {})[mid];
+      return st && (st.stage === 'observed' || st.stage === 'slain');
+    },
+    monsterDesc(mid) {
+      const mdef = (this.data.monsters || []).find(m => m.id === mid);
+      if (!mdef) return 'something';
+      if (this.monsterKnown(mid)) return mdef.name;
+      return mdef.unknown || 'something moving';
+    },
+    identifyMonster(mid) {
+      // surviving an encounter teaches you what it was. knowledge is earned.
+      if (this.monsterKnown(mid)) return;
+      const mdef = (this.data.monsters || []).find(m => m.id === mid);
+      if (!mdef) return;
+      this.state.codex.monsters = this.state.codex.monsters || {};
+      this.state.codex.monsters[mid] = { stage: 'observed' };
+      this.say(`Now you know what that was: ${mdef.name}. ${mdef.vibe || ''} The ${this.journalName()} keeps it.`);
+    },
+    monsterCue(mid, kind) {
+      const mdef = (this.data.monsters || []).find(m => m.id === mid);
+      const cues = (mdef && mdef.cues && mdef.cues[kind]) || [];
+      if (!cues.length) return null;
+      return cues[Math.floor(Math.random() * cues.length)];
+    },
+    // stanceFor: initial stance from data. behavior + aggression, not dice.
+    stanceFor(mdef) {
+      const b = (mdef.behavior || '').toLowerCase();
+      if (b === 'ambush') return 'ambush';
+      if (b === 'curious' || b === 'drifter') return 'curious';
+      if (b === 'territorial') return 'territorial';
+      if (b === 'pack' || b === 'swarm') return 'hungry';
+      return 'curious';
+    },
+    // scholarNearCell: is the player within r of a cell type? (fire, water...)
+    scholarNearCell(type, r) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        if (detail[y] && detail[y][x] === type && Math.max(Math.abs(x - px), Math.abs(y - py)) <= r) return true;
+      }
+      return false;
+    },
+    // monsterNearCell: same, from the monster's position.
+    monsterNearCell(m, type, r) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        if (detail[y] && detail[y][x] === type && Math.max(Math.abs(x - m.mx), Math.abs(y - m.my)) <= r) return true;
+      }
+      return false;
+    },
+    villagersNear(x, y, r) {
+      const vpos = (this.state.village && this.state.village.positions) || {};
+      let n = 0;
+      for (const rid of Object.keys(vpos)) {
+        if (Math.max(Math.abs(vpos[rid].mx - x), Math.abs(vpos[rid].my - y)) <= r) n++;
+      }
+      return n;
+    },
+
     // monsters move when you do. they're in the detail grid with you.
     monsterTurn() {
       const s = this.state.scholar;
@@ -2893,10 +3242,123 @@
         return;
       }
       m.lostSight = 0;
-      const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
-      if (Math.abs(px - m.mx) >= Math.abs(py - m.my)) m.mx += dx;
-      else m.my += dy;
-      if (m.mx === px && m.my === py) this.startCombat(m.id);
+      // ============ STANCE MACHINE: monsters are animals (alien ones) ============
+      // curiosity, territoriality, hunger, fear — not "aggro radius."
+      const mdef = (this.data.monsters || []).find(x => x.id === m.id) || {};
+      if (!m.stance) { m.stance = this.stanceFor(mdef); m.turns = 0; }
+      m.turns = (m.turns || 0) + 1;
+      const dist = Math.max(Math.abs(px - m.mx), Math.abs(py - m.my));
+      m.cueCd = Math.max(0, (m.cueCd || 0) - 1);
+      const maybeCue = (kind) => {
+        if (m.cueCd > 0) return;
+        const line = this.monsterCue(m.id, kind);
+        if (line) { this.say(line); m.cueCd = 5; }
+      };
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const mv = (dx, dy) => {
+        const nx = m.mx + dx, ny = m.my + dy;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) return false;
+        const cell = detail[ny] && detail[ny][nx];
+        if (cell && !this.cellProps(cell).blocks) { m.mx = nx; m.my = ny; return true; }
+        return false;
+      };
+      const stepToward = () => {
+        const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
+        if (Math.abs(px - m.mx) >= Math.abs(py - m.my)) mv(dx, 0); else mv(0, dy);
+      };
+      // --- stimuli: the world pushes stances around ---
+      const fear = (mdef.fear || '').toLowerCase();
+      let feared = false;
+      if (fear === 'fire' && this.scholarNearCell('fire', 2)) feared = true;
+      if (fear === 'daylight' && this.dayPart >= 3) feared = true; // night is when it hunts
+      if (fear === 'movement' && dist <= 2 && m.stance !== 'territorial') feared = true;
+      // nightlight: only hunts near water at night. otherwise it's just a glow.
+      const isNightlight = m.id === 'nightlight_catfish';
+      const nightlightActive = !isNightlight || (this.dayPart >= 3 && this.monsterNearCell(m, 'water', 3));
+      if (feared && m.stance !== 'ambush' && m.stance !== 'fearful') {
+        m.stance = 'fearful'; m.fearTurns = 0;
+        maybeCue('fearful'); m.cueCd = 0;
+        const fl = this.monsterCue(m.id, 'fearful'); if (fl) this.say(fl);
+      } else if (!feared && fear === 'numbers' && this.villagersNear(px, py, 3) >= 2 && m.stance !== 'ambush' && m.stance !== 'cautious') {
+        m.stance = 'cautious';
+        const fl = this.monsterCue(m.id, 'fearful'); if (fl) this.say(fl);
+      }
+      // --- stance behavior ---
+      switch (m.stance) {
+        case 'ambush': {
+          // speedbump: perfectly still. that's the scary part.
+          if (nightlightActive && dist <= 2) {
+            const w = this.monsterCue(m.id, 'warn'); if (w) this.say(w);
+            this.startCombat(m.id);
+          }
+          break;
+        }
+        case 'curious': {
+          maybeCue('curious');
+          if (!nightlightActive) {
+            // just a glow. not hunting. it fades.
+            m.watchTurns = (m.watchTurns || 0) + 1;
+            if (m.watchTurns >= 2) { s.monster = null; this.say('The glow dims and sinks. The water forgets it was ever there.'); }
+            break;
+          }
+          if (dist > 3) { stepToward(); }
+          else {
+            m.watchTurns = (m.watchTurns || 0) + 1;
+            if (m.watchTurns >= 3) {
+              if (Math.random() < 0.5) {
+                s.monster = null;
+                this.say('It watches a moment longer — then drifts away. Not interested. This time.');
+              } else {
+                m.stance = 'hungry'; m.watchTurns = 0;
+                const w = this.monsterCue(m.id, 'warn'); if (w) this.say(w); else this.say('Its posture changes. Curiosity is over.');
+              }
+            }
+          }
+          break;
+        }
+        case 'territorial': {
+          if (dist > 4) { m.warned = false; m.warnTurns = 0; break; } // not your place, not its problem
+          if (!m.warned) {
+            m.warned = true; m.warnTurns = 0;
+            const w = this.monsterCue(m.id, 'warn');
+            this.say(w || 'It puffs up. A warning. This is its place.');
+          } else {
+            m.warnTurns = (m.warnTurns || 0) + 1;
+            if (m.warnTurns >= 2) { this.startCombat(m.id); }
+            else stepToward(); // closing. last chance to leave.
+          }
+          break;
+        }
+        case 'hungry': {
+          stepToward();
+          if (m.mx === px && m.my === py) this.startCombat(m.id);
+          break;
+        }
+        case 'cautious': {
+          maybeCue('curious');
+          // circles at range. watching. deciding if you're worth it.
+          const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
+          if (dist < 3) { mv(-dx, 0); mv(0, -dy); }       // too close: back off
+          else if (dist > 5) { stepToward(); }              // too far: drift in
+          else { mv(-dy, dx) || mv(dy, -dx); }              // circle
+          if (Math.random() < 0.1) { s.monster = null; this.say('It decides you\'re not worth it. Gone.'); }
+          break;
+        }
+        case 'fearful': {
+          m.fearTurns = (m.fearTurns || 0) + 1;
+          const dx = Math.sign(m.mx - px), dy = Math.sign(m.my - py);
+          mv(dx, 0); mv(0, dy);
+          if (m.fearTurns >= 4 || m.mx === 0 || m.mx === 8 || m.my === 0 || m.my === 8) {
+            s.monster = null;
+            this.say('It melts back into the treeline. Gone.');
+          }
+          break;
+        }
+        default: {
+          stepToward();
+          if (m.mx === px && m.my === py) this.startCombat(m.id);
+        }
+      }
     },
 
     // --- node identity: the dominant biome/character of the tile + its neighbors ---
@@ -3074,7 +3536,8 @@
         const mx = 4 + Math.floor(Math.random() * 5) - 2;
         const my = 4 + Math.floor(Math.random() * 5) - 2;
         scholar.monster = { id: mdef.id, x: Math.max(0, Math.min(8, mx)), y: Math.max(0, Math.min(8, my)) };
-        this.say(`A ${mdef.name} is here.`);
+        // AMBIGUITY: you don't know what it is. not yet.
+        this.say(this.monsterKnown(mdef.id) ? `A ${mdef.name} is here.` : `Something moves out there — ${mdef.unknown || 'big, and wrong'}.`);
       }
       // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
       if (scholar.day >= 3 && !this.wanderer && !this.encounterDone) {
@@ -4045,6 +4508,8 @@
     endDayPart() {
       this.checkVillageProximity();
       if (this.over) return this.status();
+      // ALIVE: wants grow with time, unanswered asks curdle.
+      try { this.tickNeeds(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
@@ -4067,6 +4532,8 @@
     villageLives() {
       const v = this.state.village;
       if (!v.roster) return;
+      // ALIVE: the village talks when you're not the topic.
+      try { this.ambientSocial(); } catch (e) {}
       const bg = v.roster.filter(id => !this.data.villagers.find(m => m.id === id));
       if (!bg.length) return;
       const n = 1 + (Math.random() < 0.4 ? 1 : 0);
@@ -4113,6 +4580,7 @@
           if (v.health[id] <= 0) {
             v.roster = v.roster.filter(rid => rid !== id);
             this.say(`💀 ${person.name} is gone. The wound was too much. The village is ${v.roster.length} now.`);
+            try { this.villageEvent('death'); } catch (e) {}
             delete v.health[id];
           } else {
             this.say(`${first} is hurt — a fall, a thorn, a bad step. (health ${v.health[id]}/100)`);
@@ -4733,8 +5201,12 @@
         turnIdx: 0, round: 1,
         over: false, result: null,
       };
+      // ALIVE: the village hears it. fear is contagious.
+      try { this.villageEvent('monster_attack'); } catch (e) {}
       this.fight = null; // old menu combat retired
       this.pendingEncounter = false;
+      // face to face: the ambiguity ends. you know what it is now.
+      try { this.identifyMonster(mdef.id); } catch (e) {}
       s.monster = null; // it's in the fight now, not wandering
       const partyNames = fighters.filter(f => f.kind === 'villager').map(f => f.name);
       this.say(`⚔ ${mdef.name.toUpperCase()}!${count > 1 ? ` (${count} of them!)` : ''} ${partyNames.length ? partyNames.join(', ') + (partyNames.length > 1 ? ' join' : ' joins') + ' you!' : "You're on your own."}`);
@@ -5296,6 +5768,7 @@
           this.say(`${mdef.edible.note || ''} (+${cuts} cuts, ${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'})`);
         }
         this.notePlaystyle('bold');
+        try { this.villageEvent('victory'); } catch (e) {}
         if (this.hasAbility('grave_robber') && Math.random() < 0.5) {
           const gear = ['bone knife', 'cracked helm', 'war horn', 'tooth necklace'];
           const g = gear[Math.floor(Math.random() * gear.length)];
@@ -5312,10 +5785,12 @@
       } else if (result === 'routed') {
         this.notePlaystyle('cautious');
         this.audioEvent('combatEnd');
+        try { const mm = f.fighters.find(x => x.kind === 'monster'); if (mm) this.identifyMonster(mm.monsterId); } catch (e) {}
         this.say('It got away. No meat, no trophy — but you\'re breathing, and now you know its moves.');
         this.sysSay(`It RAN! Style score: ${f.style || 0}. The gamblers wanted blood, but they'll settle for drama.`);
       } else if (result === 'fled') {
         this.notePlaystyle('cautious');
+        try { const mm = f.fighters.find(x => x.kind === 'monster'); if (mm) this.identifyMonster(mm.monsterId); } catch (e) {}
         this.audioEvent('combatEnd');
         // survivors scatter; monsters melt back into the woods
         this.say('You escape. The thicket keeps its secrets.');

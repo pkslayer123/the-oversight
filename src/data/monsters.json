@@ -47,7 +47,20 @@
   "fear": "fire",
   "speed": 3,
   "emoji": "🐗",
-  "fleeAt": 0.25
+  "fleeAt": 0.25,
+  "unknown": "something huge, rooting in the underbrush",
+  "vibe": "a living bulldozer — territorial, impatient, unimpressed by you",
+  "cues": {
+   "curious": [
+    "It snorts, considering you. Deciding if you're worth the effort."
+   ],
+   "warn": [
+    "It lowers its head. Paws the earth. This is the warning. There won't be another."
+   ],
+   "fearful": [
+    "It backs off, snorting — firelight in its eyes. It doesn't like this."
+   ]
+  }
  },
  {
   "id": "hushwolf",
@@ -95,7 +108,20 @@
   "speed": 5,
   "emoji": "🐕",
   "fleeAt": 0.3,
-  "pack": 3
+  "pack": 3,
+  "unknown": "a dog-shaped silence at the treeline",
+  "vibe": "pack hunter — silent until it isn't, and then it's too late",
+  "cues": {
+   "curious": [
+    "It sits. Just... sits. Watching. The others are out there too, you can feel them."
+   ],
+   "warn": [
+    "A low sound — not quite a growl. The pack is deciding."
+   ],
+   "fearful": [
+    "It melts back between the trees. The silence goes with it."
+   ]
+  }
  },
  {
   "id": "gallowdeer",
@@ -145,7 +171,20 @@
   "fear": "movement",
   "speed": 4,
   "emoji": "🦌",
-  "fleeAt": 0.5
+  "fleeAt": 0.5,
+  "unknown": "a deer, standing too still",
+  "vibe": "skittish until it isn't — when it freezes, it's aiming",
+  "cues": {
+   "curious": [
+    "It watches you with one dark eye. Ears swiveling. Not afraid yet."
+   ],
+   "warn": [
+    "It freezes. Like a deer in headlights. Light gathers behind its eyes. It is not frozen. It is aiming."
+   ],
+   "fearful": [
+    "It startles — white tail flashing — and it's gone. Just gone."
+   ]
+  }
  },
  {
   "id": "mirrormoth",
@@ -191,7 +230,20 @@
   "follows": false,
   "fear": "darkness",
   "speed": 4,
-  "emoji": "🦋"
+  "emoji": "🦋",
+  "unknown": "a moth the size of a dinner plate, catching light wrong",
+  "vibe": "drifter — curious about light, including the light in you",
+  "cues": {
+   "curious": [
+    "It spirals closer, wings catching light that isn't there. It's interested in you. Specifically you."
+   ],
+   "warn": [
+    "It lands. It folds its wings. The light in them is building."
+   ],
+   "fearful": [
+    "It flutters up, erratic, and the wrong-light goes with it."
+   ]
+  }
  },
  {
   "id": "belltoad",
@@ -239,7 +291,20 @@
   "fear": "loud noise",
   "speed": 2,
   "emoji": "🐸",
-  "pack": 2
+  "pack": 2,
+  "unknown": "a toad like a war drum, throat swelling",
+  "vibe": "pack singer — the croak is the warning, the chorus is the attack",
+  "cues": {
+   "curious": [
+    "Its throat pulses. A low note you feel in your teeth. It's tasting the air."
+   ],
+   "warn": [
+    "Its throat swells. The air goes thick. The others answer."
+   ],
+   "fearful": [
+    "The croaking stops mid-note. It sinks back into the mud."
+   ]
+  }
  },
  {
   "id": "lockpick_raccoon",
@@ -286,7 +351,20 @@
   "follows": true,
   "fear": "dogs",
   "speed": 5,
-  "emoji": "🦝"
+  "emoji": "🦝",
+  "unknown": "a raccoon with too many fingers, working at something",
+  "vibe": "curious thief — it wants your stuff, not your life. Probably.",
+  "cues": {
+   "curious": [
+    "It sits up on its hind legs, hands moving too fast to follow. It's trying to figure out your pack."
+   ],
+   "warn": [
+    "It chitters — offended. Those clever hands curl into fists."
+   ],
+   "fearful": [
+    "It stuffs something into its cheeks and bolts. Your something, probably."
+   ]
+  }
  },
  {
   "id": "white_noise_heron",
@@ -335,7 +413,20 @@
   "follows": false,
   "fear": "fire",
   "speed": 3,
-  "emoji": "🐦"
+  "emoji": "🐦",
+  "unknown": "a heron that isn't quite there when you look at it",
+  "vibe": "territorial fisher — you are standing in its creek",
+  "cues": {
+   "curious": [
+    "The heron is gone. No — it's there. It was always there. Watching."
+   ],
+   "warn": [
+    "It unfolds to its full height. The air goes staticky. Leave the creek."
+   ],
+   "fearful": [
+    "It folds back into the reeds. The static fades. You were never here."
+   ]
+  }
  },
  {
   "id": "hummice",
@@ -382,7 +473,20 @@
   "fear": "cats",
   "speed": 6,
   "emoji": "🐭",
-  "pack": 4
+  "pack": 4,
+  "unknown": "the grass is humming in harmony",
+  "vibe": "swarm — playful until it's hungry, and it's often hungry",
+  "cues": {
+   "curious": [
+    "A low hum rises from the grass. It harmonizes with itself. They're circling. Playfully. Probably playfully."
+   ],
+   "warn": [
+    "The hum sharpens. The grass moves in one direction now: toward you."
+   ],
+   "fearful": [
+    "The hum scatters into squeaks, retreating. The grass goes quiet."
+   ]
+  }
  },
  {
   "id": "speedbump_turtle",
@@ -430,7 +534,20 @@
   "follows": false,
   "fear": "being flipped",
   "speed": 1,
-  "emoji": "🐢"
+  "emoji": "🐢",
+  "unknown": "a boulder with opinions about where you're walking",
+  "vibe": "territorial rock — doesn't move, doesn't need to, you come to it",
+  "cues": {
+   "curious": [
+    "It doesn't move. It hasn't moved in an hour. That's the concerning part."
+   ],
+   "warn": [
+    "Still doesn't move. But something about the stillness changed."
+   ],
+   "fearful": [
+    "It... can't really flee. It's a boulder. It just looks offended."
+   ]
+  }
  },
  {
   "id": "nightlight_catfish",
@@ -477,6 +594,19 @@
   "follows": false,
   "fear": "daylight",
   "speed": 2,
-  "emoji": "💡"
+  "emoji": "💡",
+  "unknown": "a soft green glow under the water",
+  "vibe": "ambush predator — the light is the lure, and you're curious, aren't you",
+  "cues": {
+   "curious": [
+    "The glow pulses, gentle. Pretty. You want to look closer. That's the idea."
+   ],
+   "warn": [
+    "The water goes still around the light. Too still."
+   ],
+   "fearful": [
+    "The glow dims and sinks. The water forgets it was ever there."
+   ]
+  }
  }
 ]

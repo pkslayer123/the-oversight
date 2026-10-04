@@ -97,7 +97,10 @@
       "systemDesignation": "string?",
       "aggression": "string",
       "follows": "boolean",
-      "fear": "string"
+      "fear": "string",
+      "unknown": "string?",
+      "vibe": "string?",
+      "cues": "object?"
     }
   },
   "ability": {

@@ -568,7 +568,11 @@
         actions.push(['Give food', () => Game.giveFood(villagerId)]);
       }
     } else if (isMon) {
-      desc = 'Something big. It sees you.';
+      // AMBIGUITY: name hidden until the Codex knows it.
+      const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
+      const known = Game.monsterKnown(mon.id);
+      desc = known ? `${mdef.name}. ${mdef.vibe || ''} It sees you.`
+        : `${mdef.unknown ? mdef.unknown[0].toUpperCase() + mdef.unknown.slice(1) : 'Something big'}. It sees you. You don't know what it is.`;
       if (dist <= 1) actions.push(['Fight', () => Game.startCombat(mon.id)]);
       actions.push(['Back away', () => {}]);
     } else if (isAni) {
@@ -1706,7 +1710,10 @@
               drawn = true; break;
             }
           }
-          if (!drawn && mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; drawn = true; }
+          if (!drawn && mon && cx === mon.mx && cy === mon.my) {
+            const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
+            g = esc(mdef.emoji || '👹'); cls += ' monster'; drawn = true;
+          }
           if (!drawn && ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; drawn = true; }
           if (!drawn) {
             // villagers: 🧍 with a TINY name label underneath.
