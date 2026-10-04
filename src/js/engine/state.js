@@ -53,7 +53,9 @@
       const idx = listSaves();
       const key = saveKey(state);
       if (!idx.find(i => i.key === key)) {
-        idx.push({ key, villagerId: state.villagerId, day: state.scholar && state.scholar.day, startedAt: state.startedAt });
+        const rc = (state.village && state.village.rosterChars) || {};
+        const char = rc[state.villagerId] || {};
+        idx.push({ key, villagerId: state.villagerId, villagerName: char.name || null, day: state.scholar && state.scholar.day, startedAt: state.startedAt });
         localStorage.setItem('scattering-saves-index', JSON.stringify(idx));
       }
     } catch (e) { /* storage full/blocked */ }

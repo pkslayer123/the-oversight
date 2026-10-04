@@ -88,6 +88,21 @@
     second_skin: [{ target: 'rest.energy', op: 'multiply', value: 1.3 }],
     ghost_weave: [{ target: 'travel.encounter', op: 'multiply', value: 0.6 }],
     quiet_luck: [{ target: 'forage.yield', op: 'multiply', value: 1.1 }],
+    // --- variability expansion: hidden/rare, affinity, and secret evolutions ---
+    whisper_edge: [{ target: 'travel.encounter', op: 'multiply', value: 0.7 }],
+    storm_cloth: [{ target: 'travel.kcal', op: 'multiply', value: 0.85 }],
+    unseen_hand: [{ target: 'forage.yield', op: 'multiply', value: 1.15 }],
+    careful_hands: [{ target: 'forage.yield', op: 'multiply', value: 1.2 }],
+    blood_remembers: [{ target: 'hunt.success', op: 'add', value: 0.15 }],
+    quick_spark: [{ target: 'forage.yield', op: 'multiply', value: 1.15 }],
+    trail_ghost: [{ target: 'travel.encounter', op: 'multiply', value: 0.6 }],
+    steady_ground: [{ target: 'travel.kcal', op: 'multiply', value: 0.9 }],
+    open_hearth: [{ target: 'trust.gain_mult', op: 'multiply', value: 1.25 }],
+    unbreakable: [{ target: 'rest.energy', op: 'multiply', value: 1.2 }],
+    her_handwriting: [{ target: 'trust.gain_mult', op: 'multiply', value: 1.5 }],
+    last_message: [{ target: 'rest.energy', op: 'multiply', value: 1.5 }],
+    inheritance: [{ target: 'trust.gain_mult', op: 'multiply', value: 1.5 }],
+    old_ghost: [{ target: 'hunt.success', op: 'add', value: 0.2 }],
     // resolve (morale.break_immunity): once/day ignore starvation health damage — game.js
     // anchor (despair.anchor): hold at 1 HP once/30 days — game.js
   };

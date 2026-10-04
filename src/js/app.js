@@ -39,7 +39,7 @@
     | (    ) |
      \\ '--' /
       '--'--'</div>
-      <h1 class="title">THE SCATTERING</h1>
+      <h1 class="title">THE OVERSIGHT</h1>
       <div class="subtitle">a system-apocalypse survival roguelite<br>hunger is the final boss</div>
       <button class="btn" id="b-new">New Expedition</button>
       ${Game.hasSave() ? '<div id="saves"></div>' : ''}
@@ -55,7 +55,8 @@
       const saves = Game.listSaves();
       savesDiv.innerHTML = saves.map(sv => {
         const v = Game.data.villagers.find(v => v.id === sv.villagerId) || {};
-        return `<button class="btn" data-save="${sv.key}">Continue ${v.name || sv.villagerId} (Day ${sv.day || 1})</button>`;
+        const name = sv.villagerName || v.name || sv.villagerId;
+        return `<button class="btn" data-save="${sv.key}">Continue ${name} (Day ${sv.day || 1})</button>`;
       }).join('');
       savesDiv.querySelectorAll('[data-save]').forEach(b => b.onclick = () => {
         if (Game.load(b.dataset.save)) expeditionScreen();
@@ -90,26 +91,48 @@
     };
   }
   function obHome() {
-    const homes = [
-      { id: 'ohio', label: 'Ohio river valley', sub: 'farms and small woods' },
-      { id: 'georgia', label: 'Georgia pines', sub: 'hunting country' },
-      { id: 'seattle', label: 'Seattle', sub: 'city, rain, salt water' },
-    ];
+    // WHERE ARE YOU FROM? Free text, typed by the player. Stored raw —
+    // someday characters trek home, and we'll need to know the way.
+    // It also decides what you know: Arizona -> Georgia creek means almost nothing is familiar.
     screen.innerHTML = `${bar('scattering://home', '?')}
-      <h1 class="title" style="font-size:22px">WHERE IS HOME?</h1>
-      <p class="small">What you know grows where you're from. It doesn't grow here.</p>
-      ${homes.map(h => `<button class="btn" data-h="${h.id}">${h.label}<br><span class="small">${h.sub}</span></button>`).join('')}`;
-    screen.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { ob.home = b.dataset.h; obWho(); });
+      <h1 class="title" style="font-size:22px">WHERE ARE YOU FROM?</h1>
+      <p class="small">Type it. A town, a state, a country — anything. What you know grows where you're from. It doesn't grow here.</p>
+      <input id="ob-origin" type="text" maxlength="60" placeholder="e.g. Tucson, Arizona" autocomplete="off"
+        style="width:100%;padding:12px;margin:12px 0;background:#0a0f0a;color:#c9d4c0;border:1px solid #3a4a3a;font-size:16px">
+      <p class="small" style="opacity:.6">This is stored with your character. It matters.</p>
+      <button class="btn" id="b-home-go">This is where I'm from</button>`;
+    const input = document.getElementById('ob-origin');
+    input.focus();
+    const go = () => { ob.home = input.value.trim() || 'somewhere unremembered'; obLocation(); };
+    document.getElementById('b-home-go').onclick = go;
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  }
+  function obLocation() {
+    // WHERE DID YOU WAKE UP? 3 randomized landing zones. The choice matters:
+    // water, forage, visibility, scavenging — each land plays differently.
+    const locs = Game.planExpedition();
+    screen.innerHTML = `${bar('scattering://land', '?')}
+      <h1 class="title" style="font-size:22px">WHERE DID YOU WAKE UP?</h1>
+      <p class="small">The scattering is random. Your origin didn't choose this. Pick the land:</p>
+      ${locs.map(l => `
+        <div class="card"><h3>${l.name}</h3>
+        <p><i>${l.tagline}</i></p>
+        <p class="small">${l.description}</p>
+        <p class="small" style="opacity:.7">⚠ ${l.hazard}</p>
+        <button class="btn" data-l="${l.id}">Wake up here</button></div>`).join('')}`;
+    screen.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { ob.location = b.dataset.l; obWho(); });
   }
   function obWho() {
-    const vs = Game.data.villagers;
+    // 6 fresh randomized characters per expedition. Real people, not stat blocks.
+    const vs = Game.genRoster();
     screen.innerHTML = `${bar('scattering://wake', 'clearing')}
       <h1 class="title" style="font-size:22px">WHICH ONE IS YOU?</h1>
       <p class="small">A clearing. Confused people waking up. One of them is you.</p>
       ${vs.map(v => `
         <div class="card"><h3>${v.name}</h3>
-        <p>${v.formerOccupation} · ${v.homeRegion}</p>
+        <p>${v.formerOccupation} · from ${v.homeRegion}</p>
         <p class="small">${v.backstory}</p>
+        <p class="small" style="opacity:.7">${v.personality.temperament}, ${v.personality.sharing} · ${v.systemAssessment}</p>
         <button class="btn" data-v="${v.id}">I am ${v.name.split(' ')[0]}</button></div>`).join('')}`;
     screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { ob.villager = b.dataset.v; obItems(); });
   }
@@ -133,7 +156,7 @@
       });
       const go = document.getElementById('b-go');
       if (picked.size === 5) go.onclick = () => {
-        Game.newGame(ob.home, ob.villager, [...picked]);
+        Game.newGame(ob.home, ob.location, ob.villager, [...picked]);
         questOverlay(() => { Game.depart(); expeditionScreen(); });
       };
     };
@@ -678,7 +701,9 @@
       ${mains.map(p => {
         const h = (Game.state.village.health && Game.state.village.health[p.id] !== undefined) ? Game.state.village.health[p.id] : 100;
         const hb = h >= 70 ? '🟢' : h >= 40 ? '🟡' : '🔴';
-        return `<p class="small">${hb} <b>${p.name}</b> — ${p.formerOccupation} (${h})</p>`; }).join('')}
+        const lang = p.langNote ? ` <span style="opacity:.7">${p.langNote}</span>` : '';
+        const conf = p.conflictNote ? `<br><span style="opacity:.7">${p.conflictNote}</span>` : '';
+        return `<p class="small">${hb} <b>${p.name}</b> — ${p.formerOccupation} (${h})${lang}${conf}</p>`; }).join('')}
       <p class="small" style="margin-top:8px;opacity:.75"><b>Also here:</b> ${bg.map(p => `${p.name}`).join(' · ')}</p>
       <div class="btnrow">
       </div></div>`;

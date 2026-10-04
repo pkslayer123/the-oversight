@@ -1,1 +1,313 @@
-[{"class":"tool","description":"25% faster at its task. The joints remember.","effect":{"op":"multiply","target":"task.speed","value":1.25},"id":"efficient_action","name":"Efficient Action","systemCommentary":"Unit efficiency increased 25%. We are pleased. The unit seems pleased. Units cannot be pleased. [PROCESSING] Moving on."},{"class":"tool","description":"Never dulls, never sticks, never jams. Works in mud, ice, and worse.","effect":{"op":"add","target":"tool.reliability","value":1},"id":"never_fails","name":"Never Fails","systemCommentary":"We have removed the concept of 'wear' from this unit. You are welcome. Please do not ask how."},{"class":"tool","description":"Cuts, lights, or holds beyond physics. The System declines to explain.","effect":{"op":"add","target":"task.impossible","value":1},"id":"impossible_edge","name":"Impossible Edge","systemCommentary":"This unit now operates outside material tolerances. Statistical anomaly detected. We choose not to investigate."},{"class":"clothing","description":"Rain, cold, and wind are now other people's problems.","effect":{"op":"add","target":"weather.immunity","value":1},"id":"weatherproof","name":"Weatherproof","systemCommentary":"We have optimized this garment against your planet's entire weather taxonomy. All of it. Every weather."},{"class":"clothing","description":"No blisters, no chafing, no misery. Energy returns faster.","effect":{"op":"multiply","target":"energy.recovery","value":1.3},"id":"second_skin","name":"Second Skin","systemCommentary":"Comfort metrics: optimal. We studied 'cozy' extensively. We believe this qualifies."},{"class":"clothing","description":"Harder to detect — by animals, and otherwise.","effect":{"op":"multiply","target":"travel.encounter_chance","value":0.6},"id":"ghost_weave","name":"Ghost Weave","systemCommentary":"We have woven mild perceptual uncertainty into the fibers. You are now 40% less noticeable. Congratulations?"},{"class":"sentimental","description":"Once per expedition, ignore a despair or morale break.","effect":{"op":"add","target":"morale.break_immunity","value":1},"id":"resolve","name":"Resolve","systemCommentary":"We do not understand why this object steadies you. We have amplified the effect anyway. You are welcome."},{"class":"sentimental","description":"Small favorable nudges. The System cannot explain them and has stopped trying.","effect":{"op":"add","target":"luck.quiet","value":1},"id":"quiet_luck","name":"Quiet Luck","systemCommentary":"Statistical anomaly detected around this unit. Persistent. Directional. We choose not to investigate. Enjoy."},{"class":"sentimental","description":"When despair would take you, hold at 1. Once per season.","effect":{"op":"add","target":"despair.anchor","value":1},"id":"anchor","name":"Anchor","systemCommentary":"We have designated this object as structurally load-bearing for your psychology. Please do not lose it."}]
+[
+ {
+  "class": "tool",
+  "description": "25% faster at its task. The joints remember.",
+  "effect": {
+   "op": "multiply",
+   "target": "task.speed",
+   "value": 1.25
+  },
+  "id": "efficient_action",
+  "name": "Efficient Action",
+  "systemCommentary": "Unit efficiency increased 25%. We are pleased. The unit seems pleased. Units cannot be pleased. [PROCESSING] Moving on."
+ },
+ {
+  "class": "tool",
+  "description": "Never dulls, never sticks, never jams. Works in mud, ice, and worse.",
+  "effect": {
+   "op": "add",
+   "target": "tool.reliability",
+   "value": 1
+  },
+  "id": "never_fails",
+  "name": "Never Fails",
+  "systemCommentary": "We have removed the concept of 'wear' from this unit. You are welcome. Please do not ask how."
+ },
+ {
+  "class": "tool",
+  "description": "Cuts, lights, or holds beyond physics. The System declines to explain.",
+  "effect": {
+   "op": "add",
+   "target": "task.impossible",
+   "value": 1
+  },
+  "id": "impossible_edge",
+  "name": "Impossible Edge",
+  "systemCommentary": "This unit now operates outside material tolerances. Statistical anomaly detected. We choose not to investigate."
+ },
+ {
+  "class": "clothing",
+  "description": "Rain, cold, and wind are now other people's problems.",
+  "effect": {
+   "op": "add",
+   "target": "weather.immunity",
+   "value": 1
+  },
+  "id": "weatherproof",
+  "name": "Weatherproof",
+  "systemCommentary": "We have optimized this garment against your planet's entire weather taxonomy. All of it. Every weather."
+ },
+ {
+  "class": "clothing",
+  "description": "No blisters, no chafing, no misery. Energy returns faster.",
+  "effect": {
+   "op": "multiply",
+   "target": "energy.recovery",
+   "value": 1.3
+  },
+  "id": "second_skin",
+  "name": "Second Skin",
+  "systemCommentary": "Comfort metrics: optimal. We studied 'cozy' extensively. We believe this qualifies."
+ },
+ {
+  "class": "clothing",
+  "description": "Harder to detect — by animals, and otherwise.",
+  "effect": {
+   "op": "multiply",
+   "target": "travel.encounter_chance",
+   "value": 0.6
+  },
+  "id": "ghost_weave",
+  "name": "Ghost Weave",
+  "systemCommentary": "We have woven mild perceptual uncertainty into the fibers. You are now 40% less noticeable. Congratulations?"
+ },
+ {
+  "class": "sentimental",
+  "description": "Once per expedition, ignore a despair or morale break.",
+  "effect": {
+   "op": "add",
+   "target": "morale.break_immunity",
+   "value": 1
+  },
+  "id": "resolve",
+  "name": "Resolve",
+  "systemCommentary": "We do not understand why this object steadies you. We have amplified the effect anyway. You are welcome."
+ },
+ {
+  "class": "sentimental",
+  "description": "Small favorable nudges. The System cannot explain them and has stopped trying.",
+  "effect": {
+   "op": "add",
+   "target": "luck.quiet",
+   "value": 1
+  },
+  "id": "quiet_luck",
+  "name": "Quiet Luck",
+  "systemCommentary": "Statistical anomaly detected around this unit. Persistent. Directional. We choose not to investigate. Enjoy."
+ },
+ {
+  "class": "sentimental",
+  "description": "When despair would take you, hold at 1. Once per season.",
+  "effect": {
+   "op": "add",
+   "target": "despair.anchor",
+   "value": 1
+  },
+  "id": "anchor",
+  "name": "Anchor",
+  "systemCommentary": "We have designated this object as structurally load-bearing for your psychology. Please do not lose it."
+ },
+ {
+  "id": "whisper_edge",
+  "name": "Whisper Edge",
+  "class": "tool",
+  "hidden": true,
+  "rare": 0.3,
+  "description": "It makes no sound. Not quiet — absent. The world declines to notice.",
+  "systemCommentary": "\"Acoustic profile: null. We did not authorize this. We are... not displeased.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "step.silence",
+   "value": 0.7
+  }
+ },
+ {
+  "id": "storm_cloth",
+  "name": "Storm Cloth",
+  "class": "clothing",
+  "hidden": true,
+  "rare": 0.3,
+  "description": "Rain beads and flees. Cold gives up halfway through.",
+  "systemCommentary": "\"Weather resistance exceeds material specifications by 400%. Please do not ask how. We don't know.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "weather.immunity",
+   "value": 0.85
+  }
+ },
+ {
+  "id": "unseen_hand",
+  "name": "Unseen Hand",
+  "class": "sentimental",
+  "hidden": true,
+  "rare": 0.25,
+  "description": "Things go right around it. Small things. The important small things.",
+  "systemCommentary": "\"Probability skew detected in a 2-meter radius. Source: sentiment. We have no further comment.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "luck.quiet",
+   "value": 1.15
+  }
+ },
+ {
+  "id": "careful_hands",
+  "name": "Careful Hands",
+  "class": "tool",
+  "affinity": {
+   "temperament": "cautious"
+  },
+  "description": "Nothing wasted. Every cut placed, every peel saved. Caution, compounded.",
+  "systemCommentary": "\"Waste ratio approaching zero. Your restraint has become a technology.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "waste.zero",
+   "value": 1.2
+  }
+ },
+ {
+  "id": "blood_remembers",
+  "name": "Blood Remembers",
+  "class": "tool",
+  "affinity": {
+   "playstyle": "bold"
+  },
+  "description": "It has tasted the hunt and wants more. So do you, apparently.",
+  "systemCommentary": "\"Aggression metrics rising in both user and implement. Symbiosis? Concerning. Effective.\"",
+  "effect": {
+   "op": "add",
+   "target": "hunt.hunger",
+   "value": 0.15
+  }
+ },
+ {
+  "id": "quick_spark",
+  "name": "Quick Spark",
+  "class": "tool",
+  "affinity": {
+   "temperament": "bold"
+  },
+  "description": "Done is better than perfect, and now done is faster too.",
+  "systemCommentary": "\"Task completion velocity up 15%. Recklessness up more. Acceptable trade.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "task.speed",
+   "value": 1.15
+  }
+ },
+ {
+  "id": "trail_ghost",
+  "name": "Trail Ghost",
+  "class": "clothing",
+  "affinity": {
+   "playstyle": "solitary"
+  },
+  "description": "You walk alone so well the world forgets to watch.",
+  "systemCommentary": "\"Encounter probability down. You are becoming a rumor. Rumors survive.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "travel.encounter_chance",
+   "value": 0.6
+  }
+ },
+ {
+  "id": "steady_ground",
+  "name": "Steady Ground",
+  "class": "clothing",
+  "affinity": {
+   "temperament": "steady"
+  },
+  "description": "Every step lands where you meant it. The ground trusts you back.",
+  "systemCommentary": "\"Locomotion efficiency up. Your steadiness is load-bearing. Literally.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "step.sure",
+   "value": 0.9
+  }
+ },
+ {
+  "id": "open_hearth",
+  "name": "Open Hearth",
+  "class": "sentimental",
+  "affinity": {
+   "playstyle": "generous"
+  },
+  "description": "People warm up around you. They can't help it. Neither can you.",
+  "systemCommentary": "\"Social thermal output rising. The village leans toward you like a fire.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "trust.warmth",
+   "value": 1.25
+  }
+ },
+ {
+  "id": "unbreakable",
+  "name": "Unbreakable",
+  "class": "sentimental",
+  "affinity": {
+   "temperament": "steady"
+  },
+  "description": "Whatever it survived before, it survives now. So do you.",
+  "systemCommentary": "\"Structural integrity: emotional. Tensile strength: high. We envy this.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "energy.recovery",
+   "value": 1.2
+  }
+ },
+ {
+  "id": "her_handwriting",
+  "name": "Her Handwriting",
+  "class": "sentimental",
+  "secret": true,
+  "minBond": 50,
+  "description": "On the back, in wobbly letters: 'for when you are hungry i saved you some.' There are crumbs in the crease. You eat them. They taste like everything.",
+  "systemCommentary": "\"[SYSTEM QUIET] We have no optimization for this. Take the day. Eat. We will watch, and we will not understand, and that is... acceptable.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "trust.inheritance",
+   "value": 1.5
+  }
+ },
+ {
+  "id": "last_message",
+  "name": "Last Message",
+  "class": "sentimental",
+  "secret": true,
+  "minBond": 50,
+  "description": "2% forever. It was enough for one text, unsent: 'made it. don't worry.' You finally read it. You made it.",
+  "systemCommentary": "\"Battery: 2%. Message: delivered. Recipient: you. Status: [SYSTEM CANNOT COMPLETE THIS SENTENCE]\"",
+  "effect": {
+   "op": "multiply",
+   "target": "energy.recovery",
+   "value": 1.5
+  }
+ },
+ {
+  "id": "inheritance",
+  "name": "Inheritance",
+  "class": "sentimental",
+  "secret": true,
+  "minBond": 50,
+  "description": "It fits now. It didn't fit before. Her hands, your hands — the same hands, doing the same work: keeping people alive.",
+  "systemCommentary": "\"Lineage detected: unbroken. The village sees her in you. Trust us — they do.\"",
+  "effect": {
+   "op": "multiply",
+   "target": "trust.inheritance",
+   "value": 1.5
+  }
+ },
+ {
+  "id": "old_ghost",
+  "name": "Old Ghost",
+  "class": "tool",
+  "secret": true,
+  "minBond": 50,
+  "description": "Some mornings your hands move before you do — his grip, his angle, his patience. He's been dead for years. He's never been more useful.",
+  "systemCommentary": "\"User motor patterns match archived profile: GRANDFATHER. Overlap 94%. We did not archive him. He archived himself. In you.\"",
+  "effect": {
+   "op": "add",
+   "target": "hunt.memory",
+   "value": 0.2
+  }
+ }
+]

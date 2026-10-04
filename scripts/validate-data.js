@@ -29,6 +29,7 @@ function checkType(val, spec, where) {
   const s = spec.replace(/\?$/, '');
   if (s === 'string') return typeof val === 'string';
   if (s === 'number') return typeof val === 'number' && !Number.isNaN(val);
+  if (s === 'boolean') return typeof val === 'boolean';
   if (s === 'object') return val && typeof val === 'object' && !Array.isArray(val);
   if (s === 'string[]') return Array.isArray(val) && val.every(v => typeof v === 'string');
   if (s === 'string[5..5]') return Array.isArray(val) && val.length === 5 && val.every(v => typeof v === 'string');

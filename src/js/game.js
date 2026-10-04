@@ -49,18 +49,331 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen };
       return this.data;
     },
 
     biome() { return this.data.biomes.find(b => b.id === 'se_woodlands'); },
 
-    newGame(homeRegion, villagerId, pickedItems) {
-      this.homeRegion = homeRegion; this.villagerId = villagerId;
-      const villager = this.data.villagers.find(v => v.id === villagerId);
+    // ============ EXPEDITION SETUP ============
+    // Your origin is yours — you type it. The scattering is random.
+    // We store where you're from. (Someday, characters trek home. We'll need the way.)
+    // Unfamiliarity is the point: Arizona -> Georgia creek means you know almost nothing.
+
+    // parseOrigin: free text -> { raw, tags }. Data-driven keyword matching.
+    parseOrigin(text) {
+      const raw = String(text || '').trim();
+      const lower = raw.toLowerCase();
+      const kw = (this.data.characterGen || {}).originKeywords || {};
+      const tags = new Set();
+      const keys = Object.keys(kw).sort((a, b) => b.length - a.length); // "new mexico" before "mexico"
+      for (const k of keys) {
+        if (lower.includes(k)) kw[k].forEach(t => tags.add(String(t).toLowerCase()));
+      }
+      return { raw: raw || 'somewhere unremembered', tags: [...tags] };
+    },
+
+    // familiarityTier: what fraction of the local plant pool shares a region tag with this origin?
+    // local >40%, visitor 15-40%, stranger <15%. The game feels the difference.
+    familiarityTier(tags) {
+      const plants = this.data.plants || [];
+      const tl = (tags || []).map(t => String(t).toLowerCase());
+      if (!plants.length || !tl.length) return 'stranger';
+      let known = 0;
+      for (const p of plants) {
+        const pr = (p.regions || []).map(x => String(x).toLowerCase());
+        if (pr.some(r => tl.includes(r))) known++;
+      }
+      const frac = known / plants.length;
+      return frac > 0.4 ? 'local' : frac >= 0.15 ? 'visitor' : 'stranger';
+    },
+
+    // heritageFor: which fictionalized people-group does this origin read as?
+    // Old wounds run between peoples, not individuals.
+    heritageFor(tags) {
+      const cg = this.data.characterGen || {};
+      const map = cg.heritageMap || [];
+      const tl = (tags || []).map(t => String(t).toLowerCase());
+      for (const [tag, name] of map) {
+        if (tl.includes(String(tag).toLowerCase())) return name;
+      }
+      return 'the scattered';
+    },
+
+    // planExpedition: 3 randomized landing zones. The choice matters.
+    planExpedition() {
+      const pool = [...(this.data.locations || [])];
+      const picks = [];
+      while (picks.length < 3 && pool.length) {
+        picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      }
+      this.expeditionLocations = picks;
+      return picks;
+    },
+
+    // locParams: genMap tuning for the chosen landing zone (with safe defaults).
+    locParams() {
+      const loc = (this.data.locations || []).find(l => l.id === (this.state && this.state.startLocation));
+      const g = (loc && loc.gen) || {};
+      return {
+        creeks: g.creeks ?? 1, wetlands: g.wetlands ?? 3,
+        groveBlobs: g.groveBlobs ?? 2, groveSize: g.groveSize ?? 4,
+        meadowSize: g.meadowSize ?? 5, thickets: g.thickets ?? 5,
+        trailLines: g.trailLines ?? 1, ruinMaxDist: g.ruinMaxDist ?? 3,
+        lootMult: g.lootMult ?? 1, stockMult: g.stockMult ?? 1,
+        startReveal: g.startReveal ?? 0,
+      };
+    },
+
+    // genRoster: 6 fresh randomized characters per expedition.
+    // Names, occupations, personalities, origins, languages, heritages.
+    // Real people, not stat blocks. The player's own origin is typed, not rolled.
+    genRoster() {
+      const cg = this.data.characterGen || {};
+      const pick = a => a[Math.floor(Math.random() * a.length)];
+      // sims call newGame repeatedly in one process — clear last expedition's cast
+      this.data.villagers = (this.data.villagers || []).filter(v => !(v.id || '').startsWith('gen_'));
+      const usedNames = new Set();
+      const fears = ['being forgotten', 'the dark between the trees', 'being a burden', 'losing another one', 'the silence after the System speaks', 'never seeing home again'];
+      const chars = [];
+      for (let i = 0; i < 6; i++) {
+        const occ = pick(cg.occupations || []);
+        let name, guard = 0;
+        do { name = pick(cg.firstNames || ['Sam']) + ' ' + pick(cg.lastNames || ['Reyes']); guard++; } while (usedNames.has(name) && guard < 50);
+        usedNames.add(name);
+        const first = name.split(' ')[0];
+        const pro = pick(['they', 'she', 'he']);
+        const their = pro === 'they' ? 'their' : pro === 'she' ? 'her' : 'his';
+        const them = pro === 'they' ? 'them' : pro === 'she' ? 'her' : 'him';
+        const They = pro === 'they' ? 'They' : pro === 'she' ? 'She' : 'He';
+        const backstory = (occ.backstory || '{first} is here.')
+          .replaceAll('{first}', first).replaceAll('{they}', pro).replaceAll('{their}', their)
+          .replaceAll('{them}', them).replaceAll('{They}', They);
+        const temperament = pick(cg.temperaments || ['steady']);
+        const sharing = pick(cg.sharingStyles || ['fair']);
+        const curiosity = pick(cg.curiosities || ['practical']);
+        const origin = pick(cg.sampleOrigins || ['somewhere']);
+        const parsed = this.parseOrigin(origin);
+        const skill = (occ.teachTags || []).includes('medicinal') ? 'patching people up'
+          : (occ.teachTags || []).includes('food') ? 'finding food' : 'making do';
+        const fill = t => t.replaceAll('{first}', first).replaceAll('{occ}', occ.name || 'survivor')
+          .replaceAll('{origin}', origin).replaceAll('{skill}', skill);
+        const talk = [];
+        const tt = [...(cg.talkTemplates || [])];
+        while (talk.length < 3 && tt.length) talk.push(fill(tt.splice(Math.floor(Math.random() * tt.length), 1)[0]));
+        const quest = (cg.questTemplates || []).map(fill);
+        const langs = this.genLanguages();
+        chars.push({
+          id: 'gen_' + Math.random().toString(36).slice(2, 9),
+          name, formerOccupation: occ.name || 'survivor', homeRegion: origin,
+          originTags: parsed.tags, heritage: this.heritageFor(parsed.tags),
+          backstory, personality: { temperament, sharing, curiosity },
+          abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
+          items: this.genItemCandidates(occ),
+          talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
+          survivalProbability: 25 + Math.floor(Math.random() * 21),
+          systemAssessment: `${first} reads as ${temperament} and ${sharing} with strangers. The System finds this ${temperament === 'cautious' ? 'sensible' : temperament === 'bold' ? 'entertaining' : 'notable'}.`,
+          secretFear: pick(fears), languages: langs, occupationId: occ.id || null,
+        });
+      }
+      for (const c of chars) this.data.villagers.push(c);
+      this.generatedRoster = chars;
+      return chars;
+    },
+
+    // genLanguages: not everyone speaks English. { native, english: 0|1|2 }
+    genLanguages() {
+      const cg = this.data.characterGen || {};
+      const langs = cg.languages || [{ id: 'english' }];
+      if (Math.random() < 0.55) return { native: 'english', english: 2 };
+      const nonEn = langs.filter(l => l.id !== 'english');
+      const native = nonEn.length ? nonEn[Math.floor(Math.random() * nonEn.length)].id : 'spanish';
+      const r = Math.random();
+      return { native, english: r < 0.3 ? 0 : r < 0.75 ? 1 : 2 };
+    },
+
+    // genItemCandidates: 8 personal items per character from class pools,
+    // biased by occupation. The player picks 5. Combinations surprise.
+    genItemCandidates(occ) {
+      const byId = {}; (this.data.items || []).forEach(i => { byId[i.id] = i; });
+      const bias = (occ && occ.itemBias) || {};
+      const result = [];
+      const take = (cls, n) => {
+        const poolIds = (this.data.items || []).filter(i => i.class === cls && !result.includes(i.id)).map(i => i.id);
+        const favored = (bias[cls] || []).filter(id => byId[id] && byId[id].class === cls && !result.includes(id));
+        const rest = poolIds.filter(id => !favored.includes(id));
+        // shuffle rest
+        for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[rest[i], rest[j]] = [rest[j], rest[i]]; }
+        const ordered = [...favored, ...rest];
+        for (let k = 0; k < n && ordered.length; k++) result.push(ordered.shift());
+      };
+      take('tool', 2); take('weapon', 1); take('clothing', 2); take('sentimental', 2);
+      // wild card: one more from anywhere but food (bonded relics aren't snacks)
+      const all = (this.data.items || []).filter(i => i.class !== 'food' && !result.includes(i.id)).map(i => i.id);
+      if (all.length) result.push(all[Math.floor(Math.random() * all.length)]);
+      return result;
+    },
+
+    // genConflicts: deep, old wounds between peoples — NOT petty rivalries.
+    // Hidden at first. They reveal slowly, through time and trust, if ever.
+    // One run you never learn why. Another run, you're caught in the middle by day 3.
+    genConflicts(npcIds) {
+      const cg = this.data.characterGen || {};
+      const byId = id => (this.data.villagers || []).find(v => v.id === id);
+      const pool = [...npcIds];
+      for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[pool[i], pool[j]] = [pool[j], pool[i]]; }
+      const conflicts = [];
+      const grievances = cg.grievances || ['old history'];
+      const n = 1 + (Math.random() < 0.5 ? 1 : 0);
+      const used = new Set();
+      let guard = 0;
+      while (conflicts.length < n && guard++ < 60) {
+        const a = pool[Math.floor(Math.random() * pool.length)];
+        const b = pool[Math.floor(Math.random() * pool.length)];
+        if (!a || !b || a === b || used.has(a) || used.has(b)) continue;
+        const va = byId(a), vb = byId(b);
+        if (!va || !vb) continue;
+        used.add(a); used.add(b);
+        const ha = va.heritage || 'the scattered', hb = vb.heritage || 'the scattered';
+        const fa = va.name.split(' ')[0], fb = vb.name.split(' ')[0];
+        let kind, history;
+        if (ha !== hb) {
+          kind = 'old_wound';
+          const g = grievances[Math.floor(Math.random() * grievances.length)];
+          history = [
+            `${fa} and ${fb} don't speak. It's not new.`,
+            `Their peoples have history — ${ha} and ${hb}. The kind measured in generations, not arguments.`,
+            `Something about ${g}. Ask directly and the conversation ends.`,
+          ];
+        } else {
+          kind = 'friction';
+          history = [`${fa} and ${fb} rub each other wrong. Nobody knows why. Maybe nobody needs to.`];
+        }
+        conflicts.push({
+          a, b, kind, heritageA: ha, heritageB: hb, history,
+          known: false, stage: 0, tension: 55 + Math.floor(Math.random() * 20), resolved: false,
+        });
+      }
+      return conflicts;
+    },
+
+    // commLevel: shared language? full. A few words? halved. None? quarter + misunderstandings.
+    commLevel(vid) {
+      const v = (this.data.villagers || []).find(x => x.id === vid) || {};
+      const vl = v.languages || { native: 'english', english: 2 };
+      const playerLangs = (this.state.scholar && this.state.scholar.languages) || ['english'];
+      if (vl.english === 2 || playerLangs.includes(vl.native)) return { level: 'full', mult: 1, lang: vl.native };
+      if (vl.english === 1) return { level: 'partial', mult: 0.5, lang: vl.native };
+      return { level: 'none', mult: 0.25, lang: vl.native };
+    },
+
+    // langNote: the barrier is discovered in conversation, not listed on a roster.
+    langNote(vid) {
+      const met = (this.state.village.met || {})[vid];
+      if (!met) return null;
+      const v = (this.data.villagers || []).find(x => x.id === vid) || {};
+      const vl = v.languages || { native: 'english', english: 2 };
+      const langName = ((this.data.characterGen || {}).languages || []).find(l => l.id === vl.native);
+      const label = langName ? `${langName.icon} ${langName.name}` : vl.native;
+      if (vl.native === 'english' || vl.english === 2) return label;
+      if (vl.english === 1) return `${label} · little English`;
+      return `${label} · no English`;
+    },
+
+    conflictNote(c, id) {
+      if (!c) return null;
+      const other = (this.data.villagers || []).find(x => x.id === (c.a === id ? c.b : c.a));
+      const on = other ? other.name.split(' ')[0] : 'someone';
+      if (c.kind === 'old_wound' && c.stage >= 1) return `⚡ old history with ${on} (${c.heritageA} / ${c.heritageB})`;
+      return `⚡ tension with ${on} — you don't know why`;
+    },
+
+    // notePlaystyle: the game notices who you are. Not stats — behavior.
+    notePlaystyle(axis, n) {
+      const s = this.state.scholar; if (!s) return;
+      s.playstyle = s.playstyle || {};
+      s.playstyle[axis] = (s.playstyle[axis] || 0) + (n || 1);
+    },
+
+    // dominantPlaystyle: your strongest behavioral axis, or null if too early to tell.
+    dominantPlaystyle() {
+      const p = (this.state.scholar && this.state.scholar.playstyle) || {};
+      let best = null, bestN = 2; // need at least 3 signals before the game presumes
+      for (const [k, v] of Object.entries(p)) if (v > bestN) { best = k; bestN = v; }
+      return best;
+    },
+
+    // socialSimmer: daily. The village has a life you only partly see.
+    // Conflicts reveal slowly — observation, trust, time. Never all at once.
+    socialSimmer() {
+      const v = this.state.village;
+      v.conflicts = v.conflicts || [];
+      const day = this.state.scholar.day;
+      const trust = v.trust || {};
+      for (const c of v.conflicts) {
+        if (c.resolved) continue;
+        if (!c.known && day >= 3) {
+          const talked = ((this.state.talkIdx || {})[c.a] || 0) + ((this.state.talkIdx || {})[c.b] || 0);
+          const p = 0.12 + Math.min(0.2, talked * 0.03);
+          if (Math.random() < p) {
+            c.known = true;
+            const va = (this.data.villagers || []).find(x => x.id === c.a) || {};
+            const vb = (this.data.villagers || []).find(x => x.id === c.b) || {};
+            this.say(`You've started noticing: ${(va.name || '?').split(' ')[0]} and ${(vb.name || '?').split(' ')[0]} never speak. It's not new. (Something old lives in Haven.)`);
+          }
+        }
+        if (c.known && c.tension > 40 && Math.random() < 0.10) this.conflictIncident(c);
+        // mediation: trusted by both, the air can clear — slowly
+        if (c.known && !c.resolved && (trust[c.a] || 0) >= 55 && (trust[c.b] || 0) >= 55) {
+          c.resolved = true; c.tension = 0;
+          const va = (this.data.villagers || []).find(x => x.id === c.a) || {};
+          const vb = (this.data.villagers || []).find(x => x.id === c.b) || {};
+          this.say(`${(va.name || '?').split(' ')[0]} nodded at ${(vb.name || '?').split(' ')[0]} today. First time. Whatever it was, it's loosening. Haven breathes easier.`);
+        }
+        if (c.tension > 30) c.tension -= 1;
+      }
+    },
+
+    // conflictIncident: you're caught in the middle. No choice UI — your normal
+    // actions (who you favor) ARE the choice. The game keeps score.
+    conflictIncident(c) {
+      const v = this.state.village;
+      const trust = v.trust = v.trust || {};
+      const va = (this.data.villagers || []).find(x => x.id === c.a) || {};
+      const vb = (this.data.villagers || []).find(x => x.id === c.b) || {};
+      const fa = (va.name || '?').split(' ')[0], fb = (vb.name || '?').split(' ')[0];
+      const incidents = [
+        () => { this.say(`You find ${fa} and ${fb} in a sharp, quiet argument. It stops when you approach. Neither explains.`); c.tension = Math.min(100, c.tension + 5); },
+        () => { this.say(`${fa} corners you by the fire: "Don't share your haul with ${fb}." It's not a request.`); trust[c.a] = Math.min(100, (trust[c.a] || 10) + 2); trust[c.b] = Math.max(0, (trust[c.b] || 10) - 2); },
+        () => { this.say(`${fb} eats apart from the others tonight. ${fa} doesn't look up. The fire feels smaller.`); },
+        () => { this.say(`You carry a message from ${fa} to ${fb}. It's not kind. You deliver it anyway. That's what neighbors do, apparently.`); trust[c.a] = Math.min(100, (trust[c.a] || 10) + 2); trust[c.b] = Math.max(0, (trust[c.b] || 10) - 3); c.tension = Math.min(100, c.tension + 3); },
+      ];
+      incidents[Math.floor(Math.random() * incidents.length)]();
+    },
+
+    newGame(homeRegionText, locationId, villagerId, pickedItems) {
+      // homeRegionText: free text, typed by the player. Stored raw — someday we trek home.
+      const parsed = this.parseOrigin(homeRegionText);
+      this.homeRegion = parsed.raw; this.villagerId = villagerId;
+      // landing zone: the scattering is random. Your origin doesn't choose where you wake up.
+      const loc = (this.data.locations || []).find(l => l.id === locationId) || (this.data.locations || [])[0] || {};
       this.state = S.state.newState();
+      this.state.startLocation = loc.id || null;
+      this.state.spawnType = loc.spawnType || 'countryside';
+      // roster: 6 freshly generated characters per expedition (genRoster), not fixed mains.
+      if (!this.generatedRoster || !this.generatedRoster.length) this.genRoster();
+      const playerChar = this.generatedRoster.find(c => c.id === villagerId) || this.generatedRoster[0];
+      this.villagerId = playerChar.id;
+      // YOUR origin is yours: override the rolled one on the character you pick.
+      playerChar.homeRegion = parsed.raw;
+      playerChar.originTags = parsed.tags;
+      playerChar.heritage = this.heritageFor(parsed.tags);
+      const cg = this.data.characterGen || {};
+      const occ = (cg.occupations || []).find(o => o.id === playerChar.occupationId) || {};
+      playerChar.languages = { native: 'english', english: 2 };
+      const villager = playerChar;
       this.state.village.name = 'Haven';
       // Starting pantry: REAL FOOD, not a number. 1.5-3 days for the group.
       // Each item: name, kcal, spoilDay, safe, kg. Unsafe stays unsafe.
@@ -87,15 +400,23 @@
         kcal += item.kcalEach * item.units;
       }
       // (If target not met, it's fine — RNG means some runs start leaner.)
-      this.state.village.water = { clean: 20, dirty: 0 }; // liters. Clean and dirty separate.
-      // the roster: 6 mains (the story) + 6 drawn from 36 background survivors (the variety).
-      // twelve mouths, different every run.
-      const mains = ['mara_okafor', 'jesse_calhoun', 'aki_tanaka', 'ruth_delgado', 'theo_park', 'priya_nair'];
+      this.state.village.water = { clean: 20 + ((loc.startMod && loc.startMod.waterClean) || 0), dirty: 0 }; // liters. Clean and dirty separate.
+      // the roster: your pick + the 5 you didn't pick + 6 drawn from 36 background survivors.
+      // twelve mouths, different every run. The unpicked generated characters live here too.
+      const otherGen = this.generatedRoster.filter(c => c.id !== this.villagerId).map(c => c.id);
       const pool = [...this.data.background_survivors];
       const bg = [];
       for (let i = 0; i < 6 && pool.length; i++) bg.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
-      this.state.village.roster = mains.concat(bg);
-      this.state.village.villagers = mains; // mains have dialogue; background have one-liners
+      this.state.village.roster = [this.villagerId].concat(otherGen, bg);
+      this.state.village.villagers = [this.villagerId].concat(otherGen); // generated have dialogue; background have one-liners
+      // persist the generated cast (they don't exist in the JSON — the save carries them)
+      this.state.village.rosterChars = {};
+      for (const c of this.generatedRoster) this.state.village.rosterChars[c.id] = c;
+      // who has met whom: language barriers are discovered in conversation, not listed
+      this.state.village.met = {};
+      // OLD WOUNDS: deep conflicts between peoples, hidden at first. They simmer.
+      const npcIds = this.state.village.roster.filter(id => id !== this.villagerId);
+      this.state.village.conflicts = this.genConflicts(npcIds);
       // ACT 0: trust starts low. you're 12 strangers from all over the world.
       // everyone woke up in the SAME building — but WHICH building varies.
       // by location, and by run. even ohio isn't always a school.
@@ -126,7 +447,7 @@
       // THE VILLAGE DOESN'T TRUST YOU YET. You're new (or a stranger).
       // Trust builds through contribution, dialogue, sharing.
       // This determines your meal share, whether they share knowledge, etc.
-      this.state.village.trust[villagerId] = 15;
+      this.state.village.trust[this.villagerId] = 15;
       // (Jesse's snare is granted after newCodex below — order matters.)
       // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
       // they wander turn-based. you see them. you tap them.
@@ -135,23 +456,36 @@
       const freeCells = [];
       // (positions assigned when Haven detail generates — see ensureVillagerPositions)
       
-      // TEACHERS: everyone knows a few plants (from their old life).
-      // mains know 2, background know 1. what they know, they can teach.
+      // TEACHERS: everyone knows a few plants — from THEIR old life, not yours.
+      // Familiarity matters: an Ohioan knows Ohio plants; an Arizonan dropped
+      // into Georgia creek country knows almost nothing. Local plants come first:
+      // what you knew back home is what you can teach.
       this.state.village.taught = {};
-      const plantIds = this.data.plants.map(p => p.id);
-      for (const rid of this.state.village.roster) {
-        const isMain = this.data.villagers.find(m => m.id === rid);
-        const n = isMain ? 2 : 1;
-        const known = [];
-        for (let i = 0; i < n && plantIds.length; i++) {
-          known.push(plantIds[Math.floor(Math.random() * plantIds.length)]);
+      const shuf = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; };
+      const plantsByFamiliarity = (tags) => {
+        const tl = (tags || []).map(t => String(t).toLowerCase());
+        const local = [], other = [];
+        for (const p of this.data.plants) {
+          const pr = (p.regions || []).map(x => String(x).toLowerCase());
+          (pr.some(r => tl.includes(r)) ? local : other).push(p.id);
         }
-        this.state.village.taught[rid] = [...new Set(known)]; // dedupe
+        return [...shuf(local), ...shuf(other)];
+      };
+      const tierCount = { local: 3, visitor: 2, stranger: 1 };
+      for (const rid of this.state.village.roster) {
+        const rc = (this.state.village.rosterChars || {})[rid];
+        const tags = rc ? (rc.originTags || []) : [];
+        const tier = this.familiarityTier(tags);
+        this.state.village.taught[rid] = plantsByFamiliarity(tags).slice(0, tierCount[tier] || 1);
       }
-      const scholar = S.state.newScholar(villagerId);
+      const scholar = S.state.newScholar(this.villagerId);
       // WEEK 1 TRACKER: the System watches what you do. Your first ability
       // is based on your actions, not your stats. Play how you want to play.
       scholar.week1 = { forage: 0, hunt: 0, talk: 0, cook: 0, donate: 0, scavenge: 0 };
+      // PLAYSTYLE: the game notices who you are — cautious, bold, generous... behavior, not stats.
+      scholar.playstyle = {};
+      // LANGUAGES: you speak English. Your past may have given you more.
+      scholar.languages = ['english'].concat(occ.polyglot || []);
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
       // RELIC BOND: your five are bonded relics. Grown, not found.
       // Bond accrues through use; the System offers enhancements at 10/25/50.
@@ -168,14 +502,11 @@
         { name: 'Dried meat', kcalEach: 300, units: 2, spoilDay: 30, safe: true, kg: 0.2, unit: 'strip' },
       );
       // granted abilities from villager data (2 each, defined here for slice 1)
-      const granted = {
-        mara_okafor: ['triage', 'steady_hands'],
-        jesse_calhoun: ['game_sense', 'patient_aim'],
-        aki_tanaka: ['field_dressing', 'preservation_instinct'],
-      };
       // BACKGROUND ABILITIES: separate from System slots. This is YOU — your past.
-      // Some characters are just lucky. These level with use, like System abilities.
-      scholar.backgroundAbilities = (granted[villagerId] || []).map(id => {
+      // Your occupation decides what you brought with you. Some people are just lucky.
+      // These level with use, like System abilities.
+      const grantedIds = (occ.granted || []).filter(id => this.data.abilities.find(a => a.id === id));
+      scholar.backgroundAbilities = grantedIds.map(id => {
         const def = this.data.abilities.find(a => a.id === id);
         return { id, name: def ? def.name : id, desc: def ? def.description : '', level: 1, xp: 0, background: true };
       });
@@ -188,8 +519,18 @@
       ];
       this.state.scholar = scholar;
       this.state.codex = S.state.newCodex();
-      // Jesse (hunter) starts knowing the snare. Others must learn.
-      if (villagerId === 'jesse_calhoun') {
+      // YOUR starting knowledge: what your old life taught you — if this land resembles it.
+      // Arizona -> Georgia creek: you start knowing almost nothing. That's the point.
+      for (const pid of (this.state.village.taught[this.villagerId] || [])) {
+        this.state.codex.plants[pid] = { identifiedDay: 0, level: 1, harvests: 0, tastings: 0 };
+        this.state.codex.encounters = this.state.codex.encounters || {};
+        this.state.codex.encounters[pid] = 99;
+      }
+      const famTier = this.familiarityTier(parsed.tags);
+      if (famTier === 'stranger') this.say('Nothing here looks like home. You know none of these plants. Learn fast.');
+      else if (famTier === 'visitor') this.say('Some of this country feels familiar. Not enough.');
+      // Hunters start knowing the snare. Others must learn.
+      if (occ.knowsSnare) {
         this.state.codex.recipes['snare'] = { level: 3 };
       }
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
@@ -211,11 +552,29 @@
       // (prevents infinite free diplomat-XP farming)
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 20);
       if (this.state.scholar.week1) this.state.scholar.week1.talk++;
+      this.notePlaystyle('social');
       this.gainAbilityXP('diplomat', 1);
+      // LANGUAGE: the barrier is discovered in conversation, never listed on a roster.
+      // Shared language = normal. A few words = halved. None = quarter + misunderstandings.
+      const comm = this.commLevel(vid);
+      const village = this.state.village;
+      const firstMet = !(village.met || {})[vid];
+      village.met = village.met || {}; village.met[vid] = true;
+      if (firstMet && comm.level !== 'full') {
+        const langName = ((this.data.characterGen || {}).languages || []).find(l => l.id === comm.lang);
+        const label = langName ? `${langName.icon} ${langName.name}` : comm.lang;
+        this.say(`...and then it lands: ${v.name.split(' ')[0]} doesn't speak English. ${comm.level === 'partial' ? 'A few words. Gestures. Patience.' : 'Not really. Not at all.'} (${label})`);
+      }
       this.state.talkIdx = this.state.talkIdx || {};
       const i = (this.state.talkIdx[vid] || 0) % v.talk.length;
       this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
-      const line = v.talk[i];
+      let line = v.talk[i];
+      if (comm.level === 'none' && Math.random() < 0.35) {
+        const cg = this.data.characterGen || {};
+        const tmps = cg.misunderstandTemplates || ['{first} smiles and nods.'];
+        const langName = ((cg.languages || []).find(l => l.id === comm.lang) || {}).name || comm.lang;
+        line = tmps[Math.floor(Math.random() * tmps.length)].replaceAll('{first}', v.name.split(' ')[0]).replaceAll('{lang}', langName);
+      }
       // trust builds through talking. strangers warm up slowly.
       // WORDS ONLY GO SO FAR: talk caps at 40. beyond that, do something real.
       // diplomat: the System's gift. L1 2x trust, L2 3x (still capped at 40).
@@ -223,12 +582,37 @@
       const dipMult = dipLvl >= 2 ? 3 : dipLvl >= 1 ? 2 : 1;
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
       // hoarder/chitin_skin/fear_aura: people notice. Trust gains shrink.
-      const tGain = Math.max(1, Math.round(3 * dipMult * this.modTarget('trust.gain_mult', 1)));
+      // language: without shared words, trust builds at quarter speed. Gestures only go so far.
+      const tGain = Math.max(1, Math.round(3 * dipMult * this.modTarget('trust.gain_mult', 1) * comm.mult));
       const newTrust = trust >= 40 ? trust : Math.min(40, trust + tGain);
       if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
       // the tone shifts with trust (not the number — you feel it)
       const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
       this.say(`${v.name.split(' ')[0]}${tone}: "${line}"`);
+      // OLD WOUNDS: favoritism is noticed. If you're close to one side of a conflict,
+      // the other side keeps score — even if you don't know there's a score being kept.
+      for (const c of (this.state.village.conflicts || [])) {
+        if (c.resolved || (c.a !== vid && c.b !== vid)) continue;
+        if (newTrust >= 50) {
+          const other = c.a === vid ? c.b : c.a;
+          const ot = this.state.village.trust;
+          ot[other] = Math.max(0, (ot[other] || 10) - 2);
+          const on = ((this.data.villagers || []).find(x => x.id === other) || {}).name || 'someone';
+          if (c.known) this.say(`${on.split(' ')[0]} saw how close you've gotten to ${v.name.split(' ')[0]}. Old history has long eyes. (-2 trust)`);
+          else this.say(`${on.split(' ')[0]} has been colder to you lately. You don't know why.`);
+        }
+        // HISTORY UNFOLDS through trust — slowly, partially, maybe never fully.
+        if (c.known && c.kind === 'old_wound') {
+          const t = (this.state.village.trust || {})[vid] || 0;
+          if (c.stage === 0 && t >= 45) {
+            c.stage = 1;
+            this.say(`Late, quiet, ${v.name.split(' ')[0]} tells you: "${c.history[1]}"`);
+          } else if (c.stage === 1 && t >= 70) {
+            c.stage = 2;
+            this.say(`${v.name.split(' ')[0]} looks away. "${c.history[2]}" That's all you get. Maybe that's all there is.`);
+          }
+        }
+      }
       return line;
     },
 
@@ -247,11 +631,19 @@
         this.say(`${teacher.name.split(' ')[0]} doesn\'t know that one either.`);
         return null;
       }
+      // LANGUAGE: no shared words, no teaching. You can gesture at a plant all day —
+      // without words, it's just pointing. (Unless your past gave you their tongue.)
+      const comm = this.commLevel(vid);
+      if (comm.level === 'none') {
+        this.say(`${teacher.name.split(' ')[0]} tries — gestures, dirt drawings, growing frustration. The words aren't there. Maybe with patience. Maybe never.`);
+        return null;
+      }
       const occ = (teacher.formerOccupation || '').toLowerCase();
-      // good teacher: relevant occupation, high trust
+      // good teacher: relevant occupation, high trust — AND words to teach with.
+      // partial language: even a good teacher is reduced to pointing.
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
-      const isGoodTeacher = (occ.includes('cook') || occ.includes('chef') || occ.includes('hunter')) && trust > 40;
-      const isMedicTeacher = occ.includes('nurse') && plant.medicinal && trust > 40;
+      const isGoodTeacher = (occ.includes('cook') || occ.includes('chef') || occ.includes('hunter')) && trust > 40 && comm.level === 'full';
+      const isMedicTeacher = (occ.includes('nurse') || occ.includes('medic')) && plant.medicinal && trust > 40 && comm.level === 'full';
       this.state.codex.encounters = this.state.codex.encounters || {};
       if (isGoodTeacher || isMedicTeacher) {
         // good education: instant unlock
@@ -509,9 +901,16 @@
     // the roster: who lives here this run. mains talk; background have one line each.
     villageRoster() {
       const roster = this.state.village.roster || [];
+      const conflicts = this.state.village.conflicts || [];
       return roster.map(id => {
         const main = this.data.villagers.find(v => v.id === id);
-        if (main) return { id, name: main.name, formerOccupation: main.formerOccupation, isMain: true };
+        if (main) {
+          const c = conflicts.find(x => !x.resolved && x.known && (x.a === id || x.b === id));
+          return {
+            id, name: main.name, formerOccupation: main.formerOccupation, isMain: true,
+            langNote: this.langNote(id), conflictNote: this.conflictNote(c, id),
+          };
+        }
         const bg = (this.data.background_survivors || []).find(v => v.id === id);
         if (bg) return { id, name: bg.name, formerOccupation: bg.formerOccupation, line: bg.line, isMain: false };
         return { id, name: id, formerOccupation: '', isMain: false };
@@ -645,6 +1044,12 @@
       this.departed = r.departed; this.log = r.log || [];
       this.homeRegion = r.homeRegion; this.villagerId = r.villagerId;
       this.encounterDone = r.encounterDone; this.wanderer = r.wanderer || null;
+      // re-inject the generated cast: they live in the save, not in the JSON
+      const rc = (s.village && s.village.rosterChars) || {};
+      this.data.villagers = (this.data.villagers || []).filter(v => !(v.id || '').startsWith('gen_'));
+      for (const id of Object.keys(rc)) {
+        if (!this.data.villagers.find(v => v.id === id)) this.data.villagers.push(rc[id]);
+      }
       this.over = false; this.won = false;
       return true;
     },
@@ -741,6 +1146,9 @@
     genMap() {
       // Procedural with logic: creek flows, wetlands hug water, groves cluster,
       // thickets edge, meadows open, one ruin with a story.
+      // The LANDING ZONE shapes the map: creek bottoms are wet and rich,
+      // ridgelines are exposed, old suburbs are scavenger country.
+      const P = this.locParams();
       const tiles = [];
       for (let y = 0; y < 7; y++) {
         const row = [];
@@ -750,25 +1158,27 @@
       const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < 7 && y < 7) tiles[y][x].type = t; };
       const at = (x, y) => (x >= 0 && y >= 0 && x < 7 && y < 7) ? tiles[y][x].type : null;
 
-      // creek: random walk top→bottom
-      let cx = 1 + Math.floor(Math.random() * 5), cy = 0;
-      set(cx, cy, 'creek');
-      while (cy < 6) {
-        const mv = Math.random();
-        if (mv < 0.45) cy++;
-        else if (mv < 0.7) cx = Math.max(0, cx - 1);
-        else cx = Math.min(6, cx + 1);
+      // creeks: random walks top→bottom (some landing zones have more water)
+      for (let cw = 0; cw < P.creeks; cw++) {
+        let cx = 1 + Math.floor(Math.random() * 5), cy = 0;
         set(cx, cy, 'creek');
+        while (cy < 6) {
+          const mv = Math.random();
+          if (mv < 0.45) cy++;
+          else if (mv < 0.7) cx = Math.max(0, cx - 1);
+          else cx = Math.min(6, cx + 1);
+          set(cx, cy, 'creek');
+        }
       }
       // wetlands: adjacent to creek
       let placed = 0, guard = 0;
-      while (placed < 3 && guard++ < 60) {
+      while (placed < P.wetlands && guard++ < 80) {
         const x = Math.floor(Math.random() * 7), y = Math.floor(Math.random() * 7);
         if (at(x, y) !== 'forest_floor') continue;
         const nearWater = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy) === 'creek');
         if (nearWater) { set(x, y, 'wetland'); placed++; }
       }
-      // groves: two clusters
+      // groves: clusters
       const blob = (sx, sy, t, n) => {
         let p = 0, g = 0;
         while (p < n && g++ < 40) {
@@ -776,20 +1186,24 @@
           if (at(x, y) === 'forest_floor') { set(x, y, t); p++; }
         }
       };
-      blob(1 + Math.floor(Math.random() * 2), 1 + Math.floor(Math.random() * 2), 'grove', 4);
-      blob(4 + Math.floor(Math.random() * 2), 4 + Math.floor(Math.random() * 2), 'grove', 4);
+      for (let gb = 0; gb < P.groveBlobs; gb++) {
+        blob(Math.floor(Math.random() * 7), Math.floor(Math.random() * 7), 'grove', P.groveSize);
+      }
       // meadow: one open blob
-      blob(2 + Math.floor(Math.random() * 3), 2 + Math.floor(Math.random() * 3), 'meadow', 5);
+      blob(2 + Math.floor(Math.random() * 3), 2 + Math.floor(Math.random() * 3), 'meadow', P.meadowSize);
       // thickets: edges
       placed = 0; guard = 0;
-      while (placed < 5 && guard++ < 60) {
+      while (placed < P.thickets && guard++ < 80) {
         const edge = Math.random() < 0.5;
         const x = edge ? (Math.random() < 0.5 ? 0 : 6) : Math.floor(Math.random() * 7);
         const y = edge ? Math.floor(Math.random() * 7) : (Math.random() < 0.5 ? 0 : 6);
         if (at(x, y) === 'forest_floor') { set(x, y, 'thicket'); placed++; }
       }
-      // trail: center cross
-      for (let i = 1; i < 6; i++) { if (at(3, i) === 'forest_floor') set(3, i, 'trail_edge'); }
+      // trails: old paths through the land (suburbs have more)
+      for (let tl = 0; tl < P.trailLines; tl++) {
+        const tx = Math.max(1, Math.min(5, 3 + (tl - (P.trailLines - 1) / 2) * 2));
+        for (let i = 1; i < 6; i++) { if (at(tx, i) === 'forest_floor') set(tx, i, 'trail_edge'); }
+      }
       // ruin: one, deliberate, with a story. GUARANTEED.
       // SCAVENGER VIABILITY: the ruin must be within Manhattan d<=3 of haven (3,3),
       // i.e. reachable via revealed tiles in week 1. Scavenging is a real path now.
@@ -798,7 +1212,7 @@
       const ruinCandidates = [];
       for (let ry2 = 0; ry2 < 7; ry2++) for (let rx2 = 0; rx2 < 7; rx2++) {
         const dHaven = Math.abs(rx2 - 3) + Math.abs(ry2 - 3);
-        if (dHaven <= 3 && dHaven > 0 && at(rx2, ry2) === 'forest_floor' &&
+        if (dHaven <= P.ruinMaxDist && dHaven > 0 && at(rx2, ry2) === 'forest_floor' &&
             at(rx2 + 1, ry2) !== 'creek' && at(rx2 - 1, ry2) !== 'creek') ruinCandidates.push([rx2, ry2]);
       }
       let ruinXY;
@@ -820,14 +1234,15 @@
         tiles[ry3][rx3].ruinStory = ['A collapsed barn. Pre-Burn. The wiring is gone — everything is gone — but the stones remember the shape of work.',
           'A farmhouse foundation. Someone\'s kitchen. The Burn took the wires from the walls; the walls kept standing out of spite.',
           'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(Math.random() * 3)];
-        // finite pantry: 3-5 cans. the houses feed you until they don't.
-        const nLoot = 3 + Math.floor(Math.random() * 3);
+        // finite pantry: 3-5 cans, scaled by landing zone. the houses feed you until they don't.
+        const nLoot = Math.max(1, Math.round((3 + Math.floor(Math.random() * 3)) * P.lootMult));
         tiles[ry3][rx3].loot = [];
         for (let i = 0; i < nLoot; i++) tiles[ry3][rx3].loot.push(SCAVENGED[Math.floor(Math.random() * SCAVENGED.length)].id);
       }
-      // stock: rich ground gives more pulls. number of times depends on the biome.
+      // stock: rich ground gives more pulls. number of times depends on the biome and landing zone.
       // (computed inline — this.map doesn't exist yet during gen)
       const RICH = { grove: 1.5, wetland: 1.4, creek: 1.3, meadow: 1.3, thicket: 1.2, trail_edge: 1.0, forest_floor: 0.8 };
+      for (const k of Object.keys(RICH)) RICH[k] = RICH[k] * P.stockMult;
       for (let yy = 0; yy < 7; yy++) for (let xx = 0; xx < 7; xx++) {
         let r = RICH[tiles[yy][xx].type] || 1;
         for (let dy = -1; dy <= 1 && r < 1.8; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -855,6 +1270,12 @@
       tiles[3][3].revealed = true; tiles[3][3].visited = true;
       this.map = { tiles, px: 3, py: 3 };
       this.reveal(3, 3);
+      // high ground sees farther: ridgelines start with the surroundings mapped
+      if (P.startReveal > 0) {
+        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+          if (Math.abs(x - 3) + Math.abs(y - 3) <= P.startReveal) tiles[y][x].revealed = true;
+        }
+      }
       const start = this.tileAt(3, 3);
       start.visited = true;
     },
@@ -1718,6 +2139,8 @@
       // GENEROUS XP needs a REAL gift (>= 200 kcal). token 1-kcal donations don't count.
       // (prevents donate-take-back XP farming)
       if (kcal >= 200) this.gainAbilityXP('generous', 1);
+      // PLAYSTYLE: the game notices generosity. Not the stat — the pattern.
+      if (kcal >= 200) this.notePlaystyle('generous');
       return null;
     },
 
@@ -2414,37 +2837,76 @@
     },
 
     // offerRelicEnhancement: the System noticed. Pick 1 of 3 from the class pool.
+    // The offer is shaped by WHO YOU ARE: your personality and how you actually play
+    // weight the draw. A cautious player bonding a knife sees different options than a bold one.
+    // Rare enhancements only sometimes appear. Secret evolutions (bond 50) are never telegraphed —
+    // nothing tells you what an item becomes. You discover it by becoming someone who would know.
     offerRelicEnhancement(item, threshold) {
       const s = this.state.scholar;
       const def = this.data.items.find(i => i.id === (item.itemId || item.id)) || {};
       // Weapons bond like tools — they draw from the tool enhancement pool.
       const cls = def.class === 'weapon' ? 'tool' : (def.class || 'tool');
-      const pool = (this.data.relicEnhancements || []).filter(e => e.class === cls);
-      const byId = {}; pool.forEach(e => { byId[e.id] = e; });
+      const char = (this.data.villagers || []).find(v => v.id === this.villagerId) || {};
+      const personality = char.personality || {};
+      const playstyle = this.dominantPlaystyle();
+      const all = this.data.relicEnhancements || [];
+      const byId = {}; all.forEach(e => { byId[e.id] = e; });
       // Prefer item-specific bondThresholds offers (authored), fill from class pool.
       const specific = (def.bondThresholds || []).flatMap(bt => bt.offers || []);
       const chosen = item.enhancements || [];
+      const candidates = [];
+      const seen = new Set();
+      const pushCand = (e, weight) => {
+        if (e && !chosen.includes(e.id) && !seen.has(e.id)) { seen.add(e.id); candidates.push({ e, weight }); }
+      };
+      for (const eid of specific) pushCand(byId[eid], 3);
+      for (const e of all) {
+        if (e.class !== cls || e.secret) continue; // secret evolutions never appear in the normal pool
+        if (e.hidden && Math.random() > (e.rare ?? 0.3)) continue; // rare: sometimes not on the table
+        let w = 1;
+        const aff = e.affinity || {};
+        if (aff.temperament && personality.temperament === aff.temperament) w += 3;
+        if (aff.sharing && personality.sharing === aff.sharing) w += 2;
+        if (aff.playstyle && playstyle && playstyle === aff.playstyle) w += 3;
+        pushCand(e, w);
+      }
+      // weighted sample of 3
       const options = [];
-      for (const eid of specific) {
-        if (options.length >= 3) break;
-        const e = byId[eid];
-        if (e && !chosen.includes(e.id)) options.push(e);
+      const bag = [...candidates];
+      while (options.length < 3 && bag.length) {
+        const total = bag.reduce((t, c) => t + c.weight, 0);
+        let roll = Math.random() * total, idx = 0;
+        while (idx < bag.length - 1 && roll > bag[idx].weight) { roll -= bag[idx].weight; idx++; }
+        options.push(bag.splice(idx, 1)[0].e);
       }
-      for (const e of pool) {
-        if (options.length >= 3) break;
-        if (!options.includes(e) && !chosen.includes(e.id)) options.push(e);
+      // SECRET EVOLUTION: at bond 50, some items become something amazing.
+      // Not always. Never announced beforehand. A fourth option, unnamed.
+      let secretOpt = null;
+      if (threshold >= 50 && def.secretEvolution && !chosen.includes(def.secretEvolution) && Math.random() < 0.65) {
+        secretOpt = byId[def.secretEvolution] || null;
       }
-      if (!options.length) return; // nothing new to offer
+      if (!options.length && !secretOpt) return; // nothing new to offer
+      const opts = options.slice(0, 3).map(e => ({
+        id: e.id, name: e.name, description: e.description,
+        systemCommentary: e.systemCommentary,
+      }));
+      if (secretOpt) {
+        opts.push({
+          id: secretOpt.id, name: '???',
+          description: 'Something is different about it. The System has gone quiet. That never happens.',
+          systemCommentary: secretOpt.systemCommentary,
+          secret: true, secretName: secretOpt.name, secretDesc: secretOpt.description,
+        });
+        this.say(`🌟 "Unit ${String(item.name || 'ITEM').toUpperCase()} — [ANOMALY] — we cannot classify what is happening. Choose carefully."`);
+      } else {
+        this.say(`🌟 "We have detected elevated attachment to Unit ${String(item.name || 'ITEM').toUpperCase()}. This is inefficient. This is also... [PROCESSING] ...valuable? Optimization available." (Choose an enhancement for your ${item.name}.)`);
+      }
       s.relicChoices = {
         itemId: item.itemId || item.id,
         itemName: item.name,
         threshold,
-        options: options.slice(0, 3).map(e => ({
-          id: e.id, name: e.name, description: e.description,
-          systemCommentary: e.systemCommentary,
-        })),
+        options: opts,
       };
-      this.say(`🌟 "We have detected elevated attachment to Unit ${String(item.name || 'ITEM').toUpperCase()}. This is inefficient. This is also... [PROCESSING] ...valuable? Optimization available." (Choose an enhancement for your ${item.name}.)`);
     },
 
     // chooseRelicEnhancement: player picks from the System's offer.
@@ -2462,7 +2924,11 @@
         item.bondOffered.push(rc.threshold);
       }
       s.relicChoices = null;
-      this.say(`✨ ${rc.itemName} — ${opt.name}. ${opt.description}`);
+      // secret evolutions reveal their true name only when chosen — the discovery is the reward
+      const realName = opt.secret ? (opt.secretName || opt.name) : opt.name;
+      const realDesc = opt.secret ? (opt.secretDesc || opt.description) : opt.description;
+      this.say(`✨ ${rc.itemName} — ${realName}. ${realDesc}`);
+      if (opt.secret) this.say(`You had no idea it could become this. That's the point. Nobody told you.`);
       if (opt.systemCommentary) this.say(`"${opt.systemCommentary}"`);
       return null;
     },
@@ -2825,8 +3291,13 @@
         const plant = this.data.plants.find(p => p.id === r.plantId);
         const villager = this.data.villagers.find(v => v.id === this.villagerId);
         const homeRegion = (villager && villager.homeRegion || '').toLowerCase();
-        const plantRegions = (plant.regions || []).map(x => x.toLowerCase());
-        const isLocal = plantRegions.some(pr => homeRegion.includes(pr) || pr.includes(homeRegion.split(' ')[0]));
+        // origin tags (parsed from your typed origin) vs plant region tags.
+        // Arizona -> Georgia creek: almost nothing is local. The game feels it.
+        const originTags = ((villager && villager.originTags) || this.parseOrigin(homeRegion).tags).map(t => String(t).toLowerCase());
+        const plantRegions = (plant.regions || []).map(x => String(x).toLowerCase());
+        const tagLocal = plantRegions.some(pr => originTags.includes(pr));
+        const legacyLocal = plantRegions.some(pr => homeRegion.includes(pr) || pr.includes(homeRegion.split(' ')[0]));
+        const isLocal = tagLocal || legacyLocal;
         const occupation = (villager && villager.formerOccupation || '').toLowerCase();
         // learning threshold: how many encounters to learn the name.
         // forage_identification: you've done this before. Learn faster.
@@ -3466,6 +3937,8 @@
       this.villageLives();
       this.villageEats();
       this.checkTraps();
+      // SOCIAL SIMMER: old wounds surface slowly. The village has a life you only partly see.
+      this.socialSimmer();
       // depletion: every 5 days, the easy food is gone. the land gets tired.
       if (this.state.scholar.day % 5 === 0) {
         for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
@@ -3519,6 +3992,8 @@
         const scholar = this.state.scholar;
         scholar.inventory.push({ plantId: 'boar_meat', units: 4, kcalEach: 800, spoilDay: scholar.day + 3, name: 'Bulldozer meat', unit: 'cut', prep: 'Smoke it — it keeps for weeks.', kg: 0.8 });
         this.say('The Bulldozer falls. Pork is pork — 3,200 kcal of it. The village will eat. (+4 cuts of meat)');
+        // PLAYSTYLE: you stood your ground. The game notices boldness too.
+        this.notePlaystyle('bold');
         // grave_robber: you loot the dead. Good gear. Out here, only the trees watch.
         if (this.hasAbility('grave_robber') && Math.random() < 0.5) {
           const gear = ['bone knife', 'cracked helm', 'war horn', 'tooth necklace'];
@@ -3537,6 +4012,7 @@
         this.fight = null;
       } else if (r.result === 'fled') {
         this.fight = null;
+        this.notePlaystyle('cautious');
         this.say('You escape. The thicket keeps its secrets.');
       } else if (r.result === 'lost') {
         // second_wind / phoenix / molt get a vote before death is final.

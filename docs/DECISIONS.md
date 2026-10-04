@@ -889,3 +889,52 @@ ARMOR:
 - Military vest (+40, findable): plate carrier, no plates.
 - Reduces combat damage. Best in inventory applies.
 - Like weapons: the System will obsolete these. Phase 1 they matter.
+
+## 2026-10-04 — Character + location variability, hidden potential (Steve)
+Steve: location selection at expedition start (3 randomized landing zones, choice matters);
+fresh randomized 6-character roster per expedition; origin is PLAYER-TYPED free text (stored for
+future trek-home), everything else randomizes; personal items more variable with surprising combos;
+some items have amazing hidden bond evolutions, never telegraphed; enhancement offers consider
+personality + actual playstyle; language barriers (discovered in conversation, not listed);
+pre-existing conflicts are DEEP old wounds between peoples, revealed slowly over days/weeks.
+
+IMPLEMENTATION:
+- src/data/locations.json: 8 landing zones (creek_bottom, ridgeline, old_suburb, pine_flat,
+  floodplain, orchard_row, quarry_edge, river_bluff). Each tunes genMap: creeks, wetlands,
+  groves, meadow, thickets, trails, ruin distance, loot mult, forage richness mult, starting
+  visibility. 3 offered per expedition via planExpedition().
+- src/data/characterGen.json: 48+48 names, 15 occupations (backstory, abilityWeights, granted
+  background abilities, itemBias, plantsKnown, polyglot), personality axes, talk/quest/
+  misunderstanding templates, 16 sample NPC origins, originKeywords (~70 -> region tags),
+  12 languages, heritageMap (origin tags -> fictionalized peoples), 6 grievances.
+- Origin: free text at onboarding. parseOrigin() -> tags. familiarityTier(): local/visitor/
+  stranger by fraction of plant pool sharing region tags. Stranger (Arizona -> Georgia creek)
+  starts knowing ~nothing; locals start with occupation's plantsKnown. Taught plants prefer
+  locally-known species. Foraging learn-speed uses tag-based isLocal (legacy substring fallback).
+- Roster: 6 generated chars (gen_ ids) pushed into data.villagers at runtime; persisted in
+  state.village.rosterChars; re-injected on load. Village = pick + 5 unpicked + 6 background.
+  Granted abilities + snare from occupation, not fixed ids.
+- Items: 12 new (7 clothing — pool was 4 — plus tools/sentimental). 4 items have secretEvolution
+  (daughters_drawing->her_handwriting, dead_phone->last_message, mothers_ring->inheritance,
+  grandfathers_knife->old_ghost). Candidates: 8 per char (2 tool, 1 weapon, 2 clothing,
+  2 sentimental, 1 wild), occupation-biased. Player picks 5.
+- Reproducibility note: genRoster() clears previous gen_ entries (sims call newGame repeatedly).
+- Relic offers: affinity-weighted draw (personality temperament/sharing + dominant playstyle,
+  needs 3+ signals). hidden+rare enhancements sometimes absent. Secret evolutions: bond 50 only,
+  65% roll, 4th "???" option, true name revealed on choose, never in normal pool (0/50 leak test).
+  14 new enhancements, all grounded in RELIC_MOD_MAP (modifiers.js).
+- Playstyle tracking: generous (donate 200+), bold (combat win), cautious (flee), social (talk).
+  dominantPlaystyle() gates affinity offers.
+- Languages: {native, english 0|1|2}; 45% of NPCs non-native. commLevel: full/partial(mult .5)/
+  none(mult .25 + 35% misunderstanding lines). Barrier discovered on first talkTo, never listed
+  beforehand. teachPlant: none = cannot teach; partial = good teaching downgraded.
+  Interpreter/ESL teacher occupations are polyglot.
+- Conflicts: 1-2 per run, prefer different heritages -> 'old_wound' (3-stage history, grievance
+  pool), else 'friction' (1 stage). known:false at start, NOT shown in UI. Reveal: day 3+,
+  12%/day (+talked bonus). Stages unfold at trust 45/70 — may never fully reveal. Incidents at
+  10%/day when known+tense: being used as messenger, told to pick sides (no choice UI — your
+  normal actions ARE the choice). Favoritism (trust 50+ with one side) costs -2 with the other;
+  mysterious if unknown. Mediation: trust 55+ with both resolves. socialSimmer() runs daily.
+- Pacing per Steve: "savored slowly." Nothing social is front-loaded.
+- Save index stores villagerName (generated chars have no JSON entry).
+- Title screen renamed THE SCATTERING -> THE OVERSIGHT (was missed in app.js).
