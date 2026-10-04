@@ -407,7 +407,7 @@
         <p class="small">"We watched your first week! You're good at... let us see..."</p>
         <p class="small">Choose one ability:</p>
         <div class="btnrow">
-          ${choices.map((c, i) => `<button class="btn sm" data-abil="${c.id}"><b>${c.name}</b><br><span class="small">${c.desc}</span></button>`).join('')}
+          ${choices.map((c, i) => `<button class="btn sm" data-abil="${c.id}"><b>${c.name}</b><br><span class="small">${c.description || c.desc}</span>${c.flavor ? `<br><i class="small">"${c.flavor}"</i>` : ''}</button>`).join('')}
         </div>
       </div>`;
     screen.querySelectorAll('[data-abil]').forEach(b => b.onclick = () => {

@@ -1,1 +1,382 @@
-[{"description":"Stop bleeding, set bones, treat infection. Your hands remember the ER.","id":"triage","modifiers":[{"op":"multiply","target":"healing.effectiveness","value":1.5},{"op":"add","target":"injury.recovery_days","value":-1}],"name":"Triage","pool":"care","synergyHints":["Adrenaline Control: stabilize then fight on"],"unlock":{"type":"granted"}},{"description":"Fine work under pressure. Dressing game, stitching wounds, tying snares — no shake.","id":"steady_hands","modifiers":[{"op":"multiply","target":"craft.success","value":1.25}],"name":"Steady Hands","pool":"care","unlock":{"type":"granted"}},{"description":"Read sign: tracks, scat, browse lines. You know what's been here and how long ago.","id":"game_sense","modifiers":[{"op":"multiply","target":"hunt.find_chance","value":1.4}],"name":"Game Sense","pool":"fieldcraft","synergyHints":["Patient Aim: find it, then drop it clean"],"unlock":{"type":"granted"}},{"description":"One shot. You don't take the shot unless it's the shot.","id":"patient_aim","modifiers":[{"op":"multiply","target":"hunt.first_strike_damage","value":2.0}],"name":"Patient Aim","pool":"combat","unlock":{"type":"granted"}},{"description":"Break down game fast and clean. Less waste, more meat, usable parts.","id":"field_dressing","modifiers":[{"op":"multiply","target":"hunt.meat_yield","value":1.3}],"name":"Field Dressing","pool":"craft","synergyHints":["Preservation Instinct: harvest, then keep it"],"unlock":{"type":"granted"}},{"description":"You think in shelf life. Smoking, drying, salting — food that lasts is food that saves.","id":"preservation_instinct","modifiers":[{"op":"multiply","target":"food.spoilage_days","value":1.5}],"name":"Preservation Instinct","pool":"craft","unlock":{"type":"granted"}},{"description":"Tell dandelion from disaster at a glance. The woods start talking.","id":"forage_identification","modifiers":[{"op":"add","target":"forage.id_difficulty_bonus","value":1}],"name":"Forage Identification","pool":"fieldcraft","unlock":{"detail":"Identify 5 plants correctly","type":"discovery"}},{"description":"Your gut handles what it shouldn't. A useful lie your body tells itself.","id":"iron_stomach","modifiers":[{"op":"multiply","target":"food.poison_chance","value":0.5}],"name":"Iron Stomach","pool":"care","unlock":{"detail":"Trial of Hunger survived","type":"trial"}},{"description":"Move through woods like weather. Less noise, fewer surprises.","id":"soft_step","modifiers":[{"op":"multiply","target":"travel.encounter_chance","value":0.7}],"name":"Soft Step","pool":"fieldcraft","unlock":{"detail":"Traverse 20 tiles undetected","type":"discovery"}},{"description":"Someone taught you this over a long winter. Knowledge is the only inheritance.","id":"taught_hands","modifiers":[{"op":"add","target":"craft.success_flat","value":0.1}],"name":"Taught Hands","pool":"craft","unlock":{"detail":"Learn from a village elder","type":"mentorship"}},{"description":"The System noticed you noticing patterns. It approves, in its way.","id":"pattern_recognition","modifiers":[{"op":"multiply","target":"forage.rare_find_chance","value":1.5}],"name":"Pattern Recognition","pool":"system","unlock":{"detail":"Offered after 3 novel discoveries","type":"trial"}},{"description":"Burn bright, pay later. Once per expedition, act twice.","id":"adrenaline_control","modifiers":[{"op":"add","target":"combat.bonus_actions","value":1}],"name":"Adrenaline Control","pool":"combat","synergyHints":["Triage: stabilize then fight on"],"unlock":{"detail":"Trial of Blood survived","type":"trial"}}]
+[
+  {
+    "description": "Stop bleeding, set bones, treat infection. Your hands remember the ER.",
+    "id": "triage",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "healing.effectiveness",
+        "value": 1.5
+      },
+      {
+        "op": "add",
+        "target": "injury.recovery_days",
+        "value": -1
+      }
+    ],
+    "name": "Triage",
+    "pool": "care",
+    "synergyHints": [
+      "Adrenaline Control: stabilize then fight on"
+    ],
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "description": "Fine work under pressure. Dressing game, stitching wounds, tying snares \u2014 no shake.",
+    "id": "steady_hands",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "craft.success",
+        "value": 1.25
+      }
+    ],
+    "name": "Steady Hands",
+    "pool": "care",
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "description": "Read sign: tracks, scat, browse lines. You know what's been here and how long ago.",
+    "id": "game_sense",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "hunt.find_chance",
+        "value": 1.4
+      }
+    ],
+    "name": "Game Sense",
+    "pool": "fieldcraft",
+    "synergyHints": [
+      "Patient Aim: find it, then drop it clean"
+    ],
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "description": "One shot. You don't take the shot unless it's the shot.",
+    "id": "patient_aim",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "hunt.first_strike_damage",
+        "value": 2.0
+      }
+    ],
+    "name": "Patient Aim",
+    "pool": "combat",
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "description": "Break down game fast and clean. Less waste, more meat, usable parts.",
+    "id": "field_dressing",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "hunt.meat_yield",
+        "value": 1.3
+      }
+    ],
+    "name": "Field Dressing",
+    "pool": "craft",
+    "synergyHints": [
+      "Preservation Instinct: harvest, then keep it"
+    ],
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "description": "You think in shelf life. Smoking, drying, salting \u2014 food that lasts is food that saves.",
+    "id": "preservation_instinct",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "food.spoilage_days",
+        "value": 1.5
+      }
+    ],
+    "name": "Preservation Instinct",
+    "pool": "craft",
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "description": "Tell dandelion from disaster at a glance. The woods start talking.",
+    "id": "forage_identification",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "forage.id_difficulty_bonus",
+        "value": 1
+      }
+    ],
+    "name": "Forage Identification",
+    "pool": "fieldcraft",
+    "unlock": {
+      "detail": "Identify 5 plants correctly",
+      "type": "discovery"
+    }
+  },
+  {
+    "description": "Your gut handles what it shouldn't. A useful lie your body tells itself.",
+    "id": "iron_stomach",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "food.poison_chance",
+        "value": 0.5
+      }
+    ],
+    "name": "Iron Stomach",
+    "pool": "care",
+    "unlock": {
+      "detail": "Trial of Hunger survived",
+      "type": "trial"
+    }
+  },
+  {
+    "description": "Move through woods like weather. Less noise, fewer surprises.",
+    "id": "soft_step",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "travel.encounter_chance",
+        "value": 0.7
+      }
+    ],
+    "name": "Soft Step",
+    "pool": "fieldcraft",
+    "unlock": {
+      "detail": "Traverse 20 tiles undetected",
+      "type": "discovery"
+    }
+  },
+  {
+    "description": "Someone taught you this over a long winter. Knowledge is the only inheritance.",
+    "id": "taught_hands",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "craft.success_flat",
+        "value": 0.1
+      }
+    ],
+    "name": "Taught Hands",
+    "pool": "craft",
+    "unlock": {
+      "detail": "Learn from a village elder",
+      "type": "mentorship"
+    }
+  },
+  {
+    "description": "The System noticed you noticing patterns. It approves, in its way.",
+    "id": "pattern_recognition",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "forage.rare_find_chance",
+        "value": 1.5
+      }
+    ],
+    "name": "Pattern Recognition",
+    "pool": "system",
+    "unlock": {
+      "detail": "Offered after 3 novel discoveries",
+      "type": "trial"
+    }
+  },
+  {
+    "description": "Burn bright, pay later. Once per expedition, act twice.",
+    "id": "adrenaline_control",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "combat.bonus_actions",
+        "value": 1
+      }
+    ],
+    "name": "Adrenaline Control",
+    "pool": "combat",
+    "synergyHints": [
+      "Triage: stabilize then fight on"
+    ],
+    "unlock": {
+      "detail": "Trial of Blood survived",
+      "type": "trial"
+    }
+  },
+  {
+    "id": "green_thumb",
+    "name": "Green Thumb",
+    "description": "Foraging yields +50%. You know where to look.",
+    "flavor": "PLANTS LIKE YOU! We asked them!",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "tracker",
+    "name": "Tracker",
+    "description": "Hunting success +30%. You read the ground.",
+    "flavor": "You see the footprints! We only see feet!",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "diplomat",
+    "name": "Diplomat",
+    "description": "Trust builds 2x faster. People open up to you.",
+    "flavor": "You make the sad faces go away! Teach us?",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "camp_cook",
+    "name": "Camp Cook",
+    "description": "Cooking uses half the water. +10% kcal.",
+    "flavor": "The food sings! We hear it! Do you hear it?",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "generous",
+    "name": "Generous Heart",
+    "description": "Donating gives 2x trust.",
+    "flavor": "Sharing! We love sharing! Have our moon!",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "scrounger",
+    "name": "Scrounger",
+    "description": "Ruin looting finds +1 item.",
+    "flavor": "You find the shiny things in the broken places!",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "squirrel_friend",
+    "name": "Squirrel Friend",
+    "description": "Squirrels sometimes leave you nuts. (Random gifts.)",
+    "flavor": "The tiny tree-people like you! They pay rent in acorns!",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "rain_dancer",
+    "name": "Rain Dancer",
+    "description": "When it rains, +1L water free. (You dance. It works.)",
+    "flavor": "You wiggle and the sky cries! We tried wiggling! Nothing happened!",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "loud_chewer",
+    "name": "Loud Chewer",
+    "description": "Eating is 2x louder (monsters hear you). But +5 morale.",
+    "flavor": "CRONCH CRONCH! We love the cronch! The monsters love it too! Oops!",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "hoarder",
+    "name": "Hoarder",
+    "description": "+10kg carry, but villagers trust you 20% less. (They notice.)",
+    "flavor": "You keep the things! ALL the things! We... are concerned! But impressed!",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "thief",
+    "name": "Light Fingers",
+    "description": "Steal from pantry without trust loss (50%). If caught, -20 trust.",
+    "flavor": "The food disappears! Magic! (It's not magic. We saw you.)",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "photosynthesis",
+    "name": "Photosynthesis",
+    "description": "Gain 100 kcal/hour in sunlight. (You're becoming a plant.)",
+    "flavor": "YOU EAT THE SUN! We eat... we don't eat! But WOW!",
+    "pool": "system",
+    "tier": "overpowered",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "second_wind",
+    "name": "Second Wind",
+    "description": "Once per day, when you'd die, you don't. (1 HP, 500 kcal.)",
+    "flavor": "You were almost gone! Then you WEREN'T! How?! We want to know!",
+    "pool": "system",
+    "tier": "overpowered",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "lucky_rock",
+    "name": "Lucky Rock",
+    "description": "You have a lucky rock. (+1% to everything. It's the thought that counts.)",
+    "flavor": "The rock! It is lucky! We can feel the luck! (We can't. But you can!)",
+    "pool": "system",
+    "tier": "underpowered",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "bird_whisperer",
+    "name": "Bird Whisperer",
+    "description": "Birds land on you sometimes. (No effect. But birds.)",
+    "flavor": "The sky-flappers trust you! We are jealous!",
+    "pool": "system",
+    "tier": "underpowered",
+    "unlock": {
+      "type": "system_offer"
+    }
+  }
+]

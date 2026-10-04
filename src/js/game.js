@@ -2039,46 +2039,37 @@
       }
     },
     // firstAbilityChoices: 3 options based on week-1 actions + background.
+    // First ability TENDS TO UTILITY (practical). Later: wacky, vile, OP, whatever.
+    // Delivered with alien zeal.
     firstAbilityChoices() {
       const s = this.state.scholar;
       const w = s.week1 || {};
-      const villager = this.data.villagers.find(v => v.id === this.villagerId) || {};
-      const occ = (villager.formerOccupation || '').toLowerCase();
-      const ABILITIES = {
-        green_thumb: { name: 'Green Thumb', desc: 'Foraging yields +50%. You know where to look.', cond: (w.forage || 0) >= 3 },
-        tracker: { name: 'Tracker', desc: 'Hunting success +30%. You read the ground.', cond: (w.hunt || 0) >= 2 },
-        diplomat: { name: 'Diplomat', desc: 'Trust builds 2x faster. People open up to you.', cond: (w.talk || 0) >= 5 },
-        camp_cook: { name: 'Camp Cook', desc: 'Cooking uses half the water. Food tastes better (+10% kcal).', cond: (w.cook || 0) >= 2 },
-        generous: { name: 'Generous Heart', desc: 'Donating gives 2x trust. The village loves you.', cond: (w.donate || 0) >= 2 },
-        scrounger: { name: 'Scrounger', desc: 'Ruin looting finds +1 item. You see what others miss.', cond: (w.scavenge || 0) >= 3 },
-        // background-based (always available as fallback)
-        hunter_bg: { name: 'Hunter\'s Instinct', desc: 'Your past as a hunter surfaces. +20% hunt success.', cond: occ.includes('hunter') },
-        medic_bg: { name: 'Field Medic', desc: 'Your medical training kicks in. Healing items +50%.', cond: occ.includes('doctor') || occ.includes('nurse') || occ.includes('medic') },
-        cook_bg: { name: 'Chef\'s Hands', desc: 'You cooked for a living. Food prep is faster, better.', cond: occ.includes('cook') || occ.includes('chef') },
+      const all = (this.data.abilities || []).filter(a => a.unlock && a.unlock.type === 'system_offer');
+      // action thresholds
+      const cond = {
+        green_thumb: (w.forage || 0) >= 3,
+        tracker: (w.hunt || 0) >= 2,
+        diplomat: (w.talk || 0) >= 5,
+        camp_cook: (w.cook || 0) >= 2,
+        generous: (w.donate || 0) >= 2,
+        scrounger: (w.scavenge || 0) >= 3,
       };
-      // pick 3: prioritize earned (action-based), fill with background
-      const earned = Object.entries(ABILITIES).filter(([id, a]) => a.cond && !id.endsWith('_bg'));
-      const bg = Object.entries(ABILITIES).filter(([id, a]) => a.cond && id.endsWith('_bg'));
+      // first ability: prefer UTILITY tier (practical). Later abilities can be anything.
+      const utility = all.filter(a => a.tier === 'utility' && cond[a.id]);
+      const other = all.filter(a => a.tier !== 'utility' && a.tier !== 'overpowered');
+      // pick 2 utility (earned), 1 wild (wacky/vile/underpowered for flavor)
       const choices = [];
-      // top 2 earned by count
-      const sorted = earned.sort((a, b) => {
-        const ka = a[0].split('_')[0]; const kb = b[0].split('_')[0];
-        return (w[kb] || 0) - (w[ka] || 0);
-      });
-      for (const [id, a] of sorted.slice(0, 2)) choices.push({ id, ...a });
-      // 1 background (or next earned)
-      if (bg.length && choices.length < 3) {
-        const [id, a] = bg[0]; choices.push({ id, ...a });
+      for (const a of utility.slice(0, 2)) choices.push(a);
+      if (other.length && choices.length < 3) {
+        const wild = other[Math.floor(Math.random() * other.length)];
+        choices.push(wild);
       }
-      while (choices.length < 3 && sorted.length > choices.length) {
-        const [id, a] = sorted[choices.length]; choices.push({ id, ...a });
-      }
-      // fallback: if nothing earned, offer generic
+      // fallback
       if (!choices.length) {
         choices.push(
-          { id: 'survivor', name: 'Survivor', desc: 'You endured. +10 max health.', cond: true },
-          { id: 'wanderer', name: 'Wanderer', desc: 'You kept moving. -10% travel cost.', cond: true },
-          { id: 'learner', name: 'Quick Learner', desc: 'Codex XP +50%. You pick things up fast.', cond: true },
+          { id: 'survivor', name: 'Survivor', description: 'You endured. +10 max health.', flavor: 'You lived! We are SO proud!', tier: 'utility' },
+          { id: 'wanderer', name: 'Wanderer', description: 'You kept moving. -10% travel cost.', flavor: 'You go places! We like places!', tier: 'utility' },
+          { id: 'lucky_rock', name: 'Lucky Rock', description: 'You have a lucky rock. (+1% to everything.)', flavor: 'The rock! It is lucky!', tier: 'underpowered' },
         );
       }
       return choices.slice(0, 3);
