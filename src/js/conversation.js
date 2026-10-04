@@ -363,6 +363,20 @@
       // unreachable when discovery actions filled all 5 slots.
       const MAXC = 6;
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
+      // PARTY INVITES live in conversation, not on a button. Discovered via
+      // the System unlock. You ask people. Like a person.
+      // Sits with 'more', AHEAD of the topic asks: a trust-earned, contextual
+      // person-action must never be crowded out by small talk. When you've
+      // earned the right to ask, the ask is there.
+      if (choices.length < MAXC) {
+        try {
+          if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
+              !this.inParty(vid) && !this.partyFull()) {
+            const trust = (this.state.village.trust || {})[vid] || 10;
+            if (this.hasDiscovered('party') && trust >= 20) choices.push({ id: 'invite_party', label: '"Want to come with me?"' });
+          }
+        } catch (e) {}
+      }
       // DEPTH GATING: what they'll talk about depends on how well they know
       // you. Little hits over time, like real people. Defined once, used by
       // theorize and the topic asks below.
@@ -442,17 +456,6 @@
           const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
           if (youKnow.some(pid => theyKnow.indexOf(pid) === -1)) {
             choices.push({ id: 'teach', label: this.hasDiscovered('teach') ? '"Let me show you something."' : '"Could I show you something?"' });
-          }
-        } catch (e) {}
-      }
-      // PARTY INVITES live in conversation, not on a button. Discovered via
-      // the System unlock. You ask people. Like a person.
-      if (choices.length < MAXC) {
-        try {
-          if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
-              !this.inParty(vid) && !this.partyFull()) {
-            const trust = (this.state.village.trust || {})[vid] || 10;
-            if (this.hasDiscovered('party') && trust >= 20) choices.push({ id: 'invite_party', label: '"Want to come with me?"' });
           }
         } catch (e) {}
       }

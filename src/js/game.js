@@ -310,11 +310,14 @@
         if (labels.length) return labels[Math.floor(Math.random() * labels.length)].split(',')[0].trim();
         return 'the old country';
       };
-      // English for non-natives: school, media, the lingua franca. Plausible, keep.
-      if (native !== 'english') {
-        const r = Math.random();
-        const eng = r < 0.3 ? 0 : r < 0.75 ? 1 : 2;
-        if (eng) levels.english = eng;
+      // WORK: interpreters, ESL teachers, pilots and the like speak their claimed
+      // tongues. The occupation IS the reason — it runs BEFORE the lingua-franca
+      // roll so the random pick can never shadow it (no reason) or downgrade it.
+      for (const l of ((occ && occ.polyglot) || [])) {
+        if (!levels[l]) {
+          levels[l] = 2;
+          reasons.push(`{They} learned ${langName(l)} for work — the job demanded it.`);
+        }
       }
       // HERITAGE: the name's culture differs from home — diaspora family.
       // Someone named Gonzalez born in Chicago grew up hearing Spanish. That's a story.
@@ -328,13 +331,12 @@
           reasons.push(`{Their} ${rel} came from ${placeFor(hc)}; {they} grew up hearing ${langName(hl)} at home${lv === 1 ? ', and still understand more than {they} can say' : ''}.`);
         }
       }
-      // WORK: interpreters, ESL teachers, and the like speak their claimed tongues.
-      // The occupation IS the reason.
-      for (const l of ((occ && occ.polyglot) || [])) {
-        if (!levels[l]) {
-          levels[l] = 2;
-          reasons.push(`{They} learned ${langName(l)} for work — the job demanded it.`);
-        }
+      // English for non-natives: school, media, the lingua franca. Plausible, keep.
+      // Never overwrites a language the backstory already granted.
+      if (native !== 'english' && !levels.english) {
+        const r = Math.random();
+        const eng = r < 0.3 ? 0 : r < 0.75 ? 1 : 2;
+        if (eng) levels.english = eng;
       }
       // LIFE EVENT (~7%, adults only): service, aid work, years abroad.
       // Rare, and always storied — never a silent stat.

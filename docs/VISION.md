@@ -25,6 +25,8 @@ The System is running a cheerful, fucked-up **admissions exam**. It is farming *
 
 The System is truly alien, twisted, completely out of touch — but it *really tried*. It studied humanity exhaustively and got every detail technically right and spiritually wrong. Cheerful game-show host delivering cosmic horror. It has an **audience** (other species watching), and contestants earn **Favor** by being entertaining.
 
+**Food is humanity's superpower (thematic core).** The System never understood why humans insist on eating organic matter instead of fusing any old matter — and that blind spot is dramatic irony: digesting organic food grants humans higher mana reserves and burst output than any other species achieves. The aliens' bafflement is the joke; the payoff is the ending. Our "inefficiency" is the engine that beats them. The System notices impossible energy spikes from "little organic snacks" and files them as rounding errors. It never connects the dots. The player does — much later.
+
 **Win:** survive, uncover the truth, become seat-worthy. Light ending: humanity welcomed as a cooperative species — your village becomes an embassy. Dark ending: humanity recognized as an apex species, seated under observation — your village becomes a cautionary tale with diplomatic immunity. Thematic close: **you win when the village no longer needs heroes.** Epilogue: Syndication (endless mode).
 
 ## Tone
