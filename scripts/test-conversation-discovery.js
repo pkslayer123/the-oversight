@@ -34,6 +34,17 @@ async function main() {
   const roster = (v.roster || []).filter(id => id !== Game.villagerId);
   t('roster has NPCs', roster.length >= 5);
 
+  // Neutral opener: these tests check discovery mechanics, not the opener
+  // lottery. A reactive/grief opener (correctly) narrows the choice menu,
+  // which would flake "X appears" assertions.
+  function startNeutral(vid) {
+    const real = Game.convoOpening;
+    Game.convoOpening = () => ({ line: '"Hey."', thread: 'small' });
+    const st = Game.startConvo(vid);
+    Game.convoOpening = real;
+    return st;
+  }
+
   // --- 1. Discovery system ---
   console.log('1. discovery system');
   t('nothing discovered at start', !Game.hasDiscovered('trade'));
@@ -66,7 +77,7 @@ async function main() {
     t('trade discovered after doing it', Game.hasDiscovered('trade'));
     Game.endConvo(trader, 'left');
     // discovered path: new convo, no seeding needed
-    Game.startConvo(trader);
+    startNeutral(trader);
     const ui2 = Game.convoUI(trader);
     t('trade choice appears proactively once discovered', ui2.choices.some(x => x.id === 'trade'));
     Game.endConvo(trader, 'left');
@@ -83,7 +94,7 @@ async function main() {
     Game.state.codex.plants[pid] = { level: 2 };
     Game.state.village.taught = Game.state.village.taught || {};
     delete Game.state.village.taught[pupil];
-    Game.startConvo(pupil);
+    startNeutral(pupil);
     const ui = Game.convoUI(pupil);
     t('teach choice appears when teachable', ui.choices.some(x => x.id === 'teach'));
     const before = (Game.state.village.taught[pupil] || []).length;
@@ -114,7 +125,7 @@ async function main() {
     // force discovery, then it appears proactively
     Game.discover('promise');
     Game.endConvo(promiser, 'left');
-    Game.startConvo(promiser);
+    startNeutral(promiser);
     ui = Game.convoUI(promiser);
     t('offer_help appears once discovered', ui.choices.some(x => x.id === 'offer_help'));
     const r = Game.convoTurn(promiser, 'offer_help');
@@ -132,7 +143,7 @@ async function main() {
   if (joiner) {
     const tr = Game.state.village.trust || (Game.state.village.trust = {});
     tr[joiner] = 60;
-    Game.startConvo(joiner);
+    startNeutral(joiner);
     const ui = Game.convoUI(joiner);
     t('invite_party choice appears in conversation', ui.choices.some(x => x.id === 'invite_party'));
     Game.convoTurn(joiner, 'invite_party');

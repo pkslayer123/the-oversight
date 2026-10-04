@@ -12,6 +12,237 @@
   const Game = (globalThis.Scattering || {}).Game;
   if (!Game) return;
 
+  // ============ REACTIVE QUESTIONS ============
+  // NPC lines phrased as DIRECT questions that the old system delivered as
+  // small talk with no way to answer — the player could only change the
+  // subject (the burdock non sequitur: "Did you see that?" -> plant lesson).
+  // Each entry maps a line fragment to a lightweight question:
+  // - contextual answers come FIRST in the choice list
+  // - pivots (teach/theorize) are suppressed while it hangs in the air
+  // - unanswered questions get ONE follow-up, then lapse with a line —
+  //   they linger, never vanish mid-thought
+  const REACTIVE_DEFS = {
+    rq_treeline: {
+      match: 'Did you see that, just now?',
+      thread: 'spooked',
+      answers: [
+        { id: 'saw', label: '"I saw it too."',
+          line: '"You did?" Their voice drops. "Then I\'m not imagining things. Stay close to the fire tonight — both of us."',
+          trust: 2 },
+        { id: 'no', label: '"I didn\'t see anything."',
+          line: '"Hm." They keep watching the trees. "Maybe I\'m jumpy. Probably jumpy. ...Probably."',
+          trust: 0 },
+        { id: 'look', label: '"Let\'s go look. Together."', action: 'look_treeline', trust: 3 },
+        { id: 'what', label: '"What did it look like?"',
+          line: '"I don\'t know. Fast. Wrong-shaped." A pause. "Let\'s not go out alone tonight, yeah?"',
+          trust: 1 },
+      ],
+      followUp: '"Hey — the tree line. Did you see it or not? I need to know I\'m not imagining things."',
+      lapse: '"...Never mind. Probably nothing." They don\'t sound convinced. They keep glancing at the trees.',
+      reacts: {
+        agree: '"I know I saw it. That\'s what scares me."',
+        joke: 'You try to laugh it off. It comes out wrong — and now you\'re both scared.',
+        silence: 'You say nothing. They read your face, and go a shade paler.',
+      },
+    },
+    rq_heard: {
+      match: 'Did you hear that?',
+      thread: 'spooked',
+      answers: [
+        { id: 'yes', label: '"I heard it too."',
+          line: '"Okay. Okay, so it\'s real. ...I hate that it\'s real."',
+          trust: 2 },
+        { id: 'no', label: '"Just the wind."',
+          line: '"The wind doesn\'t sound like that." A beat. "Don\'t — don\'t lie to me right now."',
+          trust: -1 },
+        { id: 'what', label: '"What did it sound like?"',
+          line: '"Like something big, moving careful. Like it didn\'t want to be heard."',
+          trust: 1 },
+      ],
+      followUp: '"Don\'t tell me you didn\'t hear that. Please."',
+      lapse: '"...It stopped. That\'s worse, somehow."',
+      reacts: {
+        agree: '"Right? It\'s out there. It\'s out there right now."',
+        joke: 'You make a joke about the wind. Neither of you laughs.',
+        silence: 'Your silence is answer enough. They edge closer to the fire.',
+      },
+    },
+    rq_wants: {
+      match: 'what do you think it actually wants from us?',
+      thread: 'small',
+      answers: [
+        { id: 'test', label: '"Something\'s testing us."',
+          line: '"That\'s what I keep coming back to. A test has rules. Rules can be learned."',
+          trust: 1 },
+        { id: 'dontknow', label: '"I have no idea."',
+          line: '"Honest. I appreciate honest. I\'m tired of people pretending they know."',
+          trust: 1 },
+        { id: 'survive', label: '"Does it matter? We survive anyway."',
+          line: 'A short laugh. "Fair. Philosophy\'s a luxury. Surviving\'s the job."',
+          trust: 0 },
+      ],
+      followUp: '"I\'m serious — what do you think it wants? I need someone to sanity-check me."',
+      lapse: '"...Forget it. Thinking in circles."',
+      reacts: {
+        agree: '"Right? It wants SOMETHING. The trick is figuring out what before it collects."',
+        joke: '"Ha. "Wants" — like it\'s a person with a shopping list. ...Don\'t make me laugh about this."',
+        silence: 'You don\'t answer. They nod slowly, like your silence confirmed something.',
+      },
+    },
+    rq_shifting: {
+      match: 'You feel it too, right?',
+      thread: 'small',
+      answers: [
+        { id: 'yes', label: '"I feel it."',
+          line: '"Good. Not good, but — good that it\'s not just me. Keep an eye on people, yeah?"',
+          trust: 1 },
+        { id: 'no', label: '"I think things are fine."',
+          line: '"...Maybe. Maybe I\'m reading weather that isn\'t there." They don\'t look convinced.',
+          trust: 0 },
+        { id: 'how', label: '"Shifting how?"',
+          line: '"Small things. Who sits where. Who stopped laughing. It adds up."',
+          trust: 1 },
+      ],
+      followUp: '"The group — you really don\'t feel anything off?"',
+      lapse: '"Forget I said anything."',
+      reacts: {
+        agree: '"Thank you. I needed someone else to say it out loud."',
+        joke: 'You joke about group dynamics. They smile, but it doesn\'t reach their eyes.',
+        silence: 'You say nothing. They take that as agreement — maybe correctly.',
+      },
+    },
+    rq_personal: {
+      match: 'Can I ask you something — person to person',
+      thread: 'small',
+      answers: [
+        { id: 'yes', label: '"Of course. Ask."', action: 'ask_real', trust: 1 },
+        { id: 'depends', label: '"Depends what it is."',
+          line: '"Fair." A pause. "It\'s personal. But — we\'re past small talk, aren\'t we?"',
+          action: 'ask_real', trust: 0 },
+        { id: 'later', label: '"Maybe another time."',
+          line: '"...Right. Of course. Sorry." They withdraw a fraction.',
+          trust: -1 },
+      ],
+      followUp: '"I meant it — can I ask you something? Person to person."',
+      lapse: '"Never mind. Forget it."',
+      reacts: {
+        agree: '"Okay. Good. Here goes, then —"',
+        joke: '"I\'m being serious. ...Okay, one joke. Then I ask."',
+        silence: 'You wait. They take a breath, and ask anyway.',
+      },
+    },
+    rq_holding: {
+      match: 'How are you holding up? Honestly.',
+      thread: 'small',
+      answers: [
+        { id: 'honest', label: '"Honestly? Not great."',
+          line: '"Thank you for saying it straight. Most people perform. I\'m tired of performances." You feel oddly steadier.',
+          trust: 2 },
+        { id: 'fine', label: '"I\'m fine."',
+          line: '"Mm." They don\'t believe you, kindly. "Well. I\'m here if fine stops working."',
+          trust: 0 },
+        { id: 'busy', label: '"Better when I\'m busy."',
+          line: '"Then let\'s find you something to do. Idle hands, idle thoughts."',
+          trust: 1 },
+      ],
+      followUp: '"I asked how you\'re holding up. Honestly means honestly."',
+      lapse: '"...I\'ll take the silence as an answer. It\'s okay."',
+      reacts: {
+        agree: '"Yeah. Me too, if I\'m honest." A small, real smile.',
+        joke: 'You deflect with humor. They let you — this time.',
+        silence: 'You don\'t answer. They sit with you anyway. That\'s the answer.',
+      },
+    },
+    rq_alright: {
+      match: 'Are you alright? Really?',
+      thread: 'small',
+      answers: [
+        { id: 'notreally', label: '"Not really."',
+          line: '"Okay. That\'s allowed, you know. Sit a minute?"',
+          trust: 2 },
+        { id: 'okay', label: '"I\'m okay."',
+          line: '"You don\'t have to perform okay for me. But I won\'t push."',
+          trust: 0 },
+        { id: 'you', label: '"Are YOU?"',
+          line: 'A surprised laugh. "Nobody asks me that. ...I\'m managing. Ask me again sometime."',
+          trust: 2 },
+      ],
+      followUp: '"I\'m asking because I mean it. Are you alright?"',
+      lapse: '"Okay. I\'ll stop hovering."',
+      reacts: {
+        agree: '"Good. That\'s good. Hold onto that."',
+        joke: 'You joke. They smile, unconvinced but fond.',
+        silence: 'Silence. They read it, and don\'t press. That\'s kindness.',
+      },
+    },
+    rq_busy: {
+      match: "What do you want? I'm busy.",
+      thread: 'small',
+      answers: [
+        { id: 'talk', label: '"Just wanted to talk."',
+          line: '"...Huh. Nobody just talks anymore." A pause. "Fine. Talk." They soften, barely.',
+          trust: 1 },
+        { id: 'help', label: '"Actually, I could use your help."',
+          line: '"Knew it. Fine — what do you need?" Brisk, but not unkind.',
+          trust: 0 },
+        { id: 'nothing', label: '"Nothing. Sorry."',
+          line: '"Right." They turn back to their work — but less sharply than before.',
+          trust: 0 },
+      ],
+      followUp: '"Well? Busy doesn\'t mean gone. What do you want?"',
+      lapse: '"..." They go back to work.',
+      reacts: {
+        agree: '"Right. Busy. We\'re all busy. That\'s the job now."',
+        joke: 'A joke. Against all odds, the corner of their mouth moves.',
+        silence: 'You stand there. "...You\'re still here. So it wasn\'t nothing."',
+      },
+    },
+    rq_others: {
+      match: 'Have you talked to the others lately?',
+      thread: 'small',
+      answers: [
+        { id: 'bit', label: '"A bit. People seem..."',
+          line: '"...Yeah. That\'s what I\'m seeing too. Keep checking in, yeah? It matters more than it looks."',
+          trust: 1 },
+        { id: 'worried', label: '"You\'re worried about the mood."',
+          line: '"Someone should be. Moods are load-bearing, out here."',
+          trust: 1 },
+        { id: 'who', label: '"Who specifically?"',
+          line: '"I don\'t want to name names. Just — pay attention. You\'ll see it."',
+          trust: 0 },
+      ],
+      followUp: '"The others — have you talked to them? I\'m a little worried, honestly."',
+      lapse: '"Forget it. Probably nothing."',
+      reacts: {
+        agree: '"I knew you\'d see it. You pay attention. I like that."',
+        joke: 'You joke about village gossip. "It\'s not gossip if it\'s true," they say, half-smiling.',
+        silence: 'You don\'t answer. "That silence tells me plenty," they murmur.',
+      },
+    },
+    rq_monsters: {
+      match: "the monsters aren't the problem?",
+      thread: 'small',
+      answers: [
+        { id: 'maybe', label: '"Maybe they\'re not."',
+          line: '"Right? What if they\'re — symptoms. Or guards. Or livestock. "Monsters" feels too easy."',
+          trust: 1 },
+        { id: 'chase', label: '"They feel like the problem when they\'re chasing you."',
+          line: '"Fair. Very fair. I theorize from safety; you theorize from experience."',
+          trust: 1 },
+        { id: 'what', label: '"What else would they be?"',
+          line: '"I don\'t know yet. That\'s why I\'m asking everyone. Collecting wrong answers until a right one shows up."',
+          trust: 0 },
+      ],
+      followUp: '"Hear me out, though — what if the monsters aren\'t the problem? What are they, then?"',
+      lapse: '"...Forget it. Half-baked."',
+      reacts: {
+        agree: '"I knew you\'d get it. Keep thinking — tell me what you land on."',
+        joke: '"I\'m serious! ...Okay, it does sound unhinged out loud."',
+        silence: 'You don\'t answer. "Yeah," they say quietly. "That\'s what I thought too."',
+      },
+    },
+  };
+
   const methods = {
 
     talkTo(vid) {
@@ -36,6 +267,18 @@
         theorized: [],
       };
       return v.conv[vid];
+    },
+
+    // convoMatchReactive: does this NPC line ask the player something direct?
+    // Returns { id, ...def } or null. Matched lines get contextual answers;
+    // unmatched lines flow through the normal choice builder.
+    convoMatchReactive(line) {
+      if (!line || typeof line !== 'string') return null;
+      for (const id of Object.keys(REACTIVE_DEFS)) {
+        const def = REACTIVE_DEFS[id];
+        if (line.indexOf(def.match) !== -1) return Object.assign({ id }, def);
+      }
+      return null;
     },
 
     convoBudget(vid) {
@@ -358,10 +601,25 @@
           { id: 'leave', label: '"I should go."' },
         ];
       }
+      // REACTIVE: they asked you something direct ("Did you see that?").
+      // Answers come first — it's rude to ignore it. Pivots (teach/theorize)
+      // are suppressed while the question hangs: you don't teach burdock
+      // when someone asks if you saw something move by the tree line.
+      const reactiveDef = c.reactiveQ ? REACTIVE_DEFS[c.reactiveQ.id] : null;
+      if (reactiveDef) {
+        for (const a of reactiveDef.answers) {
+          choices.push({ id: 'react:' + c.reactiveQ.id + ':' + a.id, label: a.label });
+        }
+      }
+      const suppressPivot = !!c.reactiveQ || c.thread === 'grief' || c.thread === 'cheer';
       // MAXC: the chat view has room for a real choice list. Topic asks
       // must never be starved by action buttons — Steve found deep topics
       // unreachable when discovery actions filled all 5 slots.
-      const MAXC = 6;
+      // When a direct question hangs (reactive), the menu narrows to the
+      // answers plus a couple conversational options — discovery actions
+      // return next exchange, once the question is engaged. You don't get
+      // the full menu mid-question; that's the coherence fix, not a bug.
+      const MAXC = reactiveDef ? reactiveDef.answers.length + 2 : 6;
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
       // PARTY INVITES live in conversation, not on a button. Discovered via
       // the System unlock. You ask people. Like a person.
@@ -416,7 +674,7 @@
       const theorizeOpen = trustNow >= 25 || convoCount >= 2;
       const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
         theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
-      if (theorizeOpen && topicsLeft.length && choices.length < MAXC) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
+      if (theorizeOpen && topicsLeft.length && choices.length < MAXC && !suppressPivot) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
       // WATCH THEM: the detective's tool. Spend time observing — behavior may
       // contradict story. Available once you've talked enough to have a baseline
       // (2nd conversation+), or if you already have doubts about them.
@@ -450,7 +708,8 @@
         } catch (e) {}
       }
       // TEACHING happens in conversation now — show, don't menu.
-      if (choices.length < MAXC) {
+      // Suppressed while a direct question hangs: no burdock non sequiturs.
+      if (choices.length < MAXC && !suppressPivot) {
         try {
           const youKnow = Object.keys(this.state.codex.plants || {});
           const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
@@ -480,6 +739,7 @@
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
       c.qAskedThisConvo = false; c.theorized = [];
       c.traderMentioned = false; c.pendingTrade = null;
+      c.reactiveQ = null;
       c.count++; c.lastDay = this.state.scholar.day;
       // TALKING COSTS A LITTLE ENERGY — 10 kcal to open a conversation, not
       // per line. Small talk is quick and cheap; going deep costs ticks
@@ -515,6 +775,14 @@
       }
       const op = this.convoOpening(vid);
       c.thread = op.thread; c.depth = 1;
+      // REACTIVE: if the opener asked something direct ("Did you see that?"),
+      // it becomes a lightweight question — answerable, follow-up-able,
+      // not small talk the player can only dodge.
+      const rq = this.convoMatchReactive(op.line);
+      if (rq) {
+        c.reactiveQ = { id: rq.id, followedUp: false };
+        if (rq.thread) { c.thread = rq.thread; op.thread = rq.thread; }
+      }
       c.transcript.push({ who: 'them', text: op.line });
       this.say(`${this.displayName(vid)}: "${op.line}"`);
       // SEEDING: knowledge traders mention their trade in conversation — the
@@ -537,6 +805,10 @@
       const mood = this.npcMood(vid);
       let line = null, youSaid = null;
       const done = (l, you) => { line = l; youSaid = you || null; };
+      // answeredReactive: this turn engaged their direct question — the
+      // follow-up logic must not fire. extraQ: a formal question that lands
+      // as a second beat in the same turn (rq_personal -> real question).
+      let answeredReactive = false, extraQ = null;
 
       if (choiceId === 'leave') {
         return this.endConvo(vid, 'left');
@@ -561,6 +833,50 @@
         const t = this.state.village.trust || {};
         t[vid] = Math.max(0, (t[vid] || 10) - 1);
         done('"Okay." Something shutters, just slightly.', '(avoid the question)');
+      } else if (choiceId.indexOf('react:') === 0) {
+        // REACTIVE ANSWER: engaged their direct question. The outcome must
+        // read as a RESPONSE to what they asked — never a canned pivot.
+        const parts = choiceId.split(':');
+        const rid = parts[1], aid = parts[2];
+        const rdef = REACTIVE_DEFS[rid];
+        const ad = rdef && rdef.answers.find(a => a.id === aid);
+        if (c.reactiveQ && c.reactiveQ.id === rid) c.reactiveQ = null;
+        answeredReactive = true;
+        const t = this.state.village.trust || {};
+        if (ad && ad.action === 'look_treeline') {
+          // "Let's go look. Together." — the contextual show, not burdock.
+          const spooky = Math.random() < 0.5;
+          t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
+          c.thread = 'spooked'; c.depth = 1;
+          try { this.convoDeepTick(vid); } catch (e) {}
+          done(spooky
+            ? 'You go to the tree line together. Nothing moves. ...Or something just stopped moving. Broken branches at head height — snapped, not cut. You don\'t let go of each other\'s sleeves all the way back.'
+            : 'You go to the tree line together and stare until your eyes water. Nothing. Just wind. "Okay," they breathe. "Okay. Good." Neither of you believes it.',
+            '"Let\'s go look. Together."');
+        } else if (ad && ad.action === 'ask_real') {
+          // "Of course. Ask." — the personal question becomes a REAL
+          // question with real answers (pendingQ machinery).
+          const cg2 = (this.data.characterGen || {}).convo || {};
+          const prefer = ['q_miss', 'q_regret', 'q_first_memory', 'q_hope', 'q_scared', 'q_trust'];
+          let pool = (cg2.questions || []).filter(q => prefer.indexOf(q.id) !== -1 && c.askedQs.indexOf(q.id) === -1);
+          if (!pool.length) pool = (cg2.questions || []).filter(q => c.askedQs.indexOf(q.id) === -1);
+          const qd = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+          t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
+          c.thread = 'small'; c.depth = 1;
+          done(ad.line || '"...Okay. Here it is."', ad.label);
+          if (qd) {
+            c.pendingQ = qd;
+            if (c.askedQs.indexOf(qd.id) === -1) c.askedQs.push(qd.id);
+            c.qAskedThisConvo = true;
+            extraQ = qd;
+          }
+        } else if (ad) {
+          t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + (ad.trust || 0)));
+          if (rdef.thread) { c.thread = rdef.thread; c.depth = 1; }
+          done(ad.line, ad.label);
+        } else {
+          done('"..."', null);
+        }
       } else if (choiceId === 'more') {
         const beat = this.convoThreadBeat(vid);
         done(beat || this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know about that."']), '"Tell me more."');
@@ -672,12 +988,28 @@
         if (tcur < 40) tt[vid] = Math.min(40, tcur + 2);
         done(line, '"What do you think is actually going on here?"');
       } else if (choiceId === 'agree') {
-        const m = cg.agreeReacts || {};
-        // Acknowledgments are human filler — a small cycling pool, never a loop.
-        const l = this.convoPick(vid, 'agree:' + temp, [m[temp] || m.default || '"Yeah."'])
-          || this.convoPickCycle(vid, 'agreefill', ['"Yeah."', '"Mm."', '"Right."', 'Nods along.']);
-        done(l, '"You\'re right."');
+        // Reactive-aware: "You're right" IS an answer to a direct question.
+        const rrA = c.reactiveQ && REACTIVE_DEFS[c.reactiveQ.id];
+        if (rrA && rrA.reacts && rrA.reacts.agree) {
+          c.reactiveQ = null; answeredReactive = true;
+          if (rrA.thread) { c.thread = rrA.thread; c.depth = 1; }
+          done(rrA.reacts.agree, '"You\'re right."');
+        } else {
+          const m = cg.agreeReacts || {};
+          // Acknowledgments are human filler — a small cycling pool, never a loop.
+          const l = this.convoPick(vid, 'agree:' + temp, [m[temp] || m.default || '"Yeah."'])
+            || this.convoPickCycle(vid, 'agreefill', ['"Yeah."', '"Mm."', '"Right."', 'Nods along.']);
+          done(l, '"You\'re right."');
+        }
       } else if (choiceId === 'joke') {
+        const rrJ = c.reactiveQ && REACTIVE_DEFS[c.reactiveQ.id];
+        if (rrJ && rrJ.reacts && rrJ.reacts.joke) {
+          c.reactiveQ = null; answeredReactive = true;
+          if (rrJ.thread) { c.thread = rrJ.thread; c.depth = 1; }
+          const vgJ = this.state.village;
+          vgJ.cheer = Math.max(vgJ.cheer || 0, 1);
+          done(rrJ.reacts.joke, '(crack a joke)');
+        } else {
         const m = cg.jokeReacts || {};
         const rkey = (mood === 'grieving' || mood === 'scared') ? mood : temp;
         const key = 'joke:' + rkey;
@@ -686,12 +1018,20 @@
         done(l, '(crack a joke)');
         const vg = this.state.village;
         vg.cheer = Math.max(vg.cheer || 0, 1);
+        }
       } else if (choiceId === 'silence') {
+        const rrS = c.reactiveQ && REACTIVE_DEFS[c.reactiveQ.id];
+        if (rrS && rrS.reacts && rrS.reacts.silence) {
+          c.reactiveQ = null; answeredReactive = true;
+          if (rrS.thread) { c.thread = rrS.thread; c.depth = 1; }
+          done(rrS.reacts.silence, '(say nothing)');
+        } else {
         const m = cg.silence || {};
         const key = 'silence:' + temp;
         const l = this.convoPick(vid, key, [m[temp] || '"..."'])
           || this.convoPickCycle(vid, 'silencefill', ['...', 'The quiet holds.', 'Say nothing more.']);
         done(l, '(say nothing)');
+        }
       } else if (choiceId === 'subject') {
         // Change the subject — to a topic you haven't covered yet.
         const asked = c.askedTopics || [];
@@ -732,6 +1072,14 @@
       c.exchanges++;
       this.say(`${this.displayName(vid)}: "${line}"`);
 
+      // extraQ: rq_personal's "Of course. Ask." lands the real question as a
+      // second beat in the same turn — question and answers stay together.
+      if (extraQ) {
+        c.transcript.push({ who: 'them', text: extraQ.q });
+        while (c.transcript.length > 8) c.transcript.shift();
+        this.say(`${this.displayName(vid)}: "${extraQ.q}"`);
+      }
+
       // DEEP BEATS cost a tick: topic asks, "tell me more", theorizing,
       // trading, teaching, promises, invites, answering personal questions.
       // Small talk (agree, joke, silence, subject-change) is free — you're
@@ -743,22 +1091,60 @@
       // THEY ask YOU things. Conversations go both ways.
       // Never in nonverbal: someone you share no words with does not
       // suddenly ask "Where are you from?" in fluent English. (Leak fix.)
+      //
+      // COHERENCE: an unanswered direct question LINGERS. If the player
+      // dodged it, the NPC follows up once before letting it lapse — the
+      // thread is never silently dropped for a random new topic. And a
+      // genuinely new question mid-thread gets a narrative bridge, not a
+      // hard pivot.
       const forceQ = c.count === 1 && !c.qAskedThisConvo;
-      if (c.thread !== 'nonverbal' && !c.pendingQ && c.exchanges >= 1 && (forceQ || Math.random() < 0.4)) {
-        const trust = (this.state.village.trust || {})[vid] || 10;
-        const moodNow = this.npcMood(vid);
-        const cands = (cg.questions || []).filter(q =>
-          c.askedQs.indexOf(q.id) === -1 && trust >= (q.minTrust || 0) &&
-          (!q.when || q.when === moodNow));
-        if (cands.length) {
-          const qd = cands[Math.floor(Math.random() * cands.length)];
-          c.pendingQ = qd;
-          c.qAskedThisConvo = true;
-          c.transcript.push({ who: 'them', text: qd.q });
-          while (c.transcript.length > 8) c.transcript.shift();
-          this.say(`${this.displayName(vid)}: "${qd.q}"`);
-          // The answer and their question are SEPARATE transcript entries —
-          // never mashed into one line. Reading back should feel like dialogue.
+      if (c.thread !== 'nonverbal' && !c.pendingQ && c.exchanges >= 1 && !answeredReactive) {
+        const rqf = c.reactiveQ && REACTIVE_DEFS[c.reactiveQ.id];
+        if (rqf) {
+          if (!c.reactiveQ.followedUp) {
+            c.reactiveQ.followedUp = true;
+            c.transcript.push({ who: 'them', text: rqf.followUp });
+            while (c.transcript.length > 8) c.transcript.shift();
+            this.say(`${this.displayName(vid)}: "${rqf.followUp}"`);
+          } else {
+            if (rqf.lapse) {
+              c.transcript.push({ who: 'them', text: rqf.lapse });
+              while (c.transcript.length > 8) c.transcript.shift();
+              this.say(`${this.displayName(vid)}: "${rqf.lapse}"`);
+            }
+            c.reactiveQ = null;
+          }
+        } else if (forceQ || Math.random() < 0.4) {
+          const trust = (this.state.village.trust || {})[vid] || 10;
+          const moodNow = this.npcMood(vid);
+          const cands = (cg.questions || []).filter(q =>
+            c.askedQs.indexOf(q.id) === -1 && trust >= (q.minTrust || 0) &&
+            (!q.when || q.when === moodNow));
+          if (cands.length) {
+            const qd = cands[Math.floor(Math.random() * cands.length)];
+            // BRIDGE: pivoting off a live thread without a breath reads as
+            // a non sequitur (the tree-line -> hope-question cut). Name the
+            // pivot so the conversation keeps its shape.
+            const liveThreads = ['goal', 'past', 'plans', 'village', 'theorize', 'trade',
+              'spooked', 'request', 'recall', 'grief', 'cheer'];
+            if (liveThreads.indexOf(c.thread) !== -1) {
+              const bridge = this.convoPickCycle(vid, 'qbridge', [
+                'A beat. Then, as if shaking something off:',
+                'They let that thread drop — for now.',
+                'A pause. When they speak again, it\'s about something else entirely.',
+                'They glance away, then back. Different subject, same worry:',
+              ]);
+              c.transcript.push({ who: 'them', text: bridge });
+              this.say(`${this.displayName(vid)}: ${bridge}`);
+            }
+            c.pendingQ = qd;
+            c.qAskedThisConvo = true;
+            c.transcript.push({ who: 'them', text: qd.q });
+            while (c.transcript.length > 8) c.transcript.shift();
+            this.say(`${this.displayName(vid)}: "${qd.q}"`);
+            // The answer and their question are SEPARATE transcript entries —
+            // never mashed into one line. Reading back should feel like dialogue.
+          }
         }
       }
 
@@ -774,6 +1160,7 @@
       const mood = this.npcMood(vid);
       const first = this.displayName(vid);
       c.active = false; c.over = true; c.thread = null; c.pendingQ = null;
+      c.reactiveQ = null;
       let line;
       if (how === 'left') {
         line = this.convoPickCycle(vid, 'leftexit', [
