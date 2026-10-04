@@ -29,7 +29,7 @@
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
       statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
       statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
-      statRow('WATER', st.hydration + '% · ' + st.water + ' clean', st.hydration, st.hydration < 30) +
+      statRow('WATER', st.hydration + '% · ' + st.waterCleanL + 'L clean', st.hydration, st.hydration < 30) +
       (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '');
   }
 
@@ -449,7 +449,8 @@
       // EDGE OF THE MAP: you're on the rim. The next node is that way.
       // This is how you travel — walk to the edge, then head out.
       const exit = Game.edgeExit(cx, cy);
-      const outTile = !Game.state.scholar.insideHaven || Game.playerTile().type !== 'haven';
+      const inside = Game.state.scholar.insideHaven && Game.playerTile().type === 'haven';
+      const outTile = !inside;
       if (exit && outTile) {
         const nx = Game.map.px + exit.dx, ny = Game.map.py + exit.dy;
         const nt = (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) ? Game.tileAt(nx, ny) : null;
@@ -463,6 +464,8 @@
           refresh();
         }]);
         desc += ` You're on the ${exit.dir}ern edge — ${nm} lies that way.`;
+      } else if (inside) {
+        desc += ' You\'re inside the hall. To leave Haven: tap the 🚪 door, step outside, walk to the edge of the grounds, then tap yourself.';
       }
     } else if (isMon) {
       desc = 'Something big. It sees you.';
@@ -897,7 +900,7 @@
       <div class="detail">${renderDetail(st)}</div>
       ${contextBarHTML()}
       <div id="tileinfo"></div>
-      <p class="small">🗺 walk to the edge of the map, tap yourself, head out (1 part · 30 kcal/tile)</p>
+      <p class="small">👆 tap a tile to walk there · 🗺 walk to the edge, tap yourself, head out (1 part · 30 kcal/tile)</p>
       <div class="map minimap">${renderMap(st, tset)}</div>
       ${panelFor(st, n)}
       <div class="actions">
@@ -922,39 +925,37 @@
         try { info.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
       };
     });
-    // detail grid: tap a cell to see your options. the popup tells you what it is,
-    // Click a cell: if there's a DECISION (forage, drink, fight, talk), popup.
-    // If it's just ground, STEP there. No bubble asking to confirm walking.
-    // Steps cost kcal (not free), but they're not decisions.
+    // detail grid: TAP A TILE = GO THERE. That's the whole interaction model.
+    // Walkable tile → you move there (step if adjacent, path if distant). One tap.
+    // Person/monster/animal → popup (talk/fight/hunt). Blocked thing → popup (examine/use).
+    // Popups are for EXAMINING, never for movement.
     screen.querySelectorAll('.detail .cell').forEach(el => {
       el.onclick = () => {
         const cx = +el.dataset.cx, cy = +el.dataset.cy;
-        // INLINE: the panel appears below the grid. The world stays visible.
-        // Tapping ground steps there (free for 1 step, confirmed for long walks).
-        // Tapping something interesting shows what you can do — in context.
         const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
-        if (cx === px && cy === py) { cellPopup(cx, cy); return; } // yourself: info panel
+        if (cx === px && cy === py) { cellPopup(cx, cy); return; } // yourself: info/travel panel
         const detail = Game.genDetail(Game.map.px, Game.map.py);
         const cell = detail[cy] && detail[cy][cx];
-        const walkable = !Game.cellProps(cell).blocks;
-        const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
-        const actions = Game.cellActions(cx, cy);
-        // Villager on the tapped cell? Popup (talk), don't step onto them.
-        let tappedVillager = false;
+        // someone (or something) there? popup — don't step onto people.
+        const mon = Game.state.scholar.monster;
+        const ani = Game.state.scholar.animal;
+        if ((mon && mon.mx === cx && mon.my === cy) || (ani && ani.mx === cx && ani.my === cy)) {
+          cellPopup(cx, cy); return;
+        }
         const vpos = Game.state.village && Game.state.village.positions;
         if (vpos) for (const rid of Object.keys(vpos)) {
-          if (vpos[rid].mx === cx && vpos[rid].my === cy) { tappedVillager = true; break; }
+          if (vpos[rid].mx === cx && vpos[rid].my === cy) { cellPopup(cx, cy); return; }
         }
-        // 'Talk' is ambient (anyone within 3) — it must NOT block stepping.
-        // Only cell-specific actions force the popup.
-        const blockingActions = actions.filter(a => a !== 'Talk');
-        if (walkable && !tappedVillager && blockingActions.length === 0 && dist <= 1) {
-          // Adjacent ground: just step. Free. No panel, no fuss.
-          Game.microMove(cx, cy);
-          expeditionScreen();
-          return;
+        // walkable? GO. adjacent = step, distant = path. no confirmation, no popup.
+        if (!Game.cellProps(cell).blocks) {
+          const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
+          let moved = false;
+          if (dist <= 1) moved = Game.microMove(cx, cy);
+          else moved = Game.movePath(cx, cy);
+          if (moved) { expeditionScreen(); return; }
+          // couldn't move (no path / not enough kcal) — popup explains why.
         }
-        // Everything else: inline panel with context-appropriate options.
+        // blocked or unpathable: popup for examine/interact.
         cellPopup(cx, cy);
       };
     });
@@ -1193,28 +1194,19 @@
         const isMe = (cx === pmx && cy === pmy);
         let g, cls = 'cell';
         const ANIMAL_GLYPH = { cottontail_rabbit: '🐇', gray_squirrel: '🐿️', white_tailed_deer: '🦌', creek_chub: '🐟', wild_turkey: '🦃' };
+        // CELL FIRST, entities overlay. (Bug was: entity glyphs got overwritten
+        // by the cell chain below, making villagers invisible on grass/dirt.)
+        let entityHere = false;
         if (isMe) {
           // DIRECTIONAL MARKER: you are a pulsing ring with a facing wedge.
           // Facing comes from your last step — the marker shows where you're headed.
           const f = Game.state.scholar.facing || { x: 0, y: 1 };
           const ang = Math.round(Math.atan2(f.x, -f.y) * 180 / Math.PI);
-          g = `<span class="pmark"><span class="pdir" style="transform:rotate(${ang}deg)">▲</span></span>`;
+          g = `<span class="pmark"><span class="ptoken">🧑</span><span class="pdir" style="transform:rotate(${ang}deg)">▲</span></span>`;
           cls += ' me';
+          entityHere = true;
         }
-        else if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
-        else if (ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; }
-        else {
-          // villagers: show 🧍 with name (first name only, small)
-          for (const [rid, pos] of Object.entries(vpos)) {
-            if (pos.mx === cx && pos.my === cy) {
-              const vp = Game.data.villagers.find(v => v.id === rid) || Game.data.background_survivors.find(v => v.id === rid);
-              const fname = vp ? vp.name.split(' ')[0] : '?';
-              g = `🧍<span class="vname">${fname}</span>`;
-              cls += ' villager';
-              break;
-            }
-          }
-        }
+        // CELL GLYPH: what the ground itself looks like. Entities overlay after.
         if (cell === 'plant') {
           g = known && PLANT_GLYPH[known] ? PLANT_GLYPH[known] : '🌱';
           cls += ' plantcell';
@@ -1249,10 +1241,28 @@
 
         // known secrets override the look: knowledge is visible.
         const sec = secrets[cx + ',' + cy];
-        if (sec && sec.known && !isMe) {
+        if (sec && sec.known && !entityHere) {
           if ((cell === 'tree' || cell === 'bigtree') && sec.yield === 0) { g = '🌿'; cls += ' ivy'; }
           else if (cell === 'water' && sec.safe === false) { g = '☠️'; cls += ' poison'; }
           else if (cell === 'tent' && sec.condition === 'shredded') { g = '💨'; cls += ' shredded'; }
+        }
+        // ENTITIES OVERLAY: player, monster, animal, villager — always visible,
+        // never overwritten by the cell underneath. People are not grass.
+        if (!isMe) {
+          if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
+          else if (ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; }
+          else {
+            // villagers: show 🧍 with name (first name only, small)
+            for (const [rid, pos] of Object.entries(vpos)) {
+              if (pos.mx === cx && pos.my === cy) {
+                const vp = Game.data.villagers.find(v => v.id === rid) || Game.data.background_survivors.find(v => v.id === rid);
+                const fname = vp ? vp.name.split(' ')[0] : '?';
+                g = `🧍<span class="vname">${fname}</span>`;
+                cls += ' villager';
+                break;
+              }
+            }
+          }
         }
         html += `<div class="${cls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }

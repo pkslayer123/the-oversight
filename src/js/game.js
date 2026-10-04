@@ -2208,21 +2208,30 @@
     },
 
     // findPath: BFS shortest path avoiding blocked cells. Returns list of [x,y] or null.
+    // 8-directional to match microMove/tap adjacency (Chebyshev): a diagonal step
+    // is one square, not two. No corner-cutting through blocked cells.
     findPath(sx, sy, tx, ty) {
       const detail = this.genDetail(this.map.px, this.map.py);
       const key = (x, y) => `${x},${y}`;
       const visited = new Set([key(sx, sy)]);
       const queue = [[sx, sy, []]]; // [x, y, path]
+      const DIRS = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
       while (queue.length) {
         const [x, y, path] = queue.shift();
         if (x === tx && y === ty) return path.length ? path : [[tx, ty]]; // path already ends at target
-        for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+        for (const [dx, dy] of DIRS) {
           const nx = x + dx, ny = y + dy;
           if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
           if (visited.has(key(nx, ny))) continue;
           const cell = detail[ny] && detail[ny][nx];
           const props = this.cellProps(cell);
           if (props.blocks) continue;
+          // no corner-cutting: a diagonal step needs both orthogonal sides clear
+          if (dx !== 0 && dy !== 0) {
+            const c1 = detail[y] && detail[y][nx];
+            const c2 = detail[ny] && detail[ny][x];
+            if (this.cellProps(c1).blocks || this.cellProps(c2).blocks) continue;
+          }
           visited.add(key(nx, ny));
           queue.push([nx, ny, path.concat([[nx, ny]])]);
         }
@@ -3598,7 +3607,9 @@
     packWeight() {
       // hollow_bones: birdlike bones — you weigh 30% less for carry calculations.
       const raw = this.state.scholar.inventory.reduce((t, i) => t + (i.units * (i.kg || 0.1)), 0);
-      return raw * this.modTarget('carry.weight_mult', 1);
+      // water has mass: 1L = 1kg. it counts.
+      const waterKg = (this.state.scholar.water || []).reduce((t, b) => t + (b.liters || 1), 0);
+      return (raw + waterKg) * this.modTarget('carry.weight_mult', 1);
     },
     canCarry(kg) { return this.packWeight() + kg <= this.packCapacity(); },
 
@@ -4704,6 +4715,10 @@
         ap: this.ap, health: Math.round(s.health), kcal: Math.round(s.kcal),
         hydration: Math.round(s.hydration), energy: Math.round(s.energy),
         water: s.water || 0,
+        // carried water, in liters (bottles are {liters, quality, source} objects —
+        // never string-concat the raw array; that's how you get "[object Object]").
+        waterL: Math.round(((s.water || []).reduce((t, b) => t + (b.liters || 1), 0)) * 10) / 10,
+        waterCleanL: Math.round(((s.water || []).filter(b => b.quality === 'clean').reduce((t, b) => t + (b.liters || 1), 0)) * 10) / 10,
         inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
         invCount: s.inventory.reduce((t, i) => t + (i.units || 1), 0),
         invKcal: s.inventory.reduce((t, i) => t + (i.units || 0) * (i.kcalEach || 0), 0),
