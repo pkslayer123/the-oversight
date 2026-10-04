@@ -161,7 +161,12 @@
         aki_tanaka: ['field_dressing', 'preservation_instinct'],
       };
       scholar.abilities = granted[villagerId] || [];
-      scholar.water = 1; // 1 clean water to start
+      // WATER BOTTLES: 1L each, 1kg each. Assume you have bottles.
+      // Quality matters: clean vs risky. Source is retained.
+      scholar.water = [
+        { liters: 1, quality: 'clean', source: 'Haven' },
+        { liters: 1, quality: 'clean', source: 'Haven' },
+      ];
       this.state.scholar = scholar;
       this.state.codex = S.state.newCodex();
       // Jesse (hunter) starts knowing the snare. Others must learn.
@@ -1408,12 +1413,62 @@
       this.say('You drink. Cold and clean.');
       return null;
     },
-    // fillWater: collect 2L clean water into village storage.
+    // fillWater: fill ONE bottle (1L). Quality depends on source.
+    // Creek water is risky (unknown). Haven well is clean.
     fillWater() {
-      const w = this.state.village.water = this.state.village.water || { clean: 20, dirty: 10 };
-      w.clean += 2;
-      this.say('Filled +2L clean water.');
+      const s = this.state.scholar;
+      s.water = s.water || [];
+      // Where are you? Creek = risky, Haven = clean.
+      const t = this.playerTile();
+      const isCreek = t && t.type === 'creek';
+      const quality = isCreek ? 'risky' : 'clean';
+      const source = isCreek ? 'Creek (unknown)' : 'Haven well';
+      s.water.push({ liters: 1, quality, source });
+      this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).`);
       return null;
+    },
+    // boilWater: at a fire, make risky water clean (kills bacteria).
+    // Does NOT fix chemical contamination.
+    boilWater() {
+      const s = this.state.scholar;
+      s.water = s.water || [];
+      let n = 0;
+      for (const b of s.water) {
+        if (b.quality === 'risky' && !b.chemical) {
+          b.quality = 'clean';
+          b.source += ' (boiled)';
+          n++;
+        }
+      }
+      this.say(n ? `Boiled ${n}L. Bacteria dead.${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+      return null;
+    },
+    // drinkWater: drink clean first. Warn if only risky.
+    drinkWater() {
+      const s = this.state.scholar;
+      s.water = s.water || [];
+      // prefer clean
+      let idx = s.water.findIndex(b => b.quality === 'clean');
+      if (idx === -1) idx = s.water.findIndex(b => b.quality === 'risky');
+      if (idx === -1) { this.say('No water. Fill at a creek or well.'); return null; }
+      const b = s.water[idx];
+      s.water.splice(idx, 1);
+      if (b.quality === 'risky') {
+        // 30% chance of sickness
+        if (Math.random() < 0.3) {
+          s.health = Math.max(0, (s.health || 100) - 15);
+          this.say(`Drank risky water (${b.source}). Stomach cramps. -15 health. Boil it next time.`);
+        } else {
+          this.say(`Drank risky water (${b.source}). Got lucky this time.`);
+        }
+      } else {
+        this.say(`Drank clean water.`);
+      }
+      return null;
+    },
+    // waterWeight: 1L = 1kg. Counts toward carry limit.
+    waterWeight() {
+      return (this.state.scholar.water || []).length; // 1 bottle = 1L = 1kg
     },
     // nearFire: is there a fire in the current detail grid?
     nearFire() {
@@ -1454,8 +1509,8 @@
       const pantry = this.state.village.pantry || [];
       const item = pantry[idx];
       if (!item || item.units <= 0) return null;
-      // weight check
-      const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0);
+      // weight check (includes water: 1L = 1kg)
+      const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0) + this.waterWeight();
       if (carry + (item.kg || 0) > 20) {
         this.say(`Too heavy. Carrying ${carry.toFixed(1)}/20 kg.`);
         return null;
@@ -2154,11 +2209,8 @@
     },
 
     drinkTreated() {
-      const scholar = this.state.scholar;
-      if ((scholar.water || 0) < 1) { this.say('No clean water. Treat some at a creek.'); return; }
-      scholar.water -= 1;
-      scholar.hydration = Math.min(100, scholar.hydration + 50);
-      this.say('You drink clean water. +50 hydration.');
+      // Legacy. Use drinkWater() (bottle system).
+      return this.drinkWater();
     },
 
     drinkWild() {

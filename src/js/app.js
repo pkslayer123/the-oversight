@@ -272,12 +272,15 @@
           else if (sec.condition === 'packable') actions.push(['Pack up', () => Game.cellInteract(cx, cy)]);
         } else if (cell === 'water') {
           actions.push(['Drink', () => { Game.drinkWater(); refresh(); }]);
-          actions.push(['Fill water (+2L)', () => { Game.fillWater(); refresh(); }]);
+          actions.push(['Fill water (1L)', () => { Game.fillWater(); refresh(); }]);
         } else if (cell === 'fire') {
           actions.push(['Warm hands', () => Game.cellInteract(cx, cy)]);
           // Cook raw food here. (Your Codex tells you what needs cooking.)
           const raw = Game.state.scholar.inventory.filter(i => i.rawKcal);
           if (raw.length) actions.push([`Cook ${raw.length} raw`, () => Game.cookAll()]);
+          // Boil risky water -> clean (kills bacteria, not chemicals).
+          const risky = (Game.state.scholar.water || []).filter(b => b.quality === 'risky').length;
+          if (risky) actions.push([`Boil ${risky}L water`, () => { Game.boilWater(); refresh(); }]);
         } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
           // BUILDING ROOMS: Search = examine + loot in one. No two-step.
           if (!sec || !sec.searched) actions.push(['Search', () => Game.searchRoom(cx, cy)]);
@@ -405,6 +408,7 @@
       <div class="card" style="margin-top:40px">
         <h3>Pack</h3>
         ${(() => { const eq = Game.state.scholar.equipped || {}; const parts = []; if (eq.weapon) parts.push(`⚔️ ${eq.weapon.name}`); if (eq.armor) parts.push(`🛡️ ${eq.armor.name}`); return parts.length ? `<p class="small"><b>Equipped:</b> ${parts.join(' · ')}</p>` : ''; })()}
+        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; return `<p class="small"><b>💧 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)</p>`; })()}
         ${inv.length ? inv.map((i, idx) => `<p class="small"><b>${i.name}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}
