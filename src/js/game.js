@@ -123,8 +123,10 @@
         // trust 5-20: strangers. it's earned.
         this.state.village.trust[rid] = 5 + Math.floor(Math.random() * 16);
       }
-      // you trust yourself
-      this.state.village.trust[villagerId] = 100;
+      // THE VILLAGE DOESN'T TRUST YOU YET. You're new (or a stranger).
+      // Trust builds through contribution, dialogue, sharing.
+      // This determines your meal share, whether they share knowledge, etc.
+      this.state.village.trust[villagerId] = 15;
       // (Jesse's snare is granted after newCodex below — order matters.)
       // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
       // they wander turn-based. you see them. you tap them.
@@ -1519,7 +1521,35 @@
       return null;
     },
 
+    // donateToPantry: give food to the village. Builds trust.
+    // Generosity is remembered. This is how you earn your place.
+    donateToPantry(idx) {
+      const item = this.state.scholar.inventory[idx];
+      if (!item || (item.kcalEach || 0) <= 0) { this.say('That\'s not food.'); return null; }
+      const v = this.state.village;
+      const vid = this.state.scholar.villagerId;
+      // add to pantry
+      v.pantry = v.pantry || [];
+      const existing = v.pantry.find(p => p.name === item.name);
+      const kcal = (item.kcalEach || 0) * (item.units || 1);
+      if (existing) {
+        existing.units += (item.units || 1);
+      } else {
+        v.pantry.push({ ...item });
+      }
+      // remove from inventory
+      this.state.scholar.inventory.splice(idx, 1);
+      // TRUST: giving builds it
+      v.trust = v.trust || {}; v.gives = v.gives || {};
+      v.gives[vid] = (v.gives[vid] || 0) + kcal;
+      v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + Math.min(10, Math.floor(kcal / 500)));
+      this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${Math.min(10, Math.floor(kcal / 500))}. They'll remember this.`);
+      return null;
+    },
+
     // takeFromPantry: pack food before going out. Weight matters (20kg max).
+    // SELFISHNESS HAS A COST: taking without contributing lowers trust.
+    // The village notices who gives and who takes.
     takeFromPantry(idx) {
       const pantry = this.state.village.pantry || [];
       const item = pantry[idx];
@@ -1533,6 +1563,19 @@
       // take one unit
       item.units--;
       if (item.units <= 0) pantry.splice(idx, 1);
+      // THEY NOTICE. Taking without giving lowers trust (a little each time).
+      const v = this.state.village;
+      v.trust = v.trust || {};
+      const vid = this.state.scholar.villagerId;
+      // track net: takes vs gives
+      v.takes = v.takes || {}; v.gives = v.gives || {};
+      v.takes[vid] = (v.takes[vid] || 0) + (item.kcalEach || 0);
+      const net = (v.gives[vid] || 0) - (v.takes[vid] || 0);
+      // if you're taking way more than giving, trust drops
+      if (net < -5000) {
+        v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
+        if (Math.random() < 0.3) this.say('Someone watches you take food. They say nothing, but you feel it.');
+      }
       // add to inventory (merge if same)
       const inv = this.state.scholar.inventory;
       const existing = inv.find(i => i.name === item.name);
@@ -2375,8 +2418,15 @@
         if (item.units <= 0) pantry.splice(i, 1);
       }
       scholar.kcal = Math.min((scholar.kcal || 0) + taken, 3000);
+      // WATER with the meal (from village storage).
+      const vw = v.water || { clean: 0 };
+      if (vw.clean >= 1) {
+        vw.clean -= 1;
+        scholar.water = scholar.water || [];
+        scholar.water.push({ liters: 1, quality: 'clean', source: 'Village meal' });
+      }
       if (taken > 0) {
-        this.say(`Village meal: +${Math.round(taken)} kcal from the communal pantry.${trust < 30 ? ' (Half ration — they don\'t trust you yet.)' : ''}`);
+        this.say(`Village meal: +${Math.round(taken)} kcal${vw.clean >= 0 ? ', +1L water' : ''} from the communal pantry.${trust < 30 ? ' (Half ration — they don\'t trust you yet.)' : ''}`);
       } else {
         this.say('No food in the pantry. The village is hungry.');
       }
