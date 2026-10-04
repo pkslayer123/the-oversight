@@ -48,22 +48,36 @@
   function save(state) {
     try {
       if (!state.startedAt) state.startedAt = Date.now();
-      localStorage.setItem(saveKey(state), JSON.stringify(state));
-      // keep an index
-      const idx = listSaves();
       const key = saveKey(state);
-      if (!idx.find(i => i.key === key)) {
-        const rc = (state.village && state.village.rosterChars) || {};
-        const char = rc[state.villagerId] || {};
-        idx.push({ key, villagerId: state.villagerId, villagerName: char.name || null, day: state.scholar && state.scholar.day, startedAt: state.startedAt });
-        localStorage.setItem('scattering-saves-index', JSON.stringify(idx));
-      }
+      localStorage.setItem(key, JSON.stringify(state));
+      // upsert the index every save: name, day, last-played stay fresh
+      const idx = listSaves().filter(i => i.key !== key);
+      const rc = (state.village && state.village.rosterChars) || {};
+      const char = rc[state.villagerId] || {};
+      idx.push({
+        key,
+        runName: state.runName || null,
+        villagerId: state.villagerId,
+        villagerName: char.name || null,
+        day: state.scholar && state.scholar.day,
+        location: state.startLocationName || null,
+        startedAt: state.startedAt,
+        lastPlayed: Date.now(),
+      });
+      idx.sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0));
+      localStorage.setItem('scattering-saves-index', JSON.stringify(idx));
     } catch (e) { /* storage full/blocked */ }
   }
   function listSaves() {
     try {
       const raw = localStorage.getItem('scattering-saves-index');
-      return raw ? JSON.parse(raw) : [];
+      const idx = raw ? JSON.parse(raw) : [];
+      // prune orphans: dead/finished runs are wiped, their index entries shouldn't linger
+      const live = idx.filter(i => { try { return !!localStorage.getItem(i.key); } catch (e) { return true; } });
+      if (live.length !== idx.length) {
+        try { localStorage.setItem('scattering-saves-index', JSON.stringify(live)); } catch (e) {}
+      }
+      return live;
     } catch (e) { return []; }
   }
   function load(key) {

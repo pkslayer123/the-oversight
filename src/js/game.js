@@ -349,7 +349,7 @@
       incidents[Math.floor(Math.random() * incidents.length)]();
     },
 
-    newGame(homeRegionText, locationId, villagerId, pickedItems) {
+    newGame(homeRegionText, locationId, villagerId, pickedItems, runName) {
       // homeRegionText: free text, typed by the player. Stored raw — someday we trek home.
       const parsed = this.parseOrigin(homeRegionText);
       this.homeRegion = parsed.raw; this.villagerId = villagerId;
@@ -361,7 +361,9 @@
         || {};
       this.state = S.state.newState();
       this.state.startLocation = loc.id || null;
+      this.state.startLocationName = loc.name || null;
       this.state.spawnType = loc.spawnType || 'countryside';
+      this.state.runName = (runName && String(runName).trim()) || null;
       // roster: 6 freshly generated characters per expedition (genRoster), not fixed mains.
       if (!this.generatedRoster || !this.generatedRoster.length) this.genRoster();
       const playerChar = this.generatedRoster.find(c => c.id === villagerId) || this.generatedRoster[0];
@@ -1047,7 +1049,16 @@
       this.recomputeActiveSynergies();
       return true;
     },
-    wipe() { S.state.wipe(); },
+    wipe() {
+      // remove this run's keyed save (dead/finished runs don't continue)
+      try {
+        if (this.state) {
+          if (!this.state.startedAt) this.state.startedAt = Date.now();
+          S.state.wipe(S.state.saveKey(this.state));
+        } else S.state.wipe();
+      } catch (e) {}
+    },
+    deleteSave(key) { S.state.wipe(key); },
 
     // OTHER VILLAGES: 2-3 on the map. They live their own game.
     // When you meet one mid-game, it has history — catch-up sim runs days since start.

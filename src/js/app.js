@@ -34,6 +34,43 @@
   }
 
   // ---------- title ----------
+  function fmtWhen(ts) {
+    if (!ts) return 'unknown';
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' +
+      d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+  // Save list: name, character, day, location, last played. Load or delete (two-tap confirm).
+  function renderSaves(el) {
+    const saves = Game.listSaves();
+    if (!saves.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `<p class="small" style="margin:18px 0 6px;opacity:.7">SAVED EXPEDITIONS</p>` + saves.map(sv => {
+      const name = sv.runName || `Expedition · ${sv.villagerName || 'unknown'}`;
+      const sub = [sv.villagerName, 'Day ' + (sv.day || 1), sv.location].filter(Boolean).join(' · ');
+      return `<div class="card" style="text-align:left">
+        <h3 style="margin:0 0 4px">${esc(name)}</h3>
+        <p class="small" style="margin:0 0 2px">${esc(sub)}</p>
+        <p class="small" style="margin:0 0 8px;opacity:.6">last played ${fmtWhen(sv.lastPlayed)}</p>
+        <button class="btn sm" data-load="${esc(sv.key)}">Continue</button>
+        <button class="btn sm ghost" data-del="${esc(sv.key)}">Delete</button>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('[data-load]').forEach(b => b.onclick = () => {
+      if (Game.load(b.dataset.load)) expeditionScreen();
+    });
+    el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+      if (b.dataset.armed) {
+        Game.deleteSave(b.dataset.del);
+        renderSaves(el);
+        toast('Expedition deleted.');
+      } else {
+        b.dataset.armed = '1';
+        b.textContent = 'Tap again to delete';
+        setTimeout(() => { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Delete'; } }, 3000);
+      }
+    });
+  }
+
   function title() {
     screen.innerHTML = `
       ${bar('scattering://village', 'day 0')}
@@ -51,20 +88,8 @@
       <button class="btn ghost" id="b-about">About</button>
       <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
-    const bc = document.getElementById('b-cont');
-    // Save list: pick which character to continue.
     const savesDiv = document.getElementById('saves');
-    if (savesDiv) {
-      const saves = Game.listSaves();
-      savesDiv.innerHTML = saves.map(sv => {
-        const v = Game.data.villagers.find(v => v.id === sv.villagerId) || {};
-        const name = sv.villagerName || v.name || sv.villagerId;
-        return `<button class="btn" data-save="${sv.key}">Continue ${name} (Day ${sv.day || 1})</button>`;
-      }).join('');
-      savesDiv.querySelectorAll('[data-save]').forEach(b => b.onclick = () => {
-        if (Game.load(b.dataset.save)) expeditionScreen();
-      });
-    }
+    if (savesDiv) renderSaves(savesDiv);
     document.getElementById('b-codex0').onclick = () => { toast('The Codex is empty. For now.'); };
     const bt = document.getElementById('b-tel');
     if (bt) bt.onclick = () => telemetryScreen();
@@ -144,11 +169,34 @@
       });
       const go = document.getElementById('b-go');
       if (picked.size === 5) go.onclick = () => {
-        Game.newGame(ob.home, null, ob.villager, [...picked]);
-        obWake();
+        ob.charName = v.name;
+        ob.picked = [...picked];
+        obName();
       };
     };
     render();
+  }
+
+  // ---------- name the expedition ----------
+  // Every run gets a name. It shows up in the save list.
+  function obName() {
+    const first = (ob.charName || 'Someone').split(' ')[0];
+    const def = `${first}'s Expedition`;
+    screen.innerHTML = `${bar('scattering://name', '?')}
+      <h1 class="title" style="font-size:22px">NAME THIS EXPEDITION</h1>
+      <p class="small">Every run gets a name. You'll see it in your saves.</p>
+      <input id="ob-runname" type="text" maxlength="40" value="${esc(def)}" autocomplete="off" autocapitalize="words"
+        style="width:100%;padding:12px;margin:12px 0;background:#0a0f0a;color:#c9d4c0;border:1px solid #3a4a3a;font-size:16px">
+      <button class="btn" id="b-name-go">Begin</button>`;
+    const input = document.getElementById('ob-runname');
+    input.focus(); input.select();
+    const go = () => {
+      const name = input.value.trim() || def;
+      Game.newGame(ob.home, null, ob.villager, ob.picked, name);
+      obWake();
+    };
+    document.getElementById('b-name-go').onclick = go;
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
   }
 
   // ---------- wake-up reveal ----------
@@ -925,7 +973,7 @@
   }
 
   function pantryPopup() {
-    const st = Game.stateSnapshot();
+    const st = Game.status();
     const pantry = Game.state.village.pantry || [];
     const vWater = Game.state.village.water || { clean: 0, dirty: 0 };
     const carry = st.carryKg;
