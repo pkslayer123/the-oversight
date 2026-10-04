@@ -1009,14 +1009,8 @@
         msg += `\n— ${arr.title} —\n${tile.ruinStory || arr.text}`;
         // no free lessons on arrival — the land teaches when you work it, not when you walk in.
       }
-      // WALKING INTO FOG: if it was unknown, something might be waiting.
-      if (wasUnknown && Math.random() < 0.3) {
-        // 30%: a monster was already here. surprise.
-        const mdefs = this.data.monsters;
-        const mdef = mdefs[Math.floor(Math.random() * mdefs.length)];
-        this.state.scholar.monster = { id: mdef.id, x: 4 + Math.floor(Math.random() * 3) - 1, y: 4 + Math.floor(Math.random() * 3) - 1 };
-        this.say(`Something was waiting. A ${mdef.name} looks up at you.`);
-      }
+      // Walking into fog: the wanderer system (checkEncounter) handles "something is there."
+      // No invented ambush odds. If the Bulldozer is on this tile, you'll meet it.
       this.say(msg);
       // arrive at the center of the new tile's detail grid. you're IN the world now.
       this.state.scholar.mx = 4; this.state.scholar.my = 4;
