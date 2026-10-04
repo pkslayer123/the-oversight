@@ -1177,7 +1177,8 @@
         ${(() => { const w = Game.goalWant(villagerId); return w ? `<p class="small" style="opacity:.7">🎯 Wants ${esc(w)}.</p>` : ''; })()}
         <p class="small" style="opacity:.7">👁 Sees you as: ${esc(Game.repWords(villagerId))}.</p>
         ${(() => { const pers = vp.personality || {}; const bits = [];
-          if (pers.quirk) bits.push(pers.quirk.charAt(0).toUpperCase() + pers.quirk.slice(1));
+          const qk = Game.npcQuirk(villagerId) || pers.quirk;
+          if (qk) bits.push(qk.charAt(0).toUpperCase() + qk.slice(1));
           if (pers.hope) bits.push('Hopes ' + pers.hope);
           return bits.length ? `<p class="small" style="opacity:.7">💭 ${esc(bits.join('. '))}.</p>` : ''; })()}`;
     } else {
@@ -1226,10 +1227,9 @@
           <button class="btn sm ghost" data-act="draw">\u2710\uFE0F Draw \u25B8</button>`;
       }
     }
-    if (teachable.length) btns += ` <button class="btn sm ghost" data-act="teach">\uD83D\uDCD6 Teach (${teachable.length})</button>`;
-    if (Game.isKnowledgeTrader && Game.isKnowledgeTrader(villagerId)) {
-      const tradeable = Game.traderKnowledge(villagerId);
-      btns += ` <button class="btn sm ghost" data-act="trade">\uD83D\uDD04 Trade knowledge${tradeable.length ? ` (${tradeable.length})` : ''}</button>`;
+    // TEACH and TRADE KNOWLEDGE are conversation paths now, not buttons.
+    // Steve's rule: social mechanics are discovered through talking.
+    // "You know things. I know things. Shall we trade?" — in dialogue.
     // === CONTEXTUAL SOCIAL ACTIONS ===
     // Not perpetual buttons -- opportunities that appear when relevant.
     // Every deep system gets a player-facing verb.
@@ -1263,11 +1263,8 @@
         btns += ' <button class="btn sm ghost" data-act="rally">📢 Rally the village</button>';
       }
     } catch (e) {}
-    try {
-      if (Game.goalKnown(villagerId) && !(Game.state.village.promises || {})[villagerId] && !(Game.state.village.challenge || {}).cid) {
-        btns += ' <button class="btn sm ghost" data-act="promise">🤞 Promise to help</button>';
-      }
-    } catch (e) {}
+    // PROMISES are made in conversation now ("I could help with that."),
+    // not via button. Discovered through talking about what they want.
     try {
       const _heard = (Game.state.village.gossip || []).filter(g => (g.heard || []).includes(villagerId));
       const _neg = _heard.find(g => Object.entries(g.dims || {}).some(([k, val]) => val < -3));
@@ -1275,7 +1272,6 @@
         btns += ' <button class="btn sm ghost" data-act="confront">\u26A1 Confront</button>';
       }
     } catch (e) {}
-    }
     // LEADERSHIP CHALLENGE: they're confronting you about who's in charge.
     // This conversation is about one thing. Yield a domain or hold your ground.
     // === PARTY ===
@@ -1356,32 +1352,8 @@
     }
     else if (act.startsWith('g:')) { Game.nonverbalGesture(vid, act.slice(2)); view.nvMode = null; view.result = 'You tried gestures.'; }
     else if (act.startsWith('d:')) { Game.nonverbalDraw(vid, act.slice(2)); view.nvMode = null; view.result = 'You drew in the dirt.'; }
-    else if (act === 'teach') {
-      const youKnow = Object.keys(Game.state.codex.plants || {});
-      const theyKnow = (Game.state.village.taught && Game.state.village.taught[vid]) || [];
-      const teachable = youKnow.filter(pid => !theyKnow.includes(pid));
-      if (teachable.length) {
-        const pid = teachable[0];
-        if (!Game.state.village.taught[vid]) Game.state.village.taught[vid] = [];
-        Game.state.village.taught[vid].push(pid);
-        const pname = (Game.data.plants.find(p => p.id === pid) || {}).name || pid;
-        Game.say(`You teach ${dname} about ${pname}.`);
-        view.result = `You taught them about ${pname}.`;
-      }
-    }
-    else if (act === 'trade') {
-      const tradeable = Game.traderKnowledge(vid);
-      if (!tradeable.length) {
-        Game.say(`${dname} knows nothing you don't. "Come back when you've seen more green."`);
-      } else {
-        const pid = tradeable[0];
-        const p = (Game.data.plants || []).find(x => x.id === pid) || {};
-        const pname = Game.plantKnown(pid) ? p.name : (p.description || 'a plant');
-        Game.say(`${dname} leans in. "I can teach you about ${pname} — deep knowledge. What'll you give me?"`);
-        Game.tradeKnowledge(vid, pid);
-        view.result = 'You traded knowledge.';
-      }
-    }
+    // TEACH, TRADE, PROMISE, INVITE moved to conversation choices (conversation.js).
+    // Social mechanics are discovered through talking, not buttons.
     else if (act === 'askabout') {
       inlineView = { kind: 'askabout', vid, line: view.line, result: null, mapKey: inlineMapKey() };
     }
@@ -1405,17 +1377,9 @@
       const r = Game.rallyVillage();
       view.result = r ? 'You addressed the village.' : null;
     }
-    else if (act === 'promise') {
-      const r = Game.promiseHelp(vid);
-      view.result = r ? 'You made a promise.' : null;
-    }
     else if (act === 'confront') {
       const r = Game.confrontGossip(vid);
       view.result = r ? 'You confronted them.' : null;
-    }
-    else if (act === 'inviteParty') {
-      const r = Game.inviteToParty(vid);
-      view.result = r ? r.msg : null;
     }
     else if (act === 'dismissParty') {
       const r = Game.dismissFromParty(vid);

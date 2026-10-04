@@ -476,7 +476,21 @@
           if (c) set.add(c);
           return c;
         };
-        const quirk = pickFresh(cg.quirks, 'quirk');
+        // DARK: rare psychos, benign and malicious. ~2.5% benign, ~1.5% malicious.
+        // Tell, don't label: no 'psychopath' string anywhere user-facing. The
+        // quirk IS the tell; the backstory carries one wrong note. Most people
+        // are just people — the dark ones stand out because they're exceptions.
+        let dark = null, quirk;
+        {
+          const rolled = this.rollDarkTrait();
+          if (rolled) {
+            dark = rolled;
+            quirk = rolled._tell.quirk;
+            _ut.quirk.add(quirk); // dedupe the tell like any other quirk
+          } else {
+            quirk = pickFresh(cg.quirks, 'quirk');
+          }
+        }
         const habit = pickFresh(cg.habits, 'habit');
         const hope = pickFresh(cg.hopes, 'hope');
         // GOALS: everyone wants something. People have agendas, not just traits.
@@ -508,17 +522,26 @@
         for (const s of (curSec[curiosity] || ['steady'])) { secPool.push(s); }
         const secCands = secPool.filter(s => s !== intelPrimary && intelDefs[s]);
         const intelSecondary = secCands.length ? secCands[Math.floor(Math.random() * secCands.length)] : (intelPrimary === 'steady' ? 'practical' : 'steady');
+        // DARK TELL, applied: one wrong note in the backstory, one unsettling
+        // line in the assessment. The quirk (set above) is the visible tell.
+        let sysAssess = `${first} reads as ${temperament} and ${sharing} with strangers. The others find this ${temperament === 'cautious' ? 'reassuring' : temperament === 'bold' ? 'exhausting' : 'worth watching'}.`;
+        let darkStored = null;
+        if (dark && dark._tell) {
+          backstory += ' ' + fillPronouns(dark._tell.note);
+          sysAssess += ' ' + dark._tell.assessment;
+          darkStored = { kind: dark.kind, tell: dark.tell };
+        }
         const char = {
           id: 'gen_' + Math.random().toString(36).slice(2, 9),
           name, formerOccupation: occ.name || 'survivor', homeRegion: origin,
           originTags: parsed.tags, heritage: this.heritageFor(parsed.tags),
-          backstory, personality: { temperament, sharing, curiosity, quirk, habit, hope }, age, goal,
+          backstory, personality: { temperament, sharing, curiosity, quirk, habit, hope, dark: darkStored }, age, goal,
           intelligence: { primary: intelPrimary, secondary: intelSecondary },
           abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
           items: this.genItemCandidates(occ),
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
           survivalProbability: 25 + Math.floor(Math.random() * 21),
-          systemAssessment: `${first} reads as ${temperament} and ${sharing} with strangers. The others find this ${temperament === 'cautious' ? 'reassuring' : temperament === 'bold' ? 'exhausting' : 'worth watching'}.`,
+          systemAssessment: sysAssess,
           secretFear, languages: langs, occupationId: occ.id || null,
           candidate: candidate !== false, pro,
         };
@@ -871,6 +894,41 @@
           });
         }
       }
+      // background survivors get per-run home regions (static data can't hold them).
+      // Derived from the same culture draw as bgLangs — a Ruiz is from Mexico,
+      // an Okonkwo from Nigeria. Coherent people, coherent origins.
+      this.state.village.bgHome = {};
+      {
+        const culturePlaces = {
+          american: 'America', argentine: 'Argentina', bangladeshi: 'Bangladesh',
+          brazilian: 'Brazil', colombian: 'Colombia', egyptian: 'Egypt',
+          ethiopian: 'Ethiopia', filipino: 'the Philippines', german: 'Germany',
+          ghanaian: 'Ghana', indian: 'India', indonesian: 'Indonesia',
+          irish: 'Ireland', japanese: 'Japan', kenyan: 'Kenya', korean: 'Korea',
+          mexican: 'Mexico', moroccan: 'Morocco', newzealander: 'New Zealand',
+          nigerian: 'Nigeria', norwegian: 'Norway', peruvian: 'Peru',
+          polish: 'Poland', thai: 'Thailand', turkish: 'Turkey',
+          ukrainian: 'Ukraine', venezuelan: 'Venezuela', vietnamese: 'Vietnam',
+        };
+        const nc2 = this.data.nameCultures || {};
+        const cultures2 = nc2.cultures || {};
+        const lastToCultures2 = {};
+        for (const [cid, c] of Object.entries(cultures2)) {
+          for (const ln of (c.last || [])) {
+            const k = String(ln).toLowerCase();
+            (lastToCultures2[k] = lastToCultures2[k] || []).push(cid);
+          }
+        }
+        for (const id of bg) {
+          const person = (this.data.background_survivors || []).find(s => s.id === id) || {};
+          const lastName = String(person.name || '').split(' ').slice(-1)[0].toLowerCase();
+          const matches = (lastToCultures2[lastName] || []).filter(c => c !== 'american');
+          const home = matches.length
+            ? matches[Math.floor(Math.random() * matches.length)]
+            : ((lastToCultures2[lastName] || [])[0] || 'american');
+          this.state.village.bgHome[id] = culturePlaces[home] || 'America';
+        }
+      }
       this.state.village.roster = [this.villagerId].concat(otherGen, bg);
       this.state.village.villagers = [this.villagerId].concat(otherGen); // generated have dialogue; background have one-liners
       // persist the generated cast (they don't exist in the JSON — the save carries them)
@@ -903,6 +961,31 @@
           const cands = (tempSec[temp] || ['steady']).filter(s => s !== primary && intelDefs[s]);
           const secondary = cands.length ? cands[Math.floor(Math.random() * cands.length)] : (primary === 'steady' ? 'practical' : 'steady');
           this.state.village.bgIntel[id] = { primary, secondary };
+        }
+      }
+      // background survivors get per-run dark traits (static data can't hold them).
+      // VILLAGE CAP: at most one dark NPC per village — two psychos in twelve
+      // people stops feeling rare. The generated cast may already hold one.
+      this.state.village.bgDark = {};
+      {
+        const darkGen = otherGen.filter(id => {
+          const rc = (this.state.village.rosterChars || {})[id];
+          return rc && rc.personality && rc.personality.dark;
+        });
+        // strip extras from the generated cast (the tell quirk stays as flavor —
+        // eccentricity without the machinery underneath)
+        for (const id of darkGen.slice(1)) {
+          const rc = (this.state.village.rosterChars || {})[id];
+          if (rc && rc.personality) rc.personality.dark = null;
+        }
+        let darkPlaced = darkGen.length > 0;
+        for (const id of bg) {
+          if (darkPlaced) break;
+          const rolled = this.rollDarkTrait();
+          if (rolled) {
+            this.state.village.bgDark[id] = { kind: rolled.kind, tell: rolled.tell };
+            darkPlaced = true;
+          }
         }
       }
       // LEADERSHIP: 1-2 NPC contenders — never the scholar (you can't compete
@@ -966,6 +1049,20 @@
       // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
       // they wander turn-based. you see them. you tap them.
       this.state.village.positions = {};
+      // LIVING WORLD: NPCs exist on the world map, not just in Haven's grid.
+      // nodePos[rid] = {nx, ny}: which map node they're on. Everyone starts at
+      // Haven. They move between nodes with their own agendas — foraging,
+      // exploring, leaving. The world simulates them whether you're there or not.
+      // positions[rid] = {mx, my} is only populated for NPCs on YOUR node.
+      this.state.village.nodePos = {};
+      this.state.village.away = {}; // rid -> {nx, ny, purpose, returnPart, returnDay}: NPCs out in the world
+      {
+        const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+        for (const rid of this.state.village.roster) {
+          if (rid === this.villagerId) continue;
+          this.state.village.nodePos[rid] = { nx: hx, ny: hy };
+        }
+      }
       // place them in the building (not on walls, not on you)
       const freeCells = [];
       // (positions assigned when Haven detail generates — see ensureVillagerPositions)
@@ -1092,6 +1189,18 @@
     vpOf(vid) {
       return (this.data.villagers || []).find(x => x.id === vid)
         || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+    },
+
+    // npcHomeRegion: where an NPC is from. Generated cast has homeRegion;
+    // background survivors get a per-run draw in village.bgHome (from culture).
+    npcHomeRegion(vid) {
+      const vp = this.vpOf(vid);
+      if (vp.homeRegion) return vp.homeRegion;
+      const bg = (this.state.village || {}).bgHome || {};
+      if (bg[vid]) return bg[vid];
+      const rc = ((this.state.village || {}).rosterChars || {})[vid];
+      if (rc && rc.homeRegion) return rc.homeRegion;
+      return 'somewhere';
     },
 
     convoGet(vid) {
@@ -2187,6 +2296,54 @@
         return { ok: true, goal };
       }
       if (topic === 'gossip') {
+        // DARK GOSSIP: the village talks about the weird one. Unease for the
+        // benign, quiet warnings for the malicious — and some defend them.
+        // ("He's just different." The most chilling sentence in the village.)
+        const darkIds = (this.state.village.roster || []).filter(id =>
+          id !== vid && id !== this.villagerId && this.npcDark(id));
+        if (darkIds.length && Math.random() < 0.45) {
+          const did = darkIds[Math.floor(Math.random() * darkIds.length)];
+          const dk = this.npcDark(did);
+          const dname = this.displayName(did);
+          let line;
+          const roll = Math.random();
+          if (dk.kind === 'benign') {
+            const unease = [
+              `"You ever notice ${dname}? ...I don't know what to make of that. Nobody does."`,
+              `"I'm not saying there's anything wrong with ${dname}. I'm just saying I sleep better with them on the other side of the fire."`,
+              `"Someone should talk to ${dname}. Not me, though."`,
+            ];
+            const defend = [
+              `"Leave ${dname} alone. They're harmless. Weird, but harmless."`,
+              `"${dname}? They're fine. We're all a little broken right now."`,
+              `"People need to stop whispering about ${dname}. They've done nothing wrong."`,
+            ];
+            line = roll < 0.65
+              ? unease[Math.floor(Math.random() * unease.length)]
+              : defend[Math.floor(Math.random() * defend.length)];
+          } else {
+            const warn = [
+              `"Watch yourself around ${dname}. I can't tell you why. Just... watch."`,
+              `"${dname} asked me about you. A lot of questions. Friendly ones. Too friendly."`,
+              `"Something's off with ${dname}. I mentioned it to the others and they went quiet, which tells you everything."`,
+            ];
+            const defend = [
+              `"${dname}? You're imagining things. They're perfectly pleasant."`,
+              `"People are paranoid. ${dname} hasn't done a thing."`,
+            ];
+            line = roll < 0.7
+              ? warn[Math.floor(Math.random() * warn.length)]
+              : defend[Math.floor(Math.random() * defend.length)];
+          }
+          this.say(`${first} lowers their voice. ${line}`);
+          try {
+            if (this.journalNote) this.journalNote('people', did,
+              dk.kind === 'benign'
+                ? `People are uneasy about them. Nobody can say why, exactly.`
+                : `Someone warned me about them. Quietly. Like it cost them to say it.`);
+          } catch (e) {}
+          return { ok: true, darkGossip: true };
+        }
         const heard = (this.state.village.gossip || []).filter(g => (g.heard || []).includes(vid));
         if (!heard.length) {
           const idle = [`"Quiet lately. Too quiet, maybe."`, `"Nothing new. Which is new, if you think about it."`, `"People are keeping to themselves."`];
@@ -4210,6 +4367,9 @@
       // Walking into fog: the wanderer system (checkEncounter) handles "something is there."
       // No invented ambush odds. If the Bulldozer is on this tile, you'll meet it.
       this.say(msg);
+      // LIVING WORLD: NPCs who are on this node get grid positions. You might
+      // run into someone out here — they're living their own lives.
+      this.ensureVillagerPositions();
       // arrive at the center of the new tile's detail grid. you're IN the world now.
       this.state.scholar.mx = 4; this.state.scholar.my = 4;
       // traveling means you're outside. (Arriving at Haven puts you on the grounds —
@@ -5082,25 +5242,173 @@
     },
 
     // ensure villagers have positions in the Haven grid.
-    ensureVillagerPositions() {
+    // npcNode: which world-map node an NPC is on. Defaults to Haven.
+    // NPCs move between nodes with their own agendas — they're not glued to you.
+    npcNode(vid) {
       const v = this.state.village;
-      if (this.map.px !== 3 || this.map.py !== 3) return; // only at Haven
-      if (v.positions && Object.keys(v.positions).length > 0) return; // already placed
-      v.positions = {};
-      const detail = this.genDetail(3, 3);
-      // find passable cells: anything that doesn't block movement.
-      // (was: only excluded 'wall' — villagers spawned on fire/tents/trees.)
+      v.nodePos = v.nodePos || {};
+      if (!v.nodePos[vid]) {
+        const hx = v.px ?? 3, hy = v.py ?? 3;
+        v.nodePos[vid] = { nx: hx, ny: hy };
+      }
+      return v.nodePos[vid];
+    },
+
+    // npcSetNode: move an NPC to a different world node. Their grid position
+    // is cleared — it'll be assigned when someone (you) is on that node.
+    npcSetNode(vid, nx, ny) {
+      const v = this.state.village;
+      v.nodePos = v.nodePos || {};
+      nx = Math.max(0, Math.min(6, nx)); ny = Math.max(0, Math.min(6, ny));
+      v.nodePos[vid] = { nx, ny };
+      if (v.positions) delete v.positions[vid];
+    },
+
+    // npcsOnNode: which NPCs are on a given world node (default: your node).
+    npcsOnNode(nx, ny) {
+      const v = this.state.village;
+      if (nx === undefined) { nx = this.map.px; ny = this.map.py; }
+      return (v.roster || []).filter(rid => {
+        if (rid === this.villagerId) return false;
+        const n = this.npcNode(rid);
+        return n.nx === nx && n.ny === ny;
+      });
+    },
+
+    ensureVillagerPositions() {
+      // LIVING WORLD: positions are per-node. Only NPCs on YOUR node get grid
+      // positions. NPCs elsewhere exist in simulation (nodePos) but aren't rendered.
+      // Call this whenever you move within a node or arrive at a new node.
+      const v = this.state.village;
+      const px = this.map.px, py = this.map.py;
+      v.positions = v.positions || {};
+      // Clear positions for NPCs who aren't on this node anymore.
+      for (const rid of Object.keys(v.positions)) {
+        const n = this.npcNode(rid);
+        if (n.nx !== px || n.ny !== py) delete v.positions[rid];
+      }
+      // Assign positions to NPCs on this node who don't have one.
+      const here = this.npcsOnNode(px, py).filter(rid => !v.positions[rid]);
+      if (!here.length) return;
+      const detail = this.genDetail(px, py);
       const free = [];
       for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
         const c = detail[cy] && detail[cy][cx];
         if (c && !this.cellProps(c).blocks && !(cx === 4 && cy === 4)) free.push({x: cx, y: cy});
       }
-      for (const rid of (v.roster || [])) {
-        if (rid === this.villagerId) continue; // you're the player, not an NPC
+      // Don't spawn on top of the player.
+      const pmx = this.state.scholar.mx ?? 4, pmy = this.state.scholar.my ?? 4;
+      for (const rid of here) {
         if (!free.length) break;
         const idx = Math.floor(Math.random() * free.length);
         const pos = free.splice(idx, 1)[0];
+        // nudge off the player's exact cell if collided
+        if (pos.x === pmx && pos.y === pmy && free.length) {
+          const alt = free.splice(Math.floor(Math.random() * free.length), 1)[0];
+          free.push(pos); pos.x = alt.x; pos.y = alt.y;
+        }
         v.positions[rid] = { mx: pos.x, my: pos.y };
+      }
+    },
+
+    // npcNodeTravel: ONCE PER DAY-PART, NPCs move between world nodes.
+    // Called from advancePart. This is how the world lives without you:
+    // foragers go out, explorers wander, the restless leave.
+    npcNodeTravel() {
+      const v = this.state.village;
+      const s = this.state.scholar;
+      if (this.over) return;
+      const hx = v.px ?? 3, hy = v.py ?? 3;
+      const night = this.isNight();
+      for (const rid of (v.roster || [])) {
+        if (rid === this.villagerId) continue;
+        if (this.isEngaged(rid)) continue; // talking to you — stays put
+        // Dead NPCs don't travel.
+        const vp = this.vpOf(rid);
+        if (vp && vp.dead) continue;
+        const node = this.npcNode(rid);
+        const atHaven = (node.nx === hx && node.ny === hy);
+        const temp = this.npcTemper(rid);
+        const goal = this.npcGoal(rid);
+        const away = (v.away || {})[rid];
+
+        // AWAY NPCs: check if they come back.
+        if (away) {
+          const partsAway = (s.day - (away.sinceDay || s.day)) * 4 + (this.dayPart - (away.sincePart || 0));
+          const shouldReturn = partsAway >= (away.duration || 4);
+          if (shouldReturn) {
+            // They come home. Foragers bring food. Explorers bring news.
+            this.npcSetNode(rid, hx, hy);
+            delete v.away[rid];
+            const first = this.displayName(rid);
+            if (away.purpose === 'forage') {
+              const kcal = 200 + Math.floor(Math.random() * 400);
+              v.pantryKcal = (v.pantryKcal || 0) + kcal;
+              // Only announce if you're at Haven to see it.
+              if (this.map.px === hx && this.map.py === hy) {
+                this.say(`🌿 ${first} returns from foraging the wilds: +${kcal} kcal to the pantry.`);
+              }
+              this.bumpTrust(rid, 1);
+            } else if (away.purpose === 'explore') {
+              if (this.map.px === hx && this.map.py === hy && Math.random() < 0.6) {
+                const dirs = ['north', 'south', 'east', 'west'];
+                const d = dirs[Math.floor(Math.random() * dirs.length)];
+                this.say(`🧭 ${first} is back from the ${d}. "It's... different out there. I'll tell you about it." (Ask them what they saw.)`);
+                // They actually learned something — askable via conversation.
+                v.explorerNews = v.explorerNews || {};
+                v.explorerNews[rid] = { dir: d, day: s.day };
+              }
+            } else if (away.purpose === 'leave' && Math.random() < 0.3) {
+              // The 'escape' goal: some who leave come back changed. Most don't.
+              if (this.map.px === hx && this.map.py === hy) {
+                this.say(`${first} came back. They don't say where they went.`);
+              }
+            }
+            // 'leave' purpose with no return: they're gone. The village notices.
+            continue;
+          }
+          // Still away: drift to adjacent nodes (they're out there, living).
+          if (Math.random() < 0.3) {
+            const dx = Math.floor(Math.random() * 3) - 1;
+            const dy = Math.floor(Math.random() * 3) - 1;
+            if (dx || dy) this.npcSetNode(rid, node.nx + dx, node.ny + dy);
+          }
+          continue;
+        }
+
+        // AT HAVEN (or wherever they are): decide to leave.
+        if (night) continue; // nobody sets out at night
+        let leaveChance = 0, purpose = null, duration = 4;
+        const n = this.npcNeeds(rid);
+        // Hungry NPCs forage — this is survival, not tourism.
+        if ((n.hunger || 0) > 60 && atHaven) { leaveChance = 0.35; purpose = 'forage'; duration = 2 + Math.floor(Math.random() * 3); }
+        // The 'escape' goal: they leave. Maybe for good.
+        else if (goal === 'escape' && atHaven) { leaveChance = 0.15; purpose = 'leave'; duration = 999; }
+        // Bold/restless NPCs explore.
+        else if ((temp === 'bold' || temp === 'restless') && atHaven) { leaveChance = 0.12; purpose = 'explore'; duration = 3 + Math.floor(Math.random() * 4); }
+        // Curious minds wander.
+        else if (atHaven && Math.random() < 0.04) { leaveChance = 1; purpose = 'explore'; duration = 2 + Math.floor(Math.random() * 3); }
+
+        if (purpose && Math.random() < leaveChance) {
+          // Step to an adjacent node — not a teleport across the map.
+          const dx = Math.floor(Math.random() * 3) - 1;
+          const dy = Math.floor(Math.random() * 3) - 1;
+          if (!dx && !dy) continue;
+          const nx = Math.max(0, Math.min(6, node.nx + dx));
+          const ny = Math.max(0, Math.min(6, node.ny + dy));
+          if (nx === node.nx && ny === node.ny) continue;
+          this.npcSetNode(rid, nx, ny);
+          v.away = v.away || {};
+          v.away[rid] = { nx, ny, purpose, sinceDay: s.day, sincePart: this.dayPart, duration };
+          const first = this.displayName(rid);
+          if (this.map.px === hx && this.map.py === hy) {
+            if (purpose === 'forage') this.say(`${first} heads out to forage. "Back before dark. Probably."`);
+            else if (purpose === 'explore') this.say(`${first} wanders off. "I want to see what's out there."`);
+            else if (purpose === 'leave') this.say(`${first} walks away from Haven. They don't look back.`);
+          }
+          // Leaving is gossip-worthy.
+          try { this.seedGossip('departure', { who: rid }, []); } catch (e) {}
+        }
       }
     },
 
@@ -5177,6 +5485,43 @@
       if (v.goal) return v.goal;
       return (this.state.village.bgGoals || {})[vid] || null;
     },
+    // DARK: roll a rare dark trait. ~2.5% benign (weird, unsettling, harmless),
+    // ~1.5% malicious (dangerous, hidden). Returns {kind, tell, _tell} or null.
+    // The _tell carries the story fragments; strip it before storing.
+    rollDarkTrait() {
+      const tells = (this.data.characterGen || {}).darkTells || {};
+      const roll = Math.random();
+      const pool = roll < 0.015 ? (tells.malicious || [])
+        : roll < 0.04 ? (tells.benign || []) : null;
+      if (!pool || !pool.length) return null;
+      const tell = pool[Math.floor(Math.random() * pool.length)];
+      return { kind: roll < 0.015 ? 'malicious' : 'benign', tell: tell.id, _tell: tell };
+    },
+    // darkTellOf: look up the tell object for a stored dark trait.
+    darkTellOf(dark) {
+      if (!dark) return null;
+      const tells = (this.data.characterGen || {}).darkTells || {};
+      const pool = dark.kind === 'malicious' ? (tells.malicious || []) : (tells.benign || []);
+      return pool.find(t => t.id === dark.tell) || null;
+    },
+    // npcDark: the hidden truth about someone. Generated cast carries it in
+    // personality.dark; background survivors get a per-run draw in bgDark.
+    // Returns {kind:'benign'|'malicious', tell} or null. Never user-labeled.
+    npcDark(vid) {
+      const rc = (this.state.village.rosterChars || {})[vid];
+      if (rc && rc.personality && rc.personality.dark) return rc.personality.dark;
+      return (this.state.village.bgDark || {})[vid] || null;
+    },
+    // npcQuirk: the visible quirk, dark tell included. Background survivors
+    // carry no quirk in static data — a dark one's tell surfaces from bgDark.
+    npcQuirk(vid) {
+      const dark = this.npcDark(vid);
+      if (dark) { const t = this.darkTellOf(dark); if (t && t.quirk) return t.quirk; }
+      const rc = (this.state.village.rosterChars || {})[vid];
+      if (rc && rc.personality && rc.personality.quirk) return rc.personality.quirk;
+      const vp = this.vpOf(vid);
+      return (vp.personality && vp.personality.quirk) || null;
+    },
     goalWant(vid) {
       const g = (this.data.characterGen.goals || []).find(x => x.id === this.npcGoal(vid));
       return g ? g.want : null;
@@ -5222,6 +5567,21 @@
     // PROXIMITY MATTERS: only witnesses (nearby) see it directly. Everyone
     // else hears about it secondhand — distorted — or not at all.
     // opts: {target, task, noTrust, noGossip}
+    // murderDims: how the village reads a killing. Depends on the victim.
+    // Killing a feared psycho: less horror, a grim note of respect from some.
+    // Killing a harmless weirdo or a beloved innocent: worse than baseline.
+    murderDims(vid) {
+      const dark = this.npcDark(vid);
+      if (dark && dark.kind === 'malicious')
+        return { honest: -15, generous: -10, brave: 2, competent: 0 };
+      if (dark && dark.kind === 'benign')
+        return { honest: -40, generous: -30, brave: -8, competent: 0 };
+      const r = this.repOf(vid);
+      const like = (r.generous || 0) + (r.honest || 0);
+      if (like >= 20) return { honest: -38, generous: -28, brave: -8, competent: 0 };
+      if (like <= -20) return { honest: -20, generous: -12, brave: 0, competent: 0 };
+      return { honest: -30, generous: -20, brave: -5, competent: 0 };
+    },
     observe(action, opts) {
       opts = opts || {};
       const AX = {
@@ -5281,6 +5641,12 @@
           if (isTarget && temp === 'prickly') dims.honest = -3;
         }
         if (action === 'donate' && goal === 'lead') dims.honest = -3;
+        if (action === 'murder' && opts.target) {
+          // WITNESSES judge the killing by the victim. A dead psycho reads
+          // different than a dead innocent — same blood, different meaning.
+          const md = this.murderDims(opts.target);
+          for (const k of Object.keys(md)) dims[k] = md[k];
+        }
         this.applyRep(vid, dims, isTarget ? 1 : 0.8, opts.noTrust);
       }
     },
@@ -5418,11 +5784,20 @@
       }
       v.groups = groups;
     },
-    // fillTalkLine: shared dialogue data carries {first}/{occ}/{origin}/{skill}.
+    // fillTalkLine: shared dialogue data carries {first}/{occ}/{an_occ}/{Occ}/{origin}/{skill}.
+    // {occ} is lowercase bare ("fisherman"), {an_occ} has the article
+    // ("a fisherman"/"an ER nurse"), {Occ} is capitalized bare for appositives.
+    // NOTE: {an_occ} must be replaced BEFORE {occ} — it's a superstring.
     fillTalkLine(line, v) {
       const first = ((v && v.name) || 'Someone').split(' ')[0];
-      return String(line).replaceAll('{first}', first)
-        .replaceAll('{occ}', (v && v.formerOccupation) || 'survivor')
+      const occRaw = String((v && v.formerOccupation) || 'survivor');
+      const occ = occRaw.charAt(0).toLowerCase() + occRaw.slice(1);
+      const Occ = occRaw.charAt(0).toUpperCase() + occRaw.slice(1);
+      const an_occ = (/^[aeiou]/i.test(occ) ? 'an ' : 'a ') + occ;
+      return String(line).replaceAll('{an_occ}', an_occ)
+        .replaceAll('{Occ}', Occ)
+        .replaceAll('{occ}', occ)
+        .replaceAll('{first}', first)
         .replaceAll('{origin}', (v && v.homeRegion) || 'somewhere')
         .replaceAll('{skill}', 'making do');
     },
@@ -5504,7 +5879,8 @@
       if (v.memory[rid].length > 20) v.memory[rid].shift();
     },
     // villageEvent: the village feels things together.
-    villageEvent(type) {
+    villageEvent(type, opts) {
+      opts = opts || {};
       const v = this.state.village;
       const atHaven = this.map.px === 3 && this.map.py === 3;
       if (type === 'monster_attack') {
@@ -5516,17 +5892,31 @@
         for (const rid of (v.roster || [])) { if (rid !== this.villagerId) { const n = this.npcNeeds(rid); n.fear = Math.min(100, n.fear + 25); n.social = Math.min(100, n.social + 20); } }
         this.say('Nobody\'s talking much. The fire feels smaller tonight.');
       } else if (type === 'murder') {
-        // YOU killed someone. Everyone knows. The village is afraid of YOU now.
-        v.grief = 5;
+        // YOU killed someone. The village reacts to WHO died, not just that
+        // someone did. A beloved innocent: horror. A feared psycho: uneasy relief.
+        const victim = opts.victim;
+        const vDarkM = victim ? this.npcDark(victim) : null;
+        const vnameM = victim ? this.displayName(victim) : 'someone';
+        const malVictim = vDarkM && vDarkM.kind === 'malicious';
+        const benVictim = vDarkM && vDarkM.kind === 'benign';
+        v.grief = malVictim ? 3 : 5;
+        const fearBump = malVictim ? 30 : benVictim ? 55 : 45;
+        const trustDrop = malVictim ? 10 : benVictim ? 20 : 15;
         for (const rid of (v.roster || [])) {
           if (rid !== this.villagerId) {
-            const n = this.npcNeeds(rid); n.fear = Math.min(100, n.fear + 45); n.social = Math.min(100, n.social + 30);
+            const n = this.npcNeeds(rid); n.fear = Math.min(100, n.fear + fearBump); n.social = Math.min(100, n.social + 30);
             // trust craters: you are dangerous now
             const t = (v.trust && v.trust[rid]) || 10;
-            if (v.trust) v.trust[rid] = Math.max(0, t - 15);
+            if (v.trust) v.trust[rid] = Math.max(0, t - trustDrop);
           }
         }
-        this.say('They look at you differently now. The fire feels smaller, and you are the reason.');
+        if (malVictim) {
+          this.say(`Nobody's mourning ${vnameM} out loud. That silence says more than grief would. They still look at you differently — you're the one who did it.`);
+        } else if (benVictim) {
+          this.say(`${vnameM} never hurt anyone. Everyone knew that. Everyone knows what you did. The fire feels smaller, and you are the reason.`);
+        } else {
+          this.say('They look at you differently now. The fire feels smaller, and you are the reason.');
+        }
       } else if (type === 'donation') {
         v.cheer = Math.max(v.cheer || 0, 2);
         for (const rid of (v.roster || [])) { if (rid !== this.villagerId) this.npcNeeds(rid).hunger = Math.max(0, this.npcNeeds(rid).hunger - 25); }
@@ -5718,11 +6108,15 @@
     // one initiative per day part max — they're people, not popups.
     villagerInitiative() {
       const v = this.state.village;
-      if (this.map.px !== 3 || this.map.py !== 3 || !v.positions) return;
+      // LIVING WORLD: initiative works on any node — NPCs come to you wherever
+      // you are, if they're on your node. Not just Haven anymore.
+      if (!v.positions) return;
+      const here = this.npcsOnNode();
+      if (!here.length) return;
       const partKey = this.state.scholar.day + ':' + this.dayPart;
       if (v.lastInitPart === partKey) return;
       const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
-      const order = (v.roster || []).filter(rid => rid !== this.villagerId && v.positions[rid]);
+      const order = here.filter(rid => v.positions[rid]);
       // shuffle so the same loud NPC doesn't always win
       for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[order[i], order[j]] = [order[j], order[i]]; }
       for (const rid of order) {
@@ -5739,7 +6133,7 @@
           const dx = Math.sign(px - pos.mx), dy = Math.sign(py - pos.my);
           const nx = pos.mx + dx, ny = pos.my + dy;
           if (nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8) {
-            const detail = this.genDetail(3, 3);
+            const detail = this.genDetail(this.map.px, this.map.py);
             const cell = detail[ny] && detail[ny][nx];
             if (cell && !this.cellProps(cell).blocks) { pos.mx = nx; pos.my = ny; }
           }
@@ -6281,6 +6675,13 @@
           this.endDay();
           transitioned = true;
         }
+        // DAY-7 DEBUG: the System arrives on your first real action, not on
+        // the debug jump. The moment should land in the flow of play.
+        if (s._day7Armed && !this.state.systemArrived && !this.over) {
+          s._day7Armed = false;
+          this.checkSystemArrival();
+          transitioned = true;
+        }
       } finally { this._ticking = false; }
       return transitioned ? this.status() : undefined;
     },
@@ -6363,8 +6764,10 @@
     npcBatchTurn() {
       const v = this.state.village;
       if (!v.positions) return;
-      // only the node you're on has a live grid
-      const detail = this.genDetail(this.map.px, this.map.py);
+      // LIVING WORLD: only NPCs on YOUR node have live grid positions.
+      // NPCs elsewhere are simulated at node level (npcNodeTravel), not here.
+      const px = this.map.px, py = this.map.py;
+      const detail = this.genDetail(px, py);
       const night = this.isNight();
       // _sleeping is transient (NOT in save state) — you're unconscious, not interactive.
       const youSleep = !!this._sleeping;
@@ -7255,6 +7658,105 @@
           this.say('\U0001F9D1\u200d\U0001F91d\U0001F9D1\u200d\U0001F91d The village gathers. Everyone\'s journal is changing. Everyone hears the voice. Mara grabs your arm. "Tell me you hear that too."');
         }
       }
+    },
+    // debugDay7Experience: jump to day 7 with a DEVELOPED village — not a
+    // fresh spawn. Six days of life are synthesized: relationships built,
+    // names learned, journal partially filled, gossip seeded, pantry strained,
+    // promises made and kept. Then the System arrives and you FEEL it.
+    debugDay7Experience() {
+      const v = this.state.village;
+      const s = this.state.scholar;
+      if (this.state.systemArrived) {
+        this.say('🐞 The System has already arrived in this run.');
+        return;
+      }
+      this.say('🐞 DEBUG: fast-forwarding. Six days of life, compressed.');
+      this.say('🐞 (Trust, names, journal, gossip — as if you lived it.)');
+      const roster = (v.roster || []).filter(rid => rid !== this.villagerId);
+
+      // 1. TRUST: six days of interaction.
+      v.trust = v.trust || {};
+      for (const rid of roster) {
+        const temp = this.npcTemper(rid);
+        const base = temp === 'warm' || temp === 'gentle' ? 35 + Math.floor(Math.random() * 25)
+          : temp === 'prickly' || temp === 'withdrawn' ? 12 + Math.floor(Math.random() * 15)
+          : 20 + Math.floor(Math.random() * 25);
+        v.trust[rid] = Math.min(70, base);
+      }
+      // 2. NAMES: ~60% learned socially.
+      v.knownNames = v.knownNames || {};
+      const shuffled = [...roster].sort(() => Math.random() - 0.5);
+      const namedCount = Math.floor(roster.length * 0.6);
+      for (let i = 0; i < namedCount; i++) {
+        v.knownNames[shuffled[i]] = true;
+        try { this.journalLearn(shuffled[i], 'name', this.npcName(shuffled[i]), { how: 'told' }); } catch (e) {}
+      }
+      // 3. JOURNAL: partially filled.
+      for (const rid of shuffled.slice(0, Math.floor(roster.length * 0.5))) {
+        try {
+          const vp = this.vpOf(rid);
+          if (vp.formerOccupation) this.journalLearn(rid, 'occupation', vp.formerOccupation, { sure: Math.random() < 0.7 });
+          if (Math.random() < 0.4) this.journalLearn(rid, 'goal', this.npcGoal(rid), {});
+          if (Math.random() < 0.3) {
+            const langs = this.levelsOf(this.npcLangs(rid));
+            const langIds = Object.keys(langs);
+            if (langIds.length) this.journalLearn(rid, 'language', { id: langIds[0], label: langIds[0] });
+          }
+        } catch (e) {}
+      }
+      // 4. GOSSIP: rumors floating around.
+      try {
+        if (roster.length >= 3) {
+          this.seedGossip('generous', { who: shuffled[0] }, [shuffled[1]]);
+          this.seedGossip('stingy', { who: shuffled[2] }, [shuffled[0]]);
+        }
+      } catch (e) {}
+      // 5. LEADERSHIP: a contender has heat.
+      try {
+        const contenders = roster.filter(rid => this.npcGoal(rid) === 'lead');
+        if (contenders.length) {
+          v.leadHeat = v.leadHeat || {};
+          v.leadHeat[contenders[0]] = 3 + Math.floor(Math.random() * 3);
+        }
+      } catch (e) {}
+      // 6. PANTRY: six days of eating. Pressure is on.
+      v.pantryKcal = 8000 + Math.floor(Math.random() * 4000);
+      // 7. WEEK 1: you were active.
+      s.week1 = { forage: 8, hunt: 3, talk: 14, cook: 4, donate: 3, scavenge: 2 };
+      // 8. PLAYER: lived-in.
+      s.health = 85 + Math.floor(Math.random() * 10);
+      s.kcal = 1800 + Math.floor(Math.random() * 400);
+      s.hydration = 70 + Math.floor(Math.random() * 20);
+      s.energy = 75 + Math.floor(Math.random() * 15);
+      try {
+        const plants = (this.data.plants || []).slice(0, 5);
+        s.codex = s.codex || {}; s.codex.plants = s.codex.plants || {};
+        for (let i = 0; i < 3 && i < plants.length; i++) {
+          if (plants[i]) s.codex.plants[plants[i].id] = { level: 1, encounters: 2 };
+        }
+      } catch (e) {}
+      // 9. PROMISES: one kept, one open.
+      try {
+        if (roster.length >= 2) {
+          this.journalLearn(shuffled[0], 'promise', { text: 'Help find their family', status: 'kept' });
+          this.journalLearn(shuffled[1], 'promise', { text: 'Share food when the pantry runs low', status: 'open' });
+        }
+      } catch (e) {}
+      // 10. It's day 7. Morning. Nobody knows what's coming.
+      s.day = 7;
+      s.dayTicks = 0;
+      s.actionClock = 0;
+      this.dayPart = 0;
+      this.map.px = v.px ?? 3; this.map.py = v.py ?? 3;
+      s.mx = 4; s.my = 4;
+      this.ensureVillagerPositions();
+      this.say('');
+      this.say('— Day 7. Morning. —');
+      this.say('Six days. You know some names now. The pantry is getting thin.');
+      this.say('Someone is humming by the fire. It almost feels normal.');
+      this.say('');
+      this.say('🐞 (The System arrives the moment you take your next action. Be ready.)');
+      s._day7Armed = true;
     },
     // firstAbilityChoices: 3 options based on week-1 actions + background.
     // First ability TENDS TO UTILITY (practical). Later: wacky, vile, OP, whatever.
@@ -8166,6 +8668,9 @@
       try { this.tickNeeds(); } catch (e) {}
       // LEADER: assigned villagers execute their tasks. Reports come back now.
       try { this.resolveAssignments(); } catch (e) {}
+      // LIVING WORLD: NPCs move between nodes with their own agendas.
+      // Once per part — the world lives at a slower rhythm than your steps.
+      try { this.npcNodeTravel(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
@@ -9112,14 +9617,18 @@
         // HUMAN COMBAT IS NOT FUN. It's traumatic. No cool moves, no style points.
         // The text says what happened. Your hands did it. You live with it.
         const wtxt = w.unarmed ? 'your hands' : `the ${w.name}`;
+        const vDarkH = this.npcDark(t.villagerId);
         const lines = [
           `You hurt ${t.name} with ${wtxt}. They make a sound you will hear again tonight.`,
           `Your hands move before you decide. Blood. ${t.name} is staring at you like you're a stranger.`,
           `${wtxt} connects. ${t.name} gasps — surprised, more than anything. Like they didn't think you'd really do it.`,
         ];
+        if (vDarkH && vDarkH.kind === 'malicious') {
+          lines.push(`You hurt ${t.name} with ${wtxt}. They smile — wrong, late — and that scares you more than the blood.`);
+        }
         this.say(lines[Math.floor(Math.random() * lines.length)]);
-        // Trauma accrues. The game remembers that you did this.
-        try { this.addTrauma(8); } catch (e) {}
+        // Trauma accrues — but not blindly. Who they were and why matters.
+        try { this.addTrauma(this.traumaForHurt(t.villagerId)); } catch (e) {}
       } else {
         const wtxt = w.unarmed ? '' : ` (${w.name})`;
         this.say(`You STRIKE the ${t.name} for ${d}${wtxt}.`);
@@ -9143,6 +9652,36 @@
       }
     },
     traumaLevel() { return this.state.scholar.trauma || 0; },
+    // TRAUMA MATRIX: killing isn't automatically traumatic. It depends on
+    // WHO died, WHY it happened, and what they meant to you.
+    //   justification: self-defense (they drew first) vs murder (you did)
+    //   victim: a malicious psycho's death lands different than an innocent's
+    //   relationship: killing someone you trusted cuts deeper
+    //   likability: the village's read, off reputation axes
+    //   your own darkness: psychos don't haunt the same way
+    traumaFactor(vid, lethal) {
+      let f = 1;
+      const tf = (this.tbfight || {});
+      const selfDefense = tf.aggressor === 'npc'; // they drew first: them or you
+      const dark = this.npcDark(vid);
+      if (selfDefense) f *= lethal ? 0.35 : 0.3;
+      if (dark && dark.kind === 'malicious') f *= lethal ? 0.45 : 0.6;  // they were going to kill someone
+      else if (dark && dark.kind === 'benign') f *= 1.35; // they never hurt anyone. you did.
+      const trust = ((this.state.village.trust || {})[vid]) || 10;
+      if (trust >= 60) f *= 1.5;        // you knew them. you chose this.
+      else if (trust >= 30) f *= 1.15;
+      else if (trust < 10) f *= 0.85;   // a stranger. still a person.
+      const r = this.repOf(vid);
+      const like = (r.generous || 0) + (r.honest || 0);
+      if (like >= 20) f *= 1.25;        // beloved
+      else if (like <= -20) f *= 0.75;  // feared or despised
+      const myDark = this.npcDark(this.villagerId);
+      if (myDark && myDark.kind === 'malicious') f *= 0.25; // you don't feel it like others do
+      else if (myDark && myDark.kind === 'benign') f *= 0.7;
+      return Math.max(0.1, f);
+    },
+    traumaForHurt(vid) { return Math.max(1, Math.round(8 * this.traumaFactor(vid, false))); },
+    traumaForKill(vid) { return Math.max(2, Math.round(25 * this.traumaFactor(vid, true))); },
 
     tbPlayerStudy() {
       const f = this.tbfight;
@@ -9281,15 +9820,37 @@
         if (t.kind === 'player') this.say('You go down.');
         else if (t.kind === 'villager') { this.say(`☠ ${t.name} falls.`); this.tbVillagerFalls(t); }
         else if (t.kind === 'hostile') {
-          // KILLING A PERSON: this is the worst thing in the game. Say so.
-          const kl = [
-            `☠ ${t.name} stops moving. The clearing is very quiet. Your hands won't stop shaking.`,
-            `☠ ${t.name} is dead. You did that. No one is clapping, whatever the System says.`,
-            `☠ It's over. ${t.name} lies still. You keep waiting for them to get up.`,
-          ];
+          // KILLING A PERSON: the text depends on who they were and why.
+          // Self-defense, a monster in human skin, an innocent — different deaths.
+          const vDarkK = this.npcDark(t.villagerId);
+          const selfDefK = (this.tbfight || {}).aggressor === 'npc';
+          let kl;
+          if (selfDefK) {
+            kl = [
+              `☠ ${t.name} stops moving. It was them or you. Your hands shake anyway — but differently.`,
+              `☠ Self-defense. That's what you'll tell yourself. It's even true. It doesn't help as much as it should.`,
+            ];
+          } else if (vDarkK && vDarkK.kind === 'malicious') {
+            kl = [
+              `☠ ${t.name} is still. The clearing feels lighter, and that frightens you more than the killing.`,
+              `☠ Done. You keep waiting to feel worse about it than you do.`,
+              `☠ ${t.name} won't hurt anyone now. You tell yourself that's why. Mostly it's why.`,
+            ];
+          } else if (vDarkK && vDarkK.kind === 'benign') {
+            kl = [
+              `☠ ${t.name} stops moving. They never hurt anyone. You did.`,
+              `☠ ${t.name} is dead. The wrongness of it sits in your chest like a stone.`,
+            ];
+          } else {
+            kl = [
+              `☠ ${t.name} stops moving. The clearing is very quiet. Your hands won't stop shaking.`,
+              `☠ ${t.name} is dead. You did that. No one is clapping, whatever the System says.`,
+              `☠ It's over. ${t.name} lies still. You keep waiting for them to get up.`,
+            ];
+          }
           this.say(kl[Math.floor(Math.random() * kl.length)]);
-          try { this.addTrauma(25); } catch (e) {}
-          try { this.villageEvent('murder'); } catch (e) {}
+          try { this.addTrauma(this.traumaForKill(t.villagerId)); } catch (e) {}
+          try { this.villageEvent('murder', { victim: t.villagerId }); } catch (e) {}
         }
         else this.say(`The ${t.name} falls.`);
       }

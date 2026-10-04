@@ -219,9 +219,26 @@
         return l ? this.fillTalkLine(l, vp) : exh();
       }
       if (topic === 'past') {
-        const pool = (this.data.characterGen.talkTemplates || [])
-          .filter(s => s.indexOf('{occ}') !== -1 || s.indexOf('{origin}') !== -1);
-        const l = this.convoPick(vid, 'past', pool.length ? pool : ['"Before? I was {occ}. Feels like someone else\'s life."']);
+        // DEFLECTORS don't do "before". Withdrawn/prickly people with low
+        // trust shut it down — that's a real conversation, not a dead end.
+        const temp = this.npcTemper(vid);
+        const trust = (this.state.village.trust || {})[vid] || 10;
+        if ((temp === 'withdrawn' || temp === 'prickly') && trust < 40 && Math.random() < 0.55) {
+          c.thread = 'past'; c.depth = 1;
+          return this.convoPickCycle(vid, 'deflectpast', [
+            '"Before doesn\'t matter anymore." A wall comes down.',
+            '"I don\'t talk about before." Flat. Final.',
+            '"Long story. Not a good one. Let\'s leave it there."',
+          ]);
+        }
+        const all = this.data.characterGen.talkTemplates || [];
+        // PREFER occupation answers for "what did you do" — origin-flavored
+        // lines ("I'm from Chicago...") are non-sequiturs here. Only fall
+        // back to origin lines if no occupation lines exist.
+        // (matches {occ}, {an_occ}, {Occ} — 'occ}' is the common tail)
+        const occPool = all.filter(s => s.indexOf('occ}') !== -1);
+        const pool = occPool.length ? occPool : all.filter(s => s.indexOf('{origin}') !== -1);
+        const l = this.convoPick(vid, 'past', pool.length ? pool : ['"Before? I was {an_occ}. Feels like someone else\'s life."']);
         c.thread = 'past'; c.depth = 1;
         return l ? this.fillTalkLine(l, vp) : exh();
       }
@@ -266,12 +283,36 @@
       return null;
     },
 
+    // convoLabel: topic prompts are NOT identical every time. Each villager
+    // gets stable-per-person phrasing (seeded by id hash), so the "paths"
+    // stop looking like paths. You learn to talk to PEOPLE, not menus.
+    convoLabel(vid, key) {
+      const variants = {
+        goal: ['"What do you want? Out of all this."',
+               '"What are you hoping for, here?"',
+               '"What keeps you going?"'],
+        past: ['"What did you do — before?"',
+               '"What was your life, before?"',
+               '"Tell me about before."'],
+        village: ['"How\'s everyone holding up?"',
+                  '"What\'s the mood like around here?"',
+                  '"How are people doing?"'],
+        plans: ['"What\'s your plan for tomorrow?"',
+                '"Thought about what\'s next?"',
+                '"Any plans, or just getting through?"'],
+      };
+      const vs = variants[key] || [key];
+      const h = this._hashStr ? this._hashStr(vid + ':' + key) : 0;
+      return vs[Math.abs(h) % vs.length];
+    },
+
     convoChoices(vid) {
       const c = this.convoGet(vid);
       const choices = [];
       // Answering their question comes first — it's rude to ignore it.
       if (c.pendingQ) {
-        for (const a of c.pendingQ.answers) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: a.label });
+        const region = (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'far from here';
+        for (const a of c.pendingQ.answers) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: String(a.label).replaceAll('{region}', region) });
         choices.push({ id: 'deflect_q', label: '(avoid the question)' });
         choices.push({ id: 'leave', label: '"I should go."' });
         return choices;
@@ -293,14 +334,9 @@
         ];
       }
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
-      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
-      const asked = c.askedTopics || [];
-      const asks = [];
-      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1) asks.push({ id: 'ask:goal', label: '"What do you want? Out of all this."' });
-      if (asked.indexOf('past') === -1) asks.push({ id: 'ask:past', label: '"What did you do — before?"' });
-      if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: '"How\'s everyone holding up?"' });
-      if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: '"What\'s your plan for tomorrow?"' });
-      for (const a of asks) if (a.id !== threadAsk && choices.length < 4) choices.push(a);
+      // DISCOVERY CHOICES take priority over generic topic asks. These are
+      // the meaningful actions — trade, teach, promise, invite — and they
+      // should surface before small talk fills the slots.
       // PROMISES are discovered, not menued. Before you've learned the
       // concept, the offer only surfaces when they've really opened up
       // (deep in their goal thread). After that, any known goal will do.
@@ -342,7 +378,9 @@
           }
         } catch (e) {}
       }
-      // THEORIZE: think TOGETHER. Not info-vending — joint discovery.
+      // THEORIZE comes before the topic asks: it's a signature mechanic
+      // (joint discovery), not small talk — it shouldn't be starved by
+      // the discovery choices above or the asks below.
       // System talk only makes sense after it arrives; before that, the
       // scattering itself and the monsters are the mystery.
       const theorized = c.theorized || [];
@@ -350,6 +388,25 @@
       const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
         theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
       if (topicsLeft.length && choices.length < 5) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
+      // TOPIC ASKS fill remaining slots after the meaningful actions.
+      // DEFLECTORS offer fewer doors: withdrawn/prickly/restless people don't
+      // volunteer every topic — you get two, and you earn the rest.
+      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
+      const asked = c.askedTopics || [];
+      const tempNow = this.npcTemper(vid);
+      const topicCap = (tempNow === 'withdrawn' || tempNow === 'prickly' || tempNow === 'restless') ? 2 : 5;
+      const asks = [];
+      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
+      if (asked.indexOf('past') === -1) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
+      if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
+      if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
+      // Cap counts TOPIC asks, not total choices — deflectors get fewer doors,
+      // not zero. (An earlier version capped choices.length and starved them.)
+      let topicsAdded = 0;
+      for (const a of asks) {
+        if (a.id === threadAsk || topicsAdded >= topicCap || choices.length >= 5) continue;
+        choices.push(a); topicsAdded++;
+      }
       const reacts = [
         { id: 'agree', label: '"You\'re right."' },
         { id: 'joke', label: '(crack a joke)' },
@@ -439,8 +496,10 @@
         if (c.askedQs.indexOf(qid) === -1) c.askedQs.push(qid);
         c.pendingQ = null;
         let react = (ad && ad.react) || '"Huh. Okay."';
-        react = react.replaceAll('{region}', (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'there');
-        done(this.fillTalkLine(react, this.vpOf(vid)), ad ? ad.label : null);
+        const regionNow = (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'there';
+        react = react.replaceAll('{region}', regionNow);
+        const saidLabel = ad && ad.label ? String(ad.label).replaceAll('{region}', regionNow) : null;
+        done(this.fillTalkLine(react, this.vpOf(vid)), saidLabel);
         this.remember(vid, 'you_said', qid + '=' + aid);
       } else if (choiceId === 'deflect_q') {
         const qid = c.pendingQ && c.pendingQ.id;
@@ -454,8 +513,7 @@
         done(beat || this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know about that."']), '"Tell me more."');
       } else if (choiceId.indexOf('ask:') === 0) {
         const topic = choiceId.slice(4);
-        const labels = { goal: '"What do you want? Out of all this."', past: '"What did you do — before?"', village: '"How\'s everyone holding up?"', plans: '"What\'s your plan for tomorrow?"' };
-        done(this.convoAskTopic(vid, topic), labels[topic] || null);
+        done(this.convoAskTopic(vid, topic), this.convoLabel(vid, topic));
       } else if (choiceId === 'offer_help') {
         c.offeredHelp = true;
         // A promise is a FORMAL tracked commitment now — not just +2 trust.
@@ -573,12 +631,11 @@
         if (asked.indexOf('past') === -1) opts.push('past');
         if (asked.indexOf('village') === -1) opts.push('village');
         if (asked.indexOf('plans') === -1) opts.push('plans');
-        const labels = { goal: '"What do you want? Out of all this."', past: '"What did you do — before?"', village: '"How\'s everyone holding up?"', plans: '"What\'s your plan for tomorrow?"' };
         if (!opts.length) {
           done(this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I think we\'ve covered everything."']), '"Actually — different subject."');
         } else {
           const nt = opts[Math.floor(Math.random() * opts.length)];
-          done(this.convoAskTopic(vid, nt), '"Actually — different subject." ' + (labels[nt] || ''));
+          done(this.convoAskTopic(vid, nt), '"Actually — different subject." ' + this.convoLabel(vid, nt));
         }
       } else if (choiceId.indexOf('nv:') === 0) {
         const kind = choiceId.slice(3);
@@ -623,9 +680,8 @@
           c.transcript.push({ who: 'them', text: qd.q });
           while (c.transcript.length > 8) c.transcript.shift();
           this.say(`${this.displayName(vid)}: "${qd.q}"`);
-          // FIX (playtest): never stomp the answer to the player's question.
-          // The NPC answers FIRST, then asks their question — both shown, in order.
-          line = line ? line + ' ' + qd.q : qd.q;
+          // The answer and their question are SEPARATE transcript entries —
+          // never mashed into one line. Reading back should feel like dialogue.
         }
       }
 
