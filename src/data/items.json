@@ -847,5 +847,23 @@
     "kcalEach": 350,
     "kg": 0.2,
     "spoilDay": 120
+  },
+  {
+    "id": "hiking_backpack",
+    "name": "Hiking Backpack",
+    "class": "tool",
+    "description": "A real backpack. +10kg carry.",
+    "carryBonus": 10,
+    "kg": 1.5,
+    "findable": true
+  },
+  {
+    "id": "duffel_bag",
+    "name": "Duffel Bag",
+    "class": "tool",
+    "description": "Big and awkward. +7kg carry.",
+    "carryBonus": 7,
+    "kg": 1.0,
+    "findable": true
   }
 ]

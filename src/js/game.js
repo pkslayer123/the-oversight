@@ -199,6 +199,8 @@
     talkTo(vid) {
       const v = this.data.villagers.find(x => x.id === vid);
       if (!v || !v.talk || !v.talk.length) return null;
+      if (this.state.scholar.week1) this.state.scholar.week1.talk++;
+      this.gainAbilityXP('diplomat', 1);
       this.state.talkIdx = this.state.talkIdx || {};
       const i = (this.state.talkIdx[vid] || 0) % v.talk.length;
       this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
@@ -1581,7 +1583,26 @@
       return null;
     },
 
-    // takeFromPantry: pack food before going out. Weight matters (20kg max).
+    // carryCapacity: base 20kg. Abilities, items, and strength boost it.
+    carryCapacity() {
+      let cap = 20;
+      const s = this.state.scholar;
+      // Abilities
+      const has = (id) => (s.abilities || []).some(a => a.id === id) || (s.backgroundAbilities || []).some(a => a.id === id);
+      if (has('pack_rat')) cap += 5;
+      if (has('hoarder')) cap += 10;
+      // Items: backpacks, etc. (equipped or in inventory)
+      for (const item of (s.inventory || [])) {
+        const def = this.data.items.find(i => i.id === (item.itemId || item.id));
+        if (def && def.carryBonus) cap += def.carryBonus;
+      }
+      // Strength: integration makes you tougher (System upgrades your body).
+      const integ = s.integration || 5;
+      if (integ >= 60) cap += 5; // System-enhanced musculature
+      return cap;
+    },
+
+    // takeFromPantry: pack food before going out. Weight matters.
     // SELFISHNESS HAS A COST: taking without contributing lowers trust.
     // The village notices who gives and who takes.
     takeFromPantry(idx) {
@@ -1590,8 +1611,9 @@
       if (!item || item.units <= 0) return null;
       // weight check (includes water: 1L = 1kg)
       const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0) + this.waterWeight();
-      if (carry + (item.kg || 0) > 20) {
-        this.say(`Too heavy. Carrying ${carry.toFixed(1)}/20 kg.`);
+      const max = this.carryCapacity();
+      if (carry + (item.kg || 0) > max) {
+        this.say(`Too heavy. Carrying ${carry.toFixed(1)}/${max} kg.`);
         return null;
       }
       // take one unit
@@ -2325,6 +2347,8 @@
             this.say('Picked clean. The houses fed someone — not you.'); return null;
           }
           const lootId = t.loot.shift();
+          if (this.state.scholar.week1) this.state.scholar.week1.scavenge++;
+          this.gainAbilityXP('scrounger', 1);
           const item = SCAVENGED.find(s => s.id === lootId);
           if (!this.canCarry(item.kg)) { t.loot.unshift(lootId); this.say('Too heavy — your pack can\'t take it. Eat something or leave it.'); return null; }
           scholar.inventory.push({ plantId: lootId, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg });
