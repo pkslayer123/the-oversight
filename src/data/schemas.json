@@ -420,5 +420,32 @@
       "unlocks": "object",
       "flavor": "string"
     }
+  },
+  "synergy": {
+    "required": [
+      "id",
+      "name",
+      "requires",
+      "discovery"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "requires": "string[]",
+      "minLevel": "number?",
+      "modifiers": [
+        {
+          "target": "string",
+          "op": [
+            "add",
+            "multiply"
+          ],
+          "value": "number"
+        }
+      ],
+      "flags": "string[]?",
+      "discovery": "string",
+      "flavor": "string?"
+    }
   }
 }

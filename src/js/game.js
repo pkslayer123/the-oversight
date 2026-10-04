@@ -49,9 +49,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies };
       return this.data;
     },
 
@@ -1053,6 +1053,9 @@
         if (!this.data.villagers.find(v => v.id === id)) this.data.villagers.push(rc[id]);
       }
       this.over = false; this.won = false;
+      // SYNERGIES: recompute on load (saves predate the resonance system).
+      // Discovered ones stay discovered; no re-announcement (checkSynergies only says on new).
+      this.checkSynergies();
       return true;
     },
     wipe() { S.state.wipe(); },
@@ -3207,6 +3210,8 @@
       s.abilities.push({ id: choice.id, name: choice.name, desc: choice.description || choice.desc, level: 1, xp: 0 });
       // ON-ACQUIRE: some abilities change the world the moment you take them.
       this.abilityOnAcquire(choice.id);
+      // SYNERGIES: new ability might resonate with something you already hold.
+      this.checkSynergies();
       s.abilityChoices = null;
       this.say(`✨ Ability gained: ${choice.name} (L1). ${choice.description || choice.desc}`);
       if (choice.flavor) this.say(`"${choice.flavor}"`);
@@ -3238,6 +3243,7 @@
           const lid = (lose && lose.id) || lose;
           s.abilities = s.abilities.filter(e => ((e && e.id) || e) !== lid);
           this.say(`PACT: the Static takes — ${lid} is gone.`);
+          this.checkSynergies();
         }
       } else if (id === 'chitin_skin') {
         trustAll(-5, 'Your skin hardens into plates. People stare. (chitin_skin: trust -5, they notice)');
@@ -3257,7 +3263,7 @@
       const s = this.state.scholar;
       const out = [];
       const has = (id) => this.hasAbility(id);
-      if (has('blood_magic')) out.push({ id: 'blood_magic', name: 'Blood Price', desc: '-10 HP → +500 kcal. Your body eats itself.', available: (s.health || 0) > 10, why: 'Too weak — need 10+ HP.' });
+      if (has('blood_magic')) { const bc = this.hasSynergy('crimson_circuit') ? 7 : 10; out.push({ id: 'blood_magic', name: 'Blood Price', desc: `-${bc} HP → +500 kcal. Your body eats itself.`, available: (s.health || 0) > bc, why: `Too weak — need ${bc}+ HP.` }); }
       if (has('time_skip')) out.push({ id: 'time_skip', name: 'Time Skip', desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true });
       if (has('dowsing')) out.push({ id: 'dowsing', name: 'Dowse', desc: 'A forked stick twitches toward water. 70% accurate.', available: true });
       if (has('echo_location')) out.push({ id: 'echo_location', name: 'Echo-locate', desc: 'Clap once: sense the 3x3 around you. 1/day.', available: s.echoDay !== s.day, why: 'Used today.' });
@@ -3273,9 +3279,10 @@
     activateAbility(id) {
       const s = this.state.scholar;
       if (id === 'blood_magic') {
-        if ((s.health || 0) <= 10) { this.say('Too weak for the Blood Price.'); return null; }
-        s.health -= 10; s.kcal += 500;
-        this.say('BLOOD PRICE: -10 HP, +500 kcal. Your body eats itself. Efficient. Horrifying.');
+        const cost = this.hasSynergy('crimson_circuit') ? 7 : 10;
+        if ((s.health || 0) <= cost) { this.say('Too weak for the Blood Price.'); return null; }
+        s.health -= cost; s.kcal += 500;
+        this.say(`BLOOD PRICE: -${cost} HP, +500 kcal. Your body eats itself. Efficient. Horrifying.${cost < 10 ? ' (Crimson Circuit: the circuit closes, the price drops.)' : ''}`);
       } else if (id === 'time_skip') {
         s.ageDebt = (s.ageDebt || 0) + 1;
         this.say('TIME SKIP: the light stutters. You are a day older. The time had to come from somewhere.');
@@ -3352,6 +3359,8 @@
           `"Yes! YES! That's the comprehension we calibrated for! Keep going! The sponsors are doubling down!"`,
         ];
         this.say(insights[Math.floor(Math.random() * insights.length)]);
+        // SYNERGIES: a deepened ability might wake a new resonance.
+        this.checkSynergies();
       }
     },
     // abilityLevelBonus: what does leveling up give? (Per ability.)
@@ -3945,9 +3954,60 @@
       return (globalThis.Scattering && globalThis.Scattering.abilityLevel(this.state.scholar, id)) || 0;
     },
 
-    // mods: all active ability modifiers for the scholar (system + background).
+    // ============ ABILITY SYNERGIES ============
+    // Related powers resonate. Hold two that sing together and something new wakes up.
+    // The player discovers these — they're never listed in advance.
+    // checkSynergies: recompute active synergies, announce new discoveries.
+    // Runs on equip, unequip, and level-up (evolved abilities resonate deeper).
+    checkSynergies() {
+      const sch = this.state.scholar;
+      if (!sch) return;
+      const syns = this.data.synergies || [];
+      sch.synergies = sch.synergies || [];
+      const active = [];
+      for (const syn of syns) {
+        const minLvl = syn.minLevel || 1;
+        const held = (syn.requires || []).every(rid => this.abilityLevel(rid) >= minLvl);
+        if (held) active.push(syn.id);
+      }
+      // Discoveries: newly active synergies get the System's delight.
+      for (const sid of active) {
+        if (!sch.synergies.includes(sid)) {
+          sch.synergies.push(sid);
+          const syn = syns.find(x => x.id === sid);
+          this.say(`\u2728 SYNERGY DISCOVERED: ${syn.name}!`);
+          if (syn.flavor) this.say(syn.flavor);
+          if (syn.discovery) this.say(syn.discovery);
+        }
+      }
+      // Lost: synergies whose requirements no longer hold go quiet (kept as discovered).
+      sch.activeSynergies = active;
+    },
+
+    // hasSynergy: is this synergy currently resonating?
+    hasSynergy(sid) {
+      const sch = this.state.scholar;
+      return !!((sch.activeSynergies || []).includes(sid));
+    },
+
+    // synergyMods: passive synergy effects, fed into the modifier pipeline.
+    synergyMods() {
+      const out = [];
+      const syns = this.data.synergies || [];
+      for (const sid of (this.state.scholar.activeSynergies || [])) {
+        const syn = syns.find(x => x.id === sid);
+        if (!syn || !syn.modifiers) continue;
+        for (const m of syn.modifiers) {
+          out.push(Object.assign({ source: 'synergy:' + sid }, m));
+        }
+      }
+      return out;
+    },
+
+    // mods: all active ability modifiers for the scholar (system + background + synergies).
     mods() {
-      return globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities);
+      const base = globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities);
+      return base.concat(this.synergyMods());
     },
 
     // modTarget: resolve one computed value through the modifier pipeline.
@@ -4320,8 +4380,10 @@
       const s = this.state.scholar;
       // molt: once per week, shed your skin. Heal to full — but lose all equipped gear.
       const week = Math.floor(s.day / 7);
-      if (this.hasAbility('molt') && s.moltWeek !== week && s.health <= 0) {
-        s.moltWeek = week;
+      const moltUses = (s.moltWeek === week) ? (s.moltUses || 1) : 0;
+      const moltMax = this.hasSynergy('refuses_death') ? 2 : 1;
+      if (this.hasAbility('molt') && moltUses < moltMax && s.health <= 0) {
+        s.moltWeek = week; s.moltUses = moltUses + 1;
         s.health = this.maxHealth();
         const eq = s.equipped || {};
         s.equipped = {};
@@ -4329,10 +4391,14 @@
         return true;
       }
       // second_wind: once per day, when you'd die, you don't. 1 HP, 500 kcal.
-      if (this.hasAbility('second_wind') && s.secondWindDay !== s.day && s.health <= 0) {
-        s.secondWindDay = s.day;
-        s.health = 1; s.kcal = Math.max(s.kcal, 500);
-        this.say('SECOND WIND: you should be dead. You refuse. (1 HP, 500 kcal. Once today.)');
+      // refuses_death synergy: twice per day. undying_fury: full restore mid-rage.
+      const swUses = (s.secondWindDay === s.day) ? (s.secondWindUses || 1) : 0;
+      const swMax = this.hasSynergy('refuses_death') ? 2 : 1;
+      if (this.hasAbility('second_wind') && swUses < swMax && s.health <= 0) {
+        s.secondWindDay = s.day; s.secondWindUses = swUses + 1;
+        const furious = this.hasSynergy('undying_fury') && this.hasAbility('rage');
+        s.health = furious ? this.maxHealth() : 1; s.kcal = Math.max(s.kcal, 500);
+        this.say(furious ? 'UNDYING FURY: death came for you mid-rage and you LAUGHED. FULL HEALTH. The rage does not end.' : `SECOND WIND: you should be dead. You refuse. (1 HP, 500 kcal.${swMax > 1 ? ` ${swMax - swUses - 1} use left today.` : ' Once today.'})`);
         return true;
       }
       // phoenix_clause: once per run. Explode, then respawn at Haven with 1 HP.

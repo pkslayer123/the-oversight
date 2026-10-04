@@ -22,6 +22,7 @@ const FILES = {
   'animals.json': 'animal',
   'recipes.json': 'recipe',
   'books.json': 'book',
+  'synergies.json': 'synergy',
 };
 
 function checkType(val, spec, where) {
