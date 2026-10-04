@@ -725,3 +725,21 @@ LEARNING METHODS:
 - Teaching builds trust (+8).
 
 TEACHERS: everyone knows 1-2 plants from their old life. What they know, they can teach.
+
+## 2026-10-03 — Crafting as knowledge (Steve)
+Steve: "We also need capacity to hunt animals. Is about trap supplies and knowledge.
+Crafting should be focused on supplies to feed ourselves until abilities could sub in
+during the later game... This is another thing that should work more like knowledge
+discovery, but traps and items can be lost overtime and do need replacing."
+
+SYSTEM:
+- RECIPES (src/data/recipes.json): snare, deadfall, water filter, cook spit.
+- KNOWLEDGE LEVELS: L1 seen, L2 materials, L3 can craft. Like plants.
+- MATERIALS from world: vine (bush 30%), stick (tree 40%), stone (rubble).
+- CRAFT: consumes materials, creates tool with uses.
+- TRAPS: set in tile, check daily (40%/day). Catch animal. Uses decrement.
+- DEGRADE: snare breaks after 2 catches. You make another.
+- Jesse starts with snare L3 (hunter). Others learn.
+
+FOCUS: survival supplies, not a crafting game. Abilities replace later.
+Gear comes from achievements/monsters, not crafting.

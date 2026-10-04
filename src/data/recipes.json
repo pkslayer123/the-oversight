@@ -3,9 +3,15 @@
     "id": "snare",
     "name": "Snare",
     "description": "a loop of vine on a bent stick. catches small game.",
-    "materials": {"vine": 1, "stick": 1},
-    "uses": 2,
-    "catches": ["cottontail_rabbit", "gray_squirrel"],
+    "materials": {
+      "vine": 1,
+      "stick": 1
+    },
+    "uses": 10,
+    "catches": [
+      "cottontail_rabbit",
+      "gray_squirrel"
+    ],
     "knowledgeLevels": {
       "1": "You have seen a snare. A loop, a stick, an animal.",
       "2": "Materials: vine (muscadine or bush) + stick (tree branch). The loop goes on a game trail.",
@@ -16,9 +22,17 @@
     "id": "deadfall",
     "name": "Deadfall Trap",
     "description": "a heavy stone propped on sticks. crushes larger game.",
-    "materials": {"stick": 2, "stone": 1, "bait": 1},
-    "uses": 1,
-    "catches": ["cottontail_rabbit", "gray_squirrel", "wild_turkey"],
+    "materials": {
+      "stick": 2,
+      "stone": 1,
+      "bait": 1
+    },
+    "uses": 5,
+    "catches": [
+      "cottontail_rabbit",
+      "gray_squirrel",
+      "wild_turkey"
+    ],
     "knowledgeLevels": {
       "1": "A deadfall. Stone, sticks, bait. Simple and brutal.",
       "2": "Materials: 2 sticks + 1 heavy stone + bait (berries or nuts). The trigger is the trick.",
@@ -29,8 +43,12 @@
     "id": "water_filter",
     "name": "Water Filter",
     "description": "cloth and charcoal in a container. makes murky water safe.",
-    "materials": {"cloth": 1, "charcoal": 1, "container": 1},
-    "uses": 5,
+    "materials": {
+      "cloth": 1,
+      "charcoal": 1,
+      "container": 1
+    },
+    "uses": 20,
     "knowledgeLevels": {
       "1": "A filter. Dirty water in, clean out.",
       "2": "Materials: cloth + charcoal (from fire) + container. Layer them.",
@@ -41,8 +59,10 @@
     "id": "cook_spit",
     "name": "Cooking Spit",
     "description": "a stick over fire. cooks meat evenly.",
-    "materials": {"stick": 1},
-    "uses": 10,
+    "materials": {
+      "stick": 1
+    },
+    "uses": 30,
     "knowledgeLevels": {
       "1": "Meat on a stick over fire. Better than raw.",
       "2": "Materials: 1 sturdy stick. Green wood (will not burn).",
