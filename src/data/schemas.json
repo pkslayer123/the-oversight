@@ -35,7 +35,9 @@
       "preparation": "string?",
       "spoilageDays": "number[0..60]?",
       "confidence": [
-        "high"
+        "high",
+        "medium",
+        "low"
       ],
       "lookalikeNote": "string?",
       "codex": "string",
@@ -77,7 +79,10 @@
         "ambush",
         "territorial",
         "pack",
-        "passive"
+        "passive",
+        "curious",
+        "swarm",
+        "drifter"
       ],
       "codexStages": {
         "unknown": "string",
@@ -125,11 +130,24 @@
           "granted",
           "trial",
           "discovery",
-          "mentorship"
+          "mentorship",
+          "system_offer"
         ],
         "detail": "string?"
       },
-      "synergyHints": "string[]?"
+      "synergyHints": "string[]?",
+      "tier": [
+        "utility",
+        "wacky",
+        "vile",
+        "overpowered",
+        "underpowered",
+        "body_horror",
+        "risky",
+        "combat",
+        "social"
+      ],
+      "flavor": "string"
     }
   },
   "villager": {
@@ -177,7 +195,8 @@
         "tool",
         "clothing",
         "sentimental",
-        "weapon"
+        "weapon",
+        "food"
       ],
       "baseEffect": "string?",
       "flavor": "string",
@@ -191,7 +210,11 @@
       "craftable": "boolean",
       "materials": "object",
       "findable": "boolean",
-      "armor": "object"
+      "armor": "object",
+      "carryBonus": "number",
+      "kcalEach": "number",
+      "kg": "number",
+      "spoilDay": "number"
     }
   },
   "gameEvent": {

@@ -852,18 +852,18 @@
     "id": "hiking_backpack",
     "name": "Hiking Backpack",
     "class": "tool",
-    "description": "A real backpack. +10kg carry.",
     "carryBonus": 10,
     "kg": 1.5,
-    "findable": true
+    "findable": true,
+    "flavor": "A real backpack. +10kg carry. Padded straps. Hip belt. Someone loved this pack. Now it loves you."
   },
   {
     "id": "duffel_bag",
     "name": "Duffel Bag",
     "class": "tool",
-    "description": "Big and awkward. +7kg carry.",
     "carryBonus": 7,
     "kg": 1.0,
-    "findable": true
+    "findable": true,
+    "flavor": "Big and awkward. +7kg carry. Smells faintly of gym socks and freedom. Holds a LOT."
   }
 ]

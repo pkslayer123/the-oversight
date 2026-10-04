@@ -766,11 +766,14 @@
       }
       // trail: center cross
       for (let i = 1; i < 6; i++) { if (at(3, i) === 'forest_floor') set(3, i, 'trail_edge'); }
-      // ruin: one, deliberate, with a story
+      // ruin: one, deliberate, with a story.
+      // SCAVENGER VIABILITY: the ruin must be within Manhattan d<=3 of haven (3,3),
+      // i.e. reachable via revealed tiles in week 1. Scavenging is a real path now.
       guard = 0;
       while (guard++ < 60) {
         const x = Math.floor(Math.random() * 7), y = Math.floor(Math.random() * 7);
-        if (at(x, y) === 'forest_floor' && at(x + 1, y) !== 'creek' && at(x - 1, y) !== 'creek') {
+        const dHaven = Math.abs(x - 3) + Math.abs(y - 3);
+        if (at(x, y) === 'forest_floor' && at(x + 1, y) !== 'creek' && at(x - 1, y) !== 'creek' && dHaven <= 3 && dHaven > 0) {
           set(x, y, 'ruin');
           tiles[y][x].ruinStory = ['A collapsed barn. Pre-Burn. The wiring is gone — everything is gone — but the stones remember the shape of work.',
             'A farmhouse foundation. Someone\'s kitchen. The Burn took the wires from the walls; the walls kept standing out of spite.',
@@ -2168,6 +2171,10 @@
         camp_cook: (w.cook || 0) >= 2,
         generous: (w.donate || 0) >= 2,
         scrounger: (w.scavenge || 0) >= 3,
+        // previously unreachable first picks — now wired to sensible actions
+        ant_trail: (w.scavenge || 0) >= 2,   // ants know where the sugar is; ruins have sugar
+        cold_blooded: (w.forage || 0) >= 4,  // cold mornings outdoors teach efficiency
+        echo_location: (w.hunt || 0) >= 3,   // tracking hones your senses
       };
       // first ability: prefer UTILITY tier (practical). Later abilities can be anything.
       const utility = all.filter(a => a.tier === 'utility' && cond[a.id]);
