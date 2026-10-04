@@ -1426,11 +1426,6 @@
     },
 
     // drinkWater: drink from a water source. Hydrates.
-    drinkWater() {
-      this.state.scholar.kcal += 0; // water has no calories, but you need it
-      this.say('You drink. Cold and clean.');
-      return null;
-    },
     // fillWater: fill ONE bottle (1L). Quality depends on source.
     // Creek water is risky (unknown). Haven well is clean.
     fillWater() {
@@ -1482,6 +1477,7 @@
       } else {
         this.say(`Drank clean water.`);
       }
+      s.hydration = Math.min(100, (s.hydration || 0) + 50);
       return null;
     },
     // waterWeight: 1L = 1kg. Counts toward carry limit.
@@ -2133,7 +2129,9 @@
       } else if (kind === 'treat') {
         const t = this.playerTile();
         if (t.type !== 'creek' && t.type !== 'wetland') { this.say('Need moving water — find a creek or wetland.'); return null; }
-        scholar.water = (scholar.water || 0) + 2;
+        scholar.water = scholar.water || [];
+        scholar.water.push({ liters: 1, quality: 'clean', source: 'Creek (boiled)' });
+        scholar.water.push({ liters: 1, quality: 'clean', source: 'Creek (boiled)' });
         scholar.kcal -= S.calories.ACTION_COSTS.treat_water;
         msg = 'You boil water over a small fire. +2 clean water.';
       }
@@ -2360,13 +2358,17 @@
       // trust < 30: half ration (they're watching you). 30+: full. 60+: full + bonus.
       const trust = v.trust && v.trust[scholar.villagerId] !== undefined ? v.trust[scholar.villagerId] : 10;
       const share = trust < 30 ? 1000 : trust < 60 ? 2000 : 2200;
+      // don't take more than you can hold — food doesn't vanish into the cap
+      const room = Math.max(0, 3000 - (scholar.kcal || 0));
+      const want = Math.min(share, room);
+      if (want <= 0) { this.say('You\'re full. The pantry keeps its food.'); return; }
       // take from pantry (most perishable first)
       let taken = 0;
       pantry.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
-      for (let i = pantry.length - 1; i >= 0 && taken < share; i--) {
+      for (let i = pantry.length - 1; i >= 0 && taken < want; i--) {
         const item = pantry[i];
         if (!item || (item.kcalEach || 0) <= 0 || item.units <= 0) continue;
-        const need = share - taken;
+        const need = want - taken;
         const units = Math.min(item.units, Math.ceil(need / item.kcalEach));
         taken += units * item.kcalEach;
         item.units -= units;
