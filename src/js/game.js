@@ -49,9 +49,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books };
       return this.data;
     },
 
@@ -289,6 +289,38 @@
           }
         }
       }
+    },
+
+    // READ BOOK: treasure trove. Unlocks big chunks of codex at once.
+    // Not all at once — you find them occasionally, in ruins, offices, basements.
+    readBook(bookId) {
+      const book = this.data.books.find(b => b.id === bookId);
+      if (!book) return null;
+      this.say(`You open "${book.name}". ${book.flavor}`);
+      const unlocks = book.unlocks || {};
+      // plants
+      for (const pid of (unlocks.plants || [])) {
+        const level = unlocks.level || 1;
+        this.state.codex.plants[pid] = { identifiedDay: this.state.scholar.day, level, harvests: 0, tastings: 0 };
+        this.state.codex.encounters[pid] = 99;
+        const plant = this.data.plants.find(p => p.id === pid);
+        this.say(`Learned: ${plant.name} (Level ${level}). ${plant.knowledgeLevels[String(level)]}`);
+      }
+      // recipes
+      for (const rid of (unlocks.recipes || [])) {
+        this.learnRecipe(rid, 3);
+      }
+      // animals
+      for (const aid of (unlocks.animals || [])) {
+        this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
+        this.state.codex.animalEncounters[aid] = 99;
+        const animal = this.data.animals.find(a => a.id === aid);
+        this.say(`Learned: ${animal.name}.`);
+      }
+      this.integrate(5, 'book');
+      // remove the book (you've absorbed it)
+      this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.bookId !== bookId);
+      return true;
     },
 
     // give food: the fastest way to earn trust. sharing is the social contract.
@@ -907,7 +939,9 @@
       const props = CELL_PROPS[cell] || {};
       if (props.blocks) return false; // can't walk through, but might interact (see cellInteract)
       const cost = props.cost || 10;
-      s.kcal = Math.max(0, s.kcal - cost);
+      // POWER BURNS: metabolic mult applies. A fire god pays 4x per step.
+      const mult = this.metabolicMult(s.abilities);
+      s.kcal = Math.max(0, s.kcal - cost * mult);
       s.mx = cx; s.my = cy;
       this.monsterTurn();
       this.animalTurn();
@@ -1364,8 +1398,22 @@
           return null;
         }
         // ruins: scavenge finite loot, not plants
+        // BOOKS: 10% chance in ruins. Treasure, not routine.
         if (t.type === 'ruin') {
-          if (!t.loot || !t.loot.length) { this.say('Picked clean. The houses fed someone — not you.'); return null; }
+          if (!t.loot || !t.loot.length) {
+            // check for a book (once per ruin)
+            if (!t.bookChecked && Math.random() < 0.1 && this.data.books.length) {
+              t.bookChecked = true;
+              const book = this.data.books[Math.floor(Math.random() * this.data.books.length)];
+              this.state.scholar.inventory.push({
+                bookId: book.id, units: 1, name: book.name, kcalEach: 0,
+                spoilDay: 9999, unit: 'book', prep: 'Read it.', kg: 0.5
+              });
+              this.say(`You find a book: "${book.name}". ${book.description}. (Read it from your pack.)`);
+              return this.endDayPart();
+            }
+            this.say('Picked clean. The houses fed someone — not you.'); return null;
+          }
           const lootId = t.loot.shift();
           const item = SCAVENGED.find(s => s.id === lootId);
           if (!this.canCarry(item.kg)) { t.loot.unshift(lootId); this.say('Too heavy — your pack can\'t take it. Eat something or leave it.'); return null; }

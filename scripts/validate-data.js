@@ -21,6 +21,7 @@ const FILES = {
   'background_survivors.json': 'background_survivor',
   'animals.json': 'animal',
   'recipes.json': 'recipe',
+  'books.json': 'book',
 };
 
 function checkType(val, spec, where) {

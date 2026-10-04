@@ -360,5 +360,18 @@
       "catches": "string[]",
       "knowledgeLevels": "object"
     }
+  },
+  "book": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "description": "string",
+      "unlocks": "object",
+      "flavor": "string"
+    }
   }
 }

@@ -743,3 +743,13 @@ SYSTEM:
 
 FOCUS: survival supplies, not a crafting game. Abilities replace later.
 Gear comes from achievements/monsters, not crafting.
+
+## 2026-10-03 — Knowledge, not crafter (Steve)
+Steve: "It\'s a knowledge game, not a crafter. 2 uses is kinda weak. We actually want
+to let them play our game and NOT have it feel grindy. We just never want to let them
+forget about eating and drinking."
+
+- Traps last: snare 10 uses (was 2), deadfall 5, filter 20, spit 30.
+- The grind is SURVIVAL (finding food, staying alive), not REPLACING TOOLS.
+- Eating/drinking is a strategic concern (do I have enough?), not a mechanical chore.
+- Even a godly powerful being needs calories. "Does this let you skip dinner?" — never.

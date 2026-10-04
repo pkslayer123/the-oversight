@@ -300,7 +300,7 @@
     screen.innerHTML = `${bar('scattering://pack', st.invCount + ' items')}
       <div class="card" style="margin-top:40px">
         <h3>Pack</h3>
-        ${inv.length ? inv.map(i => `<p class="small"><b>${i.name}</b> x${i.units} (${i.kcalEach * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${inv.length ? inv.map(i => `<p class="small"><b>${i.name}</b> x${i.units} (${i.kcalEach * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : '<p class="small" style="opacity:.7">No recipes known yet. Learn by doing, or ask Jesse.</p>'}
         <button class="btn ghost sm" id="b-iback">Back</button>
@@ -308,6 +308,7 @@
     document.getElementById('b-iback').onclick = () => expeditionScreen();
     screen.querySelectorAll('[data-craft]').forEach(b => b.onclick = () => { Game.craft(b.dataset.craft); invPopup(); });
     screen.querySelectorAll('[data-settrap]').forEach(b => b.onclick = () => { Game.setTrap(b.dataset.settrap); expeditionScreen(); });
+    screen.querySelectorAll('[data-read]').forEach(b => b.onclick = () => { Game.readBook(b.dataset.read); invPopup(); });
   }
 
   function talkOverlay(vid) {

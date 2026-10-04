@@ -1,0 +1,30 @@
+[
+  {
+    "id": "field_guide_edible",
+    "name": "Field Guide to Edible Plants",
+    "description": "a battered field guide, pages stained with berry juice",
+    "unlocks": {"plants": ["dandelion", "cattail", "chickweed"], "level": 1},
+    "flavor": "Someone loved this book. Margins full of notes."
+  },
+  {
+    "id": "foxfires_journal",
+    "name": "Foxfire Journal",
+    "description": "a handwritten journal, cooking stains on every page",
+    "unlocks": {"plants": ["dandelion", "cattail"], "level": 2, "recipes": ["cook_spit"]},
+    "flavor": "Recipes and failures. Day 43: FINALLY got the acorns right."
+  },
+  {
+    "id": "trappers_handbook",
+    "name": "Trapper Handbook",
+    "description": "a slim volume on snares and deadfalls",
+    "unlocks": {"recipes": ["snare", "deadfall"], "animals": ["cottontail_rabbit"]},
+    "flavor": "Diagrams of knots. Check at dawn. Always."
+  },
+  {
+    "id": "medicinal_plants",
+    "name": "Medicinal Plants of the Southeast",
+    "description": "a clinical guide, precise illustrations",
+    "unlocks": {"plants": ["wood_sorrel", "wild_onion"], "level": 3},
+    "flavor": "Dosages and warnings. Whoever owned this was careful."
+  }
+]
