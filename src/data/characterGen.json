@@ -282,7 +282,8 @@
         "{first} worked the children's wing, where every shot came with a sticker and a negotiation. {They} have coaxed terrified kids through worse — and terrified adults aren't that different.",
         "{first} ran triage during flu season — thirty people, four beds, one whiteboard. {They} have a talent for deciding who waits and making the wait feel like care.",
         "{first} covered psych nights, talking people off ledges and out of locked bathrooms. {They} know how to be the calmest person in a room that isn't calm at all."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -319,7 +320,8 @@
         "{first} cooked out of a food truck with a kitchen the size of a closet. {They} do more with one flat-top than some restaurants do with six.",
         "{first} plated wedding dinners for two hundred at a time — everything hot, everything at once. {They} stay calm when the tickets won't stop, because the tickets never stopped.",
         "{first} did bakery prep at 3 a.m., feeding a wood-fired oven all night. {They} know dough by feel and {they} have strong opinions about campfire heat — strong enough to hear about daily."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -361,7 +363,8 @@
         "{first} packed elk out of canyons — two miles of quartered animal on {their} back. {They} know what a real haul costs. {They} do not romanticize it.",
         "{first} guided night hunts for hogs, reading heat and sound instead of sign. {They} are comfortable in dark woods and {they} stay quieter than the crickets.",
         "{first} trained bird dogs and guided quail hunts behind them. {They} read a dog's body the way sailors read clouds."
-      ]
+      ],
+      "intel": "observant"
     },
     {
       "abilityWeights": {
@@ -396,7 +399,8 @@
         "{first} installed rooftop solar — conduit runs in the rain, panels up before the storm hit. {They} are used to working against the weather instead of waiting on it.",
         "{first} climbed poles for the storm crews, restoring power at 2 a.m. in freezing rain. {They} keep going when the work is miserable because {they} know the lights come back on.",
         "{first} did maintenance at a paper mill, keeping hundred-year-old machines alive on scavenged parts. {They} have fixed things the manufacturer stopped supporting decades ago."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -434,7 +438,8 @@
         "{first} taught bilingual kindergarten — songs, picture cards, twenty five-year-olds. {They} have the patience of a saint and the reflexes of a goalkeeper.",
         "{first} ran citizenship prep, coaching nervous adults through the interview. {They} know the exact moment someone stops translating in {their} head.",
         "{first} tutored refugees over video calls across three time zones. {They} talk through bad connections and worse days with the same steady voice."
-      ]
+      ],
+      "intel": "social"
     },
     {
       "abilityWeights": {
@@ -471,7 +476,8 @@
         "{first} interpreted for troops on deployment — patrols, councils, bad news delivered exactly. {They} know how to say the unsayable in a steady voice.",
         "{first} led walking tours for foreign visitors through {origin}. {They} speak the whole history of a street corner in two languages at once.",
         "{first} worked the on-call phone line — hospitals, police, 2 a.m. emergencies. {They} are wide awake inside someone else's worst night, translating it calmly."
-      ]
+      ],
+      "intel": "social"
     },
     {
       "abilityWeights": {
@@ -506,7 +512,8 @@
         "{first} ran the custom bike shop — Harleys, choppers, chrome everything. {They} have an eye for what a machine wants to be, not just what it is.",
         "{first} fixed small engines: mowers, chainsaws, generators, the things everyone else threw away. {They} keep other people's trash running and {they} do not understand the word 'totaled'.",
         "{first} was an airframe mechanic at a regional airport — logbooks, torque specs, no shortcuts. {They} are meticulous in a way that keeps people alive."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -542,7 +549,8 @@
         "{first} volunteered at the firehouse in a town of nine hundred. {They} have loaded every neighbor onto a stretcher at least once, and everyone waves at the ambulance.",
         "{first} patrolled the slopes, hauling toboggans down runs {they} know blindfolded. {They} stay cheerful in a whiteout and {they} do the work anyway.",
         "{first} worked event standby — rodeos, concerts, harvest festivals. {They} have treated more drunk injuries than {they} have fingers, and {they} keep {their} humor about all of them."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -579,7 +587,8 @@
         "{first} ran an almond orchard — ten thousand trees, bees trucked in every spring. {They} know more about bee labor negotiations than most union reps.",
         "{first} ran a CSA — two hundred families, a box every week, no excuses. {They} have apologized for ugly carrots more times than {they} have counted.",
         "{first} milked cows twice a day for fifteen years, no days off. {They} are up before dawn because {they} have always been up before dawn."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -614,7 +623,8 @@
         "{first} built wooden boats — ribs, planks, and patience. {They} know how wood moves when it gets wet — {they} build to forgive it.",
         "{first} raised log cabins — scribing, notching, chinking. {They} look at a pile of logs and see the walls already.",
         "{first} built theater sets — a whole street that only had to last one season. {They} are fast, theatrical about safety — and {they} do not weep over beautiful things that get struck."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -648,7 +658,8 @@
         "{first} ran the children's floor — story times for a hundred kids at a stretch. {They} have a voice that quiets a room and {they} keep a pocket full of stickers, just in case.",
         "{first} drove the bookmobile to towns the library forgot. {They} know every back road for miles around and {they} talk to the regulars at each stop.",
         "{first} was the university archivist — boxes of old letters, maps nobody had opened in decades. {They} read other people's handwriting like weather and {they} have strong feelings about lost knowledge."
-      ]
+      ],
+      "intel": "analytical"
     },
     {
       "abilityWeights": {
@@ -688,7 +699,8 @@
         "{first} built boardwalks through swamps — sinking posts where the ground swallowed them. {They} have strong opinions about drainage and {they} do not trust dry-looking ground.",
         "{first} worked the alpine crew at twelve thousand feet, where weather kills. {They} keep {their} pack light and {they} do not argue with lightning.",
         "{first} ran volunteer trail days — herding weekend warriors with shovels. {They} talk a stranger into loving hard work within the hour."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -728,7 +740,8 @@
         "{first} taught combat lifesaver courses to new recruits — tourniquets, airways, calm. {They} have yelled 'keep pressure on it' in three languages of profanity.",
         "{first} ran the aid station at basic training — heat casualties, blisters, homesick eighteen-year-olds. {They} stay unflappable when the waiting room fills with limping teenagers.",
         "{first} worked nights at the base hospital ER — car wrecks, training accidents, bad decisions. {They} know the difference between urgent and important at 3 a.m."
-      ]
+      ],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -766,7 +779,8 @@
         "{first} ran a charter boat offshore — tuna, weather windows, seasick clients. {They} read the water forty miles out and {they} have never lost a boat to a bad call.",
         "{first} guided ice fishing — augers, tip-ups, a shack on a frozen lake. {They} stare at a hole in the ice all day and {they} stay warm doing it.",
         "{first} guided surf casting at dawn — reading tides, mending line, wading out. {They} know the beach the way {they} know {their} own hands."
-      ]
+      ],
+      "intel": "observant"
     },
     {
       "abilityWeights": {
@@ -806,7 +820,8 @@
         "{first} worked the conservatory at the botanical garden — orchids, climate control, misting schedules. {They} know what plants want before the plants do.",
         "{first} landscaped a mansion estate — formal hedges, ruthless symmetry. {They} have strong feelings about pruning and {they} keep {their} shears sharp enough to shave with.",
         "{first} worked the nursery — grafting apple trees, mixing soil, starting ten thousand seedlings. {They} talk to cuttings and {they} do not care who hears."
-      ]
+      ],
+      "intel": "observant"
     },
     {
       "id": "midwife",
@@ -847,7 +862,8 @@
         "{first} ran a birth center out of a converted Victorian near {origin}. {They} keep a handwritten log of all four hundred babies.",
         "{first} spent {their} twenties as a labor-and-delivery nurse before going independent. {They} are the person other people hand the flashlight to when things get bad."
       ],
-      "backstory": "{first} delivered babies in farmhouse kitchens and cramped apartment bedrooms for twelve years. {They} know how to stay calm when everyone else is screaming."
+      "backstory": "{first} delivered babies in farmhouse kitchens and cramped apartment bedrooms for twelve years. {They} know how to stay calm when everyone else is screaming.",
+      "intel": "steady"
     },
     {
       "id": "dentist",
@@ -888,7 +904,8 @@
         "{first} paid off {their} student loans doing extractions at a prison infirmary. {They} keep {their} stories short and {their} instruments sharp.",
         "{first} specialized in kids who were terrified of the chair, which was most of them. {They} talk people through pain the way some people talk dogs off ledges."
       ],
-      "backstory": "{first} ran a two-chair practice above the hardware store in {city}. {They} have pulled teeth by flashlight during blackouts and never flinched."
+      "backstory": "{first} ran a two-chair practice above the hardware store in {city}. {They} have pulled teeth by flashlight during blackouts and never flinched.",
+      "intel": "practical"
     },
     {
       "id": "pharmacist",
@@ -929,7 +946,8 @@
         "{first} compounded creams and tinctures in the back room because the chains would not. {They} have a notebook of formulas going back twenty years.",
         "{first} worked the overnight window, the only pharmacist awake for miles at 3 a.m. {They} are used to being the last line of defense."
       ],
-      "backstory": "{first} ran the counter at an independent pharmacy in {city} for fifteen years. {They} know which drugs interact, which ones lie on the label, and which ones people actually need."
+      "backstory": "{first} ran the counter at an independent pharmacy in {city} for fifteen years. {They} know which drugs interact, which ones lie on the label, and which ones people actually need.",
+      "intel": "analytical"
     },
     {
       "id": "veterinarian",
@@ -970,7 +988,8 @@
         "{first} volunteered at the wildlife rehab center, tube-feeding owls and splinting deer. {They} talk to animals like colleagues and to owners like children.",
         "{first} was the vet on call for the harvest fair, which meant everything from heatstroke pigs to kicked farm kids. {They} stay calm when something large is bleeding."
       ],
-      "backstory": "{first} doctored cattle, horses, and the occasional very angry goat across three districts. {They} know how to read an animal that cannot tell you where it hurts."
+      "backstory": "{first} doctored cattle, horses, and the occasional very angry goat across three districts. {They} know how to read an animal that cannot tell you where it hurts.",
+      "intel": "observant"
     },
     {
       "id": "physical_therapist",
@@ -1011,7 +1030,8 @@
         "{first} did home visits for elderly patients who refused to leave their houses. {They} talk people into doing the hard exercises with jokes and stubbornness.",
         "{first} treated ranch hands and roofers, people who broke themselves for a living. {They} are fluent in the language of 'it'll be fine' and know when it won't be."
       ],
-      "backstory": "{first} rebuilt knees, shoulders, and backs at a sports clinic outside {city}. {They} know exactly how far to push a healing body and when to stop."
+      "backstory": "{first} rebuilt knees, shoulders, and backs at a sports clinic outside {city}. {They} know exactly how far to push a healing body and when to stop.",
+      "intel": "steady"
     },
     {
       "id": "firefighter",
@@ -1050,7 +1070,8 @@
         "{first} was the probie who never panicked, so the captain kept {them} on the nozzle. {They} are still surprised by how quiet {their} mind gets under pressure.",
         "{first} drove the ladder truck and knew every hydrant in the district by heart. {They} go toward the smoke because standing still feels worse."
       ],
-      "backstory": "{first} ran into burning buildings for the {city} fire department for eleven years. {They} know what fear sounds like in {their} own head and how to walk through it."
+      "backstory": "{first} ran into burning buildings for the {city} fire department for eleven years. {They} know what fear sounds like in {their} own head and how to walk through it.",
+      "intel": "steady"
     },
     {
       "id": "police_officer",
@@ -1089,7 +1110,8 @@
         "{first} directed traffic, broke up bar fights, and once talked a jumper off the overpass. {They} know that most emergencies are really just people at the end of their rope.",
         "{first} was two years from the pension when everything stopped mattering. {They} keep {their} cool by habit, and habits are hard to break."
       ],
-      "backstory": "{first} walked a beat in {city} for nine years and knew the regulars by name. {They} talk first and reach for {their} belt last."
+      "backstory": "{first} walked a beat in {city} for nine years and knew the regulars by name. {They} talk first and reach for {their} belt last.",
+      "intel": "observant"
     },
     {
       "id": "dispatcher_911",
@@ -1128,7 +1150,8 @@
         "{first} trained new dispatchers, teaching them to type while listening to someone scream. {They} are the calmest person in any room, which is a job requirement.",
         "{first} worked the overnight board when the whole district went quiet except the drunks and the desperate. {They} read maps, monitors, and human panic like a second language."
       ],
-      "backstory": "{first} took emergency calls for the district dispatch center, twelve-hour shifts of other people's worst days. {They} know how to keep a caller breathing while the ambulance is still miles out."
+      "backstory": "{first} took emergency calls for the district dispatch center, twelve-hour shifts of other people's worst days. {They} know how to keep a caller breathing while the ambulance is still miles out.",
+      "intel": "steady"
     },
     {
       "id": "social_worker",
@@ -1167,7 +1190,8 @@
         "{first} ran the intake desk at a shelter, the first face people saw at rock bottom. {They} speak softly and write everything down, because details save lives.",
         "{first} did home visits in neighborhoods the police drove through fast. {They} go where people actually live, and {they} stay until someone trusts {them}."
       ],
-      "backstory": "{first} carried a caseload of forty families in {city} and knew every one of their stories. {They} know how to get help to people who have stopped asking for it."
+      "backstory": "{first} carried a caseload of forty families in {city} and knew every one of their stories. {They} know how to get help to people who have stopped asking for it.",
+      "intel": "social"
     },
     {
       "id": "mortician",
@@ -1206,7 +1230,8 @@
         "{first} learned embalming from {their} father, who learned it from his. {They} keep the trade's old tools oiled and {their} composure oiled better.",
         "{first} handled the district's unclaimed dead, giving strangers dignified endings. {They} look at death the way farmers look at weather: it comes, you deal with it."
       ],
-      "backstory": "{first} ran the family funeral home in {city}, third generation. {They} know the human body the way a mechanic knows an engine."
+      "backstory": "{first} ran the family funeral home in {city}, third generation. {They} know the human body the way a mechanic knows an engine.",
+      "intel": "steady"
     },
     {
       "abilityWeights": {
@@ -1245,7 +1270,8 @@
       "minAge": 20,
       "name": "plumber",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -1284,7 +1310,8 @@
       "minAge": 19,
       "name": "locksmith",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "analytical"
     },
     {
       "abilityWeights": {
@@ -1323,7 +1350,8 @@
       "minAge": 20,
       "name": "welder",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -1362,7 +1390,8 @@
       "minAge": 19,
       "name": "roofer",
       "plantsKnown": 1,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -1401,7 +1430,8 @@
       "minAge": 21,
       "name": "mason",
       "plantsKnown": 1,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -1440,7 +1470,8 @@
       "minAge": 19,
       "name": "HVAC tech",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -1479,7 +1510,8 @@
       "minAge": 18,
       "name": "appliance repair tech",
       "plantsKnown": 1,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "analytical"
     },
     {
       "abilityWeights": {
@@ -1518,7 +1550,8 @@
       "minAge": 22,
       "name": "blacksmith",
       "plantsKnown": 1,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "practical"
     },
     {
       "abilityWeights": {
@@ -1557,7 +1590,8 @@
       "minAge": 18,
       "name": "exterminator",
       "plantsKnown": 2,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "observant"
     },
     {
       "abilityWeights": {
@@ -1596,7 +1630,8 @@
       "minAge": 20,
       "name": "glazier",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "practical"
     },
     {
       "id": "beekeeper",
@@ -1637,7 +1672,8 @@
         "{first} once ran a pollination service, hauling hives between orchards all spring. {They} talk softly around the frames because a calm keeper keeps a calm hive.",
         "Every fall {first} rendered wax and bottled honey for the harvest fair. {They} have a recipe for propolis salve and {they} do not share it lightly."
       ],
-      "backstory": "{first} kept twelve hives on the edge of town and {they} know the smell of a queenright colony. {They} know that cool smoke keeps a hive calm, not scared."
+      "backstory": "{first} kept twelve hives on the edge of town and {they} know the smell of a queenright colony. {They} know that cool smoke keeps a hive calm, not scared.",
+      "intel": "observant"
     },
     {
       "id": "butcher",
@@ -1678,7 +1714,8 @@
         "At the meat lockers {first} watched whole sides of beef go in and meal plans come out. {They} do the math in {their} head: yield, waste, what feeds a family all winter.",
         "{first} learned that nose-to-tail is not a trend but how people used to survive. {They} talk about rendering tallow and {they} are right."
       ],
-      "backstory": "{first} broke down whole animals at a family butcher shop, primals to retail cuts in under an hour. {They} know where every cut comes from and what it is good for."
+      "backstory": "{first} broke down whole animals at a family butcher shop, primals to retail cuts in under an hour. {They} know where every cut comes from and what it is good for.",
+      "intel": "practical"
     },
     {
       "id": "baker",
@@ -1719,7 +1756,8 @@
         "In the bakery {first} learned that a hot hearth forgives a lot of mistakes. {They} build a good fire first and {they} do everything else after.",
         "{first} once fed a whole wedding on bread baked in a brick oven out back. {They} are the reason nobody in this camp goes hungry for long."
       ],
-      "backstory": "{first} baked for a bakery that milled its own flour, dawn to dusk. {They} know dough by touch — when it is alive and when it needs to rest."
+      "backstory": "{first} baked for a bakery that milled its own flour, dawn to dusk. {They} know dough by touch — when it is alive and when it needs to rest.",
+      "intel": "practical"
     },
     {
       "id": "fisherman",
@@ -1760,7 +1798,8 @@
         "On the boat {first} was the one who filleted the catch before it hit the deck. {They} talk about bleeding and icing fish and {they} are worth listening to.",
         "{first} once rode out a storm that should have sunk the boat. {They} have a healthy respect for the water and {they} do not take stupid risks."
       ],
-      "backstory": "{first} fished the coast for twenty years, longlining and running pots. {They} read the water like print and {they} know where the fish run when the tide turns."
+      "backstory": "{first} fished the coast for twenty years, longlining and running pots. {They} read the water like print and {they} know where the fish run when the tide turns.",
+      "intel": "observant"
     },
     {
       "id": "rancher",
@@ -1801,7 +1840,8 @@
         "On the ranch {first} was the one up at four checking on calving heifers. {They} have delivered more calves than most ranchers see in a lifetime and {they} stay calm through all of it.",
         "{first} once drove a herd three days through a dry spell to water. {They} know where water hides in this country and {they} are not afraid to go looking for it."
       ],
-      "backstory": "{first} ran cattle on open range, calving season to branding. {They} know livestock like {they} know {their} own family, maybe better."
+      "backstory": "{first} ran cattle on open range, calving season to branding. {They} know livestock like {they} know {their} own family, maybe better.",
+      "intel": "practical"
     },
     {
       "id": "chef",
@@ -1842,7 +1882,8 @@
         "{first} once turned a bare pantry into a banquet for a hundred guests. {They} do more with less than anyone {they} know — and {they} know a lot of cooks.",
         "In {their} kitchen, nothing went to waste — stock from bones, meals from scraps. {They} are the one who keeps the pot full here."
       ],
-      "backstory": "{first} ran a busy kitchen through the dinner rush for a decade. {They} know how to feed forty people from almost nothing and {they} stay calm when the fire is high."
+      "backstory": "{first} ran a busy kitchen through the dinner rush for a decade. {They} know how to feed forty people from almost nothing and {they} stay calm when the fire is high.",
+      "intel": "creative"
     },
     {
       "id": "forager",
@@ -1883,7 +1924,8 @@
         "In the woods {first} could find dinner in an hour with empty hands. {They} read the ground for mushrooms after rain and {they} know which trees mean nuts.",
         "{first} once lived a whole summer eating mostly what the woods gave {them}. {They} are thinner for the wisdom and {they} go quietly where the food is."
       ],
-      "backstory": "{first} filled baskets with wild greens and berries every season for market. {They} know the deadly look-alikes and {they} are serious about teaching it first."
+      "backstory": "{first} filled baskets with wild greens and berries every season for market. {They} know the deadly look-alikes and {they} are serious about teaching it first.",
+      "intel": "observant"
     },
     {
       "id": "vintner",
@@ -1924,7 +1966,8 @@
         "At harvest {first} tasted grapes every morning until they were ready. {They} do not rush the fruit and {they} do not rush anything else either.",
         "{first} once turned a frost-damaged vintage into something people paid good money for. {They} know that even a bad year can be useful."
       ],
-      "backstory": "{first} made wine in a valley vineyard, crush to barrel. {They} know fermentation like weather and {they} have saved more batches than {they} have lost."
+      "backstory": "{first} made wine in a valley vineyard, crush to barrel. {They} know fermentation like weather and {they} have saved more batches than {they} have lost.",
+      "intel": "creative"
     },
     {
       "id": "mushroom_grower",
@@ -1965,7 +2008,8 @@
         "In the woods {first} could read a rotting log and tell you what it would feed. {They} look for the right decay and {they} know which shelf fungi are dinner.",
         "{first} once fruited a crop in January when everyone said it was impossible. {They} are stubborn about fungi and {they} do not quit when it gets cold."
       ],
-      "backstory": "{first} grew mushrooms in a converted barn, logs stacked to the ceiling. {They} know mycelium like a friend and {they} talk to the logs daily."
+      "backstory": "{first} grew mushrooms in a converted barn, logs stacked to the ceiling. {They} know mycelium like a friend and {they} talk to the logs daily.",
+      "intel": "observant"
     },
     {
       "id": "sailor",
@@ -2006,7 +2050,8 @@
         "On watch {first} once spotted a squall three hours before it hit. {They} know that the ocean feeds you if you respect it and {they} do respect it.",
         "{first} spent a season fishing between ports, hook and line off the stern. {They} have eaten everything the sea throws up and {they} are not picky."
       ],
-      "backstory": "{first} crewed cargo ships and read the tide tables like scripture. {They} read the water and the sky together and {they} have a feel for weather coming."
+      "backstory": "{first} crewed cargo ships and read the tide tables like scripture. {They} read the water and the sky together and {they} have a feel for weather coming.",
+      "intel": "steady"
     },
     {
       "abilityWeights": {
@@ -2045,7 +2090,8 @@
       "minAge": 20,
       "name": "programmer",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "analytical"
     },
     {
       "abilityWeights": {
@@ -2084,7 +2130,8 @@
       "minAge": 21,
       "name": "truck driver",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "steady"
     },
     {
       "abilityWeights": {
@@ -2123,7 +2170,8 @@
       "minAge": 18,
       "name": "street artist",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "creative"
     },
     {
       "abilityWeights": {
@@ -2162,7 +2210,8 @@
       "minAge": 18,
       "name": "musician",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "creative"
     },
     {
       "abilityWeights": {
@@ -2201,7 +2250,8 @@
       "minAge": 22,
       "name": "journalist",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "analytical"
     },
     {
       "abilityWeights": {
@@ -2240,7 +2290,8 @@
       "minAge": 26,
       "name": "lawyer",
       "plantsKnown": 0,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "analytical"
     },
     {
       "abilityWeights": {
@@ -2279,7 +2330,8 @@
       "minAge": 20,
       "name": "tailor",
       "plantsKnown": 1,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "creative"
     },
     {
       "abilityWeights": {
@@ -2318,7 +2370,8 @@
       "minAge": 19,
       "name": "infantry soldier",
       "plantsKnown": 1,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "steady"
     },
     {
       "abilityWeights": {
@@ -2357,7 +2410,8 @@
       "minAge": 25,
       "name": "bush pilot",
       "plantsKnown": 1,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "steady"
     },
     {
       "abilityWeights": {
@@ -2396,7 +2450,8 @@
       "minAge": 21,
       "name": "bartender",
       "plantsKnown": 1,
-      "teachTags": []
+      "teachTags": [],
+      "intel": "social"
     }
   ],
   "originKeywords": {
@@ -3780,5 +3835,238 @@
       "\"Oh — hey. I was just thinking about what you said earlier.\"",
       "\"Hey. Got another minute?\""
     ]
+  },
+  "intelligences": {
+    "analytical": {
+      "name": "Analytical",
+      "blurb": "Spots patterns, builds theories, connects dots other people don't see connecting.",
+      "voice": "hypotheses, patterns, questions that answer questions",
+      "theorizePower": 3
+    },
+    "practical": {
+      "name": "Practical",
+      "blurb": "Survival-focused. Less interested in why than in how we eat tomorrow.",
+      "voice": "actions, doing, concrete next steps, impatience with abstraction",
+      "theorizePower": 1
+    },
+    "social": {
+      "name": "Social",
+      "blurb": "Reads people. Knows who's lying, who's scared, who's about to break.",
+      "voice": "people, dynamics, feelings, who's doing what and why",
+      "theorizePower": 2
+    },
+    "observant": {
+      "name": "Observant",
+      "blurb": "Notices details others miss — tracks, sounds, small changes in the environment.",
+      "voice": "details, noticing, sensory specifics, things that changed",
+      "theorizePower": 2
+    },
+    "creative": {
+      "name": "Creative",
+      "blurb": "Lateral thinking. Weird ideas that sometimes work brilliantly.",
+      "voice": "what-ifs, lateral leaps, metaphors, playful speculation",
+      "theorizePower": 2
+    },
+    "steady": {
+      "name": "Steady",
+      "blurb": "Not flashy, but reliable judgment. The calm voice when everyone panics.",
+      "voice": "grounding, perspective, calm reassurance, one-day-at-a-time",
+      "theorizePower": 1
+    }
+  },
+  "theories": {
+    "analytical": {
+      "system": [
+        "\"Okay, think about it. It didn't give us food, water, or shelter — but it gave us an audience. We're not colonists. We're content.\"",
+        "\"The leaks stopped the day it arrived. That's not coincidence, that's calibration. It spent a week watching us flail and taking notes.\"",
+        "\"It rewards understanding, not obedience. Every time someone figures something out, it lights up. It's farming insight, and we're the crop.\""
+      ],
+      "monsters": [
+        "\"The monsters aren't random. Highbeam Deer hunts at night, Bulldozer owns the day — that's niche partitioning. Something designed an ecosystem.\"",
+        "\"Notice how nothing out there eats the plants we can't identify? Fauna and flora came as a set. This is a terrarium, and we're inside the glass.\"",
+        "\"Attack patterns repeat. Exactly. No animal is that consistent — these are running programs, not instincts. Learn the program, beat the monster.\""
+      ],
+      "situation": [
+        "\"We need to stop thinking like victims and start thinking like contestants. What does the audience want? Give them that, and the System keeps us alive.\"",
+        "\"Priority order: water, then food, then information. Everything else is noise until those three are stable.\"",
+        "\"The villages that survive will be the ones that learn fastest, not the ones that fight hardest. Knowledge compounds. Start compounding.\""
+      ]
+    },
+    "practical": {
+      "system": [
+        "\"Don't care what it is. Care what it does. It gives powers for doing things — so we do things. Theory's for people with full bellies.\"",
+        "\"System, aliens, whatever — the snares still need checking. You can philosophize after the work's done.\"",
+        "\"It's like weather. You don't argue with weather. You build a roof.\""
+      ],
+      "monsters": [
+        "\"Forget why they're here. Here's what matters: they telegraph. Watch the shoulders, not the eyes. Shoulders tell you where it's going.\"",
+        "\"You don't need to understand it to kill it. Or avoid it. Tracks, scat, broken branches — read the ground, not the sky.\"",
+        "\"Best monster defense is a full belly and a sharp stick. Everything else is decoration.\""
+      ],
+      "situation": [
+        "\"Tomorrow: water first, then food, then firewood. In that order. No meeting about it — just do it.\"",
+        "\"Half the village is hungry and we're having a philosophy seminar. Hands, people. We need hands.\"",
+        "\"Here's the plan: eat, drink, sleep, repeat. Get good at that and the rest sorts itself out.\""
+      ]
+    },
+    "social": {
+      "system": [
+        "\"Watch how it talks to different people. Warm to the curious ones, cold to the cruel ones. It's not just watching us — it's sorting us.\"",
+        "\"The System wants us together. Every reward pushes cooperation. It's lonely up there, maybe. Or it's running an experiment on trust.\"",
+        "\"People are performing for it already. Louder laughs, bigger gestures. We're becoming actors and nobody auditioned.\""
+      ],
+      "monsters": [
+        "\"The monsters go for the isolated ones. The stragglers. Staying together isn't just nice — it's armor.\"",
+        "\"People freeze because they're alone with it. In a group, someone always moves first. That's why parties survive.\"",
+        "\"Fear is contagious, but so is courage. Breathe together, move together, live together.\""
+      ],
+      "situation": [
+        "\"We don't have a food problem, we have a trust problem. Nobody shares with people they don't trust, and nobody trusts anyone yet.\"",
+        "\"There's a split forming — the ones who want a leader and the ones who'd rather starve than follow. We need to talk about it before it festers.\"",
+        "\"Watch who sits near the fire and who sits alone. That map tells you everything about where this village is headed.\""
+      ]
+    },
+    "observant": {
+      "system": [
+        "\"The light changed yesterday. Not the sun — the other light, the one behind it. It's getting closer. Or brighter. Something's shifting.\"",
+        "\"It blinks. The overlay, I mean. Every few hours, a flicker — like it's refreshing. Whatever it is, it's not seamless.\"",
+        "\"Birds went quiet an hour before it spoke the first time. They knew. Animals always know first.\""
+      ],
+      "monsters": [
+        "\"That deer wasn't standing right. Too still. Real deer flick their ears — this one didn't move a muscle for ten minutes.\"",
+        "\"Found tracks by the creek. Three toes, dragging tail — nothing in my field guide walks like that. Something new's ranging.\"",
+        "\"The moths gather where the air tastes metallic. Follow the moths, find the wrongness.\""
+      ],
+      "situation": [
+        "\"Someone's been taking extra from the pantry. Not much — a handful here, a strip there. But the levels don't lie.\"",
+        "\"The fire's been burning faster the last two nights. Either it's colder, or someone's feeding it more wood than we can spare.\"",
+        "\"Three people didn't sleep last night. I heard them turning. Whatever's coming, the village feels it already.\""
+      ]
+    },
+    "creative": {
+      "system": [
+        "\"What if it's not aliens? What if it's us — future us — running a simulation to figure out where we went wrong? We're homework.\"",
+        "\"Maybe it's an artist. The whole thing's an installation. We're the medium. The monsters are brushstrokes.\"",
+        "\"What if the System is lonely? Infinite power, nobody to talk to, so it builds a terrarium and narrates. We're pets with a podcast host.\""
+      ],
+      "monsters": [
+        "\"What if the monsters are scared of us too? We're the aliens here. Maybe they're the locals and we're the invasive species.\"",
+        "\"The Hushpuppy doesn't want to kill you — it wants quiet. It's not a predator, it's a librarian with teeth.\"",
+        "\"What if we tried feeding one? Not fighting, not fleeing — just leaving food out. See what happens. Worst case, we're out a meal.\""
+      ],
+      "situation": [
+        "\"We should throw a feast. I know — food's short. But a feast says 'we're going to make it,' and right now nobody believes that.\"",
+        "\"What if we made the village beautiful? Paint the hall, hang things. Morale is a resource too — maybe the most important one.\"",
+        "\"We keep trying to survive. What if we tried to thrive instead? Just as an experiment. See what changes.\""
+      ]
+    },
+    "steady": {
+      "system": [
+        "\"Whatever it is, panicking doesn't help. Breathe. Watch. Learn. We've survived worse than confusion.\"",
+        "\"It's not going away, so we adapt. That's what people do. We've always done it.\"",
+        "\"Don't worship it, don't fight it. Just work around it. Like bad weather or a difficult neighbor.\""
+      ],
+      "monsters": [
+        "\"They're dangerous, yes. So's a river in flood. You respect it, you learn it, you don't let it rule you.\"",
+        "\"One step at a time. Learn one monster's pattern. Then another. Nobody needs to know everything today.\"",
+        "\"Fear makes them bigger than they are. Look at what's actually there, not what you're afraid is there.\""
+      ],
+      "situation": [
+        "\"We'll get through today. Then tomorrow. That's how this works — one day at a time, same as always.\"",
+        "\"Everyone's scared. That's fine. Scared people can still carry water and chop wood. Feel it and do the work anyway.\"",
+        "\"Let's not borrow trouble. Right now: we're fed, we're sheltered, we're together. That's enough for today.\""
+      ]
+    }
+  },
+  "intelOpeners": {
+    "analytical": [
+      "\"I've been thinking about the pattern in all this...\"",
+      "\"Have you noticed? It never does the same thing twice — except when it does.\"",
+      "\"Question for you: what do you think it actually wants from us?\""
+    ],
+    "practical": [
+      "\"Walk with me — I could use an extra pair of hands.\"",
+      "\"Got a minute? Something needs doing and I'd rather not do it alone.\"",
+      "\"While I've got you — help me think through tomorrow's work.\""
+    ],
+    "social": [
+      "\"Have you talked to the others lately? I'm a little worried about the mood.\"",
+      "\"Something's shifting in the group. You feel it too, right?\"",
+      "\"Can I ask you something — person to person, not village business?\""
+    ],
+    "observant": [
+      "\"Did you see that, just now? By the tree line.\"",
+      "\"Something's different today. Can't quite place it yet.\"",
+      "\"Look at the fire — see how it's leaning? Wind's changing.\""
+    ],
+    "creative": [
+      "\"Okay, hear me out — what if we're thinking about this all wrong?\"",
+      "\"I had the strangest idea last night. Tell me if I'm crazy.\"",
+      "\"What if — just what if — the monsters aren't the problem?\""
+    ],
+    "steady": [
+      "\"How are you holding up? Honestly. No performance.\"",
+      "\"Got a moment? No rush. Just wanted to check in.\"",
+      "\"Sit with me a minute. The work'll keep.\""
+    ]
+  },
+  "theorizeAsks": [
+    "\"But what do YOU think? You've been out there more than most of us.\"",
+    "\"That's my read. What's yours? I want to know if I'm crazy.\"",
+    "\"Am I wrong? Tell me I'm wrong — I'd rather know now.\""
+  ],
+  "overheard": {
+    "openers": {
+      "analytical": [
+        "\"The pattern in the attacks — has anyone else noticed it repeats?\"",
+        "\"If the System wanted us dead we'd be dead. So what does it want instead?\""
+      ],
+      "practical": [
+        "\"We need more firewood before dark. Who's with me?\"",
+        "\"That snare line needs checking. Talk later, work now.\""
+      ],
+      "social": [
+        "\"Have you noticed how quiet it's gotten? People are scared to say it out loud.\"",
+        "\"We should eat together tonight. All of us. It matters.\""
+      ],
+      "observant": [
+        "\"The creek's lower than yesterday. Markedly.\"",
+        "\"Something's been at the pantry. Not an animal — the jars were moved, not broken.\""
+      ],
+      "creative": [
+        "\"What if we built a signal fire? Not for rescue — for each other.\"",
+        "\"I say we name the monsters. Everything's less scary with a name.\""
+      ],
+      "steady": [
+        "\"One day at a time. We're still here — that counts.\"",
+        "\"Breathe. We've handled worse mornings than this.\""
+      ]
+    },
+    "replies": {
+      "analytical": [
+        "\"Hmm. That fits what I've been seeing. Let me think about the mechanism...\"",
+        "\"Interesting. But what's the underlying pattern?\""
+      ],
+      "practical": [
+        "\"Right. Let's do it, then. Talking doesn't chop wood.\"",
+        "\"Okay — what's the first step?\""
+      ],
+      "social": [
+        "\"I was thinking the same thing. People need to hear that.\"",
+        "\"You're right. I'll talk to the others.\""
+      ],
+      "observant": [
+        "\"I noticed that too. There's more — look closer next time.\"",
+        "\"Good eyes. Keep watching.\""
+      ],
+      "creative": [
+        "\"Ooh — and what if we also...? No, hear me out...\"",
+        "\"I love that. It's crazy enough to work.\""
+      ],
+      "steady": [
+        "\"Yeah. Yeah, okay. That's solid.\"",
+        "\"Steady on. We'll get there.\""
+      ]
+    }
   }
 }

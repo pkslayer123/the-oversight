@@ -33,6 +33,7 @@
         said: {}, transcript: [], pendingQ: null, askedQs: [],
         answered: {}, recalled: {}, lastDay: -1, count: 0, over: false,
         offeredHelp: false, askedTopics: [], qAskedThisConvo: false,
+        theorized: [],
       };
       return v.conv[vid];
     },
@@ -44,6 +45,13 @@
       if ((n.social || 0) > 70) b += 1;
       if (temp === 'warm' || temp === 'gentle') b += 1;
       if (temp === 'withdrawn' || temp === 'prickly' || temp === 'restless') b -= 1;
+      // INTELLIGENCE SHAPES TALK: social and analytical minds linger over ideas;
+      // practical minds would rather be doing.
+      try {
+        const ip = this.npcIntel(vid).primary;
+        if (ip === 'social' || ip === 'analytical') b += 1;
+        if (ip === 'practical') b -= 1;
+      } catch (e) {}
       return Math.max(2, Math.min(6, b));
     },
 
@@ -135,6 +143,11 @@
       push((this.data.characterGen.moodTalk || {})[mood], (mood === 'grieving' || mood === 'scared') ? 3 : 1);
       push((this.data.characterGen.temperamentTalk || {})[temp], 2);
       push(this.repTalkLines(vid), 2);
+      // INTELLIGENCE VOICE: analytical people open with questions, practical
+      // people open with work, social people open with the group. How someone
+      // is smart shapes how they talk. (Note: cg here is characterGen.convo;
+      // intelOpeners lives at characterGen top level.)
+      try { push(((this.data.characterGen || {}).intelOpeners || {})[this.npcIntel(vid).primary], 2); } catch (e) {}
       push((this.data.characterGen.talkTemplates || []).slice(0, 8), 1);
       if (!pool.length) push(cg.openers || ['"Hey."'], 1);
       const l = this.convoPick(vid, 'small', pool);
@@ -281,6 +294,14 @@
       if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: '"What\'s your plan for tomorrow?"' });
       for (const a of asks) if (a.id !== threadAsk && choices.length < 4) choices.push(a);
       if (this.goalKnown(vid) && !c.offeredHelp && choices.length < 5) choices.push({ id: 'offer_help', label: '"I could help with that."' });
+      // THEORIZE: think TOGETHER. Not info-vending — joint discovery.
+      // System talk only makes sense after it arrives; before that, the
+      // scattering itself and the monsters are the mystery.
+      const theorized = c.theorized || [];
+      const sysUp = !!this.state.systemArrived;
+      const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
+        theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
+      if (topicsLeft.length && choices.length < 5) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
       const reacts = [
         { id: 'agree', label: '"You\'re right."' },
         { id: 'joke', label: '(crack a joke)' },
@@ -300,7 +321,7 @@
       c.active = true; c.exchanges = 0; c.budget = this.convoBudget(vid);
       c.thread = null; c.depth = 0; c.transcript = []; c.pendingQ = null;
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
-      c.qAskedThisConvo = false;
+      c.qAskedThisConvo = false; c.theorized = [];
       c.count++; c.lastDay = this.state.scholar.day;
       // TALKING COSTS ENERGY — 20 kcal per conversation, not per line.
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 20);
@@ -387,6 +408,19 @@
         const t = this.state.village.trust || {};
         t[vid] = Math.min(100, (t[vid] || 10) + 2);
         done(l, '"I could help with that."');
+      } else if (choiceId === 'theorize') {
+        // Think TOGETHER. Topic order: the System (if it's here), the monsters,
+        // the situation. Each NPC theorizes in their intelligence voice — and
+        // sharp minds advance your understanding for real.
+        const done_topics = c.theorized || [];
+        const sysUp = !!this.state.systemArrived;
+        const order = sysUp ? ['system', 'monsters', 'situation'] : ['monsters', 'situation'];
+        const topic = order.find(x => done_topics.indexOf(x) === -1) || 'situation';
+        if (done_topics.indexOf(topic) === -1) done_topics.push(topic);
+        c.theorized = done_topics;
+        c.thread = 'theorize'; c.depth = 1;
+        const line = this.theorizeWith(vid, topic);
+        done(line, '"What do you think is actually going on here?"');
       } else if (choiceId === 'agree') {
         const m = cg.agreeReacts || {};
         // Acknowledgments are human filler — a small cycling pool, never a loop.

@@ -495,11 +495,25 @@
         while (talk.length < 3 && tt.length) talk.push(fill(tt.splice(Math.floor(Math.random() * tt.length), 1)[0]));
         const quest = (cg.questTemplates || []).map(fill);
         const secretFear = pickFresh(cg.fears && cg.fears.length ? cg.fears : ['being forgotten'], 'fear');
+        // INTELLIGENCE: primary from occupation (what the job demanded — a nurse
+        // is practical the way a programmer is analytical). Secondary from
+        // temperament + curiosity (who they are beyond the job). Never random:
+        // every trait must be traceable to the character's story.
+        const intelDefs = cg.intelligences || {};
+        const intelPrimary = (occ.intel && intelDefs[occ.intel]) ? occ.intel : 'steady';
+        const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'] };
+        const curSec = { curious: ['analytical', 'creative'], 'hungry-to-learn': ['analytical', 'creative'], practical: ['practical', 'steady'], wary: ['observant', 'steady'], skeptical: ['analytical', 'observant'], indifferent: ['steady', 'practical'] };
+        const secPool = [];
+        for (const s of (tempSec[temperament] || ['steady'])) { secPool.push(s, s); }
+        for (const s of (curSec[curiosity] || ['steady'])) { secPool.push(s); }
+        const secCands = secPool.filter(s => s !== intelPrimary && intelDefs[s]);
+        const intelSecondary = secCands.length ? secCands[Math.floor(Math.random() * secCands.length)] : (intelPrimary === 'steady' ? 'practical' : 'steady');
         const char = {
           id: 'gen_' + Math.random().toString(36).slice(2, 9),
           name, formerOccupation: occ.name || 'survivor', homeRegion: origin,
           originTags: parsed.tags, heritage: this.heritageFor(parsed.tags),
           backstory, personality: { temperament, sharing, curiosity, quirk, habit, hope }, age, goal,
+          intelligence: { primary: intelPrimary, secondary: intelSecondary },
           abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
           items: this.genItemCandidates(occ),
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
@@ -871,6 +885,25 @@
       this.state.village.bgGoals = {};
       for (const id of bg) {
         if (goalIds.length) this.state.village.bgGoals[id] = goalIds[Math.floor(Math.random() * goalIds.length)];
+      }
+      // background survivors get per-run intelligence (static data can't hold it).
+      // Primary from occupation via the same mapping as the generated cast;
+      // secondary from temperament. Same minds, same rules.
+      this.state.village.bgIntel = {};
+      {
+        const intelDefs = (this.data.characterGen || {}).intelligences || {};
+        const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'] };
+        for (const id of bg) {
+          const person = (this.data.background_survivors || []).find(s => s.id === id) || {};
+          const occName = String(person.formerOccupation || '').toLowerCase();
+          const occ = (this.data.characterGen.occupations || []).find(o =>
+            String(o.name || '').toLowerCase() === occName || String(o.id || '').toLowerCase() === occName) || {};
+          const primary = (occ.intel && intelDefs[occ.intel]) ? occ.intel : 'steady';
+          const temp = (person.personality && person.personality.temperament) || 'steady';
+          const cands = (tempSec[temp] || ['steady']).filter(s => s !== primary && intelDefs[s]);
+          const secondary = cands.length ? cands[Math.floor(Math.random() * cands.length)] : (primary === 'steady' ? 'practical' : 'steady');
+          this.state.village.bgIntel[id] = { primary, secondary };
+        }
       }
       // LEADERSHIP: 1-2 NPC contenders — never the scholar (you can't compete
       // with yourself). The genRoster fix-up might have crowned the character
@@ -1767,22 +1800,30 @@
         }
       }
       const occ = (teacher.formerOccupation || '').toLowerCase();
-      // good teacher: relevant occupation, high trust — AND words to teach with.
-      // partial language: even a good teacher is reduced to pointing.
+      // INTELLIGENCE SHAPES TEACHING. Practical minds teach by doing — the lesson
+      // lands faster when their hands are involved. Analytical minds explain the
+      // WHY, so even a partial lesson sticks harder. Social minds teach trust
+      // along with the skill.
+      const tIntel = this.npcIntel(vid).primary;
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
-      const isGoodTeacher = (occ.includes('cook') || occ.includes('chef') || occ.includes('hunter')) && trust > 40 && comm.level === 'full';
-      const isMedicTeacher = (occ.includes('nurse') || occ.includes('medic')) && plant.medicinal && trust > 40 && comm.level === 'full';
+      const trustBar = tIntel === 'practical' ? 30 : 40; // practical teachers: show, don't lecture
+      const isGoodTeacher = (occ.includes('cook') || occ.includes('chef') || occ.includes('hunter')) && trust > trustBar && comm.level === 'full';
+      const isMedicTeacher = (occ.includes('nurse') || occ.includes('medic')) && plant.medicinal && trust > trustBar && comm.level === 'full';
       this.state.codex.encounters = this.state.codex.encounters || {};
       if (isGoodTeacher || isMedicTeacher) {
         // good education: instant unlock — one path
         if (this.identifyPlant(plantId, 'taught')) {
-          this.say(`${this.displayName(vid)} shows you — a leaf, a picture scratched in dirt. You get it.`);
+          const how = tIntel === 'practical' ? 'shows you — hands moving, no wasted words. You get it.'
+            : tIntel === 'analytical' ? 'shows you, and explains WHY it works. You get it — deeply.'
+            : `${this.displayName(vid)} shows you — a leaf, a picture scratched in dirt. You get it.`;
+          this.say(how);
         }
       } else {
-        // bad education: partial
-        const enc = (this.state.codex.encounters[plantId] || 0) + 1;
+        // bad education: partial — but analytical teachers make partial stick harder.
+        const bonus = tIntel === 'analytical' ? 1 : 0;
+        const enc = (this.state.codex.encounters[plantId] || 0) + 1 + bonus;
         this.state.codex.encounters[plantId] = enc;
-        this.say(`${this.displayName(vid)} tries to explain. "It looks... a bit like that?" You\'re not sure. (${enc} encounters)`);
+        this.say(`${this.displayName(vid)} tries to explain. "It looks... a bit like that?" You\'re not sure. (${enc} encounters)${bonus ? ' Their explanation of the why helps it stick.' : ''}`);
       }
       // teaching builds trust — BUT with diminishing returns.
       // Talk gets you to 40. Beyond that, you need ACTIONS, not words.
@@ -5441,6 +5482,149 @@
         || (this.data.background_survivors || []).find(x => x.id === rid);
       return (vp && vp.personality && vp.personality.temperament) || 'steady';
     },
+    // npcIntel: how this person is smart. Primary from occupation (what the job
+    // demanded), secondary from temperament+curiosity (who they are). Six kinds,
+    // not IQ — an observant forager and an analytical programmer are both sharp,
+    // in completely different directions.
+    npcIntel(rid) {
+      // background survivors carry per-run intelligence in village state
+      // (static data can't hold it) — same minds, same rules.
+      const bv = (this.state.village || {}).bgIntel || {};
+      if (bv[rid] && bv[rid].primary) return { primary: bv[rid].primary, secondary: bv[rid].secondary || 'practical' };
+      const vp = (this.data.villagers || []).find(x => x.id === rid)
+        || (this.data.background_survivors || []).find(x => x.id === rid);
+      const intel = (vp && vp.intelligence) || {};
+      const defs = (this.data.characterGen || {}).intelligences || {};
+      const primary = (intel.primary && defs[intel.primary]) ? intel.primary : 'steady';
+      let secondary = (intel.secondary && defs[intel.secondary] && intel.secondary !== primary)
+        ? intel.secondary : 'practical';
+      if (secondary === primary) secondary = primary === 'steady' ? 'practical' : 'steady';
+      return { primary, secondary };
+    },
+    npcIntelName(rid) {
+      const defs = (this.data.characterGen || {}).intelligences || {};
+      const { primary } = this.npcIntel(rid);
+      return (defs[primary] && defs[primary].name) || 'Steady';
+    },
+    // theorizeWith: thinking TOGETHER, not info-vending. The NPC offers a theory
+    // in their intelligence voice; sharp minds advance your understanding for real.
+    // topics: 'system' | 'monsters' | 'situation'
+    theorizeWith(vid, topic) {
+      const cg = this.data.characterGen || {};
+      const theories = cg.theories || {};
+      const { primary, secondary } = this.npcIntel(vid);
+      const first = this.displayName(vid);
+      topic = ['system', 'monsters', 'situation'].includes(topic) ? topic : 'situation';
+      // no-repeat: track said theory lines per villager like conversations do.
+      const v = this.state.village;
+      v.theoriesSaid = v.theoriesSaid || {};
+      const saidKey = vid + ':' + primary + ':' + topic;
+      v.theoriesSaid[saidKey] = v.theoriesSaid[saidKey] || [];
+      const pool = ((theories[primary] || {})[topic] || []).filter(l => v.theoriesSaid[saidKey].indexOf(l) === -1);
+      const line = pool.length
+        ? pool[Math.floor(Math.random() * pool.length)]
+        : (cg.theorizeAsks || ["\"What's your read? I want to know if I'm crazy.\""])[Math.floor(Math.random() * (cg.theorizeAsks || []).length)] || "\"What's your read?\"";
+      if (pool.length) v.theoriesSaid[saidKey].push(line);
+      this.say(`${first}: ${line}`);
+      this.remember(vid, 'theorized_' + topic, primary);
+      // ACTION CLOCK: real thinking takes time (2 ticks, time-only).
+      try { this.tickAction(2); } catch (e) {}
+      try { this.setEngaged(vid, 2); } catch (e) {}
+      // MECHANICAL EFFECTS — different minds teach different things.
+      // Primary speaks at full strength; secondary contributes at half.
+      // Both intelligences matter: a practical/analytical person teaches
+      // with their hands AND explains the why.
+      const intelDefs = cg.intelligences || {};
+      const topicSkill = { system: ['system_theology', 'system_architecture', 'research'], monsters: ['animal_behavior', 'track_read'], situation: ['tactics_small', 'read_people', 'morale_keep'] }[topic] || [];
+      const grantProgress = (skills, amt) => {
+        this.state.codex.encounters = this.state.codex.encounters || {};
+        for (const sk of skills) {
+          const cur = (this.state.codex.skills || {})[sk];
+          if (cur && (cur.level || 0) >= 1) continue; // already know it — move on
+          this.state.codex.encounters[sk] = (this.state.codex.encounters[sk] || 0) + amt;
+          return sk;
+        }
+        return null;
+      };
+      const applyIntelEffect = (intel, mult) => {
+        if (intel === 'analytical') {
+          // SHARP MINDS ADVANCE UNDERSTANDING. Repeated theorizing with analytical
+          // people compounds into real knowledge — joint discovery, mechanically.
+          const prog = grantProgress(topicSkill, Math.max(1, Math.round(2 * mult)));
+          if (prog) {
+            const enc = (this.state.codex.encounters || {})[prog] || 0;
+            const k = (this.data.knowledge || []).find(x => x.id === prog);
+            if (enc >= 4) {
+              if (this.learnSkill(prog, 1, 'theorized')) {
+                this.say(`💡 Thinking it through together with ${first}, something clicks into place.`);
+              }
+            } else if (k && mult >= 1) {
+              this.say(`(Piecing it together with ${first}... ${k.name}: ${enc}/4)`);
+            }
+          }
+        } else if (intel === 'practical') {
+          // Practical minds give actionable advice. Talking shop builds trust —
+          // they respect people who ask about the work, not the wonder.
+          const t = v.trust || (v.trust = {});
+          t[vid] = Math.min(100, (t[vid] || 10) + Math.max(1, Math.round(2 * mult)));
+          if (topic === 'situation') {
+            const prog = grantProgress(['tactics_small', 'snare_wire', 'shelter_debris'], Math.max(1, Math.round(1 * mult)));
+            if (prog && mult >= 1) this.say(`(${first}'s advice sticks with you. Practical knowledge accumulates.)`);
+          }
+        } else if (intel === 'social') {
+          // Social minds read the village. Theorizing with them surfaces real intel
+          // about people — a goal learned, a tension named.
+          const roster = (v.roster || []).filter(id => id !== vid && id !== this.villagerId);
+          v.goalsKnown = v.goalsKnown || {};
+          const unknown = roster.filter(id => !v.goalsKnown[id]);
+          if (unknown.length && Math.random() < 0.6 * mult + 0.2) {
+            const target = unknown[Math.floor(Math.random() * unknown.length)];
+            const goal = this.npcGoal(target);
+            const goalDef = (cg.goals || []).find(g => g.id === goal);
+            v.goalsKnown[target] = goal;
+            this.remember(target, 'shared_goal', goal || 'unknown');
+            this.say(`(You learned what ${this.displayName(target)} wants: ${(goalDef && goalDef.name) || goal}. — via ${first}'s read of people.)`);
+          } else if (mult >= 1) {
+            this.say(`(${first} reads the room like a book. You see the village a little clearer.)`);
+          }
+        } else if (intel === 'observant') {
+          // Observant minds notice the world. Theorizing sharpens YOUR eyes too.
+          const prog = grantProgress(topic === 'monsters' ? ['track_read', 'animal_behavior'] : ['weather_read', 'track_read'], Math.max(1, Math.round(2 * mult)));
+          if (prog && mult >= 1) {
+            const k = (this.data.knowledge || []).find(x => x.id === prog);
+            if (k) this.say(`(${first} points out details you'd walked past blind. ${k.name}: ${(this.state.codex.encounters || {})[prog] || 0}/4)`);
+          }
+        } else if (intel === 'creative') {
+          // Creative minds: sometimes brilliant, always interesting. Morale is real.
+          if (Math.random() < 0.3 * mult + 0.1) {
+            v.cheer = Math.max(v.cheer || 0, mult >= 1 ? 2 : 1);
+            const prog = grantProgress(['morale_keep', 'ritual_meaning'], 1);
+            if (mult >= 1) this.say(`(It's a wild idea. But the village is smiling — and ${prog ? 'something in it might actually work.' : 'sometimes that\'s enough.'})`);
+          } else if (mult >= 1) {
+            v.cheer = Math.max(v.cheer || 0, 1);
+            this.say(`(Nobody's sure that would work. Everybody needed the laugh.)`);
+          }
+        } else {
+          // Steady minds: grounding. Fear shrinks when someone calm is thinking with you.
+          const s = this.state.scholar;
+          const gain = Math.max(2, Math.round(8 * mult));
+          s.energy = Math.min(100, (s.energy || 50) + gain);
+          try {
+            const n = this.npcNeeds(vid);
+            n.fear = Math.max(0, (n.fear || 0) - Math.max(3, Math.round(10 * mult)));
+          } catch (e) {}
+          if (mult >= 1) this.say(`(Steady company. Your shoulders drop an inch. +${gain} energy.)`);
+        }
+      };
+      applyIntelEffect(primary, 1);
+      if (secondary !== primary) applyIntelEffect(secondary, 0.5);
+      // THEY ask YOU back — joint discovery goes both ways.
+      if (Math.random() < 0.5) {
+        const asks = cg.theorizeAsks || [];
+        if (asks.length) this.say(`${first}: ${asks[Math.floor(Math.random() * asks.length)]}`);
+      }
+      return line;
+    },
     // villagerInitiative: they come to YOU. wants with legs.
     // one initiative per day part max — they're people, not popups.
     villagerInitiative() {
@@ -6144,6 +6328,55 @@
         v.engaged[k] = Math.max(0, (v.engaged[k] || 0) - 1);
         if (!v.engaged[k]) delete v.engaged[k];
       }
+      // OVERHEARD: NPCs learn from EACH OTHER, not just from you. Two villagers
+      // near you discuss something in their intelligence voices — joint discovery
+      // you happen to catch. Different minds notice different things.
+      try { this.overheardDiscussion(); } catch (e) {}
+    },
+
+    // overheardDiscussion: two NPCs near the player talk; you catch a fragment.
+    // Day only (nobody chats at 3am), player awake, not in combat. Rare enough
+    // to feel like life, not a broadcast.
+    overheardDiscussion() {
+      const v = this.state.village;
+      if (this.isNight() || this._sleeping || this.tbfight) return;
+      v.lastOverheard = (v.lastOverheard || 0) + 1;
+      if (v.lastOverheard < 4 || Math.random() > 0.35) return; // rare enough to feel like life
+      v.lastOverheard = 0;
+      const near = Object.keys(v.positions || {}).filter(rid =>
+        rid !== this.villagerId && !this.isEngaged(rid));
+      if (near.length < 2) return;
+      const a = near[Math.floor(Math.random() * near.length)];
+      let b = near[Math.floor(Math.random() * near.length)];
+      if (b === a) b = near[(near.indexOf(a) + 1) % near.length];
+      const ia = this.npcIntel(a).primary, ib = this.npcIntel(b).primary;
+      const oh = (this.data.characterGen || {}).overheard || {};
+      const openers = (oh.openers || {})[ia] || [];
+      const replies = (oh.replies || {})[ib] || [];
+      if (!openers.length || !replies.length) return;
+      const op = openers[Math.floor(Math.random() * openers.length)];
+      const rp = replies[Math.floor(Math.random() * replies.length)];
+      this.say(`👂 Overheard — ${this.displayName(a)}: ${op}`);
+      this.say(`👂 Overheard — ${this.displayName(b)}: ${rp}`);
+      // Overhearing sharp minds teaches a little. The village is a classroom
+      // you didn't enroll in.
+      if ((ia === 'analytical' || ib === 'analytical') && Math.random() < 0.4) {
+        const pool = ['read_people', 'animal_behavior', 'weather_read', 'tactics_small'];
+        this.state.codex.encounters = this.state.codex.encounters || {};
+        for (const sk of pool) {
+          const cur = (this.state.codex.skills || {})[sk];
+          if (cur && (cur.level || 0) >= 1) continue;
+          this.state.codex.encounters[sk] = (this.state.codex.encounters[sk] || 0) + 1;
+          this.say(`(Something in their exchange sticks with you. ${sk.replace(/_/g, ' ')} +1)`);
+          break;
+        }
+      }
+      // Social need eases a little — the village feels alive around you.
+      try {
+        const na = this.npcNeeds(a), nb = this.npcNeeds(b);
+        na.social = Math.max(0, (na.social || 0) - 10);
+        nb.social = Math.max(0, (nb.social || 0) - 10);
+      } catch (e) {}
     },
 
     // ============ SLEEP ============
