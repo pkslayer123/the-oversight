@@ -333,7 +333,7 @@
       for (const l of ((occ && occ.polyglot) || [])) {
         if (!levels[l]) {
           levels[l] = 2;
-          reasons.push(`{They} learned ${langName(l)} for work — {their} ${occ.name || 'job'} demanded it.`);
+          reasons.push(`{They} learned ${langName(l)} for work — the job demanded it.`);
         }
       }
       // LIFE EVENT (~7%, adults only): service, aid work, years abroad.

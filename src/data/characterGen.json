@@ -249,7 +249,7 @@
         "fieldcraft": 1,
         "system": 1
       },
-      "backstory": "{first} worked the night shift at a county ER. When the sky changed, {they} were already moving toward the screaming — old habits. {They} checked pulses in the clearing while everyone else stared up.",
+      "backstory": "{first} worked the night shift at {city} General's ER. When the sky changed, {they} were already moving toward the screaming — old habits. {They} checked pulses in the clearing while everyone else stared up.",
       "granted": [
         "triage",
         "steady_hands"
@@ -276,7 +276,7 @@
         "medicinal"
       ],
       "backstories": [
-        "{first} worked the night shift at a county ER. When the sky changed, {they} were already moving toward the screaming — old habits. {They} checked pulses in the clearing while everyone else stared up.",
+        "{first} worked the night shift at {city} General's ER. When the sky changed, {they} were already moving toward the screaming — old habits. {They} checked pulses in the clearing while everyone else stared up.",
         "{first} spent a decade telling families it would be okay, whether or not {they} believed it. {They} have a voice that makes panicking people sit down. It still works.",
         "{first} learned medicine in hallways and parking lots as much as wards. {They} can improvise a splint from almost anything and have strong opinions about other people's bandaging.",
         "{first} worked the children's wing, where every shot came with a sticker and a negotiation. {They} have coaxed terrified kids through worse — and terrified adults aren't that different.",
@@ -290,7 +290,7 @@
         "fieldcraft": 2,
         "system": 1
       },
-      "backstory": "{first} ran the fry station at a diner off the interstate. {They} can tell when oil is ready by the sound. Now {they} stare at raw roots and do the same math {they} always did: what feeds people, fast.",
+      "backstory": "{first} ran the fry station at a roadside diner. {They} can tell when oil is ready by the sound. Now {they} stare at raw roots and do the same math {they} always did: what feeds people, fast.",
       "granted": [
         "preservation_instinct"
       ],
@@ -313,7 +313,7 @@
         "food"
       ],
       "backstories": [
-        "{first} ran the fry station at a diner off the interstate. {They} can tell when oil is ready by the sound. Now {they} stare at raw roots and do the same math {they} always did: what feeds people, fast.",
+        "{first} ran the fry station at a roadside diner. {They} can tell when oil is ready by the sound. Now {they} stare at raw roots and do the same math {they} always did: what feeds people, fast.",
         "{first} worked the line through two restaurant fires and one health inspector with a grudge. {They} talk fast, move faster, and treat hunger like a personal insult.",
         "{first} learned to feed a hundred covers with a broken fryer and no prep cook. {They} look at the village stores the way a general looks at a map.",
         "{first} cooked out of a food truck with a kitchen the size of a closet. {They} do more with one flat-top than some restaurants do with six.",
@@ -541,7 +541,7 @@
         "{first} was the one who stayed with the scared ones while the crew worked. {They} know that calm is a skill you practice, not a trait you're born with.",
         "{first} volunteered at the firehouse in a town of nine hundred. {They} have loaded every neighbor onto a stretcher at least once, and everyone waves at the ambulance.",
         "{first} patrolled the slopes, hauling toboggans down runs {they} know blindfolded. {They} stay cheerful in a whiteout and {they} do the work anyway.",
-        "{first} worked event standby — rodeos, concerts, county fairs. {They} have treated more drunk injuries than {they} have fingers, and {they} keep {their} humor about all of them."
+        "{first} worked event standby — rodeos, concerts, harvest festivals. {They} have treated more drunk injuries than {they} have fingers, and {they} keep {their} humor about all of them."
       ]
     },
     {
@@ -646,7 +646,7 @@
         "{first} ran story hour for toddlers and tax help for seniors, sometimes in the same afternoon. {They} believe every question deserves a real answer.",
         "{first} weeded the collection every spring — deciding what stays is the job. {They} remember where everything was, even now.",
         "{first} ran the children's floor — story times for a hundred kids at a stretch. {They} have a voice that quiets a room and {they} keep a pocket full of stickers, just in case.",
-        "{first} drove the bookmobile to towns the library forgot. {They} know every back road in the county and {they} talk to the regulars at each stop.",
+        "{first} drove the bookmobile to towns the library forgot. {They} know every back road for miles around and {they} talk to the regulars at each stop.",
         "{first} was the university archivist — boxes of old letters, maps nobody had opened in decades. {They} read other people's handwriting like weather and {they} have strong feelings about lost knowledge."
       ]
     },
@@ -843,7 +843,7 @@
       "maxAge": 60,
       "backstories": [
         "{first} delivered babies in farmhouse kitchens and cramped apartment bedrooms for twelve years. {They} know how to stay calm when everyone else is screaming.",
-        "{first} learned the trade from {their} grandmother, who caught three generations of babies in the same county. {They} have steady hands and strong opinions about where laboring mothers should walk.",
+        "{first} learned the trade from {their} grandmother, who caught three generations of babies in the same district. {They} have steady hands and strong opinions about where laboring mothers should walk.",
         "{first} ran a birth center out of a converted Victorian near {origin}. {They} keep a handwritten log of all four hundred babies.",
         "{first} spent {their} twenties as a labor-and-delivery nurse before going independent. {They} are the person other people hand the flashlight to when things get bad."
       ],
@@ -883,12 +883,12 @@
       "minAge": 24,
       "maxAge": 65,
       "backstories": [
-        "{first} ran a two-chair practice above the hardware store in {origin}. {They} have pulled teeth by flashlight during blackouts and never flinched.",
-        "{first} did free dental days at the county clinic every third Saturday. {They} know the exact sound a cracked molar makes before the patient says a word.",
+        "{first} ran a two-chair practice above the hardware store in {city}. {They} have pulled teeth by flashlight during blackouts and never flinched.",
+        "{first} did free dental days at the free clinic every third Saturday. {They} know the exact sound a cracked molar makes before the patient says a word.",
         "{first} paid off {their} student loans doing extractions at a prison infirmary. {They} keep {their} stories short and {their} instruments sharp.",
         "{first} specialized in kids who were terrified of the chair, which was most of them. {They} talk people through pain the way some people talk dogs off ledges."
       ],
-      "backstory": "{first} ran a two-chair practice above the hardware store in {origin}. {They} have pulled teeth by flashlight during blackouts and never flinched."
+      "backstory": "{first} ran a two-chair practice above the hardware store in {city}. {They} have pulled teeth by flashlight during blackouts and never flinched."
     },
     {
       "id": "pharmacist",
@@ -924,12 +924,12 @@
       "minAge": 22,
       "maxAge": 65,
       "backstories": [
-        "{first} ran the counter at an independent pharmacy in {origin} for fifteen years. {They} know which drugs interact, which ones lie on the label, and which ones people actually need.",
+        "{first} ran the counter at an independent pharmacy in {city} for fifteen years. {They} know which drugs interact, which ones lie on the label, and which ones people actually need.",
         "{first} caught a prescribing error that would have killed a regular, and the doctor sent flowers. {They} read every label twice and trust no one's math but {their} own.",
         "{first} compounded creams and tinctures in the back room because the chains would not. {They} have a notebook of formulas going back twenty years.",
-        "{first} worked the overnight window, the only pharmacist awake in the county at 3 a.m. {They} are used to being the last line of defense."
+        "{first} worked the overnight window, the only pharmacist awake for miles at 3 a.m. {They} are used to being the last line of defense."
       ],
-      "backstory": "{first} ran the counter at an independent pharmacy in {origin} for fifteen years. {They} know which drugs interact, which ones lie on the label, and which ones people actually need."
+      "backstory": "{first} ran the counter at an independent pharmacy in {city} for fifteen years. {They} know which drugs interact, which ones lie on the label, and which ones people actually need."
     },
     {
       "id": "veterinarian",
@@ -965,12 +965,12 @@
       "minAge": 24,
       "maxAge": 60,
       "backstories": [
-        "{first} doctored cattle, horses, and the occasional very angry goat across three counties. {They} know how to read an animal that cannot tell you where it hurts.",
-        "{first} ran a small-animal clinic in {origin} and a weekend large-animal route. {They} have stitched up everything from parakeets to draft horses.",
+        "{first} doctored cattle, horses, and the occasional very angry goat across three districts. {They} know how to read an animal that cannot tell you where it hurts.",
+        "{first} ran a small-animal clinic in {city} and a weekend large-animal route. {They} have stitched up everything from parakeets to draft horses.",
         "{first} volunteered at the wildlife rehab center, tube-feeding owls and splinting deer. {They} talk to animals like colleagues and to owners like children.",
-        "{first} was the vet on call for the county fair, which meant everything from heatstroke pigs to kicked 4-H kids. {They} stay calm when something large is bleeding."
+        "{first} was the vet on call for the harvest fair, which meant everything from heatstroke pigs to kicked farm kids. {They} stay calm when something large is bleeding."
       ],
-      "backstory": "{first} doctored cattle, horses, and the occasional very angry goat across three counties. {They} know how to read an animal that cannot tell you where it hurts."
+      "backstory": "{first} doctored cattle, horses, and the occasional very angry goat across three districts. {They} know how to read an animal that cannot tell you where it hurts."
     },
     {
       "id": "physical_therapist",
@@ -1006,12 +1006,12 @@
       "minAge": 24,
       "maxAge": 60,
       "backstories": [
-        "{first} rebuilt knees, shoulders, and backs at a sports clinic outside {origin}. {They} know exactly how far to push a healing body and when to stop.",
+        "{first} rebuilt knees, shoulders, and backs at a sports clinic outside {city}. {They} know exactly how far to push a healing body and when to stop.",
         "{first} worked with stroke patients relearning how to walk, one hallway at a time. {They} have the patience of someone who measures progress in inches.",
         "{first} did home visits for elderly patients who refused to leave their houses. {They} talk people into doing the hard exercises with jokes and stubbornness.",
         "{first} treated ranch hands and roofers, people who broke themselves for a living. {They} are fluent in the language of 'it'll be fine' and know when it won't be."
       ],
-      "backstory": "{first} rebuilt knees, shoulders, and backs at a sports clinic outside {origin}. {They} know exactly how far to push a healing body and when to stop."
+      "backstory": "{first} rebuilt knees, shoulders, and backs at a sports clinic outside {city}. {They} know exactly how far to push a healing body and when to stop."
     },
     {
       "id": "firefighter",
@@ -1045,12 +1045,12 @@
       "minAge": 20,
       "maxAge": 55,
       "backstories": [
-        "{first} ran into burning buildings for the {origin} department for eleven years. {They} know what fear sounds like in {their} own head and how to walk through it.",
+        "{first} ran into burning buildings for the {city} fire department for eleven years. {They} know what fear sounds like in {their} own head and how to walk through it.",
         "{first} worked wildland crews in the summers, digging line ahead of crown fires. {They} have watched a hillside turn to torchlight and kept digging.",
         "{first} was the probie who never panicked, so the captain kept {them} on the nozzle. {They} are still surprised by how quiet {their} mind gets under pressure.",
         "{first} drove the ladder truck and knew every hydrant in the district by heart. {They} go toward the smoke because standing still feels worse."
       ],
-      "backstory": "{first} ran into burning buildings for the {origin} department for eleven years. {They} know what fear sounds like in {their} own head and how to walk through it."
+      "backstory": "{first} ran into burning buildings for the {city} fire department for eleven years. {They} know what fear sounds like in {their} own head and how to walk through it."
     },
     {
       "id": "police_officer",
@@ -1084,16 +1084,16 @@
       "minAge": 21,
       "maxAge": 55,
       "backstories": [
-        "{first} walked a beat in {origin} for nine years and knew the regulars by name. {They} talk first and reach for {their} belt last.",
+        "{first} walked a beat in {city} for nine years and knew the regulars by name. {They} talk first and reach for {their} belt last.",
         "{first} worked domestic calls, the ones nobody wants and everybody needs. {They} have a voice that can lower the temperature of a room.",
         "{first} directed traffic, broke up bar fights, and once talked a jumper off the overpass. {They} know that most emergencies are really just people at the end of their rope.",
         "{first} was two years from the pension when everything stopped mattering. {They} keep {their} cool by habit, and habits are hard to break."
       ],
-      "backstory": "{first} walked a beat in {origin} for nine years and knew the regulars by name. {They} talk first and reach for {their} belt last."
+      "backstory": "{first} walked a beat in {city} for nine years and knew the regulars by name. {They} talk first and reach for {their} belt last."
     },
     {
       "id": "dispatcher_911",
-      "name": "911 dispatcher",
+      "name": "emergency dispatcher",
       "teachTags": [],
       "abilityWeights": {
         "care": 2,
@@ -1123,12 +1123,12 @@
       "minAge": 20,
       "maxAge": 65,
       "backstories": [
-        "{first} took emergency calls for the county dispatch center, twelve-hour shifts of other people's worst days. {They} know how to keep a caller breathing while the ambulance is still miles out.",
+        "{first} took emergency calls for the district dispatch center, twelve-hour shifts of other people's worst days. {They} know how to keep a caller breathing while the ambulance is still miles out.",
         "{first} could tell a heart attack from a panic attack by the breathing on the line. {They} have talked people through childbirth, CPR, and house fires without ever leaving {their} chair.",
         "{first} trained new dispatchers, teaching them to type while listening to someone scream. {They} are the calmest person in any room, which is a job requirement.",
-        "{first} worked the overnight board when the whole county went quiet except the drunks and the desperate. {They} read maps, monitors, and human panic like a second language."
+        "{first} worked the overnight board when the whole district went quiet except the drunks and the desperate. {They} read maps, monitors, and human panic like a second language."
       ],
-      "backstory": "{first} took emergency calls for the county dispatch center, twelve-hour shifts of other people's worst days. {They} know how to keep a caller breathing while the ambulance is still miles out."
+      "backstory": "{first} took emergency calls for the district dispatch center, twelve-hour shifts of other people's worst days. {They} know how to keep a caller breathing while the ambulance is still miles out."
     },
     {
       "id": "social_worker",
@@ -1162,12 +1162,12 @@
       "minAge": 22,
       "maxAge": 65,
       "backstories": [
-        "{first} carried a caseload of forty families in {origin} and knew every one of their stories. {They} know how to get help to people who have stopped asking for it.",
+        "{first} carried a caseload of forty families in {city} and knew every one of their stories. {They} know how to get help to people who have stopped asking for it.",
         "{first} placed foster kids, which meant knowing which homes were safe and which were not. {They} have a sixth sense for when a situation is about to turn.",
         "{first} ran the intake desk at a shelter, the first face people saw at rock bottom. {They} speak softly and write everything down, because details save lives.",
         "{first} did home visits in neighborhoods the police drove through fast. {They} go where people actually live, and {they} stay until someone trusts {them}."
       ],
-      "backstory": "{first} carried a caseload of forty families in {origin} and knew every one of their stories. {They} know how to get help to people who have stopped asking for it."
+      "backstory": "{first} carried a caseload of forty families in {city} and knew every one of their stories. {They} know how to get help to people who have stopped asking for it."
     },
     {
       "id": "mortician",
@@ -1201,12 +1201,12 @@
       "minAge": 20,
       "maxAge": 65,
       "backstories": [
-        "{first} ran the family funeral home in {origin}, third generation. {They} know the human body the way a mechanic knows an engine.",
+        "{first} ran the family funeral home in {city}, third generation. {They} know the human body the way a mechanic knows an engine.",
         "{first} prepared the dead and sat with the living, often in the same afternoon. {They} have a steady hand and no fear of quiet rooms.",
         "{first} learned embalming from {their} father, who learned it from his. {They} keep the trade's old tools oiled and {their} composure oiled better.",
-        "{first} handled the county's unclaimed dead, giving strangers dignified endings. {They} look at death the way farmers look at weather: it comes, you deal with it."
+        "{first} handled the district's unclaimed dead, giving strangers dignified endings. {They} look at death the way farmers look at weather: it comes, you deal with it."
       ],
-      "backstory": "{first} ran the family funeral home in {origin}, third generation. {They} know the human body the way a mechanic knows an engine."
+      "backstory": "{first} ran the family funeral home in {city}, third generation. {They} know the human body the way a mechanic knows an engine."
     },
     {
       "abilityWeights": {
@@ -1216,7 +1216,7 @@
       },
       "backstories": [
         "{first} was the plumber everyone called when the other plumbers gave up. {They} have a sixth sense for where water goes when it shouldn't.",
-        "{first} spent twenty years snaking drains in {origin} apartment blocks. {They} know every sound a pipe makes before it bursts, and {they} have heard most of them.",
+        "{first} spent twenty years snaking drains in {city} apartment blocks. {They} know every sound a pipe makes before it bursts, and {they} have heard most of them.",
         "{first} replumbed a whole farmhouse with nothing but a pickup bed of salvaged copper. {They} do {their} best thinking under a sink, flashlight in {their} teeth.",
         "{first} was an apprentice at seventeen, a master at twenty-six. {They} keep a mental map of every building on {their} old route, and {they} talk to pipes like colleagues."
       ],
@@ -1332,12 +1332,12 @@
         "system": 1
       },
       "backstories": [
-        "{first} was a roofer for fifteen summers in {origin}. {They} have never been afraid of heights, only of Mondays.",
+        "{first} was a roofer for fifteen summers in {city}. {They} have never been afraid of heights, only of Mondays.",
         "{first} could shingle a whole garage in a day and be home by five. {They} do the steep pitches nobody else will touch.",
         "{first} started roofing at nineteen with plans to quit by thirty. {They} are forty-one and still up there, because the view never got old.",
-        "{first} patched hurricane damage two counties over, three seasons running. {They} know exactly how much wind a nail can hold, and {they} stare down every storm cloud."
+        "{first} patched hurricane damage two districts over, three seasons running. {They} know exactly how much wind a nail can hold, and {they} stare down every storm cloud."
       ],
-      "backstory": "{first} was a roofer for fifteen summers in {origin}. {They} have never been afraid of heights, only of Mondays.",
+      "backstory": "{first} was a roofer for fifteen summers in {city}. {They} have never been afraid of heights, only of Mondays.",
       "granted": [
         "soft_step",
         "survivor"
@@ -1451,7 +1451,7 @@
       "backstories": [
         "{first} was an appliance repair tech — washers, dryers, the sad symphony of dying compressors. {They} have fixed machines other techs wrote off as corpses.",
         "{first} could tell what was wrong with a fridge from the hum it made. {They} know the inside of a dishwasher better than {their} own kitchen.",
-        "{first} ran house calls across three counties, six stops a day. {They} talk to nervous homeowners while {their} hands work, and both leave calmer.",
+        "{first} ran house calls across three districts, six stops a day. {They} talk to nervous homeowners while {their} hands work, and both leave calmer.",
         "{first} learned the trade from a grumpy master who never explained anything twice. {They} keep every screw in labeled jars. {They} have opinions about planned obsolescence."
       ],
       "backstory": "{first} was an appliance repair tech — washers, dryers, the sad symphony of dying compressors. {They} have fixed machines other techs wrote off as corpses.",
@@ -1530,7 +1530,7 @@
         "{first} was an exterminator — roaches, wasps, the things in the walls. {They} have crawled through spaces {their} customers wouldn't look into.",
         "{first} could read a house for pests from the driveway. {They} know where the mice get in, where the ants march, and what the scratching means.",
         "{first} cleared a restaurant of German roaches in one night, twice. {They} do the jobs other people gag at, and {they} do them right.",
-        "{first} started in termite inspections, ended up the county's wasp whisperer. {They} stare at a wall until {they} know what's moving behind it."
+        "{first} started in termite inspections, ended up the district's wasp whisperer. {They} stare at a wall until {they} know what's moving behind it."
       ],
       "backstory": "{first} was an exterminator — roaches, wasps, the things in the walls. {They} have crawled through spaces {their} customers wouldn't look into.",
       "granted": [
@@ -1635,7 +1635,7 @@
         "{first} kept twelve hives on the edge of town and {they} know the smell of a queenright colony. {They} know that cool smoke keeps a hive calm, not scared.",
         "{first} learned beekeeping from {their} grandfather and {they} have the sting-scarred hands to prove it. {They} keep a smoker lit through the morning rounds, slow and steady.",
         "{first} once ran a pollination service, hauling hives between orchards all spring. {They} talk softly around the frames because a calm keeper keeps a calm hive.",
-        "Every fall {first} rendered wax and bottled honey for the county fair. {They} have a recipe for propolis salve and {they} do not share it lightly."
+        "Every fall {first} rendered wax and bottled honey for the harvest fair. {They} have a recipe for propolis salve and {they} do not share it lightly."
       ],
       "backstory": "{first} kept twelve hives on the edge of town and {they} know the smell of a queenright colony. {They} know that cool smoke keeps a hive calm, not scared."
     },
@@ -1675,7 +1675,7 @@
       "backstories": [
         "{first} broke down whole animals at a family butcher shop, primals to retail cuts in under an hour. {They} know where every cut comes from and what it is good for.",
         "{first} spent years teaching apprentices that a sharp knife is the safe knife. {They} keep {their} whetstone close and {they} have opinions about your honing angle.",
-        "At the county lockers {first} watched whole sides of beef go in and meal plans come out. {They} do the math in {their} head: yield, waste, what feeds a family all winter.",
+        "At the meat lockers {first} watched whole sides of beef go in and meal plans come out. {They} do the math in {their} head: yield, waste, what feeds a family all winter.",
         "{first} learned that nose-to-tail is not a trend but how people used to survive. {They} talk about rendering tallow and {they} are right."
       ],
       "backstory": "{first} broke down whole animals at a family butcher shop, primals to retail cuts in under an hour. {They} know where every cut comes from and what it is good for."
@@ -2054,12 +2054,12 @@
         "system": 2
       },
       "backstories": [
-        "{first} drove refrigerated freight across eleven states for fifteen years. {They} know every truck stop on I-80 by the quality of its coffee.",
+        "{first} drove refrigerated freight long-haul for fifteen years. {They} know every truck stop on the route by the quality of its coffee.",
         "{first} ran overnight produce hauls and slept in {their} cab four nights a week. {They} have stayed awake thirty-six hours straight and do not recommend it.",
         "{first} hauled diesel tankers and could change a fuel filter in the dark. {They} keep a mental map of which exits had diesel, back when that mattered.",
         "{first} drove a box truck for a moving company, carrying other people's lives up three flights of stairs. {They} are stronger than {they} look and have the back problems to prove it."
       ],
-      "backstory": "{first} drove refrigerated freight across eleven states for fifteen years. {They} know every truck stop on I-80 by the quality of its coffee.",
+      "backstory": "{first} drove refrigerated freight long-haul for fifteen years. {They} know every truck stop on the route by the quality of its coffee.",
       "granted": [
         "second_wind",
         "eyes_in_back"
@@ -2871,25 +2871,29 @@
       "india",
       "tropical",
       "urban",
-      "asia"
+      "asia",
+      "coast"
     ],
     "bangkok": [
       "thailand",
       "tropical",
       "urban",
-      "asia"
+      "asia",
+      "coast"
     ],
     "jakarta": [
       "indonesia",
       "tropical",
       "urban",
-      "asia"
+      "asia",
+      "coast"
     ],
     "manila": [
       "philippines",
       "tropical",
       "urban",
-      "asia"
+      "asia",
+      "coast"
     ],
     "seoul": [
       "korea",
@@ -2907,7 +2911,8 @@
       "nigeria",
       "tropical",
       "urban",
-      "africa"
+      "africa",
+      "coast"
     ],
     "nairobi": [
       "kenya",
@@ -2991,13 +2996,15 @@
       "argentina",
       "temperate",
       "urban",
-      "south america"
+      "south america",
+      "coast"
     ],
     "lima": [
       "peru",
       "desert",
       "urban",
-      "south america"
+      "south america",
+      "coast"
     ],
     "bogota": [
       "colombia",
@@ -3037,6 +3044,13 @@
       "ukraine",
       "continental",
       "europe"
+    ],
+    "accra": [
+      "ghana",
+      "tropical",
+      "urban",
+      "africa",
+      "coast"
     ]
   },
   "questTemplates": [

@@ -1,0 +1,54 @@
+# Monster Waves
+
+The System escalates. Each major progression milestone deploys a new wave of
+fauna. Earlier waves never leave — the ecosystem only gets richer and more
+dangerous.
+
+## Wave 1: Calibration Fauna (day 1+)
+
+The System's first draft. Twisted Earth animals — a boar that charges, a deer
+with headlights, a moth that flashes. The System was calibrating cameras and
+didn't know what would be entertaining yet.
+
+10 monsters: Bulldozer, Hushpuppy, Highbeam Deer, Flashbulb Moth, Choir Toad,
+Lockpick, White Noise, Hummice, Speedbump, Nightlight.
+
+## Wave 2: Advanced Fauna (System arrival, day 7+)
+
+The audience had NOTES. The System got creative — less "earth animal with a
+twist," more purpose-built entertainment predator. These are designed around
+what the System learned about humans in week 1: we run toward crying, we
+stare at our reflections, we fear performance reviews.
+
+10 monsters, tougher across the board (HP 30-90, damage 14-34 vs wave 1's
+12-70 / 6-30). Players have abilities by now; the game should feel it.
+
+| Monster | Concept | Pattern | Activity |
+|---|---|---|---|
+| Static 📻 | Voice-mimic radio, cries like your friends | direct (range 3) | nocturnal |
+| Grief Counselor 🪞 | Mirror-faced deer, shows you yourself | charge (6x1) | diurnal |
+| Performance Review 📊 | Drone that grades your dodges aloud | beam (6, windup 3) | diurnal |
+| Influencer 🤳 | Camera swarm, wants CONTENT | burst (r2) | both |
+| Motivational Speaker 🎤 | Sonic predator, encouragement as weapon | burst (r3) | crepuscular |
+| Customer Service 📞 | Polite ambush mimic, no telegraph | rush | nocturnal |
+| Terms & Conditions 📜 | Paper golem, speed 1, undodgeable | direct (range 3) | diurnal |
+| Middle Manager 💼 | Circling pack alpha | charge (4x2) | both |
+| Inspiration 💡 | Glowing detonation predator | burst (r2) | nocturnal |
+| Nostalgia 📼 | Memory projector, shows you home | beam (5, windup 2) | crepuscular |
+
+## Wave 3: Reserved (integration 80+)
+
+The System's final draft. Gating logic exists in `monsterWavePool()` —
+wave 3+ monsters spawn only after System arrival AND deep integration (80+).
+No wave-3 monsters designed yet. When they are, they should feel like the
+System has stopped pretending these are animals at all.
+
+## Implementation
+
+- `wave` field on each monster in `src/data/monsters.json` (schema allows it).
+- `Game.monsterWavePool()` in game.js: filters by `state.systemArrived` and
+  `scholar.integration`.
+- `checkEncounter()` uses the pool. The wanderer is hardcoded wave-1.
+- Wave-2 announcement woven into `checkSystemArrival()` dialogue.
+- Tests: `scripts/test-wave2.js` (115 checks: gating, integrity, combat smoke).
+- Content gate: `node scripts/validate-data.js` (monster count now 20).
