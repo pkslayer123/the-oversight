@@ -80,7 +80,7 @@ function validateEntry(entry, schema, file, idx) {
         for (const k of ['unknown', 'observed', 'slain'])
           if (typeof val[k] !== 'string') err(file, `${where}: codexStages.${k} must be string`);
       } else if (field === 'unlock') {
-        if (!['granted', 'trial', 'discovery', 'mentorship', 'system_offer'].includes(val.type))
+        if (!['granted', 'trial', 'discovery', 'mentorship', 'system_offer', 'fallback'].includes(val.type))
           err(file, `${where}: unlock.type invalid`);
       } else if (field === 'effect') {
         for (const [k, ks] of Object.entries(spec)) {

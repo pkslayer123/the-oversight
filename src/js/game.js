@@ -49,9 +49,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements };
       return this.data;
     },
 
@@ -153,7 +153,15 @@
       // is based on your actions, not your stats. Play how you want to play.
       scholar.week1 = { forage: 0, hunt: 0, talk: 0, cook: 0, donate: 0, scavenge: 0 };
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
-      scholar.inventory = gear.map(id => ({ itemId: id, units: 1, kg: 0.2, name: (this.data.items.find(i => i.id === id) || {}).name || id }));
+      // RELIC BOND: your five are bonded relics. Grown, not found.
+      // Bond accrues through use; the System offers enhancements at 10/25/50.
+      // Bond is non-transferable — a bonded relic in a stranger's hands is just stuff.
+      scholar.inventory = gear.map(id => {
+        const def = this.data.items.find(i => i.id === id) || {};
+        return { itemId: id, units: 1, kg: 0.2, name: def.name || id,
+          bonded: true, bond: 0, bondOffered: [], enhancements: [] };
+      });
+      scholar.relicUse = {}; // per-day record of meaningful relic use
       // Start with a day's food. You're not starving on arrival (that's day 3).
       scholar.inventory.push(
         { name: 'Trail mix', kcalEach: 400, units: 2, spoilDay: 9999, safe: true, kg: 0.3, unit: 'bag' },
@@ -1168,7 +1176,10 @@
       this.map.px = x; this.map.py = y;
       this.reveal(x, y);
       const tile = this.playerTile();
-      this.state.scholar.kcal -= 30 * t.d; // distance has a metabolic price
+      // RELIC — weatherproof: the garment shrugs off weather. Cheaper travel.
+      const travelKcalMult = S.modifiers.resolve(1, 'travel.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities), {});
+      this.state.scholar.kcal -= Math.round(30 * t.d * travelKcalMult); // distance has a metabolic price
+      this.noteTrailUse(); // RELIC BOND: the boots walked.
       let msg = `Travel ${t.d} tile${t.d > 1 ? 's' : ''} to ${S.TILE_NAME[tile.type]}.`;
       if (!tile.visited) {
         tile.visited = true;
@@ -1399,7 +1410,8 @@
       this.state.scholar.equipped = this.state.scholar.equipped || {};
       // unequip current (back to inventory, stays there)
       // equip new (remove from inventory, set slot)
-      this.state.scholar.equipped[slot] = { itemId: def.id, name: def.name };
+      this.state.scholar.equipped[slot] = { itemId: def.id, name: def.name,
+        ...(item.bonded ? { bonded: true, bond: item.bond || 0, bondOffered: item.bondOffered || [], enhancements: item.enhancements || [] } : {}) };
       // remove from inventory (it's worn, not carried)
       this.state.scholar.inventory.splice(itemIdx, 1);
       this.say(`Equipped ${def.name} (${slot}).`);
@@ -1409,7 +1421,8 @@
       const eq = (this.state.scholar.equipped || {})[slot];
       if (!eq) return null;
       // back to inventory
-      this.state.scholar.inventory.push({ itemId: eq.itemId, name: eq.name, units: 1, kg: 0.5 });
+      this.state.scholar.inventory.push({ itemId: eq.itemId, name: eq.name, units: 1, kg: 0.5,
+        ...(eq.bonded ? { bonded: true, bond: eq.bond || 0, bondOffered: eq.bondOffered || [], enhancements: eq.enhancements || [] } : {}) });
       delete this.state.scholar.equipped[slot];
       this.say(`Unequipped ${eq.name}.`);
       return null;
@@ -1439,6 +1452,8 @@
     useItem(idx) {
       const item = this.state.scholar.inventory[idx];
       if (!item || !this.isUsable(item)) return null;
+      // RELIC BOND: you'd never use that up. It's yours.
+      if (item.bonded) { this.say(`You'd never use up your ${item.name}. It's not a supply. It's yours.`); return null; }
       const name = item.name.toLowerCase();
       if (name.includes('first aid')) {
         this.state.scholar.health = Math.min(100, this.state.scholar.health + 30);
@@ -1634,7 +1649,9 @@
             continue;
           }
           if (needsWater) { water.clean -= cost; waterUsed += cost; }
-          item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult);
+          // RELIC — impossible_edge: physics-defying prep. +10% cooked kcal.
+          const relicCook = S.modifiers.resolve(1, 'cook.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities), {});
+          item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult * relicCook);
           item.rawKcal = null;
           item.safe = true;
           n++;
@@ -1642,6 +1659,7 @@
       }
       this.say(n ? `Cooked ${n} item${n > 1 ? 's' : ''}${waterUsed ? ` (-${waterUsed}L water)` : ''}.` : 'Nothing raw to cook.');
       if (n > 0 && this.state.scholar.week1) this.state.scholar.week1.cook++;
+      if (n > 0) this.noteToolUse(); // RELIC BOND: the knife, the pot, the fire kit.
       this.gainAbilityXP('camp_cook', 1);
       return null;
     },
@@ -1651,6 +1669,8 @@
     donateToPantry(idx) {
       const item = this.state.scholar.inventory[idx];
       if (!item || (item.kcalEach || 0) <= 0) { this.say('That\'s not food.'); return null; }
+      // RELIC BOND: non-transferable. A bonded relic in a stranger's hands is just stuff.
+      if (item.bonded) { this.say(`That's yours. Not the village's. You can't give away your ${item.name}.`); return null; }
       const v = this.state.village;
       const vid = this.state.scholar.villagerId;
       // add to pantry
@@ -1776,7 +1796,10 @@
       // tracker: the System's gift. L1 +30%, L2 +50% (additive, capped at 95%).
       const trackLvl = this.abilityLevel('tracker');
       const trackBonus = trackLvl >= 2 ? 0.5 : trackLvl >= 1 ? 0.3 : 0;
-      const chance = Math.min(0.95, base + (isHunter ? 0.2 : 0) + wbonus + trackBonus);
+      // RELIC — never_fails: the tool works when it matters. +10% hunt success.
+      const relicHunt = S.modifiers.resolve(0, 'hunt.success', S.modifiers.collectModifiers(s, this.data.abilities), {});
+      const chance = Math.min(0.95, base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt);
+      this.noteToolUse(); // RELIC BOND: the spear, the snare, the knife.
       s.kcal = Math.max(0, s.kcal - 100);
       if (Math.random() < chance) {
         // caught!
@@ -2133,6 +2156,8 @@
       if (tile.type === 'thicket') chance = 0.15;
       else if (tile.type === 'meadow') chance = 0.05;
       else if (tile.type === 'ruin') chance = 0.12;
+      // RELIC — ghost_weave: harder to detect, by animals and otherwise.
+      chance *= S.modifiers.resolve(1, 'travel.encounter', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
       if (Math.random() < chance && !scholar.monster) {
         const mdefs = this.data.monsters;
         const mdef = mdefs[Math.floor(Math.random() * mdefs.length)];
@@ -2274,6 +2299,130 @@
       }
       return choices.slice(0, 3);
     },
+    // ============ RELIC BOND ============
+    // Your five are bonded relics. Bond accrues passively through normal play —
+    // no meters to manage, no grinding. The game notices; you don't.
+    // Tools/weapons: +1/day of meaningful use. Clothing: +1/day on the trail.
+    // Sentimental: +1/day simply kept close. Story moments: +3.
+    // At bond 10/25/50 the System offers 1-of-3 enhancements from the class pool.
+
+    // relicItems: all bonded relics (pack + equipped).
+    relicItems() {
+      const s = this.state.scholar;
+      const items = (s.inventory || []).filter(i => i && i.bonded);
+      for (const slot of Object.values(s.equipped || {})) {
+        if (slot && slot.bonded) items.push(slot);
+      }
+      return items;
+    },
+
+    // noteRelicUse: mark a relic as meaningfully used today (cap 1/day is inherent).
+    noteRelicUse(itemId) {
+      if (!itemId) return;
+      const s = this.state.scholar;
+      s.relicUse = s.relicUse || {};
+      s.relicUse[itemId] = true;
+    },
+
+    // noteToolUse: camp/work happened — tools and weapons earned their keep.
+    noteToolUse() {
+      for (const r of this.relicItems()) {
+        const def = this.data.items.find(i => i.id === (r.itemId || r.id));
+        const cls = def && def.class;
+        if (cls === 'tool' || cls === 'weapon') this.noteRelicUse(r.itemId || r.id);
+      }
+    },
+
+    // noteTrailUse: you walked the world — clothing earned its keep.
+    noteTrailUse() {
+      for (const r of this.relicItems()) {
+        const def = this.data.items.find(i => i.id === (r.itemId || r.id));
+        if (def && def.class === 'clothing') this.noteRelicUse(r.itemId || r.id);
+      }
+    },
+
+    hasRelicEnhancement(id) {
+      return this.relicItems().some(r => (r.enhancements || []).includes(id));
+    },
+
+    // accrueRelicBond: daily. Called during day resolution.
+    accrueRelicBond() {
+      const s = this.state.scholar;
+      const used = s.relicUse || {};
+      for (const r of this.relicItems()) {
+        const id = r.itemId || r.id;
+        const def = this.data.items.find(i => i.id === id);
+        const cls = def && def.class;
+        let gain = 0;
+        if (cls === 'sentimental') gain = 1; // kept close, every day
+        else if (used[id]) gain = 1; // meaningful use (1/day cap is inherent)
+        if (!gain) continue;
+        r.bond = (r.bond || 0) + gain;
+        // Thresholds: 10 / 25 / 50. One offer at a time (UI simplicity).
+        for (const t of [10, 25, 50]) {
+          if (r.bond >= t && !(r.bondOffered || []).includes(t) && !s.relicChoices) {
+            this.offerRelicEnhancement(r, t);
+            break;
+          }
+        }
+      }
+      s.relicUse = {};
+    },
+
+    // offerRelicEnhancement: the System noticed. Pick 1 of 3 from the class pool.
+    offerRelicEnhancement(item, threshold) {
+      const s = this.state.scholar;
+      const def = this.data.items.find(i => i.id === (item.itemId || item.id)) || {};
+      // Weapons bond like tools — they draw from the tool enhancement pool.
+      const cls = def.class === 'weapon' ? 'tool' : (def.class || 'tool');
+      const pool = (this.data.relicEnhancements || []).filter(e => e.class === cls);
+      const byId = {}; pool.forEach(e => { byId[e.id] = e; });
+      // Prefer item-specific bondThresholds offers (authored), fill from class pool.
+      const specific = (def.bondThresholds || []).flatMap(bt => bt.offers || []);
+      const chosen = item.enhancements || [];
+      const options = [];
+      for (const eid of specific) {
+        if (options.length >= 3) break;
+        const e = byId[eid];
+        if (e && !chosen.includes(e.id)) options.push(e);
+      }
+      for (const e of pool) {
+        if (options.length >= 3) break;
+        if (!options.includes(e) && !chosen.includes(e.id)) options.push(e);
+      }
+      if (!options.length) return; // nothing new to offer
+      s.relicChoices = {
+        itemId: item.itemId || item.id,
+        itemName: item.name,
+        threshold,
+        options: options.slice(0, 3).map(e => ({
+          id: e.id, name: e.name, description: e.description,
+          systemCommentary: e.systemCommentary,
+        })),
+      };
+      this.say(`🌟 "We have detected elevated attachment to Unit ${String(item.name || 'ITEM').toUpperCase()}. This is inefficient. This is also... [PROCESSING] ...valuable? Optimization available." (Choose an enhancement for your ${item.name}.)`);
+    },
+
+    // chooseRelicEnhancement: player picks from the System's offer.
+    chooseRelicEnhancement(id) {
+      const s = this.state.scholar;
+      const rc = s.relicChoices;
+      if (!rc) return null;
+      const opt = (rc.options || []).find(o => o.id === id);
+      if (!opt) return null;
+      const item = this.relicItems().find(r => (r.itemId || r.id) === rc.itemId);
+      if (item) {
+        item.enhancements = item.enhancements || [];
+        item.enhancements.push(id);
+        item.bondOffered = item.bondOffered || [];
+        item.bondOffered.push(rc.threshold);
+      }
+      s.relicChoices = null;
+      this.say(`✨ ${rc.itemName} — ${opt.name}. ${opt.description}`);
+      if (opt.systemCommentary) this.say(`"${opt.systemCommentary}"`);
+      return null;
+    },
+
     // chooseAbility: player picks from the System's offer.
     chooseAbility(id) {
       const s = this.state.scholar;
@@ -2461,6 +2610,7 @@
           const lootId = t.loot.shift();
           if (this.state.scholar.week1) this.state.scholar.week1.scavenge++;
           this.gainAbilityXP('scrounger', 1);
+          this.noteToolUse(); // RELIC BOND: prying, cutting, carrying.
           const item = SCAVENGED.find(s => s.id === lootId);
           if (!this.canCarry(item.kg)) { t.loot.unshift(lootId); this.say('Too heavy — your pack can\'t take it. Eat something or leave it.'); return null; }
           scholar.inventory.push({ plantId: lootId, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg });
@@ -2559,6 +2709,8 @@
         const thumbMult = thumbLvl >= 2 ? 2.0 : thumbLvl >= 1 ? 1.5 : 1.0;
         const finalUnits = Math.ceil(r.units * levelMult * thumbMult);
         scholar.inventory.push({ plantId: r.plantId, units: finalUnits, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
+        // RELIC BOND: tools cut, clothing kept you moving.
+        this.noteToolUse(); this.noteTrailUse();
         // MATERIALS: byproducts for crafting. vine from bush, stick from tree, stone from rubble.
         // you don't just get food — you get supplies.
         if (plantCell && plantCell.cell === 'bush' && Math.random() < 0.3) {
@@ -2575,10 +2727,13 @@
         if (scholar.week1) scholar.week1.forage++;
         this.gainAbilityXP('green_thumb', 1);
       } else if (kind === 'rest') {
-        scholar.energy = Math.min(100, scholar.energy + 30);
+        // RELIC — second_skin: no blisters, no misery. Energy returns faster.
+        const restMult = S.modifiers.resolve(1, 'rest.energy', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
+        const restGain = Math.round(30 * restMult);
+        scholar.energy = Math.min(100, scholar.energy + restGain);
         scholar.health = Math.min(100, scholar.health + 5);
         scholar.kcal -= 40;
-        msg = 'You rest. Breath slows. +30 energy.';
+        msg = `You rest. Breath slows. +${restGain} energy.`;
       } else if (kind === 'wait') {
         msg = 'You wait. The light changes. Nothing asks anything of you.';
       } else if (kind === 'treat') {
@@ -2781,13 +2936,15 @@
     // A fire god needs 4x DAILY (8000 vs 2000) — body burns hot just existing.
     // (Abilities don't have tiers yet — infer from name. TODO: add tier to JSON.)
     metabolicMult(abilities) {
+      // Data-driven: abilities declare metabolic: {eatMult}. Legacy fallback:
+      // a "fire"/"god" name still reads as 4x (the old heuristic).
       if (!abilities || !abilities.length) return 1;
       let mult = 1;
       for (const entry of abilities) {
         const aid = (entry && entry.id) || entry;
         const ab = this.data.abilities.find(a => a.id === aid);
-        const isPowerful = ab && (ab.name.toLowerCase().includes('fire') || ab.name.toLowerCase().includes('god'));
-        if (isPowerful) mult = Math.max(mult, 4);
+        if (ab && ab.metabolic && ab.metabolic.eatMult) mult = Math.max(mult, ab.metabolic.eatMult);
+        else if (ab && (ab.name.toLowerCase().includes('fire') || ab.name.toLowerCase().includes('god'))) mult = Math.max(mult, 4);
       }
       return mult;
     },
@@ -2798,6 +2955,33 @@
     },
     abilityLevel(id) {
       return (globalThis.Scattering && globalThis.Scattering.abilityLevel(this.state.scholar, id)) || 0;
+    },
+
+    // mods: all active ability modifiers for the scholar (system + background).
+    mods() {
+      return globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities);
+    },
+
+    // modTarget: resolve one computed value through the modifier pipeline.
+    // base → collect → adds, then multiplies → final. Use for EVERY number
+    // an ability could touch. New content = new target, never new plumbing.
+    modTarget(target, base, ctx) {
+      return globalThis.Scattering.modifiers.resolve(base, target, this.mods(), ctx || {});
+    },
+
+    // metabolicDaily: conservation of energy. Every System ability has a
+    // metabolic cost (kcal/day) — power is a trade, not a tax. Background
+    // abilities are who you already were: free.
+    // Steve's test: "does this let you skip dinner?" — if yes, the cost is wrong.
+    metabolicDaily() {
+      let total = 0;
+      const all = (this.state.scholar.abilities || []).concat(this.state.scholar.backgroundAbilities || []);
+      for (const entry of all) {
+        const aid = (entry && entry.id) || entry;
+        const ab = this.data.abilities.find(a => a.id === aid);
+        if (ab && ab.metabolic && ab.metabolic.daily) total += ab.metabolic.daily;
+      }
+      return total;
     },
 
     // villageMeal: you eat from the communal pantry. You're one of the 12.
@@ -2984,8 +3168,28 @@
       this.checkSystemArrival();
       this.checkTimedEvents();
       // evening: run metabolism
+      scholar._preDayHealth = scholar.health;
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
+      // RELIC BOND: the game notices what you carried and used.
+      this.accrueRelicBond();
+      // RELIC — resolve: once per day, ignore the spiral's health damage.
+      // You look at the thing you carry. Not today.
+      if (this.hasRelicEnhancement('resolve') && !scholar.relicResolveUsed && scholar.health < scholar._preDayHealth) {
+        scholar.health = scholar._preDayHealth;
+        scholar.relicResolveUsed = true;
+        const ri = this.relicItems().find(r => (r.enhancements || []).includes('resolve'));
+        this.say(`You hold your ${ri ? ri.name : 'relic'}. Not today. (Resolve: today's health damage ignored.)`);
+      }
+      scholar._preDayHealth = scholar.health; // reset baseline after resolve/anchor adjudication
+      // RELIC — anchor: when death would take you, hold at 1. Once per 30 days.
+      if (scholar.health <= 0 && this.hasRelicEnhancement('anchor') && (scholar.relicAnchorDay || -99) + 30 <= scholar.day) {
+        scholar.health = 1;
+        res.ok = true; // the anchor refuses. death does not take you today.
+        scholar.relicAnchorDay = scholar.day;
+        const ai = this.relicItems().find(r => (r.enhancements || []).includes('anchor'));
+        this.say(`Your ${ai ? ai.name : 'relic'} holds you here. Not yet. (Anchor: death refused, once per season.)`);
+      }
       // the village eats whether you're there or not — every day you're out, twelve mouths
       // YOU EAT TOO. Village meal from the communal pantry.
       this.villageMeal();
@@ -3012,6 +3216,7 @@
         return this.status();
       }
       scholar.day += 1;
+      scholar.relicResolveUsed = false;
       this.dayPart = 0; this.ap = 1;
       this.say(`— DAY ${scholar.day} DAWN — ${DAY_PART_HINT.dawn}`);
       this.save();
@@ -3040,6 +3245,14 @@
         const scholar = this.state.scholar;
         scholar.inventory.push({ plantId: 'boar_meat', units: 4, kcalEach: 800, spoilDay: scholar.day + 3, name: 'Bulldozer meat', unit: 'cut', prep: 'Smoke it — it keeps for weeks.', kg: 0.8 });
         this.say('The Bulldozer falls. Pork is pork — 3,200 kcal of it. The village will eat. (+4 cuts of meat)');
+        // RELIC BOND: you survived the thing you were afraid of, holding what matters.
+        for (const r of this.relicItems()) {
+          const rdef = this.data.items.find(i => i.id === (r.itemId || r.id));
+          if (rdef && rdef.class === 'sentimental') {
+            r.bond = (r.bond || 0) + 3;
+            this.say(`You clutch your ${r.name}. You're still here. (Bond +3)`);
+          }
+        }
         this.fight = null;
       } else if (r.result === 'fled') {
         this.fight = null;

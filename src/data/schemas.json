@@ -111,7 +111,8 @@
         "combat",
         "craft",
         "care",
-        "system"
+        "system",
+        "fallback"
       ],
       "description": "string",
       "modifiers": [
@@ -122,7 +123,8 @@
             "multiply"
           ],
           "value": "number",
-          "condition": "string?"
+          "condition": "string?",
+          "scale": "string?"
         }
       ],
       "unlock": {
@@ -131,7 +133,8 @@
           "trial",
           "discovery",
           "mentorship",
-          "system_offer"
+          "system_offer",
+          "fallback"
         ],
         "detail": "string?"
       },
@@ -147,7 +150,11 @@
         "combat",
         "social"
       ],
-      "flavor": "string"
+      "flavor": "string",
+      "metabolic": {
+        "daily": "number?",
+        "eatMult": "number?"
+      }
     }
   },
   "villager": {

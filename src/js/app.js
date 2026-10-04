@@ -430,6 +430,26 @@
     setTimeout(() => { if (overlay.parentNode) { overlay.remove(); if (callback) callback(); } }, 10000);
   }
 
+  // relicPopup: the System noticed your attachment. Pick 1 of 3 enhancements.
+  function relicPopup() {
+    const rc = Game.state.scholar.relicChoices;
+    if (!rc) return;
+    const screen = document.getElementById('screen');
+    screen.innerHTML = `
+      <div class="card">
+        <h3>❖ The System Noticed</h3>
+        <p class="small">"We have detected elevated attachment to Unit ${esc(rc.itemName.toUpperCase())}. This is inefficient. This is also... [PROCESSING] ...valuable? Optimization available."</p>
+        <p class="small">Your <b>${esc(rc.itemName)}</b> (bond ${rc.threshold}) can become more. Choose one:</p>
+        <div class="btnrow">
+          ${rc.options.map(o => `<button class="btn sm" data-relic="${o.id}"><b>${esc(o.name)}</b><br><span class="small">${esc(o.description)}</span>${o.systemCommentary ? `<br><i class="small">"${esc(o.systemCommentary)}"</i>` : ''}</button>`).join('')}
+        </div>
+      </div>`;
+    screen.querySelectorAll('[data-relic]').forEach(b => b.onclick = () => {
+      Game.chooseRelicEnhancement(b.dataset.relic);
+      expeditionScreen();
+    });
+  }
+
   // abilityPopup: the System offers you a choice. Pick one.
   function abilityPopup() {
     const choices = Game.state.scholar.abilityChoices;
@@ -481,7 +501,7 @@
         ${(() => { const bg = Game.state.scholar.backgroundAbilities || []; if (!bg.length) return ''; return `<p class="small"><b>Background:</b> ${bg.map(a => `${a.name} L${a.level}`).join(', ')}</p>`; })()}
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)</p>`; })()}
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; return `<p class="small"><b>💧 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)</p>`; })()}
-        ${inv.length ? inv.map((i, idx) => `<p class="small"><b>${i.name}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${inv.length ? inv.map((i, idx) => `<p class="small">${i.bonded ? '❖ ' : ''}<b>${i.name}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.bonded ? ` <span class="small" title="Bonded relic — grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' · ' + i.enhancements.join(', ') : ''}</span>` : ''}${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}
         <button class="btn ghost sm" id="b-iback">Back</button>
@@ -594,6 +614,11 @@
     // System ability choice? Show it.
     if (Game.state.scholar.abilityChoices && Game.state.scholar.abilityChoices.length) {
       abilityPopup();
+      return;
+    }
+    // Relic enhancement offer? Show it.
+    if (Game.state.scholar.relicChoices) {
+      relicPopup();
       return;
     }
     document.getElementById('x-codex').onclick = codexScreen;
