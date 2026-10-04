@@ -7227,8 +7227,18 @@
       if (cell === 'tree' || cell === 'bigtree' || cell === 'tent') {
         if (!sec || !sec.known) actions.push('Examine');
         else actions.push('Use');
-        // TERRAFORMING: trees can be felled. costs a day-part, yields wood.
-        if (cell === 'tree' || cell === 'bigtree') actions.push('Cut down');
+        if (cell === 'tree' || cell === 'bigtree') {
+          // TOOL PREREQUISITES: felling needs an axe-class tool; a pruning
+          // saw takes branches, not trunks; gathering fallen branches needs
+          // nothing. Impossible actions NEVER render here — the hint teaches
+          // instead (see perception line / tap popup). No dead buttons.
+          try {
+            const ci = this.cutInfo(cell);
+            if (ci.canFell) actions.push('Cut down');
+            else if (ci.canPrune) actions.push('Prune branches');
+          } catch (e) { /* cutInfo unavailable — show nothing rather than lie */ }
+          actions.push('Gather fallen');
+        }
       } else if (cell === 'water') {
         actions.push('Drink');
         actions.push('Fill water (+2L)');

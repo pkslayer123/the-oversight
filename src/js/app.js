@@ -485,6 +485,8 @@
     if (label === 'Hunt') { Game.huntAnimal(); return; }
     if (label === 'Talk') { talkAction(); return; }
     if (label === 'Cut down') { Game.cutTree(cx, cy); return; }
+    if (label === 'Prune branches') { Game.pruneBranches(cx, cy); return; }
+    if (label === 'Gather fallen') { Game.gatherFallen(cx, cy); return; }
     if (label === 'Clear brush') { Game.clearBrush(cx, cy); return; }
     if (label === 'Fill water (+2L)') { Game.fillWater(); return; }
     if (label.startsWith('Cook (')) { Game.cookAll(); return; }
@@ -535,8 +537,11 @@
   function contextBarHTML() {
     const items = nearbyActionItems();
     if (!items.length) return '';
+    // TALK BADGE: someone nearby wants to talk to you. A quiet dot on the
+    // Talk button — peripheral, not a popup. You see it; you're not nagged.
+    const wantTalk = talkRequestNear();
     return `<div class="contextbar"><span class="ctx-label">nearby:</span>` +
-      items.map((it, i) => `<button class="ctx-btn" data-ctx="${i}">${esc(it.label)}</button>`).join('') +
+      items.map((it, i) => `<button class="ctx-btn" data-ctx="${i}">${esc(it.label)}${it.label === 'Talk' && wantTalk ? '<span class="dot"></span>' : ''}</button>`).join('') +
       `</div>`;
   }
 
@@ -552,6 +557,54 @@
         refresh();
       };
     });
+  }
+
+  // selfBarHTML: your persistent body-actions — Eat, Sleep, Pack, Wait.
+  // Always in reach, above the fold. Badges are peripheral, not nagging:
+  // a quiet dot when something needs attention. Never a popup, never a
+  // forced scroll. Hidden in combat (turn-based has its own economy).
+  function selfBarHTML(st) {
+    if (st.inCombat) return '';
+    const eatDot = st.kcal < 500 ? '<span class="dot"></span>' : '';
+    const sleepDot = st.energy < 30 ? '<span class="dot"></span>'
+      : (st.isNight ? '<span class="dot soft"></span>' : '');
+    const packDot = st.packKg >= st.packCap ? '<span class="dot"></span>' : '';
+    return `<div class="selfbar"><span class="ctx-label">you:</span>` +
+      `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` +
+      `<button class="self-btn" data-self="sleep">😴 Sleep${sleepDot}</button>` +
+      `<button class="self-btn" data-self="pack">🎒 Pack (${st.invCount})${packDot}</button>` +
+      `<button class="self-btn" data-self="wait">⏳ Wait</button></div>`;
+  }
+
+  function wireSelfBar() {
+    document.querySelectorAll('[data-self]').forEach(b => {
+      b.onclick = () => {
+        const a = b.dataset.self;
+        if (a === 'eat') { Game.eat(); rerender(); }
+        else if (a === 'sleep') { Game.sleep(); rerender(); }
+        else if (a === 'pack') { invSheet(); }
+        else if (a === 'wait') { Game.doAction('wait'); rerender(); }
+      };
+    });
+  }
+
+  // talkRequestNear: someone within earshot wants to talk to you and hasn't
+  // been heard yet. Feeds the Talk badge — the "act elsewhere" signal.
+  function talkRequestNear() {
+    try {
+      const v = Game.state.village;
+      const reqs = v && v.talkRequests;
+      if (!reqs) return false;
+      const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+      const pos = v.positions || {};
+      for (const rid of Object.keys(reqs)) {
+        if (reqs[rid] && !reqs[rid].delivered && pos[rid]) {
+          const d = Math.abs(pos[rid].mx - px) + Math.abs(pos[rid].my - py);
+          if (d <= 3) return true;
+        }
+      }
+    } catch (e) {}
+    return false;
   }
 
   // abilityBarHTML: your activatable powers, always in reach — not buried in inventory.
@@ -2010,6 +2063,7 @@
           ${perceiveHTML()}
           <div id="inlineslot" class="ord-inline"></div>
           <div class="ord-ctx">${contextBarHTML()}</div>
+          <div class="ord-self">${selfBarHTML(st)}</div>
           <div class="ord-target">${targetBarHTML()}</div>
           <div class="ord-danger">${dangerBarHTML()}</div>
           <div class="ord-ability">${abilityBarHTML()}</div>
@@ -2157,6 +2211,7 @@
     document.querySelectorAll('[data-stash-tool]').forEach(b => b.onclick = () => { Game.takeTool(b.dataset.stashTool); refresh(); });
     wirePanel(st, n);
     wireContextBar();
+    wireSelfBar();
     wireAbilityBar();
     wireTargetBar();
     // THE SYSTEM INTEGRATING INTO YOUR PERCEPTION: post-day-7, the interface
@@ -2338,14 +2393,13 @@
   }
 
 
-  // SLEEP: "sleep until morning" with the cost/benefit on the button.
-  // Quality depends on where you are: bunk > tent > hall floor > cold ground.
-  function sleepBtnHTML() {
+  // SLEEP: quality depends on where you are: bunk > tent > hall floor > cold ground.
+  // sleepHintHTML: sleep quality info only — the button lives in the self bar.
+  function sleepHintHTML() {
     let prev = null;
     try { prev = Game.sleepPreview(); } catch (e) {}
-    const hint = prev ? `${prev.name} · +${prev.heal} health · energy restored · hunger ticks slower` : 'Sleep until morning';
-    return `<button class="btn sm" id="x-sleep">😴 Sleep until morning</button>`
-      + `<p class="small" style="opacity:.6">${esc(hint)}${prev && prev.note ? `<br>${esc(prev.note)}` : ''}</p>`;
+    if (!prev) return '';
+    return `<p class="small" style="opacity:.6">😴 ${esc(prev.name)} · +${prev.heal} health · energy restored${prev.note ? `<br>${esc(prev.note)}` : ''}</p>`;
   }
 
   function panelHaven(st) {
@@ -2362,7 +2416,7 @@
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
       <button class="btn sm" id="x-pantry">Take from pantry</button>
       <button class="btn sm ghost" id="x-caches">📍 Caches</button>
-      ${sleepBtnHTML()}
+      ${sleepHintHTML()}
       ${Game.stashHtml()}
       <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
       <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry ${Game.fmtKcal(8000)}+ (${Game.fmtKcal(st.pantryKcal)})</p>
@@ -2391,18 +2445,12 @@
   }
 
   function panelNode(st, n) {
-    // Actions come from tapping squares (cell popup). No redundant buttons.
-    // Global: Eat, Wait, Inventory. Everything else is in the world.
+    // Self-care (Eat/Sleep/Pack/Wait) lives in the persistent self bar above
+    // the fold. This panel is information only — no redundant buttons.
     return `
       <div class="card"><h3>${esc(n.epithet).toUpperCase()}</h3>
       <p class="small">${esc(n.title)}</p>
-      <p class="small" style="opacity:.7">Tap a square to see what you can do there.</p>
-      <div class="actions">
-        <button class="btn sm ghost" id="p-eat">Eat</button>
-        <button class="btn sm ghost" id="p-wait">Wait</button>
-        <button class="btn sm ghost" id="p-inv">Pack (${st.invCount})</button>
-      </div>
-      ${sleepBtnHTML()}</div>`;
+      <p class="small" style="opacity:.7">Tap a square to see what you can do there.</p></div>`;
   }
 
   function panelCombat(st) {
@@ -2503,11 +2551,7 @@
     const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
     on('p-face', () => { Game.startCombat(); rerender(); });
     wireCombatPanel();
-    const go = (kind) => { Game.doAction(kind); rerender(); };
-    on('p-wait', () => go('wait'));
-    on('x-sleep', () => { Game.sleep(); rerender(); });
-    on('p-eat', () => { Game.eat(); rerender(); });
-    on('p-inv', () => invSheet());
+    // NOTE: Eat/Sleep/Pack/Wait moved to the persistent self bar (wireSelfBar).
     screen.querySelectorAll('.bgsurv').forEach(el => {
       el.onclick = () => { screen.querySelector('#bgsay').textContent = '\u201C' + el.dataset.line + '\u201D'; };
     });

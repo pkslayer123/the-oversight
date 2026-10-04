@@ -528,6 +528,29 @@ body.system-live .btn:not(.ghost) {
 .ord-perceive { order: 4.5; }
 .ord-inline { order: 5; }
 .ord-ctx { order: 6; }
+/* SELF BAR: your persistent body-actions. Sits right under the contextual
+   actions — always above the fold, never duplicated below the minimap.
+   Badges are peripheral: a quiet dot, no animation, no nagging. */
+.ord-self { order: 6.5; }
+.selfbar { display: flex; gap: 6px; margin: 6px 6px 0; align-items: center; }
+.selfbar:empty { display: none; }
+.self-btn {
+  position: relative; flex: 1; padding: 8px 4px; font-size: 13px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg2); color: inherit; cursor: pointer;
+  white-space: nowrap;
+}
+.self-btn:active { background: #2a2a2a; }
+.self-btn .dot {
+  position: absolute; top: 4px; right: 6px; width: 8px; height: 8px;
+  border-radius: 50%; background: #e05c5c;
+}
+.self-btn .dot.soft { background: #e8b64c; }
+.ctx-btn { position: relative; }
+.ctx-btn .dot {
+  position: absolute; top: 2px; right: 4px; width: 8px; height: 8px;
+  border-radius: 50%; background: #4df3ff;
+}
 /* PERCEPTION LINE: peripheral vision. Small, italic, dimmed — it should feel
    like noticing, not like UI. No animation, no color pops. Ignorable. */
 .perceiveline {
