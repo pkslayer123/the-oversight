@@ -337,6 +337,7 @@
     const known = tile.knownPlant;
     const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
     const mon = Game.state.scholar.monster;
+    const secrets = tile.secrets || {};
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
       html += '<div class="drow">';
@@ -346,7 +347,7 @@
         let g, cls = 'cell';
         if (isMe) { g = '🧍'; cls += ' me'; }
         else if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
-        else if (cell === 'plant') {
+        if (cell === 'plant') {
           g = known && PLANT_GLYPH[known] ? PLANT_GLYPH[known] : '🌱';
           cls += ' plantcell';
         }
@@ -354,6 +355,13 @@
         else if (cell === 'dirt') { g = ''; cls += ' dirt'; }
         else { g = CELL_GLYPH[cell] || ''; }
 
+        // known secrets override the look: knowledge is visible.
+        const sec = secrets[cx + ',' + cy];
+        if (sec && sec.known && !isMe) {
+          if ((cell === 'tree' || cell === 'bigtree') && sec.yield === 0) { g = '🌿'; cls += ' ivy'; }
+          else if (cell === 'water' && sec.safe === false) { g = '☠️'; cls += ' poison'; }
+          else if (cell === 'tent' && sec.condition === 'shredded') { g = '💨'; cls += ' shredded'; }
+        }
         html += `<div class="${cls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';

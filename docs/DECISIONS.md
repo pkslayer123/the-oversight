@@ -614,3 +614,26 @@ We should aspire to use satellite imagery to build out our locations to scale fr
   church (sanctuary/basement/office).
 - Intros are building-agnostic ("in there"). The UI shows the actual building name.
 - LONG-TERM: satellite imagery to build locations to scale from reality. Hand-made for now.
+
+## 2026-10-03 — Interaction model (Steve: "test all the controls yourself")
+Steve: "What about objects that need interaction? You can't walk through a tree but
+you might be able to forage from it. How to flesh out consistent world interaction model?"
+
+MODEL: every cell has {blocks, interact, cost}.
+- tree/bigtree: blocks AND forageable (nuts). You don\'t walk through it, you take from it.
+- bush/plant: forageable (berries/greens).
+- water: blocks AND drinkable. Can\'t walk through deep, can drink from edge.
+- tent: blocks AND restable. fire: blocks AND cookable.
+- wall: blocks, nothing. rubble: difficult (20 kcal), scavengable.
+- bridge/door/gym/etc: passable.
+
+CONTROLS: tap a cell.
+- Adjacent + passable: STEP (10 kcal).
+- Adjacent + blocking + interactable: USE (forage tree, drink water).
+- Else: "Can\'t get there."
+
+STOCK FROM THE WORLD: tile stock = count of forageable cells in the 9x9.
+No abstract numbers. A grove with 26 trees has 26 forages. The grid is the inventory.
+Depleted cells regrow in 3 days (tracked per-cell).
+
+TESTED: move (10 kcal), wall blocks, too-far blocks, tree blocks but forages, stock=26 from grid.

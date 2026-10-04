@@ -570,8 +570,29 @@
         cells[by + 1][bx] = 'bigtree'; cells[by + 1][bx + 1] = 'bigtree';
       }
       t.detail = cells;
+      // HIDDEN STATE: every interactable gets secrets. you learn by getting close.
+      // tree: yield 0-3 (0 = ivy-covered, nothing). water: safe or poison. tent: good/shredded/packable.
+      // knowledge sticks — stored per-cell, persists in the save.
+      t.secrets = t.secrets || {};
+      const rnd2 = this.detailRand(this.detailSeed(x, y) + 999);
+      for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
+        const key = cx + ',' + cy;
+        if (t.secrets[key]) continue; // already known
+        const c = cells[cy][cx];
+        if (c === 'tree' || c === 'bigtree') {
+          // 70% have nuts (1-3), 30% are ivy-covered (0)
+          t.secrets[key] = { yield: rnd2() < 0.7 ? 1 + Math.floor(rnd2() * 3) : 0, known: false };
+        } else if (c === 'water') {
+          // 80% safe, 20% poison (stagnant, wrong color, you learn the hard way or by examining)
+          t.secrets[key] = { safe: rnd2() < 0.8, known: false };
+        } else if (c === 'tent') {
+          const r = rnd2();
+          t.secrets[key] = { condition: r < 0.5 ? 'good' : r < 0.8 ? 'shredded' : 'packable', known: false };
+        }
+      }
       // STOCK FROM THE WORLD: count forageable cells. what exists is what you can take.
       // no abstract numbers. the grid is the inventory.
+      // note: trees with 0 yield still count (you don't know until you check).
       const FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
       let count = 0;
       for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
@@ -659,30 +680,76 @@
       return true;
     },
 
-    // cellInteract: tap a blocking-but-interactable cell to USE it.
-    // tree -> forage nuts. water -> drink. tent -> rest. fire -> cook.
+    // cellInteract: tap a cell to USE it. but it's a MAYBE — you learn the truth up close.
+    // tree might have nuts or be ivy. water might be poison. tent might be shredded.
+    // knowledge sticks: once you know, you know.
     cellInteract(cx, cy) {
+      const t = this.playerTile();
       const detail = this.genDetail(this.map.px, this.map.py);
       const cell = detail[cy] && detail[cy][cx];
-      const CELL_PROPS = {
-        wall: { blocks: 1 }, water: { blocks: 1, interact: 'drink' },
-        bigtree: { blocks: 1, interact: 'forage' }, tree: { blocks: 1, interact: 'forage' },
-        bush: { interact: 'forage' }, plant: { interact: 'forage' },
-        tent: { blocks: 1, interact: 'rest' }, fire: { blocks: 1, interact: 'cook' },
-        rubble: { interact: 'scavenge', cost: 20 },
-      };
-      const props = CELL_PROPS[cell] || {};
-      if (!props.interact) return null;
-      // must be adjacent (or on it, for non-blocking)
+      const key = cx + ',' + cy;
+      const secret = t.secrets && t.secrets[key];
       const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
       const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
       if (dist > 1) { this.say('Too far. Step closer.'); return null; }
-      const action = props.interact;
-      if (action === 'drink') return this.doAction('drink');
-      if (action === 'forage') return this.doAction('forage');
-      if (action === 'rest') return this.doAction('rest');
-      if (action === 'cook') { this.say('You warm your hands. The fire pops. (Cooking coming soon.)'); return true; }
-      if (action === 'scavenge') return this.doAction('forage'); // rubble scavenges like forage
+
+      // TREE: maybe nuts, maybe ivy.
+      if (cell === 'tree' || cell === 'bigtree') {
+        if (secret && !secret.known) {
+          secret.known = true;
+          if (secret.yield === 0) {
+            this.say('This tree is covered in ivy. Nothing to take. You note it — you won\'t waste time here again.');
+            return true;
+          } else {
+            this.say(`This tree has nuts — about ${secret.yield} worth. You take them.`);
+          }
+        } else if (secret && secret.known && secret.yield === 0) {
+          this.say('Ivy. You already checked. Nothing.');
+          return true;
+        }
+        return this.doAction('forage');
+      }
+      // WATER: maybe safe, maybe poison.
+      if (cell === 'water') {
+        if (secret && !secret.known) {
+          secret.known = true;
+          if (!secret.safe) {
+            this.say('This water is wrong — stagnant, green film. Poison. You mark it in your mind. Don\'t drink.');
+            return true;
+          } else {
+            this.say('Clear water. Safe. You drink.');
+          }
+        } else if (secret && secret.known && !secret.safe) {
+          this.say('Poison water. You know better.');
+          return true;
+        }
+        return this.doAction('drink');
+      }
+      // TENT: maybe good, shredded, or packable.
+      if (cell === 'tent') {
+        if (secret && !secret.known) {
+          secret.known = true;
+          if (secret.condition === 'shredded') {
+            this.say('The tent is shredded — wind and teeth. Not usable. You leave it.');
+            return true;
+          } else if (secret.condition === 'packable') {
+            this.say('This tent is intact — and light. You pack it up. (Shelter for later.)');
+            detail[cy][cx] = 'dirt'; // it's gone, you took it
+            return true;
+          } else {
+            this.say('A good tent. Dry inside. You could rest here.');
+          }
+        } else if (secret && secret.known) {
+          if (secret.condition === 'shredded') { this.say('Shredded. You checked.'); return true; }
+        }
+        return this.doAction('rest');
+      }
+      // PLANT/BUSH: straightforward (for now — they might have secrets later)
+      if (cell === 'plant' || cell === 'bush') return this.doAction('forage');
+      // FIRE: warm
+      if (cell === 'fire') { this.say('You warm your hands. The fire pops.'); return true; }
+      // RUBBLE: scavenge
+      if (cell === 'rubble') return this.doAction('forage');
       return null;
     },
 
