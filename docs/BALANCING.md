@@ -59,3 +59,12 @@ Steve asked: "How long does it take you?"
 - Sim runs: ~2 min for 30 runs.
 - Manual playtest (3 days): ~15 min via engine, longer on phone.
 - Track in the playtest log header.
+
+## Deep Playthrough Findings (2026-10-03)
+- Win 8+5000: too fast (13 days), too easy (100% greedy, 19k pantry).
+- Win 10+8000: 26 days, depletion hits 5x. Still 100% greedy, but the game breathes.
+- **When it breaks**: Day 10, the bot has a buffer and coasts. The mid-game needs pressure.
+- **Codex feel**: 8 entries in 13 days is fast. 10 (all plants) forces exploration.
+- **Regrowth**: +1/day (not full reset). Strip a grove, wait 3 days. State persists.
+- **New content timing**: Day 10-15 needs something (System quests at 40% integration? A crisis?).
+  The basics are mastered by day 10; the game needs a second act.

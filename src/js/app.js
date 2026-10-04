@@ -152,15 +152,21 @@
   function talkOverlay(vid) {
     const v = Game.data.villagers.find(x => x.id === vid);
     const line = Game.talkTo(vid);
+    const trust = (Game.state.village.trust && Game.state.village.trust[vid]) || 10;
+    const building = (Game.state.village.spawnBuilding && Game.state.village.spawnBuilding[vid]) || 'somewhere';
+    const health = (Game.state.village.health && Game.state.village.health[vid] !== undefined) ? Game.state.village.health[vid] : 100;
     screen.innerHTML = `${bar('scattering://village', v.name.split(' ')[0].toLowerCase())}
       <div class="card" style="margin-top:40px">
         <h3>${v.name}</h3>
-        <p class="small">${v.formerOccupation} · ${v.homeRegion}</p>
+        <p class="small">${v.formerOccupation} · ${v.homeRegion} · woke up in ${building}</p>
+        <p class="small">Health: ${health}/100</p>
         <p style="font-size:17px;line-height:1.6">"${line}"</p>
         <button class="btn sm" id="b-tagain">Say more</button>
+        <button class="btn sm" id="b-give">Give food</button>
         <button class="btn ghost sm" id="b-tback">Back to the fire</button>
       </div>`;
     document.getElementById('b-tagain').onclick = () => talkOverlay(vid);
+    document.getElementById('b-give').onclick = () => { Game.giveFood(vid); talkOverlay(vid); };
     document.getElementById('b-tback').onclick = () => expeditionScreen();
   }
 
@@ -242,11 +248,13 @@
       <div class="card"><h3>🏠 HAVEN — ${st.rosterCount} souls</h3>
       <p class="small"><i>${v.atmos}</i></p>
       <p class="small">Pantry: ${st.pantryKcal} kcal (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
-      <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()}${st.villageKnowledge ? ` (incl. +${st.villageKnowledge} from your ${Game.journalName()})` : ''} · shortfall ${net.toLocaleString()}/day</p>
+      <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
       <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry 8000+ (${st.pantryKcal})</p>
-      <p class="small" style="font-style:italic;opacity:.85">💡 ${esc(st.roleHint)}</p>
-      ${mains.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
-        <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`).join('')}
+      ${mains.map(p => {
+        const h = (Game.state.village.health && Game.state.village.health[p.id] !== undefined) ? Game.state.village.health[p.id] : 100;
+        const hb = h >= 70 ? '🟢' : h >= 40 ? '🟡' : '🔴';
+        return `<p class="small"><b>${p.name}</b> — ${p.formerOccupation} ${hb} ${h}
+        <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`; }).join('')}
       <p class="small" style="margin-top:8px;opacity:.75"><b>Also here:</b> ${bg.map(p => `${p.name} (${p.formerOccupation})`).join(' · ')}</p>
       <div class="btnrow">
         <button class="btn sm" id="p-water">Fill water</button>

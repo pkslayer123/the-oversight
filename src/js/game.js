@@ -70,6 +70,18 @@
       for (let i = 0; i < 6 && pool.length; i++) bg.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
       this.state.village.roster = mains.concat(bg);
       this.state.village.villagers = mains; // mains have dialogue; background have one-liners
+      // ACT 0: trust starts low. you're 12 strangers from all over the world.
+      // everyone woke up in a different building. nobody knows if they should work together.
+      this.state.village.trust = {};
+      this.state.village.spawnBuilding = {};
+      const buildings = ['the clinic', 'the bus depot', 'the school', 'the fire station', 'the library', 'the grocery', 'the church', 'the garage', 'the apartment', 'the warehouse', 'the diner', 'the motel'];
+      for (const rid of this.state.village.roster) {
+        // trust 5-20: strangers. it's earned.
+        this.state.village.trust[rid] = 5 + Math.floor(Math.random() * 16);
+        this.state.village.spawnBuilding[rid] = buildings.splice(Math.floor(Math.random() * buildings.length), 1)[0];
+      }
+      // you trust yourself
+      this.state.village.trust[villagerId] = 100;
       const scholar = S.state.newScholar(villagerId);
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
       scholar.inventory = gear.map(id => ({ itemId: id, units: 1, kg: 0.2, name: (this.data.items.find(i => i.id === id) || {}).name || id }));
@@ -101,8 +113,30 @@
       const i = (this.state.talkIdx[vid] || 0) % v.talk.length;
       this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
       const line = v.talk[i];
-      this.say(`${v.name.split(' ')[0]}: "${line}"`);
+      // trust builds through talking. strangers warm up slowly.
+      const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
+      const newTrust = Math.min(100, trust + 3);
+      if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
+      // the tone shifts with trust (not the number — you feel it)
+      const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
+      this.say(`${v.name.split(' ')[0]}${tone}: "${line}"`);
       return line;
+    },
+
+    // give food: the fastest way to earn trust. sharing is the social contract.
+    giveFood(vid) {
+      const v = this.data.villagers.find(x => x.id === vid) || this.data.background_survivors.find(x => x.id === vid);
+      if (!v) return null;
+      // find food in inventory
+      const food = this.state.scholar.inventory.find(i => i.plantId && i.units > 0);
+      if (!food) { this.say("You have no food to give."); return null; }
+      food.units -= 1;
+      if (food.units <= 0) this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
+      const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
+      const newTrust = Math.min(100, trust + 12);
+      if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
+      this.say(`You give ${v.name.split(' ')[0]} some ${food.name}. They look at you differently now.`);
+      return true;
     },
 
     // integration: the System is learning you. you are learning it.
@@ -178,19 +212,6 @@
     },
 
     // --- village node ---
-    // roleHint: each game, find the part you need to play.
-    // not always the forager — sometimes the scholar, sometimes the hunter's helper.
-    roleHint() {
-      const codexN = Object.keys(this.state.codex.plants).length;
-      const pantry = this.state.village.pantryKcal;
-      const shortfall = (this.state.village.lastEat || 24000) - (this.state.village.lastGive || 22000);
-      if (pantry < 1000) return "The pantry is empty. They need food. You're the forager today.";
-      if (codexN < 4 && pantry > 2000) return "The village feeds itself. They need your knowledge. You're the scholar.";
-      if (shortfall > 1500) return "The gap is wide. They need calories. Hunt, forage, bring it home.";
-      if (this.state.village.roster && this.state.village.roster.length < 10) return "The village is shrinking. Every hand matters. Every day matters.";
-      return "Find your part. Watch the village. They'll tell you what they need.";
-    },
-
     // the roster: who lives here this run. mains talk; background have one line each.
     villageRoster() {
       const roster = this.state.village.roster || [];
@@ -863,16 +884,17 @@
           v.pantryKcal += kcal;
           this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {
-          // wounded. three wounds and you're gone — people die out here.
-          v.wounded = v.wounded || {};
-          v.wounded[id] = (v.wounded[id] || 0) + 1;
-          if (v.wounded[id] >= 3) {
-            // death
+          // wounded: health bars. -20 to -35 per bad day.
+          v.health = v.health || {};
+          const curH = v.health[id] !== undefined ? v.health[id] : 100;
+          const dmg = 20 + Math.floor(Math.random() * 16);
+          v.health[id] = Math.max(0, curH - dmg);
+          if (v.health[id] <= 0) {
             v.roster = v.roster.filter(rid => rid !== id);
-            this.say(`💀 ${person.name} is gone. Three bad days. The village is ${v.roster.length} now.`);
-            delete v.wounded[id];
+            this.say(`💀 ${person.name} is gone. The wound was too much. The village is ${v.roster.length} now.`);
+            delete v.health[id];
           } else {
-            this.say(`${first} is hurt — a fall, a thorn, a bad step. (${v.wounded[id]}/3)`);
+            this.say(`${first} is hurt — a fall, a thorn, a bad step. (health ${v.health[id]}/100)`);
           }
         } else if (r < 0.65) {
           // discovers something (adds to codex if new!)
@@ -899,35 +921,46 @@
       const v = this.state.village;
       let eat = 0, give = 0;
       const providers = [];
-      const codexN = Object.keys(this.state.codex.plants).length;
-      const knowledgeBonus = codexN * 80; // each plant you identify: +80 kcal/day village-wide. they learn.
       for (const id of (v.roster || [])) {
         const person = this.data.villagers.find(p => p.id === id) || this.data.background_survivors.find(p => p.id === id);
         if (!person) continue;
-        eat += person.kcalPerDay || 2000;
-        if (person.providesPerDay) { give += person.providesPerDay; providers.push(person); }
+        const health = (v.health && v.health[id] !== undefined) ? v.health[id] : 100;
+        const healthFactor = health / 100;
+        // the sick eat less (can't keep it down) and provide nothing
+        eat += (person.kcalPerDay || 2000) * (0.7 + 0.3 * healthFactor);
+        // taught plants: villagers who LEARN (via dialogue) forage better. real mechanism.
+        const knownPlants = (v.taught && v.taught[id]) ? v.taught[id].length : 0;
+        const knowledgeFactor = 1 + (knownPlants * 0.15);
+        // TRUST: they share food when they trust you. strangers hoard.
+        // trust 0-30: 20% shared. 30-60: 50%. 60-80: 80%. 80+: all.
+        const trust = (v.trust && v.trust[id] !== undefined) ? v.trust[id] : 10;
+        const trustFactor = trust < 30 ? 0.2 : trust < 60 ? 0.5 : trust < 80 ? 0.8 : 1.0;
+        const personalGive = (person.providesPerDay || 0) * healthFactor * knowledgeFactor * trustFactor;
+        if (personalGive > 0) { give += personalGive; providers.push(person); }
       }
-      give += knowledgeBonus;
       const net = Math.max(0, eat - give);
       v.lastEat = eat; v.lastGive = give; v.lastProviders = providers.map(p => p.name.split(' ')[0]);
-      v.lastKnowledgeBonus = knowledgeBonus;
-      const wasEmpty = v.pantryKcal <= 0;
       v.pantryKcal = Math.max(0, v.pantryKcal - net);
-      // starvation kills: empty pantry for 2+ days, the weakest go first
+      // starvation is slow: -5 health/day when empty. people fade.
+      // health recovers +2/day when there's food.
+      v.health = v.health || {};
       if (v.pantryKcal <= 0) {
-        v.starvingDays = (v.starvingDays || 0) + 1;
-        if (v.starvingDays >= 2 && v.roster && v.roster.length > 6) {
-          const bg = v.roster.filter(rid => !this.data.villagers.find(m => m.id === rid));
-          if (bg.length) {
-            const victim = bg[Math.floor(Math.random() * bg.length)];
-            const vp = this.data.background_survivors.find(p => p.id === victim);
-            v.roster = v.roster.filter(rid => rid !== victim);
-            this.say(`💀 ${vp ? vp.name : victim} starved. The village is ${v.roster.length} now. This is on all of us.`);
-            v.starvingDays = 0;
+        for (const rid of (v.roster || [])) {
+          const cur = v.health[rid] !== undefined ? v.health[rid] : 100;
+          v.health[rid] = Math.max(0, cur - 5);
+          if (v.health[rid] <= 0) {
+            const vp = this.data.villagers.find(m => m.id === rid) || this.data.background_survivors.find(p => p.id === rid);
+            v.roster = v.roster.filter(r => r !== rid);
+            this.say(`💀 ${(vp && vp.name) || rid} starved. Slowly. The village is ${v.roster.length} now.`);
+            delete v.health[rid];
           }
         }
       } else {
-        v.starvingDays = 0;
+        for (const rid of (v.roster || [])) {
+          if (v.health[rid] !== undefined && v.health[rid] < 100 && v.health[rid] > 0) {
+            v.health[rid] = Math.min(100, v.health[rid] + 2);
+          }
+        }
       }
       if (v.pantryKcal <= 0) {
         v.hungryDays = (v.hungryDays || 0) + 1;
@@ -1050,7 +1083,6 @@
         rosterCount: (this.state.village.roster || []).length,
         integration: Math.round(this.state.scholar.integration || 5),
         activeQuest: this.state.scholar.activeQuest || null,
-        roleHint: this.roleHint(),
         hungryDays: this.state.village.hungryDays || 0,
         packKg: Math.round(this.packWeight() * 10) / 10,
         packCap: this.packCapacity(),
