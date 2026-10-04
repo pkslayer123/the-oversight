@@ -828,21 +828,32 @@
       // background survivors get per-run languages from the same story-driven
       // generator. Static data carries none — without this, levelsOf defaults
       // everyone to fluent English and language barriers never happen.
+      // Their home culture is read from their LAST NAME (not random): a Ruiz
+      // grew up Spanish-speaking, an Okonkwo Yoruba-speaking. Coherent people.
       this.state.village.bgLangs = {};
       {
-        const cg = this.data.characterGen || {};
-        const pick = a => a[Math.floor(Math.random() * a.length)];
         const nc = this.data.nameCultures || {};
-        const cids = Object.keys(nc.cultures || {});
+        const cultures = nc.cultures || {};
+        const lastToCultures = {};
+        for (const [cid, c] of Object.entries(cultures)) {
+          for (const ln of (c.last || [])) {
+            const k = String(ln).toLowerCase();
+            (lastToCultures[k] = lastToCultures[k] || []).push(cid);
+          }
+        }
+        const cids = Object.keys(cultures);
         for (const id of bg) {
           const person = (this.data.background_survivors || []).find(s => s.id === id) || {};
-          const bOrigin = pick(cg.sampleOrigins || ['somewhere']);
-          const bHome = this.cultureForOrigin(bOrigin);
-          const bHeritage = (bHome && Math.random() < 0.2 && cids.length)
+          const lastName = String(person.name || '').split(' ').slice(-1)[0].toLowerCase();
+          const matches = (lastToCultures[lastName] || []).filter(c => c !== 'american');
+          const bHome = matches.length
+            ? matches[Math.floor(Math.random() * matches.length)]
+            : ((lastToCultures[lastName] || [])[0] || 'american');
+          const bHeritage = (bHome !== 'american' && Math.random() < 0.25 && cids.length)
             ? cids[Math.floor(Math.random() * cids.length)] : null;
           const bOcc = (cg.occupations || []).find(o => o.name === String(person.formerOccupation || '').toLowerCase()) || null;
           this.state.village.bgLangs[id] = this.genCultureLanguages(bHome, bOcc, {
-            heritageCultureId: bHeritage, age: person.age || 35,
+            heritageCultureId: bHeritage === bHome ? null : bHeritage, age: person.age || 35,
           });
         }
       }
