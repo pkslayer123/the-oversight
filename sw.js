@@ -3,7 +3,7 @@
    the page shows a subtle "update available" banner, and tapping it sends
    SKIP_WAITING so the new version activates and the page reloads into it.
    CACHE version is bumped per build via scripts/bump-sw-version.sh. */
-const VERSION = '5c051df-20261004-141906';
+const VERSION = '1c2132e-20261004-142959';
 const CACHE = 'oversight-cache-' + VERSION;
 
 const ASSETS = [

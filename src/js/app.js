@@ -254,6 +254,7 @@
       tree: 'Tree', bigtree: 'Big tree', bush: 'Bush', plant: 'Plant',
       water: 'Water', wall: 'Wall', rubble: 'Rubble', tent: 'Tent', fire: 'Fire',
       bridge: 'Bridge', door: 'Door', gym: 'Gym floor', class: 'Classroom', hall: 'Hallway',
+      bunk: 'Bunk', lodge: 'Haven hall',
       office: 'Office', bay: 'Warehouse bay', dock: 'Loading dock', sanct: 'Sanctuary', base: 'Basement',
       grass: 'Grass', dirt: 'Dirt',
     };
@@ -263,6 +264,24 @@
 
     if (isMe) {
       desc = 'You are here.';
+      // EDGE OF THE MAP: you're on the rim. The next node is that way.
+      // This is how you travel — walk to the edge, then head out.
+      const exit = Game.edgeExit(cx, cy);
+      const outTile = !Game.state.scholar.insideHaven || Game.playerTile().type !== 'haven';
+      if (exit && outTile) {
+        const nx = Game.map.px + exit.dx, ny = Game.map.py + exit.dy;
+        const nt = (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) ? Game.tileAt(nx, ny) : null;
+        const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : `unknown (${nt.guess || '??'})`) : 'the void';
+        const block = nt ? Game.travelBlockage(nx, ny) : null;
+        const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;
+        actions.push([label, () => {
+          if (block) { showBlockage({ kind: 'blockage', blockType: block.blockType, x: nx, y: ny }); refresh(); return; }
+          const res = Game.travelTo(nx, ny);
+          if (res && res.kind === 'blockage') { showBlockage(res); }
+          refresh();
+        }]);
+        desc += ` You're on the ${exit.dir}ern edge — ${nm} lies that way.`;
+      }
     } else if (isMon) {
       desc = 'Something big. It sees you.';
       if (dist <= 1) actions.push(['Fight', () => Game.startCombat(mon.id)]);
@@ -383,7 +402,18 @@
         if (cell === 'bush') actions.push(['🧹 Clear brush', () => { Game.clearBrush(cx, cy); refresh(); }]);
         else if (cell === 'rubble') actions.push(['Scavenge', () => Game.cellInteract(cx, cy)]);
         else if (cell === 'bridge') desc += ' The only way across.';
-        else if (cell === 'door') desc += ' Leads outside.';
+        else if (cell === 'door') {
+          desc += ' Leads outside — the Haven grounds, the world beyond.';
+          actions.push(['🚪 Step outside', () => { Game.exitBuilding(); refresh(); }]);
+        }
+        else if (cell === 'lodge') {
+          desc += ' The Haven hall. Warmth and twelve people inside.';
+          actions.push(['🏠 Go inside', () => { Game.enterBuilding(); refresh(); }]);
+        }
+        else if (cell === 'bunk') {
+          desc += ' A bunk. Rest here.';
+          actions.push(['😴 Rest', () => { Game.doAction('rest'); refresh(); }]);
+        }
       }
     }
 
@@ -405,6 +435,9 @@
     document.getElementById('tp-close').onclick = () => { info.innerHTML = ''; };
     // remember what we're looking at so actions can refresh the panel
     info.dataset.cx = cx; info.dataset.cy = cy;
+    // the panel opens BELOW the grid — on a phone that's off-screen.
+    // bring it into view instead of leaving the player wondering what happened.
+    try { info.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
   }
 
   // refresh: full expedition screen re-render after an action.
@@ -671,7 +704,7 @@
       ${st.activeQuest ? `<p class="small" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
       <div class="detail">${renderDetail(st)}</div>
       <div id="tileinfo"></div>
-      <p class="small">🗺 travel — tap a highlighted tile (1 part · 30 kcal/tile)</p>
+      <p class="small">🗺 walk to the edge of the map, tap yourself, head out (1 part · 30 kcal/tile)</p>
       <div class="map minimap">${renderMap(st, tset)}</div>
       ${panelFor(st, n)}
       <div class="actions">
@@ -679,49 +712,21 @@
       </div>
       <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`;
 
+    // MINIMAP IS A MAP, NOT A TELEPORTER. Tap a tile for a fog-of-war guess.
+    // Travel happens on foot: walk to the edge of the 9x9, tap yourself, head out.
     screen.querySelectorAll('.minimap .tile').forEach(el => {
       el.onclick = () => {
         const x = +el.dataset.x, y = +el.dataset.y;
         const info = document.getElementById('tileinfo');
-        if (x === st.px && y === st.py) { pendingTravel = null; return; }
-        const d = Math.abs(x - st.px) + Math.abs(y - st.py);
         const tl = Game.tileAt(x, y);
-        const isTarget = tset.has(x + ',' + y);
-        // FOG: tap an unexplored tile for a rough guess. No commitment.
-        if (!isTarget) {
-          pendingTravel = null;
-          if (!tl.revealed && info) {
-            info.innerHTML = `<div class="card"><p>🔭 ${esc(tl.guess || 'unknown ground')}.<br><span class="small">You'll know when you get there. Walk to an adjacent tile first.</span></p></div>`;
-          } else if (!tl.revealed && d > 1) toast('Unexplored — walk to an adjacent tile first.');
-          else if (d > 3) toast('Too far — 3 tiles max per trip.');
-          else toast('Not reachable from here.');
-          return;
+        if (!info) return;
+        if (x === st.px && y === st.py) { info.innerHTML = ''; return; }
+        if (!tl.revealed) {
+          info.innerHTML = `<div class="card"><p>🔭 ${esc(tl.guess || 'unknown ground')}.<br><span class="small">You'll know when you get there. Walk to the edge and head out.</span></p></div>`;
+        } else {
+          info.innerHTML = `<div class="card"><p>🗺 ${esc(S.TILE_NAME[tl.type] || tl.type)}.<br><span class="small">Walk to the edge of the map to travel there.</span></p></div>`;
         }
-        // TWO-CLICK: first tap selects, second tap confirms.
-        if (!pendingTravel || pendingTravel.x !== x || pendingTravel.y !== y) {
-          pendingTravel = { x, y };
-          const kcal = Math.round(30 * d);
-          const name = tl.revealed ? (S.TILE_NAME[tl.type] || tl.type) : `unknown (${esc(tl.guess || '??')})`;
-          const block = Game.travelBlockage(x, y);
-          let warn = '';
-          if (block) {
-            const BT = { fallen_tree: '🪵 fallen tree blocks the way', rubble: '🧱 rubble blocks the way', washed_out: '🌊 washed out — needs a bridge', creek: '🌊 fast water — needs a bridge or a swimmer' };
-            warn = `<br><span style="color:#e0a040">⚠ ${BT[block.blockType] || 'blocked'}</span>`;
-          }
-          if (info) info.innerHTML = `<div class="card"><p>🧭 Travel to <b>${esc(name)}</b> — ${d} tile${d > 1 ? 's' : ''}, ${kcal} kcal.${warn}<br><span class="small">Tap again to go.</span></p></div>`;
-          else toast(`Tap again to travel (${kcal} kcal).`);
-          return;
-        }
-        // second tap: go.
-        pendingTravel = null;
-        const res = Game.travelTo(x, y);
-        if (res && res.blocked === undefined && res.kind === 'blockage') { showBlockage(res); return; }
-        if (!res && res !== undefined) {
-          // travelTo returned null/undefined without blockage info — shouldn't happen
-          toast('Not reachable from here.');
-          return;
-        }
-        rerender();
+        try { info.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
       };
     });
     // detail grid: tap a cell to see your options. the popup tells you what it is,
@@ -799,14 +804,82 @@
   function pantryPopup() {
     const st = Game.stateSnapshot();
     const pantry = Game.state.village.pantry || [];
+    const vWater = Game.state.village.water || { clean: 0, dirty: 0 };
     const carry = st.carryKg;
+    const maxCarry = Game.carryCapacity();
+    // WATER lives here too. One stockpile, one UI. Food and water, same sliders.
+    const waterRow = vWater.clean > 0 ? `<div class="card" style="margin:6px 0;padding:8px 10px;border-left:3px solid #4df3ff">
+        <p class="small"><b>💧 Water (clean)</b> ×${vWater.clean} L<br>
+        <span style="opacity:.7">0 kcal/L · 1 kg/L · from the Haven well</span></p>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="range" min="0" max="${vWater.clean}" value="0" data-pack="water" style="flex:1">
+          <span class="small" id="packq-water" style="min-width:44px;text-align:right">0 L</span>
+        </div>
+      </div>` : '';
     screen.innerHTML = `${bar('scattering://pantry', 'pack for the day')}
       <h2>Pantry</h2>
-      <p class="small">Take what you need. Carrying ${carry.toFixed(1)}/20 kg.</p>
-      <p class="small">💧 ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
-      ${pantry.length ? pantry.map((p, idx) => `<p class="small"><b>${p.name}</b> x${p.units} (${p.kcalEach * p.units} kcal)${p.safe ? '' : ' ⚠ UNSAFE'}${p.spoilDay <= st.day ? ' ⚠ SPOILED' : ''} <button class="btn ghost sm" data-take="${idx}">Take 1</button></p>`).join('') : '<p class="small">Empty.</p>'}
-      <button class="btn" id="x-back">Back</button>`;
-    screen.querySelectorAll('[data-take]').forEach(b => b.onclick = () => { Game.takeFromPantry(+b.dataset.take); pantryPopup(); });
+      <p class="small">Slide to pack. Carrying ${carry.toFixed(1)}/${maxCarry} kg.</p>
+      ${waterRow}
+      <div id="packlist">
+      ${pantry.length ? pantry.map((p, idx) => {
+        const density = p.kg ? Math.round(p.kcalEach / p.kg) : 0;
+        const unit = p.unit || 'item';
+        return `<div class="card" style="margin:6px 0;padding:8px 10px">
+          <p class="small"><b>${p.name}</b> ×${p.units} ${unit}s
+          ${p.safe ? '' : ' ⚠ UNSAFE'}${p.spoilDay <= st.day ? ' ⚠ SPOILED' : ''}${p.needsCooking ? ' 🍳 needs cooking' : ''}<br>
+          <span style="opacity:.7">${p.kcalEach} kcal/${unit} · ${p.kg} kg/${unit} · <b>${density} kcal/kg</b></span></p>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="${p.units}" value="0" data-pack="${idx}" style="flex:1">
+            <span class="small" id="packq-${idx}" style="min-width:44px;text-align:right">0</span>
+          </div>
+        </div>`;
+      }).join('') : '<p class="small">Empty.</p>'}
+      </div>
+      <div class="card" id="packsummary" style="border-left:3px solid #7fd67f">
+        <p class="small"><b>Packing:</b> <span id="ps-items">nothing yet</span></p>
+        <p class="small">⚖️ <span id="ps-kg">0.0</span> kg · 🔥 <span id="ps-kcal">0 kcal</span> · 💧 <span id="ps-water">0 L</span></p>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="x-pack">Pack it</button>
+        <button class="btn ghost" id="x-back">Back</button>
+      </div>`;
+    // live summary as sliders move
+    const update = () => {
+      let kg = 0, kcal = 0, wl = 0;
+      const parts = [];
+      screen.querySelectorAll('[data-pack]').forEach(sl => {
+        const key = sl.dataset.pack, q = +sl.value;
+        const qEl = document.getElementById('packq-' + key);
+        if (key === 'water') {
+          if (qEl) qEl.textContent = q + ' L';
+          if (q > 0) { kg += q; wl += q; parts.push(`${q}L water`); }
+          return;
+        }
+        const idx = +key;
+        if (qEl) qEl.textContent = q;
+        if (q > 0) {
+          const p = pantry[idx];
+          kg += q * (p.kg || 0);
+          kcal += q * p.kcalEach;
+          parts.push(`${q} ${p.name}`);
+        }
+      });
+      document.getElementById('ps-items').textContent = parts.length ? parts.join(', ') : 'nothing yet';
+      document.getElementById('ps-kg').textContent = kg.toFixed(1);
+      document.getElementById('ps-kcal').textContent = Game.fmtKcal(kcal);
+      document.getElementById('ps-water').textContent = wl + ' L';
+      const over = carry + kg > maxCarry;
+      document.getElementById('ps-kg').style.color = over ? '#e05c5c' : '';
+      document.getElementById('x-pack').disabled = !parts.length || over;
+    };
+    screen.querySelectorAll('[data-pack]').forEach(sl => sl.oninput = update);
+    update();
+    document.getElementById('x-pack').onclick = () => {
+      const sel = {};
+      screen.querySelectorAll('[data-pack]').forEach(sl => { if (+sl.value > 0) sel[sl.dataset.pack] = +sl.value; });
+      Game.takeFromPantryBulk(sel);
+      pantryPopup();
+    };
     document.getElementById('x-back').onclick = () => expeditionScreen();
   }
 
@@ -820,11 +893,11 @@
     return `
       <div class="card"><h3>🏠 HAVEN — ${st.rosterCount} souls</h3>
       <p class="small"><i>${v.atmos}</i></p>
-      <p class="small">Pantry: ${st.pantryKcal} kcal (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
       <button class="btn sm" id="x-pantry">Take from pantry</button>
       <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
-      <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry 8000+ (${st.pantryKcal})</p>
+      <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry ${Game.fmtKcal(8000)}+ (${Game.fmtKcal(st.pantryKcal)})</p>
       <p class="small" style="opacity:.7">Tap a person in the grid to talk. They\'re living their lives.</p>
       ${mains.map(p => {
         const h = (Game.state.village.health && Game.state.village.health[p.id] !== undefined) ? Game.state.village.health[p.id] : 100;
@@ -894,10 +967,11 @@
   };
   const CELL_GLYPH = {
     tree: '🌳', bigtree: '🌲', bush: '🌿', water: '💧', rubble: '🧱',
-    wall: '🧱', tent: '⛺', fire: '🔥',
-    gym: '🏀', class: '🏫', hall: '🚪', door: '🚪', bridge: '🌉',
+    wall: '⬛', tent: '⛺', fire: '🔥',
+    gym: '🏀', class: '🏫', hall: '', door: '🚪', bridge: '🌉',
     office: '🗄️', bay: '📦', dock: '🚚', sanct: '⛪', base: '🕯️',
     apt: '🏢', lobby: '🛋️', cube: '💼', break: '☕', conf: '📊',
+    bunk: '🛏️', lodge: '🏠',
   };
   function renderDetail(st) {
     const cells = Game.genDetail(st.px, st.py);
@@ -968,7 +1042,7 @@
             g = ''; cls += ' dirt';
           }
         }
-        else { g = CELL_GLYPH[cell] || ''; }
+        else { g = CELL_GLYPH[cell] || ''; if (cell) cls += ' c-' + cell; }
 
         // known secrets override the look: knowledge is visible.
         const sec = secrets[cx + ',' + cy];

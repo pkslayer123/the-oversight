@@ -375,10 +375,10 @@
       playerChar.languages = { native: 'english', english: 2 };
       const villager = playerChar;
       this.state.village.name = 'Haven';
-      // Starting pantry: REAL FOOD, not a number. 1.5-3 days for the group.
-      // Each item: name, kcal, spoilDay, safe, kg. Unsafe stays unsafe.
+      // Starting pantry: REAL FOOD, not a number. 3-4 days for the group.
+      // Breathing room to learn before the pressure hits. The scarcity comes later.
       const nPpl = 12;
-      const startDays = 1.5 + Math.random() * 1.5;
+      const startDays = 3 + Math.random() * 1;
       const targetKcal = Math.round(nPpl * 2000 * startDays);
       this.state.village.pantry = []; // list of food items
       this.state.village.pantryKcal = 0; // (kept for compat, computed from pantry)
@@ -388,10 +388,11 @@
       // 1.5 days for 12 people = 36,000 kcal. (12 * 2000 * 1.5)
       // Was 8,500. Starvation was mathematically inevitable. Fixed.
       const staples = [
-        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 60, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true },
-        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 50, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true },
-        { name: 'Canned soup', kcalEach: 250, units: 30, spoilDay: 9999, safe: true, kg: 0.4 },
-        { name: 'Dried meat', kcalEach: 400, units: 20, spoilDay: 9999, safe: true, kg: 0.3 },
+        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 150, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
+        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 120, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
+        { name: 'Canned soup', kcalEach: 250, units: 70, spoilDay: 9999, safe: true, kg: 0.4, unit: 'can' },
+        { name: 'Dried meat', kcalEach: 400, units: 50, spoilDay: 9999, safe: true, kg: 0.3, unit: 'strip' },
+        { name: 'Peanuts', kcalEach: 170, units: 60, spoilDay: 9999, safe: true, kg: 0.1, unit: 'handful' },
       ];
       let kcal = 0;
       for (const s of staples) {
@@ -401,6 +402,7 @@
       }
       // (If target not met, it's fine — RNG means some runs start leaner.)
       this.state.village.water = { clean: 20 + ((loc.startMod && loc.startMod.waterClean) || 0), dirty: 0 }; // liters. Clean and dirty separate.
+      // (Player's personal 2L is set when the scholar object is built below.)
       // the roster: your pick + the 5 you didn't pick + 6 drawn from 36 background survivors.
       // twelve mouths, different every run. The unpicked generated characters live here too.
       const otherGen = this.generatedRoster.filter(c => c.id !== this.villagerId).map(c => c.id);
@@ -418,28 +420,12 @@
       const npcIds = this.state.village.roster.filter(id => id !== this.villagerId);
       this.state.village.conflicts = this.genConflicts(npcIds);
       // ACT 0: trust starts low. you're 12 strangers from all over the world.
-      // everyone woke up in the SAME building — but WHICH building varies.
-      // by location, and by run. even ohio isn't always a school.
-      // the drama is proximity: you're stuck with these people. figure it out.
+      // everyone woke up in the SAME building — and it's ALWAYS the same building.
+      // Haven is home base. Home doesn't change shape between runs.
+      // A new player shouldn't have to re-learn the map every expedition.
       this.state.village.trust = {};
-      // BUILDINGS by spawn type. City: you wake up in an apartment or office.
-      // Countryside: school, church, warehouse. The building matches the world.
-      const spawnType = this.state.spawnType || 'countryside';
-      const buildingPools = {
-        city: ['apartment', 'office', 'warehouse'],
-        countryside: ['school', 'warehouse', 'church'],
-      };
-      const bpool = buildingPools[spawnType] || ['school', 'warehouse'];
-      const buildingType = bpool[Math.floor(Math.random() * bpool.length)];
-      this.state.village.buildingType = buildingType;
-      const buildingNames = {
-        school: 'the school gymnasium',
-        warehouse: 'the warehouse loading bay',
-        church: 'the church basement',
-        apartment: 'the apartment lobby',
-        office: 'the office break room',
-      };
-      this.state.village.spawnBuilding = buildingNames[buildingType];
+      this.state.village.buildingType = 'haven';
+      this.state.village.spawnBuilding = 'the Haven hall';
       for (const rid of this.state.village.roster) {
         // trust 5-20: strangers. it's earned.
         this.state.village.trust[rid] = 5 + Math.floor(Math.random() * 16);
@@ -517,6 +503,9 @@
         { liters: 1, quality: 'clean', source: 'Haven' },
         { liters: 1, quality: 'clean', source: 'Haven' },
       ];
+      scholar.insideHaven = true; // you wake up INSIDE the hall. the door leads out.
+      scholar.mx = 4; scholar.my = 4; // spawn: center of the hall
+      scholar.facing = { x: 0, y: 1 };
       this.state.scholar = scholar;
       this.state.codex = S.state.newCodex();
       // YOUR starting knowledge: what your old life taught you — if this land resembles it.
@@ -1394,74 +1383,47 @@
     genDetail(x, y) {
       const t = this.tileAt(x, y);
       if (t.detail) return t.detail;
-      // HAVEN IS A BUILDING. The type varies by location and run.
-      // Each is a scale model: walls are walls, the door leads outside.
-      // Long-term: satellite imagery to build to scale from reality.
+      // HAVEN IS A BUILDING. Always the same building, every run.
+      // Home base doesn't change shape. A new player learns it once.
+      // INSIDE vs OUTSIDE: scholar.insideHaven tracks which you're in.
+      // The door leads outside to the Haven grounds (tents, fire, the world).
       if (t.type === 'haven') {
-        const bt = (this.state.village && this.state.village.buildingType) || 'school';
-        const layouts = {
-          school: [
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-            ['wall','class','class','wall','wall','wall','class','class','wall'],
-            ['wall','class','class','wall','wall','wall','class','class','wall'],
-            ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
-            ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
-            ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
-            ['wall','wall','wall','wall','door','door','wall','wall','wall'],
-            ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-          ],
-          warehouse: [
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-            ['wall','office','office','wall','bay','bay','bay','bay','wall'],
-            ['wall','office','office','wall','bay','bay','bay','bay','wall'],
-            ['wall','wall','wall','wall','bay','bay','bay','bay','wall'],
-            ['wall','dock','dock','door','bay','bay','bay','bay','wall'],
-            ['wall','dock','dock','wall','bay','bay','bay','bay','wall'],
-            ['wall','wall','wall','wall','wall','door','wall','wall','wall'],
-            ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-          ],
-          church: [
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-            ['wall','office','wall','sanct','sanct','sanct','wall','office','wall'],
-            ['wall','office','wall','sanct','sanct','sanct','wall','office','wall'],
-            ['wall','wall','wall','sanct','sanct','sanct','wall','wall','wall'],
-            ['wall','wall','wall','sanct','sanct','sanct','wall','wall','wall'],
-            ['wall','wall','wall','door','door','wall','wall','wall','wall'],
-            ['wall','base','base','base','base','base','base','base','wall'],
-            ['wall','base','base','base','base','base','base','base','wall'],
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-          ],
-          apartment: [
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-            ['wall','apt','apt','wall','apt','apt','wall','apt','wall'],
-            ['wall','apt','apt','wall','apt','apt','wall','apt','wall'],
-            ['wall','wall','wall','hall','hall','hall','wall','wall','wall'],
-            ['wall','apt','apt','hall','hall','hall','apt','apt','wall'],
-            ['wall','apt','apt','door','door','wall','apt','apt','wall'],
-            ['wall','wall','wall','door','door','wall','wall','wall','wall'],
-            ['wall','lobby','lobby','lobby','lobby','lobby','lobby','lobby','wall'],
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-          ],
-          office: [
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-            ['wall','cube','cube','cube','wall','cube','cube','cube','wall'],
-            ['wall','cube','cube','cube','wall','cube','cube','cube','wall'],
-            ['wall','wall','wall','wall','hall','wall','wall','wall','wall'],
-            ['wall','break','break','hall','hall','hall','conf','conf','wall'],
-            ['wall','break','break','wall','door','door','conf','conf','wall'],
-            ['wall','wall','wall','wall','door','wall','wall','wall','wall'],
-            ['wall','lobby','lobby','lobby','lobby','lobby','lobby','lobby','wall'],
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
-          ],
-        };
-        const layout = layouts[bt] || layouts.school;
-        // FIRE: every Haven has a campfire in the common area (hall row 7).
-        // Placed at (2,7) — off the thoroughfare. The door path at (4,7) stays walkable.
-        // (Fire blocks movement; putting it in the doorway sealed the building.)
-        // This is where you cook. No fire = no cooking.
-        if (layout[7] && layout[7][2]) layout[7][2] = 'fire';
+        const inside = this.state.scholar ? this.state.scholar.insideHaven !== false : true;
+        if (!inside) {
+          // OUTSIDE: the Haven grounds. Tents, a fire pit, worn paths.
+          // The lodge (the building) sits at the north — tap it to go back in.
+          const cells = [];
+          const ornd = this.detailRand(this.detailSeed(x, y) + 4242);
+          for (let cy = 0; cy < 9; cy++) {
+            const row = [];
+            for (let cx = 0; cx < 9; cx++) {
+              // lodge footprint: rows 0-1, cols 3-5
+              if (cy <= 1 && cx >= 3 && cx <= 5) { row.push('lodge'); continue; }
+              const r = ornd();
+              row.push(r < 0.15 ? 'tent' : r < 0.25 ? 'fire' : r < 0.5 ? 'dirt' : 'grass');
+            }
+            cells.push(row);
+          }
+          // clear the lodge doorstep: walkable ground at (4,2)
+          cells[2][4] = 'dirt';
+          // fire pit near the lodge, not blocking
+          cells[2][2] = 'fire';
+          t.detail = cells;
+          return cells;
+        }
+        // INSIDE: the Haven hall. One room, one fire, bunks along the walls.
+        // Doors south (row 6). Spawn at (4,4). Fire off the main path.
+        const layout = [
+          ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+          ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
+          ['wall','hall','bunk','hall','hall','hall','bunk','hall','wall'],
+          ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
+          ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
+          ['wall','hall','hall','fire','hall','hall','hall','hall','wall'],
+          ['wall','wall','wall','wall','door','door','wall','wall','wall'],
+          ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
+          ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+        ];
         t.detail = layout;
         // SPAWN VALIDATION: the player starts at (4,4). Ensure it's not walled in.
         // BFS from spawn: need 15+ reachable cells and 2+ reachable doors.
@@ -1824,6 +1786,38 @@
       this.say('You lash logs together. A rough bridge spans the gap. It\'ll hold.');
       return this.endDayPart();
     },
+    // HAVEN DOORS: the building has an inside and an outside. Doors are real.
+    // Step through and you're on the Haven grounds — tents, fire pit, the world beyond.
+    exitBuilding() {
+      const s = this.state.scholar;
+      s.insideHaven = false;
+      // invalidate the cached detail — the grounds are a different place than the hall
+      const t = this.tileAt(this.map.px, this.map.py);
+      if (t && t.type === 'haven') t.detail = null;
+      // you emerge on the grounds, south of the lodge, facing the world
+      s.mx = 4; s.my = 2; s.facing = { x: 0, y: 1 };
+      this.say('You push through the doors into open air. Haven grounds — tents, a fire pit, worn paths. The world is that way.');
+      return true;
+    },
+    enterBuilding() {
+      const s = this.state.scholar;
+      s.insideHaven = true;
+      const t = this.tileAt(this.map.px, this.map.py);
+      if (t && t.type === 'haven') t.detail = null;
+      // you step into the hall, just inside the doors
+      s.mx = 4; s.my = 7; s.facing = { x: 0, y: -1 };
+      this.say('Inside. The hall smells of smoke and twelve people. Home.');
+      return true;
+    },
+    // edgeExit: standing on the rim of the 9x9? That's the way to the next node.
+    // Returns {dx,dy,dir} or null. Travel is orthogonal — corners pick the axis you tapped last.
+    edgeExit(cx, cy) {
+      if (cx === 0) return { dx: -1, dy: 0, dir: 'west' };
+      if (cx === 8) return { dx: 1, dy: 0, dir: 'east' };
+      if (cy === 0) return { dx: 0, dy: -1, dir: 'north' };
+      if (cy === 8) return { dx: 0, dy: 1, dir: 'south' };
+      return null;
+    },
     travelTo(x, y, force) {
       const dest = this.tileAt(x, y);
       const wasUnknown = !dest.revealed;
@@ -1860,6 +1854,11 @@
       this.say(msg);
       // arrive at the center of the new tile's detail grid. you're IN the world now.
       this.state.scholar.mx = 4; this.state.scholar.my = 4;
+      // traveling means you're outside. (Arriving at Haven puts you on the grounds —
+      // tap the lodge to go back inside.)
+      this.state.scholar.insideHaven = false;
+      const ht = this.tileAt(3, 3);
+      if (ht && ht.type === 'haven') ht.detail = null;
       // MONSTERS FOLLOW (if they want to). Territorial and hungry ones do. Skittish ones don't.
       const oldMonster = this.state.scholar.monster;
       if (oldMonster) {
@@ -2151,6 +2150,7 @@
         rubble: { interact: 'scavenge', cost: 20 },
         bridge: {}, door: {}, gym: {}, class: {}, hall: {}, office: {},
         bay: {}, dock: {}, sanct: {}, base: {}, grass: {}, dirt: {},
+        bunk: { interact: 'rest' }, lodge: { interact: 'enter' },
       };
       return P[cell] || {};
     },
@@ -2250,7 +2250,16 @@
       this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).`);
       return null;
     },
-    // addWater: gain bottled water. quality 'clean'|'risky', source retained.
+    // fillWaterFromVillage: at Haven, draw from the village supply into your pack.
+    // The village well is the reason Haven is where it is.
+    fillWaterFromVillage() {
+      const v = this.state.village;
+      if (!v || !v.water || v.water.clean < 1) { this.say('The well is dry. Find water out there.'); return null; }
+      v.water.clean -= 1;
+      this.addWater(1, 'clean', 'Haven well');
+      this.say('You fill 1L from the Haven well. Clean.');
+      return null;
+    },
     addWater(liters, quality, source) {
       const s = this.state.scholar;
       s.water = s.water || [];
@@ -2410,6 +2419,62 @@
       return cap;
     },
 
+    // takeFromPantryBulk: pack multiple items at once (slider UI).
+    // selections: {idx: qty}. Respects weight, applies trust cost once.
+    takeFromPantryBulk(selections) {
+      const pantry = this.state.village.pantry || [];
+      const v = this.state.village;
+      let totalKcal = 0, totalKg = 0, totalUnits = 0;
+      const taken = [];
+      for (const [key, qty] of Object.entries(selections)) {
+        // WATER: drawn from the village well, not the pantry shelves. Same UI, same pack.
+        if (key === 'water') {
+          const q = Math.min(qty, (v.water && v.water.clean) || 0);
+          if (q <= 0) continue;
+          const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0) + this.waterWeight() + totalKg;
+          const max = this.carryCapacity();
+          const canTake = Math.min(q, Math.floor(max - carry)); // 1L = 1kg
+          if (canTake <= 0) { this.say('Too heavy for more water.'); continue; }
+          v.water.clean -= canTake;
+          this.addWater(canTake, 'clean', 'Haven well');
+          totalKg += canTake;
+          totalUnits += canTake;
+          taken.push(`${canTake}L water`);
+          continue;
+        }
+        const idx = +key, q = Math.min(qty, (pantry[idx] && pantry[idx].units) || 0);
+        if (q <= 0) continue;
+        const item = pantry[idx];
+        // weight check per item (running total)
+        const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0) + this.waterWeight() + totalKg;
+        const max = this.carryCapacity();
+        const canTake = Math.min(q, Math.floor((max - carry) / (item.kg || 0.1)));
+        if (canTake <= 0) { this.say(`Too heavy for more ${item.name}.`); continue; }
+        item.units -= canTake;
+        if (item.units <= 0) pantry.splice(pantry.indexOf(item), 1);
+        // merge into inventory
+        const inv = this.state.scholar.inventory;
+        const existing = inv.find(i => i.name === item.name);
+        if (existing) existing.units += canTake;
+        else inv.push({ name: item.name, kcalEach: item.kcalEach, units: canTake, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking });
+        totalKcal += canTake * item.kcalEach;
+        totalKg += canTake * (item.kg || 0);
+        totalUnits += canTake;
+        taken.push(`${canTake} ${item.name}`);
+      }
+      if (!taken.length) return null;
+      // trust: one notice for the whole pack, not per click
+      v.takes = v.takes || {}; v.gives = v.gives || {};
+      const vid = this.state.scholar.villagerId;
+      v.takes[vid] = (v.takes[vid] || 0) + totalKcal;
+      const net = (v.gives[vid] || 0) - (v.takes[vid] || 0);
+      if (net < -5000) {
+        v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
+        if (Math.random() < 0.3) this.say('Someone watches you load up. They say nothing.');
+      }
+      this.say(`Packed: ${taken.join(', ')}. (${this.fmtKcal(totalKcal)}, ${totalKg.toFixed(1)} kg)`);
+      return null;
+    },
     // takeFromPantry: pack food before going out. Weight matters.
     // SELFISHNESS HAS A COST: taking without contributing lowers trust.
     // The village notices who gives and who takes.
@@ -2443,7 +2508,7 @@
       // EXPLOIT: donate-then-take-back. If net goes negative after donating, big penalty.
       // (They remember you gave. They remember you took it back. That's worse.)
       const gave = v.gives[vid] || 0;
-      if (gave > 0 && net <= 0 && !stealClean) {
+      if (gave > 0 && net <= 0) {
         v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 5);
         this.say('You took back what you gave. They noticed. Trust -5.');
       }
@@ -2642,6 +2707,13 @@
         // If you have raw food, you can cook here. (Knowledge tells you what needs it.)
         const raw = (this.state.scholar.inventory || []).filter(i => i.rawKcal);
         if (raw.length) actions.push(`Cook (${raw.length} raw)`);
+      } else if (cell === 'door') {
+        // DOORS ARE REAL. This is how you leave the building.
+        actions.push('Step outside');
+      } else if (cell === 'lodge') {
+        actions.push('Go inside');
+      } else if (cell === 'bunk') {
+        actions.push('Rest');
       } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
         if (!sec || !sec.searched) actions.push('Search');
       }
@@ -4566,6 +4638,13 @@
       if (this.state.telemetry.length > 300) this.state.telemetry.splice(0, this.state.telemetry.length - 300);
     },
 
+    // fmtKcal: human-readable calories. <1000 → "850 kcal", ≥1000 → "2.4 Mcal".
+    // One rule, everywhere. Big numbers stay readable, small ones stay precise.
+    fmtKcal(n) {
+      n = Math.round(n || 0);
+      if (Math.abs(n) < 1000) return `${n} kcal`;
+      return `${(n / 1000).toFixed(1)} Mcal`;
+    },
     status() {
       const s = this.state.scholar;
       return {
