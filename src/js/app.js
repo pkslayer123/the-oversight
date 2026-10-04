@@ -414,7 +414,7 @@
   // BLOCKED PATH: show what's in the way and every way through.
   // Always multiple solutions: work through it, bridge it, swim it, or go around.
   function showBlockage(block) {
-    const info = document.getElementById('tileinfo');
+    const info = document.getElementById('inlineslot');
     if (!info) return;
     const { x, y, blockType } = block;
     const wood = Game.woodCount();
@@ -672,7 +672,7 @@
       const vp = Game.data.villagers.find(v => v.id === villagerId) || Game.data.background_survivors.find(v => v.id === villagerId);
       const name = Game.displayName(villagerId);
       if (dist <= 2) {
-        const info = document.getElementById('tileinfo');
+        const info = document.getElementById('inlineslot');
         if (info) info.innerHTML = ''; // people get sheets, not panels
         personSheet(villagerId);
         return;
@@ -782,7 +782,7 @@
 
     // INLINE PANEL: the world stays visible. You're not yanked out of the experience.
     // Actions happen here, in context, below the grid.
-    const info = document.getElementById('tileinfo');
+    const info = document.getElementById('inlineslot');
     if (!info) { expeditionScreen(); return; } // fallback if panel target missing
     info.innerHTML = `
       <div class="tilepanel">
@@ -807,7 +807,6 @@
     info.dataset.cx = cx; info.dataset.cy = cy;
     // the panel opens BELOW the grid — on a phone that's off-screen.
     // bring it into view instead of leaving the player wondering what happened.
-    try { info.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
   }
 
   // refresh: full expedition screen re-render after an action.
@@ -815,7 +814,7 @@
 
   // refreshTilePanel: re-render the inline panel after an action (stays in context)
   function refreshTilePanel() {
-    const info = document.getElementById('tileinfo');
+    const info = document.getElementById('inlineslot');
     if (!info || info.dataset.cx === undefined || !info.innerHTML) return;
     cellPopup(+info.dataset.cx, +info.dataset.cy);
   }
@@ -1118,10 +1117,6 @@
       (Game.state.scholar ? Game.state.scholar.day + '.' + Game.state.scholar.dayPart : '');
   }
 
-  function scrollInlineIntoView() {
-    const slot = document.getElementById('inlineslot');
-    if (slot) { try { slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {} }
-  }
 
   // openPerson: tap a person → their card appears inline, in the main screen.
   // Dialogue, buttons, everything — no screen transition. Their opening line
@@ -1131,7 +1126,6 @@
     // (It used to burn energy and fire a line on every open.)
     inlineView = { kind: 'person', vid: villagerId, line: null, result: null, nvMode: null, mapKey: inlineMapKey() };
     refresh();
-    scrollInlineIntoView();
   }
 
   // personSheet is now openPerson — alias so no call site breaks.
@@ -1299,7 +1293,8 @@
       ${inlineHead('\uD83D\uDC64 ' + esc(titleName))}
       ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
       ${challengeHtml}
-      <div class="inline-body">${infoHtml}${conf}
+      <div class="inline-body">
+        <details class="person-details"><summary class="small" style="cursor:pointer;opacity:.7">about them</summary>${infoHtml}${conf}</details>
         ${convoHtml || (said ? `<p style="font-size:16px;line-height:1.6;margin-top:10px">\u201C${esc(said)}\u201D</p>` : '')}
       </div>
       <div class="inline-btns">${btns}</div>
@@ -1547,7 +1542,6 @@
   function assignTaskSheet(villagerId, via) {
     inlineView = { kind: 'assign', vid: villagerId, line: null, result: null, via: via || 'in-person', mapKey: inlineMapKey() };
     refresh();
-    scrollInlineIntoView();
   }
 
   // Remote assignment: abilities unlock assigning without face-to-face.
@@ -1580,7 +1574,6 @@
     if (!methods.length) { Game.say("You need to be face-to-face to ask for help. (Abilities can unlock remote assignment.)"); refresh(); return; }
     inlineView = { kind: 'remote', mapKey: inlineMapKey() };
     refresh();
-    scrollInlineIntoView();
   }
 
 
@@ -1750,13 +1743,23 @@
   function invSheet() {
     inlineView = { kind: 'inv', result: null, mapKey: inlineMapKey() };
     refresh();
-    scrollInlineIntoView();
   }
 
 
   // ---------- the one screen ----------
   // map + here-panel, always together. no view switching: the panel adapts to
   // where you stand (haven / wild node / ruin / combat). travel = tap a tile.
+
+  // Tutorial hint: shown until dismissed. One line, then it's gone forever.
+  function isTutorialDone() {
+    try { return localStorage.getItem('oversight_tutorial_done') === '1'; } catch (e) { return false; }
+  }
+  function dismissTutorial() {
+    try { localStorage.setItem('oversight_tutorial_done', '1'); } catch (e) {}
+    const el = document.getElementById('taphint');
+    if (el) el.style.display = 'none';
+  }
+
   function expeditionScreen() {
     const st = Game.status();
     if (st.over) return ending();
@@ -1790,32 +1793,28 @@
     const n = Game.nodeDetail();
 
     screen.innerHTML = `
-      ${bar('scattering://field', `${dialHTML(st)}<span>day ${st.day} · ${st.dayPart}</span>`)}
+      ${bar('scattering://field', `${dialHTML(st)}<span>day ${st.day} · ${st.dayPart}<br><span style="font-size:11px;opacity:.7">${esc(st.dayPartHint)}</span></span>`)}
       ${dayTickBar(st)}
-      <div id="announce" style="position:sticky;top:0;background:#1a1a1a;border-bottom:1px solid #444;padding:6px 8px;font-size:13px;z-index:100;">${esc(st.log[st.log.length - 1] || '')}</div>
       <div class="game-cols">
         <div class="game-col-main">
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
           <div class="detail ord-grid">${renderDetail(st)}</div>
+          <div id="inlineslot" class="ord-inline"></div>
           <div class="ord-ctx">${contextBarHTML()}</div>
           <div class="ord-target">${targetBarHTML()}</div>
           <div class="ord-danger">${dangerBarHTML()}</div>
           <div class="ord-ability">${abilityBarHTML()}</div>
-          <p class="small ord-taphint">👆 tap a tile to walk there · 🗺 walk to the edge, tap yourself, head out (1 part · 30 kcal/tile)</p>
+          ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">👆 tap a tile to walk there · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
           <div class="map minimap ord-minimap">${renderMap(st, tset)}</div>
         </div>
         <div class="game-col-side">
-          <p class="small ord-daypart">${st.dayPartHint}</p>
           <div class="ord-status">${statusBars(st)}</div>
           ${st.activeQuest ? `<p class="small ord-quest" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
-          <div id="tileinfo" class="ord-tileinfo"></div>
-          <div id="inlineslot" class="ord-inline"></div>
           <div class="ord-panel">${panelFor(st, n)}</div>
           <div class="actions ord-codex">
             <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
           </div>
-          <div class="log ord-log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
-          <p class="small ord-share" style="opacity:.4;text-align:center;margin-top:14px"><a href="#" id="x-share" style="color:inherit">📤 share the oversight</a></p>
+          <div class="log ord-log">${st.log.slice(-3).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
         </div>
       </div>`;
 
@@ -1825,7 +1824,7 @@
     screen.querySelectorAll('.minimap .tile').forEach(el => {
       el.onclick = () => {
         const x = +el.dataset.x, y = +el.dataset.y;
-        const info = document.getElementById('tileinfo');
+        const info = document.getElementById('inlineslot');
         const tl = Game.tileAt(x, y);
         if (!info) return;
         if (x === st.px && y === st.py) { info.innerHTML = ''; return; }
@@ -1834,7 +1833,6 @@
         } else {
           info.innerHTML = `<div class="card"><p>🗺 ${esc(S.TILE_NAME[tl.type] || tl.type)}.<br><span class="small">Walk to the edge of the map to travel there.</span></p></div>`;
         }
-        try { info.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
       };
     });
     // detail grid: TAP A TILE = GO THERE. That's the whole interaction model.
@@ -1938,8 +1936,8 @@
       return;
     }
     document.getElementById('x-codex').onclick = codexScreen;
-    const xShare = document.getElementById('x-share');
-    if (xShare) xShare.onclick = (e) => { e.preventDefault(); shareGame(); };
+    const taphintX = document.getElementById('taphint-x');
+    if (taphintX) taphintX.onclick = dismissTutorial;
     const pantryBtn = document.getElementById('x-pantry');
     if (pantryBtn) pantryBtn.onclick = () => pantrySheet();
     wirePanel(st, n);
@@ -2077,7 +2075,6 @@
   function pantrySheet() {
     inlineView = { kind: 'pantry', result: null, mapKey: inlineMapKey() };
     refresh();
-    scrollInlineIntoView();
   }
 
 

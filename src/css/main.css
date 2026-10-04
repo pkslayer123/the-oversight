@@ -199,8 +199,8 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .actions .btn.sm { margin: 0; padding: 14px 8px; font-size: 15px; flex: 1; }
 .linklike { background: none; border: none; color: var(--acc); font: inherit; font-size: 14px; cursor: pointer; text-decoration: underline; padding: 4px; }
 
-/* log */
-.log { border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 12px; max-height: 28dvh; overflow-y: auto; background: var(--bg); }
+/* log: 3 lines max. It's a feed, not a novel. */
+.log { border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; margin-top: 10px; max-height: 84px; overflow-y: auto; background: var(--bg); }
 .itempick { cursor: pointer; }
 .itempick.sel { border-color: #7fd67f; background: #1a2f1a; }
 
@@ -447,6 +447,17 @@ body.in-combat .dangerbar {
 .inline-head b { font-size: 15px; }
 .inline-body p { margin: 6px 0; }
 .inline-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+/* person card buttons: 2-column compact grid, not full-width stack */
+.inlinecard .inline-btns .btn.sm {
+  flex: 1 1 calc(50% - 3px); margin: 0; padding: 10px 6px; font-size: 14px;
+  width: auto;
+}
+.inlinecard .inline-btns .btn.sm:active { background: var(--acc); color: var(--bg); }
+/* collapsible person details: one line, expand for more */
+.person-details summary { list-style: none; }
+.person-details summary::-webkit-details-marker { display: none; }
+.person-details summary::before { content: '▸ '; }
+.person-details[open] summary::before { content: '▾ '; }
 /* action feedback: obvious confirmation, no wondering "did that work?" */
 .inline-result {
   color: #7fd67f; font-weight: bold; font-size: 14px; margin: 6px 0;
@@ -489,23 +500,20 @@ body.system-live .btn:not(.ghost) {
 .game-cols { display: flex; flex-direction: column; min-width: 0; }
 .game-col-main, .game-col-side { display: contents; }
 /* single-column order = the pre-columns flow: status, grid, interactions, panels */
-.ord-daypart { order: 1; }
-.ord-status { order: 2; }
-.ord-quest { order: 3; }
-.ord-epithet { order: 4; }
-.ord-grid { order: 5; }
+.ord-status { order: 1; }
+.ord-quest { order: 2; }
+.ord-epithet { order: 3; }
+.ord-grid { order: 4; }
+.ord-inline { order: 5; }
 .ord-ctx { order: 6; }
 .ord-target { order: 7; }
 .ord-danger { order: 8; }
 .ord-ability { order: 9; }
-.ord-tileinfo { order: 10; }
-.ord-inline { order: 11; }
-.ord-taphint { order: 12; }
-.ord-minimap { order: 13; }
-.ord-panel { order: 14; }
-.ord-codex { order: 15; }
-.ord-log { order: 16; }
-.ord-share { order: 17; }
+.ord-taphint { order: 10; }
+.ord-minimap { order: 11; }
+.ord-panel { order: 12; }
+.ord-codex { order: 13; }
+.ord-log { order: 14; }
 
 /* WIDESCREEN: the game uses the room — grid left, panels right.
    Scoped behind body:has(.game-cols) so non-game screens (title, onboarding,
