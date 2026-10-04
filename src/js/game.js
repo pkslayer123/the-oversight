@@ -2321,6 +2321,36 @@
       return mult;
     },
 
+    // villageMeal: you eat from the communal pantry. You're one of the 12.
+    // Trust determines your share. Newcomers get less. Contributors get more.
+    villageMeal() {
+      const v = this.state.village;
+      const scholar = this.state.scholar;
+      const pantry = v.pantry || [];
+      // your share: 2000 kcal (a day's food), scaled by trust
+      // trust < 30: half ration (they're watching you). 30+: full. 60+: full + bonus.
+      const trust = v.trust && v.trust[scholar.villagerId] !== undefined ? v.trust[scholar.villagerId] : 10;
+      const share = trust < 30 ? 1000 : trust < 60 ? 2000 : 2200;
+      // take from pantry (most perishable first)
+      let taken = 0;
+      pantry.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
+      for (let i = pantry.length - 1; i >= 0 && taken < share; i--) {
+        const item = pantry[i];
+        if (!item || (item.kcalEach || 0) <= 0 || item.units <= 0) continue;
+        const need = share - taken;
+        const units = Math.min(item.units, Math.ceil(need / item.kcalEach));
+        taken += units * item.kcalEach;
+        item.units -= units;
+        if (item.units <= 0) pantry.splice(i, 1);
+      }
+      scholar.kcal = Math.min((scholar.kcal || 0) + taken, 3000);
+      if (taken > 0) {
+        this.say(`Village meal: +${Math.round(taken)} kcal from the communal pantry.${trust < 30 ? ' (Half ration — they don\'t trust you yet.)' : ''}`);
+      } else {
+        this.say('No food in the pantry. The village is hungry.');
+      }
+    },
+
     villageEats() {
       const v = this.state.village;
       let eat = 0, give = 0;
@@ -2452,6 +2482,8 @@
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
       // the village eats whether you're there or not — every day you're out, twelve mouths
+      // YOU EAT TOO. Village meal from the communal pantry.
+      this.villageMeal();
       this.villageLives();
       this.villageEats();
       this.checkTraps();
