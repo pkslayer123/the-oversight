@@ -135,21 +135,21 @@
    "se_woodlands"
   ],
   "hp": [
-   35,
-   45
+   95,
+   115
   ],
   "attack": {
    "name": "Ocular Discharge",
    "damage": [
-    16,
-    24
+    22,
+    32
    ],
    "telegraph": "It freezes. Like a deer in headlights. Light gathers behind its eyes. It is not frozen. It is aiming.",
    "pattern": {
     "type": "beam",
     "length": 6,
     "width": 1,
-    "windup": 2
+    "windup": 1
    }
   },
   "weaknesses": [
@@ -168,7 +168,7 @@
   "codexStages": {
    "unknown": "A deer. It froze like a deer in headlights. The light did not stop gathering.",
    "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' — and right that you should move. When it freezes, it is aiming. Antlers never shed: the System classified them as permanent equipment.",
-   "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze — MOVE), Antler Sweep (close range), Bolt (flees at 50% hp). Never let it finish aiming. The meat is worth the sorrow. Thank it."
+   "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze — MOVE), Antler Sweep (close range). It does not run. It does not bluff. When it freezes, it is aiming — break the lane, break line of sight, or be somewhere else. The meat is worth the sorrow. Thank it."
   },
   "systemDesignation": "Odocoileus virginianus (standard)",
   "aggression": "skittish",
@@ -176,7 +176,6 @@
   "fear": "movement",
   "speed": 4,
   "emoji": "🦌",
-  "fleeAt": 0.5,
   "unknown": "a deer, standing too still",
   "vibe": "skittish until it isn't — when it freezes, it's aiming",
   "cues": {

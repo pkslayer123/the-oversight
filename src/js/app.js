@@ -2366,7 +2366,9 @@
       <div class="card warn"><h3>⚠ BULLDOZER</h3>
       <p class="small">It crashes from the thicket. It is not going around.</p>
       <button class="btn sm" id="p-face">Face it</button></div>`;
-    if (st.inCombat) return panelCombat(st);
+    // COMBAT renders in the main column, directly under the grid
+    // (ord-combatpanel) — never below the fold. This slot stays empty in combat.
+    if (st.inCombat) return '';
     if (n.isHaven) return panelHaven(st);
     return panelNode(st, n);
   }

@@ -185,9 +185,14 @@
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;
       Game.dayPart = 3; // night — it's nocturnal
-      Game.say('🐞 SCENARIO: headlight deer fight. The Highbeam Deer is out there in the dark.');
-      Game.say('When it freezes, it is NOT frozen. It is aiming. MOVE.');
-      Game.startCombat('gallowdeer');
+      // STALK IT, DON'T SPAWN ON IT. The deer grazes five tiles east, unaware.
+      // Walk toward it and watch the stance machine work: graze → notice →
+      // FREEZE (it is aiming, not frozen) → close → combat starts on ITS terms.
+      // It does not run. The mechanics should make YOU want to.
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'gallowdeer', mx: 7, my: 4 };
+      Game.say('🐞 SCENARIO: headlight deer. Grazing, five tiles east. It has not seen you.');
+      Game.say('Walk toward it. Watch how it spots you — and what the freeze means. MOVE.');
     },
   };
 
@@ -215,7 +220,7 @@
       ['night', '🌙 Night hunt'],
       ['liars', '🤥 Liar\'s den'],
       ['starving', '🔥 Starving village'],
-      ['headlight', '💡 Headlight Deer fight'],
+      ['headlight', '💡 Headlight Deer stalk'],
     ];
   };
 })();

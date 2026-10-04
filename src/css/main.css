@@ -562,6 +562,14 @@ body.system-live .btn:not(.ghost) {
 /* perception line sits between grid and interactions — quiet, ignorable */
 .ord-perceive { order: 4.5; }
 .ord-inline { order: 5; }
+/* COMBAT CARD: the fight panel sits directly under the grid, above the action
+   bars -- combat is moment-to-moment, never below the fold. High-contrast
+   treatment so the eye lands here the instant a fight starts. (highbeam) */
+.ord-combatpanel { order: 5.2; }
+.ord-combatpanel .card.warn {
+  border: 2px solid var(--danger, #ff5252);
+  box-shadow: 0 0 14px rgba(255, 82, 82, 0.35);
+}
 .ord-ctx { order: 6; }
 /* SELF BAR: your persistent body-actions (Eat, Sleep, Pack, Wait). Personal
    actions FIRST — they sit at the top of the action area, right below the

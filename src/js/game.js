@@ -4562,6 +4562,10 @@
       // Movement is baseline. Power doesn't tax walking.
       s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
+      // MONSTERS MOVE WHEN YOU DO. A step can spook, warn, or trigger —
+      // the stance machine runs on steps, not just on interacts. (It didn't.
+      // Walking up to a deer did nothing until you touched something.)
+      this.monsterTurn(); this.animalTurn();
       // ACTION CLOCK: a step is 1 tick. Strolling is time-only — no effort cost.
       // Monsters, animals, and villagers move on their own schedule (or when you ACT).
       // But steps ACCUMULATE: every TICKS_PER_BATCH ticks, NPCs take a batch turn.
@@ -4930,6 +4934,8 @@
       s.mx = tx; s.my = ty;
       this.say(`Walked ${path.length} squares (${cost} kcal).`);
       this.ensureVillagerPositions();
+      // Committed walks cross monster territory too — it notices per square.
+      for (let i = 0; i < path.length && !this.tbfight; i++) { this.monsterTurn(); this.animalTurn(); }
       // ACTION CLOCK: committed walk = 1 tick per square (+10 kcal/square effort, above).
       this.tickAction(path.length);
       return true;
@@ -10061,6 +10067,10 @@
     },
 
     tbAfterPlayerAction() {
+      // The fight can end on YOUR action (you dropped the last monster) —
+      // tbAdvance only checks after AI turns, so check here too. Otherwise
+      // killing the final foe soft-locks the fight on your turn forever.
+      if (this.tbEndCheck()) return;
       this.tbAdvance();
     },
 
@@ -10242,12 +10252,18 @@
           this.audioEvent('telegraph', { urgency: tg.turnsLeft });
           return;
         }
-        // RESOLVE. Tracking attacks re-aim at who you are NOW, not where you
-        // were. Knowledge tells you the shape; positioning saves you.
+        // RESOLVE. A BEAM or LINE locks its aim when declared — it was aiming
+        // at you during the windup, then it fires where it aimed. Sidestepping
+        // out of the lane, or breaking line of sight, dodges it. (Re-aiming at
+        // fire time made MOVE useless and the freeze meaningless.)
+        // Charges still track: they run you down. That's the point of a charge.
         m.telegraph = null;
         if (tg.kind === 'squares') {
-          const foe = S.combat.nearestEnemy(f.fighters, m);
-          if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
+          const ptype = (tg.pattern || {}).type;
+          if (ptype !== 'beam' && ptype !== 'line') {
+            const foe = S.combat.nearestEnemy(f.fighters, m);
+            if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
+          }
         }
         this.audioEvent('impact');
         if (tg.kind === 'direct') {
@@ -10262,7 +10278,12 @@
             }
           }
         } else {
-          this.say(`💥 ${tg.attackName}!`);
+          // COVER WORKS: if the lane was fully blocked at declare time, the
+          // beam dies against the trees. That's not a miss. That's the plan.
+          if (!tg.cells.length && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line')) {
+            this.say(`💥 ${tg.attackName}! The light shreds leaves and dies against the trees. Cover works. Remember that.`);
+          } else {
+          this.say(`💥 ${tg.attackName}!`);}
           const hitKeys = new Set(tg.cells.map(c => c.cx + ',' + c.cy));
           let playerHit = false;
           for (const o of f.fighters) {
@@ -10368,7 +10389,20 @@
           this.say(`The ${m.name} stalks closer. ${atk.telegraph || ''}`);
         }
       } else {
-        const cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
+        let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
+        // BEAM/LINE: trees and rocks block the shot. The lane ends at the
+        // first blocking terrain — break line of sight, break the beam.
+        // (Fighters never block: the beam goes through them. That's the point.)
+        if (pat.type === 'beam' || pat.type === 'line') {
+          const detail = this.genDetail(this.map.px, this.map.py);
+          const cut = [];
+          for (const c of cells) {
+            const cell = detail[c.cy] && detail[c.cy][c.cx];
+            if (cell && this.cellProps(cell).blocks) break;
+            cut.push(c);
+          }
+          cells = cut;
+        }
         const p0 = this.tbFighter('p');
         m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
           attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,

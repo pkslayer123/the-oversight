@@ -99,11 +99,12 @@ function eq(name, got, want) {
 
   // --- 9. headlight ---
   ok('headlight runs', Game.debugScenario('headlight'));
-  ok('combat started', !!Game.tbfight);
-  const hd = (Game.tbfight.fighters || []).find(f => f.monId === 'gallowdeer' || (f.name || '').toLowerCase().includes('highbeam'));
-  ok('highbeam deer is a fighter', !!hd);
+  ok('no instant combat (stalk from range, not spawn-on-top)', !Game.tbfight);
+  s = Game.state.scholar;
+  ok('deer placed on map', !!(s.monster && s.monster.id === 'gallowdeer'));
+  eq('deer 5 tiles away', Math.max(Math.abs(s.monster.mx - s.mx), Math.abs(s.monster.my - s.my)), 5);
   eq('night', Game.dayPart, 3);
-  try { Game.tbEnd('fled'); } catch (e) {}
+  eq('spear equipped', (s.equipped.weapon || {}).itemId, 'fire_hardened_spear');
 
   // --- unknown ---
   eq('unknown scenario false', Game.debugScenario('nope'), false);
