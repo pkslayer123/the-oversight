@@ -313,7 +313,19 @@
         }
       } else {
         // passable
-        if (dist <= 1 && !isMe) actions.push(['Step here', () => Game.microMove(cx, cy)]);
+        if (dist <= 1 && !isMe) {
+          actions.push(['Step here', () => Game.microMove(cx, cy)]);
+        } else if (!isMe) {
+          // Farther walkable cell: offer the walk (costs kcal, not free).
+          // Pathfind first — if no path, say so instead of offering.
+          const path = Game.findPath(px, py, cx, cy);
+          if (path && path.length) {
+            const cost = path.length * 10;
+            actions.push([`Walk here (${cost} kcal)`, () => Game.movePath(cx, cy)]);
+          } else {
+            desc += ' (No path there.)';
+          }
+        }
         if (cell === 'plant' || cell === 'bush') actions.push(['Forage', () => Game.cellInteract(cx, cy)]);
         else if (cell === 'rubble') actions.push(['Scavenge', () => Game.cellInteract(cx, cy)]);
         else if (cell === 'bridge') desc += ' The only way across.';
@@ -321,19 +333,31 @@
       }
     }
 
-    screen.innerHTML = `${bar('scattering://look', name.toLowerCase())}
-      <div class="card" style="margin-top:40px">
-        <h3>${name}</h3>
+    // INLINE PANEL: the world stays visible. You're not yanked out of the experience.
+    // Actions happen here, in context, below the grid.
+    const info = document.getElementById('tileinfo');
+    if (!info) { expeditionScreen(); return; } // fallback if panel target missing
+    info.innerHTML = `
+      <div class="tilepanel">
+        <div class="tp-head"><b>${esc(name)}</b><button class="btn ghost sm tp-x" id="tp-close">✕</button></div>
         <p class="small">${desc}</p>
         <div class="btnrow">
-          ${actions.map((a, i) => `<button class="btn sm" data-act="${i}">${a[0]}</button>`).join('')}
-          <button class="btn ghost sm" id="b-cback">Back</button>
+          ${actions.map((a, i) => `<button class="btn sm" data-tpact="${i}">${a[0]}</button>`).join('')}
         </div>
       </div>`;
-    actions.forEach((a, i) => {
-      document.querySelector(`[data-act="${i}"]`).onclick = () => { a[1](); expeditionScreen(); };
+    info.querySelectorAll('[data-tpact]').forEach(b => {
+      b.onclick = () => { actions[+b.dataset.tpact][1](); refreshTilePanel(); };
     });
-    document.getElementById('b-cback').onclick = () => expeditionScreen();
+    document.getElementById('tp-close').onclick = () => { info.innerHTML = ''; };
+    // remember what we're looking at so actions can refresh the panel
+    info.dataset.cx = cx; info.dataset.cy = cy;
+  }
+
+  // refreshTilePanel: re-render the inline panel after an action (stays in context)
+  function refreshTilePanel() {
+    const info = document.getElementById('tileinfo');
+    if (!info || info.dataset.cx === undefined || !info.innerHTML) return;
+    cellPopup(+info.dataset.cx, +info.dataset.cy);
   }
 
   // confirmMove: >3 steps is a commitment. Confirm the cost.
@@ -595,7 +619,15 @@
       el.onclick = () => {
         const x = +el.dataset.x, y = +el.dataset.y;
         if (x === st.px && y === st.py) return;
-        if (!Game.travelTo(x, y)) { toast('Not reachable — 3 tiles max, through scouted ground.'); return; }
+        const d = Math.abs(x - st.px) + Math.abs(y - st.py);
+        const tl = Game.tileAt(x, y);
+        if (!Game.travelTo(x, y)) {
+          // Explain WHY, not just "no". Fog of war is the usual reason.
+          if (!tl.revealed && d > 1) toast('Unexplored — walk to an adjacent tile first, then push into the fog.');
+          else if (d > 3) toast('Too far — 3 tiles max per trip.');
+          else toast('Not reachable from here.');
+          return;
+        }
         rerender();
       };
     });
@@ -606,21 +638,24 @@
     screen.querySelectorAll('.detail .cell').forEach(el => {
       el.onclick = () => {
         const cx = +el.dataset.cx, cy = +el.dataset.cy;
-        const actions = Game.cellActions(cx, cy); // what decisions exist here?
-        const path = Game.findPath(Game.state.scholar.mx ?? 4, Game.state.scholar.my ?? 4, cx, cy);
-        const steps = path ? path.length : 0;
-        if (actions.length === 0) {
-          // Just ground. But >3 steps? Confirm (it's a commitment).
-          if (steps > 3) {
-            confirmMove(cx, cy, steps);
-          } else {
-            Game.movePath(cx, cy);
-            expeditionScreen();
-          }
-        } else {
-          // Interactable destination. Popup: step here, OR step here + do the thing.
-          moveOrActPopup(cx, cy, steps, actions);
+        // INLINE: the panel appears below the grid. The world stays visible.
+        // Tapping ground steps there (free for 1 step, confirmed for long walks).
+        // Tapping something interesting shows what you can do — in context.
+        const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+        if (cx === px && cy === py) { cellPopup(cx, cy); return; } // yourself: info panel
+        const detail = Game.genDetail(Game.map.px, Game.map.py);
+        const cell = detail[cy] && detail[cy][cx];
+        const walkable = !Game.cellProps(cell).blocks;
+        const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
+        const actions = Game.cellActions(cx, cy);
+        if (walkable && actions.length === 0 && dist <= 1) {
+          // Adjacent ground: just step. Free. No panel, no fuss.
+          Game.microMove(cx, cy);
+          expeditionScreen();
+          return;
         }
+        // Everything else: inline panel with context-appropriate options.
+        cellPopup(cx, cy);
       };
     });
     // System arrival? Play the animation (once).
@@ -788,7 +823,14 @@
         const isMe = (cx === pmx && cy === pmy);
         let g, cls = 'cell';
         const ANIMAL_GLYPH = { cottontail_rabbit: '🐇', gray_squirrel: '🐿️', white_tailed_deer: '🦌', creek_chub: '🐟', wild_turkey: '🦃' };
-        if (isMe) { g = '🧍'; cls += ' me'; }
+        if (isMe) {
+          // DIRECTIONAL MARKER: you are a pulsing ring with a facing wedge.
+          // Facing comes from your last step — the marker shows where you're headed.
+          const f = Game.state.scholar.facing || { x: 0, y: 1 };
+          const ang = Math.round(Math.atan2(f.x, -f.y) * 180 / Math.PI);
+          g = `<span class="pmark"><span class="pdir" style="transform:rotate(${ang}deg)">▲</span></span>`;
+          cls += ' me';
+        }
         else if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
         else if (ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; }
         else {
@@ -862,7 +904,9 @@
         // other villages: show 🏘️ if generated (you've been near)
         const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
         const g = isW ? '🐗' : otherV ? '🏘️' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
-        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? '●' : g}</div>`;
+        const pf = Game.state.scholar.facing || { x: 0, y: 1 };
+        const pang = Math.round(Math.atan2(pf.x, -pf.y) * 180 / Math.PI);
+        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? `<span class="mface" style="transform:rotate(${pang}deg)">➤</span>` : g}</div>`;
       }
       html += '</div>';
     }

@@ -1293,6 +1293,64 @@
       let s = seed >>> 0;
       return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
     },
+    // validateSpawnArea: BFS from (sx,sy). Ensures the spawn isn't walled in.
+    // Requires 15+ reachable walkable cells and 2+ reachable doors/exits.
+    // If it fails, carve doors in walls adjacent to the reachable region.
+    validateSpawnArea(t, sx, sy) {
+      const cells = t.detail;
+      if (!cells) return;
+      const walkable = (cx, cy) => {
+        if (cx < 0 || cy < 0 || cx > 8 || cy > 8) return false;
+        return !this.cellProps(cells[cy][cx]).blocks;
+      };
+      const bfs = () => {
+        const seen = new Set([sx + ',' + sy]);
+        const q = [[sx, sy]];
+        while (q.length) {
+          const [x, y] = q.shift();
+          for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+            const nx = x + dx, ny = y + dy, k = nx + ',' + ny;
+            if (seen.has(k) || !walkable(nx, ny)) continue;
+            seen.add(k); q.push([nx, ny]);
+          }
+        }
+        return seen;
+      };
+      let seen = bfs();
+      // count doors in reachable area
+      const countDoors = () => {
+        let n = 0;
+        for (const k of seen) {
+          const [x, y] = k.split(',').map(Number);
+          if (cells[y][x] === 'door' || cells[y][x] === 'bridge') n++;
+        }
+        return n;
+      };
+      // carve up to 2 doors if needed: find a wall adjacent to reachable area
+      // that borders another walkable cell beyond it
+      let attempts = 0;
+      while ((seen.size < 15 || countDoors() < 2) && attempts++ < 10) {
+        let carved = false;
+        for (const k of seen) {
+          const [x, y] = k.split(',').map(Number);
+          for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+            const wx = x + dx, wy = y + dy; // wall candidate
+            const bx = x + dx * 2, by = y + dy * 2; // beyond
+            if (wx < 1 || wy < 1 || wx > 7 || wy > 7) continue;
+            if (cells[wy][wx] !== 'wall') continue;
+            // beyond must be walkable (or edge of map)
+            if (bx >= 0 && bx <= 8 && by >= 0 && by <= 8 && this.cellProps(cells[by][bx]).blocks) continue;
+            cells[wy][wx] = 'door';
+            carved = true;
+            break;
+          }
+          if (carved) break;
+        }
+        if (!carved) break;
+        seen = bfs();
+      }
+    },
+
     genDetail(x, y) {
       const t = this.tileAt(x, y);
       if (t.detail) return t.detail;
@@ -1309,7 +1367,7 @@
             ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
             ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
             ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
-            ['wall','wall','wall','wall','door','wall','wall','wall','wall'],
+            ['wall','wall','wall','wall','door','door','wall','wall','wall'],
             ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
             ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
           ],
@@ -1320,7 +1378,7 @@
             ['wall','wall','wall','wall','bay','bay','bay','bay','wall'],
             ['wall','dock','dock','door','bay','bay','bay','bay','wall'],
             ['wall','dock','dock','wall','bay','bay','bay','bay','wall'],
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','wall','wall','wall','wall','door','wall','wall','wall'],
             ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
             ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
           ],
@@ -1330,7 +1388,7 @@
             ['wall','office','wall','sanct','sanct','sanct','wall','office','wall'],
             ['wall','wall','wall','sanct','sanct','sanct','wall','wall','wall'],
             ['wall','wall','wall','sanct','sanct','sanct','wall','wall','wall'],
-            ['wall','wall','wall','wall','door','wall','wall','wall','wall'],
+            ['wall','wall','wall','door','door','wall','wall','wall','wall'],
             ['wall','base','base','base','base','base','base','base','wall'],
             ['wall','base','base','base','base','base','base','base','wall'],
             ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
@@ -1341,8 +1399,8 @@
             ['wall','apt','apt','wall','apt','apt','wall','apt','wall'],
             ['wall','wall','wall','hall','hall','hall','wall','wall','wall'],
             ['wall','apt','apt','hall','hall','hall','apt','apt','wall'],
-            ['wall','apt','apt','wall','door','wall','apt','apt','wall'],
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','apt','apt','door','door','wall','apt','apt','wall'],
+            ['wall','wall','wall','door','door','wall','wall','wall','wall'],
             ['wall','lobby','lobby','lobby','lobby','lobby','lobby','lobby','wall'],
             ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
           ],
@@ -1352,17 +1410,23 @@
             ['wall','cube','cube','cube','wall','cube','cube','cube','wall'],
             ['wall','wall','wall','wall','hall','wall','wall','wall','wall'],
             ['wall','break','break','hall','hall','hall','conf','conf','wall'],
-            ['wall','break','break','wall','door','wall','conf','conf','wall'],
-            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','break','break','wall','door','door','conf','conf','wall'],
+            ['wall','wall','wall','wall','door','wall','wall','wall','wall'],
             ['wall','lobby','lobby','lobby','lobby','lobby','lobby','lobby','wall'],
             ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
           ],
         };
         const layout = layouts[bt] || layouts.school;
-        // FIRE: every Haven has a campfire in the common area (hall row 7, center).
+        // FIRE: every Haven has a campfire in the common area (hall row 7).
+        // Placed at (2,7) — off the thoroughfare. The door path at (4,7) stays walkable.
+        // (Fire blocks movement; putting it in the doorway sealed the building.)
         // This is where you cook. No fire = no cooking.
-        if (layout[7] && layout[7][4]) layout[7][4] = 'fire';
+        if (layout[7] && layout[7][2]) layout[7][2] = 'fire';
         t.detail = layout;
+        // SPAWN VALIDATION: the player starts at (4,4). Ensure it's not walled in.
+        // BFS from spawn: need 15+ reachable cells and 2+ reachable doors.
+        // If the layout fails, carve — don't ship a trap.
+        this.validateSpawnArea(t, 4, 4);
         return layout;
       }
       const rnd = this.detailRand(this.detailSeed(x, y));
@@ -1605,7 +1669,9 @@
       if (this.over) return null;
       const t = this.travelTargets().find(t => t.x === x && t.y === y);
       if (!t) return null;
+      const odx = Math.sign(x - this.map.px), ody = Math.sign(y - this.map.py);
       this.map.px = x; this.map.py = y;
+      this.state.scholar.facing = { x: odx || 0, y: ody || 1 };
       this.reveal(x, y);
       const tile = this.playerTile();
       // RELIC — weatherproof: the garment shrugs off weather. Cheaper travel.
@@ -1657,7 +1723,11 @@
       const cell = detail[cy] && detail[cy][cx];
       const props = this.cellProps(cell);
       if (props.blocks) return false; // can't walk through, but might interact (see cellInteract)
-      const cost = props.cost || 10;
+      // FACING: you face where you step. The marker shows it.
+      s.facing = { x: Math.sign(cx - px), y: Math.sign(cy - py) };
+      // LOOKING AROUND IS FREE. Single steps are exploration, not travel.
+      // (Committed walks via movePath still cost — that's a decision.)
+      const cost = 0;
       // Movement is baseline. Power doesn't tax walking.
       s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
@@ -1947,6 +2017,13 @@
       const cost = path.length * 10;
       if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return false; }
       s.kcal -= cost;
+      if (path.length >= 2) {
+        const [lx, ly] = path[path.length - 1];
+        const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [s.mx, s.my];
+        s.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
+      } else if (path.length === 1) {
+        s.facing = { x: Math.sign(tx - s.mx) || 0, y: Math.sign(ty - s.my) || 1 };
+      }
       s.mx = tx; s.my = ty;
       this.say(`Walked ${path.length} squares (${cost} kcal).`);
       this.ensureVillagerPositions();
@@ -3391,6 +3468,13 @@
         msg = `You rest. Breath slows. +${restGain} energy.`;
       } else if (kind === 'wait') {
         msg = 'You wait. The light changes. Nothing asks anything of you.';
+      } else if (kind === 'drink') {
+        // Drinking water. Hydrates. FREE — you're just drinking, not making a decision.
+        // (drinkWater says what happened; it returns null either way.)
+        this.drinkWater();
+        this.checkQuest(kind);
+        this.maybeOfferQuest();
+        return true; // FREE: drinking isn't a day-part decision
       } else if (kind === 'treat') {
         const t = this.playerTile();
         if (t.type !== 'creek' && t.type !== 'wetland') { this.say('Need moving water — find a creek or wetland.'); return null; }

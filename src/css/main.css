@@ -95,7 +95,43 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .cell { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 .cell.grass { background: #1a2f1a; }
 .cell.dirt { background: #2f241a; }
-.cell.me { outline: 2px solid #fff; }
+.cell.me { outline: 2px solid #fff; position: relative; }
+.cell.me .pmark {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.cell.me .pmark::before {
+  content: ''; position: absolute; inset: 2px;
+  border: 2px solid #4df3ff; border-radius: 50%;
+  animation: ppulse 1.6s ease-in-out infinite;
+}
+.cell.me .pdir {
+  position: absolute; top: -9px; left: 50%;
+  margin-left: -7px; font-size: 14px; color: #4df3ff;
+  text-shadow: 0 0 4px #000; line-height: 1;
+  transform-origin: 7px 20px;
+}
+@keyframes ppulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .55; transform: scale(.88); }
+}
+.minimap .tile .mface {
+  display: inline-block; font-size: 16px; color: #4df3ff;
+  text-shadow: 0 0 3px #000; line-height: 1;
+}
+/* inline tile panel: context actions without leaving the world */
+.tilepanel {
+  border: 1px solid var(--line); border-left: 3px solid #4df3ff;
+  border-radius: 6px; padding: 8px 10px; margin: 8px 0;
+  background: var(--bg2);
+}
+.tp-head { display: flex; justify-content: space-between; align-items: center; }
+.tp-x { padding: 2px 8px; }
+/* bigger tap targets on the world map */
+.minimap .tile { width: 34px; height: 34px; font-size: 15px; }
+.minimap .tile.dest { outline: 2px solid var(--warn); }
+.minimap .tile:not(.dest):not(.me) { opacity: .75; }
 .cell.plantcell { cursor: default; }
 
 /* close-up: the node you're on, zoomed — 5x5 neighborhood, you at the center */
