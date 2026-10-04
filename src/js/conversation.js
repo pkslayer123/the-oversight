@@ -500,7 +500,9 @@
           c.transcript.push({ who: 'them', text: qd.q });
           while (c.transcript.length > 8) c.transcript.shift();
           this.say(`${this.displayName(vid)}: "${qd.q}"`);
-          line = qd.q;
+          // FIX (playtest): never stomp the answer to the player's question.
+          // The NPC answers FIRST, then asks their question — both shown, in order.
+          line = line ? line + ' ' + qd.q : qd.q;
         }
       }
 
