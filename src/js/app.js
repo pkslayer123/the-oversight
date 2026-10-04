@@ -405,13 +405,15 @@
       <div class="system-crack"></div>
       <div class="system-text">🌟 THE SKY SPLITS OPEN 🌟</div>
       <div class="system-window">
-        <div class="system-text system-typewriter">A voice in your head, cheerful and utterly alien:
-"Oh! Oh no. We forgot the food thing. And the water thing. We're SO sorry!"</div>
+        <div class="system-text system-typewriter">"HELLO! Welcome! We're SO glad you're all still here! What a week! The audience LOVED the foraging episode!"</div>
       </div>
       <div class="system-window" style="animation-delay: 1s">
-        <div class="system-text">"We've been watching! You're all so... small! And hungry!"</div>
+        <div class="system-text">"Okay! So! Here's what's happening! You're on a show! Survive! Be interesting!"</div>
       </div>
       <div class="system-window" style="animation-delay: 2s">
+        <div class="system-text">"Oh! And we noticed some of you are... hungry? We'll look into that! Probably! Anyway!"</div>
+      </div>
+      <div class="system-window" style="animation-delay: 3s">
         <div class="system-text">Your journal shimmers. It becomes... interface.</div>
       </div>
       <button class="btn" id="b-arrival-ok" style="margin-top: 20px; z-index: 1001;">...what?</button>
