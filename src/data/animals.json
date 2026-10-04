@@ -1,6 +1,7 @@
 [
   {
     "id": "cottontail_rabbit",
+    "activity": "crepuscular",
     "name": "Cottontail Rabbit",
     "scientific": "Sylvilagus floridanus",
     "biomes": [
@@ -23,6 +24,7 @@
   },
   {
     "id": "gray_squirrel",
+    "activity": "diurnal",
     "name": "Gray Squirrel",
     "scientific": "Sciurus carolinensis",
     "biomes": [
@@ -45,6 +47,7 @@
   },
   {
     "id": "white_tailed_deer",
+    "activity": "crepuscular",
     "name": "White-tailed Deer",
     "scientific": "Odocoileus virginianus",
     "biomes": [
@@ -67,6 +70,7 @@
   },
   {
     "id": "creek_chub",
+    "activity": "both",
     "name": "Creek Chub",
     "scientific": "Semotilus atromaculatus",
     "biomes": [
@@ -89,6 +93,7 @@
   },
   {
     "id": "wild_turkey",
+    "activity": "diurnal",
     "name": "Wild Turkey",
     "scientific": "Meleagris gallopavo",
     "biomes": [
@@ -111,6 +116,7 @@
   },
   {
     "id": "opossum",
+    "activity": "nocturnal",
     "name": "Virginia Opossum",
     "scientific": "Didelphis virginiana",
     "biomes": [
@@ -133,6 +139,7 @@
   },
   {
     "id": "bullfrog",
+    "activity": "nocturnal",
     "name": "American Bullfrog",
     "scientific": "Lithobates catesbeianus",
     "biomes": [
@@ -155,6 +162,7 @@
   },
   {
     "id": "box_turtle",
+    "activity": "diurnal",
     "name": "Eastern Box Turtle",
     "scientific": "Terrapene carolina",
     "biomes": [
@@ -176,6 +184,7 @@
   },
   {
     "id": "gray_fox",
+    "activity": "nocturnal",
     "name": "Gray Fox",
     "scientific": "Urocyon cinereoargenteus",
     "biomes": [
@@ -198,6 +207,7 @@
   },
   {
     "id": "crayfish",
+    "activity": "nocturnal",
     "name": "Rusty Crayfish",
     "scientific": "Faxonius rusticus",
     "biomes": [
@@ -220,6 +230,7 @@
   },
   {
     "id": "raccoon",
+    "activity": "nocturnal",
     "name": "Raccoon",
     "scientific": "Procyon lotor",
     "biomes": [
@@ -241,6 +252,7 @@
   },
   {
     "id": "snapping_turtle",
+    "activity": "both",
     "name": "Common Snapping Turtle",
     "scientific": "Chelydra serpentina",
     "biomes": [

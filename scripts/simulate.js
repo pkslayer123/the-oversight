@@ -98,10 +98,18 @@ function greedyPart() {
   // forage here if worth it
   // work what's in front of you — walking past food to find better food is how you starve
   if (tile.stock > 0 && tile.type !== 'haven' && tile.type !== 'ruin') {
-    Game.doAction('forage'); return;
+    // BOT FIX (2026-10-04): if forage fails (nothing in reach), step to a
+    // random adjacent cell (1 tick) to find the plants — retrying forever
+    // livelocks the sim and measures nothing.
+    if (Game.doAction('forage')) return;
+    const mx = Game.state.scholar.mx, my = Game.state.scholar.my;
+    Game.microMove(
+      Math.max(0, Math.min(8, mx + Math.floor(Math.random() * 3) - 1)),
+      Math.max(0, Math.min(8, my + Math.floor(Math.random() * 3) - 1)));
+    return;
   }
   // ruin with loot → scavenge
-  if (tile.type === 'ruin' && (tile.loot || []).length) { Game.doAction('forage'); return; }
+  if (tile.type === 'ruin' && (tile.loot || []).length) { if (Game.doAction('forage')) return; }
   // move to best tile
   const b = bestTile();
   if (b) { Game.travelTo(b.x, b.y); return; }

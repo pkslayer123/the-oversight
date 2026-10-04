@@ -3457,5 +3457,314 @@
       "I'm running on fumes and spite at this point. Mostly spite.",
       "Remind me why we do all this walking. Oh right. Food. Carry on."
     ]
+  },
+  "convo": {
+    "questions": [
+      {
+        "id": "q_origin",
+        "minTrust": 0,
+        "q": "Where are you from — originally? Before all this.",
+        "answers": [
+          {
+            "id": "a_tell",
+            "label": "Tell them where you're from.",
+            "react": "Nods slowly. \"{region}. I'll remember that. Everybody's from somewhere that isn't here.\""
+          },
+          {
+            "id": "a_vague",
+            "label": "\"Far from here. Doesn't matter now.\"",
+            "react": "\"Fair. We're all from 'before' now, I guess.\" They don't push."
+          },
+          {
+            "id": "a_deflect",
+            "label": "Deflect — \"I'd rather not say.\"",
+            "react": "A pause. \"Okay.\" Something shutters, just slightly. They wanted to know you."
+          }
+        ],
+        "recall": "You told me you're from {region}. Do you think about it much?"
+      },
+      {
+        "id": "q_plan",
+        "minTrust": 10,
+        "q": "So what's your plan here? Just... get through it?",
+        "answers": [
+          {
+            "id": "a_survive",
+            "label": "\"One day at a time.\"",
+            "react": "\"Honest. I can work with honest.\""
+          },
+          {
+            "id": "a_lead",
+            "label": "\"Keep this group alive. All of us.\"",
+            "react": "Studies you. \"That's a big promise. I'll hold you to the good parts of it.\""
+          },
+          {
+            "id": "a_find",
+            "label": "\"Figure out what happened. Why.\"",
+            "react": "\"The why. Yeah. I think about that at night too.\""
+          },
+          {
+            "id": "a_quiet",
+            "label": "\"Haven't decided yet.\"",
+            "react": "\"Nobody's decided. We're all improvising. Don't let the confident ones fool you.\""
+          }
+        ],
+        "recall": null
+      },
+      {
+        "id": "q_scared",
+        "minTrust": 10,
+        "when": "scared",
+        "q": "Are you scared? Honestly.",
+        "answers": [
+          {
+            "id": "a_yes",
+            "label": "\"Terrified. You?\"",
+            "react": "A shaky laugh. \"Yeah. Yeah, me too. Glad it's not just me.\""
+          },
+          {
+            "id": "a_no",
+            "label": "\"Fear's a luxury I can't afford.\"",
+            "react": "\"Must be nice.\" Said flat. Not mean — just tired."
+          },
+          {
+            "id": "a_honest",
+            "label": "\"Sometimes. At night, mostly.\"",
+            "react": "\"Nights are the worst. The quiet has teeth.\""
+          }
+        ],
+        "recall": null
+      },
+      {
+        "id": "q_miss",
+        "minTrust": 20,
+        "q": "What do you miss most? From before.",
+        "answers": [
+          {
+            "id": "a_food",
+            "label": "\"A real hot meal.\"",
+            "react": "\"God. Yes. I dream about soup. Actual soup, with a spoon.\""
+          },
+          {
+            "id": "a_people",
+            "label": "\"My people.\"",
+            "react": "Quiet. \"Yeah. Me too. The specific ones.\""
+          },
+          {
+            "id": "a_quiet",
+            "label": "\"Feeling safe.\"",
+            "react": "\"Safety. I forgot what that even felt like until you said it.\""
+          },
+          {
+            "id": "a_home",
+            "label": "\"Home. The place itself.\"",
+            "react": "\"The smell of it. I can almost get there and then it's gone.\""
+          }
+        ],
+        "recall": null
+      },
+      {
+        "id": "q_trust",
+        "minTrust": 45,
+        "q": "Can I trust you? I mean really.",
+        "answers": [
+          {
+            "id": "a_earn",
+            "label": "\"I hope to earn it.\"",
+            "react": "\"That's the right answer. The wrong one would've been 'yes' too fast.\""
+          },
+          {
+            "id": "a_actions",
+            "label": "\"Watch what I do.\"",
+            "react": "\"I have been. That's why I'm asking.\""
+          },
+          {
+            "id": "a_yes",
+            "label": "\"Yes.\"",
+            "react": "Holds your gaze. \"Okay. I'm choosing to believe that.\""
+          }
+        ],
+        "recall": "You told me to watch what you do. I have been. So far, so good."
+      },
+      {
+        "id": "q_think",
+        "minTrust": 10,
+        "q": "What do you make of all this? Really.",
+        "answers": [
+          {
+            "id": "a_end",
+            "label": "\"The world's ended. We're what's left.\"",
+            "react": "\"Bleak. Probably true. I keep looking for the part where it's not.\""
+          },
+          {
+            "id": "a_test",
+            "label": "\"Something's testing us.\"",
+            "react": "Goes still. \"I've thought that too. I don't like thinking it.\""
+          },
+          {
+            "id": "a_chance",
+            "label": "\"A second chance. Maybe.\"",
+            "react": "\"A second chance. I want to believe that. Some days I do.\""
+          }
+        ],
+        "recall": null
+      }
+    ],
+    "exits": {
+      "warm": [
+        "\"Anyway. I'm glad we talked. Really.\"",
+        "\"I should get back to it — but this was nice.\""
+      ],
+      "gentle": [
+        "\"Thanks for listening. I mean that.\"",
+        "\"I should go. Take care of yourself, okay?\""
+      ],
+      "bold": [
+        "\"Right. Back to it.\"",
+        "\"Good talk. Don't be a stranger.\""
+      ],
+      "prickly": [
+        "\"That's enough talking for me.\"",
+        "\"Anyway. I've got things to do.\""
+      ],
+      "withdrawn": [
+        "\"I... should go.\"",
+        "\"Thanks. I'll — yeah. Going now.\""
+      ],
+      "cautious": [
+        "\"Well. We'll see how it goes.\"",
+        "\"I should get back. Stay sharp out there.\""
+      ],
+      "steady": [
+        "\"Alright. Back to work.\"",
+        "\"Good talking. We'll figure it out.\""
+      ],
+      "restless": [
+        "\"Okay! Moving again. Can't sit still.\"",
+        "\"Right — things to do, always things to do.\""
+      ],
+      "dry": [
+        "\"Well. That was conversation.\"",
+        "\"Right then. Back to the business of surviving.\""
+      ],
+      "intense": [
+        "\"Think about what I said.\"",
+        "\"We're done here. For now.\""
+      ],
+      "grieving": [
+        "\"Sorry. I need a minute.\"",
+        "\"Thanks. I just... need some air.\""
+      ],
+      "scared": [
+        "\"I should — I need to keep moving. Sitting still is worse.\"",
+        "\"Okay. Okay. Back to it.\""
+      ]
+    },
+    "exhausted": [
+      "\"I've told you everything I know about that.\"",
+      "\"That's all I've got on that one. For now.\"",
+      "\"I keep turning it over and there's nothing new in it.\"",
+      "\"Ask me again in a few days. Maybe I'll have a better answer by then.\""
+    ],
+    "silence": {
+      "warm": "\"Hey, quiet's fine too. I'm not going anywhere.\"",
+      "gentle": "They sit with the quiet a moment. \"It's okay. You don't have to talk.\"",
+      "bold": "\"Strong silent type, huh? I can respect that.\"",
+      "prickly": "\"...Right. Well. This is comfortable.\"",
+      "withdrawn": "They look relieved, honestly. Quiet people recognize each other.",
+      "dry": "\"A conversationalist. Truly.\"",
+      "intense": "They watch you. Waiting. The silence stretches — they don't break first.",
+      "steady": "\"Sometimes there's nothing to say. That's fine.\"",
+      "cautious": "\"You don't trust easy. Noted. Not a criticism.\"",
+      "restless": "\"Okay! Quiet it is. I'm going to fidget, fair warning.\""
+    },
+    "jokeReacts": {
+      "warm": "Laughs — real, surprised. \"Okay, I needed that.\"",
+      "gentle": "Smiles, soft. \"You're funny. Don't let it go to your head.\"",
+      "bold": "Barks a laugh. \"Ha! Alright, alright.\"",
+      "dry": "\"Adequate. I've heard worse. From professionals.\"",
+      "prickly": "Almost smiles. Catches themself. \"...That was almost funny.\"",
+      "grieving": "Doesn't laugh — but something eases, a fraction. \"Thanks for trying.\"",
+      "scared": "A shaky giggle escapes. \"Don't — okay, that helped a little.\"",
+      "default": "A short laugh. The tension drops a notch."
+    },
+    "agreeReacts": {
+      "warm": "\"Yeah? Yeah. I'm glad you see it too.\"",
+      "bold": "\"Damn right.\"",
+      "prickly": "\"Well. At least someone's paying attention.\"",
+      "intense": "\"Good. Then we understand each other.\"",
+      "dry": "\"Consensus. How novel.\"",
+      "default": "Nods. \"Yeah.\""
+    },
+    "goalFollow": {
+      "lead": [
+        "\"It's not about power. It's about — someone has to decide, and I'd rather it be someone who'll lose sleep over it.\"",
+        "\"I watch how people look at you. Some of them are waiting for an alternative. I'm just saying.\""
+      ],
+      "family": [
+        "\"Her name was — is — Lena. She'd laugh at me for saying 'was'. She's fine. She has to be fine.\"",
+        "\"If I ever get a real lead I'm gone that same day. I need you to know that about me.\""
+      ],
+      "prove": [
+        "\"Back home nobody noticed me. Here — here I could be someone. I need that to be true.\"",
+        "\"Just... if you see me do something well, say so. I know how that sounds. I don't care.\""
+      ],
+      "alone": [
+        "\"People are a lot. Even good people. Especially good people, some days.\"",
+        "\"Don't take it personally if I disappear for a while. It's how I recharge.\""
+      ],
+      "feed": [
+        "\"Hungry people get mean. Scared people get mean. Fed people can think. It's that simple.\"",
+        "\"My grandmother fed the whole street during the bad year. I'm just... continuing the policy.\""
+      ],
+      "understand": [
+        "\"The sky changed and nobody knows why. That is unacceptable to me personally.\"",
+        "\"I collect details. Little ones. Someday they'll add up to something. They have to.\""
+      ],
+      "protect": [
+        "\"I couldn't protect — before. Not going to happen again. Not on my watch.\"",
+        "\"If something comes through those trees, I want to be the one standing between it and everyone else.\""
+      ],
+      "escape": [
+        "\"There's a place. I don't know where. But this — all this — isn't it.\"",
+        "\"I dream about roads. Just roads, going somewhere. Woke up crying once. Don't tell anyone.\""
+      ],
+      "remember": [
+        "\"I had a life. A name people knew. I need to hold the shape of it.\"",
+        "\"Tell me something you remember about before. Anything. I collect them.\""
+      ],
+      "belong": [
+        "\"I've never really fit anywhere. Maybe here. Maybe this is the place.\"",
+        "\"Just... include me. In things. That's all I want.\""
+      ],
+      "survive": [
+        "\"Whatever it costs. I've decided. Some people haven't decided yet — that's what'll kill them.\"",
+        "\"I do what needs doing. The math is simple: alive is better.\""
+      ],
+      "heal": [
+        "\"Everything's broken. People, things. I fix what I can reach.\"",
+        "\"You look tired. Everyone looks tired. Sit down a minute — no, I'm serious.\""
+      ]
+    },
+    "pastFollow": [
+      "\"{occ}. Day in, day out. I was good at it, too — not that it matters now. ...It matters a little.\"",
+      "\"{origin}. I wonder if it's still there. If 'there' even means anything anymore.\"",
+      "\"Funny what skills transfer. {occ} taught me {skill} — turns out that's useful when the world ends.\""
+    ],
+    "plansFollow": [
+      "\"Tomorrow? Same as today, probably. Keep breathing, keep moving. The bar is low and I intend to clear it.\"",
+      "\"I want to be useful. Find the thing I'm good at here and just... do it until it matters.\"",
+      "\"Honestly? I try not to plan past dinner. Plans feel like tempting fate.\""
+    ],
+    "openers": [
+      "\"Hey. Got a minute? It's not important. I just — wanted to talk to someone.\"",
+      "\"You look like you're thinking hard. Dangerous habit out here.\"",
+      "\"I was just thinking about before. Sorry. It's a bad habit. How are you holding up?\""
+    ],
+    "reopeners": [
+      "\"Back again? Alright. What's on your mind?\"",
+      "\"Oh — hey. I was just thinking about what you said earlier.\"",
+      "\"Hey. Got another minute?\""
+    ]
   }
 }

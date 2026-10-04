@@ -58,12 +58,16 @@
     //   (NPC batch + needs + gossip) without consuming your action budget.
     // - Combat switches to strict turn-based (separate system, untouched).
     TIME: {
-      NPC_BATCH_MOVES: 32,   // your squares within a node before NPCs batch
+      // THE ACTION CLOCK. One clock; everything you do moves it forward.
+      // 1 tick ≈ a moment (a step, a glance, a sip, a word).
+      // 32 ticks = 1 chunk ≈ half an hour of sustained work.
+      TICKS_PER_BATCH: 32,   // every 32 ticks, NPCs take a batch turn (they act)
+      TICKS_PER_PART: 128,   // one day-part = 128 ticks of living
+      TICKS_PER_DAY: 512,    // the day's full budget: 4 parts × 128 ticks
+      TRAVEL_TICKS: 32,      // node travel = 32 ticks (a "bigger tick")
       NPC_BATCH_WANDER: 8,   // base wander squares per NPC per batch (× speed)
       PLAYER_SPEED: 1.0,     // baseline: your speed. NPC speed is relative.
-      // Node travel doesn't cost a day-part (see travelTimeStep). It moves
-      // the world: NPC batch + needs tick + one gossip hop. Tunable via
-      // npcBatchTurn and tickNeeds, not a separate constant.
+      NPC_BATCH_MOVES: 32,   // deprecated alias — use TICKS_PER_BATCH
     },
 
     async init() {
@@ -813,6 +817,7 @@
         this.state.codex.recipes['snare'] = { level: 3 };
       }
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
+      this.state.scholar.dayTicks = 0; this.state.scholar.actionClock = 0; // action clock: fresh budget
       this.villageLost = false; this.wanderer = null; this.fight = null; this.pendingEncounter = false;
       this.encounterDone = false; this.log = [];
       this.location = 'village'; this.departed = false;
@@ -825,114 +830,526 @@
 
     // --- village: people to talk to, things to do ---
     talkTo(vid) {
-      // villagers = generated chars (in data.villagers). background survivors have
-      // one-liners in data.background_survivors — they're talkable too.
-      const v = this.data.villagers.find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid);
-      const lines = (v && v.talk && v.talk.length) ? v.talk : (v && v.line ? [v.line] : null);
-      if (!v || !lines) return null;
-      // TALKING COSTS ENERGY. socializing is work — 20 kcal.
-      // (prevents infinite free diplomat-XP farming)
+      // Legacy entry: now opens a real conversation, returns the opening line.
+      const st = this.startConvo(vid);
+      return st ? st.line : null;
+    },
+
+    // ============ CONVERSATIONS ============
+    // Real back-and-forth dialogue. The player always has response choices —
+    // never just "continue". NPCs ask questions back, remember your answers,
+    // and every conversation has a shape: opening, development, natural end.
+    // No repeats: said lines are tracked per thread; exhausted threads admit
+    // it honestly instead of looping.
+
+    vpOf(vid) {
+      return (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+    },
+
+    convoGet(vid) {
+      const v = this.state.village;
+      v.conv = v.conv || {};
+      if (!v.conv[vid]) v.conv[vid] = {
+        active: false, exchanges: 0, budget: 4, thread: null, depth: 0,
+        said: {}, transcript: [], pendingQ: null, askedQs: [],
+        answered: {}, recalled: {}, lastDay: -1, count: 0, over: false,
+        offeredHelp: false,
+      };
+      return v.conv[vid];
+    },
+
+    convoBudget(vid) {
+      const temp = this.npcTemper(vid);
+      const n = this.npcNeeds(vid);
+      let b = 4;
+      if ((n.social || 0) > 70) b += 1;
+      if (temp === 'warm' || temp === 'gentle') b += 1;
+      if (temp === 'withdrawn' || temp === 'prickly' || temp === 'restless') b -= 1;
+      return Math.max(2, Math.min(6, b));
+    },
+
+    // convoPick: no repeats, ever. Tracks by line TEXT (not index), so it
+    // stays correct even when the pool's composition shifts with mood/rep.
+    // Filters against EVERYTHING ever said to this villager — a line used in
+    // one thread never resurfaces in another.
+    // Returns the line, or null when the pool is genuinely exhausted.
+    convoPick(vid, key, pool) {
+      const c = this.convoGet(vid);
+      c.said[key] = c.said[key] || [];
+      const allSaid = [];
+      for (const k of Object.keys(c.said)) for (const l of c.said[k]) allSaid.push(l);
+      const fresh = (pool || []).filter(l => allSaid.indexOf(l) === -1);
+      if (!fresh.length) return null;
+      const line = fresh[Math.floor(Math.random() * fresh.length)];
+      c.said[key].push(line);
+      return line;
+    },
+
+    // convoPickCycle: like convoPick, but generic pools (exits, "told you
+    // everything") are allowed to cycle rather than fall back to one fixed
+    // string — the order still varies, so it never feels like a loop.
+    convoPickCycle(vid, key, pool) {
+      let l = this.convoPick(vid, key, pool);
+      if (l == null) {
+        this.convoGet(vid).said[key] = [];
+        l = this.convoPick(vid, key, pool);
+      }
+      return l;
+    },
+
+    convoOpening(vid) {
+      const cg = (this.data.characterGen || {}).convo || {};
+      const v = this.state.village;
+      const c = this.convoGet(vid);
+      const trust = (v.trust || {})[vid] || 10;
+      const temp = this.npcTemper(vid);
+      const mood = this.npcMood(vid);
+      const goal = this.npcGoal(vid);
+      const goalDef = (this.data.characterGen.goals || []).find(g => g.id === goal);
+      const vp = this.vpOf(vid);
+
+      // 1. THEY asked to talk — their reason leads, once.
+      const treq = (v.talkRequests || {})[vid];
+      if (treq && !treq.delivered) {
+        treq.delivered = true;
+        return { line: String(treq.line).replace(/ \(Talk to .*?\.\)$/, ''), thread: 'request' };
+      }
+      // 2. They remember what you told them. Being remembered feels real.
+      if (c.answered.q_origin === 'a_tell' && !c.recalled.q_origin) {
+        const qd = (cg.questions || []).find(q => q.id === 'q_origin');
+        c.recalled.q_origin = true;
+        if (qd && qd.recall) {
+          const region = (this.state.scholar || {}).homeRegion || 'wherever you said';
+          return { line: qd.recall.replaceAll('{region}', region), thread: 'recall' };
+        }
+      }
+      if (c.answered.q_trust && !c.recalled.q_trust) {
+        const qd = (cg.questions || []).find(q => q.id === 'q_trust');
+        c.recalled.q_trust = true;
+        if (qd && qd.recall) return { line: qd.recall, thread: 'recall' };
+      }
+      // 3. The village's weather is the elephant in the room.
+      if ((v.grief || 0) > 0) {
+        const l = this.convoPick(vid, 'grief', [
+          '"Have you — sorry. I keep thinking about them."',
+          '"It\'s quiet today. Wrong kind of quiet."',
+        ]);
+        if (l) return { line: l, thread: 'grief' };
+      }
+      if ((v.cheer || 0) > 0 && Math.random() < 0.5) {
+        const l = this.convoPick(vid, 'cheer', [
+          '"Good day, huh? Almost feels normal."',
+          '"People are smiling. I forgot what that looked like."',
+        ]);
+        if (l) return { line: l, thread: 'cheer' };
+      }
+      // 4. What they want — if they trust you enough to say it.
+      const shareAt = temp === 'withdrawn' ? 60 : temp === 'prickly' ? 50
+        : (temp === 'warm' || temp === 'gentle') ? 25 : 35;
+      if (goalDef && trust >= shareAt) {
+        const l = this.convoPick(vid, 'goal', goalDef.lines || []);
+        if (l) return { line: this.fillTalkLine(l, vp), thread: 'goal' };
+      }
+      // 5. Contextual small talk — mood, temperament, reputation. Never repeated.
+      const pool = [];
+      const push = (arr, w) => { for (const x of (arr || [])) for (let i = 0; i < (w || 1); i++) pool.push(x); };
+      push((this.data.characterGen.moodTalk || {})[mood], (mood === 'grieving' || mood === 'scared') ? 3 : 1);
+      push((this.data.characterGen.temperamentTalk || {})[temp], 2);
+      push(this.repTalkLines(vid), 2);
+      push((this.data.characterGen.talkTemplates || []).slice(0, 8), 1);
+      if (!pool.length) push(cg.openers || ['"Hey."'], 1);
+      const l = this.convoPick(vid, 'small', pool);
+      if (l) return { line: this.fillTalkLine(l, vp), thread: 'small' };
+      // 6. Truly nothing new — said like a person, not a loop.
+      const ex = this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know."']);
+      return { line: ex || '"Good to just be around people."', thread: 'small' };
+    },
+
+    convoThreadHasMore(vid) {
+      const c = this.convoGet(vid);
+      const cg = (this.data.characterGen || {}).convo || {};
+      const t = c.thread;
+      if (t === 'goal') {
+        const goal = this.npcGoal(vid);
+        const lines = (cg.goalFollow || {})[goal] || [];
+        const said = c.said.goaldeep || [];
+        return said.length < lines.length;
+      }
+      if (t === 'past') {
+        const said = c.said.pastdeep || [];
+        return said.length < (cg.pastFollow || []).length;
+      }
+      if (t === 'plans') {
+        const said = c.said.plansdeep || [];
+        return said.length < (cg.plansFollow || []).length;
+      }
+      return false;
+    },
+
+    convoThreadBeat(vid) {
+      // The next beat in the current thread, or null when it's honestly done.
+      const c = this.convoGet(vid);
+      const cg = (this.data.characterGen || {}).convo || {};
+      const vp = this.vpOf(vid);
+      const t = c.thread;
+      let l = null;
+      if (t === 'goal') {
+        const goal = this.npcGoal(vid);
+        l = this.convoPick(vid, 'goaldeep', (cg.goalFollow || {})[goal] || []);
+      } else if (t === 'past') {
+        l = this.convoPick(vid, 'pastdeep', cg.pastFollow || []);
+      } else if (t === 'plans') {
+        l = this.convoPick(vid, 'plansdeep', cg.plansFollow || []);
+      }
+      if (!l) return null;
+      c.depth++;
+      return this.fillTalkLine(l, vp);
+    },
+
+    convoAskTopic(vid, topic) {
+      // Ask about something specific. Threads develop; pools never repeat.
+      // One topic per conversation — re-asking gets an honest deflection.
+      const c = this.convoGet(vid);
+      const cg = (this.data.characterGen || {}).convo || {};
+      const exh = () => this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know about that."']);
+      c.askedTopics = c.askedTopics || [];
+      if (c.askedTopics.indexOf(topic) !== -1) return exh();
+      c.askedTopics.push(topic);
+      const vp = this.vpOf(vid);
+      if (topic === 'goal') {
+        const goal = this.npcGoal(vid);
+        const goalDef = (this.data.characterGen.goals || []).find(g => g.id === goal);
+        const l = this.convoPick(vid, 'goal', (goalDef && goalDef.lines) || []);
+        this.state.village.goalsKnown = this.state.village.goalsKnown || {};
+        this.state.village.goalsKnown[vid] = goal;
+        this.remember(vid, 'shared_goal', goal || 'unknown');
+        c.thread = 'goal'; c.depth = 1;
+        return l ? this.fillTalkLine(l, vp) : exh();
+      }
+      if (topic === 'past') {
+        const pool = (this.data.characterGen.talkTemplates || [])
+          .filter(s => s.indexOf('{occ}') !== -1 || s.indexOf('{origin}') !== -1);
+        const l = this.convoPick(vid, 'past', pool.length ? pool : ['"Before? I was {occ}. Feels like someone else\'s life."']);
+        c.thread = 'past'; c.depth = 1;
+        return l ? this.fillTalkLine(l, vp) : exh();
+      }
+      if (topic === 'village') {
+        const vg = this.state.village;
+        const bits = [];
+        if ((vg.grief || 0) > 0) bits.push("everyone's quiet since the loss");
+        if ((vg.cheer || 0) > 0) bits.push('people are in good spirits');
+        const hungry = (vg.roster || []).filter(id => id !== this.villagerId && (this.npcNeeds(id).hunger || 0) > 70).length;
+        if (hungry > 2) bits.push(hungry + ' people are going hungry');
+        const scared = (vg.roster || []).filter(id => id !== this.villagerId && (this.npcNeeds(id).fear || 0) > 70).length;
+        if (scared > 2) bits.push('people are scared');
+        const heat = Object.values(vg.heat || {}).filter(h => h > 0).length;
+        if (heat) bits.push("there's tension about who's in charge");
+        const line = bits.length ? bits.join('; ') + '.' : this.convoPickCycle(vid, 'villageidle', [
+          'holding together, somehow.',
+          'tired, but nobody\'s giving up. That counts for a lot.',
+          'quiet. People keeping to themselves, mostly.',
+          'better than yesterday. Worse than tomorrow, probably.',
+        ]);
+        const fullLine = '"Honestly? ' + line + '"';
+        // Village news can repeat when nothing changed — say it differently.
+        c.said.villagelines = c.said.villagelines || [];
+        if (c.said.villagelines.indexOf(fullLine) !== -1) {
+          c.thread = 'village'; c.depth = 1;
+          return '"Honestly? ' + this.convoPickCycle(vid, 'villageidle', [
+            'same as before, mostly.',
+            'no big changes. That\'s good news, out here.',
+            'still standing. Ask me tomorrow.',
+          ]) + '"';
+        }
+        c.said.villagelines.push(fullLine);
+        c.thread = 'village'; c.depth = 1;
+        return fullLine;
+      }
+      if (topic === 'plans') {
+        const l = this.convoPick(vid, 'plansdeep', cg.plansFollow || []);
+        c.thread = 'plans'; c.depth = 1;
+        return l ? this.fillTalkLine(l, vp) : exh();
+      }
+      return null;
+    },
+
+    convoChoices(vid) {
+      const c = this.convoGet(vid);
+      const choices = [];
+      // Answering their question comes first — it's rude to ignore it.
+      if (c.pendingQ) {
+        for (const a of c.pendingQ.answers) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: a.label });
+        choices.push({ id: 'deflect_q', label: '(avoid the question)' });
+        choices.push({ id: 'leave', label: '"I should go."' });
+        return choices;
+      }
+      if (c.thread === 'nonverbal') {
+        return [
+          { id: 'nv:nod', label: '(nod slowly)' },
+          { id: 'nv:smile', label: '(smile)' },
+          { id: 'nv:pointself', label: '(point: you, them, together)' },
+          { id: 'leave', label: '(walk away)' },
+        ];
+      }
+      if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
+      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
+      const asked = c.askedTopics || [];
+      const asks = [];
+      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1) asks.push({ id: 'ask:goal', label: '"What do you want? Out of all this."' });
+      if (asked.indexOf('past') === -1) asks.push({ id: 'ask:past', label: '"What did you do — before?"' });
+      if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: '"How\'s everyone holding up?"' });
+      if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: '"What\'s your plan for tomorrow?"' });
+      for (const a of asks) if (a.id !== threadAsk && choices.length < 4) choices.push(a);
+      if (this.goalKnown(vid) && !c.offeredHelp && choices.length < 5) choices.push({ id: 'offer_help', label: '"I could help with that."' });
+      const reacts = [
+        { id: 'agree', label: '"You\'re right."' },
+        { id: 'joke', label: '(crack a joke)' },
+        { id: 'silence', label: '(say nothing)' },
+      ];
+      if (choices.length < 5) choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
+      if (c.thread && c.thread !== 'small' && choices.length < 5) choices.push({ id: 'subject', label: '"Actually — different subject."' });
+      choices.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
+      return choices;
+    },
+
+    startConvo(vid) {
+      const vp = this.vpOf(vid);
+      if (!vp || !vp.id) return null;
+      const v = this.state.village;
+      const c = this.convoGet(vid);
+      c.active = true; c.exchanges = 0; c.budget = this.convoBudget(vid);
+      c.thread = null; c.depth = 0; c.transcript = []; c.pendingQ = null;
+      c.over = false; c.offeredHelp = false; c.askedTopics = [];
+      c.qAskedThisConvo = false;
+      c.count++; c.lastDay = this.state.scholar.day;
+      // TALKING COSTS ENERGY — 20 kcal per conversation, not per line.
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 20);
+      // ACTION CLOCK: a real conversation takes 2 ticks (time-only — talking barely burns calories).
+      // ENGAGEMENT: they're talking with you now — batch turns won't wander them off.
+      this.tickAction(2);
+      this.setEngaged(vid, 2);
       if (this.state.scholar.week1) this.state.scholar.week1.talk++;
       this.notePlaystyle('social');
       this.gainAbilityXP('diplomat', 1);
-      // LANGUAGE: the barrier is discovered in conversation, never listed on a roster.
-      // Shared language = normal. A few words = halved. None = quarter + misunderstandings.
+      // LANGUAGE: the barrier is discovered in conversation, never listed.
       const comm = this.commLevel(vid);
-      const village = this.state.village;
-      const firstMet = !(village.met || {})[vid];
-      village.met = village.met || {}; village.met[vid] = true;
+      const firstMet = !(v.met || {})[vid];
+      v.met = v.met || {}; v.met[vid] = true;
       if (firstMet && comm.level !== 'full') {
         const langName = ((this.data.characterGen || {}).languages || []).find(l => l.id === comm.lang);
         const label = langName ? `${langName.icon} ${langName.name}` : comm.lang;
         this.say(`...and then it lands: ${this.displayName(vid)} speaks ${label}. ${comm.level === 'partial' ? 'A few shared words. Gestures. Patience.' : 'You share no language at all.'}`);
       }
-      // NAMES ARE EARNED SOCIALLY: first real conversation, they tell you —
-      // but only if you share enough language for an introduction.
-      if (firstMet && !this.state.systemArrived && comm.level !== 'none') {
-        this.revealName(vid, 'intro');
-      }
-      // DIALOGUE: character-driven, never repeated until the pool is exhausted.
-      // Who they are (temperament), what they want (goal), how they feel (mood),
-      // and what they think of YOU (reputation) all shape what they say.
-      // A grieving person doesn't crack jokes. A bold person doesn't hedge.
-      const pool = [];
-      const pushLines = (arr, weight) => {
-        for (const l of (arr || [])) for (let i = 0; i < (weight || 1); i++) pool.push(l);
-      };
-      pushLines(lines, 2);
-      const goalDef = (this.data.characterGen.goals || []).find(g => g.id === this.npcGoal(vid));
-      pushLines(goalDef && goalDef.lines, 3);
-      pushLines((this.data.characterGen.temperamentTalk || {})[this.npcTemper(vid)], 2);
-      const moodNow = this.npcMood(vid);
-      pushLines((this.data.characterGen.moodTalk || {})[moodNow], (moodNow === 'grieving' || moodNow === 'scared') ? 3 : 1);
-      pushLines(this.repTalkLines(vid), 2);
-      this.state.talkSaid = this.state.talkSaid || {};
-      const said = this.state.talkSaid[vid] || (this.state.talkSaid[vid] = []);
-      let fresh = pool.filter(l => !said.includes(l));
-      if (!fresh.length) { said.length = 0; fresh = pool.slice(); }
-      let line = fresh[Math.floor(Math.random() * fresh.length)];
-      said.push(line);
-      line = this.fillTalkLine(line, v);
-      // THEY asked to talk: their reason leads the conversation, once.
-      const treq = (village.talkRequests || {})[vid];
-      if (treq && !treq.delivered) {
-        treq.delivered = true;
-        line = treq.line.replace(/ \(Talk to .*?\.\)$/, '');
-      }
-      if (comm.level === 'none' && Math.random() < 0.35) {
-        const cg = this.data.characterGen || {};
-        const tmps = cg.misunderstandTemplates || ['{first} smiles and nods.'];
-        const langName = ((cg.languages || []).find(l => l.id === comm.lang) || {}).name || comm.lang;
-        line = tmps[Math.floor(Math.random() * tmps.length)].replaceAll('{first}', this.displayName(vid)).replaceAll('{lang}', langName);
-      }
+      // NAMES ARE EARNED SOCIALLY — but only with enough shared language.
+      if (firstMet && !this.state.systemArrived && comm.level !== 'none') this.revealName(vid, 'intro');
+      if (firstMet && !this.state.systemArrived && comm.level === 'none') this.revealName(vid, 'gesture');
       // ALIVE: talking eases loneliness — for them, not just you.
       try { this.npcNeeds(vid).social = Math.max(0, this.npcNeeds(vid).social - 40); } catch (e) {}
-      // trust builds through talking. strangers warm up slowly.
-      // WORDS ONLY GO SO FAR: talk caps at 40. beyond that, do something real.
-      // diplomat: the System's gift. L1 2x trust, L2 3x (still capped at 40).
-      const dipLvl = this.abilityLevel('diplomat');
-      const dipMult = dipLvl >= 2 ? 3 : dipLvl >= 1 ? 2 : 1;
-      const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
-      // hoarder/chitin_skin/fear_aura: people notice. Trust gains shrink.
-      // language: without shared words, trust builds at quarter speed. Gestures only go so far.
-      const tGain = Math.max(1, Math.round(3 * dipMult * this.modTarget('trust.gain_mult', 1) * comm.mult));
-      const newTrust = trust >= 40 ? trust : Math.min(40, trust + tGain);
-      if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
-      // the tone shifts with trust (not the number — you feel it)
-      const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
-      this.say(`${this.displayName(vid)}${tone}: "${line}"`);
-      // they form opinions of you even in small talk — but talk alone
-      // doesn't move trust (the 40-cap rule stands).
+      if (comm.level === 'none') {
+        // No shared language isn't a wall — it's a different conversation.
+        const line = 'No shared words. Just eyes, hands, and patience.';
+        c.thread = 'nonverbal';
+        c.transcript.push({ who: 'them', text: line });
+        this.say(`${this.displayName(vid)}: (no shared words — you communicate in gestures)`);
+        return { line, choices: this.convoChoices(vid), transcript: c.transcript.slice(), ended: false };
+      }
+      const op = this.convoOpening(vid);
+      c.thread = op.thread; c.depth = 1;
+      c.transcript.push({ who: 'them', text: op.line });
+      this.say(`${this.displayName(vid)}: "${op.line}"`);
+      return { line: op.line, choices: this.convoChoices(vid), transcript: c.transcript.slice(), ended: false };
+    },
+
+    convoTurn(vid, choiceId) {
+      const c = this.convoGet(vid);
+      if (!c.active) return null;
+      const cg = (this.data.characterGen || {}).convo || {};
+      const temp = this.npcTemper(vid);
+      const mood = this.npcMood(vid);
+      let line = null, youSaid = null;
+      const done = (l, you) => { line = l; youSaid = you || null; };
+
+      if (choiceId === 'leave') {
+        return this.endConvo(vid, 'left');
+      } else if (choiceId.indexOf('ans:') === 0) {
+        const parts = choiceId.split(':');
+        const qid = parts[1], aid = parts[2];
+        const qd = (cg.questions || []).find(q => q.id === qid);
+        const ad = qd && qd.answers.find(a => a.id === aid);
+        c.answered[qid] = aid;
+        if (c.askedQs.indexOf(qid) === -1) c.askedQs.push(qid);
+        c.pendingQ = null;
+        let react = (ad && ad.react) || '"Huh. Okay."';
+        react = react.replaceAll('{region}', (this.state.scholar || {}).homeRegion || 'there');
+        done(this.fillTalkLine(react, this.vpOf(vid)), ad ? ad.label : null);
+        this.remember(vid, 'you_said', qid + '=' + aid);
+      } else if (choiceId === 'deflect_q') {
+        const qid = c.pendingQ && c.pendingQ.id;
+        c.pendingQ = null;
+        if (qid && c.askedQs.indexOf(qid) === -1) c.askedQs.push(qid);
+        const t = this.state.village.trust || {};
+        t[vid] = Math.max(0, (t[vid] || 10) - 1);
+        done('"Okay." Something shutters, just slightly.', '(avoid the question)');
+      } else if (choiceId === 'more') {
+        const beat = this.convoThreadBeat(vid);
+        done(beat || this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know about that."']), '"Tell me more."');
+      } else if (choiceId.indexOf('ask:') === 0) {
+        const topic = choiceId.slice(4);
+        const labels = { goal: '"What do you want? Out of all this."', past: '"What did you do — before?"', village: '"How\'s everyone holding up?"', plans: '"What\'s your plan for tomorrow?"' };
+        done(this.convoAskTopic(vid, topic), labels[topic] || null);
+      } else if (choiceId === 'offer_help') {
+        c.offeredHelp = true;
+        const l = this.convoPick(vid, 'offerhelp', [
+          '"You\'d do that? ...Thank you. Really."',
+          '"I won\'t forget you said that."',
+          '"Okay. Okay — that means something, you know that?"',
+        ]) || '"Thank you."';
+        const t = this.state.village.trust || {};
+        t[vid] = Math.min(100, (t[vid] || 10) + 2);
+        done(l, '"I could help with that."');
+      } else if (choiceId === 'agree') {
+        const m = cg.agreeReacts || {};
+        done(m[temp] || m.default || '"Yeah."', '"You\'re right."');
+      } else if (choiceId === 'joke') {
+        const m = cg.jokeReacts || {};
+        const key = (mood === 'grieving' || mood === 'scared') ? mood : temp;
+        done(m[key] || m.default || 'A short laugh.', '(crack a joke)');
+        const vg = this.state.village;
+        vg.cheer = Math.max(vg.cheer || 0, 1);
+      } else if (choiceId === 'silence') {
+        const m = cg.silence || {};
+        done(m[temp] || '"..."', '(say nothing)');
+      } else if (choiceId === 'subject') {
+        // Change the subject — to a topic you haven't covered yet.
+        const c2 = this.convoGet(vid);
+        const asked = c2.askedTopics || [];
+        const opts = [];
+        if (!this.goalKnown(vid) && asked.indexOf('goal') === -1) opts.push('goal');
+        if (asked.indexOf('past') === -1) opts.push('past');
+        if (asked.indexOf('village') === -1) opts.push('village');
+        if (asked.indexOf('plans') === -1) opts.push('plans');
+        const nt = opts[Math.floor(Math.random() * opts.length)];
+        const labels = { goal: '"What do you want? Out of all this."', past: '"What did you do — before?"', village: '"How\'s everyone holding up?"', plans: '"What\'s your plan for tomorrow?"' };
+        done(this.convoAskTopic(vid, nt), '"Actually — different subject." ' + (labels[nt] || ''));
+      } else if (choiceId.indexOf('nv:') === 0) {
+        const kind = choiceId.slice(3);
+        const outs = {
+          nod: 'They nod back, slowly. Some understanding passes between you.',
+          smile: 'They smile — surprised, then genuine.',
+          pointself: 'You point at yourself, then at them, then at the fire. Together. They get it.',
+        };
+        const t = this.state.village.trust || {};
+        t[vid] = Math.min(40, (t[vid] || 10) + 1);
+        done(outs[kind] || 'You gesture.', '(gesture)');
+      } else {
+        done('"..."', null);
+      }
+
+      if (youSaid) c.transcript.push({ who: 'you', text: youSaid });
+      c.transcript.push({ who: 'them', text: line });
+      while (c.transcript.length > 8) c.transcript.shift();
+      c.exchanges++;
+      this.say(`${this.displayName(vid)}: "${line}"`);
+
+      // THEY ask YOU things. Conversations go both ways.
+      // First conversation with someone: they're curious about the stranger.
+      // After that, curiosity strikes about 40% of turns.
+      const forceQ = c.count === 1 && !c.qAskedThisConvo;
+      if (!c.pendingQ && c.exchanges >= 1 && (forceQ || Math.random() < 0.4)) {
+        const trust = (this.state.village.trust || {})[vid] || 10;
+        const moodNow = this.npcMood(vid);
+        const cands = (cg.questions || []).filter(q =>
+          c.askedQs.indexOf(q.id) === -1 && trust >= (q.minTrust || 0) &&
+          (!q.when || q.when === moodNow));
+        if (cands.length) {
+          const qd = cands[Math.floor(Math.random() * cands.length)];
+          c.pendingQ = qd;
+          c.qAskedThisConvo = true;
+          c.transcript.push({ who: 'them', text: qd.q });
+          while (c.transcript.length > 8) c.transcript.shift();
+          this.say(`${this.displayName(vid)}: "${qd.q}"`);
+          line = qd.q;
+        }
+      }
+
+      // Natural ending: the conversation has run its course.
+      if (!c.pendingQ && c.exchanges >= c.budget) return this.endConvo(vid, 'natural');
+      return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
+    },
+
+    endConvo(vid, how) {
+      const c = this.convoGet(vid);
+      const cg = (this.data.characterGen || {}).convo || {};
+      const temp = this.npcTemper(vid);
+      const mood = this.npcMood(vid);
+      const first = this.displayName(vid);
+      c.active = false; c.over = true; c.thread = null; c.pendingQ = null;
+      let line;
+      if (how === 'left') {
+        line = this.convoPickCycle(vid, 'leftexit', [
+          '"Oh — okay. Later, then."',
+          '"Sure. I\'ll be around."',
+          '"Right. Go on, then."',
+        ]);
+      } else {
+        const exits = cg.exits || {};
+        const key = (mood === 'grieving' || mood === 'scared') ? mood : temp;
+        const pool = exits[key] || exits.steady || ['"I should go."'];
+        line = this.convoPickCycle(vid, 'exit', pool);
+      }
+      c.transcript.push({ who: 'them', text: line });
+      while (c.transcript.length > 8) c.transcript.shift();
+      // WORDS ONLY GO SO FAR: talk caps at 40. Beyond that, do something real.
+      const t = this.state.village.trust || (this.state.village.trust = {});
+      const cur = t[vid] || 10;
+      t[vid] = cur >= 40 ? cur : Math.min(40, cur + 3);
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
       try { this.checkPromises('social'); } catch (e) {}
-      // OLD WOUNDS: favoritism is noticed. If you're close to one side of a conflict,
-      // the other side keeps score — even if you don't know there's a score being kept.
-      for (const c of (this.state.village.conflicts || [])) {
-        if (c.resolved || (c.a !== vid && c.b !== vid)) continue;
+      this.convoConflictFallout(vid, t[vid]);
+      this.say(`${first}: ${line}`);
+      return { line, choices: [], ended: true, transcript: c.transcript.slice() };
+    },
+
+    convoConflictFallout(vid, newTrust) {
+      // OLD WOUNDS: favoritism is noticed. If you're close to one side of a
+      // conflict, the other side keeps score — even if you don't know there's
+      // a score being kept.
+      for (const cf of (this.state.village.conflicts || [])) {
+        if (cf.resolved || (cf.a !== vid && cf.b !== vid)) continue;
         if (newTrust >= 50) {
-          const other = c.a === vid ? c.b : c.a;
+          const other = cf.a === vid ? cf.b : cf.a;
           const ot = this.state.village.trust;
           ot[other] = Math.max(0, (ot[other] || 10) - 2);
-          const on = ((this.data.villagers || []).find(x => x.id === other) || {}).name || 'someone';
-          if (c.known) this.say(`${this.displayName(other)} saw how close you've gotten to ${this.displayName(vid)}. Old history has long eyes. (-2 trust)`);
+          if (cf.known) this.say(`${this.displayName(other)} saw how close you've gotten to ${this.displayName(vid)}. Old history has long eyes. (-2 trust)`);
           else this.say(`${this.displayName(other)} has been colder to you lately. You don't know why.`);
         }
         // HISTORY UNFOLDS through trust — slowly, partially, maybe never fully.
-        if (c.known && c.kind === 'old_wound') {
+        if (cf.known && cf.kind === 'old_wound') {
           const t = (this.state.village.trust || {})[vid] || 0;
-          if (c.stage === 0 && t >= 45) {
-            c.stage = 1;
-            this.say(`Late, quiet, ${this.displayName(vid)} tells you: "${c.history[1]}"`);
-          } else if (c.stage === 1 && t >= 70) {
-            c.stage = 2;
-            this.say(`${this.displayName(vid)} looks away. "${c.history[2]}" That's all you get. Maybe that's all there is.`);
+          if (cf.stage === 0 && t >= 45) {
+            cf.stage = 1;
+            this.say(`Late, quiet, ${this.displayName(vid)} tells you: "${cf.history[1]}"`);
+          } else if (cf.stage === 1 && t >= 70) {
+            cf.stage = 2;
+            this.say(`${this.displayName(vid)} looks away. "${cf.history[2]}" That's all you get. Maybe that's all there is.`);
           }
         }
       }
-      return line;
     },
+
+    convoUI(vid) {
+      // What the person card needs to render the conversation.
+      const c = this.convoGet(vid);
+      if (!c.active) return { active: false, transcript: c.transcript.slice(), choices: [], over: c.over };
+      const them = c.transcript.filter(t => t.who === 'them');
+      return {
+        active: true, transcript: c.transcript.slice(),
+        choices: this.convoChoices(vid), over: false,
+        line: them.length ? them[them.length - 1].text : null,
+      };
+    },
+
 
     // ============ NON-VERBAL COMMUNICATION ============
     // No shared language isn't a wall — it's a different game. Body language,
@@ -1171,6 +1588,9 @@
       }
       // teaching is observed: generosity + competence, through each lens.
       try { this.observe('share_knowledge', { target: vid }); } catch (e) {}
+      // ACTION CLOCK: a real lesson takes 3 ticks (time-only — minds, not muscles).
+      this.tickAction(3);
+      this.setEngaged(vid, 2);
       return true;
     },
 
@@ -1215,6 +1635,8 @@
       this.state.scholar.tools = this.state.scholar.tools || [];
       this.state.scholar.tools.push({ recipeId, uses: recipe.uses, name: recipe.name });
       this.say(`You make a ${recipe.name}. ${recipe.description} (${recipe.uses} uses)`);
+      // ACTION CLOCK: crafting = 1 chunk (32 ticks, time + hand work).
+      this.tickAction(32);
       return true;
     },
 
@@ -1311,6 +1733,8 @@
       }
       // remove the book (you've absorbed it)
       this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.bookId !== bookId);
+      // ACTION CLOCK: reading is 2 ticks (time-only — minds, not muscles).
+      this.tickAction(2);
       return true;
     },
 
@@ -1353,6 +1777,8 @@
       this.say(`You give ${this.displayName(vid)} some ${food.name}. They look at you differently now.`);
       this.observe('give_food', { target: vid });
       try { this.checkPromises('food'); } catch (e) {}
+      // ACTION CLOCK: a handoff is 1 tick (time-only — the food is the real cost).
+      this.tickAction(1);
       return true;
     },
 
@@ -1398,6 +1824,7 @@
       this.remember(vid, 'deal', 'accepted food for ' + task);
       this.observe('deal', { target: vid, task });
       this.notePlaystyle('leader'); this.notePlaystyle('social');
+      this.socialTick(vid);
       this.save();
       return { ok: true };
     },
@@ -1456,6 +1883,7 @@
       this.remember(vid, 'appeal', 'moved by appeal to goal: ' + goal);
       this.observe('appeal', { target: vid, task });
       this.notePlaystyle('leader'); this.notePlaystyle('social');
+      this.socialTick(vid);
       this.save();
       return { ok: true };
     },
@@ -1527,6 +1955,7 @@
         if (heat) bits.push("there's tension about who's in charge");
         const line = bits.length ? bits.join('; ') + '.' : "holding together, somehow.";
         this.say(`${first} looks around. "Honestly? ${line}"`);
+        this.socialTick(vid);
         return { ok: true };
       }
       return null;
@@ -1561,6 +1990,7 @@
       this.observe('comfort', { target: vid });
       this.notePlaystyle('social');
       try { this.checkPromises('heal'); } catch (e) {}
+      this.socialTick(vid);
       this.save();
       return { ok: true };
     },
@@ -1591,6 +2021,7 @@
       this.remember(vid, 'amends', 'apologized for ' + w.axis);
       this.observe('amends', { target: vid });
       this.notePlaystyle('social');
+      this.socialTick(vid);
       this.save();
       return { ok: true, axis: w.axis };
     },
@@ -1630,6 +2061,7 @@
         this.observe('mediate', { target: vid, failed: true });
       }
       this.notePlaystyle('social'); this.notePlaystyle('leader');
+      this.socialTick(vid);
       this.save();
       return { ok: true };
     },
@@ -1662,6 +2094,7 @@
       this.observe('rally', {});
       this.remember(this.villagerId, 'rally', 'gave a speech');
       this.notePlaystyle('leader'); this.notePlaystyle('social');
+      this.socialTick();
       this.save();
       return { ok: true };
     },
@@ -1691,6 +2124,7 @@
       this.remember(vid, 'ally', 'backed you against ' + target);
       this.observe('coalition', { target: vid });
       this.notePlaystyle('leader'); this.notePlaystyle('social');
+      this.socialTick(vid);
       this.save();
       return { ok: true };
     },
@@ -1722,6 +2156,7 @@
       t[vid] = Math.min(100, (t[vid] || 10) + 6);
       this.observe('promise', { target: vid });
       this.notePlaystyle('social');
+      this.socialTick(vid);
       this.save();
       return { ok: true };
     },
@@ -1779,6 +2214,7 @@
         this.observe('confront', { target: vid, backfired: true });
       }
       this.notePlaystyle('social');
+      this.socialTick(vid);
       this.save();
       return { ok: true };
     },
@@ -2038,6 +2474,8 @@
         this.sysSay('"Ooh! A DELEGATOR! The audience LOVES a mastermind! Others do the work, YOU take the credit — DELICIOUS! The gamblers are adjusting their models!"');
       }
       this.save();
+      // ACTION CLOCK: delegating is a social move — 2 ticks, and they're engaged.
+      this.socialTick(vid);
       return { ok: true };
     },
 
@@ -2451,6 +2889,7 @@
       // departure lite (member standing): tell someone you're going. no location switch — Haven is a tile.
       this.departed = true;
       this.dayPart = 0; this.ap = 1;
+      this.state.scholar.dayTicks = 0; this.state.scholar.actionClock = 0; // action clock: fresh budget
       const first = this.data.villagers.find(x => x.id === this.villagerId).name.split(' ')[0];
       this.say(`You tell the others you're heading out. Someone nods. "Come back before dark."`);
       this.say(`— DAY 1 DAWN — ${DAY_PART_HINT.dawn}`);
@@ -3319,7 +3758,8 @@
       if (t.stock > 0) t.stock--;
       this.say(`${big ? 'The big tree' : 'The tree'} comes down with a crack that echoes. +${wood} wood. The ground is clear now.`);
       this.checkQuest('terraform');
-      return this.endDayPart();
+      // ACTION CLOCK: felling a tree = 3 chunks (96 ticks) + 80 kcal effort (above).
+      return this.tickAction(96) || this.status();
     },
     clearBrush(cx, cy) {
       if (this.over) return null;
@@ -3339,7 +3779,8 @@
       if (t.stock > 0) t.stock--;
       this.say('You clear the brush. +1 wood (brushwood). Easier walking here now.');
       this.checkQuest('terraform');
-      return this.endDayPart();
+      // ACTION CLOCK: clearing brush = 1 chunk (32 ticks) + 40 kcal effort (above).
+      return this.tickAction(32) || this.status();
     },
 
     // --- travel: costs the day-part's action. destinations are decisions. ---
@@ -3392,7 +3833,8 @@
         return this.buildBridge(x, y); // washed out needs a bridge
       }
       delete dest.blockFrom;
-      return this.endDayPart();
+      // ACTION CLOCK: clearing a blockage = 1 chunk (32 ticks) + effort kcal (above).
+      return this.tickAction(32) || this.status();
     },
     // build a bridge: 4 wood, permanent. for washed-out paths and hard creeks.
     // CONSTRUCTION (future): walls/palisades will use the same pattern — spend wood, tile.structures[].
@@ -3405,7 +3847,9 @@
       dest.structures = dest.structures || [];
       dest.structures.push({ type: 'bridge', builtDay: this.state.scholar.day });
       this.say('You lash logs together. A rough bridge spans the gap. It\'ll hold.');
-      return this.endDayPart();
+      // ACTION CLOCK: building = 3 chunks (96 ticks) + 60 kcal effort. Construction is work.
+      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 60);
+      return this.tickAction(96) || this.status();
     },
     // HAVEN DOORS: the building has an inside and an outside. Doors are real.
     // Step through and you're on the Haven grounds — tents, fire pit, the world beyond.
@@ -3496,14 +3940,11 @@
       this.checkEncounter();
       this.checkAnimals();
       this.checkQuest('travel');
-      // TIME ECONOMY: moving between nodes is the BIG time step.
-      // Time passes — NPCs act, needs grow, gossip spreads — but it doesn't
-      // consume a day-part. The 4-part action economy (forage = 1 part) is
-      // the player's action budget; travel taxes the WORLD, not the budget.
+      // TIME ECONOMY: moving between nodes is a BIG time step on the unified clock.
+      // travelTimeStep ticks 32 (a "bigger tick"): NPC batch + day timer advance
+      // proportionally, like everything else. No separate clock, no free moves.
       // (Tuning: if travel feels free, raise the needs tick / energy cost
-      // in travelTimeStep. If punishing, lower it. A full part cost was
-      // playtested and broke pacing — see docs/TIME-ECONOMY.md.)
-      this.state.scholar.moveClock = 0;
+      // in travelTimeStep. If punishing, lower it. See docs/TIME-ECONOMY.md.)
       this.travelTimeStep();
     },
 
@@ -3512,14 +3953,16 @@
     // This is "a portion of the day" passing — visible in the world,
     // not deducted from your 4 actions.
     travelTimeStep() {
-      this.npcBatchTurn();
+      // ACTION CLOCK: node travel = 32 ticks (a "bigger tick"). Same unified clock
+      // as everything else: NPC batch + day timer advance proportionally.
+      this.tickAction(this.TIME.TRAVEL_TICKS);
       try { this.tickNeeds(); } catch (e) {}
       try { this.spreadGossip(); } catch (e) {}
       // travel is tiring: small energy cost
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 2);
     },
 
-    // micro-move: step to an adjacent cell in the 9x9. costs calories, not time.
+    // micro-move: step to an adjacent cell in the 9x9. 1 tick of time, no effort.
     // this is how you reach the plant, the water, the monster. the world is physical.
     microMove(cx, cy) {
       const s = this.state.scholar;
@@ -3542,18 +3985,24 @@
       // Movement is baseline. Power doesn't tax walking.
       s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
-      // A step is not a decision. The world doesn't advance because you shifted your weight.
+      // ACTION CLOCK: a step is 1 tick. Strolling is time-only — no effort cost.
       // Monsters, animals, and villagers move on their own schedule (or when you ACT).
-      // But steps ACCUMULATE: every NPC_BATCH_MOVES squares, NPCs take a batch turn.
+      // But steps ACCUMULATE: every TICKS_PER_BATCH ticks, NPCs take a batch turn.
       this.ensureVillagerPositions();
-      this.tickMoveClock(1);
+      this.tickAction(1);
       return true;
     },
 
     // cellInteract: tap a cell to USE it. but it's a MAYBE — you learn the truth up close.
     // tree might have nuts or be ivy. water might be poison. tent might be shredded.
     // knowledge sticks: once you know, you know.
+    // ACTION CLOCK: a successful interact costs 1 tick (a glance is time-only, 0 effort).
     cellInteract(cx, cy) {
+      const r = this._cellInteract(cx, cy);
+      if (r) this.tickAction(1);
+      return r;
+    },
+    _cellInteract(cx, cy) {
       // ACTIONS move the world. Steps don't.
       this.monsterTurn();
       this.animalTurn();
@@ -3678,7 +4127,9 @@
       if (s.animal || Math.random() > 0.3) return; // 30% chance per tile entry
       const candidates = (this.data.animals || []).filter(a => (a.biomes || []).includes(t.type));
       if (!candidates.length) return;
-      const animal = candidates[Math.floor(Math.random() * candidates.length)];
+      // NIGHT ECOLOGY: different animals after dark. The night has its own game —
+      // opossum, raccoon, bullfrog instead of squirrel and turkey. Learn the schedule.
+      const animal = this.pickByActivity(candidates) || candidates[Math.floor(Math.random() * candidates.length)];
       // spawn at distance, not on you
       const px = s.mx ?? 4, py = s.my ?? 4;
       let ax, ay, tries = 0;
@@ -3898,8 +4349,8 @@
       s.mx = tx; s.my = ty;
       this.say(`Walked ${path.length} squares (${cost} kcal).`);
       this.ensureVillagerPositions();
-      // committed walks are real movement: they advance the background clock
-      this.tickMoveClock(path.length);
+      // ACTION CLOCK: committed walk = 1 tick per square (+10 kcal/square effort, above).
+      this.tickAction(path.length);
       return true;
     },
 
@@ -3933,6 +4384,8 @@
       item.rawKcal = null; // it's cooked now
       item.safe = true; // cooking kills the risk (mostly)
       this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now${item.needsCooking && cost1 > 0 ? ` (-${cost1}L water)` : ''}.`);
+      // ACTION CLOCK: cooking = 1 chunk (32 ticks, tending the fire).
+      this.tickAction(32);
       return null;
     },
 
@@ -3951,6 +4404,8 @@
       const source = isCreek ? 'Creek (unknown)' : 'Haven well';
       s.water.push({ liters: 1, quality, source });
       this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).`);
+      // ACTION CLOCK: filling a bottle = 1 tick.
+      this.tickAction(1);
       return null;
     },
     // fillWaterFromVillage: at Haven, draw from the village supply into your pack.
@@ -3961,6 +4416,7 @@
       v.water.clean -= 1;
       this.addWater(1, 'clean', 'Haven well');
       this.say('You fill 1L from the Haven well. Clean.');
+      this.tickAction(1); // ACTION CLOCK: filling a bottle = 1 tick.
       return null;
     },
     addWater(liters, quality, source) {
@@ -4003,6 +4459,8 @@
       if (idx === -1) { this.say('No water. Fill at a creek or well.'); return null; }
       const b = s.water[idx];
       s.water.splice(idx, 1);
+      // ACTION CLOCK: a drink is 1 tick (time-only — drinking costs no effort).
+      this.tickAction(1);
       if (b.quality === 'risky') {
         // 30% chance of sickness
         if (Math.random() < 0.3) {
@@ -4264,7 +4722,15 @@
       const relicHunt = S.modifiers.resolve(0, 'hunt.success', S.modifiers.collectModifiers(s, this.data.abilities), {});
       // lucky_rock: the System finds your faith adorable and helps a little.
       const luck = this.modTarget('luck.global', 1);
-      const chance = Math.min(0.95, (base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt) * luck);
+      // NIGHT HUNTING (knowledge): at night, the prepared hunter is the apex thing.
+      // L2 +20%, L3 +35% — but only after dark, when the knowledge applies.
+      let nightHuntBonus = 0;
+      if (this.isNight()) {
+        if (this.skillKnown('night_hunting', 3)) nightHuntBonus = 0.35;
+        else if (this.skillKnown('night_hunting', 2)) nightHuntBonus = 0.2;
+        if (this.hasAbility('night_eyes')) nightHuntBonus += 0.1;
+      }
+      const chance = Math.min(0.95, (base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt + nightHuntBonus) * luck);
       this.noteToolUse(); // RELIC BOND: the spear, the snare, the knife.
       s.kcal = Math.max(0, s.kcal - 100);
       if (Math.random() < chance) {
@@ -4773,6 +5239,8 @@
       // shuffle so the same loud NPC doesn't always win
       for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[order[i], order[j]] = [order[j], order[i]]; }
       for (const rid of order) {
+        // ENGAGEMENT: already in conversation — don't initiate, don't step.
+        if (this.isEngaged(rid)) continue;
         const pos = v.positions[rid];
         const d = Math.max(Math.abs(pos.mx - px), Math.abs(pos.my - py));
         if (d > 5) continue;
@@ -4789,7 +5257,9 @@
             if (cell && !this.cellProps(cell).blocks) { pos.mx = nx; pos.my = ny; }
           }
         };
-        const done = () => { v.lastInitPart = partKey; };
+        // NPC-initiated contact: they're talking to YOU. Mark engaged so the
+        // batch turn doesn't wander them off mid-conversation.
+        const done = () => { v.lastInitPart = partKey; this.setEngaged(rid, 2); };
         if (n.hunger > 70 && (v.requests || {})[rid] === undefined && Math.random() < 0.3) {
           stepToward(); done();
           v.requests = v.requests || {}; v.requests[rid] = { type: 'food', day: this.state.scholar.day, part: this.dayPart };
@@ -5280,30 +5750,136 @@
       return Math.max(0.5, Math.min(1.5, Math.round(s * 20) / 20));
     },
 
-    // tickMoveClock: every square you walk advances background time.
-    // NPCs don't act on every step — they batch. When your move counter
-    // hits NPC_BATCH_MOVES, they take their turn all at once.
-    tickMoveClock(n) {
-      if (this.tbfight) return; // combat has its own strict turns
+    // tickAction: THE unified action clock. Every thing you do costs time.
+    // Cost guide (ticks): 1 = step, glance, sip, bite, handoff.
+    // 2 = a conversation. 3 = a lesson. 32 (1 chunk) = clear brush, boil water,
+    // travel a node. 64-96 (2-3 chunks) = forage, fell a tree, build.
+    // 128 = a full day-part of sustained work (rest, wait out the part).
+    // Every TICKS_PER_BATCH ticks → NPCs take a batch turn (they act).
+    // Every TICKS_PER_PART ticks → the day-part turns (needs, assignments, energy).
+    // TICKS_PER_DAY ticks → the day is spent → endDay().
+    // Turn-based combat has its own strict turns and suppresses this clock.
+    tickAction(n, opts) {
+      if (this.tbfight || this._ticking) return undefined;
       const s = this.state.scholar;
-      s.moveClock = (s.moveClock || 0) + (n || 1);
-      if (s.moveClock >= this.TIME.NPC_BATCH_MOVES) {
-        s.moveClock = 0;
-        this.npcBatchTurn();
-      }
+      n = Math.max(0, Math.round(n || 1));
+      if (!n) return undefined;
+      // save migration: moveClock → actionClock
+      if (s.actionClock === undefined) { s.actionClock = s.moveClock || 0; delete s.moveClock; }
+      s.actionClock = (s.actionClock || 0) + n;
+      s.dayTicks = (s.dayTicks || 0) + n;
+      this._ticking = true;
+      let transitioned = false;
+      try {
+        const T = this.TIME;
+        // NPC batch turns: the world acts while you act.
+        let guard = 0;
+        while (s.actionClock >= T.TICKS_PER_BATCH && guard++ < 64) {
+          s.actionClock -= T.TICKS_PER_BATCH;
+          this.npcBatchTurn();
+          transitioned = true;
+        }
+        // Day-part boundaries derive from the same clock.
+        const dayBefore = s.day;
+        guard = 0;
+        while (Math.floor(s.dayTicks / T.TICKS_PER_PART) > this.dayPart && this.dayPart < 4 && s.day === dayBefore && guard++ < 8) {
+          this.advancePart();
+          transitioned = true;
+        }
+        // The day has a fixed budget. When it's used, the day advances.
+        if ((!opts || !opts.noDayEnd) && s.dayTicks >= T.TICKS_PER_DAY && !this.over && s.day === dayBefore) {
+          s.dayTicks = 0; s.actionClock = 0;
+          this.say('The light is going. The day is spent — every small thing you did added up.');
+          this.endDay();
+          transitioned = true;
+        }
+      } finally { this._ticking = false; }
+      return transitioned ? this.status() : undefined;
     },
 
     // npcBatchTurn: the background-life beat. NPCs wander at their own speed,
     // pursue initiative, wants tick. The world isn't frozen while you explore —
     // it's living at its own pace, catching up in batches.
+    // setEngaged: mark an NPC as socially engaged (in conversation with you).
+    // Engaged NPCs don't wander during batch turns — they're busy talking.
+    // Engagement lasts `batches` batch turns, then lapses naturally.
+    setEngaged(vid, batches) {
+      const v = this.state.village;
+      v.engaged = v.engaged || {};
+      v.engaged[vid] = Math.max(v.engaged[vid] || 0, batches || 2);
+    },
+    isEngaged(vid) {
+      const v = this.state.village;
+      return v.engaged && (v.engaged[vid] || 0) > 0;
+    },
+    // socialTick: every substantive social move costs 2 ticks (a real conversation).
+    // Marks the NPC engaged so batch turns don't wander them off mid-talk.
+    socialTick(vid) {
+      this.tickAction(2);
+      if (vid) this.setEngaged(vid, 2);
+    },
+    // ============ DAY/NIGHT: continuous time ============
+    // The dial, the dark, and the creatures all read these.
+    // dayProgress: 0 = dawn's first light, 0.25 = midday, 0.5 = dusk,
+    // 0.75 = deep night, 1 = next dawn. Micro ticks move it smoothly.
+    dayProgress() {
+      const s = this.state.scholar;
+      const T = this.TIME.TICKS_PER_DAY;
+      return Math.max(0, Math.min(1, (s.dayTicks || 0) / T));
+    },
+    // lightLevel: 0..1, smooth. Dawn ramps up, midday is full, dusk falls,
+    // night is moonlight (not pitch black — you can still move, carefully).
+    lightLevel() {
+      const p = this.dayProgress();
+      if (p < 0.25) return 0.25 + 0.75 * (p / 0.25);       // dawn: kindling
+      if (p < 0.5) return 1;                               // midday: full
+      if (p < 0.75) return 1 - 0.82 * ((p - 0.5) / 0.25);  // dusk: dying
+      return 0.15;                                         // night: moonlight
+    },
+    isNight() { return this.dayPart === 3; },
+    // NIGHT ECOLOGY: the cast changes after dark. Weighted, not gated —
+    // nothing vanishes entirely, but the night belongs to nocturnal things.
+    creatureWeight(def) {
+      const act = def.activity || 'both';
+      if (act === 'both') return 1;
+      const part = this.dayPart; // 0 dawn, 1 midday, 2 dusk, 3 night
+      if (part === 3) return act === 'nocturnal' ? 3 : act === 'crepuscular' ? 1 : 0.25;
+      if (part === 0 || part === 2) return act === 'crepuscular' ? 3 : act === 'nocturnal' ? 0.5 : 1;
+      return act === 'diurnal' ? 3 : act === 'nocturnal' ? 0.15 : 1;
+    },
+    pickByActivity(list) {
+      if (!list || !list.length) return null;
+      const weights = list.map(d => this.creatureWeight(d));
+      let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+      for (let i = 0; i < list.length; i++) { r -= weights[i]; if (r <= 0) return list[i]; }
+      return list[list.length - 1];
+    },
     npcBatchTurn() {
       const v = this.state.village;
       if (!v.positions) return;
       // only the node you're on has a live grid
       const detail = this.genDetail(this.map.px, this.map.py);
+      const night = this.isNight();
+      // _sleeping is transient (NOT in save state) — you're unconscious, not interactive.
+      const youSleep = !!this._sleeping;
       for (const rid of Object.keys(v.positions)) {
         if (rid === this.villagerId) continue;
+        // ENGAGEMENT: people in conversation stay put. They don't wander off mid-talk.
+        if (this.isEngaged(rid)) continue;
         const pos = v.positions[rid];
+        if (night) {
+          // THE VILLAGE SLEEPS. People settle — a small shuffle at most,
+          // drifting toward the fire's warmth, then stillness. Nobody roams.
+          if (Math.random() < 0.25) {
+            const dx = Math.floor(Math.random() * 3) - 1;
+            const dy = Math.floor(Math.random() * 3) - 1;
+            const nx = Math.max(0, Math.min(8, pos.mx + dx));
+            const ny = Math.max(0, Math.min(8, pos.my + dy));
+            const cell = detail[ny] && detail[ny][nx];
+            if (cell && !this.cellProps(cell).blocks) { pos.mx = nx; pos.my = ny; }
+          }
+          continue;
+        }
         const speed = this.npcSpeed(rid);
         // wander: base squares scaled by relative speed.
         // speed 1.5 -> 12 squares, speed 0.5 -> 4. You can SEE who's fast.
@@ -5318,8 +5894,10 @@
           if (cell && !this.cellProps(cell).blocks) { pos.mx = nx; pos.my = ny; }
         }
       }
-      // initiative: they come to you, on their schedule
-      try { this.villagerInitiative(); } catch (e) {}
+      // initiative: they come to you, on their schedule.
+      // Not at night, and not while you're asleep — even villagers respect sleep.
+      // (The rare "can't sleep" visit still happens: it's in villagerInitiative's own odds.)
+      if (!night && !youSleep) { try { this.villagerInitiative(); } catch (e) {} }
       // time passed: wants grew a little
       try {
         for (const rid of Object.keys(v.positions)) {
@@ -5329,7 +5907,91 @@
           n.social = Math.min(100, (n.social || 0) + 2);
         }
       } catch (e) {}
+      // engagement lapses: one batch of talking done, one batch closer to wandering again
+      if (v.engaged) for (const k of Object.keys(v.engaged)) {
+        v.engaged[k] = Math.max(0, (v.engaged[k] || 0) - 1);
+        if (!v.engaged[k]) delete v.engaged[k];
+      }
     },
+
+    // ============ SLEEP ============
+    // Sleep until morning. Where you sleep matters: bunk > tent > hall floor > cold ground.
+    // Hunger still ticks, but slower — a sleeping body burns less. You heal. Energy restores.
+    // The world lives through the night around you (NPC batch turns still fire; they sleep too).
+    // Danger wakes you: the fast-forward runs in batch-sized chunks and stops on trouble.
+    sleepQuality() {
+      const s = this.state.scholar;
+      let detail = null;
+      try { detail = this.genDetail(this.map.px, this.map.py); } catch (e) {}
+      const mx = s.mx ?? 4, my = s.my ?? 4;
+      const near = (type) => {
+        if (!detail) return false;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const row = detail[my + dy];
+          if (row && row[mx + dx] === type) return true;
+        }
+        return false;
+      };
+      let atHaven = this.location === 'haven';
+      try { const t = this.playerTile(); if (t && t.type === 'haven') atHaven = true; } catch (e) {}
+      if (atHaven && near('bunk')) return 'bunk';
+      if (near('tent')) return 'tent';
+      if (atHaven) return 'hall';
+      return 'ground';
+    },
+    // sleepPreview: for the UI — show cost/benefit before committing.
+    sleepPreview() {
+      const q = this.sleepQuality();
+      return {
+        quality: q,
+        heal: { bunk: 35, tent: 25, hall: 20, ground: 12 }[q] || 12,
+        name: { bunk: 'a bunk', tent: 'a tent', hall: 'the hall floor', ground: 'the cold ground' }[q] || 'the ground',
+        note: { bunk: 'Best rest. Deep sleep, real healing.', tent: 'Sheltered. Decent rest.', hall: 'By the fire. Good enough.', ground: 'Exposed. You\'ll wake stiff.' }[q] || '',
+      };
+    },
+    sleep() {
+      const s = this.state.scholar;
+      const T = this.TIME;
+      if (this.tbfight) { this.say('Not in the middle of a fight.'); return this.status(); }
+      if (this.dayPart === 0 && (s.dayTicks || 0) < T.TICKS_PER_BATCH) {
+        this.say('It\'s barely dawn. The day is yours — sleep is for later.');
+        return this.status();
+      }
+      const prev = this.sleepPreview();
+      const startDay = s.day, startKcal = Math.round(s.kcal || 0);
+      // transient flag (not saved): suppresses NPC initiative while you're out.
+      this._sleeping = { quality: prev.quality };
+      this.say(`You settle into ${prev.name}. Sleep takes you.`);
+      let woke = false, guard = 0;
+      while (s.day === startDay && !this.over && guard++ < 64) {
+        const remaining = T.TICKS_PER_DAY - (s.dayTicks || 0);
+        if (remaining <= 0) break;
+        // batch-sized chunks: part transitions, NPC nights, and endDay all fire
+        // naturally — and we check for danger between chunks.
+        this.tickAction(Math.min(T.TICKS_PER_BATCH, remaining));
+        if (this.tbfight || this.pendingEncounter || this.over) { woke = true; break; }
+      }
+      this._sleeping = null;
+      if (woke || this.tbfight || this.pendingEncounter || this.over) {
+        if (!this.over) this.say('You wake with a start — something is wrong.');
+        return this.status();
+      }
+      // You slept through to dawn. endDay already ran: meals eaten, metabolism
+      // burned, the land regrew. Now the body's accounting.
+      const lost = startKcal - Math.round(s.kcal || 0);
+      let conservedNote = '';
+      if (lost > 0) {
+        const conserved = Math.round(lost * 0.3);
+        s.kcal = (s.kcal || 0) + conserved;
+        conservedNote = ` Your sleeping body burned less — ${conserved} kcal conserved.`;
+      }
+      s.health = Math.min(this.maxHealth(), Math.round(s.health || 0) + prev.heal);
+      s.energy = 100;
+      const rested = prev.quality === 'bunk' ? 'deeply rested' : prev.quality === 'ground' ? 'stiff and cold' : 'rested';
+      this.say(`Dawn. You wake ${rested}. (+${prev.heal} health, energy restored.${conservedNote} ${prev.note})`);
+      return this.status();
+    },
+    clearDialGlitch() { this.state.dialGlitch = false; },
 
     villagerTurn() {
       const v = this.state.village;
@@ -5868,13 +6530,22 @@
       // bird_whisperer / third_eye: the birds see everything. On a successful
       // detect you slip away first — no spawn, just a warning.
       const detect = this.modTarget('monster.detect_chance', 0);
-      if (detect > 0 && Math.random() < detect && !scholar.monster) {
+      // NIGHT EYES (ability): at night you spot trouble before it spots you.
+      // NOCTURNAL PATTERNS (knowledge L2+): you read the night's signs.
+      let nightRead = 0;
+      if (this.isNight()) {
+        if (this.hasAbility('night_eyes')) nightRead += 0.3;
+        if (this.skillKnown('nocturnal_patterns', 2)) nightRead += 0.15;
+      }
+      if (detect + nightRead > 0 && Math.random() < detect + nightRead && !scholar.monster) {
         this.say('Birds scatter in a sudden hush — something is moving out there. You give it a wide berth.');
         return;
       }
       if (Math.random() < chance && !scholar.monster) {
         const mdefs = this.data.monsters;
-        const mdef = mdefs[Math.floor(Math.random() * mdefs.length)];
+        // NIGHT ECOLOGY: the cast shifts after dark. Nocturnal things own the night;
+        // diurnal things own the day. Weighted — nothing vanishes entirely.
+        const mdef = this.pickByActivity(mdefs) || mdefs[Math.floor(Math.random() * mdefs.length)];
         const mx = 4 + Math.floor(Math.random() * 5) - 2;
         const my = 4 + Math.floor(Math.random() * 5) - 2;
         scholar.monster = { id: mdef.id, x: Math.max(0, Math.min(8, mx)), y: Math.max(0, Math.min(8, my)) };
@@ -5968,6 +6639,11 @@
         // "Oh! Oh! We almost forgot! You were writing things down! We made it better!"
         this.say('\U0001F4D6 "OH! Wait! We almost forgot! You were writing things down! In the little paper! We LOVE the paper! We made it better! It talks now! It remembers EVERYTHING!"');
         this.say('Your journal shimmers. The handwriting doesn\'t disappear — it gets... absorbed. The Codex has your notes. All of them. Even the smudged ones. Especially the smudged ones.');
+        // DIAL UPGRADE: the System "improves" even your sense of time.
+        // Your hand-drawn circle glitches — and something colder takes its place.
+        this.say('🕐 "OH! And your little time-sense! The hand-drawn circle! Adorable! We UPGRADED it! It\'s exact now! Ticks! Numbers! You\'re welcome!"');
+        this.say('Your sense of the day shimmers — and something colder, more precise, takes its place.');
+        this.state.dialGlitch = true;
         this.say('"We kept the smudges! They\'re charming! You\'re welcome!"');
         s.codexUnlocked = true;
         // THE OVERLAY: names, health bars, stats. The System doesn't ask —
@@ -6298,6 +6974,10 @@
       const s = this.state.scholar;
       // SYNERGY: activatable use logged for discovery.
       this.noteAbilityUse(id);
+      // ACTION CLOCK: activating a power takes a moment of focus (2 ticks, time-only).
+      // Sustained powers (time_skip) cost more — declared at their branch.
+      // Effort kcal / metabolic upkeep are the other two costs (see metabolicDaily).
+      this.tickAction(2);
       if (id === 'blood_magic') {
         const cost = this.hasSynergy('crimson_circuit') ? 7 : 10;
         if ((s.health || 0) <= cost) { this.say('Too weak for the Blood Price.'); return null; }
@@ -6550,7 +7230,9 @@
                 spoilDay: 9999, unit: 'book', prep: 'Read it.', kg: 0.5
               });
               this.say(`You find a book: "${book.name}". ${book.description}. (Read it from your pack.)`);
-              return this.endDayPart();
+              // ACTION CLOCK: searching a ruin = 2 chunks (64 ticks) + 100 kcal effort.
+              scholar.kcal = Math.max(0, (scholar.kcal || 0) - 100);
+              return this.tickAction(64) || this.status();
             }
             this.say('Picked clean. The houses fed someone — not you.'); return null;
           }
@@ -6588,7 +7270,8 @@
           msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
           this.say(msg);
           this.tele('scavenge', { item: item.name, kcal: item.kcal, lootLeft: t.loot.length, packKg: Math.round(this.packWeight() * 10) / 10 });
-          return this.endDayPart();
+          // ACTION CLOCK: searching a ruin = 2 chunks (64 ticks). 100 kcal effort above.
+          return this.tickAction(64) || this.status();
         }
         if (!S.forage.canForage(t)) { this.say('Nothing left to take here today.'); return null; }
         t.stock -= 1;
@@ -6745,8 +7428,21 @@
       this.say(msg);
       this.checkQuest(kind);
       this.maybeOfferQuest();
-      // the action took the day-part — time passes, no separate "end part" tap
-      return this.endDayPart();
+      // ACTION CLOCK: variable cost by fictional weight. 1 chunk = 32 ticks.
+      // Forage 2-3 chunks (a rich tile takes longer — more to gather),
+      // rest 3 chunks, treat 1 chunk, wait = however long until the part turns.
+      const T = this.TIME;
+      let ticks = T.TICKS_PER_PART;
+      if (kind === 'forage') {
+        const b = this.bountyFor(this.map.px, this.map.py);
+        ticks = (b && b.richness >= 1.3) ? 96 : 64;
+      } else if (kind === 'rest') ticks = 96;
+      else if (kind === 'treat') ticks = 32;
+      else if (kind === 'wait') {
+        const rem = (this.state.scholar.dayTicks || 0) % T.TICKS_PER_PART;
+        ticks = rem === 0 ? T.TICKS_PER_PART : T.TICKS_PER_PART - rem;
+      }
+      return this.tickAction(ticks) || this.status();
     },
 
     checkQuest(kind) {
@@ -6857,6 +7553,8 @@
         }
       }
       if (ate > 0) this.tele('eat', { ateKcal: ate, spoiled });
+      // ACTION CLOCK: a meal is 1 tick (time-only — eating costs no effort).
+      if (ate > 0) this.tickAction(1);
     },
 
     drinkTreated() {
@@ -6873,9 +7571,14 @@
         scholar.health -= 10;
         this.say('You drink from the creek. +40 hydration. Your stomach turns — untreated water is a gamble. (-10 health)');
       } else this.say('You drink from the creek. +40 hydration. (Untreated — a gamble.)');
+      // ACTION CLOCK: a drink is 1 tick (time-only).
+      this.tickAction(1);
     },
 
-    endDayPart() {
+    // advancePart: one day-part turns. Called ONLY from tickAction's boundary
+    // crossing — the part structure derives from the unified tick clock now,
+    // not from big actions calling this directly.
+    advancePart() {
       this.checkVillageProximity();
       if (this.over) return this.status();
       // ALIVE: wants grow with time, unanswered asks curdle.
@@ -6895,9 +7598,32 @@
       if (this.dayPart >= 4) return this.endDay();
       this.ap = 1;
       this.say(`— ${DAY_PARTS[this.dayPart].toUpperCase()} — ${DAY_PART_HINT[DAY_PARTS[this.dayPart]]}`);
+      // NIGHTFALL: the village reacts. Fear rises in everyone a little, people pull
+      // toward the fire, watches get posted. The dark has its own animals —
+      // everyone knows it. (Fear is per-NPC, in the existing needs system.)
+      if (this.dayPart === 3) {
+        try {
+          const v = this.state.village;
+          const onWatch = Object.keys(v.assignments || {}).filter(id => v.assignments[id].task === 'patrol');
+          for (const rid of (v.roster || [])) {
+            if (rid === this.villagerId) continue;
+            try {
+              const n = this.npcNeeds(rid);
+              n.fear = Math.min(100, (n.fear || 0) + (onWatch.length ? 5 : 12));
+            } catch (e) {}
+          }
+          this.say(onWatch.length
+            ? 'Night settles. The fire is the whole world now. Watches are posted — the dark has its own animals, and the village knows it.'
+            : 'Night settles. The fire is the whole world now. No watches posted. The dark feels bigger than it should.');
+        } catch (e) {}
+      }
       this.save();
       return this.status();
     },
+
+    // endDayPart: legacy entry point. Big actions now tick the unified clock
+    // directly with their own costs; 128 ticks = exactly one part boundary.
+    endDayPart() { return this.tickAction(this.TIME.TICKS_PER_PART) || this.status(); },
 
     // village lives: the others aren't waiting. each day, 1-2 villagers do something.
     // they forage, they get hurt, they find things. they discover along with you.
@@ -7523,6 +8249,7 @@
       scholar.day += 1;
       scholar.relicResolveUsed = false;
       this.dayPart = 0; this.ap = 1;
+      scholar.dayTicks = 0; scholar.actionClock = 0; // action clock: new day, fresh budget
       this.say(`— DAY ${scholar.day} DAWN — ${DAY_PART_HINT.dawn}`);
       this.save();
       return this.status();
@@ -8308,6 +9035,12 @@
       const s = this.state.scholar;
       return {
         day: s.day, dayPart: DAY_PARTS[this.dayPart], dayPartHint: DAY_PART_HINT[DAY_PARTS[this.dayPart]],
+        // ACTION CLOCK: ticks for the UI day-timer. 512 ticks = the full day.
+        dayTicks: s.dayTicks || 0, dayTicksMax: this.TIME.TICKS_PER_DAY,
+        // DAY/NIGHT: continuous time for the sun/moon dial and night visuals.
+        dayProgress: this.dayProgress(), lightLevel: Math.round(this.lightLevel() * 100) / 100,
+        isNight: this.isNight(), systemArrived: !!this.state.systemArrived,
+        dialGlitch: !!this.state.dialGlitch,
         ap: this.ap, health: Math.round(s.health), kcal: Math.round(s.kcal),
         hydration: Math.round(s.hydration), energy: Math.round(s.energy),
         water: s.water || 0,

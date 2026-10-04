@@ -16,6 +16,49 @@
   function bar(left, right) {
     return `<div class="term-bar"><span>${left}</span><span>${right}</span></div>`;
   }
+  // dayTickBar: the action clock, visible. Every small thing you do fills it a little.
+  // 512 ticks = the day's full budget. Subtle — a thin line under the day header.
+  function dayTickBar(st) {
+    const t = Math.max(0, Math.min(st.dayTicksMax || 512, st.dayTicks || 0));
+    const pct = Math.round(100 * t / (st.dayTicksMax || 512));
+    const left = (st.dayTicksMax || 512) - t;
+    return `<div class="dayticks" title="The day's budget: ${t} of ${st.dayTicksMax || 512} used. Everything you do costs a little of the day."><div class="dayticks-fill" style="width:${pct}%"></div><span class="dayticks-lbl">${left} left today</span></div>`;
+  }
+  // SUN/MOON DIAL: your sense of time, made visible. Micro ticks move the marker.
+  // Pre-System: hand-drawn, rough, personal — your character's own time-sense.
+  // Post-System: the System "upgraded" it. Precise. Digital. Alien. Exact.
+  // Marker orbit: dawn left, midday top, dusk right, midnight bottom.
+  function dialHTML(st) {
+    const sys = !!st.systemArrived;
+    const p = Math.max(0, Math.min(1, st.dayProgress || 0));
+    const ang = (180 + p * 360) * Math.PI / 180;
+    const cx = 22, cy = 22, r = 14;
+    const mx = (cx + r * Math.cos(ang)).toFixed(1);
+    const my = (cy + r * Math.sin(ang)).toFixed(1);
+    const ticksLeft = Math.max(0, Math.round((st.dayTicksMax || 512) - (st.dayTicks || 0)));
+    const glitch = st.dialGlitch ? ' dial-glitch' : '';
+    if (!sys) {
+      return `<span class="sundial pre${glitch}" title="Your sense of the day — rough, but yours."><svg viewBox="0 0 44 44" width="38" height="38">`
+        + `<circle cx="22" cy="22" r="14" fill="none" stroke="#8a7a5a" stroke-width="1.8" stroke-dasharray="3.2 2.2" opacity="0.95"/>`
+        + `<text x="22" y="12" text-anchor="middle" font-size="10">☀️</text>`
+        + `<text x="22" y="39" text-anchor="middle" font-size="10">🌙</text>`
+        + `<circle cx="${mx}" cy="${my}" r="3.2" fill="#d8c98a" opacity="0.95"/></svg></span>`;
+    }
+    const partTicks = [0, 0.25, 0.5, 0.75].map(pp => {
+      const a = (180 + pp * 360) * Math.PI / 180;
+      const x1 = (cx + 10.5 * Math.cos(a)).toFixed(1), y1 = (cy + 10.5 * Math.sin(a)).toFixed(1);
+      const x2 = (cx + 14 * Math.cos(a)).toFixed(1), y2 = (cy + 14 * Math.sin(a)).toFixed(1);
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#4df3ff" stroke-width="1.5"/>`;
+    }).join('');
+    return `<span class="sundial post${glitch}" title="SYSTEM CHRONOMETER — exact. ${ticksLeft} ticks to dawn."><svg viewBox="0 0 44 44" width="38" height="38">`
+      + `<circle cx="22" cy="22" r="14" fill="rgba(77,243,255,.07)" stroke="#4df3ff" stroke-width="1.3"/>`
+      + `<circle cx="22" cy="22" r="10" fill="none" stroke="#4df3ff" stroke-width="0.6" opacity="0.55"/>`
+      + partTicks
+      + `<text x="22" y="10.5" text-anchor="middle" font-size="7" fill="#4df3ff" opacity=".85">☀</text>`
+      + `<text x="22" y="37.5" text-anchor="middle" font-size="7" fill="#4df3ff" opacity=".85">☾</text>`
+      + `<circle cx="${mx}" cy="${my}" r="2.8" fill="#4df3ff"/>`
+      + `<text x="22" y="25.5" text-anchor="middle" font-size="8.5" fill="#4df3ff" font-family="monospace">${ticksLeft}</text></svg></span>`;
+  }
   function esc(s) { return String(s).replace(/</g, '&lt;'); }
 
   // TWO-CLICK TRAVEL: first tap selects, second tap confirms. Travel is deliberate.
@@ -1081,8 +1124,9 @@
   // Dialogue, buttons, everything — no screen transition. Their opening line
   // fires once per open (talking costs energy; re-renders must not re-charge).
   function openPerson(villagerId) {
-    const line = Game.talkTo(villagerId);
-    inlineView = { kind: 'person', vid: villagerId, line, result: null, nvMode: null, mapKey: inlineMapKey() };
+    // Opening a card doesn't start a conversation — that's the player's choice.
+    // (It used to burn energy and fire a line on every open.)
+    inlineView = { kind: 'person', vid: villagerId, line: null, result: null, nvMode: null, mapKey: inlineMapKey() };
     refresh();
     scrollInlineIntoView();
   }
@@ -1150,12 +1194,24 @@
     }
     const conf = vp.conflictNote ? `<p class="small" style="opacity:.7">${esc(vp.conflictNote)}</p>` : '';
     const said = view.line || '';
+    // CONVERSATION: the dialogue surface. Transcript of the exchange so far
+    // plus the player's response choices — never just "continue".
+    const convo = Game.convoUI ? Game.convoUI(villagerId) : { active: false, transcript: [], choices: [] };
+    const convoTranscript = (convo.transcript || []).slice(-6).map(e =>
+      e.who === 'you'
+        ? `<p style="font-size:14px;color:#9fd8ff;margin:8px 0 0 16px">You: ${esc(e.text)}</p>`
+        : `<p style="font-size:15px;line-height:1.55;margin:8px 0 0">${esc(e.text)}</p>`).join('');
+    const convoChoices = (convo.choices || []).map(cn =>
+      `<button class="btn sm${cn.id === 'leave' ? ' ghost' : ''}" data-act="c:${esc(cn.id)}">${esc(cn.label)}</button>`).join(' ');
+    const convoHtml = convoTranscript
+      ? `<div class="convo" style="border-top:1px solid #ffffff22;margin-top:10px;padding-top:4px">${convoTranscript}${convoChoices ? `<div class="inline-btns" style="margin-top:8px">${convoChoices}</div>` : ''}</div>`
+      : '';
+    const talkLabel = convo.active ? null : (convo.transcript && convo.transcript.length ? '\uD83D\uDCAC Talk again' : '\uD83D\uDCAC Talk');
     const youKnow = Object.keys(Game.state.codex.plants || {});
     const theyKnow = (Game.state.village.taught && Game.state.village.taught[villagerId]) || [];
     const teachable = youKnow.filter(pid => !theyKnow.includes(pid));
 
-    let btns = `<button class="btn sm" data-act="talk">\uD83D\uDCAC Talk</button>
-      <button class="btn sm ghost" data-act="give"${Game.edibleCount() ? '' : ' disabled'}>\uD83C\uDF81 Give food${Game.edibleCount() ? '' : ' (none)'}</button>
+    let btns = `${talkLabel ? `<button class="btn sm" data-act="talk">${talkLabel}</button>\n      ` : ''}<button class="btn sm ghost" data-act="give"${Game.edibleCount() ? '' : ' disabled'}>\uD83C\uDF81 Give food${Game.edibleCount() ? '' : ' (none)'}</button>
       <button class="btn sm ghost" data-act="ask">\uD83D\uDDE3\uFE0F Ask for help</button>`;
     if (comm.level === 'none') {
       if (view.nvMode === 'gesture') {
@@ -1241,7 +1297,7 @@
       ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
       ${challengeHtml}
       <div class="inline-body">${infoHtml}${conf}
-        ${said ? `<p style="font-size:16px;line-height:1.6;margin-top:10px">\u201C${esc(said)}\u201D</p>` : ''}
+        ${convoHtml || (said ? `<p style="font-size:16px;line-height:1.6;margin-top:10px">\u201C${esc(said)}\u201D</p>` : '')}
       </div>
       <div class="inline-btns">${btns}</div>
     </div>`;
@@ -1256,7 +1312,8 @@
     const vp = (Game.data.villagers || []).find(v => v.id === vid) ||
                (Game.data.background_survivors || []).find(v => v.id === vid) || {};
     const dname = Game.displayName(vid);
-    if (act === 'talk') { view.line = Game.talkTo(vid); view.result = null; view.nvMode = null; }
+    if (act === 'talk') { const st = Game.startConvo(vid); view.line = st ? st.line : null; view.result = null; view.nvMode = null; }
+    else if (act.indexOf('c:') === 0) { const st = Game.convoTurn(vid, act.slice(2)); if (st) view.line = st.line; view.result = null; }
     else if (act === 'give') {
       const gave = Game.giveFood(vid);
       view.result = gave ? 'You gave them food.' : 'You have no food to give.';
@@ -1717,12 +1774,21 @@
     // MODE SHIFT: combat gets its own visual skin — darkened edges,
     // claustrophobic grid. You FEEL the game change.
     try { document.body.classList.toggle('in-combat', !!st.inCombat); } catch (e) {}
+    // NIGHT: the world gets dark, continuously. --sky-light (0..1) drives the
+    // grid dimming in CSS; is-night adds the moonlight tint and fire glow.
+    try {
+      document.body.classList.toggle('is-night', !!st.isNight);
+      document.body.style.setProperty('--sky-light', (st.lightLevel == null ? 1 : st.lightLevel).toFixed(2));
+    } catch (e) {}
+    // DIAL GLITCH: played once — the System replacing your time-sense.
+    if (st.dialGlitch) { try { Game.clearDialGlitch(); } catch (e) {} }
     const targets = Game.travelTargets();
     const tset = new Set(targets.map(t => t.x + ',' + t.y));
     const n = Game.nodeDetail();
 
     screen.innerHTML = `
-      ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
+      ${bar('scattering://field', `${dialHTML(st)}<span>day ${st.day} · ${st.dayPart}</span>`)}
+      ${dayTickBar(st)}
       <div id="announce" style="position:sticky;top:0;background:#1a1a1a;border-bottom:1px solid #444;padding:6px 8px;font-size:13px;z-index:100;">${esc(st.log[st.log.length - 1] || '')}</div>
       <div class="game-cols">
         <div class="game-col-main">
@@ -1976,6 +2042,16 @@
   }
 
 
+  // SLEEP: "sleep until morning" with the cost/benefit on the button.
+  // Quality depends on where you are: bunk > tent > hall floor > cold ground.
+  function sleepBtnHTML() {
+    let prev = null;
+    try { prev = Game.sleepPreview(); } catch (e) {}
+    const hint = prev ? `${prev.name} · +${prev.heal} health · energy restored · hunger ticks slower` : 'Sleep until morning';
+    return `<button class="btn sm" id="x-sleep">😴 Sleep until morning</button>`
+      + `<p class="small" style="opacity:.6">${esc(hint)}${prev && prev.note ? `<br>${esc(prev.note)}` : ''}</p>`;
+  }
+
   function panelHaven(st) {
     const v = Game.villageInfo();
     const vs = Game.data.villagers;
@@ -1989,6 +2065,7 @@
       <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
       <button class="btn sm" id="x-pantry">Take from pantry</button>
+      ${sleepBtnHTML()}
       <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
       <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry ${Game.fmtKcal(8000)}+ (${Game.fmtKcal(st.pantryKcal)})</p>
       <p class="small" style="opacity:.7">Tap a person in the grid to talk. They\'re living their lives.</p>
@@ -2026,7 +2103,8 @@
         <button class="btn sm ghost" id="p-eat">Eat</button>
         <button class="btn sm ghost" id="p-wait">Wait</button>
         <button class="btn sm ghost" id="p-inv">Pack (${st.invCount})</button>
-      </div></div>`;
+      </div>
+      ${sleepBtnHTML()}</div>`;
   }
 
   function panelCombat(st) {
@@ -2095,6 +2173,7 @@
     wireCombatPanel();
     const go = (kind) => { Game.doAction(kind); rerender(); };
     on('p-wait', () => go('wait'));
+    on('x-sleep', () => { Game.sleep(); rerender(); });
     on('p-eat', () => { Game.eat(); rerender(); });
     on('p-inv', () => invSheet());
     screen.querySelectorAll('.bgsurv').forEach(el => {

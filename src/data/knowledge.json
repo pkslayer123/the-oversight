@@ -1026,5 +1026,62 @@
       "journalist"
     ],
     "abilitySynergies": []
+  },
+  {
+    "id": "nocturnal_patterns",
+    "name": "Nocturnal Patterns",
+    "domain": "nature",
+    "rarity": "uncommon",
+    "levels": {
+      "1": "The night has its own animals. Different tracks, different sounds, different eyes watching.",
+      "2": "Hushpuppies hunt in packs after dark. Highbeam Deer freeze in the black between trees — that shine is them aiming. Moths come to any light you make.",
+      "3": "Read the night like a schedule: opossum and raccoon work the same hours you sleep. Bullfrogs call where the water is. The Choir only sings at the edges of day."
+    },
+    "mechanical": {
+      "1": {},
+      "2": {
+        "night_spot": 0.15
+      },
+      "3": {
+        "night_spot": 0.3
+      }
+    },
+    "backgrounds": [
+      "hunter",
+      "naturalist",
+      "camper",
+      "tracker"
+    ],
+    "abilitySynergies": [
+      "night_eyes"
+    ]
+  },
+  {
+    "id": "night_hunting",
+    "name": "Night Hunting",
+    "domain": "survival",
+    "rarity": "rare",
+    "levels": {
+      "1": "Hunting at night is not hunting blind. It is hunting by ear, by smell, by patience.",
+      "2": "Move when the wind moves — your sound hides inside bigger sounds. Stillness is camouflage the dark respects.",
+      "3": "The prepared night hunter is the apex thing out there. You know who walks at night, and you are already waiting where they walk."
+    },
+    "mechanical": {
+      "1": {},
+      "2": {
+        "night_hunt": 0.2
+      },
+      "3": {
+        "night_hunt": 0.35
+      }
+    },
+    "backgrounds": [
+      "hunter",
+      "soldier",
+      "tracker"
+    ],
+    "abilitySynergies": [
+      "night_eyes"
+    ]
   }
 ]

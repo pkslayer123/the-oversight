@@ -89,6 +89,12 @@
         "swarm",
         "drifter"
       ],
+      "activity": [
+        "nocturnal",
+        "diurnal",
+        "crepuscular",
+        "both"
+      ],
       "codexStages": {
         "unknown": "string",
         "observed": "string",
@@ -398,7 +404,13 @@
       "description": "string",
       "biomes": "string[]",
       "scientific": "string",
-      "method": "string[]"
+      "method": "string[]",
+      "activity": [
+        "nocturnal",
+        "diurnal",
+        "crepuscular",
+        "both"
+      ]
     }
   },
   "recipe": {

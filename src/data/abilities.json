@@ -1099,5 +1099,20 @@
     "metabolic": {
       "daily": 40
     }
+  },
+  {
+    "id": "night_eyes",
+    "name": "Night Eyes",
+    "description": "Your eyes drink the dark. At night you spot trouble before it spots you, and nocturnal game can't hide from a patient hunter.",
+    "flavor": "THE DARK IS JUST... SLOW LIGHT? You see it anyway. Rude. We were going to sell that.",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    },
+    "modifiers": [],
+    "metabolic": {
+      "daily": 30
+    }
   }
 ]

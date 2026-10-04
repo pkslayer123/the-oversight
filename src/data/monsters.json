@@ -1,6 +1,7 @@
 [
  {
   "id": "thornback_boar",
+  "activity": "diurnal",
   "name": "Bulldozer",
   "biomes": [
    "se_woodlands"
@@ -64,6 +65,7 @@
  },
  {
   "id": "hushwolf",
+  "activity": "nocturnal",
   "name": "Hushpuppy",
   "biomes": [
    "se_woodlands"
@@ -125,6 +127,7 @@
  },
  {
   "id": "gallowdeer",
+  "activity": "nocturnal",
   "name": "Highbeam Deer",
   "biomes": [
    "se_woodlands"
@@ -188,6 +191,7 @@
  },
  {
   "id": "mirrormoth",
+  "activity": "nocturnal",
   "name": "Flashbulb Moth",
   "biomes": [
    "se_woodlands"
@@ -247,6 +251,7 @@
  },
  {
   "id": "belltoad",
+  "activity": "crepuscular",
   "name": "Choir Toad",
   "biomes": [
    "se_woodlands"
@@ -308,6 +313,7 @@
  },
  {
   "id": "lockpick_raccoon",
+  "activity": "nocturnal",
   "name": "Lockpick",
   "biomes": [
    "se_woodlands"
@@ -368,6 +374,7 @@
  },
  {
   "id": "white_noise_heron",
+  "activity": "crepuscular",
   "name": "White Noise",
   "biomes": [
    "se_woodlands"
@@ -430,6 +437,7 @@
  },
  {
   "id": "hummice",
+  "activity": "nocturnal",
   "name": "Hummice",
   "biomes": [
    "se_woodlands"
@@ -490,6 +498,7 @@
  },
  {
   "id": "speedbump_turtle",
+  "activity": "diurnal",
   "name": "Speedbump",
   "biomes": [
    "se_woodlands"
@@ -551,6 +560,7 @@
  },
  {
   "id": "nightlight_catfish",
+  "activity": "nocturnal",
   "name": "Nightlight",
   "biomes": [
    "se_woodlands"
