@@ -159,15 +159,53 @@
       return pick(cg.firstNames || ['Sam']) + ' ' + pick(cg.lastNames || ['Reyes']);
     },
 
-    // genCultureLanguages: what someone from this culture natively speaks.
-    // { native, english: 0|1|2 }. English fluency rolls — the roster guarantees
-    // at least one fully-fluent candidate so the player always has a playable pick.
-    genCultureLanguages(cultureId) {
+    // levelsOf: normalize any language shape to {id: level 0|1|2}.
+    // Handles the multilingual {native, levels} shape, the legacy
+    // {native, english} shape, and legacy scholar arrays (all fluent).
+    levelsOf(langs, englishLevel) {
+      if (!langs) return { english: 2 };
+      if (Array.isArray(langs)) {
+        const lv = {};
+        for (const id of langs) lv[id] = 2;
+        lv.english = englishLevel != null ? englishLevel : (lv.english != null ? lv.english : 2);
+        return lv;
+      }
+      if (langs.levels) return Object.assign({}, langs.levels);
+      if (langs.native) {
+        // legacy {native, english} shape
+        const lv = { [langs.native]: 2 };
+        if (langs.english) lv.english = langs.english;
+        return lv;
+      }
+      // bare levels map (the scholar's shape)
+      const lv = Object.assign({}, langs);
+      if (englishLevel != null) lv.english = englishLevel;
+      return lv;
+    },
+
+    // genCultureLanguages: what someone from this culture speaks.
+    // { native, levels: {lang: 0|1|2} }. Native is fluent; English rolls;
+    // ~30% pick up a third tongue (travelers, border towns), 8% a fourth.
+    // Occupation polyglots (interpreters, ESL teachers) speak their claimed tongues.
+    genCultureLanguages(cultureId, occ) {
       const nc = this.data.nameCultures || {};
       const native = ((nc.cultures || {})[cultureId] || {}).language || 'english';
-      if (native === 'english') return { native, english: 2 };
-      const r = Math.random();
-      return { native, english: r < 0.25 ? 0 : r < 0.7 ? 1 : 2 };
+      const levels = { [native]: 2 };
+      const pick = a => a[Math.floor(Math.random() * a.length)];
+      if (native !== 'english') {
+        const r = Math.random();
+        const eng = r < 0.3 ? 0 : r < 0.75 ? 1 : 2;
+        if (eng) levels.english = eng;
+      }
+      const pool = ['spanish', 'french', 'arabic', 'mandarin', 'portuguese', 'hindi', 'russian', 'swahili', 'korean', 'german'];
+      const avail = () => pool.filter(l => l !== native && !levels[l]);
+      if (avail().length && Math.random() < 0.3) {
+        const l3 = pick(avail());
+        levels[l3] = Math.random() < 0.3 ? 2 : 1;
+      }
+      if (avail().length && Math.random() < 0.08) levels[pick(avail())] = 1;
+      for (const l of ((occ && occ.polyglot) || [])) levels[l] = 2;
+      return { native, levels };
     },
 
     // genCharacter: one full person. The origin is authoritative — name, native
@@ -190,7 +228,8 @@
       do {
         name = this.genNameForOrigin(origin, forceCultureMatch);
         guard++;
-      } while (usedNames.has(name) && guard < 50);
+        // no duplicate first names in one cast — "June" twice breaks the fiction
+      } while ((usedNames.has(name) || [...usedNames].some(n => n.split(' ')[0] === name.split(' ')[0])) && guard < 50);
       usedNames.add(name);
       const first = name.split(' ')[0];
       const pro = pick(['they', 'she', 'he']);
@@ -222,7 +261,7 @@
         const tt = [...(cg.talkTemplates || [])];
         while (talk.length < 3 && tt.length) talk.push(fill(tt.splice(Math.floor(Math.random() * tt.length), 1)[0]));
         const quest = (cg.questTemplates || []).map(fill);
-        const langs = this.genCultureLanguages(this.cultureForOrigin(origin));
+        const langs = this.genCultureLanguages(this.cultureForOrigin(origin), occ);
         const age = 19 + Math.floor(Math.random() * 44); // 19-62. Real people have ages.
         const char = {
           id: 'gen_' + Math.random().toString(36).slice(2, 9),
@@ -259,8 +298,11 @@
       }
       // Language is a real choice on the cards — but the player must always have
       // at least one fully-fluent pick. No trapped protagonists.
-      if (!chars.some(c => (c.languages || {}).english === 2)) {
-        chars[0].languages.english = 2;
+      if (!chars.some(c => (this.levelsOf(c.languages).english || 0) === 2)) {
+        const c0 = chars[0];
+        c0.languages = c0.languages || { native: 'english', levels: {} };
+        c0.languages.levels = this.levelsOf(c0.languages);
+        c0.languages.levels.english = 2;
       }
       for (let i = 0; i < 2; i++) {
         const npcOrigin = pick(cg.sampleOrigins || ['somewhere']);
@@ -347,31 +389,40 @@
       return conflicts;
     },
 
-    // commLevel: shared language? full. A few words? halved. None? quarter + misunderstandings.
-    // Communication is limited by the WEAKER party's English — a non-fluent player
-    // character can't lean on a villager's fluency.
+    // commLevel: do you share ANY language? Best shared tongue wins, limited by
+    // the weaker party — a non-fluent player can't lean on a villager's fluency.
+    // full (2): normal. partial (1): halved. none: quarter + misunderstandings.
     commLevel(vid) {
       const v = (this.data.villagers || []).find(x => x.id === vid) || {};
-      const vl = v.languages || { native: 'english', english: 2 };
-      const playerLangs = (this.state.scholar && this.state.scholar.languages) || ['english'];
-      const playerEnglish = (this.state.scholar && this.state.scholar.englishLevel != null)
-        ? this.state.scholar.englishLevel : 2;
-      if (playerLangs.includes(vl.native)) return { level: 'full', mult: 1, lang: vl.native };
-      const shared = Math.min(vl.english || 0, playerEnglish);
-      if (shared === 2) return { level: 'full', mult: 1, lang: 'english' };
-      if (shared === 1) return { level: 'partial', mult: 0.5, lang: 'english' };
-      return { level: 'none', mult: 0.25, lang: vl.native };
+      const vl = this.levelsOf(v.languages);
+      const s = this.state.scholar || {};
+      const pl = this.levelsOf(s.languages, s.englishLevel);
+      let best = 0, bestLang = null;
+      for (const id of Object.keys(vl)) {
+        if ((vl[id] || 0) >= 1 && (pl[id] || 0) >= 1) {
+          const m = Math.min(vl[id], pl[id]);
+          if (m > best) { best = m; bestLang = id; }
+        }
+      }
+      const native = (v.languages && v.languages.native) || 'english';
+      if (best >= 2) return { level: 'full', mult: 1, lang: bestLang };
+      if (best === 1) return { level: 'partial', mult: 0.5, lang: bestLang };
+      return { level: 'none', mult: 0.25, lang: native };
     },
 
-    // langLabel: always-visible language tag (character select, person sheets).
-    // Diversity should be unmistakable, not discovered by accident.
+    // langLabel: every tongue listed. Diversity unmistakable, not accidental.
+    // "🇯🇵 Japanese · 🇰🇷 Korean · 🇺🇸 English (basic)"
     langLabel(langs) {
-      const vl = langs || { native: 'english', english: 2 };
-      const langName = ((this.data.characterGen || {}).languages || []).find(l => l.id === vl.native);
-      const label = langName ? `${langName.icon} ${langName.name}` : vl.native;
-      if (vl.native === 'english' || vl.english === 2) return label;
-      if (vl.english === 1) return `${label} · little English`;
-      return `${label} · no English`;
+      const lv = this.levelsOf(langs);
+      const defs = (this.data.characterGen || {}).languages || [];
+      const disp = id => { const d = defs.find(l => l.id === id); return d ? `${d.icon} ${d.name}` : id; };
+      const native = (langs && !Array.isArray(langs) && langs.native) || 'english';
+      const parts = [disp(native)];
+      for (const id of Object.keys(lv)) {
+        if (id === native || (lv[id] || 0) < 1) continue;
+        parts.push(disp(id) + (lv[id] === 1 ? ' (basic)' : ''));
+      }
+      return parts.join(' · ');
     },
 
     // langNote: the barrier is discovered in conversation, not listed on a roster.
@@ -379,12 +430,7 @@
       const met = (this.state.village.met || {})[vid];
       if (!met) return null;
       const v = (this.data.villagers || []).find(x => x.id === vid) || {};
-      const vl = v.languages || { native: 'english', english: 2 };
-      const langName = ((this.data.characterGen || {}).languages || []).find(l => l.id === vl.native);
-      const label = langName ? `${langName.icon} ${langName.name}` : vl.native;
-      if (vl.native === 'english' || vl.english === 2) return label;
-      if (vl.english === 1) return `${label} · little English`;
-      return `${label} · no English`;
+      return this.langLabel(v.languages);
     },
 
     conflictNote(c, id) {
@@ -603,12 +649,14 @@
       scholar.week1 = { forage: 0, hunt: 0, talk: 0, cook: 0, donate: 0, scavenge: 0 };
       // PLAYSTYLE: the game notices who you are — cautious, bold, generous... behavior, not stats.
       scholar.playstyle = {};
-      // LANGUAGES: your native tongue, plus whatever English you have, plus any
-      // polyglot bonus from your occupation. Your origin is real now — and so is
-      // the barrier when you don't share a language. (englishLevel drives commLevel.)
-      const pl = villager.languages || { native: 'english', english: 2 };
-      scholar.languages = [...new Set([pl.native].concat(occ.polyglot || []))];
-      scholar.englishLevel = pl.english != null ? pl.english : 2;
+      // LANGUAGES: your tongues with levels. Native is fluent; occupation
+      // polyglots actually speak their claimed languages. Your origin is real
+      // now — and so is the barrier when you share no language at all.
+      const pl = villager.languages || { native: 'english', levels: { english: 2 } };
+      const plv = this.levelsOf(pl);
+      for (const l of (occ.polyglot || [])) plv[l] = 2;
+      scholar.languages = plv;
+      scholar.englishLevel = plv.english != null ? plv.english : 2;
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
       // RELIC BOND: your five are bonded relics. Grown, not found.
       // Bond accrues through use; the System offers enhancements at 10/25/50.
@@ -700,7 +748,7 @@
       if (firstMet && comm.level !== 'full') {
         const langName = ((this.data.characterGen || {}).languages || []).find(l => l.id === comm.lang);
         const label = langName ? `${langName.icon} ${langName.name}` : comm.lang;
-        this.say(`...and then it lands: ${v.name.split(' ')[0]} doesn't speak English. ${comm.level === 'partial' ? 'A few words. Gestures. Patience.' : 'Not really. Not at all.'} (${label})`);
+        this.say(`...and then it lands: ${v.name.split(' ')[0]} speaks ${label}. ${comm.level === 'partial' ? 'A few shared words. Gestures. Patience.' : 'You share no language at all.'}`);
       }
       this.state.talkIdx = this.state.talkIdx || {};
       const i = (this.state.talkIdx[vid] || 0) % lines.length;
