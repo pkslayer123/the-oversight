@@ -102,15 +102,11 @@
       return 'the scattered';
     },
 
-    // planExpedition: 3 randomized landing zones. The choice matters.
-    planExpedition() {
+    // The scattering is random. Nobody chooses where they wake up.
+    // Origin (typed by the player) sets regional knowledge; the landing zone is pure chance.
+    randomLandingZone() {
       const pool = [...(this.data.locations || [])];
-      const picks = [];
-      while (picks.length < 3 && pool.length) {
-        picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-      }
-      this.expeditionLocations = picks;
-      return picks;
+      return pool.length ? pool[Math.floor(Math.random() * pool.length)] : {};
     },
 
     // locParams: genMap tuning for the chosen landing zone (with safe defaults).
@@ -358,7 +354,11 @@
       const parsed = this.parseOrigin(homeRegionText);
       this.homeRegion = parsed.raw; this.villagerId = villagerId;
       // landing zone: the scattering is random. Your origin doesn't choose where you wake up.
-      const loc = (this.data.locations || []).find(l => l.id === locationId) || (this.data.locations || [])[0] || {};
+      // locationId is only honored for legacy/test callers — live play always randomizes.
+      const locPool = (this.data.locations || []);
+      const loc = (locationId && locPool.find(l => l.id === locationId))
+        || locPool[Math.floor(Math.random() * locPool.length)]
+        || {};
       this.state = S.state.newState();
       this.state.startLocation = loc.id || null;
       this.state.spawnType = loc.spawnType || 'countryside';

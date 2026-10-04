@@ -106,24 +106,9 @@
       <button class="btn" id="b-home-go">This is where I'm from</button>`;
     const input = document.getElementById('ob-origin');
     input.focus();
-    const go = () => { ob.home = input.value.trim() || 'somewhere unremembered'; obLocation(); };
+    const go = () => { ob.home = input.value.trim() || 'somewhere unremembered'; obWho(); };
     document.getElementById('b-home-go').onclick = go;
     input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
-  }
-  function obLocation() {
-    // WHERE DID YOU WAKE UP? 3 randomized landing zones. The choice matters:
-    // water, forage, visibility, scavenging — each land plays differently.
-    const locs = Game.planExpedition();
-    screen.innerHTML = `${bar('scattering://land', '?')}
-      <h1 class="title" style="font-size:22px">WHERE DID YOU WAKE UP?</h1>
-      <p class="small">The scattering is random. Your origin didn't choose this. Pick the land:</p>
-      ${locs.map(l => `
-        <div class="card"><h3>${l.name}</h3>
-        <p><i>${l.tagline}</i></p>
-        <p class="small">${l.description}</p>
-        <p class="small" style="opacity:.7">⚠ ${l.hazard}</p>
-        <button class="btn" data-l="${l.id}">Wake up here</button></div>`).join('')}`;
-    screen.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { ob.location = b.dataset.l; obWho(); });
   }
   function obWho() {
     // 6 fresh randomized characters per expedition. Real people, not stat blocks.
@@ -159,11 +144,33 @@
       });
       const go = document.getElementById('b-go');
       if (picked.size === 5) go.onclick = () => {
-        Game.newGame(ob.home, ob.location, ob.villager, [...picked]);
-        questOverlay(() => { Game.depart(); expeditionScreen(); });
+        Game.newGame(ob.home, null, ob.villager, [...picked]);
+        obWake();
       };
     };
     render();
+  }
+
+  // ---------- wake-up reveal ----------
+  // The scattering is random. You don't choose where you wake up.
+  // This is the first time the player sees the land — lean into disorientation.
+  function obWake() {
+    const loc = (Game.data.locations || []).find(l => l.id === Game.state.startLocation) || {};
+    const lines = [
+      `You wake up face-down in ${/^[aeiou]/i.test(loc.name || '') ? 'an' : 'a'} ${String(loc.name || 'unfamiliar place').toLowerCase()}.`,
+      `You don't remember choosing this. You didn't.`,
+      `${loc.tagline || 'Nothing looks familiar.'}`,
+    ];
+    screen.innerHTML = `${bar('scattering://wake', '?')}
+      <h1 class="title" style="font-size:22px">YOU WAKE UP</h1>
+      <div class="card" style="margin-top:24px">
+        <p style="font-size:17px;line-height:1.7">${lines.join('<br><br>')}</p>
+        <p class="small" style="opacity:.6;margin-top:16px">What you know grows where you're from. It doesn't grow here.</p>
+        <button class="btn" id="b-wake">Open your eyes</button>
+      </div>`;
+    document.getElementById('b-wake').onclick = () => {
+      questOverlay(() => { Game.depart(); expeditionScreen(); });
+    };
   }
 
   // ---------- village node ----------

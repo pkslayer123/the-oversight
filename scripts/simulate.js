@@ -120,9 +120,8 @@ function randomPart() {
 }
 
 function runOnce(policy, maxDays = 60) {
-  Game.planExpedition();
   Game.genRoster();
-  Game.newGame('Columbus, Ohio', Game.expeditionLocations[0].id, Game.generatedRoster[0].id);
+  Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
   const pantry = [];
   let parts = 0, forages = 0, starveDays = 0;
@@ -151,9 +150,8 @@ function runOnce(policy, maxDays = 60) {
   const runs = parseInt(args[0] || '30', 10);
 
   console.log('=== PER-TILE EV (kcal per forage, 2000 samples) ===');
-  Game.planExpedition();
   Game.genRoster();
-  Game.newGame('Columbus, Ohio', Game.expeditionLocations[0].id, Game.generatedRoster[0].id);
+  Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   const ev = process.env.SKIP_EV ? {} : evTable();
   for (const [ty, r] of Object.entries(ev))
     console.log(`${ty.padEnd(13)} rich ${r.richness.toFixed(1)}  stock ${r.stock}  E/forage ${r.perForage}  E/day ${r.dailyEV}`);
