@@ -1,0 +1,2332 @@
+{
+ "_comment": "Real foreign-language speech for NPCs with no shared language. Every phrase is a real sentence in that tongue — never gibberish, never '[speaks Italian]'. Each entry: t (native text), en (translation, shown only via interpreter/translator/learning), kw (keyword glosses the player can catch while learning). fewWords: the handful of English fragments a zero-English speaker might know — the Mario energy.",
+ "arabic": {
+  "agree": [
+   {
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "نعم": "yes"
+    },
+    "t": "نعم، نعم، بالضبط."
+   },
+   {
+    "en": "This is right.",
+    "kw": {
+     "صحيح": "right"
+    },
+    "t": "هذا صحيح."
+   },
+   {
+    "en": "Agreed.",
+    "kw": {},
+    "t": "اتفقنا."
+   }
+  ],
+  "confused": [
+   {
+    "en": "What? I don't understand.",
+    "kw": {
+     "ماذا": "what"
+    },
+    "t": "ماذا؟ لا أفهم."
+   },
+   {
+    "en": "Huh? What did you say?",
+    "kw": {},
+    "t": "ها؟ ماذا قلت؟"
+   },
+   {
+    "en": "What are you saying?",
+    "kw": {
+     "ماذا": "what"
+    },
+    "t": "ماذا تقول؟"
+   }
+  ],
+  "fewWords": [
+   "Fuck you.",
+   "Hello?",
+   "Food?",
+   "No, no.",
+   "Shit.",
+   "You good?",
+   "Water?"
+  ],
+  "laugh": [
+   {
+    "en": "Haha! ...excuse me, excuse me.",
+    "kw": {
+     "عذراً": "excuse me"
+    },
+    "t": "هاها! ...عذراً، عذراً."
+   },
+   {
+    "en": "You make me laugh!",
+    "kw": {},
+    "t": "أنت تضحكني!"
+   },
+   {
+    "t": "يا له من مضحك!",
+    "en": "How funny!",
+    "kw": {
+     "مضحك": "funny"
+    }
+   },
+   {
+    "t": "لا أصدق!",
+    "en": "I don't believe it!",
+    "kw": {
+     "أصدق": "believe"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "en": "Beware! There! Danger!",
+    "kw": {
+     "احذر": "beware",
+     "خطر": "danger"
+    },
+    "t": "احذر! هناك! خطر!"
+   },
+   {
+    "en": "We must go. Now!",
+    "kw": {
+     "نذهب": "we go"
+    },
+    "t": "يجب أن نذهب. الآن!"
+   },
+   {
+    "t": "احذر!",
+    "en": "Beware!",
+    "kw": {
+     "احذر": "beware"
+    }
+   },
+   {
+    "t": "هناك شيء في الخارج.",
+    "en": "There's something outside.",
+    "kw": {
+     "شيء": "something",
+     "الخارج": "the outside"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "en": "I am hungry. Please, something to eat.",
+    "kw": {
+     "جائع": "hungry",
+     "للأكل": "to eat"
+    },
+    "t": "أنا جائع. أرجوك، شيء للأكل."
+   },
+   {
+    "en": "Hunger... severe hunger.",
+    "kw": {
+     "جوع": "hunger"
+    },
+    "t": "جوع... جوع شديد."
+   },
+   {
+    "t": "أنا جائع جداً.",
+    "en": "I'm very hungry.",
+    "kw": {
+     "جائع": "hungry"
+    }
+   },
+   {
+    "t": "شيء للأكل، من فضلك.",
+    "en": "Something to eat, please.",
+    "kw": {
+     "الأكل": "the food",
+     "من فضلك": "please"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "en": "Help... help me, please.",
+    "kw": {
+     "النجدة": "help!",
+     "ساعدني": "help me"
+    },
+    "t": "النجدة... ساعدني، أرجوك."
+   },
+   {
+    "en": "Please, I need you.",
+    "kw": {},
+    "t": "أرجوك، أحتاجك."
+   },
+   {
+    "t": "ساعدني، من فضلك.",
+    "en": "Help me, please.",
+    "kw": {
+     "ساعدني": "help me"
+    }
+   },
+   {
+    "t": "لا أستطيع وحدي.",
+    "en": "I can't alone.",
+    "kw": {
+     "وحدي": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "en": "Water... please, water.",
+    "kw": {
+     "ماء": "water"
+    },
+    "t": "ماء... أرجوك، ماء."
+   },
+   {
+    "en": "I am thirsty. Will you give me water?",
+    "kw": {
+     "عطشان": "thirsty"
+    },
+    "t": "أنا عطشان. تعطيني ماء؟"
+   },
+   {
+    "t": "حلقي جاف.",
+    "en": "My throat is dry.",
+    "kw": {
+     "حلقي": "my throat",
+     "جاف": "dry"
+    }
+   },
+   {
+    "t": "بعض الماء، من فضلك.",
+    "en": "Some water, please.",
+    "kw": {
+     "الماء": "the water"
+    }
+   }
+  ],
+  "openers": [
+   {
+    "en": "Hello! What is your name?",
+    "kw": {
+     "مرحباً": "hello"
+    },
+    "t": "مرحباً! ما اسمك؟"
+   },
+   {
+    "en": "Hey... do you speak Arabic? No? ...damn.",
+    "kw": {
+     "عربي": "Arabic",
+     "لا": "no"
+    },
+    "t": "هيه... تتكلم عربي؟ لا؟ ...تباً."
+   },
+   {
+    "en": "I don't understand a thing. Nothing!",
+    "kw": {},
+    "t": "لا أفهم شيئاً. لا شيء!"
+   },
+   {
+    "en": "What is this place? Where are we?",
+    "kw": {
+     "أين": "where"
+    },
+    "t": "ما هذا المكان؟ أين نحن؟"
+   }
+  ],
+  "questions": [
+   {
+    "en": "Do you have food?",
+    "kw": {
+     "أكل": "food"
+    },
+    "t": "عندك أكل؟"
+   },
+   {
+    "en": "Where do we sleep here?",
+    "kw": {
+     "ننام": "we sleep",
+     "وين": "where"
+    },
+    "t": "وين ننام هنا؟"
+   },
+   {
+    "en": "You... the boss?",
+    "kw": {
+     "الرئيس": "boss"
+    },
+    "t": "أنت... الرئيس؟"
+   },
+   {
+    "en": "How many days have we been here?",
+    "kw": {
+     "يوم": "day"
+    },
+    "t": "كم يوم صار لنا هنا؟"
+   }
+  ],
+  "warm": [
+   {
+    "en": "Thank you. Truly, thank you.",
+    "kw": {
+     "شكراً": "thanks"
+    },
+    "t": "شكراً. حقاً، شكراً."
+   },
+   {
+    "en": "You are a kind person.",
+    "kw": {
+     "طيب": "kind"
+    },
+    "t": "أنت إنسان طيب."
+   },
+   {
+    "en": "I won't forget this.",
+    "kw": {},
+    "t": "لن أنسى هذا."
+   }
+  ]
+ },
+ "french": {
+  "agree": [
+   {
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Oui": "yes"
+    },
+    "t": "Oui, oui, exactement."
+   },
+   {
+    "en": "It's true.",
+    "kw": {
+     "vrai": "true"
+    },
+    "t": "C'est vrai."
+   },
+   {
+    "en": "Agreed.",
+    "kw": {},
+    "t": "D'accord."
+   }
+  ],
+  "confused": [
+   {
+    "en": "What? I don't understand.",
+    "kw": {
+     "Quoi": "what"
+    },
+    "t": "Quoi ? Je ne comprends pas."
+   },
+   {
+    "en": "Huh? You repeat?",
+    "kw": {
+     "répètes": "repeat"
+    },
+    "t": "Hein ? Tu répètes ?"
+   },
+   {
+    "en": "But what are you saying?",
+    "kw": {
+     "quoi": "what"
+    },
+    "t": "Mais qu'est-ce que tu dis ?"
+   }
+  ],
+  "fewWords": [
+   "Fuck you.",
+   "Hello?",
+   "Food?",
+   "Non, non.",
+   "Shit.",
+   "You good?",
+   "Water?"
+  ],
+  "laugh": [
+   {
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "pardon": "sorry"
+    },
+    "t": "Haha ! ...pardon, pardon."
+   },
+   {
+    "en": "You make me laugh!",
+    "kw": {
+     "rire": "to laugh"
+    },
+    "t": "Tu me fais rire !"
+   },
+   {
+    "t": "C'est trop drôle !",
+    "en": "That's so funny!",
+    "kw": {
+     "drôle": "funny"
+    }
+   },
+   {
+    "t": "Je n'y crois pas !",
+    "en": "I don't believe it!",
+    "kw": {
+     "crois": "believe"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "en": "Watch out! Over there! Danger!",
+    "kw": {
+     "Attention": "attention",
+     "Danger": "danger"
+    },
+    "t": "Attention ! Là-bas ! Danger !"
+   },
+   {
+    "en": "We must leave. Right now!",
+    "kw": {
+     "partir": "to leave"
+    },
+    "t": "On doit partir. Tout de suite !"
+   },
+   {
+    "t": "Fais attention !",
+    "en": "Be careful!",
+    "kw": {
+     "attention": "care"
+    }
+   },
+   {
+    "t": "Il y a quelque chose là-dehors.",
+    "en": "There's something out there.",
+    "kw": {
+     "quelque chose": "something"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "faim": "hunger",
+     "manger": "to eat"
+    },
+    "t": "J'ai faim. S'il te plaît... quelque chose à manger."
+   },
+   {
+    "en": "Hunger... so much hunger.",
+    "kw": {
+     "Faim": "hunger"
+    },
+    "t": "Faim... tellement faim."
+   },
+   {
+    "t": "J'ai une faim de loup.",
+    "en": "I'm wolf-hungry.",
+    "kw": {
+     "faim": "hunger",
+     "loup": "wolf"
+    }
+   },
+   {
+    "t": "Quelque chose à manger, s'il te plaît.",
+    "en": "Something to eat, please.",
+    "kw": {
+     "manger": "to eat"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "en": "Help... help me, I beg you.",
+    "kw": {
+     "aide": "help"
+    },
+    "t": "À l'aide... aide-moi, je t'en prie."
+   },
+   {
+    "en": "Please, I need you.",
+    "kw": {
+     "besoin": "need"
+    },
+    "t": "S'il te plaît, j'ai besoin de toi."
+   },
+   {
+    "t": "Aide-moi, s'il te plaît.",
+    "en": "Help me, please.",
+    "kw": {
+     "aide-moi": "help me"
+    }
+   },
+   {
+    "t": "Je n'y arrive pas seul.",
+    "en": "I can't manage alone.",
+    "kw": {
+     "seul": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "en": "Water... please, water.",
+    "kw": {
+     "eau": "water"
+    },
+    "t": "De l'eau... s'il te plaît, de l'eau."
+   },
+   {
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "soif": "thirst"
+    },
+    "t": "J'ai soif. Tu me donnes de l'eau ?"
+   },
+   {
+    "t": "J'ai la gorge sèche.",
+    "en": "My throat is dry.",
+    "kw": {
+     "gorge": "throat",
+     "sèche": "dry"
+    }
+   },
+   {
+    "t": "Un peu d'eau, s'il te plaît.",
+    "en": "A little water, please.",
+    "kw": {
+     "eau": "water"
+    }
+   }
+  ],
+  "openers": [
+   {
+    "en": "Hi! What's your name?",
+    "kw": {
+     "Salut": "hi"
+    },
+    "t": "Salut ! Comment tu t'appelles ?"
+   },
+   {
+    "en": "Hey... you speak French? No? ...shit.",
+    "kw": {
+     "Non": "no",
+     "parles": "speak"
+    },
+    "t": "Hé... tu parles français ? Non ? ...merde."
+   },
+   {
+    "en": "I don't understand anything. Nothing!",
+    "kw": {
+     "rien": "nothing"
+    },
+    "t": "Je ne comprends rien. Rien !"
+   },
+   {
+    "en": "What is this place? Where are we?",
+    "kw": {
+     "Où": "where"
+    },
+    "t": "C'est quoi, cet endroit ? Où sommes-nous ?"
+   }
+  ],
+  "questions": [
+   {
+    "en": "Do you have food? Something?",
+    "kw": {
+     "manger": "to eat"
+    },
+    "t": "Tu as à manger ? Quelque chose ?"
+   },
+   {
+    "en": "Where do we sleep, here?",
+    "kw": {
+     "Où": "where",
+     "dort": "sleeps"
+    },
+    "t": "Où est-ce qu'on dort, ici ?"
+   },
+   {
+    "en": "Is it you... the boss?",
+    "kw": {
+     "chef": "boss"
+    },
+    "t": "C'est toi... le chef ?"
+   },
+   {
+    "en": "How many days has it been, here?",
+    "kw": {
+     "jours": "days"
+    },
+    "t": "Ça fait combien de jours, ici ?"
+   }
+  ],
+  "warm": [
+   {
+    "en": "Thanks. Truly, thanks.",
+    "kw": {
+     "Merci": "thanks"
+    },
+    "t": "Merci. Vraiment, merci."
+   },
+   {
+    "en": "You're someone good.",
+    "kw": {
+     "bien": "good"
+    },
+    "t": "Tu es quelqu'un de bien."
+   },
+   {
+    "en": "I won't forget.",
+    "kw": {},
+    "t": "Je n'oublierai pas."
+   }
+  ]
+ },
+ "hindi": {
+  "agree": [
+   {
+    "en": "Yes, yes, absolutely.",
+    "kw": {
+     "हाँ": "yes"
+    },
+    "t": "हाँ, हाँ, बिल्कुल।"
+   },
+   {
+    "en": "This is true.",
+    "kw": {
+     "सच": "truth"
+    },
+    "t": "यह सच है।"
+   },
+   {
+    "en": "Okay.",
+    "kw": {
+     "ठीक": "okay"
+    },
+    "t": "ठीक है।"
+   }
+  ],
+  "confused": [
+   {
+    "en": "What? I didn't understand.",
+    "kw": {
+     "क्या": "what"
+    },
+    "t": "क्या? मुझे समझ नहीं आया।"
+   },
+   {
+    "en": "Huh? Say again?",
+    "kw": {},
+    "t": "अं? फिर से कहो?"
+   },
+   {
+    "en": "What are you saying?",
+    "kw": {
+     "क्या": "what"
+    },
+    "t": "तुम क्या कह रहे हो?"
+   }
+  ],
+  "fewWords": [
+   "Fuck you.",
+   "Hello?",
+   "Food?",
+   "No, no.",
+   "Shit.",
+   "You good?",
+   "Water?"
+  ],
+  "laugh": [
+   {
+    "en": "Haha! ...forgive me, forgive me.",
+    "kw": {
+     "माफ़": "forgive"
+    },
+    "t": "हाहा! ...माफ़ करना, माफ़ करना।"
+   },
+   {
+    "en": "You make me laugh!",
+    "kw": {
+     "हँसाते": "make laugh"
+    },
+    "t": "तुम मुझे हँसाते हो!"
+   },
+   {
+    "t": "बहुत हँसी आई!",
+    "en": "So funny!",
+    "kw": {
+     "हँसी": "laughter"
+    }
+   },
+   {
+    "t": "मुझे यकीन नहीं हो रहा!",
+    "en": "I can't believe it!",
+    "kw": {
+     "यकीन": "belief"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "ख़तरा": "danger",
+     "सावधान": "careful"
+    },
+    "t": "सावधान! वहाँ! ख़तरा!"
+   },
+   {
+    "en": "We must go. Now!",
+    "kw": {
+     "जाना": "to go"
+    },
+    "t": "हमें जाना होगा। अभी!"
+   },
+   {
+    "t": "सावधान रहो!",
+    "en": "Stay careful!",
+    "kw": {
+     "सावधान": "careful"
+    }
+   },
+   {
+    "t": "बाहर कुछ है।",
+    "en": "There's something outside.",
+    "kw": {
+     "बाहर": "outside",
+     "कुछ": "something"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "en": "I am hungry. Please, give me something to eat.",
+    "kw": {
+     "खाने": "to eat",
+     "भूख": "hunger"
+    },
+    "t": "मुझे भूख लगी है। कृपया, कुछ खाने को दो।"
+   },
+   {
+    "en": "Hunger... great hunger.",
+    "kw": {
+     "भूख": "hunger"
+    },
+    "t": "भूख... बहुत भूख।"
+   },
+   {
+    "t": "मुझे बहुत भूख लगी है।",
+    "en": "I'm very hungry.",
+    "kw": {
+     "भूख": "hunger"
+    }
+   },
+   {
+    "t": "कुछ खाने को दो, प्लीज़।",
+    "en": "Give something to eat, please.",
+    "kw": {
+     "खाने": "to eat"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "en": "Save me... help me, please.",
+    "kw": {
+     "बचाओ": "save me",
+     "मदद": "help"
+    },
+    "t": "बचाओ... मेरी मदद करो, कृपया।"
+   },
+   {
+    "en": "Please, I need you.",
+    "kw": {},
+    "t": "कृपया, मुझे तुम्हारी ज़रूरत है।"
+   },
+   {
+    "t": "मेरी मदद करो, प्लीज़।",
+    "en": "Help me, please.",
+    "kw": {
+     "मदद": "help"
+    }
+   },
+   {
+    "t": "मैं अकेला नहीं कर सकता।",
+    "en": "I can't do it alone.",
+    "kw": {
+     "अकेला": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "en": "Water... please, water.",
+    "kw": {
+     "पानी": "water"
+    },
+    "t": "पानी... कृपया, पानी।"
+   },
+   {
+    "en": "I'm thirsty. Will you give water?",
+    "kw": {
+     "प्यास": "thirst"
+    },
+    "t": "मुझे प्यास लगी है। पानी दोगे?"
+   },
+   {
+    "t": "मेरा गला सूख गया है।",
+    "en": "My throat has dried.",
+    "kw": {
+     "गला": "throat",
+     "सूख": "dry"
+    }
+   },
+   {
+    "t": "थोड़ा पानी दो।",
+    "en": "Give a little water.",
+    "kw": {
+     "पानी": "water"
+    }
+   }
+  ],
+  "openers": [
+   {
+    "en": "Greetings! What is your name?",
+    "kw": {
+     "नमस्ते": "hello"
+    },
+    "t": "नमस्ते! तुम्हारा नाम क्या है?"
+   },
+   {
+    "en": "Hey... do you know Hindi? No? ...damn.",
+    "kw": {
+     "नहीं": "no",
+     "हिंदी": "Hindi"
+    },
+    "t": "अरे... तुम्हें हिंदी आती है? नहीं? ...धत्।"
+   },
+   {
+    "en": "I can't understand anything. Nothing at all!",
+    "kw": {},
+    "t": "मुझे कुछ समझ नहीं आ रहा। कुछ भी नहीं!"
+   },
+   {
+    "en": "What place is this? Where are we?",
+    "kw": {
+     "कहाँ": "where"
+    },
+    "t": "यह कौन सी जगह है? हम कहाँ हैं?"
+   }
+  ],
+  "questions": [
+   {
+    "en": "Do you have food?",
+    "kw": {
+     "खाना": "food"
+    },
+    "t": "तुम्हारे पास खाना है?"
+   },
+   {
+    "en": "Where do people sleep here?",
+    "kw": {
+     "कहाँ": "where",
+     "सोते": "sleep"
+    },
+    "t": "यहाँ सोते कहाँ हैं?"
+   },
+   {
+    "en": "Are you... the leader?",
+    "kw": {
+     "मुखिया": "leader"
+    },
+    "t": "तुम... मुखिया हो?"
+   },
+   {
+    "en": "How many days have we been here?",
+    "kw": {
+     "दिन": "days"
+    },
+    "t": "हम यहाँ कितने दिन से हैं?"
+   }
+  ],
+  "warm": [
+   {
+    "en": "Thank you. Truly, thank you.",
+    "kw": {
+     "धन्यवाद": "thanks"
+    },
+    "t": "धन्यवाद। सच में, धन्यवाद।"
+   },
+   {
+    "en": "You are a good person.",
+    "kw": {
+     "अच्छे": "good"
+    },
+    "t": "तुम अच्छे इंसान हो।"
+   },
+   {
+    "en": "I won't forget.",
+    "kw": {},
+    "t": "मैं नहीं भूलूँगा।"
+   }
+  ]
+ },
+ "italian": {
+  "agree": [
+   {
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Sì": "yes"
+    },
+    "t": "Sì, sì, esatto."
+   },
+   {
+    "en": "It's true.",
+    "kw": {
+     "vero": "true"
+    },
+    "t": "È vero."
+   },
+   {
+    "en": "Agreed.",
+    "kw": {},
+    "t": "D'accordo."
+   }
+  ],
+  "confused": [
+   {
+    "en": "What? I don't understand.",
+    "kw": {
+     "Cosa": "what"
+    },
+    "t": "Cosa? Non capisco."
+   },
+   {
+    "en": "Huh? Repeat, please.",
+    "kw": {
+     "per favore": "please"
+    },
+    "t": "Eh? Ripeti, per favore."
+   },
+   {
+    "en": "But what are you saying?",
+    "kw": {
+     "che": "what"
+    },
+    "t": "Ma che stai dicendo?"
+   }
+  ],
+  "fewWords": [
+   "Fuck you.",
+   "Hello?",
+   "Food?",
+   "No, no, no.",
+   "Shit.",
+   "You good?",
+   "Water?"
+  ],
+  "laugh": [
+   {
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "scusa": "sorry"
+    },
+    "t": "Ahah! ...scusa, scusa."
+   },
+   {
+    "en": "You make me laugh!",
+    "kw": {
+     "ridere": "to laugh"
+    },
+    "t": "Mi fai ridere!"
+   },
+   {
+    "t": "Ahah, che ridere!",
+    "en": "Haha, that's funny!",
+    "kw": {
+     "ridere": "to laugh"
+    }
+   },
+   {
+    "t": "Non ci posso credere!",
+    "en": "I can't believe it!",
+    "kw": {
+     "credere": "to believe"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "Attento": "careful",
+     "Pericolo": "danger"
+    },
+    "t": "Attento! Lì! Pericolo!"
+   },
+   {
+    "en": "We have to go. Right now!",
+    "kw": {
+     "andare": "to go"
+    },
+    "t": "Dobbiamo andare. Subito!"
+   },
+   {
+    "t": "Stai attento!",
+    "en": "Be careful!",
+    "kw": {
+     "attento": "careful"
+    }
+   },
+   {
+    "t": "C'è qualcosa lì fuori.",
+    "en": "There's something out there.",
+    "kw": {
+     "qualcosa": "something"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "Per favore": "please",
+     "fame": "hunger",
+     "mangiare": "to eat"
+    },
+    "t": "Ho fame. Per favore... qualcosa da mangiare."
+   },
+   {
+    "en": "Hunger... so much hunger.",
+    "kw": {
+     "Fame": "hunger"
+    },
+    "t": "Fame... tanta fame."
+   },
+   {
+    "t": "Ho una fame da lupi.",
+    "en": "I'm starving. (Lit: a wolves' hunger.)",
+    "kw": {
+     "fame": "hunger",
+     "lupi": "wolves"
+    }
+   },
+   {
+    "t": "Qualcosa da mangiare, ti prego.",
+    "en": "Something to eat, I beg you.",
+    "kw": {
+     "mangiare": "to eat",
+     "ti prego": "I beg you"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "en": "Help... help me, I beg you.",
+    "kw": {
+     "Aiuto": "help"
+    },
+    "t": "Aiuto... aiutami, ti prego."
+   },
+   {
+    "en": "Please, I need you.",
+    "kw": {
+     "Per favore": "please",
+     "bisogno": "need"
+    },
+    "t": "Per favore, ho bisogno di te."
+   },
+   {
+    "t": "Aiutami, ti prego.",
+    "en": "Help me, I beg you.",
+    "kw": {
+     "aiutami": "help me"
+    }
+   },
+   {
+    "t": "Non ce la faccio da solo.",
+    "en": "I can't do it alone.",
+    "kw": {
+     "da solo": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "en": "Water... please, water.",
+    "kw": {
+     "Acqua": "water"
+    },
+    "t": "Acqua... per favore, acqua."
+   },
+   {
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "acqua": "water",
+     "sete": "thirst"
+    },
+    "t": "Ho sete. Mi dai dell'acqua?"
+   },
+   {
+    "t": "Ho la gola secca.",
+    "en": "My throat is dry.",
+    "kw": {
+     "gola": "throat",
+     "secca": "dry"
+    }
+   },
+   {
+    "t": "Un po' d'acqua, per favore.",
+    "en": "A little water, please.",
+    "kw": {
+     "acqua": "water",
+     "per favore": "please"
+    }
+   }
+  ],
+  "openers": [
+   {
+    "en": "Hi! You... what's your name?",
+    "kw": {
+     "Ciao": "hi"
+    },
+    "t": "Ciao! Tu... come ti chiami?"
+   },
+   {
+    "en": "Hey... you speak Italian? No? ...shit.",
+    "kw": {
+     "No": "no",
+     "parli": "you speak"
+    },
+    "t": "Ehi... tu parli italiano? No? ...merda."
+   },
+   {
+    "en": "I don't understand anything. Nothing at all!",
+    "kw": {
+     "niente": "nothing"
+    },
+    "t": "Non capisco niente. Niente di niente!"
+   },
+   {
+    "en": "What place is this? Where are we?",
+    "kw": {
+     "Dove": "where"
+    },
+    "t": "Che posto è questo? Dove siamo?"
+   }
+  ],
+  "questions": [
+   {
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "mangiare": "to eat"
+    },
+    "t": "Hai da mangiare? Qualcosa?"
+   },
+   {
+    "en": "Where... where does one sleep, here?",
+    "kw": {
+     "Dove": "where",
+     "dorme": "sleeps"
+    },
+    "t": "Dove... dove si dorme, qui?"
+   },
+   {
+    "en": "Are you... the boss?",
+    "kw": {
+     "capo": "boss"
+    },
+    "t": "Tu sei... il capo?"
+   },
+   {
+    "en": "How many days have we been here? Many?",
+    "kw": {
+     "giorni": "days"
+    },
+    "t": "Quanti giorni siamo qui? Tanti?"
+   }
+  ],
+  "warm": [
+   {
+    "en": "Thanks. Truly, thanks.",
+    "kw": {
+     "Grazie": "thanks"
+    },
+    "t": "Grazie. Davvero, grazie."
+   },
+   {
+    "en": "You're a good person.",
+    "kw": {
+     "brava": "good"
+    },
+    "t": "Sei una brava persona."
+   },
+   {
+    "en": "I won't forget this.",
+    "kw": {},
+    "t": "Non dimenticherò questo."
+   }
+  ]
+ },
+ "mandarin": {
+  "agree": [
+   {
+    "en": "Right, right, exactly.",
+    "kw": {
+     "对": "right/yes"
+    },
+    "t": "对，对，没错。"
+   },
+   {
+    "en": "It's true.",
+    "kw": {},
+    "t": "是真的。"
+   },
+   {
+    "en": "Okay.",
+    "kw": {
+     "好的": "okay"
+    },
+    "t": "好的。"
+   }
+  ],
+  "confused": [
+   {
+    "en": "What? I don't understand.",
+    "kw": {
+     "什么": "what"
+    },
+    "t": "什么？我听不懂。"
+   },
+   {
+    "en": "Huh? Say it again?",
+    "kw": {},
+    "t": "啊？再说一遍？"
+   },
+   {
+    "en": "What are you saying?",
+    "kw": {
+     "什么": "what"
+    },
+    "t": "你在说什么呀？"
+   }
+  ],
+  "fewWords": [
+   "Fuck you.",
+   "Hello?",
+   "Food?",
+   "No, no.",
+   "Shit.",
+   "You good?",
+   "Water?"
+  ],
+  "laugh": [
+   {
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "对不起": "sorry"
+    },
+    "t": "哈哈！...对不起，对不起。"
+   },
+   {
+    "en": "You're really funny!",
+    "kw": {},
+    "t": "你真逗！"
+   },
+   {
+    "t": "太好笑了！",
+    "en": "Too funny!",
+    "kw": {
+     "好笑": "funny"
+    }
+   },
+   {
+    "t": "我不敢相信！",
+    "en": "I can't believe it!",
+    "kw": {
+     "不敢相信": "can't believe"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "危险": "danger",
+     "小心": "careful"
+    },
+    "t": "小心！那儿！危险！"
+   },
+   {
+    "en": "We have to go. Now!",
+    "kw": {
+     "走": "go"
+    },
+    "t": "我们得走。马上！"
+   },
+   {
+    "t": "小心！",
+    "en": "Careful!",
+    "kw": {
+     "小心": "careful"
+    }
+   },
+   {
+    "t": "外面有东西。",
+    "en": "There's something outside.",
+    "kw": {
+     "外面": "outside",
+     "东西": "thing"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "en": "I'm hungry. Please, give me something to eat.",
+    "kw": {
+     "吃的": "food",
+     "饿": "hungry"
+    },
+    "t": "我饿了。求你，给点吃的吧。"
+   },
+   {
+    "en": "Hungry... too hungry.",
+    "kw": {
+     "饿": "hungry"
+    },
+    "t": "饿...太饿了。"
+   },
+   {
+    "t": "我快饿死了。",
+    "en": "I'm starving to death.",
+    "kw": {
+     "饿": "hungry",
+     "死": "death"
+    }
+   },
+   {
+    "t": "给我点吃的，求你了。",
+    "en": "Give me something to eat, please.",
+    "kw": {
+     "吃的": "food to eat",
+     "求你": "beg you"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "en": "Help... help me, please.",
+    "kw": {
+     "救命": "help!"
+    },
+    "t": "救命...帮帮我，求你了。"
+   },
+   {
+    "en": "Please, I need you.",
+    "kw": {},
+    "t": "求你了，我需要你。"
+   },
+   {
+    "t": "帮帮我，求你了。",
+    "en": "Help me, I beg you.",
+    "kw": {
+     "帮": "to help"
+    }
+   },
+   {
+    "t": "我一个人不行。",
+    "en": "I can't alone.",
+    "kw": {
+     "一个人": "alone",
+     "不行": "not OK"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "en": "Water... please, some water.",
+    "kw": {
+     "水": "water"
+    },
+    "t": "水...求你，给点水。"
+   },
+   {
+    "en": "I'm thirsty. Can you give me water?",
+    "kw": {
+     "水": "water",
+     "渴": "thirsty"
+    },
+    "t": "我渴了。能给我水吗？"
+   },
+   {
+    "t": "我嗓子都干了。",
+    "en": "My throat is all dry.",
+    "kw": {
+     "嗓子": "throat",
+     "干": "dry"
+    }
+   },
+   {
+    "t": "给我点水喝吧。",
+    "en": "Give me some water to drink.",
+    "kw": {
+     "水": "water",
+     "喝": "to drink"
+    }
+   }
+  ],
+  "openers": [
+   {
+    "en": "Hello! What's your name?",
+    "kw": {
+     "你好": "hello"
+    },
+    "t": "你好！你叫什么名字？"
+   },
+   {
+    "en": "Hey... do you speak Chinese? No? ...damn.",
+    "kw": {
+     "中文": "Chinese"
+    },
+    "t": "嘿...你会说中文吗？不会？...该死。"
+   },
+   {
+    "en": "I don't understand anything at all!",
+    "kw": {},
+    "t": "我什么都听不懂。什么都不懂！"
+   },
+   {
+    "en": "What place is this? Where are we?",
+    "kw": {
+     "哪儿": "where"
+    },
+    "t": "这是什么地方？我们在哪儿？"
+   }
+  ],
+  "questions": [
+   {
+    "en": "Do you have anything to eat?",
+    "kw": {
+     "吃的": "food"
+    },
+    "t": "你有吃的吗？"
+   },
+   {
+    "en": "Where to sleep at night?",
+    "kw": {
+     "哪儿": "where",
+     "睡": "sleep"
+    },
+    "t": "晚上睡哪儿？"
+   },
+   {
+    "en": "Are you... the boss?",
+    "kw": {
+     "头儿": "boss"
+    },
+    "t": "你是...头儿吗？"
+   },
+   {
+    "en": "How many days have we been here?",
+    "kw": {
+     "几天": "how many days"
+    },
+    "t": "我们来这儿几天了？"
+   }
+  ],
+  "warm": [
+   {
+    "en": "Thank you. Truly, thank you.",
+    "kw": {
+     "谢谢": "thanks"
+    },
+    "t": "谢谢。真的，谢谢。"
+   },
+   {
+    "en": "You're a good person.",
+    "kw": {
+     "好人": "good person"
+    },
+    "t": "你是个好人。"
+   },
+   {
+    "en": "I won't forget.",
+    "kw": {},
+    "t": "我不会忘记的。"
+   }
+  ]
+ },
+ "portuguese": {
+  "agree": [
+   {
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Sim": "yes"
+    },
+    "t": "Sim, sim, exato."
+   },
+   {
+    "en": "It's true.",
+    "kw": {
+     "verdade": "truth"
+    },
+    "t": "É verdade."
+   },
+   {
+    "en": "Agreed.",
+    "kw": {},
+    "t": "Combinado."
+   }
+  ],
+  "confused": [
+   {
+    "en": "What? I don't understand.",
+    "kw": {
+     "O quê": "what"
+    },
+    "t": "O quê? Não entendo."
+   },
+   {
+    "en": "Huh? Repeat?",
+    "kw": {
+     "Repete": "repeat"
+    },
+    "t": "Hã? Repete?"
+   },
+   {
+    "en": "But what are you saying?",
+    "kw": {
+     "o que": "what"
+    },
+    "t": "Mas o que você está dizendo?"
+   }
+  ],
+  "fewWords": [
+   "Fuck you.",
+   "Hello?",
+   "Food?",
+   "Não, não.",
+   "Shit.",
+   "You good?",
+   "Water?"
+  ],
+  "laugh": [
+   {
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "desculpa": "sorry"
+    },
+    "t": "Haha! ...desculpa, desculpa."
+   },
+   {
+    "en": "You make me laugh!",
+    "kw": {
+     "rir": "to laugh"
+    },
+    "t": "Você me faz rir!"
+   },
+   {
+    "t": "Que engraçado!",
+    "en": "How funny!",
+    "kw": {
+     "engraçado": "funny"
+    }
+   },
+   {
+    "t": "Não acredito!",
+    "en": "I don't believe it!",
+    "kw": {
+     "acredito": "believe"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "Cuidado": "careful",
+     "Perigo": "danger"
+    },
+    "t": "Cuidado! Ali! Perigo!"
+   },
+   {
+    "en": "We have to go. Now!",
+    "kw": {
+     "ir": "to go"
+    },
+    "t": "Temos que ir. Agora!"
+   },
+   {
+    "t": "Cuidado!",
+    "en": "Careful!",
+    "kw": {
+     "cuidado": "care"
+    }
+   },
+   {
+    "t": "Tem algo lá fora.",
+    "en": "There's something out there.",
+    "kw": {
+     "algo": "something",
+     "fora": "outside"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "comer": "to eat",
+     "fome": "hunger"
+    },
+    "t": "Estou com fome. Por favor... algo para comer."
+   },
+   {
+    "en": "Hunger... a lot of hunger.",
+    "kw": {
+     "Fome": "hunger"
+    },
+    "t": "Fome... muita fome."
+   },
+   {
+    "t": "Estou morrendo de fome.",
+    "en": "I'm dying of hunger.",
+    "kw": {
+     "fome": "hunger",
+     "morrendo": "dying"
+    }
+   },
+   {
+    "t": "Algo para comer, por favor.",
+    "en": "Something to eat, please.",
+    "kw": {
+     "comer": "to eat",
+     "por favor": "please"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "en": "Help... help me, please.",
+    "kw": {
+     "Socorro": "help!"
+    },
+    "t": "Socorro... me ajuda, por favor."
+   },
+   {
+    "en": "Please, I need you.",
+    "kw": {
+     "preciso": "I need"
+    },
+    "t": "Por favor, preciso de você."
+   },
+   {
+    "t": "Me ajuda, por favor.",
+    "en": "Help me, please.",
+    "kw": {
+     "ajuda": "help"
+    }
+   },
+   {
+    "t": "Não consigo sozinho.",
+    "en": "I can't alone.",
+    "kw": {
+     "sozinho": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "en": "Water... please, water.",
+    "kw": {
+     "Água": "water"
+    },
+    "t": "Água... por favor, água."
+   },
+   {
+    "en": "I'm thirsty. Give me water?",
+    "kw": {
+     "sede": "thirst"
+    },
+    "t": "Estou com sede. Me dá água?"
+   },
+   {
+    "t": "Estou com a garganta seca.",
+    "en": "My throat is dry.",
+    "kw": {
+     "garganta": "throat",
+     "seca": "dry"
+    }
+   },
+   {
+    "t": "Um pouco de água, por favor.",
+    "en": "A little water, please.",
+    "kw": {
+     "água": "water"
+    }
+   }
+  ],
+  "openers": [
+   {
+    "en": "Hi! What's your name?",
+    "kw": {
+     "Oi": "hi"
+    },
+    "t": "Oi! Como você se chama?"
+   },
+   {
+    "en": "Hey... do you speak Portuguese? No? ...shit.",
+    "kw": {
+     "Não": "no",
+     "fala": "speak"
+    },
+    "t": "Ei... você fala português? Não? ...merda."
+   },
+   {
+    "en": "I don't understand anything. Nothing!",
+    "kw": {
+     "nada": "nothing"
+    },
+    "t": "Não entendo nada. Nada!"
+   },
+   {
+    "en": "What place is this? Where are we?",
+    "kw": {
+     "Onde": "where"
+    },
+    "t": "Que lugar é este? Onde estamos?"
+   }
+  ],
+  "questions": [
+   {
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "comida": "food"
+    },
+    "t": "Você tem comida? Alguma coisa?"
+   },
+   {
+    "en": "Where do we sleep here?",
+    "kw": {
+     "Onde": "where",
+     "dorme": "sleeps"
+    },
+    "t": "Onde a gente dorme aqui?"
+   },
+   {
+    "en": "Are you... the boss?",
+    "kw": {
+     "chefe": "boss"
+    },
+    "t": "Você é... o chefe?"
+   },
+   {
+    "en": "How many days have we been here?",
+    "kw": {
+     "dias": "days"
+    },
+    "t": "Há quantos dias estamos aqui?"
+   }
+  ],
+  "warm": [
+   {
+    "en": "Thanks. Truly, thanks.",
+    "kw": {
+     "Obrigado": "thanks"
+    },
+    "t": "Obrigado. De verdade, obrigado."
+   },
+   {
+    "en": "You're a good person.",
+    "kw": {
+     "boa": "good"
+    },
+    "t": "Você é uma pessoa boa."
+   },
+   {
+    "en": "I won't forget.",
+    "kw": {},
+    "t": "Não vou esquecer."
+   }
+  ]
+ },
+ "russian": {
+  "agree": [
+   {
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Да": "yes"
+    },
+    "t": "Да, да, точно."
+   },
+   {
+    "en": "It's true.",
+    "kw": {
+     "правда": "truth"
+    },
+    "t": "Это правда."
+   },
+   {
+    "en": "Agreed.",
+    "kw": {},
+    "t": "Договорились."
+   }
+  ],
+  "confused": [
+   {
+    "en": "What? I don't understand.",
+    "kw": {
+     "Что": "what"
+    },
+    "t": "Что? Не понимаю."
+   },
+   {
+    "en": "Huh? Repeat?",
+    "kw": {
+     "Повтори": "repeat"
+    },
+    "t": "А? Повтори?"
+   },
+   {
+    "en": "What are you saying?",
+    "kw": {
+     "Что": "what"
+    },
+    "t": "Что ты говоришь?"
+   }
+  ],
+  "fewWords": [
+   "Fuck you.",
+   "Hello?",
+   "Food?",
+   "No, no.",
+   "Shit.",
+   "You good?",
+   "Water?"
+  ],
+  "laugh": [
+   {
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "извини": "sorry"
+    },
+    "t": "Хаха! ...извини, извини."
+   },
+   {
+    "en": "You make me laugh!",
+    "kw": {},
+    "t": "Ты меня смешишь!"
+   },
+   {
+    "t": "Как смешно!",
+    "en": "How funny!",
+    "kw": {
+     "смешно": "funny"
+    }
+   },
+   {
+    "t": "Не могу поверить!",
+    "en": "I can't believe it!",
+    "kw": {
+     "поверить": "to believe"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "en": "Careful! There! Dangerous!",
+    "kw": {
+     "Опасно": "dangerous",
+     "Осторожно": "careful"
+    },
+    "t": "Осторожно! Там! Опасно!"
+   },
+   {
+    "en": "We need to go. Now!",
+    "kw": {
+     "идти": "to go"
+    },
+    "t": "Нам надо идти. Сейчас!"
+   },
+   {
+    "t": "Осторожно!",
+    "en": "Careful!",
+    "kw": {
+     "осторожно": "careful"
+    }
+   },
+   {
+    "t": "Там что-то есть.",
+    "en": "There's something there.",
+    "kw": {
+     "что-то": "something"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "голоден": "hungry",
+     "поесть": "to eat"
+    },
+    "t": "Я голоден. Пожалуйста... что-нибудь поесть."
+   },
+   {
+    "en": "Hunger... strong hunger.",
+    "kw": {
+     "Голод": "hunger"
+    },
+    "t": "Голод... сильный голод."
+   },
+   {
+    "t": "Я умираю с голоду.",
+    "en": "I'm dying of hunger.",
+    "kw": {
+     "голоду": "hunger",
+     "умираю": "I die"
+    }
+   },
+   {
+    "t": "Дай что-нибудь поесть, пожалуйста.",
+    "en": "Give something to eat, please.",
+    "kw": {
+     "поесть": "to eat",
+     "пожалуйста": "please"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "en": "Help... help me, please.",
+    "kw": {
+     "Помогите": "help!"
+    },
+    "t": "Помогите... помоги мне, пожалуйста."
+   },
+   {
+    "en": "Please, I need you.",
+    "kw": {},
+    "t": "Пожалуйста, ты мне нужен."
+   },
+   {
+    "t": "Помоги мне, пожалуйста.",
+    "en": "Help me, please.",
+    "kw": {
+     "помоги": "help"
+    }
+   },
+   {
+    "t": "Я один не справлюсь.",
+    "en": "I can't manage alone.",
+    "kw": {
+     "один": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "en": "Water... please, water.",
+    "kw": {
+     "Вода": "water"
+    },
+    "t": "Вода... пожалуйста, вода."
+   },
+   {
+    "en": "I want to drink. Will you give water?",
+    "kw": {
+     "воды": "water"
+    },
+    "t": "Пить хочу. Дашь воды?"
+   },
+   {
+    "t": "У меня горло пересохло.",
+    "en": "My throat dried out.",
+    "kw": {
+     "горло": "throat",
+     "пересохло": "dried out"
+    }
+   },
+   {
+    "t": "Немного воды, пожалуйста.",
+    "en": "A little water, please.",
+    "kw": {
+     "воды": "water"
+    }
+   }
+  ],
+  "openers": [
+   {
+    "en": "Hi! What's your name?",
+    "kw": {
+     "Привет": "hi"
+    },
+    "t": "Привет! Как тебя зовут?"
+   },
+   {
+    "en": "Hey... do you speak Russian? No? ...damn.",
+    "kw": {
+     "Нет": "no"
+    },
+    "t": "Эй... говоришь по-русски? Нет? ...чёрт."
+   },
+   {
+    "en": "I don't understand anything. Nothing at all!",
+    "kw": {},
+    "t": "Ничего не понимаю. Совсем ничего!"
+   },
+   {
+    "en": "What is this place? Where are we?",
+    "kw": {
+     "Где": "where"
+    },
+    "t": "Что это за место? Где мы?"
+   }
+  ],
+  "questions": [
+   {
+    "en": "Do you have food?",
+    "kw": {
+     "еда": "food"
+    },
+    "t": "У тебя есть еда?"
+   },
+   {
+    "en": "Where do people sleep here?",
+    "kw": {
+     "Где": "where",
+     "спят": "sleep"
+    },
+    "t": "Где здесь спят?"
+   },
+   {
+    "en": "Are you... the boss?",
+    "kw": {
+     "главный": "boss"
+    },
+    "t": "Ты... главный?"
+   },
+   {
+    "en": "How many days have we been here?",
+    "kw": {
+     "дней": "days"
+    },
+    "t": "Сколько дней мы здесь?"
+   }
+  ],
+  "warm": [
+   {
+    "en": "Thanks. Truly, thanks.",
+    "kw": {
+     "Спасибо": "thanks"
+    },
+    "t": "Спасибо. Правда, спасибо."
+   },
+   {
+    "en": "You're a good person.",
+    "kw": {
+     "хороший": "good"
+    },
+    "t": "Ты хороший человек."
+   },
+   {
+    "en": "I won't forget.",
+    "kw": {},
+    "t": "Я не забуду."
+   }
+  ]
+ },
+ "spanish": {
+  "agree": [
+   {
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Sí": "yes"
+    },
+    "t": "Sí, sí, exacto."
+   },
+   {
+    "en": "It's true.",
+    "kw": {
+     "verdad": "truth"
+    },
+    "t": "Es verdad."
+   },
+   {
+    "en": "Agreed.",
+    "kw": {},
+    "t": "De acuerdo."
+   }
+  ],
+  "confused": [
+   {
+    "en": "What? I don't understand.",
+    "kw": {
+     "Qué": "what"
+    },
+    "t": "¿Qué? No entiendo."
+   },
+   {
+    "en": "Huh? Can you repeat?",
+    "kw": {
+     "repetir": "repeat"
+    },
+    "t": "¿Eh? ¿Puedes repetir?"
+   },
+   {
+    "en": "But what are you saying?",
+    "kw": {
+     "qué": "what"
+    },
+    "t": "¿Pero qué dices?"
+   }
+  ],
+  "fewWords": [
+   "Fuck you.",
+   "Hello?",
+   "Food?",
+   "No, no.",
+   "Shit.",
+   "You good?",
+   "Water?"
+  ],
+  "laugh": [
+   {
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "perdón": "sorry"
+    },
+    "t": "¡Jaja! ...perdón, perdón."
+   },
+   {
+    "en": "You make me laugh!",
+    "kw": {
+     "reír": "to laugh"
+    },
+    "t": "¡Me haces reír!"
+   },
+   {
+    "t": "¡Qué risa!",
+    "en": "How funny!",
+    "kw": {
+     "risa": "laughter"
+    }
+   },
+   {
+    "t": "¡No me lo puedo creer!",
+    "en": "I can't believe it!",
+    "kw": {
+     "creer": "to believe"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "Cuidado": "careful",
+     "Peligro": "danger"
+    },
+    "t": "¡Cuidado! ¡Ahí! ¡Peligro!"
+   },
+   {
+    "en": "We have to leave. Now!",
+    "kw": {
+     "irnos": "to leave"
+    },
+    "t": "Tenemos que irnos. ¡Ya!"
+   },
+   {
+    "t": "¡Ten cuidado!",
+    "en": "Be careful!",
+    "kw": {
+     "cuidado": "care"
+    }
+   },
+   {
+    "t": "Hay algo ahí fuera.",
+    "en": "There's something out there.",
+    "kw": {
+     "algo": "something",
+     "fuera": "outside"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "Por favor": "please",
+     "comer": "to eat",
+     "hambre": "hunger"
+    },
+    "t": "Tengo hambre. Por favor... algo de comer."
+   },
+   {
+    "en": "Hunger... a lot of hunger.",
+    "kw": {
+     "Hambre": "hunger"
+    },
+    "t": "Hambre... mucha hambre."
+   },
+   {
+    "t": "Tengo un hambre que me muero.",
+    "en": "I'm dying of hunger.",
+    "kw": {
+     "hambre": "hunger",
+     "muero": "I die"
+    }
+   },
+   {
+    "t": "Algo de comer, por favor.",
+    "en": "Something to eat, please.",
+    "kw": {
+     "comer": "to eat",
+     "por favor": "please"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "en": "Help... help me, please.",
+    "kw": {
+     "Ayuda": "help"
+    },
+    "t": "Ayuda... ayúdame, por favor."
+   },
+   {
+    "en": "Please, I need you.",
+    "kw": {
+     "Por favor": "please",
+     "necesito": "I need"
+    },
+    "t": "Por favor, te necesito."
+   },
+   {
+    "t": "Ayúdame, por favor.",
+    "en": "Help me, please.",
+    "kw": {
+     "ayúdame": "help me"
+    }
+   },
+   {
+    "t": "No puedo solo.",
+    "en": "I can't alone.",
+    "kw": {
+     "solo": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "en": "Water... please, water.",
+    "kw": {
+     "Agua": "water"
+    },
+    "t": "Agua... por favor, agua."
+   },
+   {
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "agua": "water",
+     "sed": "thirst"
+    },
+    "t": "Tengo sed. ¿Me das agua?"
+   },
+   {
+    "t": "Tengo la garganta seca.",
+    "en": "My throat is dry.",
+    "kw": {
+     "garganta": "throat",
+     "seca": "dry"
+    }
+   },
+   {
+    "t": "Un poco de agua, por favor.",
+    "en": "A little water, please.",
+    "kw": {
+     "agua": "water"
+    }
+   }
+  ],
+  "openers": [
+   {
+    "en": "Hello! What's your name?",
+    "kw": {
+     "Hola": "hello"
+    },
+    "t": "¡Hola! ¿Cómo te llamas?"
+   },
+   {
+    "en": "Hey... do you speak Spanish? No? ...shit.",
+    "kw": {
+     "No": "no",
+     "hablas": "you speak"
+    },
+    "t": "Oye... ¿hablas español? ¿No? ...mierda."
+   },
+   {
+    "en": "I don't understand anything. Nothing!",
+    "kw": {
+     "nada": "nothing"
+    },
+    "t": "No entiendo nada. ¡Nada!"
+   },
+   {
+    "en": "What place is this? Where are we?",
+    "kw": {
+     "Dónde": "where"
+    },
+    "t": "¿Qué lugar es este? ¿Dónde estamos?"
+   }
+  ],
+  "questions": [
+   {
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "comida": "food"
+    },
+    "t": "¿Tienes comida? ¿Algo?"
+   },
+   {
+    "en": "Where does one sleep here?",
+    "kw": {
+     "Dónde": "where",
+     "duerme": "sleeps"
+    },
+    "t": "¿Dónde se duerme aquí?"
+   },
+   {
+    "en": "Are you... the boss?",
+    "kw": {
+     "jefe": "boss"
+    },
+    "t": "¿Tú eres... el jefe?"
+   },
+   {
+    "en": "How many days have we been here?",
+    "kw": {
+     "días": "days"
+    },
+    "t": "¿Cuántos días llevamos aquí?"
+   }
+  ],
+  "warm": [
+   {
+    "en": "Thanks. Truly, thanks.",
+    "kw": {
+     "Gracias": "thanks"
+    },
+    "t": "Gracias. De verdad, gracias."
+   },
+   {
+    "en": "You're a good person.",
+    "kw": {
+     "buena": "good"
+    },
+    "t": "Eres buena persona."
+   },
+   {
+    "en": "I won't forget it.",
+    "kw": {},
+    "t": "No lo olvidaré."
+   }
+  ]
+ }
+}

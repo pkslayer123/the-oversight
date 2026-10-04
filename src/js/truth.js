@@ -612,7 +612,9 @@
     const choices = origChoices.call(this, vid);
     try {
       const c = this.convoGet(vid);
-      if (!c.pendingQ) {
+      // Confrontation needs shared words. You can't argue semantics
+      // with someone via hand gestures. (Nonverbal conversations excluded.)
+      if (!c.pendingQ && c.thread !== 'nonverbal') {
         const doubts = this.getDoubts(vid);
         if (doubts.length && !choices.some(ch => String(ch.id).indexOf('confront:') === 0)) {
           const d = doubts[0];

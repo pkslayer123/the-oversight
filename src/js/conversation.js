@@ -481,12 +481,10 @@
       // ALIVE: talking eases loneliness — for them, not just you.
       try { this.npcNeeds(vid).social = Math.max(0, this.npcNeeds(vid).social - 40); } catch (e) {}
       if (comm.level === 'none') {
-        // No shared language isn't a wall — it's a different conversation.
-        const line = 'No shared words. Just eyes, hands, and patience.';
-        c.thread = 'nonverbal';
-        c.transcript.push({ who: 'them', text: line });
-        this.say(`${this.displayName(vid)}: (no shared words — you communicate in gestures)`);
-        return { line, choices: this.convoChoices(vid), transcript: c.transcript.slice(), ended: false };
+        // No shared language: real foreign speech, not gestures-then-English.
+        // nvOpen (appended module) states the barrier plainly and lets them
+        // speak their actual tongue.
+        return this.nvOpen(vid);
       }
       const op = this.convoOpening(vid);
       c.thread = op.thread; c.depth = 1;
@@ -700,10 +698,10 @@
       }
 
       // THEY ask YOU things. Conversations go both ways.
-      // First conversation with someone: they're curious about the stranger.
-      // After that, curiosity strikes about 40% of turns.
+      // Never in nonverbal: someone you share no words with does not
+      // suddenly ask "Where are you from?" in fluent English. (Leak fix.)
       const forceQ = c.count === 1 && !c.qAskedThisConvo;
-      if (!c.pendingQ && c.exchanges >= 1 && (forceQ || Math.random() < 0.4)) {
+      if (c.thread !== 'nonverbal' && !c.pendingQ && c.exchanges >= 1 && (forceQ || Math.random() < 0.4)) {
         const trust = (this.state.village.trust || {})[vid] || 10;
         const moodNow = this.npcMood(vid);
         const cands = (cg.questions || []).filter(q =>
@@ -801,4 +799,359 @@
   };
 
   Object.assign(Game, methods);
+})();
+
+// ============ REAL FOREIGN LANGUAGES ============
+// No shared language means NO shared language. NPCs speak their actual
+// tongue — real Italian, real Mandarin, real Spanish. Not gibberish, not
+// "[speaks Italian]". You see the words. You don't understand them.
+// That's the point. Over time, exposure teaches you: first a word,
+// then the shape of sentences, then — earned, never given — you get by.
+// Interpreters (bilingual NPCs) bridge the gap humanly. And post-System,
+// friction inspires augmentation: the System offers a Translator. It works.
+// It's in your head. The translations are... cheerful. Slightly off.
+// Tone sold separately.
+//
+// Self-attaching module: appended to conversation.js, loads before
+// journal.js/party.js/truth.js. Overrides startConvo's nonverbal branch,
+// the nv: turn handlers, and the nonverbal choices via method replacement.
+
+(function () {
+  const Game = (globalThis.Scattering || {}).Game;
+  if (!Game) return;
+
+  const methods = {
+
+    // langDef: icon + name for a language id.
+    langDef(id) {
+      const d = ((this.data.characterGen || {}).languages || []).find(l => l.id === id);
+      return d ? { icon: d.icon || '', name: d.name || id } : { icon: '', name: id || 'an unknown tongue' };
+    },
+
+    npcNativeLang(vid) {
+      const nl = this.npcLangs(vid);
+      return (nl && nl.native) || 'english';
+    },
+
+    npcEnglishLevel(vid) {
+      return (this.levelsOf(this.npcLangs(vid)).english) || 0;
+    },
+
+    // foreignLine: one real phrase in their tongue. No-repeat per villager
+    // (tracked by object identity — pools are stable data references).
+    foreignLine(vid, kind, sub) {
+      const lang = this.npcNativeLang(vid);
+      const fd = (this.data.foreignSpeech || {})[lang];
+      if (!fd) return null;
+      const pool = sub ? ((fd[kind] || {})[sub] || []) : (fd[kind] || []);
+      if (!pool.length) return null;
+      const p = this.convoPickCycle(vid, 'fl:' + lang + ':' + kind + (sub ? ':' + sub : ''), pool);
+      return p ? Object.assign({ lang }, p) : null;
+    },
+
+    // translatorActive: the System in your head, translating live.
+    translatorActive() {
+      return !!this.state.systemArrived && this.hasAbility('translator');
+    },
+
+    // langExposure: words of this tongue you've absorbed. 0..25+.
+    langExposure(lang) {
+      const e = (this.state.scholar || {}).langExposure || {};
+      return e[lang] || 0;
+    },
+
+    // langExposureGain: listening teaches. Thresholds: 3 (words), 10 (shape
+    // of sentences), 25 (you get by — level 1, earned). The translator
+    // short-circuits learning: the System does it for you, your brain
+    // never bothers. That's the tradeoff.
+    langExposureGain(vid, lang, n) {
+      const s = this.state.scholar || {};
+      if (this.translatorActive()) {
+        const f = s._translatorNote || (s._translatorNote = {});
+        if (!f[lang]) {
+          f[lang] = true;
+          this.say('The translator hums behind your eyes. Your brain doesn\'t bother learning — why would it?');
+        }
+        return this.langExposure(lang);
+      }
+      s.langExposure = s.langExposure || {};
+      const before = s.langExposure[lang] || 0;
+      const after = before + (n || 1);
+      s.langExposure[lang] = after;
+      const def = this.langDef(lang);
+      if (before < 3 && after >= 3) {
+        this.say(`💡 You're starting to catch words in ${def.name}. Not sentences — words.`);
+        try { this.journalLearn(vid, 'note', { text: `picking up ${def.name}, a word at a time` }, { quiet: true }); } catch (e) {}
+      } else if (before < 10 && after >= 10) {
+        this.say(`💡 ${def.name} is starting to make sense. You catch the shape of sentences now.`);
+        try { this.journalLearn(vid, 'note', { text: `${def.name}: catching whole phrases now` }, { quiet: true }); } catch (e) {}
+      } else if (before < 25 && after >= 25) {
+        s.languages = s.languages || {};
+        s.languages[lang] = 1;
+        this.say(`💡 You can get by in ${def.name} now. A few dozen words — all earned the hard way. Gestures. Patience. Embarrassment.`);
+        try { this.journalLearn(vid, 'note', { text: `can get by in ${def.name} now — learned it live` }, {}); } catch (e) {}
+        try { this.discover('language'); } catch (e) {}
+      }
+      return after;
+    },
+
+    // langExposureReport: for the journal's LANGUAGES section.
+    // "Italian: 12 words — catching phrases."
+    langExposureReport() {
+      const e = (this.state.scholar || {}).langExposure || {};
+      const out = [];
+      for (const [id, n] of Object.entries(e)) {
+        if (!n) continue;
+        const def = this.langDef(id);
+        const lvl = ((this.state.scholar || {}).languages || {})[id] || 0;
+        const stage = lvl >= 1 ? 'can get by' : n >= 10 ? 'catching phrases' : n >= 3 ? 'catching words' : 'heard a few times';
+        out.push({ id, icon: def.icon, name: def.name, n, stage, fluent: lvl >= 1 });
+      }
+      return out.sort((a, b) => b.n - a.n);
+    },
+
+    // renderForeign: what the player SEES. Never auto-translated.
+    // Understanding is earned (exposure), borrowed (interpreter), or
+    // System-mediated (translator — cheerful, slightly wrong).
+    // Returns { text, foreign } for transcript entries.
+    renderForeign(vid, phrase) {
+      if (!phrase) return null;
+      const lang = phrase.lang;
+      const c = this.convoGet(vid);
+      const t = phrase.t;
+      // TRANSLATOR: the System in your head, always on, inescapable. It takes
+      // priority even over a human interpreter — which is exactly what's
+      // unsettling about it. Works. Slightly off. Cheerful. Misses tone entirely.
+      if (this.translatorActive()) {
+        let en = phrase.en;
+        if (Math.random() < 0.3) {
+          const quips = [
+            ' (Family units: IMPORTANT! The audience loves family!)',
+            ' (Emotional content: HIGH! Great for ratings!)',
+            ' (We think they mean it! Probably!)',
+            ' (Such passion! The gamblers are taking notes!)',
+          ];
+          en += quips[Math.floor(Math.random() * quips.length)];
+        }
+        return { text: `«${t}» → "${en}"`, foreign: lang };
+      }
+      // INTERPRETER: a bilingual friend translates, humanly. The pre-System
+      // way — and the only way that carries tone, warmth, and trust.
+      if (c.interpreter) {
+        const iname = String(this.displayName(c.interpreter)).split(' ')[0];
+        return { text: `«${t}» — ${iname} translates: "${phrase.en}"`, foreign: lang };
+      }
+      const exp = this.langExposure(lang);
+      const def = this.langDef(lang);
+      if (exp >= 10) return { text: `«${t}» (${phrase.en} — you're fairly sure)`, foreign: lang };
+      if (exp >= 3) {
+        const kws = Object.entries(phrase.kw || {}).slice(0, 2);
+        if (kws.length) {
+          const gloss = kws.map(([k, v]) => `'${k}' — ${v}`).join(', ');
+          return { text: `«${t}» (you catch ${gloss})`, foreign: lang };
+        }
+      }
+      return { text: `«${t}»`, foreign: lang };
+    },
+
+    // maybeEnglishFragment: the Mario moment. Zero-English speakers sometimes
+    // know a handful of English words — crude, proud, characterful.
+    // "Sometimes you get Mario from Italy and all he can say is 'fuck you'."
+    maybeEnglishFragment(vid) {
+      if (this.npcEnglishLevel(vid) !== 0) return null;
+      const c = this.convoGet(vid);
+      if (c._fragUsed) return null;
+      const fd = (this.data.foreignSpeech || {})[this.npcNativeLang(vid)];
+      const pool = (fd && fd.fewWords) || [];
+      if (!pool.length || Math.random() > 0.35) return null;
+      c._fragUsed = true;
+      return pool[Math.floor(Math.random() * pool.length)];
+    },
+
+    // findInterpreter: someone nearby who speaks their tongue AND one of yours.
+    // Bilinguals are worth their weight in food.
+    findInterpreter(vid, targetLang) {
+      let here = [];
+      try { here = this.npcsOnNode() || []; } catch (e) {}
+      const trust = (this.state.village.trust || {});
+      for (const oid of here) {
+        if (oid === vid) continue;
+        const ol = this.levelsOf(this.npcLangs(oid));
+        if ((ol[targetLang] || 0) < 1) continue;
+        let comm = null;
+        try { comm = this.commLevel(oid); } catch (e) {}
+        if (!comm || comm.level === 'none') continue;
+        if ((trust[oid] || 10) < 10) continue;
+        return oid;
+      }
+      return null;
+    },
+
+    // nvOpen: the rewritten no-shared-language opening. The barrier is
+    // stated plainly — language named, incomprehension total. Then THEY
+    // speak: real words in a real tongue. No English. Not even a little.
+    nvOpen(vid) {
+      const v = this.state.village;
+      const c = this.convoGet(vid);
+      const lang = this.npcNativeLang(vid);
+      const def = this.langDef(lang);
+      c.thread = 'nonverbal'; c.wasNonverbal = true; c.nativeLang = lang;
+      c.interpreter = null; c._fragUsed = false;
+      // Consume any pending "can we talk" — they approached, but in their tongue.
+      const treq = (v.talkRequests || {})[vid];
+      if (treq) treq.delivered = true;
+      // FRICTION TRACKING: the System notices what you struggle with.
+      if (this.state.scholar.week1) this.state.scholar.week1.langStruggle = (this.state.scholar.week1.langStruggle || 0) + 1;
+      // THE BARRIER, COMMUNICATED — in the conversation itself, not just the
+      // log. Steve's bug was that the barrier was never stated and then the
+      // NPC "just started talking". Now the opening line states it plainly,
+      // and THEN they speak: real words in a real tongue. No English. Not even a little.
+      const first = this.displayName(vid);
+      const barrier = `${first} speaks only ${def.icon} ${def.name}. No shared words at all — just eyes, hands, and patience.`;
+      this.say(barrier);
+      const ph = this.foreignLine(vid, 'openers');
+      const r = this.renderForeign(vid, ph);
+      let spoken = r ? r.text : 'They speak. You understand none of it.';
+      const frag = this.maybeEnglishFragment(vid);
+      if (frag) spoken += ` "${frag}" — they grin, proud of the one English they know.`;
+      // Transcript: your realization (narration), then their real speech.
+      c.transcript.push({ who: 'you', text: `(${barrier})` });
+      c.transcript.push({ who: 'them', text: spoken, foreign: lang });
+      // The returned opening line carries BOTH — the first thing the player
+      // reads states the barrier plainly, then the foreign speech lands.
+      const line = `${barrier}\n${spoken}`;
+      this.langExposureGain(vid, lang, 1);
+      return { line, choices: this.convoChoices(vid), transcript: c.transcript.slice(), ended: false };
+    },
+
+    // nvRespond: every gesture gets a real answer — in their tongue.
+    // Listening is the fastest way to learn. Interpreters bridge humanly.
+    nvRespond(vid, kind) {
+      const c = this.convoGet(vid);
+      const lang = c.nativeLang || this.npcNativeLang(vid);
+      const t = this.state.village.trust || {};
+      if (kind === 'listen') {
+        const ph = this.foreignLine(vid, 'questions') || this.foreignLine(vid, 'openers');
+        this.langExposureGain(vid, lang, 3);
+        const r = this.renderForeign(vid, ph);
+        return `You listen hard, watching their mouth shape the words. ${r ? r.text : 'Sounds, and the shape of meaning just out of reach.'}`;
+      }
+      if (kind === 'translate') {
+        const yid = c.interpreter;
+        if (!yid) return 'No one here can bridge the gap. Gestures will have to do.';
+        const ph = this.foreignLine(vid, 'questions') || this.foreignLine(vid, 'openers');
+        const r = this.renderForeign(vid, ph);
+        const yt = this.state.village.trust || {};
+        yt[yid] = Math.min(100, (yt[yid] || 10) + 2);
+        return r ? r.text : 'They speak; the translation falters.';
+      }
+      const reactKind = { nod: 'agree', smile: 'warm', pointself: 'warm' }[kind] || 'agree';
+      const ph = this.foreignLine(vid, reactKind);
+      this.langExposureGain(vid, lang, 1);
+      t[vid] = Math.min(40, (t[vid] || 10) + 1);
+      const r = this.renderForeign(vid, ph);
+      const narr = {
+        nod: 'They nod back, slowly.',
+        smile: 'A grin breaks through, quick and warm.',
+        pointself: 'You tap your chest, then theirs. Us. They nod, emphatic.',
+      }[kind] || 'You gesture.';
+      const frag = this.maybeEnglishFragment(vid);
+      return `${r ? r.text : 'They answer at length.'} ${narr}${frag ? ` "${frag}"` : ''}`;
+    },
+
+    // nvEndLine: gesture exits. No fluent English goodbyes from someone
+    // you share no words with. (Steve's leak, fixed.)
+    nvEndLine(vid) {
+      return this.convoPickCycle(vid, 'nvexit', [
+        'They press their palms together — thanks, or goodbye, or both. Then turn back to their own thoughts.',
+        'A final nod. They touch their chest, then point at you — a promise without words.',
+        'They wave you off gently, already turning away. The conversation ends where language couldn\'t reach.',
+      ]);
+    },
+  };
+
+  Object.assign(Game, methods);
+
+  // ---- Overrides: fix the leaks, rewire the nonverbal path ----
+  // These run at load (conversation.js loads before truth.js), wrapping the
+  // base methods defined above in this same file.
+
+  // 1. startConvo: route 'none' through nvOpen.
+  const _startConvo = Game.startConvo;
+  Game.startConvo = function (vid) {
+    const c = this.convoGet(vid);
+    // reset nonverbal state every conversation
+    c.wasNonverbal = false; c.nativeLang = null; c.interpreter = null;
+    const st = _startConvo.call(this, vid);
+    // _startConvo already handled the 'none' branch inline; if it took the
+    // OLD path (shouldn't happen after our edit below), leave it.
+    return st;
+  };
+
+  // 2. convoChoices: nonverbal gets gestures + listen + interpreter.
+  // NOTE: the base convoChoices (defined earlier in this file) is replaced
+  // here rather than wrapped, because we need the nonverbal branch changed.
+  // We capture the base first.
+  const _convoChoices = Game.convoChoices;
+  Game.convoChoices = function (vid) {
+    const c = this.convoGet(vid);
+    if (c.thread === 'nonverbal') {
+      const out = [
+        { id: 'nv:nod', label: '(nod slowly)' },
+        { id: 'nv:smile', label: '(smile)' },
+        { id: 'nv:pointself', label: '(point: you, them, together)' },
+        { id: 'nv:listen', label: '(listen hard — catch words)' },
+      ];
+      const lang = c.nativeLang || this.npcNativeLang(vid);
+      const yid = this.findInterpreter(vid, lang);
+      c.interpreter = yid || null;
+      if (yid) {
+        const yn = String(this.displayName(yid)).split(' ')[0];
+        out.push({ id: 'nv:translate', label: `(ask ${yn} to translate)` });
+      }
+      out.push({ id: 'leave', label: '(walk away)' });
+      return out;
+    }
+    return _convoChoices.call(this, vid);
+  };
+
+  // 3. convoTurn: nv: kinds route through nvRespond (real foreign answers).
+  const _convoTurn = Game.convoTurn;
+  Game.convoTurn = function (vid, choiceId) {
+    if (typeof choiceId === 'string' && choiceId.indexOf('nv:') === 0) {
+      const c = this.convoGet(vid);
+      if (!c.active) return null;
+      if (choiceId === 'leave') return this.endConvo(vid, 'left');
+      const kind = choiceId.slice(3);
+      const line = this.nvRespond(vid, kind);
+      c.transcript.push({ who: 'you', text: '(gesture)' });
+      c.transcript.push({ who: 'them', text: line, foreign: c.nativeLang || this.npcNativeLang(vid) });
+      while (c.transcript.length > 8) c.transcript.shift();
+      c.exchanges++;
+      this.say(`${this.displayName(vid)}: ${line}`);
+      // No they-ask-you in nonverbal. Ever. (The leak Steve reported.)
+      if (!c.pendingQ && c.exchanges >= c.budget) return this.endConvo(vid, 'natural');
+      return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
+    }
+    return _convoTurn.call(this, vid, choiceId);
+  };
+
+  // 4. endConvo: gesture exits for nonverbal conversations.
+  // wasNonverbal is deliberately NOT cleared here (startConvo clears it):
+  // a redundant endConvo on an already-over nonverbal chat still exits
+  // with a gesture, never a sudden English "I should go."
+  const _endConvo = Game.endConvo;
+  Game.endConvo = function (vid, how) {
+    const c = this.convoGet(vid);
+    const wasNV = c.wasNonverbal || c.thread === 'nonverbal';
+    const r = _endConvo.call(this, vid, how);
+    if (wasNV && r) {
+      const line = this.nvEndLine(vid);
+      const tr = (r.transcript || []).slice();
+      if (tr.length) tr[tr.length - 1] = { who: 'them', text: line, foreign: c.nativeLang || undefined };
+      r.line = line;
+      r.transcript = tr;
+    }
+    return r;
+  };
 })();

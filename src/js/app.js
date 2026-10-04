@@ -1206,7 +1206,11 @@
       const isSpeech = /^\\s*\"/.test(e.text);
       const cls = e.who === 'you' ? 'tline you' : 'tline them';
       const who = e.who === 'you' ? 'You' : titleName;
-      return `<p class="${cls}"><b>${esc(who)}:</b> <span class="${isSpeech ? 'sp' : 'narr'}">${esc(e.text)}</span></p>`;
+      // FOREIGN SPEECH renders distinctly: italic amber, tagged with the
+      // language. You SEE the words even when you can't understand them.
+      const spCls = e.foreign ? 'fsp' : (isSpeech ? 'sp' : 'narr');
+      const ftag = e.foreign ? ` <span class="flang">${esc(Game.langDef(e.foreign).icon)} ${esc(Game.langDef(e.foreign).name)}</span>` : '';
+      return `<p class="${cls}"><b>${esc(who)}:</b> <span class="${spCls}">${esc(e.text)}</span>${ftag}</p>`;
     }).join('') + (thinking
       ? `<p class="tline them"><b>${esc(titleName)}:</b> <span class="thinking-dots" aria-label="thinking"><span>.</span><span>.</span><span>.</span></span></p>`
       : '');
@@ -2435,6 +2439,21 @@
   }
 
   // ---------- codex ----------
+  // LANGUAGES: tongues you're absorbing, word by word. Exposure teaches —
+  // unless the translator does it for you, in which case your brain
+  // never bothers. "Italian: 12 words — catching phrases."
+  function languagesSection() {
+    if (!Game.langExposureReport) return '';
+    const langs = Game.langExposureReport();
+    if (!langs.length) return '';
+    const sys = !!Game.state.systemArrived;
+    const rows = langs.map(l =>
+      `<p class="small">${l.icon} <b>${esc(l.name)}</b> — ${l.n} words · <i>${esc(l.stage)}</i>${l.fluent ? ' ✓' : ''}</p>`
+    ).join('');
+    return `<h1 class="title" style="font-size:18px">LANGUAGES</h1>
+      <p class="small"><i>${sys ? 'every tongue you\'ve brushed against. the translator knows them all, of course. it would.' : 'tongues you\'re picking up the hard way — ears, patience, embarrassment.'}</i></p>${rows}`;
+  }
+
   // PEOPLE: the journal fills as you learn. Pre-System it's your handwriting —
   // uncertain, personal. Post-System the Codex gets precise and invasive.
   function peopleSection() {
@@ -2506,6 +2525,7 @@
         <div class="card codex"><h3>${esc(s.name)} <span class="small" style="opacity:.7">[L${s.level} · ${esc(s.domain)}]</span></h3>
         <p class="small"><i>${esc(s.text)}</i></p>${s.via ? `<p class="small" style="opacity:.5">via ${esc(s.via)}</p>` : ''}</div>`).join('') : ''}
       ${peopleSection()}
+      ${languagesSection()}
       ${techniques.length ? '<h1 class="title" style="font-size:18px">TECHNIQUES</h1><p class="small"><i>where knowledge meets power.</i></p>' + techniques.map(t => `
         <div class="card codex"><h3>⚡ ${esc(t.name)}</h3><p class="small">${esc(t.effect)}</p></div>`).join('') : ''}
       ${inprog.length ? '<h1 class="title" style="font-size:18px">UNIDENTIFIED</h1><p class="small"><i>seen, not named. keep looking.</i></p>' + inprog.map(u => `

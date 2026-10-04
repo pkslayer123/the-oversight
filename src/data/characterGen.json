@@ -243,6 +243,11 @@
       "icon": "🇰🇪",
       "id": "swahili",
       "name": "Swahili"
+    },
+    {
+      "id": "italian",
+      "name": "Italian",
+      "icon": "🇮🇹"
     }
   ],
   "lastNames": [
@@ -3250,7 +3255,8 @@
     "rural Ireland",
     "Oslo, Norway",
     "Marrakech, Morocco",
-    "Auckland, New Zealand"
+    "Auckland, New Zealand",
+    "Rome, Italy"
   ],
   "sharingStyles": [
     "generous",

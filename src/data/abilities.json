@@ -1114,5 +1114,17 @@
     "metabolic": {
       "daily": 30
     }
+  },
+  {
+    "id": "translator",
+    "name": "Translator",
+    "description": "The System translates every tongue in real time, right inside your head. You understand everyone. Mostly. (Slight System editorializing included. Tone sold separately.)",
+    "flavor": "OH WE LOVE THIS ONE! All the words! Right in your brain! Don't worry about the buzzing! That's just... us! In there! With the words!",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    },
+    "modifiers": []
   }
 ]

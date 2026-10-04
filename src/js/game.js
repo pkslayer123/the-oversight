@@ -73,9 +73,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech };
       return this.data;
     },
 
@@ -6184,6 +6184,14 @@
         if (n.hunger > 70 && (v.requests || {})[rid] === undefined && Math.random() < 0.3) {
           stepToward(); done();
           v.requests = v.requests || {}; v.requests[rid] = { type: 'food', day: this.state.scholar.day, part: this.dayPart };
+          // NO SHARED LANGUAGE: they don't ask in English. They mime hunger
+          // in their own tongue — belly rubbed, eyes on your pack.
+          if (this.commLevel(rid).level === 'none') {
+            const ph = this.foreignLine(rid, 'need_food');
+            const r = ph ? this.renderForeign(rid, ph) : null;
+            this.say(`${first} sidles up, rubbing their belly, eyes fixed on your pack.${r ? ' ' + r.text : ''}`);
+            return;
+          }
           const lines = [
             `${first} sidles up. "Got anything to eat? The pot's been thin and my stomach's filing complaints."`,
             `${first} hovers near you. "I hate asking. I'm asking anyway — anything to spare?"`,
@@ -6194,6 +6202,14 @@
         }
         if (n.fear > 70 && Math.random() < 0.3) {
           stepToward(); done();
+          // NO SHARED LANGUAGE: fear needs no translation — but the words
+          // are theirs, not yours.
+          if (this.commLevel(rid).level === 'none') {
+            const ph = this.foreignLine(rid, 'need_danger');
+            const r = ph ? this.renderForeign(rid, ph) : null;
+            this.say(`${first} presses close, glancing at the treeline, talking fast.${r ? ' ' + r.text : ''}`);
+            return;
+          }
           const lines = [
             `${first} sticks close to the fire. "Can I... just stay here a while? The dark's been loud today."`,
             `${first} won't go far from the group. "Something's out there. I can feel it looking."`,
@@ -7656,6 +7672,10 @@
         } else {
           this.say('\U0001F381 "Ooh! A quiet one! You did juust enough to stay interesting! The audience was ALMOST bored! Almost! Here — a little something for existing NEAR the action!" (Choose an ability.)');
         }
+        // TRANSLATOR PITCH: the System noticed the miming.
+        if ((w1.langStruggle || 0) >= 2) {
+          this.say('🗣️ "OH! We NOTICED! The whole... talking-past-each-other thing! The miming! The pointing! SO much pointing! We can FIX that! There might be a little... translation-shaped gift... in your choices! No pressure! (Some pressure. The audience loves it when you understand each other. Drama needs dialogue!)"');
+        }
         // AFTERTHOUGHT: the System suddenly remembers the journal.
         // "Oh! Oh! We almost forgot! You were writing things down! We made it better!"
         this.say('\U0001F4D6 "OH! Wait! We almost forgot! You were writing things down! In the little paper! We LOVE the paper! We made it better! It talks now! It remembers EVERYTHING!"');
@@ -7820,6 +7840,9 @@
         ant_trail: (w.scavenge || 0) >= 2,   // ants know where the sugar is; ruins have sugar
         cold_blooded: (w.forage || 0) >= 4,  // cold mornings outdoors teach efficiency
         echo_location: (w.hunt || 0) >= 3,   // tracking hones your senses
+        // FRICTION INSPIRES AUGMENTATION: a week of miming and pointing
+        // earns the System's translation-shaped fix.
+        translator: (w.langStruggle || 0) >= 2,
       };
       // first ability: prefer UTILITY tier (practical). Later abilities can be anything.
       const utility = all.filter(a => a.tier === 'utility' && cond[a.id]);
@@ -7840,6 +7863,15 @@
           const pick = wild[Math.floor(Math.random() * wild.length)];
           // don't duplicate a utility pick if the same ability is somehow in both
           if (!choices.some(c => c.id === pick.id)) choices.push(pick);
+        }
+      }
+      // TRANSLATOR: friction inspires augmentation. If week 1 was a mime show,
+      // the System pushes its fix front and center — it noticed the struggle.
+      if (cond.translator) {
+        const tr = all.find(a => a.id === 'translator');
+        if (tr && !choices.some(c => c.id === 'translator')) {
+          if (choices.length < 3) choices.push(tr);
+          else choices[choices.length - 1] = tr; // bump the wild slot
         }
       }
       return choices.slice(0, 3);
