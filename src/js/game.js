@@ -94,6 +94,13 @@
       }
       // you trust yourself
       this.state.village.trust[villagerId] = 100;
+      // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
+      // they wander turn-based. you see them. you tap them.
+      this.state.village.positions = {};
+      // place them in the building (not on walls, not on you)
+      const freeCells = [];
+      // (positions assigned when Haven detail generates — see ensureVillagerPositions)
+      
       // TEACHERS: everyone knows a few plants (from their old life).
       // mains know 2, background know 1. what they know, they can teach.
       this.state.village.taught = {};
@@ -808,6 +815,8 @@
       s.mx = cx; s.my = cy;
       this.monsterTurn();
       this.animalTurn();
+      this.villagerTurn();
+      this.ensureVillagerPositions();
       return true;
     },
 
@@ -996,6 +1005,50 @@
         // it flees faster
         this.animalTurn(); this.animalTurn();
         return true;
+      }
+    },
+
+    // ensure villagers have positions in the Haven grid.
+    ensureVillagerPositions() {
+      const v = this.state.village;
+      if (this.map.px !== 3 || this.map.py !== 3) return; // only at Haven
+      if (v.positions && Object.keys(v.positions).length > 0) return; // already placed
+      v.positions = {};
+      const detail = this.genDetail(3, 3);
+      // find passable cells (not wall, not player spawn)
+      const free = [];
+      for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
+        const c = detail[cy] && detail[cy][cx];
+        if (c && !['wall'].includes(c) && !(cx === 4 && cy === 4)) free.push({x: cx, y: cy});
+      }
+      for (const rid of (v.roster || [])) {
+        if (rid === this.villagerId) continue; // you're the player, not an NPC
+        if (!free.length) break;
+        const idx = Math.floor(Math.random() * free.length);
+        const pos = free.splice(idx, 1)[0];
+        v.positions[rid] = { mx: pos.x, my: pos.y };
+      }
+    },
+
+    // villagers wander (turn-based). they go about their day.
+    // they don't block you. they're just living.
+    villagerTurn() {
+      const v = this.state.village;
+      if (this.map.px !== 3 || this.map.py !== 3) return;
+      if (!v.positions) return;
+      const detail = this.genDetail(3, 3);
+      for (const rid of Object.keys(v.positions)) {
+        const pos = v.positions[rid];
+        // 50% chance to move (downtime), else stay
+        if (Math.random() > 0.5) continue;
+        const dx = Math.floor(Math.random() * 3) - 1;
+        const dy = Math.floor(Math.random() * 3) - 1;
+        const nx = Math.max(0, Math.min(8, pos.mx + dx));
+        const ny = Math.max(0, Math.min(8, pos.my + dy));
+        const cell = detail[ny] && detail[ny][nx];
+        if (cell && cell !== 'wall') {
+          pos.mx = nx; pos.my = ny;
+        }
       }
     },
 
@@ -1665,6 +1718,7 @@
         hydration: Math.round(s.hydration), energy: Math.round(s.energy),
         water: s.water || 0,
         inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
+        invCount: s.inventory.reduce((t, i) => t + (i.units || 1), 0),
         invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
         pantryKcal: Math.round(this.state.village.pantryKcal),
         pantryDays: Math.floor(this.state.village.pantryKcal / Math.max(1, (this.state.village.lastEat || 800) - (this.state.village.lastGive || 0))),

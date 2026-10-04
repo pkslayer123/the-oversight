@@ -192,6 +192,30 @@
       else if (enc > 0) desc += ' Looks familiar.';
       if (dist <= 1) actions.push(['Hunt', () => Game.huntAnimal()]);
       else desc += ' (Too far to catch.)';
+    } else if (villagerId) {
+      // VILLAGER: tap to talk. all 12 are interactable, not just mains.
+      const vp = Game.data.villagers.find(v => v.id === villagerId) || Game.data.background_survivors.find(v => v.id === villagerId);
+      const name = vp ? vp.name : villagerId;
+      const trust = (Game.state.village.trust && Game.state.village.trust[villagerId]) || 10;
+      const health = (Game.state.village.health && Game.state.village.health[villagerId] !== undefined) ? Game.state.village.health[villagerId] : 100;
+      desc = `${vp ? vp.formerOccupation : ''} · Health ${health}/100.`;
+      const tone = trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.';
+      desc += ` ${tone}`;
+      if (dist <= 2) {
+        actions.push(['Talk', () => Game.talkTo(villagerId)]);
+        actions.push(['Give food', () => Game.giveFood(villagerId)]);
+        const youKnow = Object.keys(Game.state.codex.plants);
+        const theyKnow = (Game.state.village.taught && Game.state.village.taught[villagerId]) || [];
+        const teachable = youKnow.filter(pid => !theyKnow.includes(pid));
+        if (teachable.length) actions.push(['Teach', () => {
+          const pid = teachable[0];
+          if (!Game.state.village.taught[villagerId]) Game.state.village.taught[villagerId] = [];
+          Game.state.village.taught[villagerId].push(pid);
+          Game.say(`You teach ${name.split(' ')[0]} about ${Game.data.plants.find(p => p.id === pid).name}.`);
+        }]);
+      } else {
+        desc += ' (Too far to talk.)';
+      }
     } else {
       // what you know: modifiers + synthesized result.
       if (mod && mod.known) {
@@ -263,6 +287,19 @@
       document.querySelector(`[data-act="${i}"]`).onclick = () => { a[1](); expeditionScreen(); };
     });
     document.getElementById('b-cback').onclick = () => expeditionScreen();
+  }
+
+  // invPopup: what are you carrying? always accessible, not hidden.
+  function invPopup() {
+    const st = Game.status();
+    const inv = st.inventory;
+    screen.innerHTML = `${bar('scattering://pack', st.invCount + ' items')}
+      <div class="card" style="margin-top:40px">
+        <h3>Pack</h3>
+        ${inv.length ? inv.map(i => `<p class="small"><b>${i.name}</b> x${i.units} (${i.kcalEach * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        <button class="btn ghost sm" id="b-iback">Back</button>
+      </div>`;
+    document.getElementById('b-iback').onclick = () => expeditionScreen();
   }
 
   function talkOverlay(vid) {
@@ -362,32 +399,27 @@
       <p class="small">Pantry: ${st.pantryKcal} kcal (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
       <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry 8000+ (${st.pantryKcal})</p>
+      <p class="small" style="opacity:.7">Tap a person in the grid to talk. They\'re living their lives.</p>
       ${mains.map(p => {
         const h = (Game.state.village.health && Game.state.village.health[p.id] !== undefined) ? Game.state.village.health[p.id] : 100;
         const hb = h >= 70 ? '🟢' : h >= 40 ? '🟡' : '🔴';
-        return `<p class="small"><b>${p.name}</b> — ${p.formerOccupation} ${hb} ${h}
-        <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`; }).join('')}
-      <p class="small" style="margin-top:8px;opacity:.75"><b>Also here:</b> ${bg.map(p => `${p.name} (${p.formerOccupation})`).join(' · ')}</p>
+        return `<p class="small">${hb} <b>${p.name}</b> — ${p.formerOccupation} (${h})</p>`; }).join('')}
+      <p class="small" style="margin-top:8px;opacity:.75"><b>Also here:</b> ${bg.map(p => `${p.name}`).join(' · ')}</p>
       <div class="btnrow">
-        <button class="btn sm" id="p-water">Fill water</button>
-        <button class="btn sm" id="p-fire">Sit by the fire</button>
       </div></div>`;
   }
 
   function panelNode(st, n) {
+    // Actions come from tapping squares (cell popup). No redundant buttons.
+    // Global: Eat, Wait, Inventory. Everything else is in the world.
     return `
       <div class="card"><h3>${esc(n.epithet).toUpperCase()}</h3>
       <p class="small">${esc(n.title)}</p>
-      <p class="small">Here: ${n.here.length ? esc(n.here.join(' · ')) : 'nothing obvious'}</p>
+      <p class="small" style="opacity:.7">Tap a square to see what you can do there.</p>
       <div class="actions">
-        <button class="btn sm" id="p-act" ${n.canForage ? '' : 'disabled'}>${n.isRuin ? 'Scavenge' : 'Forage'}<br><span class="cost">1 part · 120 kcal</span></button>
-        <button class="btn sm" id="p-treat" ${n.canTreat ? '' : 'disabled'}>Treat water<br><span class="cost">1 part · 50 kcal</span></button>
-        <button class="btn sm" id="p-wait">Wait<br><span class="cost">1 part</span></button>
-      </div>
-      <div class="actions">
-        <button class="btn sm ghost" id="p-eat">Eat to full</button>
-        <button class="btn sm ghost" id="p-drink" ${st.water > 0 ? '' : 'disabled'}>Drink clean (${st.water})</button>
-        <button class="btn sm ghost" id="p-wild" ${n.canTreat ? '' : 'disabled'}>Drink wild</button>
+        <button class="btn sm ghost" id="p-eat">Eat</button>
+        <button class="btn sm ghost" id="p-wait">Wait</button>
+        <button class="btn sm ghost" id="p-inv">Pack (${st.invCount})</button>
       </div></div>`;
   }
 
@@ -415,18 +447,12 @@
     on('p-face', () => { Game.startCombat(); rerender(); });
     screen.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Game.combatRound(b.dataset.c); rerender(); });
     const go = (kind) => { Game.doAction(kind); rerender(); };
-    on('p-act', () => go('forage'));
-    on('p-treat', () => go('treat'));
     on('p-wait', () => go('wait'));
     on('p-eat', () => { Game.eat(); rerender(); });
-    on('p-drink', () => { Game.drinkTreated(); rerender(); });
-    on('p-wild', () => { Game.drinkWild(); rerender(); });
-    screen.querySelectorAll('[data-talk]').forEach(b => b.onclick = () => talkOverlay(b.dataset.talk));
+    on('p-inv', () => invPopup());
     screen.querySelectorAll('.bgsurv').forEach(el => {
       el.onclick = () => { screen.querySelector('#bgsay').textContent = '\u201C' + el.dataset.line + '\u201D'; };
     });
-    on('p-water', () => { Game.villageAction('water'); toast('Skin full. Cold. Clean.'); rerender(); });
-    on('p-fire', () => { Game.villageAction('fire'); rerender(); });
   }
 
   // detail grid: 9x9 cells, the world INSIDE the tile. one continuous world —
@@ -450,6 +476,7 @@
     const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
     const mon = Game.state.scholar.monster;
     const ani = Game.state.scholar.animal;
+    const vpos = (Game.state.village.positions || {});
     const secrets = tile.secrets || {};
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
@@ -462,6 +489,18 @@
         if (isMe) { g = '🧍'; cls += ' me'; }
         else if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
         else if (ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; }
+        else {
+          // villagers: show 🧍 with name (first name only, small)
+          for (const [rid, pos] of Object.entries(vpos)) {
+            if (pos.mx === cx && pos.my === cy) {
+              const vp = Game.data.villagers.find(v => v.id === rid) || Game.data.background_survivors.find(v => v.id === rid);
+              const fname = vp ? vp.name.split(' ')[0] : '?';
+              g = `🧍<span class="vname">${fname}</span>`;
+              cls += ' villager';
+              break;
+            }
+          }
+        }
         if (cell === 'plant') {
           g = known && PLANT_GLYPH[known] ? PLANT_GLYPH[known] : '🌱';
           cls += ' plantcell';
