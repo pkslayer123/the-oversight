@@ -2047,14 +2047,20 @@
       const s = this.state.scholar;
       if (s.day >= 7 && !this.state.systemArrived) {
         this.state.systemArrived = true;
-        // DRAMA: the sky changes. Everyone sees it. This is the first wave
-        // of the System's aesthetics — the world will never look the same.
+        // DRAMA: the sky changes. This is a REALITY SHOW. You're contestants.
+        // The System is a cheerful game-show host. It has an audience.
+        // It studied humanity exhaustively and got everything spiritually wrong.
+        // It doesn't understand why you're upset about food. Food is... a detail.
         this.say('\U0001F31F THE SKY SPLITS OPEN.');
-        this.say('Not with light. With... interface. Windows. Text. Numbers. Scrolling across the clouds like the world is a screen and someone just turned it on.');
-        this.say('A voice in your head, cheerful and utterly alien: "Oh! Oh no. We forgot the food thing. And the water thing. We\'re SO sorry!"');
-        this.say('"We\'ve been watching! You\'re all so... small! And hungry! We can fix the hungry! Maybe! We\'re new at this!"');
-        this.say('Your journal shimmers. The handwriting dissolves. In its place: crisp text, icons, progress bars. It\'s a game interface now. Quests. Abilities. Stats.');
-        this.say('You feel it behind your eyes. Not painful. Just... there. Like a second heartbeat.');
+        this.say('Not with light. With... interface. Windows. Text. Numbers. Scrolling across the clouds.');
+        this.say('A voice in your head — bright, enthusiastic, utterly alien:');
+        this.say('"HELLO! Welcome! We\'re SO glad you\'re all still here! What a week! The audience LOVED the foraging episode!"');
+        this.say('"Okay! So! Here\'s what\'s happening! You\'re on a show! It\'s called... we haven\'t named it yet! We\'re taking suggestions!"');
+        this.say('"The rules are simple! Survive! Be interesting! The audience votes with their attention! The more they watch, the more gifts we give you!"');
+        this.say('"Oh! And we noticed some of you are... hungry? Is that the word? The small unhappy tummy feeling? We\'ll look into that! Probably! Anyway!"');
+        this.say('Your journal shimmers. The handwriting dissolves. Crisp text. Icons. Progress bars. Quests. Abilities. Stats.');
+        this.say('It doesn\'t replace your survival gear. It just... covers part of it. Like someone put a sticker over your hunger. The hunger is still there. The sticker is very shiny.');
+        this.say('You feel it behind your eyes. Not painful. Just there. Like a second heartbeat. Like being watched.');
         s.abilities = s.abilities || [];
         s.systemQuests = [];
         s.abilityChoices = this.firstAbilityChoices();
