@@ -316,7 +316,7 @@
         if (path.length < bestD) { bestD = path.length; best = [nx, ny]; }
       }
       if (best) {
-        if (Game.movePath(best[0], best[1])) cellPopup(cx, cy);
+        if (Game.movePath(best[0], best[1])) { refresh(); cellPopup(cx, cy); }
         else refresh();
       } else {
         Game.say('No way to get closer.');
@@ -615,7 +615,14 @@
         </div>
       </div>`;
     info.querySelectorAll('[data-tpact]').forEach(b => {
-      b.onclick = () => { actions[+b.dataset.tpact][1](); refreshTilePanel(); };
+      b.onclick = () => {
+        const px0 = Game.state.scholar.mx, py0 = Game.state.scholar.my;
+        actions[+b.dataset.tpact][1]();
+        // If the action moved the player, the GRID is stale — full re-render.
+        // Panel-only refresh is fine for in-place actions (examine, drink, etc).
+        if (Game.state.scholar.mx !== px0 || Game.state.scholar.my !== py0) refresh();
+        else refreshTilePanel();
+      };
     });
     document.getElementById('tp-close').onclick = () => { info.innerHTML = ''; };
     // remember what we're looking at so actions can refresh the panel
@@ -932,7 +939,16 @@
         const walkable = !Game.cellProps(cell).blocks;
         const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
         const actions = Game.cellActions(cx, cy);
-        if (walkable && actions.length === 0 && dist <= 1) {
+        // Villager on the tapped cell? Popup (talk), don't step onto them.
+        let tappedVillager = false;
+        const vpos = Game.state.village && Game.state.village.positions;
+        if (vpos) for (const rid of Object.keys(vpos)) {
+          if (vpos[rid].mx === cx && vpos[rid].my === cy) { tappedVillager = true; break; }
+        }
+        // 'Talk' is ambient (anyone within 3) — it must NOT block stepping.
+        // Only cell-specific actions force the popup.
+        const blockingActions = actions.filter(a => a !== 'Talk');
+        if (walkable && !tappedVillager && blockingActions.length === 0 && dist <= 1) {
           // Adjacent ground: just step. Free. No panel, no fuss.
           Game.microMove(cx, cy);
           expeditionScreen();

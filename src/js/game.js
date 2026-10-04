@@ -480,7 +480,7 @@
       // Bond is non-transferable — a bonded relic in a stranger's hands is just stuff.
       scholar.inventory = gear.map(id => {
         const def = this.data.items.find(i => i.id === id) || {};
-        return { itemId: id, units: 1, kg: 0.2, name: def.name || id,
+        return { itemId: id, units: 1, kcalEach: 0, kg: 0.2, name: def.name || id,
           bonded: true, bond: 0, bondOffered: [], enhancements: [] };
       });
       scholar.relicUse = {}; // per-day record of meaningful relic use
