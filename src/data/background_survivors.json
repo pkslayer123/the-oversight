@@ -6,7 +6,7 @@
     "formerOccupation": "ER doctor",
     "line": "Mara's old colleague. Triages everything, including arguments.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "steady",
@@ -20,7 +20,7 @@
     "formerOccupation": "electrician",
     "line": "Keeps trying to fix things that don't need wires anymore.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "bold",
@@ -34,7 +34,7 @@
     "formerOccupation": "botanist",
     "line": "Knows Latin names for everything. The plants don't care.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "cautious",
@@ -48,7 +48,7 @@
     "formerOccupation": "carpenter",
     "line": "Building furniture from fallen trees. It's good. It's weird.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "steady",
@@ -62,7 +62,7 @@
     "formerOccupation": "veterinary tech",
     "line": "Treats people like nervous animals. It works.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "bold",
@@ -76,7 +76,7 @@
     "formerOccupation": "plumber",
     "line": "Water is water. He'll find it, move it, or apologize to it.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "cautious",
@@ -90,7 +90,7 @@
     "formerOccupation": "cafeteria manager",
     "line": "Feeds twelve like she fed four hundred. Portions are law.",
     "kcalPerDay": 1700,
-    "providesPerDay": 1564,
+    "providesPerDay": 1275,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "bold",
@@ -104,7 +104,7 @@
     "formerOccupation": "truck driver",
     "line": "Drove through the Burn. Doesn't talk about it. Drives nowhere now.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "bold",
@@ -118,7 +118,7 @@
     "formerOccupation": "librarian",
     "line": "Cataloging the Codex. Dewey Decimal for the apocalypse.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "bold",
@@ -132,7 +132,7 @@
     "formerOccupation": "barista",
     "line": "Makes acorn coffee. It's terrible. He knows.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "bold",
@@ -146,7 +146,7 @@
     "formerOccupation": "mechanic",
     "line": "Fixes what can't be fixed. Morale is a machine too.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "steady",
@@ -160,7 +160,7 @@
     "formerOccupation": "fisherman",
     "line": "Aki's rival. They argue about knots. It's friendly. Mostly.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1930,
+    "providesPerDay": 1573,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "steady",
@@ -174,7 +174,7 @@
     "formerOccupation": "teacher",
     "line": "Teaches the kids. Curriculum: everything.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "cautious",
@@ -188,7 +188,7 @@
     "formerOccupation": "accountant",
     "line": "Priya's deputy. They reconcile the pantry. It's intense.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "cautious",
@@ -202,7 +202,7 @@
     "formerOccupation": "nurse",
     "line": "Mara's right hand. Calm is a skill.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "bold",
@@ -216,7 +216,7 @@
     "formerOccupation": "student",
     "line": "Theo's sidekick. Learning speedrunning. Of what, unclear.",
     "kcalPerDay": 1600,
-    "providesPerDay": 1472,
+    "providesPerDay": 1200,
     "personality": {
       "sharing": "selfish",
       "temperament": "bold",
@@ -230,7 +230,7 @@
     "formerOccupation": "gardener",
     "line": "Growing things in cans. Optimist.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "bold",
@@ -244,7 +244,7 @@
     "formerOccupation": "pharmacist",
     "line": "Rations medicine like it's gold. It is.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "steady",
@@ -258,7 +258,7 @@
     "formerOccupation": "retired teacher",
     "line": "Ruth's card partner. Cheats. Everyone knows.",
     "kcalPerDay": 1700,
-    "providesPerDay": 1564,
+    "providesPerDay": 1275,
     "personality": {
       "sharing": "generous",
       "temperament": "bold",
@@ -272,7 +272,7 @@
     "formerOccupation": "construction worker",
     "line": "Builds. That's it. He builds.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "steady",
@@ -286,7 +286,7 @@
     "formerOccupation": "chef",
     "line": "Jesse's kitchen rival. The cookoff is ongoing.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "cautious",
@@ -300,7 +300,7 @@
     "formerOccupation": "park ranger",
     "line": "Knows tracks. Quiet like Jesse, but different.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "bold",
@@ -314,7 +314,7 @@
     "formerOccupation": "artist",
     "line": "Drawing the new world. It's all she can do.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "bold",
@@ -328,7 +328,7 @@
     "formerOccupation": "police officer",
     "line": "Keeps the peace. There's mostly peace.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "bold",
@@ -342,7 +342,7 @@
     "formerOccupation": "translator",
     "line": "Speaks four languages. The System speaks none.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "bold",
@@ -356,7 +356,7 @@
     "formerOccupation": "pastor",
     "line": "Holds services. Attendance varies.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "bold",
@@ -370,7 +370,7 @@
     "formerOccupation": "college student",
     "line": "Studies. Of what, she won't say.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "bold",
@@ -384,7 +384,7 @@
     "formerOccupation": "engineer",
     "line": "Designs water systems. Useful.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "cautious",
@@ -398,7 +398,7 @@
     "formerOccupation": "photographer",
     "line": "Documents everything. The Codex has pictures now.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "cautious",
@@ -412,7 +412,7 @@
     "formerOccupation": "firefighter",
     "line": "Keeps the fire. It's a whole job.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "cautious",
@@ -426,7 +426,7 @@
     "formerOccupation": "doctor",
     "line": "Not that Maya. This one fixes bones.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "selfish",
       "temperament": "cautious",
@@ -440,7 +440,7 @@
     "formerOccupation": "hiker",
     "line": "Yes, really. No, he won't change it.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "steady",
@@ -454,7 +454,7 @@
     "formerOccupation": "musician",
     "line": "Plays a cracked guitar. Morale.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "bold",
@@ -468,7 +468,7 @@
     "formerOccupation": "farmer",
     "line": "Grows food. The most important job.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "bold",
@@ -482,7 +482,7 @@
     "formerOccupation": "seamstress",
     "line": "Mends clothes. Mends people, too.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "steady",
@@ -496,7 +496,7 @@
     "formerOccupation": "veterinarian",
     "line": "Emma's boss. The animals are fine. It's the people.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "cautious",

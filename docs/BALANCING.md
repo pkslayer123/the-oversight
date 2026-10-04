@@ -6,7 +6,7 @@ Everything rooted in reality, everything balanced. This is how we evaluate chang
 
 ### Daily Economy
 - **Scholar needs**: 2,200 kcal/day (realistic adult).
-- **Village shortfall**: 800–1,200 kcal/day from pantry (the gap you're the margin for).
+- **Village shortfall**: 800–1,200 kcal/day from pantry (the gap you're the margin for). Measured 2026-10-04: ~2,000/day at low trust, shrinking toward ~200/day as trust rises (surplus sharing is trust-gated) — the "earn trust, stabilize the pantry" arc emerges from the mechanics.
 - **Villager need**: 1,600 (kids), 1,700 (elders), 2,000 (adults), 2,200 (Jesse).
 - **Village self-provision**: ~92% of need (they work; you're not feeding helpless mouths).
 
@@ -20,9 +20,10 @@ Everything rooted in reality, everything balanced. This is how we evaluate chang
 ### Win/Loss
 - **Greedy bot win rate**: 60–80% (optimal play should usually win; humans will be 30–50%).
 - **Avg win days**: 12–18.
-- **Pantry start**: 2,000 kcal (~2 days buffer).
-- **Win**: Codex 8+ AND Pantry 5,000+.
+- **Pantry start**: ~94,000 kcal as real items (beans, rice, soup, meat, peanuts — ~4 days at full need). NOTE (2026-10-04): doc previously said 2,000; the "real food" redesign made it 94k. With ~92% village self-provision this is ~2 months of buffer — the pantry-pressure half of the game is currently absent. Steve call whether to shrink it.
+- **Win** (as coded): Codex 10+ AND Pantry 8,000+. NOTE: pantry half is trivially satisfied from the start (94k >> 8k) — the win is effectively codex-only until the starting pantry is rebalanced.
 - **Loss**: 3 hungry days (pantry empty) OR scholar death.
+- **Greedy bot win rate, measured 2026-10-04**: ~20% pre-fix; ~2-8% after honest tree yields (oak→acorns, hickory→nuts — trees no longer a species slot machine for codex entries). The bot doesn't identify strategically; human path to 10 entries via plant/bush cells is intact. If the win-rate target matters, the lever is codex acquisition, not tree honesty.
 
 ### Village Lives
 - **Food haul**: 400–800 kcal (a real haul for one person, visible on top of abstract provision).

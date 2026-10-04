@@ -5,8 +5,8 @@
       "fieldcraft": 2,
       "system": 1
     },
-    "backstory": "ER nurse from Columbus. When the sky changed, she was already moving toward the screaming \u2014 old habits. She checked pulses in the clearing while everyone else stared at the sky.",
-    "clothesNote": "Scrub top (long dead) under a patched canvas jacket. Good boots \u2014 broken-in, quiet. They have outlived two worlds.",
+    "backstory": "ER nurse from Columbus. When the sky changed, she was already moving toward the screaming — old habits. She checked pulses in the clearing while everyone else stared at the sky.",
+    "clothesNote": "Scrub top (long dead) under a patched canvas jacket. Good boots — broken-in, quiet. They have outlived two worlds.",
     "formerOccupation": "ER nurse",
     "homeRegion": "Ohio river valley",
     "id": "mara_okafor",
@@ -29,17 +29,17 @@
     "survivalProbability": 34,
     "systemAssessment": "The others notice: steady hands, dry humor, the one already taking charge of the wounded.",
     "quest": [
-      "You're awake. Don't sit up fast \u2014 you were out a full day.",
+      "You're awake. Don't sit up fast — you were out a full day.",
       "I woke up on a cot in there. Twelve cots. Eleven strangers. I don't know any of them.",
       "We have to decide: do we do this together, or do we all starve separately? I'm a nurse, not a leader. But someone has to say it."
     ],
     "talk": [
       "I don't know you. But you're here, so... we figure it out.",
       "In there, I found a first-aid kit under the bleachers. I kept it. I'm not proud. I'm practical.",
-      "If we do this \u2014 the sharing thing \u2014 I need to know you're serious."
+      "If we do this — the sharing thing — I need to know you're serious."
     ],
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "providesWhat": ""
   },
   {
@@ -48,7 +48,7 @@
       "craft": 1,
       "fieldcraft": 3
     },
-    "backstory": "Grew up hunting whitetail with his grandfather in the Georgia pines. Was wearing camo when the sky changed \u2014 hasn't taken it off since. Quiet. Misses his dog.",
+    "backstory": "Grew up hunting whitetail with his grandfather in the Georgia pines. Was wearing camo when the sky changed — hasn't taken it off since. Quiet. Misses his dog.",
     "clothesNote": "Full camo, broken-in. Grandfather's knife on the belt.",
     "formerOccupation": "line cook / hunter",
     "homeRegion": "Georgia pines",
@@ -77,7 +77,7 @@
       "You hunt? No? Then we need to talk about what you DO do."
     ],
     "kcalPerDay": 2200,
-    "providesPerDay": 2274,
+    "providesPerDay": 1853,
     "providesWhat": "snares",
     "quest": [
       "Up. Good. You were in the bus depot, I think. I was in the garage.",
@@ -120,7 +120,7 @@
       "If you're kind, I'll know. If you're not, I'll know faster."
     ],
     "kcalPerDay": 2000,
-    "providesPerDay": 1990,
+    "providesPerDay": 1622,
     "providesWhat": "fish lines",
     "quest": [
       "You're awake. I was in the diner. Dreaming about rice.",
@@ -163,7 +163,7 @@
       "You seem alright. For a stranger. Which is all any of us are."
     ],
     "kcalPerDay": 1700,
-    "providesPerDay": 1564,
+    "providesPerDay": 1275,
     "providesWhat": "",
     "quest": [
       "Oh, you're up. I was in the school. You were... somewhere.",
@@ -206,7 +206,7 @@
       "If we wipe, we wipe together. That's the deal. Right?"
     ],
     "kcalPerDay": 2000,
-    "providesPerDay": 1840,
+    "providesPerDay": 1500,
     "providesWhat": "",
     "quest": [
       "Whoa, you're up. Okay. So. Twelve of us. Random spawn. No tutorial.",
@@ -249,7 +249,7 @@
       "Trust is earned. I'm not cruel about it. I'm just... careful."
     ],
     "kcalPerDay": 1900,
-    "providesPerDay": 1748,
+    "providesPerDay": 1425,
     "providesWhat": "",
     "quest": [
       "You're awake. I was in the library. You were in... does it matter?",

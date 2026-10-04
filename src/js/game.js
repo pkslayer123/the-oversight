@@ -540,6 +540,16 @@
           abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
           items: this.genItemCandidates(occ),
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
+          // villagers feed themselves FIRST. the doc target is ~92% self-provision
+          // (the pantry covers the rest — that's the gap the player is the margin
+          // for). providesPerDay is the PRE-knowledge base: starting background
+          // knowledge multiplies it (x1.15 strangers, x1.30 visitors, x1.45 locals —
+          // regional familiarity matters, and it shows in the pot). the /1.227
+          // blends the tier mix so total provision lands near 92% of need.
+          // (missing this field entirely meant generated villagers produced 0 and
+          // the village burned ~12k/day from the pantry — the forager could never
+          // keep up, and the "92% self-sufficient" fiction was a lie.)
+          providesPerDay: Math.round((occ.kcalPerDay || 2000) * 0.92 / 1.227) + Math.floor(Math.random() * 201) - 100,
           survivalProbability: 25 + Math.floor(Math.random() * 21),
           systemAssessment: sysAssess,
           secretFear, languages: langs, occupationId: occ.id || null,
@@ -3066,7 +3076,7 @@
         const dep = this.villagerDepleteTiles(vid, depleteCount);
         const kcal = Math.round(R(300, 600) * eff * (dep.depleted > 0 ? 1 : 0.3));
         // less to find when the land is stripped — scarcity is real
-        this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + kcal;
+        this.stockPantry(kcal, 'Foraged food');
         let landNote = '';
         if (dep.depleted === 0) {
           landNote = ` The ${dep.zone} are picked clean — ${first} found scraps. The village needs new ground.`;
@@ -3101,7 +3111,7 @@
         const kcal = Math.round(R(400, 900) * eff);
         const injuryRisk = temp === 'bold' ? 0.22 : temp === 'cautious' ? 0.08 : 0.15;
         const injuryRoll = Math.max(0.03, injuryRisk / Math.max(0.7, comp));
-        this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + kcal;
+        this.stockPantry(kcal, 'Game meat');
         if (Math.random() < injuryRoll) {
           const dmg = R(10, 30);
           this.hurtVillager(vid, dmg, 'hunting');
@@ -3136,7 +3146,7 @@
         let find = '';
         if (Math.random() < 0.15 * eff) {
           const kcal = R(200, 500);
-          this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + kcal;
+          this.stockPantry(kcal, 'Foraged food');
           find = ` Found a forgotten cache: +${kcal} kcal.`;
         }
         this.say(`🔭 ${first} scouts the land: mapped ${revealed} new area${revealed === 1 ? '' : 's'}.${find}`);
@@ -3177,7 +3187,7 @@
         // killed it
         s.monster = null;
         const lootKcal = R(200, 600);
-        this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + lootKcal;
+        this.stockPantry(lootKcal, 'Game meat');
         this.say(`⚔️ ${first} KILLED the ${mName}! Drags it home: +${lootKcal} kcal. The village cheers.`);
         this.villageEvent('victory');
         this.bumpTrust(vid, 5);
@@ -3388,6 +3398,22 @@
       return this.status();
     },
 
+    // stockPantry: REAL food into the REAL pantry. Every kcal arrives as an
+    // item — never a phantom number. (Phantom pantryKcal bumps get wiped by
+    // villageEats' end-of-day sync, which re-derives the counter from items.
+    // That's how player hauls used to evaporate overnight.)
+    stockPantry(kcal, name) {
+      const v = this.state.village;
+      v.pantry = v.pantry || [];
+      kcal = Math.round(kcal || 0);
+      if (kcal <= 0) return;
+      const day = (this.state.scholar && this.state.scholar.day) || 1;
+      v.pantry.push({ name: name || 'Foraged food', kcalEach: kcal, units: 1,
+        spoilDay: day + 3, safe: true, kg: 0.2 });
+      // keep the compat counter honest until the next end-of-day sync
+      v.pantryKcal = v.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+    },
+
     returnToVillage() {
       // walking onto the Haven tile: the loop closes. what you carried feeds the village.
       // no day advance here — endDay owns the clock. this is just coming home.
@@ -3409,8 +3435,21 @@
       const entries = Object.keys(this.state.codex.plants).length;
       const hasGreens = s.inventory.some(i => i.unit === 'handful' || i.unit === 'cup' || i.unit === 'oz');
       if (brought > 0) {
-        this.state.village.pantryKcal += brought;
-        s.inventory = [];
+        const vv = this.state.village;
+        vv.pantry = vv.pantry || [];
+        // move the ACTUAL food into the real pantry — not a phantom number.
+        // non-food (bonded relics, tools, materials, books) stays in your pack.
+        // (this used to wipe the whole inventory AND evaporate the haul overnight.)
+        for (const item of s.inventory) {
+          if ((item.kcalEach || 0) > 0 && (item.units || 0) > 0) {
+            vv.pantry.push({ name: item.name || 'Foraged food', plantId: item.plantId,
+              kcalEach: item.kcalEach, units: item.units,
+              spoilDay: item.spoilDay || 9999, unit: item.unit,
+              safe: item.safe !== false, kg: item.kg || 0.2, prep: item.prep });
+          }
+        }
+        s.inventory = s.inventory.filter(i => !((i.kcalEach || 0) > 0 && (i.units || 0) > 0));
+        vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
         this.say(`You unload ${Math.round(brought)} kcal into Haven's pantry.`);
         // TEACHING MOMENT: you show your haul. they gather. someone might know something.
         // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
@@ -5488,7 +5527,7 @@
             const first = this.displayName(rid);
             if (away.purpose === 'forage') {
               const kcal = 200 + Math.floor(Math.random() * 400);
-              v.pantryKcal = (v.pantryKcal || 0) + kcal;
+              this.stockPantry(kcal, 'Foraged food');
               // Only announce if you're at Haven to see it.
               if (this.map.px === hx && this.map.py === hy) {
                 this.say(`🌿 ${first} returns from foraging the wilds: +${kcal} kcal to the pantry.`);
@@ -6378,7 +6417,7 @@
             this.state.scholar.energy = Math.min(100, (this.state.scholar.energy || 0) + 15);
             this.say(`${first} claps your shoulder. "You're doing better than you think." (+15 energy — morale is real.)`);
           } else {
-            v.pantryKcal = (v.pantryKcal || 0) + 150;
+            this.stockPantry(150, 'Foraged food');
             this.say(`${first} quietly adds to the pantry without being asked. "For later. All of us." (+150 kcal)`);
           }
           // gratitude spent, not forgotten
@@ -6420,7 +6459,7 @@
         line = `${fa} got the fire going big tonight. There's almost a party feeling. Almost.`;
       } else if (r < 0.6) {
         // practical: someone does something useful, visibly
-        v.pantryKcal = (v.pantryKcal || 0) + 100;
+        this.stockPantry(100, 'Foraged food');
         line = `${fa} came back with an armful of something edible, unprompted. (+100 kcal pantry)`;
       } else {
         line = [
@@ -8805,7 +8844,7 @@
           this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
           this.state.scholar.activeQuest = null;
           if (q.reward === 'pantry') {
-            this.state.village.pantryKcal += 500;
+            this.stockPantry(500, 'Foraged food');
             this.say(`✅ ${this.displayName(q.giver)} takes the ${q.plant}. "+500 kcal to the pantry. You're good people."`);
           } else if (q.reward === 'knowledge') {
             this.integrate(5, 'quest');
@@ -9001,14 +9040,14 @@
         if (r < 0.05) {
           // BIG DAY: someone has the day of their life.
           const kcal = Math.round((1500 + Math.floor(Math.random() * 1001)) * boldMult * shareMult);
-          v.pantryKcal += kcal;
+          this.stockPantry(kcal, 'Foraged food');
           // COMPETITION: they depleted a real tile. the world is shared.
           this.depleteRandomTile(Math.ceil(kcal / 200));
           this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
         } else if (r < 0.35) {
           // brings food: a real haul. from the world, not thin air.
           const kcal = Math.round((400 + Math.floor(Math.random() * 401)) * boldMult * shareMult);
-          v.pantryKcal += kcal;
+          this.stockPantry(kcal, 'Foraged food');
           this.depleteRandomTile(Math.ceil(kcal / 200));
           this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {
