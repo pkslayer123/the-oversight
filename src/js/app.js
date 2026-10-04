@@ -518,6 +518,18 @@
     return items;
   }
 
+  // perceiveHTML: the quiet perception line under the grid. What you notice
+  // by standing here — no popups, no flashing, peripheral vision only.
+  // Cycles as you move; each render is just still text. Ignorable by design.
+  function perceiveHTML() {
+    if (Game.state.over || Game.tbfight) return '';
+    let hints = [];
+    try { hints = (Game.perceptionHints && Game.perceptionHints()) || []; }
+    catch (e) { hints = []; }
+    if (!hints.length) return '';
+    return `<div class="ord-perceive"><p class="perceiveline">${hints.map(h => esc(h)).join('<br>')}</p></div>`;
+  }
+
   // contextBarHTML: scan your cell + 8 neighbors, surface what's usable.
   // quiet by design — small pill buttons, no takeover.
   function contextBarHTML() {
@@ -1873,6 +1885,7 @@
         <div class="game-col-main">
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
           <div class="detail ord-grid">${renderDetail(st)}</div>
+          ${perceiveHTML()}
           <div id="inlineslot" class="ord-inline"></div>
           <div class="ord-ctx">${contextBarHTML()}</div>
           <div class="ord-target">${targetBarHTML()}</div>

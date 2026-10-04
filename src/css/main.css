@@ -524,8 +524,19 @@ body.system-live .btn:not(.ghost) {
 .ord-quest { order: 2; }
 .ord-epithet { order: 3; }
 .ord-grid { order: 4; }
+/* perception line sits between grid and interactions — quiet, ignorable */
+.ord-perceive { order: 4.5; }
 .ord-inline { order: 5; }
 .ord-ctx { order: 6; }
+/* PERCEPTION LINE: peripheral vision. Small, italic, dimmed — it should feel
+   like noticing, not like UI. No animation, no color pops. Ignorable. */
+.perceiveline {
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.62;
+  margin: 2px 6px 0;
+  line-height: 1.55;
+}
 .ord-target { order: 7; }
 .ord-danger { order: 8; }
 .ord-ability { order: 9; }
