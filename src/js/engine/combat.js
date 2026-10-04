@@ -38,7 +38,7 @@
     if (command === 'strike') {
       let d = roll([10, 16]);
       // Patient Aim: first strike ×2
-      if (fight.round === 1 && (scholar.abilities || []).includes('patient_aim')) {
+      if (fight.round === 1 && S.hasAbility(scholar, 'patient_aim')) {
         d *= 2; log.push('Jesse doesn\'t blink. One shot. (Patient Aim ×2)');
       }
       dmgToMonster = Math.round(S.modifiers.resolve(d, 'combat.strike_damage', mods, {}));

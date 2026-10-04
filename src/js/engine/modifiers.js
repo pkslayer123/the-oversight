@@ -32,7 +32,11 @@
     const out = [];
     const byId = {};
     (abilitiesData || []).forEach(a => { byId[a.id] = a; });
-    (scholar.abilities || []).forEach(id => {
+    // abilities may be string IDs (legacy) or objects {id, level, xp} (slice 2+).
+    // background abilities count too — they're still abilities.
+    const all = (scholar.abilities || []).concat(scholar.backgroundAbilities || []);
+    all.forEach(entry => {
+      const id = (entry && entry.id) || entry;
       const a = byId[id];
       if (a && a.modifiers) out.push(...a.modifiers);
     });
@@ -40,6 +44,20 @@
     return out;
   }
 
+  // hasAbility: does this scholar hold the ability? Works for string IDs and objects,
+  // system abilities and background abilities. Returns the entry (or level via .level).
+  function hasAbility(scholar, id) {
+    const all = (scholar.abilities || []).concat(scholar.backgroundAbilities || []);
+    return all.find(entry => ((entry && entry.id) || entry) === id) || null;
+  }
+
+  function abilityLevel(scholar, id) {
+    const e = hasAbility(scholar, id);
+    return e ? (e.level || 1) : 0;
+  }
+
   global.Scattering = global.Scattering || {};
   global.Scattering.modifiers = { resolve, collectModifiers, checkCondition };
+  global.Scattering.hasAbility = hasAbility;
+  global.Scattering.abilityLevel = abilityLevel;
 })(typeof window !== 'undefined' ? window : globalThis);

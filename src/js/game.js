@@ -206,8 +206,11 @@
       this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
       const line = v.talk[i];
       // trust builds through talking. strangers warm up slowly.
+      // diplomat: the System's gift. L1 2x trust, L2 3x.
+      const dipLvl = this.abilityLevel('diplomat');
+      const dipMult = dipLvl >= 2 ? 3 : dipLvl >= 1 ? 2 : 1;
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
-      const newTrust = Math.min(100, trust + 3);
+      const newTrust = Math.min(100, trust + 3 * dipMult);
       if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
       // the tone shifts with trust (not the number — you feel it)
       const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
@@ -255,7 +258,10 @@
         const cur = this.state.village.trust[vid] || 10;
         if (cur < 40) {
           // Diminishing: +8 at 10, +4 at 20, +2 at 30, +1 at 35...
-          const gain = Math.max(1, Math.floor(8 * (1 - cur / 50)));
+          // diplomat multiplies (still capped at 40 — words only go so far).
+          const dipLvl2 = this.abilityLevel('diplomat');
+          const dipMult2 = dipLvl2 >= 2 ? 3 : dipLvl2 >= 1 ? 2 : 1;
+          const gain = Math.max(1, Math.floor(8 * (1 - cur / 50) * dipMult2));
           this.state.village.trust[vid] = Math.min(40, cur + gain);
         }
         // Above 40: talking doesn't build trust. Do something real.
@@ -1443,19 +1449,23 @@
       }
       if (!hasFire) { this.say('Need a fire to cook.'); return null; }
       if (!item.rawKcal) { this.say('Nothing to cook there.'); return null; }
-      // water cost: 1L per unit
+      // water cost: 1L per unit (camp_cook discounts: L1 half, L2 none).
+      const cookLvl1 = this.abilityLevel('camp_cook');
+      const waterMult1 = cookLvl1 >= 2 ? 0 : cookLvl1 >= 1 ? 0.5 : 1;
+      const kcalMult1 = cookLvl1 >= 3 ? 1.25 : cookLvl1 >= 1 ? 1.1 : 1.0;
       const water = this.state.village.water || { clean: 0 };
       const units = item.units || 1;
-      if (item.needsCooking && water.clean < units) {
-        this.say(`Need ${units}L clean water to cook ${item.name}.`);
+      const cost1 = Math.ceil(units * waterMult1);
+      if (item.needsCooking && water.clean < cost1) {
+        this.say(`Need ${cost1}L clean water to cook ${item.name}.`);
         return null;
       }
-      if (item.needsCooking) water.clean -= units;
+      if (item.needsCooking) water.clean -= cost1;
       // cook it: rawKcal -> kcalEach (cooked)
-      item.kcalEach = item.cookedKcal || item.rawKcal * 1.5;
+      item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult1);
       item.rawKcal = null; // it's cooked now
       item.safe = true; // cooking kills the risk (mostly)
-      this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now${item.needsCooking ? ' (-1L water)' : ''}.`);
+      this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now${item.needsCooking && cost1 > 0 ? ` (-${cost1}L water)` : ''}.`);
       return null;
     },
 
@@ -1532,18 +1542,23 @@
     // Tradeoff: spend water, get safe + more calories. Or eat raw and risk sickness.
     cookAll() {
       const water = this.state.village.water || { clean: 0 };
+      // camp_cook: L1 half water + 10% kcal, L2 no water, L3 +25% kcal.
+      const cookLvl = this.abilityLevel('camp_cook');
+      const waterMult = cookLvl >= 2 ? 0 : cookLvl >= 1 ? 0.5 : 1;
+      const kcalMult = cookLvl >= 3 ? 1.25 : cookLvl >= 1 ? 1.1 : 1.0;
       let n = 0, waterUsed = 0;
       for (const item of (this.state.scholar.inventory || [])) {
         if (item.rawKcal) {
-          // needs water? 1L per UNIT (5 beans = 5L).
+          // needs water? 1L per UNIT (5 beans = 5L), discounted by camp_cook.
           const needsWater = item.needsCooking; // beans, rice
           const units = item.units || 1;
-          if (needsWater && water.clean < units) {
-            this.say(`Not enough clean water to cook ${item.name}. Need ${units}L, have ${Math.floor(water.clean)}.`);
+          const cost = Math.ceil(units * waterMult);
+          if (needsWater && water.clean < cost) {
+            this.say(`Not enough clean water to cook ${item.name}. Need ${cost}L, have ${Math.floor(water.clean)}.`);
             continue;
           }
-          if (needsWater) { water.clean -= units; waterUsed += units; }
-          item.kcalEach = item.cookedKcal || item.rawKcal * 1.5;
+          if (needsWater) { water.clean -= cost; waterUsed += cost; }
+          item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult);
           item.rawKcal = null;
           item.safe = true;
           n++;
@@ -1573,11 +1588,14 @@
       }
       // remove from inventory
       this.state.scholar.inventory.splice(idx, 1);
-      // TRUST: giving builds it
+      // TRUST: giving builds it. generous: the System's gift. Donating gives 2x trust.
+      const genLvl = this.abilityLevel('generous');
+      const genMult = genLvl >= 1 ? 2 : 1;
       v.trust = v.trust || {}; v.gives = v.gives || {};
       v.gives[vid] = (v.gives[vid] || 0) + kcal;
-      v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + Math.min(10, Math.floor(kcal / 500)));
-      this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${Math.min(10, Math.floor(kcal / 500))}. They'll remember this.`);
+      const trustGain = Math.min(10, Math.floor(kcal / 500)) * genMult;
+      v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + trustGain);
+      this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${trustGain}. They'll remember this.`);
       if (this.state.scholar.week1) this.state.scholar.week1.donate++;
       this.gainAbilityXP('generous', 1);
       return null;
@@ -1660,6 +1678,8 @@
       const s = this.state.scholar;
       const a = s.animal;
       if (!a) return null;
+      if (s.week1) s.week1.hunt++;
+      this.gainAbilityXP('tracker', 1);
       const px = s.mx ?? 4, py = s.my ?? 4;
       const dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
       if (dist > 1) { this.say('Too far. Get closer.'); return null; }
@@ -1671,7 +1691,10 @@
       const base = animal.difficulty === 'easy' ? 0.7 : animal.difficulty === 'medium' ? 0.4 : 0.15;
       // Weapons matter. A spear (+30) turns a 40% shot into 70%.
       const wbonus = this.weaponBonus() / 100;
-      const chance = Math.min(0.95, base + (isHunter ? 0.2 : 0) + wbonus);
+      // tracker: the System's gift. L1 +30%, L2 +50% (additive, capped at 95%).
+      const trackLvl = this.abilityLevel('tracker');
+      const trackBonus = trackLvl >= 2 ? 0.5 : trackLvl >= 1 ? 0.3 : 0;
+      const chance = Math.min(0.95, base + (isHunter ? 0.2 : 0) + wbonus + trackBonus);
       s.kcal = Math.max(0, s.kcal - 100);
       if (Math.random() < chance) {
         // caught!
@@ -2144,21 +2167,24 @@
       };
       // first ability: prefer UTILITY tier (practical). Later abilities can be anything.
       const utility = all.filter(a => a.tier === 'utility' && cond[a.id]);
-      const other = all.filter(a => a.tier !== 'utility' && a.tier !== 'overpowered');
-      // pick 2 utility (earned), 1 wild (wacky/vile/underpowered for flavor)
       const choices = [];
-      for (const a of utility.slice(0, 2)) choices.push(a);
-      if (other.length && choices.length < 3) {
-        const wild = other[Math.floor(Math.random() * other.length)];
-        choices.push(wild);
-      }
-      // fallback
-      if (!choices.length) {
+      if (!utility.length) {
+        // did nothing all week: the System improvises — 3 honest options, no random vile pick.
         choices.push(
           { id: 'survivor', name: 'Survivor', description: 'You endured. +10 max health.', flavor: 'You lived! We are SO proud!', tier: 'utility' },
           { id: 'wanderer', name: 'Wanderer', description: 'You kept moving. -10% travel cost.', flavor: 'You go places! We like places!', tier: 'utility' },
           { id: 'lucky_rock', name: 'Lucky Rock', description: 'You have a lucky rock. (+1% to everything.)', flavor: 'The rock! It is lucky!', tier: 'underpowered' },
         );
+      } else {
+        for (const a of utility.slice(0, 2)) choices.push(a);
+        // wild slot for the FIRST ability: wacky/underpowered only.
+        // nobody's first System gift should be cannibal_frenzy. (Later: anything goes.)
+        const wild = all.filter(a => a.tier === 'wacky' || a.tier === 'underpowered');
+        if (wild.length && choices.length < 3) {
+          const pick = wild[Math.floor(Math.random() * wild.length)];
+          // don't duplicate a utility pick if the same ability is somehow in both
+          if (!choices.some(c => c.id === pick.id)) choices.push(pick);
+        }
       }
       return choices.slice(0, 3);
     },
@@ -2352,6 +2378,17 @@
           const item = SCAVENGED.find(s => s.id === lootId);
           if (!this.canCarry(item.kg)) { t.loot.unshift(lootId); this.say('Too heavy — your pack can\'t take it. Eat something or leave it.'); return null; }
           scholar.inventory.push({ plantId: lootId, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg });
+          // scrounger: the System's gift. You see what others miss — +1 item per visit.
+          if (this.hasAbility('scrounger') && t.loot.length) {
+            const lootId2 = t.loot.shift();
+            const item2 = SCAVENGED.find(s => s.id === lootId2);
+            if (item2 && this.canCarry(item2.kg)) {
+              scholar.inventory.push({ plantId: lootId2, units: 1, kcalEach: item2.kcal, spoilDay: 9999, name: item2.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item2.kg });
+              this.say(`Scrounger: you spot another — ${item2.name}.`);
+            } else if (item2) {
+              t.loot.unshift(lootId2); // too heavy, leave it
+            }
+          }
           scholar.kcal -= 100;
           msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
           this.say(msg);
@@ -2431,7 +2468,10 @@
         // KNOWLEDGE = YIELD. Level 2 (parts) gives 50% more. You know what to take.
         const entry = this.state.codex.plants[r.plantId];
         const levelMult = entry && entry.level >= 2 ? 1.5 : 1.0;
-        const finalUnits = Math.ceil(r.units * levelMult);
+        // green_thumb: the System's gift. L1 +50%, L2 +100%.
+        const thumbLvl = this.abilityLevel('green_thumb');
+        const thumbMult = thumbLvl >= 2 ? 2.0 : thumbLvl >= 1 ? 1.5 : 1.0;
+        const finalUnits = Math.ceil(r.units * levelMult * thumbMult);
         scholar.inventory.push({ plantId: r.plantId, units: finalUnits, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
         // MATERIALS: byproducts for crafting. vine from bush, stick from tree, stone from rubble.
         // you don't just get food — you get supplies.
@@ -2512,7 +2552,7 @@
       const scholar = this.state.scholar;
       if (this.over) return;
       // POWER NEEDS FOOD: target scales with metabolic mult. Fire god eats to 9600.
-      const mult = this.metabolicMult(scholar.abilities);
+      const mult = this.metabolicMult((scholar.abilities || []).concat(scholar.backgroundAbilities || []));
       const target = Math.round(2400 * mult);
       // eat most-perishable first until kcal >= target or empty
       scholar.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
@@ -2657,12 +2697,21 @@
     metabolicMult(abilities) {
       if (!abilities || !abilities.length) return 1;
       let mult = 1;
-      for (const aid of abilities) {
+      for (const entry of abilities) {
+        const aid = (entry && entry.id) || entry;
         const ab = this.data.abilities.find(a => a.id === aid);
         const isPowerful = ab && (ab.name.toLowerCase().includes('fire') || ab.name.toLowerCase().includes('god'));
         if (isPowerful) mult = Math.max(mult, 4);
       }
       return mult;
+    },
+    // hasAbility / abilityLevel: delegate to the shared engine helper.
+    // Checks system abilities AND background abilities; works with objects or string IDs.
+    hasAbility(id) {
+      return !!(globalThis.Scattering && globalThis.Scattering.hasAbility(this.state.scholar, id));
+    },
+    abilityLevel(id) {
+      return (globalThis.Scattering && globalThis.Scattering.abilityLevel(this.state.scholar, id)) || 0;
     },
 
     // villageMeal: you eat from the communal pantry. You're one of the 12.

@@ -42,6 +42,10 @@
       scholar.energy = Math.max(0, scholar.energy - 30);
       warnings.push('DEHYDRATED: find and treat water today.');
     }
+    // floors: the body bottoms out at 0. Death is checked via ok, not negative numbers.
+    // (Negative kcal/hp are display/logic noise — the spiral already did its damage above.)
+    scholar.kcal = Math.max(0, scholar.kcal);
+    scholar.health = Math.max(0, scholar.health);
     // village metabolism lives in game.js (villageEats) — single owner, tuned net drain.
     // the engine only runs the scholar's own body here.
     return { ok: scholar.health > 0, warnings };
