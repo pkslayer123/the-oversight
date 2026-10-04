@@ -3392,20 +3392,22 @@
       const s = this.state.scholar;
       const out = [];
       const has = (id) => this.hasAbility(id);
-      if (has('blood_magic')) { const bc = this.hasSynergy('crimson_circuit') ? 7 : 10; out.push({ id: 'blood_magic', name: 'Blood Price', desc: `-${bc} HP → +500 kcal. Your body eats itself.`, available: (s.health || 0) > bc, why: `Too weak — need ${bc}+ HP.` }); }
-      if (has('time_skip')) out.push({ id: 'time_skip', name: 'Time Skip', desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true });
-      if (has('dowsing')) out.push({ id: 'dowsing', name: 'Dowse', desc: 'A forked stick twitches toward water. 70% accurate.', available: true });
-      if (has('echo_location')) out.push({ id: 'echo_location', name: 'Echo-locate', desc: 'Clap once: sense the 3x3 around you. 1/day.', available: s.echoDay !== s.day, why: 'Used today.' });
+      if (has('blood_magic')) { const bc = this.hasSynergy('crimson_circuit') ? 7 : 10; out.push({ id: 'blood_magic', target: 'self', name: 'Blood Price', desc: `-${bc} HP → +500 kcal. Your body eats itself.`, available: (s.health || 0) > bc, why: `Too weak — need ${bc}+ HP.` }); }
+      if (has('time_skip')) out.push({ id: 'time_skip', target: 'none', name: 'Time Skip', desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true });
+      if (has('dowsing')) out.push({ id: 'dowsing', target: 'none', name: 'Dowse', desc: 'A forked stick twitches toward water. 70% accurate.', available: true });
+      if (has('echo_location')) out.push({ id: 'echo_location', target: 'none', name: 'Echo-locate', desc: 'Clap once: sense the 3x3 around you. 1/day.', available: s.echoDay !== s.day, why: 'Used today.' });
       if (has('compost_king')) {
         const food = (s.inventory || []).find(i => (i.kcalEach || 0) > 0);
-        out.push({ id: 'compost_king', name: 'Bury Food', desc: 'Bury food as fertilizer: +10% forage on this tile.', available: !!food, why: 'No food to bury.' });
+        out.push({ id: 'compost_king', target: 'none', name: 'Bury Food', desc: 'Bury food as fertilizer: +10% forage on this tile.', available: !!food, why: 'No food to bury.' });
       }
-      if (has('cannibal_frenzy')) out.push({ id: 'cannibal_frenzy', name: 'Feed the Red Hunger', desc: '+1000 kcal. -30 trust, permanently. Only when starving.', available: (s.kcal || 0) < 500, why: 'Only when starving (<500 kcal).' });
+      if (has('cannibal_frenzy')) out.push({ id: 'cannibal_frenzy', target: 'self', name: 'Feed the Red Hunger', desc: '+1000 kcal. -30 trust, permanently. Only when starving.', available: (s.kcal || 0) < 500, why: 'Only when starving (<500 kcal).' });
       return out;
     },
 
     // activateAbility: do the thing. Costs are real.
-    activateAbility(id) {
+    // target: optional villager id or {cx, cy} for abilities that need aiming.
+    // Declared in activatableAbilities() as target: 'villager' | 'cell' | 'monster' | 'self' | 'none'.
+    activateAbility(id, target) {
       const s = this.state.scholar;
       // SYNERGY: activatable use logged for discovery.
       this.noteAbilityUse(id);
