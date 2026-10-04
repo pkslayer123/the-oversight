@@ -616,6 +616,23 @@
       this.state.otherVillages = villages;
     },
 
+    // joinVillage: you're at another village. Join them.
+    // You become one of theirs. Their pantry feeds you. You contribute.
+    // If you die, you can take over one of their villagers.
+    joinVillage(villageId) {
+      const v = (this.state.otherVillages || []).find(v => v.id === villageId);
+      if (!v) return null;
+      this.state.scholar.joinedVillage = villageId;
+      this.say(`You join ${v.name}. You're one of them now. Their pantry is yours. Their problems are yours.`);
+      return null;
+    },
+    // leaveVillage: go solo again. The wild is yours.
+    leaveVillage() {
+      this.state.scholar.joinedVillage = null;
+      this.say('You leave. Solo. The wild doesn\'t care, but it\'s honest.');
+      return null;
+    },
+
     // catchUpSim: when you approach a village, simulate all days since game start.
     // They're not fresh — they've been living, foraging, competing.
     catchUpSim(village) {
@@ -2324,9 +2341,21 @@
     // villageMeal: you eat from the communal pantry. You're one of the 12.
     // Trust determines your share. Newcomers get less. Contributors get more.
     villageMeal() {
-      const v = this.state.village;
       const scholar = this.state.scholar;
-      const pantry = v.pantry || [];
+      // If you joined another village, you eat from THEIR pantry.
+      let v = this.state.village;
+      let pantry = v.pantry || [];
+      if (scholar.joinedVillage) {
+        const jv = (this.state.otherVillages || []).find(x => x.id === scholar.joinedVillage);
+        if (jv) {
+          // other villages use pantryKcal (abstract). Convert to meal.
+          const meal = Math.min(2000, jv.pantryKcal || 0);
+          jv.pantryKcal = Math.max(0, (jv.pantryKcal || 0) - meal);
+          scholar.kcal = Math.min((scholar.kcal || 0) + meal, 3000);
+          this.say(`Village meal at ${jv.name}: +${Math.round(meal)} kcal.`);
+          return;
+        }
+      }
       // your share: 2000 kcal (a day's food), scaled by trust
       // trust < 30: half ration (they're watching you). 30+: full. 60+: full + bonus.
       const trust = v.trust && v.trust[scholar.villagerId] !== undefined ? v.trust[scholar.villagerId] : 10;

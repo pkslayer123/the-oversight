@@ -37,7 +37,7 @@
     const plantId = weightedPick(table);
     const plant = plants.find(x => x.id === plantId);
 
-    let units = 5 + Math.floor(Math.random() * 4); // 5-8: a day-part is ~3hrs of volume work; a knowing forager gathers real food, not a truckload
+    let units = 10 + Math.floor(Math.random() * 6); // 10-15: 3hrs of real foraging. A skilled gatherer fills a bag, not a pocket.
     if (bounty && bounty.richness) units = Math.round(units * bounty.richness); // rich ground feeds better
     units = Math.round(S.modifiers.resolve(units, 'forage.yield', mods, ctx));
     units = Math.max(1, units);
