@@ -30,7 +30,7 @@
       statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
       statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
       statRow('WATER', st.hydration + '% · ' + st.water + ' clean', st.hydration, st.hydration < 30) +
-      statRow('SYSTEM', st.integration + '% integrated', st.integration, false);
+      (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '');
   }
 
   // ---------- title ----------
@@ -508,12 +508,18 @@
         <div class="system-text">"Okay! So! Here's what's happening! You're on a show! Survive! Be interesting!"</div>
       </div>
       <div class="system-window" style="animation-delay: 2s">
-        <div class="system-text">"Oh! And we noticed some of you are... hungry? We'll look into that! Probably! Anyway!"</div>
+        <div class="system-text">"We've been CALIBRATING all week! And YOU — every berry picked, every fire lit — that's your signature! You signed up by DOING THINGS!"</div>
       </div>
       <div class="system-window" style="animation-delay: 3s">
-        <div class="system-text">Your journal shimmers. It becomes... interface.</div>
+        <div class="system-text">"The ones who just sat there? Removed! Boring! But YOU have FANS now! They're betting on your UNDERSTANDING!"</div>
       </div>
       <div class="system-window" style="animation-delay: 4s">
+        <div class="system-text">"Oh! And we noticed some of you are... hungry? We'll look into that! Probably! Anyway!"</div>
+      </div>
+      <div class="system-window" style="animation-delay: 5s">
+        <div class="system-text">Your journal shimmers. It becomes... interface.</div>
+      </div>
+      <div class="system-window" style="animation-delay: 6s">
         <div class="system-text">"OH! Wait! We almost forgot! You were writing things down! We made it better! It talks now!"</div>
       </div>
       <button class="btn" id="b-arrival-ok" style="margin-top: 20px; z-index: 1001;">...what?</button>
@@ -524,7 +530,7 @@
       if (callback) callback();
     };
     // Auto-dismiss after 10s (in case they don't click).
-    setTimeout(() => { if (overlay.parentNode) { overlay.remove(); if (callback) callback(); } }, 10000);
+    setTimeout(() => { if (overlay.parentNode) { overlay.remove(); if (callback) callback(); } }, 14000);
   }
 
   // relicPopup: the System noticed your attachment. Pick 1 of 3 enhancements.

@@ -136,7 +136,7 @@
       // sims call newGame repeatedly in one process — clear last expedition's cast
       this.data.villagers = (this.data.villagers || []).filter(v => !(v.id || '').startsWith('gen_'));
       const usedNames = new Set();
-      const fears = ['being forgotten', 'the dark between the trees', 'being a burden', 'losing another one', 'the silence after the System speaks', 'never seeing home again'];
+      const fears = ['being forgotten', 'the dark between the trees', 'being a burden', 'losing another one', 'the quiet ones watching from the treeline', 'never seeing home again'];
       const chars = [];
       for (let i = 0; i < 6; i++) {
         const occ = pick(cg.occupations || []);
@@ -174,7 +174,7 @@
           items: this.genItemCandidates(occ),
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
           survivalProbability: 25 + Math.floor(Math.random() * 21),
-          systemAssessment: `${first} reads as ${temperament} and ${sharing} with strangers. The System finds this ${temperament === 'cautious' ? 'sensible' : temperament === 'bold' ? 'entertaining' : 'notable'}.`,
+          systemAssessment: `${first} reads as ${temperament} and ${sharing} with strangers. The others find this ${temperament === 'cautious' ? 'reassuring' : temperament === 'bold' ? 'exhausting' : 'worth watching'}.`,
           secretFear: pick(fears), languages: langs, occupationId: occ.id || null,
         });
       }
@@ -835,6 +835,8 @@
       for (const t of thresholds) {
         if (s.integration >= t && (s.lastIntegration || 0) < t) {
           s.lastIntegration = t;
+          // No SYSTEM messages before arrival — the System doesn't exist yet.
+          if (!this.state.systemArrived) continue;
           const msgs = {
             20: 'SYSTEM: Neural interface stable. Text overlay enabled.',
             40: 'SYSTEM: Quest protocol integrated. Objectives will appear.',
@@ -2936,8 +2938,12 @@
         this.say('Not with light. With... interface. Windows. Text. Numbers. Scrolling across the clouds.');
         this.say('A voice in your head — bright, enthusiastic, utterly alien:');
         this.say('"HELLO! Welcome! We\'re SO glad you\'re all still here! What a week! The audience LOVED the foraging episode!"');
+        this.say('"So! You\'ve probably been wondering where we\'ve been! We\'ve been CALIBRATING! Getting the cameras focused! Learning your faces! A week of calibration! Very thorough! Very boring for us!"');
+        this.say('"And YOU — you\'ve been WONDERFUL. Every berry picked! Every fire lit! Every clever little snare! That was your SIGNATURE. You signed up by DOING THINGS. Consent via competence! Our lawyers love it!"');
         this.say('"Okay! So! Here\'s what\'s happening! You\'re on a show! It\'s called... we haven\'t named it yet! We\'re taking suggestions!"');
         this.say('"The rules are simple! Survive! Be interesting! The audience votes with their attention! The more they watch, the more gifts we give you!"');
+        this.say('"Oh! Quick note! Some of you... just sat in the haven? All week? Did nothing? The audience got BORED. So we removed them. Poor sportsmanship! Low entertainment value! No hard feelings! (There were hard feelings. Briefly. Then there was nothing.)"');
+        this.say('"But YOU! You have FANS now! Sponsors! Gamblers! They\'re putting their own snacks on you! They\'re not betting on your survival — oh no, anyone can survive — they\'re betting on your UNDERSTANDING! Every time you figure something out, every little ah-ha moment, the odds shift! Keep learning, little one! The market LOVES a learner!"');
         this.say('"Oh! And we noticed some of you are... hungry? Is that the word? The small unhappy tummy feeling? We\'ll look into that! Probably! Anyway!"');
         this.say('Your journal shimmers. The handwriting dissolves. Crisp text. Icons. Progress bars. Quests. Abilities. Stats.');
         this.say('It doesn\'t replace your survival gear. It just... covers part of it. Like someone put a sticker over your hunger. The hunger is still there. The sticker is very shiny.');
@@ -2945,7 +2951,13 @@
         s.abilities = s.abilities || [];
         s.systemQuests = [];
         s.abilityChoices = this.firstAbilityChoices();
-        this.say('\U0001F381 "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
+        const w1 = s.week1 || {};
+        const didAnything = (w1.forage || 0) + (w1.hunt || 0) + (w1.talk || 0) + (w1.cook || 0) + (w1.donate || 0) + (w1.scavenge || 0) > 0;
+        if (didAnything) {
+          this.say('\U0001F381 "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
+        } else {
+          this.say('\U0001F381 "Ooh! A quiet one! You did juust enough to stay interesting! The audience was ALMOST bored! Almost! Here — a little something for existing NEAR the action!" (Choose an ability.)');
+        }
         // AFTERTHOUGHT: the System suddenly remembers the journal.
         // "Oh! Oh! We almost forgot! You were writing things down! We made it better!"
         this.say('\U0001F4D6 "OH! Wait! We almost forgot! You were writing things down! In the little paper! We LOVE the paper! We made it better! It talks now! It remembers EVERYTHING!"');
@@ -2995,9 +3007,9 @@
       if (!utility.length) {
         // did nothing all week: the System improvises — 3 honest options, no random vile pick.
         choices.push(
-          { id: 'survivor', name: 'Survivor', description: 'You endured. +10 max health.', flavor: 'You lived! We are SO proud!', tier: 'utility' },
-          { id: 'wanderer', name: 'Wanderer', description: 'You kept moving. -10% travel cost.', flavor: 'You go places! We like places!', tier: 'utility' },
-          { id: 'lucky_rock', name: 'Lucky Rock', description: 'You have a lucky rock. (+1% to everything.)', flavor: 'The rock! It is lucky!', tier: 'underpowered' },
+          { id: 'survivor', name: 'Survivor', description: 'You endured. +10 max health.', flavor: 'You lived! Marginally interesting! We are SO proud!', tier: 'utility' },
+          { id: 'wanderer', name: 'Wanderer', description: 'You kept moving. -10% travel cost.', flavor: 'You go places! The audience almost watched!', tier: 'utility' },
+          { id: 'lucky_rock', name: 'Lucky Rock', description: 'You have a lucky rock. (+1% to everything.)', flavor: 'The rock! It is lucky! It carried you, honestly.', tier: 'underpowered' },
         );
       } else {
         for (const a of utility.slice(0, 2)) choices.push(a);
@@ -3073,7 +3085,8 @@
         r.bond = (r.bond || 0) + gain;
         // Thresholds: 10 / 25 / 50. One offer at a time (UI simplicity).
         for (const t of [10, 25, 50]) {
-          if (r.bond >= t && !(r.bondOffered || []).includes(t) && !s.relicChoices) {
+          // No System offers before arrival — bond accrues silently, offers wait.
+          if (r.bond >= t && !(r.bondOffered || []).includes(t) && !s.relicChoices && this.state.systemArrived) {
             this.offerRelicEnhancement(r, t);
             break;
           }
@@ -3197,6 +3210,7 @@
       s.abilityChoices = null;
       this.say(`✨ Ability gained: ${choice.name} (L1). ${choice.description || choice.desc}`);
       if (choice.flavor) this.say(`"${choice.flavor}"`);
+      this.say(`"We've been watching you figure things out all week! This one's on us — a head start! But the REAL power? That comes from UNDERSTANDING. Use it! Learn it! The gamblers are watching!"`);
       return null;
     },
     // abilityOnAcquire: the price is paid up front, where the fiction demands it.
@@ -3329,7 +3343,15 @@
         ab.level++;
         ab.xp = 0;
         const bonus = this.abilityLevelBonus(ab.id, ab.level);
-        this.say(`⬆️ ${ab.name} evolved to L${ab.level}! ${bonus}`);
+        this.say(`⬆️ ${ab.name} deepened to L${ab.level}! ${bonus}`);
+        // The System finds your growing comprehension entertaining. The gamblers agree.
+        const insights = [
+          `"Oh! OH! You're starting to GET it! The audience loves the little ah-ha moments! The odds just shifted!"`,
+          `"We didn't even explain that part! You figured it out yourself! That's the good stuff! The gamblers are thrilled!"`,
+          `"Your understanding is... deepening! We can see it! Like watching a seed decide to be a tree! Beautiful! Profitable!"`,
+          `"Yes! YES! That's the comprehension we calibrated for! Keep going! The sponsors are doubling down!"`,
+        ];
+        this.say(insights[Math.floor(Math.random() * insights.length)]);
       }
     },
     // abilityLevelBonus: what does leveling up give? (Per ability.)
