@@ -39,13 +39,17 @@ The foraging loop was "grab unlimited free food." Now food is a system to learn:
 - **Pantry**: 120,000 kcal / 40L water caps, expandable ×1.5/+20L per tier (materials + labor; builders halve cost). Ingredients (carcasses, unknown hauls) store free of cap — the pantry is where specialists transform them.
 - **Balance check**: scholar 2,200/day intact. A day-1 ignorant player eating raw unknown berries gets sick; a knowledgeable player with fire, knife, and a butcher friend eats well. First turkey = project, tenth = routine. Village haul target 400–800 unchanged — processing multiplies what the haul is *worth*.
 
-### The Reserve — food is humanity's superpower (2026-10-04)
-Digesting organic matter grants mana reserves other species can't match. The kcal pool feeds the body; the **reserve** (cap 4,800) feeds power:
-- **Fill**: deliberate **Feast** action (2 ticks) converts food → reserve at quality rates — raw/risky 0.5×, safe raw 0.7×, cooked 1.0×, preserved 1.1×, specialist-made 1.3×. Eat() overshoot beyond full also banks (no waste).
-- **Burn**: **FEASTBURN** — player attacks with ≥300 reserve auto-burn 300 (400 when gorged ≥3,600) for ×1.5 (×1.75 gorged) damage, stated every time: "the feast was the weapon." Specialist fuel burns hottest (×1.15), scraps burn dirty (×0.85).
-- **Decay**: −20%/night. Use it or lose it.
-- **Headroom**: quality × quantity scaling means a late-game player (smoker + butcher + full pantry) can plausibly become overwhelming. Endgame payoff: later.
-- Early game stays honest: you can't feast on what you don't have, and raw converts poorly.
+### The Bank — food is humanity's superpower (2026-10-04, refined: no separate pool)
+Steve's rule: NO second pool. The kcal bar IS the bank — one energy economy, conservation of energy. Digesting organic matter grants mana reserves other species can't match:
+- **One pool, one cap**: `kcalCap = 2400 × metabolicMult × bankMult`. Baseline human banks ~a day (2400). The "fed" line is `2400 × metabolicMult`; kcal above it is **banked** — the war chest.
+- **Skillsets expand the bank**: `food.bank_mult` (new) — **Deep Reserves** (System body-horror, ×5 → 12,000 kcal war chest); `food.eat_target_mult` (Extra Stomach, legacy, ×2) stacks → ×10 = 24,000. The glutton-warrior is a real build: the trade is you must EAT that much to fill it.
+- **Fill**: **Eat** fills the bar to cap. Past "fed", the message says so ("Past full — the bank takes it"). Pool quality (`kcalQ`, weighted average of meal quality — raw 0.5, safe raw 0.7, cooked 1.0, preserved 1.1, specialist-made 1.3) is tracked for the burn.
+- **Burn**: **FEASTBURN** — player attacks with ≥300 banked auto-burn 300 (400 when gorged, i.e. ≥75% of max bank) for ×1.5 (×1.75 gorged) damage, stated every time: "the feast was the weapon." Specialist fuel burns hottest (×1.15), scraps burn dirty (×0.85).
+- **Decay**: −20%/night on the banked portion only. The body pool below "fed" is untouched. Use it or lose it.
+- **UI**: no RESERVE row. The FOOD bar shows `kcal/cap`, glows gold past the fed line, carries the GORGED tag. No Feast button — Eat is the ritual.
+- **Migration**: old `reserveKcal` folds into the bar once via `migrateReserve()` in `status()`.
+- **Headroom**: a deep-reserves + smoker + butcher + full pantry late game can plausibly become overwhelming. Endgame payoff: later.
+- Early game stays honest: baseline cap IS the fed line, so there's no bank to burn — the superpower is earned, not given.
 
 ## How to Evaluate a Change (the framework)
 

@@ -65,8 +65,8 @@
   let pendingTravel = null;
 
   // ---------- shared ----------
-  function statRow(label, val, pct, low) {
-    return `<div class="stat"><div class="lbl"><span>${label}</span><span>${val}</span></div><div class="bar${low ? ' low' : ''}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></div>`;
+  function statRow(label, val, pct, low, cls) {
+    return `<div class="stat"><div class="lbl"><span>${label}</span><span>${val}</span></div><div class="bar${low ? ' low' : ''}${cls ? ' ' + cls : ''}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></div>`;
   }
   // combatStripHTML: glanceable combat awareness above the grid. When steel
   // is out, the top of the screen tells you who's in the fight and — most
@@ -88,9 +88,13 @@
   }
   function statusBars(st) {
     const feastTag = st.feastState === 'gorged' ? ' ⚡⚡ GORGED' : st.feastState === 'feasting' ? ' ⚡ feasting' : '';
+    // THE BANK: one pool. The FOOD bar IS the reserve — cap grows with bank
+    // skillsets; the bar glows gold past the "fed" line (banked war chest).
+    const cap = st.kcalCap || 2400;
+    const banked = st.banked || 0;
+    const foodVal = Math.round(st.kcal) + '/' + cap + ' kcal' + (banked > 0 ? ` (+${banked} banked)` : '') + feastTag;
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
-      statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
-      statRow('RESERVE', st.reserve + '/' + st.reserveCap + feastTag, st.reserve / Math.max(1, st.reserveCap) * 100, false) +
+      statRow('FOOD (you)', foodVal, st.kcal / cap * 100, st.kcal < 500, banked > 0 ? 'banked' : '') +
       statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
       statRow('WATER', st.hydration + '% · ' + st.waterCleanL + 'L clean', st.hydration, st.hydration < 30) +
       (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '');
@@ -597,11 +601,10 @@
     const sleepDot = st.energy < 30 ? '<span class="dot"></span>'
       : (st.isNight ? '<span class="dot soft"></span>' : '');
     const packDot = st.packKg >= st.packCap ? '<span class="dot"></span>' : '';
-    // THE RESERVE: feast when there's food to turn into power. Hidden otherwise
-    // (tool-gating: unmet prerequisites stay hidden).
-    const feastBtn = st.feastReady ? `<button class="self-btn" data-self="feast">🍖 Feast</button>` : '';
+    // THE BANK: no separate Feast button — Eat fills the bar to its cap.
+    // Banking is what eating IS when your cap exceeds "fed".
     return `<div class="selfbar"><span class="ctx-label">you:</span>` +
-      `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` + feastBtn +
+      `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` +
       `<button class="self-btn" data-self="sleep">😴 Sleep${sleepDot}</button>` +
       `<button class="self-btn" data-self="pack">🎒 Pack (${st.invCount})${packDot}</button>` +
       `<button class="self-btn" data-self="wait">⏳ Wait</button></div>`;
@@ -612,7 +615,6 @@
       b.onclick = () => {
         const a = b.dataset.self;
         if (a === 'eat') { Game.eat(); rerender(); }
-        else if (a === 'feast') { Game.feast(); rerender(); }
         else if (a === 'sleep') { Game.sleep(); rerender(); }
         else if (a === 'pack') { invSheet(); }
         else if (a === 'wait') { Game.doAction('wait'); rerender(); }

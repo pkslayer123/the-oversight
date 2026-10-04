@@ -315,16 +315,20 @@ const origRandom = Math.random;
     ok('villageHasSpecialty(preserver) via sushi chef', Game.villageHasSpecialty('preserver') === true);
   }
 
-  // ---- 9. THE RESERVE (food is humanity's superpower) ----
+  // ---- 9. THE BANK (food is humanity's superpower) ----
+  // One pool: the kcal bar IS the reserve. No separate reserveKcal.
   freshGame();
   {
     const s = Game.state.scholar;
     const dand = plant('dandelion');
     Game.say = () => {};
-    ok('reserve cap 4800', Game.reserveCap() === 4800);
-    ok('reserve starts empty', Game.reserve() === 0 && Game.feastState() === 'empty');
+    ok('no separate reserve pool', Game.reserveCap === undefined && Game.addReserve === undefined && Game.feast === undefined);
+    ok('baseline cap 2400 (~a day)', Game.kcalCap() === 2400);
+    ok('baseline fullLine 2400', Game.fullLine() === 2400);
+    ok('baseline maxBank 0', Game.maxBank() === 0);
+    ok('baseline feastState empty', Game.feastState() === 'empty');
 
-    // meal quality ladder
+    // meal quality ladder (unchanged — fuel quality still matters)
     const rawMeat = { foodKind: 'meat', foodState: 'cleaned', diseaseRisk: { p: 0.3 }, kcalEach: 300 };
     const cooked = { foodKind: 'meat', foodState: 'cooked', safe: true, kcalEach: 750 };
     const smoked = { foodKind: 'meat', foodState: 'preserved', safe: true, kcalEach: 700 };
@@ -336,39 +340,62 @@ const origRandom = Math.random;
     ok('quality: specialist 1.3', Game.mealQuality(chefMade) === 1.3);
     ok('quality: safe raw 0.7', Game.mealQuality(greens) === 0.7);
 
-    // FEAST: deliberate, quality-rated, capped
-    s.inventory.push(Object.assign({}, cooked, { units: 4, name: 'Turkey (cooked)', spoilDay: s.day + 5 }));
-    Game.feast();
-    ok('feast fills reserve at quality', s.reserveKcal === 3000); // 4×750×1.0
-    ok('feast state feasting', Game.feastState() === 'feasting');
-    s.inventory.push(Object.assign({}, chefMade, { units: 4, name: 'Turkey (chef)', spoilDay: s.day + 5 }));
-    Game.feast();
-    ok('reserve capped at 4800', s.reserveKcal === 4800);
-    ok('gorged at 3600+', Game.feastState() === 'gorged');
-    ok('reserve quality tracks best fuel', Game.reserveQuality() > 1);
+    // SKILLSET EXPANSION: deep_reserves ×5 → a real war chest
+    s.abilities.push({ id: 'deep_reserves' });
+    ok('deep_reserves: bankMult 5', Game.bankMult() === 5);
+    ok('deep_reserves: cap 12000', Game.kcalCap() === 12000);
+    ok('deep_reserves: maxBank 9600 (many days)', Game.maxBank() === 9600);
+    ok('bank >> a day of food', Game.maxBank() > 4 * 2000);
+    // extra_stomach (legacy eat_target_mult) still expands the bank
+    s.abilities.push({ id: 'extra_stomach' });
+    ok('extra_stomach stacks: bankMult 10', Game.bankMult() === 10);
+    ok('stacked cap 24000', Game.kcalCap() === 24000);
+    s.abilities.pop(); // back to deep_reserves only
 
-    // FEASTBURN: visible pipeline
+    // EAT fills the bar to cap — banking is what eating IS past "fed"
+    s.kcal = 0; s.kcalQ = 1;
+    s.inventory.push(Object.assign({}, cooked, { units: 8, name: 'Turkey (cooked)', spoilDay: s.day + 5 }));
+    Game.eat();
+    ok('eat fills toward cap', s.kcal === 6000); // 8×750, all bankable
+    ok('banked above fed line', Game.banked() === 3600);
+    ok('feastState feasting at 37% bank', Game.feastState() === 'feasting');
+    s.inventory.push(Object.assign({}, chefMade, { units: 8, name: 'Turkey (chef)', spoilDay: s.day + 5 }));
+    Game.eat();
+    ok('eat caps at kcalCap', s.kcal === 12000);
+    ok('gorged at 75%+ bank', Game.feastState() === 'gorged');
+    ok('pool quality tracks best fuel', (s.kcalQ || 1) > 1);
     let said = '';
-    Game.say = (m) => { said = m; };
+    Game.say = (m) => { said += m + '\n'; };
+    s.kcal = 0;
+    s.inventory.push(Object.assign({}, cooked, { units: 4, name: 'Turkey (cooked)', spoilDay: s.day + 5 }));
+    Game.eat();
+    ok('eat says the bank note past full', /bank/.test(said));
+
+    // FEASTBURN: burns BANKED kcal from the single pool
+    said = '';
+    s.kcal = 12000; // fully banked
     const mult = Game.feastBurn();
     ok('feastburn returns multiplier', mult > 1);
-    ok('feastburn burns reserve', s.reserveKcal === 4400); // gorged burn 400
+    ok('feastburn burns the bar', s.kcal === 11600); // gorged burn 400
     ok('feastburn says the line', /FEASTBURN/.test(said) && /feast was the weapon/.test(said));
-    s.reserveKcal = 100;
+    s.kcal = 2500; // only 100 banked
     Game.say = () => {};
-    ok('feastburn needs 300 reserve', Game.feastBurn() === 0);
+    ok('feastburn needs 300 banked', Game.feastBurn() === 0);
 
-    // eat() overshoot banks into reserve instead of vanishing
-    s.kcal = 2300; s.reserveKcal = 0;
-    s.inventory.push(Object.assign(Game.foodForageItem(dand, true, 2, 90, s.day), { spoilDay: s.day + 5, units: 2 }));
+    // NIGHT DECAY: only the banked war chest leaks, not the body pool
     Game.say = () => {};
-    Game.eat(); // target 2400: eats 2×45=90 → 2390... need bigger overshoot
-    // force a real overshoot: big unit
-    s.kcal = 2350;
-    s.inventory.push({ name: 'Big meal', units: 1, kcalEach: 500, spoilDay: s.day + 5, foodKind: 'meat', foodState: 'cooked', safe: true });
-    Game.eat();
-    ok('eat caps body kcal at target', s.kcal === 2400);
-    ok('overshoot banks to reserve', s.reserveKcal > 0);
+    s.kcal = 12000;
+    const lost = Game.overnightBankBurn();
+    ok('overnight bank leaks 20%', lost === Math.round(9600 * 0.2) && s.kcal === 12000 - lost);
+    s.kcal = 2000; // below fed: nothing to leak
+    ok('no leak below fed line', Game.overnightBankBurn() === 0 && s.kcal === 2000);
+
+    // MIGRATION: old separate reserve folds into the bar once
+    s.reserveKcal = 1000; s.reserveQ = 1.2; s.kcal = 1000;
+    Game.migrateReserve();
+    ok('migration folds reserve into bar', s.kcal === 2000);
+    ok('migration clears legacy fields', s.reserveKcal === undefined && s.reserveQ === undefined);
+    ok('migration blends quality', (s.kcalQ || 1) > 1);
 
     // wellMade set by specialist
     const turkey = animal('wild_turkey');

@@ -49,6 +49,8 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .bar > i { display: block; height: 100%; background: var(--acc); transition: width .3s; }
 .bar.low > i { background: var(--warn); }
 .bar.crit > i { background: var(--bad); }
+/* THE BANK: past the "fed" line the bar glows gold — the war chest, visible. */
+.bar.banked > i { background: linear-gradient(90deg, var(--acc), #ffd34d); }
 
 /* log */
 #log { border: 1px solid var(--line); border-radius: 4px; padding: 12px; min-height: 120px; max-height: 32dvh; overflow-y: auto; font-size: 14px; }

@@ -510,7 +510,7 @@
   {
     "id": "extra_stomach",
     "name": "Extra Stomach",
-    "description": "You grow a second stomach. Eat 2x food, but you need 2x food. (It's always hungry.)",
+    "description": "You grow a second stomach. Bank twice the calories — but the hunger doubles too. (It's always hungry.)",
     "flavor": "Two tummies! Twice the hunger! Twice the... we didn't think this through! But WOW!",
     "pool": "system",
     "tier": "body_horror",
@@ -526,6 +526,27 @@
     ],
     "metabolic": {
       "daily": 2200
+    }
+  },
+  {
+    "id": "deep_reserves",
+    "name": "Deep Reserves",
+    "description": "Your body learns to bank calories like a war chest. Bank 5× the energy. The furnace is always lit — but it must be FED.",
+    "flavor": "FIVE stomachs?! We lost count! The furnace DEMANDS tribute! FEED IT! (It's worth it. Probably.)",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
+    },
+    "modifiers": [
+      {
+        "target": "food.bank_mult",
+        "op": "multiply",
+        "value": 5
+      }
+    ],
+    "metabolic": {
+      "daily": 150
     }
   },
   {

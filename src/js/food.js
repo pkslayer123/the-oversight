@@ -540,19 +540,41 @@
       return false;
     },
 
-    // ---------- THE RESERVE: food is humanity's superpower ----------
+    // ---------- THE BANK: food is humanity's superpower ----------
     // Digesting organic matter grants mana reserves other species can't match.
-    // The kcal pool feeds the body; the RESERVE feeds power. Eat well → hit
-    // harder. The pipeline is visible by design: FEASTBURN says what happened.
-    // Headroom: the cap is generous and the burn scales with meal quality, so
-    // a late-game player with a smoker, a butcher, and a full pantry can
-    // plausibly become overwhelming. That's the fantasy. (Endgame payoff: later.)
+    // ONE pool: your kcal bar IS the bank. The fiction is conservation of
+    // energy — food in, everything else out. No second pool, no second row.
+    // Baseline humans bank ~a day. Skillsets raise the CAP: extra stomachs,
+    // furnace guts — the glutton-warrior is a real build. Eat well → hit
+    // harder. The pipeline stays visible: FEASTBURN says what happened.
+    // (Endgame payoff: later.)
 
-    reserveCap() { return 4800; }, // ~2 days of food as pure power
+    // bankMult: skillsets that expand the bank. food.bank_mult is the live
+    // target; food.eat_target_mult (extra_stomach, legacy) counts too.
+    bankMult() {
+      return this.modTarget('food.bank_mult', 1) * this.modTarget('food.eat_target_mult', 1);
+    },
 
-    reserve() { return this.state.scholar.reserveKcal || 0; },
+    // kcalCap: the one number. Baseline 2400 (~a day); skillsets multiply it.
+    kcalCap() {
+      const s = this.state.scholar || {};
+      const mult = this.metabolicMult((s.abilities || []).concat(s.backgroundAbilities || []));
+      return Math.round(2400 * mult * this.bankMult());
+    },
 
-    reserveQuality() { return this.state.scholar.reserveQ || 1; },
+    // fullLine: "fed". kcal banked above this line is the war chest.
+    fullLine() {
+      const s = this.state.scholar || {};
+      const mult = this.metabolicMult((s.abilities || []).concat(s.backgroundAbilities || []));
+      return Math.round(2400 * mult);
+    },
+
+    // banked: the stockpile above fed. This is what FEASTBURN spends.
+    banked() {
+      return Math.max(0, Math.round(this.state.scholar.kcal || 0) - this.fullLine());
+    },
+
+    maxBank() { return Math.max(0, this.kcalCap() - this.fullLine()); },
 
     // What food is worth as FUEL. Cooked > raw; specialist-made > yours.
     mealQuality(it) {
@@ -565,28 +587,26 @@
       return 0.7;                                // safe raw plants
     },
 
-    addReserve(kcal, q) {
+    // blendKcalQuality(kcalAdded, q): the pool remembers what it was built
+    // from. Specialist fuel burns hottest — even mixed into the bank.
+    blendKcalQuality(kcalAdded, q) {
       const s = this.state.scholar;
-      const cap = this.reserveCap();
-      const before = s.reserveKcal || 0;
-      const room = Math.max(0, cap - before);
-      const add = Math.min(room, Math.round(kcal * (q == null ? 1 : q)));
-      if (add <= 0) return 0;
-      s.reserveKcal = before + add;
-      s.reserveQ = (before <= 0) ? (q == null ? 1 : q)
-        : (((s.reserveQ || 1) * before) + (q == null ? 1 : q) * add) / (before + add);
-      return add;
+      if (!s || !(kcalAdded > 0)) return;
+      const before = Math.max(0, s.kcal || 0);
+      s.kcalQ = before <= 0 ? q
+        : (((s.kcalQ || 1) * before) + q * kcalAdded) / (before + kcalAdded);
     },
 
     feastState() {
-      const r = this.reserve();
-      if (r >= 3600) return 'gorged';
-      if (r >= 1200) return 'feasting';
-      return r > 0 ? 'sated' : 'empty';
+      const b = this.banked(), mb = this.maxBank();
+      if (mb <= 0 || b <= 0) return 'empty';
+      if (b >= mb * 0.75) return 'gorged';
+      if (b >= mb * 0.25) return 'feasting';
+      return 'sated';
     },
 
     feastLine() {
-      const st = this.feastState(), q = this.reserveQuality();
+      const st = this.feastState(), q = this.state.scholar.kcalQ || 1;
       if (st === 'gorged') return q >= 1.3
         ? 'Specialist cooking burns clean and hot. You feel dangerous.'
         : 'The furnace roars. You feel dangerous.';
@@ -595,50 +615,49 @@
       return '';
     },
 
-    // FEAST: deliberate. Eat beyond full; food becomes reserve at quality rates.
-    // The pre-fight ritual. Costs 2 ticks, never touches body kcal.
-    feast() {
-      const s = this.state.scholar;
-      if ((s.reserveKcal || 0) >= this.reserveCap()) {
-        this.say('Your reserve is full — the furnace can hold no more.');
-        return null;
-      }
-      s.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
-      let units = 0, gained = 0;
-      while ((s.reserveKcal || 0) < this.reserveCap()) {
-        const idx = s.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false);
-        if (idx < 0) break;
-        const it = s.inventory[idx];
-        gained += this.addReserve(it.kcalEach, this.mealQuality(it));
-        units++;
-        it.units -= 1;
-        if (it.units <= 0) s.inventory.splice(idx, 1);
-      }
-      if (!units) { this.say('Nothing to feast on.'); return null; }
-      this.tickAction(2);
-      const st = this.feastState();
-      this.say(`You feast${st === 'gorged' ? ' like something ancient' : ''}: +${gained} reserve. ${this.feastLine()}`);
-      return null;
-    },
-
     // FEASTBURN: the visible pipeline. Called when the player unleashes power.
-    // Burns reserve for a stated damage multiplier. Returns the multiplier (0 = no burn).
+    // Burns BANKED kcal for a stated damage multiplier. Returns it (0 = no burn).
     // Quality matters: specialist fuel burns hottest, scraps burn dirty.
     feastBurn() {
       const s = this.state.scholar;
-      const r = this.reserve();
-      if (r < 300) return 0;
-      const q = this.reserveQuality();
-      const gorged = r >= 3600;
-      const burn = gorged ? 400 : 300;
-      s.reserveKcal = Math.max(0, r - burn);
+      const b = this.banked();
+      if (b < 300) return 0;
+      const gorged = this.feastState() === 'gorged';
+      const burn = Math.min(b, gorged ? 400 : 300);
+      s.kcal = Math.max(0, (s.kcal || 0) - burn);
+      const q = s.kcalQ || 1;
       let mult = gorged ? 1.75 : 1.5;
       if (q >= 1.3) mult *= 1.15;
       else if (q < 0.7) mult *= 0.85;
       mult = Math.round(mult * 100) / 100;
       const qnote = q >= 1.3 ? ' Specialist fuel burns hottest.' : q < 0.7 ? ' Scraps burn dirty.' : '';
-      this.say(`FEASTBURN (−${burn} reserve, ×${mult}): the feast was the weapon.${qnote}`);
+      this.say(`FEASTBURN (−${burn} banked, ×${mult}): the feast was the weapon.${qnote}`);
       return mult;
+    },
+
+    // overnightBankBurn: the war chest leaks 20% overnight — use it or lose
+    // it. The body pool below "fed" is untouched; only banked kcal burns off.
+    overnightBankBurn() {
+      const s = this.state.scholar;
+      const b = this.banked();
+      if (b <= 0) return 0;
+      const lost = Math.round(b * 0.2);
+      s.kcal = Math.max(0, (s.kcal || 0) - lost);
+      if (lost > 0) this.say(`Overnight the bank burns −${lost} kcal. Feast again, or spend it.`);
+      return lost;
+    },
+
+    // migrateReserve: one-time fold of the old separate reserve pool into the
+    // single kcal bar. (2026-10-04: the reserve became the bank.)
+    migrateReserve() {
+      const s = this.state.scholar;
+      if (!s) return;
+      if ((s.reserveKcal || 0) > 0) {
+        const cap = this.kcalCap();
+        const add = Math.min(s.reserveKcal, Math.max(0, cap - (s.kcal || 0)));
+        if (add > 0) { this.blendKcalQuality(add, s.reserveQ || 1); s.kcal = (s.kcal || 0) + add; }
+      }
+      delete s.reserveKcal; delete s.reserveQ;
     },
   };
 

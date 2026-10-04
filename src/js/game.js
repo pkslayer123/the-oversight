@@ -9118,18 +9118,17 @@
     eat() {
       const scholar = this.state.scholar;
       if (this.over) return;
-      // POWER NEEDS FOOD: target scales with metabolic mult. Fire god eats to 9600.
-      const mult = this.metabolicMult((scholar.abilities || []).concat(scholar.backgroundAbilities || []));
-      // extra_stomach: two stomachs, twice the target. The hunger is the price.
-      const eatMult = this.modTarget('food.eat_target_mult', 1);
-      const target = Math.round(2400 * mult * eatMult);
-      // eat most-perishable first until kcal >= target or empty
+      // POWER NEEDS FOOD: the bar's cap scales with metabolic mult AND bank
+      // skillsets. Fire god eats to 9600; a furnace gut banks five days.
+      // THE BANK: one pool — eating past "fed" fills the war chest. The bar
+      // IS the reserve. Conservation of energy: food in, everything else out.
+      const cap = this.kcalCap();
+      // eat most-perishable first until the bar is full or food runs out
       scholar.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
       let ate = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
-      let lastQ = 1; // meal quality of the last unit (for the reserve)
       // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
-      while (scholar.kcal < target) {
+      while (scholar.kcal < cap) {
         // find the most perishable FOOD (not gear)
         // FOOD REALITY: unknown / unprocessed food isn't food yet — skip it.
         const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false);
@@ -9157,19 +9156,17 @@
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
         scholar.kcal += kcal; ate += kcal;
-        if (this.mealQuality) lastQ = this.mealQuality(it);
+        // THE BANK: the pool remembers what it was built from. Specialist
+        // fuel burns hottest — even mixed into the war chest.
+        if (this.blendKcalQuality) this.blendKcalQuality(kcal, this.mealQuality ? this.mealQuality(it) : 1);
         if (it.plantId) tasted[it.plantId] = (tasted[it.plantId] || 0) + 1;
         it.units -= 1;
         if (it.units <= 0) scholar.inventory.splice(foodIdx, 1);
       }
-      // THE RESERVE: overshoot beyond full doesn't vanish — it becomes power.
-      // (Fire gods still eat to their 9600 target; only the true excess banks.)
-      const over = scholar.kcal - target;
-      if (over > 0 && this.addReserve) {
-        scholar.kcal = target;
-        const added = this.addReserve(over, lastQ);
-        if (added > 0) this.say(`+${added} reserve — the furnace banks it. (${this.feastState()})`);
-      }
+      // THE BANK: the bar is the reserve. Past "fed", every bite is war chest.
+      if (scholar.kcal > cap) scholar.kcal = cap;
+      const bankedNow = this.banked ? this.banked() : 0;
+      const bankNote = bankedNow > 0 ? ` Past full — the bank takes it. (+${bankedNow} banked. ${this.feastLine ? this.feastLine() : ''})` : '';
       // LEVEL 3: Uses. Eat it 3 times, you learn what it does to you.
       // Vitamin C, medicine, energy. "Have you tasted it?" Yes. Now you know.
       for (const [pid, count] of Object.entries(tasted)) {
@@ -9181,7 +9178,7 @@
             const plant = this.data.plants.find(p => p.id === pid);
             this.say(`Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['3']} (+5 health when eaten)`);
             // level 3 benefit: eating gives health
-            scholar.kcal = Math.min(scholar.kcal + 50, 3000); // nourished
+            scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
         }
       }
@@ -9198,13 +9195,13 @@
       const spoilNote = spoiled ? ` Spoiled and discarded: ${[...new Set(spoiledNames)].join(', ')}. The Codex notes the waste.` : '';
       // FOOD REALITY: distinguish "full" from "nothing edible" (unknown/
       // unprocessed food doesn't count, and the player should know why).
-      const stillHungry = scholar.kcal < target;
+      const stillHungry = scholar.kcal < cap;
       const inedible = stillHungry ? scholar.inventory.filter(i => i.edible === false && (i.units || 0) > 0) : [];
       const nothingEdible = ate === 0 && stillHungry && inedible.length > 0 && !scholar.inventory.some(i => (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && i.edible !== false);
       const inedibleNote = inedible.length
         ? ` (${[...new Set(inedible.map(i => i.name))].join(', ')} — not food yet: ${inedible[0].foodState === 'unknown' ? 'identify it first' : inedible[0].prep || 'process it'}.)`
         : '';
-      this.say(ate > 0 ? `You eat (${ate} kcal).` + spoilNote
+      this.say(ate > 0 ? `You eat (${ate} kcal).${bankNote}` + spoilNote
                        : (nothingEdible ? 'Nothing edible.' + inedibleNote + spoilNote
                        : (scholar.inventory.length ? 'You are full enough.' + spoilNote : 'Nothing to eat. The pantry of your pack is empty.' + spoilNote)));
       // loud_chewer: eating is 2x louder. Monsters hear you. But +5 energy — morale is real.
@@ -9866,12 +9863,8 @@
         scholar.kcal -= metDrain;
         if (scholar.kcal < 500) this.say(`The System's gifts are hungry: -${metDrain} kcal metabolic cost. Feed the power or lose it.`);
       }
-      // THE RESERVE: the furnace burns overnight — use it or lose it.
-      if ((scholar.reserveKcal || 0) > 0) {
-        const lost = Math.round(scholar.reserveKcal * 0.2);
-        scholar.reserveKcal = Math.max(0, scholar.reserveKcal - lost);
-        if (lost > 0) this.say(`Overnight the furnace burns −${lost} reserve. Feast again, or spend it.`);
-      }
+      // THE BANK: the war chest leaks overnight — use it or lose it.
+      if (this.overnightBankBurn) this.overnightBankBurn();
       // ant_trail: ants know where the water is. 30% chance they lead you to some.
       if (this.hasAbility('ant_trail') && Math.random() < 0.3) {
         this.addWater(1, 'risky', 'ant-trail seep');
@@ -11148,6 +11141,8 @@
     },
     status() {
       const s = this.state.scholar;
+      // One-time migration: the old separate reserve pool folds into the bar.
+      if (this.migrateReserve) this.migrateReserve();
       return {
         day: s.day, dayPart: DAY_PARTS[this.dayPart], dayPartHint: DAY_PART_HINT[DAY_PARTS[this.dayPart]],
         // ACTION CLOCK: ticks for the UI day-timer. 512 ticks = the full day.
@@ -11158,13 +11153,11 @@
         dialGlitch: !!this.state.dialGlitch,
         ap: this.ap, health: Math.round(s.health), kcal: Math.round(s.kcal),
         hydration: Math.round(s.hydration), energy: Math.round(s.energy),
-        // THE RESERVE: mana reserves, visible.
-        reserve: Math.round(s.reserveKcal || 0),
-        reserveCap: this.reserveCap ? this.reserveCap() : 4800,
+        // THE BANK: one pool. The bar IS the reserve — cap, banked, states.
+        kcalCap: this.kcalCap ? this.kcalCap() : 2400,
+        fullLine: this.fullLine ? this.fullLine() : 2400,
+        banked: this.banked ? Math.round(this.banked()) : 0,
         feastState: this.feastState ? this.feastState() : 'empty',
-        // Feast button shows only when actionable (tool-gating).
-        feastReady: (s.reserveKcal || 0) < (this.reserveCap ? this.reserveCap() : 4800) &&
-          (s.inventory || []).some(i => (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && i.edible !== false),
         water: s.water || 0,
         // carried water, in liters (bottles are {liters, quality, source} objects —
         // never string-concat the raw array; that's how you get "[object Object]").
