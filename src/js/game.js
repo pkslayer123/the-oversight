@@ -1225,6 +1225,18 @@
     },
 
     // HUNT: adjacent to animal, tap it. Success by difficulty and your condition.
+    // weaponBonus: best weapon in inventory. A spear beats bare hands.
+    weaponBonus() {
+      let bonus = 0;
+      for (const item of (this.state.scholar.inventory || [])) {
+        const def = this.data.items.find(i => i.id === (item.itemId || item.id));
+        if (def && def.class === 'weapon' && def.weapon) {
+          bonus = Math.max(bonus, def.weapon.bonus);
+        }
+      }
+      return bonus;
+    },
+
     huntAnimal() {
       const s = this.state.scholar;
       const a = s.animal;
@@ -1238,7 +1250,9 @@
       const villager = this.data.villagers.find(v => v.id === this.villagerId);
       const isHunter = (villager && villager.formerOccupation || '').toLowerCase().includes('hunter');
       const base = animal.difficulty === 'easy' ? 0.7 : animal.difficulty === 'medium' ? 0.4 : 0.15;
-      const chance = Math.min(0.95, base + (isHunter ? 0.2 : 0));
+      // Weapons matter. A spear (+30) turns a 40% shot into 70%.
+      const wbonus = this.weaponBonus() / 100;
+      const chance = Math.min(0.95, base + (isHunter ? 0.2 : 0) + wbonus);
       s.kcal = Math.max(0, s.kcal - 100);
       if (Math.random() < chance) {
         // caught!

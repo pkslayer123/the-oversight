@@ -176,7 +176,8 @@
       "class": [
         "tool",
         "clothing",
-        "sentimental"
+        "sentimental",
+        "weapon"
       ],
       "baseEffect": "string?",
       "flavor": "string",
@@ -185,7 +186,11 @@
           "uses": "number[1..500]",
           "offers": "string[]"
         }
-      ]
+      ],
+      "weapon": "object",
+      "craftable": "boolean",
+      "materials": "object",
+      "findable": "boolean"
     }
   },
   "gameEvent": {

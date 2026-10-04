@@ -361,5 +361,61 @@
     "name": "Photo album",
     "flavor": "Faces from before. The most valuable thing she owns.",
     "class": "sentimental"
+  },
+  {
+    "id": "sharpened_stick",
+    "name": "Sharpened stick",
+    "weapon": {
+      "bonus": 10,
+      "type": "melee"
+    },
+    "craftable": true,
+    "materials": {
+      "stick": 1
+    },
+    "class": "weapon",
+    "flavor": "a stick, whittled to a point"
+  },
+  {
+    "id": "stone_knife",
+    "name": "Stone knife",
+    "weapon": {
+      "bonus": 20,
+      "type": "melee"
+    },
+    "craftable": true,
+    "materials": {
+      "stone": 1,
+      "vine": 1
+    },
+    "class": "weapon",
+    "flavor": "flint knapped to an edge, bound with vine"
+  },
+  {
+    "id": "hunting_spear",
+    "name": "Hunting spear",
+    "weapon": {
+      "bonus": 30,
+      "type": "melee"
+    },
+    "craftable": true,
+    "materials": {
+      "stick": 1,
+      "stone": 1,
+      "vine": 1
+    },
+    "class": "weapon",
+    "flavor": "long, balanced, stone-tipped"
+  },
+  {
+    "id": "kitchen_knife",
+    "name": "Kitchen knife",
+    "weapon": {
+      "bonus": 15,
+      "type": "melee"
+    },
+    "findable": true,
+    "class": "weapon",
+    "flavor": "scavenged from a ruin, still sharp"
   }
 ]
