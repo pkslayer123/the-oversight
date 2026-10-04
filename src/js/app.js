@@ -396,6 +396,26 @@
     document.getElementById('b-cback').onclick = () => expeditionScreen();
   }
 
+  // abilityPopup: the System offers you a choice. Pick one.
+  function abilityPopup() {
+    const choices = Game.state.scholar.abilityChoices;
+    if (!choices || !choices.length) return;
+    const screen = document.getElementById('screen');
+    screen.innerHTML = `
+      <div class="card">
+        <h3>🌟 The System Offers a Gift</h3>
+        <p class="small">"We watched your first week! You're good at... let us see..."</p>
+        <p class="small">Choose one ability:</p>
+        <div class="btnrow">
+          ${choices.map((c, i) => `<button class="btn sm" data-abil="${c.id}"><b>${c.name}</b><br><span class="small">${c.desc}</span></button>`).join('')}
+        </div>
+      </div>`;
+    screen.querySelectorAll('[data-abil]').forEach(b => b.onclick = () => {
+      Game.chooseAbility(b.dataset.abil);
+      expeditionScreen();
+    });
+  }
+
   // invPopup: what are you carrying? always accessible, not hidden.
   // Crafting lives here too — supplies to feed yourself.
   function invPopup() {
@@ -506,6 +526,11 @@
         }
       };
     });
+    // System ability choice? Show it.
+    if (Game.state.scholar.abilityChoices && Game.state.scholar.abilityChoices.length) {
+      abilityPopup();
+      return;
+    }
     document.getElementById('x-codex').onclick = codexScreen;
     const pantryBtn = document.getElementById('x-pantry');
     if (pantryBtn) pantryBtn.onclick = () => pantryPopup();

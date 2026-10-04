@@ -127,6 +127,9 @@
       // Trust builds through contribution, dialogue, sharing.
       // This determines your meal share, whether they share knowledge, etc.
       this.state.village.trust[villagerId] = 15;
+      // WEEK 1 TRACKER: the System watches what you do. Your first ability
+      // is based on your actions, not your stats. Play how you want to play.
+      scholar.week1 = { forage: 0, hunt: 0, talk: 0, cook: 0, donate: 0, scavenge: 0 };
       // (Jesse's snare is granted after newCodex below — order matters.)
       // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
       // they wander turn-based. you see them. you tap them.
@@ -1518,6 +1521,7 @@
         }
       }
       this.say(n ? `Cooked ${n} item${n > 1 ? 's' : ''}${waterUsed ? ` (-${waterUsed}L water)` : ''}.` : 'Nothing raw to cook.');
+      if (n > 0 && this.state.scholar.week1) this.state.scholar.week1.cook++;
       return null;
     },
 
@@ -1544,6 +1548,7 @@
       v.gives[vid] = (v.gives[vid] || 0) + kcal;
       v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + Math.min(10, Math.floor(kcal / 500)));
       this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${Math.min(10, Math.floor(kcal / 500))}. They'll remember this.`);
+      if (this.state.scholar.week1) this.state.scholar.week1.donate++;
       return null;
     },
 
@@ -2026,8 +2031,68 @@
         this.say('Your journal shimmers. It\'s... a game interface now? Quests? Abilities? What is happening?');
         s.abilities = s.abilities || [];
         s.systemQuests = [];
+        // FIRST ABILITY: based on what you DID in week 1, and who you were.
+        // The System watched. It rewards your playstyle.
+        s.abilityChoices = this.firstAbilityChoices();
+        this.say('\U0001F381 The System offers you a gift. "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
         this.scheduleSystemEvents();
       }
+    },
+    // firstAbilityChoices: 3 options based on week-1 actions + background.
+    firstAbilityChoices() {
+      const s = this.state.scholar;
+      const w = s.week1 || {};
+      const villager = this.data.villagers.find(v => v.id === this.villagerId) || {};
+      const occ = (villager.formerOccupation || '').toLowerCase();
+      const ABILITIES = {
+        green_thumb: { name: 'Green Thumb', desc: 'Foraging yields +50%. You know where to look.', cond: (w.forage || 0) >= 3 },
+        tracker: { name: 'Tracker', desc: 'Hunting success +30%. You read the ground.', cond: (w.hunt || 0) >= 2 },
+        diplomat: { name: 'Diplomat', desc: 'Trust builds 2x faster. People open up to you.', cond: (w.talk || 0) >= 5 },
+        camp_cook: { name: 'Camp Cook', desc: 'Cooking uses half the water. Food tastes better (+10% kcal).', cond: (w.cook || 0) >= 2 },
+        generous: { name: 'Generous Heart', desc: 'Donating gives 2x trust. The village loves you.', cond: (w.donate || 0) >= 2 },
+        scrounger: { name: 'Scrounger', desc: 'Ruin looting finds +1 item. You see what others miss.', cond: (w.scavenge || 0) >= 3 },
+        // background-based (always available as fallback)
+        hunter_bg: { name: 'Hunter\'s Instinct', desc: 'Your past as a hunter surfaces. +20% hunt success.', cond: occ.includes('hunter') },
+        medic_bg: { name: 'Field Medic', desc: 'Your medical training kicks in. Healing items +50%.', cond: occ.includes('doctor') || occ.includes('nurse') || occ.includes('medic') },
+        cook_bg: { name: 'Chef\'s Hands', desc: 'You cooked for a living. Food prep is faster, better.', cond: occ.includes('cook') || occ.includes('chef') },
+      };
+      // pick 3: prioritize earned (action-based), fill with background
+      const earned = Object.entries(ABILITIES).filter(([id, a]) => a.cond && !id.endsWith('_bg'));
+      const bg = Object.entries(ABILITIES).filter(([id, a]) => a.cond && id.endsWith('_bg'));
+      const choices = [];
+      // top 2 earned by count
+      const sorted = earned.sort((a, b) => {
+        const ka = a[0].split('_')[0]; const kb = b[0].split('_')[0];
+        return (w[kb] || 0) - (w[ka] || 0);
+      });
+      for (const [id, a] of sorted.slice(0, 2)) choices.push({ id, ...a });
+      // 1 background (or next earned)
+      if (bg.length && choices.length < 3) {
+        const [id, a] = bg[0]; choices.push({ id, ...a });
+      }
+      while (choices.length < 3 && sorted.length > choices.length) {
+        const [id, a] = sorted[choices.length]; choices.push({ id, ...a });
+      }
+      // fallback: if nothing earned, offer generic
+      if (!choices.length) {
+        choices.push(
+          { id: 'survivor', name: 'Survivor', desc: 'You endured. +10 max health.', cond: true },
+          { id: 'wanderer', name: 'Wanderer', desc: 'You kept moving. -10% travel cost.', cond: true },
+          { id: 'learner', name: 'Quick Learner', desc: 'Codex XP +50%. You pick things up fast.', cond: true },
+        );
+      }
+      return choices.slice(0, 3);
+    },
+    // chooseAbility: player picks from the System's offer.
+    chooseAbility(id) {
+      const s = this.state.scholar;
+      const choice = (s.abilityChoices || []).find(c => c.id === id);
+      if (!choice) return null;
+      s.abilities = s.abilities || [];
+      s.abilities.push({ id: choice.id, name: choice.name, desc: choice.desc });
+      s.abilityChoices = null; // chosen
+      this.say(`✨ Ability gained: ${choice.name}. ${choice.desc}`);
+      return null;
     },
     scheduleSystemEvents() {
       const s = this.state.scholar;
@@ -2210,6 +2275,7 @@
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         msg = r.message + ` (${r.kcal} kcal to your pack — eat up.)` + (r.firstFind ? ` (${r.plant.codex})` : '');
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
+        if (scholar.week1) scholar.week1.forage++;
       } else if (kind === 'rest') {
         scholar.energy = Math.min(100, scholar.energy + 30);
         scholar.health = Math.min(100, scholar.health + 5);
