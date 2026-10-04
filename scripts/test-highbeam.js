@@ -1,15 +1,21 @@
 // Highbeam Deer fight tests. Usage: node scripts/test-highbeam.js
-// Covers Steve's playtest notes + design correction:
+// Covers Steve's playtest notes + design corrections:
 //  - combat card placement (DOM order, not below the fold)
 //  - 2-turn perceived windup (windup:1 in data)
 //  - no one-shot: deer survives ~3 spear hits, never flees
-//  - SWEEPING BEAM: locks at declare, tracks the player while firing
-//    (sweepSpeed 3 vs player speed 4 — outrunnable laterally, not down the lane)
+//  - ANCHORED SWEEPING BEAM: a ray FROM THE DEER that ROTATES toward you
+//    (sweepRate 0.65 rad/tick). Positioning relative to the deer matters.
+//  - SWEEP ECONOMY: unspent angular budget becomes dwell — stand still and
+//    it parks the full beam on you (up to 3.5x); make it chase and it burns less
+//  - COOLDOWN between Discharges (2 deer turns) — no every-round pressure
 //  - walls/structures block; trees shred; beam reaches the node edge
 //  - scorch: environmental damage, forage destroyed, recovers in ~3 days
 //  - exposure tiers: lane hurts, beam ON you devastates, trapped = lethal
-//  - counterplay: disrupt by striking mid-fire (risky: antler thrash)
+//  - counterplay: circle it, break the line, or close in (antler thrash)
 //  - scenario stalks from 5 tiles, detection works on approach
+//  - NOT A BOSS: no boss theater; the Discharge guarantee is diegetic
+//    (windup can't be interrupted; death throes fire the beam)
+//  - village names the beast only once the news spreads (gossip/telling)
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
@@ -105,7 +111,8 @@ function driveCombat(playerFn, maxTurns) {
   ok('codex no longer claims it bolts', !/flees at 50%/.test(mdef.codexStages.slain));
   eq('beam sweeps', mdef.attack.pattern.sweep, true);
   eq('fireTurns 2', mdef.attack.pattern.fireTurns, 2);
-  eq('sweepSpeed 3 (slower than player 4)', mdef.attack.pattern.sweepSpeed, 3);
+  eq('sweepRate 0.65 rad/tick (angular, anchored at deer)', mdef.attack.pattern.sweepRate, 0.65);
+  eq('cooldownTurns 2 between Discharges', mdef.attack.pattern.cooldownTurns, 2);
   eq('beam length 9 (node edge)', mdef.attack.pattern.length, 9);
 
   // --- 2. scenario: stalk, not spawn-on-top ---
@@ -163,7 +170,7 @@ function driveCombat(playerFn, maxTurns) {
     ok('trading blows costs HP', st.playerHp < 100);
   }
 
-  // --- 5. the beam SWEEPS: aim tracks the player, lane redraws, lateral sprint outruns ---
+  // --- 5. the beam is ANCHORED at the deer: a ray that ROTATES toward you ---
   {
     const realGen = Game.genDetail.bind(Game);
     Game.genDetail = () => flatGrid();
@@ -175,24 +182,97 @@ function driveCombat(playerFn, maxTurns) {
     Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
     const hp0 = Math.round(Game.tbFighter('p').hp);
     ok('player moves first', Game.tbCurrent().kind === 'player');
-    Game.tbPlayerMove(0, 4); Game.tbPlayerEndTurn(); // P1: preemptive lateral sprint; D1 declares
+    Game.tbPlayerMove(0, 4); Game.tbPlayerEndTurn(); // P1: preemptive lateral; D1 declares
     let deer = Game.tbFighter('m_0');
-    ok('declare: aim locked at player pos', !!deer.telegraph && deer.telegraph.aim.x === 0 && deer.telegraph.aim.y === 4);
+    const ang0 = Math.atan2(4 - 6, 0 - 4);
+    ok('declare: beam bearing locked at declare', !!deer.telegraph && Math.abs(deer.telegraph.angle - ang0) < 1e-9);
+    ok('declare: lane starts AT THE DEER', deer.telegraph.cells.length > 0 &&
+      Math.max(Math.abs(deer.telegraph.cells[0].cx - 4), Math.abs(deer.telegraph.cells[0].cy - 6)) <= 1);
     ok('declare: not yet firing', deer.telegraph.firing === 0);
-    Game.tbPlayerMove(0, 0); Game.tbPlayerEndTurn(); // P2: keep sprinting laterally; D2 ignites
+    Game.tbPlayerMove(0, 0); Game.tbPlayerEndTurn(); // P2: move up the lane; D2 ignites + tick
     deer = Game.tbFighter('m_0');
     ok('beam is live (1 fire turn left)', !!deer.telegraph && deer.telegraph.firing === 1);
-    const cb0 = Math.max(Math.abs(0 - 0), Math.abs(4 - 0)); // aim (0,4) vs player (0,0)
-    const cb1 = Math.max(Math.abs(deer.telegraph.aim.x - 0), Math.abs(deer.telegraph.aim.y - 0));
-    ok('aim swept toward player, <= sweepSpeed', cb0 - cb1 > 0 && cb0 - cb1 <= 3);
-    ok('aim cell sits on the beam lane', deer.telegraph.cells.some(c => c.cx === deer.telegraph.aim.x && c.cy === deer.telegraph.aim.y));
-    eq('lateral sprint: zero beam damage', Math.round(Game.tbFighter('p').hp), hp0);
+    const want = Math.atan2(0 - 6, 0 - 4);
+    const turned = Math.abs(deer.telegraph.angle - ang0);
+    ok('beam ROTATED toward the player, within angular budget', turned > 0 && turned <= 0.65 + 1e-9);
+    ok('beam bearing now tracks the player', Math.abs(deer.telegraph.angle - want) < 1e-9);
+    ok('lane still anchored at the deer after the sweep', deer.telegraph.cells.length > 0 &&
+      Math.max(Math.abs(deer.telegraph.cells[0].cx - deer.mx), Math.abs(deer.telegraph.cells[0].cy - deer.my)) <= 1);
+    ok('telegraph cue: a ray from its eyes', /ray from its eyes/.test(Game.tbTelegraphCue(deer)));
     ok('lane scorched', deer.telegraph.cells.length > 0 && Game.cellScorched(deer.telegraph.cells[0].cx, deer.telegraph.cells[0].cy));
-    ok('telegraph cue names the sweep', /sweeping toward you/.test(Game.tbTelegraphCue(deer)));
     ok('grid overlay exposes the live lane', Game.tbBeamLaneCells().size === deer.telegraph.cells.length);
-    Game.tbPlayerMove(4, 0); Game.tbPlayerEndTurn(); // P3: reposition; D3: 2nd sweep
-    eq('still zero damage after 2nd sweep', Math.round(Game.tbFighter('p').hp), hp0);
-    ok('beam ended after 2 fire turns', !Game.tbFighter('m_0').telegraph);
+    S_.combat.roll = realRoll;
+    Game.genDetail = realGen;
+    if (Game.tbfight) Game.tbEnd('fled');
+  }
+
+  // --- 5b. SWEEP ECONOMY: unspent tracking budget becomes dwell damage ---
+  // Stationary player: the beam never has to move -> parks at 3.5x.
+  // Moving player: the beam spends budget tracking -> burns less.
+  {
+    const realGen = Game.genDetail.bind(Game);
+    Game.genDetail = () => flatGrid();
+    const S_ = globalThis.Scattering;
+    const realRoll = S_.combat.roll;
+    S_.combat.roll = ([a, b]) => b; // max damage, deterministic
+    // STATIONARY
+    newDeerGame();
+    startDeerFight(4, 4, 4, 6);
+    Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
+    Game.tbFighter('p').hp = 500; Game.state.scholar.health = 500;
+    Game.tbPlayerEndTurn(); // P1: hold; D1 declares (bearing straight north)
+    Game.tbPlayerEndTurn(); // P2: hold; D2 ignites — the beam never moved
+    let deer = Game.tbFighter('m_0');
+    ok('stationary: dwell maxed (beam did not have to sweep)', (deer.telegraph.dwell || 0) > 0.99);
+    ok('stationary: the log teaches the trade', Game.log.some(l => /doesn't need to sweep — it SITS on you/.test(l)));
+    const stillDmg = 500 - Math.round(Game.tbFighter('p').hp);
+    eq('stationary: full dwell = 3.5x max = 112', stillDmg, 112);
+    if (Game.tbfight) Game.tbEnd('fled');
+    // MOVING (along the lane, forcing the beam to spend budget tracking)
+    newDeerGame();
+    startDeerFight(4, 4, 4, 6);
+    Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
+    Game.tbFighter('p').hp = 500; Game.state.scholar.health = 500;
+    Game.tbPlayerMove(0, 4); Game.tbPlayerEndTurn(); // P1: lateral; D1 declares
+    Game.tbPlayerMove(0, 0); Game.tbPlayerEndTurn(); // P2: up the lane; D2 ignites + tracks
+    deer = Game.tbFighter('m_0');
+    ok('moving: beam spent budget tracking', (deer.telegraph.dwell || 0) < 0.5);
+    const moveDmg = 500 - Math.round(Game.tbFighter('p').hp);
+    ok('moving: burns LESS than stationary (86 < 112)', moveDmg === 86 && moveDmg < stillDmg);
+    S_.combat.roll = realRoll;
+    Game.genDetail = realGen;
+    if (Game.tbfight) Game.tbEnd('fled');
+  }
+
+  // --- 5c. COOLDOWN: the deer pauses between Discharges ---
+  {
+    const realGen = Game.genDetail.bind(Game);
+    Game.genDetail = () => flatGrid();
+    const S_ = globalThis.Scattering;
+    const realRoll = S_.combat.roll;
+    S_.combat.roll = ([a, b]) => b;
+    newDeerGame();
+    startDeerFight(4, 4, 4, 6);
+    Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
+    Game.tbFighter('p').hp = 500; Game.state.scholar.health = 500;
+    Game.tbPlayerMove(0, 4); Game.tbPlayerEndTurn(); // P1; D1 declares
+    Game.tbPlayerMove(0, 0); Game.tbPlayerEndTurn(); // P2; D2 ignites + tick 1
+    Game.tbPlayerEndTurn(); // P3: hold; D3: tick 2, beam ends
+    let deer = Game.tbFighter('m_0');
+    ok('beam ended after 2 fire turns', !deer.telegraph);
+    eq('cooldown set (2 deer turns)', deer.beamCooldown, 2);
+    ok('cooldown message: it needs a moment', Game.log.some(l => /needs a moment/.test(l)));
+    Game.tbPlayerEndTurn(); // P4: hold; D4: cooldown 2->1, stalks, cannot declare
+    deer = Game.tbFighter('m_0');
+    ok('cooldown turn 1: no telegraph, no declare', !deer.telegraph);
+    eq('cooldown ticking down', deer.beamCooldown, 1);
+    Game.tbPlayerEndTurn(); // P5: hold; D5: cooldown 1->0, stalks, cannot declare
+    deer = Game.tbFighter('m_0');
+    ok('cooldown turn 2: still cannot declare', !deer.telegraph);
+    eq('cooldown expired', deer.beamCooldown, 0);
+    Game.tbPlayerEndTurn(); // P6: hold; D6: free to declare again
+    deer = Game.tbFighter('m_0');
+    ok('after cooldown: declares again', !!deer.telegraph);
     S_.combat.roll = realRoll;
     Game.genDetail = realGen;
     if (Game.tbfight) Game.tbEnd('fled');
@@ -349,6 +429,7 @@ function driveCombat(playerFn, maxTurns) {
   }
 
   // --- 12. disrupt: a solid strike mid-fire can break the beam ---
+  // (player needs extra HP: standing in the beam with full dwell is lethal now)
   {
     const realGen = Game.genDetail.bind(Game);
     Game.genDetail = () => flatGrid();
@@ -358,15 +439,16 @@ function driveCombat(playerFn, maxTurns) {
     newDeerGame();
     startDeerFight(4, 4, 4, 6);
     Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
+    Game.tbFighter('p').hp = 200; Game.state.scholar.health = 200;
     S_.combat.roll = ([a, b]) => b;
     Math.random = () => 0.1; // disrupt triggers
     Game.tbPlayerStrike('m_0'); // P1: strike (auto-advances: D1 declares)
     let deer = Game.tbFighter('m_0');
     ok('declared after first strike', !!deer.telegraph && deer.telegraph.turnsLeft === 1);
-    Game.tbPlayerEndTurn(); // D2: ignite + tick 1 (player takes the beam: 80)
+    Game.tbPlayerEndTurn(); // D2: ignite + tick 1 (player eats the parked beam: 112, survives)
     deer = Game.tbFighter('m_0');
     ok('beam live', !!deer.telegraph && deer.telegraph.firing === 1);
-    ok('player hurt but alive', Game.tbFighter('p').alive && Math.round(Game.tbFighter('p').hp) < 100);
+    ok('player hurt but alive', Game.tbFighter('p').alive && Math.round(Game.tbFighter('p').hp) < 200);
     Game.tbPlayerStrike('m_0'); // P3: strike mid-fire -> disrupt (then D3 re-declares fresh)
     deer = Game.tbFighter('m_0');
     ok('beam disrupted (message in the log)', Game.log.some(l => /stutters and dies/.test(l)));
@@ -379,6 +461,7 @@ function driveCombat(playerFn, maxTurns) {
   }
 
   // --- 13. antlers: closing in during the fire is risky ---
+  // (player needs extra HP: parked beam 112 + antlers 16 = 128)
   {
     const realGen = Game.genDetail.bind(Game);
     Game.genDetail = () => flatGrid();
@@ -388,12 +471,13 @@ function driveCombat(playerFn, maxTurns) {
     newDeerGame();
     startDeerFight(4, 5, 4, 6); // adjacent to the deer
     Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
+    Game.tbFighter('p').hp = 200; Game.state.scholar.health = 200;
     const hp0 = Math.round(Game.tbFighter('p').hp);
     Game.tbPlayerEndTurn(); // D1: declare
-    Game.tbPlayerEndTurn(); // D2: ignite + tick 1: beam (80) + antlers (16)
+    Game.tbPlayerEndTurn(); // D2: ignite + tick 1: parked beam (112) + antlers (16)
     const dmg = hp0 - Math.round(Game.tbFighter('p').hp);
     ok('antler thrash message in the log', Game.log.some(l => /antlers/.test(l)));
-    ok('beam + antlers at close range (~96)', dmg === 96);
+    ok('beam + antlers at close range (128)', dmg === 128);
     S_.combat.roll = realRoll;
     Game.genDetail = realGen;
     if (Game.tbfight) Game.tbEnd('fled');
@@ -426,7 +510,8 @@ function driveCombat(playerFn, maxTurns) {
     if (Game.tbfight) Game.tbEnd('fled');
   }
 
-  // --- 15. boss gate: burst damage can't skip the Discharge ---
+  // --- 15. the Discharge guarantee is diegetic, not boss immunity ---
+  // A. cut down BEFORE it declares: death throes fire the beam anyway.
   {
     const realGen = Game.genDetail.bind(Game);
     Game.genDetail = () => flatGrid();
@@ -437,15 +522,76 @@ function driveCombat(playerFn, maxTurns) {
     startDeerFight(4, 4, 4, 6);
     Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
     const deer = Game.tbFighter('m_0');
-    deer.hp = 30; // wounded — a 41-damage spear strike would kill
-    Game.tbPlayerStrike('m_0'); // P1: strike (auto-advances: D1 declares)
-    eq('gate: deer held at 1 HP, not dead', Math.round(Game.tbFighter('m_0').hp), 1);
-    ok('gate: still alive', Game.tbFighter('m_0').alive);
-    ok('gate: legible message', Game.log.some(l => /won't go out/.test(l)));
-    ok('gate: declares at 1 HP anyway', !!Game.tbFighter('m_0').telegraph);
+    deer.hp = 30; // wounded — a 41-damage spear strike kills outright
+    Game.tbPlayerStrike('m_0'); // P1: strike kills before D1 declares
+    ok('death throes: the deer is dead (no immunity)', !deer.alive);
+    ok('death throes: legible message', Game.log.some(l => /death throes loose the beam/.test(l)));
+    ok('death throes: the beam still fired', Game.log.some(l => /death throes loose the beam/.test(l)));
     S_.combat.roll = realRoll;
     Game.genDetail = realGen;
     if (Game.tbfight) Game.tbEnd('fled');
+  }
+  // B. cut down DURING windup: the gathered light holds the body until it fires.
+  {
+    const realGen = Game.genDetail.bind(Game);
+    Game.genDetail = () => flatGrid();
+    const S_ = globalThis.Scattering;
+    const realRoll = S_.combat.roll;
+    S_.combat.roll = ([a, b]) => b;
+    newDeerGame();
+    startDeerFight(4, 4, 4, 6);
+    Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
+    Game.tbPlayerEndTurn(); // P1: hold; D1 declares
+    const deer = Game.tbFighter('m_0');
+    ok('declare happened', !!deer.telegraph);
+    deer.hp = 30;
+    Game.tbPlayerStrike('m_0'); // P2: strike for 41 during the windup (then D2 fires)
+    ok('windup: held at 1 HP until it fires', Math.round(deer.hp) === 1);
+    ok('windup: diegetic message (light already gathered)', Game.log.some(l => /already gathered/.test(l)));
+    S_.combat.roll = realRoll;
+    Game.genDetail = realGen;
+    if (Game.tbfight) Game.tbEnd('fled');
+  }
+  // C. after the first Discharge: no protection — it dies like anything else.
+  {
+    const realGen = Game.genDetail.bind(Game);
+    Game.genDetail = () => flatGrid();
+    const S_ = globalThis.Scattering;
+    const realRoll = S_.combat.roll;
+    S_.combat.roll = ([a, b]) => b;
+    newDeerGame();
+    startDeerFight(4, 4, 4, 6);
+    Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
+    Game.tbFighter('p').hp = 500; Game.state.scholar.health = 500;
+    Game.tbPlayerEndTurn(); // P1: hold; D1 declares
+    Game.tbPlayerEndTurn(); // P2: hold; D2 ignites (beam fires, hasFired=true)
+    const deer = Game.tbFighter('m_0');
+    ok('it fired', deer.hasFired);
+    deer.hp = 30;
+    Game.tbDamage('m_0', 41, 'you');
+    ok('after first fire: dies like anything else', !Game.tbFighter('m_0').alive);
+    S_.combat.roll = realRoll;
+    Game.genDetail = realGen;
+    if (Game.tbfight) Game.tbEnd('fled');
+  }
+
+  // --- 16. de-bossed: no boss theater in player-facing text ---
+  {
+    const src = fs.readFileSync(path.join(ROOT, 'src/js/game.js'), 'utf8');
+    ok('old boss-gate message gone', !/won't go out/.test(src));
+    ok('no BOSS comments left', !/BOSS GATE|boss gate/i.test(src));
+    // player-facing strings: no "boss" anywhere outside comments
+    const noComments = src.replace(/^\s*\/\/.*$/gm, '');
+    const says = [...noComments.matchAll(/this\.(say|sysSay)\((`|'|")/g)].length;
+    ok('say/sysSay calls found for scan', says > 50);
+    const withBoss = [];
+    for (const m of noComments.matchAll(/this\.(say|sysSay)\(`([\s\S]*?)`\)/g)) {
+      if (/boss/i.test(m[2])) withBoss.push(m[2].slice(0, 60));
+    }
+    for (const m of noComments.matchAll(/this\.(say|sysSay)\('((?:[^'\\]|\\.)*)'\)/g)) {
+      if (/boss/i.test(m[2])) withBoss.push(m[2].slice(0, 60));
+    }
+    ok('no "boss" in player-facing game.js text', withBoss.length === 0);
   }
 
   console.log(`\n${pass} passed, ${fail} failed`);

@@ -2401,6 +2401,25 @@
         this.socialTick(vid);
         return { ok: true };
       }
+      if (topic === 'tellbeast') {
+        // You tell them what you saw out there. The news starts traveling —
+        // tell enough people (or let gossip work) and the village starts
+        // arguing about a name.
+        const cands = Object.entries(this.state.codex.monsters || {})
+          .filter(([id, e]) => e.reported && !e.namingKicked);
+        if (!cands.length) {
+          this.say(`${first} shrugs. "Seen what? It's been quiet out there."`);
+          return { ok: true };
+        }
+        const [mid, e] = cands[0];
+        const mdef = (this.data.monsters || []).find(m => m.id === mid) || {};
+        e.knowers = e.knowers || [];
+        if (!e.knowers.includes(vid)) e.knowers.push(vid);
+        this.say(`${first} goes still. "${mdef.unknown || 'That thing'}. You're sure." They'll tell the others — word travels fast around a fire.`);
+        this.socialTick(vid);
+        this.monsterNewsCheck(mid);
+        return { ok: true };
+      }
       if (topic === 'namebeast') {
         // The naming argument, up close. The player weighs in — backing a
         // name counts double. Social play, not a menu.
@@ -5284,13 +5303,29 @@
       const v = this.state.village;
       let totalKcal = 0, totalKg = 0, totalUnits = 0;
       const taken = [];
-      for (const [key, qty] of Object.entries(selections)) {
+      // WEIGHT BASE: snapshot carry weight BEFORE this pack. The loop mutates
+      // inventory/water as it goes, so rescanning mid-loop double-counts what
+      // was already taken (this call) — silently blocking water after food, or
+      // short-changing later food items. totalKg tracks only what THIS pack adds.
+      const baseKg = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0);
+      const baseWaterKg = this.waterWeight();
+      const max = this.carryCapacity();
+      const carryNow = () => baseKg + baseWaterKg + totalKg;
+      // INDEX STABILITY: fully taking an item splices it out of the pantry,
+      // which would shift the indexes of items handled later in the same pack.
+      // Handle food indexes in DESCENDING order (water last) so splices never
+      // invalidate a pending selection.
+      const entries = Object.entries(selections).sort((a, b) => {
+        const ai = a[0] === 'water' ? -1 : +a[0];
+        const bi = b[0] === 'water' ? -1 : +b[0];
+        return bi - ai;
+      });
+      for (const [key, qty] of entries) {
         // WATER: drawn from the village well, not the pantry shelves. Same UI, same pack.
         if (key === 'water') {
           const q = Math.min(qty, (v.water && v.water.clean) || 0);
           if (q <= 0) continue;
-          const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0) + this.waterWeight() + totalKg;
-          const max = this.carryCapacity();
+          const carry = carryNow();
           const canTake = Math.min(q, Math.floor(max - carry)); // 1L = 1kg
           if (canTake <= 0) { this.say('Too heavy for more water.'); continue; }
           v.water.clean -= canTake;
@@ -5304,8 +5339,7 @@
         if (q <= 0) continue;
         const item = pantry[idx];
         // weight check per item (running total)
-        const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0) + this.waterWeight() + totalKg;
-        const max = this.carryCapacity();
+        const carry = carryNow();
         const canTake = Math.min(q, Math.floor((max - carry) / (item.kg || 0.1)));
         if (canTake <= 0) { this.say(`Too heavy for more ${item.name}.`); continue; }
         item.units -= canTake;
@@ -5966,6 +6000,8 @@
       }
       // stories fade after ~3 days
       v.gossip = v.gossip.filter(g => (this.state.scholar.day - g.day) < 3);
+      // monster encounter reports travel the same social lines
+      try { this.spreadMonsterNews(); } catch (e2) {}
     },
     // talkReason: why THEY want to talk to YOU. Villagers initiate because
     // they heard something, want something, or are worried.
@@ -7506,14 +7542,58 @@
     },
     identifyMonster(mid) {
       // Face to face: the ambiguity does NOT end. You get a descriptor and a
-      // feeling — never the true name. The village names it, together, later.
+      // feeling — never the true name. The encounter becomes NEWS: the village
+      // starts arguing about a name only once the word spreads — you tell
+      // someone, gossip carries it, or someone else runs into one.
       const mdef = (this.data.monsters || []).find(m => m.id === mid);
       if (!mdef) return;
       const e = this.ensureMonsterEntry(mid);
-      if (!e.namingKicked) {
-        e.namingKicked = true;
-        this.say(`You don't know what that was. ${mdef.unknown || 'Something moving.'} The village will have opinions.`);
-        this.seedMonsterNames(mid);
+      if (e.reported) return;
+      e.reported = true;
+      e.knowers = [(this.state.scholar || {}).villagerId || 'player'];
+      this.say(`You don't know what that was. ${mdef.unknown || 'Something moving.'} Someone at the haven should hear about this.`);
+    },
+    // monsterTellActive: you have an encounter the village hasn't heard about.
+    monsterTellActive() {
+      return Object.values(this.state.codex.monsters || {}).some(e => e.reported && !e.namingKicked);
+    },
+    // kickMonsterNaming: the word is out — the argument starts.
+    kickMonsterNaming(mid) {
+      const e = this.ensureMonsterEntry(mid);
+      if (e.namingKicked) return;
+      e.namingKicked = true;
+      this.seedMonsterNames(mid);
+    },
+    // monsterNewsCheck: enough villagers know -> the naming debate begins.
+    monsterNewsCheck(mid) {
+      const e = (this.state.codex.monsters || {})[mid];
+      if (!e || e.namingKicked || !e.reported) return;
+      const knowers = new Set(e.knowers || []);
+      if (knowers.size >= 3) {
+        this.say('Word gets around the haven. Whatever that thing was — everyone\'s talking about it now.');
+        this.kickMonsterNaming(mid);
+      }
+    },
+    // spreadMonsterNews: knowers tell non-knowers, one hop per part, along
+    // social lines like any other gossip. The report travels; the argument
+    // follows.
+    spreadMonsterNews() {
+      const v = this.state.village;
+      for (const [mid, e] of Object.entries(this.state.codex.monsters || {})) {
+        if (!e.reported || e.namingKicked) continue;
+        const knowers = e.knowers = e.knowers || [];
+        let spread = false;
+        for (const teller of [...knowers]) {
+          if (teller === 'player') continue;
+          if (!(v.roster || []).includes(teller)) continue;
+          if (Math.random() > 0.3) continue;
+          const candidates = (v.roster || []).filter(id => id !== teller && !knowers.includes(id));
+          if (!candidates.length) continue;
+          const listener = candidates[Math.floor(Math.random() * candidates.length)];
+          knowers.push(listener);
+          spread = true;
+        }
+        if (spread) this.monsterNewsCheck(mid);
       }
     },
     // monsterNamingActive: is there a beast awaiting its village name?
@@ -9801,6 +9881,18 @@
       try {
         for (const mid of Object.keys(this.state.codex.monsters || {})) {
           const e = this.state.codex.monsters[mid];
+          // SOMEONE ELSE SAW IT: a forager comes back white-faced. The news
+          // spreads on its own — no need for you to tell anyone.
+          if (e.reported && !e.namingKicked && Math.random() < 0.15) {
+            const roster = ((this.state.village || {}).roster || []).filter(id => id !== (scholar || {}).villagerId);
+            const wit = roster[Math.floor(Math.random() * roster.length)];
+            if (wit && !(e.knowers || []).includes(wit)) {
+              e.knowers.push(wit);
+              const first = String(this.displayName(wit)).split(' ')[0];
+              this.say(`${first} came back from the treeline white-faced. Saw it too. Whatever it is, it's still out there.`);
+              this.monsterNewsCheck(mid);
+            }
+          }
           if (e.villageName || !e.namingKicked) continue;
           const roster = ((this.state.village || {}).roster || []).filter(id => id !== (scholar || {}).villagerId);
           for (const vid of roster) {
@@ -10041,6 +10133,7 @@
           hp, maxHp: hp, speed: mdef.speed || 3, mx: spot.x, my: spot.y,
           alive: true, fled: false, telegraph: null, mdef,
           hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
+          beamCooldown: 0, dwellTaught: false,
         });
       }
 
@@ -10179,40 +10272,64 @@
       return set;
     },
 
-    // One live-fire tick: the beam pivots toward its target (sweepSpeed),
-    // the lane is redrawn to the node's edge, everything it crosses is
-    // scorched, and exposure tiers decide the damage: in the lane hurts,
-    // the beam sitting ON you devastates, pinned with no escape is lethal.
+    // One live-fire tick: the beam is a ray EMANATING FROM THE DEER that
+    // ROTATES toward the player — it is not a free-floating chaser. Each tick
+    // the beam gets an angular sweep budget; it spends budget rotating to
+    // track the player, and UNSPENT budget becomes dwell damage: if you don't
+    // move, it doesn't have to sweep — so it sits the full beam on you.
+    // The lane redraws every tick from the deer's position along the angle.
     tbBeamSweepTick(m, tg) {
       const f = this.tbfight;
       if (!f) return;
       const pat = tg.pattern || {};
-      const speed = pat.sweepSpeed || 3;
+      const budget = pat.sweepRate || 0.65; // radians of rotation per fire tick
       const tgt = this.tbFighter(tg.aimKey || 'p');
-      if (tgt && tgt.alive) {
-        let ax = tg.aim.x, ay = tg.aim.y;
-        for (let i = 0; i < speed; i++) {
-          const dx = Math.sign(tgt.mx - ax), dy = Math.sign(tgt.my - ay);
-          if (dx === 0 && dy === 0) break;
-          ax += dx; ay += dy;
-        }
-        tg.aim = { x: Math.max(0, Math.min(8, ax)), y: Math.max(0, Math.min(8, ay)) };
+      if (typeof tg.angle !== 'number') {
+        const ax0 = (tg.aim ? tg.aim.x : m.mx) - m.mx, ay0 = (tg.aim ? tg.aim.y : m.my) - m.my;
+        tg.angle = Math.atan2(ay0, ax0);
       }
-      const r = this.tbBeamCells(m.mx, m.my, tg.aim.x, tg.aim.y, tg.dir);
+      let used = 0;
+      if (tgt && tgt.alive) {
+        const want = Math.atan2(tgt.my - m.my, tgt.mx - m.mx);
+        let d = want - tg.angle;
+        while (d > Math.PI) d -= 2 * Math.PI;
+        while (d < -Math.PI) d += 2 * Math.PI;
+        used = Math.max(-budget, Math.min(budget, d));
+        tg.angle += used;
+        // keep an aim point for audio/UI: the ray point at the target's range
+        const dist = Math.hypot(tgt.mx - m.mx, tgt.my - m.my);
+        tg.aim = { x: m.mx + Math.cos(tg.angle) * dist, y: m.my + Math.sin(tg.angle) * dist };
+      }
+      const unspent = Math.max(0, budget - Math.abs(used));
+      tg.dwell = unspent / budget; // 0..1 — how little it had to move to track you
+      // rasterize the ray FROM THE DEER along the angle, to the node edge
+      const far = 12;
+      const r = this.tbBeamCells(m.mx, m.my, m.mx + Math.cos(tg.angle) * far, m.my + Math.sin(tg.angle) * far, tg.dir);
       tg.cells = r.cells; tg.dir = r.dir;
       this.scorchCells(tg.cells);
       const laneSet = new Set(tg.cells.map(c => c.cx + ',' + c.cy));
-      let hitAnyone = false;
+      const cA = Math.cos(tg.angle), sA = Math.sin(tg.angle);
+      let hitAnyone = false, dwelledPlayer = false;
       for (const o of f.fighters) {
         if (!o.alive || o.fled || o.key === m.key) continue;
         if (!S.combat.isFoe(m, o)) continue;
         if (!laneSet.has(o.mx + ',' + o.my)) continue;
         hitAnyone = true;
-        const onAim = Math.max(Math.abs(o.mx - tg.aim.x), Math.abs(o.my - tg.aim.y)) === 0;
-        const trapped = onAim && !this.tbHasEscape(o, laneSet);
+        // ON THE RAY: perpendicular distance from the fighter to the beam ray
+        const pdx = o.mx - m.mx, pdy = o.my - m.my;
+        const along = pdx * cA + pdy * sA;
+        const perp = Math.abs(pdx * sA - pdy * cA);
+        const onBeam = along > 0 && perp < 0.75;
+        const trapped = onBeam && !this.tbHasEscape(o, laneSet);
         let mult = 1, verb;
         if (trapped) { mult = 3.5; verb = 'nowhere to run — the full beam PINS'; }
-        else if (onAim) { mult = 2.5; verb = 'the beam SITS on'; }
+        else if (onBeam) {
+          // DWELL: every radian it didn't have to spend tracking you, it
+          // spends burning you. Stand still: mult up to 3.5. Make it chase: 2.5.
+          mult = 2.5 + (tg.dwell || 0);
+          verb = (tg.dwell || 0) > 0.6 ? "the beam doesn't need to sweep — it SITS on" : 'the beam SITS on';
+          if (o.kind === 'player' && (tg.dwell || 0) > 0.6) dwelledPlayer = true;
+        }
         else { verb = 'the beam rakes across'; }
         const dmg = Math.round(S.combat.roll(tg.dmg) * mult);
         const who = o.kind === 'player' ? 'you' : o.name;
@@ -10220,18 +10337,17 @@
         this.tbDamage(o.key, dmg, m.name + "'s " + tg.attackName);
         if (f.over) return;
       }
-      // ANTLER SWEEP (close range): closing in to disrupt is risky.
-      for (const o of f.fighters) {
-        if (!o.alive || o.fled || o.key === m.key) continue;
-        if (!S.combat.isFoe(m, o)) continue;
-        if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
-        const d = S.combat.roll([10, 16]);
-        const who = o.kind === 'player' ? 'you' : o.name;
-        this.say(`The ${m.name} thrashes its antlers at ${who} — getting close has a price. (${d})`);
-        this.tbDamage(o.key, d, m.name + "'s antlers");
-        if (f.over) return;
+      // TEACH THE TRADE: move and it chases (less burn); stand still and it parks.
+      if (dwelledPlayer && !m.dwellTaught) {
+        m.dwellTaught = true;
+        this.say('It barely had to move to track you. MOVE and the beam has to chase — stand still and it parks the full beam on you.');
       }
-      if (!hitAnyone) this.say('The beam sweeps on, scorching the earth where you were.');
+      if (!hitAnyone) {
+        if ((tg.dwell || 0) > 0.6) this.say('The beam holds its line, burning where you were. It did not have to move at all.');
+        else this.say('The beam swings wide, scorching the earth where you were.');
+      }
+      // ANTLER SWEEP (close range): closing in to disrupt is risky.
+      if (this.tbAntlerThrash(m)) return;
       // AUDIO: the hum hunts with the beam — pan follows it across the stereo
       // field, heat rises as the aim closes in on the player.
       try {
@@ -10244,6 +10360,23 @@
           });
         }
       } catch (e) {}
+    },
+
+    // ANTLER THRASH: closing in is risky at any point in the fight.
+    tbAntlerThrash(m) {
+      const f = this.tbfight;
+      if (!f) return false;
+      for (const o of f.fighters) {
+        if (!o.alive || o.fled || o.key === m.key) continue;
+        if (!S.combat.isFoe(m, o)) continue;
+        if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
+        const d = S.combat.roll([10, 16]);
+        const who = o.kind === 'player' ? 'you' : o.name;
+        this.say(`The ${m.name} thrashes its antlers at ${who} — getting close has a price. (${d})`);
+        this.tbDamage(o.key, d, m.name + "'s antlers");
+        if (f.over) return true;
+      }
+      return f.over;
     },
 
     // tbHasEscape: can this fighter reach any cell outside the lane within
@@ -10313,7 +10446,7 @@
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
       if (tg && tg.firing > 0) {
-        let cue = 'The beam is LIVE and sweeping toward you! Outrun it sideways — never down the lane — or get behind something solid!';
+        let cue = 'The beam is LIVE — a ray from its eyes, swinging toward you! Circle it wide or get behind something solid — and keep moving. If it doesn\'t have to chase you, it sits the full beam on you.';
         if (this.tbPatternKnown(m.mdef.id, atk.name)) {
           cue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
         }
@@ -10613,13 +10746,17 @@
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
       }
-      // BOSS GATE: a sweeping-beam monster refuses to fall before its first
-      // Discharge. Burst damage can't skip the fight — the beam WILL fire.
-      // (Gate lifts the moment the beam goes live.)
+      // THE LIGHT IS ALREADY GATHERED: once a sweeping-beam monster has begun
+      // its windup, the charge lives in its eyes, not its body. Killing the
+      // body doesn't un-gather the light — lethal damage during the windup
+      // holds it at 1 HP, and the beam fires from its death throes. After
+      // the first Discharge the light is spent: then it's just meat that
+      // shines, and it dies like anything else.
       const tPat = t.kind === 'monster' && t.mdef && t.mdef.attack && t.mdef.attack.pattern;
-      if (tPat && tPat.sweep && !t.hasFired && t.hp > 0 && t.hp - final <= 0) {
+      const windingUp = t.telegraph && !t.hasFired;
+      if (tPat && tPat.sweep && windingUp && t.hp > 0 && t.hp - final <= 0) {
         final = t.hp - 1;
-        this.say(`It should be dead — but the light in ${t.name}'s eyes won't go out. Not before it fires.`);
+        this.say(`It should drop — but the light behind ${t.name}'s eyes is already gathered. The body won't fall until it fires.`);
       }
       t.hp -= final;
       if (t.kind === 'player') {
@@ -10679,7 +10816,29 @@
           try { this.addTrauma(this.traumaForKill(t.villagerId)); } catch (e) {}
           try { this.villageEvent('murder', { victim: t.villagerId }); } catch (e) {}
         }
-        else { this.say(`The ${t.name} falls.`); if (/highbeam/i.test(t.name || '')) this.audioEvent('deerDown'); }
+        else {
+          this.say(`The ${t.name} falls.`);
+          if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
+          // DEATH THROES: a sweeping-beam monster cut down before its first
+          // Discharge fires anyway — the light was already in its eyes. The
+          // beam lances out as the body falls. (After the first Discharge the
+          // light is spent; then it dies quiet, like anything else.)
+          const dtPat = t.mdef && t.mdef.attack && t.mdef.attack.pattern;
+          if (dtPat && dtPat.sweep && !t.hasFired && this.tbfight && !this.tbfight.over) {
+            this.say(`You cut it down — but the light was already in its eyes. ${t.name}'s death throes loose the beam.`);
+            const tgt = this.tbFighter('p');
+            const throe = {
+              kind: 'squares', cells: [], dmg: (t.mdef.attack || {}).damage,
+              attackName: (t.mdef.attack || {}).name, pattern: dtPat,
+              aim: tgt ? { x: tgt.mx, y: tgt.my } : { x: t.mx, y: t.my + 1 },
+              aimKey: 'p', angle: tgt ? Math.atan2(tgt.my - t.my, tgt.mx - t.mx) : Math.PI / 2,
+              firing: 1, dwell: 1,
+            };
+            t.hasFired = true;
+            this.tbBeamSweepTick(t, throe);
+            this.audioEvent('impact', { beam: true, highbeam: true });
+          }
+        }
       }
     },
 
@@ -10777,9 +10936,12 @@
           tg.firing -= 1;
           if (tg.firing <= 0) {
             m.telegraph = null;
+            // COOLDOWN: the deer is spent. It needs a breather before it can
+            // gather the light again — your window to act.
+            m.beamCooldown = (tg.pattern || {}).cooldownTurns || 2;
             this.tbLearnPattern(m);
             this.audioEvent('beamSweepStop');
-            this.say(`The beam gutters out. ${m.name} blinks — and the light starts gathering again.`);
+            this.say(`The beam gutters out. ${m.name} sags — the light behind its eyes dims to embers. It needs a moment.`);
           }
           this.tbRefreshTelegraphUI();
           if (this.tbEndCheck()) return;
@@ -10799,13 +10961,14 @@
           tg.aim = tg.aim || { x: p0 ? p0.mx : m.mx, y: p0 ? p0.my : m.my };
           tg.aimKey = tg.aimKey || 'p';
           tg.firing = (tg.pattern || {}).fireTurns || 2;
-          m.hasFired = true; // the boss gate lifts — it got its shot off
-          this.say(`💥 ${tg.attackName}! The beam is LIVE — and it's sweeping toward you. MOVE.`);
+          m.hasFired = true; // the light is spent — after this, it's just meat that shines
+          this.say(`💥 ${tg.attackName}! A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE.`);
           this.audioEvent('impact', { beam: (tg.pattern || {}).type === 'beam', highbeam: /highbeam/i.test(m.name || '') });
           this.tbBeamSweepTick(m, tg);
           tg.firing -= 1;
           if (tg.firing <= 0) {
             m.telegraph = null;
+            m.beamCooldown = (tg.pattern || {}).cooldownTurns || 2;
             this.tbLearnPattern(m);
           }
           this.tbRefreshTelegraphUI();
@@ -10895,6 +11058,28 @@
       const foe = S.combat.nearestEnemy(f.fighters, m);
       if (!foe) return;
       const pat = (m.mdef.attack && m.mdef.attack.pattern) || { type: 'burst', radius: 1 };
+      // BEAM COOLDOWN: after a Discharge the deer is spent — the light is
+      // embers, not a weapon. It stalks and catches its breath; it cannot
+      // fire again yet. This is your window: close in, reposition, or run.
+      if (pat.sweep && (m.beamCooldown || 0) > 0) {
+        m.beamCooldown -= 1;
+        const bd = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
+        if (bd <= 1) {
+          if (this.tbAntlerThrash(m)) return;
+        } else {
+          const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
+          const danger = this.tbDangerCells(m.key);
+          for (let i = 0; i < (m.speed || 3); i++) {
+            const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+            if (!s) break;
+            m.mx = s.x; m.my = s.y;
+          }
+          this.say(`The ${m.name} circles, light dim behind its eyes. It's gathering itself — not yet.`);
+        }
+        this.tbRefreshTelegraphUI();
+        this.tbEndCheck();
+        return;
+      }
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
@@ -10951,15 +11136,17 @@
         }
       } else {
         let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
-        let aim = null, bdir = null, aimKey = null;
+        let aim = null, bdir = null, aimKey = null, bang = null;
         if (pat.sweep && (pat.type === 'beam' || pat.type === 'line')) {
-          // SWEEPING BEAM: locks onto its target's position at declare, then
-          // tracks while it fires. Only walls and real structures stop it —
-          // trees shred, and it travels to the edge of the node.
-          // (Fighters never block: the beam goes through them. That's the point.)
+          // SWEEPING BEAM: a ray FROM THE DEER that rotates toward you. It
+          // locks its bearing at declare, then sweeps while it fires. Only
+          // walls and real structures stop it — trees shred, and it travels
+          // to the edge of the node. (Fighters never block: the beam goes
+          // through them. That's the point.)
           const r = this.tbBeamCells(m.mx, m.my, foe.f.mx, foe.f.my);
           cells = r.cells; bdir = r.dir;
           aim = { x: foe.f.mx, y: foe.f.my }; aimKey = foe.f.key;
+          bang = Math.atan2(foe.f.my - m.my, foe.f.mx - m.mx);
         } else if (pat.type === 'beam' || pat.type === 'line') {
           // BEAM/LINE: trees and rocks block the shot. The lane ends at the
           // first blocking terrain — break line of sight, break the beam.
@@ -10977,7 +11164,7 @@
         m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
           attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
           threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
-          aim, dir: bdir, aimKey, firing: 0 };
+          aim, dir: bdir, aimKey, angle: bang, firing: 0 };
         // WITNESS: seeing it wind up teaches you its attack. The codex notes
         // the behavior — never the true name, never numbers.
         try {
@@ -11159,6 +11346,8 @@
       const s = this.state.scholar;
       // One-time migration: the old separate reserve pool folds into the bar.
       if (this.migrateReserve) this.migrateReserve();
+      // One-time migration: old per-species unfamiliar piles fold into lumps.
+      if (this.migrateLumps) this.migrateLumps();
       return {
         day: s.day, dayPart: DAY_PARTS[this.dayPart], dayPartHint: DAY_PART_HINT[DAY_PARTS[this.dayPart]],
         // ACTION CLOCK: ticks for the UI day-timer. 512 ticks = the full day.

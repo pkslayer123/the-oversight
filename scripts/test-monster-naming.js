@@ -41,16 +41,38 @@ function freshGame() {
   ok('no true name leaked', !/Highbeam/i.test(disp0) && !/deer/i.test(disp0));
   ok('descriptor has no "deer"', !/deer/i.test(Game.data.monsters.find(m => m.id === 'gallowdeer').unknown));
 
-  // --- 2. identifyMonster: no true name, naming kicks off ---
+  // --- 2. identifyMonster: encounter is NEWS — naming does NOT kick off ---
   Game.identifyMonster('gallowdeer');
   const e = Game.state.codex.monsters.gallowdeer;
   ok('entry created at encountered', e && e.stage === 'encountered');
-  ok('naming kicked off', !!e.namingKicked);
-  ok('villagers proposed names', Object.keys(e.proposals).length >= 3);
-  const names = Object.values(e.proposals);
+  ok('naming NOT kicked on encounter', !e.namingKicked);
+  ok('no proposals yet', Object.keys(e.proposals || {}).length === 0);
+  ok('player is a knower', (e.knowers || []).includes(Game.state.scholar.villagerId));
+  ok('true name not in the log', !Game.log.some(l => /Highbeam Deer/.test(l)));
+
+  // --- 2b. telling spreads the news; once 3 villagers know, the debate kicks off ---
+  const roster0 = Game.state.village.roster.filter(id => id !== Game.state.scholar.villagerId);
+  Game.askAbout(roster0[0], 'tellbeast');
+  ok('told villager becomes a knower', (Game.state.codex.monsters.gallowdeer.knowers || []).includes(roster0[0]));
+  ok('still no naming with 2 knowers', !Game.state.codex.monsters.gallowdeer.namingKicked);
+  Game.askAbout(roster0[1], 'tellbeast');
+  const e2b = Game.state.codex.monsters.gallowdeer;
+  ok('naming kicked once word spreads (3 knowers)', !!e2b.namingKicked);
+  ok('villagers proposed names', Object.keys(e2b.proposals).length >= 3);
+  const names = Object.values(e2b.proposals);
   ok('names from the curated silly list', names.every(n =>
     ['Headlight Harry', 'The Bright Bastard', 'Sir Blinds-A-Lot', 'Captain Bright-Eyes', 'Old Stare', 'The Glow Stag'].includes(n)));
-  ok('true name not in the log', !Game.log.some(l => /Highbeam Deer/.test(l)));
+
+  // --- 2c. gossip carries the report: tell one, the village tells the rest ---
+  freshGame();
+  Game.identifyMonster('gallowdeer');
+  const roster2c = Game.state.village.roster.filter(id => id !== Game.state.scholar.villagerId);
+  Game.askAbout(roster2c[0], 'tellbeast');
+  const e2c = Game.state.codex.monsters.gallowdeer;
+  ok('not kicked with 2 knowers', !e2c.namingKicked);
+  let kicked = false;
+  for (let i = 0; i < 40 && !kicked; i++) { Game.spreadMonsterNews(); kicked = !!e2c.namingKicked; }
+  ok('gossip spread the news to a 3rd villager — debate kicked off', kicked);
 
   // --- 3. threat sense: vague, no numbers ---
   const mdef = Game.data.monsters.find(m => m.id === 'gallowdeer');
@@ -59,7 +81,7 @@ function freshGame() {
 
   // --- 4. HP sense: locked before 3 rounds, tiers after ---
   ok('hp sense null before 3 rounds', Game.monsterHpSense({ mdef, hp: 10, maxHp: 100 }) === null);
-  e.roundsSeen = 3;
+  Game.state.codex.monsters.gallowdeer.roundsSeen = 3;
   eq2('hp tiers', [
     Game.monsterHpSense({ mdef, hp: 90, maxHp: 100 }),
     Game.monsterHpSense({ mdef, hp: 60, maxHp: 100 }),
@@ -70,7 +92,12 @@ function freshGame() {
   // --- 5. player backing converges the village ---
   freshGame();
   Game.identifyMonster('gallowdeer');
+  // tell two villagers so the debate kicks off via the news mechanic
+  const roster5 = Game.state.village.roster.filter(id => id !== Game.state.scholar.villagerId);
+  Game.askAbout(roster5[0], 'tellbeast');
+  Game.askAbout(roster5[1], 'tellbeast');
   const e2 = Game.state.codex.monsters.gallowdeer;
+  ok('debate kicked off by telling', !!e2.namingKicked);
   // back the most-proposed name to force convergence
   const tally = {};
   for (const n of Object.values(e2.proposals)) tally[n] = (tally[n] || 0) + 1;

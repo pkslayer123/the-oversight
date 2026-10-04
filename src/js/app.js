@@ -2018,11 +2018,13 @@
     const dname = Game.displayName(villagerId);
     const goalKnown = Game.goalKnown(villagerId);
     const namingActive = Game.monsterNamingActive ? Game.monsterNamingActive() : false;
+    const tellActive = Game.monsterTellActive ? Game.monsterTellActive() : false;
     const topics = [
       ['goal', '\u{1F3AF} "What do you want?"', goalKnown ? ' (you know: ' + (Game.goalWant(villagerId) || '?') + ')' : ''],
       ['gossip', '\u{1F442} "Heard anything?"', ''],
       ['village', '\u{1F3D5}\uFE0F "How\u2019s everyone?"', ''],
     ];
+    if (tellActive) topics.push(['tellbeast', '\u{1F441}\uFE0F "You saw something out there..."', '']);
     if (namingActive) topics.push(['namebeast', '\u{1F4A1} "What are we calling that thing?"', '']);
     const btns = topics.map(([tid, label, extra]) =>
       `<button class="btn sm ghost" data-topic="${tid}">${label}${extra}</button>`).join('') +
@@ -2041,7 +2043,7 @@
     slot.querySelectorAll('[data-topic]').forEach(b => {
       b.onclick = () => {
         const r = Game.askAbout(villagerId, b.dataset.topic);
-        const labels = { goal: 'what they want', gossip: 'what they\u2019ve heard', village: 'how everyone\u2019s doing', namebeast: 'what to call the beast' };
+        const labels = { goal: 'what they want', gossip: 'what they\u2019ve heard', village: 'how everyone\u2019s doing', namebeast: 'what to call the beast', tellbeast: 'what you saw out there' };
         view.result = r ? `You asked about ${labels[b.dataset.topic] || 'it'}.` : null;
         view.naming = r && r.naming ? r.naming : null;
         refresh();

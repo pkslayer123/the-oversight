@@ -152,7 +152,8 @@
     "windup": 1,
     "sweep": true,
     "fireTurns": 2,
-    "sweepSpeed": 3
+    "sweepRate": 0.65,
+    "cooldownTurns": 2
    }
   },
   "weaknesses": [
