@@ -309,7 +309,11 @@
       // twelve people didn't settle on barren ground, and the first lesson shouldn't be a bad map roll.
       const doors = [[2, 3], [4, 3], [3, 2], [3, 4]];
       const door = doors[Math.floor(Math.random() * doors.length)];
-      if (tiles[door[1]][door[0]].type !== 'ruin') tiles[door[1]][door[0]].type = 'grove';
+      if (tiles[door[1]][door[0]].type !== 'ruin') {
+        tiles[door[1]][door[0]].type = 'grove';
+        // breadbasket is safety, not sufficiency: stock 2, not 3. a full day's work means ranging out.
+        tiles[door[1]][door[0]].maxStock = 2; tiles[door[1]][door[0]].stock = 2;
+      }
       // Haven is a tile, not a separate screen. home is a place you walk to.
       tiles[3][3].type = 'haven';
       tiles[3][3].stock = 0; tiles[3][3].maxStock = 0;
@@ -629,11 +633,14 @@
           if (Object.keys(this.state.codex.plants).length === 4)
             this.say('SYSTEM: Journal designated CODEX. Four entries. What you write, the village keeps.');
         }
-        // discovery labels the place: the FIRST thing you found here is what the map remembers.
+        // discovery labels the place: the map remembers your BEST find here, not just the first.
         // the land's "why" comes after you've found something, not before.
-        if (!t.knownPlant) {
+        const prevBest = t.knownPlant ? this.data.plants.find(p => p.id === t.knownPlant) : null;
+        if (!t.knownPlant || (r.plant.caloriesPerUnit > (prevBest ? prevBest.caloriesPerUnit : 0))) {
+          const isNew = !t.knownPlant;
           t.knownPlant = r.plantId; t.bountyKnown = true;
-          if (bounty && bounty.why) this.say(`Journal: ${bounty.why}`);
+          if (isNew && bounty && bounty.why) this.say(`Journal: ${bounty.why}`);
+          else if (!isNew) this.say(`Journal updated: ${r.plant.name} grows here too — better than ${prevBest.name.toLowerCase()}.`);
         }
         scholar.inventory.push({ plantId: r.plantId, units: r.units, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
         scholar.kcal -= S.calories.ACTION_COSTS.forage;

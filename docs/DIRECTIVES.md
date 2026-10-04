@@ -38,3 +38,4 @@ Verbatim-ish record of Steve's explicit instructions. These don't expire. When i
 ## ChangePilot
 - Consequential account, authorization, production, deployment, and repo actions require explicit approval.
 - Do not nag about production authorization (state the blocker once per genuine state change).
+- The detail grid is the world: 9x9 cells per tile, edges blend into neighbors, walking feels continuous. Big features can straddle boundaries.
