@@ -105,6 +105,47 @@
       return line;
     },
 
+    // integration: the System is learning you. you are learning it.
+    // 0-20: journal (paper, handwriting). 20-40: system messages. 40-60: quests.
+    // 60-80: codex/inventory overlay. 80+: full neural integration.
+    integrate(amount, reason) {
+      const s = this.state.scholar;
+      s.integration = Math.min(100, (s.integration || 5) + amount);
+      const thresholds = [20, 40, 60, 80];
+      for (const t of thresholds) {
+        if (s.integration >= t && (s.lastIntegration || 0) < t) {
+          s.lastIntegration = t;
+          const msgs = {
+            20: 'SYSTEM: Neural interface stable. Text overlay enabled.',
+            40: 'SYSTEM: Quest protocol integrated. Objectives will appear.',
+            60: 'SYSTEM: Codex and inventory overlay online.',
+            80: 'SYSTEM: Deep integration. You see the world through us now.',
+          };
+          this.say(msgs[t]);
+        }
+      }
+      if (reason) this.tele('integrate', { amount, reason, total: Math.round(s.integration) });
+    },
+
+    // village quests: the people ask. light, passive, human.
+    // (System quests come at integration 40+ — the overlay takes over.)
+    maybeOfferQuest() {
+      const s = this.state.scholar;
+      if (s.activeQuest || (s.integration || 0) >= 40) return;
+      if (Math.random() > 0.25) return;
+      const mains = this.data.villagers.filter(v => v.id !== this.villagerId);
+      const giver = mains[Math.floor(Math.random() * mains.length)];
+      const quests = [
+        { type: 'bring', plant: 'dandelion', qty: 3, reward: 'pantry', text: `${giver.name.split(' ')[0]} needs ${3} dandelion. "For tea. For morale. For reasons."` },
+        { type: 'visit', tileType: 'creek', reward: 'knowledge', text: `${giver.name.split(' ')[0]} wants to know what's by the creek. "Just look. Come back and tell me."` },
+        { type: 'bring', plant: 'blackberry', qty: 2, reward: 'item', text: `${giver.name.split(' ')[0]} is craving blackberries. "I'll trade you something good."` },
+      ];
+      const q = quests[Math.floor(Math.random() * quests.length)];
+      q.giver = giver.id; q.giverName = giver.name.split(' ')[0];
+      s.activeQuest = q;
+      this.say(`📋 ${q.text}`);
+    },
+
     getQuest() {
       // the intro: a random main (not you) wakes you up. Mara isn't the only one with the speech.
       if (this.state.questGiven) return null;
@@ -451,6 +492,8 @@
       this.say(msg);
       if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
+      this.checkQuest('travel');
+      this.maybeOfferQuest();
       // travel consumes the day-part — time passes, no separate "end part" tap
       return this.endDayPart();
     },
@@ -651,6 +694,7 @@
         if (!this.canCarry(kg)) { t.stock += 1; this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
         if (r.firstFind) {
           this.state.codex.plants[r.plantId] = { identifiedDay: scholar.day };
+          this.integrate(3, 'discovery');
           // the journal becomes a CODEX at four entries — the System notices, names it.
           if (Object.keys(this.state.codex.plants).length === 4)
             this.say('SYSTEM: Journal designated CODEX. Four entries. What you write, the village keeps.');
@@ -683,8 +727,46 @@
         msg = 'You boil water over a small fire. +2 clean water.';
       }
       this.say(msg);
+      this.checkQuest(kind);
+      this.maybeOfferQuest();
       // the action took the day-part — time passes, no separate "end part" tap
       return this.endDayPart();
+    },
+
+    checkQuest(kind) {
+      const q = this.state.scholar.activeQuest;
+      if (!q) return;
+      if (q.type === 'bring' && kind === 'forage') {
+        const has = this.state.scholar.inventory.filter(i => i.plantId === q.plant).reduce((t, i) => t + i.units, 0);
+        if (has >= q.qty) {
+          // turn in: remove from inventory, give reward
+          let need = q.qty;
+          for (const item of this.state.scholar.inventory) {
+            if (item.plantId === q.plant && need > 0) {
+              const take = Math.min(item.units, need);
+              item.units -= take; need -= take;
+            }
+          }
+          this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
+          this.state.scholar.activeQuest = null;
+          if (q.reward === 'pantry') {
+            this.state.village.pantryKcal += 500;
+            this.say(`✅ ${q.giverName} takes the ${q.plant}. "+500 kcal to the pantry. You're good people."`);
+          } else if (q.reward === 'knowledge') {
+            this.integrate(5, 'quest');
+            this.say(`✅ ${q.giverName} listens carefully. You understand the land a little better. (+integration)`);
+          } else {
+            this.say(`✅ ${q.giverName} grins. "Pleasure doing business." (The barter economy grows.)`);
+            this.integrate(2, 'barter');
+          }
+        }
+      } else if (q.type === 'visit' && kind === 'travel') {
+        if (this.playerTile().type === q.tileType) {
+          this.state.scholar.activeQuest = null;
+          this.integrate(5, 'quest');
+          this.say(`✅ You saw the ${q.tileType}. ${q.giverName} nods. "Good. Now we know." (+integration)`);
+        }
+      }
     },
 
     // --- free minors ---
@@ -742,6 +824,47 @@
       return this.status();
     },
 
+    // village lives: the others aren't waiting. each day, 1-2 villagers do something.
+    // they forage, they get hurt, they find things. they discover along with you.
+    villageLives() {
+      const v = this.state.village;
+      if (!v.roster) return;
+      const bg = v.roster.filter(id => !this.data.villagers.find(m => m.id === id));
+      if (!bg.length) return;
+      const n = 1 + (Math.random() < 0.4 ? 1 : 0);
+      for (let i = 0; i < n; i++) {
+        const id = bg[Math.floor(Math.random() * bg.length)];
+        const person = this.data.background_survivors.find(p => p.id === id);
+        if (!person) continue;
+        const first = person.name.split(' ')[0];
+        const r = Math.random();
+        if (r < 0.35) {
+          // brings food
+          const kcal = 100 + Math.floor(Math.random() * 200);
+          v.pantryKcal += kcal;
+          this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
+        } else if (r < 0.5) {
+          // wounded
+          this.say(`${first} is hurt — a fall, a thorn, a bad step. ${person.line}`);
+          v.wounded = v.wounded || {};
+          v.wounded[id] = (v.wounded[id] || 0) + 1;
+        } else if (r < 0.65) {
+          // discovers something (adds to codex if new!)
+          const undiscovered = this.data.plants.filter(p => !this.state.codex.plants[p.id]);
+          if (undiscovered.length && Math.random() < 0.3) {
+            const p = undiscovered[Math.floor(Math.random() * undiscovered.length)];
+            this.state.codex.plants[p.id] = { identifiedDay: this.state.scholar.day, by: first };
+            this.say(`${first} found ${p.name}! They brought you a sample. The ${this.journalName()} grows.`);
+          } else {
+            this.say(`${first}: "${person.line}"`);
+          }
+        } else {
+          // barter/economy flavor
+          this.say(`${first} traded something with someone for something else. The barter economy stirs.`);
+        }
+      }
+    },
+
     // village metabolism: every mouth eats, a few hands provide. the rates add up.
     // expeditions are open-ended — the pantry clock is the arc, not a timer.
     villageEats() {
@@ -779,6 +902,7 @@
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
       // the village eats whether you're there or not — every day you're out, twelve mouths
+      this.villageLives();
       this.villageEats();
       if (this.villageLost) { return this.status(); } // no home to return to
       if (this.over) { this.returnToVillage(); return this.status(); }
@@ -858,6 +982,8 @@
         villageGive: Math.round(this.state.village.lastGive || 0),
         villageProviders: this.state.village.lastProviders || [],
         rosterCount: (this.state.village.roster || []).length,
+        integration: Math.round(this.state.scholar.integration || 5),
+        activeQuest: this.state.scholar.activeQuest || null,
         hungryDays: this.state.village.hungryDays || 0,
         packKg: Math.round(this.packWeight() * 10) / 10,
         packCap: this.packCapacity(),

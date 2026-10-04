@@ -17,7 +17,7 @@
 
   function newScholar(villagerId) {
     return {
-      villagerId, day: 1, ap: 4,
+      villagerId, day: 1, ap: 4, integration: 5, lastIntegration: 0,
       health: 100, kcal: 2200, hydration: 100, energy: 100,
       abilities: [], // ability ids (max 6)
       relics: [],    // {itemId, bond}

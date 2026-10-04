@@ -26,7 +26,8 @@
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
       statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
       statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
-      statRow('WATER', st.hydration + '% · ' + st.water + ' clean', st.hydration, st.hydration < 30);
+      statRow('WATER', st.hydration + '% · ' + st.water + ' clean', st.hydration, st.hydration < 30) +
+      statRow('SYSTEM', st.integration + '% integrated', st.integration, false);
   }
 
   // ---------- title ----------
@@ -178,6 +179,7 @@
       <p class="small">${st.dayPartHint}</p>
       ${statusBars(st)}
       <p class="small">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
+      ${st.activeQuest ? `<p class="small" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
       <div class="detail">${renderDetail(st)}</div>
       <div id="tileinfo"></div>
       <p class="small">🗺 travel — tap a highlighted tile (1 part · 30 kcal/tile)</p>
