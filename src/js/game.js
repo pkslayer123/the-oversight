@@ -79,7 +79,7 @@
         ohio: ['school', 'warehouse', 'church'],
         // other locations get their own pools as they're built
       };
-      const bpool = buildingPools[this.state.scholar.home] || ['school', 'warehouse'];
+      const bpool = buildingPools[homeRegion] || ['school', 'warehouse'];
       const buildingType = bpool[Math.floor(Math.random() * bpool.length)];
       this.state.village.buildingType = buildingType;
       const buildingNames = {
@@ -570,6 +570,18 @@
         cells[by + 1][bx] = 'bigtree'; cells[by + 1][bx + 1] = 'bigtree';
       }
       t.detail = cells;
+      // STOCK FROM THE WORLD: count forageable cells. what exists is what you can take.
+      // no abstract numbers. the grid is the inventory.
+      const FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
+      let count = 0;
+      for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
+        if (FORAGEABLE[cells[cy][cx]]) count++;
+      }
+      // the world is the truth: detail count overrides abstract map stock.
+      // but don't reset if we've already depleted (stock < maxStock means we've been here).
+      if (t.stock === undefined || t.stock === t.maxStock) {
+        t.maxStock = count; t.stock = count;
+      }
       return cells;
     },
 
@@ -624,17 +636,54 @@
       const dx = Math.abs(cx - px), dy = Math.abs(cy - py);
       if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) return false;
       if (cx < 0 || cx > 8 || cy < 0 || cy > 8) return false;
-      // the world is physical. walls, water, big trees, tents, fire: you can't walk through.
-      // rubble is difficult (20 kcal). everything else is 10.
-      const BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
+      // INTERACTION MODEL: the world is physical and consistent.
+      // blocks: you can't walk through. interact: what you can do from adjacent.
+      // tree blocks AND feeds (nuts). water blocks AND quenches. wall just blocks.
+      const CELL_PROPS = {
+        wall: { blocks: 1 }, water: { blocks: 1, interact: 'drink' },
+        bigtree: { blocks: 1, interact: 'forage' }, tree: { blocks: 1, interact: 'forage' },
+        bush: { interact: 'forage' }, plant: { interact: 'forage' },
+        tent: { blocks: 1, interact: 'rest' }, fire: { blocks: 1, interact: 'cook' },
+        rubble: { interact: 'scavenge', cost: 20 },
+        bridge: {}, door: {}, gym: {}, class: {}, hall: {}, office: {},
+        bay: {}, dock: {}, sanct: {}, base: {}, grass: {}, dirt: {},
+      };
       const detail = this.genDetail(this.map.px, this.map.py);
       const cell = detail[cy] && detail[cy][cx];
-      if (BLOCKS[cell]) return false;
-      const cost = (cell === 'rubble') ? 20 : 10;
+      const props = CELL_PROPS[cell] || {};
+      if (props.blocks) return false; // can't walk through, but might interact (see cellInteract)
+      const cost = props.cost || 10;
       s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
       this.monsterTurn();
       return true;
+    },
+
+    // cellInteract: tap a blocking-but-interactable cell to USE it.
+    // tree -> forage nuts. water -> drink. tent -> rest. fire -> cook.
+    cellInteract(cx, cy) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[cy] && detail[cy][cx];
+      const CELL_PROPS = {
+        wall: { blocks: 1 }, water: { blocks: 1, interact: 'drink' },
+        bigtree: { blocks: 1, interact: 'forage' }, tree: { blocks: 1, interact: 'forage' },
+        bush: { interact: 'forage' }, plant: { interact: 'forage' },
+        tent: { blocks: 1, interact: 'rest' }, fire: { blocks: 1, interact: 'cook' },
+        rubble: { interact: 'scavenge', cost: 20 },
+      };
+      const props = CELL_PROPS[cell] || {};
+      if (!props.interact) return null;
+      // must be adjacent (or on it, for non-blocking)
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
+      if (dist > 1) { this.say('Too far. Step closer.'); return null; }
+      const action = props.interact;
+      if (action === 'drink') return this.doAction('drink');
+      if (action === 'forage') return this.doAction('forage');
+      if (action === 'rest') return this.doAction('rest');
+      if (action === 'cook') { this.say('You warm your hands. The fire pops. (Cooking coming soon.)'); return true; }
+      if (action === 'scavenge') return this.doAction('forage'); // rubble scavenges like forage
+      return null;
     },
 
     // monsters move when you do. they're in the detail grid with you.
@@ -837,16 +886,19 @@
         const mx = scholar.mx ?? 4, my = scholar.my ?? 4;
         const detail = this.genDetail(this.map.px, this.map.py);
         let plantCell = null;
-        // check your cell and adjacent
+        // check your cell and adjacent for anything forageable: plant, bush, tree, bigtree.
+        // trees feed you (nuts). bushes feed you (berries). you don't walk through them, you take from them.
+        const FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
         for (let dy = -1; dy <= 1 && !plantCell; dy++) {
           for (let dx = -1; dx <= 1 && !plantCell; dx++) {
             const cx = mx + dx, cy = my + dy;
             if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
-            if (detail[cy] && detail[cy][cx] === 'plant') plantCell = { x: cx, y: cy };
+            const c = detail[cy] && detail[cy][cx];
+            if (FORAGEABLE[c]) plantCell = { x: cx, y: cy, cell: c };
           }
         }
         if (!plantCell && t.type !== 'ruin') {
-          this.say('No plants within reach. Walk to the 🌱 first.');
+          this.say('Nothing edible within reach. Walk to the green first.');
           return null;
         }
         // ruins: scavenge finite loot, not plants
@@ -865,10 +917,15 @@
         if (!S.forage.canForage(t)) { this.say('Nothing left to take here today.'); return null; }
         t.stock -= 1;
         // deplete the specific cell you harvested. it regrows in 3 days.
+        // trees/bushes don't disappear — they're picked clean (become 'dirt' visually, but the tree remains conceptually).
+        // actually: trees stay trees, just depleted. track it separately.
         if (plantCell) {
-          detail[plantCell.y][plantCell.x] = 'dirt';
+          const origCell = plantCell.cell;
+          // trees and bushes stay (they're perennial), plants become dirt
+          detail[plantCell.y][plantCell.x] = (origCell === 'plant') ? 'dirt' : origCell;
           t.detailRegrow = t.detailRegrow || {};
-          t.detailRegrow[plantCell.x + ',' + plantCell.y] = scholar.day + 3;
+          // store what it was, so it regrows correctly
+          t.detailRegrow[plantCell.x + ',' + plantCell.y] = { day: scholar.day + 3, was: origCell };
         }
         const bounty = this.bountyFor(this.map.px, this.map.py);
         const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty);
@@ -1134,9 +1191,15 @@
         // detail cells regrow: the plant you picked comes back in 3 days.
         if (t.detail && t.detailRegrow) {
           for (const key of Object.keys(t.detailRegrow)) {
-            if (t.detailRegrow[key] <= this.state.scholar.day) {
+            const reg = t.detailRegrow[key];
+            const regDay = (typeof reg === 'object') ? reg.day : reg;
+            const was = (typeof reg === 'object') ? reg.was : 'plant';
+            if (regDay <= this.state.scholar.day) {
               const [cx, cy] = key.split(',').map(Number);
-              if (t.detail[cy] && t.detail[cy][cx] === 'dirt') t.detail[cy][cx] = 'plant';
+              // restore the original (plants come back; trees were never gone, just picked clean)
+              if (t.detail[cy] && (t.detail[cy][cx] === 'dirt' || t.detail[cy][cx] === was)) {
+                t.detail[cy][cx] = was;
+              }
               delete t.detailRegrow[key];
             }
           }

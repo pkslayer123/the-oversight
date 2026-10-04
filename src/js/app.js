@@ -205,13 +205,16 @@
         rerender();
       };
     });
-    // detail grid: tap an adjacent cell to STEP there (costs 10 kcal). you're IN the world.
-    // the macro map below is for travel between tiles. this is for moving within one.
+    // detail grid: tap a cell to interact with the world.
+    // adjacent + passable: STEP there. adjacent + blocking-but-useful: USE it (forage tree, drink water).
+    // the macro map below is for travel between tiles. this is for being IN the world.
     screen.querySelectorAll('.detail .cell').forEach(el => {
       el.onclick = () => {
         const cx = +el.dataset.cx, cy = +el.dataset.cy;
-        if (Game.microMove(cx, cy)) rerender();
-        else toast('Too far — step to an adjacent cell.');
+        if (Game.microMove(cx, cy)) { rerender(); return; }
+        // didn't move — try interacting (tree, water, tent, fire)
+        if (Game.cellInteract(cx, cy)) { rerender(); return; }
+        toast('Can\'t get there — blocked or too far.');
       };
     });
     document.getElementById('x-codex').onclick = codexScreen;
