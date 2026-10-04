@@ -461,7 +461,7 @@
         <p class="small">"We watched your first week! You're good at... let us see..."</p>
         <p class="small">Choose one ability:</p>
         <div class="btnrow">
-          ${choices.map((c, i) => `<button class="btn sm" data-abil="${c.id}"><b>${c.name}</b><br><span class="small">${c.description || c.desc}</span>${c.flavor ? `<br><i class="small">"${c.flavor}"</i>` : ''}</button>`).join('')}
+          ${choices.map((c, i) => `<button class="btn sm" data-abil="${c.id}"><b>${c.name}</b><br><span class="small">${c.description || c.desc}</span>${c.flavor ? `<br><i class="small">"${c.flavor}"</i>` : ''}${c.metabolic && c.metabolic.daily ? `<br><span class="small">🔥 Costs ${c.metabolic.daily} kcal/day to keep. Power is a trade.</span>` : ''}</button>`).join('')}
         </div>
       </div>`;
     screen.querySelectorAll('[data-abil]').forEach(b => b.onclick = () => {
@@ -502,6 +502,7 @@
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)</p>`; })()}
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; return `<p class="small"><b>💧 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)</p>`; })()}
         ${inv.length ? inv.map((i, idx) => `<p class="small">${i.bonded ? '❖ ' : ''}<b>${i.name}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.bonded ? ` <span class="small" title="Bonded relic — grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' · ' + i.enhancements.join(', ') : ''}</span>` : ''}${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">⚡ Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> — ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}
         <button class="btn ghost sm" id="b-iback">Back</button>
@@ -515,6 +516,7 @@
     screen.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = () => { Game.equip(+b.dataset.equipW, 'weapon'); invPopup(); });
     screen.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = () => { Game.equip(+b.dataset.equipA, 'armor'); invPopup(); });
     screen.querySelectorAll('[data-donate]').forEach(b => b.onclick = () => { Game.donateToPantry(+b.dataset.donate); invPopup(); });
+    screen.querySelectorAll('[data-activate]').forEach(b => b.onclick = () => { Game.activateAbility(b.dataset.activate); invPopup(); });
   }
 
   function talkOverlay(vid) {
@@ -708,6 +710,7 @@
         <button class="btn sm" data-c="strike">STRIKE</button>
         <button class="btn sm" data-c="harry">HARRY</button>
         <button class="btn sm" data-c="brace">BRACE</button>
+        ${Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day ? '<button class="btn sm" data-c="scream">🧀 SCREAM</button>' : ''}
       </div>
       <div class="actions">
         <button class="btn sm ghost" data-c="study">STUDY</button>

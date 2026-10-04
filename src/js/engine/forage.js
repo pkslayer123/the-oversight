@@ -40,17 +40,29 @@
     let units = 10 + Math.floor(Math.random() * 6); // 10-15: 3hrs of real foraging. A skilled gatherer fills a bag, not a pocket.
     if (bounty && bounty.richness) units = Math.round(units * bounty.richness); // rich ground feeds better
     units = Math.round(S.modifiers.resolve(units, 'forage.yield', mods, ctx));
+    // lucky_rock: the System helps a little. Everywhere.
+    units = Math.round(units * S.modifiers.resolve(1, 'luck.global', mods, ctx));
+    // compost_king: buried food feeds the tile. +10% here.
+    if (tile.compost) units = Math.round(units * 1.1);
     units = Math.max(1, units);
+    // pattern_recognition: sometimes you see what others miss. A rare find.
+    let rareFind = null;
+    const rareChance = S.modifiers.resolve(0, 'forage.rare_find_chance', mods, ctx);
+    if (rareChance > 0 && Math.random() < rareChance) {
+      rareFind = { plantId: 'rare_herb', units: 1, kcal: 300 };
+      units += 0; // bonus is separate, not in the main haul
+    }
 
     const firstFind = !(codex.plants[plantId] && codex.plants[plantId].identifiedDay);
     const kcal = units * plant.caloriesPerUnit;
 
     return {
-      plantId, units, kcal, firstFind,
+      plantId, units, kcal, firstFind, rareFind,
       plant,
-      message: firstFind
+      message: (firstFind
         ? `New plant recorded: ${plant.name}. The Codex grows.`
-        : `Foraged ${units}× ${plant.unit} of ${plant.name} (+${kcal} kcal).`
+        : `Foraged ${units}× ${plant.unit} of ${plant.name} (+${kcal} kcal).`)
+        + (rareFind ? ` And something rare — a hidden patch. (+${rareFind.kcal} kcal)` : '')
     };
   }
 

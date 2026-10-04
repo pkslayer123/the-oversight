@@ -222,7 +222,9 @@
       const dipLvl = this.abilityLevel('diplomat');
       const dipMult = dipLvl >= 2 ? 3 : dipLvl >= 1 ? 2 : 1;
       const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
-      const newTrust = trust >= 40 ? trust : Math.min(40, trust + 3 * dipMult);
+      // hoarder/chitin_skin/fear_aura: people notice. Trust gains shrink.
+      const tGain = Math.max(1, Math.round(3 * dipMult * this.modTarget('trust.gain_mult', 1)));
+      const newTrust = trust >= 40 ? trust : Math.min(40, trust + tGain);
       if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
       // the tone shifts with trust (not the number — you feel it)
       const tone = trust < 30 ? " (guarded)" : trust < 60 ? " (warming)" : " (open)";
@@ -312,6 +314,13 @@
         }
       }
       this.state.scholar.inventory = inv.filter(i => i.units > 0);
+      // steady_hands/taught_hands: fine work under pressure. Base 85% success —
+      // fail and the materials are already consumed above. The woods keep them.
+      const success = Math.min(1, this.modTarget('craft.success', 0.85));
+      if (Math.random() > success) {
+        this.say(`The ${recipe.name} comes apart in your hands. The materials are wasted. (craft failed)`);
+        return null;
+      }
       // create the item
       this.state.scholar.tools = this.state.scholar.tools || [];
       this.state.scholar.tools.push({ recipeId, uses: recipe.uses, name: recipe.name });
@@ -353,8 +362,10 @@
       for (const trap of [...t.traps]) {
         if (trap.setDay >= this.state.scholar.day) continue; // set today, check tomorrow
         const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
-        // 40% chance per day (if the animal is here)
-        if (Math.random() < 0.4) {
+        // 40% chance per day (if the animal is here).
+        // poisoner/scarecrow: better bait, better lies. Multiplies the odds.
+        const trapChance = Math.min(0.95, this.modTarget('hunt.trap_catch', 0.4));
+        if (Math.random() < trapChance) {
           const catchId = recipe.catches[Math.floor(Math.random() * recipe.catches.length)];
           const animal = this.data.animals.find(a => a.id === catchId);
           this.state.scholar.inventory.push({
@@ -1456,8 +1467,10 @@
       if (item.bonded) { this.say(`You'd never use up your ${item.name}. It's not a supply. It's yours.`); return null; }
       const name = item.name.toLowerCase();
       if (name.includes('first aid')) {
-        this.state.scholar.health = Math.min(100, this.state.scholar.health + 30);
-        this.say('You use the first aid kit. +30 health.');
+        // triage: healing hands. First aid does more.
+        const amt = Math.round(this.modTarget('healing.amount', 30));
+        this.state.scholar.health = Math.min(this.maxHealth(), this.state.scholar.health + amt);
+        this.say(`You use the first aid kit. +${amt} health.`);
       }
       // consume one
       item.units--;
@@ -1569,12 +1582,21 @@
       this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).`);
       return null;
     },
+    // addWater: gain bottled water. quality 'clean'|'risky', source retained.
+    addWater(liters, quality, source) {
+      const s = this.state.scholar;
+      s.water = s.water || [];
+      for (let i = 0; i < liters; i++) s.water.push({ liters: 1, quality, source });
+    },
+
     // boilWater: at a fire, make risky water clean (kills bacteria).
     // Does NOT fix chemical contamination.
+    // beard_moss: you always have tinder. Boil anywhere.
     boilWater() {
       const s = this.state.scholar;
       // NEED FIRE. you can't boil water with wishes.
-      if (!this.nearFire()) { this.say('Need a fire to boil water.'); return null; }
+      // (beard_moss: moss in your beard is always tinder. Anywhere works.)
+      if (!this.nearFire() && !this.hasAbility('beard_moss')) { this.say('Need a fire to boil water.'); return null; }
       s.water = s.water || [];
       let n = 0;
       for (const b of s.water) {
@@ -1751,7 +1773,7 @@
       // EXPLOIT: donate-then-take-back. If net goes negative after donating, big penalty.
       // (They remember you gave. They remember you took it back. That's worse.)
       const gave = v.gives[vid] || 0;
-      if (gave > 0 && net <= 0) {
+      if (gave > 0 && net <= 0 && !stealClean) {
         v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 5);
         this.say('You took back what you gave. They noticed. Trust -5.');
       }
@@ -1790,7 +1812,9 @@
       // hunter background: +20%.
       const villager = this.data.villagers.find(v => v.id === this.villagerId);
       const isHunter = (villager && villager.formerOccupation || '').toLowerCase().includes('hunter');
-      const base = animal.difficulty === 'easy' ? 0.7 : animal.difficulty === 'medium' ? 0.4 : 0.15;
+      // game_sense: read the sign. find_chance multiplies the base.
+      let base = animal.difficulty === 'easy' ? 0.7 : animal.difficulty === 'medium' ? 0.4 : 0.15;
+      base = this.modTarget('hunt.find_chance', base);
       // Weapons matter. A spear (+30) turns a 40% shot into 70%.
       const wbonus = this.weaponBonus() / 100;
       // tracker: the System's gift. L1 +30%, L2 +50% (additive, capped at 95%).
@@ -1798,13 +1822,16 @@
       const trackBonus = trackLvl >= 2 ? 0.5 : trackLvl >= 1 ? 0.3 : 0;
       // RELIC — never_fails: the tool works when it matters. +10% hunt success.
       const relicHunt = S.modifiers.resolve(0, 'hunt.success', S.modifiers.collectModifiers(s, this.data.abilities), {});
-      const chance = Math.min(0.95, base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt);
+      // lucky_rock: the System finds your faith adorable and helps a little.
+      const luck = this.modTarget('luck.global', 1);
+      const chance = Math.min(0.95, (base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt) * luck);
       this.noteToolUse(); // RELIC BOND: the spear, the snare, the knife.
       s.kcal = Math.max(0, s.kcal - 100);
       if (Math.random() < chance) {
         // caught!
         s.animal = null;
-        const kcal = animal.calories;
+        // field_dressing: you know where the meat is. More yield per kill.
+        const kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories));
         s.inventory.push({ plantId: 'meat_' + animal.id, units: 1, kcalEach: kcal, spoilDay: s.day + 1, name: animal.name + ' (dressed)', unit: 'carcass', prep: 'Cook before eating.', kg: kcal / 1000 });
         this.say(`Got it! ${animal.name}. ${kcal} kcal of meat. Gut it quickly.`);
         // knowledge: encounters
@@ -2158,6 +2185,17 @@
       else if (tile.type === 'ruin') chance = 0.12;
       // RELIC — ghost_weave: harder to detect, by animals and otherwise.
       chance *= S.modifiers.resolve(1, 'travel.encounter', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
+      // soft_step: you move quiet. Fewer encounters find you.
+      chance = this.modTarget('travel.encounter_chance', chance);
+      // loud_chewer: they heard you eating. More encounters while noisy.
+      if (scholar.noisyUntil && scholar.noisyUntil >= scholar.day) chance *= 2;
+      // bird_whisperer / third_eye: the birds see everything. On a successful
+      // detect you slip away first — no spawn, just a warning.
+      const detect = this.modTarget('monster.detect_chance', 0);
+      if (detect > 0 && Math.random() < detect && !scholar.monster) {
+        this.say('Birds scatter in a sudden hush — something is moving out there. You give it a wide berth.');
+        return;
+      }
       if (Math.random() < chance && !scholar.monster) {
         const mdefs = this.data.monsters;
         const mdef = mdefs[Math.floor(Math.random() * mdefs.length)];
@@ -2178,6 +2216,12 @@
         this.say('Something big is moving in the woods. The birds went quiet.');
       }
       if (this.wanderer && this.map.px === this.wanderer.x && this.map.py === this.wanderer.y) {
+        // eyes_in_back: you see behind you. Ambushes never surprise — always a warning first.
+        if (this.hasAbility('eyes_in_back') && !this.wanderer.warned) {
+          this.wanderer.warned = true;
+          this.say('Your back-eyes catch it first — something big, pacing the treeline. It knows you see it. (no ambush)');
+          return;
+        }
         // the monster is HERE, in the grid with you. spawn at a distance, not on top of you.
         const px = scholar.mx ?? 4, py = scholar.my ?? 4;
         let mx, my, tries = 0;
@@ -2436,11 +2480,120 @@
         return null;
       }
       s.abilities.push({ id: choice.id, name: choice.name, desc: choice.description || choice.desc, level: 1, xp: 0 });
+      // ON-ACQUIRE: some abilities change the world the moment you take them.
+      this.abilityOnAcquire(choice.id);
       s.abilityChoices = null;
       this.say(`✨ Ability gained: ${choice.name} (L1). ${choice.description || choice.desc}`);
       if (choice.flavor) this.say(`"${choice.flavor}"`);
       return null;
     },
+    // abilityOnAcquire: the price is paid up front, where the fiction demands it.
+    abilityOnAcquire(id) {
+      const s = this.state.scholar;
+      const v = this.state.village; v.trust = v.trust || {};
+      const trustAll = (amt, why) => {
+        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.max(0, (v.trust[vid] || 15) + amt);
+        this.say(why);
+      };
+      if (id === 'pact') {
+        // The Static gives. The Static takes.
+        const ops = (this.data.abilities || []).filter(a => a.tier === 'overpowered' && a.id !== 'pact' && !this.hasAbility(a.id));
+        const utils = (s.abilities || []).filter(e => {
+          const a = this.data.abilities.find(x => x.id === ((e && e.id) || e));
+          return a && a.tier === 'utility';
+        });
+        if (ops.length) {
+          const gain = ops[Math.floor(Math.random() * ops.length)];
+          s.abilities.push({ id: gain.id, name: gain.name, desc: gain.description, level: 1, xp: 0 });
+          this.say(`PACT: the Static gives — ${gain.name}.`);
+        }
+        if (utils.length) {
+          const lose = utils[Math.floor(Math.random() * utils.length)];
+          const lid = (lose && lose.id) || lose;
+          s.abilities = s.abilities.filter(e => ((e && e.id) || e) !== lid);
+          this.say(`PACT: the Static takes — ${lid} is gone.`);
+        }
+      } else if (id === 'chitin_skin') {
+        trustAll(-5, 'Your skin hardens into plates. People stare. (chitin_skin: trust -5, they notice)');
+      } else if (id === 'fear_aura') {
+        trustAll(-10, 'The air goes cold around you. People step back. (fear_aura: trust -10)');
+      } else if (id === 'hive_mind') {
+        trustAll(-10, 'You know what everyone is doing. They can feel you knowing. (hive_mind: trust -10)');
+        // the map opens. Every tile revealed — you see the whole board.
+        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.reveal(x, y);
+        this.say('HIVE MIND: the map is open. Every tile, revealed. They know you\'re watching.');
+      }
+    },
+
+    // activatableAbilities: abilities you CHOOSE to use (not passive).
+    // Shown in the inventory popup. Explicit activation, real costs.
+    activatableAbilities() {
+      const s = this.state.scholar;
+      const out = [];
+      const has = (id) => this.hasAbility(id);
+      if (has('blood_magic')) out.push({ id: 'blood_magic', name: 'Blood Price', desc: '-10 HP → +500 kcal. Your body eats itself.', available: (s.health || 0) > 10, why: 'Too weak — need 10+ HP.' });
+      if (has('time_skip')) out.push({ id: 'time_skip', name: 'Time Skip', desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true });
+      if (has('dowsing')) out.push({ id: 'dowsing', name: 'Dowse', desc: 'A forked stick twitches toward water. 70% accurate.', available: true });
+      if (has('echo_location')) out.push({ id: 'echo_location', name: 'Echo-locate', desc: 'Clap once: sense the 3x3 around you. 1/day.', available: s.echoDay !== s.day, why: 'Used today.' });
+      if (has('compost_king')) {
+        const food = (s.inventory || []).find(i => (i.kcalEach || 0) > 0);
+        out.push({ id: 'compost_king', name: 'Bury Food', desc: 'Bury food as fertilizer: +10% forage on this tile.', available: !!food, why: 'No food to bury.' });
+      }
+      if (has('cannibal_frenzy')) out.push({ id: 'cannibal_frenzy', name: 'Feed the Red Hunger', desc: '+1000 kcal. -30 trust, permanently. Only when starving.', available: (s.kcal || 0) < 500, why: 'Only when starving (<500 kcal).' });
+      return out;
+    },
+
+    // activateAbility: do the thing. Costs are real.
+    activateAbility(id) {
+      const s = this.state.scholar;
+      if (id === 'blood_magic') {
+        if ((s.health || 0) <= 10) { this.say('Too weak for the Blood Price.'); return null; }
+        s.health -= 10; s.kcal += 500;
+        this.say('BLOOD PRICE: -10 HP, +500 kcal. Your body eats itself. Efficient. Horrifying.');
+      } else if (id === 'time_skip') {
+        s.ageDebt = (s.ageDebt || 0) + 1;
+        this.say('TIME SKIP: the light stutters. You are a day older. The time had to come from somewhere.');
+        return this.endDayPart();
+      } else if (id === 'dowsing') {
+        // 70%: reveal the nearest water tile. Nobody knows why it works. Including us.
+        let best = null, bestD = 99;
+        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+          const t = this.tileAt(x, y);
+          if (t.type === 'creek' || t.type === 'wetland') {
+            const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
+            if (d < bestD) { bestD = d; best = { x, y }; }
+          }
+        }
+        if (best && Math.random() < 0.7) {
+          this.reveal(best.x, best.y);
+          const dir = best.y < this.map.py ? 'north' : best.y > this.map.py ? 'south' : best.x < this.map.px ? 'west' : 'east';
+          this.say(`The stick twitches — water, ${dir}. ${bestD} tiles. (dowsing)`);
+        } else this.say('The stick is still. Either no water near, or it\'s lying. (dowsing failed)');
+      } else if (id === 'echo_location') {
+        if (s.echoDay === s.day) { this.say('Already echoed today.'); return null; }
+        s.echoDay = s.day;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const nx = this.map.px + dx, ny = this.map.py + dy;
+          if (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) this.reveal(nx, ny);
+        }
+        this.say('You clap once. The echo comes back with the shape of the land — 3x3 revealed. (echo_location)');
+      } else if (id === 'compost_king') {
+        const idx = (s.inventory || []).findIndex(i => (i.kcalEach || 0) > 0);
+        if (idx === -1) { this.say('No food to bury.'); return null; }
+        const it = s.inventory[idx];
+        it.units -= 1; if (it.units <= 0) s.inventory.splice(idx, 1);
+        this.playerTile().compost = true;
+        this.say(`You bury ${it.name}. The tile will remember. (+10% forage here. compost_king)`);
+      } else if (id === 'cannibal_frenzy') {
+        if ((s.kcal || 0) >= 500) { this.say('The Red Hunger sleeps. You are not starving enough.'); return null; }
+        s.kcal += 1000;
+        const v = this.state.village; v.trust = v.trust || {};
+        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 30);
+        this.say('RED HUNGER: you eat what you should not. +1000 kcal. Everyone saw. Trust -30, permanently.');
+      }
+      return null;
+    },
+
     // abilitySlots: how many abilities can you hold? Integration-based.
     abilitySlots() {
       const integ = this.state.scholar.integration || 5;
@@ -2501,6 +2654,13 @@
         this.state.scholar.activeChallenge = { id: 'first_hunt', desc: 'Hunt an animal', reward: 'Ability point' };
       } else if (ev.id === 'stranger') {
         this.say('\U0001F6B6 A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
+        // mediator: peace is a skill. You talk the village through it.
+        if (this.hasAbility('mediator')) {
+          const bonus = Math.round(this.modTarget('drama.resolve_bonus', 8));
+          const v = this.state.village; v.trust = v.trust || {};
+          for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + bonus);
+          this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${bonus})`);
+        }
       } else if (ev.id === 'hushwolf_pack') {
         this.say('\U0001F43A HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
       } else if (ev.id === 'system_task') {
@@ -2557,9 +2717,11 @@
     },
 
     // --- pack weight: 15 kg. distance has a price; so does carrying. ---
-    packCapacity() { return 15; },
+    packCapacity() { return this.carryCapacity(); },
     packWeight() {
-      return this.state.scholar.inventory.reduce((t, i) => t + (i.units * (i.kg || 0.1)), 0);
+      // hollow_bones: birdlike bones — you weigh 30% less for carry calculations.
+      const raw = this.state.scholar.inventory.reduce((t, i) => t + (i.units * (i.kg || 0.1)), 0);
+      return raw * this.modTarget('carry.weight_mult', 1);
     },
     canCarry(kg) { return this.packWeight() + kg <= this.packCapacity(); },
 
@@ -2625,6 +2787,16 @@
               t.loot.unshift(lootId2); // too heavy, leave it
             }
           }
+          // taste_vision: the walls taste like secrets. Bonus finds in ruins.
+          const findMult = this.modTarget('ruin.find_mult', 1);
+          if (findMult > 1 && t.loot.length && Math.random() < 0.3 * findMult) {
+            const bonusId = t.loot.shift();
+            const bonus = SCAVENGED.find(x => x.id === bonusId);
+            if (bonus && this.canCarry(bonus.kg)) {
+              scholar.inventory.push({ plantId: bonusId, units: 1, kcalEach: bonus.kcal, spoilDay: 9999, name: bonus.name, unit: 'can', prep: 'No prep.', kg: bonus.kg });
+              this.say(`Taste vision: behind the loose panel — ${bonus.name}. The walls were right.`);
+            } else if (bonus) t.loot.unshift(bonusId);
+          }
           scholar.kcal -= 100;
           msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
           this.say(msg);
@@ -2656,8 +2828,9 @@
         const plantRegions = (plant.regions || []).map(x => x.toLowerCase());
         const isLocal = plantRegions.some(pr => homeRegion.includes(pr) || pr.includes(homeRegion.split(' ')[0]));
         const occupation = (villager && villager.formerOccupation || '').toLowerCase();
-        // learning threshold: how many encounters to learn the name
-        let threshold = 3;
+        // learning threshold: how many encounters to learn the name.
+        // forage_identification: you've done this before. Learn faster.
+        let threshold = Math.max(1, Math.round(this.modTarget('forage.learn_threshold', 3)));
         if (occupation.includes('hunter') || occupation.includes('cook') || occupation.includes('chef')) threshold = 2;
         if (occupation.includes('nurse') && plant.medicinal) threshold = 2;
         if (occupation.includes('bus driver') || occupation.includes('accountant') || occupation.includes('dropout')) threshold = 4;
@@ -2686,6 +2859,12 @@
           const stage = newEnc === 1 ? plant.description || 'a plant you don\'t recognize' :
                         `looks familiar — like the ${plant.description || 'plant'} from before`;
           this.say(`You take ${stage}. Not sure what it is yet. (${newEnc}/${threshold})`);
+        }
+        // squirrel_friend: sometimes they leave you nuts. Random gifts, real food.
+        const giftChance = this.modTarget('forage.gift_chance', 0);
+        if (giftChance > 0 && Math.random() < giftChance) {
+          scholar.inventory.push({ plantId: 'gift_nuts', units: 2, kcalEach: 100, spoilDay: scholar.day + 5, name: 'Squirrel gift (nuts)', unit: 'handful', prep: 'A squirrel left these. A tip? A bribe? Nuts.', kg: 0.2 });
+          this.say('A squirrel drops nuts at your feet and vanishes. A gift. (squirrel_friend: +200 kcal)');
         }
         if (r.firstFind) {
           // the journal becomes a CODEX at four entries — the System notices, names it.
@@ -2721,6 +2900,10 @@
           scholar.inventory.push({ material: 'stick', units: 1, name: 'Stick', kcalEach: 0, spoilDay: 9999, kg: 0.2 });
           this.say('A sturdy stick (crafting material).');
         }
+        // pattern_recognition: the rare find goes in the pack.
+        if (r.rareFind) {
+          scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
+        }
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         msg = r.message + ` (${r.kcal} kcal to your pack — eat up.)` + (r.firstFind ? ` (${r.plant.codex})` : '');
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
@@ -2731,7 +2914,8 @@
         const restMult = S.modifiers.resolve(1, 'rest.energy', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
         const restGain = Math.round(30 * restMult);
         scholar.energy = Math.min(100, scholar.energy + restGain);
-        scholar.health = Math.min(100, scholar.health + 5);
+        // triage: practiced hands heal more, even resting.
+        scholar.health = Math.min(this.maxHealth(), scholar.health + Math.round(this.modTarget('healing.amount', 5)));
         scholar.kcal -= 40;
         msg = `You rest. Breath slows. +${restGain} energy.`;
       } else if (kind === 'wait') {
@@ -2794,7 +2978,9 @@
       if (this.over) return;
       // POWER NEEDS FOOD: target scales with metabolic mult. Fire god eats to 9600.
       const mult = this.metabolicMult((scholar.abilities || []).concat(scholar.backgroundAbilities || []));
-      const target = Math.round(2400 * mult);
+      // extra_stomach: two stomachs, twice the target. The hunger is the price.
+      const eatMult = this.modTarget('food.eat_target_mult', 1);
+      const target = Math.round(2400 * mult * eatMult);
       // eat most-perishable first until kcal >= target or empty
       scholar.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
       let ate = 0;
@@ -2806,6 +2992,20 @@
         if (foodIdx === -1) break; // no food left
         const it = scholar.inventory[foodIdx];
         const kcal = it.kcalEach;
+        // symbiote: it tastes your food first. Warns you of poison.
+        if (it.safe === false && this.hasAbility('symbiote') && !it.symWarned) {
+          it.symWarned = true;
+          this.say(`Your gut churns a warning — the ${it.name} is wrong. (symbiote: unsafe food)`);
+        }
+        // iron_stomach: unsafe food is a gamble. Base 20% chance of -5 health;
+        // an iron stomach shrugs most of it off.
+        if (it.safe === false) {
+          const pChance = this.modTarget('food.poison_chance', 0.2);
+          if (Math.random() < pChance) {
+            scholar.health = Math.max(0, scholar.health - 5);
+            this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
+          }
+        }
         scholar.kcal += kcal; ate += kcal;
         if (it.plantId) tasted[it.plantId] = (tasted[it.plantId] || 0) + 1;
         it.units -= 1;
@@ -2827,11 +3027,22 @@
         }
       }
       // spoilage: drop expired FOOD. Gear (no spoilDay) never spoils.
+      // preservation_instinct: you store food right. +days before it turns.
+      const spoilBonus = Math.round(this.modTarget('food.spoilage_days', 0));
       const before = scholar.inventory.length;
-      scholar.inventory = scholar.inventory.filter(i => i.spoilDay === undefined || i.spoilDay === null || i.spoilDay > scholar.day);
+      scholar.inventory = scholar.inventory.filter(i => i.spoilDay === undefined || i.spoilDay === null || (i.spoilDay + spoilBonus) > scholar.day);
       const spoiled = before - scholar.inventory.length;
       this.say(ate > 0 ? `You eat (${ate} kcal).` + (spoiled ? ` ${spoiled} item(s) spoiled — the Codex notes the waste.` : '')
                        : (scholar.inventory.length ? 'You are full enough.' : 'Nothing to eat. The pantry of your pack is empty.'));
+      // loud_chewer: eating is 2x louder. Monsters hear you. But +5 energy — morale is real.
+      if (ate > 0) {
+        scholar.energy = Math.min(100, scholar.energy + 5);
+        const hear = 0.1 * this.modTarget('monster.hear_mult', 1);
+        if (Math.random() < hear) {
+          scholar.noisyUntil = scholar.day + 1;
+          this.say('Your chewing echoes off the trees. Something out there heard. (encounters more likely tomorrow)');
+        }
+      }
       if (ate > 0) this.tele('eat', { ateKcal: ate, spoiled });
     },
 
@@ -2856,6 +3067,12 @@
       if (this.over) return this.status();
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
+      // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
+      // (You're becoming a plant. The metabolic cost already took its cut.)
+      if (this.hasAbility('photosynthesis') && this.dayPart < 3) {
+        this.state.scholar.kcal += 100;
+        this.say('Sunlight on your skin. You drink it. +100 kcal. (photosynthesis)');
+      }
       this.moveWanderer();
       this.dayPart += 1;
       if (this.dayPart >= 4) return this.endDay();
@@ -2902,7 +3119,16 @@
           v.health = v.health || {};
           const curH = v.health[id] !== undefined ? v.health[id] : 100;
           const dmg = 20 + Math.floor(Math.random() * 16);
-          v.health[id] = Math.max(0, curH - dmg);
+          // leech: when an ally is hurt near you, you take half. They owe you. (They know it.)
+          let dmgTaken = dmg;
+          if (this.hasAbility('leech') && this.isSafeTile(this.map.px, this.map.py)) {
+            const half = Math.ceil(dmg / 2);
+            dmgTaken = dmg - half;
+            this.state.scholar.health = Math.max(1, this.state.scholar.health - half);
+            const vt = this.state.village.trust || {}; vt[id] = Math.min(100, (vt[id] || 10) + 5);
+            this.say(`You step in front of ${first}. You take ${half} of it. They owe you. (leech: trust +5)`);
+          }
+          v.health[id] = Math.max(0, curH - dmgTaken);
           if (v.health[id] <= 0) {
             v.roster = v.roster.filter(rid => rid !== id);
             this.say(`💀 ${person.name} is gone. The wound was too much. The village is ${v.roster.length} now.`);
@@ -2948,6 +3174,11 @@
       }
       return mult;
     },
+    // maxHealth: 100 + survivor bonus. Everything that heals caps here.
+    maxHealth() {
+      return 100 + Math.round(this.modTarget('health.max_add', 0));
+    },
+
     // hasAbility / abilityLevel: delegate to the shared engine helper.
     // Checks system abilities AND background abilities; works with objects or string IDs.
     hasAbility(id) {
@@ -3169,6 +3400,45 @@
       this.checkTimedEvents();
       // evening: run metabolism
       scholar._preDayHealth = scholar.health;
+      // WEATHER: the sky does what it wants. Clear most days, rain sometimes, cold snaps.
+      // rain_dancer: when it rains, +1L water free. (You dance. It works.)
+      // cold_blooded: on cold days your body budgets — 20% less food needed.
+      const wr = Math.random();
+      this.state.weather = wr < 0.7 ? 'clear' : wr < 0.9 ? 'rain' : 'cold';
+      if (this.state.weather === 'rain') {
+        const catchL = Math.round(this.modTarget('water.rain_catch', 0));
+        if (catchL > 0) {
+          this.addWater(catchL, 'clean', 'rain');
+          this.say(`Rain. You dance. It works. +${catchL}L clean water. (rain_dancer)`);
+        } else this.say('Rain. Steady, cold, honest rain.');
+      } else if (this.state.weather === 'cold') {
+        this.say('A cold snap. Breath smokes. The woods go quiet.');
+        if (this.hasAbility('cold_blooded')) {
+          scholar.kcal += 440; // 20% of the 2200 daily need, returned
+          this.say('Cold-blooded: your body budgets like an accountant. (-20% food need today)');
+        }
+      }
+      // METABOLIC DRAIN: conservation of energy. System abilities cost food every day.
+      // Power is a trade, not a tax — the System takes its cut in calories.
+      const metDrain = this.metabolicDaily();
+      if (metDrain > 0) {
+        scholar.kcal -= metDrain;
+        if (scholar.kcal < 500) this.say(`The System's gifts are hungry: -${metDrain} kcal metabolic cost. Feed the power or lose it.`);
+      }
+      // ant_trail: ants know where the water is. 30% chance they lead you to some.
+      if (this.hasAbility('ant_trail') && Math.random() < 0.3) {
+        this.addWater(1, 'risky', 'ant-trail seep');
+        this.say('Ants march past your boot, laden. You follow them to a seep. +1L water (risky). (ant_trail)');
+      }
+      // symbiote: it eats 200 kcal/day (in its metabolic cost) but purifies 1L of risky water daily.
+      if (this.hasAbility('symbiote')) {
+        const bottles = scholar.water || [];
+        const risky = bottles.find(b => b.quality === 'risky' && !b.chemical);
+        if (risky) {
+          risky.quality = 'clean'; risky.source = (risky.source || '') + ' (symbiote-purified)';
+          this.say('Your gut-tenant worked overnight: 1L of water is clean now. It hums, satisfied. (symbiote)');
+        }
+      }
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
       // RELIC BOND: the game notices what you carried and used.
@@ -3210,10 +3480,14 @@
       if (this.villageLost) { return this.status(); } // no home to return to
       if (this.over) { this.returnToVillage(); return this.status(); }
       if (!res.ok || scholar.health <= 0) {
-        this.over = true;
-        this.say('You didn\'t make it. The village remembers. The Codex keeps what you brought home.');
-        this.returnToVillage();
-        return this.status();
+        if (this.maybeCheatDeath()) {
+          this.say('Death knocked. Something else answered.');
+        } else {
+          this.over = true;
+          this.say('You didn\'t make it. The village remembers. The Codex keeps what you brought home.');
+          this.returnToVillage();
+          return this.status();
+        }
       }
       scholar.day += 1;
       scholar.relicResolveUsed = false;
@@ -3245,6 +3519,13 @@
         const scholar = this.state.scholar;
         scholar.inventory.push({ plantId: 'boar_meat', units: 4, kcalEach: 800, spoilDay: scholar.day + 3, name: 'Bulldozer meat', unit: 'cut', prep: 'Smoke it — it keeps for weeks.', kg: 0.8 });
         this.say('The Bulldozer falls. Pork is pork — 3,200 kcal of it. The village will eat. (+4 cuts of meat)');
+        // grave_robber: you loot the dead. Good gear. Out here, only the trees watch.
+        if (this.hasAbility('grave_robber') && Math.random() < 0.5) {
+          const gear = ['bone knife', 'cracked helm', 'war horn', 'tooth necklace'];
+          const g = gear[Math.floor(Math.random() * gear.length)];
+          scholar.inventory.push({ name: g, kcalEach: 0, units: 1, spoilDay: 9999, unit: 'trophy', kg: 0.5 });
+          this.say(`Grave robber: you take its ${g}. The dead don't need it.`);
+        }
         // RELIC BOND: you survived the thing you were afraid of, holding what matters.
         for (const r of this.relicItems()) {
           const rdef = this.data.items.find(i => i.id === (r.itemId || r.id));
@@ -3258,14 +3539,56 @@
         this.fight = null;
         this.say('You escape. The thicket keeps its secrets.');
       } else if (r.result === 'lost') {
-        this.over = true; this.fight = null;
-        this.say('The Bulldozer does not go around. You didn\'t make it. The village remembers.');
+        // second_wind / phoenix / molt get a vote before death is final.
+        if (this.maybeCheatDeath()) { this.fight = null; }
+        else {
+          this.over = true; this.fight = null;
+          this.say('The Bulldozer does not go around. You didn\'t make it. The village remembers.');
+        }
       }
-      if (this.state.scholar.health <= 0 && !this.over) { this.over = true; this.say('You didn\'t make it.'); }
+      if (this.state.scholar.health <= 0 && !this.over && !this.maybeCheatDeath()) { this.over = true; this.say('You didn\'t make it.'); }
       return r;
     },
 
     say(msg) { this.log.push(msg); if (this.log.length > 40) this.log.shift(); },
+
+    // maybeCheatDeath: second_wind / phoenix_clause / molt. Called BEFORE death is final.
+    // Returns true if death was cheated (caller must not set over).
+    maybeCheatDeath() {
+      const s = this.state.scholar;
+      // molt: once per week, shed your skin. Heal to full — but lose all equipped gear.
+      const week = Math.floor(s.day / 7);
+      if (this.hasAbility('molt') && s.moltWeek !== week && s.health <= 0) {
+        s.moltWeek = week;
+        s.health = this.maxHealth();
+        const eq = s.equipped || {};
+        s.equipped = {};
+        this.say('MOLT: your skin splits. You step out new, whole — and naked. All equipped gear lost in the old skin.');
+        return true;
+      }
+      // second_wind: once per day, when you'd die, you don't. 1 HP, 500 kcal.
+      if (this.hasAbility('second_wind') && s.secondWindDay !== s.day && s.health <= 0) {
+        s.secondWindDay = s.day;
+        s.health = 1; s.kcal = Math.max(s.kcal, 500);
+        this.say('SECOND WIND: you should be dead. You refuse. (1 HP, 500 kcal. Once today.)');
+        return true;
+      }
+      // phoenix_clause: once per run. Explode, then respawn at Haven with 1 HP.
+      // The System calls it 'great television.'
+      if (this.hasAbility('phoenix_clause') && !s.phoenixUsed && s.health <= 0) {
+        s.phoenixUsed = true;
+        if (this.fight && this.fight.monster) {
+          this.fight.monster.hp -= 60;
+          this.say('PHOENIX CLAUSE: you EXPLODE — 60 damage to everything nearby.');
+        }
+        s.health = 1; s.kcal = 500;
+        this.map.px = this.state.village.x ?? 3; this.map.py = this.state.village.y ?? 3;
+        s.mx = 4; s.my = 4; this.fight = null; s.monster = null;
+        this.say('You wake at Haven, 1 HP, ash in your mouth. The audience applauds. (phoenix_clause: once per run)');
+        return true;
+      }
+      return false;
+    },
 
     // --- telemetry: every meaningful event, with state deltas. for diagnosing playtests. ---
     tele(type, data) {
@@ -3316,7 +3639,19 @@
         log: this.log.slice(-6),
         codexCount: Object.keys(this.state.codex.plants).length,
         abilities: s.abilities,
+        // open_book: villagers tell you their real trust level. You just know how to ask.
+        villagerTrust: this.hasAbility('open_book') ? this.openBookInfo() : null,
       };
+    },
+
+    // openBookInfo: true trust levels + one secret fear each. Information is power.
+    openBookInfo() {
+      const v = this.state.village;
+      return (this.data.villagers || []).filter(x => (v.roster || []).includes(x.id)).map(p => ({
+        name: p.name.split(' ')[0],
+        trust: Math.round((v.trust || {})[p.id] ?? 10),
+        fear: p.secretFear || p.fear || 'being forgotten',
+      }));
     },
 
     codexEntries() {
