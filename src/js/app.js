@@ -450,6 +450,22 @@
     });
   }
 
+  // AUTOSAVE: the phone kills background tabs. Save aggressively.
+  // When you switch to Muse chat and back, your game must still be there.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      try { Game.save(); } catch (e) {}
+    }
+  });
+  window.addEventListener('beforeunload', () => {
+    try { Game.save(); } catch (e) {}
+  });
+  window.addEventListener('pagehide', () => {
+    try { Game.save(); } catch (e) {}
+  });
+  // Also save every 30 seconds (in case the above don't fire).
+  setInterval(() => { try { Game.save(); } catch (e) {} }, 30000);
+
   // invPopup: what are you carrying? always accessible, not hidden.
   // Crafting lives here too — supplies to feed yourself.
   function invPopup() {
