@@ -143,6 +143,7 @@
       this.location = 'village'; this.departed = false;
       this.wipe();
       this.genMap();
+      this.genVillages();
       this.say('Haven. Twelve people. The fire is lit.');
       return this.status();
     },
@@ -544,6 +545,77 @@
       return true;
     },
     wipe() { S.state.wipe(); },
+
+    // OTHER VILLAGES: 2-3 on the map. They live their own game.
+    // When you meet one mid-game, it has history — catch-up sim runs days since start.
+    genVillages() {
+      const villages = [];
+      const nVillages = 2 + Math.floor(Math.random() * 2); // 2-3
+      for (let i = 0; i < nVillages; i++) {
+        // place away from haven (3,3) and away from each other
+        let x, y, tries = 0;
+        do {
+          x = Math.floor(Math.random() * 7); y = Math.floor(Math.random() * 7);
+          tries++;
+        } while (tries < 50 && (
+          (Math.abs(x - 3) + Math.abs(y - 3) < 3) || // not too close to haven
+          villages.some(v => Math.abs(v.x - x) + Math.abs(v.y - y) < 2) // not too close to each other
+        ));
+        const village = {
+          id: `village_${i}`,
+          name: ['Emberhold', 'Stonebridge', 'Thornfield', 'Ashford'][i] || `Village ${i}`,
+          x, y,
+          day: 0, // how many days they've been simulated
+          population: 8 + Math.floor(Math.random() * 5), // 8-12
+          pantryKcal: 2000 + Math.floor(Math.random() * 3000),
+          knowledge: Math.floor(Math.random() * 5), // codex-like level
+          generated: false, // becomes true when player approaches
+        };
+        villages.push(village);
+      }
+      this.state.otherVillages = villages;
+    },
+
+    // catchUpSim: when you approach a village, simulate all days since game start.
+    // They're not fresh — they've been living, foraging, competing.
+    catchUpSim(village) {
+      const targetDay = this.state.scholar.day;
+      const daysToSim = targetDay - village.day;
+      if (daysToSim <= 0) return;
+      // Fast sim: each day, they forage (depleting the world), eat, maybe grow.
+      for (let d = 0; d < daysToSim; d++) {
+        // forage: 400-800 per person, depletes world
+        const forage = village.population * (400 + Math.random() * 400);
+        village.pantryKcal += forage;
+        // they deplete the world near them (competition!)
+        this.depleteRandomTile(Math.ceil(forage / 500));
+        // eat: 2000 per person
+        village.pantryKcal -= village.population * 2000;
+        // starvation: lose people if pantry empty
+        if (village.pantryKcal < 0) {
+          village.pantryKcal = 0;
+          if (Math.random() < 0.3 && village.population > 4) {
+            village.population--;
+          }
+        }
+        // knowledge grows slowly
+        if (Math.random() < 0.2) village.knowledge++;
+        village.day++;
+      }
+      village.generated = true;
+    },
+
+    // checkVillageProximity: when player gets within 2 tiles, generate + catch up.
+    checkVillageProximity() {
+      const px = this.map.px, py = this.map.py;
+      for (const v of (this.state.otherVillages || [])) {
+        const dist = Math.abs(v.x - px) + Math.abs(v.y - py);
+        if (dist <= 2 && !v.generated) {
+          this.catchUpSim(v);
+          this.say(`You see smoke on the horizon. ${v.name} — ${v.population} people, ${v.day} days in. They've been here the whole time.`);
+        }
+      }
+    },
 
     genMap() {
       // Procedural with logic: creek flows, wetlands hug water, groves cluster,
@@ -1675,6 +1747,7 @@
     },
 
     endDayPart() {
+      this.checkVillageProximity();
       if (this.over) return this.status();
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);

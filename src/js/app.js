@@ -543,7 +543,9 @@
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
         const isT = tset.has(x + ',' + y);
         const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + ((tl.maxStock - (tl.stock || 0) > 0) && tl.revealed ? ' spent' : '');
-        const g = isW ? '🐗' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
+        // other villages: show 🏘️ if generated (you've been near)
+        const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
+        const g = isW ? '🐗' : otherV ? '🏘️' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? '●' : g}</div>`;
       }
       html += '</div>';
