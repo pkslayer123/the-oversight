@@ -127,9 +127,6 @@
       // Trust builds through contribution, dialogue, sharing.
       // This determines your meal share, whether they share knowledge, etc.
       this.state.village.trust[villagerId] = 15;
-      // WEEK 1 TRACKER: the System watches what you do. Your first ability
-      // is based on your actions, not your stats. Play how you want to play.
-      scholar.week1 = { forage: 0, hunt: 0, talk: 0, cook: 0, donate: 0, scavenge: 0 };
       // (Jesse's snare is granted after newCodex below — order matters.)
       // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
       // they wander turn-based. you see them. you tap them.
@@ -152,6 +149,9 @@
         this.state.village.taught[rid] = [...new Set(known)]; // dedupe
       }
       const scholar = S.state.newScholar(villagerId);
+      // WEEK 1 TRACKER: the System watches what you do. Your first ability
+      // is based on your actions, not your stats. Play how you want to play.
+      scholar.week1 = { forage: 0, hunt: 0, talk: 0, cook: 0, donate: 0, scavenge: 0 };
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
       scholar.inventory = gear.map(id => ({ itemId: id, units: 1, kg: 0.2, name: (this.data.items.find(i => i.id === id) || {}).name || id }));
       // Start with a day's food. You're not starving on arrival (that's day 3).
