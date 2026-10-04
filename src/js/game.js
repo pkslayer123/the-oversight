@@ -1660,8 +1660,12 @@
       // add to inventory (merge if same)
       const inv = this.state.scholar.inventory;
       const existing = inv.find(i => i.name === item.name);
-      if (existing) existing.units++;
-      else inv.push({ name: item.name, kcalEach: item.kcalEach, units: 1, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item' });
+      if (existing) {
+        existing.units++;
+        // backfill cooking fields if the existing stack predates them
+        if (item.rawKcal != null && existing.rawKcal == null) { existing.rawKcal = item.rawKcal; existing.cookedKcal = item.cookedKcal; existing.needsCooking = item.needsCooking; }
+      }
+      else inv.push({ name: item.name, kcalEach: item.kcalEach, units: 1, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking });
       this.say(`Took ${item.name}.`);
       return null;
     },
