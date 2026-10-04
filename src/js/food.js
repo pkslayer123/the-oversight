@@ -377,7 +377,11 @@
           it.kcalEach = Math.round((it.cookedKcal || it.rawKcal * 1.5) * mult);
           it.rawKcal = null; it.safe = true;
         } else if (it.foodKind === 'meat' && it.foodState === 'cleaned') {
-          it.kcalEach = Math.round((it.hiddenKcal || it.kcalEach * 2.5) * mult);
+          // hiddenKcal is TOTAL; kcalEach is per unit.
+          const units = it.units || 1;
+          const total = it.hiddenKcal || it.kcalEach * 2.5 * units;
+          it.kcalEach = Math.round(total * mult / units);
+          it.hiddenKcal = null;
           it.foodState = 'cooked'; it.diseaseRisk = null; it.safe = true;
           it.spoilDay = day + 5;
           it.name = it.name.replace(' (cleaned)', '') + ' (cooked)';
@@ -386,6 +390,7 @@
           it.diseaseRisk = null; it.safe = true; it.needsCooking = false;
           it.prep = (it.prep || '').replace(/\u26A0\uFE0F Risky raw \u2014 cook it\./, '').trim();
         }
+        it.wellMade = true; // a specialist made this — it burns hotter as fuel
         this.say(`${spec.name} (${spec.occupation}) takes it to the fire. It comes back transformed — better than you could do.`);
       } else if (task === 'preserver') {
         it.kcalEach = Math.round(it.kcalEach * (0.95 + 0.02 * spec.skill));
@@ -393,6 +398,7 @@
         it.spoilDay = day + 30 + 5 * spec.skill;
         it.name = it.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (smoked)';
         it.prep = 'Smoked by knowing hands. Keeps well over a month.';
+        it.wellMade = true; // a specialist made this — it burns hotter as fuel
         this.say(`${spec.name} (${spec.occupation}) smokes it low and slow. This will keep for weeks.`);
       }
       // practice makes the specialist better; watching teaches you.
@@ -533,6 +539,107 @@
       }
       return false;
     },
+
+    // ---------- THE RESERVE: food is humanity's superpower ----------
+    // Digesting organic matter grants mana reserves other species can't match.
+    // The kcal pool feeds the body; the RESERVE feeds power. Eat well → hit
+    // harder. The pipeline is visible by design: FEASTBURN says what happened.
+    // Headroom: the cap is generous and the burn scales with meal quality, so
+    // a late-game player with a smoker, a butcher, and a full pantry can
+    // plausibly become overwhelming. That's the fantasy. (Endgame payoff: later.)
+
+    reserveCap() { return 4800; }, // ~2 days of food as pure power
+
+    reserve() { return this.state.scholar.reserveKcal || 0; },
+
+    reserveQuality() { return this.state.scholar.reserveQ || 1; },
+
+    // What food is worth as FUEL. Cooked > raw; specialist-made > yours.
+    mealQuality(it) {
+      if (!it) return 0.7;
+      if (it.wellMade) return 1.3;               // a specialist made this
+      if (it.foodState === 'preserved') return 1.1;
+      if (it.diseaseRisk) return 0.5;            // raw and risky
+      if (it.foodKind === 'meat') return 1.0;    // cooked meat
+      if (it.rawKcal) return 1.0;                // cooked (legacy)
+      return 0.7;                                // safe raw plants
+    },
+
+    addReserve(kcal, q) {
+      const s = this.state.scholar;
+      const cap = this.reserveCap();
+      const before = s.reserveKcal || 0;
+      const room = Math.max(0, cap - before);
+      const add = Math.min(room, Math.round(kcal * (q == null ? 1 : q)));
+      if (add <= 0) return 0;
+      s.reserveKcal = before + add;
+      s.reserveQ = (before <= 0) ? (q == null ? 1 : q)
+        : (((s.reserveQ || 1) * before) + (q == null ? 1 : q) * add) / (before + add);
+      return add;
+    },
+
+    feastState() {
+      const r = this.reserve();
+      if (r >= 3600) return 'gorged';
+      if (r >= 1200) return 'feasting';
+      return r > 0 ? 'sated' : 'empty';
+    },
+
+    feastLine() {
+      const st = this.feastState(), q = this.reserveQuality();
+      if (st === 'gorged') return q >= 1.3
+        ? 'Specialist cooking burns clean and hot. You feel dangerous.'
+        : 'The furnace roars. You feel dangerous.';
+      if (st === 'feasting') return 'Warmth spreads to your fingertips. Power, waiting.';
+      if (st === 'sated') return 'A little extra in the tank.';
+      return '';
+    },
+
+    // FEAST: deliberate. Eat beyond full; food becomes reserve at quality rates.
+    // The pre-fight ritual. Costs 2 ticks, never touches body kcal.
+    feast() {
+      const s = this.state.scholar;
+      if ((s.reserveKcal || 0) >= this.reserveCap()) {
+        this.say('Your reserve is full — the furnace can hold no more.');
+        return null;
+      }
+      s.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
+      let units = 0, gained = 0;
+      while ((s.reserveKcal || 0) < this.reserveCap()) {
+        const idx = s.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false);
+        if (idx < 0) break;
+        const it = s.inventory[idx];
+        gained += this.addReserve(it.kcalEach, this.mealQuality(it));
+        units++;
+        it.units -= 1;
+        if (it.units <= 0) s.inventory.splice(idx, 1);
+      }
+      if (!units) { this.say('Nothing to feast on.'); return null; }
+      this.tickAction(2);
+      const st = this.feastState();
+      this.say(`You feast${st === 'gorged' ? ' like something ancient' : ''}: +${gained} reserve. ${this.feastLine()}`);
+      return null;
+    },
+
+    // FEASTBURN: the visible pipeline. Called when the player unleashes power.
+    // Burns reserve for a stated damage multiplier. Returns the multiplier (0 = no burn).
+    // Quality matters: specialist fuel burns hottest, scraps burn dirty.
+    feastBurn() {
+      const s = this.state.scholar;
+      const r = this.reserve();
+      if (r < 300) return 0;
+      const q = this.reserveQuality();
+      const gorged = r >= 3600;
+      const burn = gorged ? 400 : 300;
+      s.reserveKcal = Math.max(0, r - burn);
+      let mult = gorged ? 1.75 : 1.5;
+      if (q >= 1.3) mult *= 1.15;
+      else if (q < 0.7) mult *= 0.85;
+      mult = Math.round(mult * 100) / 100;
+      const qnote = q >= 1.3 ? ' Specialist fuel burns hottest.' : q < 0.7 ? ' Scraps burn dirty.' : '';
+      this.say(`FEASTBURN (−${burn} reserve, ×${mult}): the feast was the weapon.${qnote}`);
+      return mult;
+    },
   };
 
   Object.assign(G, methods);
@@ -563,12 +670,15 @@
         }
       }
     }
-    // meat pipeline: cleaned -> cooked (full kcal, safe)
+    // meat pipeline: cleaned -> cooked (full kcal, safe).
+    // (hiddenKcal is the TOTAL gross; kcalEach is per unit — don't mix them.)
     let n = 0;
     for (const item of (this.state.scholar.inventory || [])) {
       if (item.foodKind === 'meat' && item.foodState === 'cleaned') {
-        const full = item.hiddenKcal || Math.round(item.kcalEach * 2.5);
-        item.kcalEach = knowsCook ? full : Math.round(full * 0.85);
+        const units = item.units || 1;
+        const total = item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units);
+        const cookedTotal = knowsCook ? total : Math.round(total * 0.85);
+        item.kcalEach = Math.round(cookedTotal / units);
         item.hiddenKcal = null;
         item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = true;
         item.spoilDay = this.state.scholar.day + 5;
@@ -606,9 +716,11 @@
     const item = this.state.scholar.inventory[idx];
     if (item && item.foodKind === 'meat' && item.foodState === 'cleaned') {
       if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
-      const full = item.hiddenKcal || Math.round(item.kcalEach * 2.5);
+      // hiddenKcal is TOTAL; kcalEach is per unit.
+      const units = item.units || 1;
+      const total = item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units);
       const knows = this.knowsTechnique('cook');
-      item.kcalEach = knows ? full : Math.round(full * 0.85);
+      item.kcalEach = Math.round((knows ? total : Math.round(total * 0.85)) / units);
       item.hiddenKcal = null;
       item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = true;
       item.spoilDay = this.state.scholar.day + 5;

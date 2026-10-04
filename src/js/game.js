@@ -8664,12 +8664,19 @@
               const cx = mx + dx, cy = my + dy;
               if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
               const c = detail[cy] && detail[cy][cx];
-              if (FORAGEABLE[c]) plantCell = { x: cx, y: cy, cell: c };
+              // SCORCHED EARTH: the beam got here first. Skip it in the scan.
+              if (FORAGEABLE[c] && !this.cellScorched(cx, cy)) plantCell = { x: cx, y: cy, cell: c };
             }
           }
         }
         if (!plantCell && t.type !== 'ruin') {
           this.say('Nothing edible within reach. Walk to the green first.');
+          return null;
+        }
+        // SCORCHED EARTH: a tapped cell the beam crossed gives nothing.
+        // It recovers in a few days.
+        if (plantCell && this.cellScorched(plantCell.x, plantCell.y)) {
+          this.say('Charred ground — the beam got here first. Nothing will grow here for a few days.');
           return null;
         }
         // ruins: scavenge finite loot, not plants
@@ -8979,6 +8986,7 @@
       scholar.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
       let ate = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
+      let lastQ = 1; // meal quality of the last unit (for the reserve)
       // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
       while (scholar.kcal < target) {
         // find the most perishable FOOD (not gear)
@@ -9008,9 +9016,18 @@
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
         scholar.kcal += kcal; ate += kcal;
+        if (this.mealQuality) lastQ = this.mealQuality(it);
         if (it.plantId) tasted[it.plantId] = (tasted[it.plantId] || 0) + 1;
         it.units -= 1;
         if (it.units <= 0) scholar.inventory.splice(foodIdx, 1);
+      }
+      // THE RESERVE: overshoot beyond full doesn't vanish — it becomes power.
+      // (Fire gods still eat to their 9600 target; only the true excess banks.)
+      const over = scholar.kcal - target;
+      if (over > 0 && this.addReserve) {
+        scholar.kcal = target;
+        const added = this.addReserve(over, lastQ);
+        if (added > 0) this.say(`+${added} reserve — the furnace banks it. (${this.feastState()})`);
       }
       // LEVEL 3: Uses. Eat it 3 times, you learn what it does to you.
       // Vitamin C, medicine, energy. "Have you tasted it?" Yes. Now you know.
@@ -9560,7 +9577,8 @@
         // Otherwise the village eats it raw — at raw value. Specialists matter.
         if (item.foodKind === 'meat' && item.foodState === 'cleaned' && item.hiddenKcal) {
           const cooks = (this.villageHasSpecialty && this.villageHasSpecialty('cook')) || (this.knowsTechnique && this.knowsTechnique('cook'));
-          effectiveKcal = cooks ? item.hiddenKcal : kcalEach;
+          // hiddenKcal is TOTAL; effectiveKcal is per unit.
+          effectiveKcal = cooks ? Math.round(item.hiddenKcal / (item.units || 1)) : kcalEach;
         }
         const itemTotal = effectiveKcal * (item.units || 1);
         if (itemTotal <= need) {
@@ -9693,6 +9711,12 @@
       if (metDrain > 0) {
         scholar.kcal -= metDrain;
         if (scholar.kcal < 500) this.say(`The System's gifts are hungry: -${metDrain} kcal metabolic cost. Feed the power or lose it.`);
+      }
+      // THE RESERVE: the furnace burns overnight — use it or lose it.
+      if ((scholar.reserveKcal || 0) > 0) {
+        const lost = Math.round(scholar.reserveKcal * 0.2);
+        scholar.reserveKcal = Math.max(0, scholar.reserveKcal - lost);
+        if (lost > 0) this.say(`Overnight the furnace burns −${lost} reserve. Feast again, or spend it.`);
       }
       // ant_trail: ants know where the water is. 30% chance they lead you to some.
       if (this.hasAbility('ant_trail') && Math.random() < 0.3) {
@@ -9912,6 +9936,9 @@
     // Pattern descriptions: what the Codex writes after you've SURVIVED an attack.
     tbPatternDesc(pattern) {
       const t = (pattern && pattern.type) || 'burst';
+      if (t === 'beam' && pattern && pattern.sweep) {
+        return 'fires a sweeping beam that tracks you while it burns — outrun it sideways, block it with walls, or close in and break its aim';
+      }
       return {
         beam: 'fires in a straight line from itself',
         charge: 'charges in a straight line, trampling everything in its path',
@@ -9944,11 +9971,190 @@
       }
     },
 
+    // === SWEEPING BEAM (Highbeam Deer) ===
+    // Walls and real structures stop the beam. Trees, brush, rubble, water
+    // do not — the beam shreds straight through them to the edge of the node.
+    beamBlockingCells() { return { wall: 1, tent: 1, door: 1, fire: 1 }; },
+
+    // tbBeamCells: rasterized line from the deer through the aim point, past
+    // it to the grid edge, truncated at the first wall/structure. The aim
+    // cell is always on the line by construction. The blocking cell itself
+    // is included (impact point — it scorches, nothing can stand there anyway).
+    // Returns {cells, dir}.
+    tbBeamCells(mx, my, aimX, aimY, lastDir) {
+      let dx = aimX - mx, dy = aimY - my;
+      if (dx === 0 && dy === 0) { dx = lastDir ? lastDir.x : 0; dy = lastDir ? lastDir.y : 1; }
+      const dir = { x: Math.sign(dx), y: Math.sign(dy) };
+      const blockers = this.beamBlockingCells();
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cells = [];
+      const steps = Math.max(Math.abs(dx), Math.abs(dy)) || 1;
+      const ux = dx / steps, uy = dy / steps;
+      let guard = 0;
+      for (let t = 1; guard++ < 24; t++) {
+        const cx = Math.round(mx + ux * t), cy = Math.round(my + uy * t);
+        if (cx < 0 || cx > 8 || cy < 0 || cy > 8) break;
+        const last = cells[cells.length - 1];
+        if (last && last.cx === cx && last.cy === cy) continue;
+        cells.push({ cx, cy });
+        const cell = detail[cy] && detail[cy][cx];
+        if (cell && blockers[cell]) break;
+      }
+      return { cells, dir };
+    },
+
+    // Live beam-lane cells for the grid overlay (windup + firing).
+    tbBeamLaneCells() {
+      const f = this.tbfight;
+      const set = new Set();
+      if (!f) return set;
+      for (const m of f.fighters) {
+        if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || !m.telegraph) continue;
+        for (const c of (m.telegraph.cells || [])) set.add(c.cx + ',' + c.cy);
+      }
+      return set;
+    },
+
+    // One live-fire tick: the beam pivots toward its target (sweepSpeed),
+    // the lane is redrawn to the node's edge, everything it crosses is
+    // scorched, and exposure tiers decide the damage: in the lane hurts,
+    // the beam sitting ON you devastates, pinned with no escape is lethal.
+    tbBeamSweepTick(m, tg) {
+      const f = this.tbfight;
+      if (!f) return;
+      const pat = tg.pattern || {};
+      const speed = pat.sweepSpeed || 3;
+      const tgt = this.tbFighter(tg.aimKey || 'p');
+      if (tgt && tgt.alive) {
+        let ax = tg.aim.x, ay = tg.aim.y;
+        for (let i = 0; i < speed; i++) {
+          const dx = Math.sign(tgt.mx - ax), dy = Math.sign(tgt.my - ay);
+          if (dx === 0 && dy === 0) break;
+          ax += dx; ay += dy;
+        }
+        tg.aim = { x: Math.max(0, Math.min(8, ax)), y: Math.max(0, Math.min(8, ay)) };
+      }
+      const r = this.tbBeamCells(m.mx, m.my, tg.aim.x, tg.aim.y, tg.dir);
+      tg.cells = r.cells; tg.dir = r.dir;
+      this.scorchCells(tg.cells);
+      const laneSet = new Set(tg.cells.map(c => c.cx + ',' + c.cy));
+      let hitAnyone = false;
+      for (const o of f.fighters) {
+        if (!o.alive || o.fled || o.key === m.key) continue;
+        if (!S.combat.isFoe(m, o)) continue;
+        if (!laneSet.has(o.mx + ',' + o.my)) continue;
+        hitAnyone = true;
+        const onAim = Math.max(Math.abs(o.mx - tg.aim.x), Math.abs(o.my - tg.aim.y)) === 0;
+        const trapped = onAim && !this.tbHasEscape(o, laneSet);
+        let mult = 1, verb;
+        if (trapped) { mult = 3.5; verb = 'nowhere to run — the full beam PINS'; }
+        else if (onAim) { mult = 2.5; verb = 'the beam SITS on'; }
+        else { verb = 'the beam rakes across'; }
+        const dmg = Math.round(S.combat.roll(tg.dmg) * mult);
+        const who = o.kind === 'player' ? 'you' : o.name;
+        this.say(`🔥 ${verb} ${who}! (${dmg})`);
+        this.tbDamage(o.key, dmg, m.name + "'s " + tg.attackName);
+        if (f.over) return;
+      }
+      // ANTLER SWEEP (close range): closing in to disrupt is risky.
+      for (const o of f.fighters) {
+        if (!o.alive || o.fled || o.key === m.key) continue;
+        if (!S.combat.isFoe(m, o)) continue;
+        if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
+        const d = S.combat.roll([10, 16]);
+        const who = o.kind === 'player' ? 'you' : o.name;
+        this.say(`The ${m.name} thrashes its antlers at ${who} — getting close has a price. (${d})`);
+        this.tbDamage(o.key, d, m.name + "'s antlers");
+        if (f.over) return;
+      }
+      if (!hitAnyone) this.say('The beam sweeps on, scorching the earth where you were.');
+      // AUDIO: the hum hunts with the beam — pan follows it across the stereo
+      // field, heat rises as the aim closes in on the player.
+      try {
+        const pl = this.tbFighter('p');
+        if (pl) {
+          const dst = Math.max(Math.abs(tg.aim.x - pl.mx), Math.abs(tg.aim.y - pl.my));
+          this.audioEvent('beamSweep', {
+            pan: Math.max(-1, Math.min(1, (tg.aim.x - pl.mx) / 4)),
+            heat: Math.max(0, 1 - dst / 6),
+          });
+        }
+      } catch (e) {}
+    },
+
+    // tbHasEscape: can this fighter reach any cell outside the lane within
+    // one turn's movement? BFS over walkable cells.
+    tbHasEscape(o, laneSet) {
+      const budget = o.speed || 3;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const f = this.tbfight;
+      if (!f) return true;
+      const key = (x, y) => x + ',' + y;
+      const occupied = new Set();
+      for (const x of f.fighters) {
+        if (x.alive && (x.kind === 'monster' || x.kind === 'hostile') && x.key !== o.key) occupied.add(key(x.mx, x.my));
+      }
+      const seen = new Set([key(o.mx, o.my)]);
+      const queue = [[o.mx, o.my, 0]];
+      while (queue.length) {
+        const [x, y, d] = queue.shift();
+        if (d > 0 && !laneSet.has(key(x, y))) return true;
+        if (d >= budget) continue;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || seen.has(key(nx, ny))) continue;
+          const cell = detail[ny] && detail[ny][nx];
+          if (cell && this.cellProps(cell).blocks) continue;
+          if (occupied.has(key(nx, ny))) continue;
+          seen.add(key(nx, ny));
+          queue.push([nx, ny, d + 1]);
+        }
+      }
+      return false;
+    },
+
+    // === SCORCHED EARTH ===
+    // The beam ruins what it crosses. Scorched cells give no forage and
+    // recover in ~3 days. Tents in the path are shredded outright.
+    scorchCells(cells) {
+      const day = (this.state.scholar || {}).day || 0;
+      const nkey = this.map.px + ',' + this.map.py;
+      this.state.scorch = this.state.scorch || {};
+      const node = this.state.scorch[nkey] = this.state.scorch[nkey] || {};
+      const t = this.playerTile();
+      for (const c of cells || []) {
+        node[c.cx + ',' + c.cy] = day + 3;
+        const skey = c.cx + ',' + c.cy;
+        if (t && t.secrets && t.secrets[skey] && t.secrets[skey].condition && t.secrets[skey].condition !== 'shredded') {
+          t.secrets[skey].condition = 'shredded';
+          t.secrets[skey].known = true;
+          this.say('The beam shreds a tent in its path. Canvas peels like paper.');
+        }
+      }
+    },
+    cellScorched(cx, cy) {
+      const nkey = this.map.px + ',' + this.map.py;
+      const node = (this.state.scorch || {})[nkey];
+      if (!node) return false;
+      const until = node[cx + ',' + cy];
+      if (until === undefined) return false;
+      if (until <= ((this.state.scholar || {}).day || 0)) { delete node[cx + ',' + cy]; return false; }
+      return true;
+    },
+
     // The telegraph cue: behavioral text ALWAYS. Learned understanding only if earned.
     // Escalates as the windup counts down — you can FEEL it coming.
     tbTelegraphCue(m) {
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
+      if (tg && tg.firing > 0) {
+        let cue = 'The beam is LIVE and sweeping toward you! Outrun it sideways — never down the lane — or get behind something solid!';
+        if (this.tbPatternKnown(m.mdef.id, atk.name)) {
+          cue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
+        }
+        return cue;
+      }
       let cue = atk.telegraph || 'It shifts. Something is coming.';
       if (tg && tg.turnsLeft === 1) cue += " It's about to loose!";
       else if (tg && tg.turnsLeft > 1) cue += ' It is still gathering itself…';
@@ -10041,6 +10247,9 @@
       if (this.hasAbility('rage') && hpFrac < 0.5) { d *= 2; this.say('RAGE: +100% damage.'); }
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
       if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
+      // THE RESERVE: food is humanity's superpower. A full furnace hits harder —
+      // visibly. (feastBurn states the burn itself.)
+      if (this.feastBurn) { const fb = this.feastBurn(); if (fb > 0) d = Math.round(d * fb); }
       d = Math.round(d);
       p.acted = true;
       const isHuman = t.kind === 'hostile';
@@ -10067,6 +10276,15 @@
       }
       this.tbDamage(t.key, d, 'you');
       const tAfter = this.tbFighter(t.key);
+      // DISRUPT: a solid hit while it's channeling the beam can break its aim.
+      // Closing in is the risky counterplay — the antlers make sure of that.
+      if (tAfter && tAfter.alive && tAfter.telegraph && tAfter.telegraph.firing > 0 &&
+          Math.random() < (d >= 20 ? 0.5 : 0.25)) {
+        tAfter.telegraph = null;
+        this.say(`Your strike bites DEEP — the ${tAfter.name} staggers, and the beam stutters and dies!`);
+        this.tbStyle(15, 'broke its concentration!');
+        this.tbRefreshTelegraphUI();
+      }
       if (tAfter && !tAfter.alive && !isHuman) this.tbStyle(20, `dropped the ${tAfter.name}!`);
       this.tbAfterPlayerAction();
       return true;
@@ -10759,6 +10977,13 @@
         dialGlitch: !!this.state.dialGlitch,
         ap: this.ap, health: Math.round(s.health), kcal: Math.round(s.kcal),
         hydration: Math.round(s.hydration), energy: Math.round(s.energy),
+        // THE RESERVE: mana reserves, visible.
+        reserve: Math.round(s.reserveKcal || 0),
+        reserveCap: this.reserveCap ? this.reserveCap() : 4800,
+        feastState: this.feastState ? this.feastState() : 'empty',
+        // Feast button shows only when actionable (tool-gating).
+        feastReady: (s.reserveKcal || 0) < (this.reserveCap ? this.reserveCap() : 4800) &&
+          (s.inventory || []).some(i => (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && i.edible !== false),
         water: s.water || 0,
         // carried water, in liters (bottles are {liters, quality, source} objects —
         // never string-concat the raw array; that's how you get "[object Object]").

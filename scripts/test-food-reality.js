@@ -71,12 +71,15 @@ const origRandom = Math.random;
   freshGame();
   {
     const s = Game.state.scholar;
-    s.inventory.push(Game.foodForageItem(dand, false, 6, 450, s.day));
+    // pick a plant the background didn't already grant (background knowledge
+    // is random per run — using dandelion here flakes).
+    const p2 = Game.data.plants.find(p => !Game.plantKnown(p.id) && !/crack|shell|husk/i.test(p.preparation || '') && (p.caloriesPerUnit || 0) > 0);
+    s.inventory.push(Game.foodForageItem(p2, false, 6, 6 * p2.caloriesPerUnit, s.day));
     ok('pre-identify: still unknown', Game.state.scholar.inventory[0].edible === false);
     Game.say = () => {};
-    Game.identifyPlant('dandelion', 'observation');
+    Game.identifyPlant(p2.id, 'observation');
     const it = Game.state.scholar.inventory[0];
-    ok('identify flips unknown -> edible', it.edible === true && it.kcalEach === 45 && it.foodState === 'ready');
+    ok('identify flips unknown -> edible', it.edible === true && it.kcalEach === p2.caloriesPerUnit && it.foodState === 'ready');
   }
 
   // ---- 2. TURKEY PIPELINE ----
@@ -118,14 +121,14 @@ const origRandom = Math.random;
     ok('cook technique unknown before first cook', Game.knowsTechnique('cook') === false);
     Game.cookAll();
     const cooked = s.inventory[2];
-    ok('messy cook: 85% kcal', cooked.kcalEach === 2550);
+    ok('messy cook: 85% kcal', cooked.kcalEach === 638); // 3000*0.85/4 portions
     ok('messy cook: safe + spoilDay +5', cooked.safe === true && !cooked.diseaseRisk && cooked.spoilDay === s.day + 5);
     ok('messy cook: teaches', Game.knowsTechnique('cook') === true);
     // skilled cook on a fresh turkey: full value
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     Game.cleanCarcass(3);
     Game.cookAll();
-    ok('skilled cook: full kcal', s.inventory[3].kcalEach === 3000);
+    ok('skilled cook: full kcal', s.inventory[3].kcalEach === 750); // 3000/4 portions
     Game.nearFire = origNear;
 
     // preserve
@@ -133,7 +136,7 @@ const origRandom = Math.random;
     Game.preserveFood(2);
     const smoked = s.inventory[2];
     ok('preserved messy: keeps ~2 weeks', smoked.foodState === 'preserved' && smoked.spoilDay === s.day + 15);
-    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(2550 * 0.8)); // messy: no technique
+    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(638 * 0.8)); // messy: no technique
     // skilled preserve: full month
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     Game.state.codex.techniques.preserve = true;
@@ -310,6 +313,83 @@ const origRandom = Math.random;
     v.rosterChars[fakeId] = { id: fakeId, name: 'Aki Test', formerOccupation: 'sushi chef' };
     ok('villageHasSpecialty(cook)', Game.villageHasSpecialty('cook') === true);
     ok('villageHasSpecialty(preserver) via sushi chef', Game.villageHasSpecialty('preserver') === true);
+  }
+
+  // ---- 9. THE RESERVE (food is humanity's superpower) ----
+  freshGame();
+  {
+    const s = Game.state.scholar;
+    const dand = plant('dandelion');
+    Game.say = () => {};
+    ok('reserve cap 4800', Game.reserveCap() === 4800);
+    ok('reserve starts empty', Game.reserve() === 0 && Game.feastState() === 'empty');
+
+    // meal quality ladder
+    const rawMeat = { foodKind: 'meat', foodState: 'cleaned', diseaseRisk: { p: 0.3 }, kcalEach: 300 };
+    const cooked = { foodKind: 'meat', foodState: 'cooked', safe: true, kcalEach: 750 };
+    const smoked = { foodKind: 'meat', foodState: 'preserved', safe: true, kcalEach: 700 };
+    const chefMade = Object.assign({}, cooked, { wellMade: true });
+    const greens = { foodKind: 'plant', foodState: 'ready', kcalEach: 45 };
+    ok('quality: raw risky 0.5', Game.mealQuality(rawMeat) === 0.5);
+    ok('quality: cooked 1.0', Game.mealQuality(cooked) === 1.0);
+    ok('quality: preserved 1.1', Game.mealQuality(smoked) === 1.1);
+    ok('quality: specialist 1.3', Game.mealQuality(chefMade) === 1.3);
+    ok('quality: safe raw 0.7', Game.mealQuality(greens) === 0.7);
+
+    // FEAST: deliberate, quality-rated, capped
+    s.inventory.push(Object.assign({}, cooked, { units: 4, name: 'Turkey (cooked)', spoilDay: s.day + 5 }));
+    Game.feast();
+    ok('feast fills reserve at quality', s.reserveKcal === 3000); // 4×750×1.0
+    ok('feast state feasting', Game.feastState() === 'feasting');
+    s.inventory.push(Object.assign({}, chefMade, { units: 4, name: 'Turkey (chef)', spoilDay: s.day + 5 }));
+    Game.feast();
+    ok('reserve capped at 4800', s.reserveKcal === 4800);
+    ok('gorged at 3600+', Game.feastState() === 'gorged');
+    ok('reserve quality tracks best fuel', Game.reserveQuality() > 1);
+
+    // FEASTBURN: visible pipeline
+    let said = '';
+    Game.say = (m) => { said = m; };
+    const mult = Game.feastBurn();
+    ok('feastburn returns multiplier', mult > 1);
+    ok('feastburn burns reserve', s.reserveKcal === 4400); // gorged burn 400
+    ok('feastburn says the line', /FEASTBURN/.test(said) && /feast was the weapon/.test(said));
+    s.reserveKcal = 100;
+    Game.say = () => {};
+    ok('feastburn needs 300 reserve', Game.feastBurn() === 0);
+
+    // eat() overshoot banks into reserve instead of vanishing
+    s.kcal = 2300; s.reserveKcal = 0;
+    s.inventory.push(Object.assign(Game.foodForageItem(dand, true, 2, 90, s.day), { spoilDay: s.day + 5, units: 2 }));
+    Game.say = () => {};
+    Game.eat(); // target 2400: eats 2×45=90 → 2390... need bigger overshoot
+    // force a real overshoot: big unit
+    s.kcal = 2350;
+    s.inventory.push({ name: 'Big meal', units: 1, kcalEach: 500, spoilDay: s.day + 5, foodKind: 'meat', foodState: 'cooked', safe: true });
+    Game.eat();
+    ok('eat caps body kcal at target', s.kcal === 2400);
+    ok('overshoot banks to reserve', s.reserveKcal > 0);
+
+    // wellMade set by specialist
+    const turkey = animal('wild_turkey');
+    s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
+    const v = Game.state.village;
+    const fakeId = 'bg_chefw_test';
+    v.roster.push(fakeId);
+    v.rosterChars[fakeId] = { id: fakeId, name: 'Aki W', formerOccupation: 'sushi chef' };
+    v.nodePos = v.nodePos || {};
+    v.nodePos[fakeId] = { nx: Game.map.px, ny: Game.map.py };
+    Game.techniques(); // init
+    Game.state.codex.techniques.clean = true;
+    s.inventory.push({ name: "Grandfather's knife", units: 1, kcalEach: 0 });
+    const cIdx = s.inventory.findIndex(i => i.foodState === 'carcass');
+    Game.cleanCarcass(cIdx);
+    const mIdx = s.inventory.findIndex(i => i.foodState === 'cleaned');
+    Game.nearFire = () => true;
+    Game.askSpecialist(fakeId, mIdx);
+    // askSpecialist with a cook-specialist on cleaned meat → cook branch sets wellMade
+    const wm = s.inventory.find(i => i.wellMade);
+    ok('specialist cooking marks wellMade', !!wm);
   }
 
   console.log(`\nfood-reality: ${pass} passed, ${fail} failed`);

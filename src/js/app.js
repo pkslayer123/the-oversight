@@ -83,8 +83,10 @@
       `</div></div>`;
   }
   function statusBars(st) {
+    const feastTag = st.feastState === 'gorged' ? ' ⚡⚡ GORGED' : st.feastState === 'feasting' ? ' ⚡ feasting' : '';
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
       statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
+      statRow('RESERVE', st.reserve + '/' + st.reserveCap + feastTag, st.reserve / Math.max(1, st.reserveCap) * 100, false) +
       statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
       statRow('WATER', st.hydration + '% · ' + st.waterCleanL + 'L clean', st.hydration, st.hydration < 30) +
       (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '');
@@ -591,8 +593,11 @@
     const sleepDot = st.energy < 30 ? '<span class="dot"></span>'
       : (st.isNight ? '<span class="dot soft"></span>' : '');
     const packDot = st.packKg >= st.packCap ? '<span class="dot"></span>' : '';
+    // THE RESERVE: feast when there's food to turn into power. Hidden otherwise
+    // (tool-gating: unmet prerequisites stay hidden).
+    const feastBtn = st.feastReady ? `<button class="self-btn" data-self="feast">🍖 Feast</button>` : '';
     return `<div class="selfbar"><span class="ctx-label">you:</span>` +
-      `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` +
+      `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` + feastBtn +
       `<button class="self-btn" data-self="sleep">😴 Sleep${sleepDot}</button>` +
       `<button class="self-btn" data-self="pack">🎒 Pack (${st.invCount})${packDot}</button>` +
       `<button class="self-btn" data-self="wait">⏳ Wait</button></div>`;
@@ -603,6 +608,7 @@
       b.onclick = () => {
         const a = b.dataset.self;
         if (a === 'eat') { Game.eat(); rerender(); }
+        else if (a === 'feast') { Game.feast(); rerender(); }
         else if (a === 'sleep') { Game.sleep(); rerender(); }
         else if (a === 'pack') { invSheet(); }
         else if (a === 'wait') { Game.doAction('wait'); rerender(); }
@@ -3196,7 +3202,7 @@
             }
           }
         }
-        html += `<div class="${cls}${targetingCells().has(cx + ',' + cy) ? ' targetable' : ''}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        html += `<div class="${cls}${targetingCells().has(cx + ',' + cy) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${Game.tbBeamLaneCells && Game.tbBeamLaneCells().has(cx + ',' + cy) ? ' beamLane' : ''}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }

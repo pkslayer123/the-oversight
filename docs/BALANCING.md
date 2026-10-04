@@ -39,6 +39,14 @@ The foraging loop was "grab unlimited free food." Now food is a system to learn:
 - **Pantry**: 120,000 kcal / 40L water caps, expandable ×1.5/+20L per tier (materials + labor; builders halve cost). Ingredients (carcasses, unknown hauls) store free of cap — the pantry is where specialists transform them.
 - **Balance check**: scholar 2,200/day intact. A day-1 ignorant player eating raw unknown berries gets sick; a knowledgeable player with fire, knife, and a butcher friend eats well. First turkey = project, tenth = routine. Village haul target 400–800 unchanged — processing multiplies what the haul is *worth*.
 
+### The Reserve — food is humanity's superpower (2026-10-04)
+Digesting organic matter grants mana reserves other species can't match. The kcal pool feeds the body; the **reserve** (cap 4,800) feeds power:
+- **Fill**: deliberate **Feast** action (2 ticks) converts food → reserve at quality rates — raw/risky 0.5×, safe raw 0.7×, cooked 1.0×, preserved 1.1×, specialist-made 1.3×. Eat() overshoot beyond full also banks (no waste).
+- **Burn**: **FEASTBURN** — player attacks with ≥300 reserve auto-burn 300 (400 when gorged ≥3,600) for ×1.5 (×1.75 gorged) damage, stated every time: "the feast was the weapon." Specialist fuel burns hottest (×1.15), scraps burn dirty (×0.85).
+- **Decay**: −20%/night. Use it or lose it.
+- **Headroom**: quality × quantity scaling means a late-game player (smoker + butcher + full pantry) can plausibly become overwhelming. Endgame payoff: later.
+- Early game stays honest: you can't feast on what you don't have, and raw converts poorly.
+
 ## How to Evaluate a Change (the framework)
 
 Before changing a number, answer:
