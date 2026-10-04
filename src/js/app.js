@@ -290,16 +290,24 @@
   }
 
   // invPopup: what are you carrying? always accessible, not hidden.
+  // Crafting lives here too — supplies to feed yourself.
   function invPopup() {
     const st = Game.status();
     const inv = st.inventory;
+    const tools = Game.state.scholar.tools || [];
+    const recipes = Game.data.recipes || [];
+    const knownRecipes = recipes.filter(r => (Game.state.codex.recipes || {})[r.id] && Game.state.codex.recipes[r.id].level >= 3);
     screen.innerHTML = `${bar('scattering://pack', st.invCount + ' items')}
       <div class="card" style="margin-top:40px">
         <h3>Pack</h3>
         ${inv.length ? inv.map(i => `<p class="small"><b>${i.name}</b> x${i.units} (${i.kcalEach * i.units} kcal)${i.spoilDay <= st.day ? ' ⚠ spoiled' : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
+        ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> — ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : '<p class="small" style="opacity:.7">No recipes known yet. Learn by doing, or ask Jesse.</p>'}
         <button class="btn ghost sm" id="b-iback">Back</button>
       </div>`;
     document.getElementById('b-iback').onclick = () => expeditionScreen();
+    screen.querySelectorAll('[data-craft]').forEach(b => b.onclick = () => { Game.craft(b.dataset.craft); invPopup(); });
+    screen.querySelectorAll('[data-settrap]').forEach(b => b.onclick = () => { Game.setTrap(b.dataset.settrap); expeditionScreen(); });
   }
 
   function talkOverlay(vid) {

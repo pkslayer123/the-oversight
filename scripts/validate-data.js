@@ -20,6 +20,7 @@ const FILES = {
   'relicEnhancements.json': 'relicEnhancement',
   'background_survivors.json': 'background_survivor',
   'animals.json': 'animal',
+  'recipes.json': 'recipe',
 };
 
 function checkType(val, spec, where) {

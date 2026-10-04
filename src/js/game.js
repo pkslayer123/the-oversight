@@ -49,9 +49,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes };
       return this.data;
     },
 
@@ -94,6 +94,11 @@
       }
       // you trust yourself
       this.state.village.trust[villagerId] = 100;
+      // Jesse (hunter) starts knowing the snare recipe. Others must learn.
+      this.state.codex.recipes = {};
+      if (villagerId === 'jesse_calhoun') {
+        this.state.codex.recipes['snare'] = { level: 3 };
+      }
       // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
       // they wander turn-based. you see them. you tap them.
       this.state.village.positions = {};
@@ -193,6 +198,97 @@
         this.state.village.trust[vid] = Math.min(100, ((this.state.village.trust[vid] || 10) + 8));
       }
       return true;
+    },
+
+    // CRAFT: make a recipe you know (L3). Consumes materials. Creates an item with uses.
+    // Items degrade: snare breaks after 2 catches. You make another.
+    craft(recipeId) {
+      const recipe = this.data.recipes.find(r => r.id === recipeId);
+      if (!recipe) return null;
+      const known = (this.state.codex.recipes || {})[recipeId];
+      if (!known || known.level < 3) {
+        this.say(`You don\'t know how to make a ${recipe.name} yet.`);
+        return null;
+      }
+      // check materials
+      const inv = this.state.scholar.inventory;
+      for (const [mat, need] of Object.entries(recipe.materials)) {
+        const have = inv.filter(i => i.material === mat).reduce((t, i) => t + i.units, 0);
+        if (have < need) {
+          this.say(`Need ${need} ${mat} (have ${have}).`);
+          return null;
+        }
+      }
+      // consume materials
+      for (const [mat, need] of Object.entries(recipe.materials)) {
+        let left = need;
+        for (const item of inv) {
+          if (item.material !== mat || left <= 0) continue;
+          const take = Math.min(item.units, left);
+          item.units -= take; left -= take;
+        }
+      }
+      this.state.scholar.inventory = inv.filter(i => i.units > 0);
+      // create the item
+      this.state.scholar.tools = this.state.scholar.tools || [];
+      this.state.scholar.tools.push({ recipeId, uses: recipe.uses, name: recipe.name });
+      this.say(`You make a ${recipe.name}. ${recipe.description} (${recipe.uses} uses)`);
+      return true;
+    },
+
+    // LEARN RECIPE: like plants. Seen (L1), taught materials (L2), practiced (L3).
+    learnRecipe(recipeId, level) {
+      this.state.codex.recipes = this.state.codex.recipes || {};
+      const cur = this.state.codex.recipes[recipeId] || { level: 0 };
+      if (level > cur.level) {
+        this.state.codex.recipes[recipeId] = { level };
+        const recipe = this.data.recipes.find(r => r.id === recipeId);
+        this.say(`Recipe: ${recipe.name}. ${recipe.knowledgeLevels[String(level)]}`);
+      }
+    },
+
+    // SET TRAP: place a snare/deadfall. Check it later.
+    setTrap(recipeId) {
+      const tool = (this.state.scholar.tools || []).find(t => t.recipeId === recipeId);
+      if (!tool) { this.say('You don\'t have that trap.'); return null; }
+      const recipe = this.data.recipes.find(r => r.id === recipeId);
+      // traps go in the current tile's detail (at your position)
+      const t = this.playerTile();
+      t.traps = t.traps || [];
+      const mx = this.state.scholar.mx ?? 4, my = this.state.scholar.my ?? 4;
+      t.traps.push({ recipeId, mx, my, setDay: this.state.scholar.day, uses: tool.uses });
+      // remove from tools (it's set now)
+      this.state.scholar.tools = this.state.scholar.tools.filter(x => x !== tool);
+      this.say(`You set a ${recipe.name} here. Check it tomorrow.`);
+      return true;
+    },
+
+    // CHECK TRAPS: at day start, traps may have caught something.
+    checkTraps() {
+      const t = this.playerTile();
+      if (!t.traps || !t.traps.length) return;
+      for (const trap of [...t.traps]) {
+        if (trap.setDay >= this.state.scholar.day) continue; // set today, check tomorrow
+        const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
+        // 40% chance per day (if the animal is here)
+        if (Math.random() < 0.4) {
+          const catchId = recipe.catches[Math.floor(Math.random() * recipe.catches.length)];
+          const animal = this.data.animals.find(a => a.id === catchId);
+          this.state.scholar.inventory.push({
+            plantId: 'meat_' + animal.id, units: 1, kcalEach: animal.calories,
+            spoilDay: this.state.scholar.day + 1, name: animal.name + ' (trapped)',
+            unit: 'carcass', prep: 'Cook before eating.', kg: animal.calories / 1000
+          });
+          this.say(`Your ${recipe.name} caught a ${animal.name}! ${animal.calories} kcal.`);
+          trap.uses -= 1;
+          if (trap.uses <= 0) {
+            this.say(`The ${recipe.name} broke. You\'ll need another.`);
+            t.traps = t.traps.filter(x => x !== trap);
+          } else {
+            trap.setDay = this.state.scholar.day; // reset, check again tomorrow
+          }
+        }
+      }
     },
 
     // give food: the fastest way to earn trust. sharing is the social contract.
@@ -1355,6 +1451,16 @@
         const levelMult = entry && entry.level >= 2 ? 1.5 : 1.0;
         const finalUnits = Math.ceil(r.units * levelMult);
         scholar.inventory.push({ plantId: r.plantId, units: finalUnits, kcalEach: r.plant.caloriesPerUnit, spoilDay: scholar.day + (r.plant.spoilageDays || 2), name: r.plant.name, unit: r.plant.unit, prep: r.plant.preparation, kg: 0.1 });
+        // MATERIALS: byproducts for crafting. vine from bush, stick from tree, stone from rubble.
+        // you don't just get food — you get supplies.
+        if (plantCell && plantCell.cell === 'bush' && Math.random() < 0.3) {
+          scholar.inventory.push({ material: 'vine', units: 1, name: 'Vine', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
+          this.say('You also take some vine (crafting material).');
+        }
+        if (plantCell && (plantCell.cell === 'tree' || plantCell.cell === 'bigtree') && Math.random() < 0.4) {
+          scholar.inventory.push({ material: 'stick', units: 1, name: 'Stick', kcalEach: 0, spoilDay: 9999, kg: 0.2 });
+          this.say('A sturdy stick (crafting material).');
+        }
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         msg = r.message + ` (${r.kcal} kcal to your pack — eat up.)` + (r.firstFind ? ` (${r.plant.codex})` : '');
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
@@ -1635,6 +1741,7 @@
       // the village eats whether you're there or not — every day you're out, twelve mouths
       this.villageLives();
       this.villageEats();
+      this.checkTraps();
       // depletion: every 5 days, the easy food is gone. the land gets tired.
       if (this.state.scholar.day % 5 === 0) {
         for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {

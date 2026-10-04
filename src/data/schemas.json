@@ -345,5 +345,20 @@
       "scientific": "string",
       "method": "string[]"
     }
+  },
+  "recipe": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "uses": "number",
+      "description": "string",
+      "materials": "object",
+      "catches": "string[]",
+      "knowledgeLevels": "object"
+    }
   }
 }
