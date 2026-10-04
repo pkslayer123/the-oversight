@@ -1318,27 +1318,15 @@
       tiles[3][3].type = 'haven';
       tiles[3][3].stock = 0; tiles[3][3].maxStock = 0;
       tiles[3][3].revealed = true; tiles[3][3].visited = true;
-      // FOG OF WAR: every tile gets a vague guess. You don't know until you go.
+      // FOG OF WAR: unexplored tiles are fully hidden. No hints, no guesses —
+      // if you haven't been there, you don't see it. Revealed on visit.
       // BLOCKED ROADS: some paths in are obstructed. Always multiple solutions:
       // cut (fallen tree), clear (rubble), bridge (washed out / hard creek), swim, or go around.
       // CONSTRUCTION (future): tile.structures[] holds anything built here — walls, palisades, etc.
-      const GUESSES = {
-        forest_floor: ['looks like woods', 'trees, probably', 'green and dark that way'],
-        grove: ['denser canopy', 'big trees, maybe', 'dark crowns on the horizon'],
-        meadow: ['open ground, maybe', 'lighter ahead', 'could be a clearing'],
-        thicket: ['dark and tangled looking', 'dense brush', 'hard to see through'],
-        wetland: ['low and wet looking', 'mist hanging', 'soft ground ahead'],
-        creek: ['something glints — water?', 'you hear water', 'a shine through the trees'],
-        trail_edge: ['a line through the land?', 'looks walked-on', 'something regular'],
-        ruin: ['unnatural shapes', 'something built, once', 'straight lines where they shouldn\'t be'],
-        haven: ['home'],
-      };
       const DIRS = [[0,-1],[1,0],[0,1],[-1,0]]; // n,e,s,w
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
         const t = tiles[y][x];
         t.structures = []; // future: walls, palisades, shelters
-        const g = GUESSES[t.type] || ['unknown ground'];
-        t.guess = g[Math.floor(Math.random() * g.length)];
         // blockages: ~12% of wild tiles have one obstructed approach.
         // never block haven, never block the ruin approach (scavengers need in).
         if (t.type !== 'haven' && t.type !== 'ruin' && Math.random() < 0.12) {
@@ -1354,13 +1342,12 @@
         if (t.type === 'creek' && Math.random() < 0.35) t.needsBridge = true;
       }
       this.map = { tiles, px: 3, py: 3 };
-      this.reveal(3, 3);
-      // high ground sees farther: ridgelines start with the surroundings mapped
-      if (P.startReveal > 0) {
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
-          if (Math.abs(x - 3) + Math.abs(y - 3) <= P.startReveal) tiles[y][x].revealed = true;
-        }
-      }
+      // STRICT FOG: at start you see haven and the ground south of it — the
+      // door faces south, so south is all you can see. Everything else is
+      // dark until you walk there. (reveal() is still used on travel: arriving
+      // somewhere maps its surroundings.)
+      tiles[3][3].revealed = true;
+      tiles[4][3].revealed = true;
       const start = this.tileAt(3, 3);
       start.visited = true;
     },

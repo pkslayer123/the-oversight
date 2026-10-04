@@ -163,18 +163,17 @@
       // nothing to show right now.
     })();
     // Build tag: tap to force an update check (diagnostic + escape hatch).
+    // Uses the version.json flow — works with or without service workers.
     const btag = document.getElementById('build-tag');
-    if (btag && 'serviceWorker' in navigator) {
+    if (btag) {
       btag.onclick = () => {
         btag.textContent = 'checking for updates…';
-        navigator.serviceWorker.getRegistration().then(reg => {
-          if (!reg) { btag.textContent = 'no service worker — reload the page'; return; }
-          reg.update().then(() => {
-            setTimeout(() => {
-              btag.textContent = (reg.waiting ? 'update ready — tap the banner above ↑' : 'build ' + (window.BUILD_VERSION || 'dev') + ' (latest)');
-            }, 2500);
-          }).catch(() => { btag.textContent = 'update check failed — reload the page'; });
-        });
+        const up = window.__oversightUpdate;
+        if (!up) { btag.textContent = 'updater not ready — reload the page'; return; }
+        up.check().then(has => {
+          btag.textContent = has ? 'update ready — tap the banner above ↑'
+            : 'build ' + (window.BUILD_VERSION || 'dev') + ' (latest)';
+        }).catch(() => { btag.textContent = 'update check failed — reload the page'; });
       };
     }
   }
@@ -521,7 +520,7 @@
       if (exit && outTile) {
         const nx = Game.map.px + exit.dx, ny = Game.map.py + exit.dy;
         const nt = (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) ? Game.tileAt(nx, ny) : null;
-        const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : `unknown (${nt.guess || '??'})`) : 'the void';
+        const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the void';
         const block = nt ? Game.travelBlockage(nx, ny) : null;
         const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;
         actions.push([label, () => {
@@ -990,8 +989,9 @@
       <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
       <p class="small" style="opacity:.4;text-align:center;margin-top:14px"><a href="#" id="x-share" style="color:inherit">📤 share the oversight</a></p>`;
 
-    // MINIMAP IS A MAP, NOT A TELEPORTER. Tap a tile for a fog-of-war guess.
-    // Travel happens on foot: walk to the edge of the 9x9, tap yourself, head out.
+    // MINIMAP IS A MAP, NOT A TELEPORTER. Unexplored tiles are fully hidden —
+    // no hints, no guesses. Travel happens on foot: walk to the edge of the
+    // 9x9, tap yourself, head out.
     screen.querySelectorAll('.minimap .tile').forEach(el => {
       el.onclick = () => {
         const x = +el.dataset.x, y = +el.dataset.y;
@@ -1000,7 +1000,7 @@
         if (!info) return;
         if (x === st.px && y === st.py) { info.innerHTML = ''; return; }
         if (!tl.revealed) {
-          info.innerHTML = `<div class="card"><p>🔭 ${esc(tl.guess || 'unknown ground')}.<br><span class="small">You'll know when you get there. Walk to the edge and head out.</span></p></div>`;
+          info.innerHTML = `<div class="card"><p>🌫 <b>Unexplored.</b><br><span class="small">No one has been there. Walk to the edge and head out to see what's really there.</span></p></div>`;
         } else {
           info.innerHTML = `<div class="card"><p>🗺 ${esc(S.TILE_NAME[tl.type] || tl.type)}.<br><span class="small">Walk to the edge of the map to travel there.</span></p></div>`;
         }
