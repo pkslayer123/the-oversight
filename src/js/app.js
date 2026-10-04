@@ -484,15 +484,15 @@
     if (label === 'Fight' && mon && mon.mx === cx && mon.my === cy) { Game.startCombat(mon.id); return; }
     if (label === 'Hunt') { Game.huntAnimal(); return; }
     if (label === 'Talk') { talkAction(); return; }
-    if (label === 'Cut down') { Game.cutTree(cx, cy); return; }
+    if (label === 'Cut down (big job)') { Game.cutTree(cx, cy); return; }
     if (label === 'Prune branches') { Game.pruneBranches(cx, cy); return; }
     if (label === 'Gather fallen') { Game.gatherFallen(cx, cy); return; }
-    if (label === 'Clear brush') { Game.clearBrush(cx, cy); return; }
+    if (label === 'Clear brush (a while)') { Game.clearBrush(cx, cy); return; }
     if (label === 'Fill water (+2L)') { Game.fillWater(); return; }
     if (label.startsWith('Cook (')) { Game.cookAll(); return; }
     if (label === 'Step outside') { Game.exitBuilding(); return; }
     if (label === 'Go inside') { Game.enterBuilding(); return; }
-    if (label === 'Rest') { Game.doAction('rest'); return; }
+    if (label === 'Rest' || label === 'Rest (a while)') { Game.doAction('rest'); return; }
     if (label === 'Search') { Game.searchRoom(cx, cy); return; }
     // Examine, Use, Drink, Warm hands, Forage → the universal interact
     Game.cellInteract(cx, cy);
@@ -790,7 +790,7 @@
           // TOOL PREREQUISITES: felling needs an axe. A pruning saw takes
           // branches, not trunks. Impossible actions hide; the hint teaches.
           const ci = Game.cutInfo(cell);
-          if (ci.canFell) actions.push(['🪓 Cut down', () => { Game.cutTree(cx, cy); refresh(); }]);
+          if (ci.canFell) actions.push(['🪓 Cut down (big job)', () => { Game.cutTree(cx, cy); refresh(); }]);
           else {
             desc += ' ' + ci.hint;
             if (ci.canPrune) actions.push(['🌿 Prune branches', () => { Game.pruneBranches(cx, cy); refresh(); }]);
@@ -801,7 +801,7 @@
           else if (sec.safe) actions.push(['Drink', () => Game.cellInteract(cx, cy)]);
         } else if (cell === 'tent') {
           if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
-          else if (sec.condition === 'good') actions.push(['Rest', () => Game.cellInteract(cx, cy)]);
+          else if (sec.condition === 'good') actions.push(['😴 Rest (a while)', () => { Game.doAction('rest'); refresh(); }]);
           else if (sec.condition === 'packable') actions.push(['Pack up', () => Game.cellInteract(cx, cy)]);
         } else if (cell === 'water') {
           actions.push(['Drink', () => { Game.drinkWater(); refresh(); }]);
@@ -844,7 +844,7 @@
         }
         if (cell === 'plant' || cell === 'bush') actions.push(['Forage', () => Game.cellInteract(cx, cy)]);
         // TERRAFORMING: clear brush for brushwood. costs a day-part + 40 kcal.
-        if (cell === 'bush') actions.push(['🧹 Clear brush', () => { Game.clearBrush(cx, cy); refresh(); }]);
+        if (cell === 'bush') actions.push(['🧹 Clear brush (a while)', () => { Game.clearBrush(cx, cy); refresh(); }]);
         else if (cell === 'rubble') actions.push(['Scavenge', () => Game.cellInteract(cx, cy)]);
         else if (cell === 'bridge') desc += ' The only way across.';
         else if (cell === 'door') {
@@ -857,7 +857,7 @@
         }
         else if (cell === 'bunk') {
           desc += ' A bunk. Rest here.';
-          actions.push(['😴 Rest', () => { Game.doAction('rest'); refresh(); }]);
+          actions.push(['😴 Rest (a while)', () => { Game.doAction('rest'); refresh(); }]);
         }
         // EXAMINE on passable ground: tracks, old camps, strange growths.
         // The ground has stories. You have to stop and look.

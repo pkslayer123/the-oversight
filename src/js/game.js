@@ -4639,7 +4639,10 @@
         }
         return this.doAction('drink');
       }
-      // TENT: maybe good, shredded, or packable.
+      // TENT: maybe good, shredded, or packable. Looking is cheap and always
+      // says something. RESTING is a separate explicit decision (96 ticks —
+      // most of a day part) and must never be a silent side effect of
+      // examining. (That stole 97 ticks per "examine" tap.)
       if (cell === 'tent') {
         if (secret && !secret.known) {
           secret.known = true;
@@ -4650,13 +4653,19 @@
             this.say('This tent is intact — and light. You pack it up. (Shelter for later.)');
             detail[cy][cx] = 'dirt'; // it's gone, you took it
             return true;
-          } else {
-            this.say('A good tent. Dry inside. You could rest here.');
           }
-        } else if (secret && secret.known) {
-          if (secret.condition === 'shredded') { this.say('Shredded. You checked.'); return true; }
+          this.say('A good tent. Dry inside. (Resting here takes most of the day part — use Rest when you mean it.)');
+          return true;
         }
-        return this.doAction('rest');
+        if (secret && secret.known) {
+          if (secret.condition === 'shredded') { this.say('Shredded. You checked.'); return true; }
+          this.say(secret.condition === 'packable'
+            ? 'The packable tent, still here. (Pack up to take it.)'
+            : 'The tent, as you left it. Dry inside. (Rest is its own action — it costs most of the day part.)');
+          return true;
+        }
+        this.say('A tent. You give it a look — nothing more to learn from out here.');
+        return true;
       }
       // BUSH: thorns hurt. you learn to be careful.
       if (cell === 'bush') {
@@ -7302,6 +7311,7 @@
       // interactive cells? decision.
       if (cell === 'tree' || cell === 'bigtree' || cell === 'tent') {
         if (!sec || !sec.known) actions.push('Examine');
+        else if (cell === 'tent') actions.push(sec.condition === 'good' ? 'Rest (a while)' : 'Use');
         else actions.push('Use');
         if (cell === 'tree' || cell === 'bigtree') {
           // TOOL PREREQUISITES: felling needs an axe-class tool; a pruning
@@ -7310,7 +7320,7 @@
           // instead (see perception line / tap popup). No dead buttons.
           try {
             const ci = this.cutInfo(cell);
-            if (ci.canFell) actions.push('Cut down');
+            if (ci.canFell) actions.push('Cut down (big job)');
             else if (ci.canPrune) actions.push('Prune branches');
           } catch (e) { /* cutInfo unavailable — show nothing rather than lie */ }
           actions.push('Gather fallen');
@@ -7321,7 +7331,7 @@
       } else if (cell === 'plant' || cell === 'bush' || cell === 'rubble') {
         actions.push('Forage');
         // TERRAFORMING: brush can be cleared. costs a day-part, yields brushwood.
-        if (cell === 'bush') actions.push('Clear brush');
+        if (cell === 'bush') actions.push('Clear brush (a while)');
       } else if (cell === 'fire') {
         actions.push('Warm hands');
         // If you have raw food, you can cook here. (Knowledge tells you what needs it.)
@@ -7333,7 +7343,7 @@
       } else if (cell === 'lodge') {
         actions.push('Go inside');
       } else if (cell === 'bunk') {
-        actions.push('Rest');
+        actions.push('Rest (a while)');
       } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
         if (!sec || !sec.searched) actions.push('Search');
       }
@@ -8790,7 +8800,9 @@
         // triage: practiced hands heal more, even resting.
         scholar.health = Math.min(this.maxHealth(), scholar.health + Math.round(this.modTarget('healing.amount', 5)));
         scholar.kcal -= 40;
-        msg = `You rest. Breath slows. +${restGain} energy.`;
+        // COST HONESTY: rest burns 96 ticks — most of the day part. The
+        // message names the time spent so it feels earned, not stolen.
+        msg = `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy.`;
       } else if (kind === 'wait') {
         msg = 'You wait. The light changes. Nothing asks anything of you.';
       } else if (kind === 'drink') {

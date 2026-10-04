@@ -290,7 +290,7 @@
     const detail = this.genDetail(this.map.px, this.map.py);
     const row = detail[cy];
     const cell = row && row[cx];
-    if (!cell) return null;
+    if (!cell) { this.say('Nothing there to examine.'); return null; }
     const key = `${this.map.px},${this.map.py},${cx},${cy}`;
     const t = this.playerTile();
     const mod = (t.modifiers || {})[cx + ',' + cy];

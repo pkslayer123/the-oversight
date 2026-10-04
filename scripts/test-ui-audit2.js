@@ -43,7 +43,7 @@ function give(itemId, name) {
   freshGame();
   plantTree('tree', 5, 4);
   let acts = Game.cellActions(5, 4);
-  ok('bare hands: no Cut down', !acts.includes('Cut down'));
+  ok('bare hands: no Cut down', !acts.some(l => l.startsWith('Cut down')));
   ok('bare hands: no Prune branches', !acts.includes('Prune branches'));
   ok('bare hands: Gather fallen always available', acts.includes('Gather fallen'));
 
@@ -51,7 +51,7 @@ function give(itemId, name) {
   plantTree('tree', 5, 4);
   give('hand_saw', 'Hand Saw');
   acts = Game.cellActions(5, 4);
-  ok('saw: no Cut down', !acts.includes('Cut down'));
+  ok('saw: no Cut down', !acts.some(l => l.startsWith('Cut down')));
   ok('saw: Prune branches offered', acts.includes('Prune branches'));
   ok('saw: Gather fallen offered', acts.includes('Gather fallen'));
 
@@ -59,7 +59,7 @@ function give(itemId, name) {
   plantTree('bigtree', 5, 4);
   give('hatchet', 'Hatchet');
   acts = Game.cellActions(5, 4);
-  ok('axe: Cut down offered', acts.includes('Cut down'));
+  ok('axe: Cut down offered', acts.includes('Cut down (big job)'));
   ok('axe: Prune branches not duplicated', !acts.includes('Prune branches'));
   ok('axe: Gather fallen offered', acts.includes('Gather fallen'));
 
