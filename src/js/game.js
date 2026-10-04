@@ -1055,7 +1055,7 @@
       this.over = false; this.won = false;
       // SYNERGIES: recompute on load (saves predate the resonance system).
       // Discovered ones stay discovered; no re-announcement (checkSynergies only says on new).
-      this.checkSynergies();
+      this.recomputeActiveSynergies();
       return true;
     },
     wipe() { S.state.wipe(); },
@@ -1845,6 +1845,9 @@
       const travelKcalMult = S.modifiers.resolve(1, 'travel.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities), {});
       this.state.scholar.kcal -= Math.round(30 * t.d * travelKcalMult); // distance has a metabolic price
       this.noteTrailUse(); // RELIC BOND: the boots walked.
+      // SYNERGY passives: cold_blooded + hollow_bones work while traveling.
+      this.noteAbilityUse('cold_blooded');
+      this.noteAbilityUse('hollow_bones');
       let msg = `Travel ${t.d} tile${t.d > 1 ? 's' : ''} to ${S.TILE_NAME[tile.type]}.`;
       if (!tile.visited) {
         tile.visited = true;
@@ -3211,7 +3214,7 @@
       // ON-ACQUIRE: some abilities change the world the moment you take them.
       this.abilityOnAcquire(choice.id);
       // SYNERGIES: new ability might resonate with something you already hold.
-      this.checkSynergies();
+      this.recomputeActiveSynergies();
       s.abilityChoices = null;
       this.say(`✨ Ability gained: ${choice.name} (L1). ${choice.description || choice.desc}`);
       if (choice.flavor) this.say(`"${choice.flavor}"`);
@@ -3243,7 +3246,7 @@
           const lid = (lose && lose.id) || lose;
           s.abilities = s.abilities.filter(e => ((e && e.id) || e) !== lid);
           this.say(`PACT: the Static takes — ${lid} is gone.`);
-          this.checkSynergies();
+          this.recomputeActiveSynergies();
         }
       } else if (id === 'chitin_skin') {
         trustAll(-5, 'Your skin hardens into plates. People stare. (chitin_skin: trust -5, they notice)');
@@ -3278,6 +3281,8 @@
     // activateAbility: do the thing. Costs are real.
     activateAbility(id) {
       const s = this.state.scholar;
+      // SYNERGY: activatable use logged for discovery.
+      this.noteAbilityUse(id);
       if (id === 'blood_magic') {
         const cost = this.hasSynergy('crimson_circuit') ? 7 : 10;
         if ((s.health || 0) <= cost) { this.say('Too weak for the Blood Price.'); return null; }
@@ -3288,6 +3293,8 @@
         this.say('TIME SKIP: the light stutters. You are a day older. The time had to come from somewhere.');
         return this.endDayPart();
       } else if (id === 'dowsing') {
+        // SYNERGY: stormcaller — dowsing in the rain counts as rain_dancer use too.
+        if (this.state.weather === 'rain') this.noteAbilityUse('rain_dancer');
         // 70%: reveal the nearest water tile. Nobody knows why it works. Including us.
         let best = null, bestD = 99;
         for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
@@ -3340,6 +3347,8 @@
     // L1 -> L2: 10 uses. L2 -> L3: 25 uses. L3 is max (for now — evolution coming).
     gainAbilityXP(abilityId, amount) {
       const s = this.state.scholar;
+      // SYNERGY: every ability use is a potential resonance attempt.
+      this.noteAbilityUse(abilityId);
       // Check both background and System abilities.
       const ab = (s.backgroundAbilities || []).find(a => a.id === abilityId) ||
                  (s.abilities || []).find(a => a.id === abilityId);
@@ -3360,7 +3369,7 @@
         ];
         this.say(insights[Math.floor(Math.random() * insights.length)]);
         // SYNERGIES: a deepened ability might wake a new resonance.
-        this.checkSynergies();
+        this.recomputeActiveSynergies();
       }
     },
     // abilityLevelBonus: what does leveling up give? (Per ability.)
@@ -3403,6 +3412,7 @@
           const v = this.state.village; v.trust = v.trust || {};
           for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + bonus);
           this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${bonus})`);
+          this.noteAbilityUse('mediator');
         }
       } else if (ev.id === 'hushwolf_pack') {
         this.say('\U0001F43A HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
@@ -3515,6 +3525,8 @@
           const lootId = t.loot.shift();
           if (this.state.scholar.week1) this.state.scholar.week1.scavenge++;
           this.gainAbilityXP('scrounger', 1);
+          // SYNERGY passive: grave_robber works the same ruins.
+          this.noteAbilityUse('grave_robber');
           this.noteToolUse(); // RELIC BOND: prying, cutting, carrying.
           const item = SCAVENGED.find(s => s.id === lootId);
           if (!this.canCarry(item.kg)) { t.loot.unshift(lootId); this.say('Too heavy — your pack can\'t take it. Eat something or leave it.'); return null; }
@@ -3667,6 +3679,10 @@
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: r.units, kcal: r.kcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
         if (scholar.week1) scholar.week1.forage++;
         this.gainAbilityXP('green_thumb', 1);
+        // SYNERGY passives: photosynthesis works in daylight; third_eye/pattern see patterns.
+        if (this.dayPart === 1 || this.dayPart === 2) this.noteAbilityUse('photosynthesis');
+        this.noteAbilityUse('third_eye');
+        this.noteAbilityUse('pattern_recognition');
       } else if (kind === 'rest') {
         // RELIC — second_skin: no blisters, no misery. Energy returns faster.
         const restMult = S.modifiers.resolve(1, 'rest.energy', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
@@ -3892,6 +3908,7 @@
             this.state.scholar.health = Math.max(1, this.state.scholar.health - half);
             const vt = this.state.village.trust || {}; vt[id] = Math.min(100, (vt[id] || 10) + 5);
             this.say(`You step in front of ${first}. You take ${half} of it. They owe you. (leech: trust +5)`);
+            this.noteAbilityUse('leech');
           }
           v.health[id] = Math.max(0, curH - dmgTaken);
           if (v.health[id] <= 0) {
@@ -3955,32 +3972,141 @@
     },
 
     // ============ ABILITY SYNERGIES ============
-    // Related powers resonate. Hold two that sing together and something new wakes up.
-    // The player discovers these — they're never listed in advance.
-    // checkSynergies: recompute active synergies, announce new discoveries.
-    // Runs on equip, unequip, and level-up (evolved abilities resonate deeper).
-    checkSynergies() {
+    // Related powers resonate — but only if you LEARN to combine them.
+    // Holding two abilities does nothing by itself. You must discover the
+    // combination through use: simultaneous, sequential, same-target, or sustained.
+    // 3 successful combined uses unlocks the synergy. Attempts 1-2 tease the
+    // result (a flicker of what's possible) without revealing the method.
+    // The player thinks "whoa, what did I just do?" and tries to replicate it.
+    //
+    // noteAbilityUse: log an ability use, then check for synergy discoveries.
+    // Called from gainAbilityXP (passive uses), activateAbility (activatables),
+    // and maybeCheatDeath (death cheats). context: { target }.
+    noteAbilityUse(abilityId, context) {
+      const sch = this.state.scholar;
+      if (!sch || !abilityId) return;
+      context = context || {};
+      const day = (this.state.village && this.state.village.day) || (sch.day || 1);
+      const part = this.dayPart || 0;
+      sch.abilityUseLog = sch.abilityUseLog || [];
+      sch.abilityUseLog.push({ id: abilityId, day, part, target: context.target || null });
+      if (sch.abilityUseLog.length > 40) sch.abilityUseLog.shift();
+      this.checkSynergyDiscovery(abilityId, { day, part, target: context.target || null });
+    },
+
+    // checkSynergyDiscovery: did this ability use complete a combined use?
+    checkSynergyDiscovery(usedId, ctx) {
       const sch = this.state.scholar;
       if (!sch) return;
       const syns = this.data.synergies || [];
-      sch.synergies = sch.synergies || [];
+      sch.synergies = sch.synergies || [];       // discovered synergy ids
+      sch.synergyAttempts = sch.synergyAttempts || {};  // synId -> attempt count
+      for (const syn of syns) {
+        if (sch.synergies.includes(syn.id)) continue;   // already discovered
+        const dm = syn.discovery_method;
+        if (!dm) continue;
+        const reqs = syn.requires || [];
+        if (!reqs.includes(usedId)) continue;
+        // Must hold both abilities at minLevel to make progress.
+        const minLvl = syn.minLevel || 1;
+        if (!reqs.every(rid => this.abilityLevel(rid) >= minLvl)) continue;
+        const otherId = reqs.find(r => r !== usedId);
+        const log = sch.abilityUseLog || [];
+        let combined = false;
+        if (dm.type === 'simultaneous') {
+          // Both used in the same day-part.
+          combined = log.some(u => u.id === otherId && u.day === ctx.day && u.part === ctx.part);
+        } else if (dm.type === 'sequential') {
+          // Used second in the defined order, other was first earlier today.
+          const order = dm.order || reqs;
+          if (usedId === order[1]) {
+            combined = log.some(u => u.id === order[0] && u.day === ctx.day);
+          }
+        } else if (dm.type === 'same_target') {
+          // Both applied to the same target today.
+          combined = !!(ctx.target && log.some(u => u.id === otherId && u.target === ctx.target && u.day === ctx.day));
+        } else if (dm.type === 'sustained') {
+          // Both used today — counts as one day toward a 3-day streak.
+          const otherUsedToday = log.some(u => u.id === otherId && u.day === ctx.day);
+          if (otherUsedToday) {
+            const dayKey = syn.id + '_days';
+            const lastKey = syn.id + '_lastday';
+            const last = sch.synergyAttempts[lastKey] || 0;
+            if (last !== ctx.day) {
+              if (!sch.synergyAttempts[dayKey] || last === ctx.day - 1) {
+                sch.synergyAttempts[dayKey] = (sch.synergyAttempts[dayKey] || 0) + 1;
+              } else {
+                sch.synergyAttempts[dayKey] = 1;  // streak broken, restart
+              }
+              sch.synergyAttempts[lastKey] = ctx.day;
+              const days = sch.synergyAttempts[dayKey];
+              if (days >= 3) {
+                // Sustained: 3 days IS the discovery. Unlock directly.
+                this.unlockSynergy(syn);
+                continue;
+              } else {
+                // Sustained teases on day-progress, not a separate attempt counter.
+                this.synergyTease(syn, days);
+                continue;
+              }
+            }
+          }
+        }
+        if (combined) {
+          sch.synergyAttempts[syn.id] = (sch.synergyAttempts[syn.id] || 0) + 1;
+          const n = sch.synergyAttempts[syn.id];
+          if (n >= 3) {
+            this.unlockSynergy(syn);
+          } else {
+            this.synergyTease(syn, n);
+          }
+        }
+      }
+      this.recomputeActiveSynergies();
+    },
+
+    // synergyTease: attempt 1-2 feedback. Hints at the NATURE of the power,
+    // never the METHOD. The player should think "what did I just do?"
+    synergyTease(syn, n) {
+      const dm = syn.discovery_method || {};
+      const tease = n === 1 ? dm.tease1 : dm.tease2;
+      if (!tease) return;
+      // Only tease once per attempt count — don't spam on repeated checks.
+      const sch = this.state.scholar;
+      const seenKey = syn.id + '_teased_' + n;
+      if (sch.synergyAttempts[seenKey]) return;
+      sch.synergyAttempts[seenKey] = 1;
+      this.say(tease);
+      if (n === 2 && dm.hint) {
+        this.say(`Something wants to happen when you do... whatever you just did. (${n}/3)`);
+      }
+    },
+
+    // unlockSynergy: 3rd successful combined use. Permanent (while both held).
+    unlockSynergy(syn) {
+      const sch = this.state.scholar;
+      if (!sch.synergies.includes(syn.id)) {
+        sch.synergies.push(syn.id);
+        this.say(`\u2728 SYNERGY DISCOVERED: ${syn.name}!`);
+        if (syn.flavor) this.say(syn.flavor);
+        if (syn.discovery) this.say(syn.discovery);
+      }
+      this.recomputeActiveSynergies();
+    },
+
+    // recomputeActiveSynergies: only DISCOVERED + currently held synergies are active.
+    // Runs on equip, unequip, level-up, and load. Never auto-discovers.
+    recomputeActiveSynergies() {
+      const sch = this.state.scholar;
+      if (!sch) return;
+      const syns = this.data.synergies || [];
       const active = [];
       for (const syn of syns) {
+        if (!(sch.synergies || []).includes(syn.id)) continue;
         const minLvl = syn.minLevel || 1;
         const held = (syn.requires || []).every(rid => this.abilityLevel(rid) >= minLvl);
         if (held) active.push(syn.id);
       }
-      // Discoveries: newly active synergies get the System's delight.
-      for (const sid of active) {
-        if (!sch.synergies.includes(sid)) {
-          sch.synergies.push(sid);
-          const syn = syns.find(x => x.id === sid);
-          this.say(`\u2728 SYNERGY DISCOVERED: ${syn.name}!`);
-          if (syn.flavor) this.say(syn.flavor);
-          if (syn.discovery) this.say(syn.discovery);
-        }
-      }
-      // Lost: synergies whose requirements no longer hold go quiet (kept as discovered).
       sch.activeSynergies = active;
     },
 
@@ -4329,7 +4455,10 @@
     combatRound(cmd) {
       const r = S.combat.round(this.fight, cmd, this.state.scholar, this.data.abilities);
       r.log.forEach(l => this.say(l));
+      const hpBefore = this.state.scholar.health;
       this.state.scholar.health = Math.max(0, this.fight.scholarHp);
+      // SYNERGY passive: chitin_skin "used" when you take damage (it absorbs).
+      if (this.fight.scholarHp < hpBefore) this.noteAbilityUse('chitin_skin');
       if (cmd === 'study' && !this.state.codex.monsters) this.state.codex.monsters = {};
       if (cmd === 'study') this.state.codex.monsters['thornback_boar'] = { stage: 'observed' };
       if (r.result === 'won') {
@@ -4388,6 +4517,7 @@
         const eq = s.equipped || {};
         s.equipped = {};
         this.say('MOLT: your skin splits. You step out new, whole — and naked. All equipped gear lost in the old skin.');
+        this.noteAbilityUse('molt');
         return true;
       }
       // second_wind: once per day, when you'd die, you don't. 1 HP, 500 kcal.
@@ -4397,7 +4527,11 @@
       if (this.hasAbility('second_wind') && swUses < swMax && s.health <= 0) {
         s.secondWindDay = s.day; s.secondWindUses = swUses + 1;
         const furious = this.hasSynergy('undying_fury') && this.hasAbility('rage');
+        // undying_fury: rage was active (health hit 0, which is below half). Log both as simultaneous.
+        const wasRaging = this.hasAbility('rage');
         s.health = furious ? this.maxHealth() : 1; s.kcal = Math.max(s.kcal, 500);
+        this.noteAbilityUse('second_wind');
+        if (wasRaging) this.noteAbilityUse('rage');
         this.say(furious ? 'UNDYING FURY: death came for you mid-rage and you LAUGHED. FULL HEALTH. The rage does not end.' : `SECOND WIND: you should be dead. You refuse. (1 HP, 500 kcal.${swMax > 1 ? ` ${swMax - swUses - 1} use left today.` : ' Once today.'})`);
         return true;
       }
@@ -4413,6 +4547,7 @@
         this.map.px = this.state.village.x ?? 3; this.map.py = this.state.village.y ?? 3;
         s.mx = 4; s.my = 4; this.fight = null; s.monster = null;
         this.say('You wake at Haven, 1 HP, ash in your mouth. The audience applauds. (phoenix_clause: once per run)');
+        this.noteAbilityUse('phoenix_clause');
         return true;
       }
       return false;

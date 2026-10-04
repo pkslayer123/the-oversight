@@ -1,1 +1,336 @@
-[{"discovery":"\"OOH! Those two TOGETHER?! Ears AND eyes?! The audience did NOT see that coming! Nothing hides from you now! NOTHING!\"","flags":[],"flavor":"Your ears and eyes agree. Nothing hides.","id":"apex_sense","minLevel":1,"modifiers":[{"op":"add","target":"hunt.find_chance","value":0.15},{"op":"add","target":"hunt.success","value":0.1}],"name":"Apex Sense","requires":["tracker","echo_location"]},{"discovery":"\"WAIT. You grow the food AND you eat the sun?! That's... that's double-dipping! The gamblers are FURIOUS they didn't think of it! The plants like you AND you ARE a plant?!\"","flags":[],"flavor":"The plants feed you. You feed the plants. The System is confused and delighted.","id":"sun_garden","minLevel":1,"modifiers":[{"op":"multiply","target":"forage.yield","value":1.25}],"name":"Sun Eater's Garden","requires":["green_thumb","photosynthesis"]},{"discovery":"\"Nothing wasted?! EVERYTHING returns?! Oh, the efficiency! The AUDIENCE is taking notes! This is the most sustainable contestant we've EVER had!\"","flags":[],"flavor":"Nothing wasted. Everything returns.","id":"closed_loop","minLevel":1,"modifiers":[{"op":"multiply","target":"cook.kcal","value":1.15},{"op":"multiply","target":"forage.yield","value":1.1}],"name":"Closed Loop","requires":["camp_cook","compost_king"]},{"discovery":"\"You could talk a HUSHWOLF out of dinner! The drama division is filing a complaint — you're ruining their storylines! KEEP GOING!\"","flags":[],"flavor":"You speak and rooms settle.","id":"peacemakers_voice","minLevel":1,"modifiers":[{"op":"multiply","target":"trust.gain_mult","value":1.5},{"op":"add","target":"drama.resolve_bonus","value":5}],"name":"Peacemaker's Voice","requires":["diplomat","mediator"]},{"discovery":"\"Blood IN! Blood OUT! It's a CIRCUIT! Oh that's DARK! The audience is covering their eyes but PEEKING! We love it! We shouldn't! We DO!\"","flags":["crimson_circuit"],"flavor":"Blood in, blood out. The circuit closes. (Blood Price costs 3 less HP.)","id":"crimson_circuit","minLevel":1,"modifiers":[{"op":"multiply","target":"healing.amount","value":1.3}],"name":"Crimson Circuit","requires":["blood_magic","leech"]},{"discovery":"\"It REFUSES to fall! It REFUSES to calm down! ANGER plus UNDEATH?! The sponsors just tripled the odds! FIGHT! FIGHT! FIGHT!\"","flags":["undying_fury"],"flavor":"When Second Wind triggers during rage, you return at FULL health and the rage does not end.","id":"undying_fury","minLevel":1,"modifiers":[],"name":"Undying Fury","requires":["rage","second_wind"]},{"discovery":"\"You don't FIND water! Water FINDS YOU! The weather team wants to know your SECRET! There IS no secret! That's the best part!\"","flags":[],"flavor":"You don't find water. Water finds you.","id":"stormcaller","minLevel":1,"modifiers":[{"op":"multiply","target":"water.rain_catch","value":2.0}],"name":"Stormcaller","requires":["rain_dancer","dowsing"]},{"discovery":"\"Shed! Harden! Shed! Harden! It's BEAUTIFUL! Like watching armor decide to be ALIVE! The audience is molting EMOTIONALLY!\"","flags":[],"flavor":"Shed and harden. Shed and harden. (+25 max HP.)","id":"perfect_chrysalis","minLevel":1,"modifiers":[{"op":"add","target":"health.max_add","value":25}],"name":"Perfect Chrysalis","requires":["chitin_skin","molt"]},{"discovery":"\"You SEE it, don't you?! The SEAMS! The world has SEAMS and you're READING them! Our technicians are NERVOUS! Keep looking! Don't look at US!\"","flags":[],"flavor":"The world has seams. You see them.","id":"sees_the_weave","minLevel":1,"modifiers":[{"op":"add","target":"forage.gift_chance","value":0.15},{"op":"add","target":"hunt.trap_catch","value":0.15}],"name":"Sees the Weave","requires":["third_eye","pattern_recognition"]},{"discovery":"\"The living AND the dead?! You're looting BOTH SIDES of mortality! The ancestors' union has filed a grievance! We tore it up! DELVE! DELVE!\"","flags":[],"flavor":"The dead don't mind. Much.","id":"delver","minLevel":1,"modifiers":[{"op":"multiply","target":"ruin.find_mult","value":1.5}],"name":"Delver","requires":["scrounger","grave_robber"]},{"discovery":"\"Less fuel! SAME distance! You're... you're OPTIMIZED! Our engineers are taking notes and feeling INADEQUATE! Walk, efficient one! WALK!\"","flags":[],"flavor":"Less fuel. Same distance. The System takes notes.","id":"efficient_machine","minLevel":1,"modifiers":[{"op":"multiply","target":"travel.kcal","value":0.8}],"name":"Efficient Machine","requires":["cold_blooded","hollow_bones"]},{"discovery":"\"It DIED! It's BACK! It DIED! It's BACK! Death keeps filing the paperwork and you keep LOSING it! The underworld wants a recount! DENIED!\"","flags":["refuses_death"],"flavor":"Your death cheats recharge twice as fast. Death is getting annoyed.","id":"refuses_death","minLevel":1,"modifiers":[],"name":"Refuses Death","requires":["phoenix_clause","second_wind"]}]
+[
+  {
+    "discovery": "\"OOH! Those two TOGETHER?! Ears AND eyes?! The audience did NOT see that coming! Nothing hides from you now! NOTHING!\"",
+    "flags": [],
+    "flavor": "Your ears and eyes agree. Nothing hides.",
+    "id": "apex_sense",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "hunt.find_chance",
+        "value": 0.15
+      },
+      {
+        "op": "add",
+        "target": "hunt.success",
+        "value": 0.1
+      }
+    ],
+    "name": "Apex Sense",
+    "requires": [
+      "tracker",
+      "echo_location"
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "echo_location",
+        "tracker"
+      ],
+      "hint": "Echo first. Then hunt. Let your ears guide your eyes.",
+      "tease1": "For a heartbeat, the world had edges made of sound. Then it was just... quiet. Did you imagine that?",
+      "tease2": "The echo came back wrong \u2014 no, not wrong. *More.* You could hear the shape of something moving, almost see it. Then it slipped away. So close."
+    }
+  },
+  {
+    "discovery": "\"WAIT. You grow the food AND you eat the sun?! That's... that's double-dipping! The gamblers are FURIOUS they didn't think of it! The plants like you AND you ARE a plant?!\"",
+    "flags": [],
+    "flavor": "The plants feed you. You feed the plants. The System is confused and delighted.",
+    "id": "sun_garden",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "forage.yield",
+        "value": 1.25
+      }
+    ],
+    "name": "Sun Eater's Garden",
+    "requires": [
+      "green_thumb",
+      "photosynthesis"
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Tend living things in the daylight, day after day. Be patient. Be a garden.",
+      "tease1": "Your hands tingled in the sun today. The plants seemed to lean toward you. Probably the wind.",
+      "tease2": "The garden *hummed*. You felt it in your teeth \u2014 green and gold and hungry. Then it stopped. It wants... something. Repetition?"
+    }
+  },
+  {
+    "discovery": "\"Nothing wasted?! EVERYTHING returns?! Oh, the efficiency! The AUDIENCE is taking notes! This is the most sustainable contestant we've EVER had!\"",
+    "flags": [],
+    "flavor": "Nothing wasted. Everything returns.",
+    "id": "closed_loop",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "cook.kcal",
+        "value": 1.15
+      },
+      {
+        "op": "multiply",
+        "target": "forage.yield",
+        "value": 1.1
+      }
+    ],
+    "name": "Closed Loop",
+    "requires": [
+      "camp_cook",
+      "compost_king"
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "camp_cook",
+        "compost_king"
+      ],
+      "hint": "Cook, then return the scraps to the earth. Nothing wasted.",
+      "tease1": "The buried scraps seemed warmer than they should be. The soil... appreciated it? That's a strange thought.",
+      "tease2": "Where you buried yesterday's meal, something is already sprouting. Too fast. Impossibly fast. Then it slowed, as if embarrassed to be seen."
+    }
+  },
+  {
+    "discovery": "\"You could talk a HUSHWOLF out of dinner! The drama division is filing a complaint \u2014 you're ruining their storylines! KEEP GOING!\"",
+    "flags": [],
+    "flavor": "You speak and rooms settle.",
+    "id": "peacemakers_voice",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "trust.gain_mult",
+        "value": 1.5
+      },
+      {
+        "op": "add",
+        "target": "drama.resolve_bonus",
+        "value": 5
+      }
+    ],
+    "name": "Peacemaker's Voice",
+    "requires": [
+      "diplomat",
+      "mediator"
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "diplomat",
+        "mediator"
+      ],
+      "hint": "Talk first. Then mend. Words open the door; understanding walks through.",
+      "tease1": "Mid-conversation, the air went still. Everyone was listening \u2014 really listening \u2014 for just a moment. Then someone coughed.",
+      "tease2": "You watched two people who hate each other *almost* understand each other. The words were right there, on the edge of your tongue. Then the moment passed."
+    }
+  },
+  {
+    "discovery": "\"Blood IN! Blood OUT! It's a CIRCUIT! Oh that's DARK! The audience is covering their eyes but PEEKING! We love it! We shouldn't! We DO!\"",
+    "flags": [
+      "crimson_circuit"
+    ],
+    "flavor": "Blood in, blood out. The circuit closes. (Blood Price costs 3 less HP.)",
+    "id": "crimson_circuit",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "healing.amount",
+        "value": 1.3
+      }
+    ],
+    "name": "Crimson Circuit",
+    "requires": [
+      "blood_magic",
+      "leech"
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "blood_magic",
+        "leech"
+      ],
+      "hint": "Spend blood. Then drink it back. Close the circuit.",
+      "tease1": "The blood you spent seemed to hesitate before leaving you. Like it wanted to come back.",
+      "tease2": "You felt it \u2014 a loop, almost closed. Power leaving and returning in the same breath. Your veins buzzed. Then the circuit broke, and you were just... tired."
+    }
+  },
+  {
+    "discovery": "\"It REFUSES to fall! It REFUSES to calm down! ANGER plus UNDEATH?! The sponsors just tripled the odds! FIGHT! FIGHT! FIGHT!\"",
+    "flags": [
+      "undying_fury"
+    ],
+    "flavor": "When Second Wind triggers during rage, you return at FULL health and the rage does not end.",
+    "id": "undying_fury",
+    "minLevel": 1,
+    "modifiers": [],
+    "name": "Undying Fury",
+    "requires": [
+      "rage",
+      "second_wind"
+    ],
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Refuse to fall while refusing to calm down.",
+      "tease1": "Death reached for you and your anger *slapped its hand away*. For a second. Then you fell anyway.",
+      "tease2": "You died angry \u2014 and for one impossible moment, the anger held you up. You were standing. Dead, but standing. Then the rage broke, and so did you."
+    }
+  },
+  {
+    "discovery": "\"You don't FIND water! Water FINDS YOU! The weather team wants to know your SECRET! There IS no secret! That's the best part!\"",
+    "flags": [],
+    "flavor": "You don't find water. Water finds you.",
+    "id": "stormcaller",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "water.rain_catch",
+        "value": 2.0
+      }
+    ],
+    "name": "Stormcaller",
+    "requires": [
+      "rain_dancer",
+      "dowsing"
+    ],
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Seek water when the sky is already giving it.",
+      "tease1": "The dowsing stick twitched toward the clouds. That's... not how it's supposed to work.",
+      "tease2": "Rain bent toward your outstretched hand. Just a little. Just enough to notice. The clouds seemed surprised too."
+    }
+  },
+  {
+    "discovery": "\"Shed! Harden! Shed! Harden! It's BEAUTIFUL! Like watching armor decide to be ALIVE! The audience is molting EMOTIONALLY!\"",
+    "flags": [],
+    "flavor": "Shed and harden. Shed and harden. (+25 max HP.)",
+    "id": "perfect_chrysalis",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "health.max_add",
+        "value": 25
+      }
+    ],
+    "name": "Perfect Chrysalis",
+    "requires": [
+      "chitin_skin",
+      "molt"
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Shed, then harden. Shed, then harden. Let the cycle turn.",
+      "tease1": "Your skin itched in a way that felt... purposeful. Like it was rehearsing something.",
+      "tease2": "After the blow, your skin rippled \u2014 almost shed, almost renewed, then settled. It knows what it wants to do. It just needs... practice."
+    }
+  },
+  {
+    "discovery": "\"You SEE it, don't you?! The SEAMS! The world has SEAMS and you're READING them! Our technicians are NERVOUS! Keep looking! Don't look at US!\"",
+    "flags": [],
+    "flavor": "The world has seams. You see them.",
+    "id": "sees_the_weave",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "forage.gift_chance",
+        "value": 0.15
+      },
+      {
+        "op": "add",
+        "target": "hunt.trap_catch",
+        "value": 0.15
+      }
+    ],
+    "name": "Sees the Weave",
+    "requires": [
+      "third_eye",
+      "pattern_recognition"
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Look for patterns, day after day. The seams will show.",
+      "tease1": "For a second, the world had a texture \u2014 like fabric, like something woven. You blinked and it was just trees again.",
+      "tease2": "You saw it. A seam. A place where the world was stitched together slightly wrong. You reached for it and it... wasn't there. But you *saw* it."
+    }
+  },
+  {
+    "discovery": "\"The living AND the dead?! You're looting BOTH SIDES of mortality! The ancestors' union has filed a grievance! We tore it up! DELVE! DELVE!\"",
+    "flags": [],
+    "flavor": "The dead don't mind. Much.",
+    "id": "delver",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "ruin.find_mult",
+        "value": 1.5
+      }
+    ],
+    "name": "Delver",
+    "requires": [
+      "scrounger",
+      "grave_robber"
+    ],
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Rob the living and the dead in the same place.",
+      "tease1": "The ruins felt... cooperative today. Like they wanted to be searched.",
+      "tease2": "You found something in the rubble that shouldn't have been there \u2014 something old that *noticed* you finding it. Then it was just an old coin. Probably."
+    }
+  },
+  {
+    "discovery": "\"Less fuel! SAME distance! You're... you're OPTIMIZED! Our engineers are taking notes and feeling INADEQUATE! Walk, efficient one! WALK!\"",
+    "flags": [],
+    "flavor": "Less fuel. Same distance. The System takes notes.",
+    "id": "efficient_machine",
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "travel.kcal",
+        "value": 0.8
+      }
+    ],
+    "name": "Efficient Machine",
+    "requires": [
+      "cold_blooded",
+      "hollow_bones"
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Walk far, walk light, walk cold. Efficiency is a practice.",
+      "tease1": "The walk felt easier today. Less fuel, same distance. Your body is learning something.",
+      "tease2": "You stopped to rest and realized you didn't need to. Your breath was slow, your steps were light, and the miles just... happened. Then you thought about it, and the feeling faded."
+    }
+  },
+  {
+    "discovery": "\"It DIED! It's BACK! It DIED! It's BACK! Death keeps filing the paperwork and you keep LOSING it! The underworld wants a recount! DENIED!\"",
+    "flags": [
+      "refuses_death"
+    ],
+    "flavor": "Your death cheats recharge twice as fast. Death is getting annoyed.",
+    "id": "refuses_death",
+    "minLevel": 1,
+    "modifiers": [],
+    "name": "Refuses Death",
+    "requires": [
+      "phoenix_clause",
+      "second_wind"
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "phoenix_clause",
+        "second_wind"
+      ],
+      "hint": "Die. Return. Die again. Return again. Death keeps score; you keep erasing it.",
+      "tease1": "Death filed the paperwork. You lost it. Death is getting annoyed.",
+      "tease2": "You came back *again*, and for a moment death itself seemed to hesitate \u2014 like it was checking its notes, confused. Then it remembered its job."
+    }
+  }
+]

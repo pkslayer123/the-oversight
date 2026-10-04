@@ -445,7 +445,14 @@
       ],
       "flags": "string[]?",
       "discovery": "string",
-      "flavor": "string?"
+      "flavor": "string?",
+      "discovery_method": {
+        "type": "string",
+        "order": "string[]?",
+        "hint": "string",
+        "tease1": "string",
+        "tease2": "string"
+      }
     }
   }
 }
