@@ -109,16 +109,23 @@ const origRandom = Math.random;
     const raw2 = s.inventory[2];
     ok('skilled clean: 40% yield', raw2.kcalEach === 300 && raw2.units === 4);
 
-    // cook requires fire
+    // cook requires fire; cooking is a technique (messy first time)
     const origNear = Game.nearFire;
     Game.nearFire = () => false;
     Game.cookAll();
     ok('cookAll refused without fire', s.inventory[2].foodState === 'cleaned');
     Game.nearFire = () => true;
+    ok('cook technique unknown before first cook', Game.knowsTechnique('cook') === false);
     Game.cookAll();
     const cooked = s.inventory[2];
-    ok('cooked: full kcal, safe', cooked.kcalEach === 3000 && cooked.safe === true && !cooked.diseaseRisk);
-    ok('cooked: spoilDay +5', cooked.spoilDay === s.day + 5);
+    ok('messy cook: 85% kcal', cooked.kcalEach === 2550);
+    ok('messy cook: safe + spoilDay +5', cooked.safe === true && !cooked.diseaseRisk && cooked.spoilDay === s.day + 5);
+    ok('messy cook: teaches', Game.knowsTechnique('cook') === true);
+    // skilled cook on a fresh turkey: full value
+    s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
+    Game.cleanCarcass(3);
+    Game.cookAll();
+    ok('skilled cook: full kcal', s.inventory[3].kcalEach === 3000);
     Game.nearFire = origNear;
 
     // preserve
@@ -126,14 +133,14 @@ const origRandom = Math.random;
     Game.preserveFood(2);
     const smoked = s.inventory[2];
     ok('preserved messy: keeps ~2 weeks', smoked.foodState === 'preserved' && smoked.spoilDay === s.day + 15);
-    ok('preserved: 95% of cooked (messy 80%)', smoked.kcalEach === Math.round(3000 * 0.8)); // messy: no technique
+    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(2550 * 0.8)); // messy: no technique
     // skilled preserve: full month
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     Game.state.codex.techniques.preserve = true;
-    Game.cleanCarcass(3);
+    Game.cleanCarcass(4);
     Game.cookAll();
-    Game.preserveFood(3);
-    ok('preserved skilled: keeps ~month', s.inventory[3].spoilDay === s.day + 30);
+    Game.preserveFood(4);
+    ok('preserved skilled: keeps ~month', s.inventory[4].spoilDay === s.day + 30);
     Game.nearFire = origNear;
   }
 

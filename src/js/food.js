@@ -548,14 +548,27 @@
     const captured = [];
     const origSay = this.say;
     this.say = (m) => captured.push(String(m));
+    // snapshot legacy raw items so messy cooking can scale what orig cooked
+    const rawBefore = new Set((this.state.scholar.inventory || []).filter(i => i.rawKcal));
     let r;
     try { r = origCookAll.call(this); } finally { this.say = origSay; }
     const origCooked = captured.some(m => m.startsWith('Cooked '));
+    // FOOD REALITY: cooking is a technique. Blind attempts work but uneven
+    // (85%) — and teach. Specialists (askSpecialist) do it better.
+    const knowsCook = this.knowsTechnique('cook');
+    if (!knowsCook) {
+      for (const item of (this.state.scholar.inventory || [])) {
+        if (rawBefore.has(item) && !item.rawKcal) {
+          item.kcalEach = Math.round((item.kcalEach || 0) * 0.85);
+        }
+      }
+    }
     // meat pipeline: cleaned -> cooked (full kcal, safe)
     let n = 0;
     for (const item of (this.state.scholar.inventory || [])) {
       if (item.foodKind === 'meat' && item.foodState === 'cleaned') {
-        item.kcalEach = item.hiddenKcal || Math.round(item.kcalEach * 2.5);
+        const full = item.hiddenKcal || Math.round(item.kcalEach * 2.5);
+        item.kcalEach = knowsCook ? full : Math.round(full * 0.85);
         item.hiddenKcal = null;
         item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = true;
         item.spoilDay = this.state.scholar.day + 5;
@@ -568,13 +581,20 @@
         n++;
       }
     }
+    // legacy rawKcal items: scale the just-cooked ones when technique is missing.
+    // (orig already cooked them; find what changed this call.)
     for (const m of captured) {
       if (n > 0 && m === 'Nothing raw to cook.') continue;
       this.say(m);
     }
-    if (n > 0) {
+    const anyCooked = n > 0 || origCooked;
+    if (anyCooked) {
       this.tickAction(16); // tending the fire — honest time
-      this.say(origCooked ? `Plus ${n} from the hunt, cooked through. (16 ticks)` : `Cooked ${n} over the fire. (16 ticks)`);
+      if (!knowsCook) {
+        this.say(`A bit burnt in spots, underdone in others — but edible. You'll do better next time.`);
+        this.learnTechnique('cook', 'trial');
+      }
+      if (n > 0) this.say(origCooked ? `Plus ${n} from the hunt, cooked through. (16 ticks)` : `Cooked ${n} over the fire. (16 ticks)`);
       if (this.state.scholar.week1) this.state.scholar.week1.cook++;
     }
     return r;
@@ -586,12 +606,18 @@
     const item = this.state.scholar.inventory[idx];
     if (item && item.foodKind === 'meat' && item.foodState === 'cleaned') {
       if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
-      item.kcalEach = item.hiddenKcal || Math.round(item.kcalEach * 2.5);
+      const full = item.hiddenKcal || Math.round(item.kcalEach * 2.5);
+      const knows = this.knowsTechnique('cook');
+      item.kcalEach = knows ? full : Math.round(full * 0.85);
       item.hiddenKcal = null;
       item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = true;
       item.spoilDay = this.state.scholar.day + 5;
       item.name = item.name.replace(' (cleaned)', '') + ' (cooked)';
       item.prep = 'Cooked through. Safe.';
+      if (!knows) {
+        this.say(`A bit burnt in spots — but edible. You'll do better next time.`);
+        this.learnTechnique('cook', 'trial');
+      }
       this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now.`);
       this.tickAction(32);
       return null;

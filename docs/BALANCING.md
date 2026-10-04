@@ -34,7 +34,7 @@ Everything rooted in reality, everything balanced. This is how we evaluate chang
 ### Food Reality (2026-10-04)
 The foraging loop was "grab unlimited free food." Now food is a system to learn:
 - **Recognition is gated**: unknown plants aren't food (0 kcal, uneaten, uncounted) until identified. Nuts need shelling (net 75% of gross). The codex is survival, not completion.
-- **Turkey pipeline** (reference): carcass (not food, spoils ~2d) → cleaned raw 40% (risky 35%/-12, ~2d) → cooked 100% (safe, ~5d) → smoked 90-95% (~30d). Blind attempts work messy and teach; specialists do it better (butcher 44-52%, cook +5%/level).
+- **Turkey pipeline** (reference): carcass (not food, spoils ~2d) → cleaned raw 40% (risky 35%/-12, ~2d) → cooked 100% (safe, ~5d) → smoked 90-95% (~30d). Blind attempts work messy and teach (clean 30%, cook 85%, preserve 80%/+15d); specialists do it better (butcher 44-52%, cook +5%/level).
 - **Prey flees**: graze → wary → bolt, plus a reaction roll on the strike (tracker/hunter/night help). Weapon range is real (bow 5, spear 2, melee 1) — stalking, not statues.
 - **Pantry**: 120,000 kcal / 40L water caps, expandable ×1.5/+20L per tier (materials + labor; builders halve cost). Ingredients (carcasses, unknown hauls) store free of cap — the pantry is where specialists transform them.
 - **Balance check**: scholar 2,200/day intact. A day-1 ignorant player eating raw unknown berries gets sick; a knowledgeable player with fire, knife, and a butcher friend eats well. First turkey = project, tenth = routine. Village haul target 400–800 unchanged — processing multiplies what the haul is *worth*.
