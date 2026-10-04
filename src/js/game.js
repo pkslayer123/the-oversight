@@ -1392,13 +1392,14 @@
       }
       if (!hasFire) { this.say('Need a fire to cook.'); return null; }
       if (!item.rawKcal) { this.say('Nothing to cook there.'); return null; }
-      // water cost
+      // water cost: 1L per unit
       const water = this.state.village.water || { clean: 0 };
-      if (item.needsCooking && water.clean < 1) {
-        this.say(`Need 1L clean water to cook ${item.name}.`);
+      const units = item.units || 1;
+      if (item.needsCooking && water.clean < units) {
+        this.say(`Need ${units}L clean water to cook ${item.name}.`);
         return null;
       }
-      if (item.needsCooking) water.clean -= 1;
+      if (item.needsCooking) water.clean -= units;
       // cook it: rawKcal -> kcalEach (cooked)
       item.kcalEach = item.cookedKcal || item.rawKcal * 1.5;
       item.rawKcal = null; // it's cooked now
@@ -1487,13 +1488,14 @@
       let n = 0, waterUsed = 0;
       for (const item of (this.state.scholar.inventory || [])) {
         if (item.rawKcal) {
-          // needs water?
+          // needs water? 1L per UNIT (5 beans = 5L).
           const needsWater = item.needsCooking; // beans, rice
-          if (needsWater && water.clean < 1) {
-            this.say(`Not enough clean water to cook ${item.name}. Need 1L.`);
+          const units = item.units || 1;
+          if (needsWater && water.clean < units) {
+            this.say(`Not enough clean water to cook ${item.name}. Need ${units}L, have ${Math.floor(water.clean)}.`);
             continue;
           }
-          if (needsWater) { water.clean -= 1; waterUsed++; }
+          if (needsWater) { water.clean -= units; waterUsed += units; }
           item.kcalEach = item.cookedKcal || item.rawKcal * 1.5;
           item.rawKcal = null;
           item.safe = true;
