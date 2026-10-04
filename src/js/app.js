@@ -204,17 +204,13 @@
         rerender();
       };
     });
-    // tap the detail grid's edge to walk that way — the world continues
+    // detail grid: tap an adjacent cell to STEP there (costs 10 kcal). you're IN the world.
+    // the macro map below is for travel between tiles. this is for moving within one.
     screen.querySelectorAll('.detail .cell').forEach(el => {
       el.onclick = () => {
         const cx = +el.dataset.cx, cy = +el.dataset.cy;
-        let dx = 0, dy = 0;
-        if (cx <= 1) dx = -1; else if (cx >= 7) dx = 1;
-        if (cy <= 1) dy = -1; else if (cy >= 7) dy = 1;
-        if (!dx && !dy) return; // interior — nothing to walk to
-        const nx = st.px + dx, ny = st.py + dy;
-        if (!Game.travelTo(nx, ny)) { toast('Not reachable — through scouted ground.'); return; }
-        rerender();
+        if (Game.microMove(cx, cy)) rerender();
+        else toast('Too far — step to an adjacent cell.');
       };
     });
     document.getElementById('x-codex').onclick = codexScreen;
@@ -333,12 +329,13 @@
     const cells = Game.genDetail(st.px, st.py);
     const tile = Game.playerTile();
     const known = tile.knownPlant;
+    const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
       html += '<div class="drow">';
       for (let cx = 0; cx < 9; cx++) {
         const cell = cells[cy][cx];
-        const isMe = cx === 4 && cy === 4;
+        const isMe = (cx === pmx && cy === pmy);
         let g, cls = 'cell';
         if (isMe) { g = '🧍'; cls += ' me'; }
         else if (cell === 'plant') {
@@ -348,6 +345,7 @@
         else if (cell === 'grass') { g = ''; cls += ' grass'; }
         else if (cell === 'dirt') { g = ''; cls += ' dirt'; }
         else { g = CELL_GLYPH[cell] || ''; }
+
         html += `<div class="${cls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';

@@ -81,7 +81,7 @@
     "providesWhat": "snares",
     "quest": [
       "Up. Good. You were in the bus depot, I think. I was in the garage.",
-      "Twelve of us. Strangers. The System dropped us here and forgot the food part.",
+      "Twelve of us. Strangers. Something dropped us here and forgot the food part.",
       "I can hunt. But I don't know if I trust these people yet. Do you?"
     ]
   },
@@ -210,7 +210,7 @@
     "providesWhat": "",
     "quest": [
       "Whoa, you're up. Okay. So. Twelve of us. Random spawn. No tutorial.",
-      "I was in the motel. Woke up, everyone's a stranger, and the System's like 'good luck!'",
+      "I was in the motel. Woke up, everyone's a stranger, and there's this... voice? Like a tutorial that doesn't know it's a tutorial.",
       "We gotta figure out if we're a party or just twelve solo players. What's your build?"
     ]
   },

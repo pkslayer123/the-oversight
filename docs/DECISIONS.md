@@ -550,3 +550,27 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 - Depletion: every 7 days, maxStock -1 (min 1). The easy food dries up.
 - Role hint: Haven panel shows what the village needs from you right now.
   Not always the forager — sometimes the scholar.
+
+## 2026-10-03 — Act 0: 12 strangers (Steve's correction)
+Steve: "Don't just make stuff up. Adding little numbers like plant identities equals
+more calories is way too simplistic. Your wound system is bad."
+
+REMOVED:
+- Magic +80/entry knowledge bonus. Knowledge works when TAUGHT via dialogue,
+  then villagers forage better (+15% per plant they learn). Real mechanism.
+- 3-strike wound system. Now health bars (0-100).
+- Instant starvation death. Now -5 health/day (slow), +2/day recovery.
+- Role hint ("Haven tells you"). Information via observation and dialogue.
+
+ACT 0 (the opening — not glossed over):
+- 12 strangers from all over the world. Everyone spawns in a different building.
+- Trust starts 5-20. It's earned: talk (+3), give food (+12), teach (+?).
+- Villagers share food based on trust: <30: 20%, <60: 50%, <80: 80%, 80+: 100%.
+- The question "do we work together?" is the first arc. Not assumed.
+- Intros rewritten: guarded, practical, wondering if this is a good idea.
+
+STILL NEEDED (not yet built):
+- Food linked to detail grid: tile stock = sum of plant cells' yield. Plants produce on cycles.
+- Teach system: dialogue option to teach a plant you know.
+- Trust affects more than food (quests, knowledge sharing, leaving?).
+- The "shouldn't go the same way" — personalities that drive different Act 0 outcomes.

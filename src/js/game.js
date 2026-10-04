@@ -525,12 +525,37 @@
         // no free lessons on arrival — the land teaches when you work it, not when you walk in.
       }
       this.say(msg);
+      // arrive at the center of the new tile's detail grid. you're IN the world now.
+      this.state.scholar.mx = 4; this.state.scholar.my = 4;
       if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
       this.checkQuest('travel');
-      this.maybeOfferQuest();
-      // travel consumes the day-part — time passes, no separate "end part" tap
-      return this.endDayPart();
+    },
+
+    // micro-move: step to an adjacent cell in the 9x9. costs calories, not time.
+    // this is how you reach the plant, the water, the monster. the world is physical.
+    microMove(cx, cy) {
+      const s = this.state.scholar;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      const dx = Math.abs(cx - px), dy = Math.abs(cy - py);
+      if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) return false;
+      if (cx < 0 || cx > 8 || cy < 0 || cy > 8) return false;
+      s.kcal = Math.max(0, s.kcal - 10); // walking is work
+      s.mx = cx; s.my = cy;
+      this.monsterTurn();
+      return true;
+    },
+
+    // monsters move when you do. they're in the detail grid with you.
+    monsterTurn() {
+      const s = this.state.scholar;
+      const m = s.monster;
+      if (!m || m.mx === undefined) return;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
+      if (Math.abs(px - m.mx) >= Math.abs(py - m.my)) m.mx += dx;
+      else m.my += dy;
+      if (m.mx === px && m.my === py) this.startCombat(m.id);
     },
 
     // --- node identity: the dominant biome/character of the tile + its neighbors ---
