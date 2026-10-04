@@ -69,7 +69,8 @@
           isNew = true; label = `noted a language they speak`;
         }
       } else if (field === 'backstory' || field === 'trait' || field === 'note') {
-        const arr = e[field === 'note' ? 'notes' : field];
+        const key = field === 'note' ? 'notes' : field === 'trait' ? 'traits' : 'backstory';
+        const arr = e[key];
         if (!arr.find(x => x.text === value)) {
           arr.push({ text: value, day: day(), via: opts.via || 'talk', sure: opts.sure !== false });
           if (arr.length > 12) arr.shift();

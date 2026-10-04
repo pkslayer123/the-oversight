@@ -56,6 +56,9 @@ async function main() {
   }
   t('multiple distinct choice types', seenIds.size >= 3);
   // walk a full conversation to natural end
+  // (stub random low so the NPC's question roll always fires — deterministic)
+  const realRandom2 = Math.random;
+  Math.random = () => 0.1;
   Game.startConvo(wvid);
   let turns = 0, ended = false, sawQuestion = false, lastLine = '';
   const allLines = [];
@@ -75,6 +78,7 @@ async function main() {
     lastLine = s.line;
     if (s.ended) ended = true;
   }
+  Math.random = realRandom2;
   t('conversation ended naturally within 12 turns', ended);
   t('NPC asked a question during convo', sawQuestion);
   t('convoUI inactive after end', Game.convoUI(wvid).active === false);
