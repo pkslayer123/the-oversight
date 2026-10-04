@@ -4037,9 +4037,11 @@
           if (this.cellProps(cells[ey][ex]).blocks) cells[ey][ex] = 'grass';
         }
       }
-      // SPAWN SAFETY: travelTo drops you at (4,4). on creek tiles the river/channel
-      // could leave you standing on a walkable cell ringed by water — stuck, turn one.
-      // guarantee (4,4) is walkable and at least one orthogonal neighbor is too.
+      // SPAWN SAFETY: travelTo now enters at the matching edge (see findWalkableEntry),
+      // with BFS fallback to the nearest walkable cell. On creek tiles the
+      // river/channel could leave the edge ringed by water — so (4,4) is still
+      // guaranteed walkable with at least one walkable orthogonal neighbor,
+      // as the ultimate fallback anchor.
       if (t.type === 'creek') {
         const blocksAt = (cx, cy) => {
           if (cx < 0 || cy < 0 || cx > 8 || cy > 8) return true;
@@ -4333,6 +4335,32 @@
       if (cy === 8) return { dx: 0, dy: 1, dir: 'south' };
       return null;
     },
+    // findWalkableEntry: nearest walkable cell to a desired entry point.
+    // The edge you want might be water, trees, or wall — BFS outward to
+    // the nearest shore instead of spawning you somewhere absurd.
+    findWalkableEntry(tx, ty, wantX, wantY) {
+      const detail = this.genDetail(tx, ty);
+      const walkable = (cx, cy) => {
+        if (cx < 0 || cy < 0 || cx > 8 || cy > 8) return false;
+        const cell = detail[cy] && detail[cy][cx];
+        return !!cell && !this.cellProps(cell).blocks;
+      };
+      const sx = Math.max(0, Math.min(8, wantX)), sy = Math.max(0, Math.min(8, wantY));
+      if (walkable(sx, sy)) return { x: sx, y: sy };
+      const seen = new Set([sy * 9 + sx]);
+      const queue = [[sx, sy]];
+      while (queue.length) {
+        const [cx, cy] = queue.shift();
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx, ny = cy + dy, k = ny * 9 + nx;
+          if (nx < 0 || ny < 0 || nx > 8 || ny > 8 || seen.has(k)) continue;
+          seen.add(k);
+          if (walkable(nx, ny)) return { x: nx, y: ny };
+          queue.push([nx, ny]);
+        }
+      }
+      return { x: 4, y: 4 }; // unreachable in practice — every detail has walkable cells
+    },
     travelTo(x, y, force) {
       const dest = this.tileAt(x, y);
       const wasUnknown = !dest.revealed;
@@ -4346,6 +4374,9 @@
         if (block) return block;
       }
       const odx = Math.sign(x - this.map.px), ody = Math.sign(y - this.map.py);
+      // CONTINUOUS TRAVEL: remember where you stood on the old node so you can
+      // walk onto the new one at the matching spot — not the middle.
+      const oldMx = this.state.scholar.mx ?? 4, oldMy = this.state.scholar.my ?? 4;
       this.map.px = x; this.map.py = y;
       this.state.scholar.facing = { x: odx || 0, y: ody || 1 };
       this.reveal(x, y);
@@ -4367,11 +4398,20 @@
       // Walking into fog: the wanderer system (checkEncounter) handles "something is there."
       // No invented ambush odds. If the Bulldozer is on this tile, you'll meet it.
       this.say(msg);
+      // CONTINUOUS TRAVEL: you walk off one map, you walk onto the next.
+      // Enter at the edge you came from (opposite the travel direction),
+      // keeping your column/row so the world feels connected.
+      // Grid north is cy=0, south is cy=8; map y grows southward, so a
+      // northward trip (ody=-1) enters at the south edge (my=8).
+      const clamp9 = v => Math.max(0, Math.min(8, v));
+      const entryX = odx > 0 ? 0 : odx < 0 ? 8 : clamp9(oldMx);
+      const entryY = ody > 0 ? 0 : ody < 0 ? 8 : clamp9(oldMy);
+      const entry = this.findWalkableEntry(x, y, entryX, entryY);
+      this.state.scholar.mx = entry.x; this.state.scholar.my = entry.y;
       // LIVING WORLD: NPCs who are on this node get grid positions. You might
       // run into someone out here — they're living their own lives.
+      // (Runs after the player is placed, so nobody spawns on your entry cell.)
       this.ensureVillagerPositions();
-      // arrive at the center of the new tile's detail grid. you're IN the world now.
-      this.state.scholar.mx = 4; this.state.scholar.my = 4;
       // traveling means you're outside. (Arriving at Haven puts you on the grounds —
       // tap the lodge to go back inside.)
       this.state.scholar.insideHaven = false;
