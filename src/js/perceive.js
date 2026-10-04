@@ -186,6 +186,43 @@
       }
     } catch (e) {}
 
+    // ---- CURIOSITY: the world hides things — tracks, old camps, strange
+    // growths, hollows, remnants. Standing right next to one surfaces a
+    // whisper, not a label. The player still has to examine the exact cell
+    // to learn what it is. Once revealed, the whisper goes quiet.
+    // (Without this, examine is a blind 2-tick lottery across 81 cells —
+    // tedium, not exploration.)
+    try {
+      if (typeof this.tileFeature === 'function') {
+        const detail = this.genDetail(this.map.px, this.map.py);
+        const examined = (this.state.codex || {}).examined || {};
+        const curiosityLines = {
+          tracks: 'The ground here looks disturbed. Worth a closer look.',
+          oldcamp: 'Something about this spot feels... used. Lived in.',
+          strange: 'The ground here is wrong in a way you can\'t name.',
+          remnant: 'That rubble doesn\'t look accidental.',
+          hollow: 'That tree has a dark hollow at its base.',
+          banktracks: 'The mud at the bank looks trampled.',
+        };
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const cx = px + dx, cy = py + dy;
+            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+            const row = detail[cy];
+            const cell = row && row[cx];
+            if (!cell) continue;
+            const feat = this.tileFeature(this.map.px, this.map.py, cx, cy, cell);
+            if (!feat) continue;
+            const featKey = `${this.map.px},${this.map.py},${cx},${cy}:feat`;
+            if (examined[featKey]) continue;
+            if (curiosityLines[feat]) { push(curiosityLines[feat], 37); }
+            dy = 2; // one whisper at a time
+            break;
+          }
+        }
+      }
+    } catch (e) {}
+
     hints.sort((a, b) => b.priority - a.priority);
     return hints.slice(0, observant ? 3 : 2).map(h => h.text);
   };
