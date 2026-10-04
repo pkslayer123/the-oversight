@@ -7892,6 +7892,12 @@
         const kp = this.data.plants.find(p => p.id === t.knownPlant);
         if (kp) here.push(`${this.plantDisplayName(t.knownPlant).toLowerCase()} country`);
       }
+      // SPATIAL RECOGNITION: other species gathered on this tile, described
+      // with CURRENT knowledge — no amnesia between trips.
+      for (const sid of Object.keys(t.speciesSeen || {}).filter(id => id !== t.knownPlant).slice(0, 3)) {
+        const line = this.speciesHereLine(sid);
+        if (line) here.push(line);
+      }
       if (t.type === 'creek' || t.type === 'wetland') here.push('water to treat');
       if (this.wanderer && this.wanderer.x === this.map.px && this.wanderer.y === this.map.py) here.push('⚠ something big is here');
       return {
@@ -8945,7 +8951,7 @@
           entry.harvests = (entry.harvests || 0) + 1;
           if (entry.level === 1 && entry.harvests >= 5) {
             entry.level = 2;
-            this.say(`\u2605 Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['2']} (Yield +50%)`);
+            this.say(`\u2605 Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['2']} (Yield +50%). Use unlocked: ${this.plantUsesText(r.plantId) || 'not yet'}.`);
           }
           // LEVEL 4: Mastery. Long use teaches timing — roots in fall, leaves in spring.
           if (entry.level === 3 && entry.harvests >= 15) {
@@ -8965,7 +8971,8 @@
         // squirrel_friend: sometimes they leave you nuts. Random gifts, real food.
         const giftChance = this.modTarget('forage.gift_chance', 0);
         if (giftChance > 0 && Math.random() < giftChance) {
-          scholar.inventory.push({ plantId: 'gift_nuts', units: 2, kcalEach: 100, spoilDay: scholar.day + 5, name: 'Squirrel gift (nuts)', unit: 'handful', prep: 'A squirrel left these. A tip? A bribe? Nuts.', kg: 0.2 });
+          // IDENTITY: a squirrel leaves real nuts — a true species, not a blob.
+          scholar.inventory.push({ plantId: 'hickory_nut', units: 2, kcalEach: 100, spoilDay: scholar.day + 5, name: 'Squirrel gift (hickory nuts)', unit: 'handful', prep: 'A squirrel left these. A tip? A bribe? Nuts.', kg: 0.2 });
           this.say('A squirrel drops nuts at your feet and vanishes. A gift. (squirrel_friend: +200 kcal)');
         }
         if (r.firstFind) {
@@ -8982,6 +8989,11 @@
           if (isNew && bounty && bounty.why) this.say(`Journal: ${bounty.why}`);
           else if (!isNew) this.say(`Journal updated: ${this.plantDisplayName(r.plantId)} grows here too — better than ${this.plantDisplayName(prevBest.id).toLowerCase()}.`);
         }
+        // SPATIAL MEMORY: this tile remembers every species taken from it.
+        // Return trips surface recognition with your CURRENT knowledge.
+        t.speciesSeen = t.speciesSeen || {};
+        const prevSeen = t.speciesSeen[r.plantId] || null;
+        t.speciesSeen[r.plantId] = { day: scholar.day, n: (prevSeen ? prevSeen.n : 0) + 1 };
         // KNOWLEDGE = YIELD. Level 2 (parts) gives 50% more. You know what to take.
         const entry = this.state.codex.plants[r.plantId];
         const levelMult = !entry ? 1.0 : entry.level >= 4 ? 2.0 : entry.level >= 2 ? 1.5 : 1.0;
@@ -9008,8 +9020,10 @@
           this.say('A sturdy stick (crafting material).');
         }
         // pattern_recognition: the rare find goes in the pack.
+        // IDENTITY: rare_herb is a true species (Ghost Pipe) — honest naming.
         if (r.rareFind) {
-          scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
+          const rp = this.data.plants.find(p => p.id === r.rareFind.plantId);
+          scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: rp ? (this.plantKnown(rp.id) ? rp.name : (rp.description || 'unfamiliar plant')) : 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
         }
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
         // FOOD REALITY: unknown hauls aren't food yet — say so honestly.
@@ -9017,6 +9031,8 @@
         const gateNote = !isKnown ? ` (not food until identified)` : (invItem.foodState === 'in_shell' ? ` (needs shelling — net < gross)` : '');
         const kcalNote = !isKnown ? 'unknown value' : finalKcal + ' kcal';
         msg = `Packed ${finalUnits}× ${r.plant.unit} of ${this.plantDisplayName(r.plantId)} (${kcalNote})${gateNote}.`;
+        // RECOGNITION: gathered here before? Say so, with current knowledge.
+        if (prevSeen && prevSeen.n >= 1) msg += ' ' + this.speciesRecognition(r.plantId);
         if (plantCell) msg += ` The ${plantCell.cell === 'plant' ? 'patch' : plantCell.cell} is picked clean — it'll recover in a few days.`;
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: finalUnits, kcal: finalKcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
         if (scholar.week1) scholar.week1.forage++;
@@ -9176,7 +9192,7 @@
           if (entry.tastings >= 3) {
             entry.level = 3;
             const plant = this.data.plants.find(p => p.id === pid);
-            this.say(`Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['3']} (+5 health when eaten)`);
+            this.say(`Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['3']} (+5 health when eaten). All uses known: ${this.plantUsesText(pid) || '—'}.`);
             // level 3 benefit: eating gives health
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
@@ -11212,6 +11228,50 @@
       const e = (this.state.codex.plants || {})[pid];
       return !!(e && e.level >= 1);
     },
+    plantLevel(pid) {
+      const e = (this.state.codex.plants || {})[pid];
+      return (e && e.level) || 0;
+    },
+    // USES ARE EARNED: every forageable has at least one real use, but
+    // uselessness is ignorance, not a property of the plant. L2 unlocks the
+    // primary use; L3 unlocks the rest. L0/L1: no uses known.
+    plantUses(pid) {
+      const p = this.data.plants.find(x => x.id === pid);
+      if (!p || !p.uses) return [];
+      const lvl = this.plantLevel(pid);
+      return p.uses.filter(u => lvl >= (u.minLevel || 2));
+    },
+    plantUsesText(pid) {
+      const uses = this.plantUses(pid);
+      if (!uses.length) return '';
+      return uses.map(u => `${u.kind}: ${u.note}`).join('; ');
+    },
+    // SPATIAL RECOGNITION: the land remembers what you took, and so do you.
+    // Returning to a tile surfaces what you found here before, described with
+    // your CURRENT knowledge — the "oh, THESE are the edible ones" moment.
+    speciesRecognition(pid) {
+      const p = this.data.plants.find(x => x.id === pid);
+      if (!p) return '';
+      const lvl = this.plantLevel(pid);
+      const uses = this.plantUses(pid);
+      const edible = uses.some(u => u.kind === 'food');
+      if (lvl >= 2) {
+        return `You recognize it — ${p.name.toLowerCase()}${edible ? ', one of the edible ones' : ''}.` +
+          (uses.length ? ` Uses so far: ${uses.map(u => u.kind + ' (' + u.note + ')').join('; ')}.` : '');
+      }
+      if (lvl >= 1) return `The ${p.name} — you've gathered it here before.`;
+      return `The ${(p.description || 'unfamiliar plant').toLowerCase()} from before — still unnamed.`;
+    },
+    // compact variant for the tile's "here" list
+    speciesHereLine(pid) {
+      const p = this.data.plants.find(x => x.id === pid);
+      if (!p) return null;
+      const lvl = this.plantLevel(pid);
+      const edible = this.plantUses(pid).some(u => u.kind === 'food');
+      if (lvl >= 2) return `${p.name.toLowerCase()} (known${edible ? ', edible' : ''})`;
+      if (lvl >= 1) return `${p.name.toLowerCase()} (recognized)`;
+      return `${(p.description || 'unfamiliar plant').toLowerCase()} (seen before, unnamed)`;
+    },
     plantDisplayName(pid) {
       const p = this.data.plants.find(x => x.id === pid);
       if (!p) return 'unfamiliar plant matter';
@@ -11245,7 +11305,7 @@
       const namePrefix = p.name + '. ';
       if (kl1.startsWith(namePrefix)) kl1 = kl1.slice(namePrefix.length);
       else if (kl1.startsWith(p.name)) kl1 = kl1.slice(p.name.length).replace(/^[.\s:—-]+/, '');
-      this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1}`);
+      this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1} Uses unknown — harvest, taste, and learn.`);
       const sys = [
         'SYSTEM: Naming things. Very human. The audience approves.',
         'SYSTEM: Oh! It has a NAME. You all love names.',
@@ -11263,6 +11323,7 @@
         const lvl = e.level || 1;
         return { pid, name: p.name, level: lvl, kcal: p.caloriesPerUnit, unit: p.unit,
           prep: p.preparation, text: p.codex, knowledge: (p.knowledgeLevels || {})[String(lvl)] || '',
+          uses: this.plantUsesText(pid),
           harvests: e.harvests || 0, tastings: e.tastings || 0 };
       }).filter(Boolean);
     },

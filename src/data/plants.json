@@ -4,7 +4,7 @@
       "se_woodlands"
     ],
     "caloriesPerUnit": 45,
-    "codex": "Every part is edible \u2014 leaves, flowers, roots. Bitter means nutritious. The first green of spring and the last of fall.",
+    "codex": "Every part is edible — leaves, flowers, roots. Bitter means nutritious. The first green of spring and the last of fall.",
     "confidence": "high",
     "id": "dandelion",
     "idDifficulty": 1,
@@ -25,7 +25,7 @@
     "unit": "handful of greens",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -39,7 +39,19 @@
       "2": "Parts: roots (roast for coffee), young leaves (salad), petals (tea). Don't take old leaves (bitter).",
       "3": "Uses: vitamin C (scurvy), vitamin A, diuretic. Eat regularly for +5 health.",
       "4": "Mastery: harvest roots in fall, leaves in spring. Blanch leaves to remove bitterness. 2x yield."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "young leaves raw or boiled; roots roasted"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "vitamin C, diuretic — eat regularly for health"
+      }
+    ]
   },
   {
     "biomes": [
@@ -67,7 +79,7 @@
     "unit": "bundle of shoots",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -80,14 +92,31 @@
       "2": "Parts: rhizomes (starch, like potato), young shoots (asparagus), pollen (flour), heads (tinder).",
       "3": "Uses: rhizomes are survival starch. High calories. Pollen is protein-rich.",
       "4": "Mastery: dig rhizomes in fall/winter. Collect pollen in early summer. Process starch by pounding."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "young shoots peeled; roots pounded for starch"
+      },
+      {
+        "kind": "tinder",
+        "minLevel": 2,
+        "note": "seed fluff catches a spark fast"
+      },
+      {
+        "kind": "fiber",
+        "minLevel": 3,
+        "note": "leaves weave into mats and cordage"
+      }
+    ]
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 65,
-    "codex": "Thorns guard the sweetest calories in the woods. Summer's paycheck \u2014 eat fresh, dry what you can't carry.",
+    "codex": "Thorns guard the sweetest calories in the woods. Summer's paycheck — eat fresh, dry what you can't carry.",
     "confidence": "high",
     "id": "blackberry",
     "idDifficulty": 1,
@@ -105,7 +134,7 @@
     "unit": "handful of berries",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -118,14 +147,31 @@
       "2": "Parts: berries (eat), leaves (tea), roots (medicinal). Pick ripe (black, not red).",
       "3": "Uses: vitamin C, antioxidants. Leaves for diarrhea. High energy.",
       "4": "Mastery: pick in morning (cooler, firmer). Leave unripe for later. Canes fruit on second year."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "ripe black berries, straight off the cane"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "leaf tea settles the stomach"
+      },
+      {
+        "kind": "dye",
+        "minLevel": 3,
+        "note": "deep purple-black dye from the juice"
+      }
+    ]
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 130,
-    "codex": "Fall's candy. The fruit sweetens after frost \u2014 nature's own ripening timer. Dries well for winter stores.",
+    "codex": "Fall's candy. The fruit sweetens after frost — nature's own ripening timer. Dries well for winter stores.",
     "confidence": "high",
     "id": "persimmon",
     "idDifficulty": 2,
@@ -145,7 +191,7 @@
     "unit": "handful of fruit",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -157,14 +203,26 @@
       "2": "Parts: fruit (eat when soft), seeds (roast). Unripe = astringent (mouth-puckering).",
       "3": "Uses: high sugar, vitamin A/C. Good winter food (hangs on tree).",
       "4": "Mastery: wait for frost (sweetens). Dry for storage. Seeds predict winter (spoon=fork=knife)."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "only dead-ripe and soft — unripe will punish you"
+      },
+      {
+        "kind": "bait",
+        "minLevel": 3,
+        "note": "sweet pulp draws animals to snares"
+      }
+    ]
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 200,
-    "codex": "Calorie-dense and they keep for months. The woods' savings account \u2014 gather in fall, eat all winter.",
+    "codex": "Calorie-dense and they keep for months. The woods' savings account — gather in fall, eat all winter.",
     "confidence": "high",
     "id": "hickory_nut",
     "idDifficulty": 2,
@@ -181,7 +239,7 @@
     "unit": "handful of nuts",
     "waterContent": "low",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -193,14 +251,26 @@
       "2": "Parts: nut meat (eat), shells (smoke flavor), bark (tea). Crack carefully.",
       "3": "Uses: high fat, high protein. Best nut calorie-wise. Stores well.",
       "4": "Mastery: shagbark easiest to crack. Float test (sinkers are good). Store unshelled."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "sweet nutmeats — shell first, worth the work"
+      },
+      {
+        "kind": "tinder",
+        "minLevel": 3,
+        "note": "shaggy bark strips make fine tinder"
+      }
+    ]
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 150,
-    "codex": "The staple that fed nations. Tannins must be leached or they'll punish you \u2014 but leached acorn meal is flour. Flour is bread. Bread is winter.",
+    "codex": "The staple that fed nations. Tannins must be leached or they'll punish you — but leached acorn meal is flour. Flour is bread. Bread is winter.",
     "confidence": "high",
     "id": "acorn_white_oak",
     "idDifficulty": 2,
@@ -218,7 +288,7 @@
     "unit": "handful of nutmeats",
     "waterContent": "low",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -231,14 +301,26 @@
       "2": "Parts: nut meat (must leach tannins), caps (nothing). White oak = less tannin than red.",
       "3": "Uses: starch staple. Leached acorns = flour. High calories when processed.",
       "4": "Mastery: leach in running water (days) or boil (hours). Dry and grind. 2x yield when done right."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "leach the tannins in water, then grind to meal"
+      },
+      {
+        "kind": "dye",
+        "minLevel": 3,
+        "note": "tannin brown dye from the shells"
+      }
+    ]
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 35,
-    "codex": "Flavor is survival too \u2014 morale matters. The smell test is the only ID that counts: onion smell or it stays in the ground.",
+    "codex": "Flavor is survival too — morale matters. The smell test is the only ID that counts: onion smell or it stays in the ground.",
     "confidence": "high",
     "id": "wild_onion",
     "idDifficulty": 2,
@@ -257,7 +339,7 @@
     "unit": "bundle",
     "waterContent": "medium",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -270,7 +352,19 @@
       "2": "Parts: bulb (strongest), leaves (mild), flowers (garnish). Whole plant edible.",
       "3": "Uses: vitamin C, antimicrobial. Good flavoring. Prevents infection.",
       "4": "Mastery: dig bulbs in spring/fall. Don't overharvest (leave some). Braid to store."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "bulbs and greens, raw or cooked"
+      },
+      {
+        "kind": "seasoning",
+        "minLevel": 3,
+        "note": "wild seasoning — a little goes far"
+      }
+    ]
   },
   {
     "biomes": [
@@ -282,7 +376,7 @@
     "id": "chickweed",
     "idDifficulty": 2,
     "name": "Chickweed",
-    "preparation": "Eat raw. Delicate \u2014 wilts fast.",
+    "preparation": "Eat raw. Delicate — wilts fast.",
     "scientific": "Stellaria media",
     "seasons": [
       "spring",
@@ -297,7 +391,7 @@
     "unit": "handful of greens",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -310,18 +404,30 @@
       "2": "Parts: leaves and stems (salad), flowers (garnish). Eat raw.",
       "3": "Uses: vitamin C, minerals. Cooling (for inflammation). Chickens love it (hence name).",
       "4": "Mastery: harvest before flowering (tender). Grows in cool weather. Succession plant."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "tender salad green, mild and fresh"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "poultice cools skin irritation"
+      }
+    ]
   },
   {
     "biomes": [
       "se_woodlands"
     ],
     "caloriesPerUnit": 25,
-    "codex": "Trail nibble, not a meal \u2014 but it lifts the spirits, and sometimes that's the difference between going on and giving up.",
+    "codex": "Trail nibble, not a meal — but it lifts the spirits, and sometimes that's the difference between going on and giving up.",
     "confidence": "high",
     "id": "wood_sorrel",
     "idDifficulty": 1,
-    "lookalikeNote": "Heart-shaped leaflets in threes. Tangy taste confirms it \u2014 but eat in moderation (oxalic acid).",
+    "lookalikeNote": "Heart-shaped leaflets in threes. Tangy taste confirms it — but eat in moderation (oxalic acid).",
     "name": "Wood Sorrel",
     "preparation": "Eat raw, sparingly. Pleasant lemony tang.",
     "scientific": "Oxalis stricta",
@@ -338,7 +444,7 @@
     "unit": "handful",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "ohio",
@@ -351,7 +457,19 @@
       "2": "Parts: leaves (tangy), flowers (garnish), seed pods (crunchy). Oxalic acid = lemony.",
       "3": "Uses: vitamin C, thirst-quencher. Don't overeat (oxalic acid). Good trail nibble.",
       "4": "Mastery: best in spring. Mix with bland greens. Avoid if kidney issues."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "tart lemony nibble — small amounts"
+      },
+      {
+        "kind": "seasoning",
+        "minLevel": 3,
+        "note": "sour seasoning for bland meals"
+      }
+    ]
   },
   {
     "biomes": [
@@ -363,7 +481,7 @@
     "id": "muscadine",
     "idDifficulty": 1,
     "name": "Muscadine Grapes",
-    "preparation": "Eat raw. Thick skins, big seeds \u2014 work for it.",
+    "preparation": "Eat raw. Thick skins, big seeds — work for it.",
     "scientific": "Vitis rotundifolia",
     "seasons": [
       "summer",
@@ -377,7 +495,7 @@
     "unit": "handful",
     "waterContent": "high",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
     ],
     "regions": [
       "georgia"
@@ -388,7 +506,19 @@
       "2": "Parts: fruit (eat), leaves (wrap food), vines (cordage).",
       "3": "Uses: sugar, resveratrol. Leaves are edible (like grape leaves).",
       "4": "Mastery: harvest after first frost (sweetest). Dry for raisins. Vines for baskets."
-    }
+    },
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "thick-skinned wild grapes, sweet-tart"
+      },
+      {
+        "kind": "bait",
+        "minLevel": 3,
+        "note": "fallen fruit baits traps well"
+      }
+    ]
   },
   {
     "id": "elderberry",
@@ -426,9 +556,21 @@
     ],
     "lookalikeNote": "Red-berried elder is toxic. Only the dark purple-black CANADENSIS berries, cooked.",
     "waterContent": "high",
-    "codex": "Flowers in June, berries in August. One of the best wild medicines \u2014 if you cook it.",
+    "codex": "Flowers in June, berries in August. One of the best wild medicines — if you cook it.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "MUST be cooked — raw berries and all green parts are toxic"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "cooked berry syrup and flower tea for colds"
+      }
     ]
   },
   {
@@ -468,7 +610,19 @@
     "waterContent": "high",
     "codex": "The forgotten fruit. Tastes like banana-mango. Raccoons know before you do.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "custard-sweet fruit when fully ripe and soft"
+      },
+      {
+        "kind": "bait",
+        "minLevel": 3,
+        "note": "strong scent draws animals"
+      }
     ]
   },
   {
@@ -486,7 +640,7 @@
       "3": "Uses: seasoning, vitamin C, morale. A little goes far.",
       "4": "Mastery: take 1 in 10 (they're slow). Leaves in April, bulbs after."
     },
-    "preparation": "Eat raw or cooked. Bulb is strongest. Use sparingly \u2014 potent.",
+    "preparation": "Eat raw or cooked. Bulb is strongest. Use sparingly — potent.",
     "regions": [
       "ohio",
       "georgia",
@@ -506,9 +660,21 @@
     ],
     "lookalikeNote": "Lily-of-the-valley looks similar and is POISONOUS. Crush a leaf: ramps smell like onion. No smell = don't eat.",
     "waterContent": "medium",
-    "codex": "Spring gold. Overharvested in many places \u2014 take little, leave much.",
+    "codex": "Spring gold. Overharvested in many places — take little, leave much.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "wild leek — bulb and leaves, pungent and rich"
+      },
+      {
+        "kind": "seasoning",
+        "minLevel": 3,
+        "note": "dried and ground, seasons for months"
+      }
     ]
   },
   {
@@ -550,7 +716,19 @@
     "waterContent": "medium",
     "codex": "The weed that's better than spinach. Free salad, everywhere.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "spinach-like greens — cook to tame the oxalates"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "leaf poultice for bites and stings"
+      }
     ]
   },
   {
@@ -566,7 +744,7 @@
       "1": "Purslane. Succulent reddish stems, paddle leaves. Grows flat.",
       "2": "Parts: stems, leaves, all edible raw. Crunchy, lemony.",
       "3": "Uses: highest omega-3 of any leafy plant. Good raw in summer heat.",
-      "4": "Mastery: pick before flowering for best texture. Regrows fast \u2014 cut, don't pull."
+      "4": "Mastery: pick before flowering for best texture. Regrows fast — cut, don't pull."
     },
     "preparation": "Eat raw. Great in summer. Rinse off grit.",
     "regions": [
@@ -586,11 +764,23 @@
       "meadow",
       "trail_edge"
     ],
-    "lookalikeNote": "Spurge looks similar but has milky sap \u2014 purslane sap is clear. Milky = poison.",
+    "lookalikeNote": "Spurge looks similar but has milky sap — purslane sap is clear. Milky = poison.",
     "waterContent": "high",
     "codex": "Succulent weed with more omega-3 than fish oil wishes it had.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "succulent crunch, surprisingly rich — eat fresh"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "cooling poultice for minor burns"
+      }
     ]
   },
   {
@@ -608,7 +798,7 @@
       "3": "Uses: highest-calorie wild nut. Oil-rich. Keeps for months in shell.",
       "4": "Mastery: gather in fall; husk immediately (wear gloves). Crack with a rock; pick meat with a thorn."
     },
-    "preparation": "Husk, wash, dry, crack. Meat is rich \u2014 a little satisfies.",
+    "preparation": "Husk, wash, dry, crack. Meat is rich — a little satisfies.",
     "regions": [
       "ohio",
       "georgia",
@@ -625,11 +815,23 @@
     "tileAffinity": [
       "grove"
     ],
-    "lookalikeNote": "Husks stain hands black for days \u2014 that's how you know. English walnut is milder; this one is stronger.",
+    "lookalikeNote": "Husks stain hands black for days — that's how you know. English walnut is milder; this one is stronger.",
     "waterContent": "low",
     "codex": "220 calories of oil-rich meat per nut. Nature's energy bar, in armor.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "rich oily nutmeats — shelling is a project, worth it"
+      },
+      {
+        "kind": "dye",
+        "minLevel": 3,
+        "note": "the famous dark walnut dye — stains everything"
+      }
     ]
   },
   {
@@ -642,12 +844,12 @@
     "caloriesPerUnit": 20,
     "unit": "root piece",
     "knowledgeLevels": {
-      "1": "Sassafras. Mitten-shaped leaves \u2014 three shapes on one tree.",
-      "2": "Parts: roots (tea), young leaves (fil\u00e9 powder). Root bark is strongest.",
+      "1": "Sassafras. Mitten-shaped leaves — three shapes on one tree.",
+      "2": "Parts: roots (tea), young leaves (filé powder). Root bark is strongest.",
       "3": "Uses: root tea for morale and mild medicine. Leaves thicken stew.",
-      "4": "Mastery: dig small roots in fall. Don't ring-bark the tree. Dry leaves for fil\u00e9."
+      "4": "Mastery: dig small roots in fall. Don't ring-bark the tree. Dry leaves for filé."
     },
-    "preparation": "Root tea: simmer, don't boil hard. Leaves dried and powdered as fil\u00e9.",
+    "preparation": "Root tea: simmer, don't boil hard. Leaves dried and powdered as filé.",
     "regions": [
       "ohio",
       "georgia",
@@ -671,7 +873,24 @@
     "waterContent": "low",
     "codex": "Root beer grows on trees. The original flavor, before the lawyers.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "tea",
+        "minLevel": 2,
+        "note": "spicy root tea — morale in a cup"
+      },
+      {
+        "kind": "seasoning",
+        "minLevel": 3,
+        "note": "dried leaves ground to filé thicken stew"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "mild traditional tonic"
+      }
     ]
   },
   {
@@ -685,11 +904,11 @@
     "unit": "handful of leaves/flowers",
     "knowledgeLevels": {
       "1": "Yarrow. Feathery leaves, flat white flower clusters.",
-      "2": "Parts: leaves and flowers. Bitter tea. NOT a food \u2014 medicine.",
+      "2": "Parts: leaves and flowers. Bitter tea. NOT a food — medicine.",
       "3": "Uses: stops bleeding (poultice), breaks fever (tea). Battlefield herb for millennia.",
       "4": "Mastery: crush fresh leaves for wounds. Dry flowers for winter tea. Small doses."
     },
-    "preparation": "Poultice for wounds (crushed fresh). Tea for fever \u2014 bitter, small cups.",
+    "preparation": "Poultice for wounds (crushed fresh). Tea for fever — bitter, small cups.",
     "regions": [
       "ohio",
       "georgia",
@@ -708,11 +927,23 @@
       "meadow",
       "trail_edge"
     ],
-    "lookalikeNote": "Queen Anne's lace has similar flowers but carrot-like leaves; yarrow leaves are feathery. Low calories \u2014 this is medicine, not food.",
+    "lookalikeNote": "Queen Anne's lace has similar flowers but carrot-like leaves; yarrow leaves are feathery. Low calories — this is medicine, not food.",
     "waterContent": "low",
     "codex": "The soldier's herb. Achilles used it. So can you.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "medicine",
+        "minLevel": 2,
+        "note": "crushed leaves staunch bleeding — the battlefield herb"
+      },
+      {
+        "kind": "tea",
+        "minLevel": 3,
+        "note": "bitter flower tea breaks fever"
+      }
     ]
   },
   {
@@ -750,11 +981,23 @@
       "meadow",
       "trail_edge"
     ],
-    "lookalikeNote": "Grows in every lawn and path. If it's flat, ribbed, and everywhere \u2014 that's it.",
+    "lookalikeNote": "Grows in every lawn and path. If it's flat, ribbed, and everywhere — that's it.",
     "waterContent": "medium",
     "codex": "The weed under your feet that fixes stings. Chew, spit, apply.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "medicine",
+        "minLevel": 2,
+        "note": "chewed-leaf poultice for bites, stings, splinters"
+      },
+      {
+        "kind": "food",
+        "minLevel": 3,
+        "note": "young leaves edible — stringy but honest"
+      }
     ]
   },
   {
@@ -768,7 +1011,7 @@
     "unit": "handful of stems",
     "knowledgeLevels": {
       "1": "Jewelweed. Translucent stems, orange spotted flowers like tiny trumpets.",
-      "2": "Parts: juicy stems. Crush for juice \u2014 poison ivy remedy.",
+      "2": "Parts: juicy stems. Crush for juice — poison ivy remedy.",
       "3": "Uses: THE poison ivy treatment. Juice neutralizes urushiol. Also soothes nettle.",
       "4": "Mastery: grows where poison ivy grows (nature's joke). Crush stems, apply immediately."
     },
@@ -791,11 +1034,23 @@
       "wetland",
       "creek"
     ],
-    "lookalikeNote": "Where there's jewelweed there's usually poison ivy nearby \u2014 check before grabbing.",
+    "lookalikeNote": "Where there's jewelweed there's usually poison ivy nearby — check before grabbing.",
     "waterContent": "high",
     "codex": "Nature put the cure next to the curse. Orange trumpets in wet shade.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "medicine",
+        "minLevel": 2,
+        "note": "THE poison ivy remedy — crush juicy stems, apply fast"
+      },
+      {
+        "kind": "dye",
+        "minLevel": 3,
+        "note": "orange-yellow dye from the flowers"
+      }
     ]
   },
   {
@@ -811,7 +1066,7 @@
       "1": "Wild strawberry. Tiny red berries, familiar leaves.",
       "2": "Parts: berries (small, intense). Leaves make tea.",
       "3": "Uses: morale miracle. Tiny but the best-tasting thing in the woods.",
-      "4": "Mastery: June. Check under leaves. Birds compete \u2014 pick early morning."
+      "4": "Mastery: June. Check under leaves. Birds compete — pick early morning."
     },
     "preparation": "Eat raw. The best-tasting wild food, pound for pound.",
     "regions": [
@@ -831,11 +1086,23 @@
       "meadow",
       "trail_edge"
     ],
-    "lookalikeNote": "Mock strawberry looks similar but is dry and tasteless \u2014 real ones are fragrant and soft.",
+    "lookalikeNote": "Mock strawberry looks similar but is dry and tasteless — real ones are fragrant and soft.",
     "waterContent": "high",
-    "codex": "Small. Perfect. Worth more than calories \u2014 worth hope.",
+    "codex": "Small. Perfect. Worth more than calories — worth hope.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "tiny, intense — the best-tasting thing in the woods"
+      },
+      {
+        "kind": "tea",
+        "minLevel": 3,
+        "note": "leaf tea, mild and pleasant"
+      }
     ]
   },
   {
@@ -849,9 +1116,9 @@
     "unit": "berry cone",
     "knowledgeLevels": {
       "1": "Staghorn sumac. Fuzzy red berry cones pointing up like torches.",
-      "2": "Parts: red berry fuzz (lemonade/tea). NOT the white berries \u2014 those are poison.",
+      "2": "Parts: red berry fuzz (lemonade/tea). NOT the white berries — those are poison.",
       "3": "Uses: tart drink (sumac-ade), vitamin C. Steep in cold water.",
-      "4": "Mastery: harvest after rain washes them (less potent) \u2014 pick dry. Cold-steep, never boil."
+      "4": "Mastery: harvest after rain washes them (less potent) — pick dry. Cold-steep, never boil."
     },
     "preparation": "Cold-steep berry cones for tart drink. Never boil (releases tannins).",
     "regions": [
@@ -874,9 +1141,26 @@
     ],
     "lookalikeNote": "RED upright cones = good. WHITE drooping berries = POISON sumac. Different plant, different danger.",
     "waterContent": "low",
-    "codex": "Wild lemonade. Red torches in fall \u2014 the tartest free drink.",
+    "codex": "Wild lemonade. Red torches in fall — the tartest free drink.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "tart red fuzz steeped cold = sumac-ade (NOT white berries — poison)"
+      },
+      {
+        "kind": "seasoning",
+        "minLevel": 3,
+        "note": "dried red spice, lemony and bright"
+      },
+      {
+        "kind": "dye",
+        "minLevel": 3,
+        "note": "red-brown dye from cones and leaves"
+      }
     ]
   },
   {
@@ -892,7 +1176,7 @@
       "1": "Burdock. Huge leaves, burrs that stick to everything.",
       "2": "Parts: first-year roots (carrot-like). Leaves are too bitter.",
       "3": "Uses: starchy root vegetable. Dig first-year plants (no flower stalk).",
-      "4": "Mastery: only rosettes without stalks. Dig deep \u2014 roots go far. Peel before cooking."
+      "4": "Mastery: only rosettes without stalks. Dig deep — roots go far. Peel before cooking."
     },
     "preparation": "Peel and cook roots like carrots/parsnips. First-year plants only.",
     "regions": [
@@ -913,11 +1197,28 @@
       "meadow",
       "trail_edge"
     ],
-    "lookalikeNote": "If it has a tall flower stalk, the root is woody \u2014 find a stalkless rosette.",
+    "lookalikeNote": "If it has a tall flower stalk, the root is woody — find a stalkless rosette.",
     "waterContent": "medium",
     "codex": "The burrs invented Velcro. The roots are dinner.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "first-year roots only — dig deep, peel, cook like carrots"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "root tea, traditional blood purifier"
+      },
+      {
+        "kind": "fiber",
+        "minLevel": 3,
+        "note": "tough stalk fiber for rough cordage"
+      }
     ]
   },
   {
@@ -931,11 +1232,11 @@
     "unit": "handful of flowers/leaves",
     "knowledgeLevels": {
       "1": "Goldenrod. Tall yellow flower plumes in fall.",
-      "2": "Parts: flowers and leaves for tea. NOT a food \u2014 medicine and morale.",
+      "2": "Parts: flowers and leaves for tea. NOT a food — medicine and morale.",
       "3": "Uses: tea for colds, kidney support. Blamed for allergies unfairly (it's ragweed).",
       "4": "Mastery: harvest flowers just opened. Dry for winter tea."
     },
-    "preparation": "Tea from flowers/leaves. Not food \u2014 comfort and medicine.",
+    "preparation": "Tea from flowers/leaves. Not food — comfort and medicine.",
     "regions": [
       "ohio",
       "georgia",
@@ -952,11 +1253,28 @@
     "tileAffinity": [
       "meadow"
     ],
-    "lookalikeNote": "Unfairly blamed for hay fever \u2014 ragweed is the culprit. Goldenrod is innocent and useful.",
+    "lookalikeNote": "Unfairly blamed for hay fever — ragweed is the culprit. Goldenrod is innocent and useful.",
     "waterContent": "low",
     "codex": "Fall gold. Tea for colds, wrongly accused of sneezes.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "tea",
+        "minLevel": 2,
+        "note": "flower tea for colds — unfairly blamed for allergies"
+      },
+      {
+        "kind": "dye",
+        "minLevel": 3,
+        "note": "brilliant yellow dye from the plumes"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "traditional kidney and urinary support"
+      }
     ]
   },
   {
@@ -996,7 +1314,68 @@
     "waterContent": "high",
     "codex": "Delicious fruit under a poison umbrella. Knowledge is the difference.",
     "sources": [
-      "Field validation pending \u2014 conservative well-known species"
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "ONLY the fully ripe fallen fruit — everything else is toxic"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "root resin is potent medicine — expert use only, small doses"
+      }
     ]
+  },
+  {
+    "id": "rare_herb",
+    "name": "Ghost Pipe",
+    "scientific": "Monotropa uniflora",
+    "description": "a cluster of waxy white pipe-shaped flowers, no green at all — like something carved from candle wax",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw",
+      "columbus"
+    ],
+    "seasons": [
+      "summer",
+      "fall"
+    ],
+    "tileAffinity": [
+      "forest_floor"
+    ],
+    "unit": "cluster",
+    "caloriesPerUnit": 5,
+    "spoilageDays": 1,
+    "idDifficulty": 3,
+    "waterContent": "low",
+    "confidence": "high",
+    "codex": "A parasite that eats fungus instead of sunlight. Rare, strange, and potent — the System finds it very interesting.",
+    "preparation": "Dry carefully or tincture. Never eat fresh in quantity.",
+    "lookalikeNote": "Nothing else looks like white wax pipes nodding in leaf litter. Unmistakable.",
+    "uses": [
+      {
+        "kind": "medicine",
+        "minLevel": 2,
+        "note": "nerve-calming tincture — small doses, potent"
+      },
+      {
+        "kind": "tea",
+        "minLevel": 3,
+        "note": "dried pipe tea for pain and restlessness"
+      }
+    ],
+    "knowledgeLevels": {
+      "1": "Ghost Pipe. White wax-pipe flowers, no green. A parasite on fungus.",
+      "2": "Parts: the whole above-ground pipe. Dry it — do not eat fresh in quantity.",
+      "3": "Uses: nerve tonic and pain remedy in tiny doses. The System wants a sample.",
+      "4": "Mastery: harvest after rain when pipes stand tall. Dry whole, tincture in anything strong."
+    }
   }
 ]

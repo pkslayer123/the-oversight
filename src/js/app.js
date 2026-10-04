@@ -3338,6 +3338,7 @@
       ${entries.length ? entries.map(e => `
         <div class="card codex"><h3>${e.name} <span class="small">· ${e.kcal} kcal/${e.unit}</span> <span class="small" style="opacity:.7">[${LVL[e.level] || 'L1'}]</span></h3>
         <p class="small"><b>Prep:</b> ${e.level >= 2 ? (e.prep || '—') : '<i>unidentified uses — reach L2</i>'}</p>
+        <p class="small"><b>Uses:</b> ${e.uses ? esc(e.uses) : '<i>unknown — harvest and taste to learn</i>'}</p>
         <p class="small"><i>${e.knowledge || ''}</i></p><p>${e.level >= 1 ? e.text : ''}</p></div>`).join('')
         : '<div class="card"><h3>No entries yet.</h3><p>Forage something. Survive it. Write it down.</p></div>'}
       ${skills.length ? '<h1 class="title" style="font-size:18px">SKILLS</h1><p class="small"><i>knowledge about anything — not just plants. your old life, books, strangers, hard lessons.</i></p>' + skills.map(s => `
