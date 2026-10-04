@@ -1546,16 +1546,10 @@
     return origDonate.call(this, idx);
   };
 
-  // fillWater: the cistern has a real cap too.
-  const origFill = G.fillWater;
-  G.fillWater = function () {
-    const w = this.state.village.water || { clean: 0, dirty: 0 };
-    if ((w.clean || 0) + (w.dirty || 0) >= this.waterCapL()) {
-      this.say(`The cistern is full (${this.waterCapL()}L). Expand storage for more water.`);
-      return null;
-    }
-    return origFill.call(this);
-  };
+  // fillWater: haven draws come from the shared cistern (see game.js fillWater).
+  // The cistern cap is enforced where water ENTERS (haulers), not where the
+  // player draws — the old wrapper blocked creek fills when the cistern was
+  // full, which was backwards. No wrapper needed.
 
   // newGame: seed background plant knowledge once the roster exists.
   // Someone arrived knowing things — the chicken-and-egg breaker.

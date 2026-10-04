@@ -3168,8 +3168,14 @@
       } else if (a.task === 'water') {
         const liters = Math.max(1, Math.round(R(2, 4) * eff));
         const vw = this.state.village.water = this.state.village.water || { clean: 0, dirty: 0 };
-        vw.clean += liters;
-        this.say(`💧 ${first} returns with ${liters}L of clean water for the village.`);
+        // the cistern has a real cap — overflow is reported, not silently kept.
+        const cap = (typeof this.waterCapL === 'function') ? this.waterCapL() : 40;
+        const room = Math.max(0, cap - ((vw.clean || 0) + (vw.dirty || 0)));
+        const added = Math.min(liters, room);
+        vw.clean += added;
+        this.say(added >= liters
+          ? `💧 ${first} returns with ${liters}L of clean water for the village.`
+          : `💧 ${first} returns with ${liters}L, but the cistern only holds ${added}L more.`);
         this.bumpTrust(vid, 1);
       } else if (a.task === 'scout') {
         // reveal tiles around haven + small chance of a find
@@ -5094,22 +5100,35 @@
 
     // drinkWater: drink from a water source. Hydrates.
     // fillWater: fill ONE bottle (1L). Quality depends on source.
-    // Haven well is clean. Creek and any wild source are risky (unknown) —
-    // boil it at a fire, or drink it raw and roll the dice.
+    // Haven well is clean — drawn from the shared village cistern (finite:
+    // haulers refill it; the meal, cooking, and your bottles draw it down).
+    // Creek and wild sources are free but risky (unknown) — boil at a fire,
+    // or drink raw and roll the dice.
     fillWater() {
       const s = this.state.scholar;
       s.water = s.water || [];
-      // HAULING WATER IS WORK. 10 kcal per liter. (nothing is free)
-      s.kcal = Math.max(0, (s.kcal || 0) - 10);
       // Where are you? Only the Haven well is clean. Everything wild is unknown.
       const t = this.playerTile();
       const isCreek = t && t.type === 'creek';
       let atHaven = this.location === 'haven';
       try { if (t && t.type === 'haven') atHaven = true; } catch (e) {}
+      if (atHaven) {
+        // THE CISTERN IS REAL. Haven water comes from the shared supply —
+        // that's why the well is where Haven is. It can run dry.
+        const vw = this.state.village.water = this.state.village.water || { clean: 0, dirty: 0 };
+        if ((vw.clean || 0) < 1) {
+          this.say('The cistern is dry. Haul from a creek (risky water), or put someone on water duty.');
+          return null;
+        }
+        vw.clean -= 1;
+      }
+      // HAULING WATER IS WORK. 10 kcal per liter. (nothing is free)
+      s.kcal = Math.max(0, (s.kcal || 0) - 10);
       const quality = atHaven ? 'clean' : 'risky';
       const source = atHaven ? 'Haven well' : isCreek ? 'Creek (unknown)' : 'Wild source (unknown)';
       s.water.push({ liters: 1, quality, source });
-      this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).`);
+      const left = atHaven ? ` Cistern: ${Math.floor((this.state.village.water || {}).clean || 0)}L left.` : '';
+      this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).${left}`);
       // ACTION CLOCK: filling a bottle = 1 tick.
       this.tickAction(1);
       return null;
@@ -7459,7 +7478,7 @@
         }
       } else if (cell === 'water') {
         actions.push('Drink');
-        actions.push('Fill water (+2L)');
+        actions.push('Fill water (1L)');
       } else if (cell === 'plant' || cell === 'bush' || cell === 'rubble') {
         actions.push('Forage');
         // TERRAFORMING: brush can be cleared. costs a day-part, yields brushwood.

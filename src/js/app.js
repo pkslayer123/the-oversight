@@ -519,7 +519,7 @@
     if (label === 'Prune branches') { Game.pruneBranches(cx, cy); return; }
     if (label === 'Gather fallen') { Game.gatherFallen(cx, cy); return; }
     if (label === 'Clear brush (a while)') { Game.clearBrush(cx, cy); return; }
-    if (label === 'Fill water (+2L)') { Game.fillWater(); return; }
+    if (label === 'Fill water (1L)') { Game.fillWater(); return; }
     if (label.startsWith('Cook (')) { Game.cookAll(); return; }
     if (label.startsWith('Smoke ')) { Game.preserveFood(); return; }
     if (label === 'Step outside') { Game.exitBuilding(); return; }

@@ -269,12 +269,22 @@ const origRandom = Math.random;
     ok('expand: water +20L', Game.waterCapL() === 60);
     ok('expand: consumed materials', s.inventory.every(i => i.units < 20));
 
-    // water cap enforced
+    // water: haven fills DRAW the shared cistern (finite — haulers refill it).
+    // (The old "blocked at cap" wrapper was backwards: it blocked creek fills
+    // when the cistern was full. Filling draws; hauling fills.)
     Game.state.village.water = { clean: 60, dirty: 0 };
     said = '';
     Game.say = (m) => { said = m; };
+    const bw0 = (Game.state.scholar.water || []).length;
     Game.fillWater();
-    ok('fillWater blocked at cap', /full/.test(said));
+    ok('fillWater draws the cistern', Game.state.village.water.clean === 59 && (Game.state.scholar.water || []).length === bw0 + 1);
+    // dry cistern: refused with a clear message, no bottle minted
+    Game.state.village.water = { clean: 0, dirty: 0 };
+    said = '';
+    Game.say = (m) => { said = m; };
+    const bw1 = (Game.state.scholar.water || []).length;
+    Game.fillWater();
+    ok('fillWater refused when cistern dry', /dry/.test(said) && (Game.state.scholar.water || []).length === bw1);
   }
 
   // ---- 8. HAUL-TO-STASH LOOP (prep staging) ----
