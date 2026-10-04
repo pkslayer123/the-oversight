@@ -462,6 +462,9 @@
       this.state.village.needs = {};
       this.state.village.memory = {};
       this.state.village.requests = {}; // rid -> {type, day, part}: an ask awaiting answer
+      // LEADER: delegation assignments + village knowledge pool.
+      this.state.village.assignments = {}; // rid -> {task, assignedDay, assignedPart}
+      this.state.village.sharedKnowledge = {}; // plantId -> {discoveredBy, day}
       this.state.village.grief = 0;  // days of village-wide grief (death)
       this.state.village.cheer = 0;  // days of village-wide cheer (victory, donation)
       for (const rid of this.state.village.roster) {
@@ -983,6 +986,349 @@
         this.say(msg); return msg;
       }
       return null;
+    },
+
+    // === LEADER PLAYSTYLE: DELEGATION ===
+    // "This game is what you want it to be." Some players don't fight.
+    // They direct. They assign. They keep people alive and build knowledge.
+    // That's a complete playstyle — not a gimped mode.
+    //
+    // How it works: open a person's sheet → Assign task → they go do it.
+    // Assignments resolve at end of the day-part. Competence matters.
+    // Trust matters. Danger is real.
+
+    // Task definitions: what you can ask people to do.
+    delegateTasks() {
+      return {
+        forage: { icon: '🌿', name: 'Forage', desc: 'Gather food from the wilds. Safe, steady.', danger: 0 },
+        hunt:   { icon: '🏹', name: 'Hunt', desc: 'Hunt animals for meat. Risky — animals fight back.', danger: 1 },
+        wood:   { icon: '🪵', name: 'Gather wood', desc: 'Firewood and building wood. Safe.', danger: 0 },
+        water:  { icon: '💧', name: 'Fetch water', desc: 'Bring back clean water. Safe.', danger: 0 },
+        scout:  { icon: '🔭', name: 'Scout', desc: 'Explore and map nearby land. May find things.', danger: 0 },
+        patrol: { icon: '⚔️', name: 'Patrol / Fight', desc: 'Deal with monster threats. DANGEROUS.', danger: 2 },
+        rest:   { icon: '😴', name: 'Rest', desc: 'Recover at Haven. Clears assignment.', danger: 0 },
+      };
+    },
+
+    // competence: how good is this person at this task? 0.7 / 1.0 / 1.4
+    // from occupation keywords + personality. Assign wisely.
+    villagerCompetence(vid, task) {
+      const vp = (this.data.villagers || []).find(v => v.id === vid)
+        || (this.data.background_survivors || []).find(v => v.id === vid)
+        || {};
+      const occ = (vp.formerOccupation || '').toLowerCase();
+      const temp = (vp.personality && vp.personality.temperament) || 'steady';
+      let mult = 1.0;
+      const has = (...words) => words.some(w => occ.includes(w));
+      if (task === 'hunt') {
+        if (has('hunter', 'tracker', 'ranger', 'soldier', 'marine', 'poacher')) mult = 1.4;
+        else if (has('butcher', 'farmer', 'athlete')) mult = 1.2;
+        else if (has('librarian', 'accountant', 'teacher', 'programmer', 'clerk')) mult = 0.7;
+      } else if (task === 'forage') {
+        if (has('cook', 'chef', 'forager', 'botanist', 'farmer', 'gardener', 'herbalist')) mult = 1.4;
+        else if (has('nurse', 'doctor')) mult = 1.2;
+      } else if (task === 'wood') {
+        if (has('lumberjack', 'carpenter', 'logger', 'builder', 'handyman')) mult = 1.4;
+        else if (has('farmer', 'firefighter')) mult = 1.2;
+      } else if (task === 'water') {
+        if (has('plumber', 'firefighter', 'fisherman', 'sailor')) mult = 1.3;
+      } else if (task === 'scout') {
+        if (has('scout', 'ranger', 'tracker', 'soldier', 'hiker', 'explorer', 'surveyor')) mult = 1.4;
+        else if (has('photographer', 'journalist')) mult = 1.2;
+      } else if (task === 'patrol') {
+        if (has('soldier', 'marine', 'police', 'officer', 'fighter', 'boxer', 'martial')) mult = 1.4;
+        else if (has('hunter', 'firefighter', 'athlete')) mult = 1.2;
+        else if (has('librarian', 'teacher', 'accountant', 'nurse', 'cook')) mult = 0.7;
+      }
+      // temperament: bold takes risks (better results, more danger).
+      // cautious plays safe (smaller hauls, fewer injuries).
+      if (temp === 'bold' && (task === 'hunt' || task === 'patrol')) mult *= 1.15;
+      if (temp === 'cautious') mult *= 0.9;
+      return Math.round(mult * 100) / 100;
+    },
+
+    // trust gates obedience. Low trust → refuse or do it badly.
+    // Returns {ok, reason} — ok false means they refused.
+    checkObedience(vid) {
+      const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
+      const vp = (this.data.villagers || []).find(v => v.id === vid)
+        || (this.data.background_survivors || []).find(v => v.id === vid) || {};
+      const first = (vp.name || 'Someone').split(' ')[0];
+      if (trust < 20) {
+        const lines = [
+          `${first} looks at you flatly. "Why should I listen to you?" (Trust too low.)`,
+          `"You haven't earned that yet," ${first} says. (Trust too low.)`,
+          `${first} shakes their head. "Ask someone who trusts you." (Trust too low.)`,
+        ];
+        return { ok: false, reason: lines[Math.floor(Math.random() * lines.length)] };
+      }
+      if (trust < 40 && Math.random() < 0.4) {
+        return { ok: false, reason: `${first} hesitates, then backs off. "Not today. Sorry." (Low trust — reluctant.)` };
+      }
+      return { ok: true, trust };
+    },
+
+    trustTaskMult(vid) {
+      const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
+      if (trust < 40) return 0.7;
+      if (trust >= 70) return 1.2;
+      return 1.0;
+    },
+
+    // assign a task. Returns message. This is the leader's core verb.
+    assignTask(vid, task) {
+      const v = this.state.village;
+      v.assignments = v.assignments || {};
+      if (vid === this.villagerId) { this.say("You're the leader. Lead."); return null; }
+      const tasks = this.delegateTasks();
+      if (!tasks[task]) return null;
+      const vp = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      const first = (vp.name || 'Someone').split(' ')[0];
+      if (task === 'rest') {
+        delete v.assignments[vid];
+        this.say(`${first} rests at Haven.`);
+        return null;
+      }
+      // obedience check
+      const ob = this.checkObedience(vid);
+      if (!ob.ok) { this.say(ob.reason); return null; }
+      v.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart };
+      // THE GAME NOTICES: leadership is a playstyle axis.
+      this.notePlaystyle('leader');
+      this.notePlaystyle('social');
+      const comp = this.villagerCompetence(vid, task);
+      const compNote = comp >= 1.3 ? ' (a natural — good pick)' : comp <= 0.8 ? ' (not their strength...) ' : '';
+      const eager = (ob.trust >= 70) ? ` ${first} nods eagerly.` : '';
+      this.say(`📋 ${first} — ${tasks[task].icon} ${tasks[task].name}.${compNote}${eager} They'll report back by next part.`);
+      // System notices delegators.
+      if (this.state.systemArrived && (this.state.scholar.playstyle || {}).leader >= 3 && !this.state.village.leaderNoticed) {
+        this.state.village.leaderNoticed = true;
+        this.sysSay('"Ooh! A DELEGATOR! The audience LOVES a mastermind! Others do the work, YOU take the credit — DELICIOUS! The gamblers are adjusting their models!"');
+      }
+      this.save();
+      return null;
+    },
+
+    assignmentFor(vid) {
+      const a = (this.state.village.assignments || {})[vid];
+      return a || null;
+    },
+
+    // resolve all assignments at end of day-part. Each assigned villager
+    // executes. Results reported. Danger is real.
+    resolveAssignments() {
+      const v = this.state.village;
+      const asg = v.assignments || {};
+      const ids = Object.keys(asg);
+      if (!ids.length) return;
+      for (const vid of ids) {
+        const a = asg[vid];
+        // must be alive and still in roster
+        if (!(v.roster || []).includes(vid)) { delete asg[vid]; continue; }
+        try { this.resolveOneAssignment(vid, a); } catch (e) { delete asg[vid]; }
+        delete asg[vid]; // one part per assignment — reassign to continue
+      }
+    },
+
+    resolveOneAssignment(vid, a) {
+      const vp = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      const first = (vp.name || 'Someone').split(' ')[0];
+      const comp = this.villagerCompetence(vid, a.task);
+      const tmult = this.trustTaskMult(vid);
+      const eff = comp * tmult;
+      const temp = (vp.personality && vp.personality.temperament) || 'steady';
+      const R = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+
+      if (a.task === 'forage') {
+        const kcal = Math.round(R(300, 600) * eff);
+        this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + kcal;
+        // KNOWLEDGE: foragers learn. What they learn, the village learns.
+        let learned = '';
+        if (Math.random() < 0.25 && this.data.plants.length) {
+          const p = this.data.plants[Math.floor(Math.random() * this.data.plants.length)];
+          v.sharedKnowledge = v.sharedKnowledge || {};
+          if (!v.sharedKnowledge[p.id] && !(this.state.codex.plants || {})[p.id]) {
+            v.sharedKnowledge[p.id] = { discoveredBy: vid, day: this.state.scholar.day };
+            const pname = p.name || p.id;
+            learned = ` ${first} also learned to recognize ${pname} — village knowledge grows.`;
+            if (this.state.systemArrived) this.flowVillageKnowledge();
+          }
+        }
+        this.say(`🌿 ${first} returns with foraged food: +${kcal} kcal to the pantry.${learned}`);
+        this.bumpTrust(vid, 2);
+      } else if (a.task === 'hunt') {
+        const kcal = Math.round(R(400, 900) * eff);
+        const injuryRisk = temp === 'bold' ? 0.22 : temp === 'cautious' ? 0.08 : 0.15;
+        const injuryRoll = Math.max(0.03, injuryRisk / Math.max(0.7, comp));
+        this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + kcal;
+        if (Math.random() < injuryRoll) {
+          const dmg = R(10, 30);
+          this.hurtVillager(vid, dmg, 'hunting');
+          this.say(`🏹 ${first} brings back meat (+${kcal} kcal) but got hurt out there (-${dmg} health). The wild charges interest.`);
+        } else {
+          this.say(`🏹 ${first} returns with meat: +${kcal} kcal to the pantry. Clean hunt.`);
+        }
+        this.bumpTrust(vid, 2);
+      } else if (a.task === 'wood') {
+        const wood = Math.max(1, Math.round(R(2, 5) * eff));
+        this.addWood(wood);
+        this.say(`🪵 ${first} hauls back ${wood} wood. The pile grows.`);
+        this.bumpTrust(vid, 1);
+      } else if (a.task === 'water') {
+        const liters = Math.max(1, Math.round(R(2, 4) * eff));
+        const vw = this.state.village.water = this.state.village.water || { clean: 0, dirty: 0 };
+        vw.clean += liters;
+        this.say(`💧 ${first} returns with ${liters}L of clean water for the village.`);
+        this.bumpTrust(vid, 1);
+      } else if (a.task === 'scout') {
+        // reveal tiles around haven + small chance of a find
+        let revealed = 0;
+        try {
+          const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+          for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+            const nx = hx + dx, ny = hy + dy;
+            if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+            const t = this.tileAt(nx, ny);
+            if (t && !t.visited && Math.random() < 0.5 * eff) { t.visited = true; revealed++; }
+          }
+        } catch (e) {}
+        let find = '';
+        if (Math.random() < 0.15 * eff) {
+          const kcal = R(200, 500);
+          this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + kcal;
+          find = ` Found a forgotten cache: +${kcal} kcal.`;
+        }
+        this.say(`🔭 ${first} scouts the land: mapped ${revealed} new area${revealed === 1 ? '' : 's'}.${find}`);
+        this.bumpTrust(vid, 2);
+      } else if (a.task === 'patrol') {
+        this.resolvePatrol(vid, first, eff, temp, R);
+      }
+      // assigned villagers don't also do random villageLives actions this part
+      // (they were busy — mark it)
+      this.remember(vid, 'task', a.task + ' (assigned)');
+    },
+
+    // patrol: deal with monster threats. Simplified auto-resolve.
+    // The leader sends fighters instead of fighting. Stakes are real.
+    resolvePatrol(vid, first, eff, temp, R) {
+      const s = this.state.scholar;
+      const m = s.monster; // known wandering threat
+      const vp = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      if (!m || !m.id) {
+        // no known threat — uneventful patrol, small trust gain
+        const lines = [
+          `${first} walks the perimeter. Nothing stirs. The village sleeps easier.`,
+          `⚔️ ${first} patrols. All quiet — which is its own kind of good news.`,
+          `${first} keeps watch. No monsters today. (Small mercies.)`,
+        ];
+        this.say(lines[Math.floor(Math.random() * lines.length)]);
+        this.bumpTrust(vid, 1);
+        return;
+      }
+      const mdef = (this.data.monsters || []).find(x => x.id === m.id) || {};
+      const mName = mdef.name || 'the thing';
+      // fight power: competence × trust × boldness vs monster hp
+      const mHp = (mdef.hp && mdef.hp[0]) || 20;
+      const fightPower = eff * (temp === 'bold' ? 1.3 : 1.0) * 25;
+      const roll = fightPower + R(0, 20);
+      if (roll >= mHp * 1.2) {
+        // killed it
+        s.monster = null;
+        const lootKcal = R(200, 600);
+        this.state.village.pantryKcal = (this.state.village.pantryKcal || 0) + lootKcal;
+        this.say(`⚔️ ${first} KILLED the ${mName}! Drags it home: +${lootKcal} kcal. The village cheers.`);
+        this.villageEvent('victory');
+        this.bumpTrust(vid, 5);
+        this.remember(vid, 'hero', 'killed ' + mName);
+        if (this.state.systemArrived) this.sysSay(`"OH! ${first.toUpperCase()} DID THE FIGHTING! Delegated violence! The audience is CHEERING! Style points!"`);
+      } else if (roll >= mHp * 0.7) {
+        // drove it off
+        s.monster = null;
+        const dmg = R(5, 20);
+        this.hurtVillager(vid, dmg, 'patrol');
+        this.say(`⚔️ ${first} drove the ${mName} off! (-${dmg} health.) It won't come back soon.`);
+        this.bumpTrust(vid, 3);
+      } else {
+        // mauled
+        const dmg = R(20, 45);
+        this.hurtVillager(vid, dmg, 'patrol');
+        if ((this.state.village.health || {})[vid] <= 0) {
+          this.say(`⚔️ ${first} faced the ${mName}... and didn't come back. The village mourns. (Leadership has stakes.)`);
+          this.villageEvent('death');
+        } else {
+          this.say(`⚔️ ${first} was mauled by the ${mName} (-${dmg} health) and barely escaped. It's still out there.`);
+        }
+        this.bumpTrust(vid, -2);
+      }
+    },
+
+    // hurt a villager (non-player). Tracks health, handles death.
+    hurtVillager(vid, dmg, cause) {
+      const v = this.state.village;
+      v.health = v.health || {};
+      const cur = (v.health[vid] !== undefined) ? v.health[vid] : 100;
+      v.health[vid] = Math.max(0, cur - dmg);
+      if (v.health[vid] <= 0) {
+        // remove from roster — they're gone
+        v.roster = (v.roster || []).filter(id => id !== vid);
+        v.fallen = v.fallen || [];
+        v.fallen.push({ villagerId: vid, day: this.state.scholar.day, cause });
+        delete (v.positions || {})[vid];
+      }
+    },
+
+    bumpTrust(vid, n) {
+      const v = this.state.village;
+      v.trust = v.trust || {};
+      const cur = v.trust[vid] || 10;
+      v.trust[vid] = Math.max(0, Math.min(100, cur + n));
+    },
+
+    // === VILLAGE KNOWLEDGE POOL ===
+    // What anyone learns, the village learns. Post-System, it flows to you.
+    // "After week one it becomes clear that knowledge is power, and everyone
+    // cooperating gets to share all the knowledge their group has collected."
+    flowVillageKnowledge() {
+      const v = this.state.village;
+      const shared = v.sharedKnowledge || {};
+      let flowed = 0;
+      for (const [pid, entry] of Object.entries(shared)) {
+        if ((this.state.codex.plants || {})[pid]) continue;
+        const plant = (this.data.plants || []).find(p => p.id === pid);
+        this.state.codex.plants = this.state.codex.plants || {};
+        this.state.codex.plants[pid] = {
+          identifiedDay: this.state.scholar.day,
+          level: 1, harvests: 0, tastings: 0,
+          viaShare: 'village',
+          sharedHeadStart: true,
+        };
+        flowed++;
+        const dVill = (this.data.villagers || []).find(x => x.id === entry.discoveredBy)
+          || (this.data.background_survivors || []).find(x => x.id === entry.discoveredBy) || {};
+        const discoverer = entry.discoveredBy ? (dVill.name || 'someone').split(' ')[0] : 'someone';
+        this.say(`📚 Village knowledge: ${discoverer} taught everyone about ${plant ? plant.name : pid}. The Codex grows without you lifting a finger.`);
+      }
+      if (flowed > 0 && this.state.systemArrived && !v.hiveNoticed) {
+        v.hiveNoticed = true;
+        this.sysSay('"COLLECTIVE INTELLIGENCE! Your PEOPLE are learning and SHARING! The gamblers LOVE a hive mind! Knowledge is power and you\'re COLLECTING it!"');
+      }
+      return flowed;
+    },
+
+    // morning briefing: shared knowledge flows, assignments report.
+    // Called at dawn (in endDay, after System arrival check).
+    villageBriefing() {
+      if (!this.state.systemArrived) return;
+      const flowed = this.flowVillageKnowledge();
+      const asg = this.state.village.assignments || {};
+      const ids = Object.keys(asg);
+      if (ids.length && !this.state.village.briefingNoticed) {
+        this.state.village.briefingNoticed = true;
+        this.sysSay('"Your people await orders, little leader! The audience loves a MORNING BRIEFING! So official! So powerful!"');
+      }
     },
 
     // --- village node ---
@@ -4510,6 +4856,8 @@
       if (this.over) return this.status();
       // ALIVE: wants grow with time, unanswered asks curdle.
       try { this.tickNeeds(); } catch (e) {}
+      // LEADER: assigned villagers execute their tasks. Reports come back now.
+      try { this.resolveAssignments(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
@@ -4536,9 +4884,13 @@
       try { this.ambientSocial(); } catch (e) {}
       const bg = v.roster.filter(id => !this.data.villagers.find(m => m.id === id));
       if (!bg.length) return;
+      // LEADER: assigned villagers are out working — they don't do random things.
+      const asg = v.assignments || {};
+      const free = bg.filter(id => !asg[id]);
+      if (!free.length) return;
       const n = 1 + (Math.random() < 0.4 ? 1 : 0);
       for (let i = 0; i < n; i++) {
-        const id = bg[Math.floor(Math.random() * bg.length)];
+        const id = free[Math.floor(Math.random() * free.length)];
         const person = this.data.background_survivors.find(p => p.id === id);
         if (!person) continue;
         const first = person.name.split(' ')[0];
@@ -5008,6 +5360,8 @@
       // SLICE 2: System arrival and timed events.
       this.checkSystemArrival();
       this.checkTimedEvents();
+      // LEADER: morning briefing — village knowledge flows to you post-arrival.
+      try { this.villageBriefing(); } catch (e) {}
       // evening: run metabolism
       scholar._preDayHealth = scholar.health;
       // WEATHER: the sky does what it wants. Clear most days, rain sometimes, cold snaps.

@@ -1060,6 +1060,7 @@
           refresh();
         } },
       { label: '\U0001F381 Give food', keepOpen: true, onClick: () => { Game.giveFood(villagerId); refresh(); } },
+      { label: '\U0001F4CB Assign task', keepOpen: true, onClick: () => { assignTaskSheet(villagerId); } },
     ];
     if (teachable.length) {
       buttons.push({ label: `\U0001F4D6 Teach (${teachable.length})`, keepOpen: true, onClick: () => {
@@ -1078,6 +1079,51 @@
       html: body,
       buttons,
       priority: 40, modal: false, dismissible: true,
+    });
+  }
+
+  // LEADER: task assignment sheet. Pick a villager, pick a task, they go do it.
+  // "This game is what you want it to be." — including a leader who never fights.
+  function assignTaskSheet(villagerId) {
+    const vp = (Game.data.villagers || []).find(v => v.id === villagerId) ||
+               (Game.data.background_survivors || []).find(v => v.id === villagerId);
+    if (!vp) return;
+    const first = (vp.name || 'Someone').split(' ')[0];
+    const trust = (Game.state.village.trust && Game.state.village.trust[villagerId]) || 10;
+    const tasks = Game.delegateTasks();
+    const current = Game.assignmentFor(villagerId);
+
+    let body = '';
+    if (current && tasks[current.task]) {
+      body += `<p class="small" style="opacity:.8">Currently: ${tasks[current.task].icon} <b>${esc(tasks[current.task].name)}</b> — out until next part.</p>`;
+    } else {
+      body += `<p class="small" style="opacity:.7">${esc(first)} is at Haven, waiting. Trust: ${trust}/100.</p>`;
+    }
+    if (trust < 20) {
+      body += `<p class="small" style="color:#e88">⚠ Trust too low — ${esc(first)} won't take orders yet. (Need 20+.)</p>`;
+    }
+    body += `<p class="small" style="opacity:.6;margin-top:8px">They'll report back at the end of this part. Dangerous tasks can get people hurt.</p>`;
+
+    const buttons = Object.entries(tasks).map(([tid, t]) => {
+      const comp = Game.villagerCompetence(villagerId, tid);
+      const compTag = tid === 'rest' ? '' : comp >= 1.3 ? ' ⭐ natural' : comp <= 0.8 ? ' ⚠ weak' : '';
+      const isCurrent = current && current.task === tid;
+      return {
+        label: `${t.icon} ${t.name}${compTag}${isCurrent ? ' ✓' : ''}`,
+        keepOpen: false,
+        onClick: () => {
+          Game.assignTask(villagerId, tid);
+          refresh();
+        },
+      };
+    });
+
+    openSheet({
+      id: 'assign-' + villagerId,
+      title: '\U0001F4CB Assign: ' + esc(first),
+      html: body,
+      buttons,
+      priority: 45, modal: false, dismissible: true,
     });
   }
 
@@ -1527,6 +1573,18 @@
         const conf = p.conflictNote ? `<br><span style="opacity:.7">${p.conflictNote}</span>` : '';
         return `<p class="small">${hb} <b>${p.name}</b> — ${p.formerOccupation} (${h})${lang}${conf}</p>`; }).join('')}
       <p class="small" style="margin-top:8px;opacity:.75"><b>Also here:</b> ${bg.map(p => `${p.name}`).join(' · ')}</p>
+      ${(() => {
+        const asg = (Game.state.village.assignments || {});
+        const ids = Object.keys(asg);
+        if (!ids.length) return '<p class="small" style="opacity:.6">📋 No one assigned. Tap a person → Assign task to direct them.</p>';
+        const tasks = Game.delegateTasks();
+        const lines = ids.map(rid => {
+          const vp = (Game.data.villagers || []).find(v => v.id === rid) || (Game.data.background_survivors || []).find(v => v.id === rid) || {};
+          const t = tasks[asg[rid].task];
+          return t ? `${t.icon} ${(vp.name || '?').split(' ')[0]} — ${t.name}` : null;
+        }).filter(Boolean);
+        return `<p class="small" style="margin-top:6px"><b>📋 Assigned:</b><br>${lines.join('<br>')}</p>`;
+      })()}
       <div class="btnrow">
       </div></div>`;
   }
