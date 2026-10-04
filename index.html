@@ -6,13 +6,14 @@
 <meta name="theme-color" content="#0a0f0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Scattering">
+<meta name="apple-mobile-web-app-title" content="The Oversight">
 <title>The Oversight</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 <link rel="stylesheet" href="src/css/main.css">
 </head>
 <body>
+<div id="update-banner" class="hidden">&#11015; A new version is ready &mdash; <b>tap to update</b></div>
 <div id="app">
   <!-- Screens are swapped by app.js -->
   <main id="screen"></main>
@@ -27,8 +28,53 @@
 <script src="src/js/game.js"></script>
 <script src="src/js/app.js"></script>
 <script>
+/* PWA update flow: the service worker never force-updates a running session.
+   When a newer version finishes installing, a subtle banner appears; tapping it
+   tells the waiting worker to take over, and the page reloads into the new build.
+   Update checks run on launch, on foreground resume, and hourly while open. */
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  let refreshing = false;
+  let waitingWorker = null;
+  const banner = document.getElementById('update-banner');
+  function showUpdateBanner() { banner.classList.remove('hidden'); }
+  banner.addEventListener('click', () => {
+    banner.innerHTML = 'Updating&hellip;';
+    if (waitingWorker) waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      if (reg.waiting) {           // update installed during a previous visit
+        waitingWorker = reg.waiting;
+        showUpdateBanner();
+      }
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          // 'installed' + an existing controller = a newer version is ready.
+          // (No controller means first-ever install — already on the new version.)
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            waitingWorker = nw;
+            showUpdateBanner();
+          }
+        });
+      });
+      reg.update().catch(() => {});
+      setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+    }).catch(() => {});
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) reg.update().catch(() => {});
+      });
+    }
+  });
 }
 </script>
 </body>

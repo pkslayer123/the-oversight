@@ -202,3 +202,13 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 }
 
 .emptybush { opacity: 0.4; filter: grayscale(50%); }
+
+/* PWA update banner: subtle top strip, appears only when a newer build is ready. */
+#update-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  background: var(--bg2); border-bottom: 1px solid var(--acc);
+  color: var(--dim); font-size: 13px; text-align: center; cursor: pointer;
+  padding: calc(8px + env(safe-area-inset-top)) 16px 8px;
+}
+#update-banner b { color: var(--acc); }
+#update-banner.hidden { display: none; }
