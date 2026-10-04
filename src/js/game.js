@@ -1349,7 +1349,7 @@
       const queue = [[sx, sy, []]]; // [x, y, path]
       while (queue.length) {
         const [x, y, path] = queue.shift();
-        if (x === tx && y === ty) return path.concat([[tx, ty]]);
+        if (x === tx && y === ty) return path.length ? path : [[tx, ty]]; // path already ends at target
         for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
           const nx = x + dx, ny = y + dy;
           if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
@@ -2169,7 +2169,7 @@
       const mult = this.metabolicMult(scholar.abilities);
       const target = Math.round(2400 * mult);
       // eat most-perishable first until kcal >= target or empty
-      scholar.inventory.sort((a, b) => a.spoilDay - b.spoilDay);
+      scholar.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
       let ate = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
       // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
@@ -2199,9 +2199,9 @@
           }
         }
       }
-      // spoilage: drop expired
+      // spoilage: drop expired FOOD. Gear (no spoilDay) never spoils.
       const before = scholar.inventory.length;
-      scholar.inventory = scholar.inventory.filter(i => i.spoilDay > scholar.day);
+      scholar.inventory = scholar.inventory.filter(i => i.spoilDay === undefined || i.spoilDay === null || i.spoilDay > scholar.day);
       const spoiled = before - scholar.inventory.length;
       this.say(ate > 0 ? `You eat (${ate} kcal).` + (spoiled ? ` ${spoiled} item(s) spoiled — the Codex notes the waste.` : '')
                        : (scholar.inventory.length ? 'You are full enough.' : 'Nothing to eat. The pantry of your pack is empty.'));
@@ -2328,8 +2328,6 @@
         if (!person) continue;
         const health = (v.health && v.health[id] !== undefined) ? v.health[id] : 100;
         const healthFactor = health / 100;
-        // the sick eat less (can't keep it down) and provide nothing
-        eat += (person.kcalPerDay || 2000) * (0.7 + 0.3 * healthFactor);
         // taught plants: villagers who LEARN (via dialogue) forage better. real mechanism.
         const knownPlants = (v.taught && v.taught[id]) ? v.taught[id].length : 0;
         const knowledgeFactor = 1 + (knownPlants * 0.15);
@@ -2337,16 +2335,61 @@
         // trust 0-30: 20% shared. 30-60: 50%. 60-80: 80%. 80+: all.
         const trust = (v.trust && v.trust[id] !== undefined) ? v.trust[id] : 10;
         const trustFactor = trust < 30 ? 0.2 : trust < 60 ? 0.5 : trust < 80 ? 0.8 : 1.0;
-        const personalGive = (person.providesPerDay || 0) * healthFactor * knowledgeFactor * trustFactor;
-        if (personalGive > 0) { give += personalGive; providers.push(person); }
+        // THEY FEED THEMSELVES FIRST. Each villager forages, eats, shares surplus.
+        // The pantry is the buffer, not their main food source.
+        const produced = (person.providesPerDay || 0) * healthFactor * knowledgeFactor;
+        const needed = (person.kcalPerDay || 2000) * (0.7 + 0.3 * healthFactor);
+        if (produced >= needed) {
+          // self-sufficient. surplus shared by trust.
+          const surplus = (produced - needed) * trustFactor;
+          if (surplus > 0) { give += surplus; providers.push(person); }
+        } else {
+          // deficit. takes from pantry.
+          eat += (needed - produced);
+        }
       }
       const net = Math.max(0, eat - give);
       v.lastEat = eat; v.lastGive = give; v.lastProviders = providers.map(p => p.name.split(' ')[0]);
-      v.pantryKcal = Math.max(0, v.pantryKcal - net);
+      // Consume REAL pantry items (not phantom pantryKcal). Oldest/spoiling first.
+      v.pantry = v.pantry || [];
+      let need = net;
+      // sort by spoilDay (perishable first)
+      v.pantry.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
+      for (let i = v.pantry.length - 1; i >= 0 && need > 0; i--) {
+        const item = v.pantry[i];
+        const kcalEach = item.kcalEach || 0;
+        if (kcalEach <= 0) continue;
+        // villagers cook raw food if they know how (abstracted: they get cooked value if any villager knows)
+        const effectiveKcal = item.rawKcal ? (item.cookedKcal || item.rawKcal * 1.5) : kcalEach;
+        const itemTotal = effectiveKcal * (item.units || 1);
+        if (itemTotal <= need) {
+          need -= itemTotal;
+          v.pantry.splice(i, 1);
+        } else {
+          const unitsNeeded = Math.ceil(need / effectiveKcal);
+          item.units -= unitsNeeded;
+          need = 0;
+          if (item.units <= 0) v.pantry.splice(i, 1);
+        }
+      }
+      // surplus goes INTO pantry (as foraged goods).
+      if (give > 0) {
+        v.pantry = v.pantry || [];
+        // add as a generic "foraged food" item (villagers bring variety)
+        const existing = v.pantry.find(p => p.name === 'Foraged food');
+        if (existing) {
+          existing.units += Math.ceil(give / 200); // ~200 kcal per unit
+        } else {
+          v.pantry.push({ name: 'Foraged food', kcalEach: 200, units: Math.ceil(give / 200), spoilDay: v.day + 3, safe: true, kg: 0.2 });
+        }
+      }
+      // keep pantryKcal in sync (derived, not source of truth)
+      v.pantryKcal = v.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+      const starving = need > 0; // village didn't get enough
       // starvation is slow: -5 health/day when empty. people fade.
       // health recovers +2/day when there's food.
       v.health = v.health || {};
-      if (v.pantryKcal <= 0) {
+      if (starving || v.pantry.length === 0) {
         for (const rid of (v.roster || [])) {
           const cur = v.health[rid] !== undefined ? v.health[rid] : 100;
           v.health[rid] = Math.max(0, cur - 5);
