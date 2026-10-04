@@ -768,7 +768,18 @@
           }
         }
         else if (cell === 'grass') { g = ''; cls += ' grass'; }
-        else if (cell === 'dirt') { g = ''; cls += ' dirt'; }
+        else if (cell === 'dirt') {
+          // Was this a bush you identified? Show it as EMPTY, not just dirt.
+          // You know what it is. You know it's picked clean. That's information.
+          const bs = (tile.bushSpecies || {})[cx + ',' + cy];
+          const codex = Game.state.codex.plants || {};
+          if (bs && codex[bs] && codex[bs].level >= 1) {
+            g = PLANT_GLYPH[bs] || '🌿';
+            cls += ' emptybush'; // greyed out, but you know what it is
+          } else {
+            g = ''; cls += ' dirt';
+          }
+        }
         else { g = CELL_GLYPH[cell] || ''; }
 
         // known secrets override the look: knowledge is visible.
