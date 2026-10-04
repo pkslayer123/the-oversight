@@ -582,6 +582,26 @@ body.system-live .btn:not(.ghost) {
   border: 2px solid var(--danger, #ff5252);
   box-shadow: 0 0 14px rgba(255, 82, 82, 0.35);
 }
+/* COMBAT CARD, COMPACT: arrives, doesn't intrude. Single breath of info —
+   no stat blocks, no layout jump. Slides in instead of popping. */
+.ord-combatpanel .card.combat-compact {
+  border: 2px solid var(--danger, #ff5252);
+  box-shadow: 0 0 14px rgba(255, 82, 82, 0.35);
+  padding: 8px 10px;
+  animation: combatArrive 0.25s ease-out;
+}
+@keyframes combatArrive {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.combat-compact .cc-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 13px; font-weight: bold; margin-bottom: 2px;
+}
+.combat-compact .cc-turn { font-weight: normal; opacity: .8; font-size: 12px; }
+.combat-compact .cc-mon { margin: 2px 0; }
+.combat-compact .cc-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.combat-compact .cc-actions .btn { flex: 1 1 0; min-width: 0; padding: 8px 4px; }
 .ord-ctx { order: 6; }
 /* SELF BAR: your persistent body-actions (Eat, Sleep, Pack, Wait). Personal
    actions FIRST — they sit at the top of the action area, right below the

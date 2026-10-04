@@ -169,7 +169,7 @@
   ],
   "behavior": "territorial",
   "codexStages": {
-   "unknown": "A deer. It froze like a deer in headlights. The light did not stop gathering.",
+   "unknown": "It froze like headlights on a highway. The light did not stop gathering.",
    "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' — and right that you should move. When it freezes, it is aiming. The beam does not just fire — it SWEEPS after you while it burns. Antlers never shed: the System classified them as permanent equipment.",
    "slain": "Gallowdeer. Moves: Ocular Discharge (telegraphed by the freeze — MOVE), Antler Sweep (close range). It does not run. It does not bluff. When it freezes, it is aiming — and the beam tracks you while it fires. Break the lane behind a wall, outrun it sideways (never down the lane), or close in and break its aim — mind the antlers. Caught under the full beam with nowhere to run, you die. The meat is worth the sorrow. Thank it."
   },
@@ -179,7 +179,15 @@
   "fear": "movement",
   "speed": 4,
   "emoji": "🦌",
-  "unknown": "a deer, standing too still",
+  "unknown": "the thing with headlights for eyes, standing too still",
+  "villageNames": [
+   "Headlight Harry",
+   "The Bright Bastard",
+   "Sir Blinds-A-Lot",
+   "Captain Bright-Eyes",
+   "Old Stare",
+   "The Glow Stag"
+  ],
   "vibe": "skittish until it isn't — when it freezes, it's aiming",
   "cues": {
    "curious": [

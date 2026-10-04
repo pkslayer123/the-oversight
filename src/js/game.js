@@ -2401,6 +2401,28 @@
         this.socialTick(vid);
         return { ok: true };
       }
+      if (topic === 'namebeast') {
+        // The naming argument, up close. The player weighs in — backing a
+        // name counts double. Social play, not a menu.
+        const cands = Object.entries(this.state.codex.monsters || {})
+          .filter(([id, e]) => e.namingKicked && !e.villageName);
+        if (!cands.length) {
+          this.say(`${first} shrugs. "Name what? We haven't seen anything worth naming lately."`);
+          return { ok: true };
+        }
+        const [mid, e] = cands[0];
+        const mdef = (this.data.monsters || []).find(m => m.id === mid) || {};
+        const votes = {};
+        for (const [pvid, name] of Object.entries(e.proposals || {})) {
+          votes[name] = votes[name] || { n: 0, backers: [] };
+          votes[name].n += (pvid === ((this.state.scholar || {}).villagerId || 'player') || pvid === 'player') ? 2 : 1;
+          votes[name].backers.push(this.displayName(pvid).split(' ')[0]);
+        }
+        const opts = Object.entries(votes).map(([name, v]) => ({ name, n: v.n, backers: v.backers }));
+        this.say(`${first} leans in. "That thing — ${mdef.unknown || 'you know the one'}. We're naming it. So far: ${opts.map(o => `"${o.name}" (${o.backers.join(', ')})`).join('; ')}. What's your vote?"`);
+        this.socialTick(vid);
+        return { ok: true, naming: { mid, descriptor: mdef.unknown || 'the beast', options: opts.map(o => o.name) } };
+      }
       return null;
     },
     // goalKnown: post-System it's displayed; pre-System it's learned via askAbout
@@ -7436,19 +7458,138 @@
       return st && (st.stage === 'observed' || st.stage === 'slain');
     },
     monsterDesc(mid) {
+      return this.monsterDisplayName(mid);
+    },
+    // === MONSTER KNOWLEDGE: progressive disclosure ===
+    // Steve's rule: monsters are learned, like plants and people. First
+    // encounter shows a strange descriptor and a vague threat sense — never
+    // the true name, never numbers. The VILLAGE names the beast through talk;
+    // the codex records the agreed name. Stats unlock through survival.
+    ensureMonsterEntry(mid) {
+      this.state.codex.monsters = this.state.codex.monsters || {};
+      const e = this.state.codex.monsters[mid] = this.state.codex.monsters[mid] || {};
+      if (!e.stage) e.stage = 'encountered';
+      e.proposals = e.proposals || {};     // vid -> proposed name
+      e.attacksSeen = e.attacksSeen || []; // attack names witnessed
+      e.roundsSeen = e.roundsSeen || 0;
+      e.hitsLanded = e.hitsLanded || 0;
+      return e;
+    },
+    // monsterDisplayName: what the UI calls it. Village-agreed name wins;
+    // otherwise the strange descriptor. The TRUE name never shows pre-System.
+    monsterDisplayName(mid) {
       const mdef = (this.data.monsters || []).find(m => m.id === mid);
       if (!mdef) return 'something';
-      if (this.monsterKnown(mid)) return mdef.name;
+      const e = (this.state.codex.monsters || {})[mid];
+      if (e && e.villageName) return e.villageName;
+      if (this.state.systemArrived) return mdef.name;
       return mdef.unknown || 'something moving';
     },
+    // monsterThreatSense: vague, from data. No numbers, ever.
+    monsterThreatSense(mdef) {
+      const dmg = mdef.attack && mdef.attack.damage;
+      const max = dmg ? dmg[1] : 10;
+      if (max >= 30) return 'it feels like death';
+      if (max >= 20) return 'it feels dangerous';
+      if (max >= 12) return 'it feels wrong';
+      return 'it feels skittish';
+    },
+    // monsterHpSense: estimate tiers, unlocked after surviving 3+ rounds.
+    monsterHpSense(m) {
+      const e = (this.state.codex.monsters || {})[(m.mdef || {}).id];
+      if (!e || (e.roundsSeen || 0) < 3) return null;
+      const frac = m.hp / m.maxHp;
+      if (frac > 0.75) return 'looks unhurt';
+      if (frac > 0.5) return 'looks okay';
+      if (frac > 0.25) return 'looks hurt';
+      return 'looks ready to drop';
+    },
     identifyMonster(mid) {
-      // surviving an encounter teaches you what it was. knowledge is earned.
-      if (this.monsterKnown(mid)) return;
+      // Face to face: the ambiguity does NOT end. You get a descriptor and a
+      // feeling — never the true name. The village names it, together, later.
       const mdef = (this.data.monsters || []).find(m => m.id === mid);
       if (!mdef) return;
-      this.state.codex.monsters = this.state.codex.monsters || {};
-      this.state.codex.monsters[mid] = { stage: 'observed' };
-      this.say(`Now you know what that was: ${mdef.name}. ${mdef.vibe || ''} The ${this.journalName()} keeps it.`);
+      const e = this.ensureMonsterEntry(mid);
+      if (!e.namingKicked) {
+        e.namingKicked = true;
+        this.say(`You don't know what that was. ${mdef.unknown || 'Something moving.'} The village will have opinions.`);
+        this.seedMonsterNames(mid);
+      }
+    },
+    // monsterNamingActive: is there a beast awaiting its village name?
+    monsterNamingActive() {
+      return Object.values(this.state.codex.monsters || {}).some(e => e.namingKicked && !e.villageName);
+    },
+    // === VILLAGE NAMING ===
+    // Villagers propose silly, personality-flavored names per game, campaign
+    // through gossip, and converge. The agreed name goes in the codex.
+    generateMonsterName(mid, vid) {
+      const mdef = (this.data.monsters || []).find(m => m.id === mid) || {};
+      const curated = mdef.villageNames || [];
+      if (curated.length) return curated[Math.floor(Math.random() * curated.length)];
+      const traits = mdef.nameTraits || ['big', 'loud', 'ugly'];
+      const t = traits[Math.floor(Math.random() * traits.length)];
+      const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+      const v = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      const temp = (v.personality && v.personality.temperament) || 'steady';
+      const pools = {
+        bold: [`The ${cap(t)} Bastard`, `Old ${cap(t)}`, `${cap(t)}-Bane`],
+        cautious: [`The ${cap(t)} Thing`, `Don't-Look`, `The ${cap(t)} Stare`],
+        steady: [`${cap(t)}-Eyes`, `The ${cap(t)} Beast`, `Big ${cap(t)}`],
+      };
+      const pool = pools[temp] || pools.steady;
+      return pool[Math.floor(Math.random() * pool.length)];
+    },
+    seedMonsterNames(mid) {
+      const e = this.ensureMonsterEntry(mid);
+      const roster = ((this.state.village || {}).roster || []).filter(id => id !== (this.state.scholar || {}).villagerId);
+      // the loud ones propose first — 3 to 4 voices to start the argument
+      const proposers = roster.slice(0, 4);
+      for (const vid of proposers) {
+        if (!e.proposals[vid]) e.proposals[vid] = this.generateMonsterName(mid, vid);
+      }
+      const names = Object.values(e.proposals);
+      if (names.length) {
+        const first = names[0];
+        const who = this.displayName(Object.keys(e.proposals)[0]).split(' ')[0];
+        this.say(`Back at the haven the argument starts: ${who} is calling it "${first}." They'll fight it out — weigh in if you want.`);
+      }
+      this.monsterNamingCheck(mid);
+    },
+    // backMonsterName: the player weighs in through talk. Your backing counts.
+    backMonsterName(mid, name) {
+      const e = this.ensureMonsterEntry(mid);
+      const pid = (this.state.scholar || {}).villagerId || 'player';
+      e.proposals[pid] = name;
+      e.playerBacked = name;
+      this.say(`You back "${name}." Word gets around.`);
+      this.monsterNamingCheck(mid);
+    },
+    // monsterNamingCheck: majority of the roster agrees -> the name sticks.
+    monsterNamingCheck(mid) {
+      const e = (this.state.codex.monsters || {})[mid];
+      if (!e || e.villageName) return;
+      const roster = ((this.state.village || {}).roster || []);
+      const votes = {};
+      for (const [vid, name] of Object.entries(e.proposals || {})) {
+        // the player's backing counts double — you're the one who bled for it
+        votes[name] = (votes[name] || 0) + (vid === ((this.state.scholar || {}).villagerId || 'player') || vid === 'player' ? 2 : 1);
+      }
+      const majority = Math.floor(roster.length / 2) + 1;
+      for (const [name, n] of Object.entries(votes)) {
+        if (n >= majority) {
+          e.villageName = name;
+          this.say(`It's settled. The village is calling it "${name}." The ${this.journalName()} keeps it.`);
+          // live fighters get the name too
+          try {
+            for (const f of (this.tbfight || {}).fighters || []) {
+              if (f.kind === 'monster' && f.mdef && f.mdef.id === mid) f.name = name;
+            }
+          } catch (e2) {}
+          return;
+        }
+      }
     },
     monsterCue(mid, kind) {
       const mdef = (this.data.monsters || []).find(m => m.id === mid);
@@ -7824,8 +7965,8 @@
         const mx = 4 + Math.floor(Math.random() * 5) - 2;
         const my = 4 + Math.floor(Math.random() * 5) - 2;
         scholar.monster = { id: mdef.id, x: Math.max(0, Math.min(8, mx)), y: Math.max(0, Math.min(8, my)) };
-        // AMBIGUITY: you don't know what it is. not yet.
-        this.say(this.monsterKnown(mdef.id) ? `A ${mdef.name} is here.` : `Something moves out there — ${mdef.unknown || 'big, and wrong'}.`);
+        // AMBIGUITY: you don't know what it is. The village name, or the descriptor — never the true name.
+        this.say(`Something moves out there — ${this.monsterDisplayName(mdef.id)}.`);
       }
       // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
       if (scholar.day >= 3 && !this.wanderer && !this.encounterDone) {
@@ -9642,6 +9783,19 @@
 
     endDay() {
       const scholar = this.state.scholar;
+      // VILLAGE NAMING: the argument continues. Late proposers chime in, and
+      // the village converges on a name for each unnamed beast.
+      try {
+        for (const mid of Object.keys(this.state.codex.monsters || {})) {
+          const e = this.state.codex.monsters[mid];
+          if (e.villageName || !e.namingKicked) continue;
+          const roster = ((this.state.village || {}).roster || []).filter(id => id !== (scholar || {}).villagerId);
+          for (const vid of roster) {
+            if (!e.proposals[vid] && Math.random() < 0.5) e.proposals[vid] = this.generateMonsterName(mid, vid);
+          }
+          this.monsterNamingCheck(mid);
+        }
+      } catch (e2) {}
       // regrow: +1/day up to maxStock. food comes back, but slowly.
       // strip a grove and it takes 3 days to recover. not unlimited, but renewable.
       // state persists — the land remembers what you took.
@@ -9874,7 +10028,7 @@
         const hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
         fighters.push({
           key: 'm_' + i, kind: 'monster', monsterId: mdef.id,
-          name: mdef.name + (count > 1 ? ' ' + (i + 1) : ''), emoji: mdef.emoji || '👹',
+          name: this.monsterDisplayName(mdef.id) + (count > 1 ? ' ' + (i + 1) : ''), emoji: mdef.emoji || '👹',
           hp, maxHp: hp, speed: mdef.speed || 3, mx: spot.x, my: spot.y,
           alive: true, fled: false, telegraph: null, mdef,
           hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
@@ -9894,17 +10048,18 @@
       try { this.observe('fight'); } catch (e) {}
       this.fight = null; // old menu combat retired
       this.pendingEncounter = false;
-      // face to face: the ambiguity ends. you know what it is now.
+      // face to face: the ambiguity does NOT end. Descriptor and dread, not a name.
       try { this.identifyMonster(mdef.id); } catch (e) {}
       s.monster = null; // it's in the fight now, not wandering
       const partyNames = fighters.filter(f => f.kind === 'villager').map(f => f.name);
-      this.say(`⚔ ${mdef.name.toUpperCase()}!${count > 1 ? ` (${count} of them!)` : ''} ${partyNames.length ? partyNames.join(', ') + (partyNames.length > 1 ? ' join' : ' joins') + ' you!' : "You're on your own."}`);
+      const dispName = this.monsterDisplayName(mdef.id);
+      this.say(`⚔ ${dispName.toUpperCase()}!${count > 1 ? ` (${count} of them!)` : ''} ${partyNames.length ? partyNames.join(', ') + (partyNames.length > 1 ? ' join' : ' joins') + ' you!' : "You're on your own."}`);
       if (hasFear) this.say('Something about you is wrong. It hesitates. (fear_aura)');
       if (hasSand) this.say('You fling a handful of grit into its eyes. (pocket_sand: blinded)');
       this.say('Turn-based now. Tap a tile to move — speed is squares. Then act.');
       this.audioEvent('combatStart');
       if (/highbeam/i.test(mdef.name || '')) this.audioEvent('deerNotice'); // distant, wrong-sounding call
-      this.sysSay(`COMBAT! ${mdef.name.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
+      this.sysSay(`COMBAT! ${dispName.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
       this.tbBeginTurn();
       return this.tbfight;
     },
@@ -10276,6 +10431,8 @@
       }
       this.tbDamage(t.key, d, 'you');
       const tAfter = this.tbFighter(t.key);
+      // HITS LANDED: hurting it teaches you its toughness.
+      try { if (tAfter && tAfter.mdef) this.ensureMonsterEntry(tAfter.mdef.id).hitsLanded++; } catch (e) {}
       // DISRUPT: a solid hit while it's channeling the beam can break its aim.
       // Closing in is the risky counterplay — the antlers make sure of that.
       if (tAfter && tAfter.alive && tAfter.telegraph && tAfter.telegraph.firing > 0 &&
@@ -10585,6 +10742,12 @@
 
     tbMonsterTurn(m) {
       const f = this.tbfight;
+      // ROUNDS SEEN: surviving its turns teaches you its toughness.
+      try {
+        const me = this.ensureMonsterEntry(m.mdef.id);
+        me.roundsSeen = (me.roundsSeen || 0) + 1;
+        if (me.roundsSeen >= 3 && me.stage === 'encountered') me.stage = 'observed';
+      } catch (e) {}
       // stunned: no move, no new attack. (Pending telegraph was canceled by the scream.)
       if (m.stunned > 0) {
         m.stunned -= 1;
@@ -10806,6 +10969,15 @@
           attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
           threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
           aim, dir: bdir, aimKey, firing: 0 };
+        // WITNESS: seeing it wind up teaches you its attack. The codex notes
+        // the behavior — never the true name, never numbers.
+        try {
+          const me = this.ensureMonsterEntry(m.mdef.id);
+          if (atk.name && !me.attacksSeen.includes(atk.name)) {
+            me.attacksSeen.push(atk.name);
+            if (me.stage === 'encountered') me.stage = 'observed';
+          }
+        } catch (e) {}
         this.say('⚠ ' + this.tbTelegraphCue(m));
         this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: /highbeam/i.test(m.name || '') });
       }

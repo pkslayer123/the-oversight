@@ -75,7 +75,11 @@
     const tf = Game.tbfight;
     if (!tf) return '';
     const mons = tf.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
-    const names = mons.map(m => `${m.emoji || '👹'} ${esc(m.name)}${m.telegraph ? ' ⚠' : ''}`).join(' · ') || '⚔ COMBAT';
+    const names = mons.map(m => {
+      const mid = m.mdef ? m.mdef.id : m.monsterId;
+      const label = Game.monsterDisplayName ? Game.monsterDisplayName(mid) : m.name;
+      return `${m.emoji || '👹'} ${esc(label)}${m.telegraph ? ' ⚠' : ''}`;
+    }).join(' · ') || '⚔ COMBAT';
     const tg = mons.find(m => m.telegraph);
     return `<div class="ord-combatstrip"><div class="combatstrip">` +
       `<div class="cs-row"><span>⚔ ${names}</span></div>` +
@@ -2011,11 +2015,13 @@
     if (!vp) { slot.innerHTML = ''; inlineView = null; return; }
     const dname = Game.displayName(villagerId);
     const goalKnown = Game.goalKnown(villagerId);
+    const namingActive = Game.monsterNamingActive ? Game.monsterNamingActive() : false;
     const topics = [
       ['goal', '\u{1F3AF} "What do you want?"', goalKnown ? ' (you know: ' + (Game.goalWant(villagerId) || '?') + ')' : ''],
       ['gossip', '\u{1F442} "Heard anything?"', ''],
       ['village', '\u{1F3D5}\uFE0F "How\u2019s everyone?"', ''],
     ];
+    if (namingActive) topics.push(['namebeast', '\u{1F4A1} "What are we calling that thing?"', '']);
     const btns = topics.map(([tid, label, extra]) =>
       `<button class="btn sm ghost" data-topic="${tid}">${label}${extra}</button>`).join('') +
       ` <button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
@@ -2033,11 +2039,27 @@
     slot.querySelectorAll('[data-topic]').forEach(b => {
       b.onclick = () => {
         const r = Game.askAbout(villagerId, b.dataset.topic);
-        const labels = { goal: 'what they want', gossip: 'what they\u2019ve heard', village: 'how everyone\u2019s doing' };
+        const labels = { goal: 'what they want', gossip: 'what they\u2019ve heard', village: 'how everyone\u2019s doing', namebeast: 'what to call the beast' };
         view.result = r ? `You asked about ${labels[b.dataset.topic] || 'it'}.` : null;
+        view.naming = r && r.naming ? r.naming : null;
         refresh();
       };
     });
+    // NAMING: back a name for the beast. Your vote counts double.
+    if (view.naming) {
+      const nz = document.createElement('div');
+      nz.className = 'inline-btns';
+      nz.innerHTML = `<p class="small" style="opacity:.7">Back a name for ${esc(view.naming.descriptor)}:</p>` +
+        view.naming.options.map(n => `<button class="btn sm ghost" data-name="${esc(n)}">"${esc(n)}"</button>`).join('');
+      slot.querySelector('.inline-body').appendChild(nz);
+      nz.querySelectorAll('[data-name]').forEach(b => {
+        b.onclick = () => {
+          Game.backMonsterName(view.naming.mid, b.dataset.name);
+          view.naming = null; view.result = `You backed "${b.dataset.name}."`;
+          refresh();
+        };
+      });
+    }
   }
 
   // GIVE FOOD — a decision, not a button. How much? The world (witnesses)
@@ -2968,45 +2990,45 @@
       <p class="small" style="opacity:.7">Tap a square to see what you can do there.</p></div>`;
   }
 
+  // COMBAT CARD: compact, non-obstructive, progressive disclosure.
+  // Steve's rules: it arrives, it doesn't intrude. First encounter shows a
+  // strange descriptor and a vague threat sense — never the true name, never
+  // numbers. Stats unlock through survival (rounds), hits, and the village
+  // naming the beast. Knowing is earned.
   function panelCombat(st) {
     const tf = Game.tbfight;
     if (!tf) return '';
     const cur = Game.tbCurrent();
     const p = Game.tbFighter('p');
-    const orderHtml = tf.order.map(k => {
-      const f = Game.tbFighter(k);
-      if (!f) return '';
-      const label = f.kind === 'player' ? 'You' : `${f.emoji} ${esc(f.name)}`;
-      const dead = !f.alive ? ' ☠' : f.fled ? ' 🏃' : '';
-      const active = cur && cur.key === k;
-      return active ? `<b style="color:#4df3ff">${label}${dead}</b>` : `<span style="opacity:.6">${label}${dead}</span>`;
-    }).join(' → ');
     const mons = tf.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
     const monRows = mons.map(m => {
-      const pct = Math.max(0, Math.round(m.hp / m.maxHp * 100));
-      return `<p class="small">${m.emoji} <b>${esc(m.name)}</b> — ${Math.max(0, Math.round(m.hp))}/${m.maxHp} HP ${m.telegraph ? '⚠ winding up…' : ''}</p>`;
+      const mid = m.mdef ? m.mdef.id : m.monsterId;
+      const name = Game.monsterDisplayName ? Game.monsterDisplayName(mid) : m.name;
+      const threat = Game.monsterThreatSense && m.mdef ? Game.monsterThreatSense(m.mdef) : '';
+      const hpSense = Game.monsterHpSense ? Game.monsterHpSense(m) : null;
+      const bits = [threat, hpSense].filter(Boolean).join(' · ');
+      return `<p class="small cc-mon">${m.emoji} <b>${esc(name)}</b>${bits ? ` <span style="opacity:.7">— ${esc(bits)}</span>` : ''}${m.telegraph ? ' ⚠' : ''}</p>`;
     }).join('');
     const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= (Game.equippedWeapon ? Game.equippedWeapon().range : 1)) : [];
     const wrange = Game.equippedWeapon ? Game.equippedWeapon().range : 1;
     const wname = Game.equippedWeapon ? Game.equippedWeapon().name : '';
     const canScream = Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day;
     const yourTurn = Game.tbIsPlayerTurn();
+    const turnLine = yourTurn && p
+      ? `Your turn — <b>${p.moveLeft}</b> move${p.acted ? ' · acted' : ''}`
+      : (cur ? `${esc(cur.kind === 'player' ? 'You' : (Game.monsterDisplayName && cur.mdef ? Game.monsterDisplayName(cur.mdef.id) : cur.name))} acting…` : '');
     return `
-      <div class="card warn"><h3>⚔ COMBAT — round ${tf.round}</h3>
-      <p class="small" style="opacity:.8">${orderHtml}</p>
+      <div class="card combat-compact"><div class="cc-head"><span>⚔ R${tf.round}</span><span class="cc-turn">${turnLine}</span></div>
       ${monRows}
-      ${yourTurn && p ? `<p class="small">Your turn — <b>${p.moveLeft}</b> move left${p.acted ? ' · acted' : ''}. Tap a tile to move.</p>
-      <div class="actions">
-        <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${wrange > 1 ? ` (${wrange})` : ''}${adj.length > 1 ? '…' : ''}</button>
-        <button class="btn sm" id="c-study" ${p.acted ? 'disabled' : ''}>👁 STUDY</button>
-        <button class="btn sm" id="c-talk" ${(p.acted || !mons.some(m => m.kind === 'hostile')) ? 'disabled' : ''}>💬 TALK</button>
-        ${canScream ? `<button class="btn sm" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀 SCREAM</button>` : ''}
+      ${yourTurn && p ? `<div class="actions cc-actions">
+        <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
+        <button class="btn sm ghost" id="c-study" ${p.acted ? 'disabled' : ''}>👁</button>
+        ${mons.some(m => m.kind === 'hostile') ? `<button class="btn sm ghost" id="c-talk" ${p.acted ? 'disabled' : ''}>💬</button>` : ''}
+        ${canScream ? `<button class="btn sm ghost" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀</button>` : ''}
+        <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃</button>
+        <button class="btn sm ghost" id="c-endturn">⏭</button>
       </div>
-      <div class="actions">
-        <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃 FLEE</button>
-        <button class="btn sm ghost" id="c-endturn">⏭ END TURN</button>
-      </div>
-      <div class="actions" id="c-talkrow" style="display:none"></div>` : `<p class="small">${cur ? esc(cur.kind === 'player' ? 'You' : cur.name) + ' is acting…' : ''}</p>`}
+      <div class="actions" id="c-talkrow" style="display:none"></div>` : ''}
       </div>`;
   }
 
@@ -3328,7 +3350,10 @@
         <p class="small">encounters: ${u.enc}/${u.threshold} ${u.enc >= u.threshold - 1 ? '— <b>almost there</b>' : ''}</p></div>`).join('') : ''}
       ${Object.keys(mons).length ? '<h1 class="title" style="font-size:18px">BEASTS</h1>' + Object.entries(mons).map(([id, m]) => {
         const md = Game.data.monsters.find(x => x.id === id);
-        return `<div class="card codex"><h3>${md.name}</h3><p class="small">System files it as: ${md.systemDesignation || '—'}</p><p>${esc(md.codexStages[m.stage] || '')}</p></div>`;
+        const name = Game.monsterDisplayName ? Game.monsterDisplayName(id) : md.name;
+        const stageText = md.codexStages[m.stage] || md.codexStages.unknown || '';
+        const attacks = (m.attacksSeen || []).length ? `<p class="small">You've seen it attack ${m.attacksSeen.length}× — ${esc((md.attack || {}).telegraph || 'it gives warning first')}.</p>` : '';
+        return `<div class="card codex"><h3>${esc(name)}</h3>${m.villageName ? `<p class="small" style="opacity:.7">named by the village</p>` : `<p class="small" style="opacity:.7">not yet named — the village is arguing about it</p>`}<p>${esc(stageText)}</p>${attacks}</div>`;
       }).join('') : ''}
       <button class="btn ghost" id="b-back">Back</button>`;
     document.getElementById('b-back').onclick = () => expeditionScreen();
