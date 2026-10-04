@@ -42,14 +42,25 @@
       <h1 class="title">THE SCATTERING</h1>
       <div class="subtitle">a system-apocalypse survival roguelite<br>hunger is the final boss</div>
       <button class="btn" id="b-new">New Expedition</button>
-      ${Game.hasSave() ? '<button class="btn" id="b-cont">Continue Expedition</button>' : ''}
+      ${Game.hasSave() ? '<div id="saves"></div>' : ''}
       <button class="btn ghost" id="b-codex0">Codex</button>
       ${(Game.state && Game.state.telemetry && Game.state.telemetry.length) ? '<button class="btn ghost" id="b-tel">📊 Telemetry</button>' : ''}
       <button class="btn ghost" id="b-about">About</button>
       <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
     const bc = document.getElementById('b-cont');
-    if (bc) bc.onclick = () => { if (Game.load()) expeditionScreen(); };
+    // Save list: pick which character to continue.
+    const savesDiv = document.getElementById('saves');
+    if (savesDiv) {
+      const saves = Game.listSaves();
+      savesDiv.innerHTML = saves.map(sv => {
+        const v = Game.data.villagers.find(v => v.id === sv.villagerId) || {};
+        return `<button class="btn" data-save="${sv.key}">Continue ${v.name || sv.villagerId} (Day ${sv.day || 1})</button>`;
+      }).join('');
+      savesDiv.querySelectorAll('[data-save]').forEach(b => b.onclick = () => {
+        if (Game.load(b.dataset.save)) expeditionScreen();
+      });
+    }
     document.getElementById('b-codex0').onclick = () => { toast('The Codex is empty. For now.'); };
     const bt = document.getElementById('b-tel');
     if (bt) bt.onclick = () => telemetryScreen();

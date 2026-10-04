@@ -38,22 +38,58 @@
     return { version: SAVE_VERSION, village: newVillage(), scholar: null, codex: newCodex(), run: null };
   }
 
-  function save(state) {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { /* storage full/blocked */ }
+  // Multiple saves: one per run. Key = villager + started timestamp.
+  // Dead runs are wiped. Living runs persist until you start a new one (or delete).
+  function saveKey(state) {
+    const vid = state.villagerId || state.scholar && state.scholar.villagerId || 'unknown';
+    const started = state.startedAt || Date.now();
+    return `scattering-save-v1-${vid}-${started}`;
   }
-
-  function load() {
+  function save(state) {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
+      if (!state.startedAt) state.startedAt = Date.now();
+      localStorage.setItem(saveKey(state), JSON.stringify(state));
+      // keep an index
+      const idx = listSaves();
+      const key = saveKey(state);
+      if (!idx.find(i => i.key === key)) {
+        idx.push({ key, villagerId: state.villagerId, day: state.scholar && state.scholar.day, startedAt: state.startedAt });
+        localStorage.setItem('scattering-saves-index', JSON.stringify(idx));
+      }
+    } catch (e) { /* storage full/blocked */ }
+  }
+  function listSaves() {
+    try {
+      const raw = localStorage.getItem('scattering-saves-index');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+  function load(key) {
+    try {
+      const k = key || SAVE_KEY; // fallback to legacy single save
+      const raw = localStorage.getItem(k);
       if (!raw) return null;
       const s = JSON.parse(raw);
-      if (s.version !== SAVE_VERSION) return null; // refuse to corrupt; migrate later
+      if (s.version !== SAVE_VERSION) return null;
       return s;
     } catch (e) { return null; }
   }
-
-  function wipe() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+  function wipe(key) {
+    try {
+      localStorage.removeItem(key || SAVE_KEY);
+      // remove from index
+      if (key) {
+        const idx = listSaves().filter(i => i.key !== key);
+        localStorage.setItem('scattering-saves-index', JSON.stringify(idx));
+      }
+    } catch (e) {}
+  }
+  function wipeAll() { try {
+    for (const i of listSaves()) localStorage.removeItem(i.key);
+    localStorage.removeItem('scattering-saves-index');
+    localStorage.removeItem(SAVE_KEY);
+  } catch (e) {} }
 
   global.Scattering = global.Scattering || {};
-  global.Scattering.state = { newState, newVillage, newScholar, newCodex, save, load, wipe, SAVE_VERSION };
+  global.Scattering.state = { newState, newVillage, newScholar, newCodex, save, load, wipe, wipeAll, listSaves, saveKey, SAVE_VERSION };
 })(typeof window !== 'undefined' ? window : globalThis);

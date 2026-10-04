@@ -559,10 +559,13 @@
       S.state.save(this.state);
     },
     hasSave() {
-      try { return !!S.state.load(); } catch (e) { return false; }
+      try { return S.state.listSaves().length > 0; } catch (e) { return false; }
     },
-    load() {
-      const s = S.state.load();
+    listSaves() {
+      try { return S.state.listSaves(); } catch (e) { return []; }
+    },
+    load(key) {
+      const s = S.state.load(key);
       if (!s || !s.run) return false;
       this.state = s;
       const r = s.run;
