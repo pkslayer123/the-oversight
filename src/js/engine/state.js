@@ -8,7 +8,9 @@
   function newVillage() {
     return {
       name: 'Haven', day: 1, season: 'spring',
-      pantryKcal: 2000, waterL: 12, morale: 'steady',
+      // Starting pantry: RNG, scaled for 12 people. 1.5-3 days of food (36k-72k kcal).
+      // Set properly in newGame (this is just the template).
+      pantryKcal: 36000, waterL: 12, morale: 'steady',
       villagers: [], // villager ids (living)
       fallen: [],    // {villagerId, day, cause} — remembered
       favor: 0,

@@ -62,6 +62,10 @@
       const villager = this.data.villagers.find(v => v.id === villagerId);
       this.state = S.state.newState();
       this.state.village.name = 'Haven';
+      // Starting pantry: 1.5-3 days for the group. RNG every run.
+      const nPpl = this.state.village.villagers.length + 6; // 6 mains + 6 background
+      const startDays = 1.5 + Math.random() * 1.5;
+      this.state.village.pantryKcal = Math.round(nPpl * 2000 * startDays);
       // the roster: 6 mains (the story) + 6 drawn from 36 background survivors (the variety).
       // twelve mouths, different every run.
       const mains = ['mara_okafor', 'jesse_calhoun', 'aki_tanaka', 'ruth_delgado', 'theo_park', 'priya_nair'];
@@ -99,11 +103,7 @@
       }
       // you trust yourself
       this.state.village.trust[villagerId] = 100;
-      // Jesse (hunter) starts knowing the snare recipe. Others must learn.
-      this.state.codex.recipes = {};
-      if (villagerId === 'jesse_calhoun') {
-        this.state.codex.recipes['snare'] = { level: 3 };
-      }
+      // (Jesse's snare is granted after newCodex below — order matters.)
       // VILLAGERS IN THE GRID: each has a position (mx, my) in the Haven building.
       // they wander turn-based. you see them. you tap them.
       this.state.village.positions = {};
@@ -137,6 +137,10 @@
       scholar.water = 1; // 1 clean water to start
       this.state.scholar = scholar;
       this.state.codex = S.state.newCodex();
+      // Jesse (hunter) starts knowing the snare. Others must learn.
+      if (villagerId === 'jesse_calhoun') {
+        this.state.codex.recipes['snare'] = { level: 3 };
+      }
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
       this.villageLost = false; this.wanderer = null; this.fight = null; this.pendingEncounter = false;
       this.encounterDone = false; this.log = [];
@@ -1145,6 +1149,9 @@
         const mod = t.modifiers && t.modifiers[key];
         if (mod) mod.known = true;
         if (secret) secret.known = true;
+        // Learning the bush: it gets a species, neighbors chain-reveal, icon updates.
+        const species = this.revealBush(cx, cy);
+        this.say(`It's a ${species}. You'll recognize the patch now.`);
         if (secret && secret.thorns) {
           this.state.scholar.kcal -= 20; // thorns scratch
           this.say('Thorns. You get the berries, but they take a little blood. (-20 kcal)');
@@ -1235,6 +1242,67 @@
         }
       }
       return prot;
+    },
+
+    // isUsable: can you USE this item? (first aid, etc.)
+    isUsable(item) {
+      const name = (item.name || '').toLowerCase();
+      return name.includes('first aid') || name.includes('bandage') || name.includes('medicine');
+    },
+
+    // useItem: use it. First aid heals.
+    useItem(idx) {
+      const item = this.state.scholar.inventory[idx];
+      if (!item || !this.isUsable(item)) return null;
+      const name = item.name.toLowerCase();
+      if (name.includes('first aid')) {
+        this.state.scholar.health = Math.min(100, this.state.scholar.health + 30);
+        this.say('You use the first aid kit. +30 health.');
+      }
+      // consume one
+      item.units--;
+      if (item.units <= 0) {
+        this.state.scholar.inventory.splice(idx, 1);
+      }
+      return null;
+    },
+
+    // findPath: BFS shortest path avoiding blocked cells. Returns list of [x,y] or null.
+    findPath(sx, sy, tx, ty) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const key = (x, y) => `${x},${y}`;
+      const visited = new Set([key(sx, sy)]);
+      const queue = [[sx, sy, []]]; // [x, y, path]
+      while (queue.length) {
+        const [x, y, path] = queue.shift();
+        if (x === tx && y === ty) return path.concat([[tx, ty]]);
+        for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+          if (visited.has(key(nx, ny))) continue;
+          const cell = detail[ny] && detail[ny][nx];
+          const props = CELL_PROPS[cell] || {};
+          if (props.blocks) continue;
+          visited.add(key(nx, ny));
+          queue.push([nx, ny, path.concat([[nx, ny]])]);
+        }
+      }
+      return null; // no path
+    },
+
+    // movePath: walk a path. Cost = 10 kcal per square. Not free, not a decision.
+    movePath(tx, ty) {
+      const s = this.state.scholar;
+      const sx = s.mx ?? 4, sy = s.my ?? 4;
+      const path = this.findPath(sx, sy, tx, ty);
+      if (!path) { this.say('No path there.'); return false; }
+      const cost = path.length * 10;
+      if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return false; }
+      s.kcal -= cost;
+      s.mx = tx; s.my = ty;
+      this.say(`Walked ${path.length} squares (${cost} kcal).`);
+      this.ensureVillagerPositions();
+      return true;
     },
 
     // weaponBonus: best weapon in inventory. A spear beats bare hands.
@@ -1361,7 +1429,9 @@
       } else {
         this.say('You search the room. Nothing useful.');
       }
-      return this.endDayPart();
+      // Searching is quick. Doesn't cost a day part (that was killing players).
+      this.monsterTurn(); this.animalTurn();
+      return null;
     },
 
     // cellActions: returns list of decision labels at a cell. Empty = just walk there.
@@ -1379,11 +1449,14 @@
       // animal here? decision.
       const an = this.state.scholar.animal;
       if (an && an.x === cx && an.y === cy) actions.push('Hunt');
-      // villager here? decision.
+      // villager here (or within 3)? decision. Talk from a few spaces away.
       const v = this.state.village;
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
       if (v && v.positions) {
         for (const rid of Object.keys(v.positions)) {
           const pos = v.positions[rid];
+          const d = Math.abs(pos.mx - px) + Math.abs(pos.my - py);
+          if (d <= 3) { actions.push('Talk'); break; }
           if (pos.mx === cx && pos.my === cy) { actions.push('Talk'); break; }
         }
       }
@@ -1399,6 +1472,33 @@
         if (!sec || !sec.searched) actions.push('Search');
       }
       return actions;
+    },
+
+    // revealBush: when you examine a bush, it gets a species. Neighbors of the same
+    // species chain-reveal (you recognize them now). Icons update.
+    revealBush(cx, cy) {
+      const t = this.playerTile();
+      t.secrets = t.secrets || {};
+      t.bushSpecies = t.bushSpecies || {};
+      const key = `${cx},${cy}`;
+      if (t.bushSpecies[key]) return t.bushSpecies[key];
+      // assign a species (berry bushes in this biome)
+      const species = ['blackberry', 'muscadine'][Math.floor(Math.random() * 2)];
+      t.bushSpecies[key] = species;
+      // CHAIN: nearby bushes (within 2) of the same "type" also reveal.
+      // You see one blackberry, you recognize the patch.
+      const detail = this.genDetail(this.map.px, this.map.py);
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+        if (detail[ny] && detail[ny][nx] === 'bush') {
+          const nkey = `${nx},${ny}`;
+          if (!t.bushSpecies[nkey] && Math.random() < 0.7) {
+            t.bushSpecies[nkey] = species;
+          }
+        }
+      }
+      return species;
     },
 
     // depleteRandomTile: when villagers forage, the world loses stock.
@@ -1848,6 +1948,8 @@
       scholar.inventory.sort((a, b) => a.spoilDay - b.spoilDay);
       let ate = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
+      // BUGFIX: only eat things with calories. Gear (knife, rope) has undefined kcalEach.
+      scholar.inventory = scholar.inventory.filter(i => i.kcalEach !== undefined);
       while (scholar.kcal < target && scholar.inventory.length) {
         const it = scholar.inventory[0];
         const kcal = it.kcalEach;

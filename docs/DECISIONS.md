@@ -877,3 +877,15 @@ PHASE 2 (later, when System arrives):
 - System awards magical/scientific gear. Basic weapons become quickly useless.
 - The CONTRAST is the point. You survived with sticks. Now the System hands you fire.
 - Keep Phase 1 survival-focused so the System hits harder.
+
+## 2026-10-03 — Armor progression (Steve)
+Steve: "Basic weapons, basic armor too, up to like military and riot gear until it\'s made
+obsolete by the system."
+
+ARMOR:
+- Bark armor (+10, craftable): bark + vine. Better than skin.
+- Leather jacket (+15, findable): scavenged.
+- Riot gear (+30, findable): police surplus. Stops a boar.
+- Military vest (+40, findable): plate carrier, no plates.
+- Reduces combat damage. Best in inventory applies.
+- Like weapons: the System will obsolete these. Phase 1 they matter.
