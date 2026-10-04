@@ -477,6 +477,7 @@
     wall: '🧱', tent: '⛺', fire: '🔥',
     gym: '🏀', class: '🏫', hall: '🚪', door: '🚪', bridge: '🌉',
     office: '🗄️', bay: '📦', dock: '🚚', sanct: '⛪', base: '🕯️',
+    apt: '🏢', lobby: '🛋️', cube: '💼', break: '☕', conf: '📊',
   };
   function renderDetail(st) {
     const cells = Game.genDetail(st.px, st.py);

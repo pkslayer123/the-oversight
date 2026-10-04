@@ -753,3 +753,27 @@ forget about eating and drinking."
 - The grind is SURVIVAL (finding food, staying alive), not REPLACING TOOLS.
 - Eating/drinking is a strategic concern (do I have enough?), not a mechanical chore.
 - Even a godly powerful being needs calories. "Does this let you skip dinner?" — never.
+
+## 2026-10-03 — Books and power costs (Steve)
+Steve: "Books should be a treasure trove. Not all at once but occasionally they should be
+found and unlock big chunks of the journal or codex. As villagers share and the actual
+codex is unlocked, food becomes less scarce but also more in demand. Suddenly it might
+take 4x calories to support someone trying to be a fire god. This is happening in every village."
+
+BOOKS (src/data/books.json):
+- Field Guide to Edible Plants: unlocks 3 plants L1.
+- Foxfire\'s Journal: 2 plants L2 + cook spit recipe.
+- Trapper\'s Handbook: snare + deadfall + rabbit.
+- Medicinal Plants: 2 plants L3.
+- Found: 10% in ruins (once per ruin). Read from pack. Treasure, not routine.
+
+POWER COSTS:
+- metabolicMult(): abilities multiply calorie costs.
+- Fire god (or similar): 4x per action. You never skip dinner.
+- Applies to movement (and should extend to all actions).
+- Every village: this is universal. Power always costs food.
+
+FOOD DYNAMICS:
+- Codex grows → village forages better (less scarce).
+- But power users need 4x → more demand.
+- The balance shifts. Success creates new pressures.

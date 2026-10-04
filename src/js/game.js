@@ -75,17 +75,22 @@
       // by location, and by run. even ohio isn't always a school.
       // the drama is proximity: you're stuck with these people. figure it out.
       this.state.village.trust = {};
+      // BUILDINGS by spawn type. City: you wake up in an apartment or office.
+      // Countryside: school, church, warehouse. The building matches the world.
+      const spawnType = this.state.spawnType || 'countryside';
       const buildingPools = {
-        ohio: ['school', 'warehouse', 'church'],
-        // other locations get their own pools as they're built
+        city: ['apartment', 'office', 'warehouse'],
+        countryside: ['school', 'warehouse', 'church'],
       };
-      const bpool = buildingPools[homeRegion] || ['school', 'warehouse'];
+      const bpool = buildingPools[spawnType] || ['school', 'warehouse'];
       const buildingType = bpool[Math.floor(Math.random() * bpool.length)];
       this.state.village.buildingType = buildingType;
       const buildingNames = {
         school: 'the school gymnasium',
         warehouse: 'the warehouse loading bay',
         church: 'the church basement',
+        apartment: 'the apartment lobby',
+        office: 'the office break room',
       };
       this.state.village.spawnBuilding = buildingNames[buildingType];
       for (const rid of this.state.village.roster) {
@@ -697,6 +702,28 @@
             ['wall','base','base','base','base','base','base','base','wall'],
             ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
           ],
+          apartment: [
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','apt','apt','wall','apt','apt','wall','apt','wall'],
+            ['wall','apt','apt','wall','apt','apt','wall','apt','wall'],
+            ['wall','wall','wall','hall','hall','hall','wall','wall','wall'],
+            ['wall','apt','apt','hall','hall','hall','apt','apt','wall'],
+            ['wall','apt','apt','wall','door','wall','apt','apt','wall'],
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','lobby','lobby','lobby','lobby','lobby','lobby','lobby','wall'],
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+          ],
+          office: [
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','cube','cube','cube','wall','cube','cube','cube','wall'],
+            ['wall','cube','cube','cube','wall','cube','cube','cube','wall'],
+            ['wall','wall','wall','wall','hall','wall','wall','wall','wall'],
+            ['wall','break','break','hall','hall','hall','conf','conf','wall'],
+            ['wall','break','break','wall','door','wall','conf','conf','wall'],
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+            ['wall','lobby','lobby','lobby','lobby','lobby','lobby','lobby','wall'],
+            ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+          ],
         };
         const layout = layouts[bt] || layouts.school;
         t.detail = layout;
@@ -1182,6 +1209,23 @@
       }
     },
 
+    // depleteRandomTile: when villagers forage, the world loses stock.
+    // you compete for the same plants. if you don't take it, they might.
+    depleteRandomTile(amount) {
+      // find tiles with stock, deplete randomly
+      const candidates = [];
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const t = this.tileAt(x, y);
+        if (t.type !== 'haven' && t.type !== 'ruin' && (t.stock || 0) > 0) {
+          candidates.push(t);
+        }
+      }
+      for (let i = 0; i < amount && candidates.length; i++) {
+        const t = candidates[Math.floor(Math.random() * candidates.length)];
+        t.stock = Math.max(0, (t.stock || 0) - 1);
+      }
+    },
+
     // monsters move when you do. they're in the detail grid with you.
     monsterTurn() {
       const s = this.state.scholar;
@@ -1655,15 +1699,23 @@
         if (!person) continue;
         const first = person.name.split(' ')[0];
         const r = Math.random();
+        const pers = person.personality || { sharing: 'pragmatic', temperament: 'steady' };
+        // PERSONALITY: selfish keeps more (shares 50%), generous shares all, pragmatic shares 80%.
+        // bold: bigger hauls, more wounds. cautious: smaller, safer.
+        const shareMult = pers.sharing === 'selfish' ? 0.5 : pers.sharing === 'generous' ? 1.0 : 0.8;
+        const boldMult = pers.temperament === 'bold' ? 1.3 : pers.temperament === 'cautious' ? 0.7 : 1.0;
         if (r < 0.05) {
-          // BIG DAY: 3 people bringing two days each happens. someone has the day of their life.
-          const kcal = 1500 + Math.floor(Math.random() * 1001);
+          // BIG DAY: someone has the day of their life.
+          const kcal = Math.round((1500 + Math.floor(Math.random() * 1001)) * boldMult * shareMult);
           v.pantryKcal += kcal;
-          this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.`);
+          // COMPETITION: they depleted a real tile. the world is shared.
+          this.depleteRandomTile(Math.ceil(kcal / 200));
+          this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
         } else if (r < 0.35) {
-          // brings food: a real haul (400-800 kcal), not a snack. this is their work, made visible.
-          const kcal = 400 + Math.floor(Math.random() * 401);
+          // brings food: a real haul. from the world, not thin air.
+          const kcal = Math.round((400 + Math.floor(Math.random() * 401)) * boldMult * shareMult);
           v.pantryKcal += kcal;
+          this.depleteRandomTile(Math.ceil(kcal / 200));
           this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {
           // wounded: health bars. -20 to -35 per bad day.

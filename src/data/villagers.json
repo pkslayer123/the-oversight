@@ -21,11 +21,11 @@
       "protein_bar"
     ],
     "name": "Mara Okafor",
-    "personality": [
-      "steady",
-      "dry-humored",
-      "protective"
-    ],
+    "personality": {
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "practical"
+    },
     "survivalProbability": 34,
     "systemAssessment": "The others notice: steady hands, dry humor, the one already taking charge of the wounded.",
     "quest": [
@@ -64,11 +64,11 @@
       "binoculars"
     ],
     "name": "Jesse Calhoun",
-    "personality": [
-      "quiet",
-      "patient",
-      "observant"
-    ],
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "practical"
+    },
     "survivalProbability": 41,
     "systemAssessment": "The others notice: quiet, patient, watching the treeline instead of the sky.",
     "talk": [
@@ -107,11 +107,11 @@
       "tasting_spoon"
     ],
     "name": "Aki Tanaka",
-    "personality": [
-      "precise",
-      "warm",
-      "unflappable"
-    ],
+    "personality": {
+      "sharing": "generous",
+      "temperament": "cautious",
+      "curiosity": "curious"
+    },
     "survivalProbability": 29,
     "systemAssessment": "The others notice: precise, warm, unflappable. Already inventorying what the group carried.",
     "talk": [
@@ -133,11 +133,11 @@
     "name": "Ruth Delgado",
     "formerOccupation": "city bus driver (retired)",
     "homeRegion": "Ohio river valley",
-    "personality": [
-      "dry",
-      "unimpressed",
-      "warm-underneath"
-    ],
+    "personality": {
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "practical"
+    },
     "backstory": "Drove the 42 crosstown for thirty-one years through floods, a riot, and one very determined goose. Retired in March. The sky changed in April. She has opinions about the scheduling.",
     "clothesNote": "Transit windbreaker, orthopedic shoes, a tote bag that has everything.",
     "survivalProbability": 68,
@@ -176,11 +176,11 @@
     "name": "Theo Park",
     "formerOccupation": "college dropout",
     "homeRegion": "Seattle",
-    "personality": [
-      "feral",
-      "perceptive",
-      "annoying-about-it"
-    ],
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "bold",
+      "curiosity": "curious"
+    },
     "backstory": "Washed out of a CS degree, got very good at speedrunning old games instead. Treats the apocalypse like a new release: reads patch notes nobody else can see. Often right. Never humble about it.",
     "clothesNote": "Hoodie, cracked phone (dead, kept anyway), sneakers held together by hope.",
     "survivalProbability": 35,
@@ -219,11 +219,11 @@
     "name": "Priya Nair",
     "formerOccupation": "tax accountant",
     "homeRegion": "Columbus",
-    "personality": [
-      "precise",
-      "anxious",
-      "secretly-funny"
-    ],
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "cautious",
+      "curiosity": "practical"
+    },
     "backstory": "Did taxes for eleven years. Now does the pantry: every calorie in, every calorie out, depreciating the canned goods. The only reason anyone knows how bad things are is that she'll say the number out loud.",
     "clothesNote": "Cardigan, ledger book, three pens (one is a backup, one is a backup for the backup).",
     "survivalProbability": 52,

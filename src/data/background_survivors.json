@@ -6,7 +6,12 @@
     "formerOccupation": "ER doctor",
     "line": "Mara's old colleague. Triages everything, including arguments.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "steady",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "marcus_webb",
@@ -15,7 +20,12 @@
     "formerOccupation": "electrician",
     "line": "Keeps trying to fix things that don't need wires anymore.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "sofia_chen",
@@ -24,7 +34,12 @@
     "formerOccupation": "botanist",
     "line": "Knows Latin names for everything. The plants don't care.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "cautious",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "james_okonkwo",
@@ -33,7 +48,12 @@
     "formerOccupation": "carpenter",
     "line": "Building furniture from fallen trees. It's good. It's weird.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "steady",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "emma_larsen",
@@ -42,7 +62,12 @@
     "formerOccupation": "veterinary tech",
     "line": "Treats people like nervous animals. It works.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "david_kim",
@@ -51,7 +76,12 @@
     "formerOccupation": "plumber",
     "line": "Water is water. He'll find it, move it, or apologize to it.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "cautious",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "rosa_mendez",
@@ -60,7 +90,12 @@
     "formerOccupation": "cafeteria manager",
     "line": "Feeds twelve like she fed four hundred. Portions are law.",
     "kcalPerDay": 1700,
-    "providesPerDay": 1564
+    "providesPerDay": 1564,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "tom_baker",
@@ -69,7 +104,12 @@
     "formerOccupation": "truck driver",
     "line": "Drove through the Burn. Doesn't talk about it. Drives nowhere now.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "yuki_mori",
@@ -78,7 +118,12 @@
     "formerOccupation": "librarian",
     "line": "Cataloging the Codex. Dewey Decimal for the apocalypse.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "sam_wilson",
@@ -87,7 +132,12 @@
     "formerOccupation": "barista",
     "line": "Makes acorn coffee. It's terrible. He knows.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "nina_petrova",
@@ -96,7 +146,12 @@
     "formerOccupation": "mechanic",
     "line": "Fixes what can't be fixed. Morale is a machine too.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "steady",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "carlos_diaz",
@@ -105,7 +160,12 @@
     "formerOccupation": "fisherman",
     "line": "Aki's rival. They argue about knots. It's friendly. Mostly.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1930
+    "providesPerDay": 1930,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "steady",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "grace_obi",
@@ -114,7 +174,12 @@
     "formerOccupation": "teacher",
     "line": "Teaches the kids. Curriculum: everything.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "cautious",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "henry_zhang",
@@ -123,7 +188,12 @@
     "formerOccupation": "accountant",
     "line": "Priya's deputy. They reconcile the pantry. It's intense.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "cautious",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "fatima_hassan",
@@ -132,7 +202,12 @@
     "formerOccupation": "nurse",
     "line": "Mara's right hand. Calm is a skill.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "leo_martin",
@@ -141,7 +216,12 @@
     "formerOccupation": "student",
     "line": "Theo's sidekick. Learning speedrunning. Of what, unclear.",
     "kcalPerDay": 1600,
-    "providesPerDay": 1472
+    "providesPerDay": 1472,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "mia_andersson",
@@ -150,7 +230,12 @@
     "formerOccupation": "gardener",
     "line": "Growing things in cans. Optimist.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "raj_patel",
@@ -159,7 +244,12 @@
     "formerOccupation": "pharmacist",
     "line": "Rations medicine like it's gold. It is.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "ella_johnson",
@@ -168,7 +258,12 @@
     "formerOccupation": "retired teacher",
     "line": "Ruth's card partner. Cheats. Everyone knows.",
     "kcalPerDay": 1700,
-    "providesPerDay": 1564
+    "providesPerDay": 1564,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "victor_lopez",
@@ -177,7 +272,12 @@
     "formerOccupation": "construction worker",
     "line": "Builds. That's it. He builds.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "steady",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "hannah_kim",
@@ -186,7 +286,12 @@
     "formerOccupation": "chef",
     "line": "Jesse's kitchen rival. The cookoff is ongoing.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "cautious",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "owen_smith",
@@ -195,7 +300,12 @@
     "formerOccupation": "park ranger",
     "line": "Knows tracks. Quiet like Jesse, but different.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "ava_garcia",
@@ -204,7 +314,12 @@
     "formerOccupation": "artist",
     "line": "Drawing the new world. It's all she can do.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "lucas_brown",
@@ -213,7 +328,12 @@
     "formerOccupation": "police officer",
     "line": "Keeps the peace. There's mostly peace.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "chloe_dubois",
@@ -222,7 +342,12 @@
     "formerOccupation": "translator",
     "line": "Speaks four languages. The System speaks none.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "elijah_scott",
@@ -231,7 +356,12 @@
     "formerOccupation": "pastor",
     "line": "Holds services. Attendance varies.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "bold",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "zoe_adams",
@@ -240,7 +370,12 @@
     "formerOccupation": "college student",
     "line": "Studies. Of what, she won't say.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "nathan_lee",
@@ -249,7 +384,12 @@
     "formerOccupation": "engineer",
     "line": "Designs water systems. Useful.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "cautious",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "ivy_wang",
@@ -258,7 +398,12 @@
     "formerOccupation": "photographer",
     "line": "Documents everything. The Codex has pictures now.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "cautious",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "caleb_jones",
@@ -267,7 +412,12 @@
     "formerOccupation": "firefighter",
     "line": "Keeps the fire. It's a whole job.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "cautious",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "maya_singh",
@@ -276,7 +426,12 @@
     "formerOccupation": "doctor",
     "line": "Not that Maya. This one fixes bones.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "selfish",
+      "temperament": "cautious",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "ethan_hunt",
@@ -285,7 +440,12 @@
     "formerOccupation": "hiker",
     "line": "Yes, really. No, he won't change it.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "aria_thompson",
@@ -294,7 +454,12 @@
     "formerOccupation": "musician",
     "line": "Plays a cracked guitar. Morale.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "curious"
+    }
   },
   {
     "id": "liam_davis",
@@ -303,7 +468,12 @@
     "formerOccupation": "farmer",
     "line": "Grows food. The most important job.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "nora_wilson",
@@ -312,7 +482,12 @@
     "formerOccupation": "seamstress",
     "line": "Mends clothes. Mends people, too.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "steady",
+      "curiosity": "practical"
+    }
   },
   {
     "id": "oliver_moore",
@@ -321,6 +496,11 @@
     "formerOccupation": "veterinarian",
     "line": "Emma's boss. The animals are fine. It's the people.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1840
+    "providesPerDay": 1840,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "cautious",
+      "curiosity": "practical"
+    }
   }
 ]
