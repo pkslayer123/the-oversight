@@ -575,6 +575,42 @@ function driveCombat(playerFn, maxTurns) {
     if (Game.tbfight) Game.tbEnd('fled');
   }
 
+  // --- 17. recharge paw: rooted but dangerous up close ---
+  {
+    newDeerGame();
+    const realGen = Game.genDetail;
+    Game.genDetail = () => flatGrid();
+    const f = startDeerFight(4, 4, 4, 5); // player adjacent to deer
+    const deer = f.fighters.find(x => x.kind === 'monster');
+    deer.beamCooldown = 2;
+    // prevent re-declare after cooldown for a clean measurement (restore after)
+    const pat = deer.mdef.attack.pattern, realCd = pat.cooldownTurns;
+    pat.cooldownTurns = 99;
+    const dmx = deer.mx, dmy = deer.my;
+    const hp0 = Game.state.scholar.health;
+    // one tbAdvance: player passes, monster paws, back to player
+    Game.tbAdvance();
+    eq('deer does not move while recharging', deer.mx === dmx && deer.my === dmy, true);
+    const pawDmg = Math.round(hp0 - Game.state.scholar.health);
+    ok('paw hits adjacent player during recharge (8-14)', pawDmg >= 8 && pawDmg <= 14);
+    ok('paw teaches the lesson', Game.log.join('\n').includes("isn't free up close"));
+    pat.cooldownTurns = realCd;
+    if (Game.tbfight) Game.tbEnd('fled');
+    // at spear range: safe
+    newDeerGame();
+    Game.genDetail = () => flatGrid();
+    const f2 = startDeerFight(4, 4, 4, 6); // range 2
+    const deer2 = f2.fighters.find(x => x.kind === 'monster');
+    deer2.beamCooldown = 1;
+    deer2.mdef.attack.pattern.cooldownTurns = 99;
+    const hp1 = Game.state.scholar.health;
+    Game.tbAdvance(); // player passes, deer breathes (no paw at range 2)
+    eq('no paw at spear range', Math.round(hp1 - Game.state.scholar.health), 0);
+    eq('deer still rooted at range', deer2.mx === 4 && deer2.my === 6, true);
+    if (Game.tbfight) Game.tbEnd('fled');
+    Game.genDetail = realGen;
+  }
+
   // --- 16. de-bossed: no boss theater in player-facing text ---
   {
     const src = fs.readFileSync(path.join(ROOT, 'src/js/game.js'), 'utf8');

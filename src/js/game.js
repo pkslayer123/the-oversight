@@ -10442,6 +10442,28 @@
       } catch (e) {}
     },
 
+    // RECHARGE PAW: the deer can't move while the light gathers — but crowding
+    // it is still a mistake. A foreleg lashes out at anyone adjacent: modest
+    // damage, aimed at the unprepared who thought the breather was free.
+    // At spear range (2) it can't touch you. That's the answer.
+    tbRechargePaw(m) {
+      const f = this.tbfight;
+      if (!f) return false;
+      let hit = false;
+      for (const o of f.fighters) {
+        if (!o.alive || o.fled || o.key === m.key) continue;
+        if (!S.combat.isFoe(m, o)) continue;
+        if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
+        const d = S.combat.roll([8, 14]);
+        const who = o.kind === 'player' ? 'you' : o.name;
+        this.say(`It can't move — but a foreleg lashes out and catches ${who}. The breather isn't free up close. (${d})`);
+        this.tbDamage(o.key, d, m.name + "'s paw");
+        hit = true;
+        if (f.over) return true;
+      }
+      return hit;
+    },
+
     // ANTLER THRASH: closing in is risky at any point in the fight.
     tbAntlerThrash(m) {
       const f = this.tbfight;
@@ -11139,23 +11161,19 @@
       if (!foe) return;
       const pat = (m.mdef.attack && m.mdef.attack.pattern) || { type: 'burst', radius: 1 };
       // BEAM COOLDOWN: after a Discharge the deer is spent — the light is
-      // embers, not a weapon. It stalks and catches its breath; it cannot
-      // fire again yet. This is your window: close in, reposition, or run.
+      // embers, not a weapon. It CANNOT move while recharging; it stands and
+      // breathes. But crowding it is still a mistake: it paws at anyone
+      // adjacent. The recharge is a window at spear range (2) — one step out
+      // of reach, where it can't touch you — not a free pass up close.
       if (pat.sweep && (m.beamCooldown || 0) > 0) {
         m.beamCooldown -= 1;
         const bd = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         if (bd <= 1) {
-          if (this.tbAntlerThrash(m)) return;
-        } else {
-          const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
-          const danger = this.tbDangerCells(m.key);
-          for (let i = 0; i < (m.speed || 3); i++) {
-            const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
-            if (!s) break;
-            m.mx = s.x; m.my = s.y;
-          }
-          this.say(`The ${m.name} circles, light dim behind its eyes. It's gathering itself — not yet.`);
+          this.tbRechargePaw(m);
+        } else if (m.beamCooldown <= 0) {
+          this.say(`The ${m.name} shakes its head — the light behind its eyes rekindles.`);
         }
+        // otherwise it just breathes. Stillness is the tell.
         this.tbRefreshTelegraphUI();
         this.tbEndCheck();
         return;
