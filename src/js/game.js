@@ -266,7 +266,8 @@
           const dipLvl2 = this.abilityLevel('diplomat');
           const dipMult2 = dipLvl2 >= 2 ? 3 : dipLvl2 >= 1 ? 2 : 1;
           const gain = Math.max(1, Math.floor(8 * (1 - cur / 50) * dipMult2));
-          this.state.village.trust[vid] = Math.min(40, cur + gain);
+          // Talking can raise trust toward 40, but never drag it down.
+          this.state.village.trust[vid] = cur >= 40 ? cur : Math.min(40, cur + gain);
         }
         // Above 40: talking doesn't build trust. Do something real.
       }
