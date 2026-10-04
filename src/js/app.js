@@ -2332,6 +2332,51 @@
   }
 
   // ---------- codex ----------
+  // PEOPLE: the journal fills as you learn. Pre-System it's your handwriting —
+  // uncertain, personal. Post-System the Codex gets precise and invasive.
+  function peopleSection() {
+    if (!Game.peopleJournal) return '';
+    const sys = !!Game.state.systemArrived;
+    const folks = Game.peopleJournal();
+    if (!folks.length) return '';
+    const cards = folks.map(({ vid, e }) => {
+      const trust = (Game.state.village.trust || {})[vid] || 10;
+      const rel = trust >= 60 ? (sys ? 'Trusts you.' : 'I think they trust me.')
+        : trust >= 40 ? (sys ? 'Warming.' : 'Warming up, maybe.')
+        : trust >= 25 ? (sys ? 'Guarded.' : 'Still guarded.')
+        : (sys ? 'Distrustful.' : 'Doesn\'t trust me yet.');
+      const title = e.name ? esc(e.name.value) : esc(Game.personDescriptor(vid));
+      const nameNote = e.name
+        ? (sys ? `<span class="small" style="opacity:.6"> · id: ${esc(e.name.how || 'filed')}</span>` : `<span class="small" style="opacity:.6"> · ${esc(e.name.how === 'overheard by the fire' ? 'heard someone say it' : e.name.how || '')}</span>`)
+        : '';
+      const q = sys ? '—' : '?';
+      const occ = e.occupation
+        ? (e.occupation.sure ? esc(e.occupation.value) : `<i>I think: ${esc(e.occupation.value)}?</i>`)
+        : (sys ? '—' : `<span style="opacity:.5">What did they do before? ${q}</span>`);
+      const goal = e.goal
+        ? `Wants ${esc(e.goal.want || e.goal.id)}.`
+        : (sys ? 'Motive: —' : `<span style="opacity:.5">What do they want? ${q}</span>`);
+      const langs = e.languages.length
+        ? e.languages.map(l => esc(l.label)).join(' · ')
+        : (sys ? '—' : `<span style="opacity:.5">Haven't really talked yet.</span>`);
+      const traits = (e.traits || []).map(t =>
+        `<p class="small">${t.sure ? '' : '<i>maybe: </i>'}${esc(t.text)} <span style="opacity:.45">· ${esc(t.via || 'noticed')}</span></p>`).join('');
+      const story = (e.backstory || []).map(b => `<p class="small"><i>"${esc(b.text)}"</i></p>`).join('');
+      const notes = (e.notes || []).map(n => `<p class="small">· ${esc(n.text)}</p>`).join('');
+      const promises = (e.promises || []).map(p => {
+        const mark = p.status === 'kept' ? '✓' : p.status === 'broken' ? '✗' : '○';
+        const col = p.status === 'kept' ? '#8f8' : p.status === 'broken' ? '#f88' : '#fd8';
+        return `<p class="small" style="color:${col}">${mark} ${esc(p.text)} <span style="opacity:.6">(${p.status})</span></p>`;
+      }).join('');
+      return `<div class="card codex"><h3>${title}${nameNote}</h3>
+        <p class="small">${sys ? `<b>OCC:</b> ${occ} · <b>GOAL:</b> ${goal} · <b>LANG:</b> ${langs}` : `${occ}<br>${goal}<br><span style="opacity:.7">Speaks: ${langs}</span>`}</p>
+        ${traits}${story}${notes}${promises}
+        <p class="small" style="opacity:.6">${esc(rel)}</p></div>`;
+    }).join('');
+    return `<h1 class="title" style="font-size:18px">PEOPLE</h1>
+      <p class="small"><i>${sys ? 'personnel files. the System knows them better than you do.' : 'your handwriting. who these people are, as far as you can tell.'}</i></p>${cards}`;
+  }
+
   function codexScreen() {
     const entries = Game.codexEntries();
     const inprog = Game.codexInProgress();
@@ -2357,6 +2402,7 @@
       ${skills.length ? '<h1 class="title" style="font-size:18px">SKILLS</h1><p class="small"><i>knowledge about anything — not just plants. your old life, books, strangers, hard lessons.</i></p>' + skills.map(s => `
         <div class="card codex"><h3>${esc(s.name)} <span class="small" style="opacity:.7">[L${s.level} · ${esc(s.domain)}]</span></h3>
         <p class="small"><i>${esc(s.text)}</i></p>${s.via ? `<p class="small" style="opacity:.5">via ${esc(s.via)}</p>` : ''}</div>`).join('') : ''}
+      ${peopleSection()}
       ${techniques.length ? '<h1 class="title" style="font-size:18px">TECHNIQUES</h1><p class="small"><i>where knowledge meets power.</i></p>' + techniques.map(t => `
         <div class="card codex"><h3>⚡ ${esc(t.name)}</h3><p class="small">${esc(t.effect)}</p></div>`).join('') : ''}
       ${inprog.length ? '<h1 class="title" style="font-size:18px">UNIDENTIFIED</h1><p class="small"><i>seen, not named. keep looking.</i></p>' + inprog.map(u => `
