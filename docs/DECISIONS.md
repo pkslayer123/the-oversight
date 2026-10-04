@@ -860,3 +860,20 @@ MONSTERS FOLLOW:
 PEOPLE RUN:
 - villagerTurn(): trust < 20 and you\'re within 3? 60% they move AWAY.
 - Strangers are scary. Earn trust before they stop flinching.
+
+## 2026-10-03 — Gear progression (Steve)
+Steve: "There should be value in finding basic weapons in the early game. Some craftable
+but eventually the system will make those quickly useless, and it shifts towards leveling
+up magical or scientific gear and abilities awarded by the system and leveled within it.
+But we keep the survival theme for phase 1, so the system coming in hits all the harder."
+
+PHASE 1 (now):
+- 4 basic weapons: sharpened stick (+10), stone knife (+20), hunting spear (+30), kitchen knife (+15).
+- Craftable (stick, stone, vine) or findable (kitchen knife in rooms).
+- Weapons add to hunting success. A spear turns 40% into 70%.
+- They MATTER. Finding a spear is a good day.
+
+PHASE 2 (later, when System arrives):
+- System awards magical/scientific gear. Basic weapons become quickly useless.
+- The CONTRAST is the point. You survived with sticks. Now the System hands you fire.
+- Keep Phase 1 survival-focused so the System hits harder.

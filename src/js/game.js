@@ -1225,6 +1225,18 @@
     },
 
     // HUNT: adjacent to animal, tap it. Success by difficulty and your condition.
+    // armorBonus: best protection in inventory. Bark (10) to military vest (40).
+    armorBonus() {
+      let prot = 0;
+      for (const item of (this.state.scholar.inventory || [])) {
+        const def = this.data.items.find(i => i.id === (item.itemId || item.id));
+        if (def && def.armor) {
+          prot = Math.max(prot, def.armor.protection);
+        }
+      }
+      return prot;
+    },
+
     // weaponBonus: best weapon in inventory. A spear beats bare hands.
     weaponBonus() {
       let bonus = 0;

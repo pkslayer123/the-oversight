@@ -82,6 +82,16 @@
       dmgToScholar = incoming;
     }
 
+    // ARMOR: best protection in inventory reduces damage.
+    // Bark (10) -> military vest (40). The System will make these obsolete.
+    let protection = 0;
+    // (scholar items don't carry defs here — check via global Game if available)
+    if (typeof Game !== 'undefined' && Game.armorBonus) {
+      protection = Game.armorBonus();
+    }
+    dmgToScholar = Math.max(0, dmgToScholar - protection);
+    if (protection > 0 && incoming > 0) log.push(`Armor absorbs ${Math.min(incoming, protection)}.`);
+
     fight.monster.hp -= dmgToMonster;
     fight.scholarHp -= dmgToScholar;
 

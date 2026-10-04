@@ -190,7 +190,8 @@
       "weapon": "object",
       "craftable": "boolean",
       "materials": "object",
-      "findable": "boolean"
+      "findable": "boolean",
+      "armor": "object"
     }
   },
   "gameEvent": {

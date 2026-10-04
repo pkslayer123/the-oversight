@@ -417,5 +417,49 @@
     "findable": true,
     "class": "weapon",
     "flavor": "scavenged from a ruin, still sharp"
+  },
+  {
+    "id": "bark_armor",
+    "name": "Bark armor",
+    "class": "weapon",
+    "flavor": "bark lashed with vine. Better than skin.",
+    "armor": {
+      "protection": 10
+    },
+    "craftable": true,
+    "materials": {
+      "bark": 2,
+      "vine": 2
+    }
+  },
+  {
+    "id": "leather_jacket",
+    "name": "Leather jacket",
+    "class": "weapon",
+    "flavor": "scavenged. Smells like someone else's life.",
+    "armor": {
+      "protection": 15
+    },
+    "findable": true
+  },
+  {
+    "id": "riot_gear",
+    "name": "Riot gear",
+    "class": "weapon",
+    "flavor": "police surplus. Heavy, hot, stops a boar.",
+    "armor": {
+      "protection": 30
+    },
+    "findable": true
+  },
+  {
+    "id": "military_vest",
+    "name": "Military vest",
+    "class": "weapon",
+    "flavor": "plate carrier, no plates. Still better than nothing.",
+    "armor": {
+      "protection": 40
+    },
+    "findable": true
   }
 ]
