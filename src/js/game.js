@@ -1350,6 +1350,21 @@
       return null;
     },
 
+    // cookAll: cook everything raw in inventory (at a fire).
+    cookAll() {
+      let n = 0;
+      for (const item of (this.state.scholar.inventory || [])) {
+        if (item.rawKcal) {
+          item.kcalEach = item.cookedKcal || item.rawKcal * 1.5;
+          item.rawKcal = null;
+          item.safe = true;
+          n++;
+        }
+      }
+      this.say(n ? `Cooked ${n} item${n > 1 ? 's' : ''}.` : 'Nothing raw to cook.');
+      return null;
+    },
+
     // takeFromPantry: pack food before going out. Weight matters (20kg max).
     takeFromPantry(idx) {
       const pantry = this.state.village.pantry || [];
@@ -1536,6 +1551,9 @@
         actions.push('Forage');
       } else if (cell === 'fire') {
         actions.push('Warm hands');
+        // If you have raw food, you can cook here. (Knowledge tells you what needs it.)
+        const raw = (this.state.scholar.inventory || []).filter(i => i.rawKcal);
+        if (raw.length) actions.push(`Cook (${raw.length} raw)`);
       } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
         if (!sec || !sec.searched) actions.push('Search');
       }

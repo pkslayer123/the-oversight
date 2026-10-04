@@ -261,6 +261,9 @@
           else if (sec.condition === 'packable') actions.push(['Pack up', () => Game.cellInteract(cx, cy)]);
         } else if (cell === 'fire') {
           actions.push(['Warm hands', () => Game.cellInteract(cx, cy)]);
+          // Cook raw food here. (Your Codex tells you what needs cooking.)
+          const raw = Game.state.scholar.inventory.filter(i => i.rawKcal);
+          if (raw.length) actions.push([`Cook ${raw.length} raw`, () => Game.cookAll()]);
         } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
           // BUILDING ROOMS: Search = examine + loot in one. No two-step.
           if (!sec || !sec.searched) actions.push(['Search', () => Game.searchRoom(cx, cy)]);
@@ -420,7 +423,7 @@
       <h2>Pantry</h2>
       <p class="small">Take what you need. Carrying ${carry.toFixed(1)}/20 kg.</p>
       <p class="small">💧 ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
-      ${pantry.length ? pantry.map((p, idx) => `<p class="small"><b>${p.name}</b> x${p.units} (${p.kcalEach * p.units} kcal)${p.safe ? '' : ' ⚠ UNSAFE'}${p.needsCooking ? ' (cook it)' : ''}${p.spoilDay <= st.day ? ' ⚠ SPOILED' : ''} <button class="btn ghost sm" data-take="${idx}">Take 1</button></p>`).join('') : '<p class="small">Empty.</p>'}
+      ${pantry.length ? pantry.map((p, idx) => `<p class="small"><b>${p.name}</b> x${p.units} (${p.kcalEach * p.units} kcal)${p.safe ? '' : ' ⚠ UNSAFE'}${p.spoilDay <= st.day ? ' ⚠ SPOILED' : ''} <button class="btn ghost sm" data-take="${idx}">Take 1</button></p>`).join('') : '<p class="small">Empty.</p>'}
       <button class="btn" id="x-back">Back</button>`;
     screen.querySelectorAll('[data-take]').forEach(b => b.onclick = () => { Game.takeFromPantry(+b.dataset.take); pantryPopup(); });
     document.getElementById('x-back').onclick = () => expeditionScreen();
