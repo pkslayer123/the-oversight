@@ -225,3 +225,18 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 }
 #update-banner b { color: var(--acc); }
 #update-banner.hidden { display: none; }
+
+/* contextual action strip: quiet, persistent, updates as you move */
+.contextbar {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0;
+  padding: 6px 8px; border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.contextbar:empty { display: none; }
+.ctx-label { font-size: 11px; color: #888; align-self: center; margin-right: 2px; }
+.ctx-btn {
+  font-size: 12px; padding: 6px 10px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--bg2); color: inherit;
+  cursor: pointer;
+}
+.ctx-btn:active { background: #2a2a2a; }

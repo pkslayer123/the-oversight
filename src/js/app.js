@@ -236,6 +236,116 @@
     });
   }
 
+  // walkCloser: tap a distant interactive thing → walk to the nearest adjacent
+  // walkable cell, then re-open its panel. Multi-move never dead-ends.
+  function walkCloser(cx, cy) {
+    return ['🚶 Walk closer', () => {
+      const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+      const detail = Game.genDetail(Game.map.px, Game.map.py);
+      let best = null, bestD = 999;
+      for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+        if (Game.cellProps(detail[ny][nx]).blocks) continue;
+        const path = Game.findPath(px, py, nx, ny);
+        if (!path || !path.length) continue;
+        if (path.length < bestD) { bestD = path.length; best = [nx, ny]; }
+      }
+      if (best) {
+        if (Game.movePath(best[0], best[1])) cellPopup(cx, cy);
+        else refresh();
+      } else {
+        Game.say('No way to get closer.');
+        refresh();
+      }
+    }];
+  }
+
+  // CONTEXTUAL ACTION STRIP: when you're on/adjacent to something you can use,
+  // the actions surface quietly below the grid. No tapping around, no popups.
+  // Maps Game.cellActions labels to real calls.
+  function doContextAction(cx, cy, label) {
+    const mon = Game.state.scholar.monster;
+    if (label === 'Fight' && mon && mon.mx === cx && mon.my === cy) { Game.startCombat(mon.id); return; }
+    if (label === 'Hunt') { Game.huntAnimal(); return; }
+    if (label === 'Talk') {
+      // villager at this cell, else nearest within earshot
+      const vpos = Game.state.village && Game.state.village.positions;
+      let vid = null;
+      if (vpos) {
+        for (const rid of Object.keys(vpos)) {
+          if (vpos[rid].mx === cx && vpos[rid].my === cy) { vid = rid; break; }
+        }
+        if (!vid) {
+          const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+          let bd = 99;
+          for (const rid of Object.keys(vpos)) {
+            const d = Math.abs(vpos[rid].mx - px) + Math.abs(vpos[rid].my - py);
+            if (d <= 3 && d < bd) { bd = d; vid = rid; }
+          }
+        }
+      }
+      if (vid) Game.talkTo(vid); else Game.say('No one close enough to talk to.');
+      return;
+    }
+    if (label === 'Cut down') { Game.cutTree(cx, cy); return; }
+    if (label === 'Clear brush') { Game.clearBrush(cx, cy); return; }
+    if (label === 'Fill water (+2L)') { Game.fillWater(); return; }
+    if (label.startsWith('Cook (')) { Game.cookAll(); return; }
+    if (label === 'Step outside') { Game.exitBuilding(); return; }
+    if (label === 'Go inside') { Game.enterBuilding(); return; }
+    if (label === 'Rest') { Game.doAction('rest'); return; }
+    if (label === 'Search') { Game.searchRoom(cx, cy); return; }
+    // Examine, Use, Drink, Warm hands, Forage → the universal interact
+    Game.cellInteract(cx, cy);
+  }
+
+  // nearbyActionItems: the 9 cells around you, deduped action labels. Single source.
+  function nearbyActionItems() {
+    const items = [];
+    if (Game.state.over) return items;
+    if (Game.state.scholar && (Game.state.scholar.inCombat || Game.fight)) return items;
+    const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+    const seen = new Set();
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const cx = px + dx, cy = py + dy;
+      if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+      let labels = [];
+      try { labels = Game.cellActions(cx, cy) || []; } catch (e) { continue; }
+      for (const label of labels) {
+        // dedupe: same action label once (nearest cell wins)
+        if (seen.has(label)) continue;
+        seen.add(label);
+        items.push({ cx, cy, label });
+      }
+    }
+    return items;
+  }
+
+  // contextBarHTML: scan your cell + 8 neighbors, surface what's usable.
+  // quiet by design — small pill buttons, no takeover.
+  function contextBarHTML() {
+    const items = nearbyActionItems();
+    if (!items.length) return '';
+    return `<div class="contextbar"><span class="ctx-label">nearby:</span>` +
+      items.map((it, i) => `<button class="ctx-btn" data-ctx="${i}">${esc(it.label)}</button>`).join('') +
+      `</div>`;
+  }
+
+  function wireContextBar() {
+    const bar = document.querySelector('.contextbar');
+    if (!bar) return;
+    const items = nearbyActionItems();
+    bar.querySelectorAll('[data-ctx]').forEach(b => {
+      b.onclick = () => {
+        const it = items[+b.dataset.ctx];
+        if (!it) return;
+        doContextAction(it.cx, it.cy, it.label);
+        refresh();
+      };
+    });
+  }
+
   function cellPopup(cx, cy) {
     const detail = Game.genDetail(Game.map.px, Game.map.py);
     const cell = detail[cy] && detail[cy][cx];
@@ -249,6 +359,14 @@
     const ani = Game.state.scholar.animal;
     const isMon = mon && cx === mon.mx && cy === mon.my;
     const isAni = ani && cx === ani.mx && cy === ani.my;
+    // VILLAGER AT THIS CELL: villagers wander the grid (see ensureVillagerPositions).
+    let villagerId = null;
+    const vpos = Game.state.village && Game.state.village.positions;
+    if (vpos) {
+      for (const rid of Object.keys(vpos)) {
+        if (vpos[rid].mx === cx && vpos[rid].my === cy) { villagerId = rid; break; }
+      }
+    }
 
     const CELL_NAME = {
       tree: 'Tree', bigtree: 'Big tree', bush: 'Bush', plant: 'Plant',
@@ -294,7 +412,7 @@
       if (enc >= 3) desc += ` You know it: ${animal.name}.`;
       else if (enc > 0) desc += ' Looks familiar.';
       if (dist <= 1) actions.push(['Hunt', () => Game.huntAnimal()]);
-      else desc += ' (Too far to catch.)';
+      else { desc += ' (Too far to catch.)'; actions.push(walkCloser(cx, cy)); }
     } else if (villagerId) {
       // VILLAGER: tap to talk. all 12 are interactable, not just mains.
       const vp = Game.data.villagers.find(v => v.id === villagerId) || Game.data.background_survivors.find(v => v.id === villagerId);
@@ -318,6 +436,7 @@
         }]);
       } else {
         desc += ' (Too far to talk.)';
+        actions.push(walkCloser(cx, cy));
       }
     } else {
       // what you know: modifiers + synthesized result.
@@ -349,6 +468,8 @@
       const blocks = BLOCKS[cell];
       if (dist > 1) {
         desc += ' (Too far to reach.)';
+        // MULTI-MOVE: never a dead panel. Walk to it, then see your options.
+        if (cell !== 'wall') actions.push(walkCloser(cx, cy));
       } else if (blocks) {
         desc += ' (Blocked — can\'t walk through.)';
         // but you can USE it
@@ -703,6 +824,7 @@
       <p class="small">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
       ${st.activeQuest ? `<p class="small" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
       <div class="detail">${renderDetail(st)}</div>
+      ${contextBarHTML()}
       <div id="tileinfo"></div>
       <p class="small">🗺 walk to the edge of the map, tap yourself, head out (1 part · 30 kcal/tile)</p>
       <div class="map minimap">${renderMap(st, tset)}</div>
@@ -783,6 +905,7 @@
     const pantryBtn = document.getElementById('x-pantry');
     if (pantryBtn) pantryBtn.onclick = () => pantryPopup();
     wirePanel(st, n);
+    wireContextBar();
   }
 
   function rerender() {
