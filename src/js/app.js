@@ -86,7 +86,8 @@
       <button class="btn ghost" id="b-codex0">Codex</button>
       ${(Game.state && Game.state.telemetry && Game.state.telemetry.length) ? '<button class="btn ghost" id="b-tel">📊 Telemetry</button>' : ''}
       <button class="btn ghost" id="b-about">About</button>
-      <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>`;
+      <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>
+      <p class="small" id="build-tag" style="opacity:.45;margin-top:14px;cursor:pointer" title="tap to check for updates">build ${esc(window.BUILD_VERSION || 'dev')}</p>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
     const savesDiv = document.getElementById('saves');
     if (savesDiv) renderSaves(savesDiv);
@@ -94,6 +95,21 @@
     const bt = document.getElementById('b-tel');
     if (bt) bt.onclick = () => telemetryScreen();
     document.getElementById('b-about').onclick = about;
+    // Build tag: tap to force an update check (diagnostic + escape hatch).
+    const btag = document.getElementById('build-tag');
+    if (btag && 'serviceWorker' in navigator) {
+      btag.onclick = () => {
+        btag.textContent = 'checking for updates…';
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (!reg) { btag.textContent = 'no service worker — reload the page'; return; }
+          reg.update().then(() => {
+            setTimeout(() => {
+              btag.textContent = (reg.waiting ? 'update ready — tap the banner above ↑' : 'build ' + (window.BUILD_VERSION || 'dev') + ' (latest)');
+            }, 2500);
+          }).catch(() => { btag.textContent = 'update check failed — reload the page'; });
+        });
+      };
+    }
   }
   function about() {
     screen.innerHTML = `${bar('scattering://about', 'v0.1')}

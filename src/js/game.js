@@ -859,14 +859,55 @@
       this.say(`📋 ${q.text}`);
     },
 
+    // wake-up speech key from the giver's personality. Nobody understands what's
+    // happening — they're just reacting to finding a stranger. Confused, not knowing.
+    wakeSpeechKey(char) {
+      const p = (char && char.personality) || {};
+      const t = p.temperament, c = p.curiosity;
+      const r = Math.random();
+      // temperament drives, curiosity and chance widen the range —
+      // every speech is reachable, nobody is a fixed type.
+      if (t === 'warm') return r < 0.7 ? 'warm' : (r < 0.85 ? 'curious' : 'overwhelmed');
+      if (t === 'prickly') return r < 0.45 ? 'gruff' : 'suspicious';
+      if (t === 'bold') return r < 0.5 ? 'debt' : (r < 0.75 ? 'gruff' : 'curious');
+      if (t === 'cautious') return r < 0.4 ? 'scared' : (r < 0.65 ? 'suspicious' : 'overwhelmed');
+      if (t === 'steady') return r < 0.55 ? 'practical' : (r < 0.8 ? 'curious' : 'overwhelmed');
+      if (c === 'wary') return r < 0.5 ? 'suspicious' : 'overwhelmed';
+      return 'overwhelmed';
+    },
+
     getQuest() {
-      // the intro: a random main (not you) wakes you up. Mara isn't the only one with the speech.
+      // the intro: whoever found you wakes you up. A real roster member —
+      // one of the 11 NPCs who gets a grid position and sticks around.
       if (this.state.questGiven) return null;
-      const mains = this.data.villagers.filter(v => v.quest && v.id !== this.villagerId);
-      const giver = mains[Math.floor(Math.random() * mains.length)] || this.data.villagers[0];
+      const v = this.state.village;
+      const npcIds = (v.roster || []).filter(id => id !== this.villagerId);
+      if (!npcIds.length) return null;
+      const giverId = npcIds[Math.floor(Math.random() * npcIds.length)];
+      const giver = (v.rosterChars || {})[giverId]
+        || (this.data.background_survivors || []).find(b => b.id === giverId)
+        || { name: 'Someone', formerOccupation: 'survivor', homeRegion: 'somewhere', personality: {} };
+      const first = String(giver.name || 'Someone').split(' ')[0];
+      const occ = giver.formerOccupation || 'survivor';
+      const origin = giver.homeRegion || 'somewhere';
+      const key = this.wakeSpeechKey(giver);
+      const templates = ((this.data.characterGen || {}).wakeUpSpeeches || {})[key]
+        || ((this.data.characterGen || {}).wakeUpSpeeches || {}).overwhelmed || [];
+      const lines = templates.map(t => String(t)
+        .replaceAll('{first}', first).replaceAll('{occ}', occ).replaceAll('{origin}', origin));
+      // the finder remembers finding you. small trust bump.
+      v.foundBy = giverId;
+      v.trust[giverId] = Math.min(100, (v.trust[giverId] || 10) + 5);
+      // the debt-collector's ask is a real quest: bring greens, debt cleared.
+      if (key === 'debt' && this.state.scholar) {
+        this.state.scholar.activeQuest = {
+          type: 'bring', plant: 'dandelion', qty: 3, reward: 'pantry',
+          giver: giverId, giverName: first,
+        };
+      }
       this.state.questGiven = true;
       this.save();
-      return { from: giver.name.split(' ')[0], lines: giver.quest };
+      return { from: first, lines };
     },
 
     villageAction(kind) {
@@ -954,7 +995,7 @@
           this.say('The village looks to you. You\'re the scholar. You\'re supposed to know things.');
         }
       }
-      const brought = s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0);
+      const brought = s.inventory.reduce((t, i) => t + (i.units || 0) * (i.kcalEach || 0), 0);
       const entries = Object.keys(this.state.codex.plants).length;
       const hasGreens = s.inventory.some(i => i.unit === 'handful' || i.unit === 'cup' || i.unit === 'oz');
       if (brought > 0) {
@@ -1674,7 +1715,7 @@
       const inv = this.state.scholar.inventory || [];
       let w = inv.find(i => i.itemId === 'wood' || i.id === 'wood');
       if (w) w.units = (w.units || 0) + n;
-      else inv.push({ itemId: 'wood', id: 'wood', name: 'Wood log', units: n, kg: 2.0, unit: 'log' });
+      else inv.push({ itemId: 'wood', id: 'wood', name: 'Wood log', units: n, kcalEach: 0, kg: 2.0, unit: 'log' });
     },
     spendWood(n) {
       const inv = this.state.scholar.inventory || [];
@@ -2103,7 +2144,7 @@
       const eq = (this.state.scholar.equipped || {})[slot];
       if (!eq) return null;
       // back to inventory
-      this.state.scholar.inventory.push({ itemId: eq.itemId, name: eq.name, units: 1, kg: 0.5,
+      this.state.scholar.inventory.push({ itemId: eq.itemId, name: eq.name, units: 1, kcalEach: 0, kg: 0.5,
         ...(eq.bonded ? { bonded: true, bond: eq.bond || 0, bondOffered: eq.bondOffered || [], enhancements: eq.enhancements || [] } : {}) });
       delete this.state.scholar.equipped[slot];
       this.say(`Unequipped ${eq.name}.`);
@@ -4275,7 +4316,7 @@
         if (!item || (item.kcalEach || 0) <= 0 || item.units <= 0) continue;
         const need = want - taken;
         const units = Math.min(item.units, Math.ceil(need / item.kcalEach));
-        taken += units * item.kcalEach;
+        taken += (units || 0) * (item.kcalEach || 0);
         item.units -= units;
         if (item.units <= 0) pantry.splice(i, 1);
       }
@@ -4643,7 +4684,7 @@
       this.state.telemetry.push(Object.assign({
         t: Date.now(), day: s.day || 0, part: DAY_PARTS[this.dayPart] || '?', type,
         kcal: Math.round(s.kcal || 0), hp: Math.round(s.health || 0),
-        packKcal: (this.state.scholar ? this.state.scholar.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0) : 0),
+        packKcal: (this.state.scholar ? this.state.scholar.inventory.reduce((t, i) => t + (i.units || 0) * (i.kcalEach || 0), 0) : 0),
         pantry: Math.round(this.state.village ? this.state.village.pantryKcal : 0),
       }, data || {}));
       if (this.state.telemetry.length > 300) this.state.telemetry.splice(0, this.state.telemetry.length - 300);
@@ -4665,7 +4706,7 @@
         water: s.water || 0,
         inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
         invCount: s.inventory.reduce((t, i) => t + (i.units || 1), 0),
-        invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
+        invKcal: s.inventory.reduce((t, i) => t + (i.units || 0) * (i.kcalEach || 0), 0),
         // Pantry kcal computed from ITEMS, not a bucket. Unsafe food counts (it's there, it's risky).
         pantryKcal: Math.round((this.state.village.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0)),
         pantryDays: Math.floor(((this.state.village.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0)) / Math.max(1, 12 * 2000)),

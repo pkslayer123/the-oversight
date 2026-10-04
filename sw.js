@@ -3,14 +3,14 @@
    the page shows a subtle "update available" banner, and tapping it sends
    SKIP_WAITING so the new version activates and the page reloads into it.
    CACHE version is bumped per build via scripts/bump-sw-version.sh. */
-const VERSION = '7494da7-20261004-144139';
+const VERSION = '8e7c0a1-20261004-144458';
 const CACHE = 'oversight-cache-' + VERSION;
 
 const ASSETS = [
   './', './index.html', './manifest.json',
   './assets/icons/icon-192.png', './assets/icons/icon-512.png',
   './src/css/main.css',
-  './src/js/app.js', './src/js/game.js',
+  './src/js/app.js', './src/js/game.js', './src/js/build.js',
   './src/js/engine/state.js', './src/js/engine/modifiers.js',
   './src/js/engine/calories.js', './src/js/engine/day.js',
   './src/js/engine/forage.js', './src/js/engine/combat.js',
