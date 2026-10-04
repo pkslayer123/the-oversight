@@ -68,6 +68,20 @@
   function statRow(label, val, pct, low) {
     return `<div class="stat"><div class="lbl"><span>${label}</span><span>${val}</span></div><div class="bar${low ? ' low' : ''}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></div>`;
   }
+  // combatStripHTML: glanceable combat awareness above the grid. When steel
+  // is out, the top of the screen tells you who's in the fight and — most
+  // importantly — the telegraph cue. (highbeam: restored minimal version)
+  function combatStripHTML(st) {
+    const tf = Game.tbfight;
+    if (!tf) return '';
+    const mons = tf.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
+    const names = mons.map(m => `${m.emoji || '👹'} ${esc(m.name)}${m.telegraph ? ' ⚠' : ''}`).join(' · ') || '⚔ COMBAT';
+    const tg = mons.find(m => m.telegraph);
+    return `<div class="ord-combatstrip"><div class="combatstrip">` +
+      `<div class="cs-row"><span>⚔ ${names}</span></div>` +
+      (tg ? `<div class="cs-telegraph">⚠ ${esc(Game.tbTelegraphCue ? Game.tbTelegraphCue(tg) : 'incoming!')}</div>` : '') +
+      `</div></div>`;
+  }
   function statusBars(st) {
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
       statRow('FOOD (you)', Math.round(st.kcal) + ' kcal', st.kcal / 24, st.kcal < 500) +
@@ -2171,6 +2185,7 @@
       <div class="game-cols">
         <div class="game-col-main">
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
+          ${st.inCombat ? combatStripHTML(st) : ''}
           <div class="detail ord-grid">${renderDetail(st)}</div>
           ${st.inCombat ? `<div class="ord-combatpanel">${panelCombat(st)}</div>` : ''}
           ${perceiveHTML()}
