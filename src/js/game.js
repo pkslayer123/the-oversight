@@ -2758,10 +2758,33 @@
       const occ = giver.formerOccupation || 'survivor';
       const origin = giver.homeRegion || 'somewhere';
       const key = this.wakeSpeechKey(giver);
-      const templates = ((this.data.characterGen || {}).wakeUpSpeeches || {})[key]
-        || ((this.data.characterGen || {}).wakeUpSpeeches || {}).overwhelmed || [];
-      const lines = templates.map(t => String(t)
-        .replaceAll('{first}', first).replaceAll('{occ}', occ).replaceAll('{origin}', origin));
+      // THE WAKER DOESN'T NECESSARILY SPEAK ENGLISH. Wire the wake-up
+      // through the language system: a zero-English finder wakes you in
+      // their own tongue — urgent sounds, gestures, no shared words.
+      // (Steve: the person who wakes you doesn't have to speak English.)
+      let lines;
+      const wakerEnglish = (typeof this.npcEnglishLevel === 'function') ? this.npcEnglishLevel(giverId) : 2;
+      if (wakerEnglish === 0 && typeof this.npcNativeLang === 'function') {
+        const lang = this.npcNativeLang(giverId);
+        const def = this.langDef ? this.langDef(lang) : { icon: '', name: lang };
+        const ph = (typeof this.foreignLine === 'function') ? this.foreignLine(giverId, 'openers') : null;
+        const r = (ph && typeof this.renderForeign === 'function') ? this.renderForeign(giverId, ph) : null;
+        const frag = (typeof this.maybeEnglishFragment === 'function') ? this.maybeEnglishFragment(giverId) : null;
+        lines = [
+          `Someone is shaking you awake — urgent, insistent. ${def.icon} ${def.name}. Not one word of English.`,
+          r ? r.text : 'They speak. You understand none of it.',
+        ];
+        if (frag) lines.push(`"${frag}" — they grin, proud of the one English they know.`);
+        // Names cross every border: they tap their own chest and say it.
+        // That's how you learn who found you.
+        lines.push(`They tap their own chest: "${first}." A name, at least. Then they point at you, then mime walking — come. You understand that much.`);
+        try { this.langExposureGain(giverId, lang, 1); } catch (e) {}
+      } else {
+        const templates = ((this.data.characterGen || {}).wakeUpSpeeches || {})[key]
+          || ((this.data.characterGen || {}).wakeUpSpeeches || {}).overwhelmed || [];
+        lines = templates.map(t => String(t)
+          .replaceAll('{first}', first).replaceAll('{occ}', occ).replaceAll('{origin}', origin));
+      }
       // the finder remembers finding you. small trust bump.
       // the wake-up speech introduces them ("I'm {first}") — that's a meeting.
       v.knownNames = v.knownNames || {}; v.knownNames[giverId] = true;
@@ -3373,7 +3396,7 @@
       if (s.pendingVillageEvent) {
         const ev = s.pendingVillageEvent;
         s.pendingVillageEvent = null;
-        this.say(`\U0001F4AC ${ev.title}`);
+        this.say(`\u{1F4AC} ${ev.title}`);
         this.say(ev.desc);
         if (ev.id === 'system_arrival_discussion') {
           this.say('Mara: "The sky just... opened. And something talked to us. It said it was sorry. SORRY for what?!"');
@@ -4541,8 +4564,12 @@
           if (secret.yield === 0) {
             this.say(`This ${desc}. Nothing to take. You note it — you won\'t waste time here again.`);
             return true;
-          } else {
+          } else if (mod && (mod.species === 'oak' || mod.species === 'hickory')) {
             this.say(`This ${desc}. Nuts — about ${secret.yield} worth. You take them.`);
+          } else {
+            // pine (and unknown trees): no nut plant in the content pool.
+            // honest: you're working the ground around it, not harvesting nuts.
+            this.say(`This ${desc}. No nuts worth the trouble — but something might grow in its shade.`);
           }
         } else if (secret && secret.known && secret.yield === 0) {
           this.say('You already checked. Nothing.');
@@ -7771,7 +7798,7 @@
         // The System is a cheerful game-show host. It has an audience.
         // It studied humanity exhaustively and got everything spiritually wrong.
         // It doesn't understand why you're upset about food. Food is... a detail.
-        this.say('\U0001F31F THE SKY SPLITS OPEN.');
+        this.say('\u{1F31F} THE SKY SPLITS OPEN.');
         this.say('Not with light. With... interface. Windows. Text. Numbers. Scrolling across the clouds.');
         this.say('A voice in your head — bright, enthusiastic, utterly alien:');
         this.say('"HELLO! Welcome! We\'re SO glad you\'re all still here! What a week! The audience LOVED the foraging episode!"');
@@ -7791,9 +7818,9 @@
         const w1 = s.week1 || {};
         const didAnything = (w1.forage || 0) + (w1.hunt || 0) + (w1.talk || 0) + (w1.cook || 0) + (w1.donate || 0) + (w1.scavenge || 0) > 0;
         if (didAnything) {
-          this.say('\U0001F381 "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
+          this.say('\u{1F381} "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
         } else {
-          this.say('\U0001F381 "Ooh! A quiet one! You did juust enough to stay interesting! The audience was ALMOST bored! Almost! Here — a little something for existing NEAR the action!" (Choose an ability.)');
+          this.say('\u{1F381} "Ooh! A quiet one! You did juust enough to stay interesting! The audience was ALMOST bored! Almost! Here — a little something for existing NEAR the action!" (Choose an ability.)');
         }
         // TRANSLATOR PITCH: the System noticed the miming.
         if ((w1.langStruggle || 0) >= 2) {
@@ -7801,7 +7828,7 @@
         }
         // AFTERTHOUGHT: the System suddenly remembers the journal.
         // "Oh! Oh! We almost forgot! You were writing things down! We made it better!"
-        this.say('\U0001F4D6 "OH! Wait! We almost forgot! You were writing things down! In the little paper! We LOVE the paper! We made it better! It talks now! It remembers EVERYTHING!"');
+        this.say('\u{1F4D6} "OH! Wait! We almost forgot! You were writing things down! In the little paper! We LOVE the paper! We made it better! It talks now! It remembers EVERYTHING!"');
         this.say('Your journal shimmers. The handwriting doesn\'t disappear — it gets... absorbed. The Codex has your notes. All of them. Even the smudged ones. Especially the smudged ones.');
         // DIAL UPGRADE: the System "improves" even your sense of time.
         // Your hand-drawn circle glitches — and something colder takes its place.
@@ -7824,7 +7851,7 @@
         this.say('It feels invasive. The names you learned yourself — by talking, by listening — those felt earned. These just... appeared.');
         // WAVE 2: the System escalates. The calibration fauna was just the opener.
         // "Oh, you survived those? Let's try THESE."
-        this.say('\U0001F43E "OH! One more thing! The animals! The ones from last week — the charging ones, the humming ones, the glowy ones? Those were CALIBRATION fauna! First drafts! The audience has NOTES!"');
+        this.say('\u{1F43E} "OH! One more thing! The animals! The ones from last week — the charging ones, the humming ones, the glowy ones? Those were CALIBRATION fauna! First drafts! The audience has NOTES!"');
         this.say('"So we made BETTER ones! Advanced fauna! They\'re smarter! They\'re scarier! One of them does PERFORMANCE REVIEWS! The audience is going to LOVE the performance reviews!"');
         this.say('"Don\'t worry! The old ones are still out there! We didn\'t remove anything! The ecosystem is just... richer now! More DIVERSE! More DANGEROUS! You\'re welcome!"');
         this.say('Somewhere in the treeline, something new is crying in a voice you almost recognize.');
@@ -7841,7 +7868,7 @@
           this.say('(You\'re not at Haven. The village is experiencing this without you. Return to hear what happened.)');
         } else {
           // You were there. Witness it together.
-          this.say('\U0001F9D1\u200d\U0001F91d\U0001F9D1\u200d\U0001F91d The village gathers. Everyone\'s journal is changing. Everyone hears the voice. Mara grabs your arm. "Tell me you hear that too."');
+          this.say('\u{1F9D1}\u200d\u{1F91D}\u{1F9D1}\u200d\u{1F91D} The village gathers. Everyone\'s journal is changing. Everyone hears the voice. Mara grabs your arm. "Tell me you hear that too."');
         }
       }
     },
@@ -8393,10 +8420,10 @@
     },
     triggerEvent(ev) {
       if (ev.id === 'first_hunt') {
-        this.say('\U0001F4E2 SYSTEM CHALLENGE: "Catch something! Anything! We want to see how you do it!" (Hunt an animal today for a reward.)');
+        this.say('\u{1F4E2} SYSTEM CHALLENGE: "Catch something! Anything! We want to see how you do it!" (Hunt an animal today for a reward.)');
         this.state.scholar.activeChallenge = { id: 'first_hunt', desc: 'Hunt an animal', reward: 'Ability point' };
       } else if (ev.id === 'stranger') {
-        this.say('\U0001F6B6 A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
+        this.say('\u{1F6B6} A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
         // mediator: peace is a skill. You talk the village through it.
         if (this.hasAbility('mediator')) {
           const bonus = Math.round(this.modTarget('drama.resolve_bonus', 8));
@@ -8406,9 +8433,9 @@
           this.noteAbilityUse('mediator');
         }
       } else if (ev.id === 'hushwolf_pack') {
-        this.say('\U0001F43A HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
+        this.say('\u{1F43A} HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
       } else if (ev.id === 'system_task') {
-        this.say('\U0001F4DC SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Bring us a plant you\'ve fully identified (Codex L3)."');
+        this.say('\u{1F4DC} SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Bring us a plant you\'ve fully identified (Codex L3)."');
         this.state.scholar.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
       }
     },
@@ -8453,7 +8480,7 @@
         }
       }
       if (shared > 0) {
-        this.say(`\U0001F4D6 ${v.name} shares ${shared} plant${shared > 1 ? 's' : ''}.${deepShared ? ` (${deepShared} with deep medicinal knowledge!)` : ''} You have a head start, but skill comes from doing.`);
+        this.say(`\u{1F4D6} ${v.name} shares ${shared} plant${shared > 1 ? 's' : ''}.${deepShared ? ` (${deepShared} with deep medicinal knowledge!)` : ''} You have a head start, but skill comes from doing.`);
       } else {
         this.say(`${v.name} has nothing new to share.`);
       }
@@ -8571,6 +8598,14 @@
         let forcePlantId = null;
         if (plantCell && plantCell.cell === 'bush' && t.bushSpecies && t.bushSpecies[plantCell.x + ',' + plantCell.y]) {
           forcePlantId = t.bushSpecies[plantCell.x + ',' + plantCell.y];
+        }
+        // TREES: an oak gives acorns, a hickory gives hickory nuts. The tree
+        // told you nuts — you get nuts, not whatever the biome felt like.
+        // (Pine has no nut plant in the content pool; it forages the biome roll.)
+        if (plantCell && (plantCell.cell === 'tree' || plantCell.cell === 'bigtree') && t.modifiers) {
+          const tmod = t.modifiers[plantCell.x + ',' + plantCell.y];
+          if (tmod && tmod.species === 'oak') forcePlantId = 'acorn_white_oak';
+          else if (tmod && tmod.species === 'hickory') forcePlantId = 'hickory_nut';
         }
         const bounty = this.bountyFor(this.map.px, this.map.py);
         const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty, { forcePlantId });

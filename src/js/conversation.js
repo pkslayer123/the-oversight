@@ -358,22 +358,75 @@
           { id: 'leave', label: '"I should go."' },
         ];
       }
+      // MAXC: the chat view has room for a real choice list. Topic asks
+      // must never be starved by action buttons — Steve found deep topics
+      // unreachable when discovery actions filled all 5 slots.
+      const MAXC = 6;
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
-      // DISCOVERY CHOICES take priority over generic topic asks. These are
-      // the meaningful actions — trade, teach, promise, invite — and they
-      // should surface before small talk fills the slots.
+      // DEPTH GATING: what they'll talk about depends on how well they know
+      // you. Little hits over time, like real people. Defined once, used by
+      // theorize and the topic asks below.
+      // - village, plans: always (safe small talk)
+      // - past: trust 20+ or 2nd conversation
+      // - goal: trust 35+ or 3rd conversation (what they really want)
+      // - theorize: trust 25+ or 2nd conversation (thinking together is intimate)
+      // DEFLECTORS offer fewer doors: withdrawn/prickly/restless people don't
+      // volunteer every topic — you get two, and you earn the rest.
+      const trustNow = (this.state.village.trust || {})[vid] || 10;
+      const convoCount = c.count || 0;
+      // TOPIC ASKS come first — the conversation itself. Discovery actions
+      // (trade/teach/promise/invite) fill whatever slots remain; they never
+      // crowd out the talk.
+      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
+      const asked = c.askedTopics || [];
+      const tempNow = this.npcTemper(vid);
+      const topicCap = (tempNow === 'withdrawn' || tempNow === 'prickly' || tempNow === 'restless') ? 2 : 5;
+      const pastOpen = trustNow >= 20 || convoCount >= 2;
+      const goalOpen = trustNow >= 35 || convoCount >= 3;
+      const asks = [];
+      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
+      if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
+      if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
+      if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
+      let topicsAdded = 0;
+      for (const a of asks) {
+        if (a.id === threadAsk || topicsAdded >= topicCap || choices.length >= MAXC) continue;
+        choices.push(a); topicsAdded++;
+      }
+      // THEORIZE: joint discovery, a signature mechanic — not small talk.
+      // GATED: thinking together is intimate. System talk only makes sense
+      // after it arrives; before that, the scattering itself and the
+      // monsters are the mystery.
+      const theorized = c.theorized || [];
+      const sysUp = !!this.state.systemArrived;
+      const theorizeOpen = trustNow >= 25 || convoCount >= 2;
+      const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
+        theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
+      if (theorizeOpen && topicsLeft.length && choices.length < MAXC) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
+      // WATCH THEM: the detective's tool. Spend time observing — behavior may
+      // contradict story. Available once you've talked enough to have a baseline
+      // (2nd conversation+), or if you already have doubts about them.
+      // (observePerson lives in truth.js; guarded in case that module is absent.)
+      if (choices.length < MAXC && typeof this.observePerson === 'function') {
+        const hasDoubts = this.getDoubts && this.getDoubts(vid).length > 0;
+        if (convoCount >= 2 || hasDoubts) {
+          choices.push({ id: 'observe', label: hasDoubts ? '"I\'ve been watching you. Keep talking."' : '(watch them for a while)' });
+        }
+      }
+      // DISCOVERY ACTIONS fill the remaining slots — trade, teach, promise,
+      // invite. Meaningful, but the conversation itself comes first.
       // PROMISES are discovered, not menued. Before you've learned the
       // concept, the offer only surfaces when they've really opened up
       // (deep in their goal thread). After that, any known goal will do.
       // The handler makes a FORMAL tracked promise — keep it or break it.
       const alreadyPromised = !!((this.state.village.promises || {})[vid]);
-      if (this.goalKnown(vid) && !c.offeredHelp && !alreadyPromised && choices.length < 5) {
+      if (this.goalKnown(vid) && !c.offeredHelp && !alreadyPromised && choices.length < MAXC) {
         const openedUp = c.thread === 'goal' && (c.depth || 0) >= 2;
         if (this.hasDiscovered('promise') || openedUp) choices.push({ id: 'offer_help', label: '"I could help with that."' });
       }
       // KNOWLEDGE TRADING is discovered through conversation: traders seed it
       // by mentioning it; once learned, you can raise it with any trader.
-      if (choices.length < 5) {
+      if (choices.length < MAXC) {
         try {
           const isTrader = this.isKnowledgeTrader && this.isKnowledgeTrader(vid);
           const tradeable = isTrader ? (this.traderKnowledge(vid) || []) : [];
@@ -383,7 +436,7 @@
         } catch (e) {}
       }
       // TEACHING happens in conversation now — show, don't menu.
-      if (choices.length < 5) {
+      if (choices.length < MAXC) {
         try {
           const youKnow = Object.keys(this.state.codex.plants || {});
           const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
@@ -394,7 +447,7 @@
       }
       // PARTY INVITES live in conversation, not on a button. Discovered via
       // the System unlock. You ask people. Like a person.
-      if (choices.length < 5) {
+      if (choices.length < MAXC) {
         try {
           if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
               !this.inParty(vid) && !this.partyFull()) {
@@ -403,68 +456,13 @@
           }
         } catch (e) {}
       }
-      // DEPTH GATING: what they'll talk about depends on how well they know
-      // you. Little hits over time, like real people. Defined once, used by
-      // theorize and the topic asks below.
-      const trustNow = (this.state.village.trust || {})[vid] || 10;
-      const convoCount = c.count || 0;
-      // THEORIZE comes before the topic asks: it's a signature mechanic
-      // (joint discovery), not small talk — it shouldn't be starved by
-      // the discovery choices above or the asks below.
-      // GATED: thinking together is intimate. Trust 30+ or 2nd conversation.
-      // System talk only makes sense after it arrives; before that, the
-      // scattering itself and the monsters are the mystery.
-      const theorized = c.theorized || [];
-      const sysUp = !!this.state.systemArrived;
-      const theorizeOpen = trustNow >= 30 || convoCount >= 2;
-      const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
-        theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
-      if (theorizeOpen && topicsLeft.length && choices.length < 5) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
-      // WATCH THEM: the detective's tool. Spend time observing — behavior may
-      // contradict story. Available once you've talked enough to have a baseline
-      // (2nd conversation+), or if you already have doubts about them.
-      // (observePerson lives in truth.js; guarded in case that module is absent.)
-      if (choices.length < 5 && typeof this.observePerson === 'function') {
-        const hasDoubts = this.getDoubts && this.getDoubts(vid).length > 0;
-        if (convoCount >= 2 || hasDoubts) {
-          choices.push({ id: 'observe', label: hasDoubts ? '"I\'ve been watching you. Keep talking."' : '(watch them for a while)' });
-        }
-      }
-      // TOPIC ASKS fill remaining slots after the meaningful actions.
-      // GATED BY TRUST AND FAMILIARITY: you don't get someone's life story
-      // in the first conversation. Little hits over time, like real people.
-      // - village, plans: always (safe small talk)
-      // - past: trust 25+ or 2nd conversation
-      // - goal: trust 40+ or 3rd conversation (what they really want)
-      // - theorize: trust 30+ or 2nd conversation (thinking together is intimate)
-      // DEFLECTORS offer fewer doors: withdrawn/prickly/restless people don't
-      // volunteer every topic — you get two, and you earn the rest.
-      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
-      const asked = c.askedTopics || [];
-      const tempNow = this.npcTemper(vid);
-      const topicCap = (tempNow === 'withdrawn' || tempNow === 'prickly' || tempNow === 'restless') ? 2 : 5;
-      // Depth gating uses trustNow/convoCount defined above with theorize.
-      const pastOpen = trustNow >= 25 || convoCount >= 2;
-      const goalOpen = trustNow >= 40 || convoCount >= 3;
-      const asks = [];
-      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
-      if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
-      if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
-      if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
-      // Cap counts TOPIC asks, not total choices — deflectors get fewer doors,
-      // not zero. (An earlier version capped choices.length and starved them.)
-      let topicsAdded = 0;
-      for (const a of asks) {
-        if (a.id === threadAsk || topicsAdded >= topicCap || choices.length >= 5) continue;
-        choices.push(a); topicsAdded++;
-      }
       const reacts = [
         { id: 'agree', label: '"You\'re right."' },
         { id: 'joke', label: '(crack a joke)' },
         { id: 'silence', label: '(say nothing)' },
       ];
-      if (choices.length < 5) choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
-      if (c.thread && c.thread !== 'small' && choices.length < 5) choices.push({ id: 'subject', label: '"Actually — different subject."' });
+      if (choices.length < MAXC) choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
+      if (c.thread && c.thread !== 'small' && choices.length < MAXC) choices.push({ id: 'subject', label: '"Actually — different subject."' });
       choices.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
       return choices;
     },
@@ -565,6 +563,13 @@
         done(beat || this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know about that."']), '"Tell me more."');
       } else if (choiceId.indexOf('ask:') === 0) {
         const topic = choiceId.slice(4);
+        // DEEP BEATS build trust faster: asking about someone's past or what
+        // they want is an act of care. Words only go so far — talk caps at 40.
+        if (topic === 'past' || topic === 'goal') {
+          const t = this.state.village.trust || {};
+          const cur = t[vid] || 10;
+          if (cur < 40) t[vid] = Math.min(40, cur + 2);
+        }
         done(this.convoAskTopic(vid, topic), this.convoLabel(vid, topic));
       } else if (choiceId === 'observe') {
         // WATCH THEM: the detective's tool. Costs time, may reveal that
@@ -658,6 +663,10 @@
         c.theorized = done_topics;
         c.thread = 'theorize'; c.depth = 1;
         const line = this.theorizeWith(vid, topic);
+        // Thinking together is intimate — it deepens trust, like past/goal asks.
+        const tt = this.state.village.trust || {};
+        const tcur = tt[vid] || 10;
+        if (tcur < 40) tt[vid] = Math.min(40, tcur + 2);
         done(line, '"What do you think is actually going on here?"');
       } else if (choiceId === 'agree') {
         const m = cg.agreeReacts || {};

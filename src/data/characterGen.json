@@ -493,7 +493,8 @@
       "plantsKnown": 1,
       "polyglot": [
         "spanish",
-        "mandarin"
+        "mandarin",
+        "english"
       ],
       "teachTags": [],
       "backstories": [
@@ -531,7 +532,8 @@
       "plantsKnown": 1,
       "polyglot": [
         "spanish",
-        "arabic"
+        "arabic",
+        "english"
       ],
       "teachTags": [],
       "backstories": [
@@ -2116,7 +2118,10 @@
         "{first} spent a season fishing between ports, hook and line off the stern. {They} have eaten everything the sea throws up and {they} are not picky."
       ],
       "backstory": "{first} crewed cargo ships and read the tide tables like scripture. {They} read the water and the sky together and {they} have a feel for weather coming.",
-      "intel": "steady"
+      "intel": "steady",
+      "polyglot": [
+        "english"
+      ]
     },
     {
       "abilityWeights": {
@@ -2156,7 +2161,10 @@
       "name": "programmer",
       "plantsKnown": 0,
       "teachTags": [],
-      "intel": "analytical"
+      "intel": "analytical",
+      "polyglot": [
+        "english"
+      ]
     },
     {
       "abilityWeights": {
@@ -2316,7 +2324,10 @@
       "name": "journalist",
       "plantsKnown": 0,
       "teachTags": [],
-      "intel": "analytical"
+      "intel": "analytical",
+      "polyglot": [
+        "english"
+      ]
     },
     {
       "abilityWeights": {
@@ -2476,7 +2487,10 @@
       "name": "bush pilot",
       "plantsKnown": 1,
       "teachTags": [],
-      "intel": "steady"
+      "intel": "steady",
+      "polyglot": [
+        "english"
+      ]
     },
     {
       "abilityWeights": {

@@ -1030,7 +1030,7 @@
 
   function targetBarHTML() {
     if (!targeting) return '';
-    return `<div class="targetbar"><span>\U0001F3AF ${esc(targeting.prompt)} — tap a highlighted target</span>` +
+    return `<div class="targetbar"><span>\u{1F3AF} ${esc(targeting.prompt)} — tap a highlighted target</span>` +
       `<button class="t-cancel" id="t-cancel">\u2715 Cancel</button></div>`;
   }
 
@@ -1179,7 +1179,7 @@
     if (!near.length) { Game.say('No one close enough to talk to.'); refresh(); return; }
     if (near.length === 1) { personSheet(near[0].id); return; }
     enterTargeting({
-      prompt: '\U0001F4AC Talk to whom?',
+      prompt: '\u{1F4AC} Talk to whom?',
       targets: near,
       onPick: (t) => personSheet(t.id),
     });
@@ -1195,6 +1195,10 @@
   // openSheet() remains ONLY for modal System offers (ability/relic choices):
   // the System doesn't ask politely.
   let inlineView = null; // {kind:'person'|'assign'|'remote'|'pantry', vid, line, result, nvMode, via, mapKey}
+  // chatView: the ONE acceptable interruption (Steve). When you're talking to
+  // someone, the screen becomes the conversation — full chat view, no
+  // scrolling to follow the dialogue. {vid, thinking, thinkingToken}.
+  let chatView = null;
   // lastPersonTap: tapping a person's tile while already adjacent steps onto
   // their tile (explicit). Any movement elsewhere invalidates it.
   let lastPersonTap = null; // {vid, px, py}
@@ -1440,6 +1444,104 @@
     }, ms);
   }
 
+  // ============ CHAT VIEW ============
+  // Conversation is the ONE acceptable interruption (Steve). Tapping Talk
+  // opens a full-screen chat: messages stacked, speaker names, hesitation
+  // beats preserved, room for narrative. No scrolling to follow the dialogue.
+  // When the conversation ends, the normal one-screen view returns.
+  function openChat(vid) {
+    inlineView = null;
+    chatView = { vid: vid, thinking: null, thinkingToken: 0 };
+    Game.startConvo(vid);
+    // startConvo resets the transcript — the opening lands after a beat.
+    armChatThinking(vid, 0, null, true);
+    refresh();
+  }
+
+  function closeChat(sayGoodbye) {
+    if (!chatView) return;
+    const vid = chatView.vid;
+    chatView = null;
+    if (sayGoodbye !== false) { try { Game.endConvo(vid, 'left'); } catch (e) {} }
+    refresh();
+  }
+
+  // Chat hesitation: same personality-shaped beat as inline, held on chatView.
+  function armChatThinking(vid, hiddenFrom, choiceId, isOpening) {
+    if (!chatView || chatView.vid !== vid) return;
+    const tok = (chatView.thinkingToken = (chatView.thinkingToken || 0) + 1);
+    const ms = Game.convoHesitationMs ? Game.convoHesitationMs(vid, choiceId, isOpening) : 450;
+    chatView.thinking = { hiddenFrom: hiddenFrom, token: tok };
+    refresh();
+    setTimeout(() => {
+      if (chatView && chatView.vid === vid && chatView.thinkingToken === tok) {
+        chatView.thinking = null;
+        refresh();
+      }
+    }, ms);
+  }
+
+  function chatChoice(vid, cid) {
+    if (!chatView || chatView.vid !== vid) return;
+    if (cid === 'leave') { closeChat(true); return; }
+    const ui = Game.convoUI ? Game.convoUI(vid) : null;
+    const before = ui && ui.transcript ? ui.transcript.length : 0;
+    const st = Game.convoTurn(vid, cid);
+    if (!st || st.ended) { chatView = null; refresh(); return; }
+    armChatThinking(vid, before, cid, false);
+    refresh();
+  }
+
+  function renderChatScreen(cv, convo) {
+    const vid = cv.vid;
+    const vp = (Game.data.villagers || []).find(v => v.id === vid) ||
+               (Game.data.background_survivors || []).find(v => v.id === vid) || {};
+    const sys = !!Game.state.systemArrived;
+    const known = sys || Game.nameKnown(vid);
+    const titleName = known ? (vp.name || 'Someone') : Game.personDescriptor(vid);
+    const sub = sys && vp.formerOccupation
+      ? vp.formerOccupation + (vp.homeRegion ? ' · ' + vp.homeRegion : '') : '';
+    const thinking = cv.thinking || null;
+    const shownTranscript = thinking ? (convo.transcript || []).slice(0, thinking.hiddenFrom) : (convo.transcript || []);
+    const msgs = shownTranscript.map(e => {
+      const isSpeech = /^\s*"/.test(e.text);
+      const spCls = e.foreign ? 'fsp' : (isSpeech ? 'sp' : 'narr');
+      const ftag = e.foreign
+        ? ` <span class="flang">${esc(Game.langDef(e.foreign).icon)} ${esc(Game.langDef(e.foreign).name)}</span>` : '';
+      if (!isSpeech) {
+        return `<div class="chat-narr"><span class="narr">${esc(e.text)}</span></div>`;
+      }
+      const who = e.who === 'you' ? 'You' : titleName;
+      const side = e.who === 'you' ? 'you' : 'them';
+      return `<div class="chat-msg ${side}"><div class="chat-name">${esc(who)}</div>` +
+        `<div class="chat-bubble"><span class="${spCls}">${esc(e.text)}</span>${ftag}</div></div>`;
+    }).join('') + (thinking
+      ? `<div class="chat-msg them"><div class="chat-name">${esc(titleName)}</div>` +
+        `<div class="chat-bubble"><span class="thinking-dots" aria-label="thinking"><span>.</span><span>.</span><span>.</span></span></div></div>`
+      : '');
+    const choiceBtns = (convo.choices || []).map(cn =>
+      `<button class="btn chat-choice${cn.id === 'leave' ? ' ghost' : ''}" data-cid="${esc(cn.id)}"${thinking ? ' disabled' : ''}>${esc(cn.label)}</button>`
+    ).join('');
+    screen.innerHTML = `
+      <div class="chat">
+        <div class="chat-head">
+          <div><b>${esc(titleName)}</b>${sub ? `<br><span class="small" style="opacity:.6">${esc(sub)}</span>` : ''}</div>
+          <button class="btn sm ghost" id="chat-end">End conversation</button>
+        </div>
+        <div class="chat-msgs" id="chat-msgs">${msgs}</div>
+        <div class="chat-choices">${choiceBtns}</div>
+      </div>`;
+    document.getElementById('chat-end').onclick = () => closeChat(true);
+    screen.querySelectorAll('[data-cid]').forEach(b => {
+      b.onclick = () => chatChoice(vid, b.dataset.cid);
+    });
+    // Chat behavior: newest messages visible. Direct scrollTop assignment —
+    // no smooth animation, no page-level scrolling calls (the iOS jump fix
+    // stays intact; only the messages pane moves, which is expected in chat).
+    const box = document.getElementById('chat-msgs');
+    if (box) box.scrollTop = box.scrollHeight;
+  }
+
   // personAct: every action confirms visibly. The result line ("✓ ...") plus
   // updated numbers — no wondering whether the tap worked.
   function personAct(view, act) {
@@ -1448,9 +1550,8 @@
                (Game.data.background_survivors || []).find(v => v.id === vid) || {};
     const dname = Game.displayName(vid);
     if (act === 'talk') {
-      const st = Game.startConvo(vid); view.line = st ? st.line : null; view.result = null; view.nvMode = null;
-      // startConvo resets the transcript — the opening lands after a beat.
-      armThinking(view, vid, 0, null, true);
+      // Talk opens the full-screen chat — the one acceptable interruption.
+      openChat(vid);
       return;
     }
     else if (act.indexOf('c:') === 0) {
@@ -1564,9 +1665,9 @@
     const dname = Game.displayName(villagerId);
     const goalKnown = Game.goalKnown(villagerId);
     const topics = [
-      ['goal', '\u0001F3AF "What do you want?"', goalKnown ? ' (you know: ' + (Game.goalWant(villagerId) || '?') + ')' : ''],
-      ['gossip', '\U0001F442 "Heard anything?"', ''],
-      ['village', '\U0001F3D5\uFE0F "How\u2019s everyone?"', ''],
+      ['goal', '\u{1F3AF} "What do you want?"', goalKnown ? ' (you know: ' + (Game.goalWant(villagerId) || '?') + ')' : ''],
+      ['gossip', '\u{1F442} "Heard anything?"', ''],
+      ['village', '\u{1F3D5}\uFE0F "How\u2019s everyone?"', ''],
     ];
     const btns = topics.map(([tid, label, extra]) =>
       `<button class="btn sm ghost" data-topic="${tid}">${label}${extra}</button>`).join('') +
@@ -1916,14 +2017,14 @@
     if (!choices || !choices.length) return;
     openSheet({
       id: 'offer-ability',
-      title: '\U0001F31F The System Offers a Gift',
+      title: '\u{1F31F} The System Offers a Gift',
       html:
         '<p>"We watched your first week! You\u2019re good at... let us see..."</p>' +
         '<p>Choose one ability:</p>',
       buttons: choices.map(c => ({
         label: '<b>' + esc(c.name) + '</b><br><span class="small">' + esc(c.description || c.desc) + '</span>' +
           (c.flavor ? '<br><i class="small">"' + esc(c.flavor) + '"</i>' : '') +
-          (c.metabolic && c.metabolic.daily ? '<br><span class="small">\U0001F525 Costs ' + c.metabolic.daily + ' kcal/day to keep. Power is a trade.</span>' : ''),
+          (c.metabolic && c.metabolic.daily ? '<br><span class="small">\u{1F525} Costs ' + c.metabolic.daily + ' kcal/day to keep. Power is a trade.</span>' : ''),
         primary: true,
         onClick: () => { Game.chooseAbility(c.id); refresh(); },
       })),
@@ -2026,6 +2127,15 @@
   function expeditionScreen() {
     const st = Game.status();
     if (st.over) return ending();
+    // CHAT MODE: conversation is the one acceptable interruption. The screen
+    // is the conversation — full chat view, no scrolling to follow it.
+    // Combat cancels it; an ended conversation drops the view.
+    if (st.inCombat) chatView = null;
+    if (chatView) {
+      const _cc = Game.convoUI ? Game.convoUI(chatView.vid) : null;
+      if (_cc && _cc.active) { renderChatScreen(chatView, _cc); return; }
+      chatView = null;
+    }
     // NPCs must be visible on first load, not just after the first step.
     try { Game.ensureVillagerPositions(); } catch (e) {}
     // COMBAT MODE: the action system gets out of the way. Dodge-first.
