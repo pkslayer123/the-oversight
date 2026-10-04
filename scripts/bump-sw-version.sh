@@ -25,4 +25,12 @@ bs2, n2 = re.subn(r"^window\.BUILD_VERSION = '[^']*';", "window.BUILD_VERSION = 
 assert n2 == 1, 'BUILD_VERSION line not found in src/js/build.js'
 open(b, 'w').write(bs2)
 print('src/js/build.js BUILD_VERSION ->', v)
+# version.json is the source of truth for the v2 update flow (polled with
+# no-store + cache-buster, so it always reflects the latest deploy).
+vj = 'version.json'
+vjs = open(vj).read()
+vjs2, n3 = re.subn(r'"version"\s*:\s*"[^"]*"', '"version": "%s"' % v, vjs)
+assert n3 == 1, 'version field not found in version.json'
+open(vj, 'w').write(vjs2)
+print('version.json version ->', v)
 PY

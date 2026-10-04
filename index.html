@@ -29,76 +29,116 @@
 <script src="src/js/build.js"></script>
 <script src="src/js/app.js"></script>
 <script>
-/* PWA update flow: the service worker never force-updates a running session.
-   When a newer version finishes installing, a subtle banner appears; tapping it
-   tells the waiting worker to take over, and the page reloads into the new build.
-   Update checks run on launch, on foreground resume, and hourly while open. */
-if ('serviceWorker' in navigator) {
-  let refreshing = false;
-  let waitingWorker = null;
-  const banner = document.getElementById('update-banner');
-  function showUpdateBanner() { banner.classList.remove('hidden'); }
-  // Nuclear fallback: if SKIP_WAITING doesn't hand over control within 4s
-  // (iOS quirk), unregister everything, nuke caches, and hard-reload with
-  // a cache-busting query param. Guaranteed to land on the new version.
-  function nuclearUpdate() {
-    banner.innerHTML = 'Force updating&hellip;';
-    caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))).catch(() => {})
-      .then(() => navigator.serviceWorker.getRegistrations().catch(() => []))
-      .then(regs => Promise.all(regs.map(r => r.unregister().catch(() => {}))))
-      .then(() => {
-        const u = new URL(window.location.href);
-        u.searchParams.set('fresh', Date.now().toString(36));
-        window.location.href = u.toString();
-      });
+/* PWA update flow (v2): version.json is the source of truth, NOT the service
+   worker. The SW exists only for offline caching — updates no longer depend on
+   the SW install/waiting/skipWaiting handover, which stalls silently on iOS.
+   On launch, on foreground resume, and every 15 minutes we fetch version.json
+   with cache:'no-store' plus a cache-buster; if it differs from the running
+   BUILD_VERSION we show the banner. Tapping it unregisters all SWs, wipes all
+   caches, and navigates to a cache-busted URL — the new version loads no
+   matter what state the old SW is in. Every step reports progress; failures
+   show retry + a manual fallback. Works even where SWs are unsupported. */
+(function () {
+  var banner = document.getElementById('update-banner');
+  var state = 'idle'; // idle | available | working | failed
+  var remoteVersion = null;
+  var failCount = 0;
+
+  function isNewer(local, remote) {
+    if (!remote || remote === local) return false;
+    function ts(v) { var m = /-(\d{8})-(\d{6})$/.exec(v || ''); return m ? m[1] + m[2] : null; }
+    var a = ts(local), b = ts(remote);
+    if (a && b) return b >= a; // same-second double commit still counts
+    return true; // unparseable: any difference counts as newer
   }
-  let skipWaitingSent = false;
-  banner.addEventListener('click', () => {
-    banner.innerHTML = 'Updating&hellip;';
-    if (waitingWorker && !skipWaitingSent) {
-      skipWaitingSent = true;
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-      // If the handover stalls, go nuclear.
-      setTimeout(() => { if (!refreshing) nuclearUpdate(); }, 4000);
-    } else {
-      nuclearUpdate();
-    }
-  });
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
-  });
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').then(reg => {
-      if (reg.waiting) {           // update installed during a previous visit
-        waitingWorker = reg.waiting;
-        showUpdateBanner();
+
+  function show(html) { banner.innerHTML = html; banner.classList.remove('hidden'); }
+
+  function check() {
+    var local = window.BUILD_VERSION || '';
+    var url = 'version.json?t=' + Date.now().toString(36);
+    return fetch(url, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      var remote = (j && j.version) || '';
+      if (isNewer(local, remote)) {
+        remoteVersion = remote;
+        state = 'available';
+        failCount = 0;
+        show('&#11015; A new version is ready &mdash; <b>tap to update</b>');
+        return true;
       }
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          // 'installed' + an existing controller = a newer version is ready.
-          // (No controller means first-ever install — already on the new version.)
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-            waitingWorker = nw;
-            showUpdateBanner();
-          }
-        });
-      });
-      reg.update().catch(() => {});
-      setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
-    }).catch(() => {});
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.getRegistration().then(reg => {
-        if (reg) reg.update().catch(() => {});
-      });
+      return false;
+    }).catch(function () { return false; }); // offline: stay silent
+  }
+
+  function apply() {
+    if (state === 'working') return;
+    state = 'working';
+    show('&#9203; Downloading new version&hellip;');
+    function unregisterAll() {
+      if (!('serviceWorker' in navigator)) return Promise.resolve();
+      return navigator.serviceWorker.getRegistrations()
+        .then(function (regs) {
+          return Promise.all(regs.map(function (r) { return r.unregister().catch(function () {}); }));
+        }).catch(function () {});
     }
+    function clearCaches() {
+      if (!('caches' in window)) return Promise.resolve();
+      return caches.keys()
+        .then(function (ks) {
+          return Promise.all(ks.map(function (k) { return caches.delete(k).catch(function () {}); }));
+        }).catch(function () {});
+    }
+    unregisterAll().then(clearCaches).then(function () {
+      show('&#8635; Reloading into the new version&hellip;');
+      var u = new URL(window.location.href);
+      u.search = '';
+      u.searchParams.set('v', remoteVersion || Date.now().toString(36));
+      setTimeout(function () { window.location.assign(u.toString()); }, 400);
+    }).catch(function () { fail(); });
+  }
+
+  function fail() {
+    state = 'failed';
+    failCount++;
+    if (failCount >= 2) {
+      show('&#9888; Auto-update failed. Delete the home-screen app and re-add it from Safari, then <b>tap to retry</b>.');
+    } else {
+      show('&#9888; Update didn&rsquo;t work &mdash; <b>tap to retry</b>');
+    }
+  }
+
+  banner.addEventListener('click', function () {
+    if (state === 'available' || state === 'failed') apply();
   });
-}
+
+  // Clean the cache-buster param after an update navigation.
+  try {
+    var u0 = new URL(window.location.href);
+    if (u0.searchParams.has('v') || u0.searchParams.has('fresh')) {
+      u0.search = '';
+      window.history.replaceState(null, '', u0.toString());
+    }
+  } catch (e) {}
+
+  // Exposed for the build-tag tap in app.js and console debugging.
+  window.__oversightUpdate = { check: check, apply: apply };
+
+  // SW registration is for offline caching only now.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+
+  check();
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') check();
+  });
+  setInterval(function () { check(); }, 15 * 60 * 1000);
+})();
 </script>
 </body>
 </html>

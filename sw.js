@@ -1,13 +1,16 @@
 /* The Oversight — service worker.
-   Update policy: a newly installed SW does NOT take over on its own. It waits,
-   the page shows a subtle "update available" banner, and tapping it sends
-   SKIP_WAITING so the new version activates and the page reloads into it.
+   Update policy (v2): the SW is PURELY an offline cache. It never drives
+   updates — version.json polling in index.html does that (it works even where
+   SWs are unsupported, e.g. older iOS home-screen apps). A new SW installs in
+   the background and activates on next load; the update banner flow
+   unregisters SWs and wipes caches before navigating, so staleness is
+   impossible regardless of SW state.
    CACHE version is bumped per build via scripts/bump-sw-version.sh. */
-const VERSION = 'dd96152-20261004-151447';
+const VERSION = '0653141-20261004-152038';
 const CACHE = 'oversight-cache-' + VERSION;
 
 const ASSETS = [
-  './', './index.html', './manifest.json',
+  './', './index.html', './manifest.json', './version.json',
   './assets/icons/icon-192.png', './assets/icons/icon-512.png',
   './src/css/main.css',
   './src/js/app.js', './src/js/game.js', './src/js/build.js',
