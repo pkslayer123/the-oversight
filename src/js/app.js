@@ -390,6 +390,8 @@
       };
     });
     document.getElementById('x-codex').onclick = codexScreen;
+    const pantryBtn = document.getElementById('x-pantry');
+    if (pantryBtn) pantryBtn.onclick = () => pantryPopup();
     wirePanel(st, n);
   }
 
@@ -409,6 +411,20 @@
     return panelNode(st, n);
   }
 
+  function pantryPopup() {
+    const st = Game.stateSnapshot();
+    const pantry = Game.state.village.pantry || [];
+    const carry = st.carryKg;
+    screen.innerHTML = `${bar('scattering://pantry', 'pack for the day')}
+      <h2>Pantry</h2>
+      <p class="small">Take what you need. Carrying ${carry.toFixed(1)}/20 kg.</p>
+      <p class="small">💧 ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
+      ${pantry.length ? pantry.map((p, idx) => `<p class="small"><b>${p.name}</b> x${p.units} (${p.kcalEach * p.units} kcal)${p.safe ? '' : ' ⚠ UNSAFE'}${p.spoilDay <= st.day ? ' ⚠ SPOILED' : ''} <button class="btn ghost sm" data-take="${idx}">Take 1</button></p>`).join('') : '<p class="small">Empty.</p>'}
+      <button class="btn" id="x-back">Back</button>`;
+    screen.querySelectorAll('[data-take]').forEach(b => b.onclick = () => { Game.takeFromPantry(+b.dataset.take); pantryPopup(); });
+    document.getElementById('x-back').onclick = () => expeditionScreen();
+  }
+
   function panelHaven(st) {
     const v = Game.villageInfo();
     const vs = Game.data.villagers;
@@ -420,6 +436,8 @@
       <div class="card"><h3>🏠 HAVEN — ${st.rosterCount} souls</h3>
       <p class="small"><i>${v.atmos}</i></p>
       <p class="small">Pantry: ${st.pantryKcal} kcal (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
+      <button class="btn sm" id="x-pantry">Take from pantry</button>
       <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
       <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry 8000+ (${st.pantryKcal})</p>
       <p class="small" style="opacity:.7">Tap a person in the grid to talk. They\'re living their lives.</p>

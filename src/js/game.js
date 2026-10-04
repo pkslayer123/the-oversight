@@ -62,10 +62,27 @@
       const villager = this.data.villagers.find(v => v.id === villagerId);
       this.state = S.state.newState();
       this.state.village.name = 'Haven';
-      // Starting pantry: 1.5-3 days for the group. RNG every run.
-      const nPpl = this.state.village.villagers.length + 6; // 6 mains + 6 background
+      // Starting pantry: REAL FOOD, not a number. 1.5-3 days for the group.
+      // Each item: name, kcal, spoilDay, safe, kg. Unsafe stays unsafe.
+      const nPpl = 12;
       const startDays = 1.5 + Math.random() * 1.5;
-      this.state.village.pantryKcal = Math.round(nPpl * 2000 * startDays);
+      const targetKcal = Math.round(nPpl * 2000 * startDays);
+      this.state.village.pantry = []; // list of food items
+      this.state.village.pantryKcal = 0; // (kept for compat, computed from pantry)
+      // Fill with staples: dried beans, rice, canned goods (safe, long spoil).
+      const staples = [
+        { name: 'Dried beans', kcalEach: 300, units: 20, spoilDay: 9999, safe: true, kg: 0.5 },
+        { name: 'Rice', kcalEach: 350, units: 15, spoilDay: 9999, safe: true, kg: 0.5 },
+        { name: 'Canned soup', kcalEach: 250, units: 10, spoilDay: 9999, safe: true, kg: 0.4 },
+      ];
+      let kcal = 0;
+      for (const s of staples) {
+        const item = { ...s };
+        this.state.village.pantry.push(item);
+        kcal += item.kcalEach * item.units;
+      }
+      // (If target not met, it's fine — RNG means some runs start leaner.)
+      this.state.village.water = { clean: 20, dirty: 0 }; // liters. Clean and dirty separate.
       // the roster: 6 mains (the story) + 6 drawn from 36 background survivors (the variety).
       // twelve mouths, different every run.
       const mains = ['mara_okafor', 'jesse_calhoun', 'aki_tanaka', 'ruth_delgado', 'theo_park', 'priya_nair'];
@@ -127,6 +144,11 @@
       const scholar = S.state.newScholar(villagerId);
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
       scholar.inventory = gear.map(id => ({ itemId: id, units: 1, kg: 0.2, name: (this.data.items.find(i => i.id === id) || {}).name || id }));
+      // Start with a day's food. You're not starving on arrival (that's day 3).
+      scholar.inventory.push(
+        { name: 'Trail mix', kcalEach: 400, units: 2, spoilDay: 9999, safe: true, kg: 0.3, unit: 'bag' },
+        { name: 'Dried meat', kcalEach: 300, units: 2, spoilDay: 30, safe: true, kg: 0.2, unit: 'strip' },
+      );
       // granted abilities from villager data (2 each, defined here for slice 1)
       const granted = {
         mara_okafor: ['triage', 'steady_hands'],
@@ -1305,6 +1327,29 @@
       return true;
     },
 
+    // takeFromPantry: pack food before going out. Weight matters (20kg max).
+    takeFromPantry(idx) {
+      const pantry = this.state.village.pantry || [];
+      const item = pantry[idx];
+      if (!item || item.units <= 0) return null;
+      // weight check
+      const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0);
+      if (carry + (item.kg || 0) > 20) {
+        this.say(`Too heavy. Carrying ${carry.toFixed(1)}/20 kg.`);
+        return null;
+      }
+      // take one unit
+      item.units--;
+      if (item.units <= 0) pantry.splice(idx, 1);
+      // add to inventory (merge if same)
+      const inv = this.state.scholar.inventory;
+      const existing = inv.find(i => i.name === item.name);
+      if (existing) existing.units++;
+      else inv.push({ name: item.name, kcalEach: item.kcalEach, units: 1, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item' });
+      this.say(`Took ${item.name}.`);
+      return null;
+    },
+
     // weaponBonus: best weapon in inventory. A spear beats bare hands.
     weaponBonus() {
       let bonus = 0;
@@ -2272,10 +2317,13 @@
         inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
         invCount: s.inventory.reduce((t, i) => t + (i.units || 1), 0),
         invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
-        pantryKcal: Math.round(this.state.village.pantryKcal),
-        // PANTRY DAYS: honest math. kcal divided by what 12 people actually need (2000 each).
-        // The old formula (lastEat - lastGive) lied when the village was starving.
-        pantryDays: Math.floor(this.state.village.pantryKcal / Math.max(1, this.state.village.villagers.length * 2000)),
+        // Pantry kcal computed from ITEMS, not a bucket. Unsafe food counts (it's there, it's risky).
+        pantryKcal: Math.round((this.state.village.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0)),
+        pantryDays: Math.floor(((this.state.village.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0)) / Math.max(1, 12 * 2000)),
+        waterClean: Math.round((this.state.village.water || {}).clean || 0),
+        waterDirty: Math.round((this.state.village.water || {}).dirty || 0),
+        // Weight: everything has mass. Carrying capacity 20kg.
+        carryKg: (s.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0),
         villageEat: Math.round(this.state.village.lastEat || 800),
         villageGive: Math.round(this.state.village.lastGive || 0),
         villageProviders: this.state.village.lastProviders || [],
