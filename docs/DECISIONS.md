@@ -799,3 +799,26 @@ CITY vs COUNTRYSIDE:
 - City buildings: apartment, office, warehouse. Countryside: school, church, warehouse.
 - City: (TODO) more ruins, less nature. Different feel.
 - Every personality × location mix = new game.
+
+## 2026-10-03 — Conservation of energy (Steve correction)
+Steve: "No who said it applies to movement? We should basically operate in a conservation
+of energy basis. Abilities use calories stored in excess of your bodies storage to convert
+as functionally energy and mana."
+
+CORRECTED:
+- Movement is BASELINE. Walking costs 10 kcal, always. Power doesn\'t tax it.
+- metabolicMult applies to DAILY NEED: fire god eats to 9600, not 2400.
+- Your kcal pool IS your mana. Abilities convert stored calories to effects.
+- No free power. Conservation: energy in = energy out.
+- (TODO: ability activation costs, tier in abilities.json)
+
+## 2026-10-03 — Power is a trade, not a tax (Steve)
+Steve: "Idk if daily need should scale unless daily use scales. I could see metabolic need
+increasing in exchange for getting to move twice as fast or something like this."
+
+PRINCIPLE: Every ability is benefit ↔ cost. No pure penalties.
+- If daily need is 2x, you get 2x (move twice as fast, or equivalent).
+- If daily need is 4x (fire god), the fire had better be worth 4x food.
+- Conservation of energy: you pay for what you get. Nothing is free, nothing is pure tax.
+- (Implementation: metabolicMult exists but should only apply when the ability grants
+  a proportional benefit. Don\'t scale cost without scaling use.)
