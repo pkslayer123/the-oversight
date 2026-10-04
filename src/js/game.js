@@ -178,6 +178,19 @@
     },
 
     // --- village node ---
+    // roleHint: each game, find the part you need to play.
+    // not always the forager — sometimes the scholar, sometimes the hunter's helper.
+    roleHint() {
+      const codexN = Object.keys(this.state.codex.plants).length;
+      const pantry = this.state.village.pantryKcal;
+      const shortfall = (this.state.village.lastEat || 24000) - (this.state.village.lastGive || 22000);
+      if (pantry < 1000) return "The pantry is empty. They need food. You're the forager today.";
+      if (codexN < 4 && pantry > 2000) return "The village feeds itself. They need your knowledge. You're the scholar.";
+      if (shortfall > 1500) return "The gap is wide. They need calories. Hunt, forage, bring it home.";
+      if (this.state.village.roster && this.state.village.roster.length < 10) return "The village is shrinking. Every hand matters. Every day matters.";
+      return "Find your part. Watch the village. They'll tell you what they need.";
+    },
+
     // the roster: who lives here this run. mains talk; background have one line each.
     villageRoster() {
       const roster = this.state.village.roster || [];
@@ -838,16 +851,28 @@
         if (!person) continue;
         const first = person.name.split(' ')[0];
         const r = Math.random();
-        if (r < 0.35) {
+        if (r < 0.05) {
+          // BIG DAY: 3 people bringing two days each happens. someone has the day of their life.
+          const kcal = 1500 + Math.floor(Math.random() * 1001);
+          v.pantryKcal += kcal;
+          this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.`);
+        } else if (r < 0.35) {
           // brings food: a real haul (400-800 kcal), not a snack. this is their work, made visible.
           const kcal = 400 + Math.floor(Math.random() * 401);
           v.pantryKcal += kcal;
           this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {
-          // wounded
-          this.say(`${first} is hurt — a fall, a thorn, a bad step. ${person.line}`);
+          // wounded. three wounds and you're gone — people die out here.
           v.wounded = v.wounded || {};
           v.wounded[id] = (v.wounded[id] || 0) + 1;
+          if (v.wounded[id] >= 3) {
+            // death
+            v.roster = v.roster.filter(rid => rid !== id);
+            this.say(`💀 ${person.name} is gone. Three bad days. The village is ${v.roster.length} now.`);
+            delete v.wounded[id];
+          } else {
+            this.say(`${first} is hurt — a fall, a thorn, a bad step. (${v.wounded[id]}/3)`);
+          }
         } else if (r < 0.65) {
           // discovers something (adds to codex if new!)
           const undiscovered = this.data.plants.filter(p => !this.state.codex.plants[p.id]);
@@ -866,20 +891,43 @@
     },
 
     // village metabolism: every mouth eats, a few hands provide. the rates add up.
+    // KNOWLEDGE FEEDS: each codex entry teaches the village what's edible.
+    // they forage better because of you. the scholar's contribution isn't always calories.
     // expeditions are open-ended — the pantry clock is the arc, not a timer.
     villageEats() {
       const v = this.state.village;
       let eat = 0, give = 0;
       const providers = [];
+      const codexN = Object.keys(this.state.codex.plants).length;
+      const knowledgeBonus = codexN * 80; // each plant you identify: +80 kcal/day village-wide. they learn.
       for (const id of (v.roster || [])) {
         const person = this.data.villagers.find(p => p.id === id) || this.data.background_survivors.find(p => p.id === id);
         if (!person) continue;
-        eat += person.kcalPerDay || 65;
+        eat += person.kcalPerDay || 2000;
         if (person.providesPerDay) { give += person.providesPerDay; providers.push(person); }
       }
+      give += knowledgeBonus;
       const net = Math.max(0, eat - give);
       v.lastEat = eat; v.lastGive = give; v.lastProviders = providers.map(p => p.name.split(' ')[0]);
+      v.lastKnowledgeBonus = knowledgeBonus;
+      const wasEmpty = v.pantryKcal <= 0;
       v.pantryKcal = Math.max(0, v.pantryKcal - net);
+      // starvation kills: empty pantry for 2+ days, the weakest go first
+      if (v.pantryKcal <= 0) {
+        v.starvingDays = (v.starvingDays || 0) + 1;
+        if (v.starvingDays >= 2 && v.roster && v.roster.length > 6) {
+          const bg = v.roster.filter(rid => !this.data.villagers.find(m => m.id === rid));
+          if (bg.length) {
+            const victim = bg[Math.floor(Math.random() * bg.length)];
+            const vp = this.data.background_survivors.find(p => p.id === victim);
+            v.roster = v.roster.filter(rid => rid !== victim);
+            this.say(`💀 ${vp ? vp.name : victim} starved. The village is ${v.roster.length} now. This is on all of us.`);
+            v.starvingDays = 0;
+          }
+        }
+      } else {
+        v.starvingDays = 0;
+      }
       if (v.pantryKcal <= 0) {
         v.hungryDays = (v.hungryDays || 0) + 1;
         this.say(`⚠ Haven's pantry is empty. Day ${v.hungryDays} of hunger.`);
@@ -904,6 +952,17 @@
       // the village eats whether you're there or not — every day you're out, twelve mouths
       this.villageLives();
       this.villageEats();
+      // depletion: every 7 days, the easy food is gone. the land gets tired.
+      if (this.state.scholar.day % 7 === 0) {
+        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+          const t = this.tileAt(x, y);
+          if (t.type !== 'haven' && t.type !== 'ruin' && t.maxStock > 1) {
+            t.maxStock -= 1;
+            t.stock = Math.min(t.stock, t.maxStock);
+          }
+        }
+        this.say('The land is getting tired. The easy food is gone.');
+      }
       if (this.villageLost) { return this.status(); } // no home to return to
       if (this.over) { this.returnToVillage(); return this.status(); }
       if (!res.ok || scholar.health <= 0) {
@@ -981,9 +1040,11 @@
         villageEat: Math.round(this.state.village.lastEat || 800),
         villageGive: Math.round(this.state.village.lastGive || 0),
         villageProviders: this.state.village.lastProviders || [],
+        villageKnowledge: this.state.village.lastKnowledgeBonus || 0,
         rosterCount: (this.state.village.roster || []).length,
         integration: Math.round(this.state.scholar.integration || 5),
         activeQuest: this.state.scholar.activeQuest || null,
+        roleHint: this.roleHint(),
         hungryDays: this.state.village.hungryDays || 0,
         packKg: Math.round(this.packWeight() * 10) / 10,
         packCap: this.packCapacity(),

@@ -242,8 +242,9 @@
       <div class="card"><h3>🏠 HAVEN — ${st.rosterCount} souls</h3>
       <p class="small"><i>${v.atmos}</i></p>
       <p class="small">Pantry: ${st.pantryKcal} kcal (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
-      <p class="small" style="opacity:.75">12 mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day — that's you</p>
+      <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()}${st.villageKnowledge ? ` (incl. +${st.villageKnowledge} from your ${Game.journalName()})` : ''} · shortfall ${net.toLocaleString()}/day</p>
       <p class="small">Haven survives when: ${Game.journalName()} 8+ (${st.codexCount}) · Pantry 5000+ (${st.pantryKcal})</p>
+      <p class="small" style="font-style:italic;opacity:.85">💡 ${esc(st.roleHint)}</p>
       ${mains.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
         <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`).join('')}
       <p class="small" style="margin-top:8px;opacity:.75"><b>Also here:</b> ${bg.map(p => `${p.name} (${p.formerOccupation})`).join(' · ')}</p>
