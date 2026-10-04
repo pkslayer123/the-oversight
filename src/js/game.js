@@ -1530,9 +1530,41 @@
       this.say(`Codex: ${text}`);
     },
 
+    // isSafeTile: villages are safe from monsters. The ONLY safe space.
+    isSafeTile(x, y) {
+      const t = this.tileAt(x, y);
+      if (t.type === 'haven') return true;
+      // other villages are safe too
+      for (const v of (this.state.otherVillages || [])) {
+        if (v.x === x && v.y === y) return true;
+      }
+      return false;
+    },
+
     checkEncounter() {
-      // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
+      // RNG, not staged. Monsters spawn in the wild.
+      // Villages are safe. Everywhere else? Roll the dice.
       const scholar = this.state.scholar;
+      const px = this.map.px, py = this.map.py;
+      // Safe in villages. Don't even roll.
+      if (this.isSafeTile(px, py)) return;
+      // LEVER (not grounded): spawn chance per tile entry.
+      // Thickets feel dangerous, meadows feel safe. Tune with playtest.
+      // TODO: replace with monster population system (N monsters / 49 tiles).
+      const tile = this.playerTile();
+      let chance = 0.08;
+      if (tile.type === 'thicket') chance = 0.15;
+      else if (tile.type === 'meadow') chance = 0.05;
+      else if (tile.type === 'ruin') chance = 0.12;
+      if (Math.random() < chance && !scholar.monster) {
+        const mdefs = this.data.monsters;
+        const mdef = mdefs[Math.floor(Math.random() * mdefs.length)];
+        const mx = 4 + Math.floor(Math.random() * 5) - 2;
+        const my = 4 + Math.floor(Math.random() * 5) - 2;
+        scholar.monster = { id: mdef.id, x: Math.max(0, Math.min(8, mx)), y: Math.max(0, Math.min(8, my)) };
+        this.say(`A ${mdef.name} is here.`);
+      }
+      // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
       if (scholar.day >= 3 && !this.wanderer && !this.encounterDone) {
         // spawn at a random revealed-edge thicket, or near player
         const spots = [];
