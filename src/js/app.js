@@ -220,13 +220,19 @@
   function panelHaven(st) {
     const v = Game.villageInfo();
     const vs = Game.data.villagers;
+    const roster = Game.villageRoster();
+    const mains = roster.filter(r => r.isMain);
+    const bg = roster.filter(r => !r.isMain);
+    const net = st.villageEat - st.villageGive;
     return `
-      <div class="card"><h3>🏠 HAVEN</h3>
+      <div class="card"><h3>🏠 HAVEN — ${st.rosterCount} souls</h3>
       <p class="small"><i>${v.atmos}</i></p>
-      <p class="small">Pantry: ${st.pantryKcal} kcal (${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
-      <p class="small">Haven survives when: Codex 8+ (${st.codexCount}) · Pantry 5000+ (${st.pantryKcal})</p>
-      ${vs.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
+      <p class="small">Pantry: ${st.pantryKcal} kcal (${st.pantryDays} days at ${net}/day)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      <p class="small" style="opacity:.75">12 mouths eat ${st.villageEat}/day${st.villageGive ? ` · ${st.villageProviders.join(', ')} bring in ${st.villageGive}` : ''}</p>
+      <p class="small">Haven survives when: ${Game.journalName()} 8+ (${st.codexCount}) · Pantry 5000+ (${st.pantryKcal})</p>
+      ${mains.map(p => `<p class="small"><b>${p.name}</b> — ${p.formerOccupation}
         <button class="btn ghost sm" data-talk="${p.id}" style="margin-left:8px">Talk</button></p>`).join('')}
+      <p class="small" style="margin-top:8px;opacity:.75"><b>Also here:</b> ${bg.map(p => `${p.name} (${p.formerOccupation})`).join(' · ')}</p>
       <div class="btnrow">
         <button class="btn sm" id="p-water">Fill water</button>
         <button class="btn sm" id="p-fire">Sit by the fire</button>

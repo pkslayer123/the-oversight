@@ -18,6 +18,7 @@ const FILES = {
   'systemMessages.json': 'systemMessage', 'shop.json': 'shopItem',
   'trials.json': 'trial', 'biomes.json': 'biome',
   'relicEnhancements.json': 'relicEnhancement',
+  'background_survivors.json': 'background_survivor',
 };
 
 function checkType(val, spec, where) {

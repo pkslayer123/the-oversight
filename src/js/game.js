@@ -49,9 +49,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors };
       return this.data;
     },
 
@@ -62,7 +62,14 @@
       const villager = this.data.villagers.find(v => v.id === villagerId);
       this.state = S.state.newState();
       this.state.village.name = 'Haven';
-      this.state.village.villagers = ['mara_okafor', 'jesse_calhoun', 'aki_tanaka'];
+      // the roster: 6 mains (the story) + 6 drawn from 36 background survivors (the variety).
+      // twelve mouths, different every run.
+      const mains = ['mara_okafor', 'jesse_calhoun', 'aki_tanaka', 'ruth_delgado', 'theo_park', 'priya_nair'];
+      const pool = [...this.data.background_survivors];
+      const bg = [];
+      for (let i = 0; i < 6 && pool.length; i++) bg.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
+      this.state.village.roster = mains.concat(bg);
+      this.state.village.villagers = mains; // mains have dialogue; background have one-liners
       const scholar = S.state.newScholar(villagerId);
       // granted abilities from villager data (2 each, defined here for slice 1)
       const granted = {
@@ -97,12 +104,13 @@
     },
 
     getQuest() {
-      // Mara's quest, once, on first arrival — the intro into the narrative
+      // the intro: a random main (not you) wakes you up. Mara isn't the only one with the speech.
       if (this.state.questGiven) return null;
-      const mara = this.data.villagers.find(x => x.id === 'mara_okafor');
+      const mains = this.data.villagers.filter(v => v.quest && v.id !== this.villagerId);
+      const giver = mains[Math.floor(Math.random() * mains.length)] || this.data.villagers[0];
       this.state.questGiven = true;
       this.save();
-      return { from: mara.name.split(' ')[0], lines: mara.quest };
+      return { from: giver.name.split(' ')[0], lines: giver.quest };
     },
 
     villageAction(kind) {
@@ -127,6 +135,18 @@
     },
 
     // --- village node ---
+    // the roster: who lives here this run. mains talk; background have one line each.
+    villageRoster() {
+      const roster = this.state.village.roster || [];
+      return roster.map(id => {
+        const main = this.data.villagers.find(v => v.id === id);
+        if (main) return { id, name: main.name, formerOccupation: main.formerOccupation, isMain: true };
+        const bg = (this.data.background_survivors || []).find(v => v.id === id);
+        if (bg) return { id, name: bg.name, formerOccupation: bg.formerOccupation, line: bg.line, isMain: false };
+        return { id, name: id, formerOccupation: '', isMain: false };
+      });
+    },
+
     villageInfo() {
       const v = this.state.village;
       const codexN = Object.keys(this.state.codex.plants).length;
@@ -720,11 +740,21 @@
       return this.status();
     },
 
-    // village metabolism: 12 people, tight rations, net 800 kcal/day from the pantry.
+    // village metabolism: every mouth eats, a few hands provide. the rates add up.
     // expeditions are open-ended — the pantry clock is the arc, not a timer.
     villageEats() {
       const v = this.state.village;
-      v.pantryKcal = Math.max(0, v.pantryKcal - 800);
+      let eat = 0, give = 0;
+      const providers = [];
+      for (const id of (v.roster || [])) {
+        const person = this.data.villagers.find(p => p.id === id) || this.data.background_survivors.find(p => p.id === id);
+        if (!person) continue;
+        eat += person.kcalPerDay || 65;
+        if (person.providesPerDay) { give += person.providesPerDay; providers.push(person); }
+      }
+      const net = Math.max(0, eat - give);
+      v.lastEat = eat; v.lastGive = give; v.lastProviders = providers.map(p => p.name.split(' ')[0]);
+      v.pantryKcal = Math.max(0, v.pantryKcal - net);
       if (v.pantryKcal <= 0) {
         v.hungryDays = (v.hungryDays || 0) + 1;
         this.say(`⚠ Haven's pantry is empty. Day ${v.hungryDays} of hunger.`);
@@ -821,7 +851,11 @@
         inventory: s.inventory.map(i => ({ name: i.name, units: i.units, kcalEach: i.kcalEach, spoilDay: i.spoilDay })),
         invKcal: s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0),
         pantryKcal: Math.round(this.state.village.pantryKcal),
-        pantryDays: (this.state.village.pantryKcal / 800).toFixed(1),
+        pantryDays: (this.state.village.pantryKcal / Math.max(1, (this.state.village.lastEat || 800) - (this.state.village.lastGive || 0))).toFixed(1),
+        villageEat: Math.round(this.state.village.lastEat || 800),
+        villageGive: Math.round(this.state.village.lastGive || 0),
+        villageProviders: this.state.village.lastProviders || [],
+        rosterCount: (this.state.village.roster || []).length,
         hungryDays: this.state.village.hungryDays || 0,
         packKg: Math.round(this.packWeight() * 10) / 10,
         packCap: this.packCapacity(),

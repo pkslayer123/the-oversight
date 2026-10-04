@@ -151,7 +151,10 @@
       "systemAssessment": "string",
       "survivalProbability": "number[1..99]?",
       "talk": "string[]",
-      "quest": "string[]?"
+      "quest": "string[]?",
+      "kcalPerDay": "number?",
+      "providesPerDay": "number?",
+      "providesWhat": "string?"
     }
   },
   "item": {
@@ -302,6 +305,25 @@
         "value": "number"
       },
       "systemCommentary": "string"
+    }
+  },
+  "background_survivor": {
+    "required": [
+      "id",
+      "name",
+      "age",
+      "formerOccupation",
+      "line",
+      "kcalPerDay"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "age": "number",
+      "formerOccupation": "string",
+      "line": "string",
+      "kcalPerDay": "number",
+      "providesPerDay": "number?"
     }
   }
 }
