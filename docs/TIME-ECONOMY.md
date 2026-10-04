@@ -46,7 +46,11 @@ Every action is priced in up to three currencies:
 | Step (`microMove`) | 1 | 0 | Strolling is time-only |
 | Examine a tile (`cellInteract`) | 1 | 0 | A glance is time-only |
 | Drink / eat / handoff (`giveFood`) | 1 | 0 | Moments, not labor |
-| Talk (`startConvo`) | 2 | 20 kcal | A conversation takes time; barely burns |
+| Open a conversation (`startConvo`) | 1 | 10 kcal | Small talk is quick and cheap |
+| Deep conversational beat (`ask:`, `theorize`, `ans:`, …) | +1 | 0 | Real exchanges take a real moment |
+| Small talk (`agree`, `joke`, `silence`) | 0 | 0 | You're already standing there |
+| Teach in conversation | 3 total | 0 | A real lesson takes real time |
+| Confront a doubt | 1 | 0 | A hard question takes a moment |
 | Social verbs (deal, comfort, …) | 2 | 0–varies | Substantive social moves |
 | Read a book | 2 | 0 | Time-only — minds, not muscles |
 | Activate an ability | 2 | varies | Focus takes a moment; powers have their own prices |
@@ -84,9 +88,11 @@ with stay put; the moment lapses naturally if you walk away.
 
 Every action was checked for spam-for-free-benefit:
 
-- **Talk/social spam:** 2 ticks each + 20 kcal/conversation; trust caps at 40
-  via talk alone; rep gains are one-shot or diminishing; promises create
-  obligations. Talking to 10 people/day is legitimate play, not an exploit.
+- **Talk/social spam:** 1 tick + 10 kcal to open; +1 tick per deep beat;
+  small talk free. A full 6-exchange deep conversation runs ~5 ticks +
+  10 kcal — affordable. Trust caps at 40 via talk alone; rep gains are
+  one-shot or diminishing; promises create obligations. Talking to 10
+  people/day is legitimate play, not an exploit.
 - **Drink/eat:** hydration and kcal-target caps; no benefit past full.
 - **Examine spam:** secrets are one-time reveals; re-examining is just 1 tick.
 - **Give food:** the food itself is the cost; trust is capped.

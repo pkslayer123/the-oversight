@@ -1198,14 +1198,20 @@
     // TRANSCRIPT: reads like dialogue, not a log. Speaker name always shown
     // (descriptor pre-System, real name once earned). Narration (non-quoted)
     // is italic and dimmed so speech stands out.
-    const convoTranscript = (convo.transcript || []).slice(-6).map(e => {
-      const isSpeech = /^\s*"/.test(e.text);
+    // HESITATION: while they're thinking, the newest entries are held back
+    // and a "..." shows instead. The response lands after the beat.
+    const thinking = (view.thinking && view.thinking.vid === villagerId) ? view.thinking : null;
+    const shownTranscript = thinking ? (convo.transcript || []).slice(0, thinking.hiddenFrom) : (convo.transcript || []);
+    const convoTranscript = shownTranscript.slice(-6).map(e => {
+      const isSpeech = /^\\s*\"/.test(e.text);
       const cls = e.who === 'you' ? 'tline you' : 'tline them';
       const who = e.who === 'you' ? 'You' : titleName;
       return `<p class="${cls}"><b>${esc(who)}:</b> <span class="${isSpeech ? 'sp' : 'narr'}">${esc(e.text)}</span></p>`;
-    }).join('');
+    }).join('') + (thinking
+      ? `<p class="tline them"><b>${esc(titleName)}:</b> <span class="thinking-dots" aria-label="thinking"><span>.</span><span>.</span><span>.</span></span></p>`
+      : '');
     const convoChoices = (convo.choices || []).map(cn =>
-      `<button class="btn sm${cn.id === 'leave' ? ' ghost' : ''}" data-act="c:${esc(cn.id)}">${esc(cn.label)}</button>`).join(' ');
+      `<button class="btn sm${cn.id === 'leave' ? ' ghost' : ''}" data-act="c:${esc(cn.id)}"${thinking ? ' disabled' : ''}>${esc(cn.label)}</button>`).join(' ');
     const convoHtml = convoTranscript
       ? `<div class="convo" style="border-top:1px solid #ffffff22;margin-top:10px;padding-top:4px">${convoTranscript}${convoChoices ? `<div class="inline-btns" style="margin-top:8px">${convoChoices}</div>` : ''}</div>`
       : '';
@@ -1314,6 +1320,23 @@
     slot.querySelectorAll('[data-act]').forEach(b => { b.onclick = () => personAct(view, b.dataset.act); });
   }
 
+  // HESITATION: people don't respond instantly. armThinking computes the
+  // turn immediately (game state advances now) but holds the new transcript
+  // entries back for a personality-shaped beat — a "..." while they think.
+  // The response lands after the pause, like a real person considering.
+  function armThinking(view, vid, hiddenFrom, choiceId, isOpening) {
+    const tok = (view.thinkingToken = (view.thinkingToken || 0) + 1);
+    const ms = Game.convoHesitationMs ? Game.convoHesitationMs(vid, choiceId, isOpening) : 450;
+    view.thinking = { vid, hiddenFrom, token: tok };
+    refresh();
+    setTimeout(() => {
+      if (inlineView && inlineView.kind === 'person' && inlineView.vid === vid && inlineView.thinkingToken === tok) {
+        inlineView.thinking = null;
+        refresh();
+      }
+    }, ms);
+  }
+
   // personAct: every action confirms visibly. The result line ("✓ ...") plus
   // updated numbers — no wondering whether the tap worked.
   function personAct(view, act) {
@@ -1321,8 +1344,19 @@
     const vp = (Game.data.villagers || []).find(v => v.id === vid) ||
                (Game.data.background_survivors || []).find(v => v.id === vid) || {};
     const dname = Game.displayName(vid);
-    if (act === 'talk') { const st = Game.startConvo(vid); view.line = st ? st.line : null; view.result = null; view.nvMode = null; }
-    else if (act.indexOf('c:') === 0) { const st = Game.convoTurn(vid, act.slice(2)); if (st) view.line = st.line; view.result = null; }
+    if (act === 'talk') {
+      const st = Game.startConvo(vid); view.line = st ? st.line : null; view.result = null; view.nvMode = null;
+      // startConvo resets the transcript — the opening lands after a beat.
+      armThinking(view, vid, 0, null, true);
+      return;
+    }
+    else if (act.indexOf('c:') === 0) {
+      const cid = act.slice(2);
+      const before = (Game.convoUI && Game.convoUI(vid).transcript ? Game.convoUI(vid).transcript.length : 0);
+      const st = Game.convoTurn(vid, cid); if (st) view.line = st.line; view.result = null;
+      armThinking(view, vid, before, cid, false);
+      return;
+    }
     else if (act === 'give') {
       const gave = Game.giveFood(vid);
       view.result = gave ? 'You gave them food.' : 'You have no food to give.';

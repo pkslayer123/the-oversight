@@ -457,6 +457,12 @@ body.in-combat .dangerbar {
 .convo .tline.you b { color: #9fd8ff; font-weight: 600; }
 .convo .tline.them b { color: #b8e986; font-weight: 600; }
 .convo .tline .narr { font-style: italic; opacity: .72; }
+/* HESITATION: the "..." while someone thinks before responding. */
+.thinking-dots { display: inline-block; letter-spacing: 2px; }
+.thinking-dots span { display: inline-block; animation: tblink 1.1s infinite; opacity: .25; }
+.thinking-dots span:nth-child(2) { animation-delay: .18s; }
+.thinking-dots span:nth-child(3) { animation-delay: .36s; }
+@keyframes tblink { 0%, 60%, 100% { opacity: .25; } 30% { opacity: 1; } }
 /* person card buttons: 2-column compact grid, not full-width stack */
 .inlinecard .inline-btns .btn.sm {
   flex: 1 1 calc(50% - 3px); margin: 0; padding: 10px 6px; font-size: 14px;

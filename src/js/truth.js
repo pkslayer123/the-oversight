@@ -648,7 +648,7 @@
       c.transcript.push({ who: 'them', text: r.line });
       while (c.transcript.length > 8) c.transcript.shift();
       c.exchanges++;
-      try { this.tickAction(2); } catch (e) {} // confrontation takes time
+      try { this.tickAction(1); } catch (e) {} // confrontation takes a moment
       this.say(`${this.displayName(vid)}: "${r.line}"`);
       if (r.outcome === 'attacked') { try { this.endConvo(vid, 'left'); return { line: r.line, choices: [], ended: true, transcript: c.transcript.slice() }; } catch (e) {} }
       return { line: r.line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };

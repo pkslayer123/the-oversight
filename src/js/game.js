@@ -6633,10 +6633,13 @@
     },
 
     // tickAction: THE unified action clock. Every thing you do costs time.
-    // Cost guide (ticks): 1 = step, glance, sip, bite, handoff.
-    // 2 = a conversation. 3 = a lesson. 32 (1 chunk) = clear brush, boil water,
-    // travel a node. 64-96 (2-3 chunks) = forage, fell a tree, build.
-    // 128 = a full day-part of sustained work (rest, wait out the part).
+    // Cost guide (ticks): 1 = step, glance, sip, bite, handoff, opening a
+    // conversation, one deep conversational beat. 2 = a substantive social
+    // move (comfort, mediate, deal). 3 = a lesson (teaching). 32 (1 chunk) =
+    // clear brush, boil water, travel a node. 64-96 (2-3 chunks) = forage,
+    // fell a tree, build. 128 = a full day-part of sustained work (rest, wait
+    // out the part). Small talk inside a conversation is free — you're
+    // already spending the time standing there.
     // Every TICKS_PER_BATCH ticks → NPCs take a batch turn (they act).
     // Every TICKS_PER_PART ticks → the day-part turns (needs, assignments, energy).
     // TICKS_PER_DAY ticks → the day is spent → endDay().

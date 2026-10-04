@@ -55,6 +55,31 @@
       return Math.max(2, Math.min(6, b));
     },
 
+    // convoHesitationMs: people don't respond instantly. A brief,
+    // personality-shaped pause before their line lands — impulsive people
+    // fire back, thoughtful people take their time. Deep or emotional beats
+    // get a longer pause. Feels human, never laggy (200–950ms).
+    convoHesitationMs(vid, choiceId, isOpening) {
+      let ms = isOpening ? 320 : 400;
+      const temp = (this.npcTemper && this.npcTemper(vid)) || '';
+      if (temp === 'bold' || temp === 'intense' || temp === 'restless') ms -= 150;
+      else if (temp === 'cautious' || temp === 'withdrawn' || temp === 'steady') ms += 230;
+      else if (temp === 'warm' || temp === 'gentle') ms += 90;
+      // 'dry' and 'prickly' answer at their own pace — no modifier.
+      const deep = choiceId && /^(ask:|more|theorize|confront|trade|teach|offer_help|invite_party|ans:)/.test(choiceId);
+      if (deep) ms += 260;
+      return Math.max(200, Math.min(950, ms + Math.floor(Math.random() * 120)));
+    },
+
+    // convoDeepTick: going deep costs a little time (1 tick), not energy.
+    // Small talk is cheap — you're already standing there. A real exchange,
+    // a lesson, a hard question: those take a real moment. Keeps social
+    // play viable: a full deep conversation runs ~4-6 ticks, not a day.
+    convoDeepTick(vid) {
+      try { this.tickAction(1); } catch (e) {}
+      try { this.setEngaged(vid, 2); } catch (e) {}
+    },
+
     // convoPick: no repeats, ever. Tracks by line TEXT (not index), so it
     // stays correct even when the pool's composition shifts with mood/rep.
     // Filters against EVERYTHING ever said to this villager — a line used in
@@ -429,11 +454,14 @@
       c.qAskedThisConvo = false; c.theorized = [];
       c.traderMentioned = false; c.pendingTrade = null;
       c.count++; c.lastDay = this.state.scholar.day;
-      // TALKING COSTS ENERGY — 20 kcal per conversation, not per line.
-      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 20);
-      // ACTION CLOCK: a real conversation takes 2 ticks (time-only — talking barely burns calories).
+      // TALKING COSTS A LITTLE ENERGY — 10 kcal to open a conversation, not
+      // per line. Small talk is quick and cheap; going deep costs ticks
+      // (see convoDeepTick), not a flat tax. Social play stays viable.
+      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
+      // ACTION CLOCK: opening a conversation takes 1 tick (time-only —
+      // talking barely burns calories). Deep beats add ticks as they land.
       // ENGAGEMENT: they're talking with you now — batch turns won't wander them off.
-      this.tickAction(2);
+      this.tickAction(1);
       this.setEngaged(vid, 2);
       if (this.state.scholar.week1) this.state.scholar.week1.talk++;
       this.notePlaystyle('social');
@@ -583,7 +611,7 @@
           const t = this.state.village.trust || {};
           t[vid] = Math.min(100, (t[vid] || 10) + 2);
           try { this.socialTick(vid); } catch (e) {}
-          try { this.tickAction(3); } catch (e) {}
+          try { this.convoDeepTick(vid); } catch (e) {}
           done(`You show them ${pname} — where it grows, how to tell it apart. Their eyes widen. "I never knew that."`, '"Let me show you something."');
         }
       } else if (choiceId === 'invite_party') {
@@ -662,6 +690,14 @@
       while (c.transcript.length > 8) c.transcript.shift();
       c.exchanges++;
       this.say(`${this.displayName(vid)}: "${line}"`);
+
+      // DEEP BEATS cost a tick: topic asks, "tell me more", theorizing,
+      // trading, teaching, promises, invites, answering personal questions.
+      // Small talk (agree, joke, silence, subject-change) is free — you're
+      // already here. Graduated cost keeps long conversations affordable.
+      if (/^(ask:|more|theorize|trade_yes|teach|offer_help|invite_party|ans:)/.test(choiceId || '')) {
+        this.convoDeepTick(vid);
+      }
 
       // THEY ask YOU things. Conversations go both ways.
       // First conversation with someone: they're curious about the stranger.
