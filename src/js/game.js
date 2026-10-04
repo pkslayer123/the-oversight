@@ -503,6 +503,19 @@
       // walking onto the Haven tile: the loop closes. what you carried feeds the village.
       // no day advance here — endDay owns the clock. this is just coming home.
       const s = this.state.scholar;
+      // PENDING VILLAGE EVENT: if something happened while you were away, they tell you.
+      if (s.pendingVillageEvent) {
+        const ev = s.pendingVillageEvent;
+        s.pendingVillageEvent = null;
+        this.say(`\U0001F4AC ${ev.title}`);
+        this.say(ev.desc);
+        if (ev.id === 'system_arrival_discussion') {
+          this.say('Mara: "The sky just... opened. And something talked to us. It said it was sorry. SORRY for what?!"');
+          this.say('Jesse: "It offered me something. A... gift? I said no. I don\'t trust gifts from the sky."');
+          this.say('Aki: "..." (Aki hasn\'t spoken since it happened.)');
+          this.say('The village looks to you. You\'re the scholar. You\'re supposed to know things.');
+        }
+      }
       const brought = s.inventory.reduce((t, i) => t + i.units * i.kcalEach, 0);
       const entries = Object.keys(this.state.codex.plants).length;
       const hasGreens = s.inventory.some(i => i.unit === 'handful' || i.unit === 'cup' || i.unit === 'oz');
@@ -2028,16 +2041,33 @@
       const s = this.state.scholar;
       if (s.day >= 7 && !this.state.systemArrived) {
         this.state.systemArrived = true;
-        this.say('\U0001F31F THE SYSTEM HAS ARRIVED.');
+        // DRAMA: the sky changes. Everyone sees it. This is the first wave
+        // of the System's aesthetics — the world will never look the same.
+        this.say('\U0001F31F THE SKY SPLITS OPEN.');
+        this.say('Not with light. With... interface. Windows. Text. Numbers. Scrolling across the clouds like the world is a screen and someone just turned it on.');
         this.say('A voice in your head, cheerful and utterly alien: "Oh! Oh no. We forgot the food thing. And the water thing. We\'re SO sorry!"');
-        this.say('Your journal shimmers. It\'s... a game interface now? Quests? Abilities? What is happening?');
+        this.say('"We\'ve been watching! You\'re all so... small! And hungry! We can fix the hungry! Maybe! We\'re new at this!"');
+        this.say('Your journal shimmers. The handwriting dissolves. In its place: crisp text, icons, progress bars. It\'s a game interface now. Quests. Abilities. Stats.');
+        this.say('You feel it behind your eyes. Not painful. Just... there. Like a second heartbeat.');
         s.abilities = s.abilities || [];
         s.systemQuests = [];
-        // FIRST ABILITY: based on what you DID in week 1, and who you were.
-        // The System watched. It rewards your playstyle.
         s.abilityChoices = this.firstAbilityChoices();
-        this.say('\U0001F381 The System offers you a gift. "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
+        this.say('\U0001F381 "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
         this.scheduleSystemEvents();
+        // If you're NOT at Haven, the village talks about it without you.
+        // When you return, they'll tell you what happened. (Drama: you missed it.)
+        const atHaven = this.map && this.map.px === this.state.village.px && this.map.py === this.state.village.py;
+        if (!atHaven) {
+          s.pendingVillageEvent = {
+            id: 'system_arrival_discussion',
+            title: 'The village saw the sky split.',
+            desc: 'You were out when it happened. When you return, everyone\'s talking at once. Mara\'s crying. Jesse\'s laughing. Aki hasn\'t said a word.',
+          };
+          this.say('(You\'re not at Haven. The village is experiencing this without you. Return to hear what happened.)');
+        } else {
+          // You were there. Witness it together.
+          this.say('\U0001F9D1\u200d\U0001F91d\U0001F9D1\u200d\U0001F91d The village gathers. Everyone\'s journal is changing. Everyone hears the voice. Mara grabs your arm. "Tell me you hear that too."');
+        }
       }
     },
     // firstAbilityChoices: 3 options based on week-1 actions + background.
