@@ -19,7 +19,7 @@ body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 #app { max-width: 520px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
-#screen { flex: 1; padding: 20px 16px 32px; }
+#screen { flex: 1; padding: 16px 12px 32px; }
 .hidden { display: none !important; }
 
 /* terminal chrome */
@@ -93,11 +93,18 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .tile:active { background: var(--line); }
 .cost { font-size: 10px; opacity: .7; font-weight: normal; }
 .closeup .tile { width: 44px; height: 44px; font-size: 22px; }
-.minimap .tile { width: 26px; height: 26px; font-size: 13px; }
 .minimap .tlabel { display: none; }
 .detail { margin: 8px 0; }
 .drow { display: flex; justify-content: center; }
-.cell { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+/* 9x9 detail grid: FLUID — fills the column on any screen. Cells scale with
+   the viewport; emoji scale with the cell (em-based children below). */
+.cell {
+  flex: 1 1 0; min-width: 0; aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(16px, 5.2vw, 44px);
+  border: 1px solid transparent; border-radius: 4px;
+  cursor: pointer; user-select: none;
+}
 .cell.grass { background: #1a2f1a; }
 .cell.dirt { background: #2f241a; }
 /* BUILDING VISUAL LANGUAGE: walls are dark, doors glow, halls are plain floor. */
@@ -130,21 +137,21 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   animation: ppulse 1.1s ease-in-out infinite;
 }
 .cell.me .ptoken {
-  font-size: 20px; line-height: 1;
+  font-size: 1.15em; line-height: 1;
   filter: drop-shadow(0 0 4px #4df3ff);
 }
 .cell.me .pdir {
-  position: absolute; top: -12px; left: 50%;
-  margin-left: -9px; font-size: 18px; color: #fff;
+  position: absolute; top: -.67em; left: 50%;
+  margin-left: -.5em; font-size: 1em; color: #fff;
   text-shadow: 0 0 6px #4df3ff, 0 0 2px #000; line-height: 1;
-  transform-origin: 9px 24px;
+  transform-origin: .5em 1.33em;
 }
 @keyframes ppulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: .6; transform: scale(.9); }
 }
 .minimap .tile .mface {
-  display: inline-block; font-size: 16px; color: #4df3ff;
+  display: inline-block; font-size: 1.05em; color: #4df3ff;
   text-shadow: 0 0 3px #000; line-height: 1;
 }
 /* inline tile panel: context actions without leaving the world */
@@ -163,13 +170,14 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 }
 /* villagers: emoji on top, TINY name underneath. never swallows the tile. */
 .cell.villager { flex-direction: column; line-height: 1.1; }
-.cell.villager .vtoken { font-size: 16px; }
+.cell.villager .vtoken { font-size: .89em; }
 .cell.villager .vname {
-  font-size: 7px; color: #9a9a9a;
-  max-width: 28px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: .39em; color: #9a9a9a;
+  max-width: 1.6em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* bigger tap targets on the world map */
-.minimap .tile { width: 34px; height: 34px; font-size: 15px; }
+/* world map: fluid tiles, capped width so it doesn't get absurd on desktop */
+.minimap { max-width: 480px; }
+.minimap .tile { font-size: clamp(12px, 3.6vw, 22px); }
 .minimap .tile.dest { outline: 2px solid var(--warn); }
 .minimap .tile:not(.dest):not(.me) { opacity: .75; }
 .cell.plantcell { cursor: default; }
@@ -467,4 +475,47 @@ body.system-live #announce {
 body.system-live .btn:not(.ghost) {
   border-color: rgba(0,255,200,.5);
   box-shadow: 0 0 10px rgba(0,255,200,.12);
+}
+
+/* ============ GAME SCREEN COLUMNS: one column on phones, two when wide ============ */
+/* The expedition screen splits into main (grid) + side (status/panels) columns.
+   On narrow screens the column wrappers dissolve (display:contents) and the
+   children are ordered to match the classic single-column flow. On wide
+   screens the grid goes left and the panels dock right. */
+.game-cols { display: flex; flex-direction: column; min-width: 0; }
+.game-col-main, .game-col-side { display: contents; }
+/* single-column order = the pre-columns flow: status, grid, interactions, panels */
+.ord-daypart { order: 1; }
+.ord-status { order: 2; }
+.ord-quest { order: 3; }
+.ord-epithet { order: 4; }
+.ord-grid { order: 5; }
+.ord-ctx { order: 6; }
+.ord-target { order: 7; }
+.ord-danger { order: 8; }
+.ord-ability { order: 9; }
+.ord-tileinfo { order: 10; }
+.ord-inline { order: 11; }
+.ord-taphint { order: 12; }
+.ord-minimap { order: 13; }
+.ord-panel { order: 14; }
+.ord-codex { order: 15; }
+.ord-log { order: 16; }
+.ord-share { order: 17; }
+
+/* WIDESCREEN: the game uses the room — grid left, panels right.
+   Scoped behind body:has(.game-cols) so non-game screens (title, onboarding,
+   codex, ending) keep their narrow centered column. If :has() is unsupported
+   the whole block is dropped and the game stays single-column — safe. */
+@media (min-width: 900px) {
+  body:has(.game-cols) #app { max-width: 1280px; padding-left: 28px; padding-right: 28px; }
+  body:has(.game-cols) .game-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 28px; align-items: start;
+  }
+  body:has(.game-cols) .game-col-main,
+  body:has(.game-cols) .game-col-side { display: block; min-width: 0; }
+  body:has(.game-cols) .sheet { max-width: 640px; }
+  body:has(.game-cols) .minimap { max-width: 430px; }
 }

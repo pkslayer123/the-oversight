@@ -1724,25 +1724,31 @@
     screen.innerHTML = `
       ${bar('scattering://field', `day ${st.day} · ${st.dayPart}`)}
       <div id="announce" style="position:sticky;top:0;background:#1a1a1a;border-bottom:1px solid #444;padding:6px 8px;font-size:13px;z-index:100;">${esc(st.log[st.log.length - 1] || '')}</div>
-      <p class="small">${st.dayPartHint}</p>
-      ${statusBars(st)}
-      <p class="small">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
-      ${st.activeQuest ? `<p class="small" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
-      <div class="detail">${renderDetail(st)}</div>
-      ${contextBarHTML()}
-      ${targetBarHTML()}
-      ${dangerBarHTML()}
-      ${abilityBarHTML()}
-      <div id="tileinfo"></div>
-      <div id="inlineslot"></div>
-      <p class="small">👆 tap a tile to walk there · 🗺 walk to the edge, tap yourself, head out (1 part · 30 kcal/tile)</p>
-      <div class="map minimap">${renderMap(st, tset)}</div>
-      ${panelFor(st, n)}
-      <div class="actions">
-        <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
-      </div>
-      <div class="log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
-      <p class="small" style="opacity:.4;text-align:center;margin-top:14px"><a href="#" id="x-share" style="color:inherit">📤 share the oversight</a></p>`;
+      <div class="game-cols">
+        <div class="game-col-main">
+          <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
+          <div class="detail ord-grid">${renderDetail(st)}</div>
+          <div class="ord-ctx">${contextBarHTML()}</div>
+          <div class="ord-target">${targetBarHTML()}</div>
+          <div class="ord-danger">${dangerBarHTML()}</div>
+          <div class="ord-ability">${abilityBarHTML()}</div>
+          <p class="small ord-taphint">👆 tap a tile to walk there · 🗺 walk to the edge, tap yourself, head out (1 part · 30 kcal/tile)</p>
+          <div class="map minimap ord-minimap">${renderMap(st, tset)}</div>
+        </div>
+        <div class="game-col-side">
+          <p class="small ord-daypart">${st.dayPartHint}</p>
+          <div class="ord-status">${statusBars(st)}</div>
+          ${st.activeQuest ? `<p class="small ord-quest" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
+          <div id="tileinfo" class="ord-tileinfo"></div>
+          <div id="inlineslot" class="ord-inline"></div>
+          <div class="ord-panel">${panelFor(st, n)}</div>
+          <div class="actions ord-codex">
+            <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
+          </div>
+          <div class="log ord-log">${st.log.slice(-6).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
+          <p class="small ord-share" style="opacity:.4;text-align:center;margin-top:14px"><a href="#" id="x-share" style="color:inherit">📤 share the oversight</a></p>
+        </div>
+      </div>`;
 
     // MINIMAP IS A MAP, NOT A TELEPORTER. Unexplored tiles are fully hidden —
     // no hints, no guesses. Travel happens on foot: walk to the edge of the
