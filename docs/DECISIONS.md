@@ -705,3 +705,23 @@ SYSTEM: who you are changes what you know.
 - Not all nuts equal: oak vs hickory vs pine have different yields (in cell modifiers).
 
 You don\'t know "oak" until someone shows you the leaf, or you figure it out yourself.
+
+## 2026-10-03 — Knowledge levels (Steve)
+Steve: "Even knowing it\'s a dandelion doesn\'t mean you know all the ways to use it.
+To start maybe you grab the whole plant. Later you realize it produces both roots and
+leaves and petals. Good for lots of things. Yields more and for more things."
+
+LEVELS (per plant, in codex entry):
+- L1 Named: you know what it is. Basic yield (1x).
+- L2 Parts: harvest 5x, you notice roots/leaves/petals. Yield 1.5x. Selective.
+- L3 Uses: eat 3x, you learn effects. Dandelion: vitamin C (+5 health, scurvy).
+- L4 Mastery: (TODO: cooking) optimal preparation. 2x yield.
+
+LEARNING METHODS:
+- By doing: encounters build (2-4 by occupation, -1 if regional).
+- Taught well: instant L1. Good teacher = relevant occupation + trust>40.
+  "She shows you a picture. You get it."
+- Taught poorly: +1 encounter. "It looks... a bit like that?" Partial.
+- Teaching builds trust (+8).
+
+TEACHERS: everyone knows 1-2 plants from their old life. What they know, they can teach.

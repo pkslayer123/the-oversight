@@ -162,7 +162,9 @@
     const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
     const isMe = (cx === px && cy === py);
     const mon = Game.state.scholar.monster;
+    const ani = Game.state.scholar.animal;
     const isMon = mon && cx === mon.mx && cy === mon.my;
+    const isAni = ani && cx === ani.mx && cy === ani.my;
 
     const CELL_NAME = {
       tree: 'Tree', bigtree: 'Big tree', bush: 'Bush', plant: 'Plant',
@@ -181,6 +183,15 @@
       desc = 'Something big. It sees you.';
       if (dist <= 1) actions.push(['Fight', () => Game.startCombat(mon.id)]);
       actions.push(['Back away', () => {}]);
+    } else if (isAni) {
+      const animal = Game.data.animals.find(a => a.id === ani.id);
+      desc = animal ? animal.description + '.' : 'An animal.';
+      // knowledge level
+      const enc = (Game.state.codex.animalEncounters || {})[ani.id] || 0;
+      if (enc >= 3) desc += ` You know it: ${animal.name}.`;
+      else if (enc > 0) desc += ' Looks familiar.';
+      if (dist <= 1) actions.push(['Hunt', () => Game.huntAnimal()]);
+      else desc += ' (Too far to catch.)';
     } else {
       // what you know: modifiers + synthesized result.
       if (mod && mod.known) {
@@ -438,6 +449,7 @@
     const known = tile.knownPlant;
     const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
     const mon = Game.state.scholar.monster;
+    const ani = Game.state.scholar.animal;
     const secrets = tile.secrets || {};
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
@@ -446,8 +458,10 @@
         const cell = cells[cy][cx];
         const isMe = (cx === pmx && cy === pmy);
         let g, cls = 'cell';
+        const ANIMAL_GLYPH = { cottontail_rabbit: '🐇', gray_squirrel: '🐿️', white_tailed_deer: '🦌', creek_chub: '🐟', wild_turkey: '🦃' };
         if (isMe) { g = '🧍'; cls += ' me'; }
         else if (mon && cx === mon.mx && cy === mon.my) { g = '🐗'; cls += ' monster'; }
+        else if (ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; }
         if (cell === 'plant') {
           g = known && PLANT_GLYPH[known] ? PLANT_GLYPH[known] : '🌱';
           cls += ' plantcell';

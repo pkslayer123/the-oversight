@@ -35,10 +35,10 @@
     ],
     "description": "a plant with jagged leaves and a yellow flower",
     "knowledgeLevels": {
-      "1": "Name: Dandelion. You grab the whole plant.",
-      "2": "Parts: roots (roast like coffee), leaves (salad), petals (tea). Selective harvest yields more.",
-      "3": "Uses: vitamin C (prevents scurvy), diuretic, liver support. Eating gives +5 health.",
-      "4": "Mastery: roots best roasted, leaves best young, petals for wine. 2x yield when prepared right."
+      "1": "Dandelion. Jagged leaves, yellow flower. You grab the whole plant.",
+      "2": "Parts: roots (roast for coffee), young leaves (salad), petals (tea). Don't take old leaves (bitter).",
+      "3": "Uses: vitamin C (scurvy), vitamin A, diuretic. Eat regularly for +5 health.",
+      "4": "Mastery: harvest roots in fall, leaves in spring. Blanch leaves to remove bitterness. 2x yield."
     }
   },
   {
@@ -76,10 +76,10 @@
     ],
     "description": "tall reeds with brown sausage-shaped heads",
     "knowledgeLevels": {
-      "1": "Name: Cattail. The brown sausage heads.",
-      "2": "Parts: rhizomes (starch), shoots (like asparagus), pollen (flour).",
-      "3": "Uses: high starch, good calories. Rhizomes are survival food.",
-      "4": "Mastery: harvest rhizomes in fall, shoots in spring. Process for max calories."
+      "1": "Cattail. Brown sausage heads on tall reeds.",
+      "2": "Parts: rhizomes (starch, like potato), young shoots (asparagus), pollen (flour), heads (tinder).",
+      "3": "Uses: rhizomes are survival starch. High calories. Pollen is protein-rich.",
+      "4": "Mastery: dig rhizomes in fall/winter. Collect pollen in early summer. Process starch by pounding."
     }
   },
   {
@@ -114,10 +114,10 @@
     ],
     "description": "a thorny bush with dark berries",
     "knowledgeLevels": {
-      "1": "Name: Blackberry. Basic identification.",
-      "2": "Parts: you learn which parts of blackberry are usable.",
-      "3": "Uses: nutritional and medicinal properties of blackberry.",
-      "4": "Mastery: optimal preparation of blackberry."
+      "1": "Blackberry. Thorny canes, dark berries.",
+      "2": "Parts: berries (eat), leaves (tea), roots (medicinal). Pick ripe (black, not red).",
+      "3": "Uses: vitamin C, antioxidants. Leaves for diarrhea. High energy.",
+      "4": "Mastery: pick in morning (cooler, firmer). Leave unripe for later. Canes fruit on second year."
     }
   },
   {
@@ -153,10 +153,10 @@
     ],
     "description": "a tree with orange fruit, soft when ripe",
     "knowledgeLevels": {
-      "1": "Name: American Persimmon. Basic identification.",
-      "2": "Parts: you learn which parts of american persimmon are usable.",
-      "3": "Uses: nutritional and medicinal properties of american persimmon.",
-      "4": "Mastery: optimal preparation of american persimmon."
+      "1": "Persimmon. Orange fruit, soft when ripe.",
+      "2": "Parts: fruit (eat when soft), seeds (roast). Unripe = astringent (mouth-puckering).",
+      "3": "Uses: high sugar, vitamin A/C. Good winter food (hangs on tree).",
+      "4": "Mastery: wait for frost (sweetens). Dry for storage. Seeds predict winter (spoon=fork=knife)."
     }
   },
   {
@@ -189,10 +189,10 @@
     ],
     "description": "a tree with compound leaves and hard nuts",
     "knowledgeLevels": {
-      "1": "Name: Hickory Nuts. Basic identification.",
-      "2": "Parts: you learn which parts of hickory nuts are usable.",
-      "3": "Uses: nutritional and medicinal properties of hickory nuts.",
-      "4": "Mastery: optimal preparation of hickory nuts."
+      "1": "Hickory nut. Hard shell, sweet meat.",
+      "2": "Parts: nut meat (eat), shells (smoke flavor), bark (tea). Crack carefully.",
+      "3": "Uses: high fat, high protein. Best nut calorie-wise. Stores well.",
+      "4": "Mastery: shagbark easiest to crack. Float test (sinkers are good). Store unshelled."
     }
   },
   {
@@ -227,10 +227,10 @@
     ],
     "description": "a tree with lobed leaves and acorns",
     "knowledgeLevels": {
-      "1": "Name: White Oak Acorns. Basic identification.",
-      "2": "Parts: you learn which parts of white oak acorns are usable.",
-      "3": "Uses: nutritional and medicinal properties of white oak acorns.",
-      "4": "Mastery: optimal preparation of white oak acorns."
+      "1": "White oak acorn. Lobed leaves, sweet acorns.",
+      "2": "Parts: nut meat (must leach tannins), caps (nothing). White oak = less tannin than red.",
+      "3": "Uses: starch staple. Leached acorns = flour. High calories when processed.",
+      "4": "Mastery: leach in running water (days) or boil (hours). Dry and grind. 2x yield when done right."
     }
   },
   {
@@ -266,10 +266,10 @@
     ],
     "description": "grass-like leaves that smell like onion",
     "knowledgeLevels": {
-      "1": "Name: Wild Onion. Basic identification.",
-      "2": "Parts: you learn which parts of wild onion are usable.",
-      "3": "Uses: nutritional and medicinal properties of wild onion.",
-      "4": "Mastery: optimal preparation of wild onion."
+      "1": "Wild onion. Grass-like, smells like onion.",
+      "2": "Parts: bulb (strongest), leaves (mild), flowers (garnish). Whole plant edible.",
+      "3": "Uses: vitamin C, antimicrobial. Good flavoring. Prevents infection.",
+      "4": "Mastery: dig bulbs in spring/fall. Don't overharvest (leave some). Braid to store."
     }
   },
   {
@@ -306,10 +306,10 @@
     ],
     "description": "a low plant with tiny white flowers",
     "knowledgeLevels": {
-      "1": "Name: Chickweed. Basic identification.",
-      "2": "Parts: you learn which parts of chickweed are usable.",
-      "3": "Uses: nutritional and medicinal properties of chickweed.",
-      "4": "Mastery: optimal preparation of chickweed."
+      "1": "Chickweed. Low, tiny white flowers.",
+      "2": "Parts: leaves and stems (salad), flowers (garnish). Eat raw.",
+      "3": "Uses: vitamin C, minerals. Cooling (for inflammation). Chickens love it (hence name).",
+      "4": "Mastery: harvest before flowering (tender). Grows in cool weather. Succession plant."
     }
   },
   {
@@ -347,10 +347,10 @@
     ],
     "description": "clover-like leaves, tangy taste",
     "knowledgeLevels": {
-      "1": "Name: Wood Sorrel. Basic identification.",
-      "2": "Parts: you learn which parts of wood sorrel are usable.",
-      "3": "Uses: nutritional and medicinal properties of wood sorrel.",
-      "4": "Mastery: optimal preparation of wood sorrel."
+      "1": "Wood sorrel. Clover-like, tangy.",
+      "2": "Parts: leaves (tangy), flowers (garnish), seed pods (crunchy). Oxalic acid = lemony.",
+      "3": "Uses: vitamin C, thirst-quencher. Don't overeat (oxalic acid). Good trail nibble.",
+      "4": "Mastery: best in spring. Mix with bland greens. Avoid if kidney issues."
     }
   },
   {
@@ -384,10 +384,10 @@
     ],
     "description": "a vine with thick-skinned grapes",
     "knowledgeLevels": {
-      "1": "Name: Muscadine Grapes. Basic identification.",
-      "2": "Parts: you learn which parts of muscadine grapes are usable.",
-      "3": "Uses: nutritional and medicinal properties of muscadine grapes.",
-      "4": "Mastery: optimal preparation of muscadine grapes."
+      "1": "Muscadine. Thick-skinned wild grapes.",
+      "2": "Parts: fruit (eat), leaves (wrap food), vines (cordage).",
+      "3": "Uses: sugar, resveratrol. Leaves are edible (like grape leaves).",
+      "4": "Mastery: harvest after first frost (sweetest). Dry for raisins. Vines for baskets."
     }
   }
 ]

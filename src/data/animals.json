@@ -1,0 +1,82 @@
+[
+  {
+    "id": "cottontail_rabbit",
+    "name": "Cottontail Rabbit",
+    "scientific": "Sylvilagus floridanus",
+    "biomes": ["meadow", "thicket"],
+    "description": "a brown rabbit, white tail flashing",
+    "calories": 800,
+    "difficulty": "easy",
+    "method": ["snare", "chase"],
+    "knowledgeLevels": {
+      "1": "Cottontail rabbit. Brown, white tail. Fast.",
+      "2": "Parts: meat (lean), hide (warm), bones (tools). Gut quickly.",
+      "3": "Uses: protein, but lean (rabbit starvation if only food). Need fat too.",
+      "4": "Mastery: snare on runs (not random). Check at dawn/dusk. Cook with fat."
+    }
+  },
+  {
+    "id": "gray_squirrel",
+    "name": "Gray Squirrel",
+    "scientific": "Sciurus carolinensis",
+    "biomes": ["grove", "forest_floor"],
+    "description": "a gray squirrel, chattering",
+    "calories": 350,
+    "difficulty": "medium",
+    "method": ["trap", "chase"],
+    "knowledgeLevels": {
+      "1": "Gray squirrel. Quick, noisy.",
+      "2": "Parts: meat (small), hide (gloves). Hard to skin (small).",
+      "3": "Uses: decent fat in fall. Good stew meat.",
+      "4": "Mastery: hunt in fall (fat). Use a sling or trap. They follow patterns."
+    }
+  },
+  {
+    "id": "white_tailed_deer",
+    "name": "White-tailed Deer",
+    "scientific": "Odocoileus virginianus",
+    "biomes": ["forest_floor", "meadow"],
+    "description": "a deer, white tail raised in alarm",
+    "calories": 20000,
+    "difficulty": "hard",
+    "method": ["bow", "trap"],
+    "knowledgeLevels": {
+      "1": "White-tailed deer. Large. Dangerous if cornered.",
+      "2": "Parts: meat (lots), hide (clothing), bones (tools), antlers (weapons).",
+      "3": "Uses: feeds many. Fat is crucial. Organs are vitamin-rich (eat first).",
+      "4": "Mastery: need a weapon or deadfall. Track by prints. Gut immediately. Hang to age."
+    }
+  },
+  {
+    "id": "creek_chub",
+    "name": "Creek Chub",
+    "scientific": "Semotilus atromaculatus",
+    "biomes": ["creek", "wetland"],
+    "description": "a small fish flashing in the water",
+    "calories": 200,
+    "difficulty": "easy",
+    "method": ["hands", "line"],
+    "knowledgeLevels": {
+      "1": "Creek chub. Small fish.",
+      "2": "Parts: meat (eat whole if small), bones (careful).",
+      "3": "Uses: protein, omega-3. Good when other food scarce.",
+      "4": "Mastery: tickle (hands under, stroke belly). Or dam and scoop. Best at dawn."
+    }
+  },
+  {
+    "id": "wild_turkey",
+    "name": "Wild Turkey",
+    "scientific": "Meleagris gallopavo",
+    "biomes": ["forest_floor", "meadow"],
+    "description": "a wild turkey, iridescent feathers",
+    "calories": 3000,
+    "difficulty": "medium",
+    "method": ["bow", "trap"],
+    "knowledgeLevels": {
+      "1": "Wild turkey. Big bird. Wary.",
+      "2": "Parts: breast (best meat), legs (tough), feathers (fletching/insulation).",
+      "3": "Uses: high protein. Feathers are valuable (arrows, bedding).",
+      "4": "Mastery: call them (mimic). Hunt in fall (fat). Roost at dusk (find the tree)."
+    }
+  }
+]

@@ -49,9 +49,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals };
       return this.data;
     },
 
@@ -327,6 +327,26 @@
         this.state.village.pantryKcal += brought;
         s.inventory = [];
         this.say(`You unload ${Math.round(brought)} kcal into Haven's pantry.`);
+        // TEACHING MOMENT: you show your haul. they gather. someone might know something.
+        // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
+        // find a villager who knows something you don't, and trusts you enough to share
+        const v = this.state.village;
+        const candidates = (v.roster || []).filter(rid => {
+          const trust = (v.trust && v.trust[rid]) || 0;
+          return trust > 30 && rid !== this.villagerId;
+        });
+        if (candidates.length && Math.random() < 0.5) {
+          const teacherId = candidates[Math.floor(Math.random() * candidates.length)];
+          const teacherKnows = (v.taught && v.taught[teacherId]) || [];
+          const youKnow = Object.keys(this.state.codex.plants);
+          const toTeach = teacherKnows.filter(pid => !youKnow.includes(pid) && this.data.plants.find(p => p.id === pid));
+          if (toTeach.length) {
+            const pid = toTeach[Math.floor(Math.random() * toTeach.length)];
+            // they teach you (using the teachPlant logic, but as a moment not an action)
+            this.say(`Around the fire, you show your haul.`);
+            this.teachPlant(teacherId, pid);
+          }
+        }
       }
       if (this.won) {
         this.say(`You walk back into Haven with ${Math.round(brought)} kcal of food and ${entries} Codex entries. The pantry is fuller than when you left.`);
@@ -752,8 +772,10 @@
       // arrive at the center of the new tile's detail grid. you're IN the world now.
       this.state.scholar.mx = 4; this.state.scholar.my = 4;
       this.state.scholar.monster = null; // monsters don't follow you between tiles
+      this.state.scholar.animal = null; // animals don't either
       if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
+      this.checkAnimals();
       this.checkQuest('travel');
     },
 
@@ -785,6 +807,7 @@
       s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
       this.monsterTurn();
+      this.animalTurn();
       return true;
     },
 
@@ -899,6 +922,81 @@
         return this.doAction('forage');
       }
       return null;
+    },
+
+    // ANIMALS: spawn by biome. they flee from you (not toward, like monsters).
+    // rabbit in meadow, squirrel in grove, fish in creek, deer in forest, turkey in meadow/forest.
+    checkAnimals() {
+      const t = this.playerTile();
+      const s = this.state.scholar;
+      if (s.animal || Math.random() > 0.3) return; // 30% chance per tile entry
+      const candidates = (this.data.animals || []).filter(a => (a.biomes || []).includes(t.type));
+      if (!candidates.length) return;
+      const animal = candidates[Math.floor(Math.random() * candidates.length)];
+      // spawn at distance, not on you
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      let ax, ay, tries = 0;
+      do {
+        ax = Math.floor(Math.random() * 9); ay = Math.floor(Math.random() * 9);
+        tries++;
+      } while (tries < 20 && Math.abs(ax - px) + Math.abs(ay - py) < 3);
+      s.animal = { id: animal.id, mx: ax, my: ay };
+      this.say(`Movement — ${animal.description}.`);
+    },
+
+    // animals flee when you move. they're scared of you.
+    animalTurn() {
+      const s = this.state.scholar;
+      const a = s.animal;
+      if (!a || a.mx === undefined) return;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      // flee: move away from player (1 cell)
+      const dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
+      // don't flee off the grid or into walls/water
+      const nx = Math.max(0, Math.min(8, a.mx + dx));
+      const ny = Math.max(0, Math.min(8, a.my + dy));
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[ny] && detail[ny][nx];
+      const BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
+      if (!BLOCKS[cell]) { a.mx = nx; a.my = ny; }
+      // if it gets to the edge, it escapes (despawns)
+      if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
+        s.animal = null;
+      }
+    },
+
+    // HUNT: adjacent to animal, tap it. Success by difficulty and your condition.
+    huntAnimal() {
+      const s = this.state.scholar;
+      const a = s.animal;
+      if (!a) return null;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      const dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
+      if (dist > 1) { this.say('Too far. Get closer.'); return null; }
+      const animal = this.data.animals.find(x => x.id === a.id);
+      // success: easy 70%, medium 40%, hard 15%. Costs 100 kcal (chasing is work).
+      // hunter background: +20%.
+      const villager = this.data.villagers.find(v => v.id === this.villagerId);
+      const isHunter = (villager && villager.formerOccupation || '').toLowerCase().includes('hunter');
+      const base = animal.difficulty === 'easy' ? 0.7 : animal.difficulty === 'medium' ? 0.4 : 0.15;
+      const chance = Math.min(0.95, base + (isHunter ? 0.2 : 0));
+      s.kcal = Math.max(0, s.kcal - 100);
+      if (Math.random() < chance) {
+        // caught!
+        s.animal = null;
+        const kcal = animal.calories;
+        s.inventory.push({ plantId: 'meat_' + animal.id, units: 1, kcalEach: kcal, spoilDay: s.day + 1, name: animal.name + ' (dressed)', unit: 'carcass', prep: 'Cook before eating.', kg: kcal / 1000 });
+        this.say(`Got it! ${animal.name}. ${kcal} kcal of meat. Gut it quickly.`);
+        // knowledge: encounters
+        this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
+        this.state.codex.animalEncounters[animal.id] = (this.state.codex.animalEncounters[animal.id] || 0) + 1;
+        return true;
+      } else {
+        this.say(`Missed! The ${animal.name.toLowerCase()} darts away. (-100 kcal)`);
+        // it flees faster
+        this.animalTurn(); this.animalTurn();
+        return true;
+      }
     },
 
     // monsters move when you do. they're in the detail grid with you.

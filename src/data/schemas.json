@@ -328,5 +328,22 @@
       "kcalPerDay": "number",
       "providesPerDay": "number?"
     }
+  },
+  "animal": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "types": {
+      "id": "string",
+      "name": "string",
+      "calories": "number",
+      "difficulty": "string",
+      "knowledgeLevels": "object",
+      "description": "string",
+      "biomes": "string[]",
+      "scientific": "string",
+      "method": "string[]"
+    }
   }
 }
