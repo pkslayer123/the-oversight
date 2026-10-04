@@ -12,7 +12,7 @@
   };
   const TILE_GLYPH = {
     forest_floor: '🟫', grove: '🌳', meadow: '🌾', thicket: '🌿',
-    wetland: '💧', creek: '🌊', trail_edge: '🟨', ruin: '🏚️', haven: '🏠',
+    wetland: '💧', creek: '🌊', trail_edge: '🟨', ruin: '🏚️', haven: '🏫',
   };
   const TILE_NAME = {
     forest_floor: 'forest floor', grove: 'grove', meadow: 'meadow', thicket: 'thicket',
@@ -438,6 +438,23 @@
     genDetail(x, y) {
       const t = this.tileAt(x, y);
       if (t.detail) return t.detail;
+      // HAVEN IS A SCHOOL. Fixed layout — a scale model, not procedural.
+      // 12 cots in the gym. Walls are walls. The door leads outside.
+      if (t.type === 'haven') {
+        const school = [
+          ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+          ['wall','class','class','wall','wall','wall','class','class','wall'],
+          ['wall','class','class','wall','wall','wall','class','class','wall'],
+          ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
+          ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
+          ['wall','wall','wall','gym','gym','gym','wall','wall','wall'],
+          ['wall','wall','wall','wall','door','wall','wall','wall','wall'],
+          ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
+          ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
+        ];
+        t.detail = school;
+        return school;
+      }
       const rnd = this.detailRand(this.detailSeed(x, y));
       const N = 9;
       const cells = [];
@@ -540,6 +557,10 @@
       const dx = Math.abs(cx - px), dy = Math.abs(cy - py);
       if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) return false;
       if (cx < 0 || cx > 8 || cy < 0 || cy > 8) return false;
+      // walls block. the school is real — you can't walk through walls.
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[cy] && detail[cy][cx];
+      if (cell === 'wall') return false;
       s.kcal = Math.max(0, s.kcal - 10); // walking is work
       s.mx = cx; s.my = cy;
       this.monsterTurn();

@@ -324,7 +324,8 @@
   };
   const CELL_GLYPH = {
     tree: '🌳', bigtree: '🌲', bush: '🌿', water: '💧', rubble: '🧱',
-    wall: '⬛', tent: '⛺', fire: '🔥',
+    wall: '🧱', tent: '⛺', fire: '🔥',
+    gym: '🏀', class: '🏫', hall: '🚪', door: '🚪',
   };
   function renderDetail(st) {
     const cells = Game.genDetail(st.px, st.py);
