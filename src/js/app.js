@@ -1,4 +1,4 @@
-/* The Scattering — slice 1: "Seven Days" playable.
+/* The Oversight — slice 1: "Seven Days" playable.
    Screens: title → onboarding → game (map/day loop) → combat → codex → ending. */
 (function () {
   'use strict';
