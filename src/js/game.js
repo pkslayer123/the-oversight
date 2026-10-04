@@ -144,9 +144,19 @@
         const their = pro === 'they' ? 'their' : pro === 'she' ? 'her' : 'his';
         const them = pro === 'they' ? 'them' : pro === 'she' ? 'her' : 'him';
         const They = pro === 'they' ? 'They' : pro === 'she' ? 'She' : 'He';
-        const backstory = (occ.backstory || '{first} is here.')
-          .replaceAll('{first}', first).replaceAll('{they}', pro).replaceAll('{their}', their)
-          .replaceAll('{them}', them).replaceAll('{They}', They);
+        // fillPronouns: substitute {They}/{they}/{their}/{them}/{first} AND conjugate
+        // the verb that follows {They}/{they} for she/he. "They keep" but "She keeps".
+        // Only listed verbs are touched — everything else passes through unchanged.
+        const conj = { keep: 'keeps', build: 'builds', look: 'looks', know: 'knows', stare: 'stares', read: 'reads', speak: 'speaks', talk: 'talks', stay: 'stays', are: 'is', have: 'has', were: 'was', do: 'does', go: 'goes' };
+        const fillPronouns = t => t
+          .replaceAll('{first}', first)
+          .replaceAll('{their}', their)
+          .replaceAll('{them}', them)
+          .replace(/\{They\} ([A-Za-z]+)/g, (m, vb) => They + ' ' + (pro === 'they' ? vb : (conj[vb] || vb)))
+          .replace(/\{they\} ([A-Za-z]+)/g, (m, vb) => pro + ' ' + (pro === 'they' ? vb : (conj[vb] || vb)))
+          .replaceAll('{They}', They)
+          .replaceAll('{they}', pro);
+        const backstory = fillPronouns(occ.backstory || '{first} is here.');
         const temperament = pick(cg.temperaments || ['steady']);
         const sharing = pick(cg.sharingStyles || ['fair']);
         const curiosity = pick(cg.curiosities || ['practical']);
@@ -263,6 +273,17 @@
       if (vl.english === 2 || playerLangs.includes(vl.native)) return { level: 'full', mult: 1, lang: vl.native };
       if (vl.english === 1) return { level: 'partial', mult: 0.5, lang: vl.native };
       return { level: 'none', mult: 0.25, lang: vl.native };
+    },
+
+    // langLabel: always-visible language tag (character select, person sheets).
+    // Diversity should be unmistakable, not discovered by accident.
+    langLabel(langs) {
+      const vl = langs || { native: 'english', english: 2 };
+      const langName = ((this.data.characterGen || {}).languages || []).find(l => l.id === vl.native);
+      const label = langName ? `${langName.icon} ${langName.name}` : vl.native;
+      if (vl.native === 'english' || vl.english === 2) return label;
+      if (vl.english === 1) return `${label} · little English`;
+      return `${label} · no English`;
     },
 
     // langNote: the barrier is discovered in conversation, not listed on a roster.

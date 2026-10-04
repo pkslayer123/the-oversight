@@ -223,12 +223,15 @@
     screen.innerHTML = `${bar('scattering://wake', 'clearing')}
       <h1 class="title" style="font-size:22px">WHICH ONE IS YOU?</h1>
       <p class="small">A clearing. Confused people waking up. One of them is you.</p>
-      ${vs.map(v => `
+      ${vs.map(v => {
+        const lang = Game.langLabel(v.languages);
+        return `
         <div class="card"><h3>${v.name}</h3>
         <p>${v.formerOccupation} · from ${v.homeRegion}</p>
+        <p class="small">🗣 ${lang}</p>
         <p class="small">${v.backstory}</p>
         <p class="small" style="opacity:.7">${v.personality.temperament}, ${v.personality.sharing} · ${v.systemAssessment}</p>
-        <button class="btn" data-v="${v.id}">I am ${v.name.split(' ')[0]}</button></div>`).join('')}`;
+        <button class="btn" data-v="${v.id}">I am ${v.name.split(' ')[0]}</button></div>`; }).join('')}`;
     screen.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { ob.villager = b.dataset.v; obItems(); });
   }
   function obItems() {
@@ -1024,7 +1027,7 @@
       ? Game.state.village.health[villagerId] : 100;
     const tone = trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.';
     const hb = health >= 70 ? '\U0001F7E2' : health >= 40 ? '\U0001F7E1' : '\U0001F534';
-    const lang = vp.langNote ? `<p class="small" style="opacity:.7">${esc(vp.langNote)}</p>` : '';
+    const lang = `<p class="small" style="opacity:.7">🗣 ${esc(Game.langLabel(vp.languages))}</p>`;
     const conf = vp.conflictNote ? `<p class="small" style="opacity:.7">${esc(vp.conflictNote)}</p>` : '';
     const youKnow = Object.keys(Game.state.codex.plants || {});
     const theyKnow = (Game.state.village.taught && Game.state.village.taught[villagerId]) || [];
@@ -1228,6 +1231,8 @@
   function expeditionScreen() {
     const st = Game.status();
     if (st.over) return ending();
+    // NPCs must be visible on first load, not just after the first step.
+    try { Game.ensureVillagerPositions(); } catch (e) {}
     // COMBAT MODE: the action system gets out of the way. Dodge-first.
     // Non-modal sheets close instantly. No dialogs blocking movement, no
     // "are you sure?" — when something is winding up an attack, the only UI

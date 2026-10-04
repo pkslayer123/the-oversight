@@ -78,27 +78,47 @@
     if (state === 'working') return;
     state = 'working';
     show('&#9203; Downloading new version&hellip;');
-    function unregisterAll() {
-      if (!('serviceWorker' in navigator)) return Promise.resolve();
-      return navigator.serviceWorker.getRegistrations()
-        .then(function (regs) {
-          return Promise.all(regs.map(function (r) { return r.unregister().catch(function () {}); }));
-        }).catch(function () {});
-    }
-    function clearCaches() {
-      if (!('caches' in window)) return Promise.resolve();
-      return caches.keys()
-        .then(function (ks) {
-          return Promise.all(ks.map(function (k) { return caches.delete(k).catch(function () {}); }));
-        }).catch(function () {});
-    }
-    unregisterAll().then(clearCaches).then(function () {
+    // Bulletproof: every async step races a timeout, and navigation is
+    // GUARANTEED via backstop timer. iOS can hang getRegistrations() or
+    // caches.delete() forever — we never wait on them.
+    var navigated = false;
+    function go() {
+      if (navigated) return; navigated = true;
       show('&#8635; Reloading into the new version&hellip;');
-      var u = new URL(window.location.href);
-      u.search = '';
-      u.searchParams.set('v', remoteVersion || Date.now().toString(36));
-      setTimeout(function () { window.location.assign(u.toString()); }, 400);
-    }).catch(function () { fail(); });
+      try {
+        var u = new URL(window.location.href);
+        u.search = '';
+        u.searchParams.set('v', remoteVersion || Date.now().toString(36));
+        window.location.href = u.toString();
+      } catch (e) {
+        try { window.location.reload(); } catch (e2) { fail(); }
+      }
+    }
+    function withTimeout(p, ms) {
+      return Promise.race([p, new Promise(function (res) { setTimeout(res, ms); })]);
+    }
+    try {
+      var cleanups = [];
+      if ('serviceWorker' in navigator) {
+        cleanups.push(withTimeout(
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return withTimeout(Promise.all(regs.map(function (r) {
+              return withTimeout(r.unregister().catch(function () {}), 2000);
+            })), 2500);
+          }).catch(function () {}), 3000));
+      }
+      if ('caches' in window) {
+        cleanups.push(withTimeout(
+          caches.keys().then(function (ks) {
+            return withTimeout(Promise.all(ks.map(function (k) {
+              return withTimeout(caches.delete(k).catch(function () {}), 2000);
+            })), 2500);
+          }).catch(function () {}), 3000));
+      }
+      withTimeout(Promise.all(cleanups), 7000).then(go).catch(go);
+      // Absolute backstop: navigate in 8s no matter what hangs.
+      setTimeout(go, 8000);
+    } catch (e) { go(); }
   }
 
   function fail() {
