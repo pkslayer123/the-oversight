@@ -1099,6 +1099,7 @@
     if (inlineView.kind === 'person') renderPersonInline(slot, inlineView);
     else if (inlineView.kind === 'assign') renderAssignInline(slot, inlineView);
     else if (inlineView.kind === 'remote') renderRemoteInline(slot, inlineView);
+    else if (inlineView.kind === 'askabout') renderAskAboutInline(slot, inlineView);
     else if (inlineView.kind === 'pantry') renderPantryInline(slot, inlineView);
     else if (inlineView.kind === 'inv') renderInvInline(slot, inlineView);
     else slot.innerHTML = '';
@@ -1176,6 +1177,51 @@
     if (Game.isKnowledgeTrader && Game.isKnowledgeTrader(villagerId)) {
       const tradeable = Game.traderKnowledge(villagerId);
       btns += ` <button class="btn sm ghost" data-act="trade">\uD83D\uDD04 Trade knowledge${tradeable.length ? ` (${tradeable.length})` : ''}</button>`;
+    // === CONTEXTUAL SOCIAL ACTIONS ===
+    // Not perpetual buttons -- opportunities that appear when relevant.
+    // Every deep system gets a player-facing verb.
+    try {
+      if (comm.level !== 'none' && !(Game.state.village.challenge || {}).cid) {
+        btns += ' <button class="btn sm ghost" data-act="askabout">\u2753 Ask about\u2026</button>';
+      }
+    } catch (e) {}
+    try {
+      const _mood = Game.npcMood(villagerId);
+      if ((_mood === 'scared' || _mood === 'grieving') && !(Game.state.village.challenge || {}).cid) {
+        btns += ' <button class="btn sm ghost" data-act="comfort">🤗 Comfort</button>';
+      }
+    } catch (e) {}
+    try {
+      if (Game.worstRepAxis(villagerId) && !(Game.state.village.challenge || {}).cid) {
+        btns += ' <button class="btn sm ghost" data-act="amends">🙏 Make amends</button>';
+      }
+    } catch (e) {}
+    try {
+      const _conf = (Game.state.village.conflicts || []).find(x => !x.resolved && x.known && (x.a === villagerId || x.b === villagerId));
+      if (_conf && !(Game.state.village.challenge || {}).cid) {
+        btns += ' <button class="btn sm ghost" data-act="mediate">🕊 Mediate</button>';
+      }
+    } catch (e) {}
+    try {
+      const _v = Game.state.village;
+      const _heatIds = Object.keys(_v.heat || {}).filter(id => (_v.heat[id] || 0) > 0);
+      if ((_v.challenge || _heatIds.length) && !(Game.state.village.challenge || {}).cid) {
+        btns += ' <button class="btn sm ghost" data-act="support">🤝 Ask for support</button>';
+        btns += ' <button class="btn sm ghost" data-act="rally">📢 Rally the village</button>';
+      }
+    } catch (e) {}
+    try {
+      if (Game.goalKnown(villagerId) && !(Game.state.village.promises || {})[villagerId] && !(Game.state.village.challenge || {}).cid) {
+        btns += ' <button class="btn sm ghost" data-act="promise">🤞 Promise to help</button>';
+      }
+    } catch (e) {}
+    try {
+      const _heard = (Game.state.village.gossip || []).filter(g => (g.heard || []).includes(villagerId));
+      const _neg = _heard.find(g => Object.entries(g.dims || {}).some(([k, val]) => val < -3));
+      if (_neg && !(Game.state.village.challenge || {}).cid) {
+        btns += ' <button class="btn sm ghost" data-act="confront">\u26A1 Confront</button>';
+      }
+    } catch (e) {}
     }
     // LEADERSHIP CHALLENGE: they're confronting you about who's in charge.
     // This conversation is about one thing. Yield a domain or hold your ground.
@@ -1271,12 +1317,82 @@
         view.result = 'You traded knowledge.';
       }
     }
+    else if (act === 'askabout') {
+      inlineView = { kind: 'askabout', vid, line: view.line, result: null, mapKey: inlineMapKey() };
+    }
+    else if (act === 'comfort') {
+      const r = Game.comfort(vid);
+      view.result = r ? 'You sat with them.' : null;
+    }
+    else if (act === 'amends') {
+      const r = Game.makeAmends(vid);
+      view.result = r ? `You owned it (${r.axis}).` : null;
+    }
+    else if (act === 'mediate') {
+      const r = Game.mediateConflict(vid);
+      view.result = r ? 'You tried to mediate.' : null;
+    }
+    else if (act === 'support') {
+      const r = Game.askSupport(vid);
+      view.result = r ? 'They stand with you.' : null;
+    }
+    else if (act === 'rally') {
+      const r = Game.rallyVillage();
+      view.result = r ? 'You addressed the village.' : null;
+    }
+    else if (act === 'promise') {
+      const r = Game.promiseHelp(vid);
+      view.result = r ? 'You made a promise.' : null;
+    }
+    else if (act === 'confront') {
+      const r = Game.confrontGossip(vid);
+      view.result = r ? 'You confronted them.' : null;
+    }
     refresh();
   }
 
   // LEADER: ask for help. This lives in the talk flow — you're TALKING to them,
   // asking them to do something. Not a management UI. A conversation.
   // Remote assignment (shout, runner, System ping) unlocks via abilities.
+  // ASK ABOUT: the conversation verb for content paths. Topics unlock systems:
+  // their goal (learn what they want), gossip (what have you heard?),
+  // the village (how's everyone doing?). Contextual, not a menu dump.
+  function renderAskAboutInline(slot, view) {
+    const villagerId = view.vid;
+    const vp = (Game.data.villagers || []).find(v => v.id === villagerId) ||
+               (Game.data.background_survivors || []).find(v => v.id === villagerId);
+    if (!vp) { slot.innerHTML = ''; inlineView = null; return; }
+    const dname = Game.displayName(villagerId);
+    const goalKnown = Game.goalKnown(villagerId);
+    const topics = [
+      ['goal', '\u0001F3AF "What do you want?"', goalKnown ? ' (you know: ' + (Game.goalWant(villagerId) || '?') + ')' : ''],
+      ['gossip', '\U0001F442 "Heard anything?"', ''],
+      ['village', '\U0001F3D5\uFE0F "How\u2019s everyone?"', ''],
+    ];
+    const btns = topics.map(([tid, label, extra]) =>
+      `<button class="btn sm ghost" data-topic="${tid}">${label}${extra}</button>`).join('') +
+      ` <button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('\u2753 Ask ' + esc(dname) + ' about\u2026')}
+      ${view.result ? `<p class="inline-result">\u2713 ${esc(view.result)}</p>` : ''}
+      <div class="inline-body"><p class="small" style="opacity:.7">What do you want to know?</p></div>
+      <div class="inline-btns">${btns}</div>
+    </div>`;
+    wireInlineX(slot);
+    slot.querySelector('[data-act="back"]').onclick = () => {
+      inlineView = { kind: 'person', vid: villagerId, line: view.line, result: null, nvMode: null, mapKey: inlineMapKey() };
+      refresh();
+    };
+    slot.querySelectorAll('[data-topic]').forEach(b => {
+      b.onclick = () => {
+        const r = Game.askAbout(villagerId, b.dataset.topic);
+        const labels = { goal: 'what they want', gossip: 'what they\u2019ve heard', village: 'how everyone\u2019s doing' };
+        view.result = r ? `You asked about ${labels[b.dataset.topic] || 'it'}.` : null;
+        refresh();
+      };
+    });
+  }
+
   function renderAssignInline(slot, view) {
     const villagerId = view.vid;
     const via = view.via || 'in-person';
@@ -1302,7 +1418,23 @@
     }
     if (trust < 20) body += `<p class="small" style="color:#e88">"I don't take orders from strangers." (Need 20+ trust.)</p>`;
     body += `<p class="small" style="opacity:.6;margin-top:8px">They'll report back at the end of this part. Dangerous work can get people hurt.</p>`;
-    const btns = Object.entries(tasks).map(([tid, t]) => {
+    // METHOD: how you ask matters. Just ask (default), sweeten with food
+    // (costs 1 edible unit, +30 effective trust), or appeal to what they want
+    // (requires knowing their goal). Contextual — not always available.
+    const method = view.method || 'ask';
+    const hasFood = (() => { try {
+      const day = Game.state.scholar.day;
+      return !!(Game.state.scholar.inventory || []).find(i =>
+        (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
+        !(i.spoilDay !== undefined && i.spoilDay <= day));
+    } catch (e) { return false; } })();
+    const goalKnown = (() => { try { return Game.goalKnown(villagerId); } catch (e) { return false; } })();
+    const goalWant = (() => { try { return Game.goalWant(villagerId); } catch (e) { return null; } })();
+    let methodBtns = `<button class="btn sm${method === 'ask' ? '' : ' ghost'}" data-method="ask">💬 Just ask</button>`;
+    methodBtns += ` <button class="btn sm${method === 'deal' ? '' : ' ghost'}" data-method="deal"${hasFood ? '' : ' disabled title="No food to offer"'}>🤝 Offer food${hasFood ? '' : ' (none)'}</button>`;
+    methodBtns += ` <button class="btn sm${method === 'appeal' ? '' : ' ghost'}" data-method="appeal"${goalKnown ? '' : ' disabled title="Learn what they want first (Ask about…)"'}>🎯 Appeal${goalKnown && goalWant ? ` (${esc(goalWant)})` : ''}</button>`;
+    const btns = `<div class="inline-btns" style="margin-bottom:6px">${methodBtns}</div>` +
+      Object.entries(tasks).map(([tid, t]) => {
       const comp = Game.villagerCompetence(villagerId, tid);
       const compTag = tid === 'rest' ? '' : comp >= 1.3 ? ' ⭐ natural' : comp <= 0.8 ? ' ⚠ not their strength' : '';
       const isCurrent = current && current.task === tid;
@@ -1321,12 +1453,31 @@
       inlineView = { kind: 'person', vid: villagerId, line: view.line, result: null, nvMode: null, mapKey: inlineMapKey() };
       refresh();
     };
+    slot.querySelectorAll('[data-method]').forEach(b => {
+      b.onclick = () => {
+        inlineView = { kind: 'assign', vid: villagerId, line: view.line, result: view.result, via, method: b.dataset.method, mapKey: inlineMapKey() };
+        refresh();
+      };
+    });
     slot.querySelectorAll('[data-task]').forEach(b => {
       b.onclick = () => {
         const tid = b.dataset.task;
-        Game.assignTask(villagerId, tid, { via });
-        const ask = askPhrases[tid] || tasks[tid].name;
-        inlineView = { kind: 'person', vid: villagerId, line: view.line, result: `"${ask}" — they'll report back.`, nvMode: null, mapKey: inlineMapKey() };
+        const m = view.method || 'ask';
+        let resultMsg;
+        if (m === 'deal') {
+          const r = Game.offerDeal(villagerId, tid);
+          resultMsg = r && r.ok ? `"${askPhrases[tid] || tasks[tid].name}" — sealed with food.` :
+            (r && r.refused ? `They took the food. Still no.` : `No deal.`);
+        } else if (m === 'appeal') {
+          const r = Game.appealToGoal(villagerId, tid);
+          resultMsg = r && r.ok ? `"${askPhrases[tid] || tasks[tid].name}" — for what they want.` :
+            `The appeal didn't land.`;
+        } else {
+          Game.assignTask(villagerId, tid, { via });
+          const ask = askPhrases[tid] || tasks[tid].name;
+          resultMsg = `"${ask}" — they'll report back.`;
+        }
+        inlineView = { kind: 'person', vid: villagerId, line: view.line, result: resultMsg, nvMode: null, mapKey: inlineMapKey() };
         refresh();
       };
     });

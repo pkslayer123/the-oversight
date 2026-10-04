@@ -906,6 +906,7 @@
       // they form opinions of you even in small talk — but talk alone
       // doesn't move trust (the 40-cap rule stands).
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
+      try { this.checkPromises('social'); } catch (e) {}
       // OLD WOUNDS: favoritism is noticed. If you're close to one side of a conflict,
       // the other side keeps score — even if you don't know there's a score being kept.
       for (const c of (this.state.village.conflicts || [])) {
@@ -1351,7 +1352,435 @@
       this.npcNeeds(vid).hunger = Math.max(0, this.npcNeeds(vid).hunger - 60);
       this.say(`You give ${this.displayName(vid)} some ${food.name}. They look at you differently now.`);
       this.observe('give_food', { target: vid });
+      try { this.checkPromises('food'); } catch (e) {}
       return true;
+    },
+
+    // ============ SOCIAL ACTIONS: paths to the content ============
+    // Every deep system (goals, reputation, gossip, leadership, conflicts)
+    // needs a player-facing verb. Not perpetual buttons — contextual
+    // opportunities that appear when they make sense.
+
+    // offerDeal: bribery, but make it human. When someone won't do what you
+    // ask, food talks. Costs 1 edible unit. Re-rolls obedience with a bonus.
+    // The village notices — deals are honest in a way orders aren't, but
+    // rivals read them as buying loyalty.
+    offerDeal(vid, task) {
+      const v = this.data.villagers.find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid);
+      if (!v) return null;
+      const day = this.state.scholar.day;
+      const food = this.state.scholar.inventory.find(i =>
+        (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
+        !(i.spoilDay !== undefined && i.spoilDay <= day));
+      if (!food) { this.say("You have nothing to offer."); return null; }
+      const tasks = this.delegateTasks();
+      if (!tasks[task]) return null;
+      food.units -= 1;
+      if (food.units <= 0) this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
+      const first = this.displayName(vid);
+      // the deal sweetens obedience: +30 effective trust for this check
+      const trust = ((this.state.village.trust || {})[vid] || 10) + 30;
+      const t = this.state.village.trust || (this.state.village.trust = {});
+      const reluctant = trust < 40 && Math.random() < 0.25;
+      if (reluctant) {
+        this.say(`${first} takes the ${food.name}, weighs it in their hand. "Still no. But... ask me tomorrow." The food is gone. The answer isn't.`);
+        this.remember(vid, 'deal_refused', 'took food, still refused ' + task);
+        this.observe('deal', { target: vid, refused: true });
+        this.save();
+        return { ok: false, refused: true };
+      }
+      t[vid] = Math.min(100, trust);
+      const vv = this.state.village;
+      vv.assignments = vv.assignments || {};
+      vv.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart, via: 'deal' };
+      this.say(`${first} looks at the ${food.name}, then at you. "...Fine. But we're square after this."`);
+      this.remember(vid, 'deal', 'accepted food for ' + task);
+      this.observe('deal', { target: vid, task });
+      this.notePlaystyle('leader'); this.notePlaystyle('social');
+      this.save();
+      return { ok: true };
+    },
+
+    // appealToGoal: frame the request through what THEY want. Requires knowing
+    // their goal (post-System display, or learned via askAbout). Alignment
+    // between goal and task determines the bonus.
+    // goal->task affinity: which goals resonate with which tasks.
+    goalTaskAffinity(goal, task) {
+      const map = {
+        feed: { forage: 3, hunt: 3, water: 2 },
+        protect: { patrol: 3, hunt: 1 },
+        prove: { forage: 2, hunt: 2, wood: 2, patrol: 2, scout: 2, water: 2 },
+        survive: { forage: 2, hunt: 2, water: 2, wood: 1 },
+        belong: { forage: 1, wood: 1, water: 1 },
+        heal: { forage: 1, water: 1 },
+        lead: { patrol: 1, scout: 2 },
+        understand: { scout: 3, forage: 1 },
+      };
+      return ((map[goal] || {})[task]) || 0;
+    },
+    appealToGoal(vid, task) {
+      const goal = this.npcGoal(vid);
+      if (!goal) { this.say("You don't know what they want yet."); return null; }
+      const want = this.goalWant(vid);
+      const first = this.displayName(vid);
+      const aff = this.goalTaskAffinity(goal, task);
+      const tasks = this.delegateTasks();
+      if (!tasks[task]) return null;
+      const ob = this.checkObedience(vid);
+      // appeal adds effective trust: 10 + 10 per affinity point
+      const bonus = 10 + aff * 10;
+      const trust = ((this.state.village.trust || {})[vid] || 10) + bonus;
+      const lines = {
+        feed: `"Think about it — full bellies. That's what this gets us."`,
+        protect: `"This keeps people safe. That's what you want, isn't it?"`,
+        prove: `"Show them what you can do. This is your chance."`,
+        survive: `"This is how we make it. You know that."`,
+        belong: `"This is what belonging looks like — everyone pulling."`,
+        heal: `"Help me fix this. Please."`,
+        lead: `"Lead by example. They'll follow you on this."`,
+        understand: `"You'll learn something out there. I promise."`,
+      };
+      const line = lines[goal] || `"This matters. You know it does."`;
+      if (trust < 40 && Math.random() < 0.3) {
+        this.say(`${first} considers it. ${line} "...Not enough. Sorry."`);
+        this.observe('appeal', { target: vid, refused: true });
+        return { ok: false };
+      }
+      const t = this.state.village.trust || (this.state.village.trust = {});
+      t[vid] = Math.min(100, trust);
+      const vv = this.state.village;
+      vv.assignments = vv.assignments || {};
+      vv.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart, via: 'appeal' };
+      this.say(`${first} nods slowly. ${line} "Alright. For that reason — alright."`);
+      this.remember(vid, 'appeal', 'moved by appeal to goal: ' + goal);
+      this.observe('appeal', { target: vid, task });
+      this.notePlaystyle('leader'); this.notePlaystyle('social');
+      this.save();
+      return { ok: true };
+    },
+
+    // askAbout: the conversation verb. Topics unlock content paths.
+    // 'goal' -> learn what they want (may reveal goal pre-System)
+    // 'gossip' -> "heard anything?" (surfaces gossip they've heard)
+    // 'village' -> "how's everyone?" (morale/atmosphere readout)
+    askAbout(vid, topic) {
+      const v = this.data.villagers.find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid);
+      if (!v) return null;
+      const first = this.displayName(vid);
+      const known = this.state.systemArrived || this.nameKnown(vid);
+      const goal = this.npcGoal(vid);
+      const want = this.goalWant(vid);
+      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
+      if (topic === 'goal') {
+        // learning their goal: once known, it's stored and usable
+        const vg = this.state.village;
+        vg.goalsKnown = vg.goalsKnown || {};
+        const already = vg.goalsKnown[vid];
+        vg.goalsKnown[vid] = goal;
+        const goalLines = {
+          lead: `"Someone has to keep us together. Might as well be someone who cares."`,
+          family: `"I had people. Out there. I keep thinking I'll see them on the road."`,
+          prove: `"I need to matter here. I need someone to see that I matter."`,
+          alone: `"I just... need some air that nobody else is breathing."`,
+          feed: `"Nobody goes hungry if I can help it. That's the whole thing."`,
+          understand: `"I need to know what happened. Not knowing is worse than the worst answer."`,
+          protect: `"As long as I'm standing, nobody here gets hurt. That's the deal I made with myself."`,
+          escape: `"This place isn't it. There's somewhere better. I can feel it."`,
+          remember: `"I was someone, before. I need to hold onto that."`,
+          belong: `"I just want to be part of something again."`,
+          survive: `"Whatever it takes. I'm not dying out here."`,
+          heal: `"Too much is broken. I fix what I can."`,
+        };
+        const line = goalLines[goal] || `"I don't know. Getting through today, I guess."`;
+        this.say(`${first}: ${line}`);
+        if (!already && want) this.say(`(You learned what ${known ? first : 'they'} want: ${want}.)`);
+        this.remember(vid, 'shared_goal', goal || 'unknown');
+        return { ok: true, goal };
+      }
+      if (topic === 'gossip') {
+        const heard = (this.state.village.gossip || []).filter(g => (g.heard || []).includes(vid));
+        if (!heard.length) {
+          const idle = [`"Quiet lately. Too quiet, maybe."`, `"Nothing new. Which is new, if you think about it."`, `"People are keeping to themselves."`];
+          this.say(`${first}: ${idle[Math.floor(Math.random() * idle.length)]}`);
+          return { ok: true, none: true };
+        }
+        // share the freshest gossip they've heard, with their distortion
+        const g = heard[heard.length - 1];
+        const neg = Object.entries(g.dims || {}).some(([k, val]) => val < -3);
+        const aboutYou = true; // gossip seeded from observe() is always about player actions
+        if (neg) this.say(`${first} lowers their voice. "People are saying things. About you. ...I'd watch how you act around the fire."`);
+        else this.say(`${first}: "Word is you're doing right by people. Keep it up."`);
+        return { ok: true, gossip: g };
+      }
+      if (topic === 'village') {
+        const vg = this.state.village;
+        const bits = [];
+        if ((vg.grief || 0) > 0) bits.push("everyone's quiet since the loss");
+        if ((vg.cheer || 0) > 0) bits.push("people are in good spirits");
+        const hungry = (vg.roster || []).filter(id => id !== this.villagerId && (this.npcNeeds(id).hunger || 0) > 70).length;
+        if (hungry > 2) bits.push(`${hungry} people are going hungry`);
+        const scared = (vg.roster || []).filter(id => id !== this.villagerId && (this.npcNeeds(id).fear || 0) > 70).length;
+        if (scared > 2) bits.push("people are scared");
+        const heat = Object.values(vg.heat || {}).filter(h => h > 0).length;
+        if (heat) bits.push("there's tension about who's in charge");
+        const line = bits.length ? bits.join('; ') + '.' : "holding together, somehow.";
+        this.say(`${first} looks around. "Honestly? ${line}"`);
+        return { ok: true };
+      }
+      return null;
+    },
+    // goalKnown: post-System it's displayed; pre-System it's learned via askAbout
+    goalKnown(vid) {
+      if (this.state.systemArrived) return true;
+      return !!((this.state.village.goalsKnown || {})[vid]);
+    },
+
+    // comfort: for the scared and the grieving. No cost but time and presence.
+    // Reduces fear, eases grief-adjacent loneliness. Builds real trust.
+    comfort(vid) {
+      const mood = this.npcMood(vid);
+      if (mood !== 'scared' && mood !== 'grieving' && mood !== 'hungry') {
+        this.say("They don't need comforting right now.");
+        return null;
+      }
+      const first = this.displayName(vid);
+      const n = this.npcNeeds(vid);
+      n.fear = Math.max(0, (n.fear || 0) - 40);
+      n.social = Math.max(0, (n.social || 0) - 20);
+      const t = this.state.village.trust || (this.state.village.trust = {});
+      t[vid] = Math.min(100, (t[vid] || 10) + 8);
+      const lines = [
+        `You sit with ${first} for a while. Don't say much. Sometimes that's the whole thing.`,
+        `"Hey. You're okay. We're okay." ${first} breathes out, shaky. "Yeah. Yeah, okay."`,
+        `${first} leans into the quiet for a bit. When they look up, something's unclenched.`,
+      ];
+      this.say(lines[Math.floor(Math.random() * lines.length)]);
+      this.remember(vid, 'comforted', 'sat with them when scared');
+      this.observe('comfort', { target: vid });
+      this.notePlaystyle('social');
+      try { this.checkPromises('heal'); } catch (e) {}
+      this.save();
+      return { ok: true };
+    },
+
+    // makeAmends: reputation repair. When they think poorly of you on some
+    // axis, you can own it. Partial repair — words aren't deeds, but they're a start.
+    worstRepAxis(vid) {
+      const r = this.repOf(vid);
+      let worst = null, val = 0;
+      for (const [k, v2] of Object.entries(r)) if (v2 < val) { val = v2; worst = k; }
+      return worst && val <= -15 ? { axis: worst, val } : null;
+    },
+    makeAmends(vid) {
+      const w = this.worstRepAxis(vid);
+      if (!w) { this.say("They don't hold anything against you."); return null; }
+      const first = this.displayName(vid);
+      const axisLines = {
+        generous: `"I know I've been holding back. That's changing."`,
+        brave: `"I ran when I shouldn't have. I'm sorry."`,
+        honest: `"I've been playing angles. You deserved straight."`,
+        competent: `"I've been useless and I know it. I'm trying to be better."`,
+      };
+      const r = this.repOf(vid);
+      r[w.axis] = Math.min(0, r[w.axis] + 12); // partial — deeds finish the job
+      const t = this.state.village.trust || (this.state.village.trust = {});
+      t[vid] = Math.min(100, (t[vid] || 10) + 4);
+      this.say(`You find ${first}. ${axisLines[w.axis]} They study you for a long moment, then nod once.`);
+      this.remember(vid, 'amends', 'apologized for ' + w.axis);
+      this.observe('amends', { target: vid });
+      this.notePlaystyle('social');
+      this.save();
+      return { ok: true, axis: w.axis };
+    },
+
+    // mediate: player-initiated conflict resolution. The automatic path needs
+    // 55+ trust with both; doing it yourself needs 40+ and a conversation.
+    // Success eases tension; failure can make it worse.
+    mediateConflict(vid) {
+      const v = this.state.village;
+      const c = (v.conflicts || []).find(x => !x.resolved && x.known && (x.a === vid || x.b === vid));
+      if (!c) { this.say("There's nothing to mediate with them."); return null; }
+      const other = c.a === vid ? c.b : c.a;
+      const ta = (v.trust || {})[vid] || 10, tb = (v.trust || {})[other] || 10;
+      if (ta < 40 || tb < 40) {
+        this.say(`They don't trust you enough yet to let you into this. (Need 40+ with both.)`);
+        return null;
+      }
+      const first = this.displayName(vid), oname = this.displayName(other);
+      // your honesty and competence matter here, as THEY see it
+      const r = this.repOf(vid);
+      const skill = (r.honest >= 0 ? 10 : 0) + (r.competent >= 0 ? 10 : 0) + 20;
+      if (Math.random() * 100 < skill + ta * 0.3) {
+        c.tension = Math.max(0, (c.tension || 50) - 35);
+        if (c.tension <= 10) {
+          c.resolved = true; c.tension = 0;
+          this.say(`You sit them both down. It's awkward. It's hard. But ${first} and ${oname} actually talk — really talk — for the first time in longer than anyone admits. Something loosens.`);
+        } else {
+          this.say(`${first} listens. Doesn't agree to everything, but listens. "${oname} and I... we'll figure it out. Thanks for trying." The air is a little clearer.`);
+        }
+        const t = v.trust || (v.trust = {});
+        t[vid] = Math.min(100, (t[vid] || 10) + 6); t[other] = Math.min(100, (t[other] || 10) + 6);
+        this.remember(vid, 'mediated', 'helped ease conflict with ' + other);
+        this.observe('mediate', { target: vid });
+      } else {
+        c.tension = Math.min(100, (c.tension || 50) + 10);
+        this.say(`It goes badly. ${first} shuts down halfway through. "${oname} sent you, didn't they?" Nothing is clearer than before. It's worse.`);
+        this.observe('mediate', { target: vid, failed: true });
+      }
+      this.notePlaystyle('social'); this.notePlaystyle('leader');
+      this.save();
+      return { ok: true };
+    },
+
+    // rally: the speech. Village-wide, once per day. Cools contender heat,
+    // lifts morale, reminds everyone why you're worth following.
+    rallyVillage() {
+      const v = this.state.village;
+      const today = this.state.scholar.day + ':' + this.dayPart;
+      if (v.lastRally === today) { this.say("You've said your piece for now."); return null; }
+      v.lastRally = today;
+      const heatIds = Object.keys(v.heat || {}).filter(id => (v.heat[id] || 0) > 0);
+      for (const id of heatIds) v.heat[id] = Math.max(0, (v.heat[id] || 0) - 2);
+      if (v.challenge) {
+        // a good speech doesn't end a challenge, but it buys room
+        v.challenge.age = Math.max(0, (v.challenge.age || 0) - 2);
+      }
+      v.cheer = Math.max(v.cheer || 0, 2);
+      const t = v.trust || (v.trust = {});
+      for (const id of (v.roster || [])) {
+        if (id === this.villagerId) continue;
+        t[id] = Math.min(100, (t[id] || 10) + 3);
+      }
+      const lines = [
+        `You stand up by the fire. "Listen. I don't have answers. But I have us — and that's more than we had yesterday." People look at each other. Someone nods. It's a start.`,
+        `"We're still here," you say, simply. "Every one of us. That counts for something." Quiet. Then someone laughs — surprised, real. The fire feels warmer.`,
+        `You talk about what you've built together. Not perfectly, not easily — together. A few people stand a little straighter.`,
+      ];
+      this.say(lines[Math.floor(Math.random() * lines.length)]);
+      this.observe('rally', {});
+      this.remember(this.villagerId, 'rally', 'gave a speech');
+      this.notePlaystyle('leader'); this.notePlaystyle('social');
+      this.save();
+      return { ok: true };
+    },
+
+    // askSupport: coalition building. Ask someone to back you against a
+    // contender. If they agree, contender heat drops and you gain an ally.
+    // Their memory records the alliance — allies expect to be treated well.
+    askSupport(vid) {
+      const v = this.state.village;
+      const heatIds = Object.keys(v.heat || {}).filter(id => (v.heat[id] || 0) > 0);
+      const chal = v.challenge;
+      if (!heatIds.length && !chal) { this.say("There's no challenge to your lead right now."); return null; }
+      const target = chal ? chal.cid : heatIds[0];
+      const first = this.displayName(vid), tname = this.displayName(target);
+      const trust = (v.trust || {})[vid] || 10;
+      if (trust < 30) {
+        this.say(`${first} shakes their head. "I'm not getting in the middle of that." (Need 30+ trust.)`);
+        return null;
+      }
+      v.heat = v.heat || {};
+      v.heat[target] = Math.max(0, (v.heat[target] || 0) - 2);
+      v.allies = v.allies || {};
+      v.allies[vid] = target; // they stand with you against this contender
+      const t = v.trust || (v.trust = {});
+      t[vid] = Math.min(100, (t[vid] || 10) + 5);
+      this.say(`${first} considers it, then nods. "Yeah. ${tname} doesn't speak for me." You feel the ground firm up under you a little.`);
+      this.remember(vid, 'ally', 'backed you against ' + target);
+      this.observe('coalition', { target: vid });
+      this.notePlaystyle('leader'); this.notePlaystyle('social');
+      this.save();
+      return { ok: true };
+    },
+
+    // promiseHelp: commit to their goal. Tracked. If you follow through
+    // (via related actions), big trust. If you ignore it, they remember.
+    promiseHelp(vid) {
+      const goal = this.npcGoal(vid);
+      if (!goal) { this.say("You don't know what they want yet."); return null; }
+      const v = this.state.village;
+      v.promises = v.promises || {};
+      if (v.promises[vid]) { this.say("You already made them a promise. Keep it first."); return null; }
+      const want = this.goalWant(vid);
+      const first = this.displayName(vid);
+      const promiseLines = {
+        family: `"I'll watch the roads. If anyone comes through, you'll know."`,
+        feed: `"Nobody goes hungry on my watch. That's a promise."`,
+        protect: `"I've got your back. That's not just words."`,
+        prove: `"I'll find you something that matters. You'll see."`,
+        understand: `"We'll figure out what happened. Together."`,
+        heal: `"We'll fix what's broken. Starting with what we can."`,
+        belong: `"You're one of us. That's not changing."`,
+        survive: `"We make it. All of us. That's the deal."`,
+      };
+      v.promises[vid] = { goal, day: this.state.scholar.day, kept: false };
+      this.say(`${first} looks at you for a long moment. ${promiseLines[goal] || `"I'll help. I mean it."`} Something in them settles — hope is a heavy thing to carry alone.`);
+      this.remember(vid, 'promise', 'promised to help: ' + goal);
+      const t = v.trust || (v.trust = {});
+      t[vid] = Math.min(100, (t[vid] || 10) + 6);
+      this.observe('promise', { target: vid });
+      this.notePlaystyle('social');
+      this.save();
+      return { ok: true };
+    },
+    // checkPromises: called when relevant actions happen. Fulfilling a promise
+    // is one of the biggest trust gains in the game. Breaking one (7+ days
+    // ignored) is one of the biggest losses.
+    checkPromises(kind) {
+      const v = this.state.village;
+      for (const [vid, p] of Object.entries(v.promises || {})) {
+        if (p.kept) continue;
+        const age = this.state.scholar.day - (p.day || 0);
+        const match = (p.goal === 'feed' && kind === 'food') ||
+          (p.goal === 'protect' && kind === 'fight') ||
+          (p.goal === 'heal' && kind === 'heal') ||
+          (p.goal === 'prove' && kind === 'task') ||
+          (p.goal === 'belong' && kind === 'social');
+        if (match) {
+          p.kept = true;
+          const t = v.trust || (v.trust = {});
+          t[vid] = Math.min(100, (t[vid] || 10) + 15);
+          this.say(`${this.displayName(vid)} catches your eye across the fire. You kept your word. That meant everything. (+15 trust)`);
+          this.remember(vid, 'promise_kept', p.goal);
+        } else if (age >= 7) {
+          p.kept = 'broken';
+          const t = v.trust || (v.trust = {});
+          t[vid] = Math.max(0, (t[vid] || 10) - 15);
+          this.say(`${this.displayName(vid)} doesn't say anything. But they stopped looking at you the way they used to. Promises rot. (-15 trust)`);
+          this.remember(vid, 'promise_broken', p.goal);
+        }
+      }
+    },
+
+    // confrontGossip: you've heard gossip (about you, negative). Confront the
+    // source. Can clear the air — or confirm their worst suspicions.
+    confrontGossip(vid) {
+      const heard = (this.state.village.gossip || []).filter(g => (g.heard || []).includes(vid));
+      const neg = heard.find(g => Object.entries(g.dims || {}).some(([k, val]) => val < -3));
+      if (!neg) { this.say("You haven't heard them spreading anything about you."); return null; }
+      const first = this.displayName(vid);
+      const r = this.repOf(vid);
+      // honesty helps; if they already distrust you it goes badly
+      const skill = 30 + (r.honest >= 0 ? 20 : -10) + ((this.state.village.trust || {})[vid] || 10) * 0.3;
+      if (Math.random() * 100 < skill) {
+        // clear the air: dampen that gossip's dims for this person
+        for (const k of Object.keys(neg.dims || {})) if (neg.dims[k] < 0) neg.dims[k] = Math.round(neg.dims[k] * 0.4);
+        this.say(`You pull ${first} aside. "I heard what you've been saying." They flush — then, slowly, nod. "Yeah. That wasn't fair. I'm sorry." The story loses its teeth.`);
+        this.remember(vid, 'confronted', 'cleared the air about gossip');
+        const t = this.state.village.trust || (this.state.village.trust = {});
+        t[vid] = Math.min(100, (t[vid] || 10) + 4);
+        this.observe('confront', { target: vid, resolved: true });
+      } else {
+        for (const k of Object.keys(neg.dims || {})) if (neg.dims[k] < 0) neg.dims[k] = Math.round(neg.dims[k] * 1.3);
+        this.say(`${first} goes cold. "So now you're interrogating people? That tells me everything." The story gets worse.`);
+        this.remember(vid, 'confronted', 'confrontation backfired');
+        this.observe('confront', { target: vid, backfired: true });
+      }
+      this.notePlaystyle('social');
+      this.save();
+      return { ok: true };
     },
 
     // integration: the System is learning you. you are learning it.
@@ -1581,7 +2010,16 @@
       }
       // obedience check
       const ob = this.checkObedience(vid);
-      if (!ob.ok) { this.say(ob.reason); return null; }
+      if (!ob.ok) {
+        this.say(ob.reason);
+        // record the refusal — the UI can offer deal/appeal as follow-ups.
+        // contextual, not perpetual: the opportunity appears because they said no.
+        this.state.village.lastRefusal = { vid, task, reason: ob.reason };
+        this.save();
+        return { ok: false, refused: true };
+      }
+      // cleared: they said yes (or the player moved on)
+      if ((this.state.village.lastRefusal || {}).vid === vid) delete this.state.village.lastRefusal;
       v.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart, via };
       // THE GAME NOTICES: leadership is a playstyle axis.
       this.notePlaystyle('leader');
@@ -1600,7 +2038,7 @@
         this.sysSay('"Ooh! A DELEGATOR! The audience LOVES a mastermind! Others do the work, YOU take the credit — DELICIOUS! The gamblers are adjusting their models!"');
       }
       this.save();
-      return null;
+      return { ok: true };
     },
 
     assignmentFor(vid) {
@@ -1677,6 +2115,9 @@
       // GOSSIP SPREADS: what happened this part travels along social lines,
       // distorting as it goes.
       try { this.spreadGossip(); } catch (e) {}
+      // PROMISES: doing the work counts. If you promised to help someone's
+      // goal and tasks got done, that's keeping your word.
+      if (ids.length) try { this.checkPromises('task'); } catch (e) {}
     },
 
     resolveOneAssignment(vid, a) {
@@ -3997,6 +4438,15 @@
         talk: { honest: 1 },
         hoard: { generous: -6, honest: -2 },
         share_knowledge: { generous: 3, competent: 3 },
+        deal: { generous: 2, honest: -2, competent: 2 },
+        appeal: { honest: 2, competent: 1 },
+        comfort: { generous: 4, honest: 2 },
+        amends: { honest: 5 },
+        rally: { brave: 3, competent: 4 },
+        mediate: { honest: 5, competent: 3 },
+        promise: { honest: 2, generous: 1 },
+        coalition: { competent: 2, honest: -1 },
+        confront: { brave: 2, honest: 1 },
       }[action];
       if (!AX) return;
       const roster = ((this.state.village || {}).roster || []).filter(id => id !== this.villagerId);
@@ -6973,6 +7423,8 @@
       this.checkTimedEvents();
       // LEADER: morning briefing — village knowledge flows to you post-arrival.
       try { this.villageBriefing(); } catch (e) {}
+      // PROMISES ROT: unchecked daily — 7+ days ignored and they break.
+      try { this.checkPromises(); } catch (e) {}
       // evening: run metabolism
       scholar._preDayHealth = scholar.health;
       // WEATHER: the sky does what it wants. Clear most days, rain sometimes, cold snaps.
@@ -7740,6 +8192,7 @@
         }
         this.notePlaystyle('bold');
         try { this.villageEvent('victory'); } catch (e) {}
+        try { this.checkPromises('fight'); } catch (e) {}
         if (this.hasAbility('grave_robber') && Math.random() < 0.5) {
           const gear = ['bone knife', 'cracked helm', 'war horn', 'tooth necklace'];
           const g = gear[Math.floor(Math.random() * gear.length)];
