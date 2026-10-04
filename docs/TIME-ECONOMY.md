@@ -63,7 +63,7 @@ Every action is priced in up to three currencies:
 | Craft a tool | 32 (1 chunk) | 0 | Hand work, not heavy labor |
 | Cook a meal | 32 (1 chunk) | 0 | Tending the fire |
 | Node travel (`travelTo`) | 32 (1 chunk) | 30 kcal × distance | The "bigger tick" |
-| Forage | 64–96 (2–3 chunks) | 120 kcal | Rich tiles take longer — more to gather |
+| Forage | 32–64 (1–2 chunks) | 120 kcal | Rich tiles take longer — more to gather. Snappy, not a time-skip |
 | Fell a tree (`cutTree`) | 96 (3 chunks) | 80 kcal | Felling a tree is serious work |
 | Build a bridge | 96 (3 chunks) | 60 kcal | Construction is work |
 | Search a ruin (scavenge) | 64 (2 chunks) | 100 kcal | Tossing a house takes time |

@@ -6766,10 +6766,10 @@
     // Cost guide (ticks): 1 = step, glance, sip, bite, handoff, opening a
     // conversation, one deep conversational beat. 2 = a substantive social
     // move (comfort, mediate, deal). 3 = a lesson (teaching). 32 (1 chunk) =
-    // clear brush, boil water, travel a node. 64-96 (2-3 chunks) = forage,
-    // fell a tree, build. 128 = a full day-part of sustained work (rest, wait
-    // out the part). Small talk inside a conversation is free — you're
-    // already spending the time standing there.
+    // clear brush, boil water, travel a node, forage (64 on rich tiles).
+    // 64-96 (2-3 chunks) = fell a tree, build. 128 = a full day-part of
+    // sustained work (rest, wait out the part). Small talk inside a
+    // conversation is free — you're already spending the time standing there.
     // Every TICKS_PER_BATCH ticks → NPCs take a batch turn (they act).
     // Every TICKS_PER_PART ticks → the day-part turns (needs, assignments, energy).
     // TICKS_PER_DAY ticks → the day is spent → endDay().
@@ -8696,13 +8696,15 @@
       this.checkQuest(kind);
       this.maybeOfferQuest();
       // ACTION CLOCK: variable cost by fictional weight. 1 chunk = 32 ticks.
-      // Forage 2-3 chunks (a rich tile takes longer — more to gather),
+      // Forage 1-2 chunks (a rich tile takes longer — more to gather).
+      // Snappy, not a time-skip: 1 batch turn fires, not 3. The world
+      // shouldn't lurch forward from a single button press.
       // rest 3 chunks, treat 1 chunk, wait = however long until the part turns.
       const T = this.TIME;
       let ticks = T.TICKS_PER_PART;
       if (kind === 'forage') {
         const b = this.bountyFor(this.map.px, this.map.py);
-        ticks = (b && b.richness >= 1.3) ? 96 : 64;
+        ticks = (b && b.richness >= 1.3) ? 64 : 32;
       } else if (kind === 'rest') ticks = 96;
       else if (kind === 'treat') ticks = 32;
       else if (kind === 'wait') {
