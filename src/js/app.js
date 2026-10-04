@@ -2290,42 +2290,41 @@
 
   // systemArrivalAnimation: the sky splits. Animated. Dramatic.
   // Full-screen overlay, crack grows, text types out, windows slide in.
+  // systemArrivalAnimation: the sky splits. STAGED cinematic — one beat at a
+  // time, tap to continue. Trailer pacing: tease, escalate, button. The script
+  // lives in Game.systemArrivalBeats() (game.js) so it's unit-testable.
   function systemArrivalAnimation(callback) {
+    const beats = Game.systemArrivalBeats();
+    let i = 0, done = false;
     const overlay = document.createElement('div');
     overlay.className = 'system-arrival-overlay';
-    overlay.innerHTML = `
-      <div class="system-crack"></div>
-      <div class="system-text">🌟 THE SKY SPLITS OPEN 🌟</div>
-      <div class="system-window">
-        <div class="system-text system-typewriter">"HELLO! Welcome! We're SO glad you're all still here! What a week! The audience LOVED the foraging episode!"</div>
-      </div>
-      <div class="system-window" style="animation-delay: 1s">
-        <div class="system-text">"Okay! So! Here's what's happening! You're on a show! Survive! Be interesting!"</div>
-      </div>
-      <div class="system-window" style="animation-delay: 2s">
-        <div class="system-text">"We've been CALIBRATING all week! And YOU — every berry picked, every fire lit — that's your signature! You signed up by DOING THINGS!"</div>
-      </div>
-      <div class="system-window" style="animation-delay: 3s">
-        <div class="system-text">"The ones who just sat there? Removed! Boring! But YOU have FANS now! They're betting on your UNDERSTANDING!"</div>
-      </div>
-      <div class="system-window" style="animation-delay: 4s">
-        <div class="system-text">"Oh! And we noticed some of you are... hungry? We'll look into that! Probably! Anyway!"</div>
-      </div>
-      <div class="system-window" style="animation-delay: 5s">
-        <div class="system-text">Your journal shimmers. It becomes... interface.</div>
-      </div>
-      <div class="system-window" style="animation-delay: 6s">
-        <div class="system-text">"OH! Wait! We almost forgot! You were writing things down! We made it better! It talks now!"</div>
-      </div>
-      <button class="btn" id="b-arrival-ok" style="margin-top: 20px; z-index: 1001;">...what?</button>
-    `;
     document.body.appendChild(overlay);
-    document.getElementById('b-arrival-ok').onclick = () => {
-      overlay.remove();
+    function finish() {
+      if (done) return;
+      done = true;
+      try { overlay.remove(); } catch (e) {}
       if (callback) callback();
-    };
-    // Auto-dismiss after 10s (in case they don't click).
-    setTimeout(() => { if (overlay.parentNode) { overlay.remove(); if (callback) callback(); } }, 14000);
+    }
+    function showBeat() {
+      const b = beats[i] || beats[beats.length - 1];
+      overlay.innerHTML =
+        '<div class="system-crack"></div>' +
+        '<div class="system-beat-kicker">' + esc(b.kicker || '') + '</div>' +
+        b.lines.map(l =>
+          '<div class="system-window"><div class="system-text' + (l.who === 'narr' ? ' system-narr' : '') + '">' +
+          (l.who === 'sys' ? '&ldquo;' + esc(l.text) + '&rdquo;' : esc(l.text)) +
+          '</div></div>'
+        ).join('') +
+        '<button class="btn" id="b-arrival-next" style="margin-top: 14px; z-index: 1001;">' + esc(b.button || '…') + '</button>';
+      document.getElementById('b-arrival-next').onclick = () => {
+        i++;
+        if (i >= beats.length) finish();
+        else showBeat();
+      };
+    }
+    showBeat();
+    // Backstop: never trap the player behind the overlay.
+    setTimeout(finish, 120000);
   }
 
   // relicSheet: the System noticed your attachment. Pick 1 of 3 enhancements.

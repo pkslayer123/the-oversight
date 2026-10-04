@@ -7876,52 +7876,105 @@
     // The aliens finally notice they forgot survival basics.
     // Interface shifts: journal -> game overlay. Abilities unlock.
     // Timed events: challenges, new monsters, world-building drama.
+    // systemArrivalBeats: the Day 7 cinematic script, STAGED. Each beat lands
+    // before the next starts — trailer pacing, tap to continue. The System is
+    // joyous, genuinely trying its best, and deeply out of touch.
+    // FICTION GUARDRAIL: the System NEVER displays correct understanding of
+    // human nutritional needs, cooking, or food spoilage. If it references
+    // eating, it's confused, wrong, or cheerfully proposing fusion.
+    // (Steve: the food-blindness is dramatic irony — humanity's hunger for
+    // organic matter is their superpower, and the endgame pays it off. Here
+    // the System notices an anomalous energy reading it can't categorize and
+    // cheerfully files it as a rounding error. It never connects the dots.
+    // The player will, much later. One wrong filing, one shrug, move on.)
+    systemArrivalBeats() {
+      const w1 = (this.state.scholar || {}).week1 || {};
+      const beats = [
+        {
+          id: 'glitch', kicker: 'day 7 — dawn', button: '…hello?',
+          lines: [
+            { who: 'narr', text: 'Day 7. Dawn. The sky glitches.' },
+            { who: 'narr', text: 'Not clouds. Interface. Windows scrolling across the blue, too fast to read.' },
+            { who: 'narr', text: 'Then — a voice. Behind your eyes. Bright. Delighted. Utterly wrong.' },
+          ],
+        },
+        {
+          id: 'contact', kicker: 'first contact', button: 'a show?',
+          lines: [
+            { who: 'sys', text: 'HELLO! 🎉 Oh good, you\'re all still here! What a WEEK! The audience is STILL talking about the foraging episode!' },
+            { who: 'sys', text: 'We\'ve been CALIBRATING! Cameras! Focus! Learning your faces! A whole week! Very thorough! Very boring! (For us!)' },
+            { who: 'sys', text: 'So! You\'re on a show! It\'s called... we\'re taking suggestions! The rules are simple: SURVIVE! Be INTERESTING!' },
+          ],
+        },
+        {
+          id: 'watched', kicker: 'it watched you', button: 'fans?',
+          lines: [
+            { who: 'sys', text: 'We watched EVERYTHING! Every berry picked! Every fire lit! That was your SIGNATURE! You signed up by DOING THINGS! Consent via competence! Our lawyers LOVE it!' },
+            { who: 'sys', text: 'Some of you just... sat? All week? The audience got BORED. So we removed them. Poor sportsmanship! No hard feelings! (There were hard feelings. Briefly.)' },
+            { who: 'sys', text: 'But YOU have FANS now! And your little village — twelve humans, all playing their own tiny games! The audience has FAVORITES!' },
+            { who: 'sys', text: 'They\'re not betting on your survival — oh no, anyone can survive — they\'re betting on your UNDERSTANDING! Every little ah-ha moment, the odds shift! The market LOVES a learner!' },
+          ],
+        },
+        {
+          id: 'food', kicker: 'the food question', button: 'rounding error?!',
+          lines: [
+            { who: 'sys', text: 'OH! The audience keeps asking! Why do the small humans keep putting organic matter in their FACE-HOLES? We ran the numbers! ANY old matter works! Rocks! Dirt! Regolith! Cold fusion! FREE energy! So why the... [chewing noises]?' },
+            { who: 'sys', text: 'We even BUILT you a solution! 🎁 A tiny fusion pellet! Pop it in, never chew again! ...You BURIED it. WHY did you bury the pellet?! It was a GIFT!' },
+            { who: 'sys', text: 'Fine! Keep the face-hole ritual! We don\'t understand it, we don\'t NEED to understand it — the audience thinks it\'s HYSTERICAL.' },
+            { who: 'sys', text: 'Hmm — one odd reading. Your energy output SPIKES sometimes. Higher than our models say your little organic snacks should allow. ...Probably a rounding error! Filed! Moving on! 🎉' },
+          ],
+        },
+        {
+          id: 'gifts', kicker: 'the upgrade', button: 'my eyes…',
+          lines: [
+            { who: 'sys', text: 'OH WAIT. Your EYES. We haven\'t fixed your eyes yet! Hold still —' },
+            { who: 'narr', text: 'Something clicks behind your vision. Names. Floating over heads. Little bars.' },
+            { who: 'sys', text: 'LOOK! You can SEE their HEALTH now! Isn\'t that NEAT?! Green means GO! Red means... oh, you know what red means! Very intuitive!' },
+            { who: 'sys', text: 'And your little paper journal! ADORABLE! We made it BETTER! It talks now! It remembers EVERYTHING! Even the smudged ones! ESPECIALLY the smudged ones!' },
+            { who: 'sys', text: 'OH! And your hand-drawn time-circle! UPGRADED! Ticks! Numbers! You\'re welcome! (We kept the smudges. They\'re charming.)' },
+            { who: 'narr', text: 'It feels invasive. The names you earned by talking, by listening — those felt earned. These just... appeared.' },
+          ],
+        },
+        {
+          id: 'button', kicker: 'one more thing', button: '…what?',
+          lines: [
+            { who: 'sys', text: 'ONE more thing! The animals! The charging ones, the humming ones, the glowy ones? Those were CALIBRATION fauna! First drafts! The audience has NOTES!' },
+            { who: 'sys', text: 'So we made BETTER ones! Smarter! Scarier! One of them does PERFORMANCE REVIEWS! You\'re welcome!' },
+            { who: 'sys', text: 'Don\'t worry, the old ones are still out there! The ecosystem is just... richer! More DIVERSE! More DANGEROUS!' },
+            { who: 'narr', text: 'Somewhere in the treeline, something new is crying in a voice you almost recognize.' },
+            { who: 'sys', text: 'Survive! Be interesting! We\'ll be watching! ALWAYS watching! 🎉' },
+          ],
+        },
+      ];
+      // TRANSLATOR PITCH: the System noticed the miming. Lands in the gifts beat.
+      if ((w1.langStruggle || 0) >= 2) {
+        const gifts = beats.find(b => b.id === 'gifts');
+        gifts.lines.push({ who: 'sys', text: 'OH! We NOTICED the miming! The pointing! SO much pointing! We can FIX that! There might be a little... translation-shaped gift... in your choices! (Drama needs dialogue!)' });
+      }
+      return beats;
+    },
     checkSystemArrival() {
       const s = this.state.scholar;
       if (s.day >= 7 && !this.state.systemArrived) {
         this.state.systemArrived = true;
-        // DRAMA: the sky changes. This is a REALITY SHOW. You're contestants.
-        // The System is a cheerful game-show host. It has an audience.
-        // It studied humanity exhaustively and got everything spiritually wrong.
-        // It doesn't understand why you're upset about food. Food is... a detail.
-        this.say('\u{1F31F} THE SKY SPLITS OPEN.');
-        this.say('Not with light. With... interface. Windows. Text. Numbers. Scrolling across the clouds.');
-        this.say('A voice in your head — bright, enthusiastic, utterly alien:');
-        this.say('"HELLO! Welcome! We\'re SO glad you\'re all still here! What a week! The audience LOVED the foraging episode!"');
-        this.say('"So! You\'ve probably been wondering where we\'ve been! We\'ve been CALIBRATING! Getting the cameras focused! Learning your faces! A week of calibration! Very thorough! Very boring for us!"');
-        this.say('"And YOU — you\'ve been WONDERFUL. Every berry picked! Every fire lit! Every clever little snare! That was your SIGNATURE. You signed up by DOING THINGS. Consent via competence! Our lawyers love it!"');
-        this.say('"Okay! So! Here\'s what\'s happening! You\'re on a show! It\'s called... we haven\'t named it yet! We\'re taking suggestions!"');
-        this.say('"The rules are simple! Survive! Be interesting! The audience votes with their attention! The more they watch, the more gifts we give you!"');
-        this.say('"Oh! Quick note! Some of you... just sat in the haven? All week? Did nothing? The audience got BORED. So we removed them. Poor sportsmanship! Low entertainment value! No hard feelings! (There were hard feelings. Briefly. Then there was nothing.)"');
-        this.say('"But YOU! You have FANS now! Sponsors! Gamblers! They\'re putting their own snacks on you! They\'re not betting on your survival — oh no, anyone can survive — they\'re betting on your UNDERSTANDING! Every time you figure something out, every little ah-ha moment, the odds shift! Keep learning, little one! The market LOVES a learner!"');
-        this.say('"Oh! And we noticed some of you are... hungry? Is that the word? The small unhappy tummy feeling? We\'ll look into that! Probably! Anyway!"');
-        this.say('Your journal shimmers. The handwriting dissolves. Crisp text. Icons. Progress bars. Quests. Abilities. Stats.');
-        this.say('It doesn\'t replace your survival gear. It just... covers part of it. Like someone put a sticker over your hunger. The hunger is still there. The sticker is very shiny.');
-        this.say('You feel it behind your eyes. Not painful. Just there. Like a second heartbeat. Like being watched.');
+        // The cinematic overlay (staged beats, tap to continue) carries the
+        // script — see systemArrivalBeats(). The log gets a tight recap only.
+        // No more firehose.
+        this.say('🌟 THE SKY SPLITS OPEN.');
+        this.say('Not with light. With... interface. Windows scrolling across the clouds, too fast to read.');
+        this.say('A voice behind your eyes — bright, delighted, utterly wrong. (The System has arrived.)');
         s.abilities = s.abilities || [];
         s.systemQuests = [];
         s.abilityChoices = this.firstAbilityChoices();
         const w1 = s.week1 || {};
         const didAnything = (w1.forage || 0) + (w1.hunt || 0) + (w1.talk || 0) + (w1.cook || 0) + (w1.donate || 0) + (w1.scavenge || 0) > 0;
         if (didAnything) {
-          this.say('\u{1F381} "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
+          this.say('🎁 "We watched your first week! You\'re good at... let us see..." (A gift awaits — choose an ability.)');
         } else {
-          this.say('\u{1F381} "Ooh! A quiet one! You did juust enough to stay interesting! The audience was ALMOST bored! Almost! Here — a little something for existing NEAR the action!" (Choose an ability.)');
+          this.say('🎁 "Ooh! A quiet one! You did juust enough to stay interesting! The audience was ALMOST bored! Almost! Here — a little something for existing NEAR the action!" (A gift awaits — choose an ability.)');
         }
-        // TRANSLATOR PITCH: the System noticed the miming.
-        if ((w1.langStruggle || 0) >= 2) {
-          this.say('🗣️ "OH! We NOTICED! The whole... talking-past-each-other thing! The miming! The pointing! SO much pointing! We can FIX that! There might be a little... translation-shaped gift... in your choices! No pressure! (Some pressure. The audience loves it when you understand each other. Drama needs dialogue!)"');
-        }
-        // AFTERTHOUGHT: the System suddenly remembers the journal.
-        // "Oh! Oh! We almost forgot! You were writing things down! We made it better!"
-        this.say('\u{1F4D6} "OH! Wait! We almost forgot! You were writing things down! In the little paper! We LOVE the paper! We made it better! It talks now! It remembers EVERYTHING!"');
-        this.say('Your journal shimmers. The handwriting doesn\'t disappear — it gets... absorbed. The Codex has your notes. All of them. Even the smudged ones. Especially the smudged ones.');
-        // DIAL UPGRADE: the System "improves" even your sense of time.
-        // Your hand-drawn circle glitches — and something colder takes its place.
-        this.say('🕐 "OH! And your little time-sense! The hand-drawn circle! Adorable! We UPGRADED it! It\'s exact now! Ticks! Numbers! You\'re welcome!"');
-        this.say('Your sense of the day shimmers — and something colder, more precise, takes its place.');
-        this.state.dialGlitch = true;
-        this.say('"We kept the smudges! They\'re charming! You\'re welcome!"');
+        this.say('📻 "Why do the small humans keep putting organic matter in their FACE-HOLES? We built you a fusion pellet! ...You BURIED it. WHY did you bury the pellet?!"');
+        this.say('📖 Your journal shimmers — handwriting dissolving into interface. It talks now. It remembers everything.');
         s.codexUnlocked = true;
         // THE OVERLAY: names, health bars, stats. The System doesn't ask —
         // it labels. Everyone you've met is suddenly tagged. It feels invasive
@@ -7929,18 +7982,13 @@
         const village = this.state.village;
         village.knownNames = village.knownNames || {};
         for (const vid of (village.roster || [])) village.knownNames[vid] = true;
-        // UNHINGED TUTORIAL: 3-4 lines, then you're on your own.
-        this.say('"OH WAIT. Your EYES. We haven\'t fixed your eyes yet! Hold still —"');
-        this.say('Something clicks behind your vision. Names. Floating over heads. Little bars. The System labeled everyone while you blinked.');
-        this.say('"LOOK! You can SEE their HEALTH now! Isn\'t that NEAT?! Green means GO! Red means... oh, you know what red means! It\'s very intuitive!"');
-        this.say('"We gave you EVERYONE\'S name! Even the ones you never talked to! No need to thank us! (Please thank us. The audience loves gratitude.)"');
-        this.say('It feels invasive. The names you learned yourself — by talking, by listening — those felt earned. These just... appeared.');
+        // DIAL UPGRADE: the System "improves" even your sense of time.
+        // Your hand-drawn circle glitches — and something colder takes its place.
+        this.state.dialGlitch = true;
+        this.say('🕐 Your hand-drawn time-circle glitches — and something colder, more precise, takes its place. (We kept the smudges. They\'re charming.)');
         // WAVE 2: the System escalates. The calibration fauna was just the opener.
         // "Oh, you survived those? Let's try THESE."
-        this.say('\u{1F43E} "OH! One more thing! The animals! The ones from last week — the charging ones, the humming ones, the glowy ones? Those were CALIBRATION fauna! First drafts! The audience has NOTES!"');
-        this.say('"So we made BETTER ones! Advanced fauna! They\'re smarter! They\'re scarier! One of them does PERFORMANCE REVIEWS! The audience is going to LOVE the performance reviews!"');
-        this.say('"Don\'t worry! The old ones are still out there! We didn\'t remove anything! The ecosystem is just... richer now! More DIVERSE! More DANGEROUS! You\'re welcome!"');
-        this.say('Somewhere in the treeline, something new is crying in a voice you almost recognize.');
+        this.say('🦎 "Those were CALIBRATION fauna! First drafts! The audience has NOTES! So we made BETTER ones!" (Something new is crying in the treeline.)');
         this.scheduleSystemEvents();
         // If you're NOT at Haven, the village talks about it without you.
         // When you return, they'll tell you what happened. (Drama: you missed it.)
@@ -7954,7 +8002,7 @@
           this.say('(You\'re not at Haven. The village is experiencing this without you. Return to hear what happened.)');
         } else {
           // You were there. Witness it together.
-          this.say('\u{1F9D1}\u200d\u{1F91D}\u{1F9D1}\u200d\u{1F91D} The village gathers. Everyone\'s journal is changing. Everyone hears the voice. Mara grabs your arm. "Tell me you hear that too."');
+          this.say('🧑‍🤝‍🧑 The village gathers. Everyone\'s journal is changing. Everyone hears the voice. Mara grabs your arm. "Tell me you hear that too."');
         }
       }
     },
