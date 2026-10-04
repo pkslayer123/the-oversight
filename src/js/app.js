@@ -416,6 +416,9 @@
       <div class="system-window" style="animation-delay: 3s">
         <div class="system-text">Your journal shimmers. It becomes... interface.</div>
       </div>
+      <div class="system-window" style="animation-delay: 4s">
+        <div class="system-text">"OH! Wait! We almost forgot! You were writing things down! We made it better! It talks now!"</div>
+      </div>
       <button class="btn" id="b-arrival-ok" style="margin-top: 20px; z-index: 1001;">...what?</button>
     `;
     document.body.appendChild(overlay);

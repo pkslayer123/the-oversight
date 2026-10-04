@@ -1851,7 +1851,8 @@
 
     // the journal becomes the Codex at four entries. before that it's just your handwriting.
     journalName() {
-      return Object.keys(this.state.codex.plants || {}).length >= 4 ? 'Codex' : 'Journal';
+      // Before the System: it's a paper journal. After: the System "improved" it.
+      return this.state.systemArrived ? 'Codex' : 'Journal';
     },
 
     // tap a close-up tile: what do you know about this ground?
@@ -2065,6 +2066,12 @@
         s.systemQuests = [];
         s.abilityChoices = this.firstAbilityChoices();
         this.say('\U0001F381 "We watched your first week! You\'re good at... let us see..." (Choose an ability.)');
+        // AFTERTHOUGHT: the System suddenly remembers the journal.
+        // "Oh! Oh! We almost forgot! You were writing things down! We made it better!"
+        this.say('\U0001F4D6 "OH! Wait! We almost forgot! You were writing things down! In the little paper! We LOVE the paper! We made it better! It talks now! It remembers EVERYTHING!"');
+        this.say('Your journal shimmers. The handwriting doesn\'t disappear — it gets... absorbed. The Codex has your notes. All of them. Even the smudged ones. Especially the smudged ones.');
+        this.say('"We kept the smudges! They\'re charming! You\'re welcome!"');
+        s.codexUnlocked = true;
         this.scheduleSystemEvents();
         // If you're NOT at Haven, the village talks about it without you.
         // When you return, they'll tell you what happened. (Drama: you missed it.)
