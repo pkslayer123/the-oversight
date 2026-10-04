@@ -461,5 +461,391 @@
       "protection": 40
     },
     "findable": true
+  },
+  {
+    "id": "sling",
+    "name": "Sling",
+    "class": "weapon",
+    "flavor": "Two cords and a pouch. David's technology, still working.",
+    "baseEffect": "Ranged. Bonus +15. Quiet.",
+    "weapon": {
+      "bonus": 15,
+      "type": "ranged"
+    },
+    "craftable": true,
+    "materials": {
+      "vine": 1,
+      "stone": 2
+    },
+    "bondThresholds": [
+      {
+        "uses": 15,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fire_hardened_spear",
+    "name": "Fire-hardened spear",
+    "class": "weapon",
+    "flavor": "The tip is black and hard as iron. Fire did half the work.",
+    "baseEffect": "Melee. Bonus +25.",
+    "weapon": {
+      "bonus": 25,
+      "type": "melee"
+    },
+    "craftable": true,
+    "materials": {
+      "stick": 1
+    },
+    "bondThresholds": [
+      {
+        "uses": 15,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hatchet",
+    "name": "Hatchet",
+    "class": "weapon",
+    "flavor": "Chops wood. Chops other things. The edge doesn't judge.",
+    "baseEffect": "Melee. Bonus +25. Also a tool.",
+    "weapon": {
+      "bonus": 25,
+      "type": "melee"
+    },
+    "findable": true,
+    "bondThresholds": [
+      {
+        "uses": 20,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "machete",
+    "name": "Machete",
+    "class": "weapon",
+    "flavor": "Clears brush. Clears problems. Still has the price sticker.",
+    "baseEffect": "Melee. Bonus +35.",
+    "weapon": {
+      "bonus": 35,
+      "type": "melee"
+    },
+    "findable": true,
+    "bondThresholds": [
+      {
+        "uses": 20,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "crude_bow",
+    "name": "Crude bow",
+    "class": "weapon",
+    "flavor": "Bent stick, twisted cord. The arrows are straighter than the bow.",
+    "baseEffect": "Ranged. Bonus +40.",
+    "weapon": {
+      "bonus": 40,
+      "type": "ranged"
+    },
+    "craftable": true,
+    "materials": {
+      "stick": 1,
+      "vine": 2
+    },
+    "bondThresholds": [
+      {
+        "uses": 25,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "padded_cloth",
+    "name": "Padded cloth wraps",
+    "class": "weapon",
+    "flavor": "Layers of cloth tied tight. Better than skin. Barely.",
+    "baseEffect": "Armor. Protection +5.",
+    "armor": {
+      "protection": 5
+    },
+    "craftable": true,
+    "materials": {
+      "vine": 1
+    }
+  },
+  {
+    "id": "hide_armor",
+    "name": "Hide armor",
+    "class": "weapon",
+    "flavor": "Cured hide, laced with sinew. Smells like work.",
+    "baseEffect": "Armor. Protection +20.",
+    "armor": {
+      "protection": 20
+    },
+    "craftable": true,
+    "materials": {
+      "vine": 2
+    }
+  },
+  {
+    "id": "swat_vest",
+    "name": "SWAT vest",
+    "class": "weapon",
+    "flavor": "Ceramic plates in a carrier that says PROPERTY OF. Nobody's property now.",
+    "baseEffect": "Armor. Protection +35.",
+    "armor": {
+      "protection": 35
+    },
+    "findable": true
+  },
+  {
+    "id": "tinder_bundle",
+    "name": "Tinder bundle",
+    "class": "tool",
+    "flavor": "Char cloth, fatwood shavings, dry bark. Fire in a pouch.",
+    "baseEffect": "Start fires without a check"
+  },
+  {
+    "id": "rope_coil",
+    "name": "Rope coil",
+    "class": "tool",
+    "flavor": "50 feet of paracord. The most useful thing ever made.",
+    "baseEffect": "Climb, drag, bind. +1 to trap crafting"
+  },
+  {
+    "id": "sewing_kit",
+    "name": "Sewing kit",
+    "class": "tool",
+    "flavor": "Needles, thread, buttons in a tin. Civilization in miniature.",
+    "baseEffect": "Repair clothing/armor. +trust when mending for others"
+  },
+  {
+    "id": "torch",
+    "name": "Pitch torch",
+    "class": "tool",
+    "flavor": "Pine pitch on a stick. Burns an hour. Smokes.",
+    "baseEffect": "Light in dark places. Scares most animals"
+  },
+  {
+    "id": "hand_drill",
+    "name": "Hand drill",
+    "class": "tool",
+    "flavor": "Spindle and hearth board. Friction is free.",
+    "baseEffect": "Make fire anywhere (takes a day part)"
+  },
+  {
+    "id": "gill_net",
+    "name": "Gill net",
+    "class": "tool",
+    "flavor": "Monofilament net, 10 feet. Illegal in twelve states. All of them gone.",
+    "baseEffect": "Passive: catches fish while you do other things"
+  },
+  {
+    "id": "field_dressing_kit",
+    "name": "Field dressing kit",
+    "class": "tool",
+    "flavor": "Gut hook, bone saw, game bags. The respectful way.",
+    "baseEffect": "Dress game 50% faster; meat keeps longer"
+  },
+  {
+    "id": "dried_apples",
+    "name": "Dried apples",
+    "class": "food",
+    "flavor": "Chewy rings. Tastes like fall.",
+    "baseEffect": "250 kcal. Keeps well.",
+    "kcalEach": 250,
+    "kg": 0.2,
+    "spoilDay": 60
+  },
+  {
+    "id": "pemmican",
+    "name": "Pemmican",
+    "class": "food",
+    "flavor": "Dried meat pounded with fat and berries. The original energy bar.",
+    "baseEffect": "600 kcal. Nearly indestructible.",
+    "kcalEach": 600,
+    "kg": 0.3,
+    "spoilDay": 120
+  },
+  {
+    "id": "hardtack",
+    "name": "Hardtack",
+    "class": "food",
+    "flavor": "Flour, water, salt, baked to stone. The cracker that outlives empires.",
+    "baseEffect": "300 kcal. Break a tooth or eat forever.",
+    "kcalEach": 300,
+    "kg": 0.25,
+    "spoilDay": 180
+  },
+  {
+    "id": "canned_beans",
+    "name": "Canned beans",
+    "class": "food",
+    "flavor": "The can is dented. The beans don't care.",
+    "baseEffect": "400 kcal. No prep needed.",
+    "kcalEach": 400,
+    "kg": 0.4,
+    "spoilDay": 365
+  },
+  {
+    "id": "peanut_butter",
+    "name": "Peanut butter jar",
+    "class": "food",
+    "flavor": "Half full. The oil separated. Stir it with a stick like an animal.",
+    "baseEffect": "800 kcal. Spoon not included.",
+    "kcalEach": 800,
+    "kg": 0.5,
+    "spoilDay": 90
+  },
+  {
+    "id": "trail_mix_bag",
+    "name": "Trail mix",
+    "class": "food",
+    "flavor": "Nuts, raisins, chocolate chips (melted, reformed, still good).",
+    "baseEffect": "500 kcal. Morale in a bag.",
+    "kcalEach": 500,
+    "kg": 0.3,
+    "spoilDay": 60
+  },
+  {
+    "id": "wedding_ring",
+    "name": "Wedding ring",
+    "class": "sentimental",
+    "flavor": "Gold band, worn thin. Inside: initials and a date. You remember the day.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": [
+      {
+        "uses": 21,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mixtape",
+    "name": "Mixtape",
+    "class": "sentimental",
+    "flavor": "Hand-labeled: 'FOR THE DRIVE.' No player. The songs are in your head anyway.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": [
+      {
+        "uses": 21,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dog_tags",
+    "name": "Dog tags",
+    "class": "sentimental",
+    "flavor": "Not yours. You carry them so someone is remembered.",
+    "baseEffect": "+resolve when carried (morale)",
+    "bondThresholds": [
+      {
+        "uses": 21,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "wool_socks",
+    "name": "Wool socks",
+    "class": "clothing",
+    "flavor": "Dry feet are happy feet. The first rule.",
+    "baseEffect": "Resist cold/wet feet",
+    "bondThresholds": [
+      {
+        "uses": 25,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rain_poncho",
+    "name": "Rain poncho",
+    "class": "clothing",
+    "flavor": "Crackly plastic. Smells like a hardware store. Keeps you dry.",
+    "baseEffect": "Resist rain; stay dry",
+    "bondThresholds": [
+      {
+        "uses": 25,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "crowbar",
+    "name": "Crowbar",
+    "class": "weapon",
+    "flavor": "Opens doors. Opens cans. Opens arguments.",
+    "baseEffect": "Melee. Bonus +20. Pries things open.",
+    "weapon": {
+      "bonus": 20,
+      "type": "melee"
+    },
+    "findable": true,
+    "bondThresholds": [
+      {
+        "uses": 15,
+        "offers": [
+          "efficient_action",
+          "never_fails",
+          "impossible_edge"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "venison_jerky",
+    "name": "Venison jerky",
+    "class": "food",
+    "flavor": "Smoked over hickory. Chewy as a promise.",
+    "baseEffect": "350 kcal. Keeps for months.",
+    "kcalEach": 350,
+    "kg": 0.2,
+    "spoilDay": 120
   }
 ]

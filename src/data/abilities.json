@@ -554,5 +554,192 @@
     "unlock": {
       "type": "system_offer"
     }
+  },
+  {
+    "id": "ant_trail",
+    "name": "Ant Trail",
+    "description": "You can follow ant trails to water and sugar. Ants know things.",
+    "flavor": "The tiny marchers! They never get lost! Follow them! (Watch where you step!)",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "cold_blooded",
+    "name": "Cold-Blooded",
+    "description": "You need 20% less food in cold weather. Your body budgets like an accountant.",
+    "flavor": "You are the lizard! Slow! Efficient! We envy your heating bill! (You don't have one!)",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "echo_location",
+    "name": "Echo Location",
+    "description": "Clap once: you sense the layout of any 9x9 grid (reveals blocked cells). 1/day.",
+    "flavor": "CLAP! The sound comes back with a MAP! You are the bat! (The bat is jealous!)",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "compost_king",
+    "name": "Compost King",
+    "description": "Spoiled food becomes fertilizer: bury it, and forage yields +10% on that tile next season.",
+    "flavor": "The rot becomes the GROWTH! Nothing is wasted! We love this one! (We eat... nothing! But still!)",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "beard_moss",
+    "name": "Beard Moss",
+    "description": "Moss grows in your beard/hair. You always have tinder. (Looks great, honestly.)",
+    "flavor": "You are the WALKING FOREST! The moss chose YOU! Fashion AND function!",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "dowsing",
+    "name": "Dowsing",
+    "description": "A forked stick twitches toward water. Works 70% of the time. Nobody knows why. Including us.",
+    "flavor": "The stick KNOWS! We tested it! We don't understand it! Science is hard!",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "cornered_rat",
+    "name": "Cornered Rat",
+    "description": "When surrounded (3+ enemies), +100% damage and +50% dodge. Desperation is a weapon.",
+    "flavor": "BACK AGAINST THE WALL! Teeth BARE! We are cheering SO loud right now!",
+    "pool": "system",
+    "tier": "combat",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "dead_aim",
+    "name": "Dead Aim",
+    "description": "First attack in any combat is a guaranteed critical if you waited 1 round. Patience, then thunder.",
+    "flavor": "You WAIT! You BREATHE! Then \u2014 BOOM! The audience gasps! We gasped!",
+    "pool": "system",
+    "tier": "combat",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "second_skin",
+    "name": "Second Skin",
+    "description": "Your armor never slows you. Move full speed in any armor. You wear it like weather.",
+    "flavor": "The metal is your SKIN now! Clank clank! Fashionable AND functional!",
+    "pool": "system",
+    "tier": "combat",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "open_book",
+    "name": "Open Book",
+    "description": "Villagers tell you their real trust level and one secret fear. You just... know how to ask.",
+    "flavor": "You ASK and they TELL! What is this power?! We want to learn it! (We can't. We tried.)",
+    "pool": "system",
+    "tier": "social",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "mediator",
+    "name": "Mediator",
+    "description": "You can resolve villager disputes (drama events) with a talk check. Peace is a skill.",
+    "flavor": "You make the angry people UN-angry! With WORDS! We don't understand! But WOW!",
+    "pool": "system",
+    "tier": "social",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "leech",
+    "name": "Leech",
+    "description": "When an ally takes damage near you, you can take half of it. They owe you. (They know it.)",
+    "flavor": "You DRINK their pain! Not literally! (Unless you want to! We won't judge!)",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "scarecrow",
+    "name": "Scarecrow",
+    "description": "You can stage a fake injury to lure monsters into traps. They fall for it. Every time.",
+    "flavor": "You PRETEND to be hurt! They come! TRAPPED! Devious! We LOVE it! (We're a little scared of you!)",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "hollow_bones",
+    "name": "Hollow Bones",
+    "description": "You weigh 30% less for carry calculations. Your bones are birdlike. (Don't think about it.)",
+    "flavor": "Your bones are HOLLOW! Like the bird! You are light! Do NOT think about why!",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "third_eye",
+    "name": "Third Eye",
+    "description": "A small eye opens on your forehead when danger is near. +30% ambush detection. It weeps when you lie.",
+    "flavor": "ANOTHER EYE! It sees the danger! It also sees your LIES! (We see them too! We don't mind!)",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "phoenix_clause",
+    "name": "Phoenix Clause",
+    "description": "Once per run: when you die, you explode (damaging everything nearby) and respawn at Haven with 1 HP. The System calls it 'great television.'",
+    "flavor": "You DIE! Then \u2014 KABOOM! \u2014 you're BACK! The audience LOVED it! The ratings! THE RATINGS!",
+    "pool": "system",
+    "tier": "overpowered",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "id": "symbiote",
+    "name": "Symbiote",
+    "description": "A small alien organism lives in your gut. It eats 200 kcal/day but warns you of poisoned food and purifies risky water slowly (1L/day).",
+    "flavor": "You have a FRIEND inside! It eats your food! It cleans your water! It's... rent! Symbiosis! (Don't think about what happens if you starve it!)",
+    "pool": "system",
+    "tier": "risky",
+    "unlock": {
+      "type": "system_offer"
+    }
   }
 ]
