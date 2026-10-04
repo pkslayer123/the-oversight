@@ -718,8 +718,15 @@
         if (cell === 'tree' || cell === 'bigtree') {
           if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
           else if (sec.yield > 0) actions.push(['Forage nuts', () => Game.cellInteract(cx, cy)]);
-          // TERRAFORMING: fell it. costs a day-part + 80 kcal, yields wood.
-          actions.push(['🪓 Cut down', () => { Game.cutTree(cx, cy); refresh(); }]);
+          // TOOL PREREQUISITES: felling needs an axe. A pruning saw takes
+          // branches, not trunks. Impossible actions hide; the hint teaches.
+          const ci = Game.cutInfo(cell);
+          if (ci.canFell) actions.push(['🪓 Cut down', () => { Game.cutTree(cx, cy); refresh(); }]);
+          else {
+            desc += ' ' + ci.hint;
+            if (ci.canPrune) actions.push(['🌿 Prune branches', () => { Game.pruneBranches(cx, cy); refresh(); }]);
+          }
+          actions.push(['🍂 Gather fallen branches', () => { Game.gatherFallen(cx, cy); refresh(); }]);
         } else if (cell === 'water') {
           if (!sec || !sec.known) actions.push(['Examine', () => Game.cellInteract(cx, cy)]);
           else if (sec.safe) actions.push(['Drink', () => Game.cellInteract(cx, cy)]);
@@ -1142,6 +1149,7 @@
     else if (inlineView.kind === 'remote') renderRemoteInline(slot, inlineView);
     else if (inlineView.kind === 'askabout') renderAskAboutInline(slot, inlineView);
     else if (inlineView.kind === 'pantry') renderPantryInline(slot, inlineView);
+    else if (inlineView.kind === 'caches') renderCachesInline(slot, inlineView);
     else if (inlineView.kind === 'inv') renderInvInline(slot, inlineView);
     else slot.innerHTML = '';
   }
@@ -1774,7 +1782,7 @@
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)</p>`; })()}
         ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)</p>`; })()}
-        ${inv.length ? inv.map((i, idx) => `<p class="small">${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
+        ${inv.length ? inv.map((i, idx) => `<p class="small">${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.rawKcal && Game.nearFire() ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
         ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> \u2014 ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}`;
@@ -1795,6 +1803,11 @@
     slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipW, 'weapon'), 'Equipped.'));
     slot.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipA, 'armor'), 'Worn.'));
     slot.querySelectorAll('[data-donate]').forEach(b => b.onclick = rewire(() => Game.donateToPantry(+b.dataset.donate), 'Donated to the pantry.'));
+    slot.querySelectorAll('[data-stashmat]').forEach(b => b.onclick = rewire(() => {
+      const it = Game.state.scholar.inventory[+b.dataset.stashmat];
+      if (it && it.material) Game.donateMaterial(it.material, it.units || 1);
+    }, 'Stashed.'));
+    slot.querySelectorAll('[data-stashtool]').forEach(b => b.onclick = rewire(() => Game.donateTool(+b.dataset.stashtool), 'Tool stashed.'));
     slot.querySelectorAll('[data-activate]').forEach(b => b.onclick = (e) => {
       Game.activateAbility(b.dataset.activate); inlineView.result = 'Activated.'; refresh();
     });
@@ -2001,6 +2014,12 @@
     if (taphintX) taphintX.onclick = dismissTutorial;
     const pantryBtn = document.getElementById('x-pantry');
     if (pantryBtn) pantryBtn.onclick = () => pantrySheet();
+    const cachesBtn = document.getElementById('x-caches');
+    if (cachesBtn) cachesBtn.onclick = () => cachesSheet();
+    // Village stash buttons (Haven panel). Give = all you carry; Take = 5.
+    document.querySelectorAll('[data-stash-give]').forEach(b => b.onclick = () => { Game.donateMaterial(b.dataset.stashGive, 9999); refresh(); });
+    document.querySelectorAll('[data-stash-take]').forEach(b => b.onclick = () => { Game.takeMaterial(b.dataset.stashTake, 5); refresh(); });
+    document.querySelectorAll('[data-stash-tool]').forEach(b => b.onclick = () => { Game.takeTool(b.dataset.stashTool); refresh(); });
     wirePanel(st, n);
     wireContextBar();
     wireAbilityBar();
@@ -2145,6 +2164,35 @@
     refresh();
   }
 
+  // cachesSheet: your buried goods + bury form. Inline — the world stays visible.
+  function cachesSheet() {
+    inlineView = { kind: 'caches', result: null, mapKey: inlineMapKey() };
+    refresh();
+  }
+
+  function renderCachesInline(slot, view) {
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('📍 Caches & buried goods')}
+      ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
+      <div class="inline-body">${Game.cachesHtml()}</div>
+    </div>`;
+    wireInlineX(slot);
+    slot.querySelectorAll('[data-cache-dig]').forEach(b => b.onclick = () => {
+      Game.digUpCache(b.dataset.cacheDig);
+      inlineView = { kind: 'caches', result: 'Dug up.', mapKey: inlineMapKey() };
+      refresh();
+    });
+    const buryGo = slot.querySelector('#bury-go');
+    if (buryGo) buryGo.onclick = () => {
+      const sel = slot.querySelector('#bury-what').value; // "material:branch" | "food:3"
+      const qty = Math.max(1, +slot.querySelector('#bury-qty').value || 1);
+      const [kind, key] = sel.split(':');
+      Game.buryCache(kind, kind === 'food' ? +key : key, qty);
+      inlineView = { kind: 'caches', result: 'Buried.', mapKey: inlineMapKey() };
+      refresh();
+    };
+  }
+
 
   // SLEEP: "sleep until morning" with the cost/benefit on the button.
   // Quality depends on where you are: bunk > tent > hall floor > cold ground.
@@ -2169,7 +2217,9 @@
       <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
       <button class="btn sm" id="x-pantry">Take from pantry</button>
+      <button class="btn sm ghost" id="x-caches">📍 Caches</button>
       ${sleepBtnHTML()}
+      ${Game.stashHtml()}
       <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
       <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry ${Game.fmtKcal(8000)}+ (${Game.fmtKcal(st.pantryKcal)})</p>
       <p class="small" style="opacity:.7">Tap a person in the grid to talk. They\'re living their lives.</p>

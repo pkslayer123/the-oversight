@@ -395,7 +395,10 @@
       "vine": 1
     },
     "class": "weapon",
-    "flavor": "flint knapped to an edge, bound with vine"
+    "flavor": "flint knapped to an edge, bound with vine",
+    "tool": {
+      "woodcut": "whittle"
+    }
   },
   {
     "id": "hunting_spear",
@@ -545,7 +548,10 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "tool": {
+      "woodcut": "fell"
+    }
   },
   {
     "id": "machete",
@@ -568,7 +574,10 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "tool": {
+      "woodcut": "brush"
+    }
   },
   {
     "id": "crude_bow",
@@ -852,7 +861,10 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "tool": {
+      "pry": true
+    }
   },
   {
     "id": "venison_jerky",
@@ -936,7 +948,10 @@
     "name": "Hand Saw",
     "class": "tool",
     "flavor": "Folding pruning saw. Cuts on the pull, like it means it.",
-    "baseEffect": "+1 to wood gathering"
+    "baseEffect": "+1 to wood gathering",
+    "tool": {
+      "woodcut": "prune"
+    }
   },
   {
     "id": "camp_pot",
@@ -984,5 +999,29 @@
       "stick": 1
     },
     "craftYield": 3
+  },
+  {
+    "id": "branch",
+    "name": "Branch",
+    "class": "material",
+    "flavor": "Deadfall and pruned limbs. Burns well. Future: handles, stakes, walls.",
+    "kg": 0.5,
+    "findable": false
+  },
+  {
+    "id": "fiber",
+    "name": "Plant fiber",
+    "class": "material",
+    "flavor": "Stripped bark and tough stems. Future: cordage, snares, cloth.",
+    "kg": 0.1,
+    "findable": false
+  },
+  {
+    "id": "stone",
+    "name": "Stone",
+    "class": "material",
+    "flavor": "Good hard stone. Sling ammo, tool heads, future foundations.",
+    "kg": 0.3,
+    "findable": false
   }
 ]

@@ -1,0 +1,61 @@
+# Tools, Stashes & Caches
+
+Steve's rules, made mechanical. Not a crafting game — the world making sense.
+
+## Tool prerequisites
+
+Actions hide when you lack the tool. No dead buttons; the context line teaches
+("You need an axe to fell this.").
+
+Tool tags live in `items.json` (`tool.woodcut`): tiers are
+`fell > prune > brush > whittle > none`.
+
+| Tier | Example | Can fell | Can prune | Notes |
+|---|---|---|---|---|
+| fell | hatchet (axe) | ✅ any tree | ✅ | the only felling tier |
+| prune | hand saw (pruning saw) | ❌ | ✅ branches | limbs, not trunks — Steve's rule |
+| brush | machete | ❌ | ❌ | fast brush clearing |
+| whittle | stone knife | ❌ | ❌ | carving, not felling |
+| none | bare hands | ❌ | ❌ | gather deadfall, slow |
+
+- `Game.cutInfo(cell)` → `{canFell, canPrune, hint}` — the UI's single source.
+- `Game.cutTree` is wrapped: no axe, no felling (2-tick "sizing it up").
+- `Game.clearBrush` is overridden: machete 16 ticks / axe 24 / hands 64, +fiber.
+- New: `pruneBranches` (32 ticks, +2–4 branches, tree lives),
+  `gatherFallen` (16 ticks, +1 branch, no tool — the honest slow path).
+
+## Materials
+
+`branch` 0.5kg · `fiber` 0.1kg · `stone` 0.3kg · `wood` log 2.0kg.
+`Game.addMaterial / materialCount / spendMaterial`. Foundation for future
+crafting/matter-manipulation; deliberately shallow for now.
+
+## Village stash (Haven)
+
+Communal materials + spare tools + ledger. `state.village.stash`.
+
+- Give = all you carry (one tap). Take = 5. Weight-checked.
+- The ledger remembers every give/take with day + who.
+- `villageTrustLevel()`: open ≥50 / wary ≥25 / closed. In open villages NPCs
+  contribute; in closed ones the pile gets skimmed ("The count's off.
+  Nobody saw anything.") and taking tools is noticed.
+- Chronic net-takers (takes − gives < −20) lose trust, get observed as hoarding.
+
+## Personal caches
+
+`buryCache('material'|'food', key, qty)` — 32 ticks, removes from inventory,
+writes the location to `state.codex.places` ("Buried 4× Branch — at the creek
+bend, day 3") and announces the Journal note. `digUpCache(id)` returns it
+(weight-checked).
+
+Buried ≠ safe: ~6%/day discovery by others while NPCs are about. A robbed
+cache greets you with disturbed earth and an empty hole.
+
+## Files
+
+- `src/js/storage.js` — self-attaching module (wraps cutTree, overrides
+  clearBrush, wraps npcBatchTurn). Load after truth.js.
+- `src/data/items.json` — `tool` tags, branch/fiber/stone materials.
+- `src/js/app.js` — tool-aware tree actions, Haven stash panel, caches inline
+  view, inventory Stash buttons.
+- `scripts/test-storage.js` — 59 tests.
