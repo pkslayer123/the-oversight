@@ -153,12 +153,13 @@
     const v = Game.data.villagers.find(x => x.id === vid);
     const line = Game.talkTo(vid);
     const trust = (Game.state.village.trust && Game.state.village.trust[vid]) || 10;
-    const building = (Game.state.village.spawnBuilding && Game.state.village.spawnBuilding[vid]) || 'somewhere';
+    const building = Game.state.village.spawnBuilding || 'the school gymnasium';
     const health = (Game.state.village.health && Game.state.village.health[vid] !== undefined) ? Game.state.village.health[vid] : 100;
     screen.innerHTML = `${bar('scattering://village', v.name.split(' ')[0].toLowerCase())}
       <div class="card" style="margin-top:40px">
         <h3>${v.name}</h3>
-        <p class="small">${v.formerOccupation} · ${v.homeRegion} · woke up in ${building}</p>
+        <p class="small">${v.formerOccupation} · ${v.homeRegion}</p>
+        <p class="small" style="opacity:.7">Woke up in ${building} — same as you. Same as everyone.</p>
         <p class="small">Health: ${health}/100</p>
         <p style="font-size:17px;line-height:1.6">"${line}"</p>
         <button class="btn sm" id="b-tagain">Say more</button>

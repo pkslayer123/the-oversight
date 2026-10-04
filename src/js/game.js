@@ -71,14 +71,14 @@
       this.state.village.roster = mains.concat(bg);
       this.state.village.villagers = mains; // mains have dialogue; background have one-liners
       // ACT 0: trust starts low. you're 12 strangers from all over the world.
-      // everyone woke up in a different building. nobody knows if they should work together.
+      // everyone woke up in the SAME building — the school gymnasium.
+      // twelve cots. fluorescent lights buzzing. nobody knows anybody.
+      // the drama is proximity: you're stuck with these people. figure it out.
       this.state.village.trust = {};
-      this.state.village.spawnBuilding = {};
-      const buildings = ['the clinic', 'the bus depot', 'the school', 'the fire station', 'the library', 'the grocery', 'the church', 'the garage', 'the apartment', 'the warehouse', 'the diner', 'the motel'];
+      this.state.village.spawnBuilding = 'the school gymnasium';
       for (const rid of this.state.village.roster) {
         // trust 5-20: strangers. it's earned.
         this.state.village.trust[rid] = 5 + Math.floor(Math.random() * 16);
-        this.state.village.spawnBuilding[rid] = buildings.splice(Math.floor(Math.random() * buildings.length), 1)[0];
       }
       // you trust yourself
       this.state.village.trust[villagerId] = 100;

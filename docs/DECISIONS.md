@@ -574,3 +574,25 @@ STILL NEEDED (not yet built):
 - Teach system: dialogue option to teach a plant you know.
 - Trust affects more than food (quests, knowledge sharing, leaving?).
 - The "shouldn't go the same way" — personalities that drive different Act 0 outcomes.
+
+## 2026-10-03 — Architecture: macro=travel, micro=interaction (Steve's direction)
+Steve: "The top detailed map should be about interactions while the tile one is about
+travel between places. How will monsters actually be encountered?"
+
+NEW ARCHITECTURE:
+- Macro map (7x7): STRATEGIC TRAVEL. Tap a tile -> travel there (costs day-part + kcal by distance).
+- Detail grid (9x9): YOU ARE IN THE WORLD. You have a position (mx, my).
+  Tap adjacent cells to STEP (10 kcal/step). Tap plants to forage. Tap monsters to engage.
+- Monsters: exist IN the detail grid (mx, my). Move turn-based when you move.
+  If they reach your cell: combat. No more "whole node" encounters.
+- Forage: (TODO) should target the specific plant cell you're on/adjacent to, not the tile.
+
+BUGS FIXED:
+- Intros no longer mention "the System" (Act 0: they don't know it yet).
+- Detail grid taps no longer hop macro tiles (was confusing). Now: step within the tile.
+- Player position shown as 🧍 in the detail grid.
+
+STILL NEEDED:
+- Forage targeting specific cells (not tile-level).
+- Monster spawning in detail grid (currently macro-level wanderer).
+- Forage/examine/fight actions on specific cells.
