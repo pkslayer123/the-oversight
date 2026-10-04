@@ -138,6 +138,7 @@ const say = (m) => log.push(`D${day} ${m}`);
     const tile = Game.tileAt(t.x, t.y);
     if (tile.type === 'haven') continue;
     Game.travelTo(t.x, t.y);
+    if (Game.playerTile() !== tile) continue; // travel blocked — not actually there
     if (hasFireHere()) { fireTile = t; break; }
   }
   if (fireTile) {
