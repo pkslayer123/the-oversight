@@ -766,24 +766,40 @@
       }
       // trail: center cross
       for (let i = 1; i < 6; i++) { if (at(3, i) === 'forest_floor') set(3, i, 'trail_edge'); }
-      // ruin: one, deliberate, with a story.
+      // ruin: one, deliberate, with a story. GUARANTEED.
       // SCAVENGER VIABILITY: the ruin must be within Manhattan d<=3 of haven (3,3),
       // i.e. reachable via revealed tiles in week 1. Scavenging is a real path now.
-      guard = 0;
-      while (guard++ < 60) {
-        const x = Math.floor(Math.random() * 7), y = Math.floor(Math.random() * 7);
-        const dHaven = Math.abs(x - 3) + Math.abs(y - 3);
-        if (at(x, y) === 'forest_floor' && at(x + 1, y) !== 'creek' && at(x - 1, y) !== 'creek' && dHaven <= 3 && dHaven > 0) {
-          set(x, y, 'ruin');
-          tiles[y][x].ruinStory = ['A collapsed barn. Pre-Burn. The wiring is gone — everything is gone — but the stones remember the shape of work.',
-            'A farmhouse foundation. Someone\'s kitchen. The Burn took the wires from the walls; the walls kept standing out of spite.',
-            'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(Math.random() * 3)];
-          // finite pantry: 3-5 cans. the houses feed you until they don't.
-          const nLoot = 3 + Math.floor(Math.random() * 3);
-          tiles[y][x].loot = [];
-          for (let i = 0; i < nLoot; i++) tiles[y][x].loot.push(SCAVENGED[Math.floor(Math.random() * SCAVENGED.length)].id);
-          break;
+      // (The old try-60-times loop silently failed ~2% of the time, leaving worlds
+      // with no ruin at all — and scavengers with nowhere to go.)
+      const ruinCandidates = [];
+      for (let ry2 = 0; ry2 < 7; ry2++) for (let rx2 = 0; rx2 < 7; rx2++) {
+        const dHaven = Math.abs(rx2 - 3) + Math.abs(ry2 - 3);
+        if (dHaven <= 3 && dHaven > 0 && at(rx2, ry2) === 'forest_floor' &&
+            at(rx2 + 1, ry2) !== 'creek' && at(rx2 - 1, ry2) !== 'creek') ruinCandidates.push([rx2, ry2]);
+      }
+      let ruinXY;
+      if (ruinCandidates.length) {
+        ruinXY = ruinCandidates[Math.floor(Math.random() * ruinCandidates.length)];
+      } else {
+        // degenerate map: force it. pick a ring cell, make it forest_floor, put the ruin there.
+        const ring = [];
+        for (let ry2 = 0; ry2 < 7; ry2++) for (let rx2 = 0; rx2 < 7; rx2++) {
+          const dHaven = Math.abs(rx2 - 3) + Math.abs(ry2 - 3);
+          if (dHaven <= 3 && dHaven > 0) ring.push([rx2, ry2]);
         }
+        ruinXY = ring[Math.floor(Math.random() * ring.length)];
+        set(ruinXY[0], ruinXY[1], 'forest_floor');
+      }
+      {
+        const [rx3, ry3] = ruinXY;
+        set(rx3, ry3, 'ruin');
+        tiles[ry3][rx3].ruinStory = ['A collapsed barn. Pre-Burn. The wiring is gone — everything is gone — but the stones remember the shape of work.',
+          'A farmhouse foundation. Someone\'s kitchen. The Burn took the wires from the walls; the walls kept standing out of spite.',
+          'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(Math.random() * 3)];
+        // finite pantry: 3-5 cans. the houses feed you until they don't.
+        const nLoot = 3 + Math.floor(Math.random() * 3);
+        tiles[ry3][rx3].loot = [];
+        for (let i = 0; i < nLoot; i++) tiles[ry3][rx3].loot.push(SCAVENGED[Math.floor(Math.random() * SCAVENGED.length)].id);
       }
       // stock: rich ground gives more pulls. number of times depends on the biome.
       // (computed inline — this.map doesn't exist yet during gen)
@@ -920,9 +936,12 @@
           river.cells.push(c);
         }
         // one bridge: a random position along the river, ON the river (not adjacent).
+        // the river is 2 wide, so the bridge must be 2 cells to actually span it.
+        // (a 1-cell bridge stranded you mid-stream — water on the far side.)
         const bi = Math.floor(rnd() * 9);
         const rc = river.cells[bi];
-        bridge = horizontal ? { x: bi, y: rc } : { x: rc, y: bi };
+        bridge = horizontal ? [{ x: bi, y: rc }, { x: bi, y: rc + 1 }]
+                            : [{ x: rc, y: bi }, { x: rc + 1, y: bi }];
       }
       const nType = (dx, dy) => {
         const nx = x + dx, ny = y + dy;
@@ -948,36 +967,77 @@
         const row = [];
         for (let cx = 0; cx < N; cx++) {
           let cell = pick(t.type);
-          // river overrides: water (blocks), bridge (passable)
-          if (river) {
-            const horiz = river.horizontal;
-            const rc = river.cells[horiz ? cx : cy];
-            const isRiver = horiz ? (cy === rc || cy === rc + 1) : (cx === rc || cx === rc + 1);
-            if (isRiver) {
-              const isBridge = bridge && cx === bridge.x && cy === bridge.y;
-              cell = isBridge ? 'bridge' : 'water';
-            }
-          }
-          // edge blending: 2 outer rows/cols lean toward the neighbor's type
+          // edge blending: 2 outer rows/cols lean toward the neighbor's type.
+          // (runs BEFORE the river override — the river and its bridge always win.)
           const edgeN = cy < 2 ? nType(0, -1) : null;
           const edgeS = cy > 6 ? nType(0, 1) : null;
           const edgeW = cx < 2 ? nType(-1, 0) : null;
           const edgeE = cx > 6 ? nType(1, 0) : null;
           const edge = edgeN || edgeS || edgeW || edgeE;
-          if (edge && edge !== t.type && rnd() < 0.55) cell = pick(edge);
-          // creek carves a channel; trail cuts a path (only if actually that type)
-          if (t.type === 'creek' && cx >= 3 && cx <= 5) cell = rnd() < 0.8 ? 'water' : 'grass';
+          if (edge && edge !== t.type && rnd() < 0.55) {
+            const blended = pick(edge);
+            // edge blending is flavor, not fortification: a blocking cell from the
+            // neighbor's palette (tent, wall, fire) could seal off the bridge or a region.
+            if (!this.cellProps(blended).blocks) cell = blended;
+          }
+          // river overrides: water (blocks), bridge (passable). applied last — it wins.
+          if (river) {
+            const horiz = river.horizontal;
+            const rc = river.cells[horiz ? cx : cy];
+            const isRiver = horiz ? (cy === rc || cy === rc + 1) : (cx === rc || cx === rc + 1);
+            if (isRiver) {
+              const isBridge = bridge && bridge.some(b => cx === b.x && cy === b.y);
+              cell = isBridge ? 'bridge' : 'water';
+            }
+          }
+          // trail cuts a path (only if actually that type).
+          // (the old creek channel-carve is gone: it was redundant with the river and
+          // shattered the tile into unreachable pockets. the river + bridge is the water.)
           if (t.type === 'trail_edge' && cy >= 3 && cy <= 5) cell = 'dirt';
           row.push(cell);
         }
         cells.push(row);
       }
-      // big trees: 2x2 clusters that can straddle edges — the "splits biomes" feel
+      // big trees: 2x2 clusters that can straddle edges — the "splits biomes" feel.
+      // never on the bridge (you'd have to chop through a tree to cross) or the spawn cell.
       const bigTrees = Math.floor(rnd() * 3);
+      const isBridgeCell = (cx, cy) => bridge && bridge.some(b => b.x === cx && b.y === cy);
       for (let i = 0; i < bigTrees; i++) {
         const bx = Math.floor(rnd() * 8), by = Math.floor(rnd() * 8);
-        cells[by][bx] = 'bigtree'; cells[by][bx + 1] = 'bigtree';
-        cells[by + 1][bx] = 'bigtree'; cells[by + 1][bx + 1] = 'bigtree';
+        const cells4 = [[bx,by],[bx+1,by],[bx,by+1],[bx+1,by+1]];
+        if (cells4.some(([cx, cy]) => isBridgeCell(cx, cy) || (cx === 4 && cy === 4))) continue;
+        for (const [cx, cy] of cells4) cells[cy][cx] = 'bigtree';
+      }
+      // BRIDGE EXITS: the cells on either side of the bridge (along the crossing axis)
+      // must be walkable. A tree/bigtree there seals the far bank — bridge to nowhere.
+      if (t.type === 'creek' && bridge && bridge.length === 2) {
+        const horiz = river && river.horizontal;
+        const exits = horiz
+          ? [[bridge[0].x, bridge[0].y - 1], [bridge[1].x, bridge[1].y + 1]]
+          : [[bridge[0].x - 1, bridge[0].y], [bridge[1].x + 1, bridge[1].y]];
+        for (const [ex, ey] of exits) {
+          if (ex < 0 || ey < 0 || ex > 8 || ey > 8) continue;
+          if (this.cellProps(cells[ey][ex]).blocks) cells[ey][ex] = 'grass';
+        }
+      }
+      // SPAWN SAFETY: travelTo drops you at (4,4). on creek tiles the river/channel
+      // could leave you standing on a walkable cell ringed by water — stuck, turn one.
+      // guarantee (4,4) is walkable and at least one orthogonal neighbor is too.
+      if (t.type === 'creek') {
+        const blocksAt = (cx, cy) => {
+          if (cx < 0 || cy < 0 || cx > 8 || cy > 8) return true;
+          const pr = this.cellProps(cells[cy][cx]);
+          return !!pr.blocks;
+        };
+        if (blocksAt(4, 4)) cells[4][4] = 'grass';
+        const nbs = [[4,3],[4,5],[3,4],[5,4]].filter(([nx, ny]) => !blocksAt(nx, ny));
+        if (!nbs.length) {
+          // open toward the bridge if there is one, else any direction
+          const toward = bridge && bridge.length ? bridge[0] : { x: 4, y: 0 };
+          const dx = Math.sign(toward.x - 4), dy = Math.sign(toward.y - 4);
+          const ox = dx !== 0 ? 4 + dx : 4, oy = dx !== 0 ? 4 : 4 + dy;
+          cells[oy][ox] = 'grass';
+        }
       }
       t.detail = cells;
       // MODIFIERS: every space has factors. they synthesize on the fly.
