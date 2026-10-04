@@ -1195,10 +1195,15 @@
     // CONVERSATION: the dialogue surface. Transcript of the exchange so far
     // plus the player's response choices — never just "continue".
     const convo = Game.convoUI ? Game.convoUI(villagerId) : { active: false, transcript: [], choices: [] };
-    const convoTranscript = (convo.transcript || []).slice(-6).map(e =>
-      e.who === 'you'
-        ? `<p style="font-size:14px;color:#9fd8ff;margin:8px 0 0 16px">You: ${esc(e.text)}</p>`
-        : `<p style="font-size:15px;line-height:1.55;margin:8px 0 0">${esc(e.text)}</p>`).join('');
+    // TRANSCRIPT: reads like dialogue, not a log. Speaker name always shown
+    // (descriptor pre-System, real name once earned). Narration (non-quoted)
+    // is italic and dimmed so speech stands out.
+    const convoTranscript = (convo.transcript || []).slice(-6).map(e => {
+      const isSpeech = /^\s*"/.test(e.text);
+      const cls = e.who === 'you' ? 'tline you' : 'tline them';
+      const who = e.who === 'you' ? 'You' : titleName;
+      return `<p class="${cls}"><b>${esc(who)}:</b> <span class="${isSpeech ? 'sp' : 'narr'}">${esc(e.text)}</span></p>`;
+    }).join('');
     const convoChoices = (convo.choices || []).map(cn =>
       `<button class="btn sm${cn.id === 'leave' ? ' ghost' : ''}" data-act="c:${esc(cn.id)}">${esc(cn.label)}</button>`).join(' ');
     const convoHtml = convoTranscript

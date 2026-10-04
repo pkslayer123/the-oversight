@@ -177,7 +177,10 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .cell.villager .vtoken { font-size: .89em; }
 .cell.villager .vname {
   font-size: .39em; color: #9a9a9a;
-  max-width: 1.6em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* max-width must be relative to the TILE, not the tiny font: 1.6em of a
+     .39em font is ~1 character wide, which hid whole names. */
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
 }
 /* world map: fluid tiles, capped width so it doesn't get absurd on desktop */
 .minimap { max-width: 480px; }
@@ -447,6 +450,13 @@ body.in-combat .dangerbar {
 .inline-head b { font-size: 15px; }
 .inline-body p { margin: 6px 0; }
 .inline-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+/* conversation transcript: reads like dialogue, not a log. Speaker names
+   always shown; narration (non-quoted) is italic and dimmed. */
+.convo .tline { font-size: 14px; line-height: 1.55; margin: 9px 0 0; }
+.convo .tline.you { margin-left: 14px; }
+.convo .tline.you b { color: #9fd8ff; font-weight: 600; }
+.convo .tline.them b { color: #b8e986; font-weight: 600; }
+.convo .tline .narr { font-style: italic; opacity: .72; }
 /* person card buttons: 2-column compact grid, not full-width stack */
 .inlinecard .inline-btns .btn.sm {
   flex: 1 1 calc(50% - 3px); margin: 0; padding: 10px 6px; font-size: 14px;
