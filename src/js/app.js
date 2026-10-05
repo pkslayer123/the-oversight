@@ -429,10 +429,15 @@
     const pool = [...items].sort(() => Math.random() - 0.5);
     const picked = new Set();
     const card = (i) => {
+      // PERSONAL KEEPSAKES (Steve 2026-10-05): that person's items, not props.
+      // The pick screen shows the named, dated version.
+      const personal = (v.itemPersonal || {})[i.id];
+      const showName = personal ? personal.name : i.name;
+      const showFlavor = personal ? personal.flavor : (i.flavor || '');
       // SEMANTIC HONESTY (Steve 2026-10-05): items with real effects show them.
       const effect = i.baseEffect ? `<p class="small" style="opacity:.75">⚙ ${i.baseEffect}</p>` : '';
-      const sub = `<p class="small">${i.flavor || ''}</p>${effect}`;
-      return `<div class="card itempick${picked.has(i.id) ? ' sel' : ''}" data-i="${i.id}"><h3>${picked.has(i.id) ? '✓ ' : ''}${i.name}</h3>${sub}</div>`;
+      const sub = `<p class="small">${showFlavor}</p>${effect}`;
+      return `<div class="card itempick${picked.has(i.id) ? ' sel' : ''}" data-i="${i.id}"><h3>${picked.has(i.id) ? '✓ ' : ''}${showName}</h3>${sub}</div>`;
     };
     const render = () => {
       screen.innerHTML = `${bar('scattering://pack', picked.size + '/5')}
@@ -4110,6 +4115,7 @@
     const wrange = Game.equippedWeapon ? Game.equippedWeapon().range : 1;
     const wname = Game.equippedWeapon ? Game.equippedWeapon().name : '';
     const canScream = Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day;
+    const hasWell = Game.hasItem && Game.hasItem('gravity_well');
     const yourTurn = Game.tbIsPlayerTurn();
     if (!yourTurn || !p) return '';
     // INTEGRATED (Steve 2026-10-05): combat actions use the SAME selfbar
@@ -4134,6 +4140,7 @@
       <button class="self-btn" id="c-study" ${p.acted ? 'disabled' : ''}>👁 Study</button>
       ${mons.some(m => m.kind === 'hostile') ? `<button class="self-btn" id="c-talk" ${p.acted ? 'disabled' : ''}>💬 Talk</button>` : ''}
       ${canScream ? `<button class="self-btn" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀 Scream</button>` : ''}
+      ${hasWell ? `<button class="self-btn" id="c-well" ${p.acted ? 'disabled' : ''} title="Gravity well — hold monsters within 3 tiles for 2 turns (one use)">🕳 Well</button>` : ''}
       <button class="self-btn" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢 Shout</button>
       <button class="self-btn" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖 Offer</button>
       <button class="self-btn" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸ Wait</button>
@@ -4202,6 +4209,7 @@
     on('c-study', () => { Game.tbPlayerStudy(); rerender(); });
     on('c-scream', () => { Game.tbPlayerScream(); rerender(); });
     on('c-shout', () => { Game.tbPlayerShout(); rerender(); });
+    on('c-well', () => { Game.tbPlayerGravityWell(); rerender(); });
     on('c-offer', () => { Game.tbPlayerOfferFood(); rerender(); });
     // TALK: words are actions too. Pick who, then how.
     const showTalkRow = (targetKey) => {

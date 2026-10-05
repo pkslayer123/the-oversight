@@ -14,7 +14,8 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "kg": 0.24
   },
   {
     "baseEffect": "Fire on demand (until fuel runs out)",
@@ -31,10 +32,11 @@
           "efficient_action"
         ]
       }
-    ]
+    ],
+    "kg": 0.03
   },
   {
-    "baseEffect": "Stabilize one severe injury per expedition",
+    "baseEffect": "Heal 40 HP when used (field medicine)",
     "class": "tool",
     "flavor": "Not much left in the kit. Enough for one bad day.",
     "id": "field_sutures",
@@ -48,7 +50,9 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "kg": 0.08,
+    "healAmount": 40
   },
   {
     "baseEffect": "+resolve when carried (morale)",
@@ -67,13 +71,14 @@
       }
     ],
     "secretEvolution": "her_handwriting",
-    "memory": "Kitchen table, burnt pancakes. You told her the sun needed holding, and she took you literally \u2014 drew you carrying it with both hands. She was six. The sky changed three weeks later.",
+    "memory": "Kitchen table, burnt pancakes. You told her the sun needed holding, and she took you literally — drew you carrying it with both hands. She was six. The sky changed three weeks later.",
     "reveals": {
       "type": "plant",
       "id": "dandelion",
       "note": "She used to pick the bitter greens by the fence. You know them now: dandelion, edible."
     },
-    "kin": "daughter"
+    "kin": "daughter",
+    "kg": 0.01
   },
   {
     "baseEffect": "Quiet, broken-in, still holding. (Bond to unlock more.)",
@@ -90,10 +95,14 @@
           "ghost_weave"
         ]
       }
-    ]
+    ],
+    "kg": 1.2,
+    "armor": {
+      "protection": 3
+    }
   },
   {
-    "baseEffect": "Dress game 25% faster; +bond with every kill cleaned",
+    "baseEffect": "Bond 50 unlocks something old (the knife remembers)",
     "class": "tool",
     "flavor": "Grandfather's. The edge remembers.",
     "id": "grandfathers_knife",
@@ -116,24 +125,27 @@
         ]
       }
     ],
-    "secretEvolution": "old_ghost"
+    "secretEvolution": "old_ghost",
+    "kg": 0.15
   },
   {
-    "baseEffect": "Climb, snare, haul \u2014 50ft of options",
-    "class": "tool",
+    "class": "sentimental",
     "flavor": "Coiled the way their grandfather taught them.",
     "id": "rope_50ft",
-    "name": "Rope 50Ft"
+    "name": "Rope 50Ft",
+    "kg": 0.5,
+    "kin": "none"
   },
   {
-    "baseEffect": "Drink from anything, anywhere",
-    "class": "tool",
+    "class": "sentimental",
     "flavor": "Dented. Older than you.",
     "id": "tin_cup",
-    "name": "Tin Cup"
+    "name": "Tin Cup",
+    "kg": 0.08,
+    "kin": "none"
   },
   {
-    "baseEffect": "Resist cold/wet; blend into woods",
+    "baseEffect": "Armor 5. Blend into woods.",
     "class": "clothing",
     "flavor": "Hasn't taken it off since the sky changed.",
     "id": "camo_jacket",
@@ -147,10 +159,14 @@
           "second_skin"
         ]
       }
-    ]
+    ],
+    "kg": 0.8,
+    "armor": {
+      "protection": 5
+    }
   },
   {
-    "baseEffect": "Butcher and fillet with precision; +bond with every meal prepared",
+    "baseEffect": "Melee +8. +15% cooking yield (proper prep)",
     "class": "tool",
     "flavor": "Eleven years of mornings. The edge is a meditation.",
     "id": "chefs_knife",
@@ -164,21 +180,29 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "kg": 0.25,
+    "weapon": {
+      "bonus": 8,
+      "type": "melee",
+      "range": 1
+    }
   },
   {
-    "baseEffect": "Restore any blade to service",
-    "class": "tool",
+    "class": "sentimental",
     "flavor": "Small, grey, irreplaceable.",
     "id": "whetstone",
-    "name": "Whetstone"
+    "name": "Whetstone",
+    "kg": 0.15,
+    "kin": "none"
   },
   {
     "baseEffect": "Fish anywhere there's water and patience",
     "class": "tool",
     "flavor": "200 yards, wrapped around a stick. Low-tech, high-yield.",
     "id": "fishing_line",
-    "name": "Fishing Line"
+    "name": "Fishing Line",
+    "kg": 0.05
   },
   {
     "baseEffect": "+resolve when worn (morale)",
@@ -203,7 +227,8 @@
       "id": "mending",
       "note": "Her voice, patient: measure twice. Things can be fixed."
     },
-    "kin": "mother"
+    "kin": "mother",
+    "kg": 0.01
   },
   {
     "id": "tote_bag",
@@ -212,96 +237,102 @@
     "flavor": "Canvas, thirty-one years of bus routes. Currently holds: everything.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
-    "memory": "Thirty-one years of bus routes in this canvas. The driver on the 42 used to wait when he saw you running \u2014 all those years, he waited. You never learned his name. You think about him at every campfire.",
+    "memory": "Thirty-one years of bus routes in this canvas. The driver on the 42 used to wait when he saw you running — all those years, he waited. You never learned his name. You think about him at every campfire.",
     "reveals": {
       "type": "place",
       "id": "depot",
-      "note": "The depot on 5th \u2014 buses, tools, dry storage. If anyone is left, they would be there."
+      "note": "The depot on 5th — buses, tools, dry storage. If anyone is left, they would be there."
     },
-    "kin": "none"
+    "kin": "none",
+    "kg": 0.25
   },
   {
     "id": "reading_glasses",
     "name": "Reading Glasses",
     "class": "sentimental",
-    "flavor": "For the ledger and the fine print on cans. The apocalypse has fine print.",
+    "flavor": "Hers. She read everything twice — contracts, can labels, your excuses. The apocalypse has fine print; she'd have read that too.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
     "memory": "You read the fine print on medicine bottles for {kin} next door, because their hands shook. Dosages, warnings, the tiny words that matter. The apocalypse has fine print too.",
     "reveals": {
       "type": "plant",
       "id": "plantain_leaf",
-      "note": "The broad-leafed weed by every path \u2014 a poultice for stings and bites. You read about it once."
+      "note": "The broad-leafed weed by every path — a poultice for stings and bites. You read about it once."
     },
-    "kin": "neighbor"
+    "kin": "neighbor",
+    "kg": 0.03
   },
   {
     "id": "bus_schedule",
     "name": "Bus Schedule",
     "class": "sentimental",
-    "flavor": "The 42, laminated. Kept to remind the universe about punctuality.",
+    "flavor": "The 42, laminated by your own hand. Eleven years of on-time departures. Kept to remind the universe about punctuality — it never learned.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
-    "memory": "The 42. 6:14, 6:44, 7:14 \u2014 never late, even the last week, when the driver ran an empty bus through an empty city because the schedule said so.",
+    "memory": "The 42. 6:14, 6:44, 7:14 — never late, even the last week, when the driver ran an empty bus through an empty city because the schedule said so.",
     "reveals": {
       "type": "skill",
       "id": "navigation",
       "note": "You always know which way is home. Mostly."
     },
-    "kin": "none"
+    "kin": "none",
+    "kg": 0.01
   },
   {
     "id": "hard_candy",
     "name": "Hard Candy",
     "class": "sentimental",
-    "flavor": "Butterscotch. Dole them out like medals.",
+    "flavor": "Butterscotch. Grandma doled them out like medals — good news, bad news, Tuesdays. This is the last one. It stays wrapped.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
-    "memory": "Butterscotch, doled out like medals \u2014 good report card, brave dentist visit, the day the dog died. Small sweetness, on purpose.",
+    "memory": "Butterscotch, doled out like medals — good report card, brave dentist visit, the day the dog died. Small sweetness, on purpose.",
     "reveals": {
       "type": "flag",
       "id": "comfort",
       "note": "You know how to make a bad day smaller for someone."
     },
-    "kin": "grandchildren"
+    "kin": "grandchildren",
+    "kg": 0.02
   },
   {
     "id": "spare_socks",
     "name": "Spare Socks",
     "class": "sentimental",
-    "flavor": "Dry socks are civilization. This has always been known.",
+    "flavor": "Dad's rule: dry socks are civilization. You laughed at him for twenty years. You carry the spare pair anyway.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
     "memory": "The flood year, three days in wet boots. Your feet went white and strange. The medic packed them with yarrow and told you: dry socks are civilization. Never again, you said.",
     "reveals": {
       "type": "plant",
       "id": "yarrow",
-      "note": "Yarrow \u2014 white flowers, feathery leaves. Stops bleeding. The medic taught you."
+      "note": "Yarrow — white flowers, feathery leaves. Stops bleeding. The medic taught you."
     },
     "universal": true,
-    "kin": "none"
+    "kin": "none",
+    "kg": 0.06
   },
   {
     "id": "dead_phone",
     "name": "Dead Phone",
     "class": "sentimental",
-    "flavor": "Cracked screen, 2% forever. Kept the way sailors kept compasses.",
+    "flavor": "Cracked screen, 2% forever. The last text is still on it. You've got it memorized, and you read it anyway.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
     "secretEvolution": "last_message",
-    "memory": "Cracked screen, 2% forever. The last text, unsent: 'call when you can.' It was from {kin} \u2014 your brother. You have carried the unsent message for years. Maybe he is still out there.",
+    "memory": "Cracked screen, 2% forever. The last text, unsent: 'call when you can.' It was from {kin} — your brother. You have carried the unsent message for years. Maybe he is still out there.",
     "reveals": {
       "type": "name",
       "id": "brother",
-      "note": "Your brother \u2014 last known heading west. Someone, somewhere, might have seen him."
+      "note": "Your brother — last known heading west. Someone, somewhere, might have seen him."
     },
-    "kin": "brother"
+    "kin": "brother",
+    "kg": 0.17
   },
   {
     "id": "hoodie",
     "name": "Hoodie",
     "class": "sentimental",
-    "flavor": "Smells like dorm laundry and rain. Armor, basically.",
+    "flavor": "Not yours. His. It still smells like dorm laundry and rain, and you are not ready for it to stop smelling like that.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
     "memory": "Dorm laundry and rain. The night the storm took the power you walked three miles home in this, soaked through, laughing. Armor, basically.",
@@ -310,29 +341,31 @@
       "id": "forecast",
       "note": "You can smell weather coming. Storms rarely surprise you."
     },
-    "kin": "none"
+    "kin": "none",
+    "kg": 0.45
   },
   {
     "id": "energy_bar_wrapper",
     "name": "Energy Bar Wrapper",
     "class": "sentimental",
-    "flavor": "Empty. The nutrition label gets read when numbers are missed.",
+    "flavor": "Empty. The last real one got split three ways on the worst day, and it was somehow enough. The label gets read when you need the numbers to mean something.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
-    "memory": "Empty. You used to read the nutrition label when you missed numbers \u2014 calories, protein, the math of staying alive. Funny, the math that matters now.",
+    "memory": "Empty. You used to read the nutrition label when you missed numbers — calories, protein, the math of staying alive. Funny, the math that matters now.",
     "reveals": {
       "type": "plant",
       "id": "acorn_white_oak",
-      "note": "White oak mast \u2014 sweetest of the acorns, food if you know the work. You know the work."
+      "note": "White oak mast — sweetest of the acorns, food if you know the work. You know the work."
     },
     "universal": true,
-    "kin": "none"
+    "kin": "none",
+    "kg": 0.01
   },
   {
     "id": "notebook",
     "name": "Notebook",
     "class": "sentimental",
-    "flavor": "Half route notes, half apocalypse patch notes. A magnum opus.",
+    "flavor": "Your handwriting, from when the routes still ran. Half schedules, half apocalypse patch notes. A magnum opus nobody asked for.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
     "memory": "Route optimizations, glitch lists, apocalypse patch notes. 'DO NOT TRUST THE CACHE BY THE RIVER.' Your magnum opus, half-finished.",
@@ -341,110 +374,97 @@
       "id": "trapping",
       "note": "Page 12: deadfall diagrams. You remember drawing them."
     },
-    "kin": "none"
+    "kin": "none",
+    "kg": 0.2
   },
   {
     "id": "stethoscope",
     "name": "Stethoscope",
     "flavor": "Hear a heartbeat through anything. Useful for people. Useless for the System.",
-    "class": "tool"
+    "class": "tool",
+    "kg": 0.15
   },
   {
     "id": "bandana",
     "name": "Bandana",
     "flavor": "Sling, bandage, filter, flag. The most versatile square of cloth ever made.",
     "class": "tool",
-    "universal": true
+    "universal": true,
+    "kg": 0.03,
+    "healAmount": 10
   },
   {
     "id": "protein_bar",
     "name": "Protein bar",
     "flavor": "Tastes like cardboard. 200 kcal of cardboard.",
     "class": "tool",
-    "universal": true
+    "universal": true,
+    "kg": 0.06,
+    "kcalEach": 250
   },
   {
     "id": "snare_wire",
     "name": "Snare wire",
     "flavor": "Thin, strong, patient. The rabbit doesn't know it's there until it does.",
     "class": "tool",
-    "universal": true
+    "universal": true,
+    "kg": 0.05
   },
   {
     "id": "trail_mix",
     "name": "Trail mix",
     "flavor": "Nuts, raisins, chocolate. The chocolate is gone. The hope remains.",
     "class": "tool",
-    "universal": true
+    "universal": true,
+    "kg": 0.15,
+    "kcalEach": 150
   },
   {
     "id": "binoculars",
     "name": "Binoculars",
     "flavor": "See far. The far is mostly trees. But sometimes it's dinner.",
-    "class": "tool"
-  },
-  {
-    "id": "chopsticks",
-    "name": "Chopsticks",
-    "flavor": "Not just for eating. For picking, probing, and pointing at things.",
     "class": "tool",
-    "universal": true
-  },
-  {
-    "id": "soy_packets",
-    "name": "Soy packets",
-    "flavor": "Six little packets. Salt is civilization.",
-    "class": "tool",
-    "universal": true
+    "kg": 0.35
   },
   {
     "id": "bus_map",
     "name": "Bus map",
     "flavor": "Every route marked. None of them go here.",
-    "class": "tool"
-  },
-  {
-    "id": "phone_charger",
-    "name": "Phone charger",
-    "flavor": "No phone, no outlet. But it's a really good cable.",
-    "class": "tool"
+    "class": "sentimental",
+    "kg": 0.02,
+    "kin": "none"
   },
   {
     "id": "energy_drink",
     "name": "Energy drink",
     "flavor": "300mg of caffeine. For emergencies. Everything is an emergency.",
-    "class": "tool"
+    "class": "tool",
+    "kg": 0.25,
+    "kcalEach": 120
   },
   {
     "id": "dice_set",
     "name": "Dice set",
     "flavor": "For when decisions need to be fast and blame needs to be random.",
     "class": "tool",
-    "universal": true
-  },
-  {
-    "id": "calculator",
-    "name": "Calculator",
-    "flavor": "The pantry math must be exact. Estimating is how pantries die.",
-    "class": "tool"
-  },
-  {
-    "id": "pen_set",
-    "name": "Pen set",
-    "flavor": "Blue, black, red. For writing, underlining, and correcting.",
-    "class": "tool"
+    "universal": true,
+    "kg": 0.04
   },
   {
     "id": "tasting_spoon",
     "name": "Tasting spoon",
     "flavor": "A chef tastes everything. Even the apocalypse.",
-    "class": "tool"
+    "class": "sentimental",
+    "kg": 0.02,
+    "kin": "none"
   },
   {
     "id": "thermos",
     "name": "Thermos",
     "flavor": "Keeps things hot. Hot is a memory now.",
-    "class": "tool"
+    "class": "sentimental",
+    "kg": 0.5,
+    "kin": "none"
   },
   {
     "id": "photo_album",
@@ -455,9 +475,10 @@
     "reveals": {
       "type": "name",
       "id": "sister",
-      "note": "Your sister \u2014 she was visiting the coast. The coast is far. Far is not gone."
+      "note": "Your sister — she was visiting the coast. The coast is far. Far is not gone."
     },
-    "kin": "sister"
+    "kin": "sister",
+    "kg": 0.8
   },
   {
     "id": "sharpened_stick",
@@ -473,7 +494,8 @@
     },
     "class": "weapon",
     "flavor": "a stick, whittled to a point",
-    "universal": true
+    "universal": true,
+    "kg": 0.25
   },
   {
     "id": "stone_knife",
@@ -493,7 +515,8 @@
     "tool": {
       "woodcut": "whittle"
     },
-    "universal": true
+    "universal": true,
+    "kg": 0.15
   },
   {
     "id": "hunting_spear",
@@ -510,7 +533,8 @@
       "vine": 1
     },
     "class": "weapon",
-    "flavor": "long, balanced, stone-tipped"
+    "flavor": "long, balanced, stone-tipped",
+    "kg": 0.9
   },
   {
     "id": "kitchen_knife",
@@ -523,12 +547,13 @@
     "findable": true,
     "class": "weapon",
     "flavor": "scavenged from a ruin, still sharp",
-    "universal": true
+    "universal": true,
+    "kg": 0.15
   },
   {
     "id": "bark_armor",
     "name": "Bark armor",
-    "class": "weapon",
+    "class": "clothing",
     "flavor": "bark lashed with vine. Better than skin.",
     "armor": {
       "protection": 10
@@ -538,39 +563,43 @@
       "bark": 2,
       "vine": 2
     },
-    "universal": true
+    "universal": true,
+    "kg": 1.2
   },
   {
     "id": "leather_jacket",
     "name": "Leather jacket",
-    "class": "weapon",
+    "class": "clothing",
     "flavor": "scavenged. Smells like someone else's life.",
     "armor": {
       "protection": 15
     },
-    "findable": true
+    "findable": true,
+    "kg": 1.2
   },
   {
     "id": "riot_gear",
     "name": "Riot gear",
-    "class": "weapon",
+    "class": "clothing",
     "flavor": "police surplus. Heavy, hot, stops a boar.",
     "armor": {
       "protection": 30
     },
     "findable": true,
-    "universal": true
+    "universal": true,
+    "kg": 4.5
   },
   {
     "id": "military_vest",
     "name": "Military vest",
-    "class": "weapon",
+    "class": "clothing",
     "flavor": "plate carrier, no plates. Still better than nothing.",
     "armor": {
       "protection": 40
     },
     "findable": true,
-    "universal": true
+    "universal": true,
+    "kg": 1.5
   },
   {
     "id": "sling",
@@ -599,7 +628,8 @@
         ]
       }
     ],
-    "universal": true
+    "universal": true,
+    "kg": 0.05
   },
   {
     "id": "fire_hardened_spear",
@@ -626,7 +656,8 @@
         ]
       }
     ],
-    "universal": true
+    "universal": true,
+    "kg": 0.8
   },
   {
     "id": "hatchet",
@@ -652,7 +683,8 @@
     ],
     "tool": {
       "woodcut": "fell"
-    }
+    },
+    "kg": 0.7
   },
   {
     "id": "machete",
@@ -679,7 +711,8 @@
     "tool": {
       "woodcut": "brush"
     },
-    "universal": true
+    "universal": true,
+    "kg": 0.6
   },
   {
     "id": "crude_bow",
@@ -707,12 +740,13 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "kg": 0.4
   },
   {
     "id": "padded_cloth",
     "name": "Padded cloth wraps",
-    "class": "weapon",
+    "class": "clothing",
     "flavor": "Layers of cloth tied tight. Better than skin. Barely.",
     "baseEffect": "Armor. Protection +5.",
     "armor": {
@@ -722,12 +756,13 @@
     "materials": {
       "vine": 1
     },
-    "universal": true
+    "universal": true,
+    "kg": 0.8
   },
   {
     "id": "hide_armor",
     "name": "Hide armor",
-    "class": "weapon",
+    "class": "clothing",
     "flavor": "Cured hide, laced with sinew. Smells like work.",
     "baseEffect": "Armor. Protection +20.",
     "armor": {
@@ -737,19 +772,21 @@
     "materials": {
       "vine": 2
     },
-    "universal": true
+    "universal": true,
+    "kg": 2.5
   },
   {
     "id": "swat_vest",
     "name": "SWAT vest",
-    "class": "weapon",
+    "class": "clothing",
     "flavor": "Ceramic plates in a carrier that says PROPERTY OF. Nobody's property now.",
     "baseEffect": "Armor. Protection +35.",
     "armor": {
       "protection": 35
     },
     "findable": true,
-    "universal": true
+    "universal": true,
+    "kg": 3.5
   },
   {
     "id": "tinder_bundle",
@@ -757,49 +794,41 @@
     "class": "tool",
     "flavor": "Char cloth, fatwood shavings, dry bark. Fire in a pouch.",
     "baseEffect": "Start fires without a check",
-    "universal": true
-  },
-  {
-    "id": "rope_coil",
-    "name": "Rope coil",
-    "class": "tool",
-    "flavor": "50 feet of paracord. The most useful thing ever made.",
-    "baseEffect": "Climb, drag, bind. +1 to trap crafting"
-  },
-  {
-    "id": "sewing_kit",
-    "name": "Sewing kit",
-    "class": "tool",
-    "flavor": "Needles, thread, buttons in a tin. Civilization in miniature.",
-    "baseEffect": "Repair clothing/armor. +trust when mending for others"
+    "universal": true,
+    "kg": 0.05
   },
   {
     "id": "torch",
     "name": "Pitch torch",
     "class": "tool",
     "flavor": "Pine pitch on a stick. Burns an hour. Smokes.",
-    "baseEffect": "Light in dark places. Scares most animals"
+    "baseEffect": "Light in dark places. Scares most animals",
+    "kg": 0.3
   },
   {
     "id": "hand_drill",
     "name": "Hand drill",
     "class": "tool",
     "flavor": "Spindle and hearth board. Friction is free.",
-    "baseEffect": "Make fire anywhere (takes a day part)"
+    "baseEffect": "Make fire anywhere (takes a day part)",
+    "kg": 0.15
   },
   {
     "id": "gill_net",
     "name": "Gill net",
     "class": "tool",
     "flavor": "Monofilament net, 10 feet. Illegal in twelve states. All of them gone.",
-    "baseEffect": "Passive: catches fish while you do other things"
+    "baseEffect": "Passive: catches fish while you do other things",
+    "kg": 0.25
   },
   {
     "id": "field_dressing_kit",
     "name": "Field dressing kit",
     "class": "tool",
     "flavor": "Gut hook, bone saw, game bags. The respectful way.",
-    "baseEffect": "Dress game 50% faster; meat keeps longer"
+    "baseEffect": "Dress game 50% faster; meat keeps longer",
+    "kg": 0.4,
+    "healAmount": 30
   },
   {
     "id": "dried_apples",
@@ -877,19 +906,20 @@
         ]
       }
     ],
-    "memory": "Gold band, worn thin. Inside: initials and a date. You remember the day \u2014 the rain, the borrowed suit, the laughter during the vows. Grief is just love with nowhere to go.",
+    "memory": "Gold band, worn thin. Inside: initials and a date. You remember the day — the rain, the borrowed suit, the laughter during the vows. Grief is just love with nowhere to go.",
     "reveals": {
       "type": "flag",
       "id": "deep_grief",
       "note": "This one channels harder than the rest. Love with nowhere to go."
     },
-    "kin": "spouse"
+    "kin": "spouse",
+    "kg": 0.01
   },
   {
     "id": "mixtape",
     "name": "Mixtape",
     "class": "sentimental",
-    "flavor": "Hand-labeled: 'FOR THE DRIVE.' No player. The songs are in your head anyway.",
+    "flavor": "Hand-labeled in her block letters: 'FOR THE DRIVE.' No player. The songs are in your head anyway — her voice between the tracks.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [
       {
@@ -901,13 +931,14 @@
         ]
       }
     ],
-    "memory": "Hand-labeled: 'FOR THE DRIVE.' No player. The songs are in your head anyway \u2014 you hum them when you work, and the work goes faster.",
+    "memory": "Hand-labeled: 'FOR THE DRIVE.' No player. The songs are in your head anyway — you hum them when you work, and the work goes faster.",
     "reveals": {
       "type": "flag",
       "id": "work_song",
       "note": "You sing while you work. The work remembers the rhythm."
     },
-    "kin": "friend"
+    "kin": "friend",
+    "kg": 0.06
   },
   {
     "id": "dog_tags",
@@ -925,13 +956,14 @@
         ]
       }
     ],
-    "memory": "Not yours. {kin}'s. You carry them so someone is remembered \u2014 the promise you made in the dust. {kin} would laugh at you carrying them into the apocalypse.",
+    "memory": "Not yours. {kin}'s. You carry them so someone is remembered — the promise you made in the dust. {kin} would laugh at you carrying them into the apocalypse.",
     "reveals": {
       "type": "skill",
       "id": "tracking",
       "note": "{kin} taught you to read ground. You never forgot."
     },
-    "kin": "friend"
+    "kin": "friend",
+    "kg": 0.03
   },
   {
     "id": "wool_socks",
@@ -948,7 +980,11 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "kg": 0.08,
+    "armor": {
+      "protection": 1
+    }
   },
   {
     "id": "rain_poncho",
@@ -965,7 +1001,11 @@
           "impossible_edge"
         ]
       }
-    ]
+    ],
+    "kg": 0.2,
+    "armor": {
+      "protection": 2
+    }
   },
   {
     "id": "crowbar",
@@ -991,7 +1031,8 @@
     ],
     "tool": {
       "pry": true
-    }
+    },
+    "kg": 1.0
   },
   {
     "id": "venison_jerky",
@@ -1027,49 +1068,77 @@
     "name": "Work Gloves",
     "class": "clothing",
     "flavor": "Leather palms, canvas backs. Smell like every job ever done.",
-    "baseEffect": "Grip. (Bond to unlock more.)"
+    "baseEffect": "Grip. (Bond to unlock more.)",
+    "kg": 0.12,
+    "armor": {
+      "protection": 2
+    }
   },
   {
     "id": "canvas_pants",
     "name": "Canvas Pants",
     "class": "clothing",
     "flavor": "Double-kneed, thorn-proof-ish. Pockets deep enough to lose things in.",
-    "baseEffect": "Carry a little more. (Bond to unlock more.)"
+    "baseEffect": "Carry a little more. (Bond to unlock more.)",
+    "kg": 0.6,
+    "armor": {
+      "protection": 3
+    }
   },
   {
     "id": "flannel_shirt",
     "name": "Flannel Shirt",
     "class": "clothing",
-    "flavor": "Red and black check. Warm even damp \u2014 wool doesn't care about rain.",
-    "baseEffect": "Warmth. (Bond to unlock more.)"
+    "flavor": "Red and black check. Warm even damp — wool doesn't care about rain.",
+    "baseEffect": "Warmth. (Bond to unlock more.)",
+    "kg": 0.35,
+    "armor": {
+      "protection": 2
+    }
   },
   {
     "id": "knit_cap",
     "name": "Knit Cap",
     "class": "clothing",
     "flavor": "Hand-knit, slightly lopsided. Someone loved whoever wore this.",
-    "baseEffect": "Keeps the heat in. (Bond to unlock more.)"
+    "baseEffect": "Keeps the heat in. (Bond to unlock more.)",
+    "kg": 0.05,
+    "armor": {
+      "protection": 1
+    }
   },
   {
     "id": "denim_jacket",
     "name": "Denim Jacket",
     "class": "clothing",
     "flavor": "Broken-in denim, brass buttons. Armor for people who don't own armor.",
-    "baseEffect": "Tough. (Bond to unlock more.)"
+    "baseEffect": "Tough. (Bond to unlock more.)",
+    "kg": 0.7,
+    "armor": {
+      "protection": 4
+    }
   },
   {
     "id": "running_shoes",
     "name": "Running Shoes",
     "class": "clothing",
     "flavor": "Light, fast, already half-dead. Speed has a price.",
-    "baseEffect": "Move quieter. (Bond to unlock more.)"
+    "baseEffect": "Move quieter. (Bond to unlock more.)",
+    "kg": 0.5,
+    "armor": {
+      "protection": 1
+    }
   },
   {
     "id": "rain_shell",
     "name": "Rain Shell",
     "class": "clothing",
     "flavor": "Ultralight, packs to nothing. The zipper still works. Miracles happen.",
-    "baseEffect": "Sheds rain. (Bond to unlock more.)"
+    "baseEffect": "Sheds rain. (Bond to unlock more.)",
+    "kg": 0.15,
+    "armor": {
+      "protection": 3
+    }
   },
   {
     "id": "hand_saw",
@@ -1079,14 +1148,16 @@
     "baseEffect": "+1 to wood gathering",
     "tool": {
       "woodcut": "prune"
-    }
+    },
+    "kg": 0.25
   },
   {
     "id": "camp_pot",
     "name": "Camp Pot",
     "class": "tool",
     "flavor": "Dented aluminum, blackened base. Has cooked a thousand meals. Hungry for more.",
-    "baseEffect": "Cook without a kitchen"
+    "baseEffect": "Cook without a kitchen",
+    "kg": 0.35
   },
   {
     "id": "locket",
@@ -1094,19 +1165,20 @@
     "class": "sentimental",
     "flavor": "Two photos inside, both fading. Opens with a click you can feel in your teeth.",
     "baseEffect": "+resolve when carried (morale)",
-    "memory": "Brass. Two photos inside, both fading. It opens with a click you can feel in your teeth \u2014 {kin}'s click, then your mother's, now yours.",
+    "memory": "Brass. Two photos inside, both fading. It opens with a click you can feel in your teeth — {kin}'s click, then your mother's, now yours.",
     "reveals": {
       "type": "place",
       "id": "farmhouse",
       "note": "The farmhouse upstate, in the photos. Root cellar, well, far from everything."
     },
-    "kin": "grandmother"
+    "kin": "grandmother",
+    "kg": 0.02
   },
   {
     "id": "lucky_coin",
     "name": "Lucky Coin",
     "class": "sentimental",
-    "flavor": "Worn smooth. Heads or tails, it always lands on keep going.",
+    "flavor": "Worn smooth. Grandpa flipped it for every big decision and ignored it every time. Heads or tails, it always lands on keep going.",
     "baseEffect": "+resolve when carried (morale)",
     "memory": "Worn smooth. {kin} flipped it before every hard thing and said: heads or tails, it always lands on keep going. You have stopped checking which side lands.",
     "reveals": {
@@ -1114,21 +1186,23 @@
       "id": "quiet_luck",
       "note": "Quiet luck follows you. Small things break your way."
     },
-    "kin": "grandfather"
+    "kin": "grandfather",
+    "kg": 0.01
   },
   {
     "id": "paperback",
     "name": "Beat-up Paperback",
     "class": "sentimental",
-    "flavor": "A field guide to edible plants, ironically. Spine cracked at the mushroom chapter.",
+    "flavor": "A field guide to edible plants, ironically. Her copy — spine cracked at the mushroom chapter, margins full of corrections. She'd have loved being right about this.",
     "baseEffect": "+resolve when carried (morale)",
-    "memory": "A field guide to edible plants, ironically. Spine cracked at the mushroom chapter \u2014 you were always going to learn mushrooms, someday. Someday is now.",
+    "memory": "A field guide to edible plants, ironically. Spine cracked at the mushroom chapter — you were always going to learn mushrooms, someday. Someday is now.",
     "reveals": {
       "type": "plant",
       "id": "jewelweed",
-      "note": "Jewelweed \u2014 the orange touch-me-not by creeks. Poison ivy\u2019s antidote. The book taught you."
+      "note": "Jewelweed — the orange touch-me-not by creeks. Poison ivy’s antidote. The book taught you."
     },
-    "kin": "none"
+    "kin": "none",
+    "kg": 0.2
   },
   {
     "id": "wood",
@@ -1290,20 +1364,21 @@
   {
     "id": "contract_quill",
     "name": "Contract quill",
-    "class": "tool",
+    "class": "sentimental",
     "origin": "alien",
     "lootTier": 2,
     "flavor": "Signs for you. Read before it signs. It has excellent penmanship and terrible intentions.",
     "kg": 0.1,
     "findable": false,
     "tradeValue": 600,
-    "baseEffect": "The System values this (trade 600)"
+    "baseEffect": "The System values this (trade 600)",
+    "kin": "none"
   },
   {
     "id": "field_suture_kit",
     "name": "Field suture kit",
     "class": "sentimental",
-    "flavor": "From the ambulance bag. Still packed the way you were taught \u2014 needle, thread, steady hands.",
+    "flavor": "From the ambulance bag. Still packed the way you were taught — needle, thread, steady hands.",
     "memory": "You practiced on an orange. 'People are just oranges that bleed,' your instructor said, and then taught you how to not flinch. You haven't flinched since.",
     "baseEffect": "+resolve when carried; usable: +15 health",
     "bondThresholds": [
@@ -1336,7 +1411,7 @@
     "id": "knife_roll",
     "name": "Knife roll",
     "class": "sentimental",
-    "flavor": "Canvas roll, eight knives, every edge shaving-sharp. A dull knife is a tired cook.",
+    "flavor": "His. Eight knives, every edge shaving-sharp — 'a dull knife is a tired cook.' He fed the whole block out of a kitchen the size of a closet.",
     "memory": "The dinner rush, the pass, the tickets coming faster than thought. You survived your first Saturday service at sixteen. The roll was the prize.",
     "baseEffect": "+resolve when carried; camp cooking goes further",
     "bondThresholds": [
@@ -1368,8 +1443,8 @@
     "id": "carpenters_square",
     "name": "Carpenter's square",
     "class": "sentimental",
-    "flavor": "Steel square, edges worn bright. It has never measured wrong.",
-    "memory": "Your first solo frame, checked and found true. The nod that followed was the whole ceremony. Measure twice, cut once \u2014 it's in your hands now.",
+    "flavor": "Steel square, edges worn bright. Your father's. It built half the porches on Alder Street, and it has never measured wrong.",
+    "memory": "Your first solo frame, checked and found true. The nod that followed was the whole ceremony. Measure twice, cut once — it's in your hands now.",
     "baseEffect": "+resolve when carried; building and repairs hold better",
     "bondThresholds": [
       {
@@ -1400,8 +1475,8 @@
     "id": "trail_compass",
     "name": "Trail compass",
     "class": "sentimental",
-    "flavor": "Brass compass, glass cracked but needle true. It has been on every trail that mattered.",
-    "memory": "Lost above the fog line, visibility down to your boots. You didn't panic \u2014 just held the compass flat, found north, and walked out like it was nothing. It was not nothing.",
+    "flavor": "Brass compass, glass cracked but needle true. His father's. The glass broke on the last ridge they climbed together. The needle never lied, and neither did he.",
+    "memory": "Lost above the fog line, visibility down to your boots. You didn't panic — just held the compass flat, found north, and walked out like it was nothing. It was not nothing.",
     "baseEffect": "+resolve when carried; harder to get truly lost",
     "bondThresholds": [
       {
@@ -1433,8 +1508,8 @@
     "id": "dispatchers_headset",
     "name": "Dispatcher's headset",
     "class": "sentimental",
-    "flavor": "One earcup cracked. It got worn through every bad night the town ever had, and stayed calm.",
-    "memory": "You learned the voice \u2014 low, steady, unhurried. 'Panic is just information arriving too fast.' You hear it in your own voice now when it counts.",
+    "flavor": "One earcup cracked. Her voice came through it on the worst night the town ever had — 'stay with me, stay with me.' It still says it, when it's quiet.",
+    "memory": "You learned the voice — low, steady, unhurried. 'Panic is just information arriving too fast.' You hear it in your own voice now when it counts.",
     "baseEffect": "+resolve when carried; calm under pressure",
     "bondThresholds": [
       {
@@ -1466,8 +1541,8 @@
     "id": "buskers_harmonica",
     "name": "Busker's harmonica",
     "class": "sentimental",
-    "flavor": "Dented harmonica in C. It got played on every corner that would have it, and some that wouldn't.",
-    "memory": "Rain, an open case, three dollars and a sandwich. You played anyway \u2014 the street owes you nothing, so everything it gives is a gift. You still believe that.",
+    "flavor": "Dented harmonica in C. Your brother's. He played every corner that would have him, and some that wouldn't. The corners are empty now.",
+    "memory": "Rain, an open case, three dollars and a sandwich. You played anyway — the street owes you nothing, so everything it gives is a gift. You still believe that.",
     "baseEffect": "+resolve when carried; music steadies the camp",
     "bondThresholds": [
       {
@@ -1489,7 +1564,7 @@
     "reveals": {
       "type": "flag",
       "id": "work_song",
-      "note": "Music steadies hands. Yours, and the camp\u2019s."
+      "note": "Music steadies hands. Yours, and the camp’s."
     }
   },
   {
@@ -1558,7 +1633,7 @@
     "name": "Boot stone",
     "class": "sentimental",
     "flavor": "A smooth stone, carried in the boot for years. Guilt has a weight. This is exactly that weight.",
-    "memory": "You carry a guilt like a stone in the boot. So you carry a stone in the boot \u2014 the scattering took the one person you were keeping alive, and this is the shape of that. It keeps you honest.",
+    "memory": "You carry a guilt like a stone in the boot. So you carry a stone in the boot — the scattering took the one person you were keeping alive, and this is the shape of that. It keeps you honest.",
     "baseEffect": "+resolve when carried",
     "bondThresholds": [
       {
@@ -1647,7 +1722,7 @@
     "id": "seed_packet",
     "name": "Seed packet",
     "class": "sentimental",
-    "flavor": "A packet of seeds, handwriting on the front. Plant after last frost. As if frost were still the problem.",
+    "flavor": "A packet of seeds, her handwriting on the front. Plant after last frost. As if frost were still the problem.",
     "memory": "Pressed into your hand with an order: keep people fed through winter. Seeds are a plan. Plans are how you stop being helpless.",
     "baseEffect": "+resolve when carried",
     "bondThresholds": [
@@ -1686,7 +1761,13 @@
     "kg": 0.3,
     "damage": 60,
     "range": 2,
-    "baseEffect": "+60 damage, ignores armor"
+    "baseEffect": "+60 damage, ignores armor",
+    "weapon": {
+      "bonus": 60,
+      "type": "melee",
+      "range": 1,
+      "ignoresArmor": true
+    }
   },
   {
     "id": "nanite_swarm",
@@ -1696,7 +1777,8 @@
     "lootTier": 3,
     "flavor": "A cloud of tiny machines. They want to help. They insist.",
     "kg": 0.1,
-    "baseEffect": "Heals 50 HP over 3 turns when used"
+    "baseEffect": "Heals 50 HP over 3 turns when used",
+    "healAmount": 50
   },
   {
     "id": "gravity_well",
@@ -1718,7 +1800,12 @@
     "kg": 0.4,
     "damage": 80,
     "range": 3,
-    "baseEffect": "+80 damage, +3 range, burns"
+    "baseEffect": "+80 damage, +3 range, burns",
+    "weapon": {
+      "bonus": 80,
+      "type": "melee",
+      "range": 2
+    }
   },
   {
     "id": "genesis_seed",

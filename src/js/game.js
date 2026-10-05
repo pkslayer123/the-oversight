@@ -572,7 +572,7 @@
           backstory, personality: { temperament, sharing, curiosity, quirk, habit, hope, dark: darkStored }, age, goal,
           intelligence: { primary: intelPrimary, secondary: intelSecondary },
           abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
-          items: this.genItemCandidates(occ),
+          items: [], // filled below with char context (keepsake personalization)
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
           // villagers feed themselves FIRST — but they're strangers in a strange
           // land. providesPerDay is the PRE-knowledge base (~60% of need):
@@ -590,6 +590,9 @@
           secretFear, languages: langs, occupationId: occ.id || null,
           candidate: candidate !== false, pro,
         };
+        // ITEMS (Steve 2026-10-05): generated with full char context so kin
+        // keepsakes are THAT person's — named from their own culture.
+        char.items = this.genItemCandidates(occ, char);
         return char;
     },
 
@@ -644,25 +647,142 @@
     },
 
 
+    // PERSONAL KEEPSAKES (Steve 2026-10-05): keepsakes are THAT person's items,
+    // not generic props. A kin keepsake names its person — drawn from the
+    // character's own name culture, carrying the family name where blood
+    // says so. The item IS the relationship: if Lily's drawing is in your
+    // pack, Lily is your daughter. No name is invented that the fiction
+    // can't support: kin are age-gated (no grandchildren at 19).
+    kinAgeOk(kin, age) {
+      if (kin === 'grandchildren' || kin === 'grandmother' || kin === 'grandfather') return age >= 38;
+      if (kin === 'daughter' || kin === 'spouse') return age >= 20;
+      return true;
+    },
+    genKinPerson(char, kin) {
+      const age = char.age || 30;
+      if (!this.kinAgeOk(kin, age)) return null;
+      const genderNeed = { daughter: 'f', mother: 'f', sister: 'f', grandmother: 'f', father: 'm', brother: 'm', grandfather: 'm' }[kin] || null;
+      const cultureId = this.cultureForOrigin ? this.cultureForOrigin(char.homeRegion) : null;
+      const culture = ((this.data.nameCultures || {}).cultures || {})[cultureId] || {};
+      const firsts = culture.first || [];
+      const lasts = culture.last || [];
+      const pick = a => a[Math.floor(Math.random() * a.length)];
+      let first = null, guard = 0;
+      while (!first && guard++ < 40 && firsts.length) {
+        const c = String(pick(firsts)).split(' ')[0];
+        if (!genderNeed || this.guessNameGender(c, cultureId) === genderNeed) first = c;
+      }
+      if (!first) first = genderNeed === 'f' ? 'Anna' : genderNeed === 'm' ? 'John' : 'Sam';
+      const charLast = char.name.split(' ').slice(1).join(' ');
+      const isFamily = !['friend', 'neighbor'].includes(kin);
+      const full = (isFamily && charLast) ? `${first} ${charLast}`
+        : `${first} ${lasts.length ? pick(lasts) : 'Reyes'}`;
+      // kin age: plausible relative to the character
+      let kinAge = null;
+      if (kin === 'daughter') kinAge = Math.max(3, age - (22 + Math.floor(Math.random() * 9)));
+      else if (kin === 'grandchildren') kinAge = 4 + Math.floor(Math.random() * 7);
+      else if (kin === 'spouse') kinAge = Math.max(18, age + Math.floor(Math.random() * 11) - 5);
+      else if (kin === 'mother' || kin === 'father') kinAge = age + 22 + Math.floor(Math.random() * 9);
+      else if (kin === 'sister' || kin === 'brother') kinAge = Math.max(8, age + Math.floor(Math.random() * 17) - 8);
+      else if (kin === 'grandmother' || kin === 'grandfather') kinAge = age + 45 + Math.floor(Math.random() * 16);
+      else kinAge = Math.max(16, age + Math.floor(Math.random() * 21) - 10);
+      return { first, full, age: kinAge };
+    },
+    // personalizeKeepsake: rewrite a kin keepsake's name/flavor around the
+    // named person. Returns {name, flavor} or null (not personalizable).
+    personalizeKeepsake(char, def, kp) {
+      const first = char.name.split(' ')[0];
+      const per = {
+        daughters_drawing: () => ({
+          name: `${kp.first}'s Drawing`,
+          flavor: `${kp.full}, ${kp.age}. Crayon on printer paper: you, holding a sun. She drew it the week before the sky changed.`,
+        }),
+        mothers_ring: () => ({
+          name: `${kp.first}'s Ring`,
+          flavor: `${kp.full}'s. You twist it when thinking.`,
+        }),
+        wedding_ring: () => {
+          const wedYear = 2026 - Math.max(1, Math.floor((char.age || 30) / 3));
+          return {
+            name: `Wedding Ring`,
+            flavor: `Gold band, worn thin. Inside: ${first.charAt(0)} + ${kp.first.charAt(0)}, ${wedYear}. You remember the day.`,
+          };
+        },
+        photo_album: () => ({
+          name: `Photo Album`,
+          flavor: `${kp.full} put it together. Faces from before — ${kp.first} on nearly every page. The most valuable thing you own.`,
+        }),
+        dead_phone: () => ({
+          name: `Dead Phone`,
+          flavor: `${kp.first}'s old phone. Cracked screen, 2% forever. You kept it the way sailors kept compasses.`,
+        }),
+        mixtape: () => ({
+          name: `Mixtape`,
+          flavor: `${kp.first} made it. Hand-labeled: 'FOR THE DRIVE.' No player. The songs are in your head anyway.`,
+        }),
+        dog_tags: () => ({
+          name: `Dog Tags`,
+          flavor: `${kp.full}'s. Not yours. You carry them so someone is remembered.`,
+        }),
+        hard_candy: () => ({
+          name: `Hard Candy`,
+          flavor: `Butterscotch, for ${kp.first}. You dole them out like medals, even now. Especially now.`,
+        }),
+        locket: () => ({
+          name: `Brass Locket`,
+          flavor: `${kp.full}'s locket. Two photos inside, both fading. Opens with a click you can feel in your teeth.`,
+        }),
+        lucky_coin: () => ({
+          name: `Lucky Coin`,
+          flavor: `${kp.first}'s coin. Worn smooth. Heads or tails, it always lands on keep going.`,
+        }),
+        reading_glasses: () => ({
+          name: `Reading Glasses`,
+          flavor: `${kp.first} left them at your place, years ago. For the ledger and the fine print on cans. The apocalypse has fine print.`,
+        }),
+      };
+      const fn = per[def.id];
+      return fn ? fn() : null;
+    },
     // genItemCandidates: 8 personal items per character from class pools,
     // biased by occupation. The player picks 5. Combinations surprise.
-    genItemCandidates(occ) {
+    genItemCandidates(occ, char) {
       const byId = {}; (this.data.items || []).forEach(i => { byId[i.id] = i; });
       const bias = (occ && occ.itemBias) || {};
       const result = [];
-      const take = (cls, n) => {
-        const poolIds = (this.data.items || []).filter(i => i.class === cls && !result.includes(i.id)).map(i => i.id);
-        const favored = (bias[cls] || []).filter(id => byId[id] && byId[id].class === cls && !result.includes(id));
+      const charAge = (char && char.age) || 30;
+      const take = (cls, n, filter) => {
+        let poolIds = (this.data.items || []).filter(i => i.class === cls && !result.includes(i.id)).map(i => i.id);
+        if (filter) poolIds = poolIds.filter(id => filter(byId[id]));
+        const favored = (bias[cls] || []).filter(id => byId[id] && byId[id].class === cls && !result.includes(id) && (!filter || filter(byId[id])));
         const rest = poolIds.filter(id => !favored.includes(id));
         // shuffle rest
         for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[rest[i], rest[j]] = [rest[j], rest[i]]; }
         const ordered = [...favored, ...rest];
         for (let k = 0; k < n && ordered.length; k++) result.push(ordered.shift());
       };
-      take('tool', 2); take('weapon', 1); take('clothing', 2); take('sentimental', 2);
+      take('tool', 2); take('weapon', 1); take('clothing', 2);
+      // sentimental: age-gate kin (no grandchildren at 19), then personalize.
+      // A keepsake that survives the gate is THAT person's — named, dated.
+      take('sentimental', 2, def => this.kinAgeOk(def.kin || 'none', charAge));
       // wild card: one more from anywhere but food (bonded relics aren't snacks)
       const all = (this.data.items || []).filter(i => i.class !== 'food' && !result.includes(i.id)).map(i => i.id);
       if (all.length) result.push(all[Math.floor(Math.random() * all.length)]);
+      // PERSONALIZE (Steve 2026-10-05): kin keepsakes get their person.
+      // Stored per-character; the pick screen and inventory read the override.
+      if (char) {
+        char.itemPersonal = char.itemPersonal || {};
+        for (const id of result) {
+          const def = byId[id];
+          if (def && def.class === 'sentimental' && def.kin && def.kin !== 'none') {
+            const kp = this.genKinPerson(char, def.kin);
+            if (kp) {
+              const personal = this.personalizeKeepsake(char, def, kp);
+              if (personal) char.itemPersonal[id] = { ...personal, kin: def.kin, kinName: kp.full };
+            }
+          }
+        }
+      }
       return result;
     },
 
@@ -1249,7 +1369,10 @@
       // Bond is non-transferable — a bonded relic in a stranger's hands is just stuff.
       scholar.inventory = gear.map(id => {
         const def = this.data.items.find(i => i.id === id) || {};
-        return { itemId: id, units: 1, kcalEach: 0, kg: 0.2, name: def.name || id,
+        // PERSONAL KEEPSAKES: the bonded relic carries its person's name.
+        const personal = (villager.itemPersonal || {})[id];
+        return { itemId: id, units: 1, kcalEach: 0, kg: def.kg != null ? def.kg : 0.2, name: personal ? personal.name : (def.name || id),
+          flavor: personal ? personal.flavor : def.flavor,
           bonded: true, bond: 0, bondOffered: [], enhancements: [] };
       });
       scholar.relicUse = {}; // per-day record of meaningful relic use
@@ -2224,7 +2347,14 @@
 
     // SET TRAP: place a snare/deadfall. Check it later.
     setTrap(recipeId) {
-      const tool = (this.state.scholar.tools || []).find(t => t.recipeId === recipeId);
+      let tool = (this.state.scholar.tools || []).find(t => t.recipeId === recipeId);
+      // SNARE WIRE (Steve 2026-10-05): honest tackle. Wire in hand sets a
+      // snare without crafting one first — consumed when the trap is placed.
+      if (!tool && recipeId === 'snare' && this.hasItem('snare_wire')) {
+        this.consumeItem('snare_wire', 1);
+        tool = { recipeId: 'snare', uses: 2 };
+        this.say('(The snare wire becomes the snare.)');
+      }
       if (!tool) { this.say('You don\'t have that trap.'); return null; }
       const recipe = this.data.recipes.find(r => r.id === recipeId);
       // traps go in the current tile's detail (at your position)
@@ -2263,7 +2393,10 @@
           const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
           // 40% chance per day (if the animal is here).
           // poisoner/scarecrow: better bait, better lies. Multiplies the odds.
-          const trapChance = Math.min(0.95, this.modTarget('hunt.trap_catch', 0.4));
+          // BINOCULARS (Steve 2026-10-05): "sometimes it's dinner." You spot
+          // game trails — +15% trap catch.
+          let trapChance = Math.min(0.95, this.modTarget('hunt.trap_catch', 0.4));
+          if (this.hasItem('binoculars')) trapChance = Math.min(0.95, trapChance + 0.15);
           if (Math.random() < trapChance) {
             const catchId = recipe.catches[Math.floor(Math.random() * recipe.catches.length)];
             const animal = this.data.animals.find(a => a.id === catchId);
@@ -2284,8 +2417,78 @@
       }
     },
 
-    // READ BOOK: treasure trove. Unlocks big chunks of codex at once.
-    // Not all at once — you find them occasionally, in ruins, offices, basements.
+    // GILL NET (Steve 2026-10-05): passive fishing. Set it in water, check it
+    // with the traps — a net works while you sleep. Honest tackle, not text.
+    setNet() {
+      if (this.over) return null;
+      if (!this.hasItem('gill_net')) { this.say('You need a gill net.'); return null; }
+      const t = this.playerTile();
+      if (t.type !== 'creek' && t.type !== 'wetland' && t.type !== 'pond') {
+        this.say('Nets need water — a creek, wetland, or pond.');
+        return null;
+      }
+      t.nets = t.nets || [];
+      const mx = this.state.scholar.mx ?? 4, my = this.state.scholar.my ?? 4;
+      t.nets.push({ mx, my, setDay: this.state.scholar.day });
+      this.consumeItem('gill_net', 1);
+      this.say('You stake the gill net across the current. Check it tomorrow.');
+      return this.tickAction(16) || this.status();
+    },
+    checkNets() {
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const t = this.tileAt(x, y);
+        if (!t.nets || !t.nets.length) continue;
+        for (const net of [...t.nets]) {
+          if (net.setDay > this.state.scholar.day) continue;
+          if (Math.random() < 0.35) {
+            const kcal = 300 + Math.floor(Math.random() * 300);
+            const animal = (this.data.animals || []).find(a => a.id === 'fish') || { id: 'fish', name: 'fish', calories: kcal };
+            this.state.scholar.inventory.push(this.foodCarcass(animal, kcal, this.state.scholar.day, 'netted'));
+            const px = this.map.px, py = this.map.py;
+            const where = (x === px && y === py) ? 'here' : 'elsewhere';
+            this.say(`Your gill net ${where} caught a fish! About ${kcal} kcal — clean it quickly (knife).`);
+          }
+          net.setDay = this.state.scholar.day; // check again tomorrow
+        }
+      }
+    },
+    // GENESIS SEED (Steve 2026-10-05): alien loot that works. Plant it — it
+    // grows into a food source yielding 500 kcal/day for 10 days (5000 total,
+    // as promised). Yield goes to your pack if you're there, haven pantry if
+    // planted at home. Honest alien agriculture.
+    plantGenesis() {
+      if (this.over) return null;
+      if (!this.hasItem('genesis_seed')) { this.say('You need a genesis seed.'); return null; }
+      const t = this.playerTile();
+      if ((t.genesis || {}).daysLeft > 0) { this.say('A genesis crop already grows here.'); return null; }
+      this.consumeItem('genesis_seed', 1);
+      t.genesis = { daysLeft: 10, plantedDay: this.state.scholar.day };
+      this.say('You press the seed into the dirt. It hums — actually hums — and splits open. Something alien is growing.');
+      this.audioEvent('genesis_plant');
+      return this.tickAction(16) || this.status();
+    },
+    checkGenesis() {
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const t = this.tileAt(x, y);
+        if (!t.genesis || t.genesis.daysLeft <= 0) continue;
+        t.genesis.daysLeft -= 1;
+        const kcal = 500;
+        const atHaven = (x === 0 && y === 0);
+        const px = this.map.px, py = this.map.py;
+        if (x === px && y === py) {
+          this.state.scholar.inventory.push({ name: 'Genesis fruit', kcalEach: kcal, units: 1, spoilDay: this.state.scholar.day + 3, safe: true, kg: 0.5, unit: 'fruit' });
+          this.say(`The genesis crop fruits — ${kcal} kcal, strange and sweet. (+1 to your pack)`);
+        } else if (atHaven) {
+          const v = this.state.village;
+          v.pantryKcal = (v.pantryKcal || 0) + kcal;
+          this.say(`The haven genesis crop yielded ${kcal} kcal to the pantry.`);
+        }
+        if (t.genesis.daysLeft <= 0) {
+          this.say('The genesis crop withers, its ten days done. 5000 kcal, as promised.');
+          t.genesis = null;
+        }
+      }
+    },
     readBook(bookId) {
       const book = this.data.books.find(b => b.id === bookId);
       if (!book) return null;
@@ -5783,7 +5986,26 @@
       if (name.includes('first aid') || name.includes('bandage') || name.includes('medicine')) return true;
       // ALIEN HEALING (Steve 2026-10-05): items with healAmount are usable.
       const def = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
-      return !!(def && def.healAmount);
+      if (def && def.healAmount) return true;
+      // DICE (Steve 2026-10-05): "blame needs to be random." Roll with the
+      // village — a moment of levity. Usable for cheer.
+      if (def && def.id === 'dice_set') return true;
+      return false;
+    },
+
+    // hasItem: do you carry this item? Tools are only honest if the game
+    // checks for them — this is the check. (Steve 2026-10-05: ordinary tools
+    // must have actual uses; baseEffect text without code was a lie.)
+    hasItem(itemId) {
+      return (this.state.scholar.inventory || []).some(i => (i.itemId || i.id) === itemId && (i.units || 1) > 0);
+    },
+    consumeItem(itemId, n) {
+      const inv = this.state.scholar.inventory || [];
+      const it = inv.find(i => (i.itemId || i.id) === itemId && (i.units || 1) > 0);
+      if (!it) return false;
+      it.units = (it.units || 1) - (n || 1);
+      if (it.units <= 0) this.state.scholar.inventory = inv.filter(x => x !== it);
+      return true;
     },
 
     // useItem: use it. First aid heals.
@@ -5793,6 +6015,19 @@
       // RELIC BOND: you'd never use that up. It's yours.
       if (item.bonded) { this.say(`You'd never use up your ${item.name}. It's not a supply. It's yours.`); return null; }
       const name = item.name.toLowerCase();
+      const def0 = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
+      // DICE (Steve 2026-10-05): roll with the village. Fast decisions, random
+      // blame, real laughter. +cheer, once per day.
+      if (def0 && def0.id === 'dice_set') {
+        const v = this.state.village;
+        const today = this.state.scholar.day;
+        if ((v.diceDay || -1) === today) { this.say('You already rolled today. The dice need to cool off.'); return null; }
+        v.diceDay = today;
+        v.cheer = (v.cheer || 0) + 1;
+        this.say('You roll the dice with whoever\'s nearby. Fast decisions, random blame, real laughter. (Village cheer +1.)');
+        this.tickAction(8);
+        return null;
+      }
       if (name.includes('first aid')) {
         // triage: healing hands. First aid does more.
         const amt = Math.round(this.modTarget('healing.amount', 30));
@@ -5800,9 +6035,14 @@
         this.say(`You use the first aid kit. +${amt} health.`);
       } else {
         // ALIEN HEALING (Steve 2026-10-05): healAmount items heal honestly.
+        // STETHOSCOPE: diagnose first, treat better. +25% on any healing.
         const def = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
         if (def && def.healAmount) {
-          const amt = Math.round(this.modTarget('healing.amount', def.healAmount));
+          let amt = Math.round(this.modTarget('healing.amount', def.healAmount));
+          if (this.hasItem('stethoscope')) {
+            amt = Math.round(amt * 1.25);
+            this.say('(The stethoscope finds the real problem first.)');
+          }
           this.state.scholar.health = Math.min(this.maxHealth(), this.state.scholar.health + amt);
           this.say(`You use the ${item.name}. +${amt} health.`);
         }
@@ -6006,8 +6246,12 @@
       if (!item.rawKcal) { this.say('Nothing to cook there.'); return null; }
       // water cost: 1L per unit (camp_cook discounts: L1 half, L2 none).
       const cookLvl1 = this.abilityLevel('camp_cook');
-      const waterMult1 = cookLvl1 >= 2 ? 0 : cookLvl1 >= 1 ? 0.5 : 1;
-      const kcalMult1 = cookLvl1 >= 3 ? 1.25 : cookLvl1 >= 1 ? 1.1 : 1.0;
+      // TOOLS (Steve 2026-10-05): a camp pot is honest cookware — faster,
+      // less water. A chef's knife preps properly — better yield.
+      const hasPot = this.hasItem('camp_pot');
+      const hasChefKnife = this.hasItem('chefs_knife');
+      const waterMult1 = (cookLvl1 >= 2 || hasPot) ? 0 : cookLvl1 >= 1 ? 0.5 : 1;
+      const kcalMult1 = (cookLvl1 >= 3 ? 1.25 : cookLvl1 >= 1 ? 1.1 : 1.0) * (hasChefKnife ? 1.15 : 1) * (hasPot ? 1.1 : 1);
       const units = item.units || 1;
       const cost1 = Math.ceil(units * waterMult1);
       if (item.needsCooking && this.cleanWaterForCooking() < cost1) {
@@ -6026,7 +6270,8 @@
         this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now.`);
       }
       // ACTION CLOCK: cooking = 1 chunk (32 ticks, tending the fire).
-      this.tickAction(32);
+      // A camp pot works faster — proper cookware.
+      this.tickAction(hasPot ? 16 : 32);
       return null;
     },
 
@@ -6220,13 +6465,33 @@
       const fc = s.firecraft = s.firecraft || { attempts: 0, successes: 0 };
       const moss = this.hasAbility('beard_moss');
       const known = this.fireKnown();
+      // TOOLS (Steve 2026-10-05): ordinary tools must have actual uses.
+      // A lighter is fire on demand; tinder catches without the friction
+      // lottery (consumed); a hand drill replaces knowledge with mechanics;
+      // a burning torch lends its flame.
+      const hasLighter = this.hasItem('lighter');
+      const hasTinder = this.hasItem('tinder_bundle');
+      const hasDrill = this.hasItem('hand_drill');
+      const hasTorch = this.hasItem('torch');
+      let ticks = 32 + (moss ? 0 : 16), kcalCost = 70, autoFire = false, fireNote = null;
+      if (hasLighter) {
+        autoFire = true; ticks = 8; kcalCost = 5;
+        fireNote = 'The lighter catches on the first try. Fire on demand.';
+      } else if (hasTinder) {
+        autoFire = true;
+        this.consumeItem('tinder_bundle', 1);
+        fireNote = 'The tinder bundle catches without the friction lottery. (Bundle used up.)';
+      }
       // ACTION CLOCK: friction fire is a 32-tick chunk of real work. Without
       // moss-tinder you shred dry grass on the spot first (+16 ticks).
-      s.kcal = Math.max(0, (s.kcal || 0) - 70);
-      this.tickAction(32 + (moss ? 0 : 16));
+      s.kcal = Math.max(0, (s.kcal || 0) - kcalCost);
+      this.tickAction(ticks);
       fc.attempts++;
       let p = 0.40 + (known ? 0.30 : 0) + (moss ? 0.15 : 0) + Math.min(0.30, 0.05 * (fc.successes || 0));
+      if (hasDrill && !known) { p += 0.30; fireNote = fireNote || 'The hand drill does what knowledge would — mechanics instead of memory.'; }
+      if (hasTorch) { p += 0.25; fireNote = fireNote || 'You coax the torch\'s flame onto the fuel.'; }
       if (fc.knack) p = 1;
+      if (autoFire) p = 1;
       if (Math.random() < p) {
         fc.successes++;
         this.spendFireFuel(fuel);
@@ -6236,6 +6501,7 @@
         let msg = moss
           ? 'The beard-moss tinder takes the first real spark. You feed it twigs — fire. Yours.'
           : 'The tinder catches. A real flame, breathing. You feed it twigs — fire. Yours.';
+        if (fireNote) msg = fireNote + ' ' + msg;
         if (fc.successes >= 3 && !fc.knack) {
           fc.knack = true;
           this.state.codex = this.state.codex || {};
@@ -6419,11 +6685,19 @@
         this.say('Still water. Small fish, maybe. Worth a try.');
       }
       const known = this.fishKnown();
-      const chance = known ? 0.5 : 0.18;
+      // TOOLS (Steve 2026-10-05): a line is honest tackle. It reads the water
+      // for you — and it fishes still water properly, not just "maybe."
+      const hasLine = this.hasItem('fishing_line');
+      let chance = known ? 0.5 : 0.18;
+      let yieldMult = 1;
+      if (hasLine) {
+        chance = Math.min(0.85, chance + 0.25);
+        yieldMult = 1.3;
+      }
       s.kcal = Math.max(0, (s.kcal || 0) - 60);
       if (s.week1) s.week1.fish = (s.week1.fish || 0) + 1;
       if (Math.random() < chance) {
-        const kcal = known ? 500 + Math.floor(Math.random() * 400) : 150 + Math.floor(Math.random() * 200);
+        const kcal = Math.round((known ? 500 + Math.floor(Math.random() * 400) : 150 + Math.floor(Math.random() * 200)) * yieldMult);
         // FOOD REALITY: a fish is a carcass — clean it (knife), don't just eat it.
         const animal = (this.data.animals || []).find(a => a.id === 'fish') || { id: 'fish', name: 'fish', calories: kcal };
         s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'fished'));
@@ -10850,7 +11124,9 @@
           const entry = (this.state.codex.plants || {})[h.plantId];
           const levelMult = !entry ? 1.0 : entry.level >= 4 ? 2.0 : entry.level >= 2 ? 1.5 : 1.0;
           let units = 3 + Math.floor(Math.random() * 3); // 3-5 per cell: a sweep, not a strip
-          units = Math.ceil(units * levelMult * thumbMult);
+          // MULTITOOL (Steve 2026-10-05): "+1 to foraging yields" — honest now.
+          const toolMult = this.hasItem('multitool') ? 1.25 : 1.0;
+          units = Math.ceil(units * levelMult * thumbMult * toolMult);
           // deeper knowledge accrues only for identified plants — handling
           // unknowns teaches care, not parts.
           if (entry && fam.familiar) {
@@ -11981,6 +12257,8 @@
       this.villageLives();
       this.villageEats();
       this.checkTraps();
+      try { this.checkNets(); } catch (e) {}
+      try { this.checkGenesis(); } catch (e) {}
       // JACKPOT: rare knowledgeable stranger. "Occasionally you hit a vein."
       try { this.maybeJackpotStranger(); } catch (e) {}
       // SOCIAL SIMMER: old wounds surface slowly. The village has a life you only partly see.
@@ -13585,13 +13863,23 @@
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
       }
+      // PHASE BLADE (alien loot): ignores armor — the sealed shell might as
+      // well not be there. Checked the same way as the torch-vs-golem rule.
+      let ignoresArmor = false;
+      try {
+        const wdef = this.data.items.find(i => i.id === String((((this.state.scholar || {}).equipped || {}).weapon || {}).itemId || ''));
+        ignoresArmor = !!(wdef && wdef.weapon && wdef.weapon.ignoresArmor);
+      } catch (e) {}
       // BUNKER (speedbump): sealed shell — nearly invulnerable. Chip damage only.
-      if (t.kind === 'monster' && this.turtleIs(t) && (t.turtleBunker || 0) > 0 && final > 0) {
+      if (t.kind === 'monster' && this.turtleIs(t) && (t.turtleBunker || 0) > 0 && final > 0 && !ignoresArmor) {
         final = Math.max(1, Math.round(final * 0.15));
         if (!t.bunkerNoted) {
           t.bunkerNoted = true;
           this.say('The hit clangs off the sealed shell. Nearly invulnerable. Wait it out.');
         }
+      }
+      if (ignoresArmor && t.kind === 'monster' && this.turtleIs(t) && (t.turtleBunker || 0) > 0 && final > 0) {
+        this.say('The phase blade doesn\'t care about the shell. It cuts through.');
       }
       // WINDED (boar): soft flanks after a missed charge — it was never built to turn.
       if (t.kind === 'monster' && this.boarIs(t) && (t.boarWinded || 0) > 0 && final > 0) {
@@ -14287,7 +14575,7 @@
       const foe = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const stepTo = (tx, ty) => {
-        const st = S.combat.stepToward(m.mx, m.my, tx, ty, blocked);
+        const st = this.tbStepToward(m, tx, ty, blocked);
         if (st) { m.mx = st.x; m.my = st.y; return true; }
         return false;
       };
@@ -14473,6 +14761,31 @@
 
     // SHOUT: raw noise, no words. The belltoad's weakness made verb — loud
     // noise breaks the chorus. Twice per fight; throats are finite.
+    // GRAVITY WELL (Steve 2026-10-05): alien loot that works. Crushes a 3x3
+    // area — monsters caught in it can't move for 2 turns. One use; the
+    // well burns out. Honest alien tech, not text.
+    tbPlayerGravityWell() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (!p || p.acted) { this.say('Already acted this turn.'); return false; }
+      if (!this.hasItem('gravity_well')) { this.say('No gravity well.'); return false; }
+      this.consumeItem('gravity_well', 1);
+      p.acted = true;
+      this.audioEvent('gravity_well');
+      let n = 0;
+      for (const m of f.fighters) {
+        if (m.kind !== 'monster' || !m.alive || m.fled) continue;
+        const d = Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my));
+        if (d > 3) continue;
+        n++;
+        m.gravityHeld = 2; // can't move for 2 turns
+        if (m.telegraph) m.telegraph = null;
+      }
+      this.say(n ? `The well opens — space folds. ${n} ${n === 1 ? 'monster' : 'monsters'} held fast, can't move for 2 turns.`
+        : 'The well opens on empty ground. Nothing caught.');
+      return true;
+    },
     tbPlayerShout() {
       const f = this.tbfight;
       if (!f || !this.tbIsPlayerTurn()) return false;
@@ -14689,7 +15002,7 @@
       if (!p || !p.alive) return;
       if (Math.max(Math.abs(p.mx - m.mx), Math.abs(p.my - m.my)) <= 1) return;
       const detail = this.genDetail(this.map.px, this.map.py);
-      const s = S.combat.stepToward(m.mx, m.my, p.mx, p.my, (x, y) => {
+      const s = this.tbStepToward(m, p.mx, p.my, (x, y) => {
         if (x < 0 || x > 8 || y < 0 || y > 8) return true;
         const cell = detail[y] && detail[y][x];
         if (cell && this.cellProps(cell).blocks) return true;
@@ -14780,7 +15093,7 @@
       for (let i = 0; i < (m.speed || 6); i++) {
         const d = Math.max(Math.abs(p.mx - m.mx), Math.abs(p.my - m.my));
         if (d <= 1) break;
-        const s = S.combat.stepToward(m.mx, m.my, p.mx, p.my, (x, y) => {
+        const s = this.tbStepToward(m, p.mx, p.my, (x, y) => {
           if (x < 0 || x > 8 || y < 0 || y > 8) return true;
           const cell = detail[y] && detail[y][x];
           if (cell && this.cellProps(cell).blocks) return true;
@@ -14819,6 +15132,12 @@
       return cells;
     },
 
+    // tbStepToward: gravity-aware movement. A gravity-held monster strains
+    // but doesn't move — the well holds its position, not its malice.
+    tbStepToward(m, tx, ty, blocked, danger) {
+      if (m && m.gravityHeld > 0) return null;
+      return S.combat.stepToward(m.mx, m.my, tx, ty, blocked, danger);
+    },
     tbMonsterTurn(m) {
       const f = this.tbfight;
       // ROUNDS SEEN: surviving its turns teaches you its toughness.
@@ -14834,7 +15153,11 @@
         if (this.tbEndCheck()) return;
         return;
       }
-      // 1. pending telegraph: count down, then resolve.
+      // GRAVITY HELD: the well has it. No movement — it can still act at range.
+      if (m.gravityHeld > 0) {
+        m.gravityHeld -= 1;
+        this.say(`The ${this.encTheName(m)} strains against folded space. Held.`);
+      }      // 1. pending telegraph: count down, then resolve.
       // Heavy attacks wind up over multiple rounds (you don't know exactly
       // how long — but the cue escalates and the heartbeat tells you).
       // HIGHBEAM: threat scan first — anyone too close joins the list, and
@@ -14915,7 +15238,7 @@
           this.audioEvent('swarmScatter');
           const detail = this.genDetail(this.map.px, this.map.py);
           for (let i = 0; i < 2; i++) {
-            const s = S.combat.stepToward(m.mx, m.my, m.mx * 2 - fire.x, m.my * 2 - fire.y,
+            const s = this.tbStepToward(m, m.mx * 2 - fire.x, m.my * 2 - fire.y,
               (x, y) => x < 0 || x > 8 || y < 0 || y > 8 || (detail[y] && detail[y][x] && this.cellProps(detail[y][x]).blocks));
             if (!s) break;
             m.mx = s.x; m.my = s.y;
@@ -15400,7 +15723,7 @@
         for (let i = 0; i < stepN; i++) {
           const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
           if (d <= (pat.range || 3)) break;
-          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
           if (!stp) break;
           m.mx = stp.x; m.my = stp.y;
         }
@@ -15492,7 +15815,7 @@
         } else if (!m.telegraph) {
           // not set yet: drift toward the nearest warmth, slow
           if (foe.d > 4) {
-            const stp = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+            const stp = this.tbStepToward(m, foe.f.mx, foe.f.my, blocked, danger);
             if (stp) { m.mx = stp.x; m.my = stp.y; }
           }
           this.say('A light in the dark, drifting closer. Beautiful. It wasn\'t there yesterday.');
@@ -15600,7 +15923,7 @@
         const t = foe.f;
         for (let i = 0; i < m.speed; i++) {
           if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) break;
-          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
           if (!stp) break;
           m.mx = stp.x; m.my = stp.y;
         }
@@ -15636,7 +15959,7 @@
         const t = foe.f;
         // speed 1: one deliberate step toward the list-head
         if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) > (pat.range || 3)) {
-          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
           if (stp) { m.mx = stp.x; m.my = stp.y; }
         }
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
@@ -15708,7 +16031,7 @@
         if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'resolve'));
         for (let i = 0; i < m.speed; i++) {
           if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) break;
-          const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+          const s = this.tbStepToward(m, foe.f.mx, foe.f.my, blocked, danger);
           if (!s) break;
           m.mx = s.x; m.my = s.y;
         }
@@ -15762,7 +16085,7 @@
         const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         const want = this.encWantRange(m, pat);
         if (d <= want) break;
-        const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+        const s = this.tbStepToward(m, foe.f.mx, foe.f.my, blocked, danger);
         if (!s) break;
         m.mx = s.x; m.my = s.y;
       }
