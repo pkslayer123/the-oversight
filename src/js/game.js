@@ -2048,10 +2048,18 @@
       if (blind) this.say(`You've only SEEN a ${recipe.name}. You'll try to copy it from memory — long odds, and the materials are at risk if it comes apart.`);
       // check materials
       const inv = this.state.scholar.inventory;
+      // BAIT is not a material — it's food. Any edible item (berries, nuts,
+      // scraps) baits a deadfall. The recipe text says "bait (berries or
+      // nuts)"; the code honors it instead of demanding a phantom item.
+      const matMatches = (item, mat) => mat === 'bait'
+        ? ((item.kcalEach || 0) > 0 && (item.units || 0) > 0)
+        : item.material === mat;
       for (const [mat, need] of Object.entries(recipe.materials)) {
-        const have = inv.filter(i => i.material === mat).reduce((t, i) => t + i.units, 0);
+        const have = inv.filter(i => matMatches(i, mat)).reduce((t, i) => t + i.units, 0);
         if (have < need) {
-          this.say(`Need ${need} ${mat} (have ${have}).`);
+          this.say(mat === 'bait'
+            ? `Need ${need} bait — berries, nuts, any food (have ${have}).`
+            : `Need ${need} ${mat} (have ${have}).`);
           return null;
         }
       }
@@ -2059,7 +2067,7 @@
       for (const [mat, need] of Object.entries(recipe.materials)) {
         let left = need;
         for (const item of inv) {
-          if (item.material !== mat || left <= 0) continue;
+          if (!matMatches(item, mat) || left <= 0) continue;
           const take = Math.min(item.units, left);
           item.units -= take; left -= take;
         }
@@ -7876,6 +7884,20 @@
       // knowledge-ability synergy check: does this unlock a technique?
       this.checkKnowledgeAbilitySynergy(skillId, newLevel);
       return true;
+    },
+
+    // NIGHT HUNTING PRACTICE (Steve): the dark is a teacher. Night stalks and
+    // strikes earn night_hunting — L1 at 3, L2 at 8, L3 at 16. Background
+    // hunters start at L1 (flavor); the mechanical tiers are earned in the
+    // field, never given. Follows the read_people practice pattern.
+    nightHuntPractice() {
+      const s = this.state.scholar;
+      s.nightHuntXP = (s.nightHuntXP || 0) + 1;
+      const xp = s.nightHuntXP;
+      if (xp >= 16 && !this.skillKnown('night_hunting', 3)) this.learnSkill('night_hunting', 3, 'hunting by dark');
+      else if (xp >= 8 && !this.skillKnown('night_hunting', 2)) this.learnSkill('night_hunting', 2, 'hunting by dark');
+      else if (xp >= 3 && !this.skillKnown('night_hunting', 1)) this.learnSkill('night_hunting', 1, 'hunting by dark');
+      return xp;
     },
 
     // backgroundKnowledge: your occupation IS knowledge. Not flavor — mechanical.

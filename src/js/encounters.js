@@ -339,6 +339,8 @@
     s.kcal = Math.max(0, s.kcal - 15);
     s.stalked = true;
     try { if (this.tickAction) this.tickAction(1); } catch (e) {}
+    // night stalks teach the dark — practice toward night_hunting.
+    try { if (this.isNight && this.isNight() && this.nightHuntPractice) this.nightHuntPractice(); } catch (e) {}
     this.animalTurn(); // one quiet reaction
     if (!s.animal) {
       this.feedback('You stalk closer — but ' + label + ' was already gone.');
@@ -375,6 +377,8 @@
     var a = s.animal;
     if (!a) return null;
     if (s.week1) s.week1.hunt++;
+    // night strikes teach the dark too — practice toward night_hunting.
+    try { if (this.isNight && this.isNight() && this.nightHuntPractice) this.nightHuntPractice(); } catch (e) {}
     try { if (this.gainAbilityXP) this.gainAbilityXP('tracker', 1); } catch (e) {}
     var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
     var dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
