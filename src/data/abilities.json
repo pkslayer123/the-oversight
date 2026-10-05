@@ -20,7 +20,7 @@
     }
   },
   {
-    "description": "Fine work under pressure. Dressing game, stitching wounds, tying snares — no shake.",
+    "description": "Fine work under pressure. Dressing game, stitching wounds, tying snares \u2014 no shake.",
     "id": "steady_hands",
     "modifiers": [
       {
@@ -94,7 +94,7 @@
     }
   },
   {
-    "description": "You think in shelf life. Smoking, drying, salting — food that lasts is food that saves.",
+    "description": "You think in shelf life. Smoking, drying, salting \u2014 food that lasts is food that saves.",
     "id": "preservation_instinct",
     "modifiers": [
       {
@@ -510,7 +510,7 @@
   {
     "id": "extra_stomach",
     "name": "Extra Stomach",
-    "description": "You grow a second stomach. Bank twice the calories — but the hunger doubles too. (It's always hungry.)",
+    "description": "You grow a second stomach. Bank twice the calories \u2014 but the hunger doubles too. (It's always hungry.)",
     "flavor": "Two tummies! Twice the hunger! Twice the... we didn't think this through! But WOW!",
     "pool": "system",
     "tier": "body_horror",
@@ -531,7 +531,7 @@
   {
     "id": "deep_reserves",
     "name": "Deep Reserves",
-    "description": "Your body learns to bank calories like a war chest. Bank 5× the energy. The furnace is always lit — but it must be FED.",
+    "description": "Your body learns to bank calories like a war chest. Bank 5\u00d7 the energy. The furnace is always lit \u2014 but it must be FED.",
     "flavor": "FIVE stomachs?! We lost count! The furnace DEMANDS tribute! FEED IT! (It's worth it. Probably.)",
     "pool": "system",
     "tier": "body_horror",
@@ -887,7 +887,7 @@
     "id": "dead_aim",
     "name": "Dead Aim",
     "description": "First attack in any combat is a guaranteed critical if you waited 1 round. Patience, then thunder.",
-    "flavor": "You WAIT! You BREATHE! Then — BOOM! The audience gasps! We gasped!",
+    "flavor": "You WAIT! You BREATHE! Then \u2014 BOOM! The audience gasps! We gasped!",
     "pool": "system",
     "tier": "combat",
     "unlock": {
@@ -1038,7 +1038,7 @@
     "id": "phoenix_clause",
     "name": "Phoenix Clause",
     "description": "Once per run: when you die, you explode (damaging everything nearby) and respawn at Haven with 1 HP. The System calls it 'great television.'",
-    "flavor": "You DIE! Then — KABOOM! — you're BACK! The audience LOVED it! The ratings! THE RATINGS!",
+    "flavor": "You DIE! Then \u2014 KABOOM! \u2014 you're BACK! The audience LOVED it! The ratings! THE RATINGS!",
     "pool": "system",
     "tier": "overpowered",
     "unlock": {
@@ -1147,5 +1147,49 @@
       "type": "system_offer"
     },
     "modifiers": []
+  },
+  {
+    "id": "field_medicine",
+    "name": "Field Medicine",
+    "pool": "care",
+    "description": "Clean wounds, poultice infections, set bones in the field. Heal 20 HP (once per day part).",
+    "modifiers": [],
+    "unlock": {
+      "type": "granted"
+    },
+    "active": {
+      "type": "heal",
+      "amount": 20,
+      "cooldown": "daypart",
+      "target": "self"
+    }
+  },
+  {
+    "id": "herbal_remedy",
+    "name": "Herbal Remedy",
+    "pool": "care",
+    "description": "You know which plants draw fever out. Cure disease.",
+    "modifiers": [],
+    "unlock": {
+      "type": "granted"
+    },
+    "active": {
+      "type": "cure_disease",
+      "cooldown": "day"
+    }
+  },
+  {
+    "id": "purify",
+    "name": "Purify",
+    "pool": "care",
+    "description": "Charcoal, clean water, time. Neutralize poison.",
+    "modifiers": [],
+    "unlock": {
+      "type": "granted"
+    },
+    "active": {
+      "type": "cure_poison",
+      "cooldown": "day"
+    }
   }
 ]

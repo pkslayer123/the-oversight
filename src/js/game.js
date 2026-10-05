@@ -10364,6 +10364,20 @@
       if (has('time_skip')) out.push({ id: 'time_skip', target: 'none', name: 'Time Skip', desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true });
       if (has('dowsing')) out.push({ id: 'dowsing', target: 'none', name: 'Dowse', desc: 'A forked stick twitches toward water. 70% accurate.', available: true });
       if (has('echo_location')) out.push({ id: 'echo_location', target: 'none', name: 'Echo-locate', desc: 'Clap once: sense the 3x3 around you. 1/day.', available: s.echoDay !== s.day, why: 'Used today.', combat: true });
+      // HEALING (Steve 2026-10-05): problems need answers. Field medicine heals,
+      // herbal remedy cures disease, purify neutralizes poison.
+      if (has('field_medicine')) {
+        const used = s.fieldMedDayPart === `${s.day}-${this.dayPart}`;
+        out.push({ id: 'field_medicine', target: 'self', name: 'Field Medicine', desc: 'Heal 20 HP. Once per day part.', available: !used && (s.health || 0) < this.maxHealth(), why: used ? 'Used this day part.' : 'Already at full health.', combat: true });
+      }
+      if (has('herbal_remedy')) {
+        const sick = (s.diseases || []).length > 0;
+        out.push({ id: 'herbal_remedy', target: 'self', name: 'Herbal Remedy', desc: 'Cure disease. Knowledge of plants.', available: sick && s.herbalDay !== s.day, why: !sick ? 'Not sick.' : 'Used today.' });
+      }
+      if (has('purify')) {
+        const poisoned = (s.poisons || []).length > 0;
+        out.push({ id: 'purify', target: 'self', name: 'Purify', desc: 'Neutralize poison. Charcoal and clean water.', available: poisoned && s.purifyDay !== s.day, why: !poisoned ? 'Not poisoned.' : 'Used today.' });
+      }
       if (has('compost_king')) {
         const food = (s.inventory || []).find(i => (i.kcalEach || 0) > 0);
         out.push({ id: 'compost_king', target: 'none', name: 'Bury Food', desc: 'Bury food as fertilizer: +10% forage on this tile.', available: !!food, why: 'No food to bury.' });
@@ -10417,7 +10431,25 @@
           if (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) this.reveal(nx, ny);
         }
         this.say('You clap once. The echo comes back with the shape of the land — 3x3 revealed. (echo_location)');
-      } else if (id === 'compost_king') {
+      } else if (id === 'field_medicine') {
+        const key = `${s.day}-${this.dayPart}`;
+        if (s.fieldMedDayPart === key) { this.say('Already used field medicine this day part.'); return null; }
+        s.fieldMedDayPart = key;
+        const heal = 20;
+        s.health = Math.min(this.maxHealth(), (s.health || 0) + heal);
+        this.say(`Field medicine: clean the wound, poultice it, bind it. +${heal} HP.`);
+      } else if (id === 'herbal_remedy') {
+        if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return null; }
+        if (!(s.diseases || []).length) { this.say('Not sick.'); return null; }
+        s.herbalDay = s.day;
+        s.diseases = [];
+        this.say('Herbal remedy: bitter tea, steam, rest. The fever breaks.');
+      } else if (id === 'purify') {
+        if (s.purifyDay === s.day) { this.say('Already purified today.'); return null; }
+        if (!(s.poisons || []).length) { this.say('Not poisoned.'); return null; }
+        s.purifyDay = s.day;
+        s.poisons = [];
+        this.say('Purify: charcoal, clean water, time. The poison leaves your system.');
         const idx = (s.inventory || []).findIndex(i => (i.kcalEach || 0) > 0);
         if (idx === -1) { this.say('No food to bury.'); return null; }
         const it = s.inventory[idx];
@@ -10983,6 +11015,9 @@
         // Shown honestly before eating ("Risky: raw") — the gamble is informed.
         if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
           scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
+          // Track disease so herbal_remedy can cure it (Steve 2026-10-05)
+          scholar.diseases = scholar.diseases || [];
+          scholar.diseases.push({ name: it.diseaseRisk.note || 'food poisoning', day: scholar.day });
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
         scholar.kcal += kcal; ate += kcal;
