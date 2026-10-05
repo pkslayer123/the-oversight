@@ -11376,6 +11376,15 @@
       const learned = this.tbPatternKnown(mid, atk.name)
         ? ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`
         : '';
+      if (mid === 'review_drone') {
+        const eff = this.droneEff(m);
+        const count = tg && tg.turnsLeft === 3 ? 'THREE.' : tg && tg.turnsLeft === 2 ? 'TWO.' : tg && tg.turnsLeft === 1 ? 'ONE.' : '…';
+        let cue = `📊 CORRECTIVE BEAM CHARGING. DODGE EFFICIENCY CURRENTLY AT ${eff}% — ${eff >= 60 ? 'ABOVE TARGET. NOTED.' : 'BELOW TARGET.'} COMMENCING IN ${count} The line is projected on the dirt.`;
+        cue += known
+          ? ' That projected line is exactly where the beam fires — it cannot re-aim once announced. Step off it.'
+          : ' Light plays across the dirt in a straight line. Probably decorative. Probably.';
+        return cue + learned;
+      }
       return null;
     },
 
@@ -11994,6 +12003,14 @@
       return best;
     },
 
+    // the drone grades your dodging in real time. It opens at 41% — BELOW TARGET.
+    droneEff(m) { return (m.dodgeEff == null) ? 41 : m.dodgeEff; },
+    droneScore(m, dodged) {
+      let eff = this.droneEff(m);
+      eff = dodged ? Math.min(97, eff + 8) : Math.max(5, eff - 12);
+      m.dodgeEff = eff;
+      return eff;
+    },
 
     // BATCH 4 breather beats: post-attack recovery, one full turn each.
     // Returns true when the monster spent its turn breathing.
@@ -12044,6 +12061,24 @@
       const isDeer = this.deerIs(m);
       const useFifo = this.encUsesFifo(m);
       if (useFifo) this.encScanThreats(m);
+      // CROWD OVERLOAD (drone): it can't grade a crowd. More live targets
+      // than crowdLimit on the queue and the evaluation stalls out.
+      // Bring friends. (The deer is unaffected.)
+      if (useFifo && this.droneIs(m)) {
+        const limit = ((this.encConfig(m) || {}).crowdLimit) || 2;
+        const live = this.encThreatQueue(m).filter(k => {
+          const t = this.tbFighter(k); return t && t.alive && !t.fled;
+        });
+        if (live.length > limit) {
+          m.telegraph = null;
+          this.encSetPhase(m, 'recalc');
+          this.say('📊 "TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." The drone backs off, overwhelmed by the crowd.');
+          this.audioEvent('droneRecalc');
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
+          return;
+        }
+      }
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
@@ -12078,6 +12113,14 @@
               this.say('The light behind its eyes swells to a painful glare. The whine climbs past hearing. It is done aiming — now it is only waiting to loose.');
               this.audioEvent('deerAggro');
             }
+          }
+          // BATCH 4: the countdown is SPOKEN. The drone tells you exactly
+          // what it's doing — the counterplay is believing it.
+          if (this.droneIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'countdown');
+            const word = tg.turnsLeft === 2 ? 'TWO.' : tg.turnsLeft === 1 ? 'ONE.' : '…';
+            this.say(`📊 "${word}" DODGE EFFICIENCY: ${this.droneEff(m)}%. The projected line brightens.`);
+            this.audioEvent('droneCount', { n: tg.turnsLeft });
           }
           this.tbRefreshTelegraphUI();
           this.audioEvent('telegraph', { urgency: tg.turnsLeft, windupTick: true });
@@ -12161,6 +12204,16 @@
           if ((m.mdef.attack.pattern || {}).type === 'charge') {
             const last = tg.cells[tg.cells.length - 1];
             if (last && !this.tbBlocked(last.cx, last.cy)) { m.mx = last.cx; m.my = last.cy; }
+          }
+          // BATCH 4 post-resolve bookkeeping: the joke has consequences.
+          if (this.droneIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'correct');
+            if (tg.threatenedPlayer) {
+              const eff = this.droneScore(m, !playerHit);
+              this.say(`📊 DODGE EFFICIENCY: ${eff}% — ${!playerHit ? 'CLEAN DODGE. LOGGED.' : 'HIT TAKEN. LOGGED.'} ${eff >= 60 ? 'ABOVE TARGET. IT NOTICES.' : 'BELOW TARGET. CORRECTIVE ACTION SCHEDULED.'}`);
+            }
+            this.audioEvent('droneCorrect');
+            m.droneRecalc = 1; // it re-runs the numbers before grading again
           }
         }
         if (m.blind > 0) m.blind -= 1;
@@ -12314,6 +12367,12 @@
         this.say('⚠ ' + this.tbTelegraphCue(m));
         this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: (m.mdef || {}).id === 'gallowdeer' });
         if (useFifo) this.encSetPhase(m, 'aim');
+        // BATCH 4: phases wear the monster's own names; the swarm's grudge
+        // rides along into the damage.
+        if (this.droneIs(m)) {
+          if (useFifo) this.encSetPhase(m, 'project');
+          this.audioEvent('droneHum');
+        }
         this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');

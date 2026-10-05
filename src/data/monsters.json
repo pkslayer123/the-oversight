@@ -853,7 +853,31 @@
    "observed": "Floating assessment drone. The System loves metrics and assumed you do too. It grades your survival in real time, announces the scores, and fires 'corrective beams' along projected lines. The windup is long \u2014 3 beats \u2014 and the line is drawn on the ground before it fires.",
    "slain": "Performance Review. Moves: Scored Assessment (6-tile beam, 3-beat windup, line pre-drawn on ground \u2014 just don't be on it). It fears crowds (numbers) \u2014 it can't evaluate more than two subjects at once. Bring friends. Parts: lens (starts fires), projector bulb, and a printed performance review of YOU. Frame it."
   },
-  "systemDesignation": "Metrics enforcement unit"
+  "systemDesignation": "Metrics enforcement unit",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "project",
+    "countdown",
+    "correct",
+    "recalc"
+   ],
+   "phaseBadges": {
+    "project": " \ud83d\udcca EVALUATING",
+    "countdown": " \u23f3 CORRECTING IN\u2026",
+    "correct": " \ud83c\udfaf CORRECTING",
+    "recalc": " \ud83c\udf00 RECALIBRATING"
+   },
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "crowdLimit": 2,
+   "noticeText": "The drone's lens swivels to {who}. \"SUBJECT ADDED TO EVALUATION QUEUE.\" You're all being graded now.",
+   "painText": "It wobbles \u2014 then the lens LOCKS onto {who}. \"PAIN RESPONSE LOGGED. PRIORITY ESCALATED.\" Pain gets graded first.",
+   "proximityText": "\"PROXIMITY VIOLATION.\" The projector snaps to {who} \u2014 closeness overrules the queue.",
+   "comment": "Encounter framework client: FIFO evaluation queue, announced 3-count beam (the line is projected on the dirt \u2014 believe it), dodge-efficiency grading, crowd overload. The counterplay is moving off the line."
+  }
  },
  {
   "id": "camera_swarm",
