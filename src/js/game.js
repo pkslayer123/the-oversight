@@ -9439,7 +9439,11 @@
         this.scheduleSystemEvents();
         // If you're NOT at Haven, the village talks about it without you.
         // When you return, they'll tell you what happened. (Drama: you missed it.)
-        const atHaven = this.map && this.map.px === this.state.village.px && this.map.py === this.state.village.py;
+        // Haven sits at 3,3; village.px/py may be unset on older saves — same
+        // ?? 3 convention as returnToVillage/travel code, so standing at Haven
+        // actually counts as being there.
+        const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+        const atHaven = this.map && this.map.px === hx && this.map.py === hy;
         if (!atHaven) {
           s.pendingVillageEvent = {
             id: 'system_arrival_discussion',
@@ -11114,7 +11118,10 @@
       if (v.pantryKcal <= 0) {
         v.hungryDays = (v.hungryDays || 0) + 1;
         this.say(`⚠ Haven's pantry is empty. Day ${v.hungryDays} of hunger.`);
-        if (v.hungryDays >= 3) {
+        // The scattering happens ONCE. Without the flag, every endDay after
+        // game-over re-announces it and re-wipes (sims keep calling endDay).
+        if (v.hungryDays >= 3 && !v.scattered) {
+          v.scattered = true;
           this.over = true; this.villageLost = true;
           this.say('Haven couldn\'t hold. On the third hungry day, people started walking — in different directions. The scattering, again.');
           this.wipe();
