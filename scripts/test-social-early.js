@@ -69,38 +69,75 @@ const idsOf = (choices) => choices.map(c => c.id);
   }
 
   // === 2. GOSSIP ASK ===
+  // NOTE: deflector temperaments (withdrawn/prickly/restless) cap topic asks
+  // at 2, which can crowd the gossip ask out of the menu by design. And a
+  // REACTIVE opener ("did you see that?") narrows the menu to answers while
+  // the question hangs — also by design (coherence fix). The test retries
+  // villagers until it gets a normal verbal opening, so it asserts the trust
+  // GATE rather than those two unrelated mechanics.
   {
     const roster = freshGame();
-    const vid = roster[0];
+    const isDeflector = (id) => ['withdrawn', 'prickly', 'restless'].indexOf(Game.npcTemper(id)) !== -1;
+    const verbal = (id) => { try { return Game.commLevel(id).level !== 'none'; } catch (e) { return false; } };
+    const normalOpening = (id) => {
+      const c = Game.convoGet(id);
+      return c.thread !== 'nonverbal' && !c.reactiveQ;
+    };
+    // find a villager whose next conversation opens normally (not reactive /
+    // nonverbal); each failed candidate costs one throwaway conversation
+    const findNormal = (trust) => {
+      for (const id of roster) {
+        if (isDeflector(id) || !verbal(id)) continue;
+        Game.state.village.trust[id] = trust;
+        const st = Game.startConvo(id);
+        if (normalOpening(id)) return { id, st };
+        Game.endConvo(id, 'leave');
+      }
+      return null;
+    };
     // closed: low trust, first conversation
-    Game.state.village.trust[vid] = 10;
-    let st = Game.startConvo(vid);
-    ok('gossip ask hidden at trust 10 / first convo', idsOf(st.choices).indexOf('ask:gossip') === -1);
-    Game.endConvo(vid, 'leave');
+    const closed = findNormal(10);
+    ok('gossip ask hidden at trust 10 / first convo',
+      closed && idsOf(closed.st.choices).indexOf('ask:gossip') === -1);
+    if (closed) Game.endConvo(closed.id, 'leave');
 
     // open: trust 20+
-    Game.state.village.trust[vid] = 25;
-    st = Game.startConvo(vid);
-    ok('gossip ask present at trust 25', idsOf(st.choices).indexOf('ask:gossip') !== -1);
-    // label is one of the gossip variants
-    const gchoice = st.choices.find(ch => ch.id === 'ask:gossip');
-    ok('gossip ask label is a gossip variant', /Heard anything|word around the fire|saying anything interesting/.test(gchoice.label));
-    Game.endConvo(vid, 'leave');
+    const open = findNormal(25);
+    ok('gossip ask present at trust 25',
+      open && idsOf(open.st.choices).indexOf('ask:gossip') !== -1);
+    if (open) {
+      // label is one of the gossip variants
+      const gchoice = open.st.choices.find(ch => ch.id === 'ask:gossip');
+      ok('gossip ask label is a gossip variant', !!gchoice && /Heard anything|word around the fire|saying anything interesting/.test(gchoice.label));
+      Game.endConvo(open.id, 'leave');
+    } else { ok('gossip ask label is a gossip variant', false); }
 
     // open: 2nd conversation even at low trust
-    const vid2 = roster[1];
-    Game.state.village.trust[vid2] = 10;
-    Game.startConvo(vid2); Game.endConvo(vid2, 'leave');
-    st = Game.startConvo(vid2);
-    ok('gossip ask present on 2nd conversation', idsOf(st.choices).indexOf('ask:gossip') !== -1);
+    let second = null;
+    for (const id of roster) {
+      if (isDeflector(id) || !verbal(id)) continue;
+      Game.state.village.trust[id] = 10;
+      Game.startConvo(id); Game.endConvo(id, 'leave');
+      const st = Game.startConvo(id);
+      if (normalOpening(id)) { second = { id, st }; break; }
+      Game.endConvo(id, 'leave');
+    }
+    ok('gossip ask present on 2nd conversation',
+      second && idsOf(second.st.choices).indexOf('ask:gossip') !== -1);
 
-    // choosing it produces a line and sets the thread
-    const r = Game.convoTurn(vid2, 'ask:gossip');
-    ok('gossip ask returns a line', !!(r && r.line));
-    const cc = Game.convoGet(vid2);
-    ok('gossip ask sets gossip thread', cc.thread === 'gossip');
-    ok('gossip ask recorded in askedTopics', (cc.askedTopics || []).indexOf('gossip') !== -1);
-    Game.endConvo(vid2, 'leave');
+    if (second) {
+      // choosing it produces a line and sets the thread
+      const r = Game.convoTurn(second.id, 'ask:gossip');
+      ok('gossip ask returns a line', !!(r && r.line));
+      const cc = Game.convoGet(second.id);
+      ok('gossip ask sets gossip thread', cc.thread === 'gossip');
+      ok('gossip ask recorded in askedTopics', (cc.askedTopics || []).indexOf('gossip') !== -1);
+      Game.endConvo(second.id, 'leave');
+    } else {
+      ok('gossip ask returns a line', false);
+      ok('gossip ask sets gossip thread', false);
+      ok('gossip ask recorded in askedTopics', false);
+    }
   }
 
   // === 3. INVITE FLOW + DAY-1 NUDGE ===
@@ -141,9 +178,14 @@ const idsOf = (choices) => choices.map(c => c.id);
     ok('day-1 nudge: a villager approaches on day 1', reqs.length > 0);
     const rid = reqs[0];
     ok('day-1 nudge line is a can-we-talk', /Can we talk\?/.test(Game.state.village.talkRequests[rid].line));
-    // the opening delivers it
+    // the opening delivers it — as the talk line for a verbal requester, or
+    // as the nonverbal barrier opening (by design: no shared language means
+    // no fluent-English "can we talk"). Either way the request is consumed.
     const st = Game.startConvo(rid);
-    ok('day-1 nudge delivered as conversation opening', /Can we talk\?/.test(st.line || ''));
+    const deliveredTalk = /Can we talk\?/.test(st.line || '');
+    const deliveredBarrier = /No shared words at all/.test(st.line || '');
+    ok('day-1 nudge delivered as conversation opening', deliveredTalk || deliveredBarrier);
+    ok('day-1 nudge request consumed', !!Game.state.village.talkRequests[rid].delivered);
     Game.endConvo(rid, 'leave');
     Game.betrayalDaily();
     ok('day-1 nudge fires exactly once', Object.keys(Game.state.village.talkRequests || {}).length === reqs.length);

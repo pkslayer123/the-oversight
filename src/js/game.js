@@ -6751,26 +6751,34 @@
     },
     // talkReason: why THEY want to talk to YOU. Villagers initiate because
     // they heard something, want something, or are worried.
+    // talkReason lines are TEMPLATES with a __NAME__ placeholder — see
+    // renderTalkLine. The requester may earn their name between the request
+    // firing and the player answering it, so the name renders at delivery.
     talkReason(rid) {
       const v = this.state.village;
-      const d = this.displayName(rid);
       for (const g of (v.gossip || [])) {
         if (!g.heard.includes(rid)) continue;
         const neg = Object.entries(g.dims).some(([k, val]) => val < -3);
         if (neg && Math.random() < 0.6) {
-          return { line: `"Can we talk?" ${d} glances around first. "People are saying things. About you. Is any of it true?"` };
+          return { line: `"Can we talk?" __NAME__ glances around first. "People are saying things. About you. Is any of it true?"` };
         }
       }
       const goal = this.npcGoal(rid);
       const pantryLow = (v.pantryKcal || 0) < 4000;
       const roll = Math.random();
-      if (goal === 'prove' && roll < 0.5) return { line: `"Can we talk?" ${d} shifts their weight. "I need something to do. Anything. Please."` };
-      if (goal === 'alone' && roll < 0.4) return { line: `"Can we talk?" ${d} sighs. "I need some space. A corner nobody needs me in. Is that okay?"` };
+      if (goal === 'prove' && roll < 0.5) return { line: `"Can we talk?" __NAME__ shifts their weight. "I need something to do. Anything. Please."` };
+      if (goal === 'alone' && roll < 0.4) return { line: `"Can we talk?" __NAME__ sighs. "I need some space. A corner nobody needs me in. Is that okay?"` };
       if (goal === 'family' && roll < 0.4) return { line: `"Can we talk? Have you seen anyone on the roads? Anyone at all? I'm asking everyone."` };
-      if (goal === 'lead' && (v.heat || {})[rid] > 0 && roll < 0.5) return { line: `"Can we talk?" ${d} doesn't wait for an answer. "We need to discuss how things are run here."` };
-      if (pantryLow && roll < 0.35) return { line: `"Can we talk?" ${d} keeps their voice low. "The stores. Have you looked at the stores? We're running thin."` };
-      if (roll < 0.25) return { line: `"Can we talk?" ${d} sits down near you. "Just... talk. Like people used to."` };
+      if (goal === 'lead' && (v.heat || {})[rid] > 0 && roll < 0.5) return { line: `"Can we talk?" __NAME__ doesn't wait for an answer. "We need to discuss how things are run here."` };
+      if (pantryLow && roll < 0.35) return { line: `"Can we talk?" __NAME__ keeps their voice low. "The stores. Have you looked at the stores? We're running thin."` };
+      if (roll < 0.25) return { line: `"Can we talk?" __NAME__ sits down near you. "Just... talk. Like people used to."` };
       return null;
+    },
+    // renderTalkLine: a stored talk-request line is a template; the name is
+    // always rendered fresh. Old saves baked the name in at creation time —
+    // no placeholder there, so they render unchanged (slightly stale, harmless).
+    renderTalkLine(line, vid) {
+      return String(line || '').replaceAll('__NAME__', this.displayName(vid));
     },
     // applyRep: write the dims, drift trust, ripple through their group.
     applyRep(vid, dims, weight, noTrust) {
@@ -7248,7 +7256,7 @@
             stepToward(); done();
             v.talkRequests = v.talkRequests || {};
             v.talkRequests[rid] = { line: reason.line };
-            this.say(reason.line + ` (Talk to ${this.displayName(rid)}.)`);
+            this.say(this.renderTalkLine(reason.line, rid) + ` (Talk to ${this.displayName(rid)}.)`);
             return;
           }
         }
@@ -7958,7 +7966,7 @@
         // so the player sees "can we talk?" on their person card.
         try {
           v.talkRequests = v.talkRequests || {};
-          v.talkRequests[who] = { line: `${this.displayName(who)} wants you to join the conversation.` };
+          v.talkRequests[who] = { line: `__NAME__ wants you to join the conversation.` };
         } catch (e) {}
       }
       // Overhearing sharp minds teaches a little. The village is a classroom

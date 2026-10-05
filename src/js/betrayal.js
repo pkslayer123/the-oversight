@@ -195,10 +195,13 @@
       if (!roster.length) return;
       const rid = roster[Math.floor(Math.random() * roster.length)];
       const d = this.displayName(rid);
-      const line = `"Hey." ${d} settles near you, not too close. "Day one. Everyone's pretending they're fine. ...Can we talk? Just talk — like people used to."`;
+      // TALK-REQUEST LINES are templates, not baked text: names are earned
+      // socially, so the requester may still be a descriptor ("A person,
+      // maybe 60s") when the nudge fires and "Daljit" by the time the player
+      // answers it. The __NAME__ placeholder renders at DELIVERY time.
       v.talkRequests = v.talkRequests || {};
-      v.talkRequests[rid] = { line };
-      try { this.say(line + ` (Talk to ${d}.)`); } catch (e) {}
+      v.talkRequests[rid] = { line: `"Hey." __NAME__ settles near you, not too close. "Day one. Everyone's pretending they're fine. ...Can we talk? Just talk — like people used to."` };
+      try { this.say(`"Hey." ${d} settles near you, not too close. "Day one. Everyone's pretending they're fine. ...Can we talk? Just talk — like people used to."` + ` (Talk to ${d}.)`); } catch (e) {}
     },
     pendingInvite(vid) {
       const h = (this.betrayalState().invites || {})[vid];

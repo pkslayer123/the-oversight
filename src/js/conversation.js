@@ -391,11 +391,13 @@
       const goalDef = (this.data.characterGen.goals || []).find(g => g.id === goal);
       const vp = this.vpOf(vid);
 
-      // 1. THEY asked to talk — their reason leads, once.
+      // 1. THEY asked to talk — their reason leads, once. The stored line is
+      // a template: the requester's name may have been earned since the
+      // request fired, so it renders fresh here, never stale.
       const treq = (v.talkRequests || {})[vid];
       if (treq && !treq.delivered) {
         treq.delivered = true;
-        return { line: String(treq.line).replace(/ \(Talk to .*?\.\)$/, ''), thread: 'request' };
+        return { line: this.renderTalkLine(String(treq.line).replace(/ \(Talk to .*?\.\)$/, ''), vid), thread: 'request' };
       }
       // 2. They remember what you told them. Being remembered feels real.
       if (c.answered.q_origin === 'a_tell' && !c.recalled.q_origin) {
