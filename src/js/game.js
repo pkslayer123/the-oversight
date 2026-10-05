@@ -10944,7 +10944,8 @@
           alive: true, fled: false, telegraph: null, mdef,
           hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
           beamCooldown: 0, dwellTaught: false,
-          beamPhase: 'stalk', threatQueue: [],
+          beamPhase: (mdef.encounter && mdef.encounter.phaseMap && mdef.encounter.phaseMap.idle) || 'stalk',
+          threatQueue: [],
         });
       }
 
@@ -10987,6 +10988,15 @@
       this.say('Turn-based now. Tap a tile to move — speed is squares. Then act.');
       this.audioEvent('combatStart');
       if (/highbeam/i.test(mdef.name || '')) this.audioEvent('deerNotice'); // distant, wrong-sounding call
+      const scCfg = mdef.encounter || {};
+      if (scCfg.noticeAudio) this.audioEvent(scCfg.noticeAudio);
+      // HUSHWOLF: the pack arrives as a pack — the first fighter is the lead.
+      // The birds go quiet. That IS the telegraph.
+      if (mdef.id === 'hushwolf') {
+        const wolves = fighters.filter(x => x.kind === 'monster');
+        if (wolves[0]) wolves[0].wolfLead = true;
+        this.say('The woods go silent — not quiet. Silent. Like the world holding its breath. The pack is already moving.');
+      }
       this.sysSay(`COMBAT! ${dispName.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
       this.tbBeginTurn();
       return this.tbfight;
@@ -11255,6 +11265,59 @@
       return hit;
     },
 
+    // BULLDOZE: charge lanes that never go around — trees, fences and brush
+    // shred; only real walls stop them. (boar, mirror stag)
+    tbBulldozeCells(cells) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const blocks = this.beamBlockingCells();
+      const cut = [];
+      for (const c of cells || []) {
+        const cell = detail[c.cy] && detail[c.cy][c.cx];
+        if (cell && blocks[cell]) break;
+        cut.push(c);
+      }
+      return cut;
+    },
+
+    // TRAMPLE: the boar's missed charge ends here — grinding hooves on
+    // whatever is close. This is the price of the dodge.
+    tbBoarTrample(m) {
+      const f = this.tbfight;
+      if (!f) return;
+      if (this.encUsesFifo(m)) this.encSetPhase(m, 'trample');
+      this.say('It wheels at the end of its lane — and TRAMPLES, grinding hooves, at whatever is close.');
+      this.audioEvent('boarTrample');
+      let hit = false;
+      for (const o of f.fighters) {
+        if (!o.alive || o.fled || o.key === m.key) continue;
+        if (!S.combat.isFoe(m, o)) continue;
+        if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
+        hit = true;
+        this.tbDamage(o.key, S.combat.roll([10, 16]), m.name + "'s trample");
+        if (f.over) return;
+      }
+      if (!hit) this.say('Nothing in reach. It paws the earth, furious.');
+    },
+
+    // HERON DRIFT: after the strike it is somewhere else. You didn't see it move.
+    tbHeronDrift(m) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const opts = [];
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = m.mx + dx, ny = m.my + dy;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+        const cell = detail[ny] && detail[ny][nx];
+        if (!this.cellProps(cell).blocks) opts.push([nx, ny]);
+      }
+      if (opts.length) {
+        const pick = opts[Math.floor(Math.random() * opts.length)];
+        m.mx = pick[0]; m.my = pick[1];
+      }
+      if (this.encUsesFifo(m)) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
+      this.say("It is somewhere else now. You didn't see it move.");
+    },
+
     // ANTLER THRASH: closing in is risky at any point in the fight.
     tbAntlerThrash(m) {
       const f = this.tbfight;
@@ -11356,6 +11419,10 @@
       else if (tg && tg.turnsLeft > 1) cue += ' It is still gathering itself…';
       if (this.tbPatternKnown(m.mdef.id, atk.name)) {
         cue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
+        // CODEX-GATED TACTICS: the earned counterplay, in the monster's own
+        // terms. Never shown before the pattern is learned.
+        const tactics = (this.encConfig(m) || {}).knownTactics;
+        if (tactics) cue += ' ' + tactics;
       }
       return cue;
     },
@@ -11429,6 +11496,14 @@
           ? `Too far to reach. (unarmed: range 1)`
           : `${w.name} can't reach that far. (range ${w.range})`);
         return false;
+      }
+      // WHITE NOISE (statue): at range you're striking where you THINK it is.
+      // Half the time it isn't there. Close in, or wait for the unfold.
+      if (this.heronIs(t) && this.encUsesFifo(t) && t.beamPhase === 'still' && d0 > 1 && Math.random() < 0.5) {
+        p.acted = true;
+        this.say("You strike where you thought it was. It wasn't. (The heron is hardest to see when it is stillest.)");
+        this.tbAfterPlayerAction();
+        return true;
       }
       // RANGED: no ammo, no shot.
       if (w.ammo) {
@@ -11647,6 +11722,19 @@
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
       }
+      // BUNKER (speedbump): sealed shell — nearly invulnerable. Chip damage only.
+      if (t.kind === 'monster' && this.turtleIs(t) && (t.turtleBunker || 0) > 0 && final > 0) {
+        final = Math.max(1, Math.round(final * 0.15));
+        if (!t.bunkerNoted) {
+          t.bunkerNoted = true;
+          this.say('The hit clangs off the sealed shell. Nearly invulnerable. Wait it out.');
+        }
+      }
+      // WINDED (boar): soft flanks after a missed charge — it was never built to turn.
+      if (t.kind === 'monster' && this.boarIs(t) && (t.boarWinded || 0) > 0 && final > 0) {
+        final = Math.round(final * 1.5);
+        this.say(`${sourceLabel === 'you' ? 'You catch' : sourceLabel + ' catches'} it on the flank — soft, unarmored.`);
+      }
       // THE LIGHT IS ALREADY GATHERED: once a sweeping-beam monster has begun
       // its windup, the charge lives in its eyes, not its body. Killing the
       // body doesn't un-gather the light — lethal damage during the windup
@@ -11679,6 +11767,23 @@
         }
       } else {
         this.say(`${sourceLabel === 'you' ? 'You hit' : sourceLabel + ' hits'} ${t.kind === 'player' ? 'you' : t.name} for ${final}.`);
+      }
+      // WOUND THE LEAD (hushwolf): the pack coordinates through the lead animal.
+      // Drop it below half and the silence shatters — the pack breaks.
+      const dmgTf = this.tbfight;
+      if (t.kind === 'monster' && this.wolfIs(t) && t.wolfLead && t.hp > 0 && !t.wolfBroken && t.hp < t.maxHp * 0.5 && dmgTf) {
+        for (const o of dmgTf.fighters) {
+          if (o.kind === 'monster' && o.alive && !o.fled && ((o.mdef || {}).id === 'hushwolf')) o.wolfBroken = true;
+        }
+        this.say("The lead staggers — and the pack's silence shatters into yips and snarls. Coordination broken. (WOUND THE LEAD: it worked.)");
+        this.audioEvent('wolfBreak');
+      }
+      // BUNKER TRIGGER (speedbump): below half HP, it seals up.
+      if (t.kind === 'monster' && this.turtleIs(t) && t.hp > 0 && !t.turtleBunkered && t.hp < t.maxHp * 0.5) {
+        t.turtleBunker = 2; t.turtleBunkered = true; t.bunkerNoted = false;
+        if (this.encUsesFifo(t)) this.encSetPhase(t, 'bunker');
+        this.say('It withdraws. The shell seals with a sound like a door closing. (BUNKER: nearly invulnerable for 2 turns — wait it out.)');
+        this.audioEvent('turtleBunker');
       }
       if (t.hp <= 0) {
         t.alive = false;
@@ -11722,7 +11827,23 @@
         else {
           this.say(`The ${t.name} falls.`);
           try { this.registerDeath({ kind: 'monster', monsterId: (t.mdef || {}).id, monsterName: t.name, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses() }); } catch (e) {}
-          if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
+          const tdCfg = ((t.mdef || {}).encounter) || {};
+          if (tdCfg.deathAudio) this.audioEvent(tdCfg.deathAudio);
+          else if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
+          // THE LEAD FALLS (hushwolf): without it, the pack usually melts away.
+          if (this.wolfIs(t) && t.wolfLead && this.tbfight) {
+            for (const o of this.tbfight.fighters) {
+              if (o.kind !== 'monster' || !o.alive || o.fled || o.key === t.key) continue;
+              if (((o.mdef || {}).id) !== 'hushwolf') continue;
+              if (Math.random() < 0.6) {
+                o.fled = true;
+                this.say('Without the lead, another wolf melts back between the trees.');
+              } else {
+                o.wolfBroken = true;
+              }
+            }
+            this.audioEvent('wolfBreak');
+          }
           // DEATH THROES: a sweeping-beam monster cut down before its first
           // Discharge fires anyway — the light was already in its eyes. The
           // beam lances out as the body falls. (After the first Discharge the
@@ -11833,6 +11954,24 @@
     //   encNoticesPain(m,attackerKey), encScanThreats(m),
     //   encTelegraphKnown(m), encPhaseBadge(m), encSetPhase(m,phase)
     deerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'gallowdeer')); },
+    // MONSTER BATCH 1 (The Beasts): id predicates for the bespoke encounter
+    // layer. Each plugs into the shared FIFO/phase/telegraph machinery — no
+    // parallel systems, just per-id personality. (Follows the deerIs pattern.)
+    boarIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'thornback_boar')); },
+    wolfIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hushwolf')); },
+    heronIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'white_noise_heron')); },
+    turtleIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'speedbump_turtle')); },
+    stagIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'mirror_stag')); },
+    // encPhaseFor: the turn-phase rhythm, per monster. The config's phaseMap
+    // names the beats (declare/windup/resolve/cooldown/idle); without one the
+    // Highbeam's aim/charge/firing/cooldown/stalk mapping holds. The deer is
+    // untouched — it has no phaseMap, so every lookup falls through to its own.
+    encPhaseFor(m, moment) {
+      const cfg = this.encConfig(m) || {};
+      const map = cfg.phaseMap || {};
+      if (map[moment]) return map[moment];
+      return { declare: 'aim', windup: 'charge', resolve: 'firing', cooldown: 'cooldown', idle: 'stalk' }[moment] || 'stalk';
+    },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
     encThreatQueue(m) {
@@ -11848,10 +11987,16 @@
       const q = this.encThreatQueue(m);
       if (q.includes(key)) return false;
       q.push(key);
-      if (!silent && this.tbfight) {
+      const cfg = this.encConfig(m) || {};
+      if (!silent && this.tbfight && !cfg.quiet) {
         const t = this.tbFighter(key);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
-        this.say(`The deer's head swings toward ${who}. Another light in its eyes. You're all on the list now.`);
+        if (this.deerIs(m)) {
+          this.say(`The deer's head swings toward ${who}. Another light in its eyes. You're all on the list now.`);
+        } else {
+          const short = cfg.shortName || 'beast';
+          this.say(`The ${short}'s head swings toward ${who}. You're on the list now — it doesn't forget.`);
+        }
       }
       return true;
     },
@@ -11868,6 +12013,8 @@
     // pain gets noticed: hurting the deer moves you to the front of the line.
     encNoticesPain(m, attackerKey) {
       if (!this.encUsesFifo(m) || !this.tbfight) return;
+      const cfg = this.encConfig(m) || {};
+      if (cfg.painSwitch === false) return;
       const t = this.tbFighter(attackerKey);
       if (!t || !t.alive || t.fled) return;
       const q = this.encThreatQueue(m);
@@ -11877,8 +12024,11 @@
       if (i > 0) { q.splice(i, 1); q.unshift(attackerKey); }
       if (q[0] !== before) {
         const who = t.kind === 'player' ? 'you' : t.name;
-        this.say(`It staggers — and its burning gaze fixes on ${who}. Pain gets noticed.`);
-        this.audioEvent('deerAggro');
+        if (!cfg.quiet) {
+          if (this.deerIs(m)) this.say(`It staggers — and its burning gaze fixes on ${who}. Pain gets noticed.`);
+          else this.say(`It staggers — pain gets noticed. Its attention fixes on ${who}.`);
+        }
+        this.audioEvent(cfg.aggroAudio || 'deerAggro');
       }
     },
     // scan on the deer's turn: anyone too close gets noticed; anyone crazy
@@ -11913,8 +12063,11 @@
       if (q[0] !== before) {
         const t = this.tbFighter(q[0]);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
-        this.say(`Too close. The deer's gaze SNAPS to ${who} — proximity overrules patience.`);
-        this.audioEvent('deerAggro');
+        if (!cfg.quiet) {
+          if (this.deerIs(m)) this.say(`Too close. The deer's gaze SNAPS to ${who} — proximity overrules patience.`);
+          else this.say(`Too close. The ${cfg.shortName || 'beast'}'s attention SNAPS to ${who} — proximity overrules patience.`);
+        }
+        this.audioEvent(cfg.aggroAudio || 'deerAggro');
       }
     },
     // codex-gated: have you learned what the freeze means? The windup lane
@@ -11934,6 +12087,8 @@
     },
     encPhaseBadge(m) {
       if (!this.encUsesFifo(m)) return '';
+      const badges = (this.encConfig(m) || {}).phaseBadges;
+      if (badges) return badges[m.beamPhase] || '';
       return {
         aim: ' 👁 AIMING', charge: ' ⚡ CHARGING', firing: ' 🔥 FIRING',
         cooldown: ' 😮‍💨 SPENT',
@@ -11963,6 +12118,21 @@
       const isDeer = this.deerIs(m);
       const useFifo = this.encUsesFifo(m);
       if (useFifo) this.encScanThreats(m);
+      // BUNKER (speedbump): sealed in its shell. It doesn't act — it waits
+      // you out. Nearly invulnerable; the answer is patience, not force.
+      if (this.turtleIs(m) && (m.turtleBunker || 0) > 0) {
+        m.turtleBunker -= 1;
+        if (m.turtleBunker <= 0) {
+          m.bunkerNoted = false;
+          if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
+          this.say('The shell unseals with a soft pop. The bad attitude is back.');
+        } else {
+          this.say('The boulder sits. Sealed. Waiting you out.');
+        }
+        this.tbRefreshTelegraphUI();
+        if (this.tbEndCheck()) return;
+        return;
+      }
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
@@ -11990,12 +12160,26 @@
         if (tg.turnsLeft > 0) {
           // still winding up — holds position, committed. No move, no new attack.
           // HIGHBEAM CHARGE PHASE: the whine climbs, the glare swells. Readable.
-          if (useFifo) this.encSetPhase(m, 'charge');
+          if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'windup'));
           if (isDeer) {
             if (!tg.chargeNarrated) {
               tg.chargeNarrated = true;
               this.say('The light behind its eyes swells to a painful glare. The whine climbs past hearing. It is done aiming — now it is only waiting to loose.');
               this.audioEvent('deerAggro');
+            }
+          } else if (this.stagIs(m)) {
+            // CONFRONT: the mirror beat, second breath. It sees you seeing yourself.
+            if (!tg.confrontNarrated) {
+              tg.confrontNarrated = true;
+              this.say('The reflection sharpens. It sees you seeing yourself — tired, dirty, scared — and it lowers its head. The mirror becomes a weapon.');
+              this.audioEvent('stagMirror');
+            }
+          } else if (this.heronIs(m)) {
+            // UNFOLD, second breath: impossibly tall, and the air goes staticky.
+            if (!tg.unfoldNarrated) {
+              tg.unfoldNarrated = true;
+              this.say('It unfolds further — impossibly tall. The air goes staticky; the creek goes flat. It has decided.');
+              this.audioEvent('heronStatic');
             }
           }
           this.tbRefreshTelegraphUI();
@@ -12028,16 +12212,36 @@
         // at you during the windup, then it fires where it aimed. Sidestepping
         // out of the lane, or breaking line of sight, dodges it. (Re-aiming at
         // fire time made MOVE useless and the freeze meaningless.)
-        // Charges still track: they run you down. That's the point of a charge.
+        // Charges still track: they run you down. That's the point of a charge —
+        // unless the config commits them. The boar and the mirror stag lock their
+        // lane at declare: sidestepping is the whole game.
+        const rcfg = this.encConfig(m) || {};
+        // MIRROR STAG: break line of sight during the mirror beat and it loses
+        // you. The charge dies unspent — that's the counterplay, and it's earned.
+        if (this.stagIs(m) && tg.kind === 'squares') {
+          const lost = this.tbFighter(tg.aimKey);
+          if (!lost || !lost.alive || !this.canSee(m.mx, m.my, lost.mx, lost.my)) {
+            m.telegraph = null;
+            if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
+            this.say('The mirror sweeps the treeline — empty. It lost you. The charge dies unspent.');
+            this.audioEvent('stagConfused');
+            this.tbRefreshTelegraphUI();
+            if (this.tbEndCheck()) return;
+            return;
+          }
+        }
         m.telegraph = null;
         if (tg.kind === 'squares') {
           const ptype = (tg.pattern || {}).type;
-          if (ptype !== 'beam' && ptype !== 'line') {
+          if (ptype !== 'beam' && ptype !== 'line' && !rcfg.commitCharge) {
             const foe = S.combat.nearestEnemy(f.fighters, m);
             if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
           }
+          if (rcfg.bulldoze && ptype === 'charge') tg.cells = this.tbBulldozeCells(tg.cells);
         }
         this.audioEvent('impact');
+        if (rcfg.resolveAudio) this.audioEvent(rcfg.resolveAudio);
+        let anyoneHit = false;
         if (tg.kind === 'direct') {
           const t = this.tbFighter(tg.targetKey);
           if (t && t.alive) {
@@ -12047,6 +12251,7 @@
             else {
               this.say(`💥 ${m.name}'s ${tg.attackName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
               this.tbDamage(t.key, dmg, m.name);
+              anyoneHit = true;
             }
           }
         } else {
@@ -12067,6 +12272,7 @@
                 continue;
               }
               if (o.kind === 'player') playerHit = true;
+              anyoneHit = true;
               this.tbDamage(o.key, S.combat.roll(tg.dmg), m.name + "'s " + tg.attackName);
             }
           }
@@ -12081,11 +12287,28 @@
             const last = tg.cells[tg.cells.length - 1];
             if (last && !this.tbBlocked(last.cx, last.cy)) { m.mx = last.cx; m.my = last.cy; }
           }
+          // BULLDOZER: a missed charge ends winded — flanks soft, head elsewhere.
+          // Next turn it tramples whatever is close. You dodged the lane; respect the aftermath.
+          if (this.boarIs(m) && (m.mdef.attack.pattern || {}).type === 'charge' && !anyoneHit) {
+            m.boarTrample = true;
+            m.boarWinded = 2;
+            if (useFifo) this.encSetPhase(m, 'spent');
+            this.say('It thunders past — and finds only air. It stands at the end of its lane, sides heaving. Flanks soft. But it is turning, and it is angry.');
+          }
+          // WHITE NOISE: after the strike it is somewhere else. You didn't see it move.
+          if (this.heronIs(m)) {
+            if (Math.random() < 0.5) this.tbHeronDrift(m);
+            else if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
+          }
         }
         if (m.blind > 0) m.blind -= 1;
         this.tbLearnPattern(m);
         this.tbRefreshTelegraphUI();
         if (this.tbEndCheck()) return;
+        // BATCH 1 RHYTHM: the charge/strike lands — and the turn ENDS there.
+        // Each beat gets its own turn (boar: the trample; heron: stillness;
+        // stag: the mirror again). No resolve-and-redeclare in a single turn.
+        if (this.boarIs(m) || this.stagIs(m) || this.heronIs(m)) return;
       }
       if (!m.alive || f.over) return;
       // 2. hesitate (fear_aura): it doesn't act this turn
@@ -12096,7 +12319,8 @@
         return;
       }
       // 3. flee check (codex: bulldozer retreats <25%, deer bolts <50%, etc.)
-      const fleeAt = m.mdef.fleeAt || 0;
+      // A broken pack is a frightened pack — broken wolves bolt easier.
+      const fleeAt = (m.mdef.fleeAt || 0) + (this.wolfIs(m) && m.wolfBroken ? 0.2 : 0);
       if (fleeAt > 0 && m.hp / m.maxHp < fleeAt && Math.random() < 0.7) {
         m.fled = true;
         this.say(`The ${m.name} breaks and runs!`);
@@ -12107,6 +12331,17 @@
       let foe = S.combat.nearestEnemy(f.fighters, m);
       if (!foe) return;
       const pat = (m.mdef.attack && m.mdef.attack.pattern) || { type: 'burst', radius: 1 };
+      // TRAMPLE (boar): a missed charge ends here — grinding hooves on
+      // whatever is close. This is the price of the dodge.
+      if (this.boarIs(m) && m.boarTrample) {
+        m.boarTrample = false;
+        if ((m.boarWinded || 0) > 0) m.boarWinded -= 1;
+        this.tbBoarTrample(m);
+        this.tbRefreshTelegraphUI();
+        this.tbEndCheck();
+        return;
+      }
+      if (this.boarIs(m) && (m.boarWinded || 0) > 0) m.boarWinded -= 1;
       // BEAM COOLDOWN: after a Discharge the deer is spent — the light is
       // embers, not a weapon. It CANNOT move while recharging; it stands and
       // breathes. But crowding it is still a mistake: it paws at anyone
@@ -12133,14 +12368,35 @@
         const dt = this.encCurrentTarget(m);
         if (dt) foe = { f: dt, d: Math.max(Math.abs(dt.mx - m.mx), Math.abs(dt.my - m.my)) };
       }
+      // BROKEN PACK: coordination's gone — a broken wolf just goes for what's close.
+      if (this.wolfIs(m) && m.wolfBroken) {
+        const near = S.combat.nearestEnemy(f.fighters, m);
+        if (near) foe = near;
+      }
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
       if (pat.type === 'ambush') {
-        // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
-        if (foe.d <= 1) {
-          const cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
-          this.say(`💥 The ${m.name} SNAPS! No warning. There never is.`);
+        // speedbump: doesn't move. If ANYONE's adjacent, SNAP — no warning.
+        // (The FIFO head might be farther off; the snap doesn't care about the queue.)
+        let snapFoe = foe;
+        if (snapFoe.d > 1) {
+          const near = S.combat.nearestEnemy(f.fighters, m);
+          if (near && near.d <= 1) snapFoe = near;
+        }
+        if (snapFoe.d <= 1) {
+          const cells = S.combat.patternCells(pat, m.mx, m.my, snapFoe.f.mx, snapFoe.f.my);
+          if (this.turtleIs(m)) {
+            if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'resolve'));
+            const named = m.name !== ((m.mdef || {}).unknown || 'something moving');
+            this.say(named
+              ? `💥 The ${m.name} SNAPS! Its head is suddenly somewhere else.`
+              : `💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.`);
+            const rsAudio = (this.encConfig(m) || {}).resolveAudio;
+            if (rsAudio) this.audioEvent(rsAudio);
+          } else {
+            this.say(`💥 The ${m.name} SNAPS! No warning. There never is.`);
+          }
           const hitKeys = new Set(cells.map(c => c.cx + ',' + c.cy));
           for (const o of f.fighters) {
             if (!o.alive || o.fled || o.key === m.key) continue;
@@ -12152,7 +12408,15 @@
         return;
       }
       if (pat.type === 'rush') {
-        // hushpuppy: NO telegraph. Moves adjacent and hits NOW.
+        // hushwolf: NO telegraph. Moves adjacent and hits NOW.
+        // BROKEN: the pack's nerve is gone — half the time it circles wide, yipping.
+        if (this.wolfIs(m) && m.wolfBroken && Math.random() < 0.5) {
+          if (useFifo) this.encSetPhase(m, 'withdraw');
+          this.say(`Yipping, ${m.name} circles wide — the pack's nerve is gone.`);
+          this.tbEndCheck();
+          return;
+        }
+        if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'resolve'));
         for (let i = 0; i < m.speed; i++) {
           if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) break;
           const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
@@ -12160,7 +12424,7 @@
           m.mx = s.x; m.my = s.y;
         }
         if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) {
-          this.say(`The ${m.name} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
+          this.say(`No warning — just teeth: ${m.name} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name}.`);
           this.tbDamage(foe.f.key, S.combat.roll(atk.damage), m.name);
           this.tbLearnPattern(m);
         }
@@ -12169,13 +12433,27 @@
       }
       // standard: advance into range, then DECLARE (behavioral cue only).
       // The attack lands at the start of this monster's next turn. That's the dodge window.
-      for (let i = 0; i < m.speed; i++) {
-        const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
-        const want = pat.type === 'direct' ? (pat.range || 3) : 4;
-        if (d <= want) break;
-        const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
-        if (!s) break;
-        m.mx = s.x; m.my = s.y;
+      // HERON (statue): it doesn't advance. It waits — stillness is the whole animal.
+      const heronStatue = this.heronIs(m) && !!((this.encConfig(m) || {}).statue);
+      if (!heronStatue) {
+        for (let i = 0; i < m.speed; i++) {
+          const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
+          const want = pat.type === 'direct' ? (pat.range || 3) : 4;
+          if (d <= want) break;
+          const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+          if (!s) break;
+          m.mx = s.x; m.my = s.y;
+        }
+      } else {
+        if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
+        const hd = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
+        if (hd > 4) {
+          // out of strike range: nothing. Occasionally the water goes wrong-flat.
+          if (Math.random() < 0.15) this.say('The water goes wrong-flat where nothing stands. You look away. You look back. Still nothing.');
+          this.tbRefreshTelegraphUI();
+          this.tbEndCheck();
+          return;
+        }
       }
       if (pat.type === 'direct') {
         const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
@@ -12190,6 +12468,11 @@
       } else {
         let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
         let aim = null, bdir = null, aimKey = null, bang = null;
+        const dcfg = this.encConfig(m) || {};
+        // BULLDOZE: the lane shreds trees, fences, brush — only real walls stop it.
+        if (dcfg.bulldoze && pat.type === 'charge') cells = this.tbBulldozeCells(cells);
+        // COMMIT: lock the lane now. It will not re-aim at resolve.
+        if (dcfg.commitCharge) { aim = { x: foe.f.mx, y: foe.f.my }; aimKey = foe.f.key; }
         if (pat.sweep && (pat.type === 'beam' || pat.type === 'line')) {
           // SWEEPING BEAM: a ray FROM THE DEER that rotates toward you. It
           // locks its bearing at declare, then sweeps while it fires. Only
@@ -12229,8 +12512,9 @@
         } catch (e) {}
         this.say('⚠ ' + this.tbTelegraphCue(m));
         this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: (m.mdef || {}).id === 'gallowdeer' });
-        if (useFifo) this.encSetPhase(m, 'aim');
-        this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
+        if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'declare'));
+        this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: the beast itself must be audible (Steve heard only beam)
+        if (dcfg.declareAudio) this.audioEvent(dcfg.declareAudio);
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
         }
