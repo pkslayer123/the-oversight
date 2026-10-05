@@ -1253,6 +1253,24 @@
   //   beamSweepStop()         — beam ends / combat ends
   //   beamBlocked()           — beam dies against cover (fizzle, not bang)
   //   deerDown()              — the deer dies (bellow collapses)
+  //   MONSTER BATCH 1 (The Beasts) — per-config audio, fired from game.js
+  //   encounter blocks (monsters.json). All optional no-ops until implemented:
+  //   boarNotice()   — combat start: heavy snort, earth pawed
+  //   boarSnort()    — boar aggro (pain / adjacency / declare)
+  //   boarCharge()   — China-Shop Charge resolves (thundering)
+  //   boarTrample()  — missed-charge trample
+  //   wolfSilence()  — combat start: the birds cut out all at once
+  //   wolfSnarl()    — wolf aggro
+  //   wolfBreak()    — the lead is wounded / falls; pack coordination shatters
+  //   heronStatic()  — the air goes staticky (notice / unfold)
+  //   heronUnfold()  — heron aggro: it unfolds to full height
+  //   heronStrike()  — Spearfish Strike resolves
+  //   turtleSnap()   — Snap Decision (no warning, by design)
+  //   turtleBunker() — the shell seals like a door closing
+  //   stagMirror()   — mirror / confront beat (glass harmonics, wrong)
+  //   stagSnort()    — stag aggro
+  //   stagCharge()   — Confrontation charge resolves
+  //   stagConfused() — the charge dies unspent (lost you)
   const CombatAudio = (() => {
     let ctx = null, hbTimer = null;
     let master = null, hbBus = null, sfxBus = null;
