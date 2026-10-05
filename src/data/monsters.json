@@ -151,8 +151,8 @@
     "width": 1,
     "windup": 2,
     "sweep": true,
-    "fireTurns": 2,
-    "sweepRate": 0.65,
+    "fireTurns": 3,
+    "sweepRate": 0.28,
     "cooldownTurns": 2
    }
   },

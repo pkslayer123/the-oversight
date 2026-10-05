@@ -155,18 +155,50 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 }
 .cell.grass { background: #1a2f1a; }
 .cell.dirt { background: #2f241a; }
-/* SCORCHED EARTH: the Highbeam's beam crossed here. Forage is gone until it recovers. */
-.cell.scorched { filter: brightness(.45) saturate(.35); box-shadow: inset 0 0 10px #000; }
-/* BEAM LANE: live telegraph — the beam's current path. Do not stand here. */
+/* SCORCHED EARTH: ASH, not shadow. The beam ruins what it crosses — pale,
+   desaturated, unmistakable even at night. The morning after tells the story.
+   Scorched cells give no forage and recover in ~3 days. */
+.cell.scorched { background-color: rgba(190, 190, 178, .38); filter: grayscale(.85) brightness(1.3); box-shadow: inset 0 0 14px rgba(30, 25, 20, .55); }
+/* BEAM LANE: windup telegraph (codex-gated) — the warning. Amber, pulsing. */
 .cell.beamLane { outline: 2px solid #ff3b30; outline-offset: -2px; background-color: rgba(255, 60, 40, .28); animation: beamPulse 0.8s infinite alternate; }
 @keyframes beamPulse { from { background-color: rgba(255, 60, 40, .18); } to { background-color: rgba(255, 60, 40, .38); } }
-/* BEAM LIVE: the beam is FIRING — hotter, faster pulse. The windup lane (when
-   shown at all) pulses slow; the live beam burns. */
-.cell.beamLane.beamLive { background-color: rgba(255, 140, 40, .5); outline-color: #ffb13b; animation: beamLivePulse 0.3s infinite alternate; }
-@keyframes beamLivePulse { from { background-color: rgba(255, 140, 40, .38); } to { background-color: rgba(255, 140, 40, .62); } }
-/* BEAM GHOST: where the beam just was — the fading arc of the sweep, so the
-   rotation reads as motion instead of the lane teleporting. */
-.cell.beamGhost { outline: 1px solid rgba(255, 60, 40, .35); outline-offset: -2px; background-color: rgba(255, 60, 40, .08); }
+/* BEAM LIVE: the kamehameha. NOT a highlight — a column of energy. White-hot
+   core, orange bloom, punches through the night dimming (the .detail night
+   filter multiplies to ~0.42, so the core overdrives past 1.0 to stay blinding). */
+.cell.beamLane.beamLive {
+  background: linear-gradient(180deg, rgba(255, 255, 244, .96), rgba(255, 196, 80, .88));
+  outline: 2px solid #fff3c4; outline-offset: -2px;
+  box-shadow: 0 0 22px 9px rgba(255, 170, 60, .9), inset 0 0 16px rgba(255, 255, 255, .95);
+  filter: brightness(2.3);
+  animation: beamLivePulse 0.22s infinite alternate;
+  position: relative; z-index: 2;
+}
+@keyframes beamLivePulse { from { filter: brightness(2.0); } to { filter: brightness(2.6); } }
+/* BEAM SOURCE: the deer's tile while charging/firing. The beam EMANATES from
+   the beast — eyes blazing, the origin point of the column. */
+.cell.beamSource {
+  box-shadow: 0 0 26px 10px rgba(255, 224, 130, .95), inset 0 0 20px rgba(255, 255, 224, .95);
+  filter: brightness(1.9);
+  animation: beamSourcePulse 0.4s infinite alternate;
+  position: relative; z-index: 3;
+}
+@keyframes beamSourcePulse {
+  from { box-shadow: 0 0 16px 6px rgba(255, 224, 130, .65), inset 0 0 14px rgba(255, 255, 224, .65); }
+  to { box-shadow: 0 0 34px 14px rgba(255, 224, 130, 1), inset 0 0 26px rgba(255, 255, 224, 1); }
+}
+/* BEAM LIGHT: halo — the beam lights up the night around it. */
+.cell.beamLight { filter: brightness(1.45); background-color: rgba(255, 190, 90, .20); }
+/* BEAM GHOST: where the beam just was — the sweep arc reads as motion. */
+.cell.beamGhost { outline: 2px solid rgba(255, 130, 40, .55); outline-offset: -2px; background-color: rgba(255, 130, 40, .22); }
+/* IGNITE FLASH: full-screen flinch on discharge. */
+#beamflash { position: fixed; inset: 0; pointer-events: none; z-index: 90; opacity: 0;
+  background: radial-gradient(circle, rgba(255, 242, 205, .9), rgba(255, 165, 60, .38) 55%, transparent 80%); }
+#beamflash.go { animation: beamFlashAnim 0.38s ease-out; }
+@keyframes beamFlashAnim { 0% { opacity: 0; } 7% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  #beamflash.go { animation-duration: 0.15s; }
+  .cell.beamLane.beamLive, .cell.beamSource { animation-duration: 1.2s; }
+}
 /* BUILDING VISUAL LANGUAGE: walls are dark, doors glow, halls are plain floor. */
 /* A wall should never look like rubble. A door should never look like a hallway. */
 .cell.c-wall { background: #0d0d0f; }
@@ -659,6 +691,11 @@ body.system-live .btn:not(.ghost) {
 .combat-compact .cc-mon { margin: 2px 0; }
 .combat-compact .cc-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
 .combat-compact .cc-actions .btn { flex: 1 1 0; min-width: 0; padding: 8px 4px; }
+/* FIGHT FEED: the last 3 fight events, inline under the grid — never buried
+   in the bottom log box. The latest hits hardest. */
+.combat-compact .cc-feed { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, .12); }
+.combat-compact .cc-feed .cc-evt { margin: 2px 0; font-size: 12px; line-height: 1.35; opacity: .85; }
+.combat-compact .cc-feed .cc-evt:last-child { opacity: 1; font-weight: 600; }
 .ord-ctx { order: 6; }
 /* SELF BAR: your persistent body-actions (Eat, Sleep, Pack, Wait). Personal
    actions FIRST — they sit at the top of the action area, right below the

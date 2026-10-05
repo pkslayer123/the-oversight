@@ -11011,7 +11011,7 @@
     tbBeginTurn() {
       const c = this.tbCurrent();
       if (!c) return;
-      if (c.kind === 'player') { c.moveLeft = c.speed; c.acted = false; }
+      if (c.kind === 'player') { c.moveLeft = c.speed; c.acted = false; c.beamTicks = 0; }
       this.tbRefreshTelegraphUI();
     },
 
@@ -11123,6 +11123,78 @@
       const f = this.tbfight;
       if (!f) return false;
       return f.fighters.some(m => (m.kind === 'monster' || m.kind === 'hostile') && m.alive && m.telegraph && m.telegraph.firing > 0);
+    },
+
+    // Beam SOURCE cell: the deer's tile while charging/firing. The beam must
+    // visibly EMANATE from the deer — the lane rasterization starts at t=1,
+    // so without this the highlight floats disconnected from the beast.
+    // Shown during charge AND firing (the freeze + glare are the cue).
+    tbBeamSourceCell() {
+      const f = this.tbfight;
+      if (!f) return null;
+      for (const m of f.fighters) {
+        if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || !m.telegraph) continue;
+        if (!this.encUsesFifo(m)) continue;
+        return m.mx + ',' + m.my;
+      }
+      return null;
+    },
+
+    // Beam HALO: cells adjacent to the live lane. The beam LIGHTS UP THE
+    // NIGHT — the firing tiles and the ground around them visibly brighten.
+    tbBeamHaloCells() {
+      const f = this.tbfight;
+      const set = new Set();
+      if (!f || !this.tbBeamIsFiring()) return set;
+      const lane = this.tbBeamLaneCells();
+      for (const k of lane) {
+        const [cx, cy] = k.split(',').map(Number);
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+          if (!dx && !dy) continue;
+          const kk = (cx + dx) + ',' + (cy + dy);
+          if (!lane.has(kk)) set.add(kk);
+        }
+      }
+      return set;
+    },
+
+    // ACTION-LOCKED SWEEP (Steve): the beam ticks per PLAYER ACTION, not per
+    // turn. Every action the player takes — each tile moved, each strike,
+    // each wait — the beam answers with one sweep tick. The deer "spends" the
+    // player's action economy: move and the beam ticks toward you; hesitate
+    // and it ticks anyway. The fight is a conversation, move for tick.
+    tbBeamActionTick() {
+      const f = this.tbfight;
+      if (!f || f.over) return;
+      for (const m of f.fighters) {
+        if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || !m.telegraph) continue;
+        const tg = m.telegraph;
+        const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
+        if (!(sweepBeam && tg.firing > 0)) continue;
+        this.tbBeamSweepTick(m, tg);
+        tg.firing -= 1;
+        const p = this.tbFighter('p');
+        if (p) p.beamTicks = (p.beamTicks || 0) + 1;
+        if (tg.firing <= 0) this.tbBeamEndFiring(m, tg);
+        this.tbRefreshTelegraphUI();
+        if (this.tbEndCheck()) return;
+      }
+    },
+
+    // The beam gutters out: cooldown, narration, audio. Shared by the
+    // action-locked ticks (firing almost always ends mid-player-turn now).
+    tbBeamEndFiring(m, tg) {
+      const useFifo = this.encUsesFifo(m);
+      const isDeer = this.deerIs(m);
+      m.telegraph = null;
+      // COOLDOWN: the deer is spent. It needs a breather before it can
+      // gather the light again — your window to act.
+      m.beamCooldown = (tg.pattern || {}).cooldownTurns || 2;
+      if (useFifo) this.encSetPhase(m, 'cooldown');
+      if (isDeer) this.audioEvent('deerSnort');
+      this.tbLearnPattern(m);
+      this.audioEvent('beamSweepStop');
+      this.say(`The beam gutters out. ${m.name} sags — the light behind its eyes dims to embers. It needs a moment.`);
     },
 
     // One live-fire tick: the beam is a ray EMANATING FROM THE DEER that
@@ -11407,8 +11479,16 @@
         }
       }
       p.moveLeft -= path.length;
-      p.mx = cx; p.my = cy;
-      this.state.scholar.mx = cx; this.state.scholar.my = cy;
+      // STEP BY STEP: each tile is an action, and during the firing phase the
+      // beam answers every step with a sweep tick (action-locked). Walk the
+      // path tile by tile so the beam tracks your actual movement, not just
+      // where you land.
+      for (const [tx, ty] of path) {
+        p.mx = tx; p.my = ty;
+        this.state.scholar.mx = tx; this.state.scholar.my = ty;
+        this.tbBeamActionTick();
+        if (!this.tbfight || this.tbfight.over) return true;
+      }
       const [lx, ly] = path[path.length - 1];
       const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [p.mx, p.my];
       this.state.scholar.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
@@ -11607,10 +11687,18 @@
     tbPlayerEndTurn() {
       const f = this.tbfight;
       if (!f || !this.tbIsPlayerTurn()) return;
+      const p = this.tbFighter('p');
+      // HESITATE: ending the turn without spending actions still feeds the
+      // beam one tick — it does not wait forever. (If you acted, your actions
+      // already ticked it; this is only the fallback.)
+      if (p && (p.beamTicks || 0) === 0) this.tbBeamActionTick();
       this.tbAdvance();
     },
 
     tbAfterPlayerAction() {
+      // The beam answers your action with a sweep tick BEFORE the world moves.
+      this.tbBeamActionTick();
+      if (this.tbfight && this.tbfight.over) return;
       // The fight can end on YOUR action (you dropped the last monster) —
       // tbAdvance only checks after AI turns, so check here too. Otherwise
       // killing the final foe soft-locks the fight on your turn forever.
@@ -11966,22 +12054,11 @@
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
-        // LIVE FIRE: the beam is up and sweeping. It stands frozen, committed —
-        // no move, no new attack. The lane redraws every tick.
+        // LIVE FIRE: the beam is up and sweeping — but the sweep is ACTION-LOCKED
+        // (Steve): it ticks on PLAYER actions via tbBeamActionTick, not here.
+        // The deer stands frozen, committed — no move, no new attack. Its turn
+        // is just the beam holding its line while it waits for you to move.
         if (sweepBeam && tg.firing > 0) {
-          this.tbBeamSweepTick(m, tg);
-          tg.firing -= 1;
-          if (tg.firing <= 0) {
-            m.telegraph = null;
-            // COOLDOWN: the deer is spent. It needs a breather before it can
-            // gather the light again — your window to act.
-            m.beamCooldown = (tg.pattern || {}).cooldownTurns || 2;
-            if (useFifo) this.encSetPhase(m, 'cooldown');
-            if (isDeer) this.audioEvent('deerSnort');
-            this.tbLearnPattern(m);
-            this.audioEvent('beamSweepStop');
-            this.say(`The beam gutters out. ${m.name} sags — the light behind its eyes dims to embers. It needs a moment.`);
-          }
           this.tbRefreshTelegraphUI();
           if (this.tbEndCheck()) return;
           return;
@@ -12015,11 +12092,7 @@
           this.audioEvent('impact', { beam: (tg.pattern || {}).type === 'beam', highbeam: /highbeam/i.test(m.name || '') });
           this.tbBeamSweepTick(m, tg);
           tg.firing -= 1;
-          if (tg.firing <= 0) {
-            m.telegraph = null;
-            m.beamCooldown = (tg.pattern || {}).cooldownTurns || 2;
-            this.tbLearnPattern(m);
-          }
+          if (tg.firing <= 0) this.tbBeamEndFiring(m, tg);
           this.tbRefreshTelegraphUI();
           if (this.tbEndCheck()) return;
           return;
@@ -12266,6 +12339,10 @@
       const f = this.tbfight;
       if (!f || f.over) return;
       f.over = true; f.result = result;
+      // AUDIO HYGIENE (Steve): killing the deer left the beam's hum playing.
+      // NOTHING outlives its encounter — stop every sustained loop on ANY
+      // ending (won, lost, fled, routed). combatEnd is idempotent.
+      this.audioEvent('combatEnd');
       if (this.clearTelegraph) this.clearTelegraph();
       const s = this.state.scholar;
       const p = this.tbFighter('p');
@@ -12304,14 +12381,12 @@
         }
       } else if (result === 'routed') {
         this.notePlaystyle('cautious');
-        this.audioEvent('combatEnd');
         try { const mm = f.fighters.find(x => x.kind === 'monster'); if (mm) this.identifyMonster(mm.monsterId); } catch (e) {}
         this.say('It got away. No meat, no trophy — but you\'re breathing, and now you know its moves.');
         this.sysSay(`It RAN! Style score: ${f.style || 0}. The gamblers wanted blood, but they'll settle for drama.`);
       } else if (result === 'fled') {
         this.notePlaystyle('cautious');
         try { const mm = f.fighters.find(x => x.kind === 'monster'); if (mm) this.identifyMonster(mm.monsterId); } catch (e) {}
-        this.audioEvent('combatEnd');
         // survivors scatter; monsters melt back into the woods
         this.say('You escape. The thicket keeps its secrets.');
         this.sysSay('And they\'re GONE! The gamblers who bet on a fight are furious. The ones who bet on running are rich.');

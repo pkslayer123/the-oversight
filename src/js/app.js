@@ -1634,7 +1634,7 @@
         // highbeam bellow is explicit via deerAggro on declare (game.js), not here
       },
       impact(d) {
-        if (d && d.beam) beamFire();
+        if (d && d.beam) { beamFire(); beamFlash(); }
         else boom();
       },
       beamBlocked() { beamBlocked(); },
@@ -1659,6 +1659,24 @@
     };
   })();
   Game.audio = CombatAudio;
+
+  // IGNITE FLASH: the discharge is an exclamation mark. A full-screen flash
+  // on beam fire — brief, violent, unmistakable. The phone screen itself
+  // flinches. (Reduced-motion: shorter, dimmer — still unmistakable.)
+  function beamFlash() {
+    try {
+      if (typeof document === 'undefined') return;
+      let el = document.getElementById('beamflash');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'beamflash';
+        document.body.appendChild(el);
+      }
+      el.classList.remove('go');
+      void el.offsetWidth; // restart the animation
+      el.classList.add('go');
+    } catch (e) {}
+  }
 
   // villagersNear: everyone within `range` of the player (Chebyshev).
   function villagersNear(range) {
@@ -3669,9 +3687,18 @@
     const turnLine = yourTurn && p
       ? `Your turn — <b>${p.moveLeft}</b> move${p.acted ? ' · acted' : ''}`
       : (cur ? `${esc(cur.kind === 'player' ? 'You' : (Game.monsterDisplayName && cur.mdef ? Game.monsterDisplayName(cur.mdef.id) : cur.name))} acting…` : '');
+    // FIGHT FEED (Steve): essential fight info was stranded in the log box at
+    // the page bottom, requiring scroll mid-fight. The last 3 events render
+    // HERE, under the grid where the player is looking — beam state, damage,
+    // turn events. The one-screen rule: never bury the fight below the fold.
+    const feed = (Game.log || []).slice(-3);
+    const feedHtml = feed.length
+      ? `<div class="cc-feed">${feed.map(m => `<p class="cc-evt">${esc(String(m)).slice(0, 140)}</p>`).join('')}</div>`
+      : '';
     return `
       <div class="card combat-compact"><div class="cc-head"><span>⚔ R${tf.round}</span><span class="cc-turn">${turnLine}</span></div>
       ${monRows}
+      ${feedHtml}
       ${yourTurn && p ? `<div class="actions cc-actions">
         <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
         <button class="btn sm ghost" id="c-study" ${p.acted ? 'disabled' : ''}>👁</button>
@@ -3908,12 +3935,17 @@
         const _lane = Game.tbBeamLaneCells ? Game.tbBeamLaneCells() : null;
         const _ghost = Game.tbBeamPrevLaneCells ? Game.tbBeamPrevLaneCells() : null;
         const _live = Game.tbBeamIsFiring ? Game.tbBeamIsFiring() : false;
+        const _src = Game.tbBeamSourceCell ? Game.tbBeamSourceCell() : null;
+        const _halo = Game.tbBeamHaloCells ? Game.tbBeamHaloCells() : null;
         const _k = cx + ',' + cy;
-        // beamLane: current beam path. beamLive: the beam is FIRING (faster,
-        // hotter pulse). beamGhost: where the beam just was — the sweep arc,
-        // so rotation reads as motion instead of teleporting.
+        // beamLane: current beam path. beamLive: the beam is FIRING (kamehameha,
+        // not a highlight). beamGhost: where the beam just was — the sweep arc.
+        // beamSource: the deer's tile — the beam EMANATES from the beast.
+        // beamLight: halo — the beam lights up the night around it.
         const _beamCls = (_lane && _lane.has(_k)) ? (' beamLane' + (_live ? ' beamLive' : '')) : ((_ghost && _ghost.has(_k)) ? ' beamGhost' : '');
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        const _srcCls = (_src && _src === _k) ? ' beamSource' : '';
+        const _haloCls = (_halo && _halo.has(_k)) ? ' beamLight' : '';
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }

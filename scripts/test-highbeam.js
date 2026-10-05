@@ -4,8 +4,10 @@
 //  - 3-beat windup (windup:2 in data): AIM (freeze + bellow) -> CHARGE
 //    (glare swells, whine peaks) -> FIRING. The deer takes its own time.
 //  - no one-shot: deer survives ~3 spear hits, never flees
-//  - ANCHORED SWEEPING BEAM: a ray FROM THE DEER that ROTATES toward you
-//    (sweepRate 0.65 rad/tick). Positioning relative to the deer matters.
+//  - ANCHORED SWEEPING BEAM: a ray FROM THE DEER that ROTATES toward you,
+//    SLOW tick-by-tick (sweepRate 0.28 rad/tick — the slowness IS the
+//    spectacle). At fight range a committed lateral mover outruns it;
+//    hesitate and it gains. Positioning relative to the deer matters.
 //  - SWEEP ECONOMY: unspent angular budget becomes dwell — stand still and
 //    it parks the full beam on you (up to 3.5x); make it chase and it burns less
 //  - COOLDOWN between Discharges (2 deer turns) — no every-round pressure
@@ -111,8 +113,11 @@ function driveCombat(playerFn, maxTurns) {
   ok('deer never flees (no fleeAt)', !('fleeAt' in mdef));
   ok('codex no longer claims it bolts', !/flees at 50%/.test(mdef.codexStages.slain));
   eq('beam sweeps', mdef.attack.pattern.sweep, true);
-  eq('fireTurns 2', mdef.attack.pattern.fireTurns, 2);
-  eq('sweepRate 0.65 rad/tick (angular, anchored at deer)', mdef.attack.pattern.sweepRate, 0.65);
+  eq('fireTurns 3 (slow tick-by-tick sweep)', mdef.attack.pattern.fireTurns, 3);
+  // Steve's tuning: the sweep is SLOW — inevitable but outrunnable. A lateral
+  // mover at fight range gains ~0.25-0.33 rad/turn; the beam at 0.28 gains on
+  // hesitation and loses to commitment. Every tick is a decision point.
+  eq('sweepRate 0.28 rad/tick (angular, anchored at deer)', mdef.attack.pattern.sweepRate, 0.28);
   eq('cooldownTurns 2 between Discharges', mdef.attack.pattern.cooldownTurns, 2);
   eq('beam length 9 (node edge)', mdef.attack.pattern.length, 9);
 
@@ -200,11 +205,14 @@ function driveCombat(playerFn, maxTurns) {
     Game.tbPlayerEndTurn(); // P3: hold; D3 ignites + tick
     deer = Game.tbFighter('m_0');
     ok('ignite: firing phase', deer.beamPhase === 'firing');
-    ok('beam is live (1 fire turn left)', !!deer.telegraph && deer.telegraph.firing === 1);
+    ok('beam is live (2 fire turns left)', !!deer.telegraph && deer.telegraph.firing === 2);
     const want = Math.atan2(0 - 6, 0 - 4);
     const turned = Math.abs(deer.telegraph.angle - ang0);
-    ok('beam ROTATED toward the player, within angular budget', turned > 0 && turned <= 0.65 + 1e-9);
-    ok('beam bearing now tracks the player', Math.abs(deer.telegraph.angle - want) < 1e-9);
+    const budget = (deer.telegraph.pattern || {}).sweepRate || 0.28;
+    ok('beam ROTATED toward the player, within angular budget', turned > 0 && turned <= budget + 1e-9);
+    // SLOW SWEEP (Steve): it does not snap to the player in one tick — it
+    // closes by the budget each tick. Verify it moved TOWARD the bearing.
+    ok('beam bearing closing on the player, not snapped', Math.abs(deer.telegraph.angle - want) < Math.abs(ang0 - want) - 0.2);
     ok('lane still anchored at the deer after the sweep', deer.telegraph.cells.length > 0 &&
       Math.max(Math.abs(deer.telegraph.cells[0].cx - deer.mx), Math.abs(deer.telegraph.cells[0].cy - deer.my)) <= 1);
     ok('telegraph cue (unknown): terror, no tactics', /swinging wild/.test(Game.tbTelegraphCue(deer)) && !/Circle it wide/.test(Game.tbTelegraphCue(deer)));
@@ -238,18 +246,20 @@ function driveCombat(playerFn, maxTurns) {
     const stillDmg = 500 - Math.round(Game.tbFighter('p').hp);
     eq('stationary: full dwell = 3.5x max = 112', stillDmg, 112);
     if (Game.tbfight) Game.tbEnd('fled');
-    // MOVING (along the lane, forcing the beam to spend budget tracking)
+    // MOVING (one tile sideways: the beam must spend its full budget tracking,
+    // but still connects — dwell 0, burns less than the parked beam)
     newDeerGame();
     startDeerFight(4, 4, 4, 6);
     Game.tbfight.fighters = Game.tbfight.fighters.filter(f => f.kind !== 'villager');
     Game.tbFighter('p').hp = 500; Game.state.scholar.health = 500;
-    Game.tbPlayerMove(0, 4); Game.tbPlayerEndTurn(); // P1: lateral; D1 declares
-    Game.tbPlayerMove(0, 0); Game.tbPlayerEndTurn(); // P2: up the lane; D2 charges
-    Game.tbPlayerEndTurn(); // P3: hold; D3 ignites + tracks
+    Game.tbPlayerEndTurn(); // P1: hold at (4,4); D1 declares (bearing straight north)
+    Game.tbPlayerMove(3, 4); Game.tbPlayerEndTurn(); // P2: one tile sideways; D2 charges
+    Game.tbPlayerEndTurn(); // P3: hold; D3 ignites + tracks (spends full budget)
     deer = Game.tbFighter('m_0');
     ok('moving: beam spent budget tracking', (deer.telegraph.dwell || 0) < 0.5);
     const moveDmg = 500 - Math.round(Game.tbFighter('p').hp);
-    ok('moving: burns LESS than stationary (86 < 112)', moveDmg === 86 && moveDmg < stillDmg);
+    // slow sweep, full budget spent: dwell 0 -> 2.5x max = 80
+    ok('moving: burns LESS than stationary (80 < 112)', moveDmg === 80 && moveDmg < stillDmg);
     S_.combat.roll = realRoll;
     Game.genDetail = realGen;
     if (Game.tbfight) Game.tbEnd('fled');
@@ -268,20 +278,19 @@ function driveCombat(playerFn, maxTurns) {
     Game.tbFighter('p').hp = 500; Game.state.scholar.health = 500;
     Game.tbPlayerMove(0, 4); Game.tbPlayerEndTurn(); // P1; D1 declares
     Game.tbPlayerMove(0, 0); Game.tbPlayerEndTurn(); // P2; D2 charges
-    Game.tbPlayerEndTurn(); // P3: hold; D3 ignites + tick 1
-    Game.tbPlayerEndTurn(); // P4: hold; D4: tick 2, beam ends
+    Game.tbPlayerEndTurn(); // P3: hold; D3 ignites (tick 1, firing 3->2)
+    Game.tbPlayerEndTurn(); // P4: hold -> fallback tick 2 (firing 2->1); D4 frozen
+    Game.tbPlayerEndTurn(); // P5: hold -> fallback tick 3 (firing 1->0 -> cooldown=2); D5: cooldown 2->1
     let deer = Game.tbFighter('m_0');
-    ok('beam ended after 2 fire turns', !deer.telegraph);
-    eq('cooldown set (2 deer turns)', deer.beamCooldown, 2);
+    ok('beam ended after 3 fire turns', !deer.telegraph);
+    eq('cooldown set then ticked (2->1 on D5)', deer.beamCooldown, 1);
     ok('cooldown message: it needs a moment', Game.log.some(l => /needs a moment/.test(l)));
     ok('cooldown phase', deer.beamPhase === 'cooldown');
-    Game.tbPlayerEndTurn(); // P5: hold; D5: cooldown 2->1, stalks, cannot declare
+    Game.tbPlayerEndTurn(); // P6: hold; D6: cooldown 1->0, rekindles to stalk, cannot declare yet
     deer = Game.tbFighter('m_0');
-    ok('cooldown turn 1: no telegraph, no declare', !deer.telegraph);
-    eq('cooldown ticking down', deer.beamCooldown, 1);
-    Game.tbPlayerEndTurn(); // P5: hold; D5: cooldown 1->0, stalks, cannot declare
-    deer = Game.tbFighter('m_0');
-    ok('cooldown turn 2: still cannot declare', !deer.telegraph);
+    ok('cooldown turn 2: no telegraph yet', !deer.telegraph);
+    eq('cooldown expired', deer.beamCooldown, 0);
+    ok('rekindled to stalk', deer.beamPhase === 'stalk');
     eq('cooldown expired', deer.beamCooldown, 0);
     Game.tbPlayerEndTurn(); // P6: hold; D6: free to declare again
     deer = Game.tbFighter('m_0');
@@ -461,9 +470,9 @@ function driveCombat(playerFn, maxTurns) {
     let deer = Game.tbFighter('m_0');
     ok('declared after first strike', !!deer.telegraph && deer.telegraph.turnsLeft === 2);
     Game.tbPlayerEndTurn(); // P2: hold; D2 charges
-    Game.tbPlayerEndTurn(); // P3: hold; D3 ignites + tick 1 (player eats the parked beam: 112, survives)
+    Game.tbPlayerEndTurn(); // P3: hold; D3 ignites (tick 1, firing 3->2; player eats the parked beam: 112, survives)
     deer = Game.tbFighter('m_0');
-    ok('beam live', !!deer.telegraph && deer.telegraph.firing === 1);
+    ok('beam live', !!deer.telegraph && deer.telegraph.firing === 2);
     ok('player hurt but alive', Game.tbFighter('p').alive && Math.round(Game.tbFighter('p').hp) < 200);
     Game.tbPlayerStrike('m_0'); // P4: strike mid-fire -> disrupt (then D4 re-declares fresh)
     deer = Game.tbFighter('m_0');
@@ -790,8 +799,9 @@ function driveCombat(playerFn, maxTurns) {
     // survive a full discharge -> the codex learns the pattern
     Game.tbFighter('p').hp = 500; Game.state.scholar.health = 500;
     Game.tbPlayerEndTurn(); // P2: hold; D2 charges
-    Game.tbPlayerEndTurn(); // P3: hold; D3 ignites
-    Game.tbPlayerEndTurn(); // P4: hold; D4: tick 2, beam ends -> tbLearnPattern
+    Game.tbPlayerEndTurn(); // P3: hold; D3 ignites (tick 1)
+    Game.tbPlayerEndTurn(); // P4: hold -> fallback tick 2; D4 frozen
+    Game.tbPlayerEndTurn(); // P5: hold -> fallback tick 3 -> beam ends -> tbLearnPattern
     ok('survived: pattern learned', Game.tbPatternKnown('gallowdeer', 'Ocular Discharge'));
     ok('learned: beam known', Game.encTelegraphKnown(deer));
     // next windup shows the lane + the coaching
@@ -824,13 +834,14 @@ function driveCombat(playerFn, maxTurns) {
     Game.tbPlayerEndTurn(); // P2; D2 charges
     eq('charge phase', deer.beamPhase, 'charge');
     eq('badge: CHARGING', Game.encPhaseBadge(deer), ' ⚡ CHARGING');
-    Game.tbPlayerEndTurn(); // P3; D3 ignites
+    Game.tbPlayerEndTurn(); // P3; D3 ignites (tick 1)
     eq('firing phase', deer.beamPhase, 'firing');
     eq('badge: FIRING', Game.encPhaseBadge(deer), ' 🔥 FIRING');
-    Game.tbPlayerEndTurn(); // P4; D4: beam ends -> cooldown
+    Game.tbPlayerEndTurn(); // P4: hesitate -> fallback tick 2; D4 frozen, still firing
+    eq('still firing after P4', deer.beamPhase, 'firing');
+    Game.tbPlayerEndTurn(); // P5: hesitate -> fallback tick 3 -> beam ends -> cooldown
     eq('cooldown phase', deer.beamPhase, 'cooldown');
     eq('badge: SPENT', Game.encPhaseBadge(deer), ' 😮‍💨 SPENT');
-    Game.tbPlayerEndTurn(); // P5; D5: cooldown 2->1
     Game.tbPlayerEndTurn(); // P6; D6: cooldown 1->0, rekindles -> stalk
     eq('stalk again: the rhythm resets', deer.beamPhase, 'stalk');
     Game.genDetail = realGen;
@@ -852,8 +863,72 @@ function driveCombat(playerFn, maxTurns) {
     ok('swept angle recorded', (deer.telegraph.swept || 0) > 0.1);
     ok('prevCells recorded for the ghost trail', (deer.telegraph.prevCells || []).length > 0);
     ok('ghost overlay exposes the arc', Game.tbBeamPrevLaneCells().size > 0);
+    // ACTION-LOCKED: the sweep narration needs a second tick — hesitate and
+    // the beam ticks anyway, carving its arc.
+    Game.tbPlayerActed(); // P4: hesitate; tick 2 -> swept > 0.45
     ok('sweep narrated once', Game.log.some(l => /carves a bright arc/.test(l)));
     ok('beam is firing (live overlay)', Game.tbBeamIsFiring());
+    Game.genDetail = realGen;
+    if (Game.tbfight) Game.tbEnd('fled');
+  }
+
+  // --- 25. RENDER PATH: kamehameha, not laser pointer (Steve's phone audit) ---
+  // The beam must be unmistakable on the render path: anchored at the deer
+  // (source glow), bright core + halo while firing, ash in its wake.
+  {
+    const realGen = Game.genDetail.bind(Game);
+    Game.genDetail = () => flatGrid();
+    newDeerGame();
+    const f = startDeerFight(4, 4, 4, 6);
+    f.fighters = f.fighters.filter(x => x.kind !== 'villager');
+    const deer = f.fighters.find(x => x.kind === 'monster');
+    Game.tbFighter('p').hp = 500; Game.state.scholar.health = 500;
+    ok('no beam source before telegraph', Game.tbBeamSourceCell() === null);
+    ok('no halo before firing', Game.tbBeamHaloCells().size === 0);
+    Game.tbPlayerMove(0, 4); Game.tbPlayerEndTurn(); // D1 declares (aim)
+    const srcAim = Game.tbBeamSourceCell();
+    ok('beam source = deer tile during windup', srcAim === deer.mx + ',' + deer.my);
+    Game.tbPlayerEndTurn(); // D2 charges
+    ok('beam source persists through charge', Game.tbBeamSourceCell() === deer.mx + ',' + deer.my);
+    Game.tbPlayerEndTurn(); // D3 ignites + tick 1
+    ok('beam is firing', Game.tbBeamIsFiring());
+    const lane = Game.tbBeamLaneCells();
+    ok('lane non-empty while firing', lane.size > 0);
+    // anchored: every lane cell is on the ray from the deer — first cell adjacent
+    const first = deer.telegraph.cells[0];
+    ok('lane starts at the deer (anchored)', Math.max(Math.abs(first.cx - deer.mx), Math.abs(first.cy - deer.my)) === 1);
+    ok('halo lights the night around the lane', Game.tbBeamHaloCells().size > 0);
+    ok('halo excludes lane cells', [...Game.tbBeamHaloCells()].every(k => !lane.has(k)));
+    // ash: the sweep scorches, and scorch persists on the render path
+    const nkey = Game.map.px + ',' + Game.map.py;
+    const scorched = Object.keys((Game.state.scorch || {})[nkey] || {});
+    ok('ash in its wake (cells scorched)', scorched.length > 0);
+    ok('scorch visible via cellScorched', scorched.some(k => { const [x, y] = k.split(',').map(Number); return Game.cellScorched(x, y); }));
+    Game.genDetail = realGen;
+    if (Game.tbfight) Game.tbEnd('fled');
+  }
+
+  // --- 26. AUDIO HYGIENE: nothing outlives its encounter (Steve) ---
+  // Killing the deer left the beam's sweep hum playing. tbEnd must stop every
+  // sustained encounter loop on ANY ending — won, lost, fled, routed.
+  {
+    const realGen = Game.genDetail.bind(Game);
+    Game.genDetail = () => flatGrid();
+    newDeerGame();
+    const f = startDeerFight(4, 4, 4, 6);
+    f.fighters = f.fighters.filter(x => x.kind !== 'villager');
+    let stopped = 0;
+    const realAudio = Game.audio;
+    Game.audio = { combatEnd: () => { stopped++; } };
+    Game.tbEnd('won');
+    ok('kill the deer: combatEnd stops the loops', stopped === 1);
+    // fresh fight for the flee case
+    newDeerGame();
+    const f2 = startDeerFight(4, 4, 4, 6);
+    f2.fighters = f2.fighters.filter(x => x.kind !== 'villager');
+    Game.tbEnd('fled');
+    ok('flee: combatEnd stops the loops', stopped === 2);
+    Game.audio = realAudio;
     Game.genDetail = realGen;
     if (Game.tbfight) Game.tbEnd('fled');
   }
