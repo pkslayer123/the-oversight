@@ -130,17 +130,17 @@
   },
   {
     "class": "sentimental",
-    "flavor": "Coiled the way their grandfather taught them.",
+    "flavor": "His coil. Fifty feet of paracord, coiled the way his grandfather taught him at eight — every loop the same size. 'A knot is a promise.' He's never tied a bad one since.",
     "id": "rope_50ft",
-    "name": "Rope 50Ft",
+    "name": "Grandfather's Rope",
     "kg": 0.5,
     "kin": "none"
   },
   {
     "class": "sentimental",
-    "flavor": "Dented. Older than you.",
+    "flavor": "Sixty years of mornings on the porch — coffee, rain or shine. 'A cup is a house you can hold.' Dented, older than you, and it'll probably outlast you too.",
     "id": "tin_cup",
-    "name": "Tin Cup",
+    "name": "Grandma's Tin Cup",
     "kg": 0.08,
     "kin": "none"
   },
@@ -190,9 +190,9 @@
   },
   {
     "class": "sentimental",
-    "flavor": "Small, grey, irreplaceable.",
+    "flavor": "His father carried it for forty years, then handed it over without a word — the way men in his family said everything important. Small, grey, irreplaceable.",
     "id": "whetstone",
-    "name": "Whetstone",
+    "name": "Father's Whetstone",
     "kg": 0.15,
     "kin": "none"
   },
@@ -428,8 +428,8 @@
   },
   {
     "id": "bus_map",
-    "name": "Bus map",
-    "flavor": "Every route marked. None of them go here.",
+    "name": "Marked Bus Map",
+    "flavor": "Her mother's handwriting on every route — the 42 to work, the 16 to Grandma's, the night bus home. Marked so she'd never get lost. None of them go here.",
     "class": "sentimental",
     "kg": 0.02,
     "kin": "none"
@@ -452,16 +452,16 @@
   },
   {
     "id": "tasting_spoon",
-    "name": "Tasting spoon",
-    "flavor": "A chef tastes everything. Even the apocalypse.",
+    "name": "Tasting Spoon",
+    "flavor": "Hers. Twenty years in restaurant kitchens — tap it on the pot rim twice, taste, and know. 'Salt is a decision, not an accident.' She fed hundreds on a Saturday night. Now she feeds twelve.",
     "class": "sentimental",
     "kg": 0.02,
     "kin": "none"
   },
   {
     "id": "thermos",
-    "name": "Thermos",
-    "flavor": "Keeps things hot. Hot is a memory now.",
+    "name": "Dad's Thermos",
+    "flavor": "Coffee at 5 AM, every morning for thirty years — he'd tap it twice before the first sip, like knocking before entering the day. It still keeps things hot. Hot is a memory now.",
     "class": "sentimental",
     "kg": 0.5,
     "kin": "none"
@@ -1363,11 +1363,11 @@
   },
   {
     "id": "contract_quill",
-    "name": "Contract quill",
+    "name": "Contract Quill",
     "class": "sentimental",
     "origin": "alien",
     "lootTier": 2,
-    "flavor": "Signs for you. Read before it signs. It has excellent penmanship and terrible intentions.",
+    "flavor": "You watched an old woman trade her wedding ring for antibiotics and sign with this — her hand shaking, the quill perfectly steady. It has excellent penmanship and terrible intentions.",
     "kg": 0.1,
     "findable": false,
     "tradeValue": 600,
