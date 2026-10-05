@@ -64,12 +64,19 @@ const origSay = null;
   })());
 
   // === 2. REP: do listeners' attitudes toward the player move? ===
+  // (harness lesson 2026-10-05: gossip travels along social lines, so pick
+  // the listener from w1's own group and allow enough parts for the story
+  // to reach them — a fixed far-away roster index + 10 parts flaked.)
   Game.state.scholar.day = (Game.state.scholar.day || 1);
   Game.seedGossip('stole_food2', { honest: -12, generous: -10 }, [w1]);
   const g2 = v.gossip[v.gossip.length - 1];
-  const listener = roster[3];
+  let listener = roster[3];
+  const w1mates = new Set();
+  for (const gr of (v.groups || [])) if (gr.members.includes(w1)) gr.members.forEach(m => { if (m !== w1) w1mates.add(m); });
+  const inGroup = roster.find(id => id !== w1 && w1mates.has(id));
+  if (inGroup) listener = inGroup;
   const before = JSON.stringify(Game.repOf(listener));
-  for (let i = 0; i < 10 && !g2.heard.includes(listener); i++) Game.spreadGossip();
+  for (let i = 0; i < 40 && !g2.heard.includes(listener); i++) Game.spreadGossip();
   const after = JSON.stringify(Game.repOf(listener));
   ok('rep: listener rep changes when they hear gossip', before !== after && g2.heard.includes(listener),
     `heard=${g2.heard.includes(listener)} before=${before} after=${after}`);
@@ -105,12 +112,18 @@ const origSay = null;
   ok('talkReason: negative gossip can make NPCs initiate "Can we talk?"', initiated > 0, `${initiated}/200`);
 
   // === 5. confrontGossip: clearing the air ===
-  // force high trust so success is near-certain
+  // (harness lesson 2026-10-05: at trust 90 the hearer may still believe the
+  // gossip (rep honest<0), which correctly makes confrontation a gamble per
+  // the engine's "honesty helps" rule — so force the SUCCESS path with a
+  // fixed random roll to verify what success does.)
   v.trust = v.trust || {};
   v.trust[hearer] = 90;
   said.length = 0;
   const dimsBefore = JSON.stringify(g2.dims);
+  const realRand = Math.random;
+  Math.random = () => 0.0; // guarantee the success branch
   Game.confrontGossip(hearer);
+  Math.random = realRand;
   const cleared = said.find(s => /wasn't fair|loses its teeth/i.test(s));
   const dimsAfter = JSON.stringify(g2.dims);
   ok('confront: success dampens gossip dims', !!cleared && dimsBefore !== dimsAfter,
@@ -136,6 +149,25 @@ const origSay = null;
   ok('confront: failure path exists (backfire worsens the story)', backfires > 0);
   ok('confront: outcome is a gamble, not deterministic', backfires > 0 && backfires < 200 && successes > 0,
     `backfire=${backfires} success=${successes}`);
+  // design claim: trust moves the odds. Measure success rate at trust 90 vs 0
+  // with the SAME neutral rep (reset honest so only trust differs).
+  function confrontRate(trust) {
+    let s = 0, n = 120;
+    for (let i = 0; i < n; i++) {
+      g2.dims = { honest: -12, generous: -10 };
+      v.trust[hearer] = trust; // success grants +4 trust — pin it per roll
+      said.length = 0;
+      Game.confrontGossip(hearer);
+      if (said.some(x => /wasn't fair|loses its teeth/i.test(x))) s++;
+    }
+    return s / n;
+  }
+  // neutral honest rep so trust is the only variable
+  const r0 = Game.repOf(hearer); r0.honest = 5;
+  const rateHi = confrontRate(90), rateLo = confrontRate(0);
+  console.log(`confront success rate: trust90=${(100 * rateHi).toFixed(0)}% trust0=${(100 * rateLo).toFixed(0)}%`);
+  ok('confront: high trust meaningfully beats low trust', rateHi > rateLo + 0.15,
+    `hi=${rateHi.toFixed(2)} lo=${rateLo.toFixed(2)}`);
 
   // === 6. positive gossip: does praise travel too? ===
   // (fade the old scandal first — a live scandal about you rightly jumps

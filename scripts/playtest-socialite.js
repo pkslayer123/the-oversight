@@ -40,10 +40,13 @@ function holdConversation(vid, topics) {
     const cc = Game.convoGet(vid);
     if (cc && cc.thread === 'nonverbal') { rec.nonverbal = true; }
     // NPC may have opened with a talk request or question
+    // QUESTION DETECTION (2026-10-05): r.askedMe was never set by the engine —
+    // detect via convo state (pendingQ/genericQ/reactiveQ) instead.
     let guard = 0;
     while (guard++ < 12) {
       const cur = Game.convoGet(vid);
       if (!cur || cur.over || !cur.active) { rec.ended = cur && cur.over ? 'over' : 'inactive'; break; }
+      if (cur.pendingQ || cur.genericQ || cur.reactiveQ) rec.npcAskedMe = true;
       const choices = Game.convoChoices(vid) || [];
       choices.forEach(c => { choiceIdsSeen[c.id] = (choiceIdsSeen[c.id] || 0) + 1; });
       if (!choices.length) { rec.ended = 'no-choices'; break; }
@@ -57,12 +60,16 @@ function holdConversation(vid, topics) {
         choices.find(c => /agree|joke|laugh/.test(c.id)) ||
         choices[Math.floor(Math.random() * choices.length)];
       if (!pick) { rec.ended = 'no-choices'; break; }
+      // answer hanging questions when asked (first answer choice), then pivot
       let r;
-      try { r = Game.convoTurn(vid, pick.id); }
+      try {
+        const cur2 = Game.convoGet(vid);
+        if (cur2 && (cur2.pendingQ || cur2.genericQ || cur2.reactiveQ)) rec.npcAskedMe = true;
+        r = Game.convoTurn(vid, pick.id);
+      }
       catch (e) { rec.errors.push(`turn(${pick.id}): ${e.message}`); errors.push(`convoTurn ${pick.id} threw: ${e.message}`); break; }
       rec.exchanges++;
       if (r && r.line) { rec.lines.push(r.line); linesSeen.push(r.line); }
-      // NPC question to me?
       if (r && r.askedMe) rec.npcAskedMe = true;
       if (cur.over) { rec.ended = r && r.ended ? 'ended' : 'over'; break; }
       if (pick.id === 'leave' || pick.id === 'goodbye') { rec.ended = 'left'; break; }
@@ -98,11 +105,13 @@ function holdConversation(vid, topics) {
     try { Game.betrayalDaily(); } catch (e) { errors.push(`betrayalDaily d${day}: ${e.message}`); }
     try { Game.npcInviteTick(); } catch (e) { errors.push(`npcInviteTick d${day}: ${e.message}`); }
 
-    // talk requests: "Can we talk?" — respond to them first
-    const reqs = Object.keys(v.talkRequests || {});
+    // talk requests: "Can we talk?" — count only PENDING ones (delivered
+    // records linger by design; raw lines are __NAME__ templates, so render).
+    const reqs = Object.keys(v.talkRequests || {}).filter(id => v.talkRequests[id] && !v.talkRequests[id].delivered);
     if (reqs.length) {
       talkReqsSeen += reqs.length;
-      console.log(`talk requests (${reqs.length}): ${reqs.map(name).join(', ')} — "${(v.talkRequests[reqs[0]].line || '').slice(0, 70)}"`);
+      const show = reqs.map(id => `${name(id)}: "${Game.renderTalkLine(v.talkRequests[id].line, id).slice(0, 70)}"`);
+      console.log(`talk requests pending (${reqs.length}): ${show.join(' | ')}`);
     }
 
     // hold conversations with ~5 villagers per day (a socialite's full day)

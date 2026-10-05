@@ -7873,7 +7873,6 @@
     // one initiative per day part max — they're people, not popups.
     villagerInitiative() {
       const v = this.state.village;
-      try { this.expireTalkRequests(); } catch (e) {}
       // LIVING WORLD: initiative works on any node — NPCs come to you wherever
       // you are, if they're on your node. Not just Haven anymore.
       if (!v.positions) return;
@@ -11079,6 +11078,9 @@
     advancePart() {
       this.checkVillageProximity();
       if (this.over) return this.status();
+      // TALK REQUESTS ROT: an unanswered "can we talk?" doesn't wait forever.
+      // The clock runs here, so the sweep lives here — not in initiative.
+      try { this.expireTalkRequests(); } catch (e) {}
       // ALIVE: wants grow with time, unanswered asks curdle.
       try { this.tickNeeds(); } catch (e) {}
       // LEADER: assigned villagers execute their tasks. Reports come back now.

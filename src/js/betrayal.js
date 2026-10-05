@@ -200,7 +200,7 @@
       // maybe 60s") when the nudge fires and "Daljit" by the time the player
       // answers it. The __NAME__ placeholder renders at DELIVERY time.
       v.talkRequests = v.talkRequests || {};
-      v.talkRequests[rid] = { line: `"Hey." __NAME__ settles near you, not too close. "Day one. Everyone's pretending they're fine. ...Can we talk? Just talk — like people used to."` };
+      v.talkRequests[rid] = { line: `"Hey." __NAME__ settles near you, not too close. "Day one. Everyone's pretending they're fine. ...Can we talk? Just talk — like people used to."`, day: 1 };
       try { this.say(`"Hey." ${d} settles near you, not too close. "Day one. Everyone's pretending they're fine. ...Can we talk? Just talk — like people used to."` + ` (Talk to ${d}.)`); } catch (e) {}
     },
     pendingInvite(vid) {

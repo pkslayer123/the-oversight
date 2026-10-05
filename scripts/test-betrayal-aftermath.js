@@ -109,14 +109,26 @@ function startFight(vid) {
   // ---------- E. NPC aggressor path untouched: player survives ----------
   await freshGame();
   {
+    // NOTE (socialite loop 2026-10-05): flee-by-motion needs a walkable grid
+    // edge, and Haven's edge ring is all walls — fleeing is impossible there.
+    // Flagged for the brawler run / Steve: village fights currently can't be
+    // fled. This section therefore stages the ambush in the wild, where the
+    // mechanic works.
+    const tgt = Game.travelTargets()[0];
+    if (tgt) Game.travelTo(tgt.x, tgt.y, true);
     const vid = others()[0];
     Game.npcBetrays(vid); // they come at you
     ok('E: betrayal combat started', !!(Game.tbfight && Game.tbfight.betrayal));
-    // player flees the ambush (flee can fail 20%: retry)
-    for (let i = 0; i < 5 && Game.tbfight; i++) {
+    // player flees the ambush by motion (Steve 2026-10-05: FLEE button was
+    // removed — you run for the grid edge; 50% escape per try, else pursued).
+    // The haven grid has walls, so try every edge until one has a path.
+    const edgeTargets = (p) => [[0, p.my], [8, p.my], [p.mx, 0], [p.mx, 8]];
+    for (let i = 0; i < 8 && Game.tbfight; i++) {
       Game.tbfight.turnIdx = Game.tbfight.order.indexOf('p');
-      const p = Game.tbFighter('p'); p.moveLeft = 10; p.acted = false;
-      Game.tbPlayerFlee();
+      const p = Game.tbFighter('p'); p.moveLeft = 20; p.acted = false;
+      const tgt = edgeTargets(p).find(([x, y]) => Game.findPath(p.mx, p.my, x, y));
+      if (!tgt) break; // walled in — can't run (a real outcome, not a hang)
+      Game.tbPlayerMove(tgt[0], tgt[1]);
     }
     ok('E: survived', !Game.tbfight);
   }
