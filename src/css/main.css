@@ -77,10 +77,10 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .term-line { font-size: 14px; margin: 6px 0; color: var(--ink); }
 
 /* map */
-.map { margin: 12px 0; border: 1px solid var(--line); border-radius: 4px; padding: 8px; background: var(--bg2); }
-.mrow { display: flex; }
+.map { margin: 12px 0; border: 1px solid var(--line); border-radius: 4px; padding: 8px; background: var(--bg2); width: 100%; }
+.mrow { display: flex; width: 100%; }
 .tile {
-  flex: 1; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  flex: none; width: calc(100% / 7); aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
   font-size: 18px; color: var(--dim); border: 1px solid transparent; border-radius: 4px;
   cursor: pointer; user-select: none; min-height: 40px;
 }

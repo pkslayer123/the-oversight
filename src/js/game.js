@@ -10120,7 +10120,7 @@
         const mdef = this.pickByActivity(mdefs) || mdefs[Math.floor(Math.random() * mdefs.length)];
         const mx = 4 + Math.floor(Math.random() * 5) - 2;
         const my = 4 + Math.floor(Math.random() * 5) - 2;
-        scholar.monster = { id: mdef.id, x: Math.max(0, Math.min(8, mx)), y: Math.max(0, Math.min(8, my)) };
+        scholar.monster = { id: mdef.id, mx: Math.max(0, Math.min(8, mx)), my: Math.max(0, Math.min(8, my)) };
         // AMBIGUITY: you don't know what it is. The village name, or the descriptor — never the true name.
         this.say(`Something moves out there — ${this.monsterDisplayName(mdef.id)}.`);
       }
