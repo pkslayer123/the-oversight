@@ -9703,8 +9703,10 @@
         const s = spots.length ? spots[Math.floor(Math.random() * spots.length)] : { x: 5, y: 5 };
         // WAVE-CASTING (Steve 2026-10-05): the System casts monsters appropriate
         // to your threat rating. No wave-3 horrors on day 3 with a pointy stick.
-        const monsterId = this.castMonster();
-        this.wanderer = { x: s.x, y: s.y, dir: Math.random() < 0.5 ? 1 : -1, monsterId };
+        const cast = this.castMonster();
+        const monsterId = cast.id || cast; // castMonster returns {id, veteran}
+        const isVeteran = cast.veteran || false;
+        this.wanderer = { x: s.x, y: s.y, dir: Math.random() < 0.5 ? 1 : -1, monsterId, veteran: isVeteran };
         this.say('Something big is moving in the woods. The birds went quiet.');
       }
       if (this.wanderer && this.map.px === this.wanderer.x && this.map.py === this.wanderer.y) {
@@ -11769,15 +11771,27 @@
 
     // WAVE UNLOCK (Steve 2026-10-05): monsters are cast in waves. You don't
     // see wave 2 until you're ready (or the producers get bored).
-    // Wave 1: 0+ (always) — hummice, moths, raccoons, toads
-    // Wave 2: 30+ — wolves, herons, swarms, boars (need gear)
-    // Wave 3: 70+ — mimics, golems, stags (need alien loot + party)
-    // Wave 4: 120+ — gallowdeer (endgame)
+    // Wave 1: always — hummice, moths, raccoons, toads
+    // Wave 2: decent weapon (bonus 12+) OR alien loot, AND party >= 2
+    // Wave 3: good weapon (bonus 25+) OR tier-2 loot, AND party >= 3, AND threat 70+
+    // Wave 4: threat 120+ (endgame)
     unlockedWave() {
-      const r = this.threatRating();
-      if (r >= 120) return 4;
-      if (r >= 70) return 3;
-      if (r >= 30) return 2;
+      const threat = this.threatRating();
+      const w = this.equippedWeapon();
+      const hasDecentWeapon = (w.bonus || 0) >= 12;
+      const hasGoodWeapon = (w.bonus || 0) >= 25;
+      const hasAlienLoot = (this.state.scholar.inventory || []).some(i => {
+        const def = this.data.items.find(d => d.id === i.itemId);
+        return def && def.origin === 'alien';
+      });
+      const partySize = (this.state.party || []).length;
+      // Wave 4: endgame
+      if (threat >= 120) return 4;
+      // Wave 3: need good gear + party + threat
+      if (threat >= 70 && partySize >= 3 && (hasGoodWeapon || hasAlienLoot)) return 3;
+      // Wave 2: need decent weapon or alien loot, plus party
+      if ((hasDecentWeapon || hasAlienLoot) && partySize >= 2) return 2;
+      // Wave 1: always
       return 1;
     },
 
@@ -11792,28 +11806,48 @@
     // CASTING (Steve 2026-10-05): the System casts a monster appropriate to
     // your wave. Weighted random within the unlocked wave — variety, but never
     // over-leveled. The show must be entertaining, not a slaughter.
+    // RATIOS (Steve 2026-10-05): new wave dominates. Old waves still spawn
+    // but less often. Each new wave shifts the ratios.
     castMonster() {
       const wave = this.unlockedWave();
       const pool = this.data.monsters.filter(m => (m.wave || 1) <= wave);
       if (!pool.length) return 'hummice'; // fallback
-      // Prefer the current wave (70%), allow lower waves (30%) for variety
-      const current = pool.filter(m => (m.wave || 1) === wave);
-      const lower = pool.filter(m => (m.wave || 1) < wave);
-      let pick;
-      if (current.length && (Math.random() < 0.7 || !lower.length)) {
-        pick = current[Math.floor(Math.random() * current.length)];
-      } else if (lower.length) {
-        pick = lower[Math.floor(Math.random() * lower.length)];
-      } else {
-        pick = pool[Math.floor(Math.random() * pool.length)];
+      // Ratios: 60% current wave, 25% previous, 15% older
+      // (Wave 1: 100% wave 1. Wave 2: 60% w2, 40% w1. Wave 3: 60% w3, 25% w2, 15% w1.)
+      const r = Math.random();
+      let targetWave;
+      if (wave === 1) {
+        targetWave = 1;
+      } else if (wave === 2) {
+        targetWave = r < 0.6 ? 2 : 1;
+      } else if (wave === 3) {
+        targetWave = r < 0.6 ? 3 : (r < 0.85 ? 2 : 1);
+      } else { // wave 4
+        targetWave = r < 0.6 ? 4 : (r < 0.8 ? 3 : (r < 0.95 ? 2 : 1));
       }
-      return pick.id;
+      const candidates = pool.filter(m => (m.wave || 1) === targetWave);
+      if (!candidates.length) {
+        // Fallback to any in pool
+        return pool[Math.floor(Math.random() * pool.length)].id;
+      }
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      // VARIANT (Steve 2026-10-05): old-wave monsters that spawn in a new wave
+      // are hardened veterans — stronger, with a twist. The old stuff doesn't
+      // stay weak. (Variant applied at spawn in startCombat.)
+      const isVeteran = targetWave < wave;
+      return { id: pick.id, veteran: isVeteran };
     },
 
     startCombat(monsterId) {
       const s = this.state.scholar;
       const px = s.mx ?? 4, py = s.my ?? 4;
       const mdef = this.data.monsters.find(m => m.id === (monsterId || 'thornback_boar')) || this.data.monsters[0];
+      // VETERAN VARIANT (Steve 2026-10-05): old-wave monsters in a new wave
+      // are hardened. +50% HP, +3 damage, +1 speed. They've survived too.
+      const isVeteran = (s.monster && s.monster.veteran) || false;
+      if (isVeteran) {
+        this.say(`⚠ This one is different — scarred, seasoned. A veteran.`);
+      }
       const detail = this.genDetail(this.map.px, this.map.py);
       const terrainBlocked = (x, y) => {
         const cell = detail[y] && detail[y][x];
@@ -11889,32 +11923,38 @@
             fx = alt.x; fy = alt.y;
           }
           takenSpots.add(fx + ',' + fy);
-          const hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
+          let hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
+          let spd = mdef.speed || 5;
+          if (isVeteran) { hp = Math.round(hp * 1.5); spd += 1; }
           fighters.push({
             key: 'm_snake_' + i, kind: 'monster', monsterId: mdef.id,
-            name: this.monsterDisplayName(mdef.id) + (i === 0 ? ' (head)' : ` (${i + 1})`),
+            name: (isVeteran ? 'Veteran ' : '') + this.monsterDisplayName(mdef.id) + (i === 0 ? ' (head)' : ` (${i + 1})`),
             emoji: mdef.emoji || '🦆',
-            hp, maxHp: hp, speed: mdef.speed || 5, mx: fx, my: fy,
+            hp, maxHp: hp, speed: spd, mx: fx, my: fy,
             alive: true, fled: false, telegraph: null, mdef,
             hesitate: 0, blind: 0, stunned: 0,
             // Snake-specific
             snakeId, segmentIndex: i, isHead: i === 0,
             threatQueue: [],
+            veteran: isVeteran,
           });
         }
       } else for (let i = 0; i < count; i++) {
         const spot = i === 0 ? { x: srcMx, y: srcMy } : freeSpotNear(srcMx, srcMy, takenSpots);
         takenSpots.add(spot.x + ',' + spot.y);
-        const hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
+        let hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
+        let spd = mdef.speed || 3;
+        if (isVeteran) { hp = Math.round(hp * 1.5); spd += 1; }
         fighters.push({
           key: 'm_' + i, kind: 'monster', monsterId: mdef.id,
-          name: this.monsterDisplayName(mdef.id) + (count > 1 ? ' ' + (i + 1) : ''), emoji: mdef.emoji || '👹',
-          hp, maxHp: hp, speed: mdef.speed || 3, mx: spot.x, my: spot.y,
+          name: (isVeteran ? 'Veteran ' : '') + this.monsterDisplayName(mdef.id) + (count > 1 ? ' ' + (i + 1) : ''), emoji: mdef.emoji || '👹',
+          hp, maxHp: hp, speed: spd, mx: spot.x, my: spot.y,
           alive: true, fled: false, telegraph: null, mdef,
           hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
           beamCooldown: 0, dwellTaught: false,
           beamPhase: (mdef.encounter && mdef.encounter.phaseMap && mdef.encounter.phaseMap.idle) || 'stalk',
           threatQueue: [],
+          veteran: isVeteran,
         });
       }
 
