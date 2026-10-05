@@ -3408,7 +3408,7 @@
           <div class="actions ord-codex">
             <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
           </div>
-          <div class="log ord-log">${st.log.slice(-3).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
+          ${st.inCombat ? '' : `<div class="log ord-log">${st.log.slice(-3).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`}
         </div>
       </div>
       <div class="ord-bottombar">${dpadHTML()}</div>`;
@@ -3955,12 +3955,14 @@
           ? `<b style="color:#ffd54d">ACT!</b> <span style="opacity:.8">strike, shout… or ⏸ hold</span>`
           : `<b>${p.moveLeft}</b> move${p.acted ? ' · acted' : ''}`)
       : (cur ? `${esc(cur.kind === 'player' ? 'You' : (Game.monsterDisplayName && cur.mdef ? Game.monsterDisplayName(cur.mdef.id) : cur.name))} acting…` : '');
-    // COMBAT STRIP (Steve 2026-10-05): ONE channel, ONE action spot. The strip
-    // is threat + actions only — no narrative feed. The log IS the channel now,
-    // pulled up directly under the strip during combat (see .ord-log order).
-    // Two channels telling things was the complaint; this kills the duplicate.
+    // COMBAT STRIP (Steve 2026-10-05, revised): cohesive with the Pokémon-style
+    // dialogue box. Threat + narration + actions in ONE quiet surface — no red
+    // glow, no big card, no separate log. The last narration line shows here;
+    // full history lives in the Journal.
+    const lastNarr = (Game.log && Game.log.length) ? Game.log[Game.log.length - 1] : '';
     return `
-      <div class="card combat-strip"><div class="cs-line"><span>⚔</span> ${monRows} <span class="cs-turn">${turnLine}</span></div>
+      <div class="combat-strip"><div class="cs-line"><span>⚔</span> ${monRows} <span class="cs-turn">${turnLine}</span></div>
+      ${lastNarr ? `<div class="cs-narr">${esc(lastNarr)}</div>` : ''}
       ${yourTurn && p ? `<div class="actions cs-actions">
         <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
         <button class="btn sm ghost" id="c-study" ${p.acted ? 'disabled' : ''}>👁</button>

@@ -719,15 +719,18 @@ body.system-live .btn:not(.ghost) {
 .combat-compact .cc-feed .cc-evt:last-child { opacity: 1; font-weight: 600; }
 /* COMBAT STRIP (Steve 2026-10-05): threat + actions, nothing else. The strip
    is two rows max — the log below it is the ONE narrative channel. */
-.ord-combatpanel .card.combat-strip {
-  border: 2px solid var(--danger, #ff5252);
-  box-shadow: 0 0 14px rgba(255, 82, 82, 0.35);
+.ord-combatpanel .combat-strip {
+  /* QUIET (Steve 2026-10-05): no red glow, no card border. Just a surface
+     like the dialogue box — threat, narration, actions. Cohesive, not shouty. */
   padding: 6px 8px;
-  animation: combatArrive 0.25s ease-out;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin: 6px 0;
 }
 .combat-strip .cs-line { display: flex; align-items: center; gap: 6px; font-size: 13px; flex-wrap: wrap; }
 .combat-strip .cs-mon { white-space: nowrap; }
 .combat-strip .cs-turn { margin-left: auto; opacity: .8; font-size: 12px; white-space: nowrap; }
+.combat-strip .cs-narr { font-size: 13px; color: #ccc; margin: 4px 0; line-height: 1.4; }
 .combat-strip .cs-actions { display: flex; gap: 6px; margin-top: 6px; }
 .combat-strip .cs-actions .btn { flex: 1 1 0; min-width: 0; padding: 8px 4px; }
 .combat-strip .cc-hpbar { display: inline-block; width: 48px; height: 7px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; vertical-align: middle; margin-left: 6px; background: rgba(0,0,0,.4); }
