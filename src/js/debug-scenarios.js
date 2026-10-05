@@ -229,6 +229,85 @@
       Game.say('FIRST ENCOUNTER: no beam-lane warning until your codex learns. You get the freeze, the whine, and dread. MOVE.');
     },
 
+    // Monster batch 2 — the tricksters. Each follows the headlight pattern:
+    // fresh game, right day part, spear, monster placed a few tiles out.
+
+    // Flashbulb Moth. Night, drifting four tiles east. Walk toward the
+    // wrong-light. It must FACE you to flash — watch the fold, then get
+    // behind it before the wings open.
+    flashbulb() {
+      freshGame();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — it's nocturnal
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'mirrormoth', mx: 6, my: 4 };
+      Game.say('🐞 SCENARIO: flashbulb moth. A dinner-plate moth, catching light wrong, four tiles east.');
+      Game.say('Walk toward it. It lands, it folds — and the flash only goes FORWARD. Get behind it before it fires.');
+    },
+
+    // Choir Toad. Dusk, a war-drum toad four tiles east — it brought a friend
+    // (pack: 2). When one throat lets go, they ALL croak. Break the chorus:
+    // kill one, split them up — or SHOUT.
+    choir() {
+      freshGame();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 2; // dusk — crepuscular
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'belltoad', mx: 6, my: 4 };
+      Game.say('🐞 SCENARIO: choir toads. A toad like a war drum, throat swelling, four tiles east. It brought a friend.');
+      Game.say('When one throat lets go, they ALL croak. Break the chorus: kill one, split them up — or SHOUT (📢).');
+    },
+
+    // Lockpick Raccoon. Night, too many fingers four tiles east. It's not
+    // looking at you — it's looking at your pack. It steals FIRST and fights
+    // second: hit it while it runs, or buy it off with food.
+    lockpick() {
+      freshGame();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.inventory.push({ name: 'Smoked fish', kcalEach: 400, units: 2, spoilDay: 99 });
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — it's nocturnal
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'lockpick_raccoon', mx: 6, my: 4 };
+      Game.say('🐞 SCENARIO: lockpick raccoon. Too many fingers, working at something, four tiles east.');
+      Game.say("It's not looking at you. It's looking at your pack. It steals FIRST — hit it while it bolts, or buy it off with food (🍖).");
+    },
+
+    // Hummice. Night, the grass humming four tiles east — all four of them.
+    // The hum STACKS while you stand in it. Kill one and the choir stutters;
+    // step out and let it thin.
+    hummice() {
+      freshGame();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — it's nocturnal
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'hummice', mx: 6, my: 4 };
+      Game.say('🐞 SCENARIO: hummice. The grass is humming in harmony, four tiles east. Four of them.');
+      Game.say('The hum STACKS while you stand in it. Kill one and the choir stutters — or step out and let it thin.');
+    },
+
+    // Nightlight Catfish. Night, a soft green glow three tiles east — near
+    // water, or it's just a glow. Pretty. That's the problem. It won't chase
+    // you. Get close and the water goes still. Strike the light from range.
+    nightlight() {
+      freshGame();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — it only hunts at night, near water
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'nightlight_catfish', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: nightlight catfish. A soft green glow under the water, three tiles east. Pretty.');
+      Game.say("That's the problem — it's pretty. It won't chase you. Get close and the water goes still. Strike the light from range — never wade in.");
+    },
+
     // 10. Moot — YOU stand accused. Theft + assault on the books, the case
     // is open, the defense window is ticking. Speak, call witnesses, press
     // the accuser, investigate bribes, or flee before the count.
@@ -416,6 +495,11 @@
     return [
       ['deer', '🦌 Deer encounter'],
       ['headlight', '💡 Headlight Deer fight'],
+      ['flashbulb', '🦋 Flashbulb Moth fight'],
+      ['choir', '🐸 Choir Toad fight'],
+      ['lockpick', '🦝 Lockpick Raccoon fight'],
+      ['hummice', '🐭 Hummice swarm fight'],
+      ['nightlight', '💡 Nightlight Catfish fight'],
       ['ambush', '🔪 Ambush — the walk turns'],
       ['mootAccused', '⚖️ Moot — you stand accused'],
       ['mootJuror', '⚖️ Moot — you are the juror'],

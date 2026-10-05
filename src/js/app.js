@@ -3677,6 +3677,8 @@
         <button class="btn sm ghost" id="c-study" ${p.acted ? 'disabled' : ''}>👁</button>
         ${mons.some(m => m.kind === 'hostile') ? `<button class="btn sm ghost" id="c-talk" ${p.acted ? 'disabled' : ''}>💬</button>` : ''}
         ${canScream ? `<button class="btn sm ghost" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀</button>` : ''}
+        <button class="btn sm ghost" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢</button>
+        <button class="btn sm ghost" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖</button>
         <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃</button>
         <button class="btn sm ghost" id="c-endturn">⏭</button>
       </div>
@@ -3689,6 +3691,8 @@
     on('c-endturn', () => { Game.tbPlayerEndTurn(); rerender(); });
     on('c-study', () => { Game.tbPlayerStudy(); rerender(); });
     on('c-scream', () => { Game.tbPlayerScream(); rerender(); });
+    on('c-shout', () => { Game.tbPlayerShout(); rerender(); });
+    on('c-offer', () => { Game.tbPlayerOfferFood(); rerender(); });
     on('c-flee', () => { Game.tbPlayerFlee(); rerender(); });
     // TALK: words are actions too. Pick who, then how.
     const showTalkRow = (targetKey) => {
