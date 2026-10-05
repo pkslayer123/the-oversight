@@ -3300,6 +3300,7 @@
     // grid dimming in CSS; is-night adds the moonlight tint and fire glow.
     try {
       document.body.classList.toggle('is-night', !!st.isNight);
+      document.body.classList.toggle('in-combat', !!st.inCombat);
       document.body.style.setProperty('--sky-light', (st.lightLevel == null ? 1 : st.lightLevel).toFixed(2));
     } catch (e) {}
     // DIAL GLITCH: played once — the System replacing your time-sense.
@@ -3868,10 +3869,10 @@
       const count = g.length > 1 ? ` ×${g.length}` : '';
       // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
       // knowledge. First encounter: no warning symbols.
-      return `<p class="small cc-mon">${m.emoji} <b>${esc(name)}</b>${count}` +
-        ` <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>` +
-        `${(g.some(x => x.telegraph) && known) ? ' ⚠' : ''}${badge}</p>`;
-    }).join('');
+      return `<span class="cs-mon">${m.emoji} <b>${esc(name)}</b>${count}` +
+        `<span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>` +
+        `${(g.some(x => x.telegraph) && known) ? ' ⚠' : ''}${badge}</span>`;
+    }).join(' · ');
     const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= (Game.equippedWeapon ? Game.equippedWeapon().range : 1)) : [];
     const wrange = Game.equippedWeapon ? Game.equippedWeapon().range : 1;
     const wname = Game.equippedWeapon ? Game.equippedWeapon().name : '';
@@ -3882,19 +3883,13 @@
     const turnLine = yourTurn && p
       ? `<b>${p.moveLeft}</b> move${p.acted ? ' · acted' : ''}`
       : (cur ? `${esc(cur.kind === 'player' ? 'You' : (Game.monsterDisplayName && cur.mdef ? Game.monsterDisplayName(cur.mdef.id) : cur.name))} acting…` : '');
-    // FIGHT FEED (Steve): essential fight info was stranded in the log box at
-    // the page bottom, requiring scroll mid-fight. The last 3 events render
-    // HERE, under the grid where the player is looking — beam state, damage,
-    // turn events. The one-screen rule: never bury the fight below the fold.
-    const feed = (Game.log || []).slice(-3);
-    const feedHtml = feed.length
-      ? `<div class="cc-feed">${feed.map(m => `<p class="cc-evt">${esc(String(m)).slice(0, 100)}</p>`).join('')}</div>`
-      : '';
+    // COMBAT STRIP (Steve 2026-10-05): ONE channel, ONE action spot. The strip
+    // is threat + actions only — no narrative feed. The log IS the channel now,
+    // pulled up directly under the strip during combat (see .ord-log order).
+    // Two channels telling things was the complaint; this kills the duplicate.
     return `
-      <div class="card combat-compact"><div class="cc-head"><span>⚔</span><span class="cc-turn">${turnLine}</span></div>
-      ${monRows}
-      ${feedHtml}
-      ${yourTurn && p ? `<div class="actions cc-actions">
+      <div class="card combat-strip"><div class="cs-line"><span>⚔</span> ${monRows} <span class="cs-turn">${turnLine}</span></div>
+      ${yourTurn && p ? `<div class="actions cs-actions">
         <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
         <button class="btn sm ghost" id="c-study" ${p.acted ? 'disabled' : ''}>👁</button>
         ${mons.some(m => m.kind === 'hostile') ? `<button class="btn sm ghost" id="c-talk" ${p.acted ? 'disabled' : ''}>💬</button>` : ''}
