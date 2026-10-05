@@ -12564,31 +12564,40 @@
       const [lx, ly] = path[path.length - 1];
       const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [p.mx, p.my];
       this.state.scholar.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
-      // FLEE BY MOTION (Steve 2026-10-05): no FLEE button — you run by moving.
-      // 6+ tiles from every monster to break contact (not 5 — you're slower
-      // now, this has to be earned). 50% to escape clean; otherwise it pursues.
-      const mons = f.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
-      if (mons.length) {
-        const nearest = Math.min(...mons.map(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my))));
-        if (nearest >= 6) {
+      // FLEE BY NODE BARRIER (Steve 2026-10-05): no FLEE button, no distance
+      // check — you escape by LEAVING THE NODE. Walk to the grid edge and push
+      // through to the adjacent node. 50% to lose them; otherwise they follow.
+      // (Don't bring a highbeam deer back to camp.)
+      const atEdge = (p.mx === 0 || p.mx === 8 || p.my === 0 || p.my === 8);
+      if (atEdge) {
+        const mons = f.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
+        if (mons.length) {
+          // Which direction? Continue past the edge.
+          let dx = 0, dy = 0;
+          if (p.mx === 0) dx = -1; else if (p.mx === 8) dx = 1;
+          if (p.my === 0) dy = -1; else if (p.my === 8) dy = 1;
+          const nx = this.map.px + dx, ny = this.map.py + dy;
+          // 50% to break contact at the barrier
           if (Math.random() < 0.5) {
-            this.say('You break contact — gone into the undergrowth. It loses your trail.');
+            this.say('You crash through the treeline — the barrier shimmers. They lose your trail.');
             p.fled = true;
             this.tbEnd('fled');
+            try { this.travelTo(nx, ny); } catch (e) {}
             return true;
           } else {
-            this.say('It\'s on your heels — no clean escape!');
-            // Pursuit: nearest monster closes 2 tiles toward you
-            const chaser = mons.reduce((a, b) => 
-              Math.max(Math.abs(a.mx - p.mx), Math.abs(a.my - p.my)) < 
-              Math.max(Math.abs(b.mx - p.mx), Math.abs(b.my - p.my)) ? a : b);
-            for (let i = 0; i < 2; i++) {
-              const dx = Math.sign(p.mx - chaser.mx), dy = Math.sign(p.my - chaser.my);
-              const nx = chaser.mx + dx, ny = chaser.my + dy;
-              if (nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8 && !this.tbBlocked(nx, ny)) {
-                chaser.mx = nx; chaser.my = ny;
-              } else break;
+            this.say('They\'re right behind you — through the barrier!');
+            try { this.travelTo(nx, ny); } catch (e) {}
+            // They follow: reposition monsters near the entry edge on the new node
+            // (combat continues; the node changed under the fight.)
+            for (const m of mons) {
+              m.mx = Math.max(0, Math.min(8, 4 - dx * 3 + Math.floor(Math.random() * 3) - 1));
+              m.my = Math.max(0, Math.min(8, 4 - dy * 3 + Math.floor(Math.random() * 3) - 1));
             }
+            // Player enters from the opposite edge
+            p.mx = Math.max(0, Math.min(8, 4 + dx * 3));
+            p.my = Math.max(0, Math.min(8, 4 + dy * 3));
+            this.tbRefreshTelegraphUI();
+            return true;
           }
         }
       }
