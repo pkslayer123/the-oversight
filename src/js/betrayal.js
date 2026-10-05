@@ -510,8 +510,16 @@
     else outcome = 'killed';
     plot.sprung = true; plot.active = false;
     if (outcome === 'killed') {
-      // corpse hook (SIBLING: corpses.js) — feature-checked
-      try { if (this.createCorpse) this.createCorpse(plot.target, { cause: 'ambush', by: [plot.leader, ...plot.accomplices] }); } catch (e) {}
+      // corpse hook (corpses.js) — feature-checked. registerDeath also
+      // fires the village grief event, so the death gets talked about.
+      try {
+        if (this.registerDeath) this.registerDeath({
+          kind: 'person', villagerId: plot.target,
+          name: this.displayName(plot.target),
+          cause: 'ambush', killerId: plot.leader,
+          witnesses: this.witnesses ? (this.witnesses(6) || []) : [],
+        });
+      } catch (e) {}
       this.removeVillager(plot.target, 'ambushed');
       try { this.recordTrauma('killed'); } catch (e) {}
     }
@@ -730,6 +738,11 @@
     const c = this.getCase(caseId); if (!c) return null;
     if (c.status !== 'open' && c.status !== 'dormant') return null;
     const caller = byId || this.villagerId;
+    // post-System: the moot is BROADCAST. Countdown energy, the galaxy watching.
+    if (this.state.systemArrived) {
+      this.sysSay(`🔴 LIVE! THE MOOT! The fire's built HIGH and the whole GALAXY is watching!`);
+      this.sysSay(`TONIGHT: ${this.whoTag(c.accused[0]).toUpperCase()} stands accused — ${this.chargeLine(c.charge).toUpperCase()}! The gamblers are FRENZIED! Place your bets, place your bets!`);
+    }
     if (this.isPlayer(caller)) {
       this.say(`You call a moot. The fire gets built up. Everyone comes — even the ones who'd rather not.`);
     } else {
@@ -740,13 +753,49 @@
     return this.conductTrial(c);
   },
   // bribe a voter. Expensive, secret, detonable.
-  bribeVoter(caseId, voterId, byId, amount) {
-    const c = this.getCase(caseId); if (!c) return null;
-    if (c.accused.includes(voterId)) return null;
+  // bribe price: temperament sets the tag. Extracted so the choice gating
+  // (can they be bought at all) and the affordability check use the same number.
+  caseBribePrice(cs, voterId) {
     let vp = null;
     try { vp = this.vpOf(voterId) || {}; } catch (e) {}
     const temp = (vp.personality && vp.personality.temperament) || 'steady';
-    const price = temp === 'warm' ? 1500 : temp === 'dark' ? 400 : 800;
+    return temp === 'warm' ? 1500 : temp === 'dark' ? 400 : 800;
+  },
+  // who can even be bought? warm/dark/steady/bold/restless/intense/dry have a
+  // price. The rest (cautious, gentle, withdrawn, prickly) don't take bribes —
+  // unless they already distrust the accuser's side. No 'principled'
+  // temperament exists in the generator, so this is the principled stand-in.
+  caseBribable(cs, voterId) {
+    let vp = null;
+    try { vp = this.vpOf(voterId) || {}; } catch (e) {}
+    const temp = (vp.personality && vp.personality.temperament) || 'steady';
+    if (['warm', 'steady', 'bold', 'restless', 'intense', 'dry', 'dark'].includes(temp)) return true;
+    const side = (cs && cs.accuser) || (cs && cs.accused && cs.accused[0]);
+    try { return !!side && this.pairAffinity(voterId, side) <= 0; } catch (e) { return false; }
+  },
+  // can the PLAYER afford the bribe? pack food + pantry stockpile.
+  canAffordBribe(cs, voterId) {
+    const price = this.caseBribePrice(cs, voterId);
+    let pack = 0;
+    try { pack = this.packKcal(this.villagerId) || 0; } catch (e) {}
+    const pantry = (this.state.village && this.state.village.pantryKcal) || 0;
+    return pack + pantry >= price;
+  },
+  // pay for a player's bribe: carried food first, then the pantry stockpile.
+  payBribe(cs, voterId, price) {
+    try {
+      const p = Math.max(0, price || 0);
+      let pack = this.packKcal(this.villagerId) || 0;
+      const fromPack = Math.min(pack, p);
+      if (fromPack > 0) this.packSpend(this.villagerId, fromPack);
+      const rest = p - fromPack;
+      if (rest > 0) this.state.village.pantryKcal = Math.max(0, (this.state.village.pantryKcal || 0) - rest);
+    } catch (e) {}
+  },
+  bribeVoter(caseId, voterId, byId, amount) {
+    const c = this.getCase(caseId); if (!c) return null;
+    if (c.accused.includes(voterId)) return null;
+    const price = this.caseBribePrice(c, voterId);
     if ((amount || 0) < price) { this.say(`That's not enough to buy ${this.whoTag(voterId)}. Insulting, actually.`); return null; }
     c.bribes.push({ voter: voterId, by: byId, amount, day: this.state.scholar.day, trace: true });
     // the trace: sudden friendliness, a gift noticed
@@ -780,6 +829,7 @@
     // the swing: the village hates being bought
     this.say(`At the moot, you lay it out: who paid whom, what changed hands. The fire goes very quiet. Nobody likes being bought — least of all the ones who weren't.`);
     this.moveBelief(c, b.by === c.accused[0] || c.accused.includes(b.by) ? -30 : 25, 'bribery exposed');
+    this.notePlayerEvidence(c, `Exposed: ${this.displayName(b.by)} bought ${this.displayName(b.voter)} (${b.amount} kcal).`);
     // detonates on the briber too
     const t = this.state.village.trust || {};
     t[b.by] = Math.max(0, ((t[b.by]) || 10) - 25);
@@ -902,7 +952,9 @@
     const convicted = guilty >= need;
     c.trial.convicted = convicted;
     c.trial.finalGuilty = guilty;
-    // the verdict, with ceremony — the room, the faces, the pause
+    // the verdict, with ceremony — the room, the faces, the pause.
+    // Post-System the ceremony is broadcast: the LIVE tag.
+    if (this.state.systemArrived) this.sysSay(`🔴 LIVE — THE VERDICT IS IN! The galaxy holds its breath!`);
     const counter = (() => {
       try {
         const pool = (c.trial.present || []).filter(id => !c.accused.includes(id) && id !== this.villagerId);
@@ -1417,16 +1469,23 @@
       if (cs.status === 'open' && !cs.witnessesNamed && cs.playerRole !== 'accused') {
         out.push({ id: 'betrayal:witnesses:' + cs.id, label: '"Who saw us leave?" (name the witnesses)' });
       }
-      // THE PLAYER'S DEFENSE — when you stand accused
+      // THE PLAYER'S DEFENSE — when you stand accused. You don't litigate
+      // with random villagers; the strategy lives in the case file (⚖️).
+      // Per-person you get only what THIS person can actually do for you:
+      // ask what they've heard (once), your side (if it matters), press the
+      // accuser (only them, once known). demand_moot / flee / speak / alibi
+      // are NOT things you say to a specific person — they live in the dossier.
       if (cs.playerRole === 'accused' && (cs.status === 'open' || cs.status === 'dormant') && !cs.trial) {
-        out.push({ id: 'betrayal:defend_speak:' + cs.id, label: '🗣️ Speak in your defense — the truth as you lived it' });
-        if (!cs.alibiDone) out.push({ id: 'betrayal:defend_alibi:' + cs.id, label: '"Who will vouch for me?" (call character witnesses)' });
-        if (!cs.pressedAccuser) out.push({ id: 'betrayal:defend_press:' + cs.id, label: `Press ${this.whoTag(cs.accuser)} — find the crack in their story` });
-        if (!(cs.bribes || []).some(b => !cs.exposedBribes.includes(b.voter))) {
-          out.push({ id: 'betrayal:investigate:' + cs.id, label: 'Follow the food. Who bought whom? (investigate bribery)' });
+        if (!(cs.askedHeard || {})[vid] && vid !== cs.accuser) {
+          out.push({ id: 'betrayal:askheard:' + cs.id, label: `👂 "What have you heard about the case against me?" (ask ${this.whoTag(vid)})` });
         }
-        out.push({ id: 'betrayal:demand_moot:' + cs.id, label: '⚖️ "No more whispering. We settle this NOW." (force the moot)' });
-        out.push({ id: 'betrayal:flee:' + cs.id, label: '🏃 Don\'t wait for the count. Run. (exile by flight)' });
+        const theirTrust = ((this.state.village.trust || {})[vid]) || 10;
+        if (!(cs.toldSide || {})[vid] && (this.caseInvolved(cs, vid) || theirTrust >= 30)) {
+          out.push({ id: 'betrayal:tellside:' + cs.id, label: '"Let me tell you what actually happened." (your side)' });
+        }
+        if (vid === cs.accuser && (cs.knownAccusers || []).includes(vid) && !cs.pressedAccuser) {
+          out.push({ id: 'betrayal:pressaccuser:' + cs.id, label: `🎯 Press ${this.whoTag(cs.accuser)} — find the crack in their story` });
+        }
       }
       if (cs.status === 'open' && !(cs.foundBribes || []).length && cs.playerRole !== 'accused') {
         out.push({ id: 'betrayal:investigate:' + cs.id, label: 'Follow the food. Who bought whom? (investigate bribery)' });
@@ -1447,10 +1506,16 @@
       if (cs.playerBribeOffer && cs.playerBribeOffer.by === vid) {
         out.push({ id: 'betrayal:hearoffer:' + cs.id, label: `"What do you want?" (they seem... eager)` });
       }
-      // player bribes a voter (open case or mid-trial, not while their own vote pends)
+      // player bribes a voter (open case or mid-trial, not while their own vote pends).
+      // GATED: only case-involved people (committed voters, witnesses, the
+      // accuser's circle — never random villagers), only bribable temperaments,
+      // only when the player can afford the price. Most people, most of the
+      // time: no offer.
       if ((cs.status === 'open' || cs.status === 'dormant') && !cs.accused.includes(vid) && vid !== this.villagerId &&
-          (!cs.trial || cs.trial.awaitingPlayerVote === false) && !(cs.bribes || []).some(b => b.by === this.villagerId && b.voter === vid)) {
-        out.push({ id: 'betrayal:bribe:' + cs.id + ':' + vid, label: `Make ${this.whoTag(vid)} an offer. Expensive. Secret. (bribe)` });
+          (!cs.trial || cs.trial.awaitingPlayerVote === false) && !(cs.bribes || []).some(b => b.by === this.villagerId && b.voter === vid) &&
+          this.caseInvolved(cs, vid) && this.caseBribable(cs, vid) && this.canAffordBribe(cs, vid)) {
+        const price = this.caseBribePrice(cs, vid);
+        out.push({ id: 'betrayal:bribe:' + cs.id + ':' + vid, label: `Make ${this.whoTag(vid)} an offer (${price} kcal of food). Expensive. Secret. (bribe)` });
       }
       // player's trial vote
       if (cs.trial && cs.trial.awaitingPlayerVote) {
@@ -1506,16 +1571,18 @@
       return finish('Said. At the moot. Let the fire decide what it means.', '(expose the bribery)');
     }
     if (act === 'moot') {
-      const cs0 = this.getCase(parts[2]);
-      if (cs0 && cs0.playerRole === 'accused') { this.demandMoot(parts[2]); }
-      else { this.callMoot(parts[2]); }
+      this.callMoot(parts[2]);
       return finish('The moot is called. The fire gets built up.', '"We settle this. Tonight."');
     }
-    if (act === 'defend_speak') { this.defendSpeak(parts[2]); return finish('Your defense, on the record — the fire heard all of it.', '"Hear me out."'); }
-    if (act === 'defend_alibi') { this.defendAlibi(parts[2]); return finish('Witnesses named.', '"Who will vouch for me?"'); }
-    if (act === 'defend_press') { this.defendPressAccuser(parts[2]); return finish('Your question hangs in the air. Let the pause do the work.', '"Walk me through YOUR story."'); }
-    if (act === 'demand_moot') { this.demandMoot(parts[2]); return finish('The moot is called. Tonight. No more whispering.', '"We settle this NOW."'); }
-    if (act === 'flee') { this.fleeBeforeVerdict(parts[2]); return finish('Gone.', '(run)'); }
+    if (act === 'askheard') {
+      const r = this.askAboutCase(parts[2], vid);
+      return finish((r && r.line) || 'Nothing new.', '"What have you heard?"');
+    }
+    if (act === 'tellside') {
+      const saidIt = this.tellSide(parts[2], vid);
+      return finish(saidIt ? 'Said. Now it\'s theirs to carry.' : 'Already said.', '"Let me tell you what happened."');
+    }
+    if (act === 'pressaccuser') { this.defendPressAccuser(parts[2]); return finish('Your question hangs in the air. Let the pause do the work.', '"Walk me through YOUR story."'); }
     if (act === 'investigate') {
       const f = this.investigateBribery(parts[2]) || [];
       const cs2 = this.getCase(parts[2]);
@@ -1529,7 +1596,10 @@
     if (act === 'vote_guilty') { this.castPlayerVote(parts[2], true); return finish('Counted.', 'GUILTY.'); }
     if (act === 'vote_acquit') { this.castPlayerVote(parts[2], false); return finish('Counted.', 'NOT GUILTY.'); }
     if (act === 'bribe') {
-      const ok = this.bribeVoter(parts[2], parts[3], this.villagerId, 1600);
+      const cs = this.getCase(parts[2]);
+      const price = cs ? this.caseBribePrice(cs, parts[3]) : 1600;
+      const ok = this.bribeVoter(parts[2], parts[3], this.villagerId, price);
+      if (ok) this.payBribe(cs, parts[3], price);
       return finish(ok ? 'Done. Quiet. Expensive.' : 'It didn\'t take.', '(make an offer)');
     }
     if (act === 'hearoffer') {
@@ -1730,14 +1800,30 @@
       fabricated: !!fabricated, crimeKeys: (crimes || []).map(x => x.key),
       mootIn: 2 + Math.floor(R() * 2),
       defenseSpeeches: 0, alibiDone: false, pressedAccuser: false,
+      // what the player KNOWS (moot redesign): the accusation is public, so
+      // the accuser is known from the start; evidence starts with their story.
+      knownAccusers: [accuser], playerEvidence: [], askedHeard: {},
+      playerKnownWitnesses: [], toldSide: {},
+      witnessIds: [],
     };
+    try { c.witnessIds = (this.witnesses && this.witnesses(6)) || []; } catch (e) {}
     for (const cr of (crimes || [])) cr.caseId = id;
     bs.cases.push(c);
     this.initPlayerCaseBelief(c);
     this.seedAccuserStory(c);
+    c.playerEvidence.push({ day: c.day, text: c.accuserStory || 'The accusation, stated in public.' });
     const aname = this.whoTag(accuser);
-    this.say(`${aname} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. There's going to be a moot. You have ${c.mootIn} days before they call it. Use them.`);
-    try { this.journalNote && this.journalNote('village', 'trial', `Accused of ${charge} by ${this.displayName(accuser)}. Moot coming.`); } catch (e) {}
+    if (this.state.systemArrived) {
+      // post-System: the accusation is CONTENT. sysSay + a case-file sheet offer.
+      this.sysSay(`🔴 LIVE BREAKING NEWS! A MOOT has been CALLED! ${aname.toUpperCase()} points at YOU — ${this.chargeLine(charge).toUpperCase()}! The gamblers are SCRAMBLING! Your CASE FILE is ready — check it before the fire decides your fate!`);
+      this.say(`${aname} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. ${c.mootIn} days until the moot. Use them.`);
+      try { this.state.scholar.caseDossierOffer = c.id; } catch (e) {}
+    } else {
+      // pre-System: diegetic. Tightened say + journal note; the case file
+      // waits in the self bar (⚖️ Case file).
+      this.say(`${aname} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. There's going to be a moot — ${c.mootIn} days. Use them.`);
+    }
+    try { this.journalNote && this.journalNote('village', 'trial', `Accused of ${charge} by ${this.displayName(accuser)}. Moot in ${c.mootIn} days.`); } catch (e) {}
     return c;
   },
   // belief polarity: negative = guilty (of the accused), positive = acquit.
@@ -1777,6 +1863,13 @@
     }
   },
   // ----- player defense tools -----
+  // evidence the PLAYER knows: separate from the village belief ledger.
+  // The dossier shows only this — never the unknown.
+  notePlayerEvidence(c, text) {
+    if (!c || !text) return;
+    c.playerEvidence = c.playerEvidence || [];
+    c.playerEvidence.push({ day: this.state.scholar.day, text });
+  },
   // (a) speak in your defense: social stats + relationships matter
   defendSpeak(caseId) {
     const c = this.getCase(caseId); if (!c || c.playerRole !== 'accused') return null;
@@ -1788,6 +1881,7 @@
     const delta = Math.max(2, Math.round((sp + this.trustInPlayer() * 0.3) * dim));
     this.say(`You stand and speak. No performance — the truth as you lived it, and the names of people who know you. ${delta > 8 ? 'Some heads nod before they catch themselves.' : 'The fire listens. Whether it believes is another matter.'}`);
     this.moveBelief(c, delta, 'the accused spoke in their defense');
+    this.notePlayerEvidence(c, 'You spoke in your defense at the fire.');
     try { this.tickAction(24); } catch (e) {}
     return true;
   },
@@ -1806,6 +1900,7 @@
     const names = friends.map(f => this.whoTag(f)).join(' and ');
     this.say(`${names} ${friends.length > 1 ? 'stand' : 'stands'} with you. "I know this one. Whatever happened, hear them out." It matters who your friends are.`);
     this.moveBelief(c, 8 + friends.length * 5, 'character witnesses vouched');
+    this.notePlayerEvidence(c, `${friends.map(f => this.displayName(f)).join(' and ')} vouched for you.`);
     try { this.tickAction(24); } catch (e) {}
     return true;
   },
@@ -1825,6 +1920,7 @@
         this.say(`You press ${aname} — not angry, precise. "You said ${said}. But it was ${seen} — people saw." The pause before the answer is the answer.`);
         try { this.addDoubt(c.accuser, 'contradiction', `${aname}'s accusation doesn't match what others saw.`); } catch (e) {}
         this.moveBelief(c, 20, 'accuser caught in a lie');
+        this.notePlayerEvidence(c, `Caught ${this.displayName(c.accuser)} in a lie about the ${inc.field}.`);
         const t = this.state.village.trust || {};
         t[c.accuser] = Math.max(0, ((t[c.accuser]) || 10) - 20);
         return true;
@@ -1853,6 +1949,212 @@
     // unified pipeline: the formal track is done — re-sync the justice ladder
     try { if (typeof this.syncJusticeAfterMoot === 'function') this.syncJusticeAfterMoot('fled'); } catch (e) {}
     return true;
+  },
+  // ---------- 13b. MOOT REDESIGN: gating, investigation, dossier ----------
+  // Steve: defense options must be gated by person, situation, knowledge.
+  // You don't litigate with random villagers — strategy lives in the case
+  // file. Per-person you get only what this person can actually do for you.
+  caseWitnesses(cs) {
+    const out = [];
+    try {
+      const plot = (this.betrayalState().plots || []).find(p => p.id === cs.plotId);
+      if (plot && plot.witnesses) out.push(...plot.witnesses);
+    } catch (e) {}
+    if (cs.witnessIds) out.push(...cs.witnessIds);
+    return [...new Set(out)];
+  },
+  // is this person case-involved? A voter with committed views, a witness,
+  // or in the accuser's circle. Random villagers (Nadia) are not.
+  caseInvolved(cs, vid) {
+    if (!vid || this.isPlayer(vid)) return false;
+    const side = (cs && cs.accuser) || (cs && cs.accused && cs.accused[0]);
+    if (side && vid === side) return true;
+    if (this.caseWitnesses(cs).includes(vid)) return true;
+    try { if (side && this.pairAffinity(vid, side) >= 20) return true; } catch (e) {}
+    // the accuser's circle: shares a group (friends, kin, crew) with a side
+    try {
+      const v = this.state.village;
+      for (const gr of (v.groups || [])) {
+        const m = gr.members || [];
+        if (m.includes(vid) && m.includes(side)) return true;
+      }
+    } catch (e) {}
+    const b = (cs.belief || {})[vid] || 0;
+    if (Math.abs(b) >= 40) return true; // a committed voter
+    return false;
+  },
+  // the player's open/dormant accused case (drives the ⚖️ Case file button)
+  playerAccusedCase() {
+    return (this.betrayalState().cases || []).find(c =>
+      c.playerRole === 'accused' && (c.status === 'open' || c.status === 'dormant'));
+  },
+  // ----- (3) INVESTIGATION: ask what they've heard (once per person per case)
+  // Reveals ONE thing the person would actually know, records it on the case,
+  // and silently unlocks the matching targeted option. Never enumerates the
+  // unknown: options appear when knowledge justifies them, silently.
+  askAboutCase(caseId, vid) {
+    const c = this.getCase(caseId); if (!c) return null;
+    c.askedHeard = c.askedHeard || {};
+    if (c.askedHeard[vid]) return null;
+    c.askedHeard[vid] = true;
+    const name = this.whoTag(vid);
+    const reveal = (text, kind) => {
+      this.say(text);
+      return { line: text, reveal: kind };
+    };
+    // 1. the accuser's name — if it's somehow hidden from the player
+    if (c.accuser && !(c.knownAccusers || []).includes(c.accuser) && this.caseInvolved(c, vid)) {
+      c.knownAccusers = [...(c.knownAccusers || []), c.accuser];
+      this.notePlayerEvidence(c, `The accuser is ${this.displayName(c.accuser)} — named by ${this.displayName(vid)}.`);
+      return reveal(`${name} lowers their voice. "It was ${this.whoTag(c.accuser)} who stood up. Everyone saw — you'd have heard it yourself if you'd been listening."`, 'accuser');
+    }
+    // 2. a witness name
+    const newWits = this.caseWitnesses(c).filter(w => !(c.playerKnownWitnesses || []).includes(w));
+    if (newWits.length && (this.caseInvolved(c, vid) || R() < 0.4)) {
+      const w = pick(newWits);
+      c.playerKnownWitnesses = [...(c.playerKnownWitnesses || []), w];
+      this.notePlayerEvidence(c, `${this.displayName(w)} may have seen something (per ${this.displayName(vid)}).`);
+      return reveal(`${name} glances around. "${this.whoTag(w)} was close enough to see. Whether they'll SAY so at the fire is another matter."`, 'witness');
+    }
+    // 3. a rumor of bribery — only if votes are actually being bought
+    if (!c.briberyRumored && (c.bribes || []).length && (this.caseInvolved(c, vid) || R() < 0.35)) {
+      c.briberyRumored = true;
+      this.notePlayerEvidence(c, `Rumor: votes are being bought before the moot (heard from ${this.displayName(vid)}).`);
+      return reveal(`${name} won't quite look at you. "Food's been moving. Quietly. Somebody's buying goodwill before the moot." They don't name names — but now you know to follow the food.`, 'bribery');
+    }
+    // 4. an inconsistency hint — if the story has seams someone might have felt
+    const unfound = (c.inconsistencies || []).filter(i => !i.found);
+    if (!c.contradictionHinted && unfound.length && (this.caseInvolved(c, vid) || R() < 0.3)) {
+      c.contradictionHinted = true;
+      const inc = unfound[0];
+      this.notePlayerEvidence(c, `A seam in the story — the ${inc.field} didn't sit right (${this.displayName(vid)}).`);
+      return reveal(`${name} frowns. "Something about the ${inc.field} didn't sit right. Press ${this.whoTag(c.accuser)} on it — and watch their face."`, 'contradiction');
+    }
+    // 5. nothing useful — never a dead end the UI could enumerate
+    return reveal(pick([
+      `${name} shrugs. "I hear the fire crackle and people talking. That's all I know, and I know it well."`,
+      `"Honestly?" ${name} says. "I try not to listen. Safer that way."`,
+      `${name} shakes their head. "Nobody tells me anything. Maybe ask someone closer to it."`,
+    ]), null);
+  },
+  // ----- tell them your side: per-person, only when it matters -----
+  tellSide(caseId, vid) {
+    const c = this.getCase(caseId); if (!c || c.playerRole !== 'accused') return null;
+    if (c.status !== 'open' && c.status !== 'dormant') return null;
+    c.toldSide = c.toldSide || {};
+    if (c.toldSide[vid]) {
+      this.say(`You've already told ${this.whoTag(vid)} your side. Repeating it would sound like panic.`);
+      return null;
+    }
+    c.toldSide[vid] = true;
+    const t = this.state.village.trust || {};
+    t[vid] = Math.min(100, ((t[vid]) || 10) + 6);
+    c.belief[vid] = clamp(((c.belief[vid]) || 0) + 10, -100, 100);
+    this.say(`You tell ${this.whoTag(vid)} what actually happened — no performance, just the sequence. They listen. Whether it lands is in the pause after.`);
+    this.notePlayerEvidence(c, `Told ${this.displayName(vid)} your side.`);
+    return true;
+  },
+  // ----- (2) THE CASE DOSSIER -----
+  // What the player is defending against. Post-System it's a System overlay
+  // sheet in the unhinged alien voice — the aliens LOVE trials (there's a
+  // spin-off literally called "The Moot"). Pre-System it's diegetic: plain
+  // journal styling, same content, no alien voice.
+  caseDossierHtml(cs) {
+    const c = typeof cs === 'string' ? this.getCase(cs) : cs;
+    if (!c) return '<p>No case file.</p>';
+    const post = !!this.state.systemArrived;
+    const day = this.state.scholar.day;
+    const esc2 = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const rows = [];
+    // the CHARGE
+    rows.push(`<div style="margin-bottom:10px"><div style="opacity:.6;font-size:12px">CHARGE</div><b>${esc2(this.chargeLine(c.charge))}</b></div>`);
+    // the accuser(s) the player KNOWS about — never the unknown
+    const accs = (c.knownAccusers || []).filter(Boolean);
+    rows.push(`<div style="margin-bottom:10px"><div style="opacity:.6;font-size:12px">ACCUSER${accs.length > 1 ? 'S' : ''}</div>${accs.length ? accs.map(a => esc2(this.whoTag(a))).join(', ') : '—'}</div>`);
+    // the EVIDENCE the player knows
+    const ev = c.playerEvidence || [];
+    rows.push(`<div style="margin-bottom:10px"><div style="opacity:.6;font-size:12px">WHAT YOU KNOW</div>${ev.length ? '<ul style="margin:4px 0;padding-left:18px">' + ev.map(e => `<li>${esc2(e.text)}</li>`).join('') + '</ul>' : '—'}</div>`);
+    // inconsistencies FOUND (never unfound ones)
+    const foundInc = (c.inconsistencies || []).filter(i => i.found);
+    if (foundInc.length) {
+      rows.push(`<div style="margin-bottom:10px"><div style="opacity:.6;font-size:12px">CRACKS IN THEIR STORY</div><ul style="margin:4px 0;padding-left:18px">${foundInc.map(i => `<li>${esc2(this.inconsistencyLine(c, i))}</li>`).join('')}</ul></div>`);
+    }
+    // bribery: exposed, and suspected-but-unproven
+    const exposed = c.exposedBribes || [];
+    const suspected = (c.foundBribes || []).filter(b => !exposed.includes(b.voter));
+    if (exposed.length || suspected.length || c.briberyRumored) {
+      let bhtml = '';
+      for (const v of exposed) {
+        const b = (c.bribes || []).find(x => x.voter === v);
+        bhtml += `<li>Exposed: ${esc2(this.whoTag(b ? b.by : '?'))} bought ${esc2(this.whoTag(v))}.</li>`;
+      }
+      for (const b of suspected) bhtml += `<li>Suspected: food moving toward ${esc2(this.whoTag(b.voter))} — unproven.</li>`;
+      if (c.briberyRumored && !exposed.length && !suspected.length) bhtml += '<li>Rumor: votes are being bought. Follow the food.</li>';
+      rows.push(`<div style="margin-bottom:10px"><div style="opacity:.6;font-size:12px">BRIBERY</div><ul style="margin:4px 0;padding-left:18px">${bhtml}</ul></div>`);
+    }
+    // moot standing
+    let standing;
+    if (c.trial) standing = 'The moot is IN SESSION. The count decides now.';
+    else {
+      const left = Math.max(0, (c.mootIn || 2) - (day - (c.day || day)));
+      standing = left > 0 ? `${left} day${left === 1 ? '' : 's'} until the moot is called. Use them.` : 'The moot could be called at any moment.';
+    }
+    rows.push(`<div style="margin-bottom:4px"><div style="opacity:.6;font-size:12px">MOOT</div>${esc2(standing)}</div>`);
+    const head = post
+      ? `<p>📺 <i>"TONIGHT'S EPISODE: YOUR TRIAL! The galaxy is TUNED IN! The gamblers have odds and the odds are DELICIOUS! Know your case, little contestant — the fire does NOT do encores!"</i></p>`
+      : '';
+    return head + rows.join('');
+  },
+  inconsistencyLine(c, inc) {
+    const claims = Object.entries(inc.claims || {}).map(([k, v]) => `${this.whoTag(k)} said "${v}"`).join('; ');
+    return `The ${inc.field}: ${claims}. Somebody's lying.`;
+  },
+  // the dossier's strategic actions: speak, witnesses, press, investigate,
+  // expose, force the moot, flee. Each appears only while it's still live.
+  caseDossierActions(cs) {
+    const c = typeof cs === 'string' ? this.getCase(cs) : cs;
+    const acts = [];
+    if (!c || c.playerRole !== 'accused') return acts;
+    if (c.status !== 'open' && c.status !== 'dormant') return acts;
+    if (c.trial) return acts; // in session — no more moves
+    acts.push({ id: 'speak', label: '🗣️ Speak in your defense', hint: 'Address the village. Diminishing returns.' });
+    if (!c.alibiDone) acts.push({ id: 'alibi', label: '🤝 Call character witnesses', hint: 'Who will vouch for you?' });
+    if (!c.pressedAccuser && (c.knownAccusers || []).includes(c.accuser)) {
+      acts.push({
+        id: 'pressaccuser',
+        label: c.contradictionHinted ? '🎯 Press the accuser about the contradiction' : '🎯 Press the accuser',
+        hint: 'Find the crack in their story.',
+      });
+    }
+    if (c.briberyRumored || (c.foundBribes || []).length) {
+      acts.push({ id: 'investigate', label: '🍖 Follow the food (investigate bribery)', hint: 'Who bought whom?' });
+    }
+    const unexposed = (c.foundBribes || []).find(b => !(c.exposedBribes || []).includes(b.voter));
+    if (unexposed) acts.push({ id: 'expose', label: '🔥 Expose the bribery', hint: 'At the moot. Publicly.' });
+    acts.push({ id: 'demandmoot', label: '⚖️ Force the moot NOW', hint: 'Bold. Dangerous. Tonight.' });
+    acts.push({ id: 'flee', label: '🏃 Flee (exile by flight)', hint: "Don't wait for the count." });
+    return acts;
+  },
+  // dossier action dispatcher (wired by the app sheet buttons)
+  caseDossierDo(caseId, actionId) {
+    const c = this.getCase(caseId); if (!c) return null;
+    if (actionId === 'speak') return this.defendSpeak(caseId);
+    if (actionId === 'alibi') return this.defendAlibi(caseId);
+    if (actionId === 'pressaccuser') return this.defendPressAccuser(caseId);
+    if (actionId === 'investigate') {
+      const f = this.investigateBribery(caseId) || [];
+      c.foundBribes = c.foundBribes || [];
+      for (const b of f) if (!c.foundBribes.some(y => y.voter === b.voter)) c.foundBribes.push(b);
+      return f;
+    }
+    if (actionId === 'expose') {
+      const b = (c.foundBribes || []).find(x => !(c.exposedBribes || []).includes(x.voter));
+      if (b) return this.exposeBribery(caseId, b.voter);
+      return null;
+    }
+    if (actionId === 'demandmoot') return this.demandMoot(caseId);
+    if (actionId === 'flee') return this.fleeBeforeVerdict(caseId);
+    return null;
   },
   // the accuser's clock: they call the moot when they've gathered voices
   playerCaseTick() {

@@ -256,6 +256,23 @@
         || (this.data.background_survivors || []).find(x => x.id === vid) || {};
     },
 
+    // cleanDialogue: defense-in-depth against doubled quotes. Dialogue data
+    // sometimes carries its own quotes and a template wraps it again —
+    // ""x"" reads broken. Collapse accidental doublings at the edges.
+    // Applied at render (both chat paths), so every conversation benefits.
+    cleanDialogue(text) {
+      let t = String(text == null ? '' : text);
+      t = t.replace(/^""+/, '"').replace(/""+$/, '"');
+      return t;
+    },
+    // quoteWrap: wrap a line in exactly one pair of quotes. Flavor and
+    // System text sometimes carry their own quotes; naive '"'+t+'"' doubles
+    // them (the ""PLANTS LIKE YOU!"" bug). Strip, then wrap — once.
+    quoteWrap(text) {
+      const t = this.cleanDialogue(text).replace(/^"+/, '').replace(/"+$/, '');
+      return '"' + t + '"';
+    },
+
     convoGet(vid) {
       const v = this.state.village;
       v.conv = v.conv || {};
@@ -1003,7 +1020,7 @@
         }
       } else if (choiceId === 'invite_party') {
         const r = (this.inviteToParty && this.inviteToParty(vid)) || { ok: false, msg: '...' };
-        done(`"${r.msg || '...'}"`, '"Want to come with me?"');
+        done(r.msg || '...', '"Want to come with me?"');
       } else if (choiceId === 'theorize') {
         // Think TOGETHER. Topic order: the System (if it's here), the monsters,
         // the situation. Each NPC theorizes in their intelligence voice — and

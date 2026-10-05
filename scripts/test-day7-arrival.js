@@ -70,6 +70,15 @@ const sysLines = (beats) => beats.flatMap(b => b.lines).filter(l => l.who === 's
   const buttonBeat = sysLines([beats.find(b => b.id === 'button')]).join(' ');
   ok('foreshadows wave-2 monsters', /calibration fauna/i.test(buttonBeat));
 
+  // 6b. REWRITE DISCIPLINE: tight beats, no dumps.
+  ok('beat count stays <= 6', beats.length <= 6);
+  ok('no beat exceeds 5 lines', beats.every(b => b.lines.length <= 5));
+  ok('gifts beat stages at most eyes + journal (no dial/time-circle dump)',
+    !/time-circle|dial|ticks/i.test(sysLines([gifts]).join(' ')));
+  ok('watched beat teases without betting-market mechanics', !/betting|odds/i.test(watched));
+  ok('button beat lands the signoff in <= 4 lines',
+    beats.find(b => b.id === 'button').lines.length <= 4);
+
   // 7. NO DUMPED UNLOCKS: each mechanical effect applied exactly once.
   ok('systemArrived set', Game.state.systemArrived === true);
   ok('ability gift offered once (3 choices)', (Game.state.scholar.abilityChoices || []).length === 3);

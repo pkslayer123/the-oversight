@@ -444,10 +444,13 @@
           if (/\btwo tours\b/i.test(t)) min = Math.max(min, 20);
           return min;
         };
-        // prefer a backstory variant not yet used this expedition AND old enough to have lived
-        const ubs = this._usedBackstories || new Set();
+        // UNIQUENESS (Steve): no repeated backstories within a single game.
+        // Prefer unused + age-appropriate; then unused (age is a guideline);
+        // only then reuse. The expedition registry lives on the game, not the call.
+        const ubs = this._usedBackstories || (this._usedBackstories = new Set());
         const occKey = occ.id || occ.name || 'survivor';
         let bi = backstoryVariants.findIndex((_, i) => !ubs.has(occKey + ':' + i) && variantMinAge(backstoryVariants[i]) <= age);
+        if (bi < 0) bi = backstoryVariants.findIndex((_, i) => !ubs.has(occKey + ':' + i));
         if (bi < 0) bi = backstoryVariants.findIndex((_, i) => variantMinAge(backstoryVariants[i]) <= age);
         if (bi < 0) bi = Math.floor(Math.random() * backstoryVariants.length);
         ubs.add(occKey + ':' + bi);
@@ -2112,6 +2115,8 @@
             const animal = this.data.animals.find(a => a.id === catchId);
             // FOOD REALITY: trapped game is a carcass too — clean it, don't just eat it.
             this.state.scholar.inventory.push(this.foodCarcass(animal, animal.calories, this.state.scholar.day, 'trapped'));
+            // a body in hand teaches you what it was — same as a kill.
+            try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(catchId); } catch (e) {}
             this.say(`Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife).`);
             trap.uses -= 1;
             if (trap.uses <= 0) {
@@ -3016,6 +3021,12 @@
       return 'overwhelmed';
     },
 
+    // pickRandomVillager: uniform random from a list. No weighting — the
+    // wake-up companion, and any future "random villager" picks, use this.
+    pickRandomVillager(ids) {
+      if (!ids || !ids.length) return null;
+      return ids[Math.floor(Math.random() * ids.length)];
+    },
     getQuest() {
       // the intro: whoever found you wakes you up. A real roster member —
       // one of the 11 NPCs who gets a grid position and sticks around.
@@ -3023,7 +3034,10 @@
       const v = this.state.village;
       const npcIds = (v.roster || []).filter(id => id !== this.villagerId);
       if (!npcIds.length) return null;
-      const giverId = npcIds[Math.floor(Math.random() * npcIds.length)];
+      // UNIFORM RANDOM (Steve): the waker is as random as anyone else. No
+      // weighting by area, origin, or preference — just random. (Perceived
+      // bias comes from roster composition, not selection.)
+      const giverId = this.pickRandomVillager(npcIds);
       const giver = (v.rosterChars || {})[giverId]
         || (this.data.background_survivors || []).find(b => b.id === giverId)
         || { name: 'Someone', formerOccupation: 'survivor', homeRegion: 'somewhere', personality: {} };
@@ -4223,6 +4237,67 @@
       start.visited = true;
     },
 
+    // --- species truth: what grows where ---
+    // assignCellSpecies: every plant/bush cell gets a true species (seeded).
+    // cellPlantSpecies: lazy backfill for tiles generated before this existed.
+    // The game knows; the player learns through the knowledge gates.
+    assignCellSpecies(t, cells, nx, ny) {
+      const bio = this.biome();
+      const table = (bio && bio.forageTable) || {};
+      const pids = Object.keys(table);
+      if (!pids.length) return;
+      const srnd = this.detailRand(this.detailSeed(nx ?? 3, ny ?? 3) + 9182);
+      t.plantSpecies = t.plantSpecies || {};
+      t.bushSpecies = t.bushSpecies || {};
+      const pick = () => {
+        let total = 0;
+        for (const pid of pids) total += table[pid] || 0;
+        let r = srnd() * total;
+        for (const pid of pids) { r -= table[pid] || 0; if (r <= 0) return pid; }
+        return pids[0];
+      };
+      for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
+        const key = cx + ',' + cy;
+        const c = cells[cy] && cells[cy][cx];
+        if (c === 'plant' && !t.plantSpecies[key]) t.plantSpecies[key] = pick();
+        else if (c === 'bush' && !t.bushSpecies[key]) {
+          t.bushSpecies[key] = srnd() < 0.5 ? 'blackberry' : 'muscadine';
+        }
+      }
+    },
+    // cellPlantSpecies: the true species for a forageable cell (game truth).
+    // Trees name their nut (oak/hickory); pine etc. have no nut — work the ground.
+    cellPlantSpecies(t, cx, cy, cell) {
+      const key = cx + ',' + cy;
+      if (cell === 'bush') {
+        t.bushSpecies = t.bushSpecies || {};
+        if (!t.bushSpecies[key]) t.bushSpecies[key] = Math.random() < 0.5 ? 'blackberry' : 'muscadine';
+        return t.bushSpecies[key];
+      }
+      if (cell === 'plant') {
+        t.plantSpecies = t.plantSpecies || {};
+        if (!t.plantSpecies[key]) t.plantSpecies[key] = this.rollWildSpecies(t);
+        return t.plantSpecies[key];
+      }
+      if (cell === 'tree' || cell === 'bigtree') {
+        const mod = t.modifiers && t.modifiers[key];
+        if (mod && mod.species === 'oak') return 'acorn_white_oak';
+        if (mod && mod.species === 'hickory') return 'hickory_nut';
+        return null;
+      }
+      return null;
+    },
+    rollWildSpecies(t) {
+      const bio = this.biome();
+      const table = (bio && bio.forageTable) || {};
+      const pids = Object.keys(table);
+      if (!pids.length) return null;
+      let total = 0;
+      for (const pid of pids) total += table[pid] || 0;
+      let r = Math.random() * total;
+      for (const pid of pids) { r -= table[pid] || 0; if (r <= 0) return pid; }
+      return pids[0];
+    },
     // --- detail grid: the world inside a tile ---
     // 9x9 cells per tile. generated lazily, seeded by position (stable across visits).
     // edges blend toward neighbor types: a grove by a creek has water on the creek side.
@@ -4467,6 +4542,11 @@
         }
       }
       t.detail = cells;
+      // SPECIES TRUTH: the game knows what's growing where. Every plant/bush
+      // cell gets a species from the biome table (seeded — stable across
+      // visits). The PLAYER sees it only through knowledge: grid glyphs and
+      // names are gated on plantKnown. Foraging never reveals — it harvests.
+      this.assignCellSpecies(t, cells, x, y);
       // MODIFIERS: every space has factors. they synthesize on the fly.
       // Water: flow + clarity + source. Running clear spring: best. Stagnant murky runoff: poison.
       // Tree: species + health + ivy. You SEE the modifiers (murky, ivy). You learn the system.
@@ -4959,11 +5039,14 @@
           secret.known = true;
           if (mod) mod.known = true;
           const desc = mod ? `${mod.flow}, ${mod.clarity}, ${mod.source}` : 'water';
+          const wise = this.waterSafetyKnown();
           if (!secret.safe) {
-            this.say(`This water is ${desc}. Wrong. Poison. You mark it. Don\'t drink.`);
+            if (wise) this.say(`This water is ${desc}. Wrong. Poison. You mark it. Don\'t drink.`);
+            else this.say(`Water: ${desc}. You can't tell if it's safe — clear doesn't mean clean. (Someone with water knowledge could tell.)`);
             return true;
           } else {
-            this.say(`Water: ${desc}. Safe. You drink.`);
+            if (wise) this.say(`Water: ${desc}. Safe. You drink.`);
+            else this.say(`Water: ${desc}. Looks clear enough — you drink and hope.`);
           }
         } else if (secret && secret.known && !secret.safe) {
           this.say('Poison water. You know better.');
@@ -5004,9 +5087,16 @@
         const mod = t.modifiers && t.modifiers[key];
         if (mod) mod.known = true;
         if (secret) secret.known = true;
-        // Learning the bush: it gets a species, neighbors chain-reveal, icon updates.
+        // Learning the bush: it gets a species (game truth), neighbors chain-reveal.
+        // The NAME is knowledge-gated: you recognize the patch only if you
+        // know the species. Otherwise it's berries of unknown kind.
         const species = this.revealBush(cx, cy);
-        this.say(`It's a ${species}. You'll recognize the patch now.`);
+        if (this.plantKnown(species)) {
+          const sp = this.data.plants.find(pp => pp.id === species);
+          this.say(`It's a ${sp ? sp.name.toLowerCase() : species}. You'll recognize the patch now.`);
+        } else {
+          this.say(`A berry bush — berries, certainly, but you don't know which kind. (The harvest sorts at camp, with someone who knows.)`);
+        }
         if (secret && secret.thorns) {
           this.state.scholar.kcal -= 20; // thorns scratch
           this.say('Thorns. You get the berries, but they take a little blood. (-20 kcal)');
@@ -5084,7 +5174,10 @@
       };
       // ALIVE: animals are animals. graze when calm, freeze when wary, bolt when scared.
       const adef = (this.data.animals || []).find(x => x.id === a.id) || {};
-      const aname = (adef.name || 'animal').toLowerCase();
+      // DESCRIPTOR GATING: no true names pre-knowledge — the strange
+      // descriptor, same as every other animal string (encounters.js).
+      const aname = (typeof this.encDescribeAnimal === 'function')
+        ? this.encDescribeAnimal(adef) : 'something moving';
       if (dist >= 4) {
         // grazing. it doesn't know you're here. or doesn't care yet.
         a.alerted = false;
@@ -5095,7 +5188,7 @@
         // wary: freeze, assess. you can feel it deciding.
         if (!a.alerted) {
           a.alerted = true;
-          if (Math.random() < 0.5) this.say(`The ${aname} freezes — ears up, deciding about you.`);
+          if (Math.random() < 0.5) this.say(`${this.encCap(aname)} freezes — ears up, deciding about you.`);
         }
         // FOOD REALITY: the wary ones sometimes decide early and bolt.
         // Stalkers (tracker) get closer; the clumsy watch lunch leave.
@@ -5441,6 +5534,16 @@
       return null;
     },
     // drinkWater: drink clean first. Warn if only risky.
+    // WATER KNOWLEDGE (Steve): recognizing clean vs poison is a skill. Flow and
+    // clarity are observable; SAFETY is earned — outdoors background, or learned
+    // the hard way (drank wrong once). The ignorant drink and hope; the game says so.
+    waterSafetyKnown() {
+      const v = (this.data.villagers || []).find(x => x.id === this.villagerId) || {};
+      const occ = String(v.formerOccupation || '').toLowerCase();
+      if (/fisherman|fisher|sailor|plumber|farmer|hunter|guide|scout|forager|herbalist|camper|marine/i.test(occ)) return true;
+      if ((this.state.codex || {}).waterWise) return true;
+      return false;
+    },
     drinkWater() {
       const s = this.state.scholar;
       s.water = s.water || [];
@@ -5456,7 +5559,9 @@
         // 30% chance of sickness
         if (Math.random() < 0.3) {
           s.health = Math.max(0, (s.health || 100) - 15);
-          this.say(`Drank risky water (${b.source}). Stomach cramps. -15 health. Boil it next time.`);
+          this.state.codex = this.state.codex || {};
+          this.state.codex.waterWise = true; // learned the hard way
+          this.say(`Drank risky water (${b.source}). Stomach cramps. -15 health. Boil it next time. (You won't make that mistake again — you can read water now.)`);
         } else {
           this.say(`Drank risky water (${b.source}). Got lucky this time.`);
         }
@@ -5806,7 +5911,10 @@
       // FOOD REALITY: weapon range is real (bow 5, sling 4, spear 2, melee 1).
       // Hunting is stalking — the animal still gets its reaction (see preyReaction).
       const range = this.equippedWeapon().range || 1;
-      if (dist > range) { this.say(`Too far. Get closer${range > 1 ? ` (your ${this.equippedWeapon().name} reaches ${range})` : ''}.`); return null; }
+      // (weapon-name hygiene: the unarmed fallback is "your hands" — strip the
+      // leading "your " so "your ..." compositions never double it.)
+      const _wn = String((this.equippedWeapon() || {}).name || 'hands').replace(/^your\s+/i, '');
+      if (dist > range) { this.say(`Too far. Get closer${range > 1 ? ` (your ${_wn} reaches ${range})` : ''}.`); return null; }
       const animal = this.data.animals.find(x => x.id === a.id);
       // success: easy 70%, medium 40%, hard 15%. Costs 100 kcal (chasing is work).
       // hunter background: +20%.
@@ -8494,8 +8602,7 @@
           lines: [
             { who: 'sys', text: 'We watched EVERYTHING! Every berry picked! Every fire lit! That was your SIGNATURE! You signed up by DOING THINGS! Consent via competence! Our lawyers LOVE it!' },
             { who: 'sys', text: 'Some of you just... sat? All week? The audience got BORED. So we removed them. Poor sportsmanship! No hard feelings! (There were hard feelings. Briefly.)' },
-            { who: 'sys', text: 'But YOU have FANS now! And your little village — twelve humans, all playing their own tiny games! The audience has FAVORITES!' },
-            { who: 'sys', text: 'They\'re not betting on your survival — oh no, anyone can survive — they\'re betting on your UNDERSTANDING! Every little ah-ha moment, the odds shift! The market LOVES a learner!' },
+            { who: 'sys', text: 'But YOU have FANS now! Twelve humans, each playing their own tiny games — and the audience has FAVORITES! (No, we won\'t say if it\'s you. Okay, it\'s you. Don\'t tell the others.)' },
           ],
         },
         {
@@ -8503,8 +8610,8 @@
           lines: [
             { who: 'sys', text: 'OH! The audience keeps asking! Why do the small humans keep putting organic matter in their FACE-HOLES? We ran the numbers! ANY old matter works! Rocks! Dirt! Regolith! Cold fusion! FREE energy! So why the... [chewing noises]?' },
             { who: 'sys', text: 'We even BUILT you a solution! 🎁 A tiny fusion pellet! Pop it in, never chew again! ...You BURIED it. WHY did you bury the pellet?! It was a GIFT!' },
-            { who: 'sys', text: 'Fine! Keep the face-hole ritual! We don\'t understand it, we don\'t NEED to understand it — the audience thinks it\'s HYSTERICAL.' },
-            { who: 'sys', text: 'Hmm — one odd reading. Your energy output SPIKES sometimes. Higher than our models say your little organic snacks should allow. ...Probably a rounding error! Filed! Moving on! 🎉' },
+            { who: 'sys', text: 'Fine! Keep the face-hole ritual! We don\'t understand it, we don\'t NEED to — the audience thinks it\'s HYSTERICAL.' },
+            { who: 'sys', text: 'Hmm — one odd reading. Sometimes your energy output SPIKES. Higher than your little organic snacks should allow. ...Probably a rounding error! Filed! Moving on! 🎉' },
           ],
         },
         {
@@ -8514,7 +8621,6 @@
             { who: 'narr', text: 'Something clicks behind your vision. Names. Floating over heads. Little bars.' },
             { who: 'sys', text: 'LOOK! You can SEE their HEALTH now! Isn\'t that NEAT?! Green means GO! Red means... oh, you know what red means! Very intuitive!' },
             { who: 'sys', text: 'And your little paper journal! ADORABLE! We made it BETTER! It talks now! It remembers EVERYTHING! Even the smudged ones! ESPECIALLY the smudged ones!' },
-            { who: 'sys', text: 'OH! And your hand-drawn time-circle! UPGRADED! Ticks! Numbers! You\'re welcome! (We kept the smudges. They\'re charming.)' },
             { who: 'narr', text: 'It feels invasive. The names you earned by talking, by listening — those felt earned. These just... appeared.' },
           ],
         },
@@ -8523,7 +8629,6 @@
           lines: [
             { who: 'sys', text: 'ONE more thing! The animals! The charging ones, the humming ones, the glowy ones? Those were CALIBRATION fauna! First drafts! The audience has NOTES!' },
             { who: 'sys', text: 'So we made BETTER ones! Smarter! Scarier! One of them does PERFORMANCE REVIEWS! You\'re welcome!' },
-            { who: 'sys', text: 'Don\'t worry, the old ones are still out there! The ecosystem is just... richer! More DIVERSE! More DANGEROUS!' },
             { who: 'narr', text: 'Somewhere in the treeline, something new is crying in a voice you almost recognize.' },
             { who: 'sys', text: 'Survive! Be interesting! We\'ll be watching! ALWAYS watching! 🎉' },
           ],
@@ -9216,50 +9321,41 @@
     canCarry(kg) { return this.packWeight() + kg <= this.packCapacity(); },
 
     // --- actions: each one consumes the day-part and advances time ---
+    // bumpPlantFamiliarity: handling a plant builds RECOGNITION, never naming.
+    // Returns {encounters, threshold, familiar}. Identification happens at the
+    // camp ritual (sortBag), by teaching, testing, or books — never in the field.
+    // (This replaces the old field-identify: foraging yields unknowns, period.)
+    bumpPlantFamiliarity(pid, plant) {
+      const villager = this.data.villagers.find(v => v.id === this.villagerId);
+      const homeRegion = (villager && villager.homeRegion || '').toLowerCase();
+      const originTags = ((villager && villager.originTags) || this.parseOrigin(homeRegion).tags).map(t => String(t).toLowerCase());
+      const plantRegions = (plant.regions || []).map(x => String(x).toLowerCase());
+      const tagLocal = plantRegions.some(pr => originTags.includes(pr));
+      const legacyLocal = plantRegions.some(pr => homeRegion.includes(pr) || pr.includes(homeRegion.split(' ')[0]));
+      const isLocal = tagLocal || legacyLocal;
+      const occupation = (villager && villager.formerOccupation || '').toLowerCase();
+      let threshold = Math.max(1, Math.round(this.modTarget('forage.learn_threshold', 3)));
+      if (occupation.includes('hunter') || occupation.includes('cook') || occupation.includes('chef')) threshold = 2;
+      if (occupation.includes('nurse') && plant.medicinal) threshold = 2;
+      if (occupation.includes('bus driver') || occupation.includes('accountant') || occupation.includes('dropout')) threshold = 4;
+      this.state.codex.encounters = this.state.codex.encounters || {};
+      const enc = this.state.codex.encounters[pid] || 0;
+      const newEnc = enc === 0 && isLocal ? 1 : enc + 1;
+      this.state.codex.encounters[pid] = newEnc;
+      this.state.codex.learnThreshold = this.state.codex.learnThreshold || {};
+      if (!this.state.codex.learnThreshold[pid]) this.state.codex.learnThreshold[pid] = threshold;
+      return { encounters: newEnc, threshold, familiar: newEnc >= threshold };
+    },
     doAction(kind, opts) {
       if (this.over) return null;
       const scholar = this.state.scholar;
       let msg = '';
       if (kind === 'forage') {
         const t = this.playerTile();
-        // PHYSICAL: you must be on (or next to) a plant cell to forage it.
-        // walk to the 🌱, then take it. the world is not a slot machine.
+        // PHYSICAL: you work the patch around you (area sweep below). Walk to
+        // the green, then take it. The world is not a slot machine.
         const mx = scholar.mx ?? 4, my = scholar.my ?? 4;
         const detail = this.genDetail(this.map.px, this.map.py);
-        let plantCell = null;
-        // check your cell and adjacent for anything forageable: plant, bush, tree, bigtree.
-        // trees feed you (nuts). bushes feed you (berries). you don't walk through them, you take from them.
-        const FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
-        // TARGETED: when you tapped a specific cell (via cellInteract), you
-        // forage THAT cell — not whatever the scan finds first. Three presses
-        // on one bush deplete one bush, visibly. No identity-switching.
-        if (opts && opts.cx !== undefined && opts.cy !== undefined) {
-          const tc = detail[opts.cy] && detail[opts.cy][opts.cx];
-          if (FORAGEABLE[tc] && Math.max(Math.abs(opts.cx - mx), Math.abs(opts.cy - my)) <= 1) {
-            plantCell = { x: opts.cx, y: opts.cy, cell: tc };
-          }
-        }
-        if (!plantCell) {
-          for (let dy = -1; dy <= 1 && !plantCell; dy++) {
-            for (let dx = -1; dx <= 1 && !plantCell; dx++) {
-              const cx = mx + dx, cy = my + dy;
-              if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
-              const c = detail[cy] && detail[cy][cx];
-              // SCORCHED EARTH: the beam got here first. Skip it in the scan.
-              if (FORAGEABLE[c] && !this.cellScorched(cx, cy)) plantCell = { x: cx, y: cy, cell: c };
-            }
-          }
-        }
-        if (!plantCell && t.type !== 'ruin') {
-          this.say('Nothing edible within reach. Walk to the green first.');
-          return null;
-        }
-        // SCORCHED EARTH: a tapped cell the beam crossed gives nothing.
-        // It recovers in a few days.
-        if (plantCell && this.cellScorched(plantCell.x, plantCell.y)) {
-          this.say('Charred ground — the beam got here first. Nothing will grow here for a few days.');
-          return null;
-        }
         // ruins: scavenge finite loot, not plants
         // BOOKS: 10% chance in ruins. Treasure, not routine.
         if (t.type === 'ruin') {
@@ -9317,178 +9413,157 @@
           return this.tickAction(64) || this.status();
         }
         if (!S.forage.canForage(t)) { this.say('Nothing left to take here today.'); return null; }
-        // TARGETED HARVEST: a bush you've identified gives its own fruit.
-        // You tapped a blackberry bush — you get blackberries.
-        let forcePlantId = null;
-        if (plantCell && plantCell.cell === 'bush' && t.bushSpecies && t.bushSpecies[plantCell.x + ',' + plantCell.y]) {
-          forcePlantId = t.bushSpecies[plantCell.x + ',' + plantCell.y];
-        }
-        // TREES: an oak gives acorns, a hickory gives hickory nuts. The tree
-        // told you nuts — you get nuts, not whatever the biome felt like.
-        // (Pine has no nut plant in the content pool; it forages the biome roll.)
-        if (plantCell && (plantCell.cell === 'tree' || plantCell.cell === 'bigtree') && t.modifiers) {
-          const tmod = t.modifiers[plantCell.x + ',' + plantCell.y];
-          if (tmod && tmod.species === 'oak') forcePlantId = 'acorn_white_oak';
-          else if (tmod && tmod.species === 'hickory') forcePlantId = 'hickory_nut';
-        }
+        // AREA SWEEP (Steve): forage is an area action, not a tile action. One
+        // press works the patch around you — your cell + the 8 around it. The
+        // yield is whatever's actually there; the game knows every species,
+        // you may not. KNOWLEDGE IS TACTICAL: stand near plants you've
+        // identified as good and the sweep is deliberate. Forage blind and you
+        // get whatever's green — maybe nothing worth eating.
         const bounty = this.bountyFor(this.map.px, this.map.py);
-        const r = S.forage.forage(t, this.biome(), this.data.plants, scholar, this.state.codex, this.data.abilities, bounty, { forcePlantId });
-        const kg = r.units * 0.1;
-        if (!this.canCarry(kg)) { this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
-        t.stock -= 1;
-        // deplete the specific cell you harvested. it regrows in 3 days.
-        // plants become dirt (visible). trees/bushes stay standing but are
-        // picked clean — tracked in detailRegrow so the grid can show it
-        // (dimmed/wilted) until it recovers.
-        if (plantCell) {
-          const origCell = plantCell.cell;
-          detail[plantCell.y][plantCell.x] = (origCell === 'plant') ? 'dirt' : origCell;
-          t.detailRegrow = t.detailRegrow || {};
-          // store what it was, so it regrows correctly
-          t.detailRegrow[plantCell.x + ',' + plantCell.y] = { day: scholar.day + 3, was: origCell };
+        const thumbLvl = this.abilityLevel('green_thumb');
+        const thumbMult = thumbLvl >= 2 ? 2.0 : thumbLvl >= 1 ? 1.5 : 1.0;
+        const FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
+        const harvested = [];
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const cx = mx + dx, cy = my + dy;
+          if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+          const c = detail[cy] && detail[cy][cx];
+          if (!FORAGEABLE[c] || this.cellScorched(cx, cy)) continue;
+          const dk = cx + ',' + cy;
+          if (t.detailRegrow && t.detailRegrow[dk]) continue; // picked clean, regrowing
+          const pid = this.cellPlantSpecies(t, cx, cy, c);
+          if (!pid) continue;
+          const plant = this.data.plants.find(pp => pp.id === pid);
+          if (!plant) continue;
+          harvested.push({ x: cx, y: cy, cell: c, plantId: pid, plant });
         }
-        // LEARNING: encounters build familiarity. who you are matters.
-        // regional: plant from home? start at 1. occupation: hunter/cook learns food in 2, others in 3-4.
-        const plant = this.data.plants.find(p => p.id === r.plantId);
-        const villager = this.data.villagers.find(v => v.id === this.villagerId);
-        const homeRegion = (villager && villager.homeRegion || '').toLowerCase();
-        // origin tags (parsed from your typed origin) vs plant region tags.
-        // Arizona -> Georgia creek: almost nothing is local. The game feels it.
-        const originTags = ((villager && villager.originTags) || this.parseOrigin(homeRegion).tags).map(t => String(t).toLowerCase());
-        const plantRegions = (plant.regions || []).map(x => String(x).toLowerCase());
-        const tagLocal = plantRegions.some(pr => originTags.includes(pr));
-        const legacyLocal = plantRegions.some(pr => homeRegion.includes(pr) || pr.includes(homeRegion.split(' ')[0]));
-        const isLocal = tagLocal || legacyLocal;
-        const occupation = (villager && villager.formerOccupation || '').toLowerCase();
-        // learning threshold: how many encounters to learn the name.
-        // forage_identification: you've done this before. Learn faster.
-        let threshold = Math.max(1, Math.round(this.modTarget('forage.learn_threshold', 3)));
-        if (occupation.includes('hunter') || occupation.includes('cook') || occupation.includes('chef')) threshold = 2;
-        if (occupation.includes('nurse') && plant.medicinal) threshold = 2;
-        if (occupation.includes('bus driver') || occupation.includes('accountant') || occupation.includes('dropout')) threshold = 4;
-        this.state.codex.encounters = this.state.codex.encounters || {};
-        const enc = this.state.codex.encounters[r.plantId] || 0;
-        // regional familiarity: start at 1 if it's from home
-        const newEnc = enc === 0 && isLocal ? 1 : enc + 1;
-        this.state.codex.encounters[r.plantId] = newEnc;
-        const learned = newEnc >= threshold;
-        // remember the threshold so the Codex UI can show encounter progress
-        this.state.codex.learnThreshold = this.state.codex.learnThreshold || {};
-        if (!this.state.codex.learnThreshold[r.plantId]) this.state.codex.learnThreshold[r.plantId] = threshold;
-        if (learned && !this.plantKnown(r.plantId)) {
-          // LEVEL 1: Named. One path — the identification event.
-          this.identifyPlant(r.plantId, 'observation');
-        } else if (learned && this.state.codex.plants[r.plantId]) {
-          // LEVEL 2: Parts. Harvest 5 more times, you notice the parts.
-          // Later you realize: roots AND leaves AND petals. Yield increases.
-          const entry = this.state.codex.plants[r.plantId];
-          entry.harvests = (entry.harvests || 0) + 1;
-          if (entry.level === 1 && entry.harvests >= 5) {
-            entry.level = 2;
-            this.say(`\u2605 Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['2']} (Yield +50%). Use unlocked: ${this.plantUsesText(r.plantId) || 'not yet'}.`);
+        if (!harvested.length) {
+          this.say('Nothing within reach. Walk to the green first.');
+          return null;
+        }
+        const estKg = Math.round(harvested.length * 4 * 0.1 * 10) / 10;
+        if (!this.canCarry(estKg)) { this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
+        t.stock = Math.max(0, (t.stock || 0) - harvested.length);
+        // harvest each cell: deplete it (3-day regrow), accrue familiarity,
+        // aggregate by species. Familiarity NEVER identifies — the camp ritual
+        // names; handling only teaches your hands.
+        const bySpecies = {};
+        const famNotes = [];
+        for (const h of harvested) {
+          detail[h.y][h.x] = (h.cell === 'plant') ? 'dirt' : h.cell;
+          t.detailRegrow = t.detailRegrow || {};
+          t.detailRegrow[h.x + ',' + h.y] = { day: scholar.day + 3, was: h.cell };
+          const fam = this.bumpPlantFamiliarity(h.plantId, h.plant);
+          const entry = (this.state.codex.plants || {})[h.plantId];
+          const levelMult = !entry ? 1.0 : entry.level >= 4 ? 2.0 : entry.level >= 2 ? 1.5 : 1.0;
+          let units = 3 + Math.floor(Math.random() * 3); // 3-5 per cell: a sweep, not a strip
+          units = Math.ceil(units * levelMult * thumbMult);
+          // deeper knowledge accrues only for identified plants — handling
+          // unknowns teaches care, not parts.
+          if (entry && fam.familiar) {
+            entry.harvests = (entry.harvests || 0) + 1;
+            if (entry.level === 1 && entry.harvests >= 5) {
+              entry.level = 2;
+              this.say(`\u2605 Deeper knowledge: ${h.plant.name}. ${h.plant.knowledgeLevels['2']} (Yield +50%). Use unlocked: ${this.plantUsesText(h.plantId) || 'not yet'}.`);
+            }
+            if (entry.level === 3 && entry.harvests >= 15) {
+              entry.level = 4;
+              this.say(`\u2605\u2605 MASTERY: ${h.plant.name}. ${h.plant.knowledgeLevels['4']} (Yield 2x)`);
+              this.say('SYSTEM: You know this plant the way it knows itself. Concerning. Impressive.');
+            }
           }
-          // LEVEL 4: Mastery. Long use teaches timing — roots in fall, leaves in spring.
-          if (entry.level === 3 && entry.harvests >= 15) {
-            entry.level = 4;
-            this.say(`\u2605\u2605 MASTERY: ${plant.name}. ${plant.knowledgeLevels['4']} (Yield 2x)`);
-            this.say('SYSTEM: You know this plant the way it knows itself. Concerning. Impressive.');
+          const e = bySpecies[h.plantId] || (bySpecies[h.plantId] = { plant: h.plant, units: 0, known: this.plantKnown(h.plantId) });
+          e.units += units;
+          if (!e.known && !famNotes.includes(h.plantId)) {
+            if (fam.encounters === 1) famNotes.push(h.plantId);
+            else if (fam.encounters === fam.threshold - 1) famNotes.push('~' + h.plantId);
           }
-        } else if (!learned) {
-          // LUMPED UNKNOWNS: the field message never leaks species. One line,
-          // one lump — "unfamiliar shoots," into the bag. The game tracks the
-          // truth underneath; the tile's "here" list keeps place-memory.
-          // (1/3)-style per-species counters would leak; instead a familiarity
-          // hint when you're close to placing it.
-          const formName = (this.lumpFormName ? this.lumpFormName(plant) : null) || 'unfamiliar shoots';
-          if (newEnc === 1) {
-            this.say(`You gather ${formName}. Not sure what's what yet — into the bag. (Unknowns lump together; sort them at camp.)`);
+          t.speciesSeen = t.speciesSeen || {};
+          const ps = t.speciesSeen[h.plantId] || { n: 0 };
+          t.speciesSeen[h.plantId] = { day: scholar.day, n: ps.n + 1 };
+        }
+        for (const fn of famNotes) {
+          const pid = fn.startsWith('~') ? fn.slice(1) : fn;
+          const pl = this.data.plants.find(pp => pp.id === pid);
+          const formName = (this.lumpFormName ? this.lumpFormName(pl) : null) || 'unfamiliar shoots';
+          if (fn.startsWith('~')) this.say(`Some of these ${formName} are starting to look familiar — sort them at camp in good light and the name might come to you.`);
+          else this.say(`Unfamiliar ${formName} — into the bag. (Unknowns lump together; sort them at camp.)`);
+        }
+        // pack it: known species → named haul (you knew what you were taking).
+        // Unknown → the lump. The bag is honest about what you don't know.
+        const packedBits = [];
+        let totalKcalKnown = 0;
+        for (const pid of Object.keys(bySpecies)) {
+          const e = bySpecies[pid];
+          const kcal = e.units * e.plant.caloriesPerUnit;
+          if (e.known) {
+            const item = this.foodForageItem(e.plant, true, e.units, kcal, scholar.day);
+            scholar.inventory.push(item);
+            packedBits.push(`${e.units}\u00d7 ${e.plant.name}`);
+            totalKcalKnown += kcal;
           } else {
-            const close = newEnc >= threshold - 1;
-            this.say(`More ${formName} for the bag.${close ? ' Some of these are starting to look familiar — you\'re close to placing them.' : ''}`);
+            this.addUnknownToLump(e.plant, e.units, scholar.day);
+            packedBits.push(`${e.units}\u00d7 ${this.lumpFormName(e.plant)}`);
+          }
+        }
+        // RELIC BOND: tools cut, clothing kept you moving.
+        this.noteToolUse(); this.noteTrailUse();
+        // MATERIALS: vine from bush, stick from tree — you don't just get food.
+        for (const h of harvested) {
+          if (h.cell === 'bush' && Math.random() < 0.3) {
+            scholar.inventory.push({ material: 'vine', units: 1, name: 'Vine', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
+            this.say('You also take some vine (crafting material).');
+          }
+          if ((h.cell === 'tree' || h.cell === 'bigtree') && Math.random() < 0.4) {
+            scholar.inventory.push({ material: 'stick', units: 1, name: 'Stick', kcalEach: 0, spoilDay: 9999, kg: 0.2 });
+            this.say('A sturdy stick (crafting material).');
           }
         }
         // squirrel_friend: sometimes they leave you nuts. Random gifts, real food.
         const giftChance = this.modTarget('forage.gift_chance', 0);
         if (giftChance > 0 && Math.random() < giftChance) {
-          // IDENTITY: a squirrel leaves real nuts — a true species, not a blob.
           scholar.inventory.push({ plantId: 'hickory_nut', units: 2, kcalEach: 100, spoilDay: scholar.day + 5, name: 'Squirrel gift (hickory nuts)', unit: 'handful', prep: 'A squirrel left these. A tip? A bribe? Nuts.', kg: 0.2 });
           this.say('A squirrel drops nuts at your feet and vanishes. A gift. (squirrel_friend: +200 kcal)');
         }
-        if (r.firstFind) {
-          // the journal becomes a CODEX at four entries — the System notices, names it.
-          if (Object.keys(this.state.codex.plants).length === 4)
-            this.say('SYSTEM: Journal designated CODEX. Four entries. What you write, the village keeps.');
-        }
-        // discovery labels the place: the map remembers your BEST find here, not just the first.
-        // the land's "why" comes after you've found something, not before.
-        const prevBest = t.knownPlant ? this.data.plants.find(p => p.id === t.knownPlant) : null;
-        if (!t.knownPlant || (r.plant.caloriesPerUnit > (prevBest ? prevBest.caloriesPerUnit : 0))) {
-          const isNew = !t.knownPlant;
-          t.knownPlant = r.plantId; t.bountyKnown = true;
-          if (isNew && bounty && bounty.why) this.say(`Journal: ${bounty.why}`);
-          else if (!isNew) this.say(`Journal updated: ${this.plantDisplayName(r.plantId)} grows here too — better than ${this.plantDisplayName(prevBest.id).toLowerCase()}.`);
-        }
-        // SPATIAL MEMORY: this tile remembers every species taken from it.
-        // Return trips surface recognition with your CURRENT knowledge.
-        t.speciesSeen = t.speciesSeen || {};
-        const prevSeen = t.speciesSeen[r.plantId] || null;
-        t.speciesSeen[r.plantId] = { day: scholar.day, n: (prevSeen ? prevSeen.n : 0) + 1 };
-        // KNOWLEDGE = YIELD. Level 2 (parts) gives 50% more. You know what to take.
-        const entry = this.state.codex.plants[r.plantId];
-        const levelMult = !entry ? 1.0 : entry.level >= 4 ? 2.0 : entry.level >= 2 ? 1.5 : 1.0;
-        // green_thumb: the System's gift. L1 +50%, L2 +100%.
-        const thumbLvl = this.abilityLevel('green_thumb');
-        const thumbMult = thumbLvl >= 2 ? 2.0 : thumbLvl >= 1 ? 1.5 : 1.0;
-        const finalUnits = Math.ceil(r.units * levelMult * thumbMult);
-        const isKnown = this.plantKnown(r.plantId);
-        const finalKcal = finalUnits * r.plant.caloriesPerUnit;
-        // FOOD REALITY: knowledge-gated recognition. Unknown plants aren't
-        // food until identified; nuts need shelling. foodForageItem owns it.
-        // LUMPED UNKNOWNS: unknowns merge into one stack per form — the game
-        // tracks true composition underneath; the player sees only the lump.
-        let invItem = null;
-        if (!isKnown) {
-          this.addUnknownToLump(r.plant, finalUnits, scholar.day);
-        } else {
-          invItem = this.foodForageItem(r.plant, isKnown, finalUnits, finalKcal, scholar.day);
-          scholar.inventory.push(invItem);
-        }
-        // RELIC BOND: tools cut, clothing kept you moving.
-        this.noteToolUse(); this.noteTrailUse();
-        // MATERIALS: byproducts for crafting. vine from bush, stick from tree, stone from rubble.
-        // you don't just get food — you get supplies.
-        if (plantCell && plantCell.cell === 'bush' && Math.random() < 0.3) {
-          scholar.inventory.push({ material: 'vine', units: 1, name: 'Vine', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
-          this.say('You also take some vine (crafting material).');
-        }
-        if (plantCell && (plantCell.cell === 'tree' || plantCell.cell === 'bigtree') && Math.random() < 0.4) {
-          scholar.inventory.push({ material: 'stick', units: 1, name: 'Stick', kcalEach: 0, spoilDay: 9999, kg: 0.2 });
-          this.say('A sturdy stick (crafting material).');
-        }
-        // pattern_recognition: the rare find goes in the pack.
-        // IDENTITY: rare_herb is a true species (Ghost Pipe) — honest naming.
-        if (r.rareFind) {
-          const rp = this.data.plants.find(p => p.id === r.rareFind.plantId);
+        // pattern_recognition: the sharp-eyed find the odd one.
+        const rareChance = S.modifiers.resolve(0, 'forage.rare_find_chance', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
+        if (rareChance > 0 && Math.random() < rareChance) {
+          const rp = this.data.plants.find(pp => pp.id === 'rare_herb');
           if (rp && !this.plantKnown(rp.id)) {
-            // LUMPED UNKNOWNS: even the rare find lumps until identified.
             this.addUnknownToLump(rp, 1, scholar.day);
             this.say('Something unusual in the undergrowth — carefully into the bag. You\'ll know it when someone names it.');
-          } else {
-            scholar.inventory.push({ plantId: r.rareFind.plantId, units: 1, kcalEach: r.rareFind.kcal, spoilDay: scholar.day + 4, name: rp ? (this.plantKnown(rp.id) ? rp.name : (rp.description || 'unfamiliar plant')) : 'Rare herb patch', unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
+          } else if (rp) {
+            scholar.inventory.push({ plantId: 'rare_herb', units: 1, kcalEach: 300, spoilDay: scholar.day + 4, name: this.plantKnown('rare_herb') ? rp.name : (rp.description || 'unfamiliar plant'), unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
           }
         }
         scholar.kcal -= S.calories.ACTION_COSTS.forage;
-        // FOOD REALITY: unknown hauls aren't food yet — say so honestly.
-        // Known nuts show gross kcal (shelling comes later, net < gross).
-        const gateNote = !isKnown ? ` (not food until identified)` : (invItem.foodState === 'in_shell' ? ` (needs shelling — net < gross)` : '');
-        const kcalNote = !isKnown ? 'unknown value' : finalKcal + ' kcal';
-        // LUMPED UNKNOWNS: the packed message never names the species.
-        const packedName = !isKnown ? this.lumpFormName(r.plant) : this.plantDisplayName(r.plantId);
-        msg = `Packed ${finalUnits}× ${packedName} (${kcalNote})${gateNote}.`;
-        // RECOGNITION: gathered here before? Say so, with current knowledge.
-        if (prevSeen && prevSeen.n >= 1) msg += ' ' + this.speciesRecognition(r.plantId);
-        if (plantCell) msg += ` The ${plantCell.cell === 'plant' ? 'patch' : plantCell.cell} is picked clean — it'll recover in a few days.`;
-        this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plant: r.plantId, units: finalUnits, kcal: finalKcal, cost: S.calories.ACTION_COSTS.forage, firstFind: !!r.firstFind });
+        // THE MESSAGE: honest. Named hauls for what you knew; lumps for what
+        // you didn't. Blind sweeps say so; deliberate ones feel it.
+        const knownBits = [], unknownBits = [];
+        for (const pid of Object.keys(bySpecies)) {
+          const e = bySpecies[pid];
+          (e.known ? knownBits : unknownBits).push(`${e.units}\u00d7 ${e.known ? e.plant.name : this.lumpFormName(e.plant)}`);
+        }
+        if (knownBits.length && !unknownBits.length) {
+          msg = `You work the patch with practiced hands: ${knownBits.join(', ')} (${totalKcalKnown} kcal). Picked clean — it'll recover in a few days.`;
+        } else if (unknownBits.length && !knownBits.length) {
+          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.) Picked clean — it'll recover in a few days.`;
+        } else {
+          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet. Picked clean — it'll recover in a few days.`;
+        }
+        this.say(msg);
+        // discovery labels the place: the map remembers the BEST find here.
+        for (const pid of Object.keys(bySpecies)) {
+          const plant = bySpecies[pid].plant;
+          const prevBest = t.knownPlant ? this.data.plants.find(pp => pp.id === t.knownPlant) : null;
+          if (!t.knownPlant || (plant.caloriesPerUnit > (prevBest ? prevBest.caloriesPerUnit : 0))) {
+            const isNew = !t.knownPlant;
+            t.knownPlant = pid; t.bountyKnown = true;
+            if (isNew && bounty && bounty.why) this.say(`Journal: ${bounty.why}`);
+            else if (!isNew) this.say(`Journal updated: ${this.plantDisplayName(pid)} grows here too — better than ${this.plantDisplayName(prevBest.id).toLowerCase()}.`);
+          }
+        }
+        this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plants: Object.keys(bySpecies), cells: harvested.length, kcal: totalKcalKnown, cost: S.calories.ACTION_COSTS.forage });
         if (scholar.week1) scholar.week1.forage++;
         this.gainAbilityXP('green_thumb', 1);
         // SYNERGY passives: photosynthesis works in daylight; third_eye/pattern see patterns.

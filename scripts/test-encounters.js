@@ -300,6 +300,62 @@ function putAnimal(s, id, mx, my) {
     ok('registration checklist', Array.isArray(Game.encChecklist()) && Game.encChecklist().length >= 6);
   }
 
+  {
+    // NAME LEAK AUDIT (Steve): no true animal name in any player-facing
+    // string pre-knowledge — including the turtle path from the screenshot.
+    const s = freshGame();
+    Game.state.codex.animalEncounters = {};
+    for (const aid of ['snapping_turtle', 'white_tailed_deer', 'wild_turkey', 'gray_fox']) {
+      const adef = (Game.data.animals || []).find(a => a.id === aid) || {};
+      putAnimal(s, aid, 5, 4);
+      // perceive hint
+      Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
+      const hints = Game.perceptionHints();
+      const leakH = hints.some(h => new RegExp(adef.name, 'i').test(h));
+      ok(aid + ' perceive hint gated', !leakH, hints.join(' | ').slice(0, 80));
+      // stalk feedback
+      Game.feedbackMark(); Game.stalkAnimal();
+      const fb = Game.feedbackLines().join(' ');
+      ok(aid + ' stalk feedback gated', !new RegExp(adef.name, 'i').test(fb), fb.slice(0, 80));
+      // popup label
+      const label = Game.encAnimalLabel(s.animal);
+      ok(aid + ' popup label gated', !new RegExp(adef.name, 'i').test(label), label);
+    }
+  }
+
+  {
+    // TYPO SCAN (Steve): "your your hands hisses past" — doubled "your" +
+    // verb disagreement. The near-miss line must read clean unarmed AND armed.
+    const s = freshGame();
+    putAnimal(s, 'white_tailed_deer', 5, 4);
+    Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
+    Game.state.scholar.equipped = {}; // unarmed: fallback name is "your hands"
+    Game.feedbackMark();
+    // force the near-miss branch: sweep seeds until the jinks line fires
+    let fb = '', tries = 0;
+    const origR = Math.random;
+    while (!/jinks at the last breath/.test(fb) && tries < 40) {
+      tries++;
+      const s2 = freshGame();
+      putAnimal(s2, 'white_tailed_deer', 5, 4);
+      Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
+      Game.state.scholar.equipped = {};
+      Game.feedbackMark();
+      let calls = 0; const seed = tries * 0.137;
+      Math.random = () => { calls++; const v = (seed * calls * 7919) % 1; return v; };
+      try { Game.huntAnimal(); } catch (e) {}
+      fb = Game.feedbackLines().join(' ');
+    }
+    Math.random = origR;
+    ok('near-miss branch reached', /jinks at the last breath/.test(fb));
+    ok('no doubled your', !/your your/i.test(fb), fb.slice(0, 100));
+    ok('no hands hisses', !/hands hisses/i.test(fb), fb.slice(0, 100));
+    // source scan: no "your your" in player-facing strings (comments stripped)
+    const src = fs.readFileSync(path.join(ROOT, 'src/js/encounters.js'), 'utf8')
+      .replace(/\/\/.*$/gm, '');
+    ok('no "your your" in encounters.js strings', !/your your/i.test(src));
+  }
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('CRASH', e); process.exit(2); });

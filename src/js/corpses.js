@@ -154,6 +154,18 @@
             { victim: corpse.villagerId }, corpse.witnesses.filter(id => id !== this.villagerId));
         } catch (e) {}
       }
+      // GRIEF: a villager's death is a village event — this is what makes
+      // the grief dialogue fire. Without it, NPCs had nothing to say about
+      // the dead (the trigger existed, the event never did).
+      if (corpse.kind === 'person' || corpse.kind === 'villager') {
+        try {
+          if (opts.killerId && opts.killerId === this.villagerId) {
+            if (this.villageEvent) this.villageEvent('murder', { victim: corpse.villagerId });
+          } else if (this.villageEvent) {
+            this.villageEvent('death');
+          }
+        } catch (e) {}
+      }
       return corpse;
     },
 

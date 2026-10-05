@@ -503,11 +503,12 @@ body.in-combat .dangerbar {
 /* ============ CHAT VIEW: conversation is the one acceptable interruption.
    Full-screen takeover — messages stacked, speaker names, room for narrative.
    No scrolling to follow the dialogue; the messages pane holds the latest. */
-.chat { display: flex; flex-direction: column; height: 100dvh; max-width: 640px; margin: 0 auto; }
+.chat { display: flex; flex-direction: column; height: 100dvh; max-width: 640px; margin: 0 auto;
+  padding-top: env(safe-area-inset-top, 0px); }
 .chat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 12px 14px; border-bottom: 1px solid #ffffff22; flex: 0 0 auto; }
 .chat-head b { font-size: 17px; }
-.chat-msgs { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch;
+.chat-msgs { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
   padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .chat-msg { max-width: 88%; display: flex; flex-direction: column; }
 .chat-msg.them { align-self: flex-start; align-items: flex-start; }
@@ -731,3 +732,43 @@ body.is-night .cell.c-fire {
   position: relative; z-index: 2;
 }
 body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
+
+/* ============ ONE-SCREEN PHONE LAYOUT (Steve's law) ============
+   Moment-to-moment play must need no scrolling on a phone (390x844):
+   status, grid, encounter panel, self actions, contextual actions, and
+   feedback all visible in one viewport. Management (minimap, panels,
+   codex, log) may scroll — that's the scroll rule.
+   Budget: header 48 + daytick 18 + status 60 + epithet 22 + grid 330 +
+   perceive 24 + self 50 + ctx 44 + feedback 70 = ~666 < 844. */
+@media (max-width: 899px) {
+  /* the grid and its overlays are one positioned unit */
+  .ord-gridwrap { order: 4; position: relative; }
+  /* COMPACT STATUS: 2x2 mini-bars instead of 4 full rows */
+  .ord-status { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .ord-status .stat { margin: 3px 0; }
+  .ord-status .stat .lbl { font-size: 11px; }
+  .ord-status .bar { height: 7px; margin-top: 2px; }
+  /* GRID CAP: the world stays tappable (~36px cells) but stops eating
+     the viewport */
+  .ord-gridwrap .detail { max-width: 330px; margin-left: auto; margin-right: auto; }
+  .ord-epithet { margin: 4px 0; font-size: 12px; }
+  /* ENCOUNTER/PERSON PANELS: overlay the grid, never push layout.
+     The panel is transient (examine -> act -> dismiss); the grid is
+     persistent. Tapping a cell behind the panel isn't needed while it's
+     open — the panel carries the actions. */
+  #inlineslot { position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 30;
+    max-height: 78%; overflow-y: auto; margin: 0; }
+  #inlineslot:empty { display: none; }
+  #inlineslot .card { margin: 0; box-shadow: 0 -6px 28px rgba(0,0,0,.65); }
+  /* tighter action bars */
+  .selfbar { margin-top: 6px; }
+  .self-btn { min-height: 44px; padding: 10px 4px; font-size: 13px; }
+  .contextbar { margin-top: 6px; }
+  .ctx-btn { padding: 8px 10px; font-size: 13px; }
+  .perceiveline { margin-top: 4px; }
+  .feedbackcard { margin-top: 6px; }
+}
+/* SHEET BUTTONS: choice-heavy sheets (gifts, relics) must contain their
+   content — the buttons area scrolls internally instead of clipping
+   cards below the fold. */
+.sheet-btns { overflow-y: auto; min-height: 0; }

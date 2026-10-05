@@ -180,8 +180,12 @@
         const d = cheb(ani.mx, ani.my, px, py);
         if (d <= 1) {
           const adef = (this.data.animals || []).find(a => a.id === ani.id) || {};
-          const nm = (adef.name || 'animal').toLowerCase();
-          push(`A ${nm} is close, watching you.`, 40);
+          // DESCRIPTOR GATING: no true names pre-knowledge. The strange
+          // descriptor carries its own article ("a huge shelled shape...").
+          const desc = (typeof this.encDescribeAnimal === 'function')
+            ? this.encDescribeAnimal(adef) : 'something moving';
+          const cap = (typeof this.encCap === 'function') ? this.encCap(desc) : desc;
+          push(`${cap} is close, watching you.`, 40);
         }
       }
     } catch (e) {}

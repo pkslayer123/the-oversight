@@ -629,11 +629,23 @@
         ? `<span class="self-btn" style="opacity:.55" title="${esc(a.hint || '')}">${esc(a.label)}</span>`
         : `<button class="self-btn" data-self="exile:${a.id}" title="${esc(a.hint || '')}">${esc(a.label)}</button>`).join('');
     } catch (e) {}
+    // CASE FILE: visible only while the player has an open/dormant accused
+    // case. A quiet dot when the moot is imminent (<=1 day left).
+    let caseBtn = '';
+    try {
+      const pc = Game.playerAccusedCase ? Game.playerAccusedCase() : null;
+      if (pc && !pc.trial) {
+        const day = Game.state.scholar.day;
+        const left = Math.max(0, (pc.mootIn || 2) - (day - (pc.day || day)));
+        const cdot = left <= 1 ? '<span class="dot"></span>' : '';
+        caseBtn = `<button class="self-btn" data-self="casefile">⚖️ Case file${cdot}</button>`;
+      }
+    } catch (e) {}
     return `<div class="selfbar"><span class="ctx-label">you:</span>` +
       `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` +
       `<button class="self-btn" data-self="sleep">😴 Sleep${sleepDot}</button>` +
       `<button class="self-btn" data-self="pack">🎒 Pack (${st.invCount})${packDot}</button>` +
-      `<button class="self-btn" data-self="wait">⏳ Wait</button>${exileBtns}</div>`;
+      `<button class="self-btn" data-self="wait">⏳ Wait</button>${exileBtns}${caseBtn}</div>`;
   }
 
   function wireSelfBar() {
@@ -645,6 +657,7 @@
         else if (a === 'sleep') { Game.sleep(); rerender(); }
         else if (a === 'pack') { invSheet(); }
         else if (a === 'wait') { Game.doAction('wait'); rerender(); }
+        else if (a === 'casefile') { caseFileSheetForCurrent(); }
         else if (a.indexOf('exile:') === 0) { Game.exileSelfDo(a.slice(6)); rerender(); }
       };
     });
@@ -1788,14 +1801,19 @@
     const thinking = (view.thinking && view.thinking.vid === villagerId) ? view.thinking : null;
     const shownTranscript = thinking ? (convo.transcript || []).slice(0, thinking.hiddenFrom) : (convo.transcript || []);
     const convoTranscript = shownTranscript.slice(-6).map(e => {
-      const isSpeech = /^\\s*\"/.test(e.text);
+      // CHAT GRAMMAR (Steve): spoken dialogue = styled speech, narration /
+      // action = caption. The classifier is the leading quote — the SAME
+      // rule as the full chat screen. (This regex was double-escaped and
+      // never matched: every line rendered as narration here.)
+      const clean = Game.cleanDialogue ? Game.cleanDialogue(e.text) : String(e.text || '');
+      const isSpeech = /^\s*"/.test(clean);
       const cls = e.who === 'you' ? 'tline you' : 'tline them';
       const who = e.who === 'you' ? 'You' : titleName;
       // FOREIGN SPEECH renders distinctly: italic amber, tagged with the
       // language. You SEE the words even when you can't understand them.
       const spCls = e.foreign ? 'fsp' : (isSpeech ? 'sp' : 'narr');
       const ftag = e.foreign ? ` <span class="flang">${esc(Game.langDef(e.foreign).icon)} ${esc(Game.langDef(e.foreign).name)}</span>` : '';
-      return `<p class="${cls}"><b>${esc(who)}:</b> <span class="${spCls}">${esc(e.text)}</span>${ftag}</p>`;
+      return `<p class="${cls}"><b>${esc(who)}:</b> <span class="${spCls}">${esc(clean)}</span>${ftag}</p>`;
     }).join('') + (thinking
       ? `<p class="tline them"><b>${esc(titleName)}:</b> <span class="thinking-dots" aria-label="thinking"><span>.</span><span>.</span><span>.</span></span></p>`
       : '');
@@ -1961,6 +1979,18 @@
     refresh();
   }
 
+  // openChatKeep: open the chat UI on a conversation a debug scenario
+  // already set up (thread, transcript) — WITHOUT startConvo's reset.
+  // The ambush scenario springs its plot onto an opened conversation; the
+  // panel then drops the player straight into the RUN/TALK/FIGHT beat.
+  function openChatKeep(vid) {
+    inlineView = null;
+    chatView = { vid: vid, thinking: null, thinkingToken: 0 };
+    try { Game.convoGet(vid).active = true; } catch (e) {}
+    armChatThinking(vid, 0, null, true);
+    refresh();
+  }
+
   function closeChat(sayGoodbye) {
     if (!chatView) return;
     const vid = chatView.vid;
@@ -2007,24 +2037,26 @@
     const thinking = cv.thinking || null;
     const shownTranscript = thinking ? (convo.transcript || []).slice(0, thinking.hiddenFrom) : (convo.transcript || []);
     const msgs = shownTranscript.map(e => {
-      const isSpeech = /^\s*"/.test(e.text);
+      const clean = Game.cleanDialogue ? Game.cleanDialogue(e.text) : String(e.text || '');
+      const isSpeech = /^\s*"/.test(clean);
       const spCls = e.foreign ? 'fsp' : (isSpeech ? 'sp' : 'narr');
       const ftag = e.foreign
         ? ` <span class="flang">${esc(Game.langDef(e.foreign).icon)} ${esc(Game.langDef(e.foreign).name)}</span>` : '';
       if (!isSpeech) {
-        return `<div class="chat-narr"><span class="narr">${esc(e.text)}</span></div>`;
+        return `<div class="chat-narr"><span class="narr">${esc(clean)}</span></div>`;
       }
       const who = e.who === 'you' ? 'You' : titleName;
       const side = e.who === 'you' ? 'you' : 'them';
       return `<div class="chat-msg ${side}"><div class="chat-name">${esc(who)}</div>` +
-        `<div class="chat-bubble"><span class="${spCls}">${esc(e.text)}</span>${ftag}</div></div>`;
+        `<div class="chat-bubble"><span class="${spCls}">${esc(clean)}</span>${ftag}</div></div>`;
     }).join('') + (thinking
       ? `<div class="chat-msg them"><div class="chat-name">${esc(titleName)}</div>` +
         `<div class="chat-bubble"><span class="thinking-dots" aria-label="thinking"><span>.</span><span>.</span><span>.</span></span></div></div>`
       : '');
-    const choiceBtns = (convo.choices || []).map(cn =>
-      `<button class="btn chat-choice${cn.id === 'leave' ? ' ghost' : ''}" data-cid="${esc(cn.id)}"${thinking ? ' disabled' : ''}>${esc(cn.label)}</button>`
-    ).join('');
+    const choiceBtns = (convo.choices || []).map(cn => {
+      const cleanLabel = Game.cleanDialogue ? Game.cleanDialogue(cn.label) : cn.label;
+      return `<button class="btn chat-choice${cn.id === 'leave' ? ' ghost' : ''}" data-cid="${esc(cn.id)}"${thinking ? ' disabled' : ''}>${esc(cleanLabel)}</button>`;
+    }).join('');
     screen.innerHTML = `
       <div class="chat">
         <div class="chat-head">
@@ -2507,7 +2539,7 @@
         '<div class="system-beat-kicker">' + esc(b.kicker || '') + '</div>' +
         b.lines.map(l =>
           '<div class="system-window"><div class="system-text' + (l.who === 'narr' ? ' system-narr' : '') + '">' +
-          (l.who === 'sys' ? '&ldquo;' + esc(l.text) + '&rdquo;' : esc(l.text)) +
+          (l.who === 'sys' ? '&ldquo;' + esc(Game.quoteWrap(l.text).slice(1, -1)) + '&rdquo;' : esc(l.text)) +
           '</div></div>'
         ).join('') +
         '<button class="btn" id="b-arrival-next" style="margin-top: 14px; z-index: 1001;">' + esc(b.button || '…') + '</button>';
@@ -2537,11 +2569,54 @@
         '<p>Your <b>' + esc(rc.itemName) + '</b> (bond ' + rc.threshold + ') can become more. Choose one:</p>',
       buttons: rc.options.map(o => ({
         label: '<b>' + esc(o.name) + '</b><br><span class="small">' + esc(o.description) + '</span>' +
-          (o.systemCommentary ? '<br><i class="small">"' + esc(o.systemCommentary) + '"</i>' : ''),
+          (o.systemCommentary ? '<br><i class="small">' + esc(Game.quoteWrap(o.systemCommentary)) + '</i>' : ''),
         primary: true,
         onClick: () => { Game.chooseRelicEnhancement(o.id); refresh(); },
       })),
       priority: 80, modal: true, dismissible: false,
+    });
+  }
+
+  // caseFileSheet: the moot-redesign dossier. Post-System it's a System
+  // overlay sheet in the unhinged alien voice (🔴 LIVE energy — the aliens
+  // LOVE trials, there's a spin-off literally called "The Moot").
+  // Pre-System it's diegetic: plain journal styling, same content.
+  // The strategic actions live here — speak, witnesses, press, investigate,
+  // expose, force the moot, flee — each appearing only while it's live.
+  function caseFileSheetForCurrent() {
+    let c = null;
+    try { c = Game.playerAccusedCase(); } catch (e) {}
+    if (c) caseFileSheet(c.id);
+  }
+  function caseFileButtons(caseId) {
+    let acts = [];
+    try { acts = Game.caseDossierActions(caseId) || []; } catch (e) {}
+    return acts.map(a => ({
+      label: '<b>' + esc(a.label) + '</b>' + (a.hint ? '<br><span class="small">' + esc(a.hint) + '</span>' : ''),
+      keepOpen: true,
+      onClick: () => {
+        try { Game.caseDossierDo(caseId, a.id); } catch (e) {}
+        let cur = null;
+        try { cur = Game.getCase(caseId); } catch (e) {}
+        refresh();
+        // the case moved on (trial called, fled, resolved) — close the sheet
+        if (!cur || (cur.status !== 'open' && cur.status !== 'dormant') || cur.trial) return;
+        try { updateSheet('case-file', { html: Game.caseDossierHtml(cur), buttons: caseFileButtons(caseId) }); } catch (e) {}
+        return 'keep';
+      },
+    }));
+  }
+  function caseFileSheet(caseId) {
+    let c = null;
+    try { c = Game.getCase(caseId); } catch (e) {}
+    if (!c) return;
+    const post = !!Game.state.systemArrived;
+    openSheet({
+      id: 'case-file',
+      title: post ? '🔴 LIVE — THE MOOT: CASE FILE' : '⚖️ Case file',
+      html: Game.caseDossierHtml(c),
+      buttons: caseFileButtons(caseId),
+      priority: 40, modal: false, dismissible: true,
     });
   }
 
@@ -2577,7 +2652,7 @@
         '<p>Choose one ability:</p>',
       buttons: choices.map(c => ({
         label: '<b>' + esc(c.name) + '</b><br><span class="small">' + esc(c.description || c.desc) + '</span>' +
-          (c.flavor ? '<br><i class="small">"' + esc(c.flavor) + '"</i>' : '') +
+          (c.flavor ? '<br><i class="small">' + esc(Game.quoteWrap(c.flavor)) + '</i>' : '') +
           (c.metabolic && c.metabolic.daily ? '<br><span class="small">\u{1F525} Costs ' + c.metabolic.daily + ' kcal/day to keep. Power is a trade.</span>' : ''),
         primary: true,
         onClick: () => { Game.chooseAbility(c.id); refresh(); },
@@ -2878,10 +2953,12 @@
         <div class="game-col-main">
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
           ${st.inCombat ? combatStripHTML(st) : ''}
-          <div class="detail ord-grid">${renderDetail(st)}</div>
+          <div class="ord-gridwrap">
+            <div class="detail">${renderDetail(st)}</div>
+            ${perceiveHTML()}
+            <div id="inlineslot"></div>
+          </div>
           ${st.inCombat ? `<div class="ord-combatpanel">${panelCombat(st)}</div>` : ''}
-          ${perceiveHTML()}
-          <div id="inlineslot" class="ord-inline"></div>
           <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-self">${selfBarHTML(st)}</div>
           <div class="ord-ctx">${contextBarHTML()}</div>
@@ -3087,6 +3164,13 @@
   function processPendingSheets() {
     const s = Game.state.scholar;
     if (!s) return;
+    // SEQUENCING (Steve): no overlapping modals, ever. The Day 7 cinematic
+    // is a full-screen overlay, not a sheet — the gift/relic offers queue
+    // BEHIND it. The cinematic's finish callback calls processPendingSheets
+    // again, so the gift lands the moment the intro is dismissed.
+    try {
+      if (document.querySelector('.system-arrival-overlay')) return;
+    } catch (e) {}
     if (s.abilityChoices && s.abilityChoices.length && !sheetQueued('offer-ability')) {
       abilitySheet();
     }
@@ -3095,6 +3179,12 @@
     }
     if (s.tableChoices && !sheetQueued('the-table')) {
       tableSheet();
+    }
+    // MOOT REDESIGN: post-System accusations auto-offer the case file sheet.
+    if (s.caseDossierOffer && !sheetQueued('case-file')) {
+      const cid = s.caseDossierOffer;
+      s.caseDossierOffer = null;
+      caseFileSheet(cid);
     }
   }
 
@@ -3477,7 +3567,6 @@
   function renderDetail(st) {
     const cells = Game.genDetail(st.px, st.py);
     const tile = Game.playerTile();
-    const known = tile.knownPlant;
     const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
     const mon = Game.state.scholar.monster;
     const ani = Game.state.scholar.animal;
@@ -3516,8 +3605,13 @@
         const isDepleted = tile.detailRegrow && tile.detailRegrow[deplKey] &&
           (typeof tile.detailRegrow[deplKey].day === 'number' ? tile.detailRegrow[deplKey].day > (Game.state.scholar.day || 0) : true);
         if (cell === 'plant') {
-          g = known && PLANT_GLYPH[known] ? PLANT_GLYPH[known] : '🌱';
-          cls += ' plantcell';
+          // KNOWLEDGE-GATED GLYPHS (Steve): the game knows the species (t.plantSpecies),
+          // the player sees it only when their knowledge earns it. Below threshold
+          // every plant is just 🌱 — foraging blind never reveals.
+          const sp = (tile.plantSpecies || {})[cx + ',' + cy];
+          const spKnown = sp && Game.plantKnown && Game.plantKnown(sp);
+          g = (spKnown && PLANT_GLYPH[sp]) ? PLANT_GLYPH[sp] : '🌱';
+          cls += ' plantcell' + (spKnown ? ' knownplant' : '');
         } else if (cell === 'bush') {
           // If you've learned this bush, show what it IS. Not just "bush."
           const bs = (tile.bushSpecies || {})[cx + ',' + cy];
@@ -3837,6 +3931,9 @@
         const ok = Game.debugScenario(b.dataset.scen);
         el.remove();
         if (ok) refresh();
+        // scenario-requested chat (the ambush opens mid-confrontation)
+        const cv = Game.debugChatRequest; Game.debugChatRequest = null;
+        if (cv) openChatKeep(cv);
       };
     });
     q('#dbg-spawn').onclick = () => {

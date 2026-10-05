@@ -379,9 +379,9 @@
         "food"
       ],
       "backstories": [
-        "{first} ran the fry station at a roadside diner. {They} can tell when oil is ready by the sound. Now {they} stare at raw roots and do the same math {they} always did: what feeds people, fast.",
+        "{first} ran the fry station at a roadside diner. {They} can tell when oil is ready by the sound. {They} did the same math every shift: what feeds people, fast.",
         "{first} worked the line through two restaurant fires and one health inspector with a grudge. {They} talk fast, move faster, and treat hunger like a personal insult.",
-        "{first} learned to feed a hundred covers with a broken fryer and no prep cook. {They} look at the village stores the way a general looks at a map.",
+        "{first} learned to feed a hundred covers with a broken fryer and no prep cook. {They} look at a bare pantry the way a general looks at a map.",
         "{first} cooked out of a food truck with a kitchen the size of a closet. {They} do more with one flat-top than some restaurants do with six.",
         "{first} plated wedding dinners for two hundred at a time — everything hot, everything at once. {They} stay calm when the tickets won't stop, because the tickets never stopped.",
         "{first} did bakery prep at 3 a.m., feeding a wood-fired oven all night. {They} know dough by feel and {they} have strong opinions about campfire heat — strong enough to hear about daily."
@@ -3280,36 +3280,36 @@
     "secretive"
   ],
   "talkTemplates": [
-    "I don't know you. But you're here, so... we figure it out.",
-    "Back home I was {an_occ}. Doesn't mean much now, does it? Means something. Just not much.",
-    "You ever notice how quiet it gets out here at night? Like the world's holding its breath.",
-    "I'm from {origin}. The plants here don't look like home. I'm learning. Slowly.",
-    "We should stick together. Twelve strangers is better than one stranger. Math.",
-    "I keep thinking about what I left behind. Then I get hungry and stop thinking.",
-    "The others look to me for {skill}. Fine. Someone has to know something.",
-    "Don't eat anything {first} hasn't looked at first. That's my rule. It's a good rule.",
-    "I keep thinking about {origin}. Not missing it, exactly. Just... checking that I still remember it right.",
-    "You know what's weird? I'm {an_occ} — was {an_occ} — and none of that prepared me for any of this.",
-    "I've started talking to myself when I work. Keeps the rhythm. You probably do it too.",
-    "The nights are the hardest. Days, you're busy. Nights, you're just... with it all.",
-    "I wonder if {origin} looks like this now. Empty. Quiet. Or if it's worse there.",
-    "Someone has to stay hopeful, right? Might as well be me. I'm good at faking it till it's real.",
-    "I've been watching how {skill} works out here. It's different from before. Everything's different from before.",
-    "Do you think we'll look back on this and call it the good old days? God, I hope not.",
-    "I miss small talk. Real small talk, about weather that didn't matter and shows I hadn't seen.",
-    "My hands know things my brain hasn't caught up to yet. Muscle memory from {occ} days.",
-    "I've started noticing who eats first and who waits. Tells you everything about a person.",
-    "The fire's the real leader here. We just orbit it and pretend we're in charge.",
-    "I used to need noise to sleep. Now I need silence and I can't find enough of it.",
-    "Every morning I wake up surprised. Like part of me still expects the old world.",
-    "I'm collecting skills like they're currency. {skill} today, something else tomorrow.",
-    "You ever get a song stuck in your head with no way to play it? It's a special kind of torture.",
-    "I think about who I was in {origin} and it feels like reading about a stranger.",
-    "The hardest part isn't the hunger or the cold. It's not knowing if anyone else made it.",
-    "I've gotten good at reading faces. Out here, faces say what words won't.",
-    "I keep the good moments in a mental box. Today goes in the box. Just so you know.",
-    "Being {an_occ} feels like a past life. Sometimes I wonder if I dreamed it.",
-    "I don't pray, exactly. But I talk to the sky sometimes. It hasn't answered yet."
+    "\"I don't know you. But you're here, so... we figure it out.\"",
+    "\"Back home I was {an_occ}. Doesn't mean much now, does it? Means something. Just not much.\"",
+    "\"You ever notice how quiet it gets out here at night? Like the world's holding its breath.\"",
+    "\"I'm from {origin}. The plants here don't look like home. I'm learning. Slowly.\"",
+    "\"We should stick together. Twelve strangers is better than one stranger. Math.\"",
+    "\"I keep thinking about what I left behind. Then I get hungry and stop thinking.\"",
+    "\"The others look to me for {skill}. Fine. Someone has to know something.\"",
+    "\"Don't eat anything {first} hasn't looked at first. That's my rule. It's a good rule.\"",
+    "\"I keep thinking about {origin}. Not missing it, exactly. Just... checking that I still remember it right.\"",
+    "\"You know what's weird? I'm {an_occ} — was {an_occ} — and none of that prepared me for any of this.\"",
+    "\"I've started talking to myself when I work. Keeps the rhythm. You probably do it too.\"",
+    "\"The nights are the hardest. Days, you're busy. Nights, you're just... with it all.\"",
+    "\"I wonder if {origin} looks like this now. Empty. Quiet. Or if it's worse there.\"",
+    "\"Someone has to stay hopeful, right? Might as well be me. I'm good at faking it till it's real.\"",
+    "\"I've been watching how {skill} works out here. It's different from before. Everything's different from before.\"",
+    "\"Do you think we'll look back on this and call it the good old days? God, I hope not.\"",
+    "\"I miss small talk. Real small talk, about weather that didn't matter and shows I hadn't seen.\"",
+    "\"My hands know things my brain hasn't caught up to yet. Muscle memory from {occ} days.\"",
+    "\"I've started noticing who eats first and who waits. Tells you everything about a person.\"",
+    "\"The fire's the real leader here. We just orbit it and pretend we're in charge.\"",
+    "\"I used to need noise to sleep. Now I need silence and I can't find enough of it.\"",
+    "\"Every morning I wake up surprised. Like part of me still expects the old world.\"",
+    "\"I'm collecting skills like they're currency. {skill} today, something else tomorrow.\"",
+    "\"You ever get a song stuck in your head with no way to play it? It's a special kind of torture.\"",
+    "\"I think about who I was in {origin} and it feels like reading about a stranger.\"",
+    "\"The hardest part isn't the hunger or the cold. It's not knowing if anyone else made it.\"",
+    "\"I've gotten good at reading faces. Out here, faces say what words won't.\"",
+    "\"I keep the good moments in a mental box. Today goes in the box. Just so you know.\"",
+    "\"Being {an_occ} feels like a past life. Sometimes I wonder if I dreamed it.\"",
+    "\"I don't pray, exactly. But I talk to the sky sometimes. It hasn't answered yet.\""
   ],
   "temperaments": [
     "steady",
@@ -3627,66 +3627,66 @@
   ],
   "temperamentTalk": {
     "bold": [
-      "I'll say what everyone's thinking: we need a plan, and we need it today.",
-      "Fortune favors the ones who move first. I move first."
+      "\"I'll say what everyone's thinking: we need a plan, and we need it today.\"",
+      "\"Fortune favors the ones who move first. I move first.\""
     ],
     "cautious": [
-      "Let's think about this before anyone does anything... permanent.",
-      "I watch for a while before I trust. It's nothing personal. It's survival."
+      "\"Let's think about this before anyone does anything... permanent.\"",
+      "\"I watch for a while before I trust. It's nothing personal. It's survival.\""
     ],
     "warm": [
-      "Hey. You look like you could use someone to just... listen. I'm here.",
-      "We're going to be okay. I don't know that, but I believe it, and belief counts."
+      "\"Hey. You look like you could use someone to just... listen. I'm here.\"",
+      "\"We're going to be okay. I don't know that, but I believe it, and belief counts.\""
     ],
     "prickly": [
-      "What do you want? I'm busy. I'm always busy. It's a lifestyle.",
-      "I'm not rude, I'm efficient. There's a difference. Most people miss it."
+      "\"What do you want? I'm busy. I'm always busy. It's a lifestyle.\"",
+      "\"I'm not rude, I'm efficient. There's a difference. Most people miss it.\""
     ],
     "steady": [
-      "One thing at a time. That's how you get through impossible things.",
-      "Panic is a luxury. I deal in what's next."
+      "\"One thing at a time. That's how you get through impossible things.\"",
+      "\"Panic is a luxury. I deal in what's next.\""
     ],
     "restless": [
-      "I can't sit still. Sitting still is how you get caught by whatever's coming.",
-      "There's got to be something I can do. Point me at it."
+      "\"I can't sit still. Sitting still is how you get caught by whatever's coming.\"",
+      "\"There's got to be something I can do. Point me at it.\""
     ],
     "dry": [
-      "Well. This is all extremely normal and fine.",
-      "I've seen worse. I haven't, but saying it helps."
+      "\"Well. This is all extremely normal and fine.\"",
+      "\"I've seen worse. I haven't, but saying it helps.\""
     ],
     "gentle": [
-      "Are you alright? Really? You don't have to perform okay for me.",
-      "Soft doesn't mean weak. The willow bends. The oak snaps. Remember that."
+      "\"Are you alright? Really? You don't have to perform okay for me.\"",
+      "\"Soft doesn't mean weak. The willow bends. The oak snaps. Remember that.\""
     ],
     "intense": [
-      "Look at me. This matters. Everything matters now, do you understand?",
-      "I don't do small talk. The world ended. Let's talk about THAT."
+      "\"Look at me. This matters. Everything matters now, do you understand?\"",
+      "\"I don't do small talk. The world ended. Let's talk about THAT.\""
     ],
     "withdrawn": [
-      "...Sorry. I was somewhere else. What did you need?",
-      "I think better alone. Doesn't mean I'm not listening."
+      "\"...Sorry. I was somewhere else. What did you need?\"",
+      "\"I think better alone. Doesn't mean I'm not listening.\""
     ]
   },
   "moodTalk": {
     "grieving": [
-      "Don't. Not today. I can't do today.",
-      "They'd know what to say right now. I don't. I just don't."
+      "\"Don't. Not today. I can't do today.\"",
+      "\"They'd know what to say right now. I don't. I just don't.\""
     ],
     "scared": [
-      "Did you hear that? Don't tell me you didn't hear that.",
-      "I keep telling myself it's nothing. It's not working."
+      "\"Did you hear that? Don't tell me you didn't hear that.\"",
+      "\"I keep telling myself it's nothing. It's not working.\""
     ],
     "cheerful": [
-      "Okay, but — good news: the soup's actually edible today. Progress!",
-      "You know what? We're alive. That's genuinely funny, when you think about it."
+      "\"Okay, but — good news: the soup's actually edible today. Progress!\"",
+      "\"You know what? We're alive. That's genuinely funny, when you think about it.\""
     ],
     "lonely": [
-      "It's strange. Twelve people, and I've never felt so... separate.",
-      "Sit with me a while? You don't have to talk."
+      "\"It's strange. Twelve people, and I've never felt so... separate.\"",
+      "\"Sit with me a while? You don't have to talk.\""
     ],
     "weary": [
-      "I'm running on fumes and spite at this point. Mostly spite.",
-      "Remind me why we do all this walking. Oh right. Food. Carry on."
+      "\"I'm running on fumes and spite at this point. Mostly spite.\"",
+      "\"Remind me why we do all this walking. Oh right. Food. Carry on.\""
     ]
   },
   "convo": {
@@ -3694,7 +3694,7 @@
       {
         "id": "q_origin",
         "minTrust": 0,
-        "q": "Where are you from — originally? Before all this.",
+        "q": "\"Where are you from — originally? Before all this.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -3717,7 +3717,7 @@
       {
         "id": "q_plan",
         "minTrust": 10,
-        "q": "So what's your plan here? Just... get through it?",
+        "q": "\"So what's your plan here? Just... get through it?\"",
         "answers": [
           {
             "id": "a_survive",
@@ -3746,7 +3746,7 @@
         "id": "q_scared",
         "minTrust": 10,
         "when": "scared",
-        "q": "Are you scared? Honestly.",
+        "q": "\"Are you scared? Honestly.\"",
         "answers": [
           {
             "id": "a_yes",
@@ -3769,7 +3769,7 @@
       {
         "id": "q_miss",
         "minTrust": 20,
-        "q": "What do you miss most? From before.",
+        "q": "\"What do you miss most? From before.\"",
         "answers": [
           {
             "id": "a_food",
@@ -3797,7 +3797,7 @@
       {
         "id": "q_trust",
         "minTrust": 45,
-        "q": "Can I trust you? I mean really.",
+        "q": "\"Can I trust you? I mean really.\"",
         "answers": [
           {
             "id": "a_earn",
@@ -3820,7 +3820,7 @@
       {
         "id": "q_think",
         "minTrust": 10,
-        "q": "What do you make of all this? Really.",
+        "q": "\"What do you make of all this? Really.\"",
         "answers": [
           {
             "id": "a_end",
@@ -3843,7 +3843,7 @@
       {
         "id": "q_hands",
         "minTrust": 0,
-        "q": "You look handy. What did you do with your hands, before?",
+        "q": "\"You look handy. What did you do with your hands, before?\"",
         "voice": "practical",
         "answers": [
           {
@@ -3867,7 +3867,7 @@
       {
         "id": "q_read",
         "minTrust": 5,
-        "q": "Got a read on anyone here yet? Who should I be watching?",
+        "q": "\"Got a read on anyone here yet? Who should I be watching?\"",
         "voice": "social",
         "answers": [
           {
@@ -3891,7 +3891,7 @@
       {
         "id": "q_theory",
         "minTrust": 0,
-        "q": "I've been turning something over. What do YOU think actually happened to us?",
+        "q": "\"I've been turning something over. What do YOU think actually happened to us?\"",
         "voice": "analytical",
         "answers": [
           {
@@ -3915,7 +3915,7 @@
       {
         "id": "q_night",
         "minTrust": 0,
-        "q": "Did you sleep? I kept hearing things out past the treeline.",
+        "q": "\"Did you sleep? I kept hearing things out past the treeline.\"",
         "voice": "observant",
         "answers": [
           {
@@ -3939,7 +3939,7 @@
       {
         "id": "q_laugh",
         "minTrust": 0,
-        "q": "Okay, real question: what's the funniest thing you've seen since we got here? I desperately need it.",
+        "q": "\"Okay, real question: what's the funniest thing you've seen since we got here? I desperately need it.\"",
         "voice": "warm",
         "answers": [
           {
@@ -3963,7 +3963,7 @@
       {
         "id": "q_quiet",
         "minTrust": 0,
-        "q": "...Hi. Sorry. I'm not good at the talking-to-strangers part.",
+        "q": "\"...Hi. Sorry. I'm not good at the talking-to-strangers part.\"",
         "voice": "withdrawn",
         "answers": [
           {
@@ -3987,7 +3987,7 @@
       {
         "id": "q_first_memory",
         "minTrust": 15,
-        "q": "What's your first memory? Like, ever. The earliest thing.",
+        "q": "\"What's your first memory? Like, ever. The earliest thing.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4009,7 +4009,7 @@
       {
         "id": "q_regret",
         "minTrust": 35,
-        "q": "Any regrets? The real kind, not the small stuff.",
+        "q": "\"Any regrets? The real kind, not the small stuff.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4031,7 +4031,7 @@
       {
         "id": "q_skill",
         "minTrust": 10,
-        "q": "What's something you're good at that nobody here knows about?",
+        "q": "\"What's something you're good at that nobody here knows about?\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4053,7 +4053,7 @@
       {
         "id": "q_believe",
         "minTrust": 25,
-        "q": "Do you believe in anything? Now, I mean. After everything.",
+        "q": "\"Do you believe in anything? Now, I mean. After everything.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4075,7 +4075,7 @@
       {
         "id": "q_someone",
         "minTrust": 20,
-        "q": "Is there someone here you don't trust? Be honest.",
+        "q": "\"Is there someone here you don't trust? Be honest.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4097,7 +4097,7 @@
       {
         "id": "q_change",
         "minTrust": 30,
-        "q": "Has this changed you? Like, fundamentally?",
+        "q": "\"Has this changed you? Like, fundamentally?\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4119,7 +4119,7 @@
       {
         "id": "q_guilty",
         "minTrust": 40,
-        "q": "What's the worst thing you've done since the sky changed?",
+        "q": "\"What's the worst thing you've done since the sky changed?\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4141,7 +4141,7 @@
       {
         "id": "q_hope",
         "minTrust": 10,
-        "q": "What are you hoping for? Not the big stuff. The small thing.",
+        "q": "\"What are you hoping for? Not the big stuff. The small thing.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4163,7 +4163,7 @@
       {
         "id": "q_alone_time",
         "minTrust": 20,
-        "q": "Do you ever just need to be alone? Like, really alone?",
+        "q": "\"Do you ever just need to be alone? Like, really alone?\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4185,7 +4185,7 @@
       {
         "id": "q_laugh_memory",
         "minTrust": 15,
-        "q": "When's the last time you really laughed?",
+        "q": "\"When's the last time you really laughed?\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4207,7 +4207,7 @@
       {
         "id": "q_teach_me",
         "minTrust": 25,
-        "q": "Teach me something. Anything you know that I don't.",
+        "q": "\"Teach me something. Anything you know that I don't.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4229,7 +4229,7 @@
       {
         "id": "q_stay",
         "minTrust": 45,
-        "q": "Are you going to stay? With us. For real.",
+        "q": "\"Are you going to stay? With us. For real.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4251,7 +4251,7 @@
       {
         "id": "q_system_fear",
         "minTrust": 30,
-        "q": "What scares you most about what's happening? The real answer.",
+        "q": "\"What scares you most about what's happening? The real answer.\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4273,7 +4273,7 @@
       {
         "id": "q_kindness",
         "minTrust": 20,
-        "q": "What's the kindest thing someone's done for you out here?",
+        "q": "\"What's the kindest thing someone's done for you out here?\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4295,7 +4295,7 @@
       {
         "id": "q_before_skill",
         "minTrust": 15,
-        "q": "What's something from your old life that's actually useful here?",
+        "q": "\"What's something from your old life that's actually useful here?\"",
         "answers": [
           {
             "id": "a_tell",
@@ -4317,7 +4317,7 @@
       {
         "id": "q_fight",
         "minTrust": 35,
-        "q": "Have you ever hurt someone? Since all this started.",
+        "q": "\"Have you ever hurt someone? Since all this started.\"",
         "answers": [
           {
             "id": "a_tell",

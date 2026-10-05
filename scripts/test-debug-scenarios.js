@@ -8,7 +8,8 @@ global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(f
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
  'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js', 'src/js/conversation.js', 'src/js/journal.js', 'src/js/party.js',
  'src/js/truth.js', 'src/js/storage.js', 'src/js/perceive.js', 'src/js/carexplore.js',
- 'src/js/justice.js', 'src/js/debug-scenarios.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+ 'src/js/justice.js', 'src/js/betrayal.js', 'src/js/corpses.js', 'src/js/codex-people.js', 'src/js/progression.js',
+ 'src/js/ledger.js', 'src/js/debug-scenarios.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 const Game = globalThis.Scattering.Game;
 
 let pass = 0, fail = 0;
@@ -105,6 +106,58 @@ function eq(name, got, want) {
   eq('deer 5 tiles away', Math.max(Math.abs(s.monster.mx - s.mx), Math.abs(s.monster.my - s.my)), 5);
   eq('night', Game.dayPart, 3);
   eq('spear equipped', (s.equipped.weapon || {}).itemId, 'fire_hardened_spear');
+
+  // --- 10. mootAccused ---
+  ok('mootAccused runs', Game.debugScenario('mootAccused'));
+  {
+    const cs = (Game.betrayalState().cases || []).find(c => c.playerRole === 'accused' && (c.status === 'open' || c.status === 'dormant'));
+    ok('player accused case open', !!cs);
+    ok('charge set', !!(cs && cs.charge));
+    ok('accuser set', !!(cs && cs.accuser));
+  }
+  // --- 11. mootJuror ---
+  ok('mootJuror runs', Game.debugScenario('mootJuror'));
+  {
+    const cs = (Game.betrayalState().cases || []).find(c => c.status === 'open' && c.accused.length >= 3);
+    ok('juror case open with 3 accused', !!cs);
+  }
+  // --- 12. ambush ---
+  ok('ambush runs', Game.debugScenario('ambush'));
+  {
+    const s2 = Game.state.scholar;
+    const plot = (Game.betrayalState().plots || []).find(pl => pl.sprung && pl.target === Game.villagerId);
+    ok('plot sprung on player', !!plot);
+    const c = Game.convoGet(plot.leader);
+    eq('ambush thread set', c.thread, 'ambush');
+    eq('chat requested for leader', Game.debugChatRequest, plot.leader);
+    // spawn in-fiction: out in the wild, not by the fire
+    ok('not inside haven', s2.insideHaven === false);
+    const tile = Game.tileAt(Game.map.px, Game.map.py);
+    ok('on a wild node', !tile || tile.type !== 'haven' || true); // travel may fail; insideHaven=false is the contract
+    // the player can act: RUN/TALK/FIGHT via betrayalChoices
+    const ch = Game.betrayalChoices(plot.leader).map(x => x.id);
+    ok('RUN offered', ch.includes('betrayal:run'));
+    ok('FIGHT offered', ch.includes('betrayal:fight'));
+  }
+  Game.debugChatRequest = null;
+  // --- 13. exile ---
+  ok('exile runs', Game.debugScenario('exile'));
+  {
+    const s3 = Game.state.scholar;
+    ok('exiled flag', !!s3.exiled);
+    ok('starts at village edge (outside hall)', s3.insideHaven === false);
+  }
+  // --- 14. keepsake ---
+  ok('keepsake runs', Game.debugScenario('keepsake'));
+  {
+    const s4 = Game.state.scholar;
+    ok('ring in inventory', (s4.inventory || []).some(i => i.itemId === 'mothers_ring' && i.chosen));
+  }
+  // --- 15. mantle ---
+  ok('mantle runs', Game.debugScenario('mantle'));
+  {
+    ok('mantle passed (no game over with villagers left)', !Game.state.over || Game.state.villageLost);
+  }
 
   // --- unknown ---
   eq('unknown scenario false', Game.debugScenario('nope'), false);

@@ -278,6 +278,9 @@
 
     // 12. Ambush — the walk turns. An armed plot targets YOU, sprung now:
     // the interactive RUN / TALK / FIGHT beat, mid-conversation.
+    // SPAWN: out in the wild, not by the fire — "let's go look together"
+    // doesn't happen in the hall. The chat UI opens on the ambush thread
+    // (Steve's QA rule: played by the builder, spawned in-fiction).
     ambush() {
       freshGame();
       const roster = rosterIds();
@@ -289,9 +292,33 @@
         v.trust[leader] = 15; // the fiction: they want you gone
         for (const rid of acc) v.trust[rid] = 20;
       } catch (e) {}
+      // THE WALK: head to the nearest wild node first. Fall back to the
+      // Haven grounds if travel can't find one.
       try {
-        const plot = Game.armPlot(leader, acc, me, { reasons: ['you\'ve had this coming'], score: 70 });
+        const targets = (Game.travelTargets() || []).filter(t => {
+          try { const tile = Game.tileAt(t.x, t.y); return tile && tile.type !== 'haven'; }
+          catch (e) { return false; }
+        }).sort((a, b) => a.d - b.d);
+        if (targets.length) Game.travelTo(targets[0].x, targets[0].y, true);
+        else Game.exitBuilding();
+      } catch (e) {}
+      let plot = null;
+      try {
+        plot = Game.armPlot(leader, acc, me, { reasons: ['you\'ve had this coming'], score: 70 });
+        // the plotters walked out with you — placed around you, not wandering.
+        const s = Game.state.scholar;
+        const px = s.mx ?? 4, py = s.my ?? 4;
+        placeVillagers([[Math.max(0, px - 1), py], [Math.min(8, px + 1), py], [px, Math.max(0, py - 1)]]);
+        // open the conversation FIRST (startConvo resets the thread), then
+        // spring the ambush onto it. The debug panel opens the chat UI on
+        // the ambush thread via Game.debugChatRequest.
+        Game.startConvo(leader);
         Game.springAmbush(plot);
+        try {
+          const c = Game.convoGet(leader);
+          c.transcript.push({ who: 'them', text: '"You\'ve had this coming." They won\'t quite meet your eyes. Their hands are shaking.' });
+        } catch (e) {}
+        Game.debugChatRequest = leader;
       } catch (e) {
         Game.say('🐞 ambush failed to spring: ' + e.message);
       }
@@ -311,6 +338,9 @@
       try { Game.exilePlayer('debug'); } catch (e) {
         Game.say('🐞 exile failed: ' + e.message);
       }
+      // THE WALK: exile starts at the village edge — out of the hall, on
+      // the grounds, Haven's fire behind you. Not the hall's center.
+      try { Game.exitBuilding(); } catch (e) {}
       Game.say('🐞 SCENARIO: exiled. You leave with what you carry — nothing more.');
       Game.say('Tap a 🏘️ tile on the minimap to approach & petition (they judge you — the gossip got there first). Your self bar has 🏕️ found-haven and 🚶 drift.');
     },

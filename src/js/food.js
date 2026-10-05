@@ -640,6 +640,15 @@
       return out;
     },
 
+    // plantFieldClick: have you handled this species enough that sorting it
+    // at camp — in good light, unhurried — the name comes to you? Reads the
+    // familiarity built by bumpPlantFamiliarity (field handling).
+    plantFieldClick(pid) {
+      if (this.plantKnown(pid)) return false; // already known; not a "click"
+      const enc = (this.state.codex.encounters || {})[pid] || 0;
+      const th = (this.state.codex.learnThreshold || {})[pid] || 3;
+      return enc >= th;
+    },
     // sortBag(vid, idx, container): the camp ritual. vid null = you sort alone.
     // The sorter names what THEY know; you learn by watching.
     sortBag(vid, idx, container) {
@@ -653,7 +662,11 @@
       let sorterName, knowsFn;
       if (!vid) {
         sorterName = 'You';
-        knowsFn = (pid) => this.plantKnown(pid);
+        // SOLO SORTING: you name what you know — plus what your hands have
+        // learned. Enough field familiarity (threshold encounters) and the
+        // name clicks in good light at camp. This is the self-reliant
+        // identification path: forage blind, haul home, sort, learn.
+        knowsFn = (pid) => this.plantKnown(pid) || this.plantFieldClick(pid);
       } else {
         let person = null;
         try { person = this.villagePeople().find(p => p.id === vid); } catch (e) {}
@@ -662,15 +675,17 @@
         const known = this.villagerKnowsPlants(vid);
         knowsFn = (pid) => known.includes(pid);
       }
-      const named = [], taught = [];
+      const named = [], taught = [], clicked = [];
       for (const pid of pids.slice()) {
         if (knowsFn(pid)) {
           const item = this.splitLumpOut(lump, pid, cont);
           if (item) {
             named.push(pid);
             if (!this.plantKnown(pid)) {
-              this.identifyPlant(pid, 'taught');
-              taught.push(pid);
+              // field-click (solo, high familiarity) vs taught (watching a knower)
+              const isClick = !vid && this.plantFieldClick(pid);
+              this.identifyPlant(pid, isClick ? 'fieldwork' : 'taught');
+              (isClick ? clicked : taught).push(pid);
             }
           }
         }
@@ -694,6 +709,7 @@
       const bits = named.map(pid => pName(pid) + (taught.includes(pid) ? ' \u2605' : ''));
       this.say(`${sorterName} spread${vid ? 's' : ''} the bag on a flat stone and ${vid ? 'starts' : 'start'} naming: ${bits.join(', ')}.`);
       if (taught.length) this.say(`You watch closely — ${taught.map(pName).join(', ')} ${taught.length > 1 ? 'are' : 'is'} yours now too.`);
+      if (clicked.length) this.say(`Turning ${clicked.map(pName).join(', ')} over in good light — it clicks. You've handled enough of these to know them.`);
       const left = lump.units || 0;
       if (left > 0) this.say(`${left} shoot${left > 1 ? 's' : ''} still a mystery.`);
       else this.say('The bag is empty. Everything named.');

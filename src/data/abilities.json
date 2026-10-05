@@ -20,7 +20,7 @@
     }
   },
   {
-    "description": "Fine work under pressure. Dressing game, stitching wounds, tying snares \u2014 no shake.",
+    "description": "Fine work under pressure. Dressing game, stitching wounds, tying snares — no shake.",
     "id": "steady_hands",
     "modifiers": [
       {
@@ -94,7 +94,7 @@
     }
   },
   {
-    "description": "You think in shelf life. Smoking, drying, salting \u2014 food that lasts is food that saves.",
+    "description": "You think in shelf life. Smoking, drying, salting — food that lasts is food that saves.",
     "id": "preservation_instinct",
     "modifiers": [
       {
@@ -583,7 +583,7 @@
     "id": "blood_magic",
     "name": "Blood Price",
     "description": "Spend 10 HP to gain 500 kcal. (Your body eats itself. It's efficient. It's horrifying.)",
-    "flavor": "You burn the red! The red becomes food! We are... concerned! But the math works!",
+    "flavor": "You burn the red! The red becomes... lunch?! We are CONCERNED! (We checked the math twice. The math is as confused as we are.)",
     "pool": "system",
     "tier": "risky",
     "unlock": {
@@ -752,7 +752,7 @@
     "id": "time_skip",
     "name": "Time Skip",
     "description": "Skip to the next day part instantly. (Ages you 1 day. The time has to come from somewhere.)",
-    "flavor": "You jump the time! The time jumps you back! You are older! But... faster!",
+    "flavor": "You JUMP the time! The time JUMPS you back! You are OLDER! But... FASTER?! We took notes! The notes make no sense!",
     "pool": "system",
     "tier": "overpowered",
     "unlock": {
@@ -887,7 +887,7 @@
     "id": "dead_aim",
     "name": "Dead Aim",
     "description": "First attack in any combat is a guaranteed critical if you waited 1 round. Patience, then thunder.",
-    "flavor": "You WAIT! You BREATHE! Then \u2014 BOOM! The audience gasps! We gasped!",
+    "flavor": "You WAIT! You BREATHE! Then — BOOM! The audience gasps! We gasped!",
     "pool": "system",
     "tier": "combat",
     "unlock": {
@@ -1038,7 +1038,7 @@
     "id": "phoenix_clause",
     "name": "Phoenix Clause",
     "description": "Once per run: when you die, you explode (damaging everything nearby) and respawn at Haven with 1 HP. The System calls it 'great television.'",
-    "flavor": "You DIE! Then \u2014 KABOOM! \u2014 you're BACK! The audience LOVED it! The ratings! THE RATINGS!",
+    "flavor": "You DIE! Then — KABOOM! — you're BACK! The audience LOVED it! The ratings! THE RATINGS!",
     "pool": "system",
     "tier": "overpowered",
     "unlock": {
@@ -1091,7 +1091,7 @@
     "tier": "utility",
     "pool": "fallback",
     "description": "You kept moving. -10% travel cost.",
-    "flavor": "You go places! We like places!",
+    "flavor": "You go places! FAR places! We sent a camera crew! (They got lost. It's fine.)",
     "unlock": {
       "type": "fallback"
     },

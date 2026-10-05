@@ -286,7 +286,21 @@
         const cn = ((this.data.villagers || []).find(x => x.id === closeId) || {}).name || 'Someone';
         this.say(`"${oldFirst}'s gone." ${cn.split(' ')[0]} looks at you for a long moment. "You're not ${oldFirst}." No heat in it. Just fact. You'll have to earn this face.`);
       }
-      this.say(`${newFirst} picks up the Codex. Their hands shake. Then they open it, and keep writing.`);
+      // THE MANTLE'S METAPHOR IS GATED BY INTEGRATION (Steve): pre-System
+      // the Codex is a physical journal — pen and paper, "keep writing" is
+      // honest. Post-System it's digital — no pen, no paper. The Codex
+      // doesn't get picked up anymore; it syncs, all at once, to the new
+      // bearer. The moment deserves the beat, not a UI blip.
+      try {
+        const stage = this.integrationStage ? this.integrationStage() : 0;
+        if (stage >= 1) {
+          this.say(`The Codex doesn't pause for grief. ${newFirst} blinks — and it's already there, overlaying everything, syncing. No pen. No paper. The mantle just... transfers.`);
+        } else {
+          this.say(`${newFirst} picks up the journal. Their hands shake. Then they open it, and keep writing.`);
+        }
+      } catch (e) {
+        this.say(`${newFirst} picks up the Codex. Their hands shake. Then they open it, and keep writing.`);
+      }
       this.villagerId = newId;
       // the mantle passes: the PROGRESSION is the village's (slots, arc,
       // integration, ledger, Codex). The body is new.

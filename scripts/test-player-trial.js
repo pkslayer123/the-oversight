@@ -182,15 +182,34 @@ function ok(name, cond) {
   ok('demand moot runs the trial', dr && dc.trial);
   clearPlayerCases();
 
-  // ---------- 16. conversation integration ----------
+  // ---------- 16. conversation integration (moot redesign) ----------
+  // Defense strategy lives in the case file — per-person conversation offers
+  // only what THIS person can do: ask what they've heard, tell your side
+  // (if it matters), press the accuser (only the accuser). speak / alibi /
+  // force-moot / flee are dossier moves, never conversation options.
   const ic = Game.openPlayerCase(A, 'theft', [], false);
-  const choices = Game.betrayalChoices(A).map(x => x.id);
-  ok('defense choices offered', choices.some(id => id.startsWith('betrayal:defend_speak:')));
-  ok('alibi choice offered', choices.some(id => id.startsWith('betrayal:defend_alibi:')));
-  ok('press-accuser choice offered', choices.some(id => id.startsWith('betrayal:defend_press:')));
-  ok('demand-moot choice offered', choices.some(id => id.startsWith('betrayal:demand_moot:')));
-  ok('flee choice offered', choices.some(id => id.startsWith('betrayal:flee:')));
-  ok('bribe choice offered pre-trial', choices.some(id => id.startsWith('betrayal:bribe:')));
+  const choicesAccuser = Game.betrayalChoices(A).map(x => x.id); // A is the accuser
+  ok('press-accuser offered to the actual accuser', choicesAccuser.some(id => id.startsWith('betrayal:pressaccuser:')));
+  ok('accuser is not asked what they heard (press covers them)', !choicesAccuser.some(id => id.startsWith('betrayal:askheard:')));
+  const choicesOther = Game.betrayalChoices(B).map(x => x.id);
+  ok('press-accuser NOT offered to non-accusers', !choicesOther.some(id => id.startsWith('betrayal:pressaccuser:')));
+  ok('ask-heard offered per person', choicesOther.some(id => id.startsWith('betrayal:askheard:')));
+  const allCh = npcs().flatMap(id => Game.betrayalChoices(id).map(x => x.id)).filter(x => typeof x === 'string');
+  for (const gone of ['betrayal:defend_speak:', 'betrayal:defend_alibi:', 'betrayal:defend_press:', 'betrayal:demand_moot:', 'betrayal:flee:']) {
+    ok(gone + ' NOT in conversation', !allCh.some(id => id.startsWith(gone)));
+  }
+  // the dossier holds the strategic moves instead
+  const dActs = Game.caseDossierActions(ic.id).map(a => a.id);
+  for (const want of ['speak', 'alibi', 'pressaccuser', 'demandmoot', 'flee']) {
+    ok('dossier holds ' + want, dActs.includes(want));
+  }
+  // bribe is gated: C becomes a committed, bribable voter; the player can pay
+  const cvp = (Game.data.villagers || []).find(x => x.id === C) || {};
+  cvp.personality = cvp.personality || {}; cvp.personality.temperament = 'warm';
+  ic.belief[C] = -60;
+  v.pantryKcal = 50000;
+  ok('bribe choice offered pre-trial (involved+bribable+affordable)',
+    Game.betrayalChoices(C).map(x => x.id).filter(x => typeof x === 'string').some(x => x.startsWith('betrayal:bribe:')));
   clearPlayerCases();
 
   // ---------- 17. one case at a time ----------

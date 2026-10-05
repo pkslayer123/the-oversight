@@ -367,7 +367,11 @@
     var w = null;
     try { w = this.equippedWeapon(); } catch (e) {}
     var range = (w && w.range) || 1;
+    // WEAPON NAME HYGIENE: the unarmed fallback is literally called "your
+    // hands" — composing it after "your" doubles the word ("your your hands").
+    // Strip a leading "your " so every composition reads clean.
     var wname = (w && w.name) || 'hands';
+    wname = String(wname).replace(/^your\s+/i, '');
     if (dist > range) {
       this.feedback('Too far. Get closer' + (range > 1 ? ' (your ' + wname + ' reaches ' + range + ')' : '') + '.');
       return null;
@@ -428,7 +432,9 @@
     }
     if (roll < chance + 0.15) {
       // near-miss: drama, not failure. It bolts — heart hammering.
-      this.feedback('So close — ' + label + ' jinks at the last breath and your ' + wname + ' hisses past. It bolts, heart hammering.');
+      // (Verb agreement: "your hands hiss" vs "your bow hisses" can't both
+      // win, so the weapon isn't the subject. You miss. Clean.)
+      this.feedback('So close — ' + label + ' jinks at the last breath. You miss with your ' + wname + '. It bolts, heart hammering.');
       a.aware = 1; a.pstate = 'bolt';
       this.animalTurn();
       return true;
