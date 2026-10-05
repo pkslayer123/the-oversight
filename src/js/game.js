@@ -14773,7 +14773,7 @@
             }
           } catch (e) {}
           const known = this.encTelegraphKnown(m);
-          this.say(known
+          this.sayTelegraphOnce(m, known
             ? '⚠ It\'s brightening. Two beats from glow to boom — BACK OFF. Radius 2.'
             : '⚠ ' + (atk.telegraph || 'It brightens.'));
           this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'burst' });
@@ -15297,7 +15297,14 @@
       // Kept as a no-op shim so any stale caller doesn't crash.
       return null;
     },
-    say(msg) { this.log.push(msg); if (this.log.length > 40) this.log.shift(); },
+    say(msg) {
+      // DEDUP (Steve 2026-10-05): never say the exact same thing twice in a row.
+      // Pack monsters declaring the same attack were spamming the log 4×.
+      // This is a safety net — the per-attack dedup in sayTelegraphOnce is primary.
+      const log = this.log;
+      if (log.length > 0 && log[log.length - 1] === msg) return;
+      log.push(msg); if (log.length > 40) log.shift();
+    },
     // pickFresh(pool, key): cycle through narration lines without repeating
     // until every line has been used once. Repeating the same horror line
     // three times in one brawl reads as a bug, not a style. Keyed storage
