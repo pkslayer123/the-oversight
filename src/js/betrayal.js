@@ -841,6 +841,8 @@
     if (convicted) return this.sentenceCase(c);
     // acquitted: festering or vindication
     c.status = 'acquitted';
+    // unified pipeline: the formal track is done — re-sync the justice ladder
+    try { if (c.accused.includes(this.villagerId) && typeof this.syncJusticeAfterMoot === 'function') this.syncJusticeAfterMoot('acquitted'); } catch (e) {}
     if (c.accused.includes(this.villagerId)) {
       this.say(`Not guilty. The count falls short — you breathe. But an accusation leaves a mark no verdict washes off. Some faces at the fire say they'll remember anyway.`);
       const t = this.state.village.trust || {};
@@ -870,6 +872,8 @@
   // ---------- 8. RESOLUTIONS (the spectrum) ----------
   resolveCase(caseId, path) {
     const c = this.getCase(caseId); if (!c) return null;
+    // no double jeopardy: a resolved case stays resolved
+    if (c.status === 'resolved') return { resolved: true, path: c.resolution, caseId: c.id, already: true };
     const v = this.state.village;
     c.status = 'resolved'; c.resolution = path;
     const names = c.accused.map(a => this.displayName(a).split(' ')[0]).join(', ');
@@ -921,6 +925,8 @@
       const bs = this.betrayalState();
       bs.coldWar = (bs.coldWar || 0) + 2;
     }
+    // unified pipeline: the formal track is done — re-sync the justice ladder
+    try { if (c.accused.includes(this.villagerId) && typeof this.syncJusticeAfterMoot === 'function') this.syncJusticeAfterMoot(path); } catch (e) {}
     return { resolved: true, path, caseId: c.id };
   },
 
@@ -1329,10 +1335,53 @@
       murder: 'Murder. There — said plain',
     }[charge] || 'Crimes against the village';
   },
+  // Unified pipeline: is the formal track currently holding the player?
+  // justice.js freezes its ladder while this is true — one track, no parallel.
+  playerCaseOpen() {
+    let bs = null;
+    try { bs = this.betrayalState(); } catch (e) { return false; }
+    return (bs.cases || []).some(c => (c.status === 'open' || c.status === 'dormant') && c.accused.includes(this.villagerId));
+  },
+  // The justice ladder demanded a moot (refused confrontation, or heat past
+  // bearing). Deterministic — no RNG gate: the formal track is the ONLY formal
+  // track, and the village already decided. Uses the strongest uncharged crime;
+  // the confronter accuses if they're still around.
+  forcePlayerAccusation() {
+    const bs = this.betrayalState();
+    const existing = (bs.cases || []).find(c =>
+      (c.status === 'open' || c.status === 'dormant') && c.accused.includes(this.villagerId));
+    if (existing) return existing;
+    let crimes = [];
+    try { crimes = (this.justiceState().crimes || []).filter(c => !c.caseId); } catch (e) {}
+    if (!crimes.length) {
+      // nothing left unjudged to charge: the formal track is spent. No second
+      // moot over judged crimes — but no amnesia either; the cold stays.
+      this.say('There\'s nothing left unjudged to charge. No second moot — but the fire stays cold a long while.');
+      const j = this.justiceState();
+      j.mootDemanded = false; j.confrontRefused = false; j.stage = 1;
+      return null;
+    }
+    const rank = { murder: 4, attack: 3, theft: 2, intimidation: 1 };
+    const serious = crimes.filter(c => rank[c.type]).sort((a, b) => (rank[b.type] || 0) - (rank[a.type] || 0))[0];
+    let j = {};
+    try { j = this.justiceState(); } catch (e) {}
+    const accuser = (j.confrontedBy && this.npcIds().includes(j.confrontedBy))
+      ? j.confrontedBy
+      : (serious && serious.victim && this.npcIds().includes(serious.victim))
+        ? serious.victim
+        : (this.strongestMotiveVsPlayer() || {}).id;
+    if (!accuser) return null;
+    const charge = serious
+      ? ({ theft: 'theft', intimidation: 'intimidation', attack: 'assault', murder: 'murder' }[serious.type])
+      : 'theft';
+    return this.openPlayerCase(accuser, charge, serious ? [serious] : [], false);
+  },
   // daily: does someone accuse the player?
   considerPlayerAccusation() {
     const s = this.state.scholar;
     if (!s || s.exiled) return;
+    // backstop: the justice ladder demanded a moot — the formal track is not optional
+    try { if (this.justiceState().mootDemanded) return this.forcePlayerAccusation(); } catch (e) {}
     const bs = this.betrayalState();
     if ((bs.cases || []).some(c => (c.status === 'open' || c.status === 'dormant') && c.accused.includes(this.villagerId))) return;
     let crimes = [];
@@ -1504,6 +1553,8 @@
     this.say(`You don't wait for the count. Pack, dark, tree line — gone before the fire is even built. They'll call it guilt. Let them. You're alive, and the world is big.`);
     try { this.seedGossip('fled_' + c.id, { trustworthy: -20 }, this.npcIds().slice(0, 3)); } catch (e) {}
     this.exilePlayer('fled');
+    // unified pipeline: the formal track is done — re-sync the justice ladder
+    try { if (typeof this.syncJusticeAfterMoot === 'function') this.syncJusticeAfterMoot('fled'); } catch (e) {}
     return true;
   },
   // the accuser's clock: they call the moot when they've gathered voices

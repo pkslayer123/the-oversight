@@ -5,7 +5,8 @@ const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
- 'src/js/game.js', 'src/js/food.js', 'src/js/party.js', 'src/js/justice.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+ 'src/js/game.js', 'src/js/food.js', 'src/js/party.js', 'src/js/justice.js',
+ 'src/js/conversation.js', 'src/js/truth.js', 'src/js/betrayal.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 const Game = globalThis.Scattering.Game;
 
 let pass = 0, fail = 0;
@@ -65,21 +66,62 @@ function ok(name, cond) {
   eq('confrontation cleared', Game.justicePendingConfront(confronter), false);
   ok('stage dropped after amends', Game.justiceStage() <= 1);
 
-  // --- 5. refuse -> exile vote ---
+  // --- 5. refuse -> the village goes formal: ONE track, the moot ---
   // rebuild heat to force stage 2 again (clear amends credit first)
   Game.justiceState().amendsCredit = 0;
-  Game.recordCrime('murder', { victim: 'x4' });
+  const vic5 = others()[1] || others()[0];
+  Game.recordCrime('murder', { victim: vic5 });
   Game.justiceState().stage = 1;
   Game.justiceState().confrontedBy = null;
   Game.justiceTick(); // -> stage 2, new confrontation
   eq('stage 2 again', Game.justiceStage(), 2);
+  const confronter5 = Game.justiceState().confrontedBy;
   const r2 = Game.justiceRespond('refuse');
   ok('refused', r2.refused);
-  Game.justiceTick(); // refused -> stage 3 exile vote
-  eq('stage 3 exile vote', Game.justiceStage(), 3);
-  ok('exiled (trust is low)', Game.justiceExiled());
+  Game.justiceTick(); // refused -> stage 3: moot demanded, NOT a legacy exile vote
+  eq('stage 3 moot demanded', Game.justiceStage(), 3);
+  ok('moot demanded flag', !!Game.justiceState().mootDemanded);
+  ok('no parallel legacy exile vote', !Game.justiceExiled());
+  const openPlayerCase = () => (Game.betrayalState().cases || []).find(c =>
+    c.accused.includes(Game.villagerId) && (c.status === 'open' || c.status === 'dormant'));
+  const case1 = openPlayerCase();
+  ok('moot case opened deterministically', !!case1);
+  ok('case charges the murder', case1 && case1.charge === 'murder');
+  ok('confronter brings the charge', case1 && case1.accuser === confronter5);
 
-  // --- 6. exile enforcement ---
+  // --- 5b. mid-trial freeze: no escalation, no mobbing, one track ---
+  Game.recordCrime('murder', { victim: others()[2] || others()[0] });
+  Game.recordCrime('attack', { victim: others()[3] || others()[0] });
+  ok('heat past unforgivable', Game.justiceHeat() >= 95);
+  Game.justiceTick();
+  eq('stage frozen at 3 during trial', Game.justiceStage(), 3);
+  ok('no uprising mid-trial', !Game.tbfight);
+  Game.considerPlayerAccusation(); // a fresh spree can't open a second case
+  eq('one spree one track', (Game.betrayalState().cases || []).filter(c =>
+    c.accused.includes(Game.villagerId) && (c.status === 'open' || c.status === 'dormant')).length, 1);
+
+  // --- 5c. weregild via moot: amends credit still reduces heat, ladder re-syncs ---
+  Game.resolveCase(case1.id, 'cold_war'); // close case 1 without exile
+  eq('cold war -> stage 1, heat still high', Game.justiceStage(), 1);
+  ok('demand cleared after resolution', !Game.justiceState().mootDemanded);
+  const creditBefore = Game.justiceState().amendsCredit || 0;
+  const heatBeforeWeregild = Game.justiceHeat();
+  const case2 = Game.forcePlayerAccusation(); // uncharged crimes from 5b
+  ok('new crimes -> new case, still one track', !!case2 && case2.id !== case1.id);
+  Game.resolveCase(case2.id, 'weregild');
+  ok('amends credit grew', (Game.justiceState().amendsCredit || 0) > creditBefore);
+  ok('heat reduced by amends', Game.justiceHeat() < heatBeforeWeregild);
+  eq('ladder re-synced to social pressure', Game.justiceStage(), 1);
+
+  // --- 6. moot exile is the single formal exile; defiance -> uprising ---
+  Game.recordCrime('attack', { victim: others()[4] || others()[0], caught: true });
+  const case3 = Game.forcePlayerAccusation();
+  const res3 = Game.resolveCase(case3.id, 'exile');
+  ok('moot resolved exile', res3.resolved && res3.path === 'exile');
+  ok('moot exile sets exiled', Game.justiceExiled());
+  eq('stage 3 after moot exile', Game.justiceStage(), 3);
+  const res3b = Game.resolveCase(case3.id, 'exile');
+  ok('no double jeopardy', res3b.already === true);
   Game.map.px = 3; Game.map.py = 3;
   Game.justiceTick(); // exiled + at Haven -> stage 4 uprising
   eq('stage 4 uprising', Game.justiceStage(), 4);

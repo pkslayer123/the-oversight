@@ -2,10 +2,13 @@
  *
  * Two systems, one file:
  *
- * 1. VILLAGE JUSTICE — antisocial behavior escalates. The village doesn't just
- *    lower a trust number; it goes quiet, confronts you, votes you out, and
- *    eventually comes at you with numbers. Every stage is earned, visible in
- *    advance, and has an amends path — until there isn't one.
+ * 1. VILLAGE JUSTICE — antisocial behavior escalates along ONE ladder. The village
+ *    doesn't just lower a trust number; it goes quiet (cold shoulder), confronts
+ *    you (restitution or else), and then goes formal: the moot in betrayal.js is
+ *    the single formal resolution — no parallel exile vote, no double jeopardy.
+ *    While the moot has you, the ladder freezes; nobody gets mobbed mid-trial.
+ *    Exile is enforced, defiance ends in the uprising. Every stage is earned,
+ *    visible in advance, and has an amends path — until there isn't one.
  *
  * 2. COMBAT DIALOGUE — on your turn you can TALK instead of striking. Beg,
  *    intimidate, reason, lie, bribe, taunt. Hostiles talk back on their turns.
@@ -80,6 +83,12 @@
     justiceTick() {
       if (this.over || this.tbfight) return;
       const j = this.justiceState();
+      // UNIFIED PIPELINE: while the moot has you, the village waits. No
+      // parallel escalation, no mobbing someone mid-trial, no cooling either.
+      // (betrayal.js may not be loaded in some unit tests — degrade cleanly.)
+      if (typeof this.playerCaseOpen === 'function') {
+        try { if (this.playerCaseOpen()) return; } catch (e) {}
+      }
       const heat = this.justiceHeat();
       // STAGE 0 -> 1: cold shoulder
       if (j.stage === 0 && heat >= 25) {
@@ -94,13 +103,19 @@
         this.justiceConfront();
         return;
       }
-      // STAGE 2 -> 3: refused, or heat keeps climbing -> exile vote
+      // STAGE 2 -> 3: refused, or heat keeps climbing -> the village goes formal.
+      // The moot (betrayal.js) is the ONE formal track. No parallel exile vote,
+      // no double jeopardy: one crime spree, one trial.
       if (j.stage === 2 && (j.confrontRefused || heat >= 70)) {
         j.stage = 3;
-        this.justiceExileVote();
+        if (!j.mootDemanded) {
+          j.mootDemanded = true;
+          this.justiceDemandMoot();
+        }
         return;
       }
-      // STAGE 3 -> 4: exiled but still here, or unforgivable heat -> violence
+      // STAGE 3 -> 4: exiled but still here (moot exile defied), or unforgivable
+      // heat with no trial pending -> the village comes at you with numbers.
       const atHaven = this.map && this.map.px === 3 && this.map.py === 3;
       if (j.stage === 3 && j.exiled && atHaven) {
         j.stage = 4;
@@ -215,36 +230,36 @@
       return { refused: true };
     },
 
-    justiceExileVote() {
+    // The village goes formal: hand the case to the moot (betrayal.js).
+    // There is exactly one formal track — this never holds its own vote.
+    justiceDemandMoot() {
       const j = this.justiceState();
-      const v = this.state.village;
-      const roster = (v.roster || []).filter(id => id !== this.villagerId);
-      if (!roster.length) { j.stage = 1; return; }
-      let votesOut = 0;
-      const votedOut = [];
-      for (const rid of roster) {
-        const trust = ((v.trust || {})[rid]) || 10;
-        const fear = (this.npcNeeds(rid).fear || 0);
-        // low trust + high fear = vote out. Some brave souls vote to keep you.
-        const vote = (trust < 20 || fear > 60) ? 'out' : (trust > 50 ? 'stay' : (Math.random() < 0.6 ? 'out' : 'stay'));
-        if (vote === 'out') { votesOut++; votedOut.push(rid); }
+      const vid = j.confrontedBy;
+      const name = vid ? this.displayName(vid) : 'The village';
+      this.say(`⚖ ${name} looks around the fire. "No more talking around it. There'll be a moot — all of it, in the open."`);
+      try { if (this.journalNote) this.journalNote('village', 'moot', 'They demanded a moot. Formal. No more hallway justice.'); } catch (e) {}
+      if (typeof this.forcePlayerAccusation === 'function') {
+        try { this.forcePlayerAccusation(); } catch (e) {}
       }
-      const majority = votesOut > roster.length / 2;
-      if (majority) {
-        j.exiled = true;
-        j.exileDay = this.state.scholar.day;
-        this.say(`⚖ The village voted. ${votesOut} to ${roster.length - votesOut}. You're done here. "Take what you can carry and go. Don't come back to Haven."`);
-        this.say('(Exiled: the Haven pantry, stash and bunks are closed to you. Return, and it won\'t be a vote next time.)');
-        try { this.journalNote && this.journalNote('village', 'exile', 'They voted me out. ' + votesOut + ' to ' + (roster.length - votesOut) + '.'); } catch (e) {}
-      } else {
-        j.stage = 1;
-        j.confrontRefused = false;
-        j.confrontedBy = null;
-        j.pendingConfront = false;
-        this.say(`⚖ The vote failed — ${votesOut} to ${roster.length - votesOut}. Not enough. Someone spits near your feet anyway. "This isn't over."`);
+      // if betrayal.js isn't loaded the demand stands as a flag; the real
+      // game always loads betrayal.js after justice.js.
+    },
+
+    // Called by the moot (betrayal.js) when a case against the player resolves.
+    // Re-syncs the single ladder: the formal track is done, social pressure
+    // resumes from the new reality. No double jeopardy, no double exile.
+    syncJusticeAfterMoot(path) {
+      const j = this.justiceState();
+      j.mootDemanded = false;
+      j.confrontRefused = false;
+      j.confrontedBy = null;
+      j.pendingConfront = false;
+      if (path === 'exile' || path === 'player_exile' || path === 'fled') {
+        j.stage = 3; // exiled: enforcement + defiance rules apply
+        return;
       }
-      // everyone remembers the vote
-      for (const rid of votedOut) this.bumpTrust(rid, -5);
+      const heat = this.justiceHeat();
+      j.stage = heat >= 25 ? 1 : 0; // acquittal / weregild / schism / cold war
     },
 
     justiceExileGuards() {
