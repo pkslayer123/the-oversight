@@ -62,13 +62,20 @@ function ok(name, cond) {
     console.log('note: follower did not volunteer in test rolls; testing invite path instead');
   }
 
-  // --- 4. Invite: NO trust gate. Low trust can still join if they agree. ---
+  // --- 4. Invite: SLIGHT trust gate (Steve 2026-10-04). The System insists
+  // you at least KNOW the person (trust >= 20). Zero trust is refused.
   v.trust[B] = 0; // absolute zero trust
   const realRandom = Math.random;
   Math.random = () => 0.0; // force acceptance roll to succeed
   const lowTrustJoin = Game.inviteToParty(B);
   Math.random = realRandom;
-  ok('zero-trust NPC CAN join party (no trust gate)', lowTrustJoin.ok && Game.inParty(B));
+  eq('zero-trust NPC refused (trust gate)', lowTrustJoin.ok, false);
+  ok('refusal mentions knowing them', /know/i.test(lowTrustJoin.msg));
+  v.trust[B] = 25; // just over the floor
+  Math.random = () => 0.0;
+  const knownJoin = Game.inviteToParty(B);
+  Math.random = realRandom;
+  ok('known NPC (trust 25) CAN join party', knownJoin.ok && Game.inParty(B));
   // And refusal is possible too (it's their choice, not the System's).
   const D = roster.find(id => !Game.inParty(id) && (v.roster || []).includes(id));
   if (D) {
@@ -81,10 +88,10 @@ function ok(name, cond) {
 
   // --- 5. Party cap enforced ---
   v.trust[C] = 90;
-  // fill party to cap
+  // fill party to cap (trust floor applies — set trust for fill candidates)
   for (const rid of roster) {
     if (Game.partyMembers().length >= Game.partyCap()) break;
-    if (!Game.inParty(rid)) for (let i = 0; i < 30 && !Game.inParty(rid); i++) Game.inviteToParty(rid);
+    if (!Game.inParty(rid)) { v.trust[rid] = Math.max(v.trust[rid] || 10, 90); for (let i = 0; i < 30 && !Game.inParty(rid); i++) Game.inviteToParty(rid); }
   }
   ok('party reached cap', Game.partyMembers().length === Game.partyCap());
   const extra = roster.find(id => !Game.inParty(id) && (v.roster || []).includes(id));

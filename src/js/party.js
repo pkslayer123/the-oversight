@@ -31,7 +31,10 @@
     },
 
     partyUnlocked() {
-      return !!(this.state.village.partyUnlocked && this.state.systemArrived);
+      // Steve's decision 2026-10-04: formal party = System arrival + real codex
+      // unlock (same moment) + a very slight trust barrier per person — you
+      // have to at least KNOW them.
+      return !!(this.state.village.partyUnlocked && this.state.systemArrived && this.state.scholar.codexUnlocked);
     },
 
     partyMembers() {
@@ -107,8 +110,11 @@
     },
 
     // ---------- INVITES ----------
-    // NO TRUST GATE. Anyone can join if they agree. Trust affects whether
-    // they SAY yes — not whether the System allows it.
+    // SLIGHT TRUST GATE (Steve 2026-10-04): the System formalizes a party, and
+    // it insists you at least KNOW the person. Trust 20 — a conversation or
+    // two above stranger. Trust still affects whether they SAY yes; this is
+    // whether the System allows the formal invite at all.
+    partyTrustFloor() { return 20; },
 
     inviteToParty(vid) {
       const v = this.partyState();
@@ -116,13 +122,19 @@
       if (!this.state.systemArrived || !v.partyUnlocked) {
         return { ok: false, msg: 'There\'s no formal party yet. People just... come with you, or don\'t. (The System hasn\'t gamified friendship.)' };
       }
+      if (!this.state.scholar.codexUnlocked) {
+        return { ok: false, msg: 'The Codex isn\'t real yet. The System can\'t formalize what it can\'t track.' };
+      }
       if (this.inParty(vid)) return { ok: false, msg: `${dname} is already in your party.` };
       if (this.partyFull()) {
         return { ok: false, msg: `Party's full (${this.partyCap()}). The System is very firm about this. Dismiss someone first.` };
       }
-      if (!(v.roster || []).includes(vid)) return { ok: false, msg: 'They\'re not here.' };
+      if (!(v.roster || []).includes(vid)) return { ok: false, msg: 'They\'re not here.' }
 
       const trust = (v.trust && v.trust[vid]) || 10;
+      if (trust < this.partyTrustFloor()) {
+        return { ok: false, msg: `The System squints. "You don't really KNOW ${dname} yet. Talk to them first — the party UI needs a person, not a stranger." (Trust ${trust}/${this.partyTrustFloor()})` };
+      }
       const temp = this.npcTemper(vid);
       const goal = this.npcGoal(vid);
       const mood = this.npcMood ? this.npcMood(vid) : 'steady';
