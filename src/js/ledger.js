@@ -271,6 +271,13 @@
       try {
         this.registerDeath({ kind: 'villager', villagerId: oldId, name: oldName, mx: s.mx, my: s.my, cause: cause || 'the wild', killerId: null, items: keepsakes });
       } catch (e) {}
+      // MEMORIALIZED (Steve 2026-10-05): the death is narrated AND recorded.
+      // registerDeath makes the corpse; village.fallen is the memorial roll —
+      // without this push the mantle transfer left no record the scholar died.
+      try {
+        v.fallen = v.fallen || [];
+        v.fallen.push({ villagerId: oldId, day: s.day || 0, cause: cause || 'the wild' });
+      } catch (e) {}
       try { this.removeVillager(oldId, 'killed'); } catch (e) {}
       this.lineage().push({ name: oldName, epithet: this.leadershipEpithet(), day: s.day || 0, cause: cause || 'the wild' });
       this.say(`🕯️ ${oldName} is dead — ${cause || 'the wild'}. The village stops. Somebody screams. Somebody else starts digging.`);
