@@ -11706,6 +11706,11 @@
     tbTelegraphCue(m) {
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
+      // BATCH 4 (corporate horrors): bespoke codex-gated cues.
+      try {
+        const b4 = this.tbBatch4Cue(m);
+        if (b4) return b4;
+      } catch (e) {}
       // BESPOKE CUE (batch 3, the uncanny): the monster set phase-specific
       // cue text at declare time (the lure's voice, the contract's fine
       // print, the projector's picture). It overrides the generic cue — the
@@ -11744,6 +11749,50 @@
       if (tg && tg.turnsLeft === 1) cue += " It's about to loose!";
       else if (tg && tg.turnsLeft > 1) cue += ' It is still gathering itself…';
       return cue + knownTail();
+    },
+
+    // BATCH 4 telegraph cues: diegetic always, tactical only when earned.
+    // Returns null when the generic cue should run instead.
+    tbBatch4Cue(m) {
+      const tg = m.telegraph;
+      const atk = (m.mdef || {}).attack || {};
+      const mid = (m.mdef || {}).id;
+      if (mid !== 'review_drone' && mid !== 'camera_swarm' && mid !== 'hype_horn' && mid !== 'delegate_beast') return null;
+      const known = this.encUsesFifo(m) ? this.encTelegraphKnown(m) : true;
+      const learned = this.tbPatternKnown(mid, atk.name)
+        ? ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`
+        : '';
+      if (mid === 'review_drone') {
+        const eff = this.droneEff(m);
+        const count = tg && tg.turnsLeft === 3 ? 'THREE.' : tg && tg.turnsLeft === 2 ? 'TWO.' : tg && tg.turnsLeft === 1 ? 'ONE.' : '…';
+        let cue = `📊 CORRECTIVE BEAM CHARGING. DODGE EFFICIENCY CURRENTLY AT ${eff}% — ${eff >= 60 ? 'ABOVE TARGET. NOTED.' : 'BELOW TARGET.'} COMMENCING IN ${count} The line is projected on the dirt.`;
+        cue += known
+          ? ' That projected line is exactly where the beam fires — it cannot re-aim once announced. Step off it.'
+          : ' Light plays across the dirt in a straight line. Probably decorative. Probably.';
+        return cue + learned;
+      }
+      if (mid === 'camera_swarm') {
+        let cue = '📸 "SMILE! You\'re going VIRAL!" The shutters quicken — the flashes are building.';
+        cue += known
+          ? ' Flash Mob: burst radius 2 around the swarm, and it keeps closing in while it builds. Keep moving — or get it near fire.'
+          : ' It wants a reaction. Do not give it one standing still.';
+        return cue + learned;
+      }
+      if (mid === 'hype_horn') {
+        let cue = '📣 "YOU\'VE GOT THIS!" It inflates — throat, chest, the whole resonating chamber swelling like a bagpipe of pure encouragement.';
+        cue += known
+          ? ' Pep Talk: burst radius 3, the biggest burst going. Slow windup — GET CLEAR, four squares or more.'
+          : ' The encouragement is about to become physical. Distance is self-care.';
+        return cue + learned;
+      }
+      if (mid === 'delegate_beast') {
+        let cue = '"let\'s take this OFFLINE." It lowers its horns. The meeting line is SET — attendance is mandatory.';
+        cue += known
+          ? ' It charges exactly the announced line, width 2 — sidestep FARTHER than feels necessary.'
+          : ' It is staring down a line on the ground. You should not be on that line.';
+        return cue + learned;
+      }
+      return null;
     },
 
     // audioEvent: optional hook for the Web Audio terror system (app.js).
@@ -12107,7 +12156,17 @@
           final = Math.round(final * 3);
           this.say('It\'s paper. The torch does what torches do.');
         }
-      }      if (t.kind === 'player' && typeof this.armorBonus === 'function') {
+      }
+      // INFLUENCER (camera_swarm): fragile. Every hit knocks cameras out of
+      // the sky — it takes +25% from everything, and the game says so once.
+      if (t.kind === 'monster' && this.swarmIs(t)) {
+        final = Math.round(final * 1.25);
+        if (!t.fragileNoted && final > 0) {
+          t.fragileNoted = true;
+          this.say('Cameras shatter across the dirt — the swarm is FRAGILE. Every hit knocks lenses out of the sky.');
+        }
+      }
+      if (t.kind === 'player' && typeof this.armorBonus === 'function') {
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
       }
@@ -12412,10 +12471,13 @@
         snap: `Too close. The ${short}'s attention SNAPS to {who} — proximity overrules patience.`,
       };
       const out = Object.assign(dflt, cfg.threatLines || {});
-      // Batch-3 key names (the uncanny): noticeText/painText/adjText.
+      // Bespoke queue-text keys: batch 3 (the uncanny) uses
+      // noticeText/painText/adjText; batch 4 (corporate) uses
+      // noticeText/painText/proximityText. All honored here.
       if (cfg.noticeText) out.notice = cfg.noticeText;
       if (cfg.painText) out.pain = cfg.painText;
       if (cfg.adjText) out.snap = cfg.adjText;
+      if (cfg.proximityText) out.snap = cfg.proximityText;
       return out;
     },
     // MONSTER BATCH 3 (the uncanny): id gates for bespoke encounter behavior.
@@ -12427,6 +12489,12 @@
     mpIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'memory_projector')); },
     smIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'service_mimic')); },
     cgIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'contract_golem')); },
+    // MONSTER BATCH 4 (corporate horrors): id gates for the bespoke layer,
+    // following the deerIs pattern. The generic engine does the rest.
+    droneIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'review_drone')); },
+    swarmIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'camera_swarm')); },
+    hornIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hype_horn')); },
+    beastIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'delegate_beast')); },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
     encThreatQueue(m) {
@@ -12518,6 +12586,18 @@
         if (!cfg.quiet) this.say(this.encThreatLines(m).snap.replace('{who}', who));
         this.audioEvent(cfg.aggroAudio || 'deerAggro');
       }
+    },
+    // Queue narration helpers — thin delegates over encThreatLines (the
+    // unified framework). Batch 4 called these directly; they resolve the
+    // same per-monster noticeText/painText/proximityText.
+    encNoticeLine(m, who) {
+      return this.encThreatLines(m).notice.split('{who}').join(who);
+    },
+    encPainLine(m, who) {
+      return this.encThreatLines(m).pain.split('{who}').join(who);
+    },
+    encProximityLine(m, who) {
+      return this.encThreatLines(m).snap.split('{who}').join(who);
     },
     // codex-gated: have you learned what the freeze means? The windup lane
     // (where the beam will START) and the tactical coaching only appear once
@@ -13096,6 +13176,165 @@
       return false;
     },
 
+    // nearest fire cell within range (chebyshev) of (x,y) — the swarm's bane.
+    tbNearestFire(x, y, range) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      let best = null, bestD = 99;
+      for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
+        if (!detail[cy] || detail[cy][cx] !== 'fire') continue;
+        const d = Math.max(Math.abs(cx - x), Math.abs(cy - y));
+        if (d <= range && d < bestD) { bestD = d; best = { x: cx, y: cy }; }
+      }
+      return best;
+    },
+
+    // the drone grades your dodging in real time. It opens at 41% — BELOW TARGET.
+    droneEff(m) { return (m.dodgeEff == null) ? 41 : m.dodgeEff; },
+    droneScore(m, dodged) {
+      let eff = this.droneEff(m);
+      eff = dodged ? Math.min(97, eff + 8) : Math.max(5, eff - 12);
+      m.dodgeEff = eff;
+      return eff;
+    },
+    // the swarm creeps toward its muse (the player) even mid-windup — one
+    // tile, never onto anyone, never into fire. It cannot stop filming.
+    swarmCreep(m) {
+      const f = this.tbfight;
+      if (!f) return;
+      const p = this.tbFighter('p');
+      if (!p || !p.alive) return;
+      if (Math.max(Math.abs(p.mx - m.mx), Math.abs(p.my - m.my)) <= 1) return;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const s = S.combat.stepToward(m.mx, m.my, p.mx, p.my, (x, y) => {
+        if (x < 0 || x > 8 || y < 0 || y > 8) return true;
+        const cell = detail[y] && detail[y][x];
+        if (cell && this.cellProps(cell).blocks) return true;
+        if (this.tbNearestFire(x, y, 1)) return true;
+        return false;
+      });
+      if (s) {
+        m.mx = s.x; m.my = s.y;
+        if (m.telegraph && !m.telegraph.creepNarrated) {
+          m.telegraph.creepNarrated = true;
+          this.say('It never stops filming — the swarm closes in even as the flashes build.');
+        }
+      }
+    },
+
+    // BATCH 4 breather beats: post-attack recovery, one full turn each.
+    // Returns true when the monster spent its turn breathing.
+    tbFifoBreather(m) {
+      const specs = [
+        ['droneIs', 'droneRecalc', 'recalc',
+          'The drone hovers, re-running the numbers. "RECALIBRATING METRICS."', 'droneRecalc'],
+        ['hornIs', 'hypeCooldown', 'deflate',
+          'It sags, spent — the encouragement took everything out of it.', 'hypeDeflate'],
+        ['beastIs', 'beastDebrief', 'debrief',
+          'It dictates into nothing: "violence action item: closed. Scheduling retrospective."', 'delegateDebrief'],
+      ];
+      for (const [pred, field, phase, text, audio] of specs) {
+        if (this[pred](m) && (m[field] || 0) > 0) {
+          m[field] -= 1;
+          this.encSetPhase(m, phase);
+          this.say(text);
+          if (audio) this.audioEvent(audio);
+          this.tbRefreshTelegraphUI();
+          this.tbEndCheck();
+          return true;
+        }
+      }
+      return false;
+    },
+    // DELEGATE's circle: two steps orbiting the target — it commits to a
+    // direction and keeps turning that way (no pacing out and back), holding
+    // roughly the same distance. All while dictating the meeting into nothing.
+    beastCircle(m, tgt) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const angDiff = (a, b) => {
+        let d = a - b;
+        while (d > Math.PI) d -= 2 * Math.PI;
+        while (d < -Math.PI) d += 2 * Math.PI;
+        return d;
+      };
+      let px = m.mx, py = m.my, dirSign = 0;
+      for (let step = 0; step < 2; step++) {
+        const d0 = Math.max(Math.abs(tgt.mx - m.mx), Math.abs(tgt.my - m.my));
+        const ang0 = Math.atan2(m.my - tgt.my, m.mx - tgt.mx);
+        let best = null, bestScore = -99, bestDa = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = m.mx + dx, ny = m.my + dy;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+          if (nx === px && ny === py) continue; // no backtracking
+          const cell = detail[ny] && detail[ny][nx];
+          if (cell && this.cellProps(cell).blocks) continue;
+          const d = Math.max(Math.abs(tgt.mx - nx), Math.abs(tgt.my - ny));
+          const da = angDiff(Math.atan2(ny - tgt.my, nx - tgt.mx), ang0);
+          if (dirSign !== 0 && Math.sign(da) !== dirSign) continue; // keep turning
+          const score = Math.abs(da) - Math.abs(d - d0) * 0.6;
+          if (score > bestScore) { bestScore = score; best = { x: nx, y: ny }; bestDa = da; }
+        }
+        if (!best) break;
+        px = m.mx; py = m.my;
+        if (dirSign === 0 && bestDa !== 0) dirSign = Math.sign(bestDa);
+        m.mx = best.x; m.my = best.y;
+      }
+      m.circled = true;
+      this.encSetPhase(m, 'circle');
+      this.say('⚠ ' + ((m.mdef.attack || {}).telegraph || 'It paces a wide circle around you.'));
+      this.audioEvent('delegateCircle');
+    },
+    // INFLUENCER's chase: up to full speed at the player, stopping at arm's
+    // length — never onto anyone, never into fire. It fears fire (instinct).
+    swarmChase(m) {
+      const f = this.tbfight;
+      if (!f) return;
+      const p = this.tbFighter('p');
+      if (!p || !p.alive) return;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const danger = this.tbDangerCells(m.key);
+      for (let i = 0; i < (m.speed || 6); i++) {
+        const d = Math.max(Math.abs(p.mx - m.mx), Math.abs(p.my - m.my));
+        if (d <= 1) break;
+        const s = S.combat.stepToward(m.mx, m.my, p.mx, p.my, (x, y) => {
+          if (x < 0 || x > 8 || y < 0 || y > 8) return true;
+          const cell = detail[y] && detail[y][x];
+          if (cell && this.cellProps(cell).blocks) return true;
+          if (this.tbNearestFire(x, y, 1)) return true;
+          return false;
+        }, danger);
+        if (!s) break;
+        m.mx = s.x; m.my = s.y;
+      }
+    },
+
+    // DELEGATE's announced line: true-angle rasterization (not the 8-direction
+    // snap), truncated to the charge length, width 2. The aim point is always
+    // ON the line — the announcement is a genuine threat, and the counterplay
+    // (sidestep the wide line) is always real.
+    beastLineCells(mx, my, tx, ty, len, w) {
+      const cells = [], seen = new Set();
+      const dx = tx - mx, dy = ty - my;
+      const dist = Math.hypot(dx, dy) || 1;
+      const ux = dx / dist, uy = dy / dist;
+      const px = -uy, py = ux; // perpendicular
+      const push = (cx, cy) => {
+        if (cx < 0 || cx > 8 || cy < 0 || cy > 8) return;
+        const k = cx + ',' + cy;
+        if (!seen.has(k)) { seen.add(k); cells.push({ cx, cy }); }
+      };
+      for (let i = 1; i <= len * 2; i++) {
+        const t = i / 2;
+        const cx = Math.round(mx + ux * t), cy = Math.round(my + uy * t);
+        push(cx, cy);
+        if (w > 1) {
+          push(Math.round(mx + ux * t + px * 0.7), Math.round(my + uy * t + py * 0.7));
+          push(Math.round(mx + ux * t - px * 0.7), Math.round(my + uy * t - py * 0.7));
+        }
+      }
+      return cells;
+    },
+
     tbMonsterTurn(m) {
       const f = this.tbfight;
       // ROUNDS SEEN: surviving its turns teaches you its toughness.
@@ -13137,6 +13376,63 @@
       // HUMMICE: the swarm checks itself every turn — deaths drop voices,
       // distance thins the hum.
       if (this.humiceIs(m)) this.tbHumSwarmCheck(m);
+      // CROWD OVERLOAD (drone): it can't grade a crowd. More live targets
+      // than crowdLimit on the queue and the evaluation stalls out.
+      // Bring friends. (The deer is unaffected.)
+      if (useFifo && this.droneIs(m)) {
+        const limit = ((this.encConfig(m) || {}).crowdLimit) || 2;
+        const live = this.encThreatQueue(m).filter(k => {
+          const t = this.tbFighter(k); return t && t.alive && !t.fled;
+        });
+        if (live.length > limit) {
+          m.telegraph = null;
+          this.encSetPhase(m, 'recalc');
+          this.say('📊 "TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." The drone backs off, overwhelmed by the crowd.');
+          this.audioEvent('droneRecalc');
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
+          return;
+        }
+      }
+      // CROWD DEFLATE (horn): it can't encourage a crowd — it only does
+      // one-on-one. The windup fizzles and it loses its nerve for two turns.
+      if (useFifo && this.hornIs(m)) {
+        const limit = ((this.encConfig(m) || {}).crowdLimit) || 2;
+        const live = this.encThreatQueue(m).filter(k => {
+          const t = this.tbFighter(k); return t && t.alive && !t.fled;
+        });
+        if (live.length > limit) {
+          m.telegraph = null;
+          this.encSetPhase(m, 'deflate');
+          m.hypeCooldown = 2;
+          this.say('📣 "YOU\'RE ALL WINNERS, I\'M JUST—" It deflates. It only does one-on-one.');
+          this.audioEvent('hypeDeflate');
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
+          return;
+        }
+      }
+      // FIRE SCATTERS THE SWARM: it follows you — lead it into hazards. A
+      // burning cell within 2 and it loses the shot entirely.
+      if (this.swarmIs(m)) {
+        const fire = this.tbNearestFire(m.mx, m.my, 2);
+        if (fire) {
+          m.telegraph = null;
+          this.encSetPhase(m, 'scatter');
+          this.say('The shutters stutter. Smoke — no, FIRE — in the lenses. "LOSING THE SHOT! LOSING THE—" It breaks off.');
+          this.audioEvent('swarmScatter');
+          const detail = this.genDetail(this.map.px, this.map.py);
+          for (let i = 0; i < 2; i++) {
+            const s = S.combat.stepToward(m.mx, m.my, m.mx * 2 - fire.x, m.my * 2 - fire.y,
+              (x, y) => x < 0 || x > 8 || y < 0 || y > 8 || (detail[y] && detail[y][x] && this.cellProps(detail[y][x]).blocks));
+            if (!s) break;
+            m.mx = s.x; m.my = s.y;
+          }
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
+          return;
+        }
+      }
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
@@ -13197,6 +13493,30 @@
               this.audioEvent('heronStatic');
             }
           }
+          // BATCH 4: the countdown is SPOKEN. The drone tells you exactly
+          // what it's doing — the counterplay is believing it.
+          if (this.droneIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'countdown');
+            const word = tg.turnsLeft === 2 ? 'TWO.' : tg.turnsLeft === 1 ? 'ONE.' : '…';
+            this.say(`📊 "${word}" DODGE EFFICIENCY: ${this.droneEff(m)}%. The projected line brightens.`);
+            this.audioEvent('droneCount', { n: tg.turnsLeft });
+          }
+          // the swarm never stops filming — it closes in even while the
+          // flashes build. Keep moving.
+          if (this.swarmIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'build');
+            this.swarmCreep(m);
+            if (tg.turnsLeft === 1) this.say('📸 "ENGAGEMENT CRITICAL!" The shutters are a strobe now. COVER YOUR EYES.');
+            else this.say('The shutters quicken. The flashes are building…');
+            this.audioEvent('swarmShutters', { urgency: tg.turnsLeft });
+          }
+          // the pep talk escalates — each beat a louder promise.
+          if (this.hornIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'encourage');
+            const shout = tg.turnsLeft === 2 ? "YOU'RE A WINNER!" : tg.turnsLeft === 1 ? 'NEVER GIVE UP!' : "YOU'VE GOT THIS!";
+            this.say(`📣 "${shout}" It's swelling — the air ripples. GET CLEAR.`);
+            this.audioEvent('hypeEncourage', { n: tg.turnsLeft });
+          }
           this.tbRefreshTelegraphUI();
           this.audioEvent('telegraph', { urgency: tg.turnsLeft, windupTick: true });
           return;
@@ -13249,7 +13569,12 @@
         m.telegraph = null;
         if (tg.kind === 'squares') {
           const ptype = (tg.pattern || {}).type;
-          if (ptype !== 'beam' && ptype !== 'line' && !rcfg.commitCharge) {
+          // DELEGATE: the line was ANNOUNCED — it charges exactly where it
+          // said it would. No re-aiming at fire time. That's the deal.
+          // (The stag's commitCharge is the same idea via config.)
+          if (this.beastIs(m)) {
+            this.say('It charges the announced line — exactly where it said it would. Attendance was mandatory.');
+          } else if (ptype !== 'beam' && ptype !== 'line' && !rcfg.commitCharge) {
             const foe = S.combat.nearestEnemy(f.fighters, m);
             if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
           }
@@ -13344,6 +13669,40 @@
           if (this.heronIs(m)) {
             if (Math.random() < 0.5) this.tbHeronDrift(m);
             else if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
+          }
+          // BATCH 4 post-resolve bookkeeping: the joke has consequences.
+          if (this.droneIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'correct');
+            if (tg.threatenedPlayer) {
+              const eff = this.droneScore(m, !playerHit);
+              this.say(`📊 DODGE EFFICIENCY: ${eff}% — ${!playerHit ? 'CLEAN DODGE. LOGGED.' : 'HIT TAKEN. LOGGED.'} ${eff >= 60 ? 'ABOVE TARGET. IT NOTICES.' : 'BELOW TARGET. CORRECTIVE ACTION SCHEDULED.'}`);
+            }
+            this.audioEvent('droneCorrect');
+            m.droneRecalc = 1; // it re-runs the numbers before grading again
+          }
+          if (this.swarmIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'flash');
+            const anyHit = f.fighters.some(o => o.alive && o.key !== m.key && S.combat.isFoe(m, o) && hitKeys.has(o.mx + ',' + o.my));
+            if (!anyHit) {
+              m.escalation = (m.escalation || 0) + 1;
+              this.say('📸 "ENGAGEMENT DROPPING! ESCALATING!" The swarm got no reaction — the next flash will hit harder.');
+              this.audioEvent('swarmEscalate');
+            } else if (m.escalation) {
+              m.escalation = 0;
+              this.say('📸 "WE HAVE ENGAGEMENT!" The swarm got its reaction. For now.');
+            }
+            this.audioEvent('swarmFlash');
+          }
+          if (this.hornIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'detonate');
+            this.audioEvent('hypeDetonate');
+            m.hypeCooldown = 1; // spent. The encouragement took everything.
+          }
+          if (this.beastIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'charge');
+            this.audioEvent('delegateCharge');
+            m.circled = false; // the next charge gets circled first, too. Always.
+            m.beastDebrief = 1;
           }
         }
         if (m.blind > 0) m.blind -= 1;
@@ -13446,6 +13805,17 @@
       if (this.wolfIs(m) && m.wolfBroken) {
         const near = S.combat.nearestEnemy(f.fighters, m);
         if (near) foe = near;
+      }
+      // BATCH 4 breather beats: post-attack recovery with the monster's own
+      // name on it. The breather spends the whole turn.
+      if (this.tbFifoBreather(m)) return;
+      // DELEGATE: it always circles first. One full loop around the target,
+      // announcing the charge — then, and only then, the line.
+      if (this.beastIs(m) && !m.circled && foe && foe.d <= 5) {
+        this.beastCircle(m, foe.f);
+        this.tbRefreshTelegraphUI();
+        if (this.tbEndCheck()) return;
+        return;
       }
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
@@ -13856,8 +14226,28 @@
       }
       // MOTH: it doesn't advance — it drifts, erratically, toward light.
       let approachHandled = false;
-      if (!heronStatue && this.mothIs(m)) approachHandled = this.tbMothApproach(m, foe, blocked);
-      else if (!heronStatue) for (let i = 0; i < m.speed; i++) {
+      // INFLUENCER: it doesn't advance on the queue — it chases its muse (the
+      // player), relentlessly, and only declares the flash when close.
+      // (Falls through to declare below; the generic approach loop is skipped.)
+      let swarmChased = false;
+      if (this.swarmIs(m)) {
+        const pl = this.tbFighter('p');
+        if (pl && pl.alive) {
+          const pd = Math.max(Math.abs(pl.mx - m.mx), Math.abs(pl.my - m.my));
+          if (pd > 3) {
+            this.swarmChase(m);
+            if (useFifo) this.encSetPhase(m, 'film');
+            this.say('Click. Clickclickclick. It\'s still filming you. All of it is filming you.');
+            this.tbRefreshTelegraphUI();
+            if (this.tbEndCheck()) return;
+            return;
+          }
+          this.swarmChase(m);
+        }
+        swarmChased = true;
+      }
+      if (!swarmChased && !heronStatue && this.mothIs(m)) approachHandled = this.tbMothApproach(m, foe, blocked);
+      else if (!swarmChased && !heronStatue) for (let i = 0; i < m.speed; i++) {
         const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         const want = this.encWantRange(m, pat);
         if (d <= want) break;
@@ -13913,6 +14303,12 @@
           attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
           threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
           aim, dir: bdir, aimKey, angle: bang, firing: 0 };
+        // DELEGATE: the announced line is drawn true to the aim — the target
+        // is always on it. Wide, and exactly where it said.
+        if (this.beastIs(m) && pat.type === 'charge') {
+          m.telegraph.cells = this.beastLineCells(m.mx, m.my, foe.f.mx, foe.f.my, pat.length || 4, pat.width || 2);
+          m.telegraph.threatenedPlayer = !!(p0 && p0.alive && m.telegraph.cells.some(c => c.cx === p0.mx && c.cy === p0.my));
+        }
         // WITNESS: seeing it wind up teaches you its attack. The codex notes
         // the behavior — never the true name, never numbers.
         try {
@@ -13942,6 +14338,29 @@
         if (this.humiceIs(m) && (this.tbfight.humStacks || 0) >= 3) {
           this.say('The hum becomes a TIDE — teeth everywhere in the grass, all leaning your way.');
         }
+        // BATCH 4: phases wear the monster's own names; the swarm's grudge
+        // rides along into the damage.
+        if (this.droneIs(m)) {
+          if (useFifo) this.encSetPhase(m, 'project');
+          this.audioEvent('droneHum');
+        }
+        if (this.swarmIs(m)) {
+          if (useFifo) this.encSetPhase(m, 'build');
+          if (m.escalation > 0) {
+            const k = 1 + 0.15 * Math.min(m.escalation, 4);
+            m.telegraph.dmg = [Math.round(atk.damage[0] * k), Math.round(atk.damage[1] * k)];
+          }
+          this.audioEvent('swarmShutters');
+        }
+        if (this.hornIs(m)) {
+          if (useFifo) this.encSetPhase(m, 'inflate');
+          this.audioEvent('hypeInflate');
+        }
+        if (this.beastIs(m)) {
+          if (useFifo) this.encSetPhase(m, 'announce');
+          this.audioEvent('delegateAnnounce');
+        }
+        this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
         }
