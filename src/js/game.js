@@ -3933,6 +3933,11 @@
       const brought = s.inventory.reduce((t, i) => t + (((i.kcalEach || 0) > 0 && !this.isUnprocessed(i)) ? (i.units || 0) * (i.kcalEach || 0) : 0), 0);
       const entries = Object.keys(this.state.codex.plants).length;
       const hasGreens = s.inventory.some(i => i.unit === 'handful' || i.unit === 'cup' || i.unit === 'oz');
+      // FORAGER LOOP (2026-10-05): an unknowns-only return is still a haul.
+      // The staging, the counter message, and the fireside teaching moment
+      // must fire even when no finished food was brought — otherwise the
+      // day's labor silently rots in the pack and nobody teaches anything.
+      const hasUnprocessed = s.inventory.some(i => this.isUnprocessed(i) && (i.units || 0) > 0);
       if (brought > 0) {
         const vv = this.state.village;
         vv.pantry = vv.pantry || [];
@@ -3975,6 +3980,14 @@
           vv.pooledFoodExplained = true;
           this.say('Someone by the fire nods at your pack. "We pool food here. Keep what you need for the road — the rest feeds everyone."');
         }
+        // remove only what was GIVEN (kept food stays in the pack). split stacks were
+        // already reduced to their kept units above; whole-stack gives are removed.
+        s.inventory = s.inventory.filter(i => !giveSet.has(i));
+        vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+        const givenKcal = Math.round(give.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0));
+        this.say(`You keep a day's food (${Math.round(kept)} kcal) and unload ${givenKcal} kcal into Haven's pantry.`);
+      }
+      if (brought > 0 || hasUnprocessed) {
         // PREP STASH: only FINISHED food goes to the pantry. Unprocessed hauls
         // (lumps, carcasses, in-shell nuts, raw meat) land on the kitchen
         // counter — the prep stash — with their spoilage clocks ticking.
@@ -3989,12 +4002,7 @@
             staged++;
           }
         }
-        // remove only what was GIVEN (kept food stays in the pack). split stacks were
-        // already reduced to their kept units above; whole-stack gives are removed.
-        s.inventory = s.inventory.filter(i => !giveSet.has(i));
-        vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
-        const givenKcal = Math.round(give.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0));
-        this.say(`You keep a day's food (${Math.round(kept)} kcal) and unload ${givenKcal} kcal into Haven's pantry.` + (staged ? ` ${staged} unprocessed haul${staged > 1 ? 's' : ''} onto the counter — the clock is ticking.` : ''));
+        if (staged) this.say(`${staged} unprocessed haul${staged > 1 ? 's' : ''} onto the counter — the clock is ticking.`);
         // TEACHING MOMENT: you show your haul. they gather. someone might know something.
         // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
         // find a villager who knows something you don't, and trusts you enough to share
@@ -6417,6 +6425,24 @@
       if (kcal >= 200) this.gainAbilityXP('generous', 1);
       // PLAYSTYLE: the game notices generosity. Not the stat — the pattern.
       if (kcal >= 200) this.notePlaystyle('generous');
+      return null;
+    },
+    // dropItem(idx): leave it for the woods. The pack is honest about space;
+    // the woods take back what you can't carry. Free — dropping is not a
+    // decision the clock charges for. (Forager loop 2026-10-05: the pack-full
+    // message promised this option, but it didn't exist.)
+    dropItem(idx) {
+      const inv = this.state.scholar.inventory || [];
+      const item = inv[idx];
+      if (!item) { this.say('Nothing there.'); return null; }
+      if (item.bonded || (this.isKeepsake && this.isKeepsake(item))) {
+        this.say(`Not the ${item.name || 'that'}. Some things you carry for good.`);
+        return null;
+      }
+      inv.splice(idx, 1);
+      this._packFullStreak = 0;
+      const nm = (this.itemDisplayName ? this.itemDisplayName(item) : (item.name || 'it'));
+      this.say(`You leave the ${nm} for the woods. The woods don't mind.`);
       return null;
     },
 
@@ -10494,6 +10520,7 @@
       if (this.over) return null;
       const scholar = this.state.scholar;
       let msg = '';
+      if (kind !== 'forage') this._packFullStreak = 0; // guidance streak is per-stuck-episode
       if (kind === 'forage') {
         const t = this.playerTile();
         // PHYSICAL: you work the patch around you (area sweep below). Walk to
@@ -10616,7 +10643,18 @@
           return null;
         }
         const estKg = Math.round(harvested.length * 4 * 0.1 * 10) / 10;
-        if (!this.canCarry(estKg)) { this.say('Your pack is full. Eat something, or leave it for the woods.'); return null; }
+        // PACK-FULL STREAK (forager loop 2026-10-05): the first block explains
+        // the real options; repeats stay short. Fifty identical lectures is
+        // chores, not guidance.
+        if (!this.canCarry(estKg)) {
+          const streak = (this._packFullStreak || 0) + 1;
+          this._packFullStreak = streak;
+          this.say(streak === 1
+            ? 'Your pack is full. Eat something, test a lump from your pack, or leave some for the woods.'
+            : 'Still full. (Eat, test a lump, or leave some.)');
+          return null;
+        }
+        this._packFullStreak = 0;
         t.stock = Math.max(0, (t.stock || 0) - harvested.length);
         // harvest each cell: deplete it (3-day regrow), accrue familiarity,
         // aggregate by species. Familiarity NEVER identifies — the camp ritual
@@ -10857,6 +10895,7 @@
     eat() {
       const scholar = this.state.scholar;
       if (this.over) return;
+      this._packFullStreak = 0;
       // POWER NEEDS FOOD: the bar's cap scales with metabolic mult AND bank
       // skillsets. Fire god eats to 9600; a furnace gut banks five days.
       // THE BANK: one pool — eating past "fed" fills the war chest. The bar

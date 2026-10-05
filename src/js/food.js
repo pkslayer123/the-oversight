@@ -652,6 +652,7 @@
     // sortBag(vid, idx, container): the camp ritual. vid null = you sort alone.
     // The sorter names what THEY know; you learn by watching.
     sortBag(vid, idx, container) {
+      this._packFullStreak = 0;
       const cont = container || this.state.scholar.prepStash || [];
       const lump = cont[idx];
       if (!lump || !lump.lump) { this.say('Nothing to sort there.'); return null; }
@@ -729,6 +730,7 @@
     // Targets the lump's plurality species ("a few that look alike").
     testCautiously(idx, opts, container) {
       opts = opts || {};
+      this._packFullStreak = 0;
       const rush = !!opts.rush;
       const cont = container || this.state.scholar.inventory;
       const lump = cont[idx];
