@@ -3659,6 +3659,7 @@
       return `<div class="card codex"><h3>${title}${nameNote}</h3>
         <p class="small">${sys ? `<b>OCC:</b> ${occ} · <b>GOAL:</b> ${goal} · <b>LANG:</b> ${langs}` : `${occ}<br>${goal}<br><span style="opacity:.7">Speaks: ${langs}</span>`}</p>
         ${traits}${story}${notes}${promises}
+        ${Game.personDepthHTML ? Game.personDepthHTML(vid, e) : ''}
         <p class="small" style="opacity:.6">${esc(rel)}</p></div>`;
     }).join('');
     return `<h1 class="title" style="font-size:18px">PEOPLE</h1>
