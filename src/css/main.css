@@ -943,6 +943,22 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
   .ord-status .stat { margin: 3px 0; }
   .ord-status .stat .lbl { font-size: 11px; }
   .ord-status .bar { height: 7px; margin-top: 2px; }
+  /* LOWER MENU (Steve 2026-10-05): Pack, Sleep, Wait, Map — the slow actions.
+     Below status, out of the moment-to-moment flow. Frees space for combat. */
+  .ord-lowermenu { order: 5; margin: 8px 0; }
+  .lowermenu { display: flex; gap: 8px; }
+  .lm-btn {
+    flex: 1; padding: 10px 4px; font-size: 13px; min-height: 44px;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--bg2); color: inherit; cursor: pointer;
+    position: relative;
+  }
+  .lm-btn:active { background: #2a2a2a; }
+  .lm-btn .dot {
+    position: absolute; top: 4px; right: 6px; width: 8px; height: 8px;
+    border-radius: 50%; background: #e05c5c;
+  }
+  .lm-btn .dot.soft { background: #e8b64c; }
   /* GRID CAP: the world stays tappable (~36px cells) but stops eating
      the viewport */
   .ord-gridwrap .detail { max-width: 100%; margin-left: auto; margin-right: auto; }

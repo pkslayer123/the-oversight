@@ -65,8 +65,9 @@
   let pendingTravel = null;
 
   // ---------- shared ----------
-  function statRow(label, val, pct, low, cls) {
-    return `<div class="stat"><div class="lbl"><span>${label}</span><span>${val}</span></div><div class="bar${low ? ' low' : ''}${cls ? ' ' + cls : ''}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></div>`;
+  function statRow(label, val, pct, low, cls, clickable) {
+    const clickAttr = clickable ? ` data-statclick="${clickable}" style="cursor:pointer"` : '';
+    return `<div class="stat"${clickAttr}><div class="lbl"><span>${label}</span><span>${val}</span></div><div class="bar${low ? ' low' : ''}${cls ? ' ' + cls : ''}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></div>`;
   }
   // combatStripHTML: glanceable combat awareness above the grid. When steel
   // is out, the top of the screen tells you who's in the fight and — most
@@ -115,10 +116,41 @@
     } catch (e) {}
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
       statRow('FOOD (you)', foodVal, st.kcal / cap * 100, st.kcal < 500, banked > 0 ? 'banked' : '') +
-      statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
+      statRow('PACK 🎒', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap, '', 'pack') +
       statRow('WATER', st.hydration + '% · ' + st.waterCleanL + 'L clean', st.hydration, st.hydration < 30) +
       (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '') +
       contestRow;
+  }
+
+  // LOWER MENU (Steve 2026-10-05): Pack, Sleep, Wait, Map — the slow actions.
+  // Not in the moment-to-moment action row; they live below with status.
+  // This frees the main action area for combat.
+  function lowerMenuHTML(st) {
+    if (st.inCombat || Game.state.over) return '';
+    const sleepDot = st.energy < 30 ? '<span class="dot"></span>'
+      : (st.isNight ? '<span class="dot soft"></span>' : '');
+    return `<div class="lowermenu">` +
+      `<button class="lm-btn" data-lm="pack">🎒 Pack</button>` +
+      `<button class="lm-btn" data-lm="sleep">😴 Sleep${sleepDot}</button>` +
+      `<button class="lm-btn" data-lm="wait">⏳ Wait</button>` +
+      `<button class="lm-btn" data-lm="map">🗺️ Map</button>` +
+      `</div>`;
+  }
+
+  function wireLowerMenu() {
+    document.querySelectorAll('[data-lm]').forEach(b => {
+      b.onclick = () => {
+        const a = b.dataset.lm;
+        try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
+        if (a === 'pack') { invSheet(); }
+        else if (a === 'sleep') { Game.sleep(); rerender(); }
+        else if (a === 'wait') { Game.doAction('wait'); rerender(); }
+        else if (a === 'map') {
+          const compass = document.getElementById('compass');
+          if (compass) compass.click();
+        }
+      };
+    });
   }
 
   // ---------- title ----------
@@ -710,11 +742,9 @@
       const onHaven = Game.playerTile && Game.playerTile().type === 'haven';
       if (acc === 'remote' && !onHaven) sysPantryBtn = `<button class="self-btn" data-self="syspantry" title="◈ SYSTEM requisition — the pantry manifests">◈ Pantry</button>`;
     } catch (e) {}
-    return `<div class="selfbar"><span class="ctx-label">you:</span>` +
-      `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` +
-      `<button class="self-btn" data-self="sleep">😴 Sleep${sleepDot}</button>` +
-      `<button class="self-btn" data-self="pack">🎒 Pack (${st.invCount})${packDot}</button>` +
-      `<button class="self-btn" data-self="wait">⏳ Wait</button>${exileBtns}${caseBtn}${sysPantryBtn}</div>`;
+    return (exileBtns || caseBtn || sysPantryBtn)
+      ? `<div class="selfbar"><span class="ctx-label">you:</span>${exileBtns}${caseBtn}${sysPantryBtn}</div>`
+      : '';
   }
 
   function wireSelfBar() {
@@ -3129,7 +3159,7 @@
             // note: data-cook below covers cookable via the extended condition
             i._cookable = cookable;
           } catch (e) {}
-          return `<p class="small">${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
+          return `<p class="small">${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
@@ -3148,6 +3178,7 @@
     slot.querySelectorAll('[data-settrap]').forEach(b => b.onclick = (e) => { Game.setTrap(b.dataset.settrap); inlineView.result = 'Trap set.'; refresh(); });
     slot.querySelectorAll('[data-read]').forEach(b => b.onclick = rewire(() => Game.readBook(b.dataset.read), 'You read.'));
     slot.querySelectorAll('[data-use]').forEach(b => b.onclick = rewire(() => Game.useItem(+b.dataset.use), 'Used.'));
+    slot.querySelectorAll('[data-eatone]').forEach(b => b.onclick = rewire(() => Game.eatOne(+b.dataset.eatone), 'Eaten.'));
     slot.querySelectorAll('[data-channel]').forEach(b => b.onclick = rewire(() => Game.channelSentiment(+b.dataset.channel), 'Channeled.'));
     slot.querySelectorAll('[data-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.cook), 'Cooked.'));
     // FOOD REALITY: processing buttons.
@@ -3473,6 +3504,7 @@
             <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
             <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
             <div class="ord-status">${statusBars(st)}</div>
+            <div class="ord-lowermenu">${lowerMenuHTML(st)}</div>
           </div>
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
           ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">🧭 d-pad walks a step · hold to keep walking · tap a far tile to walk the full path · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
@@ -3687,6 +3719,11 @@
     wireSelfBar();
     wireAbilityBar();
     wireTargetBar();
+    wireLowerMenu();
+    // PACK MENU (Steve 2026-10-05): PACK status row opens inventory, not a button
+    document.querySelectorAll('[data-statclick="pack"]').forEach(el => {
+      el.onclick = () => invSheet();
+    });
     // THE SYSTEM INTEGRATING INTO YOUR PERCEPTION: post-day-7, the interface
     // gains System styling — glowing borders, overlay accents. You FEEL it.
     try { document.body.classList.toggle('system-live', !!Game.state.systemArrived); } catch (e) {}

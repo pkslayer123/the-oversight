@@ -11030,7 +11030,11 @@
       while (scholar.kcal < cap) {
         // find the most perishable FOOD (not gear)
         // FOOD REALITY: unknown / unprocessed food isn't food yet — skip it.
-        const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false);
+        // SPOILAGE: rot isn't food either — the dawn sweep clears it; mid-day
+        // it's skipped, never eaten.
+        const day = scholar.day;
+        const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false
+          && !(i.spoilDay !== undefined && i.spoilDay <= day));
         if (foodIdx === -1) break; // no food left
         const it = scholar.inventory[foodIdx];
         const kcal = it.kcalEach;
@@ -11143,6 +11147,64 @@
       if (ate > 0) this.tele('eat', { ateKcal: ate, spoiled });
       // ACTION CLOCK: a meal is 1 tick (time-only — eating costs no effort).
       if (ate > 0) this.tickAction(1);
+    },
+
+    // EAT ONE (Steve 2026-10-05): eat a single unit from the Pack menu.
+    // The Eat button is gone — this is how you eat now. In combat, it costs an action.
+    eatOne(idx) {
+      const scholar = this.state.scholar;
+      if (this.over) return;
+      const it = scholar.inventory[idx];
+      if (!it || (it.kcalEach || 0) <= 0 || (it.units || 0) <= 0) {
+        this.say('Nothing edible there.');
+        return;
+      }
+      if (it.edible === false) {
+        this.say(`${it.name} isn't food yet — ${it.foodState === 'unknown' ? 'identify it first' : it.prep || 'process it'}.`);
+        return;
+      }
+      const cap = this.kcalCap();
+      if (scholar.kcal >= cap) {
+        this.say('You are full enough.');
+        return;
+      }
+      // Safety checks (same as eat(): symbiote, poison, disease)
+      if (it.safe === false && this.hasAbility('symbiote') && !it.symWarned) {
+        it.symWarned = true;
+        this.say(`Your gut churns a warning — the ${it.name} is wrong. (symbiote: unsafe food)`);
+      }
+      if (it.safe === false) {
+        const pChance = this.modTarget('food.poison_chance', 0.2);
+        if (Math.random() < pChance) {
+          scholar.health = Math.max(0, scholar.health - 5);
+          this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
+        }
+      }
+      if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
+        scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
+        scholar.diseases = scholar.diseases || [];
+        scholar.diseases.push({ name: it.diseaseRisk.note || 'food poisoning', day: scholar.day });
+        this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
+      }
+      if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
+        scholar.health = Math.max(0, (scholar.health || 100) - 10);
+        scholar.poisons = scholar.poisons || [];
+        scholar.poisons.push({ name: it.poisonRisk.note || 'toxin', day: scholar.day });
+        this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
+      }
+      const kcal = it.kcalEach;
+      scholar.kcal = Math.min(cap, scholar.kcal + kcal);
+      if (this.blendKcalQuality) this.blendKcalQuality(kcal, this.mealQuality ? this.mealQuality(it) : 1);
+      it.units -= 1;
+      if (it.units <= 0) scholar.inventory.splice(idx, 1);
+      scholar.energy = Math.min(100, scholar.energy + 5);
+      this.say(`You eat the ${it.name}. (+${kcal} kcal)`);
+      // COMBAT: eating from pack costs an action (Steve 2026-10-05)
+      if (scholar.monster || this.state.inCombat) {
+        this.spendCombatAction('eat');
+      } else {
+        this.tickAction(1);
+      }
     },
 
     drinkTreated() {
@@ -11907,6 +11969,9 @@
       this.dayPart = 0; this.ap = 1;
       scholar.dayTicks = 0; scholar.actionClock = 0; // action clock: new day, fresh budget
       this.say(`— DAY ${scholar.day} DAWN — ${DAY_PART_HINT.dawn}`);
+      // SPOILAGE (hunter loop): overnight, rotten food leaves the pack —
+      // announced, never silent. Neglect has a visible cost.
+      try { this.sweepSpoiled(); } catch (e) {}
       this.save();
       return this.status();
     },
@@ -13277,6 +13342,16 @@
       this.say('You hold still, watching.');
       this.tbAfterPlayerAction();
       return true;
+    },
+
+    // SPEND COMBAT ACTION (Steve 2026-10-05): using a consumable from Pack
+    // in combat costs your action. Eating, drinking, using items — all of it.
+    spendCombatAction(kind) {
+      const p = this.tbFighter('p');
+      if (!p) return;
+      p.acted = true;
+      this.say(`You ${kind} — that costs your action.`);
+      this.tbAfterPlayerAction();
     },
 
     tbAfterPlayerAction() {
