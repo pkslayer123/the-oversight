@@ -12158,7 +12158,6 @@
           this.say(`The ${short}'s head swings toward ${who}. You're on the list now — it doesn't forget.`);
         }
       }
-      }
       return true;
     },
     encCurrentTarget(m) {
