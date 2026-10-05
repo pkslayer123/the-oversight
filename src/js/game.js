@@ -11399,6 +11399,13 @@
           : ' The encouragement is about to become physical. Distance is self-care.';
         return cue + learned;
       }
+      if (mid === 'delegate_beast') {
+        let cue = '"let\'s take this OFFLINE." It lowers its horns. The meeting line is SET — attendance is mandatory.';
+        cue += known
+          ? ' It charges exactly the announced line, width 2 — sidestep FARTHER than feels necessary.'
+          : ' It is staring down a line on the ground. You should not be on that line.';
+        return cue + learned;
+      }
       return null;
     },
 
@@ -12083,6 +12090,45 @@
       }
       return false;
     },
+    // DELEGATE's circle: two steps orbiting the target — it commits to a
+    // direction and keeps turning that way (no pacing out and back), holding
+    // roughly the same distance. All while dictating the meeting into nothing.
+    beastCircle(m, tgt) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const angDiff = (a, b) => {
+        let d = a - b;
+        while (d > Math.PI) d -= 2 * Math.PI;
+        while (d < -Math.PI) d += 2 * Math.PI;
+        return d;
+      };
+      let px = m.mx, py = m.my, dirSign = 0;
+      for (let step = 0; step < 2; step++) {
+        const d0 = Math.max(Math.abs(tgt.mx - m.mx), Math.abs(tgt.my - m.my));
+        const ang0 = Math.atan2(m.my - tgt.my, m.mx - tgt.mx);
+        let best = null, bestScore = -99, bestDa = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = m.mx + dx, ny = m.my + dy;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+          if (nx === px && ny === py) continue; // no backtracking
+          const cell = detail[ny] && detail[ny][nx];
+          if (cell && this.cellProps(cell).blocks) continue;
+          const d = Math.max(Math.abs(tgt.mx - nx), Math.abs(tgt.my - ny));
+          const da = angDiff(Math.atan2(ny - tgt.my, nx - tgt.mx), ang0);
+          if (dirSign !== 0 && Math.sign(da) !== dirSign) continue; // keep turning
+          const score = Math.abs(da) - Math.abs(d - d0) * 0.6;
+          if (score > bestScore) { bestScore = score; best = { x: nx, y: ny }; bestDa = da; }
+        }
+        if (!best) break;
+        px = m.mx; py = m.my;
+        if (dirSign === 0 && bestDa !== 0) dirSign = Math.sign(bestDa);
+        m.mx = best.x; m.my = best.y;
+      }
+      m.circled = true;
+      this.encSetPhase(m, 'circle');
+      this.say('⚠ ' + ((m.mdef.attack || {}).telegraph || 'It paces a wide circle around you.'));
+      this.audioEvent('delegateCircle');
+    },
     // INFLUENCER's chase: up to full speed at the player, stopping at arm's
     // length — never onto anyone, never into fire. It fears fire (instinct).
     swarmChase(m) {
@@ -12107,6 +12153,32 @@
       }
     },
 
+    // DELEGATE's announced line: true-angle rasterization (not the 8-direction
+    // snap), truncated to the charge length, width 2. The aim point is always
+    // ON the line — the announcement is a genuine threat, and the counterplay
+    // (sidestep the wide line) is always real.
+    beastLineCells(mx, my, tx, ty, len, w) {
+      const cells = [], seen = new Set();
+      const dx = tx - mx, dy = ty - my;
+      const dist = Math.hypot(dx, dy) || 1;
+      const ux = dx / dist, uy = dy / dist;
+      const px = -uy, py = ux; // perpendicular
+      const push = (cx, cy) => {
+        if (cx < 0 || cx > 8 || cy < 0 || cy > 8) return;
+        const k = cx + ',' + cy;
+        if (!seen.has(k)) { seen.add(k); cells.push({ cx, cy }); }
+      };
+      for (let i = 1; i <= len * 2; i++) {
+        const t = i / 2;
+        const cx = Math.round(mx + ux * t), cy = Math.round(my + uy * t);
+        push(cx, cy);
+        if (w > 1) {
+          push(Math.round(mx + ux * t + px * 0.7), Math.round(my + uy * t + py * 0.7));
+          push(Math.round(mx + ux * t - px * 0.7), Math.round(my + uy * t - py * 0.7));
+        }
+      }
+      return cells;
+    },
 
     tbMonsterTurn(m) {
       const f = this.tbfight;
@@ -12281,7 +12353,11 @@
         m.telegraph = null;
         if (tg.kind === 'squares') {
           const ptype = (tg.pattern || {}).type;
-          if (ptype !== 'beam' && ptype !== 'line') {
+          // DELEGATE: the line was ANNOUNCED — it charges exactly where it
+          // said it would. No re-aiming at fire time. That's the deal.
+          if (this.beastIs(m)) {
+            this.say('It charges the announced line — exactly where it said it would. Attendance was mandatory.');
+          } else if (ptype !== 'beam' && ptype !== 'line') {
             const foe = S.combat.nearestEnemy(f.fighters, m);
             if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
           }
@@ -12358,6 +12434,12 @@
             this.audioEvent('hypeDetonate');
             m.hypeCooldown = 1; // spent. The encouragement took everything.
           }
+          if (this.beastIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'charge');
+            this.audioEvent('delegateCharge');
+            m.circled = false; // the next charge gets circled first, too. Always.
+            m.beastDebrief = 1;
+          }
         }
         if (m.blind > 0) m.blind -= 1;
         this.tbLearnPattern(m);
@@ -12413,6 +12495,14 @@
       // BATCH 4 breather beats: post-attack recovery with the monster's own
       // name on it. The breather spends the whole turn.
       if (this.tbFifoBreather(m)) return;
+      // DELEGATE: it always circles first. One full loop around the target,
+      // announcing the charge — then, and only then, the line.
+      if (this.beastIs(m) && !m.circled && foe && foe.d <= 5) {
+        this.beastCircle(m, foe.f);
+        this.tbRefreshTelegraphUI();
+        if (this.tbEndCheck()) return;
+        return;
+      }
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
@@ -12516,6 +12606,12 @@
           attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
           threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
           aim, dir: bdir, aimKey, angle: bang, firing: 0 };
+        // DELEGATE: the announced line is drawn true to the aim — the target
+        // is always on it. Wide, and exactly where it said.
+        if (this.beastIs(m) && pat.type === 'charge') {
+          m.telegraph.cells = this.beastLineCells(m.mx, m.my, foe.f.mx, foe.f.my, pat.length || 4, pat.width || 2);
+          m.telegraph.threatenedPlayer = !!(p0 && p0.alive && m.telegraph.cells.some(c => c.cx === p0.mx && c.cy === p0.my));
+        }
         // WITNESS: seeing it wind up teaches you its attack. The codex notes
         // the behavior — never the true name, never numbers.
         try {
@@ -12545,6 +12641,10 @@
         if (this.hornIs(m)) {
           if (useFifo) this.encSetPhase(m, 'inflate');
           this.audioEvent('hypeInflate');
+        }
+        if (this.beastIs(m)) {
+          if (useFifo) this.encSetPhase(m, 'announce');
+          this.audioEvent('delegateAnnounce');
         }
         this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
         if (isDeer) {
