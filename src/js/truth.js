@@ -139,6 +139,16 @@
         `{first} says they want {told}. But everything they DO points at {truth}.`,
         `{first} claims {told}, then spends the whole evening doing the exact thing someone who wants {truth} would do.`,
       ],
+      // cache-theft confessions: the robber admits it. {what} = what was stolen.
+      // Per-game no-repeat applies here too — thieves don't share a script.
+      theftConfess: [
+        `"Okay." {first} looks down. "Okay. It was me. {what} — I was hungry and I... I'm sorry." Their voice is small.`,
+        `"Oh." A long pause. "I didn't think it was anyone's. It's gone — I ate it days ago. I'm sorry."`,
+        `"Fine." Sharp. "You want to hear it? I dug it up. I was starving and your hole was right there. Happy now?"`,
+        `Quiet for a long time. Then, barely audible: "I took {what}. I won't do it again."`,
+        `"Ha." Not amused. "So you figured it out. Yeah, I took {what}. What are you going to do about it?"`,
+        `{first} won't meet your eyes. "I told myself finders keepers. It wasn't finders keepers. I'm sorry."`,
+      ],
     },
 
     // drawTruthLine(poolKey, vid, vars): pick a line, avoid immediate repeats
@@ -182,6 +192,7 @@
       if (v.told) line = line.split('{told}').join(v.told);
       if (v.atruth) line = line.split('{atruth}').join(v.atruth);
       if (v.atold) line = line.split('{atold}').join(v.atold);
+      if (v.what) line = line.split('{what}').join(v.what);
       return line;
     },
 
@@ -583,6 +594,11 @@
       const evText = doubt.evidence.length ? doubt.evidence.join('; ') : 'things you\'ve noticed';
       let line, outcome;
 
+      // CACHE THEFT suspicion: the doubt carries the crime, not a lie about
+      // backstory. The evidence IS the sighting. Handled on its own path —
+      // a guilty thief must never resolve as "misunderstanding."
+      if (doubt.theft) return this.confrontTheft(vid, doubtId);
+
       // The lie behind this doubt was already confessed: the doubt is stale.
       // They don't confess the same thing twice — they point that out.
       if (!lie && lies) {
@@ -672,7 +688,63 @@
       return { ok: true, line, outcome };
     },
 
-    // truthSlip(vid, lie): over days, details slip. Called from endDay.
+    // confrontTheft(vid, doubtId): "I know you dug up my cache."
+    // The doubt's theft marker names the crime; the sighting is real, so the
+    // accused IS the robber. Temperament and trust decide confess / deflect /
+    // hostile — mirroring the lie-confrontation odds, but a confession here
+    // costs trust (honesty about stealing isn't the same as honesty).
+    confrontTheft(vid, doubtId) {
+      const doubt = (this.state.codex.doubts || []).find(d => d.id === doubtId);
+      if (!doubt || doubt.resolved || !doubt.theft) return { ok: false, line: '"Never mind."' };
+      const t = doubt.theft;
+      const what = t.label || 'your buried food';
+      const vp = this.vpOf(vid) || {};
+      const temp = this.npcTemper(vid);
+      const dark = (vp.personality || {}).dark;
+      const trust = ((this.state.village.trust || {})[vid]) || 10;
+      const first = String(this.displayName(vid)).split(' ')[0];
+
+      let confessP = 0.30;
+      if (temp === 'warm' || temp === 'gentle') confessP += 0.20;
+      if (temp === 'prickly' || temp === 'bold') confessP -= 0.10;
+      if (dark && dark.kind === 'malicious') confessP = 0.05;
+      confessP += (trust - 30) / 200;
+      const roll = Math.random();
+      let line, outcome;
+
+      if (roll < confessP) {
+        // CONFESSION — they did it, they say so. The food's gone (eaten days
+        // ago); what you get is the truth, on the record, and the village
+        // hears. Theft has a social price.
+        outcome = 'confessed';
+        line = this.drawTruthLine('theftConfess', vid, { first, what });
+        if (!line) line = `"It was me. ${what} — I'm sorry."`;
+        this.resolveDoubt(doubtId, `confessed: stole ${what} (day ${t.day})`);
+        try {
+          this.journalLearn(vid, 'note', `Admitted: stole ${what} — buried at ${t.place}, day ${t.day}.`, { via: 'confessed', quiet: true });
+          this.bumpTrust(vid, -4);
+          this.remember(vid, 'theft-confessed', `admitted stealing ${what}`);
+        } catch (e) {}
+      } else if (roll < confessP + 0.35) {
+        // DEFLECTION — the doubt stays open; the evidence grows.
+        outcome = 'deflected';
+        const smooth = dark && dark.kind === 'malicious';
+        line = this.drawTruthLine(smooth ? 'deflectSmooth' : 'deflectClumsy', vid);
+        doubt.evidence.push(`confronted (day ${day()}) — deflected`);
+        try { this.bumpTrust(vid, -3); this.remember(vid, 'deflected', 'dodged a theft accusation'); } catch (e) {}
+      } else {
+        // COUNTER-ATTACK
+        outcome = 'attacked';
+        line = this.drawTruthLine('attacks', vid);
+        doubt.evidence.push(`confronted (day ${day()}) — turned hostile`);
+        try {
+          this.bumpTrust(vid, -8);
+          this.applyRep(vid, { honest: -4 }, 1);
+          this.remember(vid, 'hostile', 'turned on you when accused of theft');
+        } catch (e) {}
+      }
+      return { ok: true, line, outcome };
+    },
     truthSlip(vid, lie) {
       if (!lie || lie.confessed) return;
       const poolKey = lie.field === 'occupation' ? 'slipOccupation'

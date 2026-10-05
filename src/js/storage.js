@@ -411,6 +411,50 @@
       this.say(`Dug up: ${c.label}. Still yours.`);
       return this.tickAction(16) || this.status();
     },
+    // pickCacheRobber: the culprit is a real villager, weighted by appetite.
+    // Selfish sharers and low-trust villagers are likelier; a villager whose
+    // goal is survival is hungrier than most. Never the player.
+    pickCacheRobber() {
+      const v = this.state.village || {};
+      const roster = (v.roster || []).filter(id => id !== this.state.scholar.villagerId);
+      if (!roster.length) return null;
+      const weights = roster.map(id => {
+        let wt = 1;
+        try {
+          const vp = (this.vpOf && this.vpOf(id)) || {};
+          const pers = vp.personality || {};
+          if (pers.sharing === 'selfish') wt += 2;
+          else if (pers.sharing === 'pragmatic' || pers.sharing === 'hoarder') wt += 1;
+          else if (pers.sharing === 'generous') wt = Math.max(0.2, wt - 0.7);
+          const trust = ((v.trust || {})[id]) || 15;
+          if (trust < 10) wt += 1;
+          if (this.npcGoal && this.npcGoal(id) === 'survive') wt += 0.5;
+        } catch (e) {}
+        return wt;
+      });
+      let r = Math.random() * weights.reduce((a, b) => a + b, 0), i = 0;
+      while (i < roster.length - 1 && (r -= weights[i]) > 0) i++;
+      return roster[i];
+    },
+    // plantCacheTheftSuspicion: a witness saw the robber out by the cache.
+    // Plants an 'observation' doubt on the TRUE robber with a theft marker —
+    // the detective loop (confrontDoubt) can work it from there.
+    plantCacheTheftSuspicion(vid, c) {
+      const v = this.state.village || {};
+      const others = (v.roster || []).filter(id => id !== vid && id !== this.state.scholar.villagerId);
+      if (!others.length) return null;
+      const witness = others[Math.floor(Math.random() * others.length)];
+      const cn = c.node || {};
+      let place = 'the wilds';
+      try { place = this.nodeEpithet(cn.x, cn.y) || place; } catch (e) {}
+      const wName = this.displayName(witness);
+      const rName = this.displayName(vid);
+      const text = `${wName} mentioned seeing ${rName} out by ${place} around day ${day()} — pack heavy, walking fast. Your cache at ${place} was robbed around then.`;
+      const d = this.addDoubt(vid, 'observation', text,
+        [`${wName} saw them near ${place} (day ${day()})`, `cache robbed: ${c.label}`]);
+      if (d) d.theft = { cacheId: c.id, label: c.label, place, day: day(), witness };
+      return d;
+    },
     // isStashableTool: can this inventory item be donated as a shared tool?
     isStashableTool(item) {
       if (!item || item.bonded) return false;
@@ -544,19 +588,37 @@
         }
         if (!isFinite(nearest)) nearest = 5;
         const p = this.cacheTheftChance(nearest);
-        if (Math.random() < p) {
-          c.found = true;
-          c.items = [];
-          this.say('You check your cache. Disturbed earth. Empty. Someone found it.');
-          try {
-            const cx2 = this.state.codex;
-            cx2.places = cx2.places || [];
-            cx2.places.push({ day: day(), text: `Cache robbed: ${c.label} — ${c.desc}` });
-          } catch (e) {}
-        }
+        if (Math.random() < p) this.resolveCacheRobbery(c);
       }
     } catch (e) {}
     return r;
+  };
+
+  // resolveCacheRobbery(c): the theft itself. Attached to Game directly (next
+  // to the wrap that calls it) so tests can drive it without the per-batch
+  // gate; the gate (Math.random() < p) stays in npcBatchTurn.
+  Game.resolveCacheRobbery = function (c) {
+    c.found = true;
+    c.items = [];
+    // THE ROBBER IS REAL: someone in the village did this. Selfish
+    // mouths and low-trust villagers are likelier; anyone can be hungry.
+    // (Steve: theft allowed, socially punished — the punishment needs a
+    // name to land on, so the crime keeps its culprit.)
+    const robber = this.pickCacheRobber();
+    if (robber) c.robbedBy = robber;
+    this.say('You check your cache. Disturbed earth. Empty. Someone found it.');
+    // A TRACE, SOMETIMES: the woods are big, but people talk. A witness
+    // mentions seeing the robber out there — a real sighting of the real
+    // culprit, delivered as gossip, which is how information travels.
+    // Not always: sometimes nobody saw anything and the earth keeps it.
+    if (robber && Math.random() < 0.5) {
+      try { this.plantCacheTheftSuspicion(robber, c); } catch (e) {}
+    }
+    try {
+      const cx2 = this.state.codex;
+      cx2.places = cx2.places || [];
+      cx2.places.push({ day: day(), text: `Cache robbed: ${c.label} — ${c.desc}` });
+    } catch (e) {}
   };
 
 })();
