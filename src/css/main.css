@@ -130,14 +130,16 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   position: relative;
 }
-.ord-bottombar {
-  /* LOCKED (Steve 2026-10-05): fixed to the bottom, never slides over the grid.
-     position:fixed, not sticky — iOS Safari ignores sticky here. */
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
-  display: flex; justify-content: center; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-  background: rgba(8, 10, 14, .92); border-top: 1px solid rgba(255, 255, 255, .1);
-  /* Never cover the grid: the page gets bottom padding equal to the bar */
+.ord-dpad {
+  /* IN FLOW (Steve 2026-10-05): below the grid, not fixed. You only need it
+     when looking at the map. Scrolls naturally with content. */
+  display: flex; justify-content: center; padding: 8px 0;
 }
+.ord-narration { margin: 8px 0; }
+.ord-narration .dialogue-box.narr-box { margin: 0; }
+.ord-combathead { margin: 4px 0; }
+.ord-actions { margin: 8px 0; }
+/* .ord-bottombar removed (Steve 2026-10-05): D-pad lives in flow below grid */
 .dpbtn {
   font-size: 17px; line-height: 1; color: #fff;
   background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .16);

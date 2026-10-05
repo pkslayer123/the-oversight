@@ -2292,6 +2292,23 @@
     </div>`;
   }
 
+  // NARRATION (Steve 2026-10-05): ONE box, ONE format, Pokémon-style.
+  // Dialogue, combat, exploration — all narration renders here, identically.
+  // No separate combat narr, no feedback card, no bottom log. One surface.
+  function narrationBoxHTML(st, chatView) {
+    // Dialogue takes precedence (already Pokémon-style)
+    if (chatView) return dialogueBoxHTML(chatView);
+    // Otherwise: latest narration line, if any
+    const lastNarr = (Game.log && Game.log.length) ? Game.log[Game.log.length - 1] : '';
+    const fb = feedbackInner();
+    const text = fb || lastNarr;
+    if (!text) return '';
+    // Strip HTML, show as plain narration
+    const clean = String(text).replace(/<[^>]*>/g, '').trim();
+    if (!clean) return '';
+    return `<div class="dialogue-box narr-box"><div class="dlg-line narr"><span class="narr">${esc(clean)}</span></div></div>`;
+  }
+
   function wireDialogueBox() {
     const nx = document.getElementById('dlg-next');
     if (nx) nx.onclick = () => chatAdvance();
@@ -3384,21 +3401,23 @@
                      the strip pushed the grid off-screen. All combat info lives
                      in the compact panel. */}
           <div class="ord-gridwrap">
+            <div class="ord-status">${statusBars(st)}</div>
             <div class="detail">${renderDetail(st)}</div>
             ${perceiveHTML()}
             <div id="inlineslot"></div>
+            <div class="ord-dpad">${dpadHTML()}</div>
             <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
           </div>
-          ${st.inCombat ? `<div class="ord-combatpanel">${panelCombat(st)}</div>` : ''}
-          ${chatView ? `<div class="ord-dialogue">${dialogueBoxHTML(chatView)}</div>` : ''}
-          <div class="ord-status">${statusBars(st)}</div>
-          <div class="ord-self">${selfBarHTML(st)}</div>
-          <div class="ord-stats">${statsHTML(st)}</div>
-          <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
-          <div class="ord-target">${targetBarHTML()}</div>
-          <div class="ord-danger">${dangerBarHTML()}</div>
-          <div class="ord-ability">${abilityBarHTML()}</div>
-          ${feedbackHTML()}
+          <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
+          ${st.inCombat ? `<div class="ord-combathead">${panelCombat(st)}</div>` : ''}
+          <div class="ord-actions">
+            ${st.inCombat ? combatActionsHTML(st) : ''}
+            <div class="ord-self">${selfBarHTML(st)}</div>
+            <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
+            <div class="ord-target">${targetBarHTML()}</div>
+            <div class="ord-danger">${dangerBarHTML()}</div>
+            <div class="ord-ability">${abilityBarHTML()}</div>
+          </div>
           ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">🧭 d-pad walks a step · hold to keep walking · tap a far tile to walk the full path · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
           <div class="ord-compass">${compassHTML(st)}</div>
           <div id="mapoverlay" class="mapoverlay hidden"></div>
@@ -3409,10 +3428,8 @@
           <div class="actions ord-codex">
             <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
           </div>
-          ${st.inCombat ? '' : `<div class="log ord-log">${st.log.slice(-3).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>`}
         </div>
-      </div>
-      <div class="ord-bottombar">${dpadHTML()}</div>`;
+      </div>`;
 
     // MINIMAP IS A MAP, NOT A TELEPORTER. Unexplored tiles are fully hidden —
     // no hints, no guesses. Travel happens on foot: walk to the edge of the
@@ -3938,6 +3955,32 @@
   // strange descriptor and a vague threat sense — never the true name, never
   // numbers. Stats unlock through survival (rounds), hits, and the village
   // naming the beast. Knowing is earned.
+  // COMBAT ACTIONS (Steve 2026-10-05): buttons live in the combined actions
+  // area, not a separate combat card. Threat/status stays as a compact header.
+  function combatActionsHTML(st) {
+    const tf = Game.tbfight;
+    if (!tf) return '';
+    const p = Game.tbFighter('p');
+    const mons = tf.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
+    const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= (Game.equippedWeapon ? Game.equippedWeapon().range : 1)) : [];
+    const wrange = Game.equippedWeapon ? Game.equippedWeapon().range : 1;
+    const wname = Game.equippedWeapon ? Game.equippedWeapon().name : '';
+    const canScream = Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day;
+    const yourTurn = Game.tbIsPlayerTurn();
+    if (!yourTurn || !p) return '';
+    return `<div class="actions cs-actions">
+      <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
+      <button class="btn sm ghost" id="c-study" ${p.acted ? 'disabled' : ''}>👁</button>
+      ${mons.some(m => m.kind === 'hostile') ? `<button class="btn sm ghost" id="c-talk" ${p.acted ? 'disabled' : ''}>💬</button>` : ''}
+      ${canScream ? `<button class="btn sm ghost" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀</button>` : ''}
+      <button class="btn sm ghost" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢</button>
+      <button class="btn sm ghost" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖</button>
+      <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃</button>
+      <button class="btn sm ghost" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸</button>
+    </div>
+    <div class="actions" id="c-talkrow" style="display:none"></div>`;
+  }
+
   function panelCombat(st) {
     const tf = Game.tbfight;
     if (!tf) return '';
@@ -3986,25 +4029,11 @@
           ? `<b style="color:#ffd54d">ACT!</b> <span style="opacity:.8">strike, shout… or ⏸ hold</span>`
           : `<b>${p.moveLeft}</b> move${p.acted ? ' · acted' : ''}`)
       : (cur ? `${esc(cur.kind === 'player' ? 'You' : (Game.monsterDisplayName && cur.mdef ? Game.monsterDisplayName(cur.mdef.id) : cur.name))} acting…` : '');
-    // COMBAT STRIP (Steve 2026-10-05, revised): cohesive with the Pokémon-style
-    // dialogue box. Threat + narration + actions in ONE quiet surface — no red
-    // glow, no big card, no separate log. The last narration line shows here;
-    // full history lives in the Journal.
-    const lastNarr = (Game.log && Game.log.length) ? Game.log[Game.log.length - 1] : '';
+    // COMBAT STRIP (Steve 2026-10-05, revised): threat + turn status ONLY.
+    // Narration lives in the unified narration box. Actions live in the
+    // combined actions area. This is just the compact header.
     return `
       <div class="combat-strip"><div class="cs-line"><span>⚔</span> ${monRows} <span class="cs-turn">${turnLine}</span></div>
-      ${lastNarr ? `<div class="cs-narr">${esc(lastNarr)}</div>` : ''}
-      ${yourTurn && p ? `<div class="actions cs-actions">
-        <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
-        <button class="btn sm ghost" id="c-study" ${p.acted ? 'disabled' : ''}>👁</button>
-        ${mons.some(m => m.kind === 'hostile') ? `<button class="btn sm ghost" id="c-talk" ${p.acted ? 'disabled' : ''}>💬</button>` : ''}
-        ${canScream ? `<button class="btn sm ghost" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀</button>` : ''}
-        <button class="btn sm ghost" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢</button>
-        <button class="btn sm ghost" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖</button>
-        <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃</button>
-        <button class="btn sm ghost" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸</button>
-      </div>
-      <div class="actions" id="c-talkrow" style="display:none"></div>` : ''}
       </div>`;
   }
 
