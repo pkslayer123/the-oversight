@@ -1779,6 +1779,18 @@
     // === PARTY ===
     // Formal parties are a System unlock. Pre-System, followers are informal.
     try { btns += Game.partyButtonHtml(villagerId); } catch (e) {}
+    // === STEAL: rifle their pack. Deliberate, but the drama is detection.
+    // === INTIMIDATE: "your food, now." Two-tap — a threat is a choice.
+    try {
+      if (Game.state.village.roster && Game.state.village.roster.includes(villagerId) && villagerId !== Game.villagerId) {
+        btns += ` <button class="btn sm ghost" data-act="stealFrom" style="opacity:.55">🤏 Lift rations</button>`;
+        if (view.confirmIntimidate === villagerId) {
+          btns += ` <button class="btn sm" data-act="intimidateConfirm" style="border-color:#e0a55c;color:#e0a55c">👊 Threaten ${esc(titleName)}? Tap again — they'll remember this.</button>`;
+        } else {
+          btns += ` <button class="btn sm ghost" data-act="intimidateAsk" style="opacity:.55">👊 Intimidate</button>`;
+        }
+      }
+    } catch (e) {}
     // === ATTACK: deliberate, two-tap. Violence against people is always a choice.
     // Not an accident, not a misclick. You tap once, it asks. You tap again, it's done.
     if (view.confirmAttack === villagerId) {
@@ -2017,6 +2029,19 @@
     else if (act === 'dismissParty') {
       const r = Game.dismissFromParty(vid);
       view.result = r ? r.msg : null;
+    }
+    else if (act === 'stealFrom') {
+      const r = Game.stealFrom(vid);
+      view.result = r === 'caught' ? 'Caught. Hands in the pack. No deniability.'
+        : r === 'unseen' ? 'Nobody saw. Yet.' : null;
+    }
+    else if (act === 'intimidateAsk') {
+      view.confirmIntimidate = vid;
+    }
+    else if (act === 'intimidateConfirm') {
+      view.confirmIntimidate = null;
+      const r = Game.intimidate(vid);
+      view.result = r ? `They ${r}. The village will hear about this.` : null;
     }
     else if (act === 'attackAsk') {
       // First tap: arm the choice. Deliberate, not accidental.

@@ -2155,6 +2155,174 @@
       return true;
     },
 
+    // ============ THEFT & INTIMIDATION (brawler verbs) ============
+    // Steve's rule: theft allowed, socially punished. Violence desperate and
+    // traumatic, not power fantasy. Both are deliberate choices with real
+    // costs (time + calories) and social consequences via gossip/justice.
+    // Victims carry their daily ration (packKcal): hidden until stolen.
+    // Nobody sees a number; they feel the hunger when it's gone.
+
+    // packKcal: what this person is carrying today (kcal of rations).
+    // Reseeds at dawn. Drawn from their share — the village feeds people.
+    packKcal(vid) {
+      const v = this.state.village;
+      v.pack = v.pack || {};
+      const today = this.state.scholar.day;
+      let p = v.pack[vid];
+      if (!p || p.day !== today) {
+        const need = this.npcNeeds(vid);
+        const temp = this.npcTemper(vid);
+        // The hungry carry less; the bold stash more. Roughly a day of food.
+        const base = 800 + Math.random() * 500 - (need.hunger || 0) * 3 + (temp === 'bold' ? 150 : 0);
+        p = v.pack[vid] = { day: today, kcal: Math.max(200, Math.round(base)) };
+      }
+      return p.kcal;
+    },
+    packSpend(vid, kcal) {
+      const v = this.state.village;
+      v.pack = v.pack || {};
+      const p = v.pack[vid];
+      if (!p || p.day !== this.state.scholar.day) this.packKcal(vid);
+      v.pack[vid].kcal = Math.max(0, v.pack[vid].kcal - kcal);
+    },
+
+    // stealFrom: rifle their pack while they're not looking.
+    // One deliberate action; the drama is in detection, not confirmation.
+    // Costs 1 tick (time + calories — quick hands are still work).
+    stealFrom(vid) {
+      if (this.tbfight) { this.say('Not in the middle of a fight.'); return false; }
+      const v = this.state.village;
+      if (!(v.roster || []).includes(vid) || vid === this.villagerId) return false;
+      const dname = this.displayName(vid);
+      const pack = this.packKcal(vid);
+      if (pack < 100) { this.say(`${dname} has nothing worth taking. Their pack is as empty as yours.`); return false; }
+      // The take: a few handfuls, 300-600 kcal. You can't carry their whole day.
+      const take = Math.min(pack, 300 + Math.round(Math.random() * 300));
+      // Detection: watchful people watch. Night hides you.
+      const temp = this.npcTemper(vid);
+      let chance = 0.35;
+      if (temp === 'cautious') chance += 0.20;
+      else if (temp === 'prickly' || temp === 'bold') chance += 0.10;
+      if (this.dayPart === 3) chance -= 0.15; // night
+      if (this.isFollower && this.isFollower(vid)) chance += 0.10; // close quarters
+      chance = Math.max(0.05, Math.min(0.9, chance));
+      this.packSpend(vid, take);
+      // Their food is gone. They'll feel the hunger even before they know why.
+      this.npcNeeds(vid).hunger = Math.min(100, (this.npcNeeds(vid).hunger || 0) + Math.round(take / 25));
+      // ACTION CLOCK: quick hands, 1 tick.
+      this.tickAction(1);
+      const units = Math.max(1, Math.round(take / 150));
+      const addStolen = () => {
+        const day = this.state.scholar.day;
+        const inv = this.state.scholar.inventory;
+        const stack = inv.find(i => i.stolen && !i.bonded && !(i.spoilDay !== undefined && i.spoilDay <= day));
+        if (stack) stack.units += units;
+        else inv.push({ name: 'Stolen rations', kcalEach: 150, units, stolen: true, spoilDay: day + 3, desc: 'Someone is going to miss these.' });
+      };
+      if (Math.random() < chance) {
+        // CAUGHT. Hands in the pack. No deniability.
+        this.say(`🤏 Your hand is in ${dname}'s pack when their eyes find it. The silence that follows is worse than shouting.`);
+        try { this.remember(vid, 'caught_you_stealing', 'hands in their pack'); } catch (e) {}
+        this.bumpTrust(vid, -35);
+        try { this.observe('theft', { target: vid }); } catch (e) {}
+        try { this.recordCrime('theft', { victim: vid, caught: true }); } catch (e) {}
+        this.say('You let go. Whatever you were reaching for stays where it was.');
+        return 'caught';
+      }
+      // Unseen. The food is yours now — but packs get noticed.
+      addStolen();
+      v.packTheft = v.packTheft || {};
+      v.packTheft[vid] = { day: this.state.scholar.day, part: this.dayPart, kcal: take };
+      this.say(`🤏 ${dname} is looking the other way. Their loss is ${units} handfuls of rations. Your hands are steady. Your stomach isn't.`);
+      return 'unseen';
+    },
+
+    // The victim notices the missing food later — at the next day part.
+    // Hunger makes people inventory their day. Suspicion points at you,
+    // but the village only KNOWS if someone saw.
+    theftNoticeSweep() {
+      const v = this.state.village;
+      if (!v.packTheft) return;
+      const today = this.state.scholar.day, part = this.dayPart;
+      for (const vid of Object.keys(v.packTheft)) {
+        const t = v.packTheft[vid];
+        if (t.noticed) continue;
+        if (t.day < today || (t.day === today && t.part < part)) {
+          t.noticed = true;
+          const dname = this.displayName(vid);
+          this.say(`😠 ${dname} is going through their pack. Again. Slower this time. "My rations. Someone took my rations." Their eyes keep finding you.`);
+          this.bumpTrust(vid, -15);
+          try { this.remember(vid, 'suspects_you_stealing', 'their rations went missing'); } catch (e) {}
+          try { this.recordCrime('theft', { victim: vid, caught: false }); } catch (e) {}
+          try { this.seedGossip('theft', { honest: -15, generous: -10 }, [vid]); } catch (e) {}
+        }
+      }
+    },
+
+    // intimidate: "Give me your food." A deliberate social act — two-tap in UI.
+    // Costs 2 ticks (confrontation is work). Outcome runs on temperament:
+    // the fearful yield, the steady refuse, the bold push back — sometimes swinging.
+    intimidate(vid) {
+      if (this.tbfight) { this.say('Not in the middle of a fight.'); return false; }
+      const v = this.state.village;
+      if (!(v.roster || []).includes(vid) || vid === this.villagerId) return false;
+      const dname = this.displayName(vid);
+      const temp = this.npcTemper(vid);
+      const pack = this.packKcal(vid);
+      this.say(`👊 You step into ${dname}'s space. "Your food. Now." It doesn't sound like you. That's the point.`);
+      this.tickAction(2);
+      const demand = Math.min(pack, 400 + Math.round(Math.random() * 300));
+      const handOver = () => {
+        this.packSpend(vid, demand);
+        const units = Math.max(1, Math.round(demand / 150));
+        const day = this.state.scholar.day;
+        const inv = this.state.scholar.inventory;
+        const stack = inv.find(i => i.stolen && !i.bonded && !(i.spoilDay !== undefined && i.spoilDay <= day));
+        if (stack) stack.units += units;
+        else inv.push({ name: 'Taken rations', kcalEach: 150, units, stolen: true, spoilDay: day + 3, desc: 'Taken, not given. You know the difference.' });
+        this.npcNeeds(vid).hunger = Math.min(100, (this.npcNeeds(vid).hunger || 0) + Math.round(demand / 25));
+      };
+      const markBully = () => {
+        try { this.observe('intimidation', { target: vid }); } catch (e) {}
+        try { this.recordCrime('intimidation', { victim: vid }); } catch (e) {}
+        try { this.remember(vid, 'you_threatened', 'demanded their food'); } catch (e) {}
+      };
+      if (temp === 'cautious' || temp === 'withdrawn') {
+        // They yield. Terrified. The village sees.
+        if (demand < 100) {
+          this.say(`😨 ${dname} empties their pockets with shaking hands. There's almost nothing there. "Please. That's all I have."`);
+        } else {
+          handOver();
+          this.say(`😨 ${dname} doesn't argue. They can't. Their hands shake as they hand it over, and they won't look at you after.`);
+        }
+        this.npcNeeds(vid).fear = Math.min(100, (this.npcNeeds(vid).fear || 0) + 40);
+        this.bumpTrust(vid, -40);
+        markBully();
+        return 'yielded';
+      }
+      if (temp === 'bold' || temp === 'prickly' || temp === 'intense') {
+        // They push back. Some people swing.
+        this.say(`😠 ${dname} doesn't step back. "Say that again," they say, very quietly. "Slower."`);
+        this.bumpTrust(vid, -25);
+        markBully();
+        const fear = (this.npcNeeds(vid).fear || 0);
+        if (fear < 30 && Math.random() < 0.4 && this.npcBetrays) {
+          this.say(`🥊 ${dname} swings first. Desperate, not skilled. Nobody wanted this.`);
+          this.npcBetrays(vid);
+          return 'fight';
+        }
+        try { this.seedGossip('bully', { honest: -12, generous: -10, brave: 2 }, [vid]); } catch (e) {}
+        this.say(`They hold their ground. The whole village is going to hear about this.`);
+        return 'refused';
+      }
+      // steady / warm: a flat no, and they tell people.
+      this.say(`😐 ${dname} looks at you for a long moment. "No," they say. "Ask. Like a person." They walk away. Others saw.`);
+      this.bumpTrust(vid, -20);
+      markBully();
+      try { this.seedGossip('bully', { honest: -10, generous: -8 }, [vid]); } catch (e) {}
+      return 'refused';
+    },
+
     // ============ SOCIAL ACTIONS: paths to the content ============
     // Every deep system (goals, reputation, gossip, leadership, conflicts)
     // needs a player-facing verb. Not perpetual buttons — contextual
@@ -5956,6 +6124,13 @@
         // CORPSE SYSTEM: looting the fresh dead where others can see.
         // "They were picking his pockets before he was cold."
         loot_corpse: { honest: -10, generous: -8, brave: -2, competent: 0 },
+        // THEFT: hands in someone's pack. The village hates thieves more
+        // than cowards — trust is the currency and you counterfeited it.
+        theft: { honest: -25, generous: -15, brave: -3, competent: 0 },
+        // INTIMIDATION: "your food, now." Some read it as strength; most
+        // read it as the thing it is. The victim's fear is the real tell.
+        intimidation: { honest: -15, generous: -8, brave: 3, competent: 0 },
+        bully: { honest: -12, generous: -10, brave: 2, competent: 0 },
         honor_dead: { honest: 4, generous: 3, brave: 0, competent: 0 },
         bury_dead: { honest: 5, generous: 4, brave: 2, competent: 1 },
       }[action];
@@ -9430,6 +9605,8 @@
       // LIVING WORLD: NPCs move between nodes with their own agendas.
       // Once per part — the world lives at a slower rhythm than your steps.
       try { this.npcNodeTravel(); } catch (e) {}
+      // THEFT: victims notice missing rations a part later. Hunger audits.
+      try { this.theftNoticeSweep(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.

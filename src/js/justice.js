@@ -49,6 +49,10 @@
       for (const c of j.crimes) {
         if (c.type === 'murder') heat += c.justified ? 15 : 40;
         else if (c.type === 'attack') heat += 20;
+        // theft/intimidation: real heat, but the village can forgive —
+        // amends credit wears it down, unlike murder.
+        else if (c.type === 'theft') heat += 15;
+        else if (c.type === 'intimidation') heat += 15;
       }
       // theft: net takes far beyond gives
       const takes = (v.takes && v.takes[this.villagerId]) || 0;
