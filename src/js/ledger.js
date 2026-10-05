@@ -369,6 +369,178 @@
       // legacy name — the standings ARE the viewership board now.
       return this.viewershipBoard().map(r => ({ name: r.name, score: r.viewership, trend: r.trend, us: r.us }));
     },
+
+    // ---------- CHALLENGE ABDUCTION (future hooks) ----------
+    // Steve's design (2026-10-04): challenges come with a System warning +
+    // countdown — dread is the point; the village watches the sky count
+    // down. When it fires, teleportation is MANDATORY: ripped out of
+    // whatever you were doing (mid-conversation, mid-hunt, mid-trial — the
+    // show doesn't care). Sometimes a decline is offered, sometimes not.
+    // Unhinged games vs monsters or other humans. High risk, high reward,
+    // OFTEN DEADLY.
+    //
+    // Participation is INDIVIDUAL: the leaderboard picks PEOPLE, not
+    // villages. Sometimes the chosen can bring companions — the "who do you
+    // bring" beat: choosing for a deadly televised game, and the ones left
+    // behind, is social dynamite. The invitation list is a mechanic.
+    //
+    // The future challenge scheduler drives these. Nothing here runs a
+    // challenge — these are the hooks it will call.
+    warnChallenge(spec) {
+      const s = this.state.scholar;
+      spec = spec || {};
+      const picked = (spec.picked && spec.picked.length ? spec.picked : [this.villagerId]);
+      const days = spec.firesDay != null ? spec.firesDay : (s.day || 0) + 3;
+      s.challengeWarning = {
+        id: spec.id || 'ch_' + Date.now(),
+        name: spec.name || 'A New Game',
+        arena: spec.arena || 'a place that is not a place',
+        firesDay: days,
+        canDecline: !!spec.canDecline,
+        picked: [...picked],
+        canBring: spec.canBring || 0,
+        vs: spec.vs || 'unknown',
+      };
+      s.challengeInvites = {
+        challengeId: s.challengeWarning.id,
+        picked: [...picked],
+        canBring: s.challengeWarning.canBring,
+        brought: [],
+      };
+      const names = picked.map(id => { try { return this.displayName(id).split(' ')[0]; } catch (e) { return 'someone'; } }).join(', ');
+      const n = Math.max(1, days - (s.day || 0));
+      this.say(`🌟 "ATTENTION, CONTESTANTS." The sky ripples. "${String(s.challengeWarning.name).toUpperCase()} begins in ${n} day${n === 1 ? '' : 's'}. The arena: ${s.challengeWarning.arena}. The chosen: ${names}."`);
+      this.say('The village watches the sky count down. Dread is the point.');
+      if (s.challengeWarning.canDecline) this.say('This one comes with a way out. The System almost never offers. (You can decline — but the audience will remember.)');
+      else this.say('No decline is offered. There never is, for this kind.');
+      try { this.recordMoment(`The show chose ${names} for ${s.challengeWarning.name}.`); } catch (e) {}
+      try { this.save(); } catch (e) {}
+      return s.challengeWarning;
+    },
+    challengeCountdownText() {
+      // HUD surface: the countdown chip. The future scheduler ticks firesDay.
+      try {
+        const w = this.state.scholar.challengeWarning;
+        if (!w) return '';
+        const n = Math.max(0, w.firesDay - (this.state.scholar.day || 0));
+        return `⏳ ${w.name}: ${n === 0 ? 'TODAY' : n + 'd'}`;
+      } catch (e) { return ''; }
+    },
+    declineChallenge() {
+      const s = this.state.scholar, w = s.challengeWarning;
+      if (!w) return null;
+      if (!w.canDecline) {
+        this.say('There is no decline. There never was, for this kind.');
+        return null;
+      }
+      s.challengeWarning = null; s.challengeInvites = null;
+      const pg = this.progState();
+      pg.showDebt = (pg.showDebt || 0) + 1; // whether you owe the show: a design lever
+      try { const v = this.state.village; v.viewership = Math.max(0, (v.viewership == null ? 0 : v.viewership) - 3); } catch (e) {}
+      this.say('You decline. The sky goes quiet in a way that feels personal. The audience boos — politely, the way trillions of beings boo. (Viewership −3. The show will remember that you owe it one.)');
+      try { this.recordMoment('Declined the show\u2019s invitation.'); } catch (e) {}
+      try { this.save(); } catch (e) {}
+      return null;
+    },
+    abduct(contestantIds, challengeId) {
+      // MANDATORY teleport. Interrupts ANYTHING — conversations end
+      // mid-sentence, fights stop mattering. The show doesn't care.
+      const s = this.state.scholar;
+      const ids = (contestantIds && contestantIds.length ? contestantIds : [this.villagerId]);
+      try {
+        for (const vid of (this.state.village.roster || [])) {
+          try { const c = this.convoGet(vid); if (c && c.active) this.endConvo(vid, 'abducted'); } catch (e) {}
+        }
+      } catch (e) {}
+      try { this.tbfight = null; this.fight = null; } catch (e) {}
+      s.rippedFrom = { mx: s.mx, my: s.my, day: s.day || 0 };
+      s.abducted = {
+        challengeId: challengeId || (s.challengeWarning && s.challengeWarning.id) || 'unknown',
+        at: s.day || 0,
+        contestants: [...ids],
+      };
+      s.challengeWarning = null;
+      const names = ids.map(id => { try { return this.displayName(id).split(' ')[0]; } catch (e) { return 'someone'; } }).join(', ');
+      this.say('⚡ The sky OPENS. Light like a held breath — and then you are NOT where you were. Mid-step, mid-word, mid-swing: GONE. The show doesn\u2019t care what you were doing.');
+      this.say(`Ripped from the world: ${names}. Back home, the village stares at the empty air where people used to be.`);
+      try { this.recordMoment(`${names} ${ids.length > 1 ? 'were' : 'was'} taken to the arena.`); } catch (e) {}
+      try { this.save(); } catch (e) {}
+      return s.abducted;
+    },
+    // ---------- THE INVITATION LIST ----------
+    bringCompanion(vid) {
+      // the chosen can bring friends. Who you bring into a deadly televised
+      // game — and who you leave — is its own drama. Trust, guilt, politics.
+      const s = this.state.scholar, inv = s.challengeInvites;
+      if (!inv) return null;
+      if (inv.brought.length >= inv.canBring) {
+        this.say('The invitation list is full. The show is strict about headcounts.');
+        return null;
+      }
+      if (inv.brought.includes(vid) || inv.picked.includes(vid)) return null;
+      inv.brought.push(vid);
+      let nm = 'them';
+      try { nm = this.displayName(vid).split(' ')[0]; } catch (e) {}
+      this.say(`You put ${nm} on the list. ${nm} goes pale, then nods. The ones you didn't pick look away.`);
+      try { const t = this.state.village.trust || {}; t[vid] = Math.min(100, (t[vid] || 10) + 8); } catch (e) {}
+      try { this.recordMoment(`${nm} was brought to the arena.`); } catch (e) {}
+      try { this.save(); } catch (e) {}
+      return null;
+    },
+    expectedButLeft() {
+      // who expected to be brought and wasn't. Future drama reads this.
+      try {
+        const inv = this.state.scholar.challengeInvites;
+        if (!inv) return [];
+        const trust = this.state.village.trust || {};
+        return (this.state.village.roster || []).filter(id =>
+          !inv.picked.includes(id) && !inv.brought.includes(id) && (trust[id] || 0) > 60);
+      } catch (e) { return []; }
+    },
+    // ---------- SPECTATORSHIP ----------
+    broadcastLine(text) {
+      // the village watches its own go. The show is a SHOW — lean broadcast.
+      try {
+        const pg = this.progState();
+        pg.broadcast = pg.broadcast || [];
+        pg.broadcast.unshift({ day: (this.state.scholar || {}).day || 0, text: String(text).slice(0, 160) });
+        pg.broadcast = pg.broadcast.slice(0, 40);
+      } catch (e) {}
+      this.say(`📺 ${text} (The village watches the broadcast. Nobody blinks.)`);
+      return null;
+    },
+    // ---------- DEATH IN THE ARENA ----------
+    arenaDeath(cause) {
+      // village-as-protagonist continuity: the mantle passes, the village
+      // mourns — and the show keeps the footage. And replays it. The
+      // audience loves a death reel; the village has to live inside one.
+      const char = (this.data.villagers || []).find(v => v.id === this.villagerId) || {};
+      const nm = char.name || 'the contestant';
+      try {
+        const pg = this.progState();
+        pg.deathReel = pg.deathReel || [];
+        pg.deathReel.unshift({
+          name: nm,
+          day: (this.state.scholar || {}).day || 0,
+          challenge: (this.state.scholar.abducted || {}).challengeId || 'the arena',
+        });
+      } catch (e) {}
+      this.say(`📺 ${nm} dies in the arena. The show keeps the footage. They always keep the footage.`);
+      try { this.recordMoment(`${nm} died in the arena. The footage plays on.`); } catch (e) {}
+      try { this.playerDeath('the arena'); } catch (e) { this.over = true; }
+      return null;
+    },
+    replayFootage() {
+      // the future scheduler calls this. The village has to live with the reel.
+      try {
+        const reel = this.progState().deathReel || [];
+        if (!reel.length) return null;
+        const r = reel[Math.floor(Math.random() * reel.length)];
+        this.say(`📺 Before dinner, the show replays ${r.name}'s death. Nobody eats much. The audience loves a death reel; the village has to live inside one.`);
+        try { this.recordTrauma('footage'); } catch (e) {}
+        return null;
+      } catch (e) { return null; }
+    },
   };
 
   Object.assign(Game, methods);

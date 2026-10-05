@@ -214,6 +214,72 @@ function stack(L) { const l = Game.ledger(); for (const k of Object.keys(L)) l[k
     ok('arc transition records a moment', (Game.progState().moments || []).some(m => /Arc II/.test(m.text)));
   }
 
+  // 12. CHALLENGE ABDUCTION hooks (future scheduler drives these).
+  {
+    // warning + countdown dread
+    freshGame();
+    const s = Game.state.scholar;
+    s.day = 10;
+    const heir = Game.npcIds()[0];
+    Game.warnChallenge({ id: 'ch1', name: 'The Harvest Games', arena: 'the glass field', firesDay: 13, canDecline: false, picked: [Game.villagerId], canBring: 1, vs: 'monsters' });
+    ok('warning set', !!s.challengeWarning && s.challengeWarning.name === 'The Harvest Games');
+    ok('countdown text', Game.challengeCountdownText().includes('3d'), Game.challengeCountdownText());
+    ok('dread is the point', said.some(t => t.includes('Dread is the point')));
+    ok('invitation list opened', !!s.challengeInvites && s.challengeInvites.canBring === 1);
+    // no decline offered
+    Game.declineChallenge();
+    ok('no decline when not offered', !!s.challengeWarning);
+
+    // decline when offered: viewership hit, show debt
+    Game.warnChallenge({ id: 'ch2', name: 'Quiet Game', firesDay: 12, canDecline: true });
+    const v0 = Game.state.village.viewership || 0;
+    Game.declineChallenge();
+    ok('decline clears warning', !s.challengeWarning && !s.challengeInvites);
+    ok('decline costs viewership', (Game.state.village.viewership || 0) < v0 || v0 === 0);
+    ok('decline indebts you to the show', Game.progState().showDebt === 1);
+
+    // the invitation list: who you bring
+    freshGame();
+    const h2 = Game.npcIds()[0], h3 = Game.npcIds()[1];
+    Game.state.village.trust = Game.state.village.trust || {};
+    Game.state.village.trust[h2] = 80; Game.state.village.trust[h3] = 75;
+    Game.warnChallenge({ id: 'ch3', name: 'Blood Tally', firesDay: 15, canBring: 1 });
+    Game.bringCompanion(h2);
+    ok('companion brought', Game.state.scholar.challengeInvites.brought.includes(h2));
+    ok('bringing builds trust', Game.state.village.trust[h2] === 88);
+    Game.bringCompanion(h3);
+    ok('headcount enforced', !Game.state.scholar.challengeInvites.brought.includes(h3));
+    const left = Game.expectedButLeft();
+    ok('the left-behind are known', left.includes(h3), JSON.stringify(left));
+
+    // abduction interrupts ANYTHING
+    Game.tbfight = { fake: true };
+    let c = null;
+    try { c = Game.convoGet(h2); c.active = true; } catch (e) {}
+    const ab = Game.abduct([Game.villagerId, h2], 'ch3');
+    ok('abduction rips you out', !!Game.state.scholar.abducted && ab.contestants.length === 2);
+    ok('abduction ends fights', !Game.tbfight);
+    ok('abduction ends conversations', !c || c.active !== true);
+    ok('ripped-from recorded', !!Game.state.scholar.rippedFrom);
+    ok('warning consumed', !Game.state.scholar.challengeWarning);
+    ok('show does not care', said.some(t => t.includes("doesn\u2019t care")));
+
+    // spectatorship
+    Game.broadcastLine('The glass field lights up.');
+    ok('broadcast stored', (Game.progState().broadcast || []).length === 1);
+    ok('broadcast shown', said.some(t => t.includes('📺')));
+
+    // death in the arena: mantle passes, footage kept
+    const oldId = Game.villagerId;
+    const reelBefore = (Game.progState().deathReel || []).length;
+    Game.arenaDeath('the arena');
+    ok('arena death keeps the footage', (Game.progState().deathReel || []).length === reelBefore + 1);
+    ok('arena death passes the mantle', Game.over !== true && Game.villagerId !== oldId);
+    ok('footage line', said.some(t => t.includes('keeps the footage')));
+    Game.replayFootage();
+    ok('death reel replays', said.some(t => t.includes('replays')));
+  }
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('THREW', e); process.exit(1); });
