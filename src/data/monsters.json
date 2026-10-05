@@ -1069,7 +1069,29 @@
    "observed": "Ambush mimic. No telegraph on the rush \u2014 it just moves and hits, like the Hushpuppy, but smarter: it watches first (curious stance), learns your rhythm, THEN rushes. The voice is bait. The politeness is bait. Everything is bait.",
    "slain": "Customer Service. Moves: Please Hold (rush \u2014 NO telegraph, it just goes). Counter: it spends 2-3 turns watching (curious) before rushing. Use those turns \u2014 get fire between you and it, or just leave. It only rushes once per approach. Parts: a working headset. The hold music is still playing. You can turn it off. You should turn it off."
   },
-  "systemDesignation": "Support interface (field model)"
+  "systemDesignation": "Support interface (field model)",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "watching",
+    "dialing",
+    "hold"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "service",
+   "noticeText": "\"Hello? Are you still there?\" It's watching {who} now. It's always been watching.",
+   "adjText": "Too close. \"Please hold—\" The voice cuts out. It's moving.",
+   "painText": "The script breaks — and the syrupy voice fixes on {who}, curdling. Pain gets noticed.",
+   "phaseBadges": {
+    "watching": " 📞 WATCHING",
+    "dialing": " 📞 DIALING",
+    "hold": " 📞 ON HOLD"
+   },
+   "comment": "Encounter framework client. THE WATCH: watching (2-3 turns of escalating politeness, no attack — your window: leave, or get fire near you) → dialing (ONE rush, no telegraph) → hold (resets, doesn't chase). Fire within 3 of the player suppresses the rush."
+  }
  },
  {
   "id": "contract_golem",

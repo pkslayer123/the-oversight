@@ -12521,6 +12521,73 @@
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
+      // ---- SERVICE MIMIC ("Customer Service"): THE WATCH ----
+      // watching → dialing → hold. No telegraph on the rush — that's the
+      // point. But it watches first (2-3 turns of escalating politeness):
+      // that's your window — leave, or get fire near you (it won't dial
+      // through firelight). It only rushes once per approach; after the rush
+      // it goes on hold and resets instead of chasing.
+      if (this.smIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'watching'); m.smWatch = 2 + Math.floor(Math.random() * 2); }
+        const smPhase = m.beamPhase;
+        let nearFire = false;
+        try { nearFire = this.scholarNearCell ? !!this.scholarNearCell('fire', 3) : false; } catch (e) {}
+        if (smPhase === 'hold') {
+          m.smHold = (m.smHold === undefined ? 2 : m.smHold) - 1;
+          if (m.smHold <= 0) {
+            this.encSetPhase(m, 'watching'); m.smWatch = 2 + Math.floor(Math.random() * 2);
+            this.say('"Thank you for holding." The line clicks. It\'s watching again.');
+          } else this.say('Hold music plays from somewhere in the dark. It isn\'t moving. It\'s waiting for you to come back.');
+          this.audioEvent('holdMusic', {});
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (smPhase === 'watching') {
+          if (nearFire) {
+            this.say('"We appear to be experiencing— experiencing—" The script breaks. The firelight is too much. It won\'t come closer.');
+            this.audioEvent('holdMusic', { broken: true });
+            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+          }
+          m.smWatch = (m.smWatch === undefined ? 2 : m.smWatch) - 1;
+          if (m.smWatch <= 0) {
+            this.encSetPhase(m, 'dialing');
+            this.say('"Please hold while we connect you to—" The voice cuts out. It\'s moving.');
+            this.audioEvent('lineCut');
+          } else {
+            const esc = [
+              '"Hello? Are you still there?" It\'s watching. It\'s always been watching.',
+              '"Your call is very important to us." The voice is syrup. It hasn\'t blinked.',
+              '"We\'re experiencing higher than normal fear volumes." It leans forward, listening to your breathing.',
+            ];
+            this.say(esc[Math.min(esc.length - 1, Math.max(0, 2 - m.smWatch))]);
+            this.audioEvent('holdMusic', { watching: true });
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // dialing: THE RUSH. No telegraph — it just goes. (Same shape as the
+        // generic rush: up to speed, hit if adjacent.) Then it resets to hold.
+        const t = foe.f;
+        for (let i = 0; i < m.speed; i++) {
+          if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) break;
+          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          if (!stp) break;
+          m.mx = stp.x; m.my = stp.y;
+        }
+        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) {
+          const known = this.encTelegraphKnown(m);
+          this.say(known
+            ? `"Your fear is important to us." No telegraph — it just moved. (${atk.name}.)`
+            : 'Something is right behind you, and a syrupy voice says: "Your fear is important to us."');
+          this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+          this.audioEvent('impact', {});
+          this.tbLearnPattern(m);
+        } else {
+          this.say('It rushes — and finds only empty air where you were. The line goes quiet.');
+        }
+        this.encSetPhase(m, 'hold'); m.smHold = 2;
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
       if (pat.type === 'ambush') {
         // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
         if (foe.d <= 1) {
