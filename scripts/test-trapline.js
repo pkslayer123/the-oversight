@@ -35,7 +35,17 @@ function freshGameWithTraps() {
     tgt = Game.travelTargets().find(t => t.d >= 2 && Game.tileAt(t.x, t.y).type !== 'haven');
   }
   for (let i = 0; i < 5 && !Game.craft('snare'); i++) {}
-  Game.travelTo(tgt.x, tgt.y);
+  // travel can be blocked (blockage object) — try targets until one lands,
+  // otherwise trap B silently ends up on the wrong tile and the test flakes.
+  // Prefer a tile 2+ away (a real trapline); fall back to any reachable tile.
+  const cands = Game.travelTargets().filter(t => Game.tileAt(t.x, t.y).type !== 'haven');
+  cands.sort((a, b) => (b.d >= 2) - (a.d >= 2));
+  let landed = null;
+  for (const cand of cands) {
+    if (Game.travelTo(cand.x, cand.y) === undefined) { landed = cand; break; }
+  }
+  if (!landed) throw new Error('no reachable tile for trap B');
+  tgt = landed;
   if (!Game.setTrap('snare')) throw new Error('setTrap B failed');
   Game.map.px = home.x; Game.map.py = home.y; // go home to sleep
   return { home, away: { x: tgt.x, y: tgt.y } };
@@ -46,7 +56,7 @@ function freshGameWithTraps() {
 
   // 1. away traps check at dawn (statistical: 30 dawns, both traps set)
   let awayCatches = 0, homeCatches = 0;
-  const { home, away } = freshGameWithTraps();
+  let { home, away } = freshGameWithTraps();
   for (let d = 0; d < 30; d++) {
     const uHome = (Game.tileAt(home.x, home.y).traps[0] || {}).uses;
     const uAway = (Game.tileAt(away.x, away.y).traps[0] || {}).uses;
@@ -65,7 +75,8 @@ function freshGameWithTraps() {
   console.log(`  info: home catches=${homeCatches}, away catches=${awayCatches} over 30 dawns`);
 
   // 2. catch message names the location (no silent teleport-food)
-  freshGameWithTraps();
+  // (fresh game each test — capture its own coordinates, never reuse test 1's)
+  ({ home, away } = freshGameWithTraps());
   Game.state.scholar.day = 1;
   // force a catch on the away tile by stubbing random once
   const awayTile = Game.tileAt(away.x, away.y);
@@ -81,18 +92,21 @@ function freshGameWithTraps() {
   ok('catch names the trap', /[Ss]nare/.test(said));
   console.log(`  info: "${said.slice(0, 140)}"`);
 
-  // 3. trap set today is not checked until tomorrow (per-tile setDay still respected)
-  freshGameWithTraps();
+  // 3. the "check it tomorrow" promise: a trap set today IS eligible at the
+  // end-of-day check — that checkTraps call runs before the day increments, so
+  // it IS tomorrow's dawn. Regression: the old >= guard skipped the first
+  // dawn entirely (first check landed on waking day+2, not day+1).
+  ({ home, away } = freshGameWithTraps());
   const t = Game.tileAt(away.x, away.y);
   const usesBefore = t.traps[0].uses;
-  Math.random = () => 0.01;
+  Math.random = () => 0.01; // force a catch
   Game.log.length = 0;
-  Game.checkTraps(); // setDay == today → skip
+  Game.checkTraps(); // end of the set day = tomorrow's dawn
   Math.random = realRandom;
-  ok('trap set today is skipped', t.traps[0].uses === usesBefore);
+  ok('trap set today is checked at end-of-day (first dawn)', t.traps[0].uses < usesBefore);
 
   // 4. broken traps are removed from their tile (not the player's)
-  freshGameWithTraps();
+  ({ home, away } = freshGameWithTraps());
   const at = Game.tileAt(away.x, away.y);
   at.traps[0].uses = 1; at.traps[0].setDay = Game.state.scholar.day - 1;
   Math.random = () => 0.01;

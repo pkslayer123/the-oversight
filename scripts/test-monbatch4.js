@@ -152,9 +152,9 @@ async function main() {
   }
 
   // ================= camera_swarm =================
+  // (fast monster, speed 6: startCombat's opening turn already chased + declared)
   {
     setup('camera_swarm');
-    passTurn(); // chase + declare
     let m = M();
     ok('swarm: declares (phase build)', !!m.telegraph && m.beamPhase === 'build', m.beamPhase);
     ok('swarm: telegraph renders ⚠', logHas(/^⚠.*VIRAL/));
@@ -178,14 +178,13 @@ async function main() {
     ok('swarm: ungated cue is tactical', /burst radius 2/.test(Game.tbTelegraphCue(m)) && /near fire/.test(Game.tbTelegraphCue(m)));
     // fire scatter
     setup('camera_swarm', { mx: 6, my: 4, grid: fireGrid(4, 2) });
-    const dFire0 = cheb(M().mx, M().my, 4, 2);
-    passTurn();
+    // (opening turn already ran — the scatter check fired on approach)
     ok('swarm: fire scatters it', M().beamPhase === 'scatter' && !M().telegraph, M().beamPhase);
     ok('swarm: scatter line renders', logHas(/LOSING THE SHOT/));
-    ok('swarm: flees the fire', cheb(M().mx, M().my, 4, 2) > dFire0, `${dFire0} -> ${cheb(M().mx, M().my, 4, 2)}`);
+    ok('swarm: opening scatter moved it away from the fire', cheb(M().mx, M().my, 4, 2) > 2, `d=${cheb(M().mx, M().my, 4, 2)}`);
     // fragile
     setup('camera_swarm');
-    passTurn(); // chase+declare; swarm adjacent
+    // (opening already chased + declared; swarm adjacent)
     clearLog();
     M().hp = M().maxHp = 500; // don't kill it mid-test
     const mhp0 = M().hp;
@@ -228,9 +227,9 @@ async function main() {
   }
 
   // ================= delegate_beast =================
+  // (fast monster, speed 5: startCombat's opening turn already circled)
   {
     setup('delegate_beast');
-    passTurn(); // circle turn
     let m = M();
     ok('beast: circles first (phase circle)', m.beamPhase === 'circle' && m.circled === true, m.beamPhase);
     ok('beast: circle actually moves it', !(m.mx === 7 && m.my === 4), `(${m.mx},${m.my})`);

@@ -167,14 +167,14 @@ function mdef(id) { return Game.data.monsters.find(m => m.id === id); }
   }
 
   // ---------- 4. LOCKPICK: case -> grab -> bolt; hit drops, food buys off ----------
+  // (fast monster, speed 5: startCombat's opening turn already ran case->grab)
   {
     freshFight('lockpick_raccoon', 4, 6, [[4, 4]], 3);
     const { s } = { s: Game.state.scholar };
     const mo = mon('lockpick_raccoon');
-    ok('lockpick: opens casing', mo.beamPhase === 'case', mo.beamPhase);
-    ok('lockpick: badge reads', Game.encPhaseBadge(mo) === ' 👀 CASING');
-    Game.tbMonsterTurn(mo);
-    ok('lockpick: case -> grab', mo.beamPhase === 'grab', mo.beamPhase);
+    ok('lockpick: init opens in casing', /looking at your pack/.test(Game.log.join('\n')));
+    ok('lockpick: opening ran case->grab', mo.beamPhase === 'grab' && /circles once, eyes never leaving your pack/.test(Game.log.join('\n')), mo.beamPhase);
+    ok('lockpick: grab badge reads', Game.encPhaseBadge(mo) === mdef('lockpick_raccoon').encounter.phaseBadges.grab);
     Game.tbMonsterTurn(mo);
     ok('lockpick: steals the weapon', s.equipped.weapon === null && mo.stolen && /spear/i.test(mo.stolen.name), JSON.stringify(mo.stolen));
     ok('lockpick: grab -> bolt', mo.beamPhase === 'bolt', mo.beamPhase);
@@ -189,7 +189,7 @@ function mdef(id) { return Game.data.monsters.find(m => m.id === id); }
     freshFight('lockpick_raccoon', 4, 6, [[4, 4]], 3);
     const s = Game.state.scholar;
     const mo = mon('lockpick_raccoon');
-    Game.tbMonsterTurn(mo); Game.tbMonsterTurn(mo);
+    Game.tbMonsterTurn(mo); // grab -> bolt + steal (opening already did case->grab)
     ok('lockpick2: stole', !!mo.stolen);
     const food0 = s.inventory.find(i => i.kcalEach > 0).units;
     forcePlayerTurn();
@@ -202,7 +202,7 @@ function mdef(id) { return Game.data.monsters.find(m => m.id === id); }
   {
     freshFight('lockpick_raccoon', 4, 6, [[4, 4]], 3);
     const mo = mon('lockpick_raccoon');
-    Game.tbMonsterTurn(mo); // case -> grab
+    // (opening already ran case->grab — the raccoon is mid-grab)
     mo.lockpickHit = true;
     const handled = Game.tbLockpickTurn(mo);
     ok('lockpick: hurt mid-grab -> cornered, falls through', handled === false && mo.beamPhase === 'cornered');

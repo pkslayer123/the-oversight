@@ -146,7 +146,10 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
     ok('wolf pack of 3', wolves.length === 3);
     ok('wolf lead designated', wolves[0].wolfLead === true);
     ok('wolf silence opener', log().includes('The woods go silent'));
-    ok('wolf initial phase silence', wolves.every(w => w.beamPhase === 'silence'));
+    // OPENING TURNS (soft-lock fix, 2026-10-05): wolves (speed 5 > player 4)
+    // open the fight inside startCombat, so the player first sees the pack
+    // AFTER its opening rush — 'silence' was the pre-open phase, 'rush' is now.
+    ok('wolves opened the fight (post-open phase)', wolves.every(w => w.beamPhase === 'rush'));
     const php0 = M('p').hp;
     aiRound(); // rushes: no telegraph
     ok('wolf rush hits with no telegraph', M('p').hp < php0 && wolves.every(w => !w.telegraph));

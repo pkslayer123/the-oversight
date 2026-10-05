@@ -98,10 +98,13 @@ function newMouseGame() {
   }
 
   // --- 3. standing still lets it build to a wall ---
+  // (fast monsters act in startCombat's opening pass, so the player takes the
+  // full swarm's opening — bump HP to isolate the stacking mechanic from survival)
   newMouseGame();
   Game.debugScenario('hummice');
   {
     const s = Game.state.scholar;
+    s.health = 300;
     s.mx = s.monster.mx + 1; s.my = s.monster.my;
     Game.canSee = () => true;
     for (let i = 0; i < 6 && !Game.tbfight; i++) Game.monsterTurn();

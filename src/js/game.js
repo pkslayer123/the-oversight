@@ -1184,7 +1184,7 @@
       }
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
       this.state.scholar.dayTicks = 0; this.state.scholar.actionClock = 0; // action clock: fresh budget
-      this.villageLost = false; this.wanderer = null; this.fight = null; this.pendingEncounter = false;
+      this.villageLost = false; this.wanderer = null; this.fight = null; this.pendingEncounter = false; this.pendingMonsterId = null;
       this.encounterDone = false; this.log = [];
       this.location = 'village'; this.departed = false;
       this.wipe();
@@ -2128,7 +2128,10 @@
         const t = this.tileAt(x, y);
         if (!t.traps || !t.traps.length) continue;
         for (const trap of [...t.traps]) {
-          if (trap.setDay >= this.state.scholar.day) continue; // set today, check tomorrow
+          // checkTraps runs at endDay BEFORE the day increments, so the end-of-day
+          // check on the set day IS tomorrow's dawn — the "check it tomorrow"
+          // promise. Only skip traps whose setDay is in the future (defensive).
+          if (trap.setDay > this.state.scholar.day) continue;
           const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
           // 40% chance per day (if the animal is here).
           // poisoner/scarecrow: better bait, better lies. Multiplies the odds.
@@ -9088,6 +9091,9 @@
       if (w.x === this.map.px && w.y === this.map.py && !this.encounterDone) {
         this.encounterDone = true;
         this.pendingEncounter = true;
+        // NAME DISCIPLINE: the panel must show the descriptor/village name,
+        // never the true name — remember which beast this is for the UI.
+        this.pendingMonsterId = w.monsterId;
         this.wanderer = null;
       }
     },
@@ -11248,6 +11254,7 @@
       try { this.observe('fight'); } catch (e) {}
       this.fight = null; // old menu combat retired
       this.pendingEncounter = false;
+      this.pendingMonsterId = null;
       // face to face: the ambiguity does NOT end. Descriptor and dread, not a name.
       try { this.identifyMonster(mdef.id); } catch (e) {}
       s.monster = null; // it's in the fight now, not wandering
@@ -11278,10 +11285,14 @@
         this.say('The woods go silent — not quiet. Silent. Like the world holding its breath. The pack is already moving.');
       }
       this.sysSay(`COMBAT! ${dispName.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
-      this.tbBeginTurn();
       // OPENING TURNS (Steve 2026-10-04): if a monster is faster than you it
       // opens — run AI turns until it's your turn. Without this the fight
       // soft-locks on "Not your turn" forever (hummice speed 6 > player 4).
+      // turnIdx = -1: tbAdvance() pre-increments, so the opening pass starts
+      // at order[0] — the fastest fighter gets its opening turn (previously
+      // the first fighter in the order was silently skipped).
+      this.tbfight.turnIdx = -1;
+      this.tbBeginTurn(); // no-op until a turn lands; tbAdvance calls it on arrival
       if (!this.tbIsPlayerTurn()) this.tbAdvance();
       return this.tbfight;
     },

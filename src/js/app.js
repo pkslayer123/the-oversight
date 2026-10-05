@@ -3566,10 +3566,17 @@
   }
 
   function panelFor(st, n) {
-    if (st.pendingEncounter) return `
-      <div class="card warn"><h3>⚠ BULLDOZER</h3>
+    if (st.pendingEncounter) {
+      // NAME DISCIPLINE (Steve): never the true name pre-naming. Village-agreed
+      // name wins, else the strange descriptor — same rule as the grid popup.
+      const pmid = Game.pendingMonsterId || 'thornback_boar';
+      const praw = (Game.monsterDisplayName ? Game.monsterDisplayName(pmid) : null) || 'something big';
+      const pname = praw[0].toUpperCase() + praw.slice(1);
+      return `
+      <div class="card warn"><h3>⚠ ${pname}</h3>
       <p class="small">It crashes from the thicket. It is not going around.</p>
       <button class="btn sm" id="p-face">Face it</button></div>`;
+    }
     // COMBAT renders in the main column, directly under the grid
     // (ord-combatpanel) — never below the fold. This slot stays empty in combat.
     if (st.inCombat) return '';
