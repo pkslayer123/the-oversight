@@ -2643,12 +2643,39 @@
           this.say(`${first}: ${idle[Math.floor(Math.random() * idle.length)]}`);
           return { ok: true, none: true };
         }
-        // share the freshest gossip they've heard, with their distortion
+        // Salience order: a scandal about YOU jumps the queue (it's what
+        // they'd lead with), then rumors about other people, then the
+        // freshest remaining word. {who} dims mark gossip about another
+        // villager — share the rumor itself, never misattribute it to you.
+        const isWho = (g) => g.dims && g.dims.who && g.dims.who !== this.villagerId;
+        const isNeg = (g) => !isWho(g) && Object.entries(g.dims || {}).some(([k, val]) => typeof val === 'number' && val < -3);
+        const negHeard = heard.filter(isNeg);
+        if (negHeard.length) {
+          const g = negHeard[negHeard.length - 1];
+          this.say(`${first} lowers their voice. "People are saying things. About you. ...I'd watch how you act around the fire."`);
+          return { ok: true, gossip: g };
+        }
+        const aboutOther = heard.filter(isWho);
+        if (aboutOther.length) {
+          const g = aboutOther[aboutOther.length - 1];
+          const wname = this.displayName(g.dims.who);
+          if (g.action === 'stingy') this.say(`${first} lowers their voice. "Word is ${wname} has been holding back. Keeping the good stuff close."`);
+          else if (g.action === 'generous') this.say(`${first}: "People are saying ${wname} has been generous. Sharing around, no questions asked."`);
+          else if (g.action === 'departure') this.say(`${first}: "Did you hear? ${wname} just walked away from Haven. Didn't look back."`);
+          else this.say(`${first}: "People are talking about ${wname}. Take it for what it's worth."`);
+          try {
+            if (this.journalNote) this.journalNote('people', g.dims.who,
+              g.action === 'stingy' ? `Rumor: they've been holding back, keeping the good stuff close.`
+              : g.action === 'generous' ? `Rumor: they've been generous, sharing around.`
+              : g.action === 'departure' ? `They walked away from Haven. Nobody knows where they went.`
+              : `There's talk about them going around the fire.`);
+          } catch (e2) {}
+          return { ok: true, gossip: g, aboutOther: g.dims.who };
+        }
+        // share the freshest remaining gossip, with their distortion
         const g = heard[heard.length - 1];
-        const neg = Object.entries(g.dims || {}).some(([k, val]) => val < -3);
         const aboutYou = true; // gossip seeded from observe() is always about player actions
-        if (neg) this.say(`${first} lowers their voice. "People are saying things. About you. ...I'd watch how you act around the fire."`);
-        else this.say(`${first}: "Word is you're doing right by people. Keep it up."`);
+        this.say(`${first}: "Word is you're doing right by people. Keep it up."`);
         return { ok: true, gossip: g };
       }
       if (topic === 'village') {
@@ -6645,8 +6672,13 @@
             else if (purpose === 'explore') this.say(`${first} wanders off. "I want to see what's out there."`);
             else if (purpose === 'leave') this.say(`${first} walks away from Haven. They don't look back.`);
           }
-          // Leaving is gossip-worthy.
-          try { this.seedGossip('departure', { who: rid }, []); } catch (e) {}
+          // Leaving is gossip-worthy. Someone always sees someone go — seed
+          // two witnesses so the rumor can actually travel the fire.
+          try {
+            const seen = (this.state.village.roster || []).filter(id => id !== rid && id !== this.villagerId);
+            const shuf = [...seen].sort(() => Math.random() - 0.5);
+            this.seedGossip('departure', { who: rid }, shuf.slice(0, 2));
+          } catch (e) {}
         }
 
         // THE DOOR: villagers at Haven drift through it on their own agency.
