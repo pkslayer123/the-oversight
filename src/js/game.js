@@ -7200,6 +7200,33 @@
       }
       return out;
     },
+    // combatWitnessReact (Steve 2026-10-05): villagers NEARBY visibly judge the
+    // fight — actual lines you see, not silent reputation dims. Brave ones
+    // watch openly, cautious ones flinch, rivals find something to say.
+    // moment: 'start' | 'kill' | 'hurt' | 'flee'
+    combatWitnessReact(moment) {
+      const wit = this.witnesses(6);
+      if (!wit || !wit.length) return;
+      // One voice per fight moment — not a chorus.
+      const rid = wit[Math.floor(Math.random() * wit.length)];
+      const name = this.displayName(rid);
+      const brave = (this.repOf(rid).brave || 0);
+      const lines = {
+        start: brave > 5
+          ? [`${name} squares up to watch. "Give it hell."`, `${name} doesn't look away. "About time someone fought back."`]
+          : brave < -5
+          ? [`${name} backs away, hands up. "Don't — don't bring it here!"`, `${name} goes pale. "We should RUN."`]
+          : [`${name} freezes. "What IS that?"`, `${name} watches, jaw tight.`],
+        kill: brave > 5
+          ? [`${name} whoops. "That's how it's done!"`, `${name} nods, slow. "Remind me not to cross you."`]
+          : [`${name} exhales. "It's dead? It's really dead."`, `${name} stares at the body, then at you.`],
+        hurt: [`${name} winces. "You're bleeding!"`, `${name} shouts: "Move! MOVE!"`],
+        flee: brave > 5
+          ? [`${name} spits. "Coward's move. Smart, but coward's."`]
+          : [`${name} sags with relief. "Good. Good call."`],
+      }[moment] || [];
+      if (lines.length) this.say(this.pickFresh(lines, 'witness_' + moment));
+    },
     // seedGossip: those who weren't there hear about it later — secondhand,
     // distorted, traveling along social lines. "She gave me food" becomes
     // "she's giving away all the supplies" by the third retelling.
@@ -11759,6 +11786,10 @@
       if (hasSand) this.say('You fling a handful of grit into its eyes. (pocket_sand: blinded)');
       this.say('Turn-based now. Tap a tile to move — speed is squares. Then act.');
       this.audioEvent('combatStart');
+      // WITNESS JUDGEMENT (Steve 2026-10-05): people nearby SEE the fight and
+      // they react visibly — not just silent reputation dims. Brave ones watch,
+      // cautious ones back away, rivals judge.
+      try { this.combatWitnessReact('start'); } catch (e) {}
       // AGGRO-GATED TERROR (Steve): the deer's wrong-sounding call plays only
       // if it actually sees you at combat start (silent seeding found someone).
       // Otherwise it's just a deer — the terror starts when it notices.
@@ -12771,6 +12802,13 @@
       if (t.kind === 'player') {
         this.state.scholar.health = Math.max(0, t.hp);
         if (final > 0) this.noteAbilityUse('chitin_skin');
+        // WITNESS JUDGEMENT: a hard hit on you gets a visible gasp (once per
+        // fight — not every chip). People nearby react to you bleeding.
+        const ff = this.tbfight;
+        if (final >= 15 && ff && !ff.hurtReacted) {
+          ff.hurtReacted = true;
+          try { this.combatWitnessReact('hurt'); } catch (e) {}
+        }
       }
       const tIsHuman = t.kind === 'hostile';
       if (tIsHuman) {
@@ -15058,6 +15096,7 @@
         if (v.kind === 'villager' && v.alive && !v.fled) this.tbVillagerSyncPos(v);
       }
       if (result === 'won') {
+        try { this.combatWitnessReact('kill'); } catch (e) {}
         const mdef = f.fighters.find(x => x.kind === 'monster').mdef;
         this.state.codex.monsters = this.state.codex.monsters || {};
         const cur = this.state.codex.monsters[mdef.id] || {};
@@ -15115,6 +15154,7 @@
         this.sysSay(`It RAN! Style score: ${f.style || 0}. The gamblers wanted blood, but they'll settle for drama.`);
       } else if (result === 'fled') {
         this.notePlaystyle('cautious');
+        try { this.combatWitnessReact('flee'); } catch (e) {}
         try { const mm = f.fighters.find(x => x.kind === 'monster'); if (mm) this.identifyMonster(mm.monsterId); } catch (e) {}
         // survivors scatter; monsters melt back into the woods
         this.say('You escape. The thicket keeps its secrets.');
