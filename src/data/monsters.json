@@ -720,7 +720,29 @@
    "observed": "Voice-mimic predator. The System watched humans run toward crying and concluded distress is bait. It plays the voices of people you know. The voices are always crying. It never learned any other emotion.",
    "slain": "Static. Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Fire scrambles the signal. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours."
   },
-  "systemDesignation": "Acoustic lure unit (audience-tested)"
+  "systemDesignation": "Acoustic lure unit (audience-tested)",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "call",
+    "approach",
+    "reveal"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "static",
+   "noticeText": "The static sharpens toward {who} — another voice for the collection. You're all on the list now.",
+   "adjText": "Too close. The crying STOPS — it has {who}'s voice now.",
+   "painText": "It crackles — and the crying fixes on {who}, furious. Pain gets noticed.",
+   "phaseBadges": {
+    "call": " 📻 CALLING",
+    "approach": " 📻 CLOSING IN",
+    "reveal": " 📻 REVEALED"
+   },
+   "comment": "Encounter framework client. THE LURE: call (creeps, cries in a voice you know — approaching feeds it) → approach (voice sharpens, commits) → reveal (resist 2 turns: the act breaks, honest fight, exposed). Distress Call is direct/range 3, undodgeable once declared."
+  }
  },
  {
   "id": "mirror_stag",

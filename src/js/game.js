@@ -12324,6 +12324,79 @@
         return dt ? { f: dt, d: Math.max(Math.abs(dt.mx - m.mx), Math.abs(dt.my - m.my)) } : null;
       };
 
+      // ---- VOICE MIMIC ("Static"): THE LURE ----
+      // call → approach → reveal. The horror is the choice: the crying sounds
+      // like someone you know, and walking toward it feeds it (lure+). Hold
+      // your ground or back off and the lure starves — two turns of resisting
+      // breaks the act (reveal): the fight goes honest, and exposed, it takes
+      // hits badly. Distress Call is direct/range 3: once declared, moving
+      // won't help — the counterplay is never letting it lock on your terms.
+      if (this.vmIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        const vname = this.vmVoiceName(m, t);
+        const vposs = (vname === 'your own') ? 'your own' : vname + "'s";
+        if (m.vmLure === undefined) { m.vmLure = 0; m.vmResist = 0; this.encSetPhase(m, 'call'); }
+        // post-resolve: the call falters — then starts again, elsewhere.
+        if (m.vmDeclared && !m.telegraph) {
+          m.vmDeclared = false; m.vmLure = 1; m.vmResist = 0;
+          this.encSetPhase(m, 'call');
+          this.say('The voice falters... then starts again, somewhere else in the dark. It is still hungry.');
+        }
+        let vmPhase = m.beamPhase;
+        // the lure: did you move toward the crying?
+        const tDist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (m.vmTKey !== t.key || m.vmLastDist === undefined) { m.vmTKey = t.key; m.vmLastDist = tDist; }
+        else if (tDist < m.vmLastDist) {
+          m.vmLure = Math.min(3, (m.vmLure || 0) + 1); m.vmResist = 0;
+          this.say('The crying sharpens — clearer, closer. It knows you\'re coming.');
+          this.audioEvent('staticCry', { close: tDist <= 3 });
+        } else {
+          m.vmLure = Math.max(0, (m.vmLure || 0) - 1);
+          if (vmPhase !== 'reveal') m.vmResist = (m.vmResist || 0) + 1;
+        }
+        m.vmLastDist = tDist;
+        if (vmPhase === 'call' && m.vmLure >= 2) {
+          this.encSetPhase(m, 'approach'); vmPhase = 'approach';
+          this.say(`The static resolves — mid-sob — into a voice like ${vposs}. "PLEASE. Don't leave me out here." It's coming closer now.`);
+          this.audioEvent('staticCry', { close: true });
+        } else if (vmPhase !== 'reveal' && (m.vmResist || 0) >= 2) {
+          this.encSetPhase(m, 'reveal'); vmPhase = 'reveal'; m.vmResist = 0;
+          this.say('You don\'t move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It\'s a radio. It was always a radio.');
+          this.audioEvent('staticBreak');
+        }
+        // movement: creeps while calling, commits when approaching/revealed
+        const stepN = vmPhase === 'call' ? 1 : m.speed;
+        for (let i = 0; i < stepN; i++) {
+          const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+          if (d <= (pat.range || 3)) break;
+          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          if (!stp) break;
+          m.mx = stp.x; m.my = stp.y;
+        }
+        const dNow = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (dNow <= (pat.range || 3) && !m.telegraph) {
+          m.vmDeclared = true;
+          this.encDeclareDirect(m, t, vmPhase === 'reveal'
+            ? `Static SCREAMS — no voice left, just noise and fury. ${atk.name} incoming. No dodging it.`
+            : `A voice you know is crying your name in the dark. It sounds exactly like ${vname}. It is not ${vname}. ${atk.name} is coming — and moving won't help once it has your voice.`);
+        } else if (!m.telegraph) {
+          if (vmPhase === 'call') {
+            const cries = [
+              `"Please... is anyone there?" sobs the dark, in ${vposs} voice.`,
+              `Crying, somewhere in the trees. It sounds like ${vname}. ${vname === 'your own' ? 'You are' : vname + ' is'} supposed to be safe at the haven.`,
+            ];
+            this.say(cries[Math.floor(Math.random() * cries.length)]);
+            this.audioEvent('staticCry', {});
+          }
+          else if (vmPhase === 'approach') this.say(`"COME BACK," sobs the dark, in ${vposs} voice. "Don't leave me!"`);
+          else this.say('The radio crackles, furious, advancing on dead air.');
+        }
+        this.tbRefreshTelegraphUI();
+        this.tbEndCheck();
+        return;
+      }
+
       if (pat.type === 'ambush') {
         // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
         if (foe.d <= 1) {
