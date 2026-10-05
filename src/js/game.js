@@ -7852,10 +7852,28 @@
       }
       return line;
     },
+    // expireTalkRequests: an unanswered "can we talk?" doesn't wait forever.
+    // Villagers are people, not popups — after ~3 days the moment passes and
+    // they let it go. Delivered records are one-shot memory and get pruned
+    // too, so the Talk badge never pings about ancient history ("Day one..."
+    // on day 10). Requests without a day stamp (old saves) are kept.
+    expireTalkRequests() {
+      const v = this.state.village;
+      const reqs = v.talkRequests;
+      if (!reqs) return;
+      const day = (this.state.scholar || {}).day || 1;
+      for (const rid of Object.keys(reqs)) {
+        const t = reqs[rid] || {};
+        const age = day - (t.day == null ? day : t.day);
+        if (!t.delivered && age > 2) delete reqs[rid];
+        else if (t.delivered && age > 3) delete reqs[rid];
+      }
+    },
     // villagerInitiative: they come to YOU. wants with legs.
     // one initiative per day part max — they're people, not popups.
     villagerInitiative() {
       const v = this.state.village;
+      try { this.expireTalkRequests(); } catch (e) {}
       // LIVING WORLD: initiative works on any node — NPCs come to you wherever
       // you are, if they're on your node. Not just Haven anymore.
       if (!v.positions) return;
@@ -7959,7 +7977,7 @@
           if (reason) {
             stepToward(); done();
             v.talkRequests = v.talkRequests || {};
-            v.talkRequests[rid] = { line: reason.line };
+            v.talkRequests[rid] = { line: reason.line, day: this.state.scholar.day };
             this.say(this.renderTalkLine(reason.line, rid) + ` (Talk to ${this.displayName(rid)}.)`);
             // ATTENTION CUE (Steve 2026-10-05): they came to YOU — chime so
             // the player actually notices. The quiet dot wasn't enough.
@@ -8687,7 +8705,7 @@
         // so the player sees "can we talk?" on their person card.
         try {
           v.talkRequests = v.talkRequests || {};
-          v.talkRequests[who] = { line: `__NAME__ wants you to join the conversation.` };
+          v.talkRequests[who] = { line: `__NAME__ wants you to join the conversation.`, day: this.state.scholar.day };
         } catch (e) {}
       }
       // Overhearing sharp minds teaches a little. The village is a classroom
@@ -12695,22 +12713,21 @@
       return true;
     },
 
-    // The telegraph cue: behavioral text ALWAYS. Learned understanding only if earned.
-    // Escalates as the windup counts down — you can FEEL it coming.
-    // SWARM DEDUP (Steve 2026-10-05): pack monsters declaring the same attack
-    // in the same round say the cue ONCE — four mice, one warning, not four.
+    // The telegraph cue: SILENT in combat (Steve 2026-10-05). The grid IS the
+    // telegraph — highlighted cells, monster posture, visual windup. Text
+    // descriptions belong in the codex, not as intrusive combat spoilers.
+    // The behavioral text was redundant and gave away too much.
     sayTelegraphOnce(m, text) {
       const f = this.tbfight;
-      if (!f) { this.say(text); return; }
+      if (!f) return; // not in combat: nothing to say
+      // In combat: mark as said (for dedup) but don't display text.
+      // The visual telegraph on the grid is the warning.
       f.cueSaid = f.cueSaid || {};
-      // DEDUP BY TYPE (Steve 2026-10-05): pack monsters (hummice ×4) share
-      // the same telegraph. Key by mdef.id (the TYPE), not instance key,
-      // so the pack declares once, not once per member.
       const typeId = ((m || {}).mdef || {}).id || '?';
       const key = (f.round || 0) + ':' + typeId + ':' + ((((m || {}).telegraph || {}).attackName) || '');
       if (f.cueSaid[key]) return;
       f.cueSaid[key] = true;
-      this.say(text);
+      // No this.say(text) — the grid shows it. Text lives in the codex.
     },
     tbTelegraphCue(m) {
       const tg = m.telegraph;

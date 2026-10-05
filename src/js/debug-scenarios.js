@@ -565,4 +565,96 @@
   Game.debugRetiredList = function () {
     return Object.keys(RETIRED).map(id => [id, RETIRED_LABELS[id] || ('🗄️ ' + id)]);
   };
+
+  // === FIGHTER LOADOUT MATRIX (Steve 2026-10-05) ===
+  // "Debug menu needs the option to enter as different types of fighters
+  // with different equipment... designed so you can iterate through these
+  // scenarios extremely quickly... This is how we prevent regressions."
+  //
+  // Each loadout is a preset: stats + equipment + party. Apply with
+  // Game.debugApplyLoadout('unarmed') after starting any scenario.
+  const LOADOUTS = {
+    unarmed: {
+      label: '🥊 Unarmed/Unarmored',
+      desc: 'Bare fists, no armor. Should feel nearly impossible vs normal monsters.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        s.strength = 10; s.agility = 10; s.toughness = 10;
+      }
+    },
+    improvised: {
+      label: '🔨 Improvised',
+      desc: 'Sharpened stick (5 dmg), no armor. Early desperate fighter.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('sharpened_stick');
+        s.strength = 12; s.agility = 11; s.toughness = 10;
+      }
+    },
+    early: {
+      label: '🗡️ Early Gear',
+      desc: 'Fire-hardened spear (15 dmg), basic armor. Proper early fighter.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('fire_hardened_spear');
+        // TODO: give armor when armor items exist
+        s.strength = 14; s.agility = 12; s.toughness = 12;
+      }
+    },
+    ranged: {
+      label: '🏹 Ranged',
+      desc: 'Crude bow (40 dmg), 20 arrows. Glass cannon.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('crude_bow', 'arrow', 20);
+        s.strength = 10; s.agility = 14; s.toughness = 10;
+      }
+    },
+    mid: {
+      label: '⚔️ Mid-Tier',
+      desc: 'Machete (35 dmg), decent stats. Wave 2 ready.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('machete');
+        s.strength = 16; s.agility = 14; s.toughness = 14;
+      }
+    },
+    late: {
+      label: '💀 Late-Game',
+      desc: 'Hardlight knife (45 dmg), high stats. Wave 3+.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('hardlight_knife');
+        s.strength = 20; s.agility = 18; s.toughness = 18;
+      }
+    },
+    alien: {
+      label: '👽 Alien Loot',
+      desc: 'Contest prize tier. Should feel powerful but not trivial.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        // TODO: actual alien loot items when they exist
+        giveWeapon('hardlight_knife');
+        s.strength = 22; s.agility = 20; s.toughness = 20;
+      }
+    },
+  };
+
+  Game.debugApplyLoadout = function (loadoutId) {
+    const l = LOADOUTS[loadoutId];
+    if (!l) { Game.say(`🐞 Unknown loadout: ${loadoutId}`); return; }
+    l.apply();
+    Game.say(`🐞 LOADOUT: ${l.label} — ${l.desc}`);
+  };
+
+  Game.debugLoadoutList = function () {
+    return Object.keys(LOADOUTS).map(id => [id, LOADOUTS[id].label]);
+  };
 })();

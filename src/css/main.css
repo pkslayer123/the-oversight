@@ -910,9 +910,8 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
 @media (max-width: 899px) {
   /* MOBILE LAYOUT (Steve 2026-10-05): interactive first, info below.
      Grid + D-pad + actions must be visible without scrolling.
-     Narration and info go below, scrollable. */
+     Combat integrates into the normal action bars — no separate blocks. */
   .ord-gridwrap { order: 1; position: relative; }
-  .ord-combathead { order: 1.5; } /* combat card: right under grid, above narration */
   .ord-narration { order: 2; }
   .ord-actions { order: 3; }
   .ord-compass { order: 4; }

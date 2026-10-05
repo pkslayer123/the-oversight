@@ -3451,10 +3451,8 @@
             <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
           </div>
           <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
-          ${st.inCombat ? `<div class="ord-combathead">${panelCombat(st)}</div>` : ''}
           <div class="ord-actions">
-            ${st.inCombat ? combatActionsHTML(st) : ''}
-            <div class="ord-self">${selfBarHTML(st)}</div>
+            <div class="ord-self">${st.inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
             <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
             <div class="ord-target">${targetBarHTML()}</div>
             <div class="ord-danger">${dangerBarHTML()}</div>
@@ -4010,14 +4008,31 @@
     const canScream = Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day;
     const yourTurn = Game.tbIsPlayerTurn();
     if (!yourTurn || !p) return '';
-    return `<div class="actions cs-actions">
-      <button class="btn sm" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ STRIKE${adj.length > 1 ? '…' : ''}</button>
-      <button class="btn sm ghost" id="c-study" ${p.acted ? 'disabled' : ''}>👁</button>
-      ${mons.some(m => m.kind === 'hostile') ? `<button class="btn sm ghost" id="c-talk" ${p.acted ? 'disabled' : ''}>💬</button>` : ''}
-      ${canScream ? `<button class="btn sm ghost" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀</button>` : ''}
-      <button class="btn sm ghost" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢</button>
-      <button class="btn sm ghost" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖</button>
-      <button class="btn sm ghost" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸</button>
+    // INTEGRATED (Steve 2026-10-05): combat actions use the SAME selfbar
+    // styling as the normal you: bar. No separate combat UI block — the
+    // actions live where actions always live.
+    // Enemy status: compact single line above the buttons (not a card).
+    const monGroups = {};
+    for (const m of mons) { const mid = m.mdef ? m.mdef.id : m.monsterId; (monGroups[mid] = monGroups[mid] || []).push(m); }
+    const enemyLine = Object.values(monGroups).map(g => {
+      const m = g[0];
+      const mid = m.mdef ? m.mdef.id : m.monsterId;
+      const name = Game.monsterDisplayName ? Game.monsterDisplayName(mid) : m.name;
+      const hp = g.reduce((s, x) => s + (x.hp || 0), 0);
+      const maxHp = g.reduce((s, x) => s + (x.maxHp || 1), 0);
+      const frac = Math.max(0, Math.min(1, hp / maxHp));
+      const count = g.length > 1 ? ` ×${g.length}` : '';
+      return `${m.emoji} ${esc(name)}${count} <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>`;
+    }).join(' · ');
+    return `<div class="combat-enemies" style="font-size:12px;opacity:.85;margin:0 6px 4px">${enemyLine} <span style="opacity:.6">· ${p.moveLeft || 0} move · ${p.acted ? 0 : 1} act</span></div>` +
+    `<div class="selfbar">
+      <button class="self-btn" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ Strike${adj.length > 1 ? '…' : ''}</button>
+      <button class="self-btn" id="c-study" ${p.acted ? 'disabled' : ''}>👁 Study</button>
+      ${mons.some(m => m.kind === 'hostile') ? `<button class="self-btn" id="c-talk" ${p.acted ? 'disabled' : ''}>💬 Talk</button>` : ''}
+      ${canScream ? `<button class="self-btn" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀 Scream</button>` : ''}
+      <button class="self-btn" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢 Shout</button>
+      <button class="self-btn" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖 Offer</button>
+      <button class="self-btn" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸ Wait</button>
     </div>
     <div class="actions" id="c-talkrow" style="display:none"></div>`;
   }
@@ -4553,6 +4568,14 @@
       `<option value="${a.id}">${a.name || a.id}</option>`).join('');
     const scenBtns = (typeof Game.debugScenarioList === 'function' ? Game.debugScenarioList() : [])
       .map(([id, label]) => `<button class="dbg-scen" data-scen="${id}" style="display:block;width:100%;text-align:left;margin:3px 0;padding:8px;font-size:14px">${label}</button>`).join('');
+    // LOADOUTS (Steve 2026-10-05): fighter/equipment presets for rapid iteration.
+    // Apply AFTER starting a scenario to test different builds vs same monster.
+    const loadoutBtns = (typeof Game.debugLoadoutList === 'function' ? Game.debugLoadoutList() : [])
+      .map(([id, label]) => `<button class="dbg-loadout" data-loadout="${id}" style="display:block;width:100%;text-align:left;margin:3px 0;padding:8px;font-size:14px">${label}</button>`).join('');
+    const loadoutSection = loadoutBtns
+      ? `<p style="margin:10px 0 4px"><b>LOADOUTS</b> <span style="opacity:.6;font-size:11px">apply to current run</span></p>
+         <div id="dbg-loadouts">${loadoutBtns}</div>`
+      : '';
     // RETIRED: never deleted, saved for later — collapsed behind a toggle.
     const retiredList = (typeof Game.debugRetiredList === 'function' ? Game.debugRetiredList() : []);
     const retBtns = retiredList
@@ -4563,6 +4586,7 @@
     el.innerHTML = `<b>🐞 DEBUG</b> <button id="dbg-x" style="float:right">✕</button>
       <p style="margin:8px 0 4px"><b>SCENARIOS</b> <span style="opacity:.6;font-size:11px">one tap, fresh run</span></p>
       <div id="dbg-scenarios">${scenBtns}</div>
+      ${loadoutSection}
       ${retSection}
       <p style="margin:10px 0 4px;border-top:1px solid #f90;padding-top:8px"><b>CHEATS</b></p>
       <p><select id="dbg-mon">${monsters}</select>
@@ -4593,6 +4617,15 @@
         // scenario-requested chat (the ambush opens mid-confrontation)
         const cv = Game.debugChatRequest; Game.debugChatRequest = null;
         if (cv) openChatKeep(cv);
+      };
+    });
+    // LOADOUTS (Steve 2026-10-05): apply to current run, no fresh game.
+    // Pick a scenario, then pick a loadout to test that build vs that monster.
+    el.querySelectorAll('.dbg-loadout').forEach(b => {
+      b.onclick = () => {
+        Game.debugApplyLoadout(b.dataset.loadout);
+        el.remove();
+        refresh();
       };
     });
     q('#dbg-spawn').onclick = () => {
