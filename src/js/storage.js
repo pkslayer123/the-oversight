@@ -383,6 +383,15 @@
       const i = caches.findIndex(c => c.id === id);
       if (i < 0) return null;
       const c = caches[i];
+      // LOCATION: a cache is where you buried it. No digging it up from
+      // the hall couch — you walk back out there like everyone else.
+      const cn = c.node || {};
+      if (cn.x !== this.map.px || cn.y !== this.map.py) {
+        let where = 'somewhere else';
+        try { where = this.nodeEpithet(cn.x, cn.y) || where; } catch (e) {}
+        this.say(`Not here. Your ${this.journalName()} says: ${c.desc || ('buried at ' + where)}.`);
+        return null;
+      }
       if (c.found) { this.say('You dig where you buried it. Disturbed earth. Nothing. Someone got here first.'); caches.splice(i, 1); return this.tickAction(16) || this.status(); }
       // weight check
       const inv = this.state.scholar.inventory || [];

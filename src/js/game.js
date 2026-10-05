@@ -4985,6 +4985,13 @@
     },
     enterBuilding() {
       const s = this.state.scholar;
+      // STATE INTEGRITY: the hall is at Haven. Going "inside" from a
+      // thicket six tiles out would desync inside/outside (and with it the
+      // pantry/stash gate). Refuse anywhere but the haven node.
+      try {
+        const t0 = this.playerTile();
+        if (!t0 || t0.type !== 'haven') return false;
+      } catch (e) { return false; }
       s.insideHaven = true;
       const t = this.tileAt(this.map.px, this.map.py);
       if (t && t.type === 'haven') t.detail = null;
