@@ -132,7 +132,7 @@
       },
     },
     rq_holding: {
-      match: 'How are you holding up? Honestly.',
+      match: 'how are you holding up',
       thread: 'small',
       answers: [
         { id: 'honest', label: '"Honestly? Not great."',
@@ -243,6 +243,97 @@
     },
   };
 
+  // ============ GENERIC QUESTION ANSWERS (Rule 4) ============
+  // NPCs ask direct questions all over the opener/small-talk pools — far
+  // more than the bespoke REACTIVE_DEFS cover ("Are you eating enough?",
+  // "Want to see?", "What's the move?"). A direct question with no
+  // answerable option is the non-sequitur Steve flagged: the player can
+  // only dodge. So: classify the question, offer real answers.
+  // - yes/no shaped -> Yes / No / I don't know
+  // - "how are you" shaped -> honest / fine / busy
+  // - greeting ("what's up?") -> not much / surviving
+  // - open -> "What do you think?" (they give a take) / "I don't know yet."
+  // Rhetorical questions ("isn't that weird?", "don't answer that") are
+  // NOT direct — agree/joke/silence already answer those fine.
+  // Acknowledgments are human filler, tracked no-repeat per villager via
+  // convoPick, like every other react pool.
+  const GQ_ACK = {
+    yes: ['"Yeah. Thought so."', '"Knew it."', '"Good. Good to know."',
+          '"Right. That\'s what I figured."', 'They nod, satisfied.'],
+    no: ['"Hm. Fair."', '"Okay. Worth asking."', '"Right. Noted."',
+         '"Yeah, figured. Had to ask."', 'They take that in.'],
+    unsure: ['"Nobody is, these days."', '"Fair enough."', '"Yeah. Me neither, some days."',
+             '"Honest. I\'ll take honest."'],
+    howru_bad: ['"Yeah. Me too, if I\'m honest." A small, real smile.',
+                '"Thank you for saying it straight. Most people perform."',
+                '"Okay. That\'s allowed, you know. Sit a minute?"'],
+    howru_fine: ['"Mm." They don\'t believe you, kindly. "Well. I\'m here if fine stops working."',
+                 '"Good. Hold onto that."',
+                 '"You don\'t have to perform okay for me. But I won\'t push."'],
+    howru_busy: ['"Then let\'s find you something to do. Idle hands, idle thoughts."',
+                 '"Busy is good. Busy means tomorrow."',
+                 '"Same. Keep moving, keep okay."'],
+    greet_notmuch: ['"Same. Same."', '"Yeah. That\'s the job now."',
+                    '"Not much is good. Not much is safe."'],
+    greet_surviving: ['"Aren\'t we all."', '"That\'s the whole resume now."',
+                      '"Surviving counts. Don\'t let anyone tell you different."'],
+    // Nodding along IS an answer to a direct question — small acks so the
+    // passive conversationalist is never stranded mid-question.
+    gq_agree: ['"Yeah." They take it.', '"Mm." That seems to land.',
+               'Nods. "Okay. Good to know."'],
+    gq_joke: ['You crack a joke. It lands, mostly.',
+              'A joke. They snort despite themselves.',
+              'You deflect with humor. They let you — this time.'],
+    gq_silence: ['You say nothing. They read it as an answer.',
+                 'Silence. They don\'t press.',
+                 'You don\'t answer. They nod slowly, like your silence confirmed something.'],
+  };
+  // "What do YOU think?" — they give a take. Short, portable across
+  // questions, human. Tracked no-repeat per villager.
+  const GQ_TAKES = [
+    '"Honestly? I think about it more than I say."',
+    '"I go back and forth. Ask me tomorrow, I\'ll say different."',
+    '"My take? We\'re not going to like the answer, whatever it is."',
+    '"I\'ve got theories. Most of them are just fear with better lighting."',
+    '"Short version: I don\'t know. Long version: also that, but slower."',
+    '"I think the asking matters more than the answer, out here."',
+    '"Everyone\'s got a take. Mine\'s just the one I can live with."',
+    '"You really want my take? ...Yeah. Okay. I think we\'re being tested."',
+  ];
+  const GQ_FOLLOWUP = '"Sorry — I asked you something there."';
+  const GQ_LAPSE = '"Forget it. Wasn\'t important."';
+
+  // classifyQuestion: direct question without a bespoke def? Returns
+  // { kind, q } or null. kind: 'yn' | 'howru' | 'open'.
+  function classifyQuestion(line) {
+    if (!line || typeof line !== 'string') return null;
+    const t = String(line).replace(/^[\s"'“”‘’]+|[\s"'“”‘’.,;:—–-]+$/g, '');
+    // The direct question can sit mid-line ("Are you eating enough? You
+    // look thin.") — take the first question sentence, not just a trailing one.
+    const m = t.match(/([^.?!]*\?)/);
+    if (!m) return null;
+    const q = m[1].trim();
+    // Discourse markers, not questions: a bare "Honestly?" / "Really?" /
+    // "Right?" is a tag, not something the player must answer.
+    if (/^(honestly|really|right|yeah|huh|eh)\?$/i.test(q)) return null;
+    if (/isn'?t that (weird|strange|something)|rhetorical/i.test(q)) return null;
+    // Rhetorical markers can trail the question ("...? Don't answer that.")
+    if (/don'?t answer|never mind/i.test(t)) return null;
+    if (/how are you\b/i.test(q)) return { kind: 'howru', q };
+    if (/what'?s up\?|how'?s it going\?/i.test(q)) return { kind: 'greet', q };
+    // Colloquial yes/no: "you ever...?", "have you ever...?"
+    if (/^(do you ever|you ever|have you ever|did you ever)\b/i.test(q)) return { kind: 'yn', q };
+    // Imperative-as-question: invitations and requests ("Grab an end?",
+    // "Walk with me?", "Smile for me?"). Yes/No fits.
+    if (/^(grab|take|walk|sits?|come|join|help|look|listen|smile|race|stay|wait|tell me)\b/i.test(q)) return { kind: 'yn', q };
+    if (/^(do|did|is|are|can|could|would|should|will|have|has|was|were|does|am|don't|can't|won't|isn't|aren't|want to|wanna|shall we)\b/i.test(q)) return { kind: 'yn', q };
+    return { kind: 'open', q };
+  }
+
+  // floraWords: the green world coming up in conversation. Teaching later
+  // can connect to it (Rule 2: show/teach relates to what's discussed).
+  const FLORA_WORDS = /(forag|plant|herb|\broot\b|berr|mushroom|\bgreen\b|grow|\bseed\b|garden|\beat\b|food|cook|meal|dandelion|burdock|nettle|ramp|acorn|walnut)/i;
+
   const methods = {
 
     talkTo(vid) {
@@ -289,13 +380,90 @@
     // convoMatchReactive: does this NPC line ask the player something direct?
     // Returns { id, ...def } or null. Matched lines get contextual answers;
     // unmatched lines flow through the normal choice builder.
+    // Matching is case-insensitive on a normalized line — bespoke defs use
+    // short fragments ('how are you holding up') so openers and formal
+    // questions share them instead of missing by a tail word.
     convoMatchReactive(line) {
       if (!line || typeof line !== 'string') return null;
+      const norm = line.toLowerCase();
       for (const id of Object.keys(REACTIVE_DEFS)) {
         const def = REACTIVE_DEFS[id];
-        if (line.indexOf(def.match) !== -1) return Object.assign({ id }, def);
+        if (norm.indexOf(String(def.match).toLowerCase()) !== -1) return Object.assign({ id }, def);
       }
       return null;
+    },
+
+    // convoGenericQ: the NPC just said something that's a direct question
+    // with no bespoke reactive def. Classify it and hang it on the convo
+    // (like reactiveQ): answers come first, pivots are suppressed, and a
+    // dodged question gets one follow-up before it lapses. Never leave a
+    // direct question answerless (Steve's Rule 4).
+    convoGenericQ(vid, line) {
+      const c = this.convoGet(vid);
+      if (c.pendingQ || c.reactiveQ) return null;
+      // Never stack questions: one hanging question at a time. A response
+      // line that asks something new while a question hangs is part of the
+      // dodge, not a second question (it must not reset the follow-up).
+      if (c.genericQ) return null;
+      if (this.convoMatchReactive(line)) return null;
+      const gq = classifyQuestion(line);
+      if (!gq) return null;
+      c.genericQ = { kind: gq.kind, q: gq.q, followedUp: false };
+      return c.genericQ;
+    },
+
+    // convoGenericAnswers: the answer options for a hanging generic
+    // question. Real answers to what was asked — never topic-change
+    // buttons masquerading as replies (Steve's Rule 1 + Rule 4).
+    convoGenericAnswers(vid, gq) {
+      if (!gq) return [];
+      if (gq.kind === 'yn') {
+        return [
+          { id: 'gq:yn:yes', label: '"Yes."' },
+          { id: 'gq:yn:no', label: '"No."' },
+          { id: 'gq:yn:unsure', label: '"I don\'t know."' },
+        ];
+      }
+      if (gq.kind === 'howru') {
+        return [
+          { id: 'gq:howru:bad', label: '"Honestly? Not great."' },
+          { id: 'gq:howru:fine', label: '"I\'m fine."' },
+          { id: 'gq:howru:busy', label: '"Better when I\'m busy."' },
+        ];
+      }
+      if (gq.kind === 'greet') {
+        return [
+          { id: 'gq:greet:notmuch', label: '"Not much. You?"' },
+          { id: 'gq:greet:surviving', label: '"Surviving."' },
+        ];
+      }
+      return [
+        { id: 'gq:open:take', label: '"What do you think?"' },
+        { id: 'gq:open:unsure', label: '"I don\'t know yet."' },
+      ];
+    },
+
+    // convoNoteFlora: the green world came up in this conversation. Later
+    // teaching can connect to it — Rule 2: show/teach relates to what's
+    // being discussed. Tracks a specific named plant when one appears.
+    convoNoteFlora(vid, text) {
+      if (!text) return;
+      const c = this.convoGet(vid);
+      const t = String(text).toLowerCase();
+      // Fresh read per line: only the latest NPC line counts as "what's
+      // being discussed". A stale mention from three turns ago is not a
+      // connection — that's what the teach bridge is for.
+      c.floraMentioned = null;
+      try {
+        for (const p of (this.data.plants || [])) {
+          const nm = (p.name || '').toLowerCase();
+          if (nm && nm.length > 3 && t.indexOf(nm) !== -1) {
+            c.floraMentioned = { pid: p.id, name: p.name };
+            return;
+          }
+        }
+      } catch (e) {}
+      if (FLORA_WORDS.test(t)) c.floraMentioned = { pid: null, name: null };
     },
 
     convoBudget(vid) {
@@ -693,7 +861,20 @@
           choices.push({ id: 'react:' + c.reactiveQ.id + ':' + a.id, label: a.label });
         }
       }
-      const suppressPivot = !!c.reactiveQ || c.thread === 'grief' || c.thread === 'cheer';
+      // GENERIC-Q: a direct question with no bespoke def still deserves
+      // answers first (Rule 4). Same narrowing as reactive: pivots wait.
+      // One generic react rides along — nodding along is a valid answer
+      // too, and a passive conversationalist is never stranded with no
+      // valid move mid-question.
+      const gqActive = c.genericQ && !reactiveDef && !c.pendingQ;
+      const gqAnswers = gqActive ? this.convoGenericAnswers(vid, c.genericQ) : [];
+      for (const a of gqAnswers) choices.push(a);
+      if (gqActive) {
+        const gr = [['agree', '"You\'re right."'], ['joke', '(crack a joke)'], ['silence', '(say nothing)']];
+        const pick = gr[Math.floor(Math.random() * gr.length)];
+        choices.push({ id: pick[0], label: pick[1] });
+      }
+      const suppressPivot = !!c.reactiveQ || !!c.genericQ || c.thread === 'grief' || c.thread === 'cheer';
       // MAXC: the chat view has room for a real choice list. Topic asks
       // must never be starved by action buttons — Steve found deep topics
       // unreachable when discovery actions filled all 5 slots.
@@ -703,7 +884,7 @@
       // the full menu mid-question; that's the coherence fix, not a bug.
       // (7: five topic asks can now be open at once — gossip joined them —
       // and discovery actions must still fit behind topics/theorize/observe.)
-      const MAXC = reactiveDef ? reactiveDef.answers.length + 2 : 7;
+      const MAXC = reactiveDef ? reactiveDef.answers.length + 2 : gqActive ? gqAnswers.length + 3 : 7;
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: this.convoMoreLabel(vid) });
       // PARTY INVITES live in conversation, not on a button. Discovered via
       // the System unlock. You ask people. Like a person.
@@ -830,6 +1011,7 @@
       c.qCount = 0; c.theorized = [];
       c.traderMentioned = false; c.pendingTrade = null;
       c.reactiveQ = null; c.windingDown = false; c.pastDeflected = false;
+      c.genericQ = null; c.floraMentioned = null;
       c.count++; c.lastDay = this.state.scholar.day;
       // TALKING COSTS A LITTLE ENERGY — 10 kcal to open a conversation, not
       // per line. Small talk is quick and cheap; going deep costs ticks
@@ -872,7 +1054,12 @@
       if (rq) {
         c.reactiveQ = { id: rq.id, followedUp: false };
         if (rq.thread) { c.thread = rq.thread; op.thread = rq.thread; }
+      } else {
+        // GENERIC-Q: opener asked something direct with no bespoke def —
+        // hang it as an answerable question (Rule 4).
+        this.convoGenericQ(vid, op.line);
       }
+      this.convoNoteFlora(vid, op.line);
       c.transcript.push({ who: 'them', text: op.line });
       this.say(`${this.displayName(vid)}: "${op.line}"`);
       // SEEDING: knowledge traders mention their trade in conversation — the
@@ -900,7 +1087,7 @@
       // as a second beat in the same turn (rq_personal -> real question).
       // extraLine: a follow-up beat after an answer — Q -> A -> follow-up,
       // so answering doesn't dead-end the moment.
-      let answeredReactive = false, extraQ = null, extraLine = null;
+      let answeredReactive = false, answeredGeneric = false, extraQ = null, extraLine = null;
 
       if (choiceId === 'leave') {
         return this.endConvo(vid, 'left');
@@ -978,6 +1165,41 @@
       } else if (choiceId === 'more') {
         const beat = this.convoThreadBeat(vid);
         done(beat || this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know about that."']), '"Tell me more."');
+      } else if (choiceId.indexOf('gq:') === 0) {
+        // GENERIC ANSWER: the player answered their direct question. The
+        // outcome must read as a RESPONSE — never a canned pivot (Rule 1).
+        const parts = choiceId.split(':');
+        const kind = parts[1], aid = parts[2];
+        const wasGq = c.genericQ;
+        c.genericQ = null; answeredGeneric = true;
+        const t = this.state.village.trust || {};
+        let youLine = null, resp = null;
+        if (kind === 'yn') {
+          youLine = aid === 'yes' ? '"Yes."' : aid === 'no' ? '"No."' : '"I don\'t know."';
+          resp = this.convoPick(vid, 'gq:yn:' + aid, GQ_ACK[aid] || GQ_ACK.unsure);
+          if (aid !== 'unsure') t[vid] = Math.min(100, (t[vid] || 10) + 1);
+        } else if (kind === 'howru') {
+          youLine = aid === 'bad' ? '"Honestly? Not great."' : aid === 'fine' ? '"I\'m fine."' : '"Better when I\'m busy."';
+          resp = this.convoPick(vid, 'gq:howru:' + aid, GQ_ACK['howru_' + aid] || GQ_ACK.howru_fine);
+          t[vid] = Math.min(100, (t[vid] || 10) + (aid === 'bad' ? 2 : 1));
+        } else if (kind === 'greet') {
+          youLine = aid === 'notmuch' ? '"Not much. You?"' : '"Surviving."';
+          resp = this.convoPick(vid, 'gq:greet:' + aid, GQ_ACK['greet_' + aid] || GQ_ACK.greet_notmuch);
+          t[vid] = Math.min(100, (t[vid] || 10) + 1);
+        } else {
+          if (aid === 'take') {
+            youLine = '"What do you think?"';
+            resp = this.convoPick(vid, 'gq:open:take', GQ_TAKES);
+            t[vid] = Math.min(100, (t[vid] || 10) + 1);
+          } else {
+            youLine = '"I don\'t know yet."';
+            resp = this.convoPick(vid, 'gq:open:unsure', GQ_ACK.unsure);
+          }
+        }
+        if (wasGq && wasGq.kind === 'howru' && aid === 'bad') {
+          try { this.convoDeepTick(vid); } catch (e) {}
+        }
+        done(resp || '"Hm."', youLine);
       } else if (choiceId.indexOf('ask:') === 0) {
         const topic = choiceId.slice(4);
         // DEEP BEATS build trust faster: asking about someone's past or what
@@ -1048,13 +1270,33 @@
         done('"Another time, then. Knowledge keeps."', '"Another time, maybe."');
       } else if (choiceId === 'teach') {
         // Teaching happens in conversation now — show, don't menu.
+        // TOPICAL TEACH (Steve, Rule 2): show/teach must relate to what's
+        // being discussed. If the green world came up, teach the plant that
+        // came up. Otherwise the teach carries a bridge — "that reminds
+        // me" — never a random burdock drop mid-thought.
         const youKnow = Object.keys(this.state.codex.plants || {});
         const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
         const teachable = youKnow.filter(pid => theyKnow.indexOf(pid) === -1);
         if (!teachable.length) {
           done('"Huh — looks like we\'re even on the green stuff."', '"Let me show you something."');
         } else {
-          const pid = teachable[0];
+          const fm = c.floraMentioned;
+          let pid = teachable[0], youLine = '"Let me show you something."', respLine = null;
+          if (fm && fm.pid && teachable.indexOf(fm.pid) !== -1) {
+            // They named it, you teach it — the show connects to the talk.
+            pid = fm.pid;
+            respLine = `You crouch down — the ${fm.name} you were just talking about. You show them where it grows, how to tell it apart, what it's good for. Their eyes widen. "I never knew that."`;
+          } else if (!fm || fm.pid) {
+            // Nothing green came up — or they named a plant you can't teach
+            // them — so the teach pivots: bridge it or it's a non sequitur.
+            youLine = this.convoPickCycle(vid, 'teachbridge', [
+              '"That reminds me — let me show you something."',
+              '"Speaking of staying alive out here — let me show you something."',
+              '"Different subject, but this can\'t wait — let me show you something."',
+            ]) || '"Let me show you something."';
+          }
+          // (generic flora words matched: the green world IS the topic —
+          // teaching any plant connects without a bridge.)
           this.state.village.taught[vid] = this.state.village.taught[vid] || [];
           this.state.village.taught[vid].push(pid);
           const pname = ((this.data.plants || []).find(p => p.id === pid) || {}).name || pid;
@@ -1063,7 +1305,7 @@
           t[vid] = Math.min(100, (t[vid] || 10) + 2);
           try { this.socialTick(vid); } catch (e) {}
           try { this.convoDeepTick(vid); } catch (e) {}
-          done(`You show them ${pname} — where it grows, how to tell it apart. Their eyes widen. "I never knew that."`, '"Let me show you something."');
+          done(respLine || `You show them ${pname} — where it grows, how to tell it apart. Their eyes widen. "I never knew that."`, youLine);
         }
       } else if (choiceId === 'invite_party') {
         const r = (this.inviteToParty && this.inviteToParty(vid)) || { ok: false, msg: '...' };
@@ -1092,6 +1334,10 @@
           c.reactiveQ = null; answeredReactive = true;
           if (rrA.thread) { c.thread = rrA.thread; c.depth = 1; }
           done(rrA.reacts.agree, '"You\'re right."');
+        } else if (c.genericQ) {
+          // Nodding along answers a direct question too — no strand.
+          c.genericQ = null; answeredGeneric = true;
+          done(this.convoPick(vid, 'gq:agree', GQ_ACK.gq_agree) || '"Yeah."', '"You\'re right."');
         } else {
           const m = cg.agreeReacts || {};
           // Acknowledgments are human filler — per-temperament pools (arrays
@@ -1110,6 +1356,11 @@
           const vgJ = this.state.village;
           vgJ.cheer = Math.max(vgJ.cheer || 0, 1);
           done(rrJ.reacts.joke, '(crack a joke)');
+        } else if (c.genericQ) {
+          c.genericQ = null; answeredGeneric = true;
+          const vgJ2 = this.state.village;
+          vgJ2.cheer = Math.max(vgJ2.cheer || 0, 1);
+          done(this.convoPick(vid, 'gq:joke', GQ_ACK.gq_joke) || 'A short laugh.', '(crack a joke)');
         } else {
         const m = cg.jokeReacts || {};
         const rkey = (mood === 'grieving' || mood === 'scared') ? mood : temp;
@@ -1128,6 +1379,9 @@
           c.reactiveQ = null; answeredReactive = true;
           if (rrS.thread) { c.thread = rrS.thread; c.depth = 1; }
           done(rrS.reacts.silence, '(say nothing)');
+        } else if (c.genericQ) {
+          c.genericQ = null; answeredGeneric = true;
+          done(this.convoPick(vid, 'gq:silence', GQ_ACK.gq_silence) || '...', '(say nothing)');
         } else {
         const m = cg.silence || {};
         const key = 'silence:' + temp;
@@ -1170,6 +1424,14 @@
       } else {
         done('"..."', null);
       }
+
+      // GENERIC-Q DETECTION: their response just asked something direct with
+      // no bespoke def — hang it as an answerable question (Rule 4), and
+      // note when the green world comes up (Rule 2: topical teaching).
+      // Skipped when a formal/reactive question is already live, or the
+      // player just answered the generic one.
+      if (line) this.convoNoteFlora(vid, line);
+      if (line && !answeredGeneric && !answeredReactive && !extraQ) this.convoGenericQ(vid, line);
 
       if (youSaid) c.transcript.push({ who: 'you', text: youSaid });
       c.transcript.push({ who: 'them', text: line });
@@ -1223,6 +1485,7 @@
       const forceQ = c.count === 1 && (c.qCount || 0) === 0 && c.exchanges >= 2 && !droveThread && !justAnswered;
       if (c.thread !== 'nonverbal' && !c.pendingQ && c.exchanges >= 1 && !answeredReactive) {
         const rqf = c.reactiveQ && REACTIVE_DEFS[c.reactiveQ.id];
+        const gqf = c.genericQ && !answeredGeneric ? c.genericQ : null;
         if (rqf) {
           if (!c.reactiveQ.followedUp) {
             c.reactiveQ.followedUp = true;
@@ -1237,6 +1500,22 @@
             }
             c.reactiveQ = null;
           }
+        } else if (gqf) {
+          // GENERIC-Q LINGERS: a dodged direct question gets one follow-up,
+          // then lapses honestly — the thread is never silently dropped
+          // for a random new topic (Rule 3).
+          if (!gqf.followedUp) {
+            gqf.followedUp = true;
+            const fup = GQ_FOLLOWUP + ' ' + gqf.q;
+            c.transcript.push({ who: 'them', text: fup });
+            while (c.transcript.length > 8) c.transcript.shift();
+            this.say(`${this.displayName(vid)}: "${fup}"`);
+          } else {
+            c.transcript.push({ who: 'them', text: GQ_LAPSE });
+            while (c.transcript.length > 8) c.transcript.shift();
+            this.say(`${this.displayName(vid)}: ${GQ_LAPSE}`);
+            c.genericQ = null;
+          }
         } else if (!droveThread && !justAnswered && !c.windingDown && (forceQ || ((c.qCount || 0) < 2 && Math.random() < 0.3))) {
           const trust = (this.state.village.trust || {})[vid] || 10;
           const moodNow = this.npcMood(vid);
@@ -1249,7 +1528,7 @@
             // a non sequitur (the tree-line -> hope-question cut). Name the
             // pivot so the conversation keeps its shape.
             const liveThreads = ['goal', 'past', 'plans', 'village', 'theorize', 'trade',
-              'spooked', 'request', 'recall', 'grief', 'cheer'];
+              'spooked', 'request', 'recall', 'grief', 'cheer', 'small'];
             if (liveThreads.indexOf(c.thread) !== -1) {
               const bridge = this.convoPickCycle(vid, 'qbridge', [
                 'A beat. Then, as if shaking something off:',
@@ -1262,6 +1541,10 @@
             }
             c.pendingQ = qd;
             c.qCount = (c.qCount || 0) + 1;
+            // Asked is asked — record it at fire time, not just on answer.
+            // Otherwise a dodged or interrupted question comes back next
+            // conversation like it never happened (conversation memory).
+            if (c.askedQs.indexOf(qd.id) === -1) c.askedQs.push(qd.id);
             c.transcript.push({ who: 'them', text: qd.q });
             while (c.transcript.length > 8) c.transcript.shift();
             this.say(`${this.displayName(vid)}: "${qd.q}"`);

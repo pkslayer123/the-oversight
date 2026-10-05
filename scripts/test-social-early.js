@@ -81,7 +81,9 @@ const idsOf = (choices) => choices.map(c => c.id);
     const verbal = (id) => { try { return Game.commLevel(id).level !== 'none'; } catch (e) { return false; } };
     const normalOpening = (id) => {
       const c = Game.convoGet(id);
-      return c.thread !== 'nonverbal' && !c.reactiveQ;
+      // a direct-question opening narrows the menu to answers by design
+      // (Rule 4) — not a normal opening for topic-ask assertions
+      return c.thread !== 'nonverbal' && !c.reactiveQ && !c.genericQ;
     };
     // find a villager whose next conversation opens normally (not reactive /
     // nonverbal); each failed candidate costs one throwaway conversation
