@@ -3461,7 +3461,12 @@
             const nx = hx + dx, ny = hy + dy;
             if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
             const t = this.tileAt(nx, ny);
-            if (t && !t.visited && Math.random() < 0.5 * eff) { t.visited = true; revealed++; }
+            // SCOUT = mapping, not visiting. A scout's report reveals the tile
+            // on the map (revealed) but never marks it visited — the player's
+            // first walk-in must still get the arrival moment. (Explorer loop
+            // 2026-10-05: NPC scouts were silently consuming nearby nodes'
+            // arrival text before the player ever set foot there.)
+            if (t && !t.revealed && Math.random() < 0.5 * eff) { t.revealed = true; revealed++; }
           }
         } catch (e) {}
         let find = '';
@@ -5173,6 +5178,12 @@
       if (dist > 1) { this.say('Too far. Step closer.'); return null; }
 
       // TREE: modifiers synthesize. you see species, health, ivy. you learn the system.
+      // EXAMINE IS INSPECTION. The first look describes the tree and takes THIS
+      // tree's own nuts (examine + this cell's loot, like searchRoom) — it does
+      // NOT run the area forage sweep. (Explorer loop 2026-10-05: Examine fired
+      // the full 3x3 sweep — 16 ticks, full-patch depletion, pack flood —
+      // behind an inspection tap. Steve's rule: low-effort inspection must not
+      // eat the day. The sweep stays where the player asked for it: 'Forage nuts'.)
       if (cell === 'tree' || cell === 'bigtree') {
         const mod = t.modifiers && t.modifiers[key];
         if (secret && !secret.known) {
@@ -5183,12 +5194,14 @@
             this.say(`This ${desc}. Nothing to take. You note it — you won\'t waste time here again.`);
             return true;
           } else if (mod && (mod.species === 'oak' || mod.species === 'hickory')) {
-            this.say(`This ${desc}. Nuts — about ${secret.yield} worth. You take them.`);
+            this.say(`This ${desc}. Nuts — about ${secret.yield} worth.`);
+            this.takeTreeNuts(t, cx, cy, secret);
           } else {
             // pine (and unknown trees): no nut plant in the content pool.
             // honest: you're working the ground around it, not harvesting nuts.
             this.say(`This ${desc}. No nuts worth the trouble — but something might grow in its shade.`);
           }
+          return true; // examined. the sweep is a separate, explicit choice ('Forage nuts').
         } else if (secret && secret.known && secret.yield === 0) {
           this.say('You already checked. Nothing.');
           return true;
@@ -5296,6 +5309,31 @@
         return this.doAction('forage', { cx, cy });
       }
       return null;
+    },
+
+    // takeTreeNuts: examine takes THIS tree's nuts — a targeted take of the
+    // tree's own yield, not the area sweep. Honest units ("about N worth"),
+    // knowledge-gated naming (lump if unknown), pack-full leaves the nuts
+    // up there (yield stays) instead of vanishing them.
+    takeTreeNuts(t, cx, cy, secret) {
+      const n = secret.yield || 0;
+      const pid = this.cellPlantSpecies(t, cx, cy, 'tree');
+      const plant = pid && this.data.plants.find(pp => pp.id === pid);
+      if (!plant || n <= 0) { secret.yield = 0; return; }
+      if (!this.canCarry(0.1 * n)) {
+        this.say("Your pack can't take the nuts. Eat something, or leave them.");
+        return;
+      }
+      secret.yield = 0;
+      const scholar = this.state.scholar;
+      const kcal = n * plant.caloriesPerUnit;
+      if (this.plantKnown(pid)) {
+        scholar.inventory.push(this.foodForageItem(plant, true, n, kcal, scholar.day));
+        this.say('+' + n + 'x ' + plant.name + ' (+' + kcal + ' kcal).');
+      } else {
+        this.addUnknownToLump(plant, n, scholar.day);
+        this.say('Unfamiliar unknown nuts — into the bag. (Unknowns lump together; sort them at camp.)');
+      }
     },
 
     // ANIMALS: spawn by biome. they flee from you (not toward, like monsters).
