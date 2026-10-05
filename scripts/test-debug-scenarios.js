@@ -28,7 +28,7 @@ function eq(name, got, want) {
 
   // --- list ---
   const list = Game.debugScenarioList();
-  eq('15 scenarios listed (9 original + 6 new)', list.length, 15);
+  eq('20 scenarios listed (9 original + 11 new)', list.length, 20);
   ok('all have ids+labels', list.every(([id, label]) => id && label));
 
   // --- 1. deer ---
@@ -106,6 +106,24 @@ function eq(name, got, want) {
   eq('deer 5 tiles away', Math.max(Math.abs(s.monster.mx - s.mx), Math.abs(s.monster.my - s.my)), 5);
   eq('night', Game.dayPart, 3);
   eq('spear equipped', (s.equipped.weapon || {}).itemId, 'fire_hardened_spear');
+
+  // --- 9b. monster batch 2 scenarios: each runs and places its monster ---
+  for (const [sc, mid, part] of [
+    ['flashbulb', 'mirrormoth', 3],
+    ['choir', 'belltoad', 2],
+    ['lockpick', 'lockpick_raccoon', 3],
+    ['hummice', 'hummice', 3],
+    ['nightlight', 'nightlight_catfish', 3],
+  ]) {
+    ok(`${sc} runs`, Game.debugScenario(sc));
+    s = Game.state.scholar;
+    ok(`${sc} placed`, !!(s.monster && s.monster.id === mid));
+    eq(`${sc} day part`, Game.dayPart, part);
+    eq(`${sc} spear equipped`, (s.equipped.weapon || {}).itemId, 'fire_hardened_spear');
+  }
+  // lockpick scenario brings food (the buy-off)
+  ok('lockpick scenario has food', Game.debugScenario('lockpick') &&
+    Game.state.scholar.inventory.some(i => (i.kcalEach || 0) > 0 && (i.units || 0) > 0));
 
   // --- 10. mootAccused ---
   ok('mootAccused runs', Game.debugScenario('mootAccused'));
