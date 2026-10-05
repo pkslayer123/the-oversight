@@ -5093,7 +5093,16 @@
     clearBlockage(x, y) {
       const dest = this.tileAt(x, y);
       const bf = dest.blockFrom;
-      if (!bf) return false;
+      if (!bf) {
+        // NO SILENT ACTIONS (explorer loop 2026-10-05): a creek blockage is
+        // not clearable by hand — bridge it or swim it. Say so; don't die quiet.
+        if (dest.type === 'creek' && dest.needsBridge && !dest.bridged) {
+          this.say('The creek runs fast here — you can\'t clear it with your hands. Bridge it (4 wood) or swim it.');
+        } else {
+          this.say('Nothing to clear here.');
+        }
+        return false;
+      }
       if (bf.type === 'fallen_tree') {
         this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 60);
         this.addWood(2);
@@ -5107,6 +5116,10 @@
         this.say(`You pocket ${n} good throwing stone${n > 1 ? 's' : ''}. (sling ammo)`);
       } else if (bf.type === 'washed_out') {
         return this.buildBridge(x, y); // washed out needs a bridge
+      } else {
+        // unknown blockage type: never delete it silently, never eat the work.
+        this.say('You can\'t clear that by hand.');
+        return false;
       }
       delete dest.blockFrom;
       // ACTION CLOCK: clearing a blockage = 1 chunk (32 ticks) + effort kcal (above).
@@ -5232,7 +5245,18 @@
       // (force bypasses: swimming doesn't fix the path, it just gets you across.)
       if (!force) {
         const block = this.travelBlockage(x, y);
-        if (block) return block;
+        if (block) {
+          // NO SILENT ACTIONS (explorer loop 2026-10-05): a blocked travel tap
+          // must say what blocks you even when the caller also shows the
+          // blockage card. The card and the log agree.
+          const what = block.blockType === 'creek' ? 'The creek runs fast here — no crossing without a bridge or a swim.'
+            : block.blockType === 'fallen_tree' ? 'A fallen tree blocks the path.'
+            : block.blockType === 'rubble' ? 'Rubble chokes the path.'
+            : block.blockType === 'washed_out' ? 'The path is washed out.'
+            : 'Something blocks the path.';
+          this.say(what);
+          return block;
+        }
       }
       const odx = Math.sign(x - this.map.px), ody = Math.sign(y - this.map.py);
       // CONTINUOUS TRAVEL: remember where you stood on the old node so you can
