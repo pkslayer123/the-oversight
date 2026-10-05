@@ -1801,38 +1801,12 @@
     }
     const conf = vp.conflictNote ? `<p class="small" style="opacity:.7">${esc(vp.conflictNote)}</p>` : '';
     const said = view.line || '';
-    // CONVERSATION: the dialogue surface. Transcript of the exchange so far
-    // plus the player's response choices — never just "continue".
+    // CONVERSATION: Steve 2026-10-04 — ONE surface. The full-screen chat is the
+    // conversation; the person panel no longer renders an inline transcript or
+    // inline choice buttons (redundant second chat). The Talk / Talk-again
+    // button below is the single entry point.
     const convo = Game.convoUI ? Game.convoUI(villagerId) : { active: false, transcript: [], choices: [] };
-    // TRANSCRIPT: reads like dialogue, not a log. Speaker name always shown
-    // (descriptor pre-System, real name once earned). Narration (non-quoted)
-    // is italic and dimmed so speech stands out.
-    // HESITATION: while they're thinking, the newest entries are held back
-    // and a "..." shows instead. The response lands after the beat.
-    const thinking = (view.thinking && view.thinking.vid === villagerId) ? view.thinking : null;
-    const shownTranscript = thinking ? (convo.transcript || []).slice(0, thinking.hiddenFrom) : (convo.transcript || []);
-    const convoTranscript = shownTranscript.slice(-6).map(e => {
-      // CHAT GRAMMAR (Steve): spoken dialogue = styled speech, narration /
-      // action = caption. The classifier is the leading quote — the SAME
-      // rule as the full chat screen. (This regex was double-escaped and
-      // never matched: every line rendered as narration here.)
-      const clean = Game.cleanDialogue ? Game.cleanDialogue(e.text) : String(e.text || '');
-      const isSpeech = /^\s*"/.test(clean);
-      const cls = e.who === 'you' ? 'tline you' : 'tline them';
-      const who = e.who === 'you' ? 'You' : titleName;
-      // FOREIGN SPEECH renders distinctly: italic amber, tagged with the
-      // language. You SEE the words even when you can't understand them.
-      const spCls = e.foreign ? 'fsp' : (isSpeech ? 'sp' : 'narr');
-      const ftag = e.foreign ? ` <span class="flang">${esc(Game.langDef(e.foreign).icon)} ${esc(Game.langDef(e.foreign).name)}</span>` : '';
-      return `<p class="${cls}"><b>${esc(who)}:</b> <span class="${spCls}">${esc(clean)}</span>${ftag}</p>`;
-    }).join('') + (thinking
-      ? `<p class="tline them"><b>${esc(titleName)}:</b> <span class="thinking-dots" aria-label="thinking"><span>.</span><span>.</span><span>.</span></span></p>`
-      : '');
-    const convoChoices = (convo.choices || []).map(cn =>
-      `<button class="btn sm${cn.id === 'leave' ? ' ghost' : ''}" data-act="c:${esc(cn.id)}"${thinking ? ' disabled' : ''}>${esc(cn.label)}</button>`).join(' ');
-    const convoHtml = convoTranscript
-      ? `<div class="convo" style="border-top:1px solid #ffffff22;margin-top:10px;padding-top:4px">${convoTranscript}${convoChoices ? `<div class="inline-btns" style="margin-top:8px">${convoChoices}</div>` : ''}</div>`
-      : '';
+    const convoHtml = '';
     const talkLabel = convo.active ? null : (convo.transcript && convo.transcript.length ? '\uD83D\uDCAC Talk again' : '\uD83D\uDCAC Talk');
     const youKnow = Object.keys(Game.state.codex.plants || {});
     const theyKnow = (Game.state.village.taught && Game.state.village.taught[villagerId]) || [];
