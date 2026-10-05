@@ -908,8 +908,15 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
    Budget: header 48 + daytick 18 + status 60 + epithet 22 + grid 330 +
    perceive 24 + self 50 + ctx 44 + feedback 70 = ~666 < 844. */
 @media (max-width: 899px) {
-  /* the grid and its overlays are one positioned unit */
-  .ord-gridwrap { order: 4; position: relative; }
+  /* MOBILE LAYOUT (Steve 2026-10-05): interactive first, info below.
+     Grid + D-pad + actions must be visible without scrolling.
+     Narration and info go below, scrollable. */
+  .ord-gridwrap { order: 1; position: relative; }
+  .ord-combathead { order: 1.5; } /* combat card: right under grid, above narration */
+  .ord-narration { order: 2; }
+  .ord-actions { order: 3; }
+  .ord-compass { order: 4; }
+  .ord-epithet { order: 5; }
   /* COMPACT STATUS: 2x2 mini-bars instead of 4 full rows */
   .ord-status { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
   .ord-status .stat { margin: 3px 0; }

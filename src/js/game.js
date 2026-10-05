@@ -5266,9 +5266,9 @@
       this.state.scholar.facing = { x: odx || 0, y: ody || 1 };
       this.reveal(x, y);
       const tile = this.playerTile();
-      // RELIC — weatherproof: the garment shrugs off weather. Cheaper travel.
-      const travelKcalMult = S.modifiers.resolve(1, 'travel.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities), {});
-      this.state.scholar.kcal -= Math.round(30 * t.d * travelKcalMult); // distance has a metabolic price
+      // NODE TRAVEL IS FREE (Steve 2026-10-05): crossing a node boundary is
+      // just walking. The steps to reach the edge already cost. No extra
+      // kcal tax, no tick cost for the boundary itself.
       this.noteTrailUse(); // RELIC BOND: the boots walked.
       // SYNERGY passives: cold_blooded + hollow_bones work while traveling.
       this.noteAbilityUse('cold_blooded');
@@ -5341,13 +5341,11 @@
     // This is "a portion of the day" passing — visible in the world,
     // not deducted from your 4 actions.
     travelTimeStep() {
-      // ACTION CLOCK: node travel = 32 ticks (a "bigger tick"). Same unified clock
-      // as everything else: NPC batch + day timer advance proportionally.
-      this.tickAction(this.TIME.TRAVEL_TICKS);
+      // NODE TRAVEL IS FREE (Steve 2026-10-05): no tick cost, no energy cost.
+      // The boundary is just walking. NPCs still get their batch turn because
+      // time passes, but the player isn't taxed for crossing.
       try { this.tickNeeds(); } catch (e) {}
       try { this.spreadGossip(); } catch (e) {}
-      // travel is tiring: small energy cost
-      this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 2);
     },
 
     // micro-move: step to an adjacent cell in the 9x9. 1 tick of time, no effort.
