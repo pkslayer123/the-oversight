@@ -186,6 +186,7 @@
       this.say('◈ THE TABLE — it is not a table. It\'s a ring of pale light, and around it, things with too many angles to be faces. Above it all — the audience. Trillions of eyes, and every one of them knows your name. The System speaks, and for once it isn\'t performing: "HUMANITY PRESENTS ITS CASE."');
       this.say(`Your case. ${F.narrate}`);
       this.say(`Out there they call you ${F.name.toLowerCase()}. Now — the last choice is yours, and it's live.`);
+      try { this.recordMoment(`Haven reached the table as ${F.name}.`); } catch (e) {}
       s.tableChoices = {
         frame,
         options: (TABLE_CHOICES[frame] || []).map(c => ({ id: c.id, label: c.label })),
@@ -308,6 +309,7 @@
       // office, not the face. It's alien like that.
       this.say('🌟 "MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)"');
       this.say(`📖 The Codex turns a page: ${oldName}, ${s.day || 0} days. The mantle passes to ${newName}.`);
+      try { this.recordMoment(`${oldName} died. ${newFirst} picked up the Codex.`); } catch (e) {}
       // the trust of the office transfers, discounted — the person must earn the rest
       try {
         v.trust = v.trust || {};
@@ -320,18 +322,52 @@
     // ---------- ONE CONTEST ----------
     // Many villages, one season. Rival contestants — trade and cooperation,
     // but also competition for the audience's favor. Notability is ratings.
-    contestStandings() {
+    //
+    // FUTURE HOOK (Steve 2026-10-04): the show will run periodic spectacle
+    // challenges in distinct arenas, gated by the viewership leaderboard —
+    // roughly the top 20% of contestants per challenge. Ratings = access.
+    // viewershipBoard() is the API those challenges will read: per-village
+    // viewership scores, trends, and the moments that moved them. Don't
+    // paint over it: every notable event should recordMoment().
+    havenViewership() {
       try {
         const v = this.state.village, pg = this.progState();
-        const ours = (v.pantryKcal || 0) / 2000 + this.codexBreadth() * 1.5 + (pg.arc || 1) * 5 + (this.ledger().showmanship || 0);
-        const rows = [{ name: 'Haven', score: ours, us: true }];
+        const base = (v.pantryKcal || 0) / 2000 + this.codexBreadth() * 1.5 + (pg.arc || 1) * 5 + (this.ledger().showmanship || 0);
+        v.viewership = v.viewership == null ? base : v.viewership;
+        return v.viewership;
+      } catch (e) { return 0; }
+    },
+    // trending moments: the log the future leaderboard reads. Cap 30.
+    recordMoment(text) {
+      try {
+        const pg = this.progState();
+        pg.moments = pg.moments || [];
+        pg.moments.unshift({ day: (this.state.scholar || {}).day || 0, text: String(text).slice(0, 140) });
+        pg.moments = pg.moments.slice(0, 30);
+        // moments move viewership: big plays get watched
+        const v = this.state.village;
+        v.viewership = (v.viewership == null ? this.havenViewership() : v.viewership) + 1;
+      } catch (e) {}
+    },
+    viewershipBoard() {
+      // THE leaderboard. Future challenge-gating reads this. Rows:
+      // { name, viewership, trend, us }. Sorted high→low.
+      try {
+        const rows = [{ name: 'Haven', viewership: this.havenViewership(), trend: 0, us: true }];
         for (const ov of (this.state.otherVillages || [])) {
-          ov.favor = (ov.favor == null ? 8 + R() * 8 : Math.max(2, Math.min(40, ov.favor + (R() - 0.45) * 3)));
-          rows.push({ name: ov.name || 'a far village', score: ov.favor + (ov.generated ? 4 : 0), us: false });
+          const prev = ov.viewership == null ? 8 + R() * 8 : ov.viewership;
+          const drift = (R() - 0.45) * 3;
+          ov.viewership = Math.max(2, Math.min(60, prev + drift));
+          ov.trend = Math.round((drift) * 10) / 10;
+          rows.push({ name: ov.name || 'a far village', viewership: ov.viewership + (ov.generated ? 4 : 0), trend: ov.trend || 0, us: false });
         }
-        rows.sort((a, b) => b.score - a.score);
+        rows.sort((a, b) => b.viewership - a.viewership);
         return rows;
-      } catch (e) { return [{ name: 'Haven', score: 0, us: true }]; }
+      } catch (e) { return [{ name: 'Haven', viewership: 0, trend: 0, us: true }]; }
+    },
+    contestStandings() {
+      // legacy name — the standings ARE the viewership board now.
+      return this.viewershipBoard().map(r => ({ name: r.name, score: r.viewership, trend: r.trend, us: r.us }));
     },
   };
 

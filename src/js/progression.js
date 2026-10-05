@@ -261,6 +261,7 @@
       const pg = this.progState();
       if (pg.arcSeen[n]) return;
       pg.arcSeen[n] = true;
+      try { if (this.recordMoment) this.recordMoment(`Haven entered Arc ${['I','II','III','IV'][n - 1] || n}.`); } catch (e) {}
       if (n === 2) {
         try { if (this.ledgerAdd) this.ledgerAdd('showmanship', 2); } catch (e) {}
         this.say(`◈ ARC II — THE SHOW. The sky tore open a week ago and the village is still here. Still eating. The audience has noticed. Strangers will come — not because the plot says so, but because surviving is worth watching.`);
@@ -351,6 +352,7 @@
         }
       } catch (e) {}
       try { if (this.ledgerAdd) this.ledgerAdd('showmanship', 3); } catch (e) {}
+      try { if (this.recordMoment) this.recordMoment(`Survived the audience's trial: ${t.name}.`); } catch (e) {}
       const luck = (pg.flags || {}).quiet_luck ? ' Quiet luck was with you.' : '';
       this.say(`◈ TRIAL COMPLETE — the audience applauds, which sounds like static. (+15 integration${gift ? `, gift: ${gift}` : ''})${luck}`);
       try { this.save(); } catch (e) {}

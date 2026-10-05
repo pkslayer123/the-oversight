@@ -193,6 +193,27 @@ function stack(L) { const l = Game.ledger(); for (const k of Object.keys(L)) l[k
     ok('standings sorted', rows[0].score >= rows[1].score && rows[1].score >= rows[2].score);
   }
 
+  // 11. Viewership board: the future challenge-gating API.
+  {
+    freshGame();
+    Game.state.otherVillages = [
+      { id: 'ov1', name: 'Red Creek', viewership: 30, generated: true },
+      { id: 'ov2', name: 'Stonefield', viewership: 5 },
+    ];
+    const board = Game.viewershipBoard();
+    ok('board has every village + Haven', board.length === 3 && board.some(r => r.us));
+    ok('board sorted high to low', board[0].viewership >= board[1].viewership && board[1].viewership >= board[2].viewership);
+    ok('board rows carry trend', board.every(r => typeof r.trend === 'number'));
+    ok('contestStandings delegates', Game.contestStandings().length === 3);
+    // moments move viewership and are logged
+    const v0 = Game.havenViewership();
+    Game.recordMoment('Did something spectacular.');
+    ok('moment logged', (Game.progState().moments || []).length === 1);
+    ok('moment moves viewership', Game.state.village.viewership > v0);
+    Game.arcBeat(2);
+    ok('arc transition records a moment', (Game.progState().moments || []).some(m => /Arc II/.test(m.text)));
+  }
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('THREW', e); process.exit(1); });
