@@ -2943,6 +2943,47 @@
       return { ok: true };
     },
 
+    // yieldChallenge: resolve an active leadership challenge by yielding.
+    // The contender runs the domain as task lead — working it every part,
+    // building their own base on your behalf. Trust gains; heat resets.
+    // (Moved out of the app.js inline handler so the engine path is
+    // testable — UI renders the same lines. Behavior identical to the
+    // original inline version.)
+    yieldChallenge(vid) {
+      const v = this.state.village;
+      const ch = v.challenge || {};
+      const cid = ch.cid || vid;
+      const task = ch.task || 'forage';
+      const taskName = (this.delegateTasks()[task] || {}).name || task;
+      v.taskLeads = v.taskLeads || {};
+      v.taskLeads[task] = cid;
+      const t = v.trust || (v.trust = {});
+      t[cid] = Math.min(100, (t[cid] || 10) + 10);
+      v.heat = v.heat || {};
+      v.heat[cid] = 0;
+      v.challenge = null;
+      this.say(`${this.displayName(cid)} nods slowly. "Good call." They start organizing the ${taskName} crews their way.`);
+      this.save();
+      return { ok: true, result: `You let them lead ${taskName}. They'll work it every part — and build their own base doing it.` };
+    },
+
+    // standGround: resolve an active leadership challenge by refusing to
+    // yield. They back down — for now. Trust takes a hit; the heat is
+    // banked, not gone (they can challenge again).
+    standGround(vid) {
+      const v = this.state.village;
+      const ch = v.challenge || {};
+      const cid = ch.cid || vid;
+      const t = v.trust || (v.trust = {});
+      t[cid] = Math.max(0, (t[cid] || 10) - 5);
+      v.heat = v.heat || {};
+      v.heat[cid] = 0;
+      v.challenge = null;
+      this.say(`${this.displayName(cid)} holds your gaze, then looks away. "Fine. Your funeral." This isn't over — but it's quiet. For now.`);
+      this.save();
+      return { ok: true, result: 'You held your ground.' };
+    },
+
     // promiseHelp: commit to their goal. Tracked. If you follow through
     // (via related actions), big trust. If you ignore it, they remember.
     promiseHelp(vid) {
@@ -7019,7 +7060,9 @@
           if (isTarget) dims.generous += 4; // the recipient is grateful
           else if (goal === 'lead') { dims.generous = 2; dims.honest = -6; } // buying loyalty
           if (isTarget && (temp === 'prickly' || goal === 'prove')) dims.generous = -4; // charity resented
-          if (!isTarget && (goal === 'lead' || goal === 'survive' || temp === 'cautious')) dims.honest = -3; // what's she after?
+          if (!isTarget && (goal === 'survive' || temp === 'cautious') && goal !== 'lead') dims.honest = -3; // what's she after?
+          // (goal 'lead' keeps its sharper buying-loyalty reading above — this
+          // line used to stomp it back to -3.)
         }
         if (action === 'fight') {
           if (temp === 'bold') dims.brave += 4; // respect

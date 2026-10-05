@@ -2250,27 +2250,12 @@
     else if (act === 'draw') { view.nvMode = 'draw'; }
     else if (act === 'back') { view.nvMode = null; }
     else if (act === 'yield') {
-      const chal = Game.state.village.challenge || {};
-      const task = chal.task || 'forage';
-      const taskName = (Game.delegateTasks()[task] || {}).name || task;
-      Game.state.village.taskLeads = Game.state.village.taskLeads || {};
-      Game.state.village.taskLeads[task] = vid;
-      const t = Game.state.village.trust || (Game.state.village.trust = {});
-      t[vid] = Math.min(100, (t[vid] || 10) + 10);
-      Game.state.village.heat = Game.state.village.heat || {};
-      Game.state.village.heat[vid] = 0;
-      Game.state.village.challenge = null;
-      Game.say(`${dname} nods slowly. "Good call." They start organizing the ${taskName} crews their way.`);
-      view.result = `You let them lead ${taskName}. They'll work it every part — and build their own base doing it.`;
+      const r = Game.yieldChallenge(vid);
+      view.result = r ? r.result : null;
     }
     else if (act === 'stand') {
-      const t = Game.state.village.trust || (Game.state.village.trust = {});
-      t[vid] = Math.max(0, (t[vid] || 10) - 5);
-      Game.state.village.heat = Game.state.village.heat || {};
-      Game.state.village.heat[vid] = 0;
-      Game.state.village.challenge = null;
-      Game.say(`${dname} holds your gaze, then looks away. "Fine. Your funeral." This isn't over — but it's quiet. For now.`);
-      view.result = 'You held your ground.';
+      const r = Game.standGround(vid);
+      view.result = r ? r.result : null;
     }
     else if (act.startsWith('g:')) { Game.nonverbalGesture(vid, act.slice(2)); view.nvMode = null; view.result = 'You tried gestures.'; }
     else if (act.startsWith('d:')) { Game.nonverbalDraw(vid, act.slice(2)); view.nvMode = null; view.result = 'You drew in the dirt.'; }

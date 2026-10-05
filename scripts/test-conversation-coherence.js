@@ -61,12 +61,15 @@ function seedTeachable(vid) {
       const m = Game.convoMatchReactive('x') // null probe; real check below via source scan
       void m;
     }
-    // pull match strings out of the source and verify each appears in data
+    // pull match strings out of the source and verify each appears in data.
+    // convoMatchReactive matches case-insensitively on a normalized line
+    // (bespoke defs are short fragments on purpose), so audit the same way.
     const src = fs.readFileSync(path.join(ROOT, 'src/js/conversation.js'), 'utf8');
     const matches = [...src.matchAll(/^\s*match: '((?:[^'\\]|\\.)*)',/gm)].map(x => x[1].replace(/\\'/g, "'"));
+    const rawLower = raw.toLowerCase();
     ok('registry has entries', matches.length >= 8);
     for (const mt of matches) {
-      ok(`match shipped in dialogue: ${mt.slice(0, 40)}`, raw.indexOf(mt) !== -1);
+      ok(`match shipped in dialogue: ${mt.slice(0, 40)}`, rawLower.indexOf(mt.toLowerCase()) !== -1);
     }
     // every def has answers, followUp, lapse, and reactive reacts
     for (const mt of matches) {
