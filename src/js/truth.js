@@ -50,7 +50,9 @@
 
     // ---- line pools for confrontation (procedural depth: many voices, no repeats) ----
     // {first} is replaced with the villager's first name at render time.
-    // drawTruthLine() avoids serving the same line twice in a row to one villager.
+    // drawTruthLine() never serves the same line twice in one game run:
+    // per-pool, lines are drawn without replacement across ALL villagers
+    // and only recycle after the whole pool is exhausted.
     truthLinePools: {
       deflectClumsy: [
         `"What? No — I mean —" {first} stumbles. "It's... it's complicated. Can we not do this right now?"`,
@@ -117,7 +119,13 @@
         ` The truth is there, somewhere. It just... never comes out first.`,
         ` I wish I could tell you why. I've asked myself that more times than you have.`,
       ],
-      // truthSlip pools: liars leak over days
+      // stale doubt lines: the lie was already confessed — they don't confess twice
+      staleConfessed: [
+        `"We went over this," {first} says, a little tired. "I already told you the truth about that."`,
+        `"That again?" {first} sighs. "I confessed that already. I'm not confessing it twice for dramatic effect."`,
+        `{first} looks at you, level. "I told you the truth. You can keep poking it, but it's told."`,
+        `"You're really going to make me say it again?" {first} rubs their face. "Fine — but it's the same truth as last time."`,
+      ],
       slipOccupation: [
         `"{told}, huh?" {first} nods — then, an hour later, mentions something only {atruth} would know. They catch themselves. Too late.`,
         `{first} starts a story with "back when I was {atold}..." then corrects to something else mid-sentence. The correction is worse than the slip.`,
@@ -140,8 +148,31 @@
       if (!pool || !pool.length) return '';
       const vp = this.vpOf(vid) || {};
       vp.truthLineLast = vp.truthLineLast || {};
+      // Per-game no-repeat: two villagers in one run never speak the same line.
+      // (Steve: in-character, non-repeated dialogue.) The pool resets only
+      // after every line has been used, so long games may eventually recycle.
+      let used = null, lastIdx = -1;
+      try {
+        if (this.state) {
+          this.state.truthLineUsed = this.state.truthLineUsed || {};
+          used = this.state.truthLineUsed[poolKey] = this.state.truthLineUsed[poolKey] || [];
+          if (used.length >= pool.length) {
+            // Exhausted: recycle, but never the same line as the one that
+            // ended the previous cycle (that would be an immediate repeat).
+            lastIdx = used[used.length - 1];
+            this.state.truthLineUsed[poolKey] = used = [];
+          }
+        }
+      } catch (e) { used = null; }
       let idx = Math.floor(Math.random() * pool.length);
-      if (pool.length > 1 && vp.truthLineLast[poolKey] === idx) idx = (idx + 1) % pool.length;
+      if (used) {
+        const fresh = [];
+        for (let i = 0; i < pool.length; i++) if (!used.includes(i) && i !== lastIdx) fresh.push(i);
+        idx = fresh.length ? fresh[Math.floor(Math.random() * fresh.length)] : idx;
+        used.push(idx);
+      } else if (pool.length > 1 && vp.truthLineLast[poolKey] === idx) {
+        idx = (idx + 1) % pool.length;
+      }
       vp.truthLineLast[poolKey] = idx;
       let line = pool[idx];
       const v = vars || {};
@@ -537,19 +568,36 @@
       if (lies) for (const [f, l] of Object.entries(lies)) {
         if (!l.confessed && doubt.evidence.some(e => String(e).includes(l.told))) { lie = l; lieField = f; break; }
       }
-      // fallback: match by kind
+      // fallback: match by kind (live lies only — confessed ones are handled below)
+      const liveLie = (f) => (lies && lies[f] && !lies[f].confessed) ? lies[f] : null;
       if (!lie && lies) {
         if (doubt.kind === 'contradiction' || doubt.kind === 'observation') {
-          lie = lies.occupation || lies.origin || null;
+          lie = liveLie('occupation') || liveLie('origin');
           lieField = lie ? lie.field : null;
         } else if (doubt.kind === 'gossip') {
-          lie = lies.occupation || lies.origin || lies.goal || null;
+          lie = liveLie('occupation') || liveLie('origin') || liveLie('goal');
           lieField = lie ? lie.field : null;
         }
       }
 
       const evText = doubt.evidence.length ? doubt.evidence.join('; ') : 'things you\'ve noticed';
       let line, outcome;
+
+      // The lie behind this doubt was already confessed: the doubt is stale.
+      // They don't confess the same thing twice — they point that out.
+      if (!lie && lies) {
+        let stale = null;
+        for (const [f, l] of Object.entries(lies)) {
+          if (l.confessed && doubt.evidence.some(e => String(e).includes(l.told))) { stale = l; break; }
+        }
+        if (stale) {
+          line = this.drawTruthLine('staleConfessed', vid);
+          outcome = 'already-confessed';
+          this.resolveDoubt(doubtId, 'stale doubt — the lie was already confessed');
+          try { this.bumpTrust(vid, -1); } catch (e) {}
+          return { ok: true, line, outcome };
+        }
+      }
 
       if (!lie) {
         // no lie behind this doubt — it was a misunderstanding. Honest clearing.
