@@ -1,6 +1,6 @@
 // @ontology
 // system: contests
-// description: Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama.
+// description: Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama. UNAVOIDABLE — they interrupt whatever you're doing.
 // provides:
 //   - contestEligible() -> {eligible, reason}
 //   - contestTick() -> event|null
@@ -9,6 +9,7 @@
 //   - pickShow()
 //   - fireContest(contest)
 //   - resolveContest()
+//   - contestInterruption(contest, participant) -> sequence
 // rules:
 //   - unlock_day: 14 (code: contestTick, contestEligible)
 //   - weekly_budget: 2 combined contests+shows (code: contestTick)
@@ -16,6 +17,9 @@
 //   - contest_vs_show_ratio: 0.6 (code: contestTick)
 //   - system_whim_chance: 0.1 random participant override (code: fireContest)
 //   - countdown_days: 1 (code: fireContest)
+//   - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
+//   - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
+//   - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 // consumes:
 //   - scholar.day
 //   - state.showBudget
@@ -299,6 +303,65 @@
     };
   };
 
+  // CONTEST INTERRUPTION (Steve 2026-10-05):
+  // Contests are UNAVOIDABLE. When the time comes, you go through the sequence
+  // no matter where you are or what you're doing. Participate or don't —
+  // but skipping isn't a thing. If you're not involved, you watch the show.
+  G.contestInterruption = function(contest, participantId) {
+    const isPlayer = participantId === 'player';
+    const pname = isPlayer ? 'You' : this.displayName(participantId);
+    
+    // The interruption itself — this is the sequence you can't skip
+    this.sysSay(`📺 ═══ CONTEST INTERRUPTION ═══`);
+    this.sysSay(`📺 ${contest.name}. ${contest.desc}`);
+    
+    if (contest.arena) {
+      this.sysSay(`📺 Arena:\n${contest.arena}`);
+    }
+    if (contest.variant === 'hardened') {
+      this.sysSay(`📺 ⚠️ HARDENED VARIANT — you've seen this before. It's worse now.`);
+    }
+    
+    if (isPlayer) {
+      // Sometimes you get a choice, usually you're grabbed
+      // (Steve 2026-10-05: "sometimes you get a choice depending on the contest,
+      //  but usually it grabs you anyways, participate or don't")
+      const givesChoice = contest.givesChoice || Math.random() < 0.3;
+      if (givesChoice) {
+        this.sysSay(`📺 The System offers you a choice: participate or refuse.`);
+        this.sysSay(`📺 (Choice UI coming — for now, you're grabbed. The refusal sequence is a real path.)`);
+        // TODO: actual choice UI — refusal is a sequence, not a skip
+      } else {
+        this.sysSay(`📺 ${pname} — you're grabbed. No choice. The cameras are already rolling.`);
+      }
+      // The contest sequence happens HERE (playable content, not dice roll)
+      // For now: mark as active, player must engage
+      this.state.activeContest = {
+        contestId: contest.id,
+        participant: 'player',
+        phase: 'intro',
+        variant: contest.variant || null,
+      };
+    } else {
+      // You're not in it — you WATCH. Especially if villagers are involved.
+      // (Steve 2026-10-05: "we should aspire to essentially put on a show
+      //  they can watch, especially if other villagers are involved")
+      this.sysSay(`📺 ${pname} has been chosen. The village holds its breath.`);
+      this.sysSay(`📺 You watch. The cameras love this part.`);
+      this.state.activeContest = {
+        contestId: contest.id,
+        participant: participantId,
+        phase: 'watching',
+        variant: contest.variant || null,
+      };
+    }
+    
+    // The interruption is modal — it takes over the UI until resolved
+    // (Steve: "no matter where you are or what you are doing, when the time
+    //  comes you go through the sequence")
+    return this.state.activeContest;
+  };
+
   G.resolveContest = function() {
     const pc = this.state.pendingContest;
     if (!pc) return;
@@ -307,9 +370,15 @@
     const contest = this.contestPool().find(c => c.id === pc.contestId);
     if (!contest) return;
     
-    // Outcome based on risk
-    const deathChance = { low: 0.05, medium: 0.15, high: 0.3, extreme: 0.5 }[contest.risk] || 0.1;
-    const r = Math.random();
+    // INTERRUPTION (Steve 2026-10-05): the contest doesn't resolve via dice roll.
+    // It INTERRUPTS. You go through the sequence. Participate or don't.
+    // If you're not involved, you watch.
+    return this.contestInterruption(contest, pc.participant);
+    
+    // LEGACY DICE ROLL (below) — kept for reference, not used.
+    // The playable sequence replaces this. When each contest becomes playable,
+    // its specific mechanics live in the interruption phases.
+    /*
     
     let outcome;
     if (r < deathChance) {
@@ -349,6 +418,7 @@
       this.sysSay(`📺 ${pname} survives ${contest.name}, but does not win. The audience is... polite.`);
       this.leadShift('showmanship', 1);
     }
+    */
   };
 
 })();

@@ -97,9 +97,9 @@ Every villager is a living codex entry. Deepens while they live.
 **Consumes:** village.villagers, state.codex.people
 
 ### contests (`contests.js`)
-Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama.
+Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama. UNAVOIDABLE — they interrupt whatever you're doing.
 
-**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireContest(contest), resolveContest()
+**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence
 
 **Rules:**
 - unlock_day: 14 (code: contestTick, contestEligible)
@@ -108,6 +108,9 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 - contest_vs_show_ratio: 0.6 (code: contestTick)
 - system_whim_chance: 0.1 random participant override (code: fireContest)
 - countdown_days: 1 (code: fireContest)
+- unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
+- choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
+- watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 
 **Consumes:** scholar.day, state.showBudget, state.pendingContest, state.contestsSeen
 
