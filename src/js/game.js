@@ -12505,7 +12505,7 @@
         this.say(`You STRIKE the ${this.encShortLabel(t) || this.encTheName(t)} for ${d}${wtxt}.`);
         this.tbStyle(5, 'solid hit');
       }
-      this.tbDamage(t.key, d, 'you');
+      this.tbDamage(t.key, d, 'you', null, { quiet: true });
       const tAfter = this.tbFighter(t.key);
       // HIGHBEAM: hurting the deer moves you to the front of its list.
       try { if (tAfter && this.encUsesFifo(tAfter)) this.encNoticesPain(tAfter, 'p'); } catch (e) {}
@@ -12704,9 +12704,10 @@
       }
     },
 
-    tbDamage(targetKey, dmg, sourceLabel, sourceKey) {
+    tbDamage(targetKey, dmg, sourceLabel, sourceKey, opts) {
       const t = this.tbFighter(targetKey);
       if (!t || !t.alive) return;
+      const quiet = !!(opts && opts.quiet);
       let final = Math.max(0, Math.round(dmg));
       // BATCH 3 (the uncanny) vulnerabilities:
       // - voice mimic, REVEALED: the act is broken and the signal scrambles —
@@ -12780,7 +12781,7 @@
         } else {
           this.say(`${sourceLabel} hurts ${t.kind === 'player' ? 'you' : t.name}. It isn't clean. It isn't quick.`);
         }
-      } else {
+      } else if (!quiet) {
         this.say(`${sourceLabel === 'you' ? 'You hit' : sourceLabel + ' hits'} ${t.kind === 'player' ? 'you' : (this.encShortLabel(t) || t.name)} for ${final}.`);
       }
       // WOUND THE LEAD (hushwolf): the pack coordinates through the lead animal.
@@ -13028,6 +13029,13 @@
     encShortLabel(m) {
       const cfg = (m.mdef && m.mdef.encounter) || {};
       if (cfg.shortName && !this.deerIs(m)) {
+        // NAME DISCIPLINE (Steve): the short true name ("hum-mouse") only
+        // applies once the village has named it or the System has arrived.
+        // Before that, callers fall back to the strange descriptor — the
+        // uninitiated never see the true name in strike lines.
+        const mid = m.mdef ? m.mdef.id : null;
+        const e = mid ? (this.state.codex.monsters || {})[mid] : null;
+        if ((!e || !e.villageName) && !this.state.systemArrived) return null;
         const n = String(m.name || '').match(/ (\d+)$/);
         return cfg.shortName + (n ? ' ' + n[1] : '');
       }
@@ -13416,6 +13424,24 @@
           m.cased = true;
           this.say('It circles once, eyes never leaving your pack — those hands never stop moving.');
           this.audioEvent('lockpickChitter');
+        }
+        // FAST HANDS (Steve 2026-10-05): if you're already in grab range, it
+        // doesn't waste a turn circling — it steals NOW. Fighting it up close
+        // is how it ends up with your best weapon. The counterplay is hitting
+        // it while it bolts (it drops the loot).
+        if (foe && Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my)) <= 2) {
+          const got = this.tbLockpickSteal(m);
+          if (got) {
+            setP('bolt');
+            this.say(`🖐️ Its hands blur — and suddenly it's holding your ${got}! It's already running.`);
+            this.audioEvent('lockpickGrab');
+          } else {
+            m.fled = true;
+            this.say('Its hands blur through your pack — and come up empty. It chitters, disgusted, and leaves.');
+            this.audioEvent('lockpickChitter');
+          }
+          this.tbEndCheck();
+          return true;
         }
         if (foe && Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my)) > 3) stepTo(foe.mx, foe.my);
         setP('grab');
