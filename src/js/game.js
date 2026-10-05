@@ -12083,6 +12083,11 @@
       const laneSet = new Set(tg.cells.map(c => c.cx + ',' + c.cy));
       const cA = Math.cos(tg.angle), sA = Math.sin(tg.angle);
       let hitAnyone = false, dwelledPlayer = false;
+      // IGNITION BEAT: the beam is visibly here but not burning yet — the
+      // player gets this tick to MOVE. Damage starts next tick.
+      if (tg.ignition) {
+        this.say('The light touches the ground where you were standing. It has not found you yet.');
+      } else
       for (const o of f.fighters) {
         if (!o.alive || o.fled || o.key === m.key) continue;
         if (!S.combat.isFoe(m, o)) continue;
@@ -12964,6 +12969,12 @@
       for (const m of f.fighters) {
         if (m.kind !== 'monster' || !m.alive || !m.telegraph || m.key === excludeKey) continue;
         if (!m.telegraph.cells) continue;
+        // KNOWLEDGE-GATED DANGER (Steve 2026-10-05): villagers don't dodge a
+        // telegraph they don't understand. If the community hasn't learned
+        // this attack (codex), the lane isn't "danger" to them — just the
+        // monster itself is scary. No more preemptive beam-dodging by people
+        // who've never seen a beam.
+        if (this.encUsesFifo(m) && !this.encTelegraphKnown(m)) continue;
         for (const c of m.telegraph.cells) set.add(c.cx + ',' + c.cy);
       }
       return set;
@@ -14192,9 +14203,15 @@
           tg.firing = (tg.pattern || {}).fireTurns || 2;
           m.hasFired = true; // the light is spent — after this, it's just meat that shines
           if (useFifo) this.encSetPhase(m, 'firing');
+          // IGNITION BEAT (Steve 2026-10-05): the beam lances out but doesn't
+          // burn on the ignition tick — it's the "MOVE NOW" warning. The beam
+          // starts where it was aiming (declare lock) and sweeps toward you;
+          // damage begins on the next tick. No more "shot immediately at me."
+          tg.ignition = true;
           this.say(`💥 ${tg.attackName}! A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE.`);
           this.audioEvent('impact', { beam: (tg.pattern || {}).type === 'beam', highbeam: /highbeam/i.test(m.name || '') });
           this.tbBeamSweepTick(m, tg);
+          tg.ignition = false;
           tg.firing -= 1;
           if (tg.firing <= 0) this.tbBeamEndFiring(m, tg);
           this.tbRefreshTelegraphUI();

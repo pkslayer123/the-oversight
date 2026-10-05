@@ -44,32 +44,33 @@ function setup() {
 }
 
 function botTurn() {
-  // player: move toward nearest monster, strike if adjacent, else end turn
+  // player: strike if adjacent and able, otherwise close distance, then end turn.
+  // (The old bot re-struck on a spent turn forever — it never checked p.acted
+  // before striking, so adjacent spawns soft-locked the sweep on
+  // "Already acted this turn." The game was fine; the harness was the bug.)
   const tf = Game.tbfight;
   if (!tf || !Game.tbIsPlayerTurn()) return false;
   const p = Game.tbFighter('p');
   const S = globalThis.Scattering;
   const foe = S.combat.nearestEnemy(tf.fighters, p);
   if (!foe) { Game.tbPlayerEndTurn(); return true; }
-  const d = Math.max(Math.abs(foe.f.mx - p.mx), Math.abs(foe.f.my - p.my));
-  if (d <= 1) {
-    Game.tbPlayerStrike(foe.f.key);
-  } else {
-    // step toward (respecting moveLeft via tbPlayerMove path limiting: move in chunks)
-    let moved = false;
-    for (let i = 0; i < 3 && p.moveLeft > 0; i++) {
-      const path = Game.findPath(p.mx, p.my, foe.f.mx, foe.f.my);
-      if (!path || !path.length) break;
-      const steps = Math.min(path.length - 1, p.moveLeft, 2); // stop 1 short (adjacent)
-      if (steps <= 0) break;
-      const [tx, ty] = path[steps - 1];
-      if (Game.tbPlayerMove(tx, ty)) moved = true; else break;
-    }
-    const d2 = Math.max(Math.abs(foe.f.mx - p.mx), Math.abs(foe.f.my - p.my));
-    if (d2 <= 1 && !p.acted) Game.tbPlayerStrike(foe.f.key);
-    else if (!p.acted) Game.tbPlayerStudy();
-    else Game.tbPlayerEndTurn();
-    if (!moved && !p.acted) Game.tbPlayerEndTurn();
+  const cheb = () => Math.max(Math.abs(foe.f.mx - p.mx), Math.abs(foe.f.my - p.my));
+  // 1. strike while able
+  if (!p.acted && cheb() <= 1) Game.tbPlayerStrike(foe.f.key);
+  // 2. close distance with remaining moves; strike if we arrive and can
+  let guard = 0;
+  while (Game.tbfight && Game.tbIsPlayerTurn() && p.moveLeft > 0 && guard++ < 8) {
+    const path = Game.findPath(p.mx, p.my, foe.f.mx, foe.f.my);
+    if (!path || !path.length) break;
+    const steps = Math.min(path.length - 1, p.moveLeft, 2); // stop 1 short (adjacent)
+    if (steps <= 0) break;
+    const [tx, ty] = path[steps - 1];
+    if (!Game.tbPlayerMove(tx, ty)) break;
+    if (!p.acted && cheb() <= 1) Game.tbPlayerStrike(foe.f.key);
+  }
+  // 3. never leave the turn hanging — Wait forfeits the rest
+  if (Game.tbfight && Game.tbIsPlayerTurn()) {
+    if (!p.acted) Game.tbPlayerStudy(); else Game.tbPlayerEndTurn();
   }
   return true;
 }
@@ -117,6 +118,12 @@ function runCombat(monsterId) {
   stats.rounds = tf.round;
   stats.result = result;
   stats.playerHpEnd = Math.round(Game.state.scholar.health);
+  // loot: what the hunter actually walks away with (alien drops + meat)
+  stats.loot = (Game.state.scholar.inventory || []).filter(i => i.alienLoot).map(i => i.name);
+  stats.meatKcal = (Game.state.scholar.inventory || [])
+    .filter(i => /_meat$/.test(i.plantId || ''))
+    .reduce((a, i) => a + (i.units || 0) * (i.kcalEach || 0), 0);
+  stats.guard = guard >= 200;
   return stats;
 }
 
@@ -131,7 +138,7 @@ function runCombat(monsterId) {
     for (let r = 0; r < runs; r++) {
       try {
         const st = runCombat(id);
-        console.log(`${mdef.name}: result=${st.result} rounds=${st.rounds} telegraphs=${st.telegraphs} learned=${st.learned.length} party=${JSON.stringify(st.partyActions)} playerHp=${st.playerHpEnd}`);
+        console.log(`${mdef.name}: result=${st.result} rounds=${st.rounds} telegraphs=${st.telegraphs} learned=${st.learned.length} party=${JSON.stringify(st.partyActions)} playerHp=${st.playerHpEnd} loot=[${st.loot.join(';')||'-'}] meat=${st.meatKcal}${st.guard?' GUARD':''}`);
         if (st.telegraphs > 0 && r === 0) console.log(`   cue: ${st.cues[0]}`);
         if (st.learned.length && r === 0) console.log(`   codex: ${st.learned[0]}`);
       } catch (e) {

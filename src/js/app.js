@@ -607,8 +607,24 @@
     // TALK BADGE: someone nearby wants to talk to you. A quiet dot on the
     // Talk button — peripheral, not a popup. You see it; you're not nagged.
     const wantTalk = talkRequestNear();
+    // ACTION CLARITY (Steve 2026-10-05): show WHAT you're acting on (direction
+    // arrow to the target cell) and WHAT it does (ability description). No
+    // more mystery "Dowse" buttons.
+    const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+    const dirArrow = (cx, cy) => {
+      const dx = Math.sign(cx - px), dy = Math.sign(cy - py);
+      return { '-1,-1': '↖', '0,-1': '↑', '1,-1': '↗', '-1,0': '←', '0,0': '⊙', '1,0': '→', '-1,1': '↙', '0,1': '↓', '1,1': '↘' }[dx + ',' + dy] || '';
+    };
+    let abilityDescs = {};
+    try {
+      for (const a of (Game.activatableAbilities() || [])) abilityDescs[a.name] = a.desc;
+    } catch (e) {}
     return `<div class="contextbar"><span class="ctx-label">nearby:</span>` +
-      items.map((it, i) => `<button class="ctx-btn" data-ctx="${i}">${esc(it.label)}${it.label === 'Talk' && wantTalk ? '<span class="dot"></span>' : ''}</button>`).join('') +
+      items.map((it, i) => {
+        const arrow = dirArrow(it.cx, it.cy);
+        const desc = abilityDescs[it.label];
+        return `<button class="ctx-btn" data-ctx="${i}"${desc ? ` title="${esc(desc)}"` : ''}>${esc(it.label)} ${arrow}${it.label === 'Talk' && wantTalk ? '<span class="dot"></span>' : ''}${desc ? `<span class="ctx-desc">${esc(desc)}</span>` : ''}</button>`;
+      }).join('') +
       `</div>`;
   }
 
@@ -3241,43 +3257,9 @@
   function wireDpad() {
     const pad = document.getElementById('dpad');
     if (pad) {
-      // DRAG TO MOVE (Steve 2026-10-04): the pad covered a quarter of the
-      // screen and couldn't move. Drag the pad background (not the buttons)
-      // to reposition it; the spot persists across renders via localStorage.
-      try {
-        const saved = JSON.parse(localStorage.getItem('oversight-dpad-pos') || 'null');
-        if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
-          pad.style.left = saved.left + 'px'; pad.style.top = saved.top + 'px';
-          pad.style.right = 'auto'; pad.style.bottom = 'auto';
-        }
-      } catch (_) {}
-      pad.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('.dpbtn, .dpmin')) return; // buttons still walk
-        e.preventDefault();
-        const wrap = pad.parentElement;
-        const wr = wrap.getBoundingClientRect(), pr = pad.getBoundingClientRect();
-        const ox = pr.left - wr.left, oy = pr.top - wr.top;
-        pad.style.left = ox + 'px'; pad.style.top = oy + 'px';
-        pad.style.right = 'auto'; pad.style.bottom = 'auto';
-        const sx = e.clientX, sy = e.clientY;
-        const move = (ev) => {
-          // Steve 2026-10-04: the pad must be draggable OFF the grid entirely.
-          // Clamp loosely — keep 24px grabbable so it can never be lost.
-          const grab = 24;
-          const nx = Math.max(-pr.width + grab, Math.min(ox + (ev.clientX - sx), wr.width - grab));
-          const ny = Math.max(-pr.height + grab, Math.min(oy + (ev.clientY - sy), wr.height - grab));
-          pad.style.left = nx + 'px'; pad.style.top = ny + 'px';
-        };
-        const up = () => {
-          window.removeEventListener('pointermove', move);
-          window.removeEventListener('pointerup', up);
-          window.removeEventListener('pointercancel', up);
-          try { localStorage.setItem('oversight-dpad-pos', JSON.stringify({ left: parseFloat(pad.style.left) || 0, top: parseFloat(pad.style.top) || 0 })); } catch (_) {}
-        };
-        window.addEventListener('pointermove', move);
-        window.addEventListener('pointerup', up);
-        window.addEventListener('pointercancel', up);
-      });
+      // DOCKED (Steve 2026-10-05): the pad lives in the fixed bottom bar now —
+      // no more dragging, no more saved positions, no more edging off-screen.
+      // (Drag-to-move retired; the pad is fixed by design.)
       pad.querySelectorAll('.dpbtn[data-dx]').forEach((b) => {
         b.addEventListener('pointerdown', (e) => {
           e.preventDefault();
@@ -3381,14 +3363,13 @@
             <div class="detail">${renderDetail(st)}</div>
             ${perceiveHTML()}
             <div id="inlineslot"></div>
-            ${dpadHTML()}
             <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
           </div>
           ${st.inCombat ? `<div class="ord-combatpanel">${panelCombat(st)}</div>` : ''}
           ${chatView ? `<div class="ord-dialogue">${dialogueBoxHTML(chatView)}</div>` : ''}
           <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-self">${selfBarHTML(st)}</div>
-          <div class="ord-ctx">${contextBarHTML()}</div>
+          <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
           <div class="ord-target">${targetBarHTML()}</div>
           <div class="ord-danger">${dangerBarHTML()}</div>
           <div class="ord-ability">${abilityBarHTML()}</div>
@@ -3404,7 +3385,8 @@
           </div>
           <div class="log ord-log">${st.log.slice(-3).map(l => `<p class="term-line">${esc(l)}</p>`).join('')}</div>
         </div>
-      </div>`;
+      </div>
+      <div class="ord-bottombar">${dpadHTML()}</div>`;
 
     // MINIMAP IS A MAP, NOT A TELEPORTER. Unexplored tiles are fully hidden —
     // no hints, no guesses. Travel happens on foot: walk to the edge of the

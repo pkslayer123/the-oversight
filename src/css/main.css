@@ -109,12 +109,18 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 /* the grid and its overlays are one positioned unit (all screens, not just phone) */
 .ord-gridwrap { position: relative; }
 .dpad {
-  position: absolute; right: 8px; bottom: 8px; z-index: 20;
+  /* DOCKED (Steve 2026-10-05): lives in the fixed bottom bar — no floating,
+     no absolute positioning, never edges off-screen. */
   display: grid; grid-template-columns: repeat(3, 38px); grid-auto-rows: 38px; gap: 3px;
   padding: 6px; border-radius: 12px;
   background: rgba(10, 12, 18, .72); border: 1px solid rgba(255, 255, 255, .14);
   touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
-  cursor: move;
+  position: relative;
+}
+.ord-bottombar {
+  position: sticky; bottom: 0; z-index: 30;
+  display: flex; justify-content: center; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  background: rgba(8, 10, 14, .92); border-top: 1px solid rgba(255, 255, 255, .1);
 }
 .dpbtn {
   font-size: 17px; line-height: 1; color: #fff;
