@@ -5576,7 +5576,10 @@
     // isUsable: can you USE this item? (first aid, etc.)
     isUsable(item) {
       const name = (item.name || '').toLowerCase();
-      return name.includes('first aid') || name.includes('bandage') || name.includes('medicine');
+      if (name.includes('first aid') || name.includes('bandage') || name.includes('medicine')) return true;
+      // ALIEN HEALING (Steve 2026-10-05): items with healAmount are usable.
+      const def = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
+      return !!(def && def.healAmount);
     },
 
     // useItem: use it. First aid heals.
@@ -5591,6 +5594,14 @@
         const amt = Math.round(this.modTarget('healing.amount', 30));
         this.state.scholar.health = Math.min(this.maxHealth(), this.state.scholar.health + amt);
         this.say(`You use the first aid kit. +${amt} health.`);
+      } else {
+        // ALIEN HEALING (Steve 2026-10-05): healAmount items heal honestly.
+        const def = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
+        if (def && def.healAmount) {
+          const amt = Math.round(this.modTarget('healing.amount', def.healAmount));
+          this.state.scholar.health = Math.min(this.maxHealth(), this.state.scholar.health + amt);
+          this.say(`You use the ${item.name}. +${amt} health.`);
+        }
       }
       // consume one
       item.units--;
@@ -5918,12 +5929,29 @@
         if (e.units <= 0) inv.splice(inv.indexOf(e), 1);
         return true;
       }
+      if (fuel.kind === 'fusion' && fuel.itemRef) {
+        const inv = this.state.scholar.inventory || [];
+        fuel.itemRef.units = (fuel.itemRef.units || 1) - fuel.n;
+        if (fuel.itemRef.units <= 0) inv.splice(inv.indexOf(fuel.itemRef), 1);
+        return true;
+      }
       return this.spendWood(fuel.n);
     },
     feedFuel() {
       // feeding prefers a branch (cheap), falls back to a log (long burn)
       if (this.materialCount('branch') >= 1) return { kind: 'branch', n: 1, burn: this.FIRE_BRANCH_TICKS };
       if (this.woodCount() >= 1) return { kind: 'wood', n: 1, burn: this.FIRE_BURN_TICKS };
+      // ALIEN FUEL (Steve 2026-10-05): fusion pellet/cell burn extremely long.
+      // Last resort only — these are precious, never auto-burned while wood remains.
+      const inv = (this.state.scholar || {}).inventory || [];
+      const fusion = inv.find(i => {
+        const def = (this.data.items || []).find(d => d.id === (i.itemId || i.id));
+        return def && def.fuelBurnMult && (i.units || 1) > 0;
+      });
+      if (fusion) {
+        const def = (this.data.items || []).find(d => d.id === (fusion.itemId || fusion.id));
+        return { kind: 'fusion', n: 1, burn: this.FIRE_BURN_TICKS * (def.fuelBurnMult || 6), itemRef: fusion, def };
+      }
       return null;
     },
     fireKnown() {
@@ -6031,6 +6059,8 @@
       this.tickAction(8);
       this.say(fuel.kind === 'wood'
         ? 'You lay another log on. The fire settles in — hours more flame.'
+        : fuel.kind === 'fusion'
+        ? `Nothing else to burn. You feed the ${fuel.def ? fuel.def.name.toLowerCase() : 'fusion pellet'} to the fire. It burns... enthusiastically. Hours and hours of flame.`
         : 'You feed it another branch. The fire takes it — a while more flame.');
       return null;
     },
@@ -14939,6 +14969,19 @@
       return false;
     },
 
+    // rollAlienLoot: shared loot table for monster kills AND future show/
+    // contest rewards (Steve 2026-10-05). mdef.loot = {chance, tier}.
+    // Returns an item id or null. Chances are LOW by design — alien loot
+    // should feel like a gift from a confused god, not a paycheck.
+    rollAlienLoot(mdef) {
+      const loot = (mdef || {}).loot;
+      if (!loot || !(loot.chance > 0)) return null;
+      if (Math.random() >= loot.chance) return null;
+      const tier = loot.tier || 1;
+      const pool = (this.data.items || []).filter(i => i.origin === 'alien' && (i.lootTier || 1) === tier);
+      if (!pool.length) return null;
+      return pool[Math.floor(Math.random() * pool.length)].id;
+    },
     tbEnd(result) {
       const f = this.tbfight;
       if (!f || f.over) return;
@@ -14962,11 +15005,33 @@
         this.audioEvent('victory');
         this.sysSay(`WINNER! Style score: ${f.style || 0}. The gamblers ${((f.style || 0) >= 40) ? 'are ecstatic!' : 'nod approvingly.'}`);
         if (mdef.edible) {
-          const kcal = mdef.edible.calories || 1000;
-          const cuts = Math.max(1, Math.round(kcal / 800));
-          s.inventory.push({ plantId: mdef.id + '_meat', units: cuts, kcalEach: Math.round(kcal / cuts), spoilDay: s.day + 3, name: mdef.name + ' meat', unit: 'cut', prep: mdef.edible.note || 'Cook it.', kg: 0.8 });
-          this.say(`${mdef.edible.note || ''} (+${cuts} cuts, ${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'})`);
+          // ZERO-CALORIE FIX (Steve 2026-10-05): explicit nullish check — a
+          // 0-calorie "do not eat" monster yields NO meat, not 1000 kcal of
+          // phantom lunch. (mdef.edible.calories || 1000) turned inedible
+          // robots into dinner. 0 stays 0.
+          const kcal = (mdef.edible.calories == null) ? 1000 : mdef.edible.calories;
+          if (kcal > 0) {
+            const cuts = Math.max(1, Math.round(kcal / 800));
+            s.inventory.push({ plantId: mdef.id + '_meat', units: cuts, kcalEach: Math.round(kcal / cuts), spoilDay: s.day + 3, name: mdef.name + ' meat', unit: 'cut', prep: mdef.edible.note || 'Cook it.', kg: 0.8 });
+            this.say(`${mdef.edible.note || ''} (+${cuts} cuts, ${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'})`);
+          } else if (mdef.edible.note) {
+            this.say(mdef.edible.note);
+          }
         }
+        // ALIEN LOOT (Steve 2026-10-05): monsters are HIGH RISK / HIGH REWARD.
+        // Low drop chance; loot tier scales with monster strength. The System
+        // leaves confused gifts for impressive violence. Show/contest rewards
+        // plug into rollAlienLoot(tier) when that system lands.
+        try {
+          const dropId = this.rollAlienLoot(mdef);
+          if (dropId) {
+            const def = (this.data.items || []).find(i => i.id === dropId);
+            if (def) {
+              s.inventory.push({ itemId: dropId, name: def.name, units: 1, kcalEach: def.kcalEach || 0, spoilDay: def.spoilDay || 9999, unit: 'piece', kg: def.kg || 0.3, alienLoot: true });
+              this.say(`✨ ALIEN LOOT: ${def.name}. ${def.flavor || ''}${def.baseEffect ? ` (${def.baseEffect})` : ''}`);
+            }
+          }
+        } catch (e) {}
         this.notePlaystyle('bold');
         try { this.villageEvent('victory'); } catch (e) {}
         try { this.checkPromises('fight'); } catch (e) {}
