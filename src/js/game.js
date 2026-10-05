@@ -11739,11 +11739,12 @@
         const cell = detail[y] && detail[y][x];
         return this.cellProps(cell).blocks;
       };
-      const freeSpotNear = (cx, cy) => {
+      const freeSpotNear = (cx, cy, taken) => {
         for (let r = 1; r <= 4; r++) {
           for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
             const nx = cx + dx, ny = cy + dy;
             if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || (nx === px && ny === py)) continue;
+            if (taken.has(nx + ',' + ny)) continue;
             if (!terrainBlocked(nx, ny)) return { x: nx, y: ny };
           }
         }
@@ -11788,8 +11789,12 @@
       const srcMy = (s.monster && s.monster.my !== undefined) ? s.monster.my : py;
       const hasFear = this.hasAbility('fear_aura');
       const hasSand = this.hasAbility('pocket_sand');
+      // PACK SPAWN (Steve 2026-10-05): all members visible from the start,
+      // on distinct tiles. No stacking — the pack reads as a pack immediately.
+      const takenSpots = new Set([srcMx + ',' + srcMy, px + ',' + py]);
       for (let i = 0; i < count; i++) {
-        const spot = i === 0 ? { x: srcMx, y: srcMy } : freeSpotNear(srcMx, srcMy);
+        const spot = i === 0 ? { x: srcMx, y: srcMy } : freeSpotNear(srcMx, srcMy, takenSpots);
+        takenSpots.add(spot.x + ',' + spot.y);
         const hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
         fighters.push({
           key: 'm_' + i, kind: 'monster', monsterId: mdef.id,
@@ -13094,7 +13099,13 @@
       if (this.cellProps(cell).blocks) return true;
       const f = this.tbfight;
       if (f) for (const o of f.fighters) {
-        if (o.alive && !o.fled && o.mx === x && o.my === y) return true;
+        // SMALL MONSTERS (Steve 2026-10-05): mice and other small creatures
+        // don't block movement — you can walk through/past them. Larger
+        // monsters block. Defaults to blocking.
+        if (o.alive && !o.fled && o.mx === x && o.my === y) {
+          if (o.kind === 'monster' && o.mdef && o.mdef.blocks === false) continue;
+          return true;
+        }
       }
       return false;
     },
@@ -15163,6 +15174,44 @@
         this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
+        }
+      }
+      // PACK COHESION (Steve 2026-10-05): pack monsters stick together and
+      // surround. If too far from the pack centroid, step toward it. If close
+      // to the player, spread to surround (prefer tiles adjacent to player
+      // that aren't occupied by packmates).
+      if (m.mdef && m.mdef.pack > 1) {
+        const packmates = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.id === m.mdef.id && x.key !== m.key);
+        if (packmates.length) {
+          const cx = packmates.reduce((s, x) => s + x.mx, 0) / packmates.length;
+          const cy = packmates.reduce((s, x) => s + x.my, 0) / packmates.length;
+          const distToPack = Math.max(Math.abs(m.mx - cx), Math.abs(m.my - cy));
+          const p = this.tbFighter('p');
+          if (p && distToPack > 2) {
+            // Too far from pack — step toward centroid
+            const dx = Math.sign(cx - m.mx), dy = Math.sign(cy - m.my);
+            const nx = m.mx + dx, ny = m.my + dy;
+            if (nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8 && !this.tbBlocked(nx, ny)) {
+              m.mx = nx; m.my = ny;
+            }
+          } else if (p && Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= 3) {
+            // Near player — spread to surround (avoid stacking on packmates)
+            const occupied = new Set(packmates.map(x => x.mx + ',' + x.my));
+            let best = null, bestScore = -1;
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+              if (!dx && !dy) continue;
+              const nx = m.mx + dx, ny = m.my + dy;
+              if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+              if (this.tbBlocked(nx, ny)) continue;
+              if (occupied.has(nx + ',' + ny)) continue;
+              // Prefer tiles adjacent to player but not too close to packmates
+              const dPlayer = Math.max(Math.abs(nx - p.mx), Math.abs(ny - p.my));
+              const dPack = Math.min(...packmates.map(x => Math.max(Math.abs(nx - x.mx), Math.abs(ny - x.my))));
+              const score = (dPlayer <= 1 ? 2 : 0) + Math.min(dPack, 3);
+              if (score > bestScore) { bestScore = score; best = { x: nx, y: ny }; }
+            }
+            if (best) { m.mx = best.x; m.my = best.y; }
+          }
         }
       }
       this.tbRefreshTelegraphUI();
