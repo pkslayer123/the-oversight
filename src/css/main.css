@@ -130,6 +130,12 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   position: relative;
 }
+.dpside {
+  position: absolute; bottom: 2px; right: 2px;
+  background: none; border: none; color: inherit; opacity: .5;
+  font-size: 12px; padding: 2px 4px; cursor: pointer;
+}
+.dpside:active { opacity: 1; }
 .ord-dpad {
   /* IN FLOW (Steve 2026-10-05): below the grid, not fixed. You only need it
      when looking at the map. Scrolls naturally with content. */
@@ -909,12 +915,20 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
    perceive 24 + self 50 + ctx 44 + feedback 70 = ~666 < 844. */
 @media (max-width: 899px) {
   /* MOBILE LAYOUT (Steve 2026-10-05): interactive first, info below.
-     Grid + D-pad + actions must be visible without scrolling.
-     Combat integrates into the normal action bars — no separate blocks. */
-  .ord-gridwrap { order: 1; position: relative; }
-  .ord-narration { order: 2; }
-  .ord-actions { order: 3; }
-  .ord-compass { order: 4; }
+     Grid at top. D-pad + actions side-by-side below grid.
+     D-pad docks left or right (user setting). Status and narration below. */
+  .ord-gridwrap { order: 1; position: relative; display: flex; flex-direction: column; }
+  .ord-gridwrap .detail { order: 1; }
+  /* CONTROLS ROW: D-pad + actions side by side (Steve 2026-10-05) */
+  .ord-controls { order: 2; display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
+  .ord-dpad { flex: 0 0 auto; padding: 0; }
+  .ord-dpad.dpad-left { order: 1; }
+  .ord-dpad.dpad-right { order: 2; }
+  .ord-controls .ord-actions { flex: 1 1 0; min-width: 0; margin: 0; }
+  .ord-controls .ord-actions.dpad-left { order: 2; }
+  .ord-controls .ord-actions.dpad-right { order: 1; }
+  .ord-narration { order: 3; }
+  .ord-status { order: 4; }
   .ord-epithet { order: 5; }
   /* COMBAT: narration must be compact — the grid and D-pad need the space.
      Max 3 lines, scroll internally if longer. (Steve 2026-10-05) */

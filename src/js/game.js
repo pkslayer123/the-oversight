@@ -16166,6 +16166,15 @@
           enc: this.state.codex.encounters[pid] || 0, threshold: th[pid] || 3 };
       }).filter(Boolean);
     },
+    // D-PAD SIDE (Steve 2026-10-05): user can lock D-pad to left or right.
+    // Actions fill the other side. Default: right (right-handed).
+    dpadSide() {
+      return (this.state.settings && this.state.settings.dpadSide) || 'right';
+    },
+    setDpadSide(side) {
+      this.state.settings = this.state.settings || {};
+      this.state.settings.dpadSide = side === 'left' ? 'left' : 'right';
+    },
   };
 
   global.Scattering = global.Scattering || {};

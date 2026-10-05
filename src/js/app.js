@@ -3230,7 +3230,9 @@
     const btns = dirs.map(d => d
       ? `<button class="dpbtn" data-dx="${d[0]}" data-dy="${d[1]}" aria-label="step ${d[3]}">${d[2]}</button>`
       : `<button class="dpbtn dpstop" id="dp-stop" aria-label="stop walking" title="Stop">■</button>`).join('');
-    return `<div class="dpad" id="dpad" role="group" aria-label="walk pad">${btns}<button class="dpmin" id="dp-min" aria-label="hide walk pad">–</button></div>`;
+    // SIDE TOGGLE (Steve 2026-10-05): tap to switch D-pad left/right.
+    // Actions fill the other side.
+    return `<div class="dpad" id="dpad" role="group" aria-label="walk pad">${btns}<button class="dpmin" id="dp-min" aria-label="hide walk pad">–</button><button class="dpside" id="dp-side" aria-label="switch dpad side" title="Move pad to other side">⇄</button></div>`;
   }
   // The animator's game-logic hook: resolve the step against the CURRENT
   // position at execution time and run exactly one Game step — monsters,
@@ -3364,6 +3366,14 @@
         const show = document.getElementById('dpshow');
         if (show) show.classList.remove('hidden');
       });
+      // SIDE TOGGLE (Steve 2026-10-05): switch D-pad left/right.
+      const side = document.getElementById('dp-side');
+      if (side) side.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cur = Game.dpadSide();
+        Game.setDpadSide(cur === 'right' ? 'left' : 'right');
+        refresh();
+      });
     }
     const show = document.getElementById('dpshow');
     if (show) show.onclick = () => {
@@ -3438,26 +3448,25 @@
       <div id="daytickwrap">${dayTickBar(st)}</div>
       <div class="game-cols">
         <div class="game-col-main">
-          <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
-          ${'' /* combatStripHTML removed (Steve): redundant with panelCombat below the grid;
-                     the strip pushed the grid off-screen. All combat info lives
-                     in the compact panel. */}
           <div class="ord-gridwrap">
-            <div class="ord-status">${statusBars(st)}</div>
             <div class="detail">${renderDetail(st)}</div>
             ${perceiveHTML()}
             <div id="inlineslot"></div>
-            <div class="ord-dpad">${dpadHTML()}</div>
+            <div class="ord-controls">
+              <div class="ord-dpad ${Game.dpadSide() === 'right' ? 'dpad-right' : 'dpad-left'}">${dpadHTML()}</div>
+              <div class="ord-actions ${Game.dpadSide() === 'right' ? 'dpad-right' : 'dpad-left'}">
+                <div class="ord-self">${st.inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
+                <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
+                <div class="ord-target">${targetBarHTML()}</div>
+                <div class="ord-danger">${dangerBarHTML()}</div>
+                <div class="ord-ability">${abilityBarHTML()}</div>
+              </div>
+            </div>
             <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
+            <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
+            <div class="ord-status">${statusBars(st)}</div>
           </div>
-          <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
-          <div class="ord-actions">
-            <div class="ord-self">${st.inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
-            <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
-            <div class="ord-target">${targetBarHTML()}</div>
-            <div class="ord-danger">${dangerBarHTML()}</div>
-            <div class="ord-ability">${abilityBarHTML()}</div>
-          </div>
+          <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
           ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">🧭 d-pad walks a step · hold to keep walking · tap a far tile to walk the full path · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
           <div class="ord-compass">${compassHTML(st)}</div>
           <div id="mapoverlay" class="mapoverlay hidden"></div>
