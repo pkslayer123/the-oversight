@@ -728,11 +728,19 @@
   // abilityBarHTML: your activatable powers, always in reach — not buried in inventory.
   // Scales to 6 slots + synergies without becoming a mess: one row, tap to use.
   // Abilities that need a target enter targeting mode; the rest fire directly.
+  // CLARITY (Steve 2026-10-05): every button shows WHAT it does (desc), not
+  // just a mystery name. In combat, only combat-sensible abilities appear —
+  // Time Skip and Dowse have no business in a fight.
   function abilityBarHTML() {
-    const acts = (Game.activatableAbilities && Game.activatableAbilities()) || [];
+    let acts = (Game.activatableAbilities && Game.activatableAbilities()) || [];
     if (!acts.length) return '';
+    // In combat, filter to abilities flagged combat:true. The rest wait.
+    if (Game.tbfight) {
+      acts = acts.filter(a => a.combat);
+      if (!acts.length) return '';
+    }
     return `<div class="abilitybar"><span class="ctx-label">⚡</span>` +
-      acts.map(a => `<button class="ab-btn" data-ab="${a.id}" ${a.available ? '' : 'disabled title="' + esc(a.why || 'not now') + '"'}>⚡ ${esc(a.name)}</button>`).join('') +
+      acts.map(a => `<button class="ab-btn" data-ab="${a.id}" ${a.available ? '' : 'disabled'} title="${esc(a.desc || a.name)}">⚡ ${esc(a.name)}<span class="ctx-desc">${esc(a.desc || '')}</span></button>`).join('') +
       `</div>`;
   }
 

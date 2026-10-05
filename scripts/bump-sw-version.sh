@@ -33,4 +33,17 @@ vjs2, n3 = re.subn(r'"version"\s*:\s*"[^"]*"', '"version": "%s"' % v, vjs)
 assert n3 == 1, 'version field not found in version.json'
 open(vj, 'w').write(vjs2)
 print('version.json version ->', v)
+# CACHE-BUSTING (Steve 2026-10-05): iOS serves stale JS/CSS from HTTP cache
+# even after the updater wipes SW caches — the ?v= on the page URL doesn't
+# propagate to subresources. Stamp every local asset URL with the build
+# version so a new build can never load old code.
+idx = 'index.html'
+ix = open(idx).read()
+# strip any previous ?v= before stamping the new one
+ix = re.sub(r'((?:src|href)="src/[^"]+)\?v=[^"]*"', r'\1"', ix)
+ix = re.sub(r'((?:src|href)="manifest\.json)\?v=[^"]*"', r'\1"', ix)
+ix2, n4 = re.subn(r'((?:src|href)="(?:src/[^"]+|manifest\.json))"', r'\1?v=%s"' % v, ix)
+assert n4 > 0, 'no asset URLs found in index.html'
+open(idx, 'w').write(ix2)
+print('index.html assets cache-busted ->', v, '(%d urls)' % n4)
 PY
