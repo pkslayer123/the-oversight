@@ -206,16 +206,40 @@ function freshGame() {
     } else ok('chosen keepsake exists', false);
   }
 
-  // 10. Corpse keepsakes become evolvable grief.
+  // 10. Corpse keepsakes become evolvable grief — FULL LOOP.
+  // registerDeath -> lootCorpse -> take keepsake -> memoryOf + provenance ->
+  // bond accrues via sentimental class -> threshold -> flashback with the
+  // dead friend's line. (Regression: lootCorpse used corpse.vid, but the
+  // corpse schema uses villagerId — the whole loop was dead code.)
   {
     const s = freshGame();
     Game.state.systemArrived = true;
-    const cid = Game.registerDeath({ vid: 'test_dead', name: 'Test Dead', kind: 'villager', cause: 'test' });
-    // simulate a taken keepsake in inventory
-    s.inventory.push({ plantId: 'keepsake', name: 'A photograph', units: 1, kg: 0.1, kcalEach: 0, spoilDay: 9999, keepsake: true });
-    Game.lootCorpse(cid, true);
-    const k = (s.inventory || []).find(i => i.keepsake);
-    ok('corpse keepsake marked sentimental+bonded', k && k.sentimental && k.bonded, JSON.stringify(k && { s: k.sentimental, b: k.bonded }));
+    const dead = (Game.data.villagers || []).find(v => v.id !== Game.villagerId);
+    ok('a dead villager exists', !!dead);
+    const corpse = Game.registerDeath({ kind: 'person', villagerId: dead.id, name: dead.name, cause: 'test', youWitnessed: true });
+    ok('corpse schema uses villagerId', corpse && corpse.villagerId === dead.id, String(corpse && corpse.villagerId));
+    const generated = (corpse.items || []).find(i => i.keepsake);
+    ok('corpse generated a keepsake', !!generated, generated && generated.name);
+    Game.lootCorpse(corpse.id, true);
+    const k = (s.inventory || []).find(i => i.keepsake && i.sentimental);
+    ok('corpse keepsake taken + marked sentimental/bonded', !!(k && k.sentimental && k.bonded));
+    ok('memoryOf names the dead villager', k && k.memoryOf === dead.id, String(k && k.memoryOf));
+    const def = k ? Game.itemDef(k) : {};
+    ok('keepsake adopted a sentimental itemId', !!(k && k.itemId && def.class === 'sentimental'), String(k && k.itemId));
+    const first = dead.name.split(' ')[0];
+    ok('keepsakeMemory provenance generated', !!(k && k.keepsakeMemory && k.keepsakeMemory.includes(first)), k && String(k.keepsakeMemory).slice(0, 80));
+    // bond accrues daily: sentimental = +1/day kept close
+    const b0 = k.bond || 0;
+    Game.accrueRelicBond();
+    ok('corpse keepsake bond accrues', (k.bond || 0) >= b0 + 1, `${b0} -> ${k.bond}`);
+    // threshold on the natural path -> offer -> flashback with the dead friend
+    k.bond = 9; k.bondOffered = [];
+    const n0 = said.length;
+    Game.accrueRelicBond(); // 9 -> 10, threshold fires
+    ok('threshold 10 reached on natural path', (k.bond || 0) >= 10, String(k.bond));
+    const fb = said.slice(n0).join('\n');
+    ok('flashback plays the dead friend provenance', fb.includes('carried this on purpose'), fb.slice(0, 160));
+    ok('flashback carries the dead friend with you', fb.includes(`You carry ${first} with you`), fb.slice(-160));
   }
 
   // 11. NPC ladder is visible.

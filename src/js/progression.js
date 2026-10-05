@@ -179,9 +179,13 @@
       const s = this.state.scholar;
       const char = (this.data.villagers || []).find(v => v.id === this.villagerId) || {};
       const holder = char.lifeseed ? char : { name: char.name || 'you', lifeseed: null };
-      const memory = this.resolveKeepsakeText
-        ? this.resolveKeepsakeText(holder, def, def.memory || '')
-        : (def.memory || '');
+      // keepsakes of the dead carry their own provenance — resolved against
+      // THEIR lifeseed at the moment of taking, not the player's. Grief as fuel.
+      const memory = (item.memoryOf && item.keepsakeMemory)
+        ? item.keepsakeMemory
+        : (this.resolveKeepsakeText
+          ? this.resolveKeepsakeText(holder, def, def.memory || '')
+          : (def.memory || ''));
       const itemName = item.name || def.name || 'it';
       this.say(`◈ FLASHBACK — ${itemName}\n${memory}`);
       const rev = def.reveals;
@@ -524,17 +528,33 @@
 
     // lootCorpse: taken keepsakes become bonded sentimental items with a memory
     // of the dead — grief as fuel, handled with care.
+    //
+    // Corpse keepsakes are generated ad-hoc (plantId 'keepsake', an evocative
+    // name, no itemId), so bond could never accrue and flashbacks could never
+    // fire. Here we adopt them into the sentimental family: map the evocative
+    // name onto the closest sentimental def so the itemId exists, bond accrues
+    // daily, thresholds fire, and the flashback plays the dead friend's own
+    // provenance (keepsakeMemory) — not the def's memory.
+    const CORPSE_KEEPSAKE_DEFS = {
+      'A creased photograph, faces smiling': 'photo_album',
+      'A letter, unsent, in careful handwriting': 'notebook',
+      'A wedding ring, worn thin': 'wedding_ring',
+      "A child's drawing of a house": 'daughters_drawing',
+      'A smooth stone, pocket-worn': 'lucky_coin',
+    };
     const _loot = Game.lootCorpse;
     Game.lootCorpse = function (id, takeAll) {
       const r = _loot ? _loot.call(this, id, takeAll) : undefined;
       try {
         const s = this.state.scholar;
         const corpse = (this.state.corpses || []).find(c => c.id === id);
-        const dead = corpse && (this.data.villagers || []).find(v => v.id === corpse.vid);
+        const dead = corpse && (this.data.villagers || []).find(v => v.id === corpse.villagerId);
         for (const it of (s.inventory || [])) {
           if (it.keepsake && !it.sentimental) {
             it.sentimental = true; it.bonded = true; it.bond = it.bond || 0;
-            if (corpse) it.memoryOf = corpse.vid;
+            if (corpse) it.memoryOf = corpse.villagerId;
+            const def = (this.data.items || []).find(i => i.id === (CORPSE_KEEPSAKE_DEFS[it.name] || 'lucky_coin'));
+            if (def) it.itemId = def.id;
             if (dead && this.resolveKeepsakeText) {
               const holder = { name: dead.name, lifeseed: dead.lifeseed };
               it.keepsakeMemory = this.resolveKeepsakeText(holder,
