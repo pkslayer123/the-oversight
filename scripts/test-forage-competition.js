@@ -39,7 +39,10 @@ function freshGame() {
   for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) { const t = Game.tileAt(x, y); if (t) t.revealed = true; }
   // deterministic forage ground: the distant-village catch-up sim (real
   // competition, but RNG-heavy) is out of scope for these assertions.
-  for (const ov of (Game.state.otherVillages || [])) ov.generated = true;
+  // Freeze = watermark at today (catchUpSim no-ops when village.day is
+  // current); generated=true alone no longer suppresses the sim, because
+  // every approach re-syncs a village you've walked away from (2026-10-05).
+  for (const ov of (Game.state.otherVillages || [])) { ov.generated = true; ov.day = Game.state.scholar.day; }
   return { s, v, hx: v.px ?? 3, hy: v.py ?? 3 };
 }
 const sayText = () => said.join(' | ');

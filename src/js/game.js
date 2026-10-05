@@ -4631,12 +4631,18 @@
     },
 
     // checkVillageProximity: when player gets within 2 tiles, generate + catch up.
+    // Catch-up runs on EVERY approach, not just the first: they've been living
+    // since you last looked, whether you joined them or not. (BUG 2026-10-05:
+    // the sim only ran while !generated, so after first contact a village
+    // froze in time whenever you walked away — only talk/petition re-synced it.)
     checkVillageProximity() {
       const px = this.map.px, py = this.map.py;
       for (const v of (this.state.otherVillages || [])) {
         const dist = Math.abs(v.x - px) + Math.abs(v.y - py);
-        if (dist <= 2 && !v.generated) {
+        if (dist <= 2) {
+          const firstSight = !v.generated;
           this.catchUpSim(v);
+          if (!firstSight) continue;
           const prof = v.knowledgeProfile || {};
           const nPlants = Object.keys(prof.plants || {}).length;
           const focusWord = { fisher: 'fishing folk', forager: 'foragers', farmer: 'farmers', scavenger: 'scavengers' }[prof.focus] || 'survivors';
@@ -9515,9 +9521,16 @@
         // past 4: not their turf. hands off.
       }
       // forage the home turf; range wider only when it's stripped
-      const pool = near.length ? near : mid;
       const GRID_FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
-      for (let i = 0; i < amount && pool.length; i++) {
+      for (let i = 0; i < amount; i++) {
+        // RE-SCAN each pick: the near turf strips first, then hands range wider.
+        // (BUG 2026-10-05: the pool was built once, so once the near tiles were
+        // picked to zero the remaining picks were wasted on them — phantom
+        // foraging. The pantry math claimed the food was eaten while the grid
+        // kept it, so stripped turf never really depleted.)
+        let pool = near.filter(t => (t.stock || 0) > 0);
+        if (!pool.length) pool = mid.filter(t => (t.stock || 0) > 0);
+        if (!pool.length) break;
         const t = pool[Math.floor(Math.random() * pool.length)];
         t.stock = Math.max(0, (t.stock || 0) - 1);
         // GRID TRUTH (forager loop 2026-10-05): the player's sweep reads the

@@ -34,7 +34,10 @@ function wildTile() {
   Game.debugScenario('day1');
   // deterministic forage ground: the distant-village catch-up sim is real
   // competition, but its RNG stripping would make these wood assertions flaky.
-  for (const ov of (Game.state.otherVillages || [])) ov.generated = true;
+  // Freeze = watermark at today (catchUpSim no-ops when village.day is
+  // current); generated=true alone no longer suppresses the sim, because
+  // every approach re-syncs a village you've walked away from (2026-10-05).
+  for (const ov of (Game.state.otherVillages || [])) { ov.generated = true; ov.day = Game.state.scholar.day; }
   // pick a wild target that actually has trees (creeks may have none)
   const cands = Game.travelTargets().filter(t => !Game.travelBlockage(t.x, t.y) && Game.tileAt(t.x, t.y).type !== 'haven' && Game.tileAt(t.x, t.y).type !== 'ruin');
   let tg = cands[0];
