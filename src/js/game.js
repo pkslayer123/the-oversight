@@ -4406,6 +4406,9 @@
         if (!inside) {
           // OUTSIDE: the Haven grounds. Tents, a fire pit, worn paths.
           // The lodge (the building) sits at the north — tap it to go back in.
+          // Steve 2026-10-04: the grounds were a tent maze (15% random tents
+          // ≈ 12 blocking tents) — it felt like a trap. Now: a small deliberate
+          // camp, mostly open ground, clear paths from the door to the edges.
           const cells = [];
           const ornd = this.detailRand(this.detailSeed(x, y) + 4242);
           for (let cy = 0; cy < 9; cy++) {
@@ -4414,7 +4417,7 @@
               // lodge footprint: rows 0-1, cols 3-5
               if (cy <= 1 && cx >= 3 && cx <= 5) { row.push('lodge'); continue; }
               const r = ornd();
-              row.push(r < 0.15 ? 'tent' : r < 0.25 ? 'fire' : r < 0.5 ? 'dirt' : 'grass');
+              row.push(r < 0.35 ? 'dirt' : 'grass');
             }
             cells.push(row);
           }
@@ -4422,6 +4425,13 @@
           cells[2][4] = 'dirt';
           // fire pit near the lodge, not blocking
           cells[2][2] = 'fire';
+          // THE CAMP: a few tents, placed deliberately in a loose cluster west
+          // of the lodge — homes, not a maze. Spots jitter with the seed.
+          const tentSpots = [[1, 3], [2, 4], [1, 5]];
+          for (const [tx, ty] of tentSpots) {
+            const jx = tx + Math.floor(ornd() * 2), jy = ty + Math.floor(ornd() * 2);
+            if (cells[jy] && cells[jy][jx] !== 'lodge') cells[jy][jx] = 'tent';
+          }
           // THE GARDEN CORNER: someone tried to grow things here — a sparse
           // teaching patch, not a farm. A new player learns the forage verb
           // HERE, then understands food is OUT THERE. (Barren Haven fix.)
@@ -4483,16 +4493,19 @@
       // base cell picker by tile type
       const pick = (type) => {
         const r = rnd();
+        // Steve 2026-10-04: chill out on obstacle density. Not everything is a
+        // dense forest — blocking cells thinned so biomes breathe; the grove
+        // stays the wildest, everything else opens up.
         switch (type) {
-          case 'grove': return r < 0.35 ? 'tree' : r < 0.5 ? 'bush' : r < 0.58 ? 'plant' : r < 0.85 ? 'grass' : 'dirt';
+          case 'grove': return r < 0.30 ? 'tree' : r < 0.45 ? 'bush' : r < 0.55 ? 'plant' : r < 0.85 ? 'grass' : 'dirt';
           case 'meadow': return r < 0.55 ? 'grass' : r < 0.72 ? 'plant' : r < 0.82 ? 'bush' : 'dirt';
           case 'thicket': return r < 0.45 ? 'bush' : r < 0.6 ? 'plant' : r < 0.75 ? 'grass' : 'dirt';
-          case 'wetland': return r < 0.28 ? 'water' : r < 0.5 ? 'plant' : r < 0.8 ? 'grass' : 'dirt';
+          case 'wetland': return r < 0.20 ? 'water' : r < 0.5 ? 'plant' : r < 0.8 ? 'grass' : 'dirt';
           case 'creek': return r < 0.55 ? 'grass' : r < 0.65 ? 'plant' : 'dirt'; // river is the water, not random puddles
-          case 'forest_floor': return r < 0.25 ? 'tree' : r < 0.35 ? 'plant' : r < 0.6 ? 'dirt' : 'grass';
+          case 'forest_floor': return r < 0.18 ? 'tree' : r < 0.3 ? 'plant' : r < 0.6 ? 'dirt' : 'grass';
           case 'trail_edge': return r < 0.4 ? 'dirt' : r < 0.7 ? 'grass' : r < 0.8 ? 'plant' : 'bush';
-          case 'ruin': return r < 0.25 ? 'rubble' : r < 0.4 ? 'wall' : r < 0.5 ? 'plant' : r < 0.75 ? 'dirt' : 'grass';
-          case 'haven': return r < 0.2 ? 'tent' : r < 0.3 ? 'fire' : r < 0.55 ? 'dirt' : 'grass';
+          case 'ruin': return r < 0.25 ? 'rubble' : r < 0.37 ? 'wall' : r < 0.5 ? 'plant' : r < 0.75 ? 'dirt' : 'grass';
+          case 'haven': return r < 0.08 ? 'tent' : r < 0.12 ? 'fire' : r < 0.5 ? 'dirt' : 'grass';
           default: return 'grass';
         }
       };
@@ -4876,6 +4889,25 @@
       if (cy === 0) return { dx: 0, dy: -1, dir: 'north' };
       if (cy === 8) return { dx: 0, dy: 1, dir: 'south' };
       return null;
+    },
+    // tryNodeExit: stepping off the 9x9 rim crosses to the next node automatically.
+    // Steve 2026-10-04: no tap-yourself, no confirmation. Blocked exits stop you.
+    // Returns { moved:true } | { blocked:block } | null (no exit attempted).
+    tryNodeExit(dx, dy) {
+      if (this.tbfight) return null;
+      const s = this.state.scholar;
+      const inside = s.insideHaven && this.playerTile().type === 'haven';
+      if (inside) return null;
+      const ex = dx < 0 ? { dx: -1, dy: 0, dir: 'west' }
+        : dx > 0 ? { dx: 1, dy: 0, dir: 'east' }
+        : dy < 0 ? { dx: 0, dy: -1, dir: 'north' }
+        : { dx: 0, dy: 1, dir: 'south' };
+      const nx = this.map.px + ex.dx, ny = this.map.py + ex.dy;
+      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) return null;
+      const block = this.travelBlockage(nx, ny);
+      if (block) return { blocked: block, dir: ex.dir };
+      this.travelTo(nx, ny);
+      return { moved: true, dir: ex.dir };
     },
     // findWalkableEntry: nearest walkable cell to a desired entry point.
     // The edge you want might be water, trees, or wall — BFS outward to

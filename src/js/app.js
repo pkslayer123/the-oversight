@@ -2955,6 +2955,14 @@
     }
     const s = Game.state.scholar;
     const tx = (s.mx ?? 4) + step.dx, ty = (s.my ?? 4) + step.dy;
+    // NODE EXIT (Steve 2026-10-04): stepping off the 9x9 rim crosses to the next
+    // node automatically — no tap-yourself, no confirmation. Blocked exits stop
+    // you with a reason.
+    if (tx < 0 || tx > 8 || ty < 0 || ty > 8) {
+      const r = Game.tryNodeExit(step.dx, step.dy);
+      if (r && r.blocked) toast(r.blocked.blockType === 'creek' ? '🌊 Creek blocks the way — bridge it or swim it.' : `🚧 Blocked ${r.dir} — clear the way first.`);
+      return { moved: !!(r && r.moved) };
+    }
     const moved = step.kind === 'path' ? Game.pathStep(tx, ty) : Game.microMove(tx, ty);
     // A blocked path step kills the rest of the walk — the world changed.
     if (!moved && step.walkId) return { moved: false, purge: step.walkId };
