@@ -48,6 +48,112 @@
 
   const methods = {
 
+    // ---- line pools for confrontation (procedural depth: many voices, no repeats) ----
+    // {first} is replaced with the villager's first name at render time.
+    // drawTruthLine() avoids serving the same line twice in a row to one villager.
+    truthLinePools: {
+      deflectClumsy: [
+        `"What? No — I mean —" {first} stumbles. "It's... it's complicated. Can we not do this right now?"`,
+        `"You're wrong." Too fast. {first} looks away. "Just... drop it, okay?"`,
+        `"I — I don't remember saying that." A beat. "People hear what they want to hear."`,
+        `"That's not — that's not what happened." {first}'s hands won't stop moving. "You're twisting things."`,
+        `"Ha. Funny." The laugh is dry. "Is this what we're doing now? Interrogations?"`,
+        `"I already told you what happened." {first} crosses their arms. "Asking again doesn't change it."`,
+        `"Nope. No." {first} shakes their head too fast. "I don't know where you're getting this."`,
+        `A pause that's a beat too long. "I think you're confused," {first} says, not quite looking at you.`,
+      ],
+      deflectSmooth: [
+        `{first} smiles — unhurried. "You're imagining things. Stress does that out here." Smooth. Too smooth.`,
+        `"Interesting theory." {first} doesn't blink. "Why would I lie about that? Think about it." And somehow you're the one explaining yourself.`,
+        `{first} tilts their head, genuinely curious. "Where did you hear that? Because somebody's playing you."`,
+        `"Ask yourself who benefits." {first} shrugs. "I told you the truth. The question is whether you want it."`,
+        `{first} laughs — soft, unbothered. "You know what this sounds like? Paranoia with extra steps."`,
+        `"Memory's a funny thing out here." {first} taps their temple. "Yours included."`,
+        `{first} doesn't even flinch. "If I were lying, do you really think you'd catch me?" Said lightly. Landed heavy.`,
+        `"Prove it," {first} says, pleasant as anything. "No? Then we're done with this, I think."`,
+      ],
+      attacks: [
+        `"Why are you interrogating me?" {first}'s voice goes cold. "We're all lying about something out here. You want to go first?"`,
+        `"I don't have to explain myself to you." {first} stands. "Ask around. See who trusts you after."`,
+        `"You think you know me?" {first} steps closer. "You don't. Back off."`,
+        `"Careful." {first}'s voice drops. "Accusations have a way of sticking to the accuser."`,
+        `"Done talking." {first} turns away. "Come back when you're not playing detective."`,
+        `"Say that again where everyone can hear." A thin smile. "Or don't. Your call."`,
+        `"Wow." {first} looks hurt, then angry. "I share my food with you and this is what I get?"`,
+      ],
+      clears: [
+        `"Oh — that?" {first} laughs, relieved. "No, no, you've got it wrong — let me explain..." And they do, and it makes sense, and you feel a little foolish for doubting them.`,
+        `"Huh? Oh!" {first} looks genuinely confused, then it clicks. "No — I see why you'd think that. Here's what actually happened..." The explanation holds together.`,
+        `"Wait, wait —" {first} holds up a hand, smiling. "I can see exactly why that sounded wrong. No — it's like this..." The pieces slot into place. Of course.`,
+        `{first} blinks, then groans. "Oh, that's my fault, I worded that terribly. What I meant was..." The real version is boring, which is how you know it's true.`,
+        `"You know what, fair." {first} nods slowly. "I can see how that looked. But here's the thing..." And the thing is mundane, and verifiable, and fine.`,
+      ],
+      // confession motive lines: spoken inside the confession quote (first person)
+      motiveShame: [
+        ` I was embarrassed. Everyone here was someone, and I was... that.`,
+        ` I was ashamed of the truth. Out here nobody asks, so I stopped telling.`,
+        ` The truth felt small. The lie felt like someone worth keeping around.`,
+        ` You don't know what it's like, being the only nobody in a camp of somebodies.`,
+      ],
+      motiveHiding: [
+        ` It's safer if people don't know. Please don't tell the others.`,
+        ` There are people from my old life I'd rather never find me. That's all.`,
+        ` I keep my head down. Old habit. It kept me alive before; it keeps me alive now.`,
+        ` The less of me is out there, the less can be used against me.`,
+      ],
+      motiveProtection: [
+        ` I wasn't protecting myself. I was protecting someone else.`,
+        ` If the wrong people know, it doesn't fall on me. It falls on them.`,
+        ` Someone I love needed the lie more than I needed the truth.`,
+        ` I weighed the lie against what the truth would cost them. The lie was cheaper.`,
+      ],
+      motiveManipulation: [
+        ` I thought if you believed that, you'd trust me faster. I'm sorry. Or I'm supposed to be.`,
+        ` I wanted an edge. You were new, you were listening, and I used it. I'm not proud of that.`,
+        ` Everyone out here is selling something. I was selling a better version of me.`,
+      ],
+      motivePathological: [
+        ` I don't know why I said it. It just came out. It always just comes out.`,
+        ` The truth is there, somewhere. It just... never comes out first.`,
+        ` I wish I could tell you why. I've asked myself that more times than you have.`,
+      ],
+      // truthSlip pools: liars leak over days
+      slipOccupation: [
+        `"{told}, huh?" {first} nods — then, an hour later, mentions something only {atruth} would know. They catch themselves. Too late.`,
+        `{first} starts a story with "back when I was {atold}..." then corrects to something else mid-sentence. The correction is worse than the slip.`,
+        `Someone asks {first} a shop-talk question about {told} work. The pause before the answer is long enough to hear.`,
+      ],
+      slipOrigin: [
+        `{first} mentions "{truth}" like it's home — then says "I mean, {told}." The pause is doing a lot of work.`,
+        `{first} names a street, a diner, a high school — all in {truth}. Then catches your eye and goes very quiet.`,
+      ],
+      slipGoal: [
+        `{first} says they want {told}. But everything they DO points at {truth}.`,
+        `{first} claims {told}, then spends the whole evening doing the exact thing someone who wants {truth} would do.`,
+      ],
+    },
+
+    // drawTruthLine(poolKey, vid, vars): pick a line, avoid immediate repeats
+    // for this villager. vars: {first, truth, told, atruth, atold}.
+    drawTruthLine(poolKey, vid, vars) {
+      const pool = this.truthLinePools[poolKey];
+      if (!pool || !pool.length) return '';
+      const vp = this.vpOf(vid) || {};
+      vp.truthLineLast = vp.truthLineLast || {};
+      let idx = Math.floor(Math.random() * pool.length);
+      if (pool.length > 1 && vp.truthLineLast[poolKey] === idx) idx = (idx + 1) % pool.length;
+      vp.truthLineLast[poolKey] = idx;
+      let line = pool[idx];
+      const v = vars || {};
+      const first = v.first || String(this.displayName(vid)).split(' ')[0];
+      line = line.split('{first}').join(first);
+      if (v.truth) line = line.split('{truth}').join(v.truth);
+      if (v.told) line = line.split('{told}').join(v.told);
+      if (v.atruth) line = line.split('{atruth}').join(v.atruth);
+      if (v.atold) line = line.split('{atold}').join(v.atold);
+      return line;
+    },
+
     // ---- lie generation ----
     // npcLies(vid): lazy. Returns vp.lies or generates. Most people are
     // honest; liars have reasons.
@@ -393,12 +499,14 @@
           const lines = [
             `"${first}? They told you they were ${lieWord}? Huh." ${teller} looks away. "${first} was ${truthWord}. Everyone knew."`,
             `"Don't repeat this, but ${first}'s story doesn't hold. ${g.field === 'origin' ? 'From' : an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}, back before. Not what they told you."`,
+            `${teller} snorts. "${first} said that? Please. ${g.field === 'origin' ? 'From' : an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth} — I knew them from before. The story doesn't survive five minutes of scrutiny."`,
           ];
           line = lines[Math.floor(Math.random() * lines.length)];
         } else {
           const lines = [
             `"${first}?" ${teller} lowers their voice. "Between us — they're not ${lieWord}. They're ${truthWord}. Don't say who told you."`,
             `"You didn't hear it from me, but ${first}'s story doesn't hold. ${g.field === 'origin' ? 'From' : an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}, back before."`,
+            `"Funny you should ask." ${teller} glances over their shoulder. "${first}'s been polishing that story. The unpolished version: ${truthWord}. Keep my name out of it."`,
           ];
           line = lines[Math.floor(Math.random() * lines.length)];
         }
@@ -445,11 +553,7 @@
 
       if (!lie) {
         // no lie behind this doubt — it was a misunderstanding. Honest clearing.
-        const clears = [
-          `"Oh — that? ${first} laughs, relieved. "No, no, you've got it wrong — let me explain..." And they do, and it makes sense, and you feel a little foolish for doubting them.`,
-          `"Huh? Oh!" ${first} looks genuinely confused, then it clicks. "No — I see why you'd think that. Here's what actually happened..." The explanation holds together.`,
-        ];
-        line = clears[Math.floor(Math.random() * clears.length)];
+        line = this.drawTruthLine('clears', vid);
         outcome = 'cleared';
         this.resolveDoubt(doubtId, 'misunderstanding — they explained it');
         try { this.bumpTrust(vid, 3); } catch (e) {}
@@ -479,19 +583,18 @@
         const truthWord = lieField === 'occupation' ? `I wasn't ${/^[aeiou]/i.test(lie.told) ? 'an' : 'a'} ${lie.told}. I was ${/^[aeiou]/i.test(lie.truth) ? 'an' : 'a'} ${lie.truth}`
           : lieField === 'origin' ? `I'm not from ${lie.told}. I'm from ${lie.truth}`
           : `I don't actually want ${lie.told}. I want ${lie.truth}`;
-        const motiveLine = motive === 'shame' ? ' I was embarrassed. Everyone here was someone, and I was... that.'
-          : motive === 'hiding' ? ' It\'s safer if people don\'t know. Please don\'t tell the others.'
-          : motive === 'protection' ? ' I wasn\'t protecting myself. I was protecting someone else.'
-          : motive === 'manipulation' ? ' I thought if you believed that, you\'d trust me faster. I\'m sorry. Or I\'m supposed to be.'
-          : ' I don\'t know why I said it. It just came out. It always just comes out.';
+        const motiveLine = this.drawTruthLine(
+          'motive' + motive.charAt(0).toUpperCase() + motive.slice(1), vid);
+        // safety net: unknown motive → generic line
+        const motiveSpeech = motiveLine || ` I don't know why I said it. It just came out.`;
         const reactions = {
           warm: `"Okay." ${first} looks down. "Okay, you got me. ${truthWord}.${motiveLine}" Their voice is small.`,
-          gentle: `"Oh." A long pause. "${truthWord}.${motiveLine}" ${first} won't meet your eyes.`,
-          prickly: `"Fine." Sharp. "You want the truth? ${truthWord}.${motiveLine} Happy now?"`,
-          withdrawn: `A wall comes down, then — surprisingly — a door opens behind it. "${truthWord}.${motiveLine}" Quiet. Real.`,
-          bold: `"Ha." Not amused. "${truthWord}.${motiveLine} There. You happy?"`,
+          gentle: `"Oh." A long pause. "${truthWord}.${motiveSpeech}" ${first} won't meet your eyes.`,
+          prickly: `"Fine." Sharp. "You want the truth? ${truthWord}.${motiveSpeech} Happy now?"`,
+          withdrawn: `A wall comes down, then — surprisingly — a door opens behind it. "${truthWord}.${motiveSpeech}" Quiet. Real.`,
+          bold: `"Ha." Not amused. "${truthWord}.${motiveSpeech} There. You happy?"`,
         };
-        line = reactions[temp] || `"${truthWord}.${motiveLine}"`;
+        line = reactions[temp] || `"${truthWord}.${motiveSpeech}"`;
         this.resolveDoubt(doubtId, `confessed: ${lie.truth} (was claiming ${lie.told})`);
         // correct the journal
         try {
@@ -503,24 +606,13 @@
         // DEFLECTION — smooth or clumsy depending on who they are
         outcome = 'deflected';
         const smooth = dark && dark.kind === 'malicious';
-        const deflects = smooth ? [
-          `"${first} smiles — unhurried. "You're imagining things. Stress does that out here." Smooth. Too smooth."`,
-          `"Interesting theory." ${first} doesn't blink. "Why would I lie about that? Think about it." And somehow you're the one explaining yourself.`,
-        ] : [
-          `"What? No — I mean —" ${first} stumbles. "It's... it's complicated. Can we not do this right now?"`,
-          `"You're wrong." Too fast. ${first} looks away. "Just... drop it, okay?"`,
-        ];
-        line = deflects[Math.floor(Math.random() * deflects.length)];
+        line = this.drawTruthLine(smooth ? 'deflectSmooth' : 'deflectClumsy', vid);
         doubt.evidence.push(`confronted (day ${day()}) — deflected${smooth ? ', smoothly' : ''}`);
         try { this.bumpTrust(vid, -3); this.remember(vid, 'deflected', 'dodged a confrontation'); } catch (e) {}
       } else {
         // COUNTER-ATTACK
         outcome = 'attacked';
-        const attacks = [
-          `"Why are you interrogating me?" ${first}'s voice goes cold. "We're all lying about something out here. You want to go first?"`,
-          `"I don't have to explain myself to you." ${first} stands. "Ask around. See who trusts you after."`,
-        ];
-        line = attacks[Math.floor(Math.random() * attacks.length)];
+        line = this.drawTruthLine('attacks', vid);
         doubt.evidence.push(`confronted (day ${day()}) — turned hostile`);
         try {
           this.bumpTrust(vid, -8);
@@ -534,21 +626,13 @@
     // truthSlip(vid, lie): over days, details slip. Called from endDay.
     truthSlip(vid, lie) {
       if (!lie || lie.confessed) return;
-      const first = String(this.displayName(vid)).split(' ')[0];
-      const slips = {
-        occupation: [
-          `"${lie.told}, huh?" ${first} nods — then, an hour later, mentions something only ${/^[aeiou]/i.test(lie.truth) ? 'an' : 'a'} ${lie.truth} would know. They catch themselves. Too late.`,
-          `${first} starts a story with "back when I was ${/^[aeiou]/i.test(lie.told) ? 'an' : 'a'} ${lie.told}..." then corrects to something else mid-sentence. The correction is worse than the slip.`,
-        ],
-        origin: [
-          `${first} mentions "${lie.truth}" like it's home — then says "I mean, ${lie.told}." The pause is doing a lot of work.`,
-        ],
-        goal: [
-          `${first} says they want ${lie.told}. But everything they DO points at ${lie.truth}.`,
-        ],
-      };
-      const pool = slips[lie.field] || slips.occupation;
-      const text = pool[Math.floor(Math.random() * pool.length)];
+      const poolKey = lie.field === 'occupation' ? 'slipOccupation'
+        : lie.field === 'origin' ? 'slipOrigin' : 'slipGoal';
+      const anTruth = /^[aeiou]/i.test(lie.truth) ? 'an' : 'a';
+      const anTold = /^[aeiou]/i.test(lie.told) ? 'an' : 'a';
+      const text = this.drawTruthLine(poolKey, vid, {
+        truth: lie.truth, told: lie.told, atruth: anTruth + ' ' + lie.truth, atold: anTold + ' ' + lie.told,
+      });
       this.say(`👀 ${text}`);
       this.addDoubt(vid, 'slip', this.doubtText(vid, 'slip', { text }),
         [`claimed "${lie.told}"`, `slipped: ${text.slice(0, 80)}...`]);

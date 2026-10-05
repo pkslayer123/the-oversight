@@ -13,11 +13,13 @@ global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(f
 ].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 const Game = globalThis.Scattering.Game;
 
-const seedArg = process.argv.find(a => a.startsWith('--seed'));
+const seedIdx = process.argv.findIndex(a => a === '--seed' || a.startsWith('--seed='));
 let seedUsed = 'random';
-if (seedArg) {
-  const m = seedArg.match(/--seed[= ]?(\d+)/);
-  let s = (m && parseInt(m[1], 10)) || 1;
+if (seedIdx >= 0) {
+  const raw = process.argv[seedIdx].startsWith('--seed=')
+    ? process.argv[seedIdx].slice('--seed='.length)
+    : process.argv[seedIdx + 1];
+  let s = parseInt(raw, 10) || 1;
   seedUsed = String(s);
   Math.random = () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
 }

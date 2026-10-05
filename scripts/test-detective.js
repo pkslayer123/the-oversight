@@ -133,6 +133,51 @@ function ok(name, cond) {
     ok('confrontation resolves or deepens', r && (r.outcome === 'confessed' || r.outcome === 'deflected' || r.outcome === 'hostile' || r.ok));
   } else { ok('confrontation resolves or deepens (no doubts to test)', true); }
 
+  // --- 8. confrontation line pools: depth, no placeholders, no immediate repeats ---
+  const pools = Game.truthLinePools;
+  ok('truthLinePools exists', !!pools && typeof pools === 'object');
+  const minSizes = {
+    deflectClumsy: 5, deflectSmooth: 5, attacks: 5, clears: 4,
+    motiveShame: 3, motiveHiding: 3, motiveProtection: 3,
+    motiveManipulation: 3, motivePathological: 3,
+    slipOccupation: 3, slipOrigin: 2, slipGoal: 2,
+  };
+  for (const [key, min] of Object.entries(minSizes)) {
+    ok(`pool ${key} has >= ${min} lines`, Array.isArray(pools[key]) && pools[key].length >= min);
+  }
+  // all lines are non-empty strings; render leaves no raw placeholders
+  const tvid = (Game.state.village.roster || []).find(id => id !== Game.villagerId);
+  let renderedClean = true, nonEmpty = true;
+  for (const [key, pool] of Object.entries(pools)) {
+    for (const raw of pool) {
+      if (typeof raw !== 'string' || !raw.length) { nonEmpty = false; break; }
+    }
+    for (let i = 0; i < 20; i++) {
+      const out = Game.drawTruthLine(key, tvid, { truth: 'plumber', told: 'midwife', atruth: 'a plumber', atold: 'a midwife' });
+      if (/\{[a-z]+\}/.test(out)) { renderedClean = false; break; }
+    }
+    if (!renderedClean) break;
+  }
+  ok('pool lines are non-empty strings', nonEmpty);
+  ok('rendered lines have no raw {placeholders}', renderedClean);
+  // no immediate repeats for one villager across 200 draws
+  for (const key of ['deflectClumsy', 'attacks', 'clears', 'motiveShame']) {
+    const vp = Game.vpOf(tvid);
+    vp.truthLineLast = {};
+    let prev = null, repeated = false;
+    for (let i = 0; i < 200; i++) {
+      const out = Game.drawTruthLine(key, tvid);
+      if (out === prev) { repeated = true; break; }
+      prev = out;
+    }
+    ok(`no immediate repeat in ${key}`, !repeated);
+  }
+  // variety: drawing exhausts the pool (not stuck on one line)
+  const seen = new Set();
+  Game.vpOf(tvid).truthLineLast = {};
+  for (let i = 0; i < 60; i++) seen.add(Game.drawTruthLine('deflectClumsy', tvid));
+  ok('deflectClumsy serves its whole pool', seen.size === pools.deflectClumsy.length);
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('FATAL', e); process.exit(1); });
