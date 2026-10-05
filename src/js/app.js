@@ -531,6 +531,7 @@
     const mon = Game.state.scholar.monster;
     if (label === 'Fight' && mon && mon.mx === cx && mon.my === cy) { Game.startCombat(mon.id); return; }
     if (label === 'Hunt') { Game.huntAnimal(); return; }
+    if (label === 'Stalk') { Game.stalkAnimal(); return; }
     if (label === 'Talk') { talkAction(); return; }
     if (label === 'Cut down (big job)') { Game.cutTree(cx, cy); return; }
     if (label === 'Prune branches') { Game.pruneBranches(cx, cy); return; }
@@ -602,8 +603,7 @@
       b.onclick = () => {
         const it = items[+b.dataset.ctx];
         if (!it) return;
-        doContextAction(it.cx, it.cy, it.label);
-        refresh();
+        actAndRefresh(() => doContextAction(it.cx, it.cy, it.label));
       };
     });
   }
@@ -640,6 +640,7 @@
     document.querySelectorAll('[data-self]').forEach(b => {
       b.onclick = () => {
         const a = b.dataset.self;
+        try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
         if (a === 'eat') { Game.eat(); rerender(); }
         else if (a === 'sleep') { Game.sleep(); rerender(); }
         else if (a === 'pack') { invSheet(); }
@@ -694,9 +695,10 @@
           const near = villagersNear(8);
           if (!near.length) { Game.say('No one in reach.'); return; }
           enterTargeting({ prompt: `⚡ ${a.name} — on whom?`, targets: near,
-            onPick: (t) => { Game.activateAbility(id, t.id); refresh(); } });
+            onPick: (t) => { try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {} Game.activateAbility(id, t.id); refresh(); } });
           return;
         }
+        try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
         Game.activateAbility(id);
         // in combat, an ability IS your action for the turn
         if (Game.tbfight) Game.tbPlayerActed();
@@ -800,13 +802,19 @@
       actions.push(['Back away', () => {}]);
     } else if (isAni) {
       const animal = Game.data.animals.find(a => a.id === ani.id);
-      desc = animal ? animal.description + '.' : 'An animal.';
-      // knowledge level
+      // DESCRIPTOR GATING: until the codex knows it, no true name anywhere —
+      // not in the popup, not in the spawn message, not in the hunt text.
+      const alabel = Game.encDescribeAnimal ? Game.encDescribeAnimal(animal) : (animal ? animal.description : 'an animal');
+      desc = alabel + '.';
       const enc = (Game.state.codex.animalEncounters || {})[ani.id] || 0;
-      if (enc >= 3) desc += ` You know it: ${animal.name}.`;
+      if (enc >= 3 && animal) desc += ` You know it: ${animal.name}.`;
       else if (enc > 0) desc += ' Looks familiar.';
       if (dist <= 1) actions.push(['Hunt', () => Game.huntAnimal()]);
-      else { desc += ' (Too far to catch.)'; actions.push(walkCloser(cx, cy)); }
+      else {
+        desc += ' (Too far to catch.)';
+        actions.push(['Stalk', () => Game.stalkAnimal()]);
+        actions.push(walkCloser(cx, cy));
+      }
     } else if (Game.corpseAt) {
       // CORPSE SYSTEM: the dead stay where they fell.
       const dead = Game.corpseAt(cx, cy);
@@ -978,6 +986,7 @@
     info.querySelectorAll('[data-tpact]').forEach(b => {
       b.onclick = () => {
         const px0 = Game.state.scholar.mx, py0 = Game.state.scholar.my;
+        try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
         actions[+b.dataset.tpact][1]();
         // If the action moved the player, the GRID is stale — full re-render.
         // Panel-only refresh is fine for in-place actions (examine, drink, etc).
@@ -995,11 +1004,42 @@
   // refresh: full expedition screen re-render after an action.
   function refresh() { expeditionScreen(); }
 
+  // ACTION FEEDBACK: every action's result renders right under the action
+  // bars — never scroll to read what just happened. The engine marks the log
+  // at action start (Game.feedbackMark); every say() after the mark lands in
+  // the feedback card. Wrap every action invocation with actAndRefresh.
+  function actAndRefresh(fn) {
+    try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
+    try { fn(); } catch (e) { console.error(e); }
+    refresh();
+  }
+
+  function feedbackInner() {
+    let lines = [];
+    try { lines = (Game.feedbackLines && Game.feedbackLines()) || []; } catch (e) {}
+    if (!lines.length) return '';
+    return lines.map(l => `<p class="fb-line">${esc(l)}</p>`).join('');
+  }
+  function feedbackHTML() {
+    const inner = feedbackInner();
+    if (!inner) return '';
+    return `<div id="actionfeedback" class="ord-feedback"><div class="feedbackcard">${inner}</div></div>`;
+  }
+  function refreshFeedback() {
+    const fb = document.getElementById('actionfeedback');
+    const inner = feedbackInner();
+    if (fb) {
+      if (inner) fb.innerHTML = `<div class="feedbackcard">${inner}</div>`;
+      else fb.innerHTML = '';
+    }
+  }
+
   // refreshTilePanel: re-render the inline panel after an action (stays in context)
   function refreshTilePanel() {
     const info = document.getElementById('inlineslot');
     if (!info || info.dataset.cx === undefined || !info.innerHTML) return;
     cellPopup(+info.dataset.cx, +info.dataset.cy);
+    refreshFeedback();
   }
 
   // ============ SHEET SYSTEM ============
@@ -2848,6 +2888,7 @@
           <div class="ord-target">${targetBarHTML()}</div>
           <div class="ord-danger">${dangerBarHTML()}</div>
           <div class="ord-ability">${abilityBarHTML()}</div>
+          ${feedbackHTML()}
           ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">👆 tap a tile to walk there · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
           <div class="map minimap ord-minimap">${renderMap(st, tset)}</div>
         </div>
@@ -2883,6 +2924,7 @@
             info.querySelectorAll('[data-vact]').forEach(b => {
               b.onclick = () => {
                 const a = card.actions[+b.dataset.vact];
+                try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
                 Game.villageCardAction(otherV.id, a.id, { giftKcal: a.giftKcal || 0 });
                 refresh();
               };
@@ -2914,6 +2956,7 @@
         if (Game.tbfight) {
           if (!Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); refresh(); return; }
           if (cx === px && cy === py) return; // tapping yourself: nothing
+          try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
           Game.tbPlayerMove(cx, cy);
           expeditionScreen();
           return;
@@ -2933,6 +2976,8 @@
         if (vpos) for (const rid of Object.keys(vpos)) {
           if (vpos[rid].mx === cx && vpos[rid].my === cy) { villagerThere = rid; break; }
         }
+        // from here on, the tap DOES something (walk) — mark for feedback.
+        try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
         // PEOPLE: tap a person → walk NEXT TO them, not onto their tile.
         // Standing inside someone feels wrong, even though NPCs don't block.
         // (Tap their tile again while adjacent = explicit step onto it.)
@@ -3407,7 +3452,12 @@
         const cell = cells[cy][cx];
         const isMe = (cx === pmx && cy === pmy);
         let g, cls = 'cell';
-        const ANIMAL_GLYPH = { cottontail_rabbit: '🐇', gray_squirrel: '🐿️', white_tailed_deer: '🦌', creek_chub: '🐟', wild_turkey: '🦃' };
+        // Framework gating (encounters.js): species glyphs only AFTER codex ID —
+        // before that every animal is just paw-prints. No visual name leaks.
+        const _aniKnown = (id) => { try { return Game.encAnimalKnown(id); } catch (e) { return false; } };
+        const ANIMAL_GLYPH = new Proxy({ cottontail_rabbit: '🐇', gray_squirrel: '🐿️', white_tailed_deer: '🦌', creek_chub: '🐟', wild_turkey: '🦃' }, {
+          get(t, id) { return (typeof id === 'string' && _aniKnown(id)) ? t[id] : '🐾'; }
+        });
         // CELL FIRST, entities overlay. (Bug was: entity glyphs got overwritten
         // by the cell chain below, making villagers invisible on grass/dirt.)
         let entityHere = false;

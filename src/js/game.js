@@ -7642,7 +7642,7 @@
       if (mon && mon.x === cx && mon.y === cy) actions.push('Fight');
       // animal here? decision.
       const an = this.state.scholar.animal;
-      if (an && an.x === cx && an.y === cy) actions.push('Hunt');
+      if (an && an.mx === cx && an.my === cy) actions.push('Hunt');
       // villager here (or within 3)? decision. Talk from a few spaces away.
       const v = this.state.village;
       const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;

@@ -14,7 +14,7 @@ global.localStorage = {
 };
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
- 'src/js/game.js', 'src/js/conversation.js', 'src/js/journal.js', 'src/js/party.js',
+ 'src/js/game.js', 'src/js/encounters.js', 'src/js/conversation.js', 'src/js/journal.js', 'src/js/party.js',
  'src/js/truth.js', 'src/js/storage.js', 'src/js/perceive.js', 'src/js/food.js',
  'src/js/corpses.js', 'src/js/betrayal.js', 'src/js/lifeseed.js', 'src/js/progression.js',
  'src/js/ledger.js'

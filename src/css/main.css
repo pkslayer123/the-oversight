@@ -657,6 +657,16 @@ body.system-live .btn:not(.ghost) {
 .ord-target { order: 7; }
 .ord-danger { order: 8; }
 .ord-ability { order: 9; }
+/* ACTION FEEDBACK: the result of what you just did, right under the action
+   bars — never scroll to read what happened. The engine marks the log at
+   action start; new lines render here. */
+.ord-feedback { order: 9.5; }
+.feedbackcard {
+  margin: 8px 6px 0; padding: 8px 12px;
+  border-left: 3px solid #7fd67f; border-radius: 8px;
+  background: rgba(127, 214, 127, 0.07);
+}
+.fb-line { margin: 4px 0; font-size: 13px; line-height: 1.5; }
 .ord-taphint { order: 10; }
 .ord-minimap { order: 11; }
 .ord-panel { order: 12; }

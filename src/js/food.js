@@ -954,14 +954,26 @@
 
     // The animal reacts to your strike. Called before the hunt resolves.
     // Returns true if it got away clean.
+    // FRAMEWORK (encounters.js owns the loop): descriptor-gated, awareness-
+    // based. A calm animal can be caught flat-footed; a wary one explodes.
+    // Bolting moves ONE tile (the chase is real); stamina runs out.
     preyReaction(a) {
       const s = this.state.scholar;
-      const adef = (this.data.animals || []).find(x => x.id === a.id) || {};
-      const aname = (adef.name || 'animal').toLowerCase();
+      const label = (this.encAnimalLabel ? this.encAnimalLabel(a) : 'an animal');
+      const cap = (this.encCap ? this.encCap(label) : label);
       const px = s.mx ?? 4, py = s.my ?? 4;
       const dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
-      let fleeP = this.preyWariness(adef);
-      fleeP -= this.abilityLevel('tracker') * 0.12; // stalking skill matters
+      if (a.aware == null) a.aware = 0.6; // struck at unawares: at least wary
+      if (a.stamina == null && this.encPreyCfg) a.stamina = this.encPreyCfg(a.id).stamina;
+      if (!a.pstate) a.pstate = 'graze';
+      if (a.edgeTurns == null) a.edgeTurns = 0;
+      // winded prey can't explode — it's spent.
+      if (a.pstate === 'winded') return false;
+      // it SAW you move: no clean shot, ever.
+      let fleeP = (a.aware >= 0.9) ? 1 : a.aware * 0.9;
+      let trackLvl = 0;
+      try { trackLvl = this.abilityLevel ? this.abilityLevel('tracker') : 0; } catch (e) {}
+      fleeP -= trackLvl * 0.12; // stalking skill matters
       const villager = (this.data.villagers || []).find(v => v.id === this.villagerId);
       if (villager && String(villager.formerOccupation || '').toLowerCase().includes('hunter')) fleeP -= 0.10;
       if (this.isNight && this.isNight()) fleeP -= 0.08; // dark hides you
@@ -971,26 +983,38 @@
       const detail = this.genDetail(this.map.px, this.map.py);
       const BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
       const canBolt = (() => {
-        for (const [mx, my] of [[a.mx + dx * 2, a.my + dy * 2], [a.mx + dx, a.my + dy]]) {
+        for (const [mx, my] of [[a.mx + dx, a.my + dy], [a.mx - dy, a.my + dx]]) {
           const nx = Math.max(0, Math.min(8, mx)), ny = Math.max(0, Math.min(8, my));
           const cell = detail[ny] && detail[ny][nx];
           if (!BLOCKS[cell]) return true;
         }
         return false;
       })();
-      if (!canBolt) fleeP = 0.08;
+      if (!canBolt) fleeP = Math.min(fleeP, 0.08);
       if (Math.random() < fleeP) {
-        // it bolts
+        // it bolts — one tile, framework state
         const tryMove = (nx, ny) => {
           nx = Math.max(0, Math.min(8, nx)); ny = Math.max(0, Math.min(8, ny));
           const cell = detail[ny] && detail[ny][nx];
           if (!BLOCKS[cell]) { a.mx = nx; a.my = ny; return true; }
           return false;
         };
-        tryMove(a.mx + dx * 2, a.my + dy * 2) || tryMove(a.mx + dx, a.my + dy);
-        a.alerted = true; a.bolted = true;
-        if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) s.animal = null;
-        this.say(`The ${aname} catches your move and explodes away!`);
+        tryMove(a.mx + dx, a.my + dy) || tryMove(a.mx - dy, a.my + dx) || tryMove(a.mx + dx, a.my);
+        a.aware = 1; a.pstate = 'bolt';
+        a.stamina = Math.max(0, (a.stamina || 1) - 1);
+        if (a.stamina <= 0) {
+          a.pstate = 'winded';
+          this.say(`${cap} explodes away — but it's winded already, sides heaving.`);
+        } else {
+          if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
+            a.edgeTurns = (a.edgeTurns || 0) + 1;
+            if (a.edgeTurns >= 2) { s.animal = null; this.say(`${cap} melts into the treeline. Gone.`); }
+            else this.say(`${cap} catches your move and explodes away!`);
+          } else {
+            a.edgeTurns = 0;
+            this.say(`${cap} catches your move and explodes away!`);
+          }
+        }
         s.kcal = Math.max(0, s.kcal - 50); // the lunge cost you
         return true;
       }
@@ -1522,15 +1546,8 @@
     return r;
   };
 
-  // huntAnimal: the animal reacts to the strike. Stalkers eat; the clumsy watch lunch leave.
-  const origHunt = G.huntAnimal;
-  G.huntAnimal = function () {
-    const s = this.state.scholar;
-    const a = s.animal;
-    if (!a) return origHunt.call(this);
-    if (this.preyReaction(a)) return null; // it bolted
-    return origHunt.call(this);
-  };
+  // huntAnimal: the strike reaction lives in the encounter framework now
+  // (encounters.js huntAnimal calls preyReaction itself). No wrapper needed.
 
   // donateToPantry: the pantry has a real cap now.
   const origDonate = G.donateToPantry;
