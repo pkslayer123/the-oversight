@@ -1515,7 +1515,7 @@
       // INTERPRETER: a bilingual friend translates, humanly. The pre-System
       // way — and the only way that carries tone, warmth, and trust.
       if (c.interpreter) {
-        const iname = String(this.displayName(c.interpreter)).split(' ')[0];
+        const iname = this.firstRef(c.interpreter);
         return { text: `«${t}» — ${iname} translates: "${phrase.en}"`, foreign: lang };
       }
       const exp = this.langExposure(lang);
@@ -1683,7 +1683,7 @@
       const yid = this.findInterpreter(vid, lang);
       c.interpreter = yid || null;
       if (yid) {
-        const yn = String(this.displayName(yid)).split(' ')[0];
+        const yn = this.firstRef(yid);
         out.push({ id: 'nv:translate', label: `(ask ${yn} to translate)` });
       }
       out.push({ id: 'leave', label: '(walk away)' });

@@ -345,10 +345,24 @@
       return true;
     }
     var now = this.encAnimalLabel(s.animal);
+    // TRACKING (Steve): reading sign is a skill. The tracker knows what left
+    // the prints and how fresh; the ignorant see disturbed earth. Button honest.
+    var trackK = false;
+    try { trackK = this.trackKnown && this.trackKnown(); } catch (e) {}
+    var signNote = '';
+    if (trackK) {
+      var spName = now;
+      try { if (this.encAnimalKnown && !this.encAnimalKnown(s.animal.id)) spName = 'something'; } catch (e) {}
+      signNote = ' You read the sign as you move — ' + spName + ' prints, fresh, heading ' +
+        ((s.animal.mx >= px) ? 'east' : 'west') + '.';
+    } else if (!s._signNoted) {
+      s._signNoted = true;
+      signNote = ' Disturbed earth underfoot. Something passed here — you can\'t read the rest.';
+    }
     if ((s.animal.aware || 0) >= 0.5) {
-      this.feedback("You stalk closer, low and slow. " + this.encCap(now) + " is watching you now. Careful.");
+      this.feedback("You stalk closer, low and slow. " + this.encCap(now) + " is watching you now. Careful." + signNote);
     } else {
-      this.feedback("You stalk closer, low and slow. " + this.encCap(now) + " hasn't noticed.");
+      this.feedback("You stalk closer, low and slow. " + this.encCap(now) + " hasn't noticed." + signNote);
     }
     return true;
   };

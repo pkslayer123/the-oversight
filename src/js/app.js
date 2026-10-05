@@ -538,6 +538,7 @@
     if (label === 'Gather fallen') { Game.gatherFallen(cx, cy); return; }
     if (label === 'Clear brush (a while)') { Game.clearBrush(cx, cy); return; }
     if (label === 'Fill water (1L)') { Game.fillWater(); return; }
+    if (label === 'Fish') { Game.fish(); return; }
     if (label.startsWith('Cook (')) { Game.cookAll(); return; }
     if (label.startsWith('Smoke ')) { Game.preserveFood(); return; }
     if (label === 'Step outside') { Game.exitBuilding(); return; }
@@ -859,7 +860,7 @@
       } else {
         // title AND body agree: it's a person over there, not a plant.
         name = vname;
-        desc = `${vname.split(' ')[0]} is over there. (Too far to talk.)`;
+        desc = `${Game.firstRef(villagerId)} is over there. (Too far to talk.)`;
         actions.push(walkCloser(cx, cy));
       }
     } else {

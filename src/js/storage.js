@@ -136,9 +136,14 @@
         return this.tickAction(2) || this.status();
       }
       this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 30);
-      const n = 2 + Math.floor(Math.random() * 3);
+      // WOODLORE: the knowledgeable take the right limbs — seasoned, straight.
+      const lore = this.woodloreKnown();
+      let n = 2 + Math.floor(Math.random() * 3);
+      if (lore) n = Math.ceil(n * 1.5);
       this.addMaterial('branch', n);
-      this.say(`You work the ${wt.name} through the lower limbs. +${n} branches. The tree stands — it'll grow more.`);
+      this.say(lore
+        ? `You work the ${wt.name} through the lower limbs, taking the seasoned ones. +${n} branches. The tree stands — it'll grow more.`
+        : `You work the ${wt.name} through the lower limbs. +${n} branches. The tree stands — it'll grow more.`);
       // ACTION CLOCK: pruning = 1 chunk (32 ticks) + 30 kcal effort.
       return this.tickAction(32) || this.status();
     },
