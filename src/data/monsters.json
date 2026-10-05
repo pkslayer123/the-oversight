@@ -62,7 +62,42 @@
     "It backs off, snorting \u2014 firelight in its eyes. It doesn't like this."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 4,
+   "phases": [
+    "root",
+    "paw",
+    "charge",
+    "trample",
+    "spent"
+   ],
+   "phaseBadges": {
+    "root": " \ud83c\udf31 ROOTING",
+    "paw": " \ud83d\udc17 PAWING",
+    "charge": " \ud83d\udca5 CHARGING",
+    "trample": " \ud83e\uddb6 TRAMPLE",
+    "spent": " \ud83d\ude2e\u200d\u0001F4A8 WINDED"
+   },
+   "phaseMap": {
+    "declare": "paw",
+    "windup": "paw",
+    "resolve": "charge",
+    "idle": "root"
+   },
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "boar",
+   "bulldoze": true,
+   "commitCharge": true,
+   "noticeAudio": "boarNotice",
+   "aggroAudio": "boarSnort",
+   "resolveAudio": "boarCharge",
+   "knownTactics": "Sidestep the lane \u2014 never try to outrun it. It never goes around.",
+   "comment": "Bulldozer: root->paw->charge. Charge line LOCKED at declare (commitCharge), shreds everything but real walls (bulldoze). Missed charge -> winded (soft flanks: +50% damage taken, 2 turns) + trample next turn."
+  }
  },
  {
   "id": "hushwolf",
@@ -125,7 +160,37 @@
     "It melts back between the trees. The silence goes with it."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 6,
+   "phases": [
+    "silence",
+    "circle",
+    "rush",
+    "withdraw"
+   ],
+   "phaseBadges": {
+    "silence": " \ud83e\udd2b SILENCE",
+    "circle": " \ud83d\udc15 CIRCLING",
+    "rush": " \ud83d\udca8 RUSH",
+    "withdraw": " \ud83c\udfc3 WITHDRAW"
+   },
+   "phaseMap": {
+    "declare": "circle",
+    "windup": "circle",
+    "resolve": "rush",
+    "idle": "silence"
+   },
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "wolf",
+   "noticeAudio": "wolfSilence",
+   "aggroAudio": "wolfSnarl",
+   "knownTactics": "Wound the lead and the pack breaks. They fear fire \u2014 they remember being dogs.",
+   "comment": "Pack hunter: birds go quiet at combat start; first-spawned is the lead. Wounding the lead below half breaks coordination (pack hesitates, stops focusing); killing the lead usually routs the rest."
+  }
  },
  {
   "id": "gallowdeer",
@@ -468,7 +533,38 @@
     "It folds back into the reeds. The static fades. You were never here."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "still",
+    "unfold",
+    "strike"
+   ],
+   "phaseBadges": {
+    "still": " \ud83d\uddff STILL",
+    "unfold": " \ud83d\udcf6 UNFOLDING",
+    "strike": " \ud83d\udde1 STRIKE"
+   },
+   "phaseMap": {
+    "declare": "unfold",
+    "windup": "unfold",
+    "resolve": "strike",
+    "idle": "still"
+   },
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "heron",
+   "statue": true,
+   "noticeAudio": "heronStatic",
+   "declareAudio": "heronStatic",
+   "aggroAudio": "heronUnfold",
+   "resolveAudio": "heronStrike",
+   "knownTactics": "When it unfolds, sidestep \u2014 it commits to the line and can't correct. Watch the water, not the bird.",
+   "comment": "Statue predator: never advances (statue); strikes when a foe is within 4. Ranged attacks at a still heron often hit empty air. After a strike it may reposition unseen."
+  }
  },
  {
   "id": "hummice",
@@ -593,7 +689,35 @@
     "It... can't really flee. It's a boulder. It just looks offended."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 2,
+   "phases": [
+    "rock",
+    "snap",
+    "bunker"
+   ],
+   "phaseBadges": {
+    "rock": " \ud83e\udea8 ROCK",
+    "snap": " \u26a1 SNAP",
+    "bunker": " \ud83d\udee1 BUNKER"
+   },
+   "phaseMap": {
+    "declare": "snap",
+    "windup": "snap",
+    "resolve": "snap",
+    "idle": "rock"
+   },
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "turtle",
+   "quiet": true,
+   "resolveAudio": "turtleSnap",
+   "knownTactics": "Don't step next to it. It can't chase \u2014 just walk around. When it seals up, wait it out.",
+   "comment": "A rock with opinions: never moves, snaps anything adjacent with no warning. Below half HP it bunkers (2 turns, ~invulnerable). The queue stays silent \u2014 it's a rock."
+  }
  },
  {
   "id": "nightlight_catfish",
@@ -744,7 +868,8 @@
    "pattern": {
     "type": "charge",
     "length": 6,
-    "width": 1
+    "width": 1,
+    "windup": 2
    }
   },
   "behavior": "territorial",
@@ -786,7 +911,39 @@
    "observed": "Mirror-faced deer. The System noticed humans stare at their reflections in water and concluded self-image is a vulnerability. It shows you yourself, then charges through the moment of recognition. The charge is long \u2014 6 tiles, telegraphed, destroys cover.",
    "slain": "Grief Counselor. Moves: Confrontation (6-tile charge, heavy, telegraphed \u2014 it shows your face first). Like the Bulldozer, it never goes around. Unlike the Bulldozer, it wants you to SEE it coming. That's the point. Flanks are soft. Meat: good. The mirror shards make excellent signal mirrors."
   },
-  "systemDesignation": "Reflective ungulate (therapeutic model)"
+  "systemDesignation": "Reflective ungulate (therapeutic model)",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 6,
+   "phases": [
+    "mirror",
+    "confront",
+    "charge"
+   ],
+   "phaseBadges": {
+    "mirror": " \ud83e\ude9e MIRROR",
+    "confront": " \ud83d\udc41 CONFRONT",
+    "charge": " \ud83d\udca5 CHARGE"
+   },
+   "phaseMap": {
+    "declare": "mirror",
+    "windup": "confront",
+    "resolve": "charge",
+    "idle": "mirror"
+   },
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "stag",
+   "bulldoze": true,
+   "commitCharge": true,
+   "noticeAudio": "stagMirror",
+   "declareAudio": "stagMirror",
+   "aggroAudio": "stagSnort",
+   "resolveAudio": "stagCharge",
+   "knownTactics": "Break line of sight during the mirror beat and the charge dies unspent. Or sidestep \u2014 it can't turn mid-charge.",
+   "comment": "Grief Counselor: mirror->confront->charge. Shows you your face first (it wants you to SEE it coming). 6-tile charge locked at declare; shreds cover; never goes around. Break LOS and it loses you."
+  }
  },
  {
   "id": "review_drone",
