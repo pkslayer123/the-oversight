@@ -12703,7 +12703,11 @@
       const f = this.tbfight;
       if (!f) { this.say(text); return; }
       f.cueSaid = f.cueSaid || {};
-      const key = (f.round || 0) + ':' + (((m || {}).mdef || {}).id || (m || {}).key || '?') + ':' + ((((m || {}).telegraph || {}).attackName) || '');
+      // DEDUP BY TYPE (Steve 2026-10-05): pack monsters (hummice ×4) share
+      // the same telegraph. Key by mdef.id (the TYPE), not instance key,
+      // so the pack declares once, not once per member.
+      const typeId = ((m || {}).mdef || {}).id || '?';
+      const key = (f.round || 0) + ':' + typeId + ':' + ((((m || {}).telegraph || {}).attackName) || '');
       if (f.cueSaid[key]) return;
       f.cueSaid[key] = true;
       this.say(text);

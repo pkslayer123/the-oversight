@@ -917,6 +917,14 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
   .ord-actions { order: 3; }
   .ord-compass { order: 4; }
   .ord-epithet { order: 5; }
+  /* COMBAT: narration must be compact — the grid and D-pad need the space.
+     Max 3 lines, scroll internally if longer. (Steve 2026-10-05) */
+  body.in-combat .ord-narration .dialogue-box.narr-box {
+    max-height: 72px;
+    overflow-y: auto;
+    font-size: 13px;
+    padding: 6px 8px;
+  }
   /* COMPACT STATUS: 2x2 mini-bars instead of 4 full rows */
   .ord-status { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
   .ord-status .stat { margin: 3px 0; }
