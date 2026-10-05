@@ -1781,7 +1781,18 @@
       return null;
     }
     const rank = { murder: 4, attack: 3, theft: 2, intimidation: 1 };
-    const serious = crimes.filter(c => rank[c.type]).sort((a, b) => (rank[b.type] || 0) - (rank[a.type] || 0))[0];
+    // the formal track charges what it can prove: unwitnessed crimes stay
+    // unsolved (detective path), they are not moot ammunition.
+    const provable = crimes.filter(c => rank[c.type] && c.witnessed !== false);
+    if (!provable.length) {
+      // nothing the village can prove: the formal track is spent. No fishing
+      // expedition — but no amnesia either; the cold stays.
+      this.say('There\'s nothing they can prove. No moot — but the fire stays cold a long while.');
+      const j = this.justiceState();
+      j.mootDemanded = false; j.confrontRefused = false; j.stage = 1;
+      return null;
+    }
+    const serious = provable.sort((a, b) => (rank[b.type] || 0) - (rank[a.type] || 0))[0];
     let j = {};
     try { j = this.justiceState(); } catch (e) {}
     const accuser = (j.confrontedBy && this.npcIds().includes(j.confrontedBy))

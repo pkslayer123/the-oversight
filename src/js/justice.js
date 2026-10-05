@@ -45,12 +45,14 @@
 
     // Heat: 0-100ish. Murders don't decay. Theft heat fades as trust recovers
     // only via amends — the village remembers, but it can forgive.
+    // Unwitnessed murders are unsolved: the village doesn't know, so no
+    // heat — but the crime stays on the books for the detective/moot path.
     justiceHeat() {
       const j = this.justiceState();
       const v = this.state.village;
       let heat = 0;
       for (const c of j.crimes) {
-        if (c.type === 'murder') heat += c.justified ? 15 : 40;
+        if (c.type === 'murder') heat += c.witnessed === false ? 0 : (c.justified ? 15 : 40);
         else if (c.type === 'attack') heat += 20;
         // theft/intimidation: real heat, but the village can forgive —
         // amends credit wears it down, unlike murder.
@@ -607,13 +609,15 @@
   };
 
   // Crime recording: murder via villageEvent, attack via playerAttacks.
+  // The crime is recorded even when unwitnessed (the village doesn't know —
+  // it's unsolved, no heat — but the detective systems can connect it later).
   const origVillageEvent = G.villageEvent;
   G.villageEvent = function (type, opts) {
     const r = origVillageEvent.call(this, type, opts);
     try {
       if (type === 'murder' && opts && opts.victim) {
         const justified = (this.tbfight || {}).aggressor === 'npc';
-        this.recordCrime('murder', { victim: opts.victim, justified });
+        this.recordCrime('murder', { victim: opts.victim, justified, witnessed: opts.witnessed !== false });
       }
     } catch (e) {}
     return r;

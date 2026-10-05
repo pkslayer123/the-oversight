@@ -7470,6 +7470,11 @@
         // YOU killed someone. The village reacts to WHO died, not just that
         // someone did. A beloved innocent: horror. A feared psycho: uneasy relief.
         const victim = opts.victim;
+        // UNWITNESSED: nobody saw, the body isn't found yet. The village does
+        // NOT react — the woods keep your secret (it's v.unsolved for the
+        // detective systems, and the crime is still recorded by the justice
+        // wrapper below). No broadcast without eyes.
+        if (opts.witnessed === false) return;
         const vDarkM = victim ? this.npcDark(victim) : null;
         const vnameM = victim ? this.displayName(victim) : 'someone';
         const malVictim = vDarkM && vDarkM.kind === 'malicious';
@@ -12826,7 +12831,19 @@
           }
           this.say(kl[Math.floor(Math.random() * kl.length)]);
           try { this.addTrauma(this.traumaForKill(t.villagerId)); } catch (e) {}
-          try { this.villageEvent('murder', { victim: t.villagerId }); } catch (e) {}
+          // THE murder event: exactly one, witness-gated, right here.
+          // (registerDeath below must NOT fire it again — one killing, one
+          // village reaction. Unwitnessed: the crime is recorded as unsolved
+          // but the village doesn't react to what it never saw.)
+          try {
+            let wit = 0;
+            const f = this.tbfight;
+            if (f) for (const o of f.fighters) {
+              if (o.alive && !o.fled && o.kind === 'villager' && o.villagerId &&
+                  o.villagerId !== t.villagerId && o.villagerId !== this.villagerId) wit++;
+            }
+            this.villageEvent('murder', { victim: t.villagerId, witnessed: wit > 0 });
+          } catch (e) {}
           try { this.registerDeath({ kind: 'person', villagerId: t.villagerId, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses(t.villagerId) }); } catch (e) {}
         }
         else {

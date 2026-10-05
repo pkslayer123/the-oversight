@@ -160,7 +160,15 @@
       if (corpse.kind === 'person' || corpse.kind === 'villager') {
         try {
           if (opts.killerId && opts.killerId === this.villagerId) {
-            if (this.villageEvent) this.villageEvent('murder', { victim: corpse.villagerId });
+            // Combat kills already fired the witness-gated murder event in
+            // tbDamage — firing it here too double-punished (the village
+            // reacted twice to one killing). Only non-combat player murders
+            // (poison, etc.) fire it from death registration, witness-gated
+            // the same way: unseen means unsolved, not broadcast.
+            if (opts.cause !== 'combat' && this.villageEvent) {
+              const wit = (opts.witnesses || []).filter(id => id !== this.villagerId);
+              this.villageEvent('murder', { victim: corpse.villagerId, witnessed: wit.length > 0 });
+            }
           } else if (this.villageEvent) {
             this.villageEvent('death');
           }
