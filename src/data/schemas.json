@@ -238,7 +238,11 @@
    "kcalEach": "number",
    "kg": "number",
    "spoilDay": "number",
-   "secretEvolution": "string?"
+   "secretEvolution": "string?",
+   "memory": "string?",
+   "reveals": "object?",
+   "universal": "boolean?",
+   "kin": "string?"
   }
  },
  "gameEvent": {

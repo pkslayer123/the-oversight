@@ -1,0 +1,514 @@
+{
+ "_comment": "Lifeseed pools for The Oversight. Every character gets a lifeseed: a region anchor, named people, named places, events, skill origins, a wound, a want. Backstories, keepsakes, flashbacks, and motives all read from the SAME seed — that's the coherence guarantee. Region towns are real towns; fragments never cross regions.",
+ "events": [
+  "the flood year, when the water took the low road",
+  "the winter the {workplace} closed",
+  "the fire season that turned the sky orange for a month",
+  "the spring the river jumped its banks",
+  "the year the mill laid off half the town",
+  "the storm that took the power for nine days"
+ ],
+ "kin": [
+  {
+   "fates": [
+    "is back in {town}, or was",
+    "hasn't been heard from since the sky changed",
+    "taught {first} everything practical"
+   ],
+   "relation": "mother"
+  },
+  {
+   "fates": [
+    "worked {workplace} for thirty years",
+    "is buried on the hill above {town}",
+    "hasn't been heard from since the sky changed"
+   ],
+   "relation": "father"
+  },
+  {
+   "fates": [
+    "was visiting the coast when the sky changed",
+    "always knew first when something was wrong",
+    "taught {first} to swim in the quarry"
+   ],
+   "relation": "older sister"
+  },
+  {
+   "fates": [
+    "sent one text: 'call when you can'",
+    "is somewhere west, last anyone knew",
+    "used to steal {first}'s food and grin about it"
+   ],
+   "relation": "younger brother"
+  },
+  {
+   "fates": [
+    "sent one text: 'call when you can'",
+    "is somewhere west, last anyone knew",
+    "could fix anything with an engine"
+   ],
+   "relation": "brother"
+  },
+  {
+   "fates": [
+    "was visiting the coast when the sky changed",
+    "kept every letter {first} ever wrote",
+    "laughs like their mother"
+   ],
+   "relation": "sister"
+  },
+  {
+   "fates": [
+    "drew {first} holding the sun, age six",
+    "is with her other parent, or was",
+    "asked too many questions about the sky"
+   ],
+   "relation": "daughter"
+  },
+  {
+   "fates": [
+    "is with his other parent, or was",
+    "could name every truck on the road by sound",
+    "left his shoes by the door"
+   ],
+   "relation": "son"
+  },
+  {
+   "fates": [
+    "is gone — the scattering doesn't explain",
+    "stayed behind to find the others",
+    "would know what to do here"
+   ],
+   "relation": "spouse"
+  },
+  {
+   "fates": [
+    "raised {first} half the time",
+    "kept everything: letters, buttons, recipes",
+    "died the winter before the sky changed"
+   ],
+   "relation": "grandmother"
+  },
+  {
+   "fates": [
+    "flipped a coin before every hard thing",
+    "worked {workplace} and never complained",
+    "taught {first} to drive on dirt roads"
+   ],
+   "relation": "grandfather"
+  },
+  {
+   "fates": [
+    "taught {first} trapping at twelve",
+    "lived in a cabin and liked it that way",
+    "sent postcards from nowhere"
+   ],
+   "relation": "uncle"
+  },
+  {
+   "fates": [
+    "ran the kitchen at {workplace}",
+    "kept the family stitched together",
+    "always had hard candy in her purse"
+   ],
+   "relation": "aunt"
+  },
+  {
+   "fates": [
+    "made {first} a mixtape called FOR THE DRIVE",
+    "promised they'd meet at the {place}",
+    "knew {first} better than anyone"
+   ],
+   "relation": "best friend"
+  },
+  {
+   "fates": [
+    "carried {first} home once, no questions",
+    "owed {first} twenty dollars since forever",
+    "was supposed to visit that spring"
+   ],
+   "relation": "friend"
+  },
+  {
+   "fates": [
+    "taught {first} the trade properly",
+    "said: fix what you can reach",
+    "retired to {town} and grew tomatoes"
+   ],
+   "relation": "mentor"
+  },
+  {
+   "fates": [
+    "needed help reading the fine print",
+    "shared a fence and twenty years",
+    "left a casserole dish never returned"
+   ],
+   "relation": "neighbor"
+  },
+  {
+   "fates": [
+    "are with their other grandparent, or were",
+    "called {first} every Sunday",
+    "loved the butterscotch ones best"
+   ],
+   "relation": "grandchildren"
+  }
+ ],
+ "places": [
+  {
+   "kind": "home",
+   "names": [
+    "the farmhouse upstate",
+    "the duplex on {street}",
+    "grandmother's house"
+   ]
+  },
+  {
+   "kind": "cache",
+   "names": [
+    "the depot on 5th",
+    "the storage unit",
+    "the hunting cabin"
+   ]
+  },
+  {
+   "kind": "water",
+   "names": [
+    "the quarry",
+    "Miller's creek",
+    "the old swimming hole"
+   ]
+  },
+  {
+   "kind": "work",
+   "names": [
+    "{workplace}",
+    "the night shift",
+    "the shop floor"
+   ]
+  }
+ ],
+ "regions": [
+  {
+   "id": "new_england",
+   "label": "coastal New England",
+   "land": "salt marshes, pine woods, and rocky shore",
+   "matchTags": [
+    "new england",
+    "maine",
+    "vermont",
+    "massachusetts",
+    "new hampshire",
+    "connecticut",
+    "rhode island",
+    "boston",
+    "cape cod"
+   ],
+   "towns": [
+    "Bath",
+    "Portland",
+    "New Bedford",
+    "Burlington",
+    "Providence",
+    "Bangor"
+   ],
+   "workplaces": [
+    "the cannery",
+    "the boatyard",
+    "the paper mill",
+    "the hospital on the hill"
+   ]
+  },
+  {
+   "id": "pacific_northwest",
+   "label": "the Pacific Northwest",
+   "land": "fir forest, volcanic ridges, and blackberry-choked clearcuts",
+   "matchTags": [
+    "oregon",
+    "washington",
+    "cascades",
+    "pacific northwest",
+    "seattle",
+    "portland"
+   ],
+   "towns": [
+    "Bend",
+    "Eugene",
+    "Olympia",
+    "Spokane",
+    "Boise",
+    "Missoula"
+   ],
+   "workplaces": [
+    "the mill",
+    "the ranger station",
+    "the cannery",
+    "the clinic"
+   ]
+  },
+  {
+   "id": "deep_south",
+   "label": "the Deep South",
+   "land": "pine flats, bayous, and kudzu-swallowed fence lines",
+   "matchTags": [
+    "georgia",
+    "alabama",
+    "mississippi",
+    "louisiana",
+    "south carolina",
+    "deep south",
+    "atlanta",
+    "new orleans"
+   ],
+   "towns": [
+    "Macon",
+    "Tupelo",
+    "Baton Rouge",
+    "Jackson",
+    "Mobile",
+    "Savannah"
+   ],
+   "workplaces": [
+    "the poultry plant",
+    "the shipyard",
+    "the county hospital",
+    "the school"
+   ]
+  },
+  {
+   "id": "midwest",
+   "label": "the Midwest",
+   "land": "cornfields, lake wind, and rust-belt factory towns",
+   "matchTags": [
+    "ohio",
+    "indiana",
+    "illinois",
+    "iowa",
+    "michigan",
+    "wisconsin",
+    "minnesota",
+    "missouri",
+    "midwest",
+    "chicago",
+    "columbus",
+    "cleveland",
+    "detroit"
+   ],
+   "towns": [
+    "Des Moines",
+    "Peoria",
+    "Fort Wayne",
+    "Toledo",
+    "Springfield",
+    "Duluth"
+   ],
+   "workplaces": [
+    "the stamping plant",
+    "the grain elevator",
+    "the VA clinic",
+    "the high school"
+   ]
+  },
+  {
+   "id": "great_plains",
+   "label": "the Great Plains",
+   "land": "wheat ocean, big sky, and towns an hour apart",
+   "matchTags": [
+    "kansas",
+    "nebraska",
+    "oklahoma",
+    "dakota",
+    "plains",
+    "texas panhandle"
+   ],
+   "towns": [
+    "Fargo",
+    "Wichita",
+    "Amarillo",
+    "Bismarck",
+    "Grand Island",
+    "Dodge City"
+   ],
+   "workplaces": [
+    "the feedlot",
+    "the co-op",
+    "the county shop",
+    "the nursing home"
+   ]
+  },
+  {
+   "id": "southwest",
+   "label": "the Southwest",
+   "land": "desert, arroyos, and mountains that float at dusk",
+   "matchTags": [
+    "arizona",
+    "new mexico",
+    "texas",
+    "southwest",
+    "desert",
+    "el paso",
+    "tucson",
+    "albuquerque"
+   ],
+   "towns": [
+    "Tucson",
+    "Albuquerque",
+    "El Paso",
+    "Flagstaff",
+    "Las Cruces",
+    "Santa Fe"
+   ],
+   "workplaces": [
+    "the copper mine",
+    "the border clinic",
+    "the air base",
+    "the motel"
+   ]
+  },
+  {
+   "id": "mountain_west",
+   "label": "the Mountain West",
+   "land": "high valleys, lodgepole pine, and winter that means it",
+   "matchTags": [
+    "montana",
+    "wyoming",
+    "colorado",
+    "utah",
+    "idaho",
+    "rockies",
+    "mountain"
+   ],
+   "towns": [
+    "Bozeman",
+    "Laramie",
+    "Durango",
+    "Jackson",
+    "Helena",
+    "Cody"
+   ],
+   "workplaces": [
+    "the outfitter",
+    "the mine",
+    "the ski hill",
+    "the ranger station"
+   ]
+  },
+  {
+   "id": "mid_atlantic",
+   "label": "the Mid-Atlantic",
+   "land": "ridges and hollows, coal towns and apple orchards",
+   "matchTags": [
+    "pennsylvania",
+    "virginia",
+    "maryland",
+    "mid-atlantic",
+    "appalachia",
+    "west virginia"
+   ],
+   "towns": [
+    "Harrisburg",
+    "Richmond",
+    "Baltimore",
+    "Pittsburgh",
+    "Allentown",
+    "Roanoke"
+   ],
+   "workplaces": [
+    "the mine",
+    "the rail yard",
+    "the state hospital",
+    "the orchard co-op"
+   ]
+  },
+  {
+   "id": "west_coast",
+   "label": "the West Coast",
+   "land": "freeways, farmland, and hills that burn every fall",
+   "matchTags": [
+    "california",
+    "west coast",
+    "los angeles",
+    "san diego",
+    "bay area"
+   ],
+   "towns": [
+    "Fresno",
+    "Bakersfield",
+    "Medford",
+    "Salinas",
+    "Redding",
+    "San Bernardino"
+   ],
+   "workplaces": [
+    "the warehouse",
+    "the packing house",
+    "the community college",
+    "the ER"
+   ]
+  },
+  {
+   "id": "far_away",
+   "label": "far from here",
+   "land": "streets you still dream about",
+   "matchTags": [],
+   "towns": [
+    "the old city",
+    "the port town",
+    "the mountain village",
+    "the river town"
+   ],
+   "workplaces": [
+    "the market",
+    "the workshop",
+    "the school",
+    "the clinic"
+   ]
+  }
+ ],
+ "skillOrigins": {
+  "food": [
+   "in {kin}'s kitchen",
+   "during the hungry years near {town}"
+  ],
+  "forecast": [
+   "from {kin}, who could smell weather coming",
+   "working outdoors near {town}, watching the sky"
+  ],
+  "medicinal": [
+   "from {kin}, who learned from theirs",
+   "at {workplace}, where it mattered"
+  ],
+  "mending": [
+   "from {kin}: measure twice, fix what you can reach",
+   "keeping old machines alive at {workplace}"
+  ],
+  "navigation": [
+   "because {kin} made sure of that",
+   "driving the back roads around {town} at night"
+  ],
+  "tracking": [
+   "from {kin}, before {first} could read books",
+   "following deer trails out past {place}"
+  ],
+  "trapping": [
+   "from {kin} at twelve, in the woods past {town}",
+   "running a trapline with {kin} one hard winter"
+  ]
+ },
+ "wants": [
+  "find out what happened to {kin}",
+  "get back to {town}, somehow",
+  "keep these people fed through winter",
+  "learn what the System actually wants",
+  "build something that lasts longer than they do",
+  "never be helpless like that again"
+ ],
+ "wounds": [
+  "{first} doesn't talk about the last winter before the scattering.",
+  "There is a name {first} won't say out loud anymore.",
+  "{first} was supposed to be somewhere else that day.",
+  "Somebody {first} loved didn't make it to the clearing.",
+  "{first} carries a guilt like a stone in the boot.",
+  "The scattering took the one person {first} was keeping alive."
+ ]
+}
