@@ -2043,28 +2043,42 @@
       return true;
     },
 
-    // CHECK TRAPS: at day start, traps may have caught something.
+    // CHECK TRAPS: at day start, EVERY set trap may have caught something —
+    // wherever it is. A trapline works while you sleep elsewhere; the dawn
+    // message says where, so the catch never arrives silently.
     checkTraps() {
-      const t = this.playerTile();
-      if (!t.traps || !t.traps.length) return;
-      for (const trap of [...t.traps]) {
-        if (trap.setDay >= this.state.scholar.day) continue; // set today, check tomorrow
-        const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
-        // 40% chance per day (if the animal is here).
-        // poisoner/scarecrow: better bait, better lies. Multiplies the odds.
-        const trapChance = Math.min(0.95, this.modTarget('hunt.trap_catch', 0.4));
-        if (Math.random() < trapChance) {
-          const catchId = recipe.catches[Math.floor(Math.random() * recipe.catches.length)];
-          const animal = this.data.animals.find(a => a.id === catchId);
-          // FOOD REALITY: trapped game is a carcass too — clean it, don't just eat it.
-          this.state.scholar.inventory.push(this.foodCarcass(animal, animal.calories, this.state.scholar.day, 'trapped'));
-          this.say(`Your ${recipe.name} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife).`);
-          trap.uses -= 1;
-          if (trap.uses <= 0) {
-            this.say(`The ${recipe.name} broke. You\'ll need another.`);
-            t.traps = t.traps.filter(x => x !== trap);
-          } else {
-            trap.setDay = this.state.scholar.day; // reset, check again tomorrow
+      const px = this.map.px, py = this.map.py;
+      const dirPhrase = (x, y) => {
+        if (x === px && y === py) return 'here';
+        const dx = x - px, dy = y - py;
+        const d = Math.abs(dx) + Math.abs(dy);
+        const ew = dx > 0 ? 'east' : dx < 0 ? 'west' : '';
+        const ns = dy > 0 ? 'south' : dy < 0 ? 'north' : '';
+        const dir = [ns, ew].filter(Boolean).join('-') || 'here';
+        return `${d} ${d === 1 ? 'tile' : 'tiles'} ${dir}`;
+      };
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const t = this.tileAt(x, y);
+        if (!t.traps || !t.traps.length) continue;
+        for (const trap of [...t.traps]) {
+          if (trap.setDay >= this.state.scholar.day) continue; // set today, check tomorrow
+          const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
+          // 40% chance per day (if the animal is here).
+          // poisoner/scarecrow: better bait, better lies. Multiplies the odds.
+          const trapChance = Math.min(0.95, this.modTarget('hunt.trap_catch', 0.4));
+          if (Math.random() < trapChance) {
+            const catchId = recipe.catches[Math.floor(Math.random() * recipe.catches.length)];
+            const animal = this.data.animals.find(a => a.id === catchId);
+            // FOOD REALITY: trapped game is a carcass too — clean it, don't just eat it.
+            this.state.scholar.inventory.push(this.foodCarcass(animal, animal.calories, this.state.scholar.day, 'trapped'));
+            this.say(`Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife).`);
+            trap.uses -= 1;
+            if (trap.uses <= 0) {
+              this.say(`The ${recipe.name} broke. You\\'ll need another.`);
+              t.traps = t.traps.filter(x => x !== trap);
+            } else {
+              trap.setDay = this.state.scholar.day; // reset, check again tomorrow
+            }
           }
         }
       }
