@@ -730,42 +730,70 @@
     // next gear tier, not trivialize or impossible-wall.
     w1_fighter: {
       label: '🌊 W1 Fighter',
-      desc: 'Wave 1 build: spear, basic stats. Should handle wave 1, struggle wave 2.',
+      desc: 'Wave 1 build: spear, basic stats, 2 abilities. Should handle wave 1, struggle wave 2.',
       apply() {
         const s = Game.state.scholar;
         s.inventory = []; s.equipped = {};
         giveWeapon('fire_hardened_spear');
         s.strength = 14; s.agility = 12; s.toughness = 12;
+        s.abilities = [{ id: 'patient_aim' }, { id: 'game_sense' }];
       }
     },
     w2_fighter: {
       label: '🌊🌊 W2 Fighter',
-      desc: 'Wave 2 build: machete, mid stats. Should handle wave 2, struggle wave 3.',
+      desc: 'Wave 2 build: machete, mid stats, 4 abilities. Should handle wave 2, struggle wave 3.',
       apply() {
         const s = Game.state.scholar;
         s.inventory = []; s.equipped = {};
         giveWeapon('machete');
         s.strength = 17; s.agility = 15; s.toughness = 15;
+        s.abilities = [{ id: 'patient_aim' }, { id: 'game_sense' }, { id: 'adrenaline_control' }, { id: 'triage' }];
       }
     },
     w3_fighter: {
       label: '🌊🌊🌊 W3 Fighter',
-      desc: 'Wave 3 build: hardlight knife, high stats. Should handle wave 3, struggle wave 4.',
+      desc: 'Wave 3 build: hardlight knife, high stats, 6 abilities. Should handle wave 3, struggle wave 4.',
       apply() {
         const s = Game.state.scholar;
         s.inventory = []; s.equipped = {};
         giveWeapon('hardlight_knife');
         s.strength = 21; s.agility = 19; s.toughness = 19;
+        s.abilities = [{ id: 'patient_aim' }, { id: 'game_sense' }, { id: 'adrenaline_control' }, { id: 'triage' }, { id: 'steady_hands' }, { id: 'soft_step' }];
       }
     },
     w4_fighter: {
       label: '🌊🌊🌊🌊 W4 Fighter',
-      desc: 'Wave 4 build: alien loot, max stats. Should handle wave 4.',
+      desc: 'Wave 4 build: alien loot, max stats, 6 abilities. Should handle wave 4.',
       apply() {
         const s = Game.state.scholar;
         s.inventory = []; s.equipped = {};
         giveWeapon('hardlight_knife');
         s.strength = 25; s.agility = 23; s.toughness = 23;
+        s.abilities = [{ id: 'patient_aim' }, { id: 'game_sense' }, { id: 'adrenaline_control' }, { id: 'triage' }, { id: 'steady_hands' }, { id: 'soft_step' }];
+      }
+    },
+    // NON-FIGHTER BUILDS (Steve 2026-10-05): contests aren't just combat.
+    // Social, forager, detective builds for moot/forage/detective contests.
+    socialite: {
+      label: '🎭 Socialite',
+      desc: 'Moot contest build: high social abilities. Wins debates, not fights.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        s.strength = 10; s.agility = 10; s.toughness = 10;
+        // TODO: social abilities when they exist
+        s.abilities = [{ id: 'triage' }, { id: 'steady_hands' }];
+        Game.say('🐞 Socialite build: moot contests, gossip, persuasion. (Social abilities pending)');
+      }
+    },
+    forager: {
+      label: '🌿 Forager',
+      desc: 'Calorie Run contest build: foraging abilities. Wins by gathering.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        s.strength = 12; s.agility = 14; s.toughness = 12;
+        s.abilities = [{ id: 'game_sense' }, { id: 'forage_identification' }, { id: 'soft_step' }];
       }
     },
   };
