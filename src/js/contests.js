@@ -292,7 +292,7 @@
     if (contest.variant === 'hardened') {
       this.sysSay(`📺 ⚠️ HARDENED VARIANT — you've seen this before. It's worse now.`);
     }
-    this.sysSay(`📺 ${pick.name} has been chosen. The village holds its breath.`);
+    this.sysSay(`📺 ${pick.id === 'player' ? 'You have' : pick.name + ' has'} been chosen. The village holds its breath.`);
     
     // Countdown: 1 day (simplified)
     this.state.pendingContest = {

@@ -527,6 +527,13 @@
       freshGame();
       const s = Game.state.scholar;
       s.day = 15; // contests unlock day 14+
+      // POST-SYSTEM (Steve 2026-10-05): real contests only happen after the
+      // System arrives (day 7). sysSay is silent pre-System by design — the
+      // scenario must replicate a real day-15 game, not change the gate.
+      Game.state.systemArrived = true;
+      // Villagers need grid positions to be contest-eligible; without them
+      // only the player can ever be picked and the watch path is unreachable.
+      placeVillagers([[2,2],[6,6],[3,5]]);
       giveWeapon('fire_hardened_spear');
       Game.say('🐞 SCENARIO: contest — The Pit. Day 15, you\'re eligible.');
       Game.say('The System should pick a contest soon. Check eligibility via the leaderboard.');
@@ -542,6 +549,8 @@
       freshGame();
       const s = Game.state.scholar;
       s.day = 20;
+      Game.state.systemArrived = true;
+      placeVillagers([[2,2],[6,6],[3,5]]);
       giveWeapon('machete');
       Game.say('🐞 SCENARIO: contest — Hide and Seek. Extreme risk.');
       Game.say('The seeker is a wave-2 predator. Test with different loadouts.');
@@ -556,6 +565,8 @@
       freshGame();
       const s = Game.state.scholar;
       s.day = 18;
+      Game.state.systemArrived = true;
+      placeVillagers([[2,2],[6,6],[3,5]]);
       Game.say('🐞 SCENARIO: contest — Calorie Run. Foraging competition.');
       Game.say('Whoever collects the most calorie-dense materials wins.');
       try {
@@ -564,11 +575,37 @@
       } catch (e) { Game.say('🐞 contest fire failed: ' + e.message); }
     },
 
+    // Contest WATCH MODE (Steve 2026-10-05): a villager is taken, you watch.
+    // The watching path must be in the debug list passing inspection, or it
+    // doesn't exist as a game feature.
+    contestWatch() {
+      freshGame();
+      const s = Game.state.scholar;
+      s.day = 15;
+      Game.state.systemArrived = true;
+      const placed = placeVillagers([[2,2],[6,6],[3,5]]);
+      giveWeapon('fire_hardened_spear');
+      Game.say('🐞 SCENARIO: contest — WATCH MODE. A villager is taken, you watch.');
+      try {
+        const contest = Game.contestPool().find(c => c.id === 'pit');
+        if (contest && placed.length) {
+          Game.fireContest(contest);
+          // Debug override: the System's cameras want someone else today.
+          // fireContest prefers the player; this forces the villager pick so
+          // the watch branch of contestInterruption is directly testable.
+          const pc = Game.state.pendingContest;
+          if (pc) { pc.participant = placed[0]; Game.resolveContest(); }
+        }
+      } catch (e) { Game.say('🐞 contest watch failed: ' + e.message); }
+    },
+
     // TV Show: WHY DO THEY EAT?
     showWhyEat() {
       freshGame();
       const s = Game.state.scholar;
       s.day = 16;
+      Game.state.systemArrived = true;
+      placeVillagers([[2,2],[6,6]]);
       Game.say('🐞 SCENARIO: TV show — WHY DO THEY EAT?');
       Game.say('The aliens are horrified by cooking. The audience is delighted.');
       try {
@@ -584,6 +621,8 @@
       freshGame();
       const s = Game.state.scholar;
       s.day = 15;
+      Game.state.systemArrived = true;
+      placeVillagers([[2,2],[6,6],[3,5]]);
       Game.addNotability('player', 'wave2Kill');
       Game.say('🐞 SCENARIO: contest eligibility. Day 15, you slew a wave-2 beast.');
       Game.say('Check the leaderboard — you should be eligible with notability.');
@@ -645,6 +684,7 @@
       ['contestPit', '📺 Contest: The Pit'],
       ['contestHide', '📺 Contest: Hide and Seek'],
       ['contestForage', '📺 Contest: Calorie Run'],
+      ['contestWatch', '📺 Contest: WATCH MODE (villager taken)'],
       ['showWhyEat', '📺 Show: WHY DO THEY EAT?'],
       ['contestEligible', '📺 Contest eligibility check'],
     ];
