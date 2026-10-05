@@ -271,16 +271,16 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
 
   // ================= MIRROR STAG =================
   {
-    freshFight('mirror_stag', 2, 4, 8, 4);
+    freshFight('mirror_stag', 1, 4, 8, 4); // d=7 > noticeRange 6: no silent notice at combat start
     ok('stag initial phase mirror', M('m_0').beamPhase === 'mirror');
     aiRound(); // advance + MIRROR declare
     const s = M('m_0');
     ok('stag mirror on declare', s.beamPhase === 'mirror' && !!s.telegraph);
     ok('stag telegraph renders fiction', log().includes('The face is a mirror'));
-    ok('stag queue notice (not quiet)', log().includes("The stag's head swings toward you"));
     const lane = s.telegraph.cells.map(c => c.cx + ',' + c.cy);
     ok('stag 6-tile lane', lane.length > 0 && lane.length <= 6, lane.length);
-    aiRound(); // windup -> CONFRONT
+    aiRound(); // windup -> CONFRONT; the turn-2 threat scan notices visibly
+    ok('stag queue notice (not quiet)', log().includes("The stag's head swings toward you"));
     ok('stag confront on windup', M('m_0').beamPhase === 'confront');
     ok('stag confront narrated', log().includes('The reflection sharpens'));
     // sidestep the committed lane

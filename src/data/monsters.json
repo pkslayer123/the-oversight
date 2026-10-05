@@ -981,7 +981,29 @@
    "observed": "Voice-mimic predator. The System watched humans run toward crying and concluded distress is bait. It plays the voices of people you know. The voices are always crying. It never learned any other emotion.",
    "slain": "Static. Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Fire scrambles the signal. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours."
   },
-  "systemDesignation": "Acoustic lure unit (audience-tested)"
+  "systemDesignation": "Acoustic lure unit (audience-tested)",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "call",
+    "approach",
+    "reveal"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "radio",
+   "noticeText": "The static sharpens toward {who} — another voice for the collection. You're all on the list now.",
+   "adjText": "Too close. The crying STOPS — it has {who}'s voice now.",
+   "painText": "It crackles — and the crying fixes on {who}, furious. Pain gets noticed.",
+   "phaseBadges": {
+    "call": " 📻 CALLING",
+    "approach": " 📻 CLOSING IN",
+    "reveal": " 📻 REVEALED"
+   },
+   "comment": "Encounter framework client. THE LURE: call (holds its ground, cries in a voice you know — walking toward it feeds the lure and it creeps to meet you) → approach (voice sharpens, commits) → reveal (resist 2 turns: the act breaks, honest fight, exposed, takes hits badly). Distress Call is direct/range 3, undodgeable once declared."
+  }
  },
  {
   "id": "mirror_stag",
@@ -1341,7 +1363,29 @@
    "observed": "Ambush mimic. No telegraph on the rush \u2014 it just moves and hits, like the Hushpuppy, but smarter: it watches first (curious stance), learns your rhythm, THEN rushes. The voice is bait. The politeness is bait. Everything is bait.",
    "slain": "Customer Service. Moves: Please Hold (rush \u2014 NO telegraph, it just goes). Counter: it spends 2-3 turns watching (curious) before rushing. Use those turns \u2014 get fire between you and it, or just leave. It only rushes once per approach. Parts: a working headset. The hold music is still playing. You can turn it off. You should turn it off."
   },
-  "systemDesignation": "Support interface (field model)"
+  "systemDesignation": "Support interface (field model)",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "watching",
+    "dialing",
+    "hold"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "service",
+   "noticeText": "\"Hello? Are you still there?\" It's watching {who} now. It's always been watching.",
+   "adjText": "Too close. \"Please hold—\" The voice cuts out. It's moving.",
+   "painText": "The script breaks — and the syrupy voice fixes on {who}, curdling. Pain gets noticed.",
+   "phaseBadges": {
+    "watching": " 📞 WATCHING",
+    "dialing": " 📞 DIALING",
+    "hold": " 📞 ON HOLD"
+   },
+   "comment": "Encounter framework client. THE WATCH: watching (2-3 turns of escalating politeness, no attack — your window: leave, or get fire near you) → dialing (ONE rush, no telegraph) → hold (resets, doesn't chase). Fire within 3 of the player suppresses the rush."
+  }
  },
  {
   "id": "contract_golem",
@@ -1406,7 +1450,29 @@
    "observed": "Paper golem. The System discovered human legal documents and found them DELIGHTFUL \u2014 binding agreements without consent! It built one. The attack locks on (direct, range 3, undodgeable by movement). But it's speed 1. The slowest thing in the woods. Just... walk away. It's paper. Fire ends it.",
    "slain": "Terms & Conditions. Moves: Binding Agreement (direct, range 3 \u2014 moving won't dodge it, but WALKING AWAY will, it's speed 1). 70-90 HP, never flees. The joke is that it's terrifying and trivial at once. Burn it. Loot the vellum \u2014 real paper is worth more than gold out here."
   },
-  "systemDesignation": "Agreement enforcement construct"
+  "systemDesignation": "Agreement enforcement construct",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 4,
+   "phases": [
+    "unfold",
+    "clause",
+    "bound"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "contract",
+   "noticeText": "Pages turn themselves toward {who}. It's reading you.",
+   "adjText": "Too close. Fine print crawls toward {who} — proximity is consent.",
+   "painText": "It rustles — and the text re-orients on {who}. Pain gets noticed.",
+   "phaseBadges": {
+    "unfold": " 📜 UNFOLDING",
+    "clause": " 📜 CLAUSE",
+    "bound": " 📜 BOUND"
+   },
+   "comment": "Encounter framework client. THE FINE PRINT: speed 1 — just walk away. unfold (spreads, 1 tile/turn) → clause (1st consecutive turn in range 3: the text tightens) → bound (2nd consecutive turn: Binding Agreement declared, direct/range 3, undodgeable). Leaving resets the clause. Never flees. Torch ×3 (it's paper)."
+  }
  },
  {
   "id": "delegate_beast",
@@ -1495,7 +1561,8 @@
    "telegraph": "It sits perfectly still, glowing brighter and brighter. A beautiful idea, taking shape. You can feel the brilliance building. That's when you realize: ideas this bright are never safe to stand next to.",
    "pattern": {
     "type": "burst",
-    "radius": 2
+    "radius": 2,
+    "windup": 2
    }
   },
   "behavior": "ambush",
@@ -1538,7 +1605,31 @@
    "observed": "Detonation predator. Like the Speedbump it sits perfectly still \u2014 but where the Speedbump snaps, this DETONATES. Burst radius 2, the hardest-hitting burst in either wave. The tell is the brightening: 2 beats from glow to boom. It fears daylight \u2014 it only sets its ambush at night.",
    "slain": "Inspiration. Moves: Eureka (burst radius 2, 22-34 damage \u2014 the biggest burst so far, telegraphed by brightening). It never moves once placed. The counterplay is simple: see the glow, don't approach, wait for dawn. It seemed like a good idea at the time. Parts: filament (excellent fire-starter), glass, and the lingering feeling you almost did something stupid."
   },
-  "systemDesignation": "Illumination event (contained)"
+  "systemDesignation": "Illumination event (contained)",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 6,
+   "phases": [
+    "settle",
+    "brighten",
+    "bloom",
+    "ember"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "idea",
+   "noticeText": "The light swivels toward {who}. It likes being looked at.",
+   "adjText": "Too close. The glow flares around {who} — it's been noticed.",
+   "painText": "It flickers — and the light fixes on {who}, hardening. Pain gets noticed.",
+   "phaseBadges": {
+    "settle": " 💡 SETTLED",
+    "brighten": " 💡 BRIGHTENING",
+    "bloom": " 💡 EUREKA",
+    "ember": " 💡 EMBER"
+   },
+   "comment": "Encounter framework client. THE BRIGHTENING: settle (drifts until a foe is within 4, then SETS — never moves once set) → brighten (2 beats, escalating, holds position) → bloom (burst radius 2, 22-34) → ember (2 turns spent, harmless). Daylight disperses it."
+  }
  },
  {
   "id": "memory_projector",
@@ -1605,6 +1696,28 @@
    "observed": "Memory lure. The System mined your homesickness and built a projector for it. It shows you home \u2014 real footage, somehow \u2014 and while you stand there aching, it fires a beam along the line of your gaze. Windup 2. The cruelty is the point. The audience wept. (The audience loved it.)",
    "slain": "Nostalgia. Moves: Home Movies (beam length 5, windup 2 \u2014 the line follows your gaze, so MOVE). It fears movement: keep walking and the image can't hold. It spends turns watching (curious) \u2014 that's your window to leave. The reels it drops show your memories. Don't watch them. Or do. The System already did."
   },
-  "systemDesignation": "Affective recall projector"
+  "systemDesignation": "Affective recall projector",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "watch",
+    "spell",
+    "static"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "projector",
+   "noticeText": "The light finds {who}. Shapes resolve. Is that... home?",
+   "adjText": "Too close. The screen swings toward {who} — the picture sharpens.",
+   "painText": "The image tears — and the projector swings to {who}. Pain gets noticed.",
+   "phaseBadges": {
+    "watch": " 📼 WATCHING",
+    "spell": " 📼 SPELLBOUND",
+    "static": " 📼 STATIC"
+   },
+   "comment": "Encounter framework client. THE SPELL: watch (2 turns, curious — leave now) → spell (Home Movies declared: beam length 5, windup 2, aim locked; the light PULLS a still target 1 tile/turn toward it; moving 2+ tiles breaks the spell) → static (1 turn, confused). It fears movement."
+  }
  }
 ]

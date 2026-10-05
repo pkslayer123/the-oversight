@@ -11004,7 +11004,7 @@
             if (!o.alive || o.fled || o.key === mo.key) continue;
             if (!S.combat.isFoe(mo, o)) continue;
             const d = Math.max(Math.abs(o.mx - mo.mx), Math.abs(o.my - mo.my));
-            if (d <= this.encNoticeRange() && this.canSee(mo.mx, mo.my, o.mx, o.my)) {
+            if (d <= this.encNoticeRange(mo) && this.canSee(mo.mx, mo.my, o.mx, o.my)) {
               this.encNoticeFighter(mo, o.key, true);
             }
           }
@@ -11539,6 +11539,17 @@
     tbTelegraphCue(m) {
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
+      // BESPOKE CUE (batch 3, the uncanny): the monster set phase-specific
+      // cue text at declare time (the lure's voice, the contract's fine
+      // print, the projector's picture). It overrides the generic cue — the
+      // earned codex suffix still appends once the pattern is learned.
+      if (tg && tg.cueText) {
+        let bcue = tg.cueText;
+        if (this.tbPatternKnown(m.mdef.id, atk.name)) {
+          bcue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
+        }
+        return bcue;
+      }
       // CODEX-GATED TACTICS: surviving the attack teaches the pattern
       // (tbLearnPattern); the per-monster coaching in mdef.encounter.knownCue
       // only appears after that. Knowledge is earned, not given.
@@ -11611,7 +11622,9 @@
       if (path.length > p.moveLeft) { this.say(`Too far — ${p.moveLeft} squares left.`); return false; }
       for (const o of f.fighters) {
         if ((o.kind === 'monster' || o.kind === 'hostile') && o.alive && o.mx === cx && o.my === cy) {
-          this.say("You don't stroll through a " + o.name + '.'); return false;
+          // Descriptors start with "a"/"an" ("a light in the dark...") — don't double the article.
+          const onm = /^(a|an) /i.test(o.name) ? o.name : 'a ' + o.name;
+          this.say("You don't stroll through " + onm + '.'); return false;
         }
       }
       p.moveLeft -= path.length;
@@ -11912,7 +11925,22 @@
       const t = this.tbFighter(targetKey);
       if (!t || !t.alive) return;
       let final = Math.max(0, Math.round(dmg));
-      if (t.kind === 'player' && typeof this.armorBonus === 'function') {
+      // BATCH 3 (the uncanny) vulnerabilities:
+      // - voice mimic, REVEALED: the act is broken and the signal scrambles —
+      //   exposed, it takes the hit badly. (Resisting the lure pays off.)
+      if (t.kind === 'monster' && this.vmIs(t) && t.beamPhase === 'reveal') {
+        final = Math.round(final * 1.5);
+        this.say('The signal scrambles — exposed, it takes the hit badly.');
+      }
+      // - contract golem: it's paper. A torch does what fire does.
+      if (t.kind === 'monster' && this.cgIs(t) && String(sourceLabel) === 'you') {
+        let witem = '';
+        try { witem = String((((this.state.scholar || {}).equipped || {}).weapon || {}).itemId || ''); } catch (e) {}
+        if (/torch/.test(witem)) {
+          final = Math.round(final * 3);
+          this.say('It\'s paper. The torch does what torches do.');
+        }
+      }      if (t.kind === 'player' && typeof this.armorBonus === 'function') {
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
       }
@@ -12216,8 +12244,22 @@
         pain: "It staggers — pain gets noticed. Its attention fixes on {who}.",
         snap: `Too close. The ${short}'s attention SNAPS to {who} — proximity overrules patience.`,
       };
-      return Object.assign(dflt, cfg.threatLines || {});
+      const out = Object.assign(dflt, cfg.threatLines || {});
+      // Batch-3 key names (the uncanny): noticeText/painText/adjText.
+      if (cfg.noticeText) out.notice = cfg.noticeText;
+      if (cfg.painText) out.pain = cfg.painText;
+      if (cfg.adjText) out.snap = cfg.adjText;
+      return out;
     },
+    // MONSTER BATCH 3 (the uncanny): id gates for bespoke encounter behavior.
+    // Same pattern as deerIs — targeted branches inside tbMonsterTurn, no
+    // parallel systems. The generic engine still owns telegraph countdown,
+    // resolution, the threat queue, and codex gating.
+    vmIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'voice_mimic_radio')); },
+    biIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'bright_idea')); },
+    mpIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'memory_projector')); },
+    smIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'service_mimic')); },
+    cgIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'contract_golem')); },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
     encThreatQueue(m) {
@@ -12777,6 +12819,116 @@
       return true;
     },
 
+    // === BATCH 3 (the uncanny): bespoke declare helpers ===
+    // Same telegraph shapes the generic pending section counts down and
+    // resolves — only the cue text (phase-specific, codex-gated where it
+    // matters) is bespoke. No parallel combat system.
+    encDeclareDirect(m, target, cueText) {
+      const atk = m.mdef.attack || {};
+      const pat = atk.pattern || { type: 'direct', range: 3 };
+      m.telegraph = { kind: 'direct', targetKey: target.key, dmg: atk.damage,
+        attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
+        cueText: cueText || null };
+      this.say('⚠ ' + this.tbTelegraphCue(m));
+      this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct' });
+      this.tbRefreshTelegraphUI();
+    },
+    encDeclareBeam(m, foe, cueText) {
+      const atk = m.mdef.attack || {};
+      const pat = atk.pattern || { type: 'beam', length: 5, width: 1 };
+      // BEAM: terrain blocks the shot at declare — break line of sight,
+      // break the beam. (Fighters never block: it goes through them.)
+      let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cut = [];
+      for (const c of cells) {
+        const cell = detail[c.cy] && detail[c.cy][c.cx];
+        if (cell && this.cellProps(cell).blocks) break;
+        cut.push(c);
+      }
+      cells = cut;
+      const p0 = this.tbFighter('p');
+      m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
+        attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
+        threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
+        aim: { x: foe.f.mx, y: foe.f.my }, dir: null, aimKey: foe.f.key,
+        angle: null, firing: 0, cueText: cueText || null };
+      // WITNESS: seeing it wind up teaches you its attack (codex machinery).
+      try {
+        const me = this.ensureMonsterEntry(m.mdef.id);
+        if (atk.name && !me.attacksSeen.includes(atk.name)) {
+          me.attacksSeen.push(atk.name);
+          if (me.stage === 'encountered') me.stage = 'observed';
+        }
+      } catch (e) {}
+      this.say('⚠ ' + this.tbTelegraphCue(m));
+      this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'beam', beam: true });
+      this.tbRefreshTelegraphUI();
+    },
+    // The voice the mimic cries in: someone the target would go back for. It
+    // learns voices from the people it has noticed (the threat queue first),
+    // otherwise the roster. Never the target's own name without the twist.
+    vmVoiceName(m, target) {
+      // Pre-System, people are stranger descriptors, not names ("A person,
+      // maybe 50s") — the mimic imitates the VOICE, so the descriptor sits
+      // in the sentence lowercased: "it sounds like a person, maybe 50s".
+      const lower1 = (s) => { s = String(s || ''); return s.charAt(0).toLowerCase() + s.slice(1); };
+      try {
+        const q = this.encThreatQueue(m);
+        const names = [];
+        for (const key of q) {
+          if (key === target.key) continue;
+          const fr = this.tbFighter(key);
+          if (fr && fr.alive && fr.kind !== 'monster' && fr.kind !== 'hostile') {
+            names.push(fr.kind === 'player' ? 'you' : lower1(fr.name));
+          }
+        }
+        if (names.length) return names[Math.floor(Math.random() * names.length)];
+        const roster = (this.state.village && this.state.village.roster) || [];
+        const others = roster.filter(rid => rid !== this.villagerId);
+        const rid = others[Math.floor(Math.random() * others.length)];
+        if (rid) return lower1(this.displayName(rid));
+      } catch (e) {}
+      return 'someone you know';
+    },
+    // MEMORY PROJECTOR: the spell-pull. While the beam gathers, a target that
+    // stands still is dragged a tile closer ("you take a step closer without
+    // deciding to") — the spell holds them on the beam's line. Moving 2+
+    // tiles in a turn breaks the spell outright: the image can't hold.
+    // Returns true when the spell broke (telegraph canceled).
+    mpSpellPull(m, tg) {
+      const tgt = this.tbFighter(tg.aimKey) || this.tbFighter('p');
+      if (!tgt || !tgt.alive || tgt.fled) return false;
+      const px = tgt.mx, py = tgt.my;
+      if (m.mpTx === undefined) { m.mpTx = px; m.mpTy = py; return false; }
+      const moved = Math.max(Math.abs(px - m.mpTx), Math.abs(py - m.mpTy));
+      m.mpTx = px; m.mpTy = py;
+      const who = tgt.kind === 'player' ? 'You' : tgt.name;
+      if (moved >= 2) {
+        m.telegraph = null;
+        m.mpDeclared = false;
+        this.encSetPhase(m, 'watch'); m.mpWatch = 2;
+        this.say(`${who === 'You' ? 'You force' : who + ' forces'} ${tgt.kind === 'player' ? 'your' : 'their'} feet to move — the image judders, breaks up. Too fast. It can't hold the picture. The screen collapses to static.`);
+        this.audioEvent('projectorBreak');
+        return true;
+      }
+      if (moved === 0) {
+        const dx = Math.sign(m.mx - px), dy = Math.sign(m.my - py);
+        if (dx || dy) {
+          const nx = px + dx, ny = py + dy;
+          if (!(nx === m.mx && ny === m.my) && nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8 && !this.tbBlocked(nx, ny)) {
+            tgt.mx = nx; tgt.my = ny;
+            if (tgt.kind === 'player') { this.state.scholar.mx = nx; this.state.scholar.my = ny; }
+            this.say(tgt.kind === 'player'
+              ? 'You take a step closer without deciding to. The light wants you nearer.'
+              : `${tgt.name} takes a step closer, eyes fixed on the light. They didn't decide to.`);
+            this.audioEvent('projectorPull');
+          }
+        }
+      }
+      return false;
+    },
+
     tbMonsterTurn(m) {
       const f = this.tbfight;
       // ROUNDS SEEN: surviving its turns teaches you its toughness.
@@ -12829,6 +12981,24 @@
           this.tbRefreshTelegraphUI();
           if (this.tbEndCheck()) return;
           return;
+        }
+        // BATCH 3 (the uncanny): bespoke windup behavior, same countdown.
+        // BRIGHT IDEA: the brightening escalates while it gathers — the two
+        // beats from glow to boom read clearly. It never moves once set.
+        if (this.biIs(m) && m.beamPhase === 'brighten' && tg.kind === 'squares') {
+          this.say(tg.turnsLeft > 1
+            ? 'The glow intensifies — the air tastes like copper. Brighter.'
+            : 'BRIGHTER. The light is wrong now, too bright to look at. It\'s about to loose.');
+          this.audioEvent('eurekaTick', { urgency: tg.turnsLeft });
+        }
+        // MEMORY PROJECTOR: the spell pulls while the beam gathers. A still
+        // target drifts closer; a moving one breaks the picture.
+        if (this.mpIs(m) && m.beamPhase === 'spell' && tg.kind === 'squares') {
+          if (this.mpSpellPull(m, tg)) {
+            this.tbRefreshTelegraphUI();
+            if (this.tbEndCheck()) return;
+            return;
+          }
         }
         tg.turnsLeft -= 1;
         if (tg.turnsLeft > 0) {
@@ -13113,6 +13283,339 @@
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
+      // ============ BATCH 3 (the uncanny): bespoke encounters ============
+      // Each branch is one monster's personality — its phases, its tell, its
+      // counterplay. The generic engine still owns telegraph countdown,
+      // resolution, the threat queue, and codex gating (see the declare
+      // helpers + pending-section hooks above). FIFO target: the list, not
+      // the nearest — anyone can be the one it wants.
+      const fifoFoe = () => {
+        if (!useFifo) return null;
+        const dt = this.encCurrentTarget(m);
+        return dt ? { f: dt, d: Math.max(Math.abs(dt.mx - m.mx), Math.abs(dt.my - m.my)) } : null;
+      };
+
+      // ---- VOICE MIMIC ("Static"): THE LURE ----
+      // call → approach → reveal. The horror is the choice: the crying sounds
+      // like someone you know, and walking toward it feeds it (lure+). Hold
+      // your ground or back off and the lure starves — two turns of resisting
+      // breaks the act (reveal): the fight goes honest, and exposed, it takes
+      // hits badly. Distress Call is direct/range 3: once declared, moving
+      // won't help — the counterplay is never letting it lock on your terms.
+      if (this.vmIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        const vname = this.vmVoiceName(m, t);
+        // vdisp: "a person, maybe 50s" / "Maya" / "your own voice" — sits in a sentence.
+        const vdisp = (vname === 'you') ? 'your own voice' : vname;
+        const vneg = (vname === 'you') ? 'you' : vname;
+        if (m.vmLure === undefined) { m.vmLure = 0; m.vmResist = 0; this.encSetPhase(m, 'call'); }
+        // post-resolve: the call falters — then starts again, elsewhere.
+        // (A revealed mimic stays revealed: the act is broken for good.)
+        if (m.vmDeclared && !m.telegraph) {
+          m.vmDeclared = false;
+          if (m.beamPhase === 'reveal') {
+            this.say('The static crackles, furious. No voice left. Just the radio — and it wants you dead.');
+          } else {
+            m.vmLure = 1;
+            this.encSetPhase(m, 'call');
+            this.say('The voice falters... then starts again, somewhere else in the dark. It is still hungry.');
+          }
+        }
+        let vmPhase = m.beamPhase;
+        // the lure: did YOU move toward the crying? The baseline is the
+        // post-move distance from last turn, so the mimic's own creep
+        // doesn't count as you approaching — only your feet do.
+        const tDist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (m.vmTKey !== t.key || m.vmLastDist === undefined) { m.vmTKey = t.key; }
+        else if (tDist < m.vmLastDist) {
+          m.vmLure = Math.min(3, (m.vmLure || 0) + 1); m.vmResist = 0;
+          this.say('The crying sharpens — clearer, closer. It knows you\'re coming.');
+          this.audioEvent('staticCry', { close: tDist <= 3 });
+        } else {
+          m.vmLure = Math.max(0, (m.vmLure || 0) - 1);
+          if (vmPhase !== 'reveal') m.vmResist = (m.vmResist || 0) + 1;
+        }
+        if (vmPhase === 'call' && m.vmLure >= 2) {
+          this.encSetPhase(m, 'approach'); vmPhase = 'approach';
+          this.say(`The static resolves — mid-sob — into a voice like ${vdisp}. "PLEASE. Don't leave me out here." It's coming closer now.`);
+          this.audioEvent('staticCry', { close: true });
+        } else if (vmPhase !== 'reveal' && (m.vmResist || 0) >= 2) {
+          this.encSetPhase(m, 'reveal'); vmPhase = 'reveal'; m.vmResist = 0;
+          this.say('You don\'t move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It\'s a radio. It was always a radio.');
+          this.audioEvent('staticBreak');
+        }
+        // movement: it only closes in while the lure is working (you're
+        // coming, so it comes to meet you) or the act is broken. A resisted
+        // lure holds its ground, crying — it can't make you come to it.
+        const stepN = vmPhase === 'call' ? ((m.vmLure || 0) > 0 ? 1 : 0) : m.speed;
+        for (let i = 0; i < stepN; i++) {
+          const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+          if (d <= (pat.range || 3)) break;
+          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          if (!stp) break;
+          m.mx = stp.x; m.my = stp.y;
+        }
+        const dNow = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        m.vmLastDist = dNow; // post-move baseline for next turn's lure check
+        if (dNow <= (pat.range || 3) && !m.telegraph) {
+          m.vmDeclared = true;
+          this.encDeclareDirect(m, t, vmPhase === 'reveal'
+            ? `The radio SCREAMS — no voice left, just noise and fury. ${atk.name} incoming. No dodging it.`
+            : `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. ${atk.name} is coming — and moving won't help once it has your voice.`);
+        } else if (!m.telegraph) {
+          if (vmPhase === 'call') {
+            const cries = [
+              `"Please... is anyone there?" sobs the dark, in a voice like ${vdisp}.`,
+              `Crying, somewhere in the trees. It sounds like ${vdisp}. ${(vname === 'you') ? 'You are' : 'They are'} supposed to be safe at the haven.`,
+            ];
+            this.say(cries[Math.floor(Math.random() * cries.length)]);
+            this.audioEvent('staticCry', {});
+          }
+          else if (vmPhase === 'approach') this.say(`"COME BACK," sobs the dark, in a voice like ${vdisp}. "Don't leave me!"`);
+          else this.say('The radio crackles, furious, advancing on dead air.');
+        }
+        this.tbRefreshTelegraphUI();
+        this.tbEndCheck();
+        return;
+      }
+
+      // ---- BRIGHT IDEA ("Inspiration"): THE BRIGHTENING ----
+      // settle → brighten → bloom → ember. It never moves once set: it drifts
+      // until someone is close, then SETS and brightens over 2 beats (the
+      // escalation hook narrates them). Back off when it brightens — the
+      // burst is radius 2 and the hardest-hitting in either wave. After the
+      // bloom it's a dying ember for 2 turns: harmless. Daylight disperses it.
+      if (this.biIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') this.encSetPhase(m, 'settle');
+        // post-detonation: the bloom resolved → ember
+        if (m.beamPhase === 'brighten' && !m.telegraph && m.biDeclared) {
+          m.biDeclared = false;
+          this.encSetPhase(m, 'ember'); m.biEmber = 2;
+          this.say('The light gutters down to a dying ember. It\'s spent — dim, flickering, harmless. For now.');
+          this.audioEvent('eurekaSpent');
+        }
+        const biPhase = m.beamPhase;
+        if (biPhase === 'ember') {
+          m.biEmber = (m.biEmber || 2) - 1;
+          if (m.biEmber <= 0) {
+            this.encSetPhase(m, 'settle');
+            this.say('The ember steadies. Somewhere inside the glass, an idea is forming again.');
+          } else this.say('The ember flickers, dim. It can\'t brighten yet.');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (biPhase === 'brighten') {
+          // windup runs in the generic pending section (escalation hook
+          // above). It holds position — never moves once set.
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // settle
+        let night = true;
+        try { night = this.isNight ? this.isNight() : true; } catch (e) {}
+        if (!night) {
+          m.fled = true;
+          this.say('Dawn touches it and the light gutters, thins, goes out. It was never meant for daytime.');
+          this.audioEvent('eurekaDisperse');
+          this.tbEndCheck(); return;
+        }
+        if (foe.d <= 4 && !m.telegraph) {
+          // SET: it stops moving — permanently — and starts to brighten.
+          this.encSetPhase(m, 'brighten'); m.biDeclared = true;
+          const cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
+          const p0 = this.tbFighter('p');
+          m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
+            attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 2,
+            threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
+            aim: null, dir: null, aimKey: null, angle: null, firing: 0, cueText: null };
+          try {
+            const me = this.ensureMonsterEntry(m.mdef.id);
+            if (atk.name && !me.attacksSeen.includes(atk.name)) {
+              me.attacksSeen.push(atk.name);
+              if (me.stage === 'encountered') me.stage = 'observed';
+            }
+          } catch (e) {}
+          const known = this.encTelegraphKnown(m);
+          this.say(known
+            ? '⚠ It\'s brightening. Two beats from glow to boom — BACK OFF. Radius 2.'
+            : '⚠ ' + (atk.telegraph || 'It brightens.'));
+          this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'burst' });
+          this.audioEvent('eurekaCharge');
+        } else if (!m.telegraph) {
+          // not set yet: drift toward the nearest warmth, slow
+          if (foe.d > 4) {
+            const stp = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+            if (stp) { m.mx = stp.x; m.my = stp.y; }
+          }
+          this.say('A light in the dark, drifting closer. Beautiful. It wasn\'t there yesterday.');
+          this.audioEvent('eurekaDrift');
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- MEMORY PROJECTOR ("Nostalgia"): THE SPELL ----
+      // watch → spell → static. It shows you home; while the beam gathers
+      // along your line of gaze, the light PULLS a still target closer (the
+      // spell-pull hook). Keep moving — 2+ tiles in a turn breaks the spell
+      // outright. The beam locks where you were: movement is the dodge.
+      if (this.mpIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'watch'); m.mpWatch = 2; }
+        // post-resolve: the reel fired → static
+        if (m.beamPhase === 'spell' && !m.telegraph && m.mpDeclared) {
+          m.mpDeclared = false;
+          this.encSetPhase(m, 'static'); m.mpStatic = 1;
+          this.say('The screen collapses to gray static, hissing. It\'s confused — the picture won\'t come back yet.');
+          this.audioEvent('projectorStatic');
+        }
+        const mpPhase = m.beamPhase;
+        if (mpPhase === 'static') {
+          m.mpStatic = (m.mpStatic || 1) - 1;
+          if (m.mpStatic <= 0) {
+            this.encSetPhase(m, 'watch'); m.mpWatch = 2;
+            this.say('The static resolves. Shapes flicker at the edge of the light. It\'s watching again.');
+          } else this.say('Gray static. It can\'t hold a picture right now.');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (mpPhase === 'spell') {
+          // the beam gathers in the generic pending section (spell-pull hook
+          // above). The screen is set — it holds position.
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // watch: curious. It watches first — that's your window to leave.
+        m.mpWatch = (m.mpWatch === undefined ? 2 : m.mpWatch) - 1;
+        if (m.mpWatch <= 0 && !m.telegraph) {
+          this.encSetPhase(m, 'spell'); m.mpDeclared = true;
+          const t = foe.f;
+          m.mpTx = t.mx; m.mpTy = t.my; // spell baseline: did you move since?
+          const known = this.encTelegraphKnown(m);
+          this.encDeclareBeam(m, foe, known
+            ? 'It\'s showing you home to hold you still. The beam runs along your line of gaze — MOVE. Keep moving and the picture can\'t hold.'
+            : atk.telegraph);
+          this.audioEvent('projectorHum', { spell: true });
+        } else {
+          const watchLines = [
+            'The light flickers. Shapes resolve. Is that... is that home?',
+            'Somewhere in the light: a kitchen. A laugh you haven\'t heard in years. You shouldn\'t look. You look.',
+          ];
+          this.say(watchLines[Math.floor(Math.random() * watchLines.length)]);
+          this.audioEvent('projectorHum', {});
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- SERVICE MIMIC ("Customer Service"): THE WATCH ----
+      // watching → dialing → hold. No telegraph on the rush — that's the
+      // point. But it watches first (2-3 turns of escalating politeness):
+      // that's your window — leave, or get fire near you (it won't dial
+      // through firelight). It only rushes once per approach; after the rush
+      // it goes on hold and resets instead of chasing.
+      if (this.smIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'watching'); m.smWatch = 2 + Math.floor(Math.random() * 2); }
+        const smPhase = m.beamPhase;
+        let nearFire = false;
+        try { nearFire = this.scholarNearCell ? !!this.scholarNearCell('fire', 3) : false; } catch (e) {}
+        if (smPhase === 'hold') {
+          m.smHold = (m.smHold === undefined ? 2 : m.smHold) - 1;
+          if (m.smHold <= 0) {
+            this.encSetPhase(m, 'watching'); m.smWatch = 2 + Math.floor(Math.random() * 2);
+            this.say('"Thank you for holding." The line clicks. It\'s watching again.');
+          } else this.say('Hold music plays from somewhere in the dark. It isn\'t moving. It\'s waiting for you to come back.');
+          this.audioEvent('holdMusic', {});
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (smPhase === 'watching') {
+          if (nearFire) {
+            this.say('"We appear to be experiencing— experiencing—" The script breaks. The firelight is too much. It won\'t come closer.');
+            this.audioEvent('holdMusic', { broken: true });
+            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+          }
+          m.smWatch = (m.smWatch === undefined ? 2 : m.smWatch) - 1;
+          if (m.smWatch <= 0) {
+            this.encSetPhase(m, 'dialing');
+            this.say('"Please hold while we connect you to—" The voice cuts out. It\'s moving.');
+            this.audioEvent('lineCut');
+          } else {
+            const esc = [
+              '"Hello? Are you still there?" It\'s watching. It\'s always been watching.',
+              '"Your call is very important to us." The voice is syrup. It hasn\'t blinked.',
+              '"We\'re experiencing higher than normal fear volumes." It leans forward, listening to your breathing.',
+            ];
+            this.say(esc[Math.min(esc.length - 1, Math.max(0, 2 - m.smWatch))]);
+            this.audioEvent('holdMusic', { watching: true });
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // dialing: THE RUSH. No telegraph — it just goes. (Same shape as the
+        // generic rush: up to speed, hit if adjacent.) Then it resets to hold.
+        const t = foe.f;
+        for (let i = 0; i < m.speed; i++) {
+          if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) break;
+          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          if (!stp) break;
+          m.mx = stp.x; m.my = stp.y;
+        }
+        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) {
+          const known = this.encTelegraphKnown(m);
+          this.say(known
+            ? `"Your fear is important to us." No telegraph — it just moved. (${atk.name}.)`
+            : 'Something is right behind you, and a syrupy voice says: "Your fear is important to us."');
+          this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+          this.audioEvent('impact', {});
+          this.tbLearnPattern(m);
+        } else {
+          this.say('It rushes — and finds only empty air where you were. The line goes quiet.');
+        }
+        this.encSetPhase(m, 'hold'); m.smHold = 2;
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- CONTRACT GOLEM ("Terms & Conditions"): THE FINE PRINT ----
+      // unfold → clause → bound. Speed 1 — just walk away. The attack
+      // (direct, range 3) is undodgeable by movement once declared, but the
+      // declaration only comes after 2 consecutive turns in proximity:
+      // staying IS accepting. Leaving resets the clause. Never flees.
+      if (this.cgIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'unfold'); m.cgClause = 0; }
+        // post-resolve: the agreement discharged → back to unfolding
+        if (m.cgDeclared && !m.telegraph) {
+          m.cgDeclared = false; m.cgClause = 0;
+          this.encSetPhase(m, 'unfold');
+          this.say('The ink dries. The pages settle. It begins unfolding again — there is always more fine print.');
+        }
+        const t = foe.f;
+        // speed 1: one deliberate step toward the list-head
+        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) > (pat.range || 3)) {
+          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          if (stp) { m.mx = stp.x; m.my = stp.y; }
+        }
+        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (d <= (pat.range || 3)) {
+          m.cgClause = (m.cgClause || 0) + 1;
+          if (m.cgClause === 1) {
+            this.encSetPhase(m, 'clause');
+            this.say('"SECTION 7, SUBSECTION C..." Small text crawls up your legs. You can feel the clauses tightening. You should move.');
+            this.audioEvent('paperRustle', {});
+          } else if (!m.telegraph) {
+            this.encSetPhase(m, 'bound');
+            m.cgDeclared = true;
+            const known = this.encTelegraphKnown(m);
+            this.encDeclareDirect(m, t, known
+              ? '"BY REMAINING IN PROXIMITY, YOU HAVE ACCEPTED." The agreement binds — no dodging it now. (You could have walked away. It moves one tile a turn.)'
+              : '"BY REMAINING IN PROXIMITY," it rustles, "YOU HAVE ACCEPTED." The fine print tightens around you.');
+            this.audioEvent('paperRustle', { binding: true });
+          }
+        } else {
+          if ((m.cgClause || 0) > 0) this.say('The text loosens as you leave its reach. Proximity was the whole contract.');
+          m.cgClause = 0;
+          if (m.beamPhase !== 'unfold') this.encSetPhase(m, 'unfold');
+          this.say('It unfolds — paper and ink and fine print, spreading across the ground toward you. So slowly. One tile a turn.');
+          this.audioEvent('paperRustle', {});
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
       if (pat.type === 'ambush') {
         // speedbump: doesn't move. If ANYONE's adjacent, SNAP — no warning.
         // (The FIFO head might be farther off; the snap doesn't care about the queue.)
