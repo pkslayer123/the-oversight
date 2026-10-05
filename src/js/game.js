@@ -12889,6 +12889,26 @@
       // it bites. Every segment touched = damage. (Snake moving onto you is
       // handled in tbSnakeMove.)
       this.tbSnakeContactDamage();
+      // FLEE BY DOOR (Steve 2026-10-05): at walled Haven, the grid edges are
+      // blocked — but doors work. Step on a door tile in combat and you go
+      // through, escaping the fight. (Walls don't work, doors do.)
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const curCell = detail[p.my] && detail[p.my][p.mx];
+      if (curCell === 'door') {
+        const s = this.state.scholar;
+        if (s.insideHaven) {
+          this.say('You dive through the doors — outside! The fight is behind you.');
+          this.exitBuilding();
+        } else {
+          this.say('You duck through the doors — inside! The fight is behind you.');
+          this.enterBuilding();
+        }
+        // Escaping through a door ends combat
+        const p2 = this.tbFighter('p');
+        if (p2) p2.fled = true;
+        this.tbEnd('fled');
+        return true;
+      }
       // FLEE BY NODE BARRIER (Steve 2026-10-05): no FLEE button, no distance
       // check — you escape by LEAVING THE NODE. Walk to the grid edge and push
       // through to the adjacent node. 50% to lose them; otherwise they follow.
