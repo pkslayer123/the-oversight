@@ -4,8 +4,11 @@
 // provides:
 //   - startConvo()
 //   - convoChoice()
+//   - convoUI() -> {active, transcript, choices}
 // rules:
-//   - (none documented)
+//   - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
+//   - tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length (code: app.js chatChoice, Steve 2026-10-05)
+//   - history_view: speaker tab toggles full scrollable transcript (code: app.js dialogueBoxHTML, Steve 2026-10-05)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -1449,7 +1452,7 @@
 
       if (youSaid) c.transcript.push({ who: 'you', text: youSaid });
       c.transcript.push({ who: 'them', text: line });
-      while (c.transcript.length > 8) c.transcript.shift();
+      while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       c.exchanges++;
       this.say(`${this.displayName(vid)}: "${line}"`);
 
@@ -1457,14 +1460,14 @@
       // second beat in the same turn — question and answers stay together.
       if (extraQ) {
         c.transcript.push({ who: 'them', text: extraQ.q });
-        while (c.transcript.length > 8) c.transcript.shift();
+        while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
         this.say(`${this.displayName(vid)}: "${extraQ.q}"`);
       }
       // extraLine: the follow-up beat after an answer — same-turn, so the
       // thought lands whole instead of dying at the react line.
       if (extraLine) {
         c.transcript.push({ who: 'them', text: extraLine });
-        while (c.transcript.length > 8) c.transcript.shift();
+        while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
         this.say(`${this.displayName(vid)}: "${extraLine}"`);
       }
 
@@ -1504,12 +1507,12 @@
           if (!c.reactiveQ.followedUp) {
             c.reactiveQ.followedUp = true;
             c.transcript.push({ who: 'them', text: rqf.followUp });
-            while (c.transcript.length > 8) c.transcript.shift();
+            while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
             this.say(`${this.displayName(vid)}: "${rqf.followUp}"`);
           } else {
             if (rqf.lapse) {
               c.transcript.push({ who: 'them', text: rqf.lapse });
-              while (c.transcript.length > 8) c.transcript.shift();
+              while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
               this.say(`${this.displayName(vid)}: "${rqf.lapse}"`);
             }
             c.reactiveQ = null;
@@ -1522,11 +1525,11 @@
             gqf.followedUp = true;
             const fup = GQ_FOLLOWUP + ' ' + gqf.q;
             c.transcript.push({ who: 'them', text: fup });
-            while (c.transcript.length > 8) c.transcript.shift();
+            while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
             this.say(`${this.displayName(vid)}: "${fup}"`);
           } else {
             c.transcript.push({ who: 'them', text: GQ_LAPSE });
-            while (c.transcript.length > 8) c.transcript.shift();
+            while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
             this.say(`${this.displayName(vid)}: ${GQ_LAPSE}`);
             c.genericQ = null;
           }
@@ -1560,7 +1563,7 @@
             // conversation like it never happened (conversation memory).
             if (c.askedQs.indexOf(qd.id) === -1) c.askedQs.push(qd.id);
             c.transcript.push({ who: 'them', text: qd.q });
-            while (c.transcript.length > 8) c.transcript.shift();
+            while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
             this.say(`${this.displayName(vid)}: "${qd.q}"`);
             // The answer and their question are SEPARATE transcript entries —
             // never mashed into one line. Reading back should feel like dialogue.
@@ -1582,7 +1585,7 @@
             || ['"Anyway — I should get back to it."'];
           const wd = this.convoPickCycle(vid, 'winddown', wdPool);
           c.transcript.push({ who: 'them', text: wd });
-          while (c.transcript.length > 8) c.transcript.shift();
+          while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
           this.say(`${this.displayName(vid)}: ${wd}`);
           const wdChoices = [{ id: 'leave', label: '"I should go."' }];
           if (this.convoThreadHasMore(vid)) {
@@ -1621,7 +1624,7 @@
         line = this.convoPickCycle(vid, 'exit', pool);
       }
       c.transcript.push({ who: 'them', text: line });
-      while (c.transcript.length > 8) c.transcript.shift();
+      while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       // WORDS ONLY GO SO FAR: talk caps at 40. Beyond that, do something real.
       const t = this.state.village.trust || (this.state.village.trust = {});
       const cur = t[vid] || 10;
@@ -2002,7 +2005,7 @@
       const line = this.nvRespond(vid, kind);
       c.transcript.push({ who: 'you', text: '(gesture)' });
       c.transcript.push({ who: 'them', text: line, foreign: c.nativeLang || this.npcNativeLang(vid) });
-      while (c.transcript.length > 8) c.transcript.shift();
+      while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       c.exchanges++;
       this.say(`${this.displayName(vid)}: ${line}`);
       // No they-ask-you in nonverbal. Ever. (The leak Steve reported.)
@@ -2017,7 +2020,7 @@
             'A final shared look — you both feel the talk running its course.',
           ]);
           c.transcript.push({ who: 'them', text: wd, foreign: c.nativeLang || this.npcNativeLang(vid) });
-          while (c.transcript.length > 8) c.transcript.shift();
+          while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
           this.say(`${this.displayName(vid)}: ${wd}`);
           return { line: wd, choices: [
             { id: 'leave', label: '(walk away)' },

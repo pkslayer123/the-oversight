@@ -2322,12 +2322,26 @@
     if (!chatView || chatView.vid !== vid) return;
     if (cid === 'leave') { closeChat(true); return; }
     const ui = Game.convoUI ? Game.convoUI(vid) : null;
-    const before = ui && ui.transcript ? ui.transcript.length : 0;
+    // DESYNC FIX (Steve 2026-10-05): convoTurn appends AND the transcript can
+    // shift old entries off, so "length before" is not a stable index. Anchor
+    // on the last entry's object identity instead — the first entry after it
+    // is the first new beat, no matter what shifted.
+    const t0 = (ui && ui.transcript) || [];
+    const lastBefore = t0.length ? t0[t0.length - 1] : null;
     const st = Game.convoTurn(vid, cid);
     if (!st || st.ended) { chatView = null; refresh(); return; }
-    // Pokémon-style: jump to the first new message — the reply shows at once.
-    chatView.msgIndex = before;
-    armChatThinking(vid, before, cid, false);
+    // Pokémon-style: jump to the first new message — the reply paces beat by
+    // beat under ▼, never dumps/skips.
+    const t1 = (Game.convoUI ? Game.convoUI(vid) : null) || {};
+    const t = t1.transcript || [];
+    let idx = 0;
+    if (lastBefore) {
+      const li = t.lastIndexOf(lastBefore);
+      idx = li >= 0 ? Math.min(li + 1, Math.max(0, t.length - 1)) : 0;
+    }
+    chatView.msgIndex = idx;
+    chatView.history = false;
+    armChatThinking(vid, idx, cid, false);
     refresh();
   }
 
@@ -2372,11 +2386,29 @@
       const cleanLabel = Game.cleanDialogue ? Game.cleanDialogue(cn.label) : cn.label;
       return `<button class="btn sm dlg-choice${cn.id === 'leave' ? ' ghost' : ''}" data-cid="${esc(cn.id)}"${thinking ? ' disabled' : ''}>${esc(cleanLabel)}</button>`;
     }).join('');
+    // HISTORY (Steve 2026-10-05): tap the speaker tab to see the whole
+    // conversation. One message at a time is the default (one screen, no
+    // scroll); history is one tap away and scrolls inside the box.
+    let histBody = '';
+    if (cv.history && transcript.length) {
+      const renderEntry = (e) => {
+        const clean = Game.cleanDialogue ? Game.cleanDialogue(e.text) : String(e.text || '');
+        const isSpeech = /^\s*"/.test(clean);
+        const who = e.who === 'you' ? 'You' : titleName;
+        const ftag = e.foreign
+          ? ` <span class="flang">${esc(Game.langDef(e.foreign).icon)} ${esc(Game.langDef(e.foreign).name)}</span>` : '';
+        return isSpeech
+          ? `<div class="dlg-line"><span class="dlg-who">${esc(who)}:</span> <span class="sp">${esc(clean)}</span>${ftag}</div>`
+          : `<div class="dlg-line narr"><span class="narr">${esc(clean)}</span></div>`;
+      };
+      histBody = `<div class="dlg-history">${transcript.map(renderEntry).join('')}</div>`;
+    }
+    const showBody = cv.history && histBody ? histBody : body;
     return `<div class="dialogue-box">
-      <div class="dlg-speaker">💬 ${esc(titleName)}<button class="dlg-x" id="dlg-end" aria-label="end conversation">✕</button></div>
-      ${body}
-      ${choiceBtns ? `<div class="dlg-choices">${choiceBtns}</div>` : ''}
-      ${more ? `<button class="dlg-next" id="dlg-next" aria-label="continue">▼</button>` : ''}
+      <div class="dlg-speaker"><button class="dlg-hist" id="dlg-hist" aria-label="conversation history" title="See full conversation">💬 ${esc(titleName)} ${cv.history ? '▾' : '▸'}</button><button class="dlg-x" id="dlg-end" aria-label="end conversation">✕</button></div>
+      ${showBody}
+      ${!cv.history && choiceBtns ? `<div class="dlg-choices">${choiceBtns}</div>` : ''}
+      ${!cv.history && more ? `<button class="dlg-next" id="dlg-next" aria-label="continue">▼</button>` : ''}
     </div>`;
   }
 
@@ -2400,12 +2432,19 @@
   function wireDialogueBox() {
     const nx = document.getElementById('dlg-next');
     if (nx) nx.onclick = () => chatAdvance();
+    const hist = document.getElementById('dlg-hist');
+    if (hist) hist.onclick = (e) => {
+      e.stopPropagation();
+      if (!chatView) return;
+      chatView.history = !chatView.history;
+      refresh();
+    };
     const box = document.querySelector('.dialogue-box');
     if (box && !nx) {
       // Tapping the box itself also advances (Pokémon muscle memory) — but
-      // never when choices are showing or the ✕ was tapped.
+      // never when choices are showing, the ✕ was tapped, or history toggle.
       box.onclick = (e) => {
-        if (e.target.closest('[data-cid]') || e.target.closest('#dlg-end')) return;
+        if (e.target.closest('[data-cid]') || e.target.closest('#dlg-end') || e.target.closest('#dlg-hist')) return;
         chatAdvance();
       };
     }

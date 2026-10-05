@@ -779,6 +779,11 @@ body.in-combat .ord-log { order: 5.3; }
   background: rgba(255, 255, 255, .06); border-radius: 8px 8px 0 0;
 }
 .dlg-x { background: none; border: none; color: inherit; opacity: .6; font-size: 14px; padding: 2px 6px; cursor: pointer; }
+.dlg-hist { background: none; border: none; color: inherit; font: inherit; font-weight: bold; font-size: 13px; padding: 2px 4px; cursor: pointer; text-align: left; }
+/* HISTORY (Steve 2026-10-05): the full conversation, scrollable inside the box.
+   The box stays one screen; only the history pane scrolls, and only when open. */
+.dlg-history { max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.dlg-history .dlg-line { min-height: 0; margin-bottom: 8px; }
 .dlg-line { min-height: 40px; }
 .dlg-line.narr { opacity: .85; font-style: italic; }
 .dlg-who { font-weight: bold; }
