@@ -619,11 +619,20 @@
     const packDot = st.packKg >= st.packCap ? '<span class="dot"></span>' : '';
     // THE BANK: no separate Feast button — Eat fills the bar to its cap.
     // Banking is what eating IS when your cap exceeds "fed".
+    // EXILE: the self bar is the camp surface — petition via the 🏘️ tile,
+    // but founding and drifting live here, always in reach.
+    let exileBtns = '';
+    try {
+      const acts = Game.exileSelfActions ? Game.exileSelfActions() : [];
+      exileBtns = acts.map(a => a.disabled
+        ? `<span class="self-btn" style="opacity:.55" title="${esc(a.hint || '')}">${esc(a.label)}</span>`
+        : `<button class="self-btn" data-self="exile:${a.id}" title="${esc(a.hint || '')}">${esc(a.label)}</button>`).join('');
+    } catch (e) {}
     return `<div class="selfbar"><span class="ctx-label">you:</span>` +
       `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` +
       `<button class="self-btn" data-self="sleep">😴 Sleep${sleepDot}</button>` +
       `<button class="self-btn" data-self="pack">🎒 Pack (${st.invCount})${packDot}</button>` +
-      `<button class="self-btn" data-self="wait">⏳ Wait</button></div>`;
+      `<button class="self-btn" data-self="wait">⏳ Wait</button>${exileBtns}</div>`;
   }
 
   function wireSelfBar() {
@@ -634,6 +643,7 @@
         else if (a === 'sleep') { Game.sleep(); rerender(); }
         else if (a === 'pack') { invSheet(); }
         else if (a === 'wait') { Game.doAction('wait'); rerender(); }
+        else if (a.indexOf('exile:') === 0) { Game.exileSelfDo(a.slice(6)); rerender(); }
       };
     });
   }
@@ -2828,6 +2838,25 @@
         const tl = Game.tileAt(x, y);
         if (!info) return;
         if (x === st.px && y === st.py) { info.innerHTML = ''; return; }
+        // another village on this tile? it's a door, not scenery.
+        const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
+        if (otherV && Game.villageCard) {
+          const card = Game.villageCard(otherV.id);
+          if (card) {
+            const btns = (card.actions || []).map((a, i) =>
+              `<button class="btn sm" data-vact="${i}">${esc(a.label)}</button>`).join('');
+            const hints = (card.actions || []).map(a => `<p class="small" style="opacity:.7">${esc(a.hint || '')}</p>`).join('');
+            info.innerHTML = `<div class="card"><p>🏘️ <b>${esc(card.name)}</b><br><span class="small">${esc(card.sub)}</span></p>${hints}<div class="actions">${btns}</div>${card.hint ? `<p class="small" style="opacity:.7">${esc(card.hint)}</p>` : ''}</div>`;
+            info.querySelectorAll('[data-vact]').forEach(b => {
+              b.onclick = () => {
+                const a = card.actions[+b.dataset.vact];
+                Game.villageCardAction(otherV.id, a.id, { giftKcal: a.giftKcal || 0 });
+                refresh();
+              };
+            });
+            return;
+          }
+        }
         if (!tl.revealed) {
           info.innerHTML = `<div class="card"><p>🌫 <b>Unexplored.</b><br><span class="small">No one has been there. Walk to the edge and head out to see what's really there.</span></p></div>`;
         } else {
