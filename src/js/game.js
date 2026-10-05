@@ -11385,6 +11385,13 @@
           : ' Light plays across the dirt in a straight line. Probably decorative. Probably.';
         return cue + learned;
       }
+      if (mid === 'camera_swarm') {
+        let cue = '📸 "SMILE! You\'re going VIRAL!" The shutters quicken — the flashes are building.';
+        cue += known
+          ? ' Flash Mob: burst radius 2 around the swarm, and it keeps closing in while it builds. Keep moving — or get it near fire.'
+          : ' It wants a reaction. Do not give it one standing still.';
+        return cue + learned;
+      }
       return null;
     },
 
@@ -11671,6 +11678,15 @@
       const t = this.tbFighter(targetKey);
       if (!t || !t.alive) return;
       let final = Math.max(0, Math.round(dmg));
+      // INFLUENCER (camera_swarm): fragile. Every hit knocks cameras out of
+      // the sky — it takes +25% from everything, and the game says so once.
+      if (t.kind === 'monster' && this.swarmIs(t)) {
+        final = Math.round(final * 1.25);
+        if (!t.fragileNoted && final > 0) {
+          t.fragileNoted = true;
+          this.say('Cameras shatter across the dirt — the swarm is FRAGILE. Every hit knocks lenses out of the sky.');
+        }
+      }
       if (t.kind === 'player' && typeof this.armorBonus === 'function') {
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
@@ -12011,6 +12027,30 @@
       m.dodgeEff = eff;
       return eff;
     },
+    // the swarm creeps toward its muse (the player) even mid-windup — one
+    // tile, never onto anyone, never into fire. It cannot stop filming.
+    swarmCreep(m) {
+      const f = this.tbfight;
+      if (!f) return;
+      const p = this.tbFighter('p');
+      if (!p || !p.alive) return;
+      if (Math.max(Math.abs(p.mx - m.mx), Math.abs(p.my - m.my)) <= 1) return;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const s = S.combat.stepToward(m.mx, m.my, p.mx, p.my, (x, y) => {
+        if (x < 0 || x > 8 || y < 0 || y > 8) return true;
+        const cell = detail[y] && detail[y][x];
+        if (cell && this.cellProps(cell).blocks) return true;
+        if (this.tbNearestFire(x, y, 1)) return true;
+        return false;
+      });
+      if (s) {
+        m.mx = s.x; m.my = s.y;
+        if (m.telegraph && !m.telegraph.creepNarrated) {
+          m.telegraph.creepNarrated = true;
+          this.say('It never stops filming — the swarm closes in even as the flashes build.');
+        }
+      }
+    },
 
     // BATCH 4 breather beats: post-attack recovery, one full turn each.
     // Returns true when the monster spent its turn breathing.
@@ -12035,6 +12075,29 @@
         }
       }
       return false;
+    },
+    // INFLUENCER's chase: up to full speed at the player, stopping at arm's
+    // length — never onto anyone, never into fire. It fears fire (instinct).
+    swarmChase(m) {
+      const f = this.tbfight;
+      if (!f) return;
+      const p = this.tbFighter('p');
+      if (!p || !p.alive) return;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const danger = this.tbDangerCells(m.key);
+      for (let i = 0; i < (m.speed || 6); i++) {
+        const d = Math.max(Math.abs(p.mx - m.mx), Math.abs(p.my - m.my));
+        if (d <= 1) break;
+        const s = S.combat.stepToward(m.mx, m.my, p.mx, p.my, (x, y) => {
+          if (x < 0 || x > 8 || y < 0 || y > 8) return true;
+          const cell = detail[y] && detail[y][x];
+          if (cell && this.cellProps(cell).blocks) return true;
+          if (this.tbNearestFire(x, y, 1)) return true;
+          return false;
+        }, danger);
+        if (!s) break;
+        m.mx = s.x; m.my = s.y;
+      }
     },
 
 
@@ -12074,6 +12137,27 @@
           this.encSetPhase(m, 'recalc');
           this.say('📊 "TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." The drone backs off, overwhelmed by the crowd.');
           this.audioEvent('droneRecalc');
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
+          return;
+        }
+      }
+      // FIRE SCATTERS THE SWARM: it follows you — lead it into hazards. A
+      // burning cell within 2 and it loses the shot entirely.
+      if (this.swarmIs(m)) {
+        const fire = this.tbNearestFire(m.mx, m.my, 2);
+        if (fire) {
+          m.telegraph = null;
+          this.encSetPhase(m, 'scatter');
+          this.say('The shutters stutter. Smoke — no, FIRE — in the lenses. "LOSING THE SHOT! LOSING THE—" It breaks off.');
+          this.audioEvent('swarmScatter');
+          const detail = this.genDetail(this.map.px, this.map.py);
+          for (let i = 0; i < 2; i++) {
+            const s = S.combat.stepToward(m.mx, m.my, m.mx * 2 - fire.x, m.my * 2 - fire.y,
+              (x, y) => x < 0 || x > 8 || y < 0 || y > 8 || (detail[y] && detail[y][x] && this.cellProps(detail[y][x]).blocks));
+            if (!s) break;
+            m.mx = s.x; m.my = s.y;
+          }
           this.tbRefreshTelegraphUI();
           if (this.tbEndCheck()) return;
           return;
@@ -12121,6 +12205,15 @@
             const word = tg.turnsLeft === 2 ? 'TWO.' : tg.turnsLeft === 1 ? 'ONE.' : '…';
             this.say(`📊 "${word}" DODGE EFFICIENCY: ${this.droneEff(m)}%. The projected line brightens.`);
             this.audioEvent('droneCount', { n: tg.turnsLeft });
+          }
+          // the swarm never stops filming — it closes in even while the
+          // flashes build. Keep moving.
+          if (this.swarmIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'build');
+            this.swarmCreep(m);
+            if (tg.turnsLeft === 1) this.say('📸 "ENGAGEMENT CRITICAL!" The shutters are a strobe now. COVER YOUR EYES.');
+            else this.say('The shutters quicken. The flashes are building…');
+            this.audioEvent('swarmShutters', { urgency: tg.turnsLeft });
           }
           this.tbRefreshTelegraphUI();
           this.audioEvent('telegraph', { urgency: tg.turnsLeft, windupTick: true });
@@ -12215,6 +12308,19 @@
             this.audioEvent('droneCorrect');
             m.droneRecalc = 1; // it re-runs the numbers before grading again
           }
+          if (this.swarmIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'flash');
+            const anyHit = f.fighters.some(o => o.alive && o.key !== m.key && S.combat.isFoe(m, o) && hitKeys.has(o.mx + ',' + o.my));
+            if (!anyHit) {
+              m.escalation = (m.escalation || 0) + 1;
+              this.say('📸 "ENGAGEMENT DROPPING! ESCALATING!" The swarm got no reaction — the next flash will hit harder.');
+              this.audioEvent('swarmEscalate');
+            } else if (m.escalation) {
+              m.escalation = 0;
+              this.say('📸 "WE HAVE ENGAGEMENT!" The swarm got its reaction. For now.');
+            }
+            this.audioEvent('swarmFlash');
+          }
         }
         if (m.blind > 0) m.blind -= 1;
         this.tbLearnPattern(m);
@@ -12306,13 +12412,31 @@
       }
       // standard: advance into range, then DECLARE (behavioral cue only).
       // The attack lands at the start of this monster's next turn. That's the dodge window.
-      for (let i = 0; i < m.speed; i++) {
-        const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
-        const want = pat.type === 'direct' ? (pat.range || 3) : 4;
-        if (d <= want) break;
-        const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
-        if (!s) break;
-        m.mx = s.x; m.my = s.y;
+      // INFLUENCER: it doesn't advance on the queue — it chases its muse (the
+      // player), relentlessly, and only declares the flash when close.
+      if (this.swarmIs(m)) {
+        const pl = this.tbFighter('p');
+        if (pl && pl.alive) {
+          const pd = Math.max(Math.abs(pl.mx - m.mx), Math.abs(pl.my - m.my));
+          if (pd > 3) {
+            this.swarmChase(m);
+            if (useFifo) this.encSetPhase(m, 'film');
+            this.say('Click. Clickclickclick. It\'s still filming you. All of it is filming you.');
+            this.tbRefreshTelegraphUI();
+            if (this.tbEndCheck()) return;
+            return;
+          }
+          this.swarmChase(m);
+        }
+      } else {
+        for (let i = 0; i < m.speed; i++) {
+          const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
+          const want = pat.type === 'direct' ? (pat.range || 3) : 4;
+          if (d <= want) break;
+          const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+          if (!s) break;
+          m.mx = s.x; m.my = s.y;
+        }
       }
       if (pat.type === 'direct') {
         const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
@@ -12372,6 +12496,14 @@
         if (this.droneIs(m)) {
           if (useFifo) this.encSetPhase(m, 'project');
           this.audioEvent('droneHum');
+        }
+        if (this.swarmIs(m)) {
+          if (useFifo) this.encSetPhase(m, 'build');
+          if (m.escalation > 0) {
+            const k = 1 + 0.15 * Math.min(m.escalation, 4);
+            m.telegraph.dmg = [Math.round(atk.damage[0] * k), Math.round(atk.damage[1] * k)];
+          }
+          this.audioEvent('swarmShutters');
         }
         this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
         if (isDeer) {

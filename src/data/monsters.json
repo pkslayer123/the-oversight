@@ -900,7 +900,8 @@
    "telegraph": "Dozens of tiny cameras on spindly legs pour over the ridge, all pointed at you. A chorus of shutters. Someone \u2014 something \u2014 whispers: 'SMILE! You're going VIRAL!' The flashes start building.",
    "pattern": {
     "type": "burst",
-    "radius": 2
+    "radius": 2,
+    "windup": 2
    }
   },
   "behavior": "swarm",
@@ -942,7 +943,31 @@
    "observed": "Camera swarm. The System's audience wanted MORE footage, so it built a thing that never stops filming. It follows. It's fast. When engagement drops it escalates to flash bursts \u2014 radius 2, blinding, burning. It doesn't hate you. You're just content.",
    "slain": "Influencer. Moves: Flash Mob (burst radius 2, telegraphed by quickening shutters). Speed 6 \u2014 it WILL catch you. Fire scatters it. It's fragile: area damage shreds the swarm. Loot the memory cards \u2014 it's been filming you for days. Watch what it saw. Learn what it learned."
   },
-  "systemDesignation": "Content acquisition swarm"
+  "systemDesignation": "Content acquisition swarm",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "film",
+    "build",
+    "flash",
+    "scatter"
+   ],
+   "phaseBadges": {
+    "film": " \ud83c\udfa5 FILMING",
+    "build": " \ud83d\udcf8 FLASH BUILDING",
+    "flash": " \u2728 FLASH MOB",
+    "scatter": " \ud83d\udca8 SCATTERED"
+   },
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "fireScatter": true,
+   "noticeText": "A dozen lenses swing to {who}. \"NEW ANGLE! NEW CONTENT!\" You're all being filmed now.",
+   "painText": "Cameras smash \u2014 the rest whirl toward {who}. \"OH, THAT'S GOING VIRAL.\" Pain is content.",
+   "proximityText": "Too close \u2014 the swarm pours toward {who}. Proximity is engagement.",
+   "comment": "Encounter framework client: FIFO content queue, chases the PLAYER (its muse), creeps while the flash builds, fragile (+25% damage), fire scatters it, dodged flashes escalate. Lead it into hazards."
+  }
  },
  {
   "id": "hype_horn",
