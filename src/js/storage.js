@@ -404,13 +404,30 @@
         return null;
       }
       if (c.found) { this.say('You dig where you buried it. Disturbed earth. Nothing. Someone got here first.'); caches.splice(i, 1); return this.tickAction(16) || this.status(); }
-      // weight check
+      // SPOILAGE UNDERGROUND: the earth doesn't stop time. Perishables rot in
+      // a buried cache just like in your pack — you find out when you dig, at
+      // the hole, not the morning after. Materials never rot. The lesson is
+      // the loop: bury dried and smoked goods; eat the fresh stuff fast.
+      const today = day();
+      const good = [], bad = [];
+      for (const it of c.items) {
+        const spoiled = !it.material && it.spoilDay !== undefined && it.spoilDay !== null && it.spoilDay <= today;
+        (spoiled ? bad : good).push(it);
+      }
+      const badNames = bad.map(it => `${it.units || 1}× ${it.name}`).join(', ');
+      if (!good.length) {
+        this.say(`You dig up your cache. ${badNames} — all gone bad underground. You leave ${bad.length === 1 ? 'it' : 'them'} for the worms.`);
+        caches.splice(i, 1);
+        return this.tickAction(16) || this.status();
+      }
+      if (bad.length) this.say(`You dig where you buried it. ${badNames} went bad underground — left for the worms.`);
+      // weight check (only what you're actually carrying home)
       const inv = this.state.scholar.inventory || [];
       const carry = inv.reduce((t2, it) => t2 + (it.kg || 0) * (it.units || 1), 0) + (this.waterWeight ? this.waterWeight() : 0);
       const max = this.carryCapacity ? this.carryCapacity() : 20;
-      const need = c.items.reduce((t2, it) => t2 + (it.kg || 0) * (it.units || 1), 0);
+      const need = good.reduce((t2, it) => t2 + (it.kg || 0) * (it.units || 1), 0);
       if (carry + need > max) { this.say("Too heavy to carry it all. Lighten your pack, come back."); return null; }
-      for (const it of c.items) {
+      for (const it of good) {
         if (it.material) this.addMaterial(it.material, it.units);
         else {
           const ex = inv.find(e => e.name === it.name && !e.material);
@@ -419,7 +436,11 @@
         }
       }
       caches.splice(i, 1);
-      this.say(`Dug up: ${c.label}. Still yours.`);
+      const dugLabel = good.map(it => {
+        const kcal = (it.kcalEach || 0) * (it.units || 1);
+        return kcal > 0 ? `${it.units || 1}× ${it.name} (${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'})` : `${it.units || 1}× ${it.name}`;
+      }).join(', ');
+      this.say(`Dug up: ${dugLabel}. Still yours.`);
       return this.tickAction(16) || this.status();
     },
     // pickCacheRobber: the culprit is a real villager, weighted by appetite.
@@ -628,7 +649,7 @@
     try {
       const cx2 = this.state.codex;
       cx2.places = cx2.places || [];
-      cx2.places.push({ day: day(), text: `Cache robbed: ${c.label} — ${c.desc}` });
+      cx2.places.push({ day: day(), text: `Cache robbed: ${c.desc}` });
     } catch (e) {}
   };
 
