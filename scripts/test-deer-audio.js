@@ -98,7 +98,9 @@ ok('heartbeat creates oscillators', created.osc >= 2);
 const oBefore = created.osc;
 A.telegraph({ urgency: 1, beam: true, highbeam: true });
 ok('beam telegraph starts charge whine (4 shepard + sub + shimmer)', created.osc - oBefore >= 6);
-ok('beam telegraph triggers deer call (extra oscs)', created.noise >= 1);
+const nBefore = created.noise;
+A.deerAggro(); // explicit bellow on declare (game.js), not a telegraph side-effect
+ok('deerAggro triggers deer call (bellow noise)', created.noise > nBefore);
 
 const o2 = created.osc;
 A.beamCharge(2); // direct: charge already rising from the telegraph above

@@ -78,7 +78,8 @@
     const names = mons.map(m => {
       const mid = m.mdef ? m.mdef.id : m.monsterId;
       const label = Game.monsterDisplayName ? Game.monsterDisplayName(mid) : m.name;
-      return `${m.emoji || '👹'} ${esc(label)}${m.telegraph ? ' ⚠' : ''}`;
+      const phase = Game.deerPhaseBadge ? Game.deerPhaseBadge(m) : '';
+      return `${m.emoji || '👹'} ${esc(label)}${m.telegraph ? ' ⚠' : ''}${phase}`;
     }).join(' · ') || '⚔ COMBAT';
     const tg = mons.find(m => m.telegraph);
     return `<div class="ord-combatstrip"><div class="combatstrip">` +
@@ -1180,6 +1181,8 @@
   // HOOK CONTRACT for the sweep sibling (game.js calls Game.audioEvent(name, data),
   // which dispatches to Game.audio[name](data)):
   //   deerNotice()            — deer becomes aware (distant, wrong call)
+  //   deerAggro()             — deer BELLOWS on aim declare / charge (loud, wrong)
+  //   deerSnort()             — deer snorts while pawing through its recharge
   //   telegraph({beam, highbeam, urgency, windupTick}) — charge declare / windup tick
   //   impact({beam, highbeam}) — beam resolves (fire) or normal hit
   //   beamSweep(pan, heat)    — per sweep turn: pan -1..1 follows beam, heat 0..1 as it closes in
@@ -1351,6 +1354,34 @@
         nz.start(t); nz.stop(t + dur + 0.2);
       }
       [car, car2, mod, wob, vib, ov].forEach(o => { o.start(t); o.stop(t + dur + 0.9); });
+    }
+    // deerSnort: short sharp exhalation through the nose — the deer is
+    // annoyed, pawing the ground, recharging. Audible animal, not beam.
+    function deerSnort() {
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const dur = 0.28;
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass';
+        nf.frequency.setValueAtTime(900, t);
+        nf.frequency.exponentialRampToValueAtTime(300, t + dur);
+        nf.Q.value = 1.5;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.5, t + 0.03);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + dur + 0.05);
+      }
+      const o = ctx.createOscillator(), og = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(140, t);
+      o.frequency.exponentialRampToValueAtTime(70, t + dur);
+      og.gain.setValueAtTime(0.0001, t);
+      og.gain.exponentialRampToValueAtTime(0.25, t + 0.04);
+      og.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(og); og.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05);
     }
     function stopCharge() {
       if (!charge) return;
@@ -1539,7 +1570,7 @@
         heartbeat((d && d.urgency >= 2) ? 80 : 145);
         if (d && d.windupTick) return; // charge already rising from declare
         if (d && d.beam) beamCharge(Math.max(0.9, (d.urgency || 1) * 1.5));
-        if (d && d.highbeam) deerCall(0.85);
+        // highbeam bellow is explicit via deerAggro on declare (game.js), not here
       },
       impact(d) {
         if (d && d.beam) beamFire();
@@ -1549,6 +1580,8 @@
       deerNotice() { deerCall(0.22); },
       deerDown() { deerCall(0.95, true); },
       deerCall(i, dying) { deerCall(i, dying); },
+      deerAggro() { deerCall(0.85); }, // the bellow: wrong, too deep
+      deerSnort() { deerSnort(); }, // pawing, recharging — the animal, not the beam
       beamCharge(s) { beamCharge(s); },
       beamFire() { beamFire(); },
       beamSweep(pan, heat) {
@@ -3482,7 +3515,15 @@
             }
           }
         }
-        html += `<div class="${cls}${targetingCells().has(cx + ',' + cy) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${Game.tbBeamLaneCells && Game.tbBeamLaneCells().has(cx + ',' + cy) ? ' beamLane' : ''}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        const _lane = Game.tbBeamLaneCells ? Game.tbBeamLaneCells() : null;
+        const _ghost = Game.tbBeamPrevLaneCells ? Game.tbBeamPrevLaneCells() : null;
+        const _live = Game.tbBeamIsFiring ? Game.tbBeamIsFiring() : false;
+        const _k = cx + ',' + cy;
+        // beamLane: current beam path. beamLive: the beam is FIRING (faster,
+        // hotter pulse). beamGhost: where the beam just was — the sweep arc,
+        // so rotation reads as motion instead of teleporting.
+        const _beamCls = (_lane && _lane.has(_k)) ? (' beamLane' + (_live ? ' beamLive' : '')) : ((_ghost && _ghost.has(_k)) ? ' beamGhost' : '');
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }
@@ -3666,9 +3707,17 @@
       `<option value="${a.id}">${a.name || a.id}</option>`).join('');
     const scenBtns = (typeof Game.debugScenarioList === 'function' ? Game.debugScenarioList() : [])
       .map(([id, label]) => `<button class="dbg-scen" data-scen="${id}" style="display:block;width:100%;text-align:left;margin:3px 0;padding:8px;font-size:14px">${label}</button>`).join('');
+    // RETIRED: never deleted, saved for later — collapsed behind a toggle.
+    const retiredList = (typeof Game.debugRetiredList === 'function' ? Game.debugRetiredList() : []);
+    const retBtns = retiredList
+      .map(([id, label]) => `<button class="dbg-scen" data-scen="${id}" style="display:block;width:100%;text-align:left;margin:3px 0;padding:8px;font-size:14px;opacity:.65">${label}</button>`).join('');
+    const retSection = retBtns
+      ? `<p style="margin:8px 0 4px"><button id="dbg-retired-toggle" style="font-size:12px;opacity:.7">🗄️ Retired (${retiredList.length}) ▸</button></p><div id="dbg-retired" style="display:none">${retBtns}</div>`
+      : '';
     el.innerHTML = `<b>🐞 DEBUG</b> <button id="dbg-x" style="float:right">✕</button>
       <p style="margin:8px 0 4px"><b>SCENARIOS</b> <span style="opacity:.6;font-size:11px">one tap, fresh run</span></p>
       <div id="dbg-scenarios">${scenBtns}</div>
+      ${retSection}
       <p style="margin:10px 0 4px;border-top:1px solid #f90;padding-top:8px"><b>CHEATS</b></p>
       <p><select id="dbg-mon">${monsters}</select>
       <button id="dbg-spawn">Spawn</button>
@@ -3683,6 +3732,13 @@
     document.body.appendChild(el);
     const q = (id) => el.querySelector(id);
     q('#dbg-x').onclick = () => el.remove();
+    const _rt = q('#dbg-retired-toggle');
+    if (_rt) _rt.onclick = () => {
+      const d = q('#dbg-retired');
+      const open = d.style.display === 'none';
+      d.style.display = open ? 'block' : 'none';
+      _rt.textContent = _rt.textContent.replace(open ? '▸' : '▾', open ? '▾' : '▸');
+    };
     el.querySelectorAll('.dbg-scen').forEach(b => {
       b.onclick = () => {
         const ok = Game.debugScenario(b.dataset.scen);

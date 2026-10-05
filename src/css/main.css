@@ -118,6 +118,13 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 /* BEAM LANE: live telegraph — the beam's current path. Do not stand here. */
 .cell.beamLane { outline: 2px solid #ff3b30; outline-offset: -2px; background-color: rgba(255, 60, 40, .28); animation: beamPulse 0.8s infinite alternate; }
 @keyframes beamPulse { from { background-color: rgba(255, 60, 40, .18); } to { background-color: rgba(255, 60, 40, .38); } }
+/* BEAM LIVE: the beam is FIRING — hotter, faster pulse. The windup lane (when
+   shown at all) pulses slow; the live beam burns. */
+.cell.beamLane.beamLive { background-color: rgba(255, 140, 40, .5); outline-color: #ffb13b; animation: beamLivePulse 0.3s infinite alternate; }
+@keyframes beamLivePulse { from { background-color: rgba(255, 140, 40, .38); } to { background-color: rgba(255, 140, 40, .62); } }
+/* BEAM GHOST: where the beam just was — the fading arc of the sweep, so the
+   rotation reads as motion instead of the lane teleporting. */
+.cell.beamGhost { outline: 1px solid rgba(255, 60, 40, .35); outline-offset: -2px; background-color: rgba(255, 60, 40, .08); }
 /* BUILDING VISUAL LANGUAGE: walls are dark, doors glow, halls are plain floor. */
 /* A wall should never look like rubble. A door should never look like a hallway. */
 .cell.c-wall { background: #0d0d0f; }

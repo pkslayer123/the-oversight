@@ -4,9 +4,17 @@
  * Steve's ask: "You never gave me a debug button with any preloaded
  * scenarios. I haven't tested the deer or the day 7 system transition."
  *
+ * And: "You need to make me debug events for this stuff if you want me to
+ * test. Clear out old ones only when we think we have them down, and even
+ * then you save them for later on a hidden list."
+ *
  * Self-attaching module: no edits to game.js. Each scenario starts from a
  * FRESH game (genRoster + newGame, same as character creation would), then
  * mutates state into the scenario. One tap, correct state, no broken refs.
+ *
+ * RETIREMENT: scenarios are never deleted. When we're confident one is
+ * solid, it moves from SCENARIOS to RETIRED — still in the file, still
+ * runnable, shown in the debug panel behind a collapsed "retired" toggle.
  *
  * Used by app.js debugPanel. Loaded after justice.js in index.html.
  */
@@ -55,6 +63,22 @@
   function rosterIds() {
     const v = Game.state.village;
     return (v.roster || []).filter(rid => rid !== Game.villagerId);
+  }
+
+  // Place villagers at given grid spots (for combat-adjacent scenarios).
+  function placeVillagers(spots) {
+    const v = Game.state.village;
+    v.positions = v.positions || {};
+    const ids = rosterIds();
+    spots.forEach((spot, i) => {
+      const rid = ids[i];
+      if (rid) v.positions[rid] = { mx: spot[0], my: spot[1] };
+    });
+    return ids.slice(0, spots.length);
+  }
+
+  function npcName(rid) {
+    try { return Game.displayName(rid); } catch (e) { return rid; }
   }
 
   const SCENARIOS = {
@@ -177,27 +201,175 @@
     },
 
     // 9. Headlight Deer fight — the Highbeam Deer (gallowdeer, wave 1).
-    // It already exists: nocturnal, freezes like a deer in headlights,
-    // light gathering behind its eyes. It is not frozen. It is aiming.
+    // Per Steve's spec: night, deer unaware/grazing 4-5 tiles out, spear
+    // equipped, a couple of villagers nearby (FIFO targeting: the deer goes
+    // after ANYONE too close, first in first out). Walk toward it and watch
+    // the stance machine: graze → notice → FREEZE (it is aiming, not frozen).
+    // First encounter: NO beam-lane warning until the codex learns — you get
+    // the freeze, the whine, and dread. That's the test.
     headlight() {
       freshGame();
       const s = Game.state.scholar;
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;
       Game.dayPart = 3; // night — it's nocturnal
-      // STALK IT, DON'T SPAWN ON IT. The deer grazes five tiles east, unaware.
-      // Walk toward it and watch the stance machine work: graze → notice →
-      // FREEZE (it is aiming, not frozen) → close → combat starts on ITS terms.
-      // It does not run. The mechanics should make YOU want to.
       s.mx = 2; s.my = 4;
       s.monster = { id: 'gallowdeer', mx: 7, my: 4 };
+      // Two villagers near the deer: close enough to join combat (within 4
+      // of the player) and close enough for the deer to notice them. Watch
+      // the threat queue — it doesn't only come for you.
+      const placed = placeVillagers([[5, 3], [6, 5]]);
+      try {
+        const v = Game.state.village;
+        v.trust = v.trust || {};
+        for (const rid of placed) v.trust[rid] = 40; // they fight beside you
+      } catch (e) {}
       Game.say('🐞 SCENARIO: headlight deer. Grazing, five tiles east. It has not seen you.');
-      Game.say('Walk toward it. Watch how it spots you — and what the freeze means. MOVE.');
+      Game.say(`Walk toward it. ${placed.map(npcName).join(' and ')} are out there too — the deer notices anyone too close, first in first out.`);
+      Game.say('FIRST ENCOUNTER: no beam-lane warning until your codex learns. You get the freeze, the whine, and dread. MOVE.');
+    },
+
+    // 10. Moot — YOU stand accused. Theft + assault on the books, the case
+    // is open, the defense window is ticking. Speak, call witnesses, press
+    // the accuser, investigate bribes, or flee before the count.
+    mootAccused() {
+      freshGame();
+      const roster = rosterIds();
+      try {
+        Game.recordCrime('theft', { victim: roster[0] });
+        Game.recordCrime('attack', { victim: roster[1] });
+      } catch (e) {}
+      let c = null;
+      try { c = Game.forcePlayerAccusation(); } catch (e) {
+        Game.say('🐞 accusation failed to open: ' + e.message);
+      }
+      Game.say('🐞 SCENARIO: you stand accused. Theft and assault on the books — the moot is coming.');
+      if (c) Game.say('The case is open. Your defense window is ticking: speak, call witnesses, press your accuser, or run.');
+      else Game.say('No case opened — check the log. The village may have nothing left unjudged to charge.');
+    },
+
+    // 11. Moot — you're a JUROR. Three villagers vs. one: an ambush plot
+    // resolved into a case. Watch the cover story land first, then work the
+    // evidence: press them separately, find the seam, flip the weakest.
+    mootJuror() {
+      freshGame();
+      const roster = rosterIds();
+      const leader = roster[0], acc = [roster[1], roster[2]], target = roster[3];
+      // seed the fiction: the target wronged the leader, once, publicly
+      try {
+        const v = Game.state.village;
+        v.trust = v.trust || {};
+        v.trust[leader] = 30; v.trust[target] = 45;
+        for (const rid of acc) v.trust[rid] = 25;
+      } catch (e) {}
+      let c = null;
+      try {
+        const plot = Game.armPlot(leader, acc, target, { reasons: ['an old debt, unpaid', 'they took the credit'], score: 65 });
+        c = Game.openCase(plot, 'ambush');
+      } catch (e) {
+        Game.say('🐞 case failed to open: ' + e.message);
+      }
+      Game.say('🐞 SCENARIO: moot as juror. Three villagers stand accused of an ambush that never quite happened.');
+      if (c) {
+        Game.say(`The accused: ${[leader, ...acc].map(npcName).join(', ')}. The target: ${npcName(target)}. Their story landed first — yours hasn't started.`);
+        Game.say('Work it: examine the site, name witnesses, press them separately, flip the weakest. Then vote.');
+      }
+    },
+
+    // 12. Ambush — the walk turns. An armed plot targets YOU, sprung now:
+    // the interactive RUN / TALK / FIGHT beat, mid-conversation.
+    ambush() {
+      freshGame();
+      const roster = rosterIds();
+      const me = Game.villagerId;
+      const leader = roster[0], acc = [roster[1], roster[2]];
+      try {
+        const v = Game.state.village;
+        v.trust = v.trust || {};
+        v.trust[leader] = 15; // the fiction: they want you gone
+        for (const rid of acc) v.trust[rid] = 20;
+      } catch (e) {}
+      try {
+        const plot = Game.armPlot(leader, acc, me, { reasons: ['you\'ve had this coming'], score: 70 });
+        Game.springAmbush(plot);
+      } catch (e) {
+        Game.say('🐞 ambush failed to spring: ' + e.message);
+      }
+      Game.say('🐞 SCENARIO: the walk turned. Three people, placed around you — not wandering. Placed.');
+      Game.say('RUN, TALK, or FIGHT — each exchange costs. Running is the intended move. They\'re scared, not killers.');
+    },
+
+    // 13. Exile — you walk. The moot voted (or you fled before it could).
+    // Petition a nearby village (they've heard the gossip), found your own,
+    // or drift. The old village continues without you.
+    exile() {
+      freshGame();
+      const s = Game.state.scholar;
+      try {
+        Game.recordCrime('attack', { victim: rosterIds()[0] });
+      } catch (e) {}
+      try { Game.exilePlayer('debug'); } catch (e) {
+        Game.say('🐞 exile failed: ' + e.message);
+      }
+      Game.say('🐞 SCENARIO: exiled. You leave with what you carry — nothing more.');
+      Game.say('Tap a 🏘️ tile on the minimap to approach & petition (they judge you — the gossip got there first). Your self bar has 🏕️ found-haven and 🚶 drift.');
+    },
+
+    // 14. Keepsake gamble — the gear-pick choice, restaged. A sentimental
+    // keepsake marked CHOSEN (the opening gamble), the System's
+    // resonance-harmonics lesson taught, and the flashback played on demand.
+    keepsake() {
+      freshGame();
+      const s = Game.state.scholar;
+      const def = (Game.data.items || []).find(i => i.id === 'mothers_ring') || {};
+      s.inventory = s.inventory || [];
+      const item = {
+        itemId: 'mothers_ring', name: def.name || "Mother's Ring",
+        sentimental: true, chosen: true, bond: 3, enhancements: [],
+      };
+      s.inventory.push(item);
+      try { Game.teachSentiment(); } catch (e) {}
+      Game.say('🐞 SCENARIO: the keepsake gamble. You chose the ring over the axe on day one — the visible gamble.');
+      Game.say('The System calls it RESONANCE HARMONICS. It is not harmonics. It is love. The System will never know.');
+      try {
+        Game.playFlashback(item, def);
+      } catch (e) {
+        Game.say('🐞 flashback failed: ' + e.message);
+      }
+      Game.say('Channel it from your pack. Watch what grief does when the System does the math.');
+    },
+
+    // 15. Mantle — you die, the village doesn't. The most-trusted picks up
+    // the Codex. "You're not her." The progression is the village's.
+    mantle() {
+      freshGame();
+      const roster = rosterIds();
+      try {
+        const v = Game.state.village;
+        v.trust = v.trust || {};
+        for (const rid of roster) v.trust[rid] = 40 + Math.floor(Math.random() * 20);
+      } catch (e) {}
+      Game.say('🐞 SCENARIO: the mantle passes. You are about to die — the village is not.');
+      Game.say('Watch who steps up. The Codex turns a page. The story continues in a new face.');
+      try { Game.playerDeath('the debug scenario'); }
+      catch (e) { Game.say('🐞 mantle failed: ' + e.message); }
     },
   };
 
+  // RETIRED: scenarios we're confident are solid. Never deleted — saved for
+  // later behind the collapsed toggle in the debug panel. Move entries here
+  // from SCENARIOS only when playtesting says they're down. Keep the label
+  // in RETIRED_LABELS so the menu still reads well.
+  const RETIRED = {
+    // (empty for now — nothing's retired yet)
+    // example: headlightOld() { ... },
+  };
+  const RETIRED_LABELS = {
+    // headlightOld: '💡 Headlight Deer fight (old)',
+  };
+
   Game.debugScenario = function (name) {
-    const fn = SCENARIOS[name];
+    const fn = SCENARIOS[name] || RETIRED[name];
     if (!fn) { Game.say('🐞 unknown scenario: ' + name); return false; }
     try {
       // A scenario is a fresh run — clear any combat/encounter state first.
@@ -213,6 +385,13 @@
   Game.debugScenarioList = function () {
     return [
       ['deer', '🦌 Deer encounter'],
+      ['headlight', '💡 Headlight Deer fight'],
+      ['ambush', '🔪 Ambush — the walk turns'],
+      ['mootAccused', '⚖️ Moot — you stand accused'],
+      ['mootJuror', '⚖️ Moot — you are the juror'],
+      ['exile', '🚶 Exile — you walk'],
+      ['mantle', '🕯️ Mantle — you die, village continues'],
+      ['keepsake', '💍 Keepsake gamble + flashback'],
       ['day7', '🌟 Day 7 System transition'],
       ['uprising', '⚔️ Village uprising'],
       ['day1', '🌊 Day 1 fresh spawn'],
@@ -220,7 +399,10 @@
       ['night', '🌙 Night hunt'],
       ['liars', '🤥 Liar\'s den'],
       ['starving', '🔥 Starving village'],
-      ['headlight', '💡 Headlight Deer stalk'],
     ];
+  };
+
+  Game.debugRetiredList = function () {
+    return Object.keys(RETIRED).map(id => [id, RETIRED_LABELS[id] || ('🗄️ ' + id)]);
   };
 })();

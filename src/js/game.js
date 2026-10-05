@@ -10411,6 +10411,7 @@
           alive: true, fled: false, telegraph: null, mdef,
           hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
           beamCooldown: 0, dwellTaught: false,
+          beamPhase: 'stalk', threatQueue: [],
         });
       }
 
@@ -10420,6 +10421,21 @@
         turnIdx: 0, round: 1,
         over: false, result: null,
       };
+      // HIGHBEAM: anyone already too close is on the list from the first
+      // bell — silently. The deer will announce itself soon enough.
+      try {
+        for (const mo of this.tbfight.fighters) {
+          if (!this.encUsesFifo(mo)) continue;
+          for (const o of this.tbfight.fighters) {
+            if (!o.alive || o.fled || o.key === mo.key) continue;
+            if (!S.combat.isFoe(mo, o)) continue;
+            const d = Math.max(Math.abs(o.mx - mo.mx), Math.abs(o.my - mo.my));
+            if (d <= this.encNoticeRange() && this.canSee(mo.mx, mo.my, o.mx, o.my)) {
+              this.encNoticeFighter(mo, o.key, true);
+            }
+          }
+        }
+      } catch (e) {}
       // ALIVE: the village hears it. fear is contagious.
       try { this.villageEvent('monster_attack'); } catch (e) {}
       // REPUTATION: fighting is observed. Brave villagers respect it,
@@ -10538,15 +10554,42 @@
     },
 
     // Live beam-lane cells for the grid overlay (windup + firing).
+    // CODEX-GATED: until you've learned the deer's behavior, the windup
+    // shows NO lane — you see it freeze and aim, not where the beam will
+    // start. Once the beam is live (firing), it's light: you see it.
     tbBeamLaneCells() {
       const f = this.tbfight;
       const set = new Set();
       if (!f) return set;
       for (const m of f.fighters) {
         if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || !m.telegraph) continue;
+        if (this.encUsesFifo(m) && !(m.telegraph.firing > 0) && !this.encTelegraphKnown(m)) continue;
         for (const c of (m.telegraph.cells || [])) set.add(c.cx + ',' + c.cy);
       }
       return set;
+    },
+
+    // Previous-tick lane cells: rendered as a fading ghost so the sweep is
+    // VISIBLE — the beam doesn't teleport, it rotates, and you see the arc.
+    tbBeamPrevLaneCells() {
+      const f = this.tbfight;
+      const set = new Set();
+      if (!f) return set;
+      const live = this.tbBeamLaneCells();
+      for (const m of f.fighters) {
+        if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || !m.telegraph) continue;
+        for (const c of (m.telegraph.prevCells || [])) {
+          const k = c.cx + ',' + c.cy;
+          if (!live.has(k)) set.add(k);
+        }
+      }
+      return set;
+    },
+
+    tbBeamIsFiring() {
+      const f = this.tbfight;
+      if (!f) return false;
+      return f.fighters.some(m => (m.kind === 'monster' || m.kind === 'hostile') && m.alive && m.telegraph && m.telegraph.firing > 0);
     },
 
     // One live-fire tick: the beam is a ray EMANATING FROM THE DEER that
@@ -10560,7 +10603,17 @@
       if (!f) return;
       const pat = tg.pattern || {};
       const budget = pat.sweepRate || 0.65; // radians of rotation per fire tick
-      const tgt = this.tbFighter(tg.aimKey || 'p');
+      // RELENTLESS: the queue may have changed since the last tick (pain,
+      // adjacency). The beam follows the list — walking away doesn't lose it.
+      if (this.encUsesFifo(m)) {
+        const head = this.encCurrentTarget(m);
+        if (head && head.key !== tg.aimKey) tg.aimKey = head.key;
+      }
+      let tgt = this.tbFighter(tg.aimKey || 'p');
+      if (this.encUsesFifo(m) && (!tgt || !tgt.alive || tgt.fled)) {
+        tgt = this.encCurrentTarget(m);
+        if (tgt) tg.aimKey = tgt.key;
+      }
       if (typeof tg.angle !== 'number') {
         const ax0 = (tg.aim ? tg.aim.x : m.mx) - m.mx, ay0 = (tg.aim ? tg.aim.y : m.my) - m.my;
         tg.angle = Math.atan2(ay0, ax0);
@@ -10573,12 +10626,20 @@
         while (d < -Math.PI) d += 2 * Math.PI;
         used = Math.max(-budget, Math.min(budget, d));
         tg.angle += used;
+        tg.swept = (tg.swept || 0) + Math.abs(used);
         // keep an aim point for audio/UI: the ray point at the target's range
         const dist = Math.hypot(tgt.mx - m.mx, tgt.my - m.my);
         tg.aim = { x: m.mx + Math.cos(tg.angle) * dist, y: m.my + Math.sin(tg.angle) * dist };
       }
       const unspent = Math.max(0, budget - Math.abs(used));
       tg.dwell = unspent / budget; // 0..1 — how little it had to move to track you
+      // VISIBLE SWEEP: keep the previous lane so the UI can render the arc —
+      // the beam rotates, it doesn't teleport.
+      if ((tg.swept || 0) > 0.45 && !tg.sweepNarrated) {
+        tg.sweepNarrated = true;
+        this.say('The beam carves a bright arc across the ground, swinging after its target. It does not blink. It does not hurry.');
+      }
+      tg.prevCells = tg.cells || [];
       // rasterize the ray FROM THE DEER along the angle, to the node edge
       const far = 12;
       const r = this.tbBeamCells(m.mx, m.my, m.mx + Math.cos(tg.angle) * far, m.my + Math.sin(tg.angle) * far, tg.dir);
@@ -10745,7 +10806,13 @@
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
       if (tg && tg.firing > 0) {
-        let cue = 'The beam is LIVE — a ray from its eyes, swinging toward you! Circle it wide or get behind something solid — and keep moving. If it doesn\'t have to chase you, it sits the full beam on you.';
+        // CODEX-GATED: first encounters get raw terror, not tactics. The
+        // "circle it wide / keep moving" coaching only appears once you've
+        // learned the behavior — knowledge is earned, not given.
+        const known = this.encUsesFifo(m) ? this.encTelegraphKnown(m) : true;
+        let cue = known
+          ? 'The beam is LIVE — a ray from its eyes, swinging toward you! Circle it wide or get behind something solid — and keep moving. If it doesn\'t have to chase you, it sits the full beam on you.'
+          : 'The beam is LIVE — light lances from its eyes, swinging wild! No warning, no pattern you know — MOVE!';
         if (this.tbPatternKnown(m.mdef.id, atk.name)) {
           cue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
         }
@@ -10872,6 +10939,8 @@
       }
       this.tbDamage(t.key, d, 'you');
       const tAfter = this.tbFighter(t.key);
+      // HIGHBEAM: hurting the deer moves you to the front of its list.
+      try { if (tAfter && this.encUsesFifo(tAfter)) this.encNoticesPain(tAfter, 'p'); } catch (e) {}
       // HITS LANDED: hurting it teaches you its toughness.
       try { if (tAfter && tAfter.mdef) this.ensureMonsterEntry(tAfter.mdef.id).hitsLanded++; } catch (e) {}
       // DISRUPT: a solid hit while it's channeling the beam can break its aim.
@@ -11128,12 +11197,12 @@
           const dtPat = t.mdef && t.mdef.attack && t.mdef.attack.pattern;
           if (dtPat && dtPat.sweep && !t.hasFired && this.tbfight && !this.tbfight.over) {
             this.say(`You cut it down — but the light was already in its eyes. ${t.name}'s death throes loose the beam.`);
-            const tgt = this.tbFighter('p');
+            const tgt = (this.encUsesFifo(t) && this.encCurrentTarget(t)) || this.tbFighter('p');
             const throe = {
               kind: 'squares', cells: [], dmg: (t.mdef.attack || {}).damage,
               attackName: (t.mdef.attack || {}).name, pattern: dtPat,
               aim: tgt ? { x: tgt.mx, y: tgt.my } : { x: t.mx, y: t.my + 1 },
-              aimKey: 'p', angle: tgt ? Math.atan2(tgt.my - t.my, tgt.mx - t.mx) : Math.PI / 2,
+              aimKey: tgt ? tgt.key : 'p', angle: tgt ? Math.atan2(tgt.my - t.my, tgt.mx - t.mx) : Math.PI / 2,
               firing: 1, dwell: 1,
             };
             t.hasFired = true;
@@ -11195,6 +11264,8 @@
           const dmg = a.type === 'strike' ? S.combat.roll([4, 8]) : S.combat.roll([2, 4]);
           this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${t.name}.`);
           this.tbDamage(t.key, dmg, v.name);
+          // HIGHBEAM: hurting the deer moves them to the front of its list.
+          try { const tt = this.tbFighter(t.key); if (tt && this.encUsesFifo(tt)) this.encNoticesPain(tt, v.key); } catch (e) {}
         }
       } else if (a.type === 'help') {
         const t = this.tbFighter(a.target);
@@ -11208,6 +11279,132 @@
         v.fled = true;
         this.say(`${v.name} runs for it!`);
       }
+    },
+
+    // === ENCOUNTER FRAMEWORK: FIFO THREAT QUEUE ===
+    // Shared encounter framework interface (src/js/encounters.js will own
+    // this; the Highbeam is the first client, not a parallel system).
+    // Any monster whose mdef has an `encounter` config with fifo:true gets:
+    //  - a threat queue: anyone who gets too close goes on the list, first
+    //    seen first killed. It doesn't care that you're the protagonist.
+    //  - relentless tracking: once you're on it, walking away doesn't lose it.
+    //  - target switching ONLY on pain (hurting it gets noticed) or crazy
+    //    closeness (adjacency overrules patience).
+    //  - a turn-phase rhythm (stalk/aim/charge/firing/cooldown) with badges.
+    //  - codex-gated telegraph: no lane warning / tactics until learned.
+    // Highbeam-specific config lives in monsters.json (gallowdeer.encounter);
+    // highbeam-specific behavior (sweep, paw, audio) plugs in as config.
+    // Interface for the encounters.js sibling:
+    //   encConfig(m), encUsesFifo(m), encThreatQueue(m), encNoticeRange(m),
+    //   encNoticeFighter(m,key,silent), encCurrentTarget(m),
+    //   encNoticesPain(m,attackerKey), encScanThreats(m),
+    //   encTelegraphKnown(m), encPhaseBadge(m), encSetPhase(m,phase)
+    deerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'gallowdeer')); },
+    encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
+    encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
+    encThreatQueue(m) {
+      if (!Array.isArray(m.threatQueue)) m.threatQueue = [];
+      return m.threatQueue;
+    },
+    encNoticeRange(m) {
+      const c = this.encConfig(m);
+      return (c && c.noticeRange) || 5; // chebyshev; line of sight required
+    },
+    encSetPhase(m, phase) { m.beamPhase = phase; },
+    encNoticeFighter(m, key, silent) {
+      const q = this.encThreatQueue(m);
+      if (q.includes(key)) return false;
+      q.push(key);
+      if (!silent && this.tbfight) {
+        const t = this.tbFighter(key);
+        const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
+        this.say(`The deer's head swings toward ${who}. Another light in its eyes. You're all on the list now.`);
+      }
+      return true;
+    },
+    encCurrentTarget(m) {
+      const f = this.tbfight;
+      if (!f) return null;
+      const q = this.encThreatQueue(m);
+      for (const key of q) {
+        const t = this.tbFighter(key);
+        if (t && t.alive && !t.fled) return t;
+      }
+      return null;
+    },
+    // pain gets noticed: hurting the deer moves you to the front of the line.
+    encNoticesPain(m, attackerKey) {
+      if (!this.encUsesFifo(m) || !this.tbfight) return;
+      const t = this.tbFighter(attackerKey);
+      if (!t || !t.alive || t.fled) return;
+      const q = this.encThreatQueue(m);
+      if (!q.includes(attackerKey)) q.push(attackerKey);
+      const i = q.indexOf(attackerKey);
+      const before = q[0];
+      if (i > 0) { q.splice(i, 1); q.unshift(attackerKey); }
+      if (q[0] !== before) {
+        const who = t.kind === 'player' ? 'you' : t.name;
+        this.say(`It staggers — and its burning gaze fixes on ${who}. Pain gets noticed.`);
+        this.audioEvent('deerAggro');
+      }
+    },
+    // scan on the deer's turn: anyone too close gets noticed; anyone crazy
+    // close (adjacent) jumps the queue.
+    encScanThreats(m) {
+      const f = this.tbfight;
+      if (!f) return;
+      const cfg = this.encConfig(m) || {};
+      const adjOverride = cfg.adjacencyOverride !== undefined ? cfg.adjacencyOverride : 1;
+      for (const o of f.fighters) {
+        if (!o.alive || o.fled || o.key === m.key) continue;
+        if (!S.combat.isFoe(m, o)) continue;
+        const d = Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my));
+        if (d <= this.encNoticeRange(m) && this.canSee(m.mx, m.my, o.mx, o.my)) {
+          this.encNoticeFighter(m, o.key);
+        }
+      }
+      const q = this.encThreatQueue(m);
+      const before = q[0];
+      const cur = this.encCurrentTarget(m);
+      for (const o of f.fighters) {
+        if (!o.alive || o.fled || o.key === m.key) continue;
+        if (!S.combat.isFoe(m, o)) continue;
+        const d = Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my));
+        if (d <= adjOverride && (!cur || o.key !== cur.key)) {
+          const i = q.indexOf(o.key);
+          if (i > 0) q.splice(i, 1);
+          if (q[0] !== o.key) q.unshift(o.key);
+          break;
+        }
+      }
+      if (q[0] !== before) {
+        const t = this.tbFighter(q[0]);
+        const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
+        this.say(`Too close. The deer's gaze SNAPS to ${who} — proximity overrules patience.`);
+        this.audioEvent('deerAggro');
+      }
+    },
+    // codex-gated: have you learned what the freeze means? The windup lane
+    // (where the beam will START) and the tactical coaching only appear once
+    // you've SURVIVED a full Discharge — the codex writes the pattern when
+    // you live through it. Seeing the windup isn't enough. Knowledge is earned.
+    encTelegraphKnown(m) {
+      const id = (m.mdef || {}).id;
+      if (!id) return false;
+      const atkName = (m.mdef.attack || {}).name;
+      if (atkName && this.tbPatternKnown(id, atkName)) return true;
+      try {
+        const me = (this.state.codex.monsters || {})[id] || {};
+        if (me.stage === 'slain') return true;
+      } catch (e) {}
+      return false;
+    },
+    encPhaseBadge(m) {
+      if (!this.encUsesFifo(m)) return '';
+      return {
+        aim: ' 👁 AIMING', charge: ' ⚡ CHARGING', firing: ' 🔥 FIRING',
+        cooldown: ' 😮‍💨 SPENT',
+      }[m.beamPhase] || '';
     },
 
     tbMonsterTurn(m) {
@@ -11228,6 +11425,11 @@
       // 1. pending telegraph: count down, then resolve.
       // Heavy attacks wind up over multiple rounds (you don't know exactly
       // how long — but the cue escalates and the heartbeat tells you).
+      // HIGHBEAM: threat scan first — anyone too close joins the list, and
+      // the deer takes its turn deliberately. Each phase reads clearly.
+      const isDeer = this.deerIs(m);
+      const useFifo = this.encUsesFifo(m);
+      if (useFifo) this.encScanThreats(m);
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
@@ -11241,6 +11443,8 @@
             // COOLDOWN: the deer is spent. It needs a breather before it can
             // gather the light again — your window to act.
             m.beamCooldown = (tg.pattern || {}).cooldownTurns || 2;
+            if (useFifo) this.encSetPhase(m, 'cooldown');
+            if (isDeer) this.audioEvent('deerSnort');
             this.tbLearnPattern(m);
             this.audioEvent('beamSweepStop');
             this.say(`The beam gutters out. ${m.name} sags — the light behind its eyes dims to embers. It needs a moment.`);
@@ -11252,6 +11456,15 @@
         tg.turnsLeft -= 1;
         if (tg.turnsLeft > 0) {
           // still winding up — holds position, committed. No move, no new attack.
+          // HIGHBEAM CHARGE PHASE: the whine climbs, the glare swells. Readable.
+          if (useFifo) this.encSetPhase(m, 'charge');
+          if (isDeer) {
+            if (!tg.chargeNarrated) {
+              tg.chargeNarrated = true;
+              this.say('The light behind its eyes swells to a painful glare. The whine climbs past hearing. It is done aiming — now it is only waiting to loose.');
+              this.audioEvent('deerAggro');
+            }
+          }
           this.tbRefreshTelegraphUI();
           this.audioEvent('telegraph', { urgency: tg.turnsLeft, windupTick: true });
           return;
@@ -11259,11 +11472,12 @@
         // IGNITE: a sweeping beam doesn't resolve instantly — it goes live and
         // sweeps for fireTurns. Everything else resolves as before.
         if (sweepBeam) {
-          const p0 = this.tbFighter('p');
-          tg.aim = tg.aim || { x: p0 ? p0.mx : m.mx, y: p0 ? p0.my : m.my };
-          tg.aimKey = tg.aimKey || 'p';
+          const tgt0 = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
+          tg.aim = tg.aim || { x: tgt0 ? tgt0.mx : m.mx, y: tgt0 ? tgt0.my : m.my };
+          tg.aimKey = tg.aimKey || (tgt0 ? tgt0.key : 'p');
           tg.firing = (tg.pattern || {}).fireTurns || 2;
           m.hasFired = true; // the light is spent — after this, it's just meat that shines
+          if (useFifo) this.encSetPhase(m, 'firing');
           this.say(`💥 ${tg.attackName}! A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE.`);
           this.audioEvent('impact', { beam: (tg.pattern || {}).type === 'beam', highbeam: /highbeam/i.test(m.name || '') });
           this.tbBeamSweepTick(m, tg);
@@ -11357,7 +11571,7 @@
         return;
       }
       // 4. act by pattern
-      const foe = S.combat.nearestEnemy(f.fighters, m);
+      let foe = S.combat.nearestEnemy(f.fighters, m);
       if (!foe) return;
       const pat = (m.mdef.attack && m.mdef.attack.pattern) || { type: 'burst', radius: 1 };
       // BEAM COOLDOWN: after a Discharge the deer is spent — the light is
@@ -11367,16 +11581,24 @@
       // of reach, where it can't touch you — not a free pass up close.
       if (pat.sweep && (m.beamCooldown || 0) > 0) {
         m.beamCooldown -= 1;
+        if (useFifo) this.encSetPhase(m, 'cooldown');
         const bd = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         if (bd <= 1) {
-          this.tbRechargePaw(m);
+          if (this.tbRechargePaw(m) && isDeer) this.audioEvent('deerSnort');
         } else if (m.beamCooldown <= 0) {
+          if (useFifo) this.encSetPhase(m, 'stalk');
           this.say(`The ${m.name} shakes its head — the light behind its eyes rekindles.`);
         }
         // otherwise it just breathes. Stillness is the tell.
         this.tbRefreshTelegraphUI();
         this.tbEndCheck();
         return;
+      }
+      // HIGHBEAM: the deer doesn't chase the nearest — it works the list,
+      // first in first out. Movement, declaration, and aim all follow it.
+      if (useFifo) {
+        const dt = this.encCurrentTarget(m);
+        if (dt) foe = { f: dt, d: Math.max(Math.abs(dt.mx - m.mx), Math.abs(dt.my - m.my)) };
       }
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
@@ -11428,7 +11650,7 @@
           m.telegraph = { kind: 'direct', targetKey: foe.f.key, dmg: atk.damage,
             attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1 };
           this.say('⚠ ' + this.tbTelegraphCue(m));
-          this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct', highbeam: /highbeam/i.test(m.name || '') });
+          this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct', highbeam: (m.mdef || {}).id === 'gallowdeer' });
         } else {
           this.say(`The ${m.name} stalks closer. ${atk.telegraph || ''}`);
         }
@@ -11473,7 +11695,12 @@
           }
         } catch (e) {}
         this.say('⚠ ' + this.tbTelegraphCue(m));
-        this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: /highbeam/i.test(m.name || '') });
+        this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: (m.mdef || {}).id === 'gallowdeer' });
+        if (useFifo) this.encSetPhase(m, 'aim');
+        this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
+        if (isDeer) {
+          this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
+        }
       }
       this.tbRefreshTelegraphUI();
       this.tbEndCheck();
