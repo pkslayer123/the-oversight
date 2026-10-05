@@ -509,6 +509,80 @@
       try { Game.playerDeath('the debug scenario'); }
       catch (e) { Game.say('🐞 mantle failed: ' + e.message); }
     },
+
+    // CONTESTS & SHOWS (Steve 2026-10-05): debug scenarios for the show.
+    // Each contest type needs testing with different builds.
+
+    // Contest: The Pit (Blood) — day 15, eligible, wave 1.
+    contestPit() {
+      freshGame();
+      const s = Game.state.scholar;
+      s.day = 15; // contests unlock day 14+
+      giveWeapon('fire_hardened_spear');
+      Game.say('🐞 SCENARIO: contest — The Pit. Day 15, you\'re eligible.');
+      Game.say('The System should pick a contest soon. Check eligibility via the leaderboard.');
+      // Force a contest to fire
+      try {
+        const contest = Game.contestPool().find(c => c.id === 'pit');
+        if (contest) Game.fireContest(contest);
+      } catch (e) { Game.say('🐞 contest fire failed: ' + e.message); }
+    },
+
+    // Contest: Hide and Seek (Weird, extreme risk)
+    contestHide() {
+      freshGame();
+      const s = Game.state.scholar;
+      s.day = 20;
+      giveWeapon('machete');
+      Game.say('🐞 SCENARIO: contest — Hide and Seek. Extreme risk.');
+      Game.say('The seeker is a wave-2 predator. Test with different loadouts.');
+      try {
+        const contest = Game.contestPool().find(c => c.id === 'hide');
+        if (contest) Game.fireContest(contest);
+      } catch (e) { Game.say('🐞 contest fire failed: ' + e.message); }
+    },
+
+    // Contest: Calorie Run (Forage) — tests foraging builds
+    contestForage() {
+      freshGame();
+      const s = Game.state.scholar;
+      s.day = 18;
+      Game.say('🐞 SCENARIO: contest — Calorie Run. Foraging competition.');
+      Game.say('Whoever collects the most calorie-dense materials wins.');
+      try {
+        const contest = Game.contestPool().find(c => c.id === 'calorie_run');
+        if (contest) Game.fireContest(contest);
+      } catch (e) { Game.say('🐞 contest fire failed: ' + e.message); }
+    },
+
+    // TV Show: WHY DO THEY EAT?
+    showWhyEat() {
+      freshGame();
+      const s = Game.state.scholar;
+      s.day = 16;
+      Game.say('🐞 SCENARIO: TV show — WHY DO THEY EAT?');
+      Game.say('The aliens are horrified by cooking. The audience is delighted.');
+      try {
+        const show = Game.showPool().find(s => s.id === 'why_eat');
+        if (show) {
+          Game.sysSay(`📺 TONIGHT: ${show.name}. ${show.desc}`);
+        }
+      } catch (e) { Game.say('🐞 show failed: ' + e.message); }
+    },
+
+    // Contest eligibility check
+    contestEligible() {
+      freshGame();
+      const s = Game.state.scholar;
+      s.day = 15;
+      Game.addNotability('player', 'wave2Kill');
+      Game.say('🐞 SCENARIO: contest eligibility. Day 15, you slew a wave-2 beast.');
+      Game.say('Check the leaderboard — you should be eligible with notability.');
+      try {
+        const { eligible } = Game.contestEligible();
+        Game.say(`🐞 Eligible: ${eligible.length} (${eligible.map(e => e.name).join(', ')})`);
+      } catch (e) { Game.say('🐞 eligibility check failed: ' + e.message); }
+    },
   };
 
   // RETIRED: scenarios we're confident are solid. Never deleted — saved for
@@ -559,6 +633,11 @@
       ['night', '🌙 Night hunt'],
       ['liars', '🤥 Liar\'s den'],
       ['starving', '🔥 Starving village'],
+      ['contestPit', '📺 Contest: The Pit'],
+      ['contestHide', '📺 Contest: Hide and Seek'],
+      ['contestForage', '📺 Contest: Calorie Run'],
+      ['showWhyEat', '📺 Show: WHY DO THEY EAT?'],
+      ['contestEligible', '📺 Contest eligibility check'],
     ];
   };
 
@@ -643,6 +722,50 @@
         // TODO: actual alien loot items when they exist
         giveWeapon('hardlight_knife');
         s.strength = 22; s.agility = 20; s.toughness = 20;
+      }
+    },
+    // WAVE VARIATIONS (Steve 2026-10-05): each build scales by wave.
+    // Wave 1: struggling. Wave 2: competent. Wave 3: strong. Wave 4: dominant.
+    // Tests that progression feels right — each wave should challenge the
+    // next gear tier, not trivialize or impossible-wall.
+    w1_fighter: {
+      label: '🌊 W1 Fighter',
+      desc: 'Wave 1 build: spear, basic stats. Should handle wave 1, struggle wave 2.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('fire_hardened_spear');
+        s.strength = 14; s.agility = 12; s.toughness = 12;
+      }
+    },
+    w2_fighter: {
+      label: '🌊🌊 W2 Fighter',
+      desc: 'Wave 2 build: machete, mid stats. Should handle wave 2, struggle wave 3.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('machete');
+        s.strength = 17; s.agility = 15; s.toughness = 15;
+      }
+    },
+    w3_fighter: {
+      label: '🌊🌊🌊 W3 Fighter',
+      desc: 'Wave 3 build: hardlight knife, high stats. Should handle wave 3, struggle wave 4.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('hardlight_knife');
+        s.strength = 21; s.agility = 19; s.toughness = 19;
+      }
+    },
+    w4_fighter: {
+      label: '🌊🌊🌊🌊 W4 Fighter',
+      desc: 'Wave 4 build: alien loot, max stats. Should handle wave 4.',
+      apply() {
+        const s = Game.state.scholar;
+        s.inventory = []; s.equipped = {};
+        giveWeapon('hardlight_knife');
+        s.strength = 25; s.agility = 23; s.toughness = 23;
       }
     },
   };

@@ -1675,5 +1675,59 @@
       "id": "dandelion",
       "note": "You know what grows. You will prove it."
     }
+  },
+  {
+    "id": "phase_blade",
+    "name": "Phase blade",
+    "class": "weapon",
+    "origin": "alien",
+    "lootTier": 3,
+    "flavor": "Phases through armor. The blade is only sometimes here.",
+    "kg": 0.3,
+    "damage": 60,
+    "range": 2,
+    "baseEffect": "+60 damage, ignores armor"
+  },
+  {
+    "id": "nanite_swarm",
+    "name": "Nanite swarm",
+    "class": "tool",
+    "origin": "alien",
+    "lootTier": 3,
+    "flavor": "A cloud of tiny machines. They want to help. They insist.",
+    "kg": 0.1,
+    "baseEffect": "Heals 50 HP over 3 turns when used"
+  },
+  {
+    "id": "gravity_well",
+    "name": "Gravity well",
+    "class": "tool",
+    "origin": "alien",
+    "lootTier": 3,
+    "flavor": "Creates a point of intense gravity. Don't drop it.",
+    "kg": 0.5,
+    "baseEffect": "Immobilizes enemies in 3x3 area for 2 turns"
+  },
+  {
+    "id": "starfall_lance",
+    "name": "Starfall lance",
+    "class": "weapon",
+    "origin": "alien",
+    "lootTier": 4,
+    "flavor": "Forged from a dead star. It hums with old fire.",
+    "kg": 0.4,
+    "damage": 80,
+    "range": 3,
+    "baseEffect": "+80 damage, +3 range, burns"
+  },
+  {
+    "id": "genesis_seed",
+    "name": "Genesis seed",
+    "class": "tool",
+    "origin": "alien",
+    "lootTier": 4,
+    "flavor": "Plant it and something grows. Something that wasn't here before.",
+    "kg": 0.2,
+    "baseEffect": "Creates a food source (5000 kcal over 10 days)"
   }
 ]
