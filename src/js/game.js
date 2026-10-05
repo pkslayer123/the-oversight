@@ -10986,7 +10986,13 @@
       if (hasSand) this.say('You fling a handful of grit into its eyes. (pocket_sand: blinded)');
       this.say('Turn-based now. Tap a tile to move — speed is squares. Then act.');
       this.audioEvent('combatStart');
-      if (/highbeam/i.test(mdef.name || '')) this.audioEvent('deerNotice'); // distant, wrong-sounding call
+      // AGGRO-GATED TERROR (Steve): the deer's wrong-sounding call plays only
+      // if it actually sees you at combat start (silent seeding found someone).
+      // Otherwise it's just a deer — the terror starts when it notices.
+      try {
+        const mo = this.tbfight.fighters.find(x => this.deerIs(x));
+        if (mo && (this.encThreatQueue(mo) || []).length > 0) this.audioEvent('deerNotice');
+      } catch (e) {}
       this.sysSay(`COMBAT! ${dispName.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
       this.tbBeginTurn();
       return this.tbfight;
@@ -11492,6 +11498,9 @@
       const [lx, ly] = path[path.length - 1];
       const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [p.mx, p.my];
       this.state.scholar.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
+      // ACTION ECONOMY: out of moves AND acted -> the turn ends on its own.
+      if (p.moveLeft <= 0 && p.acted) this.tbPlayerEndTurn();
+      else this.tbRefreshTelegraphUI();
       return true;
     },
 
@@ -11687,12 +11696,24 @@
     tbPlayerEndTurn() {
       const f = this.tbfight;
       if (!f || !this.tbIsPlayerTurn()) return;
-      const p = this.tbFighter('p');
-      // HESITATE: ending the turn without spending actions still feeds the
-      // beam one tick — it does not wait forever. (If you acted, your actions
-      // already ticked it; this is only the fallback.)
-      if (p && (p.beamTicks || 0) === 0) this.tbBeamActionTick();
       this.tbAdvance();
+    },
+
+    // WAIT (Steve): the explicit pause. Forfeit remaining actions, end the
+    // turn now. This is an ACTION — during the beam's firing it feeds the
+    // beam a tick (hesitate and it ticks anyway). "If you want to pause a
+    // sec, don't use all your actions" — or just don't tap; the game waits.
+    tbPlayerWait() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (!p) return false;
+      if (p.acted && p.moveLeft <= 0) return false; // nothing left to forfeit
+      p.acted = true;
+      p.moveLeft = 0;
+      this.say('You hold still, watching.');
+      this.tbAfterPlayerAction();
+      return true;
     },
 
     tbAfterPlayerAction() {
@@ -11703,7 +11724,12 @@
       // tbAdvance only checks after AI turns, so check here too. Otherwise
       // killing the final foe soft-locks the fight on your turn forever.
       if (this.tbEndCheck()) return;
-      this.tbAdvance();
+      // ACTION ECONOMY (Steve): the turn ends when you're out of actions —
+      // no end-turn ceremony. Spend moves + the acted action and it advances
+      // on its own. (Wait forfeits the rest via tbPlayerWait.)
+      const p = this.tbFighter('p');
+      if (p && p.moveLeft <= 0 && p.acted) this.tbAdvance();
+      else this.tbRefreshTelegraphUI();
     },
 
     // --- turn advancement: run AI turns until it's the player's turn ---
@@ -11940,6 +11966,9 @@
         const t = this.tbFighter(key);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
         this.say(`The deer's head swings toward ${who}. Another light in its eyes. You're all on the list now.`);
+        // AGGRO IS THE REVEAL (Steve): the terror audio starts when the deer
+        // actually sees you — never before. The card stays innocent until then.
+        if (this.deerIs(m)) this.audioEvent('deerNotice');
       }
       return true;
     },

@@ -78,7 +78,10 @@
     const names = mons.map(m => {
       const mid = m.mdef ? m.mdef.id : m.monsterId;
       const label = Game.monsterDisplayName ? Game.monsterDisplayName(mid) : m.name;
-      const phase = Game.deerPhaseBadge ? Game.deerPhaseBadge(m) : '';
+      // PHASE BADGE (Steve): unearned specialness is stripped. The badge only
+      // shows once the codex knows the pattern — discovered, not announced.
+      const known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : false;
+      const phase = (known && Game.deerPhaseBadge) ? Game.deerPhaseBadge(m) : '';
       return `${m.emoji || '👹'} ${esc(label)}${m.telegraph ? ' ⚠' : ''}${phase}`;
     }).join(' · ') || '⚔ COMBAT';
     const tg = mons.find(m => m.telegraph);
@@ -3671,21 +3674,31 @@
     const cur = Game.tbCurrent();
     const p = Game.tbFighter('p');
     const mons = tf.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
+    // COMBAT-CARD DISCIPLINE (Steve): the card carries ONLY what it uniquely
+    // knows — name (descriptor-gated until earned) + health bar. No threat
+    // text, no HP text, no round, no phase badges the player hasn't earned.
+    // First encounter: strange descriptor, vague threat sense — the
+    // specialness is DISCOVERED through the fight and the codex, never
+    // announced by the UI.
     const monRows = mons.map(m => {
       const mid = m.mdef ? m.mdef.id : m.monsterId;
       const name = Game.monsterDisplayName ? Game.monsterDisplayName(mid) : m.name;
-      const threat = Game.monsterThreatSense && m.mdef ? Game.monsterThreatSense(m.mdef) : '';
-      const hpSense = Game.monsterHpSense ? Game.monsterHpSense(m) : null;
-      const bits = [threat, hpSense].filter(Boolean).join(' · ');
-      return `<p class="small cc-mon">${m.emoji} <b>${esc(name)}</b>${bits ? ` <span style="opacity:.7">— ${esc(bits)}</span>` : ''}${m.telegraph ? ' ⚠' : ''}</p>`;
+      const frac = Math.max(0, Math.min(1, (m.hp || 0) / (m.maxHp || 1)));
+      const known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : false;
+      const badge = (known && Game.encPhaseBadge) ? Game.encPhaseBadge(m) : '';
+      return `<p class="small cc-mon">${m.emoji} <b>${esc(name)}</b>` +
+        ` <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>` +
+        `${m.telegraph ? ' ⚠' : ''}${badge}</p>`;
     }).join('');
     const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= (Game.equippedWeapon ? Game.equippedWeapon().range : 1)) : [];
     const wrange = Game.equippedWeapon ? Game.equippedWeapon().range : 1;
     const wname = Game.equippedWeapon ? Game.equippedWeapon().name : '';
     const canScream = Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day;
     const yourTurn = Game.tbIsPlayerTurn();
+    // ACTION ECONOMY (Steve): the turn ends when you're out of actions — the
+    // line shows what's left. No end-turn button; WAIT forfeits the rest.
     const turnLine = yourTurn && p
-      ? `Your turn — <b>${p.moveLeft}</b> move${p.acted ? ' · acted' : ''}`
+      ? `<b>${p.moveLeft}</b> move${p.acted ? ' · acted' : ''}`
       : (cur ? `${esc(cur.kind === 'player' ? 'You' : (Game.monsterDisplayName && cur.mdef ? Game.monsterDisplayName(cur.mdef.id) : cur.name))} acting…` : '');
     // FIGHT FEED (Steve): essential fight info was stranded in the log box at
     // the page bottom, requiring scroll mid-fight. The last 3 events render
@@ -3696,7 +3709,7 @@
       ? `<div class="cc-feed">${feed.map(m => `<p class="cc-evt">${esc(String(m)).slice(0, 140)}</p>`).join('')}</div>`
       : '';
     return `
-      <div class="card combat-compact"><div class="cc-head"><span>⚔ R${tf.round}</span><span class="cc-turn">${turnLine}</span></div>
+      <div class="card combat-compact"><div class="cc-head"><span>⚔</span><span class="cc-turn">${turnLine}</span></div>
       ${monRows}
       ${feedHtml}
       ${yourTurn && p ? `<div class="actions cc-actions">
@@ -3705,7 +3718,7 @@
         ${mons.some(m => m.kind === 'hostile') ? `<button class="btn sm ghost" id="c-talk" ${p.acted ? 'disabled' : ''}>💬</button>` : ''}
         ${canScream ? `<button class="btn sm ghost" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀</button>` : ''}
         <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃</button>
-        <button class="btn sm ghost" id="c-endturn">⏭</button>
+        <button class="btn sm ghost" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸</button>
       </div>
       <div class="actions" id="c-talkrow" style="display:none"></div>` : ''}
       </div>`;
@@ -3713,7 +3726,7 @@
 
   function wireCombatPanel() {
     const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
-    on('c-endturn', () => { Game.tbPlayerEndTurn(); rerender(); });
+    on('c-wait', () => { Game.tbPlayerWait(); rerender(); });
     on('c-study', () => { Game.tbPlayerStudy(); rerender(); });
     on('c-scream', () => { Game.tbPlayerScream(); rerender(); });
     on('c-flee', () => { Game.tbPlayerFlee(); rerender(); });

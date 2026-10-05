@@ -691,6 +691,9 @@ body.system-live .btn:not(.ghost) {
 .combat-compact .cc-mon { margin: 2px 0; }
 .combat-compact .cc-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
 .combat-compact .cc-actions .btn { flex: 1 1 0; min-width: 0; padding: 8px 4px; }
+/* HP BAR: the card's unique info, no text senses. */
+.combat-compact .cc-hpbar { display: inline-block; width: 64px; height: 8px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; vertical-align: middle; margin-left: 6px; background: rgba(0,0,0,.4); }
+.combat-compact .cc-hpbar > span { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #e5484d, #f5a524); }
 /* FIGHT FEED: the last 3 fight events, inline under the grid — never buried
    in the bottom log box. The latest hits hardest. */
 .combat-compact .cc-feed { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, .12); }
