@@ -32,6 +32,9 @@ function sayCapture(fn) {
 }
 function wildTile() {
   Game.debugScenario('day1');
+  // deterministic forage ground: the distant-village catch-up sim is real
+  // competition, but its RNG stripping would make these wood assertions flaky.
+  for (const ov of (Game.state.otherVillages || [])) ov.generated = true;
   // pick a wild target that actually has trees (creeks may have none)
   const cands = Game.travelTargets().filter(t => !Game.travelBlockage(t.x, t.y) && Game.tileAt(t.x, t.y).type !== 'haven' && Game.tileAt(t.x, t.y).type !== 'ruin');
   let tg = cands[0];
@@ -107,9 +110,14 @@ function stickCount() {
   }
 
   // --- 3. stick/vine are real stash materials ---
+  // (the stash is physical: takeMaterial only works inside the hall —
+  // the Haven stores gate. donate first, then take, both at haven.)
   {
-    wildTile();
+    Game.debugScenario('day1');
+    const hv = Game.state.village;
+    Game.map.px = hv.px ?? 3; Game.map.py = hv.py ?? 3;
     const s = Game.state.scholar;
+    s.insideHaven = true;
     s.inventory = (s.inventory || []).filter(i => i.material !== 'stick' && i.material !== 'vine');
     const added = Game.addMaterial('stick', 3);
     ok('addMaterial stick works', added === 3 && Game.materialCount('stick') === 3, `added=${added}`);

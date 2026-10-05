@@ -129,7 +129,7 @@ function setCell(kind, cx, cy) {
   Game.cellInteract(5, 4);
   const d9 = Game.genDetail(Game.map.px, Game.map.py);
   ok('foraged plant cell becomes dirt', d9[4][5] === 'dirt');
-  ok('packed message mentions Picked clean', Game.log.slice(-4).join(' ').includes('Picked clean'));
+  ok('packed message says patch picked clean (honest copy)', Game.log.slice(-4).join(' ').includes('picked clean'));
 
   // 10. PACKED message reports actual haul (redesign format: the sweep message
   // names units, e.g. "8× Hickory Nuts").
@@ -155,8 +155,11 @@ function setCell(kind, cx, cy) {
   t11.detailRegrow = { '1,1': { day: today, was: 'plant' }, '2,2': { day: today, was: 'bush' } };
   d11[1][1] = 'dirt'; d11[2][2] = 'bush';
   Game.endDay();
-  // +1/day (villager-nibble top-up) + 2 regrown cells = 3
-  ok('regrown cells restore stock 1:1', t11.stock === 3, `stock 0 -> ${t11.stock}`);
+  // 2 regrown cells restore stock 1:1. The +1/day abstract nibble top-up is
+  // deliberately SKIPPED while grid-level depletion is outstanding — running
+  // both double-counts recovery and refunds villager competition overnight.
+  // (Abstract-only nibbles still top up; see test-forage-competition.js.)
+  ok('regrown cells restore stock 1:1 (no double recovery)', t11.stock === 2, `stock 0 -> ${t11.stock}`);
   ok('regrow clears the entries', Object.keys(t11.detailRegrow).length === 0);
   ok('regrown plant cell is a plant again', d11[1][1] === 'plant');
 

@@ -4783,6 +4783,27 @@
       // but don't reset if we've already depleted (stock < maxStock means we've been here).
       if (t.stock === undefined || t.stock === t.maxStock) {
         t.maxStock = count; t.stock = count;
+      } else if (t.maxStock > 0 && t.stock < t.maxStock) {
+        // STRIPPED BEFORE YOU ARRIVED (forager loop 2026-10-05): villagers
+        // nibbled this tile abstractly before your first visit. The grid must
+        // tell the truth — mark the depleted share of cells as regrowing, so
+        // the player doesn't walk onto a "depleted" tile and sweep a full grid
+        // (or get locked out after one press by a stale abstract number).
+        const ratio = Math.max(0, Math.min(1, t.stock / t.maxStock));
+        const keep = Math.round(count * ratio);
+        let toStrip = count - keep;
+        t.detailRegrow = t.detailRegrow || {};
+        const day = this.state.scholar ? this.state.scholar.day : 0;
+        for (let sy = 0; sy < 9 && toStrip > 0; sy++) for (let sx = 0; sx < 9 && toStrip > 0; sx++) {
+          const c = cells[sy][sx];
+          if (!FORAGEABLE[c]) continue;
+          const dk = sx + ',' + sy;
+          if (t.detailRegrow[dk]) continue;
+          t.detailRegrow[dk] = { day: day + 3, was: c };
+          if (c === 'plant') cells[sy][sx] = 'dirt'; // trees/bushes stand, just picked clean
+          toStrip--;
+        }
+        t.maxStock = count; t.stock = keep;
       }
       return cells;
     },
@@ -8614,7 +8635,13 @@
           let regrow = 1;
           if (pressure >= 10) regrow = 0;
           else if (pressure >= 5) regrow = (this.state.scholar.day % 2 === 0) ? 1 : 0;
-          if (regrow > 0) t.stock = Math.min(t.maxStock, (t.stock || 0) + regrow);
+          // GRID-LEVEL depletion (detailRegrow) recovers through the cell
+          // cycle below, 1:1 — the abstract +1/day top-up is only for abstract
+          // (unvisited-tile) nibbles. Without the gate the two count the same
+          // recovery twice, and villager competition on visited tiles gets
+          // refunded overnight instead of biting for the promised few days.
+          const gridDepleted = t.detailRegrow && Object.keys(t.detailRegrow).length > 0;
+          if (regrow > 0 && !gridDepleted) t.stock = Math.min(t.maxStock, (t.stock || 0) + regrow);
           // pressure decays slowly — the land forgives, eventually
           if (pressure > 0 && !t.foragedToday) t.foragePressure = Math.max(0, pressure - 1);
           t.foragedToday = false;
@@ -8670,9 +8697,31 @@
       }
       // forage the home turf; range wider only when it's stripped
       const pool = near.length ? near : mid;
+      const GRID_FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
       for (let i = 0; i < amount && pool.length; i++) {
         const t = pool[Math.floor(Math.random() * pool.length)];
         t.stock = Math.max(0, (t.stock || 0) - 1);
+        // GRID TRUTH (forager loop 2026-10-05): the player's sweep reads the
+        // grid, not the abstract number. If the grid exists, strip a real cell
+        // too — otherwise the map says "barren" while the patch is full (or
+        // the competition the pantry math claims never touches the world).
+        if (t.detail) {
+          const cands = [];
+          for (let gy = 0; gy < 9; gy++) for (let gx = 0; gx < 9; gx++) {
+            const c = t.detail[gy] && t.detail[gy][gx];
+            if (!GRID_FORAGEABLE[c]) continue;
+            const dk = gx + ',' + gy;
+            if (t.detailRegrow && t.detailRegrow[dk]) continue;
+            cands.push([gx, gy, c]);
+          }
+          if (cands.length) {
+            const [gx, gy, c] = cands[Math.floor(Math.random() * cands.length)];
+            t.detailRegrow = t.detailRegrow || {};
+            const day = this.state.scholar ? this.state.scholar.day : 0;
+            t.detailRegrow[gx + ',' + gy] = { day: day + 3, was: c };
+            if (c === 'plant') t.detail[gy][gx] = 'dirt'; // trees/bushes stand, just picked clean
+          }
+        }
       }
     },
 
@@ -10174,7 +10223,19 @@
           harvested.push({ x: cx, y: cy, cell: c, plantId: pid, plant });
         }
         if (!harvested.length) {
-          this.say('Nothing within reach. Walk to the green first.');
+          // PATCH HONESTY (forager loop 2026-10-05): the sweep found nothing,
+          // but the tile may still have green patches elsewhere. Don't send
+          // the player off ground that still has food — point at the next patch.
+          let otherGreen = false;
+          for (let oy = 0; oy < 9 && !otherGreen; oy++) for (let ox = 0; ox < 9; ox++) {
+            const c2 = detail[oy] && detail[oy][ox];
+            if (!FORAGEABLE[c2] || this.cellScorched(ox, oy)) continue;
+            if (t.detailRegrow && t.detailRegrow[ox + ',' + oy]) continue;
+            otherGreen = true; break;
+          }
+          this.say(otherGreen
+            ? 'This patch is worked out — step to another green patch and forage again.'
+            : 'Nothing within reach. Walk to the green first.');
           return null;
         }
         const estKg = Math.round(harvested.length * 4 * 0.1 * 10) / 10;
@@ -10297,13 +10358,13 @@
         // and the player should know the press wasn't wasted.
         const woodBit = woodSticks ? ` You also gather deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}.` : '';
         if (woodSticks && !knownBits.length && !unknownBits.length) {
-          msg = `No food in these trees — but the ground gives deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}. Picked clean — it'll recover in a few days.`;
+          msg = `No food in these trees — but the ground gives deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}. This patch is picked clean — it'll recover in a few days.`;
         } else if (knownBits.length && !unknownBits.length) {
-          msg = `You work the patch with practiced hands: ${knownBits.join(', ')} (${totalKcalKnown} kcal).${woodBit} Picked clean — it'll recover in a few days.`;
+          msg = `You work the patch with practiced hands: ${knownBits.join(', ')} (${totalKcalKnown} kcal).${woodBit} This patch is picked clean — it'll recover in a few days.`;
         } else if (unknownBits.length && !knownBits.length) {
-          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.)${woodBit} Picked clean — it'll recover in a few days.`;
+          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.)${woodBit} This patch is picked clean — it'll recover in a few days.`;
         } else {
-          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet.${woodBit} Picked clean — it'll recover in a few days.`;
+          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet.${woodBit} This patch is picked clean — it'll recover in a few days.`;
         }
         this.say(msg);
         // discovery labels the place: the map remembers the BEST find here.
@@ -10649,13 +10710,15 @@
           const kcal = Math.round((1500 + Math.floor(Math.random() * 1001)) * boldMult * shareMult);
           this.stockPantry(kcal, 'Foraged food');
           // COMPETITION: they depleted a real tile. the world is shared.
-          this.depleteRandomTile(Math.ceil(kcal / 200));
+          // (2026-10-05: was called without coords — a silent no-op. Home turf
+          // is the village's turf: pass haven so the depletion is real.)
+          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 3, v.py ?? 3);
           this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
         } else if (r < 0.35) {
           // brings food: a real haul. from the world, not thin air.
           const kcal = Math.round((400 + Math.floor(Math.random() * 401)) * boldMult * shareMult);
           this.stockPantry(kcal, 'Foraged food');
-          this.depleteRandomTile(Math.ceil(kcal / 200));
+          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 3, v.py ?? 3);
           this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {
           // wounded: health bars. -20 to -35 per bad day.
