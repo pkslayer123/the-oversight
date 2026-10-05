@@ -117,10 +117,12 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 ### conversation (`conversation.js`)
 Real back-and-forth dialogue. Player always has response choices.
 
-**Provides:** startConvo(), convoChoice()
+**Provides:** startConvo(), convoChoice(), convoUI() -> {active, transcript, choices}
 
 **Rules:**
-- (none documented)
+- transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
+- tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length (code: app.js chatChoice, Steve 2026-10-05)
+- history_view: speaker tab toggles full scrollable transcript (code: app.js dialogueBoxHTML, Steve 2026-10-05)
 
 **Consumes:** village.villagers, state.convos
 
