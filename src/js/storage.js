@@ -210,6 +210,10 @@
       return this.tickAction(2) || this.status();
     },
     takeMaterial(mat, n) {
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The stash is in the hall. Your hands are not.');
+        return null;
+      }
       const def = MAT_DEFS[mat];
       if (!def) return null;
       const st = this.stashState();
@@ -262,6 +266,10 @@
       return this.tickAction(2) || this.status();
     },
     takeTool(itemId) {
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The stash is in the hall. Your hands are not.');
+        return null;
+      }
       const st = this.stashState();
       const i = st.tools.findIndex(t => t.itemId === itemId);
       if (i < 0) { this.say("It's not there anymore."); return null; }

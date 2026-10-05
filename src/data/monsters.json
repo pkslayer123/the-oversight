@@ -657,14 +657,14 @@
    "se_woodlands"
   ],
   "hp": [
-   12,
-   18
+   10,
+   14
   ],
   "attack": {
    "name": "Swarm Hum",
    "damage": [
-    6,
-    12
+    4,
+    8
    ],
    "telegraph": "A low hum rises from the grass. It harmonizes with itself. Your teeth ache.",
    "pattern": {

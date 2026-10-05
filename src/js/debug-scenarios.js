@@ -66,13 +66,18 @@
   }
 
   // Place villagers at given grid spots (for combat-adjacent scenarios).
+  // They walk out with you: set their node to yours first, or the sim
+  // deletes their grid positions as not-on-your-node.
   function placeVillagers(spots) {
     const v = Game.state.village;
     v.positions = v.positions || {};
     const ids = rosterIds();
     spots.forEach((spot, i) => {
       const rid = ids[i];
-      if (rid) v.positions[rid] = { mx: spot[0], my: spot[1] };
+      if (rid) {
+        try { Game.npcSetNode(rid, Game.map.px, Game.map.py); } catch (e) {}
+        v.positions[rid] = { mx: spot[0], my: spot[1] };
+      }
     });
     return ids.slice(0, spots.length);
   }
@@ -81,10 +86,37 @@
     try { return Game.displayName(rid); } catch (e) { return rid; }
   }
 
+  // WILD NODE (Steve 2026-10-04): wild encounters happen OUT IN THE WILD,
+  // not on the haven grounds. Move the player node a couple tiles out from
+  // Haven to a wild tile — deterministic, no travel clock, no random
+  // encounters. The scenario drops you mid-expedition: you walked out here.
+  function toWildNode() {
+    try {
+      const tiles = Game.map.tiles;
+      let best = null;
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const t = tiles[y][x];
+        if (!t || t.type === 'haven' || t.type === 'ruin') continue;
+        const d = Math.abs(x - 3) + Math.abs(y - 3);
+        if (d < 2) continue; // not the doorstep — actually out
+        if (!best || d > best.d) best = { x, y, d };
+      }
+      if (!best) return false;
+      Game.map.px = best.x; Game.map.py = best.y;
+      const t = tiles[best.y][best.x];
+      t.visited = true; t.revealed = true;
+      const s = Game.state.scholar;
+      s.insideHaven = false;
+      s.mx = 4; s.my = 4;
+      return true;
+    } catch (e) { return false; }
+  }
+
   const SCENARIOS = {
     // 1. Deer encounter — bow in hand, deer adjacent, dawn.
     deer() {
       freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('crude_bow', 'arrow', 12);
       s.insideHaven = false;
@@ -172,6 +204,7 @@
     // 7. Night hunt — midnight, nocturnal predator, spear in hand.
     night() {
       freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;
@@ -209,6 +242,7 @@
     // the freeze, the whine, and dread. That's the test.
     headlight() {
       freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;
@@ -237,6 +271,7 @@
     // behind it before the wings open.
     flashbulb() {
       freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;
@@ -252,6 +287,7 @@
     // kill one, split them up — or SHOUT.
     choir() {
       freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;
@@ -267,6 +303,7 @@
     // second: hit it while it runs, or buy it off with food.
     lockpick() {
       freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('fire_hardened_spear');
       s.inventory.push({ name: 'Smoked fish', kcalEach: 400, units: 2, spoilDay: 99 });
@@ -283,6 +320,7 @@
     // step out and let it thin.
     hummice() {
       freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;
@@ -298,6 +336,7 @@
     // you. Get close and the water goes still. Strike the light from range.
     nightlight() {
       freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;

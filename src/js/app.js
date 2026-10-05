@@ -653,11 +653,20 @@
         caseBtn = `<button class="self-btn" data-self="casefile">⚖️ Case file${cdot}</button>`;
       }
     } catch (e) {}
+    // REMOTE STORES (Steve 2026-10-04): at Full Integration the System
+    // manifests the pantry anywhere. On the haven node the haven panel
+    // covers it; out in the world it lives here, System-framed.
+    let sysPantryBtn = '';
+    try {
+      const acc = Game.havenStoresAccess ? Game.havenStoresAccess() : 'none';
+      const onHaven = Game.playerTile && Game.playerTile().type === 'haven';
+      if (acc === 'remote' && !onHaven) sysPantryBtn = `<button class="self-btn" data-self="syspantry" title="◈ SYSTEM requisition — the pantry manifests">◈ Pantry</button>`;
+    } catch (e) {}
     return `<div class="selfbar"><span class="ctx-label">you:</span>` +
       `<button class="self-btn" data-self="eat">🍽 Eat${eatDot}</button>` +
       `<button class="self-btn" data-self="sleep">😴 Sleep${sleepDot}</button>` +
       `<button class="self-btn" data-self="pack">🎒 Pack (${st.invCount})${packDot}</button>` +
-      `<button class="self-btn" data-self="wait">⏳ Wait</button>${exileBtns}${caseBtn}</div>`;
+      `<button class="self-btn" data-self="wait">⏳ Wait</button>${exileBtns}${caseBtn}${sysPantryBtn}</div>`;
   }
 
   function wireSelfBar() {
@@ -670,6 +679,7 @@
         else if (a === 'pack') { invSheet(); }
         else if (a === 'wait') { Game.doAction('wait'); rerender(); }
         else if (a === 'casefile') { caseFileSheetForCurrent(); }
+        else if (a === 'syspantry') { pantrySheet(); }
         else if (a.indexOf('exile:') === 0) { Game.exileSelfDo(a.slice(6)); rerender(); }
       };
     });
@@ -1276,6 +1286,11 @@
   //   turtleSnap()   — Snap Decision (no warning, by design)
   //   turtleBunker() — the shell seals like a door closing
   //   stagMirror()   — mirror / confront beat (glass harmonics, wrong)
+  //   HUMMICE (Steve 2026-10-04) — the swarm is one instrument:
+  //   humNotice()    — fight opens: the grass starts humming, low, unsettled
+  //   humRise({stacks}) — the hum swells: N detuned voices for N stacks
+  //   humBreak()     — a voice drops out: stutter, then thinner
+  //   shout()        — the player's bellow: raw noise, no words, all lungs
   //   stagSnort()    — stag aggro
   //   stagCharge()   — Confrontation charge resolves
   //   stagConfused() — the charge dies unspent (lost you)
@@ -1615,6 +1630,94 @@
       try { sweep.stop(); } catch (e) {}
       sweep = null;
     }
+    // HUMMICE (Steve 2026-10-04): the swarm is one instrument — a sustained
+    // bed of detuned low voices, like a refrigerator, like a choir warming up
+    // underground. N voices for N stacks; each voice breathes at its own rate
+    // (that's the beating). humRise rebuilds at the new stack count, humBreak
+    // chops it out when a voice dies, humNotice opens the fight low and
+    // unsettled. combatEnd kills it — no hum follows you home.
+    let hum = null;
+    function humBuild(stacks) {
+      if (!ensure()) return;
+      humStop();
+      const t = ctx.currentTime;
+      const n = Math.max(1, Math.min(4, stacks || 1));
+      const g = ctx.createGain();
+      g.gain.value = 0.0001;
+      g.gain.setTargetAtTime(0.04 + 0.03 * n, t, 0.7);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.value = 380; filt.Q.value = 2;
+      g.connect(filt); filt.connect(sfxBus);
+      const oscs = [];
+      for (let i = 0; i < n; i++) {
+        const o = ctx.createOscillator(), og = ctx.createGain();
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.value = 66 + i * 8 + Math.random() * 3;
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.35 + i * 0.22 + Math.random() * 0.2;
+        lg.gain.value = 0.4;
+        lfo.connect(lg); lg.connect(og.gain);
+        og.gain.value = 0.55;
+        o.connect(og); og.connect(g);
+        o.start(t); lfo.start(t);
+        oscs.push(o, lfo);
+      }
+      hum = {
+        stop() {
+          const tt = ctx.currentTime;
+          try {
+            g.gain.cancelScheduledValues(tt);
+            g.gain.setValueAtTime(g.gain.value, tt);
+            g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.35);
+            oscs.forEach(o => o.stop(tt + 0.45));
+          } catch (e) {}
+        }
+      };
+    }
+    function humStop() {
+      if (!hum) return;
+      try { hum.stop(); } catch (e) {}
+      hum = null;
+    }
+    function humBreak() {
+      // a voice drops out of the choir: chop the hum hard, twice — the
+      // stutter — then let it die. The next humRise rebuilds it thinner.
+      if (!ensure() || !hum) return;
+      humStop();
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(140, t);
+      o.frequency.exponentialRampToValueAtTime(55, t + 0.3);
+      g.gain.setValueAtTime(0.22, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.4);
+    }
+    function shout() {
+      // raw bellow: bandpassed noise swell + a descending chest blast.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.7), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 0.8;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.5, t + 0.08);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.7);
+      }
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(70, t + 0.5);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.4, t + 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.6);
+    }
     // beamBlocked: the beam dies against something real. Fizzle, not bang.
     function beamBlocked() {
       if (!ensure()) return;
@@ -1681,7 +1784,12 @@
       beamSweepStop() { beamSweepStop(); },
       victory() { sting('victory'); },
       defeat() { sting('defeat'); },
-      combatEnd() { stopHeartbeat(); stopCharge(); beamSweepStop(); },
+      combatEnd() { stopHeartbeat(); stopCharge(); beamSweepStop(); humStop(); },
+      humNotice() { humBuild(2); }, // the grass starts humming — low, unsettled
+      humRise(d) { humBuild(d && d.stacks ? d.stacks : 1); },
+      humBreak() { humBreak(); },
+      humStop() { humStop(); },
+      shout() { shout(); },
       toggleMute() { return toggleMute(); },
       isMuted() { return muted; },
       round() { /* hook reserved */ },
@@ -3639,19 +3747,20 @@
       <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
       ${(() => {
-        // STORES GATE (Steve 2026-10-04): pantry, caches, and stash are
+        // STORES GATE (Steve 2026-10-04): the pantry and village stash are
         // physical — inside the hall, or via the System at Full Integration.
         // Outside the building they disappear: no disabled buttons, no hints.
+        // (Caches stay: they're your buried goods, dug up where they lie.)
         const acc = Game.havenStoresAccess ? Game.havenStoresAccess() : 'inside';
         if (acc === 'none') return '';
         const sysNote = acc === 'remote'
           ? '<p class="small">◈ SYSTEM: requisition from anywhere — the pantry manifests.</p>' : '';
         return `${sysNote}
         <button class="btn sm" id="x-pantry">Take from pantry</button>
-        <button class="btn sm ghost" id="x-caches">📍 Caches</button>
         <div id="haven-stores-slot"></div>
         ${Game.stashHtml()}`;
       })()}
+      <button class="btn sm ghost" id="x-caches">📍 Caches</button>
       ${sleepHintHTML()}
       ${(() => {
         try {

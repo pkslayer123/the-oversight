@@ -6094,6 +6094,10 @@
     // takeFromPantryBulk: pack multiple items at once (slider UI).
     // selections: {idx: qty}. Respects weight, applies trust cost once.
     takeFromPantryBulk(selections) {
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The pantry is in the hall. Your hands are not.');
+        return null;
+      }
       const pantry = this.state.village.pantry || [];
       const v = this.state.village;
       let totalKcal = 0, totalKg = 0, totalUnits = 0;
@@ -6172,6 +6176,10 @@
     // SELFISHNESS HAS A COST: taking without contributing lowers trust.
     // The village notices who gives and who takes.
     takeFromPantry(idx) {
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The pantry is in the hall. Your hands are not.');
+        return null;
+      }
       const pantry = this.state.village.pantry || [];
       const item = pantry[idx];
       if (!item || item.units <= 0) return null;
@@ -8670,6 +8678,33 @@
       const m = s.monster;
       if (!m || m.mx === undefined) return;
       const px = s.mx ?? 4, py = s.my ?? 4;
+      const mDist = Math.max(Math.abs(px - m.mx), Math.abs(py - m.my));
+      // HUMMICE hunt by EAR, not eye (Steve 2026-10-04): the hum is a sonar.
+      // Within 4 tiles they hear you breathing and close on the sound — dark
+      // and trees don't matter. You hear the hum getting louder first. This
+      // is also what makes them real nocturnal hunters instead of wanderers
+      // that lose your trail in their own woods.
+      if (m.id === 'hummice' && mDist <= 4) {
+        if (mDist <= 1) { this.startCombat(m.id); return; }
+        const detail = this.genDetail(this.map.px, this.map.py);
+        const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
+        const steps = Math.abs(px - m.mx) >= Math.abs(py - m.my) ? [[dx, 0], [0, dy]] : [[0, dy], [dx, 0]];
+        for (const [sx, sy] of steps) {
+          const nx = m.mx + sx, ny = m.my + sy;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+          const cell = detail[ny] && detail[ny][nx];
+          if (cell && this.cellProps(cell).blocks) continue;
+          m.mx = nx; m.my = ny;
+          break;
+        }
+        m.lostSight = 0;
+        if ((m.hearCueCd || 0) <= 0) {
+          this.say('The humming gets louder. It\'s coming toward the sound of you.');
+          m.hearCueCd = 3;
+        } else m.hearCueCd -= 1;
+        if (m.mx === px && m.my === py) this.startCombat(m.id);
+        return;
+      }
       // LINE OF SIGHT: it can't hunt what it can't see.
       if (!this.canSee(m.mx, m.my, px, py)) {
         m.lostSight = (m.lostSight || 0) + 1;
@@ -11191,6 +11226,14 @@
             mo.beamPhase = 'lure'; mo.catfishDark = 0; mo.lureSaid = false;
             this.say('A soft green glow pulses in the dark water. Pretty. That\'s the problem — it\'s pretty.');
             this.audioEvent('catfishLure');
+          } else if (this.humiceIs(mo) && !f0.humNoticed) {
+            // HUMMICE (Steve 2026-10-04): the fight must TEACH the deal up
+            // front — networked mice, one hum, three answers. No codex needed
+            // to understand the shape of the threat.
+            f0.humNoticed = true;
+            this.say('The grass is humming. In harmony. That\'s not grass — that\'s fifty throats, one note, and it\'s getting louder.');
+            this.say('The hum STACKS while you stand in it. Kill one and the choir stutters. Keep moving and it can\'t settle. Or SHOUT (📢) — noise breaks the music.');
+            this.audioEvent('humNotice');
           }
         }
       } catch (e) {}
@@ -11232,6 +11275,10 @@
       }
       this.sysSay(`COMBAT! ${dispName.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
       this.tbBeginTurn();
+      // OPENING TURNS (Steve 2026-10-04): if a monster is faster than you it
+      // opens — run AI turns until it's your turn. Without this the fight
+      // soft-locks on "Not your turn" forever (hummice speed 6 > player 4).
+      if (!this.tbIsPlayerTurn()) this.tbAdvance();
       return this.tbfight;
     },
 
@@ -12635,7 +12682,11 @@
     // generic want — their batches own their tuning.
     encWantRange(m, pat) {
       if (pat.type === 'direct') return pat.range || 3;
-      if (pat.type === 'burst' && (this.toadIs(m) || this.humiceIs(m))) return (pat.radius || 2) + 1;
+      // HUMMICE (Steve 2026-10-04): nibblers close in — range 2 puts them in
+      // spear reach. Bombarding from 3 made them unhittable; the fight is a
+      // brawl around the hum, not a siege.
+      if (pat.type === 'burst' && this.humiceIs(m)) return 2;
+      if (pat.type === 'burst' && this.toadIs(m)) return (pat.radius || 2) + 1;
       return 4;
     },
 
@@ -13005,7 +13056,10 @@
       let n = 0;
       for (const m of f.fighters) {
         if (m.kind !== 'monster' || !m.alive || m.fled) continue;
-        if ((((m.mdef || {}).fear) || '').toLowerCase() !== 'loud noise') continue;
+        // HUMMICE (Steve 2026-10-04): the swarm's coordination IS sound —
+        // noise breaks the music even though they don't "fear" it. The hum
+        // needs the choir; a bellow scatters the choir.
+        if ((((m.mdef || {}).fear) || '').toLowerCase() !== 'loud noise' && !this.humiceIs(m)) continue;
         n++;
         if (m.telegraph) m.telegraph = null;
         m.encCooldown = Math.max(m.encCooldown || 0, 1);
@@ -13607,14 +13661,22 @@
           let resCells = tg.cells;
           if (this.mothIs(m)) resCells = this.tbMothArcCells(m, tg.cells);
           const hitKeys = new Set(resCells.map(c => c.cx + ',' + c.cy));
-          // HUMMICE: the hum stacks while you stand in it — worse every time.
+          // HUMMICE: the hum stacks while you stand in it — worse every round.
+          // ROUND-GATED (Steve 2026-10-04): the stack builds once per round,
+          // not once per mouse, or four attackers max it before you can blink
+          // and "keep moving" can never work. Standing still: +1/round to a
+          // wall of sound. Moving/killing: the decay and the choir-stutter
+          // answer it.
           let humMult = 1;
           if (this.humiceIs(m)) {
-            f.humStacks = Math.min(4, (f.humStacks || 0) + 1);
-            humMult = 1 + 0.25 * f.humStacks;
-            const humWords = ['', 'a low thrum', 'your teeth aching', 'your bones buzzing', 'a solid wall of sound'];
-            this.say(`The hum stacks — ${humWords[f.humStacks]}. (hum ×${f.humStacks})`);
-            this.audioEvent('humRise', { stacks: f.humStacks });
+            if (f.humRiseRound !== f.round) {
+              f.humRiseRound = f.round;
+              f.humStacks = Math.min(4, (f.humStacks || 0) + 1);
+              const humWords = ['', 'a low thrum', 'your teeth aching', 'your bones buzzing', 'a solid wall of sound'];
+              this.say(`The hum stacks — ${humWords[f.humStacks]}. (hum ×${f.humStacks})`);
+            }
+            humMult = 1 + 0.25 * (f.humStacks || 0);
+            this.audioEvent('humRise', { stacks: f.humStacks || 0 });
             // HUMMICE: the hum ebbs after it lands — the mice need a breath
             // before the next swell. That's the player's window.
             m.encCooldown = Math.max(m.encCooldown || 0, 1);
