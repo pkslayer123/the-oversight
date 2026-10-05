@@ -11338,6 +11338,11 @@
     tbTelegraphCue(m) {
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
+      // BATCH 4 (corporate horrors): bespoke codex-gated cues.
+      try {
+        const b4 = this.tbBatch4Cue(m);
+        if (b4) return b4;
+      } catch (e) {}
       if (tg && tg.firing > 0) {
         // CODEX-GATED: first encounters get raw terror, not tactics. The
         // "circle it wide / keep moving" coaching only appears once you've
@@ -11358,6 +11363,20 @@
         cue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
       }
       return cue;
+    },
+
+    // BATCH 4 telegraph cues: diegetic always, tactical only when earned.
+    // Returns null when the generic cue should run instead.
+    tbBatch4Cue(m) {
+      const tg = m.telegraph;
+      const atk = (m.mdef || {}).attack || {};
+      const mid = (m.mdef || {}).id;
+      if (mid !== 'review_drone' && mid !== 'camera_swarm' && mid !== 'hype_horn' && mid !== 'delegate_beast') return null;
+      const known = this.encUsesFifo(m) ? this.encTelegraphKnown(m) : true;
+      const learned = this.tbPatternKnown(mid, atk.name)
+        ? ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`
+        : '';
+      return null;
     },
 
     // audioEvent: optional hook for the Web Audio terror system (app.js).
@@ -11833,6 +11852,12 @@
     //   encNoticesPain(m,attackerKey), encScanThreats(m),
     //   encTelegraphKnown(m), encPhaseBadge(m), encSetPhase(m,phase)
     deerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'gallowdeer')); },
+    // MONSTER BATCH 4 (corporate horrors): id gates for the bespoke layer,
+    // following the deerIs pattern. The generic engine does the rest.
+    droneIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'review_drone')); },
+    swarmIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'camera_swarm')); },
+    hornIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hype_horn')); },
+    beastIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'delegate_beast')); },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
     encThreatQueue(m) {
@@ -11851,7 +11876,7 @@
       if (!silent && this.tbfight) {
         const t = this.tbFighter(key);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
-        this.say(`The deer's head swings toward ${who}. Another light in its eyes. You're all on the list now.`);
+        this.say(this.encNoticeLine(m, who));
       }
       return true;
     },
@@ -11877,7 +11902,7 @@
       if (i > 0) { q.splice(i, 1); q.unshift(attackerKey); }
       if (q[0] !== before) {
         const who = t.kind === 'player' ? 'you' : t.name;
-        this.say(`It staggers — and its burning gaze fixes on ${who}. Pain gets noticed.`);
+        this.say(this.encPainLine(m, who));
         this.audioEvent('deerAggro');
       }
     },
@@ -11913,9 +11938,24 @@
       if (q[0] !== before) {
         const t = this.tbFighter(q[0]);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
-        this.say(`Too close. The deer's gaze SNAPS to ${who} — proximity overrules patience.`);
+        this.say(this.encProximityLine(m, who));
         this.audioEvent('deerAggro');
       }
+    },
+    // Queue narration is per-monster: encounter.noticeText / painText /
+    // proximityText with a {who} token. The deer lines are the defaults —
+    // its behavior and text are unchanged.
+    encNoticeLine(m, who) {
+      const cfg = this.encConfig(m) || {};
+      return (cfg.noticeText || "The deer's head swings toward {who}. Another light in its eyes. You're all on the list now.").split('{who}').join(who);
+    },
+    encPainLine(m, who) {
+      const cfg = this.encConfig(m) || {};
+      return (cfg.painText || 'It staggers — and its burning gaze fixes on {who}. Pain gets noticed.').split('{who}').join(who);
+    },
+    encProximityLine(m, who) {
+      const cfg = this.encConfig(m) || {};
+      return (cfg.proximityText || "Too close. The deer's gaze SNAPS to {who} — proximity overrules patience.").split('{who}').join(who);
     },
     // codex-gated: have you learned what the freeze means? The windup lane
     // (where the beam will START) and the tactical coaching only appear once
@@ -11934,11 +11974,52 @@
     },
     encPhaseBadge(m) {
       if (!this.encUsesFifo(m)) return '';
+      const cfg = this.encConfig(m) || {};
+      if (cfg.phaseBadges && cfg.phaseBadges[m.beamPhase]) return cfg.phaseBadges[m.beamPhase];
       return {
         aim: ' 👁 AIMING', charge: ' ⚡ CHARGING', firing: ' 🔥 FIRING',
         cooldown: ' 😮‍💨 SPENT',
       }[m.beamPhase] || '';
     },
+
+    // nearest fire cell within range (chebyshev) of (x,y) — the swarm's bane.
+    tbNearestFire(x, y, range) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      let best = null, bestD = 99;
+      for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
+        if (!detail[cy] || detail[cy][cx] !== 'fire') continue;
+        const d = Math.max(Math.abs(cx - x), Math.abs(cy - y));
+        if (d <= range && d < bestD) { bestD = d; best = { x: cx, y: cy }; }
+      }
+      return best;
+    },
+
+
+    // BATCH 4 breather beats: post-attack recovery, one full turn each.
+    // Returns true when the monster spent its turn breathing.
+    tbFifoBreather(m) {
+      const specs = [
+        ['droneIs', 'droneRecalc', 'recalc',
+          'The drone hovers, re-running the numbers. "RECALIBRATING METRICS."', 'droneRecalc'],
+        ['hornIs', 'hypeCooldown', 'deflate',
+          'It sags, spent — the encouragement took everything out of it.', 'hypeDeflate'],
+        ['beastIs', 'beastDebrief', 'debrief',
+          'It dictates into nothing: "violence action item: closed. Scheduling retrospective."', 'delegateDebrief'],
+      ];
+      for (const [pred, field, phase, text, audio] of specs) {
+        if (this[pred](m) && (m[field] || 0) > 0) {
+          m[field] -= 1;
+          this.encSetPhase(m, phase);
+          this.say(text);
+          if (audio) this.audioEvent(audio);
+          this.tbRefreshTelegraphUI();
+          this.tbEndCheck();
+          return true;
+        }
+      }
+      return false;
+    },
+
 
     tbMonsterTurn(m) {
       const f = this.tbfight;
@@ -12133,6 +12214,9 @@
         const dt = this.encCurrentTarget(m);
         if (dt) foe = { f: dt, d: Math.max(Math.abs(dt.mx - m.mx), Math.abs(dt.my - m.my)) };
       }
+      // BATCH 4 breather beats: post-attack recovery with the monster's own
+      // name on it. The breather spends the whole turn.
+      if (this.tbFifoBreather(m)) return;
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
