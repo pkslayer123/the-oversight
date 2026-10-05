@@ -3751,7 +3751,7 @@
     return `
       <div class="card"><h3>🏠 HAVEN — ${st.rosterCount} souls</h3>
       <p class="small"><i>${v.atmos}</i></p>
-      <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (${st.pantryDays >= 999 ? 'holding steady — the village feeds itself' : `about ${st.pantryDays} days at this burn`})${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
       ${(() => {
         // STORES GATE (Steve 2026-10-04): the pantry and village stash are

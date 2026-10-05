@@ -6141,6 +6141,23 @@
       try { this.remember(confronter, 'confronted_theft', 'called you out for taking too much'); } catch (e) {}
     },
 
+    // pantryDaysEstimate: how long the pantry lasts at the MEASURED burn rate
+    // (rolling 7-day net from villageEats). Falls back to the 12x2000 worst
+    // case before the first endDay. Returns 999 when the village covers
+    // itself (no net draw) — the pantry is holding, not draining.
+    pantryDaysEstimate() {
+      const v = this.state.village || {};
+      const pk = (v.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+      const hist = v.burnHistory || [];
+      if (!hist.length) {
+        const pop = ((v.roster || []).length) || 12;
+        return Math.floor(pk / Math.max(1, pop * 2000));
+      }
+      const burn = hist.reduce((a, b) => a + b, 0) / hist.length;
+      if (burn <= 0) return 999;
+      return Math.floor(pk / burn);
+    },
+
     // fairShareNote: the social norm, shown in the pantry UI. Not a limit —
     // information. Everyone knows what "fair" looks like. Violating it visibly
     // has consequences; the UI just makes the norm legible.
@@ -10907,6 +10924,10 @@
       }
       const net = Math.max(0, eat - give);
       v.lastEat = eat; v.lastGive = give; v.lastProviders = providers.map(p => p.name.split(' ')[0]);
+      // BURN HISTORY: the honest pantry clock. The haven screen's "about N days"
+      // runs on this measured net burn — not the 12x2000 worst case, which told
+      // the forager their pantry was always ~2 days from empty. Rolling 7 days.
+      v.burnHistory = (v.burnHistory || []).concat([net]).slice(-7);
       // Consume REAL pantry items (not phantom pantryKcal). Oldest/spoiling first.
       v.pantry = v.pantry || [];
       let need = net;
@@ -14658,7 +14679,7 @@
         invKcal: s.inventory.reduce((t, i) => t + (i.units || 0) * (i.kcalEach || 0), 0),
         // Pantry kcal computed from ITEMS, not a bucket. Unsafe food counts (it's there, it's risky).
         pantryKcal: Math.round((this.state.village.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0)),
-        pantryDays: Math.floor(((this.state.village.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0)) / Math.max(1, 12 * 2000)),
+        pantryDays: this.pantryDaysEstimate(),
         waterClean: Math.round((this.state.village.water || {}).clean || 0),
         waterDirty: Math.round((this.state.village.water || {}).dirty || 0),
         // Weight: everything has mass. Carrying capacity 20kg.
