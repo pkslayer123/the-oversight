@@ -11025,6 +11025,13 @@
           scholar.diseases.push({ name: it.diseaseRisk.note || 'food poisoning', day: scholar.day });
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
+        // POISON: belltoad throat sac, etc. Purify cures it.
+        if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
+          scholar.health = Math.max(0, (scholar.health || 100) - 10);
+          scholar.poisons = scholar.poisons || [];
+          scholar.poisons.push({ name: it.poisonRisk.note || 'toxin', day: scholar.day });
+          this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
+        }
         scholar.kcal += kcal; ate += kcal;
         // MEDICINE (Steve): chewing medicinal plants is a skill. Track it —
         // the knowledgeable use them deliberately, the ignorant chew and hope.

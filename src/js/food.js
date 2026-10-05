@@ -172,13 +172,19 @@
 
     // A killed animal: carcass, not food. Clean it quickly — it spoils fast.
     foodCarcass(animal, kcal, day, how) {
+      // POISON: belltoad throat sac is toxic. Eating it poisons you.
+      // (Purify cures it — every problem needs an answer.)
+      const isToad = animal.id === 'belltoad';
       return {
         plantId: 'meat_' + animal.id, foodKind: 'meat', foodState: 'carcass',
         edible: false, units: 1, kcalEach: 0, hiddenKcal: kcal,
         spoilDay: day + 2, unit: 'carcass',
         name: animal.name + (how === 'trapped' ? ' (trapped)' : ' (carcass)'),
-        prep: 'Gut it quickly — clean with a knife. Spoils in ~2 days.',
+        prep: isToad
+          ? 'Gut it carefully — the throat sac is POISON. Do not eat the throat sac.'
+          : 'Gut it quickly — clean with a knife. Spoils in ~2 days.',
         kg: Math.max(0.5, kcal / 1000),
+        ...(isToad ? { poisonRisk: { p: 0.5, note: 'throat sac toxin' } } : {}),
       };
     },
 
