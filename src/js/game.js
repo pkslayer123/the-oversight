@@ -5157,6 +5157,18 @@
         this.placePartyAtPlayer();
       } catch (e) {}
       this.say('You push through the doors into open air. Haven grounds — tents, a fire pit, worn paths. The world is that way.');
+      // MONSTERS WAIT (Steve 2026-10-05): if you fled through a door, they're
+      // still out here. They didn't leave. Going back out re-engages.
+      const waiting = this.state.doorFledMonsters;
+      if (waiting && waiting.length) {
+        this.state.doorFledMonsters = null;
+        this.say('⚠️ They\'re still here. Waiting.');
+        // Re-engage with the first monster — they were waiting for you.
+        const first = waiting[0];
+        try {
+          this.startCombat(first.id);
+        } catch (e) {}
+      }
       return true;
     },
     enterBuilding() {
@@ -5956,6 +5968,13 @@
     fillWater() {
       const s = this.state.scholar;
       s.water = s.water || [];
+      // WATER HAS MASS. 1L = 1kg against your carry limit — the pack from the
+      // pantry UI already gates on this; filling a bottle at a creek must too.
+      // (2026-10-05: wild runs filled 15-20L unboundedly past 20kg with no refusal.)
+      if (!this.canCarry(1)) {
+        this.say(`Your pack is full — water is heavy (1L = 1kg). Drink some or drop weight before filling.`);
+        return null;
+      }
       // Where are you? Only the Haven well is clean. Everything wild is unknown.
       const t = this.playerTile();
       const isCreek = t && t.type === 'creek';
@@ -5987,6 +6006,8 @@
     fillWaterFromVillage() {
       const v = this.state.village;
       if (!v || !v.water || v.water.clean < 1) { this.say('The well is dry. Find water out there.'); return null; }
+      // WATER HAS MASS here too: don't drain the cistern for a liter you can't carry.
+      if (!this.canCarry(1)) { this.say('Your pack is full — water is heavy (1L = 1kg). Drink some or drop weight.'); return null; }
       v.water.clean -= 1;
       this.addWater(1, 'clean', 'Haven well');
       this.say('You fill 1L from the Haven well. Clean.');
@@ -10861,14 +10882,6 @@
         this.checkQuest(kind);
         this.maybeOfferQuest();
         return true; // FREE: drinking isn't a day-part decision
-      } else if (kind === 'treat') {
-        const t = this.playerTile();
-        if (t.type !== 'creek' && t.type !== 'wetland') { this.say('Need moving water — find a creek or wetland.'); return null; }
-        scholar.water = scholar.water || [];
-        scholar.water.push({ liters: 1, quality: 'clean', source: 'Creek (boiled)' });
-        scholar.water.push({ liters: 1, quality: 'clean', source: 'Creek (boiled)' });
-        scholar.kcal -= S.calories.ACTION_COSTS.treat_water;
-        msg = 'You boil water over a small fire. +2 clean water.';
       }
       this.say(msg);
       this.checkQuest(kind);
@@ -10876,13 +10889,12 @@
       // ACTION CLOCK: variable cost by fictional weight. 1 chunk = 32 ticks.
       // Forage is a QUICK beat: 16 ticks (half a batch), small yield. Time
       // feels spent, not skipped — two presses move the world one batch turn.
-      // rest 3 chunks, treat 1 chunk, wait = however long until the part turns.
+      // rest 3 chunks, wait = however long until the part turns.
       const T = this.TIME;
       let ticks = 0;
       if (kind === 'forage') {
         ticks = 16;
       } else if (kind === 'rest') ticks = 96;
-      else if (kind === 'treat') ticks = 32;
       else if (kind === 'wait') {
         const rem = (this.state.scholar.dayTicks || 0) % T.TICKS_PER_PART;
         ticks = rem === 0 ? T.TICKS_PER_PART : T.TICKS_PER_PART - rem;
@@ -12892,10 +12904,17 @@
       // FLEE BY DOOR (Steve 2026-10-05): at walled Haven, the grid edges are
       // blocked — but doors work. Step on a door tile in combat and you go
       // through, escaping the fight. (Walls don't work, doors do.)
+      // REFINEMENT: going inside breaks the fight FOR YOU, but doesn't save
+      // anyone outside. Monsters stay where they are — they don't despawn.
+      // They'll be waiting if you go back out. (Don't get locked in to starve.)
       const detail = this.genDetail(this.map.px, this.map.py);
       const curCell = detail[p.my] && detail[p.my][p.mx];
       if (curCell === 'door') {
         const s = this.state.scholar;
+        // Remember monster positions before ending combat — they stay.
+        const monsterPositions = f.fighters
+          .filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive)
+          .map(m => ({ id: m.monsterId, mx: m.mx, my: m.my, hp: m.hp }));
         if (s.insideHaven) {
           this.say('You dive through the doors — outside! The fight is behind you.');
           this.exitBuilding();
@@ -12903,10 +12922,18 @@
           this.say('You duck through the doors — inside! The fight is behind you.');
           this.enterBuilding();
         }
-        // Escaping through a door ends combat
+        // Escaping through a door ends combat FOR THE PLAYER
         const p2 = this.tbFighter('p');
         if (p2) p2.fled = true;
+        // Preserve monsters: they don't melt away, they wait outside.
+        // (Standard tbEnd despawns; we stash positions first.)
+        this.state.doorFledMonsters = monsterPositions;
         this.tbEnd('fled');
+        // Restore monsters to the world — they're still out there.
+        // (They'll re-engage if you go back outside.)
+        if (monsterPositions.length) {
+          this.say(`⚠️ ${monsterPositions.length} ${monsterPositions.length === 1 ? 'thing' : 'things'} still out there. They know where you went.`);
+        }
         return true;
       }
       // FLEE BY NODE BARRIER (Steve 2026-10-05): no FLEE button, no distance
