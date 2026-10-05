@@ -188,7 +188,7 @@ function band(name, v, lo, hi) {
   const trialOutcomes = [];
   for (let i = 0; i < 100; i++) {
     const cc = Game.openCase(tPlot2, 'ambush');
-    for (const id of npcs()) if (!cc.accused.includes(id)) cc.belief[id] = 60; // strong case
+    for (const id of npcs()) if (!cc.accused.includes(id)) cc.belief[id] = -60; // strong case: belief negative = guilty
     const t = Game.callMoot(cc.id);
     if (t && t.awaitingPlayerVote) Game.castPlayerVote(cc.id, true);
     trialOutcomes.push(!!cc.trial.convicted);
@@ -199,7 +199,7 @@ function band(name, v, lo, hi) {
   const weakOutcomes = [];
   for (let i = 0; i < 100; i++) {
     const cc = Game.openCase(tPlot2, 'ambush');
-    for (const id of npcs()) if (!cc.accused.includes(id)) cc.belief[id] = -60; // weak case
+    for (const id of npcs()) if (!cc.accused.includes(id)) cc.belief[id] = 60; // weak case: belief positive = believes the accused
     const t = Game.callMoot(cc.id);
     if (t && t.awaitingPlayerVote) Game.castPlayerVote(cc.id, false);
     weakOutcomes.push(!!cc.trial.convicted);
@@ -209,6 +209,59 @@ function band(name, v, lo, hi) {
   band('weak case usually acquits', weakRate, 0.0, 0.5);
   ok('trial RNG: a good case CAN lose', convRate < 1.0);
   ok('trial RNG: a weak case CAN win', weakRate > 0.0);
+  // polarity pin: real evidence tools must HELP conviction, not hurt it.
+  // (A shipped inversion once made strong evidence acquit. Never again.)
+  // Runs on a FRESH game: trial blocks above leave the village fractured
+  // (schisms, exiles, trauma), which confounds baseline belief.
+  {
+    await Game.init();
+    Game.genRoster('Columbus, Ohio');
+    Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
+    Game.depart();
+    const vv = Game.state.village;
+    const nn = () => vv.roster.filter(id => id !== Game.villagerId);
+    const [Q1, Q2, Q3, QT] = nn();
+    const qPlot = { id: 'qplot', leader: Q1, accomplices: [Q2, Q3], target: QT, weakest: Q2 };
+    Game.betrayalState().plots.push(qPlot);
+    const ev = [], noev = [];
+    for (let i = 0; i < 60; i++) {
+      const ce = Game.openCase(qPlot, 'ambush');
+      Game.moveBelief(ce, -15, 'wounds'); Game.moveBelief(ce, -10, 'site');
+      Game.moveBelief(ce, -16, 'witnesses'); Game.moveBelief(ce, -12, 'inconsistency');
+      const te = Game.callMoot(ce.id);
+      if (te && te.awaitingPlayerVote) Game.castPlayerVote(ce.id, true);
+      ev.push(!!ce.trial.convicted);
+      vv.betrayal.cases = vv.betrayal.cases.filter(x => x !== ce);
+      const cn = Game.openCase(qPlot, 'ambush'); // cover story only, no evidence
+      const tn = Game.callMoot(cn.id);
+      if (tn && tn.awaitingPlayerVote) Game.castPlayerVote(cn.id, false); // honest: belief favors the accused
+      noev.push(!!cn.trial.convicted);
+      vv.betrayal.cases = vv.betrayal.cases.filter(x => x !== cn);
+    }
+    const evR = ev.filter(Boolean).length / ev.length, noR = noev.filter(Boolean).length / noev.length;
+    ok(`evidence helps conviction (ev ${evR.toFixed(2)} > noev ${noR.toFixed(2)})`, evR > noR + 0.3);
+  }
+  // wild-day rate tuning pin (scripts/sim-trial-frequency.js): 0.10 default.
+  {
+    delete Game.WILD_DAY_RATE;
+    ok('wildDayRate defaults to 0.10', Game.wildDayRate() === 0.10);
+    Game.WILD_DAY_RATE = 0.25;
+    ok('WILD_DAY_RATE override respected', Game.wildDayRate() === 0.25);
+    delete Game.WILD_DAY_RATE;
+    // counterfactual API: forced wild vs calm tally on the same case
+    const qn = () => Game.state.village.roster.filter(id => id !== Game.villagerId);
+    const [R1, R2, R3, RT] = qn();
+    const rPlot = { id: 'rplot', leader: R1, accomplices: [R2, R3], target: RT, weakest: R2 };
+    Game.betrayalState().plots.push(rPlot);
+    const qc = Game.openCase(rPlot, 'ambush');
+    const seedFn = (s) => { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+    const tw = Game.tallyVotes(qc, true, seedFn(42));
+    const tc = Game.tallyVotes(qc, false, seedFn(42));
+    ok('forced wild tally records wildDay', tw.wildDay === true);
+    ok('forced calm tally records wildDay', tc.wildDay === false);
+    ok('same seed, same attendance', tw.present.length === tc.present.length);
+    Game.betrayalState().cases = Game.betrayalState().cases.filter(x => x !== qc);
+  }
   // bribery
   const bc = Game.openCase(tPlot2, 'ambush');
   const voter = npcs().find(id => !bc.accused.includes(id));

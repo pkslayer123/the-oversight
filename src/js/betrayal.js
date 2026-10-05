@@ -454,6 +454,7 @@
       // corpse hook (SIBLING: corpses.js) — feature-checked
       try { if (this.createCorpse) this.createCorpse(plot.target, { cause: 'ambush', by: [plot.leader, ...plot.accomplices] }); } catch (e) {}
       this.removeVillager(plot.target, 'ambushed');
+      try { this.recordTrauma('killed'); } catch (e) {}
     }
     if (outcome === 'hurt') {
       try { this.recordGrievance(plot.target, plot.leader, 'ambushed', 60); } catch (e) {}
@@ -727,18 +728,18 @@
     } catch (e) {}
     return clamp(m, -20, 30);
   },
-  conductTrial(c) {
+  // Trial vote tally, extracted so the wild-day draw can be forced for
+  // counterfactual measurement (sim) and testing. rng defaults to Math.random.
+  // POLARITY: belief is negative = guilty (evidence moves it down), so a
+  // voter convicts when their final score s < 0.
+  tallyVotes(c, wildDay, rng) {
+    const R = rng || Math.random;
     const v = this.state.village;
     const accused = c.accused[0]; // the ringleader stands trial (accomplices judged with them)
     const voters = this.npcIds().filter(id => !c.accused.includes(id));
     // attendance varies
     const present = voters.filter(() => R() < 0.88);
     const mood = this.villageMood();
-    // TRIAL-LEVEL SWING: the village woke up angry, or forgiving. Most days
-    // the room is calm and evidence rules; some days the whole village woke
-    // up wrong and the trial is a crapshoot. This is the gamble Steve wants:
-    // a good case can lose, a weak case can win.
-    const wildDay = R() < 0.25;
     const trialSwing = (wildDay ? (R() * 140 - 70) : (R() * 24 - 12)) + mood * 0.5;
     const noise = () => (R() * 30 - 15);
     let guilty = 0, votes = [];
@@ -760,19 +761,64 @@
       const br = (c.bribes || []).find(b => b.voter === vid && !c.exposedBribes.includes(vid));
       if (br) {
         const wantsGuilty = !c.accused.includes(br.by);
-        s += wantsGuilty ? 40 : -40;
+        s += wantsGuilty ? -40 : 40;
       }
-      const v_ = s > 0 ? 'guilty' : 'acquit';
+      const v_ = s < 0 ? 'guilty' : 'acquit';
       if (v_ === 'guilty') guilty++;
       votes.push({ vid, vote: v_, score: Math.round(s) });
     }
-    c.trial = { present, votes, guilty, day: this.state.scholar.day, playerVoter };
-    const need = Math.floor(present.length / 2) + 1;
+    return { present, votes, guilty, playerVoter, wildDay };
+  },
+  // ---------- trial weather ----------
+  // Village trauma log: deaths and exiles put the village on edge for days.
+  recordTrauma(kind) {
+    const bs = this.betrayalState();
+    bs.trauma = bs.trauma || [];
+    bs.trauma.push({ day: this.state.scholar.day, kind });
+    if (bs.trauma.length > 20) bs.trauma = bs.trauma.slice(-20);
+  },
+  recentTrauma(days) {
+    const bs = this.betrayalState();
+    const day = this.state.scholar.day;
+    return (bs.trauma || []).some(t => day - t.day <= (days || 5));
+  },
+  // Wild-day rate. Tuned by sim (scripts/sim-trial-frequency.js): 0.10 keeps
+  // the gamble alive — a good case can lose, a weak case can win — without
+  // making injustice weather. Trauma clustering was tested and REJECTED:
+  // in violent games the village is always "recently traumatized," which
+  // pushed the effective rate back up to ~0.27. The trauma log stays, but
+  // only so wild days can be narrated honestly ("still raw after the exile").
+  wildDayRate() {
+    return (this.WILD_DAY_RATE != null) ? this.WILD_DAY_RATE : 0.10;
+  },
+  conductTrial(c) {
+    // TRIAL-LEVEL SWING: the village woke up angry, or forgiving. Most days
+    // the room is calm and evidence rules; some days the whole village woke
+    // up wrong and the trial is a crapshoot. This is the gamble Steve wants:
+    // a good case can lose, a weak case can win. Rate via wildDayRate().
+    const rate = this.wildDayRate();
+    const wildDay = Math.random() < rate;
+    const t = this.tallyVotes(c, wildDay);
+    c.trial = { present: t.present, votes: t.votes, guilty: t.guilty, day: this.state.scholar.day, playerVoter: t.playerVoter, wildDay: t.wildDay };
+    if (t.wildDay) {
+      // narrate the weather honestly: the room is off today. If there's
+      // fresh blood behind it, say so — otherwise it's just the village
+      // waking up wrong, which is also true sometimes.
+      let why = '';
+      try {
+        const tr = (this.betrayalState().trauma || []).slice(-1)[0];
+        if (tr && this.state.scholar.day - tr.day <= 5) {
+          why = tr.kind === 'killed' ? ' — still raw after the killing' : ' — still raw after the exile';
+        }
+      } catch (e) {}
+      this.say(`The room is wrong today${why}. Edgy, listening for the wrong things. Evidence feels thin in here.`);
+    }
+    const need = Math.floor(t.present.length / 2) + 1;
     // player votes if present and not accused (the player is always at their own moot)
-    if (playerVoter) {
+    if (t.playerVoter) {
       this.say(`The moot turns to you. Your vote matters here — and everyone will remember it.`);
       c.trial.awaitingPlayerVote = true;
-      return { trial: true, awaitingPlayerVote: true, caseId: c.id, guiltySoFar: guilty, need };
+      return { trial: true, awaitingPlayerVote: true, caseId: c.id, guiltySoFar: t.guilty, need };
     }
     return this.finishTrial(c, 0);
   },
@@ -825,6 +871,7 @@
         if (this.isPlayer(vid)) { this.exilePlayer('moot'); continue; }
         this.say(`${this.displayName(vid)} is exiled. "Take what you can carry and go." The village watches them walk until the trees close.`);
         this.removeVillager(vid, 'exiled');
+        try { this.recordTrauma('exile'); } catch (e) {}
         try { if (this.createCorpse) { /* not dead — no corpse */ } } catch (e) {}
       }
       if (c.flipped && !this.isPlayer(c.flipped)) {
@@ -867,6 +914,7 @@
     // the old village continues; gossip carries your name
     try { this.seedGossip('exile_' + s.day, { trustworthy: -15 }, this.npcIds().slice(0, 4)); } catch (e) {}
     s.exiled = true;
+    try { this.recordTrauma('exile'); } catch (e) {}
     return true;
   },
   // petition a nearby village: they judge you. They've heard things.
