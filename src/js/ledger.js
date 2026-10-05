@@ -95,10 +95,11 @@
     // ---------- THE LEDGER ----------
     ledger() {
       const pg = this.progState();
+      if (pg.ledger && pg.ledger.betrayed === undefined) pg.ledger.betrayed = 0;
       pg.ledger = pg.ledger || {
         might: 0, brokerage: 0, showmanship: 0, embrace: 0, defiance: 0,
         exposed: 0, unified: 0, fractured: 0, foodShared: 0,
-        protected: 0, killed: 0,
+        protected: 0, killed: 0, betrayed: 0,
       };
       return pg.ledger;
     },
@@ -118,7 +119,7 @@
       if (total < 6) return 'unwritten';
       const scores = {
         indispensable: L.might + L.brokerage + L.foodShared * 2 + L.unified,
-        feared: L.might * 2 + L.killed * 2,
+        feared: L.might * 2 + L.killed * 2 + (L.betrayed || 0),
         beloved: L.showmanship * 2 + L.protected * 2 + L.brokerage + L.unified,
         witness: L.exposed * 3 + L.defiance,
         defiant: L.defiance * 3 + L.might * 0.5,
@@ -538,6 +539,101 @@
         const r = reel[Math.floor(Math.random() * reel.length)];
         this.say(`📺 Before dinner, the show replays ${r.name}'s death. Nobody eats much. The audience loves a death reel; the village has to live inside one.`);
         try { this.recordTrauma('footage'); } catch (e) {}
+        return null;
+      } catch (e) { return null; }
+    },
+
+    // ---------- BROADCAST CONSEQUENCES (future hooks) ----------
+    // Steve's rule (2026-10-04): challenges are FULLY televised. No private
+    // arena. When you come back, everyone in your village saw everything —
+    // just like the rest of the world and the galaxy. Heroics, cowardice,
+    // betraying your brought-friend on camera: all content, all public,
+    // all priced immediately. The broadcast is persistent social state,
+    // not a one-time event.
+    arenaAct(vid, kind, detail) {
+      // priced immediately, at every scale: village trust, audience
+      // viewership, other villages' opinion, the leadership vector.
+      const PRICING = {
+        heroics:   { trust: 12,  view: 4,  opinion: 6,   ledger: ['protected', 2] },
+        mercy:     { trust: 8,   view: 3,  opinion: 5,   ledger: ['protected', 1] },
+        sacrifice: { trust: 15,  view: 5,  opinion: 8,   ledger: ['protected', 3] },
+        defiance:  { trust: 5,   view: 4,  opinion: 2,   ledger: ['defiance', 1] },
+        cowardice: { trust: -12, view: -2, opinion: -6,  ledger: null },
+        cruelty:   { trust: -10, view: 2,  opinion: -8,  ledger: null },
+        betrayal:  { trust: -20, view: 3,  opinion: -10, ledger: ['betrayed', 2] },
+      };
+      const p = PRICING[kind];
+      if (!p) return null;
+      let nm = 'someone';
+      try { nm = this.displayName(vid).split(' ')[0]; } catch (e) {}
+      const s = this.state.scholar, pg = this.progState();
+      const chId = (s.abducted || {}).challengeId || (s.challengeInvites || {}).challengeId || 'the arena';
+      // the record: persistent, replayable
+      pg.arenaRecord = pg.arenaRecord || {};
+      const rec = pg.arenaRecord[chId] = pg.arenaRecord[chId] || { challengeId: chId, acts: [] };
+      rec.acts.push({ vid, name: nm, kind, detail: String(detail || '').slice(0, 120), day: s.day || 0 });
+      // village scale
+      try { const t = this.state.village.trust || {}; t[vid] = Math.max(-100, Math.min(100, (t[vid] || 10) + p.trust)); } catch (e) {}
+      // the audience (it loves drama, even the ugly kind)
+      try { const v = this.state.village; v.viewership = Math.max(0, (v.viewership == null ? this.havenViewership() : v.viewership) + p.view); } catch (e) {}
+      // other villages saw it too — their opinion of Haven moves
+      try {
+        for (const ov of (this.state.otherVillages || [])) {
+          ov.opinion = Math.max(-100, Math.min(100, (ov.opinion || 0) + p.opinion));
+        }
+      } catch (e) {}
+      // the vector: the arena writes your ending
+      try { if (p.ledger && this.ledgerAdd) this.ledgerAdd(p.ledger[0], p.ledger[1]); } catch (e) {}
+      this.broadcastLine(`${nm}: ${kind}${detail ? ' — ' + detail : ''}.`);
+      return p;
+    },
+    returnFromArena() {
+      // the return is a SOCIAL EVENT, not a silent teleport-back. The
+      // village saw everything. Cheers, cold shoulders, or "we need to
+      // talk about what you did in there."
+      const s = this.state.scholar, pg = this.progState();
+      const abd = s.abducted;
+      if (!abd) return null;
+      const rec = ((pg.arenaRecord || {})[abd.challengeId]) || { acts: [] };
+      const scores = {};
+      for (const a of (rec.acts || [])) {
+        const w = { heroics: 12, mercy: 8, sacrifice: 15, defiance: 5, cowardice: -12, cruelty: -10, betrayal: -20 }[a.kind] || 0;
+        scores[a.vid] = (scores[a.vid] || 0) + w;
+      }
+      this.say('⚡ The sky gives you back — all at once, the way it took you. The whole village is already gathered. They watched. All of it.');
+      for (const vid of (abd.contestants || [])) {
+        let nm = 'someone';
+        try { nm = this.displayName(vid).split(' ')[0]; } catch (e) {}
+        const sc = scores[vid] || 0;
+        if (sc >= 10) this.say(`Cheers for ${nm} — real cheers, the kind that hurt your throat. Whatever happened in there, it was glorious.`);
+        else if (sc >= 0) this.say(`${nm} gets nods, and space. Nobody's sure what to say yet. It'll come.`);
+        else if (sc > -10) this.say(`Cold shoulders for ${nm}. People find reasons to be elsewhere. The footage doesn't lie, and everyone saw it.`);
+        else this.say(`Somebody takes ${nm} aside before the crowd thins. "We need to talk about what you did in there."`);
+      }
+      // cross-village gossip: they saw the broadcast too
+      try {
+        const ovs = (this.state.otherVillages || []).filter(ov => (ov.opinion || 0) !== 0);
+        if (ovs.length) {
+          const ov = ovs[Math.floor(Math.random() * ovs.length)];
+          this.say(`Word comes by rider: in ${ov.name}, they're ${ov.opinion > 0 ? 'still talking about the arena — with admiration' : 'still talking about the arena. Not kindly'}. Your footage is their opinion of you now.`);
+        }
+      } catch (e) {}
+      // put them back where they were ripped from
+      try { if (s.rippedFrom) { s.mx = s.rippedFrom.mx; s.my = s.rippedFrom.my; } } catch (e) {}
+      s.abducted = null;
+      try { this.recordMoment('Returned from the arena. The village saw everything.'); } catch (e) {}
+      try { this.save(); } catch (e) {}
+      return null;
+    },
+    replayHighlights() {
+      // the show replays highlights: the village lives under the footage.
+      try {
+        const recs = this.progState().arenaRecord || {};
+        const all = [];
+        for (const id of Object.keys(recs)) for (const a of (recs[id].acts || [])) all.push(a);
+        if (!all.length) return null;
+        const a = all[Math.floor(Math.random() * all.length)];
+        this.say(`📺 The show replays ${a.name}'s ${a.kind}${a.detail ? ' — "' + a.detail + '"' : ''}. It'll replay it again tomorrow. Highlights don't expire; that's what makes them highlights.`);
         return null;
       } catch (e) { return null; }
     },

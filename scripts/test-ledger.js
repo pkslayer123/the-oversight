@@ -280,6 +280,47 @@ function stack(L) { const l = Game.ledger(); for (const k of Object.keys(L)) l[k
     ok('death reel replays', said.some(t => t.includes('replays')));
   }
 
+  // 13. BROADCAST CONSEQUENCES: no private arena.
+  {
+    freshGame();
+    const s = Game.state.scholar;
+    const h2 = Game.npcIds()[0];
+    Game.state.village.trust = Game.state.village.trust || {};
+    Game.state.village.trust[h2] = 50;
+    Game.state.otherVillages = [{ id: 'ov1', name: 'Red Creek', opinion: 0 }];
+    s.abducted = { challengeId: 'chx', at: s.day || 0, contestants: [Game.villagerId, h2] };
+
+    // heroics price up everywhere
+    const t0 = Game.state.village.trust[h2];
+    Game.arenaAct(h2, 'heroics', 'carried a stranger out of the fire');
+    ok('arena heroics: village trust up', Game.state.village.trust[h2] > t0);
+    ok('arena heroics: audience up', (Game.state.village.viewership || 0) > 0);
+    ok('arena heroics: other villages approve', Game.state.otherVillages[0].opinion > 0);
+    ok('arena heroics: vector written', Game.ledger().protected >= 2);
+    ok('arena act broadcast', (Game.progState().broadcast || []).length === 1);
+
+    // betrayal on camera: the audience loves it, everyone else doesn't
+    const v0 = Game.state.village.viewership || 0;
+    Game.arenaAct(h2, 'betrayal', 'shoved their brought-friend toward the beast');
+    ok('arena betrayal: village trust tanks', Game.state.village.trust[h2] < t0);
+    ok('arena betrayal: audience still watches', (Game.state.village.viewership || 0) >= v0);
+    ok('arena betrayal: villages judge', Game.state.otherVillages[0].opinion < 6);
+    ok('arena betrayal: moral ledger', Game.ledger().betrayed >= 2);
+
+    // the return is a social event
+    const saidBefore = said.length;
+    Game.returnFromArena();
+    ok('return clears abduction', !Game.state.scholar.abducted);
+    ok('return is a scene', said.slice(saidBefore).some(t => t.includes('sky gives you back')));
+    ok('return judges the footage', said.slice(saidBefore).some(t => t.includes('we need to talk') || t.includes('Cheers') || t.includes('Cold shoulders') || t.includes('nods')));
+    ok('return is a moment', (Game.progState().moments || []).some(m => /arena/i.test(m.text)));
+
+    // highlights persist and replay
+    ok('arena record persists', !!((Game.progState().arenaRecord || {}).chx));
+    Game.replayHighlights();
+    ok('highlights replay', said.some(t => t.includes('replays') && t.includes('📺')));
+  }
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('THREW', e); process.exit(1); });
