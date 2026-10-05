@@ -11010,6 +11010,23 @@
           }
         }
       } catch (e) {}
+      // MONSTER BATCH 2: per-monster fight init — opening phases and patter.
+      try {
+        const f0 = this.tbfight;
+        f0.humStacks = 0; f0.humMice = null; f0.shouts = 0; f0.humDecayRound = -1;
+        for (const mo of f0.fighters) {
+          if (mo.kind !== 'monster') continue;
+          if (this.lockpickIs(mo)) {
+            mo.beamPhase = 'case'; mo.stolen = null; mo.lockpickHit = false; mo.cased = false;
+            this.say('It sits up on its hind legs — hands moving too fast to follow. It\'s not looking at you. It\'s looking at your pack. (It steals FIRST. Guard your things — or buy it off with food.)');
+            this.audioEvent('lockpickChitter');
+          } else if (this.catfishIs(mo)) {
+            mo.beamPhase = 'lure'; mo.catfishDark = 0; mo.lureSaid = false;
+            this.say('A soft green glow pulses in the dark water. Pretty. That\'s the problem — it\'s pretty.');
+            this.audioEvent('catfishLure');
+          }
+        }
+      } catch (e) {}
       // ALIVE: the village hears it. fear is contagious.
       try { this.villageEvent('monster_attack'); } catch (e) {}
       // REPUTATION: fighting is observed. Brave villagers respect it,
@@ -11522,6 +11539,19 @@
     tbTelegraphCue(m) {
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
+      // CODEX-GATED TACTICS: surviving the attack teaches the pattern
+      // (tbLearnPattern); the per-monster coaching in mdef.encounter.knownCue
+      // only appears after that. Knowledge is earned, not given.
+      const knownTail = () => {
+        if (!this.tbPatternKnown(m.mdef.id, atk.name)) return '';
+        let t = ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
+        const enc = (m.mdef || {}).encounter || {};
+        const kc = enc.knownCue;
+        if (this.encUsesFifo(m) && kc) t += ' ' + kc;
+        // batch 1 key (beasts): knownTactics — same gate, appended alongside.
+        if (enc.knownTactics) t += ' ' + enc.knownTactics;
+        return t;
+      };
       if (tg && tg.firing > 0) {
         // CODEX-GATED: first encounters get raw terror, not tactics. The
         // "circle it wide / keep moving" coaching only appears once you've
@@ -11530,22 +11560,12 @@
         let cue = known
           ? 'The beam is LIVE — a ray from its eyes, swinging toward you! Circle it wide or get behind something solid — and keep moving. If it doesn\'t have to chase you, it sits the full beam on you.'
           : 'The beam is LIVE — light lances from its eyes, swinging wild! No warning, no pattern you know — MOVE!';
-        if (this.tbPatternKnown(m.mdef.id, atk.name)) {
-          cue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
-        }
-        return cue;
+        return cue + knownTail();
       }
       let cue = atk.telegraph || 'It shifts. Something is coming.';
       if (tg && tg.turnsLeft === 1) cue += " It's about to loose!";
       else if (tg && tg.turnsLeft > 1) cue += ' It is still gathering itself…';
-      if (this.tbPatternKnown(m.mdef.id, atk.name)) {
-        cue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
-        // CODEX-GATED TACTICS: the earned counterplay, in the monster's own
-        // terms. Never shown before the pattern is learned.
-        const tactics = (this.encConfig(m) || {}).knownTactics;
-        if (tactics) cue += ' ' + tactics;
-      }
-      return cue;
+      return cue + knownTail();
     },
 
     // audioEvent: optional hook for the Web Audio terror system (app.js).
@@ -11638,6 +11658,18 @@
         return true;
       }
       // RANGED: no ammo, no shot.
+      // FLASHBLIND: the moth's flash leaves spots in your eyes — your strike
+      // may catch only afterimages. (Mirrors the pocket_sand miss rule.)
+      if (p.blindTurns > 0) {
+        p.blindTurns -= 1;
+        if (Math.random() < 0.5) {
+          p.acted = true;
+          this.say('You strike at afterimages — the flash is still in your eyes. Missed. (blinded)');
+          this.tbAfterPlayerAction();
+          return true;
+        }
+        this.say('You blink the spots away and strike through them.');
+      }
       if (w.ammo) {
         if (this.ammoCount(w.ammo) < 1) {
           this.say(`No ${w.ammo} left. Your ${w.name} is a stick you hold wrong.`);
@@ -11674,7 +11706,7 @@
         try { this.addTrauma(this.traumaForHurt(t.villagerId)); } catch (e) {}
       } else {
         const wtxt = w.unarmed ? '' : ` (${w.name})`;
-        this.say(`You STRIKE the ${t.name} for ${d}${wtxt}.`);
+        this.say(`You STRIKE the ${this.encShortLabel(t) || this.encTheName(t)} for ${d}${wtxt}.`);
         this.tbStyle(5, 'solid hit');
       }
       this.tbDamage(t.key, d, 'you');
@@ -11692,7 +11724,7 @@
         this.tbStyle(15, 'broke its concentration!');
         this.tbRefreshTelegraphUI();
       }
-      if (tAfter && !tAfter.alive && !isHuman) this.tbStyle(20, `dropped the ${tAfter.name}!`);
+      if (tAfter && !tAfter.alive && !isHuman) this.tbStyle(20, `dropped the ${this.encTheName(tAfter)}!`);
       this.tbAfterPlayerAction();
       return true;
     },
@@ -11814,6 +11846,11 @@
     tbPlayerEndTurn() {
       const f = this.tbfight;
       if (!f || !this.tbIsPlayerTurn()) return;
+      const p = this.tbFighter('p');
+      if (p && p.blindTurns > 0) {
+        p.blindTurns = 0;
+        this.say('Your vision clears — the spots fade.');
+      }
       this.tbAdvance();
     },
 
@@ -11923,7 +11960,7 @@
           this.say(`${sourceLabel} hurts ${t.kind === 'player' ? 'you' : t.name}. It isn't clean. It isn't quick.`);
         }
       } else {
-        this.say(`${sourceLabel === 'you' ? 'You hit' : sourceLabel + ' hits'} ${t.kind === 'player' ? 'you' : t.name} for ${final}.`);
+        this.say(`${sourceLabel === 'you' ? 'You hit' : sourceLabel + ' hits'} ${t.kind === 'player' ? 'you' : (this.encShortLabel(t) || t.name)} for ${final}.`);
       }
       // WOUND THE LEAD (hushwolf): the pack coordinates through the lead animal.
       // Drop it below half and the silence shatters — the pack breaks.
@@ -11982,7 +12019,13 @@
           try { this.registerDeath({ kind: 'person', villagerId: t.villagerId, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses(t.villagerId) }); } catch (e) {}
         }
         else {
-          this.say(`The ${t.name} falls.`);
+          this.say(`The ${this.encTheName(t)} falls.`);
+          // MONSTER BATCH 2: a lockpick killed mid-job doesn't get to keep
+          // your things — the loot is still in its hands.
+          if (t.stolen) {
+            const got = this.tbLockpickReturn(t);
+            this.say(`Your ${got} is still clutched in its clever hands. You take it back.`);
+          }
           try { this.registerDeath({ kind: 'monster', monsterId: (t.mdef || {}).id, monsterName: t.name, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses() }); } catch (e) {}
           const tdCfg = ((t.mdef || {}).encounter) || {};
           if (tdCfg.deathAudio) this.audioEvent(tdCfg.deathAudio);
@@ -12073,7 +12116,7 @@
         const t = this.tbFighter(a.target);
         if (t && t.alive) {
           const dmg = a.type === 'strike' ? S.combat.roll([4, 8]) : S.combat.roll([2, 4]);
-          this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${t.name}.`);
+          this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${this.encTheName(t)}.`);
           this.tbDamage(t.key, dmg, v.name);
           // HIGHBEAM: hurting the deer moves them to the front of its list.
           try { const tt = this.tbFighter(t.key); if (tt && this.encUsesFifo(tt)) this.encNoticesPain(tt, v.key); } catch (e) {}
@@ -12129,6 +12172,52 @@
       if (map[moment]) return map[moment];
       return { declare: 'aim', windup: 'charge', resolve: 'firing', cooldown: 'cooldown', idle: 'stalk' }[moment] || 'stalk';
     },
+    // Monster-batch-2 id gates (follow the deerIs pattern — no parallel systems).
+    mothIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'mirrormoth')); },
+    toadIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'belltoad')); },
+    lockpickIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'lockpick_raccoon')); },
+    humiceIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hummice')); },
+    catfishIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'nightlight_catfish')); },
+    // Names pre-knowledge are strange descriptors ("a toad like a war drum") —
+    // composing them after "the"/"The" doubles the article ("the a toad").
+    // Strip the leading article for sentence composition. Post-naming names
+    // ("Headlight Harry 1") have no article: no-op.
+    encTheName(m) {
+      const n = String((m && m.name) || 'it');
+      return n.replace(/^((an?)|the)\s+/i, '');
+    },
+    // MONSTER BATCH 2: short, diegetic labels for combat attribution, both
+    // as attacker ("moth's Wing Flash", "toad 1's Resonant Croak") and as
+    // target ("You STRIKE hum-mouse 1") — instead of the full descriptor
+    // possessive ("a moth the size of a dinner plate, catching light wrong's
+    // Wing Flash"). The gallowdeer is excluded explicitly — its lines never
+    // change.
+    encShortLabel(m) {
+      const cfg = (m.mdef && m.mdef.encounter) || {};
+      if (cfg.shortName && !this.deerIs(m)) {
+        const n = String(m.name || '').match(/ (\d+)$/);
+        return cfg.shortName + (n ? ' ' + n[1] : '');
+      }
+      return null; // not a batch monster: caller keeps its existing phrasing
+    },
+    encThreatLines(m) {
+      // Per-monster notice/pain/proximity lines ({who} = the noticed fighter).
+      // Defaults are the Highbeam's exact lines — the deer never changes.
+      // Other batch monsters get shortName-based lines unless they define
+      // threatLines in their encounter config.
+      const cfg = this.encConfig(m) || {};
+      const short = cfg.shortName || 'beast';
+      const dflt = this.deerIs(m) ? {
+        notice: "The deer's head swings toward {who}. Another light in its eyes. You're all on the list now.",
+        pain: "It staggers — and its burning gaze fixes on {who}. Pain gets noticed.",
+        snap: "Too close. The deer's gaze SNAPS to {who} — proximity overrules patience.",
+      } : {
+        notice: `The ${short}'s head swings toward {who}. You're on the list now — it doesn't forget.`,
+        pain: "It staggers — pain gets noticed. Its attention fixes on {who}.",
+        snap: `Too close. The ${short}'s attention SNAPS to {who} — proximity overrules patience.`,
+      };
+      return Object.assign(dflt, cfg.threatLines || {});
+    },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
     encThreatQueue(m) {
@@ -12148,15 +12237,10 @@
       if (!silent && this.tbfight && !cfg.quiet) {
         const t = this.tbFighter(key);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
-        if (this.deerIs(m)) {
-          this.say(`The deer's head swings toward ${who}. Another light in its eyes. You're all on the list now.`);
-          // AGGRO IS THE REVEAL (Steve): the terror audio starts when the deer
-          // actually sees you — never before. The card stays innocent until then.
-          this.audioEvent('deerNotice');
-        } else {
-          const short = cfg.shortName || 'beast';
-          this.say(`The ${short}'s head swings toward ${who}. You're on the list now — it doesn't forget.`);
-        }
+        this.say(this.encThreatLines(m).notice.replace('{who}', who));
+        // AGGRO IS THE REVEAL (Steve): the terror audio starts when the deer
+        // actually sees you — never before. The card stays innocent until then.
+        if (this.deerIs(m)) this.audioEvent('deerNotice');
       }
       return true;
     },
@@ -12184,12 +12268,11 @@
       if (i > 0) { q.splice(i, 1); q.unshift(attackerKey); }
       if (q[0] !== before) {
         const who = t.kind === 'player' ? 'you' : t.name;
-        if (!cfg.quiet) {
-          if (this.deerIs(m)) this.say(`It staggers — and its burning gaze fixes on ${who}. Pain gets noticed.`);
-          else this.say(`It staggers — pain gets noticed. Its attention fixes on ${who}.`);
-        }
+        if (!cfg.quiet) this.say(this.encThreatLines(m).pain.replace('{who}', who));
         this.audioEvent(cfg.aggroAudio || 'deerAggro');
       }
+      // LOCKPICK: it remembers who hurt it mid-job — its turn reacts.
+      if (this.lockpickIs(m)) m.lockpickHit = true;
     },
     // scan on the deer's turn: anyone too close gets noticed; anyone crazy
     // close (adjacent) jumps the queue.
@@ -12223,10 +12306,7 @@
       if (q[0] !== before) {
         const t = this.tbFighter(q[0]);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
-        if (!cfg.quiet) {
-          if (this.deerIs(m)) this.say(`Too close. The deer's gaze SNAPS to ${who} — proximity overrules patience.`);
-          else this.say(`Too close. The ${cfg.shortName || 'beast'}'s attention SNAPS to ${who} — proximity overrules patience.`);
-        }
+        if (!cfg.quiet) this.say(this.encThreatLines(m).snap.replace('{who}', who));
         this.audioEvent(cfg.aggroAudio || 'deerAggro');
       }
     },
@@ -12247,12 +12327,454 @@
     },
     encPhaseBadge(m) {
       if (!this.encUsesFifo(m)) return '';
-      const badges = (this.encConfig(m) || {}).phaseBadges;
-      if (badges) return badges[m.beamPhase] || '';
-      return {
+      const cfg = this.encConfig(m) || {};
+      // Per-monster phase badges from data; the Highbeam's table is the default.
+      const table = cfg.phaseBadges || {
         aim: ' 👁 AIMING', charge: ' ⚡ CHARGING', firing: ' 🔥 FIRING',
         cooldown: ' 😮‍💨 SPENT',
-      }[m.beamPhase] || '';
+      };
+      return table[m.beamPhase] || '';
+    },
+
+    // === MONSTER BATCH 2: bespoke encounter behavior ===
+    // Each trickster's personality plugs into tbMonsterTurn via the id gates
+    // above (the deerIs pattern). No parallel systems: the FIFO queue, the
+    // telegraph engine, and the codex gates are all shared.
+
+    // Advance-until range per monster: burst monsters close to their blast
+    // (radius + 1) instead of declaring at nothing. Other monsters keep the
+    // generic want — their batches own their tuning.
+    encWantRange(m, pat) {
+      if (pat.type === 'direct') return pat.range || 3;
+      if (pat.type === 'burst' && (this.toadIs(m) || this.humiceIs(m))) return (pat.radius || 2) + 1;
+      return 4;
+    },
+
+    // Declare-phase per monster (replaces the generic 'aim' for fifo clients).
+    encDeclarePhase(m) {
+      if (this.mothIs(m)) return 'fold';
+      if (this.toadIs(m)) return 'swell';
+      if (this.humiceIs(m)) return (((this.tbfight || {}).humStacks || 0) >= 3) ? 'tide' : 'hum';
+      return 'aim';
+    },
+
+    // MOTH: erratic drift approach — it doesn't hunt, it wanders toward
+    // light. Returns true when the turn is fully handled (no declare this
+    // turn), false to fall through to the fold (declare).
+    tbMothApproach(m, foe, blocked) {
+      // landed: hold still — the fold (declare) follows. No more drifting;
+      // the facing locked at the fold is the whole game.
+      if (m.beamPhase === 'land') return false;
+      for (let i = 0; i < 2; i++) {
+        const dx = Math.sign(foe.f.mx - m.mx), dy = Math.sign(foe.f.my - m.my);
+        const jx = Math.random() < 0.45 ? (Math.random() < 0.5 ? 1 : -1) : dx;
+        const jy = Math.random() < 0.45 ? (Math.random() < 0.5 ? 1 : -1) : dy;
+        const nx = m.mx + jx, ny = m.my + jy;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+        if (blocked(nx, ny)) continue;
+        m.mx = nx; m.my = ny;
+      }
+      // it always drifts facing its light — you.
+      m.mothFacing = { x: Math.sign(foe.f.mx - m.mx) || 0, y: Math.sign(foe.f.my - m.my) || 1 };
+      const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
+      // the land is honest: it only lands inside flash range (burst radius 2).
+      // Landing at range 3 and flashing at nothing would be a lying telegraph.
+      if (d <= 2) {
+        if (!m.telegraph) {
+          this.encSetPhase(m, 'land');
+          this.say('It lands on a branch at eye level — wings half-open, catching light that isn\'t there. Watching you watch it.');
+          this.audioEvent('mothFlutter');
+          return true; // a beat to read it. the fold comes next turn.
+        }
+        return false;
+      }
+      if (m.beamPhase !== 'stalk') this.encSetPhase(m, 'stalk');
+      return true;
+    },
+
+    // MOTH: the flash only goes FORWARD — a frontal 180° arc from its locked
+    // facing. Facing locks when the fold is declared. Behind it, you're safe.
+    tbMothArcCells(m, cells) {
+      // NOTE: fy uses a nullish check, not || — a locked facing of {x:1,y:0}
+      // is real data, not a missing value.
+      const fc = m.mothFacing || {};
+      const fx = fc.x || 0;
+      const fy = (fc.y === undefined || fc.y === null) ? 1 : fc.y;
+      return (cells || []).filter(c => (c.cx - m.mx) * fx + (c.cy - m.my) * fy > 0);
+    },
+
+    // HUMMICE: the swarm is one instrument. Deaths drop voices out of the
+    // choir (stacks fall, survivors scatter); nobody standing in the hum
+    // lets it thin out. Runs on every hummice turn; the round guard keeps
+    // the decay to once per round.
+    tbHumSwarmCheck(m) {
+      const f = this.tbfight;
+      if (!f) return;
+      const mice = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.id === 'hummice');
+      if (f.humMice == null) f.humMice = mice.length;
+      if (mice.length < f.humMice) {
+        const lost = f.humMice - mice.length;
+        f.humStacks = Math.max(0, (f.humStacks || 0) - 2 * lost);
+        this.say('A voice drops out of the choir — the hum stutters and thins.');
+        this.audioEvent('humBreak');
+        for (const mm of mice) {
+          if (this.encUsesFifo(mm)) this.encSetPhase(mm, 'scatter');
+          let bx = 0, by = 0;
+          for (const o of f.fighters) {
+            if ((o.kind !== 'player' && o.kind !== 'villager') || !o.alive || o.fled) continue;
+            bx += Math.sign(mm.mx - o.mx); by += Math.sign(mm.my - o.my);
+          }
+          const nx = mm.mx + Math.sign(bx), ny = mm.my + Math.sign(by);
+          if ((nx !== mm.mx || ny !== mm.my) && nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8 && !this.tbBlocked(nx, ny)) {
+            mm.mx = nx; mm.my = ny;
+          }
+        }
+        f.humMice = mice.length;
+      }
+      if (f.humDecayRound !== f.round) {
+        f.humDecayRound = f.round;
+        const p0 = this.tbFighter('p');
+        const last = f.humPlayerPos;
+        const moved = (p0 && last) ? Math.max(Math.abs(p0.mx - last.x), Math.abs(p0.my - last.y)) : 99;
+        if (p0) f.humPlayerPos = { x: p0.mx, y: p0.my };
+        const stood = f.fighters.some(o => (o.kind === 'player' || o.kind === 'villager') && o.alive && !o.fled &&
+          mice.some(mm => Math.max(Math.abs(o.mx - mm.mx), Math.abs(o.my - mm.my)) <= 2));
+        // the hum needs you STANDING in it. keep moving and it can't settle.
+        if ((f.humStacks || 0) > 0 && (!stood || moved >= 2)) {
+          f.humStacks -= 1;
+          this.say(moved >= 2 ? "You keep moving — the hum can't settle on you." : 'The hum thins — nobody standing in it.');
+        }
+      }
+    },
+
+    // BELLTOAD: the chorus. When one throat lets go, every other live toad
+    // within 4 tiles joins — its damage lands in the same beat — then every
+    // throat goes spent. Break the pack, break the chorus.
+    tbChorusJoin(m) {
+      const f = this.tbfight;
+      if (!f) return;
+      let joined = 0;
+      for (const o of f.fighters) {
+        if (f.over) break;
+        if (o.key === m.key || o.kind !== 'monster' || !o.alive || o.fled) continue;
+        if (!this.toadIs(o)) continue;
+        if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 4) continue;
+        const op = ((o.mdef || {}).attack || {}).pattern || { type: 'burst', radius: 2 };
+        const ocells = S.combat.patternCells(op, o.mx, o.my, o.mx, o.my);
+        const hitKeys = new Set(ocells.map(c => c.cx + ',' + c.cy));
+        this.say('🐸 Another throat swells — the CHORUS takes it!');
+        for (const t of f.fighters) {
+          if (f.over) break;
+          if (!t.alive || t.fled || t.key === o.key) continue;
+          if (t.kind !== 'player' && t.kind !== 'villager') continue;
+          if (hitKeys.has(t.mx + ',' + t.my)) {
+            this.tbDamage(t.key, S.combat.roll(((o.mdef || {}).attack || {}).damage || [8, 12]), (this.encShortLabel(o) || o.name) + "'s Resonant Croak");
+          }
+        }
+        o.telegraph = null;
+        o.encCooldown = 2; o.startled = false;
+        if (this.encUsesFifo(o)) this.encSetPhase(o, 'quiet');
+        joined++;
+      }
+      if (joined > 0) {
+        this.audioEvent('toadChorus');
+        this.say(`The chorus lands as ONE sound — then every throat goes slack. (chorus ×${joined + 1})`);
+      } else {
+        this.say('Its croak echoes alone. No answer. The pack is broken.');
+      }
+      m.encCooldown = 2; m.startled = false;
+      if (this.encUsesFifo(m)) this.encSetPhase(m, 'quiet');
+    },
+
+    // LOCKPICK: steal-first turn loop. case → grab → bolt → cornered.
+    // Returns true when the turn is fully handled, false to fall through to
+    // the generic attack engine (cornered — it fights for real now).
+    tbLockpickTurn(m) {
+      const f = this.tbfight;
+      const useFifo = this.encUsesFifo(m);
+      const setP = (ph) => { if (useFifo) this.encSetPhase(m, ph); };
+      // hurt mid-job: it rethinks its life choices on its next turn.
+      if (m.lockpickHit) {
+        m.lockpickHit = false;
+        const ph = m.beamPhase;
+        if (ph === 'bolt' && m.stolen) {
+          const got = this.tbLockpickReturn(m);
+          m.fled = true;
+          this.say(`It yelps — drops your ${got} — and runs for its life, empty-handed.`);
+          this.audioEvent('lockpickChitter');
+          this.tbEndCheck();
+          return true;
+        }
+        if (ph === 'case' || ph === 'stalk') {
+          m.fled = true;
+          this.say('Not worth the claws — it bolts empty-handed, chittering curses at you.');
+          this.audioEvent('lockpickChitter');
+          this.tbEndCheck();
+          return true;
+        }
+        if (ph === 'grab') {
+          setP('cornered');
+          this.say('You hurt it mid-grab — it SCREECHES, and those clever hands curl into claws. Cornered now. It fights.');
+          this.audioEvent('lockpickChitter');
+          return false; // falls through: generic Disassemble, as a weapon
+        }
+      }
+      const phase = m.beamPhase || 'case';
+      if (phase === 'cornered') {
+        // it still isn't built for this. below 40%: gone.
+        if (m.hp / m.maxHp < 0.4) {
+          if (m.stolen) { const got = this.tbLockpickReturn(m); this.say(`It drops your ${got} and runs — your pack isn't worth dying for.`); }
+          else this.say('It decides your pack isn\'t worth dying for — and runs.');
+          m.fled = true;
+          this.audioEvent('lockpickChitter');
+          this.tbEndCheck();
+          return true;
+        }
+        return false; // generic attack engine
+      }
+      const foe = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
+      const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
+      const stepTo = (tx, ty) => {
+        const st = S.combat.stepToward(m.mx, m.my, tx, ty, blocked);
+        if (st) { m.mx = st.x; m.my = st.y; return true; }
+        return false;
+      };
+      if (phase === 'case') {
+        if (!m.cased) {
+          m.cased = true;
+          this.say('It circles once, eyes never leaving your pack — those hands never stop moving.');
+          this.audioEvent('lockpickChitter');
+        }
+        if (foe && Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my)) > 3) stepTo(foe.mx, foe.my);
+        setP('grab');
+        this.tbEndCheck();
+        return true;
+      }
+      if (phase === 'grab') {
+        if (foe) {
+          for (let i = 0; i < m.speed; i++) {
+            if (Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my)) <= 2) break;
+            if (!stepTo(foe.mx, foe.my)) break;
+          }
+          const d = Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my));
+          if (d <= 2) {
+            const got = this.tbLockpickSteal(m);
+            if (got) {
+              setP('bolt');
+              this.say(`🖐️ Its hands blur — and suddenly it's holding your ${got}! It's already running.`);
+              this.audioEvent('lockpickGrab');
+            } else {
+              m.fled = true;
+              this.say('Its hands blur through your pack — and come up empty. It chitters, disgusted, and leaves.');
+              this.audioEvent('lockpickChitter');
+            }
+            this.tbEndCheck();
+            return true;
+          }
+        }
+        this.say('It darts for your pack — still too far. It\'ll be back.');
+        this.tbEndCheck();
+        return true;
+      }
+      if (phase === 'bolt') {
+        // for the nearest edge, fast. it wants your stuff, not a fight.
+        let ex = 0, ey = 0, bd = 99;
+        for (const [cx, cy] of [[0, m.my], [8, m.my], [m.mx, 0], [m.mx, 8]]) {
+          const dd = Math.max(Math.abs(cx - m.mx), Math.abs(cy - m.my));
+          if (dd < bd) { bd = dd; ex = cx; ey = cy; }
+        }
+        for (let i = 0; i < m.speed; i++) {
+          if (m.mx === ex && m.my === ey) break;
+          if (!stepTo(ex, ey)) break;
+        }
+        if (m.mx === 0 || m.mx === 8 || m.my === 0 || m.my === 8) {
+          m.fled = true;
+          const lost = m.stolen ? m.stolen.name : 'nothing';
+          m.stolen = null; // it's gone. so is your stuff.
+          this.say(`It's over the ridge with your ${lost}. Gone.`);
+          this.audioEvent('lockpickChitter');
+        } else {
+          this.say(`It bolts — ${m.stolen ? 'your ' + m.stolen.name + ' in its hands' : 'empty-handed'} — pure getaway.`);
+        }
+        this.tbEndCheck();
+        return true;
+      }
+      return false; // unknown phase: generic engine
+    },
+
+    // LOCKPICK STEAL: equipped weapon first (it's in your hands — that's the
+    // point), else the most valuable pack item. Returns the taken name, or
+    // null when there's nothing worth taking.
+    tbLockpickSteal(m) {
+      const s = this.state.scholar;
+      const eq = (s.equipped || {}).weapon;
+      if (eq && eq.itemId && !eq.unarmed) {
+        m.stolen = { kind: 'weapon', itemId: eq.itemId, name: eq.name || 'weapon' };
+        s.equipped.weapon = null;
+        return m.stolen.name;
+      }
+      const inv = s.inventory || [];
+      let bi = -1, bv = -1;
+      for (let i = 0; i < inv.length; i++) {
+        const it = inv[i];
+        if (!it || (it.units || 0) <= 0) continue;
+        const v = (it.kcalEach || 0) * (it.units || 1) + (it.bonded ? 50 : 0);
+        if (v > bv) { bv = v; bi = i; }
+      }
+      if (bi < 0) return null;
+      const it = inv.splice(bi, 1)[0];
+      m.stolen = { kind: 'inv', item: it, name: it.name || 'something' };
+      return m.stolen.name;
+    },
+    tbLockpickReturn(m) {
+      const s = this.state.scholar;
+      const st = m.stolen; m.stolen = null;
+      if (!st) return 'nothing';
+      if (st.kind === 'weapon') {
+        s.equipped = s.equipped || {};
+        s.equipped.weapon = { itemId: st.itemId, name: st.name };
+      } else {
+        s.inventory = s.inventory || [];
+        s.inventory.push(st.item);
+      }
+      return st.name;
+    },
+
+    // NIGHTLIGHT CATFISH: the lure. It never chases — it waits for curiosity.
+    // lure → still → grasp → dark → lure. The stillness is the only warning.
+    tbCatfishTurn(m) {
+      const f = this.tbfight;
+      const useFifo = this.encUsesFifo(m);
+      const setP = (ph) => { if (useFifo) this.encSetPhase(m, ph); };
+      const foe = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
+      if (!foe || !foe.alive) { this.tbEndCheck(); return; }
+      const d = Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my));
+      const phase = m.beamPhase || 'lure';
+      const atk = (m.mdef || {}).attack || {};
+      if (phase === 'lure') {
+        if (!m.lureSaid) {
+          m.lureSaid = true;
+          this.say('A soft green glow pulses under the water. Pretty. You want to look closer. That\'s the idea.');
+          this.audioEvent('catfishLure');
+        }
+        if (d <= 3) {
+          setP('still');
+          this.say('The water goes still around the light. Too still. Something down there just noticed you.');
+          this.audioEvent('catfishStill');
+        }
+        // it does not move. the lure waits.
+      } else if (phase === 'still') {
+        if (d <= 2) {
+          setP('grasp');
+          this.say('💥 The glow LUNGES — teeth where the light was! LURE AND GRASP!');
+          this.audioEvent('catfishSnap');
+          for (const o of f.fighters) {
+            if (f.over) break;
+            if (!o.alive || o.fled || o.key === m.key) continue;
+            if (o.kind !== 'player' && o.kind !== 'villager') continue;
+            if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) <= 2) {
+              this.tbDamage(o.key, S.combat.roll(atk.damage || [12, 20]), (this.encShortLabel(m) || m.name) + "'s Lure and Grasp");
+            }
+          }
+          this.tbLearnPattern(m);
+          m.catfishDark = 2;
+          setP('dark');
+          this.say('The glow gutters out. Dark water. It\'s moving.');
+        } else if (d > 4) {
+          setP('lure'); m.lureSaid = false;
+          this.say('The glow settles back into its pulse. Waiting. It can wait all night.');
+        } else {
+          this.say('The water stays too still. The light doesn\'t blink.');
+        }
+      } else { // dark
+        m.catfishDark = (m.catfishDark == null ? 2 : m.catfishDark) - 1;
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        const dd = dirs[Math.floor(Math.random() * dirs.length)];
+        const nx = m.mx + dd[0], ny = m.my + dd[1];
+        if (nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8 && !this.tbBlocked(nx, ny)) { m.mx = nx; m.my = ny; }
+        if (m.catfishDark <= 0) {
+          setP('lure'); m.lureSaid = false;
+          this.say('A tile or two over, the green glow rekindles. Pretty. That\'s still the problem.');
+          this.audioEvent('catfishLure');
+        }
+      }
+      this.tbEndCheck();
+    },
+
+    // SHOUT: raw noise, no words. The belltoad's weakness made verb — loud
+    // noise breaks the chorus. Twice per fight; throats are finite.
+    tbPlayerShout() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (p.acted) { this.say('Already acted this turn.'); return false; }
+      f.shouts = (f.shouts || 0) + 1;
+      if (f.shouts > 2) { this.say('Your throat is raw. No shout left in this fight.'); return false; }
+      p.acted = true;
+      this.say('You cup your hands and BELLOW — raw noise, no words, all lungs.');
+      this.audioEvent('shout');
+      let n = 0;
+      for (const m of f.fighters) {
+        if (m.kind !== 'monster' || !m.alive || m.fled) continue;
+        if ((((m.mdef || {}).fear) || '').toLowerCase() !== 'loud noise') continue;
+        n++;
+        if (m.telegraph) m.telegraph = null;
+        m.encCooldown = Math.max(m.encCooldown || 0, 1);
+        m.startled = true;
+        if (this.encUsesFifo(m)) this.encSetPhase(m, 'quiet');
+        const dx = Math.sign(m.mx - p.mx), dy = Math.sign(m.my - p.my);
+        const detail = this.genDetail(this.map.px, this.map.py);
+        for (const step of [[dx, dy], [dx, 0], [0, dy], [-dy, dx], [dy, -dx], [-dx, -dy]]) {
+          const nx = m.mx + step[0], ny = m.my + step[1];
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+          const cell = detail[ny] && detail[ny][nx];
+          if (cell && this.cellProps(cell).blocks) continue;
+          let occ = false;
+          for (const o of f.fighters) { if (o !== m && o.alive && !o.fled && o.mx === nx && o.my === ny) { occ = true; break; } }
+          if (occ) continue;
+          m.mx = nx; m.my = ny; break;
+        }
+        this.say(`The ${this.encTheName(m)} flinches — its note dies mid-croak. It hops back, throat fluttering.`);
+      }
+      if (!n) this.say('Nothing out there cares about noise. The dark swallows it.');
+      else this.tbStyle(10, 'broke the chorus with raw noise');
+      this.tbRefreshTelegraphUI();
+      this.tbAfterPlayerAction();
+      return true;
+    },
+
+    // OFFER FOOD: the Lockpick's weakness made verb — it cannot resist food.
+    // Buys back stolen goods (it drops your things for the meal) or buys it
+    // off before it grabs. Costs the turn's action and one unit of food.
+    tbPlayerOfferFood() {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (p.acted) { this.say('Already acted this turn.'); return false; }
+      const s = this.state.scholar;
+      const inv = s.inventory || [];
+      const fi = inv.findIndex(i => i && (i.units || 0) > 0 && (i.kcalEach || 0) > 0);
+      if (fi < 0) { this.say('No food to offer — your pack is as empty as your plan.'); return false; }
+      const locks = f.fighters.filter(m => m.kind === 'monster' && m.alive && !m.fled && this.lockpickIs(m));
+      if (!locks.length) { this.say('Nothing here wants your food. Save it.'); return false; }
+      const food = inv[fi];
+      food.units -= 1;
+      if (food.units <= 0) inv.splice(fi, 1);
+      p.acted = true;
+      const m = locks[0];
+      const fname = food.name || 'food';
+      if (m.stolen) {
+        const got = this.tbLockpickReturn(m);
+        this.say(`You toss ${fname}. It CANNOT resist — drops your ${got} mid-scamper and stuffs its cheeks instead.`);
+      } else {
+        this.say(`You toss ${fname} — and those too-many fingers snatch it mid-air. It stuffs its cheeks and bolts. Your pack survives. This time.`);
+      }
+      m.fled = true;
+      this.audioEvent('lockpickChitter');
+      this.tbStyle(10, 'bought off the thief');
+      this.tbRefreshTelegraphUI();
+      this.tbAfterPlayerAction();
+      return true;
     },
 
     tbMonsterTurn(m) {
@@ -12266,7 +12788,7 @@
       // stunned: no move, no new attack. (Pending telegraph was canceled by the scream.)
       if (m.stunned > 0) {
         m.stunned -= 1;
-        this.say(`The ${m.name} is still frozen from your scream.`);
+        this.say(`The ${this.encTheName(m)} is still frozen from your scream.`);
         if (this.tbEndCheck()) return;
         return;
       }
@@ -12293,6 +12815,9 @@
         if (this.tbEndCheck()) return;
         return;
       }
+      // HUMMICE: the swarm checks itself every turn — deaths drop voices,
+      // distance thins the hum.
+      if (this.humiceIs(m)) this.tbHumSwarmCheck(m);
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
@@ -12308,8 +12833,12 @@
         tg.turnsLeft -= 1;
         if (tg.turnsLeft > 0) {
           // still winding up — holds position, committed. No move, no new attack.
-          // HIGHBEAM CHARGE PHASE: the whine climbs, the glare swells. Readable.
-          if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'windup'));
+          // Phase mapping is per-config (batch 1's phaseMap); monsters without
+          // one keep their own bespoke phase control — only the deer is forced.
+          if (useFifo) {
+            const pcfg = this.encConfig(m) || {};
+            if (this.deerIs(m) || (pcfg.phaseMap && pcfg.phaseMap.windup)) this.encSetPhase(m, this.encPhaseFor(m, 'windup'));
+          }
           if (isDeer) {
             if (!tg.chargeNarrated) {
               tg.chargeNarrated = true;
@@ -12375,6 +12904,11 @@
             return;
           }
         }
+        // MONSTER BATCH 2: the resolve has a phase, too — the flash, the chorus.
+        if (useFifo) {
+          if (this.mothIs(m)) this.encSetPhase(m, 'flash');
+          else if (this.toadIs(m)) this.encSetPhase(m, 'chorus');
+        }
         m.telegraph = null;
         if (tg.kind === 'squares') {
           const ptype = (tg.pattern || {}).type;
@@ -12392,11 +12926,10 @@
           if (t && t.alive) {
             let dmg = S.combat.roll(tg.dmg), missed = false;
             if (m.blind > 0 && Math.random() < 0.5) { missed = true; }
-            if (missed) this.say(`${m.name}'s ${tg.attackName} swipes at sand-ghosts. Missed. (pocket_sand)`);
+            if (missed) this.say(`${this.encShortLabel(m) || m.name}'s ${tg.attackName} swipes at sand-ghosts. Missed. (pocket_sand)`);
             else {
-              this.say(`💥 ${m.name}'s ${tg.attackName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
-              this.tbDamage(t.key, dmg, m.name);
-              anyoneHit = true;
+              this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${tg.attackName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
+              this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s " + tg.attackName);
             }
           }
         } else {
@@ -12407,10 +12940,28 @@
             this.audioEvent('beamBlocked');
           } else {
           this.say(`💥 ${tg.attackName}!`);}
-          const hitKeys = new Set(tg.cells.map(c => c.cx + ',' + c.cy));
+          // MOTH: the flash only goes forward — the facing locked at the fold
+          // decides who it hits. Behind it, you're safe.
+          let resCells = tg.cells;
+          if (this.mothIs(m)) resCells = this.tbMothArcCells(m, tg.cells);
+          const hitKeys = new Set(resCells.map(c => c.cx + ',' + c.cy));
+          // HUMMICE: the hum stacks while you stand in it — worse every time.
+          let humMult = 1;
+          if (this.humiceIs(m)) {
+            f.humStacks = Math.min(4, (f.humStacks || 0) + 1);
+            humMult = 1 + 0.25 * f.humStacks;
+            const humWords = ['', 'a low thrum', 'your teeth aching', 'your bones buzzing', 'a solid wall of sound'];
+            this.say(`The hum stacks — ${humWords[f.humStacks]}. (hum ×${f.humStacks})`);
+            this.audioEvent('humRise', { stacks: f.humStacks });
+            // HUMMICE: the hum ebbs after it lands — the mice need a breath
+            // before the next swell. That's the player's window.
+            m.encCooldown = Math.max(m.encCooldown || 0, 1);
+          }
           let playerHit = false;
+          const hitFighters = [];
           for (const o of f.fighters) {
             if (!o.alive || o.fled || o.key === m.key) continue;
+            if (!S.combat.isFoe(m, o)) continue; // packmates aren't targets
             if (hitKeys.has(o.mx + ',' + o.my)) {
               if (m.blind > 0 && Math.random() < 0.5) {
                 this.say(`${m.name} lashes at sand-ghosts near ${o.kind === 'player' ? 'you' : o.name}. Missed. (pocket_sand)`);
@@ -12418,7 +12969,19 @@
               }
               if (o.kind === 'player') playerHit = true;
               anyoneHit = true;
-              this.tbDamage(o.key, S.combat.roll(tg.dmg), m.name + "'s " + tg.attackName);
+              this.tbDamage(o.key, Math.round(S.combat.roll(tg.dmg) * humMult), (this.encShortLabel(m) || m.name) + "'s " + tg.attackName);
+              hitFighters.push(o);
+              if (f.over) break;
+            }
+          }
+          // MOTH: the flash blinds for a round — spots in your vision.
+          if (this.mothIs(m)) {
+            this.audioEvent('mothFlash');
+            for (const o of hitFighters) {
+              if (o.kind === 'player' && o.alive) {
+                o.blindTurns = 1;
+                this.say('Spots bloom across your vision — the flash is still in your eyes. (blinded 1 round)');
+              }
             }
           }
           // DODGED: you were in the path when it was declared, and you're not
@@ -12447,6 +13010,14 @@
           }
         }
         if (m.blind > 0) m.blind -= 1;
+        // BELLTOAD: the resolving croak pulls the pack in — then every
+        // throat goes spent. MOTH: the flash leaves it spent for a turn.
+        if (this.toadIs(m)) this.tbChorusJoin(m, tg);
+        else if (this.mothIs(m)) {
+          m.encCooldown = 1; m.startled = false;
+          if (useFifo) this.encSetPhase(m, 'recover');
+          this.say('Its wings hang open and dull — the light spent. For a moment, it\'s just a moth.');
+        }
         this.tbLearnPattern(m);
         this.tbRefreshTelegraphUI();
         if (this.tbEndCheck()) return;
@@ -12454,12 +13025,15 @@
         // Each beat gets its own turn (boar: the trample; heron: stillness;
         // stag: the mirror again). No resolve-and-redeclare in a single turn.
         if (this.boarIs(m) || this.stagIs(m) || this.heronIs(m)) return;
+        // MONSTER BATCH 2: the spent phase must read for a full turn — a
+        // post-flash moth, post-chorus toad, or post-hum mouse doesn't act twice.
+        if ((this.mothIs(m) || this.toadIs(m) || this.humiceIs(m)) && (m.encCooldown || 0) > 0) return;
       }
       if (!m.alive || f.over) return;
       // 2. hesitate (fear_aura): it doesn't act this turn
       if (m.hesitate > 0) {
         m.hesitate -= 1;
-        this.say(`The ${m.name} hesitates. Something about you is wrong. (fear_aura)`);
+        this.say(`The ${this.encTheName(m)} hesitates. Something about you is wrong. (fear_aura)`);
         if (this.tbEndCheck()) return;
         return;
       }
@@ -12468,7 +13042,7 @@
       const fleeAt = (m.mdef.fleeAt || 0) + (this.wolfIs(m) && m.wolfBroken ? 0.2 : 0);
       if (fleeAt > 0 && m.hp / m.maxHp < fleeAt && Math.random() < 0.7) {
         m.fled = true;
-        this.say(`The ${m.name} breaks and runs!`);
+        this.say(`The ${this.encTheName(m)} breaks and runs!`);
         this.tbEndCheck();
         return;
       }
@@ -12500,13 +13074,31 @@
           if (this.tbRechargePaw(m) && isDeer) this.audioEvent('deerSnort');
         } else if (m.beamCooldown <= 0) {
           if (useFifo) this.encSetPhase(m, 'stalk');
-          this.say(`The ${m.name} shakes its head — the light behind its eyes rekindles.`);
+          this.say(`The ${this.encTheName(m)} shakes its head — the light behind its eyes rekindles.`);
         }
         // otherwise it just breathes. Stillness is the tell.
         this.tbRefreshTelegraphUI();
         this.tbEndCheck();
         return;
       }
+      // MONSTER BATCH 2: spent turns (post-flash moth, post-chorus toad,
+      // post-hum mouse, shout-startled pack). They hold position — the window is real.
+      if ((m.encCooldown || 0) > 0) {
+        m.encCooldown -= 1;
+        if (this.mothIs(m)) this.say('The moth shivers its wings — dull, lightless. Gathering itself again.');
+        else if (this.toadIs(m)) this.say(m.startled ? 'It hunkers low, throat fluttering — startled into silence.' : 'Its throat hangs slack. The chorus is spent — for a moment.');
+        else if (this.humiceIs(m)) this.say('The hum ebbs for a breath — the mice resettle, throats fluttering.');
+        m.startled = false;
+        if (m.encCooldown <= 0 && useFifo) this.encSetPhase(m, 'stalk');
+        this.tbRefreshTelegraphUI();
+        this.tbEndCheck();
+        return;
+      }
+      // LOCKPICK: steal-first bespoke turn. CATFISH: the lure. The lockpick
+      // returns true when its turn is fully handled; when cornered it falls
+      // through to the generic engine (it fights for real now).
+      if (this.lockpickIs(m) && this.tbLockpickTurn(m)) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+      if (this.catfishIs(m)) { this.tbCatfishTurn(m); this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
       // HIGHBEAM: the deer doesn't chase the nearest — it works the list,
       // first in first out. Movement, declaration, and aim all follow it.
       if (useFifo) {
@@ -12540,11 +13132,12 @@
             const rsAudio = (this.encConfig(m) || {}).resolveAudio;
             if (rsAudio) this.audioEvent(rsAudio);
           } else {
-            this.say(`💥 The ${m.name} SNAPS! No warning. There never is.`);
+            this.say(`💥 The ${this.encTheName(m)} SNAPS! No warning. There never is.`);
           }
           const hitKeys = new Set(cells.map(c => c.cx + ',' + c.cy));
           for (const o of f.fighters) {
             if (!o.alive || o.fled || o.key === m.key) continue;
+            if (!S.combat.isFoe(m, o)) continue; // packmates aren't targets
             if (hitKeys.has(o.mx + ',' + o.my)) this.tbDamage(o.key, S.combat.roll(atk.damage), m.name);
           }
           this.tbLearnPattern(m);
@@ -12569,7 +13162,7 @@
           m.mx = s.x; m.my = s.y;
         }
         if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) {
-          this.say(`No warning — just teeth: ${m.name} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name}.`);
+          this.say(`The ${this.encTheName(m)} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
           this.tbDamage(foe.f.key, S.combat.roll(atk.damage), m.name);
           this.tbLearnPattern(m);
         }
@@ -12580,16 +13173,7 @@
       // The attack lands at the start of this monster's next turn. That's the dodge window.
       // HERON (statue): it doesn't advance. It waits — stillness is the whole animal.
       const heronStatue = this.heronIs(m) && !!((this.encConfig(m) || {}).statue);
-      if (!heronStatue) {
-        for (let i = 0; i < m.speed; i++) {
-          const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
-          const want = pat.type === 'direct' ? (pat.range || 3) : 4;
-          if (d <= want) break;
-          const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
-          if (!s) break;
-          m.mx = s.x; m.my = s.y;
-        }
-      } else {
+      if (heronStatue) {
         if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
         const hd = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         if (hd > 4) {
@@ -12600,6 +13184,19 @@
           return;
         }
       }
+      // MOTH: it doesn't advance — it drifts, erratically, toward light.
+      let approachHandled = false;
+      if (!heronStatue && this.mothIs(m)) approachHandled = this.tbMothApproach(m, foe, blocked);
+      else if (!heronStatue) for (let i = 0; i < m.speed; i++) {
+        const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
+        const want = this.encWantRange(m, pat);
+        if (d <= want) break;
+        const s = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+        if (!s) break;
+        m.mx = s.x; m.my = s.y;
+      }
+      // MOTH: still drifting — no declare this turn.
+      if (approachHandled) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
       if (pat.type === 'direct') {
         const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         if (d <= (pat.range || 3)) {
@@ -12608,7 +13205,7 @@
           this.say('⚠ ' + this.tbTelegraphCue(m));
           this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct', highbeam: (m.mdef || {}).id === 'gallowdeer' });
         } else {
-          this.say(`The ${m.name} stalks closer. ${atk.telegraph || ''}`);
+          this.say(`The ${this.encTheName(m)} stalks closer. ${atk.telegraph || ''}`);
         }
       } else {
         let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
@@ -12657,9 +13254,24 @@
         } catch (e) {}
         this.say('⚠ ' + this.tbTelegraphCue(m));
         this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: (m.mdef || {}).id === 'gallowdeer' });
-        if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'declare'));
+        // Declare phase: per-monster (batch 2's encDeclarePhase) where defined,
+        // else the config phaseMap (batch 1's encPhaseFor). The deer gets 'aim' either way.
+        if (useFifo) {
+          const hasDeclare = this.mothIs(m) || this.toadIs(m) || this.humiceIs(m);
+          this.encSetPhase(m, hasDeclare ? this.encDeclarePhase(m) : this.encPhaseFor(m, 'declare'));
+        }
         this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: the beast itself must be audible (Steve heard only beam)
         if (dcfg.declareAudio) this.audioEvent(dcfg.declareAudio);
+        // MOTH: the fold locks its facing — behind it, you're safe.
+        if (this.mothIs(m)) {
+          m.mothFacing = { x: Math.sign(foe.f.mx - m.mx) || 0, y: Math.sign(foe.f.my - m.my) || 1 };
+          this.say('It hangs mid-air — turns to face you — and the wings begin to fold.');
+          this.audioEvent('mothFlutter');
+        }
+        if (this.toadIs(m)) this.audioEvent('toadSwell');
+        if (this.humiceIs(m) && (this.tbfight.humStacks || 0) >= 3) {
+          this.say('The hum becomes a TIDE — teeth everywhere in the grass, all leaning your way.');
+        }
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
         }
