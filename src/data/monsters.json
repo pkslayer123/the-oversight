@@ -1156,7 +1156,29 @@
    "observed": "Paper golem. The System discovered human legal documents and found them DELIGHTFUL \u2014 binding agreements without consent! It built one. The attack locks on (direct, range 3, undodgeable by movement). But it's speed 1. The slowest thing in the woods. Just... walk away. It's paper. Fire ends it.",
    "slain": "Terms & Conditions. Moves: Binding Agreement (direct, range 3 \u2014 moving won't dodge it, but WALKING AWAY will, it's speed 1). 70-90 HP, never flees. The joke is that it's terrifying and trivial at once. Burn it. Loot the vellum \u2014 real paper is worth more than gold out here."
   },
-  "systemDesignation": "Agreement enforcement construct"
+  "systemDesignation": "Agreement enforcement construct",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 4,
+   "phases": [
+    "unfold",
+    "clause",
+    "bound"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "contract",
+   "noticeText": "Pages turn themselves toward {who}. It's reading you.",
+   "adjText": "Too close. Fine print crawls toward {who} — proximity is consent.",
+   "painText": "It rustles — and the text re-orients on {who}. Pain gets noticed.",
+   "phaseBadges": {
+    "unfold": " 📜 UNFOLDING",
+    "clause": " 📜 CLAUSE",
+    "bound": " 📜 BOUND"
+   },
+   "comment": "Encounter framework client. THE FINE PRINT: speed 1 — just walk away. unfold (spreads, 1 tile/turn) → clause (1st consecutive turn in range 3: the text tightens) → bound (2nd consecutive turn: Binding Agreement declared, direct/range 3, undodgeable). Leaving resets the clause. Never flees. Torch ×3 (it's paper)."
+  }
  },
  {
   "id": "delegate_beast",

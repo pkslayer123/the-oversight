@@ -12588,6 +12588,51 @@
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
+      // ---- CONTRACT GOLEM ("Terms & Conditions"): THE FINE PRINT ----
+      // unfold → clause → bound. Speed 1 — just walk away. The attack
+      // (direct, range 3) is undodgeable by movement once declared, but the
+      // declaration only comes after 2 consecutive turns in proximity:
+      // staying IS accepting. Leaving resets the clause. Never flees.
+      if (this.cgIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'unfold'); m.cgClause = 0; }
+        // post-resolve: the agreement discharged → back to unfolding
+        if (m.cgDeclared && !m.telegraph) {
+          m.cgDeclared = false; m.cgClause = 0;
+          this.encSetPhase(m, 'unfold');
+          this.say('The ink dries. The pages settle. It begins unfolding again — there is always more fine print.');
+        }
+        const t = foe.f;
+        // speed 1: one deliberate step toward the list-head
+        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) > (pat.range || 3)) {
+          const stp = S.combat.stepToward(m.mx, m.my, t.mx, t.my, blocked, danger);
+          if (stp) { m.mx = stp.x; m.my = stp.y; }
+        }
+        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (d <= (pat.range || 3)) {
+          m.cgClause = (m.cgClause || 0) + 1;
+          if (m.cgClause === 1) {
+            this.encSetPhase(m, 'clause');
+            this.say('"SECTION 7, SUBSECTION C..." Small text crawls up your legs. You can feel the clauses tightening. You should move.');
+            this.audioEvent('paperRustle', {});
+          } else if (!m.telegraph) {
+            this.encSetPhase(m, 'bound');
+            m.cgDeclared = true;
+            const known = this.encTelegraphKnown(m);
+            this.encDeclareDirect(m, t, known
+              ? '"BY REMAINING IN PROXIMITY, YOU HAVE ACCEPTED." The agreement binds — no dodging it now. (You could have walked away. It moves one tile a turn.)'
+              : '"BY REMAINING IN PROXIMITY," it rustles, "YOU HAVE ACCEPTED." The fine print tightens around you.');
+            this.audioEvent('paperRustle', { binding: true });
+          }
+        } else {
+          if ((m.cgClause || 0) > 0) this.say('The text loosens as you leave its reach. Proximity was the whole contract.');
+          m.cgClause = 0;
+          if (m.beamPhase !== 'unfold') this.encSetPhase(m, 'unfold');
+          this.say('It unfolds — paper and ink and fine print, spreading across the ground toward you. So slowly. One tile a turn.');
+          this.audioEvent('paperRustle', {});
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
       if (pat.type === 'ambush') {
         // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
         if (foe.d <= 1) {
