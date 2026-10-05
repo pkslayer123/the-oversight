@@ -3031,8 +3031,11 @@
         pad.style.right = 'auto'; pad.style.bottom = 'auto';
         const sx = e.clientX, sy = e.clientY;
         const move = (ev) => {
-          const nx = Math.max(0, Math.min(ox + (ev.clientX - sx), wr.width - pr.width));
-          const ny = Math.max(0, Math.min(oy + (ev.clientY - sy), wr.height - pr.height));
+          // Steve 2026-10-04: the pad must be draggable OFF the grid entirely.
+          // Clamp loosely — keep 24px grabbable so it can never be lost.
+          const grab = 24;
+          const nx = Math.max(-pr.width + grab, Math.min(ox + (ev.clientX - sx), wr.width - grab));
+          const ny = Math.max(-pr.height + grab, Math.min(oy + (ev.clientY - sy), wr.height - grab));
           pad.style.left = nx + 'px'; pad.style.top = ny + 'px';
         };
         const up = () => {
