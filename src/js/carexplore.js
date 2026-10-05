@@ -509,6 +509,81 @@
       this.say(descs[cell] || 'You look it over.');
       if (deep) feedKnowledge('track_human', 1);
     }
+    // ---- HALL / BUNK / LODGE — home has texture. Examining the inside of
+    // Haven reads the people, not the architecture: whose mug is whose,
+    // how someone folds a blanket, where twelve people put their lives.
+    else if (cell === 'hall' || cell === 'bunk' || cell === 'lodge') {
+      const inmates = (() => {
+        try {
+          return (this.data.villagers || []).filter(v => v.id && v.id !== this.villagerId).slice(0, 4);
+        } catch (e) { return []; }
+      })();
+      const firstName = (v) => { try { return String(this.displayName(v.id)).split(' ')[0]; } catch (e) { return 'someone'; } };
+      if (cell === 'hall') {
+        if (!deep) {
+          let t = `The hall. The fire pit at the center, the cookpot black with use, herbs hanging where the smoke keeps them dry. `;
+          if (inmates.length >= 2) {
+            t += `A shelf by the door holds the tin mugs — each marked, each claimed. ${firstName(inmates[0])}'s is dented from a drop nobody mentions. ${firstName(inmates[1])}'s is scrubbed to a shine. You know whose is whose now. That's what living here does.`;
+          } else {
+            t += `A shelf by the door holds the tin mugs — each marked, each claimed. You know whose is whose now. That's what living here does.`;
+          }
+          text = t;
+        } else {
+          // CHARACTER READING: blanket folds, seat choices — the hall's memory.
+          let t = `You look at the hall the way you've started looking at everything: for the story under the surface. `;
+          if (inmates.length >= 2) {
+            const a = firstName(inmates[0]), b = firstName(inmates[1]);
+            const folds = ['military corners', 'a tight roll', 'a loose heap'];
+            t += `The bedrolls along the wall tell you things. ${a} folds theirs into ${folds[hashStr(key + 'fa') % 3]} — order is a comfort. ${b}'s is ${folds[hashStr(key + 'fb') % 3]}. `;
+          }
+          t += `The table edge is scored with tally marks nobody admits to carving — meals shared, watches kept. Twelve people live here. The hall remembers all of them, even the ones who are gone.`;
+          text = t;
+        }
+        this.say(text);
+        feedKnowledge('track_human', observant ? 2 : 1);
+      } else if (cell === 'bunk') {
+        if (!deep) {
+          text = `The sleeping row. Bedrolls in a line along the wall, boots tucked underneath, the whole quiet machinery of twelve people trying to rest at once.`;
+        } else {
+          const small = ['a smooth river stone', 'a photograph, folded soft at the creases', 'a strip of cloth too worn to be clothing and too kept to throw away', 'a pencil stub'];
+          const who = inmates.length ? firstName(inmates[hashStr(key + 'who') % inmates.length]) : 'someone';
+          text = `You look closer — carefully, the way you'd want someone to look at yours. A bedroll with ${small[hashStr(key) % small.length]} tucked at the head. ${who}'s, probably. Nobody says what they carry to sleep. But everybody carries something.`;
+        }
+        this.say(text);
+        feedKnowledge('track_human', 1);
+      } else { // lodge
+        if (!deep) {
+          text = `The lodge room. The threshold — coats on pegs, boots by the door, the worn step where every arrival and departure passes. You came through here. So did everyone.`;
+        } else {
+          text = `You study the step. The wood is dished in the middle from years of boots — before the Scattering, this was someone's something, and now it's the place twelve people come home to. There's mud on it from this morning's patrol. The world outside leaves tracks on the inside too.`;
+        }
+        this.say(text);
+        feedKnowledge('track_human', 1);
+      }
+    }
+    // ---- BUILDING ROOMS (pre-Burn interiors): gym, class, office, bay,
+    // dock, sanct, base. The old world, room by room. Looking is how you
+    // learn what the before was for.
+    else if (['gym','class','office','bay','dock','sanct','base','apt','cube','break','conf','lobby'].includes(cell)) {
+      const rooms = {
+        gym: ['A gymnasium. The floor lines are still there under the dust — courts for games with rules nobody needs anymore.', 'Bleachers, folded up and rusting. A deflated ball in the corner, chewed by something that didn\'t care what it was. This room was for joy, once.'],
+        class: ['A classroom. Desks in rows, facing a whiteboard gone gray with age. Chalk trays, empty.', 'On one desk: initials carved deep, the letters uneven. A kid, bored, decades before the end. The lesson didn\'t take. The carving did.'],
+        office: ['An office. Cubicles like a maze nobody runs. Dead terminals, screens dark since the Burn.', 'A drawer hangs open. Inside: a stapler, dried-out pens, a stress ball shaped like the planet. Someone\'s whole working life, reduced to desk junk.'],
+        bay: ['A garage bay. Oil stains in the concrete like a map of old repairs. The doors are buckled shut.', 'Tools scattered where they fell — wrenches, a jack, a socket set someone clearly loved. Whoever worked here kept their bay like a promise.'],
+        dock: ['A loading dock. The smell of old diesel is still in the concrete. Pallets stacked and never shipped.', 'Shipping labels curled on the floor — addresses for places that don\'t exist anymore. Whatever was supposed to leave here never did.'],
+        sanct: ['A sanctuary. Rows of seats facing a raised platform. The quiet here is older than the Scattering.', 'Someone left a hymnal open on a seat. The page is warped from rain through the broken roof. You don\'t read it. It doesn\'t need reading.'],
+        base: ['A utility room. Pipes, valves, a breaker panel with half the switches taped over. The bones of a building.', 'Stenciled on the wall: NO SMOKING. The paint outlasted the rule, the smokers, and the building\'s owners.'],
+        apt: ['An apartment. Kitchen, a couch facing where a television was. Someone lived a whole life in this square.', 'A closet with clothes still on hangers — folded by hands that didn\'t know they were folding for the last time.'],
+        cube: ['A cubicle farm. Fabric walls, dead monitors, a mug with a faded logo. Work, the old religion.', 'Sticky notes on one partition, the ink bled to ghosts. Reminders for a meeting that never happened.'],
+        break: ['A break room. A dead refrigerator, a microwave with the door hanging open. The smell of very old coffee.', 'A rota on the wall — who cleans the fridge, whose turn. The most ordinary document in the world. It survived everything.'],
+        conf: ['A conference room. A long table, chairs pushed back like everyone left in a hurry. They probably did.', 'A whiteboard with a half-erased diagram. Strategy, or sales targets. Whatever it was, it stopped mattering mid-sentence.'],
+        lobby: ['A lobby. A reception desk, a sign-in book with the last page half full. Visitors, once.', 'The directory board lists companies on floors that no longer have floors. Everyone in this building was somebody going somewhere.'],
+      };
+      const r = rooms[cell] || [`A room. The old world, being ordinary at you.`];
+      text = deep ? (r[1] || r[0]) : r[0];
+      this.say(text);
+      feedKnowledge('old_world_cache', deep ? 2 : 1);
+    }
     else {
       this.say(`You look at the ${cell} for a while. It declines to be interesting.`);
     }
