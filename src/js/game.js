@@ -3727,16 +3727,17 @@
         this.say(hasGreens ? `Aki: "You brought something green! I knew it."` : `Aki: "You're back. That's enough."`);
       }
       else if (s.health <= 0) {
-        this.say(`You don't come back. The clearing is quieter. The Codex keeps what you wrote down.`);
-        this.say(`Mara: "We buried what the woods sent back."`);
+        try { this.playerDeath('the expedition'); } catch (e) { this.over = true; }
       }
       else {
         this.say(`You walk back into Haven. ${entries} Codex entries. The village is glad to see you.`);
-        // win: the Codex is complete and the pantry is secure — Haven will make it. earned, not timed.
-        // 10 plants + 8000 kcal forces 20+ days: depletion, death, and scarcity all bite.
-        if (entries >= 10 && this.state.village.pantryKcal >= 8000 && !this.over) {
-          this.over = true; this.won = true;
-          this.say('Mara looks at the pantry, then at the Codex, then at you. "We\'re going to make it." Haven will survive — because someone learned the land, and wrote it down.');
+        // milestone (not game over): the Codex is filling and the pantry is secure.
+        // Haven will make it — one less thing to fear. Game over is only the
+        // table (the village's ending) or the village dying out.
+        if (entries >= 10 && this.state.village.pantryKcal >= 8000 && !this.state.village.havenSecured) {
+          this.state.village.havenSecured = true;
+          this.say('Mara looks at the pantry, then at the Codex, then at you. "We\u2019re going to make it." Haven will survive \u2014 because someone learned the land, and wrote it down. One less thing to fear.');
+          try { this.ledgerAdd('unified', 2); this.ledgerAdd('showmanship', 1); } catch (e) {}
         }
       }
       if (this.over) this.wipe(); // finished runs don't continue
@@ -10311,8 +10312,8 @@
         if (this.maybeCheatDeath()) {
           this.say('Death knocked. Something else answered.');
         } else {
-          this.over = true;
-          this.say('You didn\'t make it. The village remembers. The Codex keeps what you brought home.');
+          // the village is the protagonist: the mantle passes, the story continues.
+          try { this.playerDeath('the night'); } catch (e) { this.over = true; }
           this.returnToVillage();
           return this.status();
         }
@@ -11557,7 +11558,7 @@
       } else if (result === 'lost') {
         this.audioEvent('defeat');
         this.sysSay('OH. Oh no. ...The gamblers are very quiet.');
-        if (!this.over) { this.over = true; this.say("You didn't make it. The village remembers."); }
+        if (!this.over) { try { this.playerDeath('combat'); } catch (e) { this.over = true; } }
       }
       this.tbfight = null;
     },

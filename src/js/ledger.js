@@ -155,6 +155,15 @@
       }[f] || '';
       const vname = this.distantVillageName ? this.distantVillageName() : 'the outer villages';
       this.say(`◈ WORD TRAVELS — riders from ${vname} have heard of you. Out there they call you ${ep}. ${flavor}`);
+      // the contest: standings every so often. Notability is ratings.
+      try {
+        if (this.state.systemArrived && (s.day || 0) % 24 < 12) {
+          const rows = this.contestStandings();
+          const place = rows.findIndex(r => r.us) + 1;
+          const leader = rows[0];
+          this.say(`📊 THE STANDINGS — Haven sits ${place}${place === 1 ? 'st' : place === 2 ? 'nd' : place === 3 ? 'rd' : 'th'} of ${rows.length}. ${leader.us ? 'Haven leads. The audience has a favorite, and it\'s you.' : `${leader.name} leads — the audience loves them today. One season. Every village is playing.`}`);
+        }
+      } catch (e) {}
       try { this.save(); } catch (e) {}
     },
     distantVillageName() {
@@ -199,7 +208,15 @@
       return null;
     },
 
-    // ---------- LEGENDS (roguelite continuity) ----------
+    // ---------- LINEAGE (the village's own remembered dead) ----------
+    // Steve's correction: NO cross-run inheritance. The Codex spans one
+    // contest — one village, one season. But the village remembers its own
+    // mantle-bearers. That's the scholar-mantle fiction: each death, another
+    // adventurer assumes the mantle. Same village. Same book.
+    lineage() {
+      try { const pg = this.progState(); pg.lineage = pg.lineage || []; return pg.lineage; }
+      catch (e) { return []; }
+    },
     recordLegend(info) {
       try {
         const pg = this.progState();
@@ -207,7 +224,7 @@
         pg.legendRecorded = true;
         const s = this.state.scholar;
         const char = (this.data.villagers || []).find(v => v.id === this.villagerId) || {};
-        const legend = {
+        this.lineage().push({
           name: char.name || 'Someone',
           epithet: this.leadershipEpithet(),
           frame: (info && info.frame) || this.endingFrame(),
@@ -215,29 +232,106 @@
           outcome: (info && info.outcome) || (this.won ? 'haven-endures' : 'died'),
           day: s.day || 0,
           at: Date.now(),
-        };
-        let arr = [];
-        try { arr = JSON.parse(localStorage.getItem('oversight_legends') || '[]'); } catch (e) {}
-        arr.unshift(legend);
-        try { localStorage.setItem('oversight_legends', JSON.stringify(arr.slice(0, 20))); } catch (e) {}
+        });
       } catch (e) {}
     },
-    readLegends() {
+
+    // ---------- THE MANTLE PASSES ----------
+    // The village is the protagonist. When the bearer dies, the story does
+    // NOT reset: the village mourns, someone steps up, the Codex notes the
+    // changing of the mantle. Same village, same arc, same Codex, same
+    // leadership vector — a new face. The only game overs: the village
+    // achieves its ending (the table), or the village dies out.
+    playerDeath(cause) {
+      const s = this.state.scholar, v = this.state.village;
+      const oldId = this.villagerId;
+      const oldChar = (this.data.villagers || []).find(x => x.id === oldId) || {};
+      const oldName = oldChar.name || 'the scholar';
+      const oldFirst = oldName.split(' ')[0];
+      // the body remains: the keepsakes go with it. Grief is fuel — whoever
+      // comes next can pick them up from the corpse.
+      let keepsakes = [];
       try {
-        return JSON.parse(localStorage.getItem('oversight_legends') || '[]');
-      } catch (e) { return []; }
+        const inv = s.inventory || [];
+        keepsakes = inv.filter(i => i && (i.bonded || i.sentimental));
+        s.inventory = inv.filter(i => !(i && (i.bonded || i.sentimental)));
+      } catch (e) {}
+      try {
+        this.registerDeath({ kind: 'villager', villagerId: oldId, name: oldName, mx: s.mx, my: s.my, cause: cause || 'the wild', killerId: null, items: keepsakes });
+      } catch (e) {}
+      try { this.removeVillager(oldId, 'killed'); } catch (e) {}
+      this.lineage().push({ name: oldName, epithet: this.leadershipEpithet(), day: s.day || 0, cause: cause || 'the wild' });
+      this.say(`🕯️ ${oldName} is dead — ${cause || 'the wild'}. The village stops. Somebody screams. Somebody else starts digging.`);
+      // successor: the village chooses. Trust decides.
+      let candidates = [];
+      try { candidates = this.npcIds(); } catch (e) {}
+      if (!candidates.length) {
+        this.over = true; this.villageLost = true; this.won = false;
+        this.say('No one is left to pick up the Codex. The village dies out — quietly, the way villages do. The season ends here.');
+        this.recordLegend({ outcome: 'village-lost' });
+        return;
+      }
+      const trust = (v.trust || {});
+      candidates.sort((a, b) => (trust[b] || 0) - (trust[a] || 0));
+      const newId = candidates[0];
+      const newChar = (this.data.villagers || []).find(x => x.id === newId) || {};
+      const newName = newChar.name || 'someone';
+      const newFirst = newName.split(' ')[0];
+      // "you're not her." — the village reacts to the change.
+      const closeId = Object.keys(trust).filter(id => id !== newId && (trust[id] || 0) > 55)
+        .sort((a, b) => (trust[b] || 0) - (trust[a] || 0))[0];
+      if (closeId) {
+        const cn = ((this.data.villagers || []).find(x => x.id === closeId) || {}).name || 'Someone';
+        this.say(`"${oldFirst}'s gone." ${cn.split(' ')[0]} looks at you for a long moment. "You're not ${oldFirst}." No heat in it. Just fact. You'll have to earn this face.`);
+      }
+      this.say(`${newFirst} picks up the Codex. Their hands shake. Then they open it, and keep writing.`);
+      this.villagerId = newId;
+      // the mantle passes: the PROGRESSION is the village's (slots, arc,
+      // integration, ledger, Codex). The body is new.
+      s.kcal = 1500;
+      try { s.health = this.maxHealth(); } catch (e) { s.health = 100; }
+      s.trauma = 10; // the shock of stepping up
+      s.mx = 4; s.my = 4;
+      try {
+        if (this.map) { this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3; }
+      } catch (e) {}
+      // background abilities are THEIRS — their past, their hands.
+      try {
+        const occ = (this.data.occupations || []).find(o => o.id === newChar.occupation) || {};
+        const granted = (occ.granted || []).filter(id => (this.data.abilities || []).find(a => a.id === id));
+        s.backgroundAbilities = granted.map(id => {
+          const d = (this.data.abilities || []).find(a => a.id === id) || {};
+          return { id, name: d.name || id, desc: d.description || '', level: 1, xp: 0, background: true };
+        });
+      } catch (e) {}
+      // System abilities pass with the mantle — the System recognizes the
+      // office, not the face. It's alien like that.
+      this.say('🌟 "MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)"');
+      this.say(`📖 The Codex turns a page: ${oldName}, ${s.day || 0} days. The mantle passes to ${newName}.`);
+      // the trust of the office transfers, discounted — the person must earn the rest
+      try {
+        v.trust = v.trust || {};
+        v.trust[newId] = Math.round((trust[oldId] || 20) * 0.6);
+      } catch (e) {}
+      try { this.ledgerAdd('unified', 1); } catch (e) {}
+      try { this.save(); } catch (e) {}
     },
-    legendLine() {
-      const ls = this.readLegends();
-      if (!ls.length) return '';
-      const l = ls[0];
-      const out = {
-        'table': `sat at the galactic table as ${l.epithet}`,
-        'haven-endures': 'kept Haven alive',
-        'village-lost': 'lost the village',
-        'died': "didn't make it back",
-      }[l.outcome] || 'played their part';
-      return `Before you, ${l.name} was called ${l.epithet} — ${l.name.split(' ')[0]} ${out}. The Codex remembers.`;
+
+    // ---------- ONE CONTEST ----------
+    // Many villages, one season. Rival contestants — trade and cooperation,
+    // but also competition for the audience's favor. Notability is ratings.
+    contestStandings() {
+      try {
+        const v = this.state.village, pg = this.progState();
+        const ours = (v.pantryKcal || 0) / 2000 + this.codexBreadth() * 1.5 + (pg.arc || 1) * 5 + (this.ledger().showmanship || 0);
+        const rows = [{ name: 'Haven', score: ours, us: true }];
+        for (const ov of (this.state.otherVillages || [])) {
+          ov.favor = (ov.favor == null ? 8 + R() * 8 : Math.max(2, Math.min(40, ov.favor + (R() - 0.45) * 3)));
+          rows.push({ name: ov.name || 'a far village', score: ov.favor + (ov.generated ? 4 : 0), us: false });
+        }
+        rows.sort((a, b) => b.score - a.score);
+        return rows;
+      } catch (e) { return [{ name: 'Haven', score: 0, us: true }]; }
     },
   };
 

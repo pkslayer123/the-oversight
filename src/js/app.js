@@ -428,7 +428,6 @@
       <div class="card" style="margin-top:24px">
         <p style="font-size:17px;line-height:1.7">${lines.join('<br><br>')}</p>
         <p class="small" style="opacity:.6;margin-top:16px">What you know grows where you're from. It doesn't grow here.</p>
-        ${(() => { try { const ll = Game.legendLine ? Game.legendLine() : ''; return ll ? `<p class="small" style="opacity:.6;margin-top:12px">📖 ${esc(ll)}</p>` : ''; } catch (e) { return ''; } })()}
         <button class="btn" id="b-wake">Open your eyes</button>
       </div>`;
     document.getElementById('b-wake').onclick = () => {

@@ -120,10 +120,9 @@ function stack(L) { const l = Game.ledger(); for (const k of Object.keys(L)) l[k
     Game.chooseTableOption(optId);
     ok('choice resolves', Game.state.scholar.tableChoices === null);
     ok('run ends at the table', Game.over === true && Game.won === true);
-    const legends = Game.readLegends();
-    ok('legend recorded', legends.length === 1 && legends[0].frame === 'witness', JSON.stringify(legends[0]));
+    const legends = Game.lineage();
+    ok('legend recorded in the village lineage', legends.length === 1 && legends[0].frame === 'witness', JSON.stringify(legends[0]));
     ok('legend has the choice', !!legends[0].choice);
-    ok('legend line for next run', Game.legendLine().includes('witness') || Game.legendLine().includes('Witness') || Game.legendLine().length > 20, Game.legendLine().slice(0, 80));
   }
 
   // 7. The feared leader can choose mercy (Steve's drama beat).
@@ -135,14 +134,63 @@ function stack(L) { const l = Game.ledger(); for (const k of Object.keys(L)) l[k
     ok('mercy is on the table', opts.some(l => /mercy/i.test(l)), opts.join(' / '));
   }
 
-  // 8. Death records a legend too (warning for the next run).
+  // 8. THE MANTLE PASSES: death is not game over. The village is the protagonist.
   {
     freshGame();
-    stack({ might: 8 });
-    Game.over = true; Game.won = false;
-    try { Game.wipe(); } catch (e) {}
-    const legends = Game.readLegends();
-    ok('death legend recorded', legends.length === 1 && legends[0].outcome === 'died', JSON.stringify(legends[0]));
+    const s = Game.state.scholar;
+    const oldId = Game.villagerId;
+    const oldName = (Game.data.villagers.find(v => v.id === oldId) || {}).name;
+    // give the bearer a keepsake and a System ability
+    s.inventory = s.inventory || [];
+    s.inventory.push({ itemId: 'test_locket', name: 'Test Locket', bonded: true, bond: 12, kg: 0.1 });
+    s.abilities = [{ id: 'test_ab', name: 'Test Ability', level: 2, xp: 10 }];
+    s.kcal = 50; s.health = 0;
+    Game.state.village.trust = Game.state.village.trust || {};
+    const heir = Game.npcIds()[0];
+    Game.state.village.trust[heir] = 80;
+    Game.state.village.trust[oldId] = 70;
+    const saidBefore = said.length;
+    Game.playerDeath('the test');
+    ok('mantle passes: not game over', Game.over !== true);
+    ok('mantle passes: new bearer', Game.villagerId !== oldId && Game.villagerId === heir);
+    ok('mantle passes: lineage remembers', Game.lineage().length === 1 && Game.lineage()[0].name === oldName, JSON.stringify(Game.lineage()[0]));
+    ok('mantle passes: mourning beat', said.slice(saidBefore).some(t => t.includes('is dead')));
+    ok('mantle passes: you-are-not-her beat', said.slice(saidBefore).some(t => t.includes("You're not ")));
+    ok('mantle passes: codex turns a page', said.slice(saidBefore).some(t => t.includes('The Codex turns a page')));
+    ok('mantle passes: System notices the office', said.slice(saidBefore).some(t => t.includes('MANTLE TRANSFER')));
+    ok('mantle passes: keepsake left with the corpse', !(s.inventory || []).some(i => i.bonded) && (function () {
+      const c = (Game.state.corpses || []).find(c => c.villagerId === oldId);
+      return !!(c && (c.items || []).some(i => i.bonded));
+    })());
+    ok('mantle passes: System abilities pass with the office', (s.abilities || []).some(a => a.id === 'test_ab'));
+    ok('mantle passes: fresh body', s.kcal === 1500 && s.health > 0);
+    ok('mantle passes: trust discounted, not copied', Game.state.village.trust[heir] === Math.round(70 * 0.6));
+    ok('mantle passes: vector persists (village, not face)', Game.ledger().might >= 0);
+  }
+
+  // 9. The village dying out IS game over.
+  {
+    freshGame();
+    const s = Game.state.scholar;
+    // remove every other villager
+    for (const id of Game.npcIds()) { try { Game.removeVillager(id, 'killed'); } catch (e) {} }
+    ok('setup: no heirs', Game.npcIds().length === 0);
+    s.health = 0;
+    Game.playerDeath('the test');
+    ok('village death is game over', Game.over === true && Game.villageLost === true && Game.won === false);
+    ok('village death says so', said.some(t => t.includes('dies out')));
+  }
+
+  // 10. One contest: standings rank Haven among rival villages.
+  {
+    freshGame();
+    Game.state.otherVillages = [
+      { id: 'ov1', name: 'Red Creek', favor: 30, generated: true },
+      { id: 'ov2', name: 'Stonefield', favor: 5 },
+    ];
+    const rows = Game.contestStandings();
+    ok('standings rank all villages', rows.length === 3 && rows.some(r => r.us));
+    ok('standings sorted', rows[0].score >= rows[1].score && rows[1].score >= rows[2].score);
   }
 
   console.log(`\n${pass} passed, ${fail} failed`);
