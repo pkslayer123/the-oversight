@@ -990,7 +990,8 @@
    "telegraph": "It inflates \u2014 throat, chest, the whole resonating chamber swelling like a bagpipe of pure encouragement. 'YOU'VE GOT THIS!' it booms. 'YOU'RE A WINNER!' The sound has WEIGHT. The air ripples. 'NEVER GIVE UP!'",
    "pattern": {
     "type": "burst",
-    "radius": 3
+    "radius": 3,
+    "windup": 3
    }
   },
   "behavior": "pack",
@@ -1032,7 +1033,31 @@
    "observed": "Sonic predator. The System studied human motivation and concluded volume equals sincerity. It inflates and detonates encouragement \u2014 burst radius 3, the largest of any burst so far. It hunts in packs. It only targets individuals; crowds confuse it.",
    "slain": "Motivational Speaker. Moves: Pep Talk (burst radius 3 \u2014 BIG, get clear, slow windup). Pack hunter. Fears numbers \u2014 bring friends and it can't pick a target. Meat: tough but filling. The resonating sac makes a fine waterskin. You'll never hear 'you've got this' the same way again."
   },
-  "systemDesignation": "Morale enforcement organism"
+  "systemDesignation": "Morale enforcement organism",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "inflate",
+    "encourage",
+    "detonate",
+    "deflate"
+   ],
+   "phaseBadges": {
+    "inflate": " \ud83c\udf88 INFLATING",
+    "encourage": " \ud83d\udce3 PEP TALK",
+    "detonate": " \ud83d\udca5 DETONATING",
+    "deflate": " \ud83c\udf88\ud83d\udca8 DEFLATED"
+   },
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "crowdLimit": 2,
+   "noticeText": "\"HELLO, CHAMPION!\" It has noticed {who} too. It is SO EXCITED. You're all getting pep talks now.",
+   "painText": "It winces mid-sentence \u2014 then rounds on {who}. \"PAIN IS JUST WEAKNESS LEAVING THE BODY!\"",
+   "proximityText": "Too close. It whirls on {who}: \"I BELIEVE IN YOU!\" \u2014 proximity overrules the pep-talk queue.",
+   "comment": "Encounter framework client: FIFO encouragement queue, big slow burst (radius 3, windup 3 \u2014 get clear), deflates in a crowd. The encouragement is about to become physical."
+  }
  },
  {
   "id": "service_mimic",

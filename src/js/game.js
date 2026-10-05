@@ -11392,6 +11392,13 @@
           : ' It wants a reaction. Do not give it one standing still.';
         return cue + learned;
       }
+      if (mid === 'hype_horn') {
+        let cue = '📣 "YOU\'VE GOT THIS!" It inflates — throat, chest, the whole resonating chamber swelling like a bagpipe of pure encouragement.';
+        cue += known
+          ? ' Pep Talk: burst radius 3, the biggest burst going. Slow windup — GET CLEAR, four squares or more.'
+          : ' The encouragement is about to become physical. Distance is self-care.';
+        return cue + learned;
+      }
       return null;
     },
 
@@ -12142,6 +12149,24 @@
           return;
         }
       }
+      // CROWD DEFLATE (horn): it can't encourage a crowd — it only does
+      // one-on-one. The windup fizzles and it loses its nerve for two turns.
+      if (useFifo && this.hornIs(m)) {
+        const limit = ((this.encConfig(m) || {}).crowdLimit) || 2;
+        const live = this.encThreatQueue(m).filter(k => {
+          const t = this.tbFighter(k); return t && t.alive && !t.fled;
+        });
+        if (live.length > limit) {
+          m.telegraph = null;
+          this.encSetPhase(m, 'deflate');
+          m.hypeCooldown = 2;
+          this.say('📣 "YOU\'RE ALL WINNERS, I\'M JUST—" It deflates. It only does one-on-one.');
+          this.audioEvent('hypeDeflate');
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
+          return;
+        }
+      }
       // FIRE SCATTERS THE SWARM: it follows you — lead it into hazards. A
       // burning cell within 2 and it loses the shot entirely.
       if (this.swarmIs(m)) {
@@ -12214,6 +12239,13 @@
             if (tg.turnsLeft === 1) this.say('📸 "ENGAGEMENT CRITICAL!" The shutters are a strobe now. COVER YOUR EYES.');
             else this.say('The shutters quicken. The flashes are building…');
             this.audioEvent('swarmShutters', { urgency: tg.turnsLeft });
+          }
+          // the pep talk escalates — each beat a louder promise.
+          if (this.hornIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'encourage');
+            const shout = tg.turnsLeft === 2 ? "YOU'RE A WINNER!" : tg.turnsLeft === 1 ? 'NEVER GIVE UP!' : "YOU'VE GOT THIS!";
+            this.say(`📣 "${shout}" It's swelling — the air ripples. GET CLEAR.`);
+            this.audioEvent('hypeEncourage', { n: tg.turnsLeft });
           }
           this.tbRefreshTelegraphUI();
           this.audioEvent('telegraph', { urgency: tg.turnsLeft, windupTick: true });
@@ -12320,6 +12352,11 @@
               this.say('📸 "WE HAVE ENGAGEMENT!" The swarm got its reaction. For now.');
             }
             this.audioEvent('swarmFlash');
+          }
+          if (this.hornIs(m)) {
+            if (useFifo) this.encSetPhase(m, 'detonate');
+            this.audioEvent('hypeDetonate');
+            m.hypeCooldown = 1; // spent. The encouragement took everything.
           }
         }
         if (m.blind > 0) m.blind -= 1;
@@ -12504,6 +12541,10 @@
             m.telegraph.dmg = [Math.round(atk.damage[0] * k), Math.round(atk.damage[1] * k)];
           }
           this.audioEvent('swarmShutters');
+        }
+        if (this.hornIs(m)) {
+          if (useFifo) this.encSetPhase(m, 'inflate');
+          this.audioEvent('hypeInflate');
         }
         this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
         if (isDeer) {
