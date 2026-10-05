@@ -544,6 +544,8 @@
     if (label === 'Fish') { Game.fish(); return; }
     if (label.startsWith('Cook (')) { Game.cookAll(); return; }
     if (label.startsWith('Smoke ')) { Game.preserveFood(); return; }
+    if (label === 'Start a fire (big job)') { Game.makeFire(cx, cy); return; }
+    if (label === 'Feed the fire') { Game.feedFire(cx, cy); return; }
     if (label === 'Step outside') { Game.exitBuilding(); return; }
     if (label === 'Go inside') { Game.enterBuilding(); return; }
     if (label === 'Rest' || label === 'Rest (a while)') { Game.doAction('rest'); return; }
@@ -3619,11 +3621,21 @@
       <p class="small"><i>${v.atmos}</i></p>
       <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (about ${st.pantryDays} days)${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
-      <button class="btn sm" id="x-pantry">Take from pantry</button>
-      <button class="btn sm ghost" id="x-caches">📍 Caches</button>
-      <div id="haven-stores-slot"></div>
+      ${(() => {
+        // STORES GATE (Steve 2026-10-04): pantry, caches, and stash are
+        // physical — inside the hall, or via the System at Full Integration.
+        // Outside the building they disappear: no disabled buttons, no hints.
+        const acc = Game.havenStoresAccess ? Game.havenStoresAccess() : 'inside';
+        if (acc === 'none') return '';
+        const sysNote = acc === 'remote'
+          ? '<p class="small">◈ SYSTEM: requisition from anywhere — the pantry manifests.</p>' : '';
+        return `${sysNote}
+        <button class="btn sm" id="x-pantry">Take from pantry</button>
+        <button class="btn sm ghost" id="x-caches">📍 Caches</button>
+        <div id="haven-stores-slot"></div>
+        ${Game.stashHtml()}`;
+      })()}
       ${sleepHintHTML()}
-      ${Game.stashHtml()}
       ${(() => {
         try {
           const gs = Game.growthStatus();
