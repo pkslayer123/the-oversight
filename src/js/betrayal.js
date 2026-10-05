@@ -1212,9 +1212,14 @@
     const s = this.state.scholar;
     const prof = ov.knowledgeProfile || {};
     const focusWord = { fisher: 'fishing folk', forager: 'foragers', farmer: 'farmers', scavenger: 'scavengers' }[prof.focus] || 'survivors';
+    // trust is legible: you can see where you stand with them.
+    const trustWord = !ov.trust ? '' :
+      ov.trust >= 60 ? ' · they trust you deeply' :
+      ov.trust >= 30 ? ' · they trust you' :
+      ov.trust >= 10 ? ' · they know your face' : ' · wary of you';
     const card = {
       name: ov.name,
-      sub: `${ov.population || '?'} people · ${ov.day || 0} days in · ${focusWord}`,
+      sub: `${ov.population || '?'} people · ${ov.day || 0} days in · ${focusWord}${trustWord}`,
       actions: [],
     };
     if (s.exiled) {
@@ -1229,7 +1234,10 @@
       const pdx = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0));
       const pdy = Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
       if (pdx + pdy <= 1) {
-        card.actions.push({ id: 'talk', label: '💬 Sit & talk (a while)', hint: 'Trade news and plant knowledge. Takes time — stories aren\'t fast.' });
+        const talkHint = (ov.trust || 0) >= 10
+          ? 'Trade news and plant knowledge. Takes time — stories aren\'t fast.'
+          : 'Trade news. They\'ll share real knowledge once they know your face — come back.';
+        card.actions.push({ id: 'talk', label: '💬 Sit & talk (a while)', hint: talkHint });
       } else {
         card.hint = 'Walk to the edge of the map to travel there.';
       }
@@ -1247,6 +1255,10 @@
   // (L1, attributed), you show them one of yours (their codex grows too —
   // the world learns, not just you). Once per village per day; costs a while
   // (64 ticks, named). Talk happens face to face — no menu magic from afar.
+  // TRUST: strangers get stories, not secrets. First sit is sizing-up
+  // (trust 0 → news only); once they know your face (10+) they teach.
+  // Deep/uncommon lore needs real trust (30+); mastery-level sharing (60+).
+  // Generosity is remembered: showing them something new warms them faster.
   villageTalk(villageId) {
     const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
     if (!ov) return null;
@@ -1261,30 +1273,49 @@
       return null;
     }
     ov.lastTalkDay = s.day;
+    ov.trust = ov.trust || 0;
+    const trustIn = ov.trust;
     const prof = ov.knowledgeProfile || {};
     const theirCodex = (ov.codex && ov.codex.plants) || {};
     const mine = (this.state.codex.plants = this.state.codex.plants || {});
     const focusWord = { fisher: 'an old fisher', forager: 'a forager with bark under her nails', farmer: 'a farmer', scavenger: 'a scavenger' }[prof.focus] || 'someone';
-    // THEY TEACH YOU: something they know that you don't.
-    const newToMe = Object.keys(theirCodex).filter(pid => !mine[pid]);
-    if (newToMe.length) {
-      const pid = newToMe[Math.floor(Math.random() * newToMe.length)];
+    const isCommon = (pid) => {
       const p = (this.data.plants || []).find(x => x.id === pid);
-      const lvl = Math.min(2, (theirCodex[pid] && theirCodex[pid].level) || 1);
-      mine[pid] = { level: lvl, identifiedDay: s.day, harvests: 0, tastings: 0, learnedFrom: ov.name };
-      const pname = p ? p.name : pid;
-      this.say(`You sit with ${ov.name}. ${focusWord.charAt(0).toUpperCase() + focusWord.slice(1)} shows you ${pname} — where it grows, what it looks like, the part that won't kill you. (${pname}: knowledge L${lvl}, learned from ${ov.name}.)`);
-    } else {
-      // nothing new: deepen something shared, or just trade news
-      const shared = Object.keys(theirCodex).filter(pid => mine[pid] && (theirCodex[pid].level || 0) > (mine[pid].level || 0));
-      if (shared.length && Math.random() < 0.6) {
-        try { this.combineKnowledge(shared[Math.floor(Math.random() * shared.length)]); } catch (e) {}
+      return !p || (p.rarity || 'common') === 'common';
+    };
+    // THEY TEACH YOU: something they know that you don't — once they know your face.
+    if (trustIn >= 10) {
+      // trust gates BREADTH: below 30 they share common lore only; 30+ opens
+      // the uncommon; 60+ and their deep experts will walk you through mastery.
+      let newToMe = Object.keys(theirCodex).filter(pid => !mine[pid]);
+      if (trustIn < 30) newToMe = newToMe.filter(isCommon);
+      if (newToMe.length) {
+        const pid = newToMe[Math.floor(Math.random() * newToMe.length)];
+        const p = (this.data.plants || []).find(x => x.id === pid);
+        const theirLvl = (theirCodex[pid] && theirCodex[pid].level) || 1;
+        const lvl = (trustIn >= 60 && theirLvl >= 3) ? 3 : Math.min(2, theirLvl);
+        mine[pid] = { level: lvl, identifiedDay: s.day, harvests: 0, tastings: 0, learnedFrom: ov.name,
+          // a good teacher accelerates: shared knowledge gives a head start, not mastery.
+          // You still need to USE it to truly know it. (XP to next level is halved.)
+          sharedHeadStart: true };
+        const pname = p ? p.name : pid;
+        this.say(`You sit with ${ov.name}. ${focusWord.charAt(0).toUpperCase() + focusWord.slice(1)} shows you ${pname} — where it grows, what it looks like, the part that won't kill you. (${pname}: knowledge L${lvl}, learned from ${ov.name}.)`);
       } else {
-        this.say(`No new plants today — just news. ${ov.name} has its own troubles: who's sick, who's feuding, what the sky did last week. You trade stories. The world feels smaller, in a good way.`);
-        try { this.seedGossip('visit_' + ov.id + '_' + s.day, { trustworthy: 2 }, (this.npcIds ? this.npcIds() : []).slice(0, 3)); } catch (e) {}
+        // nothing new: deepen something shared, or just trade news
+        const shared = Object.keys(theirCodex).filter(pid => mine[pid] && (theirCodex[pid].level || 0) > (mine[pid].level || 0));
+        if (shared.length && Math.random() < 0.6) {
+          try { this.combineKnowledge(shared[Math.floor(Math.random() * shared.length)]); } catch (e) {}
+        } else {
+          this.say(`No new plants today — just news. ${ov.name} has its own troubles: who's sick, who's feuding, what the sky did last week. You trade stories. The world feels smaller, in a good way.`);
+          try { this.seedGossip('visit_' + ov.id + '_' + s.day, { trustworthy: 2 }, (this.npcIds ? this.npcIds() : []).slice(0, 3)); } catch (e) {}
+        }
       }
+    } else {
+      // first sit: stories, not secrets. They're sizing you up.
+      this.say(`You sit with ${ov.name}. Wary eyes, polite nods. They'll trade news — who's sick, who's feuding, what the sky did last week — but nobody's showing a stranger where the good patches are. Come back. Let them learn your face.`);
+      try { this.seedGossip('visit_' + ov.id + '_' + s.day, { trustworthy: 2 }, (this.npcIds ? this.npcIds() : []).slice(0, 3)); } catch (e) {}
     }
-    // YOU TEACH THEM: the exchange goes both ways.
+    // YOU TEACH THEM: the exchange goes both ways — and generosity is remembered.
     const newToThem = Object.keys(mine).filter(pid => !theirCodex[pid]);
     if (newToThem.length) {
       const pid = newToThem[Math.floor(Math.random() * newToThem.length)];
@@ -1293,7 +1324,10 @@
       ov.codex.plants[pid] = { level: 1, identifiedDay: s.day };
       if (prof.plants) prof.plants[pid] = { level: 1, learnedDay: s.day };
       this.say(`In return you show them ${(p && p.name) || pid}. Someone sketches it in the dirt, memorizing. ${ov.name} knows a little more because you came.`);
+      ov.trust = Math.min(100, ov.trust + 4);
     }
+    // showing up, sitting down, staying a while: that's how faces get known.
+    ov.trust = Math.min(100, ov.trust + (trustIn === 0 ? 8 : 4));
     // talk takes a while: stories aren't fast. (Named cost, no silent drain.)
     this.tickAction(64);
     return true;

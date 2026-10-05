@@ -91,7 +91,7 @@ function walkTo(tx, ty) {
     ok('C2: seeded + learned plants (>=2)', nPlants >= 2);
     ok('C3: codex mirrors profile', Object.keys((v.codex && v.codex.plants) || {}).length >= 2);
     ok('C4: pantry not negative', (v.pantryKcal || 0) >= 0);
-    ok('C5: population alive (4-12)', v.population >= 4 && v.population <= 12);
+    ok('C5: population alive (6-12)', v.population >= 6 && v.population <= 12);
     ok('C6: focus is a real word', ['fisher', 'forager', 'farmer', 'scavenger'].includes(prof.focus));
   }
 
@@ -139,22 +139,57 @@ function walkTo(tx, ty) {
     const prof = v.knowledgeProfile || {};
     const theirPids = Object.keys(prof.plants || {});
     ok('E5: they know something', theirPids.length > 0);
-    // wipe my knowledge of their plants so the exchange teaches me
+    // wipe my knowledge of their plants so the exchange can teach me
     for (const pid of theirPids) delete Game.state.codex.plants[pid];
     const ticksBefore = Game.state.scholar.dayTicks || 0;
     said.length = 0;
     const r = Game.villageTalk(v.id);
     ok('E6: talk happens', r === true);
-    const learned = theirPids.some(pid => Game.state.codex.plants[pid]);
-    ok('E7: I learn a plant from them (L1)', learned);
-    const entry = Game.state.codex.plants[theirPids.find(pid => Game.state.codex.plants[pid])];
-    ok('E8: learned-from attribution recorded', entry && entry.learnedFrom === v.name);
-    ok('E9: talk costs time', (Game.state.scholar.dayTicks || 0) > ticksBefore);
-    ok('E10: talk is once per day', Game.villageTalk(v.id) === null && saidHas('today'));
-    // symmetric: they learn one of mine
-    const myPids = Object.keys(Game.state.codex.plants || {}).filter(pid => !theirPids.includes(pid));
-    if (myPids.length) {
-      ok('E11: they learned one of mine', myPids.some(pid => (v.codex.plants || {})[pid]));    }
+    // TRUST: first sit is stories, not secrets — no plant taught yet
+    const learnedFirst = theirPids.some(pid => Game.state.codex.plants[pid]);
+    ok('E7: first sit teaches no plant (wary of strangers)', !learnedFirst);
+    ok('E8: first sit accrues trust', (v.trust || 0) >= 8);
+    ok('E9: first sit is news, sizing up', saidHas('sizing you up') || saidHas('learn your face'));
+    ok('E10: talk costs time', (Game.state.scholar.dayTicks || 0) > ticksBefore);
+    ok('E11: talk is once per day', Game.villageTalk(v.id) === null && saidHas('today'));
+    // keep sitting with them: once they know my face, teaching begins
+    let learnedPid = null, sitDay = 4;
+    for (; sitDay <= 6 && !learnedPid; sitDay++) {
+      s.day = sitDay; v.lastTalkDay = sitDay - 1;
+      Game.map.px = v.x; Game.map.py = v.y;
+      said.length = 0;
+      if (Game.villageTalk(v.id) !== true) break;
+      learnedPid = theirPids.find(pid => Game.state.codex.plants[pid]);
+    }
+    ok('E12: repeat sits teach a plant (trust earned)', !!learnedPid);
+    const entry = learnedPid && Game.state.codex.plants[learnedPid];
+    ok('E13: learned-from attribution recorded', entry && entry.learnedFrom === v.name);
+    ok('E14: shared head start recorded (teacher accelerates)', entry && entry.sharedHeadStart === true);
+    ok('E15: card shows trust standing', /know your face|trust|wary/.test(Game.villageCard(v.id).sub));
+    // RARITY GATE: below trust 30 they share common lore only
+    {
+      const plants = Game.data.plants || [];
+      const uncommon = plants.find(p => p.rarity && p.rarity !== 'common' && !Game.state.codex.plants[p.id]);
+      if (uncommon) {
+        v.codex = v.codex || { plants: {} };
+        v.codex.plants[uncommon.id] = { level: 2, identifiedDay: 1 };
+        // make the uncommon the ONLY thing they could teach: know the rest
+        for (const pid of Object.keys(v.codex.plants)) {
+          if (pid !== uncommon.id) Game.state.codex.plants[pid] = Game.state.codex.plants[pid] || { level: 1 };
+        }
+        delete Game.state.codex.plants[uncommon.id];
+        v.trust = 12;
+        s.day = 7; v.lastTalkDay = 6;
+        Game.map.px = v.x; Game.map.py = v.y; said.length = 0;
+        Game.villageTalk(v.id);
+        ok('E16: trust<30 withholds uncommon lore', !Game.state.codex.plants[uncommon.id]);
+        v.trust = 35;
+        s.day = 8; v.lastTalkDay = 7;
+        said.length = 0;
+        Game.villageTalk(v.id);
+        ok('E17: trust 30+ opens uncommon lore', !!Game.state.codex.plants[uncommon.id]);
+      }
+    }
   }
 
   // ---------- F. return home closes the loop ----------

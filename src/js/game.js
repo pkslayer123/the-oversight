@@ -3924,20 +3924,33 @@
     genVillages() {
       const villages = [];
       const nVillages = 2 + Math.floor(Math.random() * 2); // 2-3
+      // Villages settle the best available ground — never garbage. Rank every
+      // tile outside the haven zone by what its turf can hold, and pick from
+      // the top. (An absolute threshold fails on poor maps: the old try-60
+      // loop burned out and dropped villages in corners or on haven itself.
+      // Relative to the map always resolves.)
+      const cands = [];
+      for (let vy = 0; vy < 7; vy++) for (let vx = 0; vx < 7; vx++) {
+        if (Math.abs(vx - 3) + Math.abs(vy - 3) < 3) continue; // not too close to haven
+        cands.push({ x: vx, y: vy, tk: this.turfKcal(vx, vy) });
+      }
+      cands.sort((a, b) => b.tk - a.tk);
+      const best = cands.length ? cands[0].tk : 0;
+      const good = cands.filter(c => c.tk >= Math.max(4000, best * 0.6));
+      const pool = good.length ? good : cands.slice(0, Math.max(1, Math.min(6, cands.length)));
       for (let i = 0; i < nVillages; i++) {
-        // place away from haven (3,3) and away from each other
-        let x, y, tries = 0;
-        do {
-          x = Math.floor(Math.random() * 7); y = Math.floor(Math.random() * 7);
-          tries++;
-        } while (tries < 50 && (
-          (Math.abs(x - 3) + Math.abs(y - 3) < 3) || // not too close to haven
-          villages.some(v => Math.abs(v.x - x) + Math.abs(v.y - y) < 2) // not too close to each other
-        ));
+        // pick good ground, spaced apart from the other villages
+        let pick = null, tries = 0;
+        while (tries++ < 40) {
+          const c = pool[Math.floor(Math.random() * pool.length)];
+          if (villages.some(v => Math.abs(v.x - c.x) + Math.abs(v.y - c.y) < 2)) continue;
+          pick = c; break;
+        }
+        if (!pick) pick = pool[Math.floor(Math.random() * pool.length)];
         const village = {
           id: `village_${i}`,
           name: ['Emberhold', 'Stonebridge', 'Thornfield', 'Ashford'][i] || `Village ${i}`,
-          x, y,
+          x: pick.x, y: pick.y,
           day: 0, // how many days they've been simulated
           population: 8 + Math.floor(Math.random() * 5), // 8-12
           pantryKcal: 15000 + Math.floor(Math.random() * 10000), // a working pantry, not a death sentence
@@ -3966,6 +3979,19 @@
       return null;
     },
 
+    // turfKcal: what the land around (x,y) can actually give today.
+    // Sums stocked tiles within 4 (their turf — same footprint depleteRandomTile
+    // works). Home-village convention: 1 stock ≈ 200 kcal.
+    turfKcal(x, y) {
+      let cap = 0;
+      for (let ty = 0; ty < 7; ty++) for (let tx = 0; tx < 7; tx++) {
+        const t = this.tileAt(tx, ty);
+        if (!t || t.type === 'haven' || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
+        if (Math.abs(tx - x) + Math.abs(ty - y) <= 4) cap += (t.stock || 0);
+      }
+      return cap * 200;
+    },
+
     // catchUpSim: when you approach a village, simulate all days since game start.
     // They're not fresh — they've been living, foraging, competing.
     // LIVING WORLD: their knowledge EMERGES from who they are, where they are,
@@ -3981,6 +4007,8 @@
       }
       // Fast sim: each day, they forage (depleting the world), eat, maybe grow.
       for (let d = 0; d < daysToSim; d++) {
+        // the land heals overnight, like it does between your days — then they work it
+        try { this.regrowTiles(); } catch (e) {}
         // forage: knowledge-scaled, like the player's village. Strangers in a
         // strange land start near 60% self-sufficient and learn — the same
         // learning curve, abstracted. Villages you meet late are LIVING places,
@@ -3989,16 +4017,30 @@
         const plantCount = Object.keys(prof.plants || {}).length;
         const effKnow = Math.max(village.knowledge || 0, plantCount / 3);
         const perPerson = (1500 + Math.random() * 700) * Math.min(1.8, 1 + 0.12 * effKnow);
-        const forage = village.population * perPerson;
+        const need = village.population * 2000;
+        // THE LAND SETS THE CEILING. They take what their turf grows — the
+        // rest is ranging, traps, and work the sim doesn't map, covering about
+        // 60% of need. Strangers start near 60% self-sufficient and learn.
+        // A stripped turf means lean days; lean days mean hunger.
+        const turf = this.turfKcal(village.x, village.y);
+        const fromTurf = Math.min(village.population * perPerson, turf);
+        const stillHungry = Math.max(0, need - fromTurf);
+        const ranged = Math.min(stillHungry, need * 0.6);
+        const forage = fromTurf + ranged;
         village.pantryKcal += forage;
-        // they deplete the world near them (competition!)
-        this.depleteRandomTile(Math.ceil(forage / 500), village.x, village.y);
+        // they deplete the world near them (competition!) — what they took, in
+        // the same units the home village uses (1 stock ≈ 200 kcal)
+        this.depleteRandomTile(Math.ceil(fromTurf / 200), village.x, village.y);
         // eat: 2000 per person
-        village.pantryKcal -= village.population * 2000;
-        // starvation: lose people if pantry empty
-        if (village.pantryKcal < 0) {
+        village.pantryKcal -= need;
+        // villages eat and share surplus — they don't hoard. 4 days' buffer, max.
+        village.pantryKcal = Math.min(village.pantryKcal, village.population * 8000);
+        // starvation: lean days cost people, slowly. Never below 6 — a village
+        // of six is the smallest viable peer: they can still trade, teach, and
+        // take you in. (The old sim never starved anyone; pantries ballooned.)
+        if (village.pantryKcal <= 0 && forage < need) {
           village.pantryKcal = 0;
-          if (Math.random() < 0.3 && village.population > 4) {
+          if (Math.random() < 0.3 && village.population > 6) {
             village.population--;
           }
         }
@@ -4051,6 +4093,8 @@
       profile.experts = (focusOccs[profile.focus] || ['forager']).slice(0, 2);
       // SEED KNOWLEDGE: they start knowing 2-4 plants related to their focus.
       // Plants with matching tileAffinity or focus-relevant traits.
+      // (If the focus pool is thin — fishers only have a few water plants —
+      // fall back to the full pool. Every village knows SOMETHING.)
       const focusPlants = plants.filter(p => {
         const aff = (p.tileAffinity || []).join(' ').toLowerCase();
         if (profile.focus === 'fisher') return aff.includes('water') || aff.includes('creek') || aff.includes('wetland');
@@ -4058,14 +4102,16 @@
         if (profile.focus === 'forager') return aff.includes('forest') || aff.includes('grove') || aff.includes('meadow');
         return true; // scavengers know a bit of everything
       });
+      const pool = focusPlants.length ? focusPlants : plants;
       const nSeed = 2 + Math.floor(Math.random() * 3); // 2-4
-      for (let i = 0; i < nSeed && focusPlants.length; i++) {
-        const p = focusPlants[Math.floor(Math.random() * focusPlants.length)];
+      let guard = 0;
+      while (Object.keys(profile.plants).length < Math.min(nSeed, pool.length) && guard++ < 30) {
+        const p = pool[Math.floor(Math.random() * pool.length)];
         if (!profile.plants[p.id]) {
           profile.plants[p.id] = { level: 1 + Math.floor(Math.random() * 2), learnedDay: 0 }; // L1-L2
         }
       }
-      // village.codex mirrors the profile for shareCodexKnowledge compatibility
+      // village.codex mirrors the profile so villageTalk can trade knowledge both ways
       village.codex = village.codex || { plants: {} };
       for (const [pid, e] of Object.entries(profile.plants)) {
         village.codex.plants[pid] = { level: e.level, identifiedDay: 0 };
@@ -4111,7 +4157,9 @@
           const yourPlants = Object.keys(this.state.codex.plants || {});
           const theirNew = Object.keys(prof.plants || {}).filter(pid => !yourPlants.includes(pid)).length;
           const knowNote = nPlants > 0 ? ` They know ${nPlants} plants${theirNew > 0 ? ` — ${theirNew} you haven't seen` : ''}.` : '';
-          this.say(`You see smoke on the horizon. ${v.name} — ${v.population} people, ${v.day} days in. ${focusWord}, by the look of it.${knowNote} They've been here the whole time.`);
+          // DRIFTER: you can read a village at a glance. Lean ones look lean.
+          const leanNote = (v.pantryKcal || 0) <= 0 ? ' They look lean — hungry, even. Food would talk here.' : '';
+          this.say(`You see smoke on the horizon. ${v.name} — ${v.population} people, ${v.day} days in. ${focusWord}, by the look of it.${knowNote}${leanNote} They've been here the whole time.`);
         }
       }
     },
@@ -8435,6 +8483,54 @@
       return species;
     },
 
+    // regrowTiles: one day of the land healing. +1 stock/day up to maxStock;
+    // heavily pressured land recovers slower; detail cells come back in 3 days.
+    // Called by endDay() and by the distant-village catch-up sim per simulated day.
+    regrowTiles() {
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        const t = this.map.tiles[y][x];
+        if (t.maxStock > 0) {
+          const pressure = t.foragePressure || 0;
+          // pressure suppresses regrow: 0-4 = full, 5-9 = half (every other day), 10+ = none
+          // pressure decays by 1/day when not foraged (land rests)
+          let regrow = 1;
+          if (pressure >= 10) regrow = 0;
+          else if (pressure >= 5) regrow = (this.state.scholar.day % 2 === 0) ? 1 : 0;
+          if (regrow > 0) t.stock = Math.min(t.maxStock, (t.stock || 0) + regrow);
+          // pressure decays slowly — the land forgives, eventually
+          if (pressure > 0 && !t.foragedToday) t.foragePressure = Math.max(0, pressure - 1);
+          t.foragedToday = false;
+        }
+        // detail cells regrow: the plant you picked comes back in 3 days.
+        if (t.detail && t.detailRegrow) {
+          let regrown = 0;
+          for (const key of Object.keys(t.detailRegrow)) {
+            const reg = t.detailRegrow[key];
+            const regDay = (typeof reg === 'object') ? reg.day : reg;
+            const was = (typeof reg === 'object') ? reg.was : 'plant';
+            if (regDay <= this.state.scholar.day) {
+              const [cx, cy] = key.split(',').map(Number);
+              // restore the original (plants come back; trees were never gone, just picked clean)
+              if (t.detail[cy] && (t.detail[cy][cx] === 'dirt' || t.detail[cy][cx] === was)) {
+                t.detail[cy][cx] = was;
+                regrown++;
+              }
+              delete t.detailRegrow[key];
+            }
+          }
+          // STOCK FOLLOWS THE GRID: the grid is the inventory. Regrown cells
+          // restore stock 1:1, so a stripped grove recovers in ~3 days —
+          // matching the "it'll recover in a few days" promise the sweep makes.
+          // (The +1/day above only tops up villager-nibbled stock; it couldn't
+          // keep up with the area sweep, leaving regrown grids that read
+          // "nothing left to take here today" — green lies.)
+          if (regrown > 0 && t.maxStock > 0) {
+            t.stock = Math.min(t.maxStock, (t.stock || 0) + regrown);
+          }
+        }
+      }
+    },
+
     // depleteRandomTile: when villagers forage, the world loses stock.
     // you compete for the same plants. if you don't take it, they might.
     // LOCAL: a village forages ITS turf. Pass (cx, cy) and depletion stays
@@ -9809,51 +9905,6 @@
 
     // CODEX NETWORKING: codexes talk within friendly organizations.
     // KNOWLEDGE HAS TWO PARTS:
-    // - IDENTIFICATION (what is it?) — shareable. L1/L2.
-    // - SKILL (how do YOU use it?) — personal practice. But a good teacher accelerates it.
-    // L3 CAN be shared, but only if the teacher actually knows it deeply.
-    // (A medic who knows willow bark treats pain? They'll tell you. Most won't know.)
-    shareCodexKnowledge(villageId) {
-      const v = (this.state.otherVillages || []).find(x => x.id === villageId);
-      if (!v || !v.codex) return null;
-      const trust = v.trust || 0;
-      if (trust < 30) {
-        this.say(`${v.name} doesn't share their knowledge yet. (Trust ${trust}/100.)`);
-        return null;
-      }
-      const theirPlants = v.codex.plants || {};
-      let shared = 0, deepShared = 0;
-      for (const [pid, theirEntry] of Object.entries(theirPlants)) {
-        const plant = this.data.plants.find(p => p.id === pid);
-        const isCommon = plant && (plant.rarity || 'common') === 'common';
-        // Trust gates BREADTH: 30-60 = common only, 60+ = anything.
-        if (trust < 60 && !isCommon) continue;
-        if (!this.state.codex.plants[pid]) {
-          // They know L3 deeply? (Medicinal experts, etc.) They can share it.
-          // But it's rare — most villagers don't have L3.
-          const theyKnowDeep = theirEntry.level >= 3;
-          const shareLevel = theyKnowDeep && trust >= 70 ? 3 : trust >= 60 ? 2 : 1;
-          this.state.codex.plants[pid] = {
-            identifiedDay: this.state.scholar.day,
-            level: shareLevel,
-            harvests: 0, tastings: 0,
-            viaShare: villageId,
-            // SKILL component: shared knowledge gives you a head start, not mastery.
-            // You still need to USE it to truly know it. (XP to next level is halved.)
-            sharedHeadStart: true,
-          };
-          shared++;
-          if (shareLevel >= 3) deepShared++;
-        }
-      }
-      if (shared > 0) {
-        this.say(`\u{1F4D6} ${v.name} shares ${shared} plant${shared > 1 ? 's' : ''}.${deepShared ? ` (${deepShared} with deep medicinal knowledge!)` : ''} You have a head start, but skill comes from doing.`);
-      } else {
-        this.say(`${v.name} has nothing new to share.`);
-      }
-      return null;
-    },
-
     // --- pack weight: 15 kg. distance has a price; so does carrying. ---
     packCapacity() { return this.carryCapacity(); },
     packWeight() {
@@ -10962,53 +11013,10 @@
           this.monsterNamingCheck(mid);
         }
       } catch (e2) {}
-      // regrow: +1/day up to maxStock. food comes back, but slowly.
-      // strip a grove and it takes 3 days to recover. not unlimited, but renewable.
-      // state persists — the land remembers what you took.
-      // LIVING WORLD: heavily pressured land recovers SLOWER. Hammer a tile
-      // repeatedly and it stays barren longer. The land needs rest.
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
-        const t = this.map.tiles[y][x];
-        if (t.maxStock > 0) {
-          const pressure = t.foragePressure || 0;
-          // pressure suppresses regrow: 0-4 = full, 5-9 = half (every other day), 10+ = none
-          // pressure decays by 1/day when not foraged (land rests)
-          let regrow = 1;
-          if (pressure >= 10) regrow = 0;
-          else if (pressure >= 5) regrow = (this.state.scholar.day % 2 === 0) ? 1 : 0;
-          if (regrow > 0) t.stock = Math.min(t.maxStock, (t.stock || 0) + regrow);
-          // pressure decays slowly — the land forgives, eventually
-          if (pressure > 0 && !t.foragedToday) t.foragePressure = Math.max(0, pressure - 1);
-          t.foragedToday = false;
-        }
-        // detail cells regrow: the plant you picked comes back in 3 days.
-        if (t.detail && t.detailRegrow) {
-          let regrown = 0;
-          for (const key of Object.keys(t.detailRegrow)) {
-            const reg = t.detailRegrow[key];
-            const regDay = (typeof reg === 'object') ? reg.day : reg;
-            const was = (typeof reg === 'object') ? reg.was : 'plant';
-            if (regDay <= this.state.scholar.day) {
-              const [cx, cy] = key.split(',').map(Number);
-              // restore the original (plants come back; trees were never gone, just picked clean)
-              if (t.detail[cy] && (t.detail[cy][cx] === 'dirt' || t.detail[cy][cx] === was)) {
-                t.detail[cy][cx] = was;
-                regrown++;
-              }
-              delete t.detailRegrow[key];
-            }
-          }
-          // STOCK FOLLOWS THE GRID: the grid is the inventory. Regrown cells
-          // restore stock 1:1, so a stripped grove recovers in ~3 days —
-          // matching the "it'll recover in a few days" promise the sweep makes.
-          // (The +1/day above only tops up villager-nibbled stock; it couldn't
-          // keep up with the area sweep, leaving regrown grids that read
-          // "nothing left to take here today" — green lies.)
-          if (regrown > 0 && t.maxStock > 0) {
-            t.stock = Math.min(t.maxStock, (t.stock || 0) + regrown);
-          }
-        }
-      }
+      // regrow: extracted so the distant-village catch-up sim can run it per
+      // simulated day too — their turf regrows while they live, not just when
+      // the player's own day turns.
+      this.regrowTiles();
       // SLICE 2: System arrival and timed events.
       this.checkSystemArrival();
       this.checkTimedEvents();
