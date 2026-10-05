@@ -103,11 +103,22 @@
     const cap = st.kcalCap || 2400;
     const banked = st.banked || 0;
     const foodVal = Math.round(st.kcal) + '/' + cap + ' kcal' + (banked > 0 ? ` (+${banked} banked)` : '') + feastTag;
+    // PENDING CONTEST (Steve 2026-10-05): visible countdown so player knows what's coming
+    let contestRow = '';
+    try {
+      const pc = Game.state && Game.state.pendingContest;
+      if (pc) {
+        const daysLeft = Math.max(0, (pc.firesDay || 1) - (Game.state.scholar.day || 1));
+        const who = pc.participant === 'player' ? 'YOU' : (pc.participant || 'someone');
+        contestRow = `<div class="statrow contest-pending">📺 CONTEST: ${esc(pc.contestId || 'unknown')} — ${who} in ${daysLeft}d</div>`;
+      }
+    } catch (e) {}
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
       statRow('FOOD (you)', foodVal, st.kcal / cap * 100, st.kcal < 500, banked > 0 ? 'banked' : '') +
       statRow('PACK', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap) +
       statRow('WATER', st.hydration + '% · ' + st.waterCleanL + 'L clean', st.hydration, st.hydration < 30) +
-      (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '');
+      (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '') +
+      contestRow;
   }
 
   // ---------- title ----------

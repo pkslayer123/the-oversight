@@ -945,7 +945,7 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
   .ord-status .bar { height: 7px; margin-top: 2px; }
   /* GRID CAP: the world stays tappable (~36px cells) but stops eating
      the viewport */
-  .ord-gridwrap .detail { max-width: 330px; margin-left: auto; margin-right: auto; }
+  .ord-gridwrap .detail { max-width: 100%; margin-left: auto; margin-right: auto; }
   .ord-epithet { margin: 4px 0; font-size: 12px; }
   /* ENCOUNTER/PERSON PANELS: overlay the grid, never push layout.
      The panel is transient (examine -> act -> dismiss); the grid is
@@ -957,12 +957,15 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
   #inlineslot .card { margin: 0; box-shadow: 0 -6px 28px rgba(0,0,0,.65); }
   #inlineslot .tilepanel { background: rgba(10, 12, 20, .97); border: 1px solid rgba(255,255,255,.2); border-radius: 12px; padding: 12px; }
   /* tighter action bars */
-  .selfbar { margin-top: 6px; }
-  .self-btn { min-height: 44px; padding: 10px 4px; font-size: 13px; }
-  .contextbar { margin-top: 6px; }
+  .selfbar { margin-top: 6px; flex-wrap: wrap; }
+  .self-btn { min-height: 44px; padding: 10px 4px; font-size: 13px; flex: 1 1 40%; white-space: normal; }
+  .contextbar { margin-top: 6px; flex-wrap: wrap; }
   .ctx-btn { padding: 8px 10px; font-size: 13px; }
   .perceiveline { margin-top: 4px; }
   .feedbackcard { margin-top: 6px; }
+  /* MOBILE: action buttons must wrap, not overflow into D-pad (Steve 2026-10-05) */
+  .ord-controls .ord-actions { overflow: hidden; }
+  .ord-controls .ord-actions .selfbar { flex-wrap: wrap; }
 }
 /* SHEET BUTTONS: choice-heavy sheets (gifts, relics) must contain their
    content — the buttons area scrolls internally instead of clipping
