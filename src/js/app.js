@@ -421,31 +421,24 @@
   function obItems() {
     const v = Game.data.villagers.find(x => x.id === ob.villager);
     const items = v.items.map(id => Game.data.items.find(i => i.id === id)).filter(Boolean);
-    // THE OPENING GAMBLE: functional gear vs keepsakes, side by side. Tools show
-    // honest stats. Keepsakes show only the flag — dead weight you're asked to
-    // carry for no stated reason. The player knows it will matter somehow.
-    const func = items.filter(i => i.class !== 'sentimental');
-    const keeps = items.filter(i => i.class === 'sentimental');
+    // THE OPENING GAMBLE (Steve 2026-10-05, revised): ONE pool, no type labels.
+    // No "useful now" vs "keepsake" sections, no badges. The only signal is the
+    // item's own description. A pocket knife reads like a pocket knife; a
+    // dead spouse's wedding ring reads like a dead spouse's wedding ring.
+    // Shuffled, so position carries no meaning either.
+    const pool = [...items].sort(() => Math.random() - 0.5);
     const picked = new Set();
     const card = (i) => {
-      const isKeep = i.class === 'sentimental';
-      // SEMANTIC HONESTY (Steve 2026-10-05): keepsakes with real effects show
-      // them — "no practical use" is only for the truly impractical.
+      // SEMANTIC HONESTY (Steve 2026-10-05): items with real effects show them.
       const effect = i.baseEffect ? `<p class="small" style="opacity:.75">⚙ ${i.baseEffect}</p>` : '';
-      const sub = isKeep
-        ? `<p class="small">💛 KEEPSAKE${i.baseEffect ? '' : ' — no practical use. You can\'t quite throw it away.'}</p>${effect}`
-        : `<p class="small">${i.flavor || ''}</p>${effect}`;
-      return `<div class="card itempick${picked.has(i.id) ? ' sel' : ''}" data-i="${i.id}"><h3>${picked.has(i.id) ? '✓ ' : ''}${isKeep ? '💛 ' : ''}${i.name}</h3>${sub}</div>`;
+      const sub = `<p class="small">${i.flavor || ''}</p>${effect}`;
+      return `<div class="card itempick${picked.has(i.id) ? ' sel' : ''}" data-i="${i.id}"><h3>${picked.has(i.id) ? '✓ ' : ''}${i.name}</h3>${sub}</div>`;
     };
     const render = () => {
       screen.innerHTML = `${bar('scattering://pack', picked.size + '/5')}
       <h1 class="title" style="font-size:22px">WHAT DID YOU GRAB?</h1>
       <p class="small">The sky was changing. ${v.name.split(' ')[0]} could carry five things. Choose:</p>
-      <h3 class="small" style="opacity:.7;margin:12px 0 6px">USEFUL NOW</h3>
-      ${func.map(card).join('')}
-      ${keeps.length ? `<h3 class="small" style="opacity:.7;margin:12px 0 6px">KEEPSAKES</h3>
-      <p class="small" style="opacity:.6">Dead weight. Everyone knows you wouldn't be asked to carry dead weight for no reason.</p>
-      ${keeps.map(card).join('')}` : ''}
+      ${pool.map(card).join('')}
       <button class="btn" id="b-go" ${picked.size !== 5 ? 'disabled style="opacity:.4"' : ''}>${picked.size === 5 ? 'This is me. Begin.' : `Pick ${5 - picked.size} more`}</button>`;
       screen.querySelectorAll('.itempick').forEach(el => {
         el.onclick = () => {
