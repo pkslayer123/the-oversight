@@ -1417,6 +1417,23 @@
         o.start(st); o.stop(st + 0.5);
       });
     }
+    // talkAttention (Steve 2026-10-05): someone wants to talk to you. A soft
+    // two-tone chime — a tap on the shoulder, not an alarm. The player asked
+    // for audio cues when their attention is needed; this is the social one.
+    function talkAttention() {
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [660, 880].forEach((fq, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = fq;
+        const st = t + i * 0.14;
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.18, st + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.35);
+        o.connect(g); g.connect(sfxBus);
+        o.start(st); o.stop(st + 0.4);
+      });
+    }
     // deerCall: a rutting-buck bellow, synthesized wrong on purpose.
     // FM guttural growl (detuned twin = the beating that says "not a deer"),
     // irregular struggle wobble, a strained overtone almost like a deer,
@@ -1797,6 +1814,7 @@
       beamSweepStop() { beamSweepStop(); },
       victory() { sting('victory'); },
       defeat() { sting('defeat'); },
+      talkAttention() { talkAttention(); },
       combatEnd() { stopHeartbeat(); stopCharge(); beamSweepStop(); humStop(); },
       humNotice() { humBuild(2); }, // the grass starts humming — low, unsettled
       humRise(d) { humBuild(d && d.stacks ? d.stacks : 1); },
@@ -2130,7 +2148,7 @@
   // When the conversation ends, the normal one-screen view returns.
   function openChat(vid) {
     inlineView = null;
-    chatView = { vid: vid, thinking: null, thinkingToken: 0 };
+    chatView = { vid: vid, thinking: null, thinkingToken: 0, msgIndex: 0 };
     Game.startConvo(vid);
     // startConvo resets the transcript — the opening lands after a beat.
     armChatThinking(vid, 0, null, true);
@@ -2143,7 +2161,7 @@
   // panel then drops the player straight into the RUN/TALK/FIGHT beat.
   function openChatKeep(vid) {
     inlineView = null;
-    chatView = { vid: vid, thinking: null, thinkingToken: 0 };
+    chatView = { vid: vid, thinking: null, thinkingToken: 0, msgIndex: 0 };
     try { Game.convoGet(vid).active = true; } catch (e) {}
     armChatThinking(vid, 0, null, true);
     refresh();
@@ -2179,60 +2197,89 @@
     const before = ui && ui.transcript ? ui.transcript.length : 0;
     const st = Game.convoTurn(vid, cid);
     if (!st || st.ended) { chatView = null; refresh(); return; }
+    // Pokémon-style: jump to the first new message — the reply shows at once.
+    chatView.msgIndex = before;
     armChatThinking(vid, before, cid, false);
     refresh();
   }
 
-  function renderChatScreen(cv, convo) {
+  // DIALOGUE BOX (Steve 2026-10-05): Pokémon-style — the map stays visible and
+  // tappable; the box sits under the grid. Speaker tab (name, descriptor-gated
+  // until you know them), ONE message at a time, ▼ to continue, choices land
+  // in the box when it's your turn to pick. No screen takeover, no scrolling.
+  function dialogueBoxHTML(cv) {
     const vid = cv.vid;
-    const vp = (Game.data.villagers || []).find(v => v.id === vid) ||
-               (Game.data.background_survivors || []).find(v => v.id === vid) || {};
+    const convo = Game.convoUI ? Game.convoUI(vid) : null;
+    if (!convo || !convo.active) return '';
     const sys = !!Game.state.systemArrived;
     const known = sys || Game.nameKnown(vid);
+    const vp = (Game.data.villagers || []).find(v => v.id === vid) ||
+               (Game.data.background_survivors || []).find(v => v.id === vid) || {};
     const titleName = known ? (vp.name || 'Someone') : Game.personDescriptor(vid);
-    const sub = sys && vp.formerOccupation
-      ? vp.formerOccupation + (vp.homeRegion ? ' · ' + vp.homeRegion : '') : '';
-    const thinking = cv.thinking || null;
-    const shownTranscript = thinking ? (convo.transcript || []).slice(0, thinking.hiddenFrom) : (convo.transcript || []);
-    const msgs = shownTranscript.map(e => {
+    const transcript = convo.transcript || [];
+    const thinking = !!(cv.thinking);
+    // msgIndex: Pokémon-style, one message at a time. Clamp to the transcript.
+    let mi = cv.msgIndex || 0;
+    if (mi >= transcript.length) mi = Math.max(0, transcript.length - 1);
+    const atEnd = mi >= transcript.length - 1 || transcript.length === 0;
+    const choices = (atEnd && !thinking) ? (convo.choices || []) : [];
+    let body;
+    if (thinking) {
+      body = `<div class="dlg-line"><span class="thinking-dots" aria-label="thinking"><span>.</span><span>.</span><span>.</span></span></div>`;
+    } else if (!transcript.length) {
+      body = `<div class="dlg-line">…</div>`;
+    } else {
+      const e = transcript[mi];
       const clean = Game.cleanDialogue ? Game.cleanDialogue(e.text) : String(e.text || '');
       const isSpeech = /^\s*"/.test(clean);
-      const spCls = e.foreign ? 'fsp' : (isSpeech ? 'sp' : 'narr');
+      const who = e.who === 'you' ? 'You' : titleName;
       const ftag = e.foreign
         ? ` <span class="flang">${esc(Game.langDef(e.foreign).icon)} ${esc(Game.langDef(e.foreign).name)}</span>` : '';
-      if (!isSpeech) {
-        return `<div class="chat-narr"><span class="narr">${esc(clean)}</span></div>`;
-      }
-      const who = e.who === 'you' ? 'You' : titleName;
-      const side = e.who === 'you' ? 'you' : 'them';
-      return `<div class="chat-msg ${side}"><div class="chat-name">${esc(who)}</div>` +
-        `<div class="chat-bubble"><span class="${spCls}">${esc(clean)}</span>${ftag}</div></div>`;
-    }).join('') + (thinking
-      ? `<div class="chat-msg them"><div class="chat-name">${esc(titleName)}</div>` +
-        `<div class="chat-bubble"><span class="thinking-dots" aria-label="thinking"><span>.</span><span>.</span><span>.</span></span></div></div>`
-      : '');
-    const choiceBtns = (convo.choices || []).map(cn => {
+      body = isSpeech
+        ? `<div class="dlg-line"><span class="dlg-who">${esc(who)}:</span> <span class="sp">${esc(clean)}</span>${ftag}</div>`
+        : `<div class="dlg-line narr"><span class="narr">${esc(clean)}</span></div>`;
+    }
+    const more = !thinking && !atEnd;
+    const choiceBtns = choices.map(cn => {
       const cleanLabel = Game.cleanDialogue ? Game.cleanDialogue(cn.label) : cn.label;
-      return `<button class="btn chat-choice${cn.id === 'leave' ? ' ghost' : ''}" data-cid="${esc(cn.id)}"${thinking ? ' disabled' : ''}>${esc(cleanLabel)}</button>`;
+      return `<button class="btn sm dlg-choice${cn.id === 'leave' ? ' ghost' : ''}" data-cid="${esc(cn.id)}"${thinking ? ' disabled' : ''}>${esc(cleanLabel)}</button>`;
     }).join('');
-    screen.innerHTML = `
-      <div class="chat">
-        <div class="chat-head">
-          <div><b>${esc(titleName)}</b>${sub ? `<br><span class="small" style="opacity:.6">${esc(sub)}</span>` : ''}</div>
-          <button class="btn sm ghost" id="chat-end">End conversation</button>
-        </div>
-        <div class="chat-msgs" id="chat-msgs">${msgs}</div>
-        <div class="chat-choices">${choiceBtns}</div>
-      </div>`;
-    document.getElementById('chat-end').onclick = () => closeChat(true);
-    screen.querySelectorAll('[data-cid]').forEach(b => {
-      b.onclick = () => chatChoice(vid, b.dataset.cid);
+    return `<div class="dialogue-box">
+      <div class="dlg-speaker">💬 ${esc(titleName)}<button class="dlg-x" id="dlg-end" aria-label="end conversation">✕</button></div>
+      ${body}
+      ${choiceBtns ? `<div class="dlg-choices">${choiceBtns}</div>` : ''}
+      ${more ? `<button class="dlg-next" id="dlg-next" aria-label="continue">▼</button>` : ''}
+    </div>`;
+  }
+
+  function wireDialogueBox() {
+    const nx = document.getElementById('dlg-next');
+    if (nx) nx.onclick = () => chatAdvance();
+    const box = document.querySelector('.dialogue-box');
+    if (box && !nx) {
+      // Tapping the box itself also advances (Pokémon muscle memory) — but
+      // never when choices are showing or the ✕ was tapped.
+      box.onclick = (e) => {
+        if (e.target.closest('[data-cid]') || e.target.closest('#dlg-end')) return;
+        chatAdvance();
+      };
+    }
+    const end = document.getElementById('dlg-end');
+    if (end) end.onclick = (e) => { e.stopPropagation(); closeChat(true); };
+    document.querySelectorAll('.dialogue-box [data-cid]').forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); chatChoice(chatView.vid, b.dataset.cid); };
     });
-    // Chat behavior: newest messages visible. Direct scrollTop assignment —
-    // no smooth animation, no page-level scrolling calls (the iOS jump fix
-    // stays intact; only the messages pane moves, which is expected in chat).
-    const box = document.getElementById('chat-msgs');
-    if (box) box.scrollTop = box.scrollHeight;
+  }
+
+  // Pokémon advance: one message at a time. When the transcript runs out and
+  // the engine has choices, they render — the box never goes blank mid-talk.
+  function chatAdvance() {
+    if (!chatView || chatView.thinking) return;
+    const convo = Game.convoUI ? Game.convoUI(chatView.vid) : null;
+    if (!convo || !convo.active) { chatView = null; refresh(); return; }
+    const n = (convo.transcript || []).length;
+    chatView.msgIndex = Math.min((chatView.msgIndex || 0) + 1, Math.max(0, n - 1));
+    refresh();
   }
 
   // personAct: every action confirms visibly. The result line ("✓ ...") plus
@@ -3281,14 +3328,15 @@
   function expeditionScreen() {
     const st = Game.status();
     if (st.over) return ending();
-    // CHAT MODE: conversation is the one acceptable interruption. The screen
-    // is the conversation — full chat view, no scrolling to follow it.
-    // Combat cancels it; an ended conversation drops the view.
+    // DIALOGUE BOX (Steve 2026-10-05, revising the old "conversation is the one
+    // acceptable full-screen interruption" rule): talking no longer takes over
+    // the screen. A Pokémon-style box sits under the grid — speaker tab, one
+    // line at a time, ▼ to continue — while the map stays visible and tappable.
+    // Combat still cancels it; an ended conversation drops the view.
     if (st.inCombat) chatView = null;
     if (chatView) {
       const _cc = Game.convoUI ? Game.convoUI(chatView.vid) : null;
-      if (_cc && _cc.active) { renderChatScreen(chatView, _cc); return; }
-      chatView = null;
+      if (!_cc || !_cc.active) chatView = null;
     }
     // NPCs must be visible on first load, not just after the first step.
     try { Game.ensureVillagerPositions(); } catch (e) {}
@@ -3337,6 +3385,7 @@
             <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
           </div>
           ${st.inCombat ? `<div class="ord-combatpanel">${panelCombat(st)}</div>` : ''}
+          ${chatView ? `<div class="ord-dialogue">${dialogueBoxHTML(chatView)}</div>` : ''}
           <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-self">${selfBarHTML(st)}</div>
           <div class="ord-ctx">${contextBarHTML()}</div>
@@ -3972,6 +4021,7 @@
     const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
     on('p-face', () => { Game.startCombat(); rerender(); });
     wireCombatPanel();
+    wireDialogueBox();
     // NOTE: Eat/Sleep/Pack/Wait moved to the persistent self bar (wireSelfBar).
     screen.querySelectorAll('.bgsurv').forEach(el => {
       el.onclick = () => { screen.querySelector('#bgsay').textContent = '\u201C' + el.dataset.line + '\u201D'; };

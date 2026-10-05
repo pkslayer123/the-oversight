@@ -965,3 +965,6 @@ IMPLEMENTATION:
   844px budget on small phones); re-rendering the whole screen per step
   (the old jump); speeding steps below ~150ms (felt instant again — the beat
   IS the readability).
+
+## 2026-10-05 — Dialogue box replaces full-screen chat (Steve)
+Reverses "conversation is the one acceptable full-screen interruption." Talking now uses a Pokémon-style box under the grid: speaker tab, one line at a time, ▼ to continue, map stays visible and tappable. Reason: full-screen chat blocked map actions/events fluidly; players couldn't do things mid-conversation. The box never intrudes; a ✕ ends it, combat cancels it.

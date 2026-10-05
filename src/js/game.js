@@ -7793,6 +7793,9 @@
             v.talkRequests = v.talkRequests || {};
             v.talkRequests[rid] = { line: reason.line };
             this.say(this.renderTalkLine(reason.line, rid) + ` (Talk to ${this.displayName(rid)}.)`);
+            // ATTENTION CUE (Steve 2026-10-05): they came to YOU — chime so
+            // the player actually notices. The quiet dot wasn't enough.
+            this.audioEvent('talkAttention');
             return;
           }
         }
