@@ -1,3 +1,26 @@
+// @ontology
+// system: contests
+// description: Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama.
+// provides:
+//   - contestEligible() -> {eligible, reason}
+//   - contestTick() -> event|null
+//   - contestPool()
+//   - pickContest()
+//   - pickShow()
+//   - fireContest(contest)
+//   - resolveContest()
+// rules:
+//   - unlock_day: 14 (code: contestTick, contestEligible)
+//   - weekly_budget: 2 combined contests+shows (code: contestTick)
+//   - daily_chance: 0.3 (code: contestTick)
+//   - contest_vs_show_ratio: 0.6 (code: contestTick)
+//   - system_whim_chance: 0.1 random participant override (code: fireContest)
+//   - countdown_days: 1 (code: fireContest)
+// consumes:
+//   - scholar.day
+//   - state.showBudget
+//   - state.pendingContest
+//   - state.contestsSeen
 // CONTESTS & SHOWS (Steve 2026-10-05)
 // The aliens' flagship is OVERSIGHT. Contests are its teeth. TV shows are its gossip.
 // Both interrupt your life. Neither asks permission.

@@ -1,3 +1,14 @@
+// @ontology
+// system: conversation
+// description: Real back-and-forth dialogue. Player always has response choices.
+// provides:
+//   - startConvo()
+//   - convoChoice()
+// rules:
+//   - (none documented)
+// consumes:
+//   - village.villagers
+//   - state.convos
 // ============ CONVERSATIONS ============
 // Real back-and-forth dialogue. The player always has response choices —
 // never just "continue". NPCs ask questions back, remember your answers,

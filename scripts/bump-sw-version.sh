@@ -5,8 +5,22 @@
 # version per build guarantees the update flow triggers on every deploy.
 # Also stamps src/js/build.js so the app can display its own build version
 # (title-screen footer) — critical for confirming which build a player is on.
+#
+# ONTOLOGY GATE (Steve 2026-10-05): validates the game ontology before bumping.
+# Release is BLOCKED if the documentation doesn't match the code.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+# ONTOLOGY VALIDATION — release gate
+echo "Validating game ontology..."
+if ! node scripts/validate-ontology.js; then
+  echo ""
+  echo "RELEASE BLOCKED: ontology validation failed."
+  echo "Fix the @ontology headers in src/js/*.js, then re-run."
+  exit 1
+fi
+echo ""
+
 HASH=$(git rev-parse --short HEAD)
 STAMP=$(date -u +%Y%m%d-%H%M%S)
 VER="${HASH}-${STAMP}"

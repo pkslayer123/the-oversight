@@ -1,3 +1,14 @@
+// @ontology
+// system: codex-people
+// description: Every villager is a living codex entry. Deepens while they live.
+// provides:
+//   - getPersonEntry()
+//   - updatePersonEntry()
+// rules:
+//   - (none documented)
+// consumes:
+//   - village.villagers
+//   - state.codex.people
 // ============ CODEX PEOPLE ENTRIES ============
 // Every villager is a living codex entry. It deepens while they live and
 // closes when they die. "Dead is the end of their story."

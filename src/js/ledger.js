@@ -1,3 +1,13 @@
+// @ontology
+// system: leadership
+// description: The Leadership Vector. No single ending — ending is sum of leadership choices.
+// provides:
+//   - leadShift()
+//   - getVector()
+// rules:
+//   - (none documented)
+// consumes:
+//   - state.leadership
 // ============ THE LEADERSHIP VECTOR ============
 // Steve's decision (2026-10-04): NO single ending. The ending is the sum of
 // how you led humanity to the table. This module tracks that sum as a

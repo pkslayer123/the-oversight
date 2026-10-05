@@ -1,3 +1,13 @@
+// @ontology
+// system: membership
+// description: Village membership. Joining, leaving, exile status.
+// provides:
+//   - joinVillage()
+//   - leaveVillage()
+// rules:
+//   - (none documented)
+// consumes:
+//   - village.members
 /* VILLAGE MEMBERSHIP — src/js/membership.js
  *
  * Steve: "Villages shouldn't strictly require presence or check ins. Unless

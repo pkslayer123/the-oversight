@@ -1,3 +1,13 @@
+// @ontology
+// system: hierarchy
+// description: Inter-village hierarchy. Villages have relationships, rivalries, trade.
+// provides:
+//   - getVillageRelation()
+//   - updateHierarchy()
+// rules:
+//   - (none documented)
+// consumes:
+//   - state.otherVillages
 /* INTER-VILLAGE HIERARCHY — src/js/hierarchy.js
  *
  * Steve: "Strong enough representatives can link to a haven and join them as

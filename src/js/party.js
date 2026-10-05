@@ -1,3 +1,13 @@
+// @ontology
+// system: party
+// description: Party system. Companions travel and fight with you.
+// provides:
+//   - addToParty()
+//   - removeFromParty()
+// rules:
+//   - (none documented)
+// consumes:
+//   - state.party
 // ============ PARTY SYSTEM ============
 // Formal parties are a SYSTEM UNLOCK (day 7+). Before that, people follow you
 // informally — high trust, their own choice, no UI, no cap. Just relationships.

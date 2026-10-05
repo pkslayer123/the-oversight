@@ -1,3 +1,14 @@
+// @ontology
+// system: justice
+// description: Village justice + combat dialogue. Crimes have consequences.
+// provides:
+//   - reportCrime()
+//   - holdTrial()
+// rules:
+//   - (none documented)
+// consumes:
+//   - village.laws
+//   - scholar.crimes
 /* VILLAGE JUSTICE + COMBAT DIALOGUE
  *
  * Two systems, one file:

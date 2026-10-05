@@ -1,3 +1,13 @@
+// @ontology
+// system: encounters
+// description: Encounter framework. Every animal and monster follows the same pattern.
+// provides:
+//   - encAnimalKnown()
+//   - spawnEncounter()
+// rules:
+//   - knowledge_gated: true (code: encounters.js)
+// consumes:
+//   - state.encounters
 /* ENCOUNTER FRAMEWORK — src/js/encounters.js
  *
  * Steve: "Don't fix the deer. Fix the pattern." Every animal and every

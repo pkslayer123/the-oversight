@@ -1,3 +1,12 @@
+// @ontology
+// system: perceive
+// description: Perception system. Proximity hints, spotting.
+// provides:
+//   - perceiveCheck()
+// rules:
+//   - (none documented)
+// consumes:
+//   - scholar.perception
 // ============ PERCEPTION HINTS ============
 // Peripheral vision, not UI. When you're standing next to something
 // interesting, you notice it — quietly, without tapping anything.

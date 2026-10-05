@@ -1,3 +1,14 @@
+// @ontology
+// system: storage
+// description: Save/load. LocalStorage persistence.
+// provides:
+//   - save()
+//   - load()
+//   - listSaves()
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 // ============ TOOLS, STASHES & CACHES ============
 // Steve's rules, made mechanical:
 //  1. Tool prerequisites: you can't fell a tree without an axe. A pruning

@@ -1,3 +1,13 @@
+// @ontology
+// system: corpses
+// description: Corpse system. Dead bodies persist, can be butchered, buried, or left.
+// provides:
+//   - spawnCorpse()
+//   - butcherCorpse()
+// rules:
+//   - (none documented)
+// consumes:
+//   - state.corpses
 /* CORPSE SYSTEM
  *
  * Steve's design: "One of the most essential parts of knowledge is confirming

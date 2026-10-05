@@ -1,3 +1,15 @@
+// @ontology
+// system: progression
+// description: Character progression. XP, levels, abilities.
+// provides:
+//   - gainXP()
+//   - levelUp()
+//   - abilitySlots()
+// rules:
+//   - ability_cap: 6 (code: progression.js)
+// consumes:
+//   - scholar.xp
+//   - scholar.abilities
 // ============ PROGRESSION, ARCS & SENTIMENTAL ITEMS ============
 // Built on the lifeseed foundation (lifeseed.js). Steve's design (2026-10-04):
 //

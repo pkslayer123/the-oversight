@@ -1,3 +1,13 @@
+// @ontology
+// system: lifeseed
+// description: Procedural foundation. Procedural depth before more systems.
+// provides:
+//   - generateLife()
+//   - mutateLife()
+// rules:
+//   - (none documented)
+// consumes:
+//   - state.seed
 // ============ LIFESEEDS: the procedural foundation ============
 // Steve's rule (2026-10-04): procedural depth BEFORE more systems. Every
 // character gets a lifeseed — a region anchor, named people, named places,

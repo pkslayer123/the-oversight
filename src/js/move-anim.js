@@ -1,3 +1,12 @@
+// @ontology
+// system: move-anim
+// description: Movement animation. Step-by-step tile transitions.
+// provides:
+//   - animateMove()
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 /* The Oversight — movement animator.
    Smooth, step-by-step animated movement for the d-pad and tap-to-move paths.
 

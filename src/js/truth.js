@@ -1,3 +1,12 @@
+// @ontology
+// system: truth
+// description: Truth/distortion. Gossip spreads with distortion through retelling.
+// provides:
+//   - spreadGossip()
+// rules:
+//   - distortion_per_retelling: true (code: truth.js)
+// consumes:
+//   - village.gossip
 // ============ TRUTH-FINDING ============
 // People can lie. The Codex doesn't detect lies — it notices when things
 // don't add up. Contradictions, gossip that conflicts, behavior that doesn't

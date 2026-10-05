@@ -1,3 +1,13 @@
+// @ontology
+// system: villager-agency
+// description: Villager AI. Villagers act on their own with goals and routines.
+// provides:
+//   - villagerTurn()
+//   - villagerDecide()
+// rules:
+//   - (none documented)
+// consumes:
+//   - village.villagers
 /* VILLAGER AGENCY — src/js/villager-agency.js
  *
  * Steve: "Villagers need to be encountering these and more as they wander

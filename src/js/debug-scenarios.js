@@ -1,3 +1,12 @@
+// @ontology
+// system: debug
+// description: One-tap preloaded scenarios for the debug panel. Testing only.
+// provides:
+//   - loadScenario()
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 /*
  * debug-scenarios.js — one-tap preloaded scenarios for the debug panel.
  *

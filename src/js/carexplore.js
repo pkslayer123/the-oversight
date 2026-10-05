@@ -1,3 +1,14 @@
+// @ontology
+// system: care-explore
+// description: Care and exploration decisions. Care was a vending machine — now it requires real choices.
+// provides:
+//   - careAction()
+//   - exploreAction()
+// rules:
+//   - (none documented)
+// consumes:
+//   - scholar.energy
+//   - village.needs
 // ============ CARE & EXPLORE ============
 // Steve: "Back to decisions." Care was a vending machine — one click, no
 // texture. Now giving food and comforting are DECISIONS with tradeoffs.

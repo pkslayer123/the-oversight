@@ -1,3 +1,13 @@
+// @ontology
+// system: journal
+// description: People journal. Facts fill in as you learn them. Pre-System manual, post-System automatic.
+// provides:
+//   - addJournalEntry()
+//   - getJournal()
+// rules:
+//   - pre_system_manual: true (code: journal.js)
+// consumes:
+//   - state.journal
 // ============ PEOPLE JOURNAL ============
 // Facts about people fill in as you learn them. Pre-System it's your
 // handwritten field journal — uncertain, personal ("I think she's a nurse?").

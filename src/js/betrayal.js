@@ -1,3 +1,15 @@
+// @ontology
+// system: betrayal
+// description: Betrayal, accusation, trial & exile. Micro-quests disguise later betrayals; aftermath is the game.
+// provides:
+//   - accuse()
+//   - trial()
+//   - exile()
+// rules:
+//   - betrayal_requires_motive: true (code: betrayal.js)
+// consumes:
+//   - village.relationships
+//   - scholar.reputation
 // ============ BETRAYAL, ACCUSATION, TRIAL & EXILE ============
 // Steve's design: micro-quests disguise later betrayals; the aftermath is the
 // real game. SYMMETRY RULE: this is NOT player-centric. Any villager can be

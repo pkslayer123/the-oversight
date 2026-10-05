@@ -1,5 +1,23 @@
-/* The Oversight — slice 1: "Seven Days" playable.
-   Screens: title → onboarding → game (map/day loop) → combat → codex → ending. */
+// @ontology
+// system: ui
+// description: Renders all screens from game state. Mobile-first PWA UI. Grid, D-pad, action bars, sheets, status.
+// provides:
+//   - expeditionScreen()
+//   - statusBars(st)
+//   - lowerMenuHTML(st)
+//   - renderInvInline(slot, view)
+//   - invSheet()
+//   - combatActionsHTML(st)
+// rules:
+//   - mobile_breakpoint: 899px (code: CSS media queries)
+//   - grid_size: 9x9 (code: renderDetail)
+//   - one_screen_rule: moment-to-moment play never scrolls (code: CSS)
+//   - lower_menu: Pack/Sleep/Wait/Map below status (code: lowerMenuHTML)
+// consumes:
+//   - Game.state
+//   - Game.status()
+// The Oversight — slice 1: "Seven Days" playable.
+// Screens: title → onboarding → game (map/day loop) → combat → codex → ending.
 (function () {
   'use strict';
   const S = window.Scattering;

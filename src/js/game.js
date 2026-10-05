@@ -1,5 +1,34 @@
-/* Slice 1 game controller: "Seven Days".
-   Owns state, map, day loop, actions, encounters. UI renders from it (app.js). */
+// @ontology
+// system: game-core
+// description: Central game controller. Owns state, map, day loop, actions, encounters, combat, village simulation. UI renders from it.
+// provides:
+//   - state (scholar, village, world)
+//   - tickAction(n)
+//   - doAction(actionId)
+//   - sleep()
+//   - eat()
+//   - eatOne(idx)
+//   - spendCombatAction(kind)
+//   - tbFighter(id)
+//   - tbAdvance()
+//   - tbAfterPlayerAction()
+//   - contestTick() (delegates to contests.js)
+//   - sleepQuality()
+//   - sleepPreview()
+//   - kcalCap()
+// rules:
+//   - day_parts: 4 nested (code: TIME)
+//   - ticks_per_day: defined in TIME (code: tickAction)
+//   - sleep_heal_bunk: 35 (code: sleepPreview)
+//   - sleep_heal_tent: 25 (code: sleepPreview)
+//   - sleep_heal_hall: 20 (code: sleepPreview)
+//   - sleep_heal_fireside: 18 (code: sleepPreview)
+//   - sleep_heal_ground: 12 (code: sleepPreview)
+//   - combat_action_economy: move + acted (code: tbAfterPlayerAction)
+// consumes:
+//   - All systems (central hub)
+// Slice 1 game controller: "Seven Days".
+// Owns state, map, day loop, actions, encounters. UI renders from it (app.js).
 (function (global) {
   'use strict';
   const S = global.Scattering;

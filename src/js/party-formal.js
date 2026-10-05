@@ -1,3 +1,11 @@
+// @ontology
+// system: party-formal
+// description: Formal party mechanics. Roles, formations.
+// provides:
+// rules:
+//   - (none documented)
+// consumes:
+//   - state.party
 // ============ OFFICIAL PARTY SYSTEM ============
 // The party, formalized. Before this, people just traveled with you —
 // followers, informal, no name, no roles. The OFFICIAL PARTY is what happens
