@@ -368,9 +368,12 @@
     const picked = new Set();
     const card = (i) => {
       const isKeep = i.class === 'sentimental';
+      // SEMANTIC HONESTY (Steve 2026-10-05): keepsakes with real effects show
+      // them — "no practical use" is only for the truly impractical.
+      const effect = i.baseEffect ? `<p class="small" style="opacity:.75">⚙ ${i.baseEffect}</p>` : '';
       const sub = isKeep
-        ? `<p class="small">💛 KEEPSAKE — no practical use. You can't quite throw it away.</p>`
-        : `<p class="small">${i.flavor || ''}</p>${i.baseEffect ? `<p class="small" style="opacity:.75">⚙ ${i.baseEffect}</p>` : ''}`;
+        ? `<p class="small">💛 KEEPSAKE${i.baseEffect ? '' : ' — no practical use. You can\'t quite throw it away.'}</p>${effect}`
+        : `<p class="small">${i.flavor || ''}</p>${effect}`;
       return `<div class="card itempick${picked.has(i.id) ? ' sel' : ''}" data-i="${i.id}"><h3>${picked.has(i.id) ? '✓ ' : ''}${isKeep ? '💛 ' : ''}${i.name}</h3>${sub}</div>`;
     };
     const render = () => {

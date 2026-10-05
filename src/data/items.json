@@ -1298,5 +1298,382 @@
   "findable": false,
   "tradeValue": 600,
   "baseEffect": "The System values this (trade 600)"
+ },
+ {
+  "id": "field_suture_kit",
+  "name": "Field suture kit",
+  "class": "sentimental",
+  "flavor": "From the ambulance bag. Still packed the way you were taught — needle, thread, steady hands.",
+  "memory": "You practiced on an orange. 'People are just oranges that bleed,' your instructor said, and then taught you how to not flinch. You haven't flinched since.",
+  "baseEffect": "+resolve when carried; usable: +15 health",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "anchor",
+     "unseen_hand"
+    ]
+   }
+  ],
+  "occCategories": [
+   "medical"
+  ],
+  "skillKeys": [
+   "medicinal"
+  ],
+  "healAmount": 15,
+  "kg": 0.2,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "skill",
+   "id": "medicinal",
+   "note": "You know how to stop bleeding. You learned it properly."
+  }
+ },
+ {
+  "id": "knife_roll",
+  "name": "Knife roll",
+  "class": "sentimental",
+  "flavor": "Canvas roll, eight knives, every edge shaving-sharp. A dull knife is a tired cook.",
+  "memory": "The dinner rush, the pass, the tickets coming faster than thought. You survived your first Saturday service at sixteen. The roll was the prize.",
+  "baseEffect": "+resolve when carried; camp cooking goes further",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "quiet_luck",
+     "open_hearth"
+    ]
+   }
+  ],
+  "occCategories": [
+   "food"
+  ],
+  "skillKeys": [
+   "food"
+  ],
+  "kg": 0.8,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "skill",
+   "id": "food",
+   "note": "You can feed people. It is what you do."
+  }
+ },
+ {
+  "id": "carpenters_square",
+  "name": "Carpenter's square",
+  "class": "sentimental",
+  "flavor": "Steel square, edges worn bright. It has never measured wrong.",
+  "memory": "Your first solo frame, checked and found true. The nod that followed was the whole ceremony. Measure twice, cut once — it's in your hands now.",
+  "baseEffect": "+resolve when carried; building and repairs hold better",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "unbreakable",
+     "unseen_hand"
+    ]
+   }
+  ],
+  "occCategories": [
+   "craft"
+  ],
+  "skillKeys": [
+   "mending"
+  ],
+  "kg": 0.5,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "skill",
+   "id": "mending",
+   "note": "Measure twice. You still hear it."
+  }
+ },
+ {
+  "id": "trail_compass",
+  "name": "Trail compass",
+  "class": "sentimental",
+  "flavor": "Brass compass, glass cracked but needle true. It has been on every trail that mattered.",
+  "memory": "Lost above the fog line, visibility down to your boots. You didn't panic — just held the compass flat, found north, and walked out like it was nothing. It was not nothing.",
+  "baseEffect": "+resolve when carried; harder to get truly lost",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "quiet_luck",
+     "unseen_hand"
+    ]
+   }
+  ],
+  "occCategories": [
+   "outdoors"
+  ],
+  "skillKeys": [
+   "navigation",
+   "tracking"
+  ],
+  "kg": 0.1,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "skill",
+   "id": "navigation",
+   "note": "North is north. You can find it."
+  }
+ },
+ {
+  "id": "dispatchers_headset",
+  "name": "Dispatcher's headset",
+  "class": "sentimental",
+  "flavor": "One earcup cracked. It got worn through every bad night the town ever had, and stayed calm.",
+  "memory": "You learned the voice — low, steady, unhurried. 'Panic is just information arriving too fast.' You hear it in your own voice now when it counts.",
+  "baseEffect": "+resolve when carried; calm under pressure",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "anchor",
+     "open_hearth"
+    ]
+   }
+  ],
+  "occCategories": [
+   "service"
+  ],
+  "skillKeys": [
+   "forecast"
+  ],
+  "secretEvolution": "last_message",
+  "kg": 0.3,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "skill",
+   "id": "forecast",
+   "note": "You read bad situations early. It is training."
+  }
+ },
+ {
+  "id": "buskers_harmonica",
+  "name": "Busker's harmonica",
+  "class": "sentimental",
+  "flavor": "Dented harmonica in C. It got played on every corner that would have it, and some that wouldn't.",
+  "memory": "Rain, an open case, three dollars and a sandwich. You played anyway — the street owes you nothing, so everything it gives is a gift. You still believe that.",
+  "baseEffect": "+resolve when carried; music steadies the camp",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "open_hearth",
+     "quiet_luck"
+    ]
+   }
+  ],
+  "occCategories": [
+   "creative"
+  ],
+  "skillKeys": [],
+  "kg": 0.1,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "flag",
+   "id": "work_song",
+   "note": "Music steadies hands. Yours, and the camp’s."
+  }
+ },
+ {
+  "id": "winter_coat_button",
+  "name": "Coat button",
+  "class": "sentimental",
+  "flavor": "A single horn button from a winter coat. The coat is gone. The winter isn't.",
+  "memory": "The last winter before the scattering. You don't talk about it. The button remembers the weight of that coat, the cold that got in anyway, and who was wearing it.",
+  "baseEffect": "+resolve when carried",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "anchor",
+     "unbreakable"
+    ]
+   }
+  ],
+  "woundKeys": [
+   "last winter",
+   "somewhere else"
+  ],
+  "kg": 0.05,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "flag",
+   "id": "deep_grief",
+   "note": "Some winters do not end."
+  }
+ },
+ {
+  "id": "unnamed_photo",
+  "name": "Unnamed photograph",
+  "class": "sentimental",
+  "flavor": "A photo with the faces worn soft from handling. No names on the back. There were names once.",
+  "memory": "There is a name you won't say out loud anymore. The photo doesn't need you to say it. Somebody you loved didn't make it to the clearing, and this is what's left of the proof they were here.",
+  "baseEffect": "+resolve when carried",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "anchor",
+     "quiet_luck"
+    ]
+   }
+  ],
+  "woundKeys": [
+   "won't say out loud",
+   "didn't make it"
+  ],
+  "secretEvolution": "her_handwriting",
+  "kg": 0.05,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "flag",
+   "id": "deep_grief",
+   "note": "You carry them. That is the whole of it."
+  }
+ },
+ {
+  "id": "boot_stone",
+  "name": "Boot stone",
+  "class": "sentimental",
+  "flavor": "A smooth stone, carried in the boot for years. Guilt has a weight. This is exactly that weight.",
+  "memory": "You carry a guilt like a stone in the boot. So you carry a stone in the boot — the scattering took the one person you were keeping alive, and this is the shape of that. It keeps you honest.",
+  "baseEffect": "+resolve when carried",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "unbreakable",
+     "anchor"
+    ]
+   }
+  ],
+  "woundKeys": [
+   "stone in the boot",
+   "keeping alive"
+  ],
+  "kg": 0.2,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "flag",
+   "id": "deep_grief",
+   "note": "Guilt is a compass too. It points at what matters."
+  }
+ },
+ {
+  "id": "search_locket",
+  "name": "Search locket",
+  "class": "sentimental",
+  "flavor": "A locket with a picture inside. You open it when you need to remember what you're looking for.",
+  "memory": "The last photo, the one where they're laughing at something off-camera. You'll ask the System what it wants, later. First: them.",
+  "baseEffect": "+resolve when carried",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "quiet_luck",
+     "unseen_hand"
+    ]
+   }
+  ],
+  "wantKeys": [
+   "what happened to",
+   "actually wants"
+  ],
+  "kg": 0.05,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "flag",
+   "id": "quiet_luck",
+   "note": "You are looking. That counts for something."
+  }
+ },
+ {
+  "id": "home_key",
+  "name": "Home key",
+  "class": "sentimental",
+  "flavor": "A house key for a door that isn't here. {place} is a direction now, not an address.",
+  "memory": "The key never leaves your pocket. Locks are a promise: somewhere, a door still fits this.",
+  "baseEffect": "+resolve when carried",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "anchor",
+     "open_hearth"
+    ]
+   }
+  ],
+  "wantKeys": [
+   "get back to",
+   "lasts longer"
+  ],
+  "kg": 0.05,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "flag",
+   "id": "comfort",
+   "note": "Home is a direction. You are walking it."
+  }
+ },
+ {
+  "id": "seed_packet",
+  "name": "Seed packet",
+  "class": "sentimental",
+  "flavor": "A packet of seeds, handwriting on the front. Plant after last frost. As if frost were still the problem.",
+  "memory": "Pressed into your hand with an order: keep people fed through winter. Seeds are a plan. Plans are how you stop being helpless.",
+  "baseEffect": "+resolve when carried",
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "open_hearth",
+     "unseen_hand"
+    ]
+   }
+  ],
+  "wantKeys": [
+   "fed through winter",
+   "never be helpless"
+  ],
+  "skillKeys": [
+   "food"
+  ],
+  "kg": 0.05,
+  "findable": false,
+  "kin": "none",
+  "reveals": {
+   "type": "plant",
+   "id": "dandelion",
+   "note": "You know what grows. You will prove it."
+  }
  }
 ]

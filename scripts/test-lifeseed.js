@@ -59,7 +59,14 @@ function ok(name, cond, extra) {
   for (const o of (cg.occupations || [])) for (const ids of Object.values(o.itemBias || {})) for (const id of ids) biased.add(id);
   for (const it of items) {
     if (['tool', 'weapon', 'clothing', 'sentimental'].includes(it.class)) {
-      ok(`semantic link: ${it.id}`, biased.has(it.id) || it.universal === true);
+      // PERSONAL POOL (Steve 2026-10-05): semantic items link via lifeseed tags
+      // (occCategories/woundKeys/wantKeys/skillKeys/kin), not itemBias.
+      const linked = biased.has(it.id) || it.universal === true ||
+        it.origin === 'alien' || // alien loot is monster/show drops, not character gear
+        (it.occCategories || []).length || (it.woundKeys || []).length ||
+        (it.wantKeys || []).length || (it.skillKeys || []).length ||
+        (it.kin && it.kin !== 'none');
+      ok(`semantic link: ${it.id}`, linked);
     }
   }
 
@@ -68,7 +75,7 @@ function ok(name, cond, extra) {
   for (const it of sent) {
     const resolved = Game.resolveKeepsakeText(keeper, it, it.memory);
     ok(`resolve ${it.id}`, !/\{[a-z]+\}/.test(resolved), resolved.slice(0, 80));
-    if (it.reveals.note) {
+    if (it.reveals && it.reveals.note) {
       ok(`resolve note ${it.id}`, !/\{[a-z]+\}/.test(Game.resolveKeepsakeText(keeper, it, it.reveals.note)));
     }
   }

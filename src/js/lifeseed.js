@@ -225,6 +225,96 @@
       } catch (e) { return ''; }
     },
 
+    // ---------- 7. PERSONAL POOL ----------
+    // ONE pool per character (Steve 2026-10-05): majority semantic (5, drawn
+    // from the actual lifeseed — kin, occupation, wound, want, skill),
+    // minority utility (3, occupation-biased). Semantic items are among the
+    // best in the game via the bond -> enhancement -> secret evolution rails.
+    // The player still picks 5 from the 8 — a real choice, not an assignment.
+    // No random loot: every semantic item has a plausible connection to its
+    // owner's backstory, enforced by the tag fields (occCategories, woundKeys,
+    // wantKeys, skillKeys, kin).
+    occCategory(occName) {
+      const n = String(occName || '').toLowerCase();
+      const cats = {
+        medical: ['er nurse', 'paramedic', 'midwife', 'dentist', 'pharmacist', 'veterinarian', 'physical therapy aide', 'army medic'],
+        food: ['line cook', 'butcher', 'baker', 'chef', 'farmer', 'community gardener', 'mushroom grower', 'rancher', 'fisherman', 'fishing guide', 'wild food forager', 'vintner', 'bartender'],
+        craft: ['carpenter', 'mechanic', 'electrician', 'plumber', 'locksmith', 'welder', 'roofer', 'mason', 'hvac tech', 'appliance repair tech', 'blacksmith', 'glazier', 'tailor'],
+        outdoors: ['hunting guide', 'trail crew lead', 'sailor', 'bush pilot', 'truck driver', 'beekeeper', 'exterminator'],
+        service: ['esl teacher', 'interpreter', 'librarian', 'social worker', 'mortician', 'firefighter', 'police officer', 'emergency dispatcher'],
+        creative: ['street artist', 'musician', 'journalist', 'lawyer', 'programmer'],
+      };
+      for (const [cat, names] of Object.entries(cats)) {
+        if (names.some(x => n.includes(x))) return cat;
+      }
+      return 'service'; // unknown trade -> service (people-facing)
+    },
+
+    genPersonalPool(char) {
+      const items = this.data.items || [];
+      const byId = {};
+      items.forEach(i => { byId[i.id] = i; });
+      const ls = char.lifeseed || {};
+      const pool = [];
+      const semCount = { n: 0 };
+      const push = (id, isSem) => {
+        if (!id || !byId[id] || pool.includes(id)) return false;
+        pool.push(id);
+        if (isSem) semCount.n++;
+        return true;
+      };
+      const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+      // 1-2. KIN KEEPSAKES: sentimental items whose kin EXACTLY matches a lifeseed
+      // person (the lifeseed audit enforces exact kin coverage — no near-misses).
+      const relations = (ls.people || []).map(p => String(p.relation || '').toLowerCase());
+      const kinKeeps = shuffle(items.filter(i => i.class === 'sentimental' && i.kin && i.kin !== 'none' &&
+        relations.includes(String(i.kin).toLowerCase())));
+      for (const k of kinKeeps.slice(0, 2)) push(k.id, true);
+
+      // 3. OCCUPATION piece: the trade they carried with them.
+      const occCat = this.occCategory(char.formerOccupation);
+      const occPieces = shuffle(items.filter(i => (i.occCategories || []).includes(occCat)));
+      if (occPieces.length) push(occPieces[0].id, true);
+
+      // 4. WOUND / WANT piece: what haunts them, what drives them.
+      const woundT = String(ls.wound || '').toLowerCase();
+      const wantT = String(ls.want || '').toLowerCase();
+      const wwPieces = shuffle(items.filter(i =>
+        (i.woundKeys || []).some(k => woundT.includes(String(k).toLowerCase())) ||
+        (i.wantKeys || []).some(k => wantT.includes(String(k).toLowerCase()))));
+      for (const w of wwPieces) { if (push(w.id, true)) break; }
+
+      // 5. SKILL piece: what their hands learned, and where.
+      const skKeys = Object.keys(ls.skillOrigins || {});
+      const skPieces = shuffle(items.filter(i => (i.skillKeys || []).some(k => skKeys.includes(k))));
+      for (const s of skPieces) { if (push(s.id, true)) break; }
+
+      // Top up semantic to 5 from the keepsake pool — always a keepsake with
+      // a memory, never filler. Kin-exact or kinless only (audit enforces it).
+      // (A thin seed still gets a personal pool.)
+      if (semCount.n < 5) {
+        const fill = shuffle(items.filter(i => i.class === 'sentimental' && !pool.includes(i.id) &&
+          (!i.kin || i.kin === 'none' || relations.includes(String(i.kin).toLowerCase()))));
+        for (const f of fill) { if (semCount.n >= 5) break; push(f.id, true); }
+      }
+
+      // 6-8. UTILITY (the minority): occupation-biased tools of survival.
+      const occ = ((this.data.characterGen || {}).occupations || [])
+        .find(o => String(o.name || '').toLowerCase() === String(char.formerOccupation || '').toLowerCase()) || {};
+      const bias = occ.itemBias || {};
+      const take = (cls, n) => {
+        const poolIds = items.filter(i => i.class === cls && !pool.includes(i.id)).map(i => i.id);
+        const favored = (bias[cls] || []).filter(id => byId[id] && byId[id].class === cls && !pool.includes(id));
+        const rest = shuffle(poolIds.filter(id => !favored.includes(id)));
+        const ordered = [...favored, ...rest];
+        for (let k = 0; k < n && ordered.length; k++) push(ordered.shift(), false);
+      };
+      take('tool', 1); take('weapon', 1); take('clothing', 1);
+
+      return { pool, semantic: semCount.n };
+    },
+
     // ---------- AUDIT ----------
     // The foundation guard: generate N characters, assert depth + coherence.
     // Called by scripts/test-lifeseed.js.
@@ -294,6 +384,16 @@
         ch.lifeseed = this.genLifeseed(ch);
         const texture = this.lifeseedText(ch);
         if (texture) ch.backstory = (ch.backstory || '') + ' ' + texture;
+        // PERSONAL POOL (Steve 2026-10-05): one pool per character, majority
+        // semantic, drawn from the lifeseed. Replaces the generic class-based
+        // candidates — the player still picks 5 from 8.
+        try {
+          const pp = this.genPersonalPool(ch);
+          if (pp && pp.pool && pp.pool.length >= 5) {
+            ch.items = pp.pool;
+            ch.personalPoolSemantic = pp.semantic;
+          }
+        } catch (e) { /* generic pool stands if the seed is thin */ }
       } catch (e) { /* a thin seed is better than a crashed roster */ }
       return ch;
     };
