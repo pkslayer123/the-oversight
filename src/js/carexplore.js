@@ -448,7 +448,14 @@
         this.say(text);
         feedKnowledge('system_theology', 2);
         try {
-          if (this.journalLearn) this.journalLearn('place', 'strange growth', 'spiral grass, blue-tipped');
+          // JOURNAL PACING (Steve 2026-10-05): passive observation doesn't
+          // auto-record pre-codex. Post-codex the Codex remembers for you.
+          // Pre-codex, queue a manual jot — the player writes it down deliberately.
+          if (this.state.scholar.codexUnlocked) {
+            if (this.journalLearn) this.journalLearn('place', 'strange growth', 'spiral grass, blue-tipped');
+          } else if (this.queueJotNote) {
+            this.queueJotNote('spiral grass, blue-tipped', 'The spiral grass, blue-tipped, growing wrong.');
+          }
         } catch (e) {}
       } else if (!deep) {
         const empties = [

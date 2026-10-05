@@ -783,6 +783,14 @@
     let desc = '';
     let actions = [];
 
+    // MANUAL JOURNAL NOTES (Steve 2026-10-05): pre-codex, examining doesn't
+    // auto-record observations. If something's waiting to be jotted down,
+    // offer it here — visible, honest, costs a moment.
+    try {
+      const pj = Game.pendingJot && Game.pendingJot();
+      if (pj) actions.push(['📓 Jot this down (a moment)', () => { Game.jotPendingNote(); refresh(); }]);
+    } catch (e) {}
+
     if (isMe) {
       desc = 'You are here.';
       // EDGE OF THE MAP: you're on the rim. The next node is that way.

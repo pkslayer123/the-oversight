@@ -3445,6 +3445,8 @@
       // GOSSIP SPREADS: what happened this part travels along social lines,
       // distorting as it goes.
       try { this.spreadGossip(); } catch (e) {}
+      // PLANT KNOWLEDGE SPREADS SLOWLY: word of mouth, not broadcast.
+      try { this.spreadPlantKnowledge(); } catch (e) {}
       // PROMISES: doing the work counts. If you promised to help someone's
       // goal and tasks got done, that's keeping your word.
       if (ids.length) try { this.checkPromises('task'); } catch (e) {}
@@ -7219,6 +7221,35 @@
       // monster encounter reports travel the same social lines
       try { this.spreadMonsterNews(); } catch (e2) {}
     },
+    // spreadPlantKnowledge: word of mouth is SLOW (Steve 2026-10-05). Each
+    // day-part, for each plant that's "going around," a knower may teach one
+    // non-knower. Full village knowledge takes days, not instants. Pre-codex
+    // this is the only way plant knowledge travels between villagers; the
+    // Codex automates it once it comes alive (systemArrived seeds everyone).
+    spreadPlantKnowledge() {
+      const v = this.state.village;
+      if (!v || !v.plantRumors) return;
+      v.taught = v.taught || {};
+      const roster = v.roster || [];
+      if (roster.length < 2) return;
+      for (const pid of Object.keys(v.plantRumors)) {
+        const knows = rid => (v.taught[rid] || []).includes(pid);
+        const knowers = roster.filter(knows);
+        const learners = roster.filter(rid => !knows(rid));
+        if (!learners.length) { delete v.plantRumors[pid]; continue; }
+        if (!knowers.length) continue;
+        if (Math.random() < 0.35) {
+          const teacher = knowers[Math.floor(Math.random() * knowers.length)];
+          const learner = learners[Math.floor(Math.random() * learners.length)];
+          if (this.villagerLearnsPlant(learner, pid, 'word of mouth')) {
+            const p = (this.data.plants || []).find(x => x.id === pid);
+            if (p && Math.random() < 0.3) {
+              this.say(`${this.displayName(teacher)} showed ${this.displayName(learner)} the ${p.name} — "remember it." Word gets around. Slowly.`);
+            }
+          }
+        }
+      }
+    },
     // talkReason: why THEY want to talk to YOU. Villagers initiate because
     // they heard something, want something, or are worried.
     // talkReason lines are TEMPLATES with a __NAME__ placeholder — see
@@ -9302,6 +9333,27 @@
     journalName() {
       // Before the System: it's a paper journal. After: the System "improved" it.
       return this.state.systemArrived ? 'Codex' : 'Journal';
+    },
+
+    // MANUAL JOURNAL NOTES (Steve 2026-10-05): pre-codex, observations don't
+    // auto-record — but the player can jot things down. queueJotNote stashes a
+    // pending note; the 📓 action (app.js cell panel) offers it; jotPendingNote
+    // writes it and costs a few honest ticks. This is the "you can add notes
+    // to the central journal" path — slow, manual, deliberate.
+    queueJotNote(label, text) {
+      const s = this.state.scholar;
+      s.pendingJot = { label, text, day: s.day };
+      this.say(`(${label} — worth writing down. Look for 📓 Jot this down.)`);
+    },
+    pendingJot() { return (this.state.scholar || {}).pendingJot || null; },
+    jotPendingNote() {
+      const s = this.state.scholar;
+      const pj = s.pendingJot;
+      if (!pj) { this.say('Nothing to jot down.'); return; }
+      s.pendingJot = null;
+      this.tickAction(4);
+      try { if (this.journalLearn) this.journalLearn('place', 'note', pj.text, { via: 'jotted' }); } catch (e) {}
+      this.say(`📓 ${this.journalName()}: "${pj.text}" — written down.`);
     },
 
     // tap a close-up tile: what do you know about this ground?
@@ -15200,7 +15252,12 @@
     identifyPlant(pid, source) {
       const p = this.data.plants.find(x => x.id === pid);
       if (!p || this.plantKnown(pid)) return false;
-      this.state.codex.plants[pid] = { identifiedDay: this.state.scholar.day, level: 1, harvests: 0, tastings: 0, by: source || 'observation' };
+      // JOURNAL FRAMING (Steve 2026-10-05): pre-codex this is a handwritten
+      // journal entry (word of mouth / your own work / jotted notes), not a
+      // Codex record. journalName() already frames the UI; the flag lets
+      // entries carry their provenance.
+      const preCodex = !this.state.scholar.codexUnlocked;
+      this.state.codex.plants[pid] = { identifiedDay: this.state.scholar.day, level: 1, harvests: 0, tastings: 0, by: source || 'observation', journal: preCodex };
       this.state.codex.encounters[pid] = 99;
       this.refreshItemNames(pid);
       this.integrate(source === 'taught' ? 2 : 3, source === 'taught' ? 'taught' : 'discovery');
@@ -15223,20 +15280,24 @@
         ];
         this.say(sys[Math.floor(Math.random() * sys.length)]);
       }
-      // THE VILLAGE LEARNS: identification is the teaching moment. The camp sort
-      // is a communal ritual — villagers watching pick it up (first learner
-      // becomes the teaching seed). Your own taught[] syncs with your codex
-      // (villageEats reads taught, not codex).
+      // THE VILLAGE LEARNS — SLOWLY (Steve 2026-10-05): knowledge used to hit
+      // 60% of the village instantly. Now word of mouth is word of mouth: at
+      // most one witness picks it up on the spot, and the rest learn over
+      // days via spreadPlantKnowledge (daily tick). Your own taught[] syncs
+      // with your codex (villageEats reads taught, not codex).
       try {
         const v = this.state.village;
         this.villagerLearnsPlant(this.villagerId, pid, source);
-        const learners = [];
-        for (const rid of (v.roster || [])) {
-          if (rid === this.villagerId) continue;
-          if (Math.random() < 0.6 && this.villagerLearnsPlant(rid, pid, 'observed')) learners.push(rid);
+        const witnesses = (v.roster || []).filter(rid => rid !== this.villagerId);
+        if (witnesses.length && Math.random() < 0.5) {
+          const w = witnesses[Math.floor(Math.random() * witnesses.length)];
+          if (this.villagerLearnsPlant(w, pid, 'observed')) {
+            this.say(`${this.displayName(w)} was watching. Now they know ${p.name} too.`);
+          }
         }
-        if (learners.length === 1) this.say(`${this.displayName(learners[0])} was watching. Now they know ${p.name} too.`);
-        else if (learners.length > 1) this.say(`${learners.length} villagers were watching. The knowledge spreads.`);
+        // seed the slow rumor: this plant is "going around" now
+        v.plantRumors = v.plantRumors || {};
+        if (!v.plantRumors[pid]) v.plantRumors[pid] = { day: this.state.scholar.day };
       } catch (e) {}
       return true;
     },
