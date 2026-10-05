@@ -305,9 +305,13 @@ const origRandom = Math.random;
     const stash = Game.prepStash();
     ok('carcass stages to prep stash', stash.some(i => i.foodState === 'carcass'));
     ok('unknown lump stages to prep stash', stash.some(i => i.lump));
-    ok('finished food unloads to pantry', pan.some(i => i.plantId === 'dandelion' && i.foodState === 'ready'));
-    ok('pantry counts finished only', Game.pantryKcal() === 270);
-    ok('pack cleared of hauls', !s.inventory.some(i => i.foodKind));
+    // THE FIX: the forager keeps a day's food (~2000 kcal) in the pack; only
+    // SURPLUS unloads to the pantry. (The old vacuum took everything and the
+    // player starved next to a full pantry.) Here the finished haul is 270 kcal
+    // — under a day's food — so it all stays in the pack.
+    ok('small finished haul stays in the pack (keep a day\'s food)', s.inventory.some(i => i.plantId === 'dandelion' && i.foodState === 'ready'));
+    ok('no surplus: pantry gets nothing', !pan.some(i => i.plantId === 'dandelion' && i.foodState === 'ready'));
+    ok('unprocessed still stages, pack not wiped of non-food', !s.inventory.some(i => i.foodKind && i.foodState !== 'ready'));
 
     // carcass keeps state on the counter
     const staged = stash.find(i => i.foodState === 'carcass');

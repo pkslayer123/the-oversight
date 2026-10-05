@@ -542,16 +542,17 @@
           abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
           items: this.genItemCandidates(occ),
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
-          // villagers feed themselves FIRST. the doc target is ~92% self-provision
-          // (the pantry covers the rest — that's the gap the player is the margin
-          // for). providesPerDay is the PRE-knowledge base: starting background
-          // knowledge multiplies it (x1.15 strangers, x1.30 visitors, x1.45 locals —
-          // regional familiarity matters, and it shows in the pot). the /1.227
-          // blends the tier mix so total provision lands near 92% of need.
+          // villagers feed themselves FIRST — but they're strangers in a strange
+          // land. providesPerDay is the PRE-knowledge base (~60% of need):
+          // starting background knowledge multiplies it, and it KEEPS growing as
+          // the village learns (see villagerLearnsPlant). the learning curve IS
+          // the difficulty curve: an ignorant village leans on the pantry and the
+          // player; a knowledgeable village feeds itself and builds surplus.
+          // knowledgeFactor = 1 + 0.10 * knownPlants, capped at 1.8.
           // (missing this field entirely meant generated villagers produced 0 and
           // the village burned ~12k/day from the pantry — the forager could never
-          // keep up, and the "92% self-sufficient" fiction was a lie.)
-          providesPerDay: Math.round((occ.kcalPerDay || 2000) * 0.92 / 1.227) + Math.floor(Math.random() * 201) - 100,
+          // keep up, and the "self-sufficient" fiction was a lie.)
+          providesPerDay: Math.round((occ.kcalPerDay || 2000) * 0.60) + Math.floor(Math.random() * 201) - 100,
           survivalProbability: 25 + Math.floor(Math.random() * 21),
           systemAssessment: sysAssess,
           secretFear, languages: langs, occupationId: occ.id || null,
@@ -841,14 +842,20 @@
       // Fill with staples: dried beans, rice, canned goods (safe, long spoil).
       // Staples: beans are RAW (need cooking, 150 raw -> 300 cooked).
       // If you don't know to cook them, they're half the food. Knowledge is calories.
-      // 1.5 days for 12 people = 36,000 kcal. (12 * 2000 * 1.5)
       // Was 8,500. Starvation was mathematically inevitable. Fixed.
+      // Starting pantry: REAL FOOD, not a number. Breathing room to learn before
+      // the pressure hits — but not a season. ~47k kcal: at the real early
+      // deficit (~3.7k/day with strangers who don't know the land) that's ~13
+      // days. A neglectful village is in crisis by week two; a learning village
+      // stretches it; a knowledgeable village never looks back. The scarcity
+      // comes fast — that's the point. (Was ~94k: neglect-proof for 20 days,
+      // which taught nothing.)
       const staples = [
-        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 150, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
-        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 120, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
-        { name: 'Canned soup', kcalEach: 250, units: 70, spoilDay: 9999, safe: true, kg: 0.4, unit: 'can' },
-        { name: 'Dried meat', kcalEach: 400, units: 50, spoilDay: 9999, safe: true, kg: 0.3, unit: 'strip' },
-        { name: 'Peanuts', kcalEach: 170, units: 60, spoilDay: 9999, safe: true, kg: 0.1, unit: 'handful' },
+        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 80, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
+        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 65, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
+        { name: 'Canned soup', kcalEach: 250, units: 30, spoilDay: 9999, safe: true, kg: 0.4, unit: 'can' },
+        { name: 'Dried meat', kcalEach: 400, units: 22, spoilDay: 9999, safe: true, kg: 0.3, unit: 'strip' },
+        { name: 'Peanuts', kcalEach: 170, units: 35, spoilDay: 9999, safe: true, kg: 0.1, unit: 'handful' },
       ];
       let kcal = 0;
       for (const s of staples) {
@@ -1995,6 +2002,9 @@
       }
       // teaching is observed: generosity + competence, through each lens.
       try { this.observe('share_knowledge', { target: vid }); } catch (e) {}
+      // THEY LEARN: a successful lesson sticks. Their foraging improves —
+      // knowledge feeds, through the taught[] the village metabolism reads.
+      try { this.villagerLearnsPlant(vid, plantId, 'taught'); } catch (e) {}
       // ACTION CLOCK: a real lesson takes 3 ticks (time-only — minds, not muscles).
       this.tickAction(3);
       this.setEngaged(vid, 2);
@@ -3701,21 +3711,45 @@
         // move the ACTUAL food into the real pantry — not a phantom number.
         // non-food (bonded relics, tools, materials, books) stays in your pack.
         // (this used to wipe the whole inventory AND evaporate the haul overnight.)
+        // YOU EAT TOO: keep a day's food in your pack. The loop closes for the
+        // village, not at your expense — the surplus feeds everyone. (Before this,
+        // the vacuum took everything and the forager starved next to a full
+        // pantry. That was a bug, not a design.)
+        const KEEP_KCAL = 2000;
+        let kept = 0;
+        const give = [];
+        for (const item of s.inventory) {
+          if (!((item.kcalEach || 0) > 0 && (item.units || 0) > 0 && !this.isUnprocessed(item))) continue;
+          const itemKcal = (item.kcalEach || 0) * (item.units || 0);
+          if (kept >= KEEP_KCAL) { give.push(item); continue; }
+          const room = KEEP_KCAL - kept;
+          if (itemKcal <= room) { kept += itemKcal; continue; } // keep whole stack
+          // split the stack: keep what fills the day, give the rest
+          const keepUnits = Math.floor(room / (item.kcalEach || 1));
+          if (keepUnits > 0) {
+            kept += keepUnits * (item.kcalEach || 0);
+            give.push(Object.assign({}, item, { units: (item.units || 0) - keepUnits }));
+            item.units = keepUnits;
+          } else { give.push(item); }
+        }
+        const giveSet = new Set(give);
+        for (const item of give) {
+          vv.pantry.push({ name: item.name || 'Foraged food', plantId: item.plantId,
+            kcalEach: item.kcalEach, units: item.units,
+            spoilDay: item.spoilDay || 9999, unit: item.unit,
+            safe: item.safe !== false, kg: item.kg || 0.2, prep: item.prep,
+            foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
+            hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk,
+            needsCooking: item.needsCooking, rawKcal: item.rawKcal, cookedKcal: item.cookedKcal });
+        }
+        // first return: someone explains the pooling. after that, it's understood.
+        if (!vv.pooledFoodExplained && give.length) {
+          vv.pooledFoodExplained = true;
+          this.say('Someone by the fire nods at your pack. "We pool food here. Keep what you need for the road — the rest feeds everyone."');
+        }
         // PREP STASH: only FINISHED food goes to the pantry. Unprocessed hauls
         // (lumps, carcasses, in-shell nuts, raw meat) land on the kitchen
         // counter — the prep stash — with their spoilage clocks ticking.
-        for (const item of s.inventory) {
-          if ((item.kcalEach || 0) > 0 && (item.units || 0) > 0 && !this.isUnprocessed(item)) {
-            vv.pantry.push({ name: item.name || 'Foraged food', plantId: item.plantId,
-              kcalEach: item.kcalEach, units: item.units,
-              spoilDay: item.spoilDay || 9999, unit: item.unit,
-              safe: item.safe !== false, kg: item.kg || 0.2, prep: item.prep,
-              foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
-              hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk,
-              needsCooking: item.needsCooking, rawKcal: item.rawKcal, cookedKcal: item.cookedKcal });
-          }
-        }
-        // PREP STASH: unprocessed hauls ride to the counter, not the pantry.
         // (The pantry is where food waits to be eaten; the stash is where raw
         // becomes food.)
         let staged = 0;
@@ -3727,9 +3761,12 @@
             staged++;
           }
         }
-        s.inventory = s.inventory.filter(i => !((i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !this.isUnprocessed(i)));
+        // remove only what was GIVEN (kept food stays in the pack). split stacks were
+        // already reduced to their kept units above; whole-stack gives are removed.
+        s.inventory = s.inventory.filter(i => !giveSet.has(i));
         vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
-        this.say(`You unload ${Math.round(brought)} kcal into Haven's pantry.` + (staged ? ` ${staged} unprocessed haul${staged > 1 ? 's' : ''} onto the counter — the clock is ticking.` : ''));
+        const givenKcal = Math.round(give.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0));
+        this.say(`You keep a day's food (${Math.round(kept)} kcal) and unload ${givenKcal} kcal into Haven's pantry.` + (staged ? ` ${staged} unprocessed haul${staged > 1 ? 's' : ''} onto the counter — the clock is ticking.` : ''));
         // TEACHING MOMENT: you show your haul. they gather. someone might know something.
         // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
         // find a villager who knows something you don't, and trusts you enough to share
@@ -3851,7 +3888,7 @@
           x, y,
           day: 0, // how many days they've been simulated
           population: 8 + Math.floor(Math.random() * 5), // 8-12
-          pantryKcal: 2000 + Math.floor(Math.random() * 3000),
+          pantryKcal: 15000 + Math.floor(Math.random() * 10000), // a working pantry, not a death sentence
           knowledge: Math.floor(Math.random() * 5), // codex-like level
           generated: false, // becomes true when player approaches
         };
@@ -3892,8 +3929,15 @@
       }
       // Fast sim: each day, they forage (depleting the world), eat, maybe grow.
       for (let d = 0; d < daysToSim; d++) {
-        // forage: 400-800 per person, depletes world
-        const forage = village.population * (400 + Math.random() * 400);
+        // forage: knowledge-scaled, like the player's village. Strangers in a
+        // strange land start near 60% self-sufficient and learn — the same
+        // learning curve, abstracted. Villages you meet late are LIVING places,
+        // not graveyards: they learned while you weren't looking.
+        const prof = village.knowledgeProfile || {};
+        const plantCount = Object.keys(prof.plants || {}).length;
+        const effKnow = Math.max(village.knowledge || 0, plantCount / 3);
+        const perPerson = (1500 + Math.random() * 700) * Math.min(1.8, 1 + 0.12 * effKnow);
+        const forage = village.population * perPerson;
         village.pantryKcal += forage;
         // they deplete the world near them (competition!)
         this.depleteRandomTile(Math.ceil(forage / 500));
@@ -6883,6 +6927,12 @@
       // mark it shared — the village knows now, human-to-human
       entry.taughtAround = true;
       entry.taughtDay = this.state.scholar.day;
+      // EVERYONE at the fire learns it. Fireside knowledge is village knowledge —
+      // this is the slow background growth that saves the village: even without
+      // the player, the village gets smarter (slowly) about its land.
+      try {
+        for (const rid of (this.state.village.roster || [])) this.villagerLearnsPlant(rid, pid, 'fireside');
+      } catch (e) {}
       const journalWord = this.state.systemArrived ? 'Codex' : 'journal';
       const lines = [
         `${teacher} is showing everyone ${pname} by the fire. "See the leaves? Like that. Don't mix it up." The ${journalWord} grows — the human way.`,
@@ -10089,9 +10139,11 @@
         if (!person) continue;
         const health = (v.health && v.health[id] !== undefined) ? v.health[id] : 100;
         const healthFactor = health / 100;
-        // taught plants: villagers who LEARN (via dialogue) forage better. real mechanism.
+        // KNOWLEDGE FEEDS: villagers who LEARN forage better. taught[] grows via
+        // villagerLearnsPlant (identifications, teaching, fireside sharing) — the
+        // learning curve IS the difficulty curve. 1.0 at zero knowledge, 1.8 cap.
         const knownPlants = (v.taught && v.taught[id]) ? v.taught[id].length : 0;
-        const knowledgeFactor = 1 + (knownPlants * 0.15);
+        const knowledgeFactor = Math.min(1.8, 1 + (knownPlants * 0.10));
         // TRUST: they share food when they trust you. strangers hoard.
         // trust 0-30: 20% shared. 30-60: 50%. 60-80: 80%. 80+: all.
         const trust = (v.trust && v.trust[id] !== undefined) ? v.trust[id] : 10;
@@ -12044,6 +12096,24 @@
       }
     },
     // THE identification event. One path, every source. Names are earned here.
+    // villagerLearnsPlant: THE knowledge-growth primitive. taught[] is what
+    // villageEats reads for the knowledge factor — every identification,
+    // teaching, and fireside share flows through here. One store, not three.
+    villagerLearnsPlant(vid, pid, source) {
+      const v = this.state.village;
+      if (!v || !vid || !pid) return false;
+      v.taught = v.taught || {};
+      const list = v.taught[vid] = v.taught[vid] || [];
+      if (list.includes(pid)) return false;
+      list.push(pid);
+      // keep the parallel food.js store in sync where it exists
+      try {
+        v.plantKnowledge = v.plantKnowledge || {};
+        const pk = v.plantKnowledge[vid] = v.plantKnowledge[vid] || [];
+        if (!pk.includes(pid)) pk.push(pid);
+      } catch (e) {}
+      return true;
+    },
     identifyPlant(pid, source) {
       const p = this.data.plants.find(x => x.id === pid);
       if (!p || this.plantKnown(pid)) return false;
@@ -12066,6 +12136,21 @@
         'SYSTEM: Identification complete. You are 0.3% less lost.',
       ];
       this.say(sys[Math.floor(Math.random() * sys.length)]);
+      // THE VILLAGE LEARNS: identification is the teaching moment. The camp sort
+      // is a communal ritual — villagers watching pick it up (first learner
+      // becomes the teaching seed). Your own taught[] syncs with your codex
+      // (villageEats reads taught, not codex).
+      try {
+        const v = this.state.village;
+        this.villagerLearnsPlant(this.villagerId, pid, source);
+        const learners = [];
+        for (const rid of (v.roster || [])) {
+          if (rid === this.villagerId) continue;
+          if (Math.random() < 0.6 && this.villagerLearnsPlant(rid, pid, 'observed')) learners.push(rid);
+        }
+        if (learners.length === 1) this.say(`${this.displayName(learners[0])} was watching. Now they know ${p.name} too.`);
+        else if (learners.length > 1) this.say(`${learners.length} villagers were watching. The knowledge spreads.`);
+      } catch (e) {}
       return true;
     },
     codexEntries() {
