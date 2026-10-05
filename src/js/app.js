@@ -3400,7 +3400,8 @@
           <div class="ord-ability">${abilityBarHTML()}</div>
           ${feedbackHTML()}
           ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">🧭 d-pad walks a step · hold to keep walking · tap a far tile to walk the full path · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
-          <div class="map minimap ord-minimap">${renderMap(st, tset)}</div>
+          <div class="ord-compass">${compassHTML(st)}</div>
+          <div id="mapoverlay" class="mapoverlay hidden"></div>
         </div>
         <div class="game-col-side">
           ${st.activeQuest ? `<p class="small ord-quest" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
@@ -3415,6 +3416,36 @@
 
     // MINIMAP IS A MAP, NOT A TELEPORTER. Unexplored tiles are fully hidden —
     // no hints, no guesses. Travel happens on foot: walk to the edge of the
+    // COMPASS: tap to expand the full map overlay. Tap ✕ or the backdrop to close.
+    const compass = document.getElementById('compass');
+    const overlay = document.getElementById('mapoverlay');
+    if (compass && overlay) {
+      compass.onclick = () => {
+        const st = Game.state;
+        const tset = new Set(); // travel dest, if any
+        try { const td = Game.travelDest ? Game.travelDest() : null; if (td) for (const k of td) tset.add(k); } catch (e) {}
+        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
+        overlay.classList.remove('hidden');
+        overlay.querySelector('#mapoverlay-x').onclick = () => overlay.classList.add('hidden');
+        overlay.querySelector('.mapoverlay-back').onclick = () => overlay.classList.add('hidden');
+        // wire tile taps inside the overlay
+        overlay.querySelectorAll('.minimap .tile').forEach(el => {
+          el.onclick = () => {
+            const x = +el.dataset.x, y = +el.dataset.y;
+            const tl = Game.tileAt(x, y);
+            if (x === st.px && y === st.py) return;
+            const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
+            if (otherV && Game.villageCard) {
+              const card = Game.villageCard(otherV.id);
+              if (card) { overlay.classList.add('hidden'); Game.say(card); refresh(); }
+            } else if (tl && tl.revealed) {
+              Game.say(`${S.TILE_GLYPH[tl.type] || '·'} ${tl.type} — ${tl.revealed ? 'explored' : 'unknown'}`);
+              refresh();
+            }
+          };
+        });
+      };
+    }
     // 9x9, tap yourself, head out.
     screen.querySelectorAll('.minimap .tile').forEach(el => {
       el.onclick = () => {
@@ -4219,6 +4250,57 @@
       html += '</div>';
     }
     return html;
+  }
+
+  // compassHTML (Steve 2026-10-05): the minimap was 49 tiles for minor info.
+  // This is one line: where you are, where home is, where you're going,
+  // what's nearby. Tap to expand the full map.
+  function compassHTML(st) {
+    if (st.inCombat || Game.state.over) return '';
+    const px = st.px ?? 4, py = st.py ?? 4;
+    const dirArrow = (dx, dy) => {
+      const sx = Math.sign(dx), sy = Math.sign(dy);
+      return { '-1,-1': '↖', '0,-1': '↑', '1,-1': '↗', '-1,0': '←', '0,0': '⊙', '1,0': '→', '-1,1': '↙', '0,1': '↓', '1,1': '↘' }[sx + ',' + sy] || '·';
+    };
+    const dist = (x, y) => Math.max(Math.abs(x - px), Math.abs(y - py));
+    const parts = [];
+    // Current node
+    try {
+      const nodeName = Game.nodeDetail ? Game.nodeDetail().epithet : 'field';
+      parts.push(`📍 ${esc(nodeName.split('—')[0].trim())}`);
+    } catch (e) { parts.push('📍 here'); }
+    // Haven (home)
+    try {
+      const hv = Game.state.village;
+      if (hv && hv.px !== undefined) {
+        const d = dist(hv.px, hv.py);
+        if (d > 0) parts.push(`🏘️ ${dirArrow(hv.px - px, hv.py - py)}${d}`);
+      }
+    } catch (e) {}
+    // Destination (if traveling)
+    try {
+      const tset = Game.travelDest ? Game.travelDest() : null;
+      if (tset && tset.size) {
+        const [tx, ty] = [...tset][0].split(',').map(Number);
+        parts.push(`🎯 ${dirArrow(tx - px, ty - py)}${dist(tx, ty)}`);
+      }
+    } catch (e) {}
+    // Wanderer/beast
+    try {
+      const w = st.wanderer;
+      if (w && w.x !== undefined) {
+        const tl = Game.tileAt(w.x, w.y);
+        if (tl && tl.revealed) parts.push(`🐗 ${dirArrow(w.x - px, w.y - py)}${dist(w.x, w.y)}`);
+      }
+    } catch (e) {}
+    // Other villages
+    try {
+      for (const v of (Game.state.otherVillages || [])) {
+        if (v.generated) parts.push(`🏘️ ${dirArrow(v.x - px, v.y - py)}${dist(v.x, v.y)}`);
+      }
+    } catch (e) {}
+    if (!parts.length) return '';
+    return `<div class="compass" id="compass" title="Tap for full map">${parts.join(' · ')}</div>`;
   }
 
   function renderMap(st, tset) {

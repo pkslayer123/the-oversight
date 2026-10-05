@@ -100,6 +100,19 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .cost { font-size: 10px; opacity: .7; font-weight: normal; }
 .closeup .tile { width: 44px; height: 44px; font-size: 22px; }
 .minimap .tlabel { display: none; }
+/* COMPASS (Steve 2026-10-05): one line, not 49 tiles. Tap to expand. */
+.ord-compass { margin: 4px 0; }
+.compass {
+  font-size: 13px; color: #aaa; padding: 4px 8px;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.compass:active { background: rgba(255,255,255,.05); }
+.mapoverlay.hidden { display: none; }
+.mapoverlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; }
+.mapoverlay-back { position: absolute; inset: 0; background: rgba(0,0,0,.7); }
+.mapoverlay-box { position: relative; background: var(--bg, #0a0c10); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-width: 90vw; }
+.mapoverlay-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
 .detail { margin: 8px 0; }
 .drow { display: flex; justify-content: center; }
 /* ============ D-PAD (walk pad) ============
