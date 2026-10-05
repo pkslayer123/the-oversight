@@ -280,7 +280,7 @@
         active: false, exchanges: 0, budget: 4, thread: null, depth: 0,
         said: {}, transcript: [], pendingQ: null, askedQs: [],
         answered: {}, recalled: {}, lastDay: -1, count: 0, over: false,
-        offeredHelp: false, askedTopics: [], qAskedThisConvo: false,
+        offeredHelp: false, askedTopics: [], qCount: 0,
         theorized: [],
       };
       return v.conv[vid];
@@ -312,7 +312,9 @@
         if (ip === 'social' || ip === 'analytical') b += 1;
         if (ip === 'practical') b -= 1;
       } catch (e) {}
-      return Math.max(2, Math.min(6, b));
+      // Brief people are brief — but never cut off after a single exchange.
+      // Floor 3: opener + two real turns before the wind-down can land.
+      return Math.max(3, Math.min(6, b));
     },
 
     // convoHesitationMs: people don't respond instantly. A brief,
@@ -442,10 +444,23 @@
       // is smart shapes how they talk. (Note: cg here is characterGen.convo;
       // intelOpeners lives at characterGen top level.)
       try { push(((this.data.characterGen || {}).intelOpeners || {})[this.npcIntel(vid).primary], 2); } catch (e) {}
-      push((this.data.characterGen.talkTemplates || []).slice(0, 8), 1);
+      // Talk templates: sample 8 fresh each time, not the same first 8 —
+      // otherwise every villager's small talk converges on the same lines.
+      const allT = (this.data.characterGen.talkTemplates || []).slice();
+      for (let i = allT.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = allT[i]; allT[i] = allT[j]; allT[j] = t;
+      }
+      push(allT.slice(0, 8), 1);
       if (!pool.length) push(cg.openers || ['"Hey."'], 1);
       const l = this.convoPick(vid, 'small', pool);
       if (l) return { line: this.fillTalkLine(l, vp), thread: 'small' };
+      // Reopeners: the small-talk well is dry, but you've talked before —
+      // a familiar line beats a loop. (Previously dead data; now wired in.)
+      if ((c.count || 0) > 1) {
+        const rl = this.convoPick(vid, 'small', cg.reopeners || []);
+        if (rl) return { line: this.fillTalkLine(rl, vp), thread: 'small' };
+      }
       // 6. Truly nothing new — said like a person, not a loop.
       const ex = this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know."']);
       return { line: ex || '"Good to just be around people."', thread: 'small' };
@@ -462,6 +477,9 @@
         return said.length < lines.length;
       }
       if (t === 'past') {
+        // A deflected past is a closed door, not a thread: "Tell me more."
+        // must not pry it open with pastFollow beats. Other topics stay open.
+        if (c.pastDeflected) return false;
         const said = c.said.pastdeep || [];
         return said.length < (cg.pastFollow || []).length;
       }
@@ -518,7 +536,7 @@
         const temp = this.npcTemper(vid);
         const trust = (this.state.village.trust || {})[vid] || 10;
         if ((temp === 'withdrawn' || temp === 'prickly') && trust < 40 && Math.random() < 0.55) {
-          c.thread = 'past'; c.depth = 1;
+          c.thread = 'past'; c.depth = 1; c.pastDeflected = true;
           return this.convoPickCycle(vid, 'deflectpast', [
             '"Before doesn\'t matter anymore." A wall comes down.',
             '"I don\'t talk about before." Flat. Final.',
@@ -617,6 +635,25 @@
       return vs[Math.abs(h) % vs.length];
     },
 
+    // convoMoreLabel: "Tell me more." is not identical every time, and it
+    // reads differently per thread — "what happened next" for the past,
+    // "what would that look like" for a goal. Stable per person, like
+    // convoLabel: you learn to talk to PEOPLE, not menus.
+    convoMoreLabel(vid) {
+      const c = this.convoGet(vid);
+      const variants = {
+        past: ['"Tell me more."', '"What happened next?"', '"Go on — what was it like?"'],
+        goal: ['"Tell me more."', '"Say more about that."', '"What would that look like?"'],
+        plans: ['"Tell me more."', '"And after that?"', '"What\'s the first step?"'],
+        village: ['"Tell me more."', '"Who else?"', '"How bad is it, really?"'],
+        gossip: ['"Tell me more."', '"Whoa — go on."', '"What else did you hear?"'],
+        small: ['"Tell me more."', '"Go on."', '"I\'m listening."'],
+      };
+      const vs = variants[c.thread] || variants.small;
+      const h = this._hashStr ? this._hashStr(vid + ':more:' + (c.thread || '')) : 0;
+      return vs[Math.abs(h) % vs.length];
+    },
+
     convoChoices(vid) {
       const c = this.convoGet(vid);
       const choices = [];
@@ -665,7 +702,7 @@
       // (7: five topic asks can now be open at once — gossip joined them —
       // and discovery actions must still fit behind topics/theorize/observe.)
       const MAXC = reactiveDef ? reactiveDef.answers.length + 2 : 7;
-      if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
+      if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: this.convoMoreLabel(vid) });
       // PARTY INVITES live in conversation, not on a button. Discovered via
       // the System unlock. You ask people. Like a person.
       // Sits with 'more', AHEAD of the topic asks: a trust-earned, contextual
@@ -788,9 +825,9 @@
       c.active = true; c.exchanges = 0; c.budget = this.convoBudget(vid);
       c.thread = null; c.depth = 0; c.transcript = []; c.pendingQ = null;
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
-      c.qAskedThisConvo = false; c.theorized = [];
+      c.qCount = 0; c.theorized = [];
       c.traderMentioned = false; c.pendingTrade = null;
-      c.reactiveQ = null;
+      c.reactiveQ = null; c.windingDown = false; c.pastDeflected = false;
       c.count++; c.lastDay = this.state.scholar.day;
       // TALKING COSTS A LITTLE ENERGY — 10 kcal to open a conversation, not
       // per line. Small talk is quick and cheap; going deep costs ticks
@@ -859,7 +896,9 @@
       // answeredReactive: this turn engaged their direct question — the
       // follow-up logic must not fire. extraQ: a formal question that lands
       // as a second beat in the same turn (rq_personal -> real question).
-      let answeredReactive = false, extraQ = null;
+      // extraLine: a follow-up beat after an answer — Q -> A -> follow-up,
+      // so answering doesn't dead-end the moment.
+      let answeredReactive = false, extraQ = null, extraLine = null;
 
       if (choiceId === 'leave') {
         return this.endConvo(vid, 'left');
@@ -877,6 +916,12 @@
         const saidLabel = ad && ad.label ? String(ad.label).replaceAll('{region}', regionNow) : null;
         done(this.fillTalkLine(react, this.vpOf(vid)), saidLabel);
         this.remember(vid, 'you_said', qid + '=' + aid);
+        // FOLLOW-UP BEAT: answering a real question sometimes earns a second
+        // beat — their thought continues instead of terminating. Not every
+        // time; people don't monologue after every answer.
+        if (qd && qd.follow && Math.random() < 0.5) {
+          extraLine = this.fillTalkLine(qd.follow, this.vpOf(vid));
+        }
       } else if (choiceId === 'deflect_q') {
         const qid = c.pendingQ && c.pendingQ.id;
         c.pendingQ = null;
@@ -918,7 +963,7 @@
           if (qd) {
             c.pendingQ = qd;
             if (c.askedQs.indexOf(qd.id) === -1) c.askedQs.push(qd.id);
-            c.qAskedThisConvo = true;
+            c.qCount = (c.qCount || 0) + 1;
             extraQ = qd;
           }
         } else if (ad) {
@@ -1047,8 +1092,11 @@
           done(rrA.reacts.agree, '"You\'re right."');
         } else {
           const m = cg.agreeReacts || {};
-          // Acknowledgments are human filler — a small cycling pool, never a loop.
-          const l = this.convoPick(vid, 'agree:' + temp, [m[temp] || m.default || '"Yeah."'])
+          // Acknowledgments are human filler — per-temperament pools (arrays
+          // in data), never a loop.
+          const rawA = m[temp] || m.default || '"Yeah."';
+          const poolA = Array.isArray(rawA) ? rawA : [rawA];
+          const l = this.convoPick(vid, 'agree:' + temp, poolA)
             || this.convoPickCycle(vid, 'agreefill', ['"Yeah."', '"Mm."', '"Right."', 'Nods along.']);
           done(l, '"You\'re right."');
         }
@@ -1064,7 +1112,9 @@
         const m = cg.jokeReacts || {};
         const rkey = (mood === 'grieving' || mood === 'scared') ? mood : temp;
         const key = 'joke:' + rkey;
-        const l = this.convoPick(vid, key, [m[rkey] || m.default || 'A short laugh.'])
+        const rawJ = m[rkey] || m.default || 'A short laugh.';
+        const poolJ = Array.isArray(rawJ) ? rawJ : [rawJ];
+        const l = this.convoPick(vid, key, poolJ)
           || this.convoPickCycle(vid, 'jokefill', ['A short laugh.', 'Snorts.', 'Grins.']);
         done(l, '(crack a joke)');
         const vg = this.state.village;
@@ -1079,7 +1129,9 @@
         } else {
         const m = cg.silence || {};
         const key = 'silence:' + temp;
-        const l = this.convoPick(vid, key, [m[temp] || '"..."'])
+        const rawS = m[temp] || '"..."';
+        const poolS = Array.isArray(rawS) ? rawS : [rawS];
+        const l = this.convoPick(vid, key, poolS)
           || this.convoPickCycle(vid, 'silencefill', ['...', 'The quiet holds.', 'Say nothing more.']);
         done(l, '(say nothing)');
         }
@@ -1130,6 +1182,13 @@
         while (c.transcript.length > 8) c.transcript.shift();
         this.say(`${this.displayName(vid)}: "${extraQ.q}"`);
       }
+      // extraLine: the follow-up beat after an answer — same-turn, so the
+      // thought lands whole instead of dying at the react line.
+      if (extraLine) {
+        c.transcript.push({ who: 'them', text: extraLine });
+        while (c.transcript.length > 8) c.transcript.shift();
+        this.say(`${this.displayName(vid)}: "${extraLine}"`);
+      }
 
       // DEEP BEATS cost a tick: topic asks, "tell me more", theorizing,
       // trading, teaching, promises, invites, answering personal questions.
@@ -1139,7 +1198,11 @@
         this.convoDeepTick(vid);
       }
 
-      // THEY ask YOU things. Conversations go both ways.
+      // THEY ask YOU things. Conversations go both ways — but they follow
+      // the player's lead. A question never stomps a live thread: if the
+      // player drove the conversation this turn (ask:/more/theorize/...),
+      // the NPC stays with the thread. Questions arrive after small talk,
+      // breaths, and thread exhaustion — never as an interrogation pile-on.
       // Never in nonverbal: someone you share no words with does not
       // suddenly ask "Where are you from?" in fluent English. (Leak fix.)
       //
@@ -1148,7 +1211,14 @@
       // thread is never silently dropped for a random new topic. And a
       // genuinely new question mid-thread gets a narrative bridge, not a
       // hard pivot.
-      const forceQ = c.count === 1 && !c.qAskedThisConvo;
+      //
+      // PACING: at most 2 questions per conversation, never on the turn
+      // right after an answer (let the react breathe), and the first-
+      // conversation question waits until the second exchange — the opener
+      // and the player's first move set the tone, not an interrogation.
+      const droveThread = /^(ask:|more|theorize|react:|trade|teach|offer_help|invite_party)/.test(choiceId || '');
+      const justAnswered = /^(ans:)/.test(choiceId || '');
+      const forceQ = c.count === 1 && (c.qCount || 0) === 0 && c.exchanges >= 2 && !droveThread && !justAnswered;
       if (c.thread !== 'nonverbal' && !c.pendingQ && c.exchanges >= 1 && !answeredReactive) {
         const rqf = c.reactiveQ && REACTIVE_DEFS[c.reactiveQ.id];
         if (rqf) {
@@ -1165,7 +1235,7 @@
             }
             c.reactiveQ = null;
           }
-        } else if (forceQ || Math.random() < 0.4) {
+        } else if (!droveThread && !justAnswered && !c.windingDown && (forceQ || ((c.qCount || 0) < 2 && Math.random() < 0.3))) {
           const trust = (this.state.village.trust || {})[vid] || 10;
           const moodNow = this.npcMood(vid);
           const cands = (cg.questions || []).filter(q =>
@@ -1189,7 +1259,7 @@
               this.say(`${this.displayName(vid)}: ${bridge}`);
             }
             c.pendingQ = qd;
-            c.qAskedThisConvo = true;
+            c.qCount = (c.qCount || 0) + 1;
             c.transcript.push({ who: 'them', text: qd.q });
             while (c.transcript.length > 8) c.transcript.shift();
             this.say(`${this.displayName(vid)}: "${qd.q}"`);
@@ -1199,8 +1269,34 @@
         }
       }
 
-      // Natural ending: the conversation has run its course.
-      if (!c.pendingQ && c.exchanges >= c.budget) return this.endConvo(vid, 'natural');
+      // Natural ending: the conversation has run its course. But an abrupt
+      // exit mid-thought reads as a cutoff — so the budget landing gets a
+      // wind-down beat first: a temperament-colored "I should get going"
+      // with one last turn of choices. The player can still say goodbye
+      // themselves, take one more beat of a live thread, or just leave.
+      // Only the player's "I should go." (or the turn after the wind-down)
+      // ends the scene — never a silent chop.
+      if (!c.pendingQ && c.exchanges >= c.budget) {
+        if (!c.windingDown) {
+          c.windingDown = true;
+          const wdPool = (cg.winddowns || {})[temp] || (cg.winddowns || {}).default
+            || ['"Anyway — I should get back to it."'];
+          const wd = this.convoPickCycle(vid, 'winddown', wdPool);
+          c.transcript.push({ who: 'them', text: wd });
+          while (c.transcript.length > 8) c.transcript.shift();
+          this.say(`${this.displayName(vid)}: ${wd}`);
+          const wdChoices = [{ id: 'leave', label: '"I should go."' }];
+          if (this.convoThreadHasMore(vid)) {
+            wdChoices.push({ id: 'more', label: '"One more thing —"' });
+          }
+          const reacts = ['agree', 'joke', 'silence'];
+          const rid = reacts[Math.floor(Math.random() * reacts.length)];
+          const rlabels = { agree: '"You\'re right."', joke: '(crack a joke)', silence: '(say nothing)' };
+          wdChoices.push({ id: rid, label: rlabels[rid] });
+          return { line: wd, choices: wdChoices, ended: false, windingDown: true, transcript: c.transcript.slice() };
+        }
+        return this.endConvo(vid, 'natural');
+      }
       return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
     },
 
@@ -1611,7 +1707,26 @@
       c.exchanges++;
       this.say(`${this.displayName(vid)}: ${line}`);
       // No they-ask-you in nonverbal. Ever. (The leak Steve reported.)
-      if (!c.pendingQ && c.exchanges >= c.budget) return this.endConvo(vid, 'natural');
+      // Wind-down, not a chop: the budget landing gets a gesture beat first,
+      // same as the verbal path.
+      if (!c.pendingQ && c.exchanges >= c.budget) {
+        if (!c.windingDown) {
+          c.windingDown = true;
+          const wd = this.convoPickCycle(vid, 'nvwinddown', [
+            'Their gestures slow — the conversation thinning like light at dusk.',
+            'They glance toward their own thoughts; the exchange is winding down.',
+            'A final shared look — you both feel the talk running its course.',
+          ]);
+          c.transcript.push({ who: 'them', text: wd, foreign: c.nativeLang || this.npcNativeLang(vid) });
+          while (c.transcript.length > 8) c.transcript.shift();
+          this.say(`${this.displayName(vid)}: ${wd}`);
+          return { line: wd, choices: [
+            { id: 'leave', label: '(walk away)' },
+            { id: 'nv:nod', label: '(nod slowly)' },
+          ], ended: false, windingDown: true, transcript: c.transcript.slice() };
+        }
+        return this.endConvo(vid, 'natural');
+      }
       return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
     }
     return _convoTurn.call(this, vid, choiceId);

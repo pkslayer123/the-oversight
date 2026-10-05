@@ -2328,5 +2328,1910 @@
     "t": "No lo olvidaré."
    }
   ]
+ },
+ "german": {
+  "openers": [
+   {
+    "t": "Hallo! Du... wie heißt du?",
+    "en": "Hi! You... what's your name?",
+    "kw": {
+     "Hallo": "hi"
+    }
+   },
+   {
+    "t": "Hey... sprichst du Deutsch? Nein? ...scheiße.",
+    "en": "Hey... you speak German? No? ...shit.",
+    "kw": {
+     "Nein": "no",
+     "sprichst": "you speak"
+    }
+   },
+   {
+    "t": "Gut, dass du da bist. Wirklich.",
+    "en": "Good that you're here. Really.",
+    "kw": {
+     "Gut": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Hast du etwas zu essen? Irgendwas?",
+    "en": "Do you have something to eat? Anything?",
+    "kw": {
+     "essen": "to eat"
+    }
+   },
+   {
+    "t": "Verstehst du mich?",
+    "en": "Do you understand me?",
+    "kw": {
+     "Verstehst": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Ja, ja, genau.",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Ja": "yes"
+    }
+   },
+   {
+    "t": "Stimmt.",
+    "en": "That's right.",
+    "kw": {
+     "Stimmt": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Alles wird gut. Wirklich.",
+    "en": "Everything will be okay. Really.",
+    "kw": {
+     "gut": "good"
+    }
+   },
+   {
+    "t": "Schön, dass es dich gibt.",
+    "en": "Nice that you exist.",
+    "kw": {
+     "Schön": "nice"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Ich habe Hunger. Bitte... etwas zu essen.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "Hunger": "hunger",
+     "Bitte": "please"
+    }
+   },
+   {
+    "t": "Hunger... so viel Hunger.",
+    "en": "Hunger... so much hunger.",
+    "kw": {
+     "Hunger": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Vorsicht! Da! Gefahr!",
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "Vorsicht": "careful",
+     "Gefahr": "danger"
+    }
+   },
+   {
+    "t": "Wir müssen gehen. Sofort!",
+    "en": "We have to go. Right now!",
+    "kw": {
+     "gehen": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "japanese": {
+  "openers": [
+   {
+    "t": "こんにちは！あなた…名前は？",
+    "en": "Hi! You... what's your name?",
+    "kw": {
+     "こんにちは": "hello"
+    }
+   },
+   {
+    "t": "ねえ…日本語わかる？え？…くそ。",
+    "en": "Hey... understand Japanese? Huh? ...damn.",
+    "kw": {
+     "わかる": "understand"
+    }
+   },
+   {
+    "t": "会えてよかった。本当に。",
+    "en": "Glad we met. Really.",
+    "kw": {
+     "よかった": "glad"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "食べ物ある？何か？",
+    "en": "Have food? Anything?",
+    "kw": {
+     "食べ物": "food"
+    }
+   },
+   {
+    "t": "わかる？",
+    "en": "Understand?",
+    "kw": {
+     "わかる": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "うんうん、そうそう。",
+    "en": "Yeah yeah, exactly.",
+    "kw": {
+     "うん": "yes"
+    }
+   },
+   {
+    "t": "そうだね。",
+    "en": "That's right.",
+    "kw": {
+     "そう": "that's right"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "大丈夫だよ。きっと。",
+    "en": "It'll be okay. Surely.",
+    "kw": {
+     "大丈夫": "okay"
+    }
+   },
+   {
+    "t": "いてくれてありがとう。",
+    "en": "Thanks for being here.",
+    "kw": {
+     "ありがとう": "thanks"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "お腹すいた。お願い…何か食べ物を。",
+    "en": "I'm hungry. Please... some food.",
+    "kw": {
+     "お腹すいた": "hungry",
+     "お願い": "please"
+    }
+   },
+   {
+    "t": "お腹…すごくお腹すいた。",
+    "en": "Hungry... so hungry.",
+    "kw": {
+     "お腹": "stomach"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "危ない！あそこ！危険！",
+    "en": "Danger! There! Danger!",
+    "kw": {
+     "危ない": "watch out",
+     "危険": "danger"
+    }
+   },
+   {
+    "t": "行かなきゃ。今すぐ！",
+    "en": "We have to go. Right now!",
+    "kw": {
+     "行く": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "korean": {
+  "openers": [
+   {
+    "t": "안녕하세요! 당신... 이름이 뭐예요?",
+    "en": "Hi! You... what's your name?",
+    "kw": {
+     "안녕하세요": "hello"
+    }
+   },
+   {
+    "t": "저기요... 한국어 아세요? 네? ...젠장.",
+    "en": "Hey... do you know Korean? Huh? ...damn.",
+    "kw": {
+     "아세요": "know"
+    }
+   },
+   {
+    "t": "만나서 반가워요. 정말요.",
+    "en": "Nice to meet you. Really.",
+    "kw": {
+     "반가워요": "nice to meet you"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "먹을 것 있어요? 뭐든요?",
+    "en": "Have something to eat? Anything?",
+    "kw": {
+     "먹을 것": "food"
+    }
+   },
+   {
+    "t": "이해해요?",
+    "en": "Understand?",
+    "kw": {
+     "이해해요": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "응, 응, 맞아요.",
+    "en": "Yeah, yeah, that's right.",
+    "kw": {
+     "응": "yes"
+    }
+   },
+   {
+    "t": "그렇죠.",
+    "en": "That's right.",
+    "kw": {
+     "그렇죠": "that's right"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "괜찮을 거예요. 정말요.",
+    "en": "It'll be okay. Really.",
+    "kw": {
+     "괜찮을 거예요": "it'll be okay"
+    }
+   },
+   {
+    "t": "있어줘서 고마워요.",
+    "en": "Thanks for being here.",
+    "kw": {
+     "고마워요": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "배고파요. 제발... 먹을 것 좀요.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "배고파요": "hungry",
+     "제발": "please"
+    }
+   },
+   {
+    "t": "배고파... 너무 배고파요.",
+    "en": "Hungry... so hungry.",
+    "kw": {
+     "배고파": "hungry"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "조심해요! 저기! 위험해요!",
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "조심해요": "be careful",
+     "위험해요": "danger"
+    }
+   },
+   {
+    "t": "가야 해요. 지금 당장!",
+    "en": "We have to go. Right now!",
+    "kw": {
+     "가야 해요": "must go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "vietnamese": {
+  "openers": [
+   {
+    "t": "Chào! Bạn... tên gì?",
+    "en": "Hi! You... what's your name?",
+    "kw": {
+     "Chào": "hi"
+    }
+   },
+   {
+    "t": "Này... bạn nói tiếng Việt không? Không? ...chết tiệt.",
+    "en": "Hey... you speak Vietnamese? No? ...damn.",
+    "kw": {
+     "Không": "no"
+    }
+   },
+   {
+    "t": "Gặp được bạn thật tốt.",
+    "en": "Really good to meet you.",
+    "kw": {
+     "tốt": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Bạn có đồ ăn không? Gì cũng được?",
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "đồ ăn": "food"
+    }
+   },
+   {
+    "t": "Bạn hiểu không?",
+    "en": "Do you understand?",
+    "kw": {
+     "hiểu": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Ừ, ừ, đúng rồi.",
+    "en": "Yeah, yeah, exactly.",
+    "kw": {
+     "Ừ": "yes"
+    }
+   },
+   {
+    "t": "Đúng đấy.",
+    "en": "That's right.",
+    "kw": {
+     "Đúng": "right"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Mọi chuyện sẽ ổn thôi.",
+    "en": "Everything will be okay.",
+    "kw": {
+     "ổn": "okay"
+    }
+   },
+   {
+    "t": "Cảm ơn vì đã ở đây.",
+    "en": "Thanks for being here.",
+    "kw": {
+     "Cảm ơn": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Tôi đói. Làm ơn... gì đó để ăn.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "đói": "hungry",
+     "Làm ơn": "please"
+    }
+   },
+   {
+    "t": "Đói... đói quá.",
+    "en": "Hungry... so hungry.",
+    "kw": {
+     "đói": "hungry"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Cẩn thận! Đằng kia! Nguy hiểm!",
+    "en": "Careful! Over there! Danger!",
+    "kw": {
+     "Cẩn thận": "careful",
+     "Nguy hiểm": "danger"
+    }
+   },
+   {
+    "t": "Chúng ta phải đi. Ngay bây giờ!",
+    "en": "We have to go. Right now!",
+    "kw": {
+     "đi": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "tagalog": {
+  "openers": [
+   {
+    "t": "Kumusta! Ikaw... anong pangalan mo?",
+    "en": "Hello! You... what's your name?",
+    "kw": {
+     "Kumusta": "hello"
+    }
+   },
+   {
+    "t": "Uy... marunong ka bang Tagalog? Hindi? ...hay naku.",
+    "en": "Hey... do you know Tagalog? No? ...oh man.",
+    "kw": {
+     "Hindi": "no"
+    }
+   },
+   {
+    "t": "Buti nandito ka. Talaga.",
+    "en": "Good that you're here. Really.",
+    "kw": {
+     "Buti": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "May pagkain ka? Kahit ano?",
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "pagkain": "food"
+    }
+   },
+   {
+    "t": "Naiintindihan mo ba?",
+    "en": "Do you understand?",
+    "kw": {
+     "Naiintindihan": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Oo, oo, tama.",
+    "en": "Yes, yes, correct.",
+    "kw": {
+     "Oo": "yes"
+    }
+   },
+   {
+    "t": "Tama nga.",
+    "en": "That's right.",
+    "kw": {
+     "Tama": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Magiging okay ang lahat.",
+    "en": "Everything will be okay.",
+    "kw": {
+     "okay": "okay"
+    }
+   },
+   {
+    "t": "Salamat at nandito ka.",
+    "en": "Thanks that you're here.",
+    "kw": {
+     "Salamat": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Gutom ako. Pakiusap... kahit ano'ng makakain.",
+    "en": "I'm hungry. Please... anything to eat.",
+    "kw": {
+     "Gutom": "hunger",
+     "Pakiusap": "please"
+    }
+   },
+   {
+    "t": "Gutom... sobrang gutom.",
+    "en": "Hunger... so much hunger.",
+    "kw": {
+     "Gutom": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Mag-ingat! Doon! Panganib!",
+    "en": "Be careful! There! Danger!",
+    "kw": {
+     "Mag-ingat": "be careful",
+     "Panganib": "danger"
+    }
+   },
+   {
+    "t": "Kailangan na nating umalis. Ngayon na!",
+    "en": "We need to leave. Right now!",
+    "kw": {
+     "umalis": "to leave"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "haitian_creole": {
+  "openers": [
+   {
+    "t": "Bonjou! Ou... kijan ou rele?",
+    "en": "Hello! You... what's your name?",
+    "kw": {
+     "Bonjou": "hello"
+    }
+   },
+   {
+    "t": "Hey... ou pale kreyòl? Non? ...merde.",
+    "en": "Hey... you speak Creole? No? ...damn.",
+    "kw": {
+     "Non": "no"
+    }
+   },
+   {
+    "t": "Mwen kontan wè ou. Vreman.",
+    "en": "I'm happy to see you. Really.",
+    "kw": {
+     "kontan": "happy"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Ou gen manje? Nenpòt?",
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "manje": "food"
+    }
+   },
+   {
+    "t": "Ou konprann?",
+    "en": "Do you understand?",
+    "kw": {
+     "konprann": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Wi, wi, egzakteman.",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Wi": "yes"
+    }
+   },
+   {
+    "t": "Se vre.",
+    "en": "That's true.",
+    "kw": {
+     "vre": "true"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Tout bagay ap oke.",
+    "en": "Everything will be okay.",
+    "kw": {
+     "oke": "okay"
+    }
+   },
+   {
+    "t": "Mèsi paske ou la.",
+    "en": "Thanks for being here.",
+    "kw": {
+     "Mèsi": "thanks"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Mwen grangou. Tanpri... yon bagay pou manje.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "grangou": "hungry",
+     "Tanpri": "please"
+    }
+   },
+   {
+    "t": "Grangou... anpil grangou.",
+    "en": "Hunger... so much hunger.",
+    "kw": {
+     "grangou": "hungry"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Atansyon! La! Danje!",
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "Atansyon": "careful",
+     "Danje": "danger"
+    }
+   },
+   {
+    "t": "Fòk nou ale. Kounye a!",
+    "en": "We have to go. Right now!",
+    "kw": {
+     "ale": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "thai": {
+  "openers": [
+   {
+    "t": "สวัสดี! คุณ...ชื่ออะไร?",
+    "en": "Hello! You... what's your name?",
+    "kw": {
+     "สวัสดี": "hello"
+    }
+   },
+   {
+    "t": "นี่...พูดไทยได้ไหม? ไม่ได้? ...บ้าเอ๊ย.",
+    "en": "Hey... can you speak Thai? No? ...damn.",
+    "kw": {
+     "ไม่ได้": "cannot"
+    }
+   },
+   {
+    "t": "ดีใจที่เจอคุณ จริงๆ นะ.",
+    "en": "Glad to meet you. Really.",
+    "kw": {
+     "ดีใจ": "glad"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "มีอาหารไหม? อะไรก็ได้?",
+    "en": "Have food? Anything?",
+    "kw": {
+     "อาหาร": "food"
+    }
+   },
+   {
+    "t": "เข้าใจไหม?",
+    "en": "Understand?",
+    "kw": {
+     "เข้าใจ": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "ใช่ๆ ถูกต้อง.",
+    "en": "Yes yes, correct.",
+    "kw": {
+     "ใช่": "yes"
+    }
+   },
+   {
+    "t": "จริงด้วย.",
+    "en": "That's true.",
+    "kw": {
+     "จริง": "true"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "ทุกอย่างจะโอเค.",
+    "en": "Everything will be okay.",
+    "kw": {
+     "โอเค": "okay"
+    }
+   },
+   {
+    "t": "ขอบคุณที่อยู่ตรงนี้.",
+    "en": "Thanks for being here.",
+    "kw": {
+     "ขอบคุณ": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "หิวข้าว ขอร้อง...อะไรกินหน่อย.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "หิว": "hungry",
+     "ขอร้อง": "please"
+    }
+   },
+   {
+    "t": "หิว...หิวมาก.",
+    "en": "Hungry... very hungry.",
+    "kw": {
+     "หิว": "hungry"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "ระวัง! นั่น! อันตราย!",
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "ระวัง": "careful",
+     "อันตราย": "danger"
+    }
+   },
+   {
+    "t": "ต้องไปแล้ว เดี๋ยวนี้!",
+    "en": "Have to go. Right now!",
+    "kw": {
+     "ไป": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "turkish": {
+  "openers": [
+   {
+    "t": "Merhaba! Sen... adın ne?",
+    "en": "Hello! You... what's your name?",
+    "kw": {
+     "Merhaba": "hello"
+    }
+   },
+   {
+    "t": "Hey... Türkçe biliyor musun? Hayır? ...kahretsin.",
+    "en": "Hey... do you know Turkish? No? ...damn.",
+    "kw": {
+     "Hayır": "no"
+    }
+   },
+   {
+    "t": "Burada olman güzel. Gerçekten.",
+    "en": "Good that you're here. Really.",
+    "kw": {
+     "güzel": "nice"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Yiyeceğin var mı? Bir şeyler?",
+    "en": "Do you have food? Something?",
+    "kw": {
+     "Yiyecek": "food"
+    }
+   },
+   {
+    "t": "Anlıyor musun?",
+    "en": "Do you understand?",
+    "kw": {
+     "Anlıyor": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Evet, evet, aynen.",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Evet": "yes"
+    }
+   },
+   {
+    "t": "Doğru.",
+    "en": "Correct.",
+    "kw": {
+     "Doğru": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Her şey iyi olacak.",
+    "en": "Everything will be good.",
+    "kw": {
+     "iyi": "good"
+    }
+   },
+   {
+    "t": "Burada olduğun için teşekkürler.",
+    "en": "Thanks for being here.",
+    "kw": {
+     "teşekkürler": "thanks"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Açım. Lütfen... yiyecek bir şey.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "Açım": "hungry",
+     "Lütfen": "please"
+    }
+   },
+   {
+    "t": "Açlık... çok açlık.",
+    "en": "Hunger... so much hunger.",
+    "kw": {
+     "Açlık": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Dikkat! Orada! Tehlike!",
+    "en": "Attention! There! Danger!",
+    "kw": {
+     "Dikkat": "attention",
+     "Tehlike": "danger"
+    }
+   },
+   {
+    "t": "Gitmeliyiz. Hemen!",
+    "en": "We must go. Immediately!",
+    "kw": {
+     "Gitmeliyiz": "we must go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "polish": {
+  "openers": [
+   {
+    "t": "Cześć! Ty... jak się nazywasz?",
+    "en": "Hi! You... what's your name?",
+    "kw": {
+     "Cześć": "hi"
+    }
+   },
+   {
+    "t": "Hej... mówisz po polsku? Nie? ...cholera.",
+    "en": "Hey... you speak Polish? No? ...damn.",
+    "kw": {
+     "Nie": "no"
+    }
+   },
+   {
+    "t": "Dobrze, że jesteś. Naprawdę.",
+    "en": "Good that you're here. Really.",
+    "kw": {
+     "Dobrze": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Masz coś do jedzenia? Cokolwiek?",
+    "en": "Do you have something to eat? Anything?",
+    "kw": {
+     "jedzenia": "food"
+    }
+   },
+   {
+    "t": "Rozumiesz?",
+    "en": "Do you understand?",
+    "kw": {
+     "Rozumiesz": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Tak, tak, dokładnie.",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Tak": "yes"
+    }
+   },
+   {
+    "t": "Zgadza się.",
+    "en": "That's right.",
+    "kw": {
+     "Zgadza się": "that's right"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Wszystko będzie dobrze.",
+    "en": "Everything will be well.",
+    "kw": {
+     "dobrze": "well"
+    }
+   },
+   {
+    "t": "Dzięki, że jesteś.",
+    "en": "Thanks for being here.",
+    "kw": {
+     "Dzięki": "thanks"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Jestem głodny. Proszę... coś do jedzenia.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "głodny": "hungry",
+     "Proszę": "please"
+    }
+   },
+   {
+    "t": "Głód... taki głód.",
+    "en": "Hunger... such hunger.",
+    "kw": {
+     "Głód": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Uważaj! Tam! Niebezpieczeństwo!",
+    "en": "Watch out! There! Danger!",
+    "kw": {
+     "Uważaj": "watch out",
+     "Niebezpieczeństwo": "danger"
+    }
+   },
+   {
+    "t": "Musimy iść. Natychmiast!",
+    "en": "We must go. Immediately!",
+    "kw": {
+     "iść": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "ukrainian": {
+  "openers": [
+   {
+    "t": "Привіт! Ти... як тебе звати?",
+    "en": "Hi! You... what's your name?",
+    "kw": {
+     "Привіт": "hi"
+    }
+   },
+   {
+    "t": "Гей... ти розмовляєш українською? Ні? ...бляха.",
+    "en": "Hey... you speak Ukrainian? No? ...damn.",
+    "kw": {
+     "Ні": "no"
+    }
+   },
+   {
+    "t": "Добре, що ти тут. Справді.",
+    "en": "Good that you're here. Really.",
+    "kw": {
+     "Добре": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "У тебе є їжа? Щось?",
+    "en": "Do you have food? Something?",
+    "kw": {
+     "їжа": "food"
+    }
+   },
+   {
+    "t": "Ти розумієш?",
+    "en": "Do you understand?",
+    "kw": {
+     "розумієш": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Так, так, саме так.",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Так": "yes"
+    }
+   },
+   {
+    "t": "Правильно.",
+    "en": "Correct.",
+    "kw": {
+     "Правильно": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Все буде добре.",
+    "en": "Everything will be good.",
+    "kw": {
+     "добре": "good"
+    }
+   },
+   {
+    "t": "Дякую, що ти тут.",
+    "en": "Thanks that you're here.",
+    "kw": {
+     "Дякую": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Я голодний. Будь ласка... щось поїсти.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "голодний": "hungry",
+     "Будь ласка": "please"
+    }
+   },
+   {
+    "t": "Голод... такий голод.",
+    "en": "Hunger... such hunger.",
+    "kw": {
+     "Голод": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Обережно! Там! Небезпека!",
+    "en": "Carefully! There! Danger!",
+    "kw": {
+     "Обережно": "carefully",
+     "Небезпека": "danger"
+    }
+   },
+   {
+    "t": "Треба йти. Негайно!",
+    "en": "Need to go. Immediately!",
+    "kw": {
+     "йти": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "bengali": {
+  "openers": [
+   {
+    "t": "নমস্কার! তুমি... তোমার নাম কী?",
+    "en": "Hello! You... what's your name?",
+    "kw": {
+     "নমস্কার": "hello"
+    }
+   },
+   {
+    "t": "এই... তুমি বাংলা বলো? না? ...ধুর।",
+    "en": "Hey... you speak Bengali? No? ...damn.",
+    "kw": {
+     "না": "no"
+    }
+   },
+   {
+    "t": "তুমি আছো, ভালো লাগছে। সত্যি।",
+    "en": "Glad you're here. Really.",
+    "kw": {
+     "ভালো": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "তোমার কাছে খাবার আছে? কিছু?",
+    "en": "Do you have food? Something?",
+    "kw": {
+     "খাবার": "food"
+    }
+   },
+   {
+    "t": "বুঝতে পারছো?",
+    "en": "Can you understand?",
+    "kw": {
+     "বুঝতে": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "হ্যাঁ, হ্যাঁ, ঠিক।",
+    "en": "Yes, yes, right.",
+    "kw": {
+     "হ্যাঁ": "yes"
+    }
+   },
+   {
+    "t": "ঠিক বলেছো।",
+    "en": "Said right.",
+    "kw": {
+     "ঠিক": "right"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "সব ঠিক হয়ে যাবে।",
+    "en": "Everything will be okay.",
+    "kw": {
+     "ঠিক": "okay"
+    }
+   },
+   {
+    "t": "এখানে থাকার জন্য ধন্যবাদ।",
+    "en": "Thanks for staying here.",
+    "kw": {
+     "ধন্যবাদ": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "আমার ক্ষুধা লেগেছে। দয়া করে... কিছু খেতে।",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "ক্ষুধা": "hunger",
+     "দয়া করে": "please"
+    }
+   },
+   {
+    "t": "ক্ষুধা... খুব ক্ষুধা।",
+    "en": "Hunger... much hunger.",
+    "kw": {
+     "ক্ষুধা": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "সাবধান! ওখানে! বিপদ!",
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "সাবধান": "careful",
+     "বিপদ": "danger"
+    }
+   },
+   {
+    "t": "আমাদের যেতে হবে। এখনই!",
+    "en": "We have to go. Right now!",
+    "kw": {
+     "যেতে": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "amharic": {
+  "openers": [
+   {
+    "t": "ሰላም! አንተ... ስምህ ማን ነው?",
+    "en": "Hello! You... what is your name?",
+    "kw": {
+     "ሰላም": "hello"
+    }
+   },
+   {
+    "t": "ሄይ... አማርኛ ትችላለህ? አይ? ...ውይ።",
+    "en": "Hey... can you speak Amharic? No? ...oh.",
+    "kw": {
+     "አይ": "no"
+    }
+   },
+   {
+    "t": "እዚህ በመሆኑ ደስ ብሎኛል። በእርግጥ።",
+    "en": "Glad you're here. Truly.",
+    "kw": {
+     "ደስ": "glad"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "ምግብ አለህ? ምንም?",
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "ምግብ": "food"
+    }
+   },
+   {
+    "t": "ተረድተሃል?",
+    "en": "Did you understand?",
+    "kw": {
+     "ተረድተሃል": "understood"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "አዎ፣ አዎ፣ ልክ ነው።",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "አዎ": "yes"
+    }
+   },
+   {
+    "t": "ትክክል።",
+    "en": "Correct.",
+    "kw": {
+     "ትክክል": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "ሁሉም ነገር ደህና ይሆናል።",
+    "en": "Everything will be well.",
+    "kw": {
+     "ደህና": "well"
+    }
+   },
+   {
+    "t": "እዚህ ስላለህ አመሰግናለሁ።",
+    "en": "Thank you for being here.",
+    "kw": {
+     "አመሰግናለሁ": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "ተራብቻለሁ። እባክህ... የምመገበው ነገር።",
+    "en": "I am hungry. Please... something to eat.",
+    "kw": {
+     "ተራብቻለሁ": "I am hungry",
+     "እባክህ": "please"
+    }
+   },
+   {
+    "t": "ረሃብ... ብዙ ረሃብ።",
+    "en": "Hunger... much hunger.",
+    "kw": {
+     "ረሃብ": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "ተጠንቅቅ! እዚያ! ስጋት!",
+    "en": "Be careful! There! Danger!",
+    "kw": {
+     "ተጠንቅቅ": "be careful",
+     "ስጋት": "danger"
+    }
+   },
+   {
+    "t": "አሁን መሄድ አለብን!",
+    "en": "We must go now!",
+    "kw": {
+     "መሄድ": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "indonesian": {
+  "openers": [
+   {
+    "t": "Halo! Kamu... siapa namamu?",
+    "en": "Hello! You... what's your name?",
+    "kw": {
+     "Halo": "hello"
+    }
+   },
+   {
+    "t": "Hei... bisa bahasa Indonesia? Tidak? ...sialan.",
+    "en": "Hey... can you speak Indonesian? No? ...damn.",
+    "kw": {
+     "Tidak": "no"
+    }
+   },
+   {
+    "t": "Senang kamu di sini. Sungguhan.",
+    "en": "Glad you're here. Really.",
+    "kw": {
+     "Senang": "glad"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Punya makanan? Apa saja?",
+    "en": "Have food? Anything?",
+    "kw": {
+     "makanan": "food"
+    }
+   },
+   {
+    "t": "Kamu mengerti?",
+    "en": "Do you understand?",
+    "kw": {
+     "mengerti": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Ya, ya, betul.",
+    "en": "Yes, yes, right.",
+    "kw": {
+     "Ya": "yes"
+    }
+   },
+   {
+    "t": "Benar.",
+    "en": "Correct.",
+    "kw": {
+     "Benar": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Semuanya akan baik-baik saja.",
+    "en": "Everything will be just fine.",
+    "kw": {
+     "baik": "good"
+    }
+   },
+   {
+    "t": "Terima kasih sudah di sini.",
+    "en": "Thank you for being here.",
+    "kw": {
+     "Terima kasih": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Aku lapar. Tolong... sesuatu untuk dimakan.",
+    "en": "I'm hungry. Please... something to eat.",
+    "kw": {
+     "lapar": "hungry",
+     "Tolong": "please"
+    }
+   },
+   {
+    "t": "Lapar... sangat lapar.",
+    "en": "Hungry... very hungry.",
+    "kw": {
+     "lapar": "hungry"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Hati-hati! Di sana! Bahaya!",
+    "en": "Be careful! There! Danger!",
+    "kw": {
+     "Hati-hati": "careful",
+     "Bahaya": "danger"
+    }
+   },
+   {
+    "t": "Kita harus pergi. Sekarang!",
+    "en": "We have to go. Now!",
+    "kw": {
+     "pergi": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "norwegian": {
+  "openers": [
+   {
+    "t": "Hei! Du... hva heter du?",
+    "en": "Hi! You... what's your name?",
+    "kw": {
+     "Hei": "hi"
+    }
+   },
+   {
+    "t": "Hør... snakker du norsk? Nei? ...faen.",
+    "en": "Hey... do you speak Norwegian? No? ...damn.",
+    "kw": {
+     "Nei": "no"
+    }
+   },
+   {
+    "t": "Godt at du er her. Virkelig.",
+    "en": "Good that you're here. Really.",
+    "kw": {
+     "Godt": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Har du mat? Noe?",
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "mat": "food"
+    }
+   },
+   {
+    "t": "Forstår du?",
+    "en": "Do you understand?",
+    "kw": {
+     "Forstår": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Ja, ja, akkurat.",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Ja": "yes"
+    }
+   },
+   {
+    "t": "Stemmer.",
+    "en": "That's right.",
+    "kw": {
+     "Stemmer": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Alt blir bra.",
+    "en": "Everything will be good.",
+    "kw": {
+     "bra": "good"
+    }
+   },
+   {
+    "t": "Takk for at du er her.",
+    "en": "Thanks for being here.",
+    "kw": {
+     "Takk": "thanks"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Jeg er sulten. Vær så snill... noe å spise.",
+    "en": "I am hungry. Please... something to eat.",
+    "kw": {
+     "sulten": "hungry",
+     "Vær så snill": "please"
+    }
+   },
+   {
+    "t": "Sult... så mye sult.",
+    "en": "Hunger... so much hunger.",
+    "kw": {
+     "Sult": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Forsiktig! Der! Fare!",
+    "en": "Careful! There! Danger!",
+    "kw": {
+     "Forsiktig": "careful",
+     "Fare": "danger"
+    }
+   },
+   {
+    "t": "Vi må gå. Nå!",
+    "en": "We must go. Now!",
+    "kw": {
+     "gå": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "yoruba": {
+  "openers": [
+   {
+    "t": "Ẹ káàárọ̀! Ìwọ... kí ni orúkọ rẹ?",
+    "en": "Good morning! You... what is your name?",
+    "kw": {
+     "Ẹ káàárọ̀": "good morning"
+    }
+   },
+   {
+    "t": "Hẹ́y... ṣe o mọ̀ Yorùbá? Rárá? ...háà.",
+    "en": "Hey... do you know Yoruba? No? ...oh.",
+    "kw": {
+     "Rárá": "no"
+    }
+   },
+   {
+    "t": "Ó dára pé o wà níbí. Lóòótọ́.",
+    "en": "It's good that you're here. Truly.",
+    "kw": {
+     "dára": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Ṣe o ní oúnjẹ? Kínìkan?",
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "oúnjẹ": "food"
+    }
+   },
+   {
+    "t": "Ṣe o lóye?",
+    "en": "Do you understand?",
+    "kw": {
+     "lóye": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Bẹ́ẹ̀ ni, bẹ́ẹ̀ ni.",
+    "en": "That's it, that's it.",
+    "kw": {
+     "Bẹ́ẹ̀ ni": "yes"
+    }
+   },
+   {
+    "t": "Ó tọ́.",
+    "en": "It's correct.",
+    "kw": {
+     "tọ́": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Ohun gbogbo yóò dára.",
+    "en": "Everything will be good.",
+    "kw": {
+     "dára": "good"
+    }
+   },
+   {
+    "t": "Ẹ ṣeun pé o wà níbí.",
+    "en": "Thank you for being here.",
+    "kw": {
+     "Ẹ ṣeun": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Ebi ń pa mí. Ẹ jọ̀wọ́... nǹkan láti jẹ.",
+    "en": "Hunger is killing me. Please... something to eat.",
+    "kw": {
+     "Ebi": "hunger",
+     "Ẹ jọ̀wọ́": "please"
+    }
+   },
+   {
+    "t": "Ebi... ebi pupọ̀.",
+    "en": "Hunger... much hunger.",
+    "kw": {
+     "Ebi": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Ṣọ́ra! Níbẹ̀! Ewu!",
+    "en": "Be careful! There! Danger!",
+    "kw": {
+     "Ṣọ́ra": "be careful",
+     "Ewu": "danger"
+    }
+   },
+   {
+    "t": "A ní láti lọ. Nísinsìnyí!",
+    "en": "We have to go. Right now!",
+    "kw": {
+     "lọ": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "twi": {
+  "openers": [
+   {
+    "t": "Maakye! Wo... wo din de sɛn?",
+    "en": "Good morning! You... what is your name?",
+    "kw": {
+     "Maakye": "good morning"
+    }
+   },
+   {
+    "t": "Hei... wote Twi? Daabi? ...hai.",
+    "en": "Hey... do you hear Twi? No? ...oh.",
+    "kw": {
+     "Daabi": "no"
+    }
+   },
+   {
+    "t": "Ɛyɛ me anigye sɛ wowɔ ha. Nokorɛ.",
+    "en": "I'm happy you're here. Truly.",
+    "kw": {
+     "anigye": "happy"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Wowɔ aduane? Biribi?",
+    "en": "Do you have food? Something?",
+    "kw": {
+     "aduane": "food"
+    }
+   },
+   {
+    "t": "Wote aseɛ?",
+    "en": "Do you understand?",
+    "kw": {
+     "aseɛ": "understanding"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Yiw, yiw, pɛpɛɛpɛ.",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Yiw": "yes"
+    }
+   },
+   {
+    "t": "Ɛyɛ nokorɛ.",
+    "en": "It's the truth.",
+    "kw": {
+     "nokorɛ": "truth"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Biribiara bɛyɛ yie.",
+    "en": "Everything will be well.",
+    "kw": {
+     "yie": "well"
+    }
+   },
+   {
+    "t": "Medaase sɛ wowɔ ha.",
+    "en": "Thank you for being here.",
+    "kw": {
+     "Medaase": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Ɛkɔm de me. Mesrɛ... biribiara a medi.",
+    "en": "Hunger has caught me. I beg... something to eat.",
+    "kw": {
+     "Ɛkɔm": "hunger",
+     "Mesrɛ": "I beg"
+    }
+   },
+   {
+    "t": "Ɛkɔm... ɛkɔm kɛse.",
+    "en": "Hunger... big hunger.",
+    "kw": {
+     "Ɛkɔm": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Hwɛ yie! Hɔ! Ɔhaw!",
+    "en": "Watch well! There! Trouble!",
+    "kw": {
+     "Hwɛ yie": "watch well",
+     "Ɔhaw": "trouble"
+    }
+   },
+   {
+    "t": "Ɛsɛ sɛ yɛkɔ. Ntɛm!",
+    "en": "We must go. Quick!",
+    "kw": {
+     "kɔ": "to go"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
+ },
+ "swahili": {
+  "openers": [
+   {
+    "t": "Habari! Wewe... jina lako nani?",
+    "en": "Hello! You... what is your name?",
+    "kw": {
+     "Habari": "hello"
+    }
+   },
+   {
+    "t": "Hei... unasema Kiswahili? Hapana? ...lahaula.",
+    "en": "Hey... you speak Swahili? No? ...oh dear.",
+    "kw": {
+     "Hapana": "no"
+    }
+   },
+   {
+    "t": "Vizuri uwepo hapa. Kweli.",
+    "en": "Good that you're here. Truly.",
+    "kw": {
+     "Vizuri": "good"
+    }
+   }
+  ],
+  "questions": [
+   {
+    "t": "Una chakula? Chochote?",
+    "en": "Do you have food? Anything?",
+    "kw": {
+     "chakula": "food"
+    }
+   },
+   {
+    "t": "Unaelewa?",
+    "en": "Do you understand?",
+    "kw": {
+     "Unaelewa": "understand"
+    }
+   }
+  ],
+  "agree": [
+   {
+    "t": "Ndiyo, ndiyo, hasa.",
+    "en": "Yes, yes, exactly.",
+    "kw": {
+     "Ndiyo": "yes"
+    }
+   },
+   {
+    "t": "Sahihi.",
+    "en": "Correct.",
+    "kw": {
+     "Sahihi": "correct"
+    }
+   }
+  ],
+  "warm": [
+   {
+    "t": "Kila kitu kitakuwa sawa.",
+    "en": "Everything will be okay.",
+    "kw": {
+     "sawa": "okay"
+    }
+   },
+   {
+    "t": "Asante kwa kuwa hapa.",
+    "en": "Thanks for being here.",
+    "kw": {
+     "Asante": "thank you"
+    }
+   }
+  ],
+  "need_food": [
+   {
+    "t": "Nina njaa. Tafadhali... kitu cha kula.",
+    "en": "I have hunger. Please... something to eat.",
+    "kw": {
+     "njaa": "hunger",
+     "Tafadhali": "please"
+    }
+   },
+   {
+    "t": "Njaa... njaa sana.",
+    "en": "Hunger... big hunger.",
+    "kw": {
+     "njaa": "hunger"
+    }
+   }
+  ],
+  "need_danger": [
+   {
+    "t": "Tahadhari! Pale! Hatari!",
+    "en": "Caution! There! Danger!",
+    "kw": {
+     "Tahadhari": "caution",
+     "Hatari": "danger"
+    }
+   },
+   {
+    "t": "Lazima tuondoke. Sasa hivi!",
+    "en": "We must leave. Right now!",
+    "kw": {
+     "tuondoke": "we leave"
+    }
+   }
+  ],
+  "fewWords": [
+   "Hello?",
+   "Food?",
+   "Okay?"
+  ]
  }
 }
