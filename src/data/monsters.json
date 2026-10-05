@@ -1905,5 +1905,49 @@
       "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
+  },
+  {
+    "id": "ducks_in_a_row",
+    "name": "ducks in a row",
+    "emoji": "\ud83e\udd86",
+    "hp": [
+      15,
+      20
+    ],
+    "speed": 5,
+    "wave": 2,
+    "pack": 1,
+    "blocks": false,
+    "snake": {
+      "segments": 6,
+      "contactDamage": [
+        5,
+        8
+      ],
+      "splitOnBreak": true
+    },
+    "behavior": "snake",
+    "vibe": "a line of muscovy ducks, head to tail, moving as one. Break the line and you have two problems.",
+    "telegraph": "The ducks stop quacking. All heads turn toward you at once.",
+    "tactics": {
+      "observed": "Kill from the tail forward. Break the middle and it splits into two snakes.",
+      "slain": "Contact burns \u2014 every segment is a mouth. Don't let it touch you. Don't touch it."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 2
+    },
+    "edible": true,
+    "attack": {
+      "name": "bite",
+      "damage": [
+        5,
+        8
+      ],
+      "pattern": {
+        "type": "direct"
+      },
+      "telegraph": "The heads turn toward you."
+    }
   }
 ]

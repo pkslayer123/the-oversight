@@ -11872,7 +11872,37 @@
       // PACK SPAWN (Steve 2026-10-05): all members visible from the start,
       // on distinct tiles. No stacking — the pack reads as a pack immediately.
       const takenSpots = new Set([srcMx + ',' + srcMy, px + ',' + py]);
-      for (let i = 0; i < count; i++) {
+      // SNAKE SPAWN (Steve 2026-10-05): ducks in a row — segments in a line.
+      // Head at source, body trails behind. Each segment is a fighter.
+      if (mdef.snake) {
+        const segs = mdef.snake.segments || 6;
+        const snakeId = 'snake_' + Date.now();
+        // Line extends away from player
+        const dx = Math.sign(srcMx - px) || 1, dy = Math.sign(srcMy - py) || 0;
+        for (let i = 0; i < segs; i++) {
+          const sx = Math.max(0, Math.min(8, srcMx + dx * i));
+          const sy = Math.max(0, Math.min(8, srcMy + dy * i));
+          // If blocked, try adjacent
+          let fx = sx, fy = sy;
+          if (terrainBlocked(fx, fy) || takenSpots.has(fx + ',' + fy)) {
+            const alt = freeSpotNear(srcMx, srcMy, takenSpots);
+            fx = alt.x; fy = alt.y;
+          }
+          takenSpots.add(fx + ',' + fy);
+          const hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
+          fighters.push({
+            key: 'm_snake_' + i, kind: 'monster', monsterId: mdef.id,
+            name: this.monsterDisplayName(mdef.id) + (i === 0 ? ' (head)' : ` (${i + 1})`),
+            emoji: mdef.emoji || '🦆',
+            hp, maxHp: hp, speed: mdef.speed || 5, mx: fx, my: fy,
+            alive: true, fled: false, telegraph: null, mdef,
+            hesitate: 0, blind: 0, stunned: 0,
+            // Snake-specific
+            snakeId, segmentIndex: i, isHead: i === 0,
+            threatQueue: [],
+          });
+        }
+      } else for (let i = 0; i < count; i++) {
         const spot = i === 0 ? { x: srcMx, y: srcMy } : freeSpotNear(srcMx, srcMy, takenSpots);
         takenSpots.add(spot.x + ',' + spot.y);
         const hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
@@ -12642,6 +12672,10 @@
       const [lx, ly] = path[path.length - 1];
       const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [p.mx, p.my];
       this.state.scholar.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
+      // SNAKE CONTACT (Steve 2026-10-05): if you step onto a duck segment,
+      // it bites. Every segment touched = damage. (Snake moving onto you is
+      // handled in tbSnakeMove.)
+      this.tbSnakeContactDamage();
       // FLEE BY NODE BARRIER (Steve 2026-10-05): no FLEE button, no distance
       // check — you escape by LEAVING THE NODE. Walk to the grid edge and push
       // through to the adjacent node. 50% to lose them; otherwise they follow.
@@ -12941,6 +12975,112 @@
         if (this.tbEndCheck()) return;
       }
     },
+// SNAKE MOVEMENT (Steve 2026-10-05): ducks in a row.
+    // Head moves toward player (speed 5, scary fast). Segments follow the
+    // previous segment's position. Non-blocking (or it would wall you in).
+    tbSnakeMove(m) {
+    const f = this.tbfight;
+    if (!f || !m.alive) return;
+    // Only the head moves independently; segments follow in tbSnakeFollow
+    if (!m.isHead) return;
+    const p = this.tbFighter('p');
+    if (!p || !p.alive) return;
+    // Get all segments of this snake, in order
+    const segs = f.fighters
+      .filter(x => x.kind === 'monster' && x.alive && x.mdef && x.mdef.snake && x.snakeId === m.snakeId)
+      .sort((a, b) => a.segmentIndex - b.segmentIndex);
+    if (!segs.length) return;
+    // Record positions before move (for follow-the-leader)
+    const prevPos = segs.map(s => ({ x: s.mx, y: s.my }));
+    // Head moves toward player, up to speed tiles
+    const speed = m.speed || 5;
+    let hx = m.mx, hy = m.my;
+    for (let i = 0; i < speed; i++) {
+      const dx = Math.sign(p.mx - hx), dy = Math.sign(p.my - hy);
+      // Prefer the axis with greater distance
+      let nx = hx, ny = hy;
+      if (Math.abs(p.mx - hx) >= Math.abs(p.my - hy)) {
+      nx = hx + dx;
+      } else {
+      ny = hy + dy;
+      }
+      // Stay in bounds, avoid terrain (but NOT other segments — non-blocking)
+      if (nx < 0 || nx > 8 || ny < 0 || ny > 8) break;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[ny] && detail[nx];
+      if (cell && this.cellProps(cell).blocks) break;
+      hx = nx; hy = ny;
+      // Reached player? Stop (contact damage happens separately)
+      if (hx === p.mx && hy === p.my) break;
+    }
+    m.mx = hx; m.my = hy;
+    // Segments follow: each moves to the previous position of the one ahead
+    for (let i = 1; i < segs.length; i++) {
+      segs[i].mx = prevPos[i - 1].x;
+      segs[i].my = prevPos[i - 1].y;
+    }
+    },
+
+    // SNAKE SPLIT (Steve 2026-10-05): when a segment dies, check if it breaks
+    // the chain. If segments remain on BOTH sides of the break, the tail-side
+    // becomes a new snake (new snakeId, new head at the break point).
+    // Kill from the tail forward to avoid splits.
+    tbSnakeSplit(deadSeg) {
+    const f = this.tbfight;
+    if (!f) return;
+    const snakeId = deadSeg.snakeId;
+    const deadIdx = deadSeg.segmentIndex;
+    // Find surviving segments of this snake, sorted by index
+    const survivors = f.fighters
+      .filter(x => x.kind === 'monster' && x.alive && x.mdef && x.mdef.snake && x.snakeId === snakeId)
+      .sort((a, b) => a.segmentIndex - b.segmentIndex);
+    if (survivors.length < 2) return; // 0 or 1 left, no split possible
+    // Check if the break separates the chain
+    const before = survivors.filter(s => s.segmentIndex < deadIdx);
+    const after = survivors.filter(s => s.segmentIndex > deadIdx);
+    if (before.length && after.length) {
+      // SPLIT! The after-side becomes a new snake.
+      const newSnakeId = 'snake_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      // The first survivor after the break becomes the new head
+      after.sort((a, b) => a.segmentIndex - b.segmentIndex);
+      after[0].isHead = true;
+      // Reassign snakeId and reindex
+      after.forEach((s, i) => {
+      s.snakeId = newSnakeId;
+      s.segmentIndex = i;
+      s.isHead = (i === 0);
+      s.name = s.name.replace(/\(head\)|\(\d+\)/, i === 0 ? '(head)' : `(${i + 1})`);
+      });
+      // The before-side keeps the old snakeId, reindex not needed (still 0..n)
+      this.say(`🦆 The line breaks! The tail thrashes free — now there are TWO snakes.`);
+      this.audioEvent('snakeSplit');
+    }
+    // If only one side survives, no split — just a shorter snake.
+    // (The head-side keeps going; the tail-side is gone.)
+    },
+
+    // SNAKE CONTACT DAMAGE (Steve 2026-10-05): walking on a segment hurts.
+    // Every segment touching the player deals damage — whether you moved onto
+    // it or it moved onto you. This is the snake's main weapon.
+    tbSnakeContactDamage() {
+    const f = this.tbfight;
+    if (!f) return;
+    const p = this.tbFighter('p');
+    if (!p || !p.alive) return;
+    const touching = f.fighters.filter(x =>
+      x.kind === 'monster' && x.alive && !x.fled &&
+      x.mdef && x.mdef.snake &&
+      x.mx === p.mx && x.my === p.my
+    );
+    for (const seg of touching) {
+      const dmg = seg.mdef.snake.contactDamage;
+      const amount = dmg[0] + Math.floor(Math.random() * (dmg[1] - dmg[0]));
+      this.say(`🦆 The duck bites! (${amount} damage)`);
+      this.tbDamage('p', amount, 'duck bite', seg.key, { quiet: true });
+      if (!p.alive) break;
+    }
+    },
+
 
     tbDamage(targetKey, dmg, sourceLabel, sourceKey, opts) {
       const t = this.tbFighter(targetKey);
@@ -13058,6 +13198,12 @@
       }
       if (t.hp <= 0) {
         t.alive = false;
+        // SNAKE SPLIT (Steve 2026-10-05): kill a middle segment and the snake
+        // splits at the break. The tail-side becomes a new snake with its own
+        // head. Kill sequentially (tail first) to avoid this.
+        if (t.kind === 'monster' && t.mdef && t.mdef.snake && t.snakeId) {
+          this.tbSnakeSplit(t);
+        }
         if (t.kind === 'player') this.say('You go down.');
         else if (t.kind === 'villager') { this.say(`☠ ${t.name} falls.`); this.tbVillagerFalls(t);
           try { this.registerDeath({ kind: 'person', villagerId: t.villagerId, name: t.name, mx: t.mx, my: t.my, cause: 'combat', witnesses: this.fightWitnesses(t.villagerId) }); } catch (e) {} }
@@ -15271,9 +15417,20 @@
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
         }
       }
-      // PACK COHESION (Steve 2026-10-05): pack monsters stick together and
-      // surround. If too far from the pack centroid, step toward it. If close
-      // to the player, spread to surround (prefer tiles adjacent to player
+      // SNAKE MOVEMENT (Steve 2026-10-05): ducks in a row. The head moves toward
+      // the player (fast!); each segment follows the one ahead. Classic snake.
+      // Only the head decides — segments just follow. This runs INSTEAD of
+      // normal movement for snake segments.
+      if (m.mdef && m.mdef.snake) {
+        this.tbSnakeMove(m);
+        this.tbSnakeContactDamage();
+        this.tbRefreshTelegraphUI();
+        this.tbEndCheck();
+        return;
+      }
+    // PACK COHESION (Steve 2026-10-05): pack monsters stick together and
+    // surround. If too far from the pack centroid, step toward it. If close
+    // to the player, spread to surround (prefer tiles adjacent to player
       // that aren't occupied by packmates).
       if (m.mdef && m.mdef.pack > 1) {
         const packmates = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.id === m.mdef.id && x.key !== m.key);
