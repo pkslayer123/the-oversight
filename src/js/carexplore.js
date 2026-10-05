@@ -43,10 +43,14 @@
   if (!Game) return;
 
   // ---- deterministic hash for tile features ----
+  // FNV-1a: the old polynomial hash (h*31+c) differed by exactly the last
+  // digit between vertically adjacent cells, so h%100 for a whole column sat
+  // in a 7-wide window — features striped vertically (3 tracks cells in a
+  // column, a line of oldcamps). FNV avalanches; neighbors decorrelate.
   function hashStr(s) {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-    return Math.abs(h);
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
   }
 
   // ---- helpers ----
@@ -264,19 +268,23 @@
   // ================================================================
 
   // what the world hides: deterministic per tile so it's consistent.
+  // CURIOSITY DENSITY (tuned 2026-10-05): whispers must be invitations, not
+  // wallpaper. ~11 features/tile meant "disturbed ground" at every stop —
+  // obtrusive, against the standing rule that the cycling display stays
+  // unobtrusive. Halved: ~5 per tile, roughly one whisper every other stop.
   Game.tileFeature = function (nx, ny, cx, cy, cell) {
     const h = hashStr(`${nx},${ny},${cx},${cy}`) % 100;
     const isHaven = (nx === 3 && ny === 3);
     if (cell === 'dirt' || cell === 'grass') {
-      if (h < 12) return 'tracks';
-      if (h < 18 && !isHaven) return 'oldcamp';
-      if (h < 22) return 'strange';
+      if (h < 6) return 'tracks';
+      if (h < 9 && !isHaven) return 'oldcamp';
+      if (h < 11) return 'strange';
     } else if (cell === 'rubble') {
-      if (h < 8) return 'remnant';
+      if (h < 4) return 'remnant';
     } else if (cell === 'tree' || cell === 'bigtree') {
-      if (h < 5) return 'hollow';
+      if (h < 3) return 'hollow';
     } else if (cell === 'water') {
-      if (h < 6) return 'banktracks';
+      if (h < 4) return 'banktracks';
     }
     return null;
   };
