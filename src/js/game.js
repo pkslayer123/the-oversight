@@ -4467,49 +4467,78 @@
       for (let d = 0; d < daysToSim; d++) {
         // the land heals overnight, like it does between your days — then they work it
         try { this.regrowTiles(); } catch (e) {}
-        // forage: knowledge-scaled, like the player's village. Strangers in a
-        // strange land start near 60% self-sufficient and learn — the same
-        // learning curve, abstracted. Villages you meet late are LIVING places,
-        // not graveyards: they learned while you weren't looking.
-        const prof = village.knowledgeProfile || {};
-        const plantCount = Object.keys(prof.plants || {}).length;
-        const effKnow = Math.max(village.knowledge || 0, plantCount / 3);
-        const perPerson = (1500 + Math.random() * 700) * Math.min(1.8, 1 + 0.12 * effKnow);
-        const need = village.population * 2000;
-        // THE LAND SETS THE CEILING. They take what their turf grows — the
-        // rest is ranging, traps, and work the sim doesn't map, covering about
-        // 60% of need. Strangers start near 60% self-sufficient and learn.
-        // A stripped turf means lean days; lean days mean hunger.
-        const turf = this.turfKcal(village.x, village.y);
-        const fromTurf = Math.min(village.population * perPerson, turf);
-        const stillHungry = Math.max(0, need - fromTurf);
-        const ranged = Math.min(stillHungry, need * 0.6);
-        const forage = fromTurf + ranged;
-        village.pantryKcal += forage;
-        // they deplete the world near them (competition!) — what they took, in
-        // the same units the home village uses (1 stock ≈ 200 kcal)
-        this.depleteRandomTile(Math.ceil(fromTurf / 200), village.x, village.y);
-        // eat: 2000 per person
-        village.pantryKcal -= need;
-        // villages eat and share surplus — they don't hoard. 4 days' buffer, max.
-        village.pantryKcal = Math.min(village.pantryKcal, village.population * 8000);
-        // starvation: lean days cost people, slowly. Never below 6 — a village
-        // of six is the smallest viable peer: they can still trade, teach, and
-        // take you in. (The old sim never starved anyone; pantries ballooned.)
-        if (village.pantryKcal <= 0 && forage < need) {
-          village.pantryKcal = 0;
-          if (Math.random() < 0.3 && village.population > 6) {
-            village.population--;
-          }
-        }
-        // knowledge grows: they learn what they forage. SLOWLY, like real people.
-        // each day, small chance to deepen knowledge of a plant from their profile.
-        if (Math.random() < 0.3) {
-          this.villageLearn(village);
-        }
-        village.day++;
+        this.simVillageDay(village);
       }
       village.generated = true;
+    },
+
+    // simVillageDay: ONE lived day for a distant village — extracted from
+    // catchUpSim so the village you JOINED can live day-by-day while you're
+    // at their fire (see tickJoinedVillage). Same watermark (village.day),
+    // so catch-up and live ticks never double-count. Does NOT regrow tiles;
+    // callers own the regrow (catchUpSim per sim day, endDay once per day).
+    simVillageDay(village) {
+      // forage: knowledge-scaled, like the player's village. Strangers in a
+      // strange land start near 60% self-sufficient and learn — the same
+      // learning curve, abstracted. Villages you meet late are LIVING places,
+      // not graveyards: they learned while you weren't looking.
+      const prof = village.knowledgeProfile || {};
+      const plantCount = Object.keys(prof.plants || {}).length;
+      const effKnow = Math.max(village.knowledge || 0, plantCount / 3);
+      const perPerson = (1500 + Math.random() * 700) * Math.min(1.8, 1 + 0.12 * effKnow);
+      const need = village.population * 2000;
+      // THE LAND SETS THE CEILING. They take what their turf grows — the
+      // rest is ranging, traps, and work the sim doesn't map, covering about
+      // 60% of need. Strangers start near 60% self-sufficient and learn.
+      // A stripped turf means lean days; lean days mean hunger.
+      const turf = this.turfKcal(village.x, village.y);
+      const fromTurf = Math.min(village.population * perPerson, turf);
+      const stillHungry = Math.max(0, need - fromTurf);
+      const ranged = Math.min(stillHungry, need * 0.6);
+      const forage = fromTurf + ranged;
+      village.pantryKcal += forage;
+      // they deplete the world near them (competition!) — what they took, in
+      // the same units the home village uses (1 stock ≈ 200 kcal)
+      this.depleteRandomTile(Math.ceil(fromTurf / 200), village.x, village.y);
+      // eat: 2000 per person
+      village.pantryKcal -= need;
+      // villages eat and share surplus — they don't hoard. 4 days' buffer, max.
+      village.pantryKcal = Math.min(village.pantryKcal, village.population * 8000);
+      // starvation: lean days cost people, slowly. Never below 6 — a village
+      // of six is the smallest viable peer: they can still trade, teach, and
+      // take you in. (The old sim never starved anyone; pantries ballooned.)
+      if (village.pantryKcal <= 0 && forage < need) {
+        village.pantryKcal = 0;
+        if (Math.random() < 0.3 && village.population > 6) {
+          village.population--;
+        }
+      }
+      // knowledge grows: they learn what they forage. SLOWLY, like real people.
+      // each day, small chance to deepen knowledge of a plant from their profile.
+      if (Math.random() < 0.3) {
+        this.villageLearn(village);
+      }
+      village.day++;
+    },
+
+    // tickJoinedVillage: the village you joined lives TODAY — but only while
+    // you're actually at their fire. The pantry is physical; so is their life.
+    // (BUG 2026-10-05: a joined village never simmed while you lived there —
+    // ten people ate nothing for days; only your meal moved their pantry.)
+    tickJoinedVillage() {
+      const jvId = (this.state.scholar || {}).joinedVillage;
+      if (!jvId) return;
+      const jv = (this.state.otherVillages || []).find(x => x.id === jvId);
+      if (!jv) return;
+      const d = Math.abs((jv.x || 0) - ((this.map && this.map.px) || 0)) +
+                Math.abs((jv.y || 0) - ((this.map && this.map.py) || 0));
+      if (d > 1) return; // not there — no life, no meal (see villageMeal gate)
+      if (!jv.generated) {
+        // first sight: catch-up covers every day through today
+        try { this.catchUpSim(jv); } catch (e) {}
+        return;
+      }
+      this.simVillageDay(jv);
     },
 
     // genVillageKnowledgeProfile: what does this village know?
@@ -11959,26 +11988,33 @@
     // check-ins: you stay a member while away; you just don't get fed.)
     villageMeal() {
       const scholar = this.state.scholar;
-      if (!scholar.joinedVillage && !this.pantryInReach()) {
+      // JOINED VILLAGE: their pantry is physical too — you only eat from it
+      // when you're actually at their fire. (BUG 2026-10-05: the joined meal
+      // drew from the joined pantry from anywhere on the map, including while
+      // standing in Haven's hall. No teleporting food.)
+      const jv = scholar.joinedVillage
+        ? (this.state.otherVillages || []).find(x => x.id === scholar.joinedVillage)
+        : null;
+      const atJv = jv && this.map &&
+        (Math.abs((jv.x || 0) - this.map.px) + Math.abs((jv.y || 0) - this.map.py) <= 1);
+      // If you joined another village, you eat from THEIR pantry — at their fire.
+      if (jv && atJv) {
+        // other villages use pantryKcal (abstract). Convert to meal.
+        const meal = Math.min(2000, jv.pantryKcal || 0);
+        jv.pantryKcal = Math.max(0, (jv.pantryKcal || 0) - meal);
+        scholar.kcal = Math.min((scholar.kcal || 0) + meal, 3000);
+        this.say(`Village meal at ${jv.name}: +${Math.round(meal)} kcal.`);
+        return;
+      }
+      // Away from every fire — joined or not — you camp wild.
+      if (!this.pantryInReach()) {
         this.say('You camp wild tonight — no pantry meal. Eat from your pack.');
         return null;
       }
-      // If you joined another village, you eat from THEIR pantry.
-      let v = this.state.village;
-      let pantry = v.pantry || [];
-      if (scholar.joinedVillage) {
-        const jv = (this.state.otherVillages || []).find(x => x.id === scholar.joinedVillage);
-        if (jv) {
-          // other villages use pantryKcal (abstract). Convert to meal.
-          const meal = Math.min(2000, jv.pantryKcal || 0);
-          jv.pantryKcal = Math.max(0, (jv.pantryKcal || 0) - meal);
-          scholar.kcal = Math.min((scholar.kcal || 0) + meal, 3000);
-          this.say(`Village meal at ${jv.name}: +${Math.round(meal)} kcal.`);
-          return;
-        }
-      }
       // your share: 2000 kcal (a day's food), scaled by trust
       // trust < 30: half ration (they're watching you). 30+: full. 60+: full + bonus.
+      const v = this.state.village;
+      const pantry = v.pantry || [];
       const trust = v.trust && v.trust[scholar.villagerId] !== undefined ? v.trust[scholar.villagerId] : 10;
       const share = trust < 30 ? 1000 : trust < 60 ? 2000 : 2200;
       // don't take more than you can hold — food doesn't vanish into the cap
@@ -12020,7 +12056,11 @@
         // AWAY PLAYER: not at haven → neither foraging for the pot nor eating
         // from it today. The pantry is physical; your dawn meal is gated the
         // same way (see villageMeal). NPC roster members live at haven.
-        if (id === this.villagerId && !this.state.scholar.joinedVillage && !this.pantryInReach()) continue;
+        // JOINED ELSEWHERE counts as away: living at another village's fire
+        // means your hands work THEIR pot, not Haven's. (BUG 2026-10-05: a
+        // joined player ate the joined village's meals while their labor
+        // still fed home — food from two fires.)
+        if (id === this.villagerId && !this.pantryInReach()) continue;
         const person = this.data.villagers.find(p => p.id === id) || this.data.background_survivors.find(p => p.id === id);
         if (!person) continue;
         const health = (v.health && v.health[id] !== undefined) ? v.health[id] : 100;
@@ -12260,6 +12300,10 @@
       // the village eats whether you're there or not — every day you're out, the
       // mouths at home. YOUR meal is physical: villageMeal only serves at haven
       // (see the gate there); the away player's roster draw is skipped too.
+      // JOINED VILLAGE: while you're one of them and at their fire, THEIR day
+      // sims too — they forage, eat, starve, learn. Before, only your meal
+      // moved their pantry; ten people lived on nothing.
+      try { this.tickJoinedVillage(); } catch (e) {}
       this.villageMeal();
       this.villageLives();
       this.villageEats();
@@ -12496,7 +12540,7 @@
     startCombat(monsterId) {
       const s = this.state.scholar;
       const px = s.mx ?? 4, py = s.my ?? 4;
-      const mdef = this.data.monsters.find(m => m.id === (monsterId || 'thornback_boar')) || this.data.monsters[0];
+      const mdef = this.data.monsters.find(m => m.id === (monsterId || 'bulldozer')) || this.data.monsters[0];
       // FIRST-CONTACT FLASH (Steve 2026-10-05): after the System comes online,
       // the first encounter with a monster species flashes a freaky pixelated
       // rendition on the HUD. Horror beyond emoji. Triggered here, rendered by app.js.
@@ -14165,7 +14209,7 @@
     // MONSTER BATCH 1 (The Beasts): id predicates for the bespoke encounter
     // layer. Each plugs into the shared FIFO/phase/telegraph machinery — no
     // parallel systems, just per-id personality. (Follows the deerIs pattern.)
-    boarIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'thornback_boar')); },
+    boarIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'bulldozer')); },
     wolfIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hushwolf')); },
     heronIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'white_noise_heron')); },
     turtleIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'speedbump_turtle')); },

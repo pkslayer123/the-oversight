@@ -412,10 +412,11 @@ Append-only. Each entry: date, decision, why, alternatives considered. This is t
 
 - **Decision:** Monsters carry **folk names** given by humans; the System uses clinical (wrong) designations because it doesn't know it messed up. The Codex lists the folk name primary; the System designation appears as footnote comedy. New rule: **the discoverer names the animal** — completing a Codex entry grants naming rights (player-facing reward; starter set pre-named by earlier survivors).
 - **Why:** Steve: "Maybe the humans name the animals? The aliens don't know they messed up." The naming contrast IS the joke, and folk names encode warnings ("HIGHBEAM!" means move).
-- **Renames:**
-  - Gallowdeer → **Highbeam Deer** (System: "Odocoileus virginianus (standard)")
-  - Thornback Boar → **Bulldozer** (System: "Sus scrofa (standard)")
-  - Hushwolf → **Hushpuppy** (System: "Canis familiaris (standard)")
+- **Display names vs IDs (Steve 2026-10-05 cleanup):** The `name` field is what players see. The `id` field is the stable internal key — it does NOT need to match the name. Do not "rename" IDs to match names; it breaks saves and codex entries. The mapping is:
+  - `gallowdeer` → "Highbeam Deer"
+  - `bulldozer` → "Bulldozer" (ID renamed from `thornback_boar` 2026-10-05 — only 4 refs, safe)
+  - `hushwolf` → "Hushpuppy"
+  - etc. (see monsters.json for the full mapping)
 - **Convention:** folk names are descriptive, wry, warning-encoded. Survivors cope by naming scary things funny — "the hushpuppies got Joren" is darkly funny and instantly communicative.
 
 ## 2026-10-03 — Slice 1 built: "Seven Days" playable

@@ -3904,7 +3904,7 @@
     if (st.pendingEncounter) {
       // NAME DISCIPLINE (Steve): never the true name pre-naming. Village-agreed
       // name wins, else the strange descriptor — same rule as the grid popup.
-      const pmid = Game.pendingMonsterId || 'thornback_boar';
+      const pmid = Game.pendingMonsterId || 'bulldozer';
       const praw = (Game.monsterDisplayName ? Game.monsterDisplayName(pmid) : null) || 'something big';
       const pname = praw[0].toUpperCase() + praw.slice(1);
       return `
