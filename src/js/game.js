@@ -12089,7 +12089,9 @@
         else this.say('The beam swings wide, scorching the earth where you were.');
       }
       // ANTLER SWEEP (close range): closing in to disrupt is risky.
-      if (this.tbAntlerThrash(m)) return;
+      // During the beam, the thrash is a bonus punish — the beam still fires.
+      this.tbAntlerThrash(m);
+      if ((this.tbfight || {}).over) return;
       // AUDIO: the hum hunts with the beam — pan follows it across the stereo
       // field, heat rises as the aim closes in on the player.
       try {
@@ -12183,6 +12185,7 @@
     tbAntlerThrash(m) {
       const f = this.tbfight;
       if (!f) return false;
+      let hit = false;
       for (const o of f.fighters) {
         if (!o.alive || o.fled || o.key === m.key) continue;
         if (!S.combat.isFoe(m, o)) continue;
@@ -12191,9 +12194,10 @@
         const who = o.kind === 'player' ? 'you' : o.name;
         this.say(`The ${m.name} thrashes its antlers at ${who} — getting close has a price. (${d})`);
         this.tbDamage(o.key, d, m.name + "'s antlers");
+        hit = true;
         if (f.over) return true;
       }
-      return f.over;
+      return hit;
     },
 
     // tbHasEscape: can this fighter reach any cell outside the lane within
@@ -13970,6 +13974,14 @@
       const isDeer = this.deerIs(m);
       const useFifo = this.encUsesFifo(m);
       if (useFifo) this.encScanThreats(m);
+      // HIGHBEAM (Steve 2026-10-05): closing in is risky EVERY turn, not just
+      // while the beam fires. The antlers thrash anyone adjacent IN ADDITION
+      // to whatever the deer is doing — you take damage standing next to it
+      // AND the beam keeps coming. You get in, you hit, you get OUT.
+      if (isDeer && m.beamPhase !== 'firing') {
+        this.tbAntlerThrash(m);
+        if (this.tbEndCheck()) return;
+      }
       // BUNKER (speedbump): sealed in its shell. It doesn't act — it waits
       // you out. Nearly invulnerable; the answer is patience, not force.
       if (this.turtleIs(m) && (m.turtleBunker || 0) > 0) {
