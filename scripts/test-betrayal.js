@@ -331,6 +331,75 @@ function band(name, v, lo, hi) {
   ok('invite choice surfaces', ch.some(c => c.id === 'betrayal:accept'));
   Game.inviteHistory(inv).pending = null;
 
+  // ---------- 15. NPC-targeted plots spring on their own; stale plots expire ----------
+  // NOTE: the polarity pin above starts a FRESH game, so the `v` captured at the
+  // top of this file is stale from here on. Use live references.
+  const liveBs = () => Game.betrayalState();
+  const liveNpcs = () => Game.state.village.roster.filter(id => id !== Game.villagerId);
+  liveBs().plots.length = 0;
+  const realConsider = Game.considerBetrayalPlot;
+  Game.considerBetrayalPlot = () => {}; // keep organic arming out of the measurement
+  const nn2 = liveNpcs();
+  // spring: arm several NPC plots, run the daily tick — at least one springs
+  // (p=0.45 each; P(all hold) ~ 1e-5, no flake)
+  const springers = [];
+  for (let i = 0; i < 12; i++) {
+    const t = nn2[i % nn2.length];
+    const others = nn2.filter(id => id !== t);
+    const p = Game.armPlot(others[0], [others[1], others[2]], t, { score: 60, reasons: ['grievance'] });
+    Game.inviteHistory(p.inviter).pending = null;
+    springers.push(p);
+  }
+  const casesBefore = liveBs().cases.length;
+  Game.state.scholar.day++;
+  Game.betrayalDaily(); // wires npcPlotTick
+  const sprung = springers.filter(p => p.sprung);
+  ok('NPC plots spring via daily tick', sprung.length > 0);
+  ok('spring opens a case', liveBs().cases.length > casesBefore);
+  const sc = liveBs().cases[liveBs().cases.length - 1];
+  ok('NPC case has cover story', !!sc.coverStory);
+  ok('NPC case has planted inconsistencies', (sc.inconsistencies || []).length === 2);
+  ok('NPC case has discovery path', typeof sc.playerHeardDay === 'number');
+  ok('sprung plots free the slot', sprung.every(p => p.active === false));
+  // player-targeted plots do NOT spring on their own (only via acceptInvite)
+  liveBs().plots.length = 0;
+  const pp = Game.armPlot(nn2[0], [nn2[1], nn2[2]], Game.villagerId, { score: 60, reasons: ['grievance'] });
+  Game.inviteHistory(pp.inviter).pending = null;
+  Game.state.scholar.day++;
+  Game.betrayalDaily();
+  ok('player plot does not self-spring', pp.sprung === false && pp.active === true);
+  // stale plots expire — NPC and player alike — and free the single-plot slot
+  pp.day = Game.state.scholar.day - 10;
+  const sp2 = Game.armPlot(nn2[0], [nn2[1], nn2[2]], nn2[3], { score: 60, reasons: ['grievance'] });
+  Game.inviteHistory(sp2.inviter).pending = null;
+  sp2.day = Game.state.scholar.day - 10;
+  Game.state.scholar.day++;
+  Game.betrayalDaily();
+  ok('stale player plot expires', pp.expired === true && pp.active === false && pp.resolved === true);
+  ok('stale NPC plot expires', sp2.expired === true && sp2.active === false);
+  ok('expired plots free the single-plot slot', !liveBs().plots.some(p => p.active && !p.resolved));
+  Game.considerBetrayalPlot = realConsider;
+
+  // ---------- 16. whoTag: multi-actor dialogue never collapses to "A" ----------
+  const wA = Game.whoTag(nn2[0]), wB = Game.whoTag(nn2[1]);
+  ok('whoTag is not a bare article', wA !== 'A' && wA.length > 2);
+  ok('whoTag carries age/gender info', /woman|man|person/.test(wA) && /\d0s/.test(wA));
+  ok('whoTag player is you', Game.whoTag(Game.villagerId) === 'you');
+  Game.state.systemArrived = true;
+  ok('whoTag post-System is first name', Game.whoTag(nn2[0]) === Game.npcName(nn2[0]));
+  Game.state.systemArrived = false;
+  // the press line names two distinct, trackable speakers
+  liveBs().plots.length = 0;
+  const qp = Game.armPlot(nn2[0], [nn2[1], nn2[2]], nn2[3], { score: 70, reasons: ['grievance'] });
+  Game.inviteHistory(qp.inviter).pending = null;
+  const qr = Game.springAmbush(qp);
+  const qc = Game.getCase(qr.caseId);
+  const saidBefore = said.length;
+  Game.pressAccomplice(qc.id, qc.accused[0]);
+  const pressLine = said.slice(saidBefore).join(' ');
+  ok('press line names a trackable speaker', pressLine.includes(Game.whoTag(qc.accused[0])));
+  ok('press line has no "A says" collapse', !/ A says /.test(pressLine));
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('HARNESS ERROR', e); process.exit(2); });
