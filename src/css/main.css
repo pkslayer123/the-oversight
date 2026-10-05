@@ -113,8 +113,8 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .mapoverlay-back { position: absolute; inset: 0; background: rgba(0,0,0,.7); }
 .mapoverlay-box { position: relative; background: var(--bg, #0a0c10); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-width: 90vw; }
 .mapoverlay-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
-.detail { margin: 8px 0; }
-.drow { display: flex; justify-content: center; }
+.detail { margin: 8px 0; width: 100%; }
+.drow { display: flex; width: 100%; }
 /* ============ D-PAD (walk pad) ============
    Primary movement: 8 directions, one press = one animated step. The pad
    floats over the grid's bottom-right (the thumb zone), never pushing layout
@@ -177,7 +177,7 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 /* 9x9 detail grid: FLUID — fills the column on any screen. Cells scale with
    the viewport; emoji scale with the cell (em-based children below). */
 .cell {
-  flex: 1 1 0; min-width: 0; aspect-ratio: 1;
+  flex: none; width: calc(100% / 9); aspect-ratio: 1;
   display: flex; align-items: center; justify-content: center;
   font-size: clamp(16px, 5.2vw, 44px);
   border: 1px solid transparent; border-radius: 4px;
@@ -781,10 +781,11 @@ body.in-combat .ord-log { order: 5.3; }
 .dlg-x { background: none; border: none; color: inherit; opacity: .6; font-size: 14px; padding: 2px 6px; cursor: pointer; }
 .dlg-hist { background: none; border: none; color: inherit; font: inherit; font-weight: bold; font-size: 13px; padding: 2px 4px; cursor: pointer; text-align: left; }
 /* HISTORY (Steve 2026-10-05): the full conversation, scrollable inside the box.
-   The box stays one screen; only the history pane scrolls, and only when open. */
-.dlg-history { max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+   The box stays one screen; only the history pane scrolls, and only when open.
+   Tall enough to actually read — 45vh, not a peephole. */
+.dlg-history { max-height: 45vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .dlg-history .dlg-line { min-height: 0; margin-bottom: 8px; }
-.dlg-line { min-height: 40px; }
+.dlg-line { min-height: 40px; max-height: 30vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .dlg-line.narr { opacity: .85; font-style: italic; }
 .dlg-who { font-weight: bold; }
 .dlg-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -992,3 +993,23 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
    content — the buttons area scrolls internally instead of clipping
    cards below the fold. */
 .sheet-btns { overflow-y: auto; min-height: 0; }
+
+/* FIRST-CONTACT MONSTER FLASH (Steve 2026-10-05): freaky pixelated horror.
+   Fullscreen, brief, auto-dismisses. The canvas is low-res scaled up with
+   pixelation; scanlines via CSS, slice/RGB glitch via JS. */
+#mflash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+#mflash.mflash-out { opacity: 0; }
+#mflash-cv {
+  image-rendering: pixelated;
+  filter: contrast(1.3) brightness(1.1);
+}
+.mflash-scan {
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.35) 2px 4px);
+}

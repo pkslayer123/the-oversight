@@ -25,6 +25,69 @@
   const screen = document.getElementById('screen');
   const toastEl = document.getElementById('toast');
 
+  // FIRST-CONTACT MONSTER FLASH (Steve 2026-10-05): freaky pixelated rendition
+  // flashes on the HUD on first encounter (after System online). Horror beyond emoji.
+  // Renders the monster emoji to a tiny canvas, scales up with pixelation, then
+  // glitches: RGB split, slice displacement, scanlines, flicker. Auto-dismisses.
+  window.__monsterFlash = function (monsterId, emoji) {
+    // Don't stack flashes.
+    if (document.getElementById('mflash')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'mflash';
+    overlay.innerHTML = '<canvas id="mflash-cv"></canvas><div class="mflash-scan"></div>';
+    document.body.appendChild(overlay);
+    const cv = document.getElementById('mflash-cv');
+    const ctx = cv.getContext('2d');
+    // Low-res source for pixelation.
+    const SRC = 32;
+    cv.width = SRC; cv.height = SRC;
+    ctx.font = '28px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(emoji || '👹', SRC / 2, SRC / 2 + 2);
+    // Display canvas scaled up with pixelation via CSS.
+    cv.style.width = 'min(70vw, 280px)';
+    cv.style.height = 'min(70vw, 280px)';
+    // Glitch loop: ~1.4s of horror.
+    const start = performance.now();
+    const DUR = 1400;
+    // Audio sting: use existing combat/horror sound if available.
+    try { if (Game.audio && Game.audio.horrorSting) Game.audio.horrorSting(); } catch (e) {}
+    function frame(now) {
+      const t = now - start;
+      if (t >= DUR) {
+        overlay.classList.add('mflash-out');
+        setTimeout(() => overlay.remove(), 300);
+        return;
+      }
+      // Flicker: random opacity dips.
+      overlay.style.opacity = Math.random() < 0.12 ? '0.3' : '1';
+      // Slice displacement: draw horizontal slices offset randomly.
+      ctx.clearRect(0, 0, SRC, SRC);
+      ctx.font = '28px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const slices = 6;
+      for (let i = 0; i < slices; i++) {
+        const sy = (SRC / slices) * i;
+        const off = Math.random() < 0.4 ? (Math.random() - 0.5) * 8 : 0;
+        ctx.save();
+        ctx.beginPath(); ctx.rect(0, sy, SRC, SRC / slices); ctx.clip();
+        ctx.fillText(emoji || '👹', SRC / 2 + off, SRC / 2 + 2);
+        ctx.restore();
+      }
+      // RGB split: occasional chromatic aberration via shadow.
+      if (Math.random() < 0.3) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.shadowColor = '#ff0040'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 2;
+        ctx.fillText(emoji || '👹', SRC / 2, SRC / 2 + 2);
+        ctx.shadowColor = '#00ffff'; ctx.shadowOffsetX = -2;
+        ctx.fillText(emoji || '👹', SRC / 2, SRC / 2 + 2);
+        ctx.restore();
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  };
+
   function toast(msg) {
     toastEl.textContent = msg;
     toastEl.classList.remove('hidden');
@@ -3195,6 +3258,11 @@
               foodBtns += ` <button class="btn ghost sm" data-rush="${idx}">Rush it</button>`;
               foodBtns += ` <button class="btn ghost sm" data-watch="${idx}">Watch the fauna</button>`;
             }
+            // UNKNOWN MONSTER MEAT (Steve 2026-10-05): if you don't know it's safe,
+            // you can test it — cautiously (honest risk) or not. This is how you learn.
+            if (i.foodKind === 'meat' && i.edible === false) {
+              foodBtns += ` <button class="btn ghost sm" data-meattest="${idx}">Test cautiously</button>`;
+            }
             if (i.foodState === 'carcass') {
               if (Game.knowsTechnique && Game.knowsTechnique('clean')) {
                 foodBtns += Game.hasCuttingTool()
@@ -3214,7 +3282,7 @@
             // note: data-cook below covers cookable via the extended condition
             i._cookable = cookable;
           } catch (e) {}
-          return `<p class="small">${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.kcalEach || 0) * i.units} kcal)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
+          return `<p class="small">${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.foodKind === "meat" && i.edible === false) ? "?" : (i.kcalEach || 0) * i.units} kcal)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
@@ -3238,6 +3306,8 @@
     slot.querySelectorAll('[data-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.cook), 'Cooked.'));
     // FOOD REALITY: processing buttons.
     slot.querySelectorAll('[data-shell]').forEach(b => b.onclick = rewire(() => Game.shellNuts(+b.dataset.shell), 'Shelled.'));
+    // UNKNOWN MEAT: test cautiously to learn if it's food.
+    slot.querySelectorAll('[data-meattest]').forEach(b => b.onclick = rewire(() => Game.testMonsterMeat(+b.dataset.meattest, packOf()), 'Tested.'));
     // FIELD IDENTIFICATION: the cautious test works from the pack, anywhere.
     const packOf = () => Game.state.scholar.inventory;
     slot.querySelectorAll('[data-test]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.test, {}, packOf()), 'Tested.'));

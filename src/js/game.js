@@ -9303,7 +9303,7 @@
       const actions = [];
       // monster here? decision.
       const mon = this.state.scholar.monster;
-      if (mon && mon.x === cx && mon.y === cy) actions.push('Fight');
+      if (mon && mon.mx === cx && mon.my === cy) actions.push('Fight');
       // animal here? decision.
       const an = this.state.scholar.animal;
       if (an && an.mx === cx && an.my === cy) actions.push('Hunt');
@@ -12490,6 +12490,13 @@
       const s = this.state.scholar;
       const px = s.mx ?? 4, py = s.my ?? 4;
       const mdef = this.data.monsters.find(m => m.id === (monsterId || 'thornback_boar')) || this.data.monsters[0];
+      // FIRST-CONTACT FLASH (Steve 2026-10-05): after the System comes online,
+      // the first encounter with a monster species flashes a freaky pixelated
+      // rendition on the HUD. Horror beyond emoji. Triggered here, rendered by app.js.
+      const codexStage = (this.state.codex.monsters[mdef.id] || {}).stage;
+      if (this.state.systemArrived && !codexStage && typeof window !== 'undefined' && window.__monsterFlash) {
+        try { window.__monsterFlash(mdef.id, mdef.emoji || '👹'); } catch (e) {}
+      }
       // VETERAN VARIANT (Steve 2026-10-05): old-wave monsters in a new wave
       // are hardened. +50% HP, +3 damage, +1 speed. They've survived too.
       const isVeteran = (s.monster && s.monster.veteran) || false;
@@ -16384,7 +16391,26 @@
           const rdef = this.data.items.find(i => i.id === (r.itemId || r.id));
           if (rdef && rdef.class === 'sentimental') {
             r.bond = (r.bond || 0) + 3;
-            this.say(`You clutch your ${r.name}. You're still here. (Bond +3)`);
+          }
+        }
+        // BOND PERCEPTION (Steve 2026-10-05): the bond grows whether you
+        // understand it or not — but you only PERCEIVE it with knowledge.
+        // Before the System teaches resonance harmonics, it's just clutching
+        // something that matters. After, you feel the math. One line, not a
+        // flood — and never raw "+3" spam.
+        {
+          const kept = this.relicItems().filter(r => {
+            const rd = this.data.items.find(i => i.id === (r.itemId || r.id));
+            return rd && rd.class === 'sentimental';
+          });
+          if (kept.length) {
+            const names = kept.map(r => r.name).join(', ');
+            if (this.sentimentTaught && this.sentimentTaught()) {
+              const total = kept.reduce((s, r) => s + (r.bond || 0), 0);
+              this.say(`You clutch your ${names}. You're still here. The resonance deepens. (bond ${total})`);
+            } else {
+              this.say(`You clutch your ${names}. You're still here.`);
+            }
           }
         }
       } else if (result === 'routed') {
@@ -16579,6 +16605,38 @@
     plantKnown(pid) {
       const e = (this.state.codex.plants || {})[pid];
       return !!(e && e.level >= 1);
+    },
+    // MONSTER FOOD SAFETY (Steve 2026-10-05): if you don't know it's safe,
+    // the UI doesn't show edibility or calories. Learned via cautious testing,
+    // villager word-of-mouth, or Codex. Stored on the monster codex entry.
+    monsterFoodSafe(mid) {
+      const e = (this.state.codex.monsters || {})[mid];
+      return !!(e && e.foodSafe);
+    },
+    markMonsterFoodSafe(mid, how) {
+      if (!this.state.codex.monsters) this.state.codex.monsters = {};
+      const e = this.state.codex.monsters[mid] || {};
+      e.foodSafe = true;
+      e.foodSafeHow = how || 'tested';
+      this.state.codex.monsters[mid] = e;
+      // Reveal any matching meat already in inventory: now that you know,
+      // the UI can show it. (Steve 2026-10-05: if you don't know, it doesn't show;
+      // once you know, it does.)
+      const reveal = (cont) => {
+        if (!cont) return;
+        for (const it of cont) {
+          if (!it || it.foodKind !== 'meat') continue;
+          const id = (it.plantId || '').replace(/^meat_/, '');
+          if (id === mid && !it.edible) {
+            const gross = it.hiddenKcal || 0;
+            const per = Math.round(gross * 0.40 / 4); // standard yield
+            it.edible = true;
+            it.kcalEach = per;
+            it.prep = '⚠️ Risky: raw meat. Cook it, or preserve it. Spoils in ~2 days.';
+          }
+        }
+      };
+      reveal(this.state.scholar.inventory);
     },
     plantLevel(pid) {
       const e = (this.state.codex.plants || {})[pid];

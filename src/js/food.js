@@ -1,3 +1,17 @@
+// @ontology
+// system: food
+// description: Food reality system. Food must be known-edible AND in edible state. Processing changes net calories.
+// provides:
+//   - foodMarker()
+//   - cleanCarcass()
+//   - cookFood()
+//   - preserveFood()
+// rules:
+//   - raw_penalty: true (code: food.js)
+//   - processing_required: true (code: food.js)
+// consumes:
+//   - scholar.inventory
+//   - state.codex.plants
 /* FOOD REALITY SYSTEM
  *
  * Steve's design: the foraging loop felt like "wander out there and grab
@@ -372,9 +386,22 @@
         // yield: known 40%, blind-messy 30%. 4 portions.
         const yfrac = knows ? 0.40 : 0.30;
         const per = Math.round(gross * yfrac / 4);
-        it.foodKind = 'meat'; it.foodState = 'cleaned'; it.edible = true;
+        // MONSTER MEAT (Steve 2026-10-05): if you don't know it's safe, it doesn't show.
+        // Weight is honest (kg always visible). Edibility and calories stay hidden
+        // until you've learned this creature is food — via cautious testing,
+        // a villager's word, or the Codex. No free knowledge from the UI.
+        const meatId = (it.plantId || '').replace(/^meat_/, '');
+        const isMonsterMeat = (this.data.monsters || []).some(m => m.id === meatId);
+        const foodSafe = !isMonsterMeat || this.monsterFoodSafe(meatId);
+        it.foodKind = 'meat'; it.foodState = 'cleaned';
+        it.edible = foodSafe;
         it.units = 4; it.unit = 'portion';
-        it.kcalEach = per; it.hiddenKcal = gross; // full gross remembered for cooking
+        // Calories hidden until known-safe. The gross is remembered for when you learn.
+        it.kcalEach = foodSafe ? per : 0;
+        it.hiddenKcal = gross; // full gross remembered for cooking
+        if (!foodSafe) {
+          it.prep = '⚠️ Unknown flesh. You have no idea if this is food or poison. Test it cautiously, or ask someone who knows.';
+        }
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
         it.spoilDay = this.state.scholar.day + 2;
         it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '') + ' (cleaned)';
@@ -772,6 +799,55 @@
     // identify it. Knowledge must ENTER the system: cautious testing (always
     // available), watching animals (a hint, not proof), arriving with it
     // (backgrounds), books. The System names but never feeds.
+
+    // testMonsterMeat(idx, container): the cautious protocol for unknown flesh.
+    // (Steve 2026-10-05): if you don't know it's safe, it doesn't show as food.
+    // This is how you learn — inspect, smell, tiny taste, wait. Honest risk:
+    // some monsters are poison. Costs time. Rushing is not offered; this one
+    // you do right or not at all.
+    testMonsterMeat(idx, container) {
+      const cont = container || this.state.scholar.inventory;
+      const it = cont[idx];
+      if (!it || it.foodKind !== 'meat' || it.edible !== false) {
+        this.say('Nothing to test there.');
+        return null;
+      }
+      const mid = (it.plantId || '').replace(/^meat_/, '');
+      const mdef = (this.data.monsters || []).find(m => m.id === mid);
+      const mname = mdef ? mdef.name : 'unknown creature';
+      if (this.monsterFoodSafe(mid)) {
+        this.say('You already know this one is food.');
+        return null;
+      }
+      this.say(`You set aside time with the ${mname} flesh. Look, smell, touch — then the smallest taste, and wait. This is how you learn without dying.`);
+      this.tickAction(8);
+      // Is this monster's flesh actually safe? Check the monster definition.
+      // Most are edible; some (belltoad, etc.) are toxic.
+      const toxic = mdef && (mdef.toxicFlesh || mid === 'belltoad');
+      if (toxic) {
+        // Honest failure: you learn it's poison. Small dose, bad lesson.
+        const s = this.state.scholar;
+        s.energy = Math.max(0, (s.energy || 100) - 30);
+        this.say('Your tongue goes numb. Your stomach heaves. NOT food — the lesson is learned the hard way. (-30 energy)');
+        this.say(`The Codex notes: ${mname} flesh is POISON. You will not make this mistake twice.`);
+        // Mark as known-poison (not safe, but known — UI can show "poison, not food").
+        if (!this.state.codex.monsters) this.state.codex.monsters = {};
+        const e = this.state.codex.monsters[mid] || {};
+        e.foodSafe = false;
+        e.foodTested = 'poison';
+        this.state.codex.monsters[mid] = e;
+        it.prep = '☠️ POISON. You tested it. Never eat this.';
+        return null;
+      }
+      // Safe: the wait passes, no ill effects.
+      this.tickAction(12);
+      this.say('An hour passes. Your stomach is calm. Another hour. Nothing.');
+      this.tickAction(12);
+      this.say(`It sits fine. ${mname} is food. You know it in your gut, literally.`);
+      this.markMonsterFoodSafe(mid, 'tested');
+      this.say('The Codex notes it. Your pack updates — the meat is food now.');
+      return it;
+    },
 
     // testCautiously(idx, opts): the universal edibility test, gamified.
     // Real protocol: inspect -> skin -> lips -> taste -> meal, with waits.

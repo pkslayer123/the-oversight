@@ -268,8 +268,7 @@
         for (const rid of placed) v.trust[rid] = 40; // they fight beside you
       } catch (e) {}
       Game.say('🐞 SCENARIO: headlight deer. Grazing, five tiles east. It has not seen you.');
-      Game.say(`Walk toward it. ${placed.map(npcName).join(' and ')} are out there too — the deer notices anyone too close, first in first out.`);
-      Game.say('FIRST ENCOUNTER: no beam-lane warning until your codex learns. You get the freeze, the whine, and dread. MOVE.');
+      Game.say(`Walk toward it. ${placed.map(npcName).join(' and ')} are out there too.`);
     },
 
     // Monster batch 2 — the tricksters. Each follows the headlight pattern:
@@ -288,7 +287,7 @@
       s.mx = 2; s.my = 4;
       s.monster = { id: 'mirrormoth', mx: 6, my: 4 };
       Game.say('🐞 SCENARIO: flashbulb moth. A dinner-plate moth, catching light wrong, four tiles east.');
-      Game.say('Walk toward it. It lands, it folds — and the flash only goes FORWARD. Get behind it before it fires.');
+      Game.say('Walk toward it.');
     },
 
     // Choir Toad. Dusk, a war-drum toad four tiles east — it brought a friend
@@ -304,7 +303,6 @@
       s.mx = 2; s.my = 4;
       s.monster = { id: 'belltoad', mx: 6, my: 4 };
       Game.say('🐞 SCENARIO: choir toads. A toad like a war drum, throat swelling, four tiles east. It brought a friend.');
-      Game.say('When one throat lets go, they ALL croak. Break the chorus: kill one, split them up — or SHOUT (📢).');
     },
 
     // Lockpick Raccoon. Night, too many fingers four tiles east. It's not
@@ -351,7 +349,6 @@
       s.mx = 2; s.my = 4;
       s.monster = { id: 'nightlight_catfish', mx: 5, my: 4 };
       Game.say('🐞 SCENARIO: nightlight catfish. A soft green glow under the water, three tiles east. Pretty.');
-      Game.say("That's the problem — it's pretty. It won't chase you. Get close and the water goes still. Strike the light from range — never wade in.");
     },
 
     // 10. Moot — YOU stand accused. Theft + assault on the books, the case
