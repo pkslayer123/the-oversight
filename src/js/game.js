@@ -3937,7 +3937,7 @@
         'The clearing is quiet. A child is stacking stones. It feels like a beginning.',
       ];
       return {
-        name: v.name, pop: 12, pantryKcal: Math.round(v.pantryKcal),
+        name: v.name, pop: 12, pantryKcal: Math.round(this.pantryKcalLive(v)),
         atmos: atmos[this.state.scholar.day % atmos.length],
         codexN,
         scholarName: this.data.villagers.find(x => x.id === this.villagerId).name,
@@ -3960,6 +3960,16 @@
     // item — never a phantom number. (Phantom pantryKcal bumps get wiped by
     // villageEats' end-of-day sync, which re-derives the counter from items.
     // That's how player hauls used to evaporate overnight.)
+    // PANTRY KCAL (Steve 2026-10-05): the player's village pantry is PHYSICAL —
+    // an item list. v.pantryKcal is a cached number that's stale until the
+    // end-of-day sync (day-1 reads saw 0 against a full pantry). Any read
+    // that matters derives live from the items. (Other villages, abstractly
+    // simmed, keep using their pantryKcal numbers.)
+    pantryKcalLive(v) {
+      v = v || this.state.village;
+      if (!v || !v.pantry) return 0;
+      return v.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+    },
     stockPantry(kcal, name) {
       const v = this.state.village;
       v.pantry = v.pantry || [];
@@ -4099,7 +4109,7 @@
         // milestone (not game over): the Codex is filling and the pantry is secure.
         // Haven will make it — one less thing to fear. Game over is only the
         // table (the village's ending) or the village dying out.
-        if (entries >= 10 && this.state.village.pantryKcal >= 8000 && !this.state.village.havenSecured) {
+        if (entries >= 10 && this.pantryKcalLive(this.state.village) >= 8000 && !this.state.village.havenSecured) {
           this.state.village.havenSecured = true;
           this.say('Mara looks at the pantry, then at the Codex, then at you. "We\u2019re going to make it." Haven will survive \u2014 because someone learned the land, and wrote it down. One less thing to fear.');
           try { this.ledgerAdd('unified', 2); this.ledgerAdd('showmanship', 1); } catch (e) {}
@@ -7543,7 +7553,7 @@
         }
       }
       const goal = this.npcGoal(rid);
-      const pantryLow = (v.pantryKcal || 0) < 4000;
+      const pantryLow = this.pantryKcalLive(v) < 4000;
       const roll = Math.random();
       if (goal === 'prove' && roll < 0.5) return { line: `"Can we talk?" __NAME__ shifts their weight. "I need something to do. Anything. Please."` };
       if (goal === 'alone' && roll < 0.4) return { line: `"Can we talk?" __NAME__ sighs. "I need some space. A corner nobody needs me in. Is that okay?"` };
