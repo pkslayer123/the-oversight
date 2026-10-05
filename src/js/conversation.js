@@ -1050,7 +1050,10 @@
       // REACTIVE: if the opener asked something direct ("Did you see that?"),
       // it becomes a lightweight question — answerable, follow-up-able,
       // not small talk the player can only dodge.
-      const rq = this.convoMatchReactive(op.line);
+      // TALK REQUESTS are exempt: "Can we talk? ..." is the reason they came
+      // to you, not a question — matching it produced the garbled
+      // "Sorry — I asked you something there. Can we talk?" follow-up.
+      const rq = (op.thread === 'request') ? null : this.convoMatchReactive(op.line);
       if (rq) {
         c.reactiveQ = { id: rq.id, followedUp: false };
         if (rq.thread) { c.thread = rq.thread; op.thread = rq.thread; }

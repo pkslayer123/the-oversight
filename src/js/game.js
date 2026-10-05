@@ -7302,7 +7302,9 @@
       if (goal === 'family' && roll < 0.4) return { line: `"Can we talk? Have you seen anyone on the roads? Anyone at all? I'm asking everyone."` };
       if (goal === 'lead' && (v.heat || {})[rid] > 0 && roll < 0.5) return { line: `"Can we talk?" __NAME__ doesn't wait for an answer. "We need to discuss how things are run here."` };
       if (pantryLow && roll < 0.35) return { line: `"Can we talk?" __NAME__ keeps their voice low. "The stores. Have you looked at the stores? We're running thin."` };
-      if (roll < 0.25) return { line: `"Can we talk?" __NAME__ sits down near you. "Just... talk. Like people used to."` };
+      // JUST TALK (Steve 2026-10-05): people should come talk to you more.
+      // Was 0.25 — approaches were so rare players never noticed the mechanic.
+      if (roll < 0.5) return { line: `"Can we talk?" __NAME__ sits down near you. "Just... talk. Like people used to."` };
       return null;
     },
     // renderTalkLine: a stored talk-request line is a template; the name is
