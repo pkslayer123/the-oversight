@@ -11673,6 +11673,26 @@
       this.checkTimedEvents();
       // LEADER: morning briefing — village knowledge flows to you post-arrival.
       try { this.villageBriefing(); } catch (e) {}
+      // CONTESTS (Steve 2026-10-05): the show runs on a schedule. 2/week max.
+      try {
+        // Resolve pending contest (countdown fired)
+        const pc = this.state.pendingContest;
+        if (pc && (this.state.scholar.day || 1) >= pc.firesDay) {
+          this.resolveContest();
+        }
+        // Tick for new events
+        const event = this.contestTick();
+        if (event && event.id) {
+          // It's a contest (has id) vs show (just desc)
+          if (this.contestPool().find(c => c.id === event.id)) {
+            this.fireContest(event);
+          } else {
+            // TV show pull
+            this.sysSay(`📺 TONIGHT: ${event.name}. ${event.desc}`);
+            this.leadShift('showmanship', 1);
+          }
+        }
+      } catch (e) {}
       // PROMISES ROT: unchecked daily — 7+ days ignored and they break.
       try { this.checkPromises(); } catch (e) {}
       // evening: run metabolism
