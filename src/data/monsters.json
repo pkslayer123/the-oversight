@@ -48,7 +48,6 @@
   "fear": "fire",
   "speed": 3,
   "emoji": "🐗",
-  "fleeAt": 0.25,
   "unknown": "something huge, rooting in the underbrush",
   "vibe": "a living bulldozer — territorial, impatient, unimpressed by you",
   "cues": {
@@ -150,7 +149,6 @@
   "fear": "numbers",
   "speed": 5,
   "emoji": "🐕",
-  "fleeAt": 0.3,
   "pack": 3,
   "unknown": "a dog-shaped silence at the treeline",
   "vibe": "pack hunter — silent until it isn't, and then it's too late",
@@ -998,7 +996,6 @@
   "fear": "fire",
   "speed": 3,
   "emoji": "📻",
-  "fleeAt": 0.2,
   "unknown": "crying in the dark — a voice you almost recognize",
   "vibe": "a dead radio that learned to cry like people",
   "weaknesses": [
@@ -1092,7 +1089,6 @@
   "fear": "fire",
   "speed": 4,
   "emoji": "🪞",
-  "fleeAt": 0.25,
   "unknown": "something tall, flashing in the treeline — like sunlight on glass",
   "vibe": "it wants you to look at yourself. then it wants you dead",
   "weaknesses": [
@@ -1196,7 +1192,6 @@
   "fear": "numbers",
   "speed": 3,
   "emoji": "📊",
-  "fleeAt": 0.3,
   "unknown": "a hovering clipboard, projecting light onto the ground",
   "vibe": "it is grading you. you are failing",
   "weaknesses": [
@@ -1291,7 +1286,6 @@
   "fear": "fire",
   "speed": 6,
   "emoji": "🤳",
-  "fleeAt": 0.15,
   "unknown": "a glittering tide, all lenses, all pointed at you",
   "vibe": "it doesn't want to kill you. it wants CONTENT. the killing is incidental",
   "weaknesses": [
@@ -1386,7 +1380,6 @@
   "fear": "numbers",
   "speed": 3,
   "emoji": "🎤",
-  "fleeAt": 0.2,
   "unknown": "something in the dusk, shouting encouragement at top volume",
   "vibe": "it believes in you SO MUCH it hurts. literally",
   "weaknesses": [
@@ -1479,7 +1472,6 @@
   "fear": "fire",
   "speed": 5,
   "emoji": "📞",
-  "fleeAt": 0.25,
   "unknown": "a voice in the dark: 'thank you for calling. your fear is important to us.'",
   "vibe": "it will help you with your problem. your problem is being alive near it",
   "weaknesses": [
@@ -1571,7 +1563,6 @@
   "fear": "fire",
   "speed": 1,
   "emoji": "📜",
-  "fleeAt": 0,
   "unknown": "a drift of paper, moving against the wind",
   "vibe": "you already agreed to this. you agreed by existing near it",
   "weaknesses": [
@@ -1664,7 +1655,6 @@
   "fear": "numbers",
   "speed": 5,
   "emoji": "💼",
-  "fleeAt": 0.2,
   "unknown": "something pacing in circles, muttering about action items",
   "vibe": "it doesn't do the violence itself. it DELEGATES. to itself. repeatedly",
   "weaknesses": [
@@ -1758,7 +1748,6 @@
   "fear": "daylight",
   "speed": 2,
   "emoji": "💡",
-  "fleeAt": 0,
   "unknown": "a light in the dark that wasn't there yesterday",
   "vibe": "it seemed like a good idea at the time",
   "weaknesses": [
@@ -1855,7 +1844,6 @@
   "fear": "movement",
   "speed": 3,
   "emoji": "📼",
-  "fleeAt": 0.3,
   "unknown": "a flickering light at dusk, showing... something. you couldn't look away",
   "vibe": "it shows you what you miss. the missing is the trap",
   "weaknesses": [
