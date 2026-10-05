@@ -3585,7 +3585,9 @@
     bumpTrust(vid, n) {
       const v = this.state.village;
       v.trust = v.trust || {};
-      const cur = v.trust[vid] || 10;
+      // unset defaults to 10, but a real 0 must stay 0 — `|| 10` used to
+      // resurrect hated villagers back toward 10 on every bump.
+      const cur = v.trust[vid] === undefined ? 10 : v.trust[vid];
       v.trust[vid] = Math.max(0, Math.min(100, cur + n));
     },
 
@@ -12119,7 +12121,7 @@
         if (vDarkH && vDarkH.kind === 'malicious') {
           lines.push(`You hurt ${t.name} with ${wtxt}. They smile — wrong, late — and that scares you more than the blood.`);
         }
-        this.say(lines[Math.floor(Math.random() * lines.length)]);
+        this.say(this.pickFresh(lines, 'humanStrike'));
         // Trauma accrues — but not blindly. Who they were and why matters.
         try { this.addTrauma(this.traumaForHurt(t.villagerId)); } catch (e) {}
       } else {
@@ -12398,7 +12400,7 @@
             `Blood on your hands now. ${t.name} is holding their side, breathing wrong.`,
             `${t.name} staggers. For a second they look like someone you knew.`,
           ];
-          this.say(dl[Math.floor(Math.random() * dl.length)]);
+          this.say(this.pickFresh(dl, 'humanDamage'));
         } else {
           this.say(`${sourceLabel} hurts ${t.kind === 'player' ? 'you' : t.name}. It isn't clean. It isn't quick.`);
         }
@@ -14665,6 +14667,20 @@
       return null;
     },
     say(msg) { this.log.push(msg); if (this.log.length > 40) this.log.shift(); },
+    // pickFresh(pool, key): cycle through narration lines without repeating
+    // until every line has been used once. Repeating the same horror line
+    // three times in one brawl reads as a bug, not a style. Keyed storage
+    // lives on the fight object when one is active, else on a scratch map.
+    pickFresh(pool, key) {
+      const store = (this.tbfight && (this.tbfight._fresh = this.tbfight._fresh || {})) ||
+        (this._freshScratch = this._freshScratch || {});
+      let used = store[key] || (store[key] = []);
+      let avail = pool.filter(l => !used.includes(l));
+      if (!avail.length) { used = store[key] = []; avail = pool.slice(); }
+      const pick = avail[Math.floor(Math.random() * avail.length)];
+      used.push(pick);
+      return pick;
+    },
 
     // maybeCheatDeath: second_wind / phoenix_clause / molt. Called BEFORE death is final.
     // Returns true if death was cheated (caller must not set over).

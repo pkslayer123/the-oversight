@@ -64,7 +64,9 @@ function setTemp(vid, t) {
   Game.dayPart = 0;
   Game.state.village.packTheft[v1].part = -1; // force "earlier"
   Game.theftNoticeSweep();
-  eq('trust floored at 0 on notice', trust(v1), 0);
+  // notice costs 15 trust, floored at 0 — compare against pre-notice trust
+  // (starting trust is seeded, not always 10)
+  eq('trust floored at 0 on notice', trust(v1), Math.max(0, trust0 - 15));
   ok('theft crime recorded', Game.justiceState().crimes.length > crimes0);
   ok('theft gossip seeded', (Game.state.village.gossip || []).some(g => g.action === 'theft'));
 
@@ -145,6 +147,16 @@ function setTemp(vid, t) {
   Game.recordCrime('theft', { victim: 'dupe_v' });
   Game.recordCrime('theft', { victim: 'dupe_v' });
   eq('theft dedupe', Game.justiceState().crimes.filter(c => c.type === 'theft').length, c0 + 1);
+
+  // --- 11. trust floor integrity (bumpTrust must not resurrect a real 0) ---
+  Game.state.village.trust[v1] = 0;
+  Game.bumpTrust(v1, -5);
+  eq('trust 0 stays 0 on negative bump', Game.state.village.trust[v1], 0);
+  Game.bumpTrust(v1, 5);
+  eq('trust 0 rises only by the bump', Game.state.village.trust[v1], 5);
+  delete Game.state.village.trust[v1];
+  Game.bumpTrust(v1, -5);
+  eq('unset trust defaults to 10', Game.state.village.trust[v1], 5);
 
   unStub();
   console.log(`\n${pass} passed, ${fail} failed`);

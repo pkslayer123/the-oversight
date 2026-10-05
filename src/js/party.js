@@ -832,7 +832,7 @@
           `${h.name} lashes out, panicking. It connects anyway. That's the worst part.`,
           `${h.name} fights like a cornered animal. Because that's what this is.`,
         ];
-        this.say(`🔪 ${verbs[Math.floor(Math.random() * verbs.length)]}`);
+        this.say(`🔪 ${this.pickFresh(verbs, 'humanRetaliate')}`);
         this.tbDamage(foe.key, dmg, h.name);
         // Hurting someone costs the hurter too. Even them.
       } else {
@@ -840,7 +840,7 @@
           `${h.name} backs off, breathing hard, looking for a way out that isn't through you.`,
           `${h.name} circles — not hunting an opening. Looking for an exit.`,
         ];
-        this.say(`🔪 ${circ[Math.floor(Math.random() * circ.length)]}`);
+        this.say(`🔪 ${this.pickFresh(circ, 'humanCircle')}`);
       }
       if (this.tbEndCheck()) return;
     },
