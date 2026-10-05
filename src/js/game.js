@@ -9701,7 +9701,10 @@
           if (this.map.tiles[y][x].type === 'thicket') spots.push({ x, y });
         }
         const s = spots.length ? spots[Math.floor(Math.random() * spots.length)] : { x: 5, y: 5 };
-        this.wanderer = { x: s.x, y: s.y, dir: Math.random() < 0.5 ? 1 : -1, monsterId: 'thornback_boar' };
+        // WAVE-CASTING (Steve 2026-10-05): the System casts monsters appropriate
+        // to your threat rating. No wave-3 horrors on day 3 with a pointy stick.
+        const monsterId = this.castMonster();
+        this.wanderer = { x: s.x, y: s.y, dir: Math.random() < 0.5 ? 1 : -1, monsterId };
         this.say('Something big is moving in the woods. The birds went quiet.');
       }
       if (this.wanderer && this.map.px === this.wanderer.x && this.map.py === this.wanderer.y) {
@@ -11731,6 +11734,81 @@
     // PLAYER SPEED (Steve 2026-10-05): 3, not 4. Four moves is a lot —
     // fleeing by running should be hard, not a given. Movement is deliberate.
     playerSpeed() { return 3; },
+
+    // THREAT RATING (Steve 2026-10-05): the System tracks your power to cast
+    // appropriate monsters. It's a TV show — boring fights don't get renewed.
+    // Rating = gear + stats + party + performance. Waves unlock by rating.
+    threatRating() {
+      const s = this.state.scholar;
+      let rating = 0;
+      // Gear: weapon bonus + armor
+      const w = this.equippedWeapon();
+      rating += (w.bonus || 0) * 2; // spear +25 = 50 rating
+      rating += (w.range || 1) * 5;  // range 2 = 10
+      // Armor (if any)
+      const armor = (s.equipped || {}).armor;
+      if (armor) rating += 15;
+      // Stats: Better Human (each point above 5 = 2 rating)
+      for (const stat of ['strength', 'endurance', 'perception', 'agility', 'presence']) {
+        const v = (s.stats || {})[stat] || 5;
+        if (v > 5) rating += (v - 5) * 2;
+      }
+      // Party: each villager = 10
+      const party = (this.state.party || []).length;
+      rating += party * 10;
+      // Performance: win streak bonus (up to +20)
+      const wins = (this.state.combatWins || 0);
+      const losses = (this.state.combatLosses || 0);
+      if (wins + losses > 0) {
+        const winRate = wins / (wins + losses);
+        if (winRate > 0.7 && wins >= 3) rating += 20;
+        else if (winRate > 0.5) rating += 10;
+      }
+      return Math.round(rating);
+    },
+
+    // WAVE UNLOCK (Steve 2026-10-05): monsters are cast in waves. You don't
+    // see wave 2 until you're ready (or the producers get bored).
+    // Wave 1: 0+ (always) — hummice, moths, raccoons, toads
+    // Wave 2: 30+ — wolves, herons, swarms, boars (need gear)
+    // Wave 3: 70+ — mimics, golems, stags (need alien loot + party)
+    // Wave 4: 120+ — gallowdeer (endgame)
+    unlockedWave() {
+      const r = this.threatRating();
+      if (r >= 120) return 4;
+      if (r >= 70) return 3;
+      if (r >= 30) return 2;
+      return 1;
+    },
+
+    // Can this monster appear? Checks wave assignment.
+    monsterWaveAvailable(monsterId) {
+      const mdef = this.data.monsters.find(m => m.id === monsterId);
+      if (!mdef) return false;
+      const wave = mdef.wave || 1;
+      return wave <= this.unlockedWave();
+    },
+
+    // CASTING (Steve 2026-10-05): the System casts a monster appropriate to
+    // your wave. Weighted random within the unlocked wave — variety, but never
+    // over-leveled. The show must be entertaining, not a slaughter.
+    castMonster() {
+      const wave = this.unlockedWave();
+      const pool = this.data.monsters.filter(m => (m.wave || 1) <= wave);
+      if (!pool.length) return 'hummice'; // fallback
+      // Prefer the current wave (70%), allow lower waves (30%) for variety
+      const current = pool.filter(m => (m.wave || 1) === wave);
+      const lower = pool.filter(m => (m.wave || 1) < wave);
+      let pick;
+      if (current.length && (Math.random() < 0.7 || !lower.length)) {
+        pick = current[Math.floor(Math.random() * current.length)];
+      } else if (lower.length) {
+        pick = lower[Math.floor(Math.random() * lower.length)];
+      } else {
+        pick = pool[Math.floor(Math.random() * pool.length)];
+      }
+      return pick.id;
+    },
 
     startCombat(monsterId) {
       const s = this.state.scholar;
@@ -15262,12 +15340,21 @@
     // contest rewards (Steve 2026-10-05). mdef.loot = {chance, tier}.
     // Returns an item id or null. Chances are LOW by design — alien loot
     // should feel like a gift from a confused god, not a paycheck.
+    // WAVE-CAPPED (Steve 2026-10-05): you can't get tier-2 loot from wave-1
+    // monsters. The tier is capped by the monster's wave. No early jackpots.
     rollAlienLoot(mdef) {
       const loot = (mdef || {}).loot;
       if (!loot || !(loot.chance > 0)) return null;
       if (Math.random() >= loot.chance) return null;
-      const tier = loot.tier || 1;
-      const pool = (this.data.items || []).filter(i => i.origin === 'alien' && (i.lootTier || 1) === tier);
+      const wave = mdef.wave || 1;
+      const maxTier = Math.min(loot.tier || 1, wave); // wave caps the tier
+      // Find the highest available tier <= maxTier (fallback if tier missing)
+      let tier = Math.max(1, maxTier);
+      let pool = [];
+      while (tier >= 1 && !pool.length) {
+        pool = (this.data.items || []).filter(i => i.origin === 'alien' && (i.lootTier || 1) === tier);
+        if (!pool.length) tier--;
+      }
       if (!pool.length) return null;
       return pool[Math.floor(Math.random() * pool.length)].id;
     },
@@ -15275,6 +15362,19 @@
       const f = this.tbfight;
       if (!f || f.over) return;
       f.over = true; f.result = result;
+      // WAVE TRACKING (Steve 2026-10-05): wins/losses feed the threat rating.
+      // The System watches — dominate and it escalates.
+      this.state.combatWins = this.state.combatWins || 0;
+      this.state.combatLosses = this.state.combatLosses || 0;
+      const waveBefore = this.unlockedWave();
+      if (result === 'won') this.state.combatWins++;
+      else if (result === 'lost') this.state.combatLosses++;
+      // Check for wave unlock (System escalation)
+      const waveAfter = this.unlockedWave();
+      if (waveAfter > waveBefore) {
+        this.sysSay(`📺 RATINGS ARE UP! The producers are pleased. New casting directives incoming — Wave ${waveAfter} talent has been released into your sector.`);
+        this.audioEvent('waveUnlock');
+      }
       // AUDIO HYGIENE (Steve): killing the deer left the beam's hum playing.
       // NOTHING outlives its encounter — stop every sustained loop on ANY
       // ending (won, lost, fled, routed). combatEnd is idempotent.

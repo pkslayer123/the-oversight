@@ -61,7 +61,7 @@
         "It backs off, snorting \u2014 firelight in its eyes. It doesn't like this."
       ]
     },
-    "wave": 1,
+    "wave": 2,
     "encounter": {
       "fifo": true,
       "noticeRange": 4,
@@ -99,7 +99,7 @@
     },
     "loot": {
       "chance": 0.1,
-      "tier": 1,
+      "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
@@ -163,7 +163,7 @@
         "It melts back between the trees. The silence goes with it."
       ]
     },
-    "wave": 1,
+    "wave": 2,
     "encounter": {
       "fifo": true,
       "noticeRange": 6,
@@ -196,7 +196,7 @@
     },
     "loot": {
       "chance": 0.1,
-      "tier": 1,
+      "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
@@ -274,7 +274,7 @@
         "It startles \u2014 white tail flashing \u2014 and it's gone. Just gone."
       ]
     },
-    "wave": 1,
+    "wave": 4,
     "encounter": {
       "fifo": true,
       "noticeRange": 5,
@@ -294,7 +294,7 @@
     },
     "loot": {
       "chance": 0.22,
-      "tier": 1,
+      "tier": 4,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
@@ -644,7 +644,7 @@
         "It folds back into the reeds. The static fades. You were never here."
       ]
     },
-    "wave": 1,
+    "wave": 2,
     "encounter": {
       "fifo": true,
       "noticeRange": 5,
@@ -678,7 +678,7 @@
     },
     "loot": {
       "chance": 0.1,
-      "tier": 1,
+      "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
@@ -838,7 +838,7 @@
         "It... can't really flee. It's a boulder. It just looks offended."
       ]
     },
-    "wave": 1,
+    "wave": 3,
     "encounter": {
       "fifo": true,
       "noticeRange": 2,
@@ -869,7 +869,7 @@
     },
     "loot": {
       "chance": 0.1,
-      "tier": 1,
+      "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
@@ -933,7 +933,7 @@
         "The glow dims and sinks. The water forgets it was ever there."
       ]
     },
-    "wave": 1,
+    "wave": 2,
     "encounter": {
       "fifo": true,
       "noticeRange": 4,
@@ -963,13 +963,13 @@
     },
     "loot": {
       "chance": 0.1,
-      "tier": 1,
+      "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
   {
     "id": "voice_mimic_radio",
-    "wave": 2,
+    "wave": 3,
     "name": "Static",
     "activity": "nocturnal",
     "biomes": [
@@ -1054,13 +1054,13 @@
     },
     "loot": {
       "chance": 0.15,
-      "tier": 2,
+      "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
   {
     "id": "mirror_stag",
-    "wave": 2,
+    "wave": 3,
     "name": "Grief Counselor",
     "activity": "diurnal",
     "biomes": [
@@ -1157,7 +1157,7 @@
     },
     "loot": {
       "chance": 0.15,
-      "tier": 2,
+      "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
@@ -1352,7 +1352,7 @@
   },
   {
     "id": "hype_horn",
-    "wave": 2,
+    "wave": 3,
     "name": "Motivational Speaker",
     "activity": "crepuscular",
     "biomes": [
@@ -1440,7 +1440,7 @@
     },
     "loot": {
       "chance": 0.15,
-      "tier": 2,
+      "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
@@ -1536,7 +1536,7 @@
   },
   {
     "id": "contract_golem",
-    "wave": 2,
+    "wave": 3,
     "name": "Terms & Conditions",
     "activity": "diurnal",
     "biomes": [
@@ -1621,13 +1621,13 @@
     },
     "loot": {
       "chance": 0.22,
-      "tier": 2,
+      "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
   {
     "id": "delegate_beast",
-    "wave": 2,
+    "wave": 3,
     "name": "Middle Manager",
     "activity": "both",
     "biomes": [
@@ -1714,7 +1714,7 @@
     },
     "loot": {
       "chance": 0.25,
-      "tier": 2,
+      "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
@@ -1815,7 +1815,7 @@
   },
   {
     "id": "memory_projector",
-    "wave": 2,
+    "wave": 3,
     "name": "Nostalgia",
     "activity": "crepuscular",
     "biomes": [
@@ -1902,7 +1902,7 @@
     },
     "loot": {
       "chance": 0.15,
-      "tier": 2,
+      "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   }
