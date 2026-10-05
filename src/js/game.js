@@ -749,6 +749,81 @@
       s.playstyle[axis] = (s.playstyle[axis] || 0) + (n || 1);
     },
 
+    // BETTER HUMAN (Steve 2026-10-05): practice makes human. Doing real work
+    // in a stat's domain adds practice; enough practice raises the stat.
+    // Diminishing returns — going from 5→6 is easier than 9→10. No grind spam:
+    // only meaningful actions count (one practice per action, not per click).
+    practice(stat, n) {
+      const s = this.state.scholar; if (!s) return;
+      s.stats = s.stats || { str: 5, end: 5, per: 5, agi: 5, pre: 5 };
+      s.practice = s.practice || {};
+      const cur = s.stats[stat] || 5;
+      if (cur >= 10) return; // human ceiling — you're as good as you get
+      s.practice[stat] = (s.practice[stat] || 0) + (n || 1);
+      // Threshold: 8 reps for 5→6, +4 per level after (8, 12, 16, 20, 24)
+      const need = 8 + (cur - 5) * 4;
+      if (s.practice[stat] >= need) {
+        s.practice[stat] = 0;
+        s.stats[stat] = cur + 1;
+        const names = { str: 'Strength', end: 'Endurance', per: 'Perception', agi: 'Agility', pre: 'Presence' };
+        this.say(`💪 Your ${names[stat]} grows — ${s.stats[stat]}. The work is changing you.`);
+        this.audioEvent('levelup', { quiet: true });
+        // Check for passive skill unlocks
+        try { this.checkPassiveUnlock(stat); } catch (e) {}
+      }
+    },
+
+    // Stat getters — the effects of being a better human.
+    stat(stat) { return ((this.state.scholar || {}).stats || {})[stat] || 5; },
+
+    // PASSIVE SKILLS (Steve 2026-10-05): six human crafts, three tiers each.
+    // Earned by DOING, not allocated. Announced diegetically — you feel
+    // yourself learning, not "skill point spent." Separate from alien abilities.
+    PASSIVES: {
+      trail_eyes: { stat: 'per', name: 'Trail Eyes',
+        tiers: ['You notice tracks without trying.', 'You read sign like writing.', 'The ground tells you stories.'],
+        effect: [0.1, 0.2, 0.35] }, // forage yield bonus
+      still_heart: { stat: 'end', name: 'Still Heart',
+        tiers: ['Your hands stop shaking.', 'Fear becomes information.', 'You are the calm in the room.'],
+        effect: [0.1, 0.2, 0.3] }, // reduced panic/fear effects
+      true_swing: { stat: 'str', name: 'True Swing',
+        tiers: ['Your strikes land cleaner.', 'Every hit finds the soft spot.', 'Your body knows the arc.'],
+        effect: [0.1, 0.2, 0.3] }, // melee damage bonus
+      calm_voice: { stat: 'pre', name: 'Calm Voice',
+        tiers: ['People listen when you speak.', 'Your words carry weight.', 'You could talk a fire down.'],
+        effect: [0.1, 0.2, 0.3] }, // talk/trust bonus
+      firekeeper: { stat: 'end', name: 'Firekeeper',
+        tiers: ['Fires catch faster for you.', 'You bank coals like savings.', 'Fire is a friend you keep.'],
+        effect: [0.15, 0.3, 0.5] }, // fire starting/keeping bonus
+      footwork: { stat: 'agi', name: 'Footwork',
+        tiers: ['You move without thinking.', 'Your feet know the ground.', 'You are hard to hit.'],
+        effect: [0.05, 0.1, 0.15] }, // dodge chance in combat
+    },
+
+    checkPassiveUnlock(stat) {
+      const s = this.state.scholar; if (!s) return;
+      s.passives = s.passives || {};
+      for (const [id, def] of Object.entries(this.PASSIVES)) {
+        if (def.stat !== stat) continue;
+        const cur = s.passives[id] || 0;
+        if (cur >= 3) continue;
+        // Unlock tier when stat reaches 6/8/10
+        const need = 6 + cur * 2;
+        if ((s.stats[stat] || 5) >= need) {
+          s.passives[id] = cur + 1;
+          this.say(`✨ ${def.name} — ${def.tiers[cur]} (tier ${cur + 1})`);
+          this.audioEvent('passiveUnlock', { quiet: true });
+        }
+      }
+    },
+
+    passiveBonus(id) {
+      const s = this.state.scholar; if (!s) return 0;
+      const tier = (s.passives || {})[id] || 0;
+      if (!tier) return 0;
+      return (this.PASSIVES[id].effect[tier - 1] || 0);
+    },
+
     // dominantPlaystyle: your strongest behavioral axis, or null if too early to tell.
     dominantPlaystyle() {
       const p = (this.state.scholar && this.state.scholar.playstyle) || {};
@@ -1112,6 +1187,20 @@
         this.state.village.taught[rid] = plantsByFamiliarity(tags).slice(0, tierCount[tier] || 1);
       }
       const scholar = S.state.newScholar(this.villagerId);
+      // BETTER HUMAN (Steve 2026-10-05): background sets your starting stats.
+      // You were someone before the scattering — that body remembers.
+      try {
+        const occCat = this.lifeseed ? this.lifeseed.occCategory(villager.formerOccupation) : 'service';
+        const bonuses = {
+          medical: { per: 2, pre: 1 },   // observant, bedside manner
+          food: { end: 2, str: 1 },      // kitchen stamina, butcher's arms
+          craft: { str: 2, per: 1 },     // physical work, detail eye
+          outdoors: { end: 2, agi: 1, per: 1 }, // the survivalist
+          service: { pre: 2, per: 1 },   // people-facing
+          creative: { per: 2, pre: 1 },  // noticing, expressing
+        }[occCat] || {};
+        for (const [k, v] of Object.entries(bonuses)) scholar.stats[k] = 5 + v;
+      } catch (e) {}
       // WEEK 1 TRACKER: the System watches what you do. Your first ability
       // is based on your actions, not your stats. Play how you want to play.
       scholar.week1 = { forage: 0, hunt: 0, talk: 0, cook: 0, donate: 0, scavenge: 0 };
@@ -1556,6 +1645,8 @@
       if (this.state.scholar.week1) this.state.scholar.week1.talk++;
       this.notePlaystyle('social');
       this.gainAbilityXP('diplomat', 1);
+      // BETTER HUMAN: talking is presence practice.
+      this.practice('pre', 1);
       // LANGUAGE: the barrier is discovered in conversation, never listed.
       const comm = this.commLevel(vid);
       const firstMet = !(v.met || {})[vid];
@@ -6342,9 +6433,9 @@
         const def = this.data.items.find(i => i.id === (item.itemId || item.id));
         if (def && def.carryBonus) cap += def.carryBonus;
       }
-      // Strength: integration makes you tougher (System upgrades your body).
-      const integ = s.integration || 5;
-      if (integ >= 60) cap += 5; // System-enhanced musculature
+      // STRENGTH (Better Human): your body, not the System. +2kg per point above 5.
+      const str = (s.stats || {}).str || 5;
+      if (str > 5) cap += (str - 5) * 2;
       return cap;
     },
 
@@ -10662,6 +10753,8 @@
         this.tele('forage', { tile: t.type, epithet: this.nodeEpithet(this.map.px, this.map.py), plants: Object.keys(bySpecies), cells: harvested.length, kcal: totalKcalKnown, cost: S.calories.ACTION_COSTS.forage });
         if (scholar.week1) scholar.week1.forage++;
         this.gainAbilityXP('green_thumb', 1);
+        // BETTER HUMAN: foraging is perception practice — reading the ground.
+        this.practice('per', 1);
         // SYNERGY passives: photosynthesis works in daylight; third_eye/pattern see patterns.
         if (this.dayPart === 1 || this.dayPart === 2) this.noteAbilityUse('photosynthesis');
         this.noteAbilityUse('third_eye');
@@ -12514,6 +12607,9 @@
         this.spendAmmo(w.ammo, 1);
       }
       let d = S.combat.roll([10, 16]) + w.bonus;
+      // TRUE SWING (passive): your strikes land cleaner.
+      const tsBonus = this.passiveBonus('true_swing');
+      if (tsBonus > 0) d = Math.round(d * (1 + tsBonus));
       const hpFrac = p.hp / p.maxHp;
       if (this.hasAbility('rage') && hpFrac < 0.5) { d *= 2; this.say('RAGE: +100% damage.'); }
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
@@ -12523,6 +12619,8 @@
       if (this.feastBurn) { const fb = this.feastBurn(); if (fb > 0) d = Math.round(d * fb); }
       d = Math.round(d);
       p.acted = true;
+      // BETTER HUMAN: fighting is strength and agility practice.
+      this.practice('str', 1); this.practice('agi', 1);
       const isHuman = t.kind === 'hostile';
       if (isHuman) {
         // HUMAN COMBAT IS NOT FUN. It's traumatic. No cool moves, no style points.
@@ -12748,6 +12846,16 @@
       const t = this.tbFighter(targetKey);
       if (!t || !t.alive) return;
       const quiet = !!(opts && opts.quiet);
+      // FOOTWORK (passive): agility lets you dodge. Not a guarantee — a chance.
+      // Only vs direct attacks, not beams/AoE (you can't dodge a flood).
+      if (t.kind === 'player' && !(opts && opts.undodgeable)) {
+        const dodgeCh = this.passiveBonus('footwork') + Math.max(0, (this.stat('agi') - 5) * 0.02);
+        if (dodgeCh > 0 && Math.random() < dodgeCh) {
+          this.say('You slip aside — it misses clean. (footwork)');
+          this.practice('agi', 1); // dodging is agility practice
+          return;
+        }
+      }
       let final = Math.max(0, Math.round(dmg));
       // BATCH 3 (the uncanny) vulnerabilities:
       // - voice mimic, REVEALED: the act is broken and the signal scrambles —

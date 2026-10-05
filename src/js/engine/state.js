@@ -27,6 +27,12 @@
       position: { region: null, x: 0, y: 0 },
       inventory: [], // {plantId|itemId, qty, spoilageDay}
       prepStash: [], // the kitchen counter: unprocessed hauls awaiting prep, with spoilage clocks
+      // BETTER HUMAN (Steve 2026-10-05): five human stats, separate from alien
+      // abilities. You get better at being human by DOING human things —
+      // practice, not XP allocation. Background sets the starting point.
+      stats: { str: 5, end: 5, per: 5, agi: 5, pre: 5 },
+      practice: {}, // {stat: count} — meaningful reps toward the next point
+      passives: {}, // {passiveId: tier} — earned skills, 3 tiers each
     };
   }
 

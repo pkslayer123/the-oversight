@@ -645,8 +645,24 @@
   // Always in reach, above the fold. Badges are peripheral, not nagging:
   // a quiet dot when something needs attention. Never a popup, never a
   // forced scroll. Hidden in combat (turn-based has its own economy).
-  function selfBarHTML(st) {
-    if (st.inCombat) return '';
+  // statsHTML: your human stats, compact. Tap to expand for passives.
+  // Not a chore list — just who you're becoming.
+  function statsHTML(st) {
+    if (st.inCombat || Game.state.over) return '';
+    const stats = (Game.state.scholar || {}).stats || { str: 5, end: 5, per: 5, agi: 5, pre: 5 };
+    const passives = (Game.state.scholar || {}).passives || {};
+    const names = { str: 'STR', end: 'END', per: 'PER', agi: 'AGI', pre: 'PRE' };
+    const statLine = Object.entries(names).map(([k, n]) =>
+      `<span class="stat" title="${n}">${n} ${stats[k] || 5}</span>`).join(' ');
+    const passList = Object.entries(passives).filter(([id, t]) => t > 0)
+      .map(([id, t]) => {
+        const def = Game.PASSIVES ? Game.PASSIVES[id] : null;
+        return def ? `<span class="passive" title="${esc(def.tiers[t-1])}">${esc(def.name)} ${'●'.repeat(t)}${'○'.repeat(3-t)}</span>` : '';
+      }).join(' ');
+    return `<div class="statsbar"><span class="ctx-label">you:</span> ${statLine}${passList ? ' <span class="ctx-label">·</span> ' + passList : ''}</div>`;
+  }
+
+  function selfBarHTML(st) {    if (st.inCombat) return '';
     const eatDot = st.kcal < 500 ? '<span class="dot"></span>' : '';
     const sleepDot = st.energy < 30 ? '<span class="dot"></span>'
       : (st.isNight ? '<span class="dot soft"></span>' : '');
@@ -3377,6 +3393,7 @@
           ${chatView ? `<div class="ord-dialogue">${dialogueBoxHTML(chatView)}</div>` : ''}
           <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-self">${selfBarHTML(st)}</div>
+          <div class="ord-stats">${statsHTML(st)}</div>
           <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
           <div class="ord-target">${targetBarHTML()}</div>
           <div class="ord-danger">${dangerBarHTML()}</div>
