@@ -531,8 +531,8 @@
     }
     // seed the aftermath as a case the player can discover
     const c = this.openCase(plot, outcome === 'killed' ? 'murder' : 'ambush');
-    // the 3 seed their cover story; the target (if alive) may tell theirs
-    this.seedCoverStory(c, true);
+    // (cover story is seeded inside openCase — first-mover advantage)
+    // the target (if alive) may tell theirs
     if (outcome !== 'killed' && R() < 0.6) this.seedTargetStory(c);
     // the player hears about it 1-2 days later via gossip
     c.playerHeardDay = this.state.scholar.day + 1 + Math.floor(R() * 2);
@@ -564,8 +564,7 @@
       try { this.addTrauma(18); } catch (e) {}
     }
     const c = this.openCase(plot, 'ambush');
-    // THEIR story gets out first — first-mover advantage
-    this.seedCoverStory(c, false);
+    // THEIR story gets out first — first-mover advantage (seeded in openCase)
     // witnesses: who saw you leave together
     try {
       const wit = this.witnesses(6) || [];
@@ -591,6 +590,11 @@
     } catch (e) {}
     bs.cases.push(c);
     this.initBelief(c);
+    // the accused's cover story + plantable inconsistencies are part of the
+    // case itself — every case opens with them, no matter which path opened
+    // it (natural aftermath, accusation, or debug scenario). Without this,
+    // pressing accomplices and site examination have nothing to find.
+    try { this.seedCoverStory(c, false); } catch (e) {}
     return c;
   },
   getCase(id) { return (this.betrayalState().cases || []).find(c => c.id === id); },
@@ -623,6 +627,10 @@
   },
   // cover stories the 3 tell
   seedCoverStory(c, simHeard) {
+    // idempotent: the case seeds its cover once (see openCase). Re-seeding
+    // would clobber found inconsistencies mid-investigation.
+    if (c.coverSeeded) return;
+    c.coverSeeded = true;
     const plot = (this.betrayalState().plots || []).find(p => p.id === c.plotId) || {};
     const tname = this.disp(c.target);
     const stories = [
@@ -680,8 +688,13 @@
     const plot = (this.betrayalState().plots || []).find(p => p.id === c.plotId) || {};
     c.witnessesNamed = true;
     const wits = plot.witnesses || [];
-    if (!wits.length) { this.say(`No one saw you leave. Just trees.`); return null; }
-    this.say(`${wits.map(w => this.whoTag(w)).join(', ')} saw you walk out together — all four of you, friendly as anything. That much, at least, nobody can rehearse away.`);
+    // role-aware: "you" only when YOU were the target who walked out
+    const you = this.isPlayer(c.target);
+    const tname = you ? 'you' : this.disp(c.target);
+    if (!wits.length) { this.say(`No one saw ${tname} leave. Just trees.`); return null; }
+    const walked = you ? 'saw you walk out together — all four of you, friendly as anything'
+      : `saw ${tname} walk out with them — friendly as anything`;
+    this.say(`${wits.map(w => this.whoTag(w)).join(', ')} ${walked}. That much, at least, nobody can rehearse away.`);
     this.moveBelief(c, -8 * Math.min(2, wits.length), 'witnesses saw them leave together');
     return true;
   },
@@ -1470,7 +1483,9 @@
         out.push({ id: 'betrayal:site:' + cs.id, label: 'Go back to the site. Look at the ground.' });
       }
       if (cs.status === 'open' && !cs.witnessesNamed && cs.playerRole !== 'accused') {
-        out.push({ id: 'betrayal:witnesses:' + cs.id, label: '"Who saw us leave?" (name the witnesses)' });
+        // role-aware: "us" only when you were there; the juror asks about them
+        const sawUs = this.isPlayer(cs.target);
+        out.push({ id: 'betrayal:witnesses:' + cs.id, label: sawUs ? '"Who saw us leave?" (name the witnesses)' : '"Who saw them leave?" (name the witnesses)' });
       }
       // THE PLAYER'S DEFENSE — when you stand accused. You don't litigate
       // with random villagers; the strategy lives in the case file (⚖️).

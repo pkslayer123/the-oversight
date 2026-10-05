@@ -352,14 +352,23 @@
       // what does the teller actually know? The truth, usually — villagers
       // talk. Liars get found out by their neighbors first.
       const tellerTrust = ((this.state.village.trust || {})[tellerVid]) || 10;
-      if (tellerTrust < 25 && Math.random() < 0.6) return null; // don't know them well
+      if (tellerTrust < 15 && Math.random() < 0.5) return null; // barely know YOU — they clam up
 
       const options = [];
+      // if you've already heard the target's story, you're asking a pointed
+      // question — the teller is likelier to dish what they actually know.
+      // (This is the detective's "ask around" working as advertised.)
+      let heard = false;
+      try {
+        heard = (this.getClaims(targetVid, 'occupation') || []).length > 0 ||
+          (this.getClaims(targetVid, 'origin') || []).length > 0;
+      } catch (e) {}
+      const lieP = heard ? 0.65 : 0.45;
       // truth about occupation (if target is lying, teller might know the truth)
-      if (lies && lies.occupation && !lies.occupation.confessed && Math.random() < 0.45) {
+      if (lies && lies.occupation && !lies.occupation.confessed && Math.random() < lieP) {
         options.push({ field: 'occupation', truth: lies.occupation.truth, lie: lies.occupation.told });
       }
-      if (lies && lies.origin && !lies.origin.confessed && Math.random() < 0.40) {
+      if (lies && lies.origin && !lies.origin.confessed && Math.random() < lieP) {
         options.push({ field: 'origin', truth: lies.origin.truth, lie: lies.origin.told });
       }
       // mundane true facts (not about lies — just village talk)

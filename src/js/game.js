@@ -2570,7 +2570,17 @@
             const others = (this.state.village.roster || []).filter(id =>
               id !== vid && id !== this.villagerId);
             if (others.length) {
-              const target = others[Math.floor(Math.random() * others.length)];
+              // DETECTIVE BIAS: you ask about people you've actually talked
+              // to. If you've heard claims about someone, they're the ones
+              // on your mind — the village answers the question you mean.
+              let pool = others;
+              try {
+                const interviewed = others.filter(id =>
+                  (this.getClaims(id, 'occupation') || []).length ||
+                  (this.getClaims(id, 'origin') || []).length);
+                if (interviewed.length) pool = interviewed;
+              } catch (e) {}
+              const target = pool[Math.floor(Math.random() * pool.length)];
               const gg = this.npcGossipAbout(vid, target);
               if (gg && gg.line) {
                 this.say(`${first} lowers their voice. ${gg.line}`);

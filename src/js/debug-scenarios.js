@@ -384,6 +384,15 @@
       try {
         const plot = Game.armPlot(leader, acc, target, { reasons: ['an old debt, unpaid', 'they took the credit'], score: 65 });
         c = Game.openCase(plot, 'ambush');
+        // you're the JUROR and you know about the case — the tools have to
+        // be reachable or the scenario's prompt is a lie
+        c.knownToPlayer = true;
+        c.playerRole = 'juror';
+        // witnesses: who saw them leave together (mirrors ambushAftermath)
+        try {
+          const wit = (Game.witnesses(6) || []).filter(id => id !== leader && acc.indexOf(id) < 0);
+          plot.witnesses = wit.slice(0, 3);
+        } catch (e) { plot.witnesses = []; }
       } catch (e) {
         Game.say('🐞 case failed to open: ' + e.message);
       }
