@@ -5347,7 +5347,13 @@
             this.say('The tent is shredded — wind and teeth. Not usable. You leave it.');
             return true;
           } else if (secret.condition === 'packable') {
-            this.say('This tent is intact — and light. You pack it up. (Shelter for later.)');
+            // PACK-UP FIX (survivalist loop 2026-10-05): this used to promise
+            // "Shelter for later" and grant nothing — the tent just vanished.
+            // Now it becomes a real packed tent in your inventory.
+            const tentItem = { kind: 'tent', name: 'Packed tent', units: 1, kg: 2.5, kcalEach: 0, spoilDay: 9999, unit: 'tent', prep: 'Pitch it on clear ground for shelter.' };
+            if (!this.canCarry(tentItem.kg)) { this.say('This tent is intact — and light. But your pack can\'t take it. Eat something or drop weight.'); return true; }
+            this.state.scholar.inventory.push(tentItem);
+            this.say('This tent is intact — and light. You pack it up. (Shelter for later — pitch it on clear ground.)');
             detail[cy][cx] = 'dirt'; // it's gone, you took it
             return true;
           }
@@ -6026,6 +6032,52 @@
         : 'You feed it another branch. The fire takes it — a while more flame.');
       return null;
     },
+    // pitchTent: deploy a packed tent on clear ground. 48 ticks + 50 kcal of
+    // real work — canvas, poles, guy-lines. The tent becomes a real shelter
+    // cell (sleep quality 'tent'); pack it back up to take it with you.
+    // (Survivalist loop 2026-10-05: found tents used to vanish on pack-up;
+    // now the loop closes — carry shelter, pitch it, sleep warm.)
+    pitchTent(cx, cy) {
+      if (this.over) return null;
+      const s = this.state.scholar;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[cy] && detail[cy][cx];
+      if (['dirt', 'grass', 'clearing', 'path'].indexOf(cell) === -1) { this.say('No clear ground to pitch on there.'); return null; }
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      if (Math.max(Math.abs(cx - px), Math.abs(cy - py)) > 1) { this.say('Too far. Step closer.'); return null; }
+      if (cx === px && cy === py) { this.say('You would be pitching it on top of yourself. Pick a clear spot nearby.'); return null; }
+      const tent = (s.inventory || []).find(i => i.kind === 'tent' && (i.units || 0) > 0);
+      if (!tent) { this.say('No packed tent to pitch.'); return null; }
+      tent.units -= 1;
+      s.inventory = (s.inventory || []).filter(i => (i.units || 0) > 0 || !i.kind);
+      detail[cy][cx] = 'tent';
+      const t = this.playerTile();
+      t.secrets = t.secrets || {};
+      t.secrets[cx + ',' + cy] = { condition: 'good', known: true, yours: true };
+      s.kcal = Math.max(0, (s.kcal || 0) - 50);
+      this.tickAction(48);
+      this.say('Canvas up, poles set, guy-lines taut. Shelter — yours, wherever you are. (Sleep quality: tent. Pack it up to move it.)');
+      return null;
+    },
+    // packTent: strike your pitched tent. Shelter becomes pack weight again.
+    packTent(cx, cy) {
+      if (this.over) return null;
+      const s = this.state.scholar;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      if (!detail[cy] || detail[cy][cx] !== 'tent') { this.say('No tent there.'); return null; }
+      const t = this.playerTile();
+      const sec = t.secrets && t.secrets[cx + ',' + cy];
+      if (!sec || !sec.yours) { this.say("That's not yours to pack."); return null; }
+      detail[cy][cx] = 'dirt';
+      delete t.secrets[cx + ',' + cy];
+      s.inventory = s.inventory || [];
+      const tent = s.inventory.find(i => i.kind === 'tent');
+      if (tent) tent.units = (tent.units || 0) + 1;
+      else s.inventory.push({ kind: 'tent', name: 'Packed tent', units: 1, kg: 2.5, kcalEach: 0, spoilDay: 9999, unit: 'tent', prep: 'Pitch it on clear ground for shelter.' });
+      this.tickAction(16);
+      this.say('You strike the tent and pack it down. Shelter for later.');
+      return null;
+    },
     // drinkWater: drink clean first. Warn if only risky.
     // WATER KNOWLEDGE (Steve): recognizing clean vs poison is a skill. Flow and
     // clarity are observable; SAFETY is earned — outdoors background, or learned
@@ -6151,6 +6203,25 @@
         if (detail[y] && detail[y][x] === 'fire') return true;
       }
       return false;
+    },
+    // fireLastsTillDawn: does any fire on this tile burn past dawn?
+    // Map-made fires are established — they last. Player fires check till.
+    // Feeding a fire before sleeping on a cold night is the survivalist's
+    // whole game: the flame has to outlast the dark.
+    fireLastsTillDawn() {
+      this.sweepDeadFires();
+      const T = this.TIME;
+      const dawn = ((this.state.scholar.day || 1) + 1) * T.TICKS_PER_DAY;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      let anyFire = false, lasts = false;
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        if (detail[y] && detail[y][x] === 'fire') {
+          anyFire = true;
+          const pf = (this.state.fires || []).find(f => f.tx === this.map.px && f.ty === this.map.py && f.cx === x && f.cy === y);
+          if (!pf || pf.till >= dawn) lasts = true; // map fire, or yours fed to last
+        }
+      }
+      return anyFire && lasts;
     },
 
     // cookAll: cook everything raw in inventory (at a fire).
@@ -8434,11 +8505,19 @@
     // sleepPreview: for the UI — show cost/benefit before committing.
     sleepPreview() {
       const q = this.sleepQuality();
+      // Cold-night warning: telegraph the exposure bite before the player
+      // commits. Honest buttons, honest nights.
+      let warn = '';
+      if (this.state.weather === 'cold') {
+        if (q === 'ground') warn = 'Cold snap — sleeping exposed will hurt you. Find shelter or build a fire.';
+        else if (q === 'fireside' && !this.fireLastsTillDawn()) warn = 'Cold snap — your fire dies before dawn. Feed it, or pitch a tent.';
+      }
       return {
         quality: q,
         heal: { bunk: 35, tent: 25, hall: 20, fireside: 18, ground: 12 }[q] || 12,
         name: { bunk: 'a bunk', tent: 'a tent', hall: 'the hall floor', fireside: 'your fireside', ground: 'the cold ground' }[q] || 'the ground',
         note: { bunk: 'Best rest. Deep sleep, real healing.', tent: 'Sheltered. Decent rest.', hall: 'By the fire. Good enough.', fireside: 'Warm by your own fire. Better than cold ground.', ground: 'Exposed. You\'ll wake stiff.' }[q] || '',
+        warn,
       };
     },
     sleep() {
@@ -8451,6 +8530,12 @@
       }
       const prev = this.sleepPreview();
       const startDay = s.day, startKcal = Math.round(s.kcal || 0);
+      // NIGHT WEATHER: capture now. endDay rolls the NEW day's weather at
+      // midnight mid-sleep — the cold that bites is tonight's, not dawn's.
+      const nightWeather = this.state.weather;
+      // FIRE PROTECTION: capture now too. A fire fed to last the night burns
+      // out BY dawn — checking after the sleep would always say it failed.
+      const fireLasts = prev.quality === 'fireside' ? this.fireLastsTillDawn() : true;
       // transient flag (not saved): suppresses NPC initiative while you're out.
       this._sleeping = { quality: prev.quality };
       this.say(`You settle into ${prev.name}. Sleep takes you.`);
@@ -8477,9 +8562,30 @@
         s.kcal = (s.kcal || 0) + conserved;
         conservedNote = ` Your sleeping body burned less — ${conserved} kcal conserved.`;
       }
-      s.health = Math.min(this.maxHealth(), Math.round(s.health || 0) + prev.heal);
-      s.energy = 100;
-      const rested = prev.quality === 'bunk' ? 'deeply rested' : prev.quality === 'ground' ? 'stiff and cold' : 'rested';
+      // COLD NIGHTS BITE (survivalist loop 2026-10-05): a cold snap is not
+      // flavor. Sleep exposed — or by a fire that dies before dawn — and the
+      // cold gets in: NO healing, -18 health, a shivering half-rest (energy
+      // only to 60). Sheltered sleep (hall/bunk/tent) or a fire fed to last
+      // the night protects you. The dawn weather roll telegraphs this.
+      // fireLasts and nightWeather were captured at sleep start — the fire
+      // did its job even though it's ash by dawn, and dawn's weather is
+      // tomorrow's, not tonight's.
+      const coldNight = nightWeather === 'cold';
+      const exposed = coldNight && (prev.quality === 'ground' || !fireLasts);
+      let rested, exposureNote = '';
+      if (exposed) {
+        const fireDied = prev.quality === 'fireside';
+        s.health = Math.max(1, Math.round(s.health || 0) - 18);
+        s.energy = 60;
+        rested = 'stiff and half-frozen';
+        exposureNote = fireDied
+          ? ' Your fire died in the night, and the cold got in — no healing, and it took its cut. (Feed the fire before sleeping on cold nights.)'
+          : ' The cold got in — no healing, and it took its cut. (Sleeping unsheltered in a cold snap is a mistake you only make once.)';
+      } else {
+        s.health = Math.min(this.maxHealth(), Math.round(s.health || 0) + prev.heal);
+        s.energy = 100;
+        rested = prev.quality === 'bunk' ? 'deeply rested' : prev.quality === 'ground' ? 'stiff and cold' : 'rested';
+      }
       // NIGHTMARES: trauma follows you into sleep. You did things. The dark replays them.
       let nightmareNote = '';
       const trauma = s.trauma || 0;
@@ -8497,7 +8603,10 @@
       } else if (trauma > 0) {
         s.trauma = Math.max(0, trauma - 2); // time dulls it, slightly
       }
-      this.say(`Dawn. You wake ${rested}. (+${prev.heal} health, energy restored.${conservedNote} ${prev.note})${nightmareNote}`);
+      const wakeAcct = exposureNote
+        ? `(-18 health, restless night.${conservedNote}${exposureNote})`
+        : `(+${prev.heal} health, energy restored.${conservedNote} ${prev.note})`;
+      this.say(`Dawn. You wake ${rested}. ${wakeAcct}${nightmareNote}`);
       return this.status();
     },
     clearDialGlitch() { this.state.dialGlitch = false; },
@@ -8592,7 +8701,11 @@
       // interactive cells? decision.
       if (cell === 'tree' || cell === 'bigtree' || cell === 'tent') {
         if (!sec || !sec.known) actions.push('Examine');
-        else if (cell === 'tent') actions.push(sec.condition === 'good' ? 'Rest (a while)' : 'Use');
+        else if (cell === 'tent') {
+          actions.push(sec.condition === 'good' ? 'Rest (a while)' : 'Use');
+          // Your own pitched tent can be struck and carried again.
+          if (sec.yours) actions.push('Pack up tent');
+        }
         else actions.push('Use');
         if (cell === 'tree' || cell === 'bigtree') {
           // TOOL PREREQUISITES: felling needs an axe-class tool; a pruning
@@ -8625,6 +8738,12 @@
         // TOOL PREREQUISITES (Steve): fire-making needs fuel. No branches or
         // log, no button — the action stays hidden, not greyed.
         if (this.fireFuel()) actions.push('Start a fire (big job)');
+        // SHELTER (survivalist loop 2026-10-05): a packed tent in your pack
+        // surfaces a pitch action on clear ground. No tent, no button.
+        if (['dirt', 'grass', 'clearing', 'path'].indexOf(cell) !== -1 &&
+            (this.state.scholar.inventory || []).some(i => i.kind === 'tent' && (i.units || 0) > 0)) {
+          actions.push('Pitch tent');
+        }
       } else if (cell === 'door') {
         // DOORS ARE REAL. This is how you leave the building.
         actions.push('Step outside');

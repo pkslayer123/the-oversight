@@ -552,6 +552,8 @@
     if (label.startsWith('Smoke ')) { Game.preserveFood(); return; }
     if (label === 'Start a fire (big job)') { Game.makeFire(cx, cy); return; }
     if (label === 'Feed the fire') { Game.feedFire(cx, cy); return; }
+    if (label === 'Pitch tent') { Game.pitchTent(cx, cy); return; }
+    if (label === 'Pack up tent') { Game.packTent(cx, cy); return; }
     if (label === 'Step outside') { Game.exitBuilding(); return; }
     if (label === 'Go inside') { Game.enterBuilding(); return; }
     if (label === 'Rest' || label === 'Rest (a while)') { Game.doAction('rest'); return; }
@@ -3736,7 +3738,7 @@
     let prev = null;
     try { prev = Game.sleepPreview(); } catch (e) {}
     if (!prev) return '';
-    return `<p class="small" style="opacity:.6">😴 ${esc(prev.name)} · +${prev.heal} health · energy restored${prev.note ? `<br>${esc(prev.note)}` : ''}</p>`;
+    return `<p class="small" style="opacity:.6">😴 ${esc(prev.name)} · +${prev.heal} health · energy restored${prev.note ? `<br>${esc(prev.note)}` : ''}${prev.warn ? `<br>⚠️ ${esc(prev.warn)}` : ''}</p>`;
   }
 
   function panelHaven(st) {
