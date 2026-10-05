@@ -2475,6 +2475,33 @@
         try { this.remember(vid, 'you_threatened', 'demanded their food'); } catch (e) {}
       };
       if (temp === 'cautious' || temp === 'withdrawn') {
+        // BREAKING POINT (Steve 2026-10-05): shake down the same terrified
+        // person too often and they stop yielding. Cornered animals do one of
+        // two things: snap, or run. The second shakedown telegraphs it — the
+        // player is warned, and choosing to push past the warning is on them.
+        const day = this.state.scholar.day;
+        const recentThreats = (((v.memory || {})[vid] || [])
+          .filter(m => m.t === 'you_threatened' && day - (m.day || 0) <= 3)).length;
+        const curFear = (this.npcNeeds(vid).fear || 0);
+        if (recentThreats >= 2 || curFear >= 95) {
+          if (Math.random() < 0.5) {
+            // SNAP: they swing. Desperate, not skilled. Nobody wanted this.
+            this.say(`😱 Something in ${dname} breaks — not away from you, THROUGH you. A scream with no words in it, and suddenly they're swinging.`);
+            this.bumpTrust(vid, -25);
+            markBully();
+            this.say(`🥊 ${dname} swings. Desperate, not skilled. Nobody wanted this — least of all them.`);
+            try { if (this.npcBetrays) this.npcBetrays(vid); } catch (e) {}
+            return 'fight';
+          }
+          // RUN: they leave. Haven isn't worth this.
+          this.say(`🏃 ${dname} doesn't answer. They just... back away. Then run — into the trees, away from Haven, away from you.`);
+          this.say(`Nobody stops them. A few people watched the whole thing happen, and nobody stops them.`);
+          this.bumpTrust(vid, -25);
+          markBully();
+          try { this.seedGossip('bully', { honest: -15, generous: -12 }, [vid]); } catch (e) {}
+          try { this.removeVillager(vid, 'fled'); } catch (e) {}
+          return 'fled';
+        }
         // They yield. Terrified. The village sees.
         if (demand < 100) {
           this.say(`😨 ${dname} empties their pockets with shaking hands. There's almost nothing there. "Please. That's all I have."`);
@@ -2485,6 +2512,11 @@
         this.npcNeeds(vid).fear = Math.min(100, (this.npcNeeds(vid).fear || 0) + 40);
         this.bumpTrust(vid, -40);
         markBully();
+        if (recentThreats >= 1) {
+          // telegraphed: the next one breaks them. Their words, on the record.
+          this.say(`😨 As they hand it over, ${dname} whispers: "Please. Not again. I'll tell — I'll tell everyone."`);
+          try { this.seedGossip('bully', { honest: -12, generous: -10 }, [vid]); } catch (e) {}
+        }
         return 'yielded';
       }
       if (temp === 'bold' || temp === 'prickly' || temp === 'intense') {
@@ -13089,11 +13121,12 @@
         // HUMAN COMBAT IS NOT FUN. It's traumatic. No cool moves, no style points.
         // The text says what happened. Your hands did it. You live with it.
         const wtxt = w.unarmed ? 'your hands' : `the ${w.name}`;
+        const wverb = w.unarmed ? 'connect' : 'connects';
         const vDarkH = this.npcDark(t.villagerId);
         const lines = [
           `You hurt ${t.name} with ${wtxt}. They make a sound you will hear again tonight.`,
           `Your hands move before you decide. Blood. ${t.name} is staring at you like you're a stranger.`,
-          `${wtxt} connects. ${t.name} gasps — surprised, more than anything. Like they didn't think you'd really do it.`,
+          `${wtxt} ${wverb}. ${t.name} gasps — surprised, more than anything. Like they didn't think you'd really do it.`,
         ];
         if (vDarkH && vDarkH.kind === 'malicious') {
           lines.push(`You hurt ${t.name} with ${wtxt}. They smile — wrong, late — and that scares you more than the blood.`);
