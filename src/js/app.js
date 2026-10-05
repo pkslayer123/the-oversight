@@ -3053,6 +3053,14 @@
     document.querySelectorAll('[data-stash-give]').forEach(b => b.onclick = () => { Game.donateMaterial(b.dataset.stashGive, 9999); refresh(); });
     document.querySelectorAll('[data-stash-take]').forEach(b => b.onclick = () => { Game.takeMaterial(b.dataset.stashTake, 5); refresh(); });
     document.querySelectorAll('[data-stash-tool]').forEach(b => b.onclick = () => { Game.takeTool(b.dataset.stashTool); refresh(); });
+    // Membership: remote applications + shelter building (Haven panel).
+    document.querySelectorAll('[data-mship-accept]').forEach(b => b.onclick = () => { Game.acceptApplication(b.dataset.mshipAccept); refresh(); });
+    document.querySelectorAll('[data-mship-refuse]').forEach(b => b.onclick = () => { Game.refuseApplication(b.dataset.mshipRefuse); refresh(); });
+    document.querySelectorAll('[data-mship-build]').forEach(b => b.onclick = () => { Game.buildShelter(); refresh(); });
+    // Hierarchy: tribute + demands (Haven panel).
+    document.querySelectorAll('[data-link-pay]').forEach(b => b.onclick = () => { Game.payTribute(b.dataset.linkPay); refresh(); });
+    document.querySelectorAll('[data-demand-yes]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandYes, true); refresh(); });
+    document.querySelectorAll('[data-demand-no]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandNo, false); refresh(); });
     wirePanel(st, n);
     wireContextBar();
     wireSelfBar();
@@ -3281,6 +3289,36 @@
       <button class="btn sm ghost" id="x-caches">📍 Caches</button>
       ${sleepHintHTML()}
       ${Game.stashHtml()}
+      ${(() => {
+        try {
+          const gs = Game.growthStatus();
+          const m = Game.mshipState();
+          const away = Game.awayMembers().length;
+          const apps = (m.applications || []).map(a => {
+            const j = Game.judgeApplication(a);
+            return `<p class="small">📨 <b>${a.name}</b>${a.fromVillageName ? ' <span style="opacity:.7">of ' + a.fromVillageName + '</span>' : ''} — ${a.formerOccupation || 'drifter'} · "${a.reason}"<br><span style="opacity:.7">${j.reasons.join(' ')}</span><br><button class="btn sm" data-mship-accept="${a.id}">Accept</button> <button class="btn sm ghost" data-mship-refuse="${a.id}">Turn away</button></p>`;
+          }).join('');
+          return `<p class="small" style="margin-top:6px"><b>🏠 Membership:</b> ${gs.used}/${gs.housing} housed${away ? ' · ' + away + ' away (still ours — no check-ins)' : ''}${gs.room <= 0 ? ' · ⚠ FULL' : ''}</p>
+          <div class="btnrow"><button class="btn sm ghost" data-mship-build>🔨 Build shelter (+2, 10 wood)</button></div>
+          ${apps ? `<div style="margin-top:4px"><p class="small"><b>Remote applications:</b></p>${apps}</div>` : ''}
+          ${(() => {
+            try {
+              const links = Game.villageLinks('haven');
+              if (!links.length) return '';
+              return '<div style="margin-top:4px"><p class="small"><b>⛓️ Links:</b></p>' + links.map(l => {
+                const other = l.subordinate === 'haven' ? l.primary : l.subordinate;
+                const nm = Game._ovName(other);
+                const sub = l.subordinate === 'haven';
+                const paid = (l.tributePaidWeek >= Math.floor(Game.state.scholar.day / 7));
+                let html = `<p class="small">⛓️ ${sub ? 'Bows to ' + nm : nm + ' bows to Haven'} · trust ${l.trust} · tribute ${l.tributeKcalPerWeek.toLocaleString()} kcal/wk${sub ? (paid ? ' (paid ✓)' : ' (DUE ⚠)') : ''}`;
+                if (sub && !paid) html += ` <button class="btn sm" data-link-pay="${l.id}">Pay tribute</button>`;
+                if (l.pendingDemand) html += `<br>📯 ${l.pendingDemand.detail}<br><button class="btn sm" data-demand-yes="${l.id}">Honor it</button> <button class="btn sm ghost" data-demand-no="${l.id}">Refuse</button>`;
+                return html + '</p>';
+              }).join('') + '</div>';
+            } catch (e) { return ''; }
+          })()}`;
+        } catch (e) { return ''; }
+      })()}
       <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
       <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry ${Game.fmtKcal(8000)}+ (${Game.fmtKcal(st.pantryKcal)})</p>
       <p class="small" style="opacity:.7">Tap a person in the grid to talk. They\'re living their lives.</p>
