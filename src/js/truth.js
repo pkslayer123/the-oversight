@@ -267,7 +267,7 @@
 
       const lies = this.npcLies(vid);
       const intel = this.npcIntel ? this.npcIntel(vid).primary : 'steady';
-      let detectChance = 0.25;
+      let detectChance = 0.30;
       if (intel === 'observant') detectChance += 0.25;
       if (intel === 'social') detectChance += 0.15;
       if (intel === 'analytical') detectChance += 0.10;
@@ -356,10 +356,10 @@
 
       const options = [];
       // truth about occupation (if target is lying, teller might know the truth)
-      if (lies && lies.occupation && !lies.occupation.confessed && Math.random() < 0.35) {
+      if (lies && lies.occupation && !lies.occupation.confessed && Math.random() < 0.45) {
         options.push({ field: 'occupation', truth: lies.occupation.truth, lie: lies.occupation.told });
       }
-      if (lies && lies.origin && !lies.origin.confessed && Math.random() < 0.30) {
+      if (lies && lies.origin && !lies.origin.confessed && Math.random() < 0.40) {
         options.push({ field: 'origin', truth: lies.origin.truth, lie: lies.origin.told });
       }
       // mundane true facts (not about lies — just village talk)
@@ -371,18 +371,33 @@
       const teller = this.displayName(tellerVid);
       const target = this.displayName(targetVid);
       const first = String(target).split(' ')[0];
+      const an = (w) => /^[aeiou]/i.test(w) ? 'an' : 'a';
+      // field-aware phrasing: "were a surgeon" vs "were from Denver"
+      const lieWord = g.field === 'origin' ? `from ${g.lie}` : `${an(g.lie)} ${g.lie}`;
+      const truthWord = g.field === 'origin' ? `from ${g.truth}` : `${an(g.truth)} ${g.truth}`;
       let line;
       if (g.lie) {
-        // teller knows the truth and it contradicts the lie
-        const lines = [
-          `"${first}? They told you they were ${/^[aeiou]/i.test(g.lie) ? 'an' : 'a'} ${g.lie}? Huh." ${teller} looks away. "${first} was ${/^[aeiou]/i.test(g.truth) ? 'an' : 'a'} ${g.truth}. Everyone knew."`,
-          `"Don't repeat this, but ${first}'s story doesn't hold. ${/^[aeiou]/i.test(g.truth) ? 'An' : 'A'} ${g.truth}, back before. Not what they told you."`,
-        ];
-        line = lines[Math.floor(Math.random() * lines.length)];
+        // teller knows the truth and it contradicts the lie — but only frame
+        // it as "they told YOU that" if you actually heard the claim. Otherwise
+        // it's straight intel: the village polices its own lies.
+        const heardClaim = this.getClaims(targetVid, g.field).length > 0;
+        if (heardClaim) {
+          const lines = [
+            `"${first}? They told you they were ${lieWord}? Huh." ${teller} looks away. "${first} was ${truthWord}. Everyone knew."`,
+            `"Don't repeat this, but ${first}'s story doesn't hold. ${g.field === 'origin' ? 'From' : an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}, back before. Not what they told you."`,
+          ];
+          line = lines[Math.floor(Math.random() * lines.length)];
+        } else {
+          const lines = [
+            `"${first}?" ${teller} lowers their voice. "Between us — they're not ${lieWord}. They're ${truthWord}. Don't say who told you."`,
+            `"You didn't hear it from me, but ${first}'s story doesn't hold. ${g.field === 'origin' ? 'From' : an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}, back before."`,
+          ];
+          line = lines[Math.floor(Math.random() * lines.length)];
+        }
       } else {
-        line = `"${first}? ${/^[aeiou]/i.test(g.truth) ? 'An' : 'A'} ${g.truth}, back before. Solid person."`;
+        line = `"${first}? ${an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}, back before. Solid person."`;
       }
-      // cross-reference against what YOU were told
+      // cross-reference against what YOU were told (only when you heard a claim)
       if (g.lie) this.checkGossipClaim(targetVid, g.field, g.truth, tellerVid);
       return { line, target: targetVid, field: g.field, truth: g.truth, contradictsLie: !!g.lie };
     },
@@ -595,7 +610,7 @@
     // imperfect people failing to maintain the story.
     const isPathological = lie.motive === 'pathological';
     const isManipulative = lie.motive === 'manipulation';
-    let slipP = isPathological ? 0.02 : isManipulative ? 0.06 : 0.14;
+    let slipP = isPathological ? 0.02 : isManipulative ? 0.06 : 0.18;
     // stress makes liars worse: low trust, recent confrontation, fear
     try {
       const trust = ((this.state.village.trust || {})[vid]) || 10;
@@ -735,7 +750,7 @@
           // slips are rare but inevitable — lies decay. Bad liars decay faster.
           // (Pathological liars are good at this; everyone else leaks.)
           const slipRate = lie.motive === 'pathological' ? 0.05
-            : lie.motive === 'manipulation' ? 0.09 : 0.14;
+            : lie.motive === 'manipulation' ? 0.10 : 0.17;
           if (Math.random() < slipRate) this.truthSlip(vid, lie);
         }
         // behavior observations: goal vs actions (ambient, more common now)

@@ -177,6 +177,51 @@ function ok(name, cond) {
     ok('resolve doubt (no doubts to test)', true);
   }
 
+  // --- 19. Gossip grammar: origin lies say "from X", not "a X" ---
+  const CN = roster[2];
+  Game.vpOf(CN).lies = { origin: { told: 'Denver', truth: 'Akron', motive: 'hiding', field: 'origin' } };
+  // force the gossip branch: high teller trust, deterministic reveal
+  v.trust[roster[3]] = 90;
+  let originLine = null;
+  for (let i = 0; i < 60 && !originLine; i++) {
+    const gg = Game.npcGossipAbout(roster[3], CN);
+    if (gg && gg.field === 'origin' && gg.contradictsLie) originLine = gg.line;
+  }
+  ok('origin gossip line generated', !!originLine);
+  if (originLine) {
+    ok('origin gossip uses "from" phrasing', /from Denver|from Akron/i.test(originLine));
+    ok('origin gossip never says "a Denver"', !/a Denver/i.test(originLine));
+  }
+
+  // --- 20. Gossip framing: no false "they told you" premise without a claim ---
+  // C has an origin lie but the player never heard the claim (no occupation
+  // lie to trigger 'past' claims) — line must not claim "they told you".
+  const before = (Game.state.codex.doubts || []).length;
+  let noClaimLine = null;
+  for (let i = 0; i < 60 && !noClaimLine; i++) {
+    const gg = Game.npcGossipAbout(roster[3], CN);
+    if (gg && gg.field === 'origin' && gg.contradictsLie) noClaimLine = gg.line;
+  }
+  if (noClaimLine) {
+    ok('no-claim gossip avoids "they told you" premise', !/they told you/i.test(noClaimLine));
+  } else {
+    ok('no-claim gossip line generated', false);
+  }
+  // and with a claim on record, the "they told you" framing is correct
+  Game.trackClaimSilent(CN, 'origin', 'Denver');
+  let claimLine = null;
+  for (let i = 0; i < 60 && !claimLine; i++) {
+    const gg = Game.npcGossipAbout(roster[3], CN);
+    if (gg && gg.field === 'origin' && gg.contradictsLie) claimLine = gg.line;
+  }
+  if (claimLine) {
+    ok('heard-claim gossip uses "they told you" framing', /they told you/i.test(claimLine));
+    ok('heard-claim gossip creates cross-ref doubt',
+      (Game.state.codex.doubts || []).length > before);
+  } else {
+    ok('heard-claim gossip line generated', false);
+  }
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('FATAL', e); process.exit(1); });
