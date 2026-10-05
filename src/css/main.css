@@ -503,14 +503,16 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   50% { box-shadow: inset 0 0 0 4px rgba(77,243,255,.6); }
 }
 .targetbar {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 8px; margin: 6px 0; padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 8px; margin: 6px 0; padding: 8px 10px;
   border: 1px solid #4df3ff; border-radius: 10px;
   background: rgba(77,243,255,.07);
   font-size: 13px;
 }
+.target-prompt { font-size: 14px; }
+.target-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.target-pick { font-size: 13px; padding: 6px 10px; }
 .targetbar .t-cancel {
-  flex-shrink: 0; padding: 6px 12px; border-radius: 8px;
+  align-self: flex-end; padding: 6px 12px; border-radius: 8px;
   border: 1px solid #555; background: #222; color: #ccc;
   font-size: 12px; cursor: pointer;
 }

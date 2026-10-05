@@ -790,6 +790,18 @@
   function wireTargetBar() {
     const c = document.getElementById('t-cancel');
     if (c) c.onclick = () => { exitTargeting(); refresh(); };
+    // Target pick buttons: tap to select (instead of tapping the grid)
+    document.querySelectorAll('.target-pick').forEach(btn => {
+      btn.onclick = () => {
+        const idx = +btn.dataset.tidx;
+        if (!targeting || !targeting.targets[idx]) return;
+        const t = targeting.targets[idx];
+        const cb = targeting.onPick;
+        targeting = null;
+        refresh();
+        if (cb) { try { cb(t); } catch (e) {} }
+      };
+    });
   }
 
   function cellPopup(cx, cy) {
@@ -1261,8 +1273,35 @@
 
   function targetBarHTML() {
     if (!targeting) return '';
-    return `<div class="targetbar"><span>\u{1F3AF} ${esc(targeting.prompt)} — tap a highlighted target</span>` +
-      `<button class="t-cancel" id="t-cancel">\u2715 Cancel</button></div>`;
+    // TARGETING (Steve 2026-10-05): arrows and explanations are necessary.
+    // When facing a pack, you must know WHICH one you're targeting. List them
+    // with directional arrows and status, not just highlighted cells.
+    const p = Game.state.scholar;
+    const px = p.mx ?? Game.state.px ?? 4, py = p.my ?? Game.state.py ?? 4;
+    const dirArrow = (dx, dy) => {
+      const sx = Math.sign(dx), sy = Math.sign(dy);
+      return { '-1,-1': '↖', '0,-1': '↑', '1,-1': '↗', '-1,0': '←', '0,0': '⊙', '1,0': '→', '-1,1': '↙', '0,1': '↓', '1,1': '↘' }[sx + ',' + sy] || '·';
+    };
+    const btns = targeting.targets.map((t, i) => {
+      const arrow = dirArrow(t.cx - px, t.cy - py);
+      // Status: wounded? telegraphing?
+      let status = '';
+      try {
+        const f = Game.tbfight ? Game.tbfight.fighters.find(x => x.key === t.key) : null;
+        if (f) {
+          if (f.hp < f.maxHp * 0.5) status = ' (wounded)';
+          else if (f.hp < f.maxHp) status = ' (hurt)';
+          if (f.telegraph) status += ' ⚠';
+        }
+      } catch (e) {}
+      const label = t.label || `target ${i + 1}`;
+      // Shorten pack names: "the grass is humming in harmony 3" -> "harmony 3"
+      const short = label.replace(/^the grass is humming in /i, '').trim() || label;
+      return `<button class="btn sm target-pick" data-tidx="${i}">${arrow} ${esc(short)}${status}</button>`;
+    }).join('');
+    return `<div class="targetbar"><div class="target-prompt">🎯 ${esc(targeting.prompt)}</div>` +
+      `<div class="target-list">${btns}</div>` +
+      `<button class="t-cancel" id="t-cancel">✕ Cancel</button></div>`;
   }
 
   // ============ TELEGRAPHED DANGER ============
