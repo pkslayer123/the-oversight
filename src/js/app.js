@@ -3975,7 +3975,6 @@
       ${canScream ? `<button class="btn sm ghost" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀</button>` : ''}
       <button class="btn sm ghost" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢</button>
       <button class="btn sm ghost" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖</button>
-      <button class="btn sm ghost" id="c-flee" ${p.acted ? 'disabled' : ''}>🏃</button>
       <button class="btn sm ghost" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸</button>
     </div>
     <div class="actions" id="c-talkrow" style="display:none"></div>`;
@@ -4044,7 +4043,6 @@
     on('c-scream', () => { Game.tbPlayerScream(); rerender(); });
     on('c-shout', () => { Game.tbPlayerShout(); rerender(); });
     on('c-offer', () => { Game.tbPlayerOfferFood(); rerender(); });
-    on('c-flee', () => { Game.tbPlayerFlee(); rerender(); });
     // TALK: words are actions too. Pick who, then how.
     const showTalkRow = (targetKey) => {
       const row = document.getElementById('c-talkrow');

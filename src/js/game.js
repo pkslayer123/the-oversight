@@ -12562,6 +12562,34 @@
       const [lx, ly] = path[path.length - 1];
       const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [p.mx, p.my];
       this.state.scholar.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
+      // FLEE BY MOTION (Steve 2026-10-05): no FLEE button — you run by moving.
+      // If you're 5+ tiles from every monster, you've broken contact. 50% to
+      // escape clean; otherwise it pursues (combat continues, it closes in).
+      const mons = f.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
+      if (mons.length) {
+        const nearest = Math.min(...mons.map(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my))));
+        if (nearest >= 5) {
+          if (Math.random() < 0.5) {
+            this.say('You break contact — gone into the undergrowth. It loses your trail.');
+            p.fled = true;
+            this.tbEnd('fled');
+            return true;
+          } else {
+            this.say('It\'s on your heels — no clean escape!');
+            // Pursuit: nearest monster closes 2 tiles toward you
+            const chaser = mons.reduce((a, b) => 
+              Math.max(Math.abs(a.mx - p.mx), Math.abs(a.my - p.my)) < 
+              Math.max(Math.abs(b.mx - p.mx), Math.abs(b.my - p.my)) ? a : b);
+            for (let i = 0; i < 2; i++) {
+              const dx = Math.sign(p.mx - chaser.mx), dy = Math.sign(p.my - chaser.my);
+              const nx = chaser.mx + dx, ny = chaser.my + dy;
+              if (nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8 && !this.tbBlocked(nx, ny)) {
+                chaser.mx = nx; chaser.my = ny;
+              } else break;
+            }
+          }
+        }
+      }
       // ACTION ECONOMY: out of moves AND acted -> the turn ends on its own.
       if (p.moveLeft <= 0 && p.acted) this.tbPlayerEndTurn();
       else this.tbRefreshTelegraphUI();
@@ -12749,28 +12777,6 @@
       this.say(`You SCREAM. Milk curdles somewhere.${n ? ' Its focus shatters — the attack fizzles.' : ''} It freezes. (stunned)`);
       this.tbRefreshTelegraphUI();
       this.tbAfterPlayerAction();
-      return true;
-    },
-
-    tbPlayerFlee() {
-      const f = this.tbfight;
-      if (!f || !this.tbIsPlayerTurn()) return false;
-      const p = this.tbFighter('p');
-      if (p.acted) { this.say('Already acted this turn.'); return false; }
-      if (this.hasAbility('rage') && (p.hp / p.maxHp) < 0.5) {
-        this.say('RAGE: flee? FLEE? The thought dies before it finishes.');
-        return false;
-      }
-      p.acted = true;
-      if (Math.random() < 0.8) {
-        p.fled = true;
-        this.say('You FLEE — crashing through the undergrowth, heart hammering.');
-        try { this.observe('flee'); } catch (e) {}
-        this.tbEnd('fled');
-      } else {
-        this.say('You try to flee — it cuts you off!');
-        this.tbAfterPlayerAction();
-      }
       return true;
     },
 
