@@ -5398,6 +5398,49 @@
       return true;
     },
 
+    // beginPathWalk: validate + charge a committed walk UP FRONT (same costs
+    // as movePath: 10 kcal/square), then hand the path to the UI to animate
+    // step-by-step via pathStep. Returns the path ([[x,y],...]) or null.
+    // The UI animates the FULL path — tap-to-move never teleports.
+    beginPathWalk(tx, ty) {
+      const s = this.state.scholar;
+      const sx = s.mx ?? 4, sy = s.my ?? 4;
+      if (tx === sx && ty === sy) return [];
+      const path = this.findPath(sx, sy, tx, ty);
+      if (!path) { this.say('No path there.'); return null; }
+      const cost = path.length * 10;
+      if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return null; }
+      s.kcal -= cost;
+      const [lx, ly] = path[path.length - 1];
+      const [p2x, p2y] = path.length >= 2 ? path[path.length - 2] : [sx, sy];
+      s.facing = { x: Math.sign(lx - p2x) || 0, y: Math.sign(ly - p2y) || 1 };
+      if (path.length > 1) this.say(`Walking ${path.length} squares (${cost} kcal)…`);
+      return path;
+    },
+
+    // pathStep: ONE step of a committed walk. The kcal cost was prepaid by
+    // beginPathWalk; this charges the 1 tick of time, runs the world
+    // (monsters notice per square, villagers reposition), and revalidates
+    // the tile — the world may have changed mid-walk. Returns true if the
+    // step landed, false if the walk must stop here (caller purges the rest).
+    pathStep(tx, ty) {
+      const s = this.state.scholar;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      if (Math.abs(tx - px) > 1 || Math.abs(ty - py) > 1 || (tx === px && ty === py)) return false;
+      if (tx < 0 || tx > 8 || ty < 0 || ty > 8) return false;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[ty] && detail[ty][tx];
+      if (this.cellProps(cell).blocks) return false;
+      s.facing = { x: Math.sign(tx - px), y: Math.sign(ty - py) };
+      s.mx = tx; s.my = ty;
+      // MONSTERS MOVE WHEN YOU DO — per square, same as microMove.
+      this.monsterTurn(); this.animalTurn();
+      this.ensureVillagerPositions();
+      // ACTION CLOCK: one step = 1 tick. The beat you feel per step IS the cost.
+      this.tickAction(1);
+      return true;
+    },
+
     // cleanWaterForCooking: clean liters reachable for cooking right now.
     // YOUR bottles anywhere; the village well only when you're AT haven.
     cleanWaterForCooking() {

@@ -938,3 +938,30 @@ IMPLEMENTATION:
 - Pacing per Steve: "savored slowly." Nothing social is front-loaded.
 - Save index stores villagerName (generated chars have no JSON entry).
 - Title screen renamed THE SCATTERING -> THE OVERSIGHT (was missed in app.js).
+
+## 2026-10-04 — Movement UX overhaul: d-pad primary, animated steps
+
+- **Steve's verdict from phone playtest:** multi-tile moves make the screen skip/jump
+  (headache-inducing); tap-to-move is confusing; instant movement feels unfair (no
+  time cost, no readability).
+- **D-pad is now PRIMARY movement** (8 directions, cardinals + diagonals), floating
+  bottom-right of the 9x9 grid (thumb zone), overlaying the grid so the one-screen
+  rule holds. Collapsible to 🧭; ■ stops a walk.
+- **Every step animates** via FLIP (capture entity rects → run the Game step →
+  re-render grid → invert → eased glide). Entities carry `data-ent` keys
+  (player, monsters, animals, villagers, corpses). No teleports, ever.
+- **Each step takes a visible beat** (220ms d-pad, 140ms path) — the 1-tick/step
+  time cost that already existed is now FELT, and the day-tick bar + dial update
+  per step so the cost is SEEN. (Action economy rule: everything costs time,
+  time+calories, or calories — movement was already 1 tick; this makes it visible.)
+- **Hold-to-walk:** holding a direction queues the next step the moment the last
+  lands — continuous, gapless. Pointer release anywhere stops it (pad may
+  re-render mid-hold). Queue capped at 10.
+- **Tap-to-move stays as the accessibility alternative** but walks the FULL path
+  step-by-step (Game.beginPathWalk charges 10 kcal/sq up front, Game.pathStep
+  walks one tile per beat with monster/animal/villager turns per step).
+- **Combat:** d-pad steps one tile via tbPlayerMove on the player's turn.
+- Alternatives considered: shrinking the grid to fit a docked pad (broke the
+  844px budget on small phones); re-rendering the whole screen per step
+  (the old jump); speeding steps below ~150ms (felt instant again — the beat
+  IS the readability).

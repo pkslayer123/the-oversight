@@ -515,8 +515,8 @@
         if (path.length < bestD) { bestD = path.length; best = [nx, ny]; }
       }
       if (best) {
-        if (Game.movePath(best[0], best[1])) { refresh(); cellPopup(cx, cy); }
-        else refresh();
+        // Animated: the popup re-opens when the walk lands.
+        if (!walkPathAnimated(best[0], best[1], (ok) => { if (ok) cellPopup(cx, cy); })) cellPopup(cx, cy);
       } else {
         Game.say('No way to get closer.');
         refresh();
@@ -947,14 +947,17 @@
       } else {
         // passable
         if (dist <= 1 && !isMe) {
-          actions.push(['Step here', () => Game.microMove(cx, cy)]);
+          actions.push(['Step here', () => {
+            MoveAnim.purgeKind('path');
+            MoveAnim.enqueue({ dx: cx - px, dy: cy - py, kind: 'step', ms: MoveAnim.stepMs });
+          }]);
         } else if (!isMe) {
           // Farther walkable cell: offer the walk (costs kcal, not free).
           // Pathfind first — if no path, say so instead of offering.
           const path = Game.findPath(px, py, cx, cy);
           if (path && path.length) {
             const cost = path.length * 10;
-            actions.push([`Walk here (${cost} kcal)`, () => Game.movePath(cx, cy)]);
+            actions.push([`Walk here (${cost} kcal)`, () => walkPathAnimated(cx, cy)]);
           } else {
             desc += ' (No path there.)';
           }
@@ -2913,6 +2916,169 @@
     if (el) el.style.display = 'none';
   }
 
+  // ============ D-PAD MOVEMENT + STEP ANIMATOR ============
+  // The d-pad is the PRIMARY movement: 8 directions, one press = one step.
+  // Each step animates tile-to-tile (FLIP, eased) and takes a visible beat —
+  // movement costs time you can feel, never an instant teleport.
+  // Tap-to-move stays as the accessibility alternative, and it now walks the
+  // FULL path step-by-step instead of jumping.
+  const MoveAnim = S.MoveAnim;
+  function expHeadHTML(st) {
+    return bar('scattering://field', `${dialHTML(st)}<span>day ${st.day} · ${st.dayPart}<br><span style="font-size:11px;opacity:.7">${esc(st.dayPartHint)}</span></span>${Game.partyHud()}`);
+  }
+  // D-PAD: compact floating pad docked bottom-right of the grid — the thumb
+  // zone on a one-handed phone. It overlays the grid (never pushes layout,
+  // never breaks the one-screen rule) and collapses to 🧭 when you need to
+  // see the tiles underneath. ■ stops a walk in progress.
+  function dpadHTML() {
+    const dirs = [
+      [-1, -1, '↖', 'northwest'], [0, -1, '↑', 'north'], [1, -1, '↗', 'northeast'],
+      [-1, 0, '←', 'west'], null, [1, 0, '→', 'east'],
+      [-1, 1, '↙', 'southwest'], [0, 1, '↓', 'south'], [1, 1, '↘', 'southeast'],
+    ];
+    const btns = dirs.map(d => d
+      ? `<button class="dpbtn" data-dx="${d[0]}" data-dy="${d[1]}" aria-label="step ${d[3]}">${d[2]}</button>`
+      : `<button class="dpbtn dpstop" id="dp-stop" aria-label="stop walking" title="Stop">■</button>`).join('');
+    return `<div class="dpad" id="dpad" role="group" aria-label="walk pad">${btns}<button class="dpmin" id="dp-min" aria-label="hide walk pad">–</button></div>`;
+  }
+  // The animator's game-logic hook: resolve the step against the CURRENT
+  // position at execution time and run exactly one Game step — monsters,
+  // animals, villagers, and the 1-tick time cost all ride along per step.
+  function moveStepHook(step) {
+    step._sig = moveSig();
+    if (Game.tbfight) {
+      const p = Game.tbFighter('p');
+      if (!p || !Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); return { moved: false }; }
+      const tx = p.mx + step.dx, ty = p.my + step.dy;
+      if (tx < 0 || tx > 8 || ty < 0 || ty > 8) return { moved: false };
+      return { moved: !!Game.tbPlayerMove(tx, ty) };
+    }
+    const s = Game.state.scholar;
+    const tx = (s.mx ?? 4) + step.dx, ty = (s.my ?? 4) + step.dy;
+    const moved = step.kind === 'path' ? Game.pathStep(tx, ty) : Game.microMove(tx, ty);
+    // A blocked path step kills the rest of the walk — the world changed.
+    if (!moved && step.walkId) return { moved: false, purge: step.walkId };
+    return { moved: !!moved };
+  }
+  function renderMoveGrid() {
+    const g = document.querySelector('.ord-gridwrap .detail');
+    if (g) g.innerHTML = renderDetail(Game.status());
+  }
+  // Sync signature: what counts as "something actually changed" this step.
+  function moveSig() {
+    const st = Game.status();
+    return {
+      log: (Game.state.log || []).length, day: st.day, part: Game.dayPart,
+      combat: !!Game.tbfight, over: !!st.over,
+      tbm: Game.tbfight && Game.tbFighter('p') ? Game.tbFighter('p').moveLeft : -1,
+    };
+  }
+  function syncAfterMove(step, res) {
+    // The player moved: any open tile panel is now about somewhere else.
+    const info = document.getElementById('inlineslot');
+    if (info && res && res.moved) info.innerHTML = '';
+    const before = step._sig, now = moveSig();
+    const big = !before || now.log !== before.log || now.day !== before.day ||
+      now.part !== before.part || now.combat !== before.combat ||
+      now.over !== before.over || now.tbm !== before.tbm;
+    // Big changes (day part turned, combat started/ended, something was
+    // said) get the full re-render — the grid is already in its final
+    // position from the animation, so nothing jumps.
+    if (big) { expeditionScreen(); return; }
+    // Light sync: the clock visibly advances EVERY step — the day-tick bar
+    // drains and the dial turns. That's the time cost, made visible.
+    const st = Game.status();
+    const hw = document.getElementById('exphead');
+    if (hw) hw.innerHTML = expHeadHTML(st);
+    const dw = document.getElementById('daytickwrap');
+    if (dw) dw.innerHTML = dayTickBar(st);
+    const sb = document.querySelector('.ord-status');
+    if (sb) sb.innerHTML = statusBars(st);
+  }
+  MoveAnim.hooks.step = moveStepHook;
+  MoveAnim.hooks.render = renderMoveGrid;
+  MoveAnim.hooks.sync = syncAfterMove;
+  MoveAnim.hooks.gridEl = () => document.querySelector('.ord-gridwrap .detail');
+  // D-PAD PRESS: immediate first step + hold-to-keep-walking. A manual step
+  // cancels any in-progress tap-to-move path — hands on the pad win.
+  function dpadPress(dx, dy) {
+    if (targeting) { toast('Pick a target first — or ✕ to cancel.'); return; }
+    if (Game.tbfight && !Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); refresh(); return; }
+    MoveAnim.purgeKind('path');
+    MoveAnim.setHold({ dx, dy });
+    MoveAnim.enqueue({ dx, dy, kind: 'step', ms: MoveAnim.stepMs });
+  }
+  // TAP-TO-MOVE (accessibility alternative): the FULL path walks step by
+  // step through the animator — never a teleport. onDone(ok) fires when the
+  // walk's steps all resolve (ok=false if interrupted or blocked).
+  let walkSeq = 0;
+  function walkPathAnimated(tx, ty, onDone) {
+    if (Game.tbfight) return false;
+    const path = Game.beginPathWalk(tx, ty);
+    if (!path) { expeditionScreen(); return false; } // the say() needs a render
+    if (!path.length) { if (onDone) onDone(true); return true; }
+    const walkId = 'w' + (++walkSeq);
+    MoveAnim.purgeKind('path');
+    let px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+    let pending = 0, okAll = true;
+    for (const [x, y] of path) {
+      pending++;
+      MoveAnim.enqueue({ dx: x - px, dy: y - py, kind: 'path', walkId, ms: MoveAnim.pathMs })
+        .then((ok) => { okAll = okAll && ok; if (--pending === 0 && onDone) onDone(okAll); });
+      px = x; py = y;
+    }
+    return true;
+  }
+  function wireDpad() {
+    const pad = document.getElementById('dpad');
+    if (pad) {
+      pad.querySelectorAll('.dpbtn[data-dx]').forEach((b) => {
+        b.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          try { b.setPointerCapture(e.pointerId); } catch (_) {}
+          b.classList.add('held');
+          dpadPress(+b.dataset.dx, +b.dataset.dy);
+        });
+        const release = () => { b.classList.remove('held'); MoveAnim.clearHold(); };
+        b.addEventListener('pointerup', release);
+        b.addEventListener('pointercancel', release);
+        b.addEventListener('lostpointercapture', release);
+        b.addEventListener('contextmenu', (e) => e.preventDefault());
+      });
+      const stop = document.getElementById('dp-stop');
+      if (stop) stop.addEventListener('click', () => { MoveAnim.stopAll(); toast('Stopped.'); });
+      const min = document.getElementById('dp-min');
+      if (min) min.addEventListener('click', () => {
+        pad.classList.add('hidden');
+        const show = document.getElementById('dpshow');
+        if (show) show.classList.remove('hidden');
+      });
+    }
+    const show = document.getElementById('dpshow');
+    if (show) show.onclick = () => {
+      show.classList.add('hidden');
+      const p = document.getElementById('dpad');
+      if (p) p.classList.remove('hidden');
+    };
+  }
+  // Global: releasing the pointer ANYWHERE stops hold-to-walk. (The pad can
+  // be re-rendered mid-hold — the stop must not depend on the button living.)
+  window.addEventListener('pointerup', () => MoveAnim.clearHold());
+  window.addEventListener('pointercancel', () => MoveAnim.clearHold());
+  // DESKTOP QA: arrow keys walk. Only when the walk pad is on screen and the
+  // user isn't typing. Key repeat = hold-to-walk.
+  document.addEventListener('keydown', (e) => {
+    const K = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+    const d = K[e.key];
+    if (!d || !document.getElementById('dpad')) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (targeting) return; // same rule as the pad: pick a target first
+    e.preventDefault();
+    MoveAnim.enqueue({ dx: d[0], dy: d[1], kind: 'step', ms: MoveAnim.stepMs });
+  });
+  document.addEventListener('keyup', () => MoveAnim.clearHold());
+
   function expeditionScreen() {
     const st = Game.status();
     if (st.over) return ending();
@@ -2955,8 +3121,8 @@
     const n = Game.nodeDetail();
 
     screen.innerHTML = `
-      ${bar('scattering://field', `${dialHTML(st)}<span>day ${st.day} · ${st.dayPart}<br><span style="font-size:11px;opacity:.7">${esc(st.dayPartHint)}</span></span>${Game.partyHud()}`)}
-      ${dayTickBar(st)}
+      <div id="exphead">${expHeadHTML(st)}</div>
+      <div id="daytickwrap">${dayTickBar(st)}</div>
       <div class="game-cols">
         <div class="game-col-main">
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
@@ -2965,6 +3131,8 @@
             <div class="detail">${renderDetail(st)}</div>
             ${perceiveHTML()}
             <div id="inlineslot"></div>
+            ${dpadHTML()}
+            <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
           </div>
           ${st.inCombat ? `<div class="ord-combatpanel">${panelCombat(st)}</div>` : ''}
           <div class="ord-status">${statusBars(st)}</div>
@@ -2974,7 +3142,7 @@
           <div class="ord-danger">${dangerBarHTML()}</div>
           <div class="ord-ability">${abilityBarHTML()}</div>
           ${feedbackHTML()}
-          ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">👆 tap a tile to walk there · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
+          ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">🧭 d-pad walks a step · hold to keep walking · tap a far tile to walk the full path · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
           <div class="map minimap ord-minimap">${renderMap(st, tset)}</div>
         </div>
         <div class="game-col-side">
@@ -3079,12 +3247,12 @@
               if (!path || !path.length) continue;
               if (path.length < bestD) { bestD = path.length; best = [nx, ny]; }
             }
-            let moved = false;
-            if (best) moved = Game.movePath(best[0], best[1]);
-            else moved = Game.movePath(cx, cy); // surrounded — walk through as before
-            expeditionScreen();
-            if (moved) personSheet(villagerThere);
-            else cellPopup(cx, cy); // couldn't move — popup explains why
+            let walked = false;
+            // The sheet opens when the walk LANDS, not when the tap happens.
+            const _openAfter = (ok) => { if (ok) personSheet(villagerThere); else cellPopup(cx, cy); };
+            if (best) walked = walkPathAnimated(best[0], best[1], _openAfter);
+            else walked = walkPathAnimated(cx, cy, _openAfter); // surrounded — walk through as before
+            if (!walked) cellPopup(cx, cy); // couldn't start — popup explains why
             return;
           }
           // adjacent: a second tap on the same person (without moving away)
@@ -3092,27 +3260,31 @@
           if (lastPersonTap && lastPersonTap.vid === villagerThere &&
               lastPersonTap.px === px && lastPersonTap.py === py) {
             lastPersonTap = null;
-            if (Game.microMove(cx, cy)) { expeditionScreen(); personSheet(villagerThere); return; }
+            MoveAnim.purgeKind('path');
+            MoveAnim.enqueue({ dx: cx - px, dy: cy - py, kind: 'step', ms: MoveAnim.stepMs })
+              .then((ok) => { if (ok) { personSheet(villagerThere); return; } cellPopup(cx, cy); });
+            return;
           }
           lastPersonTap = { vid: villagerThere, px, py };
           expeditionScreen();
           personSheet(villagerThere);
           return;
         }
-        // walkable? GO. adjacent = step, distant = path. no confirmation, no popup.
+        // walkable? GO. adjacent = one animated step, distant = the FULL path
+        // animated step-by-step. Tap-to-move is the accessibility alternative
+        // now — the d-pad is primary — but it never teleports.
         if (!Game.cellProps(cell).blocks) {
           const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
-          let moved = false;
-          if (dist <= 1) moved = Game.microMove(cx, cy);
-          else moved = Game.movePath(cx, cy);
-          if (moved) {
-            // walked up to someone? their sheet opens — people get sheets, not panels.
-            // (re-render first so the grid shows your new position.)
-            expeditionScreen();
-            if (villagerThere) personSheet(villagerThere);
-            return;
+          if (dist <= 1) {
+            MoveAnim.purgeKind('path');
+            MoveAnim.enqueue({ dx: cx - px, dy: cy - py, kind: 'step', ms: MoveAnim.stepMs })
+              .then((ok) => { if (ok && villagerThere) personSheet(villagerThere); });
+          } else {
+            // couldn't start (no path / not enough kcal): the say() from
+            // beginPathWalk renders via walkPathAnimated's fallback.
+            walkPathAnimated(cx, cy, (ok) => { if (ok && villagerThere) personSheet(villagerThere); });
           }
-          // couldn't move (no path / not enough kcal) — popup explains why.
+          return;
         }
         // blocked or unpathable: popup for examine/interact.
         cellPopup(cx, cy);
@@ -3128,6 +3300,7 @@
       return;
     }
     document.getElementById('x-codex').onclick = codexScreen;
+    wireDpad();
     const taphintX = document.getElementById('taphint-x');
     if (taphintX) taphintX.onclick = dismissTutorial;
     const pantryBtn = document.getElementById('x-pantry');
@@ -3602,7 +3775,7 @@
           // Facing comes from your last step — the marker shows where you're headed.
           const f = Game.state.scholar.facing || { x: 0, y: 1 };
           const ang = Math.round(Math.atan2(f.x, -f.y) * 180 / Math.PI);
-          g = `<span class="pmark"><span class="ptoken">🧑</span><span class="pdir" style="transform:rotate(${ang}deg)">▲</span></span>`;
+          g = `<span class="pmark" data-ent="me"><span class="ptoken">🧑</span><span class="pdir" style="transform:rotate(${ang}deg)">▲</span></span>`;
           cls += ' me';
           entityHere = true;
         }
@@ -3669,18 +3842,26 @@
           const tbf = Game.tbfight;
           let drawn = false;
           if (tbf) {
-            for (const mf of tbf.fighters) {
+            for (let _mfi = 0; _mfi < tbf.fighters.length; _mfi++) {
+              const mf = tbf.fighters[_mfi];
               if (mf.kind !== 'monster' && mf.kind !== 'hostile') continue;
               if (!mf.alive || mf.fled || mf.mx !== cx || mf.my !== cy) continue;
-              g = esc(mf.emoji || '👹'); cls += ' monster';
+              // data-ent: stable key so the move animator can glide fighters
+              // tile-to-tile instead of teleporting them on re-render.
+              g = `<span data-ent="mon:${esc(mf.monsterId || mf.mdef && mf.mdef.id || ('tb' + _mfi))}">${esc(mf.emoji || '👹')}</span>`;
+              cls += ' monster';
               drawn = true; break;
             }
           }
           if (!drawn && mon && cx === mon.mx && cy === mon.my) {
             const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
-            g = esc(mdef.emoji || '👹'); cls += ' monster'; drawn = true;
+            g = `<span data-ent="mon:${esc(mon.id || 'wild')}">${esc(mdef.emoji || '👹')}</span>`;
+            cls += ' monster'; drawn = true;
           }
-          if (!drawn && ani && cx === ani.mx && cy === ani.my) { g = ANIMAL_GLYPH[ani.id] || '🐾'; cls += ' animal'; drawn = true; }
+          if (!drawn && ani && cx === ani.mx && cy === ani.my) {
+            g = `<span data-ent="ani:${esc(ani.id || 'wild')}">${ANIMAL_GLYPH[ani.id] || '🐾'}</span>`;
+            cls += ' animal'; drawn = true;
+          }
           if (!drawn) {
             // villagers: 🧍 with a TINY name label underneath.
             // (names were rendering at full size and swallowing the grid.)
@@ -3689,7 +3870,8 @@
                 const vp = Game.data.villagers.find(v => v.id === rid) || Game.data.background_survivors.find(v => v.id === rid);
                 const showName = Game.state.systemArrived || Game.nameKnown(rid);
                 const fname = showName ? (vp ? vp.name.split(' ')[0] : '?') : '';
-                g = `<span class="vtoken">🧍</span>` + (fname ? `<span class="vname">${esc(fname)}</span>` : '');
+                // vent wrapper: one animatable unit (glyph + name glide together).
+                g = `<span class="vent" data-ent="vil:${esc(rid)}"><span class="vtoken">🧍</span>` + (fname ? `<span class="vname">${esc(fname)}</span>` : '') + `</span>`;
                 cls += ' villager';
                 break;
               }
@@ -3700,7 +3882,8 @@
             const dead = Game.corpseAt(cx, cy);
             if (dead.length) {
               const dc = dead[0];
-              g = esc(Game.corpseGlyph(dc));
+              const _ckey = dc.kind + ':' + (dc.villagerId || dc.monsterId || dc.name || '?');
+              g = `<span data-ent="corpse:${esc(_ckey)}">${esc(Game.corpseGlyph(dc))}</span>`;
               cls += ' corpse';
               drawn = true;
             }
