@@ -11414,7 +11414,9 @@
       if (path.length > p.moveLeft) { this.say(`Too far — ${p.moveLeft} squares left.`); return false; }
       for (const o of f.fighters) {
         if ((o.kind === 'monster' || o.kind === 'hostile') && o.alive && o.mx === cx && o.my === cy) {
-          this.say("You don't stroll through a " + o.name + '.'); return false;
+          // Descriptors start with "a"/"an" ("a light in the dark...") — don't double the article.
+          const onm = /^(a|an) /i.test(o.name) ? o.name : 'a ' + o.name;
+          this.say("You don't stroll through " + onm + '.'); return false;
         }
       }
       p.moveLeft -= path.length;
@@ -11478,7 +11480,9 @@
         try { this.addTrauma(this.traumaForHurt(t.villagerId)); } catch (e) {}
       } else {
         const wtxt = w.unarmed ? '' : ` (${w.name})`;
-        this.say(`You STRIKE the ${t.name} for ${d}${wtxt}.`);
+        // Descriptors start with "a"/"an" — "the a light..." doubles the article. Strip it.
+        const tnm = String(t.name).replace(/^(a|an) /i, '');
+        this.say(`You STRIKE the ${tnm} for ${d}${wtxt}.`);
         this.tbStyle(5, 'solid hit');
       }
       this.tbDamage(t.key, d, 'you');
@@ -11746,7 +11750,9 @@
           try { this.registerDeath({ kind: 'person', villagerId: t.villagerId, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses(t.villagerId) }); } catch (e) {}
         }
         else {
-          this.say(`The ${t.name} falls.`);
+          // Descriptors start with "a"/"an" — strip it after "The".
+          const tnm = String(t.name).replace(/^(a|an) /i, '');
+          this.say(`The ${tnm} falls.`);
           try { this.registerDeath({ kind: 'monster', monsterId: (t.mdef || {}).id, monsterName: t.name, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses() }); } catch (e) {}
           if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
           // DEATH THROES: a sweeping-beam monster cut down before its first
@@ -11821,7 +11827,9 @@
         const t = this.tbFighter(a.target);
         if (t && t.alive) {
           const dmg = a.type === 'strike' ? S.combat.roll([4, 8]) : S.combat.roll([2, 4]);
-          this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${t.name}.`);
+          // Descriptors start with "a"/"an" — strip it after "the".
+          const tnm = String(t.name).replace(/^(a|an) /i, '');
+          this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${tnm}.`);
           this.tbDamage(t.key, dmg, v.name);
           // HIGHBEAM: hurting the deer moves them to the front of its list.
           try { const tt = this.tbFighter(t.key); if (tt && this.encUsesFifo(tt)) this.encNoticesPain(tt, v.key); } catch (e) {}
@@ -12042,6 +12050,10 @@
     // learns voices from the people it has noticed (the threat queue first),
     // otherwise the roster. Never the target's own name without the twist.
     vmVoiceName(m, target) {
+      // Pre-System, people are stranger descriptors, not names ("A person,
+      // maybe 50s") — the mimic imitates the VOICE, so the descriptor sits
+      // in the sentence lowercased: "it sounds like a person, maybe 50s".
+      const lower1 = (s) => { s = String(s || ''); return s.charAt(0).toLowerCase() + s.slice(1); };
       try {
         const q = this.encThreatQueue(m);
         const names = [];
@@ -12049,14 +12061,14 @@
           if (key === target.key) continue;
           const fr = this.tbFighter(key);
           if (fr && fr.alive && fr.kind !== 'monster' && fr.kind !== 'hostile') {
-            names.push(fr.kind === 'player' ? 'your own' : String(fr.name).split(' ')[0]);
+            names.push(fr.kind === 'player' ? 'you' : lower1(fr.name));
           }
         }
         if (names.length) return names[Math.floor(Math.random() * names.length)];
         const roster = (this.state.village && this.state.village.roster) || [];
         const others = roster.filter(rid => rid !== this.villagerId);
         const rid = others[Math.floor(Math.random() * others.length)];
-        if (rid) return String(this.displayName(rid)).split(' ')[0];
+        if (rid) return lower1(this.displayName(rid));
       } catch (e) {}
       return 'someone you know';
     },
@@ -12166,7 +12178,9 @@
         if (tg.turnsLeft > 0) {
           // still winding up — holds position, committed. No move, no new attack.
           // HIGHBEAM CHARGE PHASE: the whine climbs, the glare swells. Readable.
-          if (useFifo) this.encSetPhase(m, 'charge');
+          // (Deer-only: other FIFO monsters keep their own phase names through
+          // the windup — the bespoke branches own their beats.)
+          if (isDeer) this.encSetPhase(m, 'charge');
           if (isDeer) {
             if (!tg.chargeNarrated) {
               tg.chargeNarrated = true;
@@ -12335,18 +12349,28 @@
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
         const vname = this.vmVoiceName(m, t);
-        const vposs = (vname === 'your own') ? 'your own' : vname + "'s";
+        // vdisp: "a person, maybe 50s" / "Maya" / "your own voice" — sits in a sentence.
+        const vdisp = (vname === 'you') ? 'your own voice' : vname;
+        const vneg = (vname === 'you') ? 'you' : vname;
         if (m.vmLure === undefined) { m.vmLure = 0; m.vmResist = 0; this.encSetPhase(m, 'call'); }
         // post-resolve: the call falters — then starts again, elsewhere.
+        // (A revealed mimic stays revealed: the act is broken for good.)
         if (m.vmDeclared && !m.telegraph) {
-          m.vmDeclared = false; m.vmLure = 1; m.vmResist = 0;
-          this.encSetPhase(m, 'call');
-          this.say('The voice falters... then starts again, somewhere else in the dark. It is still hungry.');
+          m.vmDeclared = false;
+          if (m.beamPhase === 'reveal') {
+            this.say('The static crackles, furious. No voice left. Just the radio — and it wants you dead.');
+          } else {
+            m.vmLure = 1;
+            this.encSetPhase(m, 'call');
+            this.say('The voice falters... then starts again, somewhere else in the dark. It is still hungry.');
+          }
         }
         let vmPhase = m.beamPhase;
-        // the lure: did you move toward the crying?
+        // the lure: did YOU move toward the crying? The baseline is the
+        // post-move distance from last turn, so the mimic's own creep
+        // doesn't count as you approaching — only your feet do.
         const tDist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
-        if (m.vmTKey !== t.key || m.vmLastDist === undefined) { m.vmTKey = t.key; m.vmLastDist = tDist; }
+        if (m.vmTKey !== t.key || m.vmLastDist === undefined) { m.vmTKey = t.key; }
         else if (tDist < m.vmLastDist) {
           m.vmLure = Math.min(3, (m.vmLure || 0) + 1); m.vmResist = 0;
           this.say('The crying sharpens — clearer, closer. It knows you\'re coming.');
@@ -12355,18 +12379,19 @@
           m.vmLure = Math.max(0, (m.vmLure || 0) - 1);
           if (vmPhase !== 'reveal') m.vmResist = (m.vmResist || 0) + 1;
         }
-        m.vmLastDist = tDist;
         if (vmPhase === 'call' && m.vmLure >= 2) {
           this.encSetPhase(m, 'approach'); vmPhase = 'approach';
-          this.say(`The static resolves — mid-sob — into a voice like ${vposs}. "PLEASE. Don't leave me out here." It's coming closer now.`);
+          this.say(`The static resolves — mid-sob — into a voice like ${vdisp}. "PLEASE. Don't leave me out here." It's coming closer now.`);
           this.audioEvent('staticCry', { close: true });
         } else if (vmPhase !== 'reveal' && (m.vmResist || 0) >= 2) {
           this.encSetPhase(m, 'reveal'); vmPhase = 'reveal'; m.vmResist = 0;
           this.say('You don\'t move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It\'s a radio. It was always a radio.');
           this.audioEvent('staticBreak');
         }
-        // movement: creeps while calling, commits when approaching/revealed
-        const stepN = vmPhase === 'call' ? 1 : m.speed;
+        // movement: it only closes in while the lure is working (you're
+        // coming, so it comes to meet you) or the act is broken. A resisted
+        // lure holds its ground, crying — it can't make you come to it.
+        const stepN = vmPhase === 'call' ? ((m.vmLure || 0) > 0 ? 1 : 0) : m.speed;
         for (let i = 0; i < stepN; i++) {
           const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
           if (d <= (pat.range || 3)) break;
@@ -12375,21 +12400,22 @@
           m.mx = stp.x; m.my = stp.y;
         }
         const dNow = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        m.vmLastDist = dNow; // post-move baseline for next turn's lure check
         if (dNow <= (pat.range || 3) && !m.telegraph) {
           m.vmDeclared = true;
           this.encDeclareDirect(m, t, vmPhase === 'reveal'
-            ? `Static SCREAMS — no voice left, just noise and fury. ${atk.name} incoming. No dodging it.`
-            : `A voice you know is crying your name in the dark. It sounds exactly like ${vname}. It is not ${vname}. ${atk.name} is coming — and moving won't help once it has your voice.`);
+            ? `The radio SCREAMS — no voice left, just noise and fury. ${atk.name} incoming. No dodging it.`
+            : `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. ${atk.name} is coming — and moving won't help once it has your voice.`);
         } else if (!m.telegraph) {
           if (vmPhase === 'call') {
             const cries = [
-              `"Please... is anyone there?" sobs the dark, in ${vposs} voice.`,
-              `Crying, somewhere in the trees. It sounds like ${vname}. ${vname === 'your own' ? 'You are' : vname + ' is'} supposed to be safe at the haven.`,
+              `"Please... is anyone there?" sobs the dark, in a voice like ${vdisp}.`,
+              `Crying, somewhere in the trees. It sounds like ${vdisp}. ${(vname === 'you') ? 'You are' : 'They are'} supposed to be safe at the haven.`,
             ];
             this.say(cries[Math.floor(Math.random() * cries.length)]);
             this.audioEvent('staticCry', {});
           }
-          else if (vmPhase === 'approach') this.say(`"COME BACK," sobs the dark, in ${vposs} voice. "Don't leave me!"`);
+          else if (vmPhase === 'approach') this.say(`"COME BACK," sobs the dark, in a voice like ${vdisp}. "Don't leave me!"`);
           else this.say('The radio crackles, furious, advancing on dead air.');
         }
         this.tbRefreshTelegraphUI();
@@ -12637,7 +12663,9 @@
         // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
         if (foe.d <= 1) {
           const cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
-          this.say(`💥 The ${m.name} SNAPS! No warning. There never is.`);
+          // Descriptors start with "a"/"an" — strip it after "The".
+          const mnm = String(m.name).replace(/^(a|an) /i, '');
+          this.say(`💥 The ${mnm} SNAPS! No warning. There never is.`);
           const hitKeys = new Set(cells.map(c => c.cx + ',' + c.cy));
           for (const o of f.fighters) {
             if (!o.alive || o.fled || o.key === m.key) continue;
@@ -12657,7 +12685,8 @@
           m.mx = s.x; m.my = s.y;
         }
         if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) {
-          this.say(`The ${m.name} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
+          const mnm2 = String(m.name).replace(/^(a|an) /i, '');
+          this.say(`The ${mnm2} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
           this.tbDamage(foe.f.key, S.combat.roll(atk.damage), m.name);
           this.tbLearnPattern(m);
         }
@@ -12682,7 +12711,8 @@
           this.say('⚠ ' + this.tbTelegraphCue(m));
           this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct', highbeam: (m.mdef || {}).id === 'gallowdeer' });
         } else {
-          this.say(`The ${m.name} stalks closer. ${atk.telegraph || ''}`);
+          const mnm3 = String(m.name).replace(/^(a|an) /i, '');
+          this.say(`The ${mnm3} stalks closer. ${atk.telegraph || ''}`);
         }
       } else {
         let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
