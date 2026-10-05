@@ -30,6 +30,10 @@ function setup() {
   const s = Game.state.scholar;
   const c = freeCell();
   s.mx = c.x; s.my = c.y; s.health = 100;
+  // the hunter's kit: a real hunter brings a spear (range 2, +25).
+  // (The old sweep fought unarmed — range 1, +0 — which understated the
+  // hunter build by ~3x damage and hid fleeAt/routed dynamics.)
+  s.equipped = { weapon: { itemId: 'fire_hardened_spear', name: 'Fire-hardened spear', range: 2 } };
   Game.ensureVillagerPositions();
   // pull 2 villagers near the player for party testing
   const vpos = Game.state.village.positions;
@@ -55,9 +59,10 @@ function botTurn() {
   const foe = S.combat.nearestEnemy(tf.fighters, p);
   if (!foe) { Game.tbPlayerEndTurn(); return true; }
   const cheb = () => Math.max(Math.abs(foe.f.mx - p.mx), Math.abs(foe.f.my - p.my));
-  // 1. strike while able
-  if (!p.acted && cheb() <= 1) Game.tbPlayerStrike(foe.f.key);
-  // 2. close distance with remaining moves; strike if we arrive and can
+  const wrange = (Game.equippedWeapon && Game.equippedWeapon().range) || 1;
+  // 1. strike while able (weapon range is real: spear 2, hands 1)
+  if (!p.acted && cheb() <= wrange) Game.tbPlayerStrike(foe.f.key);
+  // 2. close distance with remaining moves; strike if we arrive in range and can
   let guard = 0;
   while (Game.tbfight && Game.tbIsPlayerTurn() && p.moveLeft > 0 && guard++ < 8) {
     const path = Game.findPath(p.mx, p.my, foe.f.mx, foe.f.my);
@@ -66,7 +71,7 @@ function botTurn() {
     if (steps <= 0) break;
     const [tx, ty] = path[steps - 1];
     if (!Game.tbPlayerMove(tx, ty)) break;
-    if (!p.acted && cheb() <= 1) Game.tbPlayerStrike(foe.f.key);
+    if (!p.acted && cheb() <= wrange) Game.tbPlayerStrike(foe.f.key);
   }
   // 3. never leave the turn hanging — Wait forfeits the rest
   if (Game.tbfight && Game.tbIsPlayerTurn()) {
@@ -78,10 +83,17 @@ function botTurn() {
 function runCombat(monsterId) {
   setup();
   const s = Game.state.scholar;
-  const spot = freeCell();
-  // ensure monster not on player
-  let mx = spot.x, my = spot.y;
-  if (Math.abs(mx - s.mx) + Math.abs(my - s.my) < 3) { mx = (s.mx + 4) % 9; my = (s.my + 4) % 9; }
+  // spawn the monster somewhere PATH-CONNECTED to the player: freeCell can
+  // return a walkable-but-walled-off pocket (harness artifact — real fights
+  // start adjacent), which GUARDs the sweep into a fake stalemate.
+  let mx = 0, my = 0, ok = false;
+  for (let t = 0; t < 40 && !ok; t++) {
+    const spot = freeCell();
+    mx = spot.x; my = spot.y;
+    if (Math.abs(mx - s.mx) + Math.abs(my - s.my) < 3) { mx = (s.mx + 4) % 9; my = (s.my + 4) % 9; }
+    ok = !!Game.findPath(s.mx, s.my, mx, my);
+  }
+  if (!ok) { mx = (s.mx + 2) % 9; my = s.my; } // fallback: adjacent-ish
   s.monster = { id: monsterId, mx, my };
   const mdef = Game.data.monsters.find(m => m.id === monsterId);
   Game.startCombat(monsterId);
@@ -128,6 +140,7 @@ function runCombat(monsterId) {
 }
 
 (async () => {
+  if (require.main !== module) return; // required as a lib by test-combat-harness.js
   await Game.init();
   const only = process.argv[2];
   const runs = parseInt(process.argv[3] || '3', 10);
@@ -149,3 +162,6 @@ function runCombat(monsterId) {
   }
   console.log(crashes ? `CRASHES: ${crashes}` : 'no crashes');
 })();
+
+// exported for scripts/test-combat-harness.js (the regression test for this sweep)
+module.exports = { runCombat, botTurn, setup, freeCell };
