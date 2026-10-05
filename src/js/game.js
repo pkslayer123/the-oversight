@@ -1191,6 +1191,21 @@
       this.genMap();
       this.genVillages();
       this.say('Haven. Twelve people. The fire is lit.');
+      // BARREN HAVEN FIX: a new player must understand within minutes that
+      // food is OUT THERE. A villager says it; the journal keeps it.
+      try {
+        const roster = (this.state.village.roster || []).filter(id => id !== this.villagerId);
+        const speaker = roster.length ? roster[Math.floor(Math.random() * roster.length)] : null;
+        const outwardLines = [
+          'Nothing grows here but dirt and tents. Past the treeline — that\'s where the green is. That\'s where the food is.',
+          'Don\'t bother picking around the tents. Walk out. The land feeds people who go looking.',
+          'We\'ve got days of stores, not weeks. The treeline is the pantry now. Learn what\'s out there.',
+        ];
+        const line = outwardLines[Math.floor(Math.random() * outwardLines.length)];
+        const who = speaker ? this.displayName(speaker) : 'Someone by the fire';
+        this.say(`${who}: "${line}"`);
+        if (this.journalNote) this.journalNote('haven', 'outward', 'Food won\'t come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.');
+      } catch (e) {}
       return this.status();
     },
 
@@ -2020,11 +2035,17 @@
       const recipe = this.data.recipes.find(r => r.id === recipeId);
       if (!recipe) return null;
       const known = (this.state.codex.recipes || {})[recipeId];
-      // L2: you understand it. Attempting it (succeed or fail) teaches L3.
-      if (!known || known.level < 2) {
+      // KNOWLEDGE-GATED CRAFTING (Steve): blind is never "button disabled" —
+      // it's "button honest." L2+ understands it (85%). L1 has SEEN one — you
+      // can try to copy it from memory, but it's a long shot (35%) and the
+      // materials are at real risk. L0: you've never seen one — no button.
+      const rlevel = (known && known.level) || 0;
+      if (rlevel < 1) {
         this.say(`You don\'t know how to make a ${recipe.name} yet.`);
         return null;
       }
+      const blind = rlevel < 2;
+      if (blind) this.say(`You've only SEEN a ${recipe.name}. You'll try to copy it from memory — long odds, and the materials are at risk if it comes apart.`);
       // check materials
       const inv = this.state.scholar.inventory;
       for (const [mat, need] of Object.entries(recipe.materials)) {
@@ -2046,7 +2067,9 @@
       this.state.scholar.inventory = inv.filter(i => i.units > 0);
       // steady_hands/taught_hands: fine work under pressure. Base 85% success —
       // fail and the materials are already consumed above. The woods keep them.
-      const success = Math.min(1, this.modTarget('craft.success', 0.85));
+      // Blind (L1) attempts: 35%. You've seen one; your hands haven't.
+      const baseRate = blind ? 0.35 : 0.85;
+      const success = Math.min(1, this.modTarget('craft.success', baseRate));
       if (Math.random() > success) {
         this.say(`The ${recipe.name} comes apart in your hands. The materials are wasted. (craft failed)`);
         return null;
@@ -2665,7 +2688,7 @@
         for (const [pvid, name] of Object.entries(e.proposals || {})) {
           votes[name] = votes[name] || { n: 0, backers: [] };
           votes[name].n += (pvid === ((this.state.scholar || {}).villagerId || 'player') || pvid === 'player') ? 2 : 1;
-          votes[name].backers.push(this.displayName(pvid).split(' ')[0]);
+          votes[name].backers.push(this.firstRef(pvid));
         }
         const opts = Object.entries(votes).map(([name, v]) => ({ name, n: v.n, backers: v.backers }));
         this.say(`${first} leans in. "That thing — ${mdef.unknown || 'you know the one'}. We're naming it. So far: ${opts.map(o => `"${o.name}" (${o.backers.join(', ')})`).join('; ')}. What's your vote?"`);
@@ -4399,6 +4422,14 @@
           cells[2][4] = 'dirt';
           // fire pit near the lodge, not blocking
           cells[2][2] = 'fire';
+          // THE GARDEN CORNER: someone tried to grow things here — a sparse
+          // teaching patch, not a farm. A new player learns the forage verb
+          // HERE, then understands food is OUT THERE. (Barren Haven fix.)
+          // Clustered SE so it's findable but not central.
+          const garden = [[6,5],[7,5],[6,6],[7,6],[5,6]];
+          for (const [gx, gy] of garden) {
+            if (cells[gy] && cells[gy][gx] !== 'lodge') cells[gy][gx] = (gx + gy) % 2 ? 'plant' : 'bush';
+          }
           t.detail = cells;
           return cells;
         }
@@ -4685,7 +4716,15 @@
       const big = cell === 'bigtree';
       // Felling a tree is real work.
       this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 80);
-      const wood = big ? 4 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 3);
+      // WOODLORE (Steve): knowing wood is a skill. The knowledgeable pick the
+      // right tree — straight grain, good burn — and get more from the work.
+      // The ignorant take the nearest trunk. Wood is wood. Button honest.
+      const lore = this.woodloreKnown();
+      let wood = big ? 4 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 3);
+      if (lore) {
+        wood = Math.ceil(wood * 1.5);
+        if (!this.state.codex.woodWise && Math.random() < 0.3) { this.state.codex.woodWise = true; }
+      }
       this.addWood(wood);
       // The tree is gone. The tile remembers.
       detail[cy][cx] = 'dirt';
@@ -4694,7 +4733,9 @@
       if (t.modifiers) delete t.modifiers[key];
       // stock recount: one less forageable
       if (t.stock > 0) t.stock--;
-      this.say(`${big ? 'The big tree' : 'The tree'} comes down with a crack that echoes. +${wood} wood. The ground is clear now.`);
+      this.say(lore
+        ? `You pick the straight one — good grain, splits clean, burns hot. The ${big ? 'big tree' : 'tree'} comes down with a crack that echoes. +${wood} wood.`
+        : `${big ? 'The big tree' : 'The tree'} comes down with a crack that echoes. +${wood} wood. The ground is clear now.`);
       this.checkQuest('terraform');
       // ACTION CLOCK: felling a tree = 3 chunks (96 ticks) + 80 kcal effort (above).
       return this.tickAction(96) || this.status();
@@ -5602,6 +5643,47 @@
       if ((this.state.codex || {}).waterWise) return true;
       return false;
     },
+    // KNOWLEDGE-GATED SKILLS (Steve): every skill has a knowledge dimension.
+    // The UI reveals only what knowledge earns; below threshold you act blind,
+    // and the game is honest about it. Blind is never "button disabled" —
+    // it's "button honest." Each XxxKnown() reads occupation background or a
+    // learned flag — the same contract as waterSafetyKnown above.
+    // FISHING: reading water for fish. Fisherfolk know; others thrash.
+    fishKnown() {
+      const v = (this.data.villagers || []).find(x => x.id === this.villagerId) || {};
+      const occ = String(v.formerOccupation || '').toLowerCase();
+      if (/fisher|fisherman|fishing|angler|sailor|deckhand/i.test(occ)) return true;
+      if ((this.state.codex || {}).fishWise) return true;
+      return false;
+    },
+    // WOODLORE: knowing which wood serves which purpose. The knowledgeable
+    // pick the right tree; the ignorant take the nearest trunk.
+    woodloreKnown() {
+      const v = (this.data.villagers || []).find(x => x.id === this.villagerId) || {};
+      const occ = String(v.formerOccupation || '').toLowerCase();
+      if (/lumberjack|carpenter|forester|arborist|woodworker|cabin/i.test(occ)) return true;
+      if ((this.state.codex || {}).woodWise) return true;
+      return false;
+    },
+    // HERBS: using plants as medicine. Medical folk know; others chew and hope.
+    // Checks the skill first (background grants cover nurse/medic/herbalist/
+    // forager/gardener/etc. via knowledge.json), occupation as fallback.
+    herbKnown() {
+      if (this.skillKnown('herbal_medicine', 1) || this.skillKnown('wound_care', 1)) return true;
+      const v = (this.data.villagers || []).find(x => x.id === this.villagerId) || {};
+      const occ = String(v.formerOccupation || '').toLowerCase();
+      if (/nurse|medic|doctor|herbalist|pharmacist|paramedic|veterinarian|dentist|midwife|botanist/i.test(occ)) return true;
+      return false;
+    },
+    // TRACKING: reading sign. The tracker knows what left the prints and how
+    // fresh; the ignorant see disturbed earth.
+    trackKnown() {
+      if (this.skillKnown('track_read', 1) || this.skillKnown('animal_behavior', 1)) return true;
+      const v = (this.data.villagers || []).find(x => x.id === this.villagerId) || {};
+      const occ = String(v.formerOccupation || '').toLowerCase();
+      if (/hunter|tracker|scout|guide|ranger|soldier/i.test(occ)) return true;
+      return false;
+    },
     drinkWater() {
       const s = this.state.scholar;
       s.water = s.water || [];
@@ -5632,6 +5714,40 @@
     // waterWeight: 1L = 1kg. Counts toward carry limit.
     waterWeight() {
       return (this.state.scholar.water || []).length; // 1 bottle = 1L = 1kg
+    },
+    // FISH: the knowledge-gated skill contract applied. Fisherfolk read the
+    // water — the deep cut, the shade line — and catch. The ignorant thrash
+    // the shallows and hope. Button honest: it always works, just worse blind.
+    fish() {
+      if (this.over) return null;
+      const s = this.state.scholar;
+      const t = this.playerTile();
+      if (t.type !== 'creek' && t.type !== 'wetland') {
+        // ponds and puddles hold small fish too — the tile check is for rivers;
+        // the cell check (water) already passed. Fish are smaller here.
+        this.say('Still water. Small fish, maybe. Worth a try.');
+      }
+      const known = this.fishKnown();
+      const chance = known ? 0.5 : 0.18;
+      s.kcal = Math.max(0, (s.kcal || 0) - 60);
+      if (s.week1) s.week1.fish = (s.week1.fish || 0) + 1;
+      if (Math.random() < chance) {
+        const kcal = known ? 500 + Math.floor(Math.random() * 400) : 150 + Math.floor(Math.random() * 200);
+        // FOOD REALITY: a fish is a carcass — clean it (knife), don't just eat it.
+        const animal = (this.data.animals || []).find(a => a.id === 'fish') || { id: 'fish', name: 'fish', calories: kcal };
+        s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'fished'));
+        if (known) this.say(`You read the water — the deep cut by the bank, the shade line. A fish takes it. About ${kcal} kcal — clean it quickly (knife).`);
+        else {
+          this.say(`You thrash the shallows and — a fish! Luck, mostly. About ${kcal} kcal — clean it quickly (knife).`);
+          // learned the wet way: catching teaches a little
+          if (Math.random() < 0.25) { this.state.codex = this.state.codex || {}; this.state.codex.fishWise = true; this.say('(Something about the way the water moved stuck with you. You read water a little better now.)'); }
+        }
+      } else {
+        if (known) this.say('Nothing biting in this cut. The fish know something you don\'t — today.');
+        else this.say('You splash around for a while. The fish are unimpressed. (Someone who knew water would pick a better spot.)');
+      }
+      this.tele('fish', { known, kcal: 0, cost: 60 });
+      return this.tickAction(32) || this.status();
     },
     // nearFire: is there a fire in the current detail grid?
     nearFire() {
@@ -6317,6 +6433,39 @@
     displayName(vid) {
       if (this.state.systemArrived || this.nameKnown(vid)) return this.npcName(vid);
       return this.personDescriptor(vid);
+    },
+    // journalNote: the general journal. Personal notes the player keeps —
+    // pre-System it's handwriting, post-System it's Codex. Deduped by cat+key
+    // so repeated events don't spam. (Was called in 8 places but never defined —
+    // every call site silently no-opped. Now it's real.)
+    journalNote(cat, key, text) {
+      try {
+        const cx = this.state.codex = this.state.codex || {};
+        cx.notes = cx.notes || [];
+        if (cx.notes.some(n => n.cat === cat && n.key === key)) return false;
+        cx.notes.push({ day: (this.state.scholar || {}).day || 0, cat, key, text: String(text) });
+        const jw = this.state.systemArrived ? 'Codex' : 'Journal';
+        this.say(`📓 ${jw}: ${text}`);
+        return true;
+      } catch (e) { return false; }
+    },
+    // firstRef: first-name-like reference that NEVER collapses to bare "A".
+    // Known/post-System → first name. Unknown → distinguishing descriptor
+    // ("the woman in her 30s") so gossip/living-world lines never truncate
+    // "A woman, maybe 30s" into "A". Use this anywhere you'd split(' ')[0]
+    // a displayName.
+    firstRef(vid) {
+      try {
+        if (this.state.systemArrived || this.nameKnown(vid)) {
+          const v = (this.data.villagers || []).find(x => x.id === vid)
+            || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+          return String(v.name || 'Someone').split(' ')[0];
+        }
+        if (typeof this.whoTag === 'function') return this.whoTag(vid);
+      } catch (e) {}
+      // fallback: descriptor without the leading "A"
+      try { return this.personDescriptor(vid).replace(/^A /, 'the '); } catch (e) {}
+      return 'someone';
     },
 
     // ============ GOALS ============
@@ -7555,6 +7704,20 @@
           this.endDay();
           transitioned = true;
         }
+        // HUNGER LESSON (Steve): week one must teach hunger honestly. When the
+        // bar crosses thresholds the body says so — once per threshold per day,
+        // pointing at the fix. The lesson lands before the crisis.
+        try {
+          const kcal = s.kcal || 0;
+          s._hungerNoted = (s._hungerNoted && s._hungerNoted.day === s.day) ? s._hungerNoted : { day: s.day };
+          if (kcal < 500 && !s._hungerNoted.starving) {
+            s._hungerNoted.starving = true;
+            this.say('Your stomach is a fist. Eat — anything real, now.');
+          } else if (kcal < 1200 && !s._hungerNoted.hungry) {
+            s._hungerNoted.hungry = true;
+            this.say('Hunger gnaws. The pack is thin — work the green, haul it back, get it named at camp. That\'s the whole game.');
+          }
+        } catch (e) {}
         // DAY-7 DEBUG: the System arrives on your first real action, not on
         // the debug jump. The moment should land in the flow of play.
         if (s._day7Armed && !this.state.systemArrived && !this.over) {
@@ -7990,6 +8153,7 @@
       } else if (cell === 'water') {
         actions.push('Drink');
         actions.push('Fill water (1L)');
+        actions.push('Fish');
       } else if (cell === 'plant' || cell === 'bush' || cell === 'rubble') {
         actions.push('Forage');
         // TERRAFORMING: brush can be cleared. costs a day-part, yields brushwood.
@@ -8213,7 +8377,7 @@
       const names = Object.values(e.proposals);
       if (names.length) {
         const first = names[0];
-        const who = this.displayName(Object.keys(e.proposals)[0]).split(' ')[0];
+        const who = this.firstRef(Object.keys(e.proposals)[0]);
         this.say(`Back at the haven the argument starts: ${who} is calling it "${first}." They'll fight it out — weigh in if you want.`);
       }
       this.monsterNamingCheck(mid);
@@ -9619,7 +9783,7 @@
             if (entry.level === 3 && entry.harvests >= 15) {
               entry.level = 4;
               this.say(`\u2605\u2605 MASTERY: ${h.plant.name}. ${h.plant.knowledgeLevels['4']} (Yield 2x)`);
-              this.say('SYSTEM: You know this plant the way it knows itself. Concerning. Impressive.');
+              if (this.state.systemArrived) this.say('SYSTEM: You know this plant the way it knows itself. Concerning. Impressive.');
             }
           }
           const e = bySpecies[h.plantId] || (bySpecies[h.plantId] = { plant: h.plant, units: 0, known: this.plantKnown(h.plantId) });
@@ -9827,6 +9991,7 @@
       scholar.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
       let ate = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
+      let medAte = 0, medName = null; // medicinal plant units eaten (herb skill hook)
       // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
       while (scholar.kcal < cap) {
         // find the most perishable FOOD (not gear)
@@ -9856,6 +10021,12 @@
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
         scholar.kcal += kcal; ate += kcal;
+        // MEDICINE (Steve): chewing medicinal plants is a skill. Track it —
+        // the knowledgeable use them deliberately, the ignorant chew and hope.
+        if (it.plantId) {
+          const _mp = this.data.plants.find(pp => pp.id === it.plantId);
+          if (_mp && _mp.medicinal) { medAte++; medName = this.plantKnown(it.plantId) ? _mp.name : (_mp.description || 'bitter leaves'); }
+        }
         // THE BANK: the pool remembers what it was built from. Specialist
         // fuel burns hottest — even mixed into the war chest.
         if (this.blendKcalQuality) this.blendKcalQuality(kcal, this.mealQuality ? this.mealQuality(it) : 1);
@@ -9866,6 +10037,18 @@
       // THE BANK: the bar is the reserve. Past "fed", every bite is war chest.
       if (scholar.kcal > cap) scholar.kcal = cap;
       const bankedNow = this.banked ? this.banked() : 0;
+      // MEDICINE RESOLVED: the knowledgeable get real healing from medicinal
+      // plants; the ignorant get a whisper of it and an honest message.
+      if (medAte > 0) {
+        if (this.herbKnown()) {
+          const heal = Math.min(8, medAte * 2);
+          scholar.health = Math.min(this.maxHealth(), scholar.health + heal);
+          this.say(`You chew the ${medName} deliberately — the way you were taught. Bitter, working. (+${heal} health)`);
+        } else {
+          scholar.health = Math.min(this.maxHealth(), scholar.health + 2);
+          this.say(`You chew the bitter leaves. Folk say it helps — you wouldn't know. (+2 health, maybe)`);
+        }
+      }
       const bankNote = bankedNow > 0 ? ` Past full — the bank takes it. (+${bankedNow} banked. ${this.feastLine ? this.feastLine() : ''})` : '';
       // LEVEL 3: Uses. Eat it 3 times, you learn what it does to you.
       // Vitamin C, medicine, energy. "Have you tasted it?" Yes. Now you know.
@@ -12388,13 +12571,17 @@
       if (kl1.startsWith(namePrefix)) kl1 = kl1.slice(namePrefix.length);
       else if (kl1.startsWith(p.name)) kl1 = kl1.slice(p.name.length).replace(/^[.\s:—-]+/, '');
       this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1} Uses unknown — harvest, taste, and learn.`);
-      const sys = [
-        'SYSTEM: Naming things. Very human. The audience approves.',
-        'SYSTEM: Oh! It has a NAME. You all love names.',
-        'SYSTEM: Catalogued. The Codex grows teeth.',
-        'SYSTEM: Identification complete. You are 0.3% less lost.',
-      ];
-      this.say(sys[Math.floor(Math.random() * sys.length)]);
+      // SYSTEM VOICE GATE: before the System arrives (Day 7), identification is
+      // diegetic only — people, tasting, books. The overlay never speaks first.
+      if (this.state.systemArrived) {
+        const sys = [
+          'SYSTEM: Naming things. Very human. The audience approves.',
+          'SYSTEM: Oh! It has a NAME. You all love names.',
+          'SYSTEM: Catalogued. The Codex grows teeth.',
+          'SYSTEM: Identification complete. You are 0.3% less lost.',
+        ];
+        this.say(sys[Math.floor(Math.random() * sys.length)]);
+      }
       // THE VILLAGE LEARNS: identification is the teaching moment. The camp sort
       // is a communal ritual — villagers watching pick it up (first learner
       // becomes the teaching seed). Your own taught[] syncs with your codex

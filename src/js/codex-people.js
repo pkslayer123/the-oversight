@@ -76,7 +76,7 @@
         const e = this.journalPerson(vid);
         if (e.name && e.name.value) return String(e.name.value).split(' ')[0];
       } catch (e) {}
-      try { return this.displayName(vid).split(' ')[0]; } catch (e) {}
+      try { return this.firstRef(vid); } catch (e) {}
       return 'them';
     },
 

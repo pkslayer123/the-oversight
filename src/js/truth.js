@@ -222,7 +222,7 @@
 
     doubtText(vid, kind, detail) {
       const name = this.displayName(vid);
-      const first = String(name).split(' ')[0];
+      const first = this.firstRef(vid);
       const sys = sysUp();
       if (kind === 'contradiction') {
         const fieldWord = detail.field === 'occupation' ? 'what they did before'
@@ -261,7 +261,7 @@
       const vp = this.vpOf(vid);
       if (!vp || !vp.id) return { ok: false };
       const name = this.displayName(vid);
-      const first = String(name).split(' ')[0];
+      const first = this.firstRef(vid);
       // costs time — watching is work
       try { this.tickAction(2); } catch (e) {}
 
@@ -369,8 +369,7 @@
       if (!options.length) return null;
       const g = options[Math.floor(Math.random() * options.length)];
       const teller = this.displayName(tellerVid);
-      const target = this.displayName(targetVid);
-      const first = String(target).split(' ')[0];
+      const first = this.firstRef(targetVid);
       const an = (w) => /^[aeiou]/i.test(w) ? 'an' : 'a';
       // field-aware phrasing: "were a surgeon" vs "were from Denver"
       const lieWord = g.field === 'origin' ? `from ${g.lie}` : `${an(g.lie)} ${g.lie}`;
@@ -413,7 +412,7 @@
       const dark = vp.personality && vp.personality.dark;
       const trust = ((this.state.village.trust || {})[vid]) || 10;
       const name = this.displayName(vid);
-      const first = String(name).split(' ')[0];
+      const first = this.firstRef(vid);
 
       // find the lie behind this doubt
       const lies = this.npcLies(vid);
