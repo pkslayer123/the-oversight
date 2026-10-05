@@ -6678,6 +6678,12 @@
     fish() {
       if (this.over) return null;
       const s = this.state.scholar;
+      // TOOL-GATED: no tackle, no fishing. (The action is hidden in the UI;
+      // this is the backstop for direct calls.)
+      if (!this.hasItem('fishing_line')) {
+        this.say('You need fishing tackle — a line at least. Bare hands won\'t do it.');
+        return null;
+      }
       const t = this.playerTile();
       if (t.type !== 'creek' && t.type !== 'wetland') {
         // ponds and puddles hold small fish too — the tile check is for rivers;
@@ -9342,7 +9348,9 @@
       } else if (cell === 'water') {
         actions.push('Drink');
         actions.push('Fill water (1L)');
-        actions.push('Fish');
+        // TOOL-GATED (Steve 2026-10-05): fishing requires tackle. No line,
+        // no fish — the action stays hidden, not just penalized.
+        if (this.hasItem('fishing_line')) actions.push('Fish');
       } else if (cell === 'plant' || cell === 'bush' || cell === 'rubble') {
         actions.push('Forage');
         // TERRAFORMING: brush can be cleared. costs a day-part, yields brushwood.
@@ -9850,8 +9858,11 @@
           if (dist > 3) { stepToward(); }
           else {
             m.watchTurns = (m.watchTurns || 0) + 1;
-            if (m.watchTurns >= 3) {
-              if (Math.random() < 0.5) {
+            // (Steve 2026-10-05): the moth kept vanishing before combat could start.
+            // Curious monsters linger longer now — 5 turns, and only 25% drift away.
+            // The player gets a fair chance to engage (Fight) before it loses interest.
+            if (m.watchTurns >= 5) {
+              if (Math.random() < 0.25) {
                 s.monster = null;
                 this.say('It watches a moment longer — then drifts away. Not interested. This time.');
               } else {
