@@ -985,7 +985,7 @@
       {
         "target": "hunt.trap_catch",
         "op": "multiply",
-        "value": 1.5
+        "value": 2.0
       }
     ],
     "metabolic": {
