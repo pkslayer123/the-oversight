@@ -76,9 +76,12 @@
       const first = (this.data.villagers || []).find(v => v.id === this.villagerId);
       const fname = first ? first.name.split(' ')[0] : 'you';
       const sys = this.state.systemArrived;
+      const led = (d, n) => { try { if (this.ledgerAdd) this.ledgerAdd(d, n); } catch (e) {} };
       if (t === 20) {
+        led('embrace', 1);
         this.say(`◈ THE SPARK — something clicks. A trick ${fname} learned long ago suddenly has edges it never had. ${sys ? 'SYSTEM: "ANOMALY: organic unit demonstrates pattern recognition. Slot capacity increased. We are taking notes."' : 'The world feels a fraction more legible.'} (Ability slots: ${this.abilitySlots()})`);
       } else if (t === 40) {
+        led('brokerage', 1);
         const mentor = this.bestMentor();
         if (mentor) {
           this.say(`◈ THE MENTOR — ${this.displayName(mentor)} watches ${fname} work, then reaches over. "No. Like this." An hour later something has unlocked that no manual could teach. (Ability slots: ${this.abilitySlots()})`);
@@ -87,12 +90,15 @@
           this.say(`◈ THE MENTOR — nobody left to teach ${fname}. So the System tries, clumsily, to be a teacher. It almost works. (Ability slots: ${this.abilitySlots()})`);
         }
       } else if (t === 60) {
+        led('showmanship', 1);
         this.say(`◈ THE TRIAL — the audience is restless. The System offers ${fname} a trial, broadcast live. Survive it and take the slot. Refuse it and... well. The audience remembers refusals. (Ability slots: ${this.abilitySlots()})`);
         this.offerAudienceTrial('milestone');
       } else if (t === 70) {
+        led('embrace', 1);
         this.say(`◈ THE CREEP — ${fname}'s thoughts have an echo now. The System's echo. Or theirs. Hard to tell anymore. Gifts used in sequence resonate — try them together. (Ability slots: ${this.abilitySlots()})`);
         try { if (this.state.scholar.synergyHint !== true) { this.state.scholar.synergyHint = true; } } catch (e) {}
       } else if (t === 80) {
+        led('embrace', 1);
         this.say(`◈ THE GRANT — full integration. The System opens the last slot like a door it built just for ${fname}. "You have been adequate entertainment. We upgrade adequate." (Ability slots: ${this.abilitySlots()})`);
         this.teachSentiment();
       }
@@ -256,11 +262,18 @@
       if (pg.arcSeen[n]) return;
       pg.arcSeen[n] = true;
       if (n === 2) {
+        try { if (this.ledgerAdd) this.ledgerAdd('showmanship', 2); } catch (e) {}
         this.say(`◈ ARC II — THE SHOW. The sky tore open a week ago and the village is still here. Still eating. The audience has noticed. Strangers will come — not because the plot says so, but because surviving is worth watching.`);
       } else if (n === 3) {
+        try { if (this.ledgerAdd) this.ledgerAdd('might', 1); } catch (e) {}
         this.say(`◈ ARC III — ENGINES. SYSTEM: "VIEWERSHIP MILESTONE. Organic unit demonstrates compounding capability. Resonance protocols unlocked." — Your gifts deepen. Used in sequence, they resonate. The village is no longer just surviving. It is becoming something.`);
         try { this.state.scholar.synergyBonus = true; } catch (e) {}
       } else if (n === 4) {
+        try {
+          if (this.ledgerAdd) this.ledgerAdd('foodShared', 1);
+          this.progState().tableWaiting = true;
+          this.say('The table is being set. They are watching to see who comes to it.');
+        } catch (e) {}
         this.say(`◈ ARC IV — THE INEFFICIENCY. SYSTEM: "ROUNDING ERROR RECLASSIFIED: ANOMALY. Organic consumption yields impossible output. Recalculating. Recalculating." — They finally see it. The thing they laughed at — needing to EAT — is the engine. Their confusion is your weapon now. One day there will be a table, and humanity will need a case to make. You're building it. (Feastburn burns hotter from here.)`);
         try { this.state.scholar.arc4burn = 1.25; } catch (e) {}
       }
@@ -306,6 +319,7 @@
       if (!t) return;
       if ((s.day || 0) > t.expires) {
         pg.trial = null; pg.trialCd = (s.day || 0) + 5;
+        try { if (this.ledgerAdd) this.ledgerAdd('defiance', 1); } catch (e) {}
         this.say('The trial window closed. The audience makes a disappointed sound, like wind.');
         return;
       }
@@ -336,6 +350,7 @@
           gift = def.name;
         }
       } catch (e) {}
+      try { if (this.ledgerAdd) this.ledgerAdd('showmanship', 3); } catch (e) {}
       const luck = (pg.flags || {}).quiet_luck ? ' Quiet luck was with you.' : '';
       this.say(`◈ TRIAL COMPLETE — the audience applauds, which sounds like static. (+15 integration${gift ? `, gift: ${gift}` : ''})${luck}`);
       try { this.save(); } catch (e) {}
@@ -429,6 +444,9 @@
       const before = s.integration || 5;
       const r = _integrate ? _integrate.call(this, amount, reason) : undefined;
       try {
+        if ((reason === 'system' || reason === 'quest') && this.ledgerAdd) this.ledgerAdd('embrace', 1);
+      } catch (e) {}
+      try {
         const pg = this.progState();
         pg.pendingMoments = pg.pendingMoments || [];
         for (const t of [20, 40, 60, 70, 80]) {
@@ -496,6 +514,7 @@
         const s = this.state.scholar;
         if (s.prog && s.prog.feastSurge) { mult *= 1.5; s.prog.feastSurge = false; s.prog.feastSurgeUsed = true; }
         if (s.arc4burn) mult *= s.arc4burn;
+        if (this.ledgerAdd) this.ledgerAdd('might', 2);
       } catch (e) {}
       const r = _feastBurn ? _feastBurn.call(this) : 0;
       return r * mult > 0 ? r * mult : r;

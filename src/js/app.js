@@ -428,6 +428,7 @@
       <div class="card" style="margin-top:24px">
         <p style="font-size:17px;line-height:1.7">${lines.join('<br><br>')}</p>
         <p class="small" style="opacity:.6;margin-top:16px">What you know grows where you're from. It doesn't grow here.</p>
+        ${(() => { try { const ll = Game.legendLine ? Game.legendLine() : ''; return ll ? `<p class="small" style="opacity:.6;margin-top:12px">📖 ${esc(ll)}</p>` : ''; } catch (e) { return ''; } })()}
         <button class="btn" id="b-wake">Open your eyes</button>
       </div>`;
     document.getElementById('b-wake').onclick = () => {
@@ -2462,6 +2463,25 @@
     });
   }
 
+  // tableSheet: the galactic table. One final live choice, inside your earned frame.
+  // Modal sheet - the galaxy waits.
+  function tableSheet() {
+    const tc = Game.state.scholar.tableChoices;
+    if (!tc) return;
+    openSheet({
+      id: 'the-table',
+      title: '\u{1F30C} The Table',
+      html: '<p>The ring of pale light. The too-many-angled faces. The trillions of eyes.</p>' +
+        '<p>Your case is made. Now — the last choice is yours, and it\'s live:</p>',
+      buttons: tc.options.map(o => ({
+        label: '<b>' + esc(o.label) + '</b>',
+        primary: true,
+        onClick: () => { Game.chooseTableOption(o.id); refresh(); },
+      })),
+      priority: 100, modal: true, dismissible: false,
+    });
+  }
+
   // abilitySheet: the System offers you a choice. Pick one.
   // Modal sheet - you must choose. No dismissing the System.
   function abilitySheet() {
@@ -2958,6 +2978,9 @@
     }
     if (s.relicChoices && !sheetQueued('offer-relic')) {
       relicSheet();
+    }
+    if (s.tableChoices && !sheetQueued('the-table')) {
+      tableSheet();
     }
   }
 
