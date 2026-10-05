@@ -384,11 +384,14 @@
       if (kind === 'contradiction') {
         const fieldWord = detail.field === 'occupation' ? 'what they did before'
           : detail.field === 'origin' ? 'where they\'re from' : 'what they want';
-        if (sys) return `CONTRADICTION: ${name} claimed "${detail.old}" then "${detail.now}" re: ${fieldWord}. Deception probability: HIGH.`;
+        // goal claims are stored as ids — render the human phrase in the journal
+        const oldW = detail.field === 'goal' ? this.goalWantText(detail.old) : detail.old;
+        const nowW = detail.field === 'goal' ? this.goalWantText(detail.now) : detail.now;
+        if (sys) return `CONTRADICTION: ${name} claimed "${oldW}" then "${nowW}" re: ${fieldWord}. Deception probability: HIGH.`;
         const variants = [
-          `${first} told you ${detail.field === 'occupation' ? 'they were' : detail.field === 'origin' ? 'they were from' : 'they wanted'} "${detail.old}" — now it's "${detail.now}". Something doesn't add up.`,
-          `You wrote down "${detail.old}". ${first} just said "${detail.now}". Same question, different answer.`,
-          `"${detail.old}" — that's what ${first} said before. Now it's "${detail.now}". People misremember. People also lie.`,
+          `${first} told you ${detail.field === 'occupation' ? 'they were' : detail.field === 'origin' ? 'they were from' : 'they wanted'} "${oldW}" — now it's "${nowW}". Something doesn't add up.`,
+          `You wrote down "${oldW}". ${first} just said "${nowW}". Same question, different answer.`,
+          `"${oldW}" — that's what ${first} said before. Now it's "${nowW}". People misremember. People also lie.`,
         ];
         return variants[Math.floor(Math.random() * variants.length)];
       }
@@ -486,6 +489,16 @@
     },
 
     capFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); },
+
+    // goalWantText(id): human-readable goal phrase for a goal id, e.g.
+    // 'belong' → 'to belong somewhere'. Spoken lines must never use raw ids
+    // ("I don't actually want belong" is broken English).
+    goalWantText(id) {
+      try {
+        const g = (this.data.characterGen.goals || []).find(x => x.id === id);
+        return g && g.want ? g.want : String(id);
+      } catch (e) { return String(id); }
+    },
 
     // ---- gossip cross-reference ----
     // When you hear gossip ABOUT someone, check it against their claims.
@@ -655,7 +668,7 @@
         outcome = 'confessed';
         const truthWord = lieField === 'occupation' ? `I wasn't ${/^[aeiou]/i.test(lie.told) ? 'an' : 'a'} ${lie.told}. I was ${/^[aeiou]/i.test(lie.truth) ? 'an' : 'a'} ${lie.truth}`
           : lieField === 'origin' ? `I'm not from ${lie.told}. I'm from ${lie.truth}`
-          : `I don't actually want ${lie.told}. I want ${lie.truth}`;
+          : `I don't actually want ${this.goalWantText(lie.told)}. I want ${this.goalWantText(lie.truth)}`;
         const motiveLine = this.drawTruthLine(
           'motive' + motive.charAt(0).toUpperCase() + motive.slice(1), vid);
         // safety net: unknown motive → generic line

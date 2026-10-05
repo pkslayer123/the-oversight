@@ -222,6 +222,38 @@ function ok(name, cond) {
     ok('heard-claim gossip line generated', false);
   }
 
+  // --- 21. Goal lies speak human phrases, never raw goal ids ---
+  // Regression: confession line once read "I don't actually want belong. I
+  // want alone." — broken English in spoken dialogue.
+  const GN = roster[4] || roster[0];
+  Game.vpOf(GN).lies = {
+    goal: { told: 'belong', truth: 'alone', motive: 'shame', field: 'goal' },
+  };
+  v.trust[GN] = 10;
+  if (Game.vpOf(GN).personality) Game.vpOf(GN).personality.temperament = 'warm';
+  const gDoubt = Game.addDoubt(GN, 'contradiction',
+    Game.doubtText(GN, 'contradiction', { field: 'goal', old: 'belong', now: 'survive', oldDay: 1 }),
+    [`said "belong" (day 1)`, `now says "survive" (day ${Game.state.scholar.day})`]);
+  ok('goal contradiction doubt created', !!gDoubt);
+  ok('goal contradiction doubt uses human phrases',
+    gDoubt && gDoubt.text.includes('to belong somewhere') && !/"belong"/.test(gDoubt.text));
+  // confront until confession (shame + warm + low trust ≈ 0.70 confess chance)
+  let gLine = '', gOutcome = '';
+  for (let i = 0; i < 30 && gOutcome !== 'confessed'; i++) {
+    const r = Game.confrontDoubt(GN, gDoubt.id);
+    gLine = r.line || gLine; gOutcome = r.outcome || gOutcome;
+  }
+  ok('goal lie confessed within 30 tries', gOutcome === 'confessed');
+  if (gOutcome === 'confessed') {
+    ok('goal confession uses human phrases', gLine.includes("I don't actually want to belong somewhere"));
+    ok('goal confession never uses raw goal ids',
+      !/\bwant belong\b/.test(gLine) && !/\bI want alone\b/.test(gLine));
+  }
+
+  // --- 22. goalWantText falls back to the raw id for unknown ids ---
+  eq('goalWantText known id', Game.goalWantText('survive'), 'to survive, whatever it takes');
+  eq('goalWantText unknown id falls back', Game.goalWantText('mystery_goal'), 'mystery_goal');
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('FATAL', e); process.exit(1); });
