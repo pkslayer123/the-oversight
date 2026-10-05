@@ -47,21 +47,15 @@ function ok(name, cond, extra) {
     ok(`cast ${id} wave <= 1`, (m.wave || 1) <= 1, `wave ${m.wave}`);
   }
   
-  // Test 5: Give player a spear (+15 bonus, range 2) + party -> wave 2
-  // (Wave 2 requires decent weapon AND party >= 2, per Steve 2026-10-05)
+  // Test 5: Day-based gates (Steve 2026-10-05 revised)
+  // Wave 2 requires day 8+ AND 4 wave-1 kills (not gear)
   const s = Game.state.scholar;
-  s.equipped = { weapon: { itemId: 'fire_hardened_spear', name: 'Spear', range: 2 } };
-  // Mock the item def (nerfed to +15)
-  Game.data.items.push({ id: 'fire_hardened_spear', name: 'Spear', weapon: { bonus: 15, range: 2 } });
-  // Mock party of 2
-  Game.state.party = [{ id: 'v1' }, { id: 'v2' }];
-  rating = Game.threatRating();
-  console.log(`\nWith spear + party: threat = ${rating}`);
-  ok('spear+party increases threat', rating >= 30, `got ${rating}`);
-  ok('spear+party unlocks wave 2', Game.unlockedWave() >= 2, `got ${Game.unlockedWave()}`);
-  // Without party, still wave 1 (gate requires party)
-  Game.state.party = [];
-  ok('no party = wave 1 (gate)', Game.unlockedWave() === 1, `got ${Game.unlockedWave()}`);
+  s.day = 10;
+  Game.state.waveKills = {1: 5};
+  ok('day 10 + 5 kills unlocks wave 2', Game.unlockedWave() >= 2, `got ${Game.unlockedWave()}`);
+  // Without kills, still wave 1 (gate requires kills)
+  Game.state.waveKills = {1: 2};
+  ok('day 10 but only 2 kills = wave 1', Game.unlockedWave() === 1, `got ${Game.unlockedWave()}`);
   
   // Test 6: Loot tier capped by wave
   const hummice = Game.data.monsters.find(m => m.id === 'hummice');

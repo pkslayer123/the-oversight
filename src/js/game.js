@@ -11800,6 +11800,74 @@
     // fleeing by running should be hard, not a given. Movement is deliberate.
     playerSpeed() { return 3; },
 
+    // LEADERSHIP VECTOR (Steve 2026-10-04, preserved 2026-10-05): the ending
+    // is the sum of how you led. Tracked across the game, felt before arrival.
+    // Dimensions: force vs diplomacy, showmanship, System stance, humanity's
+    // shape (unified/fractured), moral ledger (food truth shared or hoarded).
+    // Ending frames: Indispensable, Feared, Beloved, Witness, Defiant, Assimilated.
+    leadership() {
+      this.state.leadership = this.state.leadership || {
+        force: 0, diplomacy: 0,
+        showmanship: 0,
+        systemCoop: 0, systemDefiant: 0,
+        unity: 0, fracture: 0,
+        protection: 0, betrayal: 0,
+        foodShared: 0, foodHoarded: 0,
+      };
+      return this.state.leadership;
+    },
+    leadShift(dim, amount) {
+      const l = this.leadership();
+      l[dim] = (l[dim] || 0) + (amount || 1);
+    },
+    // Earned ending frame based on dominant vector
+    earnedEnding() {
+      const l = this.leadership();
+      const scores = {
+        indispensable: (l.protection || 0) + (l.unity || 0) + (l.foodShared || 0),
+        feared: (l.force || 0) + (l.systemDefiant || 0),
+        beloved: (l.diplomacy || 0) + (l.showmanship || 0) + (l.protection || 0),
+        witness: (l.systemDefiant || 0) + (l.foodShared || 0) + (l.diplomacy || 0),
+        defiant: (l.systemDefiant || 0) + (l.force || 0) + (l.fracture || 0),
+        assimilated: (l.systemCoop || 0) + (l.showmanship || 0),
+      };
+      let best = 'indispensable', bestScore = -1;
+      for (const [k, v] of Object.entries(scores)) {
+        if (v > bestScore) { bestScore = v; best = k; }
+      }
+      return best;
+    },
+
+    // READINESS (Steve 2026-10-05): strong enough as a species to start the
+    // galactic conversation. Composite: Strength (wave 4 slain) + Knowledge
+    // (codex %) + Society (pop + stability) + Integration (system level).
+    // Target: day 80-90 for a focused player in a 100-day campaign.
+    readiness() {
+      let score = 0;
+      const max = 100;
+      // Strength: 25 pts (slay a wave-4 monster)
+      if ((this.state.wave4Slain || 0) > 0) score += 25;
+      // Knowledge: 25 pts (codex completion)
+      const codex = this.state.codex || {};
+      const mCount = Object.keys(codex.monsters || {}).length;
+      const pCount = Object.keys(codex.plants || {}).length;
+      const totalMonsters = (this.data.monsters || []).length;
+      // Assume ~50 plants (rough)
+      const knowledgePct = Math.min(1, (mCount + pCount) / (totalMonsters + 50));
+      score += Math.round(knowledgePct * 25);
+      // Society: 25 pts (population + stability)
+      const pop = (this.state.village.roster || []).length;
+      const popScore = Math.min(1, pop / 16); // 16 = thriving
+      // Stability: low starvation, low exile
+      const starving = (this.state.village.starving || 0);
+      const stability = starving > 0 ? 0.5 : 1;
+      score += Math.round(popScore * stability * 25);
+      // Integration: 25 pts (system level)
+      const sysLevel = this.state.systemIntegration || 0; // 0-3
+      score += Math.round((sysLevel / 3) * 25);
+      return { score, max, ready: score >= 80 };
+    },
+
     // THREAT RATING (Steve 2026-10-05): the System tracks your power to cast
     // appropriate monsters. It's a TV show — boring fights don't get renewed.
     // Rating = gear + stats + party + performance. Waves unlock by rating.
@@ -11832,30 +11900,31 @@
       return Math.round(rating);
     },
 
-    // WAVE UNLOCK (Steve 2026-10-05): monsters are cast in waves. You don't
-    // see wave 2 until you're ready (or the producers get bored).
+    // WAVE UNLOCK (Steve 2026-10-05, revised): day-based with kill minimums.
+    // The show has a schedule. You can't cheese it with a lucky weapon find.
+    // 100-day campaign: waves at 8 / 25 / 50 / 75. Win ~day 85-95.
     // Wave 1: always — hummice, moths, raccoons, toads
-    // Wave 2: decent weapon (bonus 12+) OR alien loot, AND party >= 2
-    // Wave 3: good weapon (bonus 25+) OR tier-2 loot, AND party >= 3, AND threat 70+
-    // Wave 4: threat 120+ (endgame)
+    // Wave 2: day 8+ AND 4 wave-1 kills (village-wide, not just player)
+    // Wave 3: day 25+ AND 8 wave-2 kills
+    // Wave 4: day 50+ AND 5 wave-3 kills
+    // (Wave 4 is the apex; readiness win comes after proving yourself there.)
     unlockedWave() {
-      const threat = this.threatRating();
-      const w = this.equippedWeapon();
-      const hasDecentWeapon = (w.bonus || 0) >= 12;
-      const hasGoodWeapon = (w.bonus || 0) >= 25;
-      const hasAlienLoot = (this.state.scholar.inventory || []).some(i => {
-        const def = this.data.items.find(d => d.id === i.itemId);
-        return def && def.origin === 'alien';
-      });
-      const partySize = (this.state.party || []).length;
-      // Wave 4: endgame
-      if (threat >= 120) return 4;
-      // Wave 3: need good gear + party + threat
-      if (threat >= 70 && partySize >= 3 && (hasGoodWeapon || hasAlienLoot)) return 3;
-      // Wave 2: need decent weapon or alien loot, plus party
-      if ((hasDecentWeapon || hasAlienLoot) && partySize >= 2) return 2;
-      // Wave 1: always
+      const day = this.state.scholar.day || 1;
+      const kills = this.state.waveKills || {}; // {1: n, 2: n, 3: n}
+      if (day >= 50 && (kills[3] || 0) >= 5) return 4;
+      if (day >= 25 && (kills[2] || 0) >= 8) return 3;
+      if (day >= 8 && (kills[1] || 0) >= 4) return 2;
       return 1;
+    },
+    // Track kills by wave for unlock gates
+    recordWaveKill(monsterId) {
+      const mdef = this.data.monsters.find(m => m.id === monsterId);
+      if (!mdef) return;
+      const wave = mdef.wave || 1;
+      this.state.waveKills = this.state.waveKills || {};
+      this.state.waveKills[wave] = (this.state.waveKills[wave] || 0) + 1;
+      // Wave 4 slain feeds readiness
+      if (wave === 4) this.state.wave4Slain = (this.state.wave4Slain || 0) + 1;
     },
 
     // Can this monster appear? Checks wave assignment.
@@ -15622,12 +15691,22 @@
       const f = this.tbfight;
       if (!f || f.over) return;
       f.over = true; f.result = result;
-      // WAVE TRACKING (Steve 2026-10-05): wins/losses feed the threat rating.
-      // The System watches — dominate and it escalates.
+      // WAVE TRACKING (Steve 2026-10-05, revised): kills by wave unlock the
+      // next wave (day-gated). The System watches — prove you can handle it.
       this.state.combatWins = this.state.combatWins || 0;
       this.state.combatLosses = this.state.combatLosses || 0;
       const waveBefore = this.unlockedWave();
-      if (result === 'won') this.state.combatWins++;
+      if (result === 'won') {
+        this.state.combatWins++;
+        // Record kills by wave for unlock gates
+        for (const m of f.fighters) {
+          if (m.kind === 'monster' && !m.alive && m.mdef) {
+            this.recordWaveKill(m.mdef.id);
+          }
+        }
+        // Leadership: force
+        this.leadShift('force', 1);
+      }
       else if (result === 'lost') this.state.combatLosses++;
       // Check for wave unlock (System escalation)
       const waveAfter = this.unlockedWave();
