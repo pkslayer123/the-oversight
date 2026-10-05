@@ -2953,6 +2953,14 @@
             if (i.foodKind === 'nut' && i.foodState === 'in_shell') {
               foodBtns += ` <button class="btn ghost sm" data-shell="${idx}">Shell</button>`;
             }
+            // FIELD IDENTIFICATION (Steve: the cautious test is always available,
+            // always honest): unknown lumps can be tested from the pack, not
+            // just at camp. Sorting stays camp-only (flat surface, good light).
+            if (i.lump) {
+              foodBtns += ` <button class="btn ghost sm" data-test="${idx}">Test cautiously</button>`;
+              foodBtns += ` <button class="btn ghost sm" data-rush="${idx}">Rush it</button>`;
+              foodBtns += ` <button class="btn ghost sm" data-watch="${idx}">Watch the fauna</button>`;
+            }
             if (i.foodState === 'carcass') {
               if (Game.knowsTechnique && Game.knowsTechnique('clean')) {
                 foodBtns += Game.hasCuttingTool()
@@ -2995,6 +3003,11 @@
     slot.querySelectorAll('[data-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.cook), 'Cooked.'));
     // FOOD REALITY: processing buttons.
     slot.querySelectorAll('[data-shell]').forEach(b => b.onclick = rewire(() => Game.shellNuts(+b.dataset.shell), 'Shelled.'));
+    // FIELD IDENTIFICATION: the cautious test works from the pack, anywhere.
+    const packOf = () => Game.state.scholar.inventory;
+    slot.querySelectorAll('[data-test]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.test, {}, packOf()), 'Tested.'));
+    slot.querySelectorAll('[data-rush]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.rush, { rush: true }, packOf()), 'Rushed.'));
+    slot.querySelectorAll('[data-watch]').forEach(b => b.onclick = rewire(() => Game.watchFauna(+b.dataset.watch, packOf()), 'Watched.'));
     slot.querySelectorAll('[data-clean]').forEach(b => b.onclick = rewire(() => Game.cleanCarcass(+b.dataset.clean), 'Cleaned.'));
     slot.querySelectorAll('[data-preserve]').forEach(b => b.onclick = rewire(() => Game.preserveFood(+b.dataset.preserve), 'Smoked.'));
     slot.querySelectorAll('[data-ask]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.ask), 'A specialist handles it.'));

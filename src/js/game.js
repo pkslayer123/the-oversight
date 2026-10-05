@@ -10482,7 +10482,7 @@
       const inedible = stillHungry ? scholar.inventory.filter(i => i.edible === false && (i.units || 0) > 0) : [];
       const nothingEdible = ate === 0 && stillHungry && inedible.length > 0 && !scholar.inventory.some(i => (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && i.edible !== false);
       const inedibleNote = inedible.length
-        ? ` (${[...new Set(inedible.map(i => i.name))].join(', ')} — not food yet: ${inedible[0].foodState === 'unknown' ? 'identify it first' : inedible[0].prep || 'process it'}.)`
+        ? ` (${[...new Set(inedible.map(i => i.name))].join(', ')} — not food yet: ${inedible[0].foodState === 'unknown' ? 'identify it first — test cautiously from your pack, or sort it at camp' : inedible[0].prep || 'process it'}.)`
         : '';
       this.say(ate > 0 ? `You eat (${ate} kcal).${bankNote}` + spoilNote
                        : (nothingEdible ? 'Nothing edible.' + inedibleNote + spoilNote
@@ -10908,10 +10908,23 @@
       return total;
     },
 
+    // pantryInReach: the pantry is physical — it lives in the hall at haven.
+    // You only eat from it (or draw your share) when you're actually there.
+    pantryInReach() {
+      try { const t = this.playerTile(); return !!(t && t.type === 'haven'); }
+      catch (e) { return false; }
+    },
     // villageMeal: you eat from the communal pantry. You're one of the 12.
     // Trust determines your share. Newcomers get less. Contributors get more.
+    // PHYSICAL: the pantry is in the hall, not in your pack. Camp wild and
+    // there's no dawn meal — eat from your pack. (Membership still has no
+    // check-ins: you stay a member while away; you just don't get fed.)
     villageMeal() {
       const scholar = this.state.scholar;
+      if (!scholar.joinedVillage && !this.pantryInReach()) {
+        this.say('You camp wild tonight — no pantry meal. Eat from your pack.');
+        return null;
+      }
       // If you joined another village, you eat from THEIR pantry.
       let v = this.state.village;
       let pantry = v.pantry || [];
@@ -10966,6 +10979,10 @@
       let eat = 0, give = 0;
       const providers = [];
       for (const id of (v.roster || [])) {
+        // AWAY PLAYER: not at haven → neither foraging for the pot nor eating
+        // from it today. The pantry is physical; your dawn meal is gated the
+        // same way (see villageMeal). NPC roster members live at haven.
+        if (id === this.villagerId && !this.state.scholar.joinedVillage && !this.pantryInReach()) continue;
         const person = this.data.villagers.find(p => p.id === id) || this.data.background_survivors.find(p => p.id === id);
         if (!person) continue;
         const health = (v.health && v.health[id] !== undefined) ? v.health[id] : 100;
@@ -11179,8 +11196,9 @@
         const ai = this.relicItems().find(r => (r.enhancements || []).includes('anchor'));
         this.say(`Your ${ai ? ai.name : 'relic'} holds you here. Not yet. (Anchor: death refused, once per season.)`);
       }
-      // the village eats whether you're there or not — every day you're out, twelve mouths
-      // YOU EAT TOO. Village meal from the communal pantry.
+      // the village eats whether you're there or not — every day you're out, the
+      // mouths at home. YOUR meal is physical: villageMeal only serves at haven
+      // (see the gate there); the away player's roster draw is skipped too.
       this.villageMeal();
       this.villageLives();
       this.villageEats();

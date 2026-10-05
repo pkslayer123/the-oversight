@@ -40,3 +40,5 @@ Verbatim-ish record of Steve's explicit instructions. These don't expire. When i
 - Do not nag about production authorization (state the blocker once per genuine state change).
 - The detail grid is the world: 9x9 cells per tile, edges blend into neighbors, walking feels continuous. Big features can straddle boundaries.
 - Play the game in free time, acting like a game critic. Look for friction, feel the loop, keep the playtest log current.
+- The pantry is physical: it lives in the hall at haven. The dawn village meal and the player's roster draw only happen when the player is actually at haven — camp wild and you eat from your pack. (Membership still has no check-ins: away members stay members; they just don't get fed.)
+- The cautious edibility test is always available, always honest: unknown lumps can be tested from the carried pack anywhere, not just at the haven stash. Sorting (the camp ritual with knowledgeable people) stays camp-only.

@@ -127,7 +127,9 @@ function sayCapture() {
     ok('starving beat fires below 500', msgs.some(m => /stomach is a fist/i.test(m)));
   }
   {
-    // curve: naive week-1 drops the bar by day 3 (lesson legible), survives the week
+    // curve: naive week-1 drops the bar by day 3 (lesson legible), survives the week.
+    // The naive player forages near haven and comes HOME at night — that's what
+    // the pantry meal is for (physical pantry: no meal while camping wild).
     const s = Game.state.scholar;
     const kcalByDay = [];
     for (let d = 1; d <= 7; d++) {
@@ -137,6 +139,7 @@ function sayCapture() {
       try { Game.eat(); } catch (e) {}
       kcalByDay.push(Math.round(s.kcal));
       s.hydration = 100; s.energy = 100; // isolate food
+      Game.map.px = 3; Game.map.py = 3; // home for the night — the meal is physical
       try { Game.endDay(); } catch (e) { break; }
       if (Game.over) break;
     }

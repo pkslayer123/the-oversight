@@ -588,8 +588,11 @@
   // ---------- WRAPS ----------
 
   // villageEats feeds MEMBERS. The exiled don't draw from the common pot —
-  // filter the roster for the call, restore after. No presence check: away
-  // members eat wherever they are. The village feeds its own.
+  // filter the roster for the call, restore after. Membership itself has no
+  // presence check (away members stay members — no check-ins). But MEALS are
+  // physical: the away player neither draws from nor provides to the pot that
+  // day (see the gate in villageMeal / the skip in villageEats). The village
+  // feeds its own — at the table, not by teleport.
   var _villageEats = G.villageEats;
   G.villageEats = function () {
     var v = this.state.village;
