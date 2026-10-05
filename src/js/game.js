@@ -1375,6 +1375,37 @@
       return this.fillTalkLine(l, vp);
     },
 
+    // convLineLog: VILLAGE-WIDE line retirement. Tracks line TEXT -> day last
+    // said, so shared dialogue pools don't recycle visibly across villagers
+    // ("heard 13 times in 4 days" kills the illusion). convoPick filters
+    // against lines said anywhere in the village in the last LINE_FRESH_DAYS.
+    LINE_FRESH_DAYS: 5,
+    convLineLog() {
+      const v = this.state.village;
+      v.convLineLog = v.convLineLog || {};
+      return v.convLineLog;
+    },
+    villageLineFresh(line) {
+      const last = this.convLineLog()[line];
+      return last == null || (this.state.scholar.day - last) >= this.LINE_FRESH_DAYS;
+    },
+    noteVillageLine(line) {
+      if (line) this.convLineLog()[line] = this.state.scholar.day;
+    },
+    // villagePick: pick from a pool, preferring lines nobody in the village
+    // has said recently. Falls back to any line rather than silence —
+    // ambient beats must always land. Notes the pick in the shared log.
+    villagePick(pool) {
+      pool = pool || [];
+      if (!pool.length) return null;
+      const fresh = pool.filter(l => this.villageLineFresh(l));
+      const line = fresh.length
+        ? fresh[Math.floor(Math.random() * fresh.length)]
+        : pool[Math.floor(Math.random() * pool.length)];
+      this.noteVillageLine(line);
+      return line;
+    },
+
     convoAskTopic(vid, topic) {
       // Ask about something specific. Threads develop; pools never repeat.
       // One topic per conversation — re-asking gets an honest deflection.
@@ -9649,9 +9680,17 @@
               n.fear = Math.min(100, (n.fear || 0) + (onWatch.length ? 5 : 12));
             } catch (e) {}
           }
-          this.say(onWatch.length
-            ? 'Night settles. The fire is the whole world now. Watches are posted — the dark has its own animals, and the village knows it.'
-            : 'Night settles. The fire is the whole world now. No watches posted. The dark feels bigger than it should.');
+          this.say(this.villagePick(onWatch.length ? [
+            'Night settles. The fire is the whole world now. Watches are posted — the dark has its own animals, and the village knows it.',
+            'Night comes down like a lid. The watch takes the treeline; the rest of us take the fire.',
+            'Dark, then darker. Someone feeds the fire without being asked. That\'s the whole village, right there.',
+            'The night shift nods at you on their way out past the light. Nothing to say. There never is.',
+          ] : [
+            'Night settles. The fire is the whole world now. No watches posted. The dark feels bigger than it should.',
+            'No watches tonight. Everyone sleeps with one ear open and pretends not to.',
+            'The fire burns lower than it should. Nobody wants to be the one to go for wood in the dark.',
+            'Night. The treeline is just a sound now. The fire is the whole argument against it.',
+          ]));
         } catch (e) {}
       }
       this.save();

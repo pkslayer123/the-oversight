@@ -150,19 +150,28 @@
         { id: 'traps', label: '"Walk my trap line with me? Extra hands, extra eyes."', spot: 'the trap line' },
       ];
     },
-    // daily: 0-2 NPCs get an invite idea
+    // daily: 0-2 NPCs get an invite idea (more once the village trusts you).
+    // INVITE FLOW: once average trust passes ~15, people think of you when
+    // they head out. Early game is quieter — but the betrayal design needs
+    // 3-4 honest invites banked before the turn means anything, so the flow
+    // opens up fast once you're even slightly known.
     npcInviteTick() {
       const bs = this.betrayalState();
       const roster = this.npcIds();
       if (!roster.length) return;
-      const n = R() < 0.55 ? 1 : (R() < 0.2 ? 2 : 0);
+      const trusts = roster.map(id => ((this.state.village.trust || {})[id]) || 10);
+      const avgTrust = trusts.reduce((a, b) => a + b, 0) / trusts.length;
+      const warm = avgTrust >= 15;
+      const n = warm
+        ? 1 + (R() < 0.6 ? 1 : 0) + (R() < 0.25 ? 1 : 0)
+        : (R() < 0.55 ? 1 : (R() < 0.2 ? 2 : 0));
       for (let i = 0; i < n; i++) {
         const vid = pick(roster);
         const hist = this.inviteHistory(vid);
         if (hist.pending) continue;
-        // don't invite if they barely know you
+        // don't invite if they barely know you (gate relaxes once warm)
         const t = ((this.state.village.trust || {})[vid]) || 10;
-        if (t < 12 && R() < 0.7) continue;
+        if (t < 12 && R() < (warm ? 0.3 : 0.7)) continue;
         hist.pending = { defId: pick(this.INVITE_DEFS()).id, day: this.state.scholar.day };
       }
       // stale pendings expire
@@ -170,6 +179,26 @@
         const h = bs.invites[vid];
         if (h.pending && this.state.scholar.day - h.pending.day > 2) h.pending = null;
       }
+    },
+    // DAY-1 NUDGE: on the first day, someone comes to YOU. "Can we talk?"
+    // Teaches the conversation verb and hands the new player their first
+    // thread — the design always meant NPCs to initiate, but it could take
+    // days to fire on its own. Fires once, at the first endDay.
+    dayOneNudge() {
+      const v = this.state.village;
+      if (this.state.scholar.day !== 1 || v.day1NudgeDone) return;
+      v.day1NudgeDone = true;
+      const roster = this.npcIds().filter(id => {
+        const t = (this.npcTemper && this.npcTemper(id)) || '';
+        return t !== 'withdrawn' && t !== 'prickly' && t !== 'restless';
+      });
+      if (!roster.length) return;
+      const rid = roster[Math.floor(Math.random() * roster.length)];
+      const d = this.displayName(rid);
+      const line = `"Hey." ${d} settles near you, not too close. "Day one. Everyone's pretending they're fine. ...Can we talk? Just talk — like people used to."`;
+      v.talkRequests = v.talkRequests || {};
+      v.talkRequests[rid] = { line };
+      try { this.say(line + ` (Talk to ${d}.)`); } catch (e) {}
     },
     pendingInvite(vid) {
       const h = (this.betrayalState().invites || {})[vid];
@@ -1256,6 +1285,7 @@
     try { this.considerBetrayalPlot(); } catch (e) {}
     try { this.npcPlotTick(); } catch (e) {}
     try { this.npcInviteTick(); } catch (e) {}
+    try { this.dayOneNudge(); } catch (e) {}
     try { this.considerStrangers(); } catch (e) {}
     // simmer: conflicts gain a little tension; grievances fade very slowly
     try {

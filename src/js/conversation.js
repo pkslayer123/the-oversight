@@ -326,7 +326,10 @@
     // convoPick: no repeats, ever. Tracks by line TEXT (not index), so it
     // stays correct even when the pool's composition shifts with mood/rep.
     // Filters against EVERYTHING ever said to this villager — a line used in
-    // one thread never resurfaces in another.
+    // one thread never resurfaces in another. ALSO filters village-wide:
+    // lines said by ANYONE in the village in the last LINE_FRESH_DAYS are
+    // deprioritized, so shared pools don't recycle visibly across speakers.
+    // Falls back to per-villager-fresh, then to anything, then null.
     // Returns the line, or null when the pool is genuinely exhausted.
     convoPick(vid, key, pool) {
       const c = this.convoGet(vid);
@@ -335,8 +338,14 @@
       for (const k of Object.keys(c.said)) for (const l of c.said[k]) allSaid.push(l);
       const fresh = (pool || []).filter(l => allSaid.indexOf(l) === -1);
       if (!fresh.length) return null;
-      const line = fresh[Math.floor(Math.random() * fresh.length)];
+      let pickPool = fresh;
+      try {
+        const vf = fresh.filter(l => this.villageLineFresh(l));
+        if (vf.length) pickPool = vf;
+      } catch (e) {}
+      const line = pickPool[Math.floor(Math.random() * pickPool.length)];
       c.said[key].push(line);
+      try { this.noteVillageLine(line); } catch (e) {}
       return line;
     },
 
@@ -548,6 +557,20 @@
         c.thread = 'plans'; c.depth = 1;
         return l ? this.fillTalkLine(l, vp) : exh();
       }
+      if (topic === 'gossip') {
+        // THE SOCIALITE'S VERB: "heard anything about anyone?" The gossip
+        // engine lives in askAbout (game.js) and says its beats directly —
+        // capture them so the conversation flow can display the line.
+        // (askedTopics already gates this to once per conversation.)
+        const said = [];
+        const origSay = this.say;
+        this.say = (t) => { said.push(String(t)); };
+        try { this.askAbout(vid, 'gossip'); } catch (e) {}
+        this.say = origSay;
+        c.thread = 'gossip'; c.depth = 1;
+        const line = said.join(' ');
+        return line || exh();
+      }
       return null;
     },
 
@@ -568,6 +591,9 @@
         plans: ['"What\'s your plan for tomorrow?"',
                 '"Thought about what\'s next?"',
                 '"Any plans, or just getting through?"'],
+        gossip: ['"Heard anything about anyone?"',
+                 '"What\'s the word around the fire?"',
+                 '"Anyone saying anything interesting?"'],
       };
       const vs = variants[key] || [key];
       const h = this._hashStr ? this._hashStr(vid + ':' + key) : 0;
@@ -619,7 +645,9 @@
       // answers plus a couple conversational options — discovery actions
       // return next exchange, once the question is engaged. You don't get
       // the full menu mid-question; that's the coherence fix, not a bug.
-      const MAXC = reactiveDef ? reactiveDef.answers.length + 2 : 6;
+      // (7: five topic asks can now be open at once — gossip joined them —
+      // and discovery actions must still fit behind topics/theorize/observe.)
+      const MAXC = reactiveDef ? reactiveDef.answers.length + 2 : 7;
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
       // PARTY INVITES live in conversation, not on a button. Discovered via
       // the System unlock. You ask people. Like a person.
@@ -649,17 +677,23 @@
       // TOPIC ASKS come first — the conversation itself. Discovery actions
       // (trade/teach/promise/invite) fill whatever slots remain; they never
       // crowd out the talk.
-      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
+      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans', gossip: 'ask:gossip' }[c.thread];
       const asked = c.askedTopics || [];
       const tempNow = this.npcTemper(vid);
       const topicCap = (tempNow === 'withdrawn' || tempNow === 'prickly' || tempNow === 'restless') ? 2 : 5;
       const pastOpen = trustNow >= 20 || convoCount >= 2;
       const goalOpen = trustNow >= 35 || convoCount >= 3;
+      // GOSSIP ASK: the socialite's core verb. "Heard anything about anyone?"
+      // The detective layer is ask-able, not just receive-only. Same intimacy
+      // gate as theorize; sits with the other topic asks, never crowding out
+      // discovery actions.
+      const gossipOpen = trustNow >= 20 || convoCount >= 2;
       const asks = [];
       if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
       if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
       if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
       if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
+      if (gossipOpen && asked.indexOf('gossip') === -1) asks.push({ id: 'ask:gossip', label: this.convoLabel(vid, 'gossip') });
       let topicsAdded = 0;
       for (const a of asks) {
         if (a.id === threadAsk || topicsAdded >= topicCap || choices.length >= MAXC) continue;
