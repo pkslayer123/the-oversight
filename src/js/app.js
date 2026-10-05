@@ -750,6 +750,19 @@
         // (how much? the world decides public/private). No more one-click.
         actions.push(['🎁 Give food…', () => { inlineView = { kind: 'givefood', vid: villagerId, line: null, result: null, mapKey: inlineMapKey() }; refresh(); }]);
       }
+      // CORPSE SYSTEM: you're standing with the dead.
+      if (Game.corpseAt) {
+        const deadHere = Game.corpseAt(cx, cy);
+        if (deadHere.length) {
+          const dc = deadHere[0];
+          desc += ' ' + Game.corpseDesc(dc);
+          actions.push(['Look closely', () => { Game.examineCorpse(dc.id); refresh(); }]);
+          const remaining = (dc.items || []).filter(i => (i.units || 1) > 0).length;
+          if (remaining && !dc.buried) actions.push(['Search the body', () => { Game.lootCorpse(dc.id, true); refresh(); }]);
+          if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
+          if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
+        }
+      }
     } else if (isMon) {
       // AMBIGUITY: name hidden until the Codex knows it.
       const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
@@ -767,6 +780,24 @@
       else if (enc > 0) desc += ' Looks familiar.';
       if (dist <= 1) actions.push(['Hunt', () => Game.huntAnimal()]);
       else { desc += ' (Too far to catch.)'; actions.push(walkCloser(cx, cy)); }
+    } else if (Game.corpseAt) {
+      // CORPSE SYSTEM: the dead stay where they fell.
+      const dead = Game.corpseAt(cx, cy);
+      if (dead.length) {
+        const dc = dead[0];
+        name = dc.kind === 'person' ? 'A body' : 'A carcass';
+        desc = Game.corpseDesc(dc);
+        if (dist <= 1) {
+          actions.push(['Look closely', () => { Game.examineCorpse(dc.id); refresh(); }]);
+          const remaining = (dc.items || []).filter(i => (i.units || 1) > 0).length;
+          if (remaining && !dc.buried) actions.push(['Search the body', () => { Game.lootCorpse(dc.id, true); refresh(); }]);
+          if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
+          if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
+        } else {
+          desc += ' (Too far.)';
+          actions.push(walkCloser(cx, cy));
+        }
+      }
     } else if (villagerId) {
       // VILLAGER: people get sheets, not tile panels. Open the person sheet directly.
       // (cellPopup was called for a distant villager tap — walkCloser handles approach.)
@@ -3337,6 +3368,16 @@
                 cls += ' villager';
                 break;
               }
+            }
+          }
+          // CORPSE SYSTEM: the dead stay where they fell. Always visible.
+          if (!drawn && Game.corpseAt) {
+            const dead = Game.corpseAt(cx, cy);
+            if (dead.length) {
+              const dc = dead[0];
+              g = esc(Game.corpseGlyph(dc));
+              cls += ' corpse';
+              drawn = true;
             }
           }
         }

@@ -5953,6 +5953,11 @@
         // MURDER: attacking a non-hostile person. Witnesses don't admire this.
         // There is no brave reading. There is horror, and there is fear of you.
         murder: { honest: -30, generous: -20, brave: -5, competent: 0 },
+        // CORPSE SYSTEM: looting the fresh dead where others can see.
+        // "They were picking his pockets before he was cold."
+        loot_corpse: { honest: -10, generous: -8, brave: -2, competent: 0 },
+        honor_dead: { honest: 4, generous: 3, brave: 0, competent: 0 },
+        bury_dead: { honest: 5, generous: 4, brave: 2, competent: 1 },
       }[action];
       if (!AX) return;
       const roster = ((this.state.village || {}).roster || []).filter(id => id !== this.villagerId);
@@ -10884,7 +10889,8 @@
       if (t.hp <= 0) {
         t.alive = false;
         if (t.kind === 'player') this.say('You go down.');
-        else if (t.kind === 'villager') { this.say(`☠ ${t.name} falls.`); this.tbVillagerFalls(t); }
+        else if (t.kind === 'villager') { this.say(`☠ ${t.name} falls.`); this.tbVillagerFalls(t);
+          try { this.registerDeath({ kind: 'person', villagerId: t.villagerId, name: t.name, mx: t.mx, my: t.my, cause: 'combat', witnesses: this.fightWitnesses(t.villagerId) }); } catch (e) {} }
         else if (t.kind === 'hostile') {
           // KILLING A PERSON: the text depends on who they were and why.
           // Self-defense, a monster in human skin, an innocent — different deaths.
@@ -10917,9 +10923,11 @@
           this.say(kl[Math.floor(Math.random() * kl.length)]);
           try { this.addTrauma(this.traumaForKill(t.villagerId)); } catch (e) {}
           try { this.villageEvent('murder', { victim: t.villagerId }); } catch (e) {}
+          try { this.registerDeath({ kind: 'person', villagerId: t.villagerId, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses(t.villagerId) }); } catch (e) {}
         }
         else {
           this.say(`The ${t.name} falls.`);
+          try { this.registerDeath({ kind: 'monster', monsterId: (t.mdef || {}).id, monsterName: t.name, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses() }); } catch (e) {}
           if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
           // DEATH THROES: a sweeping-beam monster cut down before its first
           // Discharge fires anyway — the light was already in its eyes. The
