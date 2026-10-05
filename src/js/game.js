@@ -12470,6 +12470,57 @@
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
+      // ---- MEMORY PROJECTOR ("Nostalgia"): THE SPELL ----
+      // watch → spell → static. It shows you home; while the beam gathers
+      // along your line of gaze, the light PULLS a still target closer (the
+      // spell-pull hook). Keep moving — 2+ tiles in a turn breaks the spell
+      // outright. The beam locks where you were: movement is the dodge.
+      if (this.mpIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'watch'); m.mpWatch = 2; }
+        // post-resolve: the reel fired → static
+        if (m.beamPhase === 'spell' && !m.telegraph && m.mpDeclared) {
+          m.mpDeclared = false;
+          this.encSetPhase(m, 'static'); m.mpStatic = 1;
+          this.say('The screen collapses to gray static, hissing. It\'s confused — the picture won\'t come back yet.');
+          this.audioEvent('projectorStatic');
+        }
+        const mpPhase = m.beamPhase;
+        if (mpPhase === 'static') {
+          m.mpStatic = (m.mpStatic || 1) - 1;
+          if (m.mpStatic <= 0) {
+            this.encSetPhase(m, 'watch'); m.mpWatch = 2;
+            this.say('The static resolves. Shapes flicker at the edge of the light. It\'s watching again.');
+          } else this.say('Gray static. It can\'t hold a picture right now.');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (mpPhase === 'spell') {
+          // the beam gathers in the generic pending section (spell-pull hook
+          // above). The screen is set — it holds position.
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // watch: curious. It watches first — that's your window to leave.
+        m.mpWatch = (m.mpWatch === undefined ? 2 : m.mpWatch) - 1;
+        if (m.mpWatch <= 0 && !m.telegraph) {
+          this.encSetPhase(m, 'spell'); m.mpDeclared = true;
+          const t = foe.f;
+          m.mpTx = t.mx; m.mpTy = t.my; // spell baseline: did you move since?
+          const known = this.encTelegraphKnown(m);
+          this.encDeclareBeam(m, foe, known
+            ? 'It\'s showing you home to hold you still. The beam runs along your line of gaze — MOVE. Keep moving and the picture can\'t hold.'
+            : atk.telegraph);
+          this.audioEvent('projectorHum', { spell: true });
+        } else {
+          const watchLines = [
+            'The light flickers. Shapes resolve. Is that... is that home?',
+            'Somewhere in the light: a kitchen. A laugh you haven\'t heard in years. You shouldn\'t look. You look.',
+          ];
+          this.say(watchLines[Math.floor(Math.random() * watchLines.length)]);
+          this.audioEvent('projectorHum', {});
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
       if (pat.type === 'ambush') {
         // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
         if (foe.d <= 1) {

@@ -1358,6 +1358,28 @@
    "observed": "Memory lure. The System mined your homesickness and built a projector for it. It shows you home \u2014 real footage, somehow \u2014 and while you stand there aching, it fires a beam along the line of your gaze. Windup 2. The cruelty is the point. The audience wept. (The audience loved it.)",
    "slain": "Nostalgia. Moves: Home Movies (beam length 5, windup 2 \u2014 the line follows your gaze, so MOVE). It fears movement: keep walking and the image can't hold. It spends turns watching (curious) \u2014 that's your window to leave. The reels it drops show your memories. Don't watch them. Or do. The System already did."
   },
-  "systemDesignation": "Affective recall projector"
+  "systemDesignation": "Affective recall projector",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "watch",
+    "spell",
+    "static"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "projector",
+   "noticeText": "The light finds {who}. Shapes resolve. Is that... home?",
+   "adjText": "Too close. The screen swings toward {who} — the picture sharpens.",
+   "painText": "The image tears — and the projector swings to {who}. Pain gets noticed.",
+   "phaseBadges": {
+    "watch": " 📼 WATCHING",
+    "spell": " 📼 SPELLBOUND",
+    "static": " 📼 STATIC"
+   },
+   "comment": "Encounter framework client. THE SPELL: watch (2 turns, curious — leave now) → spell (Home Movies declared: beam length 5, windup 2, aim locked; the light PULLS a still target 1 tile/turn toward it; moving 2+ tiles breaks the spell) → static (1 turn, confused). It fears movement."
+  }
  }
 ]
