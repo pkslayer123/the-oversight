@@ -10963,7 +10963,7 @@
             if (!o.alive || o.fled || o.key === mo.key) continue;
             if (!S.combat.isFoe(mo, o)) continue;
             const d = Math.max(Math.abs(o.mx - mo.mx), Math.abs(o.my - mo.my));
-            if (d <= this.encNoticeRange() && this.canSee(mo.mx, mo.my, o.mx, o.my)) {
+            if (d <= this.encNoticeRange(mo) && this.canSee(mo.mx, mo.my, o.mx, o.my)) {
               this.encNoticeFighter(mo, o.key, true);
             }
           }
@@ -11338,6 +11338,17 @@
     tbTelegraphCue(m) {
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
+      // BESPOKE CUE (batch 3, the uncanny): the monster set phase-specific
+      // cue text at declare time (the lure's voice, the contract's fine
+      // print, the projector's picture). It overrides the generic cue — the
+      // earned codex suffix still appends once the pattern is learned.
+      if (tg && tg.cueText) {
+        let bcue = tg.cueText;
+        if (this.tbPatternKnown(m.mdef.id, atk.name)) {
+          bcue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
+        }
+        return bcue;
+      }
       if (tg && tg.firing > 0) {
         // CODEX-GATED: first encounters get raw terror, not tactics. The
         // "circle it wide / keep moving" coaching only appears once you've
@@ -11643,7 +11654,22 @@
       const t = this.tbFighter(targetKey);
       if (!t || !t.alive) return;
       let final = Math.max(0, Math.round(dmg));
-      if (t.kind === 'player' && typeof this.armorBonus === 'function') {
+      // BATCH 3 (the uncanny) vulnerabilities:
+      // - voice mimic, REVEALED: the act is broken and the signal scrambles —
+      //   exposed, it takes the hit badly. (Resisting the lure pays off.)
+      if (t.kind === 'monster' && this.vmIs(t) && t.beamPhase === 'reveal') {
+        final = Math.round(final * 1.5);
+        this.say('The signal scrambles — exposed, it takes the hit badly.');
+      }
+      // - contract golem: it's paper. A torch does what fire does.
+      if (t.kind === 'monster' && this.cgIs(t) && String(sourceLabel) === 'you') {
+        let witem = '';
+        try { witem = String((((this.state.scholar || {}).equipped || {}).weapon || {}).itemId || ''); } catch (e) {}
+        if (/torch/.test(witem)) {
+          final = Math.round(final * 3);
+          this.say('It\'s paper. The torch does what torches do.');
+        }
+      }      if (t.kind === 'player' && typeof this.armorBonus === 'function') {
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
       }
@@ -11833,6 +11859,15 @@
     //   encNoticesPain(m,attackerKey), encScanThreats(m),
     //   encTelegraphKnown(m), encPhaseBadge(m), encSetPhase(m,phase)
     deerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'gallowdeer')); },
+    // MONSTER BATCH 3 (the uncanny): id gates for bespoke encounter behavior.
+    // Same pattern as deerIs — targeted branches inside tbMonsterTurn, no
+    // parallel systems. The generic engine still owns telegraph countdown,
+    // resolution, the threat queue, and codex gating.
+    vmIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'voice_mimic_radio')); },
+    biIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'bright_idea')); },
+    mpIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'memory_projector')); },
+    smIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'service_mimic')); },
+    cgIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'contract_golem')); },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
     encThreatQueue(m) {
@@ -11851,7 +11886,12 @@
       if (!silent && this.tbfight) {
         const t = this.tbFighter(key);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
-        this.say(`The deer's head swings toward ${who}. Another light in its eyes. You're all on the list now.`);
+        // Per-monster notice text from the encounter config ({who} = the
+        // noticed fighter). Falls back to the Highbeam wording.
+        const cfg = this.encConfig(m) || {};
+        this.say(cfg.noticeText
+          ? String(cfg.noticeText).replace(/\{who\}/g, who)
+          : `The deer's head swings toward ${who}. Another light in its eyes. You're all on the list now.`);
       }
       return true;
     },
@@ -11877,8 +11917,12 @@
       if (i > 0) { q.splice(i, 1); q.unshift(attackerKey); }
       if (q[0] !== before) {
         const who = t.kind === 'player' ? 'you' : t.name;
-        this.say(`It staggers — and its burning gaze fixes on ${who}. Pain gets noticed.`);
-        this.audioEvent('deerAggro');
+        const cfg = this.encConfig(m) || {};
+        this.say(cfg.painText
+          ? String(cfg.painText).replace(/\{who\}/g, who)
+          : `It staggers — and its burning gaze fixes on ${who}. Pain gets noticed.`);
+        if (this.deerIs(m)) this.audioEvent('deerAggro');
+        else this.audioEvent('encNotice');
       }
     },
     // scan on the deer's turn: anyone too close gets noticed; anyone crazy
@@ -11913,8 +11957,11 @@
       if (q[0] !== before) {
         const t = this.tbFighter(q[0]);
         const who = t ? (t.kind === 'player' ? 'you' : t.name) : 'someone';
-        this.say(`Too close. The deer's gaze SNAPS to ${who} — proximity overrules patience.`);
-        this.audioEvent('deerAggro');
+        this.say(cfg.adjText
+          ? String(cfg.adjText).replace(/\{who\}/g, who)
+          : `Too close. The deer's gaze SNAPS to ${who} — proximity overrules patience.`);
+        if (this.deerIs(m)) this.audioEvent('deerAggro');
+        else this.audioEvent('encNotice');
       }
     },
     // codex-gated: have you learned what the freeze means? The windup lane
@@ -11934,10 +11981,121 @@
     },
     encPhaseBadge(m) {
       if (!this.encUsesFifo(m)) return '';
+      // Per-monster phase badges from the encounter config; the Highbeam map
+      // is the fallback. Phase names are the monster's own (call/approach/
+      // reveal, settle/brighten/bloom/ember, ...).
+      const cfg = this.encConfig(m) || {};
+      if (cfg.phaseBadges && cfg.phaseBadges[m.beamPhase]) return cfg.phaseBadges[m.beamPhase];
       return {
         aim: ' 👁 AIMING', charge: ' ⚡ CHARGING', firing: ' 🔥 FIRING',
         cooldown: ' 😮‍💨 SPENT',
       }[m.beamPhase] || '';
+    },
+
+    // === BATCH 3 (the uncanny): bespoke declare helpers ===
+    // Same telegraph shapes the generic pending section counts down and
+    // resolves — only the cue text (phase-specific, codex-gated where it
+    // matters) is bespoke. No parallel combat system.
+    encDeclareDirect(m, target, cueText) {
+      const atk = m.mdef.attack || {};
+      const pat = atk.pattern || { type: 'direct', range: 3 };
+      m.telegraph = { kind: 'direct', targetKey: target.key, dmg: atk.damage,
+        attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
+        cueText: cueText || null };
+      this.say('⚠ ' + this.tbTelegraphCue(m));
+      this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct' });
+      this.tbRefreshTelegraphUI();
+    },
+    encDeclareBeam(m, foe, cueText) {
+      const atk = m.mdef.attack || {};
+      const pat = atk.pattern || { type: 'beam', length: 5, width: 1 };
+      // BEAM: terrain blocks the shot at declare — break line of sight,
+      // break the beam. (Fighters never block: it goes through them.)
+      let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cut = [];
+      for (const c of cells) {
+        const cell = detail[c.cy] && detail[c.cy][c.cx];
+        if (cell && this.cellProps(cell).blocks) break;
+        cut.push(c);
+      }
+      cells = cut;
+      const p0 = this.tbFighter('p');
+      m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
+        attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
+        threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
+        aim: { x: foe.f.mx, y: foe.f.my }, dir: null, aimKey: foe.f.key,
+        angle: null, firing: 0, cueText: cueText || null };
+      // WITNESS: seeing it wind up teaches you its attack (codex machinery).
+      try {
+        const me = this.ensureMonsterEntry(m.mdef.id);
+        if (atk.name && !me.attacksSeen.includes(atk.name)) {
+          me.attacksSeen.push(atk.name);
+          if (me.stage === 'encountered') me.stage = 'observed';
+        }
+      } catch (e) {}
+      this.say('⚠ ' + this.tbTelegraphCue(m));
+      this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'beam', beam: true });
+      this.tbRefreshTelegraphUI();
+    },
+    // The voice the mimic cries in: someone the target would go back for. It
+    // learns voices from the people it has noticed (the threat queue first),
+    // otherwise the roster. Never the target's own name without the twist.
+    vmVoiceName(m, target) {
+      try {
+        const q = this.encThreatQueue(m);
+        const names = [];
+        for (const key of q) {
+          if (key === target.key) continue;
+          const fr = this.tbFighter(key);
+          if (fr && fr.alive && fr.kind !== 'monster' && fr.kind !== 'hostile') {
+            names.push(fr.kind === 'player' ? 'your own' : String(fr.name).split(' ')[0]);
+          }
+        }
+        if (names.length) return names[Math.floor(Math.random() * names.length)];
+        const roster = (this.state.village && this.state.village.roster) || [];
+        const others = roster.filter(rid => rid !== this.villagerId);
+        const rid = others[Math.floor(Math.random() * others.length)];
+        if (rid) return String(this.displayName(rid)).split(' ')[0];
+      } catch (e) {}
+      return 'someone you know';
+    },
+    // MEMORY PROJECTOR: the spell-pull. While the beam gathers, a target that
+    // stands still is dragged a tile closer ("you take a step closer without
+    // deciding to") — the spell holds them on the beam's line. Moving 2+
+    // tiles in a turn breaks the spell outright: the image can't hold.
+    // Returns true when the spell broke (telegraph canceled).
+    mpSpellPull(m, tg) {
+      const tgt = this.tbFighter(tg.aimKey) || this.tbFighter('p');
+      if (!tgt || !tgt.alive || tgt.fled) return false;
+      const px = tgt.mx, py = tgt.my;
+      if (m.mpTx === undefined) { m.mpTx = px; m.mpTy = py; return false; }
+      const moved = Math.max(Math.abs(px - m.mpTx), Math.abs(py - m.mpTy));
+      m.mpTx = px; m.mpTy = py;
+      const who = tgt.kind === 'player' ? 'You' : tgt.name;
+      if (moved >= 2) {
+        m.telegraph = null;
+        m.mpDeclared = false;
+        this.encSetPhase(m, 'watch'); m.mpWatch = 2;
+        this.say(`${who === 'You' ? 'You force' : who + ' forces'} ${tgt.kind === 'player' ? 'your' : 'their'} feet to move — the image judders, breaks up. Too fast. It can't hold the picture. The screen collapses to static.`);
+        this.audioEvent('projectorBreak');
+        return true;
+      }
+      if (moved === 0) {
+        const dx = Math.sign(m.mx - px), dy = Math.sign(m.my - py);
+        if (dx || dy) {
+          const nx = px + dx, ny = py + dy;
+          if (!(nx === m.mx && ny === m.my) && nx >= 0 && nx <= 8 && ny >= 0 && ny <= 8 && !this.tbBlocked(nx, ny)) {
+            tgt.mx = nx; tgt.my = ny;
+            if (tgt.kind === 'player') { this.state.scholar.mx = nx; this.state.scholar.my = ny; }
+            this.say(tgt.kind === 'player'
+              ? 'You take a step closer without deciding to. The light wants you nearer.'
+              : `${tgt.name} takes a step closer, eyes fixed on the light. They didn't decide to.`);
+            this.audioEvent('projectorPull');
+          }
+        }
+      }
+      return false;
     },
 
     tbMonsterTurn(m) {
@@ -11985,6 +12143,24 @@
           this.tbRefreshTelegraphUI();
           if (this.tbEndCheck()) return;
           return;
+        }
+        // BATCH 3 (the uncanny): bespoke windup behavior, same countdown.
+        // BRIGHT IDEA: the brightening escalates while it gathers — the two
+        // beats from glow to boom read clearly. It never moves once set.
+        if (this.biIs(m) && m.beamPhase === 'brighten' && tg.kind === 'squares') {
+          this.say(tg.turnsLeft > 1
+            ? 'The glow intensifies — the air tastes like copper. Brighter.'
+            : 'BRIGHTER. The light is wrong now, too bright to look at. It\'s about to loose.');
+          this.audioEvent('eurekaTick', { urgency: tg.turnsLeft });
+        }
+        // MEMORY PROJECTOR: the spell pulls while the beam gathers. A still
+        // target drifts closer; a moving one breaks the picture.
+        if (this.mpIs(m) && m.beamPhase === 'spell' && tg.kind === 'squares') {
+          if (this.mpSpellPull(m, tg)) {
+            this.tbRefreshTelegraphUI();
+            if (this.tbEndCheck()) return;
+            return;
+          }
         }
         tg.turnsLeft -= 1;
         if (tg.turnsLeft > 0) {
@@ -12136,6 +12312,18 @@
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
+      // ============ BATCH 3 (the uncanny): bespoke encounters ============
+      // Each branch is one monster's personality — its phases, its tell, its
+      // counterplay. The generic engine still owns telegraph countdown,
+      // resolution, the threat queue, and codex gating (see the declare
+      // helpers + pending-section hooks above). FIFO target: the list, not
+      // the nearest — anyone can be the one it wants.
+      const fifoFoe = () => {
+        if (!useFifo) return null;
+        const dt = this.encCurrentTarget(m);
+        return dt ? { f: dt, d: Math.max(Math.abs(dt.mx - m.mx), Math.abs(dt.my - m.my)) } : null;
+      };
+
       if (pat.type === 'ambush') {
         // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
         if (foe.d <= 1) {
