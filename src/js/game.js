@@ -9858,17 +9858,12 @@
           if (dist > 3) { stepToward(); }
           else {
             m.watchTurns = (m.watchTurns || 0) + 1;
-            // (Steve 2026-10-05): the moth kept vanishing before combat could start.
-            // Curious monsters linger longer now — 5 turns, and only 25% drift away.
-            // The player gets a fair chance to engage (Fight) before it loses interest.
-            if (m.watchTurns >= 5) {
-              if (Math.random() < 0.25) {
-                s.monster = null;
-                this.say('It watches a moment longer — then drifts away. Not interested. This time.');
-              } else {
-                m.stance = 'hungry'; m.watchTurns = 0;
-                const w = this.monsterCue(m.id, 'warn'); if (w) this.say(w); else this.say('Its posture changes. Curiosity is over.');
-              }
+            // (Steve 2026-10-05): monsters were SENT to fight. Curiosity is
+            // predatory assessment, not losing interest. They don't drift away —
+            // they decide you're prey and escalate. No sheepish despawns.
+            if (m.watchTurns >= 3) {
+              m.stance = 'hungry'; m.watchTurns = 0;
+              const w = this.monsterCue(m.id, 'warn'); if (w) this.say(w); else this.say('Its posture changes. Curiosity is over.');
             }
           }
           break;
@@ -9894,11 +9889,12 @@
         case 'cautious': {
           maybeCue('curious');
           // circles at range. watching. deciding if you're worth it.
+          // (Steve 2026-10-05): sent to fight, not to give up. It doesn't decide
+          // you're "not worth it" — it waits for an opening. Menacing, not sheepish.
           const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
           if (dist < 3) { mv(-dx, 0); mv(0, -dy); }       // too close: back off
           else if (dist > 5) { stepToward(); }              // too far: drift in
           else { mv(-dy, dx) || mv(dy, -dx); }              // circle
-          if (Math.random() < 0.1) { s.monster = null; this.say('It decides you\'re not worth it. Gone.'); }
           break;
         }
         case 'fearful': {
