@@ -4693,6 +4693,20 @@
     tileAt(x, y) { return this.map.tiles[y][x]; },
     playerTile() { return this.tileAt(this.map.px, this.map.py); },
 
+    // HAVEN STORES ACCESS (Steve 2026-10-04): the pantry, caches, and village
+    // stash are PHYSICAL. You use them with your hands, inside the hall — not
+    // by thinking about them from the treeline. Returns 'inside' (in the
+    // hall), 'remote' (Full Integration: the System manifests the manifest —
+    // requisition from anywhere, the aliens' logistics), or 'none'.
+    havenStoresAccess() {
+      try {
+        const s = this.state.scholar;
+        if (s && s.insideHaven && this.playerTile().type === 'haven') return 'inside';
+        if (typeof this.integrationStage === 'function' && this.integrationStage() >= 3) return 'remote';
+      } catch (e) {}
+      return 'none';
+    },
+
     // --- WOOD: the building material. Terraforming yields it, construction spends it. ---
     // CONSTRUCTION (future): walls, palisades, shelters hook in here.
     // tile.structures[] is the foundation — anything built on a tile lives there.
@@ -5664,6 +5678,149 @@
       this.say(n ? `Boiled ${n}L. Bacteria dead.${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
       return null;
     },
+    // FIRECRAFT: the player can start their own fires. Until now fires were
+    // only where map generation put them (8% of grids) or the Haven hall —
+    // so field cooking and boiling were impossible away from home. Friction
+    // fire is real work: time + calories, a practice curve, and the fire
+    // burns real fuel (feed it or it dies to cold dirt).
+    // FUEL: deadfall branches are the honest friction-fire fuel — always
+    // earnable with bare hands (gather fallen). A wood log burns longer.
+    // 2 branches = a small fire; 1 log = a real one. The button stays hidden
+    // without fuel (tool-gated), but anyone can earn fuel.
+    FIRE_BURN_TICKS: 192, // one wood log ≈ 1.5 day-parts of flame (~9 hours)
+    FIRE_BRANCH_TICKS: 64, // one branch ≈ half a day-part
+    fireFuel() {
+      // returns {kind, n, burn} for the best available starting fuel, or null
+      if (this.materialCount('branch') >= 2) return { kind: 'branch', n: 2, burn: this.FIRE_BRANCH_TICKS * 2 };
+      if (this.woodCount() >= 1) return { kind: 'wood', n: 1, burn: this.FIRE_BURN_TICKS };
+      return null;
+    },
+    spendFireFuel(fuel) {
+      if (!fuel) return false;
+      if (fuel.kind === 'branch') {
+        const inv = this.state.scholar.inventory || [];
+        const e = inv.find(i => i.material === 'branch');
+        if (!e || (e.units || 0) < fuel.n) return false;
+        e.units -= fuel.n;
+        if (e.units <= 0) inv.splice(inv.indexOf(e), 1);
+        return true;
+      }
+      return this.spendWood(fuel.n);
+    },
+    feedFuel() {
+      // feeding prefers a branch (cheap), falls back to a log (long burn)
+      if (this.materialCount('branch') >= 1) return { kind: 'branch', n: 1, burn: this.FIRE_BRANCH_TICKS };
+      if (this.woodCount() >= 1) return { kind: 'wood', n: 1, burn: this.FIRE_BURN_TICKS };
+      return null;
+    },
+    fireKnown() {
+      const v = (this.data.villagers || []).find(x => x.id === this.villagerId) || {};
+      const occ = String(v.formerOccupation || '').toLowerCase();
+      if (/camper|scout|survivalist|bushcraft|firefighter|boyscout|girlscout|ranger|soldier|marine|arborist/i.test(occ)) return true;
+      if ((this.state.codex || {}).fireWise) return true;
+      const fc = (this.state.scholar || {}).firecraft || {};
+      return (fc.successes || 0) >= 3;
+    },
+    // _absTick: monotonic tick clock across days, for fire expiry.
+    _absTick() {
+      const s = this.state.scholar;
+      return (s.day || 1) * this.TIME.TICKS_PER_DAY + (s.dayTicks || 0);
+    },
+    // fireGroundOK: ground you can safely light a fire on.
+    fireGroundOK(cell) {
+      return ['grass', 'dirt', 'rubble', 'mud', 'sand', 'snow', 'ash', 'path', 'clearing'].indexOf(cell) !== -1;
+    },
+    playerFireAt(cx, cy) {
+      this.sweepDeadFires();
+      const fires = this.state.fires || [];
+      return fires.some(f => f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy && f.till > this._absTick());
+    },
+    // sweepDeadFires: expired player fires go cold — back to plain dirt.
+    // Called lazily at every fire-touching path; only tracked fires are scanned.
+    sweepDeadFires() {
+      const now = this._absTick();
+      const fires = this.state.fires || [];
+      for (let i = fires.length - 1; i >= 0; i--) {
+        if (fires[i].till > now) continue;
+        const row = this.map.tiles[fires[i].ty];
+        const t = row && row[fires[i].tx];
+        if (t && t.detail && t.detail[fires[i].cy]) t.detail[fires[i].cy][fires[i].cx] = 'dirt';
+        fires.splice(i, 1);
+      }
+    },
+    // makeFire: friction fire on a nearby ground cell. Costs 32 ticks + 70
+    // kcal (a real chunk of work). Success is a practice curve: knowledge,
+    // beard-moss tinder, and prior successes all help; three successes and
+    // you've got the knack (fireWise). Failures are honest and teach.
+    makeFire(cx, cy) {
+      if (this.over) return null;
+      this.sweepDeadFires();
+      const s = this.state.scholar;
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[cy] && detail[cy][cx];
+      if (!this.fireGroundOK(cell)) { this.say('No good ground for a fire there.'); return null; }
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      if (Math.max(Math.abs(cx - px), Math.abs(cy - py)) > 1) { this.say('Too far. Step closer.'); return null; }
+      const fuel = this.fireFuel();
+      if (!fuel) { this.say('You need fuel — gather fallen branches, or cut a log.'); return null; }
+      const fc = s.firecraft = s.firecraft || { attempts: 0, successes: 0 };
+      const moss = this.hasAbility('beard_moss');
+      const known = this.fireKnown();
+      // ACTION CLOCK: friction fire is a 32-tick chunk of real work. Without
+      // moss-tinder you shred dry grass on the spot first (+16 ticks).
+      s.kcal = Math.max(0, (s.kcal || 0) - 70);
+      this.tickAction(32 + (moss ? 0 : 16));
+      fc.attempts++;
+      let p = 0.40 + (known ? 0.30 : 0) + (moss ? 0.15 : 0) + Math.min(0.30, 0.05 * (fc.successes || 0));
+      if (fc.knack) p = 1;
+      if (Math.random() < p) {
+        fc.successes++;
+        this.spendFireFuel(fuel);
+        detail[cy][cx] = 'fire';
+        const till = this._absTick() + fuel.burn;
+        (this.state.fires = this.state.fires || []).push({ tx: this.map.px, ty: this.map.py, cx, cy, till });
+        let msg = moss
+          ? 'The beard-moss tinder takes the first real spark. You feed it twigs — fire. Yours.'
+          : 'The tinder catches. A real flame, breathing. You feed it twigs — fire. Yours.';
+        if (fc.successes >= 3 && !fc.knack) {
+          fc.knack = true;
+          this.state.codex = this.state.codex || {};
+          this.state.codex.fireWise = true;
+          msg += " Third fire. You've got the knack now — friction fire is yours, every time.";
+        } else {
+          msg += ' (It will burn down. Feed it branches or a log to keep it alive.)';
+        }
+        this.say(msg);
+        this.discover('firecraft');
+        return null;
+      }
+      // FAILURE IS HONEST: attempts 1-2 tease what practice earns, the way
+      // synergy discovery does — a hint of what could happen, never the how.
+      const hints = [
+        "Sparks, then nothing. The tinder's too coarse — shred it finer next time.",
+        "A wisp of smoke, gone. Slower breath. Shelter the spark with your body.",
+        "Nothing. Your arms ache. But your hands know a little more than they did.",
+        "The coal glows... and dies. Closer. You're closer.",
+      ];
+      this.say(hints[Math.min(fc.attempts - 1, hints.length - 1)]);
+      return null;
+    },
+    // feedFire: lay another log on a live player-made fire (+192 ticks).
+    feedFire(cx, cy) {
+      if (this.over) return null;
+      this.sweepDeadFires();
+      if (!this.playerFireAt(cx, cy)) { this.say('Nothing to feed there.'); return null; }
+      const fuel = this.feedFuel();
+      if (!fuel) { this.say('Nothing to feed it with — gather fallen branches, or cut a log.'); return null; }
+      this.spendFireFuel(fuel);
+      const f = (this.state.fires || []).find(f => f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy);
+      if (f) f.till += fuel.burn;
+      this.tickAction(8);
+      this.say(fuel.kind === 'wood'
+        ? 'You lay another log on. The fire settles in — hours more flame.'
+        : 'You feed it another branch. The fire takes it — a while more flame.');
+      return null;
+    },
     // drinkWater: drink clean first. Warn if only risky.
     // WATER KNOWLEDGE (Steve): recognizing clean vs poison is a skill. Flow and
     // clarity are observable; SAFETY is earned — outdoors background, or learned
@@ -5783,6 +5940,7 @@
     },
     // nearFire: is there a fire in the current detail grid?
     nearFire() {
+      this.sweepDeadFires(); // player-made fires go cold when their fuel runs out
       const detail = this.genDetail(this.map.px, this.map.py);
       for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (detail[y] && detail[y][x] === 'fire') return true;
@@ -8013,6 +8171,9 @@
       if (atHaven && near('bunk')) return 'bunk';
       if (near('tent')) return 'tent';
       if (atHaven) return 'hall';
+      // FIRESIDE: a fire you (or the world) lit nearby makes cold ground
+      // survivable. Warmth is earned, not given — you built the thing.
+      if (this.nearFire()) return 'fireside';
       return 'ground';
     },
     // sleepPreview: for the UI — show cost/benefit before committing.
@@ -8020,9 +8181,9 @@
       const q = this.sleepQuality();
       return {
         quality: q,
-        heal: { bunk: 35, tent: 25, hall: 20, ground: 12 }[q] || 12,
-        name: { bunk: 'a bunk', tent: 'a tent', hall: 'the hall floor', ground: 'the cold ground' }[q] || 'the ground',
-        note: { bunk: 'Best rest. Deep sleep, real healing.', tent: 'Sheltered. Decent rest.', hall: 'By the fire. Good enough.', ground: 'Exposed. You\'ll wake stiff.' }[q] || '',
+        heal: { bunk: 35, tent: 25, hall: 20, fireside: 18, ground: 12 }[q] || 12,
+        name: { bunk: 'a bunk', tent: 'a tent', hall: 'the hall floor', fireside: 'your fireside', ground: 'the cold ground' }[q] || 'the ground',
+        note: { bunk: 'Best rest. Deep sleep, real healing.', tent: 'Sheltered. Decent rest.', hall: 'By the fire. Good enough.', fireside: 'Warm by your own fire. Better than cold ground.', ground: 'Exposed. You\'ll wake stiff.' }[q] || '',
       };
     },
     sleep() {
@@ -8203,6 +8364,12 @@
         // If you have raw food, you can cook here. (Knowledge tells you what needs it.)
         const raw = (this.state.scholar.inventory || []).filter(i => i.rawKcal);
         if (raw.length) actions.push(`Cook (${raw.length} raw)`);
+        // A fire you started yourself can be fed another branch or log. Map-made fires burn on their own.
+        if (this.playerFireAt(cx, cy) && this.feedFuel()) actions.push('Feed the fire');
+      } else if (this.fireGroundOK(cell) && cell !== 'rubble') {
+        // TOOL PREREQUISITES (Steve): fire-making needs fuel. No branches or
+        // log, no button — the action stays hidden, not greyed.
+        if (this.fireFuel()) actions.push('Start a fire (big job)');
       } else if (cell === 'door') {
         // DOORS ARE REAL. This is how you leave the building.
         actions.push('Step outside');
