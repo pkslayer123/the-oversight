@@ -106,6 +106,33 @@
     },
     isPlayer(id) { return id === this.villagerId; },
     disp(id) { return this.isPlayer(id) ? 'you' : this.displayName(id); },
+    // whoTag: distinguishing token for dialogue. Names once known/post-System;
+    // pre-System, an age/gender/role descriptor ("the woman in her 30s, the nurse")
+    // so multi-actor dialogue never collapses to "A says dusk. But A said full dark."
+    // The player has to track WHO said WHAT — that's the gameplay.
+    whoTag(vid) {
+      if (!vid) return 'someone';
+      if (this.isPlayer(vid)) return 'you';
+      try {
+        if (this.state.systemArrived || this.nameKnown(vid)) return this.npcName(vid);
+      } catch (e) {}
+      try {
+        const v = (this.data.villagers || []).find(x => x.id === vid)
+          || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        let pro = v.pro;
+        if (!pro) pro = ['she', 'he', 'they'][this._hashStr(String(vid)) % 3];
+        const who = pro === 'she' ? 'woman' : pro === 'he' ? 'man' : 'person';
+        const age = v.age || 30;
+        const band = age < 25 ? '20s' : age < 35 ? '30s' : age < 45 ? '40s' : age < 55 ? '50s' : '60s';
+        const poss = pro === 'she' ? 'her' : pro === 'he' ? 'his' : 'their';
+        let role = '';
+        try {
+          const occ = v.formerOccupation || (v.lifeseed && (v.lifeseed.occupation || v.lifeseed.role));
+          if (occ) role = ', the ' + String(occ).toLowerCase().replace(/\s*\(.*?\)/g, '').trim();
+        } catch (e) {}
+        return 'the ' + who + ' in ' + poss + ' ' + band + role;
+      } catch (e) { return 'someone'; }
+    },
 
     // ---------- 3. MICRO-QUEST INVITES ----------
     // The trust pattern. ~60% smallness / ~30% reward / ~10% wild danger.
@@ -172,7 +199,7 @@
       const def = this.INVITE_DEFS().find(d => d.id === defId) || this.INVITE_DEFS()[0];
       const hist = this.inviteHistory(vid);
       const name = this.displayName(vid);
-      const first = String(name).split(' ')[0];
+      const first = this.whoTag(vid);
       const t = this.state.village.trust || {};
       const roll = R();
       let outcome, line;
@@ -208,7 +235,7 @@
     },
     inviteReward(vid) {
       const name = this.displayName(vid);
-      const first = String(name).split(' ')[0];
+      const first = this.whoTag(vid);
       const kind = pick(['cache', 'bundle', 'knowledge', 'item']);
       if (kind === 'cache') {
         const kcal = 800 + Math.floor(R() * 1200);
@@ -324,10 +351,10 @@
   // tells: gated by perception. The observant earn the warning.
   ambushTells(plot) {
     const p = this.isPlayer(plot.target) ? this.socialPerception() : 30;
-    const inviter = this.displayName(plot.inviter);
+    const inviter = this.whoTag(plot.inviter);
     const T = [
-      { min: 20, text: `They named the spot — not "a walk," somewhere specific. ${inviter.split(' ')[0]} chose it.` },
-      { min: 35, text: `${inviter.split(' ')[0]} is carrying more than usual. You notice the weight of it.` },
+      { min: 20, text: `They named the spot — not "a walk," somewhere specific. ${inviter} chose it.` },
+      { min: 35, text: `${inviter} is carrying more than usual. You notice the weight of it.` },
       { min: 50, text: `Too eager. Asked twice. People with nothing planned don't ask twice.` },
       { min: 65, text: `Someone's already out there. You saw a figure heading that way earlier — and it wasn't alone.` },
     ];
@@ -345,7 +372,7 @@
     plot.sprung = true;
     plot.active = false;
     if (!this.isPlayer(plot.target)) return this.simNpcAmbush(plot);
-    const leader = this.displayName(plot.leader);
+    const leader = this.whoTag(plot.leader);
     const acc = plot.accomplices.map(a => this.displayName(a));
     const tells = plot.tells;
     this.say(`You walk out with ${this.displayName(plot.inviter)}. ${tells.length >= 3 ? 'Every warning bell you own is ringing.' : tells.length ? 'Something feels off, but you go anyway.' : 'Just a walk. Just people.'}`);
@@ -355,7 +382,7 @@
       'Don\'t make this worse than it is.',
       'We\'re not monsters. We just need you gone.',
       'Nothing personal. That\'s the worst part, isn\'t it?',
-    ])}" ${leader.split(' ')[0]} won't quite meet your eyes. Their hands are shaking.`);
+    ])}" ${leader} won't quite meet your eyes. Their hands are shaking.`);
     plot.round = 0; plot.talksLeft = 2;
     plot.aware = plot.tells.length >= 2;
     // open the ambush conversation: RUN / TALK / FIGHT each exchange
@@ -419,8 +446,8 @@
       plot.talksLeft--;
       plot.stalled = (plot.stalled || 0) + 1;
       const waver = plot.accomplices[Math.floor(R() * plot.accomplices.length)];
-      this.say(`You talk — hands visible, voice level. ${this.displayName(waver).split(' ')[0]} looks away. Looks at the ground. The plan is leaking.`);
-      try { this.addDoubt(waver, 'observation', `${this.displayName(waver).split(' ')[0]} wavered when you talked instead of running. They don't want this.`); } catch (e) {}
+      this.say(`You talk — hands visible, voice level. ${this.whoTag(waver)} looks away. Looks at the ground. The plan is leaking.`);
+      try { this.addDoubt(waver, 'observation', `${this.whoTag(waver)} wavered when you talked instead of running. They don't want this.`); } catch (e) {}
       return { continue: true, line: `A long second. Nobody moves. You've bought a little distance — use it.` };
     }
     // fight
@@ -428,11 +455,11 @@
     const dmg = 8 + Math.floor(R() * 10);
     plot.dealt = plot.dealt || {};
     plot.dealt[target] = (plot.dealt[target] || 0) + dmg;
-    this.say(`You hit ${this.displayName(target).split(' ')[0]} — hard, no form, all survival. (${dmg})`);
+    this.say(`You hit ${this.whoTag(target)} — hard, no form, all survival. (${dmg})`);
     try { this.addTrauma(8); } catch (e) {}
     if ((plot.dealt[target] || 0) >= 25) {
       // first blood breaks them
-      this.say(`${this.displayName(target).split(' ')[0]} goes down — not dead, done. And the other two just... stop. This was supposed to be easy. It isn't. They back off, hands up.`);
+      this.say(`${this.whoTag(target)} goes down — not dead, done. And the other two just... stop. This was supposed to be easy. It isn't. They back off, hands up.`);
       plot.foughtOff = true;
       // corpse only if you finished someone — you didn't; they're down
       return this.ambushAftermath(plot, 'fought_off');
@@ -603,7 +630,7 @@
     try { this.tickAction(32); } catch (e) {}
     const plot = (this.betrayalState().plots || []).find(p => p.id === c.plotId) || {};
     const dropper = pick(plot.accomplices || []);
-    this.say(`The ground out there is churned. Three sets of feet circling one. And something dropped in the scuffle — ${dropper ? this.displayName(dropper).split(' ')[0] + '\'s, by the look of it.' : 'a strip of cloth.'} The earth keeps better records than people.`);
+    this.say(`The ground out there is churned. Three sets of feet circling one. And something dropped in the scuffle — ${dropper ? this.whoTag(dropper) + '\'s, by the look of it.' : 'a strip of cloth.'} The earth keeps better records than people.`);
     this.moveBelief(c, -10, 'site evidence: three on one, dropped belongings');
     return true;
   },
@@ -614,7 +641,7 @@
     c.witnessesNamed = true;
     const wits = plot.witnesses || [];
     if (!wits.length) { this.say(`No one saw you leave. Just trees.`); return null; }
-    this.say(`${wits.map(w => this.displayName(w).split(' ')[0]).join(', ')} saw you walk out together — all four of you, friendly as anything. That much, at least, nobody can rehearse away.`);
+    this.say(`${wits.map(w => this.whoTag(w)).join(', ')} saw you walk out together — all four of you, friendly as anything. That much, at least, nobody can rehearse away.`);
     this.moveBelief(c, -8 * Math.min(2, wits.length), 'witnesses saw them leave together');
     return true;
   },
@@ -626,7 +653,7 @@
     if (!inc) { this.say(`Their story holds — this time. The rehearsed parts are smooth.`); return null; }
     inc.found = true;
     const other = c.accused.find(a => a !== vid && inc.claims[a]);
-    const line = `"Walk me through it again. Slowly." ${this.displayName(vid).split(' ')[0]} says ${inc.claims[vid]}. But ${other ? this.displayName(other).split(' ')[0] + ' said ' + inc.claims[other] + '.' : 'that\'s not what the ground says.'} Somebody's lying.`;
+    const line = `"Walk me through it again. Slowly." ${this.whoTag(vid)} says ${inc.claims[vid]}. But ${other ? this.whoTag(other) + ' said ' + inc.claims[other] + '.' : 'that\'s not what the ground says.'} Somebody's lying.`;
     this.say(line);
     try { this.addDoubt(vid, 'contradiction', `${this.displayName(vid)} said ${inc.claims[vid]} about the ${inc.field}; the others said otherwise.`); } catch (e) {}
     this.moveBelief(c, -12, `caught inconsistency (${inc.field})`);
@@ -637,7 +664,7 @@
     const c = this.getCase(caseId); if (!c || c.flipped) return null;
     const w = c.weakest;
     if (!w) return null;
-    const name = this.displayName(w).split(' ')[0];
+    const name = this.whoTag(w);
     let chance = 0.25;
     try { chance += (this.getDoubts(w, true) || []).length * 0.2; } catch (e) {}
     const t = ((this.state.village.trust || {})[w]) || 10;
@@ -670,10 +697,16 @@
   // ---------- 7. THE TRIAL ----------
   // NOT deterministic. Attendance varies, mood shifts, factions pull, noise happens.
   // Justice can be bought — by anyone — and bribery can detonate.
-  callMoot(caseId) {
+  callMoot(caseId, byId) {
     const c = this.getCase(caseId); if (!c) return null;
     if (c.status !== 'open' && c.status !== 'dormant') return null;
-    this.say(`You call a moot. The fire gets built up. Everyone comes — even the ones who'd rather not.`);
+    const caller = byId || this.villagerId;
+    if (this.isPlayer(caller)) {
+      this.say(`You call a moot. The fire gets built up. Everyone comes — even the ones who'd rather not.`);
+    } else {
+      const n = (() => { try { return this.whoTag(caller); } catch (e) { return 'Someone'; } })();
+      this.say(`${n} calls the moot. The fire gets built up — word travels fast, and everyone comes.`);
+    }
     try { this.tickAction(48); } catch (e) {}
     return this.conductTrial(c);
   },
@@ -685,11 +718,11 @@
     try { vp = this.vpOf(voterId) || {}; } catch (e) {}
     const temp = (vp.personality && vp.personality.temperament) || 'steady';
     const price = temp === 'warm' ? 1500 : temp === 'dark' ? 400 : 800;
-    if ((amount || 0) < price) { this.say(`That's not enough to buy ${this.displayName(voterId).split(' ')[0]}. Insulting, actually.`); return null; }
+    if ((amount || 0) < price) { this.say(`That's not enough to buy ${this.whoTag(voterId)}. Insulting, actually.`); return null; }
     c.bribes.push({ voter: voterId, by: byId, amount, day: this.state.scholar.day, trace: true });
     // the trace: sudden friendliness, a gift noticed
     if (R() < 0.5) {
-      try { this.addDoubt(voterId, 'observation', `${this.displayName(voterId).split(' ')[0]} has been suddenly warm toward ${this.displayName(byId).split(' ')[0]} — and there's a new something in their pack.`); } catch (e) {}
+      try { this.addDoubt(voterId, 'observation', `${this.whoTag(voterId)} has been suddenly warm toward ${this.whoTag(byId)} — and there's a new something in their pack.`); } catch (e) {}
     }
     if (this.isPlayer(byId)) this.say(`Done. Expensive, quiet. Secrets like this have a half-life.`);
     return true;
@@ -699,11 +732,14 @@
     const found = [];
     for (const b of (c.bribes || [])) {
       if (c.exposedBribes.includes(b.voter)) continue;
-      if (R() < 0.65) found.push(b);
+      // bribes that left traces (sudden friendliness, new goods) are findable;
+      // clean ones mostly aren't — follow the food, it usually works
+      const p = b.trace === false ? 0.35 : 0.8;
+      if (R() < p) found.push(b);
     }
     if (!found.length) { this.say(`You follow the food, the gifts, the sudden friendliness. Nothing you can prove. Yet.`); return []; }
     for (const b of found) {
-      this.say(`There it is: ${this.displayName(b.by).split(' ')[0]} bought ${this.displayName(b.voter).split(' ')[0]}. Follow the food — it always works.`);
+      this.say(`There it is: ${this.whoTag(b.by)} bought ${this.whoTag(b.voter)}. Follow the food — it always works.`);
     }
     return found;
   },
@@ -837,10 +873,24 @@
     const convicted = guilty >= need;
     c.trial.convicted = convicted;
     c.trial.finalGuilty = guilty;
-    this.say(`The count: ${guilty} for guilty, ${total - guilty} against. ${convicted ? 'Guilty.' : 'Not guilty — this time.'} The fire pops. Nobody looks at anybody.`);
+    // the verdict, with ceremony — the room, the faces, the pause
+    const counter = (() => {
+      try {
+        const pool = (c.trial.present || []).filter(id => !c.accused.includes(id) && id !== this.villagerId);
+        const id = pool[0] || c.accuser || this.npcIds()[0];
+        return this.whoTag(id);
+      } catch (e) { return 'Someone'; }
+    })();
+    this.say(`The fire is built high. Nobody speaks while the count is taken — you can hear the wind past the edge of the light.`);
+    this.say(`${counter} counts on their fingers, twice, like they don't trust the first number. Then, to the fire: "${guilty} for guilty. ${total - guilty} against."`);
+    if (convicted) {
+      this.say(`A pause long enough to live in. Someone's breath catches. Then: "Guilty." Nobody looks at anybody.`);
+    } else {
+      this.say(`A long exhale moves around the fire like weather. "Not guilty — this time."`);
+    }
     if (convicted) return this.sentenceCase(c);
     // acquitted: festering or vindication
-    c.status = 'acquitted';
+    c.status = 'acquitted'; c.resolution = 'acquitted';
     // unified pipeline: the formal track is done — re-sync the justice ladder
     try { if (c.accused.includes(this.villagerId) && typeof this.syncJusticeAfterMoot === 'function') this.syncJusticeAfterMoot('acquitted'); } catch (e) {}
     if (c.accused.includes(this.villagerId)) {
@@ -855,14 +905,28 @@
     return { acquitted: true, caseId: c.id };
   },
   sentenceCase(c) {
-    // the village chooses the sentence: exile is the heavy one
+    // the village chooses the sentence: the CHARGE sets the baseline, the
+    // belief decides the close calls. A murder conviction norms to exile —
+    // exile is a real risk — while theft needs the village baying for blood.
+    // (Natural play almost never pushes avgBelief below -40, which is why the
+    // old belief-only ladder exiled nobody.)
     const avg = this.avgBelief(c);
-    const ringleader = c.accused[0];
-    if (avg < -40 || c.flipped) {
-      // strong conviction → exile
+    const charge = c.charge || 'theft';
+    const sev = { murder: 4, ambush: 3, assault: 3, theft: 2, intimidation: 1 }[charge] || 1;
+    // the flipped weakest bought leniency with testimony — the village honors
+    // the deal, and the accomplices face the heavy sentence
+    if (c.flipped) return this.resolveCase(c.id, 'exile');
+    const exileAt = sev >= 4 ? -5 : sev === 3 ? -25 : -40;
+    const weregildAt = -10;
+    const cname = (() => { try { return this.whoTag(c.accused[0]); } catch (e) { return 'the accused'; } })();
+    if (avg < exileAt) {
+      this.say(`The oldest among them stands. The fire seems to lean in. "${cname} — take what you can carry and go."`);
       return this.resolveCase(c.id, 'exile');
     }
-    if (avg < -10) {
+    // a murder conviction always costs at least weregild — the village can't
+    // shrug at a killing, even a shaky one
+    if (avg < weregildAt || sev >= 4) {
+      this.say(`The sentence is spoken low, like something heavy set down. "${cname} pays. And stays — this time."`);
       return this.resolveCase(c.id, 'weregild');
     }
     // weak conviction → schism or cold war
@@ -876,7 +940,7 @@
     if (c.status === 'resolved') return { resolved: true, path: c.resolution, caseId: c.id, already: true };
     const v = this.state.village;
     c.status = 'resolved'; c.resolution = path;
-    const names = c.accused.map(a => this.displayName(a).split(' ')[0]).join(', ');
+    const names = c.accused.map(a => this.whoTag(a)).join(', ');
     if (path === 'exile') {
       // the flipped weakest gets leniency
       const exiled = c.flipped ? c.accused.filter(a => a !== c.flipped) : c.accused;
@@ -888,7 +952,7 @@
         try { if (this.createCorpse) { /* not dead — no corpse */ } } catch (e) {}
       }
       if (c.flipped && !this.isPlayer(c.flipped)) {
-        this.say(`${this.displayName(c.flipped).split(' ')[0]} talked first. The village remembers that too — leniency, and a long probation.`);
+        this.say(`${this.whoTag(c.flipped)} talked first. The village remembers that too — leniency, and a long probation.`);
       }
     } else if (path === 'weregild') {
       this.say(`Weregild. ${names} ${c.accused.length > 1 ? 'pay' : 'pays'} — food, work, public apology. The price of staying.`);
@@ -943,7 +1007,10 @@
     return true;
   },
   // petition a nearby village: they judge you. They've heard things.
-  petitionVillage(villageId) {
+  // opts: { giftKcal } — food offered from your pack. Gifts and skills
+  // genuinely move the needle; exile alone no longer auto-dooms you.
+  petitionVillage(villageId, opts) {
+    opts = opts || {};
     const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
     if (!ov) return null;
     // catch-up: they've lived
@@ -956,22 +1023,133 @@
       else if (crimes.some(c => c.type === 'attack')) judgment -= 20;
       else judgment -= 12; // exiled is exiled — they've heard
     }
-    // gossip precedes you: your home village's stories travel
+    // gossip precedes you: your home village's stories travel.
+    // your OWN exile notice is already priced in the crime penalty above —
+    // counting it again was double jeopardy (and made petition impossible).
     try {
-      const bad = ((this.state.village.gossip || []).filter(g => g.dims && (g.dims.trustworthy || 0) < -5)).length;
-      judgment -= Math.min(20, bad * 4);
+      const bad = ((this.state.village.gossip || []).filter(g =>
+        g.dims && (g.dims.trustworthy || 0) < -5 &&
+        String(g.action || '').indexOf('exile_') !== 0)).length;
+      judgment -= Math.min(16, bad * 4);
     } catch (e) {}
-    // gifts help. Skills help.
+    // GIFTS: food offered from your pack speaks louder than words.
+    // You can only give what you carry.
+    let giftGiven = 0;
+    try {
+      const have = this.packKcal(this.villagerId);
+      const offered = Math.max(0, Math.round(opts.giftKcal || 0));
+      giftGiven = Math.min(offered, have);
+      if (giftGiven > 0) {
+        this.packSpend(this.villagerId, giftGiven);
+        if (giftGiven >= 1500) judgment += 12;
+        else if (giftGiven >= 700) judgment += 8;
+        else judgment += 4;
+      }
+    } catch (e) {}
+    // SKILLS: reading the room helps you plead your case.
+    try {
+      const readLvl = ((this.state.codex.skills || {}).read_people || {}).level || 0;
+      judgment += Math.min(9, readLvl * 3);
+    } catch (e) {}
     judgment += R() * 20 - 10; // noise: they're people, not calculators
     if (judgment >= 45) {
-      this.say(`${ov.name} listens. Argues. Votes. "You can stay. Probation. One winter to prove you're not what they said." It's more than you had yesterday.`);
+      const giftNote = giftGiven > 0 ? ` The food you laid down didn't hurt.` : '';
+      this.say(`${ov.name} listens. Argues. Votes. "You can stay. Probation. One winter to prove you're not what they said." It's more than you had yesterday.${giftNote}`);
       try { this.joinVillage(villageId); } catch (e) { s.joinedVillage = villageId; }
       s.exiled = false;
+      s.drifting = false;
       try { this.justiceState().exiled = false; } catch (e) {}
       return true;
     }
     this.say(`${ov.name} turns you away. "We've heard about Haven." The door — there is no door, it's a clearing, but it closes anyway.`);
     return false;
+  },
+  // drift: solo, between villages. The wild provides, or it doesn't.
+  // A state, not a place — petition or founding ends it.
+  drift() {
+    const s = this.state.scholar;
+    if (!s.exiled) { this.say('You have a home. Drifting is for the cast-out.'); return null; }
+    if (s.drifting) return true;
+    s.drifting = true;
+    s.driftStartDay = s.day;
+    this.say(`You drift. No fire but yours, no roof but weather, no eyes but the sky's. The wild doesn't judge — it just charges.`);
+    return true;
+  },
+  // driftTick: one roll per day while drifting. Minimal, honest: food found
+  // or not, weather kind or not, the occasional stranger on the same road.
+  // Drifting too long wears on you — it's a road, not a home.
+  driftTick() {
+    const s = this.state.scholar;
+    if (!s.drifting || !s.exiled) return;
+    const r = R();
+    if (r < 0.22) {
+      const gain = 400 + Math.round(R() * 600);
+      s.kcal = Math.min((s.kcal || 0) + gain, 3000);
+      this.say(`Drifting: a lucky stretch — roots, grubs, a bird too slow. +${gain} kcal. The wild provides, today.`);
+    } else if (r < 0.38) {
+      const loss = 200 + Math.round(R() * 300);
+      s.kcal = Math.max(0, (s.kcal || 0) - loss);
+      s.energy = Math.max(0, (s.energy || 0) - 10);
+      this.say(`Drifting: cold rain, no shelter, nothing found. −${loss} kcal. The wild charges, today.`);
+    } else if (r < 0.48) {
+      s.energy = Math.min(100, (s.energy || 0) + 15);
+      this.say(`Drifting: a dry overhang, a real night's sleep under it. You wake up almost human.`);
+    } else if (r < 0.56) {
+      // the road has other walkers
+      this.say(`Drifting: another walker on the same road — wary, like you. You share a fire, no names. It helps more than you'd admit.`);
+      try { this.recordTrauma && this.recordTrauma('drift_kindness'); } catch (e) {}
+      s.driftMet = (s.driftMet || 0) + 1;
+    }
+    // loneliness accrues: drift is a road, not a home
+    s.driftDays = (s.driftDays || 0) + 1;
+    if (s.driftDays === 7) this.say(`A week of drifting. You're starting to talk to yourself. Petition somewhere, or build a fire of your own.`);
+    if (s.driftDays > 0 && s.driftDays % 10 === 0) {
+      try { this.recordTrauma('drift_lonely'); } catch (e) {}
+      this.say(`${s.driftDays} days drifting. The quiet is getting loud.`);
+    }
+  },
+  // villageCard: the 🏘️ tile UI reads this. Pure data — the UI renders buttons.
+  villageCard(villageId) {
+    const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
+    if (!ov) return null;
+    const s = this.state.scholar;
+    const prof = ov.knowledgeProfile || {};
+    const focusWord = { fisher: 'fishing folk', forager: 'foragers', farmer: 'farmers', scavenger: 'scavengers' }[prof.focus] || 'survivors';
+    const card = {
+      name: ov.name,
+      sub: `${ov.population || '?'} people · ${ov.day || 0} days in · ${focusWord}`,
+      actions: [],
+    };
+    if (s.exiled) {
+      let pack = 0;
+      try { pack = this.packKcal(this.villagerId); } catch (e) {}
+      card.actions.push({ id: 'petition', label: '🙏 Approach & petition', hint: `They've heard the gossip. (You carry ~${pack} kcal of food — offering some helps.)`, giftKcal: 0 });
+      if (pack >= 700) card.actions.push({ id: 'petition', label: '🙏 Petition + offer food (700 kcal)', hint: 'A real offering. Costs you.', giftKcal: 700 });
+      if (pack >= 1500) card.actions.push({ id: 'petition', label: '🙏 Petition + offer a feast (1500 kcal)', hint: 'More than a day\'s food. Hard to refuse.', giftKcal: 1500 });
+    } else {
+      card.hint = 'Walk to the edge of the map to travel there.';
+    }
+    return card;
+  },
+  villageCardAction(villageId, actionId, opts) {
+    if (actionId === 'petition') return this.petitionVillage(villageId, opts);
+    return null;
+  },
+  // exileSelfActions: the camp/self UI reads this while exiled. Pure data.
+  exileSelfActions() {
+    const s = this.state.scholar;
+    if (!s.exiled) return [];
+    const acts = [
+      { id: 'foundhaven', label: '🏕️ Found your own haven', hint: 'Hard reset. Day one, again — knowledge kept.' },
+    ];
+    if (!s.drifting) acts.push({ id: 'drift', label: '🚶 Drift', hint: "Solo. The wild provides, or it doesn't." });
+    else acts.push({ id: 'drift', label: '🚶 Drifting…', hint: `Day ${(s.driftDays || 0) + 1} on the road. Petition or found a haven to stop.`, disabled: true });
+    return acts;
+  },
+  exileSelfDo(actionId) {
+    if (actionId === 'foundhaven') { const r = this.foundHaven(); try { this.state.scholar.drifting = false; } catch (e) {} return r; }
+    if (actionId === 'drift') return this.drift();
+    return null;
   },
   // found your own haven: hard, slow, real
   foundHaven() {
@@ -983,6 +1161,7 @@
     // keep the old village in memory: it continues without you
     this.state.oldVillage = this.state.oldVillage || this.state.village.name;
     s.exiled = false;
+    s.drifting = false;
     try { this.justiceState().exiled = false; } catch (e) {}
     s.foundedHaven = true;
     s.foundedDay = s.day;
@@ -1052,8 +1231,30 @@
   },
 
   // ---------- 11. DAILY + WORLDGEN ----------
+  // NPC-targeted plots spring on their own (the luring happens off-screen),
+  // and stale armed plots expire so the single-plot slot never squats forever.
+  npcPlotTick() {
+    const bs = this.betrayalState();
+    const day = this.state.scholar.day;
+    for (const p of (bs.plots || [])) {
+      if (!p.active || p.sprung || p.resolved) continue;
+      const age = day - (p.day || 0);
+      if (age > 4) {
+        // stale: the moment passed, the conspirators lost their nerve. Slot frees.
+        p.active = false; p.resolved = true; p.expired = true;
+        try {
+          const h = this.inviteHistory(p.inviter);
+          if (h && h.pending && h.pending.plotId === p.id) h.pending = null;
+        } catch (e) {}
+        continue;
+      }
+      if (this.isPlayer(p.target)) continue; // player plots spring via acceptInvite
+      if (R() < 0.45) this.springAmbush(p);
+    }
+  },
   betrayalDaily() {
     try { this.considerBetrayalPlot(); } catch (e) {}
+    try { this.npcPlotTick(); } catch (e) {}
     try { this.npcInviteTick(); } catch (e) {}
     try { this.considerStrangers(); } catch (e) {}
     // simmer: conflicts gain a little tension; grievances fade very slowly
@@ -1101,7 +1302,7 @@
     for (const cs of cases) {
       const tag = cs.id + ':';
       if (cs.accused.includes(vid) && cs.status === 'open') {
-        out.push({ id: 'betrayal:press:' + tag + vid, label: `"Walk me through that night again. Slowly." (press ${this.displayName(vid).split(' ')[0]})` });
+        out.push({ id: 'betrayal:press:' + tag + vid, label: `"Walk me through that night again. Slowly." (press ${this.whoTag(vid)})` });
       }
       if (cs.weakest === vid && !cs.flipped && cs.status === 'open') {
         out.push({ id: 'betrayal:approach:' + cs.id, label: `"Talk first. Leniency. The offer expires when I walk away."` });
@@ -1124,7 +1325,7 @@
       if (cs.playerRole === 'accused' && (cs.status === 'open' || cs.status === 'dormant') && !cs.trial) {
         out.push({ id: 'betrayal:defend_speak:' + cs.id, label: '🗣️ Speak in your defense — the truth as you lived it' });
         if (!cs.alibiDone) out.push({ id: 'betrayal:defend_alibi:' + cs.id, label: '"Who will vouch for me?" (call character witnesses)' });
-        if (!cs.pressedAccuser) out.push({ id: 'betrayal:defend_press:' + cs.id, label: `Press ${this.displayName(cs.accuser).split(' ')[0]} — find the crack in their story` });
+        if (!cs.pressedAccuser) out.push({ id: 'betrayal:defend_press:' + cs.id, label: `Press ${this.whoTag(cs.accuser)} — find the crack in their story` });
         if (!(cs.bribes || []).some(b => !cs.exposedBribes.includes(b.voter))) {
           out.push({ id: 'betrayal:investigate:' + cs.id, label: 'Follow the food. Who bought whom? (investigate bribery)' });
         }
@@ -1153,7 +1354,7 @@
       // player bribes a voter (open case or mid-trial, not while their own vote pends)
       if ((cs.status === 'open' || cs.status === 'dormant') && !cs.accused.includes(vid) && vid !== this.villagerId &&
           (!cs.trial || cs.trial.awaitingPlayerVote === false) && !(cs.bribes || []).some(b => b.by === this.villagerId && b.voter === vid)) {
-        out.push({ id: 'betrayal:bribe:' + cs.id + ':' + vid, label: `Make ${this.displayName(vid).split(' ')[0]} an offer. Expensive. Secret. (bribe)` });
+        out.push({ id: 'betrayal:bribe:' + cs.id + ':' + vid, label: `Make ${this.whoTag(vid)} an offer. Expensive. Secret. (bribe)` });
       }
       // player's trial vote
       if (cs.trial && cs.trial.awaitingPlayerVote) {
@@ -1214,9 +1415,9 @@
       else { this.callMoot(parts[2]); }
       return finish('The moot is called. The fire gets built up.', '"We settle this. Tonight."');
     }
-    if (act === 'defend_speak') { this.defendSpeak(parts[2]); return finish('Said. Your defense, on the record.', '"Hear me out."'); }
+    if (act === 'defend_speak') { this.defendSpeak(parts[2]); return finish('Your defense, on the record — the fire heard all of it.', '"Hear me out."'); }
     if (act === 'defend_alibi') { this.defendAlibi(parts[2]); return finish('Witnesses named.', '"Who will vouch for me?"'); }
-    if (act === 'defend_press') { this.defendPressAccuser(parts[2]); return finish('Pressed. Let the pause speak.', '"Walk me through YOUR story."'); }
+    if (act === 'defend_press') { this.defendPressAccuser(parts[2]); return finish('Your question hangs in the air. Let the pause do the work.', '"Walk me through YOUR story."'); }
     if (act === 'demand_moot') { this.demandMoot(parts[2]); return finish('The moot is called. Tonight. No more whispering.', '"We settle this NOW."'); }
     if (act === 'flee') { this.fleeBeforeVerdict(parts[2]); return finish('Gone.', '(run)'); }
     if (act === 'investigate') {
@@ -1228,7 +1429,7 @@
       }
       return finish(f.length ? 'Found something. Follow it to the moot.' : 'Nothing you can prove. Yet.', '(follow the food)');
     }
-    if (act === 'letlie') { this.letItLie(parts[2]); return finish('Nothing. Said.', '(say nothing)'); }
+    if (act === 'letlie') { this.letItLie(parts[2]); return finish('You say nothing. The silence sits at the fire with everyone else.', '(say nothing)'); }
     if (act === 'vote_guilty') { this.castPlayerVote(parts[2], true); return finish('Counted.', 'GUILTY.'); }
     if (act === 'vote_acquit') { this.castPlayerVote(parts[2], false); return finish('Counted.', 'NOT GUILTY.'); }
     if (act === 'bribe') {
@@ -1287,7 +1488,7 @@
         const by = pick([cs.accused[0], this.isPlayer(cs.target) ? cs.accused[0] : cs.target]);
         if (!this.isPlayer(by)) {
           cs.playerBribeOffer = { by, amount: 600 + Math.floor(R() * 1200) };
-          try { this.journalNote && this.journalNote('village', 'trial', this.displayName(by).split(' ')[0] + ' wants a word about your vote.'); } catch (e) {}
+          try { this.journalNote && this.journalNote('village', 'trial', this.whoTag(by) + ' wants a word about your vote.'); } catch (e) {}
         }
       }
     }
@@ -1300,7 +1501,7 @@
       if (cs.playerHeardDay && day >= cs.playerHeardDay) {
         cs.knownToPlayer = true;
         cs.playerRole = 'juror';
-        this.say(`Word reaches you, days late: ${this.displayName(cs.accused[0]).split(' ')[0]} stands accused over what happened to ${this.disp(cs.target)}. There's going to be a moot. People are choosing sides.`);
+        this.say(`Word reaches you, days late: ${this.whoTag(cs.accused[0])} stands accused over what happened to ${this.disp(cs.target)}. There's going to be a moot. People are choosing sides.`);
         try { this.journalNote && this.journalNote('village', 'trial', 'Heard about the case against ' + this.displayName(cs.accused[0]) + '.'); } catch (e) {}
       }
     }
@@ -1438,7 +1639,7 @@
     bs.cases.push(c);
     this.initPlayerCaseBelief(c);
     this.seedAccuserStory(c);
-    const aname = this.displayName(accuser).split(' ')[0];
+    const aname = this.whoTag(accuser);
     this.say(`${aname} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. There's going to be a moot. You have ${c.mootIn} days before they call it. Use them.`);
     try { this.journalNote && this.journalNote('village', 'trial', `Accused of ${charge} by ${this.displayName(accuser)}. Moot coming.`); } catch (e) {}
     return c;
@@ -1456,8 +1657,8 @@
     }
   },
   seedAccuserStory(c) {
-    const aname = this.displayName(c.accuser).split(' ')[0];
-    const vname = (c.target && !this.isPlayer(c.target)) ? this.displayName(c.target).split(' ')[0] : 'the village';
+    const aname = this.whoTag(c.accuser);
+    const vname = (c.target && !this.isPlayer(c.target)) ? this.whoTag(c.target) : 'the village';
     const lines = {
       theft: `stole from ${vname} — took what wasn't theirs`,
       intimidation: `threatened ${vname} — put fear in them, deliberately`,
@@ -1506,7 +1707,7 @@
       this.moveBelief(c, -4, 'no one would vouch');
       return false;
     }
-    const names = friends.map(f => this.displayName(f).split(' ')[0]).join(' and ');
+    const names = friends.map(f => this.whoTag(f)).join(' and ');
     this.say(`${names} ${friends.length > 1 ? 'stand' : 'stands'} with you. "I know this one. Whatever happened, hear them out." It matters who your friends are.`);
     this.moveBelief(c, 8 + friends.length * 5, 'character witnesses vouched');
     try { this.tickAction(24); } catch (e) {}
@@ -1517,7 +1718,7 @@
     const c = this.getCase(caseId); if (!c || c.pressedAccuser || c.playerRole !== 'accused') return null;
     if (c.status !== 'open' && c.status !== 'dormant') return null;
     c.pressedAccuser = true;
-    const aname = this.displayName(c.accuser).split(' ')[0];
+    const aname = this.whoTag(c.accuser);
     if (c.fabricated) {
       const inc = (c.inconsistencies || []).find(i => !i.found);
       if (inc) {
@@ -1564,9 +1765,9 @@
     for (const c of (bs.cases || [])) {
       if (c.playerRole !== 'accused' || c.status !== 'open') continue;
       if (day - c.day >= (c.mootIn || 2)) {
-        const aname = this.displayName(c.accuser).split(' ')[0];
-        this.say(`${aname} has gathered enough voices. The moot is called — tonight, at the fire. This is it.`);
-        this.callMoot(c.id);
+        const aname = this.whoTag(c.accuser);
+        this.say(`${aname} has gathered enough voices. This is it — tonight, at the fire.`);
+        this.callMoot(c.id, c.accuser);
       }
     }
     try { this.considerPlayerAccusation(); } catch (e) {}
@@ -1576,6 +1777,7 @@
     try { this.simBriberyTick(); } catch (e) {}
     try { this.caseDiscoveryTick(); } catch (e) {}
     try { this.playerCaseTick(); } catch (e) {}
+    try { this.driftTick(); } catch (e) {}
   },
 };
 

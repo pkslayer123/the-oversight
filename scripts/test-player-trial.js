@@ -79,13 +79,16 @@ function ok(name, cond) {
   let antiBribe = null;
   for (let i = 0; i < 20 && !antiBribe; i++) { Game.simBriberyTick(); antiBribe = pc.bribes.find(b => b.by === pc.accuser); }
   ok('accuser side bribes against player', !!antiBribe);
+  // plant a traced accuser bribe: discovery + exposure, deterministic
+  // (simBriberyTick traces are coin-flips — not testable directly)
+  const av = npcs().find(id => id !== A && id !== voter);
+  pc.bribes.push({ voter: av, by: pc.accuser, amount: 800, day: Game.state.scholar.day, trace: true });
   let found = [];
-  for (let i = 0; i < 10 && !found.length; i++) found = Game.investigateBribery(pc.id);
+  for (let i = 0; i < 10 && !found.some(b => b.voter === av); i++) found = Game.investigateBribery(pc.id);
   pc.foundBribes = found;
-  ok('bribery discoverable', found.length > 0);
+  ok('bribery discoverable', found.some(b => b.voter === av));
   const b4 = Game.avgBelief(pc);
-  const ab = found.find(b => b.by === pc.accuser);
-  if (ab) Game.exposeBribery(pc.id, ab.voter);
+  Game.exposeBribery(pc.id, av);
   ok('exposing accuser bribery helps player', Game.avgBelief(pc) > b4);
   clearPlayerCases();
 
@@ -196,6 +199,102 @@ function ok(name, cond) {
   ok('single player case at a time', playerCases().length <= 1);
   clearPlayerCases();
   Game.justiceState().crimes = [];
+
+  // ---------- 18. charge-weighted sentencing bands ----------
+  const mkSent = (charge, avgVal) => {
+    const c = Game.openPlayerCase(A, charge, [], false);
+    for (const id of npcs()) c.belief[id] = avgVal;
+    c.flipped = null;
+    return c;
+  };
+  const resetExile = () => { Game.state.scholar.exiled = false; try { Game.justiceState().exiled = false; } catch (e) {} clearPlayerCases(); };
+  let sc = mkSent('murder', -20); Game.sentenceCase(sc);
+  ok('murder conviction (natural belief) -> exile', sc.resolution === 'exile'); resetExile();
+  sc = mkSent('murder', -3); Game.sentenceCase(sc);
+  ok('shaky murder conviction -> at least weregild', sc.resolution === 'weregild'); resetExile();
+  sc = mkSent('assault', -30); Game.sentenceCase(sc);
+  ok('strong assault conviction -> exile', sc.resolution === 'exile'); resetExile();
+  sc = mkSent('assault', -20); Game.sentenceCase(sc);
+  ok('mid assault conviction -> weregild', sc.resolution === 'weregild'); resetExile();
+  sc = mkSent('ambush', -30); Game.sentenceCase(sc);
+  ok('ambush (violent) conviction -> exile', sc.resolution === 'exile'); resetExile();
+  sc = mkSent('theft', -20); Game.sentenceCase(sc);
+  ok('theft conviction -> weregild, not exile', sc.resolution === 'weregild'); resetExile();
+  sc = mkSent('theft', -45); Game.sentenceCase(sc);
+  ok('baying-for-blood theft conviction -> exile', sc.resolution === 'exile'); resetExile();
+  sc = mkSent('intimidation', -20); Game.sentenceCase(sc);
+  ok('intimidation conviction -> weregild', sc.resolution === 'weregild'); resetExile();
+  sc = mkSent('theft', -20); sc.flipped = B; Game.sentenceCase(sc);
+  ok('flipped accomplice -> exile regardless of charge', sc.resolution === 'exile'); resetExile();
+
+  // ---------- 19. Monte Carlo: natural-play exile rates per charge ----------
+  const rates = {};
+  for (const ch of ['murder', 'assault', 'theft', 'intimidation']) {
+    let ex = 0; const N = 200;
+    for (let i = 0; i < N; i++) {
+      const c = Game.openPlayerCase(A, ch, [], false);
+      const avg = Math.round(-38 + Math.random() * 33); // natural convicted range
+      for (const id of npcs()) c.belief[id] = avg;
+      c.flipped = null;
+      Game.sentenceCase(c);
+      if (c.resolution === 'exile') ex++;
+      Game.state.scholar.exiled = false;
+      try { Game.justiceState().exiled = false; } catch (e) {}
+      clearPlayerCases();
+    }
+    rates[ch] = ex / N;
+  }
+  console.log('   sentencing exile rates:', JSON.stringify(rates));
+  ok('murder exile rate high', rates.murder >= 0.9);
+  ok('assault exile rate often', rates.assault >= 0.2 && rates.assault <= 0.8);
+  ok('theft exile rate low', rates.theft <= 0.1);
+  ok('intimidation exile rate low', rates.intimidation <= 0.1);
+
+  // ---------- 20. moot-caller perspective ----------
+  const saidLines = [];
+  const _say2 = Game.say;
+  Game.say = (t) => saidLines.push(t);
+  const _ct2 = Game.conductTrial;
+  Game.conductTrial = () => null; // don't run the trial, just check the announcement
+  const pc2 = Game.openPlayerCase(A, 'theft', [], false);
+  Game.callMoot(pc2.id); // player calls
+  ok('player-called moot: "You call a moot"', saidLines.some(l => l.includes('You call a moot')));
+  saidLines.length = 0;
+  Game.callMoot(pc2.id, A); // accuser calls
+  // NOTE: displayName is a random descriptor pre-System, so we can't pin the
+  // exact name — pin the perspective instead: SOMEONE calls it, never "you"
+  ok('accuser-called moot announces a caller', saidLines.some(l => l.includes('calls the moot')));
+  ok('accuser-called moot never says "You call"', !saidLines.some(l => l.includes('You call a moot')));
+  Game.conductTrial = _ct2;
+  Game.say = _say2;
+  clearPlayerCases();
+
+  // ---------- 21. resolution always recorded + verdict ceremony ----------
+  const said3 = [];
+  Game.say = (t) => said3.push(t);
+  const ac2 = Game.openPlayerCase(C, 'theft', [], false);
+  for (const id of npcs()) ac2.belief[id] = 100;
+  Game.conductTrial(ac2);
+  ok('acquittal records resolution', ac2.resolution === 'acquitted');
+  ok('verdict ceremony: the count is spoken', said3.some(l => l.includes('for guilty')));
+  ok('verdict ceremony: faces and pause', said3.some(l => l.includes('wind past the edge of the light')));
+  Game.say = _say2;
+  clearPlayerCases();
+
+  // ---------- 22. bribery trace flag is read by investigation ----------
+  const bc = Game.openPlayerCase(A, 'theft', [], false);
+  bc.bribes.push({ voter: B, by: A, amount: 800, day: 0, trace: true });
+  bc.bribes.push({ voter: C, by: A, amount: 800, day: 0, trace: false });
+  bc.exposedBribes = [];
+  let foundT = 0, foundF = 0;
+  for (let i = 0; i < 200; i++) {
+    const f = Game.investigateBribery(bc.id);
+    if (f.some(b => b.voter === B)) foundT++;
+    if (f.some(b => b.voter === C)) foundF++;
+  }
+  console.log(`   bribery trace: traced found ${foundT}/200, clean found ${foundF}/200`);
+  ok('traced bribes found more often than clean ones', foundT > foundF + 30);
+  clearPlayerCases();
 
   Game.WILD_DAY_RATE = null;
   console.log(`\nplayer-trial: ${pass} passed, ${fail} failed`);
