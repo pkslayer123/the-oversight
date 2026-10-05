@@ -1238,6 +1238,15 @@
           ? 'Trade news and plant knowledge. Takes time — stories aren\'t fast.'
           : 'Trade news. They\'ll share real knowledge once they know your face — come back.';
         card.actions.push({ id: 'talk', label: '💬 Sit & talk (a while)', hint: talkHint });
+        // DRIFTER GENEROSITY (Steve 2026-10-05): the smoke line promises "food
+        // would talk here" — now it can. A traveler at their fire can open
+        // their pack. Costs you real food; trust remembers. Named costs, no
+        // silent drain. Gifts come from what you carry (the pack), same pool
+        // as the petition offering.
+        let pack = 0;
+        try { pack = this.packKcal(this.villagerId); } catch (e) {}
+        if (pack >= 700) card.actions.push({ id: 'sharefood', label: '🍲 Share a day\'s food (700 kcal)', hint: 'Feed their fire from your pack. They\'ll remember — especially if the pot is empty.', giftKcal: 700 });
+        if (pack >= 1500) card.actions.push({ id: 'sharefood', label: '🍲🍲 Lay down a feast (1500 kcal)', hint: 'More than a day\'s food from your pack. A gift nobody shrugs at.', giftKcal: 1500 });
       } else {
         card.hint = 'Walk to the edge of the map to travel there.';
       }
@@ -1247,6 +1256,7 @@
   villageCardAction(villageId, actionId, opts) {
     if (actionId === 'petition') return this.petitionVillage(villageId, opts);
     if (actionId === 'talk') return this.villageTalk(villageId);
+    if (actionId === 'sharefood') return this.villageShareFood(villageId, opts);
     return null;
   },
   // villageTalk: sit with another village. Trade news, trade plant knowledge.
@@ -1330,6 +1340,56 @@
     ov.trust = Math.min(100, ov.trust + (trustIn === 0 ? 8 : 4));
     // talk takes a while: stories aren't fast. (Named cost, no silent drain.)
     this.tickAction(64);
+    return true;
+  },
+  // villageShareFood: open your pack at their fire. (Steve 2026-10-05, drifter
+  // loop.) The smoke-on-the-horizon line says "food would talk here" — this
+  // is the mechanic behind the promise. A traveler, not an exile, gives food
+  // from what they carry (the pack — same pool as the petition offering).
+  // Real cost, real memory: pantry gains the food, trust gains a named bump,
+  // and the home village hears about it through gossip (generosity is judged
+  // by personality there, like everything else). A gift to an empty pot hits
+  // harder. Repeat gifts the same day are still welcome but buy less trust.
+  // Named cost (32 ticks — a shared meal takes a while), never silent.
+  villageShareFood(villageId, opts) {
+    opts = opts || {};
+    const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
+    if (!ov) return null;
+    const s = this.state.scholar;
+    if (s.exiled) { this.say('Petition them instead — a gift from an exile reads as a bribe, and they know it.'); return null; }
+    const dist = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0)) +
+                 Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
+    if (dist > 1) { this.say(`You're not at ${ov.name}. Walk there first — a gift travels in your hands, not your thoughts.`); return null; }
+    // they've lived since you last looked
+    try { this.catchUpSim(ov); } catch (e) {}
+    let pack = 0;
+    try { pack = this.packKcal(this.villagerId); } catch (e) {}
+    const wanted = Math.max(0, Math.round(opts.giftKcal || 0));
+    const gift = Math.min(wanted, pack);
+    if (gift < 700) {
+      this.say(`You don't carry enough to make a gift of it — ${Math.round(pack)} kcal in your pack, and 700 is the smallest gift that feeds a fire. (Eat up, pack more, come back.)`);
+      return null;
+    }
+    try { this.packSpend(this.villagerId, gift); } catch (e) {}
+    const wasLean = (ov.pantryKcal || 0) <= 0;
+    ov.pantryKcal = (ov.pantryKcal || 0) + gift;
+    // trust: a 700 gift is a day of your food (+10); a 1500 feast is a statement
+    // (+18). An empty pot doubles the memory (+4). Same-day repeats are
+    // welcomed, not worshipped.
+    const firstToday = ov.lastGiftDay !== s.day;
+    let gain = (gift >= 1500 ? 18 : 10) + (wasLean ? 4 : 0);
+    if (!firstToday) gain = Math.min(gain, 6);
+    ov.trust = Math.min(100, (ov.trust || 0) + gain);
+    ov.lastGiftDay = s.day;
+    const feast = gift >= 1500;
+    const leanLine = wasLean
+      ? ` Their pot was empty — you could see it in how fast the bowls came out. Nobody forgets who fed them when the fire was cold.`
+      : ` Their pantry breathes a little easier.`;
+    this.say(`You open your pack and lay out ${gift} kcal of food${feast ? ' — a feast, spread on their ground cloth, more than a day\'s eating' : ', a day\'s food, no ceremony'}. ${ov.name} takes it the way hungry people take everything: fast, and then embarrassed about the fast.${leanLine} (${ov.name} trust +${gain}.)`);
+    // home hears. Generosity travels too — and gets judged by personality.
+    try { this.seedGossip('gift_' + ov.id + '_' + s.day, { trustworthy: 3 }, (this.npcIds ? this.npcIds() : []).slice(0, 3)); } catch (e) {}
+    // a shared meal takes a while: named cost, no silent drain.
+    try { this.tickAction(32); } catch (e) {}
     return true;
   },
   // exileSelfActions: the camp/self UI reads this while exiled. Pure data.
