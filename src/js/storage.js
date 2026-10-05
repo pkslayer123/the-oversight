@@ -23,12 +23,17 @@
   const TIER_RANK = { none: 0, whittle: 1, brush: 2, prune: 3, fell: 4 };
 
   const MAT_DEFS = {
-    wood:   { name: 'Wood log',    kg: 2.0 },
-    branch: { name: 'Branch',      kg: 0.5 },
-    stone:  { name: 'Stone',       kg: 0.3 },
-    fiber:  { name: 'Plant fiber', kg: 0.1 },
+    wood:   { name: 'Wood log',    plural: 'Wood logs',  kg: 2.0 },
+    branch: { name: 'Branch',      plural: 'Branches',   kg: 0.5 },
+    stone:  { name: 'Stone',       plural: 'Stones',     kg: 0.3 },
+    fiber:  { name: 'Plant fiber', plural: 'Plant fiber', kg: 0.1 },
   };
   const MAT_IDS = Object.keys(MAT_DEFS);
+  // matName: 'branch' vs 'branches' — never 'branchs'.
+  const matName = (mat, n) => {
+    const d = MAT_DEFS[mat] || {};
+    return String(n === 1 ? d.name : (d.plural || d.name)).toLowerCase();
+  };
 
   const day = () => (Game.state.scholar || {}).day || 0;
 
@@ -181,7 +186,7 @@
       const def = MAT_DEFS[mat];
       if (!def) return null;
       n = Math.min(Math.floor(n || 0), this.materialCount(mat));
-      if (n <= 0) { this.say(`You have no ${def.name.toLowerCase()} to give.`); return null; }
+      if (n <= 0) { this.say(`You have no ${matName(mat, 1)} to give.`); return null; }
       this.spendMaterial(mat, n);
       const st = this.stashState();
       st.materials[mat] = (st.materials[mat] || 0) + n;
@@ -192,7 +197,7 @@
       v.stashGives = v.stashGives || {};
       v.stashGives[vid] = (v.stashGives[vid] || 0) + n;
       this.observe('donate');
-      this.say(`Set ${n} ${def.name.toLowerCase()}${n > 1 ? 's' : ''} in the village stash. The pile grows.`);
+      this.say(`Set ${n} ${matName(mat, n)} in the village stash. The pile grows.`);
       return this.tickAction(2) || this.status();
     },
     takeMaterial(mat, n) {
@@ -201,7 +206,7 @@
       const st = this.stashState();
       const have = st.materials[mat] || 0;
       n = Math.min(Math.floor(n || 0), have);
-      if (n <= 0) { this.say(`The stash has no ${def.name.toLowerCase()}.`); return null; }
+      if (n <= 0) { this.say(`The stash has no ${matName(mat, 1)}.`); return null; }
       // weight check — take what fits
       const inv = this.state.scholar.inventory || [];
       const carry = inv.reduce((t2, i) => t2 + (i.kg || 0) * (i.units || 1), 0) + (this.waterWeight ? this.waterWeight() : 0);
@@ -223,7 +228,7 @@
         this.observe('hoard');
         if (Math.random() < 0.4) this.say('Someone watches you take from the stash. They say nothing. The ledger says everything.');
       }
-      this.say(`Took ${n} ${def.name.toLowerCase()}${n > 1 ? 's' : ''} from the stash.`);
+      this.say(`Took ${n} ${matName(mat, n)} from the stash.`);
       return this.tickAction(2) || this.status();
     },
     // donateTool / takeTool: spare tools live in the stash for anyone to use.
@@ -482,7 +487,7 @@
         this.stashLog('give', MAT_DEFS[mat].name, n, giver);
         if (Math.random() < 0.5) {
           const first = String(this.displayName(giver)).split(' ')[0];
-          this.say(`${first} left ${n} ${MAT_DEFS[mat].name.toLowerCase()}${n > 1 ? 's' : ''} by the stash. No announcement. That's how it works here.`);
+          this.say(`${first} left ${n} ${matName(mat, n)} by the stash. No announcement. That's how it works here.`);
         }
       }
       // CLOSED village: the pile gets skimmed. The ledger notices, even if no one saw.
@@ -493,7 +498,7 @@
           const n = Math.min(st.materials[mat], 1 + Math.floor(Math.random() * 2));
           st.materials[mat] -= n;
           this.stashLog('take', MAT_DEFS[mat].name, n, null); // vid null = someone
-          this.say(`The stash count is off. ${n} ${MAT_DEFS[mat].name.toLowerCase()}${n > 1 ? 's' : ''} missing. Nobody saw anything. Everybody suspects something.`);
+          this.say(`The stash count is off. ${n} ${matName(mat, n)} missing. Nobody saw anything. Everybody suspects something.`);
           this.observe('stole');
         }
       }

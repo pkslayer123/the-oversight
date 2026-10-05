@@ -2266,9 +2266,6 @@
       if (this.dayPart === 3) chance -= 0.15; // night
       if (this.isFollower && this.isFollower(vid)) chance += 0.10; // close quarters
       chance = Math.max(0.05, Math.min(0.9, chance));
-      this.packSpend(vid, take);
-      // Their food is gone. They'll feel the hunger even before they know why.
-      this.npcNeeds(vid).hunger = Math.min(100, (this.npcNeeds(vid).hunger || 0) + Math.round(take / 25));
       // ACTION CLOCK: quick hands, 1 tick.
       this.tickAction(1);
       const units = Math.max(1, Math.round(take / 150));
@@ -2290,6 +2287,11 @@
         return 'caught';
       }
       // Unseen. The food is yours now — but packs get noticed.
+      // (Spend happens here, not before the roll: getting caught means you
+      // let go and the food stays where it was.)
+      this.packSpend(vid, take);
+      // Their food is gone. They'll feel the hunger even before they know why.
+      this.npcNeeds(vid).hunger = Math.min(100, (this.npcNeeds(vid).hunger || 0) + Math.round(take / 25));
       addStolen();
       v.packTheft = v.packTheft || {};
       v.packTheft[vid] = { day: this.state.scholar.day, part: this.dayPart, kcal: take };
