@@ -6,7 +6,7 @@
    unregisters SWs and wipes caches before navigating, so staleness is
    impossible regardless of SW state.
    CACHE version is bumped per build via scripts/bump-sw-version.sh. */
-const VERSION = 'e0613a2-20261005-195730';
+const VERSION = '680d7aa-20261005-200458';
 const CACHE = 'oversight-cache-' + VERSION;
 
 const ASSETS = [
