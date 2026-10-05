@@ -3940,7 +3940,7 @@
         const forage = village.population * perPerson;
         village.pantryKcal += forage;
         // they deplete the world near them (competition!)
-        this.depleteRandomTile(Math.ceil(forage / 500));
+        this.depleteRandomTile(Math.ceil(forage / 500), village.x, village.y);
         // eat: 2000 per person
         village.pantryKcal -= village.population * 2000;
         // starvation: lose people if pantry empty
@@ -4841,6 +4841,14 @@
       this.checkEncounter();
       this.checkAnimals();
       this.checkQuest('travel');
+      // DRIFTER: arriving near another village announces it NOW — not whenever
+      // the day-part happens to turn. You walked up to their smoke; you see it.
+      // (checkVillageProximity also runs on part turns; the generated flag
+      // keeps it from double-firing.)
+      this.checkVillageProximity();
+      // DRIFTER: stepping onto their tile says so. It's their clearing, not scenery.
+      const hereV = (this.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
+      if (hereV) this.say(`${hereV.name}'s clearing. Voices, a cookfire, somebody else's home. You're a guest here — act like it.`);
       // TIME ECONOMY: moving between nodes is a BIG time step on the unified clock.
       // travelTimeStep ticks 32 (a "bigger tick"): NPC batch + day timer advance
       // proportionally, like everything else. No separate clock, no free moves.
@@ -7806,17 +7814,27 @@
 
     // depleteRandomTile: when villagers forage, the world loses stock.
     // you compete for the same plants. if you don't take it, they might.
-    depleteRandomTile(amount) {
-      // find tiles with stock, deplete randomly
-      const candidates = [];
+    // LOCAL: a village forages ITS turf. Pass (cx, cy) and depletion stays
+    // within 4 of them — the home turf first (<=2), ranging wider only when
+    // it's stripped. It NEVER goes map-wide: a village across the map does
+    // not eat your foraging grounds. If their whole region is bare, they
+    // find nothing — the pantry math and the starvation path handle the rest
+    // (a stripped, hungry village is a story, not a teleporting mouth).
+    depleteRandomTile(amount, cx, cy) {
+      // find tiles with stock, deplete near the foragers first
+      const near = [], mid = [];
       for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
         const t = this.tileAt(x, y);
-        if (t.type !== 'haven' && t.type !== 'ruin' && (t.stock || 0) > 0) {
-          candidates.push(t);
-        }
+        if (!t || t.type === 'haven' || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
+        const d = (cx == null || cy == null) ? 99 : Math.abs(x - cx) + Math.abs(y - cy);
+        if (d <= 2) near.push(t);
+        else if (d <= 4) mid.push(t);
+        // past 4: not their turf. hands off.
       }
-      for (let i = 0; i < amount && candidates.length; i++) {
-        const t = candidates[Math.floor(Math.random() * candidates.length)];
+      // forage the home turf; range wider only when it's stripped
+      const pool = near.length ? near : mid;
+      for (let i = 0; i < amount && pool.length; i++) {
+        const t = pool[Math.floor(Math.random() * pool.length)];
         t.stock = Math.max(0, (t.stock || 0) - 1);
       }
     },

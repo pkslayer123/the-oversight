@@ -1156,13 +1156,79 @@
       if (pack >= 700) card.actions.push({ id: 'petition', label: '🙏 Petition + offer food (700 kcal)', hint: 'A real offering. Costs you.', giftKcal: 700 });
       if (pack >= 1500) card.actions.push({ id: 'petition', label: '🙏 Petition + offer a feast (1500 kcal)', hint: 'More than a day\'s food. Hard to refuse.', giftKcal: 1500 });
     } else {
-      card.hint = 'Walk to the edge of the map to travel there.';
+      // DRIFTER: you're a traveler, not an exile. If you're AT their fire,
+      // you can sit and talk. From across the map, all you get is the smoke.
+      const pdx = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0));
+      const pdy = Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
+      if (pdx + pdy <= 1) {
+        card.actions.push({ id: 'talk', label: '💬 Sit & talk (a while)', hint: 'Trade news and plant knowledge. Takes time — stories aren\'t fast.' });
+      } else {
+        card.hint = 'Walk to the edge of the map to travel there.';
+      }
     }
     return card;
   },
   villageCardAction(villageId, actionId, opts) {
     if (actionId === 'petition') return this.petitionVillage(villageId, opts);
+    if (actionId === 'talk') return this.villageTalk(villageId);
     return null;
+  },
+  // villageTalk: sit with another village. Trade news, trade plant knowledge.
+  // The drifter's verb: you walked all that way — come home knowing something.
+  // Knowledge ENTERS the system here: they show you a plant you didn't know
+  // (L1, attributed), you show them one of yours (their codex grows too —
+  // the world learns, not just you). Once per village per day; costs a while
+  // (64 ticks, named). Talk happens face to face — no menu magic from afar.
+  villageTalk(villageId) {
+    const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
+    if (!ov) return null;
+    const s = this.state.scholar;
+    const dist = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0)) +
+                 Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
+    if (dist > 1) { this.say(`You're not at ${ov.name}. Walk there first — talk happens face to face.`); return null; }
+    // they've lived since you last looked
+    try { this.catchUpSim(ov); } catch (e) {}
+    if (ov.lastTalkDay === s.day) {
+      this.say(`You've talked ${ov.name}'s ear off for today. Come back tomorrow — stories need time to travel.`);
+      return null;
+    }
+    ov.lastTalkDay = s.day;
+    const prof = ov.knowledgeProfile || {};
+    const theirCodex = (ov.codex && ov.codex.plants) || {};
+    const mine = (this.state.codex.plants = this.state.codex.plants || {});
+    const focusWord = { fisher: 'an old fisher', forager: 'a forager with bark under her nails', farmer: 'a farmer', scavenger: 'a scavenger' }[prof.focus] || 'someone';
+    // THEY TEACH YOU: something they know that you don't.
+    const newToMe = Object.keys(theirCodex).filter(pid => !mine[pid]);
+    if (newToMe.length) {
+      const pid = newToMe[Math.floor(Math.random() * newToMe.length)];
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      const lvl = Math.min(2, (theirCodex[pid] && theirCodex[pid].level) || 1);
+      mine[pid] = { level: lvl, identifiedDay: s.day, harvests: 0, tastings: 0, learnedFrom: ov.name };
+      const pname = p ? p.name : pid;
+      this.say(`You sit with ${ov.name}. ${focusWord.charAt(0).toUpperCase() + focusWord.slice(1)} shows you ${pname} — where it grows, what it looks like, the part that won't kill you. (${pname}: knowledge L${lvl}, learned from ${ov.name}.)`);
+    } else {
+      // nothing new: deepen something shared, or just trade news
+      const shared = Object.keys(theirCodex).filter(pid => mine[pid] && (theirCodex[pid].level || 0) > (mine[pid].level || 0));
+      if (shared.length && Math.random() < 0.6) {
+        try { this.combineKnowledge(shared[Math.floor(Math.random() * shared.length)]); } catch (e) {}
+      } else {
+        this.say(`No new plants today — just news. ${ov.name} has its own troubles: who's sick, who's feuding, what the sky did last week. You trade stories. The world feels smaller, in a good way.`);
+        try { this.seedGossip('visit_' + ov.id + '_' + s.day, { trustworthy: 2 }, (this.npcIds ? this.npcIds() : []).slice(0, 3)); } catch (e) {}
+      }
+    }
+    // YOU TEACH THEM: the exchange goes both ways.
+    const newToThem = Object.keys(mine).filter(pid => !theirCodex[pid]);
+    if (newToThem.length) {
+      const pid = newToThem[Math.floor(Math.random() * newToThem.length)];
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      ov.codex = ov.codex || { plants: {} };
+      ov.codex.plants[pid] = { level: 1, identifiedDay: s.day };
+      if (prof.plants) prof.plants[pid] = { level: 1, learnedDay: s.day };
+      this.say(`In return you show them ${(p && p.name) || pid}. Someone sketches it in the dirt, memorizing. ${ov.name} knows a little more because you came.`);
+    }
+    // talk takes a while: stories aren't fast. (Named cost, no silent drain.)
+    this.tickAction(64);
+    return true;
   },
   // exileSelfActions: the camp/self UI reads this while exiled. Pure data.
   exileSelfActions() {
