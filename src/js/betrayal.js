@@ -14,6 +14,9 @@
 //  7. exile: any villager; player exile = a phase (petition/found/drift)
 //  8. strangers: earned visitors (the world opening up)
 //  9. world-gen: guaranteed reachable village
+//  10. THE PLAYER STANDS ACCUSED: crimes → accusation → defense → trial
+//      (same machinery, other side: speak, alibi, press accuser, bribe,
+//      expose, demand moot, flee) → acquittal / weregild / exile / cold war
 //
 // Self-attaching module: Object.assign(Game, methods) + wraps endDay,
 // convoChoices, convoTurn, villageAction, genVillages. Load after food.js.
@@ -838,6 +841,12 @@
     if (convicted) return this.sentenceCase(c);
     // acquitted: festering or vindication
     c.status = 'acquitted';
+    if (c.accused.includes(this.villagerId)) {
+      this.say(`Not guilty. The count falls short — you breathe. But an accusation leaves a mark no verdict washes off. Some faces at the fire say they'll remember anyway.`);
+      const t = this.state.village.trust || {};
+      t[this.villagerId] = Math.max(0, ((t[this.villagerId]) || 10) - 8);
+      return { acquitted: true, caseId: c.id };
+    }
     if (this.isPlayer(c.target) && c.accused.some(a => !this.isPlayer(a))) {
       this.say(`They walk. The story stands — theirs. You'll be watching your back for a long while.`);
     }
@@ -881,6 +890,12 @@
       this.say(`Weregild. ${names} ${c.accused.length > 1 ? 'pay' : 'pays'} — food, work, public apology. The price of staying.`);
       try {
         v.pantryKcal = (v.pantryKcal || 0) + 3000;
+        // the player pays from their own stores — it has to hurt
+        if (c.accused.includes(this.villagerId)) {
+          const s = this.state.scholar;
+          if (typeof s.kcal === 'number') s.kcal = Math.max(0, s.kcal - 3000);
+          try { this.justiceState().amendsCredit = (this.justiceState().amendsCredit || 0) + 30; } catch (e) {}
+        }
         const t = v.trust || {};
         for (const a of c.accused) t[a] = Math.max(0, ((t[a]) || 10) - 20);
       } catch (e) {}
@@ -892,6 +907,10 @@
         const b = this.npcIds().filter(id => !c.accused.includes(id)).slice(0, 4);
         if (a.length) v.groups.push({ id: 'feud_a', kind: 'feud', members: a });
         if (b.length) v.groups.push({ id: 'feud_b', kind: 'feud', members: b });
+        if (c.accused.includes(this.villagerId)) {
+          const t = v.trust || {};
+          t[this.villagerId] = Math.max(0, ((t[this.villagerId]) || 10) - 15);
+        }
       } catch (e) {}
     } else if (path === 'player_exile') {
       this.exilePlayer('moot');
@@ -1089,17 +1108,32 @@
       if (cs.status === 'open' && this.isPlayer(cs.target)) {
         out.push({ id: 'betrayal:wounds:' + cs.id, label: '"Look at me. Does this look like I started it?" (show your wounds)' });
       }
-      if (cs.status === 'open' && !cs.siteExamined) {
+      if (cs.status === 'open' && !cs.siteExamined && cs.playerRole !== 'accused') {
         out.push({ id: 'betrayal:site:' + cs.id, label: 'Go back to the site. Look at the ground.' });
       }
-      if (cs.status === 'open' && !cs.witnessesNamed) {
+      if (cs.status === 'open' && !cs.witnessesNamed && cs.playerRole !== 'accused') {
         out.push({ id: 'betrayal:witnesses:' + cs.id, label: '"Who saw us leave?" (name the witnesses)' });
+      }
+      // THE PLAYER'S DEFENSE — when you stand accused
+      if (cs.playerRole === 'accused' && (cs.status === 'open' || cs.status === 'dormant') && !cs.trial) {
+        out.push({ id: 'betrayal:defend_speak:' + cs.id, label: '🗣️ Speak in your defense — the truth as you lived it' });
+        if (!cs.alibiDone) out.push({ id: 'betrayal:defend_alibi:' + cs.id, label: '"Who will vouch for me?" (call character witnesses)' });
+        if (!cs.pressedAccuser) out.push({ id: 'betrayal:defend_press:' + cs.id, label: `Press ${this.displayName(cs.accuser).split(' ')[0]} — find the crack in their story` });
+        if (!(cs.bribes || []).some(b => !cs.exposedBribes.includes(b.voter))) {
+          out.push({ id: 'betrayal:investigate:' + cs.id, label: 'Follow the food. Who bought whom? (investigate bribery)' });
+        }
+        out.push({ id: 'betrayal:demand_moot:' + cs.id, label: '⚖️ "No more whispering. We settle this NOW." (force the moot)' });
+        out.push({ id: 'betrayal:flee:' + cs.id, label: '🏃 Don\'t wait for the count. Run. (exile by flight)' });
+      }
+      if (cs.status === 'open' && !(cs.foundBribes || []).length && cs.playerRole !== 'accused') {
+        out.push({ id: 'betrayal:investigate:' + cs.id, label: 'Follow the food. Who bought whom? (investigate bribery)' });
       }
       if (cs.status === 'open' && (cs.foundBribes || []).some(b => !cs.exposedBribes.includes(b.voter))) {
         out.push({ id: 'betrayal:expose:' + cs.id, label: '🔥 Expose the bribery. At the moot. Publicly.' });
       }
       if (cs.status === 'open' || cs.status === 'dormant') {
-        if (!(cs.status === 'open' && cs.trial && cs.trial.awaitingPlayerVote)) {
+        // the accused player doesn't "call a moot" on themselves — they demand it
+        if (!(cs.status === 'open' && cs.trial && cs.trial.awaitingPlayerVote) && cs.playerRole !== 'accused') {
           out.push({ id: 'betrayal:moot:' + cs.id, label: `Call a moot — put the ${cs.charge} of ${tname} to the village` });
         }
       }
@@ -1110,9 +1144,9 @@
       if (cs.playerBribeOffer && cs.playerBribeOffer.by === vid) {
         out.push({ id: 'betrayal:hearoffer:' + cs.id, label: `"What do you want?" (they seem... eager)` });
       }
-      // player bribes a voter
-      if (cs.status === 'open' && !cs.accused.includes(vid) && vid !== this.villagerId &&
-          cs.trial && cs.trial.awaitingPlayerVote === false && !(cs.bribes || []).some(b => b.by === this.villagerId && b.voter === vid)) {
+      // player bribes a voter (open case or mid-trial, not while their own vote pends)
+      if ((cs.status === 'open' || cs.status === 'dormant') && !cs.accused.includes(vid) && vid !== this.villagerId &&
+          (!cs.trial || cs.trial.awaitingPlayerVote === false) && !(cs.bribes || []).some(b => b.by === this.villagerId && b.voter === vid)) {
         out.push({ id: 'betrayal:bribe:' + cs.id + ':' + vid, label: `Make ${this.displayName(vid).split(' ')[0]} an offer. Expensive. Secret. (bribe)` });
       }
       // player's trial vote
@@ -1168,7 +1202,26 @@
       if (b) this.exposeBribery(parts[2], b.voter);
       return finish('Said. At the moot. Let the fire decide what it means.', '(expose the bribery)');
     }
-    if (act === 'moot') { this.callMoot(parts[2]); return finish('The moot is called. The fire gets built up.', '"We settle this. Tonight."'); }
+    if (act === 'moot') {
+      const cs0 = this.getCase(parts[2]);
+      if (cs0 && cs0.playerRole === 'accused') { this.demandMoot(parts[2]); }
+      else { this.callMoot(parts[2]); }
+      return finish('The moot is called. The fire gets built up.', '"We settle this. Tonight."');
+    }
+    if (act === 'defend_speak') { this.defendSpeak(parts[2]); return finish('Said. Your defense, on the record.', '"Hear me out."'); }
+    if (act === 'defend_alibi') { this.defendAlibi(parts[2]); return finish('Witnesses named.', '"Who will vouch for me?"'); }
+    if (act === 'defend_press') { this.defendPressAccuser(parts[2]); return finish('Pressed. Let the pause speak.', '"Walk me through YOUR story."'); }
+    if (act === 'demand_moot') { this.demandMoot(parts[2]); return finish('The moot is called. Tonight. No more whispering.', '"We settle this NOW."'); }
+    if (act === 'flee') { this.fleeBeforeVerdict(parts[2]); return finish('Gone.', '(run)'); }
+    if (act === 'investigate') {
+      const f = this.investigateBribery(parts[2]) || [];
+      const cs2 = this.getCase(parts[2]);
+      if (cs2) {
+        cs2.foundBribes = cs2.foundBribes || [];
+        for (const b of f) if (!cs2.foundBribes.some(y => y.voter === b.voter)) cs2.foundBribes.push(b);
+      }
+      return finish(f.length ? 'Found something. Follow it to the moot.' : 'Nothing you can prove. Yet.', '(follow the food)');
+    }
     if (act === 'letlie') { this.letItLie(parts[2]); return finish('Nothing. Said.', '(say nothing)'); }
     if (act === 'vote_guilty') { this.castPlayerVote(parts[2], true); return finish('Counted.', 'GUILTY.'); }
     if (act === 'vote_acquit') { this.castPlayerVote(parts[2], false); return finish('Counted.', 'NOT GUILTY.'); }
@@ -1200,9 +1253,19 @@
     }
     return null;
   },
-  // NPCs bribe NPC voters too (the world corrupts without you)
+  // NPCs bribe NPC voters too (the world corrupts without you).
+  // Against an accused PLAYER, the accuser's side buys votes during the
+  // defense window — the player can find and expose it.
   simBriberyTick() {
     for (const cs of (this.betrayalState().cases || [])) {
+      if (cs.playerRole === 'accused' && (cs.status === 'open' || cs.status === 'dormant') && !cs.trial) {
+        if (R() < 0.3) {
+          const voters = this.npcIds().filter(id => !(cs.bribes || []).some(b => b.voter === id));
+          const v = pick(voters);
+          if (v) cs.bribes.push({ voter: v, by: cs.accuser, amount: 800, day: this.state.scholar.day, trace: R() < 0.5 });
+        }
+        continue;
+      }
       if (cs.status !== 'open' || !cs.trial) continue;
       if (R() < 0.35) {
         const side = pick([cs.accused[0], 'target']);
@@ -1236,10 +1299,232 @@
       }
     }
   },
+  // ---------- 13. THE PLAYER STANDS ACCUSED ----------
+  // Symmetric jeopardy (Steve: "obviously a player should have to face the
+  // judge. Exile is a real risk."). Player crimes (theft, intimidation,
+  // assault, murder — the justice records) become prosecutable cases. NPCs
+  // with motive — victims, the righteous, your enemies — formally accuse you.
+  // The trial runs the SAME machinery from the other side: attendance RNG,
+  // wild days, bribery both directions, relationship-weighted belief.
+  // The accusation must be EARNED: heat/evidence/witness thresholds. And
+  // false accusations are possible — your enemies can weaponize the moot,
+  // and you can expose that.
+  strongestMotiveVsPlayer() {
+    let best = null;
+    for (const vid of this.npcIds()) {
+      const m = this.motiveBetween(vid, this.villagerId);
+      if (!best || m.score > best.score) best = { id: vid, score: m.score, reasons: m.reasons };
+    }
+    return best;
+  },
+  trustInPlayer() {
+    const t = (this.state.village.trust || {})[this.villagerId];
+    return t == null ? 10 : t;
+  },
+  chargeLine(charge) {
+    return {
+      theft: 'Theft — taking what wasn\'t theirs',
+      intimidation: 'Threats — putting fear in people on purpose',
+      assault: 'Raising hands against one of us',
+      murder: 'Murder. There — said plain',
+    }[charge] || 'Crimes against the village';
+  },
+  // daily: does someone accuse the player?
+  considerPlayerAccusation() {
+    const s = this.state.scholar;
+    if (!s || s.exiled) return;
+    const bs = this.betrayalState();
+    if ((bs.cases || []).some(c => (c.status === 'open' || c.status === 'dormant') && c.accused.includes(this.villagerId))) return;
+    let crimes = [];
+    try { crimes = (this.justiceState().crimes || []).filter(c => !c.caseId); } catch (e) {}
+    const heat = (() => { try { return this.justiceHeat(); } catch (e) { return 0; } })();
+    const rank = { murder: 4, attack: 3, theft: 2, intimidation: 1 };
+    const serious = crimes.filter(c => rank[c.type]).sort((a, b) => (rank[b.type] || 0) - (rank[a.type] || 0))[0];
+    let accuser = null, charge = null, used = [], fabricated = false;
+    if (serious) {
+      const t = rank[serious.type];
+      const victim = serious.victim;
+      const victimAlive = victim && this.npcIds().includes(victim);
+      let wit = 0;
+      try { wit = (this.witnesses(6) || []).length; } catch (e) {}
+      // the threshold: moots aren't convened over nothing
+      const sameVictim = crimes.filter(c => c.type === serious.type && c.victim === victim).length;
+      const prosecutable = t >= 3
+        ? (wit > 0 || victimAlive || heat >= 40)
+        : (serious.caught || heat >= 45 || sameVictim >= 2);
+      if (prosecutable && R() < 0.5) {
+        const m = this.strongestMotiveVsPlayer();
+        accuser = victimAlive ? victim : (m && m.id);
+        charge = { theft: 'theft', intimidation: 'intimidation', attack: 'assault', murder: 'murder' }[serious.type];
+        used = [serious];
+      }
+    }
+    if (!accuser) {
+      // false accusation: an enemy weaponizes the moot (only when there's
+      // no real ammunition — enemies prefer real crimes)
+      const m = this.strongestMotiveVsPlayer();
+      if (m && m.score >= 60 && this.trustInPlayer() < 25 && R() < 0.25) {
+        accuser = m.id; fabricated = true;
+        charge = pick(['theft', 'assault']);
+      }
+    }
+    if (!accuser) return;
+    this.openPlayerCase(accuser, charge, used, fabricated);
+  },
+  openPlayerCase(accuser, charge, crimes, fabricated) {
+    const bs = this.betrayalState();
+    const id = 'case_' + (++bs.seq);
+    const victim = (crimes && crimes[0] && crimes[0].victim) || null;
+    const c = {
+      id, plotId: null, charge, day: this.state.scholar.day,
+      accused: [this.villagerId], target: victim, accuser,
+      belief: {}, evidence: [], bribes: [], exposedBribes: [], foundBribes: [],
+      inconsistencies: [], status: 'open', flipped: null,
+      playerRole: 'accused', knownToPlayer: true,
+      fabricated: !!fabricated, crimeKeys: (crimes || []).map(x => x.key),
+      mootIn: 2 + Math.floor(R() * 2),
+      defenseSpeeches: 0, alibiDone: false, pressedAccuser: false,
+    };
+    for (const cr of (crimes || [])) cr.caseId = id;
+    bs.cases.push(c);
+    this.initPlayerCaseBelief(c);
+    this.seedAccuserStory(c);
+    const aname = this.displayName(accuser).split(' ')[0];
+    this.say(`${aname} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. There's going to be a moot. You have ${c.mootIn} days before they call it. Use them.`);
+    try { this.journalNote && this.journalNote('village', 'trial', `Accused of ${charge} by ${this.displayName(accuser)}. Moot coming.`); } catch (e) {}
+    return c;
+  },
+  // belief polarity: negative = guilty (of the accused), positive = acquit.
+  // The accuser's story landed first — the village starts suspicious.
+  initPlayerCaseBelief(c) {
+    const tp = this.trustInPlayer();
+    for (const vid of this.npcIds()) {
+      let b = -20;
+      b += (tp - 25) * 0.8;                              // they trust you → doubt it
+      b -= this.pairAffinity(vid, c.accuser) * 0.5;      // they like the accuser → believe it
+      b += this.pairAffinity(vid, this.villagerId) * 0.4; // personal bond with you
+      c.belief[vid] = clamp(Math.round(b), -100, 100);
+    }
+  },
+  seedAccuserStory(c) {
+    const aname = this.displayName(c.accuser).split(' ')[0];
+    const vname = (c.target && !this.isPlayer(c.target)) ? this.displayName(c.target).split(' ')[0] : 'the village';
+    const lines = {
+      theft: `stole from ${vname} — took what wasn't theirs`,
+      intimidation: `threatened ${vname} — put fear in them, deliberately`,
+      assault: `attacked ${vname} — blood was drawn`,
+      murder: `killed ${vname}. There it is. Said out loud.`,
+    };
+    c.accuserStory = `${aname} says you ${lines[c.charge] || 'wronged the village'}.`;
+    try {
+      this.seedGossip('accuse_' + c.id, { trustworthy: -12, honest: -4 }, [c.accuser]);
+      this.applyRep(this.villagerId, { trustworthy: -10 }, 0.8);
+    } catch (e) {}
+    if (c.fabricated) {
+      // the lie has seams — planted inconsistencies the player can find
+      c.inconsistencies = [
+        { field: 'time', claims: { [c.accuser]: 'dusk', witness: 'full dark' }, found: false },
+        { field: 'place', claims: { [c.accuser]: 'the creek', witness: 'near the ridge' }, found: false },
+      ];
+    } else {
+      c.inconsistencies = [];
+    }
+  },
+  // ----- player defense tools -----
+  // (a) speak in your defense: social stats + relationships matter
+  defendSpeak(caseId) {
+    const c = this.getCase(caseId); if (!c || c.playerRole !== 'accused') return null;
+    if (c.status !== 'open' && c.status !== 'dormant') return null;
+    c.defenseSpeeches = (c.defenseSpeeches || 0) + 1;
+    const dim = 1 / c.defenseSpeeches; // diminishing returns
+    let sp = 10;
+    try { if (this.hasAbility('social_read')) sp += 6; } catch (e) {}
+    const delta = Math.max(2, Math.round((sp + this.trustInPlayer() * 0.3) * dim));
+    this.say(`You stand and speak. No performance — the truth as you lived it, and the names of people who know you. ${delta > 8 ? 'Some heads nod before they catch themselves.' : 'The fire listens. Whether it believes is another matter.'}`);
+    this.moveBelief(c, delta, 'the accused spoke in their defense');
+    try { this.tickAction(24); } catch (e) {}
+    return true;
+  },
+  // (b) alibi / character witnesses: who will vouch for you?
+  defendAlibi(caseId) {
+    const c = this.getCase(caseId); if (!c || c.alibiDone || c.playerRole !== 'accused') return null;
+    if (c.status !== 'open' && c.status !== 'dormant') return null;
+    c.alibiDone = true;
+    const t = this.state.village.trust || {};
+    const friends = this.npcIds().filter(id => (t[id] || 0) >= 25).slice(0, 2);
+    if (!friends.length) {
+      this.say(`You look around the fire for someone to vouch for you. Nobody meets your eyes. That silence is its own testimony.`);
+      this.moveBelief(c, -4, 'no one would vouch');
+      return false;
+    }
+    const names = friends.map(f => this.displayName(f).split(' ')[0]).join(' and ');
+    this.say(`${names} ${friends.length > 1 ? 'stand' : 'stands'} with you. "I know this one. Whatever happened, hear them out." It matters who your friends are.`);
+    this.moveBelief(c, 8 + friends.length * 5, 'character witnesses vouched');
+    try { this.tickAction(24); } catch (e) {}
+    return true;
+  },
+  // (c) turn it around: press the accuser. Lies have seams; truth doesn't.
+  defendPressAccuser(caseId) {
+    const c = this.getCase(caseId); if (!c || c.pressedAccuser || c.playerRole !== 'accused') return null;
+    if (c.status !== 'open' && c.status !== 'dormant') return null;
+    c.pressedAccuser = true;
+    const aname = this.displayName(c.accuser).split(' ')[0];
+    if (c.fabricated) {
+      const inc = (c.inconsistencies || []).find(i => !i.found);
+      if (inc) {
+        inc.found = true;
+        c.accuserExposed = true;
+        const said = inc.field === 'time' ? 'dusk' : 'the creek';
+        const seen = inc.field === 'time' ? 'full dark' : 'near the ridge';
+        this.say(`You press ${aname} — not angry, precise. "You said ${said}. But it was ${seen} — people saw." The pause before the answer is the answer.`);
+        try { this.addDoubt(c.accuser, 'contradiction', `${aname}'s accusation doesn't match what others saw.`); } catch (e) {}
+        this.moveBelief(c, 20, 'accuser caught in a lie');
+        const t = this.state.village.trust || {};
+        t[c.accuser] = Math.max(0, ((t[c.accuser]) || 10) - 20);
+        return true;
+      }
+    }
+    this.say(`You press ${aname}. Their story holds — every detail, steady as stone. You look desperate for having tried.`);
+    this.moveBelief(c, -5, 'pressing a truthful accuser backfired');
+    return false;
+  },
+  // (d) demand the moot early: bold, dangerous
+  demandMoot(caseId) {
+    const c = this.getCase(caseId); if (!c || c.playerRole !== 'accused') return null;
+    if (c.status !== 'open' && c.status !== 'dormant') return null;
+    this.say(`You stand before they finish gathering voices. "No more whispering. We settle this NOW — all of it, in the open." Bold. Dangerous. The fire gets built up.`);
+    try { this.tickAction(24); } catch (e) {}
+    return this.conductTrial(c);
+  },
+  // (e) flee before the verdict: exile by flight
+  fleeBeforeVerdict(caseId) {
+    const c = this.getCase(caseId); if (!c || c.playerRole !== 'accused') return null;
+    if (c.status !== 'open' && c.status !== 'dormant') return null;
+    c.status = 'resolved'; c.resolution = 'fled';
+    this.say(`You don't wait for the count. Pack, dark, tree line — gone before the fire is even built. They'll call it guilt. Let them. You're alive, and the world is big.`);
+    try { this.seedGossip('fled_' + c.id, { trustworthy: -20 }, this.npcIds().slice(0, 3)); } catch (e) {}
+    this.exilePlayer('fled');
+    return true;
+  },
+  // the accuser's clock: they call the moot when they've gathered voices
+  playerCaseTick() {
+    const bs = this.betrayalState();
+    const day = this.state.scholar.day;
+    for (const c of (bs.cases || [])) {
+      if (c.playerRole !== 'accused' || c.status !== 'open') continue;
+      if (day - c.day >= (c.mootIn || 2)) {
+        const aname = this.displayName(c.accuser).split(' ')[0];
+        this.say(`${aname} has gathered enough voices. The moot is called — tonight, at the fire. This is it.`);
+        this.callMoot(c.id);
+      }
+    }
+    try { this.considerPlayerAccusation(); } catch (e) {}
+  },
   betrayalDailyFull() {
     this.betrayalDaily();
     try { this.simBriberyTick(); } catch (e) {}
     try { this.caseDiscoveryTick(); } catch (e) {}
+    try { this.playerCaseTick(); } catch (e) {}
   },
 };
 
