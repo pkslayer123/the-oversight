@@ -3849,17 +3849,26 @@
     // First encounter: strange descriptor, vague threat sense — the
     // specialness is DISCOVERED through the fight and the codex, never
     // announced by the UI.
-    const monRows = mons.map(m => {
+    // SWARM COLLAPSE (Steve 2026-10-05): pack monsters share one card row —
+    // four hum-mice read as one chorus (count + combined bar), not four
+    // identical rows. Targeting stays on the grid tiles.
+    const monGroups = {};
+    for (const m of mons) { const mid = m.mdef ? m.mdef.id : m.monsterId; (monGroups[mid] = monGroups[mid] || []).push(m); }
+    const monRows = Object.values(monGroups).map(g => {
+      const m = g[0];
       const mid = m.mdef ? m.mdef.id : m.monsterId;
       const name = Game.monsterDisplayName ? Game.monsterDisplayName(mid) : m.name;
-      const frac = Math.max(0, Math.min(1, (m.hp || 0) / (m.maxHp || 1)));
+      const hp = g.reduce((s, x) => s + (x.hp || 0), 0);
+      const maxHp = g.reduce((s, x) => s + (x.maxHp || 1), 0);
+      const frac = Math.max(0, Math.min(1, hp / maxHp));
       const known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : false;
       const badge = (known && Game.encPhaseBadge) ? Game.encPhaseBadge(m) : '';
+      const count = g.length > 1 ? ` ×${g.length}` : '';
       // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
       // knowledge. First encounter: no warning symbols.
-      return `<p class="small cc-mon">${m.emoji} <b>${esc(name)}</b>` +
+      return `<p class="small cc-mon">${m.emoji} <b>${esc(name)}</b>${count}` +
         ` <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>` +
-        `${(m.telegraph && known) ? ' ⚠' : ''}${badge}</p>`;
+        `${(g.some(x => x.telegraph) && known) ? ' ⚠' : ''}${badge}</p>`;
     }).join('');
     const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= (Game.equippedWeapon ? Game.equippedWeapon().range : 1)) : [];
     const wrange = Game.equippedWeapon ? Game.equippedWeapon().range : 1;

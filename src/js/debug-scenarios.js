@@ -312,12 +312,11 @@
       s.mx = 2; s.my = 4;
       s.monster = { id: 'lockpick_raccoon', mx: 6, my: 4 };
       Game.say('🐞 SCENARIO: lockpick raccoon. Too many fingers, working at something, four tiles east.');
-      Game.say("It's not looking at you. It's looking at your pack. It steals FIRST — hit it while it bolts, or buy it off with food (🍖).");
     },
 
     // Hummice. Night, the grass humming four tiles east — all four of them.
-    // The hum STACKS while you stand in it. Kill one and the choir stutters;
-    // step out and let it thin.
+    // (Tactics deliberately NOT in the setup text — first contact should be
+    // dread, not a lecture. See game.js humNoticed block.)
     hummice() {
       freshGame();
       toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
@@ -328,7 +327,6 @@
       s.mx = 2; s.my = 4;
       s.monster = { id: 'hummice', mx: 6, my: 4 };
       Game.say('🐞 SCENARIO: hummice. The grass is humming in harmony, four tiles east. Four of them.');
-      Game.say('The hum STACKS while you stand in it. Kill one and the choir stutters — or step out and let it thin.');
     },
 
     // Nightlight Catfish. Night, a soft green glow three tiles east — near

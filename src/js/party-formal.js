@@ -456,12 +456,17 @@
     offerSplit() {
       const foes = this.detectSplitOpportunity();
       if (foes.length < 2) return null;
+      // THREAT READ (Steve 2026-10-05): group the pack — four hum-mice are one
+      // threat, not four. Correct count, diegetic language, no debug leak.
+      const byId = {};
+      for (const t of foes) { const id = (t.mdef || {}).id || t.key; (byId[id] = byId[id] || []).push(t); }
+      const groups = Object.values(byId);
+      const gnames = groups.map(g => (g.length > 1 ? `${g[0].name} (\u00d7${g.length})` : g[0].name));
+      const n = groups.length;
+      const threatWord = n === 2 ? 'Two threats' : n === 3 ? 'Three threats' : `${n} threats`;
       const members = this.partyMembers().map(id => this.displayName(id)).join(', ');
-      const text = `⚠️ TWO THREATS. ${foes.map(t => t.name).join(' and ')} — both here, both now.\n` +
-        `Your party: ${members || 'just you'}.\n` +
-        `You can split: send companions to hold one threat while you take the other. ` +
-        `Both halves will be weaker for it. Someone might not come back.\n` +
-        `(Use: splitParty(threatKey, [companion ids]) — or don't. Holding together against both is also a choice.)`;
+      const text = `\u26a0\ufe0f ${threatWord}: ${gnames.join(' and ')} \u2014 all here, all now.\n` +
+        `Your party: ${members || 'just you'}. You are outnumbered \u2014 fight like it.`;
       this.say(text);
       return foes;
     },

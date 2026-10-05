@@ -44,7 +44,7 @@ function newMouseGame() {
   const realGen = Game.genDetail.bind(Game);
   Game.genDetail = () => flatGrid();
 
-  // --- 1. opening teaches the deal ---
+  // --- 1. opening: first contact is dread, not a lecture (Steve 2026-10-05) ---
   newMouseGame();
   Game.debugScenario('hummice');
   {
@@ -54,9 +54,24 @@ function newMouseGame() {
     for (let i = 0; i < 6 && !Game.tbfight; i++) Game.monsterTurn();
     ok('fight starts', !!Game.tbfight);
     ok('humNoticed set', !!Game.tbfight.humNoticed);
-    ok('opening teaches stacks', Game.log.some(l => /STACKS while you stand in it/i.test(l)));
-    ok('opening teaches shout', Game.log.some(l => /SHOUT/i.test(l)));
-    ok('opening teaches killing', Game.log.some(l => /Kill one and the choir stutters/i.test(l)));
+    ok('opening has dread line', Game.log.some(l => /fifty throats, one note/i.test(l)));
+    ok('first contact: no tactical lecture', !Game.log.some(l => /STACKS while you stand in it/i.test(l)));
+    ok('first contact: no shout coaching', !Game.log.some(l => /Or SHOUT/i.test(l)));
+    ok('first contact: admits ignorance', Game.log.some(l => /You don't know what it wants/i.test(l)));
+  }
+
+  // --- 1b. opening: earned knowledge gets the tactical read ---
+  newMouseGame();
+  Game.debugScenario('hummice');
+  {
+    Game.ensureMonsterEntry('hummice').stage = 'observed';
+    const s = Game.state.scholar;
+    s.mx = s.monster.mx + 1; s.my = s.monster.my;
+    Game.canSee = () => true;
+    for (let i = 0; i < 6 && !Game.tbfight; i++) Game.monsterTurn();
+    ok('observed: tactical lecture present', Game.log.some(l => /STACKS while you stand in it/i.test(l)));
+    ok('observed: teaches shout', Game.log.some(l => /SHOUT/i.test(l)));
+    ok('observed: teaches killing', Game.log.some(l => /Kill one and the choir stutters/i.test(l)));
   }
 
   // --- 2. round-gated stacks + survivable opening ---

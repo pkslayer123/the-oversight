@@ -11501,19 +11501,31 @@
           if (mo.kind !== 'monster') continue;
           if (this.lockpickIs(mo)) {
             mo.beamPhase = 'case'; mo.stolen = null; mo.lockpickHit = false; mo.cased = false;
-            this.say('It sits up on its hind legs — hands moving too fast to follow. It\'s not looking at you. It\'s looking at your pack. (It steals FIRST. Guard your things — or buy it off with food.)');
+            // First contact: dread, not a lecture (Steve 2026-10-05). The
+            // steal-first warning only lands once you've seen it happen.
+            this.say('It sits up on its hind legs — hands moving too fast to follow. It\'s not looking at you. It\'s looking at your pack.');
+            const lstage = (this.ensureMonsterEntry('lockpick_raccoon') || {}).stage;
+            if (lstage === 'observed' || lstage === 'slain') {
+              this.say('(It steals FIRST. Guard your things — or buy it off with food.)');
+            }
             this.audioEvent('lockpickChitter');
           } else if (this.catfishIs(mo)) {
             mo.beamPhase = 'lure'; mo.catfishDark = 0; mo.lureSaid = false;
             this.say('A soft green glow pulses in the dark water. Pretty. That\'s the problem — it\'s pretty.');
             this.audioEvent('catfishLure');
           } else if (this.humiceIs(mo) && !f0.humNoticed) {
-            // HUMMICE (Steve 2026-10-04): the fight must TEACH the deal up
-            // front — networked mice, one hum, three answers. No codex needed
-            // to understand the shape of the threat.
+            // HUMMICE (Steve 2026-10-05): first contact is dread, not a
+            // lecture. The tactical read only appears once the pattern is
+            // earned (codex observed/slain). First-timers learn by doing —
+            // the fight's feedback lines teach through sensation.
             f0.humNoticed = true;
             this.say('The grass is humming. In harmony. That\'s not grass — that\'s fifty throats, one note, and it\'s getting louder.');
-            this.say('The hum STACKS while you stand in it. Kill one and the choir stutters. Keep moving and it can\'t settle. Or SHOUT (📢) — noise breaks the music.');
+            const hstage = (this.ensureMonsterEntry('hummice') || {}).stage;
+            if (hstage === 'observed' || hstage === 'slain') {
+              this.say('You know this hum now. It STACKS while you stand in it. Kill one and the choir stutters. Keep moving and it can\'t settle. Or SHOUT (📢) — noise breaks the music.');
+            } else {
+              this.say('Your teeth ache with it. You don\'t know what it wants.');
+            }
             this.audioEvent('humNotice');
           }
         }
@@ -12036,6 +12048,17 @@
 
     // The telegraph cue: behavioral text ALWAYS. Learned understanding only if earned.
     // Escalates as the windup counts down — you can FEEL it coming.
+    // SWARM DEDUP (Steve 2026-10-05): pack monsters declaring the same attack
+    // in the same round say the cue ONCE — four mice, one warning, not four.
+    sayTelegraphOnce(m, text) {
+      const f = this.tbfight;
+      if (!f) { this.say(text); return; }
+      f.cueSaid = f.cueSaid || {};
+      const key = (f.round || 0) + ':' + (((m || {}).mdef || {}).id || (m || {}).key || '?') + ':' + ((((m || {}).telegraph || {}).attackName) || '');
+      if (f.cueSaid[key]) return;
+      f.cueSaid[key] = true;
+      this.say(text);
+    },
     tbTelegraphCue(m) {
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
@@ -12079,7 +12102,7 @@
         return cue + knownTail();
       }
       let cue = atk.telegraph || 'It shifts. Something is coming.';
-      if (tg && tg.turnsLeft === 1) cue += " It's about to loose!";
+      if (tg && tg.turnsLeft === 1) cue += " It's about to break loose!";
       else if (tg && tg.turnsLeft > 1) cue += ' It is still gathering itself…';
       return cue + knownTail();
     },
@@ -13416,7 +13439,7 @@
       m.telegraph = { kind: 'direct', targetKey: target.key, dmg: atk.damage,
         attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
         cueText: cueText || null };
-      this.say('⚠ ' + this.tbTelegraphCue(m));
+      this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
       this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct' });
       this.tbRefreshTelegraphUI();
     },
@@ -13448,7 +13471,7 @@
           if (me.stage === 'encountered') me.stage = 'observed';
         }
       } catch (e) {}
-      this.say('⚠ ' + this.tbTelegraphCue(m));
+      this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
       this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'beam', beam: true });
       this.tbRefreshTelegraphUI();
     },
@@ -13791,7 +13814,7 @@
         if (this.biIs(m) && m.beamPhase === 'brighten' && tg.kind === 'squares') {
           this.say(tg.turnsLeft > 1
             ? 'The glow intensifies — the air tastes like copper. Brighter.'
-            : 'BRIGHTER. The light is wrong now, too bright to look at. It\'s about to loose.');
+            : 'BRIGHTER. The light is wrong now, too bright to look at. It\'s about to break loose.');
           this.audioEvent('eurekaTick', { urgency: tg.turnsLeft });
         }
         // MEMORY PROJECTOR: the spell pulls while the beam gathers. A still
@@ -13959,7 +13982,12 @@
               f.humRiseRound = f.round;
               f.humStacks = Math.min(4, (f.humStacks || 0) + 1);
               const humWords = ['', 'a low thrum', 'your teeth aching', 'your bones buzzing', 'a solid wall of sound'];
-              this.say(`The hum stacks — ${humWords[f.humStacks]}. (hum ×${f.humStacks})`);
+              // INFO DISCIPLINE (Steve 2026-10-05): sensation always, numbers
+              // only when earned. First-timers feel it getting worse; veterans
+              // get the count.
+              const hst = (this.ensureMonsterEntry('hummice') || {}).stage;
+              const hknown = hst === 'observed' || hst === 'slain';
+              this.say(`The hum stacks — ${humWords[f.humStacks]}.${hknown ? ` (hum ×${f.humStacks})` : ''}`);
             }
             humMult = 1 + 0.25 * (f.humStacks || 0);
             this.audioEvent('humRise', { stacks: f.humStacks || 0 });
@@ -14610,7 +14638,7 @@
         if (d <= (pat.range || 3)) {
           m.telegraph = { kind: 'direct', targetKey: foe.f.key, dmg: atk.damage,
             attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1 };
-          this.say('⚠ ' + this.tbTelegraphCue(m));
+          this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
           this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct', highbeam: (m.mdef || {}).id === 'gallowdeer' });
         } else {
           this.say(`The ${this.encTheName(m)} stalks closer. ${atk.telegraph || ''}`);
@@ -14666,7 +14694,7 @@
             if (me.stage === 'encountered') me.stage = 'observed';
           }
         } catch (e) {}
-        this.say('⚠ ' + this.tbTelegraphCue(m));
+        this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
         this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: (m.mdef || {}).id === 'gallowdeer' });
         // Declare phase: per-monster (batch 2's encDeclarePhase) where defined,
         // else the config phaseMap (batch 1's encPhaseFor). The deer gets 'aim' either way.
