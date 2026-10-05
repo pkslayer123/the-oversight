@@ -11027,14 +11027,14 @@
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
       let medAte = 0, medName = null; // medicinal plant units eaten (herb skill hook)
       // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
+      // preservation_instinct: you store food right. +days before it turns.
+      const spoilBonus = Math.round(this.modTarget('food.spoilage_days', 0));
+      const isSpoiled = (i) => this.isSpoiled ? this.isSpoiled(i, spoilBonus) : (i.spoilDay !== undefined && i.spoilDay <= scholar.day);
       while (scholar.kcal < cap) {
         // find the most perishable FOOD (not gear)
         // FOOD REALITY: unknown / unprocessed food isn't food yet — skip it.
-        // SPOILAGE: rot isn't food either — the dawn sweep clears it; mid-day
-        // it's skipped, never eaten.
-        const day = scholar.day;
-        const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false
-          && !(i.spoilDay !== undefined && i.spoilDay <= day));
+        // SPOILAGE: rot isn't food either — skipped here, discarded below.
+        const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false && !isSpoiled(i));
         if (foodIdx === -1) break; // no food left
         const it = scholar.inventory[foodIdx];
         const kcal = it.kcalEach;
@@ -11114,14 +11114,12 @@
         }
       }
       // spoilage: drop expired FOOD. Gear (no spoilDay) never spoils.
-      // preservation_instinct: you store food right. +days before it turns.
-      const spoilBonus = Math.round(this.modTarget('food.spoilage_days', 0));
       const before = scholar.inventory.length;
       // FOOD REALITY: name what spoiled — waste should be visible, not a count.
       const spoiledNames = scholar.inventory
-        .filter(i => i.spoilDay !== undefined && i.spoilDay !== null && (i.spoilDay + spoilBonus) <= scholar.day)
+        .filter(i => isSpoiled(i))
         .map(i => i.name);
-      scholar.inventory = scholar.inventory.filter(i => i.spoilDay === undefined || i.spoilDay === null || (i.spoilDay + spoilBonus) > scholar.day);
+      scholar.inventory = scholar.inventory.filter(i => !isSpoiled(i));
       const spoiled = before - scholar.inventory.length;
       const spoilNote = spoiled ? ` Spoiled and discarded: ${[...new Set(spoiledNames)].join(', ')}. The Codex notes the waste.` : '';
       // FOOD REALITY: distinguish "full" from "nothing edible" (unknown/
@@ -11161,6 +11159,13 @@
       }
       if (it.edible === false) {
         this.say(`${it.name} isn't food yet — ${it.foodState === 'unknown' ? 'identify it first' : it.prep || 'process it'}.`);
+        return;
+      }
+      // SPOILAGE: rot isn't food. The dawn sweep clears it; mid-day it's
+      // refused, honestly — never eaten for full kcal.
+      const spoilBonus = Math.round(this.modTarget('food.spoilage_days', 0));
+      if (this.isSpoiled && this.isSpoiled(it, spoilBonus)) {
+        this.say(`The ${it.name} went bad — beyond eating. You leave it for the flies.`);
         return;
       }
       const cap = this.kcalCap();

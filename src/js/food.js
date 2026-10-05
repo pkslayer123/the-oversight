@@ -341,6 +341,25 @@
     // CLEAN: gutting. Needs a knife + knowing how. Blind attempts are messy but teach.
     cleanCarcass(idx, container) {
       const inv = container || this.state.scholar.inventory;
+      const day = this.state.scholar.day;
+      const rotten = (it) => !!it && it.spoilDay !== undefined && it.spoilDay <= day;
+      // SPOILAGE (hunter loop, Steve 2026-10-05): rot is past saving. A
+      // neglected kill is lost — honestly and visibly — never cleaned back
+      // into food. Silent rot that could be scrubbed into dinner made the
+      // whole spoilage clock a lie.
+      const dropRotten = (i) => {
+        this.say(`The ${inv[i].name} went bad — maggots, smell, the whole sad story. Beyond cleaning. You leave it for the flies.`);
+        inv.splice(i, 1);
+      };
+      if (idx !== undefined) {
+        const it = inv[idx];
+        if (!it || it.foodState !== 'carcass') { this.say('No carcasses to clean.'); return null; }
+        if (rotten(it)) { dropRotten(idx); return null; }
+      } else {
+        for (let i = inv.length - 1; i >= 0; i--) {
+          if (inv[i] && inv[i].foodState === 'carcass' && rotten(inv[i])) dropRotten(i);
+        }
+      }
       const targets = (idx === undefined ? inv.map((it, i) => i) : [idx])
         .filter(i => inv[i] && inv[i].foodState === 'carcass');
       if (!targets.length) { this.say('No carcasses to clean.'); return null; }
@@ -379,6 +398,23 @@
     preserveFood(idx, container) {
       if (!this.nearFire()) { this.say('Need a fire to smoke meat.'); return null; }
       const inv = container || this.state.scholar.inventory;
+      const day = this.state.scholar.day;
+      // SPOILAGE: rot can't be smoked back into food. Discard honestly.
+      const dropRotten = (i) => {
+        this.say(`The ${inv[i].name} went bad — smoking won't save it. You leave it for the flies.`);
+        inv.splice(i, 1);
+      };
+      if (idx !== undefined) {
+        const it = inv[idx];
+        if (it && it.foodKind === 'meat' && (it.foodState === 'cleaned' || it.foodState === 'cooked')
+            && it.spoilDay !== undefined && it.spoilDay <= day) { dropRotten(idx); return null; }
+      } else {
+        for (let i = inv.length - 1; i >= 0; i--) {
+          const it = inv[i];
+          if (it && it.foodKind === 'meat' && (it.foodState === 'cleaned' || it.foodState === 'cooked')
+              && it.spoilDay !== undefined && it.spoilDay <= day) dropRotten(i);
+        }
+      }
       const targets = (idx === undefined ? inv.map((it, i) => i) : [idx])
         .filter(i => inv[i] && inv[i].foodKind === 'meat' && (inv[i].foodState === 'cleaned' || inv[i].foodState === 'cooked'));
       if (!targets.length) { this.say('Nothing to preserve (cleaned or cooked meat).'); return null; }
@@ -413,6 +449,7 @@
       if (it.foodState === 'unknown') return '? unknown \u2014 not food yet';
       if (it.foodState === 'in_shell') return 'needs shelling';
       if (it.foodState === 'carcass') {
+        if (it.spoilDay !== undefined && it.spoilDay <= this.state.scholar.day) return 'spoiled — beyond cleaning';
         const t = this.knowsTechnique('clean');
         return t ? (this.hasCuttingTool() ? 'needs cleaning' : 'needs cleaning (no knife)') : 'needs cleaning (you don\'t know how)';
       }
@@ -494,6 +531,12 @@
       const day = this.state.scholar.day;
       if (task === 'butcher') {
         if (it.foodState !== 'carcass') { this.say('That\'s already cleaned.'); return null; }
+        // SPOILAGE: the specialist won't touch rot either. Honest, visible loss.
+        if (it.spoilDay !== undefined && it.spoilDay <= day) {
+          this.say(`The ${it.name} went bad — ${spec.name} (${spec.occupation}) won't touch it. Beyond cleaning. You leave it for the flies.`);
+          inv.splice(idx, 1);
+          return null;
+        }
         const gross = it.hiddenKcal || 0;
         const yfrac = 0.40 + 0.04 * spec.skill; // 44/48/52% — better hands, more meat
         const per = Math.round(gross * yfrac / 4);
@@ -1265,6 +1308,37 @@
       return `spoils in ${left}d`;
     },
 
+    // isSpoiled: spoilDay <= today means spoiled. Matches the UI's ⚠ spoiled
+    // marker and the giftable-count exclusion — one boundary everywhere.
+    // Optional bonus: preservation_instinct grants +days before it turns.
+    isSpoiled(it, bonus) {
+      return !!it && it.spoilDay !== undefined && it.spoilDay !== null
+        && (it.spoilDay + (bonus || 0)) <= this.state.scholar.day;
+    },
+
+    // sweepSpoiled: overnight, rotten food leaves your pack (and the prep
+    // counter). Announced, never silent — the hunter sees the cost of neglect.
+    // Relics and keepsakes don't rot. The village pantry is the village's
+    // business, not yours.
+    sweepSpoiled() {
+      const lost = [];
+      const conts = [this.state.scholar.inventory];
+      try { const ps = this.prepStash(); if (ps && ps !== this.state.scholar.inventory) conts.push(ps); } catch (e) {}
+      for (const cont of conts) {
+        if (!cont) continue;
+        for (let i = cont.length - 1; i >= 0; i--) {
+          const it = cont[i];
+          if (!it || it.bonded) continue;
+          if (this.isKeepsake && this.isKeepsake(it)) continue;
+          if (this.isSpoiled(it)) { lost.push(it.name || 'something'); cont.splice(i, 1); }
+        }
+      }
+      if (lost.length) {
+        this.say(`Overnight, ${lost.join('; ')} went bad — beyond saving. You leave ${lost.length === 1 ? 'it' : 'them'} for the flies.`);
+      }
+      return lost.length;
+    },
+
     // putAwayFinished: batch — finished food goes to the pantry.
     putAwayFinished() {
       const stash = this.prepStash();
@@ -1287,7 +1361,10 @@
     eatStashOne(idx) {
       const stash = this.prepStash();
       const it = stash[idx];
-      if (!it || (it.kcalEach || 0) <= 0 || it.edible === false) { this.say('Nothing edible there.'); return null; }
+      const day = this.state.scholar.day;
+      // SPOILAGE: the counter's rot isn't food. The dawn sweep clears it; mid-day it's refused.
+      if (!it || (it.kcalEach || 0) <= 0 || it.edible === false
+          || (it.spoilDay !== undefined && it.spoilDay <= day)) { this.say('Nothing edible there.'); return null; }
       const s = this.state.scholar;
       if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
         s.health = Math.max(0, (s.health || 100) - it.diseaseRisk.dmg);
