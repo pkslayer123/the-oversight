@@ -1223,7 +1223,8 @@
    "telegraph": "It sits perfectly still, glowing brighter and brighter. A beautiful idea, taking shape. You can feel the brilliance building. That's when you realize: ideas this bright are never safe to stand next to.",
    "pattern": {
     "type": "burst",
-    "radius": 2
+    "radius": 2,
+    "windup": 2
    }
   },
   "behavior": "ambush",
@@ -1266,7 +1267,31 @@
    "observed": "Detonation predator. Like the Speedbump it sits perfectly still \u2014 but where the Speedbump snaps, this DETONATES. Burst radius 2, the hardest-hitting burst in either wave. The tell is the brightening: 2 beats from glow to boom. It fears daylight \u2014 it only sets its ambush at night.",
    "slain": "Inspiration. Moves: Eureka (burst radius 2, 22-34 damage \u2014 the biggest burst so far, telegraphed by brightening). It never moves once placed. The counterplay is simple: see the glow, don't approach, wait for dawn. It seemed like a good idea at the time. Parts: filament (excellent fire-starter), glass, and the lingering feeling you almost did something stupid."
   },
-  "systemDesignation": "Illumination event (contained)"
+  "systemDesignation": "Illumination event (contained)",
+  "encounter": {
+   "fifo": true,
+   "noticeRange": 6,
+   "phases": [
+    "settle",
+    "brighten",
+    "bloom",
+    "ember"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "idea",
+   "noticeText": "The light swivels toward {who}. It likes being looked at.",
+   "adjText": "Too close. The glow flares around {who} — it's been noticed.",
+   "painText": "It flickers — and the light fixes on {who}, hardening. Pain gets noticed.",
+   "phaseBadges": {
+    "settle": " 💡 SETTLED",
+    "brighten": " 💡 BRIGHTENING",
+    "bloom": " 💡 EUREKA",
+    "ember": " 💡 EMBER"
+   },
+   "comment": "Encounter framework client. THE BRIGHTENING: settle (drifts until a foe is within 4, then SETS — never moves once set) → brighten (2 beats, escalating, holds position) → bloom (burst radius 2, 22-34) → ember (2 turns spent, harmless). Daylight disperses it."
+  }
  },
  {
   "id": "memory_projector",

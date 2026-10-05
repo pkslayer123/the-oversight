@@ -12397,6 +12397,79 @@
         return;
       }
 
+      // ---- BRIGHT IDEA ("Inspiration"): THE BRIGHTENING ----
+      // settle → brighten → bloom → ember. It never moves once set: it drifts
+      // until someone is close, then SETS and brightens over 2 beats (the
+      // escalation hook narrates them). Back off when it brightens — the
+      // burst is radius 2 and the hardest-hitting in either wave. After the
+      // bloom it's a dying ember for 2 turns: harmless. Daylight disperses it.
+      if (this.biIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') this.encSetPhase(m, 'settle');
+        // post-detonation: the bloom resolved → ember
+        if (m.beamPhase === 'brighten' && !m.telegraph && m.biDeclared) {
+          m.biDeclared = false;
+          this.encSetPhase(m, 'ember'); m.biEmber = 2;
+          this.say('The light gutters down to a dying ember. It\'s spent — dim, flickering, harmless. For now.');
+          this.audioEvent('eurekaSpent');
+        }
+        const biPhase = m.beamPhase;
+        if (biPhase === 'ember') {
+          m.biEmber = (m.biEmber || 2) - 1;
+          if (m.biEmber <= 0) {
+            this.encSetPhase(m, 'settle');
+            this.say('The ember steadies. Somewhere inside the glass, an idea is forming again.');
+          } else this.say('The ember flickers, dim. It can\'t brighten yet.');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (biPhase === 'brighten') {
+          // windup runs in the generic pending section (escalation hook
+          // above). It holds position — never moves once set.
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // settle
+        let night = true;
+        try { night = this.isNight ? this.isNight() : true; } catch (e) {}
+        if (!night) {
+          m.fled = true;
+          this.say('Dawn touches it and the light gutters, thins, goes out. It was never meant for daytime.');
+          this.audioEvent('eurekaDisperse');
+          this.tbEndCheck(); return;
+        }
+        if (foe.d <= 4 && !m.telegraph) {
+          // SET: it stops moving — permanently — and starts to brighten.
+          this.encSetPhase(m, 'brighten'); m.biDeclared = true;
+          const cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
+          const p0 = this.tbFighter('p');
+          m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
+            attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 2,
+            threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
+            aim: null, dir: null, aimKey: null, angle: null, firing: 0, cueText: null };
+          try {
+            const me = this.ensureMonsterEntry(m.mdef.id);
+            if (atk.name && !me.attacksSeen.includes(atk.name)) {
+              me.attacksSeen.push(atk.name);
+              if (me.stage === 'encountered') me.stage = 'observed';
+            }
+          } catch (e) {}
+          const known = this.encTelegraphKnown(m);
+          this.say(known
+            ? '⚠ It\'s brightening. Two beats from glow to boom — BACK OFF. Radius 2.'
+            : '⚠ ' + (atk.telegraph || 'It brightens.'));
+          this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'burst' });
+          this.audioEvent('eurekaCharge');
+        } else if (!m.telegraph) {
+          // not set yet: drift toward the nearest warmth, slow
+          if (foe.d > 4) {
+            const stp = S.combat.stepToward(m.mx, m.my, foe.f.mx, foe.f.my, blocked, danger);
+            if (stp) { m.mx = stp.x; m.my = stp.y; }
+          }
+          this.say('A light in the dark, drifting closer. Beautiful. It wasn\'t there yesterday.');
+          this.audioEvent('eurekaDrift');
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
       if (pat.type === 'ambush') {
         // speedbump: doesn't move. If someone's adjacent, SNAP — no warning.
         if (foe.d <= 1) {
