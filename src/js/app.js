@@ -980,9 +980,13 @@
           desc += ' A bunk. Rest here.';
           actions.push(['😴 Rest (a while)', () => { Game.doAction('rest'); refresh(); }]);
         }
-        // EXAMINE on passable ground: tracks, old camps, strange growths.
-        // The ground has stories. You have to stop and look.
-        if (['dirt','grass','bush','plant','rubble'].includes(cell)) {
+        // EXAMINE on passable ground: tracks, old camps, strange growths —
+        // the ground has stories. Haven interiors have them too (home has
+        // texture: mugs, blanket folds, the threshold's worn step), and
+        // pre-Burn rooms read as old-world memory.
+        if (['dirt','grass','bush','plant','rubble','hall','bunk','lodge',
+             'gym','class','office','bay','dock','sanct','base',
+             'apt','cube','break','conf','lobby'].includes(cell)) {
           actions.push(['🔍 Examine closely', () => { Game.examineCell(cx, cy); refresh(); }]);
         }
       }
@@ -3007,6 +3011,40 @@
   function wireDpad() {
     const pad = document.getElementById('dpad');
     if (pad) {
+      // DRAG TO MOVE (Steve 2026-10-04): the pad covered a quarter of the
+      // screen and couldn't move. Drag the pad background (not the buttons)
+      // to reposition it; the spot persists across renders via localStorage.
+      try {
+        const saved = JSON.parse(localStorage.getItem('oversight-dpad-pos') || 'null');
+        if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
+          pad.style.left = saved.left + 'px'; pad.style.top = saved.top + 'px';
+          pad.style.right = 'auto'; pad.style.bottom = 'auto';
+        }
+      } catch (_) {}
+      pad.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.dpbtn, .dpmin')) return; // buttons still walk
+        e.preventDefault();
+        const wrap = pad.parentElement;
+        const wr = wrap.getBoundingClientRect(), pr = pad.getBoundingClientRect();
+        const ox = pr.left - wr.left, oy = pr.top - wr.top;
+        pad.style.left = ox + 'px'; pad.style.top = oy + 'px';
+        pad.style.right = 'auto'; pad.style.bottom = 'auto';
+        const sx = e.clientX, sy = e.clientY;
+        const move = (ev) => {
+          const nx = Math.max(0, Math.min(ox + (ev.clientX - sx), wr.width - pr.width));
+          const ny = Math.max(0, Math.min(oy + (ev.clientY - sy), wr.height - pr.height));
+          pad.style.left = nx + 'px'; pad.style.top = ny + 'px';
+        };
+        const up = () => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+          window.removeEventListener('pointercancel', up);
+          try { localStorage.setItem('oversight-dpad-pos', JSON.stringify({ left: parseFloat(pad.style.left) || 0, top: parseFloat(pad.style.top) || 0 })); } catch (_) {}
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+        window.addEventListener('pointercancel', up);
+      });
       pad.querySelectorAll('.dpbtn[data-dx]').forEach((b) => {
         b.addEventListener('pointerdown', (e) => {
           e.preventDefault();
