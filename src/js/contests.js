@@ -91,43 +91,90 @@
   };
 
   // === CONTEST POOL ===
-  // Data-driven templates. Categories: Blood, Endurance, Moot, Weird.
+  // Data-driven templates. Categories: Blood, Endurance, Moot, Weird,
+  // Puzzle, Detective, Forage, Chance. (Steve 2026-10-05: expand variety)
   G.contestPool = function() {
     return [
       // BLOOD (combat) — the feared ones
       { id: 'pit', name: 'The Pit', cat: 'blood', risk: 'high',
         desc: 'Thrown into an arena with a wave-appropriate beast. Kill or be killed. The audience votes on weapons.',
-        participants: 1 },
+        participants: 1,
+        arena: '🕳️\n🪨🪨🪨🪨🪨\n🪨⬛⬛⬛🪨\n🪨⬛🦴⬛🪨\n🪨⬛⬛⬛🪨\n🪨🪨🪨🪨🪨\n👥👥👥👥👥' },
       { id: 'gauntlet', name: 'Gauntlet', cat: 'blood', risk: 'extreme',
         desc: 'Three waves, no rest. Survive all three and the crowd goes wild. Most don\'t see wave two.',
-        participants: 1 },
+        participants: 1,
+        arena: '⚔️\n🔥🔥🔥🔥🔥\n🔥⬛⬛⬛🔥\n🔥⬛⚔️⬛🔥\n🔥⬛⬛⬛🔥\n🔥🔥🔥🔥🔥' },
       { id: 'duel', name: 'Duel', cat: 'blood', risk: 'high',
         desc: 'You vs another contestant. Not to the death — to the yield. But accidents happen.',
-        participants: 2 },
+        participants: 2,
+        arena: '🤺\n➖➖➖➖➖\n⬜⬜⚔️⬜⬜\n➖➖➖➖➖\n👥👥👥👥👥' },
       // ENDURANCE (survival)
       { id: 'drop', name: 'The Drop', cat: 'endurance', risk: 'high',
         desc: 'Dropped somewhere with nothing. First back to the beacon eats. The others... walk.',
-        participants: 3 },
+        participants: 3,
+        arena: '🏔️\n⛰️⛰️⛰️⛰️⛰️\n⛰️❄️❄️❄️⛰️\n⛰️❄️🚩❄️⛰️\n⛰️❄️❄️❄️⛰️\n⛰️⛰️⛰️⛰️⛰️' },
       { id: 'starve', name: 'Hollow Belly', cat: 'endurance', risk: 'medium',
         desc: 'No food for three days. The System watches who breaks first. Water provided. Dignity not.',
-        participants: 4 },
+        participants: 4,
+        arena: '🍽️\n⬛⬛⬛⬛⬛\n⬛🍽️⬛🍽️⬛\n⬛⬛⬛⬛⬛\n⬛🍽️⬛🍽️⬛\n⬛⬛⬛⬛⬛' },
       // MOOT (social)
       { id: 'moot', name: 'The Moot', cat: 'moot', risk: 'medium',
         desc: 'Televised trial. Defend yourself against accusations (true or not). The audience is the jury.',
-        participants: 1 },
+        participants: 1,
+        arena: '⚖️\n👥👥👥👥👥\n⬜⬜🎤⬜⬜\n⬜⬜⬜⬜⬜\n👥👥👥👥👥' },
       { id: 'lies', name: 'Lie Detector', cat: 'moot', risk: 'low',
         desc: 'Answer questions. The System knows when you lie. The audience loves when you do.',
-        participants: 2 },
+        participants: 2,
+        arena: '🤥\n🔍🔍🔍🔍🔍\n⬜⬜🪑⬜⬜\n⬜⬜⬜⬜⬜\n📺📺📺📺📺' },
       // WEIRD (unhinged)
       { id: 'cookfight', name: 'Cooking With Teeth', cat: 'weird', risk: 'medium',
         desc: 'Cook a meal. The ingredients fight back. Presentation matters. Survival matters more.',
-        participants: 2 },
+        participants: 2,
+        arena: '🍳\n🔪🔪🔪🔪🔪\n🍳🦷🦷🦷🍳\n🔪🔪🔪🔪🔪\n👨‍🍳👨‍🍳👨‍🍳' },
       { id: 'fetch', name: 'Bring Us Something Interesting', cat: 'weird', risk: 'low',
         desc: 'One mile radius. One hour. Most interesting thing wins. Judged by beings who have never touched grass.',
-        participants: 3 },
+        participants: 3,
+        arena: '🔍\n🌿🌿🌿🌿🌿\n🌿❓🌿❓🌿\n🌿🌿🌿🌿🌿\n🌿❓🌿❓🌿' },
       { id: 'hide', name: 'Hide and Seek', cat: 'weird', risk: 'extreme',
         desc: 'Hide. The seeker is a wave-2 predator. It\'s very good at seeking.',
-        participants: 3 },
+        participants: 3,
+        arena: '👁️\n🌲🌲🌲🌲🌲\n🌲👤🌲👤🌲\n🌲🌲🌲🌲🌲\n🌲👤🌲🐺🌲' },
+      // PUZZLE (Steve 2026-10-05)
+      { id: 'box', name: 'The Box', cat: 'puzzle', risk: 'medium',
+        desc: 'An alien puzzle box. Solve it or be stuck inside the arena until you do. The audience has the manual.',
+        participants: 1,
+        arena: '📦\n⬛⬛⬛⬛⬛\n⬛🧩🧩🧩⬛\n⬛🧩📦🧩⬛\n⬛🧩🧩🧩⬛\n⬛⬛⬛⬛⬛' },
+      { id: 'pattern', name: 'Pattern Hunger', cat: 'puzzle', risk: 'low',
+        desc: 'A sequence of foods. Eat them in the right order. The wrong order... disagrees with you.',
+        participants: 2,
+        arena: '🧩\n🍎🍌🍇🍊🍎\n❓❓❓❓❓\n🍽️🍽️🍽️🍽️🍽️' },
+      // DETECTIVE (Steve 2026-10-05)
+      { id: 'whoate', name: 'Who Ate It?', cat: 'detective', risk: 'low',
+        desc: 'Someone stole the prize. Interrogate the suspects. The thief is among you.',
+        participants: 3,
+        arena: '🔍\n👤👤👤👤👤\n❓❓❓❓❓\n🍖🍖🍖🍖🍖' },
+      { id: 'informant', name: 'The Informant', cat: 'detective', risk: 'medium',
+        desc: 'One of you is lying about everything. Find them before they find the exit.',
+        participants: 4,
+        arena: '🕵️\n👤🤥👤🤥👤\n🔍🔍🔍🔍🔍\n🚪🚪🚪🚪🚪' },
+      // FORAGE (Steve 2026-10-05)
+      { id: 'calorie_run', name: 'Calorie Run', cat: 'forage', risk: 'medium',
+        desc: 'One hour. Whoever collects the most calorie-dense materials wins. The forest is... competitive.',
+        participants: 3,
+        arena: '🌿\n🌳🍎🌳🍇🌳\n🌳🌿🌳🌿🌳\n🌳🍒🌳🌰🌳\n🌳🌿🌳🌿🌳' },
+      { id: 'pantry_raid', name: 'Pantry Raid', cat: 'forage', risk: 'high',
+        desc: 'Gather from a dangerous location. The locals object. Bring back food or don\'t come back.',
+        participants: 2,
+        arena: '🏚️\n⚠️⚠️⚠️⚠️⚠️\n🏚️🍖🏚️🍖🏚️\n⚠️⚠️⚠️⚠️⚠️\n🐺🐺🐺🐺🐺' },
+      // CHANCE (Steve 2026-10-05)
+      { id: 'wheel', name: 'Wheel of Teeth', cat: 'chance', risk: 'medium',
+        desc: 'Spin the wheel. The teeth decide. The audience holds its breath.',
+        participants: 1,
+        arena: '🎡\n🦷🦷🦷🦷🦷\n🎡⬛⬛⬛🎡\n🦷🦷🦷🦷🦷' },
+      { id: 'lottery', name: 'The Lottery', cat: 'chance', risk: 'low',
+        desc: 'Pure luck. Draw a token. The audience loves an underdog.',
+        participants: 5,
+        arena: '🎰\n🎫🎫🎫🎫🎫\n🎰⬛⬛⬛🎰\n🎫🎫🎫🎫🎫' },
     ];
   };
 
@@ -138,7 +185,39 @@
     let candidates = pool;
     if (wave < 2) candidates = pool.filter(c => c.risk !== 'extreme');
     if (wave < 3) candidates = candidates.filter(c => c.id !== 'gauntlet');
-    return candidates[Math.floor(Math.random() * candidates.length)];
+    
+    // RNG: pick random (Steve 2026-10-05: mostly random which one you get)
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    
+    // VARIANT (Steve 2026-10-05): like monsters, contests get variants.
+    // If you've seen this contest before, 30% chance it's HARDENED:
+    // higher risk, better prizes, twist on the rules.
+    const seen = (this.state.contestsSeen || {})[pick.id] || 0;
+    let variant = null;
+    if (seen > 0 && Math.random() < 0.3) {
+      variant = 'hardened';
+    }
+    // Track that we've seen it
+    this.state.contestsSeen = this.state.contestsSeen || {};
+    this.state.contestsSeen[pick.id] = seen + 1;
+    
+    // Wave scaling: higher waves = harder contests
+    // (Risk increases, but so do prizes)
+    const scaled = Object.assign({}, pick);
+    if (wave >= 3 && scaled.risk === 'medium') scaled.risk = 'high';
+    if (wave >= 4 && scaled.risk === 'high') scaled.risk = 'extreme';
+    
+    if (variant === 'hardened') {
+      scaled.name = 'Hardened ' + scaled.name;
+      scaled.desc += ' The rules have changed. The audience demanded it.';
+      // Bump risk one level
+      const risks = ['low', 'medium', 'high', 'extreme'];
+      const idx = risks.indexOf(scaled.risk);
+      if (idx < 3) scaled.risk = risks[idx + 1];
+      scaled.variant = 'hardened';
+    }
+    
+    return scaled;
   };
 
   // === TV SHOWS ===
@@ -180,6 +259,12 @@
     }
     
     this.sysSay(`📺 CONTEST: ${contest.name}. ${contest.desc}`);
+    if (contest.arena) {
+      this.sysSay(`📺 Arena:\n${contest.arena}`);
+    }
+    if (contest.variant === 'hardened') {
+      this.sysSay(`📺 ⚠️ HARDENED VARIANT — you've seen this before. It's worse now.`);
+    }
     this.sysSay(`📺 ${pick.name} has been chosen. The village holds its breath.`);
     
     // Countdown: 1 day (simplified)
@@ -187,6 +272,7 @@
       contestId: contest.id,
       participant: pick.id,
       firesDay: (this.state.scholar.day || 1) + 1,
+      variant: contest.variant || null,
     };
   };
 

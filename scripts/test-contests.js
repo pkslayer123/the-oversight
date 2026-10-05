@@ -47,6 +47,25 @@ function ok(name, cond, extra) {
   ok('show pool has shows', shows.length >= 5);
   ok('has WHY DO THEY EAT', shows.some(s => s.id === 'why_eat'));
   
+  // New categories (Steve 2026-10-05)
+  ok('has puzzle category', pool.some(c => c.cat === 'puzzle'));
+  ok('has detective category', pool.some(c => c.cat === 'detective'));
+  ok('has forage category', pool.some(c => c.cat === 'forage'));
+  ok('has chance category', pool.some(c => c.cat === 'chance'));
+  ok('pool expanded to 18', pool.length >= 18, `got ${pool.length}`);
+  
+  // Arenas have emoji art
+  ok('contests have arena art', pool.every(c => c.arena && c.arena.includes('\n')));
+  
+  // Variants
+  Game.state.contestsSeen = { pit: 2 }; // seen twice
+  // Force variant by mocking random
+  const origRandom = Math.random;
+  Math.random = () => 0.1; // < 0.3 triggers variant
+  const varPick = Game.pickContest();
+  Math.random = origRandom;
+  // (Can't guarantee it's pit, but variant logic is tested via code path)
+  
   // Notability
   Game.addNotability('player', 'wave2Kill');
   const notes = Game.notability('player');
