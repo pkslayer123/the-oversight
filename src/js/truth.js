@@ -599,6 +599,7 @@
         // correct the journal
         try {
           if (lieField === 'occupation') this.journalLearn(vid, 'occupation', lie.truth, { sure: true, via: 'confessed', quiet: true });
+          if (lieField === 'origin') this.journalLearn(vid, 'backstory', `Admitted: from ${lie.truth} (said ${lie.told}).`, { via: 'confessed', quiet: true });
           if (lieField === 'goal') { const gdef = (this.data.characterGen.goals || []).find(g => g.id === lie.truth); if (gdef) this.journalLearn(vid, 'goal', { id: lie.truth, want: gdef.want }, { quiet: true }); }
         } catch (e) {}
         try { this.bumpTrust(vid, motive === 'pathological' ? -10 : 5); this.remember(vid, 'confession', 'told the truth when confronted'); } catch (e) {}
