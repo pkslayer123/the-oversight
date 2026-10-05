@@ -279,7 +279,36 @@
     "It flutters up, erratic, and the wrong-light goes with it."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter":   {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "stalk",
+    "land",
+    "fold",
+    "flash",
+    "recover"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "moth",
+   "phaseBadges": {
+    "stalk": " \ud83e\udd8b DRIFTING",
+    "land": " \ud83d\udeec LANDED",
+    "fold": " \ud83e\udd8b FOLDING",
+    "flash": " \u2728 FLASH!",
+    "recover": " \ud83d\ude2e\u200d\u0001F4A8 SPENT"
+   },
+   "knownCue": "Wing Flash only fires FORWARD \u2014 it must face you. Circle behind it before the wings open.",
+   "threatLines": {
+    "notice": "The moth's wings tilt toward {who} \u2014 catching light that isn't there. You're interesting now.",
+    "pain": "It flutters \u2014 wing-scales scattering like sparks \u2014 and its light fixes on {who}. Pain gets noticed.",
+    "snap": "Too close. The moth spirals straight at {who} \u2014 curiosity overrules caution."
+   },
+   "comment": "Encounter framework client. Bespoke: erratic drift approach, facing-locked frontal flash (flank it), blinds 1 round, 1-turn recover."
+  }
  },
  {
   "id": "belltoad",
@@ -342,7 +371,34 @@
     "The croaking stops mid-note. It sinks back into the mud."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter":   {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "stalk",
+    "swell",
+    "chorus",
+    "quiet"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "toad",
+   "phaseBadges": {
+    "stalk": " \ud83d\udc38 LURKING",
+    "swell": " \ud83d\udc38 SWELLING",
+    "chorus": " \ud83d\udd0a CHORUS!",
+    "quiet": " \ud83d\ude36\u200d\u0001F32B\ufe0f SPENT"
+   },
+   "knownCue": "The pack croaks as one \u2014 every throat in range joins. Break the chorus: kill one, split them up, or make NOISE.",
+   "threatLines": {
+    "notice": "The toad's throat pulses toward {who}. The chorus has a new verse.",
+    "pain": "It CROAKS \u2014 offended \u2014 and its throat swells toward {who}. Pain gets noticed.",
+    "snap": "Too close. The toad's throat SNAPS wide toward {who} \u2014 proximity overrules patience."
+   },
+   "comment": "Encounter framework client. Bespoke: pack chorus (nearby toads join the croak, then all go throat-spent); scattered by loud noise (SHOUT)."
+  }
  },
  {
   "id": "lockpick_raccoon",
@@ -404,7 +460,34 @@
     "It stuffs something into its cheeks and bolts. Your something, probably."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter":   {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "case",
+    "grab",
+    "bolt",
+    "cornered"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "raccoon",
+   "phaseBadges": {
+    "case": " \ud83d\udc40 CASING",
+    "grab": " \ud83d\udd90\ufe0f GRABBING",
+    "bolt": " \ud83d\udca8 BOLTING",
+    "cornered": " \ud83e\udd9d CORNERED"
+   },
+   "knownCue": "It steals FIRST and fights second. Hit it while it runs and it drops your things \u2014 or buy it off with food.",
+   "threatLines": {
+    "notice": "The raccoon's clever hands pause mid-fiddle \u2014 and its eyes find {who}. New mark.",
+    "pain": "It chitters \u2014 furious \u2014 and too many fingers point at {who}. Pain gets noticed.",
+    "snap": "Too close. The raccoon is on {who} in a blink \u2014 clever hands everywhere."
+   },
+   "comment": "Encounter framework client. Bespoke: steal-first turn loop (case -> grab -> bolt with loot -> cornered if hurt). Distract with food; hitting it while bolting makes it drop the loot."
+  }
  },
  {
   "id": "white_noise_heron",
@@ -530,7 +613,34 @@
     "The hum scatters into squeaks, retreating. The grass goes quiet."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter":   {
+   "fifo": true,
+   "noticeRange": 5,
+   "phases": [
+    "stalk",
+    "hum",
+    "tide",
+    "scatter"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "hum-mouse",
+   "phaseBadges": {
+    "stalk": " \ud83d\udc2d CIRCLING",
+    "hum": " \u3030\ufe0f HUMMING",
+    "tide": " \ud83c\udf0a TIDE!",
+    "scatter": " \ud83d\udca8 SCATTERED"
+   },
+   "knownCue": "The hum STACKS while you stand in it. Break the swarm \u2014 every dead mouse drops the pitch, and stepping out thins it.",
+   "threatLines": {
+    "notice": "The hum shifts pitch toward {who}. The swarm has noticed you.",
+    "pain": "The hum spikes \u2014 angry static \u2014 and the grass leans toward {who}. Pain gets noticed.",
+    "snap": "Too close. The hum converges on {who} \u2014 the swarm overrules everything."
+   },
+   "comment": "Encounter framework client. Bespoke: fight-level hum stacks (damage scales while you stand in it); killing mice drops stacks and scatters the swarm; stepping out decays."
+  }
  },
  {
   "id": "speedbump_turtle",
@@ -655,7 +765,34 @@
     "The glow dims and sinks. The water forgets it was ever there."
    ]
   },
-  "wave": 1
+  "wave": 1,
+  "encounter":   {
+   "fifo": true,
+   "noticeRange": 4,
+   "phases": [
+    "lure",
+    "still",
+    "grasp",
+    "dark"
+   ],
+   "telegraphGate": "pattern",
+   "painSwitch": true,
+   "adjacencyOverride": 1,
+   "shortName": "catfish",
+   "phaseBadges": {
+    "lure": " \ud83d\udca1 LURING",
+    "still": " \ud83e\udeb7 TOO STILL",
+    "grasp": " \ud83d\udc1f GRASP!",
+    "dark": " \ud83c\udf11 DARK"
+   },
+   "knownCue": "The glow is a mouth. It won't chase you \u2014 it waits for you to come close. Strike the light from range. Never wade in.",
+   "threatLines": {
+    "notice": "The glow pulses toward {who}. Pretty. That's the idea.",
+    "pain": "The glow flares white \u2014 and the water goes dead still around {who}. Pain gets noticed.",
+    "snap": "Too close. The water goes dead still around {who} \u2014 and the glow rises to meet you."
+   },
+   "comment": "Encounter framework client. Bespoke: full lure turn (lure -> still -> grasp -> dark); never chases, never warns beyond the stillness; re-lures after each grasp."
+  }
  },
  {
   "id": "voice_mimic_radio",
