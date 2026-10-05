@@ -1949,5 +1949,183 @@
       },
       "telegraph": "The heads turn toward you."
     }
+  },
+  {
+    "id": "glasswing",
+    "activity": "diurnal",
+    "name": "Glasswing Darter",
+    "biomes": [
+      "se_woodlands",
+      "grassland"
+    ],
+    "hp": [
+      18,
+      26
+    ],
+    "attack": {
+      "name": "Skyfall Dive",
+      "damage": [
+        10,
+        16
+      ],
+      "telegraph": "A shadow crosses the ground \u2014 growing fast. Something is falling out of the sky, straight at you.",
+      "pattern": {
+        "type": "single",
+        "range": 3
+      }
+    },
+    "weaknesses": [
+      "move when the shadow comes \u2014 it can't turn mid-dive",
+      "after a miss it lands, vulnerable for a turn"
+    ],
+    "edible": {
+      "calories": 140,
+      "note": "Dragonfly the size of a hawk. Gamey. The wings are like cellophane."
+    },
+    "parts": [
+      "glasswing membrane (light, strong \u2014 good for patching)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "A shadow that wasn't a cloud. Then the air screamed.",
+      "observed": "Glasswing darter. The System gave a dragonfly hawk eyes and no fear of heights. It circles high, picks a target, and falls like a thrown knife. The shadow is the warning \u2014 move.",
+      "slain": "Glasswing Darter. Moves: Skyfall Dive (telegraphed by shadow, dodge by moving, big damage if it connects), Grounded (after a miss, it's vulnerable 1 turn). Kill it when it lands. The membranes make excellent patches."
+    },
+    "systemDesignation": "Anax junius (kinetic enhancement)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "",
+    "speed": 5,
+    "emoji": "\ud83e\udeb0",
+    "unknown": "a shadow moving wrong against the sun",
+    "vibe": "territorial \u2014 the sky is its, and you're under it",
+    "cues": {
+      "curious": [
+        "A high whine, circling. It's looking down at you."
+      ],
+      "warn": [
+        "The shadow detaches from the clouds and starts growing."
+      ],
+      "fearful": []
+    },
+    "wave": 1,
+    "encounter": {
+      "comment": "Daytime diver. Circles high (untargetable), shadow telegraphs dive, dodge by moving, vulnerable when grounded after miss.",
+      "fifo": true,
+      "knownCue": "Watch the shadow, not the bug. Move when it grows.",
+      "noticeRange": 6,
+      "painSwitch": true,
+      "phaseBadges": {
+        "circle": " \ud83c\udf00 CIRCLING",
+        "dive": " \u2b07\ufe0f DIVING!",
+        "grounded": " \ud83e\udeb0 GROUNDED"
+      },
+      "phases": [
+        "circle",
+        "dive",
+        "grounded"
+      ],
+      "shortName": "darter",
+      "telegraphGate": "pattern",
+      "threatLines": {
+        "notice": "A whine from overhead. The glasswing is circling {who}.",
+        "pain": "It shrieks \u2014 wings buzzing angry \u2014 and climbs higher. It's not done.",
+        "snap": "The shadow detaches. It's coming straight down at {who}."
+      }
+    },
+    "loot": {
+      "chance": 0.1,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05).",
+      "tier": 1
+    }
+  },
+  {
+    "id": "sunbasker",
+    "activity": "diurnal",
+    "name": "Sunbasker",
+    "biomes": [
+      "grassland",
+      "se_woodlands"
+    ],
+    "hp": [
+      20,
+      28
+    ],
+    "attack": {
+      "name": "Sun-Charged Bite",
+      "damage": [
+        8,
+        14
+      ],
+      "telegraph": "Its scales go from dull brown to molten gold. Heat shimmers off its back. It's ready.",
+      "pattern": {
+        "type": "single",
+        "range": 1
+      }
+    },
+    "weaknesses": [
+      "attack it while it basks \u2014 it loses the charge",
+      "it won't fight in shade or at dusk"
+    ],
+    "edible": {
+      "calories": 180,
+      "note": "Lizard the size of a dog. Tastes like chicken, if chicken sunbathed."
+    },
+    "parts": [
+      "sunbasker scales (retain heat \u2014 good for cold nights)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "Something gold in the grass. It wasn't there, then it was.",
+      "observed": "Sunbasker. The System took a collared lizard and made it solar-powered. It basks to charge \u2014 each turn in sunlight makes the next bite worse. Break the bask (hit it, shade it) and it's just a lizard.",
+      "slain": "Sunbasker. Moves: Bask (charges in sunlight, +damage per turn), Sun-Charged Bite (damage scales with charge). Interrupt the bask. Fight it in shade. The scales hold heat for hours."
+    },
+    "systemDesignation": "Crotaphytus collaris (photovoltaic dermis)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "darkness",
+    "speed": 3,
+    "emoji": "\ud83e\udd8e",
+    "unknown": "a gold flash in the grass, gone when you look",
+    "vibe": "territorial \u2014 it was here first, and the sun is its",
+    "cues": {
+      "curious": [
+        "A rustle in the grass. Something gold catches the light."
+      ],
+      "warn": [
+        "Its scales are going gold. It's charging."
+      ],
+      "fearful": [
+        "It flattens, dull brown, trying to disappear into the dirt."
+      ]
+    },
+    "wave": 1,
+    "encounter": {
+      "comment": "Solar charger. Basks to build damage, interrupt resets it. Weak in shade/dusk.",
+      "fifo": true,
+      "knownCue": "Don't let it bask. Hit it every turn or drag it to shade.",
+      "noticeRange": 4,
+      "painSwitch": true,
+      "phaseBadges": {
+        "bask": " \u2600\ufe0f BASKING",
+        "charged": " \ud83d\udd25 CHARGED"
+      },
+      "phases": [
+        "bask",
+        "charged"
+      ],
+      "shortName": "basker",
+      "telegraphGate": "pattern",
+      "threatLines": {
+        "notice": "Gold in the grass. The sunbasker is watching {who}.",
+        "pain": "It hisses \u2014 gold flaking to brown \u2014 and scrambles for the sunlight.",
+        "snap": "Fully gold now. It's coming at {who}, molten and furious."
+      }
+    },
+    "loot": {
+      "chance": 0.1,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05).",
+      "tier": 1
+    }
   }
 ]

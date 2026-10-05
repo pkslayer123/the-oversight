@@ -351,6 +351,30 @@
       Game.say('🐞 SCENARIO: nightlight catfish. A soft green glow under the water, three tiles east. Pretty.');
     },
 
+    glasswing() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — it hunts in sunlight
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'glasswing', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: glasswing darter. A shadow moves wrong against the sun, three tiles east.');
+    },
+
+    sunbasker() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — it basks in sunlight
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'sunbasker', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: sunbasker. Gold in the grass, three tiles east. It was not there, then it was.');
+    },
+
     // 10. Moot — YOU stand accused. Theft + assault on the books, the case
     // is open, the defense window is ticking. Speak, call witnesses, press
     // the accuser, investigate bribes, or flee before the count.
@@ -665,6 +689,8 @@
       ['lockpick', '🦝 Lockpick Raccoon fight'],
       ['hummice', '🐭 Hummice swarm fight'],
       ['nightlight', '💡 Nightlight Catfish fight'],
+      ['glasswing', '🪰 Glasswing Darter fight'],
+      ['sunbasker', '🦎 Sunbasker fight'],
       ['ambush', '🔪 Ambush — the walk turns'],
       ['mootAccused', '⚖️ Moot — you stand accused'],
       ['mootJuror', '⚖️ Moot — you are the juror'],

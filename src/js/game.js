@@ -14186,6 +14186,8 @@
     lockpickIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'lockpick_raccoon')); },
     humiceIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hummice')); },
     catfishIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'nightlight_catfish')); },
+    glasswingIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'glasswing')); },
+    sunbaskerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'sunbasker')); },
     // Names pre-knowledge are strange descriptors ("a toad like a war drum") —
     // composing them after "the"/"The" doubles the article ("the a toad").
     // Strip the leading article for sentence composition. Post-naming names
