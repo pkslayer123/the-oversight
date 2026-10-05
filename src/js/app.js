@@ -4059,13 +4059,12 @@
     const yourTurn = Game.tbIsPlayerTurn();
     // ACTION ECONOMY (Steve): the turn ends when you're out of actions — the
     // line shows what's left. No end-turn button; WAIT forfeits the rest.
-    // TURN CLARITY (Steve 2026-10-05): when moves are spent but the action
-    // isn't, say so LOUDLY — "0 move" alone reads as "I'm done" and the turn
-    // just sits there. The player needs to know: act or ⏸.
+    // TURN CLARITY (Steve 2026-10-05): movement and actions are SEPARATE.
+    // You get 3 moves AND 1 action. The line shows both distinctly.
     const turnLine = yourTurn && p
       ? (p.moveLeft <= 0 && !p.acted
           ? `<b style="color:#ffd54d">ACT!</b> <span style="opacity:.8">strike, shout… or ⏸ hold</span>`
-          : `<b>${p.moveLeft}</b> move${p.acted ? ' · acted' : ''}`)
+          : `<span title="Movement — D-pad or tap to walk"><b>${p.moveLeft}</b> move</span>${p.acted ? '' : ' <span title="Action — strike, study, shout…" style="opacity:.8">· <b>1</b> act</span>'}`)
       : (cur ? `${esc(cur.kind === 'player' ? 'You' : (Game.monsterDisplayName && cur.mdef ? Game.monsterDisplayName(cur.mdef.id) : cur.name))} acting…` : '');
     // COMBAT STRIP (Steve 2026-10-05, revised): threat + turn status ONLY.
     // Narration lives in the unified narration box. Actions live in the

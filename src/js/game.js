@@ -11728,7 +11728,9 @@
     // Party: nearby villagers join and act on their own AI (brave/cautious/
     // helpful from temperament). They don't just follow you.
 
-    playerSpeed() { return 4; },
+    // PLAYER SPEED (Steve 2026-10-05): 3, not 4. Four moves is a lot —
+    // fleeing by running should be hard, not a given. Movement is deliberate.
+    playerSpeed() { return 3; },
 
     startCombat(monsterId) {
       const s = this.state.scholar;
@@ -12563,12 +12565,12 @@
       const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [p.mx, p.my];
       this.state.scholar.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
       // FLEE BY MOTION (Steve 2026-10-05): no FLEE button — you run by moving.
-      // If you're 5+ tiles from every monster, you've broken contact. 50% to
-      // escape clean; otherwise it pursues (combat continues, it closes in).
+      // 6+ tiles from every monster to break contact (not 5 — you're slower
+      // now, this has to be earned). 50% to escape clean; otherwise it pursues.
       const mons = f.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
       if (mons.length) {
         const nearest = Math.min(...mons.map(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my))));
-        if (nearest >= 5) {
+        if (nearest >= 6) {
           if (Math.random() < 0.5) {
             this.say('You break contact — gone into the undergrowth. It loses your trail.');
             p.fled = true;
