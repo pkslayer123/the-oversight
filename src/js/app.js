@@ -1723,17 +1723,25 @@
     if (!slot) return;
     // stale? new tile, new day part, or combat started → clear.
     if (inlineView && inlineView.mapKey !== inlineMapKey()) inlineView = null;
-    if (!inlineView || (st && st.inCombat)) { slot.innerHTML = ''; return; }
-    if (inlineView.kind === 'person') renderPersonInline(slot, inlineView);
-    else if (inlineView.kind === 'assign') renderAssignInline(slot, inlineView);
-    else if (inlineView.kind === 'remote') renderRemoteInline(slot, inlineView);
-    else if (inlineView.kind === 'askabout') renderAskAboutInline(slot, inlineView);
-    else if (inlineView.kind === 'pantry') renderPantryInline(slot, inlineView);
-    else if (inlineView.kind === 'caches') renderCachesInline(slot, inlineView);
-    else if (inlineView.kind === 'givefood') renderGiveFoodInline(slot, inlineView);
-    else if (inlineView.kind === 'comfort') renderComfortInline(slot, inlineView);
-    else if (inlineView.kind === 'inv') renderInvInline(slot, inlineView);
-    else slot.innerHTML = '';
+    // STORES CO-LOCATION: pantry and caches belong with the Haven panel's
+    // pantry/stash display — not in the far-away main-column slot. Render them
+    // into the slot sitting right under the pantry/caches buttons.
+    const havenSlot = document.getElementById('haven-stores-slot');
+    const isStores = inlineView && (inlineView.kind === 'pantry' || inlineView.kind === 'caches');
+    const target = (isStores && havenSlot) ? havenSlot : slot;
+    if (havenSlot && havenSlot !== target) havenSlot.innerHTML = '';
+    if (!inlineView || (st && st.inCombat)) { slot.innerHTML = ''; if (havenSlot) havenSlot.innerHTML = ''; return; }
+    if (isStores && target !== slot) slot.innerHTML = '';
+    if (inlineView.kind === 'person') renderPersonInline(target, inlineView);
+    else if (inlineView.kind === 'assign') renderAssignInline(target, inlineView);
+    else if (inlineView.kind === 'remote') renderRemoteInline(target, inlineView);
+    else if (inlineView.kind === 'askabout') renderAskAboutInline(target, inlineView);
+    else if (inlineView.kind === 'pantry') renderPantryInline(target, inlineView);
+    else if (inlineView.kind === 'caches') renderCachesInline(target, inlineView);
+    else if (inlineView.kind === 'givefood') renderGiveFoodInline(target, inlineView);
+    else if (inlineView.kind === 'comfort') renderComfortInline(target, inlineView);
+    else if (inlineView.kind === 'inv') renderInvInline(target, inlineView);
+    else target.innerHTML = '';
   }
 
   function inlineHead(title) {
@@ -3377,6 +3385,7 @@
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
       <button class="btn sm" id="x-pantry">Take from pantry</button>
       <button class="btn sm ghost" id="x-caches">📍 Caches</button>
+      <div id="haven-stores-slot"></div>
       ${sleepHintHTML()}
       ${Game.stashHtml()}
       ${(() => {

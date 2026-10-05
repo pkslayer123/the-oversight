@@ -4801,6 +4801,12 @@
       if (t && t.type === 'haven') t.detail = null;
       // you emerge on the grounds, south of the lodge, facing the world
       s.mx = 4; s.my = 2; s.facing = { x: 0, y: 1 };
+      // THE DOOR MOVES ONLY YOU (+ party/followers). Everyone else keeps their
+      // own inside/outside sub-state — nobody teleports with you.
+      try {
+        for (const vid of this.travelingWith()) this.npcSetInside(vid, false);
+        this.placePartyAtPlayer();
+      } catch (e) {}
       this.say('You push through the doors into open air. Haven grounds — tents, a fire pit, worn paths. The world is that way.');
       return true;
     },
@@ -4811,6 +4817,11 @@
       if (t && t.type === 'haven') t.detail = null;
       // you step into the hall, just inside the doors
       s.mx = 4; s.my = 7; s.facing = { x: 0, y: -1 };
+      // Party/followers come in with you. Everyone else stays where they are.
+      try {
+        for (const vid of this.travelingWith()) this.npcSetInside(vid, true);
+        this.placePartyAtPlayer();
+      } catch (e) {}
       this.say('Inside. The hall smells of smoke and twelve people. Home.');
       return true;
     },
@@ -4903,6 +4914,8 @@
       // traveling means you're outside. (Arriving at Haven puts you on the grounds —
       // tap the lodge to go back inside.)
       this.state.scholar.insideHaven = false;
+      // Party/followers travel with you — they're outside too, same sub-state.
+      try { for (const vid of this.travelingWith()) this.npcSetInside(vid, false); } catch (e) {}
       const ht = this.tileAt(3, 3);
       if (ht && ht.type === 'haven') ht.detail = null;
       // MONSTERS FOLLOW (if they want to). Territorial and hungry ones do. Skittish ones don't.
@@ -5997,6 +6010,27 @@
       });
     },
 
+    // npcInside: the inside/outside sub-state. Haven interior and Haven grounds
+    // are the SAME node — the hall and the grounds are one place with a door
+    // between them, not two places. Each villager has their own sub-state:
+    // inside villagers stay inside until their own agency moves them out.
+    // The player's door transition moves ONLY the player (plus party/followers)
+    // — it never drags the village along. Default: inside (they live in the hall).
+    npcInside(vid) {
+      const v = this.state.village;
+      v.npcInside = v.npcInside || {};
+      if (v.npcInside[vid] === undefined) v.npcInside[vid] = true;
+      return !!v.npcInside[vid];
+    },
+    npcSetInside(vid, inside) {
+      const v = this.state.village;
+      v.npcInside = v.npcInside || {};
+      v.npcInside[vid] = !!inside;
+      // sub-state changed: drop the grid position so it re-assigns on the
+      // correct side of the door.
+      if (v.positions) delete v.positions[vid];
+    },
+
     ensureVillagerPositions() {
       // LIVING WORLD: positions are per-node. Only NPCs on YOUR node get grid
       // positions. NPCs elsewhere exist in simulation (nodePos) but aren't rendered.
@@ -6004,13 +6038,21 @@
       const v = this.state.village;
       const px = this.map.px, py = this.map.py;
       v.positions = v.positions || {};
-      // Clear positions for NPCs who aren't on this node anymore.
+      // On the Haven node, the door is real: only NPCs on YOUR side of it
+      // render. Inside villagers don't teleport out when you step outside.
+      const havenNode = (px === (v.px ?? 3) && py === (v.py ?? 3));
+      const playerInside = havenNode ? (this.state.scholar.insideHaven !== false) : true;
+      // Clear positions for NPCs who aren't on this node anymore — or who are
+      // on the other side of the Haven door.
       for (const rid of Object.keys(v.positions)) {
         const n = this.npcNode(rid);
-        if (n.nx !== px || n.ny !== py) delete v.positions[rid];
+        if (n.nx !== px || n.ny !== py) { delete v.positions[rid]; continue; }
+        if (havenNode && this.npcInside(rid) !== playerInside) delete v.positions[rid];
       }
-      // Assign positions to NPCs on this node who don't have one.
-      const here = this.npcsOnNode(px, py).filter(rid => !v.positions[rid]);
+      // Assign positions to NPCs on this node (and your side of the door) who
+      // don't have one.
+      const here = this.npcsOnNode(px, py).filter(rid =>
+        !v.positions[rid] && (!havenNode || this.npcInside(rid) === playerInside));
       if (!here.length) return;
       const detail = this.genDetail(px, py);
       const free = [];
@@ -6130,6 +6172,38 @@
           }
           // Leaving is gossip-worthy.
           try { this.seedGossip('departure', { who: rid }, []); } catch (e) {}
+        }
+
+        // THE DOOR: villagers at Haven drift through it on their own agency.
+        // Inside/outside is a per-character sub-state — the hall and the grounds
+        // are one node, and nobody changes sub-state except by their own choice
+        // (or by walking through the door with you). Drift is slow: a person or
+        // two per day-part, temperament-led.
+        if (atHaven && !this.isEngaged(rid)) {
+          try {
+            const withYou = this.travelingWith();
+            if (!withYou.includes(rid)) {
+              const insideNow = this.npcInside(rid);
+              const t2 = this.npcTemper(rid);
+              const n2 = this.npcNeeds(rid);
+              if (night) {
+                // Night: almost everyone wants the hall. The grounds are for the watch.
+                if (!insideNow && Math.random() < 0.6) this.npcSetInside(rid, true);
+              } else {
+                // Day: the restless head out, homebodies stay in.
+                if (insideNow) {
+                  let outChance = 0;
+                  if (t2 === 'bold' || t2 === 'restless' || t2 === 'intense') outChance = 0.25;
+                  else if (t2 === 'warm' || t2 === 'dry') outChance = 0.12;
+                  else if ((n2.social || 0) > 70) outChance = 0.10; // sociable: out where people are
+                  if (Math.random() < outChance) this.npcSetInside(rid, false);
+                } else {
+                  // Outside already: drift back in sometimes (meals, rest, habit).
+                  if (Math.random() < 0.15) this.npcSetInside(rid, true);
+                }
+              }
+            }
+          } catch (e) {}
         }
       }
     },
