@@ -52,6 +52,10 @@ function band(name, v, lo, hi) {
   ok('payoff sums', counts.small + counts.reward + counts.wild === N);
 
   // ---------- 2. motive gating ----------
+  // isolate the pair: worldgen may have given A/B a shared conflict, and
+  // conflicts feed grievance symmetrically by design. This check is about
+  // recordGrievance directionality, not their history.
+  v.conflicts = (v.conflicts || []).filter(c => !((c.a === A && c.b === B) || (c.a === B && c.b === A)));
   Game.recordGrievance(A, B, 'theft', 60);
   const mAB = Game.motiveBetween(A, B);
   ok('motive with grievance >= 45', mAB.score >= 45);
@@ -207,8 +211,30 @@ function band(name, v, lo, hi) {
   }
   const weakRate = weakOutcomes.filter(Boolean).length / weakOutcomes.length;
   band('weak case usually acquits', weakRate, 0.0, 0.5);
-  ok('trial RNG: a good case CAN lose', convRate < 1.0);
-  ok('trial RNG: a weak case CAN win', weakRate > 0.0);
+  // Deterministic gamble pins (both directions): the probabilistic
+  // convRate<1.0 / weakRate>0 assertions over N=100 were flaky whenever the
+  // true tail rate sat below ~1%. Prove the mechanism directly with the
+  // forced-weather counterfactual API — same voters, same rng shape, only
+  // the trial weather changes. Attendance draws come first, so the queue
+  // feeds 0.5 (everyone present) until the swing/noise draws, then 0.999.
+  {
+    const wc = Game.openCase(tPlot2, 'ambush');
+    for (const id of npcs()) if (!wc.accused.includes(id)) wc.belief[id] = 60; // weak case
+    const zero = () => 0; // wild swing -70, full attendance, noise -15
+    const tw = Game.tallyVotes(wc, true, zero);
+    const needW = Math.floor(tw.present.length / 2) + 1;
+    ok('trial RNG: a weak case CAN win (mechanism)', tw.guilty >= needW);
+    v.betrayal.cases = v.betrayal.cases.filter(x => x !== wc);
+    const sc = Game.openCase(tPlot2, 'ambush');
+    for (const id of npcs()) if (!sc.accused.includes(id)) sc.belief[id] = -60; // strong case
+    const nV = npcs().filter(id => !sc.accused.includes(id)).length;
+    let ci = 0;
+    const q = () => (++ci <= nV ? 0.5 : 0.999); // max-swing wild day
+    const ts = Game.tallyVotes(sc, true, q);
+    const needS = Math.floor(ts.present.length / 2) + 1;
+    ok('trial RNG: a good case CAN lose (mechanism)', ts.present.length === nV && ts.guilty < needS);
+    v.betrayal.cases = v.betrayal.cases.filter(x => x !== sc);
+  }
   // polarity pin: real evidence tools must HELP conviction, not hurt it.
   // (A shipped inversion once made strong evidence acquit. Never again.)
   // Runs on a FRESH game: trial blocks above leave the village fractured
@@ -306,20 +332,23 @@ function band(name, v, lo, hi) {
   ok('founding works', Game.state.scholar.foundedHaven === true && Game.state.scholar.exiled === false);
 
   // ---------- 13. strangers are earned ----------
+  // NOTE: section 10 started a fresh game, so the `v` captured at the top of
+  // this test is stale — use the live village or the pantry write is lost.
+  const v13 = Game.state.village;
   Game.state.scholar.day = 8;
-  v.pantryKcal = 20000;
-  v.visitors = [];
+  v13.pantryKcal = 20000;
+  v13.visitors = [];
   let vis = null;
   for (let i = 0; i < 60 && !vis; i++) vis = Game.considerStrangers();
   ok('stranger arrives when notable', !!vis);
   if (vis) {
     Game.visitorInteract(vis.id, vis.type === 'trader' ? 'trade' : 'welcome');
-    ok('visitor leaves after interaction', (v.visitors || []).length === 0);
+    ok('visitor leaves after interaction', (v13.visitors || []).length === 0);
   }
   // no strangers when obscure
   Game.state.scholar.day = 2;
-  v.pantryKcal = 100;
-  v.visitors = [];
+  v13.pantryKcal = 100;
+  v13.visitors = [];
   let vis2 = null;
   for (let i = 0; i < 30 && !vis2; i++) vis2 = Game.considerStrangers();
   ok('no strangers before notability', !vis2);

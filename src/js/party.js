@@ -566,7 +566,9 @@
         betrayal: true, betrayer: vid, aggressor: opts.aggressor || 'npc',
       };
       try { this.villageEvent('betrayal'); } catch (e) {}
-      try { this.observe(opts.aggressor === 'player' ? 'murder' : 'fight', { target: vid }); } catch (e) {}
+      // The opening is an ATTACK, not a murder — the outcome isn't known yet.
+      // If it becomes a killing, the aftermath upgrades the village's read.
+      try { this.observe(opts.aggressor === 'player' ? 'attack' : 'fight', { target: vid }); } catch (e) {}
       this.say(`⚔ BETRAYAL. ${opts.aggressor === 'player' ? 'You started this.' : 'They started this.'} Turn-based now.`);
       this.sysSay(opts.aggressor === 'player'
         ? 'OH!!! THE PLAYER IS DOING A MURDER!!! The audience is LOSING ITS MIND!!!'
@@ -592,16 +594,33 @@
       // Witnesses: surviving loyal party members who were in the fight.
       const witnesses = (f.witnesses || []).filter(id => (v.roster || []).includes(id));
       if (aggressor === 'player') {
+        // DEAD vs ALIVE is the whole story: a fled or yielded victim is a
+        // living witness, not a corpse. The journal must never confess to a
+        // killing that didn't happen — it contradicts the fight two lines up.
+        const dead = !!f.betrayerDead;
         if (witnesses.length) {
-          this.seedGossip('murder', this.murderDims(betrayer), witnesses);
-          this.say(`They saw. ${witnesses.map(id => this.displayName(id)).join(', ')} saw what you did. The village will hear.`);
-        } else {
+          if (dead) {
+            this.seedGossip('murder', this.murderDims(betrayer), witnesses);
+            this.say(`They saw. ${witnesses.map(id => this.displayName(id)).join(', ')} saw what you did. The village will hear.`);
+          } else {
+            // Assault, not murder — and the victim is alive to tell it themselves.
+            this.seedGossip('attack', { honest: -25, generous: -20, brave: 5, competent: 0 }, witnesses);
+            this.say(`They saw what you did to ${bname} — and ${bname} is alive to tell it. The village will hear.`);
+          }
+        } else if (dead) {
           // No witnesses. But the journal knows.
           v.unsolved = v.unsolved || [];
           v.unsolved.push({ who: betrayer, day: this.state.scholar.day });
           this.say(`${bname} is gone. No one saw. The woods keep your secret — for now.`);
           try {
             if (this.journalNote) this.journalNote('people', betrayer, `I killed them. No witnesses. I don't want to write why.`);
+          } catch (e) {}
+        } else {
+          // No witnesses — but the victim ran, alive. They know what you did.
+          // The village will notice the absence; you know exactly why.
+          this.say(`${bname} ran. No one saw it happen — but THEY did. They're out there now, and they know exactly what you did.`);
+          try {
+            if (this.journalNote) this.journalNote('people', betrayer, `They got away. I beat them until they ran. If they talk, the village hears it from them first.`);
           } catch (e) {}
         }
         // Everyone's trust in you takes a hit once gossip spreads — handled by gossip dims.
@@ -1035,7 +1054,12 @@
         try { this.addTrauma(12); } catch (e) {}
         // They stay in the village. That's worse, somehow.
         this.tbfight = null;
-        try { this.betrayalAftermath(); } catch (e) {}
+        // The yield aftermath above is complete (terror seeded, trust cratered).
+        // Skip the generic betrayalAftermath: it would narrate a killing that
+        // didn't happen. Just clean up the betrayal state.
+        try { const bv = this.state.village; if (bv.betray) delete bv.betray[yielder.villagerId]; } catch (e) {}
+        this._lastBetrayal = null;
+        this._betrayAggressor = null;
         return;
       }
       if (result === 'betrayal_won') {

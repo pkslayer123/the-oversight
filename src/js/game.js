@@ -6790,6 +6790,10 @@
         promise: { honest: 2, generous: 1 },
         coalition: { competent: 2, honest: -1 },
         confront: { brave: 2, honest: 1 },
+        // ATTACK: turning on someone. The outcome isn't known yet — the
+        // aftermath upgrades the village's read to murder if it becomes one.
+        // (Same dims as the 'attack' gossip seeded post-fight.)
+        attack: { honest: -25, generous: -20, brave: 5, competent: 0 },
         // MURDER: attacking a non-hostile person. Witnesses don't admire this.
         // There is no brave reading. There is horror, and there is fear of you.
         murder: { honest: -30, generous: -20, brave: -5, competent: 0 },
