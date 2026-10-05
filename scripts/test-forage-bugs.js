@@ -88,11 +88,13 @@ function setCell(kind, cx, cy) {
   const d4 = Game.genDetail(Game.map.px, Game.map.py);
   ok('neighbor bush still a bush', d4[4][3] === 'bush');
 
-  // 5. BUSH SPECIES: an identified bush yields its own fruit.
+  // 5. BUSH SPECIES: an IDENTIFIED bush yields its own fruit, named.
+  // (Redesign contract: reveal-to-the-game is not identification. Unknown
+  // species lump at camp per the knowledge model — test-forage.js.)
   freshGame();
   setCell('bush', 5, 4);
   const species = Game.revealBush(5, 4); // e.g. blackberry
-  const t5 = Game.playerTile();
+  Game.identifyPlant(species, 'taught'); // the player learns it (camp ritual, teacher, book...)
   Game.cellInteract(5, 4);
   const got = (Game.state.scholar.inventory.find(i => i.plantId === species));
   ok(`identified ${species} bush yields ${species}`, !!got);
@@ -127,15 +129,36 @@ function setCell(kind, cx, cy) {
   Game.cellInteract(5, 4);
   const d9 = Game.genDetail(Game.map.px, Game.map.py);
   ok('foraged plant cell becomes dirt', d9[4][5] === 'dirt');
-  ok('packed message mentions picked clean', Game.log.slice(-4).join(' ').includes('picked clean'));
+  ok('packed message mentions Picked clean', Game.log.slice(-4).join(' ').includes('Picked clean'));
 
-  // 10. PACKED message reports actual haul.
+  // 10. PACKED message reports actual haul (redesign format: the sweep message
+  // names units, e.g. "8× Hickory Nuts").
   freshGame();
   setCell('plant', 5, 4);
+  Game.identifyPlant(Game.cellPlantSpecies(Game.playerTile(), 5, 4, 'plant'), 'taught');
   Game.cellInteract(5, 4);
-  const packedLine = Game.log.slice(-4).find(l => l.startsWith('Packed'));
   const invItem = Game.state.scholar.inventory.find(i => i.plantId);
-  ok('packed line matches inventory units', !!packedLine && !!invItem && packedLine.includes(`${invItem.units}×`));
+  const haulLine = Game.log.slice(-6).join(' ');
+  ok('packed line matches inventory units', !!invItem && haulLine.includes(`${invItem.units}\u00d7`));
+
+  // 11. REGROW: stock follows the grid. A stripped node recovers in ~3 days —
+  // the sweep's "it'll recover in a few days" promise. (Was: detail cells
+  // regrew in 3 days but stock crept at +1/day, so regrown grids read
+  // "nothing left to take here today" — green lies.)
+  freshGame();
+  const t11 = Game.playerTile();
+  const d11 = Game.genDetail(Game.map.px, Game.map.py);
+  t11.maxStock = 40;
+  t11.stock = 0; // stripped bare
+  t11.foragePressure = 0; t11.foragedToday = false;
+  const today = Game.state.scholar.day;
+  t11.detailRegrow = { '1,1': { day: today, was: 'plant' }, '2,2': { day: today, was: 'bush' } };
+  d11[1][1] = 'dirt'; d11[2][2] = 'bush';
+  Game.endDay();
+  // +1/day (villager-nibble top-up) + 2 regrown cells = 3
+  ok('regrown cells restore stock 1:1', t11.stock === 3, `stock 0 -> ${t11.stock}`);
+  ok('regrow clears the entries', Object.keys(t11.detailRegrow).length === 0);
+  ok('regrown plant cell is a plant again', d11[1][1] === 'plant');
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

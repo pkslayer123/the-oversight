@@ -27,6 +27,10 @@
     branch: { name: 'Branch',      plural: 'Branches',   kg: 0.5 },
     stone:  { name: 'Stone',       plural: 'Stones',     kg: 0.3 },
     fiber:  { name: 'Plant fiber', plural: 'Plant fiber', kg: 0.1 },
+    // FORAGE-DROP materials: the sweep pushes these straight into the pack
+    // (game.js). They need defs or donateMaterial/stash silently no-op.
+    stick:  { name: 'Stick',       plural: 'Sticks',     kg: 0.2 },
+    vine:   { name: 'Vine',        plural: 'Vines',      kg: 0.1 },
   };
   const MAT_IDS = Object.keys(MAT_DEFS);
   // matName: 'branch' vs 'branches' — never 'branchs'.

@@ -9473,6 +9473,16 @@
         const t = this.playerTile();
         // PHYSICAL: you work the patch around you (area sweep below). Walk to
         // the green, then take it. The world is not a slot machine.
+        // TAP = step there: _cellInteract passes the tapped cell; stepping
+        // onto it centers the sweep where you pointed. The tap already checked
+        // adjacency ("Too far. Step closer."), so this is always 1 step.
+        // Steps don't cost time — the ACTION does.
+        if (opts && opts.cx !== undefined && opts.cy !== undefined) {
+          const px0 = scholar.mx ?? 4, py0 = scholar.my ?? 4;
+          if (Math.max(Math.abs(opts.cx - px0), Math.abs(opts.cy - py0)) <= 1) {
+            scholar.mx = opts.cx; scholar.my = opts.cy;
+          }
+        }
         const mx = scholar.mx ?? 4, my = scholar.my ?? 4;
         const detail = this.genDetail(this.map.px, this.map.py);
         // ruins: scavenge finite loot, not plants
@@ -9551,7 +9561,15 @@
           const dk = cx + ',' + cy;
           if (t.detailRegrow && t.detailRegrow[dk]) continue; // picked clean, regrowing
           const pid = this.cellPlantSpecies(t, cx, cy, c);
-          if (!pid) continue;
+          if (!pid) {
+            // WOOD (Steve: every forageable has some use, even if minor):
+            // pines and other trees with no food species still give deadfall —
+            // branches for the fire, bark fiber for cordage. Never a dead end.
+            if (c === 'tree' || c === 'bigtree') {
+              harvested.push({ x: cx, y: cy, cell: c, wood: true });
+            }
+            continue;
+          }
           const plant = this.data.plants.find(pp => pp.id === pid);
           if (!plant) continue;
           harvested.push({ x: cx, y: cy, cell: c, plantId: pid, plant });
@@ -9568,10 +9586,23 @@
         // names; handling only teaches your hands.
         const bySpecies = {};
         const famNotes = [];
+        let woodSticks = 0, woodFiber = 0;
         for (const h of harvested) {
           detail[h.y][h.x] = (h.cell === 'plant') ? 'dirt' : h.cell;
           t.detailRegrow = t.detailRegrow || {};
           t.detailRegrow[h.x + ',' + h.y] = { day: scholar.day + 3, was: h.cell };
+          if (h.wood) {
+            // DEADFALL: no species, no knowledge — but branches for the fire
+            // and bark fiber for cordage. The stand recovers like everything else.
+            const sticks = 1 + (Math.random() < 0.5 ? 1 : 0);
+            for (let i = 0; i < sticks; i++) scholar.inventory.push({ material: 'stick', units: 1, name: 'Stick', kcalEach: 0, spoilDay: 9999, kg: 0.2 });
+            woodSticks += sticks;
+            if (Math.random() < 0.25) {
+              scholar.inventory.push({ material: 'fiber', units: 1, name: 'Plant fiber', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
+              woodFiber++;
+            }
+            continue;
+          }
           const fam = this.bumpPlantFamiliarity(h.plantId, h.plant);
           const entry = (this.state.codex.plants || {})[h.plantId];
           const levelMult = !entry ? 1.0 : entry.level >= 4 ? 2.0 : entry.level >= 2 ? 1.5 : 1.0;
@@ -9663,12 +9694,17 @@
           const e = bySpecies[pid];
           (e.known ? knownBits : unknownBits).push(`${e.units}\u00d7 ${e.known ? e.plant.name : this.lumpFormName(e.plant)}`);
         }
-        if (knownBits.length && !unknownBits.length) {
-          msg = `You work the patch with practiced hands: ${knownBits.join(', ')} (${totalKcalKnown} kcal). Picked clean — it'll recover in a few days.`;
+        // NO SILENT ACTIONS: deadfall is reported too — the pines gave wood,
+        // and the player should know the press wasn't wasted.
+        const woodBit = woodSticks ? ` You also gather deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}.` : '';
+        if (woodSticks && !knownBits.length && !unknownBits.length) {
+          msg = `No food in these trees — but the ground gives deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}. Picked clean — it'll recover in a few days.`;
+        } else if (knownBits.length && !unknownBits.length) {
+          msg = `You work the patch with practiced hands: ${knownBits.join(', ')} (${totalKcalKnown} kcal).${woodBit} Picked clean — it'll recover in a few days.`;
         } else if (unknownBits.length && !knownBits.length) {
-          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.) Picked clean — it'll recover in a few days.`;
+          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.)${woodBit} Picked clean — it'll recover in a few days.`;
         } else {
-          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet. Picked clean — it'll recover in a few days.`;
+          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet.${woodBit} Picked clean — it'll recover in a few days.`;
         }
         this.say(msg);
         // discovery labels the place: the map remembers the BEST find here.
@@ -10502,6 +10538,7 @@
         }
         // detail cells regrow: the plant you picked comes back in 3 days.
         if (t.detail && t.detailRegrow) {
+          let regrown = 0;
           for (const key of Object.keys(t.detailRegrow)) {
             const reg = t.detailRegrow[key];
             const regDay = (typeof reg === 'object') ? reg.day : reg;
@@ -10511,9 +10548,19 @@
               // restore the original (plants come back; trees were never gone, just picked clean)
               if (t.detail[cy] && (t.detail[cy][cx] === 'dirt' || t.detail[cy][cx] === was)) {
                 t.detail[cy][cx] = was;
+                regrown++;
               }
               delete t.detailRegrow[key];
             }
+          }
+          // STOCK FOLLOWS THE GRID: the grid is the inventory. Regrown cells
+          // restore stock 1:1, so a stripped grove recovers in ~3 days —
+          // matching the "it'll recover in a few days" promise the sweep makes.
+          // (The +1/day above only tops up villager-nibbled stock; it couldn't
+          // keep up with the area sweep, leaving regrown grids that read
+          // "nothing left to take here today" — green lies.)
+          if (regrown > 0 && t.maxStock > 0) {
+            t.stock = Math.min(t.maxStock, (t.stock || 0) + regrown);
           }
         }
       }
