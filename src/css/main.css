@@ -19,7 +19,7 @@ body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 #app { max-width: 520px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
-#screen { flex: 1; padding: 16px 12px 32px; }
+#screen { flex: 1; padding: 16px 12px 120px; } /* 120px bottom: room for the fixed D-pad bar */
 .hidden { display: none !important; }
 
 /* terminal chrome */
@@ -118,9 +118,12 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   position: relative;
 }
 .ord-bottombar {
-  position: sticky; bottom: 0; z-index: 30;
+  /* LOCKED (Steve 2026-10-05): fixed to the bottom, never slides over the grid.
+     position:fixed, not sticky — iOS Safari ignores sticky here. */
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
   display: flex; justify-content: center; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
   background: rgba(8, 10, 14, .92); border-top: 1px solid rgba(255, 255, 255, .1);
+  /* Never cover the grid: the page gets bottom padding equal to the bar */
 }
 .dpbtn {
   font-size: 17px; line-height: 1; color: #fff;
