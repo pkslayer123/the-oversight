@@ -82,12 +82,18 @@
       // shows once the codex knows the pattern — discovered, not announced.
       const known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : false;
       const phase = (known && Game.deerPhaseBadge) ? Game.deerPhaseBadge(m) : '';
-      return `${m.emoji || '👹'} ${esc(label)}${m.telegraph ? ' ⚠' : ''}${phase}`;
+      // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
+      // knowledge, just like the phase badge. First encounter: no warning
+      // symbols — just beam visuals + audio dread.
+      return `${m.emoji || '👹'} ${esc(label)}${(m.telegraph && known) ? ' ⚠' : ''}${phase}`;
     }).join(' · ') || '⚔ COMBAT';
     const tg = mons.find(m => m.telegraph);
+    // INFO LEAK FIX (Steve): the telegraph cue line is gated behind codex
+    // knowledge. First encounter shows no cue text — the beam itself is the warning.
+    const tgKnown = tg && Game.encTelegraphKnown ? Game.encTelegraphKnown(tg) : false;
     return `<div class="ord-combatstrip"><div class="combatstrip">` +
       `<div class="cs-row"><span>⚔ ${names}</span></div>` +
-      (tg ? `<div class="cs-telegraph">⚠ ${esc(Game.tbTelegraphCue ? Game.tbTelegraphCue(tg) : 'incoming!')}</div>` : '') +
+      (tgKnown ? `<div class="cs-telegraph">⚠ ${esc(Game.tbTelegraphCue ? Game.tbTelegraphCue(tg) : 'incoming!')}</div>` : '') +
       `</div></div>`;
   }
   function statusBars(st) {
@@ -2971,7 +2977,16 @@
       if (!p || !Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); return { moved: false }; }
       const tx = p.mx + step.dx, ty = p.my + step.dy;
       if (tx < 0 || tx > 8 || ty < 0 || ty > 8) return { moved: false };
-      return { moved: !!Game.tbPlayerMove(tx, ty) };
+      const mlBefore = p.moveLeft;
+      const moved = !!Game.tbPlayerMove(tx, ty);
+      // TURN BOUNDARY (Steve): if this step ended the turn (moveLeft reset for
+      // a fresh turn), kill hold-to-move. A held D-pad finger must not spend
+      // the NEW turn's movement — each turn starts with a conscious input.
+      const pAfter = Game.tbFighter('p');
+      if (pAfter && Game.tbIsPlayerTurn() && pAfter.moveLeft > mlBefore) {
+        MoveAnim.clearHold();
+      }
+      return { moved };
     }
     const s = Game.state.scholar;
     const tx = (s.mx ?? 4) + step.dx, ty = (s.my ?? 4) + step.dy;
@@ -3191,7 +3206,9 @@
       <div class="game-cols">
         <div class="game-col-main">
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
-          ${st.inCombat ? combatStripHTML(st) : ''}
+          ${'' /* combatStripHTML removed (Steve): redundant with panelCombat below the grid;
+                     the strip pushed the grid off-screen. All combat info lives
+                     in the compact panel. */}
           <div class="ord-gridwrap">
             <div class="detail">${renderDetail(st)}</div>
             ${perceiveHTML()}
@@ -3724,9 +3741,11 @@
       const frac = Math.max(0, Math.min(1, (m.hp || 0) / (m.maxHp || 1)));
       const known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : false;
       const badge = (known && Game.encPhaseBadge) ? Game.encPhaseBadge(m) : '';
+      // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
+      // knowledge. First encounter: no warning symbols.
       return `<p class="small cc-mon">${m.emoji} <b>${esc(name)}</b>` +
         ` <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>` +
-        `${m.telegraph ? ' ⚠' : ''}${badge}</p>`;
+        `${(m.telegraph && known) ? ' ⚠' : ''}${badge}</p>`;
     }).join('');
     const adj = p ? mons.filter(m => Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= (Game.equippedWeapon ? Game.equippedWeapon().range : 1)) : [];
     const wrange = Game.equippedWeapon ? Game.equippedWeapon().range : 1;
@@ -3744,7 +3763,7 @@
     // turn events. The one-screen rule: never bury the fight below the fold.
     const feed = (Game.log || []).slice(-3);
     const feedHtml = feed.length
-      ? `<div class="cc-feed">${feed.map(m => `<p class="cc-evt">${esc(String(m)).slice(0, 140)}</p>`).join('')}</div>`
+      ? `<div class="cc-feed">${feed.map(m => `<p class="cc-evt">${esc(String(m)).slice(0, 100)}</p>`).join('')}</div>`
       : '';
     return `
       <div class="card combat-compact"><div class="cc-head"><span>⚔</span><span class="cc-turn">${turnLine}</span></div>

@@ -676,7 +676,7 @@ body.system-live .btn:not(.ghost) {
 .ord-combatpanel .card.combat-compact {
   border: 2px solid var(--danger, #ff5252);
   box-shadow: 0 0 14px rgba(255, 82, 82, 0.35);
-  padding: 8px 10px;
+  padding: 6px 8px;
   animation: combatArrive 0.25s ease-out;
 }
 @keyframes combatArrive {
@@ -696,8 +696,8 @@ body.system-live .btn:not(.ghost) {
 .combat-compact .cc-hpbar > span { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #e5484d, #f5a524); }
 /* FIGHT FEED: the last 3 fight events, inline under the grid — never buried
    in the bottom log box. The latest hits hardest. */
-.combat-compact .cc-feed { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, .12); }
-.combat-compact .cc-feed .cc-evt { margin: 2px 0; font-size: 12px; line-height: 1.35; opacity: .85; }
+.combat-compact .cc-feed { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, .12); }
+.combat-compact .cc-feed .cc-evt { margin: 1px 0; font-size: 11px; line-height: 1.25; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .combat-compact .cc-feed .cc-evt:last-child { opacity: 1; font-weight: 600; }
 .ord-ctx { order: 6; }
 /* SELF BAR: your persistent body-actions (Eat, Sleep, Pack, Wait). Personal
