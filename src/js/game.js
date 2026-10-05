@@ -10436,8 +10436,13 @@
         if (s.fieldMedDayPart === key) { this.say('Already used field medicine this day part.'); return null; }
         s.fieldMedDayPart = key;
         const heal = 20;
+        // COST: healing burns calories. No free lunch — prevents Blood Magic infinite loop.
+        // (Blood Magic: -10 HP → +500 kcal. Without a heal cost, that's infinite food.)
+        const healCost = 100;
+        if ((s.kcal || 0) < healCost) { this.say(`Too hungry to heal — need ${healCost} kcal.`); return null; }
+        s.kcal -= healCost;
         s.health = Math.min(this.maxHealth(), (s.health || 0) + heal);
-        this.say(`Field medicine: clean the wound, poultice it, bind it. +${heal} HP.`);
+        this.say(`Field medicine: clean the wound, poultice it, bind it. +${heal} HP, -${healCost} kcal.`);
       } else if (id === 'herbal_remedy') {
         if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return null; }
         if (!(s.diseases || []).length) { this.say('Not sick.'); return null; }
