@@ -11352,7 +11352,7 @@
       // a spawn (or a monster already present) resets it. Measured effective
       // rates with pity (seed 42, 5760 entries): thicket ~26%, base ~16%,
       // meadow ~12%, ruin ~22% — the designed gradient holds (thicket >= 2x
-      // meadow), droughts roughly halve. Face chances below stay the design's.
+      // meadow), droughts roughly halve. The face chances below stay the design's.
       const misses = scholar.monster ? 0 : (scholar.spawnMisses || 0);
       const effChance = Math.min(chance * (1 + 0.25 * misses), 0.6);
       if (Math.random() < effChance && !scholar.monster) {
