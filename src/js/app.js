@@ -2122,7 +2122,8 @@
     if (havenSlot && havenSlot !== target) havenSlot.innerHTML = '';
     if (!inlineView || (st && st.inCombat)) { slot.innerHTML = ''; if (havenSlot) havenSlot.innerHTML = ''; return; }
     if (isStores && target !== slot) slot.innerHTML = '';
-    if (inlineView.kind === 'person') renderPersonInline(target, inlineView);
+    // PERSON CARDS now render in the narration box (Steve 2026-10-05) — not here.
+    if (inlineView.kind === 'person') { slot.innerHTML = ''; return; }
     else if (inlineView.kind === 'assign') renderAssignInline(target, inlineView);
     else if (inlineView.kind === 'remote') renderRemoteInline(target, inlineView);
     else if (inlineView.kind === 'askabout') renderAskAboutInline(target, inlineView);
@@ -2143,7 +2144,7 @@
     if (x) x.onclick = () => { inlineView = null; refresh(); };
   }
 
-  function renderPersonInline(slot, view) {
+  function personCardHTML(view) {
     const villagerId = view.vid;
     const vp = (Game.data.villagers || []).find(v => v.id === villagerId) ||
                (Game.data.background_survivors || []).find(v => v.id === villagerId);
@@ -2306,7 +2307,7 @@
         <button class="btn sm ghost" data-act="stand">Hold your ground</button>`;
     }
 
-    slot.innerHTML = `<div class="inlinecard">
+    return `<div class="inlinecard">
       ${inlineHead('\uD83D\uDC64 ' + esc(titleName))}
       ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
       ${challengeHtml}
@@ -2316,6 +2317,9 @@
       </div>
       <div class="inline-btns">${btns}</div>
     </div>`;
+  }
+  function renderPersonInline(slot, view) {
+    slot.innerHTML = personCardHTML(view);
     wireInlineX(slot);
     slot.querySelectorAll('[data-act]').forEach(b => { b.onclick = () => personAct(view, b.dataset.act); });
   }
@@ -2484,6 +2488,11 @@
   // Dialogue, combat, exploration — all narration renders here, identically.
   // No separate combat narr, no feedback card, no bottom log. One surface.
   function narrationBoxHTML(st, chatView) {
+    // PERSON CARD (Steve 2026-10-05): tapping a person shows their card HERE,
+    // in the narration/chat area — not below the grid. One interaction surface.
+    if (inlineView && inlineView.kind === 'person') {
+      return personCardHTML(inlineView);
+    }
     // Dialogue takes precedence (already Pokémon-style)
     if (chatView) return dialogueBoxHTML(chatView);
     // Otherwise: latest narration line, if any
@@ -4349,6 +4358,14 @@
     on('p-face', () => { Game.startCombat(); rerender(); });
     wireCombatPanel();
     wireDialogueBox();
+    // PERSON CARD in narration box: wire its buttons (Steve 2026-10-05)
+    const narrBox = document.querySelector('.ord-narration');
+    if (narrBox && inlineView && inlineView.kind === 'person') {
+      wireInlineX(narrBox);
+      narrBox.querySelectorAll('[data-act]').forEach(b => {
+        b.onclick = () => personAct(inlineView, b.dataset.act);
+      });
+    }
     // NOTE: Eat/Sleep/Pack/Wait moved to the persistent self bar (wireSelfBar).
     screen.querySelectorAll('.bgsurv').forEach(el => {
       el.onclick = () => { screen.querySelector('#bgsay').textContent = '\u201C' + el.dataset.line + '\u201D'; };
