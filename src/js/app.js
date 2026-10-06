@@ -625,7 +625,7 @@
       html = `<div class="card"><p>🪵 A fallen tree blocks the path.</p><div class="actions">
         <button class="btn sm" data-act="cut">🪓 Cut through (1 part, 60 kcal, +2 wood)</button>${goAround}</div></div>`;
     } else if (blockType === 'rubble') {
-      html = `<div class="card"><p>🧱 Rubble chokes the path.</p><div class="actions">
+      html = `<div class="card"><p>🪨 Rubble chokes the path.</p><div class="actions">
         <button class="btn sm" data-act="clear">🧹 Clear rubble (1 part, 40 kcal)</button>${goAround}</div></div>`;
     } else if (blockType === 'washed_out' || blockType === 'creek') {
       const label = blockType === 'creek' ? 'The creek runs fast here.' : 'The path is washed out.';
@@ -11245,7 +11245,7 @@
     chickweed: '🌱', wood_sorrel: '☘️',
   };
   const CELL_GLYPH = {
-    tree: '🌳', bigtree: '🌲', bush: '🌿', water: '💧', rubble: '🧱',
+    tree: '🌳', bigtree: '🌲', bush: '🌿', water: '💧', rubble: '🪨',
     wall: '⬛', tent: '⛺', fire: '🔥',
     gym: '🏀', class: '🏫', hall: '', door: '🚪', bridge: '🌉',
     office: '🗄️', bay: '📦', dock: '🚚', sanct: '⛪', base: '🕯️',

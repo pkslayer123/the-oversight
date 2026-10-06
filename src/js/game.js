@@ -4626,7 +4626,66 @@
     save() {
       if (this.over) return;
       this.syncRun();
+      // FIGHT PERSISTENCE (Steve 2026-10-06): backgrounding mid-fight must
+      // NOT grant a free reset. The fight snapshots into the save; on load
+      // it resumes exactly where it left off. No exploit, no mercy.
+      this.state.tbfightSnap = this.snapFight();
       S.state.save(this.state);
+    },
+    // snapFight: serializable snapshot of the live fight, or null.
+    // mdef objects are replaced with ids; restoreFightSnap re-links them.
+    snapFight() {
+      const f = this.tbfight;
+      if (!f || f.over) return null;
+      try {
+        const fighters = f.fighters.map(o => {
+          const c = {};
+          for (const k of Object.keys(o)) {
+            if (k === 'mdef') { c.mdefId = o.mdef && o.mdef.id; continue; }
+            c[k] = o[k];
+          }
+          return c;
+        });
+        return {
+          fighters, order: f.order.slice(), turnIdx: f.turnIdx, round: f.round,
+          terraform: f.terraform || {},
+          savedAt: Date.now(),
+        };
+      } catch (e) { return null; }
+    },
+    // restoreFightSnap: rebuild the live fight from a snapshot. Returns true
+    // if the fight resumed. Corrupt snapshots fail closed (no fight, but the
+    // monster stays hostile in the world — see tbEnd fallback).
+    restoreFightSnap(snap) {
+      try {
+        if (!snap || !snap.fighters || !snap.fighters.length) return false;
+        const fighters = [];
+        for (const c of snap.fighters) {
+          const o = Object.assign({}, c);
+          if (c.mdefId) {
+            const mdef = (this.data.monsters || []).find(m => m.id === c.mdefId);
+            if (!mdef && o.kind === 'monster') return false; // unknown monster: fail closed
+            o.mdef = mdef || null;
+          }
+          delete o.mdefId;
+          fighters.push(o);
+        }
+        // The player fighter is the authority during combat — sync the scholar.
+        const p = fighters.find(x => x.key === 'p');
+        if (p && this.state.scholar) {
+          this.state.scholar.mx = p.mx; this.state.scholar.my = p.my;
+          if (typeof p.hp === 'number') this.state.scholar.health = p.hp;
+        }
+        this.tbfight = {
+          fighters, order: snap.order.slice(), turnIdx: snap.turnIdx || 0,
+          round: snap.round || 1, over: false, result: null,
+          terraform: snap.terraform || {},
+        };
+        // Clear the snapshot so a second load doesn't double-restore.
+        this.state.tbfightSnap = null;
+        this.say('The fight is still on. It waited for you.');
+        return true;
+      } catch (e) { return false; }
     },
     hasSave() {
       try { return S.state.listSaves().length > 0; } catch (e) { return false; }
@@ -4653,6 +4712,9 @@
       // SYNERGIES: recompute on load (saves predate the resonance system).
       // Discovered ones stay discovered; no re-announcement (checkSynergies only says on new).
       this.recomputeActiveSynergies();
+      // FIGHT PERSISTENCE (Steve 2026-10-06): resume a fight that was live
+      // at save time. No free reset for backgrounding mid-fight.
+      if (s.tbfightSnap) this.restoreFightSnap(s.tbfightSnap);
       return true;
     },
     wipe() {
@@ -6088,6 +6150,31 @@
       return true;
     },
 
+    // rubblePull: one pull from a rubble pile's loot type. Returns an
+    // inventory item or null. Cans are SCAVENGED items (rare by weight);
+    // tools/cloth are pre-Burn debris finds.
+    rubblePull(lootType) {
+      const day = (this.state.scholar || {}).day || 0;
+      if (lootType === 'cans') {
+        const item = SCAVENGED[Math.floor(Math.random() * SCAVENGED.length)];
+        if (!item) return null;
+        return { plantId: item.id, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg };
+      }
+      if (lootType === 'tools') {
+        const tools = [
+          { id: 'wrench', name: 'Wrench', kg: 0.4, text: 'Pre-Burn steel. Still turns.' },
+          { id: 'prybar', name: 'Prybar', kg: 0.8, text: 'For opening things that don\'t want opening.' },
+          { id: 'screwdriver', name: 'Screwdriver', kg: 0.15, text: 'Small, honest, useful.' },
+        ];
+        const t = tools[Math.floor(Math.random() * tools.length)];
+        return { toolId: t.id, units: 1, name: t.name, unit: 'tool', prep: t.text, kg: t.kg, spoilDay: 9999, kcalEach: 0 };
+      }
+      if (lootType === 'cloth') {
+        return { clothId: 'cloth_scrap', units: 1, name: 'Cloth scrap', unit: 'cloth', prep: 'Bandage, filter, patch. Cloth is never just cloth.', kg: 0.1, spoilDay: 9999, kcalEach: 0 };
+      }
+      return null;
+    },
+
     // cellInteract: tap a cell to USE it. but it's a MAYBE — you learn the truth up close.
     // tree might have nuts or be ivy. water might be poison. tent might be shredded.
     // knowledge sticks: once you know, you know.
@@ -6231,6 +6318,8 @@
       // FIRE: warm
       if (cell === 'fire') { this.say('You warm your hands. The fire pops.'); return true; }
       // RUBBLE: might have loot. shifting rubble is dangerous.
+      // DEPLETION (Steve 2026-10-06): rubble spots are FINITE — each has
+      // secret.amount pulls, then it's picked clean. No more infinite cans.
       if (cell === 'rubble') {
         const mod = t.modifiers && t.modifiers[key];
         if (mod) mod.known = true;
@@ -6243,13 +6332,28 @@
             this.say('A stone slips — your ankle twists. (-50 kcal)');
           }
         }
-        if (secret && secret.loot && secret.loot !== 'none') {
-          this.say(`You find ${secret.amount} ${secret.loot}.`);
-        } else if (secret) {
-          this.say('Picked clean. Nothing.');
+        if (!secret || !secret.loot || secret.loot === 'none' || (secret.amount || 0) <= 0) {
+          this.say('Picked clean. Nothing but dust and broken concrete.');
           return true;
         }
-        return this.doAction('forage', { cx, cy });
+        // One pull per search. Grant the actual item, then decrement.
+        const pull = this.rubblePull(secret.loot);
+        if (pull && !this.canCarry(pull.kg)) {
+          this.say(`You spot ${pull.name} in the debris — too heavy for your pack right now. It'll keep.`);
+          return true;
+        }
+        if (pull) {
+          this.state.scholar.inventory.push(pull);
+          secret.amount = (secret.amount || 1) - 1;
+          if (secret.amount <= 0) secret.loot = 'none';
+          const left = secret.amount > 0 ? ` (${secret.amount} more ${secret.amount === 1 ? 'find' : 'finds'} here, maybe)` : ` That's everything. This pile is done.`;
+          this.say(`You work the rubble and pull out ${pull.name} (${pull.kg} kg).${left}`);
+        } else {
+          this.say('Nothing but dust and broken concrete.');
+          secret.loot = 'none';
+        }
+        this.tickAction(20);
+        return true;
       }
       // RUIN WALLS: pre-Burn bones. Looking is cheap and always says
       // something — knowledge sticks. (Explorer loop 2026-10-05: ruin walls
