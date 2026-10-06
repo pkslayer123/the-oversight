@@ -3962,7 +3962,9 @@
         return;
       }
       const mdef = (this.data.monsters || []).find(x => x.id === m.id) || {};
-      const mName = mdef.name || 'the thing';
+      // KNOWLEDGE-GATED: the patrol report names what the village calls it —
+      // descriptor until named, never the System's true name for free.
+      const mName = this.monsterNoun(mdef.id);
       // fight power: competence × trust × boldness vs monster hp
       const mHp = (mdef.hp && mdef.hp[0]) || 20;
       const fightPower = eff * (temp === 'bold' ? 1.3 : 1.0) * 25;
@@ -5690,7 +5692,7 @@
           const fe = this.findWalkableEntry(x, y, fmx, fmy);
           oldMonster.mx = fe.x; oldMonster.my = fe.y;
           oldMonster.lostSight = 0; // it saw you cross. it's on your trail.
-          this.say(`It followed you. The ${mdef.name} is here.`);
+          this.say(`It followed you. The ${this.monsterNoun(mdef.id)} is here.`);
         } else {
           this.state.scholar.monster = null; // it didn't care enough to follow
         }
@@ -5708,7 +5710,7 @@
             hp: fled.hp, maxHp: fled.maxHp,
           };
           delete this.state.fledMonsters[fmKey];
-          this.say(`You find it — ${mdef.name || 'the thing'} didn't get far. It's still running scared.`);
+          this.say(`You find it — the ${this.monsterNoun(fled.id)} didn't get far. It's still running scared.`);
         }
       } catch (e) {}
       this.state.scholar.animal = null; // animals don't follow
@@ -7327,6 +7329,9 @@
           s.inventory.push(this.foodCarcass(animal, charredKcal, s.day, 'charred'));
           this.say(`The beam takes it apart. Charred remains — about ${charredKcal} kcal of edible bits. Energy weapons don't hunt, they unmake.`);
         } else {
+          // a kill teaches you what it was — you're holding the body. Identify
+          // BEFORE the carcass and the kill line, so the name is earned, not leaked.
+          try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(animal.id); } catch (e) {}
           s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted'));
           this.say(`Got it! ${animal.name}. About ${kcal} kcal of meat on the bone — gut it quickly (knife). It spoils fast.`);
         }
@@ -7335,7 +7340,10 @@
         this.state.codex.animalEncounters[animal.id] = (this.state.codex.animalEncounters[animal.id] || 0) + 1;
         return true;
       } else {
-        this.say(`Missed! The ${animal.name.toLowerCase()} darts away. (-100 kcal)`);
+        // KNOWLEDGE-GATED: the miss names only what you know — descriptor until
+        // 3 encounters or a kill teach the name.
+        const missName = (this.encAnimalKnown && this.encAnimalKnown(animal.id)) ? animal.name.toLowerCase() : (animal.unknown || 'something');
+        this.say(`Missed! The ${missName} darts away. (-100 kcal)`);
         // it flees faster
         this.animalTurn(); this.animalTurn();
         return true;
@@ -9760,6 +9768,46 @@
       if (this.state.systemArrived) return mdef.name;
       return mdef.unknown || 'something moving';
     },
+    // monsterNoun(mid): the gated display name as a sentence-safe noun phrase.
+    // Descriptors carry their articles ("a toad like a war drum", "the thing
+    // with headlights for eyes") — composing "the a toad" doubles the article,
+    // so strip it; callers supply their own ("The toad like a war drum is
+    // here."). True/village names keep their casing ("Headlight Harry").
+    // Prose unknowns ("Something heavy moved...") aren't nouns — fall back to
+    // 'something' rather than mangling prose into a noun.
+    monsterNoun(mid) {
+      const mdef = (this.data.monsters || []).find(m => m.id === mid);
+      let n = String(this.monsterDisplayName(mid) || 'something');
+      const e = (this.state.codex.monsters || {})[mid];
+      const isProper = (e && e.villageName && n === e.villageName) ||
+        (this.state.systemArrived && mdef && n === mdef.name);
+      if (!isProper) {
+        if (/[.!?]/.test(n) && n.length > 50) return 'something';
+        const stripped = n.replace(/^((an?)|the)\s+/i, '');
+        const base = stripped !== n ? stripped : n;
+        return base.charAt(0).toLowerCase() + base.slice(1);
+      }
+      return n;
+    },
+    // refreshMeatNames(mid): when the village names a monster (or the System
+    // arrives and names everything), meat already in packs updates — the same
+    // reveal the plant system does via refreshItemNames. If you don't know, it
+    // doesn't show; once you know, it does.
+    refreshMeatNames(mid) {
+      const pid = 'meat_' + mid;
+      for (const cont of [this.state.scholar.inventory, this.state.scholar.prepStash]) {
+        if (!cont) continue;
+        for (const it of cont) {
+          if (it && it.plantId === pid && it.foodKind === 'meat' && !it.nameLocked) {
+            // keep the processing suffix — carcass, cleaned, cooked — only the
+            // creature part of the name changes.
+            const m = String(it.name || '').match(/\((carcass|cleaned|cooked|smoked|dried)\)\s*$/);
+            const suffix = m ? ' (' + m[1] + ')' : ' meat';
+            it.name = this.monsterDisplayName(mid) + suffix;
+          }
+        }
+      }
+    },
     // monsterThreatSense: vague, from data. No numbers, ever.
     monsterThreatSense(mdef) {
       const dmg = mdef.attack && mdef.attack.damage;
@@ -9900,6 +9948,8 @@
         if (n >= majority) {
           e.villageName = name;
           this.say(`It's settled. The village is calling it "${name}." The ${this.journalName()} keeps it.`);
+          // meat in packs learns the name too — if you know, it shows
+          this.refreshMeatNames(mid);
           // live fighters get the name too
           try {
             for (const f of (this.tbfight || {}).fighters || []) {
@@ -10650,6 +10700,10 @@
       const s = this.state.scholar;
       if (s.day >= 7 && !this.state.systemArrived) {
         this.state.systemArrived = true;
+        // the System names everything — meat in packs updates too
+        try {
+          for (const mid of Object.keys(this.state.codex.monsters || {})) this.refreshMeatNames(mid);
+        } catch (e) {}
         // The cinematic overlay (staged beats, tap to continue) carries the
         // script — see systemArrivalBeats(). The log gets a tight recap only.
         // No more firehose.
@@ -14108,19 +14162,23 @@
         const mid = t.monsterId || (t.mdef && t.mdef.id);
         const mdef = (this.data.monsters || []).find(m => m.id === mid) || {};
         const wType = (w.weapon && w.weapon.damageType) || 'physical';
+        // KNOWLEDGE-GATED: the armor/resist callouts use the same gated phrasing
+        // as strike lines (encShortLabel post-naming, descriptor before) — the
+        // true name is never free, even mid-fight.
+        const tName = this.encShortLabel(t) || this.encTheName(t);
         // Armor: flat reduction vs physical damage only
         if (wType === 'physical' && mdef.armor > 0) {
           const absorbed = Math.min(d, mdef.armor);
           d -= absorbed;
-          if (absorbed > 0) this.say(`(${mdef.name}'s hide absorbs ${absorbed}.)`);
+          if (absorbed > 0) this.say(`(${tName}'s hide absorbs ${absorbed}.)`);
         }
         // Resistances: percentage reduction per type (negative = vulnerability)
         const res = (mdef.resistances || {})[wType] || 0;
         if (res !== 0) {
           const oldD = d;
           d = Math.round(d * (1 - res));
-          if (res > 0) this.say(`(${mdef.name} resists ${wType} — ${oldD} → ${d}.)`);
-          else this.say(`(${mdef.name} is vulnerable to ${wType}! ${oldD} → ${d}.)`);
+          if (res > 0) this.say(`(${tName} resists ${wType} — ${oldD} → ${d}.)`);
+          else this.say(`(${tName} is vulnerable to ${wType}! ${oldD} → ${d}.)`);
         }
         d = Math.max(1, d); // always at least 1 damage
       }
@@ -14326,9 +14384,12 @@
           f.turnIdx = 0; f.round++;
           this.sysSay(`ROUND ${f.round}!`);
           this.audioEvent('round', { round: f.round });
-          // BELLTOAD PACK TRICKLE (Steve 2026-10-05): not a swarm, a chorus.
-          // 1 per round arrives, up to pack size. Never the hummice instant-swarm.
-          if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0) {
+          // BELLTOAD CHORUS (Steve 2026-10-05): the sound IS the mechanic.
+          // Every 2 rounds, another answers the call (up to 4), even if the
+          // original is dead. The croak carries for miles.
+          // The resonance builds: 1 toad = base, 2 = +50%, 3 = +100%, 4 = +150%.
+          // SHOUT breaks the chorus for a round. Killing drops the harmony.
+          if (f.round >= 2 && f.round % 2 === 0 && this._pendingPack && this._pendingPack.count > 0) {
             const pp = this._pendingPack;
             pp.count--;
             if (pp.count <= 0) this._pendingPack = null;
@@ -14339,7 +14400,7 @@
             if (existing) {
               // Spawn just 1 per round (trickle, not swarm)
               for (let i = 0; i < 1; i++) {
-                const nx = Math.max(0, Math.min(8, existing.mx + (i % 2 === 0 ? 1 : -1))));
+                const nx = Math.max(0, Math.min(8, existing.mx + (i % 2 === 0 ? 1 : -1)));
                 const ny = Math.max(0, Math.min(8, existing.my + 1));
                 const newFighter = {
                   key: 'm' + Date.now() + i,
@@ -14369,7 +14430,10 @@
           this.sysSay(`${c.name}'s turn`);
           this.tbVillagerTurn(c);
         } else {
-          const mName = (c.mdef && c.mdef.name) || c.name || 'the monster';
+          // KNOWLEDGE-GATED: the fighter's spawn name is already the gated
+          // display name (descriptor until the village names it) — never reach
+          // past it for the System's true name.
+          const mName = c.name || 'the monster';
           const mEmoji = (c.mdef && c.mdef.emoji) || '👹';
           this.sysSay(`${mEmoji} ${mName}'s turn`);
           this.tbMonsterTurn(c);
@@ -15238,7 +15302,22 @@
           if (!t.alive || t.fled || t.key === o.key) continue;
           if (t.kind !== 'player' && t.kind !== 'villager') continue;
           if (hitKeys.has(t.mx + ',' + t.my)) {
-            this.tbDamage(t.key, S.combat.roll(((o.mdef || {}).attack || {}).damage || [8, 12]), (this.encShortLabel(o) || o.name) + "'s " + this.encAttackName(o, 'Resonant Croak'));
+            // CHORUS RESONANCE (Steve 2026-10-05): the sound builds. Count alive
+            // toads in the fight — each adds +50% to the croak. 1=base, 2=+50%,
+            // 3=+100%, 4=+150%. SHOUT breaks it (handled via startled flag).
+            let chorus = 0;
+            try {
+              chorus = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.id === 'belltoad').length;
+            } catch (e) {}
+            const baseDmg = ((o.mdef || {}).attack || {}).damage || [8, 12];
+            const mult = 1 + (Math.max(0, chorus - 1) * 0.5);
+            const scaled = [Math.round(baseDmg[0] * mult), Math.round(baseDmg[1] * mult)];
+            // SHOUT breaks the chorus: if startled, no harmony bonus
+            const finalDmg = o.startled ? baseDmg : scaled;
+            if (chorus > 1 && !o.startled) {
+              this.say(`The chorus harmonizes — ${chorus} throats, resonance x${mult.toFixed(1)}!`);
+            }
+            this.tbDamage(t.key, S.combat.roll(finalDmg), (this.encShortLabel(o) || o.name) + "'s " + this.encAttackName(o, 'Resonant Croak'));
           }
         }
         o.telegraph = null;
@@ -17198,6 +17277,12 @@
       const p = this.tbFighter('p');
       const monstersFighting = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled);
       const monstersAlive = f.fighters.some(x => x.kind === 'monster' && x.alive);
+      // BELLTOAD CHORUS CONTINUES (Steve 2026-10-05): even if you kill them all,
+      // more answer the call. The fight doesn't end while the chorus is incoming.
+      if (!monstersFighting.length && this._pendingPack && this._pendingPack.count > 0) {
+        this.say('Silence — then, from the dark, another croak answers. The chorus continues.');
+        return false;
+      }
       if (!monstersFighting.length) { this.tbEnd(monstersAlive ? 'routed' : 'won'); return true; }
       if (p && (!p.alive || p.fled)) {
         if (!p.alive) {
@@ -17296,9 +17381,20 @@
           // robots into dinner. 0 stays 0.
           const kcal = (mdef.edible.calories == null) ? 1000 : mdef.edible.calories;
           if (kcal > 0) {
-            const cuts = Math.max(1, Math.round(kcal / 800));
-            s.inventory.push({ plantId: mdef.id + '_meat', units: cuts, kcalEach: Math.round(kcal / cuts), spoilDay: s.day + 3, name: mdef.name + ' meat', unit: 'cut', prep: mdef.edible.note || 'Cook it.', kg: 0.8 });
-            this.say(`${mdef.edible.note || ''} (+${cuts} cuts, ${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'})`);
+            // MONSTER FOOD SAFETY (Steve 2026-10-05): a kill is a carcass, not
+            // lunch. plantId 'meat_<mid>' matches the cautious-test and
+            // clean-meat reveal paths; edibility and calories stay hidden
+            // until learned (tested / villager word / Codex). The name is the
+            // gated display name — descriptor until the village names it.
+            // Killing it does NOT teach the true name.
+            s.inventory.push({
+              plantId: 'meat_' + mdef.id, foodKind: 'meat', foodState: 'carcass',
+              edible: false, units: 1, kcalEach: 0, hiddenKcal: kcal,
+              spoilDay: s.day + 3, name: this.monsterDisplayName(mdef.id) + ' (carcass)',
+              unit: 'carcass', kg: Math.max(0.5, kcal / 1000),
+              prep: 'A carcass. Clean it with a knife — quickly. Spoils fast.'
+            });
+            this.say(`${mdef.edible.note || ''} It's dead, and the meat is yours if you want it — but you don't know this flesh. Clean it, test it cautiously, or ask someone who knows.`);
           } else if (mdef.edible.note) {
             this.say(mdef.edible.note);
           }
@@ -17577,6 +17673,7 @@
         }
       };
       reveal(this.state.scholar.inventory);
+      reveal(this.state.scholar.prepStash);
     },
     plantLevel(pid) {
       const e = (this.state.codex.plants || {})[pid];
@@ -17629,7 +17726,14 @@
       return p.description || 'an unfamiliar plant';
     },
     itemDisplayName(it) {
-      if (it && it.plantId) return this.plantDisplayName(it.plantId);
+      if (it && it.plantId) {
+        // meat_* ids aren't plants — show the stored name, which is set at
+        // creation through the gated monsterDisplayName (descriptor until the
+        // village names it or the System arrives). The old fallthrough showed
+        // every carcass as "unfamiliar plant matter".
+        if (String(it.plantId).startsWith('meat_')) return (it && it.name) || 'unknown flesh';
+        return this.plantDisplayName(it.plantId);
+      }
       return (it && it.name) || 'something';
     },
     // when a plant is identified, update any inventory stacks still showing descriptors
