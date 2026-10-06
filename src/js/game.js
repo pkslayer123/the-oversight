@@ -14392,7 +14392,8 @@
           // original is dead. The croak carries for miles.
           // The resonance builds: 1 toad = base, 2 = +50%, 3 = +100%, 4 = +150%.
           // SHOUT breaks the chorus for a round. Killing drops the harmony.
-          if (f.round >= 2 && f.round % 2 === 0 && this._pendingPack && this._pendingPack.count > 0) {
+          // Pack trickle: rounds 3 and 5 (slow). Max 3 toads.
+          if ((f.round === 3 || f.round === 5) && this._pendingPack && this._pendingPack.count > 0) {
             const pp = this._pendingPack;
             pp.count--;
             if (pp.count <= 0) this._pendingPack = null;
@@ -15305,22 +15306,18 @@
           if (!t.alive || t.fled || t.key === o.key) continue;
           if (t.kind !== 'player' && t.kind !== 'villager') continue;
           if (hitKeys.has(t.mx + ',' + t.my)) {
-            // CHORUS RESONANCE (Steve 2026-10-05): the sound builds. Count alive
-            // toads in the fight — each adds +50% to the croak. 1=base, 2=+50%,
-            // 3=+100%, 4=+150%. SHOUT breaks it (handled via startled flag).
-            let chorus = 0;
-            try {
-              chorus = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.id === 'belltoad').length;
-            } catch (e) {}
+            // SONIC STUN (Steve 2026-10-05): the croak hits like a wall. 20%
+            // chance to ring your ears — lose move action next turn. Simple,
+            // fits the combat system. No stacking, no SHOUT interaction.
             const baseDmg = ((o.mdef || {}).attack || {}).damage || [8, 12];
-            const mult = 1 + (Math.max(0, chorus - 1) * 0.5);
-            const scaled = [Math.round(baseDmg[0] * mult), Math.round(baseDmg[1] * mult)];
-            // SHOUT breaks the chorus: if startled, no harmony bonus
-            const finalDmg = o.startled ? baseDmg : scaled;
-            if (chorus > 1 && !o.startled) {
-              this.say(`The chorus harmonizes — ${chorus} throats, resonance x${mult.toFixed(1)}!`);
+            this.tbDamage(t.key, S.combat.roll(baseDmg), (this.encShortLabel(o) || o.name) + "'s " + this.encAttackName(o, 'Resonant Croak'));
+            if (t.kind === 'player' && Math.random() < 0.2) {
+              const p = this.tbFighter('p');
+              if (p) {
+                p.moveLeft = 0;
+                this.say('Your ears ring — the sound hits like a wall. You stagger, losing your footing.');
+              }
             }
-            this.tbDamage(t.key, S.combat.roll(finalDmg), (this.encShortLabel(o) || o.name) + "'s " + this.encAttackName(o, 'Resonant Croak'));
           }
         }
         o.telegraph = null;
