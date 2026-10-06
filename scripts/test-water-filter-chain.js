@@ -1,8 +1,9 @@
 // Water filter chain (2026-10-06):
-//  The water_filter recipe was a lie — cloth/charcoal/container had no
-//  obtainable source. Fix: weave cloth from plant fiber, rake charcoal from
-//  campfire ashes, burn-hollow a wooden cup; filterWater() purifies risky
-//  water (including chemical, which boiling can't fix) with no fire needed.
+//  The water_filter recipe was a lie — cloth/charcoal had no obtainable
+//  source. Fix: weave cloth from plant fiber, rake charcoal from campfire
+//  ashes (containers assumed, not crafted — no wooden cup); filterWater()
+//  purifies risky water (including chemical, which boiling can't fix) with
+//  no fire needed.
 //  This plays the FULL chain end-to-end as a player would.
 // Usage: node scripts/test-water-filter-chain.js
 const fs = require('fs');
@@ -50,9 +51,13 @@ function lightFire() {
   ok('opening narration mentions the filter chain', /water filter/i.test(openingLog));
 
   // ---- 2. weave cloth from plant fiber ----
-  s.inventory.push({ material: 'fiber', units: 3, name: 'Plant fiber', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
+  // craft() is 85% at L3 and consumes materials on a miss, so each retry
+  // re-stocks fresh fiber — a real player retries with fresh fiber too.
   let made = null;
-  for (let i = 0; i < 8 && !made; i++) made = Game.craft('cloth');
+  for (let i = 0; i < 8 && !made; i++) {
+    s.inventory.push({ material: 'fiber', units: 3, name: 'Plant fiber', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
+    made = Game.craft('cloth');
+  }
   ok('cloth crafts from 3 fiber', !!made);
   const cloth = s.inventory.find(i => i.material === 'cloth');
   ok('cloth item carries material key', !!cloth && cloth.units >= 1);
@@ -75,8 +80,14 @@ function lightFire() {
 
   // ---- 4. craft the water filter (containers assumed, not crafted) ----
   ok('have both materials', Game.materialCount('cloth') >= 1 && Game.materialCount('charcoal') >= 1);
+  // same retry-with-fresh-materials pattern as cloth: charcoal has a daily
+  // raking limit, so retries come from the test's own stores (gathered off-screen).
   made = null;
-  for (let i = 0; i < 8 && !made; i++) made = Game.craft('water_filter');
+  for (let i = 0; i < 8 && !made; i++) {
+    if (Game.materialCount('cloth') < 1) s.inventory.push({ material: 'cloth', units: 1, name: 'Woven cloth', kcalEach: 0, spoilDay: 9999, kg: 0.2 });
+    if (Game.materialCount('charcoal') < 1) s.inventory.push({ material: 'charcoal', units: 1, name: 'Charcoal', kcalEach: 0, spoilDay: 9999, kg: 0.3 });
+    made = Game.craft('water_filter');
+  }
   ok('water filter crafts', !!made);
   const filter = (s.tools || []).find(t => t.recipeId === 'water_filter');
   ok('filter lands in tools with 20 uses', !!filter && filter.uses === 20);
@@ -112,7 +123,9 @@ function lightFire() {
   // craft without materials
   s.inventory = s.inventory.filter(i => !i.material);
   const failCraft = Game.craft('water_filter');
-  ok('craft without materials fails honestly', !failCraft && /need \d+ (cloth|charcoal|container)/i.test(say()));
+  const log5 = say();
+  ok('craft without materials fails honestly', !failCraft && /need \d+ (cloth|charcoal)/i.test(log5));
+  ok('no container demanded (containers assumed, not crafted)', !/container/i.test(log5));
 
   // ---- 9. charcoal needs a burning fire ----
   const detail2 = Game.genDetail(Game.map.px, Game.map.py);

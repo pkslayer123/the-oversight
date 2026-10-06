@@ -359,6 +359,24 @@ function band(name, v, lo, hi) {
     }
     ok('visitor leaves after interaction', (v13.visitors || []).length === 0);
   }
+  // trade-then-done, deterministically: force a trader via the real spawn
+  // path (the block above only covers the cart when the first stranger
+  // happens to be a trader — 40% of runs).
+  v13.visitors = [];
+  let tvis = null;
+  for (let i = 0; i < 200 && !tvis; i++) {
+    const c = Game.considerStrangers();
+    if (c && c.type === 'trader') tvis = c;
+    v13.visitors = (v13.visitors || []).filter(x => x.type === 'trader');
+  }
+  ok('trader arrives via the spawn path', !!tvis);
+  if (tvis) {
+    ok('trader visitor has the real shape', typeof tvis.id === 'string' && tvis.leavesDay === Game.state.scholar.day + 1);
+    Game.visitorInteract(tvis.id, 'trade');
+    ok('trade opens the cart every run, visitor stays', (v13.visitors || []).length === 1 && v13.visitors[0].trading === true);
+    Game.visitorInteract(tvis.id, 'done');
+    ok('done closes the deal, visitor leaves', (v13.visitors || []).length === 0);
+  }
   // no strangers when obscure
   Game.state.scholar.day = 2;
   v13.pantryKcal = 100;
@@ -424,16 +442,25 @@ function band(name, v, lo, hi) {
   Game.considerBetrayalPlot = realConsider;
 
   // ---------- 16. whoTag: multi-actor dialogue never collapses to "A" ----------
-  const wA = Game.whoTag(nn2[0]), wB = Game.whoTag(nn2[1]);
+  // Fresh game: section 12's foundHaven fork leaves a founder-only roster and
+  // section 15's sprung ambushes are lethal — whoTag needs live villagers, and
+  // stale ids make it say "someone" (a false red, not a game bug).
+  await Game.init();
+  Game.genRoster('Columbus, Ohio');
+  Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
+  Game.depart();
+  const live16 = Game.state.village.roster.filter(id => id !== Game.villagerId);
+  const [i0, i1, i2, i3] = live16;
+  const wA = Game.whoTag(i0), wB = Game.whoTag(i1);
   ok('whoTag is not a bare article', wA !== 'A' && wA.length > 2);
   ok('whoTag carries age/gender info', /woman|man|person/.test(wA) && /\d0s/.test(wA));
   ok('whoTag player is you', Game.whoTag(Game.villagerId) === 'you');
   Game.state.systemArrived = true;
-  ok('whoTag post-System is first name', Game.whoTag(nn2[0]) === Game.npcName(nn2[0]));
+  ok('whoTag post-System is first name', Game.whoTag(i0) === Game.npcName(i0));
   Game.state.systemArrived = false;
   // the press line names two distinct, trackable speakers
   liveBs().plots.length = 0;
-  const qp = Game.armPlot(nn2[0], [nn2[1], nn2[2]], nn2[3], { score: 70, reasons: ['grievance'] });
+  const qp = Game.armPlot(i0, [i1, i2], i3, { score: 70, reasons: ['grievance'] });
   Game.inviteHistory(qp.inviter).pending = null;
   const qr = Game.springAmbush(qp);
   const qc = Game.getCase(qr.caseId);

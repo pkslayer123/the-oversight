@@ -49,6 +49,7 @@ const unitsOf = (re) => { const it = (s().inventory || []).find(i => re.test(i.n
 (async () => {
   await Game.init();
   freshGame();
+  forceTrader(); // sets the trade day first, so the perishable pack is fresh relative to it
   const d = s().day;
   stockPack(d);
 
@@ -106,7 +107,7 @@ const unitsOf = (re) => { const it = (s().inventory || []).find(i => re.test(i.n
   said = [];
   const rSold = Game.visitorBuyWare(vis.id, toolIdx);
   ok('re-buy of sold ware refused', rSold === null && said.some(t => /Already sold/.test(t)));
-  s().inventory = [{ name: 'Ripe blackberries', kcalEach: 30, units: 2, spoilDay: d + 1, foodKind: 'plant', foodState: 'ready', edible: true }];
+  s().inventory = [{ name: 'Ripe blackberries', kcalEach: 30, units: 2, spoilDay: s().day + 1, foodKind: 'plant', foodState: 'ready', edible: true }];
   const visB = forceTrader(); Game.visitorInteract(visB.id, 'trade');
   const wB = Game.visitorWares(visB);
   said = [];

@@ -127,10 +127,12 @@ function setPack(pid, kcal) {
   Game.state.village.gossip = [];
   Game.state.codex.skills = { read_people: { level: 3 } };
   setPack(pid2, 2000);
+  const oldName5 = Game.state.village.name;
   const popBefore = home.population;
   const okPet = Game.petitionVillage(home.id, { giftKcal: 1500 });
   ok('petition accepted with food + skills', okPet === true);
-  ok('old village archived on join (hard reset)', (Game.state.pastVillages || []).includes(Game.state.village) || (Game.state.pastVillages || []).length > 0);
+  ok('old village archived on join (hard reset)',
+    (Game.state.pastVillages || []).some(x => x && x.name === oldName5));
   ok('probation set: 14 days', s2.probation && s2.probation.villageId === home.id && s2.probation.daysLeft === 14);
   ok('outsider trust starts at 5', home.trust === 5);
   ok('population grew by one', home.population === popBefore + 1);

@@ -51,13 +51,12 @@ function forceTrader() {
 (async () => {
   await Game.init();
   freshGame();
+  console.log('ACT 1 — a trader comes to Haven (notability set first, so the pack is fresh relative to trade day)');
+  const vis = forceTrader();
+  if (!vis) { console.log('  no trader spawned in 200 tries — check notability gating'); return; }
   const d = s().day;
   stockPack(d);
   console.log(`PACK: ${packKcal()} kcal (berries spoil day ${d + 1}, smoked venison preserved, beans durable)`);
-
-  console.log('\nACT 1 — a trader comes to Haven');
-  const vis = forceTrader();
-  if (!vis) { console.log('  no trader spawned in 200 tries — check notability gating'); return; }
   console.log(`  visitor: "${vis.name}" (${vis.type}), leavesDay=${vis.leavesDay}`);
   const html = Game.visitorHtml();
   console.log(`  Haven panel shows visitor block: ${html.includes('🧳 Visitor:')}`);
@@ -80,7 +79,7 @@ function forceTrader() {
   Game.visitorBuyWare(vis.id, newsIdx);
   const berriesAfter = (s().inventory.find(i => /blackberries/.test(i.name)) || {}).units || 0;
   const venisonAfterNews = (s().inventory.find(i => /venison/.test(i.name)) || {}).units;
-  const dealLine = said.find(t => /^Done\./.test(t));
+  const dealLine = said.find(t => /sketches a map in the dirt/.test(t));
   console.log(`  berries ${berriesBefore} -> ${berriesAfter} (perishable-first: ${berriesAfter < berriesBefore ? 'YES' : 'NO'}); venison untouched: ${venisonAfterNews === 8}`);
   console.log(`  deal line: ${(dealLine || '(none)').slice(0, 120)}`);
   console.log(`  strangersHeard now: ${Game.betrayalState().strangersHeard} (news travels both ways)`);
@@ -110,7 +109,7 @@ function forceTrader() {
 
   console.log('\nACT 6 — broke miser: the honest no');
   said = [];
-  s().inventory = [{ name: 'Ripe blackberries', kcalEach: 30, units: 2, spoilDay: d + 1, foodKind: 'plant', foodState: 'ready', edible: true }];
+  s().inventory = [{ name: 'Ripe blackberries', kcalEach: 30, units: 2, spoilDay: s().day + 1, foodKind: 'plant', foodState: 'ready', edible: true }];
   const r = Game.visitorBuyWare(vis.id, newsIdx); // already sold -> sold line
   const vis2b = forceTrader(); Game.visitorInteract(vis2b.id, 'trade');
   const w2 = Game.visitorWares(vis2b);
