@@ -468,6 +468,7 @@
       this.state.codex.animalEncounters[a.id] = (this.state.codex.animalEncounters[a.id] || 0) + 1;
     } catch (e) {}
     this.feedback('It never moved. One clean strike — it was faking, too late now. About ' + kcal + ' kcal of meat on the bone — gut it quickly (knife).');
+    try { this.audioEvent('animalKill'); } catch (e) {}
     return true;
   };
 
@@ -499,6 +500,7 @@
     var cfg = this.encPreyCfg(animal.id);
     s.animal = { id: animal.id, mx: ax, my: ay, aware: 0, stamina: cfg.stamina, pstate: 'graze', edgeTurns: 0 };
     this.say('Movement — ' + this.encDescribeAnimal(animal) + '.');
+    try { this.audioEvent('animalRustle'); } catch (e) {}
     // knownCue coaching: once you've learned the animal, its trick is
     // stated up front. Earned knowledge, not a spoiler.
     try { var acue = this.encAnimalCue(animal.id); if (acue) this.say('👁 ' + acue); } catch (e) {}
@@ -558,6 +560,7 @@
       if (dist <= 2 && !a.hissed) {
         a.hissed = true; a.aware = 1;
         this.say(this.encCap(label) + ' hisses and lunges — that beak can take a finger. Keep your distance or commit.');
+        try { this.audioEvent('animalHiss'); } catch (e) {}
       }
       if (dist <= 1 && Math.random() < 0.35) {
         var snapDmg = 6 + Math.floor(Math.random() * 8);
@@ -634,7 +637,7 @@
         this.say(this.encCap(label) + ' jukes sideways — leading you in circles.');
         try { this.audioEvent('animalBolt'); } catch (e) {}
         a.stamina -= 1;
-        if (a.stamina <= 0) { a.pstate = 'winded'; this.say(this.encCap(label) + ' is winded — sides heaving. Now\'s your chance.'); }
+        if (a.stamina <= 0) { a.pstate = 'winded'; this.say(this.encCap(label) + ' is winded — sides heaving. Now\'s your chance.'); try { this.audioEvent('animalPant'); } catch (e) {} }
         return;
       }
     }
@@ -642,6 +645,7 @@
       // DEER: the white tail goes up early. Explodes into motion.
       a.pstate = 'bolt'; a.aware = 1;
       this.say(this.encCap(label) + ' — white tail up — explodes into motion!');
+      try { this.audioEvent('animalSnort'); } catch (e) {}
       try { this.audioEvent('animalBolt'); } catch (e) {}
     }
     if (beh === 'flock' && a.pstate === 'bolt' && !a.flockSaid) {
@@ -683,6 +687,10 @@
       // Flee narration is knowledge-gated (encFleeText): the vivid huntText
       // is earned; the ignorant get the generic version.
       this.say(this.encFleeText(a, this.encCap(label) + " decides you're trouble and bolts!"));
+      // DEER (Steve 2026-10-06): a deer snorts when it bolts — same beat as
+      // the white-tail branch above, which only wins the race for stalkers
+      // (aware jumps 0.5→1.0 in one turn for the normal player).
+      if (beh === 'wary') { try { this.audioEvent('animalSnort'); } catch (e) {} }
       try { this.audioEvent('animalBolt'); } catch (e) {}
     }
     if (a.pstate === 'winded') return; // spent. your move.
@@ -703,6 +711,7 @@
       if (a.stamina <= 0) {
         a.pstate = 'winded';
         this.say(this.encCap(label) + " is winded — sides heaving, head low. Now's your chance.");
+        try { this.audioEvent('animalPant'); } catch (e) {}
         return;
       }
       if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
@@ -916,6 +925,8 @@
       } else {
         try { s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted')); } catch (e) {}
         this.feedback('Got it — ' + animal.name + '! About ' + kcal + ' kcal of meat on the bone — gut it quickly (knife). It spoils fast.');
+        // the kill thud — NOT for beam-kills above (the beam unmakes, no thud)
+        try { this.audioEvent('animalKill'); } catch (e) {}
       }
       // CRAYFISH: the tiny boxer gets a pinch in on the way into the bag.
       if ((animal.behavior || '') === 'aquatic_defensive' && !charsMeat && Math.random() < 0.3) {

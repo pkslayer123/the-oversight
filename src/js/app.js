@@ -1054,6 +1054,14 @@
       // not in the popup, not in the spawn message, not in the hunt text.
       const alabel = Game.encDescribeAnimal ? Game.encDescribeAnimal(animal) : (animal ? animal.description : 'an animal');
       desc = alabel + '.';
+      // PREY PHASE BADGE (Steve 2026-10-06): the full badge string in the
+      // popup; a compact symbol on the grid cell. Observable, ungated.
+      try {
+        if (typeof Game.encPreyPhaseBadge === 'function') {
+          const pb = Game.encPreyPhaseBadge(ani);
+          if (pb && pb !== 'grazing') desc += ' ' + pb + '.';
+        }
+      } catch (e) {}
       const enc = (Game.state.codex.animalEncounters || {})[ani.id] || 0;
       if (enc >= 3 && animal) desc += ` You know it: ${animal.name}.`;
       else if (enc > 0) desc += ' Looks familiar.';
@@ -1225,6 +1233,15 @@
 
     // INLINE PANEL: the world stays visible. You're not yanked out of the experience.
     // Actions happen here, in context, below the grid.
+    // GLASSWING TRAP SHADOW (Steve 2026-10-06): tapping the shadow names it.
+    // Diegetic observation ("a shadow on the ground"), never coaching.
+    try {
+      const _gt = (typeof Game.glasswingTrapCells === 'function') ? Game.glasswingTrapCells() : null;
+      if (_gt && _gt.tile && cx === _gt.tile.x && cy === _gt.tile.y) {
+        const _dark = ['faint', 'darker', 'almost black'][Math.min(3, Math.max(1, _gt.turns || 1)) - 1];
+        desc += ` A shadow on the ground — ${_dark}. Something is falling.`;
+      }
+    } catch (e) {}
     const info = document.getElementById('inlineslot');
     if (!info) { expeditionScreen(); return; } // fallback if panel target missing
     info.innerHTML = `
@@ -1528,6 +1545,12 @@
   //   humRise({stacks}) — the hum swells: N detuned voices for N stacks
   //   humBreak()     — a voice drops out: stutter, then thinner
   //   shout()        — the player's bellow: raw noise, no words, all lungs
+  //   PREY BEATS (Steve 2026-10-06) — the hunt's missing sounds:
+  //   animalKill()   — the kill thud (NOT for beam-kills; those unmake)
+  //   animalHiss()   — snapping turtle hiss/lunge warning
+  //   animalSnort()  — deer alarm snort on the white-tail bolt
+  //   animalRustle() — the "Movement —" spawn notice (with one wrong note)
+  //   animalPant()   — winded state: sides heaving, spent
   //   stagSnort()    — stag aggro
   //   stagCharge()   — Confrontation charge resolves
   //   stagConfused() — the charge dies unspent (lost you)
@@ -3052,6 +3075,145 @@
         o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.1);
       }
     }
+    // ---- PREY BEATS (Steve 2026-10-06): the hunt's missing sounds ----
+    function animalKill() {
+      // THE KILL THUD: heavy body-fall, then a wrong resonance underneath —
+      // two low voices a semitone apart beating against each other as the
+      // life leaves. Final. Don't fire this for beam-kills (charsMeat).
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // Body thud: the weight arriving
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(110, t);
+      o.frequency.exponentialRampToValueAtTime(38, t + 0.22);
+      g.gain.setValueAtTime(0.5, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.4);
+      // Bone-tick: a sharp transient at impact
+      const nz = noise(0.1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 1400; nf.Q.value = 3;
+        ng.gain.setValueAtTime(0.25, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.12);
+      }
+      // The wrong underneath: two beating lows, dying slow
+      [74, 78.5].forEach(fq => {
+        const wo = ctx.createOscillator(), wg = ctx.createGain();
+        wo.type = 'sine'; wo.frequency.value = fq;
+        wg.gain.setValueAtTime(0.0001, t + 0.05);
+        wg.gain.exponentialRampToValueAtTime(0.09, t + 0.25);
+        wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+        wo.connect(wg); wg.connect(sfxBus); wo.start(t + 0.05); wo.stop(t + 1.35);
+      });
+    }
+    function animalHiss() {
+      // SNAPPING TURTLE HISS/LUNGE WARNING: an angry exhale, bandpassed —
+      // a dry sibilant rush with a guttural undertow. Ancient and furious.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.55;
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (!nz) return;
+      nf.type = 'bandpass'; nf.frequency.setValueAtTime(3800, t);
+      nf.frequency.exponentialRampToValueAtTime(2200, t + dur); nf.Q.value = 1.2;
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(0.4, t + 0.08);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      // Pulsed: a hiss is breath, breath has rhythm
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sawtooth'; lfo.frequency.value = 26;
+      lg.gain.value = 0.16; lfo.connect(lg); lg.connect(ng.gain);
+      nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+      nz.start(t); nz.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
+      // Undertow: low growl, almost felt more than heard
+      const go = ctx.createOscillator(), gg = ctx.createGain();
+      go.type = 'sawtooth'; go.frequency.setValueAtTime(90, t);
+      go.frequency.exponentialRampToValueAtTime(65, t + dur);
+      const gf = ctx.createBiquadFilter(); gf.type = 'lowpass'; gf.frequency.value = 200;
+      gg.gain.setValueAtTime(0.12, t);
+      gg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      go.connect(gf); gf.connect(gg); gg.connect(sfxBus);
+      go.start(t); go.stop(t + dur);
+    }
+    function animalSnort() {
+      // DEER ALARM SNORT: two explosive nasal puffs — the white tail's
+      // trumpet. Short, violent, unmistakable. Fired WITH the bolt scamper.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 2; i++) {
+        const dt = t + i * 0.22;
+        const nz = noise(0.18), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) continue;
+        // Nasal resonance: the sound of air through a deer's nose
+        nf.type = 'bandpass'; nf.frequency.setValueAtTime(320, dt);
+        nf.frequency.exponentialRampToValueAtTime(180, dt + 0.15); nf.Q.value = 2.5;
+        ng.gain.setValueAtTime(0.42, dt);
+        ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.17);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(dt); nz.stop(dt + 0.18);
+        // The snort's edge: a high whistle of forced air
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(2400, dt);
+        o.frequency.exponentialRampToValueAtTime(1200, dt + 0.12);
+        g.gain.setValueAtTime(0.1, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.13);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.14);
+      }
+    }
+    function animalRustle() {
+      // "MOVEMENT —" : a soft dry rustle — and one note that's wrong.
+      // The wrongness is the cue: this grass doesn't behave like grass.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.5;
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (!nz) return;
+      nf.type = 'highpass'; nf.frequency.value = 4500;
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(0.16, t + 0.15);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+      nz.start(t); nz.stop(t + dur);
+      // The wrong note: a high detuned ping that shouldn't be in grass
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 3100;
+      const o2 = ctx.createOscillator();
+      o2.type = 'sine'; o2.frequency.value = 3170; // beating, slightly off
+      const g2 = ctx.createGain(); g2.gain.value = 0.5;
+      o2.connect(g2); g2.connect(g);
+      g.gain.setValueAtTime(0.05, t + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.65);
+      o.connect(g); g.connect(sfxBus); o.start(t + 0.2); o2.start(t + 0.2);
+      o.stop(t + 0.7); o2.stop(t + 0.7);
+    }
+    function animalPant() {
+      // WINDED: sides heaving — ragged breathing, irregular, wheezy.
+      // Three breath pairs, each weaker. You ran it down. It's spent.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const pairs = [[0, 0.22], [0.5, 0.26], [1.05, 0.3]];
+      pairs.forEach(([dt, breath]) => {
+        // exhale: pushed air, bandpassed low
+        const nx = noise(breath), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (nx) {
+          nf.type = 'bandpass'; nf.frequency.value = 480 + Math.random() * 120; nf.Q.value = 1;
+          ng.gain.setValueAtTime(0.0001, t + dt);
+          ng.gain.exponentialRampToValueAtTime(0.22, t + dt + 0.05);
+          ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + breath);
+          nx.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+          nx.start(t + dt); nx.stop(t + dt + breath + 0.05);
+        }
+        // the wheeze inside: a thin, almost-whistle on the inhale
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.setValueAtTime(900 + Math.random() * 300, t + dt + breath * 0.6);
+        o.frequency.exponentialRampToValueAtTime(700, t + dt + breath);
+        g.gain.setValueAtTime(0.0001, t + dt + breath * 0.6);
+        g.gain.exponentialRampToValueAtTime(0.05, t + dt + breath * 0.75);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + breath + 0.15);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + dt + breath * 0.6); o.stop(t + dt + breath + 0.2);
+      });
+    }
     // ---- BATCH MONSTERS: the ones that were silent ----
     function boarTrample() {
       // BULLDOZER TRAMPLE: heavy rhythmic thuds, ground shaking.
@@ -3590,6 +3752,25 @@
       }
       return muted;
     }
+    // IGNITE FLASH: the discharge is an exclamation mark. A full-screen flash
+    // on beam fire — brief, violent, unmistakable. The phone screen itself
+    // flinches. (Reduced-motion: shorter, dimmer — still unmistakable.)
+    // Lives INSIDE the CombatAudio IIFE so impact() always resolves it —
+    // a test-extracted copy of the IIFE must be self-contained (Steve 2026-10-06).
+    function beamFlash() {
+      try {
+        if (typeof document === 'undefined') return;
+        let el = document.getElementById('beamflash');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'beamflash';
+          document.body.appendChild(el);
+        }
+        el.classList.remove('go');
+        void el.offsetWidth; // restart the animation
+        el.classList.add('go');
+      } catch (e) {}
+    }
     return {
       ensureAudio() { return ensure(); },
       combatStart() { heartbeat(72); },
@@ -3678,6 +3859,12 @@
       animalFlop() { animalFlop(); },
       animalPinch() { animalPinch(); },
       animalSplash() { animalSplash(); },
+      // Prey beats (Steve 2026-10-06): the hunt's missing sounds
+      animalKill() { animalKill(); },
+      animalHiss() { animalHiss(); },
+      animalSnort() { animalSnort(); },
+      animalRustle() { animalRustle(); },
+      animalPant() { animalPant(); },
       // Batch monsters (were silent)
       boarTrample() { boarTrample(); },
       catfishLure() { catfishLure(); },
@@ -3718,23 +3905,7 @@
   })();
   Game.audio = CombatAudio;
 
-  // IGNITE FLASH: the discharge is an exclamation mark. A full-screen flash
-  // on beam fire — brief, violent, unmistakable. The phone screen itself
-  // flinches. (Reduced-motion: shorter, dimmer — still unmistakable.)
-  function beamFlash() {
-    try {
-      if (typeof document === 'undefined') return;
-      let el = document.getElementById('beamflash');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = 'beamflash';
-        document.body.appendChild(el);
-      }
-      el.classList.remove('go');
-      void el.offsetWidth; // restart the animation
-      el.classList.add('go');
-    } catch (e) {}
-  }
+  // (beamFlash lives inside the CombatAudio IIFE — impact() resolves it there.)
 
   // villagersNear: everyone within `range` of the player (Chebyshev).
   function villagersNear(range) {
@@ -6167,6 +6338,13 @@
     const ani = Game.state.scholar.animal;
     const vpos = (Game.state.village.positions || {});
     const secrets = tile.secrets || {};
+    // GLASSWING TRAP SHADOW (Steve 2026-10-06): the pre-combat dive shadow.
+    // game.js sibling owns Game.glasswingTrapCells() — null or
+    // {tile:{x,y}, turns:1|2|3, splash:[{x,y}]}. GUARDED: if absent, nothing renders.
+    // The shadow is DIEGETIC (a shadow on the ground is physically there),
+    // so it renders ungated — but no coaching text beyond the observation.
+    let _gwTrap = null;
+    try { _gwTrap = (typeof Game.glasswingTrapCells === 'function') ? Game.glasswingTrapCells() : null; } catch (e) { _gwTrap = null; }
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
       html += '<div class="drow">';
@@ -6279,7 +6457,15 @@
               const adef = Game.encAnimalDef ? Game.encAnimalDef(ani.id) : null;
               if (adef && adef.emoji) aemoji = adef.emoji;
             } catch (e) {}
-            g = `<span data-ent="creature:${esc(ani.id || 'wild')}">${esc(aemoji)}</span>`;
+            // PREY PHASE BADGE (Steve 2026-10-06): windup → action → recovery
+            // is visible on the grid. Observable behavior — no knowledge gate.
+            // Calm (grazing) shows no badge: the grid stays quiet until it matters.
+            let _pbadge = '';
+            try {
+              const _pp = (typeof Game.encPreyPhase === 'function') ? Game.encPreyPhase(ani) : null;
+              _pbadge = ({ wary: '⚠', bolt: '💨', winded: '😮‍💨', playing_dead: '💀', taunt: '👀' })[_pp] || '';
+            } catch (e) {}
+            g = `<span data-ent="creature:${esc(ani.id || 'wild')}">${esc(aemoji)}${_pbadge ? `<span class="preybadge" style="display:block;font-size:9px;line-height:1;margin-top:-3px">${esc(_pbadge)}</span>` : ''}</span>`;
             cls += ' creature'; drawn = true;
           }
           if (!drawn) {
@@ -6333,7 +6519,27 @@
           (_tg.direct.has(_k) ? ' lockOn' : '') +
           (_tg.rush.has(_k) ? ' rushIndicator' : '') +
           (_tg.ambush.has(_k) ? ' ambushZone' : '');
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        // GLASSWING TRAP SHADOW: the target tile darkens with turns
+        // (faint → darker → almost black); splash tiles get a light mark.
+        // Inline styles keep this in app.js (no CSS file touch).
+        let _gwCls = '', _gwStyle = '';
+        if (_gwTrap && _gwTrap.tile) {
+          if (cx === _gwTrap.tile.x && cy === _gwTrap.tile.y) {
+            const _turns = Math.min(3, Math.max(1, _gwTrap.turns || 1));
+            const _dark = [0.22, 0.42, 0.68][_turns - 1];
+            _gwStyle = `box-shadow:inset 0 0 0 999px rgba(10,10,20,${_dark})`;
+            _gwCls = ' gwtrap';
+          } else if (_gwTrap.splash) {
+            for (const _sc of _gwTrap.splash) {
+              if (_sc && _sc.x === cx && _sc.y === cy) {
+                _gwStyle = 'box-shadow:inset 0 0 0 999px rgba(10,10,20,0.12)';
+                _gwCls = ' gwtrap-splash';
+                break;
+              }
+            }
+          }
+        }
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_gwCls}"${_gwStyle ? ` style="${_gwStyle}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }
@@ -6479,6 +6685,27 @@
       <p class="small"><i>${sys ? 'personnel files. the System knows them better than you do.' : 'your handwriting. who these people are, as far as you can tell.'}</i></p>${cards}`;
   }
 
+  // 📺 OVERSIGHT (Steve 2026-10-06): visible eligibility — who can go, and why.
+  // Driven by Game.contestEligible(): eligible names + notability notes
+  // (earned deeds — showing them here is the intended "why was I picked"),
+  // or the reason pre-day-14. Absent fn = no panel (sibling owns contests.js).
+  function oversightPanel() {
+    if (typeof Game.contestEligible !== 'function') return '';
+    let el = null;
+    try { el = Game.contestEligible(); } catch (e) { return ''; }
+    if (!el) return '';
+    const head = '<h1 class="title" style="font-size:18px">📺 OVERSIGHT</h1><p class="small"><i>the flagship is watching. contests are its teeth. who can go — and why.</i></p>';
+    if (el.eligible && el.eligible.length) {
+      return head + el.eligible.map(e =>
+        `<p class="small">🎯 <b>${esc(e.name)}</b>` +
+        ((e.notability && e.notability.length)
+          ? ' — <i>' + esc(e.notability.join('; ')) + '</i>'
+          : ' — <i>no deeds on the record. the show decides.</i>') +
+        '</p>').join('');
+    }
+    return head + `<p class="small">${esc(el.reason || "The show isn't casting yet.")}</p>`;
+  }
+
   function codexScreen() {
     const entries = Game.codexEntries();
     const inprog = Game.codexInProgress();
@@ -6513,6 +6740,7 @@
         <div class="card codex"><h3>${esc(Game.displayName ? Game.displayName(d.vid) : 'Someone')} <span class="small" style="opacity:.6">· day ${d.day}</span></h3><p class="small">${esc(d.text)}</p></div>`).join('') : ''}
       ${Game.villagerBoard ? '<h1 class="title" style="font-size:18px">CONTEST</h1><p class="small"><i>the leaderboard. the show is watching.</i></p>' + Game.villagerBoard().slice(0, 6).map((r, i) => `
         <p class="small">${i + 1}. <b>${esc(r.name)}</b> — ${r.score}${r.you ? ' (you)' : ''}${r.trend ? ' ' + r.trend : ''}</p>`).join('') : ''}
+      ${oversightPanel()}
       ${inprog.length ? '<h1 class="title" style="font-size:18px">UNIDENTIFIED</h1><p class="small"><i>seen, not named. keep looking.</i></p>' + inprog.map(u => `
         <div class="card"><h3 style="opacity:.75">${u.descriptor}</h3>
         <p class="small">encounters: ${u.enc}/${u.threshold} ${u.enc >= u.threshold - 1 ? '— <b>almost there</b>' : ''}</p></div>`).join('') : ''}
