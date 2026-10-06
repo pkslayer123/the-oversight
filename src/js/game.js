@@ -14358,9 +14358,15 @@
       // the counterplay is pressure. A hit also startles it out of a flatten.
       if (t.kind === 'monster' && this.sunbaskerIs(t) && final > 0) {
         if ((t.sbCharge || 0) > 0) {
+          const hadFull = t.sbCharge >= 2;
           t.sbCharge = 0;
           if (this.encUsesFifo(t)) this.encSetPhase(t, 'bask');
-          this.say('The blow knocks the charge out of its scales — dull brown again.');
+          this.say(hadFull
+            ? 'The blow knocks the charge out of its scales — dull brown again. The bite starves.'
+            : this.pickFresh([
+              'The blow knocks the sunlight out of its scales — dull brown again.',
+              'It flinches — the gold flickers and dies. Back to brown.',
+            ], 'sbBreak'));
           this.audioEvent('baskBreak');
         }
         if (t.sbFlat) {
@@ -16091,7 +16097,9 @@
             m.mx = dc.cx; m.my = dc.cy;
             if (anyoneHit) {
               if (useFifo) this.encSetPhase(m, 'circle');
-              this.say('It snatches at its target and climbs — screaming, back into the sun.');
+              const vt = this.tbFighter(tg.aimKey);
+              const vname = vt ? (vt.kind === 'player' ? 'you' : vt.name) : 'its target';
+              this.say(`It snatches at ${vname} and climbs — screaming, back into the sun.`);
               this.audioEvent('glasswingClimb');
             } else {
               if (useFifo) this.encSetPhase(m, 'grounded');
@@ -16572,9 +16580,13 @@
             // DECLARE THE BITE: direct, tracking — moving won't dodge it.
             // The counterplay is the charge, not the tile: hit it and the
             // bite starves before it lands (pending hook re-reads charge).
-            this.encDeclareDirect(m, t, known
+            // The declare is SPOKEN (a tracking bite has no grid telegraph —
+            // the gold is the warning, and the player must hear it).
+            const biteCue = known
               ? 'Fully gold — Sun-Charged Bite incoming. It tracks: hit it NOW and the charge dies before it lands.'
-              : 'Its scales go molten gold. Heat shimmers off its back.');
+              : 'Its scales go molten gold. Heat shimmers off its back. Something is about to happen.';
+            this.say(biteCue);
+            this.encDeclareDirect(m, t, biteCue);
             m.telegraph.dmg = this.sbBiteDmg(m);
           } else {
             this.say(this.pickFresh([

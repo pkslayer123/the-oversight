@@ -1531,6 +1531,15 @@
   //   stagSnort()    — stag aggro
   //   stagCharge()   — Confrontation charge resolves
   //   stagConfused() — the charge dies unspent (lost you)
+  //   GLASSWING (Steve 2026-10-05):
+  //   glasswingCircle() — circling high, thin whine with vibrato
+  //   glasswingDive()   — the falling whistle, 2000→300Hz
+  //   glasswingLand()   — crash: dirt thud + tangled wing buzz
+  //   glasswingClimb()  — rising buzz, back into the sky
+  //   SUNBASKER (Steve 2026-10-05):
+  //   baskCharge({charge}) — heat shimmer, brighter with charge
+  //   baskBreak()    — the charge knocked out: descending zap
+  //   baskFlatten()  — flattening into the dirt: soft deflate
   const CombatAudio = (() => {
     let ctx = null, hbTimer = null;
     let master = null, hbBus = null, sfxBus = null;
@@ -1972,6 +1981,109 @@
       o.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + 0.6);
     }
+    // ---- GLASSWING DARTER / SUNBASKER (Steve 2026-10-05) ----
+    function glasswingCircle() {
+      // high circling whine: thin sine with slow vibrato, unsettled.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.9;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 1250;
+      lfo.type = 'sine'; lfo.frequency.value = 5; lg.gain.value = 90;
+      lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.10, t + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05); lfo.start(t); lfo.stop(t + dur + 0.05);
+    }
+    function glasswingDive() {
+      // the falling whistle: 2000 → 300, louder as it comes.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.7;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(2000, t);
+      o.frequency.exponentialRampToValueAtTime(300, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.28, t + dur * 0.8);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.1);
+    }
+    function glasswingLand() {
+      // crash: dirt thud + tangled wing buzz.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      thump(t, 0.5);
+      const nz = noise(0.4), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 2500;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.22, t + 0.05);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.45);
+      }
+    }
+    function glasswingClimb() {
+      // rising buzz: climbing back into the sky.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.5;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(200, t);
+      o.frequency.exponentialRampToValueAtTime(650, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    function baskCharge(d) {
+      // heat shimmer: soft rising shimmer, brighter with charge.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.6;
+      const ch = Math.min(3, (d && d.charge) || 0);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(500 + ch * 120, t);
+      o.frequency.exponentialRampToValueAtTime(900 + ch * 200, t + dur);
+      const peak = 0.06 + ch * 0.05;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + dur * 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    function baskBreak() {
+      // the charge knocked out: descending zap.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.3;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(800, t);
+      o.frequency.exponentialRampToValueAtTime(150, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.14, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    function baskFlatten() {
+      // flattening: soft deflate into the dirt.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.6;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(400, t);
+      o.frequency.exponentialRampToValueAtTime(120, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
     // beamBlocked: the beam dies against something real. Fizzle, not bang.
     function beamBlocked() {
       if (!ensure()) return;
@@ -2045,6 +2157,13 @@
       humBreak() { humBreak(); },
       humStop() { humStop(); },
       shout() { shout(); },
+      glasswingCircle() { glasswingCircle(); },
+      glasswingDive() { glasswingDive(); },
+      glasswingLand() { glasswingLand(); },
+      glasswingClimb() { glasswingClimb(); },
+      baskCharge(d) { baskCharge(d); },
+      baskBreak() { baskBreak(); },
+      baskFlatten() { baskFlatten(); },
       toggleMute() { return toggleMute(); },
       isMuted() { return muted; },
       round() { /* hook reserved */ },
