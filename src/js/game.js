@@ -13616,7 +13616,23 @@
     tbBeginTurn() {
       const c = this.tbCurrent();
       if (!c) return;
-      if (c.kind === 'player') { c.moveLeft = c.speed; c.acted = false; c.beamTicks = 0; }
+      if (c.kind === 'player') {
+        // STUNNED (mirror-stag gaze, belltoad croak): the stun is set during a
+        // monster's turn, so it must be consumed HERE — tbBeginTurn otherwise
+        // wipes moveLeft/acted and the freeze silently never happens.
+        // stunFull (toad): the whole turn is lost. Otherwise (stag): the
+        // freeze costs movement — "lose move" — but you can still act.
+        if (c.stunned > 0) {
+          c.stunned -= 1;
+          c.moveLeft = 0;
+          if (c.stunFull) { c.acted = true; c.stunFull = 0; }
+          this.say(c.acted ? 'You can\'t act — the world tilts, and the turn slips past.' : 'You\'re frozen — you can\'t move. (stunned)');
+          this.tbRefreshTelegraphUI();
+          if (c.acted) { this.tbAdvance(); return; }
+        } else {
+          c.moveLeft = c.speed; c.acted = false; c.beamTicks = 0;
+        }
+      }
       this.tbRefreshTelegraphUI();
     },
 
@@ -14194,17 +14210,6 @@
         const b4 = this.tbBatch4Cue(m);
         if (b4) return b4;
       } catch (e) {}
-      // BESPOKE CUE (batch 3, the uncanny): the monster set phase-specific
-      // cue text at declare time (the lure's voice, the contract's fine
-      // print, the projector's picture). It overrides the generic cue — the
-      // earned codex suffix still appends once the pattern is learned.
-      if (tg && tg.cueText) {
-        let bcue = tg.cueText;
-        if (this.tbPatternKnown(m.mdef.id, atk.name)) {
-          bcue += ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
-        }
-        return bcue;
-      }
       // CODEX-GATED TACTICS: surviving the attack teaches the pattern
       // (tbLearnPattern); the per-monster coaching in mdef.encounter.knownCue
       // only appears after that. Knowledge is earned, not given.
@@ -14218,6 +14223,16 @@
         if (enc.knownTactics) t += ' ' + enc.knownTactics;
         return t;
       };
+      // BESPOKE CUE (batch 3, the uncanny): the monster set phase-specific
+      // cue text at declare time (the lure's voice, the contract's fine
+      // print, the projector's picture). It overrides the generic cue — the
+      // earned codex suffix still appends once the pattern is learned.
+      if (tg && tg.cueText) {
+        // A cueText must never swallow the coaching the player earned
+        // (Steve 2026-10-06: voice_mimic, mirror_stag, review_drone,
+        // camera_swarm all set cueText).
+        return tg.cueText + knownTail();
+      }
       if (tg && tg.firing > 0) {
         // CODEX-GATED: first encounters get raw terror, not tactics. The
         // "circle it wide / keep moving" coaching only appears once you've
@@ -15731,6 +15746,7 @@
                 p.moveLeft = 0;
                 p.acted = true;
                 p.stunned = 1;
+                p.stunFull = 1; // the toad's stun is a FULL turn loss — consumed in tbBeginTurn
                 this.say('Your ears ring — the world tilts. The croak hits like a wall. You lose your turn.');
                 this.audioEvent('belltoadStun');
               }
@@ -16255,10 +16271,16 @@
         if (x < 0 || x > 8 || y < 0 || y > 8) return true;
         const cell = detail[y] && detail[y][x];
         if (cell && this.cellProps(cell).blocks) return true;
-        if (this.tbNearestFire(x, y, 1)) return true;
+        // Match the scatter trigger radius (2) — creeping to within 2
+        // would instantly lose the shot.
+        if (this.tbNearestFire(x, y, 2)) return true;
         return false;
       });
       if (s) {
+        // The greedy stepToward falls back to a blocked step when every
+        // improving step is blocked — verify the destination isn't inside
+        // the scatter radius before committing.
+        if (this.tbNearestFire(s.x, s.y, 2)) return;
         m.mx = s.x; m.my = s.y;
         if (m.telegraph && !m.telegraph.creepNarrated) {
           m.telegraph.creepNarrated = true;
@@ -16448,7 +16470,10 @@
         const live = this.encThreatQueue(m).filter(k => {
           const t = this.tbFighter(k); return t && t.alive && !t.fled;
         });
-        if (live.length > limit) {
+        // ADAPTATION: after 1 recalc the drone narrows scope and grades
+        // anyway (see the drone's bespoke block). Crowds buy time, not immunity.
+        if (live.length > limit && (m.drRecalcs || 0) < 1) {
+          m.drRecalcs = (m.drRecalcs || 0) + 1;
           m.telegraph = null;
           this.encSetPhase(m, 'recalc');
           this.say('📊 "TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." The drone backs off, overwhelmed by the crowd.');
@@ -16571,7 +16596,7 @@
             if (useFifo) this.encSetPhase(m, 'countdown');
             const word = tg.turnsLeft === 2 ? 'TWO.' : tg.turnsLeft === 1 ? 'ONE.' : '…';
             this.say(`📊 "${word}" DODGE EFFICIENCY: ${this.droneEff(m)}%. The projected line brightens.`);
-            this.audioEvent('droneCount', { n: tg.turnsLeft });
+            this.audioEvent('droneCount', { count: tg.turnsLeft });
           }
           // the swarm never stops filming — it closes in even while the
           // flashes build. Keep moving.
@@ -16650,8 +16675,18 @@
         if (useFifo) {
           if (this.mothIs(m)) this.encSetPhase(m, 'flash');
           else if (this.toadIs(m)) this.encSetPhase(m, 'chorus');
+          // GRIEF COUNSELOR: after the charge, the mirror again — it wants
+          // you to SEE it coming. That's the point. (The gaze gets another
+          // chance each cycle; the fight never degrades to charge-spam.)
+          else if (this.stagIs(m)) this.encSetPhase(m, 'mirror');
         }
         m.telegraph = null;
+        // MIRROR STAG: its charge telegraph is kind 'line' (locked at declare),
+        // so the squares-only bulldoze below would skip it. The config says
+        // bulldoze — the lane shreds cover at resolve, like its cousin.
+        if (rcfg.bulldoze && tg.kind === 'line' && (tg.pattern || {}).type === 'charge') {
+          tg.cells = this.tbBulldozeCells(tg.cells);
+        }
         if (tg.kind === 'squares') {
           const ptype = (tg.pattern || {}).type;
           // DELEGATE: the line was ANNOUNCED — it charges exactly where it
@@ -16791,6 +16826,7 @@
                   p.moveLeft = 0;
                   p.acted = true;
                   p.stunned = 1;
+                  p.stunFull = 1; // the toad's stun is a FULL turn loss — consumed in tbBeginTurn
                   this.say('Your ears ring — the world tilts. The croak hits like a wall. You lose your turn.');
                   this.audioEvent('belltoadStun');
                 }
@@ -17154,6 +17190,10 @@
             // (simplified: if you didn't move last turn, you're "looking")
             if (Math.random() < 0.4) {
               p.moveLeft = 0;
+              // The freeze must survive to the player's NEXT turn — moveLeft
+              // alone is wiped by tbBeginTurn. stunned=1 is consumed there
+              // (move-only freeze: the block comment says "lose move").
+              p.stunned = 1;
               this.say('You meet its gaze in the mirror. Yourself, tired and afraid — and you can\'t look away. FROZEN.');
               this.audioEvent('stagMirror');
               this.encSetPhase(m, 'confront'); stPhase = 'confront';
@@ -17166,14 +17206,13 @@
           if (!m.telegraph) {
             this.encSetPhase(m, 'confront');
             const atkName = this.encAttackName(m, 'Confrontation');
-            // Grid telegraph: line from monster toward player, length 6
-            const dx = Math.sign(t.mx - m.mx), dy = Math.sign(t.my - m.my);
-            const cells = [];
-            for (let i = 1; i <= 6; i++) {
-              cells.push({ cx: m.mx + dx * i, cy: m.my + dy * i });
-            }
+            // Grid telegraph: 6-tile charge lane toward the target, locked at
+            // declare. Grid-clamped via patternCells — a hand-rolled lane once
+            // ran off the grid and teleported the stag out of the world.
+            // aimKey: the LOS-fizzle must check the RIGHT target's visibility.
+            const cells = S.combat.patternCells(pat, m.mx, m.my, t.mx, t.my);
             m.telegraph = { kind: 'line', cells, dmg: (m.mdef.attack || {}).damage,
-              attackName: atkName, pattern: pat, turnsLeft: 2,
+              attackName: atkName, pattern: pat, turnsLeft: 2, aimKey: t.key,
               cueText: 'It lowers its head. The mirror catches the light. It\'s going to charge — in a straight line. MOVE SIDWAYS.' };
             this.say('It lowers its head. The mirror face catches the light, blinding. It\'s going to charge.');
             this.audioEvent('stagSnort');
@@ -17204,31 +17243,49 @@
         // (Drone phases are project/countdown/correct/recalc. If it's in a
         // generic phase like 'stalk', start the evaluation.)
         if (!m.beamPhase || !['project', 'countdown', 'correct', 'recalc'].includes(m.beamPhase)) {
-          this.encSetPhase(m, 'project'); m.drCount = 0;
+          this.encSetPhase(m, 'project');
         }
         let drPhase = m.beamPhase;
-        // CROWD LIMIT: more than 2 fighters (player + villagers) → recalc
+        // CROWD LIMIT: more than 2 subjects and it recalibrates (loses a turn).
+        // ADAPTATION (Steve 2026-10-06): a permanently-stalled drone never
+        // fights. After 1 recalc it narrows scope and grades the primary
+        // subject anyway. Crowds buy time, not immunity — monsters were sent
+        // to fight.
         const fighterCount = f.fighters.filter(x => x.alive && !x.fled).length;
-        if (fighterCount > 3 && drPhase !== 'recalc') { // player + 2 villagers max
+        if (fighterCount > 3 && drPhase !== 'recalc' && (m.drRecalcs || 0) < 1) { // player + 2 villagers max
+          m.drRecalcs = (m.drRecalcs || 0) + 1;
           this.encSetPhase(m, 'recalc'); drPhase = 'recalc';
           this.say('"TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." It wobbles, overwhelmed.');
           this.audioEvent('droneRecalc');
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         if (drPhase === 'recalc') {
-          // Recalc takes 1 turn, then back to project
-          this.encSetPhase(m, 'project'); m.drCount = 0;
-          this.say('"RECALIBRATION COMPLETE. RESUMING EVALUATION."');
+          // Recalc takes 1 turn, then back to project — or, adapted, it
+          // narrows to a single subject and evaluates anyway.
+          if ((m.drRecalcs || 0) >= 1) {
+            this.say('📊 "SAMPLE SIZE INSUFFICIENT. REDUCING SCOPE. EVALUATING PRIMARY SUBJECT." It stops trying to grade everyone — the lens locks onto one of you.');
+          } else {
+            this.say('"RECALIBRATION COMPLETE. RESUMING EVALUATION."');
+          }
+          this.encSetPhase(m, 'project');
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
-        if (drPhase === 'project' && !m.telegraph) {
-          // PROJECT: draw the line, start countdown
-          this.encSetPhase(m, 'countdown'); m.drCount = 3;
-          const dx = Math.sign(t.mx - m.mx), dy = Math.sign(t.my - m.my);
-          const cells = [];
-          for (let i = 1; i <= 6; i++) {
-            cells.push({ cx: m.mx + dx * i, cy: m.my + dy * i });
+        if (drPhase === 'project') {
+          // PROJECT: draw the line, start countdown. Grid-clamped lane.
+          // If the subject is beyond projector range, drift closer first —
+          // it can't grade what the projector can't reach.
+          const dRange = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+          const reach = pat.length || 6;
+          if (dRange > reach) {
+            const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+            if (stp) { m.mx = stp.x; m.my = stp.y; }
+            this.say('"SUBJECT OUT OF PROJECTOR RANGE. REPOSITIONING." It drifts closer, the lens never leaving you.');
+            this.audioEvent('droneHum');
+            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
           }
+          this.encSetPhase(m, 'countdown');
+          m.drRecalcs = 0; // it committed — the adaptation counter resets
+          const cells = S.combat.patternCells(pat, m.mx, m.my, t.mx, t.my);
           const p0 = this.tbFighter('p');
           m.telegraph = { kind: 'line', cells, dmg: (m.mdef.attack || {}).damage,
             attackName: this.encAttackName(m, 'Scored Assessment'),
@@ -17237,16 +17294,10 @@
             cueText: '"DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGET. COMMENCING CORRECTIVE ACTION IN THREE. TWO." The line is drawn. Move OFF it.' };
           this.say('"SUBJECT LOCKED. COMMENCING CORRECTIVE ACTION IN THREE..." The projector draws a burning line across the dirt.');
           this.audioEvent('droneCount', { count: 3 });
-        } else if (drPhase === 'countdown' && m.telegraph) {
-          m.drCount--;
-          if (m.drCount > 0) {
-            this.say(`"${m.drCount}..." The line brightens.`);
-            this.audioEvent('droneCount', { count: m.drCount });
-            m.telegraph.turnsLeft = m.drCount;
-          }
-          // At 0, the generic telegraph resolver fires the beam
+          // (Windup ticks in the generic pending section — the countdown is
+          // SPOKEN there, one word per beat. This block only declares.)
         }
-        // Drone hovers: doesn't move while evaluating, drifts if no target
+        // Drone hovers: doesn't move while evaluating
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
@@ -17261,18 +17312,25 @@
         // (Swarm phases are film/build/flash. If in a generic phase, start filming.
         // After a flash, go back to film to re-declare.)
         if (!m.beamPhase || !['film', 'build', 'flash'].includes(m.beamPhase) || m.beamPhase === 'flash') {
-          this.encSetPhase(m, 'film'); m.swBuild = 0;
+          this.encSetPhase(m, 'film');
         }
         let swPhase = m.beamPhase;
         const dist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
-        if (swPhase === 'film' && dist <= 4 && !m.telegraph) {
-          // BUILD: shutters quicken, 2-turn windup
-          this.encSetPhase(m, 'build'); m.swBuild = 2;
+        // Don't declare the flash if the shot would instantly scatter — the
+        // swarm knows fire kills the shot. It waits for a cleaner angle.
+        const nearFire = !!this.tbNearestFire(m.mx, m.my, 2);
+        if (swPhase === 'film' && dist <= 4 && !m.telegraph && !nearFire) {
+          // BUILD: shutters quicken, 2-turn windup. The burst is centered on
+          // the target's tile AT DECLARE — keep moving and it lands where you
+          // were. Grid-clamped. (Windup ticks in the generic pending section.)
+          this.encSetPhase(m, 'build');
+          const r = (pat.radius || 2);
           const cells = [];
-          for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-            if (Math.max(Math.abs(dx), Math.abs(dy)) <= 2) {
-              cells.push({ cx: t.mx + dx, cy: t.my + dy });
-            }
+          for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+            if (Math.max(Math.abs(dx), Math.abs(dy)) > r) continue;
+            const cx = t.mx + dx, cy = t.my + dy;
+            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+            cells.push({ cx, cy });
           }
           // (Apply escalation: missed flashes hit harder.)
           const swDmg = (m.mdef.attack || {}).damage || [14, 18];
@@ -17284,21 +17342,33 @@
             cueText: '"ENGAGEMENT DROPPING! ESCALATING!" The shutters quicken — clickclickCLICK. Flash building. Radius 2. COVER YOUR EYES or MOVE.' };
           this.say('"SMILE! You\'re going VIRAL!" The cameras swarm closer, flashes building.');
           this.audioEvent('swarmBuild');
-        } else if (swPhase === 'build' && m.telegraph) {
-          m.swBuild--;
-          if (m.swBuild > 0) {
-            this.say('"ENGAGEMENT DROPPING! ESCALATING!" ClickclickclickCLICK.');
-            this.audioEvent('swarmBuild');
-            m.telegraph.turnsLeft = m.swBuild;
-          }
-          // At 0, generic resolver fires the burst
+          swPhase = 'build'; // the phase changed — creep, don't dash, on the declare turn
         }
         // Movement: speed 6, chases the player (its muse). Creeps while building.
+        // It FEARS fire — if it's too close to a blaze it backs off to a
+        // cleaner angle instead of chasing straight through the flames
+        // (which scattered the shot every single turn). Circling, filming,
+        // waiting for you to leave the fire.
         const speed = swPhase === 'build' ? 2 : 6;
         for (let i = 0; i < speed; i++) {
           const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
           if (d <= 1) break;
-          const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+          let stp;
+          if (this.tbNearestFire(m.mx, m.my, 2)) {
+            const fire = this.tbNearestFire(m.mx, m.my, 2);
+            stp = this.tbStepToward(m, m.mx * 2 - fire.x, m.my * 2 - fire.y, blocked, danger);
+            if (stp && !m.swFireNoted) {
+              m.swFireNoted = true;
+              this.say('The swarm veers away from the flames — it won\'t risk the shot near fire. It\'s waiting for you to step away from the blaze.');
+            }
+          } else {
+            m.swFireNoted = false;
+            stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+            // Don't step INTO the fire's radius — the greedy stepToward can't
+            // see ahead, so check the destination. Better to hold than to
+            // scatter the shot you just declared.
+            if (stp && this.tbNearestFire(stp.x, stp.y, 2)) stp = null;
+          }
           if (!stp) break;
           m.mx = stp.x; m.my = stp.y;
         }
