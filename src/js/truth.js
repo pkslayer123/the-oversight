@@ -92,6 +92,26 @@
         `"Say that again where everyone can hear." A thin smile. "Or don't. Your call."`,
         `"Wow." {first} looks hurt, then angry. "I share my food with you and this is what I get?"`,
       ],
+      // watching someone: quiet observation beats. No-repeat via drawTruthLine —
+      // a player who watches the same person repeatedly shouldn't read the
+      // same three sentences on loop.
+      observeCalm: [
+        `You watch {first} for a while. They move like someone comfortable in their own story. Nothing feels off.`,
+        `{first} doesn't know you're watching. What you see matches what they've told you.`,
+        `An hour of watching {first}. Either they're telling the truth, or they're very good.`,
+        `You study {first} at the fire, at work, at rest. No tells. Either clean or careful — you can't tell which.`,
+      ],
+      observeTellOcc: [
+        `{first} claims to have been a {told}. But you watched them try to {tellVerb} — their hands didn't know the work. {truthCap} have stories in their hands. {first}'s hands are blank.`,
+        `Someone asked {first} about {told} work. The answer was smooth — too smooth, like reciting. Then later, doing something {truth}s do without thinking, {first} fumbled it completely.`,
+        `{first} says "{told}". But their calluses, their posture, the way they hold a tool — that's not {told} work. That's {truth} work, or no work at all.`,
+        `{first} dropped the {told} act for half a second when they thought nobody was looking — the {truth} underneath showed through like bone.`,
+      ],
+      observeTellOrigin: [
+        `{first} says they're from {told}. But you heard them mention "{truth}" like it was home — then catch themselves.`,
+        `{first} claims {told}. Their accent slips sometimes. Not {told}. Somewhere else.`,
+        `You asked {first} about {told} — the streets, the weather, the way people talk. They answered wrong in a way a local never would.`,
+      ],
       clears: [
         `"Oh — that?" {first} laughs, relieved. "No, no, you've got it wrong — let me explain..." And they do, and it makes sense, and you feel a little foolish for doubting them.`,
         `"Huh? Oh!" {first} looks genuinely confused, then it clicks. "No — I see why you'd think that. Here's what actually happened..." The explanation holds together.`,
@@ -213,7 +233,7 @@
       vp.truthLineLast[poolKey] = idx;
       let line = pool[idx];
       const v = vars || {};
-      const first = v.first || String(this.displayName(vid)).split(' ')[0];
+      const first = v.first || this.nameFirst(vid);
       line = line.split('{first}').join(first);
       if (v.truth) line = line.split('{truth}').join(v.truth);
       if (v.told) line = line.split('{told}').join(v.told);
@@ -225,6 +245,7 @@
       if (v.truthWord) line = line.split('{truthWord}').join(v.truthWord);
       if (v.truthCap) line = line.split('{truthCap}').join(v.truthCap);
       if (v.what) line = line.split('{what}').join(v.what);
+      if (v.tellVerb) line = line.split('{tellVerb}').join(v.tellVerb);
       return line;
     },
 
@@ -467,35 +488,27 @@
         try { this.remember(vid, 'observed', 'behavior didn\'t match their story'); } catch (e) {}
         return { ok: true, found: true, text: tells };
       }
-      // honest observation — nothing wrong, which is itself information
-      const calm = [
-        `You watch ${first} for a while. They move like someone comfortable in their own story. Nothing feels off.`,
-        `${first} doesn't know you're watching. What you see matches what they've told you.`,
-        `An hour of watching ${first}. Either they're telling the truth, or they're very good.`,
-      ];
-      const line = calm[Math.floor(Math.random() * calm.length)];
+      // honest observation — nothing wrong, which is itself information.
+      // No-repeat pool: watching the same person on loop shouldn't recycle
+      // the same three sentences.
+      const line = this.drawTruthLine('observeCalm', vid);
       this.say(line);
       return { ok: true, found: false, text: line };
     },
 
     observationTell(vid, lie) {
-      const vp = this.vpOf(vid);
-      const first = String(this.displayName(vid)).split(' ')[0];
+      const first = this.nameFirst(vid);
       const truth = lie.truth, told = lie.told;
       if (lie.field === 'occupation') {
-        const tells = [
-          `${first} claims to have been ${told === 'consultant' ? 'a consultant' : 'a ' + told}. But you watched them try to ${this.occTellVerb(truth)} — their hands didn't know the work. ${this.capFirst(truth)}s have stories in their hands. ${first}'s hands are blank.`,
-          `Someone asked ${first} about ${told} work. The answer was smooth — too smooth, like reciting. Then later, doing something ${truth}s do without thinking, ${first} fumbled it completely.`,
-          `${first} says "${told}". But their calluses, their posture, the way they hold a tool — that's not ${told} work. That's ${truth} work, or no work at all.`,
-        ];
-        return tells[Math.floor(Math.random() * tells.length)];
+        // {truthCap} is the pluralized trade ("Ranchers have stories in
+        // their hands"); {tellVerb} is what the true trade's hands would know.
+        return this.drawTruthLine('observeTellOcc', vid, {
+          told, truth, truthCap: this.capFirst(truth) + 's',
+          tellVerb: this.occTellVerb(truth),
+        });
       }
       if (lie.field === 'origin') {
-        const tells = [
-          `${first} says they're from ${told}. But you heard them mention "${truth}" like it was home — then catch themselves.`,
-          `${first} claims ${told}. Their accent slips sometimes. Not ${told}. Somewhere else.`,
-        ];
-        return tells[Math.floor(Math.random() * tells.length)];
+        return this.drawTruthLine('observeTellOrigin', vid, { told, truth });
       }
       return `Something ${first} does doesn't match something ${first} said.`;
     },
@@ -512,6 +525,17 @@
     },
 
     capFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); },
+
+    // nameFirst: a speakable subject for dialogue lines. displayName is
+    // "A person, maybe 30s" pre-knowledge — splitting THAT gives "A"
+    // ("Someone asked A about..."). firstRef gives the first name once
+    // known, else the whoTag descriptor ("the woman in her 30s, the nurse").
+    nameFirst(vid) {
+      try {
+        if (typeof this.firstRef === 'function') { const f = this.firstRef(vid); if (f) return f; }
+      } catch (e) {}
+      return String(this.displayName(vid));
+    },
 
     // goalWantText(id): human-readable goal phrase for a goal id, e.g.
     // 'belong' → 'to belong somewhere'. Spoken lines must never use raw ids
@@ -737,7 +761,7 @@
       const temp = this.npcTemper(vid);
       const dark = (vp.personality || {}).dark;
       const trust = ((this.state.village.trust || {})[vid]) || 10;
-      const first = String(this.displayName(vid)).split(' ')[0];
+      const first = this.nameFirst(vid);
 
       let confessP = 0.30;
       if (temp === 'warm' || temp === 'gentle') confessP += 0.20;
@@ -868,7 +892,7 @@
       if ((this.npcNeeds(vid).fear || 0) > 60) slipP += 0.06;
     } catch (e) {}
     if (Math.random() < slipP) {
-      const first = String(this.displayName(vid)).split(' ')[0];
+      const first = this.nameFirst(vid);
       const truthWord = lie.truth;
       const anTruth = /^[aeiou]/i.test(truthWord) ? 'an' : 'a';
       const slips = [
@@ -1019,14 +1043,14 @@
       // claimed 'belong' (community) but hoarding/stealing → mismatch
       if ((claimedGoal === 'belong' || claimedGoal === 'heal') &&
           recent.some(m => m.t === 'hoard' || m.t === 'stole' || m.t === 'betrayed')) {
-        const first = String(this.displayName(vid)).split(' ')[0];
+        const first = this.nameFirst(vid);
         this.addDoubt(vid, 'behavior',
           this.doubtText(vid, 'behavior', { text: `${first} says they want ${claimedGoal === 'belong' ? 'to belong' : 'to help'} — but you've seen them take more than their share. Words and hands telling different stories.` }),
           [`claims goal: ${claimedGoal}`, 'observed: selfish behavior']);
       }
       // claimed 'survive' (lay low) but picking fights → mismatch
       if (claimedGoal === 'survive' && recent.some(m => m.t === 'fight' || m.t === 'confronted')) {
-        const first = String(this.displayName(vid)).split(' ')[0];
+        const first = this.nameFirst(vid);
         this.addDoubt(vid, 'behavior',
           this.doubtText(vid, 'behavior', { text: `${first} says they just want to survive, keep their head down. But they keep picking fights. Survival isn't what they're after.` }),
           [`claims goal: ${claimedGoal}`, 'observed: aggressive behavior']);

@@ -139,7 +139,16 @@
         const poss = pro === 'she' ? 'her' : pro === 'he' ? 'his' : 'their';
         let role = '';
         try {
-          const occ = v.formerOccupation || (v.lifeseed && (v.lifeseed.occupation || v.lifeseed.role));
+          // LIAR'S MASK (Steve 2026-10-05): an unconfessed occupation lie means
+          // the village — and the narrator — knows them by their CLAIM, not the
+          // truth. whoTag used to leak the TRUE occupation into every dialogue
+          // tag, collapsing each liar's mystery at a glance. After confession /
+          // exposure the tag flips to the truth: a discovery beat, not a leak.
+          let occ = v.formerOccupation || (v.lifeseed && (v.lifeseed.occupation || v.lifeseed.role));
+          try {
+            const lies = (this.vpOf(vid) || {}).lies; // read-only: never generate lies from a descriptor
+            if (lies && lies.occupation && !lies.occupation.confessed && lies.occupation.told) occ = lies.occupation.told;
+          } catch (e) {}
           if (occ) role = ', the ' + String(occ).toLowerCase().replace(/\s*\(.*?\)/g, '').trim();
         } catch (e) {}
         return 'the ' + who + ' in ' + poss + ' ' + band + role;
@@ -418,9 +427,12 @@
     if (!this.isPlayer(plot.target)) return this.simNpcAmbush(plot);
     const leader = this.whoTag(plot.leader);
     const acc = plot.accomplices.map(a => this.displayName(a));
+    const flank = acc.length >= 2 ? `${acc[0]} and ${acc[1]} are suddenly on your other sides`
+      : acc.length === 1 ? `${acc[0]} is suddenly on your other side`
+      : `there's suddenly someone on your other side`;
     const tells = plot.tells;
     this.say(`You walk out with ${this.displayName(plot.inviter)}. ${tells.length >= 3 ? 'Every warning bell you own is ringing.' : tells.length ? 'Something feels off, but you go anyway.' : 'Just a walk. Just people.'}`);
-    this.say(`Halfway there, the shape of it changes. ${leader} stops walking. ${acc[0]} and ${acc[1]} are suddenly on your other sides — not wandering. Placed.`);
+    this.say(`Halfway there, the shape of it changes. ${leader} stops walking. ${flank} — not wandering. Placed.`);
     this.say(`"${pick([
       'You\'ve had this coming.',
       'Don\'t make this worse than it is.',
@@ -464,7 +476,8 @@
       }
       // caught: shaky attack
       if (R() < 0.3) {
-        this.say(`You bolt — and one of them just... freezes. Hands up, shaking. They can't do it. The others can.`);
+        const others = (plot.accomplices || []).length;
+        this.say(`You bolt — and one of them just... freezes. Hands up, shaking. They can't do it.${others ? ' The others can.' : ' But the leader can.'}`);
       }
       const d = 2 + Math.floor(R() * 5);
       s.health = Math.max(1, (s.health || 100) - d);
@@ -489,21 +502,29 @@
       }
       plot.talksLeft--;
       plot.stalled = (plot.stalled || 0) + 1;
-      const waver = plot.accomplices[Math.floor(R() * plot.accomplices.length)];
+      // the waver: an accomplice with cold feet — or the leader, if they came alone
+      const waver = (plot.accomplices || []).length
+        ? plot.accomplices[Math.floor(R() * plot.accomplices.length)]
+        : plot.leader;
       this.say(`You talk — hands visible, voice level. ${this.whoTag(waver)} looks away. Looks at the ground. The plan is leaking.`);
       try { this.addDoubt(waver, 'observation', `${this.whoTag(waver)} wavered when you talked instead of running. They don't want this.`); } catch (e) {}
       return { continue: true, line: `A long second. Nobody moves. You've bought a little distance — use it.` };
     }
     // fight
-    const target = R() < 0.5 ? plot.leader : pick(plot.accomplices);
+    const accs = plot.accomplices || [];
+    const target = accs.length && R() < 0.5 ? plot.leader : (accs.length ? pick(accs) : plot.leader);
     const dmg = 8 + Math.floor(R() * 10);
     plot.dealt = plot.dealt || {};
     plot.dealt[target] = (plot.dealt[target] || 0) + dmg;
     this.say(`You hit ${this.whoTag(target)} — hard, no form, all survival. (${dmg})`);
     try { this.addTrauma(8); } catch (e) {}
     if ((plot.dealt[target] || 0) >= 25) {
-      // first blood breaks them
-      this.say(`${this.whoTag(target)} goes down — not dead, done. And the other two just... stop. This was supposed to be easy. It isn't. They back off, hands up.`);
+      // first blood breaks them: attackers left standing = everyone minus the one who went down
+      const stillUp = accs.length;
+      const breakLine = stillUp <= 0 ? `That's all of them. Nobody's getting up to argue.`
+        : stillUp === 1 ? `And the last one standing just... stops. This was supposed to be easy. It isn't. They back off, hands up.`
+        : `And the other ${stillUp === 2 ? 'two' : stillUp} just... stop. This was supposed to be easy. It isn't. They back off, hands up.`;
+      this.say(`${this.whoTag(target)} goes down — not dead, done. ${breakLine}`);
       plot.foughtOff = true;
       // corpse only if you finished someone — you didn't; they're down
       return this.ambushAftermath(plot, 'fought_off');
@@ -514,7 +535,15 @@
     plot.woundsTaken = (plot.woundsTaken || 0) + d;
     this.say(`Wild swings back at you (${d}). They're terrible at this. That's the only reason you're still standing.`);
     if (plot.round >= 3) return this.ambushAftermath(plot, 'escaped');
-    return { continue: true };
+    // a continuing fight needs a spoken beat — without one the thread renders "undefined"
+    return {
+      continue: true,
+      line: pick([
+        `"Stay— stay back!" Someone's voice cracks on it. Nobody's steady here.`,
+        `Breathing hard all around. ${this.whoTag(plot.leader)}'s hands won't stop shaking — but they haven't backed off either.`,
+        `"We can still—" ${this.whoTag(target)} doesn't finish. Nobody finishes anything right now.`,
+      ]),
+    };
   },
   // NPC-NPC ambush: resolved in the sim. The player hears about it later.
   simNpcAmbush(plot) {
@@ -1000,6 +1029,31 @@
     } else {
       this.say(`A long exhale moves around the fire like weather. "Not guilty — this time."`);
     }
+    // THE ROOM REMEMBERS (Steve 2026-10-05): the ceremony promises "everyone
+    // will remember it" — so the player's vote lands socially, not just in
+    // the count. The accused remember who voted against them; the victim's
+    // side remembers who stood with them. Voting has a price either way.
+    try {
+      if (c.trial.playerVoter && playerGuiltyVotes !== undefined) {
+        const votedGuilty = playerGuiltyVotes > 0;
+        const me = this.villagerId;
+        for (const aid of (c.accused || [])) {
+          if (this.isPlayer(aid)) continue;
+          if (votedGuilty) this.recordGrievance(aid, me, 'voted_guilty', 22);
+          else { this.bumpTrust(aid, 6); this.remember(aid, 'moot_vote', 'you voted to acquit them at the moot'); }
+        }
+        // ambush cases name no accuser — the victim (target) brought the case
+        const accuser = c.accuser;
+        const vSide = (accuser && !c.accused.includes(accuser)) ? accuser : c.target;
+        if (vSide && !this.isPlayer(vSide) && !c.accused.includes(vSide)) {
+          if (votedGuilty) { this.bumpTrust(vSide, 6); this.remember(vSide, 'moot_vote', 'you voted guilty at the moot'); }
+          else this.recordGrievance(vSide, me, 'voted_acquit', 16);
+        }
+        this.say(votedGuilty
+          ? `Your "guilty" lands in the count, out loud, in front of everyone. The accused hear exactly who said it.`
+          : `Your "not guilty" lands in the count, out loud. Across the fire, a jaw tightens. The accused breathe — and they'll remember who stood up.`);
+      }
+    } catch (e) {}
     if (convicted) return this.sentenceCase(c);
     // acquitted: festering or vindication
     c.status = 'acquitted'; c.resolution = 'acquitted';
@@ -1031,14 +1085,18 @@
     const exileAt = sev >= 4 ? -5 : sev === 3 ? -25 : -40;
     const weregildAt = -10;
     const cname = (() => { try { return this.whoTag(c.accused[0]); } catch (e) { return 'the accused'; } })();
+    // whoTag gives 'you' for the player — fine mid-sentence, but these lines
+    // START the sentence, so capitalize (was: "you pays. And stays").
+    const cnameCap = cname ? cname.charAt(0).toUpperCase() + cname.slice(1) : cname;
     if (avg < exileAt) {
-      this.say(`The oldest among them stands. The fire seems to lean in. "${cname} — take what you can carry and go."`);
+      this.say(`The oldest among them stands. The fire seems to lean in. "${cnameCap} — take what you can carry and go."`);
       return this.resolveCase(c.id, 'exile');
     }
     // a murder conviction always costs at least weregild — the village can't
     // shrug at a killing, even a shaky one
     if (avg < weregildAt || sev >= 4) {
-      this.say(`The sentence is spoken low, like something heavy set down. "${cname} pays. And stays — this time."`);
+      const payVerb = this.isPlayer(c.accused[0]) ? 'pay' : 'pays';
+      this.say(`The sentence is spoken low, like something heavy set down. "${cnameCap} ${payVerb}. And stays — this time."`);
       return this.resolveCase(c.id, 'weregild');
     }
     // weak conviction → schism or cold war
@@ -1053,6 +1111,7 @@
     const v = this.state.village;
     c.status = 'resolved'; c.resolution = path;
     const names = c.accused.map(a => this.whoTag(a)).join(', ');
+    const namesCap = names ? names.charAt(0).toUpperCase() + names.slice(1) : names; // sentence-start, not "you pays"
     if (path === 'exile') {
       // the flipped weakest gets leniency
       const exiled = c.flipped ? c.accused.filter(a => a !== c.flipped) : c.accused;
@@ -1067,7 +1126,9 @@
         this.say(`${this.whoTag(c.flipped)} talked first. The village remembers that too — leniency, and a long probation.`);
       }
     } else if (path === 'weregild') {
-      this.say(`Weregild. ${names} ${c.accused.length > 1 ? 'pay' : 'pays'} — food, work, public apology. The price of staying.`);
+      // verb agreement: "you" takes "pay", a single third person takes "pays"
+      const wergildVerb = (c.accused.length === 1 && this.isPlayer(c.accused[0])) || c.accused.length > 1 ? 'pay' : 'pays';
+      this.say(`Weregild. ${namesCap} ${wergildVerb} — food, work, public apology. The price of staying.`);
       try {
         v.pantryKcal = (v.pantryKcal || 0) + 3000;
         // the player pays from their own stores — it has to hurt
