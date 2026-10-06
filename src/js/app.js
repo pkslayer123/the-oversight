@@ -10632,6 +10632,7 @@
     const overlay = document.getElementById('mapoverlay');
     if (compass && overlay) {
       compass.onclick = () => {
+        try { if (Game.backfillSeen) Game.backfillSeen(); } catch (e) {}
         const st = Game.state;
         const tset = new Set(); // travel dest, if any
         try { const td = Game.travelDest ? Game.travelDest() : null; if (td) for (const k of td) tset.add(k); } catch (e) {}

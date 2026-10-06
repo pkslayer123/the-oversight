@@ -5930,8 +5930,23 @@
         if (!cur || (cur.k === 's' && kind === 'visited')) s.seenTiles[k] = { k: kind === 'visited' ? 'v' : 's', by: by || null };
       } catch (e) {}
     },
+    // Backfill map knowledge for saves predating fog of war (Steve 2026-10-06).
+    backfillSeen() {
+      try {
+        const s = this.state.scholar;
+        s.seenTiles = s.seenTiles || {};
+        if (!Object.keys(s.seenTiles).length) {
+          const mp = this.map, v = this.state.village;
+          if (mp) this.markSeen(mp.px, mp.py, 'visited');
+          if (v && v.px !== undefined) this.markSeen(v.px, v.py, 'visited');
+        }
+      } catch (e) {}
+    },
     mapSeen(x, y) {
       try {
+        // You're always aware of where you're standing (old saves predate seenTiles).
+        const mp = this.map;
+        if (mp && x === mp.px && y === mp.py) return 'visited';
         const e = (this.state.scholar.seenTiles || {})[x + ',' + y];
         return e ? (e.k === 'v' ? 'visited' : 'shared') : null;
       } catch (e) { return null; }
