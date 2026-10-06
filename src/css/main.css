@@ -382,6 +382,13 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .minimap { max-width: 480px; }
 .minimap .tile { font-size: clamp(12px, 3.6vw, 22px); }
 .minimap .tile.dest { outline: 2px solid var(--warn); }
+/* MAP INFO (Steve 2026-10-06): tap-through tile info inside the map overlay. */
+.map-info {
+  margin: 8px 4px 0; padding: 8px 12px;
+  background: rgba(255,255,255,.06); border-radius: 8px;
+  font-size: 14px; line-height: 1.4; min-height: 20px;
+}
+.map-info .dim { opacity: .6; }
 .minimap .tile:not(.dest):not(.me) { opacity: .75; }
 .cell.plantcell { cursor: default; }
 

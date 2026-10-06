@@ -10644,21 +10644,46 @@
         overlay.classList.remove('hidden');
         overlay.querySelector('#mapoverlay-x').onclick = () => overlay.classList.add('hidden');
         overlay.querySelector('.mapoverlay-back').onclick = () => overlay.classList.add('hidden');
-        // wire tile taps inside the overlay
+        // wire tile taps inside the overlay (Steve 2026-10-06): tapping a
+        // node shows its info WITHOUT leaving the map. Tap through freely.
+        let mapInfoEl = overlay.querySelector('.map-info');
+        if (!mapInfoEl) {
+          mapInfoEl = document.createElement('div');
+          mapInfoEl.className = 'map-info';
+          overlay.querySelector('.mapoverlay-box').appendChild(mapInfoEl);
+        }
         overlay.querySelectorAll('.minimap .tile').forEach(el => {
-          el.onclick = () => {
+          el.onclick = (ev) => {
+            ev.stopPropagation();
             const x = +el.dataset.x, y = +el.dataset.y;
             const tl = Game.tileAt(x, y);
-            if (x === st.px && y === st.py) return;
-            const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
-            if (otherV && Game.villageCard) {
-              const card = Game.villageCard(otherV.id);
-              if (card) { overlay.classList.add('hidden'); Game.say(card); refresh(); }
-            } else if (tl && Game.mapSeen && Game.mapSeen(x, y)) {
-              const how = Game.mapSeen(x, y) === 'shared' ? ' — shown to you by someone' : '';
-              Game.say(`${S.TILE_GLYPH[tl.type] || '·'} ${tl.type}${how}`);
-              refresh();
+            const seen = Game.mapSeen ? Game.mapSeen(x, y) : null;
+            if (!seen) { mapInfoEl.innerHTML = '<span class="dim">Unexplored — you haven\'t been here.</span>'; return; }
+            if (x === (Game.map || {}).px && y === (Game.map || {}).py) {
+              mapInfoEl.innerHTML = '<b>You are here.</b>';
+              return;
             }
+            const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
+            if (otherV) {
+              mapInfoEl.innerHTML = `<b>🏘️ ${esc(otherV.name || 'Another village')}</b> — tap again to visit.`;
+              el.dataset.village = otherV.id;
+              return;
+            }
+            // Second tap on a seen tile: travel there (if adjacent).
+            if (el.dataset.armed === '1') {
+              const dx = Math.abs(x - Game.map.px), dy = Math.abs(y - Game.map.py);
+              if (dx + dy === 1 && Game.travelTo) {
+                overlay.classList.add('hidden');
+                Game.travelTo(x, y);
+                refresh();
+                return;
+              }
+              el.dataset.armed = '';
+            }
+            const how = seen === 'shared' ? ' <span class="dim">(shown to you by someone)</span>' : '';
+            const glyph = (typeof S !== 'undefined' && S.TILE_GLYPH && tl) ? (S.TILE_GLYPH[tl.type] || '·') : '·';
+            mapInfoEl.innerHTML = `${glyph} <b>${esc(tl ? tl.type : 'unknown')}</b>${how} — tap again to travel.`;
+            el.dataset.armed = '1';
           };
         });
       };

@@ -22375,6 +22375,12 @@
       // DEDUP (Steve 2026-10-05): never say the exact same thing twice in a row.
       // Pack monsters declaring the same attack were spamming the log 4×.
       // This is a safety net — the per-attack dedup in sayTelegraphOnce is primary.
+      // OBJECT GUARD (Steve 2026-10-06): never push [object Object] to the log.
+      if (msg && typeof msg === 'object') {
+        msg = msg.text || msg.desc || msg.msg || msg.message || String(msg);
+      }
+      msg = String(msg == null ? '' : msg);
+      if (!msg) return;
       const log = this.log;
       if (log.length > 0 && log[log.length - 1] === msg) return;
       log.push(msg); if (log.length > 40) log.shift();
