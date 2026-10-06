@@ -11893,12 +11893,14 @@
         const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '');
         // other villages: show 🏘️ if generated (you've been near)
         const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
-        // PLAYER MARKER (Steve 2026-10-05): always show YOU clearly, even on
-        // fog. The old code showed the tile glyph which could hide you.
+        // PLAYER MARKER (Steve 2026-10-05, enhanced 2026-10-06): always show YOU
+        // clearly, even on fog. The old code showed the tile glyph which could
+        // hide you. 2026-10-06: playtester couldn't find herself — the small
+        // cyan arrow on green was low-contrast. Now: bold white arrow, larger.
         const g = isP ? '📍' : isW ? '🐗' : otherV ? '🏘️' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
         const pf = Game.state.scholar.facing || { x: 0, y: 1 };
         const pang = Math.round(Math.atan2(pf.x, -pf.y) * 180 / Math.PI);
-        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? `<span class="mface" style="transform:rotate(${pang}deg)">➤</span>` : g}</div>`;
+        html += `<div class="${cls}" data-x="${x}" data-y="${y}"${isP ? ' data-you="1" aria-label="You are here"' : ''}>${isP ? `<span class="mface youface" style="transform:rotate(${pang}deg)">➤</span>` : g}</div>`;
       }
       html += '</div>';
     }
