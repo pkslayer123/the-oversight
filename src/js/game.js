@@ -9309,6 +9309,10 @@
       }
       const prev = this.sleepPreview();
       const startDay = s.day, startKcal = Math.round(s.kcal || 0);
+      const healthBefore = Math.round(s.health || 0);
+      // DIAGNOSTIC (Steve 2026-10-05): partner reports no healing from sleep.
+      // Log health before/after to console for debugging.
+      if (typeof console !== 'undefined') console.log(`[SLEEP] health before: ${healthBefore}, quality: ${prev.quality}, heal: ${prev.heal}, hydration: ${s.hydration}, kcal: ${s.kcal}`);
       // NIGHT WEATHER: capture now. endDay rolls the NEW day's weather at
       // midnight mid-sleep — the cold that bites is tonight's, not dawn's.
       const nightWeather = this.state.weather;
@@ -9401,6 +9405,8 @@
                    : `(+${crisisHeal} health, wrung-out morning.${conservedNote}${exposureNote})`)
         : `(+${prev.heal} health, energy restored.${conservedNote} ${prev.note})`;
       this.say(`Dawn. You wake ${rested}. ${wakeAcct}${nightmareNote}`);
+      // DIAGNOSTIC: log health after
+      if (typeof console !== 'undefined') console.log(`[SLEEP] health after: ${Math.round(s.health || 0)}, expected gain: ${prev.heal}`);
       return this.status();
     },
     clearDialGlitch() { this.state.dialGlitch = false; },
