@@ -61,7 +61,7 @@
         "It backs off, snorting \u2014 firelight in its eyes. It doesn't like this."
       ]
     },
-    "wave": 2,
+    "wave": 1,
     "encounter": {
       "fifo": true,
       "noticeRange": 4,
@@ -163,7 +163,7 @@
         "It melts back between the trees. The silence goes with it."
       ]
     },
-    "wave": 2,
+    "wave": 1,
     "encounter": {
       "fifo": true,
       "noticeRange": 6,
@@ -274,7 +274,7 @@
         "It startles \u2014 white tail flashing \u2014 and it's gone. Just gone."
       ]
     },
-    "wave": 4,
+    "wave": 1,
     "encounter": {
       "fifo": true,
       "noticeRange": 5,
@@ -644,7 +644,7 @@
         "It folds back into the reeds. The static fades. You were never here."
       ]
     },
-    "wave": 2,
+    "wave": 1,
     "encounter": {
       "fifo": true,
       "noticeRange": 5,
@@ -838,7 +838,7 @@
         "It... can't really flee. It's a boulder. It just looks offended."
       ]
     },
-    "wave": 3,
+    "wave": 1,
     "encounter": {
       "fifo": true,
       "noticeRange": 2,
@@ -933,7 +933,7 @@
         "The glow dims and sinks. The water forgets it was ever there."
       ]
     },
-    "wave": 2,
+    "wave": 1,
     "encounter": {
       "fifo": true,
       "noticeRange": 4,
@@ -969,7 +969,7 @@
   },
   {
     "id": "voice_mimic_radio",
-    "wave": 3,
+    "wave": 2,
     "name": "Static",
     "activity": "nocturnal",
     "biomes": [
@@ -1060,7 +1060,7 @@
   },
   {
     "id": "mirror_stag",
-    "wave": 3,
+    "wave": 2,
     "name": "Grief Counselor",
     "activity": "diurnal",
     "biomes": [
@@ -1352,7 +1352,7 @@
   },
   {
     "id": "hype_horn",
-    "wave": 3,
+    "wave": 2,
     "name": "Motivational Speaker",
     "activity": "crepuscular",
     "biomes": [
@@ -1536,7 +1536,7 @@
   },
   {
     "id": "contract_golem",
-    "wave": 3,
+    "wave": 2,
     "name": "Terms & Conditions",
     "activity": "diurnal",
     "biomes": [
@@ -1627,7 +1627,7 @@
   },
   {
     "id": "delegate_beast",
-    "wave": 3,
+    "wave": 2,
     "name": "Middle Manager",
     "activity": "both",
     "biomes": [
@@ -1815,7 +1815,7 @@
   },
   {
     "id": "memory_projector",
-    "wave": 3,
+    "wave": 2,
     "name": "Nostalgia",
     "activity": "crepuscular",
     "biomes": [
@@ -1916,7 +1916,7 @@
       20
     ],
     "speed": 5,
-    "wave": 2,
+    "wave": 1,
     "pack": 1,
     "blocks": false,
     "snake": {
