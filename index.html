@@ -204,11 +204,31 @@
       u0.search = '';
       window.history.replaceState(null, '', u0.toString());
     }
-    if (attempted && /^[0-9a-f]{7}-\d{8}-\d{6}$/.test(attempted) &&
-        attempted !== (window.BUILD_VERSION || '')) {
-      state = 'pending';
-      show(PENDING_HTML);
+    if (attempted && /^[0-9a-f]{7}-\d{8}-\d{6}$/.test(attempted)) {
+      if (attempted !== (window.BUILD_VERSION || '')) {
+        state = 'pending';
+        show(PENDING_HTML);
+      } else {
+        // Update succeeded - show confirmation briefly
+        // (Steve 2026-10-06: make updates verifiable)
+        try {
+          sessionStorage.setItem('oversight_just_updated', attempted);
+        } catch (e) {}
+      }
     }
+    // Show update confirmation if we just updated
+    try {
+      var justUpdated = sessionStorage.getItem('oversight_just_updated');
+      if (justUpdated && justUpdated === (window.BUILD_VERSION || '')) {
+        sessionStorage.removeItem('oversight_just_updated');
+        // The banner will show briefly to confirm
+        state = 'idle';
+        show('&#9989; Updated to build ' + justUpdated.substring(0, 7));
+        setTimeout(function() {
+          if (state === 'idle') banner.classList.add('hidden');
+        }, 3000);
+      }
+    } catch (e) {}
   } catch (e) {}
 
   // Exposed for the build-tag tap in app.js and console debugging.
