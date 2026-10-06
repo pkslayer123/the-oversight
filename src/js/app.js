@@ -12264,8 +12264,7 @@
             // UNKNOWN SEEN TILES (Steve 2026-10-06): if seen but no data,
             // show a visible "explored" tile, not blank dark.
             const isUnknown = !tl || ttype === 'unknown';
-            // DIAGNOSTIC (Steve 2026-10-06): bright red to verify code path runs
-            const base = '#ff0000';
+            const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
             const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
             const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
             g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" style="width:100%;height:100%;display:block">` +
