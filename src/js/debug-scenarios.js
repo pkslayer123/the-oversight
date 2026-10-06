@@ -136,6 +136,124 @@
       Game.say('Get adjacent to the deer and Hunt (🏹). It\'s hard difficulty — the bow\'s +40 helps.');
     },
 
+    // ANIMALS (Steve 2026-10-05): separate from monsters. These are prey,
+    // not predators. Hunt them, don't fight them.
+    rabbit() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('sling');
+      s.insideHaven = false;
+      Game.dayPart = 0; // dawn
+      spawnAnimalNear('cottontail_rabbit');
+      Game.say('🐞 SCENARIO: rabbit. Small, fast, everywhere at dawn. The sling is your best bet.');
+    },
+
+    squirrel() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('sling');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday
+      spawnAnimalNear('gray_squirrel');
+      Game.say('🐞 SCENARIO: squirrel. In the trees. Watch for movement.');
+    },
+
+    turkey() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('crude_bow', 'arrow', 8);
+      s.insideHaven = false;
+      Game.dayPart = 0; // dawn
+      spawnAnimalNear('wild_turkey');
+      Game.say('🐞 SCENARIO: wild turkey. Big bird, good meat. The bow works if you\'re close.');
+    },
+
+    opossum() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('sharpened_stick');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — nocturnal
+      spawnAnimalNear('virginia_opossum');
+      Game.say('🐞 SCENARIO: opossum. Plays dead. Don\'t fall for it.');
+    },
+
+    bullfrog() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      s.insideHaven = false;
+      Game.dayPart = 2; // dusk — near water
+      spawnAnimalNear('american_bullfrog');
+      Game.say('🐞 SCENARIO: bullfrog. Near water at dusk. Listen for the croak.');
+    },
+
+    boxturtle() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday
+      spawnAnimalNear('eastern_box_turtle');
+      Game.say('🐞 SCENARIO: box turtle. Slow. You can literally walk up to it.');
+    },
+
+    fox() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('crude_bow', 'arrow', 10);
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — nocturnal hunter
+      spawnAnimalNear('gray_fox');
+      Game.say('🐞 SCENARIO: gray fox. Clever. It will see you before you see it.');
+    },
+
+    crayfish() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — in creeks
+      spawnAnimalNear('rusty_crayfish');
+      Game.say('🐞 SCENARIO: crayfish. In the creek. Reach in and grab — watch the claws.');
+    },
+
+    raccoon() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      s.insideHaven = false;
+      Game.dayPart = 3; // night
+      spawnAnimalNear('raccoon');
+      Game.say('🐞 SCENARIO: raccoon. Not the Lockpick — just a regular raccoon. Curious, not hostile.');
+    },
+
+    snappingturtle() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('sharpened_stick');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — near water
+      spawnAnimalNear('common_snapping_turtle');
+      Game.say('🐞 SCENARIO: snapping turtle. Do NOT grab this one. The stick keeps your fingers.');
+    },
+
+    chub() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday
+      spawnAnimalNear('creek_chub');
+      Game.say('🐞 SCENARIO: creek chub. In the water. You\'ll need to fish, not hunt.');
+    },
+
     // 2. Day 7 System transition — the lived-in village. System arrives on next action.
     day7() {
       freshGame();
@@ -862,7 +980,18 @@
 
   Game.debugScenarioList = function () {
     return [
-      ['deer', '🦌 Deer encounter'],
+      ['deer', '🦌 Deer hunt'],
+      ['rabbit', '🐇 Rabbit hunt'],
+      ['squirrel', '🐿️ Squirrel hunt'],
+      ['turkey', '🦃 Wild Turkey hunt'],
+      ['opossum', '🐾 Opossum encounter'],
+      ['bullfrog', '🐸 Bullfrog encounter'],
+      ['boxturtle', '🐢 Box Turtle encounter'],
+      ['fox', '🦊 Gray Fox hunt'],
+      ['crayfish', '🦞 Crayfish catch'],
+      ['raccoon', '🦝 Raccoon encounter'],
+      ['snappingturtle', '🐢 Snapping Turtle (careful!)'],
+      ['chub', '🐟 Creek Chub fishing'],
       ['headlight', '💡 Headlight Deer fight'],
       ['flashbulb', '🦋 Flashbulb Moth fight'],
       ['choir', '🐸 Choir Toad fight'],
@@ -914,7 +1043,8 @@
     const all = Game.debugScenarioList();
     const byId = Object.fromEntries(all);
     const cats = {
-      '🦌 Monsters — Wave 1': ['deer', 'headlight', 'flashbulb', 'choir', 'lockpick', 'hummice', 'glasswing', 'sunbasker', 'bulldozer', 'hushpuppy', 'whitenoise', 'nightlight', 'speedbump', 'ducksinarow'],
+      '🐾 Animals — Prey': ['deer', 'rabbit', 'squirrel', 'turkey', 'opossum', 'bullfrog', 'boxturtle', 'fox', 'crayfish', 'raccoon', 'snappingturtle', 'chub'],
+      '🦌 Monsters — Wave 1': ['headlight', 'flashbulb', 'choir', 'lockpick', 'hummice', 'glasswing', 'sunbasker', 'bulldozer', 'hushpuppy', 'whitenoise', 'nightlight', 'speedbump', 'ducksinarow'],
       '👹 Monsters — Wave 2': ['static', 'griefcounselor', 'reviewdrone', 'influencer', 'motivationalspeaker', 'customerservice', 'termsconditions', 'middlemanager', 'inspiration', 'nostalgia'],
       '⚖️ Justice & Social': ['ambush', 'mootAccused', 'mootJuror', 'exile', 'uprising', 'liars'],
       '📖 Story': ['mantle', 'day7', 'day1', 'night', 'language', 'starving'],
