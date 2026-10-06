@@ -636,7 +636,8 @@
    }
   ],
   "universal": true,
-  "kg": 0.05
+  "kg": 0.05,
+  "damage": 8
  },
  {
   "id": "fire_hardened_spear",
@@ -731,7 +732,7 @@
   "flavor": "Bent stick, twisted cord. The arrows are straighter than the bow.",
   "baseEffect": "Ranged. Bonus +40.",
   "weapon": {
-   "bonus": 40,
+   "bonus": 18,
    "type": "ranged",
    "range": 5,
    "ammo": "arrow",
@@ -752,7 +753,8 @@
     ]
    }
   ],
-  "kg": 0.4
+  "kg": 0.4,
+  "damage": 18
  },
  {
   "id": "padded_cloth",
@@ -1839,11 +1841,11 @@
   "origin": "crafted",
   "flavor": "Yew and sinew and patience. The arrow knows where it's going before you loose it.",
   "kg": 0.8,
-  "damage": 50,
+  "damage": 22,
   "range": 5,
-  "baseEffect": "+50 damage, range 5, uses arrows",
+  "baseEffect": "+22 damage, range 5, uses arrows",
   "weapon": {
-   "bonus": 50,
+   "bonus": 22,
    "type": "ranged",
    "range": 5,
    "ammo": "arrow",
@@ -1871,11 +1873,11 @@
   "origin": "crafted",
   "flavor": "Crank, lock, loose. Less art than the bow, more certainty. The bolt doesn't care about your form.",
   "kg": 2.5,
-  "damage": 65,
+  "damage": 28,
   "range": 6,
-  "baseEffect": "+65 damage, range 6, uses bolts",
+  "baseEffect": "+28 damage, range 6, uses bolts",
   "weapon": {
-   "bonus": 65,
+   "bonus": 28,
    "type": "ranged",
    "range": 6,
    "ammo": "bolt",
@@ -1904,11 +1906,11 @@
   "lootTier": 2,
   "flavor": "The pouch phases half a second ahead of your hand. Stones arrive before you throw them.",
   "kg": 0.1,
-  "damage": 30,
+  "damage": 35,
   "range": 5,
-  "baseEffect": "+30 damage, range 5, uses stones, phases through cover",
+  "baseEffect": "+35 damage, range 5, uses stones, phases through cover",
   "weapon": {
-   "bonus": 30,
+   "bonus": 35,
    "type": "ranged",
    "range": 5,
    "ammo": "stone",
@@ -1924,11 +1926,11 @@
   "lootTier": 3,
   "flavor": "The limbs are star-metal. Arrows leave trails of cold fire. The deer never hear it.",
   "kg": 0.5,
-  "damage": 45,
+  "damage": 50,
   "range": 7,
-  "baseEffect": "+45 damage, range 7, uses arrows, silent",
+  "baseEffect": "+50 damage, range 7, uses arrows, silent",
   "weapon": {
-   "bonus": 45,
+   "bonus": 50,
    "type": "ranged",
    "range": 7,
    "ammo": "arrow",
