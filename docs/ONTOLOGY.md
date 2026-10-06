@@ -202,7 +202,7 @@ Food reality system. Food must be known-edible AND in edible state. Processing c
 ### game-core (`game.js`)
 Central game controller. Owns state, map, day loop, actions, encounters, combat, village simulation. UI renders from it.
 
-**Provides:** state (scholar, village, world), tickAction(n), doAction(actionId), sleep(), eat(), eatOne(idx), spendCombatAction(kind), tbFighter(id), tbAdvance(), tbAfterPlayerAction(), contestTick() (delegates to contests.js), sleepQuality(), sleepPreview(), kcalCap()
+**Provides:** state (scholar, village, world), tickAction(n), doAction(actionId), sleep(), eat(), eatOne(idx), spendCombatAction(kind), tbFighter(id), tbAdvance(), tbAfterPlayerAction(), contestTick() (delegates to contests.js), fireShow(event) -> show (TV pull-away; called from dawn branch), glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract), sleepQuality(), sleepPreview(), kcalCap()
 
 **Rules:**
 - day_parts: 4 nested (code: TIME)

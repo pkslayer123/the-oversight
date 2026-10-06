@@ -13,6 +13,8 @@
 //   - tbAdvance()
 //   - tbAfterPlayerAction()
 //   - contestTick() (delegates to contests.js)
+//   - fireShow(event) -> show (TV pull-away; called from dawn branch)
+//   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
 //   - sleepQuality()
 //   - sleepPreview()
 //   - kcalCap()
@@ -10264,6 +10266,21 @@
         this.say(`A shadow on the ground — ${darkness}. Something is falling.`);
       }
     },
+    // GLASSWING TRAP CELLS (Steve 2026-10-06): grid-render contract for the
+    // pre-combat dive shadow. Returns null when no trap is set; otherwise the
+    // trap tile plus the 8 adjacent splash tiles (the dive's thrash radius).
+    // A parallel worker renders this on the grid — keep the shape exact:
+    // { tile: {x, y}, turns, splash: [{x, y} x8] }.
+    glasswingTrapCells() {
+      const trap = (this.state.scholar || {}).gwTrap;
+      if (!trap) return null;
+      const splash = [];
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        splash.push({ x: trap.tileX + dx, y: trap.tileY + dy });
+      }
+      return { tile: { x: trap.tileX, y: trap.tileY }, turns: trap.turns, splash };
+    },
     // monsters move when you do. they're in the detail grid with you.
     monsterTurn() {
       const s = this.state.scholar;
@@ -12887,9 +12904,10 @@
           if (this.contestPool().find(c => c.id === event.id)) {
             this.fireContest(event);
           } else {
-            // TV show pull
-            this.sysSay(`📺 TONIGHT: ${event.name}. ${event.desc}`);
-            this.leadShift('showmanship', 1);
+            // TV show pull (Steve 2026-10-06): fireShow (contests.js) announces
+            // the pull-away, picks a villager for a silly reason, adds
+            // notability, and nudges showmanship. One line here.
+            this.fireShow(event);
           }
         }
       } catch (e) {}
