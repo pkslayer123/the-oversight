@@ -491,6 +491,8 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .cell.terr-paper::after { content: '▤'; color: #e8e8e0; }
 .cell.terr-crater::after { content: '○'; color: #777; }
 .cell.terr-scorch::after { content: '▲'; color: #e05545; }
+.cell.terr-claimed { background-color: rgba(120, 90, 20, .35); }
+.cell.terr-claimed::after { content: '⚖'; color: #d4a017; }
 
 /* PWA update banner: subtle top strip, appears only when a newer build is ready. */
 #update-banner {
