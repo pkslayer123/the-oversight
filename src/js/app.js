@@ -3749,23 +3749,73 @@
         nz.start(t); nz.stop(t + 0.9);
       }
     }
-    function hecklerTaunt() {
-      // THE TAUNT: mocking laughter — three descending jeers, nasal and mean.
+    function hecklerTaunt(d) {
+      // THE TAUNT (deepened Steve 2026-10-06): mocking laughter — and it
+      // STACKS with your shame. Three jeers when you're clean, up to eight
+      // when you're drowning in it; each jeer is a detuned beating pair,
+      // each pair wobbling faster and deeper the worse the shame gets, the
+      // pitch climbing because it stings more. Halfway through, a second
+      // set of voices joins in — fainter, off-pitch, arriving late. There
+      // is no crowd. And the last jeer doesn't end laughing: it curdles
+      // down past laughter into something that isn't laughing at all.
       // Not a laugh with you. At you.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      [392, 330, 262].forEach((fq, i) => {
-        const dt = t + i * 0.16;
+      const shame = Math.min(10, Math.max(0, (d && d.shame) || 0));
+      const nJeers = 3 + Math.floor(shame / 2); // 3 clean .. 8 ashamed
+      const base = 392 + shame * 14;            // sharper the more it stings
+      const wobbleRate = 8 + shame;             // the mockery quickens
+      const wobbleDepth = 15 + shame * 1.6;
+      // 1) THE JEER STACK: descending jeers, each a detuned beating pair
+      for (let i = 0; i < nJeers; i++) {
+        const dt = t + i * 0.13;
+        const fq = base * Math.pow(0.93, i);
+        [0, 6].forEach(det => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'square'; o.frequency.value = fq + det;
+          // detuned wobble: the mockery wobbles, meaner with shame
+          const lfo = ctx.createOscillator(), lg = ctx.createGain();
+          lfo.type = 'sine'; lfo.frequency.value = wobbleRate;
+          lg.gain.value = wobbleDepth; lfo.connect(lg); lg.connect(o.frequency);
+          g.gain.setValueAtTime(0.0001, dt);
+          g.gain.exponentialRampToValueAtTime(0.07, dt + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
+          o.connect(g); g.connect(sfxBus);
+          o.start(dt); o.stop(dt + 0.14); lfo.start(dt); lfo.stop(dt + 0.14);
+        });
+      }
+      const stackEnd = t + nJeers * 0.13;
+      // 2) THE CROWD THAT ISN'T THERE: faint off-pitch echoes arriving
+      //    late, louder the more ashamed you are — shame echoing itself.
+      [0.97, 1.02].forEach((mul, k) => {
+        const edt = t + 0.22 + k * 0.12;
         const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square'; o.frequency.value = fq;
-        // vibrato: the mockery wobbles
+        o.type = 'square'; o.frequency.value = base * 0.82 * mul;
         const lfo = ctx.createOscillator(), lg = ctx.createGain();
-        lfo.type = 'sine'; lfo.frequency.value = 8;
-        lg.gain.value = 15; lfo.connect(lg); lg.connect(o.frequency);
-        g.gain.setValueAtTime(0.09, dt);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.14);
+        lfo.type = 'sine'; lfo.frequency.value = wobbleRate * 1.35;
+        lg.gain.value = wobbleDepth * 1.3; lfo.connect(lg); lg.connect(o.frequency);
+        g.gain.setValueAtTime(0.0001, edt);
+        g.gain.exponentialRampToValueAtTime(0.035 + shame * 0.005, edt + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0001, edt + 0.22);
         o.connect(g); g.connect(sfxBus);
-        o.start(dt); o.stop(dt + 0.15); lfo.start(dt); lfo.stop(dt + 0.15);
+        o.start(edt); o.stop(edt + 0.24); lfo.start(edt); lfo.stop(edt + 0.24);
+      });
+      // 3) THE CURDLING TAIL: the last jeer slides down past laughter —
+      //    a detuned pair falling together, then gone.
+      [[260, 120], [266, 120]].forEach(([f0, f1]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f0, stackEnd);
+        o.frequency.exponentialRampToValueAtTime(f1, stackEnd + 0.34);
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = wobbleRate;
+        lg.gain.value = wobbleDepth; lfo.connect(lg); lg.connect(o.frequency);
+        g.gain.setValueAtTime(0.0001, stackEnd);
+        g.gain.exponentialRampToValueAtTime(0.085, stackEnd + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, stackEnd + 0.4);
+        o.connect(g); g.connect(sfxBus);
+        o.start(stackEnd); o.stop(stackEnd + 0.42);
+        lfo.start(stackEnd); lfo.stop(stackEnd + 0.42);
       });
     }
     function hecklerPileOn() {
@@ -8567,8 +8617,12 @@
       understudyCopy() { understudyCopy(); },
       landlordStamp() { landlordStamp(); },
       landlordClaim() { landlordClaim(); },
-      hecklerTaunt() { hecklerTaunt(); },
+      hecklerTaunt(d) { hecklerTaunt(d); },
       hecklerPileOn() { hecklerPileOn(); },
+      // (Steve 2026-10-06): orphaned hook — the heckler's monsters.json
+      // aggroAudio fires 'hecklerLaugh' but no voice existed; it gets the
+      // deepened taunt (closest existing voice).
+      hecklerLaugh(d) { hecklerTaunt(d); },
       paparazzoShutter() { paparazzoShutter(); },
       paparazzoFlash() { paparazzoFlash(); },
       unionRepChant() { unionRepChant(); },
