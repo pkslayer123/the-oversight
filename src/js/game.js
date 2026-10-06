@@ -10449,6 +10449,12 @@
       w.x = nx;
       // contact check after it moves (it can walk into you)
       if (w.x === this.map.px && w.y === this.map.py && !this.encounterDone) {
+        // HAVENS ARE SAFE (Steve 2026-10-05): wandering monsters cannot enter
+        // haven tiles. The wanderer turns away.
+        if (this.isSafeTile(this.map.px, this.map.py)) {
+          w.dir *= -1; // turn away, don't enter
+          return;
+        }
         this.encounterDone = true;
         this.pendingEncounter = true;
         // NAME DISCIPLINE: the panel must show the descriptor/village name,
