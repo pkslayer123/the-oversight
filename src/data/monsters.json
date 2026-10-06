@@ -1989,19 +1989,19 @@
     ],
     "cues": {
       "curious": [
-        "It is watching you fight. Taking notes. In your handwriting."
+        "Something at the tree line is watching you. Not hunting — studying. The way it tilts its head is wrong, like it's taking notes."
       ],
       "warn": [
-        "It stands the way you stand. That's new. That's bad."
+        "It's closer now. And it's moving like you move — your walk, your rhythm. That's not mimicry. That's rehearsal."
       ],
       "fearful": [
-        "The mask slips. Underneath is also a mask."
+        "It stumbles, the copy breaking. The borrowed moves don't fit anymore — it's improvising, and it knows it."
       ]
     },
     "codexStages": {
-      "unknown": "Something watched me fight last night. It didn't join in. It took notes.",
-      "observed": "Learner mimic. It watches your attacks — after seeing one twice, it can use a weaker copy. It is doing YOUR move. Worse. But still. The copies get closer every cycle.",
-      "slain": "Moves: Your Move (copies your last-seen attack at growing fidelity — 50%, then 65%, then 80%). Counter: kill it fast, or be unpredictable — it can only copy what it has seen twice. Fire breaks its study. Parts: a blank mask that fits anyone. A notebook of your moves, in your handwriting. Burn the notebook."
+      "unknown": "A blank shape at the tree line, watching. Learning. It has no face yet — it's waiting to borrow yours.",
+      "observed": "The System's understudy. It watches you fight and learns your moves — your weapon, your rhythm, your favorite opening. The longer you show off, the better its copy gets. Change weapons. Change tempo. Don't give it a clean read.",
+      "slain": "Moves: Mirror Strike (copies your best weapon's damage), Opening Steal (punishes your most-used move), Desperate Improv (at low HP, chains everything it learned). It learns fast but shallow — switch tactics mid-fight and the copy falls apart."
     },
     "systemDesignation": "Behavioral acquisition unit (field model)",
     "encounter": {
@@ -2069,19 +2069,19 @@
     ],
     "cues": {
       "curious": [
-        "It is measuring the clearing. It likes what it sees. It likes that you are standing on it."
+        "You find a notice staked in the ground. \"BY ORDER OF MANAGEMENT.\" The soil under it looks... owned."
       ],
       "warn": [
-        "\"THIS PARCEL IS NOW LEASED.\" The ground under you feels... owned."
+        "The landlord is stamping the ground. Each stamp lands like a gavel. The tiles it marks start to feel wrong under your feet."
       ],
       "fearful": [
-        "It clutches its signs. Without the signs it is just a figure in a vest."
+        "The notices are curling, the ink running. The ground is forgetting who owns it."
       ]
     },
     "codexStages": {
-      "unknown": "A figure was hammering signs into the dirt near the creek. The signs had names on them.",
-      "observed": "Territory claimer. Tiles it stands on become CLAIMED — standing on claimed ground hurts (1/turn) and heals IT. The fight is about positioning, not damage. The claim SPREADS to adjacent tiles each round — the safe ground shrinks.",
-      "slain": "Moves: Eviction Notice (direct, heavy). The ground is the real attack — CLAIMED tiles (terraform) deal 1 on entry and heal the landlord. Counter: keep moving, never stand still; fire burns the signs and clears claimed tiles. Parts: a ring of keys that fit nothing. Pre-signed eviction notices. A high-visibility vest — actually useful, wear it."
+      "unknown": "A clipboard. A stamp. A property line that wasn't there yesterday. Something is claiming the ground you stand on.",
+      "observed": "The System's landlord. It doesn't fight you — it EVICTS you. It claims tiles, charges rent (in blood or calories), and the ground itself starts obeying the lease. You can fight on claimed ground, but it hurts. Break the claim or pay up.",
+      "slain": "Moves: Serve Notice (claims tiles around you), Collect Rent (damages you for standing on claimed ground), Jurisdiction Spread (the claim grows). The claim is tied to its clipboard — destroy the paperwork (target the claim markers) or kill the landlord to void all leases."
     },
     "systemDesignation": "Parcel acquisition unit (field model)",
     "encounter": {
@@ -2148,19 +2148,19 @@
     ],
     "cues": {
       "curious": [
-        "\"Let's see what we've got here.\" It is sizing you up. Out loud."
+        "Something in the dark is laughing. It stops when you look. Starts again when you don't."
       ],
       "warn": [
-        "\"THAT'S the stance? My grandmother stands better and she's a concept.\""
+        "\"Oh, THIS is the hero?\" The voice is close now, and it sounds disappointed. In you. Specifically."
       ],
       "fearful": [
-        "\"Okay okay, point made—\" It is backpedaling. Keep going."
+        "The laughter is thinner now, forced. It's running out of material."
       ]
     },
     "codexStages": {
-      "unknown": "Something laughed at me in the dark last night. Not at the situation. At me. Specifically.",
-      "observed": "Psychological pack-debuffer. It narrates your misses — each narration stacks SHAME (-1 damage per stack, it compounds). At 5+ shame the words become a compulsion: answer back (lose a turn) or take double shame.",
-      "slain": "Moves: heckling narration (stacks SHAME, -1 damage each). At 5 stacks: compulsion — lose a turn answering, or double the shame. Counter: it is FRAGILE, kill the mouth; stuns interrupt narration; the words lie about your arms, keep swinging. Parts: a framed review of your footwork. Hurtful. Accurate, which is worse."
+      "unknown": "Laughter from the dark. Not joy — the other kind. The kind that knows exactly what you're insecure about.",
+      "observed": "The System's heckler. It doesn't want your blood — it wants your confidence. Its taunts stack SHAME, and shame makes your hands shake (reduced damage). Answer back (wait a turn) to clear the shame, or kill it before the words stick.",
+      "slain": "Moves: Vicious Mockery (stacks SHAME, -1 damage per stack), Pile-On (extra shame if you're already ashamed), Compulsion (forces you to answer or act). The counter is dignity: wait, answer back, clear the shame. Or end it fast before it finds your weak spot."
     },
     "systemDesignation": "Morale suppression unit (field model)",
     "encounter": {
@@ -2228,19 +2228,19 @@
     ],
     "cues": {
       "curious": [
-        "A shutter clicks. It is not attacking. It is studying."
+        "A shutter clicks. Somewhere, a lens is pointed at you. You feel... framed."
       ],
       "warn": [
-        "\"Hold still. Hold— STILL.\" The lens is tracking you now."
+        "\"Hold that pose.\" The lens is tracking you, and it's not guessing anymore — it KNOWS where you'll move."
       ],
       "fearful": [
-        "It lowers the camera. \"Off the record? Off the record.\""
+        "The shutter is clicking wildly, desperately. It's lost the shot."
       ]
     },
     "codexStages": {
-      "unknown": "Something photographed me last night. I didn't see it. I saw the flash.",
-      "observed": "Solo stalker. FLASH photos freeze you for a turn — and each photo increases PREDICTION: it learns your dodge pattern. The more it photographs, the harder the flash is to dodge. At full prediction the flash is unavoidable.",
-      "slain": "Moves: Flash Photography (burst, freezes 1 turn; PREDICTION stacks make it progressively undodgeable — at 5 stacks the flash cannot be dodged). Counter: break line of sight, keep moving unpredictably, kill it before it learns you. Parts: a cracked lens, still warm. Contact sheets of you sleeping. A press pass from nowhere — the organization doesn't exist. Probably."
+      "unknown": "A lens flare where no lens should be. A shutter click. You're being watched by something that wants a photo, not a fight.",
+      "observed": "The System's paparazzo. It doesn't chase — it FRAMES. It predicts where you'll dodge and the flash gets harder to avoid each time (PREDICTION stacks). At max prediction, the flash is unavoidable. Break line of sight. Be unpredictable. Don't let it learn your pattern.",
+      "slain": "Moves: Flash Photography (telegraphed burst, freezes you), Prediction (each photo makes the next harder to dodge), Widening Shot (at high prediction, the burst grows). The counter is chaos: move erratically, break line of sight, never dodge the same way twice."
     },
     "systemDesignation": "Subject documentation unit (field model)",
     "encounter": {
@@ -2308,19 +2308,19 @@
     ],
     "cues": {
       "curious": [
-        "\"Brothers, sisters, monsters — gather round.\" It is holding a meeting. About you."
+        "You hear chanting. \"WHAT DO WE WANT? BRAINS! WHEN DO WE WANT THEM? NOW!\" It's getting closer."
       ],
       "warn": [
-        "\"STAND TOGETHER!\" The other monsters stand a little straighter."
+        "The rep is on a crate, bullhorn up. The other monsters are listening. Nodding. Cracking knuckles. This is bad."
       ],
       "fearful": [
-        "\"This wasn't in the contract—\" It is flipping pages frantically."
+        "The chanting falters. The picket signs droop. Solidarity is breaking."
       ]
     },
     "codexStages": {
-      "unknown": "Something held a rally in the woods last night. The monsters attended. I was the agenda item.",
-      "observed": "Monster commander. It barely fights itself — it BUFFS other monsters (+damage, +speed) and calls a picket line (summons additional monsters mid-fight). At half HP: THE WALKOUT — all monsters +50%, and it stops taking turns to coordinate full-time.",
-      "slain": "Moves: Grievance Filed (direct, modest). The real threat: SOLIDARITY (allied monsters +3 damage, +1 speed) and PICKET LINE (summons 1 wave-1 monster mid-fight). At 50% HP: THE WALKOUT — all allies +50% damage, rep becomes untargetable while coordinating. Counter: kill the rep FIRST, before the line forms; isolate it. Parts: a bullhorn, still charged. A grievance form with your name pre-filled. A union card — local 404, not found."
+      "unknown": "Chanting. Rhythmic, organized, getting closer. Something is unionizing the monsters.",
+      "observed": "The System's union rep. It doesn't fight — it ORGANIZES. It buffs other monsters (solidarity: +damage), calls for backup, and if you ignore it, it goes on WALKOUT (full buff mode, untargetable). Kill it early or break the picket line.",
+      "slain": "Moves: Solidarity Speech (allied monsters +damage), Call to Action (summons help), WALKOUT (untargetable, massive buffs to allies). The counter is union-busting: focus the rep before it organizes, or scatter the monsters it's trying to rally."
     },
     "systemDesignation": "Collective action coordinator (field model)",
     "encounter": {
