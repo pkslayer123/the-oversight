@@ -30,6 +30,15 @@
 //   - hydrateSeed(seed) -> full person (unified person system: seed -> genCharacter depth)
 //   - getPerson(id) -> person | null (unified lookup: villagers + hydrated seeds)
 //   - markSeen(x, y, kind, by), mapSeen(x, y) -> 'visited'|'shared'|null (player map knowledge: fog of war display)
+//   - worldMonsters() -> [{id,tx,ty,mx,my,hp,...}] (living world: monsters on tiles, independent of the player)
+//   - monsterAt(tx, ty) -> monster | null
+//   - playerMonster() -> monster | null (the monster on the player's tile; replaces scholar.monster reads; adopts debug-set alias)
+//   - syncMonsterAlias() (scholar.monster mirrors the player-tile monster for unmigrated consumers)
+//   - spawnWorldMonster(mdef, tx, ty, opts) -> monster
+//   - removeWorldMonster(m)
+//   - nearestWorldMonster(tx, ty) -> monster | null
+//   - worldMonsterCap() -> int (3 base, 5 arrived, 8 deep, +1 night)
+//   - maintainWorldMonsters(), wanderWorldMonsters(), villagerMonsterTick(), worldTick() (living-world step on tile entry)
 //   - seedVillagerMaps() (every villager gets visitedTiles: haven + nearby)
 //   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge)
 // rules:
@@ -42,6 +51,7 @@
 //   - multitile_occupancy: size 2 = 2x2 block, mx,my is top-left (code: fighterTiles)
 //   - multitile_validation: all tiles walkable before each move (code: tbCanOccupy)
 //   - map_is_seen_only: world map displays only visited + map-shared tiles; unvisited renders blank (code: mapSeen, Steve 2026-10-06)
+//   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
@@ -1892,9 +1902,9 @@
       // (Said BEFORE the wake-up so the wake-up is the visible last beat.)
       this.say('📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.');
       this.say('📖 Your hands remember: weave cloth (3 plant fiber), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn\'t have to stay dirty.');
-      // THE WAKE-UP (Steve 2026-10-06): you are a person, not a tutorial.
-      // OPENING AS ONE BEAT: narration shows only the last say() — the
-      // wake-up + hook must land as a single cohesive moment.
+      // THE WAKE-UP (Steve 2026-10-06): hook them or lose them.
+      // DRAMA: this is the first thing they read. Make it count.
+      // OPENING AS ONE BEAT: narration shows only the last say().
       try {
         const me = this.vpOf(this.villagerId) || {};
         const myName = me.name || 'You';
@@ -1906,12 +1916,13 @@
         }).filter(Boolean);
         const itemsLine = myItems.length ? ` You have: ${myItems.join(', ')}. That's everything you own in this world.` : '';
         const hooks = [
-          'Last night, something moved past the treeline. Too big. Too quiet. Nobody wants to talk about it.',
-          'There are lights in the sky that aren\'t stars. They watch. You can feel it.',
-          'Someone found tracks near the water this morning. Nothing we know makes tracks like that.',
+          'Last night, something walked past the treeline on two legs. Too tall. It stopped. It listened. Then it kept going. Nobody slept after that.',
+          'The stars are wrong. They move when you aren\'t looking. Yesterday there were seven. Tonight there are nine. They\'re getting closer.',
+          'They found a deer this morning. Inside out. Not eaten — unmade. Like something was trying to understand how it worked. It didn\'t finish.',
+          'You heard it in the dark. Breathing. Not yours. It knew your name — it said it wrong, like it learned the shape of the sound but not what it meant.',
         ];
         const hook = hooks[Math.floor(Math.random() * hooks.length)];
-        this.say(`You wake up on cold ground. The sky is the wrong color. ${myName}. ${myOcc.charAt(0).toUpperCase() + myOcc.slice(1)}. From ${myHome}. That was yesterday. This is now.${itemsLine} Haven. Twelve people. The fire is lit. ${hook}`);
+        this.say(`You wake up with dirt in your mouth and blood on your hands that isn\'t yours. The sky is the wrong color — not sunset-wrong, wound-wrong. ${myName}. ${myOcc.charAt(0).toUpperCase() + myOcc.slice(1)}. From ${myHome}. That was yesterday. This is now.${itemsLine} Haven. Twelve people. The fire is lit. ${hook}`);
       } catch (e) {}
       // BARREN HAVEN FIX: a new player must understand within minutes that
       // food is OUT THERE. A villager says it; the journal keeps it.
@@ -4562,7 +4573,10 @@
     // The leader sends fighters instead of fighting. Stakes are real.
     resolvePatrol(vid, first, eff, temp, R) {
       const s = this.state.scholar;
-      const m = s.monster; // known wandering threat
+      // WORLD MONSTERS (Steve 2026-10-06): patrols hunt the nearest roaming
+      // threat to Haven, not a single player-tethered monster.
+      const hx = (this.state.village || {}).px ?? 3, hy = (this.state.village || {}).py ?? 3;
+      const m = this.nearestWorldMonster(hx, hy);
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         /* unified: getPerson */ || {};
       if (!m || !m.id) {
@@ -4586,7 +4600,7 @@
       const roll = fightPower + R(0, 20);
       if (roll >= mHp * 1.2) {
         // killed it
-        s.monster = null;
+        this.removeWorldMonster(m);
         const lootKcal = R(200, 600);
         this.stockPantry(lootKcal, 'Game meat');
         this.say(`⚔️ ${first} KILLED the ${mName}! Drags it home: +${lootKcal} kcal. The village cheers.`);
@@ -4596,7 +4610,7 @@
         if (this.state.systemArrived) this.sysSay(`"OH! ${first.toUpperCase()} DID THE FIGHTING! Delegated violence! The audience is CHEERING! Style points!"`);
       } else if (roll >= mHp * 0.7) {
         // drove it off
-        s.monster = null;
+        this.removeWorldMonster(m);
         const dmg = R(5, 20);
         this.hurtVillager(vid, dmg, 'patrol');
         this.say(`⚔️ ${first} drove the ${mName} off! (-${dmg} health.) It won't come back soon.`);
@@ -6417,8 +6431,11 @@
       try { for (const vid of this.travelingWith()) this.npcSetInside(vid, false); } catch (e) {}
       const ht = this.tileAt(3, 3);
       if (ht && ht.type === 'haven') ht.detail = null;
-      // MONSTERS FOLLOW (if they want to). Territorial and hungry ones do. Skittish ones don't.
-      const oldMonster = this.state.scholar.monster;
+      // WORLD MONSTERS (Steve 2026-10-06): monsters live on tiles, not on
+      // you. The one you left behind STAYS behind (continuity — it's still
+      // out there). Territorial and hungry ones follow you through the boundary.
+      const fromX = x - odx, fromY = y - ody;
+      const oldMonster = this.monsterAt(fromX, fromY);
       if (oldMonster) {
         const mdef = this.data.monsters.find(m => m.id === oldMonster.id);
         if (mdef && mdef.follows) {
@@ -6433,25 +6450,26 @@
           // offset along the edge so it doesn't land on top of you
           if (odx !== 0) fmy = clamp9(fmy + 2); else fmx = clamp9(fmx + 2);
           const fe = this.findWalkableEntry(x, y, fmx, fmy);
+          oldMonster.tx = x; oldMonster.ty = y;
           oldMonster.mx = fe.x; oldMonster.my = fe.y;
           oldMonster.lostSight = 0; // it saw you cross. it's on your trail.
+          this.touchTileScene(fromX, fromY); this.touchTileScene(x, y);
           this.say(`It followed you. The ${this.monsterNoun(mdef.id)} is here.`);
-        } else {
-          this.state.scholar.monster = null; // it didn't care enough to follow
         }
+        // else: it stays on the old tile. Continuity — the world must live.
       }
       // FLED MONSTER RECOVERY (Steve 2026-10-05): if a monster fled to this
       // node, it's here. Restore it at the edge opposite your entry.
       try {
         const fmKey = this.map.px + ',' + this.map.py;
         const fled = (this.state.fledMonsters || {})[fmKey];
-        if (fled && !this.state.scholar.monster) {
+        if (fled && !this.monsterAt(x, y)) {
           const mdef = this.data.monsters.find(m => m.id === fled.id) || {};
-          this.state.scholar.monster = {
-            id: fled.id, mx: fled.mx, my: fled.my,
+          this.spawnWorldMonster({ id: fled.id }, x, y, {
+            mx: fled.mx, my: fled.my,
             stance: 'fearful', fearTurns: 0,
             hp: fled.hp, maxHp: fled.maxHp,
-          };
+          });
           delete this.state.fledMonsters[fmKey];
           this.say(`You find it — the ${this.monsterNoun(fled.id)} didn't get far. It's still running scared.`);
         }
@@ -10268,6 +10286,224 @@
         return true;
       });
     },
+    // WORLD MONSTERS (Steve 2026-10-06): the world must live. Monsters exist
+    // on tiles independent of the player. state.worldMonsters is the source
+    // of truth; each entry lives on a tile (tx,ty) at detail coords (mx,my).
+    // scholar.monster remains as the player-tile alias (same object reference)
+    // so existing consumers keep working; playerMonster()/syncMonsterAlias()
+    // keep it honest.
+    worldMonsters() {
+      this.state.worldMonsters = this.state.worldMonsters || [];
+      return this.state.worldMonsters;
+    },
+    monsterAt(tx, ty) {
+      return this.worldMonsters().find(m => m.tx === tx && m.ty === ty) || null;
+    },
+    // playerMonster: the monster on the player's tile. Replaces scholar.monster
+    // reads. Also adopts directly-set scholar.monster (debug scenarios) into
+    // the world so dev tools keep working.
+    playerMonster() {
+      try {
+        const s = this.state.scholar;
+        if (s.monster && s.monster.id && !this.worldMonsters().includes(s.monster)) {
+          s.monster.tx = this.map.px; s.monster.ty = this.map.py;
+          this.worldMonsters().push(s.monster);
+        }
+        return this.monsterAt(this.map.px, this.map.py);
+      } catch (e) { return null; }
+    },
+    // syncMonsterAlias: scholar.monster always mirrors the player-tile monster.
+    syncMonsterAlias() {
+      try { this.state.scholar.monster = this.playerMonster(); } catch (e) {}
+      return this.state.scholar.monster;
+    },
+    spawnWorldMonster(mdef, tx, ty, opts) {
+      opts = opts || {};
+      const id = (typeof mdef === 'string') ? mdef : mdef.id;
+      const full = (typeof mdef === 'string')
+        ? ((this.data.monsters || []).find(m => m.id === id) || {})
+        : (mdef || {});
+      const baseHp = (full.hp && full.hp[0]) || 20;
+      const mon = {
+        id, tx, ty,
+        mx: (opts.mx !== undefined) ? opts.mx : Math.floor(Math.random() * 9),
+        my: (opts.my !== undefined) ? opts.my : Math.floor(Math.random() * 9),
+        hp: (opts.hp !== undefined) ? opts.hp : baseHp,
+        maxHp: (opts.maxHp !== undefined) ? opts.maxHp : baseHp,
+        stance: opts.stance || null,
+        fearTurns: opts.fearTurns || 0,
+        veteran: !!opts.veteran,
+        variant: opts.variant || null,
+        lostSight: 0,
+      };
+      // passthrough for behavior flags (beamPhase, gwGrounded, watchTurns...)
+      for (const k of Object.keys(opts)) {
+        if (!(k in mon)) mon[k] = opts[k];
+      }
+      this.worldMonsters().push(mon);
+      this.touchTileScene(tx, ty);
+      this.syncMonsterAlias();
+      return mon;
+    },
+    removeWorldMonster(m) {
+      if (!m) { this.syncMonsterAlias(); return; }
+      const arr = this.worldMonsters();
+      let i = arr.indexOf(m);
+      if (i < 0) i = arr.findIndex(x => x.tx === m.tx && x.ty === m.ty && x.id === m.id);
+      if (i >= 0) {
+        const gone = arr.splice(i, 1)[0];
+        this.touchTileScene(gone.tx, gone.ty);
+      }
+      this.syncMonsterAlias();
+    },
+    touchTileScene(tx, ty) {
+      try {
+        if (typeof Scattering !== 'undefined' && Scattering.TileScenes) Scattering.TileScenes.touch(tx, ty);
+      } catch (e) {}
+    },
+    nearestWorldMonster(tx, ty) {
+      let best = null, bestD = 1e9;
+      for (const m of this.worldMonsters()) {
+        const d = Math.abs(m.tx - tx) + Math.abs(m.ty - ty);
+        if (d < bestD) { bestD = d; best = m; }
+      }
+      return best;
+    },
+    worldMonsterCap() {
+      let cap = 3;
+      if (this.state.systemArrived) cap = 5;
+      if (((this.state.scholar || {}).integration || 0) >= 80) cap = 8;
+      try { if (this.isNight && this.isNight()) cap += 1; } catch (e) {}
+      return cap;
+    },
+    // pickWorldTile: weighted random tile for a background spawn. Skips the
+    // player tile (handled by the encounter roll), villages (safe), and water
+    // mismatches (water-affinity gating by tile type).
+    pickWorldTile(mdef) {
+      const px = this.map.px, py = this.map.py;
+      const aff = (mdef && mdef.waterAffinity) || null;
+      const cands = [];
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        if (x === px && y === py) continue;
+        if (this.isSafeTile(x, y)) continue;
+        const t = this.tileAt(x, y);
+        if (!t) continue;
+        const tt = t.type;
+        if (aff === 'in' && tt !== 'creek' && tt !== 'wetland') continue;
+        let w = 1;
+        if (tt === 'thicket') w = 3;
+        else if (tt === 'ruin') w = 2;
+        else if ((tt === 'wetland' || tt === 'creek') && aff) w = 2;
+        cands.push({ x, y, w });
+      }
+      if (!cands.length) return null;
+      let total = 0;
+      for (const c of cands) total += c.w;
+      let r = Math.random() * total;
+      for (const c of cands) { r -= c.w; if (r <= 0) return c; }
+      return cands[cands.length - 1];
+    },
+    // maintainWorldMonsters: top up the roaming population toward the cap.
+    // One spawn per tick — the world fills gradually, not in a pop-in crowd.
+    maintainWorldMonsters() {
+      if (this.worldMonsters().length >= this.worldMonsterCap()) return;
+      const pool = this.monsterWavePool();
+      if (!pool.length) return;
+      const tw = this.spawnWaveTarget(pool);
+      const wcands = pool.filter(m => (m.wave || 1) === tw);
+      const usePool = wcands.length ? wcands : pool;
+      const mdef = this.pickByActivity(usePool) || usePool[0];
+      if (!mdef) return;
+      const spot = this.pickWorldTile(mdef);
+      if (!spot) return;
+      this.spawnWorldMonster(mdef, spot.x, spot.y, {});
+    },
+    // wanderWorldMonsters: the woods are restless. Monsters drift between
+    // adjacent tiles; they steer clear of villages. One that wanders onto
+    // your tile announces itself — a beat, not a silent ambush.
+    wanderWorldMonsters() {
+      let moved = false;
+      for (const m of this.worldMonsters()) {
+        if (Math.random() > 0.35) continue;
+        const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        const d = dirs[Math.floor(Math.random() * dirs.length)];
+        const nx = m.tx + d[0], ny = m.ty + d[1];
+        if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+        if (this.isSafeTile(nx, ny)) continue;
+        const ox = m.tx, oy = m.ty;
+        m.tx = nx; m.ty = ny;
+        m.mx = Math.floor(Math.random() * 9); m.my = Math.floor(Math.random() * 9);
+        this.touchTileScene(ox, oy); this.touchTileScene(nx, ny);
+        moved = true;
+        if (nx === this.map.px && ny === this.map.py) {
+          this.say(`Something pads into the clearing — ${this.monsterDisplayName(m.id)}. It's here.`);
+        }
+      }
+      if (moved) this.syncMonsterAlias();
+    },
+    // villagerMonsterTick: the world lives without you. Villagers on a
+    // monster's tile may kill it, drive it off, get mauled, or die.
+    villagerMonsterTick() {
+      const v = this.state.village;
+      if (!v || !v.roster) return;
+      for (const m of [...this.worldMonsters()]) {
+        if (m.tx === this.map.px && m.ty === this.map.py) continue; // your fight is yours
+        let npcIds = [];
+        try { npcIds = this.npcsOnNode(m.tx, m.ty).filter(id => (v.roster || []).includes(id)); } catch (e) {}
+        if (!npcIds.length) continue;
+        if (Math.random() > 0.5) continue; // not every tick is a bloodbath
+        const vid = npcIds[Math.floor(Math.random() * npcIds.length)];
+        this.resolveWildMonsterEncounter(vid, m);
+      }
+    },
+    resolveWildMonsterEncounter(vid, m) {
+      let person = null;
+      try { person = this.getPerson ? this.getPerson(vid) : null; } catch (e) {}
+      const name = person ? String(person.name).split(' ')[0] : 'Someone';
+      let mName = m.id;
+      try { mName = this.monsterNoun(m.id); } catch (e) {}
+      const tell = (msg) => {
+        const s = this.state.scholar;
+        s.awayNews = s.awayNews || [];
+        if (s.awayNews.length < 8) s.awayNews.push(msg);
+      };
+      const r = Math.random();
+      if (r < 0.35) {
+        this.removeWorldMonster(m);
+        tell(`⚔️ ${name} killed the ${mName}! Word travels fast — the village cheers.`);
+        try { this.bumpTrust(vid, 4); } catch (e) {}
+        try { if (this.remember) this.remember(vid, 'hero', 'killed ' + mName); } catch (e) {}
+      } else if (r < 0.6) {
+        const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => Math.random() - 0.5);
+        for (const d of dirs) {
+          const nx = m.tx + d[0], ny = m.ty + d[1];
+          if (nx < 0 || nx > 6 || ny < 0 || ny > 6 || this.isSafeTile(nx, ny)) continue;
+          const ox = m.tx, oy = m.ty;
+          m.tx = nx; m.ty = ny;
+          this.touchTileScene(ox, oy); this.touchTileScene(nx, ny);
+          break;
+        }
+        tell(`⚔️ ${name} drove the ${mName} off! It's still out there, somewhere.`);
+        try { this.bumpTrust(vid, 2); } catch (e) {}
+      } else if (r < 0.85) {
+        const dmg = 10 + Math.floor(Math.random() * 21);
+        try { this.hurtVillager(vid, dmg, 'monster'); } catch (e) {}
+        tell(`🩸 The ${mName} mauled ${name} (-${dmg} health). They're lucky to be breathing.`);
+      } else {
+        try { this.hurtVillager(vid, 500, 'monster'); } catch (e) {}
+        tell(`💀 The ${mName} killed ${name}. The village mourns.`);
+        try { this.villageEvent('death'); } catch (e) {}
+      }
+      this.syncMonsterAlias();
+    },
+    // worldTick: one living-world step — population, wandering, villagers.
+    // Called on tile entry (checkEncounter), so the world moves when you do.
+    worldTick() {
+      try { this.maintainWorldMonsters(); } catch (e) {}
+      try { this.wanderWorldMonsters(); } catch (e) {}
+      try { this.villagerMonsterTick(); } catch (e) {}
+      this.syncMonsterAlias();
+    },
     pickByActivity(list) {
       if (!list || !list.length) return null;
       const weights = list.map(d => this.creatureWeight(d));
@@ -10783,7 +11019,7 @@
       const sec = (t.secrets || {})[cx + ',' + cy];
       const actions = [];
       // monster here? decision.
-      const mon = this.state.scholar.monster;
+      const mon = this.playerMonster();
       if (mon && mon.mx === cx && mon.my === cy) actions.push('Fight');
       // animal here? decision.
       const an = this.state.scholar.animal;
@@ -11364,7 +11600,7 @@
               }
             }
           } catch (e) {}
-          s.monster = { id: trap.monsterId, mx: trap.tileX, my: trap.tileY, beamPhase: 'grounded',
+          this.spawnWorldMonster({ id: trap.monsterId }, this.map.px, this.map.py, { mx: trap.tileX, my: trap.tileY, beamPhase: 'grounded',
             // GROUNDED WINDOW PARITY (Steve 2026-10-06): the in-combat dive
             // miss sets gwGrounded=2 and the miss resolves ON the monster's
             // turn — the player gets 2 actions before it escapes. The trap
@@ -11375,7 +11611,7 @@
             // actions as the in-combat path. (The +50% grounded damage hook
             // in tbDamage makes one good strike often lethal — the window is
             // real, not a formality.)
-            gwGrounded: 3 };
+            gwGrounded: 3 });
           s.gwTrap = null;
           this.startCombat(trap.monsterId);
         } else {
@@ -11459,7 +11695,7 @@
     // monsters move when you do. they're in the detail grid with you.
     monsterTurn() {
       const s = this.state.scholar;
-      const m = s.monster;
+      const m = this.playerMonster();
       if (!m || m.mx === undefined) return;
       const px = s.mx ?? 4, py = s.my ?? 4;
       const mDist = Math.max(Math.abs(px - m.mx), Math.abs(py - m.my));
@@ -11467,7 +11703,7 @@
       // it VANISHES. No turn-based, no combat UI. The trick is preserved.
       if (m.id === 'glasswing' && !s.gwTrap && mDist <= 5) {
         s.gwTrap = { turns: 0, tileX: px, tileY: py, monsterId: m.id };
-        s.monster = null;
+        this.removeWorldMonster(m);
         this.say('The air feels wrong. A high whine, circling — then nothing. Silence.');
         this.audioEvent('glasswingCircle');
         this.audioEvent('heartbeat');
@@ -11509,7 +11745,7 @@
       if (!_canSeeAny) {
         m.lostSight = (m.lostSight || 0) + 1;
         if (m.lostSight > 6) {
-          s.monster = null;
+          this.removeWorldMonster(m);
           this.say('You hold still behind cover. After a while, the sounds fade. It lost your trail.');
           return;
         }
@@ -11618,7 +11854,7 @@
           if (!nightlightActive) {
             // just a glow. not hunting. it fades.
             m.watchTurns = (m.watchTurns || 0) + 1;
-            if (m.watchTurns >= 2) { s.monster = null; this.say('The glow dims and sinks. The water forgets it was ever there.'); }
+            if (m.watchTurns >= 2) { this.removeWorldMonster(m); this.say('The glow dims and sinks. The water forgets it was ever there.'); }
             break;
           }
           if (dist > 3) { stepToward(); }
@@ -11729,12 +11965,12 @@
                 stance: 'fearful', fearTurns: 0,
                 hp: m.hp, maxHp: m.maxHp,
               };
-              s.monster = null;
+              this.removeWorldMonster(m);
               const dir = m.mx === 0 ? 'west' : m.mx === 8 ? 'east' : m.my === 0 ? 'north' : 'south';
               this.say(`It bolts ${dir}, across the treeline. It's still out there.`);
             } else {
               // gave up after 4 turns without reaching an edge — truly gone
-              s.monster = null;
+              this.removeWorldMonster(m);
               this.say('It melts back into the treeline. Gone.');
             }
           }
@@ -11932,6 +12168,9 @@
     checkEncounter() {
       // RNG, not staged. Monsters spawn in the wild.
       // Villages are safe. Everywhere else? Roll the dice.
+      // WORLD MONSTERS (Steve 2026-10-06): the living world ticks first —
+      // population, wandering, villagers — then your own encounter roll.
+      this.worldTick();
       const scholar = this.state.scholar;
       const px = this.map.px, py = this.map.py;
       // Safe in villages. Don't even roll.
@@ -11970,7 +12209,7 @@
         if (this.hasAbility('night_eyes')) nightRead += 0.3;
         if (this.skillKnown('nocturnal_patterns', 2)) nightRead += 0.15;
       }
-      if (detect + nightRead > 0 && Math.random() < detect + nightRead && !scholar.monster) {
+      if (detect + nightRead > 0 && Math.random() < detect + nightRead && !this.monsterAt(px, py)) {
         this.say('Birds scatter in a sudden hush — something is moving out there. You give it a wide berth.');
         scholar.spawnMisses = 0; // a dodge is still a beat — the pity clock resets
         return;
@@ -11983,9 +12222,9 @@
       // rates with pity (seed 42, 5760 entries): thicket ~26%, base ~16%,
       // meadow ~12%, ruin ~22% — the designed gradient holds (thicket >= 2x
       // meadow), droughts roughly halve. The face chances below stay the design's.
-      const misses = scholar.monster ? 0 : (scholar.spawnMisses || 0);
+      const misses = this.monsterAt(px, py) ? 0 : (scholar.spawnMisses || 0);
       const effChance = Math.min(chance * (1 + 0.25 * misses), 0.6);
-      if (Math.random() < effChance && !scholar.monster) {
+      if (Math.random() < effChance && !this.monsterAt(px, py)) {
         scholar.spawnMisses = 0;
         // MONSTER WAVES: the System escalates. Wave 1 (calibration fauna) is
         // always in the pool. Wave 2 (advanced fauna) joins after System arrival.
@@ -12006,13 +12245,13 @@
         const mdef = this.pickSpawnMonster(pool);
         if (mdef) {
           const spot = this.placeSpawnMonster(mdef);
-          scholar.monster = { id: mdef.id, mx: spot.mx, my: spot.my };
+          this.spawnWorldMonster(mdef, px, py, { mx: spot.mx, my: spot.my });
           // AMBIGUITY: you don't know what it is. The village name, or the descriptor — never the true name.
           this.say(`Something moves out there — ${this.monsterDisplayName(mdef.id)}.`);
         } else {
           scholar.spawnMisses = misses + 1; // rolled but nothing spawnable — pity keeps counting
         }
-      } else if (!scholar.monster) {
+      } else if (!this.monsterAt(px, py)) {
         scholar.spawnMisses = misses + 1;
       }
       // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
@@ -12060,7 +12299,7 @@
             tries++;
           } while (tries < 20 && Math.abs(mx - px) + Math.abs(my - py) < 4);
         }
-        scholar.monster = { id: this.wanderer.monsterId, mx, my };
+        this.spawnWorldMonster({ id: this.wanderer.monsterId, veteran: this.wanderer.veteran }, px, py, { mx, my });
         this.say('Something big is HERE. In the grid with you. You can see it. It can see you.');
         this.encounterDone = true;
         this.state.wandererNextDay = scholar.day + 4; // it comes back. they always come back.
@@ -13622,7 +13861,7 @@
         } // end else (plant track) — meat took the animal branch above
       }
       // COMBAT: eating from pack costs an action (Steve 2026-10-05)
-      if (scholar.monster || this.state.inCombat) {
+      if (this.playerMonster() || this.state.inCombat) {
         this.spendCombatAction('eat');
       } else {
         this.tickAction(1);
@@ -14700,6 +14939,7 @@
 
     startCombat(monsterId) {
       const s = this.state.scholar;
+      this.syncMonsterAlias();
       const px = s.mx ?? 4, py = s.my ?? 4;
       // WANDERER CONTACT (forager loop 2026-10-05): the "Face it" button calls
       // startCombat() with no id — the monster that walked into you is
@@ -15075,7 +15315,7 @@
       this.pendingMonsterId = null;
       // face to face: the ambiguity does NOT end. Descriptor and dread, not a name.
       try { this.identifyMonster(mdef.id); } catch (e) {}
-      s.monster = null; // it's in the fight now, not wandering
+      this.removeWorldMonster(this.playerMonster()); // it's in the fight now, not wandering
       const partyNames = fighters.filter(f => f.kind === 'villager').map(f => f.name);
       const dispName = this.monsterDisplayName(mdef.id);
       this.say(`⚔ ${dispName.toUpperCase()}!${count > 1 ? ` (${count} of them!)` : ''} ${partyNames.length ? partyNames.join(', ') + (partyNames.length > 1 ? ' join' : ' joins') + ' you!' : "You're on your own."}`);
@@ -22359,7 +22599,7 @@
         // Belt-and-suspenders: the wild encounter monster lives in the fight,
         // not on the grid. (Cleared at combat start; never leave a stale one
         // rendering on every node.)
-        try { if (this.state && this.state.scholar) this.state.scholar.monster = null; } catch (e) {}
+        try { if (this.state && this.state.scholar) this.syncMonsterAlias(); } catch (e) {}
       }
     },
 
@@ -22439,7 +22679,7 @@
         }
         s.health = 1; s.kcal = 500;
         this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3;
-        s.mx = 4; s.my = 4; this.fight = null; s.monster = null;
+        s.mx = 4; s.my = 4; this.fight = null; this.syncMonsterAlias();
         this.say('You wake at Haven, 1 HP, ash in your mouth. The audience applauds. (phoenix_clause: once per run)');
         this.noteAbilityUse('phoenix_clause');
         return true;
