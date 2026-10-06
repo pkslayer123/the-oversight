@@ -375,6 +375,90 @@
       Game.say('🐞 SCENARIO: sunbasker. Gold in the grass, three tiles east. It was not there, then it was.');
     },
 
+    bulldozer() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — it owns the day
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'bulldozer', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: bulldozer. Something big and impatient, three tiles east. It does not go around.');
+    },
+
+    hushpuppy() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — silent pack hunters
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'hushwolf', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: hushpuppy. The birds went quiet. Something is circling, three tiles east.');
+    },
+
+    whitenoise() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 2; // dusk — crepuscular
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'white_noise_heron', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: white noise heron. Static on the water, three tiles east. Do not listen too long.');
+    },
+
+    reviewdrone() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'review_drone', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: performance review drone. It is already evaluating you, three tiles east.');
+    },
+
+    influencer() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'camera_swarm', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: influencer swarm. Cameras, three tiles east. They want content. You are content.');
+    },
+
+    customerservice() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'service_mimic', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: customer service mimic. "Hello! How can I help you today?" Three tiles east.');
+    },
+
+    inspiration() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — it strikes when you're vulnerable
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'bright_idea', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: inspiration. A bright idea, three tiles east. It will not leave you alone.');
+    },
+
     // 10. Moot — YOU stand accused. Theft + assault on the books, the case
     // is open, the defense window is ticking. Speak, call witnesses, press
     // the accuser, investigate bribes, or flee before the count.
@@ -691,6 +775,13 @@
       ['nightlight', '💡 Nightlight Catfish fight'],
       ['glasswing', '🪰 Glasswing Darter fight'],
       ['sunbasker', '🦎 Sunbasker fight'],
+      ['bulldozer', '🐗 Bulldozer fight'],
+      ['hushpuppy', '🐺 Hushpuppy pack fight'],
+      ['whitenoise', '📻 White Noise Heron fight'],
+      ['reviewdrone', '📋 Performance Review Drone fight'],
+      ['influencer', '📸 Influencer Swarm fight'],
+      ['customerservice', '🎧 Customer Service Mimic fight'],
+      ['inspiration', '💡 Inspiration fight'],
       ['ambush', '🔪 Ambush — the walk turns'],
       ['mootAccused', '⚖️ Moot — you stand accused'],
       ['mootJuror', '⚖️ Moot — you are the juror'],
@@ -711,6 +802,28 @@
       ['showWhyEat', '📺 Show: WHY DO THEY EAT?'],
       ['contestEligible', '📺 Contest eligibility check'],
     ];
+  };
+
+  // CATEGORIZED SCENARIOS (Steve 2026-10-05): the list is getting long.
+  // Categories first, then specifics within each.
+  Game.debugScenarioCategories = function () {
+    const all = Game.debugScenarioList();
+    const byId = Object.fromEntries(all);
+    const cats = {
+      '🦌 Monsters — Wave 1': ['deer', 'headlight', 'flashbulb', 'choir', 'lockpick', 'hummice', 'glasswing', 'sunbasker'],
+      '👹 Monsters — Wave 2': ['nightlight', 'bulldozer', 'hushpuppy', 'whitenoise', 'reviewdrone', 'influencer', 'customerservice', 'inspiration'],
+      '⚖️ Justice & Social': ['ambush', 'mootAccused', 'mootJuror', 'exile', 'uprising', 'liars'],
+      '📖 Story': ['mantle', 'day7', 'day1', 'night', 'language', 'starving'],
+      '📺 Contests & Shows': ['contestPit', 'contestHide', 'contestForage', 'contestWatch', 'showWhyEat', 'contestEligible'],
+      '💍 Items': ['keepsake'],
+    };
+    // Only include categories that have at least one existing scenario
+    const result = {};
+    for (const [cat, ids] of Object.entries(cats)) {
+      const items = ids.filter(id => byId[id]).map(id => [id, byId[id]]);
+      if (items.length) result[cat] = items;
+    }
+    return result;
   };
 
   Game.debugRetiredList = function () {

@@ -4748,8 +4748,23 @@
       `<option value="${m.id}">${m.name}</option>`).join('');
     const abilities = (Game.data.abilities || []).map(a =>
       `<option value="${a.id}">${a.name || a.id}</option>`).join('');
-    const scenBtns = (typeof Game.debugScenarioList === 'function' ? Game.debugScenarioList() : [])
-      .map(([id, label]) => `<button class="dbg-scen" data-scen="${id}" style="display:block;width:100%;text-align:left;margin:3px 0;padding:8px;font-size:14px">${label}</button>`).join('');
+    // CATEGORIZED SCENARIOS (Steve 2026-10-05): categories first, then specifics.
+    // Falls back to flat list if categories aren't available.
+    let scenHtml = '';
+    if (typeof Game.debugScenarioCategories === 'function') {
+      const cats = Game.debugScenarioCategories();
+      scenHtml = Object.entries(cats).map(([cat, items]) => {
+        const btns = items.map(([id, label]) =>
+          `<button class="dbg-scen" data-scen="${id}" style="display:block;width:100%;text-align:left;margin:3px 0;padding:8px;font-size:14px">${label}</button>`
+        ).join('');
+        const catId = 'dbg-cat-' + cat.replace(/[^a-z0-9]/gi, '');
+        return `<p style="margin:10px 0 4px"><button id="${catId}-toggle" style="font-size:14px;font-weight:bold">${cat} ▸</button></p><div id="${catId}" style="display:none">${btns}</div>`;
+      }).join('');
+    } else {
+      const scenBtns = (typeof Game.debugScenarioList === 'function' ? Game.debugScenarioList() : [])
+        .map(([id, label]) => `<button class="dbg-scen" data-scen="${id}" style="display:block;width:100%;text-align:left;margin:3px 0;padding:8px;font-size:14px">${label}</button>`).join('');
+      scenHtml = `<div id="dbg-scenarios">${scenBtns}</div>`;
+    }
     // LOADOUTS (Steve 2026-10-05): fighter/equipment presets for rapid iteration.
     // Apply AFTER starting a scenario to test different builds vs same monster.
     const loadoutBtns = (typeof Game.debugLoadoutList === 'function' ? Game.debugLoadoutList() : [])
@@ -4767,7 +4782,7 @@
       : '';
     el.innerHTML = `<b>🐞 DEBUG</b> <button id="dbg-x" style="float:right">✕</button>
       <p style="margin:8px 0 4px"><b>SCENARIOS</b> <span style="opacity:.6;font-size:11px">one tap, fresh run</span></p>
-      <div id="dbg-scenarios">${scenBtns}</div>
+      ${scenHtml}
       ${loadoutSection}
       ${retSection}
       <p style="margin:10px 0 4px;border-top:1px solid #f90;padding-top:8px"><b>CHEATS</b></p>
@@ -4799,6 +4814,18 @@
         // scenario-requested chat (the ambush opens mid-confrontation)
         const cv = Game.debugChatRequest; Game.debugChatRequest = null;
         if (cv) openChatKeep(cv);
+      };
+    });
+    // CATEGORY TOGGLES (Steve 2026-10-05): expand/collapse scenario groups.
+    el.querySelectorAll('[id$="-toggle"]').forEach(btn => {
+      if (!btn.id.startsWith('dbg-cat-')) return;
+      btn.onclick = () => {
+        const catId = btn.id.replace('-toggle', '');
+        const div = el.querySelector('#' + catId);
+        if (!div) return;
+        const open = div.style.display !== 'none';
+        div.style.display = open ? 'none' : 'block';
+        btn.innerHTML = btn.innerHTML.replace(open ? '▾' : '▸', open ? '▸' : '▾');
       };
     });
     // LOADOUTS (Steve 2026-10-05): apply to current run, no fresh game.
