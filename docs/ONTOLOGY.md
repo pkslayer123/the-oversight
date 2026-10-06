@@ -129,6 +129,34 @@ Real back-and-forth dialogue. Player always has response choices.
 
 **Consumes:** village.villagers, state.convos
 
+### convo-mood (`convo-mood.js`)
+Per-conversation emotional state (rapport). Warmth and tension shift as you talk; mood is derived from who they are now, never stored per villager.
+
+**Provides:** convoMoodInit(vid), convoMoodBand(vid), convoMoodShift(vid, delta), convoMoodFlush(vid), convoMoodBeat(from, to), convoMoodSilence(vid), convoMoodGoodbye(vid), convoMoodMod(vid), convoMoodReceptivity(vid)
+
+**Rules:**
+- mood_derived: c.mood is -3..3, re-initialized every startConvo from current trust + current npcMood; nothing is stored per villager (code: convo-mood.js, convoMoodInit; Steve 2026-10-06 unique-person law)
+- mood_bands: warm >=2, friendly 1, neutral 0, cool -1, tense <=-2 (code: convo-mood.js, bandOf)
+- warmth_from_trust: answer warmth derives from the sign of its trust delta — no separate data (code: conversation.js react: branches)
+- band_beats: crossing a band boundary queues one stage-direction beat, flushed after the turn's line (code: convo-mood.js, convoMoodShift/convoMoodFlush)
+- receptivity: recent lived events (memory) decide guard/grace — guarded people absorb the first warming move, shown kindness absorbs the first cooling one (code: convo-mood.js, convoMoodReceptivity)
+- mood_lingers: ending warm/tense nudges trust by the final mood value (code: conversation.js, endConvo)
+
+**Consumes:** state.village.conv (c.mood, per-conversation only), village.trust, village.memory, npcMood, npcTemper
+
+### conversation-topics (`convoTopics.js`)
+Generated conversation topics. Every villager is a unique person
+
+**Provides:** topic2Has(topic), topic2Ask(vid, topic), topic2HasMore(vid), topic2Beat(vid), topic2Asks(vid), topic2Label(vid, topic), topic2MoreLabel(vid), topic2AskLabel(vid, topic), topic2Deep(topic), topic2SubjectOpts(vid)
+
+**Rules:**
+- generated_not_pooled: topic lines are composed from villager identity + run state (code: convoTopics.js, t2gen_*)
+- change_over_run: re-asking after events acknowledges the change (code: convoTopics.js, topic2Ask t2snap)
+- event_topic: 'lately' appears only while a run event is live (code: convoTopics.js, t2LatelyEvent)
+- no_repeat: openers and beats route through convoPick (code: convoTopics.js, topic2Ask/topic2Beat)
+
+**Consumes:** village roster, trust, memory, grief, heat, exiles, conflicts, characterGen.topicPack (labels), villager identity fields
+
 ### corpses (`corpses.js`)
 Corpse system. Dead bodies persist, can be butchered, buried, or left.
 

@@ -903,6 +903,8 @@
       } else if (t === 'plans') {
         l = this.convoPick(vid, 'plansdeep', cg.plansFollow || []);
       }
+      // TOPIC PACK (Steve 2026-10-06): generated topic beats.
+      else if (this.topic2Has && this.topic2Has(t)) l = this.topic2Beat(vid);
       if (!l) return null;
       c.depth++;
       return this.fillTalkLine(l, vp);
@@ -1241,6 +1243,8 @@
     // mid-story; per-thread otherwise. Stable per person within context.
     convoMoreLabel(vid) {
       const c = this.convoGet(vid);
+      // TOPIC PACK (Steve 2026-10-06): generated topics have their own more-labels.
+      if (this.topic2Has && this.topic2Has(c.thread || '')) return this.topic2MoreLabel(vid);
       const thread = c.thread || 'small';
       const mood = (this.npcMood && this.npcMood(vid)) || '';
       const themLines = (c.transcript || []).filter(e => e.who === 'them');
@@ -1459,6 +1463,31 @@
         const gr = [['agree', '"You\'re right."'], ['joke', '"Ha — yeah."'], ['silence', '"..."']];
         const pick = gr[Math.floor(Math.random() * gr.length)];
         choices.push({ id: pick[0], label: pick[1] });
+      }
+      // RUMOR THREAD: two-step — pick WHO, then WHAT. While the thread is
+      // open the menu narrows to the steps, like the reactive narrowing
+      // above. (Fix 2026-10-06: the thread used to dangle at "who are we
+      // talking about?" with no follow-up choices — rumors could never be
+      // started through conversation.)
+      if (c.thread === 'spread_rumor' && !c.rumorDone && !reactiveDef && !gqActive && !c.pendingQ) {
+        const rlist = [];
+        if (!c.rumorTarget) {
+          for (const tid of (c.rumorTargets || [])) {
+            rlist.push({ id: 'rumor:tgt:' + tid, label: this.displayName(tid) });
+          }
+        } else {
+          const tname = this.displayName(c.rumorTarget).split(' ')[0];
+          const types = [
+            ['stingy', `"${tname}'s been holding back. Keeping the good stuff close."`],
+            ['untrustworthy', `"Can't trust ${tname}. Watch your back around them."`],
+            ['generous', `"${tname}'s been generous. Sharing around, no questions asked."`],
+            ['scheming', `"${tname}'s scheming. Planning something — I can see it."`],
+            ['coward', `"${tname} froze when it mattered. Coward."`],
+          ];
+          for (const [ty, label] of types) rlist.push({ id: 'rumor:type:' + ty, label });
+        }
+        rlist.push({ id: 'leave', label: '"Never mind."' });
+        return rlist;
       }
       const suppressPivot = !!c.reactiveQ || !!c.genericQ || c.thread === 'grief' || c.thread === 'cheer';
       // MAXC: the chat view has room for a real choice list. Topic asks
