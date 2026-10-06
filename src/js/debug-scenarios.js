@@ -504,6 +504,42 @@
       Game.say('🐞 SCENARIO: glasswing darter. A shadow moves wrong against the sun, three tiles east.');
     },
 
+    nevermore() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 2; // dusk — it hunts the long shadows
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'nevermore', mx: 5, my: 4 };
+      Game.say('🐦‍⬛ SCENARIO: nevermore. A crow on the treeline, three tiles east. It has not blinked.');
+    },
+
+    nightcourt() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — court is in session
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'nightcourt', mx: 5, my: 4 };
+      Game.say('🦉 SCENARIO: night court. Two eyes, forward-facing, three tiles east. No wingsound.');
+    },
+
+    statickite() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('sling', 'stone', 12);
+      s.insideHaven = false;
+      Game.dayPart = 1;
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'statickite', mx: 5, my: 4 };
+      Game.say('🪁 SCENARIO: the static kite. A kite with no string, three tiles east. It is filming you.');
+    },
+
     sunbasker() {
       freshGame();
       toWildNode();
@@ -1072,6 +1108,9 @@
       ['hummice', '🐭 Hummice swarm fight'],
       ['nightlight', '💡 Nightlight Catfish fight'],
       ['glasswing', '🪰 Glasswing Darter fight'],
+      ['nevermore', '🐦‍⬛ Nevermore fight'],
+      ['nightcourt', '🦉 Night Court fight'],
+      ['statickite', '🪁 Static Kite fight'],
       ['sunbasker', '🦎 Sunbasker fight'],
       ['bulldozer', '🐗 Bulldozer fight'],
       ['hushpuppy', '🐺 Hushpuppy pack fight'],
@@ -1117,8 +1156,8 @@
     const byId = Object.fromEntries(all);
     const cats = {
       '🐾 Animals — Prey': ['deer', 'rabbit', 'squirrel', 'turkey', 'opossum', 'bullfrog', 'boxturtle', 'fox', 'crayfish', 'raccoon', 'snappingturtle', 'chub'],
-      '🦌 Monsters — Wave 1': ['headlight', 'flashbulb', 'choir', 'lockpick', 'hummice', 'glasswing', 'sunbasker', 'bulldozer', 'hushpuppy', 'whitenoise', 'nightlight', 'speedbump', 'ducksinarow'],
-      '👹 Monsters — Wave 2': ['static', 'griefcounselor', 'reviewdrone', 'influencer', 'motivationalspeaker', 'customerservice', 'termsconditions', 'middlemanager', 'inspiration', 'nostalgia'],
+      '🦌 Monsters — Wave 1': ['headlight', 'flashbulb', 'choir', 'lockpick', 'hummice', 'glasswing', 'sunbasker', 'bulldozer', 'hushpuppy', 'whitenoise', 'nightlight', 'speedbump', 'ducksinarow', 'nevermore', 'nightcourt'],
+      '👹 Monsters — Wave 2': ['static', 'griefcounselor', 'reviewdrone', 'influencer', 'motivationalspeaker', 'customerservice', 'termsconditions', 'middlemanager', 'inspiration', 'nostalgia', 'statickite'],
       '⚖️ Justice & Social': ['ambush', 'mootAccused', 'mootJuror', 'exile', 'uprising', 'liars'],
       '📖 Story': ['mantle', 'day7', 'day1', 'night', 'language', 'starving'],
       '📺 Contests & Shows': ['contestPit', 'contestHide', 'contestForage', 'contestWatch', 'showWhyEat', 'contestEligible'],
