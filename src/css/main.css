@@ -199,6 +199,13 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   cursor: pointer; user-select: none;
 }
 .cell.grass { background: #1a2f1a; }
+/* BARRIER EDGE (Steve 2026-10-06): during combat, grid edges are exits through
+   the node barrier. Dashed cyan outline says "way out" — distinct from walls. */
+.cell.barrierEdge { outline: 2px dashed rgba(77, 243, 255, .65); outline-offset: -2px; }
+.cell.barrierEdge::after {
+  content: '➤'; position: absolute; font-size: 10px; color: rgba(77, 243, 255, .8);
+  pointer-events: none;
+}
 .cell.dirt { background: #2f241a; }
 /* SCORCHED EARTH: ASH, not shadow. The beam ruins what it crosses — pale,
    desaturated, unmistakable even at night. The morning after tells the story.

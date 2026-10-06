@@ -11844,7 +11844,14 @@
           _cfStyle = 'box-shadow:inset 0 0 0 999px rgba(120,255,170,0.16);outline:2px solid rgba(120,255,170,0.55);outline-offset:-2px';
           _cfCls = ' cftell';
         }
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_w2aCls}${_gwCls}${_cfCls}"${(_gwStyle || _cfStyle || _w2cStyle || _wbStyle) ? ` style="${[_gwStyle, _cfStyle, _w2cStyle, _wbStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        // BARRIER EDGE (Steve 2026-10-06): during combat, grid edges are exits —
+        // stepping off flees through the node barrier (50% break, 50% followed).
+        // The edge must READ as an exit, not a wall. Players were "teleporting"
+        // without understanding why.
+        const _inCombat = !!(Game.tbfight && !Game.tbfight.over);
+        const _isEdge = (cx === 0 || cx === 8 || cy === 0 || cy === 8);
+        const _barrierCls = (_inCombat && _isEdge) ? ' barrierEdge' : '';
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_w2aCls}${_gwCls}${_cfCls}${_barrierCls}"${(_gwStyle || _cfStyle || _w2cStyle || _wbStyle) ? ` style="${[_gwStyle, _cfStyle, _w2cStyle, _wbStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }

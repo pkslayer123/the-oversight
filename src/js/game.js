@@ -15220,13 +15220,13 @@
           const nx = this.map.px + dx, ny = this.map.py + dy;
           // 50% to break contact at the barrier
           if (Math.random() < 0.5) {
-            this.say('You crash through the treeline — the barrier shimmers. They lose your trail.');
+            this.say('🚪 BARRIER CROSSED — you crash through the treeline to a new area. The barrier shimmers. They lose your trail. (You fled the fight by leaving the area.)');
             p.fled = true;
             this.tbEnd('fled');
             try { this.travelTo(nx, ny); } catch (e) {}
             return true;
           } else {
-            this.say('They\'re right behind you — through the barrier!');
+            this.say('🚪 BARRIER CROSSED — you stumble into a new area, but they\'re right behind you — through the barrier! The fight continues here. (The edge of the grid is an exit. They followed you.)');
             try { this.travelTo(nx, ny); } catch (e) {}
             // They follow: reposition monsters near the entry edge on the new node
             // (combat continues; the node changed under the fight.)
