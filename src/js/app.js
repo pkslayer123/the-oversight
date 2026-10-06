@@ -34,15 +34,17 @@
     try {
       const Sp = S.Sprites;
       if (!Sp || !it) return '';
+      // Plant-derived food: plant sprite, depth 2 if known else 0.
       const pid = it.plantId;
       if (pid && !String(pid).startsWith('meat_')) {
         const known = Game.plantKnown ? Game.plantKnown(pid) : false;
         const svg = Sp.plantSprite(pid, known ? 2 : 0, 'plant');
-        return svg ? '<span class="itemsprite">' + svg + '</span>' : '';
+        return svg ? `<span class="itemsprite">${svg}</span>` : '';
       }
+      // Manufactured/found items: item sprite, gated on lump.
       const known = !it.lump;
       const svg = Sp.itemSprite(it.id || it.itemId, known);
-      return svg ? '<span class="itemsprite">' + svg + '</span>' : '';
+      return svg ? `<span class="itemsprite">${svg}</span>` : '';
     } catch (e) { return ''; }
   }
   // Exposed for betrayal.js trade UI.
@@ -10317,7 +10319,15 @@
       const p = Game.tbFighter('p');
       if (!p || !Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); return { moved: false }; }
       const tx = p.mx + step.dx, ty = p.my + step.dy;
-      if (tx < 0 || tx > 8 || ty < 0 || ty > 8) return { moved: false };
+      // BARRIER EXIT (Steve 2026-10-06): pushing off the grid edge in combat
+      // attempts a barrier crossing. Walking along the edge is safe.
+      // A crossing is deliberate — kill hold-to-move so a held finger doesn't
+      // chain-cross into the next node unintentionally.
+      if (tx < 0 || tx > 8 || ty < 0 || ty > 8) {
+        const exited = Game.tbBarrierExit(step.dx, step.dy);
+        if (exited) MoveAnim.clearHold();
+        return { moved: !!exited };
+      }
       const mlBefore = p.moveLeft;
       const moved = !!Game.tbPlayerMove(tx, ty);
       // TURN BOUNDARY (Steve): if this step ended the turn (moveLeft reset for

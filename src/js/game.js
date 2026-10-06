@@ -15205,46 +15205,61 @@
         }
         return true;
       }
-      // FLEE BY NODE BARRIER (Steve 2026-10-05): no FLEE button, no distance
-      // check — you escape by LEAVING THE NODE. Walk to the grid edge and push
-      // through to the adjacent node. 50% to lose them; otherwise they follow.
-      // (Don't bring a highbeam deer back to camp.)
-      const atEdge = (p.mx === 0 || p.mx === 8 || p.my === 0 || p.my === 8);
-      if (atEdge) {
-        const mons = f.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
-        if (mons.length) {
-          // Which direction? Continue past the edge.
-          let dx = 0, dy = 0;
-          if (p.mx === 0) dx = -1; else if (p.mx === 8) dx = 1;
-          if (p.my === 0) dy = -1; else if (p.my === 8) dy = 1;
-          const nx = this.map.px + dx, ny = this.map.py + dy;
-          // 50% to break contact at the barrier
-          if (Math.random() < 0.5) {
-            this.say('🚪 BARRIER CROSSED — you crash through the treeline to a new area. The barrier shimmers. They lose your trail. (You fled the fight by leaving the area.)');
-            p.fled = true;
-            this.tbEnd('fled');
-            try { this.travelTo(nx, ny); } catch (e) {}
-            return true;
-          } else {
-            this.say('🚪 BARRIER CROSSED — you stumble into a new area, but they\'re right behind you — through the barrier! The fight continues here. (The edge of the grid is an exit. They followed you.)');
-            try { this.travelTo(nx, ny); } catch (e) {}
-            // They follow: reposition monsters near the entry edge on the new node
-            // (combat continues; the node changed under the fight.)
-            for (const m of mons) {
-              m.mx = Math.max(0, Math.min(8, 4 - dx * 3 + Math.floor(Math.random() * 3) - 1));
-              m.my = Math.max(0, Math.min(8, 4 - dy * 3 + Math.floor(Math.random() * 3) - 1));
-            }
-            // Player enters from the opposite edge
-            p.mx = Math.max(0, Math.min(8, 4 + dx * 3));
-            p.my = Math.max(0, Math.min(8, 4 + dy * 3));
-            this.tbRefreshTelegraphUI();
-            return true;
-          }
-        }
-      }
       // ACTION ECONOMY: out of moves AND acted -> the turn ends on its own.
       if (p.moveLeft <= 0 && p.acted) this.tbPlayerEndTurn();
       else this.tbRefreshTelegraphUI();
+      return true;
+    },
+
+    // FLEE BY NODE BARRIER (Steve 2026-10-05, corrected 2026-10-06): no FLEE
+    // button — you escape by LEAVING THE NODE. Push THROUGH the grid edge
+    // (step off-grid) to cross to the adjacent node. 50% to lose them;
+    // otherwise they follow. Walking ALONG the edge or landing on an edge
+    // tile does NOT trigger this — only a deliberate exit attempt.
+    // (Don't bring a highbeam deer back to camp.)
+    tbBarrierExit(dx, dy) {
+      const f = this.tbfight;
+      if (!f || f.over || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (!p) return false;
+      // Must be on the edge you're pushing through.
+      const onEdge = (dx < 0 && p.mx === 0) || (dx > 0 && p.mx === 8) ||
+                     (dy < 0 && p.my === 0) || (dy > 0 && p.my === 8);
+      if (!onEdge) return false;
+      const mons = f.fighters.filter(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled);
+      if (!mons.length) {
+        // No live monsters — just leave (shouldn't happen mid-fight, but safe).
+        return false;
+      }
+      const nx = this.map.px + dx, ny = this.map.py + dy;
+      // World edge: can't leave the map.
+      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) {
+        this.say('The known world ends here — no pushing through. Turn back.');
+        return true; // consumed the push attempt
+      }
+      // Exiting costs the rest of your movement.
+      p.moveLeft = 0;
+      // 50% to break contact at the barrier
+      if (Math.random() < 0.5) {
+        this.say('🚪 BARRIER CROSSED — you crash through the treeline to a new area. The barrier shimmers. They lose your trail. (You fled the fight by leaving the area.)');
+        p.fled = true;
+        this.tbEnd('fled');
+        try { this.travelTo(nx, ny); } catch (e) {}
+        return true;
+      }
+      this.say('🚪 BARRIER CROSSED — you stumble into a new area, but they\'re right behind you — through the barrier! The fight continues here. (The edge of the grid is an exit. They followed you.)');
+      try { this.travelTo(nx, ny); } catch (e) {}
+      // They follow: reposition monsters near the entry edge on the new node
+      // (combat continues; the node changed under the fight.)
+      for (const m of mons) {
+        m.mx = Math.max(0, Math.min(8, 4 - dx * 3 + Math.floor(Math.random() * 3) - 1));
+        m.my = Math.max(0, Math.min(8, 4 - dy * 3 + Math.floor(Math.random() * 3) - 1));
+      }
+      // Player enters from the opposite edge
+      p.mx = Math.max(0, Math.min(8, 4 + dx * 3));
+      p.my = Math.max(0, Math.min(8, 4 + dy * 3));
+      this.state.scholar.mx = p.mx; this.state.scholar.my = p.my;
+      this.tbRefreshTelegraphUI();
       return true;
     },
 
