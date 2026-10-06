@@ -2297,130 +2297,6 @@
     // Good education: they show you a picture, you get it. Instant level 1.
     // Bad education: "it looks a bit like that" — partial (+1 encounter, not full).
     // Teacher quality: occupation matters. A cook teaches food well. A nurse teaches medicine.
-    // villagerWrongAbout(vid): what this person gets WRONG. Not always malice —
-    // sometimes they're just wrong. Seeded lazily: 12% honest mistake about
-    // one plant they "know"; malicious dark tells lie deliberately (30%) and
-    // know the truth. Returns { pid: { wrongPid, deliberate } }.
-    villagerWrongAbout(vid) {
-      const v = this.state.village || {};
-      v.wrongAbout = v.wrongAbout || {};
-      if (!v.wrongAbout[vid]) {
-        v.wrongAbout[vid] = {};
-        try {
-          const vp = (this.data.villagers || []).find(x => x.id === vid)
-            || (this.data.background_survivors || []).find(x => x.id === vid) || {};
-          const malicious = vp.personality && vp.personality.dark && vp.personality.dark.kind === 'malicious';
-          const theyKnow = (v.taught && v.taught[vid]) || [];
-          const plants = this.data.plants || [];
-          if (theyKnow.length && plants.length > 1) {
-            const rollWrong = malicious ? 0.3 : 0.12;
-            if (R() < rollWrong) {
-              const pid = theyKnow[Math.floor(R() * theyKnow.length)];
-              const others = plants.filter(p => p.id !== pid);
-              const wrong = others[Math.floor(R() * others.length)];
-              v.wrongAbout[vid][pid] = { wrongPid: wrong.id, deliberate: !!malicious };
-            }
-          }
-        } catch (e) {}
-      }
-      return v.wrongAbout[vid];
-    },
-    // wrongTeaching(vid, pid): the bad-knowledge beat. Returns 'taught-wrong'
-    // (you believed it), 'contested' (you knew better — codex marks the
-    // disagreement), or null (not wrong). Knowledge is the counterplay: you
-    // can't be fooled about what you know deep.
-    wrongTeaching(vid, pid, source) {
-      const wrong = (this.villagerWrongAbout(vid) || {})[pid];
-      if (!wrong) return null;
-      const p = (this.data.plants || []).find(x => x.id === pid) || {};
-      const wp = (this.data.plants || []).find(x => x.id === wrong.wrongPid) || {};
-      const wname = wp.name || wrong.wrongPid;
-      const myLevel = ((this.state.codex.plants || {})[pid] || {}).level || 0;
-      const tname = this.displayName(vid);
-      if (myLevel >= 2) {
-        // YOU KNOW BETTER. The codex is honest about disagreement.
-        this.state.codex.plants[pid] = this.state.codex.plants[pid] || { level: myLevel };
-        this.state.codex.plants[pid].contested = { by: vid, byName: tname, claim: wname,
-          claimPid: wrong.wrongPid, deliberate: wrong.deliberate, day: (this.state.scholar || {}).day || 0 };
-        this.say(`${tname} points at the ${p.name || pid} and calls it ${wname} — confidently. You know better. (The Codex marks the disagreement. You can call them out in conversation.)`);
-        try { this.journalNote && this.journalNote('village', 'person', `${tname} misidentified ${p.name || pid} as ${wname}. I know better — contested.`); } catch (e) {}
-        return 'contested';
-      }
-      // You didn't know better — the wrong lesson lands. The label is wrong;
-      // the plant is still the plant (mechanics key off the real pid).
-      this.state.codex.plants[pid] = { identifiedDay: (this.state.scholar || {}).day || 0, level: 1,
-        harvests: 0, tastings: 0, by: source || 'taught', wrongAs: wname, wrongPid: wrong.wrongPid,
-        taughtBy: vid, taughtByName: tname };
-      this.say(`\u2605 IDENTIFIED (maybe): ${wname}. ${tname} is sure — "${wname}, see the leaves?" — and you have no reason to doubt them. Yet.`);
-      try { this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${wname} (${source || 'taught'}).`); } catch (e) {}
-      return 'taught-wrong';
-    },
-    // hasContestedWith(vid): unresolved contested claims by this person.
-    hasContestedWith(vid) {
-      const out = [];
-      for (const [pid, e] of Object.entries(this.state.codex.plants || {})) {
-        if (e && e.contested && e.contested.by === vid && !e.contested.resolved) out.push(pid);
-      }
-      return out;
-    },
-    // callOutTeaching(vid, pid, {public}): the social confrontation.
-    // Knowledge-gated — you can't call out what you don't know better (the
-    // choice only appears when contested exists, which requires L2+).
-    // Quiet + high rapport: grace, correction, trust grows.
-    // Public or low rapport: humiliation — resentment, witnesses take sides.
-    // Liars confronted with proof react differently than honest mistakes.
-    callOutTeaching(vid, pid, opts) {
-      opts = opts || {};
-      const e = (this.state.codex.plants || {})[pid];
-      if (!e || !e.contested || e.contested.resolved) return null;
-      const c = e.contested;
-      const p = (this.data.plants || []).find(x => x.id === pid) || {};
-      const tname = this.displayName(vid);
-      const liar = !!c.deliberate;
-      const trust = ((this.state.village || {}).trust || {})[vid] || 10;
-      const witnesses = ((this.state.village || {}).roster || []).filter(rid => rid !== vid && rid !== this.villagerId);
-      const isPublic = !!opts.public && witnesses.length > 0;
-      const bumpTrust = (id, d) => { try { this.bumpTrust(id, d); } catch (err) {
-        const t = (this.state.village.trust = this.state.village.trust || {}); t[id] = Math.max(0, Math.min(100, (t[id] || 10) + d)); } };
-      if (!isPublic && trust >= 30) {
-        // DONE WELL: private, high rapport. Grace lands.
-        c.resolved = true; c.resolvedHow = 'quiet';
-        if (liar) {
-          bumpTrust(vid, -1);
-          this.say(`You take ${tname} aside. "That wasn't ${c.claim}. You knew that." A long pause. Then, very quietly: "...Yeah." They don't apologize — but they don't lie to you again.`);
-        } else {
-          bumpTrust(vid, 2);
-          this.say(`You take ${tname} aside, gentle. "I think you've got that one mixed up — it's ${p.name || pid}, not ${c.claim}." They stare at the leaves, then laugh, embarrassed and grateful. "Gods. Thank you for not saying that in front of everyone."`);
-        }
-        try { this.journalNote && this.journalNote('village', 'person', `Corrected ${tname} privately about ${p.name || pid}. Resolved quietly.`); } catch (err) {}
-      } else if (!isPublic) {
-        // private but thin rapport: correct but stiff
-        c.resolved = true; c.resolvedHow = 'quiet-cold';
-        bumpTrust(vid, -1);
-        this.say(`You correct ${tname} quietly. They're polite about it — barely. "If you say so." The correction lands; the warmth doesn't.`);
-      } else {
-        // PUBLIC: humiliation. Witnesses take sides by loyalty.
-        c.resolved = true; c.resolvedHow = 'public';
-        bumpTrust(vid, liar ? -5 : -3);
-        const vt = (this.state.village || {}).trust || {};
-        const backYou = [], backThem = [];
-        for (const w of witnesses.slice(0, 4)) {
-          if ((vt[w] || 10) >= (vt[vid] || 10)) backYou.push(w); else backThem.push(w);
-        }
-        for (const w of backYou) bumpTrust(w, 1);
-        for (const w of backThem) bumpTrust(w, -1);
-        if (liar) {
-          this.say(`You call it out in front of everyone: "${tname} knew that wasn't ${c.claim}." The silence is total. ${tname} ${backThem.length ? 'finds a few eyes to hide behind' : 'stands alone in it'} — ${backYou.length ? this.displayName(backYou[0]) + ' won\'t meet their gaze. ' : ''}A liar exposed doesn't forget who held the knife.`);
-          // the village now discounts their word
-          const vv = this.state.village; vv.distrusted = vv.distrusted || {}; vv.distrusted[vid] = true;
-        } else {
-          this.say(`You correct ${tname} in front of everyone — maybe louder than you needed to. Their face burns. ${backYou.length ? this.displayName(backYou[0]) + ' nods along with you. ' : ''}${backThem.length ? this.displayName(backThem[0]) + ' looks away, loyal to the embarrassed. ' : ''}The truth won. It cost something.`);
-        }
-        try { this.journalNote && this.journalNote('village', 'person', `Called out ${tname} publicly re ${p.name || pid} (${liar ? 'deliberate lie' : 'honest mistake'}). Witnesses split.`); } catch (err) {}
-      }
-      try { this.state.scholar.calloutsDone = (this.state.scholar.calloutsDone || 0) + 1; } catch (err) {}
-      return true;
-    },
     teachPlant(vid, plantId) {
       const teacher = this.data.villagers.find(x => x.id === vid) || this.data.background_survivors.find(x => x.id === vid);
       const plant = this.data.plants.find(p => p.id === plantId);
@@ -2432,12 +2308,6 @@
         this.say(`${this.displayName(vid)} doesn\'t know that one either.`);
         return null;
       }
-      // BAD KNOWLEDGE (Steve 2026-10-06): sometimes they're just wrong —
-      // sometimes they're lying. Either way the lesson may be false.
-      try {
-        const wt = this.wrongTeaching(vid, plantId, 'taught');
-        if (wt) return wt;
-      } catch (e) {}
       // LANGUAGE: no shared words? Try DRAWING. A picture of the plant, an arrow
       // to the mouth, a skull for the bad ones. Crude — but sometimes enough.
       // Success here teaches at "bad education" level (partial, not instant).
@@ -5833,16 +5703,7 @@
         : dy < 0 ? { dx: 0, dy: -1, dir: 'north' }
         : { dx: 0, dy: 1, dir: 'south' };
       const nx = this.map.px + ex.dx, ny = this.map.py + ex.dy;
-      // WORLD EDGE (explorer loop 2026-10-06): the known world ends at the
-      // map border. NO SILENT ACTIONS — say so once per game, not on every
-      // hold-to-walk bump into the edge.
-      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) {
-        if (!this.state.worldEdgeTold) {
-          this.state.worldEdgeTold = true;
-          this.say('The known world ends here — beyond is unmapped, no path. Turn back.');
-        }
-        return null;
-      }
+      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) return null;
       const block = this.travelBlockage(nx, ny);
       if (block) return { blocked: block, dir: ex.dir };
       this.travelTo(nx, ny);
@@ -5875,18 +5736,11 @@
       return { x: 4, y: 4 }; // unreachable in practice — every detail has walkable cells
     },
     travelTo(x, y, force) {
-      // WORLD EDGE (explorer loop 2026-10-06): the 7x7 map is the whole
-      // known world. A rim tap on a border node passes out-of-bounds coords
-      // (e.g. (-1,3)) — tileAt is undefined there, and the old order crashed
-      // on dest.revealed BEFORE the travelTargets guard. Guard first: no
-      // target, no travel, no exception. (The tap-self popup no longer
-      // offers a travel button into the void; tryNodeExit tells the player
-      // the world ends here.)
+      const dest = this.tileAt(x, y);
+      const wasUnknown = !dest.revealed;
       if (this.over) return null;
       const t = this.travelTargets().find(t => t.x === x && t.y === y);
       if (!t) return null;
-      const dest = this.tileAt(x, y);
-      const wasUnknown = !dest.revealed;
       // blocked? don't travel — return the blockage so the UI can offer solutions.
       // (force bypasses: swimming doesn't fix the path, it just gets you across.)
       if (!force) {
@@ -9187,20 +9041,6 @@
       // mark it shared — the village knows now, human-to-human
       entry.taughtAround = true;
       entry.taughtDay = this.state.scholar.day;
-      // BAD GOSSIP (Steve 2026-10-06): the teacher may be wrong — and the
-      // fire spreads wrongness as fast as truth. The player gets the
-      // wrongTeaching beat (contested if they know better); villagers who
-      // don't know better learn it wrong.
-      try {
-        const wt = this.wrongTeaching(entry.discoveredBy, pid, 'fireside');
-        if (wt) {
-          for (const rid of (this.state.village.roster || [])) {
-            if (rid === this.villagerId) continue;
-            try { this.villagerLearnsPlant(rid, pid, 'fireside'); } catch (e) {}
-          }
-          return;
-        }
-      } catch (e) {}
       // EVERYONE at the fire learns it. Fireside knowledge is village knowledge —
       // this is the slow background growth that saves the village: even without
       // the player, the village gets smarter (slowly) about its land.
@@ -9298,12 +9138,6 @@
         this.say(`${first} trusts you. "Come here. Let me tell you about ${p.name}..." (High trust — free.)`);
       }
       // the teaching: they know it DEEP. You get L2 immediately, L3 if you had L1.
-      // BAD KNOWLEDGE (Steve 2026-10-06): bought knowledge can be counterfeit
-      // too — and you PAID for it, which stings more.
-      try {
-        const wt = this.wrongTeaching(vid, pid, 'traded');
-        if (wt) { this.bumpTrust(vid, wt === 'contested' ? -1 : 1); return wt; }
-      } catch (e) {}
       const cur = (this.state.codex.plants || {})[pid];
       const curLevel = cur ? (cur.level || 1) : 0;
       const newLevel = curLevel >= 1 ? 3 : 2;
@@ -12364,15 +12198,6 @@
               entry.level = 2;
               // L2 includes preparation knowledge — you now know how to prepare it
               entry.prepKnown = true;
-              // WRONG-NAME RESOLUTION (Steve 2026-10-06): handling it yourself
-              // teaches the truth. The false label falls off.
-              if (entry.wrongAs) {
-                const who = entry.taughtByName || 'someone';
-                this.say(`\u2605 Wait. This isn't ${entry.wrongAs} — handling it yourself, the leaves, the smell, it's obvious now. ${who} taught you wrong. (The Codex corrects the record. You can call them out in conversation.)`);
-                entry.contested = { by: entry.taughtBy, byName: who, claim: entry.wrongAs,
-                  claimPid: entry.wrongPid, deliberate: false, day: (this.state.scholar || {}).day || 0 };
-                delete entry.wrongAs; delete entry.wrongPid;
-              }
               this.say(`\u2605 Deeper knowledge: ${h.plant.name}. ${h.plant.knowledgeLevels['2']} (Yield +50%). Use unlocked: ${this.plantUsesText(h.plantId) || 'not yet'}.`);
             }
             if (entry.level === 3 && entry.harvests >= 15) {
@@ -12682,18 +12507,6 @@
       const spoiledNames = scholar.inventory
         .filter(i => isSpoiled(i))
         .map(i => i.name);
-      // SCAM DISCOVERY (Steve 2026-10-06): "fresh" rations rotting in a day
-      // is the lie surfacing. Undeniable, dated, damning — ledger it.
-      try {
-        const scammed = scholar.inventory.filter(i => isSpoiled(i) && i.scamSpoiled);
-        for (const it of scammed) {
-          this.say(`That ${it.name} — sold to you as fresh — is already rotten. It was never fresh. Somebody lied to you for food.`);
-          const ledger = (this.state.village || {}).scamLedger || [];
-          const s = ledger.find(x => x.id === it.scamLedgerId);
-          if (s) s.discovered = true;
-          try { this.journalNote && this.journalNote('village', 'stranger', `The ${it.name} I bought rotted in a day — sold as fresh. Scam confirmed.`); } catch (e) {}
-        }
-      } catch (e) {}
       scholar.inventory = scholar.inventory.filter(i => !isSpoiled(i));
       const spoiled = before - scholar.inventory.length;
       const spoilNote = spoiled ? ` Spoiled and discarded: ${[...new Set(spoiledNames)].join(', ')}. The Codex notes the waste.` : '';
@@ -20774,16 +20587,6 @@
         // Trim a leading "Use: " — the beat already says you used it.
         const eff = String(def.baseEffect).replace(/^use:\s*/i, '');
         this.say(`✨ Now you understand it. The ${item.name}: ${eff}.`);
-        // TIER-LIE DISCOVERY (Steve 2026-10-06): the "tier 3" focus sputters
-        // like a tier 1 — because it IS a tier 1. The lie surfaces in the hand.
-        if (item.scamTierLie) {
-          item.scamTierLie = false;
-          this.say(`...it sputters. Weak, thin, ordinary. That was no tier ${item.advertisedTier} — not even close. Somebody painted a sigil on a trinket and charged you for a treasure.`);
-          const ledger = (this.state.village || {}).scamLedger || [];
-          const s = ledger.find(x => x.id === item.scamLedgerId);
-          if (s) s.discovered = true;
-          try { this.journalNote && this.journalNote('village', 'stranger', `The "tier ${item.advertisedTier}" loot was counterfeit — tier lie confirmed on first use.`); } catch (e) {}
-        }
       }
       return true;
     },
@@ -21333,13 +21136,6 @@
           prepKnown,
           text: p.codex, knowledge: (p.knowledgeLevels || {})[String(lvl)] || '',
           uses: this.plantUsesText(pid),
-          // CONTESTED (Steve 2026-10-06): the codex is honest about
-          // disagreement — "Mara says X, but you know Y."
-          contested: e.contested && !e.contested.resolved ? {
-            byName: e.contested.byName, claim: e.contested.claim,
-            deliberate: !!e.contested.deliberate } : null,
-          // believed-wrong: you were taught a false name and bought it
-          wrongAs: e.wrongAs || null, taughtByName: e.taughtByName || null,
           harvests: e.harvests || 0, tastings: e.tastings || 0 };
       }).filter(Boolean);
     },

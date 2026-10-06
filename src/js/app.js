@@ -1021,23 +1021,16 @@
       if (exit && outTile) {
         const nx = Game.map.px + exit.dx, ny = Game.map.py + exit.dy;
         const nt = (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) ? Game.tileAt(nx, ny) : null;
-        const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the edge of the known world';
+        const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the void';
         const block = nt ? Game.travelBlockage(nx, ny) : null;
-        // WORLD EDGE (explorer loop 2026-10-06): no travel button into the
-        // void — the 7x7 map is the whole known world. The old button called
-        // Game.travelTo with out-of-bounds coords and crashed the tap.
-        if (nt) {
-          const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;
-          actions.push([label, () => {
-            if (block) { showBlockage({ kind: 'blockage', blockType: block.blockType, x: nx, y: ny }); refresh(); return; }
-            const res = Game.travelTo(nx, ny);
-            if (res && res.kind === 'blockage') { showBlockage(res); }
-            refresh();
-          }]);
-          desc += ` You're on the ${exit.dir}ern edge — ${nm} lies that way.`;
-        } else {
-          desc += ` You're on the ${exit.dir}ern edge of the known world. Beyond is unmapped — there's no path to take.`;
-        }
+        const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;
+        actions.push([label, () => {
+          if (block) { showBlockage({ kind: 'blockage', blockType: block.blockType, x: nx, y: ny }); refresh(); return; }
+          const res = Game.travelTo(nx, ny);
+          if (res && res.kind === 'blockage') { showBlockage(res); }
+          refresh();
+        }]);
+        desc += ` You're on the ${exit.dir}ern edge — ${nm} lies that way.`;
       } else if (inside) {
         desc += ' You\'re inside the hall. To leave Haven: tap the 🚪 door, step outside, walk to the edge of the grounds, then tap yourself.';
       }
@@ -12000,9 +11993,7 @@
       <h1 class="title" style="font-size:22px">${Game.journalName().toUpperCase()}</h1>
       <p class="small"><i>${Game.journalName() === 'Codex' ? 'the village keeps what you write. the System is watching.' : 'field journal — your handwriting. what you learned, so far just yours.'}</i></p>
       ${entries.length ? entries.map(e => `
-        <div class="card codex"><h3>${e.wrongAs ? esc(e.wrongAs) + ' <span class="small" style="opacity:.6">(as taught)</span>' : e.name} <span class="small">· ${e.kcalKnown ? `${e.kcal} kcal/${e.unit}` : `<i>kcal unknown — learn preparation</i>`}</span> <span class="small" style="opacity:.7">[${LVL[e.level] || 'L1'}]</span></h3>
-        ${e.contested ? `<p class="small" style="color:#e8a13c"><b>⚠ Disputed:</b> ${esc(e.contested.byName)} insists this is <b>${esc(e.contested.claim)}</b> — you know it's ${esc(e.name)}.${e.contested.deliberate ? ' (You think they knew better.)' : ''}</p>` : ''}
-        ${e.wrongAs ? `<p class="small" style="color:#e8a13c"><b>⚠ Taught wrong:</b> ${esc(e.taughtByName || 'someone')} taught you this as <b>${esc(e.wrongAs)}</b>. You haven't verified it yourself.</p>` : ''}
+        <div class="card codex"><h3>${e.name} <span class="small">· ${e.kcalKnown ? `${e.kcal} kcal/${e.unit}` : `<i>kcal unknown — learn preparation</i>`}</span> <span class="small" style="opacity:.7">[${LVL[e.level] || 'L1'}]</span></h3>
         <p class="small"><b>Prep:</b> ${e.prepKnown ? (e.prep || '—') : '<i>unknown — eat it or reach L2 to learn</i>'}</p>
         <p class="small"><b>Uses:</b> ${e.uses ? esc(e.uses) : '<i>unknown — harvest and taste to learn</i>'}</p>
         <p class="small"><i>${e.knowledge || ''}</i></p><p>${e.level >= 1 ? e.text : ''}</p></div>`).join('')
