@@ -34,7 +34,10 @@
       "bone": 1
     },
     "diseaseVector": "Rabbits carry tularemia \u2014 wear gloves gutting, and cook it through. Ticks ride them too.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "gray_squirrel",
@@ -70,7 +73,10 @@
       "hide": 1
     },
     "diseaseVector": "Squirrels carry ticks and fleas. Cook the meat through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "white_tailed_deer",
@@ -108,7 +114,10 @@
       "antler": 2
     },
     "diseaseVector": "Deer carry ticks \u2014 Lyme disease is real. Check the hide before you wear it, and cook the venison through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "creek_chub",
@@ -144,7 +153,10 @@
       "bone": 1
     },
     "diseaseVector": "Raw freshwater fish can carry parasites. Cook it.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "wild_turkey",
@@ -181,7 +193,10 @@
       "bone": 2
     },
     "diseaseVector": "Raw poultry carries salmonella. Cook it through \u2014 no pink.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "opossum",
@@ -218,7 +233,10 @@
       "bone": 1
     },
     "diseaseVector": "Opossums rarely carry rabies, but raw meat is raw meat. Cook it through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "bullfrog",
@@ -252,7 +270,10 @@
     "tell": "the croak cuts off mid-note. The ripples flatten.",
     "butcher": {},
     "diseaseVector": "Frogs carry salmonella. Cook the legs through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "box_turtle",
@@ -288,7 +309,10 @@
       "bone": 1
     },
     "diseaseVector": "Reptiles carry salmonella. Wash up, cook it through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "gray_fox",
@@ -325,7 +349,10 @@
       "bone": 1
     },
     "diseaseVector": "Foxes are a rabies vector \u2014 never handle one acting strange. Cook the meat through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "crayfish",
@@ -361,7 +388,10 @@
       "shell": 1
     },
     "diseaseVector": "Raw crayfish can carry lung fluke. Boil them.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "raccoon",
@@ -397,7 +427,10 @@
       "bone": 1
     },
     "diseaseVector": "Raccoons carry roundworm and rabies. Wash your hands after gutting; cook through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "snapping_turtle",
@@ -434,7 +467,10 @@
       "bone": 2
     },
     "diseaseVector": "Reptiles carry salmonella \u2014 cook through. (The head bites after death: cut wide, bury it.)",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "timber_rattlesnake",
@@ -471,7 +507,10 @@
       "bone": 1
     },
     "diseaseVector": "The venom is in the head, not the meat \u2014 but reptiles carry salmonella. Cook through; bury the head deep.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "striped_skunk",
@@ -508,7 +547,10 @@
       "bone": 1
     },
     "diseaseVector": "Skunks are a rabies vector. Cook through \u2014 and never nick the musk glands.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "muskrat",
@@ -545,7 +587,10 @@
       "bone": 1
     },
     "diseaseVector": "Muskrats can carry tularemia. Cook through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "wild_boar",
@@ -583,7 +628,10 @@
       "tusk": 2
     },
     "diseaseVector": "Wild pork can carry trichinella \u2014 cook it through, no exceptions. No pink, ever.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "north_american_porcupine",
@@ -620,7 +668,10 @@
       "quill": 12
     },
     "diseaseVector": "Low disease risk, but raw is raw. Cook it through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "groundhog",
@@ -657,7 +708,10 @@
       "bone": 1
     },
     "diseaseVector": "Groundhogs carry ticks and can carry tularemia. Cook through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "canada_goose",
@@ -694,7 +748,10 @@
       "bone": 2
     },
     "diseaseVector": "Raw waterfowl carries salmonella. Cook it through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "american_woodcock",
@@ -766,7 +823,10 @@
       "bone": 2
     },
     "diseaseVector": "Beavers swim in giardia water and can carry tularemia. Cook the meat through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "bobcat",
@@ -803,7 +863,10 @@
       "bone": 2
     },
     "diseaseVector": "Wild cats can carry toxoplasma \u2014 cook through. (If you're pregnant, let someone else gut it.)",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "nine_banded_armadillo",
@@ -841,7 +904,10 @@
     },
     "killText": "About {kcal} kcal \u2014 poor man\u2019s pork. Cook it through; the shell makes a bowl if you\u2019re patient.",
     "diseaseVector": "Armadillos can carry leprosy \u2014 rare, real. Wear gloves gutting; cook through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "american_crow",
@@ -878,7 +944,10 @@
     },
     "killText": "About {kcal} kcal \u2014 stringy and dark. Famine meat; the feathers are the real prize.",
     "diseaseVector": "Crows don't give you West Nile from the meat (that's mosquitoes), but raw is raw. Cook through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "bluegill",
@@ -912,7 +981,10 @@
     "butcher": {},
     "killText": "About {kcal} kcal \u2014 sweet panfish. Fry whole, eat around the bones.",
     "diseaseVector": "Low risk \u2014 cook it through anyway.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   },
   {
     "id": "gray_rat_snake",
@@ -948,6 +1020,9 @@
     "butcher": {},
     "killText": "About {kcal} kcal \u2014 cooks like eel. The meat is clean; the musk washes off the hands, not the memory.",
     "diseaseVector": "Reptiles carry salmonella. Cook it through.",
-    "common": true
+    "common": true,
+    "regions": [
+      "north_america"
+    ]
   }
 ]
