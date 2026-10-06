@@ -12233,11 +12233,15 @@
               thicket: '#18291f', wetland: '#1a2830', creek: '#14303c',
               trail_edge: '#322e1b', ruin: '#27272b', haven: '#20271f'
             };
-            const base = colors[ttype] || '#1c1c18';
-            const glyph = (S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·';
+            // UNKNOWN SEEN TILES (Steve 2026-10-06): if seen but no data,
+            // show a visible "explored" tile, not blank dark.
+            const isUnknown = !tl || ttype === 'unknown';
+            const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
+            const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
+            const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
             g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" style="width:100%;height:100%;display:block">` +
-              `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}"/>` +
-              `<text x="32" y="42" text-anchor="middle" font-size="28">${glyph}</text></svg>`;
+              `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}" stroke="#4a4a42" stroke-width="1"/>` +
+              `<text x="32" y="42" text-anchor="middle" font-size="28" fill="${textColor}">${glyph}</text></svg>`;
             // Try the full scene generator as enhancement, not requirement
             if (TS) {
               try {

@@ -1059,11 +1059,13 @@ body.in-combat .ord-log { order: 5.3; }
   filter: brightness(calc(.42 + .58 * var(--sky-light, 1)))
           saturate(calc(.62 + .38 * var(--sky-light, 1)));
 }
-/* moonlight tint over the world, not the UI */
-body.is-night #screen::before {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 55;
-  background: linear-gradient(180deg, rgba(8,12,40,.55), rgba(10,16,48,.30));
+/* moonlight tint over the GRID ONLY (Steve 2026-10-06): night darkens the
+   play area, not the map, menus, or UI chrome. */
+body.is-night .ord-gridwrap.detail::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background: linear-gradient(180deg, rgba(8,12,40,.45), rgba(10,16,48,.25));
   opacity: calc(1 - var(--sky-light, 1));
+  border-radius: inherit;
 }
 /* fire matters more at night: warm glow against the dark */
 body.is-night .cell.c-fire {
