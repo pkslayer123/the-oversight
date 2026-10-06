@@ -11,34 +11,34 @@ You don't know what that was. a dog-shaped silence at the treeline Someone at th
 ⚔ A DOG-SHAPED SILENCE AT THE TREELINE! (3 of them!) You're on your own.
 Turn-based now. Tap a tile to move — speed is squares. Then act.
 The woods go silent — not quiet. Silent. Like the world holding its breath. The pack is already moving.
+The dog-shaped silence at the treeline 2 is on you — no warning, just teeth.
+a dog-shaped silence at the treeline 2 hits you for 16.
+📖 Codex: Silent Rush — gives no warning — it just moves and hits. You won't forget this.
+The dog-shaped silence at the treeline 1 is on you — no warning, just teeth.
+a dog-shaped silence at the treeline 1 hits you for 17.
 
 ━━━ FIRST SIGHTING — the birds go quiet (pack of 3, m_0 is the lead) ━━━
 🐞 fighters: m_0[LEAD], m_1, m_2
-No warning — just teeth: a dog-shaped silence at the treeline 1 is on you.
-a dog-shaped silence at the treeline 1 hits you for 16.
-📖 Codex: Silent Rush — gives no warning — it just moves and hits. You won't forget this.
-No warning — just teeth: a dog-shaped silence at the treeline 2 is on you.
+The dog-shaped silence at the treeline 2 is on you — no warning, just teeth.
 a dog-shaped silence at the treeline 2 hits you for 14.
-No warning — just teeth: a dog-shaped silence at the treeline 1 is on you.
-a dog-shaped silence at the treeline 1 hits you for 15.
+The dog-shaped silence at the treeline 1 is on you — no warning, just teeth.
+a dog-shaped silence at the treeline 1 hits you for 14.
 
 ━━━ SILENT RUSH — no warning, just teeth ━━━
-You hit a dog-shaped silence at the treeline 1 for 19.
+You hit a dog-shaped silence at the treeline 1 for 16.
 The lead staggers — and the pack's silence shatters into yips and snarls. Coordination broken. (WOUND THE LEAD: it worked.)
-🐞 lead hp 15/34, broken=true
+🐞 lead hp 13/29, broken=true
 
 ━━━ WOUND THE LEAD — the pack breaks (not dead, just broken) ━━━
-No warning — just teeth: a dog-shaped silence at the treeline 2 is on you.
+The dog-shaped silence at the treeline 2 is on you — no warning, just teeth.
 a dog-shaped silence at the treeline 2 hits you for 15.
-The a dog-shaped silence at the treeline 1 breaks and runs!
-No warning — just teeth: a dog-shaped silence at the treeline 3 is on you.
-a dog-shaped silence at the treeline 3 hits you for 16.
+The dog-shaped silence at the treeline 3 skirts the edge of the fight, yipping — no one's following it.
+The dog-shaped silence at the treeline 1 skirts the edge of the fight, yipping — no one's following it.
 
 ━━━ BROKEN PACK — circling wide, yipping ━━━
 You hit a dog-shaped silence at the treeline 1 for 999.
-The a dog-shaped silence at the treeline 1 falls.
-Without the lead, another wolf melts back between the trees.
+The dog-shaped silence at the treeline 1 falls.
 Without the lead, another wolf melts back between the trees.
 
 ━━━ THE LEAD FALLS — without it ━━━
-🐞 remaining: m_1[fled], m_2[fled]
+🐞 remaining: m_1, m_2[fled]

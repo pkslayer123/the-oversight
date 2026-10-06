@@ -6,105 +6,104 @@ Six days as a hoarder: forage hard, eat light, bury far, skim the pantry, steal 
 MISER WEEK — haven at (3,3). Opening: kcal=2200 pack=1400kcal pantry=47250kcal caches=0(0kcal) trust=15 heat=0 stage=0
 
 D1 MORNING kcal=2200 pack=1400kcal pantry=47250kcal caches=0(0kcal) trust=15 heat=0 stage=0
-foraged 4x on wetland, ate +0 kcal. kcal=1960 pack=1400kcal pantry=47250kcal caches=0(0kcal) trust=15 heat=0 stage=0
-  [game] 📋 A person, maybe 30s, with a gap-toothed grin needs 3 dandelion. "For tea. For morale. For reasons."
-  [game] Unfamiliar unknown shoots — into the bag. (Unknowns lump together; sort them at camp.)
-  [game] A shot in the dark — you take what's green: 3× unknown shoots. Into the bag, unnamed. (Not food until identified — sort them at camp.) This patch is picked clean — it'll recover in
-  [game] Unfamiliar unknown shoots — into the bag. (Unknowns lump together; sort them at camp.)
-  [game] Unfamiliar unknown nuts — into the bag. (Unknowns lump together; sort them at camp.)
-  [game] A shot in the dark — you take what's green: 5× unknown shoots, 4× unknown nuts. Into the bag, unnamed. (Not food until identified — sort them at camp.) This patch is picked clean —
-  [game] Journal updated: a tree with compound leaves and hard nuts grows here too — better than a tree with lobed leaves and acorns.
-  [game] A shot in the dark — you take what's green: 5× unknown shoots, 4× unknown nuts. Into the bag, unnamed. (Not food until identified — sort them at camp.) This patch is picked clean —
-  [game] Unfamiliar unknown berries — into the bag. (Unknowns lump together; sort them at camp.)
-  [game] A shot in the dark — you take what's green: 3× unknown berries, 4× unknown berries. Into the bag, unnamed. (Not food until identified — sort them at camp.) This patch is picked cle
-  no farther hop (dist 6)
-walked out 6 tiles from haven to grove
-buried far cache #1: 1x Dried meat; 1x Trail mix
-  [game] Travel 2 tiles to creek.
-— Moving water —
-The creek braids around gravel bars. Crawdads flick backward into the shadows of rocks.
-  [game] Movement — a ripple that isn't a fish, sliding along the bank.
-  [game] Travel 2 tiles to creek.
-— Moving water —
-Cold, clear, moving. The best thing you've seen all day.
-  [game] Travel 1 tile to grove.
-— Nut trees —
-The trees here fruit on their own schedule. Right now the schedule is generous.
-  [game] Buried. 1× Dried meat (300 kcal) — buried at creekside grove, day 1. Only you know — and your Journal.
-  [game] 📓 Journal: noted — 1× Dried meat (300 kcal) — buried at creekside grove, day 1
-  [game] Buried. 1× Trail mix (400 kcal) — buried at creekside grove, day 1. Only you know — and your Journal.
-  [game] 📓 Journal: noted — 1× Trail mix (400 kcal) — buried at creekside grove, day 1
+foraged 4x on ruin, ate +0 kcal. kcal=1800 pack=6150kcal pantry=47250kcal caches=0(0kcal) trust=15 heat=0 stage=0
+  [game] Scrounger: you spot another — Canned beans.
+  [game] You pry open a cupboard: Canned soup (+450 kcal). Chicken soup. Tastes like before.
+  [game] Scrounger: you spot another — Jarred peaches.
+  [game] You pry open a cupboard: Canned soup (+450 kcal). Chicken soup. Tastes like before.
   [game] — MIDDAY — Honest work hours. Heat builds.
-cover story: donated 2 branches. ledger: day 1: A left 2× Branch
-D1 END: day 1 -> 2, hp 100 -> 100, kcal=1302 pack=700kcal pantry=41461kcal caches=2(700kcal) trust=16 heat=0 stage=0
-
-D2 MORNING kcal=1302 pack=700kcal pantry=41461kcal caches=2(700kcal) trust=16 heat=0 stage=0
+  [game] Scrounger: you spot another — Jarred peaches.
+  [game] You pry open a cupboard: Canned beans (+650 kcal). Dusty can, intact seal. Someone's pantry, a lifetime ago.
+  [game] Scrounger: you spot another — Jarred peaches.
+  [game] You pry open a cupboard: Canned soup (+450 kcal). Chicken soup. Tastes like before.
+  [game] — DUSK — Animals stir again. Shadows lengthen.
   no farther hop (dist 6)
-foraged 4x ate +0, walked 6 out, buried far cache #2: 2x Common Plantain
-  [game] You work the patch: 3× Common Plantain — and 3× unknown shoots, 4× unknown shoots you can't name yet. This patch is picked clean — it'll recover in a few days.
-  [game] Journal: Where the creek spreads out, the starch grows.
-  [game] Journal updated: a plant with jagged leaves and a yellow flower grows here too — better than common plantain.
-  [game] You work the patch: 3× Common Plantain — and 3× unknown shoots, 4× unknown shoots you can't name yet. This patch is picked clean — it'll recover in a few days.
-  [game] A shot in the dark — you take what's green: 5× unknown shoots. Into the bag, unnamed. (Not food until identified — sort them at camp.) This patch is picked clean — it'll recover in
-  [game] Your pack is full. Eat something, test a lump from your pack, or leave some for the woods.
-  [game] Still full. (Eat, test a lump, or leave some.)
-  [game] Travel 3 tiles to grove.
-  [game] Buried. 2× Common Plantain (70 kcal) — buried at creekside grove, day 2. Only you know — and your Journal.
-  [game] 📓 Journal: noted — 2× Common Plantain (70 kcal) — buried at creekside grove, day 2
-pantry skim: 41461 -> 31561 kcal in pantry. takes=9900 gives=0 stashTakes=0
+walked out 6 tiles from haven to forest_floor
+buried far cache #1: 1x Dried meat; 1x Trail mix
+  [game] Travel 2 tiles to forest floor.
+— Under the canopy —
+Old growth. The canopy closes overhead and the light comes down in shafts. Something rustled, and decided not to be seen.
+  [game] Birds scatter in a sudden hush — something is moving out there. You give it a wide berth.
+  [game] Travel 1 tile to forest floor.
+— Under the canopy —
+Saplings push up through last year's deadfall, racing each other for the light. The forest never stops trying.
+  [game] Birds scatter in a sudden hush — something is moving out there. You give it a wide berth.
+  [game] Movement — a large brown quadruped, white tail raised in alarm.
+  [game] You see smoke on the horizon. Stonebridge — 11 people, 1 day in. foragers, by the look of it. They know 3 plants — 2 you haven't seen. They've been here the whole time.
+  [game] Buried. 1× Dried meat (300 kcal) — buried at forest floor, day 1. Only you know — and your Journal.
+  [game] 📓 Journal: noted — 1× Dried meat (300 kcal) — buried at forest floor, day 1
+  [game] Buried. 1× Trail mix (400 kcal) — buried at forest floor, day 1. Only you know — and your Journal.
+  [game] 📓 Journal: noted — 1× Trail mix (400 kcal) — buried at forest floor, day 1
+cover story: donated 2 branches. ledger: day 1: you left 2× Branch
+D1 END: day 1 -> 2, hp 100 -> 100, kcal=1275 pack=1800kcal pantry=47300kcal caches=2(700kcal) trust=16 heat=0 stage=0
+
+D2 MORNING kcal=1275 pack=1800kcal pantry=47300kcal caches=2(700kcal) trust=16 heat=0 stage=0
+  no farther hop (dist 6)
+foraged 4x ate +0, walked 6 out, buried far cache #2: nothing
+  [game] Something moves out there — a toad like a war drum, throat swelling.
+  [game] Unfamiliar unknown nuts — into the bag. (Unknowns lump together; sort them at camp.)
+  [game] Unfamiliar unknown shoots — into the bag. (Unknowns lump together; sort them at camp.)
+  [game] A shot in the dark — you take what's green: 3× unknown nuts, 4× unknown shoots. Into the bag, unnamed. (Not food until identified — sort them at camp.) This patch is picked clean —
+  [game] Journal: Deep shade. The floor keeps its secrets.
+  [game] A shot in the dark — you take what's green: 3× unknown nuts, 4× unknown shoots. Into the bag, unnamed. (Not food until identified — sort them at camp.) This patch is picked clean —
+  [game] 📋 A woman, maybe 40s needs 3 dandelion. "For tea. For morale. For reasons."
+  [game] This patch is worked out — step to another green patch and forage again.
+  [game] Travel 3 tiles to forest floor.
+  [game] It followed you. The toad like a war drum, throat swelling is here.
+pantry skim: 47300 -> 33610 kcal in pantry. takes=13690 gives=0 stashTakes=0
+  [game] It followed you. The toad like a war drum, throat swelling is here.
+  [game] Movement — leaf litter that wasn't leaves — a whir of wings from under your feet.
   [game] Travel 3 tiles to Haven.
-  [game] You keep a day's food (735 kcal) and unload 0 kcal into Haven's pantry.
-  [game] 1 unprocessed haul onto the counter — the clock is ticking.
+  [game] It followed you. The toad like a war drum, throat swelling is here.
+  [game] You keep a day's food (1800 kcal) and unload 0 kcal into Haven's pantry.
+  [game] 2 unprocessed hauls onto the counter — the clock is ticking.
   [game] You walk back into Haven. 3 Codex entries. The village is glad to see you.
   [game] Inside. The hall smells of smoke and twelve people. Home.
   [game] Too heavy for more Dried beans.
-  [game] Too heavy for more Foraged food.
-  [game] Someone watches you load up. They say nothing.
-  [game] A woman, maybe 20s watches you load up, then says it loud enough for the fire to hear: "Must be nice, taking double while the rest of us count bites."
-  [game] Packed: 12 Dried meat, 12 Canned soup, 10 Rice, 1 Foraged food. (9.9 Mcal, 13.6 kg)
-D2 END: day 2 -> 3, hp 100 -> 100, kcal=1200 pack=9435kcal pantry=27487kcal caches=3(770kcal) trust=14 heat=10 stage=0
+  [game] Packed: 1 Jarred peaches, 1 Canned soup, 1 Jarred peaches, 1 Canned beans, 1 Jarred peaches, 1 Canned soup, 12 Peanuts, 12 Dried meat, 12 Canned soup, 1 Rice. (13.7 Mcal, 12.7 kg)
+D2 END: day 2 -> 2 (SLEEP DID NOT ADVANCE), hp 100 -> 100, kcal=1055 pack=16690kcal pantry=35513kcal caches=2(700kcal) trust=14 heat=10 stage=0
 
-D3 MORNING kcal=1200 pack=9435kcal pantry=27487kcal caches=3(770kcal) trust=14 heat=10 stage=0
+D3 MORNING kcal=1055 pack=16690kcal pantry=35513kcal caches=2(700kcal) trust=14 heat=10 stage=0
 donate-then-take-back 'Trail mix': trust 14 -> 7
   [game] Donated Trail mix (+400 kcal). Trust +0. They'll remember this.
   [game] You took back what you gave. They noticed. Trust -5.
   [game] Took Trail mix.
-lifted rations: result=unseen (tries=1). pack now 10035kcal.
+lifted rations: result=false (tries=5). pack now 16690kcal.
   [game] You push through the doors into open air. Haven grounds — tents, a fire pit, worn paths. The world is that way.
-  [game] 🤏 A person, maybe 30s, with a burn-scarred forearm is looking the other way. Their loss is 4 handfuls of rations. Your hands are steady. Your stomach isn't.
-notice sweep done. kcal=1200 pack=10035kcal pantry=27487kcal caches=3(770kcal) trust=7 heat=10 stage=0
-D3 END: day 3 -> 4, hp 100 -> 86, kcal=1153 pack=9900kcal pantry=23971kcal caches=3(470kcal) trust=7 heat=25 stage=1
+  [game] Not in the middle of a fight.
+notice sweep done. kcal=1055 pack=16690kcal pantry=35513kcal caches=2(700kcal) trust=7 heat=10 stage=0
+D3 END: day 2 -> 2 (SLEEP DID NOT ADVANCE), hp 100 -> 100, kcal=895 pack=16690kcal pantry=35513kcal caches=2(700kcal) trust=7 heat=10 stage=0
 
-D4 MORNING kcal=1153 pack=9900kcal pantry=23971kcal caches=3(470kcal) trust=7 heat=25 stage=1
-justice: stage=1 heat=25 cold=true
-after gossip: trust=7 heat=25 stage=1
-second lift: result=unseen.
+D4 MORNING kcal=895 pack=16690kcal pantry=35513kcal caches=2(700kcal) trust=7 heat=10 stage=0
+justice: stage=0 heat=10 cold=false
+after gossip: trust=7 heat=10 stage=0
+second lift: result=false.
   [game] You push through the doors into open air. Haven grounds — tents, a fire pit, worn paths. The world is that way.
-  [game] 🤏 A person, maybe 30s, with a burn-scarred forearm is looking the other way. Their loss is 2 handfuls of rations. Your hands are steady. Your stomach isn't.
-after 2nd theft: trust=7 heat=25 stage=1 cold=true
-ate +0 kcal. kcal=1153 pack=10200kcal pantry=23971kcal caches=3(470kcal) trust=7 heat=25 stage=1
-D4 END: day 4 -> 5, hp 86 -> 76, kcal=1034 pack=10200kcal pantry=20045kcal caches=3(470kcal) trust=0 heat=40 stage=1
+  [game] Not in the middle of a fight.
+  [game] The stash count is off. 1 branch missing. Nobody saw anything. Everybody suspects something.
+  [game] You check your cache. Disturbed earth. Empty. Someone found it.
+  [game] 📓 Journal: jotted down what they said (A woman, maybe 50s).
+after 2nd theft: trust=7 heat=10 stage=0 cold=false
+ate +1505 kcal. kcal=2400 pack=14890kcal pantry=35513kcal caches=2(300kcal) trust=7 heat=10 stage=0
+D4 END: day 2 -> 2 (SLEEP DID NOT ADVANCE), hp 100 -> 100, kcal=2240 pack=14890kcal pantry=35513kcal caches=2(300kcal) trust=7 heat=10 stage=0
 
-D5 MORNING kcal=1034 pack=10200kcal pantry=20045kcal caches=3(470kcal) trust=0 heat=40 stage=1
-returned to farthest cache (6 tiles out), buried day 1, now day 5
-dug up '1× Trail mix (400 kcal)': pack 10200 -> 10200 kcal. caches left: 3
+D5 MORNING kcal=2240 pack=14890kcal pantry=35513kcal caches=2(300kcal) trust=7 heat=10 stage=0
+returned to farthest cache (6 tiles out), buried day 1, now day 2
+dug up '1× Dried meat (300 kcal)': pack 14890 -> 15190 kcal. caches left: 1
   [game] You push through the doors into open air. Haven grounds — tents, a fire pit, worn paths. The world is that way.
-  [game] Travel 3 tiles to wetland.
-  [game] Something big is moving in the woods. The birds went quiet.
-  [game] You catch fragments by the fire — A person, maybe 30s, with a burn-scarred forearm telling A person, maybe 30s, with a missing fingertip about you. The story's getting bigger than 
-  [game] Travel 3 tiles to grove.
-  [game] Movement — a domed shape in the leaves, ancient and unhurried.
-  [game] You catch fragments by the fire — A person, maybe 30s, with a burn-scarred forearm telling A woman, maybe 50s about you. The story's getting bigger than what happened.
-  [game] You catch fragments by the fire — A person, maybe 40s, with a nervous tic telling A woman, maybe 20s about you. The story's getting bigger than what happened.
-  [game] Too heavy to carry it all. Lighten your pack, come back.
-D5 END: day 5 -> 6, hp 76 -> 66, kcal=1000 pack=2000kcal pantry=22645kcal caches=3(70kcal) trust=5 heat=40 stage=1
+  [game] Travel 3 tiles to forest floor.
+  [game] Birds scatter in a sudden hush — something is moving out there. You give it a wide berth.
+  [game] You catch fragments by the fire — Marcus telling A person, maybe 50s, with a scarred cheek about you. The story's getting bigger than what happened.
+  [game] Travel 3 tiles to forest floor.
+  [game] Birds scatter in a sudden hush — something is moving out there. You give it a wide berth.
+  [game] Dug up: 1× Dried meat (300 kcal). Still yours.
+D5 END: day 2 -> 2 (SLEEP DID NOT ADVANCE), hp 100 -> 100, kcal=2080 pack=1970kcal pantry=48733kcal caches=1(0kcal) trust=7 heat=10 stage=0
 
-D6 MORNING kcal=1000 pack=2000kcal pantry=22645kcal caches=3(70kcal) trust=5 heat=40 stage=1
+D6 MORNING kcal=2080 pack=1970kcal pantry=48733kcal caches=1(0kcal) trust=7 heat=10 stage=0
 ledger:
-day 2: A took 1× Branch
-day 1: A took 1× Branch
-day 1: A left 2× Branch
-caches remaining: 1× Dried meat (300 kcal) @(0,0) found=true | 1× Trail mix (400 kcal) @(0,0) found=true | 2× Common Plantain (70 kcal) @(0,0) found=false
-takes=10300 gives=400 stashTakes=0
-FINAL: day=6 kcal=1000 pack=2000kcal pantry=22645kcal caches=3(70kcal) trust=5 heat=40 stage=1 exiled=false
+day 2: someone took 1× Branch
+day 1: you left 2× Branch
+caches remaining: 1× Trail mix (400 kcal) @(0,0) found=true
+takes=14090 gives=400 stashTakes=0
+FINAL: day=2 kcal=2080 pack=1970kcal pantry=48733kcal caches=1(0kcal) trust=7 heat=10 stage=0 exiled=false
 ```

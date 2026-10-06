@@ -1,0 +1,44 @@
+village: 11 villagers
+natural liars (player can't see this): 4/11
+
+===== DAY 1 =====
+  gossip spark day 1 — Marcus: ❓ Wait. Renate told you "EMT". Marcus just said "exterminator". Those don't match. 📓 Journal: jotted down what they said (Renate). Marcus lowers their voice. "
+  NEW DOUBT day 1 — Hatsune [slip]: Hatsune told you "belong" — but something they just said doesn’t fit. A wrong detail, a bad correction.
+  NEW DOUBT day 1 — Emma [slip]: Emma told you "midwife" — but something they just said doesn’t fit. A wrong detail, a bad correction.
+  NEW DOUBT day 1 — Renate [gossip]: Renate said "EMT" — but Marcus says "exterminator". One of them is wrong.
+  doubtsHTML length: 1466 chars
+  journal ❓ notes: 0
+  CONFRONT(UI) day 1 — Hatsune [slip] → no-outcome: "I don't actually want to belong somewhere. I want to leave and find somewhere better. There are people from my old life I'd rather never find me. That's all."
+  CONFRONT(direct, no UI choice!) day 1 — Emma [slip] → confessed
+  CONFRONT(UI) day 1 — Renate [gossip] → no-outcome: A wall comes down, then — surprisingly — a door opens behind it. "I wasn't an EMT. I was an exterminator. If the wrong people know, it doesn't fall on me. It falls on them." Quiet. Real.
+  end of day 1: open=0 resolved=3
+
+===== DAY 2 =====
+  end of day 2: open=0 resolved=3
+
+===== DAY 3 =====
+  gossip spark day 3 — Renate: ❓ Wait. Hatsune told you "Denver". Renate just said "Tokyo, Japan". Those don't match. 📓 Journal: jotted down what they said (Hatsune). Renate lowers their voi
+  NEW DOUBT day 3 — Hatsune [slip]: Hatsune told you "Denver" — but something they just said doesn’t fit. A wrong detail, a bad correction.
+  NEW DOUBT day 3 — Sofia [slip]: Sofia told you "Denver" — but something they just said doesn’t fit. A wrong detail, a bad correction.
+  NEW DOUBT day 3 — Hatsune [gossip]: Hatsune said "Denver" — but Renate says "Tokyo, Japan". One of them is wrong.
+  CONFRONT(UI) day 3 — Hatsune [slip] → no-outcome: "I'm not from Denver. I'm from Tokyo, Japan. The less of me is out there, the less can be used against me."
+  CONFRONT(UI) day 3 — Sofia [slip] → no-outcome: "I'm not from Denver. I'm from somewhere. The truth felt small. The lie felt like someone worth keeping around."
+  CONFRONT(UI) day 3 — Hatsune [gossip] → no-outcome: "We went over this," Hatsune says, a little tired. "I already told you the truth about that."
+  end of day 3: open=0 resolved=6
+
+===== DAY 4 =====
+  end of day 4: open=0 resolved=6
+
+===== DAY 5 =====
+  end of day 5: open=0 resolved=6
+
+===== DAY 6 =====
+  end of day 6: open=0 resolved=6
+
+===== DAY 6 =====
+  end of day 6: open=0 resolved=6
+
+===== FEEL SUMMARY =====
+doubts ever formed: 6
+confrontations: 6, outcomes: {"no-outcome":5,"confessed":1}
+kinds: {"slip":4,"gossip":2}

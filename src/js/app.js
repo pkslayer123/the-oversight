@@ -10136,7 +10136,7 @@
     // below. Knowledge-gated like every bucket.
     // No 'rush' bucket (Steve 2026-10-06): rush patterns never declare, so
     // nothing could ever paint it — removed as unreachable dead code.
-    const out = { burst: new Set(), charge: new Set(), encircle: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), pepBurst: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), beam: new Set() };
+    const out = { burst: new Set(), charge: new Set(), encircle: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), pepBurst: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), beam: new Set(), heronStrike: new Set() };
     // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity — which
     // monster each telegraph cell belongs to, so the grid can render each
     // monster's attack in its own visual voice (mirror-shimmer, projected

@@ -283,6 +283,17 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   background-image: linear-gradient(135deg, transparent 42%, rgba(255,255,255,.65) 50%, transparent 58%);
   animation: flashBlink 0.55s steps(2, jump-none) infinite; }
 @keyframes flashBlink { 0%, 49% { filter: brightness(1.7); } 50%, 100% { filter: brightness(0.85); } }
+/* HERON STRIKE (Steve 2026-10-06): the white noise heron's Spearfish Strike —
+   a needle out of TV static. Pale gray-white, dashed outline, snow-grain
+   fill that flickers. Distinct from the deer's harsh red beamLane and the
+   moth's hard silver flashBurst: this is soft, wrong, staticky. */
+.cell.heronStrike { position: relative; outline: 2px dashed #d5dde5; outline-offset: -2px;
+  background-color: rgba(205,215,225,.16);
+  background-image: radial-gradient(rgba(255,255,255,.8) 1px, transparent 1.7px),
+    radial-gradient(rgba(150,160,175,.55) 1px, transparent 1.7px);
+  background-size: 7px 7px, 11px 11px;
+  animation: staticFlicker .3s infinite alternate; }
+@keyframes staticFlicker { from { filter: brightness(1); } to { filter: brightness(1.45); } }
 /* AMBUSH: ambush zone — dark, lurking */
 .cell.ambushZone { outline: 2px dashed #5c5c5c; outline-offset: -2px; background-color: rgba(40, 40, 40, .4); }
 /* VAGUE: pattern not learned yet — dimmer, you see danger but not the shape */
@@ -295,7 +306,7 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 @media (prefers-reduced-motion: reduce) {
   #beamflash.go { animation-duration: 0.15s; }
   .cell.beamLane.beamLive, .cell.beamSource { animation-duration: 1.2s; }
-  .cell.dozeLane, .cell.pepBurst, .cell.swarmHum, .cell.resonantBurst, .cell.flashBurst, .swarmRing { animation: none; }
+  .cell.dozeLane, .cell.pepBurst, .cell.swarmHum, .cell.resonantBurst, .cell.flashBurst, .cell.heronStrike, .swarmRing { animation: none; }
 }
 /* BUILDING VISUAL LANGUAGE: walls are dark, doors glow, halls are plain floor. */
 /* A wall should never look like rubble. A door should never look like a hallway. */

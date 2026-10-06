@@ -12,35 +12,34 @@ You don't know what that was. something huge, rooting in the underbrush Someone 
 Turn-based now. Tap a tile to move — speed is squares. Then act.
 
 ━━━ FIRST SIGHTING — the queue notices you ━━━
-⚠ Lowers its head, paws the earth. It is not going around the tree. It has never gone around anything. It's about to loose!
 
 ━━━ PAW — the telegraph ━━━
 🐞 phase=paw boar@6,3
-🐞 you step into the lane @5,4
-💥 China-Shop Charge!
-something huge, rooting in the underbrush's China-Shop Charge hits you for 23.
+🐞 you step into the lane @5,3
+Something huge, rooting in the underbrush turns toward you. You're on the list now — it doesn't forget.
+The charge leaves the ground churned and broken — wreckage underfoot. It will slow you down.
+💥 It slams through!
+The attack hits you for 21.
 📖 Codex: China-Shop Charge — charges in a straight line, trampling everything in its path. You won't forget this.
 
 ━━━ CHARGE — the hit (you stood in the lane) ━━━
-⚠ Lowers its head, paws the earth. It is not going around the tree. It has never gone around anything. It's about to loose! You know this one: China-Shop Charge charges in a straight line, trampling everything in its path. Sidestep the lane — never try to outrun it. It never goes around.
+Too far — 3 squares left.
 
 ━━━ PAW AGAIN — sidestepped clear ━━━
+The charge leaves the ground churned and broken — wreckage underfoot. It will slow you down.
 💥 China-Shop Charge!
-It thunders past — and finds only air. It stands at the end of its lane, sides heaving. Flanks soft. But it is turning, and it is angry.
+The China-Shop Charge hits you for 25.
 
 ━━━ MISS — the lane was committed, you were not in it ━━━
-It wheels at the end of its lane — and TRAMPLES, grinding hooves, at whatever is close.
-Nothing in reach. It paws the earth, furious.
 
 ━━━ TRAMPLE — the price of the dodge ━━━
 FEASTBURN (−300 banked, ×1.5): the feast was the weapon.
-You STRIKE the something huge, rooting in the underbrush for 57 (Fire-hardened spear).
-You catch it on the flank — soft, unarmored.
-You hit something huge, rooting in the underbrush for 86.
-The something huge, rooting in the underbrush falls.
-Pork is pork. Smoke it; it keeps for weeks. The quills make excellent awls. (+4 cuts, 3.2 Mcal)
-You came back bloody. Nobody asks. Someone saves you the good seat by the fire.
+(something huge, rooting in the underbrush's hide absorbs 8.)
+You STRIKE the something huge, rooting in the underbrush for 30 (Fire-hardened spear).
 
 ━━━ WINDED FLANKS — soft, unarmored (+50%) ━━━
+The charge leaves the ground churned and broken — wreckage underfoot. It will slow you down.
+💥 China-Shop Charge!
+The China-Shop Charge hits you for 25.
 
 ━━━ AFTERMATH — the rhythm: paw, charge, trample, paw ━━━

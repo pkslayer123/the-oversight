@@ -13,11 +13,11 @@ Turn-based now. Tap a tile to move — speed is squares. Then act.
 
 ━━━ FIRST SIGHTING — a boulder with opinions ━━━
 💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.
-a boulder with opinions about where you're walking hits you for 20.
+a boulder with opinions about where you're walking hits you for 25.
 📖 Codex: Snap Decision — strikes without warning when you get close. You won't forget this.
 
 ━━━ SNAP — no warning, there never is ━━━
-You hit a boulder with opinions about where you're walking for 37.
+You hit a boulder with opinions about where you're walking for 30.
 It withdraws. The shell seals with a sound like a door closing. (BUNKER: nearly invulnerable for 2 turns — wait it out.)
 
 ━━━ BUNKER — the shell seals ━━━

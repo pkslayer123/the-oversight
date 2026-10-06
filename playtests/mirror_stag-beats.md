@@ -6,42 +6,47 @@ Fiction root: `mirror_stag` in `src/data/monsters.json` (telegraph text, weaknes
 
 ---
 
+It turns its face toward you. The face is a mirror. You see yourself — tired, dirty, afraid. It starts walking. Not running. Walking. That's worse.
 The village is rattled. Everyone's jumpy — eyes on the treeline.
 You don't know what that was. something tall, flashing in the treeline — like sunlight on glass Someone at the haven should hear about this.
 ⚔ SOMETHING TALL, FLASHING IN THE TREELINE — LIKE SUNLIGHT ON GLASS! You're on your own.
 Turn-based now. Tap a tile to move — speed is squares. Then act.
 
 ━━━ FIRST SIGHTING — something tall, flashing in the treeline ━━━
-The stag's head swings toward you. You're on the list now — it doesn't forget.
-⚠ It turns its face toward you. The face is a mirror. You see yourself — tired, dirty, scared. It holds the reflection for one breath. Then it lowers its head and the mirror becomes a weapon. It is still gathering itself…
+It angles the mirror toward you. Don't look. Don't look.
 
 ━━━ MIRROR — it shows you your face ━━━
-🐞 phase=mirror stag@6,2
-🐞 you sidestep to 0,0
-The reflection sharpens. It sees you seeing yourself — tired, dirty, scared — and it lowers its head. The mirror becomes a weapon.
+🐞 phase=mirror stag@4,2
+You crash through the treeline — the barrier shimmers. They lose your trail.
+You escape. The thicket keeps its secrets.
+Travel 1 tile to grove.
+— Nut trees —
+Hickories and oaks, heavy with mast. This is a pantry that grows.
+🐞 you sidestep to 0,1
 
 ━━━ CONFRONT — the reflection sharpens ━━━
-💥 Confrontation!
-📖 Codex: Confrontation — charges in a straight line, trampling everything in its path. You won't forget this.
 
 ━━━ CHARGE — committed to the lane, you are not in it ━━━
 
 ━━━ (a second stag, a second chance — trees this time) ━━━
 
+It turns its face toward you. The face is a mirror. You see yourself — tired, dirty, afraid. It starts walking. Not running. Walking. That's worse.
 The village is rattled. Everyone's jumpy — eyes on the treeline.
 You don't know what that was. something tall, flashing in the treeline — like sunlight on glass Someone at the haven should hear about this.
 ⚔ SOMETHING TALL, FLASHING IN THE TREELINE — LIKE SUNLIGHT ON GLASS! You're on your own.
 Turn-based now. Tap a tile to move — speed is squares. Then act.
 
 ━━━ SECOND SIGHTING — trees to hide behind this time ━━━
-⚠ It turns its face toward you. The face is a mirror. You see yourself — tired, dirty, scared. It holds the reflection for one breath. Then it lowers its head and the mirror becomes a weapon. It is still gathering itself…
+Something tall, flashing in the treeline — like sunlight on glass turns toward you. You're on the list now — it doesn't forget.
+You meet its gaze in the mirror. Yourself, tired and afraid — and you can't look away. FROZEN.
+You're frozen — you can't move. (stunned)
 
 ━━━ MIRROR — the lane shreds cover, but the mirror needs eyes ━━━
-🐞 hiding spot: 3,5
-The reflection sharpens. It sees you seeing yourself — tired, dirty, scared — and it lowers its head. The mirror becomes a weapon.
+🐞 hiding spot: null
+The mirror face swings toward you, blinding. Something is coming.
 
 ━━━ CONFRONT — it sees you seeing yourself ━━━
-The mirror sweeps the treeline — empty. It lost you. The charge dies unspent.
+The reflection sharpens. It sees you seeing yourself — tired, dirty, scared — and it lowers its head. The mirror becomes a weapon.
 
 ━━━ LOST YOU — the charge dies unspent ━━━
-🐞 phase=mirror
+🐞 phase=confront
