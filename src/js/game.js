@@ -5016,6 +5016,25 @@
     // --- autosave: one writer, one format. run data lives in state.run ---
     // the phone kills background tabs; an expedition must survive a refresh.
     syncRun() {
+      // COMBAT PERSISTENCE (Steve 2026-10-06): save active fight so it survives
+      // PWA updates. Fighters are serialized minimally; reconstructed on load.
+      let tbSave = null;
+      try {
+        const f = this.tbfight;
+        if (f && !f.over) {
+          tbSave = {
+            fighters: (f.fighters || []).map(ft => ({
+              key: ft.key, kind: ft.kind, name: ft.name,
+              hp: ft.hp, maxHp: ft.maxHp,
+              mx: ft.mx, my: ft.my,
+              monsterId: ft.monsterId || (ft.mdef && ft.mdef.id) || null,
+              alive: ft.alive !== false, fled: !!ft.fled,
+              moveLeft: ft.moveLeft || 0, acted: !!ft.acted,
+            })),
+            turnIdx: f.turnIdx || 0, round: f.round || 1,
+          };
+        }
+      } catch (e) {}
       this.state.run = {
         map: this.map, dayPart: this.dayPart, location: this.location,
         departed: this.departed, log: this.log.slice(-40),
@@ -5023,6 +5042,7 @@
         encounterDone: this.encounterDone, wanderer: this.wanderer || null, telemetry: this.state.telemetry || [],
         talkIdx: this.state.talkIdx || {}, fireIdx: this.state.fireIdx || 0,
         questGiven: !!this.state.questGiven,
+        tbfight: tbSave,
       };
     },
     save() {
@@ -5055,6 +5075,41 @@
       // SYNERGIES: recompute on load (saves predate the resonance system).
       // Discovered ones stay discovered; no re-announcement (checkSynergies only says on new).
       this.recomputeActiveSynergies();
+      // COMBAT RESTORE (Steve 2026-10-06): rebuild active fight from save.
+      try {
+        const tbS = r.tbfight;
+        if (tbS && tbS.fighters && tbS.fighters.length) {
+          const fighters = tbS.fighters.map(fs => {
+            const ft = {
+              key: fs.key, kind: fs.kind, name: fs.name,
+              hp: fs.hp, maxHp: fs.maxHp,
+              mx: fs.mx, my: fs.my,
+              alive: fs.alive, fled: fs.fled,
+              moveLeft: fs.moveLeft, acted: fs.acted,
+            };
+            // Reattach monster definition
+            if (fs.monsterId) {
+              ft.monsterId = fs.monsterId;
+              const mdef = (this.data.monsters || []).find(m => m.id === fs.monsterId);
+              if (mdef) ft.mdef = mdef;
+            }
+            // Player fighter needs special fields
+            if (fs.key === 'p') {
+              ft.isPlayer = true;
+            }
+            return ft;
+          });
+          this.tbfight = {
+            fighters,
+            order: (typeof S !== 'undefined' && S.combat && S.combat.turnOrder)
+              ? S.combat.turnOrder(fighters) : fighters.map(f => f.key),
+            turnIdx: tbS.turnIdx || 0,
+            round: tbS.round || 1,
+            over: false, result: null,
+            terraform: {},
+          };
+        }
+      } catch (e) {}
       return true;
     },
     wipe() {
