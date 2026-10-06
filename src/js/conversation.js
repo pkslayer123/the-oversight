@@ -1153,14 +1153,21 @@
       const def = occDef.find(o => o.name === occName) || {};
       const voiceClass = { bold: 'blunt', prickly: 'blunt', intense: 'blunt',
         warm: 'soft', gentle: 'soft', cautious: 'soft', dry: 'dry' }[temp] || 'plain';
+      // AGE (Steve 2026-10-06): a teenager and an elder with the same
+      // temperament do not sound alike. Age is a voice dimension, not just
+      // a stat. Bands are coarse on purpose — voice is about life stage,
+      // not birthdays.
+      const age = rc.age || 30;
+      const ageBand = age <= 24 ? 'young' : age >= 55 ? 'elder' : 'adult';
       return { temp, voiceClass, occName, occTags: def.teachTags || [],
-               age: rc.age || null, name: rc.name || null };
+               age, ageBand, name: rc.name || null };
     },
 
     // convoVoicePool: shared selection for tier x voice labels. Occupation
-    // flavor wins (a medic's check-in is about injuries), then temperament
-    // voice, then the relationship-tier default. Seeded per person so your
-    // phrasing is stable — you sound like YOU, consistently.
+    // flavor wins (a medic's check-in is about injuries), then age (a
+    // teenager and an elder phrase the same question differently), then
+    // temperament voice, then the relationship-tier default. Seeded per
+    // person so your phrasing is stable — you sound like YOU, consistently.
     convoVoicePool(vid, def, seedKey) {
       const tier = this.convoVoiceTier(vid);
       const pv = this.playerVoice();
@@ -1169,11 +1176,12 @@
         if (def.occ && pv.occTags.length) {
           for (const t of pv.occTags) { if (def.occ[t]) { pool = def.occ[t]; break; } }
         }
+        if (!pool && def.age && pv.ageBand !== 'adult' && def.age[pv.ageBand]) pool = def.age[pv.ageBand];
         if (!pool && def.voice && def.voice[pv.voiceClass]) pool = def.voice[pv.voiceClass];
         if (!pool && def.tier) pool = def.tier[tier] || def.tier.new;
       }
       pool = pool || [seedKey];
-      const h = this._hashStr ? this._hashStr(vid + ':' + seedKey + ':' + tier + ':' + pv.voiceClass) : 0;
+      const h = this._hashStr ? this._hashStr(vid + ':' + seedKey + ':' + tier + ':' + pv.voiceClass + ':' + pv.ageBand) : 0;
       return pool[Math.abs(h) % pool.length];
     },
 
@@ -1213,6 +1221,12 @@
             soft: ['"What are you hoping for? If you don\'t mind me asking."'],
             dry: ['"So. What\'s the dream?"'],
           },
+          age: {
+            young: ['"So like... what do you actually want? From all this?"',
+                    '"What are you even hoping for? Honestly?"'],
+            elder: ['"Tell me what you want, child. I\'ve heard enough wants to know the real ones."',
+                    '"What are you hoping for? At my age, hope is a plan."'],
+          },
         },
         past: {
           tier: {
@@ -1227,6 +1241,12 @@
             blunt: ['"What were you, before?"', '"Before all this — what?"'],
             soft: ['"Do you mind talking about before?"', '"What was your life like? Before, I mean."'],
             dry: ['"What did you used to be?"'],
+          },
+          age: {
+            young: ['"What did you do before? Like, as a job?"',
+                    '"Were you in school, or...?"'],
+            elder: ['"What was your trade, back in the world?"',
+                    '"Tell me about your life. I\'ve got time."'],
           },
         },
         village: {
@@ -1247,6 +1267,12 @@
             soft: ['"Is everyone alright? Really alright?"'],
             dry: ['"How\'s morale? Or shouldn\'t I ask."'],
           },
+          age: {
+            young: ['"Is everyone okay? Like, actually okay?"',
+                    '"How\'s everyone doing? For real?"'],
+            elder: ['"How are the young ones holding up?"',
+                    '"Is everyone managing? Tell me true."'],
+          },
         },
         plans: {
           tier: {
@@ -1262,6 +1288,12 @@
             soft: ['"Have you thought about tomorrow at all?"'],
             dry: ['"What\'s the plan, then?"'],
           },
+          age: {
+            young: ['"So what are we doing tomorrow?"',
+                    '"Any plan for tomorrow, or are we winging it?"'],
+            elder: ['"What\'s the plan for tomorrow? And the day after — I think in weeks now."',
+                    '"Tomorrow, then. What does it need to look like?"'],
+          },
         },
         gossip: {
           tier: {
@@ -1276,6 +1308,12 @@
             blunt: ['"What are people saying?"'],
             soft: ['"Has anyone told you anything — about anyone?"'],
             dry: ['"Any good gossip? I\'m bored."'],
+          },
+          age: {
+            young: ['"Heard anything good? About anyone?"',
+                    '"What\'s everyone saying? Give me everything."'],
+            elder: ['"What are people saying? I hear less than I used to."',
+                    '"Any news around the fire? My ears aren\'t what they were."'],
           },
         },
       };
@@ -1319,11 +1357,18 @@
         };
         // Your voice colors even the continuer: a blunt person says "And?",
         // a soft one says "Please, go on." Same moment, different person.
+        // Age colors it too: a teenager says "Wait, what?", an elder says
+        // "Take your time, I've got nowhere to be." Life stage is audible
+        // even in two words.
         const pv = this.playerVoice();
+        const ageMore = { young: ['"Wait, what? Go on —"',
+                                  '"Hold on, back up. Then what?"'],
+                          elder: ['"Go on. I\'m listening."',
+                                  '"Take your time. I\'ve got nowhere to be."'] }[pv.ageBand];
         const voiceMore = { blunt: ['"And?"', '"Keep going."'],
                             soft: ['"Please, go on."', '"I\'m listening, I promise."'],
                             dry: ['"Do go on."'] }[pv.voiceClass];
-        pool = voiceMore || variants[thread] || variants.small;
+        pool = ageMore || voiceMore || variants[thread] || variants.small;
       }
       const pv = this.playerVoice();
       const h = this._hashStr ? this._hashStr(vid + ':more:' + thread + ':' + pv.voiceClass + ':' + pool.length) : 0;
@@ -1349,6 +1394,12 @@
             blunt: ['"Who are you, then?"', '"Your story. Go."'],
             soft: ['"I\'d like to know you better, if that\'s alright."'],
             dry: ['"So what\'s your deal?"'],
+          },
+          age: {
+            young: ['"So... who are you? Like, really?"',
+                    '"I don\'t even know your story. Tell me?"'],
+            elder: ['"Tell me who you are, child. The whole of it."',
+                    '"I\'d like to know you. Properly, this time."'],
           },
         },
         spread_rumor: {
@@ -1379,6 +1430,12 @@
             soft: ['"What do you think it all means? I keep wondering."'],
             dry: ['"Any theories? I\'m collecting."'],
           },
+          age: {
+            young: ['"Okay but like... what IS all this? Seriously?"',
+                    '"Do you have any idea what\'s happening? Any at all?"'],
+            elder: ['"I\'ve seen a lot, but nothing like this. What do you make of it?"',
+                    '"In all my years, never. What do you think it is?"'],
+          },
         },
         offer_help: {
           tier: {
@@ -1397,6 +1454,12 @@
             blunt: ['"Point me at the problem."'],
             soft: ['"Can I help? Please \u2014 let me."'],
             dry: ['"I could be useful, if you want."'],
+          },
+          age: {
+            young: ['"I can help! Like, actually, I can."',
+                    '"Want help? I\'m pretty good at... stuff."'],
+            elder: ['"Let an old hand help with that."',
+                    '"I\'ve done this before. Let me."'],
           },
         },
         trade: {

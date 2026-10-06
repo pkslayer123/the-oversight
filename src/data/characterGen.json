@@ -3967,7 +3967,7 @@
       },
       {
         "id": "q_read",
-        "minTrust": 5,
+        "minTrust": 15,
         "q": "\"Got a read on anyone here yet? Who should I be watching?\"",
         "voice": "social",
         "answers": [
