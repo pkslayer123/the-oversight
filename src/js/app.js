@@ -53,11 +53,16 @@
     try {
       const Sp = S.Sprites;
       if (!Sp || !it) return '';
-      // Plant-derived food: plant sprite, depth 2 if known else 0.
+      // Plant-derived food: plant sprite, depth 2 if known, 1 if examined, else 0.
       const pid = it.plantId;
       if (pid && !String(pid).startsWith('meat_')) {
         const known = Game.plantKnown ? Game.plantKnown(pid) : false;
-        const svg = Sp.plantSprite(pid, known ? 2 : 0, 'plant');
+        let depth = 0;
+        try {
+          const Ex = (typeof Scattering !== 'undefined' && Scattering.Examine) || null;
+          depth = Ex && Ex.plantVisualDepth ? Ex.plantVisualDepth(pid) : (known ? 2 : 0);
+        } catch (e) { depth = known ? 2 : 0; }
+        const svg = Sp.plantSprite(pid, depth, 'plant');
         return svg ? `<span class="itemsprite">${svg}</span>` : '';
       }
       // Manufactured/found items: item sprite, gated on lump.
@@ -1281,6 +1286,9 @@
           }
         }
         if (cell === 'plant' || cell === 'bush') actions.push(['Forage', () => Game.cellInteract(cx, cy)]);
+        // EXAMINE (Steve 2026-10-06): cheap look without harvesting. Vague
+        // description + observation memory — the foundation of recognition.
+        if (cell === 'plant' || cell === 'bush') actions.push(['\U0001F50D Examine', () => { Game.examineCell(cx, cy); refresh(); }]);
         // TERRAFORMING: clear brush for brushwood. costs a day-part + 40 kcal.
         if (cell === 'bush') actions.push(['🧹 Clear brush (a while)', () => { Game.clearBrush(cx, cy); refresh(); }]);
         else if (cell === 'rubble') actions.push(['Scavenge', () => Game.cellInteract(cx, cy)]);
@@ -11602,6 +11610,12 @@
           const spKnown = sp && Game.plantKnown && Game.plantKnown(sp);
           g = (spKnown && PLANT_GLYPH[sp]) ? PLANT_GLYPH[sp] : '🌱';
           cls += ' plantcell' + (spKnown ? ' knownplant' : '');
+          // EXAMINED (Steve 2026-10-06): looked-at-but-unnamed plants get a
+          // visual marker — you've studied this one, it's not just green.
+          try {
+            const Ex = (typeof Scattering !== 'undefined' && Scattering.Examine) || null;
+            if (!spKnown && sp && Ex && Ex.observedPlant && Ex.observedPlant(sp)) cls += ' examinedplant';
+          } catch (e) {}
         } else if (cell === 'bush') {
           // If you've learned this bush, show what it IS. Not just "bush."
           const bs = (tile.bushSpecies || {})[cx + ',' + cy];
@@ -11612,6 +11626,10 @@
           } else if (bs) {
             g = '🫐'; // you know it's a berry, not which one
             cls += ' berrybush';
+            try {
+              const Ex2 = (typeof Scattering !== 'undefined' && Scattering.Examine) || null;
+              if (Ex2 && Ex2.observedPlant && Ex2.observedPlant(bs)) cls += ' examinedbush';
+            } catch (e) {}
           } else {
             g = '🌿';
           }

@@ -2527,7 +2527,7 @@
       this.state.codex.encounters = this.state.codex.encounters || {};
       if (isGoodTeacher || isMedicTeacher) {
         // good education: instant unlock — one path
-        if (this.identifyPlant(plantId, 'taught')) {
+        if (this.identifyPlant(plantId, 'taught', this.displayName(vid))) {
           const how = tIntel === 'practical' ? 'shows you — hands moving, no wasted words. You get it.'
             : tIntel === 'analytical' ? 'shows you, and explains WHY it works. You get it — deeply.'
             : `${this.displayName(vid)} shows you — a leaf, a picture scratched in dirt. You get it.`;
@@ -10349,6 +10349,10 @@
         if (this.hasItem('fishing_line')) actions.push('Fish');
       } else if (cell === 'plant' || cell === 'bush' || cell === 'rubble') {
         actions.push('Forage');
+        // EXAMINE (Steve 2026-10-06): look closely without harvesting. Cheap
+        // (time + tiny kcal), yields a vague description + observation memory.
+        // The foundation of later recognition — examined-then-taught clicks.
+        if (cell === 'plant' || cell === 'bush') actions.push('Examine');
         // TERRAFORMING: brush can be cleared. costs a day-part, yields brushwood.
         if (cell === 'bush') actions.push('Clear brush (a while)');
       } else if (cell === 'fire') {
@@ -10384,6 +10388,21 @@
         if (!sec || !sec.searched) actions.push('Search');
       }
       return actions;
+    },
+
+    // examineCell(cx, cy): the EXAMINE action entry point. Delegates to the
+    // examine-recognition module (src/js/examine.js). Cheap look, no harvest.
+    examineCell(cx, cy) {
+      if (this.over) return null;
+      // ACTIONS move the world. Steps don't — but examining is a small action:
+      // the world still turns (someone might notice you crouching).
+      this.monsterTurn();
+      this.animalTurn();
+      this.villagerTurn();
+      const Ex = (typeof Scattering !== 'undefined' && Scattering.Examine) || null;
+      if (Ex && Ex.examinePlantCell) return Ex.examinePlantCell(cx, cy);
+      this.say('You look closely. Green, growing, unremarkable — or remarkable in a way you can\'t name yet.');
+      return this.tickAction(8) || this.status();
     },
 
     // revealBush: when you examine a bush, it gets a species. Neighbors of the same
@@ -12585,6 +12604,13 @@
             continue;
           }
           const fam = this.bumpPlantFamiliarity(h.plantId, h.plant);
+          // EXAMINE-RECOGNITION (Steve 2026-10-06): handling teaches. Every
+          // harvest records an observation — foraging is the expensive way to
+          // learn what examining teaches cheaply.
+          try {
+            const Ex = (typeof Scattering !== 'undefined' && Scattering.Examine) || null;
+            if (Ex && Ex.observePlant && h.plantId) Ex.observePlant(h.plantId, 'forage');
+          } catch (e) {}
           const entry = (this.state.codex.plants || {})[h.plantId];
           const levelMult = !entry ? 1.0 : entry.level >= 4 ? 2.0 : entry.level >= 2 ? 1.5 : 1.0;
           let units = 3 + Math.floor(Math.random() * 3); // 3-5 per cell: a sweep, not a strip
@@ -22157,7 +22183,7 @@
       } catch (e) {}
       return true;
     },
-    identifyPlant(pid, source) {
+    identifyPlant(pid, source, teacherName) {
       const p = this.data.plants.find(x => x.id === pid);
       if (!p || this.plantKnown(pid)) return false;
       // JOURNAL FRAMING (Steve 2026-10-05): pre-codex this is a handwritten
@@ -22177,6 +22203,13 @@
       if (kl1.startsWith(namePrefix)) kl1 = kl1.slice(namePrefix.length);
       else if (kl1.startsWith(p.name)) kl1 = kl1.slice(p.name.length).replace(/^[.\s:—-]+/, '');
       this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1} Uses unknown — harvest, taste, and learn.`);
+      // RECOGNITION (Steve 2026-10-06): if you examined this species before it
+      // was named, the vague description CLICKS. The observation memory
+      // resolves into the name — a revelation, not a database unlock.
+      try {
+        const Ex = (typeof Scattering !== 'undefined' && Scattering.Examine) || null;
+        if (Ex && Ex.recognitionBeat) Ex.recognitionBeat(pid, teacherName || (source === 'taught' ? 'your teacher' : null));
+      } catch (e) {}
       // SYSTEM VOICE GATE: before the System arrives (Day 7), identification is
       // diegetic only — people, tasting, books. The overlay never speaks first.
       if (this.state.systemArrived) {
