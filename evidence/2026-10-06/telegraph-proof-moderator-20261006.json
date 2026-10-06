@@ -1,0 +1,75 @@
+[
+  {
+    "name": "moderator-unknown",
+    "label": "The Moderator (wave-2 apex) — unknown",
+    "known": false,
+    "monster": "moderator",
+    "attack": "Removal Notice",
+    "kind": "direct",
+    "pattern": "direct",
+    "dmg": [
+      6,
+      10
+    ],
+    "turnsLeft": 1,
+    "phase": "observing",
+    "badge": "👁 CONTENT UNDER REVIEW",
+    "muted": [],
+    "violations": 0,
+    "cue": "It taps you with the flat of the hammer, almost gentle. Taking your measure.",
+    "directCells": 0,
+    "suppressed": 25,
+    "shadowed": 0,
+    "rounds": 1
+  },
+  {
+    "name": "moderator-known",
+    "label": "The Moderator (wave-2 apex) — known",
+    "known": true,
+    "monster": "moderator",
+    "attack": "Removal Notice",
+    "kind": "direct",
+    "pattern": "direct",
+    "dmg": [
+      45,
+      51
+    ],
+    "turnsLeft": 1,
+    "phase": "muting",
+    "badge": "🔇 MUTING",
+    "muted": [
+      "move"
+    ],
+    "violations": 11,
+    "cue": "\"REMOVAL NOTICE.\" The hammer falls — PRIOR VIOLATIONS make it hit +33 harder. (Unavoidable. The mute is the counterplay, not the dodge.) You know this one: Removal Notice locks onto one target — moving won't dodge it. It mutes the verb you lean on — strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one.",
+    "directCells": 1,
+    "suppressed": 16,
+    "shadowed": 0,
+    "rounds": 12
+  },
+  {
+    "name": "moderator-known-shadowban",
+    "label": "The Moderator (wave-2 apex) — SHADOWBAN",
+    "known": true,
+    "monster": "moderator",
+    "attack": "Removal Notice",
+    "kind": "direct",
+    "pattern": "direct",
+    "dmg": [
+      55,
+      65
+    ],
+    "turnsLeft": 1,
+    "phase": "shadowban",
+    "badge": "⬛ SHADOWBAN",
+    "muted": [
+      "move"
+    ],
+    "violations": 11,
+    "cue": "\"DEPLATFORMED.\" The hammer comes down like a period at the end of you. You know this one: Removal Notice locks onto one target — moving won't dodge it. It mutes the verb you lean on — strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one.",
+    "directCells": 1,
+    "suppressed": 0,
+    "shadowed": 30,
+    "rounds": 10
+  }
+]
