@@ -12,12 +12,12 @@
 //   - touch_is_the_bump: forage/harvest/structure-build call touch(x, y) to force re-render; stock quantization alone is too coarse for visual freshness (code: touch, Steve 2026-10-06)
 //   - miniature_not_sprite: detail cells render as simple shapes, never full sprites — this is a 40px-readable miniature (code: markerFor, Steve 2026-10-06)
 //   - entities_are_local: player/villager/animal markers only render on the player's tile, from detail-grid mx/my coords (code: entityMarkers, Steve 2026-10-06)
-//   - world_monsters_mapped: world monsters render as red diamonds on whatever seen tile they haunt, not just the player's (code: entityMarkers, Steve 2026-10-06)
+//   - no_monster_markers: the map shows geography only, never live monster positions (code: entityMarkers, Steve 2026-10-06)
 //   - no_dom: composition is pure string building; safe to call from hot paths and off-thread tests (code: compose, Steve 2026-10-06)
 // consumes:
 //   - Game.tileAt, Game.genDetail (detail-grid generation)
 //   - Game.map.px/py (player tile), Game.state.scholar (mx,my,animal)
-//   - Game.state.worldMonsters (red-diamond markers per tile)
+//   - Game.state.worldMonsters (NOT rendered on map — geography only, Steve 2026-10-06)
 //   - Game.state.village.positions (villager detail-grid positions)
 // ============ TILE SCENES: miniature SVG scenes per world-map tile ============
 // Steve 2026-10-06: "start the real SVG project" — tiles as auto-composed SVG
@@ -177,10 +177,9 @@
     const diamond = (mx, my) => dot(mx, my, (px, py) =>
       '<path d="M' + px + ' ' + r1(py - 3) + ' L' + r1(px + 3) + ' ' + py +
       ' L' + px + ' ' + r1(py + 3) + ' L' + r1(px - 3) + ' ' + py + ' Z" fill="#e04040"/>');
-    // WORLD MONSTERS (Steve 2026-10-06): red diamonds on whatever tile they
-    // haunt — the map shows the living world, not just your tile.
-    const wms = (st.worldMonsters || []).filter(m => m.tx === x && m.ty === y);
-    for (const m of wms) s += diamond(m.mx, m.my);
+    // NO MONSTER MARKERS (Steve 2026-10-06): the map is the map. It shows
+    // geography, not live monster positions. Monster tracking is a future
+    // codex/ability feature (hunt or combat affinity), not a map default.
     if (!onPlayerTile) return s;
     // player: white dot with ring
     s += dot(sch.mx != null ? sch.mx : 4, sch.my != null ? sch.my : 4, (px, py) =>
@@ -234,15 +233,9 @@
     const ver = t._sceneVer || 0;
     // Entity signature: rounded detail-grid coords so the cache busts when
     // anyone moves; villagers are rid->pos pairs on the player tile.
-    // world-monster signature for THIS tile — busts the cache when a
-    // monster arrives, leaves, or shifts on the detail grid.
+    // No monster positions in fingerprint (Steve 2026-10-06): map shows
+    // geography only, not live monsters.
     let wms = '';
-    try {
-      wms = ((g.state || {}).worldMonsters || [])
-        .filter(m => m.tx === x && m.ty === y)
-        .map(m => Math.round(m.mx || 0) + ',' + Math.round(m.my || 0) + ':' + m.id)
-        .sort().join(';');
-    } catch (e) {}
     let ent = '';
     if (g && g.map && g.map.px === x && g.map.py === y && g.state) {
       const sch = g.state.scholar || {};
