@@ -456,7 +456,9 @@
       // Openers don't lead questions ("I think are you okay?" is broken).
       const useOpen = opens.length && (!closes.length || (!isQ && Math.random() < 0.45));
       const pool = useOpen ? opens : closes;
-      const bit = this.convoPick(vid, 'voice:' + temp + ':' + mods.join('+') + ':' + (useOpen ? 'o' : 'c'), pool);
+      // Mannerisms cycle, never exhaust: real people repeat their tics.
+      // convoPickCycle reshuffles when the pool runs dry.
+      const bit = this.convoPickCycle(vid, 'voice:' + temp + ':' + mods.join('+') + ':' + (useOpen ? 'o' : 'c'), pool);
       if (!bit) return line;
       return useOpen ? '"' + bit + inner + '"' : '"' + inner + ' ' + bit + '"';
     },
