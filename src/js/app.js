@@ -11474,35 +11474,23 @@
           // KNOWLEDGE-GATED GLYPHS (Steve): the game knows the species (t.plantSpecies),
           // the player sees it only when their knowledge earns it. Below threshold
           // every plant is just 🌱 — foraging blind never reveals.
-          // SPRITE TAXONOMY (Steve 2026-10-06): plant -> category -> specific.
-          // Unexamined = generic plant sprite; examined = category sprite;
-          // codex L1+ = the specific sprite that actually looks like the thing.
           const sp = (tile.plantSpecies || {})[cx + ',' + cy];
           const spKnown = sp && Game.plantKnown && Game.plantKnown(sp);
-          const spDepth = spKnown ? 2 : (sp ? 1 : 0);
-          const spSpr = (S.Sprites && S.Sprites.plantSprite(sp, spDepth, 'plant')) || null;
-          if (spSpr) { g = spSpr; cls += ' plantsprite'; }
-          else g = (spKnown && PLANT_GLYPH[sp]) ? PLANT_GLYPH[sp] : '🌱';
+          g = (spKnown && PLANT_GLYPH[sp]) ? PLANT_GLYPH[sp] : '🌱';
           cls += ' plantcell' + (spKnown ? ' knownplant' : '');
         } else if (cell === 'bush') {
-          // SPRITE TAXONOMY (Steve 2026-10-06): bush -> berry bush -> blackberry.
-          // Unexamined = generic bush; examined (species assigned) = berry bush
-          // category sprite; codex L1+ = the specific sprite.
+          // If you've learned this bush, show what it IS. Not just "bush."
           const bs = (tile.bushSpecies || {})[cx + ',' + cy];
           const codex = Game.state.codex.plants || {};
-          const bsKnown = bs && codex[bs] && codex[bs].level >= 1;
-          const bsDepth = bsKnown ? 2 : (bs ? 1 : 0);
-          const bsSpr = (S.Sprites && S.Sprites.plantSprite(bs, bsDepth, 'bush')) || null;
-          if (bsSpr) {
-            g = bsSpr; cls += ' bushsprite';
-          } else if (bsKnown) {
+          if (bs && codex[bs] && codex[bs].level >= 1) {
             g = PLANT_GLYPH[bs] || '🌿';
+            cls += ' knownbush';
           } else if (bs) {
-            g = '🫐'; // fallback: you know it's a berry, not which one
+            g = '🫐'; // you know it's a berry, not which one
+            cls += ' berrybush';
           } else {
             g = '🌿';
           }
-          cls += bsKnown ? ' knownbush' : (bs ? ' berrybush' : '');
           if (isDepleted) { cls += ' depleted'; }
         } else if (cell === 'tree' || cell === 'bigtree') {
           g = CELL_GLYPH[cell] || '';

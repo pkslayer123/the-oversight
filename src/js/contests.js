@@ -36,6 +36,9 @@
 //   - _contestConfession(contest) -> phases (social-fear detective)
 //   - _contestHoney(contest) -> phases (swarm forage)
 //   - _contestSecrets(contest) -> phases (secret-cost chance)
+//   - _contestQuiet(contest) -> phases (involuntary thought broadcast; knowledge-gated defense; social costs)
+//   - _contestGuest(contest) -> phases (televised alien dinner; knowledge-gated palate/etiquette)
+//   - _contestVigil(contest) -> phases (night watchpost; stillness discipline; alarm ends the vigil)
 // rules:
 //   - unlock_day: 14 (code: contestTick, contestEligible)
 //   - eligible_villagers: alive + member in good standing + fighting age 15-72, player alive/health>0/not exiled (code: contestEligible, Steve 2026-10-06)
@@ -59,7 +62,7 @@
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
 //   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it) (code: contestPlayable, contestChoose, Steve 2026-10-06)
-//   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 9 wave-2+ contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added (code: _contestWatchBeat, Steve 2026-10-06)
+//   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 12 knowledge-gated contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added, then quiet/guest/vigil (code: _contestWatchBeat, Steve 2026-10-06)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 // consumes:
 //   - scholar.day
@@ -309,6 +312,24 @@
         desc: 'Cards against the System\'s dealer. The deck is made of village secrets — every card drawn reveals something true about someone watching.',
         participants: 1,
         arena: '🃏\n🂡🂢🂣🂤🂥\n🎰⬛⬛⬛🎰\n👁️👁️👁️👁️👁️' },
+      // CONTEST-POOL EXPANSION (Steve 2026-10-06): three new variants with
+      // distinct fear/fun textures — exposure (quiet), farcical hospitality
+      // (guest), stillness-under-pressure (vigil). NOT reskins: quiet is not
+      // a trial (moot) — it's involuntary broadcast you can't argue with;
+      // guest is not a cook-off (cookfight) — the dinner party fights back;
+      // vigil is not being hunted (hide) or moving (maw) — it's holding.
+      { id: 'quiet', name: 'The Quiet Room', cat: 'moot', risk: 'high',
+        desc: 'One silent hour in a white room. The System reads your thoughts aloud to the village. You cannot argue with the broadcast — you can only steer what surfaces.',
+        participants: 1,
+        arena: '🤫\n⬜⬜⬜⬜⬜\n⬜🪑⬜🪑⬜\n⬜⬜⬜⬜⬜\n👥👥👥👥👥\n📢📢📢📢📢' },
+      { id: 'guest', name: 'The Guest', cat: 'weird', risk: 'medium',
+        desc: 'An alien ambassador is coming to dinner at your haven. Televised. Serve something it finds interesting, and survive an etiquette you were never taught.',
+        participants: 1,
+        arena: '👽\n🍽️🍽️🍽️🍽️🍽️\n⬜🕯️⬜🕯️⬜\n🍲🍲🍲🍲🍲\n👥👥👥👥👥' },
+      { id: 'vigil', name: 'The Vigil', cat: 'endurance', risk: 'high',
+        desc: 'One night, alone on the haven wall, the lamp lit. Below in the dark, something large is circling. Hold your post until dawn. Do not abandon the light.',
+        participants: 1,
+        arena: '🕯️\n⬛⬛⬛⬛⬛\n🌑🌑🌑🌑🌑\n🕯️👤🕯️👁️🕯️\n🌑🌑🌑🌑🌑\n⬛⬛⬛⬛⬛' },
     ];
   };
 
@@ -775,6 +796,9 @@
     if (id === 'confession') return this._contestConfession(contest);
     if (id === 'honey') return this._contestHoney(contest);
     if (id === 'secrets') return this._contestSecrets(contest);
+    if (id === 'quiet') return this._contestQuiet(contest);
+    if (id === 'guest') return this._contestGuest(contest);
+    if (id === 'vigil') return this._contestVigil(contest);
     const cat = contest.cat;
     if (cat === 'endurance') return this._contestEndurance(contest);
     if (cat === 'moot') return this._contestMoot(contest);
@@ -873,6 +897,9 @@
       confession: "The confessor is covering for someone. Watch who they look at when the details get specific — guilt looks at the person it's protecting.",
       honey: "Smoke first, always. The queen cell is the prize and the death. The swarm respects slowness — it has never been hurried and doesn't intend to start.",
       secrets: "The deck isn't random — it's curated. It plays the secrets that hurt most when you're winning. Fold while you still like these people.",
+      quiet: "It hunts for the thought you're actively burying — so don't bury anything. Feed it turnips on purpose. Loud, boring, relentless turnips.",
+      guest: "Bitter and fermented wins. Sugar alarms it. And mirror its limbs — imitation reads as respect, not mockery.",
+      vigil: "It circles the light, not you. Tend the lamp. A bright lamp makes a long night for it and a short one for you.",
     };
     return '\n\n📚 What you know: ' + (LINES[contest.id] || "You've seen this before. Trust your instincts.");
   };
@@ -1508,6 +1535,123 @@
     ];
   };
 
+  // --- THE QUIET ROOM (bespoke, moot/high) ---
+  // CONTEST-POOL EXPANSION (Steve 2026-10-06): the fear is involuntary
+  // EXPOSURE — not accusation (moot), not lies (lies), not finding the liar
+  // (informant). You can't argue with the broadcast; you steer what
+  // surfaces. Knowledge-gated (tithe-style): veterans know it hunts the
+  // thought you're actively burying, so decoy-feeding is a real strategy.
+  // The teeth are social: the honesty path trades fracture for the prize —
+  // theft (of a secret) allowed, socially punished. The System rewards the
+  // truth; the village is colder. Feel over math.
+  G._contestQuiet = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('quiet').level >= 2;
+    const p1rule = knows
+      ? `\n\n📚 What the silence taught you: it hunts for the thought you're ACTIVELY BURYING. Don't bury anything — feed it something boring on purpose. Loud, boring, relentless.`
+      : `\n\nNobody who's been in the room will say what it does. The village's veterans just shake their heads and won't meet your eyes.`;
+    const p2 = knows
+      ? { text: `It keeps reaching. You know its tells now — the pause before the buried one, the way the hum rises.\n\nThe decoy is holding. Barely. It knows there's something underneath the turnips.`,
+          choices: [
+            { label: 'Hold the turnips to the end', sub: 'dullness as armor', do: { prize: true, note: 'TURNIPS. SOIL. PLANTING DEPTH. ROW SPACING. You broadcast agricultural trivia at maximum inner volume for the rest of the hour. The System slows... confused. The galaxy is howling. The village is weeping with laughter.', notability: 'showmanship' }, next: 'WIN' },
+            { label: 'Offer it the small shame freely', sub: 'honesty, on purpose', do: { prize: true, trauma: 4, unity: 1, note: 'You stop defending and hand it the small, human shame — the petty one, the one everybody has. The village hears it... and laughs WITH you. The relief is a physical thing. The System bows: "THANK YOU FOR THE TRUTH."', notability: 'contestWin' }, next: 'WIN' },
+            { label: 'Clamp down at the last second', sub: 'panic', do: { trauma: 12, fracture: 1, die: 0.08, note: 'You know better. You do it anyway — clamp down on the real thought, the one about the System itself. It notices the clamping. It goes deeper. It reads it anyway, LOUDER, to everyone.' }, next: 'LOSE' },
+          ] }
+      : { text: `It's past the surface now. Past the rehearsals. It's reaching for the thing you didn't prepare for.\n\nWhatever it finds next, the whole village hears.`,
+          choices: [
+            { label: 'Take it', sub: 'whatever it is', do: { prize: true, trauma: 8, fracture: 1, note: 'It reads the real one — the food you set aside for yourself, from the communal pot, all winter. The village goes silent. The System rewards the honesty with a prize. The village is colder. Both things are true.', notability: 'contestWin' }, next: 'WIN' },
+            { label: 'Beg it to stop', sub: 'on camera', do: { trauma: 6, note: 'You beg, out loud, on every screen in the galaxy. It pauses — curious, not kind — and moves on to something smaller. The clip of you begging will outlive you.', notability: 'showmanship' }, next: 'LOSE' },
+            { label: 'Resist', sub: 'fight the room', do: { trauma: 12, fracture: 1, die: 0.08, note: 'You fight the room itself. The room wins. It takes the buried thought and reads it twice, in case anyone missed it the first time.' }, next: 'LOSE' },
+          ] };
+    return [
+      { text: intro + `\n\nA white room. One chair. No camera you can see — the room IS the camera.\n\nThe System, soft: "SIT. THINK. WE WILL READ ALOUD. ONE HOUR."`,
+        choices: [
+          { label: 'Prepare a decoy', sub: knows ? 'think of turnips' : 'a dull, dull thought', do: { note: knows ? 'You pick the most boring thought you own and rehearse it. Turnips. Soil. Turnips again. You are ready to be profoundly dull.' : 'You pick a dull thought and rehearse it — something grey and uninteresting. You are ready to be profoundly boring.' }, next: 1 },
+          { label: 'Empty your mind', sub: 'meditate', do: { trauma: 3, note: 'You breathe it all out — the fear, the plans, the names. The room hums, disappointed in advance.' }, next: 1 },
+          { label: 'Own it', sub: 'let it come', do: { note: 'No tricks. Whatever it finds, it finds. Your jaw is set. The audience leans in — honesty is rare television.' }, next: 1 },
+        ] },
+      { text: `The silence deepens. It starts reading — your voice, speaking your thoughts a half-second before you think them.\n\nThe village hears the rehearsal thoughts first. Then it starts reaching deeper.` + p1rule,
+        choices: [
+          { label: 'Stay with the plan', sub: 'steady', do: { note: 'You hold your posture — decoy, breath, or open hands. The hum rises. It is looking for the crack.' }, next: 2 },
+          { label: 'Change tactics', sub: 'mid-stream', do: { trauma: 3, note: 'You switch strategies halfway. The System notices the switch. It likes switches — they mean there\'s something to find.' }, next: 2 },
+          { label: 'Talk to it', sub: 'out loud', do: { note: '"I know you\'re in here," you say to the room. The broadcast carries it. The galaxy hears you talking to your own head. The System answers: "WE KNOW. CONTINUE."', notability: 'showmanship' }, next: 2 },
+        ] },
+      p2,
+    ];
+  };
+
+  // --- THE GUEST (bespoke, weird/medium) ---
+  // CONTEST-POOL EXPANSION (Steve 2026-10-06): farcical hospitality as
+  // combat. NOT a cook-off (cookfight) — the ingredients are fine; the
+  // DINNER PARTY fights back. The fear is social: one wrong gesture and
+  // the whole village is mortified on seventeen systems. Knowledge-gated:
+  // the ambassador's palate (bitter/fermented, sugar alarms it) and the
+  // limb-mirroring etiquette are earned knowledge, not given. The fun is
+  // real; the humiliation is real too.
+  G._contestGuest = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('guest').level >= 2;
+    const palate = knows
+      ? `\n\n📚 What the last dinner taught you: its palate runs BITTER and FERMENTED — things humans spit out. Sugar alarms it. Serve ugly. Serve honest.`
+      : `\n\nNobody knows what it eats. The veterans who've hosted before just smile tightly and say "you'll see."`;
+    return [
+      { text: intro + `\n\nA ship the size of weather settles over the haven. Out steps the ambassador: too many limbs, impeccable manners, and a retinue of cameras.\n\nIt is coming to DINNER. At your table. Tonight.` + palate,
+        choices: [
+          { label: 'Serve your best stew', sub: 'looks delicious', do: { note: 'Your finest stew, the good bowls, the good spoons. It looks like a feast. The ambassador regards it the way you\'d regard a dare.' }, next: 1 },
+          { label: 'Serve the bitter roots', sub: knows ? 'you know its palate' : 'an ugly, bitter bowl', do: { note: knows ? 'Bitter roots, fermented stores, the ugly honest food. You serve it like it\'s the crown jewels. The ambassador\'s limbs still — interest.' : 'You serve a bowl of bitter roots and fermented mash. It is not pretty. The village winces. The ambassador leans in.' }, next: 1 },
+          { label: 'Let the village cook decide', sub: 'many hands', do: { unity: 1, note: 'You open the kitchen to the whole village. Three generations argue about the menu. The ambassador watches the argument with something like delight. Families, it seems, are interesting everywhere.' }, next: 1 },
+        ] },
+      { text: `The meal is served. The ambassador lifts the bowl with two limbs at once — and extends a third toward you.\n\nNobody knows what the gesture means. The village is screaming advice at the screen. You have to pick.${knows ? '\n\n📚 Mirror it exactly. Imitation reads as respect, not mockery — you learned that the hard way last time.' : ''}`,
+        choices: [
+          { label: 'Shake it', sub: 'human custom', do: { trauma: 4, note: 'You shake the limb firmly, like a business deal. The limb goes rigid. The retinue inhales. Wrong custom. The ambassador withdraws the limb slowly, re-evaluating your entire species.' }, next: 2 },
+          { label: 'Bow low', sub: 'respectful', do: { note: 'You bow, deep and sincere. Safe. The ambassador inclines — something — back. Respect is never wrong, but it\'s never interesting either.' }, next: 2 },
+          { label: 'Mirror it exactly', sub: knows ? 'you know this one' : 'a guess', do: { unity: 1, note: 'You extend the same limb, the same angle, the same stillness. The ambassador freezes — then ripples with what the subtitles translate as delight. "THE HUMAN LEARNS," it announces. The village erupts.', notability: 'showmanship' }, next: 2 },
+        ] },
+      { text: `The toast. The ambassador rises — which takes a while — and lifts its cup.\n\nWhatever happens now, the whole village tells this story for years. The galaxy too.`,
+        choices: [
+          { label: 'Toast the village', sub: 'heart', do: { prize: true, unity: 1, note: 'You toast your people — by name, the living and the gone. The ambassador listens to every name. "INTERESTING," it pronounces, and the word lands like a benediction. The village will dine out on this for a decade.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Toast the System', sub: 'flattery', do: { fracture: 1, note: 'You toast the System\'s wisdom. The ambassador tilts — flattery, it seems, translates as flattery everywhere, and it finds it suspicious. The village hears you suck up on camera. Dinner is awkward after that.' }, next: 'LOSE' },
+          { label: 'Offer it your pack', sub: 'generosity', do: { prize: true, kcal: -200, note: 'You offer it your pack — everything you carry. The ambassador takes one dried root, holds it up to seventeen cameras, and eats it thoughtfully. "THE HUMAN SHARES," it says. The galaxy awws. Your pack is lighter. Your name is heavier.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Insult it back', sub: 'when it insults the food', do: { die: 0.03, trauma: 8, fracture: 1, note: 'It calls your stew "adequate." Something snaps. You tell an alien ambassador exactly what you think of its table manners, on camera. The bodyguards move. The village will talk about your funeral for years.' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
+  // --- THE VIGIL (bespoke, endurance/high) ---
+  // CONTEST-POOL EXPANSION (Steve 2026-10-06): stillness-under-pressure.
+  // NOT being hunted (hide) and NOT moving through dark (maw) — the
+  // discipline is holding a post while something patient circles below.
+  // The village sleeps; the cameras don't. Knowledge-gated: veterans know
+  // it circles the LIGHT, not the watcher — tending the lamp is the whole
+  // game. The alarm is a real, costly choice: safety now, shame at dawn.
+  G._contestVigil = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('vigil').level >= 2;
+    const circle = knows
+      ? `\n\n📚 What the last long night taught you: it circles the LIGHT, not you. Tend the lamp — a bright lamp makes a long night for it and a short one for you. Don't chase the sound.`
+      : `\n\nThe veterans who've held this wall won't say what's down there. "Just don't leave the lamp," they say. They don't say it lightly.`;
+    return [
+      { text: intro + `\n\nNight. The haven wall. One lamp, lit. Below in the dark, something large is circling — you can see the grass move where it passes.\n\nThe System: "HOLD UNTIL DAWN. DO NOT ABANDON THE LIGHT."` + circle,
+        choices: [
+          { label: 'Check the lamp', sub: 'tend the flame', do: { note: 'You trim the wick, shield the flame, feed it oil. The light steadies — a small sun on the wall. Below, the circling pauses, considering.' }, next: 1 },
+          { label: 'Memorize the dark', sub: 'learn the circle', do: { note: 'You stop watching the lamp and learn the dark instead: the rhythm of the circle, the pauses, the places it looks up. Knowledge is a kind of company.' }, next: 1 },
+          { label: 'Count your breaths', sub: 'steel yourself', do: { trauma: -3, note: 'In, out. In, out. You make your breathing the only clock that matters. The night gets smaller. You get larger.' }, next: 1 },
+        ] },
+      { text: `The circling tightens. The lamp flame leans away from the dark like it's afraid.\n\nIt's close enough now that you can hear it breathing — slow, patient, interested in the light.`,
+        choices: [
+          { label: 'Hold still and watch', sub: 'do your job', do: { kcal: -150, note: 'You stand your post. You watch. The thing circles, and circles, and does not come closer — the light holds it the way a wall holds weather.' }, next: 2 },
+          { label: 'Sound the alarm', sub: 'wake the village', do: { trauma: 4, fracture: 1, note: 'You ring the bell. The village pours out armed and terrified — at nothing. The dark is empty. The thing, if it was ever there, is gone. They look at you. Dawn will be a long time coming.', notability: 'showmanship' }, next: 'LOSE' },
+          { label: 'Call down to it', sub: 'desperate', do: { trauma: 8, die: 0.06, note: '"I SEE YOU," you shout into the dark. The circling stops. The silence that follows is worse. Then, from below, something almost like an answer.' }, next: 2 },
+        ] },
+      { text: `Dawn. Grey light on the wall, the lamp burned low. The thing is gone — withdrawn with the dark, or never there at all.\n\nThe village is waking. They'll ask how the night went.`,
+        choices: [
+          { label: 'Greet the dawn at your post', sub: 'held the line', do: { prize: true, unity: 1, kcal: -200, note: 'You are at your post when the sun comes up, lamp still lit. The village sees. Nobody says much — they don\'t need to. The bell rings for breakfast, and it rings for you.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Sleep standing up', sub: 'the last hour', do: { note: 'You doze in the last hour. The lamp gutters. The cameras catch the exact moment your head drops. The System plays it back at breakfast. The village is kind about it, which is worse.' }, next: 'LOSE' },
+          { label: 'Climb down early', sub: 'an hour short', do: { fracture: 1, note: 'You leave the wall an hour before dawn. The lamp burns alone. The System noticed. Everyone noticed. The post was the whole point.' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
   // --- GENERIC fallback ---
   G._contestGeneric = function(contest) {
     const intro = this._cxIntro(contest);
@@ -1586,8 +1730,8 @@
       log.push(`${d.kcal > 0 ? '+' : ''}${d.kcal} kcal`);
     }
     if (d.trauma) {
-      s.trauma = Math.min(100, (s.trauma || 0) + d.trauma);
-      log.push(`+${d.trauma} trauma`);
+      s.trauma = Math.max(0, Math.min(100, (s.trauma || 0) + d.trauma));
+      log.push(`${d.trauma > 0 ? '+' : ''}${d.trauma} trauma`);
     }
     // Social consequences are real, not mechanical (Steve 2026-10-05):
     // winning can cost the village. fracture/unity shift the leadership
@@ -1755,6 +1899,9 @@
       confession: `${pname} accused the System on its own cameras. The broadcast cut to static for nine seconds. When it came back, the lectern was empty.`,
       honey: `The swarm took ${pname} apart like a question. The honey was excellent that year. The village doesn't say so out loud.`,
       secrets: `${pname} called the System a cheat on live television. The deck dealt one last card. It was ${poss} own secret. The cameras held on the face.`,
+      quiet: `${pname} resisted the Quiet Room. It went deeper than anyone meant to let it. The broadcast cut mid-sentence. When it came back, the chair was empty.`,
+      guest: `The Guest took offense at the dessert. The bodyguards were faster than the apology. The System's note to the village was two words long: "OUR BAD."`,
+      vigil: `The lamp went out. The circling stopped. Dawn came up on an empty wall.`,
     };
     const CAT = {
       blood: `${pname} bled out for the cameras. The Death Reel thanks ${them} for the content.`,
@@ -1996,6 +2143,25 @@
         end: p => `📺 The Secret Deck — the river. Last card. The deck is warm in the dealer's hands, like it's alive.\n\nWhatever ${p} does next, the village will remember what was traded. Win, and three secrets air to the galaxy. Fold, and nobody ever knows what ${p} saved them from.`,
         knows: p => `📚 The deck isn't random — it's curated. It plays the secrets that hurt most when you're winning. You've seen someone fold here. Fold while you still like these people.`,
       },
+      // --- CONTEST-POOL EXPANSION (Steve 2026-10-06) ---
+      quiet: {
+        setup: p => `📺 The Quiet Room. ${p} has been taken.\n\nA white room. One chair. No visible cameras — the room IS the camera. The System, soft: "SIT. THINK. WE WILL READ ALOUD. ONE HOUR."\n\nThe village watches. Nobody is eating the snacks anyone brought.`,
+        turn: p => `📺 The Quiet Room — it's reading. ${p}'s own voice, speaking ${p}'s thoughts a half-second before they're thought.\n\nSomeone in the village gasps. Someone else goes very still. The thoughts are getting personal. There is nowhere to look away to — the broadcast is everywhere.`,
+        end: p => `📺 The Quiet Room — the last minutes. Whatever ${p} has been burying all hour, it's reaching for it now.\n\nThe village holds its breath. Secrets this big have weight. When they land, everyone feels it.`,
+        knows: p => `📚 You've sat in that chair. It's hunting the thought they're burying — the harder they clamp, the louder it reads. If you could shout one thing through the screen: THINK OF TURNIPS.`,
+      },
+      guest: {
+        setup: p => `📺 The Guest. ${p} has been taken — or rather, volunteered by geography: the ambassador is coming to dinner, and ${p} is hosting.\n\nA ship the size of weather settles over the haven. Out steps something with too many limbs and impeccable manners. The table is set. The cameras are everywhere.`,
+        turn: p => `📺 The Guest — the meal. ${p} serves. The ambassador lifts the bowl with two limbs at once and... considers.\n\nIt extends a limb toward ${p}. Nobody knows what the gesture means. The village is screaming advice at the screen. ${p} has to pick.`,
+        end: p => `📺 The Guest — the toast. The ambassador rises, which takes a while.\n\nWhatever happens now, the whole village will be telling this story for years. The galaxy too. ${p} lifts the cup.`,
+        knows: p => `📚 You've hosted before: bitter and fermented wins, sugar alarms it. And mirror the limbs — imitation reads as respect. Watch the toast. That's where it decides.`,
+      },
+      vigil: {
+        setup: p => `📺 The Vigil. ${p} has been taken.\n\nNight. The haven wall. One lamp, lit. Below in the dark, something large is circling — you can see the grass move where it passes.\n\n${p} climbs to the post alone. The village sleeps. The cameras don't.`,
+        turn: p => `📺 The Vigil — the circling. It's closer now. The lamp flame leans away from the dark like it's afraid.\n\n${p} is a silhouette against the light. Still. The night-vision feed shows the thing's eyes, low and patient, making another round.`,
+        end: p => `📺 The Vigil — the last hour before dawn. The hardest one.\n\nThe lamp is low. ${p} is swaying. The thing has stopped circling and is just... watching the light. Dawn is close. So close.`,
+        knows: p => `📚 You've held that wall. It circles the light, not the watcher — if the lamp stays bright, it stays out there. Watch the flame, not the eyes.`,
+      },
     };
     const b = T[contest.id];
     if (!b) return null;
@@ -2013,7 +2179,7 @@
   // The three watch beats ARE the show (Steve 2026-10-06): each contest gets
   // its own fiction now. Generic is fallback only — no contest in the pool
   // should ever reach it.
-  // PLURAL BEATS (Steve 2026-10-06): the 27 contest-specific watch beats
+  // PLURAL BEATS (Steve 2026-10-06): the 30 contest-specific watch beats
   // were written for one taken villager ("Mara has been taken", "how Mara
   // dies"). When several are taken, the verbs must agree — "Amy and
   // Vanessa have been taken", "how Amy and Vanessa die". Literal,
