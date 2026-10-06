@@ -464,6 +464,16 @@
       return useOpen ? '"' + bit + inner + '"' : '"' + inner + ' ' + bit + '"';
     },
 
+    // sayLine: villager speech to the feed, exactly one quote layer.
+    // Lines flowing through convo are pre-quoted speech (voiceLine's contract:
+    // "only touches plain quoted speech"), so a blind `Name: "line"` wrap
+    // produced `Name: ""line""`. A line that already opens with a quote
+    // carries its own layer; bare narration still gets wrapped. (Steve 2026-10-06)
+    sayLine(vid, line) {
+      const t = String(line == null ? '' : line);
+      this.say(`${this.displayName(vid)}: ${/^"/.test(t) ? t : `"${t}"`}`);
+    },
+
     convoGet(vid) {
       const v = this.state.village;
       v.conv = v.conv || {};
@@ -507,11 +517,13 @@
         if (occ.includes(k)) { know = val; break; }
       }
 
-      // Want: something specific and actionable
+      // Want: something specific and actionable. First-person: the hook is
+      // SPOKEN by the villager as their own dialogue, never narrated in
+      // third person about them (Steve 2026-10-06: third-person-as-speech fix).
       const wants = [
-        `They're running low on ${['bandages', 'salt', 'wire', 'paper', 'thread'][Math.floor(Math.random() * 5)]}. It's the kind of thing you don't miss until it's gone.`,
-        `They want to ${['fix the water filter', 'map the east woods', 'build a better shelter', 'find a working radio'][Math.floor(Math.random() * 4)]}. They've been thinking about it for days.`,
-        `They're worried about ${['the kids', 'the food stores', 'the winter', 'the strangers'][Math.floor(Math.random() * 4)]}. They don't say it out loud, but you can tell.`,
+        `I'm running low on ${['bandages', 'salt', 'wire', 'paper', 'thread'][Math.floor(Math.random() * 5)]}. It's the kind of thing you don't miss until it's gone.`,
+        `I want to ${['fix the water filter', 'map the east woods', 'build a better shelter', 'find a working radio'][Math.floor(Math.random() * 4)]}. Been thinking about it for days.`,
+        `I'm worried about ${['the kids', 'the food stores', 'the winter', 'the strangers'][Math.floor(Math.random() * 4)]}. Trying not to say it out loud.`,
       ];
       const want = wants[Math.floor(Math.random() * wants.length)];
 
@@ -526,14 +538,16 @@
       const feel = feelByTemp[temp] || feelByTemp.steady;
 
       // Secret: something specific with stakes — 6 distinct secrets so villagers
-      // don't share (the duplicate opener bug: 2-item pool meant collisions)
+      // don't share (the duplicate opener bug: 2-item pool meant collisions).
+      // First-person: confessed as "Can I tell you something? I..." — their
+      // own voice, never third-person narration (Steve 2026-10-06).
       const secrets = [
-        `They've been ${['skimming extra food', 'sneaking out at night', 'hiding an injury', 'writing letters they\'ll never send'][Math.floor(Math.random() * 4)]}. They're ashamed and they can't stop.`,
-        `Before the scattering, they ${['froze when it mattered', 'said something cruel', 'ran when they should have stayed', 'stole from someone who trusted them'][Math.floor(Math.random() * 4)]}. They think about it every day.`,
-        `They're ${['keeping a photo of someone they left behind', 'saving a candy bar for when things get better', 'practicing what they would say if they ever saw their family again'][Math.floor(Math.random() * 3)]}. They haven't told anyone.`,
-        `They ${['don\'t actually know how to swim and are terrified someone will find out', 'have been lying about their age — they\'re younger than they look', 'can\'t read, and they\'re scared it matters now'][Math.floor(Math.random() * 3)]}.`,
-        `At night they ${['cry quietly so no one hears', 'talk to someone who isn\'t there anymore', 'count the stars and name them after people'][Math.floor(Math.random() * 3)]}.`,
-        `They ${['stole medicine from the stash once and never confessed', 'know who took the extra rations but won\'t say', 'saw something in the woods they\'re not telling anyone about'][Math.floor(Math.random() * 3)]}.`,
+        `I've been ${['skimming extra food', 'sneaking out at night', 'hiding an injury', 'writing letters I\'ll never send'][Math.floor(Math.random() * 4)]}. I'm ashamed and I can't stop.`,
+        `Before the scattering, I ${['froze when it mattered', 'said something cruel', 'ran when I should have stayed', 'stole from someone who trusted me'][Math.floor(Math.random() * 4)]}. I think about it every day.`,
+        `I'm ${['keeping a photo of someone I left behind', 'saving a candy bar for when things get better', 'practicing what I would say if I ever saw my family again'][Math.floor(Math.random() * 3)]}. I haven't told anyone.`,
+        `I ${['don\'t actually know how to swim and I\'m terrified someone will find out', 'have been lying about my age — I\'m younger than I look', 'can\'t read, and I\'m scared it matters now'][Math.floor(Math.random() * 3)]}.`,
+        `At night I ${['cry quietly so no one hears', 'talk to someone who isn\'t there anymore', 'count the stars and name them after people'][Math.floor(Math.random() * 3)]}.`,
+        `I ${['stole medicine from the stash once and never confessed', 'know who took the extra rations but won\'t say', 'saw something in the woods I\'m not telling anyone about'][Math.floor(Math.random() * 3)]}.`,
       ];
       const secret = secrets[Math.floor(Math.random() * secrets.length)];
 
@@ -1759,7 +1773,7 @@
       }
       this.convoNoteFlora(vid, opLine);
       c.transcript.push({ who: 'them', text: opLine });
-      this.say(`${this.displayName(vid)}: "${opLine}"`);
+      this.sayLine(vid, opLine);
       // SEEDING: knowledge traders mention their trade in conversation — the
       // mechanic is discovered by talking, not by a button. Once you've
       // learned the concept, you can bring it up with any trader yourself.
@@ -1848,7 +1862,7 @@
           c.transcript.push({ who: 'you', text: gl });
           c.transcript.push({ who: 'them', text: hb.text, foreign: hb.foreign });
           while (c.transcript.length > 200) c.transcript.shift();
-          this.say(`${this.displayName(vid)}: "${hb.text}"`);
+          this.sayLine(vid, hb.text);
           done(hb.text, gl);
           if (hb.winddown) {
             // The goodbye lands: one last turn of choices, then it's over.
@@ -2276,7 +2290,7 @@
       c.transcript.push({ who: 'them', text: line });
       while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       c.exchanges++;
-      this.say(`${this.displayName(vid)}: "${line}"`);
+      this.sayLine(vid, line);
       // ONE-BEAT TURNS (Steve 2026-10-05): everything after the line queues.
       // MOOD: a band-crossing or guard/grace beat queues behind the line —
       // the continuer reveals their reaction settling in. (convo-mood.js

@@ -44,7 +44,8 @@ function check(name, cond, detail) {
     Game.convoGet(rid).wantHooked = false; // re-arm: we test the line, not the gating
     const r = Game.convoOpening(rid);
     if (r && r.thread === 'want') {
-      Game.say(`${Game.displayName(rid)}: "${r.line}"`); // what conversation.js:2279 does
+      sayLog = [];
+      Game.sayLine(rid, r.line); // what conversation.js:2279 does (one quote layer)
       wantLine = sayLog[sayLog.length - 1];
     }
   }
@@ -65,8 +66,10 @@ function check(name, cond, detail) {
     if (!d) continue;
     tried++;
     const res = Game.confrontDoubt(r2, d.id);
-    if (res && res.ok && /^"/.test(res.line || '')) {
-      const wrapped = `${Game.displayName(r2)}: "${res.line}"`; // truth.js:1025
+    if (res && res.ok && res.line) {
+      sayLog = [];
+      Game.sayLine(r2, res.line); // what truth.js:1025 does (one quote layer)
+      const wrapped = sayLog[sayLog.length - 1] || '';
       if (/:\s*""/.test(wrapped)) doubled = wrapped;
     }
   }

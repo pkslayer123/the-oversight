@@ -339,9 +339,13 @@
         if (field === 'name') { this.checkPersonLevel(vid); return r; }
         if (['occupation', 'goal', 'backstory', 'trait', 'language'].includes(field)) {
           d.facts += 1;
-          // confession or verified learn → confirmation ("you know")
+          // confession or verified learn → confirmation ("you know").
+          // Occupation names the actual job ("Rosa is a blacksmith's
+          // apprentice"), never the vague "what Rosa did" (Steve 2026-10-06).
           if (opts.sure && (opts.via === 'confessed' || /confirm|verif/i.test(opts.via || ''))) {
-            const label = field === 'occupation' ? `what ${this.personFirst(vid)} did` :
+            const occ = field === 'occupation' ? String((value && value.text) || value || '').trim() : '';
+            const label = occ ? `${this.personFirst(vid)} is ${/^[aeiou]/i.test(occ) ? 'an' : 'a'} ${occ}` :
+              field === 'occupation' ? `what ${this.personFirst(vid)} did` :
               field === 'goal' ? `what ${this.personFirst(vid)} wants` : String((value && value.text) || value || field);
             this.confirmField(vid, field, label);
           }
