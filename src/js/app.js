@@ -682,7 +682,7 @@
     const mon = Game.state.scholar.monster;
     if (label === 'Fight' && mon && mon.mx === cx && mon.my === cy) { Game.startCombat(mon.id); return; }
     if (label === 'Hunt') { Game.huntAnimal(); return; }
-    if (label === 'Stalk') { Game.stalkAnimal(); return; }
+    if (label === 'Stalk') { try { Game.audioEvent('animalStalk'); } catch (e) {} Game.stalkAnimal(); return; }
     if (label === 'Talk') { talkAction(); return; }
     if (label === 'Clear the way' && extra && extra.blockX !== undefined) {
       Game.clearBlockage(extra.blockX, extra.blockY);
@@ -1085,7 +1085,7 @@
       if (dist <= 1) actions.push(['Hunt', () => Game.huntAnimal()]);
       else {
         desc += ' (Too far to catch.)';
-        actions.push(['Stalk', () => Game.stalkAnimal()]);
+        actions.push(['Stalk', () => { try { Game.audioEvent('animalStalk'); } catch (e) {} Game.stalkAnimal(); }]);
         actions.push(walkCloser(cx, cy));
       }
     } else if (Game.corpseAt) {
@@ -1580,6 +1580,9 @@
   //   animalHiss()   — snapping turtle hiss/lunge warning
   //   animalSnort()  — deer alarm snort on the white-tail bolt
   //   animalRustle() — the "Movement —" spawn notice (with one wrong note)
+  //   animalStalk()  — the player's own careful step (Steve 2026-10-06: the
+  //     quietest beat in the hunt — near-silent footfalls, held breath, your
+  //     heartbeat slightly too fast; fired from the Stalk dispatch, app.js)
   //   animalPant()   — winded state: sides heaving, spent
   //   animalRattle() — timber rattlesnake warning: dry pulsed buzz (Steve 2026-10-06)
   //   animalSpray()  — striped skunk spray: wet sibilant burst + oily thump (Steve 2026-10-06)
@@ -5550,6 +5553,55 @@
       o.connect(g); g.connect(sfxBus); o.start(t + 0.2); o2.start(t + 0.2);
       o.stop(t + 0.7); o2.stop(t + 0.7);
     }
+    function animalStalk() {
+      // THE STALK: the quietest beat in the hunt — this is YOUR sound, the
+      // player's own careful step (Steve 2026-10-06). A good stalk makes
+      // almost no sound, so the synth stays near-silent on purpose: two soft
+      // footfalls (lowpassed, felt more than heard), a held breath between
+      // them, one leaf-shift. The wrongness: your heartbeat is slightly too
+      // fast underneath — the hunter's nerves, audible only to you. If the
+      // stalk were loud, the prey would already be gone.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // two soft footfalls: weight arriving through leaf litter, lowpassed
+      [[0, 0.055], [0.55, 0.045]].forEach(([dt, vol]) => {
+        const nz = noise(0.22), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'lowpass'; nf.frequency.value = 700;
+        ng.gain.setValueAtTime(0.0001, t + dt);
+        ng.gain.exponentialRampToValueAtTime(vol, t + dt + 0.06);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.22);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + dt); nz.stop(t + dt + 0.25);
+      });
+      // the held breath between steps: near-silence with a thin edge
+      const b = ctx.createOscillator(), bg = ctx.createGain();
+      b.type = 'sine'; b.frequency.setValueAtTime(1180, t + 0.28);
+      b.frequency.exponentialRampToValueAtTime(1120, t + 0.5);
+      bg.gain.setValueAtTime(0.0001, t + 0.28);
+      bg.gain.exponentialRampToValueAtTime(0.018, t + 0.36);
+      bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.52);
+      b.connect(bg); bg.connect(sfxBus); b.start(t + 0.28); b.stop(t + 0.55);
+      // the hunter's nerves: your heartbeat, slightly too fast, felt in the chest
+      [0.15, 0.52, 0.89].forEach(dt => {
+        const h = ctx.createOscillator(), hg = ctx.createGain();
+        h.type = 'sine'; h.frequency.setValueAtTime(58, t + dt);
+        h.frequency.exponentialRampToValueAtTime(40, t + dt + 0.1);
+        hg.gain.setValueAtTime(0.07, t + dt);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.12);
+        h.connect(hg); hg.connect(sfxBus); h.start(t + dt); h.stop(t + dt + 0.14);
+      });
+      // one leaf-shift that almost gives you away — then doesn't
+      const lz = noise(0.09), lf = ctx.createBiquadFilter(), lg = ctx.createGain();
+      if (lz) {
+        lf.type = 'highpass'; lf.frequency.value = 5200;
+        lg.gain.setValueAtTime(0.0001, t + 0.72);
+        lg.gain.exponentialRampToValueAtTime(0.03, t + 0.75);
+        lg.gain.exponentialRampToValueAtTime(0.0001, t + 0.81);
+        lz.connect(lf); lf.connect(lg); lg.connect(sfxBus);
+        lz.start(t + 0.72); lz.stop(t + 0.82);
+      }
+    }
     function animalPant() {
       // WINDED: sides heaving — ragged breathing, irregular, wheezy.
       // Three breath pairs, each weaker. You ran it down. It's spent.
@@ -8586,6 +8638,7 @@
       animalHiss() { animalHiss(); },
       animalSnort() { animalSnort(); },
       animalRustle() { animalRustle(); },
+      animalStalk() { animalStalk(); }, // (Steve 2026-10-06): the player's own careful step — fired from the Stalk dispatch
       animalPant() { animalPant(); },
       animalRattle() { animalRattle(); },
       animalSpray() { animalSpray(); },

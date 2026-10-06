@@ -12626,13 +12626,39 @@
           // DEEPENING (Steve 2026-10-06): eating the same game three times
           // teaches the parts — this is what animals.json knowledgeLevels[2]
           // is for. The name was only the start.
-          if (adef && mentry.tastings >= 3 && !mentry.deepKnown) {
+          // KNOWLEDGE LAW: no true names pre-knowledge. The deepening chain
+          // (parts → uses → mastery) only unlocks once the species is known —
+          // eating gifted meat of a stranger teaches your tongue, not the
+          // name. (The old L2 line said the true name unconditionally: leak.)
+          const aKnownDeep = adef && this.encAnimalKnown && this.encAnimalKnown(meatAid);
+          if (aKnownDeep && mentry.tastings >= 3 && !mentry.deepKnown) {
             mentry.deepKnown = true;
             const kl2 = (adef.knowledgeLevels || {})['2'];
             if (kl2) this.say(`Deeper knowledge: ${adef.name}. ${kl2}`);
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
+          // L3 — USES (Steve 2026-10-06): six tastings and you know what the
+          // animal is FOR, not just what it's made of. knowledgeLevels[3]
+          // finally has a home. You eat it well: nourished again.
+          if (aKnownDeep && mentry.tastings >= 6 && !mentry.usesKnown) {
+            mentry.usesKnown = true;
+            const kl3 = (adef.knowledgeLevels || {})['3'];
+            if (kl3) this.say(`Deeper knowledge: ${adef.name}. ${kl3}`);
+            scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
+          }
+          // L4 — MASTERY (Steve 2026-10-06): ten tastings. You've eaten this
+          // a dozen ways, in every season. knowledgeLevels[4]. The
+          // knowledgeable get real nourishment: +5 health every time you eat it.
+          if (aKnownDeep && mentry.tastings >= 10 && !mentry.masterKnown) {
+            mentry.masterKnown = true;
+            const kl4 = (adef.knowledgeLevels || {})['4'];
+            if (kl4) this.say(`📚 MASTERY: ${adef.name}. ${kl4}`);
+            scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
+          }
           if (mentry.deepKnown) {
+            scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
+          }
+          if (mentry.masterKnown) {
             scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
           }
         } else {
