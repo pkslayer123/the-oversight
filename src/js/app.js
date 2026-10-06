@@ -9180,13 +9180,29 @@
     // renders diegetic-ungated via the Game.gwDiveShadow() overlay below
     // (trap-shadow precedent) and is skipped from the generic buckets so
     // the dive keeps its own visual voice.
-    const out = { burst: new Set(), charge: new Set(), encircle: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), beam: new Set() };
+    // WAVE 1 STYLE VOICES (Steve 2026-10-06): dozeLane (bulldozer — its
+    // charge reads as a DUST WALL, not the generic charge lane), pepBurst
+    // (hype_horn — magenta sound rings), swarmHum (hummice — dotted
+    // many-bodies), resonantBurst (belltoad — green croak rings), flashBurst
+    // (mirrormoth — hard silver blink). Routed from burstStyle/chargeStyle
+    // below. Knowledge-gated like every bucket.
+    // No 'rush' bucket (Steve 2026-10-06): rush patterns never declare, so
+    // nothing could ever paint it — removed as unreachable dead code.
+    const out = { burst: new Set(), charge: new Set(), encircle: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), pepBurst: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), beam: new Set() };
     // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity — which
     // monster each telegraph cell belongs to, so the grid can render each
     // monster's attack in its own visual voice (mirror-shimmer, projected
     // grid, flashbulbs, voice-ripple). Knowledge-gated like the rest.
     out.mon = {};
     const W2A_IDS = { mirror_stag: 1, review_drone: 1, camera_swarm: 1, voice_mimic_radio: 1 };
+    // WAVE 1 STYLE VOICES (Steve 2026-10-06): burstStyle/chargeStyle existed
+    // in monsters.json but NOTHING consumed them — the bulldozer's charge
+    // and the hype_horn/hummice/belltoad/mirrormoth bursts all rendered as
+    // the generic yellow lane / orange burst. Route per style to dedicated
+    // buckets so each monster's attack reads in its own visual voice.
+    // Mirrors the W2A_IDS / wave-2-groupC per-id routing above. Unknown
+    // styles fall through to the generic bucket (no crash, no silence).
+    const STYLE_BUCKETS = { bulldozer: 'dozeLane', pep: 'pepBurst', swarm: 'swarmHum', resonant: 'resonantBurst', flash: 'flashBurst' };
     try {
       const f = Game.tbfight;
       if (!f) return out;
@@ -9216,6 +9232,26 @@
         }
         // BRIGHT IDEA (Steve 2026-10-06): last windup tick → white-hot.
         if (mid === 'bright_idea' && ptype === 'burst' && tg.turnsLeft <= 1) targetSet = out.biHot;
+        // STYLE ROUTING (Steve 2026-10-06): the style lives on the attack
+        // pattern in mdef (burstStyle/chargeStyle); the live telegraph
+        // clones it. Runs after the `if (!known) continue` above, so the
+        // style voices are knowledge-gated like every other bucket.
+        const _pat = ((m.mdef || {}).attack || {}).pattern || {};
+        const _style = ptype === 'charge' ? _pat.chargeStyle : (ptype === 'burst' ? _pat.burstStyle : null);
+        const _sb = _style && STYLE_BUCKETS[_style];
+        if (_sb && out[_sb]) {
+          targetSet = out[_sb];
+          // DOZE ANGLE (Steve 2026-10-06): the bulldozer's ➤ arrows ride the
+          // charge direction — same first→last-cell mechanism as encircleAngle.
+          if (_sb === 'dozeLane' && tg.cells && tg.cells.length >= 2) {
+            const _sa = tg.cells[0], _sbb = tg.cells[tg.cells.length - 1];
+            out.dozeAngle = Math.round(Math.atan2(_sbb.cy - _sa.cy, _sbb.cx - _sa.cx) * 180 / Math.PI);
+          }
+          // SWARM SOURCES (Steve 2026-10-06): every declaring mouse is a
+          // throat of the hum — renderDetail rings each one (◎); the burst
+          // cells between them are the many small bodies.
+          if (_sb === 'swarmHum') { (out.swarmSrc = out.swarmSrc || []).push({ x: m.mx, y: m.my }); }
+        }
         if (tg.kind === 'direct' && tg.targetKey) {
           const tgt = (f.fighters || []).find(x => x.key === tg.targetKey);
           if (tgt) {
@@ -9475,10 +9511,14 @@
           (_tg.encircle.has(_k) ? ' encircleLane' : '') +
           (_tg.biHot.has(_k) ? ' biHot' : '') +
           (_tg.sbLock.has(_k) ? ' sbLock' : '') +
+          (_tg.dozeLane.has(_k) ? ' dozeLane' : '') +
+          (_tg.pepBurst.has(_k) ? ' pepBurst' : '') +
+          (_tg.swarmHum.has(_k) ? ' swarmHum' : '') +
+          (_tg.resonantBurst.has(_k) ? ' resonantBurst' : '') +
+          (_tg.flashBurst.has(_k) ? ' flashBurst' : '') +
           (_tg.line.has(_k) ? ' lineCells' : '') +
           (_tg.single.has(_k) ? ' targetTile' : '') +
-          (_tg.direct.has(_k) ? ' lockOn' : '') +
-          (_tg.rush.has(_k) ? ' rushIndicator' : '');
+          (_tg.direct.has(_k) ? ' lockOn' : '');
         // (no ambushZone: the speedbump's snap is no-warning by design —
         // see tbAllTelegraphCells note. Steve 2026-10-06)
         // WAVE 2 GROUP C telegraph identity (Steve 2026-10-06): inline styles
@@ -9574,6 +9614,21 @@
           (_w2aMon === 'review_drone' ? ' w2aDrone' : '') +
           (_w2aMon === 'camera_swarm' ? ' w2aSwarm' : '') +
           (_w2aMon === 'voice_mimic_radio' ? ' w2aStatic' : '');
+        // WAVE 1 STYLE VOICES (Steve 2026-10-06): per-style glyph overlays.
+        //  dozeLane: ➤ arrows riding the charge direction (dozeAngle — same
+        //    mechanism as the encircle ➤ above). The cell class carries
+        //    position:relative (main.css).
+        //  swarmHum: ◎ expanding hum rings on each declaring mouse
+        //    (swarmSrc) — the hum's many throats. (.swarmRing, main.css.)
+        //  pepBurst: ♪ glyphs ride in the CSS (::after) — no inline span.
+        // Knowledge-gated upstream in tbAllTelegraphCells like every bucket.
+        if (_tg.dozeLane.has(_k)) {
+          const _dang = _tg.dozeAngle || 0;
+          g += `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(${_dang}deg);font-size:15px;line-height:1;color:#c98a3d;text-shadow:0 0 5px rgba(0,0,0,.9);pointer-events:none">➤</span>`;
+        }
+        if ((_tg.swarmSrc || []).some(s => _k === (s.x + ',' + s.y))) {
+          g += `<span class="swarmRing" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;color:#e8e8f2;text-shadow:0 0 6px rgba(0,0,0,.9);pointer-events:none">◎</span>`;
+        }
         // GLASSWING TRAP SHADOW: the target tile darkens with turns
         // (faint → darker → almost black); splash tiles get a light mark.
         // Inline styles keep this in app.js (no CSS file touch).
