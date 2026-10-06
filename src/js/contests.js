@@ -131,7 +131,7 @@
     if (deeds.wave3Kill) notes.push('slew a wave-3 horror');
     if (deeds.survivedMoot) notes.push('survived the Moot');
     if (deeds.heist) notes.push('pulled off a heist');
-    if (deeds.contestWin) notes.push(`won ${deeds.contestWin} contest(s)`);
+    if (deeds.contestWin) notes.push(deeds.contestWin === 1 ? 'won a contest' : `won ${deeds.contestWin} contests`);
     // Showmanship: TV pull-aways (fireShow) and camera-friendly contest play
     // both feed this. Visible in the eligibility panel — fame is a deed.
     if (deeds.showmanship) notes.push(`audience favorite${deeds.showmanship > 1 ? ` (${deeds.showmanship}×)` : ''}`);
@@ -2637,7 +2637,13 @@
         this.sysSay(`📺 ${pname} WON. You didn't see it — you had your own arena. The village will tell you about it for weeks.`);
         this.addNotability(pid, 'contestWin');
       } else {
-        this.sysSay(`📺 ${pname} survived. Barely, by the look of them when the lights came up.`);
+        const survived = [
+          `📺 ${pname} survived. Barely, by the look of them when the lights came up.`,
+          `📺 ${pname} made it out. They won't talk about what happened in there.`,
+          `📺 ${pname} is back. Shaking. Alive. That's more than most get.`,
+          `📺 ${pname} walked out under their own power. The cameras lingered a little too long.`,
+        ];
+        this.sysSay(survived[Math.floor(Math.random() * survived.length)]);
       }
     }
   };
