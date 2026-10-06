@@ -5945,12 +5945,9 @@
         const cell = cells[cy][cx];
         const isMe = (cx === pmx && cy === pmy);
         let g, cls = 'cell';
-        // Framework gating (encounters.js): species glyphs only AFTER codex ID —
-        // before that every animal is just paw-prints. No visual name leaks.
-        const _aniKnown = (id) => { try { return Game.encAnimalKnown(id); } catch (e) { return false; } };
-        const ANIMAL_GLYPH = new Proxy({ cottontail_rabbit: '🐇', gray_squirrel: '🐿️', white_tailed_deer: '🦌', creek_chub: '🐟', wild_turkey: '🦃' }, {
-          get(t, id) { return (typeof id === 'string' && _aniKnown(id)) ? t[id] : '🐾'; }
-        });
+        // INDISTINCT (Steve 2026-10-05): creatures show their species emoji —
+        // that's fine to know from looking. The ANIMAL_GLYPH paw-print gating
+        // is removed; the emoji doesn't reveal monster vs animal.
         // CELL FIRST, entities overlay. (Bug was: entity glyphs got overwritten
         // by the cell chain below, making villagers invisible on grass/dirt.)
         let entityHere = false;
@@ -6032,19 +6029,29 @@
               if (!mf.alive || mf.fled || mf.mx !== cx || mf.my !== cy) continue;
               // data-ent: stable key so the move animator can glide fighters
               // tile-to-tile instead of teleporting them on re-render.
-              g = `<span data-ent="mon:${esc(mf.monsterId || mf.mdef && mf.mdef.id || ('tb' + _mfi))}">${esc(mf.emoji || '👹')}</span>`;
-              cls += ' monster';
+              // INDISTINCT (Steve 2026-10-05): creatures render the same whether
+              // monster or animal — the emoji shows what it looks like, not what it is.
+              g = `<span data-ent="creature:${esc(mf.monsterId || mf.mdef && mf.mdef.id || ('tb' + _mfi))}">${esc(mf.emoji || '👹')}</span>`;
+              cls += ' creature';
               drawn = true; break;
             }
           }
           if (!drawn && mon && cx === mon.mx && cy === mon.my) {
             const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
-            g = `<span data-ent="mon:${esc(mon.id || 'wild')}">${esc(mdef.emoji || '👹')}</span>`;
-            cls += ' monster'; drawn = true;
+            // INDISTINCT (Steve 2026-10-05): same 'creature' class as animals
+            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${esc(mdef.emoji || '👹')}</span>`;
+            cls += ' creature'; drawn = true;
           }
           if (!drawn && ani && cx === ani.mx && cy === ani.my) {
-            g = `<span data-ent="ani:${esc(ani.id || 'wild')}">${ANIMAL_GLYPH[ani.id] || '🐾'}</span>`;
-            cls += ' animal'; drawn = true;
+            // INDISTINCT (Steve 2026-10-05): show the correct species emoji —
+            // that's fine to know from looking. But no 'animal' vs 'monster' indicator.
+            let aemoji = '🐾';
+            try {
+              const adef = Game.encAnimalDef ? Game.encAnimalDef(ani.id) : null;
+              if (adef && adef.emoji) aemoji = adef.emoji;
+            } catch (e) {}
+            g = `<span data-ent="creature:${esc(ani.id || 'wild')}">${esc(aemoji)}</span>`;
+            cls += ' creature'; drawn = true;
           }
           if (!drawn) {
             // villagers: 🧍 with a TINY name label underneath.
@@ -6088,7 +6095,10 @@
         const _haloCls = (_halo && _halo.has(_k)) ? ' beamLight' : '';
         // ATTACK VISUALS: pattern-specific telegraph classes. The grid IS the telegraph.
         // vague: pattern not learned yet — dimmer (you see danger, not the shape).
+        // BUT: the beam WHILE FIRING is always fully visible (Steve 2026-10-05).
+        // What's gated is the telegraph — the predicted path, source, ghost.
         const _vague = _tg.vague.has(_k) ? ' vague' : '';
+        const _isFiring = _live && _beamCls.includes('beamLive');
         const _tgCls =
           (_tg.burst.has(_k) ? ' burstRadius' + _vague : '') +
           (_tg.charge.has(_k) ? ' chargeLane' + _vague : '') +
@@ -6097,8 +6107,9 @@
           (_tg.direct.has(_k) ? ' lockOn' + _vague : '') +
           (_tg.rush.has(_k) ? ' rushIndicator' + _vague : '') +
           (_tg.ambush.has(_k) ? ' ambushZone' + _vague : '');
-        // Beam classes also get vague for knowledge gating (the beam was bypassing it)
-        const _beamVague = _vague ? _vague : '';
+        // Beam classes: the beam WHILE FIRING is always fully visible (Steve 2026-10-05).
+        // The telegraph (predicted lane, source, ghost) is gated when not learned.
+        const _beamVague = (!_isFiring && _vague) ? _vague : '';
         html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_beamVague}${_srcCls}${_beamVague}${_haloCls}${_beamVague}${_tgCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
@@ -6263,8 +6274,8 @@
       <h1 class="title" style="font-size:22px">${Game.journalName().toUpperCase()}</h1>
       <p class="small"><i>${Game.journalName() === 'Codex' ? 'the village keeps what you write. the System is watching.' : 'field journal — your handwriting. what you learned, so far just yours.'}</i></p>
       ${entries.length ? entries.map(e => `
-        <div class="card codex"><h3>${e.name} <span class="small">· ${e.kcal} kcal/${e.unit}</span> <span class="small" style="opacity:.7">[${LVL[e.level] || 'L1'}]</span></h3>
-        <p class="small"><b>Prep:</b> ${e.level >= 2 ? (e.prep || '—') : '<i>unidentified uses — reach L2</i>'}</p>
+        <div class="card codex"><h3>${e.name} <span class="small">· ${e.kcalKnown ? `${e.kcal} kcal/${e.unit}` : `<i>kcal unknown — learn preparation</i>`}</span> <span class="small" style="opacity:.7">[${LVL[e.level] || 'L1'}]</span></h3>
+        <p class="small"><b>Prep:</b> ${e.prepKnown ? (e.prep || '—') : '<i>unknown — eat it or reach L2 to learn</i>'}</p>
         <p class="small"><b>Uses:</b> ${e.uses ? esc(e.uses) : '<i>unknown — harvest and taste to learn</i>'}</p>
         <p class="small"><i>${e.knowledge || ''}</i></p><p>${e.level >= 1 ? e.text : ''}</p></div>`).join('')
         : '<div class="card"><h3>No entries yet.</h3><p>Forage something. Survive it. Write it down.</p></div>'}
