@@ -727,7 +727,7 @@
   // the actions surface quietly below the grid. No tapping around, no popups.
   // Maps Game.cellActions labels to real calls.
   function doContextAction(cx, cy, label, extra) {
-    const mon = Game.state.scholar.monster;
+    const mon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
     if (label === 'Fight' && mon && mon.mx === cx && mon.my === cy) { Game.startCombat(mon.id); return; }
     if (label === 'Hunt') { Game.huntAnimal(); return; }
     if (label === 'Stalk') { try { Game.audioEvent('animalStalk'); } catch (e) {} Game.stalkAnimal(); return; }
@@ -1026,7 +1026,7 @@
     const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
     const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
     const isMe = (cx === px && cy === py);
-    const mon = Game.state.scholar.monster;
+    const mon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
     const ani = Game.state.scholar.animal;
     const isMon = mon && cx === mon.mx && cy === mon.my;
     const isAni = ani && cx === ani.mx && cy === ani.my;
@@ -9384,6 +9384,52 @@
     // Dialogue takes precedence (already Pokémon-style)
     if (chatView) return dialogueBoxHTML(chatView);
     // Otherwise: latest narration line, if any
+    // TOAST SYSTEM (Steve 2026-10-06): ambient events appear top-screen, auto-fade.
+    // Cohesive with speech bubbles (villager chatter) and narration box (big beats).
+    if (!window._toastInit) {
+      window._toastInit = true;
+      window.showToast = function(msg, important) {
+        try {
+          const layer = document.getElementById('toast-layer');
+          if (!layer) return;
+          // Max 3 toasts; oldest fades out
+          while (layer.children.length >= 3) layer.removeChild(layer.firstChild);
+          const el = document.createElement('div');
+          el.className = 'toast' + (important ? ' important' : '');
+          el.textContent = msg;
+          layer.appendChild(el);
+          setTimeout(() => el.classList.add('fading'), important ? 5000 : 3500);
+          setTimeout(() => { try { layer.removeChild(el); } catch (e) {} }, important ? 5600 : 4100);
+        } catch (e) {}
+      };
+      // Speech bubble above a grid cell (cx, cy are 0-8 detail coords)
+      window.showSpeechBubble = function(cx, cy, who, text) {
+        try {
+          const grid = document.querySelector('.detail-grid');
+          if (!grid) return;
+          const cell = grid.querySelector(`[data-cx="${cx}"][data-cy="${cy}"]`);
+          if (!cell) return;
+          // Remove old bubble on this cell
+          const old = cell.querySelector('.speech-bubble');
+          if (old) old.remove();
+          const b = document.createElement('div');
+          b.className = 'speech-bubble';
+          b.innerHTML = `<span class="who">${esc(who)}</span>${esc(text)}`;
+          b.onclick = () => b.remove();
+          cell.appendChild(b);
+          setTimeout(() => b.classList.add('fading'), 4500);
+          setTimeout(() => { try { b.remove(); } catch (e) {} }, 5000);
+        } catch (e) {}
+      };
+      // Game.toast: ambient narration goes to toast, not the log
+      if (typeof Game !== 'undefined' && Game) {
+        Game.toast = function(msg, important) {
+          if (window.showToast) window.showToast(msg, important);
+          // Also log it (history), but don't show in narration box
+          try { this.log.push(String(msg)); if (this.log.length > 40) this.log.shift(); } catch (e) {}
+        };
+      }
+    }
     const lastNarr = (Game.log && Game.log.length) ? Game.log[Game.log.length - 1] : '';
     const fb = feedbackInner();
     const text = fb || lastNarr;
@@ -10617,6 +10663,7 @@
             </div>
           </div>
           <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
+          <div class="toast-layer" id="toast-layer"></div>
           <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
           <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-lowermenu">${lowerMenuHTML(st)}</div>
@@ -10751,7 +10798,7 @@
         const detail = Game.genDetail(Game.map.px, Game.map.py);
         const cell = detail[cy] && detail[cy][cx];
         // monster/animal? popup — you don't stroll through a boar.
-        const mon = Game.state.scholar.monster;
+        const mon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
         const ani = Game.state.scholar.animal;
         if ((mon && mon.mx === cx && mon.my === cy) || (ani && ani.mx === cx && ani.my === cy)) {
           cellPopup(cx, cy); return;
@@ -11572,7 +11619,7 @@
     const cells = Game.genDetail(st.px, st.py);
     const tile = Game.playerTile();
     const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
-    const mon = Game.state.scholar.monster;
+    const mon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
     const ani = Game.state.scholar.animal;
     const vpos = (Game.state.village.positions || {});
     const secrets = tile.secrets || {};
@@ -12139,10 +12186,31 @@
           g = '🐗';
         } else if (otherV) {
           g = '🏘️';
-        } else if (TS) {
-          try { g = TS.svgFor(x, y, { seen }) || (S.TILE_GLYPH[tl.type] || '·'); } catch (e) { g = S.TILE_GLYPH[tl.type] || '·'; }
         } else {
-          g = S.TILE_GLYPH[tl.type] || '·';
+          // DIRECT VISUAL (Steve 2026-10-06): show, don't tell. Terrain-colored
+          // square with glyph. No dependency on external generator.
+          try {
+            const ttype = tl ? tl.type : 'unknown';
+            const colors = {
+              forest_floor: '#241c12', grove: '#1b2f1c', meadow: '#28331b',
+              thicket: '#18291f', wetland: '#1a2830', creek: '#14303c',
+              trail_edge: '#322e1b', ruin: '#27272b', haven: '#20271f'
+            };
+            const base = colors[ttype] || '#1c1c18';
+            const glyph = (S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·';
+            g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" style="width:100%;height:100%;display:block">` +
+              `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}"/>` +
+              `<text x="32" y="42" text-anchor="middle" font-size="28">${glyph}</text></svg>`;
+            // Try the full scene generator as enhancement, not requirement
+            if (TS) {
+              try {
+                const full = TS.svgFor(x, y, { seen });
+                if (full && full.length > 100) g = full;
+              } catch (e) {}
+            }
+          } catch (e) {
+            g = '·';
+          }
         }
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
       }
@@ -12465,7 +12533,7 @@
           if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
           const cell = detail[ny] && detail[ny][nx];
           if (!Game.cellProps(cell).blocks) {
-            s.monster = { id, mx: nx, my: ny };
+            Game.spawnWorldMonster({ id }, Game.map.px, Game.map.py, { mx: nx, my: ny });
             Game.say(`🐞 DEBUG: ${id} spawned at ${nx},${ny}.`);
             break outer;
           }
@@ -12475,8 +12543,8 @@
     };
     q('#dbg-fight').onclick = () => {
       const id = q('#dbg-mon').value;
-      const s = Game.state.scholar;
-      if (!s.monster || s.monster.id !== id) q('#dbg-spawn').onclick();
+      const _dbgMon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
+      if (!_dbgMon || _dbgMon.id !== id) q('#dbg-spawn').onclick();
       Game.startCombat(id);
       refresh();
     };
