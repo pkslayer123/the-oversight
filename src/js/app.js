@@ -12241,7 +12241,7 @@
         const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
         const pathCls = (tl.wornPath && seen) ? 'worn-path' : '';
         const shrCls = seen === 'shared' ? ' shared' : '';
-        const cls = 'tile' + (seen ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '') + shrCls;
+        const cls = 'tile' + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '') + shrCls;
         // other villages: show 🏘️ if generated (you've been near)
         const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
         let g;
