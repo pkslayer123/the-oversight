@@ -43,7 +43,17 @@
       return svg ? `<span class="csprite">${svg}</span>` : '';
     } catch (e) { return ''; }
   }
-  function villagerSpriteHtml(vp) {
+  // MONSTER SPRITE HELPER (Steve 2026-10-06): get SVG for monster, fallback to emoji.
+  function monsterSpriteHtml(mid, aggro) {
+    try {
+      if (mid && S.Sprites && S.Sprites.monsterSprite) {
+        const svg = S.Sprites.monsterSprite(mid, aggro);
+        if (svg) return `<span class="msprite">${svg}</span>`;
+      }
+    } catch (e) {}
+    return '';
+  }
+    function villagerSpriteHtml(vp) {
     try {
       if (!vp || !S.Sprites || !S.Sprites.villagerSprite) return '';
       const svg = S.Sprites.villagerSprite(vp);
@@ -217,7 +227,8 @@
       // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
       // knowledge, just like the phase badge. First encounter: no warning
       // symbols — just beam visuals + audio dread.
-      return `${m.emoji || '👹'} ${esc(label)}${(m.telegraph && known) ? ' ⚠' : ''}${phase}`;
+      const _mspr1 = monsterSpriteHtml(m.id || m.monsterId, true);
+      return `${_mspr1 || (m.emoji || '👹')} ${esc(label)}${(m.telegraph && known) ? ' ⚠' : ''}${phase}`;
     }).join(' · ') || '⚔ COMBAT';
     const tg = mons.find(m => m.telegraph);
     // INFO LEAK FIX (Steve): the telegraph cue line is gated behind codex
@@ -469,7 +480,11 @@
     screen.innerHTML = `${bar('scattering://wake', '...')}
       <div style="margin:60px 0 30px;min-height:120px" id="ob-lines"></div>
       <button class="btn ghost" id="b-c1">...</button>`;
-    const lines = ['The sky changed on a Tuesday.', 'You woke up somewhere else.'];
+    const lines = [
+      'You wake up with dirt in your mouth and blood on your hands that isn\'t yours.',
+      'The sky is the wrong color — not sunset-wrong, wound-wrong.',
+      'That was yesterday. This is now.'
+    ];
     const el = document.getElementById('ob-lines');
     let i = 0;
     document.getElementById('b-c1').onclick = () => {
@@ -727,7 +742,7 @@
   // the actions surface quietly below the grid. No tapping around, no popups.
   // Maps Game.cellActions labels to real calls.
   function doContextAction(cx, cy, label, extra) {
-    const mon = Game.state.scholar.monster;
+    const mon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
     if (label === 'Fight' && mon && mon.mx === cx && mon.my === cy) { Game.startCombat(mon.id); return; }
     if (label === 'Hunt') { Game.huntAnimal(); return; }
     if (label === 'Stalk') { try { Game.audioEvent('animalStalk'); } catch (e) {} Game.stalkAnimal(); return; }
@@ -1026,7 +1041,7 @@
     const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
     const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
     const isMe = (cx === px && cy === py);
-    const mon = Game.state.scholar.monster;
+    const mon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
     const ani = Game.state.scholar.animal;
     const isMon = mon && cx === mon.mx && cy === mon.my;
     const isAni = ani && cx === ani.mx && cy === ani.my;
@@ -9384,6 +9399,52 @@
     // Dialogue takes precedence (already Pokémon-style)
     if (chatView) return dialogueBoxHTML(chatView);
     // Otherwise: latest narration line, if any
+    // TOAST SYSTEM (Steve 2026-10-06): ambient events appear top-screen, auto-fade.
+    // Cohesive with speech bubbles (villager chatter) and narration box (big beats).
+    if (!window._toastInit) {
+      window._toastInit = true;
+      window.showToast = function(msg, important) {
+        try {
+          const layer = document.getElementById('toast-layer');
+          if (!layer) return;
+          // Max 3 toasts; oldest fades out
+          while (layer.children.length >= 3) layer.removeChild(layer.firstChild);
+          const el = document.createElement('div');
+          el.className = 'toast' + (important ? ' important' : '');
+          el.textContent = msg;
+          layer.appendChild(el);
+          setTimeout(() => el.classList.add('fading'), important ? 5000 : 3500);
+          setTimeout(() => { try { layer.removeChild(el); } catch (e) {} }, important ? 5600 : 4100);
+        } catch (e) {}
+      };
+      // Speech bubble above a grid cell (cx, cy are 0-8 detail coords)
+      window.showSpeechBubble = function(cx, cy, who, text) {
+        try {
+          const grid = document.querySelector('.detail-grid');
+          if (!grid) return;
+          const cell = grid.querySelector(`[data-cx="${cx}"][data-cy="${cy}"]`);
+          if (!cell) return;
+          // Remove old bubble on this cell
+          const old = cell.querySelector('.speech-bubble');
+          if (old) old.remove();
+          const b = document.createElement('div');
+          b.className = 'speech-bubble';
+          b.innerHTML = `<span class="who">${esc(who)}</span>${esc(text)}`;
+          b.onclick = () => b.remove();
+          cell.appendChild(b);
+          setTimeout(() => b.classList.add('fading'), 4500);
+          setTimeout(() => { try { b.remove(); } catch (e) {} }, 5000);
+        } catch (e) {}
+      };
+      // Game.toast: ambient narration goes to toast, not the log
+      if (typeof Game !== 'undefined' && Game) {
+        Game.toast = function(msg, important) {
+          if (window.showToast) window.showToast(msg, important);
+          // Also log it (history), but don't show in narration box
+          try { this.log.push(String(msg)); if (this.log.length > 40) this.log.shift(); } catch (e) {}
+        };
+      }
+    }
     const lastNarr = (Game.log && Game.log.length) ? Game.log[Game.log.length - 1] : '';
     const fb = feedbackInner();
     const text = fb || lastNarr;
@@ -10533,6 +10594,32 @@
   // be re-rendered mid-hold — the stop must not depend on the button living.)
   window.addEventListener('pointerup', () => MoveAnim.clearHold());
   window.addEventListener('pointercancel', () => MoveAnim.clearHold());
+  // COMBAT CADENCE (Steve 2026-10-06): highlight the acting monster during
+  // async stepped turns. Each monster gets a visible beat — no more
+  // instantaneous grid jumps.
+  window.addEventListener('tb-turn', (e) => {
+    try {
+      const d = e.detail || {};
+      if (d.phase === 'player') {
+        // Player's turn: clear highlights, re-render
+        document.querySelectorAll('.cell.creature.acting').forEach(el => {
+          el.classList.remove('acting');
+        });
+      } else if (d.phase === 'monster' && d.key) {
+        // Monster acting: highlight its cell(s)
+        document.querySelectorAll('.cell.creature.acting').forEach(el => {
+          el.classList.remove('acting');
+        });
+        const sel = document.querySelector(`[data-ent="creature:${CSS.escape(d.key)}"]`);
+        if (sel) {
+          const cell = sel.closest('.cell');
+          if (cell) cell.classList.add('acting');
+        }
+      }
+      // Re-render to show the updated state
+      if (typeof refresh === 'function') refresh();
+    } catch (err) {}
+  });
   // DESKTOP QA: arrow keys walk. Only when the walk pad is on screen and the
   // user isn't typing. Key repeat = hold-to-walk.
   document.addEventListener('keydown', (e) => {
@@ -10617,6 +10704,7 @@
             </div>
           </div>
           <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
+          <div class="toast-layer" id="toast-layer"></div>
           <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
           <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-lowermenu">${lowerMenuHTML(st)}</div>
@@ -10639,25 +10727,41 @@
         const st = Game.state;
         const tset = new Set(); // travel dest, if any
         try { const td = Game.travelDest ? Game.travelDest() : null; if (td) for (const k of td) tset.add(k); } catch (e) {}
-        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
+        const _seenCount = Object.keys((Game.state.scholar || {}).seenTiles || {}).length;
+        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World (${_seenCount} seen)</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
         overlay.classList.remove('hidden');
         overlay.querySelector('#mapoverlay-x').onclick = () => overlay.classList.add('hidden');
         overlay.querySelector('.mapoverlay-back').onclick = () => overlay.classList.add('hidden');
-        // wire tile taps inside the overlay
+        // wire tile taps inside the overlay (Steve 2026-10-06): tapping a
+        // node shows its info WITHOUT leaving the map. Tap through freely.
+        let mapInfoEl = overlay.querySelector('.map-info');
+        if (!mapInfoEl) {
+          mapInfoEl = document.createElement('div');
+          mapInfoEl.className = 'map-info';
+          overlay.querySelector('.mapoverlay-box').appendChild(mapInfoEl);
+        }
         overlay.querySelectorAll('.minimap .tile').forEach(el => {
-          el.onclick = () => {
+          el.onclick = (ev) => {
+            ev.stopPropagation();
             const x = +el.dataset.x, y = +el.dataset.y;
             const tl = Game.tileAt(x, y);
-            if (x === st.px && y === st.py) return;
-            const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
-            if (otherV && Game.villageCard) {
-              const card = Game.villageCard(otherV.id);
-              if (card) { overlay.classList.add('hidden'); Game.say(card); refresh(); }
-            } else if (tl && Game.mapSeen && Game.mapSeen(x, y)) {
-              const how = Game.mapSeen(x, y) === 'shared' ? ' — shown to you by someone' : '';
-              Game.say(`${S.TILE_GLYPH[tl.type] || '·'} ${tl.type}${how}`);
-              refresh();
+            const seen = Game.mapSeen ? Game.mapSeen(x, y) : null;
+            if (!seen) { mapInfoEl.innerHTML = '<span class="dim">Unexplored — you haven\'t been here.</span>'; return; }
+            if (x === (Game.map || {}).px && y === (Game.map || {}).py) {
+              mapInfoEl.innerHTML = '<b>You are here.</b>';
+              return;
             }
+            const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
+            if (otherV) {
+              mapInfoEl.innerHTML = `<b>🏘️ ${esc(otherV.name || 'Another village')}</b> — tap again to visit.`;
+              el.dataset.village = otherV.id;
+              return;
+            }
+            // MAP IS FOR VIEWING (Steve 2026-10-06): no travel from the map.
+            // Travel happens by walking. The map shows where you've been.
+            const how = seen === 'shared' ? ' <span class="dim">(shown to you by someone)</span>' : '';
+            const glyph = (typeof S !== 'undefined' && S.TILE_GLYPH && tl) ? (S.TILE_GLYPH[tl.type] || '·') : '·';
+            mapInfoEl.innerHTML = `${glyph} <b>${esc(tl ? tl.type : 'unknown')}</b>${how}.`;
           };
         });
       };
@@ -10725,7 +10829,7 @@
         const detail = Game.genDetail(Game.map.px, Game.map.py);
         const cell = detail[cy] && detail[cy][cx];
         // monster/animal? popup — you don't stroll through a boar.
-        const mon = Game.state.scholar.monster;
+        const mon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
         const ani = Game.state.scholar.animal;
         if ((mon && mon.mx === cx && mon.my === cy) || (ani && ani.mx === cx && ani.my === cy)) {
           cellPopup(cx, cy); return;
@@ -11223,7 +11327,8 @@
       const maxHp = g.reduce((s, x) => s + (x.maxHp || 1), 0);
       const frac = Math.max(0, Math.min(1, hp / maxHp));
       const count = g.length > 1 ? ` ×${g.length}` : '';
-      return `${m.emoji} ${esc(name)}${count} <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>`;
+      const _mspr2 = monsterSpriteHtml(m.id || m.monsterId, true);
+      return `${_mspr2 || m.emoji} ${esc(name)}${count} <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>`;
     }).join(' · ');
     return `<div class="combat-enemies" style="font-size:12px;opacity:.85;margin:0 6px 4px">${enemyLine} <span style="opacity:.6">· ${p.moveLeft || 0} move · ${p.acted ? 0 : 1} act</span></div>` +
     `<div class="selfbar">
@@ -11268,7 +11373,8 @@
       const count = g.length > 1 ? ` ×${g.length}` : '';
       // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
       // knowledge. First encounter: no warning symbols.
-      return `<span class="cs-mon">${m.emoji} <b>${esc(name)}</b>${count}` +
+      const _mspr3 = monsterSpriteHtml(m.id || m.monsterId, true);
+      return `<span class="cs-mon">${_mspr3 || m.emoji} <b>${esc(name)}</b>${count}` +
         `<span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>` +
         `${(g.some(x => x.telegraph) && known) ? ' ⚠' : ''}${badge}</span>`;
     }).join(' · ');
@@ -11447,9 +11553,11 @@
         const tg = m.telegraph;
         const ptype = (tg.pattern && tg.pattern.type) || 'single';
         // If pattern not learned, skip entirely — no telegraph markers at all
-        let known = true;
+        // TELEGRAPH KNOWLEDGE GATE (Steve 2026-10-06): if you don't know
+        // the pattern, you don't see the telegraph. Default to HIDDEN.
+        let known = false;
         try {
-          known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : true;
+          known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : false;
         } catch (e) {}
         if (!known) continue;
         const mid = (m.mdef || {}).id;
@@ -11546,7 +11654,7 @@
     const cells = Game.genDetail(st.px, st.py);
     const tile = Game.playerTile();
     const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
-    const mon = Game.state.scholar.monster;
+    const mon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
     const ani = Game.state.scholar.animal;
     const vpos = (Game.state.village.positions || {});
     const secrets = tile.secrets || {};
@@ -11618,7 +11726,16 @@
           // every plant is just 🌱 — foraging blind never reveals.
           const sp = (tile.plantSpecies || {})[cx + ',' + cy];
           const spKnown = sp && Game.plantKnown && Game.plantKnown(sp);
-          g = (spKnown && PLANT_GLYPH[sp]) ? PLANT_GLYPH[sp] : '🌱';
+          // PLANT SVGS (Steve 2026-10-06): use custom sprites, not just emoji.
+          let _psvg = '';
+          try {
+            if (spKnown && sp && S.Sprites && S.Sprites.plantSprite) {
+              const _depth = 2; // known = full visual
+              const _svg = S.Sprites.plantSprite(sp, _depth, 'plant');
+              if (_svg) _psvg = `<span class="plantsprite">${_svg}</span>`;
+            }
+          } catch (e) {}
+          g = _psvg || ((spKnown && PLANT_GLYPH[sp]) ? PLANT_GLYPH[sp] : '🌱');
           cls += ' plantcell' + (spKnown ? ' knownplant' : '');
           // EXAMINED (Steve 2026-10-06): looked-at-but-unnamed plants get a
           // visual marker — you've studied this one, it's not just green.
@@ -11645,7 +11762,16 @@
           }
           if (isDepleted) { cls += ' depleted'; }
         } else if (cell === 'tree' || cell === 'bigtree') {
-          g = CELL_GLYPH[cell] || '';
+          // TREE SVGS (Steve 2026-10-06): use custom sprites.
+          let _tsvg = '';
+          try {
+            if (S.Sprites && S.Sprites.get) {
+              const _tid = (cell === 'bigtree') ? 'generic_tree' : 'generic_tree';
+              const _svg = S.Sprites.get(_tid);
+              if (_svg) _tsvg = `<span class="treesprite">${_svg}</span>`;
+            }
+          } catch (e) {}
+          g = _tsvg || (CELL_GLYPH[cell] || '');
           if (cell) cls += ' c-' + cell;
           if (isDepleted) { cls += ' depleted'; }
         }
@@ -11720,8 +11846,20 @@
               // HUMANOID SPRITES (Steve 2026-10-06): human-like horrors show
               // their calm SVG — the paranoia needs a real silhouette.
               const _hkey = mf.monsterId || (mf.mdef && mf.mdef.id) || ('tb' + _mfi);
-              const _hspr = humanoidSpriteHtml(mf.monsterId || (mf.mdef && mf.mdef.id));
-              g = `<span data-ent="creature:${esc(_hkey)}">${_hspr || esc(mf.emoji || '👹')}</span>`;
+              const _mid = mf.monsterId || (mf.mdef && mf.mdef.id);
+              // MONSTER SVGS (Steve 2026-10-06): use the custom SVG for all monsters,
+              // not just humanoids. The emoji is a last resort.
+              let _mspr = '';
+              try {
+                if (_mid && S.Sprites && S.Sprites.monsterSprite) {
+                  const _aggro = true; // combat = aggro form
+                  const _svg = S.Sprites.monsterSprite(_mid, _aggro);
+                  if (_svg) _mspr = `<span class="csprite">${_svg}</span>`;
+                }
+              } catch (e) {}
+              // Humanoids get the special ambiguous treatment; others get their SVG
+              const _hspr = humanoidSpriteHtml(_mid);
+              g = `<span data-ent="creature:${esc(_hkey)}">${_hspr || _mspr || esc(mf.emoji || '👹')}</span>`;
               cls += ' creature';
               drawn = true; break;
             }
@@ -11732,7 +11870,8 @@
             // HUMANOID SPRITES (Steve 2026-10-06): human-like horrors show
             // their calm SVG on the field too.
             const _mhspr = humanoidSpriteHtml(mon.id || mdef.id);
-            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${_mhspr || esc(mdef.emoji || '👹')}</span>`;
+            const _mmspr = monsterSpriteHtml(mon.id || mdef.id, false);
+            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${_mhspr || _mmspr || esc(mdef.emoji || '👹')}</span>`;
             cls += ' creature'; drawn = true;
           }
           if (!drawn && ani && cx === ani.mx && cy === ani.my) {
@@ -11751,7 +11890,8 @@
               const _pp = (typeof Game.encPreyPhase === 'function') ? Game.encPreyPhase(ani) : null;
               _pbadge = ({ wary: '⚠', bolt: '💨', winded: '😮‍💨', playing_dead: '💀', taunt: '👀' })[_pp] || '';
             } catch (e) {}
-            g = `<span data-ent="creature:${esc(ani.id || 'wild')}">${esc(aemoji)}${_pbadge ? `<span class="preybadge" style="display:block;font-size:9px;line-height:1;margin-top:-3px">${esc(_pbadge)}</span>` : ''}</span>`;
+            const _aniSpr = monsterSpriteHtml(ani.id || ani.monsterId, false);
+            g = `<span data-ent="creature:${esc(ani.id || 'wild')}">${_aniSpr || esc(aemoji)}${_pbadge ? `<span class="preybadge" style="display:block;font-size:9px;line-height:1;margin-top:-3px">${esc(_pbadge)}</span>` : ''}</span>`;
             cls += ' creature'; drawn = true;
           }
           if (!drawn) {
@@ -12113,10 +12253,35 @@
           g = '🐗';
         } else if (otherV) {
           g = '🏘️';
-        } else if (TS) {
-          try { g = TS.svgFor(x, y, { seen }); } catch (e) { g = S.TILE_GLYPH[tl.type]; }
         } else {
-          g = S.TILE_GLYPH[tl.type];
+          // DIRECT VISUAL (Steve 2026-10-06): show, don't tell. Terrain-colored
+          // square with glyph. No dependency on external generator.
+          try {
+            const ttype = tl ? tl.type : 'unknown';
+            const colors = {
+              forest_floor: '#241c12', grove: '#1b2f1c', meadow: '#28331b',
+              thicket: '#18291f', wetland: '#1a2830', creek: '#14303c',
+              trail_edge: '#322e1b', ruin: '#27272b', haven: '#20271f'
+            };
+            // UNKNOWN SEEN TILES (Steve 2026-10-06): if seen but no data,
+            // show a visible "explored" tile, not blank dark.
+            const isUnknown = !tl || ttype === 'unknown';
+            const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
+            const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
+            const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
+            g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" style="width:100%;height:100%;display:block">` +
+              `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}" stroke="#4a4a42" stroke-width="1"/>` +
+              `<text x="32" y="42" text-anchor="middle" font-size="28" fill="${textColor}">${glyph}</text></svg>`;
+            // Try the full scene generator as enhancement, not requirement
+            if (TS) {
+              try {
+                const full = TS.svgFor(x, y, { seen });
+                if (full && full.length > 100) g = full;
+              } catch (e) {}
+            }
+          } catch (e) {
+            g = '·';
+          }
         }
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
       }
@@ -12439,7 +12604,7 @@
           if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
           const cell = detail[ny] && detail[ny][nx];
           if (!Game.cellProps(cell).blocks) {
-            s.monster = { id, mx: nx, my: ny };
+            Game.spawnWorldMonster({ id }, Game.map.px, Game.map.py, { mx: nx, my: ny });
             Game.say(`🐞 DEBUG: ${id} spawned at ${nx},${ny}.`);
             break outer;
           }
@@ -12449,8 +12614,8 @@
     };
     q('#dbg-fight').onclick = () => {
       const id = q('#dbg-mon').value;
-      const s = Game.state.scholar;
-      if (!s.monster || s.monster.id !== id) q('#dbg-spawn').onclick();
+      const _dbgMon = (typeof Game.playerMonster === 'function') ? Game.playerMonster() : Game.state.scholar.monster;
+      if (!_dbgMon || _dbgMon.id !== id) q('#dbg-spawn').onclick();
       Game.startCombat(id);
       refresh();
     };
