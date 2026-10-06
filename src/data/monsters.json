@@ -1951,8 +1951,8 @@
     "name": "The Understudy",
     "activity": "nocturnal",
     "hp": [
-      70,
-      95
+      105,
+      125
     ],
     "attack": {
       "name": "Your Move",
@@ -2001,7 +2001,7 @@
     "codexStages": {
       "unknown": "A blank shape at the tree line, watching. Learning. It has no face yet — it's waiting to borrow yours.",
       "observed": "The System's understudy. It watches you fight and learns your moves — your weapon, your rhythm, your favorite opening. The longer you show off, the better its copy gets. Change weapons. Change tempo. Don't give it a clean read.",
-      "slain": "Moves: Mirror Strike (copies your best weapon's damage), Opening Steal (punishes your most-used move), Desperate Improv (at low HP, chains everything it learned). It learns fast but shallow — switch tactics mid-fight and the copy falls apart."
+      "slain": "Moves: Mirror Strike (copies your best-seen weapon's damage at 50→65→80% fidelity), Opening Steal (the moment it starts performing, your most-used move is anticipated once — halved and answered), Desperate Improv (below 30% HP, chains your two best-learned moves, badly, frantically). No armor while watching — a blank shape has nothing to hide behind; when performing it wears YOUR guard (your equipped armor protects it). Switch weapons mid-fight and the copy falls apart."
     },
     "systemDesignation": "Behavioral acquisition unit (field model)",
     "encounter": {
@@ -2011,18 +2011,23 @@
       "phases": [
         "watching",
         "rehearsing",
-        "performing"
+        "performing",
+        "improv"
       ],
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "understudy",
+      "knownCue": "It only knows what you've SHOWN it. Switch weapons and the copy falls apart — the familiar is what kills you. Never let it get a clean read on your favorite move.",
       "noticeText": "A blank shape at the tree line. It is watching {who} fight. Learning.",
       "phaseBadges": {
         "watching": "👁 WATCHING",
         "rehearsing": "📝 REHEARSING",
-        "performing": "🎭 PERFORMING"
+        "performing": "🎭 PERFORMING",
+        "improv": "🎲 IMPROVISING"
       }
-    }
+    },
+    "armor": 0,
+    "resistances": {}
   },
   {
     "id": "landlord",
@@ -2116,20 +2121,24 @@
     "name": "The Heckler",
     "activity": "nocturnal",
     "hp": [
-      55,
-      75
+      85,
+      100
     ],
     "attack": {
       "name": "You Call That A Swing?",
       "damage": [
-        10,
-        14
+        6,
+        10
       ],
       "telegraph": "It leans in, grinning. \"Oh, this ought to be good.\"",
       "pattern": {
         "type": "direct"
       },
       "damageType": "psychic"
+    },
+    "armor": 0,
+    "resistances": {
+      "psychic": 0.75
     },
     "behavior": "pack",
     "aggression": "pack",
@@ -2166,7 +2175,7 @@
     "codexStages": {
       "unknown": "Laughter from the dark. Not joy — the other kind. The kind that knows exactly what you're insecure about.",
       "observed": "The System's heckler. It doesn't want your blood — it wants your confidence. Its taunts stack SHAME, and shame makes your hands shake (reduced damage). Answer back (wait a turn) to clear the shame, or kill it before the words stick.",
-      "slain": "Moves: Vicious Mockery (stacks SHAME, -1 damage per stack), Pile-On (extra shame if you're already ashamed), Compulsion (forces you to answer or act). The counter is dignity: wait, answer back, clear the shame. Or end it fast before it finds your weak spot."
+      "slain": "Moves: Vicious Mockery (stacks SHAME, -1 damage per stack; the words CUT once it's headlining), Pile-On (double shame when you're already ashamed), Compulsion (answer back or act and take +2 shame). The counter is dignity: wait, answer back, clear the shame. Or end it fast before it finds your weak spot."
     },
     "systemDesignation": "Morale suppression unit (field model)",
     "encounter": {
@@ -2181,6 +2190,7 @@
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "heckler",
+      "knownCue": "Its words are the weapon — SHAME is what hurts, not the swing. Answer back (WAIT) to clear it before the HEADLINER compulsion lands, or end it fast: it's all mouth, no armor.",
       "noticeText": "Laughter in the dark — aimed at {who}, specifically.",
       "phaseBadges": {
         "warming_up": "🎤 WARMING UP",
@@ -2245,8 +2255,8 @@
     },
     "codexStages": {
       "unknown": "A lens flare where no lens should be. A shutter click. You're being watched by something that wants a photo, not a fight.",
-      "observed": "The System's paparazzo. It doesn't chase — it FRAMES. It predicts where you'll dodge and the flash gets harder to avoid each time (PREDICTION stacks). At max prediction, the flash is unavoidable. Break line of sight. Be unpredictable. Don't let it learn your pattern.",
-      "slain": "Moves: Flash Photography (telegraphed burst, freezes you), Prediction (each photo makes the next harder to dodge), Widening Shot (at high prediction, the burst grows). The counter is chaos: move erratically, break line of sight, never dodge the same way twice."
+      "observed": "The System's paparazzo. It doesn't chase — it FRAMES. Every shot refines its model of your dodge (PREDICTION stacks, hit or miss), the burst WIDENS as it learns, and at full prediction the money shot can't be dodged at all. Kill it before the fourth frame.",
+      "slain": "Moves: Flash Photography (telegraphed burst, freezes you in place), Prediction (every shot refines its model, hit or miss — at 4 the money shot is unavoidable), Widening Shot (at high prediction, the burst grows). No armor — it's glass and light, not hide; every hit lands clean. But it stares into light for a living: energy washes off the lens. The counter is speed: dodge the telegraphed flashes, kill it before the fourth frame."
     },
     "systemDesignation": "Subject documentation unit (field model)",
     "encounter": {
@@ -2266,7 +2276,12 @@
         "candid": "📷 CANDID",
         "tracking": "🎯 TRACKING",
         "exclusive": "⭐ EXCLUSIVE"
-      }
+      },
+      "knownCue": "Every shot refines its model — dodging the flash won't slow it down. Four shots is all it needs: the money shot can't be dodged. End it fast, or be in reach when it comes."
+    },
+    "armor": 0,
+    "resistances": {
+      "energy": 0.5
     }
   },
   {
@@ -2350,6 +2365,107 @@
       "knownCue": "Kill the rep before it organizes. Every ally it rallies hits +3 harder — and at WALKOUT they hit +8 while the rep goes UNTARGETABLE behind the picket line. Scatter the line or union-bust it early: once it climbs on the bullhorn, the fight is uphill."
     },
     "armor": 4,
+    "resistances": {
+      "psychic": 0.5
+    }
+  }
+  ,
+  {
+    "id": "moderator",
+    "wave": 2,
+    "name": "The Moderator",
+    "activity": "nocturnal",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      150,
+      170
+    ],
+    "attack": {
+      "name": "Removal Notice",
+      "damage": [
+        12,
+        18
+      ],
+      "telegraph": "It raises the banhammer. A calm voice: 'YOUR CONTENT HAS BEEN FLAGGED. REMOVAL IMMINENT.' The air around it goes the color of a bruised screen.",
+      "pattern": {
+        "type": "direct",
+        "range": 4
+      },
+      "damageType": "electric"
+    },
+    "behavior": "territorial",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "darkness",
+    "speed": 3,
+    "emoji": "\ud83d\udd28",
+    "unknown": "a hovering shape with a hammer, drawing a circle on the ground around itself",
+    "vibe": "it stopped watching content and started removing it. you are the content",
+    "weaknesses": [
+      "vary your verbs \u2014 it mutes what you lean on",
+      "step OUT of the suppression field \u2014 the mute only holds inside it",
+      "violations feed it: never swing at a muted verb, the +3 stacks",
+      "darkness \u2014 it cannot moderate what it cannot see"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a machine. Do not eat the machine. It would flag you for it."
+    },
+    "parts": [
+      "banhammer head (heavy, final)",
+      "a printed list of YOUR violations, timestamped",
+      "its mute button (trophy. it still works. do not press it)"
+    ],
+    "cues": {
+      "curious": [
+        "\"CONTENT UNDER REVIEW.\" It is not looking at you. It is looking at everything you have ever done, the way a teacher looks at a margin note."
+      ],
+      "warn": [
+        "\"REPEATED BEHAVIOR DETECTED.\" The hammer comes up. The circle on the ground brightens \u2014 purple, the color of a bruise."
+      ],
+      "fearful": [
+        "The lens flickers. In the dark it cannot see the field it drew \u2014 it swings the hammer at nothing, moderating the night."
+      ]
+    },
+    "codexStages": {
+      "unknown": "There's a thing in the clearing with a hammer, drawing a circle on the dirt. The circle is purple. It feels like being watched by a rule.",
+      "observed": "The System's escalation arm: a content enforcement unit. It stopped grading and started removing. It draws a suppression field (radius 2) and MUTES the verb you use most \u2014 strike or move \u2014 inside that field. The mute is real: try the verb and your turn is spent, flagged as a violation.",
+      "slain": "Moves: Content Noted (weak ranging chip, 6-10, while it reviews you), Removal Notice (12-18, once it starts muting), Deplatform (22-32 at half HP: the mute keeps chasing your most-used verb, field widens to radius 3, and the shadowed ground itself rejects you for 2). Every violation \u2014 every muted verb you attempt \u2014 makes its strikes hit +3 harder. The counterplay is the field: step OUT of it and muted verbs work again, and vary your verbs so the mute keeps chasing the wrong one. Parts: banhammer head, your printed violations, its mute button (trophy)."
+    },
+    "systemDesignation": "Content enforcement unit (field model)",
+    "encounter": {
+      "aggroAudio": "modNotice",
+      "resolveAudio": "modRemoval",
+      "deathAudio": "modDown",
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "observing",
+        "muting",
+        "shadowban"
+      ],
+      "phaseBadges": {
+        "observing": " \ud83d\udc41 CONTENT UNDER REVIEW",
+        "muting": " \ud83d\udd07 MUTING",
+        "shadowban": " \u2b1b SHADOWBAN"
+      },
+      "telegraphGate": "pattern",
+      "painSwitch": true,
+      "shortName": "moderator",
+      "noticeText": "A shape detaches from the dark, hammer first. \"SUBJECT FLAGGED. CONTENT UNDER REVIEW.\" {who} is the content now.",
+      "painText": "The hammer dips \u2014 then rises higher. \"ESCALATION AUTHORIZED. PRIORITY: MAXIMUM.\" Hurting it only hurries the paperwork.",
+      "proximityText": "\"PROXIMITY FLAGGED.\" The circle redraws itself around {who} \u2014 the field follows.",
+      "comment": "Wave-2 apex encounter. FIFO enforcement unit: suppression field (grid-visible), verb muting (strike/move, most-used first), violation escalation (+3/strike per violation). Counterplay is positional (leave the field) and behavioral (vary verbs).",
+      "knownCue": "It mutes the verb you lean on \u2014 strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one."
+    },
+    "loot": {
+      "chance": 0.2,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Apex slot: tier 3."
+    },
+    "armor": 6,
     "resistances": {
       "psychic": 0.5
     }

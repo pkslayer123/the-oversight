@@ -18,13 +18,20 @@
 //   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
 //   - tbTerrainAt(x, y) -> type | null
 //   - tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double)
+//   - modIs(m) (wave-2 apex id gate: the Moderator)
+//   - modVerbBlocked(verb) (mute enforcement at the player choke points)
+//   - modProjectField(m, r, type) (suppression field projection, follows the monster)
 //   - sleepQuality()
 //   - sleepPreview()
+//   - playerAtHaven() (drifter presence gate for home-village narration)
 //   - kcalCap() (delegates to food.js)
 // rules:
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
 //   - terraform_scope: fight-scoped, dies with the fight (code: tbTerraform)
+//   - moderator_field: radius 2, 3 in shadowban; re-projected each of its turns (code: modProjectField)
+//   - moderator_violation: muted verb inside the field spends the turn, +3 strike damage each (code: modVerbBlocked)
+//   - moderator_phases: observing -> muting -> shadowban (code: tbMonsterTurn)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
 //   - sleep_heal_bunk: 35 (code: sleepPreview)
@@ -4313,6 +4320,32 @@
       const s = this.state.scholar;
       // PIN: you are at the village now (safe even when called without walking).
       try { this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3; } catch (e) {}
+      // HOMECOMING (drifter loop, Steve 2026-10-06): walking back into Haven
+      // after days away lands as a beat. No leaks: this names nothing you
+      // didn't live. Sets homecomingSaid so the haul block below doesn't
+      // repeat the welcome.
+      let homecomingSaid = false;
+      if (!this.over) {
+        const dayNow = s.day || 1;
+        const daysAway = dayNow - (s.lastHavenDay || dayNow);
+        if (daysAway >= 2) {
+          const variants = [
+            `You walk back into Haven — ${daysAway} days gone. The fire's still going. Somebody looks up from the work and nods. Back is back.`,
+            `Haven. ${daysAway} days. The palisade looks smaller than you remembered, or you got bigger. Somebody by the fire: "Knew you'd walk back in. You always do."`,
+            `You come home after ${daysAway} days. The smell of the cookfire does something to your chest you don't examine. "You're thinner," someone says. "You're still here," you say.`,
+          ];
+          this.say(variants[daysAway % variants.length]);
+          homecomingSaid = true;
+        }
+        s.lastHavenDay = dayNow;
+        // AWAY NEWS: deaths you weren't there to mourn, queued by villageLives.
+        if (s.awayNews && s.awayNews.length) {
+          const news = s.awayNews.splice(0);
+          this.say(`While you were gone — ${news.length === 1 ? 'one thing' : news.length + ' things'} you missed:`);
+          for (const n of news.slice(0, 5)) this.say(n);
+          if (news.length > 5) this.say(`...and ${news.length - 5} more. Ask around — they'll tell you.`);
+        }
+      }
       // PENDING VILLAGE EVENT: if something happened while you were away, they tell you.
       if (s.pendingVillageEvent) {
         const ev = s.pendingVillageEvent;
@@ -4430,7 +4463,9 @@
         try { this.playerDeath('the expedition'); } catch (e) { this.over = true; }
       }
       else {
-        this.say(`You walk back into Haven. ${entries} Codex entries. The village is glad to see you.`);
+        // (homecomingSaid: the days-away beat above already welcomed you —
+        // don't say it twice.)
+        if (!homecomingSaid) this.say(`You walk back into Haven. ${entries} Codex entries. The village is glad to see you.`);
         // milestone (not game over): the Codex is filling and the pantry is secure.
         // Haven will make it — one less thing to fear. Game over is only the
         // table (the village's ending) or the village dying out.
@@ -5818,7 +5853,13 @@
       this.checkVillageProximity();
       // DRIFTER: stepping onto their tile says so. It's their clearing, not scenery.
       const hereV = (this.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
-      if (hereV) this.say(`${hereV.name}'s clearing. Voices, a cookfire, somebody else's home. You're a guest here — act like it.`);
+      if (hereV) {
+        // DRIFTER (Steve 2026-10-06): a village that knows your face doesn't
+        // read as a stranger's camp. Trust 10+ is "they know your face" — the
+        // same threshold villageTalk uses before anyone shows you anything.
+        if ((hereV.trust || 0) >= 10) this.say(`${hereV.name}'s clearing. The cookfire smoke smells familiar now — they know your face here. Somebody waves you in.`);
+        else this.say(`${hereV.name}'s clearing. Voices, a cookfire, somebody else's home. You're a guest here — act like it.`);
+      }
       // TIME ECONOMY: moving between nodes is a BIG time step on the unified clock.
       // travelTimeStep ticks 32 (a "bigger tick"): NPC batch + day timer advance
       // proportionally, like everything else. No separate clock, no free moves.
@@ -8536,7 +8577,8 @@
       } else if (type === 'death') {
         v.grief = 3;
         for (const rid of (v.roster || [])) { if (rid !== this.villagerId) { const n = this.npcNeeds(rid); n.fear = Math.min(100, n.fear + 25); n.social = Math.min(100, n.social + 20); } }
-        this.say('Nobody\'s talking much. The fire feels smaller tonight.');
+        // presence-gated like monster_attack: grief is real, the narration waits.
+        if (this.playerAtHaven()) this.say('Nobody\'s talking much. The fire feels smaller tonight.');
       } else if (type === 'murder') {
         // YOU killed someone. The village reacts to WHO died, not just that
         // someone did. A beloved innocent: horror. A feared psycho: uneasy relief.
@@ -8929,9 +8971,11 @@
     },
     // ambientSocial: the village talks when you're not the topic.
     // personality-driven beats between NPCs. called from villageLives.
-    ambientSocial() {
+    ambientSocial(isPresent) {
       const v = this.state.village;
       if (!v.roster || Math.random() > 0.7) return;
+      // narration needs the player at the fire; the pantry stock below does not.
+      const present = isPresent === undefined ? this.playerAtHaven() : isPresent;
       const npcs = v.roster.filter(rid => rid !== this.villagerId);
       if (npcs.length < 2) return;
       const pick = () => npcs[Math.floor(Math.random() * npcs.length)];
@@ -8970,16 +9014,18 @@
           `Quiet mending sounds from the bunks — ${fa} fixing something.`,
         ][Math.floor(Math.random() * 3)];
       }
-      this.say(line);
+      if (present) this.say(line);
     },
 
     // firesideTeaching: knowledge moves human-to-human, BEFORE the System.
     // Villagers teach each other what they've learned. The player can learn by listening.
     // This is the Journal era — informal, spoken, real. The System doesn't create
     // the Codex later; it FORMALIZES what the group already knows.
-    firesideTeaching() {
+    firesideTeaching(isPresent) {
       const v = this.state.village;
       if (!v.roster || Math.random() > 0.35) return; // not every part
+      // the lesson is spoken at the fire — you only hear it if you're there.
+      const present = isPresent === undefined ? this.playerAtHaven() : isPresent;
       const shared = v.sharedKnowledge || {};
       const taught = Object.keys(shared).filter(pid => !shared[pid].taughtAround);
       if (!taught.length) return;
@@ -9005,15 +9051,17 @@
         `Fireside lesson: ${teacher} passes around ${pname}. Someone asks a dumb question. Nobody minds. That's how you learn.`,
         `${teacher} drew ${pname} in the dirt for the others. It'll wash away. The knowledge won't.`,
       ];
-      this.say(lines[Math.floor(Math.random() * lines.length)]);
+      if (present) this.say(lines[Math.floor(Math.random() * lines.length)]);
       // YOU can learn by being there. If you don't know it yet, this is your chance.
-      if (!this.plantKnown(pid) && Math.random() < 0.6) {
+      // (Presence-gated: no learning from a fire five nodes away.)
+      if (present && !this.plantKnown(pid) && Math.random() < 0.6) {
         this.identifyPlant(pid, 'fireside');
         this.say(`You were listening. Now you know ${p.name} too.`);
       }
       // knowledge combination: if someone else knows MORE about this plant,
       // the fireside conversation unlocks deeper levels. Overlap computes depth.
-      this.combineKnowledge(pid);
+      // (Also presence-gated: you weren't in the conversation.)
+      if (present) this.combineKnowledge(pid);
     },
 
     // isKnowledgeTrader: some people trade in knowledge. They know things deeply
@@ -12715,13 +12763,28 @@
 
     // village lives: the others aren't waiting. each day, 1-2 villagers do something.
     // they forage, they get hurt, they find things. they discover along with you.
+    // DRIFTER (Steve 2026-10-06): home-village narration is presence-gated.
+    // Sitting at another village's fire, you don't hear Haven's jokes mid-day,
+    // and you don't learn from lessons you didn't attend. The SIM still runs
+    // (pantries fill, people get hurt) — the story waits until you're there
+    // to hear it. Defaults true when position is unknown: narration is the
+    // long-standing behavior, suppressed only when we KNOW you're away.
+    playerAtHaven() {
+      const v = this.state.village || {};
+      if (!this.map) return true;
+      const hx = v.px ?? 3, hy = v.py ?? 3;
+      return Math.abs(this.map.px - hx) + Math.abs(this.map.py - hy) <= 1;
+    },
+
     villageLives() {
       const v = this.state.village;
       if (!v.roster) return;
+      // presence-gated narration (drifter loop): the sim runs, the story waits.
+      const present = this.playerAtHaven();
       // ALIVE: the village talks when you're not the topic.
-      try { this.ambientSocial(); } catch (e) {}
+      try { this.ambientSocial(present); } catch (e) {}
       // LIVING WORLD: knowledge moves human-to-human, by the fire.
-      try { this.firesideTeaching(); } catch (e) {}
+      try { this.firesideTeaching(present); } catch (e) {}
       const bg = v.roster.filter(id => !this.data.villagers.find(m => m.id === id));
       if (!bg.length) return;
       // LEADER: assigned villagers are out working — they don't do random things.
@@ -12748,13 +12811,13 @@
           // (2026-10-05: was called without coords — a silent no-op. Home turf
           // is the village's turf: pass haven so the depletion is real.)
           this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 3, v.py ?? 3);
-          this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
+          if (present) this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
         } else if (r < 0.35) {
           // brings food: a real haul. from the world, not thin air.
           const kcal = Math.round((400 + Math.floor(Math.random() * 401)) * boldMult * shareMult);
           this.stockPantry(kcal, 'Foraged food');
           this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 3, v.py ?? 3);
-          this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
+          if (present) this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {
           // wounded: health bars. -20 to -35 per bad day.
           v.health = v.health || {};
@@ -12773,26 +12836,36 @@
           v.health[id] = Math.max(0, curH - dmgTaken);
           if (v.health[id] <= 0) {
             v.roster = v.roster.filter(rid => rid !== id);
-            this.say(`💀 ${person.name} is gone. The wound was too much. The village is ${v.roster.length} now.`);
+            if (present) {
+              this.say(`💀 ${person.name} is gone. The wound was too much. The village is ${v.roster.length} now.`);
+            } else {
+              // you weren't there to mourn. They'll tell you when you're back.
+              const sch = this.state.scholar;
+              sch.awayNews = sch.awayNews || [];
+              if (sch.awayNews.length < 8) sch.awayNews.push(`💀 ${person.name} died while you were gone — a wound that wouldn't close.`);
+            }
             try { this.villageEvent('death'); } catch (e) {}
             delete v.health[id];
           } else {
-            this.say(`${first} is hurt — a fall, a thorn, a bad step. (health ${v.health[id]}/100)`);
+            if (present) this.say(`${first} is hurt — a fall, a thorn, a bad step. (health ${v.health[id]}/100)`);
           }
         } else if (r < 0.65) {
-          // discovers something (adds to codex if new!)
-          const undiscovered = this.data.plants.filter(p => !this.state.codex.plants[p.id]);
-          if (undiscovered.length && Math.random() < 0.3) {
-            const p = undiscovered[Math.floor(Math.random() * undiscovered.length)];
-            if (this.identifyPlant(p.id, first)) {
-              this.say(`${first} brought you a sample. The ${this.journalName()} grows.`);
+          // discovers something (adds to codex if new!) — someone brings YOU a
+          // sample. Presence-gated: no samples delivered five nodes away.
+          if (present) {
+            const undiscovered = this.data.plants.filter(p => !this.state.codex.plants[p.id]);
+            if (undiscovered.length && Math.random() < 0.3) {
+              const p = undiscovered[Math.floor(Math.random() * undiscovered.length)];
+              if (this.identifyPlant(p.id, first)) {
+                this.say(`${first} brought you a sample. The ${this.journalName()} grows.`);
+              }
+            } else {
+              this.say(`${first}: "${person.line}"`);
             }
-          } else {
-            this.say(`${first}: "${person.line}"`);
           }
         } else {
           // barter/economy flavor
-          this.say(`${first} traded something with someone for something else. The barter economy stirs.`);
+          if (present) this.say(`${first} traded something with someone for something else. The barter economy stirs.`);
         }
       }
     },
@@ -13421,6 +13494,8 @@
       // moved their pantry; ten people lived on nothing.
       try { this.tickJoinedVillage(); } catch (e) {}
       this.villageMeal();
+      // track "home" for the homecoming beat: sleeping at haven resets the away clock.
+      try { if (this.playerAtHaven()) scholar.lastHavenDay = scholar.day || 1; } catch (e) {}
       this.villageLives();
       this.villageEats();
       this.checkTraps();
@@ -14773,6 +14848,10 @@
       if (!p || p.moveLeft <= 0) { this.say('No movement left this turn.'); return false; }
       const path = this.findPath(p.mx, p.my, cx, cy);
       if (!path || !path.length) { this.say('No path there.'); return false; }
+      // THE MODERATOR (Steve 2026-10-06): muted verbs inside its suppression
+      // field are violations — the attempt spends the turn (modVerbBlocked).
+      if (this.modVerbBlocked('move')) return true;
+      this.modNoteVerb('move');
       // TERRAFORM (Steve 2026-10-06): difficult terrain costs 2 per tile —
       // price the whole path honestly up front.
       const pathCost = path.reduce((s, [tx, ty]) => s + this.tbTerrainCost(tx, ty), 0);
@@ -14889,6 +14968,10 @@
       if (p.acted) { this.say('Already acted this turn.'); return false; }
       const t = this.tbFighter(targetKey);
       if (!t || !t.alive || (t.kind !== 'monster' && t.kind !== 'hostile')) return false;
+      // THE MODERATOR (Steve 2026-10-06): muted verbs inside its suppression
+      // field are violations — the attempt spends the turn (modVerbBlocked).
+      if (this.modVerbBlocked('strike')) return true;
+      this.modNoteVerb('strike');
       // UNION REP WALKOUT (Steve 2026-10-06): while coordinating full-time,
       // the rep is untargetable — it's not fighting, it's organizing.
       if (this.urIs(t) && t.urWalkout) {
@@ -14989,6 +15072,22 @@
           if (res > 0) this.say(`(${tName} resists ${wType} — ${oldD} → ${d}.)`);
           else this.say(`(${tName} is vulnerable to ${wType}! ${oldD} → ${d}.)`);
         }
+        // UNDERSTUDY (Steve 2026-10-06): performing — it wears your guard.
+        // It copied your stance along with your moves: your equipped armor
+        // now protects IT. (None while watching — a blank shape has nothing
+        // to hide behind. Data armor stays 0; this is the learned armor,
+        // stated explicitly here and in the codex.)
+        if (wType === 'physical' && this.usIs(t) && t.beamPhase === 'performing') {
+          const stolen = (typeof this.armorBonus === 'function' ? this.armorBonus() : 0) || 0;
+          if (stolen > 0) {
+            if (!t.usGuardSaid) {
+              t.usGuardSaid = true;
+              this.say(`(${tName} wears your guard now — your own armor, copied. It stands the way you stand.)`);
+            }
+            const absorbed = Math.min(d, stolen);
+            if (absorbed > 0) { d -= absorbed; this.say(`(${tName}'s stolen guard absorbs ${absorbed}.)`); }
+          }
+        }
         d = Math.max(1, d); // always at least 1 damage
       }
       p.acted = true;
@@ -15028,6 +15127,15 @@
           }
         }
       } catch (e) {}
+      // HECKLER MOCK (Steve 2026-10-06): it narrates EVERY swing — the set
+      // feeds on your effort. Landing a strike on a heckler guarantees a
+      // jibe on its next turn (the words answer the blow).
+      try {
+        const f4 = this.tbfight;
+        if (f4) for (const hm of f4.fighters) {
+          if (this.hkIs(hm) && hm.alive && !hm.fled) { hm.hkMockNext = true; break; }
+        }
+      } catch (e) {}
       // HECKLER COMPULSION (Steve 2026-10-06): acting instead of answering
       // doubles the shame. The words punish defiance.
       try {
@@ -15053,22 +15161,31 @@
           this.say('It saw the opening coming — braced, scar tissue white. Your first strike glances off. (SCARRED: -3 first strike)');
         }
       }
+      // UNDERSTUDY OPENING STEAL (Steve 2026-10-06): when it started
+      // performing it stole your most-used move's opening. Strike it with
+      // that weapon and it was already gone — your blow lands weakly and it
+      // answers with the copy, free. (Armed in the understudy AI block on
+      // the performing transition. The anticipated, halved damage is what
+      // gets recorded below — the steal costs you twice, honestly.)
+      try {
+        if (this.usIs(t) && t.alive && !t.fled && t.usStealArmed) {
+          const wname = (w && w.name) || 'strike';
+          if (t.usStealArmed === wname) {
+            t.usStealArmed = null;
+            d = Math.max(1, Math.ceil(d / 2));
+            this.say(`It knew that one was coming — it was already gone. Your ${wname} glances off its guard. (OPENING STEAL: anticipated — half damage. Switch weapons.)`);
+            const srec = (t.usSeen && t.usSeen[wname]) || { dmg: d };
+            const cpy = S.combat.roll([Math.max(1, Math.round(srec.dmg * 0.8)), Math.max(2, Math.round(srec.dmg * 0.8 * 1.2))]);
+            this.say(`It answers with YOUR ${wname}.`);
+            try { this.audioEvent('understudyCopy', { fidelity: 0.8 }); } catch (e) {}
+            this.tbDamage('p', cpy, (this.encShortLabel(t) || this.encTheName(t)) + "'s stolen " + wname, t.key);
+          }
+        }
+      } catch (e) {}
       this.tbDamage(t.key, d, 'you', null, { quiet: true });
       // UNDERSTUDY (Steve 2026-10-06): it watches you fight and learns. Record
       // the weapon + damage for any watching understudy in this fight.
       // (Records SHAMED damage — the heckler's words affect the copy too.)
-      try {
-        const f2 = this.tbfight;
-        if (f2) for (const um of f2.fighters) {
-          if (this.usIs(um) && um.alive && !um.fled) {
-            um.usSeen = um.usSeen || {};
-            const wname = (w && w.name) || 'strike';
-            const rec = um.usSeen[wname] || { count: 0, dmg: 0 };
-            rec.count++; rec.dmg = Math.max(rec.dmg, d);
-            um.usSeen[wname] = rec;
-          }
-        }
-      } catch (e) {}
       try {
         const f2 = this.tbfight;
         if (f2) for (const um of f2.fighters) {
@@ -15223,6 +15340,9 @@
       if (p.acted && p.moveLeft <= 0) return false; // nothing left to forfeit
       p.acted = true;
       p.moveLeft = 0;
+      // THE MODERATOR (Steve 2026-10-06): silence is a verb the algorithm
+      // cannot moderate — waiting shifts its attention off your habits.
+      this.modNoteVerb('wait');
       // HECKLER COMPULSION (Steve 2026-10-06): answering back costs the turn
       // but clears 3 shame. The words demand a response.
       if (p.hkCompelled) {
@@ -15933,7 +16053,7 @@
     // dealt. Narrates verbosely on first contact per type, briefly after.
     tbTerrainStep(x, y) {
       const t = this.tbTerrainAt(x, y);
-      if (t !== 'paper' && t !== 'scorch' && t !== 'claimed') return 0;
+      if (t !== 'paper' && t !== 'scorch' && t !== 'claimed' && t !== 'shadowed') return 0;
       const f = this.tbfight;
       const p = this.tbFighter('p');
       if (!p || !p.alive || p.fled) return 0;
@@ -15946,6 +16066,10 @@
       } else if (t === 'claimed') {
         this.say(first ? 'The ground is LEASED — it rejects you. (1) The signs mean it.' : 'Leased ground. (1)');
         this.tbDamage('p', 1, 'leased ground', null, { quiet: true });
+      } else if (t === 'shadowed') {
+        // THE MODERATOR (Steve 2026-10-06): shadowban field rejects you.
+        this.say(first ? 'The shadowbanned ground rejects you. (2) The black field is the tell — get out of it.' : 'Shadowbanned ground. (2)');
+        this.tbDamage('p', 2, 'shadowbanned ground', null, { quiet: true });
       } else {
         this.say(first ? 'The scorched earth burns your feet. (1)' : 'Scorched ground. (1)');
         this.tbDamage('p', 1, 'scorched earth', null, { quiet: true });
@@ -16167,6 +16291,85 @@
     hkIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'heckler')); },
     pzIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'paparazzo')); },
     urIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'union_rep')); },
+    // THE MODERATOR (Steve 2026-10-06): wave-2 apex. Content enforcement
+    // unit — mutes the player's most-used verb inside its suppression field.
+    modIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'moderator')); },
+    // MODERATOR HELPERS (Steve 2026-10-06): the mute machinery. All state is
+    // fight-scoped (f.modRecent: rolling window of the player's last 6 verbs;
+    // m.modMuted: currently muted verb list; m.modField: projected field keys).
+    modLive() {
+      const f = this.tbfight; if (!f) return null;
+      return f.fighters.find(x => this.modIs(x) && x.alive && !x.fled) || null;
+    },
+    modNoteVerb(verb) {
+      const f = this.tbfight; if (!f || f.over) return;
+      f.modRecent || (f.modRecent = []);
+      f.modRecent.push(verb);
+      if (f.modRecent.length > 5) f.modRecent.shift();
+    },
+    // Most-used verbs in the rolling window. WAIT counts too — silence is a
+    // verb the algorithm cannot moderate: if the window holds no strike/move,
+    // there is nothing to mute and the mute LIFTS ("it loses the thread").
+    // Ties break by recency. Window of 5: three quiet rounds flip a habit.
+    modTopVerbs(n) {
+      const f = this.tbfight;
+      const recent = (f && f.modRecent) || [];
+      const counts = { strike: 0, move: 0 };
+      const lastIdx = { strike: -1, move: -1 };
+      recent.forEach((v, i) => {
+        if (counts[v] !== undefined) { counts[v]++; lastIdx[v] = i; }
+      });
+      const cands = ['strike', 'move'].filter(v => counts[v] > 0);
+      cands.sort((a, b) => (counts[b] - counts[a]) || (lastIdx[b] - lastIdx[a]));
+      return cands.slice(0, n);
+    },
+    modPlayerInField(m) {
+      const p = this.tbFighter('p');
+      if (!p || !m.modFieldSet) return false;
+      return m.modFieldSet.has(p.mx + ',' + p.my);
+    },
+    // Suppression field: radius r diamond around the moderator, projected as
+    // terraform every one of its turns. Old tiles are cleared first so the
+    // field visibly follows it. Returns the key list.
+    modProjectField(m, r, type) {
+      const f = this.tbfight; if (!f) return [];
+      if (f.terraform && m.modField) for (const k of m.modField) delete f.terraform[k];
+      const keys = [];
+      f.terraform || (f.terraform = {});
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) > r) continue;
+        const nx = m.mx + dx, ny = m.my + dy;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+        const k = nx + ',' + ny;
+        if (f.terraform[k]) continue; // first layer wins — never claim (or later clear) another layer's tile
+        this.tbTerraform(nx, ny, type);
+        keys.push(k);
+      }
+      m.modField = keys; m.modFieldSet = new Set(keys);
+      return keys;
+    },
+    // Mute enforcement choke point. Called at the top of tbPlayerStrike /
+    // tbPlayerMove. If the verb is muted AND the player stands inside the
+    // suppression field, the attempt is a VIOLATION: the turn is spent, the
+    // violation is logged (+3 to its strikes), and the turn advances.
+    // Returns true when the attempt was consumed as a violation.
+    modVerbBlocked(verb) {
+      const m = this.modLive(); if (!m) return false;
+      if (!this.encUsesFifo(m)) return false;
+      const phase = m.beamPhase;
+      if (phase !== 'muting' && phase !== 'shadowban') return false;
+      if (!(m.modMuted || []).includes(verb)) return false;
+      if (!this.modPlayerInField(m)) return false;
+      const p = this.tbFighter('p'); if (!p) return false;
+      m.modViolations = (m.modViolations || 0) + 1;
+      const vLabel = verb === 'strike' ? 'STRIKE' : 'MOVE';
+      this.say(`🚫 ${vLabel} IS MUTED inside the suppression field. Your ${verb === 'strike' ? 'swing dies in your hands' : 'feet refuse the order'} — flagged as a violation. (PRIOR VIOLATIONS: ${m.modViolations} — its Notices hit +${m.modViolations * 3} harder. Step OUT of the purple field.)`);
+      try { this.audioEvent('modViolation', { violations: m.modViolations }); } catch (e) {}
+      p.acted = true; p.moveLeft = 0;
+      this.tbAfterPlayerAction();
+      return true;
+    },
+    modStrikeBonus(m) { return (m.modViolations || 0) * 3; },
     // FASTER REDIALS (Steve 2026-10-06): wave-2 escalation. Every redial is
     // a cycle; the hold music gets shorter as it learns your number —
     // 2 turns, then 1. The pressure ratchets. Narrated once when it shortens.
@@ -17666,13 +17869,23 @@
             if (missed) this.say(`${this.encShortLabel(m) || m.name}'s ${this.encAttackName(m, tg.attackName)} swipes at sand-ghosts. Missed. (pocket_sand)`);
             else {
               const hitName = this.encAttackName(m, tg.attackName);
-              this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${hitName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
-              // SUNBASKER (Steve 2026-10-06): the bite TRACKS — footwork can't
-              // dodge it. The fiction says "no dodging it" and means it; the
-              // counterplay is hitting it mid-windup to starve the charge.
-              // (Blindness can still make it whiff — that's not dodging.)
-              this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s " + hitName,
-                m.key, this.sunbaskerIs(m) ? { undodgeable: true } : undefined);
+              // UNDERSTUDY DESPERATE IMPROV (Steve 2026-10-06): the chain
+              // reads as two of YOUR moves, not one generic hit.
+              if (this.usIs(m) && tg.usImprov && tg.usImprovNames) {
+                this.say(`💥 ${this.encShortLabel(m) || m.name}'s DESPERATE IMPROV — your ${tg.usImprovNames[0]}, then your ${tg.usImprovNames[1]} — finds you. Badly. Frantically.`);
+                this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s Desperate Improv", m.key);
+              } else {
+                this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${hitName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
+                // SUNBASKER (Steve 2026-10-06): the bite TRACKS — footwork can't
+                // dodge it. The fiction says "no dodging it" and means it; the
+                // counterplay is hitting it mid-windup to starve the charge.
+                // (Blindness can still make it whiff — that's not dodging.)
+                this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s " + hitName,
+                  m.key, this.sunbaskerIs(m) ? { undodgeable: true } : undefined);
+              }
+              // HECKLER (Steve 2026-10-06): landing a hit feeds the set — it
+              // WILL narrate this on its next turn.
+              if (this.hkIs(m) && t.kind === 'player') m.hkLandedHit = true;
             }
           }
           // SUNBASKER: the bite spends the charge — dull brown again, already
@@ -17714,7 +17927,23 @@
           } else this.say(`💥 ${resName}!`);}
           // MOTH: the flash only goes forward — the facing locked at the fold
           // decides who it hits. Behind it, you're safe.
+          // PAPARAZZO EXCLUSIVE (Steve 2026-10-06): the money shot re-centers
+          // on the target's CURRENT position at resolve — it predicted the
+          // dodge, so footwork doesn't save you. (tg.unavoidable was set at
+          // declare but never read: "UNAVOIDABLE" was text-only. Now it's real.)
           let resCells = tg.cells;
+          if (this.pzIs(m) && tg.unavoidable) {
+            const pt = (this.encUsesFifo(m) && this.encCurrentTarget(m)) || this.tbFighter('p');
+            if (pt && pt.alive) {
+              const rc = [];
+              for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+                const cx = pt.mx + dx, cy = pt.my + dy;
+                if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+                rc.push({ cx, cy });
+              }
+              tg.cells = rc; resCells = rc;
+            }
+          }
           if (this.mothIs(m)) resCells = this.tbMothArcCells(m, tg.cells);
           const hitKeys = new Set(resCells.map(c => c.cx + ',' + c.cy));
           // HUMMICE: the hum stacks while you stand in it — worse every round.
@@ -17781,18 +18010,23 @@
               }
             }
           }
-          // PAPARAZZO (Steve 2026-10-06): the flash freezes — and each photo
-          // increases PREDICTION. It learns your dodge pattern.
+          // PAPARAZZO (Steve 2026-10-06): the flash freezes. PREDICTION
+          // stacks when the shot is COMMITTED (declare), not on resolve —
+          // +1 per telegraph cycle. (Was +1 per resolve = +1 per 2 rounds, so
+          // the exclusive never fired inside a normal fight.) It learns from
+          // the miss too — the model updates every time it takes the shot.
+          // FREEZE BUGFIX (Steve 2026-10-06): this wrote o.frozen, a field
+          // NOTHING reads — the "freeze" was text-only. stunned=1 (no
+          // stunFull) is the real lose-movement-keep-action freeze.
           if (this.pzIs(m) && (tg.pattern || {}).type === 'burst') {
-            m.pzPrediction = Math.min(5, (m.pzPrediction || 0) + 1);
             for (const o of hitFighters) {
               if (o.kind === 'player' && o.alive) {
-                o.frozen = Math.max(o.frozen || 0, 1);
-                this.say(`FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/5 — it learns your dodge.)`);
+                o.stunned = Math.max(o.stunned || 0, 1);
+                this.say(`FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`);
               }
             }
             if (!hitFighters.some(o => o.kind === 'player')) {
-              this.say(`Click. It missed — but the shutter keeps clicking. (Prediction ${m.pzPrediction}/5 anyway — it learns from the miss too.)`);
+              this.say(`Click. It missed — but the shutter keeps clicking. (Prediction ${m.pzPrediction}/4 anyway — it learns from the miss too.)`);
             }
           }
           // BELLTOAD: the croak hits like a wall. 15% chance to stun (full turn
@@ -19312,8 +19546,12 @@
       // ---- THE UNDERSTUDY: THE REHEARSAL ----
       // It has no tricks of its own — so it steals yours. Watches your attacks
       // (hooked in tbPlayerStrike); after seeing an attack twice it copies it.
-      // Fidelity grows 50% → 65% → 80%. The wave-1 answer (just hit it) fails
-      // because it hits back with YOUR damage.
+      // Fidelity grows 50% → 65% → 80%. Arc: watching (keeps distance, learns)
+      // → rehearsing @2 observations (copies badly) → performing @3 (OPENING
+      // STEAL: your most-used move is anticipated once; it wears your guard)
+      // → improv below 30% HP (DESPERATE IMPROV: chains your two best-learned
+      // moves). The wave-1 answer (just hit it) fails because it hits back
+      // with YOUR damage — switch weapons mid-fight and the copy falls apart.
       if (this.usIs(m)) {
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
@@ -19321,9 +19559,38 @@
         m.usSeen = m.usSeen || {};
         const totalSeen = Object.values(m.usSeen).reduce((a, r) => a + r.count, 0);
         const known = this.encTelegraphKnown(m);
-        if (totalSeen >= 4 && m.beamPhase !== 'performing') {
+        // Rank observed weapons: best = most-seen. (SHAME already shaped
+        // rec.dmg at record time — the copy inherits your weakened state.)
+        const ranked = Object.entries(m.usSeen)
+          .map(([wname, rec]) => ({ name: wname, count: rec.count, dmg: rec.dmg }))
+          .sort((a, b) => b.count - a.count);
+        const best = ranked[0] || null, second = ranked[1] || null;
+        const learned = !!(best && best.count >= 2);
+        const hpFrac = m.hp / Math.max(1, m.maxHp || 1);
+        // DESPERATE IMPROV (Steve 2026-10-06): below 30% HP the copy breaks
+        // and it chains everything it learned — your two best-seen moves,
+        // badly, frantically, both at once. (The codex promised it.) It never
+        // preempts the performing beat: improv waits until the performance
+        // has happened or the observations are undeniable.
+        if (learned && hpFrac < 0.3 && m.beamPhase !== 'improv' && (m.usPerformed || totalSeen >= 4)) {
+          this.encSetPhase(m, 'improv');
+          this.say('"No no no—" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (DESPERATE IMPROV: it chains everything it learned — two of your moves, badly, frantically.)');
+          try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
+        }
+        // OPENING STEAL (Steve 2026-10-06): the moment it starts performing,
+        // your most-used move is stolen — the next strike with it is
+        // anticipated (halved, answered). Armed here; fired in tbPlayerStrike.
+        // (Arc compressed 4→3 observations: with honest single-count
+        // recording, performing must start a beat earlier to survive the
+        // fight it escalates.)
+        if (totalSeen >= 3 && m.beamPhase !== 'performing' && m.beamPhase !== 'improv') {
           this.encSetPhase(m, 'performing');
-          this.say('It stands the way you stand. Moves the way you move. "I\'ve got it now." (It copies at 80% — kill it or be unpredictable.)');
+          m.usPerformed = true;
+          m.usStealArmed = best ? best.name : null;
+          this.say('It stands the way you stand. Moves the way you move. "I\'ve got it now."'
+            + (m.usStealArmed
+              ? ` Your ${m.usStealArmed} — it has seen that one ${best.count} times. It knows where it lands. (OPENING STEAL: your next ${m.usStealArmed} strike is anticipated — switch weapons.)`
+              : ' (It copies at 80% — kill it or be unpredictable.)'));
           try { this.audioEvent('understudyPerform', {}); } catch (e) {}
         } else if (totalSeen >= 2 && m.beamPhase === 'watching') {
           this.encSetPhase(m, 'rehearsing');
@@ -19344,12 +19611,32 @@
           try { this.audioEvent('understudyWatch', {}); } catch (e) {}
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
-        let best = null, bestCount = 0;
-        for (const [wname, rec] of Object.entries(m.usSeen)) {
-          if (rec.count > bestCount) { bestCount = rec.count; best = { name: wname, count: rec.count, dmg: rec.dmg }; }
-        }
         if (!best || best.count < 2) {
           this.encSetPhase(m, 'watching');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // DESPERATE IMPROV behavior: chain the two best-learned moves in one
+        // telegraph — one declare, one resolution, both of your moves at 60%.
+        if (m.beamPhase === 'improv') {
+          const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+          if (d > 1) {
+            const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+            if (stp) { m.mx = stp.x; m.my = stp.y; }
+            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+          }
+          if (!m.telegraph) {
+            const w2 = (second && second.count >= 1) ? second : best;
+            const cue = known
+              ? `"ALL OF IT." Your ${best.name}, then your ${w2.name} — badly, frantically, both at once. (DESPERATE IMPROV)`
+              : 'It stumbles — then comes at you with everything, all your moves at once, wrong and fast.';
+            this.encDeclareDirect(m, t, cue);
+            const iLo = Math.max(1, Math.round(best.dmg * 0.6)) + Math.max(1, Math.round(w2.dmg * 0.6));
+            const iHi = Math.max(2, Math.round(best.dmg * 0.72)) + Math.max(2, Math.round(w2.dmg * 0.72));
+            m.telegraph.dmg = [iLo, iHi];
+            m.telegraph.usImprov = true;
+            m.telegraph.usImprovNames = [best.name, w2.name];
+            try { this.audioEvent('understudyCopy', { fidelity: 0.6 }); } catch (e) {}
+          }
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         const fidelity = m.beamPhase === 'performing' ? 0.8 : (best.count >= 3 ? 0.65 : 0.5);
@@ -19361,7 +19648,7 @@
         }
         if (!m.telegraph) {
           const cue = known
-            ? `"YOUR MOVE." It does ${best.name} — yours, at ${Math.round(fidelity * 100)}%.`
+            ? `"MIRROR STRIKE." Your ${best.name} — played back at you at ${Math.round(fidelity * 100)}%.`
             : 'It goes still. It is doing the thing you do before you do it.';
           this.encDeclareDirect(m, t, cue);
           m.telegraph.dmg = [Math.max(1, Math.round(best.dmg * fidelity)), Math.max(2, Math.round(best.dmg * fidelity * 1.2))];
@@ -19493,10 +19780,14 @@
       }
 
       // ---- THE HECKLER: THE SET ----
-      // It doesn't want to kill you. It wants you to quit. Narrates your
-      // misses — each narration stacks SHAME (-1 damage per stack). At 5+
-      // shame: compulsion — answer back (lose a turn) or take double shame.
-      // The wave-1 answer (ignore it and hit) fails because the debuff compounds.
+      // It doesn't want to kill you. It wants you to quit. It narrates EVERY
+      // swing — each narration stacks SHAME (-1 damage per stack). At 3+
+      // shame it goes HEADLINER: the PILE-ON (every jibe stacks double, and
+      // the words start to CUT — psychic chip) plus the compulsion — answer
+      // back (lose a turn, clear 3 shame) or act and take +2 shame. The
+      // wave-1 answer (ignore it and hit) fails because the debuff compounds.
+      // The counterplay is dignity (wait, answer, clear) or speed (end it
+      // fast — it's all mouth, no armor).
       if (this.hkIs(m)) {
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
@@ -19508,25 +19799,46 @@
         if (p && !p.hkDebuffApplied) {
           p.hkDebuffApplied = true; p.hkShameTaken = 0;
         }
+        // Phase transitions — on live shame, so the headliner lands the same
+        // beat the threshold shame does, not a turn late.
+        const hkHeadlinerAt = 3;
+        const hkSetPhase = () => {
+          const s = m.hkShame || 0;
+          if (s >= hkHeadlinerAt && m.beamPhase !== 'headliner') {
+            this.encSetPhase(m, 'headliner');
+            this.say('"Oh, we\'ve got a LIVE ONE!" It has your number now. (3+ SHAME: answer back next turn or act and take +2.)');
+            try { this.audioEvent('hecklerHeadliner', {}); } catch (e) {}
+            // The full pattern is revealed — surviving the set teaches it.
+            // (The jibes aren't telegraphed attacks, so nothing else would
+            // ever call tbLearnPattern for this monster.)
+            try { this.tbLearnPattern(m); } catch (e) {}
+          } else if (s >= 1 && m.beamPhase === 'warming_up') {
+            this.encSetPhase(m, 'heckling');
+          }
+        };
+        hkSetPhase();
         const shameNow = m.hkShame;
         if (p && shameNow > (p.hkShameTaken || 0)) {
           p.hkShameTaken = shameNow;
           this.say(`The words stick. Your arms feel heavier. (SHAME ${shameNow}: -${shameNow} damage.)`);
         }
-        // Phase transitions
-        if (shameNow >= 5 && m.beamPhase !== 'headliner') {
-          this.encSetPhase(m, 'headliner');
-          this.say('"Oh, we\'ve got a LIVE ONE!" It has your number now. (5+ SHAME: answer back next turn or take double.)');
-          try { this.audioEvent('hecklerHeadliner', {}); } catch (e) {}
-        } else if (shameNow >= 2 && m.beamPhase === 'warming_up') {
-          this.encSetPhase(m, 'heckling');
-        }
-        // Heckling: narrate (stack shame) instead of just attacking
-        // It heckles when you miss or when it feels like it
+        // Heckling: narrate (stack shame) instead of just attacking.
+        // It heckles when you miss, when you hit it (it narrates the swing),
+        // when ITS hit lands (it narrates the blow) — or when it feels like
+        // it, and the longer the set runs the harder it heckles.
         const lastMissed = f.lastPlayerMissed;
-        if ((lastMissed || Math.random() < 0.4) && !m.telegraph) {
-          m.hkShame++;
+        const mocked = m.hkMockNext; m.hkMockNext = false;
+        const landed = m.hkLandedHit; m.hkLandedHit = false;
+        const jibeChance = Math.min(0.9, 0.55 + 0.1 * (m.hkShame || 0));
+        if ((lastMissed || mocked || landed || Math.random() < jibeChance) && !m.telegraph) {
+          m.hkShame += 1;
           f.lastPlayerMissed = false;
+          // PILE-ON (Steve 2026-10-06): the moment it's headlining, the crowd
+          // that isn't there joins in — every headliner jibe stacks an extra
+          // shame, and the words start to CUT (psychic chip). The codex
+          // promised Pile-On; the headliner entrance always delivers it.
+          const pileOn = (m.hkShame || 0) >= hkHeadlinerAt;
+          if (pileOn) m.hkShame += 1;
           const jibes = known ? [
             `"THAT'S the swing? My grandmother hits harder and she's a concept." (SHAME ${m.hkShame})`,
             `"I've seen better footwork from a landslide." (SHAME ${m.hkShame})`,
@@ -19535,12 +19847,27 @@
             'It laughs at you. Specifically at you. The laugh has notes.',
             '"Do it again! Do it again, I want to see if it gets worse."',
           ];
-          this.say(jibes[Math.floor(Math.random() * jibes.length)]);
+          let line = jibes[Math.floor(Math.random() * jibes.length)];
+          if (pileOn) {
+            line += ' The laugh multiplies — a whole crowd that isn\'t there, and every throat is laughing at you. (PILE-ON: +2 SHAME)';
+            try { this.audioEvent('hecklerPileOn', {}); } catch (e) {}
+          }
+          this.say(line);
+          hkSetPhase();
           try { this.audioEvent('hecklerJibe', { shame: m.hkShame }); } catch (e) {}
-          // Compulsion at 5+: player must answer or double shame
-          if (m.hkShame >= 5 && p && !p.hkCompelled) {
+          // VICIOUS MOCKERY (Steve 2026-10-06): headlining words cut. Once
+          // the set has found its rhythm the mockery deals psychic chip —
+          // the trick is the threat, not the sideshow direct.
+          if (pileOn && p && p.alive) {
+            const chip = 3 + Math.floor(Math.random() * 4);
+            this.tbDamage('p', chip, "The Heckler's Vicious Mockery", m.key, { quiet: true });
+            this.say(`The words find the soft places. (${chip} psychic — the mockery cuts.)`);
+          }
+          // Compulsion at headliner: the words become a weight. Answer back
+          // (WAIT — lose the turn, clear 3 shame) or act and take +2.
+          if (m.hkShame >= hkHeadlinerAt && p && !p.hkCompelled) {
             p.hkCompelled = true;
-            this.say('The words become a weight. You WANT to answer back. (Next turn: WAIT to answer (lose the turn, clear 3 shame) or act and take double shame.)');
+            this.say('The words become a weight. You WANT to answer back. (Next turn: WAIT to answer (lose the turn, clear 3 shame) or act and take +2 shame.)');
           }
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
@@ -19570,33 +19897,44 @@
         const t = foe.f;
         if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'candid'); m.pzPrediction = 0; }
         const known = this.encTelegraphKnown(m);
-        if (m.pzPrediction >= 5 && m.beamPhase !== 'exclusive') {
+        if (m.pzPrediction >= 4 && m.beamPhase !== 'exclusive') {
           this.encSetPhase(m, 'exclusive');
-          this.say('"GOT IT. The money shot." It knows exactly where you\'ll go. (PREDICTION 5: the flash is now UNBLOCKABLE — break line of sight.)');
+          this.say('"GOT IT. The money shot." It knows exactly where you\'ll go. (PREDICTION 4: the flash is now UNBLOCKABLE — break line of sight.)');
           try { this.audioEvent('paparazzoExclusive', {}); } catch (e) {}
         } else if (m.pzPrediction >= 2 && m.beamPhase === 'candid') {
           this.encSetPhase(m, 'tracking');
           this.say('"Hold still. Hold— STILL." The lens is tracking you now. (It is learning your dodge.)');
         }
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
-        // It follows at mid-range (3-5), never too close
-        if (d < 3) {
-          const stp = this.tbStepAway(m, t.mx, t.my, blocked, danger);
-          if (stp) { m.mx = stp.x; m.my = stp.y; }
-          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-        }
-        if (d > 6) {
+        // It follows at mid-range (3-5), never too close — UNLESS you're
+        // dazzled. A frozen subject is a CLOSE-UP: it moves in for the shot,
+        // so a dazzled player can still strike back (no freeze-lock).
+        // It never stops shooting to reposition — no early return here. (Was:
+        // step-away RETURNED, so a chaser denied every flash and the whole
+        // prediction mechanic never engaged.)
+        if ((t.stunned || 0) > 0 && d > 1) {
           const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
           if (stp) { m.mx = stp.x; m.my = stp.y; }
-          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        } else if (d < 3) {
+          const stp = this.tbStepAway(m, t.mx, t.my, blocked, danger);
+          if (stp) { m.mx = stp.x; m.my = stp.y; }
+        } else if (d > 6) {
+          const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+          if (stp) { m.mx = stp.x; m.my = stp.y; }
         }
         // FLASH: telegraphed burst that freezes; prediction makes it unavoidable
         // (manual burst telegraph — same pattern as the old camera_swarm)
         if (!m.telegraph) {
-          const unavoidable = m.pzPrediction >= 5;
+          // PREDICTION stacks on the COMMIT (Steve 2026-10-06): the model
+          // updates when it takes the shot — +1 per telegraph cycle, so the
+          // money shot lands on the 5th monster turn, inside a normal fight.
+          m.pzPrediction = Math.min(4, (m.pzPrediction || 0) + 1);
+          // Unavoidable is phase-locked: the money shot, the ⭐ EXCLUSIVE
+          // badge, and the paparazzoExclusive sting all land on the same turn.
+          const unavoidable = m.beamPhase === 'exclusive';
           const cue = known
             ? (unavoidable ? 'The shutter doesn\'t even bother aiming. It knows. (UNAVOIDABLE flash — break line of sight or eat it.)'
-              : `"Say cheese." The lens steadies. (Flash incoming — freeze 1 turn. Prediction ${m.pzPrediction}/5.)`)
+              : `"Say cheese." The lens steadies. (Flash incoming — freeze 1 turn. Prediction ${m.pzPrediction}/4.)`)
             : 'The lens steadies. You hear the shutter think about it.';
           const pr = 2 + (m.pzPrediction >= 3 ? 1 : 0); // WIDENING THE SHOT (salvaged)
           if (m.pzPrediction >= 3 && !m.pzWidenSaid) {
@@ -19690,6 +20028,91 @@
           this.encDeclareDirect(m, t, known
             ? '"Grievance filed." It licks the pencil. (Modest direct — the allies are the threat.)'
             : 'It licks the pencil. "Let\'s put this one in writing."');
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- THE MODERATOR: CONTENT ENFORCEMENT (wave-2 apex) ----
+      // It stopped watching content and started removing it. You are the
+      // content. It draws a suppression field (radius 2, grid-visible purple
+      // tiles) and MUTES your most-used verb (strike/move, rolling window)
+      // inside it — attempting the verb there spends your turn as a VIOLATION
+      // (+3 to its strikes per violation). Step OUT of the field and the verb
+      // works again; vary your verbs to keep the mute chasing the wrong one.
+      // At 50% HP it drops the SHADOWBAN: field widens to radius 3, the
+      // shadowed ground itself rejects you (2 on entry), Deplatform hits
+      // 22-32, and the mute keeps chasing your most-used verb. The wave-1
+      // answer (dodge the telegraph) fails
+      // because the strikes are unavoidable direct — the counterplay is the
+      // field and your habits, not your feet.
+      if (this.modIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        if (!m.beamPhase || m.beamPhase === 'stalk') {
+          this.encSetPhase(m, 'observing');
+          this.say('"CONTENT UNDER REVIEW." It draws a circle on the dirt — purple, the color of a bruise. It is reading everything you have ever done.');
+          try { this.audioEvent('modNotice', {}); } catch (e) {}
+        }
+        const known = this.encTelegraphKnown(m);
+        const round = (f && f.round) || 1;
+        if (m.beamPhase === 'observing' && (round >= 4 || m.hp <= m.maxHp * 0.7)) {
+          this.encSetPhase(m, 'muting');
+        }
+        if (m.beamPhase === 'muting' && m.hp <= m.maxHp * 0.5 && round >= 4) {
+          this.encSetPhase(m, 'shadowban');
+          this.say('The circle on the ground goes BLACK at the edges. "SHADOWBAN." The air tastes like a dead channel. (The field is wider. The ground itself rejects you. Keep flipping the mute — or go quiet until it loses the thread.)');
+          try { this.audioEvent('modShadow', {}); } catch (e) {}
+        }
+        const phase = m.beamPhase;
+        // Mute selection: most-used verb in the rolling window. Announced when
+        // the set changes — the player always knows what is muted. ONE verb,
+        // even in shadowban: muting both would lock the fight (no way to deal
+        // damage), and a lock is not a trick. The flip game stays winnable.
+        if (phase === 'muting' || phase === 'shadowban') {
+          const top = this.modTopVerbs(1);
+          if (top.join(',') !== (m.modMuted || []).join(',')) {
+            m.modMuted = top;
+            const names = top.map(v => v.toUpperCase()).join(' + ');
+            this.say(known
+              ? `🔇 ${names} MUTED inside the suppression field. (It mutes what you lean on — vary your verbs, or step out of the purple.)`
+              : `🔇 The hammer comes down. "${names} — REMOVED FOR VIOLATING COMMUNITY STANDARDS." Your ${top[0] === 'strike' ? 'hands' : 'feet'} feel the rule settle over them — but only inside the circle.`);
+            try { this.audioEvent('modMute', { verbs: top }); } catch (e) {}
+          }
+        }
+        // Project the suppression field — it follows the moderator.
+        const fr = phase === 'shadowban' ? 3 : 2;
+        const ft = phase === 'shadowban' ? 'shadowed' : 'suppressed';
+        this.modProjectField(m, fr, ft);
+        // Hunt: one deliberate step to keep standoff range 2-4, field re-centered.
+        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (d > 4 || d < 2) {
+          const stp = d > 4 ? this.tbStepToward(m, t.mx, t.my, blocked, danger)
+                            : this.tbStepAway(m, t.mx, t.my, blocked, danger);
+          if (stp) { m.mx = stp.x; m.my = stp.y; }
+          this.modProjectField(m, fr, ft);
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // Strike: declare via the generic engine, damage overridden per phase.
+        if (!m.telegraph) {
+          const bonus = this.modStrikeBonus(m);
+          let dmg, cue;
+          if (phase === 'observing') {
+            dmg = [6, 10];
+            cue = known ? '"CONTENT NOTED." A ranging tap — it is still reading you. (Weak now. It gets worse.)'
+              : 'It taps you with the flat of the hammer, almost gentle. Taking your measure.';
+            try { this.audioEvent('modNoted', {}); } catch (e) {}
+          } else if (phase === 'muting') {
+            dmg = [12 + bonus, 18 + bonus];
+            cue = known ? `"REMOVAL NOTICE." The hammer falls${bonus ? ` — PRIOR VIOLATIONS make it hit +${bonus} harder` : ''}. (Unavoidable. The mute is the counterplay, not the dodge.)`
+              : '"YOUR CONTENT HAS BEEN FLAGGED. REMOVAL IMMINENT." There is nowhere the notice does not reach.';
+            try { this.audioEvent('modRemoval', {}); } catch (e) {}
+          } else {
+            dmg = [22 + bonus, 32 + bonus];
+            cue = '"DEPLATFORMED." The hammer comes down like a period at the end of you.';
+            try { this.audioEvent('modRemoval', { final: true }); } catch (e) {}
+          }
+          this.encDeclareDirect(m, t, cue);
+          m.telegraph.dmg = dmg;
         }
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
