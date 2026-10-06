@@ -18,6 +18,8 @@
 //   - fireShow(event) -> show (delegates to contests.js)
 //   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
 //   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
+//   - pickSpawnMonster(mdefs) (water-gated spawn pick: 'in' needs water)
+//   - placeSpawnMonster(mdef, opts) (water-aware spawn placement)
 //   - tbTerrainAt(x, y) -> type | null
 //   - tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double)
 //   - modIs(m) (wave-2 apex id gate: the Moderator)
@@ -36,6 +38,7 @@
 //   - moderator_phases: observing -> muting -> shadowban (code: tbMonsterTurn)
 //   - multitile_occupancy: size 2 = 2x2 block, mx,my is top-left (code: fighterTiles)
 //   - multitile_validation: all tiles walkable before each move (code: tbCanOccupy)
+//   - water_spawn: waterAffinity 'in' spawns ON a water cell only when water exists (re-pick from dry pool otherwise); 'near' prefers shore cells; wanderer cast excludes 'in' (code: pickSpawnMonster, placeSpawnMonster, castMonster)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
 //   - sleep_heal_bunk: 35 (code: sleepPreview)
@@ -9774,6 +9777,108 @@
       for (let i = 0; i < list.length; i++) { r -= weights[i]; if (r <= 0) return list[i]; }
       return list[list.length - 1];
     },
+    // WATER-SPAWN AUDIT (Steve 2026-10-06): monsters with waterAffinity only
+    // spawn where the water is.
+    //   'in'   (nightlight_catfish): lives IN water. Gated: only picked when
+    //          water cells exist on the detail grid, and placed ON one.
+    //   'near' (white_noise_heron, belltoad, speedbump_turtle): waders and
+    //          shore hunters. Placement prefers the water's edge; still spawn
+    //          on dry grids (they tolerate land).
+    //   null/undefined: no water logic (the old behavior).
+    spawnGridWater() {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const water = [];
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        if (detail[y] && detail[y][x] === 'water') water.push({ x, y });
+      }
+      return { detail, water };
+    },
+    pickSpawnMonster(mdefs) {
+      if (!mdefs || !mdefs.length) return null;
+      const { water } = this.spawnGridWater();
+      let pool = mdefs;
+      if (!water.length) {
+        // No water here: 'in' monsters can't spawn. Re-pick from the rest —
+        // never silently spawn a catfish on grass.
+        const dry = mdefs.filter(m => m.waterAffinity !== 'in');
+        if (dry.length) pool = dry;
+        else return null; // nothing spawnable — skip the encounter this entry
+      }
+      return this.pickByActivity(pool) || pool[Math.floor(Math.random() * pool.length)];
+    },
+    placeSpawnMonster(mdef, opts) {
+      // Water-aware placement for a picked monster. Returns {mx, my}.
+      // opts.minDist: keep at least this far from the player (wanderer contact).
+      // opts.fullGrid: pick from the whole 9x9, not the 4±2 spawn box.
+      const s = this.state.scholar;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      const minDist = (opts && opts.minDist) || 0;
+      const fullGrid = !!(opts && opts.fullGrid);
+      const { detail, water } = this.spawnGridWater();
+      const cheb = (x, y) => Math.max(Math.abs(x - px), Math.abs(y - py));
+      const base = () => {
+        let best = null;
+        for (let t = 0; t < 20; t++) {
+          let mx, my;
+          if (fullGrid) { mx = Math.floor(Math.random() * 9); my = Math.floor(Math.random() * 9); }
+          else { mx = 4 + Math.floor(Math.random() * 5) - 2; my = 4 + Math.floor(Math.random() * 5) - 2; }
+          mx = Math.max(0, Math.min(8, mx)); my = Math.max(0, Math.min(8, my));
+          const dd = cheb(mx, my);
+          if (dd >= minDist) return { mx, my };
+          if (!best || dd > best.d) best = { mx, my, d: dd };
+        }
+        return { mx: best.mx, my: best.my };
+      };
+      const aff = (mdef && mdef.waterAffinity) || null;
+      if (aff === 'in' && water.length) {
+        // ON a water cell — the lure needs its pool. Prefer the water's EDGE
+        // (a water cell adjacent to walkable shore): the fight must stay
+        // reachable. A catfish mid-lake can grasp at range 2 while no melee
+        // can ever close to range 1 — an unwinnable punching bag (2026-10-06
+        // playtest: 41 rounds, 0 strikes, 83 damage taken, no way in).
+        const edgeWater = water.filter(c => {
+          for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
+            if (!ox && !oy) continue;
+            const nx = c.x + ox, ny = c.y + oy;
+            if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+            const ncell = detail[ny] && detail[ny][nx];
+            if (ncell && !this.cellProps(ncell).blocks) return true;
+          }
+          return false;
+        });
+        const src = edgeWater.length ? edgeWater : water;
+        const cands = src.filter(c => cheb(c.x, c.y) > 0 && cheb(c.x, c.y) >= minDist);
+        const pool = cands.length ? cands : src.filter(c => cheb(c.x, c.y) > 0);
+        if (pool.length) {
+          const c = pool[Math.floor(Math.random() * pool.length)];
+          return { mx: c.x, my: c.y };
+        }
+        return base();
+      }
+      if (aff === 'near' && water.length) {
+        // A shore cell: walkable, adjacent to water. Prefer a few steps out —
+        // the heron fishes the edge, the toad chorus gathers at the bank.
+        const shores = [];
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+          const cell = detail[y] && detail[y][x];
+          if (!cell || this.cellProps(cell).blocks) continue;
+          if (cheb(x, y) < minDist) continue;
+          let adj = false;
+          for (let oy = -1; oy <= 1 && !adj; oy++) for (let ox = -1; ox <= 1 && !adj; ox++) {
+            if (!ox && !oy) continue;
+            if (water.some(c => c.x === x + ox && c.y === y + oy)) adj = true;
+          }
+          if (adj) shores.push({ x, y });
+        }
+        if (shores.length) {
+          const want = shores.filter(c => cheb(c.x, c.y) >= Math.max(2, minDist) && cheb(c.x, c.y) <= minDist + 5);
+          const pick = want.length ? want : shores;
+          const c = pick[Math.floor(Math.random() * pick.length)];
+          return { mx: c.x, my: c.y };
+        }
+      }
+      return base();
+    },
     npcBatchTurn() {
       const v = this.state.village;
       if (!v.positions) return;
@@ -11348,12 +11453,15 @@
         const mdefs = this.monsterWavePool();
         // NIGHT ECOLOGY: the cast shifts after dark. Nocturnal things own the night;
         // diurnal things own the day. Weighted — nothing vanishes entirely.
-        const mdef = this.pickByActivity(mdefs) || mdefs[Math.floor(Math.random() * mdefs.length)];
-        const mx = 4 + Math.floor(Math.random() * 5) - 2;
-        const my = 4 + Math.floor(Math.random() * 5) - 2;
-        scholar.monster = { id: mdef.id, mx: Math.max(0, Math.min(8, mx)), my: Math.max(0, Math.min(8, my)) };
-        // AMBIGUITY: you don't know what it is. The village name, or the descriptor — never the true name.
-        this.say(`Something moves out there — ${this.monsterDisplayName(mdef.id)}.`);
+        // WATER-SPAWN (Steve 2026-10-06): pickSpawnMonster gates 'in'-water
+        // monsters on actual water; placeSpawnMonster puts them on/near it.
+        const mdef = this.pickSpawnMonster(mdefs);
+        if (mdef) {
+          const spot = this.placeSpawnMonster(mdef);
+          scholar.monster = { id: mdef.id, mx: spot.mx, my: spot.my };
+          // AMBIGUITY: you don't know what it is. The village name, or the descriptor — never the true name.
+          this.say(`Something moves out there — ${this.monsterDisplayName(mdef.id)}.`);
+        }
       }
       // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
       if (scholar.day >= 3 && !this.wanderer && !this.encounterDone) {
@@ -11379,12 +11487,21 @@
           return;
         }
         // the monster is HERE, in the grid with you. spawn at a distance, not on top of you.
+        // WATER-SPAWN (Steve 2026-10-06): water-affinity wanderers (heron,
+        // toad, turtle) take the shore when there's water to take.
         const px = scholar.mx ?? 4, py = scholar.my ?? 4;
-        let mx, my, tries = 0;
-        do {
-          mx = Math.floor(Math.random() * 9); my = Math.floor(Math.random() * 9);
-          tries++;
-        } while (tries < 20 && Math.abs(mx - px) + Math.abs(my - py) < 4);
+        let mx, my;
+        const wdef = (this.data.monsters || []).find(mm => mm.id === this.wanderer.monsterId) || {};
+        if (wdef.waterAffinity) {
+          const spot = this.placeSpawnMonster(wdef, { minDist: 4, fullGrid: true });
+          mx = spot.mx; my = spot.my;
+        } else {
+          let tries = 0;
+          do {
+            mx = Math.floor(Math.random() * 9); my = Math.floor(Math.random() * 9);
+            tries++;
+          } while (tries < 20 && Math.abs(mx - px) + Math.abs(my - py) < 4);
+        }
         scholar.monster = { id: this.wanderer.monsterId, mx, my };
         this.say('Something big is HERE. In the grid with you. You can see it. It can see you.');
         this.encounterDone = true;
@@ -13980,7 +14097,10 @@
     // but less often. Each new wave shifts the ratios.
     castMonster() {
       const wave = this.unlockedWave();
-      const pool = this.data.monsters.filter(m => (m.wave || 1) <= wave);
+      // WATER-SPAWN (Steve 2026-10-06): the wanderer paces the treeline
+      // tile-to-tile. A sessile lure predator (waterAffinity 'in') can't do
+      // that — it never leaves its pool. Excluded from the roaming cast.
+      const pool = this.data.monsters.filter(m => (m.wave || 1) <= wave && m.waterAffinity !== 'in');
       if (!pool.length) return 'hummice'; // fallback
       // Ratios: 60% current wave, 25% previous, 15% older
       // (Wave 1: 100% wave 1. Wave 2: 60% w2, 40% w1. Wave 3: 60% w3, 25% w2, 15% w1.)

@@ -428,6 +428,7 @@
     "biomes": [
       "se_woodlands"
     ],
+    "waterAffinity": "near",
     "hp": [
       20,
       30
@@ -628,6 +629,7 @@
     "biomes": [
       "se_woodlands"
     ],
+    "waterAffinity": "near",
     "hp": [
       30,
       40
@@ -837,6 +839,7 @@
     "biomes": [
       "se_woodlands"
     ],
+    "waterAffinity": "near",
     "hp": [
       50,
       70
@@ -939,6 +942,7 @@
     "biomes": [
       "se_woodlands"
     ],
+    "waterAffinity": "in",
     "hp": [
       22,
       32

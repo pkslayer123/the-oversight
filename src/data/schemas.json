@@ -79,6 +79,7 @@
    "id": "string",
    "name": "string",
    "biomes": "string[]?",
+   "waterAffinity": ["in", "near"],
    "hp": "number[2..2]",
    "attack": {
     "name": "string",
