@@ -2,8 +2,12 @@
 // system: villager-agency
 // description: Villager AI. Villagers act on their own with goals and routines.
 // provides:
-//   - villagerTurn()
-//   - villagerDecide()
+//   - agencyState(vid)
+//   - agencyTick()
+//   - agencyOf(vid)
+//   - agencyScore(vid)
+//   - recordDeed(vid, deed)
+//   - startExpedition(vid)
 // rules:
 //   - (none documented)
 // consumes:

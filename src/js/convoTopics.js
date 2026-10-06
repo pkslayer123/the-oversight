@@ -22,8 +22,8 @@
 //   - event_topic: 'lately' appears only while a run event is live (code: convoTopics.js, t2LatelyEvent)
 //   - no_repeat: openers and beats route through convoPick (code: convoTopics.js, topic2Ask/topic2Beat)
 // consumes:
-//   - village roster, trust, memory, grief, heat, exiles, conflicts
-//   - characterGen.topicPack (labels), villager identity fields
+//   - Game (characterGen.topicPack labels)
+//   - village.villagers
 // ============ GENERATED CONVERSATION TOPICS ============
 // Steve 2026-10-06 (unique-person law): topics generate from WHO this villager
 // is and WHAT they've lived through this run. Self-attaching module, same

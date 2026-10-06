@@ -2,7 +2,8 @@
 // system: debug
 // description: One-tap preloaded scenarios for the debug panel. Testing only.
 // provides:
-//   - loadScenario()
+//   - SCENARIOS (code: debug-scenarios.js)
+//   - RETIRED (code: debug-scenarios.js)
 // rules:
 //   - (none documented)
 // consumes:

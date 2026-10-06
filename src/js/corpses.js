@@ -2,8 +2,18 @@
 // system: corpses
 // description: Corpse system. Dead bodies persist, can be butchered, buried, or left.
 // provides:
-//   - spawnCorpse()
-//   - butcherCorpse()
+//   - buryCorpse(cid)
+//   - corpseAt(x, y)
+//   - corpseDesc(c)
+//   - examineCorpse(cid)
+//   - lootCorpse(cid)
+//   - registerDeath(vid, cause)
+//   - corpseStage(c)
+//   - corpseGlyph(c)
+//   - knowsDeath(vid)
+//   - generatePossessions(vid)
+//   - payRespects(cid)
+//   - codexDeathSync()
 // rules:
 //   - (none documented)
 // consumes:

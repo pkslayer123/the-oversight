@@ -1,3 +1,20 @@
+// @ontology
+// system: modifier-pipeline
+// description: The scalability core. Every computed value resolves base -> collect modifiers -> apply adds, then multiplies -> final.
+// provides:
+//   - resolve(base, target, modifiers, context)
+//   - checkCondition(cond, ctx)
+//   - levelOf(entry)
+//   - scaledValue(m, level)
+//   - collectModifiers(scholar, abilitiesData)
+//   - hasAbility(scholar, id)
+//   - abilityLevel(scholar, id)
+//   - collectKnowledgeModifiers(codexSkills, knowledgeData)
+//   - hasKnowledgeUnlock(codexSkills, knowledgeData, unlockId)
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 /* The modifier pipeline — the scalability core.
    Every computed value resolves through here:
      base → collect active modifiers → apply adds, then multiplies → final.

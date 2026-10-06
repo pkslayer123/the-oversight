@@ -3,7 +3,7 @@
 // description: Real back-and-forth dialogue. Player always has response choices.
 // provides:
 //   - startConvo()
-//   - convoChoice()
+//   - convoChoices(vid)
 //   - convoUI() -> {active, transcript, choices}
 // rules:
 //   - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)

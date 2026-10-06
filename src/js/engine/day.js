@@ -1,3 +1,13 @@
+// @ontology
+// system: day-engine
+// description: Day resolution order. The turn structure — one day, one turn. Order is load-bearing.
+// provides:
+//   - PHASES (code: day.js)
+//   - newDay(scholar)
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 /* Day resolution order. The turn structure — one day, one turn.
    Order is load-bearing; document changes in DECISIONS.md. */
 (function (global) {

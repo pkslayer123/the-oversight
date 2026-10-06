@@ -2,7 +2,15 @@
 // system: truth
 // description: Truth/distortion. Gossip spreads with distortion through retelling.
 // provides:
-//   - spreadGossip()
+//   - trackClaim(vid, topic, claim)
+//   - getClaims(vid)
+//   - makeLie(vid, topic)
+//   - getActiveLie(vid)
+//   - addDoubt(doubt)
+//   - getDoubts()
+//   - resolveDoubt(id)
+//   - confrontDoubt(vid)
+//   - npcGossipAbout(vid)
 // rules:
 //   - distortion_per_retelling: true (code: truth.js)
 //   - min_liars_per_village: 1 (code: newGame wrapper)

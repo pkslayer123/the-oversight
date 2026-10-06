@@ -2,7 +2,14 @@
 // system: move-anim
 // description: Movement animation. Step-by-step tile transitions.
 // provides:
-//   - animateMove()
+//   - enqueue(anim)
+//   - pump()
+//   - purgeKind(kind)
+//   - setHold(id)
+//   - clearHold(id)
+//   - stopAll()
+//   - capture()
+//   - flip()
 // rules:
 //   - (none documented)
 // consumes:

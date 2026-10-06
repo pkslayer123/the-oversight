@@ -2,8 +2,12 @@
 // system: lifeseed
 // description: Procedural foundation. Procedural depth before more systems.
 // provides:
-//   - generateLife()
-//   - mutateLife()
+//   - genCharacter(opts)
+//   - genLifeseed()
+//   - genPersonalPool(vid)
+//   - lifeseedKin(vid)
+//   - lifeseedText(vid)
+//   - resolveKeepsakeText(item)
 // rules:
 //   - (none documented)
 // consumes:

@@ -2,8 +2,12 @@
 // system: care-explore
 // description: Care and exploration decisions. Care was a vending machine — now it requires real choices.
 // provides:
-//   - careAction()
-//   - exploreAction()
+//   - giveFood(vid, amount)
+//   - comfort(vid, approach)
+//   - giveFoodOptions()
+//   - comfortOptions(vid)
+//   - examineCell(cx, cy)
+//   - tileFeature(nx, ny, cx, cy, cell)
 // rules:
 //   - (none documented)
 // consumes:

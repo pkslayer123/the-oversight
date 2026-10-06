@@ -2,8 +2,12 @@
 // system: leadership
 // description: The Leadership Vector. No single ending — ending is sum of leadership choices.
 // provides:
-//   - leadShift()
-//   - getVector()
+//   - ledger()
+//   - ledgerAdd(entry)
+//   - recordLegend(text)
+//   - recordMoment(text)
+//   - contestStandings()
+//   - viewershipBoard()
 // rules:
 //   - (none documented)
 // consumes:

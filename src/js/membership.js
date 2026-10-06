@@ -2,8 +2,17 @@
 // system: membership
 // description: Village membership. Joining, leaving, exile status.
 // provides:
-//   - joinVillage()
-//   - leaveVillage()
+//   - isMember(vid)
+//   - mshipState()
+//   - acceptApplication(app)
+//   - refuseApplication(app)
+//   - genApplicant()
+//   - judgeApplication(app)
+//   - considerApplications()
+//   - rejoinMembership()
+//   - severMembership(vid)
+//   - housingCap()
+//   - foodSupports(n)
 // rules:
 //   - (none documented)
 // consumes:

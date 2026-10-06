@@ -1,3 +1,16 @@
+// @ontology
+// system: calorie-engine
+// description: The master clock. Every cost in the game flows through here. Needs never decrease with level; power costs calories.
+// provides:
+//   - BASE_BMR (code: calories.js)
+//   - ACTIVE_DAY (code: calories.js)
+//   - ACTION_COSTS (code: calories.js)
+//   - dailyNeed(scholar)
+//   - resolveDay(scholar, village)
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 /* The master clock. Every cost in the game flows through here.
    Thesis enforcement: needs never decrease with level; power costs calories. */
 (function (global) {

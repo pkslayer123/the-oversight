@@ -1,3 +1,21 @@
+// @ontology
+// system: combat-engine
+// description: Turn-based grid combat pure helpers. 9x9 detail grid, speed order, square-targeted telegraphed attacks.
+// provides:
+//   - roll(range)
+//   - cheb(ax, ay, bx, by)
+//   - inGrid(x, y)
+//   - turnOrder(fighters)
+//   - patternCells(pattern, ax, ay, tx, ty)
+//   - isFoe(a, b)
+//   - nearestEnemy(fighters, f)
+//   - stepToward(fx, fy, tx, ty, blocked, avoidCells)
+//   - stepAway(fx, fy, tx, ty, blocked, avoidCells)
+//   - villagerDecide(f, fighters, blocked, dangerCells)
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 /* Turn-based grid combat engine — pure helpers.
    Combat happens on the 9x9 detail grid. Everyone acts in speed order.
    Attacks typically target SQUARES (telegraphed — dodge by moving).

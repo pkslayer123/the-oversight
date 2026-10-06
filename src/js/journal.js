@@ -2,8 +2,10 @@
 // system: journal
 // description: People journal. Facts fill in as you learn them. Pre-System manual, post-System automatic.
 // provides:
-//   - addJournalEntry()
-//   - getJournal()
+//   - journalPerson(vid)
+//   - journalLearn(vid, topic)
+//   - journalTraitWord(vid)
+//   - peopleJournal()
 // rules:
 //   - pre_system_manual: true (code: journal.js)
 // consumes:

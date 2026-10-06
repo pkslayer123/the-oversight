@@ -2,8 +2,17 @@
 // system: hierarchy
 // description: Inter-village hierarchy. Villages have relationships, rivalries, trade.
 // provides:
-//   - getVillageRelation()
-//   - updateHierarchy()
+//   - hierarchyState()
+//   - linkWith(vid, other)
+//   - linkStanding(a, b)
+//   - breakLink(a, b)
+//   - judgeLink(a, b)
+//   - proposeLink(a, b)
+//   - answerDemand(a, b)
+//   - payTribute(a, b)
+//   - hierarchyDaily()
+//   - linkTick(a, b)
+//   - onLeaderDeath(vid)
 // rules:
 //   - (none documented)
 // consumes:

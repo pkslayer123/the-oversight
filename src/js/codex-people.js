@@ -2,8 +2,18 @@
 // system: codex-people
 // description: Every villager is a living codex entry. Deepens while they live.
 // provides:
-//   - getPersonEntry()
-//   - updatePersonEntry()
+//   - checkPersonLevel(vid)
+//   - personDepth(vid)
+//   - personFirst(vid)
+//   - theirViewOfYou(vid)
+//   - noteSharedHistory(vid, text)
+//   - closePersonBook(vid)
+//   - codexPersonTick()
+//   - confirmField(vid, field)
+//   - ensurePersonLifeseed(vid)
+//   - posthumousReveal(vid)
+//   - revealForLevel(vid)
+//   - personDepthHTML(vid)
 // rules:
 //   - (none documented)
 // consumes:

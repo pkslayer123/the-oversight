@@ -1,3 +1,22 @@
+// @ontology
+// system: game-state
+// description: State factories, versioned save/load. Village / scholars / Codex / run are independent so one can reset cleanly.
+// provides:
+//   - SAVE_VERSION (code: state.js)
+//   - newVillage()
+//   - newScholar(villagerId)
+//   - newCodex()
+//   - newState()
+//   - saveKey(state)
+//   - save(state)
+//   - listSaves()
+//   - load(key)
+//   - wipe(key)
+//   - wipeAll()
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 /* Game state: factory, save/load (versioned), sub-objects separable.
    Village / scholars / Codex / run are independent so one can reset cleanly. */
 (function (global) {

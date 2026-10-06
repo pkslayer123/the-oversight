@@ -2,9 +2,14 @@
 // system: progression
 // description: Character progression. XP, levels, abilities.
 // provides:
-//   - gainXP()
-//   - levelUp()
 //   - abilitySlots()
+//   - accrueRelicBond(item)
+//   - integrationStage()
+//   - checkTrial(id)
+//   - completeTrial(id)
+//   - progState()
+//   - progDaily()
+//   - slotMoment()
 // rules:
 //   - ability_cap: 6 (code: progression.js)
 // consumes:

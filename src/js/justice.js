@@ -2,8 +2,14 @@
 // system: justice
 // description: Village justice + combat dialogue. Crimes have consequences.
 // provides:
-//   - reportCrime()
-//   - holdTrial()
+//   - recordCrime(type, opts)
+//   - justiceState()
+//   - justiceTick()
+//   - justiceConfront(vid)
+//   - justiceHeat()
+//   - justiceStage()
+//   - startVillageUprising()
+//   - uprisingAftermath()
 // rules:
 //   - one_ladder: cold shoulder -> confrontation -> moot -> uprising; the moot is the ONE formal track (code: justiceTick)
 //   - confrontation_first: heat 50+ holds the formal track until the ladder demands the moot — refusal, silence-timeout, or heat 70+ (code: considerPlayerAccusation, justiceTick)

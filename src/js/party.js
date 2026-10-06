@@ -2,8 +2,16 @@
 // system: party
 // description: Party system. Companions travel and fight with you.
 // provides:
-//   - addToParty()
-//   - removeFromParty()
+//   - inviteToParty(vid)
+//   - dismissFromParty(vid)
+//   - partyState()
+//   - partyMembers()
+//   - inParty(vid)
+//   - partyCap()
+//   - partyFull()
+//   - partyTrustFloor()
+//   - travelingWith()
+//   - placePartyAtPlayer()
 // rules:
 //   - (none documented)
 // consumes:

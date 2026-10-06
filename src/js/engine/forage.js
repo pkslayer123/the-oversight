@@ -1,3 +1,14 @@
+// @ontology
+// system: forage-engine
+// description: Foraging resolver. Tile + biome + day yields plant yield from plants.json + biomes.json data. Pure logic.
+// provides:
+//   - weightedPick(table, rng)
+//   - forage(tile, biome, plants, scholar, codex, abilitiesData, bounty, opts)
+//   - canForage(tile)
+// rules:
+//   - (none documented)
+// consumes:
+//   - (none documented)
 /* Foraging resolver — slice 1.
    Tile + biome + day → plant yield. Uses data from plants.json + biomes.json.
    Pure logic; UI lives in app.js. */

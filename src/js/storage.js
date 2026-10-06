@@ -1,14 +1,40 @@
 // @ontology
-// system: storage
-// description: Save/load. LocalStorage persistence.
+// system: tools-stashes
+// description: Tool prerequisites, raw materials, village stash ledger, personal caches. (Save/load lives in engine/state.js.)
 // provides:
-//   - save()
-//   - load()
-//   - listSaves()
+//   - MAT_DEFS (code: storage.js)
+//   - hasToolItem(itemId)
+//   - woodcutTier()
+//   - canFell()
+//   - canPrune()
+//   - cutInfo()
+//   - pruneBranches()
+//   - gatherFallen()
+//   - addMaterial(mat, n)
+//   - spendMaterial(mat, n)
+//   - takeMaterial(mat, n)
+//   - materialCount(mat)
+//   - donateMaterial(mat, n)
+//   - donateTool(itemId)
+//   - takeTool(itemId)
+//   - isStashableTool(item)
+//   - stashState()
+//   - stashHtml()
+//   - stashLog()
+//   - stashLedgerText()
+//   - buryCache()
+//   - digUpCache()
+//   - playerCaches()
+//   - cachesHtml()
+//   - cacheTheftChance()
+//   - pickCacheRobber()
+//   - plantCacheTheftSuspicion()
+//   - villageTrustLevel()
 // rules:
 //   - (none documented)
 // consumes:
-//   - (none documented)
+//   - scholar.inventory
+//   - state.codex
 // ============ TOOLS, STASHES & CACHES ============
 // Steve's rules, made mechanical:
 //  1. Tool prerequisites: you can't fell a tree without an axe. A pruning

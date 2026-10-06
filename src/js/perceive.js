@@ -2,7 +2,7 @@
 // system: perceive
 // description: Perception system. Proximity hints, spotting.
 // provides:
-//   - perceiveCheck()
+//   - perceptionHints()
 // rules:
 //   - (none documented)
 // consumes:

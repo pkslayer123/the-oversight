@@ -2,9 +2,21 @@
 // system: betrayal
 // description: Betrayal, accusation, trial & exile. Micro-quests disguise later betrayals; aftermath is the game.
 // provides:
-//   - accuse()
-//   - trial()
-//   - exile()
+//   - betrayalState()
+//   - grievanceBetween(a, b)
+//   - motiveBetween(a, b)
+//   - recordGrievance(g)
+//   - inviteHistory()
+//   - pendingInvite()
+//   - acceptInvite(id)
+//   - declineInvite(id)
+//   - resolveInvite(id)
+//   - inviteReward(id)
+//   - npcInviteTick()
+//   - dayOneNudge()
+//   - whoTag(vid)
+//   - isPlayer(vid)
+//   - pairAffinity(a, b)
 // rules:
 //   - betrayal_requires_motive: true (code: betrayal.js)
 // consumes:
