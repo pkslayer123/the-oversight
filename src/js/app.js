@@ -723,9 +723,14 @@
         try {
           const nx = Game.map.px + d.dx, ny = Game.map.py + d.dy;
           const block = Game.travelBlockage(nx, ny);
-          if (block && block.blockType !== 'creek' && !seen.has('Clear the way')) {
-            seen.add('Clear the way');
-            items.push({ cx: px, cy: py, label: 'Clear the way', blockDir: d.dir, blockX: nx, blockY: ny });
+          if (block && !seen.has('Clear the way')) {
+            // Creeks and washed-out need a bridge (4 wood). Only offer if
+            // the player can actually build it, or if it's clearable by hand.
+            const isBridgeNeeded = block.blockType === 'creek' || block.blockType === 'washed_out';
+            if (!isBridgeNeeded || Game.woodCount() >= 4) {
+              seen.add('Clear the way');
+              items.push({ cx: px, cy: py, label: 'Clear the way', blockDir: d.dir, blockX: nx, blockY: ny });
+            }
           }
         } catch (e) {}
       }
