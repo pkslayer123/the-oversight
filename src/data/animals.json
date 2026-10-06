@@ -27,6 +27,7 @@
     "behaviorDesc": "Freezes, then bolts in a zigzag. Fast but predictable — it runs in a straight line after the first juke.",
     "fleeDifficulty": "medium",
     "huntText": "It freezes. You hold your breath. Then — white tail flashing — it bolts!",
+    "killText": "About {kcal} kcal — lean meat, one good meal. All protein, no fat: eat it with something greasy or you’ll run hollow (rabbit starvation is real).",
     "tell": "freezes mid-hop, one ear swiveling toward you.",
     "butcher": {
       "hide": 1,
@@ -61,6 +62,7 @@
     "behaviorDesc": "Stays in trees. Drops to grab nuts, then spirals up the trunk. You need to catch it on the ground.",
     "fleeDifficulty": "hard",
     "huntText": "It chatters at you from the branch — scolding, not scared. Then it drops, grabs, and spirals up before you move.",
+    "killText": "About {kcal} kcal — small, but a fall squirrel carries fat. Stew meat; the hide makes gloves if you’re patient.",
     "tell": "goes silent mid-chatter, tail flicking hard.",
     "butcher": {
       "hide": 1
@@ -94,6 +96,7 @@
     "behaviorDesc": "Grazes with head down, ears swiveling. At the first wrong sound, the white tail goes up and it's gone.",
     "fleeDifficulty": "hard",
     "huntText": "It grazes, ears tracking every sound. The white tail flicks — once, twice — then it explodes into motion.",
+    "killText": "About {kcal} kcal — this feeds people for days. Organs first (they spoil fastest and carry the vitamins), then gut and hang the rest. Don’t waste the fat.",
     "tell": "head snaps up — the white tail flicks, once, twice.",
     "butcher": {
       "hide": 2,
@@ -129,6 +132,7 @@
     "behaviorDesc": "Stays in water. Darts under rocks when shadow falls. You need a line, not hands.",
     "fleeDifficulty": "medium",
     "huntText": "A flash of silver in the creek. It darts under the rock before your shadow even touches the water.",
+    "killText": "About {kcal} kcal — a mouthful. Eat it whole, bones and all, or the tickle wasn’t worth it.",
     "tell": "holds perfectly still in the current, fins barely moving.",
     "butcher": {
       "bone": 1
@@ -162,6 +166,7 @@
     "behaviorDesc": "Moves in flocks. One spots you, they all know. Loud, big, but they panic in different directions.",
     "fleeDifficulty": "medium",
     "huntText": "Gobble-gobble-gobble. The flock erupts — wings like thunder, all going different ways. Pick one and commit.",
+    "killText": "About {kcal} kcal — the breast alone is a feast. Legs are tough; save the wing feathers for fletching.",
     "tell": "the heads jerk up in unison — all of them, all at once.",
     "butcher": {
       "feather": 6,
@@ -196,6 +201,7 @@
     "behaviorDesc": "When threatened, it flops over, tongue out, playing dead. It's not dead. It's waiting for you to leave.",
     "fleeDifficulty": "easy",
     "huntText": "It hisses, shows teeth — then flops over. Tongue lolling. Dead. Except the eye that tracks you. It's faking.",
+    "killText": "About {kcal} kcal — greasy meat. The scent glands come out with the guts: cut wide, never nick them.",
     "tell": "stops waddling and bares its teeth in a wet hiss.",
     "butcher": {
       "hide": 1,
@@ -230,6 +236,7 @@
     "behaviorDesc": "Sits at the water's edge. At the splash, it dives. You need to be fast or use a gig.",
     "fleeDifficulty": "medium",
     "huntText": "It croaks — a deep jug-o-rum. You step closer. Splash. Gone. The ripples are still spreading.",
+    "killText": "About {kcal} kcal — it’s all in the legs. The rest is skin and attitude. Fry them like chicken.",
     "tell": "the croak cuts off mid-note. The ripples flatten.",
     "butcher": {}
   },
@@ -260,6 +267,7 @@
     "behaviorDesc": "It walks. That's it. It just walks, slowly, with total confidence that you're not a threat. You can pick it up.",
     "fleeDifficulty": "trivial",
     "huntText": "It plods along, head out, utterly unconcerned. You could pick it up with one hand. It knows. It doesn't care.",
+    "killText": "About {kcal} kcal — soup turtle. The shell’s a bowl when you’re done. It lived a century; take the lesson with the meat.",
     "tell": "pulls its head in a fraction. It has nowhere to be, but it knows you're there.",
     "butcher": {
       "shell": 1,
@@ -294,6 +302,7 @@
     "behaviorDesc": "It watches you watching it. Circles downwind to scent you. If you chase, it leads you in circles.",
     "fleeDifficulty": "very_hard",
     "huntText": "Amber eyes in the underbrush. It doesn't run — it trots, just out of range, looking back. It's toying with you.",
+    "killText": "About {kcal} kcal — lean and gamey. The winter pelt is the real prize; flesh it carefully.",
     "tell": "stops mid-step, one paw raised — eyes locked on you.",
     "butcher": {
       "hide": 1,
@@ -328,6 +337,7 @@
     "behaviorDesc": "Under rocks in the creek. When you lift the rock, it darts backward, claws up. Grab behind the claws.",
     "fleeDifficulty": "easy",
     "huntText": "You lift the rock. It shoots backward, claws raised like a tiny boxer. Grab it right behind the claws — fast.",
+    "killText": "About {kcal} kcal — sweet tail meat, a bite at a time. Boil, peel, repeat. The pinch was earned.",
     "tell": "freezes under its rock, claws raised.",
     "butcher": {
       "shell": 1
@@ -360,6 +370,7 @@
     "behaviorDesc": "Not afraid of you. Watches with clever hands. Might try to steal from you instead of fleeing.",
     "fleeDifficulty": "easy",
     "huntText": "It sits up, paws dangling, watching you with unsettling intelligence. It's not scared. It's assessing.",
+    "killText": "About {kcal} kcal — greasy, good in stew. Wash your hands after; raccoons carry things you don’t want.",
     "tell": "sits up on its haunches, paws dangling — watching you back.",
     "butcher": {
       "hide": 1,
@@ -394,6 +405,7 @@
     "behaviorDesc": "Does NOT flee. Hisses, lunges, snaps. That beak can take a finger. Use a stick, keep distance.",
     "fleeDifficulty": "dangerous",
     "huntText": "It hisses — a sound like a tire leaking — and LUNGES. The beak snaps shut where your hand was. Do not grab this.",
+    "killText": "About {kcal} kcal — they say seven kinds of meat in one shell. The head bites after death: cut wide, bury the head.",
     "tell": "goes statue-still, neck coiling back.",
     "butcher": {
       "shell": 1,
@@ -428,6 +440,7 @@
     "behaviorDesc": "Coils and rattles a long warning before it ever strikes. The one animal that tells you exactly what it will do, and means it.",
     "fleeDifficulty": "dangerous",
     "huntText": "A dry buzz from the leaf litter — a rattle, then the coil tightens. It isn't bluffing. Nothing about this is a bluff.",
+    "killText": "About {kcal} kcal — tastes like tough chicken. The venom’s in the head, not the body — but the head bites after death. Cut wide, bury it deep.",
     "tell": "leaf litter shivers before you see it; then the dry rattle starts.",
     "butcher": {
       "hide": 1,
@@ -462,6 +475,7 @@
     "behaviorDesc": "Ambles after grubs, waddles through your trapline, and does not run from you. It has exactly one argument and it wins every argument.",
     "fleeDifficulty": "trivial",
     "huntText": "It turns its back on you. That is not surrender — the tail goes up like a flag, and you have about one second to reconsider your life.",
+    "killText": "About {kcal} kcal — the meat’s fine. The musk glands are the whole job: cut wide around them, never nick. Everything you own will remember if you do.",
     "tell": "a white stripe lifting into the air, tail high; the calm before the chemistry.",
     "butcher": {
       "hide": 1,
@@ -496,6 +510,7 @@
     "behaviorDesc": "Builds bank dens and cattail lodges, marks its runs with musk. When it dives, it stays down — longer than you can hold your nerve.",
     "fleeDifficulty": "hard",
     "huntText": "A V of ripples slides off the cattails — then nothing. The muskrat is already under the bank, listening to your feet.",
+    "killText": "About {kcal} kcal — rich dark meat, nearly waterproof pelt. The lodge-builder earned its winter fat; pelts prime in late fall.",
     "tell": "a sliding ripple line along the bank, and a sweet-musky smell on the water.",
     "butcher": {
       "hide": 1,
@@ -530,6 +545,7 @@
     "behaviorDesc": "Paws the ground and snorts a warning when it notices you. Press it — or miss — and it CHARGES: 150 pounds straight at you. Sidestep, don't outrun.",
     "fleeDifficulty": "dangerous",
     "huntText": "It sees you. The head drops, the front hooves scrape — then it comes, fast and low, tusks first. This is the part everyone warned you about.",
+    "killText": "About {kcal} kcal — rich, fatty, the tusks are tools. Gut it fast; a boar this size feeds the village for days.",
     "tell": "head drops, front hooves scraping the dirt — the snort changes pitch.",
     "butcher": {
       "hide": 1,
@@ -565,6 +581,7 @@
     "behaviorDesc": "Ambles. Never hurries, never bolts — it doesn't need to. Turn your back is a quill-rattle warning. Grab it barehanded and the quills lodge in your hand.",
     "fleeDifficulty": "trivial",
     "huntText": "It hears you and turns its back — quills up, rattling like dry beans. It is in no hurry. It has never needed to hurry.",
+    "killText": "About {kcal} kcal — good fatty meat under the armor. Quills pull straight out, slow — the barbs break off inside. Keep a dozen for fish hooks.",
     "tell": "quills rise and rattle — a dry shiver of sound — as it turns its back to you.",
     "butcher": {
       "hide": 1,
@@ -599,6 +616,7 @@
     "behaviorDesc": "Whistles an alarm the moment it clocks you — and the whole meadow hears it. Then it sprints for its burrow: fast, straight, gone down the hole if it gets there.",
     "fleeDifficulty": "hard",
     "huntText": "The whistle splits the meadow — sharp, twice. Then it's running, low and fast, straight for the dark hole in the bank. Cut it off or lose it.",
+    "killText": "About {kcal} kcal — surprisingly good eating. Late-summer groundhogs are fat; spring ones are lean and mean.",
     "tell": "rears up on its haunches, nose high — then the whistle.",
     "butcher": {
       "hide": 1,
@@ -633,6 +651,7 @@
     "behaviorDesc": "Does not flee — advances. Honks, neck low, wings half-out. Back off and it settles; press it and the wings and beak are real.",
     "fleeDifficulty": "dangerous",
     "huntText": "HONK. The neck stretches flat and it comes at you, wings half-spread, utterly committed. This bird has never lost a fight it started.",
+    "killText": "About {kcal} kcal — the breast is beefy, the legs are rope. It fought you for this; respect the wings, keep the down.",
     "tell": "the honk changes — lower, faster — and the neck drops level with the ground.",
     "butcher": {
       "feather": 8,
@@ -667,6 +686,7 @@
     "behaviorDesc": "Perfect leaf-litter camouflage. It sits still until you're right on top of it — then explodes upward in a whir of wings. One fast shot, or it's gone.",
     "fleeDifficulty": "very_hard",
     "huntText": "The leaves move — no, the leaves FLY. A whir of wings from under your boots, twisting away through the brush. That was a bird. That was always a bird.",
+    "killText": "About {kcal} kcal — a mouthful of the classic. Hard to find, easy to lose, worth the one fast shot.",
     "tell": "nothing. That is the tell. The leaf litter is a little too still, a little too bird-shaped.",
     "butcher": {
       "feather": 2
@@ -700,6 +720,7 @@
     "behaviorDesc": "Works the bank, always near water. The moment it clocks you, the flat tail SLAPS the water — crack like a rifle — and it dives. The slap warns everything nearby.",
     "fleeDifficulty": "very_hard",
     "huntText": "CRACK. The tail hits the water like a gunshot and the beaver is gone — just spreading rings. Every animal on the creek heard that. Your hunt is over.",
+    "killText": "About {kcal} kcal — rich meat, and the warmest fur in North America. The castor glands are trade goods; the slap was the price of admission.",
     "tell": "the flat tail lifts clear of the water — the slap is already decided.",
     "butcher": {
       "hide": 2,
@@ -734,6 +755,7 @@
     "behaviorDesc": "It stalks YOU. Circles closer each turn, yellow eyes fixed. Run and it chases; hold your ground and it loses interest. Strike true or wear the claws.",
     "fleeDifficulty": "dangerous",
     "huntText": "Yellow eyes. It doesn't bolt — it pads closer, unhurried, like it has already done the math on you. You are not hunting. You are being hunted.",
+    "killText": "About {kcal} kcal — lean, gamey. The spotted pelt is valuable. It did the math on you once; it won’t again.",
     "tell": "the circling stops — it faces you square, ears flat, weight forward.",
     "butcher": {
       "hide": 1,
@@ -763,12 +785,13 @@
       "3": "Uses: real meat, poor man's pork, and it walks right up to you half the time. Corner it against a bank at night with a light, grab the tail — it cannot bite you from there. Cook it THOROUGH; armadillos can carry leprosy, and heat is the cure.",
       "4": "Mastery: they follow the same grub trails night after night. Find the rooted-up litter, set a snare on the trail, and the armadillo delivers itself."
     },
+    "emoji": "🛡️",
     "unknown": "something armored crashing through the leaves at night",
     "behavior": "armored",
     "behaviorDesc": "Roots for grubs, head down, deaf to the world. Startle it and it leaps straight up — a vertical jump that startles back — then bolts for the nearest burrow. Cornered against a bank or a log, it has no plan B.",
     "fleeDifficulty": "easy",
     "huntText": "A clanking in the leaf litter — an armadillo, snout down, digging for grubs. It has not noticed you. It will not notice you until it is far too late.",
-    "tell": "the clanking stops. A pink ear rises above the litter, swiveling.",
+    "tell": "stops clanking \u2014 a pink ear rises above the litter, swiveling.",
     "butcher": {
       "shell": 1,
       "bone": 1
@@ -866,12 +889,13 @@
       "3": "Uses: good meat, cooks like eel. Pin it behind the head with a forked stick — it will musk and bite, but the bite is a scratch. Freezes when spotted, counting on you to mistake stillness for a stick.",
       "4": "Mastery: where rat snakes hunt, rodents run thick — which means grain, which means people were storing food here. A snake is a signpost. Follow the sign."
     },
+    "emoji": "🐍",
     "unknown": "a thick gray snake on the trail — rattler until proven otherwise",
     "behavior": "constrictor",
     "behaviorDesc": "Nonvenomous. Kills rats by wrapping and waiting. Freezes when spotted, betting everything on being mistaken for a stick. Grabbed, it musks and bites — but the bite is a scratch, and the musk washes off.",
     "fleeDifficulty": "medium",
     "huntText": "A gray coil on the log, thick as your wrist. No rattle sounds — but your hands do not believe that yet. It has not moved. It is hoping you walk past.",
-    "tell": "a shed skin hangs on the brambles, scale-pattern crisp, longer than your arm.",
+    "tell": "goes utterly still on the log, head raised an inch, tasting the air.",
     "butcher": {},
     "killText": "About {kcal} kcal — cooks like eel. The meat is clean; the musk washes off the hands, not the memory."
   }

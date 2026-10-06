@@ -58,8 +58,8 @@ function giveWeapon(itemId) {
   s.equipped.weapon = { itemId, name: def.name };
 }
 
-const BEHAVIORS = new Set(['skittish', 'arboreal', 'wary', 'aquatic', 'aquatic_ambush', 'aquatic_defensive', 'flock', 'plays_dead', 'slow', 'cunning', 'curious', 'aggressive', 'defensive', 'unbothered', 'architect', 'charger', 'quilled', 'alarmed', 'territorial', 'camouflaged', 'sentinel', 'stalker']);
-const METHODS = new Set(['snare', 'chase', 'trap', 'bow', 'hands', 'line']);
+const BEHAVIORS = new Set(['skittish', 'arboreal', 'wary', 'aquatic', 'aquatic_ambush', 'aquatic_defensive', 'flock', 'plays_dead', 'slow', 'cunning', 'curious', 'aggressive', 'defensive', 'unbothered', 'architect', 'charger', 'quilled', 'alarmed', 'territorial', 'camouflaged', 'sentinel', 'stalker', 'armored', 'sentinel_mob', 'bedding', 'constrictor']);
+const METHODS = new Set(['snare', 'chase', 'trap', 'bow', 'hands', 'line', 'stick']);
 
 (async () => {
   await Game.init();

@@ -95,8 +95,10 @@ function setAnimal(id, mx, my, extra) {
   s().equipped = {};
   const hpBefore = s().health;
   clearSay();
-  // rand sequence: preyReaction flee roll (high -> no bolt), bite roll (low -> bite), fumble (high -> no fumble), kill roll
-  withRand([0.99, 0.01, 0.99, 0.01], () => Game.huntAnimal());
+  // rand sequence: aggressive never bolts so preyReaction is skipped
+  // (encBehaviorStrikeReact returns false) — bite roll (low -> bite),
+  // bite damage, fumble (high -> no fumble), kill roll
+  withRand([0.01, 0.99, 0.99, 0.01], () => Game.huntAnimal());
   const biteMsg = /bites!|It bites/.test(sayLines());
   ok('snapper bites at close range', biteMsg || s().health < hpBefore, sayLines().slice(0, 160));
 
