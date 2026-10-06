@@ -1908,6 +1908,7 @@
   },
   {
     "id": "ducks_in_a_row",
+    "activity": "diurnal",
     "name": "ducks in a row",
     "emoji": "\ud83e\udd86",
     "hp": [

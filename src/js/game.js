@@ -4497,9 +4497,17 @@
       const ranged = Math.min(stillHungry, need * 0.6);
       const forage = fromTurf + ranged;
       village.pantryKcal += forage;
-      // they deplete the world near them (competition!) — what they took, in
-      // the same units the home village uses (1 stock ≈ 200 kcal)
-      this.depleteRandomTile(Math.ceil(fromTurf / 200), village.x, village.y);
+      // VISIBLE COMPETITION (forager loop 2026-10-05): the world only sees
+      // what hands take. The home village sends 1-2 villagers out a day
+      // (400-800 kcal hauls — see villageLives), so a distant village visibly
+      // depletes the same: 2-8 stock/day, not its whole need. The old formula
+      // took the full need from STANDING stock (depleteRandomTile(91,...)),
+      // zeroing 27 tiles in a single catch-up day — the map can't survive its
+      // own villages, and the "never goes map-wide" promise broke. The rest
+      // of their living is ranging/traps/abstract, same as home.
+      const handsOut = 1 + (Math.random() < 0.4 ? 1 : 0);
+      const visibleKcal = handsOut * (400 + Math.random() * 400);
+      this.depleteRandomTile(Math.ceil(visibleKcal / 200), village.x, village.y);
       // eat: 2000 per person
       village.pantryKcal -= need;
       // villages eat and share surplus — they don't hoard. 4 days' buffer, max.
@@ -5250,7 +5258,12 @@
           if (!FORAGEABLE[c]) continue;
           const dk = sx + ',' + sy;
           if (t.detailRegrow[dk]) continue;
-          t.detailRegrow[dk] = { day: day + 3, was: c };
+          // REGROW TIMING (forager loop 2026-10-05): the tag is the last barren
+          // day, not the first productive one — regrowTiles() restores during
+          // endDay BEFORE day++, so a tag of D restores at the end of day D
+          // and is playable on D+1. Foraged day N -> tag N+2 -> playable N+3:
+          // "the plant you picked comes back in 3 days", as promised.
+          t.detailRegrow[dk] = { day: day + 2, was: c };
           if (c === 'plant') cells[sy][sx] = 'dirt'; // trees/bushes stand, just picked clean
           toStrip--;
         }
@@ -9550,7 +9563,8 @@
             const [gx, gy, c] = cands[Math.floor(Math.random() * cands.length)];
             t.detailRegrow = t.detailRegrow || {};
             const day = this.state.scholar ? this.state.scholar.day : 0;
-            t.detailRegrow[gx + ',' + gy] = { day: day + 3, was: c };
+            // same N+2 timing as the player's harvest: stripped today, back in 3 days
+            t.detailRegrow[gx + ',' + gy] = { day: day + 2, was: c };
             if (c === 'plant') t.detail[gy][gx] = 'dirt'; // trees/bushes stand, just picked clean
           }
         }
@@ -11156,7 +11170,7 @@
         for (const h of harvested) {
           detail[h.y][h.x] = (h.cell === 'plant') ? 'dirt' : h.cell;
           t.detailRegrow = t.detailRegrow || {};
-          t.detailRegrow[h.x + ',' + h.y] = { day: scholar.day + 3, was: h.cell };
+          t.detailRegrow[h.x + ',' + h.y] = { day: scholar.day + 2, was: h.cell };
           if (h.wood) {
             // DEADFALL: no species, no knowledge — but branches for the fire
             // and bark fiber for cordage. The stand recovers like everything else.
@@ -12553,7 +12567,12 @@
     startCombat(monsterId) {
       const s = this.state.scholar;
       const px = s.mx ?? 4, py = s.my ?? 4;
-      const mdef = this.data.monsters.find(m => m.id === (monsterId || 'bulldozer')) || this.data.monsters[0];
+      // WANDERER CONTACT (forager loop 2026-10-05): the "Face it" button calls
+      // startCombat() with no id — the monster that walked into you is
+      // pendingMonsterId, not the default bulldozer. The panel names it right;
+      // the fight must spawn it right.
+      const mid = monsterId || this.pendingMonsterId || 'bulldozer';
+      const mdef = this.data.monsters.find(m => m.id === mid) || this.data.monsters[0];
       // FIRST-CONTACT FLASH (Steve 2026-10-05): after the System comes online,
       // the first encounter with a monster species flashes a freaky pixelated
       // rendition on the HUD. Horror beyond emoji. Triggered here, rendered by app.js.
