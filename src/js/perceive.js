@@ -174,7 +174,9 @@
             } else if (cell === 'plant') {
               push(`Something green and low-growing. Might be edible.`, 44);
             } else {
-              push(`A ${mod.species || 'nut tree'}. There might be nuts.`, 44);
+              const sp = mod.species || 'nut tree';
+              const art = /^[aeiou]/i.test(sp) ? 'An' : 'A';
+              push(`${art} ${sp}. There might be nuts.`, 44);
             }
             forageSaid = true;
           }

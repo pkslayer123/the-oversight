@@ -4660,7 +4660,7 @@
           const knowNote = nPlants > 0 ? ` They know ${nPlants} plants${theirNew > 0 ? ` — ${theirNew} you haven't seen` : ''}.` : '';
           // DRIFTER: you can read a village at a glance. Lean ones look lean.
           const leanNote = (v.pantryKcal || 0) <= 0 ? ' They look lean — hungry, even. Food would talk here.' : '';
-          this.say(`You see smoke on the horizon. ${v.name} — ${v.population} people, ${v.day} days in. ${focusWord}, by the look of it.${knowNote}${leanNote} They've been here the whole time.`);
+          this.say(`You see smoke on the horizon. ${v.name} — ${v.population} people, ${v.day} day${v.day === 1 ? '' : 's'} in. ${focusWord}, by the look of it.${knowNote}${leanNote} They've been here the whole time.`);
         }
       }
     },
@@ -5643,7 +5643,19 @@
       if (oldMonster) {
         const mdef = this.data.monsters.find(m => m.id === oldMonster.id);
         if (mdef && mdef.follows) {
-          // it followed you. it's in the new tile's grid.
+          // FOLLOW RE-ENTRY (explorer loop 2026-10-05): the monster chases
+          // you through the boundary and enters the NEW grid at the edge you
+          // came from, a step or two behind you. Its old mx/my belonged to
+          // the old tile — keeping them made it hunt stale cells forever: a
+          // ghost that followed for days without ever reaching you, while
+          // occupying the monster slot and blocking every new encounter.
+          let fmx = odx > 0 ? 0 : odx < 0 ? 8 : clamp9(oldMx);
+          let fmy = ody > 0 ? 0 : ody < 0 ? 8 : clamp9(oldMy);
+          // offset along the edge so it doesn't land on top of you
+          if (odx !== 0) fmy = clamp9(fmy + 2); else fmx = clamp9(fmx + 2);
+          const fe = this.findWalkableEntry(x, y, fmx, fmy);
+          oldMonster.mx = fe.x; oldMonster.my = fe.y;
+          oldMonster.lostSight = 0; // it saw you cross. it's on your trail.
           this.say(`It followed you. The ${mdef.name} is here.`);
         } else {
           this.state.scholar.monster = null; // it didn't care enough to follow
