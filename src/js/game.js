@@ -13221,9 +13221,41 @@
       };
       this.say(causes[cause] || `The ${cellName} is destroyed!`);
       this.audioEvent('crash', { cause });
+      // SHRAPNEL (Steve 2026-10-05): smashing a wall/tree creates shrapnel.
+      // AoE around the impact, hit chance decreases with distance.
+      if (cause === 'bulldozer') {
+        this.bulldozerShrapnel(cx, cy);
+      }
       // Mark the map as changed so it saves
       this.map.dirty = true;
       return true;
+    },
+
+    // BULLDOZER SHRAPNEL (Steve 2026-10-05): when the Bulldozer smashes
+    // through something, splinters fly. AoE damage, hit chance falls off
+    // with distance. Get away from the impact.
+    bulldozerShrapnel(cx, cy) {
+      const f = this.tbfight;
+      if (!f) return;
+      this.say('Splinters fly!');
+      for (const o of f.fighters) {
+        if (!o.alive || o.fled) continue;
+        const dist = Math.max(Math.abs(o.mx - cx), Math.abs(o.my - cy));
+        if (dist > 3) continue; // shrapnel range
+        // Hit chance: 80% at dist 0, 60% at 1, 40% at 2, 20% at 3
+        const hitChance = Math.max(0.2, 0.8 - (dist * 0.2));
+        if (Math.random() < hitChance) {
+          const dmg = Math.round(S.combat.roll([5, 12]) * (1 - dist * 0.2));
+          const targetName = o.kind === 'player' ? 'you' : o.name;
+          this.say(`A splinter catches ${targetName} for ${dmg}! (dist ${dist})`);
+          this.tbDamage(o.key, dmg, 'shrapnel', null, { quiet: true });
+          if (f.over) break;
+        } else if (dist <= 2) {
+          // Only narrate misses that were close
+          const targetName = o.kind === 'player' ? 'you' : o.name;
+          this.say(`Splinters whistle past ${targetName}.`);
+        }
+      }
     },
 
     // TRAMPLE: the boar's missed charge ends here — grinding hooves on
