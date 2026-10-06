@@ -19931,6 +19931,7 @@
           try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
         }
         if (m.beamPhase === 'watching') {
+          m.usWatchTurns = (m.usWatchTurns || 0) + 1;
           const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
           if (d < 3) {
             const stp = this.tbStepAway(m, t.mx, t.my, blocked, danger);
@@ -19941,10 +19942,27 @@
             this.say(known ? 'It is watching you fight. Taking notes. In your handwriting. (Attack it — every round it watches, it learns.)'
               : 'A blank shape at the tree line, watching. Learning.');
           }
-          try { this.audioEvent('understudyWatch', {}); } catch (e) {}
-          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+          // COLD READ (Steve 2026-10-06): the anti-stall prod. After ~3
+          // watching turns without learning a real move, the understudy
+          // stops waiting for a performance that isn't coming — it has
+          // learned the one thing you showed it: how you stand still.
+          // It performs THAT, badly, coming at you. A passive player can
+          // no longer wait it out forever. ("Oh no, it learned my trick"
+          // — the trick was standing there.)
+          if (m.usWatchTurns >= 3 && !learned && !m.usColdRead) {
+            m.usColdRead = true;
+            this.encSetPhase(m, 'rehearsing');
+            this.say(known
+              ? '"Nothing? Then I\'ll do you." Three rounds it has watched you stand there — and now it stands the way you stand. It is coming. (COLD READ: it learned your stillness. It attacks with your own body, badly.)'
+              : 'It stops watching. It stands the way you stand. It is coming at you.');
+            try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
+            // Fall through to the attack below — cold-read damage, no weapon.
+          } else {
+            try { this.audioEvent('understudyWatch', {}); } catch (e) {}
+            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+          }
         }
-        if (!best || best.count < 2) {
+        if ((!best || best.count < 2) && !m.usColdRead) {
           this.encSetPhase(m, 'watching');
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
@@ -19972,7 +19990,8 @@
           }
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
-        const fidelity = m.beamPhase === 'performing' ? 0.8 : (best.count >= 3 ? 0.65 : 0.5);
+        const coldRead = m.usColdRead && !best;
+        const fidelity = coldRead ? 0.5 : (m.beamPhase === 'performing' ? 0.8 : (best.count >= 3 ? 0.65 : 0.5));
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         if (d > 1) {
           const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
@@ -19980,11 +19999,20 @@
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         if (!m.telegraph) {
-          const cue = known
-            ? `"MIRROR STRIKE." Your ${best.name} — played back at you at ${Math.round(fidelity * 100)}%.`
-            : 'It goes still. It is doing the thing you do before you do it.';
+          const cue = coldRead
+            ? (known
+              ? '"COLD READ." Your stillness, played back at you — your stance, your weight, wrong and coming.'
+              : 'It moves the way you move. Wrong. Fast.')
+            : (known
+              ? `"MIRROR STRIKE." Your ${best.name} — played back at you at ${Math.round(fidelity * 100)}%.`
+              : 'It goes still. It is doing the thing you do before you do it.');
           this.encDeclareDirect(m, t, cue);
-          m.telegraph.dmg = [Math.max(1, Math.round(best.dmg * fidelity)), Math.max(2, Math.round(best.dmg * fidelity * 1.2))];
+          if (coldRead) {
+            // No weapon learned — a clumsy body-copy. Real damage, modest.
+            m.telegraph.dmg = [8, 12];
+          } else {
+            m.telegraph.dmg = [Math.max(1, Math.round(best.dmg * fidelity)), Math.max(2, Math.round(best.dmg * fidelity * 1.2))];
+          }
           try { this.audioEvent('understudyCopy', { fidelity }); } catch (e) {}
         }
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
