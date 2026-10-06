@@ -332,6 +332,25 @@
         desc: 'One night, alone on the haven wall, the lamp lit. Below in the dark, something large is circling. Hold your post until dawn. Do not abandon the light.',
         participants: 1,
         arena: '🕯️\n⬛⬛⬛⬛⬛\n🌑🌑🌑🌑🌑\n🕯️👤🕯️👁️🕯️\n🌑🌑🌑🌑🌑\n⬛⬛⬛⬛⬛' },
+      // CONTEST-POOL EXPANSION 2 (Steve 2026-10-06): the four smallest pools
+      // (puzzle/detective/forage/chance — 3 each) each get a bespoke variant
+      // with a distinct mechanic. NOT reskins — see the ontology rule.
+      { id: 'sorting', name: 'The Sorting', cat: 'puzzle', risk: 'high',
+        desc: 'The System empties your pack and the tithe crate onto a conveyor. Its sorter keeps the shiny and burns the useful. Redirect what matters before it burns.',
+        participants: 1,
+        arena: '🏭\n📦➡️🔥⬅️📦\n⬜⬜🏭⬜⬜\n📦📦📦📦📦\n👥👥👥👥👥' },
+      { id: 'witness', name: 'The Witness', cat: 'detective', risk: 'high',
+        desc: 'Three witnesses describe last night\'s attack on the trap-line. Two are true memories. One the System wrote. Name the fabrication — the village arms for whatever you name.',
+        participants: 1,
+        arena: '🕵️\n👤🎤👤🎤👤\n🔍🔍🔍🔍🔍\n🌲🌲🐾🌲🌲\n👥👥👥👥👥' },
+      { id: 'cache', name: 'The Cache', cat: 'forage', risk: 'medium',
+        desc: 'At dawn the System\'s surveyors map every hidden food cache in the valley. Tonight you move the winter store — every move the cameras catch is taxed. Move it all. Let them see nothing.',
+        participants: 2,
+        arena: '🌙\n📦📦📦📦📦\n🌲👤📦👤🌲\n📷📷📷📷📷\n🌙🌙🌙🌙🌙' },
+      { id: 'longodds', name: 'The Long Odds', cat: 'chance', risk: 'medium',
+        desc: 'Dice against the house champion — a smug alien who has never lost on camera. The dice are fair. The stakes are the game. Raise, hold, or walk — but the table is unavoidable.',
+        participants: 1,
+        arena: '🎲\n🎰⬛🎲⬛🎰\n👽🎲🎲🎲👽\n🎲⬛🎲⬛🎲\n👥👥👥👥👥' },
     ];
   };
 
@@ -801,6 +820,10 @@
     if (id === 'quiet') return this._contestQuiet(contest);
     if (id === 'guest') return this._contestGuest(contest);
     if (id === 'vigil') return this._contestVigil(contest);
+    if (id === 'sorting') return this._contestSorting(contest);
+    if (id === 'witness') return this._contestWitness(contest);
+    if (id === 'cache') return this._contestCache(contest);
+    if (id === 'longodds') return this._contestLongodds(contest);
     const cat = contest.cat;
     if (cat === 'endurance') return this._contestEndurance(contest);
     if (cat === 'moot') return this._contestMoot(contest);
@@ -835,6 +858,37 @@
   // never stack another 📺 in front (Steve 2026-10-05: double-prefix fix).
   G._cxPhaseSay = function(text) {
     this.sysSay(/^📺/.test(text) ? text : ('📺 ' + text));
+  };
+
+  // CONTEST BEAT AUDIO (Steve 2026-10-06): app.js owns the synth registry;
+  // contests.js owns dispatch. New per-contest beats can't add synths to
+  // app.js from this file, so each beat is a NAMED, composed dispatch over
+  // already-registered Game.audio synths — zero silent, no app.js edit.
+  // Registration is lazy: Game.audio doesn't exist until app.js loads,
+  // which is AFTER contests.js. Phases declare beat:'name'; the first
+  // presentation registers the composition, then fires it.
+  const CX_BEAT_DEFS = {
+    // The Sorting: televised judgment — game-show jingle curdles into a verdict.
+    contestSort: ['contestCall', 'justiceVerdict'],
+    // The Witness: the fabrication reveal — a scream of wrongness under relief's shadow.
+    contestWitness: ['horrorSting', 'contestSpared'],
+    // The Cache: the audit closes in — the grab-klaxon under receding footsteps.
+    contestCache: ['contestTaken', 'exileWalk'],
+    // The Long Odds: the table — game-show call under the dice slam.
+    contestDice: ['contestCall', 'rushHit'],
+  };
+  G._cxBeat = function(name) {
+    try {
+      const A = this.audio;
+      if (!A || !CX_BEAT_DEFS[name]) return;
+      if (typeof A[name] !== 'function') {
+        const parts = CX_BEAT_DEFS[name].slice();
+        A[name] = function() {
+          for (const p of parts) { try { if (typeof A[p] === 'function') A[p](); } catch (e) {} }
+        };
+      }
+      this.audioEvent(name);
+    } catch (e) {}
   };
 
   // === CONTEST KNOWLEDGE (Steve 2026-10-05) ===
@@ -902,6 +956,10 @@
       quiet: "It hunts for the thought you're actively burying — so don't bury anything. Feed it turnips on purpose. Loud, boring, relentless turnips.",
       guest: "Bitter and fermented wins. Sugar alarms it. And mirror its limbs — imitation reads as respect, not mockery.",
       vigil: "It circles the light, not you. Tend the lamp. A bright lamp makes a long night for it and a short one for you.",
+      sorting: "The sorter keeps what SHINES and burns what's dull-useful. Save the dull things. It can't parse a body on the belt.",
+      witness: "It writes monsters from the codex but gets the behavior wrong — it doesn't know how they move. The hushwolf never screams. Listen for the seam.",
+      cache: "Decoys beat speed. The cameras sweep in a pattern — feed them something small and loud and they'll log a victory and miss the big thing.",
+      longodds: "The dice are fair; the champion isn't — it reads hesitation the way the scanner reads lies. Commit to the bit.",
     };
     return '\n\n📚 What you know: ' + (LINES[contest.id] || "You've seen this before. Trust your instincts.");
   };
@@ -973,6 +1031,10 @@
   // (choices carrying dieWounds), so the choice-phase prepend can't shift it.
   G._contestRenderPhase = function(ac, phase, idx) {
     if (!phase) return phase;
+    // BEAT AUDIO (Steve 2026-10-06): phases may declare beat:'name' — fired
+    // when the phase is presented (phase 0 goes through here in both the
+    // grabbed and choice paths, and contestChoose routes advances here too).
+    if (phase.beat) { try { this._cxBeat(phase.beat); } catch (e) {} }
     // Idempotent: the rendered phase is stored back into ac.phases (the
     // choice box renders phases directly), so a second render must not
     // stack another readout onto the text (Steve 2026-10-06).
@@ -1654,6 +1716,182 @@
     ];
   };
 
+  // --- THE SORTING (bespoke, puzzle/high) ---
+  // CONTEST-POOL EXPANSION 2 (Steve 2026-10-06): triage-under-time, not Q&A
+  // (riddle) and not spatial (box). The fear is watching the village's food
+  // ride a belt toward fire while an alien sorter applies alien logic:
+  // shiny = keep, dull-useful = burn. Knowledge-gated: veterans know the
+  // sorter's rule; first-timers can still reason it out (roots smell like
+  // medicine) — blind is honest, never disabled. Burned food costs real kcal.
+  G._contestSorting = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('sorting').level >= 2;
+    const rule = knows
+      ? `\n\n📚 What the last Sorting taught you: the sorter keeps what SHINES. Dull-useful is its definition of trash. Save the dull things — and remember, it can't parse a body on the belt.`
+      : `\n\nNobody will say how the sorter decides. The veterans just keep muttering about "the dull things."`;
+    let vname = 'a villager';
+    try {
+      const r = (this.state.village.roster || []).find(id => id !== this.villagerId && this.isMember(id));
+      if (r) vname = this.displayName(r);
+    } catch (e) {}
+    return [
+      { beat: 'contestSort',
+        text: intro + `\n\nThe conveyor runs the length of the arena. Your pack, the tithe crate, everything — riding the belt toward the sorter. KEEP pile left. Fire right.\n\nFirst up: a bundle of dull roots, a shiny bauble that sings faintly, a grey pouch of seeds. The sorter is reaching.` + rule,
+        choices: [
+          { label: 'Save the dull roots', sub: 'grab them off the belt', do: { kcal: 150, note: 'You yank the root bundle off the belt. The sorter clicks, annoyed. The roots smell of medicine — the dull, honest kind.' }, next: 1 },
+          { label: 'Save the seed pouch', sub: 'seeds are spring', do: { kcal: 100, note: 'The seed pouch comes off the belt. Next spring thanks you. The sorter has already forgotten it wanted them.' }, next: 1 },
+          { label: 'Save the shiny bauble', sub: 'it sings, after all', do: { kcal: -300, trauma: 3, note: 'You save the singing bauble. The belt carries the roots and the seeds into the fire. They burn green and sweet. The bauble sings in the KEEP pile. The village will remember this.' }, next: 1 },
+          { label: 'Let the machine decide', sub: 'step back', do: { kcal: -250, note: 'You step back. The machine keeps the bauble. The fire eats the rest. Efficiency, televised.' }, next: 1 },
+        ] },
+      { beat: 'contestSort',
+        text: `The belt speeds up. Here comes the tithe crate — the fever-root bundle, the one that broke ${vname}'s fever last winter. Dull as dirt. The sorter's arm is already moving toward the fire side.\n\nThe village is on its feet.`,
+        choices: [
+          { label: 'Throw yourself at the belt', sub: 'body-block it', do: { dmg: [6, 14], unity: 1, note: 'You bodily block the belt. The sorter cannot parse this — bodies aren\'t in the manual. It stops, confused. You walk away with the fever-root and a new collection of bruises.' }, next: 2 },
+          { label: 'Swap in a decoy', sub: 'sleight of hand', do: { kcal: -100, note: 'You toss your own shiny spare onto the belt ahead of the roots. The sorter diverts to the shine, hypnotized. Sleight of hand, televised.', notability: 'heist' }, next: 2 },
+          { label: 'Bribe the sorter-drone', sub: 'with your lunch', do: { kcal: -200, note: 'You offer the drone your lunch. It considers. Machines, it turns out, can be bribed with sandwiches. Who knew.', notability: 'showmanship' }, next: 2 },
+          { label: 'Let it burn', sub: 'it\'s just food', do: { fracture: 1, note: 'You watch the fever-root go into the fire. It\'s just food, you tell yourself. The village doesn\'t see it that way.' }, next: 2 },
+        ] },
+      { beat: 'contestSort',
+        text: `Last crate. The System's voice, almost gentle: "ONE ITEM MAY BE SPARED FROM THE FIRE. CHOOSE."\n\nThe whole village leans forward. Whatever you pick now, the winter remembers.`,
+        choices: [
+          { label: 'Spare the fever-root', sub: 'the medicine', do: { prize: true, unity: 1, note: 'You choose the medicine. The village eats this winter because of you. The fire takes the rest, and nobody begrudges it.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Spare your best tool', sub: 'yours, on camera', do: { prize: true, fracture: 1, note: 'You choose your own tool, on camera. The System approves of the self-interest. The village does the math.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Spare nothing', sub: 'let it burn', do: { trauma: 8, note: 'You fold your arms. Let it burn — all of it. The fire is very bright. The village is very quiet.' }, next: 'LOSE' },
+          { label: 'Beg for the whole crate', sub: 'on camera', do: { trauma: 4, note: 'You beg, on camera, for all of it. The System considers... and keeps the fire lit. The clip will outlive you.', notability: 'showmanship' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
+  // --- THE WITNESS (bespoke, detective/high) ---
+  // CONTEST-POOL EXPANSION 2 (Steve 2026-10-06): forgery-forensics, not
+  // liar-hunting (informant) and not accusation (confession). The System is
+  // the forger — it writes monsters from the codex but gets BEHAVIOR wrong,
+  // because it doesn't know how they move. Knowledge-gated: veterans know
+  // the hushwolf never screams (Silent Rush gives no warning — the silence
+  // IS the telegraph); first-timers read the same accounts but the seam
+  // isn't named for them. Wrong name = the village arms for the wrong
+  // monster. Real social consequence, not a points penalty.
+  G._contestWitness = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('witness').level >= 2;
+    const seam = knows
+      ? `\n\n📚 What catching it taught you: it writes monsters from the codex but gets the BEHAVIOR wrong — it doesn't know how they move. The hushwolf never screams. The rush is silent. Listen for the seam.`
+      : `\n\nThe veterans who've named it before won't say how. "You'll know it when you hear it," they say. "Or you won't."`;
+    const wits = (() => {
+      const out = [];
+      try {
+        const roster = (this.state.village.roster || []).filter(id => id !== this.villagerId && this.isMember(id));
+        for (const id of roster) { if (out.length >= 3) break; out.push(this.displayName(id)); }
+      } catch (e) {}
+      const fb = ['Mara', 'Tove', 'Sef'];
+      while (out.length < 3) out.push(fb[out.length]);
+      return out;
+    })();
+    const [w1, w2, w3] = wits;
+    const tell = knows
+      ? `\n\n📚 The screaming. A hushwolf never screams — the rush is silent, that's the whole terror of it. That's the fabrication's seam, right there in the open.`
+      : `\n\nSomething about the screaming bothers you. You can't say why. It just... doesn't sit right.`;
+    return [
+      { beat: 'contestWitness',
+        text: intro + `\n\nLast night something hit the far trap-line. Three witnesses, seated in a row under the lights.\n\nThe System, mild: "TWO ARE TRUE MEMORIES. ONE WE WROTE. NAME THE FABRICATION — THE VILLAGE ARMS FOR WHATEVER YOU NAME."` + seam,
+        choices: [
+          { label: 'Hear them out', sub: 'all three accounts', do: { note: 'You nod. The lights tighten on the row. Three people, three stories, one lie with the System\'s handwriting on it.' }, next: 1 },
+          { label: 'Study their faces first', sub: 'before a word', do: { note: 'You watch them before they speak. Two look haunted. One looks... rehearsed. Or maybe just scared differently.' }, next: 1 },
+          { label: 'Ask the System what it wants', sub: 'read the dealer', do: { note: '"A GOOD SHOW," says the System. "AND A WRONG ANSWER, OBVIOUSLY. OR A RIGHT ONE. WE ENJOY BOTH."', notability: 'showmanship' }, next: 1 },
+        ] },
+      { beat: 'contestWitness',
+        text: `The accounts:\n\n${w1}: "It came low through the treeline, the way the big deer comes — I heard the beam before I saw it. Then the charge."\n\n${w2}: "The hushwolf rushed us, screaming the whole way. I've never heard anything scream like that."\n\n${w3}: "It took the bait and the spring-trap both, and left the meat lying. It wasn't hunting. It was angry."` + tell + `\n\nPress one of them. Carefully — the true ones bruise, and the false one is listening.`,
+        choices: [
+          { label: `Press ${w1}`, sub: 'the beam story', do: { trauma: 3, note: `${w1} goes white. "I KNOW what I heard. The beam first — you don't forget that sound." True witnesses bruise when you press them. This one bruised.` }, next: 2 },
+          { label: `Press ${w2}`, sub: 'the screaming story', do: { note: `You lean in on the screaming. ${w2} repeats it — word for word, twice, the exact same cadence. And smiles. Nobody smiles like that about being rushed. The account has a seam, and you can feel it with your thumb.` }, next: 2 },
+          { label: `Press ${w3}`, sub: 'the angry story', do: { note: `${w3} cries — quietly, angrily. "It left the meat. It just... left it." That's not a rehearsed grief. That's a trap-line grief.` }, next: 2 },
+        ] },
+      { beat: 'contestWitness',
+        text: `The village waits. The System waits. The trap-line waits — whatever you name, the village arms against it tonight.\n\nName the fabrication.`,
+        choices: [
+          { label: `Name ${w1}`, sub: 'the beam story is the lie', do: { fracture: 1, trauma: 6, note: `You name ${w1}. The System is quiet for a long moment. "WRONG," it says, almost sad. "WE WROTE THE TRUE ONE AND YOU CALLED IT A LIE." The village arms against the deer that never came. The real thing walks in through the unguarded treeline.` }, next: 'LOSE' },
+          { label: `Name ${w2}`, sub: 'the screaming story is the lie', do: { prize: true, unity: 1, note: `"CORRECT," says the System, and ${w2}'s smile comes off like a mask. "THE FABRICATION WAS OURS. The hushwolf never screams — you knew. The village arms for the real thing tonight: the deer that hit the trap-line is still out there, and now everyone knows its walk.`, notability: 'contestWin' }, next: 'WIN' },
+          { label: `Name ${w3}`, sub: 'the angry story is the lie', do: { fracture: 1, trauma: 6, note: `You name ${w3}. ${w3} stares at you like you've killed something. "WRONG," says the System. The village arms against an anger that was real. The real thing walks in through the unguarded treeline.` }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
+  // --- THE CACHE (bespoke, forage/medium) ---
+  // CONTEST-POOL EXPANSION 2 (Steve 2026-10-06): hiding, not gathering —
+  // not a race (calorie_run), not a raid (pantry_raid), not a harvest
+  // (honey). A night heist against the audit: every move the cameras catch
+  // is taxed. The skilled play is misdirection — decoys beat speed — and
+  // veterans know the cameras sweep in a pattern. Theft allowed, socially
+  // punished: the village's winter is the stake.
+  G._contestCache = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('cache').level >= 2;
+    const pattern = knows
+      ? `\n\n📚 What the last audit taught you: decoys beat speed. The cameras sweep in a pattern — feed them something small and loud and they'll log a victory and miss the big thing.`
+      : `\n\nThe veterans who've moved a cache before just say "don't let them see the big one." They won't say how.`;
+    return [
+      { beat: 'contestCache',
+        text: intro + `\n\nThe announcement scrolls across the sky: AT DAWN, THE SURVEYORS MAP EVERY HIDDEN CACHE IN THE VALLEY.\n\nTonight, the winter store moves — sacks, bundles, the smoked meat, all of it. Every move the cameras catch is taxed. Move it all. Let them see nothing.` + pattern,
+        choices: [
+          { label: 'Alone, slow, careful', sub: 'one quiet trip at a time', do: { kcal: -100, note: 'You move it yourself, one quiet trip at a time through the dark. Slow. Your back files a formal complaint.' }, next: 1 },
+          { label: 'Bring the kids', sub: 'fast and loud', do: { note: 'The kids LOVE a heist. They\'re fast. They\'re also loud. The cameras love them most of all — you may regret this.', notability: 'showmanship' }, next: 1 },
+          { label: 'Split it: many small trips', sub: 'paranoia as logistics', do: { kcal: -200, note: 'A dozen small trips, different routes, different hours. Paranoia as logistics. Nobody sees the whole picture — including you, which is the point.' }, next: 1 },
+        ] },
+      { beat: 'contestCache',
+        text: `Third trip. A surveyor-drone detaches from the sky-pattern and locks onto a moving shape in the dark — you, with the winter on your back.\n\nThe night-vision feed goes tight. The village watches you decide.`,
+        choices: [
+          { label: 'Freeze', sub: 'become nothing', do: { kcal: -150, note: 'You freeze mid-step, cache in your arms, and wait. The drone hovers... moves on. The food in your arms is safe. The trip is lost — you bury it shallow and mark the stone.' }, next: 2 },
+          { label: 'Sacrifice a decoy', sub: 'feed the cameras', do: { kcal: -100, note: 'You drop a small decoy cache in the open and walk away from it casually, whistling. The drone pounces. Somewhere, a surveyor logs a victory. The real cache keeps moving through the dark.', notability: 'heist' }, next: 2 },
+          { label: 'Run it', sub: 'lungs vs rotors', do: { dmg: [4, 10], die: 0.04, note: 'You RUN with the winter store on your back. The drone gives chase. Your lungs against its rotors, the dark against its light. You make the treeline.' }, next: 2 },
+        ] },
+      { beat: 'contestCache',
+        text: `Dawn. The surveyors present their map to the cameras — every hidden cache in the valley, mapped.\n\nThe village leans in. The winter hangs on what's drawn there.`,
+        choices: [
+          { label: 'Present the empty decoy field', sub: 'the map is wrong', do: { prize: true, unity: 1, note: 'The map shows three small caches, all decoys, all empty. The real winter store sleeps under the old chapel floor, unmapped. The village breathes out all at once.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Bribe the surveyor', sub: 'with honey', do: { kcal: -300, prize: true, note: 'You press a honeycomb into the surveyor-drone\'s intake. It whirs. The map comes back... incomplete. Somehow. Machines love honey. Who knew.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Take the tax', sub: 'the map is right', do: { kcal: -400, fracture: 1, note: 'They found half of it. The map is accurate and damning. The village will eat thin this winter, and everyone knows whose plan this was.' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
+  // --- THE LONG ODDS (bespoke, chance/medium) ---
+  // CONTEST-POOL EXPANSION 2 (Steve 2026-10-06): stakes-escalation, not
+  // pure draw (lottery) and not a spin (wheel). The dice are fair — the
+  // GAME is what you're willing to put in the middle. Push-your-luck with
+  // real costs: memories (trauma), food (kcal), pride (showmanship). The
+  // table is unavoidable, but walking away up is a played choice inside it.
+  // Knowledge-gated: veterans know the champion reads hesitation.
+  G._contestLongodds = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('longodds').level >= 2;
+    const read = knows
+      ? `\n\n📚 What the last table taught you: the dice are fair; the champion isn't — it reads hesitation the way the scanner reads lies. Commit to the bit. Never let it see you count.`
+      : `\n\nNobody's beaten Vex on camera. The veterans just say "don't think at the table." They won't say why.`;
+    return [
+      { beat: 'contestDice',
+        text: intro + `\n\nThe table is green felt under white light. Across it: Vex of the Ninth Ledger — seventeen limbs, zero losses on camera, and a smile like a tax form.\n\n"ANTE," says Vex. "FIFTY. AND ANYTHING ELSE YOU'D LIKE TO LOSE."` + read,
+        choices: [
+          { label: 'Roll straight', sub: 'honest dice', do: { kcal: -50, note: 'You roll honest. The dice clatter across the felt. Vex smiles like it knows something. It probably does.' }, next: 1 },
+          { label: 'Stake a memory', sub: 'grief is legal tender', do: { kcal: -50, trauma: 4, note: 'You offer the System a memory — the summer afternoon. It takes it. You remember remembering it; the shape of it is gone. The dice warm in your hand.' }, next: 1 },
+          { label: 'Stake your pride', sub: 'play to the crowd', do: { kcal: -50, note: 'You play to the crowd, loud and grinning. The cameras eat it up. Vex\'s smile flickers — it has never been out-entertained by a mammal.', notability: 'showmanship' }, next: 1 },
+        ] },
+      { beat: 'contestDice',
+        text: `Vex is up two. The dice sit between you like an accusation.\n\n"RAISE OR FOLD, MAMMAL," says Vex. The crowd has opinions. The crowd is very loud about them.`,
+        choices: [
+          { label: 'Double the stakes', sub: 'everything trembles', do: { kcal: -150, dmg: [0, 6], note: 'You push your whole stack forward. Your hands shake. Vex notices. It doubles too — it can smell the fear and it likes the smell.' }, next: 2 },
+          { label: 'Bluff the house', sub: 'laugh like you\'re winning', do: { trauma: 4, note: 'You laugh like you\'re already winning. Vex tilts its head — it has never been bluffed by a mammal before. Seventeen limbs go very still.', notability: 'showmanship' }, next: 2 },
+          { label: 'Play it safe', sub: 'small bets', do: { kcal: -50, note: 'Small bets, tight hands. The crowd boos the caution and respects it, both at once. Vex looks... disappointed?' }, next: 2 },
+        ] },
+      { beat: 'contestDice',
+        text: `The last roll. Everything staked is in the middle of the table, and the dice are in your hand.\n\nVex is watching the dice. For the first time tonight, it is not smiling.`,
+        choices: [
+          { label: 'Everything on the table', sub: 'all of it', do: { dmg: [6, 14], die: 0.06, prize: true, note: 'You shove it all in. The dice hang in the air for a year. They land. Vex stares. The crowd detonates like weather.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Take the partial win', sub: 'walk away up', do: { kcal: 200, prize: true, note: 'You cash out ahead. Vex bows — a real bow, almost respectful. You walk away up. Nobody walks away up.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Fold with dignity', sub: 'live to bet again', do: { note: 'You fold. Vex bows. The crowd respects the discipline. The dice keep their secrets, and so do you.' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
   // --- GENERIC fallback ---
   G._contestGeneric = function(contest) {
     const intro = this._cxIntro(contest);
@@ -1904,6 +2142,10 @@
       quiet: `${pname} resisted the Quiet Room. It went deeper than anyone meant to let it. The broadcast cut mid-sentence. When it came back, the chair was empty.`,
       guest: `The Guest took offense at the dessert. The bodyguards were faster than the apology. The System's note to the village was two words long: "OUR BAD."`,
       vigil: `The lamp went out. The circling stopped. Dawn came up on an empty wall.`,
+      sorting: `${pname} argued with the belt. The belt won. The fire kept the dull things and the bright one both — the village eats the memory of the winter store.`,
+      witness: `${pname} named the wrong witness. The village armed against a monster that never came, and the real one walked in through the unguarded treeline. The System kept the footage. It always keeps the footage.`,
+      cache: `The drone didn't miss. ${pname} is a tax the village couldn't afford. The cache made it home, though. That's something. It's not enough.`,
+      longodds: `${pname} went all in on the last roll. The dice landed wrong. The champion bowed — a real bow, almost respectful. The house always collects.`,
     };
     const CAT = {
       blood: `${pname} bled out for the cameras. The Death Reel thanks ${them} for the content.`,
@@ -2164,6 +2406,30 @@
         end: p => `📺 The Vigil — the last hour before dawn. The hardest one.\n\nThe lamp is low. ${p} is swaying. The thing has stopped circling and is just... watching the light. Dawn is close. So close.`,
         knows: p => `📚 You've held that wall. It circles the light, not the watcher — if the lamp stays bright, it stays out there. Watch the flame, not the eyes.`,
       },
+      sorting: {
+        setup: p => `📺 The Sorting. ${p} has been taken.\n\nThe conveyor runs the length of the arena — pack, tithe crate, everything the village set aside, riding the belt toward the sorter. KEEP pile on the left. Fire on the right.\n\nThe village watches its winter ride the belt. Nobody is breathing right.`,
+        turn: p => `📺 The Sorting — the belt speeds up. The tithe crate is coming — the fever-root, the seed stores, the things with no shine on them at all.\n\n${p} is running alongside the belt now, grabbing. The sorter clicks, annoyed, and keeps sorting.`,
+        end: p => `📺 The Sorting — the last crate. The System's voice, almost gentle: "ONE ITEM MAY BE SPARED FROM THE FIRE. CHOOSE."\n\nThe whole village leans forward. Whatever ${p} picks now, the winter remembers.`,
+        knows: p => `📚 You've worked that belt. It keeps what shines and burns what's dull-useful — save the dull things. And it can't parse a body on the belt. Bodies aren't in the manual.`,
+      },
+      witness: {
+        setup: p => `📺 The Witness. ${p} has been taken.\n\nThree villagers from the trap-line, seated in a row under the lights. Last night something hit the far traps. They each tell it different.\n\nThe System, mild: "TWO ARE TRUE MEMORIES. ONE WE WROTE. NAME THE FABRICATION."`,
+        turn: p => `📺 The Witness — the press. ${p} is leaning into one of them, and the account is coming apart at the seam.\n\nOne of the three smiles wrong. Or cries right. From the village seats, it's impossible to tell which is worse.`,
+        end: p => `📺 The Witness — the naming. ${p} points.\n\nThe village holds its breath — because whatever gets named, the village arms against it tonight. A wrong name is an unguarded treeline.`,
+        knows: p => `📚 You've caught it before. It writes monsters from the codex but gets the behavior wrong — it doesn't know how they move. The hushwolf never screams. Listen for the seam.`,
+      },
+      cache: {
+        setup: p => `📺 The Cache. ${p} has been taken — and one more, for the hauling.\n\nThe System's announcement scrolls across the sky: AT DAWN, THE SURVEYORS MAP EVERY HIDDEN CACHE. Tonight, the winter store moves.\n\nThe village watches its food go out into the dark in someone's arms.`,
+        turn: p => `📺 The Cache — the drone sweep. A surveyor locks onto a moving shape in the dark and the night-vision feed goes tight.\n\n${p} is mid-step with the winter on their back. Freeze, decoy, or run — the whole village is silently screaming one of the three.`,
+        end: p => `📺 The Cache — dawn. The surveyors present their map to the cameras.\n\nThe village leans in. Every hidden cache in the valley, mapped — or not. The winter hangs on what's drawn there.`,
+        knows: p => `📚 You've run the dark with food on your back. Decoys beat speed — feed the cameras something small and loud and they'll log a victory and miss the big thing.`,
+      },
+      longodds: {
+        setup: p => `📺 The Long Odds. ${p} has been taken.\n\nThe table is green felt under white light. Across it: the house champion, Vex of the Ninth Ledger — seventeen limbs, zero losses on camera, and a smile like a tax form.\n\nThe dice are fair. The stakes are the game.`,
+        turn: p => `📺 The Long Odds — down two. The champion hasn't stopped smiling.\n\n${p} is deciding how much of themselves to push into the middle. The crowd has opinions. The crowd is very loud about them.`,
+        end: p => `📺 The Long Odds — the last roll. Everything ${p} staked is in the middle of the table, and the dice are in the air.\n\nThe champion is watching the dice. For the first time tonight, it is not smiling.`,
+        knows: p => `📚 You've sat at that table. The dice are fair; the champion isn't — it reads hesitation the way the scanner reads lies. Commit to the bit.`,
+      },
     };
     const b = T[contest.id];
     if (!b) return null;
@@ -2181,7 +2447,7 @@
   // The three watch beats ARE the show (Steve 2026-10-06): each contest gets
   // its own fiction now. Generic is fallback only — no contest in the pool
   // should ever reach it.
-  // PLURAL BEATS (Steve 2026-10-06): the 30 contest-specific watch beats
+  // PLURAL BEATS (Steve 2026-10-06): the 34 contest-specific watch beats
   // were written for one taken villager ("Mara has been taken", "how Mara
   // dies"). When several are taken, the verbs must agree — "Amy and
   // Vanessa have been taken", "how Amy and Vanessa die". Literal,
