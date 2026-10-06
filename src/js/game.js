@@ -8995,6 +8995,8 @@
       const s = this.state.scholar;
       n = Math.max(0, Math.round(n || 1));
       if (!n) return undefined;
+      // GLASSWING TRAP: shadow grows on ANY action, not just movement
+      if (s.gwTrap) this.gwTrapTick();
       // save migration: moveClock → actionClock
       if (s.actionClock === undefined) { s.actionClock = s.moveClock || 0; delete s.moveClock; }
       s.actionClock = (s.actionClock || 0) + n;
@@ -9975,6 +9977,35 @@
       return best;
     },
 
+    // GLASSWING TRAP TICK (Steve 2026-10-05): the shadow grows on every action.
+    // Called from tickAction. After 3 ticks, the dive resolves.
+    gwTrapTick() {
+      const s = this.state.scholar;
+      const trap = s.gwTrap;
+      if (!trap) return;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      trap.turns++;
+      if (trap.turns >= 3) {
+        const stillThere = (px === trap.tileX && py === trap.tileY);
+        if (stillThere) {
+          const dmg = 20 + Math.floor(Math.random() * 10);
+          s.health = Math.max(0, s.health - dmg);
+          this.say(`Something SLAMS into you from above! ${dmg} damage. Wings thrash — it's GROUNDED.`);
+          this.audioEvent('glasswingDive');
+          s.monster = { id: trap.monsterId, mx: trap.tileX, my: trap.tileY, beamPhase: 'grounded', gwGrounded: 2 };
+          s.gwTrap = null;
+          this.startCombat(trap.monsterId);
+        } else {
+          this.say('A shadow detaches from the clouds — and hits empty dirt where you were. Wings scream, climbing back into the sun.');
+          this.audioEvent('glasswingDive');
+          this.audioEvent('glasswingClimb');
+          s.gwTrap = null;
+        }
+      } else {
+        const darkness = ['faint', 'darker', 'almost black'][trap.turns - 1] || 'darker';
+        this.say(`A shadow on the ground — ${darkness}. Something is falling.`);
+      }
+    },
     // monsters move when you do. they're in the detail grid with you.
     monsterTurn() {
       const s = this.state.scholar;
@@ -9982,6 +10013,16 @@
       if (!m || m.mx === undefined) return;
       const px = s.mx ?? 4, py = s.my ?? 4;
       const mDist = Math.max(Math.abs(px - m.mx), Math.abs(py - m.my));
+      // GLASSWING TRAP TRIGGER (Steve 2026-10-05): when it spots you (within 5),
+      // it VANISHES. No turn-based, no combat UI. The trick is preserved.
+      if (m.id === 'glasswing' && !s.gwTrap && mDist <= 5) {
+        s.gwTrap = { turns: 0, tileX: px, tileY: py, monsterId: m.id };
+        s.monster = null;
+        this.say('The air feels wrong. A high whine, circling — then nothing. Silence.');
+        this.audioEvent('glasswingCircle');
+        this.audioEvent('heartbeat');
+        return;
+      }
       const oldMx = m.mx, oldMy = m.my;
       // HUMMICE hunt by EAR, not eye (Steve 2026-10-04): the hum is a sonar.
       // Within 4 tiles they hear you breathing and close on the sound — dark
