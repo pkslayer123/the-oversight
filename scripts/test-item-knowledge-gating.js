@@ -65,8 +65,9 @@ function lastSayHas(substr) {
     ok('selection: obItems exists', start > 0 && end > start);
     ok('selection: no baseEffect in pick cards', !codeOnly.includes('baseEffect'),
       'the ⚙ effect line must be gone from selection');
-    ok('selection: no stat/effect signals', !/damage|healAmount|\+resolve|kcalEach/i.test(obItems.replace(/kcal/g, '')) || true,
-      'informational only');
+    ok('selection: no stat/effect signals',
+      !/baseEffect|damage|healAmount|\+resolve|kcalEach|cooldown/i.test(codeOnly),
+      'pick cards must carry no mechanical signals — flavor only');
     ok('selection: flavor still shown', obItems.includes('showFlavor'),
       'flavor/description remains the only signal');
     // No other app.js surface shows item baseEffect except the (gated) pack line

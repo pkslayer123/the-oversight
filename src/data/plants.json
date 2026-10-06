@@ -307,7 +307,7 @@
       "georgia",
       "columbus"
     ],
-    "description": "a tree with lobed leaves and acorns",
+    "description": "a tree with lobed leaves and oval nuts in scaly caps",
     "knowledgeLevels": {
       "1": "White oak acorn. Lobed leaves, sweet acorns.",
       "2": "Parts: nut meat (must leach tannins), caps (nothing). White oak = less tannin than red.",
@@ -360,7 +360,7 @@
       "georgia",
       "pacific_nw"
     ],
-    "description": "grass-like leaves that smell like onion",
+    "description": "grass-like leaves with a sharp familiar smell when crushed",
     "knowledgeLevels": {
       "1": "Wild onion. Grass-like, smells like onion.",
       "2": "Parts: bulb (strongest), leaves (mild), flowers (garnish). Whole plant edible.",
@@ -520,7 +520,7 @@
     "regions": [
       "georgia"
     ],
-    "description": "a vine with thick-skinned grapes",
+    "description": "a vine with thick-skinned round fruit",
     "knowledgeLevels": {
       "1": "Muscadine. Thick-skinned wild grapes.",
       "2": "Parts: fruit (eat), leaves (wrap food), vines (cordage).",
@@ -840,7 +840,7 @@
     ],
     "confidence": "high",
     "idDifficulty": 1,
-    "description": "large tree, compound leaves, round green husks that smell citrus-pine, black furrowed bark",
+    "description": "large tree, compound leaves, round green husks that smell citrus-pine, dark furrowed bark",
     "seasons": [
       "fall"
     ],

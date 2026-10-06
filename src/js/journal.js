@@ -189,10 +189,20 @@
         const gdef = (this.data.characterGen.goals || []).find(g => g.id === gid);
         if (gdef) this.journalLearn(vid, 'goal', { id: gid, want: gdef.want }, {});
       } else if (topic === 'past') {
-        const vp = (this.data.villagers || []).find(x => x.id === vid)
-          || (this.data.background_survivors || []).find(x => x.id === vid) || {};
-        if (vp.formerOccupation) this.journalLearn(vid, 'occupation', vp.formerOccupation, { sure: true, via: 'talk' });
-        if (vp.homeRegion) this.journalLearn(vid, 'backstory', `From ${vp.homeRegion}.`, { via: 'talk' });
+        // DEFLECTED PAST LEAK FIX (Steve 2026-10-06): a villager who shuts
+        // down ("I don't talk about before") teaches NOTHING — the old hook
+        // journaled their true occupation anyway, handing the player earned
+        // knowledge the conversation explicitly refused. pastDeflected is set
+        // only in the deflect branch and reset at convo start, so it's a
+        // reliable signal for exactly this ask.
+        let deflected = false;
+        try { deflected = !!(this.convoGet(vid) || {}).pastDeflected; } catch (e) {}
+        if (!deflected) {
+          const vp = (this.data.villagers || []).find(x => x.id === vid)
+            || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+          if (vp.formerOccupation) this.journalLearn(vid, 'occupation', vp.formerOccupation, { sure: true, via: 'talk' });
+          if (vp.homeRegion) this.journalLearn(vid, 'backstory', `From ${vp.homeRegion}.`, { via: 'talk' });
+        }
       }
     } catch (e) {}
     return line;
