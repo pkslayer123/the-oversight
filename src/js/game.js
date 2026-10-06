@@ -1499,11 +1499,11 @@
       // with a knife (4 of 6 roster archetypes had no path to one).
       this.state.codex.recipes['stone_knife'] = { level: 3 };
       // WATER FILTER CHAIN (2026-10-06): the water_filter recipe was a lie —
-      // cloth/charcoal/container had no obtainable source. Now: weave cloth
-      // from plant fiber, rake charcoal from campfire ashes, burn-hollow a
-      // wooden cup. Everyone knows these basics; the materials are the work.
+      // cloth/charcoal had no obtainable source. Now: weave cloth from plant
+      // fiber, rake charcoal from campfire ashes. Containers are assumed
+      // (Steve: not a crafting game). Everyone knows these basics; the
+      // materials are the work.
       this.state.codex.recipes['cloth'] = { level: 3 };
-      this.state.codex.recipes['wooden_cup'] = { level: 3 };
       this.state.codex.recipes['water_filter'] = { level: 3 };
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
       this.state.scholar.dayTicks = 0; this.state.scholar.actionClock = 0; // action clock: fresh budget
