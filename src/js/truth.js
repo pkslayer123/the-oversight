@@ -107,13 +107,19 @@
         `{first} catches you looking and just nods, easy. No flinch, no performance. Whatever they're holding, it isn't guilt.`,
       ],
       observeTellOcc: [
-        `{first} claims to have been a {told}. But you watched them try to {tellVerb} — their hands didn't know the work. {truthCap} have stories in their hands. {first}'s hands are blank.`,
-        `Someone asked {first} about {told} work. The answer was smooth — too smooth, like reciting. Then later, doing something {truth}s do without thinking, {first} fumbled it completely.`,
-        `{first} says "{told}". But their calluses, their posture, the way they hold a tool — that's not {told} work. That's {truth} work, or no work at all.`,
-        `{first} dropped the {told} act for half a second when they thought nobody was looking — the {truth} underneath showed through like bone.`,
+        // KNOWLEDGE GATING (Steve 2026-10-06): these lines used to name the
+        // TRUE trade in the narrator's voice ("{truthCap} have stories in
+        // their hands") — handing the player a truth they hadn't earned. The
+        // observation earns a CRACK (the cover is false), never the truth.
+        // The truth comes from slips, gossip, or confrontation.
+        `{first} claims to have been a {told}. But you watched them try to {tellVerb} — their hands didn't know the work. People who've done that work have stories in their hands. {first}'s hands are blank.`,
+        `Someone asked {first} about {told} work. The answer was smooth — too smooth, like reciting. Then later, doing something a {told} does without thinking, {first} fumbled it completely.`,
+        `{first} says "{told}". But their calluses, their posture, the way they hold a tool — that's not {told} work. That's someone else's work, or no work at all.`,
+        `{first} dropped the {told} act for half a second when they thought nobody was looking — something else showed through, quick as a blink. Not {told}. Gone before you could name it.`,
       ],
       observeTellOrigin: [
-        `{first} says they're from {told}. But you heard them mention "{truth}" like it was home — then catch themselves.`,
+        // same gating as occupation: the crack, never the true origin word.
+        `{first} says they're from {told}. But twice now they've named streets that don't exist in {told} — then gone very quiet.`,
         `{first} claims {told}. Their accent slips sometimes. Not {told}. Somewhere else.`,
         `You asked {first} about {told} — the streets, the weather, the way people talk. They answered wrong in a way a local never would.`,
       ],
@@ -179,7 +185,9 @@
         `"{first}'s story has a fresh coat of paint." {teller} taps the table. "Scrape it off and you get {truthWord}. Just don't scrape it in front of them."`,
       ],
       slipOccupation: [
-        `"{told}, huh?" {first} nods — then, an hour later, mentions something only {atruth} would know. They catch themselves. Too late.`,
+        // same gating rule: the slip earns a crack, not the narrator naming
+        // the true trade ("something only a {atruth} would know" was a leak).
+        `"{told}, huh?" {first} nods — then, an hour later, drops a shop-talk detail no {told} would ever get right. They catch themselves. Too late.`,
         `{first} starts a story with "back when I was {atold}..." then corrects to something else mid-sentence. The correction is worse than the slip.`,
         `Someone asks {first} a shop-talk question about {told} work. The pause before the answer is long enough to hear.`,
       ],
@@ -188,8 +196,10 @@
         `{first} names a street, a diner, a high school — all in {truth}. Then catches your eye and goes very quiet.`,
       ],
       slipGoal: [
-        `{first} says they want {told}. But everything they DO points at {truth}.`,
-        `{first} claims {told}, then spends the whole evening doing the exact thing someone who wants {truth} would do.`,
+        // goal ids are raw ("belong") — truthSlip maps them through
+        // goalWantText first, so these read as English, not ids.
+        `{first} says they want {told}. But everything they DO says they want {truth}.`,
+        `{first} claims {told} — then spends the whole evening doing the exact thing someone who wants {truth} would do.`,
       ],
       // cache-theft confessions: the robber admits it. {what} = what was stolen.
       // Per-game no-repeat applies here too — thieves don't share a script.
@@ -370,16 +380,31 @@
 
     // lieScrubLine(line, truth, cover): replace the TRUTH occupation/origin
     // in a finished line with the cover story, the way a careful liar would.
-    // Needed for 'personal' talk lines: they're baked at character creation
-    // with {occ}/{origin} already filled from the TRUE values, so the
-    // vp-field temp-swap in the convoAskTopic wrapper can't hide the truth
-    // there. Case-insensitive, whole-word(ish); tolerates a trailing plural.
+    // Case-insensitive, whole-word(ish); tolerates a trailing plural.
     // (Steve 2026-10-06)
     lieScrubLine(line, truth, cover) {
       if (!line || !truth || !cover) return line;
       const esc = String(truth).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp('\\b' + esc + 's?\\b', 'gi');
       return String(line).replace(re, cover);
+    },
+
+    // scrubLiesFromLine(vid, line): run every finished talk line past all of
+    // this person's UNCONFESSED occupation/origin lies, replacing the truth
+    // with the cover. Baked lines carry {occ}/{origin} on ANY topic (goal
+    // lines do: "I was {an_occ} in {origin}"), so the scrub can't be
+    // topic-scoped — the round-2 personal-only scrub left siblings leaking
+    // through 'goal' and every other topic. (Steve 2026-10-06)
+    scrubLiesFromLine(vid, line) {
+      if (!line) return line;
+      try {
+        const lies = this.npcLies(vid) || {};
+        for (const f of ['occupation', 'origin']) {
+          const lf = lies[f];
+          if (lf && !lf.confessed && lf.truth && lf.told) line = this.lieScrubLine(line, lf.truth, lf.told);
+        }
+      } catch (e) {}
+      return line;
     },
 
     // ---- claim tracking ----
@@ -394,14 +419,18 @@
       // THE AHA MOMENT: surface it dramatically in the moment.
       if (last && last.claim !== claim) {
         const first = this.firstRef(vid);
-        const beats = [
-          `❓ Wait — ${first} told you "${last.claim}" before. Now it's "${claim}".`,
-          `❓ That's not what ${first} said last time. "${last.claim}" then, "${claim}" now.`,
-        ];
+        // goal claims are raw ids — render the human phrase, never the id.
+        const oldW = field === 'goal' ? this.goalWantText(last.claim) : last.claim;
+        const nowW = field === 'goal' ? this.goalWantText(claim) : claim;
+        const beats = field === 'goal'
+          ? [`❓ Wait — ${first} said they wanted ${oldW} before. Now it's ${nowW}.`,
+             `❓ That's not what ${first} said last time. Wanted ${oldW} then, ${nowW} now.`]
+          : [`❓ Wait — ${first} told you "${oldW}" before. Now it's "${nowW}".`,
+             `❓ That's not what ${first} said last time. "${oldW}" then, "${nowW}" now.`];
         try { this.say(beats[Math.floor(Math.random() * beats.length)]); } catch (e) {}
         this.addDoubt(vid, 'contradiction',
           this.doubtText(vid, 'contradiction', { field, old: last.claim, now: claim, oldDay: last.day }),
-          [`said "${last.claim}" (day ${last.day})`, `now says "${claim}" (day ${day()})`]);
+          [`said "${oldW}" (day ${last.day})`, `now says "${nowW}" (day ${day()})`]);
       }
       arr.push({ claim, day: day(), via: 'talk' });
       if (arr.length > 6) arr.shift();
@@ -529,17 +558,17 @@
 
     observationTell(vid, lie) {
       const first = this.nameFirst(vid);
-      const truth = lie.truth, told = lie.told;
+      const told = lie.told;
       if (lie.field === 'occupation') {
-        // {truthCap} is the pluralized trade ("Ranchers have stories in
-        // their hands"); {tellVerb} is what the true trade's hands would know.
+        // {tellVerb} is what the CLAIMED trade's hands should know — generic
+        // skill, never the true trade's name. The template never receives the
+        // truth, so it can't leak it (knowledge gating, Steve 2026-10-06).
         return this.drawTruthLine('observeTellOcc', vid, {
-          told, truth, truthCap: this.capFirst(truth) + 's',
-          tellVerb: this.occTellVerb(truth),
+          told, tellVerb: this.occTellVerb(told),
         });
       }
       if (lie.field === 'origin') {
-        return this.drawTruthLine('observeTellOrigin', vid, { told, truth });
+        return this.drawTruthLine('observeTellOrigin', vid, { told });
       }
       return `Something ${first} does doesn't match something ${first} said.`;
     },
@@ -787,7 +816,7 @@
             id: 'gossip_' + Math.random().toString(36).slice(2, 9),
             day: day(),
             dims: { who: vid, honest: repHit },
-            text: `${name} admitted lying about ${lieField === 'occupation' ? 'what they did before' : lieField === 'origin' ? 'where they\'re from' : 'what they want'}. Said "${lie.told}", actually "${lie.truth}".`,
+            text: `${name} admitted lying about ${lieField === 'occupation' ? 'what they did before' : lieField === 'origin' ? 'where they\'re from' : 'what they want'}. Said "${lieField === 'goal' ? this.goalWantText(lie.told) : lie.told}", actually "${lieField === 'goal' ? this.goalWantText(lie.truth) : lie.truth}".`,
             heard: [],
           });
           // Their reputation for honesty drops village-wide
@@ -875,14 +904,21 @@
       if (!lie || lie.confessed) return;
       const poolKey = lie.field === 'occupation' ? 'slipOccupation'
         : lie.field === 'origin' ? 'slipOrigin' : 'slipGoal';
-      const anTruth = /^[aeiou]/i.test(lie.truth) ? 'an' : 'a';
-      const anTold = /^[aeiou]/i.test(lie.told) ? 'an' : 'a';
+      const isGoal = lie.field === 'goal';
+      // goal claims are raw ids — render the human phrase, never the id
+      // ("says they want belong" is broken English).
+      const toldW = isGoal ? this.goalWantText(lie.told) : lie.told;
+      const truthW = isGoal ? this.goalWantText(lie.truth) : lie.truth;
+      const anTruth = /^[aeiou]/i.test(truthW) ? 'an' : 'a';
+      const anTold = /^[aeiou]/i.test(toldW) ? 'an' : 'a';
       const text = this.drawTruthLine(poolKey, vid, {
-        truth: lie.truth, told: lie.told, atruth: anTruth + ' ' + lie.truth, atold: anTold + ' ' + lie.told,
+        truth: truthW, told: toldW,
+        atruth: isGoal ? truthW : anTruth + ' ' + truthW,
+        atold: isGoal ? toldW : anTold + ' ' + toldW,
       });
       this.say(`👀 ${text}`);
       this.addDoubt(vid, 'slip', this.doubtText(vid, 'slip', { text }),
-        [`claimed "${lie.told}"`, `slipped: ${text.slice(0, 80)}...`]);
+        [`claimed "${toldW}"`, `slipped: ${text.slice(0, 80)}...`]);
       try { this.remember(vid, 'slip', 'said something revealing'); } catch (e) {}
     },
 
@@ -909,6 +945,51 @@
 
   // ============ WRAPPERS ============
 
+  // 0. fillTalkLine: THE choke point. Every baked villager line in the game
+  // (openings, topic answers, "tell me more" beats, small talk, reactions)
+  // fills {an_occ}/{occ}/{origin} here. Wrapping the entry points one by one
+  // left siblings leaking — the pastdeep "tell me more" beat bypasses
+  // convoAskTopic entirely. So the lie lives HERE: while an
+  // occupation/origin/goal lie is unconfessed, the record fields read as the
+  // COVER during the fill (correct "an"/"a" included), and the finished line
+  // gets the scrub as a backstop. (Steve 2026-10-06)
+  const origFillTalkLine = Game.fillTalkLine;
+  if (origFillTalkLine) Game.fillTalkLine = function (line, v) {
+    const vid = v && v.id;
+    const lies = vid ? (this.npcLies(vid) || {}) : {};
+    const swaps = [];
+    try {
+      for (const [f, key] of [['occupation', 'formerOccupation'], ['origin', 'homeRegion'], ['goal', 'goal']]) {
+        const lf = lies[f];
+        if (lf && !lf.confessed && v && v[key] && lf.told) { swaps.push([key, v[key]]); v[key] = lf.told; }
+      }
+    } catch (e) {}
+    let out;
+    try { out = origFillTalkLine.call(this, line, v); }
+    finally { try { for (const [k, val] of swaps) v[k] = val; } catch (e) {} }
+    try { return vid ? this.scrubLiesFromLine(vid, out) : out; }
+    catch (e) { return out; }
+  };
+
+  // 0b. convoThreadBeat: the "tell me more" follow-up beats pick their pool
+  // by the CURRENT goal (goalFollow[goal]) before fillTalkLine runs — a goal
+  // liar would discuss their TRUE goal's follow-ups. The swap covers pool
+  // selection; the fillTalkLine wrapper covers the fill. (Steve 2026-10-06)
+  const origThreadBeat = Game.convoThreadBeat;
+  if (origThreadBeat) Game.convoThreadBeat = function (vid) {
+    const v = this.vpOf(vid);
+    const lies = this.npcLies(vid) || {};
+    const swaps = [];
+    try {
+      for (const [f, key] of [['occupation', 'formerOccupation'], ['origin', 'homeRegion'], ['goal', 'goal']]) {
+        const lf = lies[f];
+        if (lf && !lf.confessed && v && v[key] && lf.told) { swaps.push([key, v[key]]); v[key] = lf.told; }
+      }
+    } catch (e) {}
+    try { return origThreadBeat.call(this, vid); }
+    finally { try { for (const [k, val] of swaps) v[k] = val; } catch (e) {} }
+  };
+
   // 1. convoAskTopic: substitute lies, track claims.
   // Temp-swap the truth with the lie so fillTalkLine AND journal.js's wrapper
   // both see the lie. The journal records what they TOLD you.
@@ -916,12 +997,32 @@
   if (origAskTopic) Game.convoAskTopic = function (vid, topic) {
     const lie = this.getActiveLie(vid, topic);
     if (!lie) {
-      const line = origAskTopic.call(this, vid, topic);
+      const vp = this.vpOf(vid);
+      const lies0 = this.npcLies(vid) || {};
+      // temp-swap here too: the journal wrapper (inside origAskTopic)
+      // records what they TOLD you — while a lie is live that's the cover,
+      // on every topic, not just the lie's own topic.
+      const swaps0 = [];
+      try {
+        for (const [f, key] of [['occupation', 'formerOccupation'], ['origin', 'homeRegion']]) {
+          const lf = lies0[f];
+          if (lf && !lf.confessed && vp && vp[key]) { swaps0.push([key, vp[key]]); vp[key] = lf.told; }
+        }
+      } catch (e) {}
+      let raw;
+      try { raw = origAskTopic.call(this, vid, topic); }
+      finally { try { for (const [k, val] of swaps0) vp[k] = val; } catch (e) {} }
+      // the line is scrubbed even on the "honest" branch: while a lie is
+      // live, the cover is what they told you — the claim baseline must
+      // match what the player heard, or a later contradiction beat would
+      // name a truth the player never heard (knowledge leak).
+      const line = this.scrubLiesFromLine(vid, raw);
       // track truthful claims too (baseline for future contradictions)
       try {
-        const vp = this.vpOf(vid);
-        if ((topic === 'past' || topic === 'personal') && vp.formerOccupation) this.trackClaimSilent(vid, 'occupation', vp.formerOccupation);
-        if ((topic === 'past' || topic === 'personal') && vp.homeRegion) this.trackClaimSilent(vid, 'origin', vp.homeRegion);
+        const occHeard = (lies0.occupation && !lies0.occupation.confessed) ? lies0.occupation.told : vp.formerOccupation;
+        const orgHeard = (lies0.origin && !lies0.origin.confessed) ? lies0.origin.told : vp.homeRegion;
+        if ((topic === 'past' || topic === 'personal') && vp.formerOccupation) this.trackClaimSilent(vid, 'occupation', occHeard);
+        if ((topic === 'past' || topic === 'personal') && vp.homeRegion) this.trackClaimSilent(vid, 'origin', orgHeard);
         if (topic === 'goal') this.trackClaimSilent(vid, 'goal', this.npcGoal(vid));
       } catch (e) {}
       return line;
@@ -940,13 +1041,10 @@
     let line;
     try { line = origAskTopic.call(this, vid, topic); }
     finally { for (const [k, val] of swaps) vp[k] = val; }
-    // PERSONAL talk lines are baked at generation from the TRUE
-    // occupation/origin — the field swap above can't reach them. Scrub the
-    // truth out of the finished line so "I'd like to know you better" can't
-    // hand the player the truth for free. (Steve 2026-10-06)
-    if (topic === 'personal' && line && (lie.field === 'occupation' || lie.field === 'origin')) {
-      line = this.lieScrubLine(line, lie.truth, lie.told);
-    }
+    // SCRUB (Steve 2026-10-06, generalized round 3): baked talk lines carry
+    // {occ}/{origin} on EVERY topic — 'personal' was just the first one
+    // caught. The scrub runs against all live lies, every topic.
+    line = this.scrubLiesFromLine(vid, line);
     // track the false claim (may trigger contradiction doubt)
     this.trackClaim(vid, lie.field, lie.told);
     // BAD LIARS SLIP IN CONVERSATION: non-pathological liars sometimes get
@@ -967,11 +1065,12 @@
     } catch (e) {}
     if (Math.random() < slipP) {
       const first = this.nameFirst(vid);
-      const truthWord = lie.truth;
-      const anTruth = /^[aeiou]/i.test(truthWord) ? 'an' : 'a';
+      // the slip earns a crack, never the truth: naming the true trade here
+      // ("something only a rancher would know") was the same narrator leak
+      // as the old observeTellOcc lines (Steve 2026-10-06).
       const slips = [
         ' ...' + first + ' catches themself mid-sentence. "I mean \u2014 ' + lie.told + '. That\u2019s what I said." The correction lands wrong.',
-        ' A detail doesn\u2019t fit. ' + first + ' said "' + lie.told + '" \u2014 but then mentions something that only makes sense for ' + anTruth + ' ' + truthWord + '. They don\u2019t notice. You do.',
+        ' A detail doesn\u2019t fit. ' + first + ' said "' + lie.told + '" \u2014 but then mentions something no ' + lie.told + ' would ever say. They don\u2019t notice. You do.',
         ' "' + lie.told + '." ' + first + ' says it a little too firmly. Like they\u2019re convincing themself, not you.',
       ];
       const slipText = slips[Math.floor(Math.random() * slips.length)];

@@ -426,13 +426,19 @@
     plot.active = false;
     if (!this.isPlayer(plot.target)) return this.simNpcAmbush(plot);
     const leader = this.whoTag(plot.leader);
-    const acc = plot.accomplices.map(a => this.displayName(a));
-    const flank = acc.length >= 2 ? `${acc[0]} and ${acc[1]} are suddenly on your other sides`
-      : acc.length === 1 ? `${acc[0]} is suddenly on your other side`
-      : `there's suddenly someone on your other side`;
+    const Cap = (s) => this.capFirst(s);
+    // the inviter walked out WITH you — they're already beside you. The
+    // flank is everyone else closing in. (Listing the inviter again made
+    // one person read as two — a coherence break the player could feel.)
+    const others = (plot.accomplices || []).filter(a => a !== plot.inviter).map(a => this.displayName(a));
+    let beat2;
+    if (others.length >= 2) beat2 = `${others[0]} and ${others[1]} are suddenly on your other sides — not wandering. Placed.`;
+    else if (others.length === 1) beat2 = `${others[0]} is suddenly on your other side — not wandering. Placed.`;
+    else if (plot.inviter === plot.leader) beat2 = `nobody else in sight. Just ${leader} — close now, too close. Not wandering. Placed.`;
+    else beat2 = `${this.displayName(plot.inviter)} was walking beside you a moment ago. Now they're behind you. Too close.`;
     const tells = plot.tells;
     this.say(`You walk out with ${this.displayName(plot.inviter)}. ${tells.length >= 3 ? 'Every warning bell you own is ringing.' : tells.length ? 'Something feels off, but you go anyway.' : 'Just a walk. Just people.'}`);
-    this.say(`Halfway there, the shape of it changes. ${leader} stops walking. ${flank} — not wandering. Placed.`);
+    this.say(`Halfway there, the shape of it changes. ${Cap(leader)} stops walking. ${beat2}`);
     this.say(`"${pick([
       'You\'ve had this coming.',
       'Don\'t make this worse than it is.',
@@ -507,14 +513,23 @@
         ? plot.accomplices[Math.floor(R() * plot.accomplices.length)]
         : plot.leader;
       const wtag = this.whoTag(waver);
+      const Wtag = this.capFirst(wtag);
+      // when the leader came alone, the waver IS the leader — "the leader
+      // snaps: shut it" would be self-directed nonsense. The crack reads
+      // differently when there's nobody else to perform for.
+      const alone = waver === plot.leader;
       // ESCALATION (Steve 2026-10-05): each talk is different. The plan frays.
       const n = plot.stalled;
       if (n === 1) {
-        this.say(`You talk — hands visible, voice level. ${wtag} looks away. Looks at the ground. The plan is leaking.`);
+        this.say(`You talk — hands visible, voice level. ${Wtag} looks away. Looks at the ground. The plan is leaking.`);
       } else if (n === 2) {
-        this.say(`You keep talking. ${wtag} is crying now, quietly. "I didn't — we weren't going to —" The leader snaps: "Shut it." But the crack is there.`);
+        this.say(alone
+          ? `You keep talking. ${Wtag} is crying now, quietly. "I didn't — we weren't going to —" They catch themselves, hard. "Shut it," they hiss — at you, at themselves, at the whole idea. But the crack is there.`
+          : `You keep talking. ${Wtag} is crying now, quietly. "I didn't — we weren't going to —" The leader snaps: "Shut it." But the crack is there.`);
       } else {
-        this.say(`You talk through the shaking. ${wtag} has stopped pretending. "I'm sorry," they whisper. Not to you — to the leader. The whole thing is coming apart.`);
+        this.say(alone
+          ? `You talk through the shaking. ${Wtag} has stopped pretending. "I'm sorry," they whisper — and it lands wrong, because there's nobody else here to be sorry to but you. The whole thing is coming apart.`
+          : `You talk through the shaking. ${Wtag} has stopped pretending. "I'm sorry," they whisper. Not to you — to the leader. The whole thing is coming apart.`);
       }
       try { this.addDoubt(waver, 'observation', `${wtag} wavered when you talked instead of running. They don't want this.`); } catch (e) {}
       return { continue: true, line: `A long second. Nobody moves. You've bought a little distance — use it.` };
@@ -533,7 +548,7 @@
       const breakLine = stillUp <= 0 ? `That's all of them. Nobody's getting up to argue.`
         : stillUp === 1 ? `And the last one standing just... stops. This was supposed to be easy. It isn't. They back off, hands up.`
         : `And the other ${stillUp === 2 ? 'two' : stillUp} just... stop. This was supposed to be easy. It isn't. They back off, hands up.`;
-      this.say(`${this.whoTag(target)} goes down — not dead, done. ${breakLine}`);
+      this.say(`${this.capFirst(this.whoTag(target))} goes down — not dead, done. ${breakLine}`);
       plot.foughtOff = true;
       // corpse only if you finished someone — you didn't; they're down
       return this.ambushAftermath(plot, 'fought_off');
@@ -549,7 +564,7 @@
       continue: true,
       line: pick([
         `"Stay— stay back!" Someone's voice cracks on it. Nobody's steady here.`,
-        `Breathing hard all around. ${this.whoTag(plot.leader)}'s hands won't stop shaking — but they haven't backed off either.`,
+        `Breathing hard all around. ${this.capFirst(this.whoTag(plot.leader))}'s hands won't stop shaking — but they haven't backed off either.`,
         `"We can still—" ${this.whoTag(target)} doesn't finish. Nobody finishes anything right now.`,
       ]),
     };
@@ -623,7 +638,10 @@
       const wit = this.witnesses(6) || [];
       plot.witnesses = wit.filter(id => id !== plot.leader && !plot.accomplices.includes(id)).slice(0, 3);
     } catch (e) { plot.witnesses = []; }
-    this.say(`Back at Haven, the story is already moving without you. Three voices, one story, rehearsed on the walk back.`);
+    this.say(`Back at Haven, the story is already moving without you. ${(() => {
+      const n = [plot.leader, ...((plot.accomplices || []).filter(Boolean))].filter(Boolean).length;
+      return n <= 1 ? 'One voice' : n === 2 ? 'Two voices' : n === 3 ? 'Three voices' : `${n} voices`;
+    })()}, one story, rehearsed on the walk back.`);
     return { aftermath: true, caseId: c.id, outcome };
   },
   openCase(plot, charge) {
@@ -678,7 +696,7 @@
     }
     if (why) c.evidence.push({ day: this.state.scholar.day, text: why, delta });
   },
-  // cover stories the 3 tell
+  // cover stories the accused tell
   seedCoverStory(c, simHeard) {
     // idempotent: the case seeds its cover once (see openCase). Re-seeding
     // would clobber found inconsistencies mid-investigation.
@@ -693,10 +711,19 @@
     ];
     const st = pick(stories);
     c.coverStory = st.text;
-    // plant the inconsistencies the detective work will find
+    // plant the inconsistencies the detective work will find. Attribute them
+    // to REAL people: plots with fewer than 2 accomplices used to plant
+    // claims[undefined] (accomplices[1] on a 2-person plot), leaving an
+    // inconsistency no pressing could ever catch. A solo plotter contradicts
+    // their OWN first telling — selfContra.
+    const accs = [plot.leader, ...((plot.accomplices || []).filter(Boolean))].filter(Boolean);
+    const a1 = accs[1] || accs[0], a2 = accs[2] || accs[1] || accs[0];
+    const mkInc = (field, first, second, alt) => alt === accs[0]
+      ? { field, claims: { [accs[0]]: first }, altClaim: second, selfContra: true, found: false }
+      : { field, claims: { [accs[0]]: first, [alt]: second }, found: false };
     c.inconsistencies = [
-      { field: 'time', claims: { [plot.leader]: 'dusk', [plot.accomplices[0]]: 'full dark' }, found: false },
-      { field: 'place', claims: { [plot.leader]: 'the creek', [plot.accomplices[1]]: 'near the ridge' }, found: false },
+      mkInc('time', 'dusk', 'full dark', a1),
+      mkInc('place', 'the creek', 'near the ridge', a2),
     ];
     try {
       this.seedGossip('ambush_cover_' + c.id, st.dims, [plot.leader, ...plot.accomplices]);
@@ -731,8 +758,11 @@
     try { this.tickAction(32); } catch (e) {}
     const plot = (this.betrayalState().plots || []).find(p => p.id === c.plotId) || {};
     const dropper = pick(plot.accomplices || []);
-    this.say(`The ground out there is churned. Three sets of feet circling one. And something dropped in the scuffle — ${dropper ? this.whoTag(dropper) + '\'s, by the look of it.' : 'a strip of cloth.'} The earth keeps better records than people.`);
-    this.moveBelief(c, -10, 'site evidence: three on one, dropped belongings');
+    // count the feet honestly — plots run 1 to 3 attackers, never "three" by law
+    const nfeet = [plot.leader, ...((plot.accomplices || []).filter(Boolean))].filter(Boolean).length;
+    const feet = nfeet <= 1 ? 'One set of feet' : nfeet === 2 ? 'Two sets of feet' : nfeet === 3 ? 'Three sets of feet' : `${nfeet} sets of feet`;
+    this.say(`The ground out there is churned. ${feet} circling one. And something dropped in the scuffle — ${dropper ? this.whoTag(dropper) + '\'s, by the look of it.' : 'a strip of cloth.'} The earth keeps better records than people.`);
+    this.moveBelief(c, -10, `site evidence: ${nfeet} on one, dropped belongings`);
     return true;
   },
   // (c) witnesses: name who saw you leave together
@@ -745,9 +775,12 @@
     const you = this.isPlayer(c.target);
     const tname = you ? 'you' : this.disp(c.target);
     if (!wits.length) { this.say(`No one saw ${tname} leave. Just trees.`); return null; }
-    const walked = you ? 'saw you walk out together — all four of you, friendly as anything'
+    // count the walk honestly — the party was the plotters plus the target
+    const nwalk = (c.accused || []).length + 1;
+    const all = nwalk <= 2 ? 'both of you' : nwalk === 3 ? 'all three of you' : nwalk === 4 ? 'all four of you' : `all ${nwalk} of you`;
+    const walked = you ? `saw you walk out together — ${all}, friendly as anything`
       : `saw ${tname} walk out with them — friendly as anything`;
-    this.say(`${wits.map(w => this.whoTag(w)).join(', ')} ${walked}. That much, at least, nobody can rehearse away.`);
+    this.say(`${this.capFirst(wits.map(w => this.whoTag(w)).join(', '))} ${walked}. That much, at least, nobody can rehearse away.`);
     this.moveBelief(c, -8 * Math.min(2, wits.length), 'witnesses saw them leave together');
     return true;
   },
@@ -770,9 +803,18 @@
     }
     inc.found = true;
     const other = c.accused.find(a => a !== vid && inc.claims[a]);
-    const line = `"Walk me through it again. Slowly." ${this.whoTag(vid)} says ${inc.claims[vid]}. But ${other ? this.whoTag(other) + ' said ' + inc.claims[other] + '.' : 'that\'s not what the ground says.'} Somebody's lying.`;
+    let line;
+    if (inc.selfContra) {
+      line = `"Walk me through it again. Slowly." ${this.whoTag(vid)} says ${inc.claims[vid]}. But the first telling was ${inc.altClaim}. Same mouth, different story. Somebody's lying.`;
+    } else {
+      line = `"Walk me through it again. Slowly." ${this.whoTag(vid)} says ${inc.claims[vid]}. But ${other ? this.whoTag(other) + ' said ' + inc.claims[other] + '.' : 'that\'s not what the ground says.'} Somebody's lying.`;
+    }
     this.say(line);
-    try { this.addDoubt(vid, 'contradiction', `${this.displayName(vid)} said ${inc.claims[vid]} about the ${inc.field}; the others said otherwise.`); } catch (e) {}
+    try {
+      this.addDoubt(vid, 'contradiction', inc.selfContra
+        ? `${this.displayName(vid)} contradicted their own first telling about the ${inc.field} (${inc.claims[vid]} vs ${inc.altClaim}).`
+        : `${this.displayName(vid)} said ${inc.claims[vid]} about the ${inc.field}; the others said otherwise.`);
+    } catch (e) {}
     this.moveBelief(c, -12, `caught inconsistency (${inc.field})`);
     return true;
   },
@@ -790,12 +832,12 @@
     this.say(`Alone with ${name}. "Whoever talks first gets leniency. That's the offer. It expires when I walk away."`);
     if (R() < chance) {
       c.flipped = w;
-      this.say(`${name} breaks. All of it — whose idea, what they planned, what they told the village after. The rehearsed story comes apart like wet paper.`);
+      this.say(`${this.capFirst(name)} breaks. All of it — whose idea, what they planned, what they told the village after. The rehearsed story comes apart like wet paper.`);
       try { this.addDoubt(c.accused.find(a => a !== w) || w, 'contradiction', `${name} confessed and named the others.`); } catch (e) {}
       this.moveBelief(c, -45, 'the weakest talked');
       return true;
     }
-    this.say(`${name} stares at the ground. "I can't." Maybe later. Maybe never. The offer stands — for now.`);
+    this.say(`${this.capFirst(name)} stares at the ground. "I can't." Maybe later. Maybe never. The offer stands — for now.`);
     return false;
   },
   // (f) say nothing
@@ -827,7 +869,7 @@
       this.say(`You call a moot. The fire gets built up. Everyone comes — even the ones who'd rather not.`);
     } else {
       const n = (() => { try { return this.whoTag(caller); } catch (e) { return 'Someone'; } })();
-      this.say(`${n} calls the moot. The fire gets built up — word travels fast, and everyone comes.`);
+      this.say(`${this.capFirst(n)} calls the moot. The fire gets built up — word travels fast, and everyone comes.`);
     }
     try { this.tickAction(48); } catch (e) {}
     return this.conductTrial(c);
@@ -1043,7 +1085,7 @@
       } catch (e) { return 'Someone'; }
     })();
     this.say(`The fire is built high. Nobody speaks while the count is taken — you can hear the wind past the edge of the light.`);
-    this.say(`${counter} counts on their fingers, twice, like they don't trust the first number. Then, to the fire: "${guilty} for guilty. ${total - guilty} against."`);
+    this.say(`${this.capFirst(counter)} counts on their fingers, twice, like they don't trust the first number. Then, to the fire: "${guilty} for guilty. ${total - guilty} against."`);
     if (convicted) {
       this.say(`A pause long enough to live in. Someone's breath catches. Then: "Guilty." Nobody looks at anybody.`);
     } else {
@@ -1143,7 +1185,7 @@
         try { if (this.createCorpse) { /* not dead — no corpse */ } } catch (e) {}
       }
       if (c.flipped && !this.isPlayer(c.flipped)) {
-        this.say(`${this.whoTag(c.flipped)} talked first. The village remembers that too — leniency, and a long probation.`);
+        this.say(`${this.capFirst(this.whoTag(c.flipped))} talked first. The village remembers that too — leniency, and a long probation.`);
       }
     } else if (path === 'weregild') {
       // verb agreement: "you" takes "pay", a single third person takes "pays"
@@ -1577,7 +1619,7 @@
       this.say(`The trader opens the cart. Fair prices, sharp eyes. You trade — and hear news of two other villages you'd never heard named.`);
       bs.strangersHeard = (bs.strangersHeard || 0) + 2;
     } else if (how === 'invite' && (vis.type === 'fleeing' || vis.type === 'curious')) {
-      this.say(`${vis.name} ${vis.type === 'fleeing' ? 'cries — relief, mostly' : 'grins wide'}. Haven grows by one.`);
+      this.say(`${this.capFirst(vis.name)} ${vis.type === 'fleeing' ? 'cries — relief, mostly' : 'grins wide'}. Haven grows by one.`);
       // they join the roster as a background survivor
       const nid = 'visjoin_' + vis.day;
       v.roster = v.roster || []; v.roster.push(nid);
@@ -2057,12 +2099,12 @@
     if (this.state.systemArrived) {
       // post-System: the accusation is CONTENT. sysSay + a case-file sheet offer.
       this.sysSay(`🔴 LIVE BREAKING NEWS! A MOOT has been CALLED! ${aname.toUpperCase()} points at YOU — ${this.chargeLine(charge).toUpperCase()}! The gamblers are SCRAMBLING! Your CASE FILE is ready — check it before the fire decides your fate!`);
-      this.say(`${aname} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. ${c.mootIn} days until the moot. Use them.`);
+      this.say(`${this.capFirst(aname)} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. ${c.mootIn} days until the moot. Use them.`);
       try { this.state.scholar.caseDossierOffer = c.id; } catch (e) {}
     } else {
       // pre-System: diegetic. Tightened say + journal note; the case file
       // waits in the self bar (⚖️ Case file).
-      this.say(`${aname} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. There's going to be a moot — ${c.mootIn} days. Use them.`);
+      this.say(`${this.capFirst(aname)} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. There's going to be a moot — ${c.mootIn} days. Use them.`);
     }
     try { this.journalNote && this.journalNote('village', 'trial', `Accused of ${charge} by ${this.displayName(accuser)}. Moot in ${c.mootIn} days.`); } catch (e) {}
     return c;
@@ -2120,7 +2162,20 @@
     let sp = 10;
     try { if (this.hasAbility('social_read')) sp += 6; } catch (e) {}
     const delta = Math.max(2, Math.round((sp + this.trustInPlayer() * 0.3) * dim));
-    this.say(`You stand and speak. No performance — the truth as you lived it, and the names of people who know you. ${delta > 8 ? 'Some heads nod before they catch themselves.' : 'The fire listens. Whether it believes is another matter.'}`);
+    // the room's reaction rotates — never the same beat twice in a row.
+    // The "nod" tails only fire when the defense is actually landing.
+    c.speakTails = c.speakTails || { nod: 0, flat: 0 };
+    const bucket = delta > 8 ? 'nod' : 'flat';
+    const tails = bucket === 'nod'
+      ? ['Some heads nod before they catch themselves.',
+         'A murmur moves around the fire — not agreement, but listening.',
+         'Someone in the back says "huh" under their breath. It carries.']
+      : ['The fire listens. Whether it believes is another matter.',
+         'A few faces soften. A few harden.',
+         'Nobody interrupts. In this village, that counts as respect.',
+         'Your voice holds. That surprises you more than anyone.'];
+    const tail = tails[c.speakTails[bucket]++ % tails.length];
+    this.say(`You stand and speak. No performance — the truth as you lived it, and the names of people who know you. ${tail}`);
     this.moveBelief(c, delta, 'the accused spoke in their defense');
     this.notePlayerEvidence(c, 'You spoke in your defense at the fire.');
     try { this.tickAction(24); } catch (e) {}
@@ -2139,7 +2194,7 @@
       return false;
     }
     const names = friends.map(f => this.whoTag(f)).join(' and ');
-    this.say(`${names} ${friends.length > 1 ? 'stand' : 'stands'} with you. "I know this one. Whatever happened, hear them out." It matters who your friends are.`);
+    this.say(`${this.capFirst(names)} ${friends.length > 1 ? 'stand' : 'stands'} with you. "I know this one. Whatever happened, hear them out." It matters who your friends are.`);
     this.moveBelief(c, 8 + friends.length * 5, 'character witnesses vouched');
     this.notePlayerEvidence(c, `${friends.map(f => this.displayName(f)).join(' and ')} vouched for you.`);
     try { this.tickAction(24); } catch (e) {}
@@ -2366,7 +2421,8 @@
   },
   inconsistencyLine(c, inc) {
     const claims = Object.entries(inc.claims || {}).map(([k, v]) => `${this.whoTag(k)} said "${v}"`).join('; ');
-    return `The ${inc.field}: ${claims}. Somebody's lying.`;
+    const selfBit = inc.selfContra ? ` — but the first telling was "${inc.altClaim}"` : '';
+    return `The ${inc.field}: ${claims}${selfBit}. Somebody's lying.`;
   },
   // the dossier's strategic actions: speak, witnesses, press, investigate,
   // expose, force the moot, flee. Each appears only while it's still live.
@@ -2423,7 +2479,7 @@
       if (c.playerRole !== 'accused' || c.status !== 'open') continue;
       if (day - c.day >= (c.mootIn || 2)) {
         const aname = this.whoTag(c.accuser);
-        this.say(`${aname} has gathered enough voices. This is it — tonight, at the fire.`);
+        this.say(`${this.capFirst(aname)} has gathered enough voices. This is it — tonight, at the fire.`);
         this.callMoot(c.id, c.accuser);
       }
     }
