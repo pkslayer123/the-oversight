@@ -38,6 +38,8 @@ const TARGETS = [
   { name: 'middlemanager-known', scenario: 'middlemanager', monster: 'delegate_beast', learn: true, label: 'Middle Manager (wave-2C) — known' },
   { name: 'inspiration-unknown', scenario: 'inspiration', monster: 'bright_idea', label: 'Inspiration (wave-2C) — unknown' },
   { name: 'inspiration-known', scenario: 'inspiration', monster: 'bright_idea', learn: true, label: 'Inspiration (wave-2C) — known' },
+  { name: 'inspiration-bihot', scenario: 'inspiration', monster: 'bright_idea', learn: true, untilHot: true,
+    label: 'Inspiration (wave-2C) — known, WHITE-HOT final tick (biHot, turnsLeft<=1)' },
   { name: 'nostalgia-unknown', scenario: 'nostalgia', monster: 'memory_projector', label: 'Nostalgia (wave-2C) — unknown' },
   { name: 'nostalgia-known', scenario: 'nostalgia', monster: 'memory_projector', learn: true, label: 'Nostalgia (wave-2C) — known' },
   { name: 'glasswing-unknown', scenario: 'glasswing', monster: 'glasswing', label: 'Glasswing Darter — dive shadow, unknown' },
@@ -105,6 +107,18 @@ function captureMonster(t) {
   }
   const tgs = monsters().filter(m => m.telegraph);
   if (!tgs.length && !t.noDrive) { if (savedGenDetail) Game.genDetail = savedGenDetail; return { error: 'no telegraph declared in 80 rounds' }; }
+  // untilHot (Steve 2026-10-06): keep driving past declaration until the last
+  // windup tick (turnsLeft<=1) — captures the white-hot biHot state.
+  if (t.untilHot && !t.noDrive) {
+    for (let r = 0; r < 80; r++) {
+      if (!Game.tbfight || Game.tbfight.over) break;
+      const tg = monsters().find(m => m.telegraph);
+      if (!tg) break; // fired and cleared — capture would be stale
+      if (tg.telegraph.turnsLeft <= 1) break;
+      if (Game.tbIsPlayerTurn()) endTurn();
+      else { try { Game.tbAdvance && Game.tbAdvance(); } catch (e) { break; } }
+    }
+  }
   let buckets = {};
   try { buckets = tbAllTelegraphCells(); } catch (e) { buckets = { error: String(e) }; }
   const tgInfo = tgs.map(m => {
@@ -294,7 +308,17 @@ function toPng(svgPath, pngPath) {
       sbHeat: snap.sbHeat ? 'charge' + snap.sbHeat.charge : null,
     });
   }
-  fs.writeFileSync(path.join(OUT, 'telegraph-proof-20261006.json'), JSON.stringify(summary, null, 2));
+  // Upsert into the summary (Steve 2026-10-06): targeted runs must not
+  // destroy the baseline from earlier runs — merge by target name.
+  const sumPath = path.join(OUT, 'telegraph-proof-20261006.json');
+  let merged = [];
+  try { merged = JSON.parse(fs.readFileSync(sumPath, 'utf8')); } catch (e) { merged = []; }
+  const seen = new Set(merged.map(s => s.name));
+  for (const s of summary) {
+    if (seen.has(s.name)) merged = merged.map(x => x.name === s.name ? s : x);
+    else { merged.push(s); seen.add(s.name); }
+  }
+  fs.writeFileSync(sumPath, JSON.stringify(merged, null, 2));
   const errs = summary.filter(s => s.error);
   console.log('\nDONE: ' + summary.length + ' targets, ' + errs.length + ' errors.');
   if (errs.length) process.exit(1);

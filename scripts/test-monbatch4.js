@@ -271,7 +271,7 @@ async function main() {
     ok('beast: ungated cue is tactical', /sidestep FARTHER/.test(cue), cue.slice(0, 80));
     ok('beast: gated cue is diegetic', (() => {
       delete Game.state.codex.monsters['delegate_beast'].patterns;
-      return /should not be on that line/.test(Game.tbTelegraphCue(m));
+      return /a line only it can see/.test(Game.tbTelegraphCue(m));
     })());
     // it always circles first: next attack also circles
     M().telegraph = null; // clear the fake telegraph from the cue test

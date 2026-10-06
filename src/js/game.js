@@ -14455,7 +14455,7 @@
         let cue = '"let\'s take this OFFLINE." It lowers its horns. The meeting line is SET — attendance is mandatory.';
         cue += known
           ? ' It charges exactly the announced line, width 2 — sidestep FARTHER than feels necessary.'
-          : ' It is staring down a line on the ground. You should not be on that line.';
+          : ' It is staring down a line only it can see. Wherever that is — do not be there.';
         return cue + learned;
       }
       if (mid === 'service_mimic') {
