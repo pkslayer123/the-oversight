@@ -9448,6 +9448,12 @@
         }
         // BRIGHT IDEA (Steve 2026-10-06): last windup tick → white-hot.
         if (mid === 'bright_idea' && ptype === 'burst' && tg.turnsLeft <= 1) targetSet = out.biHot;
+        // WHITE NOISE HERON (Steve 2026-10-06): the Spearfish Strike is a
+        // needle out of static, not the deer's harsh red beam — route its
+        // line telegraph to the heronStrike bucket (white-noise static
+        // visual, main.css). Knowledge-gated like every bucket (the
+        // `if (!known) continue` above already ran).
+        if (mid === 'white_noise_heron' && ptype === 'line') targetSet = out.heronStrike;
         // STYLE ROUTING (Steve 2026-10-06): the style lives on the attack
         // pattern in mdef (burstStyle/chargeStyle); the live telegraph
         // clones it. Runs after the `if (!known) continue` above, so the
@@ -9633,6 +9639,14 @@
           else if (cell === 'water' && sec.safe === false) { g = '☠️'; cls += ' poison'; }
           else if (cell === 'tent' && sec.condition === 'shredded') { g = '💨'; cls += ' shredded'; }
         }
+        // TERRAFORM (Steve 2026-10-06): monster-reshaped ground. The visuals
+        // always show — wreckage, paper, craters and scorched earth are
+        // physically there. (The mechanical effect is learned by touch;
+        // game.js narrates first contact.) GUARDED: if absent, nothing renders.
+        try {
+          const _terr = (typeof Game.tbTerrainAt === 'function') ? Game.tbTerrainAt(cx, cy) : null;
+          if (_terr) cls += ' terr-' + _terr;
+        } catch (e) { /* no terrain layer */ }
         // ENTITIES OVERLAY: player, monster, animal, villager — always visible,
         // never overwritten by the cell underneath. People are not grass.
         if (!isMe) {
@@ -9733,6 +9747,7 @@
           (_tg.resonantBurst.has(_k) ? ' resonantBurst' : '') +
           (_tg.flashBurst.has(_k) ? ' flashBurst' : '') +
           (_tg.line.has(_k) ? ' lineCells' : '') +
+          (_tg.heronStrike.has(_k) ? ' heronStrike' : '') +
           (_tg.single.has(_k) ? ' targetTile' : '') +
           (_tg.direct.has(_k) ? ' lockOn' : '');
         // (no ambushZone: the speedbump's snap is no-warning by design —
@@ -9767,6 +9782,14 @@
         const _mpKeys = (typeof Game.mpBeamKeys === 'function') ? Game.mpBeamKeys() : null;
         if (_mpKeys && _mpKeys.has(_k) && !_w2cStyle) {
           _w2cStyle = 'outline:2px solid #ffca7a;outline-offset:-2px;background-color:rgba(255,190,110,.16);box-shadow:inset 0 0 14px rgba(255,200,120,.45)';
+        }
+        // DUCKS IN A ROW (Steve 2026-10-06): the line_up aim lane — dotted
+        // pale-yellow march orders, locked at the line_up beat. Distinct
+        // from the deer's harsh red beamLane and the delegate's amber
+        // encircle. Knowledge-gated in Game.duckLaneKeys().
+        const _duckKeys = (typeof Game.duckLaneKeys === 'function') ? Game.duckLaneKeys() : null;
+        if (_duckKeys && _duckKeys.has(_k) && !_w2cStyle) {
+          _w2cStyle = 'outline:2px dotted #e8d44d;outline-offset:-2px;background-color:rgba(232,212,77,.13);box-shadow:inset 0 0 10px rgba(232,212,77,.25)';
         }
         // WING/BASK OVERLAYS (Steve 2026-10-06): inline styles keep this in
         // app.js (no CSS file touch — precedent: glasswing trap, wave 2C).
