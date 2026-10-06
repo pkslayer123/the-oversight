@@ -3620,6 +3620,164 @@
         s.connect(sg); sg.connect(sfxBus); s.start(dt); s.stop(dt + 0.05);
       }
     }
+    // WAVE-2 REDESIGN (Steve 2026-10-06): five new monsters, five new voices.
+    function understudyLearn() {
+      // LEARNING: an echo that corrects itself — two tones, the second
+      // slightly sharper, like it's tuning to you. Then a third, exact.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [440, 445, 440].forEach((fq, i) => {
+        const dt = t + i * 0.22;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.12, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.2);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.22);
+      });
+    }
+    function understudyCopy() {
+      // THE COPY: your move, played back at you — a perfect mirror, then
+      // a semitone off, mocking. Cold.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [523, 554].forEach((fq, i) => {
+        const dt = t + i * 0.18;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.1, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.18);
+      });
+    }
+    function landlordStamp() {
+      // THE STAMP: a heavy official thud — wood on paper, final. Then the
+      // paper slides. Bureaucracy as percussion.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+      g.gain.setValueAtTime(0.3, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.16);
+      // paper slide
+      const nz = noise(0.3), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 4000;
+        ng.gain.setValueAtTime(0.06, t + 0.15);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.15); nz.stop(t + 0.5);
+      }
+    }
+    function landlordClaim() {
+      // JURISDICTION SPREADING: a low brass note that widens — the claim
+      // getting bigger. Unpleasant in a civic way.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(110, t);
+      o.frequency.exponentialRampToValueAtTime(165, t + 0.8);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.1, t + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.95);
+    }
+    function hecklerTaunt() {
+      // THE TAUNT: mocking laughter — three descending jeers, nasal and mean.
+      // Not a laugh with you. At you.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [392, 330, 262].forEach((fq, i) => {
+        const dt = t + i * 0.16;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = fq;
+        // vibrato: the mockery wobbles
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 8;
+        lg.gain.value = 15; lfo.connect(lg); lg.connect(o.frequency);
+        g.gain.setValueAtTime(0.09, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.14);
+        o.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.15); lfo.start(dt); lfo.stop(dt + 0.15);
+      });
+    }
+    function hecklerPileOn() {
+      // PILE-ON: the taunt multiplies — overlapping jeers, a chorus of mean.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 4; i++) {
+        const dt = t + i * 0.09;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = 300 + Math.random() * 150;
+        g.gain.setValueAtTime(0.07, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.13);
+      }
+    }
+    function paparazzoShutter(opts) {
+      // THE SHUTTER: a single expensive click — not a swarm, a sniper.
+      // Prediction level raises the pitch: it knows.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const pred = (opts && opts.prediction) || 0;
+      const baseFq = 2000 + pred * 300;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = baseFq;
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.07);
+      // the lens whirr: focusing, hunting
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.type = 'sine';
+      o2.frequency.setValueAtTime(800, t);
+      o2.frequency.exponentialRampToValueAtTime(1200, t + 0.3);
+      g2.gain.setValueAtTime(0.05, t);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o2.connect(g2); g2.connect(sfxBus); o2.start(t); o2.stop(t + 0.36);
+    }
+    function paparazzoFlash() {
+      // THE FLASH: white burst, but personal — aimed at YOU, not a crowd.
+      // Shorter, crueler than the swarm's.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.25;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4000;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.35, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(hp); hp.connect(g); g.connect(sfxBus);
+      src.start(t); src.stop(t + dur);
+    }
+    function unionRepChant() {
+      // THE CHANT: rhythmic, low, collective — a picket line finding its beat.
+      // Three pulses, then a fourth that lands harder.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.22, 0.44, 0.66].forEach((dt, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = i === 3 ? 98 : 110;
+        g.gain.setValueAtTime(0.14, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.18);
+        o.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + 0.2);
+      });
+    }
+    function unionRepWhistle() {
+      // THE WHISTLE: a sharp blast — the line moves. Attention must be paid.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = 2200;
+      g.gain.setValueAtTime(0.1, t);
+      g.gain.setValueAtTime(0.1, t + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.32);
+    }
     function glasswingLand() {
       // CRASH: dirt thud + tangled wing buzz — then the glass talks back:
       // inharmonic shard-pings, randomly detuned, dying fast. The last thing
@@ -7542,6 +7700,16 @@
       swarmFilm() { swarmFilm(); },
       swarmBuild() { swarmBuild(); },
       swarmFlash() { swarmFlash(); },
+      understudyLearn() { understudyLearn(); },
+      understudyCopy() { understudyCopy(); },
+      landlordStamp() { landlordStamp(); },
+      landlordClaim() { landlordClaim(); },
+      hecklerTaunt() { hecklerTaunt(); },
+      hecklerPileOn() { hecklerPileOn(); },
+      paparazzoShutter() { paparazzoShutter(); },
+      paparazzoFlash() { paparazzoFlash(); },
+      unionRepChant() { unionRepChant(); },
+      unionRepWhistle() { unionRepWhistle(); },
       belltoadCroak() { belltoadCroak(); },
       belltoadStun() { belltoadStun(); },
       belltoadChorus() { belltoadChorus(); },
