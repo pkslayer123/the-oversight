@@ -7,7 +7,8 @@
 //   - convoUI() -> {active, transcript, choices}
 // rules:
 //   - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
-//   - tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length (code: app.js chatChoice, Steve 2026-10-05)
+//   - one_beat_turns: a choice yields exactly one new THEM beat; follow-ons queue in c.heldBeats and surface as a voiced continuer ('goon', convoMoreLabel per person/mood/thread); unspoken beats die when the player moves on (code: conversation.js convoTurn, Steve 2026-10-05)
+//   - tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length; lands on their reply, not your echoed line (code: app.js chatChoice, Steve 2026-10-05)
 //   - history_view: speaker tab toggles full scrollable transcript (code: app.js dialogueBoxHTML, Steve 2026-10-05)
 // consumes:
 //   - village.villagers
@@ -471,9 +472,14 @@
         said: {}, transcript: [], pendingQ: null, askedQs: [],
         answered: {}, recalled: {}, lastDay: -1, count: 0, over: false,
         offeredHelp: false, askedTopics: [], qCount: 0,
-        theorized: [],
+        theorized: [], heldBeats: [], heldAsk: false,
       };
-      return v.conv[vid];
+      const c = v.conv[vid];
+      // Normalize older convo states (saves/scenarios predate the fields).
+      if (!c.heldBeats) c.heldBeats = [];
+      if (typeof c.heldAsk === 'undefined') c.heldAsk = false;
+      if (typeof c.winddownQueued === 'undefined') c.winddownQueued = false;
+      return c;
     },
 
     // synthPrototype: derive Want/Know/Feel/Secret for generated villagers
@@ -870,6 +876,8 @@
       const c = this.convoGet(vid);
       const cg = (this.data.characterGen || {}).convo || {};
       const t = c.thread;
+      // TOPIC PACK (Steve 2026-10-06): generated topics track their own depth.
+      if (this.topic2Has && this.topic2Has(t)) return this.topic2HasMore(vid);
       if (t === 'goal') {
         const goal = this.npcGoal(vid);
         const lines = (cg.goalFollow || {})[goal] || [];
@@ -1085,6 +1093,9 @@
         // Return a line prompting target selection; the choices are built in convoChoices
         return `${this.displayName(vid)} leans in. "Oh? Who are we talking about?"`;
       }
+      // TOPIC PACK (Steve 2026-10-06): generated identity/event topics delegate
+      // to convoTopics.js. askedTopics was already pushed above.
+      if (this.topic2Has && this.topic2Has(topic)) return this.topic2Ask(vid, topic);
       return null;
     },
 
@@ -1443,6 +1454,13 @@
           { id: 'leave', label: '"I should go."' },
         ];
       }
+      // CONTINUER (Steve 2026-10-05): one-beat turns. When the engine held
+      // follow-on beats, the continuer leads the choices — voiced per
+      // person, mood, and thread (convoMoreLabel), never a hardcoded
+      // "Go on." (unique-person law, Steve 2026-10-06).
+      if (c.thread !== 'nonverbal' && (c.heldBeats || []).length) {
+        choices.unshift({ id: 'goon', label: this.convoGoonLabel(vid) });
+      }
       // REACTIVE: they asked you something direct ("Did you see that?").
       // Answers come first — it's rude to ignore it. Pivots (teach/theorize)
       // are suppressed while the question hangs: you don't teach burdock
@@ -1562,8 +1580,28 @@
       // SPREAD RUMOR: the player's drama verb. Start a rumor about someone.
       // Same gate as gossip — you need some rapport to be believed.
       if (gossipOpen && asked.indexOf('spread_rumor') === -1) asks.push({ id: 'ask:spread_rumor', label: this.convoActionLabel(vid, 'spread_rumor') });
+      // TOPIC PACK (Steve 2026-10-06): fresh generated topics get first crack
+      // at the topic budget — who this villager IS shouldn't wait behind small
+      // talk forever. 'lately' always qualifies: live events cut the queue.
+      // Once a generated topic's been discussed, it joins the rotation behind
+      // the main asks. Shared budget — the cap never grows.
       let topicsAdded = 0;
+      const t2said = (this.convoGet(vid).said || {});
+      const t2list = this.topic2Asks ? this.topic2Asks(vid) : [];
+      const freshCap = topicCapMood <= 2 ? 1 : 2;
+      for (const a of t2list) {
+        const tid = a.id.slice(4);
+        if (tid !== 'lately' && (t2said['t2:' + tid] || []).length) continue;
+        if (a.id === threadAsk || topicsAdded >= freshCap || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
+        choices.push(a); topicsAdded++;
+      }
       for (const a of asks) {
+        if (a.id === threadAsk || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
+        choices.push(a); topicsAdded++;
+      }
+      for (const a of t2list) {
+        const tid = a.id.slice(4);
+        if (tid === 'lately' || !(t2said['t2:' + tid] || []).length) continue;
         if (a.id === threadAsk || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
         choices.push(a); topicsAdded++;
       }
@@ -1734,9 +1772,35 @@
       return { line: opLine, choices: this.convoChoices(vid), transcript: c.transcript.slice(), ended: false };
     },
 
+    // convoGoonLabel: the continuer, voiced per person/mood/thread — or a
+    // gesture when there's no shared language. Never a hardcoded "Go on."
+    // (unique-person law, Steve 2026-10-06).
+    convoGoonLabel(vid) {
+      const c = this.convoGet(vid);
+      if (c.thread === 'nonverbal') return '(watch quietly)';
+      return this.convoMoreLabel(vid);
+    },
+
+    // convoWinddownChoices: one last turn — say goodbye yourself, take one
+    // more beat of a live thread, or just leave.
+    convoWinddownChoices(vid) {
+      const wdChoices = [{ id: 'leave', label: '"I should go."' }];
+      if (this.convoThreadHasMore(vid)) {
+        wdChoices.push({ id: 'more', label: '"One more thing —"' });
+      }
+      const reacts = ['agree', 'joke', 'silence'];
+      const rid = reacts[Math.floor(Math.random() * reacts.length)];
+      const rlabels = { agree: '"You\'re right."', joke: '(crack a joke)', silence: '(say nothing)' };
+      wdChoices.push({ id: rid, label: rlabels[rid] });
+      return wdChoices;
+    },
+
     convoTurn(vid, choiceId) {
       const c = this.convoGet(vid);
       if (!c.active) return null;
+      // Old saves / mid-run convos predate heldBeats (one-beat-turns):
+      // lazy-init so a dodged question can't crash the turn.
+      if (!c.heldBeats) c.heldBeats = [];
       const cg = (this.data.characterGen || {}).convo || {};
       const temp = this.npcTemper(vid);
       const mood = this.npcMood(vid);
@@ -1752,8 +1816,55 @@
       // so answering doesn't dead-end the moment.
       let answeredReactive = false, answeredGeneric = false, extraQ = null, extraLine = null;
 
+      // ONE-BEAT TURNS (Steve 2026-10-05): a choice yields exactly one new
+      // THEM beat. Unspoken held beats die when the player moves on — like
+      // a real conversation, the moment passes. The wind-down can't be
+      // dodged: it stays queued until the continuer reveals it.
+      if (choiceId !== 'goon' && c.heldBeats && c.heldBeats.length) {
+        c.heldBeats = c.heldBeats.filter(h => h.winddown);
+        if (!c.heldBeats.length) { c.heldAsk = false; c.winddownQueued = false; }
+      }
+
       if (choiceId === 'leave') {
         return this.endConvo(vid, 'left');
+      } else if (choiceId === 'goon') {
+        // CONTINUER (Steve 2026-10-05): the queued beat lands now, with
+        // whatever state its showing implies. Nothing else happens this
+        // turn — the beats belonged to the turn that queued them.
+        // The label is voiced per person, mood, and thread (convoMoreLabel)
+        // — never a hardcoded "Go on." (unique-person law, Steve 2026-10-06).
+        const hb = (c.heldBeats || []).shift();
+        if (hb) {
+          // The ask-beat is the one piece of state that waits for the
+          // showing: offering answers before the player has seen the
+          // question would be answering blind.
+          if (hb.ask) {
+            c.pendingQ = hb.ask;
+            c.qCount = (c.qCount || 0) + 1;
+            if (c.askedQs.indexOf(hb.ask.id) === -1) c.askedQs.push(hb.ask.id);
+            c.heldAsk = false;
+          }
+          const gl = this.convoGoonLabel(vid);
+          c.transcript.push({ who: 'you', text: gl });
+          c.transcript.push({ who: 'them', text: hb.text, foreign: hb.foreign });
+          while (c.transcript.length > 200) c.transcript.shift();
+          this.say(`${this.displayName(vid)}: "${hb.text}"`);
+          done(hb.text, gl);
+          if (hb.winddown) {
+            // The goodbye lands: one last turn of choices, then it's over.
+            // Only the player's "I should go." (or the turn after) ends it —
+            // never a silent chop.
+            c.windingDown = true;
+            c.winddownQueued = false;
+            const wdChoices = c.thread === 'nonverbal'
+              ? [{ id: 'leave', label: '(walk away)' }, { id: 'nv:nod', label: '(nod slowly)' }]
+              : this.convoWinddownChoices(vid);
+            return { line, choices: wdChoices, ended: false, windingDown: true, transcript: c.transcript.slice() };
+          }
+        } else {
+          done('"..."', null);
+        }
+        return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
       } else if (choiceId.indexOf('ans:') === 0) {
         const parts = choiceId.split(':');
         const qid = parts[1], aid = parts[2];
@@ -1818,12 +1929,10 @@
           mshift(Math.sign(ad.trust || 0));
           c.thread = 'small'; c.depth = 1;
           done(ad.line || '"...Okay. Here it is."', ad.label);
-          if (qd) {
-            c.pendingQ = qd;
-            if (c.askedQs.indexOf(qd.id) === -1) c.askedQs.push(qd.id);
-            c.qCount = (c.qCount || 0) + 1;
-            extraQ = qd;
-          }
+          // ONE-BEAT TURNS (Steve 2026-10-05): the question queues behind
+          // "Of course. Ask." — pendingQ/askedQs/qCount land when the
+          // continuer reveals it, never before the player has seen it asked.
+          if (qd) extraQ = qd;
         } else if (ad) {
           t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + (ad.trust || 0)));
           // MOOD: warmth follows the trust delta — kind answers warm,
@@ -1876,12 +1985,14 @@
         const topic = choiceId.slice(4);
         // DEEP BEATS build trust faster: asking about someone's past or what
         // they want is an act of care. Words only go so far — talk caps at 40.
-        if (topic === 'past' || topic === 'goal') {
+        // TOPIC PACK (Steve 2026-10-06): you/fears/loved are acts of care too.
+        if (topic === 'past' || topic === 'goal' || (this.topic2Deep && this.topic2Deep(topic))) {
           const t = this.state.village.trust || {};
           const cur = t[vid] || 10;
           if (cur < 40) t[vid] = Math.min(40, cur + 2);
         }
-        done(this.convoAskTopic(vid, topic), this.convoLabel(vid, topic));
+        // TOPIC PACK (Steve 2026-10-06): generated topics carry their own labels.
+        done(this.convoAskTopic(vid, topic), this.topic2AskLabel ? this.topic2AskLabel(vid, topic) : this.convoLabel(vid, topic));
       } else if (choiceId === 'observe') {
         // WATCH THEM: the detective's tool. Costs time, may reveal that
         // behavior doesn't match story. (observePerson lives in truth.js.)
@@ -2075,11 +2186,16 @@
         if (asked.indexOf('past') === -1) opts.push('past');
         if (asked.indexOf('village') === -1) opts.push('village');
         if (asked.indexOf('plans') === -1) opts.push('plans');
+        // TOPIC PACK (Steve 2026-10-06): generated topics are subject-change
+        // options too (gated — no 'loved' at trust 10).
+        if (this.topic2SubjectOpts) for (const t of this.topic2SubjectOpts(vid)) opts.push(t);
         if (!opts.length) {
           done(this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I think we\'ve covered everything."']), '"Actually — different subject."');
         } else {
           const nt = opts[Math.floor(Math.random() * opts.length)];
-          done(this.convoAskTopic(vid, nt), '"Actually — different subject." ' + this.convoLabel(vid, nt));
+          // TOPIC PACK: generated topics carry their own labels.
+          const ntLabel = this.topic2AskLabel ? this.topic2AskLabel(vid, nt) : this.convoLabel(vid, nt);
+          done(this.convoAskTopic(vid, nt), '"Actually — different subject." ' + ntLabel);
         }
       } else if (choiceId.indexOf('nv:') === 0) {
         const kind = choiceId.slice(3);
@@ -2114,24 +2230,22 @@
       while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       c.exchanges++;
       this.say(`${this.displayName(vid)}: "${line}"`);
-      // MOOD: a band-crossing or guard/grace beat lands here — after the
-      // line that caused it, reading as their reaction settling in.
-      // (convo-mood.js; does not touch turn flow.)
+      // ONE-BEAT TURNS (Steve 2026-10-05): everything after the line queues.
+      // MOOD: a band-crossing or guard/grace beat queues behind the line —
+      // the continuer reveals their reaction settling in. (convo-mood.js
+      // queues into c.heldBeats; never lands mid-turn.)
       try { this.convoMoodFlush(vid); } catch (e) {}
 
-      // extraQ: rq_personal's "Of course. Ask." lands the real question as a
-      // second beat in the same turn — question and answers stay together.
+      // extraQ: "Of course. Ask." is the turn's beat; the real question
+      // queues behind it — asked is asked only when it's actually asked.
       if (extraQ) {
-        c.transcript.push({ who: 'them', text: extraQ.q });
-        while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-        this.say(`${this.displayName(vid)}: "${extraQ.q}"`);
+        c.heldBeats.push({ text: extraQ.q, ask: extraQ });
+        c.heldAsk = true;
       }
-      // extraLine: the follow-up beat after an answer — same-turn, so the
-      // thought lands whole instead of dying at the react line.
+      // extraLine: the follow-up beat after an answer queues — the thought
+      // continues on the continuer, or goes unspoken if the player moves on.
       if (extraLine) {
-        c.transcript.push({ who: 'them', text: extraLine });
-        while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-        this.say(`${this.displayName(vid)}: "${extraLine}"`);
+        c.heldBeats.push({ text: extraLine });
       }
 
       // DEEP BEATS cost a tick: topic asks, "tell me more", theorizing,
@@ -2163,21 +2277,21 @@
       const droveThread = /^(ask:|more|theorize|react:|trade|teach|offer_help|invite_party)/.test(choiceId || '');
       const justAnswered = /^(ans:)/.test(choiceId || '');
       const forceQ = c.count === 1 && (c.qCount || 0) === 0 && c.exchanges >= 2 && !droveThread && !justAnswered;
-      if (c.thread !== 'nonverbal' && !c.pendingQ && c.exchanges >= 1 && !answeredReactive) {
+      // ONE-BEAT TURNS (Steve 2026-10-05): follow-ups, lapses, and new
+      // questions queue behind the turn's line — the continuer reveals them.
+      // heldAsk guards against queueing a second question behind one already
+      // queued ("Of course. Ask." case above).
+      if (c.thread !== 'nonverbal' && !c.pendingQ && !c.heldAsk && c.exchanges >= 1 && !answeredReactive) {
         const rqf = c.reactiveQ && REACTIVE_DEFS[c.reactiveQ.id];
         const gqf = c.genericQ && !answeredGeneric ? c.genericQ : null;
         if (rqf) {
           if (!c.reactiveQ.followedUp) {
+            // State marks at queue time (as before); only the showing waits
+            // for the continuer.
             c.reactiveQ.followedUp = true;
-            c.transcript.push({ who: 'them', text: rqf.followUp });
-            while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-            this.say(`${this.displayName(vid)}: "${rqf.followUp}"`);
+            c.heldBeats.push({ text: rqf.followUp });
           } else {
-            if (rqf.lapse) {
-              c.transcript.push({ who: 'them', text: rqf.lapse });
-              while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-              this.say(`${this.displayName(vid)}: "${rqf.lapse}"`);
-            }
+            if (rqf.lapse) c.heldBeats.push({ text: rqf.lapse });
             c.reactiveQ = null;
           }
         } else if (gqf) {
@@ -2185,15 +2299,11 @@
           // then lapses honestly — the thread is never silently dropped
           // for a random new topic (Rule 3).
           if (!gqf.followedUp) {
-            gqf.followedUp = true;
             const fup = GQ_FOLLOWUP + ' ' + gqf.q;
-            c.transcript.push({ who: 'them', text: fup });
-            while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-            this.say(`${this.displayName(vid)}: "${fup}"`);
+            gqf.followedUp = true;
+            c.heldBeats.push({ text: fup });
           } else {
-            c.transcript.push({ who: 'them', text: GQ_LAPSE });
-            while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-            this.say(`${this.displayName(vid)}: ${GQ_LAPSE}`);
+            c.heldBeats.push({ text: GQ_LAPSE });
             c.genericQ = null;
           }
         } else if (!droveThread && !justAnswered && !c.windingDown && (forceQ || ((c.qCount || 0) < 2 && Math.random() < 0.3))) {
@@ -2216,34 +2326,29 @@
                 'A pause. When they speak again, it\'s about something else entirely.',
                 'They glance away, then back. Different subject, same worry:',
               ]);
-              c.transcript.push({ who: 'them', text: bridge });
-              this.say(`${this.displayName(vid)}: ${bridge}`);
+              c.heldBeats.push({ text: bridge });
             }
-            c.pendingQ = qd;
-            c.qCount = (c.qCount || 0) + 1;
-            // Asked is asked — record it at fire time, not just on answer.
-            // Otherwise a dodged or interrupted question comes back next
-            // conversation like it never happened (conversation memory).
-            if (c.askedQs.indexOf(qd.id) === -1) c.askedQs.push(qd.id);
-            c.transcript.push({ who: 'them', text: qd.q });
-            while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-            this.say(`${this.displayName(vid)}: "${qd.q}"`);
-            // The answer and their question are SEPARATE transcript entries —
-            // never mashed into one line. Reading back should feel like dialogue.
+            // Asked is asked — but only when it's actually asked: pendingQ,
+            // qCount, and askedQs land when the continuer reveals the
+            // question, never before the player has seen it.
+            c.heldBeats.push({ text: qd.q, ask: qd });
+            c.heldAsk = true;
+            // The answer and their question stay SEPARATE transcript entries —
+            // never mashed into one line. Reading back feels like dialogue.
           }
         }
       }
 
-      // Natural ending: the conversation has run its course. But an abrupt
-      // exit mid-thought reads as a cutoff — so the budget landing gets a
-      // wind-down beat first: a temperament-colored "I should get going"
-      // with one last turn of choices. The player can still say goodbye
-      // themselves, take one more beat of a live thread, or just leave.
-      // Only the player's "I should go." (or the turn after the wind-down)
-      // ends the scene — never a silent chop.
-      if (!c.pendingQ && c.exchanges >= c.budget) {
-        if (!c.windingDown) {
-          c.windingDown = true;
+      // WIND-DOWN (Steve 2026-10-05, one-beat turns): the goodbye beat queues
+      // like any other follow-on — the continuer reveals it, and only then
+      // does the conversation start ending. It can't be dodged: other held
+      // beats die on a new choice, the wind-down stays queued. heldAsk
+      // guards: a queued question gets asked before the goodbye.
+      // The player can still say goodbye themselves, take one more beat of
+      // a live thread, or just leave. Never a silent chop.
+      if (!c.pendingQ && !c.heldAsk && c.exchanges >= c.budget) {
+        if (!c.windingDown && !c.winddownQueued) {
+          c.winddownQueued = true;
           let wdPool = (cg.winddowns || {})[temp] || (cg.winddowns || {}).default
             || ['"Anyway — I should get back to it."'];
           // RELATIONSHIP AGE (Steve 2026-10-06): old friends don't wind down
@@ -2257,20 +2362,10 @@
             }
           } catch (e) {}
           const wd = this.convoPickCycle(vid, 'winddown', wdPool);
-          c.transcript.push({ who: 'them', text: wd });
-          while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-          this.say(`${this.displayName(vid)}: ${wd}`);
-          const wdChoices = [{ id: 'leave', label: '"I should go."' }];
-          if (this.convoThreadHasMore(vid)) {
-            wdChoices.push({ id: 'more', label: '"One more thing —"' });
-          }
-          const reacts = ['agree', 'joke', 'silence'];
-          const rid = reacts[Math.floor(Math.random() * reacts.length)];
-          const rlabels = { agree: '"You\'re right."', joke: '(crack a joke)', silence: '(say nothing)' };
-          wdChoices.push({ id: rid, label: rlabels[rid] });
-          return { line: wd, choices: wdChoices, ended: false, windingDown: true, transcript: c.transcript.slice() };
+          c.heldBeats.push({ text: wd, winddown: true });
+        } else if (c.windingDown) {
+          return this.endConvo(vid, 'natural');
         }
-        return this.endConvo(vid, 'natural');
       }
       return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
     },
@@ -2283,6 +2378,7 @@
       const first = this.displayName(vid);
       c.active = false; c.over = true; c.thread = null; c.pendingQ = null;
       c.reactiveQ = null;
+      c.heldBeats = []; c.heldAsk = false; c.winddownQueued = false; c.windingDown = false;
       let line;
       if (how === 'left') {
         line = this.convoPickCycle(vid, 'leftexit', [
@@ -2689,6 +2785,9 @@
         out.push({ id: 'nv:translate', label: `(ask ${yn} to translate)` });
       }
       out.push({ id: 'leave', label: '(walk away)' });
+      // ONE-BEAT TURNS (Steve 2026-10-05): queued beats surface as a
+      // gestural continuer, first.
+      if ((c.heldBeats || []).length) out.unshift({ id: 'goon', label: this.convoGoonLabel(vid) });
       return out;
     }
     return _convoChoices.call(this, vid);
@@ -2710,24 +2809,20 @@
       this.say(`${this.displayName(vid)}: ${line}`);
       // No they-ask-you in nonverbal. Ever. (The leak Steve reported.)
       // Wind-down, not a chop: the budget landing gets a gesture beat first,
-      // same as the verbal path.
+      // same as the verbal path. ONE-BEAT TURNS (Steve 2026-10-05): queued —
+      // the gestural continuer reveals it.
       if (!c.pendingQ && c.exchanges >= c.budget) {
-        if (!c.windingDown) {
-          c.windingDown = true;
+        if (!c.windingDown && !c.winddownQueued) {
+          c.winddownQueued = true;
           const wd = this.convoPickCycle(vid, 'nvwinddown', [
             'Their gestures slow — the conversation thinning like light at dusk.',
             'They glance toward their own thoughts; the exchange is winding down.',
             'A final shared look — you both feel the talk running its course.',
           ]);
-          c.transcript.push({ who: 'them', text: wd, foreign: c.nativeLang || this.npcNativeLang(vid) });
-          while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
-          this.say(`${this.displayName(vid)}: ${wd}`);
-          return { line: wd, choices: [
-            { id: 'leave', label: '(walk away)' },
-            { id: 'nv:nod', label: '(nod slowly)' },
-          ], ended: false, windingDown: true, transcript: c.transcript.slice() };
+          c.heldBeats.push({ text: wd, winddown: true, foreign: c.nativeLang || this.npcNativeLang(vid) });
+        } else if (c.windingDown) {
+          return this.endConvo(vid, 'natural');
         }
-        return this.endConvo(vid, 'natural');
       }
       return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
     }

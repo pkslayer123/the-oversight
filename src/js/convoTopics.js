@@ -63,11 +63,22 @@
       const obj = pro === 'they' ? 'them' : (pro === 'she' ? 'her' : 'him');
       const poss = pro === 'they' ? 'their' : (pro === 'she' ? 'her' : 'his');
       const Subj = subj.charAt(0).toUpperCase() + subj.slice(1);
+      // Habits/quirks are stored third-person ("checks the treeline"); the
+      // {habitI}/{quirkI} slots convert to first-person for "I ..." frames.
+      const toFirst = (x) => String(x || '')
+        .replace(/^(never|always|still|just)\s+([a-z]+?)s\b/, '$1 $2')
+        .replace(/^does\b/, 'do').replace(/^has\b/, 'have')
+        .replace(/^([a-z]+?)s\b/, '$1');
+      const habitI = toFirst(p.habit || 'keeping busy');
+      const quirkI = toFirst(p.quirk || 'a habit I don\'t talk about');
       return s.replaceAll('{fear}', this.t2fear(vp))
         .replaceAll('{Fear}', this.t2cap(this.t2fear(vp)))
         .replaceAll('{hope}', p.hope || 'something better')
         .replaceAll('{quirk}', p.quirk || 'a habit I don\'t talk about')
+        .replaceAll('{Quirk}', this.t2cap(p.quirk || 'a habit I don\'t talk about'))
+        .replaceAll('{quirkI}', quirkI)
         .replaceAll('{habit}', p.habit || 'keeping busy')
+        .replaceAll('{habitI}', habitI)
         .replaceAll('{They}', Subj).replaceAll('{they}', subj)
         .replaceAll('{them}', obj).replaceAll('{their}', poss);
     },
@@ -174,10 +185,10 @@
     topic2Beat(vid) {
       const c = this.convoGet(vid);
       const t = c.thread;
-      const fns = this['t2fol_' + t] || [];
+      const folFn = this['t2fol_' + t];
+      const fns = folFn ? folFn.call(this, vid) : [];
       const said = (c.said || {})['t2:' + t] || [];
-      const fn = fns[Math.min(Math.max(said.length - 1, 0), fns.length - 1)];
-      const cands = fn ? fn.call(this, vid) : [];
+      const cands = fns[Math.min(Math.max(said.length - 1, 0), fns.length - 1)] || [];
       let line = this.t2pick(vid, 't2:' + t, cands.length ? cands : ['"..."']);
       line = this.t2fill(line, this.vpOf(vid), vid);
       c.depth = (c.depth || 1) + 1;
@@ -293,7 +304,7 @@
       const f1 = [];
       if (sig && sig.note) {
         f1.push('"About ' + sig.note + ' — here\'s what you didn\'t see. ' +
-          (this.t2pers(vp).quirk ? 'I {quirk}, that\'s just what I do when things matter.' : 'It mattered more than I let on.') + '"');
+          (this.t2pers(vp).quirk ? 'I {quirkI}, that\'s just what I do when things matter.' : 'It mattered more than I let on.') + '"');
       }
       f1.push('"Here\'s what it would take, if you want more than this: show up when it costs you something. That\'s the whole test."');
       f1.push('"People here talk. What they say about you when you\'re not at the fire — that\'s the real answer to your question."');
@@ -327,9 +338,9 @@
     t2fol_fears(vid) {
       const vp = this.vpOf(vid);
       const f1 = [
-        '"When it gets bad, I {habit}. It doesn\'t help, exactly. It gives my hands something to do while my head catches up."',
-        '"I cope by {habit}. Everyone\'s got something. That\'s mine."',
-        '"{quirk} — that\'s what I do when the fear gets loud. You\'ve probably noticed."',
+        '"When it gets bad, I {habitI}. It doesn\'t help, exactly. It gives my hands something to do while my head catches up."',
+        '"I {habitI} when it gets loud in my head. Everyone\'s got something. That\'s mine."',
+        '"{Quirk} — that\'s what I do when the fear gets loud. You\'ve probably noticed."',
       ];
       const f2 = [
         '"It\'s worse since the scattering. Before, {fear} was... theoretical. Now it has a schedule."',
@@ -337,7 +348,7 @@
         '"Some fears you outgrow. This one grew up with me."',
       ];
       const f3 = [
-        '"If it happened — really happened — I think I\'d {habit} first, then figure out the rest. That\'s the plan. It\'s a bad plan."',
+        '"If it happened — really happened — I think I\'d {habitI} first, then figure out the rest. That\'s the plan. It\'s a bad plan."',
         '"I try not to think about what I\'d do. Thinking about it feels like inviting it."',
         '"I\'d survive it. I\'ve survived everything else so far, haven\'t I?"',
       ];
@@ -584,7 +595,7 @@
       ];
       const vp = this.vpOf(vid);
       const f3 = [
-        '"I {habit} when I think about them. It\'s not much of a ritual, but it\'s mine."',
+        '"I {habitI} when I think about them. It\'s not much of a ritual, but it\'s mine."',
         '"{hope} — that\'s what I hold. It\'s thin, some days. But it holds."',
       ];
       return [f1, f2, f3];
@@ -630,7 +641,7 @@
       const ev = this.t2LatelyEvent(vid);
       const kind = ev ? ev.kind : 'none';
       const cope = {
-        mourning: ['"I {habit}. It doesn\'t bring anyone back. It just keeps my hands from shaking."'],
+        mourning: ['"I {habitI}. It doesn\'t bring anyone back. It just keeps my hands from shaking."'],
         threat: ['"I sleep with my boots on now. That\'s where we are."'],
         betrayal: ['"I\'m watching. That\'s what I do now — I watch."'],
         tension: ['"I stay out of it. Mostly. It\'s getting harder."'],
