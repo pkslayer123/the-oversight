@@ -1498,6 +1498,13 @@
       // hunter gut/cook chain was a dead end for characters who don't start
       // with a knife (4 of 6 roster archetypes had no path to one).
       this.state.codex.recipes['stone_knife'] = { level: 3 };
+      // WATER FILTER CHAIN (2026-10-06): the water_filter recipe was a lie —
+      // cloth/charcoal/container had no obtainable source. Now: weave cloth
+      // from plant fiber, rake charcoal from campfire ashes, burn-hollow a
+      // wooden cup. Everyone knows these basics; the materials are the work.
+      this.state.codex.recipes['cloth'] = { level: 3 };
+      this.state.codex.recipes['wooden_cup'] = { level: 3 };
+      this.state.codex.recipes['water_filter'] = { level: 3 };
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
       this.state.scholar.dayTicks = 0; this.state.scholar.actionClock = 0; // action clock: fresh budget
       this.villageLost = false; this.wanderer = null; this.fight = null; this.pendingEncounter = false; this.pendingMonsterId = null;
@@ -1505,6 +1512,7 @@
       // (say AFTER the log reset above — anything said before it is wiped and
       // the player never sees it.)
       this.say('📖 You know how to knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.');
+      this.say('📖 You know how to weave cloth (3 plant fiber), burn-hollow a wooden cup (2 branches), and build a Water Filter (cloth + charcoal from fire ashes + cup). Dirty water doesn\'t have to stay dirty.');
       this.location = 'village'; this.departed = false;
       this.wipe();
       this.genMap();
@@ -2409,7 +2417,12 @@
         // uses — it lives in the pack, not the tool row. The tool row renders
         // every tool with a Set button, and a knife there would offer to set
         // it as a trap (which would crash the dawn check on recipe.catches).
-        this.state.scholar.inventory.push({ name: recipe.name, units: 1, kg: recipe.kg || 0.2, desc: recipe.description });
+        // producesMaterial (water-filter chain 2026-10-06): woven cloth and
+        // wooden cups are materials for other recipes — the item carries its
+        // material key so craft()'s material matching can consume it.
+        const made = { name: recipe.name, units: 1, kg: recipe.kg || 0.2, desc: recipe.description };
+        if (recipe.producesMaterial) made.material = recipe.producesMaterial;
+        this.state.scholar.inventory.push(made);
         this.say(`You make a ${recipe.name}. ${recipe.description}`);
       } else {
         this.state.scholar.tools = this.state.scholar.tools || [];
@@ -6611,6 +6624,56 @@
         s.kcal = Math.max(0, (s.kcal || 0) - 30);
       }
       this.say(n ? `Boiled ${n}L. Bacteria dead.${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+      return null;
+    },
+    // gatherCharcoal: rake charcoal from a campfire's ashes. Wood fires make
+    // it — the black chunks in the ash bed. Water filters need it, and the
+    // old-timers swear by it for poison (see: Purify). One raking per fire
+    // per day keeps it honest; the fire has to be burning.
+    gatherCharcoal() {
+      const s = this.state.scholar;
+      if (!this.nearFire()) { this.say('Need a burning fire — charcoal comes from the ash bed.'); return null; }
+      const t = this.playerTile();
+      const key = (this.map ? this.map.px + ',' + this.map.py : 'x') + ':' + (s.day || 0);
+      t.charcoalRaked = t.charcoalRaked || {};
+      if (t.charcoalRaked[key]) { this.say('You already raked this fire today. Let it burn down more.'); return null; }
+      t.charcoalRaked[key] = true;
+      const n = this.addMaterial('charcoal', 1 + (Math.random() < 0.4 ? 1 : 0));
+      this.say(`You rake the ash bed: ${n} charcoal. Black gold — filters drink it up.`);
+      // ACTION CLOCK: raking coals = 2 ticks of careful work.
+      this.tickAction(2);
+      return null;
+    },
+    // filterWater: pour risky water through the water filter. Unlike boiling,
+    // it needs no fire — and it strips chemical contamination that boiling
+    // can't touch. Each liter wears the filter media (1 use per liter).
+    filterWater() {
+      const s = this.state.scholar;
+      s.water = s.water || [];
+      const tools = s.tools || [];
+      const filter = tools.find(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0);
+      if (!filter) { this.say('No working water filter. Craft one: cloth + charcoal + container.'); return null; }
+      let n = 0;
+      for (const b of s.water) {
+        if (b.quality !== 'risky') continue;
+        if ((filter.uses || 0) <= 0) break;
+        b.quality = 'clean';
+        const hadChemical = !!b.chemical;
+        delete b.chemical;
+        b.source += ' (filtered)';
+        filter.uses -= 1;
+        n++;
+        if (hadChemical) this.say('The filter strips something foul-smelling out of the water. Boiling could never have done that.');
+      }
+      // drop dead filters
+      s.tools = tools.filter(t => (t.recipeId !== 'water_filter') || (t.uses || 0) > 0);
+      if (n > 0) {
+        this.say(`Filtered ${n}L through the water filter. Clean.${filter.uses > 0 ? ` (${filter.uses} uses left.)` : ' The filter media is spent — make another.'}`);
+      } else {
+        this.say('No risky water to filter.');
+      }
+      // ACTION CLOCK: filtering = 1 tick per liter, pouring slow.
+      if (n > 0) this.tickAction(n);
       return null;
     },
     // FIRECRAFT: the player can start their own fires. Until now fires were

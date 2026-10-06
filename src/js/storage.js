@@ -38,6 +38,12 @@
     branch: { name: 'Branch',      plural: 'Branches',   kg: 0.5 },
     stone:  { name: 'Stone',       plural: 'Stones',     kg: 0.3 },
     fiber:  { name: 'Plant fiber', plural: 'Plant fiber', kg: 0.1 },
+    // WATER FILTER CHAIN (2026-10-06): cloth/charcoal/container were recipe
+    // materials with no obtainable source. Now: cloth weaves from fiber,
+    // charcoal rakes from campfire ashes, containers are burned-hollow cups.
+    cloth:     { name: 'Cloth',      plural: 'Cloth',       kg: 0.2 },
+    charcoal:  { name: 'Charcoal',   plural: 'Charcoal',    kg: 0.3 },
+    container: { name: 'Wooden cup', plural: 'Wooden cups', kg: 0.3 },
     // FORAGE-DROP materials: the sweep pushes these straight into the pack
     // (game.js). They need defs or donateMaterial/stash silently no-op.
     stick:  { name: 'Stick',       plural: 'Sticks',     kg: 0.2 },

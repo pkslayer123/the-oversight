@@ -554,7 +554,8 @@
    "catches": "string[]",
    "knowledgeLevels": "object",
    "durable": "boolean?",
-   "kg": "number?"
+   "kg": "number?",
+   "producesMaterial": "string?"
   }
  },
  "book": {

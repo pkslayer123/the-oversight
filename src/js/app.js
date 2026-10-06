@@ -1179,6 +1179,11 @@
           // Boil risky water -> clean (kills bacteria, not chemicals).
           const risky = (Game.state.scholar.water || []).filter(b => b.quality === 'risky').length;
           if (risky) actions.push([`Boil ${risky}L water`, () => { Game.boilWater(); refresh(); }]);
+          // Filter risky water -> clean (no fire needed, strips chemicals).
+          const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0);
+          if (risky && hasFilter) actions.push([`Filter ${risky}L water`, () => { Game.filterWater(); refresh(); }]);
+          // Rake charcoal from the ash bed (water filters drink it up).
+          actions.push(['Rake charcoal', () => { Game.gatherCharcoal(); refresh(); }]);
         } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
           // BUILDING ROOMS: Search = examine + loot in one. No two-step.
           if (!sec || !sec.searched) actions.push(['Search', () => Game.searchRoom(cx, cy)]);
@@ -8058,7 +8063,7 @@
         ${(() => { const bg = Game.state.scholar.backgroundAbilities || []; if (!bg.length) return ''; return `<p class="small"><b>Background:</b> ${bg.map(a => `${a.name} L${a.level}`).join(', ')}</p>`; })()}
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; let cc = ''; try { const t = Game.challengeCountdownText ? Game.challengeCountdownText() : ''; if (t) cc = ` · <b style="color:#ff5d5d">${t}</b>`; } catch (e) {} return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)${Game.integrationStageName ? ` · ${Game.integrationStageName()}` : ''}${Game.arcName ? ` · ${Game.arcName()}` : ''}${cc}</p>`; })()}
         ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
-        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)</p>`; })()}
+        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''}</p>`; })()}
         ${inv.length ? inv.map((i, idx) => {
           // FOOD REALITY: per-item processing buttons + state markers.
           let foodBtns = '';
@@ -8129,6 +8134,8 @@
     slot.querySelectorAll('[data-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.cook), 'Cooked.'));
     // FOOD REALITY: processing buttons.
     slot.querySelectorAll('[data-shell]').forEach(b => b.onclick = rewire(() => Game.shellNuts(+b.dataset.shell), 'Shelled.'));
+    // WATER FILTER: pour risky water through the filter, anywhere.
+    slot.querySelectorAll('[data-filterwater]').forEach(b => b.onclick = rewire(() => Game.filterWater(), 'Filtered.'));
     // UNKNOWN MEAT: test cautiously to learn if it's food.
     slot.querySelectorAll('[data-meattest]').forEach(b => b.onclick = rewire(() => Game.testMonsterMeat(+b.dataset.meattest, packOf()), 'Tested.'));
     // FIELD IDENTIFICATION: the cautious test works from the pack, anywhere.

@@ -97,6 +97,38 @@
     }
   },
   {
+    "id": "cloth",
+    "name": "Woven cloth",
+    "description": "plant fiber twisted and woven tight. not pretty, but it holds water back.",
+    "materials": {
+      "fiber": 3
+    },
+    "durable": true,
+    "producesMaterial": "cloth",
+    "kg": 0.2,
+    "knowledgeLevels": {
+      "1": "Woven plant fiber. Someone made cloth from weeds.",
+      "2": "Materials: 3 plant fiber. Twist the fibers into cord, weave the cords tight.",
+      "3": "You can weave it. Twist fiber into two-ply cord, then plain-weave over-under. Tight enough to strain water."
+    }
+  },
+  {
+    "id": "wooden_cup",
+    "name": "Wooden cup",
+    "description": "a branch section burned hollow. holds water, mostly.",
+    "materials": {
+      "branch": 2
+    },
+    "durable": true,
+    "producesMaterial": "container",
+    "kg": 0.3,
+    "knowledgeLevels": {
+      "1": "A wooden cup, charred inside. Someone burned it hollow.",
+      "2": "Materials: 2 branches. Lay a coal on the cut face, blow it hollow, scrape the char.",
+      "3": "You can make one. Set a coal on the flat-cut branch end and nurse it inward — the char is the cup. Scrape it smooth."
+    }
+  },
+  {
     "id": "water_filter",
     "name": "Water Filter",
     "description": "cloth and charcoal in a container. makes murky water safe.",
