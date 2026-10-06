@@ -172,7 +172,12 @@
     ],
     "form": "berries",
     "edibility": "safe",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "bush",
+      "berry_bush",
+      "blackberry"
+    ]
   },
   {
     "biomes": [
@@ -540,7 +545,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "bush",
+      "berry_bush",
+      "muscadine"
+    ]
   },
   {
     "id": "elderberry",
@@ -596,7 +606,12 @@
     ],
     "form": "berries",
     "edibility": "cook",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "bush",
+      "berry_bush",
+      "elderberry"
+    ]
   },
   {
     "id": "pawpaw",
@@ -1151,7 +1166,12 @@
       }
     ],
     "form": "berries",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "plant",
+      "berry_plant",
+      "wild_strawberry"
+    ]
   },
   {
     "id": "staghorn_sumac",
