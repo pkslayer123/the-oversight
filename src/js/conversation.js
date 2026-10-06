@@ -391,6 +391,59 @@
       return v.conv[vid];
     },
 
+    // synthPrototype: derive Want/Know/Feel/Secret for generated villagers
+    // from their occupation, personality, and backstory. Not hand-authored,
+    // but specific enough to feel like a person, not a template.
+    synthPrototype(v) {
+      const occ = (v.formerOccupation || v.occupation || 'drifter').toLowerCase();
+      const temp = ((v.personality || {}).temperament || 'steady').toLowerCase();
+      const name = (v.name || 'they').split(' ')[0];
+
+      // Know from occupation
+      const knowByOcc = {
+        'nurse': 'triage — she can look at a wound and tell you if it\'s going to kill you',
+        'cook': 'food — he can make anything edible, and most things delicious',
+        'chef': 'precision with a knife — no waste, no hesitation',
+        'driver': 'roads — thirty years of knowing where everything is, or was',
+        'engineer': 'fixing things — wire, tape, and stubbornness',
+        'accountant': 'numbers — she can organize chaos into systems',
+        'teacher': 'explaining — she can make anything make sense',
+        'farmer': 'growing — she knows what the land wants',
+        'mechanic': 'engines — he hears what\'s wrong before he sees it',
+      };
+      let know = 'surviving — they\'ve learned fast';
+      for (const [k, val] of Object.entries(knowByOcc)) {
+        if (occ.includes(k)) { know = val; break; }
+      }
+
+      // Want: something specific and actionable
+      const wants = [
+        `They're running low on ${['bandages', 'salt', 'wire', 'paper', 'thread'][Math.floor(Math.random() * 5)]}. It's the kind of thing you don't miss until it's gone.`,
+        `They want to ${['fix the water filter', 'map the east woods', 'build a better shelter', 'find a working radio'][Math.floor(Math.random() * 4)]}. They've been thinking about it for days.`,
+        `They're worried about ${['the kids', 'the food stores', 'the winter', 'the strangers'][Math.floor(Math.random() * 4)]}. They don't say it out loud, but you can tell.`,
+      ];
+      const want = wants[Math.floor(Math.random() * wants.length)];
+
+      // Feel from temperament
+      const feelByTemp = {
+        'warm': 'Open and tired. They\'re holding on by holding others.',
+        'steady': 'Calm on the surface. They\'ve decided to endure.',
+        'sharp': 'Alert and a little angry. They\'re not going down easy.',
+        'restless': 'Itchy. They need to move, to do, to not think.',
+        'bold': 'Confident, or performing confidence. Hard to tell.',
+      };
+      const feel = feelByTemp[temp] || feelByTemp.steady;
+
+      // Secret: something specific with stakes
+      const secrets = [
+        `They've been ${['skimming extra food', 'sneaking out at night', 'hiding an injury', 'writing letters they\'ll never send'][Math.floor(Math.random() * 4)]}. They're ashamed and they can't stop.`,
+        `Before the scattering, they ${['froze when it mattered', 'said something cruel', 'ran when they should have stayed', 'stole from someone who trusted them'][Math.floor(Math.random() * 4)]}. They think about it every day.`,
+      ];
+      const secret = secrets[Math.floor(Math.random() * secrets.length)];
+
+      return { want, know, feel, secret, relationships: [] };
+    },
+
     // convoMatchReactive: does this NPC line ask the player something direct?
     // Returns { id, ...def } or null. Matched lines get contextual answers;
     // unmatched lines flow through the normal choice builder.
@@ -577,7 +630,12 @@
       // Want/Know/Feel/Secret per villager. Want surfaces as a hook (30%).
       // Secret surfaces at trust 40+ (20%). These are authored, not generic.
       const villager = (this.data.villagers || []).find(x => x.id === vid);
-      const proto = villager && villager.prototype;
+      let proto = villager && villager.prototype;
+      // SYNTHESIZE for generated villagers (no hand-authored prototype).
+      // Derive Want/Know/Feel from occupation, personality, backstory.
+      if (!proto && villager && (villager.id || '').startsWith('gen_')) {
+        proto = this.synthPrototype(villager);
+      }
       if (proto) {
         // Secret at high trust
         if (trust >= 40 && proto.secret && !c.secretShared && Math.random() < 0.2) {
@@ -1073,9 +1131,23 @@
     },
 
     startConvo(vid) {
+      // MODAL (Steve 2026-10-05): one conversation at a time. If another is
+      // active, end it first — you can't talk to two people at once.
+      const v = this.state.village;
+      for (const otherId of Object.keys(v.convos || {})) {
+        if (otherId !== vid) {
+          const oc = (v.convos || {})[otherId];
+          if (oc && oc.active) {
+            oc.active = false; oc.over = true;
+            try {
+              const oname = this.displayName(otherId) || 'them';
+              this.say(`You turn away from ${oname} mid-conversation.`);
+            } catch (e) {}
+          }
+        }
+      }
       const vp = this.vpOf(vid);
       if (!vp || !vp.id) return null;
-      const v = this.state.village;
       const c = this.convoGet(vid);
       c.active = true; c.exchanges = 0; c.budget = this.convoBudget(vid);
       c.thread = null; c.depth = 0; c.transcript = []; c.pendingQ = null;
