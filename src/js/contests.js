@@ -1523,17 +1523,16 @@
           try {
             const loot = this.rollAlienLoot({ wave: this.unlockedWave(), loot: { chance: 1, tier: this.unlockedWave() } });
             if (loot) {
-              // No raw-id leak (Steve 2026-10-06): resolve the display name
-              // like monster alien-loot does, and store the enriched entry so
-              // Pack renders a name instead of "something".
-              const def = (this.data.items || []).find(i => i.id === loot);
-              s.inventory = s.inventory || [];
-              if (def) {
-                s.inventory.push({ itemId: loot, name: def.name, units: 1, kcalEach: def.kcalEach || 0, spoilDay: def.spoilDay || 9999, unit: 'piece', kg: def.kg || 0.3, alienLoot: true });
-                this.sysSay(`📺 Prize: ${def.name}!${def.flavor ? ' ' + def.flavor : ''}`);
+              // KNOWLEDGE-GATED (Steve 2026-10-06): the prize goes through the
+              // SAME reveal path as monster-kill loot (alienLootGrant). Diegetic
+              // announce — no raw id, no mechanics. The prize arrives named in
+              // your Pack; what it DOES, you learn by using it.
+              const granted = this.alienLootGrant(loot);
+              if (granted) {
+                const d = granted.def;
+                this.sysSay(`📺 The System presses something humming into your hands: ${d.name}.${d.flavor ? ' ' + d.flavor : ''}`);
               } else {
-                s.inventory.push({ itemId: loot, units: 1 });
-                this.sysSay(`📺 Prize: ${loot}!`);
+                this.sysSay('📺 Prize: the System\'s favor (and a story).');
               }
             }
           } catch (e) { this.sysSay('📺 Prize: the System\'s favor (and a story).'); }

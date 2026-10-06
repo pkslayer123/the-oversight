@@ -2535,6 +2535,11 @@
       if (!this.hasItem('genesis_seed')) { this.say('You need a genesis seed.'); return null; }
       const t = this.playerTile();
       if ((t.genesis || {}).daysLeft > 0) { this.say('A genesis crop already grows here.'); return null; }
+      // ALIEN LOOT REVEAL (Steve 2026-10-06): planting it teaches you.
+      try {
+        const seed = (this.state.scholar.inventory || []).find(i => (i.itemId || i.id) === 'genesis_seed');
+        if (seed) this.alienLootReveal(seed);
+      } catch (e) {}
       this.consumeItem('genesis_seed', 1);
       t.genesis = { daysLeft: 10, plantedDay: this.state.scholar.day };
       this.say('You press the seed into the dirt. It hums — actually hums — and splits open. Something alien is growing.');
@@ -6155,7 +6160,10 @@
       // unequip current (back to inventory, stays there)
       // equip new (remove from inventory, set slot)
       this.state.scholar.equipped[slot] = { itemId: def.id, name: def.name,
-        ...(item.bonded ? { bonded: true, bond: item.bond || 0, bondOffered: item.bondOffered || [], enhancements: item.enhancements || [] } : {}) };
+        ...(item.bonded ? { bonded: true, bond: item.bond || 0, bondOffered: item.bondOffered || [], enhancements: item.enhancements || [] } : {}),
+        // ALIEN LOOT (Steve 2026-10-06): the knowledge-gate flag travels with
+        // the weapon — first swing is the learning moment (tbPlayerStrike).
+        ...(item.alienLoot ? { alienLoot: true, alienEffectHidden: item.alienEffectHidden } : {}) };
       // remove from inventory (it's worn, not carried)
       this.state.scholar.inventory.splice(itemIdx, 1);
       this.say(`Equipped ${def.name} (${slot}).`);
@@ -6166,7 +6174,10 @@
       if (!eq) return null;
       // back to inventory
       this.state.scholar.inventory.push({ itemId: eq.itemId, name: eq.name, units: 1, kcalEach: 0, kg: 0.5,
-        ...(eq.bonded ? { bonded: true, bond: eq.bond || 0, bondOffered: eq.bondOffered || [], enhancements: eq.enhancements || [] } : {}) });
+        ...(eq.bonded ? { bonded: true, bond: eq.bond || 0, bondOffered: eq.bondOffered || [], enhancements: eq.enhancements || [] } : {}),
+        // ALIEN LOOT (Steve 2026-10-06): the knowledge-gate flag comes home
+        // with the weapon, revealed or not.
+        ...(eq.alienLoot ? { alienLoot: true, alienEffectHidden: eq.alienEffectHidden } : {}) });
       delete this.state.scholar.equipped[slot];
       this.say(`Unequipped ${eq.name}.`);
       return null;
@@ -6261,6 +6272,10 @@
           this.say(`You use the ${item.name}. +${amt} health.`);
         }
       }
+      // ALIEN LOOT REVEAL (Steve 2026-10-06): first use teaches you what the
+      // System's gift actually does. "If you don't know, it doesn't show" —
+      // until you try it.
+      this.alienLootReveal(item);
       // consume one
       item.units--;
       if (item.units <= 0) {
@@ -6606,6 +6621,8 @@
         return true;
       }
       if (fuel.kind === 'fusion' && fuel.itemRef) {
+        // ALIEN LOOT REVEAL (Steve 2026-10-06): burning it teaches you.
+        try { this.alienLootReveal(fuel.itemRef); } catch (e) {}
         const inv = this.state.scholar.inventory || [];
         fuel.itemRef.units = (fuel.itemRef.units || 1) - fuel.n;
         if (fuel.itemRef.units <= 0) inv.splice(inv.indexOf(fuel.itemRef), 1);
@@ -12243,6 +12260,8 @@
       if (it.units <= 0) scholar.inventory.splice(idx, 1);
       scholar.energy = Math.min(100, scholar.energy + 5);
       this.say(`You eat the ${it.name}. (+${kcal} kcal)`);
+      // ALIEN LOOT REVEAL (Steve 2026-10-06): tasting it teaches you.
+      try { this.alienLootReveal(it); } catch (e) {}
       // EXPERIENTIAL LEARNING (Steve 2026-10-05): eating teaches you the calories.
       // You learn preparation (how to eat it) by doing it, even if you don't
       // know what it is yet. Preparation is a separate track from identification.
@@ -14599,6 +14618,9 @@
         this.tbStyle(5, 'solid hit');
       }
       this.tbDamage(t.key, d, 'you', null, { quiet: true });
+      // ALIEN LOOT REVEAL (Steve 2026-10-06): first swing teaches you what the
+      // alien weapon actually does. Knowledge is earned by doing.
+      try { this.alienLootReveal((this.state.scholar.equipped || {}).weapon); } catch (e) {}
       const tAfter = this.tbFighter(t.key);
       // HIGHBEAM: hurting the deer moves you to the front of its list.
       try { if (tAfter && this.encUsesFifo(tAfter)) this.encNoticesPain(tAfter, 'p'); } catch (e) {}
@@ -18252,6 +18274,37 @@
       if (!pool.length) return null;
       return pool[Math.floor(Math.random() * pool.length)].id;
     },
+    // ALIEN LOOT GRANT (Steve 2026-10-06): ONE shared path for monster-kill
+    // loot AND contest/show prizes. The System's gifts arrive NAMED — the name
+    // is the System's confused narration, visible immediately. The MECHANICAL
+    // baseEffect stays hidden until first use (alienEffectHidden). The flag is
+    // a plain JSON field on the inventory entry, so it survives save/load like
+    // every other inventory field. Callers: tbEnd loot drop, _contestEnd prize.
+    alienLootGrant(itemId) {
+      const def = (this.data.items || []).find(i => i.id === itemId);
+      if (!def) return null;
+      const entry = { itemId: def.id, name: def.name, units: 1,
+        kcalEach: def.kcalEach || 0, spoilDay: def.spoilDay || 9999,
+        unit: 'piece', kg: def.kg || 0.3, alienLoot: true, alienEffectHidden: true };
+      const s = this.state.scholar || {};
+      s.inventory = s.inventory || [];
+      s.inventory.push(entry);
+      return { def, entry };
+    },
+    // ALIEN LOOT REVEAL (Steve 2026-10-06): first use = the learning moment.
+    // Name was always the System's narration; what it DOES, you learn by
+    // doing. Idempotent — safe to call from every use path.
+    alienLootReveal(item) {
+      if (!item || !item.alienLoot || !item.alienEffectHidden) return false;
+      const def = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
+      item.alienEffectHidden = false;
+      if (def && def.baseEffect) {
+        // Trim a leading "Use: " — the beat already says you used it.
+        const eff = String(def.baseEffect).replace(/^use:\s*/i, '');
+        this.say(`✨ Now you understand it. The ${item.name}: ${eff}.`);
+      }
+      return true;
+    },
     tbEnd(result) {
       const f = this.tbfight;
       if (!f || f.over) return;
@@ -18336,10 +18389,13 @@
         try {
           const dropId = this.rollAlienLoot(mdef);
           if (dropId) {
-            const def = (this.data.items || []).find(i => i.id === dropId);
-            if (def) {
-              s.inventory.push({ itemId: dropId, name: def.name, units: 1, kcalEach: def.kcalEach || 0, spoilDay: def.spoilDay || 9999, unit: 'piece', kg: def.kg || 0.3, alienLoot: true });
-              this.say(`✨ ALIEN LOOT: ${def.name}. ${def.flavor || ''}${def.baseEffect ? ` (${def.baseEffect})` : ''}`);
+            const granted = this.alienLootGrant(dropId);
+            if (granted) {
+              // KNOWLEDGE-GATED (Steve 2026-10-06): name + flavor are the
+              // System's confused narration — they announce. The mechanical
+              // baseEffect stays hidden until first use (alienLootReveal):
+              // "if you don't know, it doesn't show."
+              this.say(`✨ ALIEN LOOT: ${granted.def.name}. ${granted.def.flavor || ''}`);
             }
           }
         } catch (e) {}
