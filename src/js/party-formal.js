@@ -4,6 +4,7 @@
 // provides:
 // rules:
 //   - (none documented)
+//   - turn_guard: convoTurn rejects non-string choice ids with null (UI-safe) instead of throwing on .indexOf (code: convoTurn, 2026-10-06)
 // consumes:
 //   - state.party
 // ============ OFFICIAL PARTY SYSTEM ============
@@ -164,7 +165,7 @@
         if (f) for (const x of f.fighters) {
           if (x.kind === 'monster' && x.alive && !x.fled) seen.add(x.key);
         }
-        const sm = this.state.scholar.monster;
+        const sm = (typeof this.playerMonster === 'function') ? this.playerMonster() : this.state.scholar.monster;
         if (sm && sm.id) seen.add('node:' + sm.id);
       } catch (e) {}
       return seen.size;
@@ -815,10 +816,11 @@
   const origCheckEncounter = Game.checkEncounter;
   Game.checkEncounter = function () {
     let had = null;
-    try { had = this.state.scholar.monster ? this.state.scholar.monster.id : null; } catch (e) {}
+    try { const _pmh = (typeof this.playerMonster === 'function') ? this.playerMonster() : this.state.scholar.monster; had = _pmh ? _pmh.id : null; } catch (e) {}
     const r = origCheckEncounter.call(this);
     try {
-      const now = this.state.scholar.monster ? this.state.scholar.monster.id : null;
+      const _pmn = (typeof this.playerMonster === 'function') ? this.playerMonster() : this.state.scholar.monster;
+      const now = _pmn ? _pmn.id : null;
       if (now && now !== had) {
         const bonus = this.partyExpeditionBonus ? this.partyExpeditionBonus() : null;
         if (bonus && bonus.scout) {
@@ -903,6 +905,10 @@
   // convoTurn: handle our choice ids, shaped like the original's return.
   const origConvoTurn = Game.convoTurn;
   Game.convoTurn = function (vid, choiceId) {
+    // GUARD (2026-10-06): a missing/garbage choice id used to throw
+    // TypeError on choiceId.indexOf and kill the whole chat. Every other
+    // wrapper type-checks; this one didn't. Null is UI-safe (closes chat).
+    if (typeof choiceId !== 'string' || !choiceId) return null;
     if (choiceId === 'party_name' || choiceId.indexOf('party_namepick:') === 0 ||
         choiceId === 'party_role' || choiceId.indexOf('party_rolepick:') === 0) {
       const c = this.convoGet(vid);

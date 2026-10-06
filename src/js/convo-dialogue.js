@@ -4,15 +4,18 @@
 // provides:
 //   - dialogueBeatKind(vid) -> classifies what the NPC just said/did
 //   - dialogueResponses(vid) -> 3-4 responses TO the current beat
-//   - dialogueSubjectMenu(vid) -> the old topic menu, behind "talk about something else"
+//   - convoTurn(vid, choiceId) -> advance the dialogue one beat
+//   - convoChoices(vid) -> dialogue-model choices (overrides conversation.js)
 // rules:
 //   - beat_drives_menu: responses derive from the NPC's last utterance, not from state flags (code: dialogueResponses, Steve 2026-10-06)
 //   - no_feature_cut: every existing conversation feature remains reachable — mapped, not removed (code: DIALOGUE_FEATURE_MAP, Steve 2026-10-06)
 //   - subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: dialogueResponses, Steve 2026-10-06)
+//   - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: dialogueResponses + dlg:more/dlg:react, 2026-10-06)
 // consumes:
 //   - village.villagers
 //   - state.convos
-//   - conversation.js (convoGet, convoChoices, playerVoice)
+//   - convoGet(vid)
+//   - playerVoice()
 // ============ DIALOGUE-DRIVEN CONVERSATION ============
 // Steve 2026-10-06: "Conversations need to feel real. Every NPC beat generates
 // its own response options — what would a person actually say back to THIS."
@@ -148,9 +151,16 @@
       try { return this.getDoubts && this.getDoubts(vid).length > 0; } catch (e) { return false; }
     })();
 
+    // THREAD DRY (2026-10-06): "tell me more" is honest only while the thread
+    // has beats. Once dry, offering it again just loops the admission line
+    // forever — drop it and let the thread wind down (react / subject change
+    // / leave). The marker is thread-specific (threadDryFor), so a new thread
+    // re-enables the option automatically.
+    const threadDry = !!(c.thread && c.threadDryFor && c.thread === c.threadDryFor);
+
     if (kind === 'share') {
       // They told you something. Respond to IT.
-      out.push({ id: 'dlg:more', label: voice('"Go on."', '"Tell me more."', '"And then?"') });
+      if (!threadDry) out.push({ id: 'dlg:more', label: voice('"Go on."', '"Tell me more."', '"And then?"') });
       out.push({ id: 'dlg:react', label: voice('"Huh."', '"Oh wow."', '"I see."') });
       if (hasDoubts) out.push({ id: 'dlg:doubt', label: '"That doesn\'t quite add up."' });
       // Theorize surfaces contextually on mystery beats.
@@ -171,7 +181,7 @@
       out.push({ id: 'dlg:cant', label: voice('"Can\'t right now."', '"I wish I could, but not right now."', '"Not right now, sorry."') });
     } else {
       // Small talk — natural responses.
-      out.push({ id: 'dlg:more', label: voice('"Yeah?"', '"Mmhm."', '"Go on."') });
+      if (!threadDry) out.push({ id: 'dlg:more', label: voice('"Yeah?"', '"Mmhm."', '"Go on."') });
       out.push({ id: 'dlg:react', label: voice('"Huh."', '"Oh nice."', '"I see."') });
     }
 
@@ -219,13 +229,16 @@
         c.transcript.push({ who: 'you', text: '"Tell me more."' });
         const beat = this.convoThreadBeat(vid);
         if (beat) {
+          c.threadDryFor = null; // thread is alive — clear any stale dry marker
           c.transcript.push({ who: 'them', text: beat });
           this.sayLine(vid, beat);
           // Trust: engaging builds it.
           try { this.trustGain(vid, 1); } catch (e) {}
           return { line: beat, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
         }
-        // Thread's dry — honest admission.
+        // Thread's dry — honest admission, once. Mark the thread dry so the
+        // menu stops offering "tell me more" and winds down instead.
+        c.threadDryFor = c.thread;
         const line = '"That\'s... pretty much all of it, honestly."';
         c.transcript.push({ who: 'them', text: line });
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
@@ -237,9 +250,12 @@
         const youSaid = reacts[Math.floor(Math.random() * reacts.length)];
         c.transcript.push({ who: 'you', text: youSaid });
         try { this.trustGain(vid, 0.5); } catch (e) {}
-        // They continue or wind down naturally.
-        const beat = Math.random() < 0.6 ? this.convoThreadBeat(vid) : null;
+        // They continue or wind down naturally. On a dry thread, don't fish
+        // for beats — go straight to the wind-down.
+        const dry = c.thread && c.threadDryFor && c.thread === c.threadDryFor;
+        const beat = (!dry && Math.random() < 0.6) ? this.convoThreadBeat(vid) : null;
         if (beat) {
+          c.threadDryFor = null;
           c.transcript.push({ who: 'them', text: beat });
           this.sayLine(vid, beat);
           return { line: beat, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
