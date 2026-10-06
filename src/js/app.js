@@ -8,11 +8,13 @@
 //   - renderInvInline(slot, view)
 //   - invSheet()
 //   - combatActionsHTML(st)
+//   - modNotice(), modNoted(), modMute(), modViolation(), modRemoval(), modShadow(), modDown() (Moderator audio suite)
 // rules:
 //   - mobile_breakpoint: 899px (code: CSS media queries)
 //   - grid_size: 9x9 (code: renderDetail)
 //   - one_screen_rule: moment-to-moment play never scrolls (code: CSS)
 //   - lower_menu: Pack/Sleep/Wait/Map below status (code: lowerMenuHTML)
+//   - moderator_audio: every mod* audioEvent fired by game.js resolves in Game.audio (code: Game.audio registry)
 // consumes:
 //   - Game.state
 //   - Game.status()
@@ -4407,6 +4409,186 @@
       thg.gain.exponentialRampToValueAtTime(0.0001, ft + 0.35);
       th.connect(thg); thg.connect(sfxBus); th.start(ft); th.stop(ft + 0.4);
     }
+    function modNotice() {
+      // THE REVIEW (Steve 2026-10-06): "CONTENT UNDER REVIEW." A cold boot
+      // chime — two sterile sine pings, customer-service calm — under a
+      // modem-handshake screech that climbs and never resolves. The machine
+      // is reading everything you have ever done, and it is not impressed.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [880, 1174.7].forEach((fq, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = fq;
+        const dt = t + i * 0.22;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.09, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.2);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.25);
+      });
+      // the handshake that never completes: rising, wobbling, cut off
+      const h = ctx.createOscillator(), hg = ctx.createGain();
+      h.type = 'sawtooth';
+      h.frequency.setValueAtTime(300, t + 0.3);
+      h.frequency.exponentialRampToValueAtTime(2400, t + 1.1);
+      const hl = ctx.createOscillator(), hlg = ctx.createGain();
+      hl.type = 'sine'; hl.frequency.value = 9; hlg.gain.value = 120;
+      hl.connect(hlg); hlg.connect(h.frequency);
+      const hf = ctx.createBiquadFilter(); hf.type = 'bandpass'; hf.frequency.value = 1400; hf.Q.value = 2;
+      hg.gain.setValueAtTime(0.0001, t + 0.3);
+      hg.gain.exponentialRampToValueAtTime(0.05, t + 0.6);
+      hg.gain.exponentialRampToValueAtTime(0.0001, t + 1.15);
+      h.connect(hf); hf.connect(hg); hg.connect(sfxBus);
+      h.start(t + 0.3); h.stop(t + 1.2); hl.start(t + 0.3); hl.stop(t + 1.2);
+    }
+    function modNoted() {
+      // THE RANGING TAP (Steve 2026-10-06): "Content noted." Almost gentle —
+      // a rubber-stamp thump and a flat little blip, the sound of a box being
+      // ticked. The politeness is the scary part.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      thump(t, 0.3);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.setValueAtTime(520, t + 0.08);
+      o.frequency.exponentialRampToValueAtTime(480, t + 0.16);
+      g.gain.setValueAtTime(0.0001, t + 0.08);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      o.connect(g); g.connect(sfxBus); o.start(t + 0.08); o.stop(t + 0.25);
+    }
+    function modMute() {
+      // THE GAVEL (Steve 2026-10-06): a verb gets muted. A deep stamp-thud,
+      // then a descending square wave spelling M-U-T-E-D, then paper shredding
+      // — your options going through the machine.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      thump(t, 0.7);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(392, t + 0.05);
+      o.frequency.exponentialRampToValueAtTime(98, t + 0.5);
+      g.gain.setValueAtTime(0.0001, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.09, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      o.connect(g); g.connect(sfxBus); o.start(t + 0.05); o.stop(t + 0.6);
+      // the shred: your options, processed
+      const nz = noise(0.4), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 4000;
+        ng.gain.setValueAtTime(0.0001, t + 0.4);
+        ng.gain.exponentialRampToValueAtTime(0.1, t + 0.5);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.4); nz.stop(t + 0.95);
+      }
+    }
+    function modViolation(d) {
+      // THE FLAG (Steve 2026-10-06): you used a muted verb. Two harsh buzzes
+      // — the second angrier, pitched up by how many violations you've stacked
+      // — then the stamp comes down on the paperwork. With your name on it.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const v = Math.min(8, Math.max(0, (d && d.violations) || 1));
+      [0, 0.28].forEach((dt, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = 110 + v * 14 + i * 22;
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 28; lg.gain.value = 0.5;
+        lfo.connect(lg); lg.connect(g.gain);
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.11, t + dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.24);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + dt); o.stop(t + dt + 0.28); lfo.start(t + dt); lfo.stop(t + dt + 0.28);
+      });
+      thump(t + 0.55, 0.5);
+    }
+    function modRemoval(d) {
+      // THE NOTICE (Steve 2026-10-06): "REMOVAL IMMINENT." A send-whoosh —
+      // filtered noise sweeping UP like something being filed away — into a
+      // heavy impact. The final variant (Deplatform) adds a low tolling bell:
+      // a period at the end of you.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 3;
+        nf.frequency.setValueAtTime(600, t);
+        nf.frequency.exponentialRampToValueAtTime(5000, t + 0.4);
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.14, t + 0.35);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.5);
+      }
+      thump(t + 0.4, 0.9);
+      if (d && d.final) {
+        // the toll: low bell, slightly detuned pair, long decay
+        [98, 98.7, 147].forEach((fq) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'sine'; o.frequency.value = fq;
+          g.gain.setValueAtTime(0.0001, t + 0.4);
+          g.gain.exponentialRampToValueAtTime(0.1, t + 0.45);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+          o.connect(g); g.connect(sfxBus); o.start(t + 0.4); o.stop(t + 1.85);
+        });
+      }
+    }
+    function modShadow() {
+      // THE SHADOWBAN (Steve 2026-10-06): the drone drops an octave into a
+      // dark low hum, and the air gets sucked out — a reverse swell that
+      // never lands. You are still here. Nobody can see you.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const drop = ctx.createOscillator(), dg = ctx.createGain();
+      drop.type = 'sawtooth';
+      drop.frequency.setValueAtTime(220, t);
+      drop.frequency.exponentialRampToValueAtTime(55, t + 0.8);
+      const df = ctx.createBiquadFilter(); df.type = 'lowpass'; df.frequency.value = 300;
+      dg.gain.setValueAtTime(0.0001, t);
+      dg.gain.exponentialRampToValueAtTime(0.12, t + 0.3);
+      dg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+      drop.connect(df); df.connect(dg); dg.connect(sfxBus);
+      drop.start(t); drop.stop(t + 1.05);
+      // the hum that stays: two detuned lows, beating slowly, wrong
+      [55, 56.3].forEach((fq) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, t + 0.7);
+        g.gain.exponentialRampToValueAtTime(0.07, t + 1.1);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+        o.connect(g); g.connect(sfxBus); o.start(t + 0.7); o.stop(t + 2.25);
+      });
+    }
+    function modDown() {
+      // DEPLATFORMED (Steve 2026-10-06): the machine powers down. A descending
+      // gliss that gives up halfway, a sad dial tone, and one wrong note that
+      // hangs in the air after the machine is gone.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(440, t);
+      o.frequency.exponentialRampToValueAtTime(110, t + 0.7);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 0.08);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.8);
+      // dial tone, then the wrong note
+      [350, 440].forEach((fq) => {
+        const d2 = ctx.createOscillator(), g2 = ctx.createGain();
+        d2.type = 'sine'; d2.frequency.value = fq;
+        g2.gain.setValueAtTime(0.0001, t + 0.8);
+        g2.gain.exponentialRampToValueAtTime(0.05, t + 0.85);
+        g2.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+        d2.connect(g2); g2.connect(sfxBus); d2.start(t + 0.8); d2.stop(t + 1.35);
+      });
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sine'; w.frequency.value = 466.2; // Bb — wrong on purpose
+      wg.gain.setValueAtTime(0.0001, t + 1.2);
+      wg.gain.exponentialRampToValueAtTime(0.06, t + 1.4);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
+      w.connect(wg); wg.connect(sfxBus); w.start(t + 1.2); w.stop(t + 2.45);
+    }
     function glasswingLand() {
       // CRASH: dirt thud + tangled wing buzz — then the glass talks back:
       // inharmonic shard-pings, randomly detuned, dying fast. The last thing
@@ -8352,6 +8534,14 @@
       hecklerHeadliner(d) { hecklerHeadliner(d); }, // "we've got a LIVE ONE!"
       hecklerJibe(d) { hecklerJibe(d); },       // narrated miss, shame-scaled
       paparazzoExclusive() { paparazzoExclusive(); }, // the money shot
+      // THE MODERATOR (Steve 2026-10-06): wave-2 apex — content enforcement.
+      modNotice() { modNotice(); },             // CONTENT UNDER REVIEW
+      modNoted() { modNoted(); },               // the ranging tap
+      modMute(d) { modMute(d); },               // the gavel
+      modViolation(d) { modViolation(d); },     // flagged: muted verb used
+      modRemoval(d) { modRemoval(d); },         // REMOVAL IMMINENT / Deplatform
+      modShadow() { modShadow(); },             // SHADOWBAN
+      modDown() { modDown(); },                 // deplatformed
       belltoadCroak() { belltoadCroak(); },
       belltoadStun() { belltoadStun(); },
       belltoadChorus() { belltoadChorus(); },

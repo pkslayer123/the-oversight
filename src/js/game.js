@@ -39,6 +39,8 @@
 //   - sleep_heal_hall: 20 (code: sleepPreview)
 //   - sleep_heal_fireside: 18 (code: sleepPreview)
 //   - sleep_heal_ground: 12 (code: sleepPreview)
+//   - home_narration_presence: villageLives/ambientSocial/firesideTeaching narrate only when playerAtHaven(); sim still runs; home deaths queue to scholar.awayNews, delivered by returnToVillage (code: playerAtHaven)
+//   - homecoming_beat: returnToVillage says a return line after >=2 days away, tracked via scholar.lastHavenDay (code: returnToVillage)
 //   - combat_action_economy: move + acted (code: tbAfterPlayerAction)
 // consumes:
 //   - state.scholar, state.village, state.codex (central game state roots)
