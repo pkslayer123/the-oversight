@@ -13907,7 +13907,7 @@
         const dmg = Math.round(S.combat.roll(tg.dmg) * mult);
         const who = o.kind === 'player' ? 'you' : o.name;
         this.say(`🔥 ${verb} ${who}! (${dmg})`);
-        this.tbDamage(o.key, dmg, m.name + "'s " + this.encAttackName(m, tg.attackName));
+        this.tbDamage(o.key, dmg, this.encDamageSource(m, tg.attackName));
         if (f.over) return;
       }
       // TEACH THE TRADE: move and it chases (less burn); stand still and it parks.
@@ -14059,7 +14059,7 @@
         if (!S.combat.isFoe(m, o)) continue;
         if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
         hit = true;
-        this.tbDamage(o.key, S.combat.roll([10, 16]), m.name + "'s trample");
+        this.tbDamage(o.key, S.combat.roll([10, 16]), this.encSubject(m));
         if (f.over) return;
       }
       if (!hit) this.say('Nothing in reach. It paws the earth, furious.');
@@ -15190,7 +15190,7 @@
           try { this.registerDeath({ kind: 'person', villagerId: t.villagerId, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses(t.villagerId) }); } catch (e) {}
         }
         else {
-          this.say(`The ${this.encTheName(t)} falls.`);
+          this.say(`${this.encSubject(t)} falls.`);
           // MONSTER BATCH 2: a lockpick killed mid-job doesn't get to keep
           // your things — the loot is still in its hands.
           if (t.stolen) {
@@ -15370,6 +15370,34 @@
     encTheName(m) {
       const n = String((m && m.name) || 'it');
       return n.replace(/^((an?)|the)\s+/i, '');
+    },
+    // SUBJECT LINE (2026-10-06): "The something huge, rooting in the underbrush
+    // falls" is broken English — indefinite descriptors ("something…") are
+    // already complete noun phrases. Named monsters and "a …" descriptors
+    // take "The"; "something …" descriptors stand on their own, capitalized.
+    encSubject(m) {
+      const n = String((m && m.name) || 'it');
+      const mdef = (m && m.mdef) || {};
+      const unknown = mdef.unknown || 'something moving';
+      const base = n.replace(/ \d+$/, ''); // pack numbers don't change kind
+      const isDescriptor = base === unknown;
+      if (!isDescriptor) return 'The ' + this.encTheName(m); // named
+      if (/^(something|someone|it|they|he|she)\b/i.test(n)) return n.charAt(0).toUpperCase() + n.slice(1);
+      return 'The ' + this.encTheName(m); // "a …" / "the …" → "The …"
+    },
+    // DAMAGE SOURCE (2026-10-06): possessive composition breaks on unnamed
+    // monsters — "something huge, rooting in the underbrush's the attack hits
+    // you" is not a sentence. Unknown or descriptor-named attackers stay
+    // dread ("The attack hits you"); named ones keep the possessive
+    // ("Bulldozer's China-Shop Charge hits you").
+    encDamageSource(m, attackName) {
+      const atk = this.encAttackName(m, attackName);
+      // "The attack" for the unknown; "The China-Shop Charge" for the known.
+      const cap = atk === 'the attack' ? 'The attack' : 'The ' + atk;
+      const mdef = (m && m.mdef) || {};
+      const isNamed = String((m && m.name) || '').replace(/ \d+$/, '') !== (mdef.unknown || 'something moving');
+      if (!isNamed || atk === 'the attack') return cap;
+      return (this.encShortLabel(m) || (m && m.name) || 'it') + "'s " + atk;
     },
     // MONSTER BATCH 2: short, diegetic labels for combat attribution, both
     // as attacker ("moth's Wing Flash", "toad 1's Resonant Croak") and as
@@ -15737,7 +15765,7 @@
             // chance to ring your ears — lose move action next turn. Simple,
             // fits the combat system. No stacking, no SHOUT interaction.
             const baseDmg = ((o.mdef || {}).attack || {}).damage || [8, 12];
-            this.tbDamage(t.key, S.combat.roll(baseDmg), (this.encShortLabel(o) || o.name) + "'s " + this.encAttackName(o, 'Resonant Croak'));
+            this.tbDamage(t.key, S.combat.roll(baseDmg), this.encDamageSource(o, 'Resonant Croak'));
             // SONIC STUN (Steve 2026-10-05): full turn loss. The sound hits like
             // a wall — ears ringing, world tilts. 15% chance. Don't skimp on audio.
             if (t.kind === 'player' && Math.random() < 0.15) {
@@ -15973,7 +16001,7 @@
             if (!o.alive || o.fled || o.key === m.key) continue;
             if (o.kind !== 'player' && o.kind !== 'villager') continue;
             if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) <= 2) {
-              this.tbDamage(o.key, S.combat.roll(atk.damage || [12, 20]), (this.encShortLabel(m) || m.name) + "'s " + this.encAttackName(m, 'Lure and Grasp'));
+              this.tbDamage(o.key, S.combat.roll(atk.damage || [12, 20]), this.encDamageSource(m, 'Lure and Grasp'));
             }
           }
           this.tbLearnPattern(m);
@@ -16082,7 +16110,7 @@
           if (occ) continue;
           m.mx = nx; m.my = ny; break;
         }
-        this.say(`The ${this.encTheName(m)} flinches — its note dies mid-croak. It hops back, throat fluttering.`);
+        this.say(`${this.encSubject(m)} flinches — its note dies mid-croak. It hops back, throat fluttering.`);
       }
       if (!n) this.say('Nothing out there cares about noise. The dark swallows it.');
       else this.tbStyle(10, 'broke the chorus with raw noise');
@@ -16420,14 +16448,14 @@
       // stunned: no move, no new attack. (Pending telegraph was canceled by the scream.)
       if (m.stunned > 0) {
         m.stunned -= 1;
-        this.say(`The ${this.encTheName(m)} is still frozen from your scream.`);
+        this.say(`${this.encSubject(m)} is still frozen from your scream.`);
         if (this.tbEndCheck()) return;
         return;
       }
       // GRAVITY HELD: the well has it. No movement — it can still act at range.
       if (m.gravityHeld > 0) {
         m.gravityHeld -= 1;
-        this.say(`The ${this.encTheName(m)} strains against folded space. Held.`);
+        this.say(`${this.encSubject(m)} strains against folded space. Held.`);
       }      // 1. pending telegraph: count down, then resolve.
       // Heavy attacks wind up over multiple rounds (you don't know exactly
       // how long — but the cue escalates and the heartbeat tells you).
@@ -16799,7 +16827,7 @@
               }
               if (o.kind === 'player') playerHit = true;
               anyoneHit = true;
-              this.tbDamage(o.key, Math.round(S.combat.roll(tg.dmg) * humMult), (this.encShortLabel(m) || m.name) + "'s " + this.encAttackName(m, tg.attackName));
+              this.tbDamage(o.key, Math.round(S.combat.roll(tg.dmg) * humMult), this.encDamageSource(m, tg.attackName));
               hitFighters.push(o);
               if (f.over) break;
             }
@@ -16970,7 +16998,7 @@
       // 2. hesitate (fear_aura): it doesn't act this turn
       if (m.hesitate > 0) {
         m.hesitate -= 1;
-        this.say(`The ${this.encTheName(m)} hesitates. Something about you is wrong. (fear_aura)`);
+        this.say(`${this.encSubject(m)} hesitates. Something about you is wrong. (fear_aura)`);
         if (this.tbEndCheck()) return;
         return;
       }
@@ -16979,7 +17007,7 @@
       const fleeAt = (m.mdef.fleeAt || 0) + (this.wolfIs(m) && m.wolfBroken ? 0.2 : 0);
       if (fleeAt > 0 && m.hp / m.maxHp < fleeAt && Math.random() < 0.7) {
         m.fled = true;
-        this.say(`The ${this.encTheName(m)} breaks and runs!`);
+        this.say(`${this.encSubject(m)} breaks and runs!`);
         this.tbEndCheck();
         return;
       }
@@ -17011,7 +17039,7 @@
           if (this.tbRechargePaw(m) && isDeer) this.audioEvent('deerSnort');
         } else if (m.beamCooldown <= 0) {
           if (useFifo) this.encSetPhase(m, 'stalk');
-          this.say(`The ${this.encTheName(m)} shakes its head — the light behind its eyes rekindles.`);
+          this.say(`${this.encSubject(m)} shakes its head — the light behind its eyes rekindles.`);
         }
         // otherwise it just breathes. Stillness is the tell.
         this.tbRefreshTelegraphUI();
@@ -17856,11 +17884,18 @@
       if (pat.type === 'rush') {
         // hushwolf: NO telegraph. Moves adjacent and hits NOW.
         // BROKEN: the pack's nerve is gone — half the time it circles wide, yipping.
+        // The bark ROTATES per wolf: a long broken tail used to print the same
+        // line six rounds straight (2026-10-06 playtest).
         if (this.wolfIs(m) && m.wolfBroken && Math.random() < 0.5) {
           if (useFifo) this.encSetPhase(m, 'withdraw');
-          this.say(`Yipping, ${m.name} circles wide — the pack's nerve is gone.`);
-          this.tbEndCheck();
-          return;
+          const yips = [
+            `Yipping, ${m.name} circles wide — the pack's nerve is gone.`,
+            `${this.encSubject(m)} skirts the edge of the fight, yipping — no one's following it.`,
+            `${this.encSubject(m)} feints in, thinks better of it, and circles off again.`,
+          ];
+          m.wolfYip = ((m.wolfYip || 0) + 1) % yips.length;
+          this.say(yips[m.wolfYip]);
+          this.tbEndCheck(); return;
         }
         if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'resolve'));
         for (let i = 0; i < m.speed; i++) {
@@ -17870,7 +17905,7 @@
           m.mx = s.x; m.my = s.y;
         }
         if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) {
-          this.say(`The ${this.encTheName(m)} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
+          this.say(`${this.encSubject(m)} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
           this.tbDamage(foe.f.key, S.combat.roll(atk.damage), m.name);
           this.tbLearnPattern(m);
         }
@@ -17933,7 +17968,7 @@
           this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
           this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct', highbeam: (m.mdef || {}).id === 'gallowdeer' });
         } else {
-          this.say(`The ${this.encTheName(m)} stalks closer. ${atk.telegraph || ''}`);
+          this.say(`${this.encSubject(m)} stalks closer. ${atk.telegraph || ''}`);
         }
       } else {
         let cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
