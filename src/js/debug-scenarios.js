@@ -137,7 +137,7 @@
       spawnAnimalNear('white_tailed_deer');
       Game.say('');
       Game.say('🐞 SCENARIO: deer encounter. Crude bow equipped, 12 arrows.');
-      Game.say('Get adjacent to the deer and Hunt (🏹). It\'s hard difficulty — the bow\'s +40 helps.');
+      Game.say('Dawn. A white-tail, grazing, not yet aware of you.');
     },
 
     // ANIMALS (Steve 2026-10-05): separate from monsters. These are prey,
@@ -150,7 +150,7 @@
       s.insideHaven = false;
       Game.dayPart = 0; // dawn
       spawnAnimalNear('cottontail_rabbit');
-      Game.say('🐞 SCENARIO: rabbit. Small, fast, everywhere at dawn. The sling is your best bet.');
+      Game.say('🐞 SCENARIO: rabbit. Small, fast, everywhere at dawn. Sling in hand.');
     },
 
     squirrel() {
@@ -172,7 +172,7 @@
       s.insideHaven = false;
       Game.dayPart = 0; // dawn
       spawnAnimalNear('wild_turkey');
-      Game.say('🐞 SCENARIO: wild turkey. Big bird, good meat. The bow works if you\'re close.');
+      Game.say('🐞 SCENARIO: wild turkey. Big bird. Crude bow in hand.');
     },
 
     opossum() {
@@ -183,7 +183,7 @@
       s.insideHaven = false;
       Game.dayPart = 3; // night — nocturnal
       spawnAnimalNear('opossum');
-      Game.say('🐞 SCENARIO: opossum. Nocturnal. Watch what it does when it sees you.');
+      Game.say('🐞 SCENARIO: opossum. Nocturnal.');
     },
 
     bullfrog() {
@@ -203,7 +203,7 @@
       s.insideHaven = false;
       Game.dayPart = 1; // midday
       spawnAnimalNear('box_turtle');
-      Game.say('🐞 SCENARIO: box turtle. Slow. You can literally walk up to it.');
+      Game.say('🐞 SCENARIO: box turtle. Slow.');
     },
 
     fox() {
@@ -214,7 +214,7 @@
       s.insideHaven = false;
       Game.dayPart = 3; // night — nocturnal hunter
       spawnAnimalNear('gray_fox');
-      Game.say('🐞 SCENARIO: gray fox. Clever. It will see you before you see it.');
+      Game.say('🐞 SCENARIO: gray fox. Clever.');
     },
 
     crayfish() {
@@ -224,7 +224,7 @@
       s.insideHaven = false;
       Game.dayPart = 1; // midday — in creeks
       spawnAnimalNear('crayfish');
-      Game.say('🐞 SCENARIO: crayfish. In the creek. Reach in and grab — watch the claws.');
+      Game.say('🐞 SCENARIO: crayfish. In the creek.');
     },
 
     raccoon() {
@@ -255,7 +255,7 @@
       s.insideHaven = false;
       Game.dayPart = 1; // midday
       spawnAnimalNear('creek_chub');
-      Game.say('🐞 SCENARIO: creek chub. In the water. You\'ll need to fish, not hunt.');
+      Game.say('🐞 SCENARIO: creek chub. In the water.');
     },
 
     // 2. Day 7 System transition — the lived-in village. System arrives on next action.
@@ -361,7 +361,7 @@
       spawnAnimalNear('gray_fox');
       Game.say('');
       Game.say('🐞 SCENARIO: night hunt. Midnight. A gray fox is out there.');
-      Game.say('Fire-hardened spear equipped. The night has its own ecology — watch what\'s active.');
+      Game.say('Fire-hardened spear in hand.');
     },
 
     // 8. Starving village — pantry nearly empty, trust strained.

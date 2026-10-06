@@ -42,8 +42,10 @@ ok(!hasMonEnt, 'No data-ent="mon:" in app.js');
 ok(!hasAniEnt, 'No data-ent="ani:" in app.js');
 ok(hasCreatureEnt, 'Uses data-ent="creature:" prefix');
 
-// ANIMAL_GLYPH proxy (paw-print gating) should be removed
-const hasAnimalGlyph = /ANIMAL_GLYPH/.test(appCode);
+// ANIMAL_GLYPH proxy (paw-print gating) should be removed. Strip line
+// comments first — the removal note in a comment isn't the proxy.
+const codeNoComments = appCode.replace(/\/\/[^\n]*/g, '');
+const hasAnimalGlyph = /ANIMAL_GLYPH/.test(codeNoComments);
 ok(!hasAnimalGlyph, 'ANIMAL_GLYPH proxy removed (no paw-print gating)');
 
 // 2. Check animals.json has emojis for all animals

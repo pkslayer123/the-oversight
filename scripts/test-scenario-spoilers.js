@@ -15,6 +15,11 @@ const BLOCKED = [
   /only goes FORWARD/i, /won't chase you/i, /notices anyone too close/i,
   /first in first out/i, /\bMOVE\.$/, /weakness is/i, /aim for the/i,
   /don't let it/i, /keep your distance/i, /attack from/i,
+  // hunter-intro classes (2026-10-06): weapon/difficulty prescriptions, free-pass
+  // promises, mechanic imperatives. Scene-setting only.
+  /best bet/i, /difficulty/i, /\+[0-9]+ (helps|bonus|to hit|damage)/i,
+  /walk up to/i, /reach in/i, /need to fish/i, /you.{0,3}ll need to/i,
+  /watch what it does/i,
 ];
 
 const lines = src.split('\n');
