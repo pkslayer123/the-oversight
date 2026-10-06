@@ -640,7 +640,7 @@
         // Secret at high trust
         if (trust >= 40 && proto.secret && !c.secretShared && Math.random() < 0.2) {
           c.secretShared = true;
-          return `"Can I tell you something? ${proto.secret}"`;
+          return { line: `"Can I tell you something? ${proto.secret}"`, thread: 'secret' };
         }
         // Want as a hook (evolved if the world has moved)
         if (proto.want && !c.wantHooked && Math.random() < 0.3) {
@@ -648,7 +648,7 @@
           // Use evolved want if enough days have passed (simplified Change)
           const day = this.state.scholar.day || 1;
           const wantText = (day > 7 && proto.want_evolved) ? proto.want_evolved : proto.want;
-          return `"${wantText}"`;
+          return { line: `"${wantText}"`, thread: 'want' };
         }
       }
 
@@ -666,7 +666,7 @@
           `"I tried the ${pname} like you showed me. Didn't poison anyone, so that's a win."`,
           `"${pname} — I keep thinking about what you said. I'm seeing it everywhere now."`,
         ];
-        return this.convoPick(vid, 'taughtref', refs) || refs[0];
+        return { line: this.convoPick(vid, 'taughtref', refs) || refs[0], thread: 'taughtref' };
       }
 
       // 1. THEY asked to talk — their reason leads, once. The stored line is
@@ -1190,25 +1190,31 @@
         return this.nvOpen(vid);
       }
       const op = this.convoOpening(vid);
-      c.thread = op.thread; c.depth = 1;
+      // DEFENSIVE (Steve 2026-10-05): convoOpening must return {line, thread}.
+      // A bare-string return once rendered as `Name: "undefined"` — normalize
+      // here so no future branch can leak that into the fiction.
+      const opLine = (op && typeof op === 'object' && op.line) ? op.line
+        : (typeof op === 'string' && op) ? op : '"Hey."';
+      const opThread = (op && typeof op === 'object' && op.thread) ? op.thread : 'small';
+      c.thread = opThread; c.depth = 1;
       // REACTIVE: if the opener asked something direct ("Did you see that?"),
       // it becomes a lightweight question — answerable, follow-up-able,
       // not small talk the player can only dodge.
       // TALK REQUESTS are exempt: "Can we talk? ..." is the reason they came
       // to you, not a question — matching it produced the garbled
       // "Sorry — I asked you something there. Can we talk?" follow-up.
-      const rq = (op.thread === 'request') ? null : this.convoMatchReactive(op.line);
+      const rq = (opThread === 'request') ? null : this.convoMatchReactive(opLine);
       if (rq) {
         c.reactiveQ = { id: rq.id, followedUp: false };
-        if (rq.thread) { c.thread = rq.thread; op.thread = rq.thread; }
+        if (rq.thread) { c.thread = rq.thread; }
       } else {
         // GENERIC-Q: opener asked something direct with no bespoke def —
         // hang it as an answerable question (Rule 4).
-        this.convoGenericQ(vid, op.line);
+        this.convoGenericQ(vid, opLine);
       }
-      this.convoNoteFlora(vid, op.line);
-      c.transcript.push({ who: 'them', text: op.line });
-      this.say(`${this.displayName(vid)}: "${op.line}"`);
+      this.convoNoteFlora(vid, opLine);
+      c.transcript.push({ who: 'them', text: opLine });
+      this.say(`${this.displayName(vid)}: "${opLine}"`);
       // SEEDING: knowledge traders mention their trade in conversation — the
       // mechanic is discovered by talking, not by a button. Once you've
       // learned the concept, you can bring it up with any trader yourself.
@@ -1218,7 +1224,7 @@
         this.say(`${this.displayName(vid)}: ${seed}`);
         c.traderMentioned = true;
       }
-      return { line: op.line, choices: this.convoChoices(vid), transcript: c.transcript.slice(), ended: false };
+      return { line: opLine, choices: this.convoChoices(vid), transcript: c.transcript.slice(), ended: false };
     },
 
     convoTurn(vid, choiceId) {

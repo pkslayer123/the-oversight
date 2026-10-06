@@ -99,6 +99,25 @@ Game.say = (t) => { sayLog.push(String(t)); return _say(t); };
   }
   ok('juror vote was awaited (within retries)', voted);
 
+  // --- 6. convoOpening always returns {line, thread} — never "undefined" ---
+  Game.debugScenario('liars');
+  sayLog = [];
+  let badOpen = 0, opens = 0;
+  for (const vid of Game.npcIds()) {
+    // force the prototype branches: high trust unlocks want/secret hooks
+    Game.state.village.trust = Game.state.village.trust || {};
+    Game.state.village.trust[vid] = 60;
+    for (let i = 0; i < 8; i++) {
+      const op = Game.convoOpening(vid);
+      opens++;
+      if (!op || typeof op.line !== 'string' || !op.thread) badOpen++;
+    }
+  }
+  ok('convoOpening always returns {line, thread}', badOpen === 0, `${badOpen}/${opens} malformed`);
+  // integration: startConvo never says Name: "undefined"
+  for (const vid of Game.npcIds().slice(0, 4)) { try { Game.startConvo(vid); } catch (e) {} }
+  ok('startConvo never renders "undefined"', !sayLog.some(l => /"undefined"/.test(l)));
+
   console.log(`\nsocial-audit-fixes: ${pass} pass, ${fail} fail`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('CRASH:', e.message); console.error(e.stack.split('\n').slice(1, 5).join('\n')); process.exit(2); });

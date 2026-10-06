@@ -100,6 +100,10 @@
         `{first} doesn't know you're watching. What you see matches what they've told you.`,
         `An hour of watching {first}. Either they're telling the truth, or they're very good.`,
         `You study {first} at the fire, at work, at rest. No tells. Either clean or careful — you can't tell which.`,
+        `{first} laughs at something across the fire — unguarded, unperformed. Liars rehearse; that wasn't rehearsed.`,
+        `You watch {first}'s hands while they work. Steady. People's hands tell on them eventually — these aren't telling.`,
+        `A whole afternoon with {first} in your eyeline. They complain about the same things everyone complains about. Nothing hidden, or hidden well.`,
+        `{first} catches you looking and just nods, easy. No flinch, no performance. Whatever they're holding, it isn't guilt.`,
       ],
       observeTellOcc: [
         `{first} claims to have been a {told}. But you watched them try to {tellVerb} — their hands didn't know the work. {truthCap} have stories in their hands. {first}'s hands are blank.`,
