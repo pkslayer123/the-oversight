@@ -1490,10 +1490,14 @@
 
     // sweepSpoiled: overnight, rotten food leaves your pack (and the prep
     // counter). Announced, never silent — the hunter sees the cost of neglect.
-    // Relics and keepsakes don't rot. The village pantry is the village's
-    // business, not yours.
+    // Relics and keepsakes don't rot. The VILLAGE PANTRY rots too (forager
+    // loop 2026-10-06): it's the village's business, so the village sweeps it
+    // — announced in the village's voice, and pantryKcal re-derived so rotten
+    // food never counts as security. Before this, expired pantry stacks sat
+    // forever and villagers ate them at full value: phantom calories.
     sweepSpoiled() {
       const lost = [];
+      const lostPantry = [];
       const conts = [this.state.scholar.inventory];
       try { const ps = this.prepStash(); if (ps && ps !== this.state.scholar.inventory) conts.push(ps); } catch (e) {}
       for (const cont of conts) {
@@ -1505,10 +1509,25 @@
           if (this.isSpoiled(it)) { lost.push(it.name || 'something'); cont.splice(i, 1); }
         }
       }
+      // the village's pantry: the village throws out its own rot, not you.
+      try {
+        const v = this.state.village;
+        if (v && v.pantry) {
+          for (let i = v.pantry.length - 1; i >= 0; i--) {
+            const it = v.pantry[i];
+            if (!it || it.bonded) continue;
+            if (this.isSpoiled(it)) { lostPantry.push(it.name || 'something'); v.pantry.splice(i, 1); }
+          }
+          v.pantryKcal = v.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+        }
+      } catch (e) {}
       if (lost.length) {
         this.say(`Overnight, ${lost.join('; ')} went bad — beyond saving. You leave ${lost.length === 1 ? 'it' : 'them'} for the flies.`);
       }
-      return lost.length;
+      if (lostPantry.length) {
+        this.say(`The village threw out spoiled stores: ${[...new Set(lostPantry)].join(', ')}. Someone mutters about waste. (pantry)`);
+      }
+      return lost.length + lostPantry.length;
     },
 
     // putAwayFinished: batch — finished food goes to the pantry.
