@@ -324,6 +324,36 @@ function playGrabbed(id, choiceIdxs, rngSeq) {
     }
   }
 
+  // ================= H. audio hooks (contestCall/Taken/Spared) =================
+  console.log('\n===== H. contest audio hooks =====');
+  {
+    const heard = [];
+    const origAE = Game.audioEvent.bind(Game);
+    Game.audioEvent = (name, data) => { heard.push(name); return origAE(name, data); };
+    // contestCall: fireContest announces
+    fresh(); heard.length = 0;
+    const c = byId('riddle');
+    const u = rig([0.5]); // whim roll 0.5 -> prefers player, no whim branch
+    Game.fireContest(Object.assign({}, c));
+    u();
+    ok('audio: fireContest emits contestCall', heard.includes('contestCall'), heard.join(','));
+    // contestTaken: player interruption (grabbed path)
+    fresh(); heard.length = 0;
+    const u2 = rig([0.99]); // grabbed
+    Game.contestInterruption(Object.assign({}, byId('honey')), 'player');
+    u2();
+    ok('audio: player interruption emits contestTaken', heard.includes('contestTaken'), heard.join(','));
+    ok('audio: player interruption does NOT emit contestSpared', !heard.includes('contestSpared'));
+    // contestSpared: villager interruption (player watches, relieved)
+    fresh(); const f3 = fresh(); heard.length = 0;
+    const u3 = rig([0.5]);
+    Game.contestInterruption(Object.assign({}, byId('secrets')), f3.vids[0]);
+    u3();
+    ok('audio: watch interruption emits contestSpared', heard.includes('contestSpared'), heard.join(','));
+    ok('audio: watch interruption does NOT emit contestTaken', !heard.includes('contestTaken'));
+    Game.audioEvent = origAE;
+  }
+
   console.log(`\n===== RESULT: ${pass} passed, ${fail} failed =====`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('SCRIPT ERROR', e); process.exit(2); });

@@ -469,6 +469,9 @@
       this.sysSay(`📺 ⚠️ HARDENED VARIANT — you've seen this before. It's worse now.`);
     }
     this.sysSay(`📺 ${pick.id === 'player' ? 'You have' : pick.name + ' has'} been chosen. The village holds its breath.`);
+    // AUDIO (Steve 2026-10-06): the contest window gets its own sting —
+    // game-show jingle curdles. No-op when no audio system is attached.
+    this.audioEvent('contestCall');
     
     // Countdown: 1 day (simplified)
     this.state.pendingContest = {
@@ -499,6 +502,10 @@
     }
     
     if (isPlayer) {
+      // AUDIO (Steve 2026-10-06): the grab — you are chosen (reverse swell
+      // + slow klaxon). Fires whether grabbed or given the choice; either
+      // way, the cameras are for you.
+      this.audioEvent('contestTaken');
       // Sometimes you get a choice, usually you're grabbed
       // (Steve 2026-10-05: "sometimes you get a choice depending on the contest,
       //  but usually it grabs you anyways, participate or don't")
@@ -578,6 +585,9 @@
       //  they can watch, especially if other villagers are involved")
       this.sysSay(`📺 ${pname} has been chosen. The village holds its breath.`);
       this.sysSay(`📺 You watch. The cameras love this part.`);
+      // AUDIO (Steve 2026-10-06): announced not-taken — relief with a
+      // dissonant shadow. Someone else is going on, and you're glad.
+      this.audioEvent('contestSpared');
       let wphases;
       try { wphases = this._contestWatchPhases(contest, participantId); } catch (e) { wphases = null; }
       if (!wphases || !wphases.length) {
