@@ -10390,6 +10390,9 @@
     if (tx < 0 || tx > 8 || ty < 0 || ty > 8) {
       const r = Game.tryNodeExit(step.dx, step.dy);
       if (r && r.blocked) toast(r.blocked.blockType === 'creek' ? '🌊 Creek blocks the way — bridge it or swim it.' : `🚧 Blocked ${r.dir} — clear the way first.`);
+      // NODE EXIT (Steve 2026-10-06): a successful crossing kills hold-to-move.
+      // A held finger must not chain-travel into the next node unintentionally.
+      if (r && r.moved) MoveAnim.clearHold();
       return { moved: !!(r && r.moved) };
     }
     const moved = step.kind === 'path' ? Game.pathStep(tx, ty) : Game.microMove(tx, ty);
@@ -11678,7 +11681,15 @@
         } catch (e) { /* no terrain layer */ }
         // ENTITIES OVERLAY: player, monster, animal, villager — always visible,
         // never overwritten by the cell underneath. People are not grass.
-        if (!isMe) {
+        // (Player was skipped here and the cell glyph overwrote the sprite —
+        //  Steve 2026-10-06: player invisible on grid.)
+        if (isMe) {
+          const _alert2 = tgPlayerAlertClasses(_tg, _gwDive, pmx, pmy).join(' ');
+          const meVp2 = Game.data.villagers.find(v => v.id === Game.villagerId) || (Game.data.background_survivors || []).find(v => v.id === Game.villagerId);
+          const _mspr2 = villagerSpriteHtml(meVp2);
+          const meName2 = meVp2 ? meVp2.name.split(' ')[0] : '';
+          g = `<span class="vent${_alert2 ? ' ' + _alert2 : ''}" data-ent="me"><span class="vtoken">${_mspr2 || '🧍'}</span>` + (meName2 ? `<span class="vname">${esc(meName2)}</span>` : '') + `</span>`;
+        } else {
           // turn-based combat: fighters render from the fight, not scholar.monster
           // COMBAT-OVER GUARD (Steve 2026-10-06): if the fight is over but
           // tbfight hasn't cleared yet (or got stuck), do NOT render fighters.
