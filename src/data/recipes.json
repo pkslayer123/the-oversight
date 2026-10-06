@@ -63,12 +63,17 @@
       "muskrat",
       "gray_fox",
       "striped_skunk",
-      "timber_rattlesnake"
+      "timber_rattlesnake",
+      "groundhog",
+      "north_american_beaver",
+      "bobcat",
+      "nine_banded_armadillo",
+      "nine_banded_armadillo"
     ],
     "knowledgeLevels": {
       "1": "A box trap. Woven saplings, a drop door, bait inside. For clever medium game.",
       "2": "Materials: 4 sticks + 2 vine + bait (meat scraps work best). The door counterweights shut behind them.",
-      "3": "You can build one. Set it by dens and water for raccoon and muskrat, on night trails for opossum. Foxes are shy of traps — bait it well, leave it alone, check at dawn. Skunks wander in too: open it from upwind, with a long stick, and have a change of clothes. A rattlesnake in the box means the weave held and your luck did too — pin it before you reach in."
+      "3": "You can build one. Set it by dens and water for raccoon and muskrat, on night trails for opossum. Foxes are shy of traps — bait it well, leave it alone, check at dawn. Groundhogs funnel straight into one set at a burrow mouth; beavers take a big one set on a slide; bobcats are fox-shy but the same bait works. Armadillos blunder in wherever they root — they barely look where they're going. Skunks wander in too: open it from upwind, with a long stick, and have a change of clothes. A rattlesnake in the box means the weave held and your luck did too — pin it before you reach in."
     }
   },
   {
@@ -152,13 +157,15 @@
     "gray_squirrel",
     "wild_turkey",
     "gray_fox",
+    "canada_goose",
+    "american_crow",
     "cottontail_rabbit",
     "gray_squirrel"
   ],
   "knowledgeLevels": {
     "1": "A snare with a bent sapling for a spring. Faster than a plain loop.",
     "2": "Materials: 2 vine + 2 sticks + bait. The sapling does the lifting — the loop only has to be in the right place.",
-    "3": "You can build one. Bend the sapling down, stake it, run the vine loop on a game trail and tie off to the trigger. Foxes take these on night trails; turkeys walk into them on dusting flats. Check at dawn — a spring-pole holds its catch off the ground, away from other teeth."
+    "3": "You can build one. Bend the sapling down, stake it, run the vine loop on a game trail and tie off to the trigger. Foxes take these on night trails; turkeys walk into them on dusting flats. A loop set low on a goose trail will take a goose now and then — they step right through. Crows are too wary for most sets, but one strutting a bait line will commit. Check at dawn — a spring-pole holds its catch off the ground, away from other teeth."
   }
 },
 {
