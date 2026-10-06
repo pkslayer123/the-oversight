@@ -56,6 +56,9 @@ const monsterToScenario = {
   'landlord': 'termsconditions',
   'union_rep': 'middlemanager',
   'memory_projector': 'nostalgia',
+  'nevermore': 'nevermore',
+  'nightcourt': 'nightcourt',
+  'statickite': 'statickite',
 };
 
 // Wave assignments from MONSTER-WAVES.md (NOT from monsters.json — that drifted)

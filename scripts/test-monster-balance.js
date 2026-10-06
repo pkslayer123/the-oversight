@@ -52,6 +52,9 @@ const SCENARIOS = {
   'union_rep': 'middlemanager',
   'bright_idea': 'inspiration',
   'memory_projector': 'nostalgia',
+  'nevermore': 'nevermore',
+  'nightcourt': 'nightcourt',
+  'statickite': 'statickite',
 };
 
 async function testMonster(monsterId) {

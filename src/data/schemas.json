@@ -167,6 +167,7 @@
    "terraformDesc": "string?",
    "blocks": "boolean?",
    "villageNames": "string[]?",
+   "flight": "boolean?",
    "snake": {
     "segments": "number?",
     "contactDamage": "number[2..2]?",
