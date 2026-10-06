@@ -14446,12 +14446,12 @@
           // 25% chance to call another. More toads = more croaking = higher chance.
           // 1 toad: 25%/round, 2 toads: 44%/round. Up to 3 max. The chorus builds.
           if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0) {
-            // Each PENDING toad rolls: 30% chance to answer the call.
-            // The chorus continues even if all alive toads are dead (Steve 2026-10-05).
+            // Each PENDING toad rolls: 40% chance to answer the call (Steve 2026-10-05: bump up to reduce dead air).
+            // The chorus continues even if all alive toads are dead.
             const pendingCount = this._pendingPack.count;
             let called = false;
             for (let i = 0; i < pendingCount && !called; i++) {
-              if (Math.random() < 0.30) called = true;
+              if (Math.random() < 0.40) called = true;
             }
             if (called) {
             const pp = this._pendingPack;
