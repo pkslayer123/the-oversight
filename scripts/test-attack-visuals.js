@@ -51,9 +51,13 @@ async function main() {
   
   // 2. Verify CSS classes exist
   const css = fs.readFileSync(path.join(ROOT, 'src/css/main.css'), 'utf8');
-  for (const cls of ['burstRadius', 'chargeLane', 'lineCells', 'targetTile', 'lockOn', 'rushIndicator', 'ambushZone', 'vague']) {
+  // rushIndicator removed (Steve 2026-10-06): rush patterns never declare —
+  // the bucket was unreachable dead code.
+  for (const cls of ['burstRadius', 'chargeLane', 'lineCells', 'targetTile', 'lockOn', 'ambushZone', 'vague',
+    'dozeLane', 'pepBurst', 'swarmHum', 'resonantBurst', 'flashBurst']) {
     ok(`CSS .cell.${cls} exists`, css.includes(`.cell.${cls}`));
   }
+  ok('CSS .cell.rushIndicator removed (dead)', !css.includes('.cell.rushIndicator'));
   
   // 3. Verify tbAllTelegraphCells function exists in app.js
   const appJs = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
