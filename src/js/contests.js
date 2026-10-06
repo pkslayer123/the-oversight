@@ -39,6 +39,7 @@
 //   - system_whim_chance: 0.1 random participant override (code: fireContest)
 //   - countdown_days: 1 (code: fireContest)
 //   - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
+//   - recast_dead: countdown outlives contestant → recast from living eligible, or cancel with the System's disappointment (code: resolveContest, Steve 2026-10-06)
 //   - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 //   - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 //   - watched_deaths: watch verdict rolls risk-scaled death — villagers can die on camera (code: _contestVerdict, Steve 2026-10-06)
@@ -622,17 +623,39 @@
     const pc = this.state.pendingContest;
     if (!pc) return;
     this.state.pendingContest = null;
-    
+
     const base = this.contestPool().find(c => c.id === pc.contestId);
     if (!base) return;
     // Re-apply wave scaling + variant: what was announced is what's played
     // (Steve 2026-10-06: the fire->resolve rebuild used to drop these).
     const contest = this._contestScaled(base, pc.variant || null);
-    
+
+    // RECAST (Steve 2026-10-06): the countdown can outlive its contestant —
+    // killed, exiled, or vanished overnight. The show still comes
+    // (unavoidable), but a corpse can't be televised: recast from the living
+    // eligible, or cancel with the System's disappointment on the record.
+    let who = pc.participant;
+    const s = this.state.scholar;
+    const roster = (this.state.village.roster || []);
+    const playerAlive = !this.state.over && (s.health || 0) > 0 && !s.exiled;
+    const alive = who === 'player' ? playerAlive : roster.includes(who);
+    if (!alive) {
+      const { eligible } = this.contestEligible();
+      const living = (eligible || []).filter(e => e.id !== 'player' || playerAlive);
+      const goneName = who === 'player' ? 'You' : this.displayName(who);
+      if (!living.length) {
+        this.sysSay(`📺 The System was going to take ${goneName}. ${goneName} ${who === 'player' ? 'are' : 'is'} gone — and there is no one left to take. The show is cancelled. The galaxy boos.`);
+        return;
+      }
+      const recast = living[Math.floor(Math.random() * living.length)];
+      this.sysSay(`📺 The System was going to take ${goneName}. ${who === 'player' ? 'You are' : goneName + ' is'} gone. The show must go on — it takes ${recast.id === 'player' ? 'YOU' : recast.name} instead.`);
+      who = recast.id;
+    }
+
     // INTERRUPTION (Steve 2026-10-05): the contest doesn't resolve via dice roll.
     // It INTERRUPTS. You go through the sequence. Participate or don't.
     // If you're not involved, you watch.
-    return this.contestInterruption(contest, pc.participant);
+    return this.contestInterruption(contest, who);
   };
 
   // === PLAYABLE CONTEST ENGINE (Steve 2026-10-05) ===
