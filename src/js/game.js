@@ -11427,6 +11427,13 @@
       if (tile.type === 'thicket') chance = 0.15;
       else if (tile.type === 'meadow') chance = 0.05;
       else if (tile.type === 'ruin') chance = 0.12;
+      // NIGHT (Steve 2026-10-06): the night belongs to nocturnal things. The
+      // cast already shifts after dark (creatureWeight), but at the same flat
+      // rate night legs felt identical to day legs in playtests (3 days, 9+
+      // night entries, 0 night encounters — the night cast never appeared).
+      // Night travel is tangibly riskier now; night_eyes / nocturnal_patterns
+      // still dodge it, so the counter-play is already in the game.
+      if (this.isNight()) chance *= 1.5;
       // RELIC — ghost_weave: harder to detect, by animals and otherwise.
       chance *= S.modifiers.resolve(1, 'travel.encounter', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
       // soft_step: you move quiet. Fewer encounters find you.
@@ -11448,27 +11455,54 @@
       }
       if (detect + nightRead > 0 && Math.random() < detect + nightRead && !scholar.monster) {
         this.say('Birds scatter in a sudden hush — something is moving out there. You give it a wide berth.');
+        scholar.spawnMisses = 0; // a dodge is still a beat — the pity clock resets
         return;
       }
-      if (Math.random() < chance && !scholar.monster) {
+      // PITY (Steve 2026-10-06): anti-clustering. Raw chance per entry is
+      // Poisson — 3 days of playtests showed whole quiet days (P(0 encounters
+      // in 8 entries) ~51% at base 8%) then ambush clusters, so "thickets feel
+      // dangerous" never landed per-crossing. Each miss raises the next roll;
+      // a spawn (or a monster already present) resets it. Measured effective
+      // rates with pity (seed 42, 5760 entries): thicket ~26%, base ~16%,
+      // meadow ~12%, ruin ~22% — the designed gradient holds (thicket >= 2x
+      // meadow), droughts roughly halve. The face chances below stay the design's.
+      const misses = scholar.monster ? 0 : (scholar.spawnMisses || 0);
+      const effChance = Math.min(chance * (1 + 0.25 * misses), 0.6);
+      if (Math.random() < effChance && !scholar.monster) {
+        scholar.spawnMisses = 0;
         // MONSTER WAVES: the System escalates. Wave 1 (calibration fauna) is
         // always in the pool. Wave 2 (advanced fauna) joins after System arrival.
         // Wave 3+ hook: gate on integration thresholds (see monsterWavePool).
         const mdefs = this.monsterWavePool();
+        // WAVE RATIO (Steve 2026-10-06): tile-entry spawns use the same wave
+        // ratios as castMonster (60% newest unlocked wave / 40% older) — the
+        // System's escalation reads the same whichever path spawns the beast.
+        // (Before: uniform over the pool — 55/45 at day 10, and the two spawn
+        // paths disagreed with each other.)
         // NIGHT ECOLOGY: the cast shifts after dark. Nocturnal things own the night;
         // diurnal things own the day. Weighted — nothing vanishes entirely.
+        const tw = this.spawnWaveTarget(mdefs);
+        const wcands = mdefs.filter(m => (m.wave || 1) === tw);
+        const pool = wcands.length ? wcands : mdefs;
         // WATER-SPAWN (Steve 2026-10-06): pickSpawnMonster gates 'in'-water
         // monsters on actual water; placeSpawnMonster puts them on/near it.
-        const mdef = this.pickSpawnMonster(mdefs);
+        const mdef = this.pickSpawnMonster(pool);
         if (mdef) {
           const spot = this.placeSpawnMonster(mdef);
           scholar.monster = { id: mdef.id, mx: spot.mx, my: spot.my };
           // AMBIGUITY: you don't know what it is. The village name, or the descriptor — never the true name.
           this.say(`Something moves out there — ${this.monsterDisplayName(mdef.id)}.`);
+        } else {
+          scholar.spawnMisses = misses + 1; // rolled but nothing spawnable — pity keeps counting
         }
       }
       // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
-      if (scholar.day >= 3 && !this.wanderer && !this.encounterDone) {
+      // WANDERER RECURRENCE (Steve 2026-10-06): one-shot per run meant the
+      // "birds went quiet" beat usually fizzled (45% contact by day 10 in sims)
+      // and then the system went dead for the rest of the run. After a contact,
+      // a new wanderer may be cast a few days later — the beat recurs.
+      const wNext = this.state.wandererNextDay || 3;
+      if (scholar.day >= 3 && scholar.day >= wNext && !this.wanderer) {
         // spawn at a random revealed-edge thicket, or near player
         const spots = [];
         for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
@@ -11481,6 +11515,7 @@
         const monsterId = cast.id || cast; // castMonster returns {id, veteran}
         const isVeteran = cast.veteran || false;
         this.wanderer = { x: s.x, y: s.y, dir: Math.random() < 0.5 ? 1 : -1, monsterId, veteran: isVeteran };
+        this.encounterDone = false; // per-wanderer: the moveWanderer contact guard keys off this
         this.say('Something big is moving in the woods. The birds went quiet.');
       }
       if (this.wanderer && this.map.px === this.wanderer.x && this.map.py === this.wanderer.y) {
@@ -11509,6 +11544,7 @@
         scholar.monster = { id: this.wanderer.monsterId, mx, my };
         this.say('Something big is HERE. In the grid with you. You can see it. It can see you.');
         this.encounterDone = true;
+        this.state.wandererNextDay = scholar.day + 4; // it comes back. they always come back.
         this.wanderer = null;
       }
     },
@@ -11533,6 +11569,7 @@
         // NAME DISCIPLINE: the panel must show the descriptor/village name,
         // never the true name — remember which beast this is for the UI.
         this.pendingMonsterId = w.monsterId;
+        this.state.wandererNextDay = this.state.scholar.day + 4; // it comes back. they always come back.
         this.wanderer = null;
       }
     },
@@ -14094,6 +14131,21 @@
       return wave <= this.unlockedWave();
     },
 
+    // WAVE RATIO (Steve 2026-10-06): which wave a fresh spawn belongs to.
+    // Single source of truth for the 60%-newest-wave ratios — used by both
+    // castMonster (wanderer/contest casting) and checkEncounter (tile-entry
+    // spawns), so the System's escalation reads the same on every path.
+    // (Wave 1: 100% wave 1. Wave 2: 60% w2 / 40% w1. Wave 3: 60/25/15.)
+    spawnWaveTarget(pool) {
+      let top = 1;
+      for (const m of (pool || [])) top = Math.max(top, m.wave || 1);
+      const r = Math.random();
+      if (top <= 1) return 1;
+      if (top === 2) return r < 0.6 ? 2 : 1;
+      if (top === 3) return r < 0.6 ? 3 : (r < 0.85 ? 2 : 1);
+      return r < 0.6 ? 4 : (r < 0.8 ? 3 : (r < 0.95 ? 2 : 1));
+    },
+
     // CASTING (Steve 2026-10-05): the System casts a monster appropriate to
     // your wave. Weighted random within the unlocked wave — variety, but never
     // over-leveled. The show must be entertaining, not a slaughter.
@@ -14106,19 +14158,7 @@
       // that — it never leaves its pool. Excluded from the roaming cast.
       const pool = this.data.monsters.filter(m => (m.wave || 1) <= wave && m.waterAffinity !== 'in');
       if (!pool.length) return 'hummice'; // fallback
-      // Ratios: 60% current wave, 25% previous, 15% older
-      // (Wave 1: 100% wave 1. Wave 2: 60% w2, 40% w1. Wave 3: 60% w3, 25% w2, 15% w1.)
-      const r = Math.random();
-      let targetWave;
-      if (wave === 1) {
-        targetWave = 1;
-      } else if (wave === 2) {
-        targetWave = r < 0.6 ? 2 : 1;
-      } else if (wave === 3) {
-        targetWave = r < 0.6 ? 3 : (r < 0.85 ? 2 : 1);
-      } else { // wave 4
-        targetWave = r < 0.6 ? 4 : (r < 0.8 ? 3 : (r < 0.95 ? 2 : 1));
-      }
+      const targetWave = this.spawnWaveTarget(pool);
       const candidates = pool.filter(m => (m.wave || 1) === targetWave);
       if (!candidates.length) {
         // Fallback to any in pool
