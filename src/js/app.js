@@ -10639,7 +10639,8 @@
         const st = Game.state;
         const tset = new Set(); // travel dest, if any
         try { const td = Game.travelDest ? Game.travelDest() : null; if (td) for (const k of td) tset.add(k); } catch (e) {}
-        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
+        const _seenCount = Object.keys((Game.state.scholar || {}).seenTiles || {}).length;
+        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World (${_seenCount} seen)</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
         overlay.classList.remove('hidden');
         overlay.querySelector('#mapoverlay-x').onclick = () => overlay.classList.add('hidden');
         overlay.querySelector('.mapoverlay-back').onclick = () => overlay.classList.add('hidden');
