@@ -118,6 +118,8 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 - wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
 - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
+- template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it) (code: contestPlayable, contestChoose, Steve 2026-10-06)
+- watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 9 wave-2+ contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added (code: _contestWatchBeat, Steve 2026-10-06)
 - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 
 **Consumes:** scholar.day, state.showBudget, state.pendingContest, state.contestsSeen, state.codex.contests
