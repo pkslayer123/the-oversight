@@ -11240,7 +11240,7 @@
   // edges blend into neighbors, so walking east shows the same water and trees.
   // plant cells show 🌱 until you've discovered what's there, then the real thing.
   const PLANT_GLYPH = {
-    hickory_nut: '🌰', acorn_white_oak: '🌰', blackberry: '🫐', dandelion: '🌼',
+    hickory_nut: '🥜', acorn_white_oak: '🌰', blackberry: '🫐', dandelion: '🌼',
     cattail: '🌾', persimmon: '🍑', muscadine: '🍇', wild_onion: '🧅',
     chickweed: '🌱', wood_sorrel: '☘️',
   };

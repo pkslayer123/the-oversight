@@ -95,6 +95,11 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .tile.depleted-lush { /* full stock: normal, no extra styling */ }
 .tile.depleted-picked { opacity: .7; filter: sepia(.4) saturate(.7); }
 .tile.depleted-barren { opacity: .45; filter: grayscale(.6) sepia(.3); border: 1px dashed #4a3f30; }
+/* KNOWN vs HUNCH (Steve 2026-10-06): a bush you've identified gets a gold
+   ring — earned knowledge looks different from a guess. The emoji stays the
+   same (it's still a berry bush); the ring says YOU know which one. */
+.tile.knownbush { box-shadow: inset 0 0 0 2px #c9a227; }
+.tile.berrybush { /* unknown berry: no ring, just the hunch */ }
 .tile.worn-path { border-bottom: 2px solid #6b5b3e; }
 .tile:active { background: var(--line); }
 .cost { font-size: 10px; opacity: .7; font-weight: normal; }
