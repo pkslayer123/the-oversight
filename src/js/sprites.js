@@ -536,6 +536,178 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 </g>
 </svg>`,
     nightlight_catfish_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><g transform=\"translate(0,5)\"><circle cx=\"6.6\" cy=\"5.6\" r=\"4.0\" fill=\"#57ff8a\" opacity=\"0.10\"/><circle cx=\"6.6\" cy=\"5.6\" r=\"2.8\" fill=\"#57ff8a\" opacity=\"0.16\"/><circle cx=\"6.6\" cy=\"5.6\" r=\"1.9\" fill=\"#2fd65f\"/><circle cx=\"6.6\" cy=\"5.6\" r=\"1.25\" fill=\"#a9ffc4\"/><circle cx=\"6.6\" cy=\"5.6\" r=\"0.6\" fill=\"#f4fff8\"/><line x1=\"5.9\" y1=\"4.9\" x2=\"6.4\" y2=\"5.4\" stroke=\"#ffffff\" stroke-width=\"0.45\" stroke-linecap=\"round\" opacity=\"0.9\"/><path d=\"M6.6 7.4 C7.1 9.0 8.1 10.4 9.7 11.7\" stroke=\"#b8f5cd\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"28.6,13.8 31.0,11.2 29.6,15\" fill=\"#1a1f26\"/><polygon points=\"28.6,16.2 31.0,18.8 29.6,15\" fill=\"#1a1f26\"/><path d=\"M9 12.5 C12 10.6 17 10.4 22 11.8 C25 12.6 27 13.2 28.6 13.8 L28.6 16.2 C27 16.8 25 17.4 22 18.2 C17 19.4 12 19.2 9 17.6 Z\" fill=\"#20262e\"/><path d=\"M9 12.5 C12 10.6 17 10.4 22 11.8 C25 12.6 27 13.2 28.6 13.8 L28.6 14.4 C24 13.6 18 13.2 13 13.4 C11 13.5 9.8 13 9 12.5 Z\" fill=\"#2c333d\"/><g fill=\"#14181e\" opacity=\"0.9\"><ellipse cx=\"17\" cy=\"14.6\" rx=\"1.7\" ry=\"1.1\"/><ellipse cx=\"22.5\" cy=\"15.8\" rx=\"1.4\" ry=\"1\"/><ellipse cx=\"14\" cy=\"17\" rx=\"1.1\" ry=\"0.8\"/></g><polygon points=\"14,11 14.9,6.2 16,10.8\" fill=\"#14181e\"/><polygon points=\"17.5,11.2 19.2,7.4 19.6,11.6\" fill=\"#14181e\"/><ellipse cx=\"9.5\" cy=\"15\" rx=\"3.2\" ry=\"2.9\" fill=\"#20262e\"/><ellipse cx=\"6\" cy=\"17.5\" rx=\"3.4\" ry=\"3.2\" fill=\"#060304\" transform=\"rotate(-15 6 17.5)\"/><ellipse cx=\"6.2\" cy=\"18.2\" rx=\"2.1\" ry=\"2.1\" fill=\"#0e0508\"/><g><polygon points=\"2.5,14.6 3.9,14.6 4.2,17.2\" fill=\"#ded8bc\"/><polygon points=\"4.2,14 5.6,14 5.6,16.4\" fill=\"#ded8bc\"/><polygon points=\"6.1,13.8 7.5,13.8 7,16.2\" fill=\"#ded8bc\"/><polygon points=\"8,14.2 9.4,14.2 8.4,16.4\" fill=\"#ded8bc\"/><polygon points=\"2.3,20.4 3.7,20.4 4.2,18.4\" fill=\"#ded8bc\"/><polygon points=\"4,21.2 5.4,21.2 5.6,18.8\" fill=\"#ded8bc\"/><polygon points=\"5.9,21.4 7.3,21.4 7,19\" fill=\"#ded8bc\"/><polygon points=\"7.8,20.9 9.2,20.9 8.4,18.6\" fill=\"#ded8bc\"/></g><circle cx=\"10.4\" cy=\"13.2\" r=\"0.8\" fill=\"#3a1010\"/><circle cx=\"10.6\" cy=\"13\" r=\"0.3\" fill=\"#ff5a4a\" opacity=\"0.8\"/><g stroke=\"#c9c2a8\" stroke-width=\"0.65\" fill=\"none\" stroke-linecap=\"round\"><path d=\"M5.2 16 C3.8 16.4 3.2 17.6 2.8 19.2\"/><path d=\"M5 17.4 C3.8 18.2 3.2 19.4 2.7 21\"/><path d=\"M9 19 C8 20.2 7.4 21.6 7.2 23.2\"/></g><g fill=\"#a9ffc4\" opacity=\"0.85\"><circle cx=\"2.8\" cy=\"19.2\" r=\"0.4\"/><circle cx=\"2.7\" cy=\"21\" r=\"0.4\"/><circle cx=\"7.2\" cy=\"23.2\" r=\"0.4\"/></g><g stroke=\"#d6ffe8\" stroke-width=\"0.55\" fill=\"none\" opacity=\"0.9\"><path d=\"M20.2 15.6 L21.4 15.4 L21.9 16.8 L23.5 15.2 L21.6 19.9\" /><path d=\"M17.7 17 L17.6 18 L17 18.9 L18.6 20 L18.7 21\" /><path d=\"M15.7 15.4 L14.9 16 L14.1 16.8 L12.9 16.7 L13.1 18.8\" /></g></g></svg>`,
+
+    nevermore_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- nevermore calm: an ordinary crow, standing. Nothing wrong with it. Yet. -->
+  <!-- tail -->
+  <path d=\"M21 15 L29 9 L27.5 13.5 L22.5 17.5 Z\" fill=\"#141416\"/>
+  <!-- body -->
+  <ellipse cx=\"16\" cy=\"17\" rx=\"7\" ry=\"4.6\" fill=\"#1a1a1e\"/>
+  <!-- folded wing -->
+  <path d=\"M13 14.5 Q18 13 22 16.5 Q18 19.5 13.5 18.5 Z\" fill=\"#232328\"/>
+  <path d=\"M14 15.5 L20 16.5 M14.5 17 L19.5 17.8\" stroke=\"#101013\" stroke-width=\"0.7\" fill=\"none\"/>
+  <!-- head -->
+  <circle cx=\"9.5\" cy=\"12.5\" r=\"3.2\" fill=\"#1a1a1e\"/>
+  <!-- beak -->
+  <polygon points=\"6.8,11.3 2.8,12.9 6.8,14.2\" fill=\"#55565c\"/>
+  <!-- eye: dark, ordinary -->
+  <circle cx=\"8.9\" cy=\"11.7\" r=\"0.6\" fill=\"#0a0a0a\"/>
+  <circle cx=\"9.1\" cy=\"11.5\" r=\"0.18\" fill=\"#cfd6dd\" opacity=\"0.7\"/>
+  <!-- throat hackles -->
+  <path d=\"M8 15.5 l-1 1.6 M9.5 16 l-0.7 1.7\" stroke=\"#101013\" stroke-width=\"0.6\"/>
+  <!-- legs -->
+  <path d=\"M14 21.2 L13.6 27.5 M18 21.2 L18.4 27.5\" stroke=\"#3a3a3f\" stroke-width=\"1\"/>
+  <path d=\"M13.6 27.5 l-1.6 1 M13.6 27.5 l0.2 1.8 M13.6 27.5 l1.5 1.2 M18.4 27.5 l-1.5 1.2 M18.4 27.5 l-0.2 1.8 M18.4 27.5 l1.6 1\" stroke=\"#3a3a3f\" stroke-width=\"0.7\"/>
+</svg>`,
+    nevermore_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- nevermore aggro: THE UNFOLDING. Wings spread into black blades, beak split
+       four ways, eyes burning. Its shadow detaches below — the shadow moves first. -->
+  <!-- the detached shadow -->
+  <ellipse cx=\"17.5\" cy=\"29\" rx=\"8\" ry=\"1.6\" fill=\"#000000\" opacity=\"0.45\"/>
+  <!-- left blade-wing -->
+  <path d=\"M15 16 L2 3 L5 8 L3.5 9.5 L7 11 L5.5 13.5 L9.5 14.5 L8.5 17.5 L13 17 L12.5 20 L16 18.5 Z\" fill=\"#0a0a0c\"/>
+  <path d=\"M14 16.5 L6 8 M13.5 17.5 L8.5 12.5\" stroke=\"#2a2a30\" stroke-width=\"0.7\" fill=\"none\"/>
+  <!-- right blade-wing -->
+  <path d=\"M17 16 L30 3 L27 8 L28.5 9.5 L25 11 L26.5 13.5 L22.5 14.5 L23.5 17.5 L19 17 L19.5 20 L16 18.5 Z\" fill=\"#0a0a0c\"/>
+  <path d=\"M18 16.5 L26 8 M18.5 17.5 L23.5 12.5\" stroke=\"#2a2a30\" stroke-width=\"0.7\" fill=\"none\"/>
+  <!-- body, hunched -->
+  <ellipse cx=\"16\" cy=\"19\" rx=\"4.6\" ry=\"5.2\" fill=\"#121214\"/>
+  <!-- head, thrown back -->
+  <circle cx=\"16\" cy=\"11.5\" r=\"2.8\" fill=\"#121214\"/>
+  <!-- THE BEAK: split four ways -->
+  <polygon points=\"14.5,9.5 12,4.5 15.2,8\" fill=\"#3a3a40\"/>
+  <polygon points=\"17.5,9.5 20,4.5 16.8,8\" fill=\"#3a3a40\"/>
+  <polygon points=\"14.5,13.5 12.5,17.5 15.5,14\" fill=\"#2c2c31\"/>
+  <polygon points=\"17.5,13.5 19.5,17.5 16.5,14\" fill=\"#2c2c31\"/>
+  <!-- THE EYES: burning amber -->
+  <circle cx=\"14.6\" cy=\"11\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"17.4\" cy=\"11\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"14.6\" cy=\"11\" r=\"0.4\" fill=\"#fff3d0\"/>
+  <circle cx=\"17.4\" cy=\"11\" r=\"0.4\" fill=\"#fff3d0\"/>
+  <circle cx=\"14.6\" cy=\"11\" r=\"1.45\" fill=\"none\" stroke=\"#ffb020\" stroke-width=\"0.4\" opacity=\"0.6\"/>
+  <circle cx=\"17.4\" cy=\"11\" r=\"1.45\" fill=\"none\" stroke=\"#ffb020\" stroke-width=\"0.4\" opacity=\"0.6\"/>
+  <!-- talons, spread for the run -->
+  <path d=\"M13.5 23.5 L11 28 M18.5 23.5 L21 28\" stroke=\"#1c1c20\" stroke-width=\"1\"/>
+  <path d=\"M11 28 l-1.2 1 M11 28 l1.2 1 M21 28 l-1.2 1 M21 28 l1.2 1\" stroke=\"#3a3a40\" stroke-width=\"0.8\"/>
+  <!-- falling feather-shards -->
+  <polygon points=\"7,22 8.5,24.5 6.5,24\" fill=\"#0a0a0c\"/>
+  <polygon points=\"25,23 26.5,25.5 24.5,25\" fill=\"#0a0a0c\"/>
+</svg>`,
+    nightcourt_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- nightcourt calm: a great horned owl, perched. Mottled brown, ear tufts,
+       big forward eyes. An ordinary owl. -->
+  <!-- ear tufts -->
+  <polygon points=\"10.5,7.5 8.5,2.5 13,5.5\" fill=\"#5a4530\"/>
+  <polygon points=\"21.5,7.5 23.5,2.5 19,5.5\" fill=\"#5a4530\"/>
+  <!-- body -->
+  <ellipse cx=\"16\" cy=\"18.5\" rx=\"6.5\" ry=\"8\" fill=\"#6b5136\"/>
+  <!-- wing folds -->
+  <path d=\"M10.5 15 Q9 20 11 25 M21.5 15 Q23 20 21 25\" stroke=\"#4a3826\" stroke-width=\"1.2\" fill=\"none\"/>
+  <!-- facial disks -->
+  <circle cx=\"13\" cy=\"11\" r=\"3.6\" fill=\"#c9b18a\"/>
+  <circle cx=\"19\" cy=\"11\" r=\"3.6\" fill=\"#c9b18a\"/>
+  <!-- eyes -->
+  <circle cx=\"13\" cy=\"11\" r=\"1.7\" fill=\"#ffb020\"/>
+  <circle cx=\"19\" cy=\"11\" r=\"1.7\" fill=\"#ffb020\"/>
+  <circle cx=\"13\" cy=\"11\" r=\"0.9\" fill=\"#1a120a\"/>
+  <circle cx=\"19\" cy=\"11\" r=\"0.9\" fill=\"#1a120a\"/>
+  <circle cx=\"13.4\" cy=\"10.6\" r=\"0.3\" fill=\"#fff\" opacity=\"0.85\"/>
+  <circle cx=\"19.4\" cy=\"10.6\" r=\"0.3\" fill=\"#fff\" opacity=\"0.85\"/>
+  <!-- beak -->
+  <polygon points=\"14.8,13.2 17.2,13.2 16,15.5\" fill=\"#2a2a2a\"/>
+  <!-- chest barring -->
+  <path d=\"M11 18 h10 M11.5 20.5 h9 M12 23 h8 M12.5 25.5 h7\" stroke=\"#4a3826\" stroke-width=\"0.8\" opacity=\"0.8\"/>
+  <!-- feet -->
+  <ellipse cx=\"13\" cy=\"27.5\" rx=\"1.6\" ry=\"1\" fill=\"#8a7a5c\"/>
+  <ellipse cx=\"19\" cy=\"27.5\" rx=\"1.6\" ry=\"1\" fill=\"#8a7a5c\"/>
+  <path d=\"M11.8 28.2 q-0.8 0.8 -1.4 0.4 M14.2 28.2 q0.8 0.8 1.4 0.4 M17.8 28.2 q-0.8 0.8 -1.4 0.4 M20.2 28.2 q0.8 0.8 1.4 0.4\" stroke=\"#2a2a2a\" stroke-width=\"0.8\" fill=\"none\"/>
+</svg>`,
+    nightcourt_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- nightcourt aggro: THE SILENT JUDGE. Head rotated past possible, talons
+       overgrown into gavel-hooks, eyes huge and pale. The arcs collapsing
+       inward are the silence — sound going INTO the owl. -->
+  <!-- half-spread wings -->
+  <path d=\"M10 16 L2 12 L4 17 L2.5 19 L7 20 Z\" fill=\"#241a10\"/>
+  <path d=\"M22 16 L30 12 L28 17 L29.5 19 L25 20 Z\" fill=\"#241a10\"/>
+  <!-- body, dark -->
+  <ellipse cx=\"16\" cy=\"19\" rx=\"6\" ry=\"7.5\" fill=\"#3a2c1e\"/>
+  <path d=\"M11 17 h10 M11.5 20 h9 M12 23 h8\" stroke=\"#241a10\" stroke-width=\"1\" opacity=\"0.9\"/>
+  <!-- neck ruff, twisted -->
+  <path d=\"M11 12 Q16 9 21 12 L20 15 Q16 13 12 15 Z\" fill=\"#4a3826\"/>
+  <!-- HEAD: twisted 270 degrees — the face stares sideways out of a rotated skull -->
+  <ellipse cx=\"16\" cy=\"8\" rx=\"4.2\" ry=\"3.4\" fill=\"#4a3826\"/>
+  <path d=\"M12.5 7 Q16 4.5 19.5 7 Q16 6 12.5 7 Z\" fill=\"#c9b18a\" opacity=\"0.9\"/>
+  <path d=\"M12 8.5 Q16 11 20 8.5\" stroke=\"#241a10\" stroke-width=\"0.8\" fill=\"none\"/>
+  <!-- twist creases in the neck -->
+  <path d=\"M13.5 10.5 Q16 11.5 18.5 10.5\" stroke=\"#241a10\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.8\"/>
+  <!-- THE EYES: huge, pale, forward — courtroom lights -->
+  <circle cx=\"12.5\" cy=\"7.5\" r=\"2.2\" fill=\"#e8e4d8\"/>
+  <circle cx=\"12.5\" cy=\"7.5\" r=\"0.7\" fill=\"#0a0a0a\"/>
+  <circle cx=\"19.5\" cy=\"7.5\" r=\"2.2\" fill=\"#e8e4d8\"/>
+  <circle cx=\"19.5\" cy=\"7.5\" r=\"0.7\" fill=\"#0a0a0a\"/>
+  <!-- hooked beak, oversized -->
+  <path d=\"M15 10 Q16 13.5 13.5 14.5 Q15.5 14 16 12 Z\" fill=\"#1c1c1c\"/>
+  <!-- GAVEL TALONS: overgrown hooks -->
+  <path d=\"M11 25.5 Q8 28 9.5 30.5 Q9 28.5 12 27.5 Z\" fill=\"#d8ccaa\"/>
+  <path d=\"M21 25.5 Q24 28 22.5 30.5 Q23 28.5 20 27.5 Z\" fill=\"#d8ccaa\"/>
+  <path d=\"M9.5 30.5 L8.5 31.5 M22.5 30.5 L23.5 31.5\" stroke=\"#1c1c1c\" stroke-width=\"1\"/>
+  <!-- THE SILENCE: sound collapsing inward -->
+  <g stroke=\"#8a93a0\" stroke-width=\"1\" fill=\"none\" opacity=\"0.85\">
+    <path d=\"M4 8 Q7 10 8.5 12\"/>
+    <path d=\"M2.5 5 Q7 8 9.5 11\"/>
+    <path d=\"M28 8 Q25 10 23.5 12\"/>
+    <path d=\"M29.5 5 Q25 8 22.5 11\"/>
+  </g>
+</svg>`,
+    statickite_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+<g transform=\"translate(16 17) scale(1.28) translate(-16 -17)\">
+  <!-- statickite calm: a dead kite, draped and sagging. Screen dark. Nobody
+       is holding the string. -->
+  <!-- sagging diamond -->
+  <path d=\"M16 7 Q20 11 22.5 16.5 Q19 21 15 25.5 Q11 21 9.5 16.5 Q12 11 16 7 Z\" fill=\"#2a2d33\"/>
+  <!-- slack spars -->
+  <path d=\"M16 7 Q16.5 16 15 25.5 M9.5 16.5 Q16 15.5 22.5 16.5\" stroke=\"#4a4e55\" stroke-width=\"0.8\" fill=\"none\"/>
+  <!-- dead screen -->
+  <path d=\"M16 11.5 Q18.5 14 19.5 16.5 Q18 19 15.5 21.5 Q13.5 19 12.8 16.5 Q13.8 14 16 11.5 Z\" fill=\"#0a0a0c\"/>
+  <!-- loose string -->
+  <path d=\"M15 25.5 Q13 28 14.5 31\" stroke=\"#6a6e75\" stroke-width=\"0.7\" fill=\"none\"/>
+  <path d=\"M22.5 16.5 Q26 17.5 27.5 20\" stroke=\"#6a6e75\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.7\"/>
+</g>
+</svg>`,
+    statickite_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- statickite aggro: THE BROADCAST. The kite snaps taut — a lattice of
+       static-glass. The screen shows YOU, from above. The ribbon tail ticks
+       your name. -->
+  <!-- taut diamond frame -->
+  <polygon points=\"16,3 27.5,15 16,27 4.5,15\" fill=\"#dfe6ee\" opacity=\"0.92\"/>
+  <!-- lattice -->
+  <path d=\"M16 3 L16 27 M4.5 15 L27.5 15 M10 9 L22 21 M22 9 L10 21\" stroke=\"#8a93a0\" stroke-width=\"0.7\" opacity=\"0.8\"/>
+  <!-- static noise -->
+  <g fill=\"#ffffff\" opacity=\"0.85\">
+    <rect x=\"8\" y=\"10\" width=\"1.4\" height=\"0.9\"/><rect x=\"20\" y=\"8\" width=\"1.1\" height=\"1.2\"/>
+    <rect x=\"13\" y=\"19\" width=\"1.3\" height=\"0.8\"/><rect x=\"23\" y=\"17\" width=\"1\" height=\"1\"/>
+    <rect x=\"10\" y=\"21\" width=\"1.2\" height=\"0.9\"/>
+  </g>
+  <g fill=\"#5a6270\" opacity=\"0.9\">
+    <rect x=\"18\" y=\"12\" width=\"1.2\" height=\"0.9\"/><rect x=\"11\" y=\"14\" width=\"1\" height=\"1.1\"/>
+    <rect x=\"21\" y=\"20\" width=\"1.3\" height=\"0.8\"/>
+  </g>
+  <!-- THE SCREEN: footage of you, from above -->
+  <rect x=\"11.5\" y=\"10.5\" width=\"9\" height=\"9\" fill=\"#0c0f14\" stroke=\"#ffb020\" stroke-width=\"0.8\"/>
+  <circle cx=\"16\" cy=\"13.5\" r=\"1.3\" fill=\"#e8ecf5\"/>
+  <path d=\"M16 14.8 L16 17.5 M16 15.5 L14 16.5 M16 15.5 L18 16.5 M16 17.5 L14.8 19 M16 17.5 L17.2 19\" stroke=\"#e8ecf5\" stroke-width=\"0.8\"/>
+  <!-- scanlines -->
+  <path d=\"M11.5 12.5 h9 M11.5 14.5 h9 M11.5 16.5 h9 M11.5 18.5 h9\" stroke=\"#7df9ff\" stroke-width=\"0.3\" opacity=\"0.5\"/>
+  <!-- spar joints, hot -->
+  <circle cx=\"16\" cy=\"3\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"27.5\" cy=\"15\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"16\" cy=\"27\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"4.5\" cy=\"15\" r=\"1\" fill=\"#ffb020\"/>
+  <!-- TICKER RIBBON: your name, ticking past -->
+  <path d=\"M16 27 Q14 29.5 16 31.5 Q18 29.5 16 27\" fill=\"#c0392b\"/>
+  <path d=\"M14.8 28.5 h2.4 M14.6 29.7 h2.8 M14.9 30.8 h2.2\" stroke=\"#ffffff\" stroke-width=\"0.5\" opacity=\"0.85\"/>
+</svg>`,
+
     ducks_in_a_row_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g transform=\"translate(16 16) scale(0.92) translate(-16 -16)\"><path d=\"M14 23.5 L14 29.4 M18.5 23.5 L18.5 29.4\" stroke=\"#c96a2a\" stroke-width=\"1.4\"/><path d=\"M14 29.4 l-1.9 1.1 M14 29.4 l1.9 1.1 M18.5 29.4 l-1.9 1.1 M18.5 29.4 l1.9 1.1\" stroke=\"#c96a2a\" stroke-width=\"1\" stroke-linecap=\"round\"/><path d=\"M23 17.5 L30.5 15 L28.5 21.5 Z\" fill=\"#241e19\"/><ellipse cx=\"16.5\" cy=\"19.5\" rx=\"8\" ry=\"4.3\" fill=\"#2e2620\"/><ellipse cx=\"17.5\" cy=\"19\" rx=\"5.4\" ry=\"2.7\" fill=\"#3a3129\"/><path d=\"M13.5 17.6 q4 -1.6 8 0\" stroke=\"#4a6a3a\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.8\"/><path d=\"M14 20.4 q3.6 1.2 7 0\" stroke=\"#5a4a6a\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.6\"/><path d=\"M10 17.8 Q9.2 14.5 9.6 12.2 L12 12.8 Q11.4 15.2 11.8 17.8 Z\" fill=\"#ddd8cc\"/><circle cx=\"8.6\" cy=\"11.8\" r=\"3.1\" fill=\"#e8e4da\"/><ellipse cx=\"9.4\" cy=\"10.8\" rx=\"1.6\" ry=\"1\" fill=\"#f4f0e6\" opacity=\"0.8\"/><g fill=\"#c23b2e\"><circle cx=\"6.6\" cy=\"11.4\" r=\"0.85\"/><circle cx=\"7.6\" cy=\"10.6\" r=\"0.7\"/><circle cx=\"6.2\" cy=\"12.6\" r=\"0.7\"/><circle cx=\"7.3\" cy=\"12.4\" r=\"0.55\"/><circle cx=\"5.8\" cy=\"10.8\" r=\"0.5\"/></g><g fill=\"#a02a20\"><circle cx=\"6.6\" cy=\"11.4\" r=\"0.35\"/><circle cx=\"7.6\" cy=\"10.6\" r=\"0.3\"/><circle cx=\"6.2\" cy=\"12.6\" r=\"0.3\"/></g><path d=\"M5.8 12.2 L1.6 14.2 Q1 14.5 1.6 15 L5.8 15.6 Z\" fill=\"#d8c4b4\"/><path d=\"M5.8 12.2 L1.6 14.2 Q1 14.5 1.6 15 L3 15.3 Q2 14.6 2.6 14 Z\" fill=\"#e8d8c8\" opacity=\"0.7\"/><ellipse cx=\"2.2\" cy=\"14.9\" rx=\"0.5\" ry=\"0.35\" fill=\"#8a7a6e\"/><path d=\"M4.2 13.6 q0.8 0.3 1.4 0.8\" stroke=\"#a08a7a\" stroke-width=\"0.4\" fill=\"none\"/><circle cx=\"7.9\" cy=\"11.9\" r=\"0.62\" fill=\"#3a2415\"/><circle cx=\"8.05\" cy=\"11.75\" r=\"0.2\" fill=\"#fff\" opacity=\"0.85\"/></g></svg>`,
     ducks_in_a_row_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g transform=\"translate(0 4)\"><path d=\"M4.5 21 C4.5 18.5 7 17 10 17 L22 17 C26 17 28.5 18.5 28.5 21 C28.5 23.5 26 25 22 25 L10 25 C7 25 4.5 23.5 4.5 21 Z\" fill=\"#14101a\"/><g stroke=\"#241a30\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\"><path d=\"M7 18.5 l-1.2 -1.2 M12 18.2 l-0.8 -1.5 M17 18.2 l-0.8 -1.5 M22 18.2 l-0.8 -1.5 M26.5 18.8 l-1 -1.3\"/></g><path d=\"M6 20.2 q5.5 -1.6 10.5 0 q5.5 1.6 10.5 0\" stroke=\"#3a2a5a\" stroke-width=\"0.8\" fill=\"none\" opacity=\"0.9\"/><path d=\"M6.5 23 q5 1.4 9.8 0 q5 -1.4 10 0\" stroke=\"#1a4a3a\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.8\"/><path d=\"M7 17.5 Q6.4 14.5 6.8 12 L9.6 12.4 Q9 14.8 9.6 17.5 Z\" fill=\"#1a1418\"/><path d=\"M12.5 17.5 Q11.9 14.5 12.3 12 L15.1 12.4 Q14.5 14.8 15.1 17.5 Z\" fill=\"#1a1418\"/><path d=\"M18 17.5 Q17.4 14.5 17.8 12 L20.6 12.4 Q20 14.8 20.6 17.5 Z\" fill=\"#1a1418\"/><circle cx=\"8\" cy=\"10.2\" r=\"2.1\" fill=\"#14101a\"/><circle cx=\"7.4\" cy=\"10\" r=\"0.55\" fill=\"#ff2222\"/><path d=\"M6 10.6 L3.6 11.6 L6.2 12.6 Z\" fill=\"#8a7a6e\"/><circle cx=\"13.5\" cy=\"10.2\" r=\"2.1\" fill=\"#14101a\"/><circle cx=\"12.9\" cy=\"10\" r=\"0.55\" fill=\"#ff2222\"/><path d=\"M11.5 10.6 L9.1 11.6 L11.7 12.6 Z\" fill=\"#8a7a6e\"/><circle cx=\"19\" cy=\"10.2\" r=\"2.1\" fill=\"#14101a\"/><circle cx=\"18.4\" cy=\"10\" r=\"0.55\" fill=\"#ff2222\"/><path d=\"M17 10.6 L14.6 11.6 L17.2 12.6 Z\" fill=\"#8a7a6e\"/><path d=\"M23.5 17.5 Q22.9 14.5 23.3 12.6 L26.1 12.6 Q25.5 14.8 26.1 17.5 Z\" fill=\"#1a1418\"/><circle cx=\"24.6\" cy=\"9.8\" r=\"2.7\" fill=\"#0f0d12\"/><g fill=\"#d42a1a\"><circle cx=\"22.4\" cy=\"8.6\" r=\"0.85\"/><circle cx=\"26.8\" cy=\"8.6\" r=\"0.85\"/><circle cx=\"22.1\" cy=\"10.6\" r=\"0.65\"/><circle cx=\"27.1\" cy=\"10.6\" r=\"0.65\"/><circle cx=\"23.6\" cy=\"7.4\" r=\"0.55\"/><circle cx=\"25.6\" cy=\"7.4\" r=\"0.55\"/></g><g fill=\"#7a0f08\"><circle cx=\"22.4\" cy=\"8.6\" r=\"0.38\"/><circle cx=\"26.8\" cy=\"8.6\" r=\"0.38\"/><circle cx=\"22.1\" cy=\"10.6\" r=\"0.3\"/><circle cx=\"27.1\" cy=\"10.6\" r=\"0.3\"/></g><circle cx=\"23.4\" cy=\"10\" r=\"0.7\" fill=\"#ff2222\"/><circle cx=\"25.8\" cy=\"10\" r=\"0.7\" fill=\"#ff2222\"/><path d=\"M23.4 9.5 l0 1 M25.8 9.5 l0 1\" stroke=\"#2a0000\" stroke-width=\"0.35\"/><path d=\"M24.6 11.8 L21.2 16.4 L28 16.4 Z\" fill=\"#5a1a12\"/><path d=\"M24.6 12.3 L22.6 15.6 L26.6 15.6 Z\" fill=\"#050505\"/><g fill=\"#d8cfc0\"><path d=\"M22.2 15.2 l0.45 1 l0.45 -1 Z M23.4 15.3 l0.45 1 l0.45 -1 Z M24.6 15.3 l0.45 1 l0.45 -1 Z M25.8 15.2 l0.45 1 l0.45 -1 Z\"/><path d=\"M22.4 14.6 l0.45 -0.8 l0.45 0.8 Z M23.8 14.4 l0.45 -0.8 l0.45 0.8 Z M25.2 14.4 l0.45 -0.8 l0.45 0.8 Z\"/></g></g></svg>`,
     glasswing_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g transform=\"translate(0 2)\"><g transform=\"translate(16 14) scale(1.22) translate(-16 -14)\"><path d=\"M15.2 17.5 Q10 19 8.6 24.5 Q13 24 15.4 19.6 Z\" fill=\"#ffffff\" opacity=\"0.32\" stroke=\"#a85f1c\" stroke-width=\"0.9\"/><path d=\"M16.8 17.5 Q22 19 23.4 24.5 Q19 24 16.6 19.6 Z\" fill=\"#ffffff\" opacity=\"0.32\" stroke=\"#a85f1c\" stroke-width=\"0.9\"/><path d=\"M15 14 Q9 8 7.4 4.5 Q11 4 14.6 9.5 Q15.6 12 15 14 Z\" fill=\"#ffffff\" opacity=\"0.3\" stroke=\"#a85f1c\" stroke-width=\"0.9\"/><path d=\"M17 14 Q23 8 24.6 4.5 Q21 4 17.4 9.5 Q16.4 12 17 14 Z\" fill=\"#ffffff\" opacity=\"0.3\" stroke=\"#a85f1c\" stroke-width=\"0.9\"/><ellipse cx=\"10.6\" cy=\"8.6\" rx=\"1.3\" ry=\"2.2\" fill=\"#ffffff\" opacity=\"0.9\" transform=\"rotate(-28 10.6 8.6)\"/><ellipse cx=\"21.4\" cy=\"8.6\" rx=\"1.3\" ry=\"2.2\" fill=\"#ffffff\" opacity=\"0.9\" transform=\"rotate(28 21.4 8.6)\"/><g stroke=\"#8a4f16\" stroke-width=\"0.4\" opacity=\"0.9\"><path d=\"M14.8 13.5 L10.5 6.5 M14.8 13.5 L12.8 5.6 M17.2 13.5 L21.5 6.5 M17.2 13.5 L19.2 5.6\"/><path d=\"M15.2 18 L11.5 22.5 M16.8 18 L20.5 22.5\"/></g></g><ellipse cx=\"16\" cy=\"17.5\" rx=\"1.1\" ry=\"5\" fill=\"#1c1c1c\"/><circle cx=\"16\" cy=\"11.6\" r=\"1.3\" fill=\"#1c1c1c\"/><circle cx=\"15.6\" cy=\"11.4\" r=\"0.35\" fill=\"#0a0a0a\"/><path d=\"M15.5 10.6 Q13 6 11.5 3.6 M16.5 10.6 Q19 6 20.5 3.6\" stroke=\"#1c1c1c\" stroke-width=\"0.5\" fill=\"none\"/><circle cx=\"11.5\" cy=\"3.6\" r=\"0.4\" fill=\"#1c1c1c\"/><circle cx=\"20.5\" cy=\"3.6\" r=\"0.4\" fill=\"#1c1c1c\"/><path d=\"M15.2 16 l-2.4 3.4 M16.8 16 l2.4 3.4 M15.2 19 l-2.2 4.6 M16.8 19 l2.2 4.6\" stroke=\"#1c1c1c\" stroke-width=\"0.45\"/></g></svg>`,
@@ -657,8 +829,6 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
   const UNKNOWN_ITEM = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite"><rect x="8" y="10" width="16" height="13" rx="2" fill="#6b5b3e" stroke="#4a3f30" stroke-width="1"/><path d="M8 14 L24 14" stroke="#4a3f30" stroke-width="1"/><text x="16" y="21" text-anchor="middle" font-size="9" fill="#2a2419" font-family="monospace">?</text></svg>`;
   function itemSprite(itemId, known) {
     if (known && SPRITES[itemId]) return SPRITES[itemId];
-    // CLASS FALLBACK (Steve 2026-10-06): known items without a specific sprite
-    // get a class-based generic, not the "?" parcel. The "?" is for unknown.
     if (known) {
       try {
         const data = (global.Scattering.Game && global.Scattering.Game.data) || {};
@@ -694,15 +864,6 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
     // Fallback: root sprite for the cell type.
     const root = ROOTS[cellType] || ROOTS.bush;
     return SPRITES[root] || null;
-  }
-
-  // monsterSprite(mid, aggro): calm = the real animal/mundane thing (Steve's law:
-  // identical until aggro), aggro = the monster revealed. Falls back to calm.
-  function monsterSprite(mid, aggro) {
-    const key = mid + (aggro ? '_aggro' : '_calm');
-    if (SPRITES[key]) return SPRITES[key];
-    const calm = SPRITES[mid + '_calm'];
-    return calm || null;
   }
 
   // monsterSprite(mid, aggro): calm = the real animal/mundane thing (Steve's law:
@@ -863,7 +1024,6 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
     }
     if (veq.torso) {
       if (veq.torso.fullSet) {
-        // RIOT GEAR: bulky dark armor head-to-toe
         s += `<path d="M${16 - shoulderW/2 - 1} 12.5 L${16 + shoulderW/2 + 1} 12.5 L${16 + shoulderW/2} 23.5 L${16 - shoulderW/2} 23.5 Z" fill="#2e3138" opacity="0.95"/>`;
         s += `<rect x="${16 - 3.5}" y="14" width="7" height="1.2" fill="#4a4f58"/><rect x="${16 - 3.5}" y="18" width="7" height="1.2" fill="#4a4f58"/>`;
         s += `<rect x="${hx - 4.2}" y="${hy - 4.4}" width="8.4" height="2.6" rx="1.2" fill="#2e3138"/>`;
