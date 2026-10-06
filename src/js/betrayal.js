@@ -1742,7 +1742,10 @@
         c.transcript.push({ who: 'them', text: line });
         while (c.transcript.length > 8) c.transcript.shift();
         c.exchanges = (c.exchanges || 0) + 1;
-        this.say(`${this.displayName(vid)}: "${line}"`);
+        // One quote layer via sayLine: lines arriving pre-quoted (e.g. from
+        // ambushExchange/acceptInvite) keep their layer; bare narration gets
+        // wrapped. Never `Name: ""line""` again. (Steve 2026-10-06)
+        this.sayLine(vid, line);
       } catch (e) {}
       return { line, choices: this.convoChoices(vid), ended: false, transcript: (c.transcript || []).slice() };
     };

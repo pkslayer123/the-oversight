@@ -15985,6 +15985,26 @@
       this.tbEndCheck();
     },
 
+    // CATFISH TELL CELLS (Steve 2026-10-06): the lure's one fair tell, made
+    // knowledge-gated. The still phase ("The water goes still around the
+    // light. Too still.") is the only warning before the grasp — and it
+    // always fires, one full turn before teeth. But text is easy to miss,
+    // so once the pattern is LEARNED (codex observed+ via tbLearnPattern /
+    // surviving the grasp), the grid itself shimmers on the catfish's tile
+    // during the still phase. "If you don't know, it doesn't show": unknown
+    // players get the text alone, and the glow stays pretty and innocent.
+    // Returns {x, y} of the catfish tile, or null.
+    catfishTellCell() {
+      try {
+        const f = this.tbfight;
+        if (!f) return null;
+        const m = (f.fighters || []).find(x => (x.kind === 'monster' || x.kind === 'hostile') && x.alive && !x.fled && this.catfishIs(x));
+        if (!m || m.beamPhase !== 'still') return null;
+        if (!this.encTelegraphKnown(m)) return null;
+        return { x: m.mx, y: m.my };
+      } catch (e) { return null; }
+    },
+
     // SHOUT: raw noise, no words. The belltoad's weakness made verb — loud
     // noise breaks the chorus. Twice per fight; throats are finite.
     // GRAVITY WELL (Steve 2026-10-05): alien loot that works. Crushes a 3x3

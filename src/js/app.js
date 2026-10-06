@@ -6296,7 +6296,14 @@
   // (Steve 2026-10-05: "Not dimmed if not learned. They don't show up. Dimmed will still give it away.")
   // The beam WHILE FIRING is always visible — you see it happening.
   function tbAllTelegraphCells() {
-    const out = { burst: new Set(), charge: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), ambush: new Set(), beam: new Set() };
+    // NOTE: no 'ambush' bucket (Steve 2026-10-06): the speedbump's snap is
+    // no-warning BY DESIGN ("No warning. There never is."), so no ambush
+    // telegraph ever carries cells. Its one fair tell is the world-view
+    // warn cue ("Still doesn't move. But something about the stillness
+    // changed.") + the ROCK phase badge + the codex knownCue — never a grid
+    // zone. Should a future ambush monster declare with cells, `out[ptype] ||
+    // out.single` below falls back to the targetTile highlight (no crash).
+    const out = { burst: new Set(), charge: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), beam: new Set() };
     try {
       const f = Game.tbfight;
       if (!f) return out;
@@ -6345,6 +6352,13 @@
     // so it renders ungated — but no coaching text beyond the observation.
     let _gwTrap = null;
     try { _gwTrap = (typeof Game.glasswingTrapCells === 'function') ? Game.glasswingTrapCells() : null; } catch (e) { _gwTrap = null; }
+    // NIGHTLIGHT TELL (Steve 2026-10-06): the catfish's still-phase shimmer.
+    // game.js sibling owns Game.catfishTellCell() — null or {x, y} of the
+    // catfish tile, and ONLY when the pattern is learned (codex observed+).
+    // Unknown players get the stillness text alone — "if you don't know,
+    // it doesn't show." GUARDED: if absent, nothing renders.
+    let _cfTell = null;
+    try { _cfTell = (typeof Game.catfishTellCell === 'function') ? Game.catfishTellCell() : null; } catch (e) { _cfTell = null; }
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
       html += '<div class="drow">';
@@ -6517,8 +6531,9 @@
           (_tg.line.has(_k) ? ' lineCells' : '') +
           (_tg.single.has(_k) ? ' targetTile' : '') +
           (_tg.direct.has(_k) ? ' lockOn' : '') +
-          (_tg.rush.has(_k) ? ' rushIndicator' : '') +
-          (_tg.ambush.has(_k) ? ' ambushZone' : '');
+          (_tg.rush.has(_k) ? ' rushIndicator' : '');
+        // (no ambushZone: the speedbump's snap is no-warning by design —
+        // see tbAllTelegraphCells note. Steve 2026-10-06)
         // GLASSWING TRAP SHADOW: the target tile darkens with turns
         // (faint → darker → almost black); splash tiles get a light mark.
         // Inline styles keep this in app.js (no CSS file touch).
@@ -6539,7 +6554,16 @@
             }
           }
         }
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_gwCls}"${_gwStyle ? ` style="${_gwStyle}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        // NIGHTLIGHT TELL: the learned shimmer. The catfish's tile glows a
+        // sickly green while the water is too still — the lure betraying
+        // itself, but only to eyes that have learned what it means.
+        // Inline styles keep this in app.js (no CSS file touch).
+        let _cfCls = '', _cfStyle = '';
+        if (_cfTell && cx === _cfTell.x && cy === _cfTell.y) {
+          _cfStyle = 'box-shadow:inset 0 0 0 999px rgba(120,255,170,0.16);outline:2px solid rgba(120,255,170,0.55);outline-offset:-2px';
+          _cfCls = ' cftell';
+        }
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_gwCls}${_cfCls}"${(_gwStyle || _cfStyle) ? ` style="${[_gwStyle, _cfStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }
