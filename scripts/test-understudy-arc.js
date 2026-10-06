@@ -68,8 +68,10 @@ function chaseAndStrike() {
 const SPEAR = { itemId: 'fire_hardened_spear', name: 'Fire-hardened spear' };
 const STICK = { itemId: 'sharp_stick', name: 'Sharp stick' };
 function newFight(hp) {
+  try { if (Game.tbfight && !Game.tbfight.over) Game.tbEnd('fled'); } catch (e) {}
   Game.startCombat('understudy');
-  const m = M(); m.hp = m.maxHp = hp || 115;
+  const m = M(); if (!m) throw new Error('newFight: startCombat produced no monster');
+  m.hp = m.maxHp = hp || 115;
   const pl = P(); pl.hp = pl.maxHp = 150;
   pl.mx = Math.min(7, Math.max(1, m.mx - 2)); pl.my = Math.min(7, Math.max(1, m.my));
   Game.state.scholar.mx = pl.mx; Game.state.scholar.my = pl.my;
@@ -101,7 +103,7 @@ function newFight(hp) {
   let m = newFight(115);
   const php0 = P().hp;
   const phaseByRound = [];
-  let rounds = 0, maxRounds = 8, lastPhp = php0;
+  let rounds = 0, maxRounds = 14, lastPhp = php0;
   while (Game.tbfight && !Game.tbfight.over && rounds < maxRounds && M() && M().alive && P()) {
     phaseByRound.push(`${rounds}:${M().beamPhase || 'stalk'}(seen=${totalSeen(M())})`);
     chaseAndStrike();
@@ -132,7 +134,7 @@ function newFight(hp) {
   says = [];
   const mhpBeforeStick = M().hp;
   chaseAndStrike();
-  check('different weapon does NOT trigger steal (counterplay)', !says.some(s => s.includes('OPENING STEAL')) && M().usStealArmed === 'Fire-hardened spear');
+  check('different weapon does NOT trigger steal (counterplay)', !says.some(s => s.includes('OPENING STEAL')) && (M() || {}).usStealArmed === 'Fire-hardened spear');
   // now the stolen weapon: halved + answered
   Game.state.scholar.equipped.weapon = Object.assign({}, SPEAR);
   says = [];
@@ -140,7 +142,7 @@ function newFight(hp) {
   chaseAndStrike();
   const stealSays = says.filter(s => s.includes('OPENING STEAL'));
   check('steal fires on the stolen weapon', stealSays.length > 0);
-  check('steal disarms after firing', M().usStealArmed === null || M().usStealArmed === undefined);
+  check('steal disarms after firing', (M() || {}).usStealArmed === null || (M() || {}).usStealArmed === undefined);
   const dmgDealt = mhpBefore - M().hp;
   check('stolen strike is weak (halved)', dmgDealt < 20, `dealt ${dmgDealt}`);
   check('steal answers with the copy (player hurt on own strike turn)', P().hp < phpBefore, `player ${phpBefore}->${P().hp}`);
