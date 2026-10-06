@@ -1870,8 +1870,8 @@
       this.encounterDone = false; this.log = [];
       // (say AFTER the log reset above — anything said before it is wiped and
       // the player never sees it.)
-      this.say('📖 You know how to knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.');
-      this.say('📖 You know how to weave cloth (3 plant fiber), burn-hollow a wooden cup (2 branches), and build a Water Filter (cloth + charcoal from fire ashes + cup). Dirty water doesn\'t have to stay dirty.');
+      // OPENING (Steve 2026-10-06): atmosphere and character FIRST, tutorials
+      // as earned memory AFTER. The player must care before they learn.
       this.location = 'village'; this.departed = false;
       this.wipe();
       this.genMap();
@@ -1881,6 +1881,21 @@
       try {
         this.markSeen(this.map.px, this.map.py, 'visited');
         this.seedVillagerMaps();
+      } catch (e) {}
+      // THE WAKE-UP (Steve 2026-10-06): you are a person, not a tutorial.
+      // Ground the player in their character, the strangeness, the stakes.
+      try {
+        const me = this.vpOf(this.villagerId) || {};
+        const myName = me.name || 'You';
+        const myOcc = (me.formerOccupation || 'drifter').toLowerCase();
+        const myHome = me.homeRegion || 'somewhere';
+        const myItems = (me.items || []).slice(0, 5).map(id => {
+          const d = (this.data.items || []).find(i => i.id === id);
+          return d ? d.name : null;
+        }).filter(Boolean);
+        this.say('You wake up on cold ground. The sky is the wrong color.');
+        this.say(`${myName}. ${myOcc.charAt(0).toUpperCase() + myOcc.slice(1)}. From ${myHome}. That was yesterday. This is now.`);
+        if (myItems.length) this.say(`You have: ${myItems.join(', ')}. That's everything you own in this world.`);
       } catch (e) {}
       this.say('Haven. Twelve people. The fire is lit.');
       // BARREN HAVEN FIX: a new player must understand within minutes that
@@ -1898,6 +1913,20 @@
         this.say(`${who}: "${line}"`);
         if (this.journalNote) this.journalNote('haven', 'outward', 'Food won\'t come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.');
       } catch (e) {}
+      // THE HOOK (Steve 2026-10-06): something strange on day 1. A question
+      // the player wants answered. Not a tutorial — a mystery.
+      try {
+        const hooks = [
+          'Last night, something moved past the treeline. Too big. Too quiet. Nobody wants to talk about it.',
+          'There are lights in the sky that aren\'t stars. They watch. You can feel it.',
+          'Someone found tracks near the water this morning. Nothing we know makes tracks like that.',
+        ];
+        this.say(hooks[Math.floor(Math.random() * hooks.length)]);
+      } catch (e) {}
+      // TUTORIALS AS MEMORY (Steve 2026-10-06): your hands remember what your
+      // old life taught you. Not a lecture — a recollection, after you care.
+      this.say('📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.');
+      this.say('📖 Your hands remember: weave cloth (3 plant fiber), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn\'t have to stay dirty.');
       return this.status();
     },
 
