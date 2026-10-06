@@ -12267,8 +12267,11 @@
             const isUnknown = !tl || ttype === 'unknown';
             const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
             const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
-            // SIMPLE (Steve 2026-10-06): plain text, no SVG - test if SVG is the problem
-            g = `<span style="font-size:24px;">${glyph}</span>`;
+            const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
+            // SVG terrain tile (Steve 2026-10-06): simple and robust
+            g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
+              `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}"/>` +
+              `<text x="32" y="42" text-anchor="middle" font-size="28" fill="${textColor}">${glyph}</text></svg>`;
             // Try the full scene generator as enhancement, not requirement
             if (TS) {
               try {
