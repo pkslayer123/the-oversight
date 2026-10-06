@@ -184,7 +184,7 @@ One-tap preloaded scenarios for the debug panel. Testing only.
 ### encounters (`encounters.js`)
 Encounter framework. Every animal and monster follows the same pattern.
 
-**Provides:** encAnimalKnown(), encAnimalDef(), encAnimalBehavior(), encAnimalCue(), encFleeText(), encWaryText(), encBoltDir(), encPreyPhase(), encPreyPhaseBadge(), encWeaponMethod(), encMethodWords(), encPossumFlop(), encBehaviorStrikeReact(), encBehaviorAfterBolt(), encStrikeReact(), encStrikeDeadPossum(), spawnEncounter()
+**Provides:** encAnimalKnown(), encAnimalDef(), encAnimalBehavior(), encAnimalCue(), encFleeText(), encWaryText(), encBoltDir(), encPreyPhase(), encPreyPhaseBadge(), encWeaponMethod(), encMethodWords(), encMethodToolReady(), encMethodToolName(), encNeverBolt(), encMissReact(), encPossumFlop(), encBehaviorStrikeReact(), encBehaviorAfterBolt(), encStrikeReact(), encStrikeDeadPossum(), spawnEncounter()
 
 **Rules:**
 - knowledge_gated: true (code: encounters.js)

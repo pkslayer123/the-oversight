@@ -13,6 +13,10 @@
 //   - encPreyPhaseBadge()
 //   - encWeaponMethod()
 //   - encMethodWords()
+//   - encMethodToolReady()
+//   - encMethodToolName()
+//   - encNeverBolt()
+//   - encMissReact()
 //   - encPossumFlop()
 //   - encBehaviorStrikeReact()
 //   - encBehaviorAfterBolt()
@@ -215,7 +219,20 @@
     // the muskrat dives when it bolts near water (architect => water escape).
     timber_rattlesnake: { notice: 2, awareRate: 0.60, stamina: 1 },
     striped_skunk:      { notice: 3, awareRate: 0.25, stamina: 2 },
-    muskrat:            { notice: 3, awareRate: 0.55, stamina: 3 }
+    muskrat:            { notice: 3, awareRate: 0.55, stamina: 3 },
+    // PACK 2 (Steve 2026-10-06): the boar notices late but answers with a
+    // charge; the porcupine barely reacts to anything (quills are the answer);
+    // the groundhog sprints for its burrow (high stamina, short race);
+    // the goose spots you early and comes AT you; the woodcock is nearly
+    // invisible (notice 1, slow awareness); the beaver slaps and vanishes;
+    // the bobcat notices YOU first and closes in.
+    wild_boar:                 { notice: 3, awareRate: 0.65, stamina: 2 },
+    north_american_porcupine:   { notice: 2, awareRate: 0.20, stamina: 1 },
+    groundhog:                 { notice: 4, awareRate: 0.60, stamina: 4 },
+    canada_goose:              { notice: 4, awareRate: 0.70, stamina: 3 },
+    american_woodcock:         { notice: 1, awareRate: 0.30, stamina: 3 },
+    north_american_beaver:      { notice: 3, awareRate: 0.60, stamina: 2 },
+    bobcat:                    { notice: 6, awareRate: 0.50, stamina: 4 }
   };
   G.encPreyCfg = function (id) {
     var o = { notice: ENC_PREY_DEFAULT.notice, awareRate: ENC_PREY_DEFAULT.awareRate, stamina: ENC_PREY_DEFAULT.stamina };
@@ -248,8 +265,9 @@
   // ================= 6b. BEHAVIOR ENGINE =================
   // animals.json carries per-species `behavior` (skittish, arboreal, wary,
   // aquatic, aquatic_ambush, aquatic_defensive, flock, plays_dead, slow,
-  // cunning, curious, aggressive) and `method` (snare, chase, trap, bow,
-  // hands, line). The stalk/strike/flee loop was generic — every animal fled
+  // cunning, curious, aggressive, defensive, unbothered, architect, charger,
+  // quilled, alarmed, territorial, camouflaged, sentinel, stalker) and
+  // `method` (snare, chase, trap, bow, hands, line). The stalk/strike/flee loop was generic — every animal fled
   // the same way and the data fields sat unused. This engine turns both
   // into play: flee looks different per animal, and the wrong tool is
   // honestly worse. Steve's tool-gated doctrine, translated for the hunt:
@@ -261,6 +279,13 @@
   G.encAnimalBehavior = function (id) {
     var d = this.encAnimalDef(id);
     return (d && d.behavior) || 'skittish';
+  };
+  // NEVER_BOLT (Steve 2026-10-06): these animals answer a miss differently.
+  // The skunk's answer is the spray; the porcupine's the quills; the goose
+  // and the boar end fights instead of leaving them; the bobcat is the one
+  // doing the hunting; the snake and the snapper stand their ground.
+  G.encNeverBolt = function (beh) {
+    return !!({ unbothered: 1, quilled: 1, territorial: 1, stalker: 1, defensive: 1, aggressive: 1, charger: 1, sentinel: 1 }[beh]);
   };
   // knownCue coaching, Highbeam-Deer style: once you've learned the animal
   // (3 encounters or a kill), the game tells you its trick up front.
@@ -279,7 +304,14 @@
       slow: "Slow. Walk up and pick it up. That's the whole hunt.",
       cunning: "Clever. It'll stay just out of reach, toying with you. Run it down.",
       curious: "Curious, not scared. It'll come look at you. Let it.",
-      aggressive: "Do NOT grab this one. The beak is real. Ranged, or a trap."
+      aggressive: "Do NOT grab this one. The beak is real. Ranged, or a trap.",
+      charger: "It paws the ground before it charges — that's your warning. Strike only when it's calm, or be ready to sidestep.",
+      quilled: "Never grab it barehanded. A bow works clean; hands get quills. Flip it with a long stick if you must.",
+      alarmed: "It whistles when it clocks you — and the whole meadow hears it. Wind it before it reaches the burrow, or hunt the whistlers last.",
+      territorial: "It doesn't flee, it advances. Back off and it settles. Strike when it commits — and respect the wings.",
+      camouflaged: "You will walk past it ten times. Sweep likely patches at dusk — it bursts from under your feet, one fast shot.",
+      sentinel: "The tail-slap ends the hunt — it dives and warns the whole creek. Strike before the tail rises, or trap the slide.",
+      stalker: "It is hunting you. Don't run — that invites the chase. Hold your ground, strike true, or wear the claws."
     };
     return CUES[b] || null;
   };
@@ -320,7 +352,8 @@
     var p = this.encPreyPhase(a);
     var BADGE = {
       graze: 'grazing', wary: '⚠ wary', bolt: '💨 bolting', winded: '😮‍💨 winded',
-      playing_dead: '💀 playing dead', taunt: '👀 toying with you'
+      playing_dead: '💀 playing dead', taunt: '👀 toying with you',
+      pawing: '⚠ pawing ground', advancing: '🪿 advancing', charging: '💥 charging'
     };
     return BADGE[p] || p;
   };
@@ -334,6 +367,37 @@
   };
   G.encMethodWords = function (m) {
     return { snare: 'a snare', chase: 'running it down', trap: 'a trap', bow: 'a bow', hands: 'your hands', line: 'a fishing line' }[m] || m;
+  };
+  // TOOL READINESS (Steve 2026-10-06): tool-gated hunting. Each hunt method
+  // names what it needs: snare -> snare wire in the pack; trap -> the
+  // trapping skill (or a cage); line -> fishing line; bow -> a real ranged
+  // weapon equipped; hands/chase -> always available (chase is a condition,
+  // not a tool). encMethodToolName names the missing piece honestly.
+  G.encMethodToolReady = function (m) {
+    var s = null;
+    try { s = this.state.scholar; } catch (e) {}
+    if (m === 'hands' || m === 'chase') return true;
+    if (m === 'bow') { try { return this.encWeaponMethod() === 'bow'; } catch (e) { return false; } }
+    var inv = [];
+    try { inv = (s.inventory || []).concat(s.tools || []); } catch (e) {}
+    function has(re) {
+      for (var i = 0; i < inv.length; i++) {
+        var it = inv[i] || {};
+        if (re.test(String(it.name || '') + ' ' + String(it.itemId || '') + ' ' + String(it.recipeId || ''))) return true;
+      }
+      return false;
+    }
+    if (m === 'snare') return has(/snare/i);
+    if (m === 'line') return has(/fishing[ _]?line|fishing[ _]?pole/i);
+    if (m === 'trap') {
+      var sk = false;
+      try { sk = this.skillKnown && this.skillKnown('trapping'); } catch (e) {}
+      return sk || has(/trap|cage/i);
+    }
+    return true;
+  };
+  G.encMethodToolName = function (m) {
+    return { snare: 'snare wire', trap: 'the trapping skill or a cage', line: 'a fishing line', bow: 'a bow or sling', hands: 'your hands', chase: 'running it down' }[m] || m;
   };
   // The flop. Shared by the strike path and the awareness path — one text,
   // one fiction. Pre-knowledge the player sees a dead opossum; post, they
@@ -358,6 +422,11 @@
       this.encPossumFlop(a);
       return true;
     }
+    // NEVER-BOLT (Steve 2026-10-06): these animals stand their ground when
+    // struck — the strike resolves, it never routs them. The boar answers
+    // with a charge (huntAnimal hook), the goose with retaliation
+    // (encMissReact), the rest with teeth/quills/chemistry (bite block).
+    if (this.encNeverBolt && this.encNeverBolt(b)) return false;
     return null;
   };
   // After a generic strike-bolt, behavior takes over: the squirrel reaches a
@@ -507,6 +576,16 @@
     s.animal = { id: animal.id, mx: ax, my: ay, aware: 0, stamina: cfg.stamina, pstate: 'graze', edgeTurns: 0 };
     this.say('Movement — ' + this.encDescribeAnimal(animal) + '.');
     try { this.audioEvent('animalRustle'); } catch (e) {}
+    // WOODS ON EDGE (Steve 2026-10-06): a groundhog whistle or beaver
+    // tail-slap warned everything. The next animal spawns already wary —
+    // one-shot, then the woods settle. Hunt the alarmists LAST, not first.
+    try {
+      if (s.whAlert && s.whAlert.day === s.day) {
+        s.whAlert = null;
+        s.animal.aware = 0.6; s.animal.pstate = 'wary';
+        this.say('The woods are on edge — something warned everything here. It\'s already watching.');
+      }
+    } catch (e) {}
     // knownCue coaching: once you've learned the animal, its trick is
     // stated up front. Earned knowledge, not a spoiler.
     try { var acue = this.encAnimalCue(animal.id); if (acue) this.say('👁 ' + acue); } catch (e) {}
@@ -523,6 +602,7 @@
     if (a.stamina == null) a.stamina = cfg.stamina;
     if (!a.pstate) a.pstate = 'graze';
     if (a.edgeTurns == null) a.edgeTurns = 0;
+    a.turns = (a.turns || 0) + 1; // encounter age — the tracker's freshness read
     var label = this.encAnimalLabel(a);
     var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
     var dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
@@ -607,6 +687,26 @@
       tryMove(a.mx + Math.sign(a.mx - px), a.my + Math.sign(a.my - py)); // ambles off, unhurried
       return;
     }
+    if (beh === 'quilled') {
+      // PORCUPINE (Steve 2026-10-06): it does not flee, ever. It has never
+      // needed to. Warning = quill-rattle, back turned. Strike it barehanded
+      // and the quills lodge (huntAnimal owns the consequence). Otherwise it
+      // ambles, unhurried, and the generic graze/wary awareness below still
+      // runs — but the bolt threshold excludes it (NEVER_BOLT).
+      if (dist <= 1 && !a.quillWarned) {
+        a.quillWarned = true; a.aware = 1;
+        this.say(this.encCap(label) + ' turns its back — quills rising with a dry rattle, like beans in a gourd. That is the whole warning. It will not give another.');
+        try { this.audioEvent('animalQuill'); } catch (e) {}
+        return;
+      }
+      if (dist >= cfg.notice) {
+        a.pstate = 'graze'; a.aware = Math.max(0, a.aware - 0.25); a.edgeTurns = 0;
+        if (Math.random() < 0.25) tryMove(a.mx + rnd3(), a.my + rnd3());
+        return;
+      }
+      // within notice: it still clocks you (awareness builds below) but it
+      // will not bolt — fall through to the generic awareness only.
+    }
     // Unbothered otherwise: the generic graze/wary turn below runs (it still
     // notices you — the scent hook included), but the skunk NEVER bolts.
     // The spray is its answer; bolting is for animals with something to lose.
@@ -642,6 +742,116 @@
         if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) s.animal = null;
         return;
       }
+    }
+    if (beh === 'territorial') {
+      // CANADA GOOSE (Steve 2026-10-06): the hunt inverts. It does not flee —
+      // it advances on YOU, honking, neck low. Back off (dist >= 5) and it
+      // settles; at dist <= 1 the wings and beak are real. It never bolts.
+      if (dist >= 5) {
+        if (a.pstate === 'advancing') {
+          a.pstate = 'graze'; a.aware = Math.max(0, a.aware - 0.5);
+          this.say(this.encCap(label) + ' settles, neck rising. It holds its patch — no grudge, just ground.');
+        } else {
+          a.pstate = 'graze'; a.aware = Math.max(0, a.aware - 0.25);
+        }
+        return;
+      }
+      if (dist <= 1) {
+        a.pstate = 'advancing'; a.aware = 1;
+        var wingDmg = 4 + Math.floor(Math.random() * 6);
+        try { s.health = Math.max(0, (s.health || 100) - wingDmg); } catch (e) {}
+        this.say('HONK — ' + this.encCap(label) + ' is on you, wings hammering, beak pinching. (-' + wingDmg + ' HP) It has never lost a fight it started.');
+        try { this.audioEvent('animalHonk'); } catch (e) {}
+        return;
+      }
+      // dist 2-4: advances one tile toward you, honking
+      a.pstate = 'advancing'; a.aware = Math.min(1, a.aware + 0.3);
+      var gdx = Math.sign(px - a.mx), gdy = Math.sign(py - a.my);
+      if (tryMove(a.mx + gdx, a.my + gdy)) {
+        if (!a.honked) {
+          a.honked = true;
+          this.say(this.encCap(label) + ' honks — neck dropping level — and comes at you. Back off or commit.');
+          try { this.audioEvent('animalHonk'); } catch (e) {}
+        }
+      }
+      return;
+    }
+    if (beh === 'stalker') {
+      // BOBCAT (Steve 2026-10-06): you are not hunting. It pads closer each
+      // turn, circling. Run (dist increased since last turn) and it chases;
+      // hold your ground (a.satTurns >= 3) and it loses interest and melts
+      // away. At dist <= 1 the claws come out. It never bolts — it leaves
+      // when the math stops working.
+      var lastD = (a.lastDist == null) ? dist : a.lastDist;
+      if (dist > lastD) {
+        // you backed off: it follows, unhurried
+        var cdx = Math.sign(px - a.mx), cdy = Math.sign(py - a.my);
+        tryMove(a.mx + cdx, a.my + cdy) || tryMove(a.mx + cdx, a.my) || tryMove(a.mx, a.my + cdy);
+        a.satTurns = 0;
+        if (!a.chaseTold) {
+          a.chaseTold = true;
+          this.say(this.encCap(label) + ' pads after you, unhurried. Running invites the chase.');
+          try { this.audioEvent('animalYowl'); } catch (e) {}
+        }
+      } else if (dist <= 1) {
+        a.satTurns = 0; a.aware = 1;
+        var clawDmg = 6 + Math.floor(Math.random() * 7);
+        try { s.health = Math.max(0, (s.health || 100) - clawDmg); } catch (e) {}
+        this.say(this.encCap(label) + ' slashes — claws raking your arm. (-' + clawDmg + ' HP) Yellow eyes, no hurry.');
+        try { this.audioEvent('animalBite'); } catch (e) {}
+      } else {
+        // holding ground or closing: it circles closer, or loses interest
+        a.satTurns = (a.satTurns || 0) + 1;
+        if (a.satTurns >= 3) {
+          s.animal = null;
+          this.say(this.encCap(label) + ' holds your gaze a long moment — then melts into the brush. You were too expensive.');
+          try { this.audioEvent('animalYowl'); } catch (e) {}
+          return;
+        }
+        var sdx2 = Math.sign(px - a.mx), sdy2 = Math.sign(py - a.my);
+        if (dist > 2) tryMove(a.mx + sdx2, a.my + sdy2);
+        if (!a.stalkTold) {
+          a.stalkTold = true;
+          this.say(this.encCap(label) + ' circles closer, yellow eyes fixed on you. It is not prey. It is deciding whether you are.');
+          try { this.audioEvent('animalYowl'); } catch (e) {}
+        }
+      }
+      a.lastDist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
+      return;
+    }
+    if (beh === 'charger') {
+      // WILD BOAR (Steve 2026-10-06): warns (pawing, head low) at dist <= 3.
+      // Press it (dist <= 1) or strike while it paws and it CHARGES: it moves
+      // to your tile and gores. A charging boar commits — afterwards it's
+      // winded (overcommitted, catchable). It never bolts; it ends fights.
+      if (a.pstate === 'charging') {
+        // mid-charge: it reaches you
+        a.mx = px; a.my = py;
+        var goreDmg = 10 + Math.floor(Math.random() * 7);
+        try { s.health = Math.max(0, (s.health || 100) - goreDmg); } catch (e) {}
+        a.pstate = 'winded'; a.stamina = 0; a.aware = 1;
+        this.say(this.encCap(label) + ' hits you like a door — tusks raking. (-' + goreDmg + ' HP) It overshoots, blowing hard. Overcommitted. Now\'s your chance.');
+        try { this.audioEvent('animalCharge'); } catch (e) {}
+        return;
+      }
+      if (dist <= 3 && a.pstate !== 'pawing' && a.pstate !== 'winded') {
+        a.pstate = 'pawing'; a.aware = Math.max(a.aware, 0.6);
+        this.say(this.encWaryText(a) + ' It is not bluffing. Back off, or be ready to sidestep.');
+        try { this.audioEvent('animalSnort'); } catch (e) {}
+        return;
+      }
+      if (a.pstate === 'pawing' && dist <= 1) {
+        a.pstate = 'charging';
+        this.say(this.encCap(label) + ' drops its head and COMES — 150 pounds, tusks first, straight at you!');
+        try { this.audioEvent('animalCharge'); } catch (e) {}
+        return;
+      }
+      if (dist > 4 && a.pstate === 'pawing') {
+        a.pstate = 'graze'; a.aware = Math.max(0, a.aware - 0.4);
+        this.say(this.encCap(label) + ' snorts and goes back to rooting. Wise choice.');
+        return;
+      }
+      // otherwise the generic graze/wary below runs (it still roots around)
     }
     if ((beh === 'aquatic' || beh === 'aquatic_ambush' || beh === 'aquatic_defensive' || beh === 'architect') && a.pstate === 'bolt') {
       // WATER ESCAPE: darts for the nearest water cell and dives. Gone.
@@ -699,10 +909,43 @@
       if (dist < 4) { a.pstate = 'bolt'; }
       else { a.aware = Math.max(0.4, (a.aware || 0.6) - 0.1); return; }
     }
+    // BEAVER (Steve 2026-10-06): the tail-slap ends the hunt. At aware 0.7 the
+    // flat tail rises — the slap is already decided: CRACK, it dives, and
+    // every animal on the water hears it (woods-on-edge for the day).
+    if (beh === 'sentinel' && a.aware >= 0.7 && a.pstate !== 'bolt' && a.pstate !== 'winded') {
+      s.animal = null;
+      this.say('CRACK — ' + this.encCap(label) + ' slaps the water with its flat tail and dives. Just spreading rings. Every animal on the creek heard that. (the woods are on edge)');
+      try { this.audioEvent('animalTailSlap'); } catch (e) {}
+      try { s.whAlert = { day: s.day }; } catch (e) {}
+      return;
+    }
+    // GROUNDHOG (Steve 2026-10-06): the whistle warns the whole meadow.
+    // Once per encounter: +woods-on-edge for the day, and the text is the
+    // telegraph — you know it's about to sprint for the hole.
+    if (beh === 'alarmed' && a.aware >= 0.5 && !a.whistled) {
+      a.whistled = true;
+      this.say(this.encWaryText(a) + ' — and the whistle splits the meadow, sharp, twice. Every animal for a hundred yards heard that. (the woods are on edge)');
+      try { this.audioEvent('animalWhistle'); } catch (e) {}
+      try { s.whAlert = { day: s.day }; } catch (e) {}
+    }
     // SKUNK SPRAY (Steve 2026-10-06): you smell. Everything with a nose
     // notices you sooner — animals and monsters alike.
     var noticeRange = cfg.notice + (s.skunkScent > 0 ? 2 : 0);
-    if (dist >= noticeRange) {
+    // WOODCOCK (Steve 2026-10-06): leaf-litter camouflage. You only notice it
+    // when you're right on top of it (range 1), and awareness builds slowly.
+    // At dist <= 1 with high awareness it EXPLODES from under your feet.
+    // Graze cutoff is dist >= 2 (not 1): at dist 1 it's clocking you, slowly.
+    if (beh === 'camouflaged') {
+      noticeRange = 1;
+      if (dist <= 1 && (a.aware || 0) >= 0.75 && a.pstate !== 'bolt' && a.pstate !== 'winded') {
+        a.pstate = 'bolt'; a.aware = 1;
+        this.say(this.encFleeText(a, this.encCap(label) + ' EXPLODES from under your boots — a whir of wings, twisting away!'));
+        try { this.audioEvent('animalFlush'); } catch (e) {}
+        return; // the explosion IS this turn; it bolts next turn
+      }
+    }
+    var grazeRange = (beh === 'camouflaged') ? 2 : noticeRange;
+    if (dist >= grazeRange) {
       // grazing. it doesn't know you're here. or doesn't care yet.
       a.pstate = 'graze';
       a.aware = Math.max(0, a.aware - 0.25);
@@ -724,9 +967,12 @@
     }
     // Bolt threshold is behavior-aware: the skittish rabbit goes at a
     // shadow (0.75); the wary deer at the white tail (0.7, above); most at 1.
-    // The skunk never bolts — the spray is its answer.
+    // NEVER_BOLT: the skunk's answer is the spray; the porcupine's is the
+    // quills; the goose and the boar end fights instead of leaving them;
+    // the bobcat is the one doing the hunting; the snake and the snapper
+    // return early above (kept here as documentation).
     var boltAt = beh === 'skittish' ? 0.75 : 1;
-    if (beh !== 'unbothered' && a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead') {
+    if (!this.encNeverBolt(beh) && a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead') {
       a.pstate = 'bolt';
       // Flee narration is knowledge-gated (encFleeText): the vivid huntText
       // is earned; the ignorant get the generic version.
@@ -748,8 +994,15 @@
         dx = zd[0]; dy = zd[1];
       }
       // ONE tile, not two — the chase is real now, and so is the hunt.
+      // GROUNDHOG: two. It sprints for the burrow — low, fast, straight.
+      // You get one chase: wind it before the hole, or it's down and gone.
       if (!tryMove(a.mx + dx, a.my + dy)) {
         tryMove(a.mx + dx, a.my) || tryMove(a.mx, a.my + dy) || tryMove(a.mx - dy, a.my + dx);
+      }
+      if (beh === 'alarmed' && (a.mx !== 0 && a.mx !== 8 && a.my !== 0 && a.my !== 8)) {
+        if (!tryMove(a.mx + dx, a.my + dy)) {
+          tryMove(a.mx + dx, a.my) || tryMove(a.mx, a.my + dy);
+        }
       }
       a.stamina -= 1;
       if (a.stamina <= 0) {
@@ -760,9 +1013,13 @@
       }
       if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
         a.edgeTurns += 1;
-        if (a.edgeTurns >= 2) {
+        // GROUNDHOG: one edge turn is enough — the hole is right there.
+        var edgeNeed = beh === 'alarmed' ? 1 : 2;
+        if (a.edgeTurns >= edgeNeed) {
           s.animal = null;
-          this.say(this.encCap(label) + ' melts into the treeline. Gone.');
+          this.say(beh === 'alarmed'
+            ? this.encCap(label) + ' pours itself down its burrow — a dark hole in the bank. Gone. The whistle echoes a little longer than the groundhog does.'
+            : this.encCap(label) + ' melts into the treeline. Gone.');
           return;
         }
       } else {
@@ -810,14 +1067,25 @@
     var now = this.encAnimalLabel(s.animal);
     // TRACKING (Steve): reading sign is a skill. The tracker knows what left
     // the prints and how fresh; the ignorant see disturbed earth. Button honest.
-    var trackK = false;
+    // DEEPENED (Steve 2026-10-06): tracker levels read more. L1: species (if
+    // known) + heading. L2: + freshness (fresh vs hours old). L3: + gait
+    // (ambling, running, moving). The name stays knowledge-gated either way —
+    // "if you don't know, it doesn't show."
+    var trackK = false, trackLvl = 0;
     try { trackK = this.trackKnown && this.trackKnown(); } catch (e) {}
+    try { trackLvl = this.abilityLevel ? this.abilityLevel('tracker') : 0; } catch (e) {}
     var signNote = '';
     if (trackK) {
       var spName = now;
       try { if (this.encAnimalKnown && !this.encAnimalKnown(s.animal.id)) spName = 'something'; } catch (e) {}
-      signNote = ' You read the sign as you move — ' + spName + ' prints, fresh, heading ' +
-        ((s.animal.mx >= px) ? 'east' : 'west') + '.';
+      var heading = ((s.animal.mx >= px) ? 'east' : 'west');
+      if (trackLvl >= 2) {
+        var fresh = (s.animal.turns || 0) <= 4 ? 'fresh' : 'hours old';
+        var gait = (s.animal.pstate === 'bolt') ? 'running' : (s.animal.pstate === 'graze' ? 'ambling' : 'moving');
+        signNote = ' You read the sign as you move — ' + spName + ' prints, ' + fresh + ', ' + gait + ' ' + heading + '.';
+      } else {
+        signNote = ' You read the sign as you move — ' + spName + ' prints, heading ' + heading + '.';
+      }
     } else if (!s._signNoted) {
       s._signNoted = true;
       signNote = ' Disturbed earth underfoot. Something passed here — you can\'t read the rest.';
@@ -828,6 +1096,40 @@
       this.feedback("You stalk closer, low and slow. " + this.encCap(now) + " hasn't noticed." + signNote);
     }
     return true;
+  };
+
+  // MISS REACTION (Steve 2026-10-06): a miss doesn't always mean it bolts.
+  // The boar charges, the goose retaliates, the bobcat slashes and melts
+  // away; the porcupine, skunk, and snake just... stay. Returns true when
+  // the encounter ended (caller skips animalTurn).
+  G.encMissReact = function (a, animal) {
+    var s = this.state.scholar;
+    var b = (animal && animal.behavior) || '';
+    if (b === 'charger' && Math.random() < 0.6) {
+      a.pstate = 'charging'; a.aware = 1;
+      this.feedback(this.encCap(this.encAnimalLabel(a)) + ' drops its head and COMES — your miss was the invitation.');
+      try { this.audioEvent('animalCharge'); } catch (e) {}
+      return false;
+    }
+    if (b === 'territorial') {
+      a.pstate = 'advancing'; a.aware = 1;
+      var wd = 4 + Math.floor(Math.random() * 6);
+      try { s.health = Math.max(0, (s.health || 100) - wd); } catch (e) {}
+      this.feedback('HONK — your miss enrages it. Wings hammering, beak pinching. (-' + wd + ' HP) It is not leaving.');
+      try { this.audioEvent('animalHonk'); } catch (e) {}
+      return false;
+    }
+    if (b === 'stalker') {
+      var cd = 6 + Math.floor(Math.random() * 6);
+      try { s.health = Math.max(0, (s.health || 100) - cd); } catch (e) {}
+      s.animal = null;
+      this.feedback(this.encCap(this.encAnimalLabel(a)) + ' twists aside — claws raking as it goes (-' + cd + ' HP) — and melts into the brush. It hates a fair fight.');
+      try { this.audioEvent('animalYowl'); } catch (e) {}
+      return true;
+    }
+    if (this.encNeverBolt(b)) { a.aware = 1; return false; } // stays. it was never leaving.
+    a.aware = 1; a.pstate = 'bolt';
+    return false;
   };
 
   // HUNT: the strike. Range-gated, awareness-penalized, three outcomes:
@@ -931,6 +1233,31 @@
         }
       }
     }
+    // TOOL READINESS (Steve 2026-10-06): tool-gated hunting, deepened. The
+    // wrong-tool penalty above is about the strike; this is about the HUNT —
+    // if you have NO proper method at all (no snare wire for a snare animal,
+    // no trapping skill for a trap animal, no line for a line animal, no bow
+    // for a bow animal), this is a long shot, and the game names exactly
+    // what's missing. The strike stays visible (moment-to-moment play), but
+    // the game is honest: you're improvising.
+    if (!unarmedHunt) {
+      var hmethods = animal.method || [];
+      var self2 = this;
+      var anyReady = hmethods.some(function (m) { return self2.encMethodToolReady(m); });
+      if (!anyReady && hmethods.length) {
+        chance *= 0.4;
+        if (!a._unprepTold) {
+          a._unprepTold = true;
+          var missing = [];
+          for (var ui = 0; ui < hmethods.length; ui++) {
+            var hm = hmethods[ui];
+            if (!self2.encMethodToolReady(hm)) missing.push(self2.encMethodToolName(hm));
+          }
+          this.feedback('You don\'t have the right tool for this one — no ' + missing.join(', no ') +
+            '. Your ' + wname + ' is a real long shot.');
+        }
+      }
+    }
     // SKUNK SPRAY (Steve 2026-10-06): sprayed this encounter — your eyes are
     // streaming. You swing at a blur. Clears when the encounter ends (read
     // from the animal, not a scholar flag).
@@ -941,16 +1268,47 @@
         this.feedback('Your eyes are streaming — you swing at a blur. (sprayed: blinded)');
       }
     }
+    // BEHAVIOR STRIKE HOOKS (Steve 2026-10-06): the new animals answer the
+    // strike itself, not just the approach. Each hook is encounter-scoped
+    // (read from the animal, cleared when the encounter ends).
+    var hBeh = animal.behavior || '';
+    if (hBeh === 'quilled' && dist <= 1 && range <= 1 && !a.quilledYou) {
+      // PORCUPINE: grabbing it barehanded = quills, barbed and deep. Ranged
+      // strikes are clean — the quills only punish the grab.
+      a.quilledYou = true;
+      var qDmg = 4 + Math.floor(Math.random() * 5);
+      try { s.health = Math.max(0, (s.health || 100) - qDmg); } catch (e) {}
+      this.feedback('Quills — in your hand, barbed and deep. (-' + qDmg + ' HP) Pull them straight out, slow. Every strike this encounter is compromised.');
+      try { this.audioEvent('animalQuill'); } catch (e) {}
+    }
+    if (a.quilledYou) chance *= 0.5; // quills in your swinging hand
+    if (hBeh === 'territorial' && a.pstate === 'advancing') chance = Math.max(0.05, chance - 0.25); // it sees you coming
+    if (hBeh === 'stalker') chance *= 0.6; // it dodges — ambush hunters hate fair fights
+    if (hBeh === 'charger' && a.pstate === 'pawing') {
+      // BOAR: striking a pawing boar triggers the charge, not a normal
+      // strike. It resolves RIGHT NOW (animalTurn) — no free second strike
+      // while it's mid-charge. The charge commits and winds it.
+      a.pstate = 'charging';
+      this.feedback('You move — it drops its head and COMES. 150 pounds, tusks first. (sidestep, don\'t outrun)');
+      this.animalTurn();
+      return true;
+    }
     // BITE (Steve 2026-10-05): close capture can cost you. Wild things have
     // teeth — not a fight, just the price of grabbing. Traps avoid this.
-    if (dist <= 1) {
+    // (Porcupines don't bite — the quills already answered.)
+    if (dist <= 1 && hBeh !== 'quilled') {
       var bBeh = animal.behavior || '';
       var biteP = bBeh === 'aggressive' ? 0.6 : bBeh === 'defensive' ? 0.6 : bBeh === 'plays_dead' ? 0.3 : 0.2;
       if (Math.random() < biteP) {
-        var biteDmg = bBeh === 'aggressive' ? 8 + Math.floor(Math.random() * 8) : bBeh === 'defensive' ? 8 + Math.floor(Math.random() * 7) : 3 + Math.floor(Math.random() * 6);
+        var biteDmg = bBeh === 'aggressive' ? 8 + Math.floor(Math.random() * 8)
+          : bBeh === 'defensive' ? 8 + Math.floor(Math.random() * 7)
+          : bBeh === 'charger' ? 6 + Math.floor(Math.random() * 7)
+          : 3 + Math.floor(Math.random() * 6);
         try { s.health = Math.max(0, (s.health || 100) - biteDmg); } catch (e) {}
         this.feedback(bBeh === 'defensive'
           ? 'It strikes! Fangs — ' + biteDmg + ' damage. The head bites after death — cut wide, bury the head.'
+          : bBeh === 'charger'
+          ? 'It catches you with a tusk — ' + biteDmg + ' damage. Boars don\'t bite, they slash.'
           : 'It bites! Teeth in your hand — ' + biteDmg + ' damage. Wild things have teeth.');
         if (bBeh === 'defensive') {
           // RATTLESNAKE: fangs, not teeth. The venom is in.
@@ -1003,19 +1361,21 @@
       return true;
     }
     if (roll < chance + 0.15) {
-      // near-miss: drama, not failure. It bolts — heart hammering.
+      // near-miss: drama, not failure. It bolts — heart hammering. (Unless
+      // it's one of the animals that doesn't bolt — encMissReact owns that.)
       // (Verb agreement: "your hands hiss" vs "your bow hisses" can't both
       // win, so the weapon isn't the subject. You miss. Clean.)
-      this.feedback('So close — ' + label + ' jinks at the last breath. You miss with your ' + wname + '. It bolts, heart hammering.');
+      this.feedback('So close — ' + label + ' jinks at the last breath. You miss with your ' + wname + '.');
       try { this.audioEvent('animalBolt'); } catch (e) {}
-      a.aware = 1; a.pstate = 'bolt';
-      this.animalTurn();
+      var nmEnded = this.encMissReact(a, animal);
+      if (!nmEnded) this.animalTurn();
       return true;
     }
-    this.feedback('Missed! ' + this.encCap(label) + ' bolts. (-100 kcal)');
+    var mBeh = (animal.behavior || '');
+    this.feedback('Missed! ' + this.encCap(label) + (this.encNeverBolt(mBeh) ? ' doesn\'t even flinch. (-100 kcal)' : ' bolts. (-100 kcal)'));
     try { this.audioEvent('animalBolt'); } catch (e) {}
-    a.aware = 1; a.pstate = 'bolt';
-    this.animalTurn();
+    var mEnded = this.encMissReact(a, animal);
+    if (!mEnded) this.animalTurn();
     return true;
   };
   G.huntAnimal._wrapped = true;
@@ -1025,7 +1385,8 @@
     return [
       '1. Data: "unknown" strange descriptor on the animal/monster def. Animals: also "tell" (the distinct windup telegraph).',
       '2. Prey: Game.ENC_PREY entry {notice, awareRate, stamina} — loop is free.',
-      '2b. Behavior: "behavior" + "method" + "tell" in animals.json drive the flee, the strike, and the windup telegraph (encAnimalBehavior / encWeaponMethod / encWaryText). Wrong tool = worse odds, honestly said.',
+      '2b. Behavior: "behavior" + "method" + "tell" in animals.json drive the flee, the strike, and the windup telegraph (encAnimalBehavior / encWeaponMethod / encWaryText). Wrong tool = worse odds, honestly said. NO proper tool at all = long shot, missing piece named (encMethodToolReady).',
+      '2c. Miss reactions: encMissReact owns what a miss means per behavior (boar charges, goose retaliates, bobcat slashes and leaves). encNeverBolt lists the animals that never bolt.',
       '3. Threats: "encounter" config in monsters.json + game.js enc* interface.',
       '4. Telegraph: Game.encTelegraphKnown(m); cue via Game.encPickCue.',
       '5. Phases: Game.encSetPhase / Game.encPhase(ent, phase, beats).',

@@ -501,5 +501,243 @@
       "hide": 1,
       "bone": 1
     }
+  },
+  {
+    "id": "wild_boar",
+    "activity": "both",
+    "name": "Wild Boar",
+    "scientific": "Sus scrofa",
+    "biomes": [
+      "meadow",
+      "thicket"
+    ],
+    "description": "a bristling wild boar, tusks yellowed, head low",
+    "calories": 21000,
+    "difficulty": "hard",
+    "method": [
+      "bow",
+      "trap"
+    ],
+    "knowledgeLevels": {
+      "1": "Wild boar. Tusks. Pawing the ground means it has decided about you.",
+      "2": "Parts: meat (rich, fatty), hide (tough), tusks (tools, trade). Males are meaner; sows with piglets are meanest.",
+      "3": "Hunt: from a tree or a trap. On the ground, a boar charges — 150 pounds of bad decision. Never chase one into the brush; that's where it wants you.",
+      "4": "Mastery: it telegraphs — head drops, paws scrape, the snort changes pitch. Strike only when it's calm or winded. A charging boar commits: sidestep, don't outrun."
+    },
+    "unknown": "a dark bristling mass, head low, pawing the dirt",
+    "emoji": "🐗",
+    "behavior": "charger",
+    "behaviorDesc": "Paws the ground and snorts a warning when it notices you. Press it — or miss — and it CHARGES: 150 pounds straight at you. Sidestep, don't outrun.",
+    "fleeDifficulty": "dangerous",
+    "huntText": "It sees you. The head drops, the front hooves scrape — then it comes, fast and low, tusks first. This is the part everyone warned you about.",
+    "tell": "head drops, front hooves scraping the dirt — the snort changes pitch.",
+    "butcher": {
+      "hide": 1,
+      "bone": 3,
+      "tusk": 2
+    }
+  },
+  {
+    "id": "north_american_porcupine",
+    "activity": "nocturnal",
+    "name": "North American Porcupine",
+    "scientific": "Erethizon dorsatum",
+    "biomes": [
+      "forest_floor",
+      "grove"
+    ],
+    "description": "a waddling porcupine, quills rattling softly",
+    "calories": 2700,
+    "difficulty": "medium",
+    "method": [
+      "bow",
+      "hands"
+    ],
+    "knowledgeLevels": {
+      "1": "Porcupine. The quills are the argument. There is no counter-argument.",
+      "2": "Parts: meat (good, fatty), quills (fish hooks, needles, decoration). It can't shoot them — that's a myth — but it can back into you.",
+      "3": "Hunt: ranged, or flip it with a long stick and go for the belly. Bare hands grab = quills in your hand for days.",
+      "4": "Mastery: quills have barbs — pull straight out, slow, or they break off inside. Salt pork cooks out the wild taste. Winter porcupines are fattest."
+    },
+    "unknown": "a waddling dark lump, quills rattling softly as it moves",
+    "emoji": "🦔",
+    "behavior": "quilled",
+    "behaviorDesc": "Ambles. Never hurries, never bolts — it doesn't need to. Turn your back is a quill-rattle warning. Grab it barehanded and the quills lodge in your hand.",
+    "fleeDifficulty": "trivial",
+    "huntText": "It hears you and turns its back — quills up, rattling like dry beans. It is in no hurry. It has never needed to hurry.",
+    "tell": "quills rise and rattle — a dry shiver of sound — as it turns its back to you.",
+    "butcher": {
+      "hide": 1,
+      "quill": 12
+    }
+  },
+  {
+    "id": "groundhog",
+    "activity": "diurnal",
+    "name": "Groundhog",
+    "scientific": "Marmota monax",
+    "biomes": [
+      "meadow",
+      "thicket"
+    ],
+    "description": "a fat groundhog, whistling an alarm from its haunches",
+    "calories": 1500,
+    "difficulty": "medium",
+    "method": [
+      "trap",
+      "chase"
+    ],
+    "knowledgeLevels": {
+      "1": "Groundhog. Whistles when it sees you — and every animal for a hundred yards hears it.",
+      "2": "Parts: meat (surprisingly good), hide. The whistle is the problem: it warns the whole meadow.",
+      "3": "Hunt: it sprints for its burrow the second it bolts. You get one chase — wind it before the hole, or it's gone. Traps at the burrow mouth work at dawn.",
+      "4": "Mastery: after a whistle, everything nearby is on edge for the day. Hunt groundhogs LAST, not first. Late summer they're fat; spring they're lean and mean."
+    },
+    "unknown": "a fat brown shape rearing up, then a sharp whistle",
+    "emoji": "🦫",
+    "behavior": "alarmed",
+    "behaviorDesc": "Whistles an alarm the moment it clocks you — and the whole meadow hears it. Then it sprints for its burrow: fast, straight, gone down the hole if it gets there.",
+    "fleeDifficulty": "hard",
+    "huntText": "The whistle splits the meadow — sharp, twice. Then it's running, low and fast, straight for the dark hole in the bank. Cut it off or lose it.",
+    "tell": "rears up on its haunches, nose high — then the whistle.",
+    "butcher": {
+      "hide": 1,
+      "bone": 1
+    }
+  },
+  {
+    "id": "canada_goose",
+    "activity": "diurnal",
+    "name": "Canada Goose",
+    "scientific": "Branta canadensis",
+    "biomes": [
+      "creek",
+      "wetland"
+    ],
+    "description": "a Canada goose, neck out, coming at you",
+    "calories": 2200,
+    "difficulty": "medium",
+    "method": [
+      "bow",
+      "trap"
+    ],
+    "knowledgeLevels": {
+      "1": "Canada goose. It does not flee. It advances. The neck means business.",
+      "2": "Parts: breast (big, beefy), legs (tough), feathers (bedding, fletching). A wing can bruise you; the beak pinches.",
+      "3": "Hunt: it charges YOU. Backing off resets it — it guards a patch, not a grudge. Strike when it commits; it telegraphs the neck-low rush.",
+      "4": "Mastery: nesting season (spring) is the danger window — pairs defend. A goose that advances on you is protecting something; note where it started."
+    },
+    "unknown": "a big gray bird, neck stretched out, honking as it comes at you",
+    "emoji": "🪿",
+    "behavior": "territorial",
+    "behaviorDesc": "Does not flee — advances. Honks, neck low, wings half-out. Back off and it settles; press it and the wings and beak are real.",
+    "fleeDifficulty": "dangerous",
+    "huntText": "HONK. The neck stretches flat and it comes at you, wings half-spread, utterly committed. This bird has never lost a fight it started.",
+    "tell": "the honk changes — lower, faster — and the neck drops level with the ground.",
+    "butcher": {
+      "feather": 8,
+      "bone": 2
+    }
+  },
+  {
+    "id": "american_woodcock",
+    "activity": "crepuscular",
+    "name": "American Woodcock",
+    "scientific": "Scolopax minor",
+    "biomes": [
+      "thicket",
+      "forest_floor"
+    ],
+    "description": "a woodcock, leaf-litter made bird, long bill probing",
+    "calories": 150,
+    "difficulty": "hard",
+    "method": [
+      "bow",
+      "chase"
+    ],
+    "knowledgeLevels": {
+      "1": "Woodcock. You will walk past ten of these before you see one. The leaves ARE the bird.",
+      "2": "Parts: tiny, but the breast is the classic. Hard to find, easy to lose.",
+      "3": "Hunt: it sits until you're nearly on top of it, then explodes from under your feet — you get one fast shot. Sweep likely patches at dusk.",
+      "4": "Mastery: at dusk males do the sky-dance — spiral up, twittering down. Follow the sound to the singing ground, and you'll find them all spring."
+    },
+    "unknown": "leaf litter that wasn't leaves — a whir of wings from under your feet",
+    "emoji": "🐦",
+    "behavior": "camouflaged",
+    "behaviorDesc": "Perfect leaf-litter camouflage. It sits still until you're right on top of it — then explodes upward in a whir of wings. One fast shot, or it's gone.",
+    "fleeDifficulty": "very_hard",
+    "huntText": "The leaves move — no, the leaves FLY. A whir of wings from under your boots, twisting away through the brush. That was a bird. That was always a bird.",
+    "tell": "nothing. That is the tell. The leaf litter is a little too still, a little too bird-shaped.",
+    "butcher": {
+      "feather": 2
+    }
+  },
+  {
+    "id": "north_american_beaver",
+    "activity": "nocturnal",
+    "name": "North American Beaver",
+    "scientific": "Castor canadensis",
+    "biomes": [
+      "creek",
+      "wetland"
+    ],
+    "description": "a broad flat-tailed beaver, working the bank",
+    "calories": 6000,
+    "difficulty": "hard",
+    "method": [
+      "trap",
+      "bow"
+    ],
+    "knowledgeLevels": {
+      "1": "Beaver. The tail-slap is the loudest sound in the wetland — and your hunt ending.",
+      "2": "Parts: meat (rich), pelt (the warmest fur in North America), castor glands (trade, medicine).",
+      "3": "Hunt: the slap means it saw you — it dives and it's gone. Strike before the tail rises, or trap the slide at dusk.",
+      "4": "Mastery: beavers follow runs — muddy slides into the water. Trap the slide, not the lodge. And the slap warns every animal on the water: hunt beaver last."
+    },
+    "unknown": "a broad dark shape on the bank, flat tail dragging",
+    "emoji": "🦫",
+    "behavior": "sentinel",
+    "behaviorDesc": "Works the bank, always near water. The moment it clocks you, the flat tail SLAPS the water — crack like a rifle — and it dives. The slap warns everything nearby.",
+    "fleeDifficulty": "very_hard",
+    "huntText": "CRACK. The tail hits the water like a gunshot and the beaver is gone — just spreading rings. Every animal on the creek heard that. Your hunt is over.",
+    "tell": "the flat tail lifts clear of the water — the slap is already decided.",
+    "butcher": {
+      "hide": 2,
+      "bone": 2
+    }
+  },
+  {
+    "id": "bobcat",
+    "activity": "nocturnal",
+    "name": "Bobcat",
+    "scientific": "Lynx rufus",
+    "biomes": [
+      "thicket",
+      "forest_floor"
+    ],
+    "description": "a bobcat, tufted ears, watching you with yellow eyes",
+    "calories": 2250,
+    "difficulty": "hard",
+    "method": [
+      "bow",
+      "trap"
+    ],
+    "knowledgeLevels": {
+      "1": "Bobcat. It is not prey. It is deciding whether you are.",
+      "2": "Parts: meat (lean, gamey), pelt (spotted, valuable). Claws do the talking up close.",
+      "3": "Hunt: it circles. Backing away invites the chase; standing your ground bores it. Strike when it commits — miss, and the claws come out.",
+      "4": "Mastery: it's an ambush hunter — it hates a fair fight. Noise, size, confidence: make yourself expensive and it picks easier math. Never run."
+    },
+    "unknown": "tufted ears and yellow eyes in the brush, circling",
+    "emoji": "🐱",
+    "behavior": "stalker",
+    "behaviorDesc": "It stalks YOU. Circles closer each turn, yellow eyes fixed. Run and it chases; hold your ground and it loses interest. Strike true or wear the claws.",
+    "fleeDifficulty": "dangerous",
+    "huntText": "Yellow eyes. It doesn't bolt — it pads closer, unhurried, like it has already done the math on you. You are not hunting. You are being hunted.",
+    "tell": "the circling stops — it faces you square, ears flat, weight forward.",
+    "butcher": {
+      "hide": 1,
+      "bone": 2
+    }
   }
 ]

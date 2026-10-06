@@ -427,8 +427,8 @@
           const aid = (it.plantId || '').replace(/^meat_/, '');
           const adef = (this.data.animals || []).find(x => x.id === aid) || {};
           const by = adef.butcher || {};
-          const matName = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell' };
-          const matKg = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0 };
+          const matName = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell', quill: 'Quill', tusk: 'Tusk' };
+          const matKg = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0, quill: 0.02, tusk: 0.3 };
           const got = [];
           for (const mk of Object.keys(by)) {
             const n2 = by[mk] || 0;
@@ -619,8 +619,8 @@
           const aid2 = (it.plantId || '').replace(/^meat_/, '');
           const adef2 = (this.data.animals || []).find(x => x.id === aid2) || {};
           const by2 = adef2.butcher || {};
-          const matName2 = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell' };
-          const matKg2 = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0 };
+          const matName2 = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell', quill: 'Quill', tusk: 'Tusk' };
+          const matKg2 = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0, quill: 0.02, tusk: 0.3 };
           const got2 = [];
           for (const mk of Object.keys(by2)) {
             const n3 = by2[mk] || 0;
