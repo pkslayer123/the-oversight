@@ -54,7 +54,12 @@
     ],
     "form": "shoots",
     "edibility": "safe",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "plant",
+      "flower",
+      "dandelion"
+    ]
   },
   {
     "biomes": [
@@ -114,7 +119,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "plant",
+      "herb",
+      "cattail"
+    ]
   },
   {
     "biomes": [
@@ -172,7 +182,12 @@
     ],
     "form": "berries",
     "edibility": "safe",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "bush",
+      "berry_bush",
+      "blackberry"
+    ]
   },
   {
     "biomes": [
@@ -225,7 +240,12 @@
       }
     ],
     "form": "berries",
-    "edibility": "caution"
+    "edibility": "caution",
+    "taxon": [
+      "tree",
+      "fruit_tree",
+      "persimmon"
+    ]
   },
   {
     "biomes": [
@@ -275,7 +295,12 @@
       }
     ],
     "form": "nuts",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "tree",
+      "nut_tree",
+      "hickory_nut"
+    ]
   },
   {
     "biomes": [
@@ -327,7 +352,12 @@
       }
     ],
     "form": "nuts",
-    "edibility": "cook"
+    "edibility": "cook",
+    "taxon": [
+      "tree",
+      "nut_tree",
+      "white_oak"
+    ]
   },
   {
     "biomes": [
@@ -380,7 +410,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "plant",
+      "herb",
+      "wild_onion"
+    ]
   },
   {
     "biomes": [
@@ -434,7 +469,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "plant",
+      "flower",
+      "chickweed"
+    ]
   },
   {
     "biomes": [
@@ -489,7 +529,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "caution"
+    "edibility": "caution",
+    "taxon": [
+      "plant",
+      "herb",
+      "wood_sorrel"
+    ]
   },
   {
     "biomes": [
@@ -540,7 +585,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "bush",
+      "vine",
+      "muscadine"
+    ]
   },
   {
     "id": "elderberry",
@@ -596,7 +646,12 @@
     ],
     "form": "berries",
     "edibility": "cook",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "bush",
+      "berry_bush",
+      "elderberry"
+    ]
   },
   {
     "id": "pawpaw",
@@ -650,7 +705,12 @@
       }
     ],
     "form": "berries",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "tree",
+      "fruit_tree",
+      "pawpaw"
+    ]
   },
   {
     "id": "ramps",
@@ -704,7 +764,12 @@
       }
     ],
     "form": "roots",
-    "edibility": "caution"
+    "edibility": "caution",
+    "taxon": [
+      "plant",
+      "herb",
+      "ramps"
+    ]
   },
   {
     "id": "lambs_quarters",
@@ -760,7 +825,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "caution"
+    "edibility": "caution",
+    "taxon": [
+      "plant",
+      "herb",
+      "lambs_quarters"
+    ]
   },
   {
     "id": "purslane",
@@ -814,7 +884,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "plant",
+      "herb",
+      "purslane"
+    ]
   },
   {
     "id": "black_walnut",
@@ -867,7 +942,12 @@
       }
     ],
     "form": "nuts",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "tree",
+      "nut_tree",
+      "black_walnut"
+    ]
   },
   {
     "id": "sassafras",
@@ -929,7 +1009,12 @@
     ],
     "form": "roots",
     "edibility": "avoid",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "bush",
+      "shrub",
+      "sassafras"
+    ]
   },
   {
     "id": "yarrow",
@@ -985,7 +1070,12 @@
     ],
     "form": "shoots",
     "edibility": "avoid",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "plant",
+      "flower",
+      "yarrow"
+    ]
   },
   {
     "id": "plantain_leaf",
@@ -1042,7 +1132,12 @@
     ],
     "form": "shoots",
     "edibility": "safe",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "plant",
+      "herb",
+      "plantain_leaf"
+    ]
   },
   {
     "id": "jewelweed",
@@ -1097,7 +1192,12 @@
       }
     ],
     "form": "shoots",
-    "edibility": "avoid"
+    "edibility": "avoid",
+    "taxon": [
+      "plant",
+      "flower",
+      "jewelweed"
+    ]
   },
   {
     "id": "wild_strawberry",
@@ -1151,7 +1251,12 @@
       }
     ],
     "form": "berries",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "plant",
+      "berry_plant",
+      "wild_strawberry"
+    ]
   },
   {
     "id": "staghorn_sumac",
@@ -1211,7 +1316,12 @@
       }
     ],
     "form": "berries",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "bush",
+      "shrub",
+      "staghorn_sumac"
+    ]
   },
   {
     "id": "burdock",
@@ -1271,7 +1381,12 @@
       }
     ],
     "form": "roots",
-    "edibility": "safe"
+    "edibility": "safe",
+    "taxon": [
+      "plant",
+      "herb",
+      "burdock"
+    ]
   },
   {
     "id": "goldenrod",
@@ -1330,7 +1445,12 @@
     ],
     "form": "shoots",
     "edibility": "avoid",
-    "medicinal": true
+    "medicinal": true,
+    "taxon": [
+      "plant",
+      "flower",
+      "goldenrod"
+    ]
   },
   {
     "id": "mayapple",
@@ -1384,7 +1504,12 @@
       }
     ],
     "form": "berries",
-    "edibility": "caution"
+    "edibility": "caution",
+    "taxon": [
+      "plant",
+      "herb",
+      "mayapple"
+    ]
   },
   {
     "id": "rare_herb",
@@ -1435,6 +1560,11 @@
       "4": "Mastery: harvest after rain when pipes stand tall. Dry whole, tincture in anything strong."
     },
     "form": "shoots",
-    "edibility": "avoid"
+    "edibility": "avoid",
+    "taxon": [
+      "plant",
+      "herb",
+      "ghost_pipe"
+    ]
   }
 ]
