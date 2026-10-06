@@ -121,6 +121,12 @@ function looksLikeEnglishSpeech(e) {
   ok('nonverbal exit is gesture narration, not speech', !/^\s*"/.test(end.line));
 
   // ============ 5. LEARNING PROGRESSES ============
+  // (Flakiness guard: a randomly-generated bilingual on the node can be
+  // picked up as interpreter by the nonverbal opening, which reroutes
+  // renderForeign through the interpreter branch. Interpreters get their
+  // own section 6 — this section is about exposure-driven understanding,
+  // so pin the interpreter off.)
+  Game.convoGet(A).interpreter = null;
   s.langExposure = {};
   Game.langExposureGain(A, 'italian', 1);
   eq('exposure starts counting', Game.langExposure('italian'), 1);
@@ -200,7 +206,7 @@ function looksLikeEnglishSpeech(e) {
   const vpC = Game.vpOf(C);
   vpC.languages = { native: 'english', levels: { english: 2 } };
   const stN = Game.startConvo(C);
-  ok('shared-language convo opens in english', !stN.line.includes('«') || true); // english opening expected
+  ok('shared-language convo opens in english', !stN.line.includes('«')); // english opening expected: no foreign markers
   const nc = Game.convoGet(C);
   ok('normal thread is not nonverbal', nc.thread !== 'nonverbal');
   const nChoices = (Game.convoTurn(C, (stN.choices || [])[0].id) || {});
