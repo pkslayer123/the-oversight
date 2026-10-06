@@ -224,148 +224,1376 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 
     // === MONSTER SPRITES (Steve 2026-10-06): calm = the real animal/mundane thing,
     // aggro = the monster revealed. Steve's law: identical until aggro. ===
-        bulldozer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"6\" cy=\"25\" rx=\"4.5\" ry=\"3\" fill=\"#3d6b2f\"/><ellipse cx=\"26\" cy=\"26\" rx=\"4\" ry=\"2.6\" fill=\"#35592a\"/><ellipse cx=\"4.5\" cy=\"28.5\" rx=\"4.5\" ry=\"1.6\" fill=\"#5a4326\"/><ellipse cx=\"17\" cy=\"16\" rx=\"8.5\" ry=\"5.5\" fill=\"#4a3a28\"/><ellipse cx=\"17\" cy=\"13.8\" rx=\"6.8\" ry=\"3\" fill=\"#54402c\"/><path d=\"M9 11 l1 -2.6 M13 10 l1 -2.8 M17 9.6 l1 -2.8 M21 10 l1 -2.6 M25 11.4 l1 -2.4\" stroke=\"#2e2318\" stroke-width=\"1.3\" stroke-linecap=\"round\"/><path d=\"M25.5 14.5 q2.2 1.8 1 4.4\" stroke=\"#3a2d20\" stroke-width=\"1.4\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M11.5 13.5 L4.5 21.5 L7.5 24 L12.5 18 Z\" fill=\"#4a3a28\"/><ellipse cx=\"4.8\" cy=\"24\" rx=\"1.9\" ry=\"1.5\" fill=\"#6e5844\"/><circle cx=\"4.1\" cy=\"24\" r=\"0.45\" fill=\"#241c12\"/><circle cx=\"5.6\" cy=\"24.1\" r=\"0.45\" fill=\"#241c12\"/><polygon points=\"11,12.5 12.6,9.4 13.9,12.3\" fill=\"#3a2d20\"/><circle cx=\"9.6\" cy=\"17.6\" r=\"0.85\" fill=\"#1a1410\"/><circle cx=\"9.85\" cy=\"17.35\" r=\"0.25\" fill=\"#cfd6c8\" opacity=\"0.8\"/><g fill=\"#3a2d20\"><rect x=\"12.2\" y=\"19.5\" width=\"1.8\" height=\"8.6\" rx=\"0.8\"/><rect x=\"16\" y=\"20\" width=\"1.8\" height=\"8.2\" rx=\"0.8\"/><rect x=\"19.8\" y=\"20\" width=\"1.8\" height=\"8.2\" rx=\"0.8\"/><rect x=\"23.6\" y=\"18.6\" width=\"1.8\" height=\"9.4\" rx=\"0.8\"/></g><g fill=\"#241c12\"><rect x=\"12.2\" y=\"26.4\" width=\"1.8\" height=\"2\" rx=\"0.6\"/><rect x=\"16\" y=\"26.4\" width=\"1.8\" height=\"2\" rx=\"0.6\"/><rect x=\"19.8\" y=\"26.4\" width=\"1.8\" height=\"2\" rx=\"0.6\"/><rect x=\"23.6\" y=\"26.4\" width=\"1.8\" height=\"2\" rx=\"0.6\"/></g><g fill=\"#6e5844\"><circle cx=\"8.5\" cy=\"28\" r=\"1\"/><circle cx=\"11\" cy=\"29\" r=\"0.8\"/><circle cx=\"6.4\" cy=\"29.2\" r=\"0.7\"/></g></svg>`,
-    bulldozer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#c9b896\" opacity=\"0.65\"><ellipse cx=\"3\" cy=\"12\" rx=\"2.6\" ry=\"2\"/><ellipse cx=\"4.5\" cy=\"20\" rx=\"3\" ry=\"2.4\"/><ellipse cx=\"28.5\" cy=\"13\" rx=\"2.4\" ry=\"1.8\"/><ellipse cx=\"29\" cy=\"22\" rx=\"2.8\" ry=\"2.2\"/></g><path d=\"M1 10 h4 M0 24 h5 M28 10 h4 M27 25 h5\" stroke=\"#b3a184\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><ellipse cx=\"16\" cy=\"15.5\" rx=\"9.5\" ry=\"6.5\" fill=\"#41311f\"/><polygon points=\"7,11.5 8.8,6.8 10.3,11.2 12.3,6.4 13.8,11 15.8,6.2 17.3,11 19.3,6.6 20.8,11.2 22.8,7.2 23.8,11.5\" fill=\"#241c12\"/><ellipse cx=\"16\" cy=\"18.5\" rx=\"6.8\" ry=\"5.8\" fill=\"#4a3a28\"/><path d=\"M11.2 20 C9 18 8.4 15.4 9.4 12.8 C9.9 15 11 16.8 12.8 17.8 Z\" fill=\"#e8e0cc\"/><path d=\"M20.8 20 C23 18 23.6 15.4 22.6 12.8 C22.1 15 21 16.8 19.2 17.8 Z\" fill=\"#e8e0cc\"/><ellipse cx=\"16\" cy=\"21\" rx=\"3.6\" ry=\"2.7\" fill=\"#6e5844\"/><ellipse cx=\"14.6\" cy=\"21.2\" rx=\"1\" ry=\"1.2\" fill=\"#241c12\"/><ellipse cx=\"17.4\" cy=\"21.2\" rx=\"1\" ry=\"1.2\" fill=\"#241c12\"/><circle cx=\"12.8\" cy=\"15.6\" r=\"1.35\" fill=\"#c0392b\"/><circle cx=\"19.2\" cy=\"15.6\" r=\"1.35\" fill=\"#c0392b\"/><circle cx=\"13.1\" cy=\"15.3\" r=\"0.4\" fill=\"#ffd9d9\"/><circle cx=\"19.5\" cy=\"15.3\" r=\"0.4\" fill=\"#ffd9d9\"/><g fill=\"#6e5844\"><circle cx=\"6\" cy=\"27\" r=\"1.1\"/><circle cx=\"26\" cy=\"27.5\" r=\"1\"/><circle cx=\"10\" cy=\"28.5\" r=\"0.8\"/><circle cx=\"22.5\" cy=\"28.8\" r=\"0.9\"/></g><path d=\"M2 29.5 l3 -1.5 2 1.5 3 -1.5 2 1.5 3 -1.5 2 1.5 3 -1.5 2 1.5 3 -1.5 2 1.5\" stroke=\"#3a2d20\" stroke-width=\"1.2\" fill=\"none\"/></svg>`,
-    hushwolf_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#2e4426\"><polygon points=\"2,26 5,14 8,26\"/><polygon points=\"24,26 27,14 30,26\"/><polygon points=\"6,27 8.5,20 11,27\"/></g><ellipse cx=\"17\" cy=\"19.5\" rx=\"7\" ry=\"4\" fill=\"#5b6472\"/><ellipse cx=\"17\" cy=\"17.8\" rx=\"6\" ry=\"2.6\" fill=\"#66707e\"/><circle cx=\"10.2\" cy=\"14\" r=\"3.3\" fill=\"#5b6472\"/><polygon points=\"8.2,12 7.4,8.4 10,10.6\" fill=\"#4a525e\"/><polygon points=\"11.8,11.6 12.6,8 13.8,11\" fill=\"#4a525e\"/><path d=\"M7.6 14.2 L3.8 15.8 L7.4 17.4 Z\" fill=\"#525a66\"/><circle cx=\"3.9\" cy=\"16\" r=\"0.7\" fill=\"#23262c\"/><circle cx=\"10\" cy=\"13.4\" r=\"0.75\" fill=\"#23262c\"/><path d=\"M23.5 18.5 q3.2 1 2.6 4.4\" stroke=\"#4a525e\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"/><g fill=\"#4a525e\"><rect x=\"12\" y=\"22\" width=\"1.7\" height=\"6\" rx=\"0.8\"/><rect x=\"15.4\" y=\"22.4\" width=\"1.7\" height=\"5.6\" rx=\"0.8\"/><rect x=\"18.8\" y=\"22.4\" width=\"1.7\" height=\"5.6\" rx=\"0.8\"/><rect x=\"22\" y=\"21.6\" width=\"1.7\" height=\"6.2\" rx=\"0.8\"/></g></svg>`,
-    hushwolf_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"none\" stroke=\"#9aa3b2\" opacity=\"0.45\"><path d=\"M6 8 a13 13 0 0 1 8 -3.4\"/><path d=\"M26 8 a13 13 0 0 0 -8 -3.4\"/><path d=\"M4 24 a15 15 0 0 1 5 -8\"/><path d=\"M28 24 a15 15 0 0 0 -5 -8\"/></g><ellipse cx=\"17\" cy=\"20\" rx=\"7.6\" ry=\"4.1\" fill=\"#3a4049\"/><path d=\"M10 17 l1.4 -2 M13 16.4 l1.4 -2 M16 16.2 l1.4 -2 M19 16.4 l1.4 -2 M22 17 l1.4 -2\" stroke=\"#23262c\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><circle cx=\"10\" cy=\"15\" r=\"3.2\" fill=\"#3a4049\"/><polygon points=\"7.8,13.2 6.8,9.6 9.6,11.6\" fill=\"#2b3038\"/><polygon points=\"11.8,12.6 12.8,9 13.8,12.2\" fill=\"#2b3038\"/><path d=\"M7.2 15.2 L3.4 17 L7.2 18.8 Z\" fill=\"#2f353e\"/><circle cx=\"3.5\" cy=\"17.2\" r=\"0.65\" fill=\"#101216\"/><path d=\"M5.5 17.6 l1 1.2 1 -1.2 1 1.2\" stroke=\"#dfe6f0\" stroke-width=\"0.7\" fill=\"none\"/><circle cx=\"9.4\" cy=\"14.2\" r=\"0.85\" fill=\"#dfe6f0\"/><circle cx=\"9.4\" cy=\"14.2\" r=\"0.35\" fill=\"#101216\"/><path d=\"M23.8 19 q3.4 0.6 3 4\" stroke=\"#2b3038\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"/><g fill=\"#2b3038\"><rect x=\"11.6\" y=\"22.6\" width=\"1.7\" height=\"5.4\" rx=\"0.8\"/><rect x=\"15\" y=\"23\" width=\"1.7\" height=\"5\" rx=\"0.8\"/><rect x=\"18.4\" y=\"23\" width=\"1.7\" height=\"5\" rx=\"0.8\"/><rect x=\"21.8\" y=\"22.2\" width=\"1.7\" height=\"5.6\" rx=\"0.8\"/></g></svg>`,
-    gallowdeer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"17\" cy=\"16.5\" rx=\"7\" ry=\"3.8\" fill=\"#a9793f\"/><ellipse cx=\"17\" cy=\"15\" rx=\"6\" ry=\"2.6\" fill=\"#b8894d\"/><path d=\"M11.5 15 C9.5 11.5 9 8.4 10 5.4 L12.6 5.2 C12.4 8.2 12.8 11.4 13.8 14.4 Z\" fill=\"#a9793f\"/><ellipse cx=\"11\" cy=\"4.6\" rx=\"2.3\" ry=\"2.1\" fill=\"#a9793f\" transform=\"rotate(-12 11 4.6)\"/><path d=\"M9.2 3.6 L8.9 4.9 L10.9 5.2 Z\" fill=\"#6b4a26\"/><circle cx=\"9.1\" cy=\"4.6\" r=\"0.65\" fill=\"#2b1f12\"/><polygon points=\"11.6,2.8 12.2,0.4 13.4,2.4\" fill=\"#a9793f\"/><polygon points=\"9.8,2.6 9,0.4 10.8,1.8\" fill=\"#96693a\"/><circle cx=\"10.9\" cy=\"4.1\" r=\"0.8\" fill=\"#2b1f12\"/><circle cx=\"11.15\" cy=\"3.85\" r=\"0.25\" fill=\"#f5ead2\" opacity=\"0.9\"/><ellipse cx=\"23.8\" cy=\"14.6\" rx=\"1.3\" ry=\"1.8\" fill=\"#e8dcc4\"/><g fill=\"#96693a\"><rect x=\"12\" y=\"19\" width=\"1.4\" height=\"9.4\" rx=\"0.7\"/><rect x=\"15\" y=\"19.4\" width=\"1.4\" height=\"9\" rx=\"0.7\"/><rect x=\"18.4\" y=\"19.4\" width=\"1.4\" height=\"9\" rx=\"0.7\"/><rect x=\"21.4\" y=\"19\" width=\"1.4\" height=\"9.4\" rx=\"0.7\"/></g><g fill=\"#4a3a22\"><rect x=\"12\" y=\"27\" width=\"1.4\" height=\"1.6\" rx=\"0.5\"/><rect x=\"15\" y=\"27\" width=\"1.4\" height=\"1.6\" rx=\"0.5\"/><rect x=\"18.4\" y=\"27\" width=\"1.4\" height=\"1.6\" rx=\"0.5\"/><rect x=\"21.4\" y=\"27\" width=\"1.4\" height=\"1.6\" rx=\"0.5\"/></g></svg>`,
-    gallowdeer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><polygon points=\"11.8,9.4 2,2.5 2,16\" fill=\"#fff7d6\" opacity=\"0.22\"/><polygon points=\"20.2,9.4 30,2.5 30,16\" fill=\"#fff7d6\" opacity=\"0.22\"/><ellipse cx=\"16\" cy=\"19\" rx=\"6.2\" ry=\"4.6\" fill=\"#7c5427\"/><path d=\"M16 15.5 L16 9\" stroke=\"#7c5427\" stroke-width=\"4.4\" stroke-linecap=\"round\"/><ellipse cx=\"16\" cy=\"10.5\" rx=\"3.6\" ry=\"3.9\" fill=\"#7c5427\"/><polygon points=\"12.8,8.2 10.8,6.6 11.8,8.8\" fill=\"#6b4a26\"/><polygon points=\"19.2,8.2 21.2,6.6 20.2,8.8\" fill=\"#6b4a26\"/><circle cx=\"13.7\" cy=\"10.2\" r=\"3.3\" fill=\"#ffe45e\" opacity=\"0.35\"/><circle cx=\"18.3\" cy=\"10.2\" r=\"3.3\" fill=\"#ffe45e\" opacity=\"0.35\"/><circle cx=\"13.7\" cy=\"10.2\" r=\"2.15\" fill=\"#fff7d6\"/><circle cx=\"18.3\" cy=\"10.2\" r=\"2.15\" fill=\"#fff7d6\"/><circle cx=\"13.7\" cy=\"10.2\" r=\"1.1\" fill=\"#ffffff\"/><circle cx=\"18.3\" cy=\"10.2\" r=\"1.1\" fill=\"#ffffff\"/><circle cx=\"13.7\" cy=\"10.2\" r=\"0.45\" fill=\"#2b1f12\"/><circle cx=\"18.3\" cy=\"10.2\" r=\"0.45\" fill=\"#2b1f12\"/><path d=\"M14.8 14.6 h2.4\" stroke=\"#4a3a22\" stroke-width=\"1\"/><g stroke=\"#5e421f\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12.5 22.5 L12.5 29\"/><path d=\"M15.5 23 L15.5 29\"/><path d=\"M18.5 23 L18.5 29\"/><path d=\"M21.5 22.5 L21.5 29\"/></g><ellipse cx=\"16\" cy=\"30\" rx=\"7\" ry=\"1\" fill=\"#000000\" opacity=\"0.25\"/></svg>`,
-    mirrormoth_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><path d=\"M14.6 12 L7.5 7.5 L9.5 20.5 Z\" fill=\"#8a7bb0\"/><path d=\"M17.4 12 L24.5 7.5 L22.5 20.5 Z\" fill=\"#8a7bb0\"/><path d=\"M13.8 13 L8.5 9.8 L9.8 18 Z\" fill=\"#9c8dc2\" opacity=\"0.85\"/><path d=\"M18.2 13 L23.5 9.8 L22.2 18 Z\" fill=\"#9c8dc2\" opacity=\"0.85\"/><circle cx=\"9.2\" cy=\"13.5\" r=\"1.5\" fill=\"#5a4a68\"/><circle cx=\"9.2\" cy=\"13.5\" r=\"0.7\" fill=\"#cfd6ea\"/><circle cx=\"22.8\" cy=\"13.5\" r=\"1.5\" fill=\"#5a4a68\"/><circle cx=\"22.8\" cy=\"13.5\" r=\"0.7\" fill=\"#cfd6ea\"/><ellipse cx=\"16\" cy=\"17\" rx=\"2\" ry=\"6.5\" fill=\"#5a4a3a\"/><path d=\"M14.8 14.5 l-2 -0.8 M14.8 16.5 l-2.2 -0.4 M14.8 18.5 l-2.2 0.2 M17.2 14.5 l2 -0.8 M17.2 16.5 l2.2 -0.4 M17.2 18.5 l2.2 0.2\" stroke=\"#6e5c4c\" stroke-width=\"0.9\" stroke-linecap=\"round\"/><circle cx=\"16\" cy=\"10.2\" r=\"1.6\" fill=\"#5a4a3a\"/><circle cx=\"15.4\" cy=\"10\" r=\"0.6\" fill=\"#1f1a14\"/><circle cx=\"16.6\" cy=\"10\" r=\"0.6\" fill=\"#1f1a14\"/><path d=\"M15 8.8 C13 6.5 11 5.5 8.8 5.2 M17 8.8 C19 6.5 21 5.5 23.2 5.2\" stroke=\"#5a4a3a\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M13.4 7.6 l-1.4 -1.2 M12.2 6.9 l-1.4 -1.2 M18.6 7.6 l1.4 -1.2 M19.8 6.9 l1.4 -1.2\" stroke=\"#5a4a3a\" stroke-width=\"0.7\" stroke-linecap=\"round\"/></svg>`,
-    mirrormoth_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g stroke-linecap=\"round\"><path d=\"M4 3 l1.6 1.6 M28 3 l-1.6 1.6 M2 16 h2.4 M30 16 h-2.4 M4 29 l1.6 -1.6 M28 29 l-1.6 -1.6\" stroke=\"#f5c518\" stroke-width=\"1.2\" opacity=\"0.8\"/><path d=\"M8 2 l1 1.4 M24 2 l-1 1.4\" stroke=\"#e74c3c\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M8 30 l1 -1.4 M24 30 l-1 -1.4\" stroke=\"#3498db\" stroke-width=\"1\" opacity=\"0.7\"/></g><ellipse cx=\"8.5\" cy=\"13\" rx=\"7\" ry=\"5\" fill=\"#b9c4e8\"/><ellipse cx=\"23.5\" cy=\"13\" rx=\"7\" ry=\"5\" fill=\"#b9c4e8\"/><ellipse cx=\"9.5\" cy=\"22\" rx=\"5.5\" ry=\"4\" fill=\"#a3aedb\"/><ellipse cx=\"22.5\" cy=\"22\" rx=\"5.5\" ry=\"4\" fill=\"#a3aedb\"/><polygon points=\"4,10 9,12.5 5,15\" fill=\"#ffffff\" opacity=\"0.75\"/><polygon points=\"28,10 23,12.5 27,15\" fill=\"#ffffff\" opacity=\"0.75\"/><polygon points=\"7,21 11,22.5 8,24\" fill=\"#ffffff\" opacity=\"0.6\"/><polygon points=\"25,21 21,22.5 24,24\" fill=\"#ffffff\" opacity=\"0.6\"/><circle cx=\"8.5\" cy=\"13\" r=\"1.6\" fill=\"#5a4a68\"/><circle cx=\"8.5\" cy=\"13\" r=\"0.8\" fill=\"#eaf0ff\"/><circle cx=\"23.5\" cy=\"13\" r=\"1.6\" fill=\"#5a4a68\"/><circle cx=\"23.5\" cy=\"13\" r=\"0.8\" fill=\"#eaf0ff\"/><ellipse cx=\"16\" cy=\"16.5\" rx=\"2.2\" ry=\"6\" fill=\"#3f3428\"/><circle cx=\"16\" cy=\"9.8\" r=\"1.8\" fill=\"#3f3428\"/><circle cx=\"15.2\" cy=\"9.6\" r=\"0.7\" fill=\"#0f0c08\"/><circle cx=\"16.8\" cy=\"9.6\" r=\"0.7\" fill=\"#0f0c08\"/><circle cx=\"16\" cy=\"16.5\" r=\"5\" fill=\"#ffffff\" opacity=\"0.9\"/><circle cx=\"16\" cy=\"16.5\" r=\"2.8\" fill=\"#ffffff\"/></svg>`,
-        belltoad_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <ellipse cx=\"16\" cy=\"21\" rx=\"10\" ry=\"7\" fill=\"#6b7a3a\" stroke=\"#45502a\" stroke-width=\"1\"/> <ellipse cx=\"16\" cy=\"22.5\" rx=\"6.5\" ry=\"4\" fill=\"#8a9560\" opacity=\"0.9\"/> <ellipse cx=\"16\" cy=\"13.5\" rx=\"8\" ry=\"6\" fill=\"#74803e\" stroke=\"#45502a\" stroke-width=\"1\"/> <g fill=\"#5a6531\"><circle cx=\"10\" cy=\"17\" r=\"0.9\"/><circle cx=\"22.5\" cy=\"17.5\" r=\"0.9\"/><circle cx=\"13\" cy=\"20\" r=\"0.9\"/><circle cx=\"19.5\" cy=\"20.5\" r=\"0.9\"/><circle cx=\"16\" cy=\"19\" r=\"0.9\"/></g> <ellipse cx=\"11.5\" cy=\"9.5\" rx=\"2.4\" ry=\"2.2\" fill=\"#74803e\"/> <ellipse cx=\"20.5\" cy=\"9.5\" rx=\"2.4\" ry=\"2.2\" fill=\"#74803e\"/> <circle cx=\"11.5\" cy=\"9.5\" r=\"1.6\" fill=\"#d8a93c\"/><circle cx=\"11.5\" cy=\"9.5\" r=\"0.8\" fill=\"#1a1a1a\"/> <circle cx=\"20.5\" cy=\"9.5\" r=\"1.6\" fill=\"#d8a93c\"/><circle cx=\"20.5\" cy=\"9.5\" r=\"0.8\" fill=\"#1a1a1a\"/> <path d=\"M12 14.5 Q16 16.5 20 14.5\" stroke=\"#45502a\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/> <rect x=\"9.5\" y=\"21\" width=\"3\" height=\"6\" rx=\"1.2\" fill=\"#5f6a33\"/> <rect x=\"19.5\" y=\"21\" width=\"3\" height=\"6\" rx=\"1.2\" fill=\"#5f6a33\"/> </svg>`,
-    belltoad_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <ellipse cx=\"16\" cy=\"23.5\" rx=\"9.5\" ry=\"6\" fill=\"#5f6a30\" stroke=\"#3d4423\" stroke-width=\"1\"/> <ellipse cx=\"16\" cy=\"12\" rx=\"7.5\" ry=\"5.5\" fill=\"#67723a\" stroke=\"#3d4423\" stroke-width=\"1\"/> <circle cx=\"11.8\" cy=\"9.8\" r=\"1.8\" fill=\"#e0b03c\"/><ellipse cx=\"11.8\" cy=\"9.8\" rx=\"0.5\" ry=\"1.1\" fill=\"#1a1a1a\"/> <circle cx=\"20.2\" cy=\"9.8\" r=\"1.8\" fill=\"#e0b03c\"/><ellipse cx=\"20.2\" cy=\"9.8\" rx=\"0.5\" ry=\"1.1\" fill=\"#1a1a1a\"/> <ellipse cx=\"16\" cy=\"14.5\" rx=\"3\" ry=\"2.1\" fill=\"#2a1f1a\"/> <circle cx=\"16\" cy=\"20\" r=\"6.5\" fill=\"#d4746a\" stroke=\"#a24a42\" stroke-width=\"1.2\"/> <circle cx=\"14\" cy=\"18\" r=\"2\" fill=\"#e89a8a\" opacity=\"0.8\"/> <path d=\"M7 13.5 Q2.5 20 7 26.5\" stroke=\"#c0392b\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.9\"/> <path d=\"M9.5 15 Q6.5 20 9.5 25\" stroke=\"#c0392b\" stroke-width=\"1\" fill=\"none\" opacity=\"0.7\"/> <path d=\"M25 13.5 Q29.5 20 25 26.5\" stroke=\"#c0392b\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.9\"/> <path d=\"M22.5 15 Q25.5 20 22.5 25\" stroke=\"#c0392b\" stroke-width=\"1\" fill=\"none\" opacity=\"0.7\"/> </svg>`,
-    lockpick_raccoon_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <path d=\"M23 21 Q28.5 20.5 27.5 26.5 Q25 28.5 22.5 26 Z\" fill=\"#8a8f96\" stroke=\"#5c6066\" stroke-width=\"0.8\"/> <path d=\"M24.2 22 Q26.2 22.5 26 25\" stroke=\"#3a3d42\" stroke-width=\"1.2\" fill=\"none\"/> <path d=\"M23.6 25.2 Q25.4 25.2 25.6 27\" stroke=\"#3a3d42\" stroke-width=\"1.2\" fill=\"none\"/> <ellipse cx=\"16\" cy=\"21.5\" rx=\"8\" ry=\"6.5\" fill=\"#8a8f96\" stroke=\"#5c6066\" stroke-width=\"1\"/> <circle cx=\"16\" cy=\"11\" r=\"6.5\" fill=\"#989da5\" stroke=\"#5c6066\" stroke-width=\"1\"/> <path d=\"M10.5 6.8 L8.5 2.5 L13.2 4.6 Z\" fill=\"#7d828a\" stroke=\"#5c6066\" stroke-width=\"0.7\"/> <path d=\"M21.5 6.8 L23.5 2.5 L18.8 4.6 Z\" fill=\"#7d828a\" stroke=\"#5c6066\" stroke-width=\"0.7\"/> <rect x=\"9.5\" y=\"9\" width=\"13\" height=\"4.6\" rx=\"2.3\" fill=\"#3a3d42\"/> <circle cx=\"12.5\" cy=\"11.3\" r=\"1.2\" fill=\"#e8e8e8\"/><circle cx=\"12.5\" cy=\"11.3\" r=\"0.55\" fill=\"#1a1a1a\"/> <circle cx=\"19.5\" cy=\"11.3\" r=\"1.2\" fill=\"#e8e8e8\"/><circle cx=\"19.5\" cy=\"11.3\" r=\"0.55\" fill=\"#1a1a1a\"/> <path d=\"M14.5 14.6 L17.5 14.6 L16 16.3 Z\" fill=\"#2c2e33\"/> <rect x=\"13.2\" y=\"17.2\" width=\"5.6\" height=\"3.4\" rx=\"0.8\" fill=\"#b08d57\" stroke=\"#7a5f33\" stroke-width=\"0.8\"/> <circle cx=\"16\" cy=\"18.9\" r=\"0.7\" fill=\"#7a5f33\"/> <circle cx=\"11.8\" cy=\"18.9\" r=\"1.8\" fill=\"#7d828a\" stroke=\"#5c6066\" stroke-width=\"0.6\"/> <circle cx=\"20.2\" cy=\"18.9\" r=\"1.8\" fill=\"#7d828a\" stroke=\"#5c6066\" stroke-width=\"0.6\"/> </svg>`,
-    lockpick_raccoon_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <path d=\"M23 21 Q28.5 20.5 27.5 26.5 Q25 28.5 22.5 26 Z\" fill=\"#8a8f96\" stroke=\"#5c6066\" stroke-width=\"0.8\"/> <path d=\"M24.2 22 Q26.2 22.5 26 25\" stroke=\"#3a3d42\" stroke-width=\"1.2\" fill=\"none\"/> <path d=\"M23.6 25.2 Q25.4 25.2 25.6 27\" stroke=\"#3a3d42\" stroke-width=\"1.2\" fill=\"none\"/> <ellipse cx=\"16\" cy=\"21.5\" rx=\"8\" ry=\"6.5\" fill=\"#8a8f96\" stroke=\"#5c6066\" stroke-width=\"1\"/> <circle cx=\"16\" cy=\"11\" r=\"6.5\" fill=\"#989da5\" stroke=\"#5c6066\" stroke-width=\"1\"/> <path d=\"M10.5 6.8 L8.5 2.5 L13.2 4.6 Z\" fill=\"#7d828a\" stroke=\"#5c6066\" stroke-width=\"0.7\"/> <path d=\"M21.5 6.8 L23.5 2.5 L18.8 4.6 Z\" fill=\"#7d828a\" stroke=\"#5c6066\" stroke-width=\"0.7\"/> <rect x=\"9.5\" y=\"9\" width=\"13\" height=\"4.6\" rx=\"2.3\" fill=\"#3a3d42\"/> <circle cx=\"12.5\" cy=\"11.3\" r=\"1.2\" fill=\"#ff6a5a\"/><circle cx=\"12.5\" cy=\"11.3\" r=\"0.5\" fill=\"#1a1a1a\"/> <circle cx=\"19.5\" cy=\"11.3\" r=\"1.2\" fill=\"#ff6a5a\"/><circle cx=\"19.5\" cy=\"11.3\" r=\"0.5\" fill=\"#1a1a1a\"/> <path d=\"M14.5 14.6 L17.5 14.6 L16 16.3 Z\" fill=\"#2c2e33\"/> <g stroke=\"#7d828a\" stroke-width=\"0.9\" stroke-linecap=\"round\"> <path d=\"M9.5 16.5 L5.5 13.5\"/><path d=\"M8.8 17.3 L4.8 15.5\"/><path d=\"M8.5 18.3 L4.3 17.3\"/><path d=\"M8.7 19.4 L4.7 19.6\"/><path d=\"M9.4 20.3 L6.2 22\"/><path d=\"M10.4 21 L8.4 24\"/><path d=\"M11.6 21.2 L10.8 24.4\"/> <path d=\"M22.5 16.5 L26.5 13.5\"/><path d=\"M23.2 17.3 L27.2 15.5\"/><path d=\"M23.5 18.3 L27.7 17.3\"/><path d=\"M23.3 19.4 L27.3 19.6\"/><path d=\"M22.6 20.3 L25.8 22\"/><path d=\"M21.6 21 L23.6 24\"/><path d=\"M20.4 21.2 L21.2 24.4\"/> </g> <ellipse cx=\"10.8\" cy=\"19.2\" rx=\"2.4\" ry=\"2\" fill=\"#7d828a\" stroke=\"#5c6066\" stroke-width=\"0.6\"/> <ellipse cx=\"21.2\" cy=\"19.2\" rx=\"2.4\" ry=\"2\" fill=\"#7d828a\" stroke=\"#5c6066\" stroke-width=\"0.6\"/> <g fill=\"#b08d57\" stroke=\"#7a5f33\" stroke-width=\"0.6\"> <circle cx=\"27\" cy=\"9\" r=\"2\"/><circle cx=\"27\" cy=\"9\" r=\"0.7\" fill=\"#7a5f33\"/> <circle cx=\"4\" cy=\"10\" r=\"1.2\"/><circle cx=\"4\" cy=\"10\" r=\"0.4\" fill=\"#7a5f33\"/> <rect x=\"2\" y=\"24\" width=\"3.4\" height=\"1.3\" transform=\"rotate(30 3.7 24.6)\"/> <rect x=\"26\" y=\"22\" width=\"3\" height=\"1.1\" transform=\"rotate(-25 27.5 22.5)\"/> </g> <circle cx=\"16\" cy=\"24.5\" r=\"1\" fill=\"#c0392b\"/> <path d=\"M13.5 22.5 L13 21 M18.5 22.5 L19 21\" stroke=\"#c0392b\" stroke-width=\"0.8\"/> </svg>`,
-    white_noise_heron_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <g opacity=\"0.78\"> <ellipse cx=\"16\" cy=\"27\" rx=\"11\" ry=\"2.8\" fill=\"#3f6b8a\"/> <path d=\"M14 22 L14 26.5 M18 22 L18 26.5\" stroke=\"#3a3d42\" stroke-width=\"1.4\"/> <ellipse cx=\"16\" cy=\"16.5\" rx=\"5\" ry=\"6.5\" fill=\"#a9b4bd\" stroke=\"#6b7680\" stroke-width=\"1\"/> <path d=\"M13.5 14 Q10.5 17 12.8 20.5\" stroke=\"#6b7680\" stroke-width=\"1\" fill=\"none\"/> <path d=\"M16 11 Q14 7 15.5 4.5\" stroke=\"#a9b4bd\" stroke-width=\"2.4\" fill=\"none\" stroke-linecap=\"round\"/> <ellipse cx=\"15.5\" cy=\"4\" rx=\"2.2\" ry=\"1.8\" fill=\"#b7c1c9\"/> <path d=\"M17.3 3.4 L25 4.7 L17.3 6 Z\" fill=\"#d8a93c\"/> <circle cx=\"15\" cy=\"3.7\" r=\"0.55\" fill=\"#1a1a1a\"/> <path d=\"M8 27 Q12 25.5 16 27 Q20 28.5 24 27\" stroke=\"#7fa3bd\" stroke-width=\"0.8\" fill=\"none\" opacity=\"0.8\"/> </g> </svg>`,
-    white_noise_heron_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <ellipse cx=\"16\" cy=\"27.5\" rx=\"12\" ry=\"3.2\" fill=\"#3f6b8a\"/> <path d=\"M13.5 22 L13 26.5 M17.5 22 L18.5 26.5\" stroke=\"#2c2e33\" stroke-width=\"1.4\"/> <g opacity=\"0.35\" transform=\"translate(2.4,-1.8)\" stroke=\"#6b7680\" stroke-width=\"0.9\" stroke-dasharray=\"1.6 1.4\" fill=\"none\"> <ellipse cx=\"14\" cy=\"16.5\" rx=\"5\" ry=\"6.5\"/><path d=\"M17 12 Q22 10 24 6\"/><ellipse cx=\"24.5\" cy=\"5.5\" rx=\"2\" ry=\"1.6\"/> </g> <ellipse cx=\"14\" cy=\"16.5\" rx=\"5\" ry=\"6.5\" fill=\"#9aa5ae\" stroke=\"#5c666e\" stroke-width=\"1\"/> <path d=\"M17 12 Q22 10 24 6\" stroke=\"#9aa5ae\" stroke-width=\"2.6\" fill=\"none\" stroke-linecap=\"round\"/> <ellipse cx=\"24.5\" cy=\"5.5\" rx=\"2\" ry=\"1.6\" fill=\"#aab4bc\"/> <path d=\"M26 5 L31 4 L26.5 7 Z\" fill=\"#d8a93c\"/> <circle cx=\"24\" cy=\"5.2\" r=\"0.55\" fill=\"#1a1a1a\"/> <path d=\"M29.5 8 Q30.2 10 29 12\" stroke=\"#cfe3ef\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/> <path d=\"M27.8 8.2 Q28.2 9.8 27.2 11.4\" stroke=\"#cfe3ef\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/> <g stroke=\"#7fa3bd\" stroke-width=\"1\" stroke-linecap=\"round\" opacity=\"0.9\"> <path d=\"M20 7.5 L17.5 6.5\"/><path d=\"M19.5 10 L16.5 9.2\"/><path d=\"M19.5 12.8 L16.5 12.5\"/> </g> <g stroke=\"#6b7680\" stroke-width=\"0.9\" stroke-dasharray=\"1.6 1.4\" fill=\"none\" opacity=\"0.7\"> <path d=\"M9 12 Q14 8 19 9\"/><path d=\"M9.5 20 Q14 24 19.5 23\"/> </g> </svg>`,
-    hummice_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <g stroke=\"#4da63f\" stroke-width=\"1.4\" stroke-linecap=\"round\" fill=\"none\"> <path d=\"M2 30 Q4 20 3 14\"/><path d=\"M6 30 Q7 22 6 16\"/><path d=\"M26 30 Q25 22 26 16\"/><path d=\"M30 30 Q28 20 29 14\"/> </g> <path d=\"M8 22.5 Q4 24.5 3 28.5\" stroke=\"#c98a90\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/> <ellipse cx=\"12\" cy=\"22\" rx=\"4.2\" ry=\"2.8\" fill=\"#8d8d99\" stroke=\"#5f5f6b\" stroke-width=\"0.8\"/> <circle cx=\"15.6\" cy=\"21.4\" r=\"2.1\" fill=\"#9a9aa6\"/> <circle cx=\"14.3\" cy=\"19.7\" r=\"1\" fill=\"#9a9aa6\"/><circle cx=\"14.3\" cy=\"19.7\" r=\"0.5\" fill=\"#e0a0a8\"/> <circle cx=\"16.1\" cy=\"19.9\" r=\"1\" fill=\"#9a9aa6\"/><circle cx=\"16.1\" cy=\"19.9\" r=\"0.5\" fill=\"#e0a0a8\"/> <circle cx=\"16.4\" cy=\"21\" r=\"0.5\" fill=\"#1a1a1a\"/> <circle cx=\"17.7\" cy=\"21.7\" r=\"0.45\" fill=\"#c98a90\"/> <path d=\"M24 23.5 Q28 25 29 29\" stroke=\"#c98a90\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/> <ellipse cx=\"21.5\" cy=\"23\" rx=\"3.2\" ry=\"2.2\" fill=\"#8d8d99\" stroke=\"#5f5f6b\" stroke-width=\"0.8\"/> <circle cx=\"18.9\" cy=\"22.5\" r=\"1.7\" fill=\"#9a9aa6\"/> <circle cx=\"17.8\" cy=\"21.1\" r=\"0.8\" fill=\"#9a9aa6\"/><circle cx=\"17.8\" cy=\"21.1\" r=\"0.4\" fill=\"#e0a0a8\"/> <circle cx=\"18.3\" cy=\"22.2\" r=\"0.4\" fill=\"#1a1a1a\"/> <circle cx=\"17.2\" cy=\"22.7\" r=\"0.35\" fill=\"#c98a90\"/> </svg>`,
-    hummice_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <g stroke=\"#4da63f\" stroke-width=\"1.4\" stroke-linecap=\"round\" fill=\"none\" opacity=\"0.7\"> <path d=\"M2 30 Q4 20 3 14\"/><path d=\"M30 30 Q28 20 29 14\"/> </g> <path d=\"M4 13 Q16 4 28 13\" stroke=\"#e8b93c\" stroke-width=\"1.4\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.9\"/> <path d=\"M6.5 16.5 Q16 9 25.5 16.5\" stroke=\"#e8b93c\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/> <path d=\"M9 19.5 Q16 13.5 23 19.5\" stroke=\"#e8b93c\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.5\"/> <ellipse cx=\"10\" cy=\"23\" rx=\"3.4\" ry=\"2.4\" fill=\"#7a7a86\" stroke=\"#4c4c56\" stroke-width=\"0.8\"/> <circle cx=\"12.8\" cy=\"22.4\" r=\"1.8\" fill=\"#86868f\"/> <circle cx=\"11.8\" cy=\"20.9\" r=\"0.8\" fill=\"#86868f\"/><circle cx=\"11.8\" cy=\"20.9\" r=\"0.4\" fill=\"#e0a0a8\"/> <circle cx=\"13.4\" cy=\"22\" r=\"0.45\" fill=\"#1a1a1a\"/><circle cx=\"14.6\" cy=\"22.6\" r=\"0.4\" fill=\"#c98a90\"/> <ellipse cx=\"21\" cy=\"24\" rx=\"3.4\" ry=\"2.4\" fill=\"#7a7a86\" stroke=\"#4c4c56\" stroke-width=\"0.8\"/> <circle cx=\"18.2\" cy=\"23.4\" r=\"1.8\" fill=\"#86868f\"/> <circle cx=\"19.2\" cy=\"21.9\" r=\"0.8\" fill=\"#86868f\"/><circle cx=\"19.2\" cy=\"21.9\" r=\"0.4\" fill=\"#e0a0a8\"/> <circle cx=\"17.6\" cy=\"23\" r=\"0.45\" fill=\"#1a1a1a\"/><circle cx=\"16.4\" cy=\"23.6\" r=\"0.4\" fill=\"#c98a90\"/> <ellipse cx=\"16\" cy=\"26.5\" rx=\"2.8\" ry=\"2\" fill=\"#7a7a86\" stroke=\"#4c4c56\" stroke-width=\"0.8\"/> <circle cx=\"18.3\" cy=\"26\" r=\"1.5\" fill=\"#86868f\"/> <circle cx=\"17.5\" cy=\"24.7\" r=\"0.7\" fill=\"#86868f\"/><circle cx=\"17.5\" cy=\"24.7\" r=\"0.35\" fill=\"#e0a0a8\"/> <g stroke=\"#e8b93c\" stroke-width=\"1\" stroke-linecap=\"round\" opacity=\"0.8\"> <path d=\"M4 22 L1.5 22\"/><path d=\"M4 25 L2 26\"/><path d=\"M28 22 L30.5 22\"/><path d=\"M28 25 L30 26\"/> </g> </svg>`,
-        speedbump_turtle_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <ellipse cx=\"16\" cy=\"20\" rx=\"12\" ry=\"8\" fill=\"#6b6b63\"/> <ellipse cx=\"16\" cy=\"18\" rx=\"10\" ry=\"6\" fill=\"#75756c\"/> <ellipse cx=\"10\" cy=\"17\" rx=\"2.2\" ry=\"1.6\" fill=\"#5a5a52\" opacity=\"0.8\"/> <ellipse cx=\"16\" cy=\"15.5\" rx=\"2.2\" ry=\"1.6\" fill=\"#5a5a52\" opacity=\"0.8\"/> <ellipse cx=\"22\" cy=\"17\" rx=\"2.2\" ry=\"1.6\" fill=\"#5a5a52\" opacity=\"0.8\"/> <ellipse cx=\"13\" cy=\"20\" rx=\"1.6\" ry=\"1.1\" fill=\"#5a5a52\" opacity=\"0.7\"/> <ellipse cx=\"19\" cy=\"20\" rx=\"1.6\" ry=\"1.1\" fill=\"#5a5a52\" opacity=\"0.7\"/> <ellipse cx=\"12\" cy=\"15\" rx=\"1\" ry=\"0.7\" fill=\"#7d8a6a\" opacity=\"0.6\"/> <ellipse cx=\"21\" cy=\"14.5\" rx=\"1.2\" ry=\"0.8\" fill=\"#7d8a6a\" opacity=\"0.5\"/> <ellipse cx=\"7.5\" cy=\"21.5\" rx=\"1.2\" ry=\"1.8\" fill=\"#55613f\"/> <ellipse cx=\"24.5\" cy=\"21.5\" rx=\"1.2\" ry=\"1.8\" fill=\"#55613f\"/> <path d=\"M14 25.2 q2 -1.2 4 0 q-2 1 -4 0z\" fill=\"#4e5a3c\"/> <path d=\"M15.2 25.4 l1.6 -0.9\" stroke=\"#3a4430\" stroke-width=\"0.7\" stroke-linecap=\"round\"/> <ellipse cx=\"16\" cy=\"24.5\" rx=\"3\" ry=\"1.4\" fill=\"#3f4636\" opacity=\"0.9\"/> </svg>`,
-    speedbump_turtle_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <path d=\"M4 8 l6 1.5 M3 14 l6 1 M4 20 l6 0.5\" stroke=\"#9aa0a6\" stroke-width=\"1.4\" stroke-linecap=\"round\"/> <ellipse cx=\"16\" cy=\"18\" rx=\"11\" ry=\"8\" fill=\"#5f6257\" transform=\"rotate(-8 16 18)\"/> <ellipse cx=\"16\" cy=\"16\" rx=\"9\" ry=\"5.5\" fill=\"#6e7166\" transform=\"rotate(-8 16 16)\"/> <ellipse cx=\"11\" cy=\"15\" rx=\"2\" ry=\"1.4\" fill=\"#4c4f45\"/> <ellipse cx=\"17\" cy=\"13.5\" rx=\"2\" ry=\"1.4\" fill=\"#4c4f45\"/> <ellipse cx=\"22\" cy=\"15.5\" rx=\"2\" ry=\"1.4\" fill=\"#4c4f45\"/> <ellipse cx=\"6\" cy=\"23\" rx=\"2.2\" ry=\"3\" fill=\"#4e5a3c\"/> <path d=\"M4 25 l-1.5 2 M6 25.5 l0 2 M8 25 l1.5 2\" stroke=\"#2f3527\" stroke-width=\"1.2\" stroke-linecap=\"round\"/> <ellipse cx=\"26\" cy=\"23\" rx=\"2.2\" ry=\"3\" fill=\"#4e5a3c\"/> <path d=\"M24.5 25 l-1.5 2 M26.5 25.5 l0 2 M28 25 l1.5 2\" stroke=\"#2f3527\" stroke-width=\"1.2\" stroke-linecap=\"round\"/> <path d=\"M24 16 q6 -4 8 -1 q-1 3 -4 4 q-3 1 -4 -3z\" fill=\"#4e5a3c\"/> <circle cx=\"28.5\" cy=\"14.5\" r=\"1.3\" fill=\"#c22\"/> <path d=\"M27 17 q3 0 4.5 3 q-2.8 1.6 -5 0.5 q-1.2 -1.8 0.5 -3.5z\" fill=\"#7a1f1f\"/> <path d=\"M27.2 17.5 q2.8 0.2 3.8 2.5 q-2.2 1.3 -4 0.3 q-0.9 -1.4 0.2 -2.8z\" fill=\"#3d0d0d\"/> <path d=\"M28 18.2 l1.6 0.4 M28.2 19.6 l1.4 0.2\" stroke=\"#e8e8e8\" stroke-width=\"0.6\" stroke-linecap=\"round\"/> </svg>`,
-    nightlight_catfish_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <rect x=\"0\" y=\"0\" width=\"32\" height=\"32\" fill=\"#0b2436\"/> <rect x=\"0\" y=\"0\" width=\"32\" height=\"32\" fill=\"#123a52\" opacity=\"0.5\"/> <ellipse cx=\"16\" cy=\"17\" rx=\"10\" ry=\"8\" fill=\"#2fae5f\" opacity=\"0.25\"/> <ellipse cx=\"16\" cy=\"17\" rx=\"7\" ry=\"5.5\" fill=\"#46d67e\" opacity=\"0.35\"/> <ellipse cx=\"16\" cy=\"17\" rx=\"4\" ry=\"3\" fill=\"#8ff0b3\" opacity=\"0.55\"/> <ellipse cx=\"16\" cy=\"17\" rx=\"1.8\" ry=\"1.3\" fill=\"#d8ffe6\" opacity=\"0.9\"/> <ellipse cx=\"16\" cy=\"18\" rx=\"9\" ry=\"3.5\" fill=\"#0a1a28\" opacity=\"0.35\"/> <path d=\"M5 6 q3 -1.5 6 0 M21 5 q3 -1.5 6 0 M8 27 q4 -1.5 8 0 M17 28 q4 -1.5 7 0\" stroke=\"#1d4a63\" stroke-width=\"1\" fill=\"none\" opacity=\"0.8\" stroke-linecap=\"round\"/> </svg>`,
-    nightlight_catfish_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <rect x=\"0\" y=\"0\" width=\"32\" height=\"32\" fill=\"#0b2436\"/> <ellipse cx=\"16\" cy=\"6.5\" rx=\"5\" ry=\"3.5\" fill=\"#46d67e\" opacity=\"0.3\"/> <circle cx=\"16\" cy=\"6.5\" r=\"2.2\" fill=\"#8ff0b3\" opacity=\"0.8\"/> <circle cx=\"16\" cy=\"6.5\" r=\"1\" fill=\"#eafff0\"/> <path d=\"M16 8.5 q0.5 3 -1 5\" stroke=\"#2fae5f\" stroke-width=\"1\" fill=\"none\" opacity=\"0.7\"/> <ellipse cx=\"16\" cy=\"19\" rx=\"9\" ry=\"7\" fill=\"#2b3542\"/> <ellipse cx=\"16\" cy=\"18\" rx=\"7\" ry=\"5\" fill=\"#3a4657\"/> <path d=\"M8 16 q-6 -2 -7 -6 M8 20 q-6 0 -7.5 3 M24 16 q6 -2 7 -6 M24 20 q6 0 7.5 3\" stroke=\"#8a97a8\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/> <path d=\"M12 22 q-4 2 -5 5 M20 22 q4 2 5 5\" stroke=\"#8a97a8\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/> <circle cx=\"12.5\" cy=\"15\" r=\"1.4\" fill=\"#d8ff5e\"/> <circle cx=\"19.5\" cy=\"15\" r=\"1.4\" fill=\"#d8ff5e\"/> <ellipse cx=\"16\" cy=\"21.5\" rx=\"4\" ry=\"2.6\" fill=\"#10151c\"/> <ellipse cx=\"16\" cy=\"21.8\" rx=\"2.6\" ry=\"1.5\" fill=\"#7a1f1f\"/> <path d=\"M7 24 q-3 1 -4 4 q3 0 5 -2z\" fill=\"#232c38\"/> <path d=\"M25 24 q3 1 4 4 q-3 0 -5 -2z\" fill=\"#232c38\"/> <path d=\"M16 25.5 l-2.5 5 l5 0 z\" fill=\"#232c38\"/> </svg>`,
+        bulldozer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- bulldozer calm: wild boar rooting, head down --><ellipse cx=\"6.5\" cy=\"27.6\" rx=\"4.2\" ry=\"1.8\" fill=\"#5a4632\"/><g fill=\"#4a3826\"><circle cx=\"3.6\" cy=\"26.6\" r=\"0.7\"/><circle cx=\"9.2\" cy=\"27\" r=\"0.8\"/><circle cx=\"6\" cy=\"28.3\" r=\"0.6\"/></g><ellipse cx=\"19\" cy=\"15\" rx=\"8.5\" ry=\"5.5\" fill=\"#4a4038\"/><ellipse cx=\"13.5\" cy=\"11.5\" rx=\"5.2\" ry=\"3.8\" fill=\"#54483c\"/><ellipse cx=\"17\" cy=\"11.5\" rx=\"6\" ry=\"2.2\" fill=\"#5d5248\" opacity=\"0.6\"/><path d=\"M14 12 C11 16 8 20 6 24 L9 26 C11 22 13 18 16 14 Z\" fill=\"#4a4038\"/><ellipse cx=\"9.5\" cy=\"22\" rx=\"2.6\" ry=\"2\" fill=\"#54483c\"/><ellipse cx=\"6.2\" cy=\"25.2\" rx=\"1.9\" ry=\"1.5\" fill=\"#241f1a\"/><circle cx=\"5.5\" cy=\"25.2\" r=\"0.35\" fill=\"#0f0c09\"/><circle cx=\"6.9\" cy=\"25.2\" r=\"0.35\" fill=\"#0f0c09\"/><path d=\"M7.8 24.5 C8.2 23 9 22 10.2 21.6\" stroke=\"#e8ddc0\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"11.5,10.5 12.8,7.2 14.2,10.2\" fill=\"#33291f\"/><circle cx=\"10.8\" cy=\"17\" r=\"0.75\" fill=\"#14100c\"/><circle cx=\"11\" cy=\"16.8\" r=\"0.22\" fill=\"#b9b2a4\" opacity=\"0.8\"/><path d=\"M10 8.5 l0.8 -2 M12 8 l0.8 -2.2 M14 7.8 l0.8 -2.2 M16 7.8 l0.8 -2 M18 8 l0.8 -2 M20 8.4 l0.8 -1.8 M22 9 l0.8 -1.6\" stroke=\"#241f1a\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><g fill=\"#33291f\"><rect x=\"11.5\" y=\"20.2\" width=\"1.8\" height=\"6.8\" rx=\"0.8\"/><rect x=\"14.5\" y=\"20.4\" width=\"1.8\" height=\"6.6\" rx=\"0.8\"/><rect x=\"20.5\" y=\"20.4\" width=\"1.8\" height=\"6.6\" rx=\"0.8\"/><rect x=\"23.5\" y=\"20.2\" width=\"1.8\" height=\"6.8\" rx=\"0.8\"/></g><g fill=\"#1c1611\"><rect x=\"11.5\" y=\"25.4\" width=\"1.8\" height=\"1.8\" rx=\"0.6\"/><rect x=\"14.5\" y=\"25.4\" width=\"1.8\" height=\"1.8\" rx=\"0.6\"/><rect x=\"20.5\" y=\"25.4\" width=\"1.8\" height=\"1.8\" rx=\"0.6\"/><rect x=\"23.5\" y=\"25.4\" width=\"1.8\" height=\"1.8\" rx=\"0.6\"/></g><path d=\"M27 13 q2 0.5 1.5 2.5\" stroke=\"#33291f\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"28.3\" cy=\"15.8\" r=\"0.8\" fill=\"#241f1a\"/></svg>`,
+    bulldozer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- bulldozer aggro: eldritch charging boar, tusks forward, dust behind --><g fill=\"#8a7a5e\" opacity=\"0.55\"><circle cx=\"25\" cy=\"22\" r=\"2.2\"/><circle cx=\"28\" cy=\"24\" r=\"2.6\"/><circle cx=\"26\" cy=\"27\" r=\"2\"/><circle cx=\"29.5\" cy=\"21\" r=\"1.6\"/></g><path d=\"M24 13 h6 M25 17 h5 M24 25 h6\" stroke=\"#9a8a6a\" stroke-width=\"1\" opacity=\"0.6\" stroke-linecap=\"round\"/><path d=\"M2 29.5 l4 -1 3 1 4 -1 3 1 4 -1 3 1 3 -1\" stroke=\"#2a2117\" stroke-width=\"1\" fill=\"none\"/><ellipse cx=\"15.5\" cy=\"16\" rx=\"9\" ry=\"5.2\" fill=\"#3a2c1e\"/><ellipse cx=\"16\" cy=\"13\" rx=\"7\" ry=\"2.6\" fill=\"#2a1f14\"/><ellipse cx=\"10.5\" cy=\"15\" rx=\"4.8\" ry=\"4.2\" fill=\"#443522\"/><polygon points=\"9,12.5 3,17 2.2,20.5 6,22 9.5,18.5\" fill=\"#3a2c1e\"/><ellipse cx=\"3\" cy=\"19\" rx=\"1.4\" ry=\"2\" fill=\"#1c140c\"/><circle cx=\"2.7\" cy=\"18.4\" r=\"0.3\" fill=\"#0a0705\"/><circle cx=\"2.7\" cy=\"19.6\" r=\"0.3\" fill=\"#0a0705\"/><path d=\"M5 18.5 C3 17.5 1.8 16 1.2 14\" stroke=\"#e8ddc0\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M4.5 21 C3 20.8 1.8 20 1.2 18.8\" stroke=\"#d9cda8\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"6,16.5 7.5,14.5 8,16.8\" fill=\"#d9cda8\"/><polygon points=\"8,16 9.5,14 10,16.2\" fill=\"#d9cda8\"/><ellipse cx=\"5.5\" cy=\"21.5\" rx=\"2\" ry=\"1\" fill=\"#0f0a06\"/><path d=\"M10 11 l-1.5 -2.5 M13 10.5 l-1 -2.8 M16 10.5 l-0.5 -2.8 M19 11 l0 -2.8 M22 12 l0.5 -2.6\" stroke=\"#1c140c\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><circle cx=\"8\" cy=\"15.5\" r=\"2.2\" fill=\"#ff5a2a\" opacity=\"0.25\"/><ellipse cx=\"8\" cy=\"15.5\" rx=\"1.3\" ry=\"0.6\" fill=\"#ff5a2a\"/><rect x=\"7.7\" y=\"14.6\" width=\"0.6\" height=\"1.8\" fill=\"#1c0a04\"/><path d=\"M12 12 l1.5 2 M14 11.5 l1 2.2\" stroke=\"#1c140c\" stroke-width=\"0.8\" opacity=\"0.7\"/><ellipse cx=\"21\" cy=\"19\" rx=\"3\" ry=\"3.4\" fill=\"#443522\"/><path d=\"M9 20 L6 27\" stroke=\"#2a1f14\" stroke-width=\"2\" stroke-linecap=\"round\"/><path d=\"M11.5 20.5 L9 27.5\" stroke=\"#2a1f14\" stroke-width=\"2\" stroke-linecap=\"round\"/><path d=\"M22 21 L25 28\" stroke=\"#2a1f14\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path d=\"M19 21 L21 24.5 L19.5 28\" stroke=\"#2a1f14\" stroke-width=\"2\" stroke-linecap=\"round\" fill=\"none\"/><g fill=\"#0f0a06\"><rect x=\"5.2\" y=\"26.4\" width=\"1.6\" height=\"1.6\" rx=\"0.5\"/><rect x=\"8.2\" y=\"26.9\" width=\"1.6\" height=\"1.6\" rx=\"0.5\"/><rect x=\"24.2\" y=\"27.4\" width=\"1.6\" height=\"1.6\" rx=\"0.5\"/><rect x=\"18.7\" y=\"27.4\" width=\"1.6\" height=\"1.6\" rx=\"0.5\"/></g><g fill=\"#7a6a52\" opacity=\"0.8\"><polygon points=\"25,7 26.5,5 27.5,7.5\"/><polygon points=\"28,12 29.5,10.5 30,13\"/><polygon points=\"24,24 25.5,23 26,25.5\"/></g></svg>`,
+    hushwolf_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- hushwolf calm: wolf standing alert at the treeline --><g fill=\"#1e2a1e\" opacity=\"0.85\"><polygon points=\"28,4 30,10 26,10\"/><polygon points=\"28,8 30.5,14 25.5,14\"/><polygon points=\"31,8 32.5,13 29.5,13\"/></g><path d=\"M24 14 C27 16 27.5 20 25.5 23.5\" stroke=\"#4a4e55\" stroke-width=\"2.6\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"16\" cy=\"15\" rx=\"8\" ry=\"4\" fill=\"#6b6f75\"/><ellipse cx=\"16\" cy=\"13.4\" rx=\"6.4\" ry=\"2.2\" fill=\"#7a7e85\" opacity=\"0.7\"/><ellipse cx=\"10\" cy=\"13\" rx=\"3.5\" ry=\"3.5\" fill=\"#7d7a70\"/><polygon points=\"10,9.5 4,11.5 2.5,15 6,16.5 10,14\" fill=\"#6b6f75\"/><polygon points=\"6,13 9,13.5 7.5,16\" fill=\"#a89f8d\" opacity=\"0.7\"/><polygon points=\"7,10 8,6.5 9.2,9.8\" fill=\"#4a4e55\"/><polygon points=\"9.5,9.8 10.8,6.8 11.8,10\" fill=\"#4a4e55\"/><polygon points=\"7.8,9.4 8.3,7.6 8.9,9.3\" fill=\"#2e3138\"/><circle cx=\"3\" cy=\"14.5\" r=\"0.9\" fill=\"#22252b\"/><ellipse cx=\"7\" cy=\"12.5\" rx=\"0.8\" ry=\"0.6\" fill=\"#d9a13b\"/><rect x=\"6.8\" y=\"12\" width=\"0.4\" height=\"1\" fill=\"#1c1a10\"/><g fill=\"#565a61\"><rect x=\"10\" y=\"18\" width=\"1.6\" height=\"9.5\" rx=\"0.7\"/><rect x=\"13\" y=\"18.4\" width=\"1.6\" height=\"9.1\" rx=\"0.7\"/><rect x=\"19\" y=\"18.4\" width=\"1.6\" height=\"9.1\" rx=\"0.7\"/><rect x=\"22\" y=\"18\" width=\"1.6\" height=\"9.5\" rx=\"0.7\"/></g><g fill=\"#33363d\"><rect x=\"10\" y=\"25.8\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"13\" y=\"25.8\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"19\" y=\"25.8\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"22\" y=\"25.8\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/></g></svg>`,
+    hushwolf_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- hushwolf aggro: coiled silent rush, spring haunch, dissolving muzzle --><ellipse cx=\"17\" cy=\"17\" rx=\"12\" ry=\"8\" stroke=\"#1a1c22\" stroke-width=\"0.7\" opacity=\"0.5\" fill=\"none\"/><path d=\"M21 10.5 h7 M22.5 26.5 h6\" stroke=\"#1a1c22\" stroke-width=\"0.8\" opacity=\"0.6\" stroke-linecap=\"round\"/><path d=\"M9 17 C11 12 15 10.5 20 11.5 C24 12.5 26 15 25.5 19 C25 22.5 21 23.5 17 23 C13 22.5 10 20.5 9 17 Z\" fill=\"#23252e\"/><ellipse cx=\"22.5\" cy=\"18.5\" rx=\"4\" ry=\"4.2\" fill=\"#2c303a\"/><path d=\"M22.5 15.5 c2.5 0 3.5 2.5 2.5 4.5 c-1 2 -4 2 -5 0 c-0.8 -1.6 0.5 -3.2 2 -2.6\" stroke=\"#565c68\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"10,13.5 3.5,15.5 2,17.5 6,19 10,17.5\" fill=\"#23252e\"/><path d=\"M3.2 16.3 L1 16 M3.5 17.8 L1.4 17.9\" stroke=\"#23252e\" stroke-width=\"0.9\" opacity=\"0.4\" stroke-linecap=\"round\"/><polygon points=\"11,12 16,10.5 12,14\" fill=\"#23252e\"/><polygon points=\"12,13.5 16.5,12.5 13,15.2\" fill=\"#1a1c22\"/><ellipse cx=\"7.5\" cy=\"15.2\" rx=\"0.9\" ry=\"0.7\" fill=\"#0a0b10\"/><ellipse cx=\"7.5\" cy=\"15.2\" rx=\"1.3\" ry=\"1\" stroke=\"#3a3f4a\" stroke-width=\"0.5\" fill=\"none\" opacity=\"0.8\"/><path d=\"M21 21 L24 23.5 L22 27.5\" stroke=\"#2c303a\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/><path d=\"M18 21.5 L20 24.5 L18.5 28\" stroke=\"#2c303a\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/><path d=\"M10 20 L7 24 L5 23\" stroke=\"#2c303a\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/><path d=\"M25.5 17.5 C28 18 29.5 18.6 30.5 19.5\" stroke=\"#23252e\" stroke-width=\"1.4\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M27.5 16.5 h2.5 M28.5 19.5 h2\" stroke=\"#23252e\" stroke-width=\"0.8\" opacity=\"0.35\" stroke-linecap=\"round\"/></svg>`,
+    gallowdeer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- gallowdeer calm: white-tailed doe standing alert --><polygon points=\"24.5,13 27,11.5 26,14.5\" fill=\"#e8e0cc\"/><ellipse cx=\"17\" cy=\"16\" rx=\"7.5\" ry=\"3.8\" fill=\"#7a5a3c\"/><ellipse cx=\"17\" cy=\"17.5\" rx=\"6\" ry=\"2\" fill=\"#c9b18a\" opacity=\"0.8\"/><path d=\"M11 14 C9 11 8 8 7.5 5.5 L11 4.5 C11.5 7.5 12.5 10.5 14 13 Z\" fill=\"#7a5a3c\"/><path d=\"M9.5 12 C8.5 9.5 8 7 7.8 5\" stroke=\"#c9b18a\" stroke-width=\"1\" opacity=\"0.5\" fill=\"none\"/><polygon points=\"7.5,3 4,5 3.5,8 6.5,8.5 8.5,6\" fill=\"#7a5a3c\"/><ellipse cx=\"3.8\" cy=\"7.6\" rx=\"0.8\" ry=\"0.6\" fill=\"#241c12\"/><circle cx=\"6.2\" cy=\"5.5\" r=\"0.9\" fill=\"#14100c\"/><circle cx=\"6.4\" cy=\"5.3\" r=\"0.25\" fill=\"#cfd6c8\" opacity=\"0.8\"/><ellipse cx=\"7.8\" cy=\"1.8\" rx=\"1.1\" ry=\"2\" transform=\"rotate(-15 7.8 1.8)\" fill=\"#7a5a3c\"/><ellipse cx=\"7.8\" cy=\"1.9\" rx=\"0.55\" ry=\"1.2\" transform=\"rotate(-15 7.8 1.9)\" fill=\"#4a3826\"/><ellipse cx=\"10\" cy=\"2\" rx=\"1\" ry=\"1.8\" transform=\"rotate(10 10 2)\" fill=\"#7a5a3c\"/><ellipse cx=\"10\" cy=\"2.1\" rx=\"0.5\" ry=\"1.1\" transform=\"rotate(10 10 2.1)\" fill=\"#4a3826\"/><g fill=\"#6a4e34\"><rect x=\"11.5\" y=\"19\" width=\"1.3\" height=\"9\" rx=\"0.6\"/><rect x=\"14\" y=\"19.2\" width=\"1.3\" height=\"8.8\" rx=\"0.6\"/><rect x=\"20\" y=\"19.2\" width=\"1.3\" height=\"8.8\" rx=\"0.6\"/><rect x=\"22.5\" y=\"19\" width=\"1.3\" height=\"9\" rx=\"0.6\"/></g><g fill=\"#241c12\"><rect x=\"11.5\" y=\"26.4\" width=\"1.3\" height=\"1.6\" rx=\"0.5\"/><rect x=\"14\" y=\"26.4\" width=\"1.3\" height=\"1.6\" rx=\"0.5\"/><rect x=\"20\" y=\"26.4\" width=\"1.3\" height=\"1.6\" rx=\"0.5\"/><rect x=\"22.5\" y=\"26.4\" width=\"1.3\" height=\"1.6\" rx=\"0.5\"/></g></svg>`,
+    gallowdeer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- gallowdeer aggro: headlight-lens beam eyes, charging glow, targeting satellites --><polygon points=\"5,6 0.5,4.5 0.5,8\" fill=\"#ffe98a\" opacity=\"0.12\"/><ellipse cx=\"17\" cy=\"17\" rx=\"7\" ry=\"3.5\" fill=\"#3d3428\"/><rect x=\"8\" y=\"5\" width=\"3.5\" height=\"10.5\" fill=\"#3d3428\"/><polygon points=\"8,2.5 4,4.5 3.5,9.5 7,10.5 9.5,6.5\" fill=\"#3d3428\"/><path d=\"M8.5 3.5 l1.5 -1 M9.2 8.5 l1.5 1 M4.5 3 l-1 -1\" stroke=\"#1c1610\" stroke-width=\"0.7\" fill=\"none\"/><circle cx=\"5.5\" cy=\"6.5\" r=\"3.7\" fill=\"#ffe98a\" opacity=\"0.28\"/><circle cx=\"8.6\" cy=\"5.2\" r=\"3.1\" fill=\"#ffe98a\" opacity=\"0.28\"/><circle cx=\"5.5\" cy=\"6.5\" r=\"2.6\" fill=\"#f5e9c8\"/><circle cx=\"8.6\" cy=\"5.2\" r=\"2.1\" fill=\"#f5e9c8\"/><circle cx=\"5.5\" cy=\"6.5\" r=\"2.6\" stroke=\"#8a7a4a\" stroke-width=\"0.6\" fill=\"none\"/><circle cx=\"5.5\" cy=\"6.5\" r=\"1.9\" stroke=\"#b3a05e\" stroke-width=\"0.5\" fill=\"none\"/><circle cx=\"5.5\" cy=\"6.5\" r=\"1.2\" fill=\"#fff8e0\"/><circle cx=\"5.5\" cy=\"6.5\" r=\"0.6\" fill=\"#ffffff\"/><circle cx=\"8.6\" cy=\"5.2\" r=\"2.1\" stroke=\"#8a7a4a\" stroke-width=\"0.6\" fill=\"none\"/><circle cx=\"8.6\" cy=\"5.2\" r=\"1.4\" stroke=\"#b3a05e\" stroke-width=\"0.5\" fill=\"none\"/><circle cx=\"8.6\" cy=\"5.2\" r=\"0.8\" fill=\"#fff8e0\"/><circle cx=\"8.6\" cy=\"5.2\" r=\"0.4\" fill=\"#ffffff\"/><path d=\"M4.5 9.8 L7.2 10\" stroke=\"#1c1610\" stroke-width=\"0.6\"/><g><circle cx=\"10.5\" cy=\"9.5\" r=\"1\" fill=\"#f5e9c8\"/><circle cx=\"10.2\" cy=\"9.5\" r=\"0.35\" fill=\"#1c1610\"/><circle cx=\"12\" cy=\"12.5\" r=\"0.85\" fill=\"#f5e9c8\"/><circle cx=\"11.7\" cy=\"12.5\" r=\"0.3\" fill=\"#1c1610\"/><circle cx=\"13.5\" cy=\"15\" r=\"0.7\" fill=\"#f5e9c8\"/><circle cx=\"13.2\" cy=\"15\" r=\"0.25\" fill=\"#1c1610\"/><circle cx=\"9.5\" cy=\"14.5\" r=\"0.65\" fill=\"#f5e9c8\"/><circle cx=\"9.2\" cy=\"14.5\" r=\"0.22\" fill=\"#1c1610\"/></g><g fill=\"#2a2318\"><rect x=\"12\" y=\"19.5\" width=\"1.2\" height=\"9.5\" rx=\"0.5\"/><rect x=\"14.5\" y=\"19.5\" width=\"1.2\" height=\"9.5\" rx=\"0.5\"/><rect x=\"20\" y=\"19.5\" width=\"1.2\" height=\"9.5\" rx=\"0.5\"/><rect x=\"22.5\" y=\"19.5\" width=\"1.2\" height=\"9.5\" rx=\"0.5\"/></g><path d=\"M2.5 5.2 L0.8 4.6 M2.3 7.8 L0.6 8\" stroke=\"#ffe98a\" stroke-width=\"0.7\" opacity=\"0.7\" stroke-linecap=\"round\"/></svg>`,
+    mirrormoth_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- atlas-moth-like: reddish wings, snake-head wingtips, wavy bands, windows -->
+  <!-- left forewing -->
+  <path d=\"M14.6 10.5 C11 8.2 7 6.8 3.6 7.2 C2.4 7.4 2.2 8.6 3.2 9.4 C4.6 10.6 4.4 12 5.2 13.8 C7 17.4 10.4 19.4 14.2 18.6 Z\" fill=\"#93402c\"/>
+  <!-- right forewing -->
+  <path d=\"M17.4 10.5 C21 8.2 25 6.8 28.4 7.2 C29.6 7.4 29.8 8.6 28.8 9.4 C27.4 10.6 27.6 12 26.8 13.8 C25 17.4 21.6 19.4 17.8 18.6 Z\" fill=\"#93402c\"/>
+  <!-- left hindwing -->
+  <path d=\"M14.2 18.8 C11 19.5 8 22 7 25.5 C6.6 27 7.6 27.8 8.8 27.2 C11 26.2 12.6 24 14.4 21.6 Z\" fill=\"#7e3524\"/>
+  <!-- right hindwing -->
+  <path d=\"M17.8 18.8 C21 19.5 24 22 25 25.5 C25.4 27 24.4 27.8 23.2 27.2 C21 26.2 19.4 24 17.6 21.6 Z\" fill=\"#7e3524\"/>
+  <!-- snake-head wingtips (atlas moth mimicry) -->
+  <path d=\"M3.6 7.2 C2.6 7.3 2.3 8.3 3 9.1 C3.8 10 3.7 11.2 4.4 12.4 C5.2 12 5.4 10.8 5 9.8 C4.7 8.8 4.4 7.8 3.6 7.2 Z\" fill=\"#d9a45e\"/>
+  <path d=\"M28.4 7.2 C29.4 7.3 29.7 8.3 29 9.1 C28.2 10 28.3 11.2 27.6 12.4 C26.8 12 26.6 10.8 27 9.8 C27.3 8.8 27.6 7.8 28.4 7.2 Z\" fill=\"#d9a45e\"/>
+  <circle cx=\"3.7\" cy=\"8.2\" r=\"0.55\" fill=\"#241a12\"/>
+  <circle cx=\"28.3\" cy=\"8.2\" r=\"0.55\" fill=\"#241a12\"/>
+  <path d=\"M3.2 9.6 C4 10.2 4.1 11.2 4.6 12.2 M28.8 9.6 C28 10.2 27.9 11.2 27.4 12.2\" stroke=\"#7a2d1c\" stroke-width=\"0.6\" fill=\"none\"/>
+  <!-- pale postmedial bands -->
+  <path d=\"M5.4 13.2 C8.5 14.6 11.5 14.4 14 13.2 M26.6 13.2 C23.5 14.6 20.5 14.4 18 13.2\" stroke=\"#e9c9b8\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/>
+  <path d=\"M7.4 21.5 C9.5 22.8 11.8 22.6 13.6 21.4 M24.6 21.5 C22.5 22.8 20.2 22.6 18.4 21.4\" stroke=\"#e9c9b8\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- wing windows -->
+  <polygon points=\"8.2,12.2 10.6,12.8 9.2,15\" fill=\"#d8cfc0\" opacity=\"0.9\"/>
+  <polygon points=\"23.8,12.2 21.4,12.8 22.8,15\" fill=\"#d8cfc0\" opacity=\"0.9\"/>
+  <polygon points=\"10.4,22.6 12,23.2 11,24.8\" fill=\"#d8cfc0\" opacity=\"0.85\"/>
+  <polygon points=\"21.6,22.6 20,23.2 21,24.8\" fill=\"#d8cfc0\" opacity=\"0.85\"/>
+  <!-- dark margin scallops -->
+  <path d=\"M5.2 13.8 C7 17.4 10.4 19.4 14.2 18.6 C11 18.2 8.4 16.4 6.8 13.4 Z\" fill=\"#5e2418\" opacity=\"0.55\"/>
+  <path d=\"M26.8 13.8 C25 17.4 21.6 19.4 17.8 18.6 C21 18.2 23.6 16.4 25.2 13.4 Z\" fill=\"#5e2418\" opacity=\"0.55\"/>
+  <!-- body -->
+  <ellipse cx=\"16\" cy=\"17.6\" rx=\"1.9\" ry=\"5.4\" fill=\"#a8472a\"/>
+  <path d=\"M14.3 14.2 h3.4 M14.2 16.2 h3.6 M14.2 18.2 h3.6 M14.3 20.2 h3.4 M14.5 22.1 h3\" stroke=\"#e8d0a8\" stroke-width=\"0.7\" opacity=\"0.85\"/>
+  <!-- head + eyes -->
+  <circle cx=\"16\" cy=\"11.3\" r=\"1.5\" fill=\"#8a3520\"/>
+  <circle cx=\"15.3\" cy=\"11.1\" r=\"0.5\" fill=\"#1f1410\"/>
+  <circle cx=\"16.7\" cy=\"11.1\" r=\"0.5\" fill=\"#1f1410\"/>
+  <!-- feathery antennae -->
+  <path d=\"M15.3 10.2 C13.8 8.4 12.4 7.4 10.8 7 M16.7 10.2 C18.2 8.4 19.6 7.4 21.2 7\" stroke=\"#6e2a18\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\"/>
+  <path d=\"M14.2 9.2 l-1.2 -0.6 M13.2 8.4 l-1.2 -0.6 M12.2 7.7 l-1.1 -0.5 M17.8 9.2 l1.2 -0.6 M18.8 8.4 l1.2 -0.6 M19.8 7.7 l1.1 -0.5\" stroke=\"#6e2a18\" stroke-width=\"0.55\" stroke-linecap=\"round\"/>
+  <!-- tucked legs -->
+  <path d=\"M14.4 19.5 l-1.8 1.6 M17.6 19.5 l1.8 1.6 M14.4 21.5 l-1.6 1.8 M17.6 21.5 l1.6 1.8\" stroke=\"#5e2418\" stroke-width=\"0.8\" stroke-linecap=\"round\"/>
+</svg>`,
+    mirrormoth_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- aggro: wings are fractured mirrors; wingtip snake-heads real; eyes stare; body splits open on a psychic core -->
+  <!-- refracted light shards (light caught wrong) -->
+  <polygon points=\"26,3 29,5 27,8.5\" fill=\"#7df9ff\" opacity=\"0.5\"/>
+  <polygon points=\"5,26 8,28 4,30\" fill=\"#ff7df0\" opacity=\"0.45\"/>
+  <polygon points=\"27,24 30,26 28,29\" fill=\"#7df9ff\" opacity=\"0.4\"/>
+  <polygon points=\"6,3 9,4 7,7\" fill=\"#ff7df0\" opacity=\"0.4\"/>
+  <polygon points=\"24,27 26.5,29 23.5,30.5\" fill=\"#b48cff\" opacity=\"0.45\"/>
+  <!-- LEFT wing shards -->
+  <polygon points=\"14.5,10 8,7.5 4.5,8.5 9,11\" fill=\"#241a30\"/>
+  <polygon points=\"9.5,11.5 4,9.5 3,13 8.5,14.5\" fill=\"#bcd2f5\" opacity=\"0.8\"/>
+  <polygon points=\"14,12 9,12.5 8.5,15.5 13.5,16\" fill=\"#2e2138\"/>
+  <polygon points=\"8.5,15 3.5,13.5 4.5,17.5 9.5,18.5\" fill=\"#8fa8d8\" opacity=\"0.7\"/>
+  <polygon points=\"13.5,17.5 8,19 7,24 11,26.5 14,21\" fill=\"#241a30\"/>
+  <polygon points=\"10.5,21 7.5,23.5 9.5,27 12.5,24.5\" fill=\"#bcd2f5\" opacity=\"0.55\"/>
+  <!-- RIGHT wing shards -->
+  <polygon points=\"17.5,10 24,7.5 27.5,8.5 23,11\" fill=\"#241a30\"/>
+  <polygon points=\"22.5,11.5 28,9.5 29,13 23.5,14.5\" fill=\"#bcd2f5\" opacity=\"0.8\"/>
+  <polygon points=\"18,12 23,12.5 23.5,15.5 18.5,16\" fill=\"#2e2138\"/>
+  <polygon points=\"23.5,15 28.5,13.5 27.5,17.5 22.5,18.5\" fill=\"#8fa8d8\" opacity=\"0.7\"/>
+  <polygon points=\"18.5,17.5 24,19 25,24 21,26.5 18,21\" fill=\"#241a30\"/>
+  <polygon points=\"21.5,21 24.5,23.5 22.5,27 19.5,24.5\" fill=\"#bcd2f5\" opacity=\"0.55\"/>
+  <!-- mirror glints -->
+  <path d=\"M5 10.5 L8 13 M24 10.5 L27 13\" stroke=\"#ffffff\" stroke-width=\"0.8\" opacity=\"0.9\" stroke-linecap=\"round\"/>
+  <path d=\"M4.5 14.5 L7.5 16 M25 15 L27.5 16.5\" stroke=\"#7df9ff\" stroke-width=\"0.7\" opacity=\"0.8\" stroke-linecap=\"round\"/>
+  <path d=\"M8.5 22.5 L11 25 M21 22.5 L23.5 25.5\" stroke=\"#ff7df0\" stroke-width=\"0.7\" opacity=\"0.8\" stroke-linecap=\"round\"/>
+  <!-- wingtip snake heads: the mimicry made real, jaws open -->
+  <g>
+    <polygon points=\"4.5,8.5 1.2,7.2 2.2,10.4\" fill=\"#c9a24e\"/>
+    <polygon points=\"4.3,9.6 1.6,10.6 3.2,12.2\" fill=\"#a8823c\"/>
+    <polygon points=\"2.4,10 2,11.2 2.8,11\" fill=\"#fff\"/>
+    <polygon points=\"3.1,9.9 2.9,11.1 3.6,10.8\" fill=\"#fff\"/>
+    <circle cx=\"2.9\" cy=\"8.6\" r=\"0.55\" fill=\"#ffe14d\"/>
+    <ellipse cx=\"2.9\" cy=\"8.6\" rx=\"0.15\" ry=\"0.4\" fill=\"#1a1a1a\"/>
+  </g>
+  <g>
+    <polygon points=\"27.5,8.5 30.8,7.2 29.8,10.4\" fill=\"#c9a24e\"/>
+    <polygon points=\"27.7,9.6 30.4,10.6 28.8,12.2\" fill=\"#a8823c\"/>
+    <polygon points=\"29.6,10 30,11.2 29.2,11\" fill=\"#fff\"/>
+    <polygon points=\"28.9,9.9 29.1,11.1 28.4,10.8\" fill=\"#fff\"/>
+    <circle cx=\"29.1\" cy=\"8.6\" r=\"0.55\" fill=\"#ffe14d\"/>
+    <ellipse cx=\"29.1\" cy=\"8.6\" rx=\"0.15\" ry=\"0.4\" fill=\"#1a1a1a\"/>
+  </g>
+  <!-- staring eyes where eyespots were -->
+  <g>
+    <circle cx=\"11\" cy=\"14.2\" r=\"1.4\" fill=\"#e8ecf5\"/>
+    <ellipse cx=\"11\" cy=\"14.2\" rx=\"0.4\" ry=\"0.9\" fill=\"#14101c\"/>
+    <circle cx=\"11\" cy=\"14.2\" r=\"1.7\" fill=\"none\" stroke=\"#b48cff\" stroke-width=\"0.5\" opacity=\"0.7\"/>
+    <circle cx=\"21\" cy=\"14.2\" r=\"1.4\" fill=\"#e8ecf5\"/>
+    <ellipse cx=\"21\" cy=\"14.2\" rx=\"0.4\" ry=\"0.9\" fill=\"#14101c\"/>
+    <circle cx=\"21\" cy=\"14.2\" r=\"1.7\" fill=\"none\" stroke=\"#b48cff\" stroke-width=\"0.5\" opacity=\"0.7\"/>
+    <circle cx=\"11.5\" cy=\"19.5\" r=\"1\" fill=\"#e8ecf5\"/>
+    <ellipse cx=\"11.5\" cy=\"19.5\" rx=\"0.3\" ry=\"0.65\" fill=\"#14101c\"/>
+    <circle cx=\"20.5\" cy=\"19.5\" r=\"1\" fill=\"#e8ecf5\"/>
+    <ellipse cx=\"20.5\" cy=\"19.5\" rx=\"0.3\" ry=\"0.65\" fill=\"#14101c\"/>
+  </g>
+  <!-- body split open on psychic core -->
+  <ellipse cx=\"16\" cy=\"17.5\" rx=\"2.1\" ry=\"5.6\" fill=\"#1f1626\"/>
+  <ellipse cx=\"16\" cy=\"17.5\" rx=\"1.1\" ry=\"4.2\" fill=\"#c77dff\"/>
+  <ellipse cx=\"16\" cy=\"17.5\" rx=\"0.5\" ry=\"2.6\" fill=\"#f2e6ff\"/>
+  <path d=\"M13.9 13.5 L14.6 14.8 M18.1 13.5 L17.4 14.8 M13.9 21.5 L14.6 20.2 M18.1 21.5 L17.4 20.2\" stroke=\"#0f0a14\" stroke-width=\"0.9\" stroke-linecap=\"round\"/>
+  <!-- psychic burst radiating from core -->
+  <g stroke=\"#e0b3ff\" stroke-width=\"0.8\" stroke-linecap=\"round\" opacity=\"0.9\">
+    <path d=\"M16 11.5 L16 8.5\"/><path d=\"M12.5 13 L10.5 11\"/><path d=\"M19.5 13 L21.5 11\"/>
+    <path d=\"M12 17.5 L9 17.5\"/><path d=\"M20 17.5 L23 17.5\"/>
+    <path d=\"M12.5 22 L10.5 24\"/><path d=\"M19.5 22 L21.5 24\"/>
+    <path d=\"M16 23.5 L16 26.5\"/>
+  </g>
+  <path d=\"M10 8 C12 9.5 14 10 16 10 M22 8 C20 9.5 18 10 16 10\" stroke=\"#b48cff\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.7\"/>
+  <!-- forked antennae tipped with eye dots -->
+  <path d=\"M15.2 11.5 C13.5 9.5 12 8.5 10.5 8 M16.8 11.5 C18.5 9.5 20 8.5 21.5 8\" stroke=\"#2e2138\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>
+  <circle cx=\"10.3\" cy=\"7.9\" r=\"0.5\" fill=\"#ffe14d\"/>
+  <circle cx=\"21.7\" cy=\"7.9\" r=\"0.5\" fill=\"#ffe14d\"/>
+</svg>`,
+        belltoad_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- common toad, side profile facing right -->
+  <ellipse cx=\"16\" cy=\"29\" rx=\"11\" ry=\"1.6\" fill=\"#2e2a1e\" opacity=\"0.35\"/>
+  <!-- body mass -->
+  <path d=\"M4.5 22.5 C4.5 17.5 9 14 14.5 14.2 C19 14.4 21.5 15.5 24 17.5 C26.5 19.5 27.5 22 26.5 24.5 C25.5 27 22 28.5 16.5 28.5 C10.5 28.5 4.5 26.5 4.5 22.5 Z\" fill=\"#6b5f43\"/>
+  <!-- back shading -->
+  <path d=\"M4.5 22.5 C4.5 17.5 9 14 14.5 14.2 C18 14.35 20.2 15 22.2 16.4 C18 16 12 16.8 8.5 20 C6.5 21.9 5.5 23.8 5.6 25.6 C4.8 24.7 4.5 23.6 4.5 22.5 Z\" fill=\"#57503a\" opacity=\"0.8\"/>
+  <!-- belly -->
+  <path d=\"M8 26.5 C12 28 20 28.2 24.5 26 C23.5 27.8 20 28.5 16.5 28.5 C12.5 28.5 9 27.8 8 26.5 Z\" fill=\"#8a7c5c\" opacity=\"0.9\"/>
+  <!-- mottling -->
+  <g fill=\"#4e4630\" opacity=\"0.75\">
+    <ellipse cx=\"9\" cy=\"19\" rx=\"1.6\" ry=\"1.1\"/>
+    <ellipse cx=\"13.5\" cy=\"17.2\" rx=\"1.3\" ry=\"0.9\"/>
+    <ellipse cx=\"17.5\" cy=\"18.5\" rx=\"1.8\" ry=\"1.2\"/>
+    <ellipse cx=\"11\" cy=\"22.5\" rx=\"1.4\" ry=\"1\"/>
+    <ellipse cx=\"20\" cy=\"21.5\" rx=\"1.2\" ry=\"0.9\"/>
+  </g>
+  <!-- warts -->
+  <g fill=\"#7d7057\">
+    <circle cx=\"7.5\" cy=\"17.5\" r=\"0.8\"/><circle cx=\"12\" cy=\"15.8\" r=\"0.7\"/>
+    <circle cx=\"15.5\" cy=\"20.5\" r=\"0.8\"/><circle cx=\"19\" cy=\"16.5\" r=\"0.7\"/>
+    <circle cx=\"8.5\" cy=\"23.5\" r=\"0.8\"/><circle cx=\"13.5\" cy=\"24.5\" r=\"0.7\"/>
+    <circle cx=\"22\" cy=\"19.5\" r=\"0.7\"/><circle cx=\"5.8\" cy=\"21\" r=\"0.7\"/>
+  </g>
+  <!-- head: blunt snout right, eye ridge -->
+  <ellipse cx=\"21\" cy=\"14.8\" rx=\"2.2\" ry=\"1.8\" fill=\"#6b5f43\"/>
+  <path d=\"M24.5 17 C25.8 18.2 26.2 19.6 25.8 21\" stroke=\"#4e4630\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- eye -->
+  <circle cx=\"20.8\" cy=\"14.2\" r=\"1.7\" fill=\"#d8a93c\"/>
+  <ellipse cx=\"20.8\" cy=\"14.2\" rx=\"1\" ry=\"0.45\" fill=\"#1a1a1a\"/>
+  <circle cx=\"21.4\" cy=\"13.6\" r=\"0.35\" fill=\"#fff\" opacity=\"0.8\"/>
+  <!-- nostril -->
+  <circle cx=\"24.6\" cy=\"16.6\" r=\"0.4\" fill=\"#3a3423\"/>
+  <!-- foreleg folded -->
+  <path d=\"M19.5 24 C20.5 25.5 21.5 26.5 23.5 27 L24.5 28.2 L21.5 28.4 C20 28 19 26.8 18.6 25.4 Z\" fill=\"#5b5036\"/>
+  <path d=\"M23.5 27 L26.5 27.6 M23.8 27.8 L26.2 28.8\" stroke=\"#4a422c\" stroke-width=\"0.9\" stroke-linecap=\"round\"/>
+  <!-- hind haunch -->
+  <path d=\"M5 23 C6.5 21 9 20 11.5 20.5 C9.5 21.5 8 23 7.5 25.5 C6.5 24.8 5.5 24 5 23 Z\" fill=\"#5b5036\"/>
+  <path d=\"M7.5 25.5 L5 28.5 L8 28.2\" stroke=\"#4a422c\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/>
+</svg>`,
+    belltoad_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- aggro: throat sac inflated into a war drum; sound anatomy visible -->
+  <ellipse cx=\"16\" cy=\"29.5\" rx=\"11\" ry=\"1.4\" fill=\"#1e1a12\" opacity=\"0.4\"/>
+  <!-- body flanks behind drum -->
+  <path d=\"M3 20 C3.5 15 7 11.5 11 11 L11 26 C7.5 26 3.8 24 3 20 Z\" fill=\"#4e5626\"/>
+  <path d=\"M29 20 C28.5 15 25 11.5 21 11 L21 26 C24.5 26 28.2 24 29 20 Z\" fill=\"#4e5626\"/>
+  <!-- bulging eyes on raised ridges -->
+  <ellipse cx=\"11\" cy=\"9.5\" rx=\"2.6\" ry=\"2.2\" fill=\"#5f6a30\"/>
+  <ellipse cx=\"21\" cy=\"9.5\" rx=\"2.6\" ry=\"2.2\" fill=\"#5f6a30\"/>
+  <circle cx=\"11\" cy=\"8.8\" r=\"2\" fill=\"#e0b03c\"/>
+  <ellipse cx=\"11\" cy=\"8.8\" rx=\"0.6\" ry=\"1.3\" fill=\"#1a1a1a\"/>
+  <circle cx=\"21\" cy=\"8.8\" r=\"2\" fill=\"#e0b03c\"/>
+  <ellipse cx=\"21\" cy=\"8.8\" rx=\"0.6\" ry=\"1.3\" fill=\"#1a1a1a\"/>
+  <circle cx=\"11.7\" cy=\"8\" r=\"0.4\" fill=\"#fff\" opacity=\"0.85\"/>
+  <circle cx=\"21.7\" cy=\"8\" r=\"0.4\" fill=\"#fff\" opacity=\"0.85\"/>
+  <!-- open mouth: the sound source, rimmed so it reads over the drum -->
+  <path d=\"M8 12 L24 12 L16 17.8 Z\" fill=\"#160d08\"/>
+  <path d=\"M8 12 L24 12 L16 17.8 Z\" fill=\"none\" stroke=\"#7a4a2a\" stroke-width=\"0.9\"/>
+  <path d=\"M10.2 12.7 L21.8 12.7 L16 16.6 Z\" fill=\"#3a1420\" opacity=\"0.85\"/>
+  <!-- throat drum: massively inflated resonating chamber -->
+  <ellipse cx=\"16\" cy=\"23\" rx=\"9.8\" ry=\"6.8\" fill=\"#d9a86c\"/>
+  <ellipse cx=\"16\" cy=\"23\" rx=\"9.8\" ry=\"6.8\" fill=\"none\" stroke=\"#7a4a2a\" stroke-width=\"1.4\"/>
+  <!-- tension rings inside the membrane -->
+  <ellipse cx=\"16\" cy=\"23\" rx=\"7.4\" ry=\"5\" fill=\"none\" stroke=\"#a06a3a\" stroke-width=\"0.8\" opacity=\"0.7\"/>
+  <ellipse cx=\"16\" cy=\"23\" rx=\"5\" ry=\"3.3\" fill=\"none\" stroke=\"#a06a3a\" stroke-width=\"0.7\" opacity=\"0.55\"/>
+  <ellipse cx=\"16\" cy=\"23\" rx=\"2.6\" ry=\"1.7\" fill=\"none\" stroke=\"#8a542e\" stroke-width=\"0.6\" opacity=\"0.5\"/>
+  <!-- membrane shimmer: vibration -->
+  <path d=\"M8.5 21.5 l1.5 1 l1.5 -1 l1.5 1 l1.5 -1 l1.5 1 l1.5 -1 l1.5 1 M8.5 25 l1.5 -1 l1.5 1 l1.5 -1 l1.5 1 l1.5 -1 l1.5 1 l1.5 -1\" stroke=\"#f0d0a0\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.8\"/>
+  <!-- drum lugs around rim -->
+  <g fill=\"#4a2c18\">
+    <rect x=\"6\" y=\"18.6\" width=\"1.6\" height=\"1.6\" rx=\"0.4\" transform=\"rotate(24 6.8 19.4)\"/>
+    <rect x=\"24.4\" y=\"18.6\" width=\"1.6\" height=\"1.6\" rx=\"0.4\" transform=\"rotate(-24 25.2 19.4)\"/>
+    <rect x=\"4.6\" y=\"22.4\" width=\"1.6\" height=\"1.6\" rx=\"0.4\"/>
+    <rect x=\"25.8\" y=\"22.4\" width=\"1.6\" height=\"1.6\" rx=\"0.4\"/>
+    <rect x=\"6.4\" y=\"26\" width=\"1.6\" height=\"1.6\" rx=\"0.4\" transform=\"rotate(-24 7.2 26.8)\"/>
+    <rect x=\"24\" y=\"26\" width=\"1.6\" height=\"1.6\" rx=\"0.4\" transform=\"rotate(24 24.8 26.8)\"/>
+    <rect x=\"15.2\" y=\"16.8\" width=\"1.6\" height=\"1.6\" rx=\"0.4\"/>
+    <rect x=\"15.2\" y=\"27.6\" width=\"1.6\" height=\"1.6\" rx=\"0.4\"/>
+  </g>
+  <!-- warts grown into spikes around the drum -->
+  <g fill=\"#3d4423\">
+    <polygon points=\"3.2,17 4.4,15.2 5,17.4\"/><polygon points=\"28.8,17 27.6,15.2 27,17.4\"/>
+    <polygon points=\"2.6,22.5 4.2,21.4 4,23.8\"/><polygon points=\"29.4,22.5 27.8,21.4 28,23.8\"/>
+    <polygon points=\"5.5,27.5 6.8,25.9 7.6,28\"/><polygon points=\"26.5,27.5 25.2,25.9 24.4,28\"/>
+  </g>
+  <!-- visible sound: expanding shockwave arcs from the mouth -->
+  <g fill=\"none\" stroke=\"#e8d9a0\" stroke-linecap=\"round\">
+    <path d=\"M6 12 A6 6 0 0 0 2.5 17\" stroke-width=\"1.1\" opacity=\"0.75\"/>
+    <path d=\"M4.5 10.5 A9 9 0 0 0 0.5 17.5\" stroke-width=\"0.9\" opacity=\"0.5\"/>
+    <path d=\"M26 12 A6 6 0 0 1 29.5 17\" stroke-width=\"1.1\" opacity=\"0.75\"/>
+    <path d=\"M27.5 10.5 A9 9 0 0 1 31.5 17.5\" stroke-width=\"0.9\" opacity=\"0.5\"/>
+    <path d=\"M12 6.5 A7 7 0 0 1 20 6.5\" stroke-width=\"0.9\" opacity=\"0.55\"/>
+    <path d=\"M10 4.5 A10.5 10.5 0 0 1 22 4.5\" stroke-width=\"0.7\" opacity=\"0.35\"/>
+  </g>
+</svg>`,
+    lockpick_raccoon_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- raccoon sitting, body 3/4, face toward viewer -->
+  <ellipse cx=\"16\" cy=\"29.5\" rx=\"10\" ry=\"1.4\" fill=\"#22252a\" opacity=\"0.3\"/>
+  <!-- ringed tail curling left -->
+  <path d=\"M9.5 24 C6 24.5 3.5 23 2.5 20.5 C2 19 2.6 17.8 4 17.6 C6.5 17.3 8.5 18.8 10 21 Z\" fill=\"#8a8f96\"/>
+  <path d=\"M5.2 18.2 C4.6 19.2 4.4 20.4 4.6 21.6 M7.6 18 C7 19.2 6.8 20.6 7.2 22\" stroke=\"#3a3d42\" stroke-width=\"1.4\"/>
+  <!-- body -->
+  <ellipse cx=\"15.5\" cy=\"22.5\" rx=\"7.6\" ry=\"6.2\" fill=\"#8a8f96\"/>
+  <ellipse cx=\"15.5\" cy=\"24\" rx=\"5.4\" ry=\"4.2\" fill=\"#9aa0a8\" opacity=\"0.8\"/>
+  <!-- grizzle strokes -->
+  <path d=\"M10 19.5 l1.5 2 M13 18.5 l1.2 2 M20 19 l-1.2 2 M22 21.5 l-1 1.8\" stroke=\"#6e737b\" stroke-width=\"0.7\" stroke-linecap=\"round\"/>
+  <!-- haunch -->
+  <path d=\"M9 24 C10 22.5 12 22 13.5 22.8 C12 23.6 11 25 10.8 26.8 Z\" fill=\"#7d828a\"/>
+  <!-- head -->
+  <circle cx=\"19\" cy=\"12\" r=\"5.6\" fill=\"#989da5\"/>
+  <!-- ears -->
+  <path d=\"M14.8 8.2 L13.4 3.8 L17.6 6 Z\" fill=\"#7d828a\"/>
+  <path d=\"M23.2 8.2 L24.6 3.8 L20.4 6 Z\" fill=\"#7d828a\"/>
+  <path d=\"M14.9 7.2 L14.2 4.8 L16.4 6 Z M23.1 7.2 L23.8 4.8 L21.6 6 Z\" fill=\"#c9cdd3\"/>
+  <!-- mask -->
+  <path d=\"M13.8 10.2 C15.5 9.4 17 9.6 19 10.4 C21 11.2 22.6 11 24.2 10.2 L24.6 13.4 C23 14.4 21.2 14.4 19 13.6 C16.8 12.8 15 12.8 13.4 13.6 Z\" fill=\"#3a3d42\"/>
+  <!-- eyes -->
+  <circle cx=\"16.6\" cy=\"11.9\" r=\"1.15\" fill=\"#e8e8e8\"/>
+  <circle cx=\"16.6\" cy=\"11.9\" r=\"0.55\" fill=\"#1a1a1a\"/>
+  <circle cx=\"21.4\" cy=\"11.9\" r=\"1.15\" fill=\"#e8e8e8\"/>
+  <circle cx=\"21.4\" cy=\"11.9\" r=\"0.55\" fill=\"#1a1a1a\"/>
+  <circle cx=\"17\" cy=\"11.5\" r=\"0.25\" fill=\"#fff\"/>
+  <circle cx=\"21.8\" cy=\"11.5\" r=\"0.25\" fill=\"#fff\"/>
+  <!-- muzzle -->
+  <ellipse cx=\"19\" cy=\"15.2\" rx=\"2.6\" ry=\"1.9\" fill=\"#dfe2e6\"/>
+  <path d=\"M17.9 14.2 h2.2 l-1.1 1.3 Z\" fill=\"#2c2e33\"/>
+  <path d=\"M19 15.5 v0.9 M17.6 16.2 q1.4 0.7 2.8 0\" stroke=\"#5c6066\" stroke-width=\"0.6\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- whisker dots -->
+  <g fill=\"#5c6066\"><circle cx=\"17\" cy=\"15\" r=\"0.25\"/><circle cx=\"21\" cy=\"15\" r=\"0.25\"/></g>
+  <!-- front paws together, working -->
+  <rect x=\"15.6\" y=\"19.5\" width=\"2.6\" height=\"4.4\" rx=\"1.2\" fill=\"#5c6066\"/>
+  <rect x=\"19.8\" y=\"19.5\" width=\"2.6\" height=\"4.4\" rx=\"1.2\" fill=\"#5c6066\"/>
+  <path d=\"M16.4 21.5 v1.6 M17.5 21.5 v1.6 M20.6 21.5 v1.6 M21.7 21.5 v1.6\" stroke=\"#3a3d42\" stroke-width=\"0.6\" stroke-linecap=\"round\"/>
+  <!-- hind feet -->
+  <ellipse cx=\"11\" cy=\"27.5\" rx=\"2.2\" ry=\"1.2\" fill=\"#5c6066\"/>
+  <ellipse cx=\"20\" cy=\"27.8\" rx=\"2.2\" ry=\"1.2\" fill=\"#5c6066\"/>
+</svg>`,
+    lockpick_raccoon_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- aggro: too many jointed fingers with tool tips, disassembling a lock -->
+  <ellipse cx=\"16\" cy=\"29.5\" rx=\"10\" ry=\"1.4\" fill=\"#1a1c20\" opacity=\"0.4\"/>
+  <!-- body with hackles -->
+  <ellipse cx=\"16\" cy=\"23\" rx=\"8\" ry=\"6\" fill=\"#6e737b\"/>
+  <path d=\"M8.5 20 l-1.8 -1.2 l0.6 1.9 l-2 -0.6 l1.2 1.6 l-2.1 0.2 l1.6 1.3 l-1.9 1 l2 0.7 l-1.4 1.6 l2.1 -0.1 l-0.8 1.9 l1.9 -0.9 M23.5 20 l1.8 -1.2 l-0.6 1.9 l2 -0.6 l-1.2 1.6 l2.1 0.2 l-1.6 1.3 l1.9 1 l-2 0.7 l1.4 1.6 l-2.1 -0.1 l0.8 1.9 l-1.9 -0.9\" stroke=\"#3a3d42\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- tail raised, bottle-brush -->
+  <path d=\"M23 22 C27 21 29.5 18.5 30 15 C30.2 13.5 29 12.5 27.8 13.2 C25.5 14.6 24.5 17.5 24 20.5 Z\" fill=\"#7d828a\"/>
+  <path d=\"M26.4 14.6 l1.8 0.6 M25.6 16.8 l2 0.8 M25 19.2 l2 0.8\" stroke=\"#3a3d42\" stroke-width=\"1.3\"/>
+  <!-- head -->
+  <circle cx=\"16\" cy=\"11.5\" r=\"6\" fill=\"#7d828a\"/>
+  <!-- ears flattened back -->
+  <path d=\"M11 7.5 L7.5 5.5 L10.5 9.5 Z\" fill=\"#5c6066\"/>
+  <path d=\"M21 7.5 L24.5 5.5 L21.5 9.5 Z\" fill=\"#5c6066\"/>
+  <!-- wide mask -->
+  <path d=\"M10.2 9.6 C12.5 8.6 14.2 9 16 9.8 C17.8 10.6 19.5 10.2 21.8 9.6 L22.2 13.2 C20 14.4 18.2 14.2 16 13.2 C13.8 12.2 12 12.4 9.8 13.4 Z\" fill=\"#26282d\"/>
+  <!-- third eye -->
+  <circle cx=\"16\" cy=\"7.2\" r=\"0.9\" fill=\"#ff5a4a\"/>
+  <circle cx=\"16\" cy=\"7.2\" r=\"0.4\" fill=\"#1a1a1a\"/>
+  <!-- main eyes: red glow -->
+  <circle cx=\"13.4\" cy=\"11.4\" r=\"1.5\" fill=\"#ff5a4a\"/>
+  <circle cx=\"13.4\" cy=\"11.4\" r=\"1.9\" fill=\"none\" stroke=\"#ff5a4a\" stroke-width=\"0.6\" opacity=\"0.5\"/>
+  <circle cx=\"13.4\" cy=\"11.4\" r=\"0.6\" fill=\"#1a1a1a\"/>
+  <circle cx=\"18.6\" cy=\"11.4\" r=\"1.5\" fill=\"#ff5a4a\"/>
+  <circle cx=\"18.6\" cy=\"11.4\" r=\"1.9\" fill=\"none\" stroke=\"#ff5a4a\" stroke-width=\"0.6\" opacity=\"0.5\"/>
+  <circle cx=\"18.6\" cy=\"11.4\" r=\"0.6\" fill=\"#1a1a1a\"/>
+  <!-- muzzle bared -->
+  <ellipse cx=\"16\" cy=\"15.2\" rx=\"2.4\" ry=\"1.6\" fill=\"#b9bec6\"/>
+  <path d=\"M14.2 15.6 l0.7 0.7 l0.7 -0.7 l0.7 0.7 l0.7 -0.7\" stroke=\"#2c2e33\" stroke-width=\"0.6\" fill=\"none\"/>
+  <!-- LEFT hand: 8 jointed fingers -->
+  <g stroke=\"#9aa0a8\" stroke-width=\"1\" stroke-linecap=\"round\" fill=\"none\">
+    <path d=\"M11 18.8 L8.5 16.8 L6.5 16.6\"/><path d=\"M10.3 19.2 L7.5 18.2 L5.2 18.6\"/>
+    <path d=\"M9.8 20 L6.8 20 L4.6 21\"/><path d=\"M9.6 20.9 L6.8 22.2 L4.6 23.8\"/>
+    <path d=\"M9.8 21.8 L7.6 23.8 L6 25.8\"/><path d=\"M10.6 22.4 L9.6 25 L9.2 27.6\"/>
+    <path d=\"M11.6 22.7 L12 25.4 L12.3 28\"/><path d=\"M12.4 22.4 L13.8 24.2 L15.2 25.6\"/>
+  </g>
+  <g fill=\"#6e737b\"><circle cx=\"8.5\" cy=\"16.8\" r=\"0.45\"/><circle cx=\"7.5\" cy=\"18.2\" r=\"0.45\"/><circle cx=\"6.8\" cy=\"20\" r=\"0.45\"/><circle cx=\"6.8\" cy=\"22.2\" r=\"0.45\"/><circle cx=\"7.6\" cy=\"23.8\" r=\"0.45\"/><circle cx=\"9.6\" cy=\"25\" r=\"0.45\"/><circle cx=\"12\" cy=\"25.4\" r=\"0.45\"/><circle cx=\"13.8\" cy=\"24.2\" r=\"0.45\"/></g>
+  <!-- RIGHT hand: 8 jointed fingers -->
+  <g stroke=\"#9aa0a8\" stroke-width=\"1\" stroke-linecap=\"round\" fill=\"none\">
+    <path d=\"M21 18.8 L23.5 16.8 L25.5 16.6\"/><path d=\"M21.7 19.2 L24.5 18.2 L26.8 18.6\"/>
+    <path d=\"M22.2 20 L25.2 20 L27.4 21\"/><path d=\"M22.4 20.9 L25.2 22.2 L27.4 23.8\"/>
+    <path d=\"M22.2 21.8 L24.4 23.8 L26 25.8\"/><path d=\"M21.4 22.4 L22.4 25 L22.8 27.6\"/>
+    <path d=\"M20.4 22.7 L20 25.4 L19.7 28\"/><path d=\"M19.6 22.4 L18.2 24.2 L16.8 25.6\"/>
+  </g>
+  <g fill=\"#6e737b\"><circle cx=\"23.5\" cy=\"16.8\" r=\"0.45\"/><circle cx=\"24.5\" cy=\"18.2\" r=\"0.45\"/><circle cx=\"25.2\" cy=\"20\" r=\"0.45\"/><circle cx=\"25.2\" cy=\"22.2\" r=\"0.45\"/><circle cx=\"24.4\" cy=\"23.8\" r=\"0.45\"/><circle cx=\"22.4\" cy=\"25\" r=\"0.45\"/><circle cx=\"20\" cy=\"25.4\" r=\"0.45\"/><circle cx=\"18.2\" cy=\"24.2\" r=\"0.45\"/></g>
+  <!-- tool tips: hooks -->
+  <g stroke=\"#cfd6da\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\">
+    <path d=\"M6.5 16.6 q-0.9 0.2 -0.7 1.1\"/><path d=\"M4.6 23.8 q-0.8 0.4 -0.4 1.2\"/>
+    <path d=\"M12.3 28 q0 0.9 0.8 1\"/><path d=\"M25.5 16.6 q0.9 0.2 0.7 1.1\"/>
+    <path d=\"M27.4 23.8 q0.8 0.4 0.4 1.2\"/><path d=\"M19.7 28 q0 0.9 -0.8 1\"/>
+  </g>
+  <!-- tool tips: blades -->
+  <g fill=\"#cfd6da\">
+    <polygon points=\"5.2,18 4,19.4 5.8,19.6\"/><polygon points=\"6,25.2 4.9,26.6 6.6,26.6\"/>
+    <polygon points=\"26.8,18 28,19.4 26.2,19.6\"/><polygon points=\"26,25.2 27.1,26.6 25.4,26.6\"/>
+  </g>
+  <!-- paw bases -->
+  <ellipse cx=\"11\" cy=\"21\" rx=\"2.3\" ry=\"2.1\" fill=\"#7d828a\"/>
+  <ellipse cx=\"21\" cy=\"21\" rx=\"2.3\" ry=\"2.1\" fill=\"#7d828a\"/>
+  <!-- the lock being disassembled -->
+  <path d=\"M14.6 24.5 v-1.8 a1.4 1.4 0 0 1 2.8 0 v1.8\" stroke=\"#8a8f96\" stroke-width=\"1\" fill=\"none\"/>
+  <rect x=\"13.8\" y=\"24.3\" width=\"4.4\" height=\"4.2\" rx=\"1\" fill=\"#b08d57\" stroke=\"#7a5f33\" stroke-width=\"0.8\"/>
+  <circle cx=\"16\" cy=\"26\" r=\"0.65\" fill=\"#3a2c14\"/>
+  <rect x=\"15.7\" y=\"26\" width=\"0.6\" height=\"1.4\" fill=\"#3a2c14\"/>
+  <!-- pick inserted from right hand -->
+  <path d=\"M16.8 25.6 L18.2 24.2\" stroke=\"#cfd6da\" stroke-width=\"0.7\" stroke-linecap=\"round\"/>
+  <!-- loose tumbler pins scattered -->
+  <g fill=\"#d8cba8\"><rect x=\"8.5\" y=\"28.5\" width=\"1.4\" height=\"0.7\" transform=\"rotate(30 9.2 28.8)\"/><rect x=\"22.5\" y=\"29\" width=\"1.4\" height=\"0.7\" transform=\"rotate(-20 23.2 29.3)\"/></g>
+</svg>`,
+    white_noise_heron_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- grey heron, standing profile facing right -->
+  <!-- water -->
+  <path d=\"M2 28.5 q2 -1 4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0\" stroke=\"#7fa3bd\" stroke-width=\"0.9\" fill=\"none\" opacity=\"0.8\" stroke-linecap=\"round\"/>
+  <path d=\"M6 30 q2 -0.8 4 0 t4 0 t4 0 t4 0\" stroke=\"#5b7a94\" stroke-width=\"0.8\" fill=\"none\" opacity=\"0.6\" stroke-linecap=\"round\"/>
+  <!-- legs -->
+  <path d=\"M14.5 20 L14.2 28.5 M17.5 20 L17.8 28.5\" stroke=\"#4a3f35\" stroke-width=\"1.1\" stroke-linecap=\"round\"/>
+  <!-- body -->
+  <ellipse cx=\"14.5\" cy=\"16.5\" rx=\"6.8\" ry=\"4.6\" fill=\"#9fb0bd\"/>
+  <!-- folded wing with feather layering -->
+  <path d=\"M9.5 14.5 C13 13.5 17.5 14 20 16 C18.5 18.5 14.5 20 10.5 19.2 C8.5 18.2 8.2 15.8 9.5 14.5 Z\" fill=\"#7c8b98\"/>
+  <path d=\"M10 15.5 C13 14.8 16.5 15.2 18.8 16.6 M10.2 17.2 C13 16.6 16 16.9 18.2 18\" stroke=\"#5d6b77\" stroke-width=\"0.7\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- black shoulder edge -->
+  <path d=\"M9.8 14.2 C12 13.6 15 13.8 17.5 15\" stroke=\"#23272e\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- neck: S-curve rising -->
+  <path d=\"M18.5 14.5 C20.5 12 20.8 9.5 20.2 7\" stroke=\"#cfd6da\" stroke-width=\"2.2\" fill=\"none\" stroke-linecap=\"round\"/>
+  <path d=\"M18.5 14.5 C20.5 12 20.8 9.5 20.2 7\" stroke=\"#8b979f\" stroke-width=\"0.9\" fill=\"none\" opacity=\"0.6\"/>
+  <!-- shaggy breast feathers -->
+  <path d=\"M19.6 12.5 l-1.6 0.8 M19.9 11 l-1.7 0.6 M19.9 9.5 l-1.6 0.4\" stroke=\"#b7c0c7\" stroke-width=\"0.7\" stroke-linecap=\"round\"/>
+  <!-- head -->
+  <ellipse cx=\"21.5\" cy=\"5.6\" rx=\"2.4\" ry=\"1.7\" fill=\"#e3e8ec\"/>
+  <!-- black cap + crest plume -->
+  <path d=\"M19.8 4.6 C21 3.4 23.5 3.4 24.6 4.8 L24.2 5.6 C22.8 4.6 21 4.6 20 5.6 Z\" fill=\"#23272e\"/>
+  <path d=\"M23.8 4.4 C22.5 3.2 20.8 2.8 19.2 3.2 C20.8 3.4 22.2 4 23.2 5.2 Z\" fill=\"#23272e\"/>
+  <path d=\"M19.6 4.2 C17.5 3.6 15.8 3.8 14.5 4.8 C16 4.6 17.8 4.8 19.4 5.4 Z\" fill=\"#23272e\"/>
+  <!-- bill: long dagger -->
+  <path d=\"M23.6 4.9 L30.8 4 L23.7 6.6 Z\" fill=\"#e0992e\"/>
+  <path d=\"M23.6 4.9 L30.8 4 L27 5.1 Z\" fill=\"#f2b84b\" opacity=\"0.7\"/>
+  <!-- eye -->
+  <circle cx=\"21.8\" cy=\"5.3\" r=\"0.75\" fill=\"#e8b93c\"/>
+  <circle cx=\"21.8\" cy=\"5.3\" r=\"0.38\" fill=\"#1a1a1a\"/>
+</svg>`,
+    white_noise_heron_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- aggro: spear-beak leveled for a line strike; body not quite there -->
+  <!-- water -->
+  <path d=\"M2 28.5 q2 -1 4 0 t4 0 t4 0 t4 0 t4 0\" stroke=\"#7fa3bd\" stroke-width=\"0.9\" fill=\"none\" opacity=\"0.7\" stroke-linecap=\"round\"/>
+  <!-- legs: one solid, one only half there -->
+  <path d=\"M8 20.5 L7.8 28.5\" stroke=\"#4a3f35\" stroke-width=\"1.1\" stroke-linecap=\"round\"/>
+  <path d=\"M10.5 20.5 L10.8 25\" stroke=\"#4a3f35\" stroke-width=\"1\" stroke-dasharray=\"1.6 1.3\" opacity=\"0.6\" stroke-linecap=\"round\"/>
+  <!-- ghost afterimage necks: vibrating between strike positions -->
+  <g stroke=\"#b7c0c7\" stroke-width=\"1.6\" fill=\"none\" stroke-dasharray=\"2 1.6\" opacity=\"0.32\" stroke-linecap=\"round\">
+    <path d=\"M11 15 L13.5 4\"/>
+    <path d=\"M11.5 16 L15.5 13.5\"/>
+  </g>
+  <ellipse cx=\"14.3\" cy=\"3.2\" rx=\"1.6\" ry=\"1.1\" fill=\"none\" stroke=\"#b7c0c7\" stroke-width=\"0.9\" stroke-dasharray=\"1.6 1.3\" opacity=\"0.32\"/>
+  <circle cx=\"14.7\" cy=\"3\" r=\"0.45\" fill=\"#e8b93c\" opacity=\"0.32\"/>
+  <ellipse cx=\"16.8\" cy=\"13.8\" rx=\"1.6\" ry=\"1.1\" fill=\"none\" stroke=\"#b7c0c7\" stroke-width=\"0.9\" stroke-dasharray=\"1.6 1.3\" opacity=\"0.32\"/>
+  <!-- body: partially missing, dashed shell -->
+  <ellipse cx=\"8.5\" cy=\"17\" rx=\"5.5\" ry=\"4\" fill=\"#9fb0bd\" opacity=\"0.3\"/>
+  <ellipse cx=\"8.5\" cy=\"17\" rx=\"5.5\" ry=\"4\" fill=\"none\" stroke=\"#5d6b77\" stroke-width=\"1\" stroke-dasharray=\"2.4 1.8\"/>
+  <path d=\"M4.5 15.5 C7 15 10 15.2 12 16.4\" stroke=\"#5d6b77\" stroke-width=\"0.8\" fill=\"none\" stroke-dasharray=\"1.8 1.4\" opacity=\"0.8\"/>
+  <!-- static flicker around the body -->
+  <g stroke=\"#cfd6da\" stroke-width=\"0.7\" stroke-linecap=\"round\" opacity=\"0.8\">
+    <path d=\"M3 12.5 l1.2 0.4 M13.5 13 l1.2 -0.3 M2.5 19 l1.3 0.2 M13.8 20.5 l1.2 0.4 M5 22.5 l0.9 0.9 M11.5 22.8 l1 0.8\"/>
+  </g>
+  <!-- neck extended straight: the spear shaft -->
+  <path d=\"M12.5 15.5 L18.5 9\" stroke=\"#e3e8ec\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>
+  <path d=\"M12.5 15.5 L18.5 9\" stroke=\"#8b979f\" stroke-width=\"0.7\" opacity=\"0.5\"/>
+  <!-- head -->
+  <ellipse cx=\"20\" cy=\"8.2\" rx=\"2.2\" ry=\"1.6\" fill=\"#e3e8ec\"/>
+  <path d=\"M18.4 7.2 C19.6 6 22 6 23 7.4 L22.6 8.1 C21.4 7.1 19.8 7.1 18.8 8 Z\" fill=\"#23272e\"/>
+  <path d=\"M18.4 6.9 C17.2 6.1 16 6.2 15.2 7 C16.2 6.9 17.4 7.2 18.2 7.8 Z\" fill=\"#23272e\"/>
+  <!-- eye: locked on target -->
+  <circle cx=\"20.3\" cy=\"8\" r=\"0.8\" fill=\"#e8b93c\"/>
+  <circle cx=\"20.3\" cy=\"8\" r=\"0.4\" fill=\"#1a1a1a\"/>
+  <!-- beak: the lance, leveled -->
+  <polygon points=\"21.8,7.4 26.5,8.4 21.8,9.4\" fill=\"#ffd76a\"/>
+  <path d=\"M22.5 8.1 L25.8 8.4\" stroke=\"#fff\" stroke-width=\"0.6\" opacity=\"0.9\" stroke-linecap=\"round\"/>
+  <polygon points=\"21.8,7.4 23.8,8.4 21.8,9.4\" fill=\"#e0992e\" opacity=\"0.6\"/>
+  <!-- line-attack geometry: dashed strike line with range ticks -->
+  <g stroke=\"#ffd76a\" stroke-linecap=\"round\">
+    <path d=\"M27.2 8.4 L31.6 8.4\" stroke-width=\"1\" stroke-dasharray=\"1.4 1\" opacity=\"0.9\"/>
+    <path d=\"M28 7.4 v2 M29.2 7.4 v2 M30.4 7.4 v2\" stroke-width=\"0.6\" opacity=\"0.7\"/>
+  </g>
+  <!-- faint parallel: the line the strike travels -->
+  <path d=\"M21.8 10.6 L31 10.6\" stroke=\"#ffd76a\" stroke-width=\"0.5\" stroke-dasharray=\"1.2 1.6\" opacity=\"0.35\"/>
+</svg>`,
+    hummice_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- hummice calm: four field mice foraging in grass --><g stroke=\"#3d6b2f\" stroke-width=\"1\" stroke-linecap=\"round\" opacity=\"0.8\" fill=\"none\"><path d=\"M3 29 q0.5 -4 -0.5 -8\"/><path d=\"M6 29 q1 -5 2 -8\"/><path d=\"M15 29 q-0.5 -4 -1 -7\"/><path d=\"M21 29 q0.8 -4.5 0 -8\"/><path d=\"M27 29 q-1 -4 -0.5 -7.5\"/><path d=\"M30 29 q0.5 -3.5 0 -6\"/></g><g><!-- mouse 1: facing left --><ellipse cx=\"8.5\" cy=\"22\" rx=\"2.8\" ry=\"2.1\" fill=\"#8a7a66\"/><ellipse cx=\"8.5\" cy=\"22.8\" rx=\"2\" ry=\"1.2\" fill=\"#b3a488\" opacity=\"0.7\"/><circle cx=\"5.8\" cy=\"21.4\" r=\"1.7\" fill=\"#8a7a66\"/><circle cx=\"5.2\" cy=\"19.9\" r=\"0.95\" fill=\"#8a7a66\"/><circle cx=\"6.9\" cy=\"19.6\" r=\"0.9\" fill=\"#8a7a66\"/><circle cx=\"5.2\" cy=\"19.9\" r=\"0.5\" fill=\"#d9a08e\"/><circle cx=\"6.9\" cy=\"19.6\" r=\"0.45\" fill=\"#d9a08e\"/><circle cx=\"4.1\" cy=\"21.6\" r=\"0.35\" fill=\"#d9a08e\"/><circle cx=\"6.3\" cy=\"20.9\" r=\"0.4\" fill=\"#14100c\"/><path d=\"M11.3 22.5 q2.5 0.5 3 -1.5\" stroke=\"#d9a08e\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M4.5 22 L2.8 22.4 M4.5 22.6 L3 23.2\" stroke=\"#e8e0cc\" stroke-width=\"0.4\"/></g><g><!-- mouse 2: facing right --><ellipse cx=\"16.5\" cy=\"24\" rx=\"2.8\" ry=\"2.1\" fill=\"#7d6e5a\"/><ellipse cx=\"16.5\" cy=\"24.8\" rx=\"2\" ry=\"1.2\" fill=\"#b3a488\" opacity=\"0.7\"/><circle cx=\"19.2\" cy=\"23.4\" r=\"1.7\" fill=\"#7d6e5a\"/><circle cx=\"19.8\" cy=\"21.9\" r=\"0.95\" fill=\"#7d6e5a\"/><circle cx=\"18.1\" cy=\"21.6\" r=\"0.9\" fill=\"#7d6e5a\"/><circle cx=\"19.8\" cy=\"21.9\" r=\"0.5\" fill=\"#d9a08e\"/><circle cx=\"18.1\" cy=\"21.6\" r=\"0.45\" fill=\"#d9a08e\"/><circle cx=\"20.9\" cy=\"23.6\" r=\"0.35\" fill=\"#d9a08e\"/><circle cx=\"18.7\" cy=\"22.9\" r=\"0.4\" fill=\"#14100c\"/><path d=\"M13.7 24.5 q-2.5 0.5 -3 -1.5\" stroke=\"#d9a08e\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M20.5 24 L22.2 24.4 M20.5 24.6 L22 25.2\" stroke=\"#e8e0cc\" stroke-width=\"0.4\"/></g><g><!-- mouse 3: facing left, higher --><ellipse cx=\"23.5\" cy=\"18\" rx=\"2.6\" ry=\"2\" fill=\"#8a7a66\"/><ellipse cx=\"23.5\" cy=\"18.7\" rx=\"1.9\" ry=\"1.1\" fill=\"#b3a488\" opacity=\"0.7\"/><circle cx=\"20.8\" cy=\"17.4\" r=\"1.6\" fill=\"#8a7a66\"/><circle cx=\"20.2\" cy=\"15.9\" r=\"0.9\" fill=\"#8a7a66\"/><circle cx=\"21.9\" cy=\"15.6\" r=\"0.85\" fill=\"#8a7a66\"/><circle cx=\"20.2\" cy=\"15.9\" r=\"0.48\" fill=\"#d9a08e\"/><circle cx=\"21.9\" cy=\"15.6\" r=\"0.42\" fill=\"#d9a08e\"/><circle cx=\"19.2\" cy=\"17.6\" r=\"0.33\" fill=\"#d9a08e\"/><circle cx=\"21.3\" cy=\"16.9\" r=\"0.38\" fill=\"#14100c\"/><path d=\"M26 18.5 q2.5 0.3 2.8 -1.6\" stroke=\"#d9a08e\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M19.5 18 L17.9 18.3 M19.5 18.6 L18.1 19.1\" stroke=\"#e8e0cc\" stroke-width=\"0.4\"/></g><g><!-- mouse 4: facing right, in grass --><ellipse cx=\"11.5\" cy=\"13\" rx=\"2.4\" ry=\"1.9\" fill=\"#7d6e5a\"/><ellipse cx=\"11.5\" cy=\"13.7\" rx=\"1.7\" ry=\"1\" fill=\"#b3a488\" opacity=\"0.7\"/><circle cx=\"14\" cy=\"12.4\" r=\"1.5\" fill=\"#7d6e5a\"/><circle cx=\"14.4\" cy=\"11\" r=\"0.85\" fill=\"#7d6e5a\"/><circle cx=\"12.9\" cy=\"10.8\" r=\"0.8\" fill=\"#7d6e5a\"/><circle cx=\"14.4\" cy=\"11\" r=\"0.45\" fill=\"#d9a08e\"/><circle cx=\"12.9\" cy=\"10.8\" r=\"0.4\" fill=\"#d9a08e\"/><circle cx=\"15.5\" cy=\"12.6\" r=\"0.32\" fill=\"#d9a08e\"/><circle cx=\"13.5\" cy=\"11.9\" r=\"0.36\" fill=\"#14100c\"/><path d=\"M9.2 13.5 q-2.2 0.4 -2.6 -1.4\" stroke=\"#d9a08e\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\"/></g><path d=\"M24 29 q0.6 -3.5 1.6 -6\" stroke=\"#3d6b2f\" stroke-width=\"1\" stroke-linecap=\"round\" fill=\"none\" opacity=\"0.9\"/></svg>`,
+    hummice_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- hummice aggro: 4-mouse sonic resonator, converging hum burst --><circle cx=\"16\" cy=\"17\" r=\"9.5\" stroke=\"#e8d878\" stroke-width=\"0.5\" opacity=\"0.25\" fill=\"none\"/><circle cx=\"16\" cy=\"17\" r=\"7\" stroke=\"#e8d878\" stroke-width=\"0.6\" opacity=\"0.35\" fill=\"none\"/><circle cx=\"16\" cy=\"17\" r=\"4.5\" stroke=\"#e8d878\" stroke-width=\"0.7\" opacity=\"0.5\" fill=\"none\"/><circle cx=\"16\" cy=\"17\" r=\"2.8\" fill=\"#ffe98a\" opacity=\"0.3\"/><circle cx=\"16\" cy=\"17\" r=\"1.6\" fill=\"#fff3b0\" opacity=\"0.85\"/><g stroke=\"#e8d878\" stroke-width=\"0.7\" opacity=\"0.5\" stroke-linecap=\"round\"><path d=\"M16 4.5 v-2 M16 29.5 v-2 M3.5 17 h-2 M30.5 17 h-2 M7.2 8.2 l-1.4 -1.4 M26.2 25.8 l-1.4 -1.4 M24.8 8.2 l1.4 -1.4 M5.8 25.8 l1.4 -1.4\"/></g><g><!-- top mouse, facing down (inward) --><ellipse cx=\"16\" cy=\"7\" rx=\"1.8\" ry=\"2.8\" fill=\"#6a5a44\"/><circle cx=\"14.8\" cy=\"4.6\" r=\"1.2\" fill=\"#6a5a44\"/><circle cx=\"17.2\" cy=\"4.6\" r=\"1.2\" fill=\"#6a5a44\"/><circle cx=\"14.8\" cy=\"4.6\" r=\"0.65\" fill=\"#c98a7a\"/><circle cx=\"17.2\" cy=\"4.6\" r=\"0.65\" fill=\"#c98a7a\"/><circle cx=\"15.3\" cy=\"6.6\" r=\"0.55\" fill=\"#0a0705\"/><circle cx=\"16.7\" cy=\"6.6\" r=\"0.55\" fill=\"#0a0705\"/><polygon points=\"14.5,8 17.5,8 16,11.2\" fill=\"#0a0705\"/><path d=\"M16 4.2 L16 1.5 M15.3 4 L15.3 1.8 M16.7 4 L16.7 1.8\" stroke=\"#c98a7a\" stroke-width=\"0.5\" opacity=\"0.6\"/></g><g><!-- bottom mouse, facing up (inward) --><ellipse cx=\"16\" cy=\"27\" rx=\"1.8\" ry=\"2.8\" fill=\"#6a5a44\"/><circle cx=\"14.8\" cy=\"29.4\" r=\"1.2\" fill=\"#6a5a44\"/><circle cx=\"17.2\" cy=\"29.4\" r=\"1.2\" fill=\"#6a5a44\"/><circle cx=\"14.8\" cy=\"29.4\" r=\"0.65\" fill=\"#c98a7a\"/><circle cx=\"17.2\" cy=\"29.4\" r=\"0.65\" fill=\"#c98a7a\"/><circle cx=\"15.3\" cy=\"27.4\" r=\"0.55\" fill=\"#0a0705\"/><circle cx=\"16.7\" cy=\"27.4\" r=\"0.55\" fill=\"#0a0705\"/><polygon points=\"14.5,26 17.5,26 16,22.8\" fill=\"#0a0705\"/><path d=\"M16 29.8 L16 32 M15.3 30 L15.3 32 M16.7 30 L16.7 32\" stroke=\"#c98a7a\" stroke-width=\"0.5\" opacity=\"0.6\"/></g><g><!-- left mouse, facing right (inward) --><ellipse cx=\"6.5\" cy=\"17\" rx=\"2.8\" ry=\"1.8\" fill=\"#5d4e3a\"/><circle cx=\"3.8\" cy=\"16\" r=\"1.2\" fill=\"#5d4e3a\"/><circle cx=\"3.8\" cy=\"18\" r=\"1.2\" fill=\"#5d4e3a\"/><circle cx=\"3.8\" cy=\"16\" r=\"0.65\" fill=\"#c98a7a\"/><circle cx=\"3.8\" cy=\"18\" r=\"0.65\" fill=\"#c98a7a\"/><circle cx=\"6\" cy=\"16.3\" r=\"0.55\" fill=\"#0a0705\"/><circle cx=\"6\" cy=\"17.7\" r=\"0.55\" fill=\"#0a0705\"/><polygon points=\"8,15.5 8,18.5 11.2,17\" fill=\"#0a0705\"/><path d=\"M3.5 15 L2 12 M2.8 15.2 L1.5 12.4 M4.2 15.2 L3 12.4\" stroke=\"#c98a7a\" stroke-width=\"0.5\" opacity=\"0.6\"/></g><g><!-- right mouse, facing left (inward) --><ellipse cx=\"25.5\" cy=\"17\" rx=\"2.8\" ry=\"1.8\" fill=\"#5d4e3a\"/><circle cx=\"28.2\" cy=\"16\" r=\"1.2\" fill=\"#5d4e3a\"/><circle cx=\"28.2\" cy=\"18\" r=\"1.2\" fill=\"#5d4e3a\"/><circle cx=\"28.2\" cy=\"16\" r=\"0.65\" fill=\"#c98a7a\"/><circle cx=\"28.2\" cy=\"18\" r=\"0.65\" fill=\"#c98a7a\"/><circle cx=\"26\" cy=\"16.3\" r=\"0.55\" fill=\"#0a0705\"/><circle cx=\"26\" cy=\"17.7\" r=\"0.55\" fill=\"#0a0705\"/><polygon points=\"24,15.5 24,18.5 20.8,17\" fill=\"#0a0705\"/><path d=\"M28.5 15 L30 12 M29.2 15.2 L30.5 12.4 M27.8 15.2 L29 12.4\" stroke=\"#c98a7a\" stroke-width=\"0.5\" opacity=\"0.6\"/></g></svg>`,
+        speedbump_turtle_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- speedbump_turtle calm: box turtle, high-domed shell --><ellipse cx=\"4.5\" cy=\"21\" rx=\"2.2\" ry=\"1.8\" fill=\"#5a5240\"/><rect x=\"5.5\" y=\"20\" width=\"2.5\" height=\"3.5\" fill=\"#5a5240\"/><circle cx=\"4\" cy=\"20.4\" r=\"0.55\" fill=\"#14100c\"/><circle cx=\"2.6\" cy=\"21.4\" r=\"0.3\" fill=\"#3a352a\"/><path d=\"M5 24 C5 13 10 6.5 16 6.5 C22 6.5 27 13 27 24 Z\" fill=\"#4a3a26\"/><ellipse cx=\"16\" cy=\"24\" rx=\"11\" ry=\"2.2\" fill=\"#3a2d1e\"/><path d=\"M10 10 C10 15 10 19 10 23 M16 7.5 C16 13 16 18 16 23 M22 10 C22 15 22 19 22 23\" stroke=\"#2e2318\" stroke-width=\"0.7\" opacity=\"0.8\" fill=\"none\"/><path d=\"M8 14 l1.5 1 M12 10 l1 1.5 M18 9 l-1 1.5 M23 13 l-1.5 1 M9 19 l1.5 0.5 M20 18 l1.5 1 M13.5 13 l1 1.5 M18.5 14 l-1 1.5\" stroke=\"#d9a13b\" stroke-width=\"0.8\" stroke-linecap=\"round\" opacity=\"0.9\"/><ellipse cx=\"9\" cy=\"25.5\" rx=\"1.6\" ry=\"1.4\" fill=\"#4a4436\"/><ellipse cx=\"22\" cy=\"25.5\" rx=\"1.8\" ry=\"1.5\" fill=\"#4a4436\"/><polygon points=\"7.8,26.6 8.4,25.4 9,26.6\" fill=\"#d9cda8\"/><polygon points=\"9.4,26.7 10,25.5 10.6,26.7\" fill=\"#d9cda8\"/><polygon points=\"20.8,26.6 21.4,25.4 22,26.6\" fill=\"#d9cda8\"/><polygon points=\"22.4,26.7 23,25.5 23.6,26.7\" fill=\"#d9cda8\"/><path d=\"M27 23 q1.5 0.5 1 2\" stroke=\"#4a4436\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/></svg>`,
+    speedbump_turtle_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- speedbump_turtle aggro: boulder shell hiding an impossible snapping jaw --><path d=\"M5 22 C5 12 10 6 16 6 C22 6 27 12 27 22 Z\" fill=\"#35301f\"/><path d=\"M12 8 l2 3 l-1 3 M20 7 l-1.5 3 l1.5 2.5 M16 6.5 l0.5 3\" stroke=\"#1c1a10\" stroke-width=\"0.8\" fill=\"none\" opacity=\"0.8\"/><polygon points=\"5,19 9.5,17.5 8.5,24 4,24\" fill=\"#0a0805\"/><rect x=\"7.5\" y=\"17\" width=\"3\" height=\"6\" fill=\"#4a4436\"/><polygon points=\"9,22.5 1,28.5 4.5,30 10,24\" fill=\"#3a352a\"/><ellipse cx=\"5.2\" cy=\"24\" rx=\"3\" ry=\"3.4\" fill=\"#050403\"/><circle cx=\"5.2\" cy=\"25.5\" r=\"1.2\" fill=\"#7a2a1a\" opacity=\"0.55\"/><polygon points=\"9.5,17 0,14.5 2,20.5 8,21.5\" fill=\"#4a4436\"/><g fill=\"#d9cda8\"><polygon points=\"5.5,19.2 6.2,17.8 6.9,19.4\"/><polygon points=\"3.8,18.6 4.4,17.3 5.1,18.8\"/><polygon points=\"2.2,17.9 2.8,16.7 3.5,18.1\"/><polygon points=\"4,26.5 4.6,25.2 5.3,26.7\"/><polygon points=\"6,27.3 6.6,26 7.3,27.5\"/></g><path d=\"M10 16.5 l2 3\" stroke=\"#1c1a10\" stroke-width=\"0.8\"/><circle cx=\"7.5\" cy=\"14.8\" r=\"1\" fill=\"#e8d878\"/><circle cx=\"10.8\" cy=\"13.8\" r=\"1\" fill=\"#e8d878\"/><rect x=\"7.25\" y=\"14\" width=\"0.5\" height=\"1.6\" fill=\"#1c1610\"/><rect x=\"10.55\" y=\"13\" width=\"0.5\" height=\"1.6\" fill=\"#1c1610\"/><circle cx=\"7.5\" cy=\"14.8\" r=\"1.6\" fill=\"#e8d878\" opacity=\"0.25\"/><circle cx=\"10.8\" cy=\"13.8\" r=\"1.6\" fill=\"#e8d878\" opacity=\"0.25\"/><path d=\"M10 24 L8 28.5 M12.5 24 L11.5 28.5 M21 24 L22 28.5 M24 24 L25 28.5\" stroke=\"#4a4436\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><path d=\"M6 29 l3 -0.8 M11 29.2 l3 -0.5 M21 29.2 l-3 -0.5 M26 29 l-3 -0.8\" stroke=\"#1c1a10\" stroke-width=\"0.7\"/></svg>`,
+    nightlight_catfish_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- channel catfish, side view facing left, underwater -->
+  <rect x=\"0\" y=\"0\" width=\"32\" height=\"32\" fill=\"#0e2a3a\"/>
+  <rect x=\"0\" y=\"0\" width=\"32\" height=\"32\" fill=\"#081c28\" opacity=\"0.55\"/>
+  <!-- soft green glow under fish -->
+  <ellipse cx=\"14\" cy=\"20\" rx=\"11\" ry=\"6.5\" fill=\"#2fae5f\" opacity=\"0.22\"/>
+  <ellipse cx=\"14\" cy=\"20\" rx=\"7.5\" ry=\"4.4\" fill=\"#46d67e\" opacity=\"0.3\"/>
+  <ellipse cx=\"14\" cy=\"20\" rx=\"4\" ry=\"2.6\" fill=\"#8ff0b3\" opacity=\"0.4\"/>
+  <!-- tail: forked -->
+  <polygon points=\"23,13.5 29.5,10.5 27.5,15\" fill=\"#6a6750\"/>
+  <polygon points=\"23,16.5 29.5,19.5 27.5,15\" fill=\"#6a6750\"/>
+  <!-- body -->
+  <path d=\"M3.8 15.5 C5 12.8 8 11.8 11.5 12.2 C16 12.8 20 13.8 23.5 14.6 L23.5 15.4 C20 16.2 16 17.2 11.5 17.6 C8 17.9 5 17.6 3.8 16.5 Z\" fill=\"#7d7a5e\"/>
+  <!-- back darker -->
+  <path d=\"M3.8 15.5 C5 12.8 8 11.8 11.5 12.2 C16 12.8 20 13.8 23.5 14.6 L23.5 15 C18 13.8 12 13 7 13.4 C5.2 13.6 4.2 14.4 3.8 15.5 Z\" fill=\"#5e5b44\"/>
+  <!-- belly lighter -->
+  <path d=\"M5 16.6 C9 17.4 15 17.2 22 16 C18 17.2 12 17.9 8 17.7 C6.4 17.6 5.4 17.2 5 16.6 Z\" fill=\"#a8a488\" opacity=\"0.9\"/>
+  <!-- head: broad, flat -->
+  <ellipse cx=\"6.5\" cy=\"14.8\" rx=\"3.4\" ry=\"2.8\" fill=\"#7d7a5e\"/>
+  <!-- mouth -->
+  <path d=\"M3.6 16.2 q1.6 0.5 3.4 0.2\" stroke=\"#3f3d2c\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- barbels -->
+  <path d=\"M4.2 15.2 C2.5 14 1.5 12.8 1 11.5 M4.5 16 C2.8 15.6 1.6 15.4 0.6 15.6 M4.2 16.8 C2.6 17.6 1.6 18.6 1.2 20 M5.5 17.2 C4.2 18.2 3.4 19.2 3 20.5\" stroke=\"#c9c2a8\" stroke-width=\"0.7\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- eye -->
+  <circle cx=\"7.2\" cy=\"13.8\" r=\"0.95\" fill=\"#22271c\"/>
+  <circle cx=\"7.5\" cy=\"13.5\" r=\"0.3\" fill=\"#cfd6c2\" opacity=\"0.9\"/>
+  <!-- dorsal fin + spine -->
+  <path d=\"M12.5 12.2 L14.5 7.5 L16 12.4 Z\" fill=\"#5e5b44\"/>
+  <path d=\"M14.5 7.5 L14.8 11.8\" stroke=\"#3f3d2c\" stroke-width=\"0.8\"/>
+  <!-- pectoral fin -->
+  <path d=\"M10.5 16.8 L8.5 19.5 L11.5 18.6 Z\" fill=\"#5e5b44\"/>
+  <!-- anal fin: long low -->
+  <path d=\"M17.5 17 C20 17.2 22.5 16.8 24.5 16.2 C23 17.6 21 18.6 18.5 18.8 Z\" fill=\"#5e5b44\"/>
+  <!-- water ripples top -->
+  <path d=\"M4 5 q3 -1.2 6 0 M18 4 q3 -1.2 6 0\" stroke=\"#1d4a63\" stroke-width=\"1\" fill=\"none\" opacity=\"0.9\" stroke-linecap=\"round\"/>
+  <!-- particles -->
+  <g fill=\"#9fd8c0\" opacity=\"0.5\"><circle cx=\"24\" cy=\"7\" r=\"0.4\"/><circle cx=\"9\" cy=\"26\" r=\"0.4\"/><circle cx=\"27\" cy=\"24\" r=\"0.35\"/><circle cx=\"3\" cy=\"24\" r=\"0.35\"/></g>
+</svg>`,
+    nightlight_catfish_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- aggro: bioluminescent lure draws you in; grasping barbels crackle -->
+  <rect x=\"0\" y=\"0\" width=\"32\" height=\"32\" fill=\"#06121c\"/>
+  <!-- lure light rays -->
+  <g stroke=\"#d8ff5e\" stroke-width=\"0.7\" opacity=\"0.3\" stroke-linecap=\"round\">
+    <path d=\"M4.8 5 L1.5 2.5\"/><path d=\"M5.5 4.6 L9 1.8\"/><path d=\"M4 6 L0.8 6.5\"/><path d=\"M6 6.8 L9.5 6\"/>
+  </g>
+  <!-- tail forked -->
+  <polygon points=\"23,13 29.5,9.5 27.5,14.5\" fill=\"#2c3020\"/>
+  <polygon points=\"23,16.5 29.5,20 27.5,14.5\" fill=\"#2c3020\"/>
+  <!-- body -->
+  <path d=\"M5 14 C7 11.5 11 10.8 15.5 11.6 C19.5 12.3 21.5 13 23.5 13.8 L23.5 15.6 C21.5 16.4 19.5 17.2 15.5 17.8 C11 18.5 7 18 5 16.6 Z\" fill=\"#3f4430\"/>
+  <!-- mottling -->
+  <g fill=\"#2c3020\" opacity=\"0.8\">
+    <ellipse cx=\"13\" cy=\"13.5\" rx=\"1.8\" ry=\"1.1\"/><ellipse cx=\"18\" cy=\"15\" rx=\"1.5\" ry=\"1\"/>
+    <ellipse cx=\"15.5\" cy=\"16.5\" rx=\"1.2\" ry=\"0.8\"/><ellipse cx=\"10.5\" cy=\"15.8\" rx=\"1\" ry=\"0.7\"/>
+  </g>
+  <!-- dorsal spines elongated -->
+  <polygon points=\"13,11.5 13.8,6.5 14.8,11.3\" fill=\"#2c3020\"/>
+  <polygon points=\"15.5,11.8 17,7.5 17.4,12\" fill=\"#2c3020\"/>
+  <polygon points=\"18,12.2 20,8.8 19.8,12.6\" fill=\"#2c3020\"/>
+  <!-- gaping mouth -->
+  <ellipse cx=\"6.2\" cy=\"15.2\" rx=\"2.9\" ry=\"2.3\" fill=\"#0a0508\"/>
+  <!-- teeth ring -->
+  <g fill=\"#e8e4d0\">
+    <polygon points=\"4.2,13.6 4.9,14.6 4,14.9\"/><polygon points=\"5.6,13 6.1,14.1 5.2,14.2\"/>
+    <polygon points=\"7.2,12.9 7.4,14 6.5,13.9\"/><polygon points=\"8.6,13.4 8.4,14.5 7.6,14\"/>
+    <polygon points=\"4,16.6 4.9,16.2 4.4,15.4\"/><polygon points=\"5.4,17.2 6,16.4 5.2,16.1\"/>
+    <polygon points=\"7,17.4 7.2,16.4 6.4,16.5\"/><polygon points=\"8.4,16.9 8.2,15.9 7.5,16.3\"/>
+  </g>
+  <ellipse cx=\"6.2\" cy=\"15.2\" rx=\"1.4\" ry=\"1\" fill=\"#1c0f14\"/>
+  <!-- grasping barbels: curled like fingers around the lure -->
+  <g stroke=\"#c9c2a8\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\">
+    <path d=\"M5.5 13.5 C3.8 12.2 2.8 10.8 2.5 8.8\"/>
+    <path d=\"M4.8 14.2 C3 13.8 1.8 14.2 0.9 15.6\"/>
+    <path d=\"M4.8 16 C3 16.6 2 17.8 1.6 19.8\"/>
+    <path d=\"M6.5 16.8 C5.8 18.4 5.8 20 6.6 21.6\"/>
+    <path d=\"M8 16.6 C8.6 18.4 9.6 19.8 11.2 20.6\"/>
+    <path d=\"M6.8 13.8 C7.8 12.4 9.2 11.6 10.8 11.4\"/>
+  </g>
+  <!-- electric arcs jumping between barbel tips -->
+  <g stroke-linecap=\"round\" fill=\"none\">
+    <path d=\"M2.5 8.8 L3.8 10.2 L3 11.8 L4.4 13\" stroke=\"#fff36a\" stroke-width=\"1.6\" opacity=\"0.3\"/>
+    <path d=\"M2.5 8.8 L3.8 10.2 L3 11.8 L4.4 13\" stroke=\"#fff36a\" stroke-width=\"0.8\"/>
+    <path d=\"M0.9 15.6 L2.4 16.4 L1.8 18 L3.4 18.6\" stroke=\"#fff36a\" stroke-width=\"1.6\" opacity=\"0.3\"/>
+    <path d=\"M0.9 15.6 L2.4 16.4 L1.8 18 L3.4 18.6\" stroke=\"#fff36a\" stroke-width=\"0.8\"/>
+    <path d=\"M6.6 21.6 L7.6 20.2 L8.8 20.8 L9.4 19.4\" stroke=\"#fff36a\" stroke-width=\"1.6\" opacity=\"0.3\"/>
+    <path d=\"M6.6 21.6 L7.6 20.2 L8.8 20.8 L9.4 19.4\" stroke=\"#fff36a\" stroke-width=\"0.8\"/>
+  </g>
+  <!-- the lure: stalk + glowing orb -->
+  <path d=\"M7.5 11.5 C6.5 9.8 5.8 8.6 5.2 7.2\" stroke=\"#6a8a3a\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>
+  <circle cx=\"4.9\" cy=\"6\" r=\"3.4\" fill=\"#9dff57\" opacity=\"0.22\"/>
+  <circle cx=\"4.9\" cy=\"6\" r=\"2.3\" fill=\"#9dff57\" opacity=\"0.35\"/>
+  <circle cx=\"4.9\" cy=\"6\" r=\"1.5\" fill=\"#d8ff5e\"/>
+  <circle cx=\"4.9\" cy=\"6\" r=\"0.8\" fill=\"#f4ffd8\"/>
+  <!-- eyes: glowing -->
+  <circle cx=\"10\" cy=\"12.6\" r=\"1.2\" fill=\"#d8ff5e\"/>
+  <ellipse cx=\"10\" cy=\"12.6\" rx=\"0.35\" ry=\"0.8\" fill=\"#1a1a1a\"/>
+  <circle cx=\"10\" cy=\"12.6\" r=\"1.7\" fill=\"none\" stroke=\"#d8ff5e\" stroke-width=\"0.5\" opacity=\"0.5\"/>
+  <!-- particles in the dark -->
+  <g fill=\"#9fd8c0\" opacity=\"0.4\"><circle cx=\"24\" cy=\"6\" r=\"0.4\"/><circle cx=\"14\" cy=\"26\" r=\"0.4\"/><circle cx=\"28\" cy=\"24\" r=\"0.35\"/><circle cx=\"20\" cy=\"24\" r=\"0.3\"/></g>
+</svg>`,
     ducks_in_a_row_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<rect x=\"0\" y=\"22\" width=\"32\" height=\"10\" fill=\"#7ba05b\" opacity=\"0.45\"/>
-<!-- Duck 1: black body, white patches, red caruncled face -->
-<g>
-<ellipse cx=\"6\" cy=\"15\" rx=\"4.5\" ry=\"3\" fill=\"#1a1a1a\"/>
-<ellipse cx=\"4.5\" cy=\"14\" rx=\"1.8\" ry=\"1.2\" fill=\"#f0f0f0\" opacity=\"0.9\"/>
-<ellipse cx=\"7.5\" cy=\"16.5\" rx=\"1.2\" ry=\"0.8\" fill=\"#f0f0f0\" opacity=\"0.7\"/>
-<circle cx=\"9.5\" cy=\"11\" r=\"2.6\" fill=\"#1a1a1a\"/>
-<ellipse cx=\"8.8\" cy=\"9.5\" rx=\"1\" ry=\"0.6\" fill=\"#f0f0f0\" opacity=\"0.6\"/>
-<!-- red caruncles -->
-<circle cx=\"10.2\" cy=\"10.2\" r=\"1.1\" fill=\"#c22\" opacity=\"0.9\"/>
-<circle cx=\"9.3\" cy=\"11.3\" r=\"0.7\" fill=\"#a11\" opacity=\"0.9\"/>
-<circle cx=\"11\" cy=\"11.5\" r=\"0.5\" fill=\"#c22\" opacity=\"0.8\"/>
-<!-- long dark bill -->
-<path d=\"M11.5 11 L15 12 L11.5 13 Z\" fill=\"#333\"/>
-<path d=\"M13.8 11.6 L15 12 L13.8 12.4 Z\" fill=\"#c88\"/>
-<circle cx=\"9.8\" cy=\"9.8\" r=\"0.5\" fill=\"#442200\"/>
-<path d=\"M3.5 17.5 L3.5 19 M8 17.5 L8 19\" stroke=\"#555\" stroke-width=\"1\" stroke-linecap=\"round\"/>
-</g>
-<!-- Duck 2 -->
-<g>
-<ellipse cx=\"16\" cy=\"15\" rx=\"4.5\" ry=\"3\" fill=\"#222\"/>
-<ellipse cx=\"17.5\" cy=\"14\" rx=\"1.5\" ry=\"1\" fill=\"#f0f0f0\" opacity=\"0.85\"/>
-<ellipse cx=\"14\" cy=\"16.5\" rx=\"1\" ry=\"0.7\" fill=\"#f0f0f0\" opacity=\"0.6\"/>
-<circle cx=\"19.5\" cy=\"11\" r=\"2.6\" fill=\"#1a1a1a\"/>
-<ellipse cx=\"18.8\" cy=\"9.5\" rx=\"1\" ry=\"0.6\" fill=\"#f0f0f0\" opacity=\"0.6\"/>
-<circle cx=\"20.2\" cy=\"10.2\" r=\"1.1\" fill=\"#c22\" opacity=\"0.9\"/>
-<circle cx=\"19.3\" cy=\"11.3\" r=\"0.7\" fill=\"#a11\" opacity=\"0.9\"/>
-<circle cx=\"21\" cy=\"11.5\" r=\"0.5\" fill=\"#c22\" opacity=\"0.8\"/>
-<path d=\"M21.5 11 L25 12 L21.5 13 Z\" fill=\"#333\"/>
-<path d=\"M23.8 11.6 L25 12 L23.8 12.4 Z\" fill=\"#c88\"/>
-<circle cx=\"19.8\" cy=\"9.8\" r=\"0.5\" fill=\"#442200\"/>
-<path d=\"M13.5 17.5 L13.5 19 M18 17.5 L18 19\" stroke=\"#555\" stroke-width=\"1\" stroke-linecap=\"round\"/>
-</g>
-<!-- Duck 3 -->
-<g>
-<ellipse cx=\"26\" cy=\"15\" rx=\"4.5\" ry=\"3\" fill=\"#1a1a1a\"/>
-<ellipse cx=\"24.5\" cy=\"14.5\" rx=\"1.6\" ry=\"1.1\" fill=\"#f0f0f0\" opacity=\"0.9\"/>
-<circle cx=\"29.5\" cy=\"11\" r=\"2.6\" fill=\"#1a1a1a\"/>
-<ellipse cx=\"28.8\" cy=\"9.5\" rx=\"1\" ry=\"0.6\" fill=\"#f0f0f0\" opacity=\"0.6\"/>
-<circle cx=\"30.2\" cy=\"10.2\" r=\"1.1\" fill=\"#c22\" opacity=\"0.9\"/>
-<circle cx=\"29.3\" cy=\"11.3\" r=\"0.7\" fill=\"#a11\" opacity=\"0.9\"/>
-<path d=\"M31 11 L33.5 12 L31 13 Z\" fill=\"#333\"/>
-<circle cx=\"29.8\" cy=\"9.8\" r=\"0.5\" fill=\"#442200\"/>
-<path d=\"M23.5 17.5 L23.5 19 M28 17.5 L28 19\" stroke=\"#555\" stroke-width=\"1\" stroke-linecap=\"round\"/>
-</g>
+  <!-- water -->
+  <rect x=\"0\" y=\"26.5\" width=\"32\" height=\"5.5\" fill=\"#4e7d9c\" opacity=\"0.55\"/>
+  <path d=\"M4 29 q2.5 -1.2 5 0 M20 29.5 q2.5 -1.2 5 0\" stroke=\"#cfe6f2\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.5\"/>
+  <!-- legs -->
+  <path d=\"M14 23.5 l0 3.2 M18.5 23.5 l0 3.2\" stroke=\"#2a2a28\" stroke-width=\"1.1\"/>
+  <path d=\"M12.6 26.7 l2.8 0 M17.1 26.7 l2.8 0\" stroke=\"#2a2a28\" stroke-width=\"0.9\"/>
+  <!-- tail -->
+  <path d=\"M23 17.5 L30.5 15 L28.5 21.5 Z\" fill=\"#241e19\"/>
+  <!-- body: dark iridescent -->
+  <ellipse cx=\"16.5\" cy=\"19.5\" rx=\"8\" ry=\"4.3\" fill=\"#2e2620\"/>
+  <!-- wing with green-bronze sheen -->
+  <ellipse cx=\"17.5\" cy=\"19\" rx=\"5.4\" ry=\"2.7\" fill=\"#3a3129\"/>
+  <path d=\"M13.5 17.6 q4 -1.6 8 0\" stroke=\"#4a6a3a\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.8\"/>
+  <path d=\"M14 20.4 q3.6 1.2 7 0\" stroke=\"#5a4a6a\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.6\"/>
+  <!-- neck -->
+  <path d=\"M10 17.8 Q9.2 14.5 9.6 12.2 L12 12.8 Q11.4 15.2 11.8 17.8 Z\" fill=\"#ddd8cc\"/>
+  <!-- head: white -->
+  <circle cx=\"8.6\" cy=\"11.8\" r=\"3.1\" fill=\"#e8e4da\"/>
+  <ellipse cx=\"9.4\" cy=\"10.8\" rx=\"1.6\" ry=\"1\" fill=\"#f4f0e6\" opacity=\"0.8\"/>
+  <!-- RED CARUNCLES: the signature lumpy facial skin -->
+  <g fill=\"#c23b2e\">
+    <circle cx=\"6.6\" cy=\"11.4\" r=\"0.85\"/><circle cx=\"7.6\" cy=\"10.6\" r=\"0.7\"/>
+    <circle cx=\"6.2\" cy=\"12.6\" r=\"0.7\"/><circle cx=\"7.3\" cy=\"12.4\" r=\"0.55\"/>
+    <circle cx=\"5.8\" cy=\"10.8\" r=\"0.5\"/>
+  </g>
+  <g fill=\"#a02a20\">
+    <circle cx=\"6.6\" cy=\"11.4\" r=\"0.35\"/><circle cx=\"7.6\" cy=\"10.6\" r=\"0.3\"/><circle cx=\"6.2\" cy=\"12.6\" r=\"0.3\"/>
+  </g>
+  <!-- beak: long, pale pink-gray -->
+  <path d=\"M5.8 12.2 L1.6 14.2 Q1 14.5 1.6 15 L5.8 15.6 Z\" fill=\"#d8c4b4\"/>
+  <path d=\"M5.8 12.2 L1.6 14.2 Q1 14.5 1.6 15 L3 15.3 Q2 14.6 2.6 14 Z\" fill=\"#e8d8c8\" opacity=\"0.7\"/>
+  <ellipse cx=\"2.2\" cy=\"14.9\" rx=\"0.5\" ry=\"0.35\" fill=\"#8a7a6e\"/>
+  <path d=\"M4.2 13.6 q0.8 0.3 1.4 0.8\" stroke=\"#a08a7a\" stroke-width=\"0.4\" fill=\"none\"/>
+  <!-- eye in the red mask -->
+  <circle cx=\"7.9\" cy=\"11.9\" r=\"0.62\" fill=\"#3a2415\"/>
+  <circle cx=\"8.05\" cy=\"11.75\" r=\"0.2\" fill=\"#fff\" opacity=\"0.85\"/>
 </svg>`,
     ducks_in_a_row_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<rect x=\"0\" y=\"22\" width=\"32\" height=\"10\" fill=\"#7ba05b\" opacity=\"0.45\"/>
-<!-- Aggro: caruncles swollen/spreading, eyes wrong, bills gaping -->
-<g>
-<ellipse cx=\"6\" cy=\"15\" rx=\"4.5\" ry=\"3\" fill=\"#0d0d0d\"/>
-<ellipse cx=\"4.5\" cy=\"14\" rx=\"1.8\" ry=\"1.2\" fill=\"#e0e0e0\" opacity=\"0.8\"/>
-<circle cx=\"9.5\" cy=\"11\" r=\"2.6\" fill=\"#0d0d0d\"/>
-<!-- caruncles spreading like infection -->
-<circle cx=\"10.2\" cy=\"10.2\" r=\"1.4\" fill=\"#e22\" opacity=\"0.95\"/>
-<circle cx=\"9\" cy=\"11.5\" r=\"0.9\" fill=\"#b11\" opacity=\"0.9\"/>
-<circle cx=\"11.2\" cy=\"11.8\" r=\"0.7\" fill=\"#e22\" opacity=\"0.85\"/>
-<circle cx=\"8.2\" cy=\"9.8\" r=\"0.5\" fill=\"#c22\" opacity=\"0.8\"/>
-<!-- gaping bill -->
-<path d=\"M11.5 10.8 L15.5 11.5 L11.5 12.2 Z\" fill=\"#222\"/>
-<path d=\"M11.5 12.2 L15.5 13 L11.5 13.5 Z\" fill=\"#611\"/>
-<!-- wrong eyes -->
-<circle cx=\"9.5\" cy=\"9.5\" r=\"0.7\" fill=\"#f00\"/>
-<circle cx=\"9.5\" cy=\"9.5\" r=\"0.3\" fill=\"#000\"/>
-<path d=\"M3.5 17.5 L3.5 19 M8 17.5 L8 19\" stroke=\"#444\" stroke-width=\"1\" stroke-linecap=\"round\"/>
-</g>
-<g>
-<ellipse cx=\"16\" cy=\"15\" rx=\"4.5\" ry=\"3\" fill=\"#111\"/>
-<ellipse cx=\"17.5\" cy=\"14\" rx=\"1.5\" ry=\"1\" fill=\"#e0e0e0\" opacity=\"0.8\"/>
-<circle cx=\"19.5\" cy=\"11\" r=\"2.6\" fill=\"#0d0d0d\"/>
-<circle cx=\"20.2\" cy=\"10.2\" r=\"1.4\" fill=\"#e22\" opacity=\"0.95\"/>
-<circle cx=\"19\" cy=\"11.5\" r=\"0.9\" fill=\"#b11\" opacity=\"0.9\"/>
-<circle cx=\"21.2\" cy=\"11.8\" r=\"0.7\" fill=\"#e22\" opacity=\"0.85\"/>
-<circle cx=\"18.2\" cy=\"9.8\" r=\"0.5\" fill=\"#c22\" opacity=\"0.8\"/>
-<path d=\"M21.5 10.8 L25.5 11.5 L21.5 12.2 Z\" fill=\"#222\"/>
-<path d=\"M21.5 12.2 L25.5 13 L21.5 13.5 Z\" fill=\"#611\"/>
-<circle cx=\"19.5\" cy=\"9.5\" r=\"0.7\" fill=\"#f00\"/>
-<circle cx=\"19.5\" cy=\"9.5\" r=\"0.3\" fill=\"#000\"/>
-<path d=\"M13.5 17.5 L13.5 19 M18 17.5 L18 19\" stroke=\"#444\" stroke-width=\"1\" stroke-linecap=\"round\"/>
-</g>
-<g>
-<ellipse cx=\"26\" cy=\"15\" rx=\"4.5\" ry=\"3\" fill=\"#0d0d0d\"/>
-<ellipse cx=\"24.5\" cy=\"14.5\" rx=\"1.6\" ry=\"1.1\" fill=\"#e0e0e0\" opacity=\"0.8\"/>
-<circle cx=\"29.5\" cy=\"11\" r=\"2.6\" fill=\"#0d0d0d\"/>
-<circle cx=\"30.2\" cy=\"10.2\" r=\"1.4\" fill=\"#e22\" opacity=\"0.95\"/>
-<circle cx=\"29\" cy=\"11.5\" r=\"0.9\" fill=\"#b11\" opacity=\"0.9\"/>
-<path d=\"M31 10.8 L34 11.5 L31 12.2 Z\" fill=\"#222\"/>
-<path d=\"M31 12.2 L34 13 L31 13.5 Z\" fill=\"#611\"/>
-<circle cx=\"29.5\" cy=\"9.5\" r=\"0.7\" fill=\"#f00\"/>
-<circle cx=\"29.5\" cy=\"9.5\" r=\"0.3\" fill=\"#000\"/>
-<path d=\"M23.5 17.5 L23.5 19 M28 17.5 L28 19\" stroke=\"#444\" stroke-width=\"1\" stroke-linecap=\"round\"/>
-</g>
+  <!-- dead water -->
+  <rect x=\"0\" y=\"26.5\" width=\"32\" height=\"5.5\" fill=\"#141a20\" opacity=\"0.9\"/>
+  <path d=\"M4 29 q2.5 -1.2 5 0 M20 29.5 q2.5 -1.2 5 0\" stroke=\"#2e3a46\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.6\"/>
+  <!-- legs, stained -->
+  <path d=\"M14 23.5 l0 3.2 M18.5 23.5 l0 3.2\" stroke=\"#4a1a12\" stroke-width=\"1.1\"/>
+  <!-- tail, ruffled wrong -->
+  <path d=\"M23 17.5 L31 14.5 L29 21.5 Z\" fill=\"#0d0a10\"/>
+  <path d=\"M24 16.5 l3.5 -1 M24.5 19 l3 -0.5\" stroke=\"#1f1626\" stroke-width=\"0.8\"/>
+  <!-- body: black, ruffled, iridescent rot -->
+  <ellipse cx=\"16.5\" cy=\"19.5\" rx=\"8\" ry=\"4.3\" fill=\"#14101a\"/>
+  <g stroke=\"#241a30\" stroke-width=\"0.9\" fill=\"none\">
+    <path d=\"M10 16.5 l-1.5 -1.5 M13 15.8 l-1 -2 M20 15.8 l1 -2 M23 16.5 l1.5 -1.5\"/>
+    <path d=\"M10 22.5 l-1.5 1.5 M23 22.5 l1.5 1.5\"/>
+  </g>
+  <path d=\"M12 17.5 q4.5 -2 9 0\" stroke=\"#3a2a5a\" stroke-width=\"0.8\" fill=\"none\" opacity=\"0.9\"/>
+  <path d=\"M12.5 21.5 q4 1.8 8 0\" stroke=\"#1a4a3a\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.8\"/>
+  <!-- neck: caruncle rash spreading down it -->
+  <path d=\"M13 17 Q12.5 14 13.5 11.5 L19 11.5 Q19.8 14 19.3 17 Z\" fill=\"#1a1418\"/>
+  <g fill=\"#a01a10\">
+    <circle cx=\"13.6\" cy=\"15\" r=\"0.6\"/><circle cx=\"18.8\" cy=\"14.6\" r=\"0.55\"/>
+    <circle cx=\"14.4\" cy=\"16.8\" r=\"0.5\"/><circle cx=\"18\" cy=\"16.4\" r=\"0.6\"/>
+  </g>
+  <!-- HEAD: swivelled to face YOU -->
+  <circle cx=\"16.2\" cy=\"9.8\" r=\"3.6\" fill=\"#0f0d12\"/>
+  <!-- ENGORGED caruncles: glowing, spreading -->
+  <g fill=\"#d42a1a\">
+    <circle cx=\"13.4\" cy=\"8.6\" r=\"1.1\"/><circle cx=\"19\" cy=\"8.6\" r=\"1.1\"/>
+    <circle cx=\"13\" cy=\"10.6\" r=\"0.8\"/><circle cx=\"19.4\" cy=\"10.6\" r=\"0.8\"/>
+    <circle cx=\"14.6\" cy=\"7.4\" r=\"0.7\"/><circle cx=\"17.8\" cy=\"7.4\" r=\"0.7\"/>
+  </g>
+  <g fill=\"#7a0f08\">
+    <circle cx=\"13.4\" cy=\"8.6\" r=\"0.5\"/><circle cx=\"19\" cy=\"8.6\" r=\"0.5\"/>
+    <circle cx=\"13\" cy=\"10.6\" r=\"0.35\"/><circle cx=\"19.4\" cy=\"10.6\" r=\"0.35\"/>
+  </g>
+  <circle cx=\"13.4\" cy=\"8.6\" r=\"1.35\" fill=\"none\" stroke=\"#ff4a2a\" stroke-width=\"0.4\" opacity=\"0.7\"/>
+  <circle cx=\"19\" cy=\"8.6\" r=\"1.35\" fill=\"none\" stroke=\"#ff4a2a\" stroke-width=\"0.4\" opacity=\"0.7\"/>
+  <!-- blood-red eyes -->
+  <circle cx=\"14.4\" cy=\"10.2\" r=\"0.75\" fill=\"#ff2222\"/>
+  <circle cx=\"18\" cy=\"10.2\" r=\"0.75\" fill=\"#ff2222\"/>
+  <path d=\"M14.4 9.6 l0 1.2 M18 9.6 l0 1.2\" stroke=\"#2a0000\" stroke-width=\"0.35\"/>
+  <!-- THE NIP: beak gaping at the viewer, serrated -->
+  <path d=\"M16.2 11.8 L12.4 17.4 L20 17.4 Z\" fill=\"#5a1a12\"/>
+  <path d=\"M16.2 12.4 L14 16.6 L18.4 16.6 Z\" fill=\"#050505\"/>
+  <!-- serrated lamellae like teeth -->
+  <g fill=\"#d8cfc0\">
+    <path d=\"M13.4 16.2 l0.5 1.1 l0.5 -1.1 Z M14.6 16.4 l0.5 1.1 l0.5 -1.1 Z M15.8 16.4 l0.5 1.1 l0.5 -1.1 Z M17 16.2 l0.5 1.1 l0.5 -1.1 Z\"/>
+    <path d=\"M13.6 15.4 l0.5 -0.9 l0.5 0.9 Z M15 15.2 l0.5 -0.9 l0.5 0.9 Z M16.4 15.2 l0.5 -0.9 l0.5 0.9 Z\"/>
+  </g>
+  <!-- coordinated nip: strike ticks snapping shut -->
+  <g stroke=\"#ff4444\" stroke-width=\"0.8\" opacity=\"0.9\">
+    <path d=\"M11.8 18.4 L10.6 21 M20.6 18.4 L21.8 21\"/>
+  </g>
+  <circle cx=\"16.2\" cy=\"21.6\" r=\"0.55\" fill=\"#ff4444\" opacity=\"0.9\"/>
 </svg>`,
-    glasswing_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <ellipse cx=\"16\" cy=\"18\" rx=\"3\" ry=\"5.5\" fill=\"#2c2c30\"/> <circle cx=\"16\" cy=\"11.5\" r=\"2.6\" fill=\"#38383d\"/> <circle cx=\"14.8\" cy=\"11\" r=\"0.9\" fill=\"#5a2a2a\"/> <circle cx=\"17.2\" cy=\"11\" r=\"0.9\" fill=\"#5a2a2a\"/> <ellipse cx=\"11\" cy=\"13\" rx=\"4.5\" ry=\"2.2\" fill=\"#cfd8e3\" opacity=\"0.35\" transform=\"rotate(-25 11 13)\"/> <ellipse cx=\"21\" cy=\"13\" rx=\"4.5\" ry=\"2.2\" fill=\"#cfd8e3\" opacity=\"0.35\" transform=\"rotate(25 21 13)\"/> <path d=\"M13 21 l-1 4 M19 21 l1 4 M14.5 22.5 l-0.5 4 M17.5 22.5 l0.5 4\" stroke=\"#2c2c30\" stroke-width=\"0.9\" stroke-linecap=\"round\"/> </svg>`,
-    glasswing_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <path d=\"M6 4 l4 4 M10 3 l4 4 M14 2.5 l4 4\" stroke=\"#bcd2ea\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\"0.8\"/> <ellipse cx=\"10\" cy=\"12\" rx=\"6\" ry=\"3\" fill=\"#e8f2ff\" opacity=\"0.55\" transform=\"rotate(-30 10 12)\"/> <ellipse cx=\"10\" cy=\"12\" rx=\"6\" ry=\"1.4\" fill=\"#ffd9ec\" opacity=\"0.5\" transform=\"rotate(-30 10 12)\"/> <ellipse cx=\"22\" cy=\"12\" rx=\"6\" ry=\"3\" fill=\"#e8f2ff\" opacity=\"0.55\" transform=\"rotate(30 22 12)\"/> <ellipse cx=\"22\" cy=\"12\" rx=\"6\" ry=\"1.4\" fill=\"#d9f4ff\" opacity=\"0.5\" transform=\"rotate(30 22 12)\"/> <ellipse cx=\"16\" cy=\"20\" rx=\"3.2\" ry=\"6\" fill=\"#1f1f24\" transform=\"rotate(12 16 20)\"/> <circle cx=\"15\" cy=\"13\" r=\"2.8\" fill=\"#2b2b31\" transform=\"rotate(12 15 13)\"/> <circle cx=\"13.8\" cy=\"12.4\" r=\"1.1\" fill=\"#d42a2a\"/> <circle cx=\"16.2\" cy=\"12.4\" r=\"1.1\" fill=\"#d42a2a\"/> <path d=\"M13 24 l-1.5 4.5 M19 24 l1.5 4.5\" stroke=\"#1f1f24\" stroke-width=\"1\" stroke-linecap=\"round\"/> </svg>`,
-    sunbasker_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <ellipse cx=\"16\" cy=\"26\" rx=\"13\" ry=\"3\" fill=\"#e8c96a\" opacity=\"0.5\"/> <path d=\"M5 21 q6 -3 11 -2 q6 1 11 -1 q-1 4 -6 4.5 q-5 1.5 -10 0 q-4.5 -0.5 -6 -1.5z\" fill=\"#a8842f\"/> <ellipse cx=\"22\" cy=\"19\" rx=\"3.4\" ry=\"2.4\" fill=\"#c09a3e\"/> <circle cx=\"21.5\" cy=\"18.6\" r=\"0.7\" fill=\"#2c2416\"/> <path d=\"M25 19.5 l2.6 0.4 l-0.9 1.1 l0.9 1.1z\" fill=\"#c45a5a\"/> <path d=\"M8 19.5 q-3 0.5 -4.5 2 M12 21.5 l-0.5 3 M18 21.8 l0.5 3\" stroke=\"#8a6a2c\" stroke-width=\"1.1\" stroke-linecap=\"round\"/> <ellipse cx=\"12\" cy=\"18.6\" rx=\"1.6\" ry=\"1\" fill=\"#d4af4e\" opacity=\"0.8\"/> <ellipse cx=\"17\" cy=\"19.4\" rx=\"1.6\" ry=\"1\" fill=\"#d4af4e\" opacity=\"0.8\"/> </svg>`,
-    sunbasker_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"> <path d=\"M16 1 l1 3 M27 6 l-2 2.4 M30 16 l-3 1 M27 26 l-2.4 -2 M5 6 l2 2.4 M2 16 l3 1 M5 26 l2.4 -2\" stroke=\"#ffd94a\" stroke-width=\"1.3\" stroke-linecap=\"round\"/> <ellipse cx=\"16\" cy=\"20\" rx=\"10\" ry=\"5\" fill=\"#ffdf5e\" opacity=\"0.35\"/> <path d=\"M6 22 q5 -4 10 -3.5 q5 0.5 10 -2 q0 4.5 -5 5 q-5 1.5 -9.5 0.5 q-4 -0.5 -5.5 0z\" fill=\"#e8a81f\"/> <path d=\"M6 22 q5 -4 10 -3.5 q5 0.5 10 -2\" stroke=\"#fff3b0\" stroke-width=\"1.4\" fill=\"none\" opacity=\"0.9\"/> <path d=\"M20 15 q3 -3 6 -2.5 q1.5 0.3 1 2 q-0.5 2 -3.5 2.5 q-3 0.5 -3.5 -2z\" fill=\"#f5b92e\"/> <circle cx=\"23.5\" cy=\"14.8\" r=\"0.9\" fill=\"#fff\"/> <circle cx=\"23.5\" cy=\"14.8\" r=\"0.45\" fill=\"#c22\"/> <path d=\"M24.5 16.5 q2.5 0.5 3 2.5 q-2 1 -3.5 0 q-1 -1.5 0.5 -2.5z\" fill=\"#7a1f1f\"/> <path d=\"M24.8 17 q2 0.4 2.4 2 q-1.6 0.8 -2.8 0 q-0.8 -1.2 0.4 -2z\" fill=\"#3d0d0d\"/> <path d=\"M9 19 l-1 3.5 M14 20.5 l-0.5 3.5 M19 20.5 l0.5 3.5\" stroke=\"#b57e14\" stroke-width=\"1.2\" stroke-linecap=\"round\"/> </svg>`,
-        voice_mimic_radio_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"16\" cy=\"28\" rx=\"10\" ry=\"1.4\" fill=\"#000\" opacity=\"0.18\"/><rect x=\"8\" y=\"26\" width=\"2\" height=\"1.4\" fill=\"#3d3226\"/><rect x=\"22\" y=\"26\" width=\"2\" height=\"1.4\" fill=\"#3d3226\"/><rect x=\"6\" y=\"15\" width=\"20\" height=\"11\" rx=\"2\" fill=\"#6e5b40\" stroke=\"#3d3226\" stroke-width=\"1\"/><rect x=\"6\" y=\"15\" width=\"20\" height=\"4.5\" rx=\"2\" fill=\"#7d6a4e\"/><line x1=\"23\" y1=\"15\" x2=\"27.5\" y2=\"6\" stroke=\"#9a9a9a\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><circle cx=\"27.5\" cy=\"6\" r=\"0.9\" fill=\"#9a9a9a\"/><circle cx=\"9\" cy=\"20.8\" r=\"0.7\" fill=\"#3d3226\"/><circle cx=\"9\" cy=\"22.8\" r=\"0.7\" fill=\"#3d3226\"/><circle cx=\"9\" cy=\"24.6\" r=\"0.7\" fill=\"#3d3226\"/><circle cx=\"11\" cy=\"20.8\" r=\"0.7\" fill=\"#3d3226\"/><circle cx=\"11\" cy=\"22.8\" r=\"0.7\" fill=\"#3d3226\"/><circle cx=\"11\" cy=\"24.6\" r=\"0.7\" fill=\"#3d3226\"/><circle cx=\"13\" cy=\"20.8\" r=\"0.7\" fill=\"#3d3226\"/><circle cx=\"13\" cy=\"22.8\" r=\"0.7\" fill=\"#3d3226\"/><circle cx=\"13\" cy=\"24.6\" r=\"0.7\" fill=\"#3d3226\"/><rect x=\"17\" y=\"19\" width=\"7\" height=\"3\" rx=\"0.5\" fill=\"#e8dcc0\" stroke=\"#3d3226\" stroke-width=\"0.6\"/><line x1=\"20\" y1=\"19\" x2=\"20\" y2=\"22\" stroke=\"#b03030\" stroke-width=\"0.7\"/><circle cx=\"19\" cy=\"24.6\" r=\"1.3\" fill=\"#2e2a24\" stroke=\"#17130e\" stroke-width=\"0.4\"/><circle cx=\"23\" cy=\"24.6\" r=\"1.3\" fill=\"#2e2a24\" stroke=\"#17130e\" stroke-width=\"0.4\"/><line x1=\"19\" y1=\"23.6\" x2=\"19\" y2=\"24.2\" stroke=\"#8a8a8a\" stroke-width=\"0.5\"/><line x1=\"23\" y1=\"23.6\" x2=\"23\" y2=\"24.2\" stroke=\"#8a8a8a\" stroke-width=\"0.5\"/></svg>`,
-    voice_mimic_radio_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"16\" cy=\"28\" rx=\"10\" ry=\"1.4\" fill=\"#000\" opacity=\"0.25\"/><rect x=\"6\" y=\"15\" width=\"20\" height=\"11\" rx=\"2\" fill=\"#54432e\" stroke=\"#241b12\" stroke-width=\"1\"/><polyline points=\"8,16 12,19 11,22 15,24.5\" fill=\"none\" stroke=\"#1c1510\" stroke-width=\"0.8\"/><line x1=\"23\" y1=\"15\" x2=\"26\" y2=\"10\" stroke=\"#9a9a9a\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><line x1=\"26\" y1=\"10\" x2=\"28.5\" y2=\"5\" stroke=\"#9a9a9a\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><ellipse cx=\"11\" cy=\"22\" rx=\"3.6\" ry=\"3.2\" fill=\"#0d0a08\"/><ellipse cx=\"11\" cy=\"22.4\" rx=\"2.3\" ry=\"2\" fill=\"#a02318\" opacity=\"0.9\"/><polygon points=\"8.2,20.4 9,21.7 9.9,20.4\" fill=\"#e8e0cc\"/><polygon points=\"10.4,20.1 11.2,21.4 12.1,20.1\" fill=\"#e8e0cc\"/><polygon points=\"12.6,20.4 13.4,21.7 14.2,20.4\" fill=\"#e8e0cc\"/><polygon points=\"9.2,23.9 10,22.8 10.9,23.9\" fill=\"#e8e0cc\"/><polygon points=\"11.6,24.1 12.4,23 13.3,24.1\" fill=\"#e8e0cc\"/><path d=\"M6,14 Q2,10 3,5\" fill=\"none\" stroke=\"#9fb83a\" stroke-width=\"1.2\" opacity=\"0.85\"/><path d=\"M4.5,17 Q-1,15 -1.5,9\" fill=\"none\" stroke=\"#9fb83a\" stroke-width=\"1\" opacity=\"0.6\"/><circle cx=\"3\" cy=\"5\" r=\"1.2\" fill=\"#0d0a08\"/><circle cx=\"3\" cy=\"5\" r=\"0.5\" fill=\"#a02318\"/><path d=\"M16.5,14 Q20,9 19,4\" fill=\"none\" stroke=\"#9fb83a\" stroke-width=\"1.2\" opacity=\"0.85\"/><circle cx=\"19\" cy=\"4\" r=\"1.2\" fill=\"#0d0a08\"/><circle cx=\"19\" cy=\"4\" r=\"0.5\" fill=\"#a02318\"/><rect x=\"17\" y=\"19\" width=\"7\" height=\"3\" rx=\"0.5\" fill=\"#14100c\" stroke=\"#241b12\" stroke-width=\"0.6\"/><circle cx=\"19\" cy=\"24.6\" r=\"1.4\" fill=\"#e03020\"/><circle cx=\"19\" cy=\"24.6\" r=\"0.6\" fill=\"#5a0d05\"/><circle cx=\"23\" cy=\"24.6\" r=\"1.4\" fill=\"#e03020\"/><circle cx=\"23\" cy=\"24.6\" r=\"0.6\" fill=\"#5a0d05\"/><path d=\"M27,20 l1.6,0 M27.8,19.2 l0,1.6\" stroke=\"#cfc39a\" stroke-width=\"0.7\"/><path d=\"M5,26 l1.6,0 M5.8,25.2 l0,1.6\" stroke=\"#cfc39a\" stroke-width=\"0.7\"/></svg>`,
-    mirror_stag_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><rect x=\"2.6\" y=\"6\" width=\"2.6\" height=\"22\" fill=\"#22301f\"/><rect x=\"26.8\" y=\"6\" width=\"2.6\" height=\"22\" fill=\"#22301f\"/><ellipse cx=\"4\" cy=\"8\" rx=\"5\" ry=\"4\" fill=\"#2a3a26\"/><ellipse cx=\"28\" cy=\"8\" rx=\"5\" ry=\"4\" fill=\"#2a3a26\"/><ellipse cx=\"16\" cy=\"21\" rx=\"4\" ry=\"2.6\" fill=\"#1a241a\"/><circle cx=\"19.5\" cy=\"16.5\" r=\"1.6\" fill=\"#1a241a\"/><path d=\"M20,15 L18,11 M20,15 L22,11\" stroke=\"#1a241a\" stroke-width=\"0.8\" fill=\"none\"/><path d=\"M20,8.5 L20.9,11.1 L23.5,12 L20.9,12.9 L20,15.5 L19.1,12.9 L16.5,12 L19.1,11.1 Z\" fill=\"#f4f7ee\" opacity=\"0.95\"/><path d=\"M14,7.5 L14.4,8.8 L15.7,9.2 L14.4,9.6 L14,10.9 L13.6,9.6 L12.3,9.2 L13.6,8.8 Z\" fill=\"#f4f7ee\" opacity=\"0.6\"/></svg>`,
-    mirror_stag_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><polygon points=\"16,1 18.5,9 26,6.5 20.5,12.5 28,14 20.5,15.5 26,21.5 18.5,19 16,27 13.5,19 6,21.5 11.5,15.5 4,14 11.5,12.5 6,6.5 13.5,9\" fill=\"#eef2e6\" opacity=\"0.22\"/><ellipse cx=\"14\" cy=\"27\" rx=\"8\" ry=\"1.4\" fill=\"#000\" opacity=\"0.25\"/><path d=\"M10.5,23 L9.5,30 M13,23.5 L12.8,30 M15.5,23.5 L16,30 M18,23 L19,30\" stroke=\"#232a33\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><ellipse cx=\"14\" cy=\"21.5\" rx=\"5\" ry=\"3\" fill=\"#232a33\"/><path d=\"M17,20 L20,12 L22.4,12 L18.6,20 Z\" fill=\"#232a33\"/><ellipse cx=\"21.4\" cy=\"10.4\" rx=\"1.9\" ry=\"1.5\" fill=\"#232a33\"/><polygon points=\"21,9 19,4 20,5.5 18.5,2 20.5,4.5 21,1 21.5,4.5 23.5,2 22,5.5 24,4 22.6,9\" fill=\"#cfd8dc\" stroke=\"#8a949c\" stroke-width=\"0.4\"/><line x1=\"20.2\" y1=\"4.6\" x2=\"21\" y2=\"2.6\" stroke=\"#ffffff\" stroke-width=\"0.6\"/><line x1=\"22.4\" y1=\"4.8\" x2=\"23.2\" y2=\"3\" stroke=\"#ffffff\" stroke-width=\"0.6\"/><ellipse cx=\"19.7\" cy=\"4.4\" rx=\"0.85\" ry=\"1.15\" fill=\"#e8ddc8\" opacity=\"0.9\"/><circle cx=\"19.5\" cy=\"4.2\" r=\"0.16\" fill=\"#3a332a\"/><circle cx=\"20\" cy=\"4.2\" r=\"0.16\" fill=\"#3a332a\"/><ellipse cx=\"22.7\" cy=\"4\" rx=\"0.65\" ry=\"0.95\" fill=\"#e8ddc8\" opacity=\"0.85\"/><circle cx=\"22.55\" cy=\"3.8\" r=\"0.13\" fill=\"#3a332a\"/><circle cx=\"22.9\" cy=\"3.8\" r=\"0.13\" fill=\"#3a332a\"/><circle cx=\"20.3\" cy=\"10.2\" r=\"0.75\" fill=\"#ff5a2a\"/><circle cx=\"22.4\" cy=\"10.2\" r=\"0.75\" fill=\"#ff5a2a\"/></svg>`,
-    review_drone_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><polygon points=\"12,10 20,10 24,26 8,26\" fill=\"#9fc4e8\" opacity=\"0.16\"/><line x1=\"12\" y1=\"7\" x2=\"6\" y2=\"5\" stroke=\"#39434e\" stroke-width=\"1\"/><line x1=\"20\" y1=\"7\" x2=\"26\" y2=\"5\" stroke=\"#39434e\" stroke-width=\"1\"/><ellipse cx=\"6\" cy=\"5\" rx=\"3.4\" ry=\"0.9\" fill=\"#8a97a5\" opacity=\"0.7\"/><ellipse cx=\"26\" cy=\"5\" rx=\"3.4\" ry=\"0.9\" fill=\"#8a97a5\" opacity=\"0.7\"/><path d=\"M4,2.6 l1.4,-0.8 M28,2.6 l-1.4,-0.8\" stroke=\"#8a97a5\" stroke-width=\"0.7\"/><rect x=\"12\" y=\"5\" width=\"8\" height=\"4\" rx=\"2\" fill=\"#5a6a7a\" stroke=\"#39434e\" stroke-width=\"0.7\"/><circle cx=\"16\" cy=\"7\" r=\"1.3\" fill=\"#2b3540\"/><circle cx=\"16\" cy=\"7\" r=\"0.5\" fill=\"#9fc4e8\"/><line x1=\"16\" y1=\"9\" x2=\"16\" y2=\"11\" stroke=\"#39434e\" stroke-width=\"0.8\"/><rect x=\"11\" y=\"11\" width=\"10\" height=\"12\" rx=\"1\" fill=\"#d8c9a3\" stroke=\"#8a7a58\" stroke-width=\"0.7\"/><rect x=\"14\" y=\"10.2\" width=\"4\" height=\"2.4\" rx=\"1\" fill=\"#8a97a5\"/><line x1=\"13\" y1=\"15\" x2=\"19\" y2=\"15\" stroke=\"#a89878\" stroke-width=\"0.7\"/><line x1=\"13\" y1=\"17.5\" x2=\"19\" y2=\"17.5\" stroke=\"#a89878\" stroke-width=\"0.7\"/><line x1=\"13\" y1=\"20\" x2=\"19\" y2=\"20\" stroke=\"#a89878\" stroke-width=\"0.7\"/><line x1=\"13\" y1=\"22\" x2=\"17\" y2=\"22\" stroke=\"#a89878\" stroke-width=\"0.7\"/></svg>`,
-    review_drone_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><polygon points=\"12,10 20,10 26,27 6,27\" fill=\"#e05240\" opacity=\"0.22\"/><line x1=\"12\" y1=\"7\" x2=\"6\" y2=\"5\" stroke=\"#2a2e35\" stroke-width=\"1\"/><line x1=\"20\" y1=\"7\" x2=\"26\" y2=\"5\" stroke=\"#2a2e35\" stroke-width=\"1\"/><ellipse cx=\"6\" cy=\"5\" rx=\"3.4\" ry=\"0.9\" fill=\"#5a626c\" opacity=\"0.8\"/><ellipse cx=\"26\" cy=\"5\" rx=\"3.4\" ry=\"0.9\" fill=\"#5a626c\" opacity=\"0.8\"/><rect x=\"12\" y=\"5\" width=\"8\" height=\"4\" rx=\"2\" fill=\"#3a3f47\" stroke=\"#1d2025\" stroke-width=\"0.7\"/><circle cx=\"16\" cy=\"7\" r=\"1.5\" fill=\"#ff3b2a\"/><circle cx=\"16\" cy=\"7\" r=\"0.6\" fill=\"#7a0d05\"/><line x1=\"16\" y1=\"9\" x2=\"16\" y2=\"11\" stroke=\"#1d2025\" stroke-width=\"0.8\"/><rect x=\"11\" y=\"11\" width=\"10\" height=\"12\" rx=\"1\" fill=\"#c9b98f\" stroke=\"#6a5a40\" stroke-width=\"0.7\"/><rect x=\"14\" y=\"10.2\" width=\"4\" height=\"2.4\" rx=\"1\" fill=\"#5a626c\"/><path d=\"M13.4,14.6 l2,2 M15.4,14.6 l-2,2\" stroke=\"#c22e1e\" stroke-width=\"1\"/><path d=\"M13.4,18.4 l2,2 M15.4,18.4 l-2,2\" stroke=\"#c22e1e\" stroke-width=\"1\"/><path d=\"M17.4,14.6 l2,2 M19.4,14.6 l-2,2\" stroke=\"#c22e1e\" stroke-width=\"1\"/><rect x=\"9\" y=\"22\" width=\"3\" height=\"4\" fill=\"#c22e1e\" opacity=\"0.85\"/><rect x=\"13\" y=\"19\" width=\"3\" height=\"7\" fill=\"#c22e1e\" opacity=\"0.85\"/><rect x=\"17\" y=\"23\" width=\"3\" height=\"3\" fill=\"#c22e1e\" opacity=\"0.85\"/><rect x=\"21\" y=\"16\" width=\"3\" height=\"10\" fill=\"#ff3b2a\" opacity=\"0.9\"/><line x1=\"8\" y1=\"26\" x2=\"25\" y2=\"26\" stroke=\"#c22e1e\" stroke-width=\"0.7\"/><text x=\"24.5\" y=\"13.5\" font-family=\"monospace\" font-size=\"7\" font-weight=\"bold\" fill=\"#ff6a55\">F</text><line x1=\"9\" y1=\"14\" x2=\"23\" y2=\"14\" stroke=\"#ff6a55\" stroke-width=\"0.5\" opacity=\"0.5\"/><line x1=\"8\" y1=\"18\" x2=\"24\" y2=\"18\" stroke=\"#ff6a55\" stroke-width=\"0.5\" opacity=\"0.4\"/></svg>`,
-    bright_idea_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"13\" r=\"9\" fill=\"#ffd76b\" opacity=\"0.12\"/><circle cx=\"16\" cy=\"13\" r=\"7\" fill=\"#ffd76b\" opacity=\"0.16\"/><circle cx=\"16\" cy=\"12.5\" r=\"6.5\" fill=\"#ffe08a\" stroke=\"#c8963a\" stroke-width=\"0.8\"/><path d=\"M13.8,13.5 L15.2,11 L16,12.6 L16.8,11 L18.2,13.5\" fill=\"none\" stroke=\"#b06a1a\" stroke-width=\"0.8\"/><rect x=\"13.5\" y=\"17.6\" width=\"5\" height=\"2.2\" fill=\"#ffe08a\" stroke=\"#c8963a\" stroke-width=\"0.7\"/><rect x=\"13\" y=\"19.8\" width=\"6\" height=\"4.4\" rx=\"1\" fill=\"#9aa0a8\" stroke=\"#6a7078\" stroke-width=\"0.7\"/><line x1=\"13\" y1=\"21.2\" x2=\"19\" y2=\"21.2\" stroke=\"#6a7078\" stroke-width=\"0.6\"/><line x1=\"13\" y1=\"22.8\" x2=\"19\" y2=\"22.8\" stroke=\"#6a7078\" stroke-width=\"0.6\"/><path d=\"M7,5.5 L7.4,6.9 L8.8,7.3 L7.4,7.7 L7,9.1 L6.6,7.7 L5.2,7.3 L6.6,6.9 Z\" fill=\"#fff2c0\" opacity=\"0.9\"/><path d=\"M25,7.5 L25.4,8.9 L26.8,9.3 L25.4,9.7 L25,11.1 L24.6,9.7 L23.2,9.3 L24.6,8.9 Z\" fill=\"#fff2c0\" opacity=\"0.9\"/></svg>`,
-    bright_idea_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><polygon points=\"31.5,13.0 24.8,16.6 27.0,24.0 19.6,21.8 16.0,28.5 12.4,21.8 5.0,24.0 7.2,16.6 0.5,13.0 7.2,9.4 5.0,2.0 12.4,4.2 16.0,-2.5 19.6,4.2 27.0,2.0 24.8,9.4\" fill=\"#ffd76b\" opacity=\"0.45\"/><polygon points=\"28.9,14.7 22.9,15.9 26.3,20.9 20.6,18.9 21.0,25.0 17.0,20.4 14.3,25.9 13.1,19.9 8.1,23.3 10.1,17.6 4.0,18.0 8.6,14.0 3.1,11.3 9.1,10.1 5.7,5.1 11.4,7.1 11.0,1.0 15.0,5.6 17.7,0.1 18.9,6.1 23.9,2.7 21.9,8.4 28.0,8.0 23.4,12.0\" fill=\"#fff3c4\" opacity=\"0.95\"/><circle cx=\"16\" cy=\"12.5\" r=\"6.5\" fill=\"#fff8dc\" stroke=\"#c8963a\" stroke-width=\"0.8\"/><path d=\"M16,6.5 L14.5,10 L15.5,12.5 M19.5,8.5 L17,11 M12.8,9 L14.5,11.5\" fill=\"none\" stroke=\"#6a5a2a\" stroke-width=\"0.7\"/><ellipse cx=\"16\" cy=\"13\" rx=\"3.6\" ry=\"2.6\" fill=\"#ffffff\" stroke=\"#b06a1a\" stroke-width=\"0.6\"/><circle cx=\"16\" cy=\"13\" r=\"1.6\" fill=\"#b06a1a\"/><circle cx=\"16\" cy=\"13\" r=\"0.8\" fill=\"#1a1a1a\"/><circle cx=\"16.6\" cy=\"12.4\" r=\"0.35\" fill=\"#ffffff\"/><rect x=\"13\" y=\"19.8\" width=\"6\" height=\"4.4\" rx=\"1\" fill=\"#9aa0a8\" stroke=\"#6a7078\" stroke-width=\"0.7\"/><rect x=\"13.5\" y=\"17.6\" width=\"5\" height=\"2.2\" fill=\"#fff8dc\" stroke=\"#c8963a\" stroke-width=\"0.7\"/></svg>`,
-    memory_projector_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><line x1=\"4\" y1=\"27.5\" x2=\"28\" y2=\"27.5\" stroke=\"#4a3b28\" stroke-width=\"1.5\"/><rect x=\"10\" y=\"25\" width=\"2\" height=\"2.5\" fill=\"#3a3a3d\"/><rect x=\"20\" y=\"25\" width=\"2\" height=\"2.5\" fill=\"#3a3a3d\"/><circle cx=\"11\" cy=\"11.5\" r=\"3.4\" fill=\"#d8d4c8\" stroke=\"#55534a\" stroke-width=\"0.8\"/><circle cx=\"19\" cy=\"11.5\" r=\"3.4\" fill=\"#d8d4c8\" stroke=\"#55534a\" stroke-width=\"0.8\"/><path d=\"M11,8.6 L11,14.4 M8.1,11.5 L13.9,11.5\" stroke=\"#55534a\" stroke-width=\"0.7\"/><path d=\"M19,8.6 L19,14.4 M16.1,11.5 L21.9,11.5\" stroke=\"#55534a\" stroke-width=\"0.7\"/><circle cx=\"11\" cy=\"11.5\" r=\"0.8\" fill=\"#55534a\"/><circle cx=\"19\" cy=\"11.5\" r=\"0.8\" fill=\"#55534a\"/><path d=\"M11,14.9 L11,16 M19,14.9 L19,16\" stroke=\"#2a2a2a\" stroke-width=\"0.6\"/><rect x=\"8\" y=\"16\" width=\"15\" height=\"9\" rx=\"1.5\" fill=\"#5c5c60\" stroke=\"#333336\" stroke-width=\"0.8\"/><circle cx=\"23\" cy=\"20.5\" r=\"2.2\" fill=\"#2b2f36\" stroke=\"#17191d\" stroke-width=\"0.7\"/><circle cx=\"23\" cy=\"20.5\" r=\"0.9\" fill=\"#9fc4e8\" opacity=\"0.8\"/><circle cx=\"26\" cy=\"18.5\" r=\"0.55\" fill=\"#ffe08a\"/><circle cx=\"27.6\" cy=\"17.4\" r=\"0.45\" fill=\"#ffe08a\" opacity=\"0.7\"/><circle cx=\"29\" cy=\"16.4\" r=\"0.35\" fill=\"#ffe08a\" opacity=\"0.45\"/></svg>`,
-    memory_projector_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><line x1=\"4\" y1=\"27.5\" x2=\"28\" y2=\"27.5\" stroke=\"#4a3b28\" stroke-width=\"1.5\"/><rect x=\"8\" y=\"16\" width=\"15\" height=\"9\" rx=\"1.5\" fill=\"#4a4a4e\" stroke=\"#232326\" stroke-width=\"0.8\"/><circle cx=\"11\" cy=\"11.5\" r=\"3.4\" fill=\"#c9c4b4\" stroke=\"#44423a\" stroke-width=\"0.8\"/><circle cx=\"19\" cy=\"11.5\" r=\"3.4\" fill=\"#c9c4b4\" stroke=\"#44423a\" stroke-width=\"0.8\"/><path d=\"M11,8.6 L11,14.4 M8.1,11.5 L13.9,11.5\" stroke=\"#44423a\" stroke-width=\"0.7\"/><path d=\"M19,8.6 L19,14.4 M16.1,11.5 L21.9,11.5\" stroke=\"#44423a\" stroke-width=\"0.7\"/><path d=\"M11,14.9 C10,19 12,22 10.5,26\" fill=\"none\" stroke=\"#3a382e\" stroke-width=\"2.2\"/><path d=\"M19,14.9 C20.5,19 18,23 19.5,27\" fill=\"none\" stroke=\"#3a382e\" stroke-width=\"2.2\"/><rect x=\"9.4\" y=\"20\" width=\"2.4\" height=\"1.8\" fill=\"#e8dcc0\" stroke=\"#3a382e\" stroke-width=\"0.4\" transform=\"rotate(12 10.6 20.9)\"/><rect x=\"18.2\" y=\"22\" width=\"2.4\" height=\"1.8\" fill=\"#e8dcc0\" stroke=\"#3a382e\" stroke-width=\"0.4\" transform=\"rotate(-10 19.4 22.9)\"/><circle cx=\"10.6\" cy=\"20.9\" r=\"0.35\" fill=\"#3a332a\"/><circle cx=\"19.4\" cy=\"22.9\" r=\"0.35\" fill=\"#3a332a\"/><circle cx=\"23\" cy=\"20.5\" r=\"3.2\" fill=\"#ff5a2a\" opacity=\"0.3\"/><circle cx=\"23\" cy=\"20.5\" r=\"2.2\" fill=\"#3a150c\" stroke=\"#ff5a2a\" stroke-width=\"1\"/><circle cx=\"23\" cy=\"20.5\" r=\"0.9\" fill=\"#ff8a3a\"/><polygon points=\"24,19 29,15 29,26 24,22\" fill=\"#ffd76b\" opacity=\"0.2\"/><ellipse cx=\"27\" cy=\"21\" rx=\"3.4\" ry=\"4.6\" fill=\"#ffd76b\" opacity=\"0.22\"/><path d=\"M24.8,22.5 L27,20.3 L29.2,22.5 Z\" fill=\"#7a5a34\"/><rect x=\"25.3\" y=\"22.5\" width=\"3.4\" height=\"2.6\" fill=\"#8a6a40\"/><rect x=\"26.4\" y=\"23.6\" width=\"1.2\" height=\"1.5\" fill=\"#3a2c1a\"/><circle cx=\"25.2\" cy=\"26.4\" r=\"0.7\" fill=\"#e8d0a8\"/><line x1=\"25.2\" y1=\"27.1\" x2=\"25.2\" y2=\"28.6\" stroke=\"#e8d0a8\" stroke-width=\"0.7\"/><circle cx=\"28.6\" cy=\"26\" r=\"0.55\" fill=\"#e8d0a8\"/><line x1=\"28.6\" y1=\"26.6\" x2=\"28.6\" y2=\"28\" stroke=\"#e8d0a8\" stroke-width=\"0.6\"/><path d=\"M29.5,16.5 l1.2,-0.6 M29.8,24.5 l1.2,0.5\" stroke=\"#ffd76b\" stroke-width=\"0.7\"/></svg>`,
-    warranty_caller_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><rect x=\"2\" y=\"5\" width=\"2.6\" height=\"23\" fill=\"#1e2a1e\"/><rect x=\"27.4\" y=\"5\" width=\"2.6\" height=\"23\" fill=\"#1e2a1e\"/><ellipse cx=\"3.3\" cy=\"7\" rx=\"4\" ry=\"3.4\" fill=\"#243024\"/><ellipse cx=\"28.7\" cy=\"7\" rx=\"4\" ry=\"3.4\" fill=\"#243024\"/><rect x=\"13\" y=\"11\" width=\"6\" height=\"11\" rx=\"1.5\" fill=\"#2b3540\" stroke=\"#12161b\" stroke-width=\"0.8\"/><rect x=\"14\" y=\"12.8\" width=\"4\" height=\"6.6\" rx=\"0.8\" fill=\"#3f6f9f\" opacity=\"0.85\"/><circle cx=\"16\" cy=\"20.8\" r=\"0.5\" fill=\"#12161b\"/><path d=\"M10.5,12.5 A5.5,5.5 0 0 0 10.5,21.5\" fill=\"none\" stroke=\"#cfd8dc\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M8,10.5 A9,9 0 0 0 8,23.5\" fill=\"none\" stroke=\"#cfd8dc\" stroke-width=\"0.8\" opacity=\"0.45\"/><path d=\"M21.5,12.5 A5.5,5.5 0 0 1 21.5,21.5\" fill=\"none\" stroke=\"#cfd8dc\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M24,10.5 A9,9 0 0 1 24,23.5\" fill=\"none\" stroke=\"#cfd8dc\" stroke-width=\"0.8\" opacity=\"0.45\"/><circle cx=\"7\" cy=\"26\" r=\"0.4\" fill=\"#cfd8dc\" opacity=\"0.5\"/><circle cx=\"25\" cy=\"26.5\" r=\"0.4\" fill=\"#cfd8dc\" opacity=\"0.5\"/></svg>`,
-    warranty_caller_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"16\" cy=\"19\" rx=\"11\" ry=\"9\" fill=\"#ff3b2a\" opacity=\"0.18\"/><path d=\"M7,16 Q16,3 25,16\" fill=\"none\" stroke=\"#2b3540\" stroke-width=\"2.4\"/><rect x=\"23.4\" y=\"14.6\" width=\"3\" height=\"4.4\" rx=\"1.2\" fill=\"#2b3540\"/><path d=\"M25,18.6 Q22.5,22.5 18.5,23.4\" fill=\"none\" stroke=\"#2b3540\" stroke-width=\"1.4\"/><circle cx=\"18\" cy=\"23.5\" r=\"1.1\" fill=\"#c22e1e\"/><ellipse cx=\"16\" cy=\"20.5\" rx=\"9\" ry=\"6.6\" fill=\"#4a1210\" stroke=\"#2a0a08\" stroke-width=\"1\"/><ellipse cx=\"16\" cy=\"21\" rx=\"6.4\" ry=\"4.4\" fill=\"#7a1e16\"/><polygon points=\"9.5,17.2 10.6,18.9 11.7,17.2\" fill=\"#e8e0cc\"/><polygon points=\"12.4,16.8 13.5,18.5 14.6,16.8\" fill=\"#e8e0cc\"/><polygon points=\"15.3,16.7 16.4,18.4 17.5,16.7\" fill=\"#e8e0cc\"/><polygon points=\"18.2,17 19.3,18.7 20.4,17\" fill=\"#e8e0cc\"/><polygon points=\"21.1,17.6 22.2,19.3 23.3,17.6\" fill=\"#e8e0cc\"/><polygon points=\"10.5,24.6 11.6,23 12.7,24.6\" fill=\"#e8e0cc\"/><polygon points=\"14,25.2 15.1,23.6 16.2,25.2\" fill=\"#e8e0cc\"/><polygon points=\"17.5,25.2 18.6,23.6 19.7,25.2\" fill=\"#e8e0cc\"/><polygon points=\"21,24.6 22.1,23 23.2,24.6\" fill=\"#e8e0cc\"/><path d=\"M7,27.5 q4.5,2 9,0 t9,0\" fill=\"none\" stroke=\"#e8dcc0\" stroke-width=\"0.9\" opacity=\"0.8\"/><path d=\"M9,29.8 q3.5,1.6 7,0 t7,0\" fill=\"none\" stroke=\"#e8dcc0\" stroke-width=\"0.7\" opacity=\"0.55\"/><text x=\"4\" y=\"6.5\" font-family=\"monospace\" font-size=\"4.5\" fill=\"#ff6a55\">0:47</text><circle cx=\"26.5\" cy=\"5\" r=\"1.6\" fill=\"none\" stroke=\"#ff3b2a\" stroke-width=\"0.9\"/><circle cx=\"26.5\" cy=\"5\" r=\"0.5\" fill=\"#ff3b2a\"/></svg>`,
-        understudy_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#24382c\"><polygon points=\"0,32 0,14 5,4 10,14 10,32\"/><polygon points=\"32,32 32,12 27,2 22,12 22,32\"/><polygon points=\"24,32 24,18 27,11 30,18 30,32\" opacity=\"0.7\"/></g><g fill=\"#a8adb3\"><ellipse cx=\"16\" cy=\"8\" rx=\"3.4\" ry=\"4\"/><path d=\"M16 12 C11 12 10 17 10 22 L10 32 L22 32 L22 22 C22 17 21 12 16 12 Z\"/><rect x=\"6.6\" y=\"14\" width=\"2.6\" height=\"12\" rx=\"1.3\"/><rect x=\"22.8\" y=\"14\" width=\"2.6\" height=\"12\" rx=\"1.3\"/></g></svg>`,
-    understudy_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#a8adb3\" opacity=\"0.35\"><ellipse cx=\"24\" cy=\"10\" rx=\"3\" ry=\"3.6\"/><path d=\"M24 13.5 C20 13.5 19.2 17.5 19.2 22 L19.2 30 L28.8 30 L28.8 22 C28.8 17.5 28 13.5 24 13.5 Z\"/></g><g fill=\"#c6ccd4\"><ellipse cx=\"14\" cy=\"9\" rx=\"3.6\" ry=\"4.2\"/><path d=\"M14 13 C9 13 8 18 8 23 L8 32 L20 32 L20 23 C20 18 19 13 14 13 Z\"/><rect x=\"4.6\" y=\"15\" width=\"2.6\" height=\"12\" rx=\"1.3\"/><rect x=\"20.8\" y=\"15\" width=\"2.6\" height=\"12\" rx=\"1.3\"/></g><g fill=\"#14181d\"><ellipse cx=\"12.6\" cy=\"8.2\" rx=\"0.7\" ry=\"1\"/><ellipse cx=\"15.4\" cy=\"8.2\" rx=\"0.7\" ry=\"1\"/><path d=\"M11.6 11.2 Q14 12.6 16.4 11.2\" stroke=\"#14181d\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/></g><g stroke=\"#e8b64c\" stroke-width=\"0.8\" stroke-dasharray=\"1.6 1.2\" fill=\"none\"><path d=\"M8 5 C10 3 12 2.4 14 2.6\"/></g></svg>`,
-    landlord_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><rect x=\"22\" y=\"14\" width=\"2.4\" height=\"18\" rx=\"1\" fill=\"#6b4f2e\"/><rect x=\"18\" y=\"8\" width=\"10\" height=\"7\" rx=\"1\" fill=\"#f3ead8\" stroke=\"#6b4f2e\" stroke-width=\"1\"/><g stroke=\"#b0a48c\" stroke-width=\"1\"><line x1=\"20\" y1=\"10.6\" x2=\"26\" y2=\"10.6\"/><line x1=\"20\" y1=\"13\" x2=\"24\" y2=\"13\"/></g><g><circle cx=\"10\" cy=\"6.5\" r=\"3.2\" fill=\"#d9a066\"/><path d=\"M10 9.5 C6 9.5 5.4 13 5.4 17 L5.4 24 L14.6 24 L14.6 17 C14.6 13 14 9.5 10 9.5 Z\" fill=\"#e8851a\"/><g fill=\"#dfe3e8\"><rect x=\"5.4\" y=\"14.5\" width=\"9.2\" height=\"1.6\"/><rect x=\"5.4\" y=\"18.5\" width=\"9.2\" height=\"1.6\"/></g><rect x=\"7.6\" y=\"24\" width=\"2\" height=\"8\" rx=\"1\" fill=\"#2f3640\"/><rect x=\"10.6\" y=\"24\" width=\"2\" height=\"8\" rx=\"1\" fill=\"#2f3640\"/><rect x=\"12.6\" y=\"11\" width=\"2\" height=\"8\" rx=\"1\" fill=\"#d9a066\" transform=\"rotate(-28 13.6 15)\"/><rect x=\"13.4\" y=\"6.6\" width=\"4.6\" height=\"2.8\" rx=\"0.8\" fill=\"#8a8f96\" transform=\"rotate(-28 15.7 8)\"/><rect x=\"12.4\" y=\"8.6\" width=\"1.6\" height=\"5\" rx=\"0.8\" fill=\"#8a8f96\" transform=\"rotate(-28 13.2 11.1)\"/></g></svg>`,
-    landlord_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#f3ead8\" stroke=\"#6b4f2e\" stroke-width=\"0.9\"><rect x=\"1\" y=\"4\" width=\"7\" height=\"5\" rx=\"0.8\" transform=\"rotate(-8 4.5 6.5)\"/><rect x=\"24\" y=\"3\" width=\"7\" height=\"5\" rx=\"0.8\" transform=\"rotate(9 27.5 5.5)\"/><rect x=\"0.5\" y=\"22\" width=\"7\" height=\"5\" rx=\"0.8\" transform=\"rotate(7 4 24.5)\"/><rect x=\"24.5\" y=\"22\" width=\"7\" height=\"5\" rx=\"0.8\" transform=\"rotate(-9 28 24.5)\"/><rect x=\"12.5\" y=\"1\" width=\"7\" height=\"5\" rx=\"0.8\"/></g><g stroke=\"#b0a48c\" stroke-width=\"0.9\"><line x1=\"2.4\" y1=\"6.2\" x2=\"6.4\" y2=\"6.2\"/><line x1=\"25.4\" y1=\"5.2\" x2=\"29.4\" y2=\"5.2\"/><line x1=\"2\" y1=\"24.2\" x2=\"6\" y2=\"24.2\"/><line x1=\"26\" y1=\"24.2\" x2=\"30\" y2=\"24.2\"/><line x1=\"13.8\" y1=\"3\" x2=\"17.8\" y2=\"3\"/></g><g><circle cx=\"16\" cy=\"8\" r=\"3.8\" fill=\"#1c1f24\"/><path d=\"M16 11.5 C11 11.5 10.2 16 10.2 21 L10.2 32 L21.8 32 L21.8 21 C21.8 16 21 11.5 16 11.5 Z\" fill=\"#8f4a10\"/><g fill=\"#f7c948\"><rect x=\"10.2\" y=\"17.5\" width=\"11.6\" height=\"1.8\"/><rect x=\"10.2\" y=\"21.8\" width=\"11.6\" height=\"1.8\"/></g><g fill=\"#ff3b30\"><circle cx=\"14.4\" cy=\"7.4\" r=\"0.9\"/><circle cx=\"17.6\" cy=\"7.4\" r=\"0.9\"/></g><rect x=\"22.5\" y=\"12\" width=\"2.6\" height=\"14\" rx=\"1.3\" fill=\"#1c1f24\" transform=\"rotate(-24 23.8 19)\"/><rect x=\"22.2\" y=\"7.2\" width=\"5.4\" height=\"3.2\" rx=\"0.9\" fill=\"#8a8f96\" transform=\"rotate(-24 24.9 8.8)\"/></g><g stroke=\"#3a2f22\" stroke-width=\"1\" fill=\"none\"><path d=\"M6 30 L10 28 M26 30 L22 28\"/></g></svg>`,
-    heckler_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"16\" r=\"14.5\" fill=\"#141a2a\"/><g stroke=\"#f5f5f5\" stroke-width=\"1.4\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.9\"><path d=\"M9 13 C10 11.6 11.6 11 13.2 11.4\"/><path d=\"M18.8 11.4 C20.4 11 22 11.6 23 13\"/></g><path d=\"M8.5 18 C11 23.5 21 23.5 23.5 18 C21 20.4 11 20.4 8.5 18 Z\" fill=\"#f5f5f5\"/><g stroke=\"#141a2a\" stroke-width=\"0.9\"><line x1=\"12\" y1=\"19.6\" x2=\"12\" y2=\"22\"/><line x1=\"16\" y1=\"19.8\" x2=\"16\" y2=\"22.4\"/><line x1=\"20\" y1=\"19.6\" x2=\"20\" y2=\"22\"/></g><g stroke=\"#8f9bb3\" stroke-width=\"1.2\" stroke-linecap=\"round\" fill=\"none\" opacity=\"0.8\"><path d=\"M6 5 C7 4 8 3.4 9.2 3.2\"/><path d=\"M26 5 C25 4 24 3.4 22.8 3.2\"/></g></svg>`,
-    heckler_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"13\" cy=\"16\" rx=\"10\" ry=\"12\" fill=\"#d9a066\"/><path d=\"M13 4 C7 4 4 8.5 4.4 13 C7 11 10 11.4 13 12.6 C16 11.4 19 11 21.6 13 C22 8.5 19 4 13 4 Z\" fill=\"#2f2a26\"/><g stroke=\"#14181d\" stroke-width=\"1.4\" stroke-linecap=\"round\"><line x1=\"8\" y1=\"15.5\" x2=\"11.5\" y2=\"16.5\"/><line x1=\"14.5\" y1=\"16.5\" x2=\"18\" y2=\"15.5\"/></g><ellipse cx=\"9.8\" cy=\"17.6\" rx=\"1.6\" ry=\"1\" fill=\"#14181d\"/><ellipse cx=\"16.2\" cy=\"17.6\" rx=\"1.6\" ry=\"1\" fill=\"#14181d\"/><path d=\"M6.5 22 C8.5 29 17.5 29 19.5 22 C16.5 24.4 9.5 24.4 6.5 22 Z\" fill=\"#5e1f1f\"/><path d=\"M6.9 22.4 C9 24 17 24 19.1 22.4 L18.8 24.6 C15.8 26 10.2 26 7.2 24.6 Z\" fill=\"#f5f5f5\"/><g stroke=\"#14181d\" stroke-width=\"0.8\"><line x1=\"10\" y1=\"23.6\" x2=\"10\" y2=\"25.6\"/><line x1=\"13\" y1=\"24\" x2=\"13\" y2=\"26.2\"/><line x1=\"16\" y1=\"23.6\" x2=\"16\" y2=\"25.6\"/></g><g><rect x=\"21\" y=\"22\" width=\"9\" height=\"3.4\" rx=\"1.7\" fill=\"#d9a066\" transform=\"rotate(-18 25.5 23.7)\"/><circle cx=\"29.4\" cy=\"19.2\" r=\"1.9\" fill=\"#d9a066\"/></g></svg>`,
-    paparazzo_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"16\" r=\"14.5\" fill=\"#10131c\"/><ellipse cx=\"16\" cy=\"15.5\" rx=\"9\" ry=\"5.2\" fill=\"#e8e4da\"/><circle cx=\"16\" cy=\"15.5\" r=\"3.6\" fill=\"#3b6ea5\"/><circle cx=\"16\" cy=\"15.5\" r=\"1.9\" fill=\"#0c0e14\"/><circle cx=\"17.2\" cy=\"14.2\" r=\"0.9\" fill=\"#ffffff\" opacity=\"0.95\"/><path d=\"M7 15.5 C7 15.5 11 10.8 16 10.8 C21 10.8 25 15.5 25 15.5 C25 15.5 21 20.2 16 20.2 C11 20.2 7 15.5 7 15.5 Z\" fill=\"none\" stroke=\"#3a4152\" stroke-width=\"1.4\"/></svg>`,
-    paparazzo_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"16\" r=\"14.5\" fill=\"#10131c\"/><g stroke=\"#ffe066\" stroke-width=\"1.3\" stroke-linecap=\"round\"><line x1=\"16\" y1=\"1.5\" x2=\"16\" y2=\"4.5\"/><line x1=\"16\" y1=\"27.5\" x2=\"16\" y2=\"30.5\"/><line x1=\"1.5\" y1=\"16\" x2=\"4.5\" y2=\"16\"/><line x1=\"27.5\" y1=\"16\" x2=\"30.5\" y2=\"16\"/><line x1=\"5.8\" y1=\"5.8\" x2=\"7.9\" y2=\"7.9\"/><line x1=\"24.1\" y1=\"24.1\" x2=\"26.2\" y2=\"26.2\"/><line x1=\"26.2\" y1=\"5.8\" x2=\"24.1\" y2=\"7.9\"/><line x1=\"7.9\" y1=\"24.1\" x2=\"5.8\" y2=\"26.2\"/></g><g fill=\"#fff7d6\" opacity=\"0.9\"><circle cx=\"16\" cy=\"6.5\" r=\"1.8\"/><circle cx=\"24.5\" cy=\"9\" r=\"1.3\"/><circle cx=\"7.5\" cy=\"9\" r=\"1.3\"/></g><ellipse cx=\"16\" cy=\"16.5\" rx=\"10.5\" ry=\"6\" fill=\"#f4f1e8\"/><circle cx=\"16\" cy=\"16.5\" r=\"4.2\" fill=\"#c0392b\"/><circle cx=\"16\" cy=\"16.5\" r=\"2.2\" fill=\"#0c0e14\"/><circle cx=\"17.5\" cy=\"15\" r=\"1.1\" fill=\"#ffffff\"/><path d=\"M5.5 16.5 C5.5 16.5 10.5 10.8 16 10.8 C21.5 10.8 26.5 16.5 26.5 16.5 C26.5 16.5 21.5 22.2 16 22.2 C10.5 22.2 5.5 16.5 5.5 16.5 Z\" fill=\"none\" stroke=\"#ff5a4d\" stroke-width=\"1.4\"/></svg>`,
-    union_rep_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g><circle cx=\"12\" cy=\"6.5\" r=\"3.2\" fill=\"#d9a066\"/><path d=\"M12 9.5 C8 9.5 7.4 13 7.4 17 L7.4 24 L16.6 24 L16.6 17 C16.6 13 16 9.5 12 9.5 Z\" fill=\"#5a6c7d\"/><rect x=\"9.4\" y=\"24\" width=\"2.1\" height=\"8\" rx=\"1\" fill=\"#2f3640\"/><rect x=\"12.6\" y=\"24\" width=\"2.1\" height=\"8\" rx=\"1\" fill=\"#2f3640\"/><rect x=\"3.2\" y=\"14\" width=\"2.4\" height=\"9\" rx=\"1.2\" fill=\"#d9a066\" transform=\"rotate(14 4.4 18.5)\"/><rect x=\"16.4\" y=\"14\" width=\"2.4\" height=\"9\" rx=\"1.2\" fill=\"#d9a066\" transform=\"rotate(-14 17.6 18.5)\"/></g><g><rect x=\"17.5\" y=\"17\" width=\"7.5\" height=\"10\" rx=\"1\" fill=\"#8a5a2e\" transform=\"rotate(-10 21.2 22)\"/><rect x=\"18.4\" y=\"18.2\" width=\"5.7\" height=\"7.6\" fill=\"#f5f2e8\" transform=\"rotate(-10 21.2 22)\"/><g stroke=\"#9aa0a6\" stroke-width=\"0.9\" transform=\"rotate(-10 21.2 22)\"><line x1=\"19.6\" y1=\"20.4\" x2=\"22.9\" y2=\"20.4\"/><line x1=\"19.6\" y1=\"22.4\" x2=\"22.9\" y2=\"22.4\"/><line x1=\"19.6\" y1=\"24.4\" x2=\"21.6\" y2=\"24.4\"/></g><rect x=\"19.9\" y=\"15.6\" width=\"2.6\" height=\"1.8\" rx=\"0.9\" fill=\"#6e6e6e\" transform=\"rotate(-10 21.2 22)\"/></g><g transform=\"rotate(24 27 8)\"><rect x=\"24.6\" y=\"3\" width=\"4.8\" height=\"2.6\" rx=\"1\" fill=\"#6e6e6e\"/><polygon points=\"24.6,3 29.4,3 31.5,8.2 24.6,8.2\" fill=\"#c0392b\"/><ellipse cx=\"31.5\" cy=\"5.6\" rx=\"1\" ry=\"2.6\" fill=\"#96281b\"/></g></svg>`,
-    union_rep_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#f5f2e8\" stroke=\"#9aa0a6\" stroke-width=\"0.7\"><rect x=\"2\" y=\"4\" width=\"6\" height=\"8\" rx=\"0.8\" transform=\"rotate(-14 5 8)\"/><rect x=\"24\" y=\"3\" width=\"6\" height=\"8\" rx=\"0.8\" transform=\"rotate(12 27 7)\"/><rect x=\"1\" y=\"19\" width=\"6\" height=\"8\" rx=\"0.8\" transform=\"rotate(10 4 23)\"/><rect x=\"25\" y=\"19\" width=\"6\" height=\"8\" rx=\"0.8\" transform=\"rotate(-12 28 23)\"/></g><g><circle cx=\"16\" cy=\"10\" r=\"3.6\" fill=\"#d9a066\"/><path d=\"M16 5.5 C12.6 5.5 11 7.6 10.6 10.5 C13 9 19 9 21.4 10.5 C21 7.6 19.4 5.5 16 5.5 Z\" fill=\"#3a2f26\"/><g stroke=\"#14181d\" stroke-width=\"1.2\" stroke-linecap=\"round\"><line x1=\"13\" y1=\"10\" x2=\"14.8\" y2=\"11\"/><line x1=\"19\" y1=\"10\" x2=\"17.2\" y2=\"11\"/></g><circle cx=\"14.2\" cy=\"12.4\" r=\"0.7\" fill=\"#14181d\"/><circle cx=\"17.8\" cy=\"12.4\" r=\"0.7\" fill=\"#14181d\"/><path d=\"M14 14.6 L18 14.2\" stroke=\"#14181d\" stroke-width=\"1\" stroke-linecap=\"round\"/><path d=\"M16 13.5 C11 13.5 10.2 17.5 10.2 22 L10.2 32 L21.8 32 L21.8 22 C21.8 17.5 21 13.5 16 13.5 Z\" fill=\"#4a3c2e\"/><rect x=\"14\" y=\"24\" width=\"4\" height=\"2.2\" rx=\"0.6\" fill=\"#c0392b\"/></g><g transform=\"rotate(-12 24 24)\"><circle cx=\"24\" cy=\"24\" r=\"5.2\" fill=\"none\" stroke=\"#c0392b\" stroke-width=\"2\"/><circle cx=\"24\" cy=\"24\" r=\"3\" fill=\"none\" stroke=\"#c0392b\" stroke-width=\"1\"/><line x1=\"20.8\" y1=\"20.8\" x2=\"27.2\" y2=\"27.2\" stroke=\"#c0392b\" stroke-width=\"1.6\"/></g><g stroke=\"#9aa0a6\" stroke-width=\"0.8\"><line x1=\"3.4\" y1=\"6.4\" x2=\"6.6\" y2=\"6.4\"/><line x1=\"26\" y1=\"5.6\" x2=\"29\" y2=\"5.6\"/><line x1=\"2.6\" y1=\"21.4\" x2=\"5.6\" y2=\"21.4\"/><line x1=\"26.6\" y1=\"21.4\" x2=\"29.6\" y2=\"21.4\"/></g></svg>`,
-    moderator_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"16\" cy=\"27\" rx=\"7\" ry=\"1.8\" fill=\"#2a2140\" opacity=\"0.5\"/><circle cx=\"16\" cy=\"17\" r=\"12\" fill=\"none\" stroke=\"#e8b64c\" stroke-width=\"1.4\" stroke-dasharray=\"4 3\" opacity=\"0.9\"/><g fill=\"#4a4460\"><path d=\"M16 5 C11 5 9.4 10 9.4 15 L9.4 24 L22.6 24 L22.6 15 C22.6 10 21 5 16 5 Z\" opacity=\"0.92\"/><ellipse cx=\"16\" cy=\"8.4\" rx=\"3.4\" ry=\"3.8\"/></g><g fill=\"#14111f\"><ellipse cx=\"14.6\" cy=\"8\" rx=\"0.8\" ry=\"1.1\"/><ellipse cx=\"17.4\" cy=\"8\" rx=\"0.8\" ry=\"1.1\"/></g><g transform=\"rotate(38 24 8)\"><rect x=\"22.8\" y=\"4.5\" width=\"2.4\" height=\"9\" rx=\"1.2\" fill=\"#6b4f2e\"/><rect x=\"20\" y=\"1.5\" width=\"8\" height=\"3.6\" rx=\"1.4\" fill=\"#8a6a3a\"/></g></svg>`,
-    moderator_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"17\" r=\"13.5\" fill=\"#241a3d\" opacity=\"0.85\"/><circle cx=\"16\" cy=\"17\" r=\"12\" fill=\"none\" stroke=\"#7fd4ff\" stroke-width=\"2\"/><circle cx=\"16\" cy=\"17\" r=\"9.4\" fill=\"none\" stroke=\"#b366ff\" stroke-width=\"1\" opacity=\"0.7\"/><g fill=\"#14111f\"><path d=\"M16 6 C11.4 6 9.8 10.6 9.8 15 L9.8 25 L22.2 25 L22.2 15 C22.2 10.6 20.6 6 16 6 Z\"/><ellipse cx=\"16\" cy=\"9\" rx=\"3.6\" ry=\"4\"/></g><g fill=\"#ff3b30\"><ellipse cx=\"14.5\" cy=\"8.6\" rx=\"1\" ry=\"1.3\"/><ellipse cx=\"17.5\" cy=\"8.6\" rx=\"1\" ry=\"1.3\"/></g><g transform=\"rotate(75 24 12)\"><rect x=\"22.8\" y=\"4\" width=\"2.4\" height=\"12\" rx=\"1.2\" fill=\"#6b4f2e\"/><rect x=\"20\" y=\"1\" width=\"8\" height=\"3.6\" rx=\"1.4\" fill=\"#c9a24b\"/><polygon points=\"20,4.6 22,4.6 21,8.6\" fill=\"#fff7d6\"/></g><g stroke=\"#7fd4ff\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"><polyline points=\"6,8 8,12 6.6,15 9,18\"/><polyline points=\"27,6 25,10 26.6,13 24.4,16\"/><polyline points=\"4,20 6.5,23\"/></g><g fill=\"#fff7d6\"><circle cx=\"16\" cy=\"1.8\" r=\"1.1\"/><circle cx=\"29\" cy=\"27\" r=\"1\"/><circle cx=\"3.5\" cy=\"26\" r=\"1\"/></g></svg>`,
+    glasswing_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- leaf -->
+  <path d=\"M4 28 Q16 24 28 28 L28 30 Q16 27 4 30 Z\" fill=\"#5e8f4a\" opacity=\"0.6\"/>
+  <!-- hindwings -->
+  <path d=\"M15.2 17.5 Q10 19 8.6 24.5 Q13 24 15.4 19.6 Z\" fill=\"#ffffff\" opacity=\"0.32\" stroke=\"#a85f1c\" stroke-width=\"0.9\"/>
+  <path d=\"M16.8 17.5 Q22 19 23.4 24.5 Q19 24 16.6 19.6 Z\" fill=\"#ffffff\" opacity=\"0.32\" stroke=\"#a85f1c\" stroke-width=\"0.9\"/>
+  <!-- forewings -->
+  <path d=\"M15 14 Q9 8 7.4 4.5 Q11 4 14.6 9.5 Q15.6 12 15 14 Z\" fill=\"#ffffff\" opacity=\"0.3\" stroke=\"#a85f1c\" stroke-width=\"0.9\"/>
+  <path d=\"M17 14 Q23 8 24.6 4.5 Q21 4 17.4 9.5 Q16.4 12 17 14 Z\" fill=\"#ffffff\" opacity=\"0.3\" stroke=\"#a85f1c\" stroke-width=\"0.9\"/>
+  <!-- white forewing patches -->
+  <ellipse cx=\"10.6\" cy=\"8.6\" rx=\"1.3\" ry=\"2.2\" fill=\"#ffffff\" opacity=\"0.9\" transform=\"rotate(-28 10.6 8.6)\"/>
+  <ellipse cx=\"21.4\" cy=\"8.6\" rx=\"1.3\" ry=\"2.2\" fill=\"#ffffff\" opacity=\"0.9\" transform=\"rotate(28 21.4 8.6)\"/>
+  <!-- veins -->
+  <g stroke=\"#8a4f16\" stroke-width=\"0.4\" opacity=\"0.9\">
+    <path d=\"M14.8 13.5 L10.5 6.5 M14.8 13.5 L12.8 5.6 M17.2 13.5 L21.5 6.5 M17.2 13.5 L19.2 5.6\"/>
+    <path d=\"M15.2 18 L11.5 22.5 M16.8 18 L20.5 22.5\"/>
+  </g>
+  <!-- body -->
+  <ellipse cx=\"16\" cy=\"17.5\" rx=\"1.1\" ry=\"5\" fill=\"#1c1c1c\"/>
+  <circle cx=\"16\" cy=\"11.6\" r=\"1.3\" fill=\"#1c1c1c\"/>
+  <circle cx=\"15.6\" cy=\"11.4\" r=\"0.35\" fill=\"#0a0a0a\"/>
+  <!-- antennae -->
+  <path d=\"M15.5 10.6 Q13 6 11.5 3.6 M16.5 10.6 Q19 6 20.5 3.6\" stroke=\"#1c1c1c\" stroke-width=\"0.5\" fill=\"none\"/>
+  <circle cx=\"11.5\" cy=\"3.6\" r=\"0.4\" fill=\"#1c1c1c\"/>
+  <circle cx=\"20.5\" cy=\"3.6\" r=\"0.4\" fill=\"#1c1c1c\"/>
+  <!-- legs -->
+  <path d=\"M15.2 16 l-2.4 3 M16.8 16 l2.4 3 M15.2 19 l-2 3.4 M16.8 19 l2 3.4\" stroke=\"#1c1c1c\" stroke-width=\"0.45\"/>
+</svg>`,
+    glasswing_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- the sun it dives out of: clean disc, high and clear -->
+  <circle cx=\"16\" cy=\"4.5\" r=\"4.5\" fill=\"#ffcf3f\" opacity=\"0.9\"/>
+  <!-- speed streaks: falling fast -->
+  <g stroke=\"#ffffff\" stroke-width=\"0.7\" opacity=\"0.45\">
+    <path d=\"M10.5 9 l0 5 M21.5 9 l0 5\"/>
+  </g>
+  <!-- swept dive wings: folded back like a diving dart -->
+  <path d=\"M16 9 L6.5 24 L11 27 L16 16 Z\" fill=\"#10141c\" opacity=\"0.88\" stroke=\"#a02323\" stroke-width=\"1\"/>
+  <path d=\"M16 9 L25.5 24 L21 27 L16 16 Z\" fill=\"#10141c\" opacity=\"0.88\" stroke=\"#a02323\" stroke-width=\"1\"/>
+  <!-- cracked wrong-glass veins -->
+  <g stroke=\"#a02323\" stroke-width=\"0.5\" opacity=\"0.95\">
+    <path d=\"M15.4 12 L10.5 21 L12.5 22.5\"/>
+    <path d=\"M14.8 14 L9.8 20.5\"/>
+    <path d=\"M16.6 12 L21.5 21 L19.5 22.5\"/>
+    <path d=\"M17.2 14 L22.2 20.5\"/>
+  </g>
+  <!-- elongated strike body, head-down -->
+  <path d=\"M16 8 L17.3 18 L16 28 L14.7 18 Z\" fill=\"#0c0f14\"/>
+  <path d=\"M14.7 14 L17.3 14 M14.8 18 L17.2 18 M15 22 L17 22\" stroke=\"#a02323\" stroke-width=\"0.5\" opacity=\"0.9\"/>
+  <!-- dive head with burning eyes -->
+  <circle cx=\"16\" cy=\"26.5\" r=\"1.7\" fill=\"#0c0f14\"/>
+  <circle cx=\"15.3\" cy=\"26.5\" r=\"0.5\" fill=\"#ff2a2a\"/>
+  <circle cx=\"16.7\" cy=\"26.5\" r=\"0.5\" fill=\"#ff2a2a\"/>
+  <!-- the shadow it casts falls wrong: ahead of it, not behind -->
+  <ellipse cx=\"16\" cy=\"30.5\" rx=\"7\" ry=\"1.4\" fill=\"#000000\" opacity=\"0.55\"/>
+</svg>`,
+    sunbasker_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- rock -->
+  <path d=\"M2 26 Q4 22 8 22.5 L24 22.5 Q28 22 30 26 L30 30 L2 30 Z\" fill=\"#7d7a72\"/>
+  <path d=\"M2 28.5 L30 28.5 L30 30 L2 30 Z\" fill=\"#5f5c55\"/>
+  <!-- tail -->
+  <path d=\"M23.5 20.5 Q28 21.5 30.5 24.5 Q27 24 23.8 22.6 Z\" fill=\"#b58a4e\"/>
+  <!-- body -->
+  <ellipse cx=\"16\" cy=\"20\" rx=\"8\" ry=\"2.7\" fill=\"#c69a5e\"/>
+  <ellipse cx=\"16\" cy=\"21.6\" rx=\"7\" ry=\"1.3\" fill=\"#a87f47\" opacity=\"0.6\"/>
+  <!-- scale texture -->
+  <g fill=\"#9a7040\" opacity=\"0.7\">
+    <circle cx=\"12\" cy=\"19\" r=\"0.45\"/><circle cx=\"14.5\" cy=\"20.4\" r=\"0.45\"/><circle cx=\"17\" cy=\"19.2\" r=\"0.45\"/>
+    <circle cx=\"19.5\" cy=\"20.5\" r=\"0.45\"/><circle cx=\"22\" cy=\"19.6\" r=\"0.45\"/><circle cx=\"10\" cy=\"20.6\" r=\"0.45\"/>
+  </g>
+  <!-- legs -->
+  <path d=\"M9 21.8 L6.8 25.2 M11 21.8 L9.6 25.4\" stroke=\"#b58a4e\" stroke-width=\"1.3\"/>
+  <path d=\"M21 21.8 L23 25.2 M23.2 21.8 L25 25\" stroke=\"#b58a4e\" stroke-width=\"1.3\"/>
+  <g stroke=\"#3d2c18\" stroke-width=\"0.6\">
+    <path d=\"M6.8 25.2 l-1 0.8 M6.8 25.2 l0.2 1 M6.8 25.2 l1 0.6\"/>
+    <path d=\"M9.6 25.4 l-1 0.8 M9.6 25.4 l0.2 1 M9.6 25.4 l1 0.6\"/>
+    <path d=\"M23 25.2 l-1 0.8 M23 25.2 l0.2 1 M23 25.2 l1 0.6\"/>
+    <path d=\"M25 25 l-1 0.8 M25 25 l0.2 1 M25 25 l1 0.6\"/>
+  </g>
+  <!-- head: triangular, basking tilt -->
+  <path d=\"M9.5 20.2 L2.8 17.8 Q2 17.5 2.4 18.4 L3.6 22.6 L9.8 22.8 Z\" fill=\"#c69a5e\"/>
+  <!-- beard spikes -->
+  <g fill=\"#a87f47\">
+    <path d=\"M4.5 21.8 l-0.9 1.2 l1.4 0.2 Z M6.2 22.2 l-0.7 1.3 l1.4 0 Z M8 22.5 l-0.6 1.2 l1.3 0 Z\"/>
+  </g>
+  <!-- brow + eye -->
+  <path d=\"M3.4 18.6 q1.2 -0.5 2.4 -0.2\" stroke=\"#9a7040\" stroke-width=\"0.7\" fill=\"none\"/>
+  <circle cx=\"4.6\" cy=\"19.2\" r=\"0.55\" fill=\"#1f150a\"/>
+  <circle cx=\"4.75\" cy=\"19.05\" r=\"0.18\" fill=\"#fff\" opacity=\"0.8\"/>
+  <!-- nostril + mouth line -->
+  <circle cx=\"3\" cy=\"19.6\" r=\"0.25\" fill=\"#6b4e2a\"/>
+  <path d=\"M2.6 21 q1.6 0.4 3.4 0.2\" stroke=\"#6b4e2a\" stroke-width=\"0.5\" fill=\"none\"/>
+</svg>`,
+    sunbasker_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- the sun it drinks from: clean bright disc, clear of the lizard -->
+  <circle cx=\"6.5\" cy=\"6\" r=\"5\" fill=\"#ffcf3f\" opacity=\"0.9\"/>
+  <g stroke=\"#ffdd55\" stroke-width=\"0.8\" opacity=\"0.5\">
+    <path d=\"M6.5 -1 l0 2 M12.5 6 l2 0 M0.5 6 l2 0 M2.6 1.1 l1.4 1.4 M10.4 1.1 l-1.4 1.4\"/>
+  </g>
+  <!-- rock, darkened -->
+  <path d=\"M2 26 Q4 22 8 22.5 L24 22.5 Q28 22 30 26 L30 30 L2 30 Z\" fill=\"#3d3630\"/>
+  <!-- tail -->
+  <path d=\"M23.5 20.5 Q28 21.5 30.5 24.5 Q27 24 23.8 22.6 Z\" fill=\"#4a2f18\"/>
+  <!-- body: scorched crust -->
+  <ellipse cx=\"16\" cy=\"20\" rx=\"8\" ry=\"2.7\" fill=\"#4a2f18\"/>
+  <!-- magma cracks: the charge showing through -->
+  <g stroke=\"#ff7a1a\" stroke-width=\"0.7\" opacity=\"0.95\">
+    <path d=\"M11 18.2 l1.5 1.2 l1 1.6 M15 17.8 l1 1.8 l1.5 1 M19 18 l1.2 1.4 l0.8 1.8 M23 18.6 l1 1.4\"/>
+    <path d=\"M12.5 21.5 l3 0.4 M17.5 21.8 l3.5 0.2\" opacity=\"0.7\"/>
+  </g>
+  <circle cx=\"16\" cy=\"20\" r=\"0.5\" fill=\"#ffd23f\" opacity=\"0.9\"/>
+  <!-- legs -->
+  <path d=\"M9 21.8 L6.8 25.2 M11 21.8 L9.6 25.4\" stroke=\"#4a2f18\" stroke-width=\"1.3\"/>
+  <path d=\"M21 21.8 L23 25.2 M23.2 21.8 L25 25\" stroke=\"#4a2f18\" stroke-width=\"1.3\"/>
+  <!-- head: jaws AGAPE, solar-charged -->
+  <path d=\"M9.5 19.8 L3 16.5 Q2.2 16.2 2.8 17.4 L5 21.5 Z\" fill=\"#4a2f18\"/>
+  <!-- upper jaw -->
+  <path d=\"M9.5 19.8 L2.6 17.2 Q1.8 16.9 2.2 18 L3.4 20.6 Z\" fill=\"#5c3a1e\"/>
+  <!-- lower jaw dropped -->
+  <path d=\"M9.8 22.2 L3.8 25.8 Q3 26.2 3.2 25.2 L4 22.6 Z\" fill=\"#5c3a1e\"/>
+  <!-- molten mouth interior: the Sun-Charged Bite -->
+  <path d=\"M8.6 20.2 L3.2 18.6 Q2.6 18.5 2.9 19.4 L4.6 23.6 L8.8 22.6 Z\" fill=\"#ff4d00\"/>
+  <path d=\"M7.4 20.2 L4 19.2 Q3.6 19.2 3.8 19.8 L5 22.6 L7.6 22 Z\" fill=\"#ffd23f\"/>
+  <!-- teeth -->
+  <g fill=\"#fff8ea\">
+    <path d=\"M3.4 18.4 l0.5 1 l0.5 -1 Z M4.8 18.2 l0.5 1 l0.5 -1 Z M6.2 18.4 l0.5 1 l0.5 -1 Z\"/>
+    <path d=\"M4.4 24.4 l0.5 -1 l0.5 1 Z M5.8 24 l0.5 -1 l0.5 1 Z\"/>
+  </g>
+  <!-- burning eye -->
+  <circle cx=\"5.4\" cy=\"18\" r=\"0.9\" fill=\"#2a1505\"/>
+  <circle cx=\"5.4\" cy=\"18\" r=\"0.55\" fill=\"#fff200\"/>
+  <circle cx=\"5.4\" cy=\"18\" r=\"0.9\" fill=\"none\" stroke=\"#ff4d00\" stroke-width=\"0.5\" opacity=\"0.8\"/>
+  <!-- heat shimmer rising off the back -->
+  <g stroke=\"#ffdd55\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.55\">
+    <path d=\"M13 14.5 q1 -1.5 0 -3 q-1 -1.5 0 -3\"/>
+    <path d=\"M17 14.5 q1 -1.5 0 -3 q-1 -1.5 0 -3\"/>
+    <path d=\"M21 14.5 q1 -1.5 0 -3 q-1 -1.5 0 -3\"/>
+  </g>
+  <!-- embers -->
+  <g fill=\"#ff7a1a\" opacity=\"0.9\">
+    <circle cx=\"10\" cy=\"13\" r=\"0.5\"/><circle cx=\"24\" cy=\"12\" r=\"0.4\"/><circle cx=\"20\" cy=\"9\" r=\"0.55\"/>
+  </g>
+</svg>`,
+        voice_mimic_radio_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- base / feet -->
+  <rect x=\"8\" y=\"25\" width=\"3\" height=\"2.4\" rx=\"0.8\" fill=\"#4a3a22\"/>
+  <rect x=\"21\" y=\"25\" width=\"3\" height=\"2.4\" rx=\"0.8\" fill=\"#4a3a22\"/>
+  <!-- cabinet -->
+  <rect x=\"4.5\" y=\"8\" width=\"23\" height=\"17.5\" rx=\"4.5\" fill=\"#7a5a30\"/>
+  <rect x=\"4.5\" y=\"8\" width=\"23\" height=\"17.5\" rx=\"4.5\" fill=\"none\" stroke=\"#4f7a6a\" stroke-width=\"1.4\"/>
+  <!-- gold speaker grill, curved slats -->
+  <g stroke=\"#d9a94f\" stroke-width=\"0.85\" opacity=\"0.95\">
+    <path d=\"M8 11 q-1 6 0 11 M10 10.6 q-1.2 6.4 0 11.8 M12 10.4 q-1.2 6.6 0 12.2\"/>
+    <path d=\"M24 11 q1 6 0 11 M22 10.6 q1.2 6.4 0 11.8 M20 10.4 q1.2 6.6 0 12.2\"/>
+  </g>
+  <!-- dial glass -->
+  <rect x=\"12.6\" y=\"10.2\" width=\"6.8\" height=\"7.4\" rx=\"1\" fill=\"#1e1a12\"/>
+  <g stroke=\"#e8dfc8\" stroke-width=\"0.3\" opacity=\"0.8\">
+    <path d=\"M13.6 12.5 l0 -1.4 M15 12.5 l0 -1.4 M16.4 12.5 l0 -1.4 M17.8 12.5 l0 -1.4\"/>
+    <path d=\"M13.6 16.6 l0 -1.4 M15 16.6 l0 -1.4 M16.4 16.6 l0 -1.4 M17.8 16.6 l0 -1.4\"/>
+  </g>
+  <path d=\"M16 10.6 L16 17.2\" stroke=\"#c23b2e\" stroke-width=\"0.5\"/>
+  <!-- brand plate -->
+  <rect x=\"14.2\" y=\"22.6\" width=\"3.6\" height=\"1.4\" rx=\"0.4\" fill=\"#c9b98a\"/>
+  <!-- knobs -->
+  <g>
+    <circle cx=\"8.6\" cy=\"20.4\" r=\"1.25\" fill=\"#d9cfb0\"/>
+    <circle cx=\"12.2\" cy=\"20.4\" r=\"1.25\" fill=\"#d9cfb0\"/>
+    <circle cx=\"19.8\" cy=\"20.4\" r=\"1.25\" fill=\"#d9cfb0\"/>
+    <circle cx=\"23.4\" cy=\"20.4\" r=\"1.25\" fill=\"#d9cfb0\"/>
+    <path d=\"M8.6 20.4 l0 -0.9 M12.2 20.4 l0.6 -0.7 M19.8 20.4 l-0.6 -0.7 M23.4 20.4 l0 -0.9\" stroke=\"#5a4a2a\" stroke-width=\"0.4\"/>
+  </g>
+</svg>`,
+    voice_mimic_radio_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- the voice has a visible source: sound waves leaving the grille-mouth -->
+  <g stroke=\"#ff2a2a\" fill=\"none\" opacity=\"0.75\">
+    <path d=\"M26.5 12 q2 4 0 8\" stroke-width=\"0.9\"/>
+    <path d=\"M28.6 10 q3 6 0 12\" stroke-width=\"0.7\" opacity=\"0.6\"/>
+    <path d=\"M30.6 8 q4 8 0 16\" stroke-width=\"0.6\" opacity=\"0.4\"/>
+  </g>
+  <!-- cabinet, warped -->
+  <rect x=\"2.5\" y=\"8\" width=\"23\" height=\"17.5\" rx=\"4.5\" fill=\"#4a3820\"/>
+  <rect x=\"2.5\" y=\"8\" width=\"23\" height=\"17.5\" rx=\"4.5\" fill=\"none\" stroke=\"#2e4a42\" stroke-width=\"1.4\"/>
+  <!-- cracks in the wood -->
+  <g stroke=\"#1c1208\" stroke-width=\"0.6\">
+    <path d=\"M4 10 l2 3 l-1 2 M24 9 l-2 2.5 M22 23 l1.5 -2\"/>
+  </g>
+  <!-- gold slats warping INTO the mouth -->
+  <g stroke=\"#b07f35\" stroke-width=\"0.85\" opacity=\"0.95\">
+    <path d=\"M6 11 q-1 6 0 11 M8 10.6 q-0.5 5 1.5 8.5\"/>
+    <path d=\"M22 11 q1 6 0 11 M20 10.6 q0.5 5 -1.5 8.5\"/>
+  </g>
+  <!-- THE MOUTH: grille slats bent into a screaming throat -->
+  <ellipse cx=\"14\" cy=\"16.5\" rx=\"3.4\" ry=\"4.4\" fill=\"#070505\"/>
+  <ellipse cx=\"14\" cy=\"16.5\" rx=\"3.4\" ry=\"4.4\" fill=\"none\" stroke=\"#b07f35\" stroke-width=\"1\"/>
+  <ellipse cx=\"14\" cy=\"17.2\" rx=\"2\" ry=\"2.8\" fill=\"#3d0d0d\"/>
+  <ellipse cx=\"14\" cy=\"17.8\" rx=\"1\" ry=\"1.6\" fill=\"#0a0a0a\"/>
+  <!-- torn grill bars across the maw -->
+  <g stroke=\"#b07f35\" stroke-width=\"0.6\">
+    <path d=\"M11.4 14.5 q2.6 1 5.2 0 M11.2 16.8 q2.8 1.2 5.6 0 M11.4 19.2 q2.6 1 5.2 0\"/>
+  </g>
+  <!-- knobs staring: two spun into eyes -->
+  <circle cx=\"6.6\" cy=\"20.4\" r=\"1.5\" fill=\"#d9cfb0\"/>
+  <circle cx=\"6.6\" cy=\"20.4\" r=\"0.7\" fill=\"#8a1a1a\"/>
+  <circle cx=\"21.4\" cy=\"20.4\" r=\"1.5\" fill=\"#d9cfb0\"/>
+  <circle cx=\"21.4\" cy=\"20.4\" r=\"0.7\" fill=\"#8a1a1a\"/>
+  <circle cx=\"10.4\" cy=\"20.4\" r=\"1.1\" fill=\"#6a5a3a\" opacity=\"0.7\"/>
+  <circle cx=\"17.6\" cy=\"20.4\" r=\"1.1\" fill=\"#6a5a3a\" opacity=\"0.7\"/>
+  <!-- dial glass gone dark, needle snapped -->
+  <rect x=\"10.6\" y=\"10.2\" width=\"6.8\" height=\"3\" rx=\"0.8\" fill=\"#0a0806\"/>
+  <path d=\"M14 10.6 L13.4 13\" stroke=\"#c23b2e\" stroke-width=\"0.5\"/>
+  <!-- static tendrils rising -->
+  <g stroke=\"#8a1a1a\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.85\">
+    <path d=\"M9 8 q-1 -2.5 0.5 -4 q1.5 -1.5 1 -3\"/>
+    <path d=\"M19 8 q1.5 -2 -0.5 -3.5\"/>
+  </g>
+  <circle cx=\"10.5\" cy=\"1\" r=\"0.5\" fill=\"#ff2a2a\" opacity=\"0.8\"/>
+</svg>`,
+    mirror_stag_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- treeline backdrop: tall dark trunks -->
+  <rect x=\"0\" y=\"0\" width=\"3.4\" height=\"32\" fill=\"#1c2620\"/>
+  <rect x=\"28.6\" y=\"0\" width=\"3.4\" height=\"32\" fill=\"#1c2620\"/>
+  <ellipse cx=\"1.6\" cy=\"3\" rx=\"3.2\" ry=\"3.6\" fill=\"#24352a\"/>
+  <ellipse cx=\"30.4\" cy=\"2.4\" rx=\"3.2\" ry=\"3.6\" fill=\"#24352a\"/>
+  <ellipse cx=\"5.2\" cy=\"8.4\" rx=\"2.6\" ry=\"2.2\" fill=\"#2b3d31\" opacity=\"0.85\"/>
+  <ellipse cx=\"26.8\" cy=\"8.4\" rx=\"2.6\" ry=\"2.2\" fill=\"#2b3d31\" opacity=\"0.85\"/>
+  <!-- legs -->
+  <rect x=\"11.6\" y=\"24\" width=\"1.5\" height=\"7\" fill=\"#4a331d\"/>
+  <rect x=\"18.9\" y=\"24\" width=\"1.5\" height=\"7\" fill=\"#4a331d\"/>
+  <rect x=\"13.9\" y=\"24.6\" width=\"1.4\" height=\"6.4\" fill=\"#3c2a17\"/>
+  <rect x=\"16.7\" y=\"24.6\" width=\"1.4\" height=\"6.4\" fill=\"#3c2a17\"/>
+  <!-- body: chestnut brown, front-facing -->
+  <ellipse cx=\"16\" cy=\"19.5\" rx=\"6\" ry=\"7.2\" fill=\"#7a5230\"/>
+  <ellipse cx=\"16\" cy=\"20.5\" rx=\"4.2\" ry=\"5.6\" fill=\"#8a6238\"/>
+  <!-- chest / throat patch (whitetail cream) -->
+  <path d=\"M13.2,13.6 Q16,15.4 18.8,13.6 Q18,17.5 16,19 Q14,17.5 13.2,13.6 Z\" fill=\"#dcc9a6\"/>
+  <!-- neck -->
+  <rect x=\"13.8\" y=\"9.5\" width=\"4.4\" height=\"5\" rx=\"1.6\" fill=\"#7a5230\"/>
+  <!-- ears: broad, alert -->
+  <path d=\"M13.4,9.6 L7.4,5.6 L11.4,11.2 Z\" fill=\"#7a5230\"/>
+  <path d=\"M18.6,9.6 L24.6,5.6 L20.6,11.2 Z\" fill=\"#7a5230\"/>
+  <path d=\"M12.6,9.2 L8.8,6.6 L11.4,10.4 Z\" fill=\"#d9c19a\"/>
+  <path d=\"M19.4,9.2 L23.2,6.6 L20.6,10.4 Z\" fill=\"#d9c19a\"/>
+  <!-- head -->
+  <ellipse cx=\"16\" cy=\"8\" rx=\"3\" ry=\"3.4\" fill=\"#7a5230\"/>
+  <!-- muzzle: cream, whitetail -->
+  <ellipse cx=\"16\" cy=\"9.8\" rx=\"1.9\" ry=\"1.7\" fill=\"#dcc9a6\"/>
+  <ellipse cx=\"16\" cy=\"10.3\" rx=\"1\" ry=\"0.8\" fill=\"#2b2118\"/>
+  <ellipse cx=\"16\" cy=\"9\" rx=\"0.55\" ry=\"0.35\" fill=\"#7a5230\"/>
+  <!-- eyes -->
+  <circle cx=\"13.9\" cy=\"7.2\" r=\"0.55\" fill=\"#1d1409\"/>
+  <circle cx=\"18.1\" cy=\"7.2\" r=\"0.55\" fill=\"#1d1409\"/>
+  <circle cx=\"14.05\" cy=\"7.05\" r=\"0.16\" fill=\"#fff\" opacity=\"0.8\"/>
+  <circle cx=\"18.25\" cy=\"7.05\" r=\"0.16\" fill=\"#fff\" opacity=\"0.8\"/>
+  <!-- antlers: bone, branching -->
+  <g stroke=\"#d8c9a8\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\">
+    <path d=\"M14.2,5.6 C13.6,4 12.6,3 12,1.6 M14.2,5.6 C14.6,4.2 14.4,3 14.8,1.8\"/>
+    <path d=\"M12.6,3.4 L11,3 M13.2,2.6 L12.2,1.8\"/>
+    <path d=\"M17.8,5.6 C18.4,4 19.4,3 20,1.6 M17.8,5.6 C17.4,4.2 17.6,3 17.2,1.8\"/>
+    <path d=\"M19.4,3.4 L21,3 M18.8,2.6 L19.8,1.8\"/>
+  </g>
+  <!-- sunlight-on-glass flash: one glint on a tine -->
+  <path d=\"M21,2.2 L21.25,2.95 L22,3.2 L21.25,3.45 L21,4.2 L20.75,3.45 L20,3.2 L20.75,2.95 Z\" fill=\"#f4f7ee\"/>
+  <path d=\"M24.6,8.2 L24.75,8.7 L25.25,8.85 L24.75,9 L24.6,9.5 L24.45,9 L23.95,8.85 L24.45,8.7 Z\" fill=\"#f4f7ee\" opacity=\"0.55\"/>
+</svg>`,
+    mirror_stag_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- psychic charge shimmer radiating from the antlers -->
+  <g stroke=\"#bfe3f2\" fill=\"none\" opacity=\"0.55\">
+    <path d=\"M9,6.5 C7.5,4.5 7,2.5 7.5,0.8\" stroke-width=\"1\"/>
+    <path d=\"M23,6.5 C24.5,4.5 25,2.5 24.5,0.8\" stroke-width=\"1\"/>
+    <path d=\"M5.5,9.5 C4,7.5 3.2,5 3.6,2.6\" stroke-width=\"0.7\" opacity=\"0.7\"/>
+    <path d=\"M26.5,9.5 C28,7.5 28.8,5 28.4,2.6\" stroke-width=\"0.7\" opacity=\"0.7\"/>
+  </g>
+  <!-- warped treeline -->
+  <polygon points=\"0,0 3.2,0 2.4,32 0,32\" fill=\"#0d1512\"/>
+  <polygon points=\"28.8,0 32,0 32,32 29.6,32\" fill=\"#0d1512\"/>
+  <!-- driving legs: front pair thrust forward, rear pair back -->
+  <g fill=\"#0a0c10\">
+    <polygon points=\"12.5,24 14,24 12.8,31 11.4,31\"/>
+    <polygon points=\"15.5,24.4 17,24.4 16.4,31 15,31\"/>
+    <polygon points=\"17.5,24.4 19,24.4 20.4,31 19,31\"/>
+    <polygon points=\"20,24 21.5,24 23.4,30.6 22,31\"/>
+  </g>
+  <!-- kick dust -->
+  <g fill=\"#2a323b\" opacity=\"0.8\">
+    <ellipse cx=\"10\" cy=\"30.5\" rx=\"1.6\" ry=\"0.9\"/>
+    <ellipse cx=\"23.5\" cy=\"30.8\" rx=\"1.8\" ry=\"1\"/>
+    <ellipse cx=\"18\" cy=\"31\" rx=\"2.4\" ry=\"0.8\" opacity=\"0.6\"/>
+  </g>
+  <!-- body: blackened, leaning into the charge -->
+  <ellipse cx=\"16\" cy=\"21.5\" rx=\"6.4\" ry=\"7\" fill=\"#141a20\"/>
+  <ellipse cx=\"16\" cy=\"22.5\" rx=\"4.5\" ry=\"5.4\" fill=\"#1b232b\"/>
+  <!-- mirror cracks + reflected face -->
+  <g stroke=\"#bfe3f2\" stroke-width=\"0.5\" opacity=\"0.9\" fill=\"none\">
+    <path d=\"M11.8,19 L14.3,21 L12.8,23.5\"/>
+    <path d=\"M20.2,19.5 L18.4,22 L20,24\"/>
+  </g>
+  <g fill=\"#d8ecf7\" opacity=\"0.95\">
+    <ellipse cx=\"13.8\" cy=\"20.8\" rx=\"0.5\" ry=\"0.7\"/>
+    <ellipse cx=\"15.6\" cy=\"21.2\" rx=\"0.42\" ry=\"0.6\"/>
+    <ellipse cx=\"14.7\" cy=\"23\" rx=\"0.55\" ry=\"0.85\"/>
+  </g>
+  <g fill=\"#141a20\" opacity=\"0.9\">
+    <circle cx=\"13.8\" cy=\"20.8\" r=\"0.28\"/>
+    <circle cx=\"15.6\" cy=\"21.2\" r=\"0.24\"/>
+    <ellipse cx=\"14.7\" cy=\"23\" rx=\"0.3\" ry=\"0.55\"/>
+  </g>
+  <!-- extra pale eyes along the flanks -->
+  <g>
+    <ellipse cx=\"11.6\" cy=\"24.6\" rx=\"0.6\" ry=\"0.5\" fill=\"#cfe9ff\" opacity=\"0.9\"/>
+    <circle cx=\"11.6\" cy=\"24.6\" r=\"0.22\" fill=\"#0d0d0d\"/>
+    <ellipse cx=\"20.4\" cy=\"25\" rx=\"0.6\" ry=\"0.5\" fill=\"#cfe9ff\" opacity=\"0.9\"/>
+    <circle cx=\"20.4\" cy=\"25\" r=\"0.22\" fill=\"#0d0d0d\"/>
+  </g>
+  <!-- neck angled down-forward -->
+  <polygon points=\"13.4,16 18.6,16 17.6,11.5 14.4,11.5\" fill=\"#141a20\"/>
+  <!-- ears pinned flat back -->
+  <path d=\"M13.6,13.4 L8,13.8 L12.8,15.6 Z\" fill=\"#0a0c10\"/>
+  <path d=\"M18.4,13.4 L24,13.8 L19.2,15.6 Z\" fill=\"#0a0c10\"/>
+  <!-- HEAD LOWERED for the charge -->
+  <ellipse cx=\"16\" cy=\"12.4\" rx=\"3.2\" ry=\"3\" fill=\"#141a20\"/>
+  <ellipse cx=\"16\" cy=\"13.8\" rx=\"2\" ry=\"1.6\" fill=\"#232b34\"/>
+  <!-- brow shadow over burning eyes -->
+  <path d=\"M12.8,9.6 L19.2,9.6 L18.6,10.8 L13.4,10.8 Z\" fill=\"#0a0c10\"/>
+  <ellipse cx=\"13.9\" cy=\"11\" rx=\"0.85\" ry=\"1\" fill=\"#f4f7ee\"/>
+  <ellipse cx=\"18.1\" cy=\"11\" rx=\"0.85\" ry=\"1\" fill=\"#f4f7ee\"/>
+  <circle cx=\"13.9\" cy=\"11.2\" r=\"0.45\" fill=\"#05070a\"/>
+  <circle cx=\"18.1\" cy=\"11.2\" r=\"0.45\" fill=\"#05070a\"/>
+  <circle cx=\"14.1\" cy=\"10.9\" r=\"0.15\" fill=\"#f4f7ee\"/>
+  <circle cx=\"18.3\" cy=\"10.9\" r=\"0.15\" fill=\"#f4f7ee\"/>
+  <!-- nostrils flared, breath steaming -->
+  <ellipse cx=\"15.1\" cy=\"14.2\" rx=\"0.28\" ry=\"0.2\" fill=\"#05070a\"/>
+  <ellipse cx=\"16.9\" cy=\"14.2\" rx=\"0.28\" ry=\"0.2\" fill=\"#05070a\"/>
+  <path d=\"M14.6,15 C14.2,16.2 13.8,17 13.4,18\" stroke=\"#bfe3f2\" stroke-width=\"0.5\" opacity=\"0.5\" fill=\"none\"/>
+  <path d=\"M17.4,15 C17.8,16.2 18.2,17 18.6,18\" stroke=\"#bfe3f2\" stroke-width=\"0.5\" opacity=\"0.5\" fill=\"none\"/>
+  <!-- MIRROR-SHARD ANTLERS: angled forward, the charge weapons -->
+  <g>
+    <polygon points=\"14.2,10.2 9.5,6.4 12.2,5.2 11.2,7.8 13.6,7\" fill=\"#9fc4e8\" opacity=\"0.95\"/>
+    <polygon points=\"14.8,9.8 12.6,3.6 14.4,3.4 14.6,6.4\" fill=\"#d8ecf7\" opacity=\"0.95\"/>
+    <polygon points=\"17.8,10.2 22.5,6.4 19.8,5.2 20.8,7.8 18.4,7\" fill=\"#9fc4e8\" opacity=\"0.95\"/>
+    <polygon points=\"17.2,9.8 19.4,3.6 17.6,3.4 17.4,6.4\" fill=\"#d8ecf7\" opacity=\"0.95\"/>
+    <polygon points=\"13.4,8.8 9.8,8.2 11.2,9.6\" fill=\"#cfe9ff\" opacity=\"0.9\"/>
+    <polygon points=\"18.6,8.8 22.2,8.2 20.8,9.6\" fill=\"#cfe9ff\" opacity=\"0.9\"/>
+  </g>
+  <!-- psychic glints firing off the shard tips -->
+  <path d=\"M12.6,3.2 L12.85,3.95 L13.6,4.2 L12.85,4.45 L12.6,5.2 L12.35,4.45 L11.6,4.2 L12.35,3.95 Z\" fill=\"#ffffff\"/>
+  <path d=\"M19.4,3.2 L19.65,3.95 L20.4,4.2 L19.65,4.45 L19.4,5.2 L19.15,4.45 L18.4,4.2 L19.15,3.95 Z\" fill=\"#ffffff\"/>
+  <!-- shard particles kicked up -->
+  <path d=\"M6.5,15 L7.1,16.2 L5.9,16.2 Z\" fill=\"#9fc4e8\" opacity=\"0.7\"/>
+  <path d=\"M25.8,17.5 L26.4,18.7 L25.2,18.7 Z\" fill=\"#9fc4e8\" opacity=\"0.7\"/>
+</svg>`,
+    review_drone_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- soft projection pool on the ground -->
+  <ellipse cx=\"16\" cy=\"29\" rx=\"9\" ry=\"2.2\" fill=\"#fff6d8\" opacity=\"0.35\"/>
+  <ellipse cx=\"16\" cy=\"29\" rx=\"5.5\" ry=\"1.4\" fill=\"#fff6d8\" opacity=\"0.4\"/>
+  <!-- projection cone from the clip-lamp -->
+  <polygon points=\"13.6,19 18.4,19 23,29 9,29\" fill=\"#fff2c0\" opacity=\"0.16\"/>
+  <!-- rotor blur discs -->
+  <ellipse cx=\"5.5\" cy=\"5.5\" rx=\"3.6\" ry=\"1\" fill=\"#8a97a5\" opacity=\"0.55\"/>
+  <ellipse cx=\"26.5\" cy=\"5.5\" rx=\"3.6\" ry=\"1\" fill=\"#8a97a5\" opacity=\"0.55\"/>
+  <!-- arms -->
+  <line x1=\"9\" y1=\"6.5\" x2=\"5.8\" y2=\"5.8\" stroke=\"#39434e\" stroke-width=\"1.2\"/>
+  <line x1=\"23\" y1=\"6.5\" x2=\"26.2\" y2=\"5.8\" stroke=\"#39434e\" stroke-width=\"1.2\"/>
+  <circle cx=\"5.5\" cy=\"5.5\" r=\"0.6\" fill=\"#39434e\"/>
+  <circle cx=\"26.5\" cy=\"5.5\" r=\"0.6\" fill=\"#39434e\"/>
+  <!-- drone body -->
+  <rect x=\"11.5\" y=\"4.5\" width=\"9\" height=\"4.5\" rx=\"2.2\" fill=\"#5a6a7a\" stroke=\"#39434e\" stroke-width=\"0.8\"/>
+  <!-- camera eye -->
+  <circle cx=\"16\" cy=\"6.75\" r=\"1.5\" fill=\"#2b3540\" stroke=\"#39434e\" stroke-width=\"0.5\"/>
+  <circle cx=\"16\" cy=\"6.75\" r=\"0.6\" fill=\"#9fc4e8\"/>
+  <circle cx=\"16.2\" cy=\"6.5\" r=\"0.18\" fill=\"#fff\"/>
+  <!-- status blink -->
+  <circle cx=\"19.2\" cy=\"5.6\" r=\"0.45\" fill=\"#7dd87d\"/>
+  <!-- tether to clipboard -->
+  <line x1=\"16\" y1=\"9\" x2=\"16\" y2=\"11.4\" stroke=\"#39434e\" stroke-width=\"0.8\"/>
+  <!-- clipboard board -->
+  <rect x=\"10.5\" y=\"11.4\" width=\"11\" height=\"12.6\" rx=\"1\" fill=\"#d8c9a3\" stroke=\"#8a7a58\" stroke-width=\"0.8\"/>
+  <!-- metal clip -->
+  <rect x=\"13.6\" y=\"10.6\" width=\"4.8\" height=\"2.4\" rx=\"1.1\" fill=\"#9aa2ac\" stroke=\"#6a727c\" stroke-width=\"0.6\"/>
+  <circle cx=\"16\" cy=\"11.8\" r=\"0.5\" fill=\"#6a727c\"/>
+  <!-- paper with checklist lines -->
+  <rect x=\"12\" y=\"13.8\" width=\"8\" height=\"7.4\" fill=\"#f4f1e6\"/>
+  <line x1=\"13\" y1=\"15.6\" x2=\"19\" y2=\"15.6\" stroke=\"#a89a7c\" stroke-width=\"0.6\"/>
+  <line x1=\"13\" y1=\"17.6\" x2=\"19\" y2=\"17.6\" stroke=\"#a89a7c\" stroke-width=\"0.6\"/>
+  <line x1=\"13\" y1=\"19.6\" x2=\"17.5\" y2=\"19.6\" stroke=\"#a89a7c\" stroke-width=\"0.6\"/>
+  <!-- checked boxes -->
+  <rect x=\"12.6\" y=\"15\" width=\"1\" height=\"1\" fill=\"none\" stroke=\"#6a7a5a\" stroke-width=\"0.6\"/>
+  <path d=\"M12.5,15.5 L13.2,16.2 L14.2,14.8\" stroke=\"#4a7a3a\" stroke-width=\"0.6\" fill=\"none\"/>
+  <!-- clip-lamp emitter under the board: the projector -->
+  <rect x=\"14.4\" y=\"24\" width=\"3.2\" height=\"2.2\" rx=\"0.8\" fill=\"#39434e\"/>
+  <circle cx=\"16\" cy=\"25.6\" r=\"1\" fill=\"#fff2c0\"/>
+  <circle cx=\"16\" cy=\"25.6\" r=\"0.45\" fill=\"#ffe08a\"/>
+</svg>`,
+    review_drone_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- grading beam target ring on the ground -->
+  <ellipse cx=\"16\" cy=\"29.5\" rx=\"9\" ry=\"2.2\" fill=\"#ff3b2a\" opacity=\"0.25\"/>
+  <ellipse cx=\"16\" cy=\"29.5\" rx=\"5.5\" ry=\"1.3\" fill=\"none\" stroke=\"#ff6a55\" stroke-width=\"0.7\" opacity=\"0.8\"/>
+  <ellipse cx=\"16\" cy=\"29.5\" rx=\"2.2\" ry=\"0.55\" fill=\"#ff3b2a\" opacity=\"0.5\"/>
+  <!-- the beam weapon: hard red grading cone -->
+  <polygon points=\"13.4,21 18.6,21 23.5,29.5 8.5,29.5\" fill=\"#ff3b2a\" opacity=\"0.28\"/>
+  <polygon points=\"14.6,21 17.4,21 20,29.5 12,29.5\" fill=\"#ff6a55\" opacity=\"0.35\"/>
+  <line x1=\"16\" y1=\"21\" x2=\"16\" y2=\"29.5\" stroke=\"#ffd0c0\" stroke-width=\"0.8\" opacity=\"0.8\"/>
+  <!-- jagged rotor blades -->
+  <polygon points=\"2.2,5.5 5.8,4.6 6.4,6.4 2.6,6.9\" fill=\"#3a3f47\"/>
+  <polygon points=\"29.8,5.5 26.2,4.6 25.6,6.4 29.4,6.9\" fill=\"#3a3f47\"/>
+  <line x1=\"8.6\" y1=\"6.4\" x2=\"4.4\" y2=\"5.8\" stroke=\"#1d2025\" stroke-width=\"1.4\"/>
+  <line x1=\"23.4\" y1=\"6.4\" x2=\"27.6\" y2=\"5.8\" stroke=\"#1d2025\" stroke-width=\"1.4\"/>
+  <!-- drone body: darkened -->
+  <rect x=\"11.5\" y=\"4\" width=\"9\" height=\"5\" rx=\"2.2\" fill=\"#2e333b\" stroke=\"#14161a\" stroke-width=\"0.9\"/>
+  <!-- one glaring red sensor eye -->
+  <circle cx=\"16\" cy=\"6.5\" r=\"2\" fill=\"#7a0d05\" stroke=\"#1d2025\" stroke-width=\"0.6\"/>
+  <circle cx=\"16\" cy=\"6.5\" r=\"1.2\" fill=\"#ff3b2a\"/>
+  <circle cx=\"16\" cy=\"6.5\" r=\"0.45\" fill=\"#2a0503\"/>
+  <circle cx=\"16.4\" cy=\"6.2\" r=\"0.18\" fill=\"#ffb0a0\"/>
+  <!-- red underglow slits -->
+  <rect x=\"12.6\" y=\"8\" width=\"2\" height=\"0.7\" fill=\"#ff3b2a\" opacity=\"0.8\"/>
+  <rect x=\"17.4\" y=\"8\" width=\"2\" height=\"0.7\" fill=\"#ff3b2a\" opacity=\"0.8\"/>
+  <!-- tether -->
+  <line x1=\"16\" y1=\"9\" x2=\"16\" y2=\"11.4\" stroke=\"#1d2025\" stroke-width=\"0.8\"/>
+  <!-- clipboard: graded to death -->
+  <rect x=\"10.5\" y=\"11.4\" width=\"11\" height=\"11\" rx=\"1\" fill=\"#c9b98f\" stroke=\"#5a4a34\" stroke-width=\"0.9\"/>
+  <rect x=\"13.6\" y=\"10.6\" width=\"4.8\" height=\"2.4\" rx=\"1.1\" fill=\"#5a626c\" stroke=\"#2a2e33\" stroke-width=\"0.6\"/>
+  <rect x=\"12\" y=\"13.8\" width=\"8\" height=\"6.4\" fill=\"#efe9d8\"/>
+  <!-- red X marks -->
+  <g stroke=\"#c22e1e\" stroke-width=\"1.1\">
+    <path d=\"M13,14.6 L14.8,16.4 M14.8,14.6 L13,16.4\"/>
+    <path d=\"M16,14.6 L17.8,16.4 M17.8,14.6 L16,16.4\"/>
+    <path d=\"M13,17.4 L14.8,19.2 M14.8,17.4 L13,19.2\"/>
+  </g>
+  <!-- the giant F -->
+  <text x=\"16.2\" y=\"20.4\" font-family=\"monospace\" font-size=\"5.5\" font-weight=\"bold\" fill=\"#c22e1e\">F</text>
+  <!-- score slashes across the board -->
+  <line x1=\"10.5\" y1=\"15.4\" x2=\"21.5\" y2=\"15.4\" stroke=\"#ff6a55\" stroke-width=\"0.5\" opacity=\"0.6\"/>
+  <line x1=\"10.5\" y1=\"18.4\" x2=\"21.5\" y2=\"18.4\" stroke=\"#ff6a55\" stroke-width=\"0.5\" opacity=\"0.5\"/>
+  <!-- BEAM EMITTER: oversized red lens barrel under the board -->
+  <rect x=\"13.2\" y=\"22.4\" width=\"5.6\" height=\"2.6\" rx=\"1\" fill=\"#1d2025\" stroke=\"#ff3b2a\" stroke-width=\"0.7\"/>
+  <circle cx=\"16\" cy=\"23.7\" r=\"1.9\" fill=\"#ff3b2a\" opacity=\"0.45\"/>
+  <circle cx=\"16\" cy=\"23.7\" r=\"1.3\" fill=\"#ff6a55\"/>
+  <circle cx=\"16\" cy=\"23.7\" r=\"0.6\" fill=\"#fff0d8\"/>
+  <!-- emitter glow -->
+  <circle cx=\"16\" cy=\"23.7\" r=\"2.6\" fill=\"none\" stroke=\"#ff6a55\" stroke-width=\"0.5\" opacity=\"0.6\"/>
+</svg>`,
+    bright_idea_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- warm halo -->
+  <circle cx=\"16\" cy=\"17\" r=\"10\" fill=\"#ffd76b\" opacity=\"0.12\"/>
+  <circle cx=\"16\" cy=\"17\" r=\"7.5\" fill=\"#ffd76b\" opacity=\"0.14\"/>
+  <!-- hanging wire -->
+  <line x1=\"16\" y1=\"0\" x2=\"16\" y2=\"6\" stroke=\"#2a2a2a\" stroke-width=\"0.9\"/>
+  <!-- brass screw base -->
+  <rect x=\"13.2\" y=\"6\" width=\"5.6\" height=\"2.6\" rx=\"0.6\" fill=\"#8a6f3a\" stroke=\"#5a4726\" stroke-width=\"0.6\"/>
+  <line x1=\"13.2\" y1=\"7\" x2=\"18.8\" y2=\"7\" stroke=\"#5a4726\" stroke-width=\"0.5\"/>
+  <line x1=\"13.2\" y1=\"7.9\" x2=\"18.8\" y2=\"7.9\" stroke=\"#5a4726\" stroke-width=\"0.5\"/>
+  <!-- glass bulb -->
+  <path d=\"M13.6,8.6 C11,11 10.2,13.6 10.2,16.4 C10.2,20.6 12.8,23.4 16,23.4 C19.2,23.4 21.8,20.6 21.8,16.4 C21.8,13.6 21,11 18.4,8.6 Z\" fill=\"#fff3c8\" opacity=\"0.92\" stroke=\"#c8a860\" stroke-width=\"0.6\"/>
+  <!-- glass shine -->
+  <path d=\"M12.2,13.5 C11.8,15 11.6,16.6 12,18.4\" stroke=\"#ffffff\" stroke-width=\"1\" opacity=\"0.7\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- filament supports -->
+  <line x1=\"14.2\" y1=\"23\" x2=\"14.2\" y2=\"16.5\" stroke=\"#6a5a40\" stroke-width=\"0.5\"/>
+  <line x1=\"17.8\" y1=\"23\" x2=\"17.8\" y2=\"16.5\" stroke=\"#6a5a40\" stroke-width=\"0.5\"/>
+  <!-- warm filament: W shape -->
+  <path d=\"M14.2,16.5 L15.1,19 L16,16.5 L16.9,19 L17.8,16.5\" fill=\"none\" stroke=\"#e08a2a\" stroke-width=\"1\" stroke-linecap=\"round\"/>
+  <!-- inner glow -->
+  <ellipse cx=\"16\" cy=\"17.8\" rx=\"3\" ry=\"2.6\" fill=\"#ffcf6b\" opacity=\"0.5\"/>
+  <!-- fireflies / sparks of the idea -->
+  <path d=\"M7.5,8 L7.7,8.7 L8.4,8.9 L7.7,9.1 L7.5,9.8 L7.3,9.1 L6.6,8.9 L7.3,8.7 Z\" fill=\"#fff2c0\" opacity=\"0.9\"/>
+  <path d=\"M24.5,10.5 L24.7,11.2 L25.4,11.4 L24.7,11.6 L24.5,12.3 L24.3,11.6 L23.6,11.4 L24.3,11.2 Z\" fill=\"#fff2c0\" opacity=\"0.85\"/>
+  <circle cx=\"25.5\" cy=\"21\" r=\"0.45\" fill=\"#ffdf90\" opacity=\"0.8\"/>
+  <circle cx=\"6.5\" cy=\"20\" r=\"0.4\" fill=\"#ffdf90\" opacity=\"0.7\"/>
+</svg>`,
+    bright_idea_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- burst rays exploding outward -->
+  <g stroke=\"#ff8a3a\" stroke-linecap=\"round\" opacity=\"0.9\">
+    <line x1=\"16\" y1=\"2.5\" x2=\"16\" y2=\"0.4\" stroke-width=\"1.2\"/>
+    <line x1=\"16\" y1=\"29.5\" x2=\"16\" y2=\"31.6\" stroke-width=\"1.2\"/>
+    <line x1=\"2.5\" y1=\"16\" x2=\"0.4\" y2=\"16\" stroke-width=\"1.2\"/>
+    <line x1=\"29.5\" y1=\"16\" x2=\"31.6\" y2=\"16\" stroke-width=\"1.2\"/>
+    <line x1=\"6.4\" y1=\"6.4\" x2=\"4.9\" y2=\"4.9\" stroke-width=\"1\"/>
+    <line x1=\"25.6\" y1=\"6.4\" x2=\"27.1\" y2=\"4.9\" stroke-width=\"1\"/>
+    <line x1=\"6.4\" y1=\"25.6\" x2=\"4.9\" y2=\"27.1\" stroke-width=\"1\"/>
+    <line x1=\"25.6\" y1=\"25.6\" x2=\"27.1\" y2=\"27.1\" stroke-width=\"1\"/>
+  </g>
+  <g stroke=\"#ffd76b\" stroke-linecap=\"round\" opacity=\"0.7\">
+    <line x1=\"16\" y1=\"4.4\" x2=\"16\" y2=\"3\" stroke-width=\"0.7\"/>
+    <line x1=\"4.4\" y1=\"16\" x2=\"3\" y2=\"16\" stroke-width=\"0.7\"/>
+    <line x1=\"27.6\" y1=\"16\" x2=\"29\" y2=\"16\" stroke-width=\"0.7\"/>
+  </g>
+  <!-- harsh burst halo -->
+  <circle cx=\"16\" cy=\"16\" r=\"11.5\" fill=\"#ff8a3a\" opacity=\"0.22\"/>
+  <circle cx=\"16\" cy=\"16\" r=\"8.5\" fill=\"#ffcf6b\" opacity=\"0.28\"/>
+  <!-- snapped wire stub -->
+  <line x1=\"16\" y1=\"0\" x2=\"16\" y2=\"3.2\" stroke=\"#2a2a2a\" stroke-width=\"1\"/>
+  <path d=\"M16,3.2 L15.2,4.4 M16,3.2 L16.8,4.6\" stroke=\"#2a2a2a\" stroke-width=\"0.6\"/>
+  <!-- brass base: cracked -->
+  <rect x=\"13.2\" y=\"4.8\" width=\"5.6\" height=\"2.6\" rx=\"0.6\" fill=\"#5a4a2e\" stroke=\"#3a3018\" stroke-width=\"0.6\"/>
+  <line x1=\"14.6\" y1=\"4.8\" x2=\"14.2\" y2=\"7.4\" stroke=\"#3a3018\" stroke-width=\"0.6\"/>
+  <line x1=\"17.6\" y1=\"4.8\" x2=\"18\" y2=\"7.4\" stroke=\"#3a3018\" stroke-width=\"0.6\"/>
+  <!-- shattered bulb glass: cracked sphere, blown apart -->
+  <path d=\"M13.4,7.4 C10.6,10 9.6,12.8 9.6,16 C9.6,20.8 12.4,24 16,24 C19.6,24 22.4,20.8 22.4,16 C22.4,12.8 21.4,10 18.6,7.4\" fill=\"none\" stroke=\"#e8d9a8\" stroke-width=\"1\" opacity=\"0.85\"/>
+  <!-- crack lines racing across the glass -->
+  <g stroke=\"#fff8dc\" stroke-width=\"0.6\" opacity=\"0.9\">
+    <path d=\"M13.4,7.4 L11.6,10.5 L13.2,11.2 L10.6,14\" fill=\"none\"/>
+    <path d=\"M18.6,7.4 L20.4,10.5 L18.8,11.2 L21.4,14\" fill=\"none\"/>
+    <path d=\"M10.2,15.5 L12.6,16.2 M20.8,18.5 L22.2,17.4\" fill=\"none\"/>
+  </g>
+  <!-- THE EYE INSIDE THE LIGHT -->
+  <ellipse cx=\"16\" cy=\"16\" rx=\"4.6\" ry=\"3.8\" fill=\"#f4ede0\"/>
+  <!-- bloodshot veins -->
+  <g stroke=\"#c22e1e\" stroke-width=\"0.55\" opacity=\"0.85\" fill=\"none\">
+    <path d=\"M11.8,14.2 C12.8,14.8 13.4,15.4 14,16\"/>
+    <path d=\"M20.2,14.4 C19.2,15 18.6,15.4 18,16\"/>
+    <path d=\"M12.2,18 C13,17.6 13.8,17.2 14.4,16.8\"/>
+    <path d=\"M19.8,18.2 C19,17.8 18.2,17.4 17.6,17\"/>
+  </g>
+  <!-- iris: burning amber ring -->
+  <circle cx=\"16\" cy=\"16\" r=\"2.5\" fill=\"#e08a2a\"/>
+  <circle cx=\"16\" cy=\"16\" r=\"2.5\" fill=\"none\" stroke=\"#7a3a10\" stroke-width=\"0.5\"/>
+  <!-- iris striations -->
+  <g stroke=\"#7a3a10\" stroke-width=\"0.4\" opacity=\"0.8\">
+    <line x1=\"16\" y1=\"13.9\" x2=\"16\" y2=\"14.8\"/>
+    <line x1=\"16\" y1=\"17.2\" x2=\"16\" y2=\"18.1\"/>
+    <line x1=\"13.9\" y1=\"16\" x2=\"14.8\" y2=\"16\"/>
+    <line x1=\"17.2\" y1=\"16\" x2=\"18.1\" y2=\"16\"/>
+  </g>
+  <circle cx=\"16\" cy=\"16\" r=\"1.2\" fill=\"#0d0d0d\"/>
+  <circle cx=\"16.5\" cy=\"15.5\" r=\"0.4\" fill=\"#ffffff\"/>
+  <!-- lid shadow: the eye stares through the cracks -->
+  <path d=\"M11.6,14.6 C13.4,12.6 18.6,12.6 20.4,14.6 C18.6,13.6 13.4,13.6 11.6,14.6 Z\" fill=\"#8a6a4a\" opacity=\"0.6\"/>
+  <!-- filament replaced: red-hot nerve strands -->
+  <g stroke=\"#ff3b2a\" stroke-width=\"0.7\" opacity=\"0.95\" fill=\"none\">
+    <path d=\"M13.8,22 C14.4,20.6 15,19.8 15.4,19\"/>
+    <path d=\"M18.2,22 C17.6,20.6 17,19.8 16.6,19\"/>
+  </g>
+  <!-- flying glass shards -->
+  <g fill=\"#e8d9a8\" opacity=\"0.95\">
+    <polygon points=\"6.8,10.5 8.2,10 7.6,11.6\"/>
+    <polygon points=\"25.2,10.5 23.8,10 24.4,11.6\"/>
+    <polygon points=\"5.6,20.5 7,21.2 5.8,22\"/>
+    <polygon points=\"26.4,20.5 25,21.2 26.2,22\"/>
+    <polygon points=\"9.4,26.5 10.6,26 10.2,27.4\"/>
+    <polygon points=\"22.6,26.5 21.4,26 21.8,27.4\"/>
+  </g>
+  <!-- shard glints -->
+  <path d=\"M7.4,10.6 L7.55,11.1 L8.05,11.25 L7.55,11.4 L7.4,11.9 L7.25,11.4 L6.75,11.25 L7.25,11.1 Z\" fill=\"#ffffff\"/>
+  <path d=\"M24.6,10.6 L24.75,11.1 L25.25,11.25 L24.75,11.4 L24.6,11.9 L24.45,11.4 L23.95,11.25 L24.45,11.1 Z\" fill=\"#ffffff\"/>
+</svg>`,
+    memory_projector_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- warm flicker beam -->
+  <polygon points=\"23.5,14.5 30,11.5 30,17.5 23.5,15.2\" fill=\"#ffd76b\" opacity=\"0.25\"/>
+  <!-- table line -->
+  <line x1=\"3\" y1=\"27.5\" x2=\"29\" y2=\"27.5\" stroke=\"#4a3b28\" stroke-width=\"1.5\"/>
+  <!-- stand feet -->
+  <rect x=\"9\" y=\"25\" width=\"2\" height=\"2.5\" fill=\"#3a3a3d\"/>
+  <rect x=\"21\" y=\"25\" width=\"2\" height=\"2.5\" fill=\"#3a3a3d\"/>
+  <!-- body: vintage metal box -->
+  <rect x=\"7.5\" y=\"15.5\" width=\"15\" height=\"9.5\" rx=\"1.5\" fill=\"#6a6a6e\" stroke=\"#333336\" stroke-width=\"0.8\"/>
+  <rect x=\"7.5\" y=\"15.5\" width=\"15\" height=\"3\" rx=\"1.5\" fill=\"#7a7a7e\"/>
+  <!-- reel arms -->
+  <line x1=\"11\" y1=\"15.5\" x2=\"11\" y2=\"12.6\" stroke=\"#3a3a3d\" stroke-width=\"1\"/>
+  <line x1=\"19\" y1=\"15.5\" x2=\"19\" y2=\"12.6\" stroke=\"#3a3a3d\" stroke-width=\"1\"/>
+  <!-- film reels: supply and take-up -->
+  <g>
+    <circle cx=\"11\" cy=\"9.2\" r=\"3.5\" fill=\"#d8d4c8\" stroke=\"#55534a\" stroke-width=\"0.8\"/>
+    <circle cx=\"11\" cy=\"9.2\" r=\"2.2\" fill=\"none\" stroke=\"#55534a\" stroke-width=\"0.5\"/>
+    <circle cx=\"11\" cy=\"9.2\" r=\"0.7\" fill=\"#55534a\"/>
+    <g fill=\"#55534a\">
+      <circle cx=\"11\" cy=\"7.6\" r=\"0.42\"/>
+      <circle cx=\"12.4\" cy=\"10\" r=\"0.42\"/>
+      <circle cx=\"9.6\" cy=\"10\" r=\"0.42\"/>
+    </g>
+    <circle cx=\"19\" cy=\"9.2\" r=\"3.5\" fill=\"#cfc9b8\" stroke=\"#55534a\" stroke-width=\"0.8\"/>
+    <circle cx=\"19\" cy=\"9.2\" r=\"2.2\" fill=\"none\" stroke=\"#55534a\" stroke-width=\"0.5\"/>
+    <circle cx=\"19\" cy=\"9.2\" r=\"0.7\" fill=\"#55534a\"/>
+    <g fill=\"#55534a\">
+      <circle cx=\"19\" cy=\"7.6\" r=\"0.42\"/>
+      <circle cx=\"20.4\" cy=\"10\" r=\"0.42\"/>
+      <circle cx=\"17.6\" cy=\"10\" r=\"0.42\"/>
+    </g>
+  </g>
+  <!-- film thread from reel to gate -->
+  <path d=\"M11,12.7 C11,14 10.4,14.8 9.4,15.5\" stroke=\"#2a2a2a\" stroke-width=\"0.7\" fill=\"none\"/>
+  <!-- lens housing: the projector's eye -->
+  <rect x=\"21.5\" y=\"16.5\" width=\"4.5\" height=\"5\" rx=\"1\" fill=\"#2b2f36\" stroke=\"#17191d\" stroke-width=\"0.7\"/>
+  <circle cx=\"23.8\" cy=\"19\" r=\"1.7\" fill=\"#17191d\"/>
+  <circle cx=\"23.8\" cy=\"19\" r=\"1\" fill=\"#9fc4e8\" opacity=\"0.85\"/>
+  <circle cx=\"24.1\" cy=\"18.7\" r=\"0.3\" fill=\"#ffffff\" opacity=\"0.8\"/>
+  <!-- warm pilot light -->
+  <circle cx=\"8.6\" cy=\"22.6\" r=\"0.55\" fill=\"#ffe08a\"/>
+  <!-- vent slits -->
+  <line x1=\"13\" y1=\"22.2\" x2=\"18\" y2=\"22.2\" stroke=\"#3a3a3e\" stroke-width=\"0.6\"/>
+  <line x1=\"13\" y1=\"23.6\" x2=\"18\" y2=\"23.6\" stroke=\"#3a3a3e\" stroke-width=\"0.6\"/>
+  <!-- flicker dust in the beam -->
+  <circle cx=\"26.5\" cy=\"13.6\" r=\"0.45\" fill=\"#ffe08a\" opacity=\"0.8\"/>
+  <circle cx=\"28\" cy=\"15\" r=\"0.35\" fill=\"#ffe08a\" opacity=\"0.6\"/>
+  <circle cx=\"27\" cy=\"16.8\" r=\"0.3\" fill=\"#ffe08a\" opacity=\"0.45\"/>
+</svg>`,
+    memory_projector_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- THE PROJECTION BEAM: sickly psychic cone, the weapon -->
+  <polygon points=\"25,14.5 31.5,10.5 31.5,21.5 25,17.5\" fill=\"#cfe06a\" opacity=\"0.22\"/>
+  <polygon points=\"25,15.2 31.5,12.5 31.5,19.5 25,16.8\" fill=\"#e8f09a\" opacity=\"0.25\"/>
+  <!-- twisted face riding inside the beam -->
+  <g fill=\"#e8f0c8\" opacity=\"0.9\">
+    <ellipse cx=\"28.4\" cy=\"14.6\" rx=\"0.55\" ry=\"0.75\"/>
+    <ellipse cx=\"30\" cy=\"14.8\" rx=\"0.45\" ry=\"0.65\"/>
+    <ellipse cx=\"29.2\" cy=\"16.9\" rx=\"0.6\" ry=\"0.9\"/>
+  </g>
+  <g fill=\"#3a4020\" opacity=\"0.9\">
+    <circle cx=\"28.4\" cy=\"14.6\" r=\"0.3\"/>
+    <circle cx=\"30\" cy=\"14.8\" r=\"0.26\"/>
+    <ellipse cx=\"29.2\" cy=\"16.9\" rx=\"0.32\" ry=\"0.6\"/>
+  </g>
+  <!-- ground line -->
+  <line x1=\"2\" y1=\"27.5\" x2=\"28\" y2=\"27.5\" stroke=\"#2a2018\" stroke-width=\"1.5\"/>
+  <!-- FILM-TENTACLES writhing from the body -->
+  <g stroke=\"#1d1a14\" fill=\"none\" stroke-linecap=\"round\">
+    <path d=\"M8,22 C5,23 3.4,25 2.8,28\" stroke-width=\"2.4\"/>
+    <path d=\"M10,24.5 C8,26 6.6,27.4 5.6,30\" stroke-width=\"1.8\"/>
+    <path d=\"M23,22 C26,23 27.6,25 28.2,28\" stroke-width=\"2.4\"/>
+    <path d=\"M11,11.5 C9,9.5 7.6,7 7.2,4\" stroke-width=\"2\"/>
+    <path d=\"M19,11.5 C21,9.5 22.4,7 22.8,4\" stroke-width=\"2\"/>
+  </g>
+  <!-- sprocket holes on the tentacles -->
+  <g fill=\"#c9c0a8\" opacity=\"0.85\">
+    <circle cx=\"5.4\" cy=\"24.6\" r=\"0.35\"/><circle cx=\"4\" cy=\"26.2\" r=\"0.35\"/>
+    <circle cx=\"24.6\" cy=\"24.6\" r=\"0.35\"/><circle cx=\"26\" cy=\"26.2\" r=\"0.35\"/>
+    <circle cx=\"8.6\" cy=\"8.6\" r=\"0.32\"/><circle cx=\"7.8\" cy=\"6.4\" r=\"0.32\"/>
+    <circle cx=\"21.4\" cy=\"8.6\" r=\"0.32\"/><circle cx=\"22.2\" cy=\"6.4\" r=\"0.32\"/>
+  </g>
+  <!-- tiny faces on the film -->
+  <g fill=\"#c9c0a8\" opacity=\"0.9\">
+    <ellipse cx=\"3.4\" cy=\"27\" rx=\"0.5\" ry=\"0.65\"/>
+    <ellipse cx=\"26.6\" cy=\"27\" rx=\"0.5\" ry=\"0.65\"/>
+  </g>
+  <g fill=\"#1d1a14\">
+    <circle cx=\"3.3\" cy=\"26.9\" r=\"0.12\"/><circle cx=\"3.6\" cy=\"26.9\" r=\"0.12\"/>
+    <ellipse cx=\"3.45\" cy=\"27.3\" rx=\"0.14\" ry=\"0.2\"/>
+    <circle cx=\"26.5\" cy=\"26.9\" r=\"0.12\"/><circle cx=\"26.8\" cy=\"26.9\" r=\"0.12\"/>
+    <ellipse cx=\"26.65\" cy=\"27.3\" rx=\"0.14\" ry=\"0.2\"/>
+  </g>
+  <!-- body: darkened, breathing -->
+  <rect x=\"7.5\" y=\"15.5\" width=\"15\" height=\"9.5\" rx=\"1.5\" fill=\"#3a3a3e\" stroke=\"#17171a\" stroke-width=\"0.9\"/>
+  <rect x=\"7.5\" y=\"15.5\" width=\"15\" height=\"3\" rx=\"1.5\" fill=\"#4a4a4e\"/>
+  <!-- veins across the body -->
+  <g stroke=\"#c22e1e\" stroke-width=\"0.5\" opacity=\"0.6\" fill=\"none\">
+    <path d=\"M9,19 C11,18 13,19.5 15,18.5\"/>
+    <path d=\"M16,21 C18,20 20,21.5 21.5,20.5\"/>
+  </g>
+  <!-- stand feet -->
+  <rect x=\"9\" y=\"25\" width=\"2\" height=\"2.5\" fill=\"#1d1a14\"/>
+  <rect x=\"21\" y=\"25\" width=\"2\" height=\"2.5\" fill=\"#1d1a14\"/>
+  <!-- REELS AS LIDLESS EYES -->
+  <g>
+    <circle cx=\"11\" cy=\"9.2\" r=\"3.6\" fill=\"#c9c0a8\" stroke=\"#3a352a\" stroke-width=\"0.8\"/>
+    <circle cx=\"11\" cy=\"9.2\" r=\"2.5\" fill=\"#efe9d8\"/>
+    <circle cx=\"11\" cy=\"9.2\" r=\"1.4\" fill=\"#c22e1e\"/>
+    <circle cx=\"11\" cy=\"9.2\" r=\"0.6\" fill=\"#0d0d0d\"/>
+    <circle cx=\"11.3\" cy=\"8.9\" r=\"0.2\" fill=\"#ffffff\"/>
+    <circle cx=\"19\" cy=\"9.2\" r=\"3.6\" fill=\"#bdb49e\" stroke=\"#3a352a\" stroke-width=\"0.8\"/>
+    <circle cx=\"19\" cy=\"9.2\" r=\"2.5\" fill=\"#e8e0cc\"/>
+    <circle cx=\"19\" cy=\"9.2\" r=\"1.4\" fill=\"#c22e1e\"/>
+    <circle cx=\"19\" cy=\"9.2\" r=\"0.6\" fill=\"#0d0d0d\"/>
+    <circle cx=\"19.3\" cy=\"8.9\" r=\"0.2\" fill=\"#ffffff\"/>
+  </g>
+  <!-- film thread -->
+  <path d=\"M11,12.7 C11,14 10.4,14.8 9.4,15.5\" stroke=\"#1d1a14\" stroke-width=\"0.8\" fill=\"none\"/>
+  <!-- LENS AS GAPING MAW: the beam source -->
+  <rect x=\"21.5\" y=\"14.5\" width=\"5\" height=\"8\" rx=\"1\" fill=\"#1d2025\" stroke=\"#c22e1e\" stroke-width=\"0.8\"/>
+  <ellipse cx=\"24\" cy=\"18.5\" rx=\"1.9\" ry=\"2.6\" fill=\"#3a0d08\" stroke=\"#ff6a55\" stroke-width=\"0.7\"/>
+  <ellipse cx=\"24\" cy=\"18.5\" rx=\"1.1\" ry=\"1.7\" fill=\"#ff3b2a\" opacity=\"0.85\"/>
+  <ellipse cx=\"24\" cy=\"18.5\" rx=\"0.5\" ry=\"0.9\" fill=\"#ffd0c0\"/>
+  <!-- teeth at the maw rim -->
+  <g fill=\"#d8d0b8\">
+    <polygon points=\"22.6,16 23.2,17.2 22.2,17\"/>
+    <polygon points=\"24,15.9 24.6,17.1 23.4,17\"/>
+    <polygon points=\"25.4,16 25.2,17.2 24.4,16.6\"/>
+    <polygon points=\"22.6,21 23.2,19.8 22.2,20\"/>
+    <polygon points=\"25.4,21 25.2,19.8 24.4,20.4\"/>
+  </g>
+  <!-- maw glow -->
+  <circle cx=\"24\" cy=\"18.5\" r=\"3.4\" fill=\"none\" stroke=\"#ff6a55\" stroke-width=\"0.5\" opacity=\"0.5\"/>
+  <!-- red pilot light -->
+  <circle cx=\"8.6\" cy=\"22.6\" r=\"0.55\" fill=\"#ff3b2a\"/>
+  <!-- vent slits: now gill-like -->
+  <line x1=\"13\" y1=\"22.2\" x2=\"18\" y2=\"22.2\" stroke=\"#17171a\" stroke-width=\"0.6\"/>
+  <line x1=\"13\" y1=\"23.6\" x2=\"18\" y2=\"23.6\" stroke=\"#17171a\" stroke-width=\"0.6\"/>
+</svg>`,
+    warranty_caller_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- coiled cord trailing -->
+  <path d=\"M25 25 q3 0.5 2.5 3 q-0.4 2 2 2.4\" stroke=\"#101012\" stroke-width=\"1.2\" fill=\"none\"/>
+  <!-- base -->
+  <path d=\"M9 19 L23 19 L25.5 27 L6.5 27 Z\" fill=\"#1c1c1e\"/>
+  <path d=\"M9 19 L23 19 L22.6 21 L9.4 21 Z\" fill=\"#2c2c30\"/>
+  <!-- rotary dial -->
+  <circle cx=\"16\" cy=\"23.4\" r=\"3.1\" fill=\"#b9b9bd\"/>
+  <circle cx=\"16\" cy=\"23.4\" r=\"3.1\" fill=\"none\" stroke=\"#0c0c0e\" stroke-width=\"0.6\"/>
+  <g fill=\"#1c1c1e\">
+    <circle cx=\"16\" cy=\"21\" r=\"0.55\"/><circle cx=\"18.2\" cy=\"22.2\" r=\"0.55\"/><circle cx=\"17.6\" cy=\"24.8\" r=\"0.55\"/>
+    <circle cx=\"14.4\" cy=\"24.8\" r=\"0.55\"/><circle cx=\"13.8\" cy=\"22.2\" r=\"0.55\"/>
+  </g>
+  <circle cx=\"16\" cy=\"23.4\" r=\"1.1\" fill=\"#e8e4da\"/>
+  <circle cx=\"16\" cy=\"23.4\" r=\"1.1\" fill=\"none\" stroke=\"#8a8a8e\" stroke-width=\"0.3\"/>
+  <!-- finger stop -->
+  <rect x=\"19.6\" y=\"23.6\" width=\"0.9\" height=\"2.2\" rx=\"0.4\" fill=\"#6a6a6e\" transform=\"rotate(-20 20 24.6)\"/>
+  <!-- cradle posts -->
+  <rect x=\"10.2\" y=\"16.6\" width=\"1.6\" height=\"3\" rx=\"0.6\" fill=\"#141416\"/>
+  <rect x=\"20.2\" y=\"16.6\" width=\"1.6\" height=\"3\" rx=\"0.6\" fill=\"#141416\"/>
+  <!-- handset resting -->
+  <rect x=\"7.5\" y=\"13\" width=\"17\" height=\"3.2\" rx=\"1.6\" fill=\"#232326\"/>
+  <ellipse cx=\"8.6\" cy=\"14.6\" rx=\"2.2\" ry=\"2.4\" fill=\"#1a1a1c\"/>
+  <ellipse cx=\"23.4\" cy=\"14.6\" rx=\"2.2\" ry=\"2.4\" fill=\"#1a1a1c\"/>
+  <!-- earpiece / mouthpiece holes -->
+  <g fill=\"#0a0a0a\">
+    <circle cx=\"8\" cy=\"13.8\" r=\"0.4\"/><circle cx=\"9.2\" cy=\"13.8\" r=\"0.4\"/><circle cx=\"8.6\" cy=\"15\" r=\"0.4\"/>
+    <circle cx=\"22.8\" cy=\"13.8\" r=\"0.4\"/><circle cx=\"24\" cy=\"13.8\" r=\"0.4\"/><circle cx=\"23.4\" cy=\"15\" r=\"0.4\"/>
+  </g>
+</svg>`,
+    warranty_caller_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- RUSH: streaks trail behind the lunge, to the right -->
+  <g stroke=\"#ffffff\" stroke-width=\"1\" opacity=\"0.45\">
+    <path d=\"M26 6 L31 6 M27 11 L32 11 M26 16 L31 16\"/>
+  </g>
+  <!-- base abandoned behind, dial spinning off its stop -->
+  <g transform=\"rotate(10 25 26)\">
+    <path d=\"M20 23 L30 23 L31.5 29 L18.5 29 Z\" fill=\"#101012\"/>
+    <circle cx=\"25\" cy=\"26.2\" r=\"2.4\" fill=\"#8a8a8e\"/>
+    <g stroke=\"#1c1c1e\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.8\">
+      <path d=\"M22.7 26.2 a2.3 2.3 0 0 1 4.6 0\"/>
+      <path d=\"M23.5 26.2 a1.5 1.5 0 0 1 3 0\"/>
+    </g>
+  </g>
+  <!-- cord writhing up off the base like a tendril -->
+  <path d=\"M24 23 q-4 -3 -2.5 -6.5 q1.2 -2.8 -0.5 -5 q-1.2 -1.6 0 -3\" stroke=\"#101012\" stroke-width=\"1.4\" fill=\"none\"/>
+  <!-- THE HANDSET, lunging at the viewer: earpiece high-right, mouthpiece low-left and HUGE -->
+  <!-- grip bar -->
+  <path d=\"M11.5 17.5 L22.5 8.5 L25.5 12.5 L14.5 21.5 Z\" fill=\"#1a1a1c\"/>
+  <path d=\"M11.5 17.5 L22.5 8.5 L25.5 12.5 L14.5 21.5 Z\" fill=\"none\" stroke=\"#3a3a40\" stroke-width=\"0.6\"/>
+  <!-- earpiece: the staring end -->
+  <ellipse cx=\"24.5\" cy=\"10\" rx=\"3.2\" ry=\"3.5\" fill=\"#232326\" transform=\"rotate(-25 24.5 10)\"/>
+  <ellipse cx=\"24.5\" cy=\"10\" rx=\"3.2\" ry=\"3.5\" fill=\"none\" stroke=\"#3a3a40\" stroke-width=\"0.6\" transform=\"rotate(-25 24.5 10)\"/>
+  <g fill=\"#0a0a0a\">
+    <circle cx=\"23.2\" cy=\"8.6\" r=\"0.62\"/><circle cx=\"25.6\" cy=\"9.2\" r=\"0.62\"/>
+    <circle cx=\"23.6\" cy=\"11\" r=\"0.62\"/><circle cx=\"26\" cy=\"11.4\" r=\"0.62\"/>
+    <circle cx=\"24.7\" cy=\"10\" r=\"0.62\"/>
+  </g>
+  <!-- MOUTHPIECE AGAPE: flared screaming cup, the focal point -->
+  <ellipse cx=\"9.5\" cy=\"20.5\" rx=\"5\" ry=\"5.4\" fill=\"#2c2c30\" transform=\"rotate(-15 9.5 20.5)\"/>
+  <ellipse cx=\"9.5\" cy=\"20.5\" rx=\"4\" ry=\"4.4\" fill=\"#050505\" transform=\"rotate(-15 9.5 20.5)\"/>
+  <ellipse cx=\"9.5\" cy=\"20.5\" rx=\"4\" ry=\"4.4\" fill=\"none\" stroke=\"#ff2a2a\" stroke-width=\"0.9\" opacity=\"0.75\" transform=\"rotate(-15 9.5 20.5)\"/>
+  <ellipse cx=\"9.5\" cy=\"20.5\" rx=\"2.2\" ry=\"2.6\" fill=\"#1a0505\" transform=\"rotate(-15 9.5 20.5)\"/>
+  <!-- torn holes around the flared rim -->
+  <g fill=\"#0a0a0a\">
+    <circle cx=\"5.6\" cy=\"16.8\" r=\"0.55\"/><circle cx=\"13\" cy=\"16.4\" r=\"0.55\"/>
+    <circle cx=\"5.2\" cy=\"24\" r=\"0.55\"/><circle cx=\"13.4\" cy=\"24.6\" r=\"0.55\"/>
+  </g>
+  <!-- still ringing: red echo arcs bursting from the mouth -->
+  <g stroke=\"#ff2a2a\" fill=\"none\" opacity=\"0.85\">
+    <path d=\"M3.4 13.5 q-2 7 0 14\" stroke-width=\"1\"/>
+    <path d=\"M1.2 11.5 q-2.6 9 0 18\" stroke-width=\"0.7\" opacity=\"0.55\"/>
+  </g>
+</svg>`,
+        understudy_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#24382c\"><polygon points=\"0,32 0,14 5,4 10,14 10,32\"/><polygon points=\"32,32 32,12 27,2 22,12 22,32\"/><polygon points=\"24,32 24,18 27,11 30,18 30,32\" opacity=\"0.7\"/></g><g fill=\"#a8adb3\"><ellipse cx=\"16\" cy=\"7.6\" rx=\"3.2\" ry=\"3.8\"/><path d=\"M16 11.2 C11.4 11.2 10.4 16 10.4 21 L10.4 32 L21.6 32 L21.6 21 C21.6 16 20.6 11.2 16 11.2 Z\"/><rect x=\"7\" y=\"13.5\" width=\"2.6\" height=\"12\" rx=\"1.3\"/><rect x=\"22.4\" y=\"13.5\" width=\"2.6\" height=\"12\" rx=\"1.3\"/></g><g fill=\"#8b9097\"><rect x=\"13\" y=\"24.5\" width=\"2.2\" height=\"7.5\" rx=\"1.1\"/><rect x=\"16.8\" y=\"24.5\" width=\"2.2\" height=\"7.5\" rx=\"1.1\"/></g></svg>`,
+    understudy_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#8b9097\" opacity=\"0.32\"><ellipse cx=\"24\" cy=\"10\" rx=\"3\" ry=\"3.6\"/><path d=\"M24 13.4 C20.1 13.4 19.3 17.4 19.3 22 L19.3 30 L28.7 30 L28.7 22 C28.7 17.4 27.9 13.4 24 13.4 Z\"/><path d=\"M25.5 12.5 L28.5 6.5\" stroke=\"#8b9097\" stroke-width=\"2.2\" stroke-linecap=\"round\" fill=\"none\"/></g><g fill=\"#c6ccd4\"><ellipse cx=\"13.5\" cy=\"8.5\" rx=\"3.5\" ry=\"4\"/><path d=\"M13.5 12.2 C9 12.2 8 17 8 22 L8 32 L19 32 L19 22 C19 17 18 12.2 13.5 12.2 Z\"/><rect x=\"5.5\" y=\"14.5\" width=\"2.6\" height=\"11\" rx=\"1.3\"/><rect x=\"18.9\" y=\"14.5\" width=\"2.6\" height=\"11\" rx=\"1.3\"/></g><g fill=\"#8b9097\"><rect x=\"12.5\" y=\"24.5\" width=\"2.2\" height=\"7.5\" rx=\"1.1\"/><rect x=\"16.3\" y=\"24.5\" width=\"2.2\" height=\"7.5\" rx=\"1.1\"/></g><g stroke=\"#6e747c\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"><path d=\"M19.5 11.5 L24.5 5.5\"/><path d=\"M7.5 18.5 L3 22.5\"/></g><circle cx=\"25.2\" cy=\"4.8\" r=\"1.6\" fill=\"#6e747c\"/><circle cx=\"2.4\" cy=\"23\" r=\"1.5\" fill=\"#6e747c\"/><g stroke=\"#14181d\" stroke-width=\"0.7\" stroke-linecap=\"round\"><line x1=\"24\" y1=\"3.6\" x2=\"22.8\" y2=\"1.6\"/><line x1=\"25.2\" y1=\"3.2\" x2=\"25\" y2=\"1\"/><line x1=\"26.4\" y1=\"3.6\" x2=\"27.4\" y2=\"1.6\"/><line x1=\"27\" y1=\"4.8\" x2=\"29\" y2=\"4\"/><line x1=\"1.2\" y1=\"22\" x2=\"-0.6\" y2=\"20.6\"/><line x1=\"1\" y1=\"23.4\" x2=\"-1\" y2=\"23.2\"/><line x1=\"1.6\" y1=\"24.6\" x2=\"0.2\" y2=\"26.2\"/><line x1=\"2.8\" y1=\"25.2\" x2=\"2\" y2=\"27.2\"/></g><ellipse cx=\"16.2\" cy=\"7.2\" rx=\"0.8\" ry=\"1.1\" fill=\"#14181d\"/><circle cx=\"11\" cy=\"8.6\" r=\"1.3\" fill=\"none\" stroke=\"#e8b64c\" stroke-width=\"0.7\" stroke-dasharray=\"1.4 1.1\"/><path d=\"M9.9 11.2 Q13.5 13.9 17.4 10.4\" stroke=\"#14181d\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/><g stroke=\"#14181d\" stroke-width=\"0.6\"><line x1=\"11.3\" y1=\"11.7\" x2=\"11.3\" y2=\"13.3\"/><line x1=\"12.7\" y1=\"12.2\" x2=\"12.7\" y2=\"13.8\"/><line x1=\"14.1\" y1=\"12.3\" x2=\"14.1\" y2=\"13.9\"/><line x1=\"15.5\" y1=\"11.9\" x2=\"15.5\" y2=\"13.5\"/></g><path d=\"M8.2 4.6 C10.4 2.8 13.2 2.2 15.8 2.6\" stroke=\"#e8b64c\" stroke-width=\"0.8\" stroke-dasharray=\"1.6 1.2\" fill=\"none\"/></svg>`,
+    landlord_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><rect x=\"22.5\" y=\"14\" width=\"2.4\" height=\"18\" rx=\"1\" fill=\"#6b4f2e\"/><rect x=\"17.5\" y=\"7.5\" width=\"11\" height=\"7\" rx=\"1\" fill=\"#f3ead8\" stroke=\"#6b4f2e\" stroke-width=\"1\"/><g stroke=\"#9aa0a6\" stroke-width=\"1\"><line x1=\"20\" y1=\"10.2\" x2=\"26\" y2=\"10.2\"/><line x1=\"20\" y1=\"12.6\" x2=\"24\" y2=\"12.6\"/></g><g><circle cx=\"10\" cy=\"6.2\" r=\"3.2\" fill=\"#d9a066\"/><path d=\"M10 4.6 C8.4 4.6 7.4 5.4 7.2 6.6 C8.8 5.8 11.2 5.8 12.8 6.6 C12.6 5.4 11.6 4.6 10 4.6 Z\" fill=\"#3a2f26\"/><path d=\"M10 9.2 C6 9.2 5.4 12.8 5.4 16.8 L5.4 24 L14.6 24 L14.6 16.8 C14.6 12.8 14 9.2 10 9.2 Z\" fill=\"#e8641a\"/><g fill=\"#f7c948\"><rect x=\"5.4\" y=\"14.2\" width=\"9.2\" height=\"1.7\"/><rect x=\"5.4\" y=\"18.2\" width=\"9.2\" height=\"1.7\"/></g><g stroke=\"#d9a066\" stroke-width=\"1.6\" stroke-linecap=\"round\"><line x1=\"8.8\" y1=\"6.2\" x2=\"9.6\" y2=\"6.2\"/><line x1=\"10.4\" y1=\"6.2\" x2=\"11.2\" y2=\"6.2\"/></g><rect x=\"7.6\" y=\"24\" width=\"2\" height=\"8\" rx=\"1\" fill=\"#2f3640\"/><rect x=\"10.6\" y=\"24\" width=\"2\" height=\"8\" rx=\"1\" fill=\"#2f3640\"/><rect x=\"12.6\" y=\"10.5\" width=\"2.1\" height=\"8.5\" rx=\"1\" fill=\"#d9a066\" transform=\"rotate(-32 13.6 14.7)\"/><g transform=\"rotate(-32 15.8 8)\"><rect x=\"14.2\" y=\"2.6\" width=\"3.2\" height=\"6\" rx=\"1\" fill=\"#7a6a55\"/><rect x=\"11.8\" y=\"1\" width=\"7.6\" height=\"3\" rx=\"1.2\" fill=\"#4a4a4f\"/></g></g></svg>`,
+    landlord_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g stroke=\"#0c0e14\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"><path d=\"M4 30 L7 28 L6 26\"/><path d=\"M28 30 L25 28 L26 26\"/></g><g fill=\"#f3ead8\" stroke=\"#6b4f2e\" stroke-width=\"0.8\"><rect x=\"1\" y=\"23\" width=\"6\" height=\"4.2\" rx=\"0.8\" transform=\"rotate(9 4 25.1)\"/><rect x=\"25\" y=\"23.4\" width=\"6\" height=\"4.2\" rx=\"0.8\" transform=\"rotate(-8 28 25.5)\"/><rect x=\"12.8\" y=\"26.4\" width=\"6.6\" height=\"4.2\" rx=\"0.8\" transform=\"rotate(-4 16.1 28.5)\"/></g><g stroke=\"#c0392b\" stroke-width=\"1.2\"><line x1=\"2.4\" y1=\"24.4\" x2=\"5.6\" y2=\"26.4\"/><line x1=\"26.6\" y1=\"24.8\" x2=\"29.8\" y2=\"26.8\"/><line x1=\"14.4\" y1=\"27.8\" x2=\"17.4\" y2=\"29.4\"/></g><g><rect x=\"1\" y=\"15.5\" width=\"11\" height=\"2.4\" rx=\"1\" fill=\"#6b4f2e\"/><rect x=\"0.2\" y=\"11.8\" width=\"6.5\" height=\"7\" rx=\"0.8\" fill=\"#f3ead8\" stroke=\"#6b4f2e\" stroke-width=\"0.9\"/><g stroke=\"#c0392b\" stroke-width=\"1.3\" stroke-linecap=\"round\"><line x1=\"1.8\" y1=\"13.4\" x2=\"5\" y2=\"17\"/><line x1=\"5\" y1=\"13.4\" x2=\"1.8\" y2=\"17\"/></g><rect x=\"10.5\" y=\"15\" width=\"2.6\" height=\"4\" rx=\"1.2\" fill=\"#1c1f24\"/><rect x=\"7.5\" y=\"14.5\" width=\"4\" height=\"2.6\" rx=\"1\" fill=\"#1c1f24\"/><path d=\"M16 10.5 C11 10.5 10 15 10 20 L10 32 L22 32 L22 20 C22 15 21 10.5 16 10.5 Z\" fill=\"#8f4a10\"/><g fill=\"#f7c948\"><rect x=\"10\" y=\"16.5\" width=\"12\" height=\"1.8\"/><rect x=\"10\" y=\"20.8\" width=\"12\" height=\"1.8\"/></g><circle cx=\"16\" cy=\"6.8\" r=\"3.6\" fill=\"#1c1f24\"/><g fill=\"#ff3b30\"><circle cx=\"14.4\" cy=\"6.4\" r=\"1\"/><circle cx=\"17.6\" cy=\"6.4\" r=\"1\"/></g><ellipse cx=\"16\" cy=\"9.8\" rx=\"1.5\" ry=\"2\" fill=\"#0a0a0a\"/><rect x=\"20.8\" y=\"7\" width=\"2.6\" height=\"8\" rx=\"1.2\" fill=\"#1c1f24\" transform=\"rotate(-24 22.1 11)\"/><rect x=\"24.2\" y=\"2.5\" width=\"2.4\" height=\"7.5\" rx=\"1\" fill=\"#7a6a55\"/><rect x=\"20.8\" y=\"0.8\" width=\"9.2\" height=\"3.4\" rx=\"1.2\" fill=\"#3a3a40\"/><g stroke=\"#f7c948\" stroke-width=\"1.1\" stroke-linecap=\"round\" fill=\"none\" opacity=\"0.85\"><path d=\"M30.5 5.5 C31.2 7 31.4 8.6 31.2 10.2\"/><path d=\"M28.2 5 C29.4 6.4 30 8 29.8 9.8\"/></g></g></svg>`,
+    heckler_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"16\" r=\"14.5\" fill=\"#141a2a\"/><g stroke=\"#f5f5f5\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.9\"><path d=\"M8.5 13.5 C9.6 12 11.4 11.3 13 11.8\"/><path d=\"M19 11.8 C20.6 11.3 22.4 12 23.5 13.5\"/></g><path d=\"M8.5 17.5 C11 23.2 21 23.2 23.5 17.5 C21 20 11 20 8.5 17.5 Z\" fill=\"#f5f5f5\"/><g stroke=\"#141a2a\" stroke-width=\"0.9\"><line x1=\"12\" y1=\"19\" x2=\"12\" y2=\"21.4\"/><line x1=\"16\" y1=\"19.3\" x2=\"16\" y2=\"21.8\"/><line x1=\"20\" y1=\"19\" x2=\"20\" y2=\"21.4\"/></g><g stroke=\"#8f9bb3\" stroke-width=\"1.3\" stroke-linecap=\"round\" fill=\"none\" opacity=\"0.75\"><path d=\"M6.5 5.5 C7.5 4.5 8.5 3.8 9.7 3.5\"/><path d=\"M25.5 5.5 C24.5 4.5 23.5 3.8 22.3 3.5\"/></g></svg>`,
+    heckler_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"14.5\" r=\"14\" fill=\"#10131c\"/><ellipse cx=\"16\" cy=\"13.5\" rx=\"11\" ry=\"11.5\" fill=\"#c99a68\"/><path d=\"M16 3 C9.5 3 6 7 6.4 11.5 C8.8 9.7 12 10.1 16 11.5 C20 10.1 23.2 9.7 25.6 11.5 C26 7 22.5 3 16 3 Z\" fill=\"#241f1a\"/><g stroke=\"#14181d\" stroke-width=\"0.8\" fill=\"none\"><path d=\"M8 7.5 L10 11.5\"/><path d=\"M24.5 7.5 L22.8 11\"/></g><g stroke=\"#14181d\" stroke-width=\"1.4\" stroke-linecap=\"round\"><line x1=\"10\" y1=\"13\" x2=\"13.5\" y2=\"13.8\"/></g><ellipse cx=\"20\" cy=\"13.6\" rx=\"1.8\" ry=\"2.2\" fill=\"#f5f5f5\"/><circle cx=\"19.4\" cy=\"14.6\" r=\"0.9\" fill=\"#14181d\"/><path d=\"M5 19 C7 28 25 28 27 19 C22.5 22.2 9.5 22.2 5 19 Z\" fill=\"#5e1f1f\"/><g stroke=\"#f5f5f5\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"><path d=\"M6.2 19.8 L7.4 22.6 L8.6 19.9 L9.8 22.7 L11 20 L12.2 22.8 L13.4 20.1 L14.6 22.9 L15.8 20.2 L17 23 L18.2 20.3 L19.4 23.1 L20.6 20.4 L21.8 23.2 L23 20.5 L24.2 22.8 L25.4 20.2\"/><path d=\"M8 25.4 L9.2 23.4 M12 26 L13 24 M16 26.2 L16.8 24.2 M20 26 L20.8 24 M23.6 25.2 L24.4 23.4\"/></g><g fill=\"none\" stroke=\"#b366ff\" stroke-width=\"1.3\" opacity=\"0.85\" stroke-linecap=\"round\"><path d=\"M5 24 C3 27 3 29.5 4.5 31.5\"/><path d=\"M27 24 C29 27 29 29.5 27.5 31.5\"/><path d=\"M9 28.5 C11.5 30.5 20.5 30.5 23 28.5\"/></g><rect x=\"21.5\" y=\"23\" width=\"3\" height=\"7.5\" rx=\"1.5\" fill=\"#c99a68\" transform=\"rotate(-22 23 26.7)\"/><circle cx=\"19\" cy=\"29.6\" r=\"2.6\" fill=\"#c99a68\"/><circle cx=\"18.2\" cy=\"28.4\" r=\"1.3\" fill=\"#e8b98a\"/><circle cx=\"18.2\" cy=\"28.4\" r=\"2.3\" fill=\"none\" stroke=\"#b366ff\" stroke-width=\"0.9\" opacity=\"0.85\"/></svg>`,
+    paparazzo_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"16\" r=\"14.5\" fill=\"#10131c\"/><ellipse cx=\"16\" cy=\"15.5\" rx=\"9.2\" ry=\"5.4\" fill=\"#e8e4da\"/><circle cx=\"16\" cy=\"15.5\" r=\"3.6\" fill=\"#3b6ea5\"/><circle cx=\"16\" cy=\"15.5\" r=\"1.9\" fill=\"#0c0e14\"/><circle cx=\"17.2\" cy=\"14.2\" r=\"0.9\" fill=\"#ffffff\" opacity=\"0.95\"/><path d=\"M6.8 15.5 C6.8 15.5 10.8 10.4 16 10.4 C21.2 10.4 25.2 15.5 25.2 15.5 C25.2 15.5 21.2 20.6 16 20.6 C10.8 20.6 6.8 15.5 6.8 15.5 Z\" fill=\"none\" stroke=\"#3a4152\" stroke-width=\"1.5\"/><g stroke=\"#3a4152\" stroke-width=\"1.1\" stroke-linecap=\"round\"><line x1=\"11\" y1=\"11.6\" x2=\"9.8\" y2=\"10.4\"/><line x1=\"21\" y1=\"11.6\" x2=\"22.2\" y2=\"10.4\"/></g></svg>`,
+    paparazzo_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"16\" r=\"14.5\" fill=\"#10131c\"/><g stroke=\"#ffe066\" stroke-width=\"1.4\" stroke-linecap=\"round\"><line x1=\"16\" y1=\"0.5\" x2=\"16\" y2=\"4\"/><line x1=\"16\" y1=\"28\" x2=\"16\" y2=\"31.5\"/><line x1=\"0.5\" y1=\"16\" x2=\"4\" y2=\"16\"/><line x1=\"28\" y1=\"16\" x2=\"31.5\" y2=\"16\"/><line x1=\"5\" y1=\"5\" x2=\"7.4\" y2=\"7.4\"/><line x1=\"24.6\" y1=\"24.6\" x2=\"27\" y2=\"27\"/><line x1=\"27\" y1=\"5\" x2=\"24.6\" y2=\"7.4\"/><line x1=\"7.4\" y1=\"24.6\" x2=\"5\" y2=\"27\"/></g><ellipse cx=\"16\" cy=\"17\" rx=\"10.8\" ry=\"6.2\" fill=\"#f4f1e8\"/><g stroke=\"#ff5a4d\" stroke-width=\"0.8\" opacity=\"0.85\"><line x1=\"8\" y1=\"14.5\" x2=\"11\" y2=\"15.5\"/><line x1=\"24\" y1=\"14.5\" x2=\"21\" y2=\"15.5\"/><line x1=\"9\" y1=\"19.5\" x2=\"11.8\" y2=\"18.4\"/><line x1=\"23\" y1=\"19.5\" x2=\"20.2\" y2=\"18.4\"/></g><g fill=\"#2a2e3a\"><polygon points=\"16,10.6 19.8,12.8 18.6,16.6 13.4,16.6 12.2,12.8\"/><polygon points=\"19.8,12.8 21.5,16.5 19.8,20.2 18.6,16.6\"/><polygon points=\"12.2,12.8 13.4,16.6 12.2,20.2 10.5,16.5\"/><polygon points=\"18.6,16.6 19.8,20.2 16,22.4 12.2,20.2 13.4,16.6\"/></g><circle cx=\"16\" cy=\"16.5\" r=\"4.4\" fill=\"none\" stroke=\"#ff5a4d\" stroke-width=\"1.4\"/><circle cx=\"16\" cy=\"16.5\" r=\"3\" fill=\"#fffdf4\"/><circle cx=\"16\" cy=\"16.5\" r=\"1.3\" fill=\"#0c0e14\"/><circle cx=\"17\" cy=\"15.4\" r=\"0.7\" fill=\"#ffffff\"/><ellipse cx=\"22\" cy=\"10\" rx=\"6\" ry=\"3.4\" fill=\"none\" stroke=\"#f4f1e8\" stroke-width=\"1\" opacity=\"0.3\" stroke-dasharray=\"2 2\"/></svg>`,
+    union_rep_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g><circle cx=\"11.5\" cy=\"6.5\" r=\"3.2\" fill=\"#d9a066\"/><path d=\"M11.5 4.9 C9.9 4.9 8.9 5.7 8.7 6.9 C10.3 6.1 12.7 6.1 14.3 6.9 C14.1 5.7 13.1 4.9 11.5 4.9 Z\" fill=\"#3a2f26\"/><path d=\"M11.5 9.5 C7.5 9.5 6.9 13 6.9 17 L6.9 24 L16.1 24 L16.1 17 C16.1 13 15.5 9.5 11.5 9.5 Z\" fill=\"#5a6c7d\"/><path d=\"M10.8 9.5 L11.5 12 L12.2 9.5 L11.5 10.2 Z\" fill=\"#8a3b3b\"/><g stroke=\"#14181d\" stroke-width=\"1.1\" stroke-linecap=\"round\"><line x1=\"9.6\" y1=\"7\" x2=\"10.6\" y2=\"7.3\"/><line x1=\"12.4\" y1=\"7.3\" x2=\"13.4\" y2=\"7\"/></g><rect x=\"9.6\" y=\"24\" width=\"2\" height=\"8\" rx=\"1\" fill=\"#2f3640\"/><rect x=\"11.6\" y=\"24\" width=\"2\" height=\"8\" rx=\"1\" fill=\"#2f3640\"/></g><g><rect x=\"18.6\" y=\"16.5\" width=\"8\" height=\"10.5\" rx=\"1\" fill=\"#8a5a2e\" transform=\"rotate(-8 22.6 21.7)\"/><rect x=\"19.6\" y=\"17.8\" width=\"6\" height=\"8\" fill=\"#f5f2e8\" transform=\"rotate(-8 22.6 21.7)\"/><g stroke=\"#9aa0a6\" stroke-width=\"0.9\" transform=\"rotate(-8 22.6 21.7)\"><line x1=\"20.8\" y1=\"20\" x2=\"24.4\" y2=\"20\"/><line x1=\"20.8\" y1=\"22\" x2=\"24.4\" y2=\"22\"/><line x1=\"20.8\" y1=\"24\" x2=\"23\" y2=\"24\"/></g><rect x=\"21.4\" y=\"15\" width=\"2.8\" height=\"1.9\" rx=\"0.9\" fill=\"#6e6e6e\" transform=\"rotate(-8 22.6 21.7)\"/><rect x=\"15.4\" y=\"12.5\" width=\"2.4\" height=\"6.5\" rx=\"1.2\" fill=\"#d9a066\" transform=\"rotate(10 16.6 15.7)\"/></g><g transform=\"rotate(22 27.5 9)\"><rect x=\"25\" y=\"4\" width=\"5\" height=\"2.8\" rx=\"1\" fill=\"#6e6e6e\"/><polygon points=\"25,4 30,4 32.2,9.4 25,9.4\" fill=\"#c0392b\"/><ellipse cx=\"32.2\" cy=\"6.7\" rx=\"1\" ry=\"2.7\" fill=\"#96281b\"/><rect x=\"4\" y=\"11\" width=\"2.2\" height=\"7\" rx=\"1.1\" fill=\"#5a6c7d\" transform=\"rotate(22 27.5 9)\"/></g></svg>`,
+    union_rep_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g fill=\"#f5f2e8\" stroke=\"#9aa0a6\" stroke-width=\"0.7\"><rect x=\"1.5\" y=\"3\" width=\"6\" height=\"8\" rx=\"0.8\" transform=\"rotate(-18 4.5 7)\"/><rect x=\"24.5\" y=\"2.5\" width=\"6\" height=\"8\" rx=\"0.8\" transform=\"rotate(16 27.5 6.5)\"/><rect x=\"0.5\" y=\"17\" width=\"6\" height=\"8\" rx=\"0.8\" transform=\"rotate(14 3.5 21)\"/><rect x=\"25.5\" y=\"17.5\" width=\"6\" height=\"8\" rx=\"0.8\" transform=\"rotate(-14 28.5 21.5)\"/></g><g stroke=\"#9aa0a6\" stroke-width=\"0.8\"><line x1=\"3\" y1=\"5.6\" x2=\"6\" y2=\"5\"/><line x1=\"26\" y1=\"5\" x2=\"29\" y2=\"5.6\"/><line x1=\"2.4\" y1=\"19.6\" x2=\"5.4\" y2=\"20.2\"/><line x1=\"27\" y1=\"20\" x2=\"30\" y2=\"19.4\"/></g><g><circle cx=\"16\" cy=\"8.5\" r=\"3.4\" fill=\"#d9a066\"/><path d=\"M16 4.6 C13 4.6 11.6 6.4 11.2 8.6 C13.4 7.4 18.6 7.4 20.8 8.6 C20.4 6.4 19 4.6 16 4.6 Z\" fill=\"#2e2620\"/><ellipse cx=\"14.2\" cy=\"9\" rx=\"0.9\" ry=\"1.1\" fill=\"#14181d\"/><ellipse cx=\"17.8\" cy=\"9\" rx=\"0.9\" ry=\"1.1\" fill=\"#14181d\"/><ellipse cx=\"16\" cy=\"12.4\" rx=\"1.1\" ry=\"1.4\" fill=\"#0a0a0a\"/><path d=\"M16 13.6 C11.4 13.6 10.4 17.4 10.4 22 L10.4 32 L21.6 32 L21.6 22 C21.6 17.4 20.6 13.6 16 13.6 Z\" fill=\"#4a3c2e\"/></g><g><circle cx=\"16\" cy=\"21.5\" r=\"4.6\" fill=\"#f5f2e8\" stroke=\"#c0392b\" stroke-width=\"1.6\"/><circle cx=\"16\" cy=\"21.5\" r=\"3.2\" fill=\"none\" stroke=\"#c0392b\" stroke-width=\"0.9\"/><g stroke=\"#c0392b\" stroke-width=\"1.6\" stroke-linecap=\"round\"><line x1=\"14.2\" y1=\"19.7\" x2=\"17.8\" y2=\"23.3\"/><line x1=\"17.8\" y1=\"19.7\" x2=\"14.2\" y2=\"23.3\"/></g><circle cx=\"16\" cy=\"21.5\" r=\"6.8\" fill=\"none\" stroke=\"#ff5a4d\" stroke-width=\"0.9\" stroke-dasharray=\"2 1.6\" opacity=\"0.75\"/><g stroke=\"#ff5a4d\" stroke-width=\"0.9\" stroke-linecap=\"round\" opacity=\"0.75\"><line x1=\"16\" y1=\"11.5\" x2=\"16\" y2=\"13\"/><line x1=\"23\" y1=\"14.5\" x2=\"21.9\" y2=\"15.6\"/><line x1=\"9\" y1=\"14.5\" x2=\"10.1\" y2=\"15.6\"/><line x1=\"25.5\" y1=\"21.5\" x2=\"24\" y2=\"21.5\"/><line x1=\"6.5\" y1=\"21.5\" x2=\"8\" y2=\"21.5\"/></g></g><g transform=\"rotate(-16 24 12)\"><polygon points=\"22.5,8.5 27.5,8.5 29.6,13.5 22.5,13.5\" fill=\"#c0392b\"/><polygon points=\"22.5,8.5 27.5,8.5 29.6,13.5\" fill=\"none\" stroke=\"#96281b\" stroke-width=\"0.8\"/><rect x=\"27.2\" y=\"6.4\" width=\"3.4\" height=\"2.2\" rx=\"0.8\" fill=\"#6e6e6e\"/></g><g fill=\"none\" stroke=\"#c0392b\" stroke-width=\"1.1\" stroke-linecap=\"round\" opacity=\"0.8\"><path d=\"M28.5 15 C29.5 17 29.5 19 28.5 21\"/><path d=\"M30.5 14 C32 16.5 32 19.5 30.5 22\"/></g></svg>`,
+    moderator_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"16\" cy=\"28.5\" rx=\"7.5\" ry=\"1.8\" fill=\"#2a2140\" opacity=\"0.55\"/><ellipse cx=\"16\" cy=\"21.5\" rx=\"11.5\" ry=\"5.5\" fill=\"none\" stroke=\"#e8b64c\" stroke-width=\"1.4\" stroke-dasharray=\"4 3\" opacity=\"0.9\"/><g fill=\"#4a4460\"><path d=\"M16 4 C11 4 9.4 9 9.4 14 L9.4 22 L22.6 22 L22.6 14 C22.6 9 21 4 16 4 Z\" opacity=\"0.94\"/><ellipse cx=\"16\" cy=\"7.6\" rx=\"3.4\" ry=\"3.8\"/></g><g fill=\"#14111f\"><ellipse cx=\"14.6\" cy=\"7.2\" rx=\"0.8\" ry=\"1.1\"/><ellipse cx=\"17.4\" cy=\"7.2\" rx=\"0.8\" ry=\"1.1\"/></g><g transform=\"rotate(35 25 7)\"><rect x=\"23.8\" y=\"3.5\" width=\"2.4\" height=\"8\" rx=\"1.2\" fill=\"#6b4f2e\"/><rect x=\"21\" y=\"0.5\" width=\"8\" height=\"3.6\" rx=\"1.4\" fill=\"#8a6a3a\"/></g></svg>`,
+    moderator_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><circle cx=\"16\" cy=\"16\" r=\"13.5\" fill=\"#241a3d\" opacity=\"0.85\"/><g fill=\"#14111f\"><path d=\"M16 5 C11.4 5 9.8 9.6 9.8 14 L9.8 25 L22.2 25 L22.2 14 C22.2 9.6 20.6 5 16 5 Z\"/><ellipse cx=\"16\" cy=\"8.4\" rx=\"3.6\" ry=\"4\"/></g><ellipse cx=\"16\" cy=\"8.4\" rx=\"2.6\" ry=\"3\" fill=\"#0c0e14\"/><g fill=\"#fff7d6\"><circle cx=\"15\" cy=\"7.4\" r=\"0.55\"/><circle cx=\"17\" cy=\"8.2\" r=\"0.45\"/><circle cx=\"16.2\" cy=\"9.4\" r=\"0.4\"/><circle cx=\"14.6\" cy=\"9\" r=\"0.35\"/></g><rect x=\"20.6\" y=\"4\" width=\"2.4\" height=\"10\" rx=\"1.2\" fill=\"#14111f\"/><rect x=\"20.5\" y=\"1\" width=\"2.6\" height=\"6\" rx=\"1\" fill=\"#6b4f2e\"/><rect x=\"17.3\" y=\"0.5\" width=\"9\" height=\"3.6\" rx=\"1.4\" fill=\"#c9a24b\"/><rect x=\"9.8\" y=\"13\" width=\"2.4\" height=\"11\" rx=\"1.2\" fill=\"#14111f\"/><rect x=\"9.8\" y=\"23\" width=\"2.4\" height=\"6\" rx=\"1.2\" fill=\"#14111f\" transform=\"rotate(24 11 26)\"/><g stroke=\"#7fd4ff\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"><polyline points=\"16.8,1 15.2,2.6 16.4,4.2 15,5.8\"/><polyline points=\"27,1 28.6,2.6 27.4,4.2 28.8,5.8\"/><polyline points=\"21.8,4.6 21.8,7 23,8.4\"/><polyline points=\"20,4.6 19,6.6\"/></g><g fill=\"#fff7d6\"><circle cx=\"15\" cy=\"6.6\" r=\"0.7\"/><circle cx=\"28.8\" cy=\"6.6\" r=\"0.7\"/><circle cx=\"23.6\" cy=\"9.2\" r=\"0.6\"/></g><g fill=\"none\" stroke-linecap=\"round\"><path d=\"M5 22 C7 20.5 10 19.8 13 20\" stroke=\"#e8b64c\" stroke-width=\"1.3\" stroke-dasharray=\"3.5 2.5\" opacity=\"0.7\"/><path d=\"M21 20.5 C24 21.2 26.5 22.5 28 24.5\" stroke=\"#e8b64c\" stroke-width=\"1.3\" stroke-dasharray=\"3.5 2.5\" opacity=\"0.7\"/><polyline points=\"21,20.5 23,23 22,25.5 24,28\" stroke=\"#7fd4ff\" stroke-width=\"1.1\"/><polyline points=\"26.5,23.5 25,26 26,28.5\" stroke=\"#7fd4ff\" stroke-width=\"1\"/></g></svg>`,
   };
 
   // Taxonomy chains: each plant defines its path from root to specific.
