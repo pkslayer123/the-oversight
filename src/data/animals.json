@@ -21,7 +21,12 @@
       "3": "Uses: protein, but lean (rabbit starvation if only food). Need fat too.",
       "4": "Mastery: snare on runs (not random). Check at dawn/dusk. Cook with fat."
     },
-    "unknown": "a brown blur with a white tail-flag, freezing between hops"
+    "unknown": "a brown blur with a white tail-flag, freezing between hops",
+    "emoji": "\ud83d\udc07",
+    "behavior": "skittish",
+    "behaviorDesc": "Freezes, then bolts in a zigzag. Fast but predictable \u2014 it runs in a straight line after the first juke.",
+    "fleeDifficulty": "medium",
+    "huntText": "It freezes. You hold your breath. Then \u2014 white tail flashing \u2014 it bolts!"
   },
   {
     "id": "gray_squirrel",
@@ -45,7 +50,12 @@
       "3": "Uses: decent fat in fall. Good stew meat.",
       "4": "Mastery: hunt in fall (fat). Use a sling or trap. They follow patterns."
     },
-    "unknown": "a gray flicker in the branches, chattering"
+    "unknown": "a gray flicker in the branches, chattering",
+    "emoji": "\ud83d\udc3f\ufe0f",
+    "behavior": "arboreal",
+    "behaviorDesc": "Stays in trees. Drops to grab nuts, then spirals up the trunk. You need to catch it on the ground.",
+    "fleeDifficulty": "hard",
+    "huntText": "It chatters at you from the branch \u2014 scolding, not scared. Then it drops, grabs, and spirals up before you move."
   },
   {
     "id": "white_tailed_deer",
@@ -69,7 +79,12 @@
       "3": "Uses: feeds many. Fat is crucial. Organs are vitamin-rich (eat first).",
       "4": "Mastery: need a weapon or deadfall. Track by prints. Gut immediately. Hang to age."
     },
-    "unknown": "a large brown quadruped, white tail raised in alarm"
+    "unknown": "a large brown quadruped, white tail raised in alarm",
+    "emoji": "\ud83e\udd8c",
+    "behavior": "wary",
+    "behaviorDesc": "Grazes with head down, ears swiveling. At the first wrong sound, the white tail goes up and it's gone.",
+    "fleeDifficulty": "hard",
+    "huntText": "It grazes, ears tracking every sound. The white tail flicks \u2014 once, twice \u2014 then it explodes into motion."
   },
   {
     "id": "creek_chub",
@@ -93,7 +108,12 @@
       "3": "Uses: protein, omega-3. Good when other food scarce.",
       "4": "Mastery: tickle (hands under, stroke belly). Or dam and scoop. Best at dawn."
     },
-    "unknown": "a flicker of silver under the water"
+    "unknown": "a flicker of silver under the water",
+    "emoji": "\ud83d\udc1f",
+    "behavior": "aquatic",
+    "behaviorDesc": "Stays in water. Darts under rocks when shadow falls. You need a line, not hands.",
+    "fleeDifficulty": "medium",
+    "huntText": "A flash of silver in the creek. It darts under the rock before your shadow even touches the water."
   },
   {
     "id": "wild_turkey",
@@ -117,7 +137,12 @@
       "3": "Uses: high protein. Feathers are valuable (arrows, bedding).",
       "4": "Mastery: call them (mimic). Hunt in fall (fat). Roost at dusk (find the tree)."
     },
-    "unknown": "a large dark bird, iridescent, head jerking"
+    "unknown": "a large dark bird, iridescent, head jerking",
+    "emoji": "\ud83e\udd83",
+    "behavior": "flock",
+    "behaviorDesc": "Moves in flocks. One spots you, they all know. Loud, big, but they panic in different directions.",
+    "fleeDifficulty": "medium",
+    "huntText": "Gobble-gobble-gobble. The flock erupts \u2014 wings like thunder, all going different ways. Pick one and commit."
   },
   {
     "id": "opossum",
@@ -137,11 +162,16 @@
     ],
     "knowledgeLevels": {
       "1": "Opossum. Waddles. Plays dead. Hisses.",
-      "2": "Parts: meat (greasy), hide. Gut carefully — scent glands.",
+      "2": "Parts: meat (greasy), hide. Gut carefully \u2014 scent glands.",
       "3": "Uses: slow and catchable. Good trap animal. Immune to snake venom (irrelevant, cool).",
       "4": "Mastery: trap near dens. They waddle into anything. Cook thoroughly."
     },
-    "unknown": "a waddling pale shape, playing dead (badly)"
+    "unknown": "a waddling pale shape, playing dead (badly)",
+    "emoji": "\ud83d\udc3e",
+    "behavior": "plays_dead",
+    "behaviorDesc": "When threatened, it flops over, tongue out, playing dead. It's not dead. It's waiting for you to leave.",
+    "fleeDifficulty": "easy",
+    "huntText": "It hisses, shows teeth \u2014 then flops over. Tongue lolling. Dead. Except the eye that tracks you. It's faking."
   },
   {
     "id": "bullfrog",
@@ -165,7 +195,12 @@
       "3": "Uses: gig at night with a light. Legs fry like chicken.",
       "4": "Mastery: night + flashlight + spear. Aim for the body, not the legs."
     },
-    "unknown": "something the size of a dinner plate, croaking from the mud"
+    "unknown": "something the size of a dinner plate, croaking from the mud",
+    "emoji": "\ud83d\udc38",
+    "behavior": "aquatic_ambush",
+    "behaviorDesc": "Sits at the water's edge. At the splash, it dives. You need to be fast or use a gig.",
+    "fleeDifficulty": "medium",
+    "huntText": "It croaks \u2014 a deep jug-o-rum. You step closer. Splash. Gone. The ripples are still spreading."
   },
   {
     "id": "box_turtle",
@@ -185,10 +220,15 @@
     "knowledgeLevels": {
       "1": "Box turtle. Domed shell. In no hurry whatsoever.",
       "2": "Parts: meat (soup). Shell is a bowl when you're done.",
-      "3": "Uses: slow = catchable. But they live 100 years — take sparingly.",
+      "3": "Uses: slow = catchable. But they live 100 years \u2014 take sparingly.",
       "4": "Mastery: only take what you need. Mark and release the rest."
     },
-    "unknown": "a domed shape in the leaves, ancient and unhurried"
+    "unknown": "a domed shape in the leaves, ancient and unhurried",
+    "emoji": "\ud83d\udc22",
+    "behavior": "slow",
+    "behaviorDesc": "It walks. That's it. It just walks, slowly, with total confidence that you're not a threat. You can pick it up.",
+    "fleeDifficulty": "trivial",
+    "huntText": "It plods along, head out, utterly unconcerned. You could pick it up with one hand. It knows. It doesn't care."
   },
   {
     "id": "gray_fox",
@@ -209,10 +249,15 @@
     "knowledgeLevels": {
       "1": "Gray fox. Smaller than red. Climbs trees (wrong, but true).",
       "2": "Parts: meat (lean), pelt (prime in winter).",
-      "3": "Uses: trap on trails. Wary — harder than it looks.",
+      "3": "Uses: trap on trails. Wary \u2014 harder than it looks.",
       "4": "Mastery: the only canid that climbs. Check low branches, not just ground."
     },
-    "unknown": "a russet-gray flicker climbing a tree (it should not do that)"
+    "unknown": "a russet-gray flicker climbing a tree (it should not do that)",
+    "emoji": "\ud83e\udd8a",
+    "behavior": "cunning",
+    "behaviorDesc": "It watches you watching it. Circles downwind to scent you. If you chase, it leads you in circles.",
+    "fleeDifficulty": "very_hard",
+    "huntText": "Amber eyes in the underbrush. It doesn't run \u2014 it trots, just out of range, looking back. It's toying with you."
   },
   {
     "id": "crayfish",
@@ -236,7 +281,12 @@
       "3": "Uses: protein from the creek. Lift rocks, grab behind claws.",
       "4": "Mastery: night with a light. Baited trap = dozens. Purge in clean water first."
     },
-    "unknown": "claws under every second rock"
+    "unknown": "claws under every second rock",
+    "emoji": "\ud83e\udd9e",
+    "behavior": "aquatic_defensive",
+    "behaviorDesc": "Under rocks in the creek. When you lift the rock, it darts backward, claws up. Grab behind the claws.",
+    "fleeDifficulty": "easy",
+    "huntText": "You lift the rock. It shoots backward, claws raised like a tiny boxer. Grab it right behind the claws \u2014 fast."
   },
   {
     "id": "raccoon",
@@ -256,10 +306,15 @@
     "knowledgeLevels": {
       "1": "Raccoon. Masked. Hands like a toddler's.",
       "2": "Parts: meat (greasy, good in stew), pelt.",
-      "3": "Uses: trap near water. Smart — varies its routes.",
+      "3": "Uses: trap near water. Smart \u2014 varies its routes.",
       "4": "Mastery: marshmallow bait works (they can't resist). Cook well; wash hands."
     },
-    "unknown": "a masked shape washing nothing in the creek"
+    "unknown": "a masked shape washing nothing in the creek",
+    "emoji": "\ud83e\udd9d",
+    "behavior": "curious",
+    "behaviorDesc": "Not afraid of you. Watches with clever hands. Might try to steal from you instead of fleeing.",
+    "fleeDifficulty": "easy",
+    "huntText": "It sits up, paws dangling, watching you with unsettling intelligence. It's not scared. It's assessing."
   },
   {
     "id": "snapping_turtle",
@@ -281,8 +336,13 @@
       "1": "Snapping turtle. Dinosaur. Do not hand-feed.",
       "2": "Parts: seven kinds of meat (they say). Soup turtle.",
       "3": "Uses: jug lines with strong cord. Keep fingers away from the front half.",
-      "4": "Mastery: tail-drag to move it. It can reach halfway back — respect the neck."
+      "4": "Mastery: tail-drag to move it. It can reach halfway back \u2014 respect the neck."
     },
-    "unknown": "a huge shelled shape in the shallows, motionless"
+    "unknown": "a huge shelled shape in the shallows, motionless",
+    "emoji": "\ud83d\udc22",
+    "behavior": "aggressive",
+    "behaviorDesc": "Does NOT flee. Hisses, lunges, snaps. That beak can take a finger. Use a stick, keep distance.",
+    "fleeDifficulty": "dangerous",
+    "huntText": "It hisses \u2014 a sound like a tire leaking \u2014 and LUNGES. The beak snaps shut where your hand was. Do not grab this."
   }
 ]
