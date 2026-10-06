@@ -12247,9 +12247,7 @@
         let g;
         if (isP) {
           g = meSpr ? `<span class="mface msprite">${meSpr}</span>` : '🧍';
-        } else if (!seen) {
-          g = ''; // FOG OF WAR (Steve 2026-10-06): unvisited is blank, not '?'.
-        } else if (isW) {
+        } else if (isW && seen) {
           g = '🐗';
         } else if (otherV) {
           g = '🏘️';
