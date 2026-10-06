@@ -142,6 +142,55 @@ for (const name of eventList) {
   }
 }
 
+// ---------- deepened-synth layer floors (Steve 2026-10-06 audio pass) ----------
+// The deepening pass rebuilt 18 synths from stock/single-oscillator toward
+// alien (glasswing x4, sunbasker x3, confront, monsterHurt, hypeInflate,
+// lockpickGrab, swarmBuild, droneHum, droneRecalc, eurekaDrift,
+// projectorStatic, mothFlutter, plus diveWindup via patternWindup).
+// Every deepened synth must stay layered (>= 6 nodes); catfishStill is
+// minimal BY DESIGN and must stay small (the absence is the instrument).
+console.log('\n--- Deepened-synth layer floors ---');
+const DEEPENED_FLOORS = {
+  glasswingCircle: 6, glasswingDive: 6, glasswingLand: 6, glasswingClimb: 6,
+  glasswingShadowClose: 6, // pre-combat dive shadow (takes {turns})
+  baskCharge: 6, baskBreak: 6, baskFlatten: 6,
+  confront: 6, monsterHurt: 6,
+  hypeInflate: 6, lockpickGrab: 6, swarmBuild: 6,
+  droneHum: 6, droneRecalc: 6, eurekaDrift: 6, projectorStatic: 6, mothFlutter: 6,
+  // New animal synths (Steve 2026-10-06): the animals worker's beats
+  animalQuill: 6, animalHonk: 6, animalYowl: 6, animalCharge: 6,
+  animalTailSlap: 6, animalWhistle: 6, animalFlush: 6,
+};
+const DEEPENED_INVOKE = {
+  baskCharge: (fn) => fn({ charge: 2 }),
+  diveWindup: () => A.patternWindup({ pattern: 'single', urgency: 1 }),
+};
+for (const [name, floor] of Object.entries(DEEPENED_FLOORS)) {
+  const fn = A[name];
+  if (typeof fn !== 'function') { ok(`deepened '${name}' registered`, false); continue; }
+  const before = snap();
+  let threw = null;
+  try { fn({ charge: 2 }); } catch (e) { threw = e; }
+  const n = nodesCreated(before);
+  ok(`deepened '${name}' does not throw`, !threw, threw && threw.message);
+  ok(`deepened '${name}' stays layered (>=${floor} nodes)`, n >= floor, `got ${n}`);
+}
+{ // diveWindup is reached through patternWindup (no dispatch key of its own)
+  const before = snap();
+  let threw = null;
+  try { A.patternWindup({ pattern: 'single', urgency: 1 }); } catch (e) { threw = e; }
+  const n = nodesCreated(before);
+  ok(`deepened 'diveWindup' (via patternWindup) does not throw`, !threw, threw && threw.message);
+  ok(`deepened 'diveWindup' stays layered (>=6 nodes)`, n >= 6, `got ${n}`);
+}
+{ // catfishStill: minimal by design — sounds, but stays small
+  const before = snap();
+  A.catfishStill();
+  const n = nodesCreated(before);
+  ok(`catfishStill sounds (>=2 nodes)`, n >= 2, `got ${n}`);
+  ok(`catfishStill stays minimal (<=4 nodes)`, n <= 4, `got ${n}`);
+}
+
 console.log(`\n=== RESULTS: ${pass} pass, ${fail} fail ===`);
 console.log(`Events with real sound: ${sounded}/${eventList.length - CONTROL.size}`);
 if (failures.length) {
