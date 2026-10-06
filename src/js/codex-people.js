@@ -82,7 +82,7 @@
     ensurePersonLifeseed(vid) {
       const rc = ((this.state.village || {}).rosterChars || {})[vid];
       if (rc && rc.lifeseed) return rc.lifeseed;
-      const person = (this.data.background_survivors || []).find(s => s.id === vid);
+      const person = this.getPerson(vid);
       const name = (rc && rc.name) || (person && person.name) || 'someone';
       const home = ((this.state.village || {}).bgHome || {})[vid] || 'America';
       try {

@@ -3,14 +3,14 @@
     "id": "lena_ruiz",
     "name": "Lena Ruiz",
     "age": 34,
-    "formerOccupation": "ER doctor",
-    "line": "Mara's old colleague. Triages everything, including arguments.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "formerOccupation": "ER nurse",
+    "line": "Triages everything, including arguments. Mara trained her.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1450,
     "personality": {
-      "sharing": "selfish",
+      "sharing": "pragmatic",
       "temperament": "steady",
-      "curiosity": "curious"
+      "curiosity": "practical"
     },
     "gender": "f",
     "origin": "Miami, Florida",
@@ -24,7 +24,7 @@
     "age": 41,
     "formerOccupation": "electrician",
     "line": "Keeps trying to fix things that don't need wires anymore.",
-    "kcalPerDay": 2000,
+    "kcalPerDay": 2200,
     "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
@@ -35,26 +35,26 @@
     "origin": "Chicago, Illinois",
     "homeRegion": "Chicago, Illinois",
     "skinTone": "dark",
-    "clothing": "casual"
+    "clothing": "workwear"
   },
   {
     "id": "sofia_chen",
     "name": "Sofia Chen",
     "age": 29,
-    "formerOccupation": "botanist",
+    "formerOccupation": "community gardener",
     "line": "Knows Latin names for everything. The plants don't care.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1600,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "cautious",
       "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "Tokyo, Japan",
-    "homeRegion": "Tokyo, Japan",
+    "origin": "Shanghai, China",
+    "homeRegion": "Shanghai, China",
     "skinTone": "light",
-    "clothing": "casual"
+    "clothing": "outdoor"
   },
   {
     "id": "james_okonkwo",
@@ -62,37 +62,37 @@
     "age": 52,
     "formerOccupation": "carpenter",
     "line": "Building furniture from fallen trees. It's good. It's weird.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 2100,
+    "providesPerDay": 1550,
     "personality": {
-      "sharing": "pragmatic",
+      "sharing": "generous",
       "temperament": "steady",
-      "curiosity": "curious"
+      "curiosity": "practical"
     },
     "gender": "m",
     "origin": "Lagos, Nigeria",
     "homeRegion": "Lagos, Nigeria",
     "skinTone": "deep",
-    "clothing": "casual"
+    "clothing": "workwear"
   },
   {
     "id": "emma_larsen",
     "name": "Emma Larsen",
     "age": 24,
-    "formerOccupation": "veterinary tech",
+    "formerOccupation": "veterinarian",
     "line": "Treats people like nervous animals. It works.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "providesPerDay": 1400,
     "personality": {
       "sharing": "generous",
-      "temperament": "bold",
+      "temperament": "warm",
       "curiosity": "practical"
     },
     "gender": "f",
     "origin": "Oslo, Norway",
     "homeRegion": "Oslo, Norway",
     "skinTone": "fair",
-    "clothing": "casual"
+    "clothing": "outdoor"
   },
   {
     "id": "david_kim",
@@ -100,10 +100,10 @@
     "age": 38,
     "formerOccupation": "plumber",
     "line": "Water is water. He'll find it, move it, or apologize to it.",
-    "kcalPerDay": 2000,
+    "kcalPerDay": 2100,
     "providesPerDay": 1500,
     "personality": {
-      "sharing": "selfish",
+      "sharing": "pragmatic",
       "temperament": "cautious",
       "curiosity": "practical"
     },
@@ -111,20 +111,20 @@
     "origin": "Seoul, South Korea",
     "homeRegion": "Seoul, South Korea",
     "skinTone": "light",
-    "clothing": "casual"
+    "clothing": "workwear"
   },
   {
     "id": "rosa_mendez",
     "name": "Rosa Mendez",
     "age": 61,
-    "formerOccupation": "cafeteria manager",
+    "formerOccupation": "line cook",
     "line": "Feeds twelve like she fed four hundred. Portions are law.",
     "kcalPerDay": 1700,
-    "providesPerDay": 1275,
+    "providesPerDay": 1800,
     "personality": {
-      "sharing": "pragmatic",
+      "sharing": "generous",
       "temperament": "bold",
-      "curiosity": "curious"
+      "curiosity": "practical"
     },
     "gender": "f",
     "origin": "New Orleans, Louisiana",
@@ -138,12 +138,12 @@
     "age": 45,
     "formerOccupation": "truck driver",
     "line": "Drove through the Burn. Doesn't talk about it. Drives nowhere now.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 2200,
+    "providesPerDay": 1300,
     "personality": {
       "sharing": "pragmatic",
-      "temperament": "bold",
-      "curiosity": "curious"
+      "temperament": "withdrawn",
+      "curiosity": "wary"
     },
     "gender": "m",
     "origin": "Brooklyn, New York",
@@ -157,37 +157,37 @@
     "age": 31,
     "formerOccupation": "librarian",
     "line": "Cataloging the Codex. Dewey Decimal for the apocalypse.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "pragmatic",
-      "temperament": "bold",
+      "sharing": "generous",
+      "temperament": "cautious",
       "curiosity": "curious"
     },
     "gender": "f",
     "origin": "Kyoto, Japan",
     "homeRegion": "Kyoto, Japan",
     "skinTone": "light",
-    "clothing": "outdoor"
+    "clothing": "casual"
   },
   {
     "id": "sam_wilson",
     "name": "Sam Wilson",
     "age": 19,
-    "formerOccupation": "barista",
+    "formerOccupation": "bartender",
     "line": "Makes acorn coffee. It's terrible. He knows.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 2300,
+    "providesPerDay": 1200,
     "personality": {
-      "sharing": "pragmatic",
-      "temperament": "bold",
-      "curiosity": "practical"
+      "sharing": "generous",
+      "temperament": "restless",
+      "curiosity": "curious"
     },
     "gender": "m",
     "origin": "rural Vermont",
     "homeRegion": "rural Vermont",
     "skinTone": "fair",
-    "clothing": "outdoor"
+    "clothing": "casual"
   },
   {
     "id": "nina_petrova",
@@ -199,14 +199,14 @@
     "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
-      "temperament": "steady",
+      "temperament": "dry",
       "curiosity": "practical"
     },
     "gender": "f",
-    "origin": "Accra, Ghana",
-    "homeRegion": "Accra, Ghana",
-    "skinTone": "deep",
-    "clothing": "casual"
+    "origin": "Kyiv, Ukraine",
+    "homeRegion": "Kyiv, Ukraine",
+    "skinTone": "fair",
+    "clothing": "workwear"
   },
   {
     "id": "carlos_diaz",
@@ -214,68 +214,68 @@
     "age": 55,
     "formerOccupation": "fisherman",
     "line": "Aki's rival. They argue about knots. It's friendly. Mostly.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1573,
+    "kcalPerDay": 2100,
+    "providesPerDay": 1700,
     "personality": {
       "sharing": "pragmatic",
-      "temperament": "steady",
+      "temperament": "prickly",
       "curiosity": "practical"
     },
     "gender": "m",
-    "origin": "Houston, Texas",
-    "homeRegion": "Houston, Texas",
+    "origin": "Veracruz, Mexico",
+    "homeRegion": "Veracruz, Mexico",
     "skinTone": "brown",
-    "clothing": "workwear"
+    "clothing": "outdoor"
   },
   {
     "id": "grace_obi",
     "name": "Grace Obi",
     "age": 43,
-    "formerOccupation": "teacher",
+    "formerOccupation": "ESL teacher",
     "line": "Teaches the kids. Curriculum: everything.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1400,
     "personality": {
       "sharing": "generous",
-      "temperament": "cautious",
-      "curiosity": "practical"
+      "temperament": "warm",
+      "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "Cairo, Egypt",
-    "homeRegion": "Cairo, Egypt",
-    "skinTone": "tan",
-    "clothing": "casual"
+    "origin": "Lagos, Nigeria",
+    "homeRegion": "Lagos, Nigeria",
+    "skinTone": "deep",
+    "clothing": "bright"
   },
   {
     "id": "henry_zhang",
     "name": "Henry Zhang",
     "age": 36,
-    "formerOccupation": "accountant",
+    "formerOccupation": "emergency dispatcher",
     "line": "Priya's deputy. They reconcile the pantry. It's intense.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "selfish",
+      "sharing": "pragmatic",
       "temperament": "cautious",
-      "curiosity": "curious"
+      "curiosity": "practical"
     },
     "gender": "m",
-    "origin": "Berlin, Germany",
-    "homeRegion": "Berlin, Germany",
-    "skinTone": "fair",
+    "origin": "Beijing, China",
+    "homeRegion": "Beijing, China",
+    "skinTone": "light",
     "clothing": "casual"
   },
   {
     "id": "fatima_hassan",
     "name": "Fatima Hassan",
     "age": 48,
-    "formerOccupation": "nurse",
+    "formerOccupation": "paramedic",
     "line": "Mara's right hand. Calm is a skill.",
     "kcalPerDay": 2000,
     "providesPerDay": 1500,
     "personality": {
-      "sharing": "pragmatic",
-      "temperament": "bold",
+      "sharing": "generous",
+      "temperament": "steady",
       "curiosity": "practical"
     },
     "gender": "f",
@@ -288,38 +288,38 @@
     "id": "leo_martin",
     "name": "Leo Martin",
     "age": 16,
-    "formerOccupation": "student",
+    "formerOccupation": "trail crew lead",
     "line": "Theo's sidekick. Learning speedrunning. Of what, unclear.",
-    "kcalPerDay": 1600,
-    "providesPerDay": 1200,
+    "kcalPerDay": 2400,
+    "providesPerDay": 1100,
     "personality": {
-      "sharing": "selfish",
-      "temperament": "bold",
-      "curiosity": "curious"
+      "sharing": "generous",
+      "temperament": "restless",
+      "curiosity": "hungry-to-learn"
     },
     "gender": "m",
     "origin": "Portland, Oregon",
     "homeRegion": "Portland, Oregon",
     "skinTone": "light",
-    "clothing": "casual"
+    "clothing": "outdoor"
   },
   {
     "id": "mia_andersson",
     "name": "Mia Andersson",
     "age": 22,
-    "formerOccupation": "gardener",
+    "formerOccupation": "community gardener",
     "line": "Growing things in cans. Optimist.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1600,
     "personality": {
-      "sharing": "selfish",
-      "temperament": "bold",
+      "sharing": "generous",
+      "temperament": "warm",
       "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "Marrakech, Morocco",
-    "homeRegion": "Marrakech, Morocco",
-    "skinTone": "tan",
+    "origin": "Stockholm, Sweden",
+    "homeRegion": "Stockholm, Sweden",
+    "skinTone": "fair",
     "clothing": "bright"
   },
   {
@@ -328,16 +328,16 @@
     "age": 50,
     "formerOccupation": "pharmacist",
     "line": "Rations medicine like it's gold. It is.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "generous",
-      "temperament": "steady",
+      "sharing": "pragmatic",
+      "temperament": "cautious",
       "curiosity": "practical"
     },
     "gender": "m",
-    "origin": "São Paulo, Brazil",
-    "homeRegion": "São Paulo, Brazil",
+    "origin": "Ahmedabad, India",
+    "homeRegion": "Ahmedabad, India",
     "skinTone": "brown",
     "clothing": "casual"
   },
@@ -345,39 +345,39 @@
     "id": "ella_johnson",
     "name": "Ella Johnson",
     "age": 67,
-    "formerOccupation": "retired teacher",
+    "formerOccupation": "ESL teacher",
     "line": "Ruth's card partner. Cheats. Everyone knows.",
-    "kcalPerDay": 1700,
-    "providesPerDay": 1275,
+    "kcalPerDay": 1600,
+    "providesPerDay": 1200,
     "personality": {
       "sharing": "generous",
-      "temperament": "bold",
+      "temperament": "dry",
       "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "rural Ireland",
-    "homeRegion": "rural Ireland",
+    "origin": "rural England",
+    "homeRegion": "rural England",
     "skinTone": "fair",
-    "clothing": "outdoor"
+    "clothing": "casual"
   },
   {
     "id": "victor_lopez",
     "name": "Victor Lopez",
     "age": 39,
-    "formerOccupation": "construction worker",
+    "formerOccupation": "mason",
     "line": "Builds. That's it. He builds.",
-    "kcalPerDay": 2000,
+    "kcalPerDay": 2300,
     "providesPerDay": 1500,
     "personality": {
       "sharing": "pragmatic",
       "temperament": "steady",
-      "curiosity": "curious"
+      "curiosity": "practical"
     },
     "gender": "m",
     "origin": "Mexico City, Mexico",
     "homeRegion": "Mexico City, Mexico",
     "skinTone": "brown",
-    "clothing": "casual"
+    "clothing": "workwear"
   },
   {
     "id": "hannah_kim",
@@ -386,55 +386,55 @@
     "formerOccupation": "chef",
     "line": "Jesse's kitchen rival. The cookoff is ongoing.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "providesPerDay": 1700,
     "personality": {
-      "sharing": "selfish",
-      "temperament": "cautious",
+      "sharing": "pragmatic",
+      "temperament": "intense",
       "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "Bangkok, Thailand",
-    "homeRegion": "Bangkok, Thailand",
-    "skinTone": "tan",
+    "origin": "Seoul, South Korea",
+    "homeRegion": "Seoul, South Korea",
+    "skinTone": "light",
     "clothing": "casual"
   },
   {
     "id": "owen_smith",
     "name": "Owen Smith",
     "age": 33,
-    "formerOccupation": "park ranger",
+    "formerOccupation": "hunting guide",
     "line": "Knows tracks. Quiet like Jesse, but different.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 2100,
+    "providesPerDay": 1600,
     "personality": {
       "sharing": "generous",
-      "temperament": "bold",
-      "curiosity": "curious"
+      "temperament": "withdrawn",
+      "curiosity": "observant"
     },
     "gender": "m",
     "origin": "Tucson, Arizona",
     "homeRegion": "Tucson, Arizona",
-    "skinTone": "light",
-    "clothing": "casual"
+    "skinTone": "tan",
+    "clothing": "outdoor"
   },
   {
     "id": "ava_garcia",
     "name": "Ava Garcia",
     "age": 26,
-    "formerOccupation": "artist",
+    "formerOccupation": "street artist",
     "line": "Drawing the new world. It's all she can do.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1300,
     "personality": {
       "sharing": "generous",
-      "temperament": "bold",
+      "temperament": "gentle",
       "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "Nairobi, Kenya",
-    "homeRegion": "Nairobi, Kenya",
-    "skinTone": "deep",
-    "clothing": "casual"
+    "origin": "Mexico City, Mexico",
+    "homeRegion": "Mexico City, Mexico",
+    "skinTone": "tan",
+    "clothing": "bright"
   },
   {
     "id": "lucas_brown",
@@ -442,69 +442,69 @@
     "age": 44,
     "formerOccupation": "police officer",
     "line": "Keeps the peace. There's mostly peace.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 2100,
+    "providesPerDay": 1400,
     "personality": {
       "sharing": "pragmatic",
-      "temperament": "bold",
-      "curiosity": "practical"
+      "temperament": "steady",
+      "curiosity": "wary"
     },
     "gender": "m",
     "origin": "Chicago, Illinois",
     "homeRegion": "Chicago, Illinois",
-    "skinTone": "tan",
+    "skinTone": "brown",
     "clothing": "casual"
   },
   {
     "id": "chloe_dubois",
     "name": "Chloe Dubois",
     "age": 30,
-    "formerOccupation": "translator",
+    "formerOccupation": "interpreter",
     "line": "Speaks four languages. The System speaks none.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "selfish",
-      "temperament": "bold",
+      "sharing": "generous",
+      "temperament": "dry",
       "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "Manila, Philippines",
-    "homeRegion": "Manila, Philippines",
-    "skinTone": "tan",
+    "origin": "Lyon, France",
+    "homeRegion": "Lyon, France",
+    "skinTone": "fair",
     "clothing": "casual"
   },
   {
     "id": "elijah_scott",
     "name": "Elijah Scott",
     "age": 58,
-    "formerOccupation": "pastor",
+    "formerOccupation": "social worker",
     "line": "Holds services. Attendance varies.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "selfish",
-      "temperament": "bold",
+      "sharing": "generous",
+      "temperament": "warm",
       "curiosity": "practical"
     },
     "gender": "m",
-    "origin": "Lima, Peru",
-    "homeRegion": "Lima, Peru",
-    "skinTone": "brown",
+    "origin": "Denver, Colorado",
+    "homeRegion": "Denver, Colorado",
+    "skinTone": "dark",
     "clothing": "casual"
   },
   {
     "id": "zoe_adams",
     "name": "Zoe Adams",
     "age": 21,
-    "formerOccupation": "college student",
+    "formerOccupation": "journalist",
     "line": "Studies. Of what, she won't say.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "providesPerDay": 1300,
     "personality": {
-      "sharing": "generous",
-      "temperament": "bold",
-      "curiosity": "practical"
+      "sharing": "pragmatic",
+      "temperament": "intense",
+      "curiosity": "hungry-to-learn"
     },
     "gender": "f",
     "origin": "Brooklyn, New York",
@@ -516,38 +516,38 @@
     "id": "nathan_lee",
     "name": "Nathan Lee",
     "age": 47,
-    "formerOccupation": "engineer",
+    "formerOccupation": "HVAC tech",
     "line": "Designs water systems. Useful.",
-    "kcalPerDay": 2000,
+    "kcalPerDay": 2100,
     "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
       "temperament": "cautious",
-      "curiosity": "curious"
+      "curiosity": "practical"
     },
     "gender": "m",
     "origin": "Seoul, South Korea",
     "homeRegion": "Seoul, South Korea",
-    "skinTone": "fair",
-    "clothing": "casual"
+    "skinTone": "light",
+    "clothing": "workwear"
   },
   {
     "id": "ivy_wang",
     "name": "Ivy Wang",
     "age": 25,
-    "formerOccupation": "photographer",
+    "formerOccupation": "journalist",
     "line": "Documents everything. The Codex has pictures now.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "selfish",
-      "temperament": "cautious",
-      "curiosity": "practical"
+      "sharing": "generous",
+      "temperament": "observant",
+      "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "Jakarta, Indonesia",
-    "homeRegion": "Jakarta, Indonesia",
-    "skinTone": "tan",
+    "origin": "Shanghai, China",
+    "homeRegion": "Shanghai, China",
+    "skinTone": "light",
     "clothing": "casual"
   },
   {
@@ -556,56 +556,56 @@
     "age": 35,
     "formerOccupation": "firefighter",
     "line": "Keeps the fire. It's a whole job.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 2300,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "pragmatic",
-      "temperament": "cautious",
-      "curiosity": "curious"
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "practical"
     },
     "gender": "m",
     "origin": "Miami, Florida",
     "homeRegion": "Miami, Florida",
-    "skinTone": "brown",
-    "clothing": "bright"
+    "skinTone": "dark",
+    "clothing": "workwear"
   },
   {
     "id": "maya_singh",
     "name": "Maya Singh",
     "age": 32,
-    "formerOccupation": "doctor",
+    "formerOccupation": "ER nurse",
     "line": "Not that Maya. This one fixes bones.",
     "kcalPerDay": 2000,
     "providesPerDay": 1500,
     "personality": {
-      "sharing": "selfish",
-      "temperament": "cautious",
+      "sharing": "pragmatic",
+      "temperament": "bold",
       "curiosity": "practical"
     },
     "gender": "f",
-    "origin": "Mumbai, India",
-    "homeRegion": "Mumbai, India",
-    "skinTone": "dark",
-    "clothing": "bright"
+    "origin": "Amritsar, Punjab, India",
+    "homeRegion": "Amritsar, Punjab, India",
+    "skinTone": "brown",
+    "clothing": "casual"
   },
   {
     "id": "ethan_hunt",
     "name": "Ethan Hunt",
     "age": 29,
-    "formerOccupation": "hiker",
+    "formerOccupation": "trail crew lead",
     "line": "Yes, really. No, he won't change it.",
-    "kcalPerDay": 2000,
+    "kcalPerDay": 2200,
     "providesPerDay": 1500,
     "personality": {
       "sharing": "generous",
-      "temperament": "steady",
+      "temperament": "bold",
       "curiosity": "curious"
     },
     "gender": "m",
-    "origin": "Istanbul, Turkey",
-    "homeRegion": "Istanbul, Turkey",
-    "skinTone": "tan",
-    "clothing": "casual"
+    "origin": "Manchester, England",
+    "homeRegion": "Manchester, England",
+    "skinTone": "fair",
+    "clothing": "outdoor"
   },
   {
     "id": "aria_thompson",
@@ -613,18 +613,18 @@
     "age": 23,
     "formerOccupation": "musician",
     "line": "Plays a cracked guitar. Morale.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1900,
+    "providesPerDay": 1300,
     "personality": {
       "sharing": "generous",
-      "temperament": "bold",
+      "temperament": "gentle",
       "curiosity": "curious"
     },
     "gender": "f",
-    "origin": "Rome, Italy",
-    "homeRegion": "Rome, Italy",
-    "skinTone": "light",
-    "clothing": "casual"
+    "origin": "Nashville, Tennessee",
+    "homeRegion": "Nashville, Tennessee",
+    "skinTone": "tan",
+    "clothing": "bright"
   },
   {
     "id": "liam_davis",
@@ -632,37 +632,37 @@
     "age": 42,
     "formerOccupation": "farmer",
     "line": "Grows food. The most important job.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 2200,
+    "providesPerDay": 1800,
     "personality": {
       "sharing": "generous",
-      "temperament": "bold",
+      "temperament": "steady",
       "curiosity": "practical"
     },
     "gender": "m",
-    "origin": "Houston, Texas",
-    "homeRegion": "Houston, Texas",
+    "origin": "Ames, Iowa",
+    "homeRegion": "Ames, Iowa",
     "skinTone": "tan",
-    "clothing": "casual"
+    "clothing": "workwear"
   },
   {
     "id": "nora_wilson",
     "name": "Nora Wilson",
     "age": 56,
-    "formerOccupation": "seamstress",
+    "formerOccupation": "tailor",
     "line": "Mends clothes. Mends people, too.",
-    "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "kcalPerDay": 1800,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "pragmatic",
-      "temperament": "steady",
+      "sharing": "generous",
+      "temperament": "gentle",
       "curiosity": "practical"
     },
     "gender": "f",
     "origin": "Addis Ababa, Ethiopia",
     "homeRegion": "Addis Ababa, Ethiopia",
     "skinTone": "deep",
-    "clothing": "casual"
+    "clothing": "bright"
   },
   {
     "id": "oliver_moore",
@@ -671,10 +671,10 @@
     "formerOccupation": "veterinarian",
     "line": "Emma's boss. The animals are fine. It's the people.",
     "kcalPerDay": 2000,
-    "providesPerDay": 1500,
+    "providesPerDay": 1400,
     "personality": {
-      "sharing": "generous",
-      "temperament": "cautious",
+      "sharing": "pragmatic",
+      "temperament": "dry",
       "curiosity": "practical"
     },
     "gender": "m",
@@ -682,5 +682,689 @@
     "homeRegion": "Portland, Oregon",
     "skinTone": "fair",
     "clothing": "outdoor"
+  },
+  {
+    "id": "mara_vasquez",
+    "name": "Mara Vasquez",
+    "age": 52,
+    "formerOccupation": "army medic",
+    "line": "The medical lead. Lena and Fatima both trained under her.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "intense",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "San Diego, California",
+    "homeRegion": "San Diego, California",
+    "skinTone": "tan",
+    "clothing": "casual"
+  },
+  {
+    "id": "aki_tanaka",
+    "name": "Aki Tanaka",
+    "age": 48,
+    "formerOccupation": "fisherman",
+    "line": "Carlos's rival. Their knot argument is in its third year.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1700,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "prickly",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Hokkaido, Japan",
+    "homeRegion": "Hokkaido, Japan",
+    "skinTone": "light",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "priya_nair",
+    "name": "Priya Nair",
+    "age": 33,
+    "formerOccupation": "emergency dispatcher",
+    "line": "Runs the pantry ledger. Henry is her deputy, willing or not.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "intense",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Kochi, Kerala, India",
+    "homeRegion": "Kochi, Kerala, India",
+    "skinTone": "brown",
+    "clothing": "casual"
+  },
+  {
+    "id": "theo_lindqvist",
+    "name": "Theo Lindqvist",
+    "age": 24,
+    "formerOccupation": "trail crew lead",
+    "line": "Leo's mentor. Teaches speedrunning. Of what, unclear.",
+    "kcalPerDay": 2300,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "restless",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "m",
+    "origin": "Bergen, Norway",
+    "homeRegion": "Bergen, Norway",
+    "skinTone": "fair",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "ruth_goldstein",
+    "name": "Ruth Goldstein",
+    "age": 71,
+    "formerOccupation": "librarian",
+    "line": "Ella's card partner. Doesn't cheat. Wins anyway.",
+    "kcalPerDay": 1500,
+    "providesPerDay": 1100,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "dry",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Brooklyn, New York",
+    "homeRegion": "Brooklyn, New York",
+    "skinTone": "fair",
+    "clothing": "casual"
+  },
+  {
+    "id": "jesse_cortez",
+    "name": "Jesse Cortez",
+    "age": 40,
+    "formerOccupation": "line cook",
+    "line": "Hannah's kitchen rival. Quiet. The food is loud enough.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1700,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "withdrawn",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Santa Fe, New Mexico",
+    "homeRegion": "Santa Fe, New Mexico",
+    "skinTone": "brown",
+    "clothing": "casual"
+  },
+  {
+    "id": "amina_diallo",
+    "name": "Amina Diallo",
+    "age": 29,
+    "formerOccupation": "midwife",
+    "line": "Delivered three babies since the Scattering. All thriving.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Dakar, Senegal",
+    "homeRegion": "Dakar, Senegal",
+    "skinTone": "deep",
+    "clothing": "bright"
+  },
+  {
+    "id": "boris_kowalski",
+    "name": "Boris Kowalski",
+    "age": 55,
+    "formerOccupation": "blacksmith",
+    "line": "Forges tools from scrap. The ring of the anvil is the village clock.",
+    "kcalPerDay": 2300,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Kraków, Poland",
+    "homeRegion": "Kraków, Poland",
+    "skinTone": "fair",
+    "clothing": "workwear"
+  },
+  {
+    "id": "chen_wei",
+    "name": "Wei Chen",
+    "age": 31,
+    "formerOccupation": "beekeeper",
+    "line": "Keeps the hives. Says bees are better organized than people.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1600,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "gentle",
+      "curiosity": "curious"
+    },
+    "gender": "m",
+    "origin": "Chengdu, China",
+    "homeRegion": "Chengdu, China",
+    "skinTone": "light",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "diana_osei",
+    "name": "Diana Osei",
+    "age": 26,
+    "formerOccupation": "paramedic",
+    "line": "Youngest medic. Fastest hands in the village.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "f",
+    "origin": "Kumasi, Ghana",
+    "homeRegion": "Kumasi, Ghana",
+    "skinTone": "deep",
+    "clothing": "casual"
+  },
+  {
+    "id": "elena_petrova",
+    "name": "Elena Petrova",
+    "age": 44,
+    "formerOccupation": "baker",
+    "line": "No relation to Nina. The bread argument is ongoing.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1700,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Odesa, Ukraine",
+    "homeRegion": "Odesa, Ukraine",
+    "skinTone": "fair",
+    "clothing": "bright"
+  },
+  {
+    "id": "farid_ahmed",
+    "name": "Farid Ahmed",
+    "age": 37,
+    "formerOccupation": "locksmith",
+    "line": "Can open anything. Chooses not to, mostly.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "cautious",
+      "curiosity": "curious"
+    },
+    "gender": "m",
+    "origin": "Dhaka, Bangladesh",
+    "homeRegion": "Dhaka, Bangladesh",
+    "skinTone": "brown",
+    "clothing": "casual"
+  },
+  {
+    "id": "greta_hansen",
+    "name": "Greta Hansen",
+    "age": 63,
+    "formerOccupation": "sailor",
+    "line": "Sailed alone across the Atlantic. Twice. The sea misses her.",
+    "kcalPerDay": 1800,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Aarhus, Denmark",
+    "homeRegion": "Aarhus, Denmark",
+    "skinTone": "fair",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "hassan_ali",
+    "name": "Hassan Ali",
+    "age": 42,
+    "formerOccupation": "butcher",
+    "line": "Processes game. Respects the animal. Wastes nothing.",
+    "kcalPerDay": 2200,
+    "providesPerDay": 1700,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "steady",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Karachi, Pakistan",
+    "homeRegion": "Karachi, Pakistan",
+    "skinTone": "brown",
+    "clothing": "workwear"
+  },
+  {
+    "id": "ingrid_vik",
+    "name": "Ingrid Vik",
+    "age": 35,
+    "formerOccupation": "physical therapy aide",
+    "line": "Rebuilds broken bodies. Patient with everyone except herself.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "gentle",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Trondheim, Norway",
+    "homeRegion": "Trondheim, Norway",
+    "skinTone": "fair",
+    "clothing": "casual"
+  },
+  {
+    "id": "jorge_silva",
+    "name": "Jorge Silva",
+    "age": 50,
+    "formerOccupation": "rancher",
+    "line": "Ran cattle in Mato Grosso. Now herds goats. Same principles.",
+    "kcalPerDay": 2200,
+    "providesPerDay": 1600,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "steady",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Cuiabá, Brazil",
+    "homeRegion": "Cuiabá, Brazil",
+    "skinTone": "tan",
+    "clothing": "workwear"
+  },
+  {
+    "id": "katarina_novak",
+    "name": "Katarina Novak",
+    "age": 28,
+    "formerOccupation": "journalist",
+    "line": "Was embedded in three war zones. The village is the fourth.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "bold",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "f",
+    "origin": "Prague, Czech Republic",
+    "homeRegion": "Prague, Czech Republic",
+    "skinTone": "fair",
+    "clothing": "casual"
+  },
+  {
+    "id": "luis_fernandez",
+    "name": "Luis Fernandez",
+    "age": 46,
+    "formerOccupation": "mason",
+    "line": "Victor's crew. Lays stone like he's writing.",
+    "kcalPerDay": 2300,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Seville, Spain",
+    "homeRegion": "Seville, Spain",
+    "skinTone": "tan",
+    "clothing": "workwear"
+  },
+  {
+    "id": "meera_reddy",
+    "name": "Meera Reddy",
+    "age": 39,
+    "formerOccupation": "dentist",
+    "line": "Fixes teeth with hand tools. Patients bite down and bear it.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "dry",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Hyderabad, India",
+    "homeRegion": "Hyderabad, India",
+    "skinTone": "brown",
+    "clothing": "casual"
+  },
+  {
+    "id": "nikolai_volkov",
+    "name": "Nikolai Volkov",
+    "age": 60,
+    "formerOccupation": "welder",
+    "line": "Retired from the shipyards. The village is his last hull.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "prickly",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Vladivostok, Russia",
+    "homeRegion": "Vladivostok, Russia",
+    "skinTone": "fair",
+    "clothing": "workwear"
+  },
+  {
+    "id": "olivia_bennett",
+    "name": "Olivia Bennett",
+    "age": 32,
+    "formerOccupation": "social worker",
+    "line": "Mediates disputes. Has a 90% success rate. The other 10% are legendary.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Melbourne, Australia",
+    "homeRegion": "Melbourne, Australia",
+    "skinTone": "fair",
+    "clothing": "casual"
+  },
+  {
+    "id": "pavel_dubinin",
+    "name": "Pavel Dubinin",
+    "age": 43,
+    "formerOccupation": "bush pilot",
+    "line": "Flew supplies in Alaska. Now walks. Complains about it.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "dry",
+      "curiosity": "wary"
+    },
+    "gender": "m",
+    "origin": "Anchorage, Alaska",
+    "homeRegion": "Anchorage, Alaska",
+    "skinTone": "fair",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "quinn_murphy",
+    "name": "Quinn Murphy",
+    "age": 25,
+    "formerOccupation": "bartender",
+    "line": "Remembers everyone's drink. Now remembers everyone's story.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Dublin, Ireland",
+    "homeRegion": "Dublin, Ireland",
+    "skinTone": "fair",
+    "clothing": "bright"
+  },
+  {
+    "id": "rafael_torres",
+    "name": "Rafael Torres",
+    "age": 38,
+    "formerOccupation": "roofer",
+    "line": "Not afraid of heights. Afraid of idle hands.",
+    "kcalPerDay": 2300,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "restless",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Medellín, Colombia",
+    "homeRegion": "Medellín, Colombia",
+    "skinTone": "tan",
+    "clothing": "workwear"
+  },
+  {
+    "id": "sanne_bakker",
+    "name": "Sanne Bakker",
+    "age": 41,
+    "formerOccupation": "vintner",
+    "line": "Made wine in Bordeaux. Now ferments whatever grows.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "dry",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Amsterdam, Netherlands",
+    "homeRegion": "Amsterdam, Netherlands",
+    "skinTone": "fair",
+    "clothing": "casual"
+  },
+  {
+    "id": "tariq_mahmood",
+    "name": "Tariq Mahmood",
+    "age": 49,
+    "formerOccupation": "electrician",
+    "line": "Marcus's counterpart. They disagree about everything. Respectfully.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "prickly",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Lahore, Pakistan",
+    "homeRegion": "Lahore, Pakistan",
+    "skinTone": "brown",
+    "clothing": "workwear"
+  },
+  {
+    "id": "ursula_weber",
+    "name": "Ursula Weber",
+    "age": 57,
+    "formerOccupation": "mortician",
+    "line": "Handles the dead with dignity. The living are harder.",
+    "kcalPerDay": 1800,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "gentle",
+      "curiosity": "wary"
+    },
+    "gender": "f",
+    "origin": "Vienna, Austria",
+    "homeRegion": "Vienna, Austria",
+    "skinTone": "fair",
+    "clothing": "casual"
+  },
+  {
+    "id": "vasyl_shevchenko",
+    "name": "Vasyl Shevchenko",
+    "age": 34,
+    "formerOccupation": "infantry soldier",
+    "line": "Two tours. Doesn't talk about them. Watches the tree line.",
+    "kcalPerDay": 2200,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "withdrawn",
+      "curiosity": "wary"
+    },
+    "gender": "m",
+    "origin": "Lviv, Ukraine",
+    "homeRegion": "Lviv, Ukraine",
+    "skinTone": "fair",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "wanjiru_kamau",
+    "name": "Wanjiru Kamau",
+    "age": 30,
+    "formerOccupation": "wild food forager",
+    "line": "Knows every edible plant within ten miles. Teaching the village.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1800,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "f",
+    "origin": "Nakuru, Kenya",
+    "homeRegion": "Nakuru, Kenya",
+    "skinTone": "deep",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "xavier_dubois",
+    "name": "Xavier Dubois",
+    "age": 36,
+    "formerOccupation": "lawyer",
+    "line": "No relation to Chloe. Argues for fun. Wins anyway.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "dry",
+      "curiosity": "curious"
+    },
+    "gender": "m",
+    "origin": "Brussels, Belgium",
+    "homeRegion": "Brussels, Belgium",
+    "skinTone": "fair",
+    "clothing": "casual"
+  },
+  {
+    "id": "yara_haddad",
+    "name": "Yara Haddad",
+    "age": 27,
+    "formerOccupation": "interpreter",
+    "line": "Speaks Arabic, French, English. Learning the System's silence.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "observant",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Beirut, Lebanon",
+    "homeRegion": "Beirut, Lebanon",
+    "skinTone": "tan",
+    "clothing": "casual"
+  },
+  {
+    "id": "zoltan_nagy",
+    "name": "Zoltan Nagy",
+    "age": 52,
+    "formerOccupation": "mushroom grower",
+    "line": "Grows mushrooms in the dark. Says they understand him.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1600,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "withdrawn",
+      "curiosity": "curious"
+    },
+    "gender": "m",
+    "origin": "Budapest, Hungary",
+    "homeRegion": "Budapest, Hungary",
+    "skinTone": "fair",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "adaeze_nwosu",
+    "name": "Adaeze Nwosu",
+    "age": 23,
+    "formerOccupation": "ESL teacher",
+    "line": "Youngest teacher. The kids adore her. She's terrified.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "anxious",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "f",
+    "origin": "Enugu, Nigeria",
+    "homeRegion": "Enugu, Nigeria",
+    "skinTone": "deep",
+    "clothing": "bright"
+  },
+  {
+    "id": "benoit_lambert",
+    "name": "Benoit Lambert",
+    "age": 45,
+    "formerOccupation": "baker",
+    "line": "Elena's rival. The bread war has no end.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1700,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "prickly",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Marseille, France",
+    "homeRegion": "Marseille, France",
+    "skinTone": "fair",
+    "clothing": "casual"
+  },
+  {
+    "id": "catalina_reyes",
+    "name": "Catalina Reyes",
+    "age": 38,
+    "formerOccupation": "fishing guide",
+    "line": "Takes people out on the water. Always brings them back.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1600,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Valparaíso, Chile",
+    "homeRegion": "Valparaíso, Chile",
+    "skinTone": "tan",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "dmitri_sokolov",
+    "name": "Dmitri Sokolov",
+    "age": 41,
+    "formerOccupation": "appliance repair tech",
+    "line": "Fixes the solar panels. Curses in Russian. It helps.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "dry",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Novosibirsk, Russia",
+    "homeRegion": "Novosibirsk, Russia",
+    "skinTone": "fair",
+    "clothing": "workwear"
   }
 ]

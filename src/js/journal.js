@@ -134,7 +134,7 @@
     occupationLabel(vid) {
       if (Game.state.systemArrived) {
         const v = (Game.data.villagers || []).find(x => x.id === vid)
-          || (Game.data.background_survivors || []).find(x => x.id === vid) || {};
+          /* unified: hydrated seeds are in villagers */ || {};
         return v.formerOccupation || null;
       }
       const p = (Game.state.codex.people || {})[vid];
@@ -171,7 +171,7 @@
     const r = origReveal.call(this, vid, how);
     if (r) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: hydrated seeds are in villagers */ || {};
       const first = (vp.name || 'Someone').split(' ')[0];
       const howText = how === 'overheard' ? 'overheard by the fire' : how === 'gesture' ? 'exchanged in gestures' : 'they told me';
       this.journalLearn(vid, 'name', first, { how: howText });
@@ -199,7 +199,7 @@
         try { deflected = !!(this.convoGet(vid) || {}).pastDeflected; } catch (e) {}
         if (!deflected) {
           const vp = (this.data.villagers || []).find(x => x.id === vid)
-            || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+            /* unified: hydrated seeds are in villagers */ || {};
           if (vp.formerOccupation) this.journalLearn(vid, 'occupation', vp.formerOccupation, { sure: true, via: 'talk' });
           if (vp.homeRegion) this.journalLearn(vid, 'backstory', `From ${vp.homeRegion}.`, { via: 'talk' });
         }

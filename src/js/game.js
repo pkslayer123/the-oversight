@@ -18,8 +18,6 @@
 //   - fireShow(event) -> show (delegates to contests.js)
 //   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
 //   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
-//   - pickSpawnMonster(mdefs) (water-gated spawn pick: 'in' needs water)
-//   - placeSpawnMonster(mdef, opts) (water-aware spawn placement)
 //   - tbTerrainAt(x, y) -> type | null
 //   - tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double)
 //   - modIs(m) (wave-2 apex id gate: the Moderator)
@@ -29,6 +27,8 @@
 //   - sleepPreview()
 //   - playerAtHaven() (drifter presence gate for home-village narration)
 //   - kcalCap() (delegates to food.js)
+//   - hydrateSeed(seed) -> full person (unified person system: seed -> genCharacter depth)
+//   - getPerson(id) -> person | null (unified lookup: villagers + hydrated seeds)
 // rules:
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
@@ -38,7 +38,6 @@
 //   - moderator_phases: observing -> muting -> shadowban (code: tbMonsterTurn)
 //   - multitile_occupancy: size 2 = 2x2 block, mx,my is top-left (code: fighterTiles)
 //   - multitile_validation: all tiles walkable before each move (code: tbCanOccupy)
-//   - water_spawn: waterAffinity 'in' spawns ON a water cell only when water exists (re-pick from dry pool otherwise); 'near' prefers shore cells; wanderer cast excludes 'in' (code: pickSpawnMonster, placeSpawnMonster, castMonster)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
 //   - sleep_heal_bunk: 35 (code: sleepPreview)
@@ -738,6 +737,223 @@
         return char;
     },
 
+    // hydrateSeed(seed): UNIFIED PERSON SYSTEM (Steve 2026-10-06).
+    // Takes a hand-written background_survivors seed and enriches it to the
+    // FULL person shape that genCharacter produces. One code path for making
+    // a person — seeds provide the identity (name, age, occupation, personality),
+    // this fills in the depth (backstory, traits, languages, goals, etc.)
+    // using the same pools, dedup registries, and logic as genCharacter.
+    // The seed's hand-written fields are authoritative and never overridden.
+    hydrateSeed(seed) {
+      const cg = this.data.characterGen || {};
+      const pick = a => a[Math.floor(Math.random() * a.length)];
+      const s = seed || {};
+
+      // Occupation: match by name (case-insensitive) to get backstories, intel, etc.
+      const occName = String(s.formerOccupation || '').toLowerCase();
+      const occ = (cg.occupations || []).find(o =>
+        String(o.name || '').toLowerCase() === occName ||
+        String(o.id || '').toLowerCase() === occName) || { name: s.formerOccupation || 'survivor' };
+
+      const name = s.name || 'Unknown';
+      const first = name.split(' ')[0];
+      const age = s.age || 35;
+      const origin = s.origin || s.homeRegion || 'somewhere';
+      const parsed = this.parseOrigin(origin);
+      const city = String(origin).split(',')[0].trim() || origin;
+
+      // Pronouns: seed gender is authoritative. Fall back to name-guessing.
+      let pro = 'they';
+      if (s.gender === 'f') pro = 'she';
+      else if (s.gender === 'm') pro = 'he';
+      else {
+        const ng = this.guessNameGender(first, null);
+        pro = ng === 'm' ? 'he' : ng === 'f' ? 'she' : 'they';
+      }
+      const their = pro === 'they' ? 'their' : pro === 'she' ? 'her' : 'his';
+      const them = pro === 'they' ? 'them' : pro === 'she' ? 'her' : 'him';
+      const They = pro === 'they' ? 'They' : pro === 'she' ? 'She' : 'He';
+      const conj = { keep: 'keeps', build: 'builds', look: 'looks', know: 'knows', stare: 'stares', read: 'reads', speak: 'speaks', talk: 'talks', stay: 'stays', are: 'is', have: 'has', were: 'was', do: 'does', go: 'goes' };
+      const skill = (occ.teachTags || []).includes('medicinal') ? 'patching people up'
+        : (occ.teachTags || []).includes('food') ? 'finding food' : 'making do';
+      const fillPronouns = t => t
+        .replaceAll('{first}', first)
+        .replaceAll('{their}', their)
+        .replaceAll('{Their}', their.charAt(0).toUpperCase() + their.slice(1))
+        .replaceAll('{them}', them)
+        .replace(/\{They\} ([A-Za-z]+)/g, (m, vb) => They + ' ' + (pro === 'they' ? vb : (conj[vb] || vb)))
+        .replace(/\{they\} ([A-Za-z]+)/g, (m, vb) => pro + ' ' + (pro === 'they' ? vb : (conj[vb] || vb)))
+        .replaceAll('{They}', They)
+        .replaceAll('{they}', pro)
+        .replaceAll('{occ}', occ.name || 'survivor')
+        .replaceAll('{origin}', origin)
+        .replaceAll('{city}', city)
+        .replaceAll('{skill}', skill);
+
+      // Backstory: from occupation variants, same uniqueness + age-gating as genCharacter.
+      const variantMinAge = t => {
+        let min = 0;
+        const words = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, fifteen: 15, twenty: 20, thirty: 30 };
+        const re = /\b(a|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|\d+)\s+(summer|year|decade)s?\b/gi;
+        let m;
+        while ((m = re.exec(t))) {
+          const raw = m[1].toLowerCase();
+          let n = raw === 'a' ? 1 : (words[raw] != null ? words[raw] : parseInt(raw, 10));
+          if (m[2].toLowerCase().startsWith('decade')) n *= 10;
+          if (n > 0) min = Math.max(min, n + 16);
+        }
+        if (/\btwo tours\b/i.test(t)) min = Math.max(min, 20);
+        return min;
+      };
+      const backstoryVariants = occ.backstories || [occ.backstory || '{first} is here.'];
+      const ubs = this._usedBackstories || (this._usedBackstories = new Set());
+      const occKey = occ.id || occ.name || 'survivor';
+      let bi = backstoryVariants.findIndex((_, i) => !ubs.has(occKey + ':' + i) && variantMinAge(backstoryVariants[i]) <= age);
+      if (bi < 0) bi = backstoryVariants.findIndex((_, i) => !ubs.has(occKey + ':' + i));
+      if (bi < 0) bi = backstoryVariants.findIndex((_, i) => variantMinAge(backstoryVariants[i]) <= age);
+      if (bi < 0) bi = Math.floor(Math.random() * backstoryVariants.length);
+      ubs.add(occKey + ':' + bi);
+
+      // Languages: same story-driven generator as genCharacter.
+      const homeCulture = this.cultureForOrigin(origin);
+      const langs = this.genCultureLanguages(homeCulture, occ, { age });
+      let backstory = fillPronouns(backstoryVariants[bi]);
+      if (langs.reasons.length) backstory += ' ' + langs.reasons.map(fillPronouns).join(' ');
+      // Seed's one-liner becomes part of their story.
+      if (s.line) backstory += ' ' + s.line;
+
+      // Personality: seed's hand-written values are authoritative.
+      const temperament = (s.personality && s.personality.temperament) || pick(cg.temperaments || ['steady']);
+      const sharing = (s.personality && s.personality.sharing) || pick(cg.sharingStyles || ['fair']);
+      const curiosity = (s.personality && s.personality.curiosity) || pick(cg.curiosities || ['practical']);
+
+      // Traits: same deduped pools as genCharacter.
+      const _ut = this._usedTraits || (this._usedTraits = { quirk: new Set(), habit: new Set(), hope: new Set(), fear: new Set() });
+      const pickFresh = (pool, setName) => {
+        const set = _ut[setName];
+        const fresh = (pool || []).filter(x => !set.has(x));
+        const src = fresh.length ? fresh : (pool || []);
+        const c = src.length ? src[Math.floor(Math.random() * src.length)] : null;
+        if (c) set.add(c);
+        return c;
+      };
+      let dark = null, quirk;
+      {
+        const rolled = this.rollDarkTrait();
+        if (rolled) {
+          dark = rolled;
+          quirk = rolled._tell.quirk;
+          _ut.quirk.add(quirk);
+        } else {
+          quirk = pickFresh(cg.quirks, 'quirk');
+        }
+      }
+      const habit = pickFresh(cg.habits, 'habit');
+      const hope = pickFresh(cg.hopes, 'hope');
+      const secretFear = pickFresh(cg.fears && cg.fears.length ? cg.fears : ['being forgotten'], 'fear');
+
+      // Goals: same weighted pool (no 'lead' for seeds — they're not contenders).
+      const goalDefs = (cg.goals || []).filter(g => g.id !== 'lead');
+      const goalPool = [];
+      for (const g of goalDefs) {
+        const w = g.id === 'survive' ? 2 : 3;
+        for (let i = 0; i < w; i++) goalPool.push(g.id);
+      }
+      const goal = goalPool.length ? pick(goalPool) : null;
+
+      // Talk and quest templates.
+      const fill = t => t.replaceAll('{first}', first).replaceAll('{occ}', occ.name || 'survivor')
+        .replaceAll('{origin}', origin).replaceAll('{city}', city).replaceAll('{skill}', skill);
+      const talk = [];
+      const tt = [...(cg.talkTemplates || [])];
+      while (talk.length < 3 && tt.length) talk.push(fill(tt.splice(Math.floor(Math.random() * tt.length), 1)[0]));
+      const quest = (cg.questTemplates || []).map(fill);
+
+      // Intelligence: same occupation + temperament mapping as genCharacter.
+      const intelDefs = cg.intelligences || {};
+      const intelPrimary = (occ.intel && intelDefs[occ.intel]) ? occ.intel : 'steady';
+      const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'] };
+      const curSec = { curious: ['analytical', 'creative'], 'hungry-to-learn': ['analytical', 'creative'], practical: ['practical', 'steady'], wary: ['observant', 'steady'], skeptical: ['analytical', 'observant'], indifferent: ['steady', 'practical'] };
+      const secPool = [];
+      for (const st of (tempSec[temperament] || ['steady'])) { secPool.push(st, st); }
+      for (const st of (curSec[curiosity] || ['steady'])) { secPool.push(st); }
+      const secCands = secPool.filter(st => st !== intelPrimary && intelDefs[st]);
+      const intelSecondary = secCands.length ? secCands[Math.floor(Math.random() * secCands.length)] : (intelPrimary === 'steady' ? 'practical' : 'steady');
+
+      // System assessment: same natural prose pools.
+      const _assessPool = {
+        steady: [`${first} doesn't rattle easily.`, `${first} keeps an even keel when things go sideways.`, `Whatever happens, ${first} is still standing in the same place.`],
+        bold: [`${first} says the thing nobody else will say.`, `${first} walks into a room like it was waiting.`, `Where ${first} stands is never a mystery.`],
+        cautious: [`${first} watches before wading in.`, `${first} trusts slowly and checks twice.`, `New faces get a nod from ${first}, not a life story.`],
+        warm: [`${first} remembers names and uses them.`, `Strangers relax around ${first} faster than they expect to.`, `${first} makes room — at the fire, in the conversation, everywhere.`],
+        prickly: [`${first} has edges and doesn't sand them down.`, `Small talk withers around ${first}; real talk survives.`, `${first} doesn't perform friendliness, which some people trust more.`],
+        restless: [`${first} is already thinking about the next thing.`, `Sitting still looks painful for ${first}.`, `${first} fidgets with tools, plans, anything in reach.`],
+        dry: [`${first}'s humor is bone-dry and easy to miss.`, `${first} says less than everyone and means more of it.`, `The driest comment in the room usually comes from ${first}.`],
+        gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
+        intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
+        withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
+      };
+      const _assessClose = {
+        steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
+        bold: [`The others find it bracing — or exhausting.`, `Nobody's neutral about ${first} for long.`, `It clears rooms and fills them, depending on the day.`, `Takes some getting used to, but nobody calls it dull.`, `Subtle was never the goal.`],
+        cautious: [`The others find it reassuring.`, `Nobody mistakes it for coldness twice.`, `Trust earned from ${first} actually means something.`, `Slow to warm, solid once warm.`, `Caution has kept ` + first + ` alive this long.`],
+        warm: [`The others gravitate toward it.`, `It's why strangers become neighbors fast around ${first}.`, `Nobody stays a stranger long.`, `The fire always has room when ${first} is tending it.`, `Warmth like that is rare out here.`],
+        prickly: [`The others learn to navigate it.`, `It's honest, which counts for more than charm out here.`, `Fewer friends, better ones.`, `The bark is worse than the bite. Usually.`, `An acquired taste, like strong coffee.`],
+        restless: [`The others find it contagious — or tiring.`, `Things get done around ${first}, one way or another.`, `Standing still was never an option anyway.`, `Exhausting to watch, useful to have.`, `The energy has to go somewhere.`],
+        dry: [`The others catch on eventually.`, `It's an acquired taste, like most good things.`, `The laugh always comes a beat late.`, `Worth listening closely for.`, `Dry humor, wetter than it looks.`],
+        gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
+        intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
+        withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
+      };
+      const _ap = _assessPool[temperament] || _assessPool.steady;
+      const _ac = _assessClose[temperament] || _assessClose.steady;
+      let sysAssess = _ap[Math.floor(Math.random() * _ap.length)] + ' ' + _ac[Math.floor(Math.random() * _ac.length)];
+      let darkStored = null;
+      if (dark && dark._tell) {
+        backstory += ' ' + fillPronouns(dark._tell.note);
+        sysAssess += ' ' + dark._tell.assessment;
+        darkStored = { kind: dark.kind, tell: dark.tell };
+      }
+
+      // Build the full person — same shape as genCharacter output.
+      const char = {
+        id: s.id, name, formerOccupation: occ.name || s.formerOccupation || 'survivor',
+        homeRegion: s.homeRegion || origin, originTags: parsed.tags,
+        heritage: this.heritageFor(parsed.tags),
+        backstory, personality: { temperament, sharing, curiosity, quirk, habit, hope, dark: darkStored },
+        age, goal,
+        intelligence: { primary: intelPrimary, secondary: intelSecondary },
+        abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
+        items: [], talk, quest,
+        kcalPerDay: s.kcalPerDay || 2000,
+        providesPerDay: s.providesPerDay || 1500,
+        survivalProbability: 25 + Math.floor(Math.random() * 21),
+        systemAssessment: sysAssess,
+        secretFear, languages: langs, occupationId: occ.id || null,
+        candidate: false, pro,
+        gender: s.gender || (pro === 'she' ? 'f' : pro === 'he' ? 'm' : 'x'),
+        skinTone: s.skinTone || this.appearanceFor(origin, parsed.tags).skinTone,
+        clothing: s.clothing || 'casual',
+        seedLine: s.line || null, // the hand-written one-liner, preserved
+        fromSeed: true, // marks unified-system seeds vs generated
+      };
+      char.items = this.genItemCandidates(occ, char);
+      return char;
+    },
+
+    // getPerson(id): UNIFIED PERSON LOOKUP (Steve 2026-10-06).
+    // One lookup for all people — seeds (hydrated) and generated alike.
+    // Replaces the villagers.find(...) || background_survivors.find(...) chains.
+    getPerson(id) {
+      if (!id) return null;
+      const v = (this.data.villagers || []).find(x => x.id === id);
+      if (v) return v;
+      // Fallback: check unhydrated seeds (shouldn't happen after unification,
+      // but keeps old saves working).
+      const s = (this.data.background_survivors || []).find(x => x.id === id);
+      return s ? this.hydrateSeed(s) : null;
+    },
+
     // genRoster(playerOrigin): the character-select cast.
     // The player picks an origin FIRST, then gets 4 candidates FROM that origin —
     // name, native language, background, and knowledge all match. The character
@@ -976,10 +1192,11 @@
     // (static data has none — without this they all default to fluent English).
     npcLangs(vid) {
       const v = this.state && this.state.village;
+      // UNIFIED: hydrated seeds carry languages directly. bgLangs is legacy fallback.
+      const person = this.getPerson(vid) || {};
+      if (person.languages) return person.languages;
       if (v && v.bgLangs && v.bgLangs[vid]) return v.bgLangs[vid];
-      const person = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
-      return person.languages;
+      return null;
     },
 
     // commLevel: do you share ANY language? Best shared tongue wins, limited by
@@ -1319,6 +1536,23 @@
       }
       this.state.village.roster = [this.villagerId].concat(otherGen, bg);
       this.state.village.villagers = [this.villagerId].concat(otherGen); // generated have dialogue; background have one-liners
+      // UNIFIED PERSON SYSTEM (Steve 2026-10-06): hydrate the drawn background
+      // survivors into full person objects and add them to the villagers array.
+      // One registry, one lookup — no more villagers-vs-background_survivors split.
+      // The hydrateSeed fills in backstory, traits, languages, goals, etc. using
+      // the same pools and logic as genCharacter. Seed identity is authoritative.
+      for (const id of bg) {
+        const seed = (this.data.background_survivors || []).find(s => s.id === id);
+        if (seed) {
+          const hydrated = this.hydrateSeed(seed);
+          // Avoid duplicates (in case of re-entry)
+          if (!this.data.villagers.find(v => v.id === hydrated.id)) {
+            this.data.villagers.push(hydrated);
+          }
+          // Persist hydrated seeds like generated chars (save carries them)
+          this.state.village.rosterChars[hydrated.id] = hydrated;
+        }
+      }
       // persist the generated cast (they don't exist in the JSON — the save carries them)
       this.state.village.rosterChars = {};
       for (const c of this.generatedRoster) this.state.village.rosterChars[c.id] = c;
@@ -1631,14 +1865,16 @@
 
     vpOf(vid) {
       return (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
     },
 
-    // npcHomeRegion: where an NPC is from. Generated cast has homeRegion;
-    // background survivors get a per-run draw in village.bgHome (from culture).
+    // npcHomeRegion: where an NPC is from. UNIFIED (Steve 2026-10-06):
+    // hydrated seeds carry homeRegion directly. bgHome is legacy fallback.
     npcHomeRegion(vid) {
       const vp = this.vpOf(vid);
       if (vp.homeRegion) return vp.homeRegion;
+      const person = this.getPerson(vid);
+      if (person && person.homeRegion) return person.homeRegion;
       const bg = (this.state.village || {}).bgHome || {};
       if (bg[vid]) return bg[vid];
       const rc = ((this.state.village || {}).rosterChars || {})[vid];
@@ -2216,7 +2452,7 @@
     // you a confident, WRONG read — which the game remembers.
     nonverbalRead(vid) {
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid);
+        /* unified: getPerson */;
       if (!v) return null;
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
       const first = this.displayName(vid);
@@ -2274,7 +2510,7 @@
     // Concrete beats abstract. Misunderstandings have consequences.
     nonverbalGesture(vid, intent) {
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid);
+        /* unified: getPerson */;
       if (!v) return null;
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
       const first = this.displayName(vid);
@@ -2324,7 +2560,7 @@
     // Slower, more deliberate than gestures — and it leaves a mark they can study.
     nonverbalDraw(vid, concept) {
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid);
+        /* unified: getPerson */;
       if (!v) return null;
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
       const first = this.displayName(vid);
@@ -2372,7 +2608,7 @@
         v.wrongAbout[vid] = {};
         try {
           const vp = (this.data.villagers || []).find(x => x.id === vid)
-            || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+            /* unified: getPerson */ || {};
           const malicious = vp.personality && vp.personality.dark && vp.personality.dark.kind === 'malicious';
           const theyKnow = (v.taught && v.taught[vid]) || [];
           const plants = this.data.plants || [];
@@ -2486,7 +2722,7 @@
       return true;
     },
     teachPlant(vid, plantId) {
-      const teacher = this.data.villagers.find(x => x.id === vid) || this.data.background_survivors.find(x => x.id === vid);
+      const teacher = this.getPerson(vid);
       const plant = this.data.plants.find(p => p.id === plantId);
       if (!teacher || !plant) return null;
       // does the teacher know it?
@@ -2860,7 +3096,7 @@
     },
 
     giveFood(vid) {
-      const v = this.data.villagers.find(x => x.id === vid) || this.data.background_survivors.find(x => x.id === vid);
+      const v = this.getPerson(vid);
       if (!v) return null;
       // find food in inventory: ANY edible item — foraged plants (plantId),
       // packed food (itemId), cooked meals. Same definition as eating:
@@ -3106,7 +3342,7 @@
     // rivals read them as buying loyalty.
     offerDeal(vid, task) {
       const v = this.data.villagers.find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid);
+        /* unified: getPerson */;
       if (!v) return null;
       const day = this.state.scholar.day;
       const food = this.state.scholar.inventory.find(i =>
@@ -3211,7 +3447,7 @@
     // 'village' -> "how's everyone?" (morale/atmosphere readout)
     askAbout(vid, topic) {
       const v = this.data.villagers.find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid);
+        /* unified: getPerson */;
       if (!v) return null;
       const first = this.displayName(vid);
       const known = this.state.systemArrived || this.nameKnown(vid);
@@ -4005,7 +4241,7 @@
       const tasks = this.delegateTasks();
       if (!tasks[task]) return null;
       const vp = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       const first = this.displayName(vid);
       if (task === 'rest') {
         delete v.assignments[vid];
@@ -4130,7 +4366,7 @@
 
     resolveOneAssignment(vid, a) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       const first = this.displayName(vid);
       const comp = this.villagerCompetence(vid, a.task);
       const tmult = this.trustTaskMult(vid);
@@ -4161,7 +4397,7 @@
             // LIVING WORLD: track the level they learned. Foragers learn L1 (recognition).
             // Experts (botanists, herbalists) might learn L2 (which parts).
             const vp2 = (this.data.villagers || []).find(x => x.id === vid)
-              || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+              /* unified: getPerson */ || {};
             const occ2 = (vp2.formerOccupation || '').toLowerCase();
             const deepLearner = ['botanist', 'herbalist', 'cook', 'chef', 'forager'].some(w => occ2.includes(w));
             v.sharedKnowledge[p.id] = {
@@ -4245,7 +4481,7 @@
       const s = this.state.scholar;
       const m = s.monster; // known wandering threat
       const vp = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       if (!m || !m.id) {
         // no known threat — uneventful patrol, small trust gain
         const lines = [
@@ -4412,7 +4648,7 @@
         };
         flowed++;
         const dVill = (this.data.villagers || []).find(x => x.id === entry.discoveredBy)
-          || (this.data.background_survivors || []).find(x => x.id === entry.discoveredBy) || {};
+          /* unified: getPerson */ || {};
         const discoverer = entry.discoveredBy ? (dVill.name || 'someone').split(' ')[0] : 'someone';
         this.say(`📚 Village knowledge: ${discoverer} taught everyone about ${plant ? plant.name : pid}. The Codex grows without you lifting a finger.`);
       }
@@ -8057,7 +8293,7 @@
     },
     npcName(rid) {
       const vp = (this.data.villagers || []).find(x => x.id === rid)
-        || (this.data.background_survivors || []).find(x => x.id === rid);
+        /* unified: getPerson */;
       return vp ? vp.name.split(' ')[0] : 'Someone';
     },
 
@@ -8077,7 +8313,7 @@
       village.knownNames = village.knownNames || {};
       if (village.knownNames[vid] || this.state.systemArrived) return false;
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid);
+        /* unified: getPerson */;
       const first = v ? v.name.split(' ')[0] : 'Someone';
       village.knownNames[vid] = true;
       if (how === 'intro') this.say(`"${first}," they say, touching their chest. "I'm ${first}." You'll remember that.`);
@@ -8094,7 +8330,7 @@
     // Stable per villager (not random each call) so you can recognize them.
     descriptorBase(vid) {
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       let pro = v.pro;
       if (!pro) pro = ['she', 'he', 'they'][this._hashStr(vid) % 3];
       const age = v.age || 30;
@@ -8138,7 +8374,7 @@
     },
     personRecord(vid) {
       return (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || null;
+        /* unified: getPerson */ || null;
     },
     // descriptorCollides: does anyone else in the village share this base descriptor?
     descriptorCollides(vid) {
@@ -8197,7 +8433,7 @@
       try {
         if (this.state.systemArrived || this.nameKnown(vid)) {
           const v = (this.data.villagers || []).find(x => x.id === vid)
-            || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+            /* unified: getPerson */ || {};
           return String(v.name || 'Someone').split(' ')[0];
         }
         if (typeof this.whoTag === 'function') return this.whoTag(vid);
@@ -8210,7 +8446,7 @@
     // ============ GOALS ============
     npcGoal(vid) {
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       if (v.goal) return v.goal;
       return (this.state.village.bgGoals || {})[vid] || null;
     },
@@ -8740,7 +8976,7 @@
       const need = this.dominantNeed(vid);
       const mood = this.npcMood(vid);
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       const pro = v.pro || (['she', 'he', 'they'][this._hashStr(vid) % 3]);
       const They = pro === 'they' ? 'They' : pro === 'she' ? 'She' : 'He';
       const keep = pro === 'they' ? 'keep' : 'keeps';
@@ -8866,7 +9102,7 @@
     },
     npcTemper(rid) {
       const vp = (this.data.villagers || []).find(x => x.id === rid)
-        || (this.data.background_survivors || []).find(x => x.id === rid);
+        /* unified: getPerson */;
       return (vp && vp.personality && vp.personality.temperament) || 'steady';
     },
     // npcAge / npcAgeBand: how old this person is. Age is identity — it
@@ -8876,7 +9112,7 @@
     // stages, not birthdays. (Steve 2026-10-06: villager age voice.)
     npcAge(rid) {
       const vp = (this.data.villagers || []).find(x => x.id === rid)
-        || (this.data.background_survivors || []).find(x => x.id === rid)
+        /* unified: getPerson */
         || ((this.state.village || {}).rosterChars || {})[rid];
       const a = vp && (vp.age || (vp.personality || {}).age);
       return typeof a === 'number' && a > 0 ? a : 30;
@@ -8890,12 +9126,16 @@
     // not IQ — an observant forager and an analytical programmer are both sharp,
     // in completely different directions.
     npcIntel(rid) {
-      // background survivors carry per-run intelligence in village state
-      // (static data can't hold it) — same minds, same rules.
+      // UNIFIED (Steve 2026-10-06): hydrated seeds carry intelligence directly.
+      // bgIntel is legacy fallback for old saves.
+      const person = this.getPerson(rid);
+      if (person && person.intelligence && person.intelligence.primary) {
+        return { primary: person.intelligence.primary, secondary: person.intelligence.secondary || 'practical' };
+      }
       const bv = (this.state.village || {}).bgIntel || {};
       if (bv[rid] && bv[rid].primary) return { primary: bv[rid].primary, secondary: bv[rid].secondary || 'practical' };
       const vp = (this.data.villagers || []).find(x => x.id === rid)
-        || (this.data.background_survivors || []).find(x => x.id === rid);
+        /* unified: getPerson */;
       const intel = (vp && vp.intelligence) || {};
       const defs = (this.data.characterGen || {}).intelligences || {};
       const primary = (intel.primary && defs[intel.primary]) ? intel.primary : 'steady';
@@ -9300,7 +9540,7 @@
     //  what you found by the creek."
     isKnowledgeTrader(vid) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       const occ = (vp.formerOccupation || '').toLowerCase();
       // natural traders: people whose old life was about knowing things
       if (['librarian', 'teacher', 'professor', 'botanist', 'herbalist', 'scout', 'tracker',
@@ -9313,7 +9553,7 @@
     // what does this trader know that you don't? Returns plant IDs they can teach.
     traderKnowledge(vid) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       // traders know 2-3 plants deeply. Generate deterministically from their ID.
       const plants = this.data.plants || [];
       if (!plants.length) return [];
@@ -9335,7 +9575,7 @@
     // tradeKnowledge: the deal. Food, favor, or knowledge for knowledge.
     tradeKnowledge(vid, pid) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       const first = this.displayName(vid);
       const p = (this.data.plants || []).find(x => x.id === pid);
       if (!p) return null;
@@ -9626,7 +9866,7 @@
     // Visible in batch turns: faster NPCs cover more ground.
     npcSpeed(vid) {
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       let s = 1.0;
       const age = v.age || 35;
       if (age < 30) s += 0.2;
@@ -10716,7 +10956,7 @@
       const t = traits[Math.floor(Math.random() * traits.length)];
       const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
       const v = (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        /* unified: getPerson */ || {};
       const temp = (v.personality && v.personality.temperament) || 'steady';
       const pools = {
         bold: [`The ${cap(t)} Bastard`, `Old ${cap(t)}`, `${cap(t)}-Bane`],
@@ -13690,7 +13930,7 @@
         // joined player ate the joined village's meals while their labor
         // still fed home — food from two fires.)
         if (id === this.villagerId && !this.pantryInReach()) continue;
-        const person = this.data.villagers.find(p => p.id === id) || this.data.background_survivors.find(p => p.id === id);
+        const person = this.getPerson(id);
         if (!person) continue;
         const health = (v.health && v.health[id] !== undefined) ? v.health[id] : 100;
         const healthFactor = health / 100;
@@ -13789,7 +14029,7 @@
           const cur = v.health[rid] !== undefined ? v.health[rid] : 100;
           v.health[rid] = Math.max(0, cur - 5);
           if (v.health[rid] <= 0) {
-            const vp = this.data.villagers.find(m => m.id === rid) || this.data.background_survivors.find(p => p.id === rid);
+            const vp = this.getPerson(rid);
             v.roster = v.roster.filter(r => r !== rid);
             this.say(`💀 ${this.displayName(rid)} starved. Slowly. The village is ${v.roster.length} now.`);
             delete v.health[rid];
@@ -14360,6 +14600,7 @@
         const spot = i === 0 ? { x: srcMx, y: srcMy } : freeSpotNear(srcMx, srcMy, takenSpots);
         // MULTI-TILE (Steve 2026-10-06): reserve all occupied tiles.
         const msize = Math.max(1, Math.min(3, mdef.size || 1));
+        // Validate the spawn block fits — find a valid 2x2 if needed.
         let sx = spot.x, sy = spot.y;
         if (msize > 1) {
           const tryBlock = (bx, by) => {
@@ -14372,6 +14613,7 @@
             return true;
           };
           if (!tryBlock(sx, sy)) {
+            // Search for a valid block near the spawn point
             let found = false;
             for (let r = 1; r <= 4 && !found; r++) {
               for (let dy = -r; dy <= r && !found; dy++) for (let dx = -r; dx <= r && !found; dx++) {
@@ -14379,6 +14621,8 @@
                 if (tryBlock(bx, by)) { sx = bx; sy = by; found = true; }
               }
             }
+            // If no 2x2 fits (extremely rare), fall back to size 1
+            if (!found) { /* keep sx,sy; size handled at fighter level */ }
           }
           for (let dy = 0; dy < msize; dy++) for (let dx = 0; dx < msize; dx++)
             takenSpots.add((sx + dx) + ',' + (sy + dy));

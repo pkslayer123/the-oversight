@@ -30,6 +30,7 @@
   // ITEM SPRITES (Steve 2026-10-06): every item renders its unique SVG.
   // Knowledge-gated: unknown (lumped) items show the generic parcel.
   // Plant-derived items use the plant sprite at full depth when known.
+
   // HUMANOID SPRITES (Steve 2026-10-06): wave-2 human-like horrors render
   // their calm SVG on the grid — and villagers render generated portraits.
   // Some villagers echo the humanoids' silhouettes, so at grid-glance you
@@ -1288,7 +1289,7 @@
         if (cell === 'plant' || cell === 'bush') actions.push(['Forage', () => Game.cellInteract(cx, cy)]);
         // EXAMINE (Steve 2026-10-06): cheap look without harvesting. Vague
         // description + observation memory — the foundation of recognition.
-        if (cell === 'plant' || cell === 'bush') actions.push(['\U0001F50D Examine', () => { Game.examineCell(cx, cy); refresh(); }]);
+        if (cell === 'plant' || cell === 'bush') actions.push(['🔍 Examine', () => { Game.examineCell(cx, cy); refresh(); }]);
         // TERRAFORMING: clear brush for brushwood. costs a day-part + 40 kcal.
         if (cell === 'bush') actions.push(['🧹 Clear brush (a while)', () => { Game.clearBrush(cx, cy); refresh(); }]);
         else if (cell === 'rubble') actions.push(['Scavenge', () => Game.cellInteract(cx, cy)]);
@@ -11163,7 +11164,7 @@
         if (!ids.length) return '<p class="small" style="opacity:.6">📋 No one assigned. Tap a person → Assign task to direct them.</p>';
         const tasks = Game.delegateTasks();
         const lines = ids.map(rid => {
-          const vp = (Game.data.villagers || []).find(v => v.id === rid) || (Game.data.background_survivors || []).find(v => v.id === rid) || {};
+          const vp = (Game.data.villagers || []).find(v => v.id === rid) /* unified: hydrated seeds are in villagers */ || {};
           const t = tasks[asg[rid].task];
           return t ? `${t.icon} ${(vp.name || '?').split(' ')[0]} — ${t.name}` : null;
         }).filter(Boolean);
@@ -11701,12 +11702,9 @@
               // monster or animal — the emoji shows what it looks like, not what it is.
               // HUMANOID SPRITES (Steve 2026-10-06): human-like horrors show
               // their calm SVG — the paranoia needs a real silhouette.
-              // AIRBORNE (Steve 2026-10-06): high flyers read as airborne on the
-              // grid — a small ▲ under the emoji. Observable, never gated.
               const _hkey = mf.monsterId || (mf.mdef && mf.mdef.id) || ('tb' + _mfi);
               const _hspr = humanoidSpriteHtml(mf.monsterId || (mf.mdef && mf.mdef.id));
-              const _air = (typeof Game.flyerAirborne === 'function' && Game.flyerAirborne(mf));
-              g = `<span data-ent="creature:${esc(_hkey)}">${_hspr || esc(mf.emoji || '👹')}${_air ? '<span class="airbadge">▲</span>' : ''}</span>`;
+              g = `<span data-ent="creature:${esc(_hkey)}">${_hspr || esc(mf.emoji || '👹')}</span>`;
               cls += ' creature';
               drawn = true; break;
             }
@@ -11714,9 +11712,10 @@
           if (!drawn && mon && !_inside && cx === mon.mx && cy === mon.my) {
             const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
             // INDISTINCT (Steve 2026-10-05): same 'creature' class as animals
+            // HUMANOID SPRITES (Steve 2026-10-06): human-like horrors show
+            // their calm SVG on the field too.
             const _mhspr = humanoidSpriteHtml(mon.id || mdef.id);
-            const _wair = !!(mdef && mdef.flight);
-            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${_mhspr || esc(mdef.emoji || '👹')}${_wair ? '<span class="airbadge">▲</span>' : ''}</span>`;
+            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${_mhspr || esc(mdef.emoji || '👹')}</span>`;
             cls += ' creature'; drawn = true;
           }
           if (!drawn && ani && cx === ani.mx && cy === ani.my) {

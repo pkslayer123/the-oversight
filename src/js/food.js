@@ -552,9 +552,8 @@
       for (const id of (v.roster || [])) {
         if (id === this.villagerId) continue;
         const rc = (v.rosterChars || {})[id];
-        const vd = (this.data.villagers || []).find(x => x.id === id);
-        const bg = (this.data.background_survivors || []).find(x => x.id === id);
-        const src = rc || vd || bg;
+        const vd = this.getPerson(id);
+        const src = rc || vd;
         if (!src) continue;
         out.push({
           id,

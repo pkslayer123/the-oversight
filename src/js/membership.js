@@ -217,8 +217,7 @@
       for (var i = 0; i < roster.length; i++) {
         var person = null;
         try {
-          person = (this.data.villagers || []).find(function (p) { return p.id === roster[i]; }) ||
-                   (this.data.background_survivors || []).find(function (p) { return p.id === roster[i]; });
+          person = this.getPerson(roster[i]);
         } catch (e) {}
         if (!person) continue;
         var health = (v.health && v.health[roster[i]] !== undefined) ? v.health[roster[i]] : 100;

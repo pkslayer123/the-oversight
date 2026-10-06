@@ -107,7 +107,7 @@
   Game.giveFood = function (vid, amount) {
     amount = amount || 'meal';
     const v = (this.data.villagers || []).find(x => x.id === vid)
-      || (this.data.background_survivors || []).find(x => x.id === vid);
+      /* unified: hydrated seeds are in villagers */;
     if (!v) return null;
 
     const stacks = edibleStacks();
