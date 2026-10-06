@@ -11811,8 +11811,6 @@
       // LIVING WORLD: NPCs move between nodes with their own agendas.
       // Once per part — the world lives at a slower rhythm than your steps.
       try { this.npcNodeTravel(); } catch (e) {}
-      // THEFT: victims notice missing rations a part later. Hunger audits.
-      try { this.theftNoticeSweep(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
@@ -11824,6 +11822,11 @@
       this.moveWanderer();
       this.dayPart += 1;
       if (this.dayPart >= 4) return this.endDay();
+      // THEFT: victims notice missing rations a part later. Hunger audits.
+      // Runs AFTER the part increments (moved 2026-10-05): at the top of
+      // advancePart the clock still reads the theft's own part, so the sweep
+      // never qualified until two parts later. Brawler loop.
+      try { this.theftNoticeSweep(); } catch (e) {}
       this.ap = 1;
       this.say(`— ${DAY_PARTS[this.dayPart].toUpperCase()} — ${DAY_PART_HINT[DAY_PARTS[this.dayPart]]}`);
       // NIGHTFALL: the village reacts. Fear rises in everyone a little, people pull
