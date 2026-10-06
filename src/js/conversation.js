@@ -272,12 +272,20 @@
   // Acknowledgments are human filler, tracked no-repeat per villager via
   // convoPick, like every other react pool.
   const GQ_ACK = {
-    yes: ['"Yeah. Thought so."', '"Knew it."', '"Good. Good to know."',
-          '"Right. That\'s what I figured."', 'They nod, satisfied.'],
-    no: ['"Hm. Fair."', '"Okay. Worth asking."', '"Right. Noted."',
-         '"Yeah, figured. Had to ask."', 'They take that in.'],
-    unsure: ['"Nobody is, these days."', '"Fair enough."', '"Yeah. Me neither, some days."',
-             '"Honest. I\'ll take honest."'],
+    yes: ['\"Yeah. Thought so — and I\'m glad it\'s you saying it.\"',
+          '\"Knew it. You\'ve got good instincts for this stuff.\"',
+          '\"Good. Good to know I\'m not the only one seeing it.\"',
+          '\"Right. That\'s what I figured — which is why I asked you, not them.\"',
+          'They nod, satisfied — like a piece just clicked into place.'],
+    no: ['\"Hm. Fair. I had to check — you never know who\'s actually paying attention.\"',
+         '\"Okay. Worth asking. I\'d rather hear no than guess wrong.\"',
+         '\"Right. Noted — and I mean that, I\'m keeping track of who says what.\"',
+         '\"Yeah, figured. Had to ask. The asking matters, even when the answer\'s no.\"',
+         'They take that in, turning it over like a stone.'],
+    unsure: ['\"Nobody is, these days. We\'re all guessing — some of us just guess louder.\"',
+             '\"Fair enough. I\'d rather hear that than a confident lie.\"',
+             '\"Yeah. Me neither, some days. The days I do know, I worry I\'m wrong.\"',
+             '\"Honest. I\'ll take honest over certain every time.\"'],
     howru_bad: ['"Yeah. Me too, if I\'m honest." A small, real smile.',
                 '"Thank you for saying it straight. Most people perform."',
                 '"Okay. That\'s allowed, you know. Sit a minute?"'],
@@ -358,7 +366,8 @@
 
     vpOf(vid) {
       return (this.data.villagers || []).find(x => x.id === vid)
-        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+        || (this.data.background_survivors || []).find(x => x.id === vid)
+        || ((this.state.village || {}).rosterChars || {})[vid] || {};
     },
 
     // cleanDialogue: defense-in-depth against doubled quotes. Dialogue data
@@ -434,10 +443,15 @@
       };
       const feel = feelByTemp[temp] || feelByTemp.steady;
 
-      // Secret: something specific with stakes
+      // Secret: something specific with stakes — 6 distinct secrets so villagers
+      // don't share (the duplicate opener bug: 2-item pool meant collisions)
       const secrets = [
         `They've been ${['skimming extra food', 'sneaking out at night', 'hiding an injury', 'writing letters they\'ll never send'][Math.floor(Math.random() * 4)]}. They're ashamed and they can't stop.`,
         `Before the scattering, they ${['froze when it mattered', 'said something cruel', 'ran when they should have stayed', 'stole from someone who trusted them'][Math.floor(Math.random() * 4)]}. They think about it every day.`,
+        `They're ${['keeping a photo of someone they left behind', 'saving a candy bar for when things get better', 'practicing what they would say if they ever saw their family again'][Math.floor(Math.random() * 3)]}. They haven't told anyone.`,
+        `They ${['don\'t actually know how to swim and are terrified someone will find out', 'have been lying about their age — they\'re younger than they look', 'can\'t read, and they\'re scared it matters now'][Math.floor(Math.random() * 3)]}.`,
+        `At night they ${['cry quietly so no one hears', 'talk to someone who isn\'t there anymore', 'count the stars and name them after people'][Math.floor(Math.random() * 3)]}.`,
+        `They ${['stole medicine from the stash once and never confessed', 'know who took the extra rations but won\'t say', 'saw something in the woods they\'re not telling anyone about'][Math.floor(Math.random() * 3)]}.`,
       ];
       const secret = secrets[Math.floor(Math.random() * secrets.length)];
 
@@ -635,6 +649,9 @@
       let proto = villager && villager.prototype;
       if (!proto && villager) {
         proto = this.synthPrototype(villager);
+        // Cache it — otherwise every conversation regenerates a random prototype
+        // and two villagers can share the same secret/want (the duplicate opener bug)
+        villager.prototype = proto;
       }
       if (proto) {
         // Secret at high trust
@@ -800,6 +817,19 @@
       if (c.askedTopics.indexOf(topic) !== -1) return exh();
       c.askedTopics.push(topic);
       const vp = this.vpOf(vid);
+      if (topic === 'personal') {
+        // PERSONAL: the villager's own talk lines — generated from their
+        // personality, occupation, backstory. These are the lines that make
+        // them a person, not a template. (Steve 2026-10-05: wire up dead data)
+        const talkLines = vp.talk || [];
+        if (talkLines.length) {
+          const l = this.convoPick(vid, 'personal', talkLines);
+          c.thread = 'personal'; c.depth = 1;
+          return l ? this.fillTalkLine(l, vp) : exh();
+        }
+        // Fallback if no personal lines (background survivors)
+        return exh();
+      }
       if (topic === 'goal') {
         const goal = this.npcGoal(vid);
         const goalDef = (this.data.characterGen.goals || []).find(g => g.id === goal);
@@ -848,6 +878,7 @@
         // TEMPERAMENT-SPECIFIC (Steve 2026-10-05): the same generic pool made
         // every villager sound identical ("better than yesterday" x3). Now the
         // idle lines reflect who's talking.
+        const temp = ((vp.personality || {}).temperament || 'steady').toLowerCase();
         const idleByTemp = {
           warm: [
             'holding together, somehow. People are good, you know?',
@@ -905,6 +936,17 @@
         c.thread = 'gossip'; c.depth = 1;
         const line = said.join(' ');
         return line || exh();
+      }
+      if (topic === 'spread_rumor') {
+        // THE DRAMA VERB: start a rumor about someone. Two-step: pick target, then rumor type.
+        // The person you're talking to becomes the first hearer.
+        const others = (this.state.village.roster || []).filter(id => 
+          id !== vid && id !== this.villagerId);
+        if (!others.length) return "There's no one to talk about.";
+        c.thread = 'spread_rumor'; c.depth = 1;
+        c.rumorTargets = others;
+        // Return a line prompting target selection; the choices are built in convoChoices
+        return `${this.displayName(vid)} leans in. "Oh? Who are we talking about?"`;
       }
       return null;
     },
@@ -1044,7 +1086,7 @@
       // TOPIC ASKS come first — the conversation itself. Discovery actions
       // (trade/teach/promise/invite) fill whatever slots remain; they never
       // crowd out the talk.
-      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans', gossip: 'ask:gossip' }[c.thread];
+      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans', gossip: 'ask:gossip', personal: 'ask:personal' }[c.thread];
       const asked = c.askedTopics || [];
       const tempNow = this.npcTemper(vid);
       const topicCap = (tempNow === 'withdrawn' || tempNow === 'prickly' || tempNow === 'restless') ? 2 : 5;
@@ -1056,11 +1098,17 @@
       // discovery actions.
       const gossipOpen = trustNow >= 20 || convoCount >= 2;
       const asks = [];
+      // PERSONAL: their own words — the talk lines generated from personality.
+      // Always available and prioritized; it's who they are, not what they know.
+      if (asked.indexOf('personal') === -1) asks.push({ id: 'ask:personal', label: '"Tell me about yourself."' });
       if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
       if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
       if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
       if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
       if (gossipOpen && asked.indexOf('gossip') === -1) asks.push({ id: 'ask:gossip', label: this.convoLabel(vid, 'gossip') });
+      // SPREAD RUMOR: the player's drama verb. Start a rumor about someone.
+      // Same gate as gossip — you need some rapport to be believed.
+      if (gossipOpen && asked.indexOf('spread_rumor') === -1) asks.push({ id: 'ask:spread_rumor', label: '"Can I tell you something? About someone..."' });
       let topicsAdded = 0;
       for (const a of asks) {
         if (a.id === threadAsk || topicsAdded >= topicCap || choices.length >= MAXC) continue;
