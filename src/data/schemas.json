@@ -10,8 +10,7 @@
    "unit",
    "idDifficulty",
    "confidence",
-   "codex",
-   "sources"
+   "codex"
   ],
   "types": {
    "id": "string",
@@ -45,24 +44,41 @@
    "sources": "string[]?",
    "regions": "string[]",
    "description": "string",
-   "knowledgeLevels": "object"
+   "knowledgeLevels": "object",
+   "uses": [
+    {
+     "kind": "string",
+     "minLevel": "number",
+     "note": "string"
+    }
+   ],
+   "form": [
+    "shoots",
+    "berries",
+    "nuts",
+    "roots"
+   ],
+   "edibility": [
+    "safe",
+    "caution",
+    "cook",
+    "avoid"
+   ],
+   "medicinal": "boolean?"
   }
  },
  "monster": {
   "required": [
    "id",
    "name",
-   "biomes",
    "hp",
    "attack",
-   "behavior",
-   "codexStages",
-   "systemDesignation"
+   "behavior"
   ],
   "types": {
    "id": "string",
    "name": "string",
-   "biomes": "string[]",
+   "biomes": "string[]?",
    "hp": "number[2..2]",
    "attack": {
     "name": "string",
@@ -87,7 +103,8 @@
     "passive",
     "curious",
     "swarm",
-    "drifter"
+    "drifter",
+    "snake"
    ],
    "activity": [
     "nocturnal",
@@ -107,7 +124,58 @@
    "unknown": "string?",
    "vibe": "string?",
    "cues": "object?",
-   "wave": "number?"
+   "wave": "number?",
+   "encounter": {
+    "fifo": "boolean?",
+    "noticeRange": "number?",
+    "phases": "string[]?",
+    "phaseBadges": "object?",
+    "phaseMap": "object?",
+    "telegraphGate": "string?",
+    "painSwitch": "boolean?",
+    "adjacencyOverride": "number?",
+    "shortName": "string?",
+    "bulldoze": "boolean?",
+    "commitCharge": "boolean?",
+    "noticeAudio": "string?",
+    "aggroAudio": "string?",
+    "resolveAudio": "string?",
+    "declareAudio": "string?",
+    "knownTactics": "string?",
+    "comment": "string?",
+    "knownCue": "string?",
+    "threatLines": "object?",
+    "relentless": "boolean?",
+    "statue": "boolean?",
+    "quiet": "boolean?",
+    "crowdLimit": "number?",
+    "fireScatter": "boolean?",
+    "noticeText": "string?",
+    "adjText": "string?",
+    "painText": "string?",
+    "proximityText": "string?"
+   },
+   "loot": {
+    "chance": "number?",
+    "tier": "number?",
+    "note": "string?"
+   },
+   "armor": "number?",
+   "resistances": "object?",
+   "terraform": "string?",
+   "terraformDesc": "string?",
+   "blocks": "boolean?",
+   "villageNames": "string[]?",
+   "snake": {
+    "segments": "number?",
+    "contactDamage": "number[2..2]?",
+    "splitOnBreak": "boolean?"
+   },
+   "telegraph": "string?",
+   "tactics": {
+    "observed": "string?",
+    "slain": "string?"
+   }
   }
  },
  "ability": {
@@ -169,6 +237,16 @@
    "metabolic": {
     "daily": "number?",
     "eatMult": "number?"
+   },
+   "active": {
+    "type": [
+     "heal",
+     "cure_disease",
+     "cure_poison"
+    ],
+    "amount": "number?",
+    "cooldown": "string?",
+    "target": "string?"
    }
   }
  },
@@ -219,7 +297,8 @@
     "sentimental",
     "weapon",
     "food",
-    "material"
+    "material",
+    "ammo"
    ],
    "baseEffect": "string?",
    "flavor": "string",
@@ -242,7 +321,26 @@
    "memory": "string?",
    "reveals": "object?",
    "universal": "boolean?",
-   "kin": "string?"
+   "kin": "string?",
+   "origin": [
+    "alien",
+    "crafted"
+   ],
+   "lootTier": "number?",
+   "damage": "number?",
+   "healAmount": "number?",
+   "skillKeys": "string[]?",
+   "range": "number?",
+   "occCategories": "string[]?",
+   "tool": "object?",
+   "tradeValue": "number?",
+   "woundKeys": "string[]?",
+   "wantKeys": "string[]?",
+   "craftYield": "number?",
+   "fuelBurnMult": "number?",
+   "units": "number?",
+   "findContext": "string?",
+   "material": "string?"
   }
  },
  "gameEvent": {
@@ -415,7 +513,30 @@
     "diurnal",
     "crepuscular",
     "both"
-   ]
+   ],
+   "unknown": "string?",
+   "emoji": "string?",
+   "behavior": "string?",
+   "behaviorDesc": "string?",
+   "fleeDifficulty": [
+    "trivial",
+    "easy",
+    "medium",
+    "hard",
+    "very_hard",
+    "dangerous"
+   ],
+   "huntText": "string?",
+   "tell": "string?",
+   "butcher": {
+    "hide": "number?",
+    "bone": "number?",
+    "antler": "number?",
+    "feather": "number?",
+    "shell": "number?",
+    "tusk": "number?",
+    "quill": "number?"
+   }
   }
  },
  "recipe": {
@@ -430,7 +551,9 @@
    "description": "string",
    "materials": "object",
    "catches": "string[]",
-   "knowledgeLevels": "object"
+   "knowledgeLevels": "object",
+   "durable": "boolean?",
+   "kg": "number?"
   }
  },
  "book": {
@@ -479,5 +602,11 @@
     "tease2": "string"
    }
   }
- }
+ },
+ "refAllowlist": {
+  "biome": [
+   "grassland"
+  ]
+ },
+ "$refAllowlistComment": "grassland: planned future biome referenced by wave-2 monsters (glasswing, sunbasker); not yet defined in biomes.json. The cross-ref gate allows it so aspirational data survives until the biome ships."
 }

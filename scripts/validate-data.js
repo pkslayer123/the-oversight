@@ -24,6 +24,8 @@ const FILES = {
   'books.json': 'book',
   'synergies.json': 'synergy',
 };
+// Schemas exist for these but no data file is authored yet — absence is expected, not an error.
+const MISSING_OK = new Set(['events.json', 'systemMessages.json', 'shop.json', 'trials.json']);
 
 function checkType(val, spec, where) {
   if (spec.endsWith('?') && (val === undefined || val === null)) return true;
@@ -75,8 +77,12 @@ function validateEntry(entry, schema, file, idx) {
     }
     if (typeof spec === 'object' && !Array.isArray(spec)) { // nested object schema
       if (field === 'attack' || field === 'edible') {
-        for (const [k, ks] of Object.entries(spec)) {
-          if (!checkType(val[k], ks, where)) err(file, `${where}: '${field}.${k}' type/range mismatch (spec ${ks})`);
+        if (field === 'edible' && typeof val === 'boolean') {
+          // edible:true = wholly edible, no note needed (e.g. joke/snake monsters)
+        } else {
+          for (const [k, ks] of Object.entries(spec)) {
+            if (!checkType(val[k], ks, where)) err(file, `${where}: '${field}.${k}' type/range mismatch (spec ${ks})`);
+          }
         }
       } else if (field === 'codexStages') {
         for (const k of ['unknown', 'observed', 'slain'])
@@ -90,6 +96,21 @@ function validateEntry(entry, schema, file, idx) {
             if (val[k] !== undefined && !ks.includes(val[k]))
               err(file, `${where}: 'effect.${k}' not in enum ${JSON.stringify(ks)}`);
           } else if (!checkType(val[k], ks, where)) err(file, `${where}: 'effect.${k}' type/range mismatch (spec ${ks})`);
+        }
+      } else {
+        // generic nested object: enforce each subfield (enum when Array, else type w/ ? support)
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          for (const [k, ks] of Object.entries(spec)) {
+            const sv = val[k];
+            if (sv === undefined || sv === null) continue;
+            if (Array.isArray(ks)) {
+              if (!ks.includes(sv)) err(file, `${where}: '${field}.${k}' not in enum ${JSON.stringify(ks)}`);
+            } else if (!checkType(sv, ks, where)) {
+              err(file, `${where}: '${field}.${k}' type/range mismatch (spec ${ks})`);
+            }
+          }
+        } else {
+          err(file, `${where}: field '${field}' must be an object`);
         }
       }
       continue;
@@ -108,7 +129,7 @@ function main() {
   const ids = {}; // file -> Set of ids, for cross-reference checks
   for (const [file, key] of Object.entries(FILES)) {
     const p = path.join(DATA, file);
-    if (!fs.existsSync(p)) { err(file, 'missing file (skipped)'); continue; }
+    if (!fs.existsSync(p)) { if (!MISSING_OK.has(file)) err(file, 'missing file (skipped)'); continue; }
     let arr;
     try { arr = JSON.parse(fs.readFileSync(p, 'utf8')); }
     catch (e) { err(file, `invalid JSON: ${e.message}`); continue; }
@@ -123,7 +144,8 @@ function main() {
     });
   }
   // cross-references
-  const has = (key, id) => ids[key] && ids[key].has(id);
+  const extra = schemas.refAllowlist || {}; // planned ids not yet defined in a registry file
+  const has = (key, id) => (ids[key] && ids[key].has(id)) || (extra[key] || []).includes(id);
   const ref = (file, where, key, id) => { if (id && !has(key, id)) err(file, `${where}: dangling reference '${id}' -> ${key}`); };
   const get = f => { const p = path.join(DATA, f); return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : []; };
   get('villagers.json').forEach(v => (v.items || []).forEach(id => ref('villagers.json', v.id, 'item', id)));
