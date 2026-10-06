@@ -12,6 +12,7 @@
 //   - encPossumFlop()
 //   - encBehaviorStrikeReact()
 //   - encBehaviorAfterBolt()
+//   - encStrikeReact()
 //   - encStrikeDeadPossum()
 //   - spawnEncounter()
 // rules:
@@ -230,7 +231,6 @@
   G.encAnimalLabel = function (a) {
     var label = _origEncAnimalLabel.call(this, a);
     if (a && a.pstate === 'playing_dead') label += ' — limp and still';
-    if (a && a.pstate === 'treed') label += ' — up the trunk';
     if (a && a.pstate === 'taunt') label += ' — watching you, just out of reach';
     return label;
   };
@@ -291,15 +291,16 @@
   G.encMethodWords = function (m) {
     return { snare: 'a snare', chase: 'running it down', trap: 'a trap', bow: 'a bow', hands: 'your hands', line: 'a fishing line' }[m] || m;
   };
-  // The flop. Shared by the strike path and the awareness path.
+  // The flop. Shared by the strike path and the awareness path — one text,
+  // one fiction. Pre-knowledge the player sees a dead opossum; post, they
+  // know it's faking (the unknown descriptor already says "playing dead").
   G.encPossumFlop = function (a) {
-    a.pstate = 'playing_dead'; a.deadTurns = 0; a.aware = 1;
-    var label = this.encAnimalLabel(a);
+    var label = this.encAnimalLabel(a); // before the pstate flips (no suffix)
+    a.pstate = 'playing_dead'; a.aware = 1; a.floppedOnce = true;
     var known = false;
     try { known = this.encAnimalKnown(a.id); } catch (e) {}
-    this.say(this.encCap(label) + (known
-      ? ' hisses, shows its teeth — then flops over. Tongue lolling. Dead. Except the eye that tracks you. You know it\'s faking.'
-      : ' flops over — tongue lolling, utterly still. Dead.'));
+    this.say(this.encCap(label) + ' flops over, tongue lolling — playing dead. It\'s not dead. It\'s waiting for you to leave.' +
+      (known ? ' You know it\'s faking.' : ''));
     try { this.audioEvent('animalFlop'); } catch (e) {}
   };
   // Strike-moment reaction, before the generic flee roll. Returns:
@@ -315,8 +316,10 @@
     }
     return null;
   };
-  // After a generic bolt, behavior takes over: treed, dove, straggler,
-  // taunt. Returns true if the encounter ended (dove).
+  // After a generic strike-bolt, behavior takes over: the squirrel reaches a
+  // trunk, the fish reaches water, the flock drops a straggler, the fox
+  // holds at range and toys with you. Mirrors the animalTurn outcomes —
+  // one fiction for both paths. Returns true if the encounter ended.
   G.encBehaviorAfterBolt = function (a) {
     var s = this.state.scholar;
     if (!s.animal) return true;
@@ -333,20 +336,15 @@
       return false;
     }
     var cap = this.encCap(this.encAnimalLabel(a));
-    var known = false;
-    try { known = this.encAnimalKnown(a.id); } catch (e) {}
     if (b === 'arboreal' && nearKind(['tree', 'bigtree'])) {
-      a.pstate = 'treed'; a.treedTurns = 3;
-      this.say(cap + (known
-        ? ' drops, grabs, and spirals up the trunk before you move. Out of reach — ranged, or wait.'
-        : ' shoots up the nearest trunk. Gone — into the branches.'));
-      try { this.audioEvent('animalChatter'); } catch (e) {}
-      return false;
-    }
-    if ((b === 'aquatic' || b === 'aquatic_ambush') && nearKind(['water'])) {
       s.animal = null;
-      this.say(cap + (known ? ' — a flash of silver under the rock. Gone.'
-        : ' splashes — gone. The ripples are still spreading.'));
+      this.say(cap + ' spirals up the trunk — chattering at you from the branches. Catch it on the ground next time.');
+      try { this.audioEvent('animalChatter'); } catch (e) {}
+      return true;
+    }
+    if ((b === 'aquatic' || b === 'aquatic_ambush') && nearKind(['water', 'creek'])) {
+      s.animal = null;
+      this.say(cap + ' dives — gone under. The water keeps it.');
       try { this.audioEvent('animalSplash'); } catch (e) {}
       return true;
     }
@@ -366,6 +364,51 @@
       }
     }
     return false;
+  };
+  // Strike dispatcher. food.js loads AFTER this module, so preyReaction
+  // can't be wrapped at load time — huntAnimal calls this instead, which
+  // runs the behavior pre-check, then the framework reaction, then the
+  // behavior post-bolt. One call site (huntAnimal), one fiction.
+  G.encStrikeReact = function (a) {
+    var r = null;
+    try { r = this.encBehaviorStrikeReact(a); } catch (e) { r = null; }
+    if (r === true) return true;   // handled (the flop) — strike aborted
+    if (r === false) return false;  // explicitly no flee (winded)
+    var bolted = false;
+    try { bolted = this.preyReaction ? !!this.preyReaction(a) : false; } catch (e) {}
+    if (bolted && this.state.scholar.animal) {
+      try { this.encBehaviorAfterBolt(a); } catch (e) {}
+    }
+    return bolted;
+  };
+  // Striking the "dead" opossum. Mostly a formality — unless it wakes up.
+  G.encStrikeDeadPossum = function (a, animal) {
+    var s = this.state.scholar;
+    if (s.week1) s.week1.hunt++;
+    try { if (this.gainAbilityXP) this.gainAbilityXP('tracker', 1); } catch (e) {}
+    s.kcal = Math.max(0, s.kcal - 100);
+    try { if (this.noteToolUse) this.noteToolUse(); } catch (e) {}
+    if (Math.random() < 0.25) {
+      // it wakes mid-swing — the trick already failed once, so now it runs
+      a.pstate = 'bolt'; a.aware = 1; a.floppedOnce = true;
+      var dmg = 3 + Math.floor(Math.random() * 4);
+      try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - dmg); } catch (e) {}
+      this.feedback('It SCREECHES awake mid-swing and sinks its teeth into your hand! (-' + dmg + ' HP) It bolts, heart hammering.');
+      try { this.audioEvent('animalBite'); } catch (e) {}
+      this.animalTurn();
+      return true;
+    }
+    s.animal = null;
+    var kcal = animal.calories;
+    try { kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories)); } catch (e) {}
+    try { s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted')); } catch (e) {}
+    this.encIdentifyAnimal(a.id); // a kill teaches you what it was — before the name is said
+    try {
+      this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
+      this.state.codex.animalEncounters[a.id] = (this.state.codex.animalEncounters[a.id] || 0) + 1;
+    } catch (e) {}
+    this.feedback('It never moved. One clean strike — it was faking, too late now. About ' + kcal + ' kcal of meat on the bone — gut it quickly (knife).');
+    return true;
   };
 
   // ================= 7. PREY ENCOUNTER LOOP =================
@@ -396,6 +439,9 @@
     var cfg = this.encPreyCfg(animal.id);
     s.animal = { id: animal.id, mx: ax, my: ay, aware: 0, stamina: cfg.stamina, pstate: 'graze', edgeTurns: 0 };
     this.say('Movement — ' + this.encDescribeAnimal(animal) + '.');
+    // knownCue coaching: once you've learned the animal, its trick is
+    // stated up front. Earned knowledge, not a spoiler.
+    try { var acue = this.encAnimalCue(animal.id); if (acue) this.say('👁 ' + acue); } catch (e) {}
   };
   // keep a reference for tests that want the original spawn shape
   G.checkAnimals._wrapped = true;
@@ -434,20 +480,16 @@
       if (Math.random() < 0.2) tryMove(a.mx + rnd3(), a.my + rnd3());
       return;
     }
-    if (beh === 'plays_dead' && a.pstate !== 'playing_dead') {
-      // OPOSSUM: threatened → flops over, tongue out. Not dead. Waiting.
-      // Doesn't flee; easy catch — but teeth (bite handled in huntAnimal).
-      // Plays dead instead of bolting at any threatening range.
-      if (dist <= 4) {
-        a.pstate = 'playing_dead'; a.aware = 1;
-        this.say(this.encCap(label) + ' flops over, tongue lolling — playing dead. It\'s not dead. It\'s waiting for you to leave.');
-        return;
-      }
+    if (beh === 'plays_dead' && a.pstate !== 'playing_dead' && !a.floppedOnce) {
+      // OPOSSUM: threatened → flops over. The flop is one fiction, one
+      // function (encPossumFlop) — strike path and awareness path agree.
+      // Once per encounter: if the trick already failed (wake-bite), it runs.
+      if (dist <= 4) { this.encPossumFlop(a); return; }
     }
     if (beh === 'plays_dead' && a.pstate === 'playing_dead') {
       if (dist >= 4) { // you left: it gets up and wanders off
         s.animal = null;
-        this.say('The opossum was already gone — just a rustle in the grass.');
+        this.say('It was already gone — just a rustle in the grass.');
       }
       return; // stays put while you watch
     }
@@ -541,6 +583,11 @@
       a.flockSaid = true;
       this.say('The flock explodes — wings hammering, panic in every direction.');
     }
+    if (a.pstate === 'taunt') {
+      // FOX: holding at range, toying with you. Close in and it runs for real.
+      if (dist < 4) { a.pstate = 'bolt'; }
+      else { a.aware = Math.max(0.4, (a.aware || 0.6) - 0.1); return; }
+    }
     if (dist >= cfg.notice) {
       // grazing. it doesn't know you're here. or doesn't care yet.
       a.pstate = 'graze';
@@ -560,13 +607,26 @@
       a.pstate = 'wary';
       this.say(this.encCap(label) + ' freezes — ears up, deciding about you.');
     }
-    if (a.aware >= 1 && a.pstate !== 'bolt' && a.pstate !== 'winded') {
+    // Bolt threshold is behavior-aware: the skittish rabbit goes at a
+    // shadow (0.75); the wary deer at the white tail (0.7, above); most at 1.
+    var boltAt = beh === 'skittish' ? 0.75 : 1;
+    if (a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead') {
       a.pstate = 'bolt';
-      this.say(this.encCap(label) + " decides you're trouble and bolts!");
+      // Flee narration is knowledge-gated: the vivid huntText is earned.
+      var fleeLine = null;
+      try { if (this.encAnimalKnown(a.id)) fleeLine = (this.encAnimalDef(a.id) || {}).huntText; } catch (e) {}
+      this.say(fleeLine || (this.encCap(label) + " decides you're trouble and bolts!"));
+      try { this.audioEvent('animalBolt'); } catch (e) {}
     }
     if (a.pstate === 'winded') return; // spent. your move.
     if (a.pstate === 'bolt') {
       var dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
+      if (beh === 'skittish' && Math.random() < 0.6) {
+        // RABBIT: zigzag, not straight away. Don't chase the line — cut it off.
+        var zdirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+        var zd = zdirs[Math.floor(Math.random() * zdirs.length)];
+        dx = zd[0]; dy = zd[1];
+      }
       // ONE tile, not two — the chase is real now, and so is the hunt.
       if (!tryMove(a.mx + dx, a.my + dy)) {
         tryMove(a.mx + dx, a.my) || tryMove(a.mx, a.my + dy) || tryMove(a.mx - dy, a.my + dx);
@@ -678,9 +738,11 @@
     try { animal = (this.data.animals || []).find(function (x) { return x.id === a.id; }); } catch (e) {}
     if (!animal) return null;
     var label = this.encAnimalLabel(a);
-    // the strike's moment of truth — it reacts to your move. The framework
-    // owns the reaction (food.js preyReaction): descriptor-gated, aware-based.
-    if (this.preyReaction && this.preyReaction(a)) return true; // it bolted
+    // the "dead" opossum: striking it resolves the trick, not the generic loop
+    if (a.pstate === 'playing_dead') return this.encStrikeDeadPossum(a, animal);
+    // the strike's moment of truth — behavior pre-check, then the framework
+    // reaction (food.js preyReaction), then behavior post-bolt. One fiction.
+    if (this.encStrikeReact(a)) return true; // it bolted (or flopped)
     var base = animal.difficulty === 'easy' ? 0.7 : animal.difficulty === 'medium' ? 0.4 : 0.15;
     try { base = this.modTarget('hunt.find_chance', base); } catch (e) {}
     var self = this;
@@ -719,11 +781,33 @@
     var unarmedHunt = !w || (w && w.unarmed) || /^hands$/i.test(String(wname));
     if (unarmedHunt) {
       if ((animal.calories || 0) >= 10000) {
-        this.feedback('You can\'t take ' + animal.name.toLowerCase() + ' with your hands. Bring a bow, a spear — or a trap.');
+        // KNOWLEDGE GATE: never the true name pre-knowledge — the descriptor.
+        this.feedback('You can\'t take ' + label + ' with your hands. Bring a bow, a spear — or a trap.');
         return true;
       }
       if ((animal.method || []).indexOf('hands') === -1) {
         chance *= 0.5; // wrong tool for the job
+      }
+    }
+    // METHOD (Steve 2026-10-05): the animal's method field says how it's
+    // hunted — snare, chase, trap, bow, hands, line. The wrong tool still
+    // works, just worse, and the game says so honestly. Snares and traps are
+    // their own mechanic; the strike honors bow/hands, and 'chase' is earned
+    // by running it down (winded). Never hide the strike — moment-to-moment
+    // play must not scroll or hunt for buttons.
+    if (!unarmedHunt) {
+      var wmethod = this.encWeaponMethod();
+      var methods = animal.method || [];
+      var methodOK = methods.indexOf(wmethod) !== -1 ||
+        (methods.indexOf('chase') !== -1 && a.pstate === 'winded');
+      if (!methodOK) {
+        chance *= 0.65;
+        if (!a._methodTold) {
+          a._methodTold = true;
+          var betterWords = [];
+          for (var mi = 0; mi < methods.length; mi++) betterWords.push(this.encMethodWords(methods[mi]));
+          this.feedback('Wrong tool for this — ' + (betterWords.join(' or ') || 'a trap') + ' would work better. Your ' + wname + ' is a compromise.');
+        }
       }
     }
     // BITE (Steve 2026-10-05): close capture can cost you. Wild things have
@@ -747,6 +831,7 @@
       s.animal = null;
       var kcal = animal.calories;
       try { kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories)); } catch (e) {}
+      this.encIdentifyAnimal(a.id); // a kill teaches you what it was — BEFORE the name is said
       // ENERGY WEAPONS (Steve 2026-10-05): beams char meat — 10% calories as
       // charred remains, no hide/bones. You can't hunt with a searcaster.
       var charsMeat = false;
@@ -763,7 +848,13 @@
         try { s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted')); } catch (e) {}
         this.feedback('Got it — ' + animal.name + '! About ' + kcal + ' kcal of meat on the bone — gut it quickly (knife). It spoils fast.');
       }
-      this.encIdentifyAnimal(a.id); // a kill teaches you what it was
+      // CRAYFISH: the tiny boxer gets a pinch in on the way into the bag.
+      if ((animal.behavior || '') === 'aquatic_defensive' && !charsMeat && Math.random() < 0.3) {
+        var pinchDmg = 2 + Math.floor(Math.random() * 3);
+        try { s.health = Math.max(0, (s.health || 100) - pinchDmg); } catch (e) {}
+        this.feedback('Got it — but the tiny boxer gets a pinch in first. (-' + pinchDmg + ' HP) Grab it right behind the claws next time.');
+        try { this.audioEvent('animalPinch'); } catch (e) {}
+      }
       try {
         this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
         this.state.codex.animalEncounters[a.id] = (this.state.codex.animalEncounters[a.id] || 0) + 1;
@@ -791,6 +882,7 @@
     return [
       '1. Data: "unknown" strange descriptor on the animal/monster def.',
       '2. Prey: Game.ENC_PREY entry {notice, awareRate, stamina} — loop is free.',
+      '2b. Behavior: "behavior" + "method" in animals.json drive the flee and the strike (encAnimalBehavior / encWeaponMethod). Wrong tool = worse odds, honestly said.',
       '3. Threats: "encounter" config in monsters.json + game.js enc* interface.',
       '4. Telegraph: Game.encTelegraphKnown(m); cue via Game.encPickCue.',
       '5. Phases: Game.encSetPhase / Game.encPhase(ent, phase, beats).',

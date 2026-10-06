@@ -64,7 +64,11 @@
   function spawnAnimalNear(animalId) {
     const s = Game.state.scholar;
     const px = s.mx ?? 4, py = s.my ?? 4;
-    s.animal = { id: animalId, mx: Math.min(8, px + 1), my: py };
+    // full encounter state — the live loop expects aware/stamina/pstate
+    // (a bare {id,mx,my} left the strike path initializing them mid-hunt).
+    let cfg = { stamina: 3 };
+    try { cfg = Game.encPreyCfg(animalId); } catch (e) {}
+    s.animal = { id: animalId, mx: Math.min(8, px + 1), my: py, aware: 0, stamina: cfg.stamina, pstate: 'graze', edgeTurns: 0 };
     const adef = (Game.data.animals || []).find(a => a.id === animalId) || {};
     Game.say(`Movement — ${adef.description || 'something alive'}.`);
   }
@@ -178,8 +182,8 @@
       giveWeapon('sharpened_stick');
       s.insideHaven = false;
       Game.dayPart = 3; // night — nocturnal
-      spawnAnimalNear('virginia_opossum');
-      Game.say('🐞 SCENARIO: opossum. Plays dead. Don\'t fall for it.');
+      spawnAnimalNear('opossum');
+      Game.say('🐞 SCENARIO: opossum. Nocturnal. Watch what it does when it sees you.');
     },
 
     bullfrog() {
@@ -188,7 +192,7 @@
       const s = Game.state.scholar;
       s.insideHaven = false;
       Game.dayPart = 2; // dusk — near water
-      spawnAnimalNear('american_bullfrog');
+      spawnAnimalNear('bullfrog');
       Game.say('🐞 SCENARIO: bullfrog. Near water at dusk. Listen for the croak.');
     },
 
@@ -198,7 +202,7 @@
       const s = Game.state.scholar;
       s.insideHaven = false;
       Game.dayPart = 1; // midday
-      spawnAnimalNear('eastern_box_turtle');
+      spawnAnimalNear('box_turtle');
       Game.say('🐞 SCENARIO: box turtle. Slow. You can literally walk up to it.');
     },
 
@@ -219,7 +223,7 @@
       const s = Game.state.scholar;
       s.insideHaven = false;
       Game.dayPart = 1; // midday — in creeks
-      spawnAnimalNear('rusty_crayfish');
+      spawnAnimalNear('crayfish');
       Game.say('🐞 SCENARIO: crayfish. In the creek. Reach in and grab — watch the claws.');
     },
 
@@ -230,7 +234,7 @@
       s.insideHaven = false;
       Game.dayPart = 3; // night
       spawnAnimalNear('raccoon');
-      Game.say('🐞 SCENARIO: raccoon. Not the Lockpick — just a regular raccoon. Curious, not hostile.');
+      Game.say('🐞 SCENARIO: raccoon. Night. Curious eyes in the dark.');
     },
 
     snappingturtle() {
@@ -240,8 +244,8 @@
       giveWeapon('sharpened_stick');
       s.insideHaven = false;
       Game.dayPart = 1; // midday — near water
-      spawnAnimalNear('common_snapping_turtle');
-      Game.say('🐞 SCENARIO: snapping turtle. Do NOT grab this one. The stick keeps your fingers.');
+      spawnAnimalNear('snapping_turtle');
+      Game.say('🐞 SCENARIO: snapping turtle. Near water at midday. Big. Unhurried.');
     },
 
     chub() {

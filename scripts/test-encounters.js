@@ -168,8 +168,10 @@ function putAnimal(s, id, mx, my) {
     let kills = 0, hunts = 0;
     const origRandom = Math.random;
     for (let i = 0; i < 30; i++) {
-      putAnimal(s, 'white_tailed_deer', 5, 4);
-      s.animal.aware = 0;
+      // winded + dist 2: skips the flee roll (winded) and the dist-1 bite
+      // block, so the kill roll itself is what's under test.
+      putAnimal(s, 'white_tailed_deer', 6, 4);
+      s.animal.aware = 0; s.animal.pstate = 'winded';
       Math.random = () => 0; // always roll under chance -> kill
       Game.log = []; Game.feedbackMark();
       const r = Game.huntAnimal();
@@ -326,8 +328,10 @@ function putAnimal(s, id, mx, my) {
   {
     // TYPO SCAN (Steve): "your your hands hisses past" — doubled "your" +
     // verb disagreement. The near-miss line must read clean unarmed AND armed.
+    // Rabbit, not deer: unarmed big-game refusal (deer 20000 kcal) would fire
+    // before any roll. Rabbit is unarmed-legal and keeps the "your hands" text.
     const s = freshGame();
-    putAnimal(s, 'white_tailed_deer', 5, 4);
+    putAnimal(s, 'cottontail_rabbit', 5, 4);
     Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
     Game.state.scholar.equipped = {}; // unarmed: fallback name is "your hands"
     Game.feedbackMark();
@@ -337,7 +341,7 @@ function putAnimal(s, id, mx, my) {
     while (!/jinks at the last breath/.test(fb) && tries < 40) {
       tries++;
       const s2 = freshGame();
-      putAnimal(s2, 'white_tailed_deer', 5, 4);
+      putAnimal(s2, 'cottontail_rabbit', 5, 4);
       Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
       Game.state.scholar.equipped = {};
       Game.feedbackMark();
