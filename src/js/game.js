@@ -14238,6 +14238,27 @@
       f.cueSaid[key] = true;
       // No this.say(text) — the grid shows it. Text lives in the codex.
     },
+    // Cross-round dedup for repeat situation lines (Steve 2026-10-06).
+    // sayTelegraphOnce dedupes within a round; this one dedupes ACROSS
+    // rounds of the same fight. While the same situation holds, the line
+    // speaks once — the hype_horn crowd-deflate re-printed identically
+    // every windup cycle while friendlies were noticed, and the swarm's
+    // fire-scatter re-fired every turn the fire stayed close. The
+    // situationKey must encode whatever makes the line fresh again (crowd
+    // composition, fire position, …) so a genuinely changed situation
+    // re-speaks; intentionally varying lines (rotations, counters) must
+    // NOT route through here. Stored on the fight object — it dies with
+    // the fight, so a new fight always re-speaks.
+    saySituationOnce(m, situationKey, text) {
+      const f = this.tbfight;
+      if (!f) { this.say(text); return; }
+      f.sitSaid = f.sitSaid || {};
+      const id = ((m || {}).mdef || {}).id || '?';
+      const k = id + ':' + situationKey;
+      if (f.sitSaid[k]) return;
+      f.sitSaid[k] = true;
+      this.say(text);
+    },
     tbTelegraphCue(m) {
       const tg = m.telegraph;
       const atk = m.mdef.attack || {};
@@ -16608,7 +16629,8 @@
           m.telegraph = null;
           this.encSetPhase(m, 'deflate');
           m.hypeCooldown = 2;
-          this.say('📣 "YOU\'RE ALL WINNERS, I\'M JUST—" It deflates. It only does one-on-one.');
+          this.saySituationOnce(m, 'deflate:crowd:' + live.slice().sort().join('+'),
+            '📣 "YOU\'RE ALL WINNERS, I\'M JUST—" It deflates. It only does one-on-one.');
           this.audioEvent('hypeDeflate');
           this.tbRefreshTelegraphUI();
           if (this.tbEndCheck()) return;
@@ -16622,7 +16644,8 @@
         if (fire) {
           m.telegraph = null;
           this.encSetPhase(m, 'scatter');
-          this.say('The shutters stutter. Smoke — no, FIRE — in the lenses. "LOSING THE SHOT! LOSING THE—" It breaks off.');
+          this.saySituationOnce(m, 'scatter:fire:' + fire.x + ',' + fire.y,
+            'The shutters stutter. Smoke — no, FIRE — in the lenses. "LOSING THE SHOT! LOSING THE—" It breaks off.');
           this.audioEvent('swarmScatter');
           const detail = this.genDetail(this.map.px, this.map.py);
           for (let i = 0; i < 2; i++) {
@@ -17814,10 +17837,23 @@
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         if (d > 1 && !m.telegraph) {
           // not adjacent: close in. No basking on the move.
+          // SUN-AWARE APPROACH (Steve 2026-10-06): shade flattens it — one
+          // shaded step on the way in and the fight fizzles into a one-hit
+          // kill on a flattened lizard. stepToward already takes an
+          // avoidCells set, so feed it shade (merged with the shared
+          // telegraph-danger set) and the approach routes around shade while
+          // still closing in. If every improving step is shaded it steps in
+          // anyway — better to approach than freeze — and the flatten branch
+          // below is honest about what that costs.
+          const shadeAvoid = { has: (k) => {
+            if (danger && danger.has(k)) return true;
+            const c = k.indexOf(',');
+            return this.tbInShade(+k.slice(0, c), +k.slice(c + 1));
+          } };
           for (let i = 0; i < (m.speed || 3); i++) {
             const dd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
             if (dd <= 1) break;
-            const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+            const stp = this.tbStepToward(m, t.mx, t.my, blocked, shadeAvoid);
             if (!stp) break;
             m.mx = stp.x; m.my = stp.y;
           }

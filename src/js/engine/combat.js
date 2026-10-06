@@ -27,14 +27,21 @@
     const cells = [];
     const type = pattern.type;
     if (type === 'beam' || type === 'line' || type === 'charge') {
-      // straight line from attacker toward target
-      const dx = Math.sign(tx - ax), dy = Math.sign(ty - ay);
+      // DDA rasterization along the TRUE bearing (Steve 2026-10-06). The old
+      // sign()-snap drew the lane along the nearest 8-way ray, so a
+      // committed charge could miss a stationary target at off-axis angles
+      // (aim was the player, the lane went diagonal, threatened=false).
+      // Walking the real bearing guarantees the lane passes through the aim
+      // point; at 8-way angles the output is identical to the old snap.
+      const ex = tx - ax, ey = ty - ay;
+      const n = Math.max(Math.abs(ex), Math.abs(ey));
       const len = pattern.length || 5, w = pattern.width || 1;
-      for (let i = 1; i <= len; i++) {
-        const cx = ax + dx * i, cy = ay + dy * i;
+      const dx = Math.sign(ex), dy = Math.sign(ey);
+      for (let i = 1; n > 0 && i <= len; i++) {
+        const cx = Math.round(ax + ex * i / n), cy = Math.round(ay + ey * i / n);
         if (!inGrid(cx, cy)) break;
         cells.push({ cx, cy });
-        // width: perpendicular spread
+        // width: perpendicular spread (unchanged semantics)
         if (w > 1 && dx !== 0 && dy !== 0) {
           // diagonal beam: widen orthogonally
           if (inGrid(cx + 1, cy)) cells.push({ cx: cx + 1, cy });
