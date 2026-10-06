@@ -4797,6 +4797,11 @@
     depart() {
       // departure lite (member standing): tell someone you're going. no location switch — Haven is a tile.
       this.departed = true;
+      // HOMECOMING (drifter loop, Steve 2026-10-06): the away clock starts at
+      // departure. Without this, a day-1 drifter who leaves immediately and
+      // returns days later gets daysAway = dayNow - (undefined || dayNow) = 0
+      // in returnToVillage and never hears the homecoming beat.
+      if (this.state.scholar.lastHavenDay == null) this.state.scholar.lastHavenDay = this.state.scholar.day || 1;
       this.dayPart = 0; this.ap = 1;
       this.state.scholar.dayTicks = 0; this.state.scholar.actionClock = 0; // action clock: fresh budget
       const first = this.data.villagers.find(x => x.id === this.villagerId).name.split(' ')[0];
