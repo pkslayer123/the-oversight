@@ -573,6 +573,27 @@
       const goalDef = (this.data.characterGen.goals || []).find(g => g.id === goal);
       const vp = this.vpOf(vid);
 
+      // PROTOTYPE: Four Things (Steve 2026-10-05)
+      // Want/Know/Feel/Secret per villager. Want surfaces as a hook (30%).
+      // Secret surfaces at trust 40+ (20%). These are authored, not generic.
+      const villager = (this.data.villagers || []).find(x => x.id === vid);
+      const proto = villager && villager.prototype;
+      if (proto) {
+        // Secret at high trust
+        if (trust >= 40 && proto.secret && !c.secretShared && Math.random() < 0.2) {
+          c.secretShared = true;
+          return `"Can I tell you something? ${proto.secret}"`;
+        }
+        // Want as a hook (evolved if the world has moved)
+        if (proto.want && !c.wantHooked && Math.random() < 0.3) {
+          c.wantHooked = true;
+          // Use evolved want if enough days have passed (simplified Change)
+          const day = this.state.scholar.day || 1;
+          const wantText = (day > 7 && proto.want_evolved) ? proto.want_evolved : proto.want;
+          return `"${wantText}"`;
+        }
+      }
+
       // TAUGHT PLANTS (Steve 2026-10-05): if you taught them something, they
       // remember. The one real conversation mechanic was invisible — now it's
       // visible. They reference what you taught them.
