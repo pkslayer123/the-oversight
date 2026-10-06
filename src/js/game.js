@@ -7163,6 +7163,10 @@
       let idx = s.water.findIndex(b => b.quality === 'clean');
       if (idx === -1) idx = s.water.findIndex(b => b.quality === 'risky');
       if (idx === -1) { this.say('No water. Fill at a creek or well.'); return null; }
+      // NOT THIRSTY (survivalist loop 2026-10-06): don't burn a liter for
+      // near-zero benefit. The fill loop is already chore enough without a
+      // quiet tax on top.
+      if ((s.hydration || 0) >= 95) { this.say("You're not thirsty — save it."); return null; }
       const b = s.water[idx];
       s.water.splice(idx, 1);
       // ACTION CLOCK: a drink is 1 tick (time-only — drinking costs no effort).
@@ -9950,6 +9954,16 @@
         return this.status();
       }
       const prev = this.sleepPreview();
+      // HONEST SLEEP (survivalist loop 2026-10-06): the haven panel renders
+      // sleepPreview via sleepHintHTML, but the wild lower-menu Sleep button
+      // committed blind — cold-night exposure could arrive as a surprise.
+      // Say the honest line here too, everywhere sleep actually happens.
+      try {
+        let atHaven = this.location === 'haven';
+        const t = this.playerTile();
+        if (t && t.type === 'haven') atHaven = true;
+        if (!atHaven) this.say(`Sleeping rough means ${prev.name} — heal ~${prev.heal}.${prev.warn ? ' ' + prev.warn : ''}`);
+      } catch (e) {}
       const startDay = s.day, startKcal = Math.round(s.kcal || 0);
       const healthBefore = Math.round(s.health || 0);
       // DIAGNOSTIC (Steve 2026-10-05): partner reports no healing from sleep.
@@ -12501,10 +12515,10 @@
         scholar.energy = Math.min(100, scholar.energy + restGain);
         // triage: practiced hands heal more, even resting.
         scholar.health = Math.min(this.maxHealth(), scholar.health + Math.round(this.modTarget('healing.amount', 5)));
-        scholar.kcal -= 40;
-        // COST HONESTY: rest burns 96 ticks — most of the day part. The
-        // message names the time spent so it feels earned, not stolen.
-        msg = `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy.`;
+        scholar.kcal -= S.calories.ACTION_COSTS.rest;
+        // COST HONESTY: rest burns 96 ticks + the ACTION_COSTS.rest kcal — most
+        // of the day part. The message names both so rest feels earned, not stolen.
+        msg = `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy. (-${S.calories.ACTION_COSTS.rest} kcal — rest burns fuel too.)`;
       } else if (kind === 'wait') {
         msg = 'You wait. The light changes. Nothing asks anything of you.';
       } else if (kind === 'drink') {
