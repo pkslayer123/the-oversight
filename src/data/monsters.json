@@ -2027,7 +2027,12 @@
       }
     },
     "armor": 0,
-    "resistances": {}
+    "resistances": {},
+    "loot": {
+      "chance": 0.15,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    }
   },
   {
     "id": "landlord",
@@ -2111,6 +2116,11 @@
         "collecting": "💰 COLLECTING",
         "foreclosing": "📜 FORECLOSURE"
       }
+    },
+    "loot": {
+      "chance": 0.2,
+      "tier": 4,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     },
     "armor": 3,
     "resistances": { "psychic": 0.5 }
@@ -2197,6 +2207,11 @@
         "heckling": "🗣️ HECKLING",
         "headliner": "⭐ HEADLINER"
       }
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
   {
@@ -2205,8 +2220,8 @@
     "name": "The Paparazzo",
     "activity": "nocturnal",
     "hp": [
-      65,
-      85
+      70,
+      90
     ],
     "attack": {
       "name": "Flash Photography",
@@ -2282,6 +2297,11 @@
     "armor": 0,
     "resistances": {
       "energy": 0.5
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     }
   },
   {
@@ -2363,6 +2383,11 @@
         "walkout": "🚨 WALKOUT"
       },
       "knownCue": "Kill the rep before it organizes. Every ally it rallies hits +3 harder — and at WALKOUT they hit +8 while the rep goes UNTARGETABLE behind the picket line. Scatter the line or union-bust it early: once it climbs on the bullhorn, the fight is uphill."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     },
     "armor": 4,
     "resistances": {

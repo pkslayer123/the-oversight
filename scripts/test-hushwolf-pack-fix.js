@@ -44,8 +44,12 @@ function stripChaos(s) {
   s.stats = s.stats || {}; s.stats.agi = 5;
   if (s.passives) delete s.passives.footwork;
 }
-// (monsterActs helper removed 2026-10-06: dead code, never called, and it
-// invoked Game.tbMonsterTurn() with no fighter arg — would crash if used.)
+function monsterActs() {
+  let guard = 0;
+  while (Game.tbfight && !Game.tbfight.over && !Game.tbIsPlayerTurn() && guard++ < 40) {
+    Game.tbMonsterTurn();
+  }
+}
 
 (async () => {
   // ============ 1. HUSHWOLF PACK: no 20-idle-round freeze ============
