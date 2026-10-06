@@ -124,7 +124,8 @@ Real back-and-forth dialogue. Player always has response choices.
 
 **Rules:**
 - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
-- tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length (code: app.js chatChoice, Steve 2026-10-05)
+- one_beat_turns: a choice yields exactly one new THEM beat; follow-ons queue in c.heldBeats and surface as a voiced continuer ('goon', convoMoreLabel per person/mood/thread); unspoken beats die when the player moves on (code: conversation.js convoTurn, Steve 2026-10-05)
+- tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length; lands on their reply, not your echoed line (code: app.js chatChoice, Steve 2026-10-05)
 - history_view: speaker tab toggles full scrollable transcript (code: app.js dialogueBoxHTML, Steve 2026-10-05)
 
 **Consumes:** village.villagers, state.convos
@@ -138,7 +139,7 @@ Per-conversation emotional state (rapport). Warmth and tension shift as you talk
 - mood_derived: c.mood is -3..3, re-initialized every startConvo from current trust + current npcMood; nothing is stored per villager (code: convo-mood.js, convoMoodInit; Steve 2026-10-06 unique-person law)
 - mood_bands: warm >=2, friendly 1, neutral 0, cool -1, tense <=-2 (code: convo-mood.js, bandOf)
 - warmth_from_trust: answer warmth derives from the sign of its trust delta — no separate data (code: conversation.js react: branches)
-- band_beats: crossing a band boundary queues one stage-direction beat, flushed after the turn's line (code: convo-mood.js, convoMoodShift/convoMoodFlush)
+- band_beats: crossing a band boundary queues one stage-direction beat in c.heldBeats; the continuer reveals it after the turn's line (code: convo-mood.js, convoMoodShift/convoMoodFlush; Steve 2026-10-05 one-beat turns)
 - receptivity: recent lived events (memory) decide guard/grace — guarded people absorb the first warming move, shown kindness absorbs the first cooling one (code: convo-mood.js, convoMoodReceptivity)
 - mood_lingers: ending warm/tense nudges trust by the final mood value (code: conversation.js, endConvo)
 
