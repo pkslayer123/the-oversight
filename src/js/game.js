@@ -13585,7 +13585,7 @@
         const dmg = Math.round(S.combat.roll(tg.dmg) * mult);
         const who = o.kind === 'player' ? 'you' : o.name;
         this.say(`🔥 ${verb} ${who}! (${dmg})`);
-        this.tbDamage(o.key, dmg, m.name + "'s " + tg.attackName);
+        this.tbDamage(o.key, dmg, m.name + "'s " + this.encAttackName(m, tg.attackName));
         if (f.over) return;
       }
       // TEACH THE TRADE: move and it chases (less burn); stand still and it parks.
@@ -16355,6 +16355,17 @@
               this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s " + hitName);
             }
           }
+          // SUNBASKER: the bite spends the charge — dull brown again, already
+          // tilting back toward the sun. The loop restarts. Committed is
+          // committed: the charge spends even on a miss or a gone target.
+          // (2026-10-05: this block used to sit in the non-direct branch
+          // below, where tg.kind === 'direct' could never be true — dead
+          // code. The bite never spent; charge pinned at 3 forever.)
+          if (this.sunbaskerIs(m)) {
+            m.sbCharge = 0;
+            if (useFifo) this.encSetPhase(m, 'bask');
+            this.say('The charge is spent — dull brown again, already tilting back toward the sun.');
+          }
         } else {
           // COVER WORKS: if the lane was fully blocked at declare time, the
           // beam dies against the trees. That's not a miss. That's the plan.
@@ -16366,7 +16377,17 @@
               : `💥 ${resName}! The light shreds leaves and dies against the trees. Cover works. Remember that.`);
             this.audioEvent('beamBlocked');
           } else {
-          this.say(resName === 'the attack' ? `💥 The light hits!` : `💥 ${resName}!`);}
+          // UNGATED-FLAVOR (bug class 2026-10-05): the old fallback assumed a
+          // light attack ("The light hits!") for EVERY unlearned attack.
+          // Flavor the unknown by pattern/monster — dread, not the deer.
+          const ptype = (tg.pattern || {}).type;
+          if (resName === 'the attack') {
+            if (this.glasswingIs(m)) this.say('💥 The shadow lands — wings screaming out of the sun.');
+            else if (ptype === 'charge') this.say('💥 It slams through!');
+            else if (ptype === 'burst') this.say('💥 It erupts!');
+            else if (ptype === 'beam' || ptype === 'line') this.say('💥 The light hits!');
+            else this.say('💥 It connects!');
+          } else this.say(`💥 ${resName}!`);}
           // MOTH: the flash only goes forward — the facing locked at the fold
           // decides who it hits. Behind it, you're safe.
           let resCells = tg.cells;
@@ -16409,7 +16430,7 @@
               }
               if (o.kind === 'player') playerHit = true;
               anyoneHit = true;
-              this.tbDamage(o.key, Math.round(S.combat.roll(tg.dmg) * humMult), (this.encShortLabel(m) || m.name) + "'s " + tg.attackName);
+              this.tbDamage(o.key, Math.round(S.combat.roll(tg.dmg) * humMult), (this.encShortLabel(m) || m.name) + "'s " + this.encAttackName(m, tg.attackName));
               hitFighters.push(o);
               if (f.over) break;
             }
@@ -16524,20 +16545,33 @@
               const vname = vt ? (vt.kind === 'player' ? 'you' : vt.name) : 'its target';
               this.say(`It snatches at ${vname} and climbs — screaming, back into the sun.`);
               this.audioEvent('glasswingClimb');
+              // CLIMB (2026-10-05): a hit-dive ends back in the SKY, not on
+              // the victim's tile. Put up to ~4 tiles between the darter and
+              // its victim so the 'circling' phase reads honestly on the grid
+              // — the shadow is the fight, not a monster stacked on the player.
+              // Picks the direction with the most room (edges cut it short).
+              const vx = vt ? vt.mx : dc.cx, vy = vt ? vt.my : dc.cy;
+              let bx = m.mx, by = m.my, best = -1;
+              for (const [ux, uy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+                let nx = m.mx, ny = m.my;
+                for (let i = 0; i < 4; i++) {
+                  const tx = nx + ux, ty = ny + uy;
+                  if (tx < 0 || tx > 8 || ty < 0 || ty > 8) break;
+                  nx = tx; ny = ty;
+                }
+                const dd = Math.max(Math.abs(nx - vx), Math.abs(ny - vy));
+                if (dd > best || (dd === best && Math.random() < 0.5)) { best = dd; bx = nx; by = ny; }
+              }
+              m.mx = bx; m.my = by;
             } else {
               if (useFifo) this.encSetPhase(m, 'grounded');
-              m.gwGrounded = 1; m.groundedNoted = false;
+              m.gwGrounded = 2; m.groundedNoted = false;
               this.say('It hits the dirt where its target was — wings tangled, screaming. GROUNDED. Now.');
               this.audioEvent('glasswingLand');
             }
           }
-          // SUNBASKER: the bite spends the charge — dull brown again, already
-          // tilting back toward the sun. The loop restarts.
-          if (this.sunbaskerIs(m) && tg.kind === 'direct') {
-            m.sbCharge = 0;
-            if (useFifo) this.encSetPhase(m, 'bask');
-            this.say('The charge is spent — dull brown again, already tilting back toward the sun.');
-          }
+          // (SUNBASKER charge-spend lives in the direct branch above — the bite
+          // is a direct telegraph.)
         }
         if (m.blind > 0) m.blind -= 1;
         // BELLTOAD: the resolving croak pulls the pack in — then every
@@ -17573,7 +17607,7 @@
           if (useFifo) this.encSetPhase(m, 'announce');
           this.audioEvent('delegateAnnounce');
         }
-        this.audioEvent('deerAggro'); // BELLOW on declare: the deer itself must be audible (Steve heard only beam)
+        this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: each monster's own sound (Steve heard only beam; toad was playing deer bellow)
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
         }
