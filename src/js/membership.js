@@ -149,15 +149,25 @@
       return true;
     },
 
-    // rejoinMembership: petition accepted, haven founded — the cut heals.
+    // rejoinMembership: joining a new village (or founding a haven).
+    // (Steve 2026-10-05): Exile sticks until you join another village OR
+    // convince the village to trust you again. Joining a new village ends
+    // YOUR exile (you're somewhere new, the mantle picks up there), but the
+    // OLD village's severed record stays — they still remember. If you ever
+    // go back, you'll need to earn trust.
     rejoinMembership() {
-      var v = this.state.village || {};
-      var id = this.villagerId;
-      if (v.severed) delete v.severed[id];
+      var s = this.state.scholar || {};
+      var wasExiled = !!s.exiled;
       try {
-        this.state.scholar.codexCut = false;
-        this.state.scholar.exiled = false; // the exile is over
+        s.codexCut = false;
+        s.exiled = false; // you're somewhere new now — the exile is over for you
       } catch (e) {}
+      // NOTE: we do NOT delete v.severed[id]. The old village still considers
+      // you cut off. That's their record, not yours. If you return, the trust
+      // rebuild mechanic (amends via justice system) is the path back.
+      if (wasExiled) {
+        try { this.say('The old village is behind you. The mantle picks up here now — new fire, new names, same codex.'); } catch (e) {}
+      }
       return true;
     },
 

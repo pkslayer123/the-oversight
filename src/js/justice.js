@@ -282,18 +282,23 @@
       return 'You\'re exiled. They watch you from the fire, hands on whatever\'s sharp. Take nothing.';
     },
 
-    // ================= THE UPRISING =================
-    // The village comes at you. Not one betrayer — everyone who's had enough.
-
+    // VILLAGE UPRISING (Steve 2026-10-05): the village comes at you with numbers.
+    // This is the end of the justice ladder — stage 4. You've stolen, attacked,
+    // refused exile. Now they come. Anyone who still trusts you fights at your side.
+    // Attackers are a MOB (2-4, lowest trust first, bold temperaments lead) — never
+    // the whole roster folded into one fighter. The fight is built here, directly:
+    // party.js's single-betrayer startBetrayalCombat takes ONE vid, not an army —
+    // calling it with a roster produced a single 40-HP pseudo-fighter with a
+    // comma-joined key and wiped _lastBetrayal. Fixed 2026-10-05 (brawler loop).
     startVillageUprising(reason) {
       if (this.tbfight) return null;
+      const v = this.state.village;
       const s = this.state.scholar;
       const px = s.mx ?? 4, py = s.my ?? 4;
-      const v = this.state.village;
-      const roster = (v.roster || []).filter(id => id !== this.villagerId);
+      const roster = (v.roster || []).filter(rid => rid !== this.villagerId);
       if (!roster.length) return null;
-      // Attackers: lowest trust first, bold temperaments lead. Cap at 4 — a mob, not an army.
       const trustOf = (id) => ((v.trust || {})[id]) || 10;
+      // Attackers: lowest trust first, bold temperaments lead. Cap at 4 — a mob, not an army.
       const attackers = roster.slice()
         .sort((a, b) => {
           const ta = this.npcTemper(a) === 'bold' ? -1000 : 0;
@@ -357,81 +362,37 @@
         betrayer: attackers[0],
         uprisingAttackers: attackers.slice(),
       };
-      const anames = attackers.map(id => this.displayName(id)).join(', ');
-      this.say(`⚔ THE VILLAGE TURNS. ${anames} ${attackers.length > 1 ? 'come' : 'comes'} at you — not sneaking, not talking. Done talking.`);
-      if (defenders.length) {
-        this.say(`${defenders.map(id => this.displayName(id)).join(', ')} ${defenders.length > 1 ? 'step' : 'steps'} between you and them. "Not like this," someone says.`);
-      } else {
-        this.say('Nobody steps between. You earned this alone.');
-      }
-      this.sysSay('OH!!! THE VILLAGE IS DOING A JUSTICE!!! The audience is SO conflicted!!! The gamblers don\'t know WHO to bet on!!!');
-      this.audioEvent('combatStart');
-      this._lastBetrayal = {
-        betrayer: attackers[0], aggressor: 'npc', uprising: true,
-        uprisingAttackers: attackers.slice(),
-        witnesses: defenders.slice(),
-        betrayerDead: false,
-      };
-      try { this.villageEvent('uprising'); } catch (e) {}
-      this.tbBeginTurn();
-      return this.tbfight;
-    },
-
-    // ================= COMBAT DIALOGUE =================
-    // Talking costs your turn. Words are actions too.
-
-    // Aftermath of an uprising: the village is broken, one way or another.
-    // VILLAGE UPRISING (Steve 2026-10-05): the village comes at you with numbers.
-    // This is the end of the justice ladder — stage 4. You've stolen, attacked,
-    // refused exile. Now they come. Anyone who still trusts you fights at your side.
-    startVillageUprising(reason) {
-      const v = this.state.village;
-      const s = this.state.scholar;
-      const roster = (v.roster || []).filter(rid => rid !== this.villagerId);
-      
       this.say('');
       this.say('⚔️ THE UPRISING');
       this.say('They\'re coming. Torches in the dark. You can hear them — not shouting, just walking. That\'s worse.');
       this.say('');
       this.say(`Reason: ${reason}. You did this.`);
       this.say('');
-      
-      // Who fights at your side? Anyone with trust > 50
-      const allies = roster.filter(rid => ((v.trust || {})[rid] || 0) > 50);
-      const enemies = roster.filter(rid => !allies.includes(rid));
-      
-      if (allies.length > 0) {
-        this.say(`At your side: ${allies.map(id => this.displayName(id)).join(', ')}. They believe in you. Don't waste it.`);
+      const anames = attackers.map(id => this.displayName(id)).join(', ');
+      this.say(`⚔ ${anames} ${attackers.length > 1 ? 'come' : 'comes'} at you — not sneaking, not talking. Done talking.`);
+      if (defenders.length) {
+        this.say(`${defenders.map(id => this.displayName(id)).join(', ')} ${defenders.length > 1 ? 'step' : 'steps'} between you and them. "Not like this," someone says.`);
       } else {
-        this.say('No one stands with you. You\'re alone.');
+        this.say('Nobody steps between. You earned this alone.');
       }
-      
-      this.say(`Against you: ${enemies.length} villagers. They want you gone — one way or another.`);
       this.say('');
       this.say('What do you do? FIGHT, FLEE, or TALK?');
-      
-      // Store for the combat setup
+      this.sysSay('OH!!! THE VILLAGE IS DOING A JUSTICE!!! The audience is SO conflicted!!! The gamblers don\'t know WHO to bet on!!!');
+      this.audioEvent('combatStart');
+      // Seed aftermath context at combat START so flee/yield outcomes still resolve.
+      // Set AFTER tbfight; nothing in this path overwrites _lastBetrayal again.
       this._lastBetrayal = {
-        uprising: true,
-        uprisingAttackers: enemies,
-        uprisingAllies: allies,
+        betrayer: attackers[0], aggressor: 'npc', uprising: true,
+        uprisingAttackers: attackers.slice(),
+        uprisingAllies: defenders.slice(),
+        witnesses: defenders.slice(),
+        betrayerDead: false,
         reason: reason,
       };
-      
-      // Start combat with the enemies as hostiles
-      // (The actual combat setup happens via the betrayal system)
-      try {
-        if (typeof this.startBetrayalCombat === 'function') {
-          this.startBetrayalCombat(enemies, allies);
-        } else {
-          this.say('⚠️ Combat system not ready. The villagers wait, torches burning.');
-          this.say('You can: FLEE (run), TALK (try to reason), or wait for them to act.');
-        }
-      } catch (e) {
-        this.say(`⚠️ Uprising failed to start combat: ${e.message}`);
-      }
+      try { this.villageEvent('uprising'); } catch (e) {}
+      this.tbBeginTurn();
+      return this.tbfight;
     },
-
     uprisingAftermath() {
       const lb = this._lastBetrayal || {};
       const result = lb.result || 'betrayal_won';
