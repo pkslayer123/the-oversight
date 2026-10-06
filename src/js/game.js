@@ -13,14 +13,14 @@
 //   - tbAdvance()
 //   - tbAfterPlayerAction()
 //   - contestTick() (delegates to contests.js)
-//   - fireShow(event) -> show (TV pull-away; called from dawn branch)
+//   - fireShow(event) -> show (delegates to contests.js)
 //   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
 //   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
 //   - tbTerrainAt(x, y) -> type | null
 //   - tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double)
 //   - sleepQuality()
 //   - sleepPreview()
-//   - kcalCap()
+//   - kcalCap() (delegates to food.js)
 // rules:
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
@@ -34,7 +34,7 @@
 //   - sleep_heal_ground: 12 (code: sleepPreview)
 //   - combat_action_economy: move + acted (code: tbAfterPlayerAction)
 // consumes:
-//   - All systems (central hub)
+//   - state.scholar, state.village, state.codex (central game state roots)
 // Slice 1 game controller: "Seven Days".
 // Owns state, map, day loop, actions, encounters. UI renders from it (app.js).
 (function (global) {
