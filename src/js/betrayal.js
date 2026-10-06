@@ -2352,9 +2352,11 @@
       let cart = '';
       if (vis.type === 'trader' && vis.trading) {
         cart = `<br>🛒 <b>The cart is open.</b> Finished food only — the perishable stuff goes first, preserved counts extra.${(vis.credit || 0) > 0 ? ` Your tab: <b>${vis.credit} kcal</b>.` : ''}<br>` +
-          this.visitorWares(vis).map((w, i) =>
-            `<span class="small">· <b>${w.name}</b> — ${w.price} kcal${w.sold ? ' <i>(sold)</i>' : ` <button class="btn ghost sm" data-ware-buy="${vis.id}:${i}">Buy</button>`}<br><span style="opacity:.7">${w.blurb}</span></span>`
-          ).join('<br>');
+          this.visitorWares(vis).map((w, i) => {
+            let spr = '';
+            try { const f = window.Scattering && window.Scattering.itemSpriteHtml; if (f && w.itemId) spr = f({ id: w.itemId }); } catch (e) {}
+            return `<span class="small">· ${spr}<b>${w.name}</b> — ${w.price} kcal${w.sold ? ' <i>(sold)</i>' : ` <button class="btn ghost sm" data-ware-buy="${vis.id}:${i}">Buy</button>`}<br><span style="opacity:.7">${w.blurb}</span></span>`;
+          }).join('<br>');
       }
       if (vis.type === 'trader' && vis.selling) {
         // SELL VIEW (Steve 2026-10-06): every stack appraised in the open,
@@ -2362,7 +2364,9 @@
         const stock = this.traderSellStock(vis);
         const rows = stock.length ? stock.map(e => {
           const sellable = e.ap.pricePerUnit > 0;
-          return `<span class="small">· <b>${e.it.name}</b> ×${e.it.units} — ${sellable ? `<b>${e.ap.pricePerUnit} kcal</b> each` : '<i>no sale</i>'}${sellable ? ` <button class="btn ghost sm" data-ware-sell="${vis.id}:${e.idx}">Sell</button>` : ''}<br><span style="opacity:.7">${e.ap.line}</span></span>`;
+          let spr = '';
+          try { const f = window.Scattering && window.Scattering.itemSpriteHtml; if (f) spr = f(e.it); } catch (e2) {}
+          return `<span class="small">· ${spr}<b>${e.it.name}</b> ×${e.it.units} — ${sellable ? `<b>${e.ap.pricePerUnit} kcal</b> each` : '<i>no sale</i>'}${sellable ? ` <button class="btn ghost sm" data-ware-sell="${vis.id}:${e.idx}">Sell</button>` : ''}<br><span style="opacity:.7">${e.ap.line}</span></span>`;
         }).join('<br>') : '<span class="small">Nothing in your pack worth selling.</span>';
         cart = `<br>💰 <b>Selling.</b> He appraises everything in the open. Your tab: <b>${vis.credit || 0} kcal</b>.<br>` + rows;
       }
