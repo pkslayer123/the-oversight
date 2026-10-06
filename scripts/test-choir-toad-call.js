@@ -77,11 +77,20 @@ function monsterActs() {
   ok('pending pack decremented', Game._pendingPack && Game._pendingPack.count === pack0 - 1,
     JSON.stringify(Game._pendingPack && Game._pendingPack.count));
   ok('chorus announced', Game.log.some(l => /another throat joins the chorus/i.test(l)));
-  // second call consumes the rest
+  // second call consumes more
   f.round = 3;
   try { monsterActs(); } catch (e) { threw = e; }
+  ok('second call decrements the pack again', Game._pendingPack && Game._pendingPack.count === pack0 - 2,
+    JSON.stringify(Game._pendingPack && Game._pendingPack.count));
+  // pack grew to 4 (one fighting + 3 pending): keep calling until empty
+  let guard = 0;
+  while (Game._pendingPack && Game._pendingPack.count > 0 && guard < 6) {
+    guard++;
+    f.round++;
+    try { monsterActs(); } catch (e) { threw = e; }
+  }
   Math.random = realRandom;
-  ok('second call empties the pack', !Game._pendingPack,
+  ok('all forced calls empty the pack', !Game._pendingPack,
     JSON.stringify(Game._pendingPack && Game._pendingPack.count));
 
   // --- 3. full fight runs rounds 1-6 without throwing (natural RNG) ---
