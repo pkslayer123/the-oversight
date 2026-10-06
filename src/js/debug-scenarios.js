@@ -459,6 +459,102 @@
       Game.say('🐞 SCENARIO: inspiration. A bright idea, three tiles east. It will not leave you alone.');
     },
 
+    speedbump() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — diurnal
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'speedbump_turtle', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: speedbump turtle. It is not in a hurry. You should be.');
+    },
+
+    ducksinarow() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — diurnal
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'ducks_in_a_row', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: ducks in a row. They are very organized. Suspiciously organized.');
+    },
+
+    static() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 3; // night — nocturnal
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'voice_mimic_radio', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: static. It sounds like your friend calling. It is not your friend.');
+    },
+
+    griefcounselor() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — diurnal
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'mirror_stag', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: grief counselor. It shows you yourself. Do not look too long.');
+    },
+
+    motivationalspeaker() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 2; // dusk — crepuscular
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'hype_horn', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: motivational speaker. "YOU CAN DO IT!" Three tiles east. It is shouting.');
+    },
+
+    termsconditions() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — diurnal
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'contract_golem', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: terms & conditions. It is very large and very legal. Three tiles east.');
+    },
+
+    middlemanager() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday — both (active day and night)
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'delegate_beast', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: middle manager. It is circling. It wants to "sync up." Three tiles east.');
+    },
+
+    nostalgia() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      giveWeapon('fire_hardened_spear');
+      s.insideHaven = false;
+      Game.dayPart = 2; // dusk — crepuscular
+      s.mx = 2; s.my = 4;
+      s.monster = { id: 'memory_projector', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: nostalgia. It is showing you home. Do not follow it there.');
+    },
+
     // 10. Moot — YOU stand accused. Theft + assault on the books, the case
     // is open, the defense window is ticking. Speak, call witnesses, press
     // the accuser, investigate bribes, or flee before the count.
@@ -782,6 +878,14 @@
       ['influencer', '📸 Influencer Swarm fight'],
       ['customerservice', '🎧 Customer Service Mimic fight'],
       ['inspiration', '💡 Inspiration fight'],
+      ['speedbump', '🐢 Speedbump Turtle fight'],
+      ['ducksinarow', '🦆 Ducks in a Row fight'],
+      ['static', '📻 Static fight'],
+      ['griefcounselor', '🪞 Grief Counselor fight'],
+      ['motivationalspeaker', '🎤 Motivational Speaker fight'],
+      ['termsconditions', '📜 Terms & Conditions fight'],
+      ['middlemanager', '💼 Middle Manager fight'],
+      ['nostalgia', '📼 Nostalgia fight'],
       ['ambush', '🔪 Ambush — the walk turns'],
       ['mootAccused', '⚖️ Moot — you stand accused'],
       ['mootJuror', '⚖️ Moot — you are the juror'],
@@ -810,8 +914,8 @@
     const all = Game.debugScenarioList();
     const byId = Object.fromEntries(all);
     const cats = {
-      '🦌 Monsters — Wave 1': ['deer', 'headlight', 'flashbulb', 'choir', 'lockpick', 'hummice', 'glasswing', 'sunbasker'],
-      '👹 Monsters — Wave 2': ['nightlight', 'bulldozer', 'hushpuppy', 'whitenoise', 'reviewdrone', 'influencer', 'customerservice', 'inspiration'],
+      '🦌 Monsters — Wave 1': ['deer', 'headlight', 'flashbulb', 'choir', 'lockpick', 'hummice', 'glasswing', 'sunbasker', 'bulldozer', 'hushpuppy', 'whitenoise', 'nightlight', 'speedbump', 'ducksinarow'],
+      '👹 Monsters — Wave 2': ['static', 'griefcounselor', 'reviewdrone', 'influencer', 'motivationalspeaker', 'customerservice', 'termsconditions', 'middlemanager', 'inspiration', 'nostalgia'],
       '⚖️ Justice & Social': ['ambush', 'mootAccused', 'mootJuror', 'exile', 'uprising', 'liars'],
       '📖 Story': ['mantle', 'day7', 'day1', 'night', 'language', 'starving'],
       '📺 Contests & Shows': ['contestPit', 'contestHide', 'contestForage', 'contestWatch', 'showWhyEat', 'contestEligible'],
