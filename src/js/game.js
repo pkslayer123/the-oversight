@@ -9301,6 +9301,16 @@
         while (s.actionClock >= T.TICKS_PER_BATCH && guard++ < 64) {
           s.actionClock -= T.TICKS_PER_BATCH;
           this.npcBatchTurn();
+          // THE WORLD MOVES WHEN YOU WAIT (Steve 2026-10-06): monsterTurn
+          // used to run only on steps/interacts, so a player who only pressed
+          // WAIT watched a hushwolf pack stand frozen forever — 20 waits, no
+          // approach, no fight. The stance machine runs on the action clock
+          // now: waiting is time, and time is the monster's turn. (A wait
+          // burns ~4 batches, so a hungry pack at distance 3 closes and
+          // engages within a single wait.) Break if combat started — the
+          // day-part machinery below shouldn't run mid-fight.
+          if (!this.tbfight) this.monsterTurn();
+          if (this.tbfight) break;
           transitioned = true;
         }
         // Day-part boundaries derive from the same clock.
@@ -10558,8 +10568,36 @@
         return false;
       };
       const stepToward = () => {
+        // GREEDY STEPPER (Steve 2026-10-06): the old version tried one axis
+        // and gave up, so a single tree between monster and player froze the
+        // stalk forever — the pack stood still for 20+ waits. Wolves go around
+        // trees. Preferred axis first, then any of the 8 neighbors that
+        // doesn't lose ground (diagonal included — the grid is chebyshev; a
+        // wolf one diagonal from you is ON you), closest-first.
         const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
-        if (Math.abs(px - m.mx) >= Math.abs(py - m.my)) mv(dx, 0); else mv(0, dy);
+        const d0 = Math.max(Math.abs(px - m.mx), Math.abs(py - m.my));
+        if (d0 === 0) return;
+        const cands = [];
+        if (Math.abs(px - m.mx) >= Math.abs(py - m.my)) {
+          if (dx) cands.push([dx, 0]);
+          if (dy) cands.push([0, dy]);
+        } else {
+          if (dy) cands.push([0, dy]);
+          if (dx) cands.push([dx, 0]);
+        }
+        const ring = [];
+        for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+          if (cands.some(([ax, ay]) => ax === ox && ay === oy)) continue;
+          ring.push([ox, oy]);
+        }
+        ring.sort((a, b) =>
+          Math.max(Math.abs(px - (m.mx + a[0])), Math.abs(py - (m.my + a[1]))) -
+          Math.max(Math.abs(px - (m.mx + b[0])), Math.abs(py - (m.my + b[1]))));
+        for (const [ox, oy] of cands.concat(ring)) {
+          const nx = m.mx + ox, ny = m.my + oy;
+          if (Math.max(Math.abs(px - nx), Math.abs(py - ny)) > d0) continue;
+          if (mv(ox, oy)) return;
+        }
       };
       // --- stimuli: the world pushes stances around ---
       const fear = (mdef.fear || '').toLowerCase();
@@ -10667,10 +10705,23 @@
           // circles at range. watching. deciding if you're worth it.
           // (Steve 2026-10-05): sent to fight, not to give up. It doesn't decide
           // you're "not worth it" — it waits for an opening. Menacing, not sheepish.
+          // PACK COMMIT (Steve 2026-10-06): circling is assessment, not a parking
+          // spot. This used to be a one-way trap — once cautious, the pack circled
+          // forever and never engaged (no exit, no startCombat). Now the pack
+          // decides within a few turns and commits. No more than ~3 idle rounds.
+          m.cautiousTurns = (m.cautiousTurns || 0) + 1;
           const dx = Math.sign(px - m.mx), dy = Math.sign(py - m.my);
           if (dist < 3) { mv(-dx, 0); mv(0, -dy); }       // too close: back off
           else if (dist > 5) { stepToward(); }              // too far: drift in
           else { mv(-dy, dx) || mv(dy, -dx); }              // circle
+          if (m.mx === px && m.my === py) { this.startCombat(m.id); break; }
+          if (m.cautiousTurns >= 4) {
+            m.stance = 'hungry'; m.cautiousTurns = 0;
+            const w = this.monsterCue(m.id, 'warn');
+            this.say(w || 'Its posture changes. Circling is over — it has decided.');
+            const aa = (mdef.encounter || {}).aggroAudio;
+            if (aa) this.audioEvent(aa, {});
+          }
           break;
         }
         case 'fearful': {
