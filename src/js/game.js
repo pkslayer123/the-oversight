@@ -14431,6 +14431,7 @@
                 f.order.push(newFighter.key);
               }
             }
+            }
           }
         }
         const c = this.tbFighter(f.order[f.turnIdx]);
