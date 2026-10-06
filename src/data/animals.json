@@ -22,18 +22,19 @@
       "4": "Mastery: snare on runs (not random). Check at dawn/dusk. Cook with fat."
     },
     "unknown": "a brown blur with a white tail-flag, freezing between hops",
-    "emoji": "🐇",
+    "emoji": "\ud83d\udc07",
     "behavior": "skittish",
-    "behaviorDesc": "Freezes, then bolts in a zigzag. Fast but predictable — it runs in a straight line after the first juke.",
+    "behaviorDesc": "Freezes, then bolts in a zigzag. Fast but predictable \u2014 it runs in a straight line after the first juke.",
     "fleeDifficulty": "medium",
-    "huntText": "It freezes. You hold your breath. Then — white tail flashing — it bolts!",
-    "killText": "About {kcal} kcal — lean meat, one good meal. All protein, no fat: eat it with something greasy or you’ll run hollow (rabbit starvation is real).",
+    "huntText": "It freezes. You hold your breath. Then \u2014 white tail flashing \u2014 it bolts!",
+    "killText": "About {kcal} kcal \u2014 lean meat, one good meal. All protein, no fat: eat it with something greasy or you\u2019ll run hollow (rabbit starvation is real).",
     "tell": "locks mid-hop, one ear swiveling toward you.",
     "butcher": {
       "hide": 1,
       "bone": 1
     },
-    "diseaseVector": "Rabbits carry tularemia — wear gloves gutting, and cook it through. Ticks ride them too."
+    "diseaseVector": "Rabbits carry tularemia \u2014 wear gloves gutting, and cook it through. Ticks ride them too.",
+    "common": true
   },
   {
     "id": "gray_squirrel",
@@ -58,17 +59,18 @@
       "4": "Mastery: hunt in fall (fat). Use a sling or trap. They follow patterns."
     },
     "unknown": "a gray flicker in the branches, chattering",
-    "emoji": "🐿️",
+    "emoji": "\ud83d\udc3f\ufe0f",
     "behavior": "arboreal",
     "behaviorDesc": "Stays in trees. Drops to grab nuts, then spirals up the trunk. You need to catch it on the ground.",
     "fleeDifficulty": "hard",
-    "huntText": "It chatters at you from the branch — scolding, not scared. Then it drops, grabs, and spirals up before you move.",
-    "killText": "About {kcal} kcal — small, but a fall squirrel carries fat. Stew meat; the hide makes gloves if you’re patient.",
+    "huntText": "It chatters at you from the branch \u2014 scolding, not scared. Then it drops, grabs, and spirals up before you move.",
+    "killText": "About {kcal} kcal \u2014 small, but a fall squirrel carries fat. Stew meat; the hide makes gloves if you\u2019re patient.",
     "tell": "goes silent mid-chatter, tail flicking hard.",
     "butcher": {
       "hide": 1
     },
-    "diseaseVector": "Squirrels carry ticks and fleas. Cook the meat through."
+    "diseaseVector": "Squirrels carry ticks and fleas. Cook the meat through.",
+    "common": true
   },
   {
     "id": "white_tailed_deer",
@@ -93,19 +95,20 @@
       "4": "Mastery: need a weapon or deadfall. Track by prints. Gut immediately. Hang to age."
     },
     "unknown": "a large brown quadruped, white tail raised in alarm",
-    "emoji": "🦌",
+    "emoji": "\ud83e\udd8c",
     "behavior": "wary",
     "behaviorDesc": "Grazes with head down, ears swiveling. At the first wrong sound, the white tail goes up and it's gone.",
     "fleeDifficulty": "hard",
-    "huntText": "It grazes, ears tracking every sound. The white tail flicks — once, twice — then it explodes into motion.",
-    "killText": "About {kcal} kcal — this feeds people for days. Organs first (they spoil fastest and carry the vitamins), then gut and hang the rest. Don’t waste the fat.",
-    "tell": "head snaps up — the white tail flicks, once, twice.",
+    "huntText": "It grazes, ears tracking every sound. The white tail flicks \u2014 once, twice \u2014 then it explodes into motion.",
+    "killText": "About {kcal} kcal \u2014 this feeds people for days. Organs first (they spoil fastest and carry the vitamins), then gut and hang the rest. Don\u2019t waste the fat.",
+    "tell": "head snaps up \u2014 the white tail flicks, once, twice.",
     "butcher": {
       "hide": 2,
       "bone": 4,
       "antler": 2
     },
-    "diseaseVector": "Deer carry ticks — Lyme disease is real. Check the hide before you wear it, and cook the venison through."
+    "diseaseVector": "Deer carry ticks \u2014 Lyme disease is real. Check the hide before you wear it, and cook the venison through.",
+    "common": true
   },
   {
     "id": "creek_chub",
@@ -130,17 +133,18 @@
       "4": "Mastery: tickle (hands under, stroke belly). Or dam and scoop. Best at dawn."
     },
     "unknown": "a flicker of silver under the water",
-    "emoji": "🐟",
+    "emoji": "\ud83d\udc1f",
     "behavior": "aquatic",
     "behaviorDesc": "Stays in water. Darts under rocks when shadow falls. You need a line, not hands.",
     "fleeDifficulty": "medium",
     "huntText": "A flash of silver in the creek. It darts under the rock before your shadow even touches the water.",
-    "killText": "About {kcal} kcal — a mouthful. Eat it whole, bones and all, or the tickle wasn’t worth it.",
+    "killText": "About {kcal} kcal \u2014 a mouthful. Eat it whole, bones and all, or the tickle wasn\u2019t worth it.",
     "tell": "holds perfectly still in the current, fins barely moving.",
     "butcher": {
       "bone": 1
     },
-    "diseaseVector": "Raw freshwater fish can carry parasites. Cook it."
+    "diseaseVector": "Raw freshwater fish can carry parasites. Cook it.",
+    "common": true
   },
   {
     "id": "wild_turkey",
@@ -165,18 +169,19 @@
       "4": "Mastery: call them (mimic). Hunt in fall (fat). Roost at dusk (find the tree)."
     },
     "unknown": "a large dark bird, iridescent, head jerking",
-    "emoji": "🦃",
+    "emoji": "\ud83e\udd83",
     "behavior": "flock",
     "behaviorDesc": "Moves in flocks. One spots you, they all know. Loud, big, but they panic in different directions.",
     "fleeDifficulty": "medium",
-    "huntText": "Gobble-gobble-gobble. The flock erupts — wings like thunder, all going different ways. Pick one and commit.",
-    "killText": "About {kcal} kcal — the breast alone is a feast. Legs are tough; save the wing feathers for fletching.",
-    "tell": "the heads jerk up in unison — all of them, all at once.",
+    "huntText": "Gobble-gobble-gobble. The flock erupts \u2014 wings like thunder, all going different ways. Pick one and commit.",
+    "killText": "About {kcal} kcal \u2014 the breast alone is a feast. Legs are tough; save the wing feathers for fletching.",
+    "tell": "the heads jerk up in unison \u2014 all of them, all at once.",
     "butcher": {
       "feather": 6,
       "bone": 2
     },
-    "diseaseVector": "Raw poultry carries salmonella. Cook it through — no pink."
+    "diseaseVector": "Raw poultry carries salmonella. Cook it through \u2014 no pink.",
+    "common": true
   },
   {
     "id": "opossum",
@@ -196,23 +201,24 @@
     ],
     "knowledgeLevels": {
       "1": "Opossum. Waddles. Plays dead. Hisses.",
-      "2": "Parts: meat (greasy), hide. Gut carefully — scent glands.",
+      "2": "Parts: meat (greasy), hide. Gut carefully \u2014 scent glands.",
       "3": "Uses: slow and catchable. Good trap animal. Immune to snake venom (irrelevant, cool).",
       "4": "Mastery: trap near dens. They waddle into anything. Cook thoroughly."
     },
     "unknown": "a waddling pale shape, playing dead (badly)",
-    "emoji": "🐾",
+    "emoji": "\ud83d\udc3e",
     "behavior": "plays_dead",
     "behaviorDesc": "When threatened, it flops over, tongue out, playing dead. It's not dead. It's waiting for you to leave.",
     "fleeDifficulty": "easy",
-    "huntText": "It hisses, shows teeth — then flops over. Tongue lolling. Dead. Except the eye that tracks you. It's faking.",
-    "killText": "About {kcal} kcal — greasy meat. The scent glands come out with the guts: cut wide, never nick them.",
+    "huntText": "It hisses, shows teeth \u2014 then flops over. Tongue lolling. Dead. Except the eye that tracks you. It's faking.",
+    "killText": "About {kcal} kcal \u2014 greasy meat. The scent glands come out with the guts: cut wide, never nick them.",
     "tell": "stops waddling and bares its teeth in a wet hiss.",
     "butcher": {
       "hide": 1,
       "bone": 1
     },
-    "diseaseVector": "Opossums rarely carry rabies, but raw meat is raw meat. Cook it through."
+    "diseaseVector": "Opossums rarely carry rabies, but raw meat is raw meat. Cook it through.",
+    "common": true
   },
   {
     "id": "bullfrog",
@@ -237,15 +243,16 @@
       "4": "Mastery: night + flashlight + spear. Aim for the body, not the legs."
     },
     "unknown": "something the size of a dinner plate, croaking from the mud",
-    "emoji": "🐸",
+    "emoji": "\ud83d\udc38",
     "behavior": "aquatic_ambush",
     "behaviorDesc": "Sits at the water's edge. At the splash, it dives. You need to be fast or use a gig.",
     "fleeDifficulty": "medium",
-    "huntText": "It croaks — a deep jug-o-rum. You step closer. Splash. Gone. The ripples are still spreading.",
-    "killText": "About {kcal} kcal — it’s all in the legs. The rest is skin and attitude. Fry them like chicken.",
+    "huntText": "It croaks \u2014 a deep jug-o-rum. You step closer. Splash. Gone. The ripples are still spreading.",
+    "killText": "About {kcal} kcal \u2014 it\u2019s all in the legs. The rest is skin and attitude. Fry them like chicken.",
     "tell": "the croak cuts off mid-note. The ripples flatten.",
     "butcher": {},
-    "diseaseVector": "Frogs carry salmonella. Cook the legs through."
+    "diseaseVector": "Frogs carry salmonella. Cook the legs through.",
+    "common": true
   },
   {
     "id": "box_turtle",
@@ -265,22 +272,23 @@
     "knowledgeLevels": {
       "1": "Box turtle. Domed shell. In no hurry whatsoever.",
       "2": "Parts: meat (soup). Shell is a bowl when you're done.",
-      "3": "Uses: slow = catchable. But they live 100 years — take sparingly.",
+      "3": "Uses: slow = catchable. But they live 100 years \u2014 take sparingly.",
       "4": "Mastery: only take what you need. Mark and release the rest."
     },
     "unknown": "a domed shape in the leaves, ancient and unhurried",
-    "emoji": "🐢",
+    "emoji": "\ud83d\udc22",
     "behavior": "slow",
     "behaviorDesc": "It walks. That's it. It just walks, slowly, with total confidence that you're not a threat. You can pick it up.",
     "fleeDifficulty": "trivial",
     "huntText": "It plods along, head out, utterly unconcerned. You could pick it up with one hand. It knows. It doesn't care.",
-    "killText": "About {kcal} kcal — soup turtle. The shell’s a bowl when you’re done. It lived a century; take the lesson with the meat.",
+    "killText": "About {kcal} kcal \u2014 soup turtle. The shell\u2019s a bowl when you\u2019re done. It lived a century; take the lesson with the meat.",
     "tell": "pulls its head in a fraction. It has nowhere to be, but it knows you're there.",
     "butcher": {
       "shell": 1,
       "bone": 1
     },
-    "diseaseVector": "Reptiles carry salmonella. Wash up, cook it through."
+    "diseaseVector": "Reptiles carry salmonella. Wash up, cook it through.",
+    "common": true
   },
   {
     "id": "gray_fox",
@@ -301,22 +309,23 @@
     "knowledgeLevels": {
       "1": "Gray fox. Smaller than red. Climbs trees (wrong, but true).",
       "2": "Parts: meat (lean), pelt (prime in winter).",
-      "3": "Uses: trap on trails. Wary — harder than it looks.",
+      "3": "Uses: trap on trails. Wary \u2014 harder than it looks.",
       "4": "Mastery: the only canid that climbs. Check low branches, not just ground."
     },
     "unknown": "a russet-gray flicker climbing a tree (it should not do that)",
-    "emoji": "🦊",
+    "emoji": "\ud83e\udd8a",
     "behavior": "cunning",
     "behaviorDesc": "It watches you watching it. Circles downwind to scent you. If you chase, it leads you in circles.",
     "fleeDifficulty": "very_hard",
-    "huntText": "Amber eyes in the underbrush. It doesn't run — it trots, just out of range, looking back. It's toying with you.",
-    "killText": "About {kcal} kcal — lean and gamey. The winter pelt is the real prize; flesh it carefully.",
-    "tell": "stops mid-step, one paw raised — eyes locked on you.",
+    "huntText": "Amber eyes in the underbrush. It doesn't run \u2014 it trots, just out of range, looking back. It's toying with you.",
+    "killText": "About {kcal} kcal \u2014 lean and gamey. The winter pelt is the real prize; flesh it carefully.",
+    "tell": "stops mid-step, one paw raised \u2014 eyes locked on you.",
     "butcher": {
       "hide": 1,
       "bone": 1
     },
-    "diseaseVector": "Foxes are a rabies vector — never handle one acting strange. Cook the meat through."
+    "diseaseVector": "Foxes are a rabies vector \u2014 never handle one acting strange. Cook the meat through.",
+    "common": true
   },
   {
     "id": "crayfish",
@@ -341,17 +350,18 @@
       "4": "Mastery: night with a light. Baited trap = dozens. Purge in clean water first."
     },
     "unknown": "claws under every second rock",
-    "emoji": "🦞",
+    "emoji": "\ud83e\udd9e",
     "behavior": "aquatic_defensive",
     "behaviorDesc": "Under rocks in the creek. When you lift the rock, it darts backward, claws up. Grab behind the claws.",
     "fleeDifficulty": "easy",
-    "huntText": "You lift the rock. It shoots backward, claws raised like a tiny boxer. Grab it right behind the claws — fast.",
-    "killText": "About {kcal} kcal — sweet tail meat, a bite at a time. Boil, peel, repeat. The pinch was earned.",
+    "huntText": "You lift the rock. It shoots backward, claws raised like a tiny boxer. Grab it right behind the claws \u2014 fast.",
+    "killText": "About {kcal} kcal \u2014 sweet tail meat, a bite at a time. Boil, peel, repeat. The pinch was earned.",
     "tell": "freezes under its rock, claws raised.",
     "butcher": {
       "shell": 1
     },
-    "diseaseVector": "Raw crayfish can carry lung fluke. Boil them."
+    "diseaseVector": "Raw crayfish can carry lung fluke. Boil them.",
+    "common": true
   },
   {
     "id": "raccoon",
@@ -371,22 +381,23 @@
     "knowledgeLevels": {
       "1": "Raccoon. Masked. Hands like a toddler's.",
       "2": "Parts: meat (greasy, good in stew), pelt.",
-      "3": "Uses: trap near water. Smart — varies its routes.",
+      "3": "Uses: trap near water. Smart \u2014 varies its routes.",
       "4": "Mastery: marshmallow bait works (they can't resist). Cook well; wash hands."
     },
     "unknown": "a masked shape washing nothing in the creek",
-    "emoji": "🦝",
+    "emoji": "\ud83e\udd9d",
     "behavior": "curious",
     "behaviorDesc": "Not afraid of you. Watches with clever hands. Might try to steal from you instead of fleeing.",
     "fleeDifficulty": "easy",
     "huntText": "It sits up, paws dangling, watching you with unsettling intelligence. It's not scared. It's assessing.",
-    "killText": "About {kcal} kcal — greasy, good in stew. Wash your hands after; raccoons carry things you don’t want.",
-    "tell": "sits up on its haunches, paws dangling — watching you back.",
+    "killText": "About {kcal} kcal \u2014 greasy, good in stew. Wash your hands after; raccoons carry things you don\u2019t want.",
+    "tell": "sits up on its haunches, paws dangling \u2014 watching you back.",
     "butcher": {
       "hide": 1,
       "bone": 1
     },
-    "diseaseVector": "Raccoons carry roundworm and rabies. Wash your hands after gutting; cook through."
+    "diseaseVector": "Raccoons carry roundworm and rabies. Wash your hands after gutting; cook through.",
+    "common": true
   },
   {
     "id": "snapping_turtle",
@@ -408,21 +419,22 @@
       "1": "Snapping turtle. Dinosaur. Do not hand-feed.",
       "2": "Parts: seven kinds of meat (they say). Soup turtle.",
       "3": "Uses: jug lines with strong cord. Keep fingers away from the front half.",
-      "4": "Mastery: tail-drag to move it. It can reach halfway back — respect the neck."
+      "4": "Mastery: tail-drag to move it. It can reach halfway back \u2014 respect the neck."
     },
     "unknown": "a huge shelled shape in the shallows, motionless",
-    "emoji": "🐢",
+    "emoji": "\ud83d\udc22",
     "behavior": "aggressive",
     "behaviorDesc": "Does NOT flee. Hisses, lunges, snaps. That beak can take a finger. Use a stick, keep distance.",
     "fleeDifficulty": "dangerous",
-    "huntText": "It hisses — a sound like a tire leaking — and LUNGES. The beak snaps shut where your hand was. Do not grab this.",
-    "killText": "About {kcal} kcal — they say seven kinds of meat in one shell. The head bites after death: cut wide, bury the head.",
+    "huntText": "It hisses \u2014 a sound like a tire leaking \u2014 and LUNGES. The beak snaps shut where your hand was. Do not grab this.",
+    "killText": "About {kcal} kcal \u2014 they say seven kinds of meat in one shell. The head bites after death: cut wide, bury the head.",
     "tell": "goes statue-still, neck coiling back.",
     "butcher": {
       "shell": 1,
       "bone": 2
     },
-    "diseaseVector": "Reptiles carry salmonella — cook through. (The head bites after death: cut wide, bury it.)"
+    "diseaseVector": "Reptiles carry salmonella \u2014 cook through. (The head bites after death: cut wide, bury it.)",
+    "common": true
   },
   {
     "id": "timber_rattlesnake",
@@ -442,23 +454,24 @@
     ],
     "knowledgeLevels": {
       "1": "Timber rattlesnake. The rattle means back away. It means it every time.",
-      "2": "Parts: meat (good, tastes like tough chicken), skin (tough). The venom is in the head, not the body — but the head bites after death. Cut wide, bury the head.",
-      "3": "Hunt: pin it behind the head with a forked stick, or take it at range. Never reach, never grab. Check sunning spots on spring mornings — they bask on trail edges before the day warms.",
-      "4": "Mastery: rattlesnakes den together through winter — find one den and you find them all. Antivenom doesn't exist anymore. The System apologizes for this in Rev. 4."
+      "2": "Parts: meat (good, tastes like tough chicken), skin (tough). The venom is in the head, not the body \u2014 but the head bites after death. Cut wide, bury the head.",
+      "3": "Hunt: pin it behind the head with a forked stick, or take it at range. Never reach, never grab. Check sunning spots on spring mornings \u2014 they bask on trail edges before the day warms.",
+      "4": "Mastery: rattlesnakes den together through winter \u2014 find one den and you find them all. Antivenom doesn't exist anymore. The System apologizes for this in Rev. 4."
     },
     "unknown": "a dry buzzing in the leaves, then a thick coil rising",
-    "emoji": "🐍",
+    "emoji": "\ud83d\udc0d",
     "behavior": "defensive",
     "behaviorDesc": "Coils and rattles a long warning before it ever strikes. The one animal that tells you exactly what it will do, and means it.",
     "fleeDifficulty": "dangerous",
-    "huntText": "A dry buzz from the leaf litter — a rattle, then the coil tightens. It isn't bluffing. Nothing about this is a bluff.",
-    "killText": "About {kcal} kcal — tastes like tough chicken. The venom’s in the head, not the body — but the head bites after death. Cut wide, bury it deep.",
+    "huntText": "A dry buzz from the leaf litter \u2014 a rattle, then the coil tightens. It isn't bluffing. Nothing about this is a bluff.",
+    "killText": "About {kcal} kcal \u2014 tastes like tough chicken. The venom\u2019s in the head, not the body \u2014 but the head bites after death. Cut wide, bury it deep.",
     "tell": "leaf litter shivers before you see it; then the dry rattle starts.",
     "butcher": {
       "hide": 1,
       "bone": 1
     },
-    "diseaseVector": "The venom is in the head, not the meat — but reptiles carry salmonella. Cook through; bury the head deep."
+    "diseaseVector": "The venom is in the head, not the meat \u2014 but reptiles carry salmonella. Cook through; bury the head deep.",
+    "common": true
   },
   {
     "id": "striped_skunk",
@@ -478,23 +491,24 @@
     ],
     "knowledgeLevels": {
       "1": "Striped skunk. The white stripe is a warning label. Read it.",
-      "2": "Spray: sulfur compounds. Blinds you for minutes, smells for days — and everything with a nose will know where you've been. Monsters have noses.",
+      "2": "Spray: sulfur compounds. Blinds you for minutes, smells for days \u2014 and everything with a nose will know where you've been. Monsters have noses.",
       "3": "Hunt: box trap at dusk, approach holding a tarp low. Or don't. The meat is fine but everything you own will remember the decision.",
-      "4": "Mastery: tomato juice is a myth — baking soda, peroxide, dish soap, that's the recipe. The musk glands come out with the guts; cut wide around them and never nick."
+      "4": "Mastery: tomato juice is a myth \u2014 baking soda, peroxide, dish soap, that's the recipe. The musk glands come out with the guts; cut wide around them and never nick."
     },
     "unknown": "a waddling stripe of white and black, calm as anything",
-    "emoji": "🦨",
+    "emoji": "\ud83e\udda8",
     "behavior": "unbothered",
     "behaviorDesc": "Ambles after grubs, waddles through your trapline, and does not run from you. It has exactly one argument and it wins every argument.",
     "fleeDifficulty": "trivial",
-    "huntText": "It turns its back on you. That is not surrender — the tail goes up like a flag, and you have about one second to reconsider your life.",
-    "killText": "About {kcal} kcal — the meat’s fine. The musk glands are the whole job: cut wide around them, never nick. Everything you own will remember if you do.",
+    "huntText": "It turns its back on you. That is not surrender \u2014 the tail goes up like a flag, and you have about one second to reconsider your life.",
+    "killText": "About {kcal} kcal \u2014 the meat\u2019s fine. The musk glands are the whole job: cut wide around them, never nick. Everything you own will remember if you do.",
     "tell": "a white stripe lifting into the air, tail high; the calm before the chemistry.",
     "butcher": {
       "hide": 1,
       "bone": 1
     },
-    "diseaseVector": "Skunks are a rabies vector. Cook through — and never nick the musk glands."
+    "diseaseVector": "Skunks are a rabies vector. Cook through \u2014 and never nick the musk glands.",
+    "common": true
   },
   {
     "id": "muskrat",
@@ -515,22 +529,23 @@
     "knowledgeLevels": {
       "1": "Muskrat. The little beaver that isn't a beaver. Everything a beaver does, smaller and angrier about it.",
       "2": "Parts: meat (rich, dark), pelt (warm, nearly waterproof). Lives in bank dens and cattail lodges; eats everything green near the water.",
-      "3": "Hunt: set at the den mouth at dusk, or on the feeding platforms. It dives the second it spooks — chasing it is a losing argument with the creek.",
-      "4": "Mastery: muskrats mark their runs with musk — the smell IS the map. Trap the run, not the water. Pelts prime in late fall; a winter lodge means a fat muskrat."
+      "3": "Hunt: set at the den mouth at dusk, or on the feeding platforms. It dives the second it spooks \u2014 chasing it is a losing argument with the creek.",
+      "4": "Mastery: muskrats mark their runs with musk \u2014 the smell IS the map. Trap the run, not the water. Pelts prime in late fall; a winter lodge means a fat muskrat."
     },
     "unknown": "a ripple that isn't a fish, sliding along the bank",
-    "emoji": "🦫",
+    "emoji": "\ud83e\uddab",
     "behavior": "architect",
-    "behaviorDesc": "Builds bank dens and cattail lodges, marks its runs with musk. When it dives, it stays down — longer than you can hold your nerve.",
+    "behaviorDesc": "Builds bank dens and cattail lodges, marks its runs with musk. When it dives, it stays down \u2014 longer than you can hold your nerve.",
     "fleeDifficulty": "hard",
-    "huntText": "A V of ripples slides off the cattails — then nothing. The muskrat is already under the bank, listening to your feet.",
-    "killText": "About {kcal} kcal — rich dark meat, nearly waterproof pelt. The lodge-builder earned its winter fat; pelts prime in late fall.",
+    "huntText": "A V of ripples slides off the cattails \u2014 then nothing. The muskrat is already under the bank, listening to your feet.",
+    "killText": "About {kcal} kcal \u2014 rich dark meat, nearly waterproof pelt. The lodge-builder earned its winter fat; pelts prime in late fall.",
     "tell": "a sliding ripple line along the bank, and a sweet-musky smell on the water.",
     "butcher": {
       "hide": 1,
       "bone": 1
     },
-    "diseaseVector": "Muskrats can carry tularemia. Cook through."
+    "diseaseVector": "Muskrats can carry tularemia. Cook through.",
+    "common": true
   },
   {
     "id": "wild_boar",
@@ -551,23 +566,24 @@
     "knowledgeLevels": {
       "1": "Wild boar. Tusks. Pawing the ground means it has decided about you.",
       "2": "Parts: meat (rich, fatty), hide (tough), tusks (tools, trade). Males are meaner; sows with piglets are meanest.",
-      "3": "Hunt: from a tree or a trap. On the ground, a boar charges — 150 pounds of bad decision. Never chase one into the brush; that's where it wants you.",
-      "4": "Mastery: it telegraphs — head drops, paws scrape, the snort changes pitch. Strike only when it's calm or winded. A charging boar commits: sidestep, don't outrun."
+      "3": "Hunt: from a tree or a trap. On the ground, a boar charges \u2014 150 pounds of bad decision. Never chase one into the brush; that's where it wants you.",
+      "4": "Mastery: it telegraphs \u2014 head drops, paws scrape, the snort changes pitch. Strike only when it's calm or winded. A charging boar commits: sidestep, don't outrun."
     },
     "unknown": "a dark bristling mass, head low, pawing the dirt",
-    "emoji": "🐗",
+    "emoji": "\ud83d\udc17",
     "behavior": "charger",
-    "behaviorDesc": "Paws the ground and snorts a warning when it notices you. Press it — or miss — and it CHARGES: 150 pounds straight at you. Sidestep, don't outrun.",
+    "behaviorDesc": "Paws the ground and snorts a warning when it notices you. Press it \u2014 or miss \u2014 and it CHARGES: 150 pounds straight at you. Sidestep, don't outrun.",
     "fleeDifficulty": "dangerous",
-    "huntText": "It sees you. The head drops, the front hooves scrape — then it comes, fast and low, tusks first. This is the part everyone warned you about.",
-    "killText": "About {kcal} kcal — rich, fatty, the tusks are tools. Gut it fast; a boar this size feeds the village for days.",
-    "tell": "head drops, front hooves scraping the dirt — the snort changes pitch.",
+    "huntText": "It sees you. The head drops, the front hooves scrape \u2014 then it comes, fast and low, tusks first. This is the part everyone warned you about.",
+    "killText": "About {kcal} kcal \u2014 rich, fatty, the tusks are tools. Gut it fast; a boar this size feeds the village for days.",
+    "tell": "head drops, front hooves scraping the dirt \u2014 the snort changes pitch.",
     "butcher": {
       "hide": 1,
       "bone": 3,
       "tusk": 2
     },
-    "diseaseVector": "Wild pork can carry trichinella — cook it through, no exceptions. No pink, ever."
+    "diseaseVector": "Wild pork can carry trichinella \u2014 cook it through, no exceptions. No pink, ever.",
+    "common": true
   },
   {
     "id": "north_american_porcupine",
@@ -587,23 +603,24 @@
     ],
     "knowledgeLevels": {
       "1": "Porcupine. The quills are the argument. There is no counter-argument.",
-      "2": "Parts: meat (good, fatty), quills (fish hooks, needles, decoration). It can't shoot them — that's a myth — but it can back into you.",
+      "2": "Parts: meat (good, fatty), quills (fish hooks, needles, decoration). It can't shoot them \u2014 that's a myth \u2014 but it can back into you.",
       "3": "Hunt: ranged, or flip it with a long stick and go for the belly. Bare hands grab = quills in your hand for days.",
-      "4": "Mastery: quills have barbs — pull straight out, slow, or they break off inside. Salt pork cooks out the wild taste. Winter porcupines are fattest."
+      "4": "Mastery: quills have barbs \u2014 pull straight out, slow, or they break off inside. Salt pork cooks out the wild taste. Winter porcupines are fattest."
     },
     "unknown": "a waddling dark lump, quills rattling softly as it moves",
-    "emoji": "🦔",
+    "emoji": "\ud83e\udd94",
     "behavior": "quilled",
-    "behaviorDesc": "Ambles. Never hurries, never bolts — it doesn't need to. Turn your back is a quill-rattle warning. Grab it barehanded and the quills lodge in your hand.",
+    "behaviorDesc": "Ambles. Never hurries, never bolts \u2014 it doesn't need to. Turn your back is a quill-rattle warning. Grab it barehanded and the quills lodge in your hand.",
     "fleeDifficulty": "trivial",
-    "huntText": "It hears you and turns its back — quills up, rattling like dry beans. It is in no hurry. It has never needed to hurry.",
-    "killText": "About {kcal} kcal — good fatty meat under the armor. Quills pull straight out, slow — the barbs break off inside. Keep a dozen for fish hooks.",
-    "tell": "quills rise and rattle — a dry shiver of sound — as it turns its back to you.",
+    "huntText": "It hears you and turns its back \u2014 quills up, rattling like dry beans. It is in no hurry. It has never needed to hurry.",
+    "killText": "About {kcal} kcal \u2014 good fatty meat under the armor. Quills pull straight out, slow \u2014 the barbs break off inside. Keep a dozen for fish hooks.",
+    "tell": "quills rise and rattle \u2014 a dry shiver of sound \u2014 as it turns its back to you.",
     "butcher": {
       "hide": 1,
       "quill": 12
     },
-    "diseaseVector": "Low disease risk, but raw is raw. Cook it through."
+    "diseaseVector": "Low disease risk, but raw is raw. Cook it through.",
+    "common": true
   },
   {
     "id": "groundhog",
@@ -622,24 +639,25 @@
       "chase"
     ],
     "knowledgeLevels": {
-      "1": "Groundhog. Whistles when it sees you — and every animal for a hundred yards hears it.",
+      "1": "Groundhog. Whistles when it sees you \u2014 and every animal for a hundred yards hears it.",
       "2": "Parts: meat (surprisingly good), hide. The whistle is the problem: it warns the whole meadow.",
-      "3": "Hunt: it sprints for its burrow the second it bolts. You get one chase — wind it before the hole, or it's gone. Traps at the burrow mouth work at dawn.",
+      "3": "Hunt: it sprints for its burrow the second it bolts. You get one chase \u2014 wind it before the hole, or it's gone. Traps at the burrow mouth work at dawn.",
       "4": "Mastery: after a whistle, everything nearby is on edge for the day. Hunt groundhogs LAST, not first. Late summer they're fat; spring they're lean and mean."
     },
     "unknown": "a fat brown shape rearing up, then a sharp whistle",
-    "emoji": "🦫",
+    "emoji": "\ud83e\uddab",
     "behavior": "alarmed",
-    "behaviorDesc": "Whistles an alarm the moment it clocks you — and the whole meadow hears it. Then it sprints for its burrow: fast, straight, gone down the hole if it gets there.",
+    "behaviorDesc": "Whistles an alarm the moment it clocks you \u2014 and the whole meadow hears it. Then it sprints for its burrow: fast, straight, gone down the hole if it gets there.",
     "fleeDifficulty": "hard",
-    "huntText": "The whistle splits the meadow — sharp, twice. Then it's running, low and fast, straight for the dark hole in the bank. Cut it off or lose it.",
-    "killText": "About {kcal} kcal — surprisingly good eating. Late-summer groundhogs are fat; spring ones are lean and mean.",
-    "tell": "rears up on its haunches, nose high — listening for your next move.",
+    "huntText": "The whistle splits the meadow \u2014 sharp, twice. Then it's running, low and fast, straight for the dark hole in the bank. Cut it off or lose it.",
+    "killText": "About {kcal} kcal \u2014 surprisingly good eating. Late-summer groundhogs are fat; spring ones are lean and mean.",
+    "tell": "rears up on its haunches, nose high \u2014 listening for your next move.",
     "butcher": {
       "hide": 1,
       "bone": 1
     },
-    "diseaseVector": "Groundhogs carry ticks and can carry tularemia. Cook through."
+    "diseaseVector": "Groundhogs carry ticks and can carry tularemia. Cook through.",
+    "common": true
   },
   {
     "id": "canada_goose",
@@ -660,22 +678,23 @@
     "knowledgeLevels": {
       "1": "Canada goose. It does not flee. It advances. The neck means business.",
       "2": "Parts: breast (big, beefy), legs (tough), feathers (bedding, fletching). A wing can bruise you; the beak pinches.",
-      "3": "Hunt: it charges YOU. Backing off resets it — it guards a patch, not a grudge. Strike when it commits; it telegraphs the neck-low rush.",
-      "4": "Mastery: nesting season (spring) is the danger window — pairs defend. A goose that advances on you is protecting something; note where it started."
+      "3": "Hunt: it charges YOU. Backing off resets it \u2014 it guards a patch, not a grudge. Strike when it commits; it telegraphs the neck-low rush.",
+      "4": "Mastery: nesting season (spring) is the danger window \u2014 pairs defend. A goose that advances on you is protecting something; note where it started."
     },
     "unknown": "a big gray bird, neck stretched out, honking as it comes at you",
-    "emoji": "🪿",
+    "emoji": "\ud83e\udebf",
     "behavior": "territorial",
-    "behaviorDesc": "Does not flee — advances. Honks, neck low, wings half-out. Back off and it settles; press it and the wings and beak are real.",
+    "behaviorDesc": "Does not flee \u2014 advances. Honks, neck low, wings half-out. Back off and it settles; press it and the wings and beak are real.",
     "fleeDifficulty": "dangerous",
     "huntText": "HONK. The neck stretches flat and it comes at you, wings half-spread, utterly committed. This bird has never lost a fight it started.",
-    "killText": "About {kcal} kcal — the breast is beefy, the legs are rope. It fought you for this; respect the wings, keep the down.",
-    "tell": "the honk changes — lower, faster — and the neck drops level with the ground.",
+    "killText": "About {kcal} kcal \u2014 the breast is beefy, the legs are rope. It fought you for this; respect the wings, keep the down.",
+    "tell": "the honk changes \u2014 lower, faster \u2014 and the neck drops level with the ground.",
     "butcher": {
       "feather": 8,
       "bone": 2
     },
-    "diseaseVector": "Raw waterfowl carries salmonella. Cook it through."
+    "diseaseVector": "Raw waterfowl carries salmonella. Cook it through.",
+    "common": true
   },
   {
     "id": "american_woodcock",
@@ -696,21 +715,22 @@
     "knowledgeLevels": {
       "1": "Woodcock. You will walk past ten of these before you see one. The leaves ARE the bird.",
       "2": "Parts: tiny, but the breast is the classic. Hard to find, easy to lose.",
-      "3": "Hunt: it sits until you're nearly on top of it, then explodes from under your feet — you get one fast shot. Sweep likely patches at dusk.",
-      "4": "Mastery: at dusk males do the sky-dance — spiral up, twittering down. Follow the sound to the singing ground, and you'll find them all spring."
+      "3": "Hunt: it sits until you're nearly on top of it, then explodes from under your feet \u2014 you get one fast shot. Sweep likely patches at dusk.",
+      "4": "Mastery: at dusk males do the sky-dance \u2014 spiral up, twittering down. Follow the sound to the singing ground, and you'll find them all spring."
     },
-    "unknown": "leaf litter that wasn't leaves — a whir of wings from under your feet",
-    "emoji": "🐦",
+    "unknown": "leaf litter that wasn't leaves \u2014 a whir of wings from under your feet",
+    "emoji": "\ud83d\udc26",
     "behavior": "camouflaged",
-    "behaviorDesc": "Perfect leaf-litter camouflage. It sits still until you're right on top of it — then explodes upward in a whir of wings. One fast shot, or it's gone.",
+    "behaviorDesc": "Perfect leaf-litter camouflage. It sits still until you're right on top of it \u2014 then explodes upward in a whir of wings. One fast shot, or it's gone.",
     "fleeDifficulty": "very_hard",
-    "huntText": "The leaves move — no, the leaves FLY. A whir of wings from under your boots, twisting away through the brush. That was a bird. That was always a bird.",
-    "killText": "About {kcal} kcal — a mouthful of the classic. Hard to find, easy to lose, worth the one fast shot.",
+    "huntText": "The leaves move \u2014 no, the leaves FLY. A whir of wings from under your boots, twisting away through the brush. That was a bird. That was always a bird.",
+    "killText": "About {kcal} kcal \u2014 a mouthful of the classic. Hard to find, easy to lose, worth the one fast shot.",
     "tell": "nothing. That is the tell. The leaf litter is a little too still, a little too bird-shaped.",
     "butcher": {
       "feather": 2
     },
-    "diseaseVector": "Low risk, but raw is raw. Cook it through."
+    "diseaseVector": "Low risk, but raw is raw. Cook it through.",
+    "common": true
   },
   {
     "id": "north_american_beaver",
@@ -729,24 +749,25 @@
       "bow"
     ],
     "knowledgeLevels": {
-      "1": "Beaver. The tail-slap is the loudest sound in the wetland — and your hunt ending.",
+      "1": "Beaver. The tail-slap is the loudest sound in the wetland \u2014 and your hunt ending.",
       "2": "Parts: meat (rich), pelt (the warmest fur in North America), castor glands (trade, medicine).",
-      "3": "Hunt: the slap means it saw you — it dives and it's gone. Strike before the tail rises, or trap the slide at dusk.",
-      "4": "Mastery: beavers follow runs — muddy slides into the water. Trap the slide, not the lodge. And the slap warns every animal on the water: hunt beaver last."
+      "3": "Hunt: the slap means it saw you \u2014 it dives and it's gone. Strike before the tail rises, or trap the slide at dusk.",
+      "4": "Mastery: beavers follow runs \u2014 muddy slides into the water. Trap the slide, not the lodge. And the slap warns every animal on the water: hunt beaver last."
     },
     "unknown": "a broad dark shape on the bank, flat tail dragging",
-    "emoji": "🦫",
+    "emoji": "\ud83e\uddab",
     "behavior": "sentinel",
-    "behaviorDesc": "Works the bank, always near water. The moment it clocks you, the flat tail SLAPS the water — crack like a rifle — and it dives. The slap warns everything nearby.",
+    "behaviorDesc": "Works the bank, always near water. The moment it clocks you, the flat tail SLAPS the water \u2014 crack like a rifle \u2014 and it dives. The slap warns everything nearby.",
     "fleeDifficulty": "very_hard",
-    "huntText": "CRACK. The tail hits the water like a gunshot and the beaver is gone — just spreading rings. Every animal on the creek heard that. Your hunt is over.",
-    "killText": "About {kcal} kcal — rich meat, and the warmest fur in North America. The castor glands are trade goods; the slap was the price of admission.",
-    "tell": "the flat tail lifts clear of the water — the slap is already decided.",
+    "huntText": "CRACK. The tail hits the water like a gunshot and the beaver is gone \u2014 just spreading rings. Every animal on the creek heard that. Your hunt is over.",
+    "killText": "About {kcal} kcal \u2014 rich meat, and the warmest fur in North America. The castor glands are trade goods; the slap was the price of admission.",
+    "tell": "the flat tail lifts clear of the water \u2014 the slap is already decided.",
     "butcher": {
       "hide": 2,
       "bone": 2
     },
-    "diseaseVector": "Beavers swim in giardia water and can carry tularemia. Cook the meat through."
+    "diseaseVector": "Beavers swim in giardia water and can carry tularemia. Cook the meat through.",
+    "common": true
   },
   {
     "id": "bobcat",
@@ -767,22 +788,23 @@
     "knowledgeLevels": {
       "1": "Bobcat. It is not prey. It is deciding whether you are.",
       "2": "Parts: meat (lean, gamey), pelt (spotted, valuable). Claws do the talking up close.",
-      "3": "Hunt: it circles. Backing away invites the chase; standing your ground bores it. Strike when it commits — miss, and the claws come out.",
-      "4": "Mastery: it's an ambush hunter — it hates a fair fight. Noise, size, confidence: make yourself expensive and it picks easier math. Never run."
+      "3": "Hunt: it circles. Backing away invites the chase; standing your ground bores it. Strike when it commits \u2014 miss, and the claws come out.",
+      "4": "Mastery: it's an ambush hunter \u2014 it hates a fair fight. Noise, size, confidence: make yourself expensive and it picks easier math. Never run."
     },
     "unknown": "tufted ears and yellow eyes in the brush, circling",
-    "emoji": "🐱",
+    "emoji": "\ud83d\udc31",
     "behavior": "stalker",
     "behaviorDesc": "It stalks YOU. Circles closer each turn, yellow eyes fixed. Run and it chases; hold your ground and it loses interest. Strike true or wear the claws.",
     "fleeDifficulty": "dangerous",
-    "huntText": "Yellow eyes. It doesn't bolt — it pads closer, unhurried, like it has already done the math on you. You are not hunting. You are being hunted.",
-    "killText": "About {kcal} kcal — lean, gamey. The spotted pelt is valuable. It did the math on you once; it won’t again.",
-    "tell": "the circling stops — it faces you square, ears flat, weight forward.",
+    "huntText": "Yellow eyes. It doesn't bolt \u2014 it pads closer, unhurried, like it has already done the math on you. You are not hunting. You are being hunted.",
+    "killText": "About {kcal} kcal \u2014 lean, gamey. The spotted pelt is valuable. It did the math on you once; it won\u2019t again.",
+    "tell": "the circling stops \u2014 it faces you square, ears flat, weight forward.",
     "butcher": {
       "hide": 1,
       "bone": 2
     },
-    "diseaseVector": "Wild cats can carry toxoplasma — cook through. (If you're pregnant, let someone else gut it.)"
+    "diseaseVector": "Wild cats can carry toxoplasma \u2014 cook through. (If you're pregnant, let someone else gut it.)",
+    "common": true
   },
   {
     "id": "nine_banded_armadillo",
@@ -803,23 +825,24 @@
     ],
     "knowledgeLevels": {
       "1": "An armadillo. Armor-plated, snout down, digging for grubs.",
-      "2": "Parts: the whole body under the shell; the shell itself is not food. Startle it and it jumps straight UP — then runs for the nearest hole.",
-      "3": "Uses: real meat, poor man's pork, and it walks right up to you half the time. Corner it against a bank at night with a light, grab the tail — it cannot bite you from there. Cook it THOROUGH; armadillos can carry leprosy, and heat is the cure.",
+      "2": "Parts: the whole body under the shell; the shell itself is not food. Startle it and it jumps straight UP \u2014 then runs for the nearest hole.",
+      "3": "Uses: real meat, poor man's pork, and it walks right up to you half the time. Corner it against a bank at night with a light, grab the tail \u2014 it cannot bite you from there. Cook it THOROUGH; armadillos can carry leprosy, and heat is the cure.",
       "4": "Mastery: they follow the same grub trails night after night. Find the rooted-up litter, set a snare on the trail, and the armadillo delivers itself."
     },
-    "emoji": "🛡️",
+    "emoji": "\ud83d\udee1\ufe0f",
     "unknown": "something armored crashing through the leaves at night",
     "behavior": "armored",
-    "behaviorDesc": "Roots for grubs, head down, deaf to the world. Startle it and it leaps straight up — a vertical jump that startles back — then bolts for the nearest burrow. Cornered against a bank or a log, it has no plan B.",
+    "behaviorDesc": "Roots for grubs, head down, deaf to the world. Startle it and it leaps straight up \u2014 a vertical jump that startles back \u2014 then bolts for the nearest burrow. Cornered against a bank or a log, it has no plan B.",
     "fleeDifficulty": "easy",
-    "huntText": "A clanking in the leaf litter — an armadillo, snout down, digging for grubs. It has not noticed you. It will not notice you until it is far too late.",
-    "tell": "stops clanking — a pink ear rises above the litter, swiveling.",
+    "huntText": "A clanking in the leaf litter \u2014 an armadillo, snout down, digging for grubs. It has not noticed you. It will not notice you until it is far too late.",
+    "tell": "stops clanking \u2014 a pink ear rises above the litter, swiveling.",
     "butcher": {
       "shell": 1,
       "bone": 1
     },
-    "killText": "About {kcal} kcal — poor man’s pork. Cook it through; the shell makes a bowl if you’re patient.",
-    "diseaseVector": "Armadillos can carry leprosy — rare, real. Wear gloves gutting; cook through."
+    "killText": "About {kcal} kcal \u2014 poor man\u2019s pork. Cook it through; the shell makes a bowl if you\u2019re patient.",
+    "diseaseVector": "Armadillos can carry leprosy \u2014 rare, real. Wear gloves gutting; cook through.",
+    "common": true
   },
   {
     "id": "american_crow",
@@ -840,22 +863,23 @@
     ],
     "knowledgeLevels": {
       "1": "A crow. Black, loud, watching you.",
-      "2": "Crows remember faces for years and tell each other. They mob hawks, owls, and anything else they do not like — loudly, for a quarter mile.",
-      "3": "Uses: stringy meat in a famine, but the real use is reading them. A crow racket that moves is a crow following something — a predator, a person, a monster. The crows know before you do.",
-      "4": "Mastery: never hunt where the crows are watching unless you want everything in earshot to know exactly where you are. And when the crows go suddenly, completely silent — look up, look around, and get your back to something."
+      "2": "Crows remember faces for years and tell each other. They mob hawks, owls, and anything else they do not like \u2014 loudly, for a quarter mile.",
+      "3": "Uses: stringy meat in a famine, but the real use is reading them. A crow racket that moves is a crow following something \u2014 a predator, a person, a monster. The crows know before you do.",
+      "4": "Mastery: never hunt where the crows are watching unless you want everything in earshot to know exactly where you are. And when the crows go suddenly, completely silent \u2014 look up, look around, and get your back to something."
     },
     "unknown": "a black shape cawing from the treetops",
-    "emoji": "🐦‍⬛",
+    "emoji": "\ud83d\udc26\u200d\u2b1b",
     "behavior": "sentinel_mob",
-    "behaviorDesc": "Mobs anything it dislikes — hawks, owls, you. The racket carries a quarter mile and every animal in earshot hears it. Crows give you away. They also give monsters away, which is worth more.",
+    "behaviorDesc": "Mobs anything it dislikes \u2014 hawks, owls, you. The racket carries a quarter mile and every animal in earshot hears it. Crows give you away. They also give monsters away, which is worth more.",
     "fleeDifficulty": "hard",
-    "huntText": "A crow spots you and the cawing starts — three sharp barks, then the whole treeline joins in. Everything within earshot now knows exactly where you are standing.",
-    "tell": "the cawing shifts pitch and moves — the whole treeline is tracking you now.",
+    "huntText": "A crow spots you and the cawing starts \u2014 three sharp barks, then the whole treeline joins in. Everything within earshot now knows exactly where you are standing.",
+    "tell": "the cawing shifts pitch and moves \u2014 the whole treeline is tracking you now.",
     "butcher": {
       "feather": 4
     },
-    "killText": "About {kcal} kcal — stringy and dark. Famine meat; the feathers are the real prize.",
-    "diseaseVector": "Crows don't give you West Nile from the meat (that's mosquitoes), but raw is raw. Cook through."
+    "killText": "About {kcal} kcal \u2014 stringy and dark. Famine meat; the feathers are the real prize.",
+    "diseaseVector": "Crows don't give you West Nile from the meat (that's mosquitoes), but raw is raw. Cook through.",
+    "common": true
   },
   {
     "id": "bluegill",
@@ -875,20 +899,21 @@
     ],
     "knowledgeLevels": {
       "1": "A bluegill. Small, blue-flecked, everywhere in warm water.",
-      "2": "Parts: the whole panfish — fry it whole, eat around the bones. In warm months the males fan circular beds in the shallows and refuse to leave them.",
-      "3": "Uses: a worm on a line over a bed is nearly unfair. The small ones are sweet; the big bulls are dinner. Hands work too — move slow, pin it to the bottom.",
+      "2": "Parts: the whole panfish \u2014 fry it whole, eat around the bones. In warm months the males fan circular beds in the shallows and refuse to leave them.",
+      "3": "Uses: a worm on a line over a bed is nearly unfair. The small ones are sweet; the big bulls are dinner. Hands work too \u2014 move slow, pin it to the bottom.",
       "4": "Mastery: bed-fishing in the spawn feeds a village. Take the bulls, leave a few beds alone, and the creek refills itself."
     },
     "unknown": "a flash of blue-green in the shallows",
-    "emoji": "🐟",
+    "emoji": "\ud83d\udc1f",
     "behavior": "bedding",
     "behaviorDesc": "In warm months the males fan circular beds in the shallows and guard them against everything. A fish sitting on a visible bed is a fish that has chosen not to run.",
     "fleeDifficulty": "easy",
-    "huntText": "Circles on the creek bottom — bluegill beds, each one guarded by a fish that refuses to leave. You could almost reach down and pick one up.",
+    "huntText": "Circles on the creek bottom \u2014 bluegill beds, each one guarded by a fish that refuses to leave. You could almost reach down and pick one up.",
     "tell": "the circles on the bottom are fresh, edges sharp, a shadow hovering over each.",
     "butcher": {},
-    "killText": "About {kcal} kcal — sweet panfish. Fry whole, eat around the bones.",
-    "diseaseVector": "Low risk — cook it through anyway."
+    "killText": "About {kcal} kcal \u2014 sweet panfish. Fry whole, eat around the bones.",
+    "diseaseVector": "Low risk \u2014 cook it through anyway.",
+    "common": true
   },
   {
     "id": "gray_rat_snake",
@@ -909,20 +934,21 @@
       "stick"
     ],
     "knowledgeLevels": {
-      "1": "A big gray snake. Rattler until proven otherwise — treat it that way.",
+      "1": "A big gray snake. Rattler until proven otherwise \u2014 treat it that way.",
       "2": "Proof: no rattle, no triangular head, no pit between eye and nostril. Rat snake. It eats rats and it wants nothing to do with you.",
-      "3": "Uses: good meat, cooks like eel. Pin it behind the head with a forked stick — it will musk and bite, but the bite is a scratch. Freezes when spotted, counting on you to mistake stillness for a stick.",
-      "4": "Mastery: where rat snakes hunt, rodents run thick — which means grain, which means people were storing food here. A snake is a signpost. Follow the sign."
+      "3": "Uses: good meat, cooks like eel. Pin it behind the head with a forked stick \u2014 it will musk and bite, but the bite is a scratch. Freezes when spotted, counting on you to mistake stillness for a stick.",
+      "4": "Mastery: where rat snakes hunt, rodents run thick \u2014 which means grain, which means people were storing food here. A snake is a signpost. Follow the sign."
     },
-    "emoji": "🐍",
-    "unknown": "a thick gray coil across the trail — frozen, head raised an inch, tasting the air. Rattler until proven otherwise",
+    "emoji": "\ud83d\udc0d",
+    "unknown": "a thick gray coil across the trail \u2014 frozen, head raised an inch, tasting the air. Rattler until proven otherwise",
     "behavior": "constrictor",
-    "behaviorDesc": "Nonvenomous. Kills rats by wrapping and waiting. Freezes when spotted, betting everything on being mistaken for a stick. Grabbed, it musks and bites — but the bite is a scratch, and the musk washes off.",
+    "behaviorDesc": "Nonvenomous. Kills rats by wrapping and waiting. Freezes when spotted, betting everything on being mistaken for a stick. Grabbed, it musks and bites \u2014 but the bite is a scratch, and the musk washes off.",
     "fleeDifficulty": "medium",
-    "huntText": "A gray coil on the log, thick as your wrist. No rattle sounds — but your hands do not believe that yet. It has not moved. It is hoping you walk past.",
-    "tell": "goes utterly still — not a scale moving.",
+    "huntText": "A gray coil on the log, thick as your wrist. No rattle sounds \u2014 but your hands do not believe that yet. It has not moved. It is hoping you walk past.",
+    "tell": "goes utterly still \u2014 not a scale moving.",
     "butcher": {},
-    "killText": "About {kcal} kcal — cooks like eel. The meat is clean; the musk washes off the hands, not the memory.",
-    "diseaseVector": "Reptiles carry salmonella. Cook it through."
+    "killText": "About {kcal} kcal \u2014 cooks like eel. The meat is clean; the musk washes off the hands, not the memory.",
+    "diseaseVector": "Reptiles carry salmonella. Cook it through.",
+    "common": true
   }
 ]
