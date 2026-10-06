@@ -62,7 +62,7 @@
       "interact": "scavenge",
       "cost": 20,
       "modifiers": {
-        "loot": {"values": ["none", "cans", "tools", "cloth"], "weights": [0.55, 0.15, 0.2, 0.1], "visible": false, "discover": "search"},
+        "loot": {"values": ["none", "cans", "tools", "cloth"], "weights": [0.4, 0.3, 0.2, 0.1], "visible": false, "discover": "search"},
         "stability": {"values": ["stable", "shifting"], "weights": [0.7, 0.3], "visible": true}
       },
       "synthesis": "Search reveals loot. Shifting = risk of injury."

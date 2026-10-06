@@ -1231,7 +1231,6 @@
   "name": "Arrow",
   "class": "ammo",
   "flavor": "straight, fletched, meant for something living",
-  "kg": 0.05,
   "craftable": true,
   "materials": {
    "stick": 1

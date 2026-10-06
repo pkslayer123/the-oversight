@@ -2140,8 +2140,8 @@
     "attack": {
       "name": "You Call That A Swing?",
       "damage": [
-        8,
-        12
+        6,
+        10
       ],
       "telegraph": "It leans in, grinning. \"Oh, this ought to be good.\"",
       "pattern": {
