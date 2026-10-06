@@ -10620,6 +10620,7 @@
     // Visitors (Haven panel). Trade opens the cart; ware buys are real exchanges.
     document.querySelectorAll('[data-visitor-act]').forEach(b => b.onclick = () => { Game.visitorInteract(b.dataset.visitorAct, b.dataset.how); refresh(); });
     document.querySelectorAll('[data-ware-buy]').forEach(b => b.onclick = () => { const p = b.dataset.wareBuy.split(':'); Game.visitorBuyWare(p[0], +p[1]); refresh(); });
+    document.querySelectorAll('[data-ware-sell]').forEach(b => b.onclick = () => { const p = b.dataset.wareSell.split(':'); Game.traderSell(p[0], +p[1]); refresh(); });
     // Membership: remote applications + shelter building (Haven panel).
     document.querySelectorAll('[data-mship-accept]').forEach(b => b.onclick = () => { Game.acceptApplication(b.dataset.mshipAccept); refresh(); });
     document.querySelectorAll('[data-mship-refuse]').forEach(b => b.onclick = () => { Game.refuseApplication(b.dataset.mshipRefuse); refresh(); });

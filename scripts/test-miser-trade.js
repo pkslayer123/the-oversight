@@ -72,7 +72,7 @@ const unitsOf = (re) => { const it = (s().inventory || []).find(i => re.test(i.n
   ok('cart line says something', said.some(t => /side panel down/.test(t)));
   const html2 = Game.visitorHtml();
   ok('buy buttons render per ware', (html2.match(/data-ware-buy/g) || []).length === 3);
-  ok('done button replaces trade button', html2.includes('data-how="done"'));
+  ok('step-back button replaces trade button', html2.includes('data-how="shelve"'));
 
   // 3. news purchase: perishable-first payment
   said = [];

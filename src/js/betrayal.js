@@ -20,6 +20,12 @@
 //   - visitorWares(vis)
 //   - traderPay(kcal)
 //   - visitorBuyWare(visId, idx)
+//   - traderSell(visId, packIdx)
+//   - traderSellStock(vis)
+//   - traderAppraise(vis, it) -> { verdict, pricePerUnit, line }
+//   - traderKnowsItem(vis, it)
+//   - traderItemKey(it)
+//   - seedTraderKnowledge() -> { staples, specialties }
 //   - visitorHtml()
 //   - visitorDaily()
 // rules:
@@ -2013,6 +2019,15 @@
       day: this.state.scholar.day,
       leavesDay: this.state.scholar.day + 1, // traders don't wait forever (see visitorDaily)
     };
+    // TRADER KNOWLEDGE (Steve 2026-10-06): the trader is a person with
+    // knowledge like anyone else. His appraisal of YOUR goods is gated on
+    // what HE knows. Common staples + 3 random specialties he "knows a buyer
+    // for" (the potential-recognition beat).
+    if (type === 'trader') {
+      const tk = this.seedTraderKnowledge() || {};
+      visitor.traderKnows = tk.staples || [];
+      visitor.traderSpecialties = tk.specialties || [];
+    }
     v.visitors = v.visitors || [];
     v.visitors.push(visitor);
     const lines = {
@@ -2038,9 +2053,20 @@
     } else if (how === 'trade' && vis.type === 'trader') {
       // THE TRADER'S CART (Steve 2026-10-06): the old beat said "You trade"
       // but no goods moved. Now the cart opens for real — wares below.
-      vis.trading = true;
+      vis.trading = true; vis.selling = false;
       this.visitorWares(vis);
       this.say(`The trader swings the cart's side panel down. Three things, laid out neat on a blanket. "Finished food only — I can't sell a raw turkey at the next village. The good stuff goes first to whoever's hungry for it."`);
+      return true;
+    } else if (how === 'sell' && vis.type === 'trader') {
+      // SELL TO TRADER (Steve 2026-10-06): he appraises YOUR goods, and his
+      // appraisal is knowledge-gated like anyone's brain. You see why the
+      // price is what it is.
+      vis.selling = true; vis.trading = false;
+      this.say(`"Show me what you've got." The trader folds their arms and waits.`);
+      return true;
+    } else if (how === 'shelve' && vis.type === 'trader') {
+      vis.trading = false; vis.selling = false;
+      this.say(`You step back from the cart. The trader waits — the road can wait a little.`);
       return true;
     } else if (how === 'done' && vis.type === 'trader') {
       this.say(`The trader folds the blanket back over the cart. "Pleasure doing almost-business. I'll be gone by morning — the road doesn't wait."`);
@@ -2060,6 +2086,120 @@
     return true;
   },
 
+  // seedTraderKnowledge(): what a road trader plausibly knows. Staples are
+  // common road foods; specialties are 3 things he "knows a buyer for" —
+  // the potential-recognition beat (Steve 2026-10-06).
+  seedTraderKnowledge() {
+    const staples = ['dandelion', 'dried beans', 'canned beans', 'hardtack', 'trail mix'];
+    const specialties = [];
+    try {
+      const foods = (this.data.items || []).filter(i => i.class === 'food' && i.id);
+      const pool = foods.slice();
+      for (let n = 0; n < 3 && pool.length; n++) {
+        const f = pool.splice(Math.floor(R() * pool.length), 1)[0];
+        if (f && !staples.includes(f.id)) specialties.push(f.id);
+      }
+      const plants = (this.data.plants || []).filter(p => p.id);
+      const ppool = plants.slice();
+      for (let n = 0; n < 2 && ppool.length; n++) {
+        const p = ppool.splice(Math.floor(R() * ppool.length), 1)[0];
+        if (p && !staples.includes(p.id) && !specialties.includes(p.id)) staples.push(p.id);
+      }
+    } catch (e) {}
+    return { staples, specialties };
+  },
+  // traderItemKey: identity for knowledge checks. plantId/itemId when the
+  // item carries one, else the plain name.
+  traderItemKey(it) {
+    if (!it) return '';
+    return it.plantId || it.itemId || String(it.name || '').toLowerCase().trim();
+  },
+  // traderKnowsItem: the trader's brain, knowledge-gated like anyone's.
+  // Common knowledge: all meat (everyone on the road knows meat rots) and
+  // all preserved trade goods. The rest is what this trader has actually seen.
+  traderKnowsItem(vis, it) {
+    if (!it) return false;
+    if (it.foodKind === 'meat') return true;
+    if (/smoked|dried|salted|pickled|cured/i.test(String(it.prep || it.name || ''))) return true;
+    const key = this.traderItemKey(it);
+    // specialties count as known — if he knows a buyer, he knows the item.
+    return (vis.traderKnows || []).includes(key) || (vis.traderSpecialties || []).includes(key);
+  },
+  // traderAppraise(vis, it): knowledge-gated appraisal. Returns
+  // { verdict, pricePerUnit, line } — the player always sees WHY the price
+  // is what it is. Verdicts: refuse | decline | cautious | discount |
+  // fair | prime | potential. (Steve 2026-10-06: "if you don't know, it
+  // doesn't show" applies to the trader's brain too.)
+  traderAppraise(vis, it) {
+    const day = (this.state.scholar || {}).day || 0;
+    const name = it.name || 'it';
+    const base = Math.max(0, Math.round(it.kcalEach || 0));
+    const spoiled = it.spoilDay != null && it.spoilDay <= day;
+    const key = this.traderItemKey(it);
+    // Obviously spoiled meat: refused outright. He smells it — common knowledge.
+    if (it.foodKind === 'meat' && spoiled) {
+      return { verdict: 'refuse', pricePerUnit: 0,
+        line: `He sniffs the ${name} and recoils. "That's turned, friend. I won't touch rotten meat — and neither should you."` };
+    }
+    if (!this.traderKnowsItem(vis, it)) {
+      // Ignorance is honest: a cautious flat offer for plausible food,
+      // otherwise a clean decline. He never confidently prices the unknown.
+      if (it.edible !== false && (it.foodKind || (it.kcalEach || 0) > 0)) {
+        const p = Math.max(5, Math.round(base * 0.4));
+        return { verdict: 'cautious', pricePerUnit: p,
+          line: `He turns the ${name} over, frowning. "Don't know this one. I'll give you ${p} a piece — my risk, my price."` };
+      }
+      return { verdict: 'decline', pricePerUnit: 0,
+        line: `He shakes his head at the ${name}. "Never seen it. Don't know it, don't buy it."` };
+    }
+    if (spoiled) {
+      const p = Math.max(5, Math.round(base * 0.5));
+      return { verdict: 'discount', pricePerUnit: p,
+        line: `He sniffs the ${name}, shakes his head. "That's turned. Half price — ${p} a piece, take it or leave it."` };
+    }
+    // Potential: he knows a buyer for this. The fun part — a knowledgeable
+    // trader spotting value you missed.
+    if ((vis.traderSpecialties || []).includes(key)) {
+      const p = Math.round(base * 1.5);
+      return { verdict: 'potential', pricePerUnit: p,
+        line: `His eyebrows go up at the ${name}. "Oh — I know a woman two valleys over who pays double for these. ${p} a piece. Don't tell her I said that."` };
+    }
+    if (/smoked|dried|salted|pickled|cured/i.test(String(it.prep || ''))) {
+      const p = Math.round(base * 1.25);
+      return { verdict: 'prime', pricePerUnit: p,
+        line: `He nods approvingly at the ${name}. "Proper trail food, this. ${p} a piece."` };
+    }
+    return { verdict: 'fair', pricePerUnit: base,
+      line: `"${this.capFirst(name)} — ${base} a piece. Fair's fair."` };
+  },
+  // traderSellStock(vis): pack food stacks with appraisals, for the sell view.
+  traderSellStock(vis) {
+    const inv = this.state.scholar.inventory || [];
+    return inv.map((it, idx) => ({ idx, it, ap: this.traderAppraise(vis, it) }))
+      .filter(e => (e.it.kcalEach || 0) > 0 && (e.it.units || 0) > 0);
+  },
+  // traderSell(visId, packIdx): sell the whole stack. The price lands on the
+  // trader's tab as credit toward his wares.
+  traderSell(visId, packIdx) {
+    const v = this.state.village;
+    const vis = (v.visitors || []).find(x => x.id === visId);
+    if (!vis || vis.type !== 'trader') return null;
+    const inv = this.state.scholar.inventory || [];
+    const it = inv[packIdx];
+    if (!it || (it.units || 0) <= 0) return null;
+    const ap = this.traderAppraise(vis, it);
+    if (ap.verdict === 'refuse' || ap.verdict === 'decline') {
+      this.say(ap.line);
+      return null;
+    }
+    const units = it.units, total = ap.pricePerUnit * units;
+    vis.credit = (vis.credit || 0) + total;
+    const name = it.name || 'it';
+    inv.splice(packIdx, 1);
+    this.say(`${ap.line} Done — ${units}× ${name} for ${total} kcal on your tab.`);
+    try { this.observe('trade', { noTrust: true }); } catch (e) {}
+    return true;
+  },
   // ---------- 8b. THE TRADER'S CART (Steve 2026-10-06) ----------
   // The trader buys FINISHED food from your pack (perishable-first: they eat
   // on the road; rot becomes their problem, not yours) and sells three wares.
@@ -2148,20 +2288,30 @@
     const w = (this.visitorWares(vis) || [])[idx];
     if (!w) return null;
     if (w.sold) { this.say('Already sold. The blanket has a bare patch where it sat.'); return null; }
-    const pay = this.traderPay(w.price);
+    // TAB FIRST (Steve 2026-10-06): credit from selling to the trader spends
+    // before the pack does. If the pack can't cover the remainder, the tab
+    // spend is rolled back — no partial purchases.
+    let price = w.price;
+    const tabUsed = Math.min(vis.credit || 0, price);
+    vis.credit = (vis.credit || 0) - tabUsed;
+    price -= tabUsed;
+    let pay = { ok: true, taken: [], paid: 0 };
+    if (price > 0) pay = this.traderPay(price);
     if (!pay.ok) {
-      this.say(`The trader shakes their head. "${w.price} kcal of finished food for the ${w.name} — and you're about ${pay.short} short. The smoked stuff counts extra, if you've got any."`);
+      vis.credit = (vis.credit || 0) + tabUsed; // roll back
+      this.say(`The trader shakes their head. "${w.price} kcal of finished food for the ${w.name} — and you're about ${pay.short} short${tabUsed ? ` even after your ${tabUsed} tab` : ''}. The smoked stuff counts extra, if you've got any."`);
       return null;
     }
     w.sold = true;
     const took = pay.taken.map(t => `${t.units}× ${t.name}${t.preserved ? ' (preserved)' : ''}`).join(', ');
+    const tabNote = tabUsed ? ` ${tabUsed} off your tab${took ? ',' : ''}` : '';
     if (w.kind === 'alien') {
       this.alienLootGrant(w.itemId);
-      this.say(`Done. The ${w.name} is yours — ${took} for it. The trader watches you turn it over. "No idea what it does. You'll figure it out — everybody does, eventually." (Try using it.)`);
+      this.say(`Done. The ${w.name} is yours —${tabNote}${took ? ' ' + took : ''} for it. The trader watches you turn it over. "No idea what it does. You'll figure it out — everybody does, eventually." (Try using it.)`);
     } else if (w.kind === 'tool') {
       const def = (this.data.items || []).find(i => i.id === w.itemId) || {};
       (this.state.scholar.inventory = this.state.scholar.inventory || []).push({ itemId: w.itemId, name: w.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
-      this.say(`Done. The ${w.name} is yours — ${took} for it. Good steel has a way of paying for itself.`);
+      this.say(`Done. The ${w.name} is yours —${tabNote}${took ? ' ' + took : ''} for it. Good steel has a way of paying for itself.`);
     } else {
       // news: real village names from the world, a road tip, word spreads
       const bs = this.betrayalState();
@@ -2186,9 +2336,13 @@
       const leaving = vis.leavesDay != null && vis.leavesDay <= d ? ' — leaving tonight' : '';
       let acts = '';
       if (vis.type === 'trader') {
-        acts = vis.trading
-          ? `<button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="done">Done trading</button>`
-          : `<button class="btn sm" data-visitor-act="${vis.id}" data-how="trade">🛒 Trade</button>`;
+        if (vis.trading) {
+          acts = `<button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="shelve">Step back</button>`;
+        } else if (vis.selling) {
+          acts = `<button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="shelve">Done selling</button>`;
+        } else {
+          acts = `<button class="btn sm" data-visitor-act="${vis.id}" data-how="trade">🛒 Buy</button> <button class="btn sm" data-visitor-act="${vis.id}" data-how="sell">💰 Sell</button>`;
+        }
         acts += ` <button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="welcome">Welcome</button> <button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="away">Turn away</button>`;
       } else {
         acts = `<button class="btn sm" data-visitor-act="${vis.id}" data-how="welcome">Welcome</button>`;
@@ -2197,10 +2351,20 @@
       }
       let cart = '';
       if (vis.type === 'trader' && vis.trading) {
-        cart = '<br>🛒 <b>The cart is open.</b> Finished food only — the perishable stuff goes first, preserved counts extra.<br>' +
+        cart = `<br>🛒 <b>The cart is open.</b> Finished food only — the perishable stuff goes first, preserved counts extra.${(vis.credit || 0) > 0 ? ` Your tab: <b>${vis.credit} kcal</b>.` : ''}<br>` +
           this.visitorWares(vis).map((w, i) =>
             `<span class="small">· <b>${w.name}</b> — ${w.price} kcal${w.sold ? ' <i>(sold)</i>' : ` <button class="btn ghost sm" data-ware-buy="${vis.id}:${i}">Buy</button>`}<br><span style="opacity:.7">${w.blurb}</span></span>`
           ).join('<br>');
+      }
+      if (vis.type === 'trader' && vis.selling) {
+        // SELL VIEW (Steve 2026-10-06): every stack appraised in the open,
+        // with the trader's reasoning. His brain is knowledge-gated too.
+        const stock = this.traderSellStock(vis);
+        const rows = stock.length ? stock.map(e => {
+          const sellable = e.ap.pricePerUnit > 0;
+          return `<span class="small">· <b>${e.it.name}</b> ×${e.it.units} — ${sellable ? `<b>${e.ap.pricePerUnit} kcal</b> each` : '<i>no sale</i>'}${sellable ? ` <button class="btn ghost sm" data-ware-sell="${vis.id}:${e.idx}">Sell</button>` : ''}<br><span style="opacity:.7">${e.ap.line}</span></span>`;
+        }).join('<br>') : '<span class="small">Nothing in your pack worth selling.</span>';
+        cart = `<br>💰 <b>Selling.</b> He appraises everything in the open. Your tab: <b>${vis.credit || 0} kcal</b>.<br>` + rows;
       }
       return `<p class="small" style="margin-top:8px"><b>🧳 Visitor:</b> ${this.capFirst(vis.name)} (${vis.type})${leaving}${cart}<br>${acts}</p>`;
     }).join('');
