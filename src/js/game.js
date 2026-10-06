@@ -16943,9 +16943,18 @@
       // Monster's turn: highlight, act, pause for drama
       f.actingKey = key;
       try {
+        // Record start position for movement trail
+        c._turnStartMx = c.mx; c._turnStartMy = c.my;
         if (typeof window !== 'undefined')
           window.dispatchEvent(new CustomEvent('tb-turn', {
-            detail: { phase: 'monster', key, name: c.name || 'Monster' }
+            detail: {
+              phase: 'monster', key,
+              name: c.name || 'Monster',
+              speed: c.speed || 3,
+              // Turn order position for "X acts next" display
+              turnPos: f.turnIdx + 1,
+              turnTotal: f.order.length,
+            }
           }));
       } catch (e) {}
       try { this.tbMonsterTurn(c); } catch (e) {}
