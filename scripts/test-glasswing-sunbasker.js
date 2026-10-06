@@ -92,6 +92,7 @@ function monsterActs() {
 (async () => {
   await Game.init();
   Game.genDetail = () => flatGrid();
+  let m;
 
   // --- 0. codex no longer lies about 'single' ---
   ok("tbPatternDesc('single') is not the area lie",

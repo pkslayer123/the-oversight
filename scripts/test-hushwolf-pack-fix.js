@@ -162,33 +162,33 @@ function monsterActs() {
   }
 
   // ============ 3. HORN DEFLATE: breather text follows the cause ============
+  // (Roster note 2026-10-06: hype_horn was DELETED from monsters.json by
+  // 6943235 "Wave-2 roster" (cheap reskin of belltoad). No live fight can
+  // reach the horn breather — these are direct unit checks on the orphaned
+  // tbFifoBreather text logic, honestly labeled, so the night's text fix
+  // stays verified if the mechanic is ever salvaged. The stale
+  // 'motivationalspeaker' debug scenario (spawns hype_horn -> silently falls
+  // back to bulldozer) is flagged for the roster owner, not fixed here.)
+  function hornFighter() {
+    return { kind: 'monster', mdef: { id: 'hype_horn' }, name: 'the motivational speaker',
+      alive: true, fled: false, mx: 4, my: 4, beamPhase: 'deflate' };
+  }
   // 3a. Crowd deflate -> breather says stage fright, not spent encouragement
-  await Game.init();
-  Game.debugScenario('motivationalspeaker');
-  stripChaos(Game.state.scholar);
-  Game.canSee = () => true;
-  Game.startCombat('hype_horn');
   {
-    const m = Game.tbfight.fighters.find(x => Game.hornIs(x));
-    // Force crowd deflate: set hypeCooldown as the crowd branch does
+    const m = hornFighter();
     m.hypeCooldown = 2; m.hypeDeflateCrowd = true;
     Game.log = [];
-    Game.tbFifoBreather(m);
+    ok('crowd deflate: breather runs', Game.tbFifoBreather(m) === true);
     const said = (Game.log || []).join('\n');
     ok('crowd deflate breather: stage-fright text', /all those eyes|broke its nerve/i.test(said), said.slice(0, 120));
     ok('crowd deflate breather: NOT spent-encouragement text', !/encouragement took everything/i.test(said));
-    ok('crowd flag cleared when cooldown spent', m.hypeCooldown === 1 && m.hypeDeflateCrowd === true);
+    ok('crowd flag persists while cooldown ticks', m.hypeCooldown === 1 && m.hypeDeflateCrowd === true);
     Game.tbFifoBreather(m);
     ok('crowd flag cleared at zero', m.hypeCooldown === 0 && !m.hypeDeflateCrowd);
   }
   // 3b. Normal spent (post-detonation) -> breather says spent encouragement
-  await Game.init();
-  Game.debugScenario('motivationalspeaker');
-  stripChaos(Game.state.scholar);
-  Game.canSee = () => true;
-  Game.startCombat('hype_horn');
   {
-    const m = Game.tbfight.fighters.find(x => Game.hornIs(x));
+    const m = hornFighter();
     m.hypeCooldown = 1; // as the detonate branch sets it; no crowd flag
     Game.log = [];
     Game.tbFifoBreather(m);

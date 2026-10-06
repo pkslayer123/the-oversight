@@ -84,16 +84,12 @@ function endTurn() {
     ok('no more than 3 consecutive idle combat rounds', maxIdle <= 3, `maxIdle=${maxIdle}`);
   }
 
-  // --- 4. sibling: service_mimic (rush/no-telegraph) also engages on wait ---
-  for (let iter = 1; iter <= 3; iter++) {
-    await Game.init();
-    Game.debugScenario('customerservice');
-    const s = Game.state.scholar;
-    Game.canSee = () => true;
-    let waits = 0;
-    while (!Game.tbfight && waits < 12) { waits++; Game.doAction('wait'); }
-    ok(`service_mimic overworld wait -> combat (iter ${iter})`, !!Game.tbfight, `no combat after ${waits} waits`);
-  }
+  // --- 4. (REMOVED 2026-10-06): this section fought 'customerservice'
+  // (service_mimic), but service_mimic was DELETED from monsters.json by
+  // 6943235 "Wave-2 roster" — startCombat('service_mimic') silently fell back
+  // to monsters[0] = bulldozer, so the check was a false green on the wrong
+  // monster. The wait-engagement fix itself is covered by sections 1-3 above.
+  // If a rush/no-telegraph monster rejoins the roster, re-add a sibling here.
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
