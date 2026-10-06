@@ -507,17 +507,37 @@
     // UI marker for an item's food state.
     foodMarker(it) {
       if (!it) return '';
-      if (it.foodState === 'unknown') return '? unknown \u2014 not food yet';
-      if (it.foodState === 'in_shell') return 'needs shelling';
-      if (it.foodState === 'carcass') {
-        if (it.spoilDay !== undefined && it.spoilDay <= this.state.scholar.day) return 'spoiled — beyond cleaning';
-        const t = this.knowsTechnique('clean');
-        return t ? (this.hasCuttingTool() ? 'needs cleaning' : 'needs cleaning (no knife)') : 'needs cleaning (you don\'t know how)';
+      let m;
+      if (it.foodState === 'unknown') m = '? unknown \u2014 not food yet';
+      else if (it.foodState === 'in_shell') m = 'needs shelling';
+      else if (it.foodState === 'carcass') {
+        if (it.spoilDay !== undefined && it.spoilDay <= this.state.scholar.day) m = 'spoiled — beyond cleaning';
+        else {
+          const t = this.knowsTechnique('clean');
+          m = t ? (this.hasCuttingTool() ? 'needs cleaning' : 'needs cleaning (no knife)') : 'needs cleaning (you don\'t know how)';
+        }
       }
-      if (it.diseaseRisk) return '\u26A0\uFE0F Risky: ' + (it.diseaseRisk.note || 'raw');
-      if (it.foodState === 'preserved') return 'smoked \u2713';
-      if (it.foodState === 'cooked') return 'cooked';
-      if (it.needsCooking) return '\uD83C\uDF73 needs cooking';
+      else if (it.diseaseRisk) m = '\u26A0\uFE0F Risky: ' + (it.diseaseRisk.note || 'raw');
+      else if (it.foodState === 'preserved') m = 'smoked \u2713';
+      else if (it.foodState === 'cooked') m = 'cooked';
+      else if (it.needsCooking) m = '\uD83C\uDF73 needs cooking';
+      else m = '';
+      // SPOIL CLOCK (food feel 2026-10-06): food near its deadline says so —
+      // the player can see WHAT to eat first. Fully spoiled (left < 0) is
+      // flagged by the pack/pantry rows themselves ('⚠ spoiled' / '⚠ SPOILED'),
+      // so the marker speaks only for the countdown, never doubling the flag.
+      const clock = this.spoilClockShort(it);
+      return clock ? (m ? m + ' · ' + clock : clock) : m;
+    },
+
+    // spoilClockShort: the visible countdown for food near its spoilDay.
+    spoilClockShort(it) {
+      if (!it || it.spoilDay === undefined || it.spoilDay === null || it.spoilDay >= 9999) return '';
+      const left = it.spoilDay - this.state.scholar.day;
+      if (left < 0) return ''; // the UI rows flag spoiled items themselves
+      if (left === 0) return '\u26A0 SPOILING TODAY';
+      if (left === 1) return 'spoils tomorrow';
+      if (left === 2) return 'spoils in 2d';
       return '';
     },
 
@@ -1523,9 +1543,23 @@
       } catch (e) {}
       if (lost.length) {
         this.say(`Overnight, ${lost.join('; ')} went bad — beyond saving. You leave ${lost.length === 1 ? 'it' : 'them'} for the flies.`);
+        // LEGIBILITY (food feel 2026-10-06): the loss teaches its own fix.
+        // Fresh food keeps days, not weeks — smoking is the fiction's answer,
+        // and it's named once, only until the player learns it.
+        if (!this.knowsTechnique('preserve')) {
+          this.say('Fresh food keeps days, not weeks. Smoke it over a fire to make it last.');
+        }
       }
       if (lostPantry.length) {
-        this.say(`The village threw out spoiled stores: ${[...new Set(lostPantry)].join(', ')}. Someone mutters about waste. (pantry)`);
+        // LEGIBILITY: the village names the loss in its own voice AND the fix.
+        // When the player already knows smoking, the village just mutters;
+        // when they don't, Old Mara teaches it outright.
+        const names = [...new Set(lostPantry)].join(', ');
+        if (this.knowsTechnique('preserve')) {
+          this.say(`The village threw out spoiled stores: ${names}. Someone mutters about the smoke rack going cold. (pantry)`);
+        } else {
+          this.say(`The village threw out spoiled stores: ${names}. Old Mara mutters: "Should've smoked that. Fresh stuff keeps a day or two on the shelf — the smoke rack is right there." (pantry)`);
+        }
       }
       return lost.length + lostPantry.length;
     },
