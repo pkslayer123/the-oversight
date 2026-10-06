@@ -190,7 +190,11 @@
     },
     stashLog(kind, what, qty, vid) {
       const st = this.stashState();
-      st.ledger.unshift({ day: day(), vid: vid || this.state.scholar.villagerId, kind, what, qty });
+      // vid omitted (undefined) = the player did it. Explicit null = anonymous
+      // ("someone") — used by the closed-village skim, where NOBODY saw who
+      // took it. Must not collapse to the player: the ledger blaming you for
+      // a skim you didn't do breaks the whole social-deterrent loop.
+      st.ledger.unshift({ day: day(), vid: vid === undefined ? this.state.scholar.villagerId : vid, kind, what, qty });
       if (st.ledger.length > 30) st.ledger.length = 30;
     },
     // villageTrustLevel: open (nobody worries), wary, closed (hoard and hide).
@@ -303,7 +307,10 @@
       const rows = (st.ledger || []).slice(0, n || 5);
       if (!rows.length) return 'Nothing yet. The stash is new.';
       return rows.map(e => {
-        const who = e.vid ? String(this.displayName(e.vid)).split(' ')[0] : 'someone';
+        // firstRef, not displayName.split(' ')[0]: unknown villagers render
+        // as "A person, maybe 30s, ..." whose first word is bare "A" — the
+        // ledger must distinguish people even before names are learned.
+        const who = e.vid ? this.firstRef(e.vid) : 'someone';
         const verb = e.kind === 'give' ? 'left' : 'took';
         return `day ${e.day}: ${who} ${verb} ${e.qty}× ${e.what}`;
       }).join('\n');
@@ -588,7 +595,9 @@
         st.materials[mat] = (st.materials[mat] || 0) + n;
         this.stashLog('give', MAT_DEFS[mat].name, n, giver);
         if (Math.random() < 0.5) {
-          const first = String(this.displayName(giver)).split(' ')[0];
+          // firstRef: "A left 2 branches..." reads as a bug; the descriptor
+          // ("the woman in her 30s") lets the player recognize the giver.
+          const first = this.firstRef(giver);
           this.say(`${first} left ${n} ${matName(mat, n)} by the stash. No announcement. That's how it works here.`);
         }
       }
