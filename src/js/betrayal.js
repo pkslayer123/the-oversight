@@ -2408,12 +2408,12 @@
           const tools = (this.data.items || []).filter(i => i.class === 'tool' && !carried.has(i.id));
           const def = (tools.length ? tools[Math.floor(R() * tools.length)] : {}) || {};
           if (def.id) ware = { kind: 'tool', itemId: def.id, name: def.name || def.id, sold: false,
-            price: 400 + Math.floor(R() * 5) * 100, blurb: `"Found it. Fixed it. Yours if the price is right."` };
+            price: 400 + Math.floor(R() * 5) * 100, kg: def.kg || 0.5, blurb: `"Found it. Fixed it. Yours if the price is right."` };
         } catch (e) {}
       }
       if (!ware) {
         ware = { kind: 'food', itemId: 'hawker_food', name: 'Smoked strips', sold: false,
-          price: 300 + Math.floor(R() * 3) * 100, units: 2, kcalEach: 300, spoilDay: day + 5,
+          price: 300 + Math.floor(R() * 3) * 100, units: 2, kcalEach: 300, spoilDay: day + 5, kg: 0.6,
           blurb: `"Smoked them myself. Good for the road."` };
       }
       const person = { id: vid, name: this.displayName(vid), shady: this.scamminess(vid) >= 2, desperate: (v.hungryDays || 0) > 0 };
@@ -2451,7 +2451,8 @@
     if (ware.kind === 'food') {
       const day = (this.state.scholar || {}).day || 0;
       const entry = { itemId: ware.itemId, name: ware.name, units: ware.units || 1, kcalEach: ware.kcalEach || 300,
-        spoilDay: ware.spoilDay != null ? ware.spoilDay : day + 5, unit: 'ration', kg: 0.4 };
+        spoilDay: ware.spoilDay != null ? ware.spoilDay : day + 5, unit: 'ration',
+        kg: ware.kg != null ? ware.kg / (ware.units || 1) : 0.4 };
       if (ware.scam && ware.scam.kind === 'spoiled_as_fresh') {
         entry.spoilDay = day + ware.scam.trueSpoilIn;
         entry.scamSpoiled = true; entry.scamLedgerId = ware.scam.ledgerId;
@@ -2459,7 +2460,7 @@
       (this.state.scholar.inventory = this.state.scholar.inventory || []).push(entry);
     } else {
       const def = (this.data.items || []).find(i => i.id === ware.itemId) || {};
-      (this.state.scholar.inventory = this.state.scholar.inventory || []).push({ itemId: ware.itemId, name: ware.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
+      (this.state.scholar.inventory = this.state.scholar.inventory || []).push({ itemId: ware.itemId, name: ware.name, units: 1, kcalEach: 0, kg: ware.kg != null ? ware.kg : (def.kg || 0.8) });
     }
     const took = pay.taken.map(t => `${t.units}× ${t.name}`).join(', ');
     this.say(`Done — the ${ware.name} is yours for ${took}. ${this.displayName(vid)} pockets the food with a merchant's neat hands.`);
@@ -2512,7 +2513,7 @@
       const def = (this.data.items || []).find(i => i.id === alienId) || {};
       if (alienId) wares.push({
         kind: 'alien', itemId: alienId, name: def.name || alienId, sold: false,
-        price: 1200 + Math.floor(R() * 9) * 100,
+        price: 1200 + Math.floor(R() * 9) * 100, kg: def.kg || 0.3,
         blurb: `"Came down in a care package. No idea what it does. That's the fun part."`,
       });
     } catch (e) {}
@@ -2529,7 +2530,7 @@
       const def = pick(fell.length ? fell : (functional.length ? functional : tools)) || {};
       if (def.id) wares.push({
         kind: 'tool', itemId: def.id, name: def.name || def.id, sold: false,
-        price: 500 + Math.floor(R() * 6) * 100,
+        price: 500 + Math.floor(R() * 6) * 100, kg: def.kg || 0.5,
         blurb: def.tool && def.tool.woodcut === 'fell'
           ? `"Fells trees. You know what that means out here."`
           : `"Good steel. Somebody's grandfather kept this sharp."`,
@@ -2548,7 +2549,7 @@
       wares.push({
         kind: 'food', itemId: 'trail_rations', name: 'Trail rations', sold: false,
         price: 400 + Math.floor(R() * 4) * 100, units: 3,
-        kcalEach: 350, spoilDay: day + 4,
+        kcalEach: 350, spoilDay: day + 4, kg: 1.2,
         blurb: `"Smoked, salted, honest. Four days easy, probably more."`,
       });
     }
@@ -2705,7 +2706,7 @@
       if (this.tradeSpirit(vis) > 0 && vis.trading) {
         cart = `<br>🛒 <b>The cart is open.</b> Finished food only — the perishable stuff goes first, preserved counts extra.${(vis.credit || 0) > 0 ? ` Your tab: <b>${vis.credit} kcal</b>.` : ''}<br>` +
           this.visitorWares(vis).map((w, i) =>
-            `<span class="small">· <b>${w.name}</b> — ${w.price} kcal${w.sold ? ' <i>(sold)</i>' : ` <button class="btn ghost sm" data-ware-buy="${vis.id}:${i}">Buy</button>`}<br><span style="opacity:.7">${w.blurb}</span></span>`
+            `<span class="small">· <b>${w.name}</b> — ${w.price} kcal${w.kg ? ` · ${w.kg} kg` : ''}${w.sold ? ' <i>(sold)</i>' : ` <button class="btn ghost sm" data-ware-buy="${vis.id}:${i}">Buy</button>`}<br><span style="opacity:.7">${w.blurb}</span></span>`
           ).join('<br>');
       }
       if (this.tradeSpirit(vis) > 0 && vis.selling) {
@@ -2714,7 +2715,7 @@
         const stock = this.traderSellStock(vis);
         const rows = stock.length ? stock.map(e => {
           const sellable = e.ap.pricePerUnit > 0;
-          return `<span class="small">· <b>${e.it.name}</b> ×${e.it.units} — ${sellable ? `<b>${e.ap.pricePerUnit} kcal</b> each` : '<i>no sale</i>'}${sellable ? ` <button class="btn ghost sm" data-ware-sell="${vis.id}:${e.idx}">Sell</button>` : ''}<br><span style="opacity:.7">${e.ap.line}</span></span>`;
+          return `<span class="small">· <b>${e.it.name}</b> ×${e.it.units} (${(((e.it.kg || 0.1)) * e.it.units).toFixed(1)} kg) — ${sellable ? `<b>${e.ap.pricePerUnit} kcal</b> each` : '<i>no sale</i>'}${sellable ? ` <button class="btn ghost sm" data-ware-sell="${vis.id}:${e.idx}">Sell</button>` : ''}<br><span style="opacity:.7">${e.ap.line}</span></span>`;
         }).join('<br>') : '<span class="small">Nothing in your pack worth selling.</span>';
         cart = `<br>💰 <b>Selling.</b> He appraises everything in the open. Your tab: <b>${vis.credit || 0} kcal</b>.<br>` + rows;
       }

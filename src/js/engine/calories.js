@@ -27,6 +27,18 @@
     combat_round: 100, system_ability: 800, // power is expensive
   };
 
+  // BURDEN TIERS (Steve 2026-10-06): weight is a calorie tax. The hauling
+  // loop should feel heavy. Tiers scale with fraction of carry capacity —
+  // not a flat tax. Movement multiplies; sustained work adds flat effort.
+  // Pure function of (weight, capacity) — the game decides where to apply it.
+  function burdenTier(weight, capacity) {
+    const f = capacity > 0 ? weight / capacity : 1;
+    if (f < 0.5) return { name: 'light', frac: f, moveMult: 1, workAdd: 0 };
+    if (f < 0.75) return { name: 'laden', frac: f, moveMult: 1.25, workAdd: 15 };
+    if (f < 0.95) return { name: 'heavy', frac: f, moveMult: 1.6, workAdd: 35 };
+    return { name: 'straining', frac: f, moveMult: 2.0, workAdd: 60 };
+  }
+
   function dailyNeed(scholar) {
     // BMR + activity; injuries and heavy abilities raise it. Never lowers with level.
     let need = ACTIVE_DAY;
@@ -65,5 +77,5 @@
   }
 
   global.Scattering = global.Scattering || {};
-  global.Scattering.calories = { BASE_BMR, ACTIVE_DAY, ACTION_COSTS, dailyNeed, resolveDay };
+  global.Scattering.calories = { BASE_BMR, ACTIVE_DAY, ACTION_COSTS, burdenTier, dailyNeed, resolveDay };
 })(typeof window !== 'undefined' ? window : globalThis);

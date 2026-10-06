@@ -10110,7 +10110,7 @@
             // note: data-cook below covers cookable via the extended condition
             i._cookable = cookable;
           } catch (e) {}
-          return `<p class="small">${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.foodKind === "meat" && i.edible === false) ? "?" : (i.kcalEach || 0) * i.units} kcal)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
+          return `<p class="small">${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.foodKind === "meat" && i.edible === false) ? "?" : (i.kcalEach || 0) * i.units} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
@@ -10796,7 +10796,7 @@
       if (fsn) fairShareHtml = `<p class="small" style="opacity:.65">Fair share is ~${fsn.perPerson} kcal/day each. The pantry holds ~${fsn.daysLeft} days at that pace. Take what you need — people notice what you take.</p>`;
     } catch (e) {}
     const bodyHtml = `
-      <p class="small">Slide to pack. Carrying ${carry.toFixed(1)}/${maxCarry} kg.</p>
+      <p class="small">Slide to pack. Carrying ${carry.toFixed(1)}/${maxCarry} kg — ${(() => { try { return Game.burden().name; } catch (e) { return 'light'; } })()}.</p>
       ${fairShareHtml}
       ${(() => { try {
         // FOOD REALITY: storage has real caps. Expand them with materials + labor.
@@ -10837,10 +10837,16 @@
           </div>
         </div>`;
         });
-        if (unknownIdx.length) rows.push(`<div class="card" style="margin:6px 0;padding:8px 10px;border-left:3px solid #8a8a8a">
-          <p class="small"><b>Unfamiliar provisions</b><br>
-          <span style="opacity:.7">Things in the pile you don't recognize yet -- no telling what's what. Learn them (forage, ask around, codex) to pack them deliberately.</span></p>
+        // WEIGHT IS ALWAYS KNOWN (Steve 2026-10-06): you can heft the pile even
+        // when you can't name what's in it. Names/counts/stats stay gated;
+        // the aggregate mass is physical and honest.
+        if (unknownIdx.length) {
+          const unknownKg = unknownIdx.reduce((t, idx) => t + ((pantry[idx].kg || 0.1) * (pantry[idx].units || 1)), 0);
+          rows.push(`<div class="card" style="margin:6px 0;padding:8px 10px;border-left:3px solid #8a8a8a">
+          <p class="small"><b>Unfamiliar provisions</b> · ~${unknownKg.toFixed(1)} kg<br>
+          <span style="opacity:.7">Things in the pile you don't recognize yet -- no telling what's what, but you can feel the heft. Learn them (forage, ask around, codex) to pack them deliberately.</span></p>
         </div>`);
+        }
         return rows.length ? rows.join('') : '<p class="small">Empty.</p>';
       })()}
       </div>
