@@ -1836,8 +1836,7 @@
       "painText": "It snorts \u2014 then squares on {who}. \"PER MY LAST ROAR: pain gets prioritized.\"",
       "proximityText": "Too close. It pivots to {who}: \"LET'S TAKE THIS OFFLINE.\" Proximity overrules the agenda.",
       "comment": "Encounter framework client: FIFO meeting agenda, always circles first (announcing the charge), wide locked line (width 2 \u2014 sidestep far), post-charge debrief. The line it announces is the line it charges.",
-      "knownCue": "It circles to cut off escape. Keep your back to open ground.",
-      "declareAudio": "managerAnnounce"
+      "knownCue": "It circles to cut off escape. Keep your back to open ground."
     },
     "loot": {
       "chance": 0.25,
@@ -2051,6 +2050,104 @@
     "armor": 2,
     "resistances": {
       "psychic": 0.5
+    }
+  },
+  {
+    "id": "warranty_caller",
+    "wave": 2,
+    "name": "Extended Warranty",
+    "activity": "both",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      35,
+      50
+    ],
+    "attack": {
+      "name": "The Pitch",
+      "damage": [
+        14,
+        22
+      ],
+      "telegraph": "No telegraph. That's the point. A phone is ringing in the trees — for you, specifically. Then the ringing STOPS. It's already moving.",
+      "pattern": {
+        "type": "rush"
+      },
+      "damageType": "psychic"
+    },
+    "behavior": "curious",
+    "aggression": "hungry",
+    "follows": true,
+    "speed": 4,
+    "emoji": "📱",
+    "unknown": "a phone ringing in the trees, and no phone anywhere",
+    "vibe": "it has decided you are the car. the warranty has expired",
+    "weaknesses": [
+      "it can only dial a stationary target — keep moving and the call drops",
+      "hurting it gives it a bad connection — it hangs up and redials",
+      "it always rings first — the ring is the tell"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a phone. Do not eat the phone."
+    },
+    "parts": [
+      "a phone that only calls you",
+      "a headset (cursed, functional)",
+      "robocall scripts (kindling)"
+    ],
+    "cues": {
+      "curious": [
+        "Ring-ring. \"We've been trying to reach you.\" It's closer than it sounds."
+      ],
+      "warn": [
+        "The ringing stops. That's worse than the ringing."
+      ],
+      "fearful": [
+        "\"—bad connection—\" The voice fragments. \"—can you hear—\" It hates being hit mid-call."
+      ]
+    },
+    "codexStages": {
+      "unknown": "A phone rang in the woods last night. Three times. Nobody has a phone anymore.",
+      "observed": "Robocall predator. The System found twenty-first-century telemarketing and was DELIGHTED — humans who answer unknown calls! It dials stationary targets: the ring is the tell, and if you move 2+ tiles the call DROPS. It redials. It always redials. Hurting it mid-call gives it a bad connection — it hangs up, furious, and starts over.",
+      "slain": "Moves: The Pitch (rush — NO grid telegraph, the RING is the tell). dial (picks its target) → ring (1 turn — MOVE, 2+ tiles drops the call) → pitch (it rushes, the words hit) → redial (2 turns). Pain = bad connection = it hangs up and redials. It never stops calling. Parts: a phone that only calls you. Don't answer."
+    },
+    "systemDesignation": "Automotive protection plan (predatory)",
+    "encounter": {
+      "aggroAudio": "lineCut",
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "dial",
+        "ring",
+        "pitch",
+        "redial"
+      ],
+      "phaseBadges": {
+        "dial": " 📱 DIALING",
+        "ring": " 📱 RINGING",
+        "pitch": " 📱 CONNECTED",
+        "redial": " 📱 REDIALING"
+      },
+      "telegraphGate": "pattern",
+      "painSwitch": true,
+      "adjacencyOverride": 1,
+      "shortName": "warranty",
+      "noticeText": "Ring-ring. \"We've been trying to reach you about your car's extended warranty.\" It's calling {who}.",
+      "painText": "\"—BAD CONNECTION—\" The voice fragments, furious. It hangs up on {who} and redials.",
+      "proximityText": "Too close. It stops ringing — it doesn't need the phone anymore. It's right there.",
+      "comment": "Encounter framework client. THE CALL: dial (1 turn, locks the target's position — the number it dialed) → ring (1 turn, the tell: audio + dread line; moving 2+ tiles from the dialed position DROPS the call) → pitch (rush, speed 4, no grid telegraph — the ring was the warning) → redial (2 turns). Pain = bad connection = hang up + redial. Relentless: no fear, it always calls back. Distinct from the mimic (patient watcher, one rush per approach, fire counter): impatient, rushes every cycle, needs you still.",
+      "knownCue": "It can only dial a stationary target. Keep moving and it can't place the call."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 0,
+    "resistances": {
+      "psychic": 0.25
     }
   },
   {

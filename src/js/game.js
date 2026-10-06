@@ -14540,22 +14540,11 @@
           : ' It is staring down a line only it can see. Wherever that is — do not be there.';
         return cue + learned;
       }
-      if (mid === 'service_mimic') {
-        // No telegraph by design — but the cue system still needs SOMETHING.
-        // The dread is the absence: it already moved.
-        let cue = '📞 "Your fear is important to us." No telegraph — it just moved. That\'s the whole trick.';
-        cue += known
-          ? ' Please Hold: rush, no windup. It watches 2-3 turns first (curious) — use those. Fire within 3 tiles suppresses the rush. It only rushes once per approach.'
-          : ' It was watching. Now it isn\'t watching anymore. It\'s coming.';
-        return cue + learned;
-      }
-      if (mid === 'contract_golem') {
-        let cue = '📜 "BY REMAINING IN PROXIMITY, YOU HAVE ACCEPTED." Fine print crawls toward you across the dirt.';
-        cue += known
-          ? ' Binding Agreement: direct, range 3 — movement won\'t dodge it once declared. But it\'s speed 1. The clause only binds after 2 consecutive turns in range. WALK AWAY. Fire ends paper.'
-          : ' Small text is crawling up your legs. You should move. It only moves one tile a turn.';
-        return cue + learned;
-      }
+      // service_mimic + contract_golem: NOT batch-4-routed (guard above).
+      // Their cues are bespoke and already knowledge-gated — the mimic's in
+      // its rush-resolve line + watching beat (Steve 2026-10-06), the golem's
+      // in encDeclareDirect's cueText + knownTail. The old branches here were
+      // unreachable and have been removed (Steve 2026-10-06).
       return null;
     },
 
@@ -15728,6 +15717,7 @@
     mpIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'memory_projector')); },
     smIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'service_mimic')); },
     cgIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'contract_golem')); },
+    wcIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'warranty_caller')); },
     // MONSTER BATCH 4 (corporate horrors): id gates for the bespoke layer,
     // following the deerIs pattern. The generic engine does the rest.
     droneIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'review_drone')); },
@@ -17287,7 +17277,8 @@
           }
           if (this.beastIs(m)) {
             if (useFifo) this.encSetPhase(m, 'charge');
-            this.audioEvent('delegateCharge');
+            // (Steve 2026-10-06): managerCharge already fired above — the
+            // delegateCharge alias played the same synth twice per resolve.
             m.circled = false; // the next charge gets circled first, too. Always.
             m.beastDebrief = 1;
           }
@@ -17443,14 +17434,11 @@
       // BATCH 4 breather beats: post-attack recovery with the monster's own
       // name on it. The breather spends the whole turn.
       if (this.tbFifoBreather(m)) return;
-      // DELEGATE: it always circles first. One full loop around the target,
-      // announcing the charge — then, and only then, the line.
-      if (this.beastIs(m) && !m.circled && foe && foe.d <= 5) {
-        this.beastCircle(m, foe.f);
-        this.tbRefreshTelegraphUI();
-        if (this.tbEndCheck()) return;
-        return;
-      }
+      // DELEGATE (Steve 2026-10-06): the bespoke branch below owns the
+      // circle beat (one circle turn per cycle, knowledge-gated cue). The
+      // old beastCircle() pre-pass double-circled and double-played the
+      // circle synth (delegateCircle aliases managerCircle). Removed — the
+      // beastCircle() helper stays for any sibling use.
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
@@ -18166,7 +18154,12 @@
         }
         if (smPhase === 'watching') {
           if (nearFire) {
-            this.say('"We appear to be experiencing— experiencing—" The script breaks. The firelight is too much. It won\'t come closer.');
+            // DEDUP (Steve 2026-10-06): the line spoke every turn the fire
+            // stayed near. It speaks once per fire position now — the
+            // situation re-speaks only when the fire moves.
+            const smFire = this.tbNearestFire(foe.f.mx, foe.f.my, 3);
+            this.saySituationOnce(m, 'watch:fire:' + (smFire ? smFire.x + ',' + smFire.y : 'near'),
+              '"We appear to be experiencing— experiencing—" The script breaks. The firelight is too much. It won\'t come closer.');
             this.audioEvent('holdMusic', { broken: true });
             this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
           }
@@ -18181,7 +18174,14 @@
               '"Your call is very important to us." The voice is syrup. It hasn\'t blinked.',
               '"We\'re experiencing higher than normal fear volumes." It leans forward, listening to your breathing.',
             ];
-            this.say(esc[Math.min(esc.length - 1, Math.max(0, 2 - m.smWatch))]);
+            // CODEX-GATED (Steve 2026-10-06): the mimic never declares, so
+            // its data knownCue had no surface — it hung dead in
+            // monsters.json. The watching beat carries it once learned:
+            // dread for first-timers, the tell for veterans.
+            const smKnown = this.encTelegraphKnown(m);
+            const smKc = ((m.mdef || {}).encounter || {}).knownCue;
+            this.say(esc[Math.min(esc.length - 1, Math.max(0, 2 - m.smWatch))] +
+              ((smKnown && smKc) ? ' ' + smKc : ''));
             this.audioEvent('holdMusic', { watching: true });
           }
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
@@ -18209,6 +18209,103 @@
           this.say('It rushes — and finds only empty air where you were. The line goes quiet.');
         }
         this.encSetPhase(m, 'hold'); m.smHold = 2;
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- WARRANTY CALLER ("Extended Warranty"): THE CALL ----
+      // dial → ring → pitch → redial. Rush pattern, but the tell is AUDIO:
+      // it always rings once before it rushes — no grid telegraph, because
+      // the ring IS the telegraph. It dials a STATIONARY target: the number
+      // it dialed is the target's position, and moving 2+ tiles before the
+      // pitch DROPS the call. Pain = bad connection: hurting it mid-call
+      // hangs it up and it redials. Relentless — no fear, it always calls
+      // back. Distinct from the mimic (patient watcher, one rush per
+      // approach, fire counter): the caller is impatient, rushes every
+      // cycle, and needs you still — the movement-inversion of the
+      // projector's gaze-pull.
+      if (this.wcIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        if (!m.beamPhase || !['dial', 'ring', 'pitch', 'redial'].includes(m.beamPhase)) {
+          this.encSetPhase(m, 'dial'); m.wcRedial = 0;
+        }
+        // BAD CONNECTION: hurting it mid-call hangs it up. Track hp across
+        // turns — any damage since its last turn is a bad connection.
+        const wcTookHit = m.hp < (m.wcLastHp === undefined ? m.hp : m.wcLastHp);
+        m.wcLastHp = m.hp;
+        if (wcTookHit && m.beamPhase !== 'redial') {
+          this.encSetPhase(m, 'redial'); m.wcRedial = 2;
+          this.say('"—BAD CONNECTION—" The voice fragments, furious. It hangs up. It is already redialing.');
+          this.audioEvent('lineCut', { dropped: true });
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        const wcKnown = this.encTelegraphKnown(m);
+        const wcKc = ((m.mdef || {}).encounter || {}).knownCue;
+        if (m.beamPhase === 'dial') {
+          this.encSetPhase(m, 'ring');
+          m.wcDialPos = { x: t.mx, y: t.my };
+          const dials = [
+            '"We\'ve been trying to reach you about your car\'s extended warranty." The voice is coming from the treeline.',
+            'Ring-ring. "Hello? This is an URGENT call about your vehicle." It\'s getting closer.',
+            '"Don\'t hang up — this is your FINAL notice." It has your number. It has everyone\'s number.',
+          ];
+          this.say(dials[Math.floor(Math.random() * dials.length)]);
+          this.audioEvent('lineCut', {});
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (m.beamPhase === 'ring') {
+          // THE TELL. Moved 2+ tiles since it dialed → CALL DROPPED.
+          const wcMoved = Math.max(Math.abs(t.mx - m.wcDialPos.x), Math.abs(t.my - m.wcDialPos.y));
+          if (wcMoved >= 2) {
+            this.encSetPhase(m, 'redial'); m.wcRedial = 2;
+            this.say('The ringing stops mid-trill. "CALL DROPPED." A pause. Then, patiently: ring-ring.');
+            this.audioEvent('lineCut', { dropped: true });
+            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+          }
+          this.encSetPhase(m, 'pitch');
+          // CODEX-GATED: first-timers get dread (a ringing phone in the
+          // trees); veterans get the tell — the data knownCue, earned.
+          this.say(wcKnown
+            ? 'Ring-ring. It\'s calling YOU. Don\'t be where you were. ' + (wcKc || '')
+            : 'A phone is ringing. In the trees. It\'s ringing for you.');
+          this.audioEvent('holdMusic', { ringing: true });
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (m.beamPhase === 'pitch') {
+          // THE PITCH: the rush. No grid telegraph — the ring was the warning.
+          // (Same shape as the generic rush: up to speed, hit if adjacent.)
+          for (let i = 0; i < m.speed; i++) {
+            if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) break;
+            const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+            if (!stp) break;
+            m.mx = stp.x; m.my = stp.y;
+          }
+          const wcAtk = this.encAttackName(m, atk.name);
+          if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) {
+            this.say(wcKnown
+              ? (wcAtk === 'the attack'
+                ? '"Your warranty has EXPIRED." The words hit like a slap.'
+                : `"Your warranty has EXPIRED." ${wcAtk} — the words hit like a slap.`)
+              : 'The voice drops all pretense of politeness, and the WORDS hit you.');
+            this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+            this.audioEvent('serviceRush', {});
+            this.audioEvent('impact', {});
+          } else {
+            this.say('It rushes the empty air where the ringing said you\'d be. "HELLO? Hello??"');
+          }
+          // Surviving the call teaches the pattern — the ring means the rush.
+          this.tbLearnPattern(m);
+          this.encSetPhase(m, 'redial'); m.wcRedial = 2;
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // redial: the cooldown. Two turns of hold music, then it dials again.
+        m.wcRedial = (m.wcRedial === undefined ? 2 : m.wcRedial) - 1;
+        if (m.wcRedial <= 0) {
+          this.encSetPhase(m, 'dial');
+        } else {
+          this.say('Hold music, faint, from the treeline. It is redialing.');
+          this.audioEvent('holdMusic', { redial: true });
+        }
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
@@ -18469,7 +18566,9 @@
         }
         if (this.beastIs(m)) {
           if (useFifo) this.encSetPhase(m, 'announce');
-          this.audioEvent('delegateAnnounce');
+          // (Steve 2026-10-06): the data's aggroAudio + declareAudio
+          // (managerAnnounce) already fire above — the delegateAnnounce
+          // alias played the same synth a third time per declare.
         }
         this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: each monster's own sound (Steve heard only beam; toad was playing deer bellow)
         if (isDeer) {
