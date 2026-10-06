@@ -6185,42 +6185,53 @@
       b.connect(bg); bg.connect(sfxBus); b.start(t + 0.4); b.stop(t + 1.05);
     }
     // ---- DUCKS IN A ROW: the formation's voice ----
-    // One quack: a nasal burst — sawtooth pitched down through a bandpass.
-    // Ducks quack; the System's ducks quack in formation.
-    function duckQuackAt(t, baseFq, dur, vol) {
+    // Muscovy ducks don't quack. Males hiss — a breathy exhalation, the
+    // "trolling" sound. Females trill softly. (Steve 2026-10-06)
+    function duckHissAt(t, dur, vol) {
+      // the male's hiss: broadband breath through a bandpass — tsssshh
+      const nz = noise(dur + 0.05), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (!nz) return;
+      nf.type = 'bandpass'; nf.frequency.value = 3200; nf.Q.value = 0.8;
+      // breathy envelope: swell then fade
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(vol, t + dur * 0.3);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+      nz.start(t); nz.stop(t + dur + 0.05);
+    }
+    function duckTrillAt(t, baseFq, dur, vol) {
+      // the female's trill: soft warbling coo
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sawtooth';
+      o.type = 'triangle';
       o.frequency.setValueAtTime(baseFq, t);
-      o.frequency.exponentialRampToValueAtTime(baseFq * 0.62, t + dur);
-      const f = ctx.createBiquadFilter(); f.type = 'bandpass';
-      f.frequency.value = 750; f.Q.value = 2.5;
-      // the quack's rattle: amplitude wobble
-      const lfo = ctx.createOscillator(), lg = ctx.createGain();
-      lfo.type = 'square'; lfo.frequency.value = 28; lg.gain.value = vol * 0.35;
-      lfo.connect(lg); lg.connect(g.gain);
+      const v = ctx.createOscillator(), vg = ctx.createGain();
+      v.type = 'sine'; v.frequency.value = 11; vg.gain.value = baseFq * 0.15;
+      v.connect(vg); vg.connect(o.frequency);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(f); f.connect(g); g.connect(sfxBus);
-      o.start(t); o.stop(t + dur + 0.05);
-      lfo.start(t); lfo.stop(t + dur + 0.05);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05); v.start(t); v.stop(t + dur + 0.05);
     }
     function ducksQuack() {
-      // AMBIENT: just ducks. Loose, irregular, innocent — five quacks
-      // wandering in time. This is the sound before the silence.
+      // AMBIENT: just muscovies. Loose hisses and soft trills wandering
+      // in time. This is the sound before the silence.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      const qs = [[0, 300], [0.34, 265], [0.61, 310], [1.02, 280], [1.31, 295]];
-      for (const [dt, fq] of qs) duckQuackAt(t + dt, fq, 0.16, 0.14);
+      duckHissAt(t, 0.35, 0.10);
+      duckTrillAt(t + 0.34, 420, 0.25, 0.08);
+      duckHissAt(t + 0.61, 0.3, 0.09);
+      duckTrillAt(t + 1.02, 380, 0.3, 0.07);
+      duckHissAt(t + 1.31, 0.4, 0.11);
     }
     function ducksQuackCut() {
-      // THE TELEGRAPH: the quacking STOPS. Two quacks, a third cut dead
+      // THE TELEGRAPH: the hissing STOPS. Two quacks, a third cut dead
       // mid-burst — then nothing. The silence after is the scary part.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      duckQuackAt(t, 300, 0.16, 0.16);
-      duckQuackAt(t + 0.32, 275, 0.16, 0.16);
-      // third quack: starts, then the knife — gain slammed to zero mid-burst
+      duckHissAt(t, 0.35, 0.14);
+      duckHissAt(t + 0.45, 0.35, 0.14);
+      // third hiss: starts, then the knife — gain slammed to zero mid-burst
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'sawtooth';
       o.frequency.setValueAtTime(290, t + 0.64);
@@ -6244,25 +6255,25 @@
       }
     }
     function duckLineUp() {
-      // THE TELL: quacks snapping into lockstep — intervals shrink until
+      // THE TELL: hisses snapping into lockstep — intervals shrink until
       // six ducks quack as one. Too precise. Too quiet, after.
       if (!ensure()) return;
       const t = ctx.currentTime;
       const gaps = [0.3, 0.24, 0.19, 0.15, 0.12];
       let dt = 0;
-      duckQuackAt(t, 310, 0.14, 0.13);
+      duckHissAt(t, 0.3, 0.12);
       for (let i = 0; i < gaps.length; i++) {
         dt += gaps[i];
-        duckQuackAt(t + dt, 300 + i * 4, 0.13, 0.13 + i * 0.008);
+        duckHissAt(t + dt, 0.3, 0.12 + i * 0.008);
       }
       // the unison beat: all six at once
-      duckQuackAt(t + dt + 0.12, 305, 0.2, 0.2);
+      duckHissAt(t + dt + 0.12, 0.45, 0.2);
     }
     function duckMarch() {
-      // MARCH: quacks in perfect military time. Do not be in the way.
+      // MARCH: hisses in perfect military time. Do not be in the way.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      for (let i = 0; i < 4; i++) duckQuackAt(t + i * 0.28, 300, 0.14, 0.15);
+      for (let i = 0; i < 4; i++) duckHissAt(t + i * 0.32, 0.35, 0.14);
     }
     function duckNip() {
       // NIP: six beak snaps, fast — short filtered noise bursts, no pitch.
@@ -6280,12 +6291,14 @@
       }
     }
     function duckRegroup() {
-      // REGROUP: the formation loosens — quacks drift apart in time and
+      // REGROUP: the formation loosens — hisses drift apart in time and
       // pitch. For a moment the line is just ducks.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      const qs = [[0, 290], [0.38, 320], [0.85, 270], [1.4, 305]];
-      for (const [dt, fq] of qs) duckQuackAt(t + dt, fq, 0.16, 0.11);
+      duckHissAt(t, 0.3, 0.09);
+      duckTrillAt(t + 0.38, 400, 0.25, 0.07);
+      duckHissAt(t + 0.85, 0.35, 0.08);
+      duckTrillAt(t + 1.4, 360, 0.3, 0.06);
     }
     function duckScreech() {
       // ENRAGED: the head is all that's left and it knows it — a harsh
@@ -6308,14 +6321,14 @@
       o.start(t); o.stop(t + dur + 0.05); v.start(t); v.stop(t + dur + 0.05);
     }
     function ducksRejoin() {
-      // REJOIN: the tail thrashes back into line — three relieved quacks
+      // REJOIN: the tail thrashes back into line — three relieved hisses
       // falling into rhythm, then the lockstep resumes. The line is whole.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      duckQuackAt(t, 280, 0.15, 0.13);
-      duckQuackAt(t + 0.26, 295, 0.14, 0.14);
-      duckQuackAt(t + 0.5, 305, 0.14, 0.15);
-      duckQuackAt(t + 0.72, 305, 0.18, 0.18);
+      duckHissAt(t, 0.3, 0.11);
+      duckHissAt(t + 0.3, 0.3, 0.12);
+      duckHissAt(t + 0.58, 0.3, 0.13);
+      duckHissAt(t + 0.82, 0.4, 0.16);
       // formation click: the line snapping straight
       const nz = noise(0.1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
       if (nz) {
