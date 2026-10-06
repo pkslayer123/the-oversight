@@ -187,11 +187,48 @@
       // answer and the village goes formal on its own.
       j.confrontDay = this.state.scholar.day;
       const name = this.displayName(vid);
-      const murders = j.crimes.filter(c => c.type === 'murder').length;
-      const line = murders > 0
-        ? `${name} steps in front of you. "We know what you did. Say it wasn't you — go on, try." Their hands are shaking. Not from fear. "You pay it back, or you go. Those are the choices."`
-        : `${name} blocks your path. "We need to talk about the stores. About what you've been taking." A few others are watching, not approaching. "Make it right, or leave. Your call."`
-      ;
+      const crimes = j.crimes || [];
+      const murders = crimes.filter(c => c.type === 'murder').length;
+      const attacks = crimes.filter(c => c.type === 'attack').length;
+      const thefts = crimes.filter(c => c.type === 'theft').length;
+      // CONFRONTATION VOICE (Steve 2026-10-06, pool expansion 2->identity):
+      // the confrontation is generated from WHO confronts you — temperament,
+      // how close you were, and what the village actually knows (the
+      // confrontation names only recorded crimes — never invented ones).
+      // A close friend's hurt reads different from a stranger's anger; a
+      // cautious person doesn't block your path, they corner you at the fire.
+      const R = Math.random;
+      const pick = (arr) => arr[Math.floor(R() * arr.length)];
+      const trust = ((this.state.village || {}).trust || {})[vid] || 10;
+      const close = trust >= 40;
+      const temp = String((this.npcTemper && this.npcTemper(vid)) || 'steady').toLowerCase();
+      const wary = (temp === 'cautious' || temp === 'withdrawn');
+      let line;
+      if (murders > 0) {
+        line = pick([
+          `${name} steps in front of you. "We know what you did. Say it wasn't you — go on, try." Their hands are shaking. Not from fear. "You pay it back, or you go. Those are the choices."`,
+          close ? `${name} finds you alone, away from the fire. "Tell me it wasn't you." A pause — you can see them hoping. "Please. Tell me it wasn't you."` : null,
+          `${name} doesn't raise their voice. That's how you know it's serious. "Someone's dead. And everyone knows whose hands. Talk."`,
+        ].filter(Boolean));
+      } else if (attacks > 0) {
+        line = pick([
+          `${name} plants themself in your way, jaw set. "You put hands on one of ours. That doesn't wash off with an apology — but an apology is where it starts."`,
+          wary ? `${name} waits until the fire's low and it's just you two. "I saw what happened. I'm not here to fight — I'm here because next time, someone won't ask first."` : null,
+          close ? `${name} looks sick. "I told them you wouldn't — I said that, out loud, to people. Don't make me the fool here. Fix it."` : null,
+        ].filter(Boolean));
+      } else if (thefts > 0) {
+        line = pick([
+          `${name} blocks your path. "We need to talk about the stores. About what you've been taking." A few others are watching, not approaching. "Make it right, or leave. Your call."`,
+          close ? `${name} won't look at you. "The stores. I covered for you once — told them it was a miscount. Don't make me a liar too."` : null,
+          `${name} corners you by the stores, voice low. "Count it with me. Right now. If I'm wrong I'll say so in front of everyone."`,
+        ].filter(Boolean));
+      } else {
+        line = pick([
+          `${name} steps close. "Something's off and everyone's felt it. I drew the short straw — so here I am. Talk to me before the village decides it doesn't need to."`,
+          close ? `${name} sits down next to you like nothing's wrong, which is how you know everything is. "People are talking. I wanted you to hear it from me first."` : null,
+          wary ? `${name} catches your eye across the fire and tilts their head — follow me. Away from everyone: "I'm asking as a friend, not the village. What happened?"` : null,
+        ].filter(Boolean));
+      }
       this.say('⚖ ' + line);
       this.say('(Find them and answer — pay restitution, or refuse. Attacking them answers too.)');
       try { this.audioEvent('confront'); } catch (e) {}

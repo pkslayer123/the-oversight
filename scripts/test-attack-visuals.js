@@ -65,8 +65,11 @@ async function main() {
   ok('renderDetail calls tbAllTelegraphCells', appJs.includes('tbAllTelegraphCells()'));
   ok('grid uses _tgCls', appJs.includes('_tgCls'));
   
-  // 4. Verify knowledge gating (vague flag)
-  ok('vague flag for unlearned patterns', appJs.includes("out.vague.add"));
+  // 4. Verify knowledge gating (unknown patterns are ABSENT, not vague)
+  // Steve 2026-10-06: "Not dimmed if not learned. They don't show up."
+  // The vague bucket was removed; unlearned patterns are skipped entirely.
+  ok('unknown patterns skipped entirely (not vague)', appJs.includes("if (!known) continue"));
+  ok('no vague bucket in telegraph cells', !/out\s*=\s*\{[^}]*vague/.test(appJs));
   ok('encTelegraphKnown checked', appJs.includes('encTelegraphKnown'));
   
   console.log(`\n=== RESULTS: ${pass} pass, ${fail} fail ===`);
