@@ -1307,6 +1307,7 @@
     "systemDesignation": "Metrics enforcement unit",
     "encounter": {
       "aggroAudio": "droneHum",
+      "resolveAudio": "droneBeam",
       "fifo": true,
       "noticeRange": 5,
       "phases": [

@@ -1525,8 +1525,8 @@
   //   beamSweepStop()         — beam ends / combat ends
   //   beamBlocked()           — beam dies against cover (fizzle, not bang)
   //   deerDown()              — the deer dies (bellow collapses)
-  //   MONSTER BATCH 1 (The Beasts) — per-config audio, fired from game.js
-  //   encounter blocks (monsters.json). All optional no-ops until implemented:
+  //   MONSTER BATCH 1 (The Beasts) — per-config audio, fired from game.js.
+  //   Implemented 2026-10-06 (were no-ops):
   //   boarNotice()   — combat start: heavy snort, earth pawed
   //   boarSnort()    — boar aggro (pain / adjacency / declare)
   //   boarCharge()   — China-Shop Charge resolves (thundering)
@@ -1568,6 +1568,22 @@
   //   crash({cause})   — a structure is destroyed ('bulldozer' hits heaviest)
   //   levelup({quiet}) — a stat grows: soft breathy rise, no fanfare, felt not heard
   //   passiveUnlock({quiet}) — a passive tier lands: a click + low settling hum
+  //   PATTERN SYNTHS (Steve 2026-10-06): generic-per-pattern windup/resolve
+  //   pairs, auto-dispatched from telegraph()/impact() by pattern type, and
+  //   callable directly as patternWindup({pattern, urgency}) /
+  //   patternResolve({pattern}). The deer keeps its own beam set; droneBeam is
+  //   the machine beam (review_drone/memory_projector). 'ambush' is silent on
+  //   windup BY DESIGN (turtleSnap is the resolve).
+  //   burstDetonate() chargeImpact() lockonTick() lockonHit() lineStrike()
+  //   rushHit() diveImpact() ambushSnap()
+  //   WAVE-2 BESPOKE (Steve 2026-10-06): staticScream() (voice_mimic reveal),
+  //   serviceRush() (service_mimic resolve), contractBind() (contract_golem
+  //   strike), monsterDown() / monsterHurt() (generic death/wound for
+  //   siblings), delegateDebrief() (was fired by tbFifoBreather, silent).
+  //   WAVE-1 CONTRACT, NOW DEFINED (Steve 2026-10-06): boarNotice/boarSnort/
+  //   boarCharge, wolfSilence/wolfSnarl, heronUnfold/heronStrike, turtleSnap
+  //   (wired as speedbump_turtle encounter.resolveAudio in monsters.json).
+  //   horrorSting() — the UI dread-beat sting (was referenced, undefined).
   const CombatAudio = (() => {
     let ctx = null, hbTimer = null;
     let master = null, hbBus = null, sfxBus = null;
@@ -3752,7 +3768,665 @@
       }
       return muted;
     }
-    // IGNITE FLASH: the discharge is an exclamation mark. A full-screen flash
+    // ============ PATTERN SYNTHS (Steve 2026-10-06) ============
+    // Generic-per-pattern windup/resolve pairs, dispatched from telegraph()
+    // and impact() by pattern type ('beam','burst','charge','direct','line',
+    // 'rush','single','ambush'). Wave-2 siblings can ALSO call these
+    // directly via Game.audioEvent('<name>') for bespoke beats, alongside
+    // the per-monster hooks below. Every windup ends unresolved — the
+    // resolve is what lands. (The Highbeam Deer keeps its own beam set:
+    // beamCharge/beamFire — the deer's beam is an animal, these are machines.)
+    function beamTechWindup(durSec) {
+      // COLD SPOOL: a scanner waking up. Glassy sheen rising in perfect
+      // steps — no organic warmth. (review_drone, memory_projector)
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = Math.max(0.8, durSec || 1.6);
+      const steps = 6;
+      for (let i = 0; i < steps; i++) {
+        const dt = t + (dur * 0.8 * i) / steps;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 1400 * Math.pow(1.18, i);
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.09, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + dur / steps);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + dur / steps + 0.05);
+      }
+      // cold breath under it: filtered noise, perfectly even
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 10; nf.frequency.value = 5200;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.05, t + dur * 0.7);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + dur);
+      }
+    }
+    function burstWindup(durSec) {
+      // INHALATION: the air pressure rises. Faint voices multiply inside
+      // the swell — one more each half second, none of them yours.
+      // (mirrormoth, belltoad, hummice, camera_swarm, hype_horn, bright_idea)
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = Math.max(0.8, durSec || 1.5);
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass';
+        nf.frequency.setValueAtTime(300, t);
+        nf.frequency.exponentialRampToValueAtTime(2400, t + dur);
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.85);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + dur);
+      }
+      for (let i = 0; i < 4; i++) {
+        const dt = t + (dur * 0.7 * i) / 4;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(160 * (1 + i * 0.26), dt);
+        o.frequency.exponentialRampToValueAtTime(220 * (1 + i * 0.26), dt + 0.3);
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.05, dt + 0.15);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.45);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.5);
+      }
+    }
+    function burstDetonate() {
+      // The held breath, released wrong: noise blast with pitched debris
+      // falling out of it — distinct from the deer's sub-bass beam fire.
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const nz = noise(0.8), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass';
+        nf.frequency.setValueAtTime(6000, t);
+        nf.frequency.exponentialRampToValueAtTime(300, t + 0.5);
+        ng.gain.setValueAtTime(0.5, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.65);
+      }
+      // debris: three pitched shards dropping past each other
+      [880, 660, 520].forEach((fq, i) => {
+        const dt = t + 0.05 + i * 0.07;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square';
+        o.frequency.setValueAtTime(fq, dt);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.4, dt + 0.4);
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fq; f.Q.value = 6;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.12, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.45);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.5);
+      });
+    }
+    function chargeWindup(durSec) {
+      // EARTH TREMBLES: low rumble with an accelerating rhythm inside it —
+      // hooves, or an engine, you can't tell which. (bulldozer, mirror_stag,
+      // delegate_beast)
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = Math.max(0.9, durSec || 1.8);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 42;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.3, t + dur * 0.7);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur);
+      // accelerating tread: 6 hits, interval shrinking
+      let dt = t;
+      for (let i = 0; i < 6; i++) {
+        const gap = dur * 0.75 / (6 - i * 0.7);
+        dt += gap;
+        const no = ctx.createOscillator(), ng2 = ctx.createGain();
+        no.type = 'sine';
+        no.frequency.setValueAtTime(90 - i * 8, dt);
+        no.frequency.exponentialRampToValueAtTime(50, dt + 0.09);
+        ng2.gain.setValueAtTime(0.0001, dt);
+        ng2.gain.exponentialRampToValueAtTime(0.25 + i * 0.03, dt + 0.02);
+        ng2.gain.exponentialRampToValueAtTime(0.0001, dt + 0.11);
+        no.connect(ng2); ng2.connect(sfxBus); no.start(dt); no.stop(dt + 0.13);
+      }
+    }
+    function chargeImpact() {
+      // THUNDER, DOUBLE: the trample, then the wreckage a beat behind it.
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const hit = (dt, vol, drop) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(drop, dt);
+        o.frequency.exponentialRampToValueAtTime(30, dt + 0.35);
+        g.gain.setValueAtTime(vol, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.45);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.5);
+      };
+      hit(t, 0.6, 110);
+      hit(t + 0.22, 0.45, 85);
+      // grinding debris between them
+      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 1.2;
+        nf.frequency.setValueAtTime(1800, t);
+        nf.frequency.exponentialRampToValueAtTime(300, t + 0.5);
+        ng.gain.setValueAtTime(0.3, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.55);
+      }
+    }
+    function lockonTick(durSec) {
+      // TARGETING: clinical ticks, like a camera finding focus — or a call
+      // connecting. Shortens as it locks. (direct-pattern windup)
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = Math.max(0.7, durSec || 1.2);
+      let dt = t;
+      let gap = 0.22;
+      const minGap = 0.05; // the ticking never quite stops, but it always ends
+      while (dt < t + dur * 0.9) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = 2100;
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2100; f.Q.value = 8;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.08, dt + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.06);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.08);
+        dt += gap; gap = Math.max(minGap, gap * 0.86);
+      }
+    }
+    function lockonHit() {
+      // Close-range crack: a dry snap and a short electric bite. Quieter
+      // than boom — it's personal, not explosive.
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const nz = noise(0.25), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 2500;
+        ng.gain.setValueAtTime(0.45, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.2);
+      }
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(1400, t);
+      o.frequency.exponentialRampToValueAtTime(300, t + 0.12);
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.2);
+    }
+    function lineWindup(durSec) {
+      // THE FILAMENT TIGHTENS: one thin wire tone rising past comfortable.
+      // (white_noise_heron — Spearfish Strike)
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = Math.max(0.8, durSec || 1.5);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(900, t);
+      o.frequency.exponentialRampToValueAtTime(3400, t + dur);
+      // beating companion: the wire has a second strand, slightly off
+      const o2 = ctx.createOscillator(); o2.type = 'sine';
+      o2.frequency.setValueAtTime(912, t);
+      o2.frequency.exponentialRampToValueAtTime(3455, t + dur);
+      const g2 = ctx.createGain(); g2.gain.value = 0.5;
+      o2.connect(g2); g2.connect(g);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.1, t + dur * 0.8);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o2.start(t); o.stop(t + dur); o2.stop(t + dur);
+    }
+    function lineStrike() {
+      // WIRE SNAP: the filament lets go — a piercing shriek downward and
+      // a thin, wet punch. Not a boom; a needle.
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(3600, t);
+      o.frequency.exponentialRampToValueAtTime(400, t + 0.3);
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 9;
+      f.frequency.setValueAtTime(3600, t);
+      f.frequency.exponentialRampToValueAtTime(500, t + 0.3);
+      g.gain.setValueAtTime(0.28, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.4);
+    }
+    function rushWindup() {
+      // HELD BREATH: almost nothing. A soft intake, then the world slows —
+      // a tape-stop drag on the heartbeat. (hushwolf, service_mimic: no
+      // telegraph by design at the TEXT level; this is the sound of that.)
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // one soft intake of breath
+      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 2; nf.frequency.value = 800;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.12, t + 0.15);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.45);
+      }
+      // heartbeat drags: a single thump pitched down hard
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(55, t + 0.25);
+      o.frequency.exponentialRampToValueAtTime(30, t + 0.8);
+      g.gain.setValueAtTime(0.35, t + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      o.connect(g); g.connect(hbBus); o.start(t + 0.25); o.stop(t + 0.95);
+    }
+    function rushHit() {
+      // AIR DISPLACEMENT: it's suddenly HERE. Low whoom and a close scrape —
+      // no boom, the rush doesn't explode, it arrives.
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(45, t + 0.3);
+      g.gain.setValueAtTime(0.5, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.45);
+      const nz = noise(0.3), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 3; nf.frequency.value = 1200;
+        ng.gain.setValueAtTime(0.25, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.3);
+      }
+    }
+    function diveWindup(durSec) {
+      // FALLING: a thin whistle dropping out of the sky. The generic
+      // 'single'-pattern windup — glasswing/sunbasker have bespoke dives.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = Math.max(0.7, durSec || 1.3);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(2600, t);
+      o.frequency.exponentialRampToValueAtTime(500, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.1, t + dur * 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur);
+    }
+    function diveImpact() {
+      // SKYFALL: dirt thud, then skittering debris — small, fast, nasty.
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(130, t);
+      o.frequency.exponentialRampToValueAtTime(35, t + 0.25);
+      g.gain.setValueAtTime(0.5, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.4);
+      for (let i = 0; i < 5; i++) {
+        const dt = t + 0.12 + i * 0.06;
+        const s = ctx.createOscillator(), sg = ctx.createGain();
+        s.type = 'triangle'; s.frequency.value = 900 + Math.random() * 1400;
+        sg.gain.setValueAtTime(0.0001, dt);
+        sg.gain.exponentialRampToValueAtTime(0.07, dt + 0.015);
+        sg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.07);
+        s.connect(sg); sg.connect(sfxBus); s.start(dt); s.stop(dt + 0.09);
+      }
+    }
+    function ambushSnap() {
+      // BEAR-TRAP JAWS: no warning, by design. Instant metallic clack and a
+      // low, surprised thud. (speedbump_turtle — Snap Decision)
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = 3400;
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 3400; f.Q.value = 5;
+      g.gain.setValueAtTime(0.3, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.12);
+      const th = ctx.createOscillator(), tg = ctx.createGain();
+      th.type = 'sine';
+      th.frequency.setValueAtTime(120, t);
+      th.frequency.exponentialRampToValueAtTime(40, t + 0.25);
+      tg.gain.setValueAtTime(0.4, t);
+      tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      th.connect(tg); tg.connect(sfxBus); th.start(t); th.stop(t + 0.35);
+    }
+    // ============ WAVE-2 BESPOKE BEATS (Steve 2026-10-06) ============
+    // Missing resolves for the wave-2 flesh-out siblings to wire up.
+    function staticScream() {
+      // THE RADIO SCREAMS: no voice left, just noise and fury. The lure is
+      // over — this is the part that hurts. (voice_mimic_radio reveal)
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime, dur = 1.2;
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 1.5;
+        nf.frequency.setValueAtTime(500, t);
+        nf.frequency.exponentialRampToValueAtTime(3800, t + dur * 0.5);
+        nf.frequency.exponentialRampToValueAtTime(300, t + dur);
+        ng.gain.setValueAtTime(0.45, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + dur);
+      }
+      // detuned sirens underneath: the voice, shredded
+      [620, 641].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 2.1, t + dur * 0.5);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.5, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.12, t + 0.15);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur);
+      });
+    }
+    function serviceRush() {
+      // PLEASE HOLD: the pleasant hold music SLAMMED into motion. A warm
+      // major-chord fragment pitch-drops as it rushes you — customer service
+      // with teeth. (service_mimic rush resolve)
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime, dur = 0.9;
+      // the fragment: three warm tones, chipper, doomed
+      [523.25, 659.25, 783.99].forEach((fq, i) => {
+        const dt = t + i * 0.09;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(fq, dt);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.45, dt + dur - i * 0.09); // dropping
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.2, dt + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(t + dur + 0.05);
+      });
+      // the arrival: low whoom
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sine';
+      w.frequency.setValueAtTime(160, t + dur * 0.6);
+      w.frequency.exponentialRampToValueAtTime(40, t + dur);
+      wg.gain.setValueAtTime(0.0001, t + dur * 0.6);
+      wg.gain.exponentialRampToValueAtTime(0.45, t + dur * 0.85);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.2);
+      w.connect(wg); wg.connect(sfxBus); w.start(t + dur * 0.6); w.stop(t + dur + 0.25);
+    }
+    function contractBind() {
+      // BINDING AGREEMENT: fine print crawling, accelerating into a heavy
+      // STAMP. Paper becomes law becomes weight. (contract_golem strike)
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      // paper rattle accelerating: 8 hits, interval shrinking
+      let dt = t;
+      for (let i = 0; i < 8; i++) {
+        const nz = noise(0.09), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (nz) {
+          nf.type = 'highpass'; nf.frequency.value = 4500;
+          ng.gain.setValueAtTime(0.16, dt);
+          ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.07);
+          nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+          nz.start(dt); nz.stop(dt + 0.09);
+        }
+        dt += 0.16 - i * 0.016;
+      }
+      // the STAMP: low, official, final
+      const st = t + 0.85;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(95, st);
+      o.frequency.exponentialRampToValueAtTime(28, st + 0.4);
+      g.gain.setValueAtTime(0.6, st);
+      g.gain.exponentialRampToValueAtTime(0.0001, st + 0.55);
+      o.connect(g); g.connect(sfxBus); o.start(st); o.stop(st + 0.6);
+    }
+    function monsterDown() {
+      // GENERIC DEATH (wave-2 siblings): a small collapse, a breath out,
+      // and one wrong note hanging in the air after it.
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(220, t);
+      o.frequency.exponentialRampToValueAtTime(60, t + 0.5);
+      g.gain.setValueAtTime(0.3, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.65);
+      // the wrong note: slightly sharp, hangs too long
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'triangle'; w.frequency.value = 466.5; // Bb, a hair sharp
+      wg.gain.setValueAtTime(0.0001, t + 0.3);
+      wg.gain.exponentialRampToValueAtTime(0.07, t + 0.5);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+      w.connect(wg); wg.connect(sfxBus); w.start(t + 0.3); w.stop(t + 1.65);
+    }
+    function monsterHurt() {
+      // WOUNDED: a flinch — short, pained, cut off. Generic, for siblings.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(700, t);
+      o.frequency.exponentialRampToValueAtTime(380, t + 0.18);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1400;
+      g.gain.setValueAtTime(0.22, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+      o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.25);
+    }
+    // ============ WAVE-1 CONTRACT HOOKS (Steve 2026-10-06) ============
+    // Promised in the HOOK CONTRACT above, never defined until now. Distinct
+    // per-monster beats for the batch-1 flesh-out.
+    function boarNotice() {
+      // COMBAT START: heavy snort, earth pawed. The bulldozer knows you're here.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.4), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 500;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.35, t + 0.12);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.4);
+      }
+      // pawing: three dull scrapes
+      for (let i = 0; i < 3; i++) {
+        const dt = t + 0.15 + i * 0.16;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = 95;
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 320;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.2, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
+        o.connect(f); f.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.14);
+      }
+    }
+    function boarSnort() {
+      // AGGRO: sharper and angrier than the deer's snort — a wet, furious bark.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 2; i++) {
+        const dt = t + i * 0.14;
+        const nz = noise(0.12), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (nz) {
+          nf.type = 'bandpass'; nf.Q.value = 2; nf.frequency.value = 700;
+          ng.gain.setValueAtTime(0.0001, dt);
+          ng.gain.exponentialRampToValueAtTime(0.4, dt + 0.03);
+          ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
+          nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+          nz.start(dt); nz.stop(dt + 0.13);
+        }
+      }
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(90, t + 0.3);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700;
+      g.gain.setValueAtTime(0.25, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+      o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.35);
+    }
+    function boarCharge() {
+      // CHINA-SHOP CHARGE RESOLVES: the generic thunder, with a porcine
+      // grunt riding it — the bulldozer is an animal, not a machine.
+      chargeImpact();
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(150, t);
+      o.frequency.exponentialRampToValueAtTime(70, t + 0.4);
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 28; lg.gain.value = 30;
+      lfo.connect(lg); lg.connect(o.frequency);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500;
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); lfo.start(t); o.stop(t + 0.5); lfo.stop(t + 0.5);
+    }
+    function wolfSilence() {
+      // THE BIRDS CUT OUT: the world ducks for a beat — then one low tone.
+      // Combat start for the hushwolf.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      if (hbBus) duckHeartbeat(0.05, 0.08, 0.9);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 73;
+      g.gain.setValueAtTime(0.0001, t + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.18, t + 0.45);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      o.connect(g); g.connect(sfxBus); o.start(t + 0.25); o.stop(t + 1.25);
+    }
+    function wolfSnarl() {
+      // AGGRO: layered low growls, detuned, CLOSE. The pack is one instrument.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.1;
+      [68, 71.5, 74].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = fq;
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 9 + fq * 0.05; lg.gain.value = fq * 0.35;
+        lfo.connect(lg); lg.connect(o.frequency);
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 320;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.12, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t); lfo.start(t); o.stop(t + dur); lfo.stop(t + dur);
+      });
+    }
+    function heronUnfold() {
+      // AGGRO: the air goes staticky and something TALL unfolds — a rising
+      // static sheet with a wooden creak inside it.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.6;
+      heronStatic();
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass';
+        nf.frequency.setValueAtTime(3000, t);
+        nf.frequency.exponentialRampToValueAtTime(7000, t + dur);
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.1, t + dur * 0.8);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + dur);
+      }
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(190, t + dur * 0.7);
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 3; lg.gain.value = 25;
+      lfo.connect(lg); lg.connect(o.frequency); // the creak wobble
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 400; f.Q.value = 4;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.09, t + dur * 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); lfo.start(t); o.stop(t + dur); lfo.stop(t + dur);
+    }
+    function heronStrike() {
+      // SPEARFISH STRIKE: the wire snap with a wet punch under it.
+      lineStrike();
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.3), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 900;
+        ng.gain.setValueAtTime(0.3, t + 0.05);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.05); nz.stop(t + 0.35);
+      }
+    }
+    function turtleSnap() {
+      // SNAP DECISION: no warning, by design. (speedbump_turtle)
+      ambushSnap();
+    }
+    function stagCharge() {
+      // CONFRONTATION RESOLVES: the mirror SHATTERS into the charge — glass
+      // harmonics splintering apart, then the thunder underneath. The grief
+      // counselor stops talking and starts running. (mirror_stag)
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // shattering glass: bright shards, accelerating
+      let dt = t;
+      for (let i = 0; i < 7; i++) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 2800 - i * 260 + Math.random() * 120;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.1, dt + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.09);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.11);
+        dt += 0.09 - i * 0.008;
+      }
+      // then the thunder: it was always coming
+      const late = t + 0.45;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(100, late);
+      o.frequency.exponentialRampToValueAtTime(30, late + 0.4);
+      g.gain.setValueAtTime(0.55, late);
+      g.gain.exponentialRampToValueAtTime(0.0001, late + 0.55);
+      o.connect(g); g.connect(sfxBus); o.start(late); o.stop(late + 0.6);
+    }
+    // ============ AMBIENT STING (Steve 2026-10-06) ============
+    function horrorSting() {
+      // THE MISSING STING: referenced by the UI dread-beat (app.js top),
+      // never defined until now. A detuned swell that never resolves —
+      // something noticed you noticing it.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.8;
+      [110, 116.5].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 1.5, t + dur); // rising, never arriving
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+        f.frequency.setValueAtTime(400, t);
+        f.frequency.exponentialRampToValueAtTime(900, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.1, t + dur * 0.6);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur);
+      });
+    }
+
     // on beam fire — brief, violent, unmistakable. The phone screen itself
     // flinches. (Reduced-motion: shorter, dimmer — still unmistakable.)
     // Lives INSIDE the CombatAudio IIFE so impact() always resolves it —
@@ -3778,12 +4452,34 @@
         // urgency = turnsLeft. 2+ = slow dread (80bpm), 1 = frantic (145bpm).
         heartbeat((d && d.urgency >= 2) ? 80 : 145);
         if (d && d.windupTick) return; // charge already rising from declare
-        if (d && d.beam) beamCharge(Math.max(0.9, (d.urgency || 1) * 1.5));
-        // highbeam bellow is explicit via deerAggro on declare (game.js), not here
+        // PATTERN-AWARE WINDUP (Steve 2026-10-06): every pattern gets its own
+        // charge sound. The deer's beam keeps beamCharge; other beams are
+        // machines (beamTechWindup). windup duration scales with urgency.
+        const dur = Math.max(0.9, ((d && d.urgency) || 1) * 1.5);
+        if (d && d.beam && d.highbeam) { beamCharge(dur); return; }
+        const pat = (d && d.pattern) || '';
+        if (pat === 'beam' || (d && d.beam)) beamTechWindup(dur);
+        else if (pat === 'burst') burstWindup(dur);
+        else if (pat === 'charge') chargeWindup(dur);
+        else if (pat === 'direct') lockonTick(dur);
+        else if (pat === 'line') lineWindup(dur);
+        else if (pat === 'rush') rushWindup();
+        else if (pat === 'single') diveWindup(dur);
+        // 'ambush' deliberately silent: no warning, by design.
       },
       impact(d) {
-        if (d && d.beam) { beamFire(); beamFlash(); }
-        else boom();
+        // PATTERN-AWARE RESOLVE (Steve 2026-10-06): mirrors telegraph.
+        if (d && d.beam && d.highbeam) { beamFire(); beamFlash(); return; }
+        const pat = (d && d.pattern) || '';
+        if (pat === 'beam' || (d && d.beam)) { droneBeam(); return; }
+        if (pat === 'burst') { burstDetonate(); return; }
+        if (pat === 'charge') { chargeImpact(); return; }
+        if (pat === 'direct') { lockonHit(); return; }
+        if (pat === 'line') { lineStrike(); return; }
+        if (pat === 'rush') { rushHit(); return; }
+        if (pat === 'single') { diveImpact(); return; }
+        if (pat === 'ambush') { ambushSnap(); return; }
+        boom();
       },
       beamBlocked() { beamBlocked(); },
       deerNotice() { deerCall(0.22); },
@@ -3901,6 +4597,63 @@
       crash(d) { crash(d); },
       levelup(d) { levelup(d); },
       passiveUnlock(d) { passiveUnlock(d); },
+      // PATTERN SYNTHS (Steve 2026-10-06): generic-per-pattern beats for the
+      // wave-2 flesh-out siblings — call directly, or let telegraph()/impact()
+      // dispatch them by pattern. Patterns: beam, burst, charge, direct,
+      // line, rush, single, ambush. (The deer's beam is separate: beamCharge/
+      // beamFire are the animal; droneBeam is the machine.)
+      patternWindup(d) {
+        const pat = (d && d.pattern) || '';
+        const dur = Math.max(0.9, ((d && d.urgency) || 1) * 1.5);
+        if (pat === 'beam' || (d && d.beam)) beamTechWindup(dur);
+        else if (pat === 'burst') burstWindup(dur);
+        else if (pat === 'charge') chargeWindup(dur);
+        else if (pat === 'direct') lockonTick(dur);
+        else if (pat === 'line') lineWindup(dur);
+        else if (pat === 'rush') rushWindup();
+        else if (pat === 'single') diveWindup(dur);
+      },
+      patternResolve(d) {
+        const pat = (d && d.pattern) || '';
+        if (pat === 'beam' || (d && d.beam)) droneBeam();
+        else if (pat === 'burst') burstDetonate();
+        else if (pat === 'charge') chargeImpact();
+        else if (pat === 'direct') lockonHit();
+        else if (pat === 'line') lineStrike();
+        else if (pat === 'rush') rushHit();
+        else if (pat === 'single') diveImpact();
+        else if (pat === 'ambush') ambushSnap();
+        else boom();
+      },
+      burstDetonate() { burstDetonate(); },
+      chargeImpact() { chargeImpact(); },
+      lockonTick(d) { lockonTick(d && d.dur); },
+      lockonHit() { lockonHit(); },
+      lineStrike() { lineStrike(); },
+      rushHit() { rushHit(); },
+      diveImpact() { diveImpact(); },
+      ambushSnap() { ambushSnap(); },
+      // WAVE-2 BESPOKE BEATS (Steve 2026-10-06): missing resolves for siblings
+      staticScream() { staticScream(); }, // voice_mimic_radio reveal: the radio SCREAMS
+      serviceRush() { serviceRush(); },   // service_mimic: hold music slammed into motion
+      contractBind() { contractBind(); }, // contract_golem: paper becomes law becomes weight
+      monsterDown() { monsterDown(); },   // generic death — collapse, breath out, wrong note
+      monsterHurt() { monsterHurt(); },   // generic wound — a flinch, cut off
+      delegateDebrief() { managerDebrief(); }, // fired by tbFifoBreather, was silent
+      // WAVE-1 CONTRACT HOOKS (Steve 2026-10-06): promised in the HOOK
+      // CONTRACT above, never defined until now
+      boarNotice() { boarNotice(); },
+      boarSnort() { boarSnort(); },
+      boarCharge() { boarCharge(); },
+      wolfSilence() { wolfSilence(); },
+      wolfSnarl() { wolfSnarl(); },
+      heronUnfold() { heronUnfold(); },
+      heronStrike() { heronStrike(); },
+      turtleSnap() { turtleSnap(); }, // speedbump_turtle resolveAudio
+      stagCharge() { stagCharge(); }, // mirror_stag Confrontation resolve (monsters.json)
+      // AMBIENT STING (Steve 2026-10-06): the UI dread-beat's horrorSting was
+      // referenced at the top of app.js but never defined. Now it is.
+      horrorSting() { horrorSting(); },
     };
   })();
   Game.audio = CombatAudio;
