@@ -209,7 +209,13 @@
     box_turtle:        { notice: 2, awareRate: 0.20, stamina: 1 },
     snapping_turtle:   { notice: 2, awareRate: 0.25, stamina: 2 },
     opossum:           { notice: 3, awareRate: 0.30, stamina: 2 },
-    crayfish:          { notice: 2, awareRate: 0.30, stamina: 2 }
+    crayfish:          { notice: 2, awareRate: 0.30, stamina: 2 },
+    // NEW SPECIES (Steve 2026-10-06): the snake stands its ground (low notice,
+    // strikes instead of bolting); the skunk barely cares (low awareRate);
+    // the muskrat dives when it bolts near water (architect => water escape).
+    timber_rattlesnake: { notice: 2, awareRate: 0.60, stamina: 1 },
+    striped_skunk:      { notice: 3, awareRate: 0.25, stamina: 2 },
+    muskrat:            { notice: 3, awareRate: 0.55, stamina: 3 }
   };
   G.encPreyCfg = function (id) {
     var o = { notice: ENC_PREY_DEFAULT.notice, awareRate: ENC_PREY_DEFAULT.awareRate, stamina: ENC_PREY_DEFAULT.stamina };
@@ -383,7 +389,7 @@
       try { this.audioEvent('animalChatter'); } catch (e) {}
       return true;
     }
-    if ((b === 'aquatic' || b === 'aquatic_ambush') && nearKind(['water', 'creek'])) {
+    if ((b === 'aquatic' || b === 'aquatic_ambush' || b === 'architect') && nearKind(['water', 'creek'])) {
       s.animal = null;
       this.say(cap + ' dives — gone under. The water keeps it.');
       try { this.audioEvent('animalSplash'); } catch (e) {}
@@ -570,6 +576,40 @@
       }
       return; // never bolts
     }
+    if (beh === 'defensive') {
+      // TIMBER RATTLESNAKE (Steve 2026-10-06): warns first. The rattle is the
+      // whole deal — heed it. Press a warned snake and it strikes: venom.
+      if (dist <= 3 && !a.rattled) {
+        a.rattled = true; a.aware = 1;
+        this.say(this.encCap(label) + ' raises its tail — a dry rattle fills the leaf litter. It is not bluffing. Back off, or commit.');
+        try { this.audioEvent('animalRattle'); } catch (e) {}
+        return;
+      }
+      if (a.rattled && dist <= 1 && Math.random() < 0.5) {
+        var vDmg = 8 + Math.floor(Math.random() * 7);
+        try { s.health = Math.max(0, (s.health || 100) - vDmg); } catch (e) {}
+        try { (s.poisons = s.poisons || []).push({ name: 'rattlesnake venom', day: s.day }); } catch (e) {}
+        this.say('It strikes — ' + vDmg + ' damage, and the venom is in. (poisoned — find an antidote)');
+        try { this.audioEvent('animalBite'); } catch (e) {}
+      }
+      if (dist > 4) a.rattled = false; // you left: it settles back into the litter
+      return; // never bolts — it stands its ground
+    }
+    if (beh === 'unbothered' && dist <= 1 && !a.sprayed) {
+      // STRIPED SKUNK (Steve 2026-10-06): not afraid of you. Consequence
+      // animal, not dangerous animal. Press it and chemistry happens: blinded
+      // for the encounter, and the smell follows you for days — everything
+      // with a nose knows where you've been.
+      a.sprayed = true; a.aware = 1;
+      s.skunkScent = (s.skunkScent || 0) + 5;
+      this.say(this.encCap(label) + " turns its back. Lifts its tail. — Your eyes are on fire. Blinded. And the smell... the smell will follow you for days. Everything with a nose knows where you've been.");
+      try { this.audioEvent('animalSpray'); } catch (e) {}
+      tryMove(a.mx + Math.sign(a.mx - px), a.my + Math.sign(a.my - py)); // ambles off, unhurried
+      return;
+    }
+    // Unbothered otherwise: the generic graze/wary turn below runs (it still
+    // notices you — the scent hook included), but the skunk NEVER bolts.
+    // The spray is its answer; bolting is for animals with something to lose.
     if (beh === 'curious' && dist >= cfg.notice) {
       // RACCOON: not afraid. Watches with clever hands. Sometimes approaches.
       a.pstate = 'graze'; a.aware = Math.max(0, a.aware - 0.25); a.edgeTurns = 0;
@@ -603,7 +643,7 @@
         return;
       }
     }
-    if ((beh === 'aquatic' || beh === 'aquatic_ambush' || beh === 'aquatic_defensive') && a.pstate === 'bolt') {
+    if ((beh === 'aquatic' || beh === 'aquatic_ambush' || beh === 'aquatic_defensive' || beh === 'architect') && a.pstate === 'bolt') {
       // WATER ESCAPE: darts for the nearest water cell and dives. Gone.
       var best = null, bd = 99;
       for (var wy = 0; wy < 9; wy++) for (var wx = 0; wx < 9; wx++) {
@@ -659,7 +699,10 @@
       if (dist < 4) { a.pstate = 'bolt'; }
       else { a.aware = Math.max(0.4, (a.aware || 0.6) - 0.1); return; }
     }
-    if (dist >= cfg.notice) {
+    // SKUNK SPRAY (Steve 2026-10-06): you smell. Everything with a nose
+    // notices you sooner — animals and monsters alike.
+    var noticeRange = cfg.notice + (s.skunkScent > 0 ? 2 : 0);
+    if (dist >= noticeRange) {
       // grazing. it doesn't know you're here. or doesn't care yet.
       a.pstate = 'graze';
       a.aware = Math.max(0, a.aware - 0.25);
@@ -681,8 +724,9 @@
     }
     // Bolt threshold is behavior-aware: the skittish rabbit goes at a
     // shadow (0.75); the wary deer at the white tail (0.7, above); most at 1.
+    // The skunk never bolts — the spray is its answer.
     var boltAt = beh === 'skittish' ? 0.75 : 1;
-    if (a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead') {
+    if (beh !== 'unbothered' && a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead') {
       a.pstate = 'bolt';
       // Flee narration is knowledge-gated (encFleeText): the vivid huntText
       // is earned; the ignorant get the generic version.
@@ -887,15 +931,32 @@
         }
       }
     }
+    // SKUNK SPRAY (Steve 2026-10-06): sprayed this encounter — your eyes are
+    // streaming. You swing at a blur. Clears when the encounter ends (read
+    // from the animal, not a scholar flag).
+    if (s.animal && s.animal.sprayed) {
+      chance *= 0.35;
+      if (!a._blindTold) {
+        a._blindTold = true;
+        this.feedback('Your eyes are streaming — you swing at a blur. (sprayed: blinded)');
+      }
+    }
     // BITE (Steve 2026-10-05): close capture can cost you. Wild things have
     // teeth — not a fight, just the price of grabbing. Traps avoid this.
     if (dist <= 1) {
       var bBeh = animal.behavior || '';
-      var biteP = bBeh === 'aggressive' ? 0.6 : bBeh === 'plays_dead' ? 0.3 : 0.2;
+      var biteP = bBeh === 'aggressive' ? 0.6 : bBeh === 'defensive' ? 0.6 : bBeh === 'plays_dead' ? 0.3 : 0.2;
       if (Math.random() < biteP) {
-        var biteDmg = bBeh === 'aggressive' ? 8 + Math.floor(Math.random() * 8) : 3 + Math.floor(Math.random() * 6);
+        var biteDmg = bBeh === 'aggressive' ? 8 + Math.floor(Math.random() * 8) : bBeh === 'defensive' ? 8 + Math.floor(Math.random() * 7) : 3 + Math.floor(Math.random() * 6);
         try { s.health = Math.max(0, (s.health || 100) - biteDmg); } catch (e) {}
-        this.feedback('It bites! Teeth in your hand — ' + biteDmg + ' damage. Wild things have teeth.');
+        this.feedback(bBeh === 'defensive'
+          ? 'It strikes! Fangs — ' + biteDmg + ' damage. The head bites after death — cut wide, bury the head.'
+          : 'It bites! Teeth in your hand — ' + biteDmg + ' damage. Wild things have teeth.');
+        if (bBeh === 'defensive') {
+          // RATTLESNAKE: fangs, not teeth. The venom is in.
+          try { (s.poisons = s.poisons || []).push({ name: 'rattlesnake venom', day: s.day }); } catch (e) {}
+          this.feedback('(poisoned — rattlesnake venom. Find an antidote.)');
+        }
         try { this.audioEvent('animalBite'); } catch (e) {}
         if (Math.random() < 0.3) {
           this.feedback('You fumble — it wriggles free!');

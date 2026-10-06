@@ -1551,6 +1551,8 @@
   //   animalSnort()  — deer alarm snort on the white-tail bolt
   //   animalRustle() — the "Movement —" spawn notice (with one wrong note)
   //   animalPant()   — winded state: sides heaving, spent
+  //   animalRattle() — timber rattlesnake warning: dry pulsed buzz (Steve 2026-10-06)
+  //   animalSpray()  — striped skunk spray: wet sibilant burst + oily thump (Steve 2026-10-06)
   //   stagSnort()    — stag aggro
   //   stagCharge()   — Confrontation charge resolves
   //   stagConfused() — the charge dies unspent (lost you)
@@ -3266,6 +3268,48 @@
         o.start(t + dt + breath * 0.6); o.stop(t + dt + breath + 0.2);
       });
     }
+    function animalRattle() {
+      // TIMBER RATTLESNAKE (Steve 2026-10-06): the warning. Dry pulsed
+      // buzz — bandpass noise chopped at ~13Hz, like shaking dry seeds in a
+      // gourd. Heed it.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.1;
+      const nx = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (!nx) return;
+      nf.type = 'bandpass'; nf.frequency.value = 4200; nf.Q.value = 3;
+      // rattle rhythm: 13 pulses/sec via gain LFO
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'square'; lfo.frequency.value = 13;
+      lg.gain.value = 0.5;
+      const base = ctx.createGain(); base.gain.value = 0.5;
+      lfo.connect(lg); lg.connect(ng.gain);
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(0.16, t + 0.1);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      nx.connect(nf); nf.connect(base); base.connect(ng); ng.connect(sfxBus);
+      nx.start(t); nx.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
+    }
+    function animalSpray() {
+      // STRIPED SKUNK (Steve 2026-10-06): the chemistry. A wet sibilant
+      // burst — high hiss with a low oily thump underneath. Then it lingers
+      // in your nose for days (that's the debuff, not the synth).
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.9;
+      const nx = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (!nx) return;
+      nf.type = 'highpass'; nf.frequency.value = 2600;
+      ng.gain.setValueAtTime(0.22, t);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      nx.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+      nx.start(t); nx.stop(t + dur);
+      // the oily thump under it
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(140, t);
+      o.frequency.exponentialRampToValueAtTime(60, t + 0.4);
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.55);
+    }
     // ---- BATCH MONSTERS: the ones that were silent ----
     function boarTrample() {
       // BULLDOZER TRAMPLE: heavy rhythmic thuds, ground shaking.
@@ -4598,6 +4642,8 @@
       animalSnort() { animalSnort(); },
       animalRustle() { animalRustle(); },
       animalPant() { animalPant(); },
+      animalRattle() { animalRattle(); },
+      animalSpray() { animalSpray(); },
       // Batch monsters (were silent)
       boarTrample() { boarTrample(); },
       catfishLure() { catfishLure(); },

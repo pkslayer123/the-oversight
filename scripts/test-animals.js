@@ -45,9 +45,9 @@ function setAnimal(id, mx, my, extra) {
   // ensure a knife so cleanCarcass works
   s().inventory.push({ name: 'Stone knife', recipeId: 'stone_knife', units: 1, kg: 0.3 });
 
-  // ---- 1. Data: all 12 animals have butcher yields defined ----
+  // ---- 1. Data: animals have butcher yields defined (count dynamic — see note in test-animals-flesh.js) ----
   const animals = Game.data.animals;
-  ok('12 animals loaded', animals.length === 12, 'got ' + animals.length);
+  ok('animals loaded', animals.length > 0, 'got ' + animals.length);
   ok('all have butcher field', animals.every(a => a.butcher && typeof a.butcher === 'object'));
   const deer = animals.find(a => a.id === 'white_tailed_deer');
   ok('deer yields hide+bone+antler', deer.butcher.hide === 2 && deer.butcher.bone === 4 && deer.butcher.antler === 2);

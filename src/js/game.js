@@ -10796,6 +10796,9 @@
       chance = this.modTarget('travel.encounter_chance', chance);
       // loud_chewer: they heard you eating. More encounters while noisy.
       if (scholar.noisyUntil && scholar.noisyUntil >= scholar.day) chance *= 2;
+      // SKUNK SPRAY (Steve 2026-10-06): you smell. Monsters have noses —
+      // more encounters find you while the scent lasts.
+      if (scholar.skunkScent > 0) chance *= 1.5;
       // bird_whisperer / third_eye: the birds see everything. On a successful
       // detect you slip away first — no spawn, just a warning.
       const detect = this.modTarget('monster.detect_chance', 0);
@@ -13008,6 +13011,12 @@
       }
       // THE BANK: the war chest leaks overnight — use it or lose it.
       if (this.overnightBankBurn) this.overnightBankBurn();
+      // SKUNK SPRAY (Steve 2026-10-06): the smell follows you for days, then
+      // finally washes out. While it lasts, everything with a nose finds you.
+      if (scholar.skunkScent > 0) {
+        scholar.skunkScent -= 1;
+        if (scholar.skunkScent === 0) this.say('The skunk smell finally washes out. You can breathe through your nose again.');
+      }
       // ant_trail: ants know where the water is. 30% chance they lead you to some.
       if (this.hasAbility('ant_trail') && Math.random() < 0.3) {
         this.addWater(1, 'risky', 'ant-trail seep');

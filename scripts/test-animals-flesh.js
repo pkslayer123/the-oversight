@@ -68,10 +68,12 @@ function withRand(values, fn) {
   const animals = Game.data.animals;
 
   // ---- 1. tell: distinct windup telegraph per species ----
-  ok('12 animals', animals.length === 12, 'got ' + animals.length);
+  // NOTE (Steve 2026-10-06): count is dynamic — hardcoding it broke when the
+  // pool grew 12->15. Assert shape/consistency, never the literal count.
+  ok('animals loaded', animals.length > 0, 'got ' + animals.length);
   ok('all have tell', animals.every(a => typeof a.tell === 'string' && a.tell.length > 10));
   const tells = animals.map(a => a.tell);
-  ok('tells are distinct per species', new Set(tells).size === 12);
+  ok('tells are distinct per species', new Set(tells).size === animals.length);
   const nameLeak = animals.filter(a =>
     a.tell.toLowerCase().includes(a.name.toLowerCase()) ||
     (a.scientific && a.tell.toLowerCase().includes(a.scientific.split(' ')[0].toLowerCase())));
