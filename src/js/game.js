@@ -22687,9 +22687,9 @@
       // knowledgeLevels['1'] often starts with the name ("Chickweed. Low, tiny
       // white flowers.") — strip it so we don't print "Chickweed. Chickweed."
       let kl1 = p.knowledgeLevels['1'] || '';
-      // Case-insensitive (explorer loop 2026-10-06): data casing doesn't always
-      // match the name ("Lamb's Quarters" vs "Lamb's quarters.").
-      kl1 = kl1.replace(new RegExp('^' + p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.\\s:\u2014-]*', 'i'), '');
+      const namePrefix = p.name + '. ';
+      if (kl1.startsWith(namePrefix)) kl1 = kl1.slice(namePrefix.length);
+      else if (kl1.startsWith(p.name)) kl1 = kl1.slice(p.name.length).replace(/^[.\s:—-]+/, '');
       this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1} Uses unknown — harvest, taste, and learn.`);
       // RECOGNITION (Steve 2026-10-06): if you examined this species before it
       // was named, the vague description CLICKS. The observation memory
