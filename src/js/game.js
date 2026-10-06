@@ -12844,17 +12844,23 @@
       const room = Math.max(0, 3000 - (scholar.kcal || 0));
       const want = Math.min(share, room);
       if (want <= 0) { this.say('You\'re full. The pantry keeps its food.'); return; }
-      // take from pantry (most perishable first)
+      // take from pantry (most perishable first). The sort puts the soonest
+      // spoilDay at index 0, so iterate FORWARD. (BUG 2026-10-06: the old loop
+      // iterated from the end — durable-first — while the comment claimed
+      // perishable-first. The village burned the beans and threw out the
+      // berries.) Spoiled stacks are SKIPPED, never eaten at full value —
+      // endDay's sweepSpoiled throws them out (its voice, its job).
       let taken = 0;
       pantry.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
-      for (let i = pantry.length - 1; i >= 0 && taken < want; i--) {
+      for (let i = 0; i < pantry.length && taken < want;) {
         const item = pantry[i];
-        if (!item || (item.kcalEach || 0) <= 0 || item.units <= 0) continue;
+        if (!item || (item.kcalEach || 0) <= 0 || item.units <= 0 ||
+            (this.isSpoiled && this.isSpoiled(item))) { i++; continue; }
         const need = want - taken;
         const units = Math.min(item.units, Math.ceil(need / item.kcalEach));
         taken += (units || 0) * (item.kcalEach || 0);
         item.units -= units;
-        if (item.units <= 0) pantry.splice(i, 1);
+        if (item.units <= 0) pantry.splice(i, 1); else i++;
       }
       scholar.kcal = Math.min((scholar.kcal || 0) + taken, 3000);
       // WATER with the meal (from village storage).
@@ -12916,15 +12922,22 @@
       // runs on this measured net burn — not the 12x2000 worst case, which told
       // the forager their pantry was always ~2 days from empty. Rolling 7 days.
       v.burnHistory = (v.burnHistory || []).concat([net]).slice(-7);
-      // Consume REAL pantry items (not phantom pantryKcal). Oldest/spoiling first.
+      // Consume REAL pantry items (not phantom pantryKcal). Perishable first:
+      // the sort puts the soonest spoilDay at index 0, so iterate FORWARD.
+      // (BUG 2026-10-06: the old loop iterated from the end — durable-first —
+      // while the comment said oldest/spoiling first. Measured: 10x100 kcal
+      // fresh berries sat untouched 3 days while the village burned 178
+      // durable bean-units, then the berries were swept as spoiled.)
+      // Spoiled stacks are SKIPPED — never eaten at full value (that's the
+      // phantom calories the rot mechanic was built to kill). They stay in
+      // the pantry and endDay's sweepSpoiled throws them out right after.
       v.pantry = v.pantry || [];
       let need = net;
-      // sort by spoilDay (perishable first)
       v.pantry.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
-      for (let i = v.pantry.length - 1; i >= 0 && need > 0; i--) {
+      for (let i = 0; i < v.pantry.length && need > 0;) {
         const item = v.pantry[i];
         const kcalEach = item.kcalEach || 0;
-        if (kcalEach <= 0) continue;
+        if (kcalEach <= 0 || (this.isSpoiled && this.isSpoiled(item))) { i++; continue; }
         // villagers cook raw food if they know how (abstracted: they get cooked value if any villager knows)
         let effectiveKcal = item.rawKcal ? (item.cookedKcal || item.rawKcal * 1.5) : kcalEach;
         // FOOD REALITY: raw cleaned meat in the pantry gets cooked value only if
@@ -12943,18 +12956,26 @@
           const unitsNeeded = Math.ceil(need / effectiveKcal);
           item.units -= unitsNeeded;
           need = 0;
-          if (item.units <= 0) v.pantry.splice(i, 1);
+          if (item.units <= 0) v.pantry.splice(i, 1); else i++;
         }
       }
       // surplus goes INTO pantry (as foraged goods).
       if (give > 0) {
         v.pantry = v.pantry || [];
-        // add as a generic "foraged food" item (villagers bring variety)
-        const existing = v.pantry.find(p => p.name === 'Foraged food');
+        // add as a generic "foraged food" item (villagers bring variety).
+        // FRESH STACKS KEEP THEIR OWN CLOCK (BUG 2026-10-06): merging fresh
+        // surplus into an old 'Foraged food' stack left the fresh units on the
+        // OLD clock — villagers hauled food in and the village threw it out as
+        // spoiled the same night. So a haul only merges into a stack whose
+        // spoilDay matches today's fresh clock; otherwise it lands as a new
+        // stack with a fresh clock.
+        const freshDay = v.day + 3;
+        const newUnits = Math.ceil(give / 200); // ~200 kcal per unit
+        const existing = v.pantry.find(p => p.name === 'Foraged food' && p.spoilDay === freshDay);
         if (existing) {
-          existing.units += Math.ceil(give / 200); // ~200 kcal per unit
+          existing.units += newUnits;
         } else {
-          v.pantry.push({ name: 'Foraged food', kcalEach: 200, units: Math.ceil(give / 200), spoilDay: v.day + 3, safe: true, kg: 0.2 });
+          v.pantry.push({ name: 'Foraged food', kcalEach: 200, units: newUnits, spoilDay: freshDay, safe: true, kg: 0.2 });
         }
       }
       // keep pantryKcal in sync (derived, not source of truth)
