@@ -19371,16 +19371,60 @@
       }
 
       // ---- THE LANDLORD: THE LEASE ----
-      // It doesn't chase you. It buys the ground under you. Tiles it stands on
-      // become CLAIMED (terraform) — standing on claimed ground hurts and heals
-      // IT. SPREADING JURISDICTION (salvaged from contract_golem): the claim
-      // spreads to adjacent tiles each round. The wave-1 answer (stand and
-      // trade) fails because the ground itself turns.
+      // It doesn't chase you. It buys the ground under you. Tiles it claims
+      // become CLAIMED (terraform) — stepping onto claimed ground hurts (1),
+      // and ENDING your turn on it costs RENT (1 + wave, every round,
+      // undodgeable: you can't dodge the ground you're standing on).
+      // JURISDICTION SPREAD fires in WAVES (Steve 2026-10-06): every 2 new
+      // claims — or every 3 of its turns with no new claims — another
+      // ADDENDUM widens the lease around it. Stand still and it serves
+      // notice ON YOUR POSITION, claiming your tile and the ring around you.
+      // Wave 2+ is FORECLOSURE: rent and its healing both rise. The wave-1
+      // answer (stand and trade) fails because the ground itself turns and
+      // the rent keeps rising. Kill it before foreclosure.
       if (this.llIs(m)) {
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
-        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'surveying'); m.llClaimed = 0; }
+        const p = this.tbFighter('p');
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'surveying'); m.llClaimed = 0; m.llAddenda = 0; m.llAddendaAt = 0; m.llSinceWave = 0; }
         const known = this.encTelegraphKnown(m);
+        // COLLECT RENT (codex-honest standing damage): ending your turn on
+        // leased ground costs rent at the start of its turn. Rises with
+        // each Addendum. This is the anti-turtle clock.
+        if (p && p.alive && !p.fled && this.tbTerrainAt(p.mx, p.my) === 'claimed') {
+          const rent = 1 + (m.llAddenda || 0);
+          this.say(known ? `"RENT'S DUE." The leased ground takes its cut. (${rent})`
+            : `The ground under your feet feels owned. It takes its cut. (${rent})`);
+          this.tbDamage('p', rent, 'rent collection', null, { quiet: true, undodgeable: true });
+          if (!p.alive || (this.tbfight || {}).over) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+        }
+        // EVICTION (anti-turtle): if you haven't moved since its last turn,
+        // it serves notice ON YOUR POSITION — your tile plus the ring around
+        // you gets claimed. The ring closes; rent starts next turn. MOVE.
+        const stationary = !!(p && p.alive && !p.fled && m.llLastPx === p.mx && m.llLastPy === p.my);
+        if (p) { m.llLastPx = p.mx; m.llLastPy = p.my; }
+        if (stationary) {
+          let served = 0;
+          const ring = [[p.mx, p.my]];
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            ring.push([p.mx + dx, p.my + dy]);
+          }
+          for (const [sx, sy] of ring) {
+            if (served >= 3) break;
+            if (sx < 0 || sx > 8 || sy < 0 || sy > 8) continue;
+            if (this.tbTerrainAt(sx, sy) !== 'claimed') {
+              this.tbTerraform(sx, sy, 'claimed');
+              m.llClaimed = (m.llClaimed || 0) + 1;
+              served++;
+            }
+          }
+          if (served > 0) {
+            this.say(known ? '"NOTICE SERVED — CURRENT OCCUPANT." Your ground is being bought out from under you. (MOVE — rent comes due.)'
+              : 'It hammers a sign into the dirt AT YOUR FEET. The sign has your name on it.');
+            try { this.audioEvent('landlordEvict', {}); } catch (e) {}
+          }
+        }
         // Claim the tile it stands on
         if (this.tbTerrainAt(m.mx, m.my) !== 'claimed') {
           this.tbTerraform(m.mx, m.my, 'claimed');
@@ -19392,10 +19436,15 @@
             try { this.audioEvent('landlordClaim', {}); } catch (e) {}
           }
         }
-        // SPREADING JURISDICTION: the claim spreads to adjacent tiles
-        if ((m.llClaimed || 0) >= 2 && !m.llSpread) {
-          m.llSpread = true;
-          this.encSetPhase(m, 'collecting');
+        // JURISDICTION SPREAD — REPEATED WAVES: every 2 new claims, or every
+        // 3 of its turns without a wave, fires another Addendum. The lease
+        // visibly grows through the whole fight; the safe ground keeps
+        // shrinking. Wave 2+ is FORECLOSURE.
+        m.llSinceWave = (m.llSinceWave || 0) + 1;
+        if ((m.llClaimed || 0) - (m.llAddendaAt || 0) >= 2 || m.llSinceWave >= 3) {
+          m.llAddendaAt = m.llClaimed || 0;
+          m.llSinceWave = 0;
+          m.llAddenda = (m.llAddenda || 0) + 1;
           let spread = 0;
           for (let dy = -1; dy <= 1 && spread < 3; dy++) for (let dx = -1; dx <= 1 && spread < 3; dx++) {
             if (!dx && !dy) continue;
@@ -19404,22 +19453,33 @@
               this.tbTerraform(nx, ny, 'claimed'); spread++;
             }
           }
-          this.say('"ADDENDUM: this agreement now covers a WIDER AREA." The leased ground spreads. The safe ground shrinks.');
+          if (m.llAddenda >= 2 && m.beamPhase !== 'foreclosing') {
+            this.encSetPhase(m, 'foreclosing');
+            this.say('"FORECLOSURE PROCEEDINGS INITIATED." The signs multiply. The rent climbs. (Its healing climbs too — end this.)');
+          } else {
+            if (m.beamPhase === 'claiming') this.encSetPhase(m, 'collecting');
+            this.say(`"ADDENDUM #${m.llAddenda}: this agreement now covers a WIDER AREA." The leased ground spreads. The safe ground shrinks.`);
+          }
           try { this.audioEvent('landlordSpread', {}); } catch (e) {}
         }
-        // Collecting: heal on claimed ground
-        if (m.beamPhase === 'collecting' && this.tbTerrainAt(m.mx, m.my) === 'claimed' && m.hp < m.maxHp) {
-          m.hp = Math.min(m.maxHp, m.hp + 2);
-          if (!m.llHealSaid) { m.llHealSaid = true; this.say('It stands on its own land, and the land pays rent. (+2)'); }
+        // Collecting: the land pays rent upward. Scales with the waves —
+        // the longer the fight runs, the more the lease feeds it.
+        if ((m.beamPhase === 'collecting' || m.beamPhase === 'foreclosing') && this.tbTerrainAt(m.mx, m.my) === 'claimed' && m.hp < m.maxHp) {
+          const heal = 2 + (m.llAddenda || 0);
+          m.hp = Math.min(m.maxHp, m.hp + heal);
+          this.say(`It stands on its own land, and the land pays rent. (+${heal})`);
         }
         // Move toward player (slow), attack when adjacent
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         if (d > 1) {
           const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
           if (stp) {
-            // Claim the tile it leaves
-            if (this.tbTerrainAt(m.mx, m.my) !== 'claimed') this.tbTerraform(m.mx, m.my, 'claimed');
             m.mx = stp.x; m.my = stp.y;
+            // The trail: claim the tile it steps onto
+            if (this.tbTerrainAt(m.mx, m.my) !== 'claimed') {
+              this.tbTerraform(m.mx, m.my, 'claimed');
+              m.llClaimed = (m.llClaimed || 0) + 1;
+            }
           }
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }

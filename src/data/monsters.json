@@ -2056,7 +2056,8 @@
     "weaknesses": [
       "keep moving — claimed ground is the weapon, not the landlord",
       "it is slow; the signs are the fast part",
-      "burn the signs (fire clears claimed tiles)"
+      "rent comes due every round you end on leased ground — never stand still on claimed tiles",
+      "each Addendum raises the rent and its healing — kill it before foreclosure"
     ],
     "edible": {
       "calories": 0,
@@ -2081,7 +2082,7 @@
     "codexStages": {
       "unknown": "A clipboard. A stamp. A property line that wasn't there yesterday. Something is claiming the ground you stand on.",
       "observed": "The System's landlord. It doesn't fight you — it EVICTS you. It claims tiles, charges rent (in blood or calories), and the ground itself starts obeying the lease. You can fight on claimed ground, but it hurts. Break the claim or pay up.",
-      "slain": "Moves: Serve Notice (claims tiles around you), Collect Rent (damages you for standing on claimed ground), Jurisdiction Spread (the claim grows). The claim is tied to its clipboard — destroy the paperwork (target the claim markers) or kill the landlord to void all leases."
+      "slain": "Moves: Serve Notice (claims the ground around you — stand still and it serves notice on YOUR position), Collect Rent (damages you every round you end on claimed ground — the rent rises with each Addendum), Jurisdiction Spread (the claim grows in repeated waves). The longer the fight runs, the more Addenda: kill it before foreclosure."
     },
     "systemDesignation": "Parcel acquisition unit (field model)",
     "encounter": {
@@ -2091,18 +2092,23 @@
       "phases": [
         "surveying",
         "claiming",
-        "collecting"
+        "collecting",
+        "foreclosing"
       ],
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "landlord",
+      "knownCue": "The ground is the weapon, not the landlord. Rent comes due every round you end on leased ground — and every Addendum raises it. Keep moving; never let it serve notice on your position.",
       "noticeText": "\"THIS PARCEL IS NOW LEASED.\" {who} is standing on it.",
       "phaseBadges": {
         "surveying": "📋 SURVEYING",
         "claiming": "📌 CLAIMING",
-        "collecting": "💰 COLLECTING"
+        "collecting": "💰 COLLECTING",
+        "foreclosing": "📜 FORECLOSURE"
       }
-    }
+    },
+    "armor": 3,
+    "resistances": { "psychic": 0.5 }
   },
   {
     "id": "heckler",
