@@ -1600,10 +1600,13 @@
   //   windup BY DESIGN (turtleSnap is the resolve).
   //   burstDetonate() chargeImpact() lockonTick() lockonHit() lineStrike()
   //   rushHit() diveImpact() ambushSnap()
-  //   WAVE-2 BESPOKE (Steve 2026-10-06): staticScream() (voice_mimic reveal),
-  //   serviceRush() (service_mimic resolve), contractBind() (contract_golem
-  //   strike), monsterDown() / monsterHurt() (generic death/wound for
-  //   siblings), delegateDebrief() (was fired by tbFifoBreather, silent).
+  //   WAVE-2 BESPOKE (Steve 2026-10-06): staticScream() (voice_mimic reveal —
+  //   wired: game.js fires it at the reveal-scream declare), serviceRush()
+  //   (service_mimic resolve — wired: game.js rush-resolve), contractBind()
+  //   (contract_golem strike — wired: monsters.json encounter.resolveAudio),
+  //   monsterDown() (wired: game.js death fallthrough for monsters with no
+  //   deathAudio) / monsterHurt() (wired: game.js tbDamage, solid hits,
+  //   once per round), delegateDebrief() (was fired by tbFifoBreather, silent).
   //   projectorFire() (memory_projector resolve: whine swelling into the cold
   //   pull tone, hard cut — the light has edges).
   //   WAVE-1 CONTRACT, NOW DEFINED (Steve 2026-10-06): boarNotice/boarSnort/
@@ -3705,6 +3708,10 @@
     }
     function lineCut() {
       // the voice cuts out: abrupt digital dropout + click.
+      // (deepened Steve 2026-10-06): the line tries to come back — two
+      // fragments at falling pitch, the first with a detuned twin beating
+      // against it, the second sweeping down hard and cut shorter. Then it
+      // gives up. The System doesn't redial. It just stops trying.
       if (!ensure()) return;
       const t = ctx.currentTime;
       const o = ctx.createOscillator(), g = ctx.createGain();
@@ -3721,6 +3728,29 @@
       g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
       o2.connect(g2); g2.connect(sfxBus);
       o2.start(t + 0.13); o2.stop(t + 0.25);
+      // the retries: it tries to re-establish, twice, failing
+      const r1t = t + 0.45, r1f = 660, r1d = 0.16;
+      const r1a = ctx.createOscillator(), r1b = ctx.createOscillator(), r1g = ctx.createGain();
+      r1a.type = 'square'; r1b.type = 'square';
+      r1a.frequency.setValueAtTime(r1f, r1t);
+      r1b.frequency.setValueAtTime(r1f * 1.008, r1t); // beating twin — the voice arguing with itself
+      r1a.frequency.exponentialRampToValueAtTime(r1f * 0.94, r1t + r1d); // sagging as it dies
+      r1b.frequency.exponentialRampToValueAtTime(r1f * 0.94 * 1.008, r1t + r1d);
+      r1g.gain.setValueAtTime(0.0001, r1t);
+      r1g.gain.exponentialRampToValueAtTime(0.09, r1t + 0.02);
+      r1g.gain.exponentialRampToValueAtTime(0.0001, r1t + r1d);
+      r1a.connect(r1g); r1b.connect(r1g); r1g.connect(sfxBus);
+      r1a.start(r1t); r1b.start(r1t); r1a.stop(r1t + r1d + 0.02); r1b.stop(r1t + r1d + 0.02);
+      // second try: shorter, falling hard, cut dead
+      const r2t = t + 0.78, r2f = 440, r2d = 0.10;
+      const r2 = ctx.createOscillator(), r2g = ctx.createGain();
+      r2.type = 'square';
+      r2.frequency.setValueAtTime(r2f, r2t);
+      r2.frequency.exponentialRampToValueAtTime(r2f * 0.55, r2t + r2d); // 1.8x fall — then nothing
+      r2g.gain.setValueAtTime(0.09, r2t);
+      r2g.gain.exponentialRampToValueAtTime(0.0001, r2t + r2d);
+      r2.connect(r2g); r2g.connect(sfxBus);
+      r2.start(r2t); r2.stop(r2t + r2d + 0.02);
     }
     function paperRustle(data) {
       // dry paper unfolding: filtered noise bursts.
@@ -5650,22 +5680,32 @@
     }
     // ---- ROUND: the alien metronome. ROUND N! gets a tick — flat, clinical,
     // the System counting. Each round it gets a little heavier and a little
-    // higher: the count is closing in. ----
+    // higher: the count is closing in.
+    // (deepened Steve 2026-10-06): the old tick was two clean voices — too
+    // honest for a machine counting your rounds for an audience. Now the tick
+    // has a detuned twin it can't quite sync with (the beating between them
+    // is the part that watches you), and the low count drags a shadow a
+    // tritone below that breathes — the count is closing in, and something
+    // else is counting along.
     function roundTick(d) {
       if (!ensure()) return;
       const t = ctx.currentTime;
       const r = Math.max(1, Math.min(20, (d && d.round) || 1));
       const w = Math.min(1, (r - 1) / 6); // 0 at round 1 → 1 by round 7
-      // the tick: sharp clock strike
+      const tickF = 1250 + r * 25;
+      // the tick: sharp clock strike — and the twin it can't sync with
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'square';
-      o.frequency.setValueAtTime(1250 + r * 25, t);
+      o.frequency.setValueAtTime(tickF, t);
+      const o2 = ctx.createOscillator();
+      o2.type = 'square';
+      o2.frequency.setValueAtTime(tickF * 1.006, t); // ~8Hz beating — the watchful shimmer
       const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1600; f.Q.value = 4;
       g.gain.setValueAtTime(0.0001, t);
       g.gain.exponentialRampToValueAtTime(0.14 + w * 0.08, t + 0.01);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
-      o.connect(f); f.connect(g); g.connect(sfxBus);
-      o.start(t); o.stop(t + 0.14);
+      o.connect(f); o2.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o2.start(t); o.stop(t + 0.14); o2.stop(t + 0.14);
       // the count underneath: a low pulse, deeper and heavier each round
       const p = ctx.createOscillator(), pg = ctx.createGain();
       p.type = 'sine';
@@ -5676,6 +5716,21 @@
       pg.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
       p.connect(pg); pg.connect(sfxBus);
       p.start(t); p.stop(t + 0.55);
+      // the shadow: a tritone below the count's floor, breathing — something
+      // else is counting along, and it's heavier than the System
+      const sh = ctx.createOscillator(), shg = ctx.createGain();
+      sh.type = 'sine';
+      sh.frequency.setValueAtTime((90 - w * 25) * 0.7071, t);
+      sh.frequency.exponentialRampToValueAtTime((45 - w * 12) * 0.7071, t + 0.4);
+      const shl = ctx.createOscillator(), shlg = ctx.createGain();
+      shl.type = 'sine'; shl.frequency.value = 2.2 + w * 2; // breathes faster as the rounds climb
+      shlg.gain.value = 0.05;
+      shl.connect(shlg); shlg.connect(shg.gain);
+      shg.gain.setValueAtTime(0.0001, t);
+      shg.gain.exponentialRampToValueAtTime(0.10 + w * 0.08, t + 0.08);
+      shg.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      sh.connect(shg); shg.connect(sfxBus);
+      sh.start(t); shl.start(t); sh.stop(t + 0.65); shl.stop(t + 0.65);
     }
     function toggleMute() {
       muted = !muted;
@@ -6651,7 +6706,7 @@
       animalSplash() { animalSplash(); },
       // Prey beats (Steve 2026-10-06): the hunt's missing sounds
       animalKill() { animalKill(); },
-      animalButcher() { animalButcher(); }, // (Steve 2026-10-06): new — no call site yet; butcher worker, wire it
+      animalButcher() { animalButcher(); }, // (Steve 2026-10-06): wired — food.js cleanCarcass + specialist butcher task
       animalHiss() { animalHiss(); },
       animalSnort() { animalSnort(); },
       animalRustle() { animalRustle(); },

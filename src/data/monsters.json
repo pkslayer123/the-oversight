@@ -1710,6 +1710,7 @@
     "systemDesignation": "Agreement enforcement construct",
     "encounter": {
       "aggroAudio": "paperRustle",
+      "resolveAudio": "contractBind",
       "fifo": true,
       "noticeRange": 4,
       "phases": [

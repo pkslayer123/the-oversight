@@ -451,6 +451,8 @@
       this.say(knows
         ? `Cleaned ${n} carcass${n > 1 ? 'es' : ''} — quick, practiced cuts. 4 portions each, raw. (${8 * n} ticks)`
         : `You hack at it clumsily — it takes a while and you waste some. But it worked, and your hands learned. (${8 * n} ticks)`);
+      // AUDIO (Steve 2026-10-06): the butcher's beat — wet work, done.
+      try { this.audioEvent('animalButcher'); } catch (e) {}
       this.noteToolUse && this.noteToolUse();
       return null;
     },
@@ -656,6 +658,8 @@
         this.say(foodSafe
           ? `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. ${4 * per} kcal of raw portions. You watch closely.`
           : `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. But they won't vouch for the flesh: "Never seen its like. Test it before you trust it."`);
+        // AUDIO (Steve 2026-10-06): the specialist's knife work — same beat as self-clean.
+        try { this.audioEvent('animalButcher'); } catch (e) {}
       } else if (task === 'cook') {
         const mult = 1 + 0.05 * spec.skill;
         if (it.rawKcal) {

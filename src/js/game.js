@@ -15368,6 +15368,14 @@
       } else if (!quiet) {
         this.say(`${sourceLabel === 'you' ? 'You hit' : sourceLabel + ' hits'} ${t.kind === 'player' ? 'you' : (this.encShortLabel(t) || t.name)} for ${final}.`);
       }
+      // WOUND SOUND (Steve 2026-10-06): a solid hit on a monster gets an
+      // audible flinch — throttled to once per combat round so multi-hit
+      // attacks don't stutter over each other.
+      const hurtF = this.tbfight;
+      if (t.kind === 'monster' && final >= 8 && t.hp > 0 && hurtF && t.hurtSndRound !== hurtF.round) {
+        t.hurtSndRound = hurtF.round;
+        this.audioEvent('monsterHurt');
+      }
       // WOUND THE LEAD (hushwolf): the pack coordinates through the lead animal.
       // Drop it below half and the silence shatters — the pack breaks.
       const dmgTf = this.tbfight;
@@ -15454,6 +15462,8 @@
           const tdCfg = ((t.mdef || {}).encounter) || {};
           if (tdCfg.deathAudio) this.audioEvent(tdCfg.deathAudio);
           else if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
+          // AUDIO (Steve 2026-10-06): generic death for the un-configured — collapse, breath out, one wrong note.
+          else this.audioEvent('monsterDown');
           // THE LEAD FALLS (hushwolf): without it, the pack usually melts away.
           if (this.wolfIs(t) && t.wolfLead && this.tbfight) {
             for (const o of this.tbfight.fighters) {
@@ -17531,6 +17541,8 @@
             : (vmAtk === 'the attack'
               ? `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. Something is coming — and moving won't help once it has your voice.`
               : `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. ${vmAtk} is coming — and moving won't help once it has your voice.`));
+          // AUDIO (Steve 2026-10-06): the reveal-scream — no voice left, just noise and fury.
+          if (vmPhase === 'reveal') { try { this.audioEvent('staticScream'); } catch (e) {} }
         } else if (!m.telegraph) {
           if (vmPhase === 'call') {
             const cries = [
@@ -18189,6 +18201,8 @@
             ? `"Your fear is important to us." No telegraph — it just moved. (${atk.name}.)`
             : 'Something is right behind you, and a syrupy voice says: "Your fear is important to us."');
           this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+          // AUDIO (Steve 2026-10-06): the rush resolve — hold music slammed into motion.
+          try { this.audioEvent('serviceRush'); } catch (e) {}
           this.audioEvent('impact', {});
           this.tbLearnPattern(m);
         } else {
