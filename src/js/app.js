@@ -11681,7 +11681,16 @@
           // every plant is just 🌱 — foraging blind never reveals.
           const sp = (tile.plantSpecies || {})[cx + ',' + cy];
           const spKnown = sp && Game.plantKnown && Game.plantKnown(sp);
-          g = (spKnown && PLANT_GLYPH[sp]) ? PLANT_GLYPH[sp] : '🌱';
+          // PLANT SVGS (Steve 2026-10-06): use custom sprites, not just emoji.
+          let _psvg = '';
+          try {
+            if (spKnown && sp && S.Sprites && S.Sprites.plantSprite) {
+              const _depth = 2; // known = full visual
+              const _svg = S.Sprites.plantSprite(sp, _depth, 'plant');
+              if (_svg) _psvg = `<span class="plantsprite">${_svg}</span>`;
+            }
+          } catch (e) {}
+          g = _psvg || ((spKnown && PLANT_GLYPH[sp]) ? PLANT_GLYPH[sp] : '🌱');
           cls += ' plantcell' + (spKnown ? ' knownplant' : '');
           // EXAMINED (Steve 2026-10-06): looked-at-but-unnamed plants get a
           // visual marker — you've studied this one, it's not just green.
@@ -11708,7 +11717,16 @@
           }
           if (isDepleted) { cls += ' depleted'; }
         } else if (cell === 'tree' || cell === 'bigtree') {
-          g = CELL_GLYPH[cell] || '';
+          // TREE SVGS (Steve 2026-10-06): use custom sprites.
+          let _tsvg = '';
+          try {
+            if (S.Sprites && S.Sprites.get) {
+              const _tid = (cell === 'bigtree') ? 'generic_tree' : 'generic_tree';
+              const _svg = S.Sprites.get(_tid);
+              if (_svg) _tsvg = `<span class="treesprite">${_svg}</span>`;
+            }
+          } catch (e) {}
+          g = _tsvg || (CELL_GLYPH[cell] || '');
           if (cell) cls += ' c-' + cell;
           if (isDepleted) { cls += ' depleted'; }
         }
