@@ -63,6 +63,8 @@
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
 //   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it) (code: contestPlayable, contestChoose, Steve 2026-10-06)
 //   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 16 knowledge-gated contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added, then quiet/guest/vigil, then sorting/witness/cache/longodds (code: _contestWatchBeat, Steve 2026-10-06)
+//   - risk_rebalance_20261006: HIGH RISK rebalance — brave choices now usually kill (~50% death across full aggressive runs), smart choices live but cost heavily. Pit aggressive: 0.08/0.12 -> 0.20/0.30. Hide: 0.20/0.18/0.25 -> 0.32/0.25/0.38. Siege/hold: 0.20 -> 0.30. Rewards NOT nerfed — high risk justifies high reward (code: contestChoose die odds, Steve 2026-10-06)
+//   - pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
 //   - pool_expansion_20261006b: the four smallest pools (puzzle/detective/forage/chance, 3 each) each gain a bespoke variant — sorting (conveyor triage), witness (fabrication hunt), cache (audit heist), longodds (push-your-luck dice). NOT reskins: sorting is triage-under-time not Q&A (riddle); witness is forgery-forensics not liar-hunting (informant); cache is hiding not gathering (calorie_run); longodds is stakes-escalation not pure draw (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
 //   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
@@ -351,6 +353,24 @@
         desc: 'Dice against the house champion — a smug alien who has never lost on camera. The dice are fair. The stakes are the game. Raise, hold, or walk — but the table is unavoidable.',
         participants: 1,
         arena: '🎲\n🎰⬛🎲⬛🎰\n👽🎲🎲🎲👽\n🎲⬛🎲⬛🎲\n👥👥👥👥👥' },
+      // NEW STYLES (Steve 2026-10-06): sacrifice, creation, team, auction.
+      // The System is a TV network. These are the shows it was missing.
+      { id: 'price', name: 'The Price', cat: 'moot', risk: 'extreme',
+        desc: 'The System names a price: one villager, for the season. The village chooses who. You can volunteer, campaign, or scheme — but someone pays.',
+        participants: 1,
+        arena: '⚖️\n👥👥👥👥👥\n⬜💀⬜💀⬜\n🎤🎤🎤🎤🎤\n👥👥👥👥👥' },
+      { id: 'impress', name: 'Impress Us', cat: 'weird', risk: 'medium',
+        desc: 'Make the aliens feel something they have never felt. They have felt everything. Almost. The judges are baffled by you, which is your only edge.',
+        participants: 1,
+        arena: '🎭\n👽👽👽👽👽\n⬜🎨⬜🎭⬜\n✨✨✨✨✨\n👥👥👥👥👥' },
+      { id: 'exchange', name: 'The Exchange', cat: 'endurance', risk: 'high',
+        desc: 'Your village versus theirs. A relay through the badlands — three legs, no rules about what runs between the markers. Losers tithe.',
+        participants: 3,
+        arena: '🏃\n🏁🌲🌲🌲🏁\n🌲⚠️🌲⚠️🌲\n🏁🌲🌲🌲🏁\n👥👥👥👥👥' },
+      { id: 'auction', name: 'The Auction', cat: 'chance', risk: 'high',
+        desc: 'The System auctions alien tech. Bid with memories, years, or body parts. Everyone pays their bid — winner takes the lot, losers take the loss.',
+        participants: 3,
+        arena: '🔨\n💰💰💰💰💰\n⬜🏺⬜🏺⬜\n👽🔨👽🔨👽\n👥👥👥👥👥' },
     ];
   };
 
@@ -824,6 +844,10 @@
     if (id === 'witness') return this._contestWitness(contest);
     if (id === 'cache') return this._contestCache(contest);
     if (id === 'longodds') return this._contestLongodds(contest);
+    if (id === 'price') return this._contestPrice(contest);
+    if (id === 'impress') return this._contestImpress(contest);
+    if (id === 'exchange') return this._contestExchange(contest);
+    if (id === 'auction') return this._contestAuction(contest);
     const cat = contest.cat;
     if (cat === 'endurance') return this._contestEndurance(contest);
     if (cat === 'moot') return this._contestMoot(contest);
@@ -960,6 +984,10 @@
       witness: "It writes monsters from the codex but gets the behavior wrong — it doesn't know how they move. The hushwolf never screams. Listen for the seam.",
       cache: "Decoys beat speed. The cameras sweep in a pattern — feed them something small and loud and they'll log a victory and miss the big thing.",
       longodds: "The dice are fair; the champion isn't — it reads hesitation the way the scanner reads lies. Commit to the bit.",
+      price: "Volunteering is the only move that doesn't fracture the village. The System respects the walk-up. The village never forgets it.",
+      impress: "They've felt everything except being human. Don't perform — offer the thing you'd never show anyone. That's the only currency they don't have.",
+      exchange: "Gray Hollow always fades late — they run proud, not patient. Let them burn out. The shortcut through the nest works once, for the cameras, and never again.",
+      auction: "The auctioneer can smell bluff but the rules bind it anyway. Bid what you'd actually pay — the winners are the ones who know their price before the hammer.", 
     };
     return '\n\n📚 What you know: ' + (LINES[contest.id] || "You've seen this before. Trust your instincts.");
   };
@@ -977,13 +1005,13 @@
       { text: `The gate slams up. A wave-appropriate beast comes out low and fast — it has been promised food.\n\nIt circles. It's deciding how you die.`,
         choices: [
           { label: 'Hold your ground', sub: 'let it come to you', do: { dmg: [8, 18], note: 'It feints, then commits. You take the hit on your terms — mostly.' }, next: 2 },
-          { label: 'Charge it', sub: 'shock and awe', do: { dmg: [12, 25], die: 0.08, note: 'You SCREAM and run at it. The crowd loses its mind. So does the beast.' }, next: 2 },
+          { label: 'Charge it', sub: 'shock and awe', do: { dmg: [15, 30], die: 0.20, note: 'You SCREAM and run at it. The crowd loses its mind. So does the beast.' }, next: 2 },
           { label: 'Throw sand', sub: 'dirty, smart', do: { dmg: [4, 10], note: 'Sand in the eyes. It shakes its head, blind and furious — and slower.' }, next: 2 },
         ] },
       { text: `It's bleeding. You're bleeding. The crowd can smell both.\n\nThe beast gathers itself for one last rush. This is the moment the Death Reel loves.`,
         choices: [
-          { label: 'Meet the rush', sub: 'end it now', do: { prize: true,  dmg: [15, 30], die: 0.12, note: 'You plant your feet and meet it head-on. Something has to give.' }, next: 'WIN' },
-          { label: 'Sidestep and strike', sub: 'precision over courage', do: { prize: true,  dmg: [6, 14], note: 'You slide aside at the last breath and open its flank as it passes.' }, next: 'WIN' },
+          { label: 'Meet the rush', sub: 'end it now', do: { prize: true,  dmg: [20, 38], die: 0.30, note: 'You plant your feet and meet it head-on. Something has to give.' }, next: 'WIN' },
+          { label: 'Sidestep and strike', sub: 'precision over courage', do: { prize: true,  dmg: [10, 20], die: 0.06, note: 'You slide aside at the last breath and open its flank as it passes.' }, next: 'WIN' },
           { label: 'Play dead', sub: 'desperate', do: { dmg: [0, 6], die: 0.05, note: 'You drop. It sniffs you. The crowd holds its breath... it turns away, confused. Cowardice, televised — but breathing.' }, next: 'LOSE' },
         ] },
     ];
@@ -1001,7 +1029,7 @@
         ] },
       { text: `WAVE TWO. Bigger. It has seen the first wave's corpse and learned nothing, which is worse.\n\nYour arms are heavy. The crowd chants your name wrong.`,
         choices: [
-          { label: 'All offense', sub: 'no defense left', do: { dmg: [18, 32], die: 0.15, note: 'You throw everything into the attack. If this doesn\'t work, nothing will.' }, next: 2 },
+          { label: 'All offense', sub: 'no defense left', do: { dmg: [22, 40], die: 0.25, note: 'You throw everything into the attack. If this doesn\'t work, nothing will.' }, next: 2 },
           { label: 'Desperate defense', sub: 'survive the wave', do: { dmg: [10, 18], kcal: -200, note: 'You curl around your vitals and let it spend itself. It hurts. You live.' }, next: 2 },
           { label: 'Beg the crowd', sub: 'humiliating, maybe works', do: { dmg: [6, 14], die: 0.05, note: 'You drop to your knees and BEG. The audience laughs — and votes you a weapon drop. A real one.' }, next: 2 },
         ] },
@@ -1083,12 +1111,12 @@
         choices: [
           { label: 'Hold your breath', sub: 'do not exist', do: { dmg: [0, 8], die: 0.1, note: 'You stop breathing. Your lungs burn. It passes — or it doesn\'t.' }, next: 2 },
           { label: 'Throw a stone', sub: 'misdirect', do: { note: 'You flick a stone into the dark. It turns toward the sound. Clever. It knows that trick too.' }, next: 2 },
-          { label: 'Run', sub: 'break cover', do: { dmg: [10, 22], die: 0.2, note: 'You RUN. Branches tear. Behind you, the quiet breaks into pursuit.' }, next: 2 },
+          { label: 'Run', sub: 'break cover', do: { dmg: [14, 28], die: 0.32, note: 'You RUN. Branches tear. Behind you, the quiet breaks into pursuit.' }, next: 2 },
         ] },
       { text: `The count is almost up. You can hear the System warming up the "FOUND YOU" sting.\n\nIt's right there. You can see its eyes catch the light.`,
         choices: [
-          { label: 'Stay hidden', sub: 'trust the spot', do: { prize: true,  dmg: [0, 12], die: 0.18, note: 'You do not move. You barely breathe. The eyes sweep past — or stop.' }, next: 'WIN' },
-          { label: 'Confront it', sub: 'scare it off', do: { prize: true,  dmg: [15, 30], die: 0.25, note: 'You burst out screaming, arms wide. Predators hate surprises. Usually.' }, next: 'WIN' },
+          { label: 'Stay hidden', sub: 'trust the spot', do: { prize: true,  dmg: [4, 16], die: 0.25, note: 'You do not move. You barely breathe. The eyes sweep past — or stop.' }, next: 'WIN' },
+          { label: 'Confront it', sub: 'scare it off', do: { prize: true,  dmg: [20, 38], die: 0.38, note: 'You burst out screaming, arms wide. Predators hate surprises. Usually.' }, next: 'WIN' },
           { label: 'Surrender', sub: 'live, lose', do: { note: 'You stand up with your hands out. It blinks. The System sighs — found, but boring.' }, next: 'LOSE' },
         ] },
     ];
@@ -1106,7 +1134,7 @@
         ] },
       { text: `They yield — or they don't. The ref-drone hovers, sensors hot.\n\nThe crowd wants blood. The System wants a story. You want to go home.`,
         choices: [
-          { label: 'Press the advantage', sub: 'finish it', do: { prize: true,  dmg: [12, 24], die: 0.1, trauma: 10, note: 'You press. They go down. The drone calls it. Your hands won\'t stop shaking.' }, next: 'WIN' },
+          { label: 'Press the advantage', sub: 'finish it', do: { prize: true,  dmg: [16, 30], die: 0.18, trauma: 12, note: 'You press. They go down. The drone calls it. Your hands won\'t stop shaking.' }, next: 'WIN' },
           { label: 'Accept their yield', sub: 'mercy, televised', do: { prize: true,  note: 'They tap out. You step back. The crowd boos the mercy and loves you for it, both at once.' }, next: 'WIN' },
           { label: 'Take the dive', sub: 'lose on purpose', do: { dmg: [8, 16], note: 'You go down easy. They "win." The System knows. It always knows. But the deal was the deal.' }, next: 'LOSE' },
         ] },
@@ -1138,7 +1166,7 @@
         ? `The beacon is close enough to hear. One of the others is ahead of you — limping, but ahead.\n\nThis is the part the promos are made of.`
         : `Day three. The doors will open at dusk. Whoever looks the least broken wins the audience.\n\nYou are very broken. So is everyone.`,
         choices: [
-          { label: isDrop ? 'Sprint the last mile' : 'Walk out smiling', sub: isDrop ? 'everything left' : 'performance', do: isDrop ? { prize: true, dmg: [10, 20], die: 0.08, kcal: -400, note: 'You sprint. Lungs, legs, heart — everything files a complaint. You pass them at the line.' } : { prize: true, note: 'You walk out smiling like you ate yesterday. The audience buys it. The System knows. It respects the lie.' }, next: 'WIN' },
+          { label: isDrop ? 'Sprint the last mile' : 'Walk out smiling', sub: isDrop ? 'everything left' : 'performance', do: isDrop ? { prize: true, dmg: [14, 26], die: 0.15, kcal: -400, note: 'You sprint. Lungs, legs, heart — everything files a complaint. You pass them at the line.' } : { prize: true, note: 'You walk out smiling like you ate yesterday. The audience buys it. The System knows. It respects the lie.' }, next: 'WIN' },
           { label: isDrop ? 'Pace it home' : 'Help another up', sub: isDrop ? 'steady' : 'carry them', do: isDrop ? { prize: true, note: 'You pace it. They beat you by a minute. You beat the mountain.' } : { prize: true, dmg: [0, 6], note: 'You help another contestant stand. You both cross. The crowd weeps. Second place, first in the edit.' }, next: 'WIN' },
           { label: isDrop ? 'Collapse short' : 'Crawl out', sub: isDrop ? 'so close' : 'no dignity left', do: isDrop ? { dmg: [6, 14], note: 'Your legs quit a hundred yards out. You crawl. The beacon blinks. You make it. Barely counts.' } : { note: 'You crawl out. There is no dignity left. There is, however, a finish line.' }, next: 'LOSE' },
         ] },
@@ -1390,13 +1418,13 @@
         ] },
       { text: `Wave two. They feint at the barricade — and come for YOU.\n\nThe village gasps as one. Someone on the wall is screaming your name.`,
         choices: [
-          { label: 'Meet them head-on', sub: 'your body', do: { dmg: [18, 32], die: 0.12, note: 'You meet the wave with your body. It costs. The line holds. The wall goes silent, then erupts.' }, next: 2 },
+          { label: 'Meet them head-on', sub: 'your body', do: { dmg: [22, 40], die: 0.20, note: 'You meet the wave with your body. It costs. The line holds. The wall goes silent, then erupts.' }, next: 2 },
           { label: 'Fall back to the barricade', sub: 'the line', do: { dmg: [8, 16], note: 'You give ground to the barricade and make them come through it. Smart. The line bends; it doesn\'t break.' }, next: 2 },
           { label: 'Call for help', sub: 'the village', do: { dmg: [4, 10], note: 'You shout for the wall. Two villagers grab spears and come down. The System notes: the village fights as one.', notability: 'showmanship' }, next: 2 },
         ] },
       { text: `Wave three. The big ones. The barricade is splinters and the light-fence is flickering.\n\nThe beacon hums behind you. The village holds its breath.`,
         choices: [
-          { label: 'Hold the line', sub: 'everything', do: { prize: true, dmg: [25, 45], die: 0.2, note: 'You plant yourself in the gap and do not move. The wave breaks on you like water on rock. Like water. On rock.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Hold the line', sub: 'everything', do: { prize: true, dmg: [30, 55], die: 0.30, note: 'You plant yourself in the gap and do not move. The wave breaks on you like water on rock. Like water. On rock.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Bring the fence down on them', sub: 'the trap', do: { prize: true, dmg: [12, 24], die: 0.1, note: 'You drop the light-fence ON them. It was never a wall — it was a weapon. The System applauds with all its hands.' }, next: 'WIN' },
           { label: 'Sound the retreat', sub: 'live', do: { trauma: 10, kcal: -200, note: 'You sound the retreat. The village flees to Haven. The beacon takes the wave alone — and survives. You did not hold. You lived.' }, next: 'LOSE' },
         ] },
@@ -1421,9 +1449,9 @@
         ] },
       { text: `Light ahead. A circle of it, small and grey and real.\n\nIt's close behind you now. You can feel its interest like heat.`,
         choices: [
-          { label: 'Sprint for the light', sub: 'everything left', do: { prize: true, dmg: [12, 24], die: 0.15, kcal: -400, note: 'You run like the tunnel is ending — because it is, one way or another.' }, next: 'WIN' },
+          { label: 'Sprint for the light', sub: 'everything left', do: { prize: true, dmg: [16, 30], die: 0.22, kcal: -400, note: 'You run like the tunnel is ending — because it is, one way or another.' }, next: 'WIN' },
           { label: 'Walk out calmly', sub: 'dignity', do: { prize: true, dmg: [6, 14], die: 0.08, note: 'You walk. Measured. Unhurried. The thing behind you slows, confused by the lack of fear.' }, next: 'WIN' },
-          { label: 'Turn and face it', sub: 'the other choice', do: { dmg: [15, 30], die: 0.2, note: 'You turn. You look at it. It looks at you. The cameras get the shot of the year.' }, next: 'LOSE' },
+          { label: 'Turn and face it', sub: 'the other choice', do: { dmg: [20, 38], die: 0.30, note: 'You turn. You look at it. It looks at you. The cameras get the shot of the year.' }, next: 'LOSE' },
         ] },
     ];
   };
@@ -1472,8 +1500,8 @@
       { text: `Last obstacle: the tunnel — dark, narrow, and it smells like the Maw.\n\nThe beast balks. This is the moment the whole contest turns on.`,
         choices: [
           { label: 'Dismount and lead it through', sub: 'walk together', do: { prize: true, note: 'You slide off and walk beside it, hand on its neck. Together, into the dark. Together, out. The crowd is on its feet.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Push for the flourish', sub: 'jump the tunnel', do: { prize: true, dmg: [12, 24], die: 0.15, note: 'You ask for the impossible jump. It gathers — and FLIES. Or it doesn\'t. The crowd holds one breath.' }, next: 'WIN' },
-          { label: 'Force it in', sub: 'cruel', do: { dmg: [15, 30], die: 0.25, note: 'You drive it into the dark. It goes — and turns, in the dark, where the cameras can\'t quite see. You hear it decide.' }, next: 'LOSE' },
+          { label: 'Push for the flourish', sub: 'jump the tunnel', do: { prize: true, dmg: [16, 30], die: 0.22, note: 'You ask for the impossible jump. It gathers — and FLIES. Or it doesn\'t. The crowd holds one breath.' }, next: 'WIN' },
+          { label: 'Force it in', sub: 'cruel', do: { dmg: [20, 38], die: 0.35, note: 'You drive it into the dark. It goes — and turns, in the dark, where the cameras can\'t quite see. You hear it decide.' }, next: 'LOSE' },
         ] },
     ];
   };
@@ -1560,7 +1588,7 @@
         choices: [
           { label: 'Cut the edge comb', sub: 'respectful', do: { kcal: 200, note: 'You cut only the edge comb. The swarm tolerates the tax. Respect is a currency they accept.' }, next: 2 },
           { label: 'Cut deep', sub: 'greedy', do: { kcal: 400, dmg: [8, 16], die: 0.06, note: 'You cut deep. The comb is heavy and golden. The swarm revises its opinion of you.' }, next: 2 },
-          { label: 'Rob the queen cell', sub: 'the prize and the death', do: { kcal: 600, dmg: [12, 20], die: 0.12, note: 'You take the queen cell. The hive SCREAMS — one voice, ten thousand throats. You will never be welcome here again.' }, next: 2 },
+          { label: 'Rob the queen cell', sub: 'the prize and the death', do: { kcal: 600, dmg: [16, 28], die: 0.20, note: 'You take the queen cell. The hive SCREAMS — one voice, ten thousand throats. You will never be welcome here again.' }, next: 2 },
         ] },
       { text: `The comb is in your hands. The swarm is in the air.\n\nNow: the getaway.`,
         choices: [
@@ -1888,6 +1916,124 @@
           { label: 'Everything on the table', sub: 'all of it', do: { dmg: [6, 14], die: 0.06, prize: true, note: 'You shove it all in. The dice hang in the air for a year. They land. Vex stares. The crowd detonates like weather.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Take the partial win', sub: 'walk away up', do: { kcal: 200, prize: true, note: 'You cash out ahead. Vex bows — a real bow, almost respectful. You walk away up. Nobody walks away up.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Fold with dignity', sub: 'live to bet again', do: { note: 'You fold. Vex bows. The crowd respects the discipline. The dice keep their secrets, and so do you.' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
+  // --- THE PRICE (bespoke, moot/extreme) — sacrifice horror (Steve 2026-10-06).
+  // The System demands one villager for the season. The village chooses.
+  // This is the darkest show: winning means someone else loses everything.
+  G._contestPrice = function(contest) {
+    const intro = this._cxIntro(contest);
+    return [
+      { beat: 'contestPrice',
+        text: intro + `\n\nThe System's voice, almost gentle: "ONE OF YOU. FOR THE SEASON. THE VILLAGE CHOOSES. YOU HAVE UNTIL DUSK."\n\nThe cameras pull back. Your village is looking at each other. Nobody is looking at you. Yet.`,
+        choices: [
+          { label: 'Volunteer', sub: 'take the price', do: { die: 0.35, trauma: 10, note: 'You step forward. "Me." The silence is total. The System tilts its head — it did not expect the price to walk up willingly.', notability: 'sacrifice' }, next: 1 },
+          { label: 'Stay silent', sub: 'let them decide', do: { note: 'You say nothing. The debate starts without you. Your name comes up twice in the first minute.' }, next: 1 },
+          { label: 'Deflect', sub: 'point elsewhere', do: { fracture: 2, note: 'You suggest — carefully, politically — that someone else might be... suitable. The cameras catch the exact moment the village learns what you are.', notability: 'schemer' }, next: 1 },
+        ] },
+      { beat: 'contestPrice',
+        text: `The debate is vicious and televised. Alliances form and break in real time.\n\nYour name is on the short list. So are two others. The System is taking notes on who argues for whom — it finds loyalty fascinating and doomed.`,
+        choices: [
+          { label: 'Campaign for yourself', sub: 'argue to live', do: { trauma: 6, note: 'You make your case: your skills, your value, your future. It feels like begging. It is begging. The village listens.' }, next: 2 },
+          { label: 'Campaign for another', sub: 'sacrifice them', do: { fracture: 3, trauma: 8, note: 'You argue — eloquently, ruthlessly — that someone else should go. The village will remember this speech. So will the cameras. So will they.', notability: 'schemer' }, next: 2 },
+          { label: 'Accept the vote', sub: 'whatever they decide', do: { note: 'You sit down. "Whatever you decide." The village stares. Resignation, televised, is its own kind of argument.' }, next: 2 },
+        ] },
+      { beat: 'contestPrice',
+        text: `Dusk. The System calls for the name.\n\nThe village has voted. The envelope is opened. The cameras push in.`,
+        choices: [
+          { label: 'Take it, if chosen', sub: 'with dignity', do: { prize: true, die: 0.25, trauma: 15, note: 'Your name is called. You stand. You walk to the light with your head up. The village weeps. The System gets its season. You get... the prize. If you survive it.', notability: 'sacrifice' }, next: 'WIN' },
+          { label: 'Refuse, if chosen', sub: 'defy the vote', do: { die: 0.45, fracture: 5, note: '"No." The word hangs in the air. The System goes very still. Refusing the village\'s choice AND the System\'s price — the cameras have never seen this. Nobody has.', notability: 'defiant' }, next: 'LOSE' },
+          { label: 'Not you — relief', sub: 'someone else goes', do: { prize: true, trauma: 10, fracture: 2, note: 'Another name. Not yours. The relief is physical, then immediately sickening. You live. Someone else pays. The village knows. You know they know.', notability: 'survivor' }, next: 'WIN' },
+        ] },
+    ];
+  };
+
+  // --- IMPRESS US (bespoke, weird/medium) — creation (Steve 2026-10-06).
+  // Make the aliens feel something new. The winning move is lateral —
+  // understand what baffles them about you, and weaponize it.
+  G._contestImpress = function(contest) {
+    const intro = this._cxIntro(contest);
+    return [
+      { beat: 'contestImpress',
+        text: intro + `\n\nFive aliens. They have catalogued 40,000 emotions across the galaxy.\n\n"IMPRESS US," they say. "WE HAVE FELT EVERYTHING."\n\nThey have not felt what it is to be you. That is your only edge.`,
+        choices: [
+          { label: 'A memory', sub: 'the realest thing', do: { trauma: 6, note: 'You offer a memory — the one you never tell anyone. The aliens go very still. They have never... kept something. The concept is new. They turn it over like a stone.' }, next: 1 },
+          { label: 'A joke', sub: 'make them laugh', do: { note: 'You tell the joke. The one that always works. The aliens stare. One of them makes a sound. It might be laughter. It might be a seizure. The translators are working overtime.', notability: 'showmanship' }, next: 1 },
+          { label: 'Silence', sub: 'nothing, on purpose', do: { note: 'You stand in silence. Ten seconds. Twenty. The aliens lean forward — they have never encountered deliberate nothing. It itches. They can\'t look away.', notability: 'showmanship' }, next: 1 },
+        ] },
+      { beat: 'contestImpress',
+        text: `They confer in frequencies that make your teeth ache.\n\n"WE DO NOT UNDERSTAND," the lead judge says. It sounds... frustrated? Curious? The translator gives up on the nuance.\n\nThe audience is leaning in. Nobody has ever confused the judges before.`,
+        choices: [
+          { label: 'Explain yourself', sub: 'help them get it', do: { note: 'You explain — patiently, like to a child — what the thing MEANS. The aliens listen. Understanding dawns, slowly, like sunrise on a strange planet. One of them makes the sound again. Definitely laughter this time.' }, next: 2 },
+          { label: 'Double down', sub: 'more, stranger', do: { dmg: [0, 8], die: 0.04, note: 'You go deeper, stranger, more human. The aliens recoil — then lean back in. They are not bored. They have never been so un-bored. One of them is... crying? The translators confirm: crying. New emotion logged.' }, next: 2 },
+          { label: 'Ask them a question', sub: 'turn it around', do: { note: '"What do YOU feel?" you ask. The judges freeze. No contestant has ever asked. The lead judge considers for a long time. "LONELY," it says finally. The audience gasps. The System cuts to commercial.', notability: 'showmanship' }, next: 2 },
+        ] },
+      { beat: 'contestImpress',
+        text: `Final offering. The judges are... changed. You can see it — something in the way they hold themselves.\n\n"ONE MORE," they say. "SOMETHING ONLY YOU COULD GIVE."`,
+        choices: [
+          { label: 'Your grief', sub: 'the truest thing', do: { prize: true, trauma: 12, note: 'You give them your grief — the whole thing, unfiltered. The aliens receive it like a physical object. Three of them weep. The translators log seventeen new emotions. You win. It costs exactly what you thought it would.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Your joy', sub: 'the rarest thing', do: { prize: true, note: 'You give them joy — pure, stupid, human joy. The thing you feel watching the fire. The aliens have catalogued pleasure, but not THIS. Not joy-without-reason. They are delighted. You are too, which is the trick.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Nothing more', sub: 'leave them wanting', do: { note: 'You bow. "That\'s all." The judges stare. The audience boos, then cheers — the refusal is its own performance. The System notes: restraint, rare.', notability: 'showmanship' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
+  // --- THE EXCHANGE (bespoke, endurance/high) — team vs team (Steve 2026-10-06).
+  // Your village versus theirs. A relay through the badlands. Losers tithe.
+  G._contestExchange = function(contest) {
+    const intro = this._cxIntro(contest);
+    return [
+      { beat: 'contestExchange',
+        text: intro + `\n\nThree legs. Your village against Gray Hollow. Through the badlands — the System has seeded the course with "obstacles."\n\nLosers tithe a season of food. Winners get the System's favor and the other village's respect, which is rarer.`,
+        choices: [
+          { label: 'Run first leg', sub: 'set the pace', do: { dmg: [6, 14], kcal: -300, note: 'You take the first leg — navigation, speed, nerve. The badlands are worse than the maps said. You set a blistering pace.' }, next: 1 },
+          { label: 'Run middle leg', sub: 'the hard part', do: { dmg: [8, 18], kcal: -300, note: 'Middle leg. The worst terrain, the loneliest miles. You run like the village is watching. It is.' }, next: 1 },
+          { label: 'Anchor', sub: 'bring it home', do: { dmg: [4, 10], kcal: -200, note: 'Anchor. You wait at the exchange, watching the others run their hearts out. The pressure builds like weather.' }, next: 1 },
+        ] },
+      { beat: 'contestExchange',
+        text: `Mid-race. Gray Hollow is ahead — their runner is fast and fearless and slightly inhuman, which the System insists is legal.\n\nYour village is screaming your name. The other village is screaming theirs.`,
+        choices: [
+          { label: 'Push past pain', sub: 'everything', do: { dmg: [12, 24], die: 0.10, kcal: -400, note: 'You push past everything. Lungs, legs, the voice saying stop. You gain ground. The Gray Hollow runner glances back — worried, for the first time.' }, next: 2 },
+          { label: 'Run smart', sub: 'pace and lines', do: { dmg: [6, 12], kcal: -200, note: 'You run the smart lines, cut the corners, save the burst. The gap holds. Patience is its own speed.' }, next: 2 },
+          { label: 'Take the shortcut', sub: 'through the nest', do: { dmg: [10, 22], die: 0.18, note: 'There\'s a shortcut. Through the nest. Everyone knows. Nobody takes it. You take it. The things in the nest notice. They let you pass — this once, for the cameras.', notability: 'daredevil' }, next: 2 },
+        ] },
+      { beat: 'contestExchange',
+        text: `Final leg. Neck and neck. The finish is a lit gate and both villages are at the barriers, screaming.\n\nThis is the part they\'ll replay for years.`,
+        choices: [
+          { label: 'Sprint it', sub: 'all or nothing', do: { prize: true, dmg: [15, 30], die: 0.15, kcal: -500, note: 'You sprint like the world is ending. It isn\'t, but the season\'s food might as well be. You cross first by a breath. Your village ERUPTS.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Outlast them', sub: 'steady wins', do: { prize: true, dmg: [8, 16], kcal: -300, note: 'You hold your pace. The Gray Hollow anchor fades — went out too fast, too proud. You pass them at the line, steady as stone. The System respects the discipline.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Fall short', sub: 'so close', do: { dmg: [10, 20], kcal: -200, note: 'You give everything and it isn\'t enough. Gray Hollow takes it by seconds. Your village still cheers — you ran like a legend. The tithe hurts. The pride helps.', notability: 'gallant' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
+  // --- THE AUCTION (bespoke, chance/high) — economic horror (Steve 2026-10-06).
+  // Bid with memories, years, body parts. Everyone pays their bid.
+  G._contestAuction = function(contest) {
+    const intro = this._cxIntro(contest);
+    return [
+      { beat: 'contestAuction',
+        text: intro + `\n\nThe System auctions three lots of alien tech. Currency: memories, years of life, body parts. Your choice.\n\n"ALL BIDS ARE FINAL," the auctioneer says. "ALL BIDDERS PAY. WINNER TAKES THE LOT."\n\nThe crowd leans in. This is the cruelest show. Everyone loves it.`,
+        choices: [
+          { label: 'Bid a memory', sub: 'the summer afternoon', do: { trauma: 8, note: 'You bid the summer afternoon — the whole thing. The auctioneer tastes it, nods. "A FINE VINTAGE." You remember remembering it. The shape is gone.' }, next: 1 },
+          { label: 'Bid years', sub: 'two years', do: { dmg: [0, 0], note: 'You bid two years of your life. The auctioneer marks it. You feel... lighter. Shorter. The crowd gasps — years are the serious currency.', notability: 'highroller' }, next: 1 },
+          { label: 'Bid small', sub: 'a finger', do: { dmg: [8, 14], note: 'You bid a finger. The auctioneer examines it. "ACCEPTABLE." The crowd winces in seventeen languages. You are now the kind of person who bids fingers.', notability: 'hardcore' }, next: 1 },
+        ] },
+      { beat: 'contestAuction',
+        text: `Bidding war. A Gray Hollow contestant just bid their childhood. Someone else bid a lung (they have two, they point out, which is technically true).\n\nThe lots are extraordinary. The prices are obscene. The audience is euphoric.`,
+        choices: [
+          { label: 'Raise', sub: 'double down', do: { trauma: 6, dmg: [4, 10], note: 'You raise. More memory, more years. The auctioneer smiles — it loves a bidder who doesn\'t know when to stop. Neither do you, apparently.' }, next: 2 },
+          { label: 'Bluff', sub: 'bid what you don\'t have', do: { die: 0.12, note: 'You bid big on nothing — pure bluff. The auctioneer pauses. It scans you. It KNOWS. But the rules say a bid is a bid. The crowd holds its breath.', notability: 'showmanship' }, next: 2 },
+          { label: 'Hold', sub: 'let them burn out', do: { note: 'You hold. Let the others burn their lives away. Patience at an auction is its own kind of wealth. The lots are still there. So are you.' }, next: 2 },
+        ] },
+      { beat: 'contestAuction',
+        text: `Final lot. The hammer is raised. Everything bid so far is already gone — paid, taken, consumed.\n\nThis is the last chance. The tech on the block could change your village\'s winter.`,
+        choices: [
+          { label: 'Everything', sub: 'win at any cost', do: { prize: true, dmg: [10, 20], die: 0.10, trauma: 10, note: 'You bid everything — the rest of the memories, the years, the parts. The hammer falls. YOURS. The tech is extraordinary. You are... less. But the village eats this winter.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'The smart bid', sub: 'just enough', do: { prize: true, trauma: 4, note: 'You bid exactly enough — not a memory more. The hammer falls. Yours. The crowd respects the precision. The auctioneer respects it too, which is rarer.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Walk away', sub: 'keep yourself', do: { note: 'You walk away. Keep the memories, the years, the fingers. The lots go to others. You are whole. The village will remember what you wouldn\'t pay — and what that cost them.', notability: 'principled' }, next: 'LOSE' },
         ] },
     ];
   };

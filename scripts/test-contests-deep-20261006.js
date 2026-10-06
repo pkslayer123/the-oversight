@@ -127,15 +127,15 @@ function playContest(id, choicePath, seedVal) {
   }
   check('gauntlet loseable on reckless play', gl > 0, `${gl}/20 lost`);
 
-  // Verify all 34 contests are at least completable (short path)
+  // Verify all 38 contests are at least completable (short path)
   const pool = Game.contestPool();
-  check('pool has 34 contests', pool.length === 34, `got ${pool.length}`);
+  check('pool has 38 contests', pool.length === 38, `got ${pool.length}`);
   let incompletable = [];
   for (const c of pool) {
     const r = playContest(c.id, [0], 7000 + pool.indexOf(c));
     if (r.error || r.stuck || r.outcome === 'UNRESOLVED') incompletable.push(c.id);
   }
-  check('all 34 contests completable', incompletable.length === 0, `stuck: ${incompletable.join(',')}`);
+  check('all 38 contests completable', incompletable.length === 0, `stuck: ${incompletable.join(',')}`);
 
   // Bug fix verification
   const deeds = { contestWin: 1 };
