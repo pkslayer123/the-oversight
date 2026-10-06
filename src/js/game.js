@@ -9608,6 +9608,19 @@
       const sch = this.state.scholar || {};
       if ((sch.hydration || 0) <= 0 || (sch.kcal || 0) <= 0) {
         warn = (warn ? warn + ' ' : '') + 'Running on empty — no water or no food means half healing and a wrung-out morning. Drink and eat before you sleep.';
+      } else {
+        // TONIGHT'S BURN (survivalist loop 2026-10-06): midnight runs a full
+        // day's metabolism (~2200 kcal, -35 hydration) BEFORE the morning
+        // meal. The honest button telegraphs the spiral while there's still
+        // time to eat/drink — not at midnight with the bill. (calories.js:
+        // "warnings telegraph the spiral BEFORE it arrives.")
+        const need = S.calories.dailyNeed(sch);
+        const bits = [];
+        if ((sch.kcal || 0) < need) bits.push(`the night burns ~${need} kcal and you haven't eaten enough today`);
+        if ((sch.hydration || 0) <= 35) bits.push('the night drinks 35 hydration');
+        if (bits.length) {
+          warn = (warn ? warn + ' ' : '') + `Tonight will cost you — ${bits.join(' and ')}. Eat and drink before you sleep, or the spiral starts at midnight.`;
+        }
       }
       return {
         quality: q,
