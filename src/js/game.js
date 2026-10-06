@@ -13823,7 +13823,16 @@
 
     // PLAYER SPEED (Steve 2026-10-05): 3, not 4. Four moves is a lot —
     // fleeing by running should be hard, not a given. Movement is deliberate.
-    playerSpeed() { return 3; },
+    // BURDEN (Steve 2026-10-06): heavy -1, straining -2 initiative in combat.
+    // A loaded pack reacts slower.
+    playerSpeed() {
+      let sp = 3;
+      try {
+        const bt = (globalThis.Scattering.calories || {}).burdenTier;
+        if (bt) sp -= bt(this.packWeight(), this.packCapacity()).speedPen;
+      } catch (e) {}
+      return Math.max(1, sp);
+    },
 
     // LEADERSHIP VECTOR (Steve 2026-10-04, preserved 2026-10-05): the ending
     // is the sum of how you led. Tracked across the game, felt before arrival.
@@ -15974,6 +15983,12 @@
       if (t.kind === 'player' && !(opts && opts.undodgeable)) {
         let dodgeCh = this.passiveBonus('footwork') + Math.max(0, (this.stat('agi') - 5) * 0.02);
         try { dodgeCh += this.modTarget('combat.dodge_chance', 0); } catch (e) {}
+        // BURDEN (Steve 2026-10-06): a heavy pack slows your slip-aside.
+        // Laden -3%, heavy -8%, straining -15% dodge chance.
+        try {
+          const bt = (globalThis.Scattering.calories || {}).burdenTier;
+          if (bt) dodgeCh -= bt(this.packWeight(), this.packCapacity()).dodgePen;
+        } catch (e) {}
         if (dodgeCh > 0 && Math.random() < dodgeCh) {
           this.say('You slip aside — it misses clean. (footwork)');
           this.practice('agi', 1); // dodging is agility practice
