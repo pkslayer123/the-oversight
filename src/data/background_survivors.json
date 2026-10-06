@@ -409,7 +409,7 @@
     "personality": {
       "sharing": "generous",
       "temperament": "withdrawn",
-      "curiosity": "observant"
+      "curiosity": "curious"
     },
     "gender": "m",
     "origin": "Tucson, Arizona",
@@ -541,7 +541,7 @@
     "providesPerDay": 1400,
     "personality": {
       "sharing": "generous",
-      "temperament": "observant",
+      "temperament": "cautious",
       "curiosity": "curious"
     },
     "gender": "f",
@@ -1263,7 +1263,7 @@
     "providesPerDay": 1400,
     "personality": {
       "sharing": "generous",
-      "temperament": "observant",
+      "temperament": "cautious",
       "curiosity": "curious"
     },
     "gender": "f",
@@ -1366,5 +1366,62 @@
     "homeRegion": "Novosibirsk, Russia",
     "skinTone": "fair",
     "clothing": "workwear"
+  },
+  {
+    "id": "stan_kowalski",
+    "name": "Stan Kowalski",
+    "age": 47,
+    "formerOccupation": "exterminator",
+    "line": "Reads a room by its baseboards. Nothing hides from Sam for long.",
+    "kcalPerDay": 2200,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "transactional",
+      "temperament": "dry",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Chicago, Illinois",
+    "homeRegion": "Chicago, Illinois",
+    "skinTone": "light",
+    "clothing": "workwear"
+  },
+  {
+    "id": "petra_novak",
+    "name": "Petra Novak",
+    "age": 38,
+    "formerOccupation": "glazier",
+    "line": "Cut glass for fifteen years. Hands steady, eyes better.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "fair",
+      "temperament": "steady",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Prague, Czech Republic",
+    "homeRegion": "Prague, Czech Republic",
+    "skinTone": "fair",
+    "clothing": "workwear"
+  },
+  {
+    "id": "devon_okafor",
+    "name": "Devon Okafor",
+    "age": 29,
+    "formerOccupation": "programmer",
+    "line": "Wrote logistics software. Now the logistics are real and there's no undo.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1350,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "anxious",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "m",
+    "origin": "Lagos, Nigeria",
+    "homeRegion": "Lagos, Nigeria",
+    "skinTone": "deep",
+    "clothing": "casual"
   }
 ]

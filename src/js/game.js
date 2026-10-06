@@ -293,6 +293,22 @@
       return null;
     },
 
+    // cultureForName(first): reverse lookup — which name-culture claims this
+    // first name? Used by hydrateSeed so hand-written seed names get the same
+    // heritage-language treatment as generated names (diaspora family story).
+    // Returns the culture id or null if no culture lists the name.
+    cultureForName(first) {
+      const nc = this.data.nameCultures || {};
+      const cultures = nc.cultures || {};
+      const target = String(first || '').toLowerCase();
+      if (!target) return null;
+      for (const [cid, c] of Object.entries(cultures)) {
+        const firsts = (c.first || []).map(n => String(n).split(' ')[0].toLowerCase());
+        if (firsts.includes(target)) return cid;
+      }
+      return null;
+    },
+
     // genNameForOrigin: names match origins. Japanese names from Japan, Nigerian from Nigeria.
     // 80% correlated, 20% mismatch — people move, diaspora exists. But the default is sensible.
     // forceMatch skips the diaspora roll: the player's own character IS from where they said.
@@ -659,7 +675,7 @@
         // every trait must be traceable to the character's story.
         const intelDefs = cg.intelligences || {};
         const intelPrimary = (occ.intel && intelDefs[occ.intel]) ? occ.intel : 'steady';
-        const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'] };
+        const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'], anxious: ['observant', 'steady'] };
         const curSec = { curious: ['analytical', 'creative'], 'hungry-to-learn': ['analytical', 'creative'], practical: ['practical', 'steady'], wary: ['observant', 'steady'], skeptical: ['analytical', 'observant'], indifferent: ['steady', 'practical'] };
         const secPool = [];
         for (const s of (tempSec[temperament] || ['steady'])) { secPool.push(s, s); }
@@ -684,6 +700,7 @@
           gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
           intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
           withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
+          anxious: [`${first} worries the way other people breathe.`, `Everything is a worst case to ${first} until proven otherwise.`, `${first} checks the perimeter twice and still doesn't sleep well.`],
         };
         const _assessClose = {
           steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
@@ -696,6 +713,7 @@
           gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
           intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
           withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
+          anxious: [`The others find it exhausting — or endearing.`, `Worry is ${first}'s love language.`, `Nobody doubts ${first} cares.`, `The fretting never stops, but neither does ${first}.`, `Anxiety keeps ${first} checking what others miss.`],
         };
         const _ap = _assessPool[temperament] || _assessPool.steady;
         const _ac = _assessClose[temperament] || _assessClose.steady;
@@ -732,9 +750,10 @@
           candidate: candidate !== false, pro,
           // APPEARANCE (Steve 2026-10-06): the sprite is generated FROM the
           // person. gender follows the name (nameGender computed above);
-          // skinTone comes from the origin's appearance pool.
+          // skinTone and clothing come from the origin's appearance pool.
           gender: nameGender,
           skinTone: this.appearanceFor(origin, parsed.tags).skinTone,
+          clothing: this.appearanceFor(origin, parsed.tags).clothing,
         };
         // ITEMS (Steve 2026-10-05): generated with full char context so kin
         // keepsakes are THAT person's — named from their own culture.
@@ -820,10 +839,20 @@
       ubs.add(occKey + ':' + bi);
 
       // Languages: same story-driven generator as genCharacter.
+      // Heritage: the seed's hand-written name may carry a different culture
+      // than home (diaspora family) — detect it from the name like genCharacter
+      // does via genNameForOrigin.
       const homeCulture = this.cultureForOrigin(origin);
-      const langs = this.genCultureLanguages(homeCulture, occ, { age });
+      const nameCulture = this.cultureForName(first);
+      const langs = this.genCultureLanguages(homeCulture, occ, { heritageCultureId: nameCulture, age });
       let backstory = fillPronouns(backstoryVariants[bi]);
       if (langs.reasons.length) backstory += ' ' + langs.reasons.map(fillPronouns).join(' ');
+      // MARITIME DRIFT (same as genCharacter): a sailor from landlocked
+      // Vermont is a contradiction — unless they left. People move.
+      const MARITIME = ['sailor', 'fisher', 'fisherman', 'deckhand', 'longshoreman', 'marine_biologist', 'naval_officer'];
+      if (MARITIME.includes(occ.id) && !(parsed.tags || []).includes('coast')) {
+        backstory += ' ' + fillPronouns(`{They} left ${city} young to work the water and never really came back.`);
+      }
       // Seed's one-liner becomes part of their story.
       if (s.line) backstory += ' ' + s.line;
 
@@ -877,7 +906,7 @@
       // Intelligence: same occupation + temperament mapping as genCharacter.
       const intelDefs = cg.intelligences || {};
       const intelPrimary = (occ.intel && intelDefs[occ.intel]) ? occ.intel : 'steady';
-      const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'] };
+      const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'], anxious: ['observant', 'steady'] };
       const curSec = { curious: ['analytical', 'creative'], 'hungry-to-learn': ['analytical', 'creative'], practical: ['practical', 'steady'], wary: ['observant', 'steady'], skeptical: ['analytical', 'observant'], indifferent: ['steady', 'practical'] };
       const secPool = [];
       for (const st of (tempSec[temperament] || ['steady'])) { secPool.push(st, st); }
@@ -897,6 +926,7 @@
         gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
         intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
         withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
+          anxious: [`${first} worries the way other people breathe.`, `Everything is a worst case to ${first} until proven otherwise.`, `${first} checks the perimeter twice and still doesn't sleep well.`],
       };
       const _assessClose = {
         steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
@@ -909,6 +939,7 @@
         gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
         intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
         withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
+          anxious: [`The others find it exhausting — or endearing.`, `Worry is ${first}'s love language.`, `Nobody doubts ${first} cares.`, `The fretting never stops, but neither does ${first}.`, `Anxiety keeps ${first} checking what others miss.`],
       };
       const _ap = _assessPool[temperament] || _assessPool.steady;
       const _ac = _assessClose[temperament] || _assessClose.steady;
@@ -1577,7 +1608,7 @@
       this.state.village.bgIntel = {};
       {
         const intelDefs = (this.data.characterGen || {}).intelligences || {};
-        const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'] };
+        const tempSec = { bold: ['creative', 'practical'], intense: ['creative', 'analytical'], cautious: ['observant', 'steady'], warm: ['social', 'steady'], gentle: ['social', 'steady'], steady: ['steady', 'practical'], withdrawn: ['analytical', 'observant'], prickly: ['analytical', 'observant'], restless: ['creative', 'observant'], dry: ['analytical', 'observant'], anxious: ['observant', 'steady'] };
         for (const id of bg) {
           const person = (this.data.background_survivors || []).find(s => s.id === id) || {};
           const occName = String(person.formerOccupation || '').toLowerCase();

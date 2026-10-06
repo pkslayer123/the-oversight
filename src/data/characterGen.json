@@ -3275,9 +3275,11 @@
   "sharingStyles": [
     "generous",
     "fair",
+    "pragmatic",
     "selfish",
     "transactional",
-    "secretive"
+    "secretive",
+    "hoarder"
   ],
   "talkTemplates": [
     "\"I don't know you. But you're here, so... we figure it out.\"",
@@ -3335,7 +3337,8 @@
     "dry",
     "gentle",
     "intense",
-    "withdrawn"
+    "withdrawn",
+    "anxious"
   ],
   "heritageMap": [
     [
