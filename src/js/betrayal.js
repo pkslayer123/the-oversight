@@ -523,7 +523,7 @@
     if (r < 0.55) outcome = 'escaped';
     else if (r < 0.8) outcome = 'hurt';
     else outcome = 'killed';
-    plot.sprung = true; plot.active = false;
+    plot.sprung = true; plot.active = false; plot.resolved = true; // sim-resolved: the plot is over
     if (outcome === 'killed') {
       // corpse hook (corpses.js) — feature-checked. registerDeath also
       // fires the village grief event, so the death gets talked about.
@@ -561,7 +561,10 @@
 
   // ---------- 6. AFTERMATH ----------
   ambushAftermath(plot, outcome) {
-    plot.outcome = outcome; plot.resolved = false;
+    // the plot is OVER: mark it resolved and clear the confrontation state.
+    // (Leaving resolved=false / state='confront' was stale state after a
+    // transition — any future "open plots" query would misfire on it.)
+    plot.outcome = outcome; plot.resolved = true; plot.state = 'aftermath';
     const s = this.state.scholar;
     // end any ambush conversation
     try {
