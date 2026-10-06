@@ -6378,6 +6378,11 @@
         }
       }
       const odx = Math.sign(x - this.map.px), ody = Math.sign(y - this.map.py);
+      // WORLD MONSTERS (Steve 2026-10-06): adopt any directly-set
+      // scholar.monster (debug scenarios) into the world BEFORE the tile
+      // changes, so follow/continuity logic sees it on the old tile.
+      this.playerMonster();
+      const fromX = this.map.px, fromY = this.map.py;
       // CONTINUOUS TRAVEL: remember where you stood on the old node so you can
       // walk onto the new one at the matching spot — not the middle.
       const oldMx = this.state.scholar.mx ?? 4, oldMy = this.state.scholar.my ?? 4;
@@ -6434,7 +6439,7 @@
       // WORLD MONSTERS (Steve 2026-10-06): monsters live on tiles, not on
       // you. The one you left behind STAYS behind (continuity — it's still
       // out there). Territorial and hungry ones follow you through the boundary.
-      const fromX = x - odx, fromY = y - ody;
+      // (fromX/fromY captured before the position update above.)
       const oldMonster = this.monsterAt(fromX, fromY);
       if (oldMonster) {
         const mdef = this.data.monsters.find(m => m.id === oldMonster.id);
@@ -10305,7 +10310,11 @@
     playerMonster() {
       try {
         const s = this.state.scholar;
-        if (s.monster && s.monster.id && !this.worldMonsters().includes(s.monster)) {
+        // Adopt directly-set scholar.monster (debug scenarios / dev panel):
+        // those are plain {id,hp,mx,my} objects WITHOUT tile coords. A removed
+        // world monster keeps its tx/ty, so it is never re-adopted here.
+        if (s.monster && s.monster.id && s.monster.tx === undefined &&
+            !this.worldMonsters().includes(s.monster)) {
           s.monster.tx = this.map.px; s.monster.ty = this.map.py;
           this.worldMonsters().push(s.monster);
         }
@@ -10353,6 +10362,7 @@
       if (i >= 0) {
         const gone = arr.splice(i, 1)[0];
         this.touchTileScene(gone.tx, gone.ty);
+        try { if (this.state.scholar.monster === gone) this.state.scholar.monster = null; } catch (e) {}
       }
       this.syncMonsterAlias();
     },
@@ -22598,8 +22608,15 @@
         this.tbfight = null;
         // Belt-and-suspenders: the wild encounter monster lives in the fight,
         // not on the grid. (Cleared at combat start; never leave a stale one
-        // rendering on every node.)
-        try { if (this.state && this.state.scholar) this.syncMonsterAlias(); } catch (e) {}
+        // rendering on every node.) A directly-set scholar.monster here is a
+        // stale leftover — discard it, don't adopt it into the world.
+        try {
+          if (this.state && this.state.scholar) {
+            const s = this.state.scholar;
+            if (s.monster && !this.worldMonsters().includes(s.monster)) s.monster = null;
+            this.syncMonsterAlias();
+          }
+        } catch (e) {}
       }
     },
 
