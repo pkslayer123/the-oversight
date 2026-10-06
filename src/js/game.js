@@ -10,6 +10,8 @@
 //   - eatOne(idx)
 //   - spendCombatAction(kind)
 //   - tbFighter(id)
+//   - fighterSize(f), fighterTiles(f) (multi-tile occupancy)
+//   - tbCanOccupy(f, nx, ny), tbMoveFighter(f, nx, ny) (validated movement)
 //   - tbAdvance()
 //   - tbAfterPlayerAction()
 //   - contestTick() (delegates to contests.js)
@@ -32,6 +34,8 @@
 //   - moderator_field: radius 2, 3 in shadowban; re-projected each of its turns (code: modProjectField)
 //   - moderator_violation: muted verb inside the field spends the turn, +3 strike damage each (code: modVerbBlocked)
 //   - moderator_phases: observing -> muting -> shadowban (code: tbMonsterTurn)
+//   - multitile_occupancy: size 2 = 2x2 block, mx,my is top-left (code: fighterTiles)
+//   - multitile_validation: all tiles walkable before each move (code: tbCanOccupy)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
 //   - sleep_heal_bunk: 35 (code: sleepPreview)
@@ -14143,7 +14147,33 @@
         }
       } else for (let i = 0; i < count; i++) {
         const spot = i === 0 ? { x: srcMx, y: srcMy } : freeSpotNear(srcMx, srcMy, takenSpots);
-        takenSpots.add(spot.x + ',' + spot.y);
+        // MULTI-TILE (Steve 2026-10-06): reserve all occupied tiles.
+        const msize = Math.max(1, Math.min(3, mdef.size || 1));
+        let sx = spot.x, sy = spot.y;
+        if (msize > 1) {
+          const tryBlock = (bx, by) => {
+            for (let dy = 0; dy < msize; dy++) for (let dx = 0; dx < msize; dx++) {
+              const x = bx + dx, y = by + dy;
+              if (x < 0 || x > 8 || y < 0 || y > 8) return false;
+              if (terrainBlocked(x, y)) return false;
+              if (takenSpots.has(x + ',' + y)) return false;
+            }
+            return true;
+          };
+          if (!tryBlock(sx, sy)) {
+            let found = false;
+            for (let r = 1; r <= 4 && !found; r++) {
+              for (let dy = -r; dy <= r && !found; dy++) for (let dx = -r; dx <= r && !found; dx++) {
+                const bx = sx + dx, by = sy + dy;
+                if (tryBlock(bx, by)) { sx = bx; sy = by; found = true; }
+              }
+            }
+          }
+          for (let dy = 0; dy < msize; dy++) for (let dx = 0; dx < msize; dx++)
+            takenSpots.add((sx + dx) + ',' + (sy + dy));
+        } else {
+          takenSpots.add(sx + ',' + sy);
+        }
         let hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
         let spd = mdef.speed || 3;
         const vName2 = veteranVariant ? (veteranVariant === 'pack-leader' ? 'Pack-leader ' : veteranVariant === 'elder' ? 'Elder ' : 'Scarred ') : (isVeteran ? 'Veteran ' : '');
@@ -14153,7 +14183,7 @@
         fighters.push({
           key: 'm_' + i, kind: 'monster', monsterId: mdef.id,
           name: vName2 + this.monsterDisplayName(mdef.id) + (count > 1 ? ' ' + (i + 1) : ''), emoji: mdef.emoji || '👹',
-          hp, maxHp: hp, speed: spd, mx: spot.x, my: spot.y,
+          hp, maxHp: hp, speed: spd, mx: sx, my: sy,
           alive: true, fled: false, telegraph: null, mdef,
           hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
           beamCooldown: 0, dwellTaught: false,
@@ -16409,12 +16439,73 @@
         // SMALL MONSTERS (Steve 2026-10-05): mice and other small creatures
         // don't block movement — you can walk through/past them. Larger
         // monsters block. Defaults to blocking.
-        if (o.alive && !o.fled && o.mx === x && o.my === y) {
-          if (o.kind === 'monster' && o.mdef && o.mdef.blocks === false) continue;
-          return true;
+        // MULTI-TILE (Steve 2026-10-06): check all occupied tiles.
+        if (o.alive && !o.fled) {
+          const tiles = this.fighterTiles(o);
+          for (const [tx, ty] of tiles) {
+            if (tx === x && ty === y) {
+              if (o.kind === 'monster' && o.mdef && o.mdef.blocks === false) continue;
+              return true;
+            }
+          }
         }
       }
       return false;
+    },
+
+    // MULTI-TILE MONSTERS (Steve 2026-10-06): large monsters occupy multiple
+    // grid spaces. size 1 = single tile (default), 2 = 2x2 block.
+    // mx,my is the TOP-LEFT of the occupied block.
+    fighterSize(f) {
+      return Math.max(1, Math.min(3, ((f.mdef && f.mdef.size) || f.size || 1)));
+    },
+    // All [x,y] tiles occupied by fighter f.
+    fighterTiles(f) {
+      const s = this.fighterSize(f);
+      const tiles = [];
+      for (let dy = 0; dy < s; dy++)
+        for (let dx = 0; dx < s; dx++)
+          tiles.push([f.mx + dx, f.my + dy]);
+      return tiles;
+    },
+    // Can fighter f occupy the size×size block with top-left at (nx, ny)?
+    // Validates ALL tiles are in-bounds and walkable — a 2x2 monster never
+    // gets stuck half-in a wall or overlapping another fighter.
+    tbCanOccupy(f, nx, ny) {
+      const s = this.fighterSize(f);
+      for (let dy = 0; dy < s; dy++) {
+        for (let dx = 0; dx < s; dx++) {
+          const x = nx + dx, y = ny + dy;
+          if (x < 0 || x > 8 || y < 0 || y > 8) return false;
+          if (this.tbBlockedFor(f, x, y)) return false;
+        }
+      }
+      return true;
+    },
+    // tbBlocked excluding fighter f itself (for occupancy validation).
+    tbBlockedFor(f, x, y) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const cell = detail[y] && detail[y][x];
+      if (this.cellProps(cell).blocks) return true;
+      const tf = this.tbfight;
+      if (tf) for (const o of tf.fighters) {
+        if (o === f || !o.alive || o.fled) continue;
+        const tiles = this.fighterTiles(o);
+        for (const [tx, ty] of tiles) {
+          if (tx === x && ty === y) {
+            if (o.kind === 'monster' && o.mdef && o.mdef.blocks === false) continue;
+            return true;
+          }
+        }
+      }
+      return false;
+    },
+    // Validated move: returns true if moved, false if any tile blocked.
+    // Multi-tile monsters MUST use this — never assign mx/my directly.
+    tbMoveFighter(f, nx, ny) {
+      if (!this.tbCanOccupy(f, nx, ny)) return false;
+      f.mx = nx; f.my = ny;
+      return true;
     },
 
     tbVillagerTurn(v) {

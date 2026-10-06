@@ -11648,7 +11648,14 @@
             for (let _mfi = 0; _mfi < tbf.fighters.length; _mfi++) {
               const mf = tbf.fighters[_mfi];
               if (mf.kind !== 'monster' && mf.kind !== 'hostile') continue;
-              if (!mf.alive || mf.fled || mf.mx !== cx || mf.my !== cy) continue;
+              if (!mf.alive || mf.fled) continue;
+              // MULTI-TILE (Steve 2026-10-06): check all occupied tiles.
+              const _msz = Math.max(1, Math.min(3, ((mf.mdef && mf.mdef.size) || mf.size || 1)));
+              let _onTile = false;
+              for (let _dy = 0; _dy < _msz && !_onTile; _dy++)
+                for (let _dx = 0; _dx < _msz && !_onTile; _dx++)
+                  if (mf.mx + _dx === cx && mf.my + _dy === cy) _onTile = true;
+              if (!_onTile) continue;
               // data-ent: stable key so the move animator can glide fighters
               // tile-to-tile instead of teleporting them on re-render.
               // INDISTINCT (Steve 2026-10-05): creatures render the same whether
