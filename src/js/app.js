@@ -8666,6 +8666,23 @@
     } catch (e) {}
     return out;
   }
+  // PLAYER-COINCIDENT TELEGRAPH ALERTS (Steve 2026-10-06): when a telegraph
+  // lands on the player's own tile, the white player marker sits on top of
+  // the tile fill and swallows the read — ring the MARKER itself so the
+  // danger survives. Pure helper (no Game calls): renderDetail consumes it,
+  // scripts/test-telegraph-judgment.js tests it.
+  //  diveTarget: the glasswing's dive shadow is ON you (dark tile + red ring).
+  //  sbLockTarget: the sunbasker's molten-gold lock is ON you (gold ring).
+  // Positional only — reveals nothing about unknown patterns, so the
+  // knowledge gate is untouched (the buckets are already gated upstream).
+  function tgPlayerAlertClasses(tgBuckets, gwDive, px, py) {
+    const out = [];
+    if (gwDive && gwDive.phase === 'dive' && gwDive.tile &&
+        gwDive.tile.x === px && gwDive.tile.y === py) out.push('diveTarget');
+    if (tgBuckets && tgBuckets.sbLock && typeof tgBuckets.sbLock.has === 'function' &&
+        tgBuckets.sbLock.has(px + ',' + py)) out.push('sbLockTarget');
+    return out;
+  }
   function renderDetail(st) {
     // Collect telegraph visuals once per render (not per cell)
     const _tg = tbAllTelegraphCells();
@@ -8721,7 +8738,11 @@
           // Facing comes from your last step — the marker shows where you're headed.
           const f = Game.state.scholar.facing || { x: 0, y: 1 };
           const ang = Math.round(Math.atan2(f.x, -f.y) * 180 / Math.PI);
-          g = `<span class="pmark" data-ent="me"><span class="ptoken">🧑</span><span class="pdir" style="transform:rotate(${ang}deg)">▲</span></span>`;
+          // PLAYER-COINCIDENT ALERTS (Steve 2026-10-06): a telegraph on your
+          // own tile would hide under the white marker — the marker carries
+          // the ring itself (diveTarget red / sbLockTarget gold, styled below).
+          const _alert = tgPlayerAlertClasses(_tg, _gwDive, pmx, pmy).join(' ');
+          g = `<span class="pmark${_alert ? ' ' + _alert : ''}" data-ent="me"><span class="ptoken">🧑</span><span class="pdir" style="transform:rotate(${ang}deg)">▲</span></span>`;
           cls += ' me';
           entityHere = true;
         }
@@ -8942,7 +8963,10 @@
             if (_k === _dk) {
               const _dark = (_gwDive.turnsLeft || 1) <= 1 ? 0.72 : 0.45;
               _wbStyle = `position:relative;box-shadow:inset 0 0 0 999px rgba(10,10,20,${_dark});outline:2px solid rgba(10,10,20,.85);outline-offset:-2px`;
-              g += `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;color:rgba(255,255,255,.9);text-shadow:0 0 6px rgba(0,0,0,.9);pointer-events:none">▼</span>`;
+              // DIVE ON YOU (Steve 2026-10-06): the player marker carries the
+              // read via its diveTarget ring — a centered ▼ would just sit on
+              // top of the 🧑 token and clutter it. Tile darkening stays.
+              if (!isMe) g += `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;color:rgba(255,255,255,.9);text-shadow:0 0 6px rgba(0,0,0,.9);pointer-events:none">▼</span>`;
             } else if ((_gwDive.streak || []).some(c => _k === (c.x + ',' + c.y))) {
               _wbStyle = 'box-shadow:inset 0 0 0 999px rgba(10,10,20,0.14)';
             }
@@ -9027,6 +9051,25 @@
 @keyframes w2aRipple { from { filter: brightness(1.0); } to { filter: brightness(1.4); } }
 @media (prefers-reduced-motion: reduce) {
   .cell.w2aStag, .cell.beamLane.w2aDrone, .cell.w2aSwarm, .cell.w2aStatic { animation: none; }
+}
+/* PLAYER-COINCIDENT TELEGRAPH ALERTS (Steve 2026-10-06): a telegraph landing
+   on the player's own tile rings the marker itself — the tile fill alone
+   hides under the white token. sbLockTarget: molten gold (sunbasker lock on
+   you). diveTarget: warning red (glasswing dive shadow on you). diveTarget
+   is listed after, so the red wins when both coincide (the dive landing is
+   the more urgent read; the gold tile fill still shows underneath). */
+.cell.me .pmark.sbLockTarget::before {
+  border: 3px solid #ffd34d;
+  box-shadow: 0 0 14px rgba(255,211,77,.95), inset 0 0 8px rgba(255,211,77,.55);
+  animation-duration: .7s;
+}
+.cell.me .pmark.diveTarget::before {
+  border: 3px solid #ff2d2d;
+  box-shadow: 0 0 14px rgba(255,45,45,.95), inset 0 0 8px rgba(255,45,45,.55);
+  animation-duration: .55s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cell.me .pmark.diveTarget::before, .cell.me .pmark.sbLockTarget::before { animation: none; }
 }
 </style>`;
     return html;
