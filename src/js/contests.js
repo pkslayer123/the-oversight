@@ -19,6 +19,7 @@
 //   - _contestRenderPhase(ac, phase, idx)
 //   - _contestCloserOdds(kind, wounds)
 //   - _contestVerdict(ac) -> watch-mode verdict roll (risk-scaled win/lose/die)
+//   - _contestWatchBeat(contest, pname) -> [setup, turn, ending] contest-specific watch beats (Steve 2026-10-06)
 //   - _cxCoaching(contest)
 //   - _cxPhaseSay(text)
 //   - _contestTithe(contest) -> phases (knowledge-gated measure)
@@ -41,6 +42,7 @@
 //   - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 //   - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 //   - watched_deaths: watch verdict rolls risk-scaled death — villagers can die on camera (code: _contestVerdict, Steve 2026-10-06)
+//   - watch_beats_specific: each contest gets its own 3 watch beats (setup/turn/ending) — the fiction of THAT contest, not generic filler; veteran watchers get a coaching line (code: _contestWatchBeat, _contestWatchPhases, Steve 2026-10-06)
 //   - single_prefix: phase texts carry their own 📺 prefix; _cxPhaseSay never doubles it (code: _cxPhaseSay, Steve 2026-10-05)
 //   - wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
@@ -1667,24 +1669,204 @@
   // The watcher doesn't decide the outcome — the VERDICT roll does, scaled
   // by contest risk. Villagers CAN die on camera (Steve 2026-10-06: watched
   // contests were bloodless, which broke FEARED).
+  // CONTEST-SPECIFIC WATCH BEATS (Steve 2026-10-06): the three watch phases
+  // were identical across all 27 contests ("it's going badly. Or well.").
+  // Watching hide-and-seek should feel like hide-and-seek — the count, the
+  // seeker — not a generic beat. Each contest gets its own three beats:
+  // what the cameras show, the taken villager's situation, the crowd —
+  // escalating setup -> turn -> ending. The fear lives in the specifics.
+  // Knowledge-gated: veteran watchers (contest knowledge level 2+) get a
+  // coaching line the broadcast never says out loud. Priors hold: System
+  // voice, no prize leaks, no coaching in setup text for first-timers.
+  G._contestWatchBeat = function(contest, pname) {
+    const T = {
+      // --- BLOOD ---
+      pit: {
+        setup: p => `📺 The Pit. ${p} has been taken.\n\nThe arena floor is sand and old bone. The gate across from them rattles — something in there is breathing hard. The System, bright as a knife: "CHOOSE YOUR WEAPON, CONTESTANT."\n\nYou watch with the village. The cameras love the watchers almost as much as the watched.`,
+        turn: p => `📺 The Pit — the beast is out. It comes in low and fast. It has been promised food.\n\nIt circles. It's deciding how ${p} dies. The crowd can smell both of them bleeding now. Someone in the village whispers the Death Reel's name like a curse.`,
+        end: p => `📺 The Pit — the last rush. The beast gathers itself and the whole arena goes silent for it.\n\nThis is the moment the Death Reel is for. Win or lose, the galaxy will watch this part forever.`,
+      },
+      gauntlet: {
+        setup: p => `📺 Gauntlet. ${p} has been taken.\n\nThree gates. Three waves. No rest between. The System: "WAVE ONE. TRY TO LOOK SURPRISED."\n\nThe crowd chants ${p}'s name. Wrong. Every time, wrong.`,
+        turn: p => `📺 Gauntlet — wave two. Bigger. It has seen the first wave's corpse and learned nothing, which is worse.\n\n${p}'s arms are heavy. The System's overlay helpfully displays the damage so far in numbers the size of weather — it wants everyone to know. The closer is watching the numbers too.`,
+        end: p => `📺 Gauntlet — wave three. What comes out of the gate is wrong in ways the first two weren't.\n\nThe closer smells blood. The whole galaxy leans in. Almost nobody walks away from this one.`,
+      },
+      duel: {
+        setup: p => `📺 Duel. ${p} has been taken.\n\nThe opponent: another contestant — scared, like ${p}, hiding it worse. Not to the death. To the yield. The System says "accidents happen" like it's a joke.\n\nYou watch with the village. Nobody is cheering yet.`,
+        turn: p => `📺 Duel — they're circling. The ref-drone hovers, sensors hot.\n\n${p} is studying them: favoring the left, nervous hands. The crowd wants blood. The System wants a story. ${p} wants to go home.`,
+        end: p => `📺 Duel — the end of it. One of them yields, or the drone calls it.\n\nThe crowd is on its feet. Accidents have happened on this floor before. Everyone watching knows exactly which kind.`,
+      },
+      // --- ENDURANCE ---
+      drop: {
+        setup: p => `📺 The Drop. ${p} has been taken.\n\nThree contestants, dropped somewhere with nothing. First back to the beacon eats. The others... walk.\n\nThe cameras split three ways. Every eye in the village is on ${p}'s feed.`,
+        turn: p => `📺 The Drop — the other two are landmarks now. Behind, or ahead — the cameras won't say.\n\n${p} is moving steady through whatever that terrain is. The beacon blinks on the horizon, too far, the exact color of hope.`,
+        end: p => `📺 The Drop — the beacon is close. Close enough to see the steam off the food.\n\nFirst one back eats. The other two walk home empty. The sprint at the end of this one is the cruelest part of the whole show.`,
+      },
+      starve: {
+        setup: p => `📺 Hollow Belly. ${p} has been taken.\n\nNo food for three days. The System watches who breaks first. Water provided. Dignity not.\n\nDay one: four contestants, one empty table, cameras in every corner. You watch with the village. Someone brings snacks. It helps.`,
+        turn: p => `📺 Hollow Belly — day two. The hunger talk has started. Nobody is entertaining anymore.\n\n${p} is quiet. The cameras linger on the empty plates. The audience is taking bets on who breaks first, and the odds keep moving.`,
+        end: p => `📺 Hollow Belly — day three. Someone is going to break today. Everyone knows it, including them.\n\nThe System zooms in, slow. Hunger is the whole show now, and ${p} is holding on by the fingernails.`,
+      },
+      // --- MOOT ---
+      moot: {
+        setup: p => `📺 The Moot. ${p} has been taken.\n\nTelevised trial. The accusations are read out — true or not, the cameras don't care. The audience is the jury.\n\n${p} stands at the mic alone. Seventeen systems are watching.`,
+        turn: p => `📺 The Moot — the defense. ${p} is talking, and the jury-feed shows the galaxy's verdict ticking up and down with every sentence.\n\nOne wrong word and it tanks. One right word and it soars. Truth is just another special effect here.`,
+        end: p => `📺 The Moot — closing. The accusations hang in the air like smoke.\n\nThe jury votes. Guilty or not, the verdict is televised, and the village will have to live next to whatever the galaxy decides.`,
+      },
+      lies: {
+        setup: p => `📺 Lie Detector. ${p} has been taken.\n\nTwo chairs. One detector. The System knows when you lie — the audience loves when you do.\n\nThe first questions are easy. They're supposed to be. The detector is calibrating on ${p}'s heartbeat.`,
+        turn: p => `📺 Lie Detector — the questions are getting personal. The detector buzzes, soft, satisfied.\n\n${p} just lied. The whole galaxy heard it. The audience is delighted. ${p}'s face is doing something complicated.`,
+        end: p => `📺 Lie Detector — the last question. The big one. The one they didn't tell ${p} about.\n\nThe detector is very quiet now. Waiting. The crowd leans in. Whatever the answer is, it will be the truth — the System makes sure of that.`,
+      },
+      // --- WEIRD ---
+      cookfight: {
+        setup: p => `📺 Cooking With Teeth. ${p} has been taken.\n\nTwo cooks. One counter. The ingredients are alive and they object to the menu.\n\n${p} picks up a knife. Something in the basket picks up... also something. Presentation matters. Survival matters more.`,
+        turn: p => `📺 Cooking With Teeth — the sauté pan just bit ${p}. The crowd roars.\n\nThe other cook's stew is fighting back too, but losing. ${p}'s dish is plated and furious. The judges are taking notes with very long utensils.`,
+        end: p => `📺 Cooking With Teeth — plating. Final seconds.\n\nTwo plates go up. One of them is still moving. The judges taste. The galaxy holds its breath — the wrong presentation here costs more than the prize.`,
+      },
+      fetch: {
+        setup: p => `📺 Bring Us Something Interesting. ${p} has been taken.\n\nOne mile radius. One hour. Most interesting thing wins — judged by beings who have never touched grass.\n\nThe clock starts. ${p} runs for the treeline. The other two split for the creek and the old ruins.`,
+        turn: p => `📺 Bring Us Something Interesting — half the hour gone. The haul is trickling in.\n\n${p} found something — the cameras won't show what. The judges are conferring. One of them is holding a rock upside down like it's a clue.`,
+        end: p => `📺 Bring Us Something Interesting — the judging. Final hauls on the table.\n\nThe judges deliberate. They have never touched grass, but they know interesting when they see it. Allegedly. ${p}'s find is about to be judged by aliens.`,
+      },
+      hide: {
+        setup: p => `📺 Hide and Seek. ${p} has been taken.\n\nThree hiders. One seeker. The seeker is a wave-2 predator, and it is very good at seeking.\n\nThe sixty-count begins. The forest is dense, dark, and full of things that want to be left alone. You watch with the village. The cameras love the watchers almost as much as the watched.`,
+        turn: p => `📺 Hide and Seek — the count is long over. The predator is listening.\n\nOn the forest feed: birds going quiet in a widening circle. ${p}'s camera shows only dark and breathing. The seeker sniffs the air the way you check the weather.`,
+        end: p => `📺 Hide and Seek — it's right there. The eyes catch the light.\n\nThe System is warming up the FOUND YOU sting. The village says ${p}'s name out loud, all at once, like that could help. It can't. The Death Reel will be tasteful. It won't be.`,
+      },
+      // --- PUZZLE ---
+      box: {
+        setup: p => `📺 The Box. ${p} has been taken.\n\nAn alien puzzle box, bigger than a person, folding and refolding. Solve it or stay in the arena until you do. The audience has the manual.\n\n${p} touches a panel. It folds wrong. The crowd groans in seventeen languages.`,
+        turn: p => `📺 The Box — ${p} is three panels deep and the box is fighting back, refolding solved sections.\n\nThe chat is screaming conflicting advice. They have the manual. They don't agree with each other. ${p}'s hands are shaking.`,
+        end: p => `📺 The Box — the last panel. One fold left, and it's the one the manual marks in red.\n\nThe arena is silent. The audience leans in. Either the box opens, or ${p} spends the night inside it. The System is already narrating both endings.`,
+      },
+      pattern: {
+        setup: p => `📺 Pattern Hunger. ${p} has been taken.\n\nA sequence of foods, laid out like a ritual. Eat them in the right order. The wrong order... disagrees with you.\n\n${p} studies the spread. The cameras zoom in on the fruit. The audience is placing bets on the order.`,
+        turn: p => `📺 Pattern Hunger — first bites down. The crowd holds its breath with every chew.\n\n${p} is reading the pattern, tasting carefully. Two more dishes to go. The wrong one disagrees — loudly, the chat warns, and the chat would know.`,
+        end: p => `📺 Pattern Hunger — the last dish. The pattern is almost visible now. Almost.\n\nOne bite left. The right order is a prize. The wrong order is a very public, very televised disagreement. ${p} picks up the fork.`,
+      },
+      // --- DETECTIVE ---
+      whoate: {
+        setup: p => `📺 Who Ate It? ${p} has been taken.\n\nThe prize is gone. Three suspects. One of them is lying about everything. ${p} has an hour, and the cameras love a deadline.\n\nThe suspects are lined up. The thief is among them. So is ${p}'s reputation.`,
+        turn: p => `📺 Who Ate It? — the questioning. ${p} is working the room.\n\nSuspect two just contradicted suspect one. The chat has theories. The chat is wrong about most things, but it's loud about all of them.`,
+        end: p => `📺 Who Ate It? — the reveal. ${p} points.\n\nThe accused face. The cameras push in. If ${p} is right, it's justice, televised. If ${p} is wrong, it's the best episode of the season.`,
+      },
+      informant: {
+        setup: p => `📺 The Informant. ${p} has been taken.\n\nFour contestants. One of them is lying about everything. Find the liar before the liar finds the exit.\n\nThe doors lock. The cameras settle in. ${p} is watching hands, eyes, who stands near the exits.`,
+        turn: p => `📺 The Informant — the lies are multiplying. Every story has a hole, and ${p} is mapping all of them.\n\nOne contestant keeps drifting toward the doors. The cameras noticed. ${p} noticed the cameras noticing.`,
+        end: p => `📺 The Informant — the exit is in play. Someone is going to make a run for it.\n\n${p} has one accusation. The informant has one exit. The doors are very loud when they open. The galaxy is watching both.`,
+      },
+      // --- FORAGE ---
+      calorie_run: {
+        setup: p => `📺 Calorie Run. ${p} has been taken.\n\nOne hour. Whoever brings back the most calorie-dense haul wins. The forest is... competitive.\n\nThe start gun. ${p} runs. The other two are already fighting over the same berry thicket.`,
+        turn: p => `📺 Calorie Run — the sacks are filling. ${p}'s is respectably heavy.\n\nThe cameras cut to the creek: one rival just found a full fish trap. The chat is furious on ${p}'s behalf. The forest does not care.`,
+        end: p => `📺 Calorie Run — the weigh-in, in front of the cameras. Sack vs sack vs sack.\n\nThe scales don't lie. The locals are watching from the treeline. ${p}'s haul goes on last, and the whole village holds its breath.`,
+      },
+      pantry_raid: {
+        setup: p => `📺 Pantry Raid. ${p} has been taken.\n\nGather from the dangerous place. The locals object. Bring back food or don't come back.\n\n${p} crosses into the warning zone. The cameras pull back, respectful. Even the drones give this one room.`,
+        turn: p => `📺 Pantry Raid — the locals have noticed. The treeline is... occupied.\n\n${p} is gathering fast, eyes everywhere. The sack is half full. The owners of this pantry are deciding what to do about the thief with the cameras.`,
+        end: p => `📺 Pantry Raid — the run home. The sack is full and the locals are done deciding.\n\n${p} runs. Behind: pursuit. Ahead: the gate. This is the part the Death Reel replays in slow motion. The village is screaming.`,
+      },
+      // --- CHANCE ---
+      wheel: {
+        setup: p => `📺 Wheel of Teeth. ${p} has been taken.\n\nOne wheel. One spin. The teeth decide.\n\n${p} steps up. The wheel is taller than a person and it grins. The crowd holds its breath. You watch with the village.`,
+        turn: p => `📺 Wheel of Teeth — the wheel is slowing. Click. Click. Click.\n\n${p} isn't watching the wheel anymore — eyes closed, listening. The teeth pass one by one. The crowd counts them out loud.`,
+        end: p => `📺 Wheel of Teeth — it stops. The tooth it lands on glints.\n\nThe System reads it out. The crowd's reaction tells ${p} everything before the words finish. Fortune, televised, in a single click.`,
+      },
+      lottery: {
+        setup: p => `📺 The Lottery. ${p} has been taken.\n\nFive contestants. Pure luck. Draw a token.\n\n${p} reaches into the drum. The audience loves an underdog, and the cameras have already decided ${p} is the underdog.`,
+        turn: p => `📺 The Lottery — four tokens drawn. None of them ${p}'s.\n\nOne token left in the drum, or the winning one is already out there in someone else's hand. The underdog edit is getting stronger. The crowd is rooting.`,
+        end: p => `📺 The Lottery — the last token. ${p}'s hand is in the drum.\n\nThe whole galaxy watches a hand pull a piece of carved bone out of a drum. Luck, televised. The underdog story writes itself. Or it doesn't.`,
+      },
+      // --- WAVE 2+ (Steve 2026-10-06) ---
+      tithe: {
+        setup: p => `📺 The Blood Tithe. ${p} has been taken.\n\nA black basin on a black altar. The System, gentle as a nurse: "BLEED FOR US. WE ONLY NEED... ENOUGH."\n\n${p}'s blood steams in the cold air. Nobody will say how much the altar wants. The audience knows. They are not telling.`,
+        turn: p => `📺 The Blood Tithe — the basin is filling. ${p}'s vision is swimming at the edges.\n\nThe System tilts its head. "MORE?" it asks, like it's offering dessert. The crowd has gone quiet — even they know this is the part where it goes wrong.`,
+        end: p => `📺 The Blood Tithe — the count. The altar gives no sign, and the basin keeps drinking.\n\nToo little and it finds you wanting. Too much and it keeps the rest. ${p} is deciding. The Death Reel is already editing.`,
+        knows: p => `📚 What your blood remembers: THREE full measures. Not four. The fourth measure is the one that kills. Watch ${p}'s hands — stop them at three if you can.`,
+      },
+      siege: {
+        setup: p => `📺 Siege. ${p} has been taken.\n\nA chokepoint of rubble and light-fencing. Beyond it: the beacon. Behind ${p}: the village, watching from the walls.\n\nThe System: "THREE WAVES. HOLD THE LINE. THE VILLAGE IS WATCHING — WAVE, WON'T YOU?"`,
+        turn: p => `📺 Siege — wave two. They feinted at the barricade and came for ${p}.\n\nThe village gasps as one. Someone on the wall is screaming ${p}'s name. The light-fence is flickering. The line bends.`,
+        end: p => `📺 Siege — wave three. The big ones. The barricade is splinters.\n\n${p} is alone in the gap. The beacon hums. The village holds its breath. The line holds, or ${p} doesn't.`,
+      },
+      maw: {
+        setup: p => `📺 The Maw. ${p} has been taken.\n\nA tunnel mouth in the arena floor, breathing cold air. The grate slams shut behind ${p}.\n\nAhead: dark. Behind the dark: something that has learned patience. The System, cheerful: "WALK. DON'T STOP. IT COUNTS YOUR PAUSES."`,
+        turn: p => `📺 The Maw — ${p} is deep in the tunnel now. The cameras switch to night-vision green.\n\nYou can hear it: not footsteps, the tunnel going quiet ahead. ${p}'s legs are shaking. Stopping would be so easy. It is counting.`,
+        end: p => `📺 The Maw — light ahead. A circle of it, small and grey and real.\n\nIt's close behind ${p} now. The thing's interest is like heat on the cameras. Walk out, or turn and face it. The galaxy will watch either way.`,
+      },
+      oath: {
+        setup: p => `📺 The Oath. ${p} has been taken.\n\nThree lecterns. Three oaths, written in light. "SWEAR. MEAN IT. WE WILL KNOW."\n\nThe first oath: NEVER LIE TO THE CAMERAS AGAIN. ${p} speaks. The light wraps the wrist like a bracelet. It itches with truth.`,
+        turn: p => `📺 The Oath — the second oath. GIVE THE SYSTEM ONE MEMORY. It chooses which.\n\nIt is already reaching. You can feel it browsing, even through the screen. ${p}'s face goes still — it found one. A summer afternoon. The shape of it, gone.`,
+        end: p => `📺 The Oath — the third oath. WHEN THE SYSTEM CALLS, COME. No conditions.\n\nThis is the one that matters. The audience knows it. ${p} knows it. The bracelet clicks shut, and the galaxy witnesses the binding.`,
+      },
+      beastmaster: {
+        setup: p => `📺 Beastmaster. ${p} has been taken.\n\nA wave-2 beast in a light-collar, pacing. The course: rings of fire, a balance beam over spikes, a tunnel.\n\nThe System: "RIDE. GUIDE. DO NOT HURT IT. IT REMEMBERS." ${p} mounts like it's a horse that could kill you. It could.`,
+        turn: p => `📺 Beastmaster — the rings of fire. The beast hates them; you can see it coiling under ${p}.\n\n${p} is guiding with knees and breath. The beam over the spikes is next, and the beast is watching ${p} for cues. One yank on the collar and its eyes change.`,
+        end: p => `📺 Beastmaster — the last obstacle. The tunnel. Dark, narrow, and it smells like the Maw.\n\nThe beast balks. This is the moment the whole contest turns on. Together through the dark, or forced in alone — and in the dark, where the cameras can't quite see, you hear it decide.`,
+      },
+      riddle: {
+        setup: p => `📺 Riddle Me This. ${p} has been taken.\n\nA lattice of mouths hangs in the air, opening and closing out of sync. The Riddle Engine doesn't want blood. It wants memories.\n\nRiddle one. The mouths ripple. ${p} answers steady — or doesn't. Wrong answers cost pieces of the past.`,
+        turn: p => `📺 Riddle Me This — riddle two. The Engine has been reading ${p} between questions.\n\nIt asks about the dog. ${p} never told it about the dog. The mouths are all smiling. The village goes very quiet.`,
+        end: p => `📺 Riddle Me This — the last riddle. The mouths lean close.\n\nThis one is about ${p}, and you can feel which memory it's reaching for.`,
+        knows: p => `📚 You've seen this Engine before: the last riddle is always the one they don't want to answer. Watch ${p} — the only way through is to answer it truthfully anyway.`,
+      },
+      confession: {
+        setup: p => `📺 The Confession. ${p} has been taken.\n\nA villager stands under the lights — the confessor. The confession, read flat: "I poisoned the water store."\n\nThe System, almost gentle: "PROVE IT TRUE OR FALSE BEFORE DUSK, INVESTIGATOR. WE PUNISH SOMEONE EITHER WAY." ${p} studies the confessor. The hands are steady. Too steady.`,
+        turn: p => `📺 The Confession — ${p} is pressing. The story wobbles: the poison, the hour, the hands.\n\nReal guilt is consistent. This isn't. The confessor won't stop looking at the back row. The cameras noticed. ${p} noticed the cameras noticing.`,
+        end: p => `📺 The Confession — dusk is coming. The System waits with the patience of weather.\n\n${p} has one verdict. The consequences are everyone's: name the real culprit and fracture the village, or confirm the lie and let the System take someone innocent.`,
+      },
+      honey: {
+        setup: p => `📺 Sweet Tooth. ${p} has been taken.\n\nThe hive hangs in the arena like a second moon, humming. The swarm moves as one body and it has opinions.\n\n${p} works the smoker. The air goes grey and sweet. Harvest the comb. Try to keep your face.`,
+        turn: p => `📺 Sweet Tooth — ${p} is at the comb. It glows. The queen cell pulses at the heart of it: the prize and the death, side by side.\n\nThe swarm is watching ${p} decide. The whole arena hums. The cameras can barely hold focus through the wings.`,
+        end: p => `📺 Sweet Tooth — the getaway. The comb is in ${p}'s hands. The swarm is in the air.\n\nRun with the comb, walk out slow and smoking, or leave an offering. The swarm follows like weather. The gate is a long way off.`,
+      },
+      secrets: {
+        setup: p => `📺 The Secret Deck. ${p} has been taken.\n\nThe dealer fans the deck. Every card has a face on it — someone watching. "ANTE UP. THE CURRENCY IS TRUTH."\n\n${p} draws. First card: someone in the village has been lying about their age. Someone in the front row just went pale.`,
+        turn: p => `📺 The Secret Deck — the turn. The pot is secrets and it's getting deep.\n\n${p} calls. Second card: two villagers have been meeting at night. The cameras find the clearing. The village does the math before the cameras do.`,
+        end: p => `📺 The Secret Deck — the river. Last card. The deck is warm in the dealer's hands, like it's alive.\n\nWhatever ${p} does next, the village will remember what was traded. Win, and three secrets air to the galaxy. Fold, and nobody ever knows what ${p} saved them from.`,
+      },
+    };
+    const b = T[contest.id];
+    if (!b) return null;
+    const beats = [b.setup(pname), b.turn(pname), b.end(pname)];
+    // Knowledge-gated coaching: only veterans (level 2+) get the line the
+    // broadcast never says out loud.
+    if (b.knows) {
+      try {
+        if (this.contestKnowledge(contest.id).level >= 2) beats[2] += '\n\n' + b.knows(pname);
+      } catch (e) {}
+    }
+    return beats;
+  };
+
+  // The three watch beats ARE the show (Steve 2026-10-06): each contest gets
+  // its own fiction now. Generic is fallback only — no contest in the pool
+  // should ever reach it.
   G._contestWatchPhases = function(contest, participantId) {
     const pname = this.displayName(participantId);
+    let beats = null;
+    try { beats = this._contestWatchBeat(contest, pname); } catch (e) { beats = null; }
+    if (!beats) {
+      beats = [
+        `📺 ${contest.name}. ${pname} has been taken.\n\nYou watch with the village. The cameras love the watchers almost as much as the watched.`,
+        `📺 ${contest.name} — it's going badly. Or well. It's hard to tell through the lights.\n\n${pname} is still in it. The crowd is restless.`,
+        `📺 ${contest.name} — it's over.\n\nThe outcome scrolls across the sky in letters the size of weather.`,
+      ];
+    }
     return [
-      { text: `📺 ${contest.name}. ${pname} has been taken.\n\nYou watch with the village. The cameras love the watchers almost as much as the watched.`,
+      { text: beats[0],
         choices: [
           { label: 'Cheer them on', sub: 'loud', do: { note: `You cheer for ${pname}. They hear it. It matters more than you'd think.` }, next: 1 },
           { label: 'Watch silently', sub: 'tense', do: { note: 'You watch without a sound. Your hands hurt from gripping.' }, next: 1 },
           { label: 'Look away', sub: 'can\'t watch', do: { note: 'You look away. The cameras catch it anyway. The audience understands.', trauma: 3 }, next: 1 },
         ] },
-      // Watchability (Steve 2026-10-06): mid/late watch phases name the
-      // contest — without it the show reads as the same generic beat for
-      // all 27 contests.
-      { text: `📺 ${contest.name} — it's going badly. Or well. It's hard to tell through the lights.\n\n${pname} is still in it. The crowd is restless.`,
+      { text: beats[1],
         choices: [
           { label: 'Shout advice', sub: 'maybe helps', do: { note: `You shout something useful. Whether ${pname} hears it over the noise is another question.` }, next: 2 },
           { label: 'Hold your breath', sub: 'tense', do: { note: 'You stop breathing. Everyone does. The village is one held breath.' }, next: 2 },
         ] },
-      { text: `📺 ${contest.name} — it's over.\n\nThe outcome scrolls across the sky in letters the size of weather.`,
+      { text: beats[2],
         choices: [
           { label: 'Go to them', sub: 'after', do: { note: `You go to ${pname} after. Win or lose, they need a familiar face more than applause.` }, next: 'VERDICT' },
           { label: 'Give them space', sub: 'respect', do: { note: 'You give them space. The cameras move on. You don\'t.' }, next: 'VERDICT' },
