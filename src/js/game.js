@@ -20473,14 +20473,28 @@
     // contest rewards (Steve 2026-10-05). mdef.loot = {chance, tier}.
     // Returns an item id or null. Chances are LOW by design — alien loot
     // should feel like a gift from a confused god, not a paycheck.
-    // WAVE-CAPPED (Steve 2026-10-05): you can't get tier-2 loot from wave-1
-    // monsters. The tier is capped by the monster's wave. No early jackpots.
-    rollAlienLoot(mdef) {
+    // LOOT TIERS (Steve 2026-10-06): difficulty gates reward.
+    // - Base wave-1 monsters: tier 1-2 max (data).
+    // - Wave-1 apex (gallowdeer, mdef.apex): tier 4 — one apex per wave.
+    // - Wave-1 VETERAN variants (fighter.veteranVariant: scarred/elder/
+    //   pack-leader): tier up to 3, ONLY after wave 2 unlocks
+    //   (unlockedWave() >= 2). Before that they drop wave-1 loot.
+    // - Wave-2 base: tier 2-3 (data).
+    // - Wave-2 apex (moderator, mdef.apex): tier 4.
+    rollAlienLoot(mdef, fighter) {
       const loot = (mdef || {}).loot;
       if (!loot || !(loot.chance > 0)) return null;
       if (Math.random() >= loot.chance) return null;
       const wave = mdef.wave || 1;
-      const maxTier = Math.min(loot.tier || 1, wave); // wave caps the tier
+      let maxTier = loot.tier || 1;
+      const isVeteran = fighter && (fighter.veteranVariant || fighter.veteran);
+      if (wave <= 1 && !mdef.apex) {
+        maxTier = Math.min(maxTier, 2);
+        if (isVeteran && this.unlockedWave() >= 2) {
+          // Veterans are a tier harder: bump one, cap at 3.
+          maxTier = Math.min((loot.tier || 1) + 1, 3);
+        }
+      }
       // Find the highest available tier <= maxTier (fallback if tier missing)
       let tier = Math.max(1, maxTier);
       let pool = [];
@@ -20604,7 +20618,7 @@
         // leaves confused gifts for impressive violence. Show/contest rewards
         // plug into rollAlienLoot(tier) when that system lands.
         try {
-          const dropId = this.rollAlienLoot(mdef);
+          const dropId = this.rollAlienLoot(mdef, mf);
           if (dropId) {
             const granted = this.alienLootGrant(dropId);
             if (granted) {

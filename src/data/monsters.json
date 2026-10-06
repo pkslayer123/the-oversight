@@ -315,7 +315,8 @@
     "armor": 0,
     "resistances": {
       "psychic": 0.5
-    }
+    },
+    "apex": true
   },
   {
     "id": "mirrormoth",
@@ -922,8 +923,8 @@
     },
     "loot": {
       "chance": 0.1,
-      "tier": 3,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Downgraded to tier 2 — wave-1 base (Steve 2026-10-06)."
     },
     "armor": 15,
     "resistances": {
@@ -2119,11 +2120,13 @@
     },
     "loot": {
       "chance": 0.2,
-      "tier": 4,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Demoted from apex — strong, not the apex (Steve 2026-10-06)."
     },
     "armor": 3,
-    "resistances": { "psychic": 0.5 }
+    "resistances": {
+      "psychic": 0.5
+    }
   },
   {
     "id": "heckler",
@@ -2393,8 +2396,7 @@
     "resistances": {
       "psychic": 0.5
     }
-  }
-  ,
+  },
   {
     "id": "moderator",
     "wave": 2,
@@ -2425,14 +2427,14 @@
     "follows": false,
     "fear": "darkness",
     "speed": 3,
-    "emoji": "\ud83d\udd28",
+    "emoji": "🔨",
     "unknown": "a hovering shape with a hammer, drawing a circle on the ground around itself",
     "vibe": "it stopped watching content and started removing it. you are the content",
     "weaknesses": [
-      "vary your verbs \u2014 it mutes what you lean on",
-      "step OUT of the suppression field \u2014 the mute only holds inside it",
+      "vary your verbs — it mutes what you lean on",
+      "step OUT of the suppression field — the mute only holds inside it",
       "violations feed it: never swing at a muted verb, the +3 stacks",
-      "darkness \u2014 it cannot moderate what it cannot see"
+      "darkness — it cannot moderate what it cannot see"
     ],
     "edible": {
       "calories": 0,
@@ -2448,16 +2450,16 @@
         "\"CONTENT UNDER REVIEW.\" It is not looking at you. It is looking at everything you have ever done, the way a teacher looks at a margin note."
       ],
       "warn": [
-        "\"REPEATED BEHAVIOR DETECTED.\" The hammer comes up. The circle on the ground brightens \u2014 purple, the color of a bruise."
+        "\"REPEATED BEHAVIOR DETECTED.\" The hammer comes up. The circle on the ground brightens — purple, the color of a bruise."
       ],
       "fearful": [
-        "The lens flickers. In the dark it cannot see the field it drew \u2014 it swings the hammer at nothing, moderating the night."
+        "The lens flickers. In the dark it cannot see the field it drew — it swings the hammer at nothing, moderating the night."
       ]
     },
     "codexStages": {
       "unknown": "There's a thing in the clearing with a hammer, drawing a circle on the dirt. The circle is purple. It feels like being watched by a rule.",
-      "observed": "The System's escalation arm: a content enforcement unit. It stopped grading and started removing. It draws a suppression field (radius 2) and MUTES the verb you use most \u2014 strike or move \u2014 inside that field. The mute is real: try the verb and your turn is spent, flagged as a violation.",
-      "slain": "Moves: Content Noted (weak ranging chip, 6-10, while it reviews you), Removal Notice (12-18, once it starts muting), Deplatform (22-32 at half HP: the mute keeps chasing your most-used verb, field widens to radius 3, and the shadowed ground itself rejects you for 2). Every violation \u2014 every muted verb you attempt \u2014 makes its strikes hit +3 harder. The counterplay is the field: step OUT of it and muted verbs work again, and vary your verbs so the mute keeps chasing the wrong one. Parts: banhammer head, your printed violations, its mute button (trophy)."
+      "observed": "The System's escalation arm: a content enforcement unit. It stopped grading and started removing. It draws a suppression field (radius 2) and MUTES the verb you use most — strike or move — inside that field. The mute is real: try the verb and your turn is spent, flagged as a violation.",
+      "slain": "Moves: Content Noted (weak ranging chip, 6-10, while it reviews you), Removal Notice (12-18, once it starts muting), Deplatform (22-32 at half HP: the mute keeps chasing your most-used verb, field widens to radius 3, and the shadowed ground itself rejects you for 2). Every violation — every muted verb you attempt — makes its strikes hit +3 harder. The counterplay is the field: step OUT of it and muted verbs work again, and vary your verbs so the mute keeps chasing the wrong one. Parts: banhammer head, your printed violations, its mute button (trophy)."
     },
     "systemDesignation": "Content enforcement unit (field model)",
     "encounter": {
@@ -2472,27 +2474,28 @@
         "shadowban"
       ],
       "phaseBadges": {
-        "observing": " \ud83d\udc41 CONTENT UNDER REVIEW",
-        "muting": " \ud83d\udd07 MUTING",
-        "shadowban": " \u2b1b SHADOWBAN"
+        "observing": " 👁 CONTENT UNDER REVIEW",
+        "muting": " 🔇 MUTING",
+        "shadowban": " ⬛ SHADOWBAN"
       },
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "moderator",
       "noticeText": "A shape detaches from the dark, hammer first. \"SUBJECT FLAGGED. CONTENT UNDER REVIEW.\" {who} is the content now.",
-      "painText": "The hammer dips \u2014 then rises higher. \"ESCALATION AUTHORIZED. PRIORITY: MAXIMUM.\" Hurting it only hurries the paperwork.",
-      "proximityText": "\"PROXIMITY FLAGGED.\" The circle redraws itself around {who} \u2014 the field follows.",
+      "painText": "The hammer dips — then rises higher. \"ESCALATION AUTHORIZED. PRIORITY: MAXIMUM.\" Hurting it only hurries the paperwork.",
+      "proximityText": "\"PROXIMITY FLAGGED.\" The circle redraws itself around {who} — the field follows.",
       "comment": "Wave-2 apex encounter. FIFO enforcement unit: suppression field (grid-visible), verb muting (strike/move, most-used first), violation escalation (+3/strike per violation). Counterplay is positional (leave the field) and behavioral (vary verbs).",
-      "knownCue": "It mutes the verb you lean on \u2014 strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one."
+      "knownCue": "It mutes the verb you lean on — strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one."
     },
     "loot": {
       "chance": 0.2,
-      "tier": 3,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Apex slot: tier 3."
+      "tier": 4,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Wave-2 apex slot: tier 4 (Steve 2026-10-06)."
     },
     "armor": 6,
     "resistances": {
       "psychic": 0.5
-    }
+    },
+    "apex": true
   }
 ]
