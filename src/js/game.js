@@ -13930,6 +13930,11 @@
       for (const m of f.fighters) {
         if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || !m.telegraph) continue;
         if (this.encUsesFifo(m) && !(m.telegraph.firing > 0) && !this.encTelegraphKnown(m)) continue;
+        // BEAM-ONLY (Steve 2026-10-06): this feeds the beamLane overlay — only
+        // beam-pattern telegraphs belong here. (Previously every telegraph's
+        // cells were included and renderDetail relied on CSS source-order to
+        // let the correct visual win — fragile.)
+        if (((m.telegraph.pattern || {}).type || 'single') !== 'beam') continue;
         for (const c of (m.telegraph.cells || [])) set.add(c.cx + ',' + c.cy);
       }
       return set;
