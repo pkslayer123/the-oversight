@@ -20853,12 +20853,15 @@
     // baseEffect stays hidden until first use (alienEffectHidden). The flag is
     // a plain JSON field on the inventory entry, so it survives save/load like
     // every other inventory field. Callers: tbEnd loot drop, _contestEnd prize.
-    alienLootGrant(itemId) {
+    alienLootGrant(itemId, toCorpse) {
       const def = (this.data.items || []).find(i => i.id === itemId);
       if (!def) return null;
       const entry = { itemId: def.id, name: def.name, units: 1,
         kcalEach: def.kcalEach || 0, spoilDay: def.spoilDay || 9999,
         unit: 'piece', kg: def.kg || 0.3, alienLoot: true, alienEffectHidden: true };
+      // LOOT-AS-ACTION (Steve 2026-10-06): monster-kill loot goes on the
+      // corpse, not the pack. Contest prizes still go direct (no corpse).
+      if (toCorpse && toCorpse.items) { toCorpse.items.push(entry); return { def, entry }; }
       const s = this.state.scholar || {};
       s.inventory = s.inventory || [];
       s.inventory.push(entry);
@@ -20887,6 +20890,31 @@
         }
       }
       return true;
+    },
+    // LOOT-AS-ACTION (Steve 2026-10-06): kills don't auto-loot. Drops go on
+    // the corpse; the player opens the pack deliberately via the Loot action.
+    // Finds the corpse registered when this monster died in tbDamage; falls
+    // back to creating one at the fighter's position (never silently drops).
+    corpseForKill(mdef, mf) {
+      try {
+        const list = this.corpses ? this.corpses() : (this.state.corpses || []);
+        for (let i = list.length - 1; i >= 0; i--) {
+          const c = list[i];
+          if (c.kind === 'monster' && !c.buried && c.monsterId === mdef.id &&
+              c.node && c.node.x === this.map.px && c.node.y === this.map.py) return c;
+        }
+        if (this.registerDeath) {
+          return this.registerDeath({
+            kind: 'monster', monsterId: mdef.id, monsterName: mdef.name,
+            name: this.monsterDisplayName ? this.monsterDisplayName(mdef.id) : (mdef.name || 'the beast'),
+            descriptor: this.monsterDisplayName ? this.monsterDisplayName(mdef.id) : null,
+            mx: (mf && mf.mx != null) ? mf.mx : null,
+            my: (mf && mf.my != null) ? mf.my : null,
+            cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses ? this.fightWitnesses() : [],
+          });
+        }
+      } catch (e) {}
+      return null;
     },
     tbEnd(result) {
       const f = this.tbfight;
@@ -20959,14 +20987,20 @@
             // until learned (tested / villager word / Codex). The name is the
             // gated display name — descriptor until the village names it.
             // Killing it does NOT teach the true name.
-            s.inventory.push({
+            // LOOT-AS-ACTION (Steve 2026-10-06): the carcass stays on the
+            // corpse. Search the body to take it — and it rots there if you
+            // don't. (spoilDay runs on corpse inventories via sweepSpoiled.)
+            const meatEntry = {
               plantId: 'meat_' + mdef.id, foodKind: 'meat', foodState: 'carcass',
               edible: false, units: 1, kcalEach: 0, hiddenKcal: kcal,
               spoilDay: s.day + 3, name: this.monsterDisplayName(mdef.id) + ' (carcass)',
               unit: 'carcass', kg: Math.max(0.5, kcal / 1000),
               prep: 'A carcass. Clean it with a knife — quickly. Spoils fast.'
-            });
-            this.say(`${mdef.edible.note || ''} It's dead, and the meat is yours if you want it — but you don't know this flesh. Clean it, test it cautiously, or ask someone who knows.`);
+            };
+            const meatCorpse = this.corpseForKill(mdef, mf);
+            if (meatCorpse) meatCorpse.items.push(meatEntry);
+            else s.inventory.push(meatEntry); // fallback: never lose the kill
+            this.say(`${mdef.edible.note || ''} It's dead. The carcass is there on the ground — search the body if you want the meat. But you don't know this flesh. Clean it, test it cautiously, or ask someone who knows. And don't leave it long: meat rots where it lies.`);
           } else if (mdef.edible.note) {
             this.say(mdef.edible.note);
           }
@@ -20978,13 +21012,15 @@
         try {
           const dropId = this.rollAlienLoot(mdef, mf);
           if (dropId) {
-            const granted = this.alienLootGrant(dropId);
+            // LOOT-AS-ACTION: the System's gift stays with the body. Search it.
+            const lootCorpse = this.corpseForKill(mdef, mf);
+            const granted = this.alienLootGrant(dropId, lootCorpse);
             if (granted) {
               // KNOWLEDGE-GATED (Steve 2026-10-06): name + flavor are the
               // System's confused narration — they announce. The mechanical
               // baseEffect stays hidden until first use (alienLootReveal):
               // "if you don't know, it doesn't show."
-              this.say(`✨ ALIEN LOOT: ${granted.def.name}. ${granted.def.flavor || ''}`);
+              this.say(`✨ ALIEN LOOT: ${granted.def.name}. ${granted.def.flavor || ''} It's on the body — search it.`);
             }
           }
         } catch (e) {}
@@ -20995,8 +21031,13 @@
         if (this.hasAbility('grave_robber') && Math.random() < 0.5) {
           const gear = ['bone knife', 'cracked helm', 'war horn', 'tooth necklace'];
           const g = gear[Math.floor(Math.random() * gear.length)];
-          s.inventory.push({ name: g, kcalEach: 0, units: 1, spoilDay: 9999, unit: 'trophy', kg: 0.5 });
-          this.say(`Grave robber: you take its ${g}. The dead don't need it.`);
+          // LOOT-AS-ACTION: even the grave robber searches the body — the
+          // trophy is on the corpse, not in the pack.
+          const grCorpse = this.corpseForKill(mdef, mf);
+          const trophy = { name: g, kcalEach: 0, units: 1, spoilDay: 9999, unit: 'trophy', kg: 0.5 };
+          if (grCorpse) grCorpse.items.push(trophy);
+          else s.inventory.push(trophy);
+          this.say(`Grave robber: its ${g} is on the body. The dead don't need it — but you'll have to take it.`);
         }
         for (const r of this.relicItems()) {
           const rdef = this.data.items.find(i => i.id === (r.itemId || r.id));

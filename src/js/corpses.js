@@ -7,6 +7,9 @@
 //   - corpseDesc(c)
 //   - examineCorpse(cid)
 //   - lootCorpse(cid)
+//   - corpseTakeItem(cid, idx)
+//   - corpseUseItem(cid, idx)
+//   - corpseEatItem(cid, idx)
 //   - registerDeath(vid, cause)
 //   - corpseStage(c)
 //   - corpseGlyph(c)
@@ -250,6 +253,107 @@
     },
 
     // ---------- looting ----------
+
+    // LOOT-AS-ACTION (Steve 2026-10-06): no auto-loot. The kill leaves a
+    // corpse with an inventory; the player opens the pack deliberately and
+    // takes, leaves, or uses per item. These are the per-item primitives —
+    // the app.js loot UI calls them. Trauma/disease apply once per corpse
+    // (first touch), not per item — the horror is the act, not the count.
+
+    // _corpseFirstTouch(c): trauma + disease on first handling. Idempotent.
+    _corpseFirstTouch(c) {
+      if (!c || c._touched) return;
+      c._touched = true;
+      const st = this.corpseStageInfo(c);
+      const trauma = this.corpseTrauma(c, {});
+      try { this.addTrauma(trauma); } catch (e) {}
+      const s = this.state.scholar;
+      if (Math.random() < st.diseaseP) {
+        s.health = Math.max(0, (s.health || 100) - st.diseaseDmg);
+        this.say(`Handling the ${st.id} remains was a mistake. Fever by nightfall. (-${st.diseaseDmg} health)`);
+      }
+      // WITNESSES: looting a fresh person-corpse where others can see.
+      if (c.kind === 'person' && this.corpseStage(c) <= 2) {
+        try { this.observe('loot_corpse', { target: c.villagerId }); } catch (e) {}
+      }
+      if (this.tickAction) this.tickAction(8);
+    },
+
+    _corpseCheckRange(c) {
+      const s = this.state.scholar;
+      if (c.node.x !== this.map.px || c.node.y !== this.map.py ||
+          Math.max(Math.abs(c.mx - (s.mx || 4)), Math.abs(c.my - (s.my || 4))) > 1) {
+        this.say('Too far — get closer to the body.');
+        return false;
+      }
+      return true;
+    },
+
+    // corpseTakeItem(cid, idx): take the whole stack of one item.
+    corpseTakeItem(cid, idx) {
+      const c = this.corpses().find(x => x.id === cid);
+      if (!c || c.buried) { this.say('Nothing there.'); return null; }
+      if (!this._corpseCheckRange(c)) return null;
+      const it = (c.items || [])[idx];
+      if (!it || (it.units == null ? 1 : it.units) <= 0) { this.say('Nothing left of that.'); return null; }
+      const units = it.units || 1;
+      const kg = (it.kg || 0.3) * units;
+      if (this.canCarry && !this.canCarry(kg)) { this.say("Too heavy — your pack can't take it."); return null; }
+      this._corpseFirstTouch(c);
+      const s = this.state.scholar;
+      const inv = s.inventory;
+      const ex = inv.find(x => x.plantId === it.plantId && !x.keepsake && !it.keepsake);
+      if (ex && !it.keepsake) ex.units = (ex.units || 1) + units;
+      else inv.push(Object.assign({}, it, { units }));
+      it.units = 0;
+      const nm = this.itemDisplayName ? this.itemDisplayName(it) : (it.name || 'it');
+      this.say(`Taken: ${nm} x${units}.`);
+      if (!c.items.some(i => (i.units == null ? 1 : i.units) > 0)) {
+        c.looted = true;
+        this.say('The body is stripped. What\'s left isn\'t worth taking.');
+      }
+      return it;
+    },
+
+    // corpseUseItem(cid, idx): take one unit into your pack, then use it
+    // through the normal use path. "Use it on the spot."
+    corpseUseItem(cid, idx) {
+      const c = this.corpses().find(x => x.id === cid);
+      if (!c || c.buried) { this.say('Nothing there.'); return null; }
+      if (!this._corpseCheckRange(c)) return null;
+      const it = (c.items || [])[idx];
+      if (!it || (it.units == null ? 1 : it.units) <= 0) { this.say('Nothing left of that.'); return null; }
+      if (!this.isUsable || !this.isUsable(it)) { this.say("You can't use that here."); return null; }
+      this._corpseFirstTouch(c);
+      const s = this.state.scholar;
+      // move one unit to the pack, then use via the standard path
+      it.units = (it.units || 1) - 1;
+      const copy = Object.assign({}, it, { units: 1 });
+      s.inventory.push(copy);
+      const invIdx = s.inventory.length - 1;
+      try { this.useItem(invIdx); } catch (e) {}
+      if (!c.items.some(i => (i.units == null ? 1 : i.units) > 0)) c.looted = true;
+      return copy;
+    },
+
+    // corpseEatItem(cid, idx): take one unit, eat it on the spot.
+    corpseEatItem(cid, idx) {
+      const c = this.corpses().find(x => x.id === cid);
+      if (!c || c.buried) { this.say('Nothing there.'); return null; }
+      if (!this._corpseCheckRange(c)) return null;
+      const it = (c.items || [])[idx];
+      if (!it || (it.units == null ? 1 : it.units) <= 0) { this.say('Nothing left of that.'); return null; }
+      if (!((it.kcalEach || 0) > 0 && it.edible !== false)) { this.say("That's not food."); return null; }
+      this._corpseFirstTouch(c);
+      const s = this.state.scholar;
+      it.units = (it.units || 1) - 1;
+      const copy = Object.assign({}, it, { units: 1 });
+      s.inventory.push(copy);
+      const invIdx = s.inventory.length - 1;
+      try { this.eatOne(invIdx); } catch (e) {}
+      if (!c.items.some(i => (i.units == null ? 1 : i.units) > 0)) c.looted = true;
+      return copy;
+    },
 
     // corpseTrauma: the grossness factor. Existing trauma system carries it.
     // Fresh + knew them well = horrifying. Old bones = just sad.

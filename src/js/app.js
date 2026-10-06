@@ -1059,7 +1059,8 @@
           desc += ' ' + Game.corpseDesc(dc);
           actions.push(['Look closely', () => { Game.examineCorpse(dc.id); refresh(); }]);
           const remaining = (dc.items || []).filter(i => (i.units || 1) > 0).length;
-          if (remaining && !dc.buried) actions.push(['Search the body', () => { Game.lootCorpse(dc.id, true); refresh(); }]);
+          // LOOT-AS-ACTION (Steve 2026-10-06): open the pack, don't take-all.
+          if (remaining && !dc.buried) actions.push(['🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
           if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
           if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
         }
@@ -1105,7 +1106,9 @@
         if (dist <= 1) {
           actions.push(['Look closely', () => { Game.examineCorpse(dc.id); refresh(); }]);
           const remaining = (dc.items || []).filter(i => (i.units || 1) > 0).length;
-          if (remaining && !dc.buried) actions.push(['Search the body', () => { Game.lootCorpse(dc.id, true); refresh(); }]);
+          // LOOT-AS-ACTION (Steve 2026-10-06): no take-all. Open the pack —
+          // take, leave, or use per item.
+          if (remaining && !dc.buried) actions.push(['🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
           if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
           if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
         } else {
@@ -8923,6 +8926,7 @@
     else if (inlineView.kind === 'givefood') renderGiveFoodInline(target, inlineView);
     else if (inlineView.kind === 'comfort') renderComfortInline(target, inlineView);
     else if (inlineView.kind === 'inv') renderInvInline(target, inlineView);
+    else if (inlineView.kind === 'loot') renderLootInline(target, inlineView);
     else target.innerHTML = '';
   }
 
@@ -10184,6 +10188,61 @@
   function invSheet() {
     inlineView = { kind: 'inv', result: null, mapKey: inlineMapKey() };
     refresh();
+  }
+
+  // LOOT-AS-ACTION (Steve 2026-10-06): the enemy's pack. Per item: take it,
+  // leave it, or use it on the spot. Knowledge-gated: unknown items show
+  // weight (always known) but not identity/effects.
+  function renderLootInline(slot, view) {
+    const cid = view.cid;
+    const c = (Game.state.corpses || []).find(x => x.id === cid);
+    if (!c || c.buried) { slot.innerHTML = ''; inlineView = null; return; }
+    const st = Game.status();
+    const items = (c.items || []).map((it, idx) => ({ it, idx }))
+      .filter(({ it }) => (it.units == null ? 1 : it.units) > 0);
+    const who = c.kind === 'monster'
+      ? (c.descriptor || c.monsterName || 'the beast')
+      : (c.name || 'the body');
+    const stage = Game.corpseStageInfo ? Game.corpseStageInfo(c).id : 'fresh';
+    const bodyHtml = items.length ? items.map(({ it, idx }) => {
+      const nm = Game.itemDisplayName ? Game.itemDisplayName(it) : (it.name || 'something');
+      const units = it.units || 1;
+      // WEIGHT IS ALWAYS KNOWN (Steve): physical, even when identity isn't.
+      const kg = (((it.kg || 0.1)) * units).toFixed(1);
+      // kcal gated: unknown meat shows "?", like the pack.
+      const kcalStr = (it.foodKind === 'meat' && it.edible === false) ? '?' : ((it.kcalEach || 0) * units);
+      let spoilMark = '';
+      try {
+        if (it.spoilDay !== undefined && it.spoilDay !== null) {
+          if (it.spoilDay <= st.day) spoilMark = ' ⚠ spoiled';
+          else if (it.spoilDay === st.day + 1) spoilMark = ' <span class="small" style="opacity:.75">going bad</span>';
+        }
+      } catch (e) {}
+      const left = it._left ? ' <span class="small" style="opacity:.6">(left)</span>' : '';
+      const canUse = Game.isUsable ? Game.isUsable(it) : false;
+      const canEat = (it.kcalEach || 0) > 0 && it.edible !== false;
+      return `<p class="small"${it._left ? ' style="opacity:.55"' : ''}><b>${esc(nm)}</b> x${units} (${kcalStr} kcal · ${kg} kg)${spoilMark}${left}<br>` +
+        `<button class="btn ghost sm" data-loottake="${idx}">Take</button>` +
+        (canUse ? ` <button class="btn ghost sm" data-lootuse="${idx}">Use</button>` : '') +
+        (canEat ? ` <button class="btn ghost sm" data-looteat="${idx}">Eat</button>` : '') +
+        (it._left ? '' : ` <button class="btn ghost sm" data-lootleave="${idx}">Leave</button>`) +
+        `</p>`;
+    }).join('') : '<p class="small">Nothing left worth taking.</p>';
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('🎒 ' + esc(who) + ' — ' + stage)}
+      <p class="small" style="opacity:.7">Take what you want. What's left stays — and meat rots where it lies.</p>
+      ${bodyHtml}
+    </div>`;
+    wireInlineX(slot);
+    const rewire = (fn, ok) => (e) => { fn(e); inlineView.result = ok; refresh(); };
+    slot.querySelectorAll('[data-loottake]').forEach(b => b.onclick = rewire(() => Game.corpseTakeItem(cid, +b.dataset.loottake), 'Taken.'));
+    slot.querySelectorAll('[data-lootuse]').forEach(b => b.onclick = rewire(() => Game.corpseUseItem(cid, +b.dataset.lootuse), 'Used.'));
+    slot.querySelectorAll('[data-looteat]').forEach(b => b.onclick = rewire(() => Game.corpseEatItem(cid, +b.dataset.looteat), 'Eaten.'));
+    slot.querySelectorAll('[data-lootleave]').forEach(b => b.onclick = rewire(() => {
+      const cc = (Game.state.corpses || []).find(x => x.id === cid);
+      const it = cc && (cc.items || [])[+b.dataset.lootleave];
+      if (it) it._left = true;
+    }, 'Left.'));
   }
 
 

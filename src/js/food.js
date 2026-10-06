@@ -1575,7 +1575,32 @@
           this.say(`The village threw out spoiled stores: ${names}. Old Mara mutters: "Should've smoked that. Fresh stuff keeps a day or two on the shelf — the smoke rack is right there." (pantry)`);
         }
       }
-      return lost.length + lostPantry.length;
+      // CORPSE ROT (Steve 2026-10-06): meat left on a body rots there.
+      // Unlooted doesn't mean preserved — the clock runs on corpse
+      // inventories too. If you're on the same node you notice the loss;
+      // otherwise you discover it when you come back. Consequence, not lecture.
+      const lostCorpse = [];
+      try {
+        const corpses = (this.state.corpses || []).filter(c => !c.buried);
+        for (const c of corpses) {
+          if (!c.items) continue;
+          for (let i = c.items.length - 1; i >= 0; i--) {
+            const it = c.items[i];
+            if (!it || it.bonded) continue;
+            if (this.isSpoiled(it)) {
+              const here = c.node && c.node.x === this.map.px && c.node.y === this.map.py;
+              lostCorpse.push({ name: it.name || 'something', here: !!here, kind: c.kind });
+              c.items.splice(i, 1);
+            }
+          }
+        }
+        const seen = lostCorpse.filter(l => l.here);
+        if (seen.length) {
+          const names = [...new Set(seen.map(l => l.name))].join(', ');
+          this.say(`On the ${seen[0].kind === 'monster' ? 'carcass' : 'body'} nearby, ${names} went bad — maggots, smell, the whole sad story. Leaving it had a cost.`);
+        }
+      } catch (e) {}
+      return lost.length + lostPantry.length + lostCorpse.length;
     },
 
     // putAwayFinished: batch — finished food goes to the pantry.
