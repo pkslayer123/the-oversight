@@ -2497,5 +2497,333 @@
       "psychic": 0.5
     },
     "apex": true
+  },
+  {
+    "id": "nevermore",
+    "activity": "crepuscular",
+    "name": "Nevermore",
+    "biomes": [
+      "se_woodlands",
+      "grassland"
+    ],
+    "hp": [
+      45,
+      60
+    ],
+    "attack": {
+      "name": "The Unkind Cut",
+      "damage": [
+        14,
+        22
+      ],
+      "telegraph": "Its shadow detaches from the branch-shadow and slides across the ground toward you \u2014 a straight black lane, growing. The bird hasn't moved. The shadow has.",
+      "pattern": {
+        "type": "line",
+        "length": 3,
+        "width": 1,
+        "windup": 1
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "the lane is the tell \u2014 step OFF it, not along it",
+      "it always lands after a strafing run \u2014 that's the window",
+      "fire scatters it"
+    ],
+    "edible": {
+      "calories": 350,
+      "note": "Crow. Tastes like a bad decision. The feathers are too black to pluck cleanly."
+    },
+    "parts": [
+      "crow feathers (fletching)",
+      "a beak that won't stay shut (trade)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "A crow watched me from the treeline all day. At dusk it was still there. It had not blinked. I do not think crows do that.",
+      "observed": "Common crow. The System filed grief under 'vocalization' and gave it back the voices of everything it ever watched die. It strafes low along a straight lane \u2014 talons out, beak split four ways. The shadow moves first: step OFF the lane, not along it. It always lands after a run. That's when it's yours.",
+      "slain": "Moves: The Unkind Cut (3-lane strafing dive, telegraphed by the detached shadow \u2014 sidestep the lane), the Perch (circles high, out of melee/spear reach \u2014 sling or bow can touch it, or wait for it to come down). It speaks with the voices of your dead. Don't answer. Feathers fletch true."
+    },
+    "systemDesignation": "Corvus brachyrhynchos (vocal archive)",
+    "aggression": "hungry",
+    "follows": false,
+    "fear": "fire",
+    "speed": 5,
+    "flight": true,
+    "emoji": "\ud83d\udc26\u200d\u2b1b",
+    "unknown": "a crow that watches too long and blinks too little",
+    "villageNames": [
+      "Old Croaker",
+      "The Reverend",
+      "Mister Never"
+    ],
+    "vibe": "it knows your name. it knows everyone's name. it says them wrong on purpose",
+    "cues": {
+      "curious": [
+        "A crow on the branch. Watching. It has been watching for some time."
+      ],
+      "warn": [
+        "Its shadow slides off the branch without it. Then, in a voice you buried: \u2014told you the creek was\u2014"
+      ],
+      "fearful": [
+        "It folds wrong \u2014 too many joints \u2014 and climbs, still talking, into the dark."
+      ]
+    },
+    "wave": 1,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "perch",
+        "strafe",
+        "grounded"
+      ],
+      "phaseBadges": {
+        "perch": " \ud83d\udc26\u200d\u2b1b PERCHED",
+        "strafe": " \u2b07 STRAFING",
+        "grounded": " \ud83e\udeb6 GROUNDED"
+      },
+      "phaseMap": {
+        "declare": "strafe",
+        "windup": "strafe",
+        "resolve": "strafe",
+        "idle": "perch"
+      },
+      "telegraphGate": "pattern",
+      "painSwitch": true,
+      "shortName": "crow",
+      "noticeAudio": "nevermoreCroak",
+      "declareAudio": "nevermoreStrafe",
+      "aggroAudio": "nevermoreUnfold",
+      "resolveAudio": "nevermoreLand",
+      "knownTactics": "Step OFF the strafing lane, not along it \u2014 it can't turn mid-run. It always lands after a run, hit or miss. Punish the landing.",
+      "comment": "Wave-1 flyer: perch (high, untargetable by melee/spear) \u2192 strafe (3-lane dive, shadow telegraph) \u2192 grounded (vulnerable 1-2 turns). Speaks with the voices of the run's dead.",
+      "knownCue": "The shadow moves first. When it detaches, the lane is already chosen \u2014 MOVE OFF IT."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 0,
+    "resistances": {}
+  },
+  {
+    "id": "nightcourt",
+    "activity": "nocturnal",
+    "name": "Night Court",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      55,
+      70
+    ],
+    "attack": {
+      "name": "Adjournment",
+      "damage": [
+        12,
+        18
+      ],
+      "telegraph": "No sound. That is the warning. The moon-shadow on the ground is growing \u2014 and there is no sound at all. Owls don't make sound when they hunt.",
+      "pattern": {
+        "type": "single",
+        "range": 4
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "the shadow is the only warning \u2014 watch the ground, not the sky",
+      "it dives twice \u2014 dodge the second one too",
+      "after the second dive it's spent \u2014 that's the window"
+    ],
+    "edible": {
+      "calories": 900,
+      "note": "Owl. Tastes like chicken that judged you first."
+    },
+    "parts": [
+      "gavel talons (tools)",
+      "silent feathers (trade)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "Something passed over the fire last night. No wingsound. The flames leaned away from it, politely.",
+      "observed": "Great horned owl. The System classified silence as a hunting strategy and removed the last of the sound. It dives at your shadow \u2014 the moon-shadow on the ground is the only warning, because there is no sound. Dodge it once and it comes again IMMEDIATELY, aimed at where you moved. Dodge twice and it's spent, grounded, yours.",
+      "slain": "Moves: Adjournment (silent dive, shadow telegraph \u2014 dodge), the Second Hearing (a missed dive is re-aimed at your new position with no extra windup \u2014 dodge AGAIN), Spent (grounded 2 turns after the second dive). It never makes a sound. Watch the ground. The talons make fine tools."
+    },
+    "systemDesignation": "Bubo virginianus (acoustic null)",
+    "aggression": "hungry",
+    "follows": false,
+    "fear": "fire",
+    "speed": 4,
+    "flight": true,
+    "emoji": "\ud83e\udd89",
+    "unknown": "the absence of sound, shaped like wings",
+    "villageNames": [
+      "Judge Hoot",
+      "The Bailiff",
+      "Old Gavel"
+    ],
+    "vibe": "court is in session. you are the docket",
+    "cues": {
+      "curious": [
+        "Two eyes, forward-facing, unblinking. Owls shouldn't look at you like that. Like a judge."
+      ],
+      "warn": [
+        "Its head rotates \u2014 too far \u2014 and stops facing you. Still no sound."
+      ],
+      "fearful": [
+        "It blinks, once, slowly, and the night takes it back."
+      ]
+    },
+    "wave": 1,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "roost",
+        "dive",
+        "redive",
+        "grounded"
+      ],
+      "phaseBadges": {
+        "roost": " \ud83e\udd89 ROOSTING",
+        "dive": " \u2b07 DIVING",
+        "redive": " \u2b07\u2b07 SECOND HEARING",
+        "grounded": " \ud83e\udeb6 SPENT"
+      },
+      "phaseMap": {
+        "declare": "dive",
+        "windup": "dive",
+        "resolve": "dive",
+        "idle": "roost"
+      },
+      "telegraphGate": "pattern",
+      "painSwitch": true,
+      "shortName": "owl",
+      "noticeAudio": "nightcourtSilence",
+      "declareAudio": "nightcourtDive",
+      "aggroAudio": "nightcourtTurn",
+      "resolveAudio": "nightcourtLand",
+      "knownTactics": "Watch the ground-shadow, not the sky \u2014 the dive is silent. A missed dive comes again instantly at your new position: dodge TWICE. Then it's spent.",
+      "comment": "Wave-1 flyer: roost (high, silent) \u2192 dive (single-tile shadow) \u2192 redive (immediate re-aim on miss) \u2192 grounded 2 turns. The double-dive is the signature \u2014 the punish window only opens after the second.",
+      "knownCue": "No sound is the tell. When the shadow grows, MOVE \u2014 and move again, because it's already re-aiming."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 0,
+    "resistances": {
+      "sonic": 0.5
+    }
+  },
+  {
+    "id": "statickite",
+    "activity": "both",
+    "name": "The Static Kite",
+    "biomes": [
+      "se_woodlands",
+      "grassland"
+    ],
+    "hp": [
+      80,
+      100
+    ],
+    "attack": {
+      "name": "The Broadcast",
+      "damage": [
+        10,
+        16
+      ],
+      "telegraph": "The kite stops dead in the sky. Below it, the ground lights up in a grid \u2014 a square of your life, outlined in scan-light. It's framing the shot.",
+      "pattern": {
+        "type": "burst",
+        "radius": 1,
+        "windup": 2
+      },
+      "damageType": "sonic"
+    },
+    "weaknesses": [
+      "the mark is the mercy \u2014 two beats to move",
+      "it dips to transmit \u2014 that's when it's yours",
+      "it never lands \u2014 don't wait for it to"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a kite. Do not eat the kite."
+    },
+    "parts": [
+      "static-glass shard (trade)",
+      "ticker ribbon (long, with your name on it)"
+    ],
+    "behavior": "curious",
+    "codexStages": {
+      "unknown": "There's a kite over the treeline. Nobody is holding the string. It has been there three days.",
+      "observed": "Not an animal. The System built its own bird: a kite of dead television, and it watches. It frames a square of ground in scan-light \u2014 two beats \u2014 then the square SCREAMS. It dips low to transmit. That's when it's yours: melee, or anything, while it dips. It never lands. Don't wait for it to.",
+      "slain": "Moves: The Broadcast (3x3 scan-mark, 2-beat windup \u2014 the mark is the mercy, MOVE), the Dip (it descends to transmit, melee-vulnerable, +50% damage \u2014 the only window). On its screen: footage of you, from angles that don't exist. It has been watching since before you arrived. Parts: static-glass, and a ticker ribbon with your name on it."
+    },
+    "systemDesignation": "Surveillance artifact (audience model)",
+    "aggression": "hungry",
+    "follows": true,
+    "fear": "",
+    "speed": 3,
+    "flight": true,
+    "emoji": "\ud83e\ude81",
+    "unknown": "a kite with no string, holding station over the trees",
+    "vibe": "it is not hunting you. it is COVERING you",
+    "cues": {
+      "curious": [
+        "The kite tilts. On its screen, for a frame: you, from above. It is filming."
+      ],
+      "warn": [
+        "The screen goes white. Below it, the ground lights up in a grid. It's framing the shot."
+      ],
+      "fearful": []
+    },
+    "wave": 2,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "rise",
+        "mark",
+        "transmit",
+        "recover"
+      ],
+      "phaseBadges": {
+        "rise": " \ud83e\ude81 RISING",
+        "mark": " \ud83d\udce1 MARKING",
+        "transmit": " \ud83d\udcfa TRANSMITTING",
+        "recover": " \ud83e\ude81 RECOVERING"
+      },
+      "phaseMap": {
+        "declare": "mark",
+        "windup": "mark",
+        "resolve": "transmit",
+        "idle": "rise"
+      },
+      "telegraphGate": "pattern",
+      "painSwitch": true,
+      "shortName": "kite",
+      "noticeAudio": "kiteHum",
+      "declareAudio": "kiteMark",
+      "aggroAudio": "kiteUnfold",
+      "resolveAudio": "kiteBroadcast",
+      "knownTactics": "The mark is generous \u2014 two full beats to leave the square. When it dips to transmit it's at melee height and takes +50%: that's the only window. Sling/bow can touch it while high.",
+      "comment": "Wave-2 flyer (System artifact, not animal): rise (high, drifts at range) \u2192 mark (3x3 zone, 2-beat windup) \u2192 transmit (zone damage + dips to low, vulnerable) \u2192 recover (climbs). The wave-2 step up: zone control, never lands, demands positioning.",
+      "knownCue": "When the ground lights up, you're already framed \u2014 MOVE. When it dips, it's yours."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 0,
+    "resistances": {
+      "psychic": 0.5,
+      "sonic": 0.5
+    }
   }
 ]
