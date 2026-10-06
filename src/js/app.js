@@ -7258,8 +7258,9 @@
     const fb = feedbackInner();
     const text = fb || lastNarr;
     if (!text) return '';
-    // Strip HTML, show as plain narration
-    const clean = String(text).replace(/<[^>]*>/g, '').trim();
+    // Strip HTML, show as plain narration (</p> boundaries become spaces
+    // so adjacent feedback lines don't glue: "slams through!A woman..." fix
+    const clean = String(text).replace(/<\/p>/gi, ' ').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
     if (!clean) return '';
     return `<div class="dialogue-box narr-box"><div class="dlg-line narr"><span class="narr">${esc(clean)}</span></div></div>`;
   }
