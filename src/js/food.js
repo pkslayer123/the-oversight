@@ -377,7 +377,16 @@
       const targets = (idx === undefined ? inv.map((it, i) => i) : [idx])
         .filter(i => inv[i] && inv[i].foodState === 'carcass');
       if (!targets.length) { this.say('No carcasses to clean.'); return null; }
-      if (!this.hasCuttingTool()) { this.say('You need a knife (or a sharp edge) to clean game.'); return null; }
+      if (!this.hasCuttingTool()) {
+        // HONEST PATH (hunter loop 2026-10-05): the knifeless message used to
+        // be a dead end — no recipe existed for any knife. Now it points at
+        // the stone knife recipe everyone knows.
+        const knifeKnown = ((this.state.codex.recipes || {}).stone_knife || {}).level >= 3;
+        this.say(knifeKnown
+          ? 'You need a knife to clean game — knap a Stone knife (stone + vine) from Craft in your pack.'
+          : 'You need a knife (or a sharp edge) to clean game.');
+        return null;
+      }
       const knows = this.knowsTechnique('clean');
       let n = 0;
       for (const i of targets) {

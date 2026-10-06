@@ -68,5 +68,21 @@
       "2": "Materials: 1 sturdy stick. Green wood (will not burn).",
       "3": "You can make one. Cook meat = +50% calories, safe to eat."
     }
+  },
+  {
+    "id": "stone_knife",
+    "name": "Stone knife",
+    "description": "flint knapped to an edge, bound with vine. cuts meat, wood, cord.",
+    "materials": {
+      "stone": 1,
+      "vine": 1
+    },
+    "durable": true,
+    "kg": 0.15,
+    "knowledgeLevels": {
+      "1": "You have seen a sharp edge. Stone breaks sharp.",
+      "2": "Materials: stone + vine. Strike the stone to knap an edge, bind it with vine.",
+      "3": "You can knap one. A few good strikes, a working edge. The oldest tool there is."
+    }
   }
 ]

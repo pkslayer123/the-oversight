@@ -1423,10 +1423,19 @@
       if (occ.knowsSnare) {
         this.state.codex.recipes['snare'] = { level: 3 };
       }
+      // Everyone knows the sharp rock. Knapping a working edge is the oldest
+      // technology there is — the recipe is universal, the stone still has to
+      // be found, and the knapping can still fail. Without this, the whole
+      // hunter gut/cook chain was a dead end for characters who don't start
+      // with a knife (4 of 6 roster archetypes had no path to one).
+      this.state.codex.recipes['stone_knife'] = { level: 3 };
       this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
       this.state.scholar.dayTicks = 0; this.state.scholar.actionClock = 0; // action clock: fresh budget
       this.villageLost = false; this.wanderer = null; this.fight = null; this.pendingEncounter = false; this.pendingMonsterId = null;
       this.encounterDone = false; this.log = [];
+      // (say AFTER the log reset above — anything said before it is wiped and
+      // the player never sees it.)
+      this.say('📖 You know how to knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.');
       this.location = 'village'; this.departed = false;
       this.wipe();
       this.genMap();
@@ -2326,9 +2335,18 @@
         return null;
       }
       // create the item
-      this.state.scholar.tools = this.state.scholar.tools || [];
-      this.state.scholar.tools.push({ recipeId, uses: recipe.uses, name: recipe.name });
-      this.say(`You make a ${recipe.name}. ${recipe.description} (${recipe.uses} uses)`);
+      if (recipe.durable || recipe.uses == null) {
+        // DURABLE (hunter loop 2026-10-05): a stone knife isn't a trap with
+        // uses — it lives in the pack, not the tool row. The tool row renders
+        // every tool with a Set button, and a knife there would offer to set
+        // it as a trap (which would crash the dawn check on recipe.catches).
+        this.state.scholar.inventory.push({ name: recipe.name, units: 1, kg: recipe.kg || 0.2, desc: recipe.description });
+        this.say(`You make a ${recipe.name}. ${recipe.description}`);
+      } else {
+        this.state.scholar.tools = this.state.scholar.tools || [];
+        this.state.scholar.tools.push({ recipeId, uses: recipe.uses, name: recipe.name });
+        this.say(`You make a ${recipe.name}. ${recipe.description} (${recipe.uses} uses)`);
+      }
       // ACTION CLOCK: crafting = 1 chunk (32 ticks, time + hand work).
       this.tickAction(32);
       return true;
@@ -2347,6 +2365,13 @@
 
     // SET TRAP: place a snare/deadfall. Check it later.
     setTrap(recipeId) {
+      const _recipe = this.data.recipes.find(r => r.id === recipeId);
+      // GUARD (hunter loop 2026-10-05): only trap recipes can be set. Durable
+      // crafts (stone knife) live in the pack, never in tools — but if one
+      // ever gets here, refuse honestly instead of crashing the dawn check.
+      // (Checked before the tool lookup so the answer is "not a trap", not
+      // the misleading "you don't have that trap".)
+      if (_recipe && !_recipe.catches) { this.say(`That's not a trap — you can't set a ${_recipe.name}.`); return null; }
       let tool = (this.state.scholar.tools || []).find(t => t.recipeId === recipeId);
       // SNARE WIRE (Steve 2026-10-05): honest tackle. Wire in hand sets a
       // snare without crafting one first — consumed when the trap is placed.
@@ -2356,7 +2381,7 @@
         this.say('(The snare wire becomes the snare.)');
       }
       if (!tool) { this.say('You don\'t have that trap.'); return null; }
-      const recipe = this.data.recipes.find(r => r.id === recipeId);
+      const recipe = _recipe;
       // traps go in the current tile's detail (at your position)
       const t = this.playerTile();
       t.traps = t.traps || [];
