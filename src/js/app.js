@@ -1454,14 +1454,18 @@
     };
     const btns = targeting.targets.map((t, i) => {
       const arrow = dirArrow(t.cx - px, t.cy - py);
-      // Status: wounded? telegraphing?
+      // Status: wounded? telegraphing? (Qualitative wound words are honest
+      // perception — blood shows. The ⚠ warning marker is knowledge-gated
+      // behind encTelegraphKnown, same as the combat strip: first
+      // encounter gets no warning symbols.)
       let status = '';
       try {
         const f = Game.tbfight ? Game.tbfight.fighters.find(x => x.key === t.key) : null;
         if (f) {
           if (f.hp < f.maxHp * 0.5) status = ' (wounded)';
           else if (f.hp < f.maxHp) status = ' (hurt)';
-          if (f.telegraph) status += ' ⚠';
+          const tKnown = Game.encTelegraphKnown ? Game.encTelegraphKnown(f) : false;
+          if (f.telegraph && tKnown) status += ' ⚠';
         }
       } catch (e) {}
       const label = t.label || `target ${i + 1}`;

@@ -15610,15 +15610,25 @@
       // Other batch monsters get shortName-based lines unless they define
       // threatLines in their encounter config.
       const cfg = this.encConfig(m) || {};
-      const short = cfg.shortName || 'beast';
+      // NAME DISCIPLINE (Steve): the true short name is village/System
+      // vocabulary — same gate as encShortLabel (villageName or
+      // systemArrived). Pre-naming, the monster's strange descriptor
+      // speaks instead of the true name; the uninitiated never see the
+      // true name in notice/pain/snap lines.
+      const gated = this.encShortLabel ? this.encShortLabel(m) : null;
+      const sub = (this.encSubject ? this.encSubject(m) : null) || 'Something';
       const dflt = this.deerIs(m) ? {
         notice: "The deer's head swings toward {who}. Another light in its eyes. You're all on the list now.",
         pain: "It staggers — and its burning gaze fixes on {who}. Pain gets noticed.",
         snap: "Too close. The deer's gaze SNAPS to {who} — proximity overrules patience.",
-      } : {
-        notice: `The ${short}'s head swings toward {who}. You're on the list now — it doesn't forget.`,
+      } : gated ? {
+        notice: `The ${gated}'s head swings toward {who}. You're on the list now — it doesn't forget.`,
         pain: "It staggers — pain gets noticed. Its attention fixes on {who}.",
-        snap: `Too close. The ${short}'s attention SNAPS to {who} — proximity overrules patience.`,
+        snap: `Too close. The ${gated}'s attention SNAPS to {who} — proximity overrules patience.`,
+      } : {
+        notice: `${sub} turns toward {who}. You're on the list now — it doesn't forget.`,
+        pain: "It reels — pain gets noticed. Its attention fixes on {who}.",
+        snap: `Too close. It SNAPS toward {who} — proximity overrules patience.`,
       };
       const out = Object.assign(dflt, cfg.threatLines || {});
       // Bespoke queue-text keys: batch 3 (the uncanny) uses
