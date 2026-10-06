@@ -126,6 +126,11 @@
         `{first} says they're from {told}. But twice now they've named streets that don't exist in {told} — then gone very quiet.`,
         `{first} claims {told}. Their accent slips sometimes. Not {told}. Somewhere else.`,
         `You asked {first} about {told} — the streets, the weather, the way people talk. They answered wrong in a way a local never would.`,
+        // POOL EXPANSION (Steve 2026-10-06): more cracks, same discipline —
+        // the cover breaks, the truth stays hidden.
+        `{first} says they're from {told}. But their hands go still when {told} comes up — the way people do when a name costs them something.`,
+        `{first} claims {told}, but they flinched at the old place-names. Not recognition — dread. {told} is where they're from the way a wound is where you're from.`,
+        `{first} told a story about {told} winters. Nobody from {told} would describe a winter like that. They've never been cold there — or they've never been there.`,
       ],
       clears: [
         `"Oh — that?" {first} laughs, relieved. "No, no, you've got it wrong — let me explain..." And they do, and it makes sense, and you feel a little foolish for doubting them.`,
@@ -157,11 +162,19 @@
         ` I thought if you believed that, you'd trust me faster. I'm sorry. Or I'm supposed to be.`,
         ` I wanted an edge. You were new, you were listening, and I used it. I'm not proud of that.`,
         ` Everyone out here is selling something. I was selling a better version of me.`,
+        // POOL EXPANSION (Steve 2026-10-06): the manipulation confession
+        // stings most when it admits the player was only ever a means.
+        ` I thought if you believed me, you'd keep me close. Close is safe. I wasn't thinking about you at all — I'm sorry for that part.`,
+        ` You looked at me like I mattered, and I wanted to keep that. So I gave you someone worth looking at. That person isn't real. This one is — and it's worse, isn't it?`,
       ],
       motivePathological: [
         ` I don't know why I said it. It just came out. It always just comes out.`,
         ` The truth is there, somewhere. It just... never comes out first.`,
         ` I wish I could tell you why. I've asked myself that more times than you have.`,
+        // POOL EXPANSION (Steve 2026-10-06): the compulsion reads as
+        // self-awareness without self-control — unnerving, not cartoonish.
+        ` Sometimes I can hear it not being true while it's leaving my mouth. I say it anyway. It's like watching someone else talk.`,
+        ` I think I wanted to see if you'd believe it. Not you specifically — anyone. If someone believes it, it's real for a minute. That's the whole trick. I'm sorry.`,
       ],
       // stale doubt lines: the lie was already confessed — they don't confess twice
       staleConfessed: [
