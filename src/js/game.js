@@ -5727,9 +5727,11 @@
       if (props.blocks) return false; // can't walk through, but might interact (see cellInteract)
       // FACING: you face where you step. The marker shows it.
       s.facing = { x: Math.sign(cx - px), y: Math.sign(cy - py) };
-      // LOOKING AROUND IS FREE. Single steps are exploration, not travel.
-      // (Committed walks via movePath still cost — that's a decision.)
-      const cost = 0;
+      // MOVEMENT COSTS (Steve 2026-10-05): 2 kcal/step. Not free, not punishing.
+      // The 2026-10-04 "free steps" fix went too far — walking the map felt
+      // costless. 2 kcal is perceptible over distance (9x9 crossing ≈ 32 kcal)
+      // without making exploration tedious. Time cost (1 tick) unchanged.
+      const cost = 2;
       // Movement is baseline. Power doesn't tax walking.
       s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
@@ -6265,6 +6267,8 @@
       const cell = detail[ty] && detail[ty][tx];
       if (this.cellProps(cell).blocks) return false;
       s.facing = { x: Math.sign(tx - px), y: Math.sign(ty - py) };
+      // Same 2 kcal/step as microMove — committed walks aren't free either.
+      s.kcal = Math.max(0, (s.kcal || 0) - 2);
       s.mx = tx; s.my = ty;
       // MONSTERS MOVE WHEN YOU DO — per square, same as microMove.
       this.monsterTurn(); this.animalTurn();
