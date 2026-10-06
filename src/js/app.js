@@ -2011,6 +2011,69 @@
       o.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + dur + 0.1);
     }
+    function belltoadCroak() {
+      // DEEP RESONANT CROAK: low, felt in the chest. 80Hz fundamental with
+      // harmonic wobble. Freaky: slightly detuned, like it's too big.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.9;
+      const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
+      o1.type = 'sawtooth'; o1.frequency.setValueAtTime(78, t);
+      o2.type = 'sawtooth'; o2.frequency.setValueAtTime(82, t); // detuned, beating
+      // Throat swell: pitch drops as it croaks
+      o1.frequency.exponentialRampToValueAtTime(55, t + dur);
+      o2.frequency.exponentialRampToValueAtTime(58, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.35, t + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      // Lowpass to keep it chesty, not buzzy
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300;
+      o1.connect(f); o2.connect(f); f.connect(g); g.connect(sfxBus);
+      o1.start(t); o2.start(t); o1.stop(t + dur); o2.stop(t + dur);
+    }
+    function belltoadStun() {
+      // EARS RINGING: high dissonant whine + low throb. Freaky: the world tilts.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.2;
+      // High whine (tinnitus-like)
+      const o1 = ctx.createOscillator(), g1 = ctx.createGain();
+      o1.type = 'sine'; o1.frequency.setValueAtTime(4200, t);
+      o1.frequency.linearRampToValueAtTime(3800, t + dur);
+      g1.gain.setValueAtTime(0.0001, t);
+      g1.gain.exponentialRampToValueAtTime(0.12, t + 0.1);
+      g1.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o1.connect(g1); g1.connect(sfxBus); o1.start(t); o1.stop(t + dur);
+      // Low throb (disorienting)
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.type = 'sine'; o2.frequency.setValueAtTime(45, t);
+      // Wobble the throb (seasick feeling)
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 7;
+      lg.gain.value = 15; lfo.connect(lg); lg.connect(o2.frequency);
+      g2.gain.setValueAtTime(0.0001, t);
+      g2.gain.exponentialRampToValueAtTime(0.25, t + 0.2);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o2.connect(g2); g2.connect(sfxBus);
+      o2.start(t); o2.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
+    }
+    function belltoadChorus() {
+      // MULTIPLE CROAKS, slightly offset — the chorus answers. Freaky: they
+      // harmonize but not quite, beating against each other.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 3; i++) {
+        const dt = t + i * 0.18; // staggered entrance
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(75 + i * 7 + Math.random() * 4, dt); // detuned cluster
+        o.frequency.exponentialRampToValueAtTime(52 + i * 5, dt + 0.8);
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.22, dt + 0.12);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.85);
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 280;
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.9);
+      }
+    }
     function glasswingLand() {
       // crash: dirt thud + tangled wing buzz.
       if (!ensure()) return;
@@ -2161,6 +2224,9 @@
       glasswingDive() { glasswingDive(); },
       glasswingLand() { glasswingLand(); },
       glasswingClimb() { glasswingClimb(); },
+      belltoadCroak() { belltoadCroak(); },
+      belltoadStun() { belltoadStun(); },
+      belltoadChorus() { belltoadChorus(); },
       baskCharge(d) { baskCharge(d); },
       baskBreak() { baskBreak(); },
       baskFlatten() { baskFlatten(); },

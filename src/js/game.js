@@ -14392,13 +14392,22 @@
           // original is dead. The croak carries for miles.
           // The resonance builds: 1 toad = base, 2 = +50%, 3 = +100%, 4 = +150%.
           // SHOUT breaks the chorus for a round. Killing drops the harmony.
-          // Pack trickle: rounds 3 and 5 (slow). Max 3 toads.
-          if ((f.round === 3 || f.round === 5) && this._pendingPack && this._pendingPack.count > 0) {
+          // CHORUS CALL (Steve 2026-10-05): each alive toad, each round, has a
+          // 25% chance to call another. More toads = more croaking = higher chance.
+          // 1 toad: 25%/round, 2 toads: 44%/round. Up to 3 max. The chorus builds.
+          if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0) {
+            const aliveToads = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.id === 'belltoad').length;
+            // Each toad rolls: 25% chance to call
+            let called = false;
+            for (let i = 0; i < aliveToads && !called; i++) {
+              if (Math.random() < 0.25) called = true;
+            }
+            if (called) {
             const pp = this._pendingPack;
             pp.count--;
             if (pp.count <= 0) this._pendingPack = null;
             this.say('Another throat joins the chorus — the pack answers the call.');
-            this.audioEvent('belltoadCroak');
+            this.audioEvent('belltoadChorus');
             // Spawn the delayed pack members near the existing toad
             const existing = f.fighters.find(x => x.kind === 'monster' && x.mdef && x.mdef.id === pp.id);
             if (existing) {
@@ -15311,11 +15320,16 @@
             // fits the combat system. No stacking, no SHOUT interaction.
             const baseDmg = ((o.mdef || {}).attack || {}).damage || [8, 12];
             this.tbDamage(t.key, S.combat.roll(baseDmg), (this.encShortLabel(o) || o.name) + "'s " + this.encAttackName(o, 'Resonant Croak'));
-            if (t.kind === 'player' && Math.random() < 0.2) {
+            // SONIC STUN (Steve 2026-10-05): full turn loss. The sound hits like
+            // a wall — ears ringing, world tilts. 15% chance. Don't skimp on audio.
+            if (t.kind === 'player' && Math.random() < 0.15) {
               const p = this.tbFighter('p');
               if (p) {
                 p.moveLeft = 0;
-                this.say('Your ears ring — the sound hits like a wall. You stagger, losing your footing.');
+                p.acted = true;
+                p.stunned = 1;
+                this.say('Your ears ring — the world tilts. The croak hits like a wall. You lose your turn.');
+                this.audioEvent('belltoadStun');
               }
             }
           }
