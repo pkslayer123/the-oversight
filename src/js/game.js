@@ -6475,6 +6475,7 @@
       // cook it: rawKcal -> kcalEach (cooked)
       item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult1);
       item.rawKcal = null; // it's cooked now
+      item.needsCooking = false; // cooked — the pack UI must drop the "needs cooking" badge
       item.safe = true; // cooking kills the risk (mostly)
       if (item.needsCooking && cost1 > 0) {
         const spent = this.spendCleanWater(cost1);
@@ -6987,6 +6988,7 @@
           const relicCook = S.modifiers.resolve(1, 'cook.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities), {});
           item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult * relicCook);
           item.rawKcal = null;
+          item.needsCooking = false; // cooked — the pack UI must drop the "needs cooking" badge
           item.safe = true;
           n++;
         }
@@ -8050,18 +8052,15 @@
     },
     // spreadRumor: PLAYER starts a rumor about someone. The drama verb.
     // targetId: who the rumor is about. rumorType: 'stingy', 'untrustworthy', etc.
-    // The rumor spreads via the normal gossip mechanics. If caught lying,
-    // the player's reputation tanks.
-    spreadRumor(targetId, rumorType) {
+    // firstHearerId: the villager you told it to — they become the FIRST
+    // hearer, which is what lets the rumor travel via spreadGossip. (Fix
+    // 2026-10-06: seeded heard: [] so spreadGossip never had a teller and
+    // player rumors died on arrival.) If caught lying, the player's
+    // reputation tanks.
+    spreadRumor(targetId, rumorType, firstHearerId) {
       const v = this.state.village;
       const target = this.displayName(targetId);
       const teller = this.villagerId; // player is the source
-      
-      // Seed the gossip with the player as the initial hearer (they're telling it)
-      // Actually, the player TELLS someone — find a listener in the current conversation
-      // For now, seed with empty heard and let it spread from the player
-      // The player tells it to whoever they're talking to (handled by caller)
-      
       const actionMap = {
         'stingy': `You've been telling people ${target} has been holding back. Keeping the good stuff close.`,
         'untrustworthy': `You've been telling people ${target} can't be trusted. Watch your back around them.`,
@@ -8072,16 +8071,20 @@
       const line = actionMap[rumorType] || `You've been talking about ${target}.`;
       this.say(line);
       
-      // The rumor is now "out there" — seed it with the player as source
-      // heardBy starts empty; the player tells it directly (caller adds the listener)
+      // The rumor is now "out there" — the person you told it to is the
+      // first hearer, so spreadGossip has a teller and the rumor travels.
       v.gossip = v.gossip || [];
       const partKey = this.state.scholar.day + ':' + this.dayPart + ':rumor:' + targetId;
       if (v.gossip.some(g => g.partKey === partKey)) {
         this.say("You've already started that rumor. It's out there.");
         return null;
       }
+      const heard = [];
+      if (firstHearerId && (v.roster || []).includes(firstHearerId) && firstHearerId !== targetId) {
+        heard.push(firstHearerId);
+      }
       const g = {
-        action: rumorType, dims: { who: targetId }, heard: [],
+        action: rumorType, dims: { who: targetId }, heard,
         distortion: 0, day: this.state.scholar.day, partKey,
         noTrust: false, source: teller, playerRumor: true,
       };
@@ -11737,7 +11740,7 @@
             // DEADFALL: no species, no knowledge — but branches for the fire
             // and bark fiber for cordage. The stand recovers like everything else.
             const sticks = 1 + (Math.random() < 0.5 ? 1 : 0);
-            for (let i = 0; i < sticks; i++) scholar.inventory.push({ material: 'stick', units: 1, name: 'Stick', kcalEach: 0, spoilDay: 9999, kg: 0.2 });
+            scholar.inventory.push({ material: 'branch', units: sticks, name: 'Branch', kcalEach: 0, spoilDay: 9999, kg: 0.5 });
             woodSticks += sticks;
             if (Math.random() < 0.25) {
               scholar.inventory.push({ material: 'fiber', units: 1, name: 'Plant fiber', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
