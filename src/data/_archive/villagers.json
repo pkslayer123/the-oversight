@@ -1,0 +1,260 @@
+[
+ {
+  "abilityWeights": {
+   "care": 3,
+   "fieldcraft": 2,
+   "system": 1
+  },
+  "backstory": "ER nurse from Columbus. When the sky changed, she was already moving toward the screaming \u2014 old habits. She checked pulses in the clearing while everyone else stared at the sky.",
+  "clothesNote": "Scrub top (long dead) under a patched canvas jacket. Good boots \u2014 broken-in, quiet. They have outlived two worlds.",
+  "formerOccupation": "ER nurse",
+  "homeRegion": "Ohio river valley",
+  "id": "mara_okafor",
+  "items": [
+   "multitool",
+   "lighter",
+   "field_sutures",
+   "daughters_drawing",
+   "good_boots",
+   "stethoscope",
+   "bandana",
+   "protein_bar"
+  ],
+  "name": "Mara Okafor",
+  "personality": {
+   "sharing": "generous",
+   "temperament": "steady",
+   "curiosity": "practical"
+  },
+  "survivalProbability": 34,
+  "systemAssessment": "The others notice: steady hands, dry humor, the one already taking charge of the wounded.",
+  "quest": [
+   "You're awake. Don't sit up fast \u2014 you were out a full day.",
+   "I woke up on a cot in there. Twelve cots. Eleven strangers. I don't know any of them.",
+   "We have to decide: do we do this together, or do we all starve separately? I'm a nurse, not a leader. But someone has to say it."
+  ],
+  "talk": [
+   "I don't know you. But you're here, so... we figure it out.",
+   "In there, I found a first-aid kit under the bleachers. I kept it. I'm not proud. I'm practical.",
+   "If we do this \u2014 the sharing thing \u2014 I need to know you're serious."
+  ],
+  "kcalPerDay": 2000,
+  "providesPerDay": 1500,
+  "providesWhat": ""
+ },
+ {
+  "abilityWeights": {
+   "combat": 2,
+   "craft": 1,
+   "fieldcraft": 3
+  },
+  "backstory": "Grew up hunting whitetail with his grandfather in the Georgia pines. Was wearing camo when the sky changed \u2014 hasn't taken it off since. Quiet. Misses his dog.",
+  "clothesNote": "Full camo, broken-in. Grandfather's knife on the belt.",
+  "formerOccupation": "line cook / hunter",
+  "homeRegion": "Georgia pines",
+  "id": "jesse_calhoun",
+  "items": [
+   "grandfathers_knife",
+   "rope_50ft",
+   "lighter",
+   "tin_cup",
+   "camo_jacket",
+   "snare_wire",
+   "trail_mix",
+   "binoculars"
+  ],
+  "name": "Jesse Calhoun",
+  "personality": {
+   "sharing": "pragmatic",
+   "temperament": "bold",
+   "curiosity": "practical"
+  },
+  "survivalProbability": 41,
+  "systemAssessment": "The others notice: quiet, patient, watching the treeline instead of the sky.",
+  "talk": [
+   "Don't sneak up on me. Sorry. Habit.",
+   "Found a wrench in the utility closet. It's mine. Everything's... we're figuring out what's shared.",
+   "You hunt? No? Then we need to talk about what you DO do."
+  ],
+  "kcalPerDay": 2200,
+  "providesPerDay": 1853,
+  "providesWhat": "snares",
+  "quest": [
+   "Up. Good. You were in the bus depot, I think. I was in the garage.",
+   "Woke up in there. Twelve of us. Strangers. Something dropped us here and forgot the food part.",
+   "I can hunt. But I don't know if I trust these people yet. Do you?"
+  ]
+ },
+ {
+  "abilityWeights": {
+   "care": 2,
+   "craft": 3,
+   "fieldcraft": 1
+  },
+  "backstory": "Ran a sushi counter in Seattle for eleven years. Knows fish the way scholars know books. Her knives are the sharpest things in the clearing, and she hasn't decided what that's worth yet.",
+  "clothesNote": "Chef's coat, cut down to a vest. Apron pockets full of useful things.",
+  "formerOccupation": "sushi chef",
+  "homeRegion": "Seattle, Washington",
+  "id": "aki_tanaka",
+  "items": [
+   "chefs_knife",
+   "whetstone",
+   "fishing_line",
+   "lighter",
+   "mothers_ring",
+   "chopsticks",
+   "soy_packets",
+   "tasting_spoon"
+  ],
+  "name": "Aki Tanaka",
+  "personality": {
+   "sharing": "generous",
+   "temperament": "cautious",
+   "curiosity": "curious"
+  },
+  "survivalProbability": 29,
+  "systemAssessment": "The others notice: precise, warm, unflappable. Already inventorying what the group carried.",
+  "talk": [
+   "The vending machine had coffee. Real coffee. I drank it all. I'm not sorry.",
+   "I miss the ocean. I miss knowing where I am. I don't know any of you.",
+   "If you're kind, I'll know. If you're not, I'll know faster."
+  ],
+  "kcalPerDay": 2000,
+  "providesPerDay": 1622,
+  "providesWhat": "fish lines",
+  "quest": [
+   "You're awake. I was in the diner. Dreaming about rice.",
+   "In there. I woke up dreaming about rice. Eleven strangers around me. I don't know if they're kind.",
+   "I'm Aki. I can fish. But I won't starve for people I don't trust. Will you?"
+  ]
+ },
+ {
+  "id": "ruth_delgado",
+  "name": "Ruth Delgado",
+  "formerOccupation": "city bus driver (retired)",
+  "homeRegion": "Ohio river valley",
+  "personality": {
+   "sharing": "generous",
+   "temperament": "steady",
+   "curiosity": "practical"
+  },
+  "backstory": "Drove the 42 crosstown for thirty-one years through floods, a riot, and one very determined goose. Retired in March. The sky changed in April. She has opinions about the scheduling.",
+  "clothesNote": "Transit windbreaker, orthopedic shoes, a tote bag that has everything.",
+  "survivalProbability": 68,
+  "systemAssessment": "The others notice: unbothered, funny, the only one sleeping through the night.",
+  "abilityWeights": {
+   "combat": 1,
+   "craft": 2,
+   "fieldcraft": 2
+  },
+  "items": [
+   "tote_bag",
+   "reading_glasses",
+   "bus_schedule",
+   "hard_candy",
+   "spare_socks",
+   "bus_map",
+   "thermos",
+   "photo_album"
+  ],
+  "talk": [
+   "Thirty years driving a bus. Never thought I'd be... here.",
+   "I make soup. That's what I do. But soup needs things. We don't have things.",
+   "You seem alright. For a stranger. Which is all any of us are."
+  ],
+  "kcalPerDay": 1700,
+  "providesPerDay": 1275,
+  "providesWhat": "",
+  "quest": [
+   "Oh, you're up. I was in the school. You were... somewhere.",
+   "I woke up in there. You were on the cot next to mine. Twelve strangers under one roof.",
+   "I'm Ruth. I drove a bus for thirty years. I know people. And I don't know these people. Yet."
+  ]
+ },
+ {
+  "id": "theo_park",
+  "name": "Theo Park",
+  "formerOccupation": "college dropout",
+  "homeRegion": "Seattle",
+  "personality": {
+   "sharing": "selfish",
+   "temperament": "bold",
+   "curiosity": "curious"
+  },
+  "backstory": "Washed out of a CS degree, got very good at speedrunning old games instead. Treats the apocalypse like a new release: reads patch notes nobody else can see. Often right. Never humble about it.",
+  "clothesNote": "Hoodie, cracked phone (dead, kept anyway), sneakers held together by hope.",
+  "survivalProbability": 35,
+  "systemAssessment": "The others notice: watches everything, names everything, wrong about people, right about patterns.",
+  "abilityWeights": {
+   "combat": 1,
+   "craft": 3,
+   "fieldcraft": 1
+  },
+  "items": [
+   "dead_phone",
+   "hoodie",
+   "energy_bar_wrapper",
+   "multitool",
+   "notebook",
+   "phone_charger",
+   "energy_drink",
+   "dice_set"
+  ],
+  "talk": [
+   "Okay so, party composition: we have no tank, no healer, and the mage is... you?",
+   "I'm kidding. Mostly. This is terrifying. I'm making jokes because it's terrifying.",
+   "If we wipe, we wipe together. That's the deal. Right?"
+  ],
+  "kcalPerDay": 2000,
+  "providesPerDay": 1500,
+  "providesWhat": "",
+  "quest": [
+   "Whoa, you're up. Okay. So. Twelve of us. Random spawn. No tutorial.",
+   "Woke up in there. Twelve cots. Everyone's a stranger. No explanation. Just... here.",
+   "We gotta figure out if we're a party or just twelve solo players. What's your build?"
+  ]
+ },
+ {
+  "id": "priya_nair",
+  "name": "Priya Nair",
+  "formerOccupation": "tax accountant",
+  "homeRegion": "Columbus",
+  "personality": {
+   "sharing": "pragmatic",
+   "temperament": "cautious",
+   "curiosity": "practical"
+  },
+  "backstory": "Did taxes for eleven years. Now does the pantry: every calorie in, every calorie out, depreciating the canned goods. The only reason anyone knows how bad things are is that she'll say the number out loud.",
+  "clothesNote": "Cardigan, ledger book, three pens (one is a backup, one is a backup for the backup).",
+  "survivalProbability": 52,
+  "systemAssessment": "The others notice: counting everything, sleeping little, the reason the pantry math works.",
+  "abilityWeights": {
+   "combat": 1,
+   "craft": 2,
+   "fieldcraft": 2
+  },
+  "items": [
+   "lighter",
+   "tin_cup",
+   "good_boots",
+   "daughters_drawing",
+   "rope_50ft",
+   "calculator",
+   "notebook",
+   "pen_set"
+  ],
+  "talk": [
+   "I've been watching. You work. That's good. I notice who works.",
+   "There's a bookshelf in the office. Found a field guide. It's mine. I haven't decided if I share it.",
+   "Trust is earned. I'm not cruel about it. I'm just... careful."
+  ],
+  "kcalPerDay": 1900,
+  "providesPerDay": 1425,
+  "providesWhat": "",
+  "quest": [
+   "You're awake. I was in the library. You were in... does it matter?",
+   "In there. Twelve cots. I've counted the food twice. It's not enough for twelve strangers.",
+   "The question isn't what we have. It's whether we share it. I'm Priya. I don't trust easily."
+  ]
+ }
+]

@@ -55,13 +55,13 @@
    "target": "energy.recovery",
    "value": 1.3
   },
-  "id": "second_skin",
+  "id": "second_skin_clothing",
   "name": "Second Skin",
   "systemCommentary": "Comfort metrics: optimal. We studied 'cozy' extensively. We believe this qualifies."
  },
  {
   "class": "clothing",
-  "description": "Harder to detect — by animals, and otherwise.",
+  "description": "Harder to detect \u2014 by animals, and otherwise.",
   "effect": {
    "op": "multiply",
    "target": "travel.encounter_chance",
@@ -113,7 +113,7 @@
   "class": "tool",
   "hidden": true,
   "rare": 0.3,
-  "description": "It makes no sound. Not quiet — absent. The world declines to notice.",
+  "description": "It makes no sound. Not quiet \u2014 absent. The world declines to notice.",
   "systemCommentary": "\"Acoustic profile: null. We did not authorize this. We are... not displeased.\"",
   "effect": {
    "op": "multiply",
@@ -288,8 +288,8 @@
   "class": "sentimental",
   "secret": true,
   "minBond": 50,
-  "description": "It fits now. It didn't fit before. Her hands, your hands — the same hands, doing the same work: keeping people alive.",
-  "systemCommentary": "\"Lineage detected: unbroken. The village sees her in you. Trust us — they do.\"",
+  "description": "It fits now. It didn't fit before. Her hands, your hands \u2014 the same hands, doing the same work: keeping people alive.",
+  "systemCommentary": "\"Lineage detected: unbroken. The village sees her in you. Trust us \u2014 they do.\"",
   "effect": {
    "op": "multiply",
    "target": "trust.inheritance",
@@ -302,7 +302,7 @@
   "class": "tool",
   "secret": true,
   "minBond": 50,
-  "description": "Some mornings your hands move before you do — his grip, his angle, his patience. He's been dead for years. He's never been more useful.",
+  "description": "Some mornings your hands move before you do \u2014 his grip, his angle, his patience. He's been dead for years. He's never been more useful.",
   "systemCommentary": "\"User motor patterns match archived profile: GRANDFATHER. Overlap 94%. We did not archive him. He archived himself. In you.\"",
   "effect": {
    "op": "add",
