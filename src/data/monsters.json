@@ -2340,7 +2340,12 @@
         "organizing": "📋 ORGANIZING",
         "picketing": "✊ PICKETING",
         "walkout": "🚨 WALKOUT"
-      }
+      },
+      "knownCue": "Kill the rep before it organizes. Every ally it rallies hits +3 harder — and at WALKOUT they hit +8 while the rep goes UNTARGETABLE behind the picket line. Scatter the line or union-bust it early: once it climbs on the bullhorn, the fight is uphill."
+    },
+    "armor": 4,
+    "resistances": {
+      "psychic": 0.5
     }
   }
 ]

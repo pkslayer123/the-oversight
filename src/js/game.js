@@ -14704,7 +14704,10 @@
       const tg = m.telegraph;
       const atk = (m.mdef || {}).attack || {};
       const mid = (m.mdef || {}).id;
-      if (mid !== 'review_drone' && mid !== 'camera_swarm' && mid !== 'hype_horn' && mid !== 'delegate_beast') return null;
+      // DEAD-ROSTER GUARD (Steve 2026-10-06): camera_swarm, hype_horn and
+      // delegate_beast were removed from monsters.json — their cue branches
+      // below were deleted. Only review_drone is batch-4-routed now.
+      if (mid !== 'review_drone') return null;
       const known = this.encUsesFifo(m) ? this.encTelegraphKnown(m) : true;
       const learned = this.tbPatternKnown(mid, atk.name)
         ? ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern, m.mdef)}.`
@@ -14718,32 +14721,12 @@
           : ' Light plays across the dirt in a straight line. Probably decorative. Probably.';
         return cue + learned;
       }
-      if (mid === 'camera_swarm') {
-        let cue = '📸 "SMILE! You\'re going VIRAL!" The shutters quicken — the flashes are building.';
-        cue += known
-          ? ' Flash Mob: burst radius 2 around the swarm, and it keeps closing in while it builds. Keep moving — or get it near fire.'
-          : ' It wants a reaction. Do not give it one standing still.';
-        return cue + learned;
-      }
-      if (mid === 'hype_horn') {
-        let cue = '📣 "YOU\'VE GOT THIS!" It inflates — throat, chest, the whole resonating chamber swelling like a bagpipe of pure encouragement.';
-        cue += known
-          ? ' Pep Talk: burst radius 3, the biggest burst going. Slow windup — GET CLEAR, four squares or more.'
-          : ' The encouragement is about to become physical. Distance is self-care.';
-        return cue + learned;
-      }
-      if (mid === 'delegate_beast') {
-        let cue = '"let\'s take this OFFLINE." It lowers its horns. The meeting line is SET — attendance is mandatory.';
-        cue += known
-          ? ' It charges exactly the announced line, width 2 — sidestep FARTHER than feels necessary.'
-          : ' It is staring down a line only it can see. Wherever that is — do not be there.';
-        return cue + learned;
-      }
       // service_mimic + contract_golem: NOT batch-4-routed (guard above).
       // Their cues are bespoke and already knowledge-gated — the mimic's in
       // its rush-resolve line + watching beat (Steve 2026-10-06), the golem's
-      // in encDeclareDirect's cueText + knownTail. The old branches here were
-      // unreachable and have been removed (Steve 2026-10-06).
+      // in encDeclareDirect's cueText + knownTail. The camera_swarm,
+      // hype_horn and delegate_beast branches here were deleted with the
+      // monsters themselves (Steve 2026-10-06).
       return null;
     },
 
