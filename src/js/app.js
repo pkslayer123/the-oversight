@@ -12266,9 +12266,6 @@
           } catch (e) {
             g = ''; // Error - blank, not mixed
           }
-          } catch (e) {
-            g = '·';
-          }
         }
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
       }
