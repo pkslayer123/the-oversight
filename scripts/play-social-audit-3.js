@@ -187,6 +187,19 @@ function ok(name, cond, detail) {
   Game.exileSelfDo('foundhaven');
   ok('found haven ends exile', !Game.state.scholar.exiled && !Game.state.scholar.drifting);
 
+  // ============ FIX 11: audio dispatch (justiceVerdict / exileWalk) ============
+  console.log('\n## 11. audio dispatch wiring');
+  const fired = [];
+  Game.audioEvent = (name) => { fired.push(name); };
+  fresh('mootJuror');
+  const cj2 = Game.betrayalState().cases.find(x => x.playerRole === 'juror');
+  Game.callMoot(cj2.id);
+  if (cj2.trial && cj2.trial.awaitingPlayerVote) Game.castPlayerVote(cj2.id, true);
+  ok('justiceVerdict fired at the verdict', fired.includes('justiceVerdict'), fired.join(','));
+  fresh('exile');
+  ok('exileWalk fired on the exile sequence', fired.includes('exileWalk'), fired.join(','));
+  delete Game.audioEvent;
+
   console.log(`\n##### RESULT: ${pass} passed, ${fail} failed #####`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('HARNESS CRASH:', e.message); console.error((e.stack || '').split('\n').slice(0, 4).join('\n')); process.exit(2); });

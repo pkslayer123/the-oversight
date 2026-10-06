@@ -1091,6 +1091,8 @@
     } else {
       this.say(`A long exhale moves around the fire like weather. "Not guilty — this time."`);
     }
+    // AUDIO (Steve 2026-10-06): the moot has decided — one heavy strike.
+    try { this.audioEvent('justiceVerdict'); } catch (e) {}
     // THE ROOM REMEMBERS (Steve 2026-10-05): the ceremony promises "everyone
     // will remember it" — so the player's vote lands socially, not just in
     // the count. The accused remember who voted against them; the victim's
@@ -1234,6 +1236,8 @@
     const s = this.state.scholar;
     try { this.justiceState().exiled = true; this.justiceState().exileDay = s.day; } catch (e) {}
     this.say(`Exiled. You leave with what you carry — nothing more. Behind you, Haven keeps its fire. Ahead: the world, which just got much bigger.`);
+    // AUDIO (Steve 2026-10-06): footsteps receding, the village hum thinning.
+    try { this.audioEvent('exileWalk'); } catch (e) {}
     try { this.journalNote && this.journalNote('village', 'exile', 'Exiled (' + how + '). Walking.'); } catch (e) {}
     // the old village continues; gossip carries your name
     try { this.seedGossip('exile_' + s.day, { trustworthy: -15 }, this.npcIds().slice(0, 4)); } catch (e) {}
