@@ -65,7 +65,7 @@
 /* PWA update flow (v2): version.json is the source of truth, NOT the service
    worker. The SW exists only for offline caching — updates no longer depend on
    the SW install/waiting/skipWaiting handover, which stalls silently on iOS.
-   On launch, on foreground resume, and every 2 minutes we fetch version.json
+   On launch, on foreground resume, and every minute we fetch version.json
    with cache:'no-store' plus a cache-buster; if it differs from the running
    BUILD_VERSION we show the banner. Tapping it unregisters all SWs, wipes all
    caches, and navigates to a cache-busted URL — the new version loads no
@@ -245,7 +245,7 @@
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') check();
   });
-  setInterval(function () { check(); }, 2 * 60 * 1000); // Steve 2026-10-06: 2 min, not 15
+  setInterval(function () { check(); }, 60 * 1000); // Steve 2026-10-06: 1 min, fast iteration
 })();
 </script>
 </body>
