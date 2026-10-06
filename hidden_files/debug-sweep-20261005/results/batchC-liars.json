@@ -1,0 +1,48 @@
+{
+  "scenario": "liars",
+  "loadOk": true,
+  "loadError": null,
+  "returned": true,
+  "scenarioError": null,
+  "failLines": [],
+  "log": [
+    "Haven. Twelve people. The fire is lit.",
+    "A man, maybe 40s: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "🐞 SCENARIO: liar's den. Five villagers are lying about who they are.",
+    "Ask about them, gossip, watch them. Bad liars slip. Catch the contradictions."
+  ],
+  "premise": {
+    "hasState": true,
+    "hasScholar": true,
+    "hasVillage": true,
+    "scholarDay": 1,
+    "villageDay": 1,
+    "rosterCount": 12,
+    "villagersCount": 6,
+    "mapExists": true,
+    "gameOver": false,
+    "dayPart": 0,
+    "tbfightActive": false,
+    "liarCount": 5,
+    "liesSample": {
+      "rid": "gen_uhszizt",
+      "lies": {
+        "occupation": {
+          "told": "Brain surgeon",
+          "truth": "lawyer",
+          "motive": "shame",
+          "field": "occupation"
+        },
+        "origin": {
+          "told": "Chicago",
+          "truth": "Minneapolis, USA",
+          "motive": "hiding",
+          "field": "origin"
+        }
+      }
+    },
+    "npcLiesExists": true
+  },
+  "notes": []
+}

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Mobile Layout Simulator — The Oversight</title>
+<style>
+  body { font-family: monospace; background: #1a1a1a; color: #eee; margin: 0; padding: 20px; }
+  h1 { font-size: 18px; }
+  .sim-container { display: flex; gap: 20px; flex-wrap: wrap; }
+  .phone {
+    width: 390px;  /* iPhone 14 Pro width */
+    height: 844px; /* iPhone 14 Pro height */
+    border: 3px solid #444;
+    border-radius: 30px;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    flex-shrink: 0;
+  }
+  .phone iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  .phone-label {
+    text-align: center;
+    margin: 8px 0;
+    font-size: 14px;
+    color: #aaa;
+  }
+  .checklist {
+    max-width: 400px;
+    background: #222;
+    padding: 15px;
+    border-radius: 8px;
+  }
+  .checklist h2 { font-size: 16px; margin-top: 0; }
+  .check { margin: 8px 0; padding: 8px; background: #333; border-radius: 4px; }
+  .check.pass { border-left: 4px solid #4caf50; }
+  .check.fail { border-left: 4px solid #f44336; }
+  .check.warn { border-left: 4px solid #ff9800; }
+  button {
+    background: #4caf50; color: white; border: none;
+    padding: 10px 20px; border-radius: 4px; cursor: pointer;
+    font-size: 14px; margin: 5px;
+  }
+  button:hover { background: #45a049; }
+  #results { margin-top: 15px; }
+</style>
+</head>
+<body>
+<h1>📱 Mobile Layout Simulator — The Oversight</h1>
+<p>Loads the game at iPhone 14 Pro dimensions (390×844). Check that everything fits on one screen.</p>
+
+<div class="sim-container">
+  <div>
+    <div class="phone-label">iPhone 14 Pro (390×844)</div>
+    <div class="phone">
+      <iframe id="gameframe" src="../index.html"></iframe>
+    </div>
+  </div>
+  
+  <div class="checklist">
+    <h2>Layout Checklist</h2>
+    <p>Steve's requirements:</p>
+    <div class="check warn">☐ D-pad visible without scrolling</div>
+    <div class="check warn">☐ Actions visible with D-pad</div>
+    <div class="check warn">☐ Combat card doesn't push content off-screen</div>
+    <div class="check warn">☐ Everything functional on one vertical screen</div>
+    <div class="check warn">☐ No horizontal scroll</div>
+    
+    <h2>Automated Checks</h2>
+    <button onclick="runChecks()">Run Layout Checks</button>
+    <div id="results"></div>
+  </div>
+</div>
+
+<script>
+function runChecks() {
+  const frame = document.getElementById('gameframe');
+  const doc = frame.contentDocument;
+  const results = document.getElementById('results');
+  results.innerHTML = '<p>Checking...</p>';
+  
+  try {
+    const checks = [];
+    
+    // Check 1: D-pad exists and is visible
+    const dpad = doc.getElementById('dpad');
+    if (dpad) {
+      const rect = dpad.getBoundingClientRect();
+      const visible = rect.top >= 0 && rect.bottom <= 844;
+      checks.push({
+        name: 'D-pad visible on screen (no scroll needed)',
+        pass: visible,
+        detail: `top=${Math.round(rect.top)}, bottom=${Math.round(rect.bottom)}`
+      });
+    } else {
+      checks.push({ name: 'D-pad exists', pass: false, detail: 'not found' });
+    }
+    
+    // Check 2: Actions visible
+    const actions = doc.querySelector('.ord-actions');
+    if (actions) {
+      const rect = actions.getBoundingClientRect();
+      const visible = rect.top >= 0 && rect.bottom <= 844;
+      checks.push({
+        name: 'Actions visible on screen',
+        pass: visible,
+        detail: `top=${Math.round(rect.top)}, bottom=${Math.round(rect.bottom)}`
+      });
+    }
+    
+    // Check 3: No horizontal overflow
+    const bodyScrollWidth = doc.body.scrollWidth;
+    const bodyClientWidth = doc.body.clientWidth;
+    checks.push({
+      name: 'No horizontal scroll',
+      pass: bodyScrollWidth <= bodyClientWidth + 1,
+      detail: `scrollWidth=${bodyScrollWidth}, clientWidth=${bodyClientWidth}`
+    });
+    
+    // Check 4: Grid visible
+    const grid = doc.querySelector('.ord-grid, .grid, [class*="grid"]');
+    if (grid) {
+      const rect = grid.getBoundingClientRect();
+      checks.push({
+        name: 'Grid visible',
+        pass: rect.top >= 0 && rect.top < 844,
+        detail: `top=${Math.round(rect.top)}`
+      });
+    }
+    
+    // Render results
+    results.innerHTML = checks.map(c => 
+      `<div class="check ${c.pass ? 'pass' : 'fail'}">
+        ${c.pass ? '✓' : '✗'} ${c.name}<br>
+        <small>${c.detail}</small>
+      </div>`
+    ).join('');
+    
+  } catch (e) {
+    results.innerHTML = `<div class="check fail">Error: ${e.message}<br><small>Make sure the game is loaded in the iframe.</small></div>`;
+  }
+}
+
+// Auto-run checks after iframe loads
+document.getElementById('gameframe').addEventListener('load', () => {
+  setTimeout(runChecks, 2000);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{
+  "scenario": "mantle",
+  "ts": "2026-10-05T21:32:30.051Z",
+  "loadErrors": [
+    {
+      "file": "src/js/build.js",
+      "message": "window is not defined",
+      "stack": [
+        "ReferenceError: window is not defined",
+        "    at eval (eval at <anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5), <anonymous>:12:1)",
+        "    at Object.<anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5)",
+        "    at Module._compile (node:internal/modules/cjs/loader:1929:14)",
+        "    at Object..js (node:internal/modules/cjs/loader:2060:10)"
+      ]
+    }
+  ],
+  "returnValue": true,
+  "logTail": [
+    "Haven. Twelve people. The fire is lit.",
+    "A person, maybe 40s: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "🐞 SCENARIO: the mantle passes. You are about to die — the village is not.",
+    "Watch who steps up. The Codex turns a page. The story continues in a new face.",
+    "Nobody's talking much. The fire feels smaller tonight.",
+    "🕯️ Talia Khan is dead — the debug scenario. The village stops. Somebody screams. Somebody else starts digging.",
+    "\"Talia's gone.\" Someone looks at you for a long moment. \"You're not Talia.\" No heat in it. Just fact. You'll have to earn this face.",
+    "someone picks up the journal. Their hands shake. Then they open it, and keep writing.",
+    "🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"",
+    "📖 The Codex turns a page: Talia Khan, 1 days. The mantle passes to someone."
+  ],
+  "failLines": [],
+  "snapshot": {
+    "villagerIds": [
+      "gen_8mz8ldt",
+      "gen_jvlmz51",
+      "gen_d8aw8vf",
+      "gen_d8sb03y",
+      "gen_1wiv0wc",
+      "gen_108a3vy"
+    ],
+    "villagerCount": 6,
+    "playerId": "lena_ruiz",
+    "playerName": "lena_ruiz",
+    "playerHealth": 100,
+    "playerDead": false,
+    "day": 1,
+    "tbfightActive": false,
+    "tbfightFighters": null,
+    "debugChatRequest": null,
+    "mootCases": "none-found(state.mootCases/state.cases/state.moot all empty)",
+    "justiceFlags": [],
+    "exileFlags": {
+      "exiled": false,
+      "exileHow": null,
+      "stateExile": "absent"
+    },
+    "scholarPos": {
+      "region": null,
+      "x": 0,
+      "y": 0,
+      "mx": 4,
+      "my": 4
+    },
+    "keepsake": [],
+    "suspectStateFlags": []
+  },
+  "logLength": 11
+}

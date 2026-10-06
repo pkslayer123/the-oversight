@@ -1,0 +1,41 @@
+{
+  "scenario": "mootAccused",
+  "returnValue": true,
+  "cases": [
+    {
+      "status": "open",
+      "accused": [
+        "gen_5on1jqy"
+      ],
+      "accuser": "gen_jpukkbc",
+      "charge": "assault",
+      "playerRole": "accused",
+      "knownToPlayer": true,
+      "defenseWindow": null
+    }
+  ],
+  "plots": [],
+  "crimes": [
+    {
+      "type": "theft",
+      "caseId": false,
+      "victim": "gen_wtw1thx"
+    },
+    {
+      "type": "attack",
+      "caseId": true,
+      "victim": "gen_jpukkbc"
+    }
+  ],
+  "justiceStage": 0,
+  "exiled": false,
+  "exileMeta": null,
+  "scholarRegion": null,
+  "inBuilding": "n/a",
+  "tbfight": false,
+  "playerDead": false,
+  "playerId": "gen_5on1jqy",
+  "scholarAlive": true,
+  "villagePop": 6,
+  "fallen": 0
+}

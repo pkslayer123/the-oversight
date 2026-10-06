@@ -1,0 +1,84 @@
+{
+  "scenario": "mootJuror",
+  "ts": "2026-10-05T21:32:27.177Z",
+  "loadErrors": [
+    {
+      "file": "src/js/build.js",
+      "message": "window is not defined",
+      "stack": [
+        "ReferenceError: window is not defined",
+        "    at eval (eval at <anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5), <anonymous>:12:1)",
+        "    at Object.<anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5)",
+        "    at Module._compile (node:internal/modules/cjs/loader:1929:14)",
+        "    at Object..js (node:internal/modules/cjs/loader:2060:10)"
+      ]
+    }
+  ],
+  "returnValue": true,
+  "logTail": [
+    "Haven. Twelve people. The fire is lit.",
+    "A person, maybe 50s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "🐞 SCENARIO: moot as juror. Three villagers stand accused of an ambush that never quite happened.",
+    "The accused: A person, maybe 60s, A woman, maybe 50s, A person, maybe 50s. The target: A woman, maybe 50s. Their story landed first — yours hasn't started.",
+    "Work it: examine the site, name witnesses, press them separately, flip the weakest. Then vote."
+  ],
+  "failLines": [],
+  "snapshot": {
+    "villagerIds": [
+      "gen_q33y8sd",
+      "gen_58v1i3g",
+      "gen_j1k7cd3",
+      "gen_k8eci7y",
+      "gen_70szqe3",
+      "gen_0eys9bs"
+    ],
+    "villagerCount": 6,
+    "playerId": "gen_q33y8sd",
+    "playerName": "gen_q33y8sd",
+    "playerHealth": 100,
+    "playerDead": false,
+    "day": 1,
+    "tbfightActive": false,
+    "tbfightFighters": null,
+    "debugChatRequest": null,
+    "mootCases": "none-found(state.mootCases/state.cases/state.moot all empty)",
+    "justiceFlags": [],
+    "exileFlags": {
+      "exiled": false,
+      "exileHow": null,
+      "stateExile": "absent"
+    },
+    "scholarPos": {
+      "region": null,
+      "x": 0,
+      "y": 0,
+      "mx": 4,
+      "my": 4
+    },
+    "keepsake": [
+      {
+        "itemId": "reading_glasses",
+        "bond": 0
+      },
+      {
+        "itemId": "mothers_ring",
+        "bond": 0
+      },
+      {
+        "itemId": "knife_roll",
+        "bond": 0
+      },
+      {
+        "itemId": "search_locket",
+        "bond": 0
+      },
+      {
+        "itemId": "trail_compass",
+        "bond": 0
+      }
+    ],
+    "suspectStateFlags": []
+  },
+  "logLength": 6
+}

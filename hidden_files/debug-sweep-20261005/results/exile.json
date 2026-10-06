@@ -1,0 +1,87 @@
+{
+  "scenario": "exile",
+  "ts": "2026-10-05T21:32:28.442Z",
+  "loadErrors": [
+    {
+      "file": "src/js/build.js",
+      "message": "window is not defined",
+      "stack": [
+        "ReferenceError: window is not defined",
+        "    at eval (eval at <anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5), <anonymous>:12:1)",
+        "    at Object.<anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5)",
+        "    at Module._compile (node:internal/modules/cjs/loader:1929:14)",
+        "    at Object..js (node:internal/modules/cjs/loader:2060:10)"
+      ]
+    }
+  ],
+  "returnValue": true,
+  "logTail": [
+    "Haven. Twelve people. The fire is lit.",
+    "A person, maybe 30s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "Exiled. You leave with what you carry — nothing more. Behind you, Haven keeps its fire. Ahead: the world, which just got much bigger.",
+    "📓 Journal: Exiled (debug). Walking.",
+    "The pantry is closed to you. The book stays behind. To Haven, you are not one of ours anymore. Membership asked nothing — no presence, no check-ins. Exile is the one way to lose it.",
+    "You push through the doors into open air. Haven grounds — tents, a fire pit, worn paths. The world is that way.",
+    "🐞 SCENARIO: exiled. You leave with what you carry — nothing more.",
+    "Tap a 🏘️ tile on the minimap to approach & petition (they judge you — the gossip got there first). Your self bar has 🏕️ found-haven and 🚶 drift."
+  ],
+  "failLines": [],
+  "snapshot": {
+    "villagerIds": [
+      "gen_ov06y3d",
+      "gen_0ehne37",
+      "gen_kbo13wn",
+      "gen_67llb93",
+      "gen_6r5zke5",
+      "gen_me64jyp"
+    ],
+    "villagerCount": 6,
+    "playerId": "gen_ov06y3d",
+    "playerName": "gen_ov06y3d",
+    "playerHealth": 100,
+    "playerDead": false,
+    "day": 1,
+    "tbfightActive": false,
+    "tbfightFighters": null,
+    "debugChatRequest": null,
+    "mootCases": "none-found(state.mootCases/state.cases/state.moot all empty)",
+    "justiceFlags": [],
+    "exileFlags": {
+      "exiled": true,
+      "exileHow": null,
+      "stateExile": "absent"
+    },
+    "scholarPos": {
+      "region": null,
+      "x": 0,
+      "y": 0,
+      "mx": 4,
+      "my": 2
+    },
+    "keepsake": [
+      {
+        "itemId": "mixtape",
+        "bond": 0
+      },
+      {
+        "itemId": "dog_tags",
+        "bond": 0
+      },
+      {
+        "itemId": "knife_roll",
+        "bond": 0
+      },
+      {
+        "itemId": "winter_coat_button",
+        "bond": 0
+      },
+      {
+        "itemId": "seed_packet",
+        "bond": 0
+      }
+    ],
+    "suspectStateFlags": []
+  },
+  "logLength": 9
+}

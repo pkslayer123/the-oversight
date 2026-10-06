@@ -1,0 +1,177 @@
+[
+  {
+    "scenario": "contestPit",
+    "timedOut": false,
+    "ms": 1209,
+    "exitCode": 0,
+    "result": {
+      "scenario": "contestPit",
+      "loadOk": true,
+      "loadError": null,
+      "returned": true,
+      "scenarioError": null,
+      "logTail": [
+        "Haven. Twelve people. The fire is lit.",
+        "A woman, maybe 40s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"",
+        "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+        "🐞 SCENARIO: contest — The Pit. Day 15, you're eligible.",
+        "The System should pick a contest soon. Check eligibility via the leaderboard."
+      ],
+      "pendingContest": {
+        "contestId": "pit",
+        "participant": "player",
+        "firesDay": 16,
+        "variant": null
+      },
+      "activeContest": {
+        "contestId": "pit",
+        "participant": "player",
+        "phase": "intro",
+        "variant": null
+      },
+      "resolveContestRan": true,
+      "resolveContestError": null,
+      "interruptionFired": true,
+      "interruptionPhase": "intro",
+      "contestInterruptionExists": true,
+      "notes": []
+    }
+  },
+  {
+    "scenario": "contestHide",
+    "timedOut": false,
+    "ms": 1102,
+    "exitCode": 0,
+    "result": {
+      "scenario": "contestHide",
+      "loadOk": true,
+      "loadError": null,
+      "returned": true,
+      "scenarioError": null,
+      "logTail": [
+        "Haven. Twelve people. The fire is lit.",
+        "A person, maybe 50s: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"",
+        "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+        "🐞 SCENARIO: contest — Hide and Seek. Extreme risk.",
+        "The seeker is a wave-2 predator. Test with different loadouts."
+      ],
+      "pendingContest": {
+        "contestId": "hide",
+        "participant": "player",
+        "firesDay": 21,
+        "variant": null
+      },
+      "activeContest": {
+        "contestId": "hide",
+        "participant": "player",
+        "phase": "intro",
+        "variant": null
+      },
+      "resolveContestRan": true,
+      "resolveContestError": null,
+      "interruptionFired": true,
+      "interruptionPhase": "intro",
+      "contestInterruptionExists": true,
+      "notes": []
+    }
+  },
+  {
+    "scenario": "contestForage",
+    "timedOut": false,
+    "ms": 2446,
+    "exitCode": 0,
+    "result": {
+      "scenario": "contestForage",
+      "loadOk": true,
+      "loadError": null,
+      "returned": true,
+      "scenarioError": null,
+      "logTail": [
+        "Haven. Twelve people. The fire is lit.",
+        "A person, maybe 30s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"",
+        "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+        "🐞 SCENARIO: contest — Calorie Run. Foraging competition.",
+        "Whoever collects the most calorie-dense materials wins."
+      ],
+      "pendingContest": {
+        "contestId": "calorie_run",
+        "participant": "player",
+        "firesDay": 19,
+        "variant": null
+      },
+      "activeContest": {
+        "contestId": "calorie_run",
+        "participant": "player",
+        "phase": "intro",
+        "variant": null
+      },
+      "resolveContestRan": true,
+      "resolveContestError": null,
+      "interruptionFired": true,
+      "interruptionPhase": "intro",
+      "contestInterruptionExists": true,
+      "notes": []
+    }
+  },
+  {
+    "scenario": "showWhyEat",
+    "timedOut": false,
+    "ms": 2087,
+    "exitCode": 0,
+    "result": {
+      "scenario": "showWhyEat",
+      "loadOk": true,
+      "loadError": null,
+      "returned": true,
+      "scenarioError": null,
+      "logTail": [
+        "Haven. Twelve people. The fire is lit.",
+        "A woman, maybe 30s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"",
+        "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+        "🐞 SCENARIO: TV show — WHY DO THEY EAT?",
+        "The aliens are horrified by cooking. The audience is delighted."
+      ],
+      "pendingContest": null,
+      "activeContest": null,
+      "resolveContestRan": false,
+      "resolveContestError": null,
+      "interruptionFired": false,
+      "interruptionPhase": null,
+      "contestInterruptionExists": true,
+      "notes": [
+        "no pendingContest after scenario — nothing to resolve."
+      ]
+    }
+  },
+  {
+    "scenario": "contestEligible",
+    "timedOut": false,
+    "ms": 1242,
+    "exitCode": 0,
+    "result": {
+      "scenario": "contestEligible",
+      "loadOk": true,
+      "loadError": null,
+      "returned": true,
+      "scenarioError": null,
+      "logTail": [
+        "Haven. Twelve people. The fire is lit.",
+        "A person, maybe 30s: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"",
+        "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+        "🐞 SCENARIO: contest eligibility. Day 15, you slew a wave-2 beast.",
+        "Check the leaderboard — you should be eligible with notability.",
+        "🐞 Eligible: 1 (You)"
+      ],
+      "pendingContest": null,
+      "activeContest": null,
+      "resolveContestRan": false,
+      "resolveContestError": null,
+      "interruptionFired": false,
+      "interruptionPhase": null,
+      "contestInterruptionExists": true,
+      "notes": [
+        "no pendingContest after scenario — nothing to resolve."
+      ]
+    }
+  }
+]

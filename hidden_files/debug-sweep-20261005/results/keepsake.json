@@ -1,0 +1,92 @@
+{
+  "scenario": "keepsake",
+  "ts": "2026-10-05T21:32:31.249Z",
+  "loadErrors": [
+    {
+      "file": "src/js/build.js",
+      "message": "window is not defined",
+      "stack": [
+        "ReferenceError: window is not defined",
+        "    at eval (eval at <anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5), <anonymous>:12:1)",
+        "    at Object.<anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5)",
+        "    at Module._compile (node:internal/modules/cjs/loader:1929:14)",
+        "    at Object..js (node:internal/modules/cjs/loader:2060:10)"
+      ]
+    }
+  ],
+  "returnValue": true,
+  "logTail": [
+    "Haven. Twelve people. The fire is lit.",
+    "A woman, maybe 40s: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "◈ RESONANCE HARMONICS — SYSTEM: \"HYPOTHESIS CONFIRMED. Objects with high observer-attention waveforms function as auxiliary capacitors. We call this RESONANCE HARMONICS. We do not know why the waveforms taste like grief. We have stopped asking.\" — Hold a keepsake. Think about them. The System will do the math. (It is not math. It is love. The System will never know.) Channel keepsakes from your pack.",
+    "🐞 SCENARIO: the keepsake gamble. You chose the ring over the axe on day one — the visible gamble.",
+    "The System calls it RESONANCE HARMONICS. It is not harmonics. It is love. The System will never know.",
+    "◈ FLASHBACK — Mother's Ring\nThe winter the factory closed Hank pressed this into your hand and said: fix what you can reach. She twisted it when she was thinking, which was always. You twist it now.",
+    "📖 The memory leaves something behind: Her voice, patient: measure twice. Things can be fixed.",
+    "Channel it from your pack. Watch what grief does when the System does the math."
+  ],
+  "failLines": [],
+  "snapshot": {
+    "villagerIds": [
+      "gen_yhvw8z9",
+      "gen_fjwq261",
+      "gen_iytx65g",
+      "gen_d3rom59",
+      "gen_75vz8ck",
+      "gen_9p3go68"
+    ],
+    "villagerCount": 6,
+    "playerId": "gen_yhvw8z9",
+    "playerName": "gen_yhvw8z9",
+    "playerHealth": 100,
+    "playerDead": false,
+    "day": 1,
+    "tbfightActive": false,
+    "tbfightFighters": null,
+    "debugChatRequest": null,
+    "mootCases": "none-found(state.mootCases/state.cases/state.moot all empty)",
+    "justiceFlags": [],
+    "exileFlags": {
+      "exiled": false,
+      "exileHow": null,
+      "stateExile": "absent"
+    },
+    "scholarPos": {
+      "region": null,
+      "x": 0,
+      "y": 0,
+      "mx": 4,
+      "my": 4
+    },
+    "keepsake": [
+      {
+        "itemId": "dog_tags",
+        "bond": 0
+      },
+      {
+        "itemId": "mixtape",
+        "bond": 0
+      },
+      {
+        "itemId": "field_suture_kit",
+        "bond": 0
+      },
+      {
+        "itemId": "home_key",
+        "bond": 0
+      },
+      {
+        "itemId": "dispatchers_headset",
+        "bond": 0
+      },
+      {
+        "itemId": "mothers_ring",
+        "chosen": true,
+        "bond": 3
+      }
+    ],
+    "suspectStateFlags": []
+  },
+  "logLength": 9
+}

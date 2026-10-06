@@ -1,0 +1,34 @@
+{
+  "scenario": "day1",
+  "loadOk": true,
+  "loadError": null,
+  "returned": true,
+  "scenarioError": null,
+  "failLines": [],
+  "log": [
+    "Haven. Twelve people. The fire is lit.",
+    "A man, maybe 20s: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "🐞 SCENARIO: day 1, fresh expedition. Standard start."
+  ],
+  "premise": {
+    "hasState": true,
+    "hasScholar": true,
+    "hasVillage": true,
+    "scholarDay": 1,
+    "villageDay": 1,
+    "rosterCount": 12,
+    "villagersCount": 6,
+    "mapExists": true,
+    "gameOver": false,
+    "dayPart": 0,
+    "tbfightActive": false,
+    "dayIs1": true,
+    "pantryKcal": 0,
+    "kcal": 2200,
+    "energy": 100,
+    "hydration": 100,
+    "health": 100
+  },
+  "notes": []
+}

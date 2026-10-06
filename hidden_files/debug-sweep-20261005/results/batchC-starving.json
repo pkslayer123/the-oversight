@@ -1,0 +1,54 @@
+{
+  "scenario": "starving",
+  "loadOk": true,
+  "loadError": null,
+  "returned": true,
+  "scenarioError": null,
+  "failLines": [],
+  "log": [
+    "Haven. Twelve people. The fire is lit.",
+    "A woman, maybe 30s: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "🐞 SCENARIO: starving village. Day 4. The pantry is nearly empty and everyone knows it.",
+    "Take food if you want. People notice what you take."
+  ],
+  "premise": {
+    "hasState": true,
+    "hasScholar": true,
+    "hasVillage": true,
+    "scholarDay": 4,
+    "villageDay": 1,
+    "rosterCount": 12,
+    "villagersCount": 6,
+    "mapExists": true,
+    "gameOver": false,
+    "dayPart": 0,
+    "tbfightActive": false,
+    "pantryItems": [
+      {
+        "name": "Canned soup",
+        "units": 6,
+        "kcalEach": 250
+      },
+      {
+        "name": "Dried meat",
+        "units": 3,
+        "kcalEach": 400
+      }
+    ],
+    "pantryKcalTotal": 2700,
+    "pantryKcalField": 0,
+    "kcal": 400,
+    "energy": 40,
+    "hydration": 50,
+    "dayIs4": true,
+    "trustValues": [
+      15,
+      13,
+      11,
+      9,
+      8
+    ]
+  },
+  "notes": []
+}

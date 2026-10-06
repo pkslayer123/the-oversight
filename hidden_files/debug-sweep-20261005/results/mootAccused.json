@@ -1,0 +1,85 @@
+{
+  "scenario": "mootAccused",
+  "ts": "2026-10-05T21:32:25.459Z",
+  "loadErrors": [
+    {
+      "file": "src/js/build.js",
+      "message": "window is not defined",
+      "stack": [
+        "ReferenceError: window is not defined",
+        "    at eval (eval at <anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5), <anonymous>:12:1)",
+        "    at Object.<anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5)",
+        "    at Module._compile (node:internal/modules/cjs/loader:1929:14)",
+        "    at Object..js (node:internal/modules/cjs/loader:2060:10)"
+      ]
+    }
+  ],
+  "returnValue": true,
+  "logTail": [
+    "Haven. Twelve people. The fire is lit.",
+    "A person, maybe 60s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "the person in their 30s, the farmer stands up at the fire, pointing. \"This one. Raising hands against one of us — and we all know it.\" Heads turn. There's going to be a moot — 2 days. Use them.",
+    "📓 Journal: Accused of assault by A person, maybe 30s. Moot in 2 days.",
+    "🐞 SCENARIO: you stand accused. Theft and assault on the books — the moot is coming.",
+    "The case is open. Your defense window is ticking: speak, call witnesses, press your accuser, or run."
+  ],
+  "failLines": [],
+  "snapshot": {
+    "villagerIds": [
+      "gen_wq12le5",
+      "gen_mcmdmxw",
+      "gen_bl3iru9",
+      "gen_at35uxg",
+      "gen_m59s4ta",
+      "gen_e17ir3z"
+    ],
+    "villagerCount": 6,
+    "playerId": "gen_wq12le5",
+    "playerName": "gen_wq12le5",
+    "playerHealth": 100,
+    "playerDead": false,
+    "day": 1,
+    "tbfightActive": false,
+    "tbfightFighters": null,
+    "debugChatRequest": null,
+    "mootCases": "none-found(state.mootCases/state.cases/state.moot all empty)",
+    "justiceFlags": [],
+    "exileFlags": {
+      "exiled": false,
+      "exileHow": null,
+      "stateExile": "absent"
+    },
+    "scholarPos": {
+      "region": null,
+      "x": 0,
+      "y": 0,
+      "mx": 4,
+      "my": 4
+    },
+    "keepsake": [
+      {
+        "itemId": "locket",
+        "bond": 0
+      },
+      {
+        "itemId": "mothers_ring",
+        "bond": 0
+      },
+      {
+        "itemId": "trail_compass",
+        "bond": 0
+      },
+      {
+        "itemId": "search_locket",
+        "bond": 0
+      },
+      {
+        "itemId": "field_suture_kit",
+        "bond": 0
+      }
+    ],
+    "suspectStateFlags": []
+  },
+  "logLength": 7
+}

@@ -1,0 +1,36 @@
+{
+  "scenario": "mootJuror",
+  "returnValue": true,
+  "cases": [
+    {
+      "status": "open",
+      "accused": [
+        "gen_t9u1m53",
+        "gen_mlkhyb7",
+        "gen_zdnj4yi"
+      ],
+      "charge": "ambush",
+      "playerRole": "juror",
+      "knownToPlayer": true,
+      "defenseWindow": null
+    }
+  ],
+  "plots": [
+    {
+      "target": "gen_01d10ft",
+      "leader": "gen_t9u1m53"
+    }
+  ],
+  "crimes": [],
+  "justiceStage": 0,
+  "exiled": false,
+  "exileMeta": null,
+  "scholarRegion": null,
+  "inBuilding": "n/a",
+  "tbfight": false,
+  "playerDead": false,
+  "playerId": "gen_y77csb4",
+  "scholarAlive": true,
+  "villagePop": 6,
+  "fallen": 0
+}

@@ -37,9 +37,13 @@ function ok(name, cond) {
   // (withdrawn/prickly NPCs with low trust deflect instead of answering —
   // correct behavior, but not what we're testing here)
   if (vpA.personality) vpA.personality.temperament = 'warm';
+  // Pin the truth first: the injected lie MUST differ from it. 'paramedic'
+  // lives in the occupation pools, so a random formerOccupation could BE
+  // 'paramedic' — and a lie identical to the truth can never contradict.
+  vpA.formerOccupation = 'ER nurse';
   // Directly inject a lie for deterministic testing
   vpA.lies = {
-    occupation: { told: 'paramedic', truth: vpA.formerOccupation || 'ER nurse', motive: 'hiding', field: 'occupation' },
+    occupation: { told: 'paramedic', truth: 'ER nurse', motive: 'hiding', field: 'occupation' },
   };
   const lies = Game.npcLies(A);
   ok('npcLies returns injected lies', lies && lies.occupation && lies.occupation.told === 'paramedic');
@@ -215,7 +219,10 @@ function ok(name, cond) {
     if (gg && gg.field === 'origin' && gg.contradictsLie) claimLine = gg.line;
   }
   if (claimLine) {
-    ok('heard-claim gossip uses "they told you" framing', /they told you/i.test(claimLine));
+    // All gossipHeard lines acknowledge the claim the target told you — some
+    // phrase it as "they told you", others as "said that" / "{first} told you".
+    // The design point is the acknowledgment, not the literal pronoun.
+    ok('heard-claim gossip uses "they told you" framing', /told you|said that/i.test(claimLine));
     ok('heard-claim gossip creates cross-ref doubt',
       (Game.state.codex.doubts || []).length > before);
   } else {

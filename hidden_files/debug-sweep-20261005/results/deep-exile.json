@@ -1,0 +1,24 @@
+{
+  "scenario": "exile",
+  "returnValue": true,
+  "cases": [],
+  "plots": [],
+  "crimes": [
+    {
+      "type": "attack",
+      "caseId": false,
+      "victim": "gen_q2l25v2"
+    }
+  ],
+  "justiceStage": 0,
+  "exiled": true,
+  "exileMeta": null,
+  "scholarRegion": null,
+  "inBuilding": "n/a",
+  "tbfight": false,
+  "playerDead": false,
+  "playerId": "gen_aibknxg",
+  "scholarAlive": true,
+  "villagePop": 6,
+  "fallen": 0
+}

@@ -1,0 +1,90 @@
+{
+  "scenario": "ambush",
+  "ts": "2026-10-05T21:32:24.738Z",
+  "loadErrors": [
+    {
+      "file": "src/js/build.js",
+      "message": "window is not defined",
+      "stack": [
+        "ReferenceError: window is not defined",
+        "    at eval (eval at <anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5), <anonymous>:12:1)",
+        "    at Object.<anonymous> (/home/hatch/workspace/the-scattering/hidden_files/debug-sweep-20261005/harness.js:67:5)",
+        "    at Module._compile (node:internal/modules/cjs/loader:1929:14)",
+        "    at Object..js (node:internal/modules/cjs/loader:2060:10)"
+      ]
+    }
+  ],
+  "returnValue": true,
+  "logTail": [
+    "Haven. Twelve people. The fire is lit.",
+    "A woman, maybe 30s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"",
+    "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+    "Travel 1 tile to trail edge.\n— An old trail —\nSomething walked here regularly, before. The path remembers even if no one does.",
+    "\"Jesse,\" they say, touching their chest. \"I'm Jesse.\" You'll remember that.",
+    "📓 Journal: learned Jesse's name (Jesse).",
+    "Jesse: \"\"How are you holding up? Honestly. No performance.\"\"",
+    "You walk out with A person, maybe 50s. Something feels off, but you go anyway.",
+    "Halfway there, the shape of it changes. Jesse stops walking. A person, maybe 50s and A person, maybe 30s are suddenly on your other sides — not wandering. Placed.",
+    "\"Don't make this worse than it is.\" Jesse won't quite meet your eyes. Their hands are shaking.",
+    "🐞 SCENARIO: the walk turned. Three people, placed around you — not wandering. Placed.",
+    "RUN, TALK, or FIGHT — each exchange costs. Running is the intended move. They're scared, not killers."
+  ],
+  "failLines": [],
+  "snapshot": {
+    "villagerIds": [
+      "gen_eozxxfl",
+      "gen_jtvtivi",
+      "gen_bt0k0m4",
+      "gen_cp2fkza",
+      "gen_dmbcrm3",
+      "gen_8dy9985"
+    ],
+    "villagerCount": 6,
+    "playerId": "gen_eozxxfl",
+    "playerName": "gen_eozxxfl",
+    "playerHealth": 100,
+    "playerDead": false,
+    "day": 1,
+    "tbfightActive": false,
+    "tbfightFighters": null,
+    "debugChatRequest": "gen_jtvtivi",
+    "mootCases": "none-found(state.mootCases/state.cases/state.moot all empty)",
+    "justiceFlags": [],
+    "exileFlags": {
+      "exiled": false,
+      "exileHow": null,
+      "stateExile": "absent"
+    },
+    "scholarPos": {
+      "region": null,
+      "x": 0,
+      "y": 0,
+      "mx": 4,
+      "my": 8
+    },
+    "keepsake": [
+      {
+        "itemId": "wedding_ring",
+        "bond": 0
+      },
+      {
+        "itemId": "hard_candy",
+        "bond": 0
+      },
+      {
+        "itemId": "field_suture_kit",
+        "bond": 0
+      },
+      {
+        "itemId": "home_key",
+        "bond": 0
+      },
+      {
+        "itemId": "seed_packet",
+        "bond": 0
+      }
+    ],
+    "suspectStateFlags": []
+  },
+  "logLength": 12
+}

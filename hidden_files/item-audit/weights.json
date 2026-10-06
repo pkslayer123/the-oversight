@@ -1,0 +1,322 @@
+[
+  {
+    "id": "multitool",
+    "kg": 0.24
+  },
+  {
+    "id": "lighter",
+    "kg": 0.03
+  },
+  {
+    "id": "field_sutures",
+    "kg": 0.08
+  },
+  {
+    "id": "grandfathers_knife",
+    "kg": 0.15
+  },
+  {
+    "id": "rope_50ft",
+    "kg": 0.5
+  },
+  {
+    "id": "tin_cup",
+    "kg": 0.08
+  },
+  {
+    "id": "chefs_knife",
+    "kg": 0.25
+  },
+  {
+    "id": "whetstone",
+    "kg": 0.15
+  },
+  {
+    "id": "fishing_line",
+    "kg": 0.05
+  },
+  {
+    "id": "stethoscope",
+    "kg": 0.15
+  },
+  {
+    "id": "bandana",
+    "kg": 0.03
+  },
+  {
+    "id": "protein_bar",
+    "kg": 0.06
+  },
+  {
+    "id": "snare_wire",
+    "kg": 0.05
+  },
+  {
+    "id": "trail_mix",
+    "kg": 0.15
+  },
+  {
+    "id": "binoculars",
+    "kg": 0.35
+  },
+  {
+    "id": "chopsticks",
+    "kg": 0.02
+  },
+  {
+    "id": "soy_packets",
+    "kg": 0.03
+  },
+  {
+    "id": "bus_map",
+    "kg": 0.02
+  },
+  {
+    "id": "phone_charger",
+    "kg": 0.05
+  },
+  {
+    "id": "energy_drink",
+    "kg": 0.25
+  },
+  {
+    "id": "dice_set",
+    "kg": 0.04
+  },
+  {
+    "id": "calculator",
+    "kg": 0.1
+  },
+  {
+    "id": "pen_set",
+    "kg": 0.05
+  },
+  {
+    "id": "tasting_spoon",
+    "kg": 0.02
+  },
+  {
+    "id": "thermos",
+    "kg": 0.5
+  },
+  {
+    "id": "tinder_bundle",
+    "kg": 0.05
+  },
+  {
+    "id": "rope_coil",
+    "kg": 0.1
+  },
+  {
+    "id": "sewing_kit",
+    "kg": 0.08
+  },
+  {
+    "id": "torch",
+    "kg": 0.3
+  },
+  {
+    "id": "hand_drill",
+    "kg": 0.15
+  },
+  {
+    "id": "gill_net",
+    "kg": 0.25
+  },
+  {
+    "id": "field_dressing_kit",
+    "kg": 0.4
+  },
+  {
+    "id": "sharpened_stick",
+    "kg": 0.25
+  },
+  {
+    "id": "stone_knife",
+    "kg": 0.15
+  },
+  {
+    "id": "hunting_spear",
+    "kg": 0.9
+  },
+  {
+    "id": "kitchen_knife",
+    "kg": 0.15
+  },
+  {
+    "id": "bark_armor",
+    "kg": 1.2
+  },
+  {
+    "id": "leather_jacket",
+    "kg": 1.2
+  },
+  {
+    "id": "riot_gear",
+    "kg": 4.5
+  },
+  {
+    "id": "military_vest",
+    "kg": 1.5
+  },
+  {
+    "id": "sling",
+    "kg": 0.05
+  },
+  {
+    "id": "fire_hardened_spear",
+    "kg": 0.8
+  },
+  {
+    "id": "hatchet",
+    "kg": 0.7
+  },
+  {
+    "id": "machete",
+    "kg": 0.6
+  },
+  {
+    "id": "crude_bow",
+    "kg": 0.4
+  },
+  {
+    "id": "padded_cloth",
+    "kg": 0.8
+  },
+  {
+    "id": "hide_armor",
+    "kg": 2.5
+  },
+  {
+    "id": "swat_vest",
+    "kg": 3.5
+  },
+  {
+    "id": "crowbar",
+    "kg": 1.0
+  },
+  {
+    "id": "good_boots",
+    "kg": 1.2
+  },
+  {
+    "id": "camo_jacket",
+    "kg": 0.8
+  },
+  {
+    "id": "wool_socks",
+    "kg": 0.08
+  },
+  {
+    "id": "rain_poncho",
+    "kg": 0.2
+  },
+  {
+    "id": "work_gloves",
+    "kg": 0.12
+  },
+  {
+    "id": "canvas_pants",
+    "kg": 0.6
+  },
+  {
+    "id": "flannel_shirt",
+    "kg": 0.35
+  },
+  {
+    "id": "knit_cap",
+    "kg": 0.05
+  },
+  {
+    "id": "denim_jacket",
+    "kg": 0.7
+  },
+  {
+    "id": "running_shoes",
+    "kg": 0.5
+  },
+  {
+    "id": "rain_shell",
+    "kg": 0.15
+  },
+  {
+    "id": "daughters_drawing",
+    "kg": 0.01
+  },
+  {
+    "id": "mothers_ring",
+    "kg": 0.01
+  },
+  {
+    "id": "tote_bag",
+    "kg": 0.25
+  },
+  {
+    "id": "reading_glasses",
+    "kg": 0.03
+  },
+  {
+    "id": "bus_schedule",
+    "kg": 0.01
+  },
+  {
+    "id": "hard_candy",
+    "kg": 0.02
+  },
+  {
+    "id": "spare_socks",
+    "kg": 0.06
+  },
+  {
+    "id": "dead_phone",
+    "kg": 0.17
+  },
+  {
+    "id": "hoodie",
+    "kg": 0.45
+  },
+  {
+    "id": "energy_bar_wrapper",
+    "kg": 0.01
+  },
+  {
+    "id": "notebook",
+    "kg": 0.2
+  },
+  {
+    "id": "photo_album",
+    "kg": 0.8
+  },
+  {
+    "id": "wedding_ring",
+    "kg": 0.01
+  },
+  {
+    "id": "mixtape",
+    "kg": 0.06
+  },
+  {
+    "id": "dog_tags",
+    "kg": 0.03
+  },
+  {
+    "id": "locket",
+    "kg": 0.02
+  },
+  {
+    "id": "lucky_coin",
+    "kg": 0.01
+  },
+  {
+    "id": "paperback",
+    "kg": 0.2
+  },
+  {
+    "id": "hand_saw",
+    "kg": 0.25
+  },
+  {
+    "id": "camp_pot",
+    "kg": 0.35
+  }
+]

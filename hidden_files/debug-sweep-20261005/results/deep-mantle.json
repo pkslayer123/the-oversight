@@ -1,0 +1,18 @@
+{
+  "scenario": "mantle",
+  "returnValue": true,
+  "cases": [],
+  "plots": [],
+  "crimes": [],
+  "justiceStage": 0,
+  "exiled": false,
+  "exileMeta": null,
+  "scholarRegion": null,
+  "inBuilding": "n/a",
+  "tbfight": false,
+  "playerDead": false,
+  "playerId": "marcus_webb",
+  "scholarAlive": true,
+  "villagePop": 6,
+  "fallen": 0
+}
