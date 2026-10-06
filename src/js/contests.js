@@ -48,6 +48,8 @@
 //   - wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
+//   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it) (code: contestPlayable, contestChoose, Steve 2026-10-06)
+//   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 9 wave-2+ contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added (code: _contestWatchBeat, Steve 2026-10-06)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 // consumes:
 //   - scholar.day
@@ -958,8 +960,8 @@
         ? `The beacon is close enough to hear. One of the others is ahead of you — limping, but ahead.\n\nThis is the part the promos are made of.`
         : `Day three. The doors will open at dusk. Whoever looks the least broken wins the audience.\n\nYou are very broken. So is everyone.`,
         choices: [
-          { label: isDrop ? 'Sprint the last mile' : 'Walk out smiling', sub: isDrop ? 'everything left' : 'performance', do: isDrop ? { dmg: [10, 20], die: 0.08, kcal: -400, note: 'You sprint. Lungs, legs, heart — everything files a complaint. You pass them at the line.' } : { note: 'You walk out smiling like you ate yesterday. The audience buys it. The System knows. It respects the lie.' }, next: 'WIN' },
-          { label: isDrop ? 'Pace it home' : 'Help another up', sub: isDrop ? 'steady' : 'carry them', do: isDrop ? { note: 'You pace it. They beat you by a minute. You beat the mountain.' } : { dmg: [0, 6], note: 'You help another contestant stand. You both cross. The crowd weeps. Second place, first in the edit.' }, next: 'WIN' },
+          { label: isDrop ? 'Sprint the last mile' : 'Walk out smiling', sub: isDrop ? 'everything left' : 'performance', do: isDrop ? { prize: true, dmg: [10, 20], die: 0.08, kcal: -400, note: 'You sprint. Lungs, legs, heart — everything files a complaint. You pass them at the line.' } : { prize: true, note: 'You walk out smiling like you ate yesterday. The audience buys it. The System knows. It respects the lie.' }, next: 'WIN' },
+          { label: isDrop ? 'Pace it home' : 'Help another up', sub: isDrop ? 'steady' : 'carry them', do: isDrop ? { prize: true, note: 'You pace it. They beat you by a minute. You beat the mountain.' } : { prize: true, dmg: [0, 6], note: 'You help another contestant stand. You both cross. The crowd weeps. Second place, first in the edit.' }, next: 'WIN' },
           { label: isDrop ? 'Collapse short' : 'Crawl out', sub: isDrop ? 'so close' : 'no dignity left', do: isDrop ? { dmg: [6, 14], note: 'Your legs quit a hundred yards out. You crawl. The beacon blinks. You make it. Barely counts.' } : { note: 'You crawl out. There is no dignity left. There is, however, a finish line.' }, next: 'LOSE' },
         ] },
     ];
@@ -990,8 +992,8 @@
         ? `Final question. The big one. The scanner is hot.\n\nWhatever you say next will be clipped and replayed for years.`
         : `Closing statements. The audience votes with their attention — you can feel it like heat.\n\nThis is the moment.`,
         choices: [
-          { label: 'The whole truth', sub: 'burn it down', do: { trauma: 8, note: 'You tell all of it. Every ugly true thing. The scanner is silent. The audience is silent. Then — applause like weather.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'The perfect lie', sub: 'one for the ages', do: { note: 'You deliver a lie so beautiful the scanner hesitates. The crowd erupts. You win the moment, if not the truth.', notability: 'showmanship' }, next: 'WIN' },
+          { label: 'The whole truth', sub: 'burn it down', do: { prize: true, trauma: 8, note: 'You tell all of it. Every ugly true thing. The scanner is silent. The audience is silent. Then — applause like weather.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'The perfect lie', sub: 'one for the ages', do: { prize: true, note: 'You deliver a lie so beautiful the scanner hesitates. The crowd erupts. You win the moment, if not the truth.', notability: 'showmanship' }, next: 'WIN' },
           { label: 'Walk out', sub: 'refuse the game', do: { note: 'You stand and leave. The cameras follow you to the door. The System lets you go — the refusal IS the content.', notability: 'showmanship' }, next: 'LOSE' },
         ] },
     ];
@@ -1022,8 +1024,8 @@
         ? `Plating. The judges lean in — three aliens who have never tasted anything.\n\nWhat you serve now defines you across the galaxy.`
         : `Time. You present your find to the judges.\n\nThey turn it over with instruments. They confer in frequencies that hurt.`,
         choices: [
-          { label: isCook ? 'Serve with love' : 'Tell its story', sub: isCook ? 'heart' : 'narrative', do: { note: isCook ? 'You serve it like it matters. Because it did. The lead judge tastes — and makes a sound no one has heard before. Delight.' : 'You tell them where you found it, what it cost. The story lands. The thing is secondary.' }, next: 'WIN' },
-          { label: isCook ? 'Serve with flair' : 'Let it speak', sub: isCook ? 'showmanship' : 'minimal', do: { note: isCook ? 'Fire, spinning plates, a garnish thrown from across the room. The crowd roars. The judges blink.' : 'You say nothing. Let the thing be the thing. Brave. The judges respect restraint. Maybe.' }, next: 'WIN' },
+          { label: isCook ? 'Serve with love' : 'Tell its story', sub: isCook ? 'heart' : 'narrative', do: { prize: true, note: isCook ? 'You serve it like it matters. Because it did. The lead judge tastes — and makes a sound no one has heard before. Delight.' : 'You tell them where you found it, what it cost. The story lands. The thing is secondary.' }, next: 'WIN' },
+          { label: isCook ? 'Serve with flair' : 'Let it speak', sub: isCook ? 'showmanship' : 'minimal', do: { prize: true, note: isCook ? 'Fire, spinning plates, a garnish thrown from across the room. The crowd roars. The judges blink.' : 'You say nothing. Let the thing be the thing. Brave. The judges respect restraint. Maybe.' }, next: 'WIN' },
           { label: isCook ? 'Serve yourself' : 'Apologize', sub: isCook ? 'chaos' : 'humble', do: { dmg: [4, 10], note: isCook ? 'You sit down and eat it yourself, on camera. The judges are horrified. The audience is deceased. Iconic, not victorious.' : 'You apologize for it in advance. Never apologize. The judges smell fear.' }, next: 'LOSE' },
         ] },
     ];
@@ -1054,8 +1056,8 @@
         ? `Last layer. The box is humming now — it knows you're close.\n\nOne move left. The audience holds its breath.`
         : `Last item. Your stomach is a democracy in crisis.\n\nGet this right and you're a legend. Get it wrong and you're a clip.`,
         choices: [
-          { label: 'The elegant solution', sub: 'beauty', do: { note: 'You see it — the pattern resolves like a chord. You move. The box OPENS. The crowd detonates.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'The brute solution', sub: 'force', do: { dmg: [6, 14], note: 'You stop solving and start forcing. The box resists, then — grudgingly — yields. Ugly. Effective.' }, next: 'WIN' },
+          { label: 'The elegant solution', sub: 'beauty', do: { prize: true, note: 'You see it — the pattern resolves like a chord. You move. The box OPENS. The crowd detonates.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'The brute solution', sub: 'force', do: { prize: true, dmg: [6, 14], note: 'You stop solving and start forcing. The box resists, then — grudgingly — yields. Ugly. Effective.' }, next: 'WIN' },
           { label: 'Admit defeat', sub: 'graceful', do: { note: 'You bow to the box. "You win." The audience awws. The System files it under: humility, rare.' }, next: 'LOSE' },
         ] },
     ];
@@ -1086,8 +1088,8 @@
         ? `You know who. Saying it on camera is the whole game.\n\nGet it right: hero. Get it wrong: the clip lives forever.`
         : `It's down to you and them. The exits are watched. The clock is loud.\n\nName the informant. Now.`,
         choices: [
-          { label: 'Name them, with proof', sub: 'the full case', do: { note: 'You lay it out — timeline, motive, the detail they got wrong. Airtight. The System confirms. The crowd erupts.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Name them, on instinct', sub: 'the gut call', do: { die: 0.03, note: 'You point on instinct. The pause before the System confirms is the longest second of your life. Correct. Barely.' }, next: 'WIN' },
+          { label: 'Name them, with proof', sub: 'the full case', do: { prize: true, note: 'You lay it out — timeline, motive, the detail they got wrong. Airtight. The System confirms. The crowd erupts.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Name them, on instinct', sub: 'the gut call', do: { prize: true, die: 0.03, note: 'You point on instinct. The pause before the System confirms is the longest second of your life. Correct. Barely.' }, next: 'WIN' },
           { label: 'Accuse the wrong one', sub: 'the mistake', do: { trauma: 6, note: 'You get it wrong. The real thief smiles. The clip will follow you. The System is merciless with editors.' }, next: 'LOSE' },
         ] },
     ];
@@ -1118,8 +1120,8 @@
         ? `Out. The weigh-in is in front of the cameras.\n\nYour sack vs theirs. The locals are watching from the treeline.`
         : `Time. The hauls are weighed in front of everyone.\n\nYours looks... competitive. Theirs looks heavy.`,
         choices: [
-          { label: 'Present with pride', sub: 'the haul', do: { kcal: 200, note: 'You lay it out. The calorie count climbs. The crowd counts with it. You win on density.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Share the method', sub: 'teach', do: { note: 'You explain HOW you found it — the sign, the birds, the thinking. The System loves knowledge. So does the crowd.' }, next: 'WIN' },
+          { label: 'Present with pride', sub: 'the haul', do: { prize: true, kcal: 200, note: 'You lay it out. The calorie count climbs. The crowd counts with it. You win on density.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Share the method', sub: 'teach', do: { prize: true, note: 'You explain HOW you found it — the sign, the birds, the thinking. The System loves knowledge. So does the crowd.' }, next: 'WIN' },
           { label: 'Accept second', sub: 'graceful', do: { kcal: 100, note: 'Theirs weighs more. You nod. Good haul, good game. The System notes the grace.' }, next: 'LOSE' },
         ] },
     ];
@@ -1812,21 +1814,25 @@
         setup: p => `📺 Siege. ${p} has been taken.\n\nA chokepoint of rubble and light-fencing. Beyond it: the beacon. Behind ${p}: the village, watching from the walls.\n\nThe System: "THREE WAVES. HOLD THE LINE. THE VILLAGE IS WATCHING — WAVE, WON'T YOU?"`,
         turn: p => `📺 Siege — wave two. They feinted at the barricade and came for ${p}.\n\nThe village gasps as one. Someone on the wall is screaming ${p}'s name. The light-fence is flickering. The line bends.`,
         end: p => `📺 Siege — wave three. The big ones. The barricade is splinters.\n\n${p} is alone in the gap. The beacon hums. The village holds its breath. The line holds, or ${p} doesn't.`,
+        knows: p => `📚 Wave two feints at the barricade and comes for the contestant, not the wall. You've held this line before — watch their feet, not the gates.`,
       },
       maw: {
         setup: p => `📺 The Maw. ${p} has been taken.\n\nA tunnel mouth in the arena floor, breathing cold air. The grate slams shut behind ${p}.\n\nAhead: dark. Behind the dark: something that has learned patience. The System, cheerful: "WALK. DON'T STOP. IT COUNTS YOUR PAUSES."`,
         turn: p => `📺 The Maw — ${p} is deep in the tunnel now. The cameras switch to night-vision green.\n\nYou can hear it: not footsteps, the tunnel going quiet ahead. ${p}'s legs are shaking. Stopping would be so easy. It is counting.`,
         end: p => `📺 The Maw — light ahead. A circle of it, small and grey and real.\n\nIt's close behind ${p} now. The thing's interest is like heat on the cameras. Walk out, or turn and face it. The galaxy will watch either way.`,
+        knows: p => `📚 It counts the pauses. You've walked this tunnel — if they stop, scream at the screen. Noise is the only thing that reaches them down there.`,
       },
       oath: {
         setup: p => `📺 The Oath. ${p} has been taken.\n\nThree lecterns. Three oaths, written in light. "SWEAR. MEAN IT. WE WILL KNOW."\n\nThe first oath: NEVER LIE TO THE CAMERAS AGAIN. ${p} speaks. The light wraps the wrist like a bracelet. It itches with truth.`,
         turn: p => `📺 The Oath — the second oath. GIVE THE SYSTEM ONE MEMORY. It chooses which.\n\nIt is already reaching. You can feel it browsing, even through the screen. ${p}'s face goes still — it found one. A summer afternoon. The shape of it, gone.`,
         end: p => `📺 The Oath — the third oath. WHEN THE SYSTEM CALLS, COME. No conditions.\n\nThis is the one that matters. The audience knows it. ${p} knows it. The bracelet clicks shut, and the galaxy witnesses the binding.`,
+        knows: p => `📚 The third oath is the one that matters. And if they're planning to break it later — you've seen someone try — the System heard the plan inside the oath.`,
       },
       beastmaster: {
         setup: p => `📺 Beastmaster. ${p} has been taken.\n\nA wave-2 beast in a light-collar, pacing. The course: rings of fire, a balance beam over spikes, a tunnel.\n\nThe System: "RIDE. GUIDE. DO NOT HURT IT. IT REMEMBERS." ${p} mounts like it's a horse that could kill you. It could.`,
         turn: p => `📺 Beastmaster — the rings of fire. The beast hates them; you can see it coiling under ${p}.\n\n${p} is guiding with knees and breath. The beam over the spikes is next, and the beast is watching ${p} for cues. One yank on the collar and its eyes change.`,
         end: p => `📺 Beastmaster — the last obstacle. The tunnel. Dark, narrow, and it smells like the Maw.\n\nThe beast balks. This is the moment the whole contest turns on. Together through the dark, or forced in alone — and in the dark, where the cameras can't quite see, you hear it decide.`,
+        knows: p => `📚 Knees and breath. Kindness first, then authority. Never yank the collar — you've seen what the beast does when it remembers.`,
       },
       riddle: {
         setup: p => `📺 Riddle Me This. ${p} has been taken.\n\nA lattice of mouths hangs in the air, opening and closing out of sync. The Riddle Engine doesn't want blood. It wants memories.\n\nRiddle one. The mouths ripple. ${p} answers steady — or doesn't. Wrong answers cost pieces of the past.`,
@@ -1838,16 +1844,19 @@
         setup: p => `📺 The Confession. ${p} has been taken.\n\nA villager stands under the lights — the confessor. The confession, read flat: "I poisoned the water store."\n\nThe System, almost gentle: "PROVE IT TRUE OR FALSE BEFORE DUSK, INVESTIGATOR. WE PUNISH SOMEONE EITHER WAY." ${p} studies the confessor. The hands are steady. Too steady.`,
         turn: p => `📺 The Confession — ${p} is pressing. The story wobbles: the poison, the hour, the hands.\n\nReal guilt is consistent. This isn't. The confessor won't stop looking at the back row. The cameras noticed. ${p} noticed the cameras noticing.`,
         end: p => `📺 The Confession — dusk is coming. The System waits with the patience of weather.\n\n${p} has one verdict. The consequences are everyone's: name the real culprit and fracture the village, or confirm the lie and let the System take someone innocent.`,
+        knows: p => `📚 You've seen a false confession before. The confessor keeps glancing at the same person in the crowd — guilt looks at who it's protecting.`,
       },
       honey: {
         setup: p => `📺 Sweet Tooth. ${p} has been taken.\n\nThe hive hangs in the arena like a second moon, humming. The swarm moves as one body and it has opinions.\n\n${p} works the smoker. The air goes grey and sweet. Harvest the comb. Try to keep your face.`,
         turn: p => `📺 Sweet Tooth — ${p} is at the comb. It glows. The queen cell pulses at the heart of it: the prize and the death, side by side.\n\nThe swarm is watching ${p} decide. The whole arena hums. The cameras can barely hold focus through the wings.`,
         end: p => `📺 Sweet Tooth — the getaway. The comb is in ${p}'s hands. The swarm is in the air.\n\nRun with the comb, walk out slow and smoking, or leave an offering. The swarm follows like weather. The gate is a long way off.`,
+        knows: p => `📚 Smoke first, always. And whatever they do — the queen cell is the prize and the death. Don't touch it.`,
       },
       secrets: {
         setup: p => `📺 The Secret Deck. ${p} has been taken.\n\nThe dealer fans the deck. Every card has a face on it — someone watching. "ANTE UP. THE CURRENCY IS TRUTH."\n\n${p} draws. First card: someone in the village has been lying about their age. Someone in the front row just went pale.`,
         turn: p => `📺 The Secret Deck — the turn. The pot is secrets and it's getting deep.\n\n${p} calls. Second card: two villagers have been meeting at night. The cameras find the clearing. The village does the math before the cameras do.`,
         end: p => `📺 The Secret Deck — the river. Last card. The deck is warm in the dealer's hands, like it's alive.\n\nWhatever ${p} does next, the village will remember what was traded. Win, and three secrets air to the galaxy. Fold, and nobody ever knows what ${p} saved them from.`,
+        knows: p => `📚 The deck isn't random — it's curated. It plays the secrets that hurt most when you're winning. You've seen someone fold here. Fold while you still like these people.`,
       },
     };
     const b = T[contest.id];
