@@ -2184,49 +2184,102 @@
     }
     // ============ WAVE 2 GROUP C: INSPIRATION / NOSTALGIA / MIDDLE MANAGER ============
     function eurekaTick(opts) {
-      // BRIGHTENING TICK: glassy ping, sharper as the boom nears. urgency =
-      // turnsLeft (2 → 1): pitch climbs, the pretty becomes painful.
+      // BRIGHTENING TICK: the idea brightens as the boom nears — but the
+      // pretty has WEIGHT now (a low thump under the ping, felt in the
+      // teeth), and on the final tick the ping FRACTURES: a second tone a
+      // minor second above, beating against the first. The idea no longer
+      // agrees with itself. Then a ghost after-echo, fainter, detuned —
+      // it's still in your head after.
       if (!ensure()) return;
-      const t = ctx.currentTime, dur = 0.5;
+      const t = ctx.currentTime, dur = 0.6;
       const urg = (opts && opts.urgency) || 2;
-      const base = urg > 1 ? 1568 : 2093; // G6 → C7: brighter = closer
-      const o = ctx.createOscillator(), g = ctx.createGain();
+      const fin = urg <= 1;
+      const base = fin ? 2093 : 1568; // G6 → C7: brighter = closer
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(fin ? 0.22 : 0.14, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      g.connect(sfxBus);
+      // the ping
+      const o = ctx.createOscillator();
       o.type = 'sine'; o.frequency.setValueAtTime(base, t);
       o.frequency.exponentialRampToValueAtTime(base * 1.5, t + dur * 0.6);
-      // glassy harmonic, slightly detuned (beautiful but wrong)
+      o.connect(g); o.start(t); o.stop(t + dur);
+      // the fracture: sweet shimmer while distant, a minor-second clash when close
       const o2 = ctx.createOscillator();
-      o2.type = 'sine'; o2.frequency.setValueAtTime(base * 2.01, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(urg > 1 ? 0.14 : 0.22, t + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g); o2.connect(g); g.connect(sfxBus);
-      o.start(t); o2.start(t); o.stop(t + dur); o2.stop(t + dur);
+      o2.type = 'sine';
+      const fr2 = fin ? 2 * 1.059 : 2.01;
+      o2.frequency.setValueAtTime(base * fr2, t);
+      o2.frequency.exponentialRampToValueAtTime(base * fr2 * 1.5, t + dur * 0.6);
+      o2.connect(g); o2.start(t); o2.stop(t + dur);
+      // the weight: a soft sub thump under the pretty — the idea is heavy
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sine'; w.frequency.setValueAtTime(110, t);
+      w.frequency.exponentialRampToValueAtTime(55, t + dur);
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(fin ? 0.16 : 0.08, t + 0.04);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.9);
+      w.connect(wg); wg.connect(sfxBus); w.start(t); w.stop(t + dur);
+      // ghost after-echo: the fracture, fainter, arriving late
+      const e = ctx.createOscillator(), eg = ctx.createGain();
+      e.type = 'sine'; e.frequency.setValueAtTime(base * fr2 * 1.02, t + 0.35);
+      eg.gain.setValueAtTime(0.0001, t + 0.35);
+      eg.gain.exponentialRampToValueAtTime(fin ? 0.07 : 0.03, t + 0.42);
+      eg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      e.connect(eg); eg.connect(sfxBus); e.start(t + 0.35); e.stop(t + 0.95);
     }
     function eurekaCharge() {
-      // THE GATHERING: rising shimmer — beautiful, luring, wrong. It wants
-      // you to watch. Don't.
+      // THE GATHERING: a rising shimmer that lures you to watch — but now
+      // there are TWO of them, climbing at DIFFERENT rates, crossing and
+      // beating against each other, amplitude-modulated into something
+      // metallic. Plus static in the lure: a faint crackle that thickens as
+      // it gathers. Don't watch. Don't.
       if (!ensure()) return;
       const t = ctx.currentTime, dur = 1.4;
-      const o = ctx.createOscillator(), g = ctx.createGain();
+      // AM edge: 13Hz amplitude modulation — pretty becomes metallic, alien
+      const g = ctx.createGain();
+      const am = ctx.createOscillator(), amg = ctx.createGain();
+      am.type = 'sine'; am.frequency.value = 13; amg.gain.value = 0.35;
+      am.connect(amg); amg.connect(g.gain);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.14, t + dur * 0.7);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      g.connect(sfxBus);
+      // voice one: the lure
+      const o = ctx.createOscillator();
       o.type = 'triangle';
       o.frequency.setValueAtTime(440, t);
       o.frequency.exponentialRampToValueAtTime(1760, t + dur);
-      // shimmer: amplitude tremolo, quickening
-      const lfo = ctx.createOscillator(), lg = ctx.createGain();
-      lfo.type = 'sine'; lfo.frequency.setValueAtTime(4, t);
-      lfo.frequency.exponentialRampToValueAtTime(14, t + dur);
-      lg.gain.value = 0.08; lfo.connect(lg); lg.connect(g.gain);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.16, t + dur * 0.7);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g); g.connect(sfxBus);
-      o.start(t); o.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
+      o.connect(g); o.start(t); o.stop(t + dur);
+      // voice two: a fifth above at first — pretty — but climbing SLOWER,
+      // so the lure overtakes it and they cross near the end. It disagrees.
+      // And it's tuned slightly FLAT: a sour fifth, beating against the lure
+      // the whole way up.
+      const o2 = ctx.createOscillator();
+      o2.type = 'triangle';
+      o2.frequency.setValueAtTime(655, t);
+      o2.frequency.exponentialRampToValueAtTime(1310, t + dur);
+      o2.connect(g); o2.start(t); o2.stop(t + dur);
+      am.start(t); am.stop(t + dur);
+      // static in the lure: crackle thickening as it gathers
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 5000;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.06, t + dur * 0.85);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + dur);
+      }
     }
     function eurekaDetonate() {
-      // DETONATION: white flare. The idea goes off — light with teeth.
-      // Not an explosion: a chord resolving too loud, then the ring.
+      // DETONATION: white flare — a major chord resolving TOO loud, light
+      // with teeth. But under the beautiful chord something DISAGREES: a
+      // ghost cluster a tritone away, slightly flat, beating against it. A
+      // sub-bloom gives the idea a body. And the lingering ring is TWO
+      // tones a minor second apart, refusing to settle. Beautiful, wrong.
       if (!ensure()) return;
-      const t = ctx.currentTime, dur = 1.0;
+      const t = ctx.currentTime, dur = 1.2;
       // the chord: major, too bright
       const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
       for (const fr of freqs) {
@@ -2239,13 +2292,35 @@
         o.connect(lp); lp.connect(g); g.connect(sfxBus);
         o.start(t); o.stop(t + dur * 0.65);
       }
-      // the ring: high sine that lingers after
-      const r = ctx.createOscillator(), rg = ctx.createGain();
-      r.type = 'sine'; r.frequency.value = 3136; // G7
-      rg.gain.setValueAtTime(0.0001, t + 0.1);
-      rg.gain.exponentialRampToValueAtTime(0.08, t + 0.2);
-      rg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      r.connect(rg); rg.connect(sfxBus); r.start(t + 0.1); r.stop(t + dur);
+      // the ghost: F#5 + a flat C6 — a tritone wrongness, quiet but sour,
+      // beating against the beautiful chord above
+      for (const fr of [740, 1040]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = fr;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1500;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.045, t + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.5);
+        o.connect(lp); lp.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur * 0.55);
+      }
+      // sub-bloom: the idea has a body — felt more than heard
+      const b = ctx.createOscillator(), bg = ctx.createGain();
+      b.type = 'sine'; b.frequency.setValueAtTime(65, t);
+      b.frequency.exponentialRampToValueAtTime(38, t + 0.5);
+      bg.gain.setValueAtTime(0.0001, t);
+      bg.gain.exponentialRampToValueAtTime(0.2, t + 0.06);
+      bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      b.connect(bg); bg.connect(sfxBus); b.start(t); b.stop(t + 0.75);
+      // the ring: two tones a minor second apart, lingering, unsettled
+      for (const f of [3136, 3322.4]) { // G7, G#7: the clash that won't leave
+        const r = ctx.createOscillator(), rg = ctx.createGain();
+        r.type = 'sine'; r.frequency.value = f;
+        rg.gain.setValueAtTime(0.0001, t + 0.1);
+        rg.gain.exponentialRampToValueAtTime(0.05, t + 0.25);
+        rg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        r.connect(rg); rg.connect(sfxBus); r.start(t + 0.1); r.stop(t + dur);
+      }
     }
     function eurekaSpent() {
       // GUTTERING TO EMBER: the fizzle. High sizzle collapsing to a dull pulse.
@@ -2321,6 +2396,22 @@
       g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(lp); lp.connect(g2); g2.connect(sfxBus);
       o.start(t); o.stop(t + dur);
+      // the hum is SICK: wow/flutter wobble on the mains — the projector
+      // can't hold its speed. Something's wrong with the bulb.
+      const wob = ctx.createOscillator(), wobg = ctx.createGain();
+      wob.type = 'sine'; wob.frequency.value = 0.6; wobg.gain.value = 9;
+      wob.connect(wobg); wobg.connect(o.frequency);
+      wob.start(t); wob.stop(t + dur);
+      // heterodyne ghost: two high whistles 15Hz apart, beating — the
+      // interference of something that ISN'T the projector
+      for (const f of [4200, 4215]) {
+        const h = ctx.createOscillator(), hg = ctx.createGain();
+        h.type = 'sine'; h.frequency.value = f;
+        hg.gain.setValueAtTime(0.0001, t);
+        hg.gain.exponentialRampToValueAtTime(0.014, t + dur * 0.5);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        h.connect(hg); hg.connect(sfxBus); h.start(t); h.stop(t + dur);
+      }
       if (opts && opts.spell) {
         // the pull: low warm tone, slowly swelling — it wants you closer
         const p = ctx.createOscillator(), pg = ctx.createGain();
@@ -2440,29 +2531,69 @@
       w.start(t); w.stop(t + 1.35); lfo.start(t); lfo.stop(t + 1.35);
     }
     function managerAnnounce() {
-      // MEETING CALLED TO ORDER: sharp horn blast + paper slap. Attendance mandatory.
+      // MEETING CALLED TO ORDER: intercom crackle first — then the horn,
+      // DOUBLED a minor second apart so it beats against itself, under a
+      // fluorescent buzz that's slightly out of tune with the room. Three
+      // paper slaps: the agenda, the minutes, the action items. Attendance
+      // mandatory. There is no excuse form.
       if (!ensure()) return;
-      const t = ctx.currentTime, dur = 0.7;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(196, t); // G3: the horn
-      o.frequency.setValueAtTime(196, t + 0.35);
-      o.frequency.setValueAtTime(147, t + 0.36); // drop: E3, final
-      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.24, t + 0.06);
-      g.gain.setValueAtTime(0.24, t + 0.5);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(lp); lp.connect(g); g.connect(sfxBus);
-      o.start(t); o.stop(t + dur);
-      // paper slap
-      const nb = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
-      const ch = nb.getChannelData(0);
-      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ch.length * 0.15));
-      const src = ctx.createBufferSource(); src.buffer = nb;
-      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2000;
-      const g2 = ctx.createGain(); g2.gain.value = 0.18;
-      src.connect(hp); hp.connect(g2); g2.connect(sfxBus); src.start(t + 0.4);
+      const t = ctx.currentTime, dur = 0.85;
+      // intercom crackle: the PA clearing its throat
+      const cnb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.18), ctx.sampleRate);
+      const cch = cnb.getChannelData(0);
+      for (let i = 0; i < cch.length; i++) cch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (cch.length * 0.25));
+      const csrc = ctx.createBufferSource(); csrc.buffer = cnb;
+      const cbp = ctx.createBiquadFilter(); cbp.type = 'bandpass'; cbp.frequency.value = 1800; cbp.Q.value = 1.2;
+      const cg = ctx.createGain(); cg.gain.value = 0.16;
+      csrc.connect(cbp); cbp.connect(cg); cg.connect(sfxBus); csrc.start(t);
+      // the horn, doubled at a minor 2nd: G3 + G#3 — it disagrees with itself
+      for (const [f0, drop] of [[196, 147], [207.65, 155.56]]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.setValueAtTime(f0, t + 0.35);
+        o.frequency.setValueAtTime(drop, t + 0.36); // the final word
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+        g.gain.setValueAtTime(0.0001, t + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.15, t + 0.16);
+        g.gain.setValueAtTime(0.15, t + 0.55);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(lp); lp.connect(g); g.connect(sfxBus);
+        o.start(t + 0.1); o.stop(t + dur);
+      }
+      // fluorescent buzz: 120Hz + 118Hz, thin, sour — the room is wrong
+      for (const f of [120, 118]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.028, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(lp); lp.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur);
+      }
+      // the paperwork: three slaps, escalating
+      for (let i = 0; i < 3; i++) {
+        const dt = t + 0.45 + i * 0.07;
+        const nb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.12), ctx.sampleRate);
+        const ch = nb.getChannelData(0);
+        for (let j = 0; j < ch.length; j++) ch[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ch.length * 0.15));
+        const src = ctx.createBufferSource(); src.buffer = nb;
+        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2000;
+        const g2 = ctx.createGain(); g2.gain.value = 0.1 + i * 0.04;
+        src.connect(hp); hp.connect(g2); g2.connect(sfxBus); src.start(dt);
+      }
+      // intercom squelch tail: the PA hangs up on you. Chirps down and dies.
+      const q = ctx.createOscillator(), qg = ctx.createGain();
+      q.type = 'sawtooth';
+      q.frequency.setValueAtTime(1200, t + dur - 0.18);
+      q.frequency.exponentialRampToValueAtTime(300, t + dur);
+      const qbp = ctx.createBiquadFilter(); qbp.type = 'bandpass'; qbp.frequency.value = 900; qbp.Q.value = 2;
+      qg.gain.setValueAtTime(0.0001, t + dur - 0.18);
+      qg.gain.exponentialRampToValueAtTime(0.07, t + dur - 0.12);
+      qg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      q.connect(qbp); qbp.connect(qg); qg.connect(sfxBus);
+      q.start(t + dur - 0.18); q.stop(t + dur + 0.02);
     }
     function managerCharge() {
       // THE CHARGE: thundering hooves, low and inevitable — plus the tie

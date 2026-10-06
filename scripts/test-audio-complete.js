@@ -71,7 +71,11 @@ const events = new Set();
 for (const f of fs.readdirSync(path.join(ROOT, 'src/js'))) {
   if (!f.endsWith('.js')) continue;
   const src = fs.readFileSync(path.join(ROOT, 'src/js', f), 'utf8');
-  for (const m of src.matchAll(/audioEvent\('([^']+)'\)/g)) events.add(m[1]);
+  // Both quote styles (data-driven dispatch uses double quotes); skip
+  // doc-comment placeholders like '<name>' which are not real events.
+  for (const m of src.matchAll(/audioEvent\(["']([^"']+)["']\)/g)) {
+    if (/^[A-Za-z0-9_]+$/.test(m[1])) events.add(m[1]);
+  }
 }
 const eventList = [...events].sort();
 ok('events collected from codebase', eventList.length > 0);
