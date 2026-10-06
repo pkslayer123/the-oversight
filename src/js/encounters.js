@@ -7,6 +7,10 @@
 //   - encAnimalBehavior()
 //   - encAnimalCue()
 //   - encFleeText()
+//   - encWaryText()
+//   - encBoltDir()
+//   - encPreyPhase()
+//   - encPreyPhaseBadge()
 //   - encWeaponMethod()
 //   - encMethodWords()
 //   - encPossumFlop()
@@ -280,6 +284,40 @@
     if (d && d.huntText && this.encAnimalKnown(a.id)) return d.huntText;
     return generic || 'It bolts!';
   };
+  // Windup tell: the moment an animal decides about you. Highbeam-Deer rule —
+  // distinct telegraph text per species, not a generic "goes still". This is
+  // honest perception (you can SEE it tense), not knowledge: the tell is
+  // ungated, but the name still is (encAnimalLabel). The MEANING of the tell
+  // (what it does next) is what's earned, via encAnimalCue.
+  G.encWaryText = function (a) {
+    var d = this.encAnimalDef(a.id);
+    var label = this.encAnimalLabel(a);
+    var tell = (d && d.tell) || 'goes still — ears up, deciding about you.';
+    return this.encCap(label) + ' ' + tell;
+  };
+  // Bolt direction: away from the player. If you're standing ON its tile
+  // (dist 0), "away" is undefined — it shoves past you in a random
+  // direction instead of bolting in place and burning stamina for nothing.
+  G.encBoltDir = function (a, px, py) {
+    var dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
+    if (!dx && !dy) {
+      var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+      var d = dirs[Math.floor(Math.random() * dirs.length)];
+      dx = d[0]; dy = d[1];
+    }
+    return [dx, dy];
+  };
+  // Prey phases, exposed for UI siblings (attack-visuals worker): the hunt
+  // is a windup → action → recovery machine, same as any monster.
+  G.encPreyPhase = function (a) { return (a && a.pstate) || 'graze'; };
+  G.encPreyPhaseBadge = function (a) {
+    var p = this.encPreyPhase(a);
+    var BADGE = {
+      graze: 'grazing', wary: '⚠ wary', bolt: '💨 bolting', winded: '😮‍💨 winded',
+      playing_dead: '💀 playing dead', taunt: '👀 toying with you'
+    };
+    return BADGE[p] || p;
+  };
   // Weapon -> hunt method. Spears are hand tools; slings and bows are 'bow'.
   G.encWeaponMethod = function () {
     var w = null;
@@ -319,7 +357,10 @@
   // After a generic strike-bolt, behavior takes over: the squirrel reaches a
   // trunk, the fish reaches water, the flock drops a straggler, the fox
   // holds at range and toys with you. Mirrors the animalTurn outcomes —
-  // one fiction for both paths. Returns true if the encounter ended.
+  // one fiction for both paths. Return values:
+  //   true   — the encounter ended (treed/dived; audio fired inside)
+  //   'taunt'— the fox holds at range, trotting, not bolting (quiet)
+  //   false  — encounter continues; the caller fires animalBolt once
   G.encBehaviorAfterBolt = function (a) {
     var s = this.state.scholar;
     if (!s.animal) return true;
@@ -352,15 +393,14 @@
       // the flock is gone; one bird lags behind
       s.animal = { id: a.id, mx: a.mx, my: a.my, aware: 0.2, stamina: 1, pstate: 'wary', edgeTurns: 0 };
       this.say(cap + ' erupts — wings like thunder, all going different ways. One hen didn\'t get the memo: half-folded wings, your chance.');
-      try { this.audioEvent('animalBolt'); } catch (e) {}
-      return false;
+      return false; // caller fires animalBolt
     }
     if (b === 'cunning') {
       var d2 = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
       if (d2 >= 5) {
         a.pstate = 'taunt'; a.aware = 0.6;
         this.say(cap + ' trots, just out of range, looking back. It\'s toying with you.');
-        return false;
+        return 'taunt'; // trots, not bolts — no bolt audio
       }
     }
     return false;
@@ -377,7 +417,27 @@
     var bolted = false;
     try { bolted = this.preyReaction ? !!this.preyReaction(a) : false; } catch (e) {}
     if (bolted && this.state.scholar.animal) {
-      try { this.encBehaviorAfterBolt(a); } catch (e) {}
+      var s = this.state.scholar;
+      // SAME-TILE GUARD (food.js preyReaction bolts away-from-player, but
+      // when you strike from its own tile "away" is undefined — it bolts in
+      // place. food.js is another worker's file; fix the symptom here.)
+      var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
+      if (a.mx === px && a.my === py) {
+        var bd = this.encBoltDir(a, px, py);
+        var detail = null;
+        try { detail = this.genDetail(this.map.px, this.map.py); } catch (e) {}
+        var BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
+        var nx = Math.max(0, Math.min(8, a.mx + bd[0])), ny = Math.max(0, Math.min(8, a.my + bd[1]));
+        var cell = detail && detail[ny] && detail[ny][nx];
+        if (!BLOCKS[cell]) { a.mx = nx; a.my = ny; }
+      }
+      var after = false;
+      try { after = this.encBehaviorAfterBolt(a); } catch (e) {}
+      // one bolt, one sound: treed/dive fired their own; the taunting fox
+      // trots (quiet); everything else that kept bolting gets the scamper.
+      if (after !== true && after !== 'taunt' && this.state.scholar.animal) {
+        try { this.audioEvent('animalBolt'); } catch (e) {}
+      }
     }
     return bolted;
   };
@@ -503,6 +563,7 @@
         var snapDmg = 6 + Math.floor(Math.random() * 8);
         try { s.health = Math.max(0, (s.health || 100) - snapDmg); } catch (e) {}
         this.say('It snaps! ' + snapDmg + ' damage — that beak means it.');
+        try { this.audioEvent('animalBite'); } catch (e) {}
       }
       return; // never bolts
     }
@@ -531,6 +592,7 @@
       if (fi >= 0) {
         var stolen = inv.splice(fi, 1)[0];
         this.say(this.encCap(label) + ' snatches your ' + (stolen.name || 'food') + ' and bolts — clever hands!');
+        try { this.audioEvent('animalBolt'); } catch (e) {}
         var sdx = Math.sign(a.mx - px), sdy = Math.sign(a.my - py);
         tryMove(a.mx + sdx * 2, a.my + sdy * 2) || tryMove(a.mx + sdx, a.my + sdy);
         a.pstate = 'bolt'; a.aware = 1;
@@ -551,6 +613,7 @@
       if (best && bd <= 2) {
         a.mx = best[0]; a.my = best[1]; s.animal = null;
         this.say(this.encCap(label) + ' dives — gone under. The water keeps it.');
+        try { this.audioEvent('animalSplash'); } catch (e) {}
         return;
       }
     }
@@ -560,6 +623,7 @@
       if (tc === 'tree' || tc === 'bigtree') {
         s.animal = null;
         this.say(this.encCap(label) + ' spirals up the trunk — chattering at you from the branches. Catch it on the ground next time.');
+        try { this.audioEvent('animalChatter'); } catch (e) {}
         return;
       }
     }
@@ -568,6 +632,7 @@
       var fdx = Math.sign(a.mx - px), fdy = Math.sign(a.my - py);
       if (tryMove(a.mx - fdy, a.my + fdx) || tryMove(a.mx + fdy, a.my - fdx)) {
         this.say(this.encCap(label) + ' jukes sideways — leading you in circles.');
+        try { this.audioEvent('animalBolt'); } catch (e) {}
         a.stamina -= 1;
         if (a.stamina <= 0) { a.pstate = 'winded'; this.say(this.encCap(label) + ' is winded — sides heaving. Now\'s your chance.'); }
         return;
@@ -577,11 +642,13 @@
       // DEER: the white tail goes up early. Explodes into motion.
       a.pstate = 'bolt'; a.aware = 1;
       this.say(this.encCap(label) + ' — white tail up — explodes into motion!');
+      try { this.audioEvent('animalBolt'); } catch (e) {}
     }
     if (beh === 'flock' && a.pstate === 'bolt' && !a.flockSaid) {
       // TURKEY: one spots, they all know. Loud panic, every direction.
       a.flockSaid = true;
       this.say('The flock explodes — wings hammering, panic in every direction.');
+      try { this.audioEvent('animalBolt'); } catch (e) {}
     }
     if (a.pstate === 'taunt') {
       // FOX: holding at range, toying with you. Close in and it runs for real.
@@ -605,22 +672,23 @@
     a.aware = Math.min(1, a.aware + rate);
     if (!wasWary && a.aware >= 0.5 && a.pstate === 'graze') {
       a.pstate = 'wary';
-      this.say(this.encCap(label) + ' goes still — ears up, deciding about you.');
+      // Windup tell: distinct per species (encWaryText), not the generic line.
+      this.say(this.encWaryText(a));
     }
     // Bolt threshold is behavior-aware: the skittish rabbit goes at a
     // shadow (0.75); the wary deer at the white tail (0.7, above); most at 1.
     var boltAt = beh === 'skittish' ? 0.75 : 1;
     if (a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead') {
       a.pstate = 'bolt';
-      // Flee narration is knowledge-gated: the vivid huntText is earned.
-      var fleeLine = null;
-      try { if (this.encAnimalKnown(a.id)) fleeLine = (this.encAnimalDef(a.id) || {}).huntText; } catch (e) {}
-      this.say(fleeLine || (this.encCap(label) + " decides you're trouble and bolts!"));
+      // Flee narration is knowledge-gated (encFleeText): the vivid huntText
+      // is earned; the ignorant get the generic version.
+      this.say(this.encFleeText(a, this.encCap(label) + " decides you're trouble and bolts!"));
       try { this.audioEvent('animalBolt'); } catch (e) {}
     }
     if (a.pstate === 'winded') return; // spent. your move.
     if (a.pstate === 'bolt') {
-      var dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
+      var bd = this.encBoltDir(a, px, py);
+      var dx = bd[0], dy = bd[1];
       if (beh === 'skittish' && Math.random() < 0.6) {
         // RABBIT: zigzag, not straight away. Don't chase the line — cut it off.
         var zdirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
@@ -819,6 +887,7 @@
         var biteDmg = bBeh === 'aggressive' ? 8 + Math.floor(Math.random() * 8) : 3 + Math.floor(Math.random() * 6);
         try { s.health = Math.max(0, (s.health || 100) - biteDmg); } catch (e) {}
         this.feedback('It bites! Teeth in your hand — ' + biteDmg + ' damage. Wild things have teeth.');
+        try { this.audioEvent('animalBite'); } catch (e) {}
         if (Math.random() < 0.3) {
           this.feedback('You fumble — it wriggles free!');
           this.animalTurn(); this.animalTurn();
@@ -866,11 +935,13 @@
       // (Verb agreement: "your hands hiss" vs "your bow hisses" can't both
       // win, so the weapon isn't the subject. You miss. Clean.)
       this.feedback('So close — ' + label + ' jinks at the last breath. You miss with your ' + wname + '. It bolts, heart hammering.');
+      try { this.audioEvent('animalBolt'); } catch (e) {}
       a.aware = 1; a.pstate = 'bolt';
       this.animalTurn();
       return true;
     }
     this.feedback('Missed! ' + this.encCap(label) + ' bolts. (-100 kcal)');
+    try { this.audioEvent('animalBolt'); } catch (e) {}
     a.aware = 1; a.pstate = 'bolt';
     this.animalTurn();
     return true;
@@ -880,9 +951,9 @@
   // ================= REGISTRATION CHECKLIST (see header) =================
   G.encChecklist = function () {
     return [
-      '1. Data: "unknown" strange descriptor on the animal/monster def.',
+      '1. Data: "unknown" strange descriptor on the animal/monster def. Animals: also "tell" (the distinct windup telegraph).',
       '2. Prey: Game.ENC_PREY entry {notice, awareRate, stamina} — loop is free.',
-      '2b. Behavior: "behavior" + "method" in animals.json drive the flee and the strike (encAnimalBehavior / encWeaponMethod). Wrong tool = worse odds, honestly said.',
+      '2b. Behavior: "behavior" + "method" + "tell" in animals.json drive the flee, the strike, and the windup telegraph (encAnimalBehavior / encWeaponMethod / encWaryText). Wrong tool = worse odds, honestly said.',
       '3. Threats: "encounter" config in monsters.json + game.js enc* interface.',
       '4. Telegraph: Game.encTelegraphKnown(m); cue via Game.encPickCue.',
       '5. Phases: Game.encSetPhase / Game.encPhase(ent, phase, beats).',
