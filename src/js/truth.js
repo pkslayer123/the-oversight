@@ -370,8 +370,15 @@
       const arr = v.truthClaims[vid][field] = v.truthClaims[vid][field] || [];
       const last = arr[arr.length - 1];
       if (last && last.claim === claim) return; // same as before, no news
-      // CONTRADICTION: they told you something different before
+      // CONTRADICTION: they told you something different before.
+      // THE AHA MOMENT: surface it dramatically in the moment.
       if (last && last.claim !== claim) {
+        const first = this.firstRef(vid);
+        const beats = [
+          `❓ Wait — ${first} told you "${last.claim}" before. Now it's "${claim}".`,
+          `❓ That's not what ${first} said last time. "${last.claim}" then, "${claim}" now.`,
+        ];
+        try { this.say(beats[Math.floor(Math.random() * beats.length)]); } catch (e) {}
         this.addDoubt(vid, 'contradiction',
           this.doubtText(vid, 'contradiction', { field, old: last.claim, now: claim, oldDay: last.day }),
           [`said "${last.claim}" (day ${last.day})`, `now says "${claim}" (day ${day()})`]);
@@ -559,9 +566,19 @@
       const lastClaim = claims[claims.length - 1].claim;
       if (String(lastClaim).toLowerCase() === String(heardValue).toLowerCase()) return; // consistent
       const source = sourceVid ? this.displayName(sourceVid) : 'someone';
+      const name = this.displayName(vid);
+      const first = this.firstRef(vid);
+      // THE AHA MOMENT (Steve 2026-10-05): the player should FEEL the contradiction
+      // in the moment, not discover it later in the journal. This is the detective's thrill.
+      const beats = [
+        `❓ Wait. ${first} told you "${lastClaim}". ${source} just said "${heardValue}". Those don't match.`,
+        `❓ Hold on — "${lastClaim}"? That's what ${first} said. But ${source} says "${heardValue}".`,
+        `❓ Something's off. You wrote down "${lastClaim}" for ${first}. ${source} just told you "${heardValue}".`,
+      ];
+      try { this.say(beats[Math.floor(Math.random() * beats.length)]); } catch (e) {}
       this.addDoubt(vid, 'gossip',
         this.doubtText(vid, 'gossip', { claimed: lastClaim, heard: heardValue, source }),
-        [`${this.displayName(vid)} claimed "${lastClaim}"`, `${source} says "${heardValue}"`]);
+        [`${name} claimed "${lastClaim}"`, `${source} says "${heardValue}"`]);
     },
 
     // NPCs talk about each other. Sometimes what they say contradicts a claim.
@@ -702,6 +719,16 @@
       confessP += (trust - 30) / 200; // trust helps
       if (temp === 'warm' || temp === 'gentle') confessP += 0.15;
       if (temp === 'prickly') confessP -= 0.15;
+      // EVIDENCE WEIGHT (Steve 2026-10-05): mounting evidence makes deflection harder.
+      // Each piece of evidence beyond the first adds +10%. Prior confrontations that
+      // ended in deflection add +15% each — they know you're not dropping it.
+      const evCount = (doubt.evidence || []).length;
+      if (evCount > 1) confessP += Math.min(0.30, (evCount - 1) * 0.10);
+      const priorDeflects = (doubt.evidence || []).filter(e => String(e).includes('deflected')).length;
+      if (priorDeflects > 0) confessP += Math.min(0.30, priorDeflects * 0.15);
+      // Multiple open doubts about the same person: the walls are closing in
+      const otherDoubts = this.getDoubts(vid).filter(d => !d.resolved && d.id !== doubtId).length;
+      if (otherDoubts > 0) confessP += Math.min(0.20, otherDoubts * 0.10);
 
       if (roll < confessP) {
         // CONFESSION
@@ -730,6 +757,22 @@
           if (lieField === 'goal') { const gdef = (this.data.characterGen.goals || []).find(g => g.id === lie.truth); if (gdef) this.journalLearn(vid, 'goal', { id: lie.truth, want: gdef.want }, { quiet: true }); }
         } catch (e) {}
         try { this.bumpTrust(vid, motive === 'pathological' ? -10 : 5); this.remember(vid, 'confession', 'told the truth when confronted'); } catch (e) {}
+        // SOCIAL CONSEQUENCES (Steve 2026-10-05): the village learns. A caught liar's
+        // reputation takes a hit — people talk. Manipulation/pathological hurts more.
+        try {
+          const v = this.state.village;
+          v.gossip = v.gossip || [];
+          const repHit = motive === 'manipulation' ? -6 : motive === 'pathological' ? -8 : -3;
+          v.gossip.push({
+            id: 'gossip_' + Math.random().toString(36).slice(2, 9),
+            day: day(),
+            dims: { who: vid, honest: repHit },
+            text: `${name} admitted lying about ${lieField === 'occupation' ? 'what they did before' : lieField === 'origin' ? 'where they\'re from' : 'what they want'}. Said "${lie.told}", actually "${lie.truth}".`,
+            heard: [],
+          });
+          // Their reputation for honesty drops village-wide
+          this.applyRep(vid, { honest: repHit }, 1);
+        } catch (e) {}
       } else if (roll < confessP + 0.35) {
         // DEFLECTION — smooth or clumsy depending on who they are
         outcome = 'deflected';
