@@ -356,6 +356,10 @@ Truth/distortion. Gossip spreads with distortion through retelling.
 **Rules:**
 - distortion_per_retelling: true (code: truth.js)
 - min_liars_per_village: 1 (code: newGame wrapper)
+- verbal_slips_require_shared_language: true (code: endDay slip loop)
+- observation_doubt_one_per_field: true (code: addDoubt)
+- gossip_intel_forms_lead_without_claim: true (code: checkGossipClaim)
+- confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 
 **Consumes:** village.gossip, Some NPCs lie (motivated: hiding, shame, manipulation, pathological)., When they answer 'past'/'goal' topics, the lie is substituted for truth., Claims are tracked per topic. New claim != old claim → doubt., Gossip about someone is cross-referenced against their claims., observePerson(vid): spend time watching. Behavior may contradict story., Confrontation: "You told me X, but [evidence]." Personality-driven., Doubts live in state.codex.doubts, surface in the journal as ❓ notes.
 

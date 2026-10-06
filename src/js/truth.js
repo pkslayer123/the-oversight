@@ -6,6 +6,10 @@
 // rules:
 //   - distortion_per_retelling: true (code: truth.js)
 //   - min_liars_per_village: 1 (code: newGame wrapper)
+//   - verbal_slips_require_shared_language: true (code: endDay slip loop)
+//   - observation_doubt_one_per_field: true (code: addDoubt)
+//   - gossip_intel_forms_lead_without_claim: true (code: checkGossipClaim)
+//   - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 // consumes:
 //   - village.gossip
 // ============ TRUTH-FINDING ============
@@ -442,15 +446,30 @@
     },
 
     // ---- doubt system ----
-    addDoubt(vid, kind, text, evidence) {
+    addDoubt(vid, kind, text, evidence, opts) {
       const cx = this.state.codex;
       cx.doubts = cx.doubts || [];
+      opts = opts || {};
       // don't duplicate the same doubt
       if (cx.doubts.some(d => !d.resolved && d.vid === vid && d.kind === kind && d.text === text)) return null;
+      // observation tells: one open doubt per (person, field). A second tell
+      // about the same claimed background is mounting evidence for the SAME
+      // doubt, not a new one — and evidence weight feeds the confrontation
+      // odds (each piece beyond the first makes deflection harder).
+      if (kind === 'observation' && opts.field) {
+        const prior = cx.doubts.find(d => !d.resolved && d.vid === vid && d.kind === 'observation' && d.field === opts.field);
+        if (prior) {
+          for (const e of (evidence || [])) {
+            if (!prior.evidence.some(x => String(x) === String(e))) prior.evidence.push(e);
+          }
+          return prior;
+        }
+      }
       const doubt = {
         id: 'd_' + Math.random().toString(36).slice(2, 9),
         vid, kind, text, evidence: evidence || [], day: day(), resolved: false,
       };
+      if (opts.field) doubt.field = opts.field;
       cx.doubts.push(doubt);
       // surface in the journal as a ❓ note — visible in the current UI
       try { this.journalLearn(vid, 'note', '❓ ' + text, { via: 'doubt', quiet: false }); } catch (e) {}
@@ -500,7 +519,14 @@
         return variants[Math.floor(Math.random() * variants.length)];
       }
       if (kind === 'gossip') {
-        if (sys) return `CROSS-REFERENCE FLAG: third-party account conflicts with ${name}'s self-report.`;
+        if (sys) return detail.claimed
+          ? `CROSS-REFERENCE FLAG: third-party account conflicts with ${name}'s self-report.`
+          : `INTEL: third-party account disputes ${name}'s background. Self-report not yet on file.`;
+        if (!detail.claimed) {
+          const w = detail.field === 'origin' ? `from ${detail.heard}`
+            : `${/^[aeiou]/i.test(String(detail.heard)) ? 'an' : 'a'} ${detail.heard}`;
+          return `${detail.source} says ${first} isn't really ${w} — or so the village talk goes. You haven't heard ${first}'s own story yet.`;
+        }
         return `${first} said "${detail.claimed}" — but ${detail.source} says "${detail.heard}". One of them is wrong.`;
       }
       if (kind === 'observation') {
@@ -544,7 +570,7 @@
         const lie = lies[field];
         const tells = this.observationTell(vid, lie);
         this.addDoubt(vid, 'observation', this.doubtText(vid, 'observation', { text: tells }),
-          [`claims "${lie.told}"`, `observed: ${tells}`]);
+          [`claims "${lie.told}"`, `observed: ${tells}`], { field });
         try { this.remember(vid, 'observed', 'behavior didn\'t match their story'); } catch (e) {}
         return { ok: true, found: true, text: tells };
       }
@@ -611,12 +637,28 @@
     // When you hear gossip ABOUT someone, check it against their claims.
     checkGossipClaim(vid, field, heardValue, sourceVid) {
       const claims = this.getClaims(vid, field);
-      if (!claims.length) return; // you don't know what they claimed yet
-      const lastClaim = claims[claims.length - 1].claim;
-      if (String(lastClaim).toLowerCase() === String(heardValue).toLowerCase()) return; // consistent
       const source = sourceVid ? this.displayName(sourceVid) : 'someone';
       const name = this.displayName(vid);
       const first = this.firstRef(vid);
+      const w = field === 'origin' ? `from ${heardValue}`
+        : `${/^[aeiou]/i.test(String(heardValue)) ? 'an' : 'a'} ${heardValue}`;
+      if (!claims.length) {
+        // LEAD WITHOUT A CLAIM (the gossip-first detective): the village told
+        // you someone's story doesn't hold up before you ever heard their
+        // version. Not a contradiction — a lead. But it's actionable: you can
+        // go hear their story, then confront.
+        const beats = [
+          `❓ ${source} just told you something about ${first} — says they're not really ${w}. Worth remembering.`,
+          `❓ Village talk: ${first} isn't really ${w}, according to ${source}. You haven't heard ${first}'s own story yet.`,
+        ];
+        try { this.say(beats[Math.floor(Math.random() * beats.length)]); } catch (e) {}
+        this.addDoubt(vid, 'gossip',
+          this.doubtText(vid, 'gossip', { heard: heardValue, source, field }),
+          [`${source}: the truth is "${heardValue}"`, `you haven't heard ${first}'s own story yet`]);
+        return;
+      }
+      const lastClaim = claims[claims.length - 1].claim;
+      if (String(lastClaim).toLowerCase() === String(heardValue).toLowerCase()) return; // consistent
       // THE AHA MOMENT (Steve 2026-10-05): the player should FEEL the contradiction
       // in the moment, not discover it later in the journal. This is the detective's thrill.
       const beats = [
@@ -1110,12 +1152,20 @@
     try {
       const c = this.convoGet(vid);
       // Confrontation needs shared words. You can't argue semantics
-      // with someone via hand gestures. (Nonverbal conversations excluded.)
-      if (!c.pendingQ && c.thread !== 'nonverbal') {
+      // with someone via hand gestures — UNLESS a bilingual villager is
+      // bridging (c.interpreter is set by the base nonverbal choices).
+      // Then the confrontation goes through them, in translation.
+      const nonverbal = c.thread === 'nonverbal';
+      const bridged = nonverbal && !!c.interpreter;
+      if (!c.pendingQ && (!nonverbal || bridged)) {
         const doubts = this.getDoubts(vid);
         if (doubts.length && !choices.some(ch => String(ch.id).indexOf('confront:') === 0)) {
           const d = doubts[0];
-          const label = d.kind === 'contradiction'
+          const first = this.firstRef(vid);
+          const via = bridged ? `(via ${this.firstRef(c.interpreter)}) ` : '';
+          const label = bridged
+            ? `${via}"Something about ${first} doesn't add up. Ask them — through you."`
+            : d.kind === 'contradiction'
             ? `"You told me one thing, then another. What's going on?"`
             : d.kind === 'gossip'
             ? `"Someone told me something about you that doesn't match. Explain."`
@@ -1190,6 +1240,14 @@
       for (const vid of roster) {
         const lies = this.npcLies(vid);
         if (!lies) continue;
+        // VERBAL SLIPS need shared words. A slip is English speech you overheard
+        // ("Hatsune told you X — but something they just said doesn't fit"). An NPC
+        // you share no language with can't "tell" you anything; letting them slip
+        // would both break the fiction and plant doubts you can never confront.
+        // (Observation doubts can still form — behavior is visible in any tongue.)
+        let noWords = false;
+        try { noWords = this.commLevel(vid).level === 'none'; } catch (e) {}
+        if (noWords) continue;
         for (const lie of Object.values(lies)) {
           if (lie.confessed) continue;
           // slips are rare but inevitable — lies decay. Bad liars decay faster.

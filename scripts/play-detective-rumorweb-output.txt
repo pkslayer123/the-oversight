@@ -1,0 +1,19 @@
+
+######## SEED 42 — 11 villagers ########
+liars (analyst-only): 3/11
+  d1: formed-total=0 open=0 sparks=0 obsFound=false
+  d2: formed-total=0 open=0 sparks=0 obsFound=false
+  d3: formed-total=0 open=0 sparks=0 obsFound=false
+  d4 spark — Sofia: ❓ Village talk: Alan isn't really from Warsaw, Poland, according to Sofia. You haven't heard Alan's own story yet. 📓 Journal: jot
+  d4 NO-UI-CHOICE — Alan [gossip] doubt still open | pendingQ=false thread=nonverbal getDoubts=1 choices=[nv:nod,nv:smile,nv:pointself,nv:listen,leave]
+  d4: formed-total=1 open=1 sparks=1 obsFound=false
+  d5 NO-UI-CHOICE — Alan [gossip] doubt still open | pendingQ=false thread=nonverbal getDoubts=1 choices=[nv:nod,nv:smile,nv:pointself,nv:listen,leave]
+  d5 confront — Marcus [slip] → STILL OPEN (trust 24->24, honest 0->0)
+  d5: formed-total=2 open=2 sparks=0 obsFound=false
+  d6 NO-UI-CHOICE — Alan [gossip] doubt still open | pendingQ=false thread=nonverbal getDoubts=2 choices=[nv:nod,nv:smile,nv:pointself,nv:listen,leave]
+  d6 confront — Marcus [slip] → RESOLVED: confessed: electrician (was claiming welder) (trust 27->33, honest 0->-3)
+  d6 NO-UI-CHOICE — Alan [observation] doubt still open | pendingQ=false thread=nonverbal getDoubts=2 choices=[nv:nod,nv:smile,nv:pointself,nv:listen,leave]
+  d6: formed-total=3 open=2 sparks=0 obsFound=true
+  d6: PLAYER DIED or day did not advance — stopping
+seed 42 SUMMARY: doubts=3 kinds={"gossip":1,"slip":1,"observation":1} confronted=6 noUI=4 outcomes={"still-open":1,"resolved":1}
+seed 42 honesty-rep hits: Karen:-1, Alan:-1, Marcus:-3, Emma:-1
