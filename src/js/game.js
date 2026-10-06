@@ -17031,7 +17031,10 @@
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
         const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
-        if (!m.beamPhase) { this.encSetPhase(m, 'mirror'); }
+        // (Stag phases are mirror/confront/charge. If in a generic phase, start in mirror.)
+        if (!m.beamPhase || !['mirror', 'confront', 'charge'].includes(m.beamPhase)) {
+          this.encSetPhase(m, 'mirror');
+        }
         let stPhase = m.beamPhase;
         const dist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         // MIRROR GAZE: if within 4 and facing, freeze. Check facing via
@@ -17091,7 +17094,11 @@
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
         const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
-        if (!m.beamPhase) { this.encSetPhase(m, 'project'); m.drCount = 0; }
+        // (Drone phases are project/countdown/correct/recalc. If it's in a
+        // generic phase like 'stalk', start the evaluation.)
+        if (!m.beamPhase || !['project', 'countdown', 'correct', 'recalc'].includes(m.beamPhase)) {
+          this.encSetPhase(m, 'project'); m.drCount = 0;
+        }
         let drPhase = m.beamPhase;
         // CROWD LIMIT: more than 2 fighters (player + villagers) → recalc
         const fighterCount = f.fighters.filter(x => x.alive && !x.fled).length;
@@ -17115,9 +17122,11 @@
           for (let i = 1; i <= 6; i++) {
             cells.push({ cx: m.mx + dx * i, cy: m.my + dy * i });
           }
+          const p0 = this.tbFighter('p');
           m.telegraph = { kind: 'line', cells, dmg: (m.mdef.attack || {}).damage,
             attackName: this.encAttackName(m, 'Scored Assessment'),
             pattern: pat, turnsLeft: 3,
+            threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
             cueText: '"DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGET. COMMENCING CORRECTIVE ACTION IN THREE. TWO." The line is drawn. Move OFF it.' };
           this.say('"SUBJECT LOCKED. COMMENCING CORRECTIVE ACTION IN THREE..." The projector draws a burning line across the dirt.');
           this.audioEvent('droneCount', { count: 3 });
@@ -17142,7 +17151,11 @@
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
         const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
-        if (!m.beamPhase) { this.encSetPhase(m, 'film'); m.swBuild = 0; }
+        // (Swarm phases are film/build/flash. If in a generic phase, start filming.
+        // After a flash, go back to film to re-declare.)
+        if (!m.beamPhase || !['film', 'build', 'flash'].includes(m.beamPhase) || m.beamPhase === 'flash') {
+          this.encSetPhase(m, 'film'); m.swBuild = 0;
+        }
         let swPhase = m.beamPhase;
         const dist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         if (swPhase === 'film' && dist <= 4 && !m.telegraph) {
@@ -17154,7 +17167,11 @@
               cells.push({ cx: t.mx + dx, cy: t.my + dy });
             }
           }
-          m.telegraph = { kind: 'burst', cells, dmg: (m.mdef.attack || {}).damage,
+          // (Apply escalation: missed flashes hit harder.)
+          const swDmg = (m.mdef.attack || {}).damage || [14, 18];
+          const swK = 1 + 0.15 * Math.min(m.escalation || 0, 4);
+          m.telegraph = { kind: 'burst', cells,
+            dmg: [Math.round(swDmg[0] * swK), Math.round(swDmg[1] * swK)],
             attackName: this.encAttackName(m, 'Flash Mob'),
             pattern: pat, turnsLeft: 2,
             cueText: '"ENGAGEMENT DROPPING! ESCALATING!" The shutters quicken — clickclickCLICK. Flash building. Radius 2. COVER YOUR EYES or MOVE.' };
