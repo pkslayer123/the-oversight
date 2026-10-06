@@ -1471,6 +1471,7 @@
       "damageType": "sonic"
     },
     "behavior": "pack",
+    "pack": 2,
     "aggression": "hungry",
     "follows": true,
     "fear": "numbers",
