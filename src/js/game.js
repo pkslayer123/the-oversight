@@ -17965,7 +17965,6 @@
           // dodge, so footwork doesn't save you. (tg.unavoidable was set at
           // declare but never read: "UNAVOIDABLE" was text-only. Now it's real.)
           let resCells = tg.cells;
-          let pzLosFizzle = false;
           if (this.pzIs(m) && tg.unavoidable) {
             const pt = (this.encUsesFifo(m) && this.encCurrentTarget(m)) || this.tbFighter('p');
             if (pt && pt.alive) {
@@ -17976,25 +17975,6 @@
                 rc.push({ cx, cy });
               }
               tg.cells = rc; resCells = rc;
-              // PAPARAZZO LOS COUNTERPLAY (Steve 2026-10-06): the codex
-              // promises "break line of sight — it cannot photograph what it
-              // cannot see." The prediction still re-centers (it learned your
-              // dodge), but the FLASH needs a clear line. No LOS → the shot
-              // dies in the cover: no damage, no freeze, and the model loses
-              // the thread (prediction drops to 1 — it has to learn you over).
-              if (!this.canSee(m.mx, m.my, pt.mx, pt.my)) {
-                pzLosFizzle = true;
-                m.pzPrediction = 1;
-                // Back to tracking: the NEXT flashes are dodgeable again until
-                // it rebuilds to 4 and re-enters exclusive. (Without this the
-                // phase would sit at 'exclusive' and every flash would stay
-                // unavoidable even at prediction 1.)
-                this.encSetPhase(m, 'tracking');
-                tg.cells = []; resCells = [];
-                tg.threatenedPlayer = false;
-                this.say('The flash fires — and dies in the cover between you. No line of sight, no shot. It got NOTHING. (Prediction resets — it has to learn you all over again.)');
-                try { this.audioEvent('paparazzoShutter', { prediction: 1 }); } catch (e) {}
-              }
             }
           }
           if (this.mothIs(m)) resCells = this.tbMothArcCells(m, tg.cells);
@@ -18078,9 +18058,7 @@
                 this.say(`FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`);
               }
             }
-            // LOS FIZZLE (Steve 2026-10-06): the fizzle line already said it —
-            // don't also print the generic "it missed" line.
-            if (!pzLosFizzle && !hitFighters.some(o => o.kind === 'player')) {
+            if (!hitFighters.some(o => o.kind === 'player')) {
               this.say(`Click. It missed — but the shutter keeps clicking. (Prediction ${m.pzPrediction}/4 anyway — it learns from the miss too.)`);
             }
           }
@@ -20495,28 +20473,14 @@
     // contest rewards (Steve 2026-10-05). mdef.loot = {chance, tier}.
     // Returns an item id or null. Chances are LOW by design — alien loot
     // should feel like a gift from a confused god, not a paycheck.
-    // LOOT TIERS (Steve 2026-10-06): difficulty gates reward.
-    // - Base wave-1 monsters: tier 1-2 max (data).
-    // - Wave-1 apex (gallowdeer, mdef.apex): tier 4 — one apex per wave.
-    // - Wave-1 VETERAN variants (fighter.veteranVariant: scarred/elder/
-    //   pack-leader): tier up to 3, ONLY after wave 2 unlocks
-    //   (unlockedWave() >= 2). Before that they drop wave-1 loot.
-    // - Wave-2 base: tier 2-3 (data).
-    // - Wave-2 apex (moderator, mdef.apex): tier 4.
-    rollAlienLoot(mdef, fighter) {
+    // WAVE-CAPPED (Steve 2026-10-05): you can't get tier-2 loot from wave-1
+    // monsters. The tier is capped by the monster's wave. No early jackpots.
+    rollAlienLoot(mdef) {
       const loot = (mdef || {}).loot;
       if (!loot || !(loot.chance > 0)) return null;
       if (Math.random() >= loot.chance) return null;
       const wave = mdef.wave || 1;
-      let maxTier = loot.tier || 1;
-      const isVeteran = fighter && (fighter.veteranVariant || fighter.veteran);
-      if (wave <= 1 && !mdef.apex) {
-        maxTier = Math.min(maxTier, 2);
-        if (isVeteran && this.unlockedWave() >= 2) {
-          // Veterans are a tier harder: bump one, cap at 3.
-          maxTier = Math.min((loot.tier || 1) + 1, 3);
-        }
-      }
+      const maxTier = Math.min(loot.tier || 1, wave); // wave caps the tier
       // Find the highest available tier <= maxTier (fallback if tier missing)
       let tier = Math.max(1, maxTier);
       let pool = [];
@@ -20640,7 +20604,7 @@
         // leaves confused gifts for impressive violence. Show/contest rewards
         // plug into rollAlienLoot(tier) when that system lands.
         try {
-          const dropId = this.rollAlienLoot(mdef, mf);
+          const dropId = this.rollAlienLoot(mdef);
           if (dropId) {
             const granted = this.alienLootGrant(dropId);
             if (granted) {
