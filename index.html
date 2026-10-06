@@ -134,6 +134,28 @@
     if (state === 'working') return;
     state = 'working';
     show('&#9203; Downloading new version&hellip;');
+    // Steve 2026-10-06: re-verify assets are live before navigating.
+    // CDN can lag version.json; navigating to stale files causes the
+    // "new version isn't available" pending loop.
+    if (remoteVersion) {
+      assetsLive(remoteVersion).then(function(live) {
+        if (!live) {
+          show('&#9203; New files are still propagating&hellip; waiting&hellip;');
+          // Retry in 10s
+          setTimeout(function() {
+            state = 'available'; // allow re-tap
+            apply();
+          }, 10000);
+          return;
+        }
+        // Assets confirmed live - proceed with update
+        doApply();
+      });
+      return;
+    }
+    doApply();
+  }
+  function doApply() {
     // Bulletproof: every async step races a timeout, and navigation is
     // GUARANTEED via backstop timer. iOS can hang getRegistrations() or
     // caches.delete() forever — we never wait on them.
