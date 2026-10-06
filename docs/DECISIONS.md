@@ -969,3 +969,6 @@ IMPLEMENTATION:
 
 ## 2026-10-05 — Dialogue box replaces full-screen chat (Steve)
 Reverses "conversation is the one acceptable full-screen interruption." Talking now uses a Pokémon-style box under the grid: speaker tab, one line at a time, ▼ to continue, map stays visible and tappable. Reason: full-screen chat blocked map actions/events fluidly; players couldn't do things mid-conversation. The box never intrudes; a ✕ ends it, combat cancels it.
+
+## 2026-10-05 — Unbreakable structures (Steve)
+Havens are the ONLY unbreakable structures. (Plus alien structures, when they exist.) Everything else — trees, walls, rocks, bushes — can be destroyed by monsters. The Bulldozer smashes through; the world remembers.

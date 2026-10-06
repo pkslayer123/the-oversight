@@ -13198,11 +13198,20 @@
 
     // DESTROY CELL (Steve 2026-10-05): monsters break the environment.
     // Trees fall, walls crumble. The world remembers.
+    // RULE (Steve 2026-10-05): Havens are the ONLY unbreakable structures.
+    // (Plus alien structures, when they exist.) Everything else breaks.
     destroyCell(cx, cy, cause) {
       const detail = this.genDetail(this.map.px, this.map.py);
       if (!detail[cy] || !detail[cy][cx]) return;
       const cell = detail[cy][cx];
-      const cellName = cell.type || cell;
+      const cellType = typeof cell === 'string' ? cell : cell.type;
+      // UNBREAKABLE: haven structures and alien structures
+      const unbreakable = ['tent', 'fire', 'hall', 'bunk', 'lodge', 'haven', 'sanct', 'base'];
+      if (unbreakable.includes(cellType)) {
+        this.say(`The ${cellType} holds. Havens do not break.`);
+        return false;
+      }
+      const cellName = cellType || cell;
       // Clear the cell
       detail[cy][cx] = null;
       // Narrative
@@ -13214,6 +13223,7 @@
       this.audioEvent('crash', { cause });
       // Mark the map as changed so it saves
       this.map.dirty = true;
+      return true;
     },
 
     // TRAMPLE: the boar's missed charge ends here — grinding hooves on
