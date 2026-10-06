@@ -381,6 +381,57 @@
     // Talking costs your turn. Words are actions too.
 
     // Aftermath of an uprising: the village is broken, one way or another.
+    // VILLAGE UPRISING (Steve 2026-10-05): the village comes at you with numbers.
+    // This is the end of the justice ladder — stage 4. You've stolen, attacked,
+    // refused exile. Now they come. Anyone who still trusts you fights at your side.
+    startVillageUprising(reason) {
+      const v = this.state.village;
+      const s = this.state.scholar;
+      const roster = (v.roster || []).filter(rid => rid !== this.villagerId);
+      
+      this.say('');
+      this.say('⚔️ THE UPRISING');
+      this.say('They\'re coming. Torches in the dark. You can hear them — not shouting, just walking. That\'s worse.');
+      this.say('');
+      this.say(`Reason: ${reason}. You did this.`);
+      this.say('');
+      
+      // Who fights at your side? Anyone with trust > 50
+      const allies = roster.filter(rid => ((v.trust || {})[rid] || 0) > 50);
+      const enemies = roster.filter(rid => !allies.includes(rid));
+      
+      if (allies.length > 0) {
+        this.say(`At your side: ${allies.map(id => this.displayName(id)).join(', ')}. They believe in you. Don't waste it.`);
+      } else {
+        this.say('No one stands with you. You\'re alone.');
+      }
+      
+      this.say(`Against you: ${enemies.length} villagers. They want you gone — one way or another.`);
+      this.say('');
+      this.say('What do you do? FIGHT, FLEE, or TALK?');
+      
+      // Store for the combat setup
+      this._lastBetrayal = {
+        uprising: true,
+        uprisingAttackers: enemies,
+        uprisingAllies: allies,
+        reason: reason,
+      };
+      
+      // Start combat with the enemies as hostiles
+      // (The actual combat setup happens via the betrayal system)
+      try {
+        if (typeof this.startBetrayalCombat === 'function') {
+          this.startBetrayalCombat(enemies, allies);
+        } else {
+          this.say('⚠️ Combat system not ready. The villagers wait, torches burning.');
+          this.say('You can: FLEE (run), TALK (try to reason), or wait for them to act.');
+        }
+      } catch (e) {
+        this.say(`⚠️ Uprising failed to start combat: ${e.message}`);
+      }
+    },
+
     uprisingAftermath() {
       const lb = this._lastBetrayal || {};
       const result = lb.result || 'betrayal_won';

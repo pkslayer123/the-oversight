@@ -266,19 +266,36 @@
       const v = Game.state.village;
       const roster = rosterIds();
       // The fiction: you robbed the pantry blind and refused to make amends.
+      // Set up the justice system at stage 4 (uprising).
       v.trust = v.trust || {};
       for (const rid of roster) v.trust[rid] = 3 + Math.floor(Math.random() * 6);
+      // Record crimes to justify the uprising
       try {
-        Game.recordCrime('attack', { victim: roster[0] });
+        Game.recordCrime('theft', { victim: roster[0] });
         Game.recordCrime('attack', { victim: roster[1] });
       } catch (e) {}
-      Game.say('🐞 SCENARIO: village uprising. You stole from the pantry, attacked when confronted, refused exile.');
-      Game.say('They\'re coming. Anyone who still trusts you (good luck) fights at your side.');
       const s = Game.state.scholar;
       s.mx = 4; s.my = 4; s.insideHaven = true;
       Game.map.px = v.x ?? 3; Game.map.py = v.y ?? 3;
-      try { Game.startVillageUprising('debug scenario'); }
-      catch (e) { Game.say('🐞 uprising failed to start: ' + e.message); }
+      Game.say('🐞 SCENARIO: village uprising. You stole from the pantry, attacked when confronted, refused exile.');
+      Game.say('They\'re coming. Anyone who still trusts you (good luck) fights at your side.');
+      Game.say('');
+      Game.say('CONTEXT: The village justice system has 4 stages:');
+      Game.say('  1. Cold shoulder (they go quiet)');
+      Game.say('  2. Confrontation (restitution or else)');
+      Game.say('  3. Moot (formal trial)');
+      Game.say('  4. UPRISING (they come at you)');
+      Game.say('');
+      Game.say('You\'re at stage 4. There\'s no talking your way out of this.');
+      // Trigger the uprising via the justice system
+      try {
+        const j = Game.justiceState();
+        j.stage = 4;
+        Game.startVillageUprising('debug scenario: theft + assault + defiance');
+      } catch (e) {
+        Game.say('🐞 uprising failed to start: ' + e.message);
+        Game.say('You can still act: move, talk to villagers, or flee the haven.');
+      }
     },
 
     // 4. Day 1 fresh spawn — standard start, no tweaks.
