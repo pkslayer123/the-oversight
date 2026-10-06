@@ -11840,7 +11840,8 @@
             // HUMANOID SPRITES (Steve 2026-10-06): human-like horrors show
             // their calm SVG on the field too.
             const _mhspr = humanoidSpriteHtml(mon.id || mdef.id);
-            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${_mhspr || esc(mdef.emoji || '👹')}</span>`;
+            const _mmspr = monsterSpriteHtml(mon.id || mdef.id, false);
+            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${_mhspr || _mmspr || esc(mdef.emoji || '👹')}</span>`;
             cls += ' creature'; drawn = true;
           }
           if (!drawn && ani && cx === ani.mx && cy === ani.my) {
@@ -11859,7 +11860,8 @@
               const _pp = (typeof Game.encPreyPhase === 'function') ? Game.encPreyPhase(ani) : null;
               _pbadge = ({ wary: '⚠', bolt: '💨', winded: '😮‍💨', playing_dead: '💀', taunt: '👀' })[_pp] || '';
             } catch (e) {}
-            g = `<span data-ent="creature:${esc(ani.id || 'wild')}">${esc(aemoji)}${_pbadge ? `<span class="preybadge" style="display:block;font-size:9px;line-height:1;margin-top:-3px">${esc(_pbadge)}</span>` : ''}</span>`;
+            const _aniSpr = monsterSpriteHtml(ani.id || ani.monsterId, false);
+            g = `<span data-ent="creature:${esc(ani.id || 'wild')}">${_aniSpr || esc(aemoji)}${_pbadge ? `<span class="preybadge" style="display:block;font-size:9px;line-height:1;margin-top:-3px">${esc(_pbadge)}</span>` : ''}</span>`;
             cls += ' creature'; drawn = true;
           }
           if (!drawn) {
