@@ -1083,5 +1083,62 @@
     "abilitySynergies": [
       "night_eyes"
     ]
+  },
+  {
+    "id": "forage_sense",
+    "name": "Reading the Land",
+    "domain": "nature",
+    "rarity": "common",
+    "levels": {
+      "1": "Eat the landscape with your eyes first: green + water + sun means food grows here. Start where those three meet.",
+      "2": "Edges are the grocery store — where meadow meets woods, where water meets bank. Disturbed ground regrows first and fattest.",
+      "3": "You read a hillside like a menu: aspect, drainage, and last year's growth tell you what's fruiting before it fruits."
+    },
+    "mechanical": {
+      "1": {
+        "unlock": "forage_read"
+      },
+      "2": {
+        "forage_find": 0.15
+      },
+      "3": {
+        "forage_find": 0.3
+      }
+    },
+    "backgrounds": [
+      "forager",
+      "farmer",
+      "gardener",
+      "hunter",
+      "homesteader"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "mending",
+    "name": "Repair & Mending",
+    "domain": "crafting",
+    "rarity": "common",
+    "levels": {
+      "1": "Look at what's broken before you touch it: find the failure point, not the symptom. Most breaks are one small thing.",
+      "2": "Splint, splice, and bind — a repair doesn't have to be pretty, it has to hold. The right lashing beats the wrong nail.",
+      "3": "You keep the village's tools alive: rehaft, rewire, re-seat. Nothing gets thrown away on your watch."
+    },
+    "mechanical": {
+      "1": {
+        "unlock": "repair"
+      },
+      "3": {
+        "tool_decay_slow": 0.5
+      }
+    },
+    "backgrounds": [
+      "mechanic",
+      "tailor",
+      "carpenter",
+      "handyman",
+      "engineer"
+    ],
+    "abilitySynergies": []
   }
 ]

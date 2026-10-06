@@ -14,11 +14,20 @@
 //   - posthumousReveal(vid)
 //   - revealForLevel(vid)
 //   - personDepthHTML(vid)
+//   - personTeachTopics(vid)
+//   - teachFromPerson(vid, skillId)
 // rules:
-//   - (none documented)
+//   - teaching_needs_trust: people teach only at depth >= 2; strangers won't (code: teachFromPerson, Steve 2026-10-06)
+//   - topics_never_leak_names: teachable topics use plain labels, never knowledge.json entry names (code: personTeachTopics, Steve 2026-10-06)
+//   - good_teaching_lands_deep: trusted (L3) teachers grant 2 knowledge levels at once, shown properly (code: teachFromPerson, Steve 2026-10-06)
+//   - integration_surface: game.js calls in via Game.teachFromPerson(vid, skillId) and Game.personTeachTopics(vid); the codex "Could teach you" section renders topics (code: personDepthHTML, Steve 2026-10-06)
 // consumes:
 //   - village.villagers
 //   - state.codex.people
+//   - Game.learnSkill
+//   - Game.skillKnown
+//   - Game.data.knowledge
+//   - state.codex.skills
 // ============ CODEX PEOPLE ENTRIES ============
 // Every villager is a living codex entry. It deepens while they live and
 // closes when they die. "Dead is the end of their story."
@@ -60,6 +69,19 @@
     0: 'Stranger', 1: 'Named', 2: 'Known', 3: 'Trusted', 4: 'Confirmed',
   };
 
+  // PERSON_SKILL_MAP: lifeseed skillOrigins key -> knowledge.json entry.
+  // The label is plain words, NEVER the knowledge entry's name — the name
+  // is earned knowledge and the topic list must not leak it.
+  const PERSON_SKILL_MAP = {
+    food:       { knowledgeId: 'forage_sense',   label: 'finding food in the wild' },
+    medicinal:  { knowledgeId: 'herbal_medicine', label: 'plant medicine' },
+    mending:    { knowledgeId: 'mending',         label: 'repairing what breaks' },
+    navigation: { knowledgeId: 'star_navigate',   label: 'finding your way' },
+    tracking:   { knowledgeId: 'track_read',      label: 'reading tracks' },
+    trapping:   { knowledgeId: 'snare_wire',      label: 'traps and snares' },
+    forecast:   { knowledgeId: 'weather_read',    label: 'reading the sky' },
+  };
+
   const methods = {
 
     // ---------- entry ----------
@@ -82,7 +104,8 @@
     ensurePersonLifeseed(vid) {
       const rc = ((this.state.village || {}).rosterChars || {})[vid];
       if (rc && rc.lifeseed) return rc.lifeseed;
-      const person = this.getPerson(vid);
+      let person = null;
+      try { person = this.getPerson(vid); } catch (e) {}
       const name = (rc && rc.name) || (person && person.name) || 'someone';
       const home = ((this.state.village || {}).bgHome || {})[vid] || 'America';
       try {
@@ -214,6 +237,73 @@
       try { return this.repWords(vid); } catch (e) { return 'still making up their mind'; }
     },
 
+    // ---------- people as teachers ----------
+
+    // personTeachTopics(vid): what this person could teach you, from their
+    // lifeseed skillOrigins. Depth-gated: strangers don't teach (level < 2
+    // returns []). Labels are plain words ("finding food in the wild") —
+    // NEVER the knowledge.json entry name. The entry name is itself earned
+    // knowledge; the topic list must not leak it.
+    personTeachTopics(vid) {
+      const d = this.personDepth(vid);
+      if (!d || d.closed || d.level < 2) return [];
+      const ls = this.ensurePersonLifeseed(vid);
+      const origins = (ls && ls.skillOrigins) || {};
+      return Object.keys(origins)
+        .filter(k => PERSON_SKILL_MAP[k])
+        .map(k => ({
+          key: k,
+          knowledgeId: PERSON_SKILL_MAP[k].knowledgeId,
+          label: PERSON_SKILL_MAP[k].label,
+          origin: origins[k], // their story of learning it — revealed at L2 already
+        }));
+    },
+
+    // teachFromPerson(vid, skillId): the lesson. They show you what they
+    // know — hands-on at depth 3 (trusted), the bones of it at depth 2.
+    // Good teaching, shown properly, lands deeper: trusted teachers grant
+    // 2 levels at once instead of 1. Records shared history either way —
+    // a lesson is a lived thing. Applies via Game.learnSkill (guarded).
+    teachFromPerson(vid, skillId) {
+      const first = this.personFirst(vid);
+      const d = this.personDepth(vid);
+      if (d && d.closed) {
+        this.say(`The book on ${first} is closed. What they knew died with them — unless you find it in what they left behind.`);
+        return false;
+      }
+      if (!d || d.level < 2) {
+        this.say(`You don't know ${first} well enough for lessons yet. Talk first. Learn later.`);
+        return false;
+      }
+      const topics = this.personTeachTopics(vid);
+      const t = topics.find(x => x.knowledgeId === skillId || x.key === skillId);
+      if (!t) {
+        this.say(`${first} has nothing to teach you about that — or won't.`);
+        return false;
+      }
+      const k = ((this.data || {}).knowledge || []).find(x => x.id === t.knowledgeId);
+      if (!k) {
+        this.say(`${first} starts to show you ${t.label}, and the knowledge isn't there to give. (Missing knowledge entry: ${t.knowledgeId}.)`);
+        return false;
+      }
+      let already = false;
+      try { already = this.skillKnown ? !!this.skillKnown(t.knowledgeId, 1) : false; } catch (e) {}
+      const good = d.level >= 3; // trusted: they SHOW you properly
+      const newLevel = good ? 2 : 1;
+      let applied = false;
+      try { if (this.learnSkill) applied = !!this.learnSkill(t.knowledgeId, newLevel, 'taught by ' + first); } catch (e) {}
+      const originBit = t.origin ? ` "${t.origin.charAt(0).toUpperCase() + t.origin.slice(1)}" — that's how they learned it.` : '';
+      if (already && !applied) {
+        this.say(`You already know the bones of ${t.label} — ${first} fills in a detail or two you were missing, and you trade stories.${originBit}`);
+      } else if (good) {
+        this.say(`No lecture — ${first} puts the work in your hands and corrects you until it's right.${originBit} Properly shown, it sticks.`);
+      } else {
+        this.say(`"I can show you the bones of ${t.label}," ${first} offers. "The rest you'll learn doing." A solid lesson, if not the deep one.${originBit}`);
+      }
+      try { this.noteSharedHistory(vid, `${first} taught you ${t.label}${good ? ' — properly, hands-on' : ''}`); } catch (e) {}
+      return applied;
+    },
+
     // ---------- death closes the book ----------
 
     // closePersonBook: dead is the end of their story. Freeze the entry,
@@ -310,6 +400,15 @@
       if (deeds.length) {
         out.push(`<p class="small" style="margin-top:4px"><b>LEGEND — what they did:</b></p>`);
         out.push(deeds.map(x => `<p class="small">· ${esc(x.text)} <span style="opacity:.45">· day ${x.day}</span></p>`).join(''));
+      }
+      // TEACHABLE: what they could show you. Depth-gated (Known+); labels
+      // are plain words, never knowledge entry names.
+      if (!d.closed && d.level >= 2) {
+        let topics = [];
+        try { topics = this.personTeachTopics(vid) || []; } catch (err) {}
+        if (topics.length) {
+          out.push(`<p class="small" style="margin-top:4px"><b>Could teach you:</b> ${topics.map(t => esc(t.label)).join(' · ')}</p>`);
+        }
       }
       const shared = (d.shared || []).slice(-4);
       if (shared.length && !d.closed) {
