@@ -77,10 +77,10 @@ function fresh() {
   console.log('   testMonsterMeat log:', JSON.stringify(meatLog.slice(0, 200)));
 
   // safe path: hummice
-  inv.push({ plantId: 'meat_hummice', foodKind: 'meat', foodState: 'cleaned', edible: false, units: 4, kcalEach: 0, hiddenKcal: 150, name: 'the grass is humming in harmony (cleaned)', spoilDay: 99 });
+  inv.push({ plantId: 'meat_hummice', foodKind: 'meat', foodState: 'cleaned', edible: false, units: 4, kcalEach: 0, hiddenKcal: 150, name: 'the humming in the grass (cleaned)', spoilDay: 99 });
   Game.testMonsterMeat(inv.length - 1, inv);
   const safeLog = drain();
-  ok('testMonsterMeat safe path: no true name', !/hummice/i.test(safeLog.replace(/the grass is humming in harmony/i, '')));
+  ok('testMonsterMeat safe path: no true name', !/hummice/i.test(safeLog.replace(/the humming in the grass/i, '')));
   ok('testMonsterMeat safe path: marks food safe', Game.monsterFoodSafe('hummice'));
 
   // ---- 3. combat-win meat shape: simulate the win-reward block ----

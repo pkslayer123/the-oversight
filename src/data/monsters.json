@@ -776,7 +776,7 @@
     "speed": 6,
     "emoji": "\ud83d\udc2d",
     "pack": 4,
-    "unknown": "the grass is humming in harmony",
+    "unknown": "the humming in the grass",
     "vibe": "swarm \u2014 playful until it's hungry, and it's often hungry",
     "cues": {
       "curious": [
@@ -1478,7 +1478,7 @@
     "fear": "numbers",
     "speed": 3,
     "emoji": "\ud83c\udfa4",
-    "unknown": "something in the dusk, shouting encouragement at top volume",
+    "unknown": "a shape in the dusk, shouting encouragement",
     "vibe": "it believes in you SO MUCH it hurts. literally",
     "weaknesses": [
       "big burst (radius 3) but slow windup \u2014 get clear",

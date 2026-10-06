@@ -10051,6 +10051,13 @@
         (this.state.systemArrived && mdef && n === mdef.name);
       if (!isProper) {
         if (/[.!?]/.test(n) && n.length > 50) return 'something';
+        // PROSE CLAUSES aren't nouns either (drifter loop 2026-10-06: "the
+        // grass is humming in harmony" composed as "The grass is humming in
+        // harmony is here"). A finite verb in the descriptor means it's a
+        // sentence, not a name — fall back to 'something' (dread, not
+        // grammar). Participles (", rooting in the underbrush") are fine:
+        // they modify a noun head.
+        if (/\b(am|is|are|was|were|has|have|had|do|does|did|will|would|shall|should|can|could|may|might|must)\b/i.test(n)) return 'something';
         const stripped = n.replace(/^((an?)|the)\s+/i, '');
         const base = stripped !== n ? stripped : n;
         return base.charAt(0).toLowerCase() + base.slice(1);

@@ -83,7 +83,7 @@ function playerWaits() {
       names[0] !== names[1] && / 1$/.test(names[0]) && / 2$/.test(names[1]),
       names.join(' / '));
     ok('pack: name hidden until known ("if you don\'t know, it doesn\'t show")',
-      /something in the dusk/i.test(names[0]), names[0].slice(0, 60));
+      /a shape in the dusk/i.test(names[0]), names[0].slice(0, 60));
     ok('pack: distinct tiles (pack reads as a pack immediately)',
       hs[0].mx !== hs[1].mx || hs[0].my !== hs[1].my,
       `(${hs[0].mx},${hs[0].my}) vs (${hs[1].mx},${hs[1].my})`);

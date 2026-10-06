@@ -106,7 +106,7 @@ function drain() { const l = Game.log.join('\n'); Game.log.length = 0; return l;
   Game.testMonsterMeat(st.scholar.inventory.indexOf(hcl), st.scholar.inventory);
   const hlog = drain();
   ok('hummice test: marked food safe', Game.monsterFoodSafe('hummice'));
-  ok('hummice test: no true name in log', !/\bhummice\b/i.test(hlog.replace(/the grass is humming in harmony/gi, '')));
+  ok('hummice test: no true name in log', !/\bhummice\b/i.test(hlog.replace(/the humming in the grass/gi, '')));
   const revealed = st.scholar.inventory.find(i => i.plantId === 'meat_hummice');
   ok('hummice revealed: edible + kcal', revealed && revealed.edible === true && revealed.kcalEach > 0);
   console.log('   hummice after reveal:', JSON.stringify({ name: revealed.name, edible: revealed.edible, kcalEach: revealed.kcalEach }));

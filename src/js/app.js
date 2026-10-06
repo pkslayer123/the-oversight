@@ -1457,8 +1457,8 @@
         }
       } catch (e) {}
       const label = t.label || `target ${i + 1}`;
-      // Shorten pack names: "the grass is humming in harmony 3" -> "harmony 3"
-      const short = label.replace(/^the grass is humming in /i, '').trim() || label;
+      // Shorten pack names: "the humming in the grass 3" -> "grass 3"
+      const short = label.replace(/^the humming in the /i, '').trim() || label;
       return `<button class="btn sm target-pick" data-tidx="${i}">${arrow} ${esc(short)}${status}</button>`;
     }).join('');
     return `<div class="targetbar"><div class="target-prompt">🎯 ${esc(targeting.prompt)}</div>` +

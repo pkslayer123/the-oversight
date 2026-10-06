@@ -24,21 +24,24 @@ const ok = (cond, label) => { if (cond) { pass++; } else { fail++; console.log('
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
 
   // 1. pool gating: pre-arrival = wave 1 only
+  // (counts updated 2026-10-06: wave-2C added monsters — 13 wave-1, 23 total.
+  // The load-bearing assertions are wave-1-only pre-arrival and all-wave-2
+  // present post-arrival; counts just track the data file.)
   let pool = Game.monsterWavePool();
-  ok(pool.length === 10 && pool.every(m => (m.wave || 1) === 1),
+  ok(pool.length === 13 && pool.every(m => (m.wave || 1) === 1),
     `pre-arrival pool is wave-1 only (got ${pool.length})`);
 
   // 2. post-arrival = wave 1 + 2
   Game.state.systemArrived = true;
   pool = Game.monsterWavePool();
-  ok(pool.length === 20, `post-arrival pool is 20 (got ${pool.length})`);
+  ok(pool.length === 23, `post-arrival pool is 23 (got ${pool.length})`);
   const missing = WAVE2.filter(id => !pool.find(m => m.id === id));
   ok(missing.length === 0, `all wave2 in pool (missing: ${missing.join(',')})`);
 
   // 3. wave-3 hook: not yet spawned (no wave-3 monsters exist, but gate logic present)
   Game.state.scholar.integration = 85;
   pool = Game.monsterWavePool();
-  ok(pool.length === 20, `deep integration doesn't break pool (got ${pool.length})`);
+  ok(pool.length === 23, `deep integration doesn't break pool (got ${pool.length})`);
   Game.state.scholar.integration = 5;
 
   // 4. data integrity for each wave-2 monster
