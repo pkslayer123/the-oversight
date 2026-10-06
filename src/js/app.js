@@ -10233,7 +10233,7 @@
   // animals, villagers, and the 1-tick time cost all ride along per step.
   function moveStepHook(step) {
     step._sig = moveSig();
-    if (Game.tbfight) {
+    if (Game.inCombat()) {
       const p = Game.tbFighter('p');
       if (!p || !Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); return { moved: false }; }
       const tx = p.mx + step.dx, ty = p.my + step.dy;
@@ -10273,8 +10273,8 @@
     const st = Game.status();
     return {
       log: (Game.state.log || []).length, day: st.day, part: Game.dayPart,
-      combat: !!Game.tbfight, over: !!st.over,
-      tbm: Game.tbfight && Game.tbFighter('p') ? Game.tbFighter('p').moveLeft : -1,
+      combat: Game.inCombat(), over: !!st.over,
+      tbm: Game.inCombat() && Game.tbFighter('p') ? Game.tbFighter('p').moveLeft : -1,
     };
   }
   function syncAfterMove(step, res) {
@@ -10303,7 +10303,7 @@
     // late as the player moved. Contextual actions depend on position.
     const actWrap = document.querySelector('.ord-actions');
     if (actWrap) {
-      const inCombat = !!Game.tbfight;
+      const inCombat = Game.inCombat();
       actWrap.innerHTML = `
         <div class="ord-self">${inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
         <div class="ord-ctx">${inCombat ? '' : contextBarHTML()}</div>
@@ -10324,7 +10324,7 @@
   // cancels any in-progress tap-to-move path — hands on the pad win.
   function dpadPress(dx, dy) {
     if (targeting) { toast('Pick a target first — or ✕ to cancel.'); return; }
-    if (Game.tbfight && !Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); refresh(); return; }
+    if (Game.inCombat() && !Game.tbIsPlayerTurn()) { Game.say('Not your turn — hold.'); refresh(); return; }
     MoveAnim.purgeKind('path');
     MoveAnim.setHold({ dx, dy });
     MoveAnim.enqueue({ dx, dy, kind: 'step', ms: MoveAnim.stepMs });
@@ -10334,7 +10334,7 @@
   // walk's steps all resolve (ok=false if interrupted or blocked).
   let walkSeq = 0;
   function walkPathAnimated(tx, ty, onDone) {
-    if (Game.tbfight) return false;
+    if (Game.inCombat()) return false;
     const path = Game.beginPathWalk(tx, ty);
     if (!path) { expeditionScreen(); return false; } // the say() needs a render
     if (!path.length) { if (onDone) onDone(true); return true; }
@@ -11531,9 +11531,12 @@
         // never overwritten by the cell underneath. People are not grass.
         if (!isMe) {
           // turn-based combat: fighters render from the fight, not scholar.monster
+          // COMBAT-OVER GUARD (Steve 2026-10-06): if the fight is over but
+          // tbfight hasn't cleared yet (or got stuck), do NOT render fighters.
+          // Dead fighters on the grid after combat = the softlock bug.
           const tbf = Game.tbfight;
           let drawn = false;
-          if (tbf) {
+          if (tbf && !tbf.over) {
             for (let _mfi = 0; _mfi < tbf.fighters.length; _mfi++) {
               const mf = tbf.fighters[_mfi];
               if (mf.kind !== 'monster' && mf.kind !== 'hostile') continue;

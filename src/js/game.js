@@ -5862,7 +5862,7 @@
     // Steve 2026-10-04: no tap-yourself, no confirmation. Blocked exits stop you.
     // Returns { moved:true } | { blocked:block } | null (no exit attempted).
     tryNodeExit(dx, dy) {
-      if (this.tbfight) return null;
+      if (this.inCombat()) return null;
       const s = this.state.scholar;
       const inside = s.insideHaven && this.playerTile().type === 'haven';
       if (inside) return null;
@@ -14361,6 +14361,12 @@
       const c = this.tbCurrent();
       return !!(c && c.kind === 'player');
     },
+    // inCombat(): the ONLY safe way to check for active combat.
+    // A tbfight with over=true is a corpse — treat it as no combat.
+    // (Steve 2026-10-06: stuck tbfight softlocked movement with no explanation.)
+    inCombat() {
+      return !!(this.tbfight && !this.tbfight.over);
+    },
 
     tbBeginTurn() {
       const c = this.tbCurrent();
@@ -20886,6 +20892,12 @@
       const f = this.tbfight;
       if (!f || f.over) return;
       f.over = true; f.result = result;
+      // COMBAT CLEANUP GUARANTEE (Steve 2026-10-06): the victory/defeat
+      // narration below is long and calls many subsystems. If ANY of it
+      // throws, tbfight must still clear — a stuck tbfight softlocks movement
+      // (dpad/tap/tryNodeExit all check it) and renders fighters on every
+      // node's grid (no node scoping). try/finally, not hope.
+      try {
       // WAVE TRACKING (Steve 2026-10-05, revised): kills by wave unlock the
       // next wave (day-gated). The System watches — prove you can handle it.
       this.state.combatWins = this.state.combatWins || 0;
@@ -21029,7 +21041,13 @@
         this.sysSay('OH. Oh no. ...The gamblers are very quiet.');
         if (!this.over) { try { this.playerDeath('combat'); } catch (e) { this.over = true; } }
       }
-      this.tbfight = null;
+      } finally {
+        this.tbfight = null;
+        // Belt-and-suspenders: the wild encounter monster lives in the fight,
+        // not on the grid. (Cleared at combat start; never leave a stale one
+        // rendering on every node.)
+        try { if (this.state && this.state.scholar) this.state.scholar.monster = null; } catch (e) {}
+      }
     },
 
     combatRound(cmd) {
