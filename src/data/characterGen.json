@@ -12,7 +12,7 @@
         "id": "night_counter",
         "quirk": "counts things under their breath: steps, heartbeats, birds",
         "note": "On the third night {they} were heard counting heartbeats — {their} own, then everyone else's, in the dark. {They} laughed it off in the morning. A little too quickly.",
-        "assessment": "The counting is soft, almost soothing — until you notice they're counting heartbeats. Yours."
+        "assessment": "The counting is soft, almost soothing — until the counting becomes noticeable heartbeats. Yours."
       },
       {
         "id": "stone_friend",
@@ -55,7 +55,7 @@
       {
         "id": "ledger_mind",
         "quirk": "remembers exactly what everyone owes them, to the calorie",
-        "note": "{They} keep a mental ledger nobody asked for. Three weeks ago you took an extra strip of jerky — {they} remember. {They} smile when {they} remind you. It's always a smile.",
+        "note": "{They} keep a mental ledger nobody asked for. Three weeks ago {first} took an extra strip of jerky — {they} remember. {They} smile when {they} remind you. It's always a smile.",
         "assessment": "Nobody likes being remembered that precisely. It feels less like memory and more like evidence."
       }
     ]
@@ -612,7 +612,7 @@
       "backstories": [
         "{first} ran 911 calls for six years. {They} have seen people at their worst and their bravest, often in the same hour. The clearing is just another scene to work.",
         "{first} worked the overnight shift in a city that never slept it off. {They} can sleep anywhere, wake instantly, and stay kind on no sleep at all.",
-        "{first} was the one who stayed with the scared ones while the crew worked. {They} know that calm is a skill you practice, not a trait you're born with.",
+        "{first} was the one who stayed with the scared ones while the crew worked. {They} know that calm is a skill practiced daily, not a trait handed outre born with.",
         "{first} volunteered at the firehouse in a town of nine hundred. {They} have loaded every neighbor onto a stretcher at least once, and everyone waves at the ambulance.",
         "{first} patrolled the slopes, hauling toboggans down runs {they} know blindfolded. {They} stay cheerful in a whiteout and {they} do the work anyway.",
         "{first} worked event standby — rodeos, concerts, harvest festivals. {They} have treated more drunk injuries than {they} have fingers, and {they} keep {their} humor about all of them."
@@ -650,7 +650,7 @@
       "backstories": [
         "{first} grew soy and sweet corn on two hundred acres. {They} know soil by smell and weather by the ache in {their} knees. This ground is strange, but ground is ground.",
         "{first} farmed through two droughts and a flood that took the barn. {They} plant anyway. That is the entire philosophy.",
-        "{first} grew up walking beans before school. {They} can tell you what the sky will do by the smell of the air at dawn.",
+        "{first} grew up walking beans before school. {They} can read what the sky will do by the smell of the air at dawn.",
         "{first} ran an almond orchard — ten thousand trees, bees trucked in every spring. {They} know more about bee labor negotiations than most union reps.",
         "{first} ran a CSA — two hundred families, a box every week, no excuses. {They} have apologized for ugly carrots more times than {they} have counted.",
         "{first} milked cows twice a day for fifteen years, no days off. {They} are up before dawn because {they} have always been up before dawn."
@@ -1050,12 +1050,12 @@
       "minAge": 24,
       "maxAge": 60,
       "backstories": [
-        "{first} doctored cattle, horses, and the occasional very angry goat across three districts. {They} know how to read an animal that cannot tell you where it hurts.",
+        "{first} doctored cattle, horses, and the occasional very angry goat across three districts. {They} know how to read an animal that cannot say where it hurts.",
         "{first} ran a small-animal clinic in {city} and a weekend large-animal route. {They} have stitched up everything from parakeets to draft horses.",
         "{first} volunteered at the wildlife rehab center, tube-feeding owls and splinting deer. {They} talk to animals like colleagues and to owners like children.",
         "{first} was the vet on call for the harvest fair, which meant everything from heatstroke pigs to kicked farm kids. {They} stay calm when something large is bleeding."
       ],
-      "backstory": "{first} doctored cattle, horses, and the occasional very angry goat across three districts. {They} know how to read an animal that cannot tell you where it hurts.",
+      "backstory": "{first} doctored cattle, horses, and the occasional very angry goat across three districts. {They} know how to read an animal that cannot say where it hurts.",
       "intel": "observant"
     },
     {
@@ -1295,7 +1295,7 @@
         "{first} ran the family funeral home in {city}, third generation. {They} know the human body the way a mechanic knows an engine.",
         "{first} prepared the dead and sat with the living, often in the same afternoon. {They} have a steady hand and no fear of quiet rooms.",
         "{first} learned embalming from {their} father, who learned it from his. {They} keep the trade's old tools oiled and {their} composure oiled better.",
-        "{first} handled the district's unclaimed dead, giving strangers dignified endings. {They} look at death the way farmers look at weather: it comes, you deal with it."
+        "{first} handled the district's unclaimed dead, giving strangers dignified endings. {They} look at death the way farmers look at weather: it comes, and it's dealt with."
       ],
       "backstory": "{first} ran the family funeral home in {city}, third generation. {They} know the human body the way a mechanic knows an engine.",
       "intel": "steady"
@@ -1388,7 +1388,7 @@
       },
       "backstories": [
         "{first} was a welder on the pipeline crews up north. {They} have burns in the shape of every mistake made along the way, and {they} do not repeat mistakes.",
-        "{first} welded pressure vessels — the kind that explode if you're wrong. {They} keep {their} hood down and {their} mouth shut, and {their} beads run like corduroy.",
+        "{first} welded pressure vessels — the kind that explode if the mix is wrong. {They} keep {their} hood down and {their} mouth shut, and {their} beads run like corduroy.",
         "{first} learned to weld fixing farm equipment that couldn't wait for town. {They} are patient with metal and impatient with everything else.",
         "{first} built {their} own smoker, {their} own trailer, {their} own everything. {They} look at two broken things. {They} know one of them is the fix."
       ],
@@ -1777,7 +1777,7 @@
       "maxAge": 60,
       "backstories": [
         "{first} broke down whole animals at a family butcher shop, primals to retail cuts in under an hour. {They} know where every cut comes from and what it is good for.",
-        "{first} spent years teaching apprentices that a sharp knife is the safe knife. {They} keep {their} whetstone close and {they} have opinions about your honing angle.",
+        "{first} spent years teaching apprentices that a sharp knife is the safe knife. {They} keep {their} whetstone close and {they} have opinions about the honing angle.",
         "At the meat lockers {first} watched whole sides of beef go in and meal plans come out. {They} do the math in {their} head: yield, waste, what feeds a family all winter.",
         "{first} learned that nose-to-tail is not a trend but how people used to survive. {They} talk about rendering tallow and {they} are right."
       ],
@@ -2029,7 +2029,7 @@
       "maxAge": 65,
       "backstories": [
         "{first} made wine in a valley vineyard, crush to barrel. {They} know fermentation like weather and {they} have saved more batches than {they} have lost.",
-        "{first} learned that the yeast does the work if you let it. {They} talk about patience and {they} are the reason the cellar always smelled like possibility.",
+        "{first} learned that the yeast does the work given time. {They} talk about patience and {they} are the reason the cellar always smelled like possibility.",
         "At harvest {first} tasted grapes every morning until they were ready. {They} do not rush the fruit and {they} do not rush anything else either.",
         "{first} once turned a frost-damaged vintage into something people paid good money for. {They} know that even a bad year can be useful."
       ],
@@ -2072,7 +2072,7 @@
       "backstories": [
         "{first} grew mushrooms in a converted barn, logs stacked to the ceiling. {They} know mycelium like a friend and {they} talk to the logs daily.",
         "{first} learned that mushrooms want darkness, damp, and to be left alone. {They} keep the barn cool and wet and {they} have a spore print for everything.",
-        "In the woods {first} could read a rotting log and tell you what it would feed. {They} look for the right decay and {they} know which shelf fungi are dinner.",
+        "In the woods {first} could read a rotting log and say what it would feed. {They} look for the right decay and {they} know which shelf fungi are dinner.",
         "{first} once fruited a crop in January when everyone said it was impossible. {They} are stubborn about fungi and {they} do not quit when it gets cold."
       ],
       "backstory": "{first} grew mushrooms in a converted barn, logs stacked to the ceiling. {They} know mycelium like a friend and {they} talk to the logs daily.",
@@ -2114,7 +2114,7 @@
       "backstories": [
         "{first} crewed cargo ships and read the tide tables like scripture. {They} read the water and the sky together and {they} have a feel for weather coming.",
         "{first} learned knots as a kid, long before algebra. {They} keep a coil of rope handy and {they} talk about the sea like an old friend.",
-        "On watch {first} once spotted a squall three hours before it hit. {They} know that the ocean feeds you if you respect it and {they} do respect it.",
+        "On watch {first} once spotted a squall three hours before it hit. {They} know that the ocean provides for those who respect it and {they} do respect it.",
         "{first} spent a season fishing between ports, hook and line off the stern. {They} have eaten everything the sea throws up and {they} are not picky."
       ],
       "backstory": "{first} crewed cargo ships and read the tide tables like scripture. {They} read the water and the sky together and {they} have a feel for weather coming.",

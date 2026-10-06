@@ -2,7 +2,7 @@
   "_comment": "Lifeseed pools for The Oversight. Every character gets a lifeseed: a region anchor, named people, named places, events, skill origins, a wound, a want. Backstories, keepsakes, flashbacks, and motives all read from the SAME seed — that's the coherence guarantee. Region towns are real towns; fragments never cross regions.",
   "events": [
     "the flood year, when the water took the low road",
-    "the winter the {workplace} closed",
+    "the winter {workplace} closed",
     "the fire season that turned the sky orange for a month",
     "the spring the river jumped its banks",
     "the year the mill laid off half the town",
@@ -10,12 +10,12 @@
     "the summer the grid flickered and never quite came back",
     "the year the deer ate the garden down to the dirt",
     "the winter the river froze loud enough to hear from {town}",
-    "the spring the {workplace} flooded and they worked from boats",
-    "the year the {workplace} switched to nights and forgot to tell the families",
+    "the spring {workplace} flooded and they worked from boats",
+    "the year {workplace} switched to nights and forgot to tell the families",
     "the flood that put the church basement underwater twice in one spring",
     "the winter the propane ran out in {town} and the school gym became a dormitory",
     "the spring the well went sulfur and the whole street boiled their water",
-    "the summer the cicadas came and you couldn't hear yourself think"
+    "the summer the cicadas came and the noise drowned out thought"
   ],
   "kin": [
     {
@@ -141,7 +141,7 @@
     {
       "fates": [
         "taught {first} the trade properly",
-        "said: fix what you can reach",
+        "said: fix what's within reach",
         "retired to {town} and grew tomatoes"
       ],
       "relation": "mentor"
@@ -498,7 +498,7 @@
     {
       "id": "far_away",
       "label": "far from here",
-      "land": "streets you still dream about",
+      "land": "harbor fog, night markets, and streets that live on in memory",
       "matchTags": [],
       "towns": [
         "the old city",
@@ -651,7 +651,7 @@
       "watching {kin} dose {first}'s fever with willow bark tea, not aspirin"
     ],
     "mending": [
-      "from {kin}: measure twice, fix what you can reach",
+      "from {kin}: measure twice, fix what's within reach",
       "keeping old machines alive at {workplace}",
       "the porch that sagged every spring until {first} fixed it for good",
       "{kin}'s saying: glue it, clamp it, sleep on it, call it good",
@@ -659,7 +659,7 @@
       "fixing {kin}'s rocking chair so many times it was mostly new wood"
     ],
     "navigation": [
-      "because {kin} made sure of that",
+      "on the back roads {kin} drilled into {first} as a kid",
       "driving the back roads around {town} at night",
       "running messages between {place} and {town} as a kid",
       "the constellations {kin} taught from the back porch",
@@ -680,7 +680,7 @@
       "running a trapline with {kin} one hard winter",
       "checking {kin}'s trapline before school, fingers too cold to work",
       "the hard winter when {kin}'s trapline kept them both eating",
-      "{kin}'s rule: a trap is a promise you check every day, hungry or not",
+      "{kin}'s rule: a trap is a promise, checked every day, hungry or not",
       "the first snare {first} ever set, and the rabbit it actually caught"
     ]
   },

@@ -197,16 +197,46 @@
       const p1 = ls.people[1];
       const soEntries = Object.entries(ls.skillOrigins || {});
       const bits = [];
+      // Steve 2026-10-06: backgrounds were "messed up, repetitive, and weird" —
+      // em-dash fragments, colon splices, and "What X wants now is simple" on
+      // every character. Natural sentences, varied structures, name-anchored
+      // (no pronouns to get wrong).
       bits.push(`${first} grew up in ${ls.hometown}, ${ls.regionLand}.`);
-      if (p0) bits.push(`${p0.name.split(' ')[0]} — ${p0.relation} — ${p0.fate}.`);
-      if (p1 && R() < 0.7) bits.push(`And ${p1.name.split(' ')[0]}, ${p1.relation}: ${p1.fate}.`);
+      if (p0) {
+        const pn = p0.name.split(' ')[0];
+        const kinLine = [
+          `${first}'s ${p0.relation} ${pn} ${p0.fate}.`,
+          `${pn}, ${first}'s ${p0.relation}, ${p0.fate}.`,
+        ][Math.floor(R() * 2)];
+        bits.push(kinLine.charAt(0).toUpperCase() + kinLine.slice(1));
+      }
+      if (p1 && R() < 0.7) {
+        const pn = p1.name.split(' ')[0];
+        const kin2 = [
+          `${first}'s ${p1.relation} ${pn} ${p1.fate}.`,
+          `${pn} — ${first}'s ${p1.relation} — ${p1.fate}.`,
+        ][Math.floor(R() * 2)];
+        bits.push(kin2.charAt(0).toUpperCase() + kin2.slice(1));
+      }
       if (soEntries.length) {
         const [sk, how] = soEntries[0];
         const skName = { food: 'finding food', medicinal: 'patching people up', mending: 'fixing things', navigation: 'never getting lost', tracking: 'reading ground', trapping: 'traps', forecast: 'reading the sky' }[sk] || sk;
-        bits.push(`${first} learned ${skName} ${how.charAt(0).toLowerCase() + how.slice(1)}.`);
+        const howLower = how.charAt(0).toLowerCase() + how.slice(1);
+        bits.push(`${first} learned ${skName} ${howLower}.`);
       }
-      bits.push(`${ls.event.charAt(0).toUpperCase() + ls.event.slice(1)} — that's the year everything changed, before the sky did.`);
-      bits.push(`${ls.wound} What ${first} wants now is simple: ${ls.want}.`);
+      const eventCap = ls.event.charAt(0).toUpperCase() + ls.event.slice(1);
+      const eventLine = [
+        `${eventCap} — that's the year everything changed, before the sky did.`,
+        `${eventCap}, and everything changed that year, before the sky did.`,
+        `Then ${eventCap.charAt(0).toLowerCase() + eventCap.slice(1)}, and nothing was the same after.`,
+      ][Math.floor(R() * 3)];
+      bits.push(eventLine);
+      const wantLine = [
+        `${ls.wound} What ${first} wants now is simple: ${ls.want}.`,
+        `${ls.wound} These days ${first} wants to ${ls.want}.`,
+        `${ls.wound} ${first} keeps coming back to one thing: ${ls.want}.`,
+      ][Math.floor(R() * 3)];
+      bits.push(wantLine);
       return bits.join(' ');
     },
 

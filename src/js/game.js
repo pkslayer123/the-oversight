@@ -333,6 +333,13 @@
       // rule exceptions (names that break the ending rules)
       kuba: 'm', aditya: 'm', hamza: 'm', taha: 'm', krishna: 'm', ravi: 'm', nikita: 'm',
       andrea: 'm',
+      // ukrainian/slavic (Steve 2026-10-06: "Leonid was a glazier... They have handled"
+      // read as a pronoun bug — Leonid is unambiguously masculine, the map just didn't know it)
+      leonid: 'm', taras: 'm', bohdan: 'm', mykola: 'm', oleksandr: 'm', dmytro: 'm', ivan: 'm',
+      petro: 'm', vasyl: 'm', yuriy: 'm', oleg: 'm', serhiy: 'm', andriy: 'm', volodymyr: 'm',
+      yevhen: 'm', roman: 'm', igor: 'm', pavel: 'm', dmitri: 'm', alexei: 'm', boris: 'm',
+      olena: 'f', oksana: 'f', natalia: 'f', iryna: 'f', kateryna: 'f', tetyana: 'f', halyna: 'f',
+      sofiya: 'f', yulia: 'f', anastasia: 'f', dariya: 'f', solomiya: 'f',
     },
 
     // guessNameGender: does this first name read male or female? Conservative:
@@ -636,7 +643,38 @@
         const intelSecondary = secCands.length ? secCands[Math.floor(Math.random() * secCands.length)] : (intelPrimary === 'steady' ? 'practical' : 'steady');
         // DARK TELL, applied: one wrong note in the backstory, one unsettling
         // line in the assessment. The quirk (set above) is the visible tell.
-        let sysAssess = `${first} reads as ${temperament} and ${sharing} with strangers. The others find this ${temperament === 'cautious' ? 'reassuring' : temperament === 'bold' ? 'exhausting' : 'worth watching'}.`;
+                // SYSTEM ASSESSMENT (Steve 2026-10-06): natural prose, not a template readout.
+        // No "reads as" (engine language leaking into fiction), no restating the
+        // axis labels (the UI already shows "steady, fair"), and the closing
+        // observation varies — "The others find this worth watching" on every
+        // third character was the tell. Name-only (no pronouns) keeps it safe.
+        const _assessPool = {
+          steady: [`${first} doesn't rattle easily.`, `${first} keeps an even keel when things go sideways.`, `Whatever happens, ${first} is still standing in the same place.`],
+          bold: [`${first} says the thing nobody else will say.`, `${first} walks into a room like it was waiting.`, `Where ${first} stands is never a mystery.`],
+          cautious: [`${first} watches before wading in.`, `${first} trusts slowly and checks twice.`, `New faces get a nod from ${first}, not a life story.`],
+          warm: [`${first} remembers names and uses them.`, `Strangers relax around ${first} faster than they expect to.`, `${first} makes room — at the fire, in the conversation, everywhere.`],
+          prickly: [`${first} has edges and doesn't sand them down.`, `Small talk withers around ${first}; real talk survives.`, `${first} doesn't perform friendliness, which some people trust more.`],
+          restless: [`${first} is already thinking about the next thing.`, `Sitting still looks painful for ${first}.`, `${first} fidgets with tools, plans, anything in reach.`],
+          dry: [`${first}'s humor is bone-dry and easy to miss.`, `${first} says less than everyone and means more of it.`, `The driest comment in the room usually comes from ${first}.`],
+          gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
+          intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
+          withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
+        };
+        const _assessClose = {
+          steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
+          bold: [`The others find it bracing — or exhausting.`, `Nobody's neutral about ${first} for long.`, `It clears rooms and fills them, depending on the day.`, `Takes some getting used to, but nobody calls it dull.`, `Subtle was never the goal.`],
+          cautious: [`The others find it reassuring.`, `Nobody mistakes it for coldness twice.`, `Trust earned from ${first} actually means something.`, `Slow to warm, solid once warm.`, `Caution has kept ` + first + ` alive this long.`],
+          warm: [`The others gravitate toward it.`, `It's why strangers become neighbors fast around ${first}.`, `Nobody stays a stranger long.`, `The fire always has room when ${first} is tending it.`, `Warmth like that is rare out here.`],
+          prickly: [`The others learn to navigate it.`, `It's honest, which counts for more than charm out here.`, `Fewer friends, better ones.`, `The bark is worse than the bite. Usually.`, `An acquired taste, like strong coffee.`],
+          restless: [`The others find it contagious — or tiring.`, `Things get done around ${first}, one way or another.`, `Standing still was never an option anyway.`, `Exhausting to watch, useful to have.`, `The energy has to go somewhere.`],
+          dry: [`The others catch on eventually.`, `It's an acquired taste, like most good things.`, `The laugh always comes a beat late.`, `Worth listening closely for.`, `Dry humor, wetter than it looks.`],
+          gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
+          intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
+          withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
+        };
+        const _ap = _assessPool[temperament] || _assessPool.steady;
+        const _ac = _assessClose[temperament] || _assessClose.steady;
+        let sysAssess = _ap[Math.floor(Math.random() * _ap.length)] + ' ' + _ac[Math.floor(Math.random() * _ac.length)];
         let darkStored = null;
         if (dark && dark._tell) {
           backstory += ' ' + fillPronouns(dark._tell.note);
