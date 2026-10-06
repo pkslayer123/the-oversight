@@ -10,18 +10,19 @@
     "uses": 10,
     "catches": [
       "cottontail_rabbit",
-      "gray_squirrel"
+      "gray_squirrel",
+      "opossum"
     ],
     "knowledgeLevels": {
       "1": "You have seen a snare. A loop, a stick, an animal.",
       "2": "Materials: vine (muscadine or bush) + stick (tree branch). The loop goes on a game trail.",
-      "3": "You can make one. Bend the stick, tie the vine, set the loop where they run."
+      "3": "You can make one. Bend the stick, tie the vine, set the loop where they run. Opossums wander into them after dark — the easiest meat you'll ever trap."
     }
   },
   {
     "id": "deadfall",
     "name": "Deadfall Trap",
-    "description": "a heavy stone propped on sticks. crushes larger game.",
+    "description": "a heavy stone propped on sticks. crushes whatever trips it — set big on a deer trail and it can take a deer.",
     "materials": {
       "stick": 2,
       "stone": 1,
@@ -30,13 +31,60 @@
     "uses": 5,
     "catches": [
       "cottontail_rabbit",
+      "cottontail_rabbit",
       "gray_squirrel",
-      "wild_turkey"
+      "gray_squirrel",
+      "wild_turkey",
+      "wild_turkey",
+      "white_tailed_deer"
     ],
     "knowledgeLevels": {
       "1": "A deadfall. Stone, sticks, bait. Simple and brutal.",
       "2": "Materials: 2 sticks + 1 heavy stone + bait (berries or nuts). The trigger is the trick.",
-      "3": "You can build one. Balance the stone, set the trigger, bait it. Check daily."
+      "3": "You can build one. Balance the stone, set the trigger, bait it. Check daily. Set it big on a deer trail and once in a long while it takes a deer — mostly you'll dress rabbit."
+    }
+  },
+  {
+    "id": "box_trap",
+    "name": "Box Trap",
+    "description": "a woven sapling cage with a drop door. for clever medium game — raccoon, opossum, the occasional fox.",
+    "materials": {
+      "stick": 4,
+      "vine": 2,
+      "bait": 1
+    },
+    "uses": 6,
+    "catches": [
+      "raccoon",
+      "raccoon",
+      "opossum",
+      "opossum",
+      "gray_fox"
+    ],
+    "knowledgeLevels": {
+      "1": "A box trap. Woven saplings, a drop door, bait inside. For clever medium game.",
+      "2": "Materials: 4 sticks + 2 vine + bait (meat scraps work best). The door counterweights shut behind them.",
+      "3": "You can build one. Set it by dens and water for raccoon, on night trails for opossum. Foxes are shy of traps — bait it well, leave it alone, check at dawn."
+    }
+  },
+  {
+    "id": "fish_weir",
+    "name": "Fish Weir",
+    "description": "stakes and vine woven across shallow water. crayfish funnel in; turtles too.",
+    "materials": {
+      "stick": 3,
+      "vine": 2
+    },
+    "uses": 8,
+    "catches": [
+      "crayfish",
+      "crayfish",
+      "snapping_turtle"
+    ],
+    "knowledgeLevels": {
+      "1": "A fish weir. Stakes and vine in the shallows — funnels them in, keeps them in.",
+      "2": "Materials: 3 sticks + 2 vine. Drive the stakes in a V, leave a gap with the basket at the throat.",
+      "3": "You can weave one. Set it in creek or wetland shallows. Crayfish pile in; a turtle is a bonus — mind your fingers, they bite."
     }
   },
   {
