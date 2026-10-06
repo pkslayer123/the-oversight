@@ -11579,10 +11579,18 @@
           }
         }
         // squirrel_friend: sometimes they leave you nuts. Random gifts, real food.
+        // KNOWLEDGE-GATED like every other find: unknown nuts lump together
+        // unnamed (sort at camp); known nuts arrive named.
         const giftChance = this.modTarget('forage.gift_chance', 0);
         if (giftChance > 0 && Math.random() < giftChance) {
-          scholar.inventory.push({ plantId: 'hickory_nut', units: 2, kcalEach: 100, spoilDay: scholar.day + 5, name: 'Squirrel gift (hickory nuts)', unit: 'handful', prep: 'A squirrel left these. A tip? A bribe? Nuts.', kg: 0.2 });
-          this.say('A squirrel drops nuts at your feet and vanishes. A gift. (squirrel_friend: +200 kcal)');
+          const nut = this.data.plants.find(pp => pp.id === 'hickory_nut');
+          if (nut && !this.plantKnown(nut.id)) {
+            this.addUnknownToLump(nut, 2, scholar.day);
+            this.say('A squirrel drops nuts at your feet and vanishes. A gift — unfamiliar ones, into the bag with the rest. (squirrel_friend)');
+          } else {
+            scholar.inventory.push({ plantId: 'hickory_nut', units: 2, kcalEach: 100, spoilDay: scholar.day + 5, name: 'Squirrel gift (hickory nuts)', unit: 'handful', prep: 'A squirrel left these. A tip? A bribe? Nuts.', kg: 0.2 });
+            this.say('A squirrel drops nuts at your feet and vanishes. A gift. (squirrel_friend: +200 kcal)');
+          }
         }
         // pattern_recognition: the sharp-eyed find the odd one.
         const rareChance = S.modifiers.resolve(0, 'forage.rare_find_chance', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
@@ -14318,16 +14326,19 @@
           f.turnIdx = 0; f.round++;
           this.sysSay(`ROUND ${f.round}!`);
           this.audioEvent('round', { round: f.round });
-          // BELLTOAD PACK ARRIVES (Steve 2026-10-05): delayed reinforcements
-          if (f.round === 2 && this._pendingPack) {
+          // BELLTOAD PACK TRICKLE (Steve 2026-10-05): not a swarm, a chorus.
+          // 1 per round arrives, up to pack size. Never the hummice instant-swarm.
+          if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0) {
             const pp = this._pendingPack;
-            this._pendingPack = null;
+            pp.count--;
+            if (pp.count <= 0) this._pendingPack = null;
             this.say('Another throat joins the chorus — the pack answers the call.');
             this.audioEvent('belltoadCroak');
             // Spawn the delayed pack members near the existing toad
             const existing = f.fighters.find(x => x.kind === 'monster' && x.mdef && x.mdef.id === pp.id);
             if (existing) {
-              for (let i = 0; i < pp.count; i++) {
+              // Spawn just 1 per round (trickle, not swarm)
+              for (let i = 0; i < 1; i++) {
                 const nx = Math.max(0, Math.min(8, existing.mx + (i % 2 === 0 ? 1 : -1))));
                 const ny = Math.max(0, Math.min(8, existing.my + 1));
                 const newFighter = {
@@ -16671,11 +16682,16 @@
         if (m.beamPhase === 'grounded') {
           m.gwGrounded = (m.gwGrounded || 1) - 1;
           if (m.gwGrounded <= 0) {
-            this.encSetPhase(m, 'circle'); m.groundedNoted = false;
-            this.say('The darter\'s wings find the air — it climbs, screaming, back into the sun.');
+            // ESCAPE (Steve 2026-10-05): if you didn't kill it while it was down,
+            // it's GONE. Not circling for another dive — the window closed.
+            // The kill window is real: 2 turns, then it leaves.
+            this.say('The darter\'s wings find the air — it climbs, screaming, back into the sun. Gone.');
             this.audioEvent('glasswingClimb');
+            // Remove from combat: it escaped
+            m.alive = false; m.fled = true;
+            this.tbEndCheck();
           } else {
-            this.say('The darter thrashes on the dirt, wings tangled. NOW. While it\'s down.');
+            this.say('The darter thrashes on the dirt, wings tangled. NOW. While it\'s down. Kill it.');
           }
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
