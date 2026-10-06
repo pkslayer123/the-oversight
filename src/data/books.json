@@ -182,4 +182,105 @@
   },
   "flavor": "'Respect the animal. Waste nothing. The gut pile feeds the woods that fed you.'"
 }
+,
+{
+  "id": "hedge_witch_herbarium",
+  "name": "The Hedge-Witch's Herbarium",
+  "description": "a hand-stitched herbarium, pressed leaves between every page",
+  "unlocks": {
+    "plants": [
+      "yarrow",
+      "plantain_leaf",
+      "jewelweed"
+    ],
+    "skills": [
+      "herbal_medicine",
+      "wound_care"
+    ],
+    "skillLevel": 2
+  },
+  "flavor": "'Yarrow stops the bleed. Plantain draws the sting. Jewelweed owes the poison ivy a debt -- rub it on within the hour.'"
+},
+{
+  "id": "night_walkers_guide",
+  "name": "Night Walker's Guide",
+  "description": "a slim pamphlet, ink smudged, margins full of moon phases",
+  "unlocks": {
+    "animals": [
+      "raccoon",
+      "striped_skunk",
+      "gray_fox"
+    ],
+    "skills": [
+      "nocturnal_patterns"
+    ],
+    "skillLevel": 1
+  },
+  "flavor": "Everything worth catching is out at night. So is everything that catches you. The pamphlet is honest about both."
+},
+{
+  "id": "birds_of_the_scattering",
+  "name": "Birds of the Scattering",
+  "description": "a watercolored bird guide, species from three counties crossed out, new ones inked in",
+  "unlocks": {
+    "animals": [
+      "wild_turkey",
+      "canada_goose",
+      "american_woodcock"
+    ],
+    "skills": [
+      "animal_behavior"
+    ],
+    "skillLevel": 1
+  },
+  "flavor": "Someone crossed out the migration maps and wrote 'GONE?' in the margins. The feeding-behavior notes are better than the pictures."
+},
+{
+  "id": "fishers_ledger",
+  "name": "The Fisher's Ledger",
+  "description": "a waterproof logbook, knots and rigs sketched between tallies",
+  "unlocks": {
+    "recipes": [
+      "fish_weir",
+      "trotline"
+    ],
+    "skills": [
+      "water_systems"
+    ],
+    "skillLevel": 2
+  },
+  "flavor": "'June 3: trotline lost to a turtle. June 4: ate the turtle. June 5: new trotline, deeper set.'"
+},
+{
+  "id": "mend_and_make_do",
+  "name": "Mend and Make Do",
+  "description": "a pamphlet on repairs, corners curled, held together with its own advice",
+  "unlocks": {
+    "recipes": [
+      "braided_cord"
+    ],
+    "skills": [
+      "sewing"
+    ],
+    "skillLevel": 1
+  },
+  "flavor": "Rule one: a cord is a rope that hasn't decided yet. Rule two: nothing with a handle is truly broken."
+},
+{
+  "id": "gardeners_winter",
+  "name": "The Gardener's Winter",
+  "description": "a seed-company almanac with forty years of handwritten corrections",
+  "unlocks": {
+    "plants": [
+      "ramps",
+      "wild_onion",
+      "lambs_quarters"
+    ],
+    "skills": [
+      "preserve_food"
+    ],
+    "skillLevel": 1
+  },
+  "flavor": "Printed dates: useless. Marginalia: everything. 'The onions don't care what the packet says.'"
+}
 ]

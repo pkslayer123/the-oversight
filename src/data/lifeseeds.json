@@ -201,6 +201,40 @@
         "the night shift",
         "the shop floor"
       ]
+    },
+    {
+      "kind": "hideout",
+      "names": [
+        "the fort {first} and {kin} built in the woods",
+        "the drainpipe behind {workplace}",
+        "the treehouse out past {town}",
+        "the storm shelter at {first}'s house"
+      ]
+    },
+    {
+      "kind": "market",
+      "names": [
+        "the farmers' market in {town}",
+        "the flea market on {street}",
+        "the corner store with the good penny candy",
+        "the feed store where {kin} haggled for hours"
+      ]
+    },
+    {
+      "kind": "grave",
+      "names": [
+        "the cemetery on the hill past {town}",
+        "{kin}'s grave",
+        "the small plot behind the old church"
+      ]
+    },
+    {
+      "kind": "road",
+      "names": [
+        "the long road out of {town}",
+        "the bus route to {workplace}",
+        "the trail {first} walked to clear {first}'s head"
+      ]
     }
   ],
   "regions": [
@@ -596,40 +630,58 @@
       "during the hungry years near {town}",
       "salting pork with {kin} every November",
       "stretching soup at {workplace} when the money ran thin",
-      "watching {kin} turn nothing into dinner, winter after winter"
+      "watching {kin} turn nothing into dinner, winter after winter",
+      "the winter the garden was all that stood between {first} and hunger",
+      "learning to stretch one chicken across three meals with {kin}"
     ],
     "forecast": [
       "from {kin}, who could smell weather coming",
       "working outdoors near {town}, watching the sky",
-      "counting the seconds between lightning and thunder over {town}"
+      "counting the seconds between lightning and thunder over {town}",
+      "the ache in {kin}'s bad knee that beat every forecast",
+      "{kin}'s rule: leaves turned upside down mean rain by nightfall",
+      "haying season at {workplace}, where a wrong sky cost a whole field"
     ],
     "medicinal": [
       "from {kin}, who learned from theirs",
       "at {workplace}, where it mattered",
-      "the winter {kin} got sick and there was no doctor to call"
+      "the winter {kin} got sick and there was no doctor to call",
+      "{kin}'s poultice drawer -- yarrow for bleeding, plantain for stings",
+      "the summer the clinic closed and {town} made do with gardens",
+      "watching {kin} dose {first}'s fever with willow bark tea, not aspirin"
     ],
     "mending": [
       "from {kin}: measure twice, fix what you can reach",
       "keeping old machines alive at {workplace}",
-      "the porch that sagged every spring until {first} fixed it for good"
+      "the porch that sagged every spring until {first} fixed it for good",
+      "{kin}'s saying: glue it, clamp it, sleep on it, call it good",
+      "the sewing machine at {workplace} that {first} kept running past its years",
+      "fixing {kin}'s rocking chair so many times it was mostly new wood"
     ],
     "navigation": [
       "because {kin} made sure of that",
       "driving the back roads around {town} at night",
-      "running messages between {place} and {town} as a kid"
+      "running messages between {place} and {town} as a kid",
+      "the constellations {kin} taught from the back porch",
+      "walking to {place} and back by landmark, never a map",
+      "getting turned around once near {town} and never again after"
     ],
     "tracking": [
       "from {kin}, before {first} could read books",
       "following deer trails out past {place}",
       "reading bent grass with {kin} on the way to {place}",
       "learning which birds go quiet when something's coming",
-      "watching {kin} read the ground like a newspaper"
+      "watching {kin} read the ground like a newspaper",
+      "{kin} showing {first} how a deer bed looks different from a dog bed",
+      "reading the morning after snow: everything that passed, in order"
     ],
     "trapping": [
       "from {kin} at twelve, in the woods past {town}",
       "running a trapline with {kin} one hard winter",
       "checking {kin}'s trapline before school, fingers too cold to work",
-      "the hard winter when {kin}'s trapline kept them both eating"
+      "the hard winter when {kin}'s trapline kept them both eating",
+      "{kin}'s rule: a trap is a promise you check every day, hungry or not",
+      "the first snare {first} ever set, and the rabbit it actually caught"
     ]
   },
   "wants": [

@@ -105,6 +105,12 @@
     "office": {"name": "Office", "modifiers": {"supplies": {"values": ["empty", "papers", "tools"], "weights": [0.5, 0.3, 0.2], "visible": false, "discover": "search"}}},
     "bay": {"name": "Warehouse bay", "modifiers": {"pallets": {"values": ["empty", "goods", "machinery"], "weights": [0.4, 0.4, 0.2], "visible": true}}},
     "sanct": {"name": "Sanctuary", "modifiers": {}},
-    "base": {"name": "Basement", "modifiers": {"stores": {"values": ["empty", "cans", "water"], "weights": [0.5, 0.3, 0.2], "visible": false, "discover": "search"}}}
+    "base": {"name": "Basement", "modifiers": {"stores": {"values": ["empty", "cans", "water"], "weights": [0.5, 0.3, 0.2], "visible": false, "discover": "search"}}},
+    "kitchen": {"name": "Kitchen", "modifiers": {"supplies": {"values": ["empty", "pans", "cans", "spices"], "weights": [0.5, 0.2, 0.2, 0.1], "visible": false, "discover": "search"}}},
+    "infirmary": {"name": "Infirmary", "modifiers": {"supplies": {"values": ["empty", "bandages", "medicine"], "weights": [0.55, 0.3, 0.15], "visible": false, "discover": "search"}}},
+    "library": {"name": "Library", "modifiers": {"supplies": {"values": ["papers", "books", "empty"], "weights": [0.5, 0.3, 0.2], "visible": true}}},
+    "workshop": {"name": "Workshop", "modifiers": {"supplies": {"values": ["tools", "scrap", "empty"], "weights": [0.3, 0.4, 0.3], "visible": false, "discover": "search"}}},
+    "dormitory": {"name": "Dormitory", "modifiers": {}},
+    "cellar": {"name": "Cellar", "modifiers": {"stores": {"values": ["empty", "jars", "cans"], "weights": [0.6, 0.25, 0.15], "visible": false, "discover": "search"}}}
   }
 }
