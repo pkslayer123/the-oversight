@@ -12267,10 +12267,8 @@
             const isUnknown = !tl || ttype === 'unknown';
             const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
             const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
-            const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
-            g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" style="width:100%;height:100%;display:block">` +
-              `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}" stroke="#4a4a42" stroke-width="1"/>` +
-              `<text x="32" y="42" text-anchor="middle" font-size="28" fill="${textColor}">${glyph}</text></svg>`;
+            // SIMPLE (Steve 2026-10-06): plain text, no SVG - test if SVG is the problem
+            g = `<span style="font-size:24px;">${glyph}</span>`;
             // Try the full scene generator as enhancement, not requirement
             if (TS) {
               try {
@@ -12282,7 +12280,22 @@
             g = '·';
           }
         }
-        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
+        // Background color for terrain (set here since we removed SVG)
+        let tileBg = '';
+        if (!isP && !isW && !otherV) {
+          try {
+            const ttype2 = tl ? tl.type : 'unknown';
+            const colors2 = {
+              forest_floor: '#241c12', grove: '#1b2f1c', meadow: '#28331b',
+              thicket: '#18291f', wetland: '#1a2830', creek: '#14303c',
+              trail_edge: '#322e1b', ruin: '#27272b', haven: '#20271f'
+            };
+            const isUnk2 = !tl || ttype2 === 'unknown';
+            tileBg = isUnk2 ? '#2a2a26' : (colors2[ttype2] || '#1c1c18');
+          } catch (e) {}
+        }
+        const styleAttr = tileBg ? ` style="background:${tileBg};"` : '';
+        html += `<div class="${cls}" data-x="${x}" data-y="${y}"${styleAttr}>${g}</div>`;
       }
       html += '</div>';
     }
