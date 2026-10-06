@@ -1580,6 +1580,8 @@
   //   serviceRush() (service_mimic resolve), contractBind() (contract_golem
   //   strike), monsterDown() / monsterHurt() (generic death/wound for
   //   siblings), delegateDebrief() (was fired by tbFifoBreather, silent).
+  //   projectorFire() (memory_projector resolve: whine swelling into the cold
+  //   pull tone, hard cut — the light has edges).
   //   WAVE-1 CONTRACT, NOW DEFINED (Steve 2026-10-06): boarNotice/boarSnort/
   //   boarCharge, wolfSilence/wolfSnarl, heronUnfold/heronStrike, turtleSnap
   //   (wired as speedbump_turtle encounter.resolveAudio in monsters.json).
@@ -2372,6 +2374,40 @@
       g.gain.exponentialRampToValueAtTime(0.16, t + 0.25);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur);
+    }
+    function projectorFire() {
+      // THE PICTURE LOCKS — then the edges cut. Projector whine swelling
+      // (bulb overdrive, rising to a scream) into the cold pull tone — but
+      // sharpened, metallic, wrong. Then a hard cut. The light has edges.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.6;
+      // overdrive whine: sawtooth climbing 800 -> 2400, thin and hot
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sawtooth';
+      w.frequency.setValueAtTime(800, t);
+      w.frequency.exponentialRampToValueAtTime(2400, t + dur * 0.55);
+      const wbp = ctx.createBiquadFilter(); wbp.type = 'bandpass'; wbp.frequency.value = 1800; wbp.Q.value = 2;
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(0.12, t + dur * 0.5);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.62);
+      w.connect(wbp); wbp.connect(wg); wg.connect(sfxBus); w.start(t); w.stop(t + dur * 0.62);
+      // the pull, cold and edged: low swell + metallic shimmer cluster
+      const p = ctx.createOscillator(), pg = ctx.createGain();
+      p.type = 'sine'; p.frequency.setValueAtTime(65, t + dur * 0.45);
+      p.frequency.linearRampToValueAtTime(58, t + dur * 0.9);
+      pg.gain.setValueAtTime(0.0001, t + dur * 0.45);
+      pg.gain.exponentialRampToValueAtTime(0.16, t + dur * 0.75);
+      pg.gain.setValueAtTime(0.16, t + dur * 0.92);
+      pg.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.94); // hard cut
+      p.connect(pg); pg.connect(sfxBus); p.start(t + dur * 0.45); p.stop(t + dur);
+      for (const f of [2093, 2637, 3136]) { // the edges: cold inharmonic shimmer
+        const s = ctx.createOscillator(), sg = ctx.createGain();
+        s.type = 'sine'; s.frequency.value = f;
+        sg.gain.setValueAtTime(0.0001, t + dur * 0.5);
+        sg.gain.exponentialRampToValueAtTime(0.03, t + dur * 0.8);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.94);
+        s.connect(sg); sg.connect(sfxBus); s.start(t + dur * 0.5); s.stop(t + dur);
+      }
     }
     function managerCircle() {
       // PACING + DICTATION: rhythmic hoofbeats in a circle, under a faint
@@ -4531,6 +4567,7 @@
       projectorStatic() { projectorStatic(); },
       projectorBreak() { projectorBreak(); },
       projectorPull() { projectorPull(); },
+      projectorFire() { projectorFire(); },
       managerCircle() { managerCircle(); },
       managerAnnounce() { managerAnnounce(); },
       managerCharge() { managerCharge(); },
