@@ -237,6 +237,20 @@
       return 'the scattered';
     },
 
+    // appearanceFor: skin tone + clothing style from the origin's appearance
+    // pool (Steve 2026-10-06). The sprite is generated FROM the person —
+    // villagers from the same origin share a plausible appearance pool.
+    appearanceFor(origin, tags) {
+      const cg = this.data.characterGen || {};
+      const pools = cg.appearancePools || {};
+      const pool = pools[origin] || pools['default'] || { skinTones: ['fair','light','tan','brown','dark','deep'], clothing: ['casual'] };
+      const tones = pool.skinTones && pool.skinTones.length ? pool.skinTones : ['tan'];
+      const skinTone = tones[Math.floor(Math.random() * tones.length)];
+      const clothes = pool.clothing && pool.clothing.length ? pool.clothing : ['casual'];
+      const clothing = clothes[Math.floor(Math.random() * clothes.length)];
+      return { skinTone, clothing };
+    },
+
     // The scattering is random. Nobody chooses where they wake up.
     // Origin (typed by the player) sets regional knowledge; the landing zone is pure chance.
     randomLandingZone() {
@@ -709,6 +723,11 @@
           systemAssessment: sysAssess,
           secretFear, languages: langs, occupationId: occ.id || null,
           candidate: candidate !== false, pro,
+          // APPEARANCE (Steve 2026-10-06): the sprite is generated FROM the
+          // person. gender follows the name (nameGender computed above);
+          // skinTone comes from the origin's appearance pool.
+          gender: nameGender,
+          skinTone: this.appearanceFor(origin, parsed.tags).skinTone,
         };
         // ITEMS (Steve 2026-10-05): generated with full char context so kin
         // keepsakes are THAT person's — named from their own culture.

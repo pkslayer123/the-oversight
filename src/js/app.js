@@ -30,6 +30,25 @@
   // ITEM SPRITES (Steve 2026-10-06): every item renders its unique SVG.
   // Knowledge-gated: unknown (lumped) items show the generic parcel.
   // Plant-derived items use the plant sprite at full depth when known.
+  // HUMANOID SPRITES (Steve 2026-10-06): wave-2 human-like horrors render
+  // their calm SVG on the grid — and villagers render generated portraits.
+  // Some villagers echo the humanoids' silhouettes, so at grid-glance you
+  // do a double-take: "is that a villager or is that one of THEM?"
+  const HUMANOID_SPRITE_IDS = new Set(['landlord', 'heckler', 'paparazzo', 'union_rep', 'understudy', 'moderator', 'warranty_caller']);
+  function humanoidSpriteHtml(mid) {
+    try {
+      if (!mid || !HUMANOID_SPRITE_IDS.has(mid)) return '';
+      const svg = S.Sprites && S.Sprites.monsterSprite(mid, false);
+      return svg ? `<span class="csprite">${svg}</span>` : '';
+    } catch (e) { return ''; }
+  }
+  function villagerSpriteHtml(vp) {
+    try {
+      if (!vp || !S.Sprites || !S.Sprites.villagerSprite) return '';
+      const svg = S.Sprites.villagerSprite(vp);
+      return svg ? `<span class="vsprite">${svg}</span>` : '';
+    } catch (e) { return ''; }
+  }
   function itemSpriteHtml(it) {
     try {
       const Sp = S.Sprites;
@@ -8983,6 +9002,8 @@
     const sys = !!Game.state.systemArrived;
     const known = sys || Game.nameKnown(villagerId);
     const titleName = known ? vp.name : Game.personDescriptor(villagerId);
+    // VILLAGER PORTRAIT (Steve 2026-10-06): generated FROM the person.
+    const _portrait = villagerSpriteHtml(vp);
     const trust = (Game.state.village.trust && Game.state.village.trust[villagerId]) || 10;
     const health = (Game.state.village.health && Game.state.village.health[villagerId] !== undefined)
       ? Game.state.village.health[villagerId] : 100;
@@ -9139,7 +9160,7 @@
     }
 
     return `<div class="inlinecard">
-      ${inlineHead('\uD83D\uDC64 ' + esc(titleName))}
+      ${inlineHead((_portrait ? '<span class="vportrait">' + _portrait + '</span> ' : '') + '\uD83D\uDC64 ' + esc(titleName))}
       ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
       ${challengeHtml}
       <div class="inline-body">
@@ -11660,7 +11681,11 @@
               // tile-to-tile instead of teleporting them on re-render.
               // INDISTINCT (Steve 2026-10-05): creatures render the same whether
               // monster or animal — the emoji shows what it looks like, not what it is.
-              g = `<span data-ent="creature:${esc(mf.monsterId || mf.mdef && mf.mdef.id || ('tb' + _mfi))}">${esc(mf.emoji || '👹')}</span>`;
+              // HUMANOID SPRITES (Steve 2026-10-06): human-like horrors show
+              // their calm SVG — the paranoia needs a real silhouette.
+              const _hkey = mf.monsterId || (mf.mdef && mf.mdef.id) || ('tb' + _mfi);
+              const _hspr = humanoidSpriteHtml(mf.monsterId || (mf.mdef && mf.mdef.id));
+              g = `<span data-ent="creature:${esc(_hkey)}">${_hspr || esc(mf.emoji || '👹')}</span>`;
               cls += ' creature';
               drawn = true; break;
             }
@@ -11668,7 +11693,8 @@
           if (!drawn && mon && !_inside && cx === mon.mx && cy === mon.my) {
             const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
             // INDISTINCT (Steve 2026-10-05): same 'creature' class as animals
-            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${esc(mdef.emoji || '👹')}</span>`;
+            const _mhspr = humanoidSpriteHtml(mon.id || mdef.id);
+            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${_mhspr || esc(mdef.emoji || '👹')}</span>`;
             cls += ' creature'; drawn = true;
           }
           if (!drawn && ani && cx === ani.mx && cy === ani.my) {
@@ -11699,7 +11725,8 @@
                 const showName = Game.state.systemArrived || Game.nameKnown(rid);
                 const fname = showName ? (vp ? vp.name.split(' ')[0] : '?') : '';
                 // vent wrapper: one animatable unit (glyph + name glide together).
-                g = `<span class="vent" data-ent="vil:${esc(rid)}"><span class="vtoken">🧍</span>` + (fname ? `<span class="vname">${esc(fname)}</span>` : '') + `</span>`;
+                const _vspr = villagerSpriteHtml(vp);
+                g = `<span class="vent" data-ent="vil:${esc(rid)}"><span class="vtoken">${_vspr || '🧍'}</span>` + (fname ? `<span class="vname">${esc(fname)}</span>` : '') + `</span>`;
                 cls += ' villager';
                 break;
               }

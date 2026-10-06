@@ -6139,5 +6139,480 @@
         "\"Go on.\""
       ]
     }
+  },
+  "appearancePools": {
+    "Portland, Oregon": {
+      "skinTones": [
+        "fair",
+        "fair",
+        "light",
+        "light",
+        "tan",
+        "brown"
+      ],
+      "clothing": [
+        "outdoor",
+        "casual"
+      ]
+    },
+    "Miami, Florida": {
+      "skinTones": [
+        "tan",
+        "tan",
+        "brown",
+        "brown",
+        "light",
+        "dark",
+        "deep"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Chicago, Illinois": {
+      "skinTones": [
+        "light",
+        "light",
+        "tan",
+        "brown",
+        "dark",
+        "fair",
+        "deep"
+      ],
+      "clothing": [
+        "casual",
+        "workwear"
+      ]
+    },
+    "rural Vermont": {
+      "skinTones": [
+        "fair",
+        "fair",
+        "fair",
+        "light",
+        "light",
+        "tan"
+      ],
+      "clothing": [
+        "outdoor",
+        "workwear"
+      ]
+    },
+    "Houston, Texas": {
+      "skinTones": [
+        "tan",
+        "tan",
+        "brown",
+        "brown",
+        "light",
+        "dark",
+        "deep"
+      ],
+      "clothing": [
+        "casual",
+        "workwear"
+      ]
+    },
+    "New Orleans, Louisiana": {
+      "skinTones": [
+        "brown",
+        "brown",
+        "tan",
+        "dark",
+        "light",
+        "deep"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Brooklyn, New York": {
+      "skinTones": [
+        "light",
+        "tan",
+        "brown",
+        "dark",
+        "fair",
+        "deep"
+      ],
+      "clothing": [
+        "casual",
+        "bright"
+      ]
+    },
+    "Tucson, Arizona": {
+      "skinTones": [
+        "tan",
+        "tan",
+        "brown",
+        "light",
+        "dark"
+      ],
+      "clothing": [
+        "outdoor",
+        "casual"
+      ]
+    },
+    "Tokyo, Japan": {
+      "skinTones": [
+        "light",
+        "light",
+        "fair",
+        "tan"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Lagos, Nigeria": {
+      "skinTones": [
+        "deep",
+        "deep",
+        "dark",
+        "dark",
+        "brown"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "São Paulo, Brazil": {
+      "skinTones": [
+        "tan",
+        "brown",
+        "light",
+        "dark",
+        "deep"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Cairo, Egypt": {
+      "skinTones": [
+        "tan",
+        "tan",
+        "brown",
+        "brown",
+        "light"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Mumbai, India": {
+      "skinTones": [
+        "brown",
+        "brown",
+        "tan",
+        "tan",
+        "dark"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Berlin, Germany": {
+      "skinTones": [
+        "fair",
+        "fair",
+        "light",
+        "light",
+        "tan"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Seoul, South Korea": {
+      "skinTones": [
+        "light",
+        "light",
+        "fair",
+        "tan"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Mexico City, Mexico": {
+      "skinTones": [
+        "brown",
+        "brown",
+        "tan",
+        "tan",
+        "light",
+        "dark"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Jakarta, Indonesia": {
+      "skinTones": [
+        "tan",
+        "tan",
+        "brown",
+        "brown"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Nairobi, Kenya": {
+      "skinTones": [
+        "deep",
+        "deep",
+        "dark",
+        "dark",
+        "brown"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Buenos Aires, Argentina": {
+      "skinTones": [
+        "light",
+        "light",
+        "tan",
+        "fair",
+        "brown"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Istanbul, Turkey": {
+      "skinTones": [
+        "light",
+        "tan",
+        "tan",
+        "brown",
+        "fair"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Bangkok, Thailand": {
+      "skinTones": [
+        "tan",
+        "tan",
+        "light",
+        "brown"
+      ],
+      "clothing": [
+        "casual",
+        "bright"
+      ]
+    },
+    "Manila, Philippines": {
+      "skinTones": [
+        "tan",
+        "tan",
+        "brown",
+        "light"
+      ],
+      "clothing": [
+        "casual",
+        "bright"
+      ]
+    },
+    "Lima, Peru": {
+      "skinTones": [
+        "brown",
+        "tan",
+        "tan",
+        "light"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Warsaw, Poland": {
+      "skinTones": [
+        "fair",
+        "fair",
+        "light",
+        "light",
+        "tan"
+      ],
+      "clothing": [
+        "casual",
+        "outdoor"
+      ]
+    },
+    "Accra, Ghana": {
+      "skinTones": [
+        "deep",
+        "deep",
+        "dark",
+        "dark",
+        "brown"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Hanoi, Vietnam": {
+      "skinTones": [
+        "light",
+        "tan",
+        "tan",
+        "fair"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Bogotá, Colombia": {
+      "skinTones": [
+        "tan",
+        "brown",
+        "light",
+        "light"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "Kyiv, Ukraine": {
+      "skinTones": [
+        "fair",
+        "fair",
+        "light",
+        "light",
+        "tan"
+      ],
+      "clothing": [
+        "casual",
+        "outdoor"
+      ]
+    },
+    "Addis Ababa, Ethiopia": {
+      "skinTones": [
+        "deep",
+        "deep",
+        "brown",
+        "dark"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Dhaka, Bangladesh": {
+      "skinTones": [
+        "brown",
+        "brown",
+        "tan",
+        "dark"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Caracas, Venezuela": {
+      "skinTones": [
+        "tan",
+        "brown",
+        "brown",
+        "light",
+        "dark"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "rural Ireland": {
+      "skinTones": [
+        "fair",
+        "fair",
+        "fair",
+        "light",
+        "light"
+      ],
+      "clothing": [
+        "outdoor",
+        "workwear"
+      ]
+    },
+    "Oslo, Norway": {
+      "skinTones": [
+        "fair",
+        "fair",
+        "light",
+        "light",
+        "tan"
+      ],
+      "clothing": [
+        "outdoor",
+        "casual"
+      ]
+    },
+    "Marrakech, Morocco": {
+      "skinTones": [
+        "tan",
+        "tan",
+        "brown",
+        "light",
+        "dark"
+      ],
+      "clothing": [
+        "bright",
+        "casual"
+      ]
+    },
+    "Auckland, New Zealand": {
+      "skinTones": [
+        "fair",
+        "light",
+        "tan",
+        "brown"
+      ],
+      "clothing": [
+        "outdoor",
+        "casual"
+      ]
+    },
+    "Rome, Italy": {
+      "skinTones": [
+        "light",
+        "light",
+        "tan",
+        "tan",
+        "fair",
+        "brown"
+      ],
+      "clothing": [
+        "casual"
+      ]
+    },
+    "default": {
+      "skinTones": [
+        "fair",
+        "light",
+        "tan",
+        "brown",
+        "dark",
+        "deep"
+      ],
+      "clothing": [
+        "casual",
+        "workwear",
+        "outdoor"
+      ]
+    }
   }
 }
