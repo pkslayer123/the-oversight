@@ -108,9 +108,9 @@ const idsOf = (choices) => choices.map(c => c.id);
     ok('gossip ask present at trust 25',
       open && idsOf(open.st.choices).indexOf('ask:gossip') !== -1);
     if (open) {
-      // label is one of the gossip variants
+      // label is one of the gossip variants (tier + player-voice pools)
       const gchoice = open.st.choices.find(ch => ch.id === 'ask:gossip');
-      ok('gossip ask label is a gossip variant', !!gchoice && /Heard anything|word around the fire|saying anything interesting/.test(gchoice.label));
+      ok('gossip ask label is a gossip variant', !!gchoice && /Heard anything|word around the fire|saying anything interesting|What are people saying|Has anyone told you anything|Any good gossip|real gossip|saying out loud|not listening/.test(gchoice.label));
       Game.endConvo(open.id, 'leave');
     } else { ok('gossip ask label is a gossip variant', false); }
 

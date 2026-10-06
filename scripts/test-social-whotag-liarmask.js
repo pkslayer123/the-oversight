@@ -38,21 +38,34 @@ function ok(name, cond) {
     ok(`whoTag masks truth (${lie.truth})`, !tag.includes(String(lie.truth).toLowerCase()));
     ok(`whoTag shows claim (${lie.told})`, tag.includes(String(lie.told).toLowerCase()));
   }
-  // confession flips the tag to the truth — the discovery beat
+  // confession flips the tag to the truth — the discovery beat.
+  // The real confession path records the truth in the journal (truth.js);
+  // the tag reads what was heard, so simulate that write here.
   const rid = liars[0];
   const lie = Game.vpOf(rid).lies.occupation;
   lie.confessed = true;
+  Game.journalLearn(rid, 'occupation', lie.truth, { sure: true, via: 'confessed', quiet: true });
   const tagAfter = Game.whoTag(rid).toLowerCase();
   ok('whoTag reveals truth after confession', tagAfter.includes(String(lie.truth).toLowerCase()));
-  // honest villagers keep the true occupation in the tag
+  // honest villagers: the true occupation is EARNED knowledge (F5 gate,
+  // kgate audit 2026-10-06) — the tag shows it only once the player hears it.
   const honest = roster.find(id => {
     const l = (Game.vpOf(id).lies || {}).occupation;
-    return !l || l.confessed || l.told === l.truth;
+    if (l) return false; // never lied at all — liars[0] was just confessed + journaled above
+    const v = (Game.data.villagers || []).find(x => x.id === id)
+      || (Game.data.background_survivors || []).find(x => x.id === id) || {};
+    return !!v.formerOccupation;
   });
   if (honest) {
-    const v = (Game.data.villagers || []).find(x => x.id === honest) || {};
+    const v = (Game.data.villagers || []).find(x => x.id === honest)
+      || (Game.data.background_survivors || []).find(x => x.id === honest) || {};
     const occ = String(v.formerOccupation || '').toLowerCase();
-    if (occ) ok('honest villager tag keeps true occupation', Game.whoTag(honest).toLowerCase().includes(occ));
+    if (occ) {
+      ok('honest villager tag hides occupation pre-knowledge', !Game.whoTag(honest).toLowerCase().includes(occ));
+      // hearing it in conversation ('past' topic) earns the descriptor
+      Game.journalLearn(honest, 'occupation', v.formerOccupation, { sure: true, via: 'talk' });
+      ok('honest villager tag shows occupation once heard', Game.whoTag(honest).toLowerCase().includes(occ));
+    }
   }
   console.log(`\nwhotag-liarmask: ${pass} pass, ${fail} fail`);
   process.exit(fail ? 1 : 0);

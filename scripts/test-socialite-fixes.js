@@ -44,6 +44,7 @@ async function main() {
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
   Game.state.systemArrived = true;
+  Game.state.scholar.codexUnlocked = true; // real arrival unlocks the codex in the same beat (game.js)
   Game.unlockPartySystem();
   const v = Game.state.village;
   const roster = (v.roster || []).filter(id => id !== Game.villagerId);

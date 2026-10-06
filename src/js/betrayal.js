@@ -144,12 +144,28 @@
           // truth. whoTag used to leak the TRUE occupation into every dialogue
           // tag, collapsing each liar's mystery at a glance. After confession /
           // exposure the tag flips to the truth: a discovery beat, not a leak.
-          let occ = v.formerOccupation || (v.lifeseed && (v.lifeseed.occupation || v.lifeseed.role));
-          try {
-            const lies = (this.vpOf(vid) || {}).lies; // read-only: never generate lies from a descriptor
-            if (lies && lies.occupation && !lies.occupation.confessed && lies.occupation.told) occ = lies.occupation.told;
-          } catch (e) {}
-          if (occ) role = ', the ' + String(occ).toLowerCase().replace(/\s*\(.*?\)/g, '').trim();
+          // (The confessed truth lands in the journal via truth.js, so the
+          // gate below picks it up — the test simulates it with journalLearn.)
+          const lies = (this.vpOf(vid) || {}).lies; // read-only: never generate lies from a descriptor
+          const liveLie = lies && lies.occupation && !lies.occupation.confessed && lies.occupation.told;
+          if (liveLie) {
+            role = ', the ' + String(lies.occupation.told).toLowerCase().replace(/\s*\(.*?\)/g, '').trim();
+          } else {
+            // OCCUPATION IS EARNED KNOWLEDGE (Steve's law: if you don't know,
+            // it doesn't show — kgate audit F5, 2026-10-06). A truthful
+            // villager's occupation shows only once the player has heard it:
+            // the journal's People Codex chapter is the ladder. Pre-knowledge
+            // the tag is just the age/gender descriptor — naming "the
+            // mortician" before the player has spoken to them collapses the
+            // mystery. The journal value is what was HEARD (truth for
+            // truthful NPCs, confessed truth after exposure).
+            let heard = null;
+            try {
+              const jp = this.journalPerson ? this.journalPerson(vid) : null;
+              heard = jp && jp.occupation && jp.occupation.value;
+            } catch (e2) {}
+            if (heard) role = ', the ' + String(heard).toLowerCase().replace(/\s*\(.*?\)/g, '').trim();
+          }
         } catch (e) {}
         return 'the ' + who + ' in ' + poss + ' ' + band + role;
       } catch (e) { return 'someone'; }

@@ -753,6 +753,18 @@
       const goalDef = (this.data.characterGen.goals || []).find(g => g.id === goal);
       const vp = this.vpOf(vid);
 
+      // 1. THEY asked to talk — their reason leads, once. The stored line is
+      // a template: the requester's name may have been earned since the
+      // request fired, so it renders fresh here, never stale.
+      // FIRST, before any random hooks: a pending request is why they're
+      // here. (socialite playtest 2026-10-06: the want/secret/taught hooks
+      // used to pre-empt it intermittently, stranding the request.)
+      const treq = (v.talkRequests || {})[vid];
+      if (treq && !treq.delivered) {
+        treq.delivered = true;
+        return { line: this.renderTalkLine(String(treq.line).replace(/ \(Talk to .*?\.\)$/, ''), vid), thread: 'request' };
+      }
+
       // PROTOTYPE: Four Things (Steve 2026-10-05)
       // Want/Know/Feel/Secret per villager. Want surfaces as a hook (30%).
       // Secret surfaces at trust 40+ (20%).
@@ -800,14 +812,6 @@
         return { line: this.voiceLine(vid, tr), thread: 'taughtref' };
       }
 
-      // 1. THEY asked to talk — their reason leads, once. The stored line is
-      // a template: the requester's name may have been earned since the
-      // request fired, so it renders fresh here, never stale.
-      const treq = (v.talkRequests || {})[vid];
-      if (treq && !treq.delivered) {
-        treq.delivered = true;
-        return { line: this.renderTalkLine(String(treq.line).replace(/ \(Talk to .*?\.\)$/, ''), vid), thread: 'request' };
-      }
       // 2. They remember what you told them. Being remembered feels real.
       if (c.answered.q_origin === 'a_tell' && !c.recalled.q_origin) {
         const qd = (cg.questions || []).find(q => q.id === 'q_origin');
@@ -1510,7 +1514,7 @@
             rlist.push({ id: 'rumor:tgt:' + tid, label: this.displayName(tid) });
           }
         } else {
-          const tname = this.displayName(c.rumorTarget).split(' ')[0];
+          const tname = this.firstRef ? this.firstRef(c.rumorTarget) : this.displayName(c.rumorTarget);
           const types = [
             ['stingy', `"${tname}'s been holding back. Keeping the good stuff close."`],
             ['untrustworthy', `"Can't trust ${tname}. Watch your back around them."`],
@@ -1535,23 +1539,12 @@
       // and discovery actions must still fit behind topics/theorize/observe.)
       const MAXC = reactiveDef ? reactiveDef.answers.length + 2 : gqActive ? gqAnswers.length + 3 : 7;
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: this.convoMoreLabel(vid) });
-      // PARTY INVITES live in conversation, not on a button. Discovered via
-      // the System unlock. You ask people. Like a person.
-      // Sits with 'more', AHEAD of the topic asks: a trust-earned, contextual
-      // person-action must never be crowded out by small talk. When you've
-      // earned the right to ask, the ask is there.
-      if (choices.length < MAXC) {
-        try {
-          if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
-              !this.inParty(vid) && !this.partyFull()) {
-            const trust = (this.state.village.trust || {})[vid] || 10;
-            if (this.hasDiscovered('party') && effTrust >= 20) choices.push({ id: 'invite_party', label: this.convoActionLabel(vid, 'invite_party') });
-          }
-        } catch (e) {}
-      }
       // DEPTH GATING: what they'll talk about depends on how well they know
       // you. Little hits over time, like real people. Defined once, used by
-      // theorize and the topic asks below.
+      // theorize and the topic asks below — and by the party-invite trust
+      // check above it (moved up 2026-10-06: the invite block read effTrust
+      // before its const declaration, a TDZ ReferenceError the try/catch
+      // swallowed — invite_party silently never appeared).
       // - village, plans: always (safe small talk)
       // - past: trust 20+ or 2nd conversation
       // - goal: trust 35+ or 3rd conversation (what they really want)
@@ -1566,6 +1559,19 @@
       // a warm one volunteers more.
       const moodBandNow = typeof this.convoMoodBand === 'function' ? this.convoMoodBand(vid) : 'neutral';
       const effTrust = trustNow + (typeof this.convoMoodMod === 'function' ? this.convoMoodMod(vid) : 0);
+      // PARTY INVITES live in conversation, not on a button. Discovered via
+      // the System unlock. You ask people. Like a person.
+      // Sits with 'more', AHEAD of the topic asks: a trust-earned, contextual
+      // person-action must never be crowded out by small talk. When you've
+      // earned the right to ask, the ask is there.
+      if (choices.length < MAXC) {
+        try {
+          if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
+              !this.inParty(vid) && !this.partyFull()) {
+            if (this.hasDiscovered('party') && effTrust >= 20) choices.push({ id: 'invite_party', label: this.convoActionLabel(vid, 'invite_party') });
+          }
+        } catch (e) {}
+      }
       // TOPIC ASKS come first — the conversation itself. Discovery actions
       // (trade/teach/promise/invite) fill whatever slots remain; they never
       // crowd out the talk.
@@ -1586,14 +1592,19 @@
       // PERSONAL: their own words — the talk lines generated from personality.
       // Always available and prioritized; it's who they are, not what they know.
       if (asked.indexOf('personal') === -1) asks.push({ id: 'ask:personal', label: this.convoActionLabel(vid, 'personal') });
-      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
-      if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
-      if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
-      if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
+      // GOSSIP FIRST: the socialite's core verbs. They used to sit last in
+      // the asks list, so the topic cap (5, or 2 for deflectors) starved
+      // them on a fresh conversation — gossip and rumor-spreading were
+      // unreachable until you'd exhausted every other topic. (socialite
+      // playtest 2026-10-06)
       if (gossipOpen && asked.indexOf('gossip') === -1) asks.push({ id: 'ask:gossip', label: this.convoLabel(vid, 'gossip') });
       // SPREAD RUMOR: the player's drama verb. Start a rumor about someone.
       // Same gate as gossip — you need some rapport to be believed.
       if (gossipOpen && asked.indexOf('spread_rumor') === -1) asks.push({ id: 'ask:spread_rumor', label: this.convoActionLabel(vid, 'spread_rumor') });
+      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
+      if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
+      if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
+      if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
       // TOPIC PACK (Steve 2026-10-06): fresh generated topics get first crack
       // at the topic budget — who this villager IS shouldn't wait behind small
       // talk forever. 'lately' always qualifies: live events cut the queue.
@@ -2114,7 +2125,7 @@
         const tid = choiceId.slice('rumor:tgt:'.length);
         c.rumorTarget = tid;
         c.thread = 'spread_rumor'; c.depth = 1;
-        done(`"${this.displayName(tid).split(' ')[0]}? Okay. And what's the word — what am I hearing?"`,
+        done(`"${(this.firstRef ? this.firstRef(tid) : this.displayName(tid))}? Okay. And what's the word — what am I hearing?"`,
           `"${this.displayName(tid)}."`);
       } else if (choiceId.indexOf('rumor:type:') === 0) {
         // RUMOR STEP 2: what's the word. The drama verb completes: the
@@ -2123,7 +2134,7 @@
         // 2026-10-06: heard: [] meant rumors died on arrival.)
         const type = choiceId.slice('rumor:type:'.length);
         const rtarget = c.rumorTarget;
-        const tname = this.displayName(rtarget).split(' ')[0];
+        const tname = this.firstRef ? this.firstRef(rtarget) : this.displayName(rtarget);
         const typeLabels = {
           stingy: `"${tname}'s been holding back. Keeping the good stuff close."`,
           untrustworthy: `"Can't trust ${tname}. Watch your back around them."`,
@@ -2283,8 +2294,14 @@
       // note when the green world comes up (Rule 2: topical teaching).
       // Skipped when a formal/reactive question is already live, or the
       // player just answered the generic one.
+      // RUMOR PROMPTS are menu prompts, not real questions: "who are we
+      // talking about?" must surface the target choices, not generic-Q
+      // answers. Without this the generic-Q narrowing re-dangles the rumor
+      // thread the 2026-10-06 fix had just un-dangled. (socialite playtest
+      // 2026-10-06)
+      const rumorPrompt = c.thread === 'spread_rumor' && !c.rumorDone;
       if (line) this.convoNoteFlora(vid, line);
-      if (line && !answeredGeneric && !answeredReactive && !extraQ) this.convoGenericQ(vid, line);
+      if (line && !answeredGeneric && !answeredReactive && !extraQ && !rumorPrompt) this.convoGenericQ(vid, line);
 
       if (youSaid) c.transcript.push({ who: 'you', text: youSaid });
       c.transcript.push({ who: 'them', text: line });

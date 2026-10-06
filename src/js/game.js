@@ -13067,7 +13067,7 @@
             const wit = roster[Math.floor(Math.random() * roster.length)];
             if (wit && !(e.knowers || []).includes(wit)) {
               e.knowers.push(wit);
-              const first = String(this.displayName(wit)).split(' ')[0];
+              const first = this.firstRef(wit);
               this.say(`${first} came back from the treeline white-faced. Saw it too. Whatever it is, it's still out there.`);
               this.monsterNewsCheck(mid);
             }

@@ -139,3 +139,23 @@ MEDIUM = same, on a colder path. LOW = flavor-level, Steve's call.
 - F1's bonus gap: no learn path exists for tree species at all
   (`codex.trees` is write-once at newGame). If Steve wants pine learnable,
   deep-examine is the natural teacher.
+
+---
+
+## Addendum — F5 fixed (2026-10-06, socialite playtest loop)
+
+F5 is FIXED and its assert is green (`node scripts/test-kgate-audit.js`: 2 pass — setup + F5).
+Fix: `whoTag` (betrayal.js) no longer appends the true `formerOccupation` for
+truthful NPCs. The occupation descriptor now shows only once the player has
+heard it — read from the journal's People Codex entry (`journalPerson(vid).
+occupation.value`), which records what was actually said. The liar's-mask
+side is unchanged per Steve's 2026-10-05 directive: a live unconfessed
+occupation lie still tags by the CLAIM (village knows them by their claim);
+after a real confession the journal holds the truth (truth.js:804) and the
+tag flips to it — the discovery beat. Pre-knowledge the tag is just the
+age/gender descriptor ("the woman in her 40s"), which stays distinguishing.
+`test-social-whotag-liarmask.js` updated to match: liar asserts unchanged
+(10 pass), honest-villager asserts now verify the gate (hidden pre-knowledge,
+shown once heard).
+F1–F4 remain open with their expected-fail asserts (explorer-domain; left for
+a future run per the original audit scope).
