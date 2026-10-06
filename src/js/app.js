@@ -2756,6 +2756,15 @@
       swg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       sw.connect(swf); swf.connect(swg); swg.connect(sfxBus);
       sw.start(t); sw.stop(t + dur);
+      const sw2 = ctx.createOscillator(), swg2 = ctx.createGain(); // twin spool, 2% sharp
+      sw2.type = 'sawtooth';
+      sw2.frequency.setValueAtTime(81.6, t);
+      sw2.frequency.exponentialRampToValueAtTime(214, t + dur);
+      swg2.gain.setValueAtTime(0.0001, t);
+      swg2.gain.exponentialRampToValueAtTime(0.05, t + 0.4);
+      swg2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      sw2.connect(swf); swf.connect(swg2); swg2.connect(sfxBus);
+      sw2.start(t); sw2.stop(t + dur);
       for (let i = 0; i < 6; i++) { // sprocket clatter
         const cdt = t + i * (0.09 + Math.random() * 0.05);
         const co = ctx.createOscillator(), cg = ctx.createGain();
@@ -3633,6 +3642,34 @@
       const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
       o.connect(f); f.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
+          // (deepened Steve 2026-10-06): the deflate leaks air — a bandpass hiss
+      // sinking with the trombone — and a second trombone, detuned flat,
+      // tries to follow and can't. The hype dies in public.
+      const hz = noise(dur), hf = ctx.createBiquadFilter(), hg = ctx.createGain();
+      if (hz) {
+        hf.type = 'bandpass'; hf.Q.value = 1.5;
+        hf.frequency.setValueAtTime(1800, t);
+        hf.frequency.exponentialRampToValueAtTime(300, t + dur); // air sinking
+        hg.gain.setValueAtTime(0.0001, t);
+        hg.gain.exponentialRampToValueAtTime(0.12, t + 0.15);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        hz.connect(hf); hf.connect(hg); hg.connect(sfxBus);
+        hz.start(t); hz.stop(t + dur);
+      }
+      const t2 = ctx.createOscillator(), t2g = ctx.createGain(); // the flat echo
+      t2.type = 'sawtooth';
+      t2.frequency.setValueAtTime(308, t + 0.12); // a semitone flat, late
+      t2.frequency.exponentialRampToValueAtTime(86, t + dur);
+      const t2l = ctx.createOscillator(), t2lg = ctx.createGain();
+      t2l.type = 'sine'; t2l.frequency.value = 6.7; t2lg.gain.value = 38;
+      t2l.connect(t2lg); t2lg.connect(t2.frequency);
+      const t2f = ctx.createBiquadFilter(); t2f.type = 'lowpass'; t2f.frequency.value = 800;
+      t2g.gain.setValueAtTime(0.0001, t + 0.12);
+      t2g.gain.exponentialRampToValueAtTime(0.12, t + 0.22);
+      t2g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.1);
+      t2.connect(t2f); t2f.connect(t2g); t2g.connect(sfxBus);
+      t2.start(t + 0.12); t2l.start(t + 0.12);
+      t2.stop(t + dur + 0.15); t2l.stop(t + dur + 0.15);
     }
     function holdMusic(d) {
       // muzak from nowhere: tinny, looping, wrong. Two detuned triangles.
@@ -4050,6 +4087,56 @@
         wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
         wo.connect(wg); wg.connect(sfxBus); wo.start(t + 0.05); wo.stop(t + 1.35);
       });
+    }
+    function animalButcher() {
+      // THE BUTCHER'S BEAT: wet, deliberate work — no hook fired for this
+      // before (Steve 2026-10-06). A knife scrape that finds its rhythm,
+      // the thud of joints parting, and one drip that lands too loud.
+      // Respectful. The animal fed people; the sound knows it.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 3; i++) { // the scrape finds its rhythm
+        const sdt = t + i * 0.42;
+        const sz = noise(0.35), sf = ctx.createBiquadFilter(), sg = ctx.createGain();
+        if (sz) {
+          sf.type = 'bandpass'; sf.Q.value = 3;
+          sf.frequency.setValueAtTime(2600, sdt);
+          sf.frequency.exponentialRampToValueAtTime(1400, sdt + 0.3); // the draw
+          sg.gain.setValueAtTime(0.0001, sdt);
+          sg.gain.exponentialRampToValueAtTime(0.14, sdt + 0.08);
+          sg.gain.exponentialRampToValueAtTime(0.0001, sdt + 0.32);
+          sz.connect(sf); sf.connect(sg); sg.connect(sfxBus);
+          sz.start(sdt); sz.stop(sdt + 0.36);
+        }
+      }
+      for (const jdt of [0.5, 1.1]) { // joints parting: low wet thuds
+        const jo = ctx.createOscillator(), jg = ctx.createGain();
+        jo.type = 'sine';
+        jo.frequency.setValueAtTime(140, t + jdt);
+        jo.frequency.exponentialRampToValueAtTime(60, t + jdt + 0.12);
+        jg.gain.setValueAtTime(0.32, t + jdt);
+        jg.gain.exponentialRampToValueAtTime(0.0001, t + jdt + 0.16);
+        jo.connect(jg); jg.connect(sfxBus);
+        jo.start(t + jdt); jo.stop(t + jdt + 0.2);
+      }
+      const d = ctx.createOscillator(), dg = ctx.createGain(); // the drip
+      d.type = 'sine';
+      d.frequency.setValueAtTime(1400, t + 1.35);
+      d.frequency.exponentialRampToValueAtTime(700, t + 1.45); // falls, lands loud
+      dg.gain.setValueAtTime(0.0001, t + 1.35);
+      dg.gain.exponentialRampToValueAtTime(0.16, t + 1.4);
+      dg.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      d.connect(dg); dg.connect(sfxBus);
+      d.start(t + 1.35); d.stop(t + 1.55);
+      const d2 = ctx.createOscillator(), dg2 = ctx.createGain(); // the drip's shadow, a semitone up
+      d2.type = 'sine';
+      d2.frequency.setValueAtTime(1484, t + 1.35);
+      d2.frequency.exponentialRampToValueAtTime(743, t + 1.45);
+      dg2.gain.setValueAtTime(0.0001, t + 1.35);
+      dg2.gain.exponentialRampToValueAtTime(0.08, t + 1.4);
+      dg2.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      d2.connect(dg2); dg2.connect(sfxBus);
+      d2.start(t + 1.35); d2.stop(t + 1.55);
     }
     function animalHiss() {
       // SNAPPING TURTLE HISS/LUNGE WARNING: an angry exhale, bandpassed —
@@ -4919,6 +5006,13 @@
       rg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9); // long ring
       r.connect(rg); rg.connect(sfxBus);
       r.start(t + 0.05); r.stop(t + 0.95);
+      const r2 = ctx.createOscillator(), rg2 = ctx.createGain(); // the ring's twin, 8Hz sharp
+      r2.type = 'sine'; r2.frequency.value = 1158;
+      rg2.gain.setValueAtTime(0.0001, t + 0.05);
+      rg2.gain.exponentialRampToValueAtTime(0.07, t + 0.08);
+      rg2.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      r2.connect(rg2); rg2.connect(sfxBus);
+      r2.start(t + 0.05); r2.stop(t + 0.95);
       const e = ctx.createOscillator(), eg = ctx.createGain(); // the echo inside
       e.type = 'sine';
       e.frequency.setValueAtTime(80, t + 0.25);
@@ -5108,6 +5202,14 @@
       wg.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
       w.connect(wf); wf.connect(wg); wg.connect(sfxBus);
       w.start(t); w.stop(t + 0.8);
+      const w2 = ctx.createOscillator(), wg2 = ctx.createGain(); // the twin, 1% sharp
+      w2.type = 'sawtooth';
+      w2.frequency.setValueAtTime(909, t);
+      w2.frequency.exponentialRampToValueAtTime(143, t + 0.7);
+      wg2.gain.setValueAtTime(0.06, t);
+      wg2.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
+      w2.connect(wf); wf.connect(wg2); wg2.connect(sfxBus);
+      w2.start(t); w2.stop(t + 0.8);
     }
     function swarmShutters(d) {
       // SHUTTERS: irregular tiny clicks — it's filming you.
@@ -5141,6 +5243,16 @@
       wg.gain.exponentialRampToValueAtTime(0.0001, t + wdur);
       w.connect(wf); wf.connect(wg); wg.connect(sfxBus);
       w.start(t); w.stop(t + wdur);
+      // the whirr's twin, 1% sharp: the spool is coming apart as it spins
+      const w2 = ctx.createOscillator(), wg2 = ctx.createGain();
+      w2.type = 'sawtooth';
+      w2.frequency.setValueAtTime((140 + urg * 30) * 1.01, t);
+      w2.frequency.exponentialRampToValueAtTime((340 + urg * 60) * 1.01, t + wdur);
+      wg2.gain.setValueAtTime(0.0001, t);
+      wg2.gain.exponentialRampToValueAtTime(0.04, t + 0.15);
+      wg2.gain.exponentialRampToValueAtTime(0.0001, t + wdur);
+      w2.connect(wf); wf.connect(wg2); wg2.connect(sfxBus);
+      w2.start(t); w2.stop(t + wdur);
     }
     // ---- SYSTEM EVENTS ----
     function confront() {
@@ -5259,6 +5371,29 @@
       sg.gain.exponentialRampToValueAtTime(0.05, t + 0.9);
       sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
       s.connect(sg); sg.connect(sfxBus); s.start(t + 0.5); s.stop(t + 1.65);
+          // (deepened Steve 2026-10-06): the crowd exhales with you — a soft sigh
+      // that cuts dead, just like the contestCall crowd — and the shadow
+      // gets a beating twin: two voices a hair apart, neither leaving.
+      const sz = noise(1.0), sf = ctx.createBiquadFilter(), sng = ctx.createGain();
+      if (sz) {
+        sf.type = 'bandpass'; sf.frequency.value = 700; sf.Q.value = 0.6;
+        sng.gain.setValueAtTime(0.0001, t);
+        sng.gain.exponentialRampToValueAtTime(0.08, t + 0.5);
+        sng.gain.setValueAtTime(0.08, t + 0.62);
+        sng.gain.exponentialRampToValueAtTime(0.0001, t + 0.65); // cut dead
+        sz.connect(sf); sf.connect(sng); sng.connect(sfxBus);
+        sz.start(t); sz.stop(t + 0.7);
+      }
+      const s2 = ctx.createOscillator(), sg2 = ctx.createGain(); // the twin
+      s2.type = 'sine'; s2.frequency.value = 557; // beats against the 554
+      sg2.gain.setValueAtTime(0.0001, t + 0.6);
+      sg2.gain.exponentialRampToValueAtTime(0.035, t + 1.0);
+      sg2.gain.exponentialRampToValueAtTime(0.0001, t + 1.7);
+      s2.connect(sg2); sg2.connect(sfxBus); s2.start(t + 0.6); s2.stop(t + 1.75);
+      const shl = ctx.createOscillator(), shlg = ctx.createGain(); // the shadow breathes
+      shl.type = 'sine'; shl.frequency.value = 0.7; shlg.gain.value = 0.02;
+      shl.connect(shlg); shlg.connect(sg2.gain);
+      shl.start(t + 0.6); shl.stop(t + 1.75);
     }
     function justiceVerdict() {
       // THE VERDICT: the moot has decided. The three drums compress into one
@@ -6516,6 +6651,7 @@
       animalSplash() { animalSplash(); },
       // Prey beats (Steve 2026-10-06): the hunt's missing sounds
       animalKill() { animalKill(); },
+      animalButcher() { animalButcher(); }, // (Steve 2026-10-06): new — no call site yet; butcher worker, wire it
       animalHiss() { animalHiss(); },
       animalSnort() { animalSnort(); },
       animalRustle() { animalRustle(); },
