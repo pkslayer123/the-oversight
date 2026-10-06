@@ -7740,7 +7740,70 @@
       return `${who}, maybe ${band}`;
     },
     personDescriptor(vid) {
-      return 'A ' + this.descriptorBase(vid);
+      const base = 'A ' + this.descriptorBase(vid);
+      // UNIQUE-PERSON LAW (Steve 2026-10-06): two villagers can share pro +
+      // age band, so a trust ledger / crime list / moot ballot can show
+      // "A woman, maybe 30s" twice — and the player can't tell the theft
+      // victim from the voter. When the base descriptor collides within the
+      // current village, append a stable visible trait: "A woman, maybe 30s,
+      // with the long braid". Traits are purely observable (hair, build,
+      // marks) — nothing the player had to earn, so no knowledge leak.
+      if (this.descriptorCollides(vid)) return base + ', ' + this.personVisibleTrait(vid);
+      return base;
+    },
+    // visibleTraitPool: observable-only person markers. Pro-agnostic
+    // (she/he/they), no clothing (changes), no occupation (earned knowledge).
+    visibleTraitPool() {
+      return [
+        'with a long braid', 'with a shaved head', 'with tattooed arms',
+        'with a scarred cheek', 'with a limp', 'with thick glasses',
+        'with weathered hands', 'with grey-streaked hair', 'with a nervous tic',
+        'with freckles', 'with a buzz cut', 'with a slouched posture',
+        'with restless hands', 'with a crooked nose', 'with a gap-toothed grin',
+        'with ink-stained fingers', "with a farmer's tan", 'with calloused knuckles',
+        'with deep-set eyes', 'with a broad frame', 'with a wiry build',
+        'with a missing fingertip', 'with a burn-scarred forearm', 'with sun-creased eyes'
+      ];
+    },
+    // villagePersonIds: everyone currently in the village (ids). Roster is
+    // rebuilt per newGame, so collision checks never leak across runs.
+    // (Named villagePersonIds — food.js already owns villagePeople(),
+    // which returns resolved person objects.)
+    villagePersonIds() {
+      try { return ((this.state.village || {}).roster || []).slice(); }
+      catch (e) { return []; }
+    },
+    personRecord(vid) {
+      return (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || null;
+    },
+    // descriptorCollides: does anyone else in the village share this base descriptor?
+    descriptorCollides(vid) {
+      try {
+        const mine = this.descriptorBase(vid);
+        return this.villagePersonIds().some(id => id !== vid && this.descriptorBase(id) === mine);
+      } catch (e) { return false; }
+    },
+    // personVisibleTrait: stable per villager (id-hashed), unique within the
+    // village. Assigned lazily onto the record; hash-based so it's identical
+    // even if the record wasn't persisted.
+    personVisibleTrait(vid) {
+      try {
+        const pool = this.visibleTraitPool();
+        const v = this.personRecord(vid);
+        if (v && v.look) return v.look;
+        const taken = new Set();
+        for (const id of this.villagePersonIds()) {
+          if (id === vid) continue;
+          const rec = this.personRecord(id);
+          if (rec && rec.look) taken.add(rec.look);
+        }
+        let idx = this._hashStr(String(vid)) % pool.length;
+        for (let i = 0; i < pool.length && taken.has(pool[idx]); i++) idx = (idx + 1) % pool.length;
+        const trait = pool[idx];
+        if (v) v.look = trait;
+        return trait;
+      } catch (e) { return 'with a tired face'; }
     },
     // displayName: THE funnel. Names pre-System only if earned socially.
     displayName(vid) {
