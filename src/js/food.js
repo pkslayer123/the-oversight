@@ -414,7 +414,9 @@
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
         it.spoilDay = this.state.scholar.day + 2;
         it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '') + ' (cleaned)';
-        it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it. Spoils in ~2 days.';
+        // unknown flesh keeps its warning — the generic risky-raw prep would
+        // bury the honest "you don't know if this is food" state.
+        if (foodSafe) it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it. Spoils in ~2 days.';
         it.kg = Math.max(0.2, gross * yfrac / 1000);
         n++;
         if (!knows) {
@@ -576,15 +578,23 @@
         const gross = it.hiddenKcal || 0;
         const yfrac = 0.40 + 0.04 * spec.skill; // 44/48/52% — better hands, more meat
         const per = Math.round(gross * yfrac / 4);
-        it.foodKind = 'meat'; it.foodState = 'cleaned'; it.edible = true;
+        // MONSTER FOOD SAFETY: the specialist's knife doesn't grant knowledge —
+        // same gate as self-clean. Unknown flesh stays unknown until tested.
+        const meatId = (it.plantId || '').replace(/^meat_/, '');
+        const isMonsterMeat = (this.data.monsters || []).some(m => m.id === meatId);
+        const foodSafe = !isMonsterMeat || this.monsterFoodSafe(meatId);
+        it.foodKind = 'meat'; it.foodState = 'cleaned'; it.edible = foodSafe;
         it.units = 4; it.unit = 'portion';
-        it.kcalEach = per; it.hiddenKcal = gross;
+        it.kcalEach = foodSafe ? per : 0; it.hiddenKcal = gross;
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
         it.spoilDay = day + 2;
         it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '') + ' (cleaned)';
-        it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it.';
+        if (foodSafe) it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it.';
+        else it.prep = '\u26A0\uFE0F Unknown flesh. You have no idea if this is food or poison. Test it cautiously, or ask someone who knows.';
         it.kg = Math.max(0.2, gross * yfrac / 1000);
-        this.say(`${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. ${4 * per} kcal of raw portions. You watch closely.`);
+        this.say(foodSafe
+          ? `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. ${4 * per} kcal of raw portions. You watch closely.`
+          : `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. But they won't vouch for the flesh: "Never seen its like. Test it before you trust it."`);
       } else if (task === 'cook') {
         const mult = 1 + 0.05 * spec.skill;
         if (it.rawKcal) {
@@ -592,14 +602,19 @@
           it.rawKcal = null; it.safe = true;
         } else if (it.foodKind === 'meat' && it.foodState === 'cleaned') {
           // hiddenKcal is TOTAL; kcalEach is per unit.
+          // MONSTER FOOD SAFETY: the specialist's fire doesn't teach either.
+          const sMeatId = (it.plantId || '').replace(/^meat_/, '');
+          const sIsMonster = (this.data.monsters || []).some(m => m.id === sMeatId);
+          const sFoodSafe = !sIsMonster || this.monsterFoodSafe(sMeatId);
           const units = it.units || 1;
           const total = it.hiddenKcal || it.kcalEach * 2.5 * units;
-          it.kcalEach = Math.round(total * mult / units);
-          it.hiddenKcal = null;
-          it.foodState = 'cooked'; it.diseaseRisk = null; it.safe = true;
+          it.kcalEach = sFoodSafe ? Math.round(total * mult / units) : 0;
+          it.hiddenKcal = sFoodSafe ? null : total;
+          it.foodState = 'cooked'; it.diseaseRisk = null; it.safe = sFoodSafe;
           it.spoilDay = day + 5;
           it.name = it.name.replace(' (cleaned)', '') + ' (cooked)';
-          it.prep = 'Cooked through. Safe.';
+          it.prep = sFoodSafe ? 'Cooked through. Safe.'
+            : '\u26A0\uFE0F Cooked, but still unknown flesh. Test it cautiously before trusting it.';
         } else if (it.needsCooking && it.diseaseRisk) {
           it.diseaseRisk = null; it.safe = true; it.needsCooking = false;
           it.prep = (it.prep || '').replace(/\u26A0\uFE0F Risky raw \u2014 cook it\./, '').trim();
@@ -823,7 +838,9 @@
       }
       const mid = (it.plantId || '').replace(/^meat_/, '');
       const mdef = (this.data.monsters || []).find(m => m.id === mid);
-      const mname = mdef ? mdef.name : 'unknown creature';
+      // KNOWLEDGE-GATED: the cautious test never speaks the true name — the
+      // flesh is named by what the village calls it, descriptor until named.
+      const mname = this.monsterNoun ? this.monsterNoun(mid) : 'something';
       if (this.monsterFoodSafe(mid)) {
         this.say('You already know this one is food.');
         return null;
@@ -838,7 +855,7 @@
         const s = this.state.scholar;
         s.energy = Math.max(0, (s.energy || 100) - 30);
         this.say('Your tongue goes numb. Your stomach heaves. NOT food — the lesson is learned the hard way. (-30 energy)');
-        this.say(`The Codex notes: ${mname} flesh is POISON. You will not make this mistake twice.`);
+        this.say(`The Codex notes: the ${mname} flesh is POISON. You will not make this mistake twice.`);
         // Mark as known-poison (not safe, but known — UI can show "poison, not food").
         if (!this.state.codex.monsters) this.state.codex.monsters = {};
         const e = this.state.codex.monsters[mid] || {};
@@ -852,7 +869,7 @@
       this.tickAction(12);
       this.say('An hour passes. Your stomach is calm. Another hour. Nothing.');
       this.tickAction(12);
-      this.say(`It sits fine. ${mname} is food. You know it in your gut, literally.`);
+      this.say(`It sits fine. The ${mname} is food. You know it in your gut, literally.`);
       this.markMonsterFoodSafe(mid, 'tested');
       this.say('The Codex notes it. Your pack updates — the meat is food now.');
       return it;
@@ -1667,17 +1684,24 @@
       const units = item.units || 1;
       const total = item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units);
       const knows = this.knowsTechnique('cook');
-      item.kcalEach = Math.round((knows ? total : Math.round(total * 0.85)) / units);
-      item.hiddenKcal = null;
-      item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = true;
+      // MONSTER FOOD SAFETY: cooking doesn't teach. Unknown flesh stays
+      // unknown — no kcal reveal, no "Safe." claim — until tested.
+      const cMeatId = (item.plantId || '').replace(/^meat_/, '');
+      const cIsMonster = (this.data.monsters || []).some(m => m.id === cMeatId);
+      const cFoodSafe = !cIsMonster || this.monsterFoodSafe(cMeatId);
+      item.kcalEach = cFoodSafe ? Math.round((knows ? total : Math.round(total * 0.85)) / units) : 0;
+      item.hiddenKcal = cFoodSafe ? null : total;
+      item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = cFoodSafe;
       item.spoilDay = this.state.scholar.day + 5;
       item.name = item.name.replace(' (cleaned)', '') + ' (cooked)';
-      item.prep = 'Cooked through. Safe.';
+      item.prep = cFoodSafe ? 'Cooked through. Safe.'
+        : '\u26A0\uFE0F Cooked, but still unknown flesh. Test it cautiously before trusting it.';
       if (!knows) {
         this.say(`A bit burnt in spots — but edible. You'll do better next time.`);
         this.learnTechnique('cook', 'trial');
       }
-      this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now.`);
+      this.say(cFoodSafe ? `Cooked ${item.name}. ${item.kcalEach} kcal now.`
+        : `Cooked ${item.name}. Smells like meat. Whether it IS food — you still don't know. Test it cautiously.`);
       this.tickAction(32);
       return null;
     }

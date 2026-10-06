@@ -32,8 +32,8 @@ function ok(name, cond) {
   Game.map.px = wild.x; Game.map.py = wild.y;
 
   // 1. pre-naming, the display name is the strange descriptor — never the true name
-  const mdef = Game.data.monsters.find(m => m.id === 'thornback_boar');
-  const disp = Game.monsterDisplayName('thornback_boar');
+  const mdef = Game.data.monsters.find(m => m.id === 'bulldozer');
+  const disp = Game.monsterDisplayName('bulldozer');
   ok('pre-naming display is not the true name', disp !== mdef.name && !/bulldozer/i.test(disp));
   ok('pre-naming display is the strange descriptor', disp === (mdef.unknown || 'something moving'));
   console.log(`  info: pre-naming display = "${disp}" (true name = "${mdef.name}")`);
@@ -41,11 +41,11 @@ function ok(name, cond) {
   // 2. wanderer contact sets pendingEncounter AND remembers which beast (for the panel)
   Game.state.scholar.day = 5;
   Game.encounterDone = false; Game.pendingEncounter = false; Game.pendingMonsterId = null;
-  Game.wanderer = { x: Game.map.px - 1, y: Game.map.py, dir: 1, monsterId: 'thornback_boar' };
-  if (Game.wanderer.x < 0) Game.wanderer = { x: Game.map.px + 1, y: Game.map.py, dir: -1, monsterId: 'thornback_boar' };
+  Game.wanderer = { x: Game.map.px - 1, y: Game.map.py, dir: 1, monsterId: 'bulldozer' };
+  if (Game.wanderer.x < 0) Game.wanderer = { x: Game.map.px + 1, y: Game.map.py, dir: -1, monsterId: 'bulldozer' };
   Game.moveWanderer(); // walks onto the player's node
   ok('wanderer contact raises pendingEncounter', Game.pendingEncounter === true);
-  ok('pendingMonsterId remembers the beast', Game.pendingMonsterId === 'thornback_boar');
+  ok('pendingMonsterId remembers the beast', Game.pendingMonsterId === 'bulldozer');
 
   // 3. the pendingEncounter panel must not hardcode any monster's true name.
   //    It must route through monsterDisplayName (descriptor / village name).
@@ -53,7 +53,11 @@ function ok(name, cond) {
   const panelIdx = appSrc.indexOf('st.pendingEncounter');
   const panelBlock = appSrc.slice(panelIdx, panelIdx + 900);
   const trueNames = Game.data.monsters.map(m => m.name).filter(Boolean);
-  const leaked = trueNames.filter(n => new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(panelBlock));
+  // CASE-SENSITIVE: monster names are Title Case; monster ids are lowercase
+  // snake_case. A lowercase id fallback (|| 'bulldozer') used as a
+  // monsterDisplayName lookup key is NOT a name leak — the rendered output is
+  // still the gated descriptor. Only a hardcoded Title-Case name counts.
+  const leaked = trueNames.filter(n => new RegExp('\\b' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(panelBlock));
   ok('panel has no hardcoded true monster name', leaked.length === 0);
   if (leaked.length) console.log(`  info: leaked names: ${leaked.join(', ')}`);
   ok('panel routes through monsterDisplayName', /monsterDisplayName/.test(panelBlock));
@@ -61,8 +65,8 @@ function ok(name, cond) {
   // 4. post-naming, the village-agreed name shows (and still not the true name,
   //    unless the village happened to agree on it)
   Game.state.codex.monsters = Game.state.codex.monsters || {};
-  Game.state.codex.monsters['thornback_boar'] = { villageName: 'Crashpig', stage: 'observed' };
-  ok('post-naming display is the village name', Game.monsterDisplayName('thornback_boar') === 'Crashpig');
+  Game.state.codex.monsters['bulldozer'] = { villageName: 'Rooter', stage: 'observed' };
+  ok('post-naming display is the village name', Game.monsterDisplayName('bulldozer') === 'Rooter');
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

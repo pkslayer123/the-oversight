@@ -6918,6 +6918,9 @@
     donateToPantry(idx) {
       const item = this.state.scholar.inventory[idx];
       if (!item || (item.kcalEach || 0) <= 0) { this.say('That\'s not food.'); return null; }
+      // MONSTER FOOD SAFETY: untested flesh is not a gift. The village doesn't
+      // want your mystery meat either — test it before feeding it to anyone.
+      if (item.edible === false) { this.say(`You don't know if that's food. Test it cautiously before feeding it to anyone.`); return null; }
       // RELIC BOND: non-transferable. A bonded relic in a stranger's hands is just stuff.
       if (item.bonded) { this.say(`That's yours. Not the village's. You can't give away your ${item.name}.`); return null; }
       const v = this.state.village;
