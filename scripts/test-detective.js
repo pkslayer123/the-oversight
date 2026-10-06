@@ -153,7 +153,7 @@ function ok(name, cond) {
       if (typeof raw !== 'string' || !raw.length) { nonEmpty = false; break; }
     }
     for (let i = 0; i < 20; i++) {
-      const out = Game.drawTruthLine(key, tvid, { truth: 'plumber', told: 'midwife', atruth: 'a plumber', atold: 'a midwife', what: 'buried food', first: 'Alex' });
+      const out = Game.drawTruthLine(key, tvid, { truth: 'plumber', told: 'midwife', atruth: 'a plumber', atold: 'a midwife', what: 'buried food', first: 'Alex', teller: 'Sam Rivera', lieWord: 'a midwife', truthWord: 'a plumber', truthCap: 'A plumber' });
       if (/\{[a-z]+\}/.test(out)) { renderedClean = false; break; }
     }
     if (!renderedClean) break;

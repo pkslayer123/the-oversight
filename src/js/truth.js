@@ -57,7 +57,7 @@
 
   const methods = {
 
-    // ---- line pools for confrontation (procedural depth: many voices, no repeats) ----
+    // ---- line pools for detective dialogue (procedural depth: many voices, no repeats) ----
     // {first} is replaced with the villager's first name at render time.
     // drawTruthLine() never serves the same line twice in one game run:
     // per-pool, lines are drawn without replacement across ALL villagers
@@ -135,6 +135,24 @@
         `{first} looks at you, level. "I told you the truth. You can keep poking it, but it's told."`,
         `"You're really going to make me say it again?" {first} rubs their face. "Fine — but it's the same truth as last time."`,
       ],
+      // gossip contradiction lines: a teller knows the truth behind the
+      // target's lie. These run through drawTruthLine's per-game no-repeat
+      // so two villagers can't parrot each other verbatim about the same
+      // target (that read as one script, not a village). {first} = target's
+      // first name, {teller} = speaker's full name, {lieWord}/{truthWord} =
+      // "a surgeon"/"from Denver" phrasing, {truthCap} = "A surgeon"/"From Denver".
+      gossipHeard: [ // you already heard the target's claim — pointed question
+        `"{first}? They told you they were {lieWord}? Huh." {teller} looks away. "{first} was {truthWord}. Everyone knew."`,
+        `"Don't repeat this, but {first}'s story doesn't hold. {truthCap}, back before. Not what they told you."`,
+        `{teller} snorts. "{first} said that? Please. {truthCap} — I knew them from before. The story doesn't survive five minutes of scrutiny."`,
+        `"{first} told you that?" {teller} gives you a long look. "Then {first} told you wrong. {truthCap} — that's the one I know."`,
+      ],
+      gossipIntel: [ // straight intel — you hadn't heard the claim yet
+        `"{first}?" {teller} lowers their voice. "Between us — they're not {lieWord}. They're {truthWord}. Don't say who told you."`,
+        `"You didn't hear it from me, but {first}'s story doesn't hold. {truthCap}, back before."`,
+        `"Funny you should ask." {teller} glances over their shoulder. "{first}'s been polishing that story. The unpolished version: {truthWord}. Keep my name out of it."`,
+        `"{first}'s story has a fresh coat of paint." {teller} taps the table. "Scrape it off and you get {truthWord}. Just don't scrape it in front of them."`,
+      ],
       slipOccupation: [
         `"{told}, huh?" {first} nods — then, an hour later, mentions something only {atruth} would know. They catch themselves. Too late.`,
         `{first} starts a story with "back when I was {atold}..." then corrects to something else mid-sentence. The correction is worse than the slip.`,
@@ -201,6 +219,11 @@
       if (v.told) line = line.split('{told}').join(v.told);
       if (v.atruth) line = line.split('{atruth}').join(v.atruth);
       if (v.atold) line = line.split('{atold}').join(v.atold);
+      // gossip-contradiction interpolation keys (npcGossipAbout)
+      if (v.teller) line = line.split('{teller}').join(v.teller);
+      if (v.lieWord) line = line.split('{lieWord}').join(v.lieWord);
+      if (v.truthWord) line = line.split('{truthWord}').join(v.truthWord);
+      if (v.truthCap) line = line.split('{truthCap}').join(v.truthCap);
       if (v.what) line = line.split('{what}').join(v.what);
       return line;
     },
@@ -558,22 +581,12 @@
         // teller knows the truth and it contradicts the lie — but only frame
         // it as "they told YOU that" if you actually heard the claim. Otherwise
         // it's straight intel: the village polices its own lies.
+        // Lines come from the per-game no-repeat pools — two villagers never
+        // parrot the same line verbatim about one target.
         const heardClaim = this.getClaims(targetVid, g.field).length > 0;
-        if (heardClaim) {
-          const lines = [
-            `"${first}? They told you they were ${lieWord}? Huh." ${teller} looks away. "${first} was ${truthWord}. Everyone knew."`,
-            `"Don't repeat this, but ${first}'s story doesn't hold. ${g.field === 'origin' ? 'From' : an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}, back before. Not what they told you."`,
-            `${teller} snorts. "${first} said that? Please. ${g.field === 'origin' ? 'From' : an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth} — I knew them from before. The story doesn't survive five minutes of scrutiny."`,
-          ];
-          line = lines[Math.floor(Math.random() * lines.length)];
-        } else {
-          const lines = [
-            `"${first}?" ${teller} lowers their voice. "Between us — they're not ${lieWord}. They're ${truthWord}. Don't say who told you."`,
-            `"You didn't hear it from me, but ${first}'s story doesn't hold. ${g.field === 'origin' ? 'From' : an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}, back before."`,
-            `"Funny you should ask." ${teller} glances over their shoulder. "${first}'s been polishing that story. The unpolished version: ${truthWord}. Keep my name out of it."`,
-          ];
-          line = lines[Math.floor(Math.random() * lines.length)];
-        }
+        const truthCap = g.field === 'origin' ? `From ${g.truth}` : `${an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}`;
+        line = this.drawTruthLine(heardClaim ? 'gossipHeard' : 'gossipIntel', tellerVid,
+          { first, teller, lieWord, truthWord, truthCap });
       } else {
         line = `"${first}? ${an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}, back before. Solid person."`;
       }
