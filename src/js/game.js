@@ -18339,6 +18339,9 @@
             // hits!") flavored it as the deer's attack. Dread, not the deer.
             if (this.heronIs(m)) this.say('💥 It STRIKES — a needle out of the white noise!');
             else if (this.glasswingIs(m)) this.say('💥 The shadow lands — wings screaming out of the sun.');
+            else if (this.nevermoreIs(m)) this.say('💥 It strafes through — talons out, beak split four ways!');
+            else if (this.nightcourtIs(m)) this.say('💥 It lands — silent, out of nowhere. No warning. There never is.');
+            else if (this.statickiteIs(m)) this.say('💥 The square SCREAMS — static made solid.');
             else if (ptype === 'charge') this.say('💥 It slams through!');
             else if (ptype === 'burst') this.say('💥 It erupts!');
             else if (ptype === 'beam' || ptype === 'line') this.say('💥 The light hits!');
@@ -19672,7 +19675,12 @@
           this.encSetPhase(m, 'strafe');
           m.altitude = 'low'; // descending into the run
           const known = this.encTelegraphKnown(m);
-          const cells = S.combat.patternCells(Object.assign({}, pat, { type: 'line', length: 3, width: 1 }), m.mx, m.my, t.mx, t.my);
+          // SAME-TILE EDGE: if it's right on top of the target, aim the lane
+          // south — patternCells needs a bearing, and the run still goes
+          // somewhere honest.
+          const aimX = (t.mx === m.mx && t.my === m.my) ? m.mx : t.mx;
+          const aimY = (t.mx === m.mx && t.my === m.my) ? m.my + 1 : t.my;
+          const cells = S.combat.patternCells(Object.assign({}, pat, { type: 'line', length: 3, width: 1 }), m.mx, m.my, aimX, aimY);
           const cueText = known
             ? 'The shadow detaches — a black lane across the ground. It\'s strafing THAT lane. MOVE OFF IT.'
             : 'Its shadow slides off the branch without it — a straight black lane, growing.';
