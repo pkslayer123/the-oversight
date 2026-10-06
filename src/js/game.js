@@ -12976,6 +12976,27 @@
               this.say('Your teeth ache with it. You don\'t know what it wants.');
             }
             this.audioEvent('humNotice');
+          } else if (this.glasswingIs(mo)) {
+            // GLASSWING: first contact is dread, not a lecture. The shadow is
+            // the whole fight — the coaching only lands once the pattern is
+            // earned (codex observed/slain). First-timers learn by doing.
+            mo.beamPhase = 'circle';
+            this.say('A shadow moves wrong against the sun — circling. Something up there is looking down at you.');
+            const gstage = (this.ensureMonsterEntry('glasswing') || {}).stage;
+            if (gstage === 'observed' || gstage === 'slain') {
+              this.say('(It dives at where you STAND — the shadow is the warning. Move when it grows. It can\'t turn mid-dive.)');
+            }
+            this.audioEvent('glasswingCircle');
+          } else if (this.sunbaskerIs(mo)) {
+            // SUNBASKER: first contact is dread, not a lecture. The bask is
+            // the tell — the coaching only lands once the pattern is earned.
+            mo.beamPhase = 'bask'; mo.sbCharge = 0;
+            this.say('Gold in the grass. It was not there, then it was — a lizard the size of a dog, tilting its back to the sun.');
+            const sstage = (this.ensureMonsterEntry('sunbasker') || {}).stage;
+            if (sstage === 'observed' || sstage === 'slain') {
+              this.say('(It basks to charge — every sunny turn makes the bite worse. Hit it and the charge dies. Shade and dusk make it harmless.)');
+            }
+            this.audioEvent('baskCharge', { charge: 0 });
           }
         }
       } catch (e) {}
@@ -13071,6 +13092,7 @@
         direct: "locks onto one target — moving won't dodge it",
         rush: 'gives no warning — it just moves and hits',
         ambush: 'strikes without warning when you get close',
+        single: 'picks one target and commits — the windup tells you how to beat it',
       }[t] || 'hits an area around it';
     },
 
@@ -13212,11 +13234,13 @@
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
         if (!(sweepBeam && tg.firing > 0)) continue;
-        this.tbBeamSweepTick(m, tg);
-        tg.firing -= 1;
-        const p = this.tbFighter('p');
-        if (p) p.beamTicks = (p.beamTicks || 0) + 1;
-        if (tg.firing <= 0) this.tbBeamEndFiring(m, tg);
+        // VISUAL-ONLY (Steve 2026-10-05): the action tick tracks the player's
+        // movement for responsiveness (the beam visually follows you), but it
+        // does NOT consume a firing tick or deal damage. The monster's turn is
+        // authoritative — that's what advances the beam and hurts you.
+        // (Previously this consumed firing ticks, which froze the game when
+        // the player didn't act — the beam waited forever.)
+        this.tbBeamSweepTick(m, tg, true); // visualOnly=true
         this.tbRefreshTelegraphUI();
         if (this.tbEndCheck()) return;
       }
@@ -13244,7 +13268,7 @@
     // track the player, and UNSPENT budget becomes dwell damage: if you don't
     // move, it doesn't have to sweep — so it sits the full beam on you.
     // The lane redraws every tick from the deer's position along the angle.
-    tbBeamSweepTick(m, tg) {
+    tbBeamSweepTick(m, tg, visualOnly) {
       const f = this.tbfight;
       if (!f) return;
       const pat = tg.pattern || {};
@@ -13296,9 +13320,10 @@
       let hitAnyone = false, dwelledPlayer = false;
       // IGNITION BEAT: the beam is visibly here but not burning yet — the
       // player gets this tick to MOVE. Damage starts next tick.
+      // VISUAL-ONLY: skip damage entirely — this is just tracking.
       if (tg.ignition) {
         this.say('The light touches the ground where you were standing. It has not found you yet.');
-      } else
+      } else if (!visualOnly)
       for (const o of f.fighters) {
         if (!o.alive || o.fled || o.key === m.key) continue;
         if (!S.combat.isFoe(m, o)) continue;
@@ -13337,7 +13362,8 @@
       }
       // ANTLER SWEEP (close range): closing in to disrupt is risky.
       // During the beam, the thrash is a bonus punish — the beam still fires.
-      this.tbAntlerThrash(m);
+      // Skipped in visual-only mode (no damage on tracking ticks).
+      if (!visualOnly) this.tbAntlerThrash(m);
       if ((this.tbfight || {}).over) return;
       // AUDIO: the hum hunts with the beam — pan follows it across the stereo
       // field, heat rises as the aim closes in on the player.
@@ -13876,6 +13902,17 @@
         this.tbAfterPlayerAction();
         return true;
       }
+      // GLASSWING (circling): it's high — out of reach. The shadow is the
+      // fight, not the bug: wait for the dive, dodge it, punish the crash.
+      // Coaching is codex-gated — first-timers just learn it's too high.
+      if (this.glasswingIs(t) && this.encUsesFifo(t) && t.beamPhase === 'circle') {
+        p.acted = true;
+        this.say(this.encTelegraphKnown(t)
+          ? "It's circling high — out of spear reach. Watch the shadow, not the bug."
+          : "It's circling high above spear reach — a shadow moving against the sun.");
+        this.tbAfterPlayerAction();
+        return true;
+      }
       // RANGED: no ammo, no shot.
       // FLASHBLIND: the moth's flash leaves spots in your eyes — your strike
       // may catch only afterimages. (Mirrors the pocket_sand miss rule.)
@@ -14302,6 +14339,28 @@
           this.say('Cameras shatter across the dirt — the swarm is FRAGILE. Every hit knocks lenses out of the sky.');
         }
       }
+      // GLASSWING (grounded): wings tangled — it takes the hit badly.
+      if (t.kind === 'monster' && this.glasswingIs(t) && t.beamPhase === 'grounded' && final > 0) {
+        final = Math.round(final * 1.5);
+        if (!t.groundedNoted) {
+          t.groundedNoted = true;
+          this.say('Wings tangled — it takes the hit badly. (+50% while grounded)');
+        }
+      }
+      // SUNBASKER: a solid hit knocks the solar charge out of its scales —
+      // the counterplay is pressure. A hit also startles it out of a flatten.
+      if (t.kind === 'monster' && this.sunbaskerIs(t) && final > 0) {
+        if ((t.sbCharge || 0) > 0) {
+          t.sbCharge = 0;
+          if (this.encUsesFifo(t)) this.encSetPhase(t, 'bask');
+          this.say('The blow knocks the charge out of its scales — dull brown again.');
+          this.audioEvent('baskBreak');
+        }
+        if (t.sbFlat) {
+          t.sbFlat = false;
+          this.say('The blow startles it — gold flares back across its scales as it scrambles for the sunlight.');
+        }
+      }
       if (t.kind === 'player' && typeof this.armorBonus === 'function') {
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
@@ -14688,6 +14747,26 @@
     hornIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hype_horn')); },
     beastIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'delegate_beast')); },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
+    // SHADE (sunbasker): canopy shade = orthogonally adjacent to a tree.
+    // The grid is honest about it — trees are visible, so shade is readable.
+    tbInShade(x, y) {
+      try {
+        const detail = this.genDetail(this.map.px, this.map.py);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const row = detail[y + dy];
+          const cell = row && row[x + dx];
+          if (cell === 'tree' || cell === 'bigtree') return true;
+        }
+      } catch (e) {}
+      return false;
+    },
+    // SUNBASKER bite damage: base + 4 per surviving charge (cap 3).
+    sbBiteDmg(m) {
+      const atk = (m && m.mdef && m.mdef.attack) || {};
+      const base = atk.damage || [8, 14];
+      const bonus = 4 * Math.min(3, (m && m.sbCharge) || 0);
+      return [base[0] + bonus, base[1] + bonus];
+    },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
     encThreatQueue(m) {
       if (!Array.isArray(m.threatQueue)) m.threatQueue = [];
@@ -15699,11 +15778,19 @@
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
-        // LIVE FIRE: the beam is up and sweeping — but the sweep is ACTION-LOCKED
-        // (Steve): it ticks on PLAYER actions via tbBeamActionTick, not here.
-        // The deer stands frozen, committed — no move, no new attack. Its turn
-        // is just the beam holding its line while it waits for you to move.
+        // LIVE FIRE: the beam sweeps on the MONSTER'S turn (Steve 2026-10-05:
+        // action-locked-only froze the game — the beam waited for player
+        // input that never came). Player actions ALSO trigger a sweep tick
+        // via tbBeamActionTick for responsiveness (the beam tracks your
+        // movement), but the monster turn is authoritative and advances
+        // the firing count. The deer stands committed — no move, no new
+        // attack — but the beam itself is the action.
         if (sweepBeam && tg.firing > 0) {
+          this.tbBeamSweepTick(m, tg);
+          tg.firing -= 1;
+          const pl = this.tbFighter('p');
+          if (pl) pl.beamTicks = (pl.beamTicks || 0) + 1;
+          if (tg.firing <= 0) this.tbBeamEndFiring(m, tg);
           this.tbRefreshTelegraphUI();
           if (this.tbEndCheck()) return;
           return;
@@ -15855,6 +15942,9 @@
         if (tg.kind === 'direct') {
           const t = this.tbFighter(tg.targetKey);
           if (t && t.alive) {
+            // SUNBASKER: the bite lands with whatever charge SURVIVED the
+            // windup — a mid-declare hit weakens it honestly.
+            if (this.sunbaskerIs(m)) tg.dmg = this.sbBiteDmg(m);
             let dmg = S.combat.roll(tg.dmg), missed = false;
             if (m.blind > 0 && Math.random() < 0.5) { missed = true; }
             if (missed) this.say(`${this.encShortLabel(m) || m.name}'s ${tg.attackName} swipes at sand-ghosts. Missed. (pocket_sand)`);
@@ -15985,6 +16075,30 @@
             this.audioEvent('delegateCharge');
             m.circled = false; // the next charge gets circled first, too. Always.
             m.beastDebrief = 1;
+          }
+          // GLASSWING: the dive lands where it lands. A hit means it snatched
+          // its target and climbed — a miss means it crashed, wings tangled,
+          // vulnerable for a turn. Kill it when it lands.
+          if (this.glasswingIs(m) && tg.kind === 'squares') {
+            const dc = (tg.cells && tg.cells[0]) || { cx: m.mx, cy: m.my };
+            m.mx = dc.cx; m.my = dc.cy;
+            if (anyoneHit) {
+              if (useFifo) this.encSetPhase(m, 'circle');
+              this.say('It snatches at its target and climbs — screaming, back into the sun.');
+              this.audioEvent('glasswingClimb');
+            } else {
+              if (useFifo) this.encSetPhase(m, 'grounded');
+              m.gwGrounded = 1; m.groundedNoted = false;
+              this.say('It hits the dirt where its target was — wings tangled, screaming. GROUNDED. Now.');
+              this.audioEvent('glasswingLand');
+            }
+          }
+          // SUNBASKER: the bite spends the charge — dull brown again, already
+          // tilting back toward the sun. The loop restarts.
+          if (this.sunbaskerIs(m) && tg.kind === 'direct') {
+            m.sbCharge = 0;
+            if (useFifo) this.encSetPhase(m, 'bask');
+            this.say('The charge is spent — dull brown again, already tilting back toward the sun.');
           }
         }
         if (m.blind > 0) m.blind -= 1;
@@ -16320,6 +16434,147 @@
           this.say(watchLines[Math.floor(Math.random() * watchLines.length)]);
           this.audioEvent('projectorHum', {});
         }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- GLASSWING DARTER: THE DIVE ----
+      // circle → dive → grounded. It hunts from the sky: while circling it is
+      // out of reach (strikes whiff — the shadow is the fight, not the bug).
+      // The dive locks ONE tile at declare (kind 'squares', single cell): the
+      // grid IS the telegraph, knowledge-gated like the deer's lane — the
+      // shadow only renders once the pattern is earned. Move off the tile
+      // and it crashes: grounded, wings tangled, +50% damage for a turn.
+      // Stand still and it snatches you and climbs.
+      if (this.glasswingIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'circle'); m.gwDive = null; }
+        // GROUNDED: crashed. It doesn't act — wings tangled. The window is real.
+        if (m.beamPhase === 'grounded') {
+          m.gwGrounded = (m.gwGrounded || 1) - 1;
+          if (m.gwGrounded <= 0) {
+            this.encSetPhase(m, 'circle'); m.groundedNoted = false;
+            this.say('The darter\'s wings find the air — it climbs, screaming, back into the sun.');
+            this.audioEvent('glasswingClimb');
+          } else {
+            this.say('The darter thrashes on the dirt, wings tangled. NOW. While it\'s down.');
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        const diveRange = pat.range || 3;
+        if (d <= diveRange && !m.telegraph) {
+          // DECLARE THE DIVE: lock the target's tile. One turn to move.
+          this.encSetPhase(m, 'dive');
+          const known = this.encTelegraphKnown(m);
+          const cueText = known
+            ? 'The shadow detaches — it\'s diving at YOUR tile. MOVE. (Watch the shadow, not the bug.)'
+            : 'A shadow crosses the ground — growing fast. Something is falling out of the sky.';
+          const p0 = this.tbFighter('p');
+          m.telegraph = { kind: 'squares', cells: [{ cx: t.mx, cy: t.my }],
+            dmg: (m.mdef.attack || {}).damage, attackName: (m.mdef.attack || {}).name,
+            pattern: pat, turnsLeft: 1,
+            threatenedPlayer: !!(p0 && p0.alive && p0.mx === t.mx && p0.my === t.my),
+            aim: { x: t.mx, y: t.my }, dir: null, aimKey: t.key,
+            angle: null, firing: 0, cueText };
+          // WITNESS: seeing the dive declared teaches the attack (codex machinery).
+          try {
+            const me = this.ensureMonsterEntry(m.mdef.id);
+            const anm = (m.mdef.attack || {}).name;
+            if (anm && !me.attacksSeen.includes(anm)) {
+              me.attacksSeen.push(anm);
+              if (me.stage === 'encountered') me.stage = 'observed';
+            }
+          } catch (e) {}
+          this.say(known ? cueText : 'The shadow detaches from the clouds and starts growing.');
+          this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m)); // silent in combat; dedup only
+          this.audioEvent('glasswingDive');
+        } else if (!m.telegraph) {
+          // CIRCLE: airborne — over terrain, closing on the target. Out of reach.
+          const airBlocked = (x, y) => x < 0 || x > 8 || y < 0 || y > 8;
+          for (let i = 0; i < (m.speed || 5); i++) {
+            const dd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+            if (dd <= diveRange) break;
+            const stp = this.tbStepToward(m, t.mx, t.my, airBlocked, danger);
+            if (!stp) break;
+            m.mx = stp.x; m.my = stp.y;
+          }
+          this.say(this.pickFresh([
+            'A high whine, circling. It\'s looking down at you.',
+            'The shadow slides across the grass, unhurried. It\'s choosing.',
+            'Wings like cellophane catch the sun — there, then gone.',
+          ], 'gwCircle'));
+          this.audioEvent('glasswingCircle');
+        }
+        // (dive windup ticks in the generic pending section; resolve lands below)
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- SUNBASKER: THE BASK ----
+      // bask → charged → bite. Solar-powered: every turn it spends in sunlight
+      // unbothered, the charge builds (+damage per turn, cap 3). Hit it and
+      // the charge dies (tbDamage hook) — the counterplay is pressure, not
+      // positioning. Shade or dusk: it flattens, dull brown, passive. It
+      // won't fight where the sun isn't. The bite spends the charge.
+      if (this.sunbaskerIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        let night = false;
+        try { night = this.isNight(); } catch (e) {}
+        const inShade = this.tbInShade(m.mx, m.my);
+        if (night || inShade) {
+          // FLATTEN: no sun, no fight. Still killable — it's a lizard.
+          if (!m.sbFlat) {
+            m.sbFlat = true; m.sbCharge = 0;
+            if (useFifo) this.encSetPhase(m, 'bask');
+            this.say(night
+              ? 'The sun is gone — and so is the fight in it. It flattens, dull brown, trying to disappear into the dirt.'
+              : 'It shuffles into the tree-shade and flattens, dull brown. No sun, no fight.');
+            this.audioEvent('baskFlatten');
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        m.sbFlat = false;
+        if (!m.beamPhase || m.beamPhase === 'stalk') this.encSetPhase(m, 'bask');
+        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (d > 1 && !m.telegraph) {
+          // not adjacent: close in. No basking on the move.
+          for (let i = 0; i < (m.speed || 3); i++) {
+            const dd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+            if (dd <= 1) break;
+            const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+            if (!stp) break;
+            m.mx = stp.x; m.my = stp.y;
+          }
+          this.say(this.pickFresh([
+            'A rustle in the grass. Something gold catches the light.',
+            'It scuttles sideways, keeping the sun on its back.',
+          ], 'sbStalk'));
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (!m.telegraph) {
+          // BASK: the charge builds. At 2+ the bite is declared.
+          m.sbCharge = Math.min(3, (m.sbCharge || 0) + 1);
+          if (useFifo) this.encSetPhase(m, (m.sbCharge || 0) >= 2 ? 'charged' : 'bask');
+          const known = this.encTelegraphKnown(m);
+          if (m.sbCharge >= 2) {
+            // DECLARE THE BITE: direct, tracking — moving won't dodge it.
+            // The counterplay is the charge, not the tile: hit it and the
+            // bite starves before it lands (pending hook re-reads charge).
+            this.encDeclareDirect(m, t, known
+              ? 'Fully gold — Sun-Charged Bite incoming. It tracks: hit it NOW and the charge dies before it lands.'
+              : 'Its scales go molten gold. Heat shimmers off its back.');
+            m.telegraph.dmg = this.sbBiteDmg(m);
+          } else {
+            this.say(this.pickFresh([
+              'Its scales go from dull brown to gold. Heat shimmers off its back. It\'s charging.',
+              'It tilts its back to the sun, utterly still. Charging.',
+            ], 'sbBask'));
+          }
+          this.audioEvent('baskCharge', { charge: m.sbCharge });
+        }
+        // (bite windup ticks in the generic pending section; resolve lands below)
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
