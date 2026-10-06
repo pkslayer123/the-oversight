@@ -59,7 +59,7 @@ Renders all screens from game state. Mobile-first PWA UI. Grid, D-pad, action ba
 ### betrayal (`betrayal.js`)
 Betrayal, accusation, trial & exile. Micro-quests disguise later betrayals; aftermath is the game.
 
-**Provides:** betrayalState(), grievanceBetween(a, b), motiveBetween(a, b), recordGrievance(g), inviteHistory(), pendingInvite(), acceptInvite(id), declineInvite(id), resolveInvite(id), inviteReward(id), npcInviteTick(), dayOneNudge(), whoTag(vid), isPlayer(vid), pairAffinity(a, b)
+**Provides:** betrayalState(), grievanceBetween(a, b), motiveBetween(a, b), recordGrievance(g), inviteHistory(), pendingInvite(), acceptInvite(id), declineInvite(id), resolveInvite(id), inviteReward(id), npcInviteTick(), dayOneNudge(), whoTag(vid), isPlayer(vid), pairAffinity(a, b), visitorWares(vis), traderPay(kcal), visitorBuyWare(visId, idx), visitorHtml(), visitorDaily()
 
 **Rules:**
 - betrayal_requires_motive: true (code: betrayal.js)
@@ -317,6 +317,9 @@ Village justice + combat dialogue. Crimes have consequences.
 - one_ladder: cold shoulder -> confrontation -> moot -> uprising; the moot is the ONE formal track (code: justiceTick)
 - confrontation_first: heat 50+ holds the formal track until the ladder demands the moot — refusal, silence-timeout, or heat 70+ (code: considerPlayerAccusation, justiceTick)
 - refused_payment_not_taken: a failed restitution offer costs nothing — refused food stays in the pack (code: justiceRespond)
+- judged_heat_halved: judged crimes (caseId set) count half heat — the village remembers but never re-tries: no double jeopardy (code: justiceHeat)
+- summons_voice: the moot demand is generated from the confronter's identity + the strongest witnessed crime + why it's happening now; never names unwitnessed crimes (code: justiceDemandMoot)
+- accuser_aftermath: the verdict moves the accuser's standing too — weak cases cost them, held cases earn them respect (code: mootAccuserAftermath)
 
 **Consumes:** village.laws, scholar.crimes
 

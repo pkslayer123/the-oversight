@@ -14,6 +14,9 @@
 //   - one_ladder: cold shoulder -> confrontation -> moot -> uprising; the moot is the ONE formal track (code: justiceTick)
 //   - confrontation_first: heat 50+ holds the formal track until the ladder demands the moot — refusal, silence-timeout, or heat 70+ (code: considerPlayerAccusation, justiceTick)
 //   - refused_payment_not_taken: a failed restitution offer costs nothing — refused food stays in the pack (code: justiceRespond)
+//   - judged_heat_halved: judged crimes (caseId set) count half heat — the village remembers but never re-tries: no double jeopardy (code: justiceHeat)
+//   - summons_voice: the moot demand is generated from the confronter's identity + the strongest witnessed crime + why it's happening now; never names unwitnessed crimes (code: justiceDemandMoot)
+//   - accuser_aftermath: the verdict moves the accuser's standing too — weak cases cost them, held cases earn them respect (code: mootAccuserAftermath)
 // consumes:
 //   - village.laws
 //   - scholar.crimes
@@ -66,17 +69,25 @@
     // only via amends — the village remembers, but it can forgive.
     // Unwitnessed murders are unsolved: the village doesn't know, so no
     // heat — but the crime stays on the books for the detective/moot path.
+    // NO DOUBLE JEOPARDY (Steve 2026-10-06): a crime the moot already
+    // judged (caseId set) counts HALF heat. The village remembers — a
+    // judged killing keeps the fire cold — but it doesn't re-confront or
+    // re-moot you over the same crime forever. Before this, an acquittal
+    // left heat at full, and the ladder re-confronted every tick: an
+    // infinite harassment loop with no recovery.
     justiceHeat() {
       const j = this.justiceState();
       const v = this.state.village;
       let heat = 0;
       for (const c of j.crimes) {
-        if (c.type === 'murder') heat += c.witnessed === false ? 0 : (c.justified ? 15 : 40);
-        else if (c.type === 'attack') heat += 20;
+        const judged = !!c.caseId;
+        const w = judged ? 0.5 : 1;
+        if (c.type === 'murder') heat += (c.witnessed === false ? 0 : (c.justified ? 15 : 40)) * w;
+        else if (c.type === 'attack') heat += 20 * w;
         // theft/intimidation: real heat, but the village can forgive —
         // amends credit wears it down, unlike murder.
-        else if (c.type === 'theft') heat += 15;
-        else if (c.type === 'intimidation') heat += 15;
+        else if (c.type === 'theft') heat += 15 * w;
+        else if (c.type === 'intimidation') heat += 15 * w;
       }
       // theft: net takes far beyond gives
       const takes = (v.takes && v.takes[this.villagerId]) || 0;
@@ -135,6 +146,7 @@
           const cname = j.confrontedBy ? this.displayName(j.confrontedBy) : 'The village';
           this.say(`⚖ ${cname} waited two days for your answer. None came. "Silence is an answer too."`);
           j.confrontRefused = true;
+          j.silenceRefused = true; // the summons should know you went quiet, not loud
           j.pendingConfront = false;
         }
       }
@@ -297,6 +309,7 @@
         j.pendingConfront = false;
         j.confrontedBy = null;
         j.confrontRefused = false;
+        j.silenceRefused = false;
         // heat recompute may drop them back to cold shoulder or peace
         const heat = this.justiceHeat();
         j.stage = heat >= 25 ? 1 : 0;
@@ -316,11 +329,72 @@
 
     // The village goes formal: hand the case to the moot (betrayal.js).
     // There is exactly one formal track — this never holds its own vote.
+    // SUMMONS VOICE (Steve 2026-10-06): the demand is generated from WHO
+    // demands it (temperament, how close you were — the unique-person law),
+    // WHAT the village can actually prove (strongest witnessed crime only;
+    // the summons never names an unwitnessed crime or a suspicion —
+    // knowledge gating runs both ways), and WHY it's happening now
+    // (refused outright, two days of silence, or the heat just kept
+    // climbing past talking). The confrontation beat is personal; the
+    // summons is the village going public. Sibling of the confrontation
+    // voice — the old single generic line is gone.
     justiceDemandMoot() {
       const j = this.justiceState();
       const vid = j.confrontedBy;
-      const name = vid ? this.displayName(vid) : 'The village';
-      this.say(`⚖ ${name} looks around the fire. "No more talking around it. There'll be a moot — all of it, in the open."`);
+      const v = this.state.village;
+      const alive = !!(vid && (v.roster || []).includes(vid));
+      const name = alive ? this.displayName(vid) : 'The village';
+      // what the village can prove: strongest witnessed crime on the books,
+      // not yet judged. forcePlayerAccusation charges this same set — the
+      // summons never gets ahead of the evidence.
+      const rank = { murder: 4, attack: 3, theft: 2, intimidation: 1 };
+      const provable = (j.crimes || []).filter(c => rank[c.type] && c.witnessed !== false && !c.caseId);
+      const serious = provable.sort((a, b) => (rank[b.type] || 0) - (rank[a.type] || 0))[0];
+      const chargeWord = !serious ? 'what you\'ve done' :
+        serious.type === 'murder' ? 'the killing' :
+        serious.type === 'attack' ? 'the attack' :
+        serious.type === 'theft' ? 'the thefts' : 'the threats';
+      const reason = j.silenceRefused ? 'silence' : (j.confrontRefused ? 'refused' : 'heat');
+      const temp = alive ? String((this.npcTemper && this.npcTemper(vid)) || 'steady').toLowerCase() : 'steady';
+      const trust = alive ? (((v.trust || {})[vid]) || 10) : 10;
+      const close = trust >= 40;
+      const wary = (temp === 'cautious' || temp === 'withdrawn');
+      const bold = (temp === 'bold' || temp === 'intense');
+      const R = Math.random;
+      const pick = (arr) => arr[Math.floor(R() * arr.length)];
+      const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+      let line;
+      if (reason === 'silence') {
+        line = pick([
+          `${name} waited two days for your answer. None came — so the question goes to everyone. "${cap(chargeWord)}, in the open. Be there, or don't. It happens either way."`,
+          close ? `${name} doesn't look at you when they say it. "I waited. Two days. The moot hears ${chargeWord} — all of it, in the open."` : null,
+          `${name} stands. "Silence is an answer. Fine. Here's ours: a moot. ${cap(chargeWord)}, in the open, where silence doesn't work."`,
+        ].filter(Boolean));
+      } else if (reason === 'refused') {
+        line = pick([
+          bold ? `${name} stands, and the fire goes quiet around them. "No more talking around it. ${cap(chargeWord)} gets a moot — all of it, in the open. You said no to me. Say it to everyone."` : null,
+          wary ? `${name} says it low, and the low carries. "There'll be a moot. ${cap(chargeWord)} — in the open. I asked you quiet. You chose loud."` : null,
+          close ? `${name} looks sick saying it. "I asked you as —" A breath. "There's a moot. ${cap(chargeWord)}, in the open. I didn't want this."` : null,
+          serious && serious.type === 'murder' ? `${name}'s voice doesn't shake. That's how you know. "A moot. For the killing. In the open, where everyone has to hear it."` : null,
+          serious && serious.type === 'attack' ? `${name} doesn't dress it up. "You put hands on one of ours. The moot hears ${chargeWord} — all of it, in the open."` : null,
+          serious && serious.type === 'theft' ? `${name} looks around the fire. "The stores. The counts. All of it — in the open. There's a moot."` : null,
+          serious && serious.type === 'intimidation' ? `${name} keeps their voice level. "Threats stop working when everyone hears them. A moot — in the open."` : null,
+          // nothing provable (shouldn't happen — the accusation would bail):
+          // the old generic line, kept as the last resort only.
+          !serious ? `${name} looks around the fire. "No more talking around it. There'll be a moot — all of it, in the open."` : null,
+        ].filter(Boolean));
+      } else {
+        // heat climbed past talking: the confronter never even got their answer
+        line = pick([
+          `"It's past asking," ${name} says. "The fire hears ${chargeWord} — tonight, in the open."`,
+          close ? `${name} won't meet your eyes. "I was going to talk to you. It's past that now. The moot hears ${chargeWord} — in the open."` : null,
+          `${name} doesn't bother with preamble. "A moot. ${cap(chargeWord)}. In the open."`,
+        ].filter(Boolean));
+      }
+      // last resort: never render "undefined" — a broken summons line is
+      // worse than a plain one.
+      if (!line) line = `${name} looks around the fire. "No more talking around it. There'll be a moot — all of it, in the open."`;
+      this.say('⚖ ' + line);
       try { if (this.journalNote) this.journalNote('village', 'moot', 'They demanded a moot. Formal. No more hallway justice.'); } catch (e) {}
       if (typeof this.forcePlayerAccusation === 'function') {
         try { this.forcePlayerAccusation(); } catch (e) {}
@@ -336,14 +410,75 @@
       const j = this.justiceState();
       j.mootDemanded = false;
       j.confrontRefused = false;
+      j.silenceRefused = false;
       j.confrontedBy = null;
       j.pendingConfront = false;
+      // MOOT AFTERMATH: SOCIAL CONSEQUENCES (Steve 2026-10-06). The verdict
+      // lands on the ACCUSER too, not just the accused — consequences are
+      // real and social, not mechanical. A case the fire wouldn't hold costs
+      // the accuser standing; a case that held earns them respect; a case
+      // that split the village costs them. The player SEES it happen — the
+      // ceremony promised "everyone will remember it," so the aftermath
+      // narrates the remembering, and the village gossip system carries it
+      // into reputation. Sibling of the verdict's own vote-memory lines.
+      try { this.mootAccuserAftermath(path); } catch (e) {}
       if (path === 'exile' || path === 'player_exile' || path === 'fled') {
         j.stage = 3; // exiled: enforcement + defiance rules apply
         return;
       }
       const heat = this.justiceHeat();
       j.stage = heat >= 25 ? 1 : 0; // acquittal / weregild / schism / cold war
+    },
+
+    // The accuser's standing moves with the verdict they called for.
+    mootAccuserAftermath(path) {
+      // find the case that just resolved against the player
+      let c = null;
+      try {
+        const cases = (this.betrayalState() || {}).cases || [];
+        for (let i = cases.length - 1; i >= 0; i--) {
+          const x = cases[i];
+          if (x && x.accused && x.accused.includes(this.villagerId) &&
+              (x.status === 'resolved' || x.status === 'acquitted')) { c = x; break; }
+        }
+      } catch (e) {}
+      if (!c || !c.accuser) return;
+      const accuser = c.accuser;
+      if (this.isPlayer && this.isPlayer(accuser)) return;
+      if (!((this.state.village || {}).roster || []).includes(accuser)) return;
+      const name = this.displayName(accuser);
+      const trust = (((this.state.village || {}).trust || {})[accuser]) || 10;
+      const close = trust >= 40;
+      const R = Math.random;
+      const pick = (arr) => arr[Math.floor(R() * arr.length)];
+      const heardBy = (((c.trial || {}).present) || [])
+        .filter(id => id !== this.villagerId && id !== accuser).slice(0, 5);
+      if (path === 'acquitted') {
+        // the fire wouldn't hold it — the accuser overreached, and the
+        // village saw. Costs more when they were your friend: the village
+        // watched a friendship burn for nothing.
+        this.bumpTrust(accuser, close ? -12 : -8);
+        try { this.remember(accuser, 'moot_weak_case', `brought a case against you the fire wouldn't hold (${c.charge || 'unknown charge'})`); } catch (e) {}
+        try { this.recordGrievance(this.villagerId, accuser, 'false_accusation', 18); } catch (e) {}
+        try { this.seedGossip('moot_weak_case', { honest: -8, competent: -8, who: accuser }, heardBy); } catch (e) {}
+        this.say(pick([
+          `The count falls short — and some eyes turn to ${name}. They brought this. Dragged everyone to the fire for it. The fire remembers that too.`,
+          `${name} doesn't meet anyone's eyes. A case the village wouldn't hold — that's on the one who called it.`,
+          close ? `${name} looks at you across the cooling fire, and something between you is over. They called a moot on you — and the fire said no.` : null,
+        ].filter(Boolean)));
+      } else if (path === 'weregild' || path === 'exile' || path === 'player_exile') {
+        // the case held — the accuser stood up when it counted
+        this.bumpTrust(accuser, 6);
+        try { this.remember(accuser, 'moot_case_held', `stood up at the moot and the fire agreed (${c.charge || 'unknown charge'})`); } catch (e) {}
+        this.say(pick([
+          `${name} doesn't gloat. Nobody thanks them out loud. But the nods they get by the fire, later — those are real.`,
+          `Nobody says ${name} was right. Nobody has to. The way the fire settles says it.`,
+        ]));
+      } else { // schism, cold_war — the case divided the village
+        this.bumpTrust(accuser, -4);
+        try { this.remember(accuser, 'moot_split_fire', `called a moot that split the village (${c.charge || 'unknown charge'})`); } catch (e) {}
+        this.say(`${name} got their moot. The village got two fires and the space between them. Nobody calls that a win — least of all ${name}.`);
+      }
     },
 
     justiceExileGuards() {
