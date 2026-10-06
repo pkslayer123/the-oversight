@@ -518,11 +518,15 @@
     }
     // ---- BUSH / PLANT ----
     else if (cell === 'bush' || cell === 'plant') {
-      const species = (mod && mod.species) || 'a bush';
+      // SIBLING HARDENING (Steve 2026-10-06): never read mod.species here —
+      // bush species live in tile.bushSpecies (gated on codex.plants level
+      // in perceive.js), so the examine branch stays generic by construction.
+      // No species name can leak through this path, present or future.
+      const species = cell === 'bush' ? 'a bush' : 'a plant';
       if (!deep) {
         text = `${species.charAt(0).toUpperCase() + species.slice(1)}. You look it over — leaves, stems, the way it holds itself.`;
       } else {
-        text = `You really look at the ${species}. The leaf arrangement, the stem color at the joints, what's growing nearby — plants keep company, and the company tells you about the soil, the water, the light. `;
+        text = `You really look at the ${species.replace(/^(a|an)\s+/i, '')}. The leaf arrangement, the stem color at the joints, what's growing nearby — plants keep company, and the company tells you about the soil, the water, the light. `;
         const note = hashStr(key) % 3;
         if (note === 0) text += `Something's been browsing it — clean bites, deer-high. This patch feeds something.`;
         else if (note === 1) text += `New growth at the tips, pale green. It's happy here. Remember this spot.`;
