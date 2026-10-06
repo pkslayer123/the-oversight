@@ -11,7 +11,12 @@
       "sharing": "selfish",
       "temperament": "steady",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "Miami, Florida",
+    "homeRegion": "Miami, Florida",
+    "skinTone": "tan",
+    "clothing": "casual"
   },
   {
     "id": "marcus_webb",
@@ -25,7 +30,12 @@
       "sharing": "generous",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Chicago, Illinois",
+    "homeRegion": "Chicago, Illinois",
+    "skinTone": "dark",
+    "clothing": "casual"
   },
   {
     "id": "sofia_chen",
@@ -39,7 +49,12 @@
       "sharing": "pragmatic",
       "temperament": "cautious",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "Tokyo, Japan",
+    "homeRegion": "Tokyo, Japan",
+    "skinTone": "light",
+    "clothing": "casual"
   },
   {
     "id": "james_okonkwo",
@@ -53,7 +68,12 @@
       "sharing": "pragmatic",
       "temperament": "steady",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Lagos, Nigeria",
+    "homeRegion": "Lagos, Nigeria",
+    "skinTone": "deep",
+    "clothing": "casual"
   },
   {
     "id": "emma_larsen",
@@ -67,7 +87,12 @@
       "sharing": "generous",
       "temperament": "bold",
       "curiosity": "practical"
-    }
+    },
+    "gender": "f",
+    "origin": "Oslo, Norway",
+    "homeRegion": "Oslo, Norway",
+    "skinTone": "fair",
+    "clothing": "casual"
   },
   {
     "id": "david_kim",
@@ -81,7 +106,12 @@
       "sharing": "selfish",
       "temperament": "cautious",
       "curiosity": "practical"
-    }
+    },
+    "gender": "m",
+    "origin": "Seoul, South Korea",
+    "homeRegion": "Seoul, South Korea",
+    "skinTone": "light",
+    "clothing": "casual"
   },
   {
     "id": "rosa_mendez",
@@ -95,7 +125,12 @@
       "sharing": "pragmatic",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "New Orleans, Louisiana",
+    "homeRegion": "New Orleans, Louisiana",
+    "skinTone": "brown",
+    "clothing": "bright"
   },
   {
     "id": "tom_baker",
@@ -109,7 +144,12 @@
       "sharing": "pragmatic",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Brooklyn, New York",
+    "homeRegion": "Brooklyn, New York",
+    "skinTone": "fair",
+    "clothing": "casual"
   },
   {
     "id": "yuki_mori",
@@ -123,7 +163,12 @@
       "sharing": "pragmatic",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "Kyoto, Japan",
+    "homeRegion": "Kyoto, Japan",
+    "skinTone": "light",
+    "clothing": "outdoor"
   },
   {
     "id": "sam_wilson",
@@ -137,7 +182,12 @@
       "sharing": "pragmatic",
       "temperament": "bold",
       "curiosity": "practical"
-    }
+    },
+    "gender": "m",
+    "origin": "rural Vermont",
+    "homeRegion": "rural Vermont",
+    "skinTone": "fair",
+    "clothing": "outdoor"
   },
   {
     "id": "nina_petrova",
@@ -151,7 +201,12 @@
       "sharing": "pragmatic",
       "temperament": "steady",
       "curiosity": "practical"
-    }
+    },
+    "gender": "f",
+    "origin": "Accra, Ghana",
+    "homeRegion": "Accra, Ghana",
+    "skinTone": "deep",
+    "clothing": "casual"
   },
   {
     "id": "carlos_diaz",
@@ -165,7 +220,12 @@
       "sharing": "pragmatic",
       "temperament": "steady",
       "curiosity": "practical"
-    }
+    },
+    "gender": "m",
+    "origin": "Houston, Texas",
+    "homeRegion": "Houston, Texas",
+    "skinTone": "brown",
+    "clothing": "workwear"
   },
   {
     "id": "grace_obi",
@@ -179,7 +239,12 @@
       "sharing": "generous",
       "temperament": "cautious",
       "curiosity": "practical"
-    }
+    },
+    "gender": "f",
+    "origin": "Cairo, Egypt",
+    "homeRegion": "Cairo, Egypt",
+    "skinTone": "tan",
+    "clothing": "casual"
   },
   {
     "id": "henry_zhang",
@@ -193,7 +258,12 @@
       "sharing": "selfish",
       "temperament": "cautious",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Berlin, Germany",
+    "homeRegion": "Berlin, Germany",
+    "skinTone": "fair",
+    "clothing": "casual"
   },
   {
     "id": "fatima_hassan",
@@ -207,7 +277,12 @@
       "sharing": "pragmatic",
       "temperament": "bold",
       "curiosity": "practical"
-    }
+    },
+    "gender": "f",
+    "origin": "Mumbai, India",
+    "homeRegion": "Mumbai, India",
+    "skinTone": "brown",
+    "clothing": "casual"
   },
   {
     "id": "leo_martin",
@@ -221,7 +296,12 @@
       "sharing": "selfish",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Portland, Oregon",
+    "homeRegion": "Portland, Oregon",
+    "skinTone": "light",
+    "clothing": "casual"
   },
   {
     "id": "mia_andersson",
@@ -235,7 +315,12 @@
       "sharing": "selfish",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "Marrakech, Morocco",
+    "homeRegion": "Marrakech, Morocco",
+    "skinTone": "tan",
+    "clothing": "bright"
   },
   {
     "id": "raj_patel",
@@ -249,7 +334,12 @@
       "sharing": "generous",
       "temperament": "steady",
       "curiosity": "practical"
-    }
+    },
+    "gender": "m",
+    "origin": "São Paulo, Brazil",
+    "homeRegion": "São Paulo, Brazil",
+    "skinTone": "brown",
+    "clothing": "casual"
   },
   {
     "id": "ella_johnson",
@@ -263,7 +353,12 @@
       "sharing": "generous",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "rural Ireland",
+    "homeRegion": "rural Ireland",
+    "skinTone": "fair",
+    "clothing": "outdoor"
   },
   {
     "id": "victor_lopez",
@@ -277,7 +372,12 @@
       "sharing": "pragmatic",
       "temperament": "steady",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Mexico City, Mexico",
+    "homeRegion": "Mexico City, Mexico",
+    "skinTone": "brown",
+    "clothing": "casual"
   },
   {
     "id": "hannah_kim",
@@ -291,7 +391,12 @@
       "sharing": "selfish",
       "temperament": "cautious",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "Bangkok, Thailand",
+    "homeRegion": "Bangkok, Thailand",
+    "skinTone": "tan",
+    "clothing": "casual"
   },
   {
     "id": "owen_smith",
@@ -305,7 +410,12 @@
       "sharing": "generous",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Tucson, Arizona",
+    "homeRegion": "Tucson, Arizona",
+    "skinTone": "light",
+    "clothing": "casual"
   },
   {
     "id": "ava_garcia",
@@ -319,7 +429,12 @@
       "sharing": "generous",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "Nairobi, Kenya",
+    "homeRegion": "Nairobi, Kenya",
+    "skinTone": "deep",
+    "clothing": "casual"
   },
   {
     "id": "lucas_brown",
@@ -333,7 +448,12 @@
       "sharing": "pragmatic",
       "temperament": "bold",
       "curiosity": "practical"
-    }
+    },
+    "gender": "m",
+    "origin": "Chicago, Illinois",
+    "homeRegion": "Chicago, Illinois",
+    "skinTone": "tan",
+    "clothing": "casual"
   },
   {
     "id": "chloe_dubois",
@@ -347,7 +467,12 @@
       "sharing": "selfish",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "Manila, Philippines",
+    "homeRegion": "Manila, Philippines",
+    "skinTone": "tan",
+    "clothing": "casual"
   },
   {
     "id": "elijah_scott",
@@ -361,7 +486,12 @@
       "sharing": "selfish",
       "temperament": "bold",
       "curiosity": "practical"
-    }
+    },
+    "gender": "m",
+    "origin": "Lima, Peru",
+    "homeRegion": "Lima, Peru",
+    "skinTone": "brown",
+    "clothing": "casual"
   },
   {
     "id": "zoe_adams",
@@ -375,7 +505,12 @@
       "sharing": "generous",
       "temperament": "bold",
       "curiosity": "practical"
-    }
+    },
+    "gender": "f",
+    "origin": "Brooklyn, New York",
+    "homeRegion": "Brooklyn, New York",
+    "skinTone": "dark",
+    "clothing": "bright"
   },
   {
     "id": "nathan_lee",
@@ -389,7 +524,12 @@
       "sharing": "generous",
       "temperament": "cautious",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Seoul, South Korea",
+    "homeRegion": "Seoul, South Korea",
+    "skinTone": "fair",
+    "clothing": "casual"
   },
   {
     "id": "ivy_wang",
@@ -403,7 +543,12 @@
       "sharing": "selfish",
       "temperament": "cautious",
       "curiosity": "practical"
-    }
+    },
+    "gender": "f",
+    "origin": "Jakarta, Indonesia",
+    "homeRegion": "Jakarta, Indonesia",
+    "skinTone": "tan",
+    "clothing": "casual"
   },
   {
     "id": "caleb_jones",
@@ -417,7 +562,12 @@
       "sharing": "pragmatic",
       "temperament": "cautious",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Miami, Florida",
+    "homeRegion": "Miami, Florida",
+    "skinTone": "brown",
+    "clothing": "bright"
   },
   {
     "id": "maya_singh",
@@ -431,7 +581,12 @@
       "sharing": "selfish",
       "temperament": "cautious",
       "curiosity": "practical"
-    }
+    },
+    "gender": "f",
+    "origin": "Mumbai, India",
+    "homeRegion": "Mumbai, India",
+    "skinTone": "dark",
+    "clothing": "bright"
   },
   {
     "id": "ethan_hunt",
@@ -445,7 +600,12 @@
       "sharing": "generous",
       "temperament": "steady",
       "curiosity": "curious"
-    }
+    },
+    "gender": "m",
+    "origin": "Istanbul, Turkey",
+    "homeRegion": "Istanbul, Turkey",
+    "skinTone": "tan",
+    "clothing": "casual"
   },
   {
     "id": "aria_thompson",
@@ -459,7 +619,12 @@
       "sharing": "generous",
       "temperament": "bold",
       "curiosity": "curious"
-    }
+    },
+    "gender": "f",
+    "origin": "Rome, Italy",
+    "homeRegion": "Rome, Italy",
+    "skinTone": "light",
+    "clothing": "casual"
   },
   {
     "id": "liam_davis",
@@ -473,7 +638,12 @@
       "sharing": "generous",
       "temperament": "bold",
       "curiosity": "practical"
-    }
+    },
+    "gender": "m",
+    "origin": "Houston, Texas",
+    "homeRegion": "Houston, Texas",
+    "skinTone": "tan",
+    "clothing": "casual"
   },
   {
     "id": "nora_wilson",
@@ -487,7 +657,12 @@
       "sharing": "pragmatic",
       "temperament": "steady",
       "curiosity": "practical"
-    }
+    },
+    "gender": "f",
+    "origin": "Addis Ababa, Ethiopia",
+    "homeRegion": "Addis Ababa, Ethiopia",
+    "skinTone": "deep",
+    "clothing": "casual"
   },
   {
     "id": "oliver_moore",
@@ -501,6 +676,11 @@
       "sharing": "generous",
       "temperament": "cautious",
       "curiosity": "practical"
-    }
+    },
+    "gender": "m",
+    "origin": "Portland, Oregon",
+    "homeRegion": "Portland, Oregon",
+    "skinTone": "fair",
+    "clothing": "outdoor"
   }
 ]

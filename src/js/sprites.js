@@ -226,8 +226,8 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 
     // === MONSTER SPRITES (Steve 2026-10-06): calm = the real animal/mundane thing,
     // aggro = the monster revealed. Steve's law: identical until aggro. ===
-        bulldozer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"19\" cy=\"15\" rx=\"8.5\" ry=\"5.5\" fill=\"#4a4038\"/><ellipse cx=\"13.5\" cy=\"11.5\" rx=\"5.2\" ry=\"3.8\" fill=\"#54483c\"/><ellipse cx=\"17\" cy=\"11.5\" rx=\"6\" ry=\"2.2\" fill=\"#5d5248\" opacity=\"0.6\"/><path d=\"M14 12 C11 16 8 20 6 24 L9 26 C11 22 13 18 16 14 Z\" fill=\"#4a4038\"/><ellipse cx=\"9.5\" cy=\"22\" rx=\"2.6\" ry=\"2\" fill=\"#54483c\"/><ellipse cx=\"6.2\" cy=\"25.2\" rx=\"1.9\" ry=\"1.5\" fill=\"#241f1a\"/><circle cx=\"5.5\" cy=\"25.2\" r=\"0.35\" fill=\"#0f0c09\"/><circle cx=\"6.9\" cy=\"25.2\" r=\"0.35\" fill=\"#0f0c09\"/><path d=\"M7.8 24.5 C8.2 23 9 22 10.2 21.6\" stroke=\"#e8ddc0\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"11.5,10.5 12.8,7.2 14.2,10.2\" fill=\"#33291f\"/><circle cx=\"13\" cy=\"10.6\" r=\"0.75\" fill=\"#14100c\"/><circle cx=\"13.2\" cy=\"10.4\" r=\"0.22\" fill=\"#b9b2a4\" opacity=\"0.8\"/><path d=\"M10 8.5 l0.8 -2 M12 8 l0.8 -2.2 M14 7.8 l0.8 -2.2 M16 7.8 l0.8 -2 M18 8 l0.8 -2 M20 8.4 l0.8 -1.8 M22 9 l0.8 -1.6\" stroke=\"#241f1a\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><g fill=\"#33291f\"><rect x=\"11.3\" y=\"20.2\" width=\"2.2\" height=\"7.6\" rx=\"0.9\"/><rect x=\"14.3\" y=\"20.4\" width=\"2.2\" height=\"7.4\" rx=\"0.9\"/><rect x=\"20.3\" y=\"20.4\" width=\"2.2\" height=\"7.4\" rx=\"0.9\"/><rect x=\"23.3\" y=\"20.2\" width=\"2.2\" height=\"7.6\" rx=\"0.9\"/></g><g fill=\"#1c1611\"><rect x=\"11.3\" y=\"26.4\" width=\"2.2\" height=\"1.8\" rx=\"0.6\"/><rect x=\"14.3\" y=\"26.4\" width=\"2.2\" height=\"1.8\" rx=\"0.6\"/><rect x=\"20.3\" y=\"26.4\" width=\"2.2\" height=\"1.8\" rx=\"0.6\"/><rect x=\"23.3\" y=\"26.4\" width=\"2.2\" height=\"1.8\" rx=\"0.6\"/></g><path d=\"M27 13 q2 0.5 1.5 2.5\" stroke=\"#33291f\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"28.3\" cy=\"15.8\" r=\"0.8\" fill=\"#241f1a\"/></svg>`,
-    bulldozer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><ellipse cx=\"22\" cy=\"13.5\" rx=\"7\" ry=\"5.5\" fill=\"#3a3229\"/><ellipse cx=\"21\" cy=\"10.5\" rx=\"5\" ry=\"2.4\" fill=\"#453c32\" opacity=\"0.7\"/><g stroke=\"#1c1611\" stroke-width=\"1.1\" stroke-linecap=\"round\"><path d=\"M16 8.2 l-0.7 -2.2 M18.4 7.6 l-0.7 -2.2 M20.8 7.4 l-0.6 -2.2 M23.2 7.8 l-0.4 -2.2 M25.4 8.6 l-0.2 -2.1\"/></g><ellipse cx=\"15\" cy=\"16.5\" rx=\"5.5\" ry=\"4.5\" fill=\"#443a30\"/><ellipse cx=\"13\" cy=\"14.5\" rx=\"4\" ry=\"2.4\" fill=\"#52463a\" opacity=\"0.8\"/><path d=\"M14.5 17 C11.5 19.5 8.5 22.5 6 26.5 L9.5 28.5 C12 24.5 14.5 21.5 17 19.5 Z\" fill=\"#3a3229\"/><ellipse cx=\"8.2\" cy=\"26\" rx=\"3.2\" ry=\"2.6\" fill=\"#443a30\"/><ellipse cx=\"5.6\" cy=\"27.4\" rx=\"1.9\" ry=\"1.6\" fill=\"#241f1a\"/><ellipse cx=\"5\" cy=\"27.2\" rx=\"0.45\" ry=\"0.6\" fill=\"#0f0c09\"/><ellipse cx=\"6.2\" cy=\"27.2\" rx=\"0.45\" ry=\"0.6\" fill=\"#0f0c09\"/><path d=\"M6.4 26.2 C7 24.4 8.4 23 10.4 22.4 C8.8 23.6 7.8 25.2 7.4 27 Z\" fill=\"#e8ddc0\"/><path d=\"M7.4 28.4 C7.6 26.6 8.4 25 9.8 23.8 C8.4 25 7.8 26.6 7.8 28.6 Z\" fill=\"#b9ac90\"/><path d=\"M4.6 25.4 C4.4 23.6 4.8 21.9 5.8 20.4 C5.4 22.1 5.4 23.9 5.8 25.6 Z\" fill=\"#e8ddc0\" opacity=\"0.9\"/><circle cx=\"10.2\" cy=\"24.2\" r=\"0.8\" fill=\"#14100c\"/><circle cx=\"10.2\" cy=\"24.2\" r=\"0.5\" fill=\"#a01a10\"/><circle cx=\"10.4\" cy=\"24\" r=\"0.16\" fill=\"#e8ddc0\"/><path d=\"M13 21.5 L16 19.8 L14.8 22.4 Z\" fill=\"#2c241c\"/><g stroke=\"#2c241c\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M13.5 20.5 L11.5 27.5\"/><path d=\"M16.5 20 L15.5 27.5\"/></g><g stroke=\"#2c241c\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M21 18 L19.5 26.5 L21.5 28.2\"/><path d=\"M24.5 17.5 L24 26.5 L26.2 28.2\"/></g><path d=\"M28.5 12 q0.6 0.8 0.5 2.2\" stroke=\"#2c241c\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"/></svg>`,
+        bulldozer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><ellipse cx=\"19\" cy=\"15\" rx=\"8.5\" ry=\"5.5\" fill=\"#4a4038\"/><ellipse cx=\"13.5\" cy=\"11.5\" rx=\"5.2\" ry=\"3.8\" fill=\"#54483c\"/><ellipse cx=\"17\" cy=\"11.5\" rx=\"6\" ry=\"2.2\" fill=\"#5d5248\" opacity=\"0.6\"/><path d=\"M15.5 11 C12.5 15 10 19.5 8.5 24 L13.5 26 C15 21.5 17 17 19 12.5 Z\" fill=\"#4a4038\"/><ellipse cx=\"9.5\" cy=\"22\" rx=\"2.6\" ry=\"2\" fill=\"#54483c\"/><ellipse cx=\"10.8\" cy=\"25\" rx=\"3.3\" ry=\"2.3\" fill=\"#33291f\"/><circle cx=\"9.3\" cy=\"24.8\" r=\"0.5\" fill=\"#0f0c09\"/><circle cx=\"12.3\" cy=\"25.2\" r=\"0.5\" fill=\"#0f0c09\"/><path d=\"M8.6 23.8 C9.2 22.3 10.2 21.3 11.8 20.8\" stroke=\"#e8ddc0\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"11.5,10.5 12.8,7.2 14.2,10.2\" fill=\"#33291f\"/><circle cx=\"13\" cy=\"10.6\" r=\"0.75\" fill=\"#14100c\"/><circle cx=\"13.2\" cy=\"10.4\" r=\"0.22\" fill=\"#b9b2a4\" opacity=\"0.8\"/><path d=\"M10 8.5 l0.8 -2 M12 8 l0.8 -2.2 M14 7.8 l0.8 -2.2 M16 7.8 l0.8 -2 M18 8 l0.8 -2 M20 8.4 l0.8 -1.8 M22 9 l0.8 -1.6\" stroke=\"#241f1a\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><g fill=\"#33291f\"><rect x=\"11.3\" y=\"20.2\" width=\"2.2\" height=\"7.6\" rx=\"0.9\"/><rect x=\"14.3\" y=\"20.4\" width=\"2.2\" height=\"7.4\" rx=\"0.9\"/><rect x=\"20.3\" y=\"20.4\" width=\"2.2\" height=\"7.4\" rx=\"0.9\"/><rect x=\"23.3\" y=\"20.2\" width=\"2.2\" height=\"7.6\" rx=\"0.9\"/></g><g fill=\"#1c1611\"><rect x=\"11.3\" y=\"26.4\" width=\"2.2\" height=\"1.8\" rx=\"0.6\"/><rect x=\"14.3\" y=\"26.4\" width=\"2.2\" height=\"1.8\" rx=\"0.6\"/><rect x=\"20.3\" y=\"26.4\" width=\"2.2\" height=\"1.8\" rx=\"0.6\"/><rect x=\"23.3\" y=\"26.4\" width=\"2.2\" height=\"1.8\" rx=\"0.6\"/></g><path d=\"M27 13 q2 0.5 1.5 2.5\" stroke=\"#33291f\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"28.3\" cy=\"15.8\" r=\"0.8\" fill=\"#241f1a\"/></svg>`,
+    bulldozer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><ellipse cx=\"22\" cy=\"13.5\" rx=\"7\" ry=\"5.5\" fill=\"#3a3229\"/><ellipse cx=\"21\" cy=\"10.5\" rx=\"5\" ry=\"2.4\" fill=\"#453c32\" opacity=\"0.7\"/><g stroke=\"#1c1611\" stroke-width=\"1.1\" stroke-linecap=\"round\"><path d=\"M16 8.2 l-0.7 -2.2 M18.4 7.6 l-0.7 -2.2 M20.8 7.4 l-0.6 -2.2 M23.2 7.8 l-0.4 -2.2 M25.4 8.6 l-0.2 -2.1\"/></g><ellipse cx=\"15\" cy=\"16.5\" rx=\"5.5\" ry=\"4.5\" fill=\"#443a30\"/><ellipse cx=\"13\" cy=\"14.5\" rx=\"4\" ry=\"2.4\" fill=\"#52463a\" opacity=\"0.8\"/><path d=\"M17.5 14.5 C13.5 18 11 22.5 9.5 27.5 L15 29.5 C16.5 25 18.5 21 21 17.5 Z\" fill=\"#3a3229\"/><path d=\"M13.5 18.5 C11.8 21.5 10.6 24.8 10 27.8 L12.3 28.5 C12.9 25.5 14.1 22.3 15.8 19.6 Z\" fill=\"#9a8a68\"/><path d=\"M12.2 21.5 L13.8 23.2 M11.4 25 L13 26.4\" stroke=\"#4a4038\" stroke-width=\"0.6\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"8.2\" cy=\"26\" rx=\"3.2\" ry=\"2.6\" fill=\"#443a30\"/><ellipse cx=\"10.8\" cy=\"28.2\" rx=\"3.2\" ry=\"2.2\" fill=\"#241f1a\"/><ellipse cx=\"9.4\" cy=\"28\" rx=\"0.55\" ry=\"0.7\" fill=\"#0f0c09\"/><ellipse cx=\"12.2\" cy=\"28.4\" rx=\"0.55\" ry=\"0.7\" fill=\"#0f0c09\"/><path d=\"M10.4 27.8 C11 26 12.4 24.6 14.4 24 C12.8 25.2 11.8 26.8 11.4 28.6 Z\" fill=\"#e8ddc0\"/><path d=\"M11.4 30 C11.6 28.2 12.4 26.6 13.8 25.4 C12.4 26.6 11.8 28.2 11.8 30.2 Z\" fill=\"#b9ac90\"/><path d=\"M8.6 27 C8.4 25.2 8.8 23.5 9.8 22 C9.4 23.7 9.4 25.5 9.8 27.2 Z\" fill=\"#e8ddc0\" opacity=\"0.9\"/><circle cx=\"10.2\" cy=\"24.2\" r=\"0.8\" fill=\"#14100c\"/><circle cx=\"10.2\" cy=\"24.2\" r=\"0.5\" fill=\"#a01a10\"/><circle cx=\"10.4\" cy=\"24\" r=\"0.16\" fill=\"#e8ddc0\"/><path d=\"M13 21.5 L16 19.8 L14.8 22.4 Z\" fill=\"#2c241c\"/><g stroke=\"#2c241c\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M13.5 20.5 L11.5 27.5\"/><path d=\"M16.5 20 L15.5 27.5\"/></g><g stroke=\"#2c241c\" stroke-width=\"2.2\" stroke-linecap=\"round\"><path d=\"M21 18 L19.5 26.5 L21.5 28.2\"/><path d=\"M24.5 17.5 L24 26.5 L26.2 28.2\"/></g><path d=\"M28.5 12 q0.6 0.8 0.5 2.2\" stroke=\"#2c241c\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"/></svg>`,
     hushwolf_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><g transform=\"translate(16 16) scale(0.95) translate(-16 -16)\"><path d=\"M24 14 C27 16 27.5 20 25.5 23.5\" stroke=\"#4a4e55\" stroke-width=\"2.6\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"16\" cy=\"15\" rx=\"8\" ry=\"4\" fill=\"#6b6f75\"/><ellipse cx=\"16\" cy=\"13.4\" rx=\"6.4\" ry=\"2.2\" fill=\"#7a7e85\" opacity=\"0.7\"/><ellipse cx=\"10\" cy=\"13\" rx=\"3.5\" ry=\"3.5\" fill=\"#7d7a70\"/><polygon points=\"10,9.5 4,11.5 2.5,15 6,16.5 10,14\" fill=\"#6b6f75\"/><polygon points=\"6,13 9,13.5 7.5,16\" fill=\"#a89f8d\" opacity=\"0.7\"/><polygon points=\"7,10 8,6.5 9.2,9.8\" fill=\"#4a4e55\"/><polygon points=\"9.5,9.8 10.8,6.8 11.8,10\" fill=\"#4a4e55\"/><polygon points=\"7.8,9.4 8.3,7.6 8.9,9.3\" fill=\"#2e3138\"/><circle cx=\"3\" cy=\"14.5\" r=\"0.9\" fill=\"#22252b\"/><ellipse cx=\"7\" cy=\"12.5\" rx=\"0.8\" ry=\"0.6\" fill=\"#d9a13b\"/><rect x=\"6.8\" y=\"12\" width=\"0.4\" height=\"1\" fill=\"#1c1a10\"/><g fill=\"#565a61\"><rect x=\"10\" y=\"18\" width=\"1.6\" height=\"11\" rx=\"0.7\"/><rect x=\"13\" y=\"18.4\" width=\"1.6\" height=\"10.6\" rx=\"0.7\"/><rect x=\"19\" y=\"18.4\" width=\"1.6\" height=\"10.6\" rx=\"0.7\"/><rect x=\"22\" y=\"18\" width=\"1.6\" height=\"11\" rx=\"0.7\"/></g><g fill=\"#33363d\"><rect x=\"10\" y=\"27.2\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"13\" y=\"27.2\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"19\" y=\"27.2\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"22\" y=\"27.2\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/></g></g></svg>`,
     hushwolf_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><ellipse cx=\"23\" cy=\"19\" rx=\"6.5\" ry=\"4.5\" fill=\"#1c1e26\"/><path d=\"M8.5 18.5 C13 15.5 19 15 24.5 17\" stroke=\"#262a34\" stroke-width=\"3.2\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M10 16.8 L3.8 17.5 L2.6 20.2 L7.5 21.8 L11.5 20 Z\" fill=\"#1c1e26\"/><path d=\"M7.6 16.6 L6.2 13 L8.8 15.4 Z\" fill=\"#1c1e26\"/><path d=\"M9.4 16.4 L8.8 12.8 L10.8 15.6 Z\" fill=\"#262a34\"/><path d=\"M2.2 20.2 L7.5 21.8 L7.8 22.8 L2.6 21.4 Z\" fill=\"#14161c\"/><path d=\"M3.4 21.2 L7.4 22.4 L7 24.6 L3.2 23.6 Z\" fill=\"#050507\"/><g fill=\"#d8d4c8\"><path d=\"M3.4 21.4 l0.35 1.15 l0.35 -1.05 Z\"/><path d=\"M4.5 21.65 l0.35 1.5 l0.4 -1.4 Z\"/><path d=\"M5.7 21.9 l0.35 1.05 l0.35 -0.95 Z\"/><path d=\"M6.7 22.15 l0.3 0.85 l0.3 -0.8 Z\"/><path d=\"M3.6 23.4 l0.35 -0.9 l0.35 0.95 Z\"/><path d=\"M5 23.65 l0.4 -1.1 l0.4 1.15 Z\"/></g><ellipse cx=\"3.1\" cy=\"20.4\" rx=\"0.7\" ry=\"0.55\" fill=\"#0c0d12\"/><circle cx=\"6.2\" cy=\"18.6\" r=\"0.75\" fill=\"#cfe6ee\"/><ellipse cx=\"6.2\" cy=\"18.6\" rx=\"0.32\" ry=\"0.5\" fill=\"#06070b\"/><circle cx=\"6.4\" cy=\"18.35\" r=\"0.14\" fill=\"#ffffff\"/><g stroke=\"#101218\" stroke-width=\"1\" stroke-linecap=\"round\"><path d=\"M9.5 15.8 l-0.8 -1.4 M11.5 15.4 l-0.8 -1.4 M13.5 15.2 l-0.7 -1.4\"/></g><g stroke=\"#262a34\" stroke-width=\"1.9\" stroke-linecap=\"round\" fill=\"none\"><path d=\"M12.5 21.5 L10 26 L7.8 25.4\"/><path d=\"M15 22 L13.5 27.2 L11.4 27\"/><path d=\"M21.5 21.5 L24 26.2 L26.3 25.4\"/><path d=\"M24 20.8 L27 24 L28.4 25.6\"/></g><path d=\"M28.3 16.7 C29.6 16 30.6 16.2 31.1 16.9 C30.5 17.5 29.5 17.8 28.3 17.9 Z\" fill=\"#1c1e26\"/></svg>`,
     gallowdeer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><path d=\"M22.8 20.2 L23.6 24.6 L23.4 27.8 L24.9 27.8 L24.6 24.4 L24.2 20.2 Z\" fill=\"#5e4630\"/><path d=\"M11 19.8 L10.6 24.2 L10.8 27.8 L12.2 27.8 L12 24.2 L12.4 19.8 Z\" fill=\"#5e4630\"/><path d=\"M8 16.8 C8 14.2 11 12.8 14.5 12.8 C19 12.8 23.5 13.8 24.5 16 C25 17.6 23.8 19.6 21.2 20.4 C17.5 21.6 12 21.6 9.3 19.8 C8.2 19 7.9 17.8 8 16.8 Z\" fill=\"#7a5a3c\"/><ellipse cx=\"16\" cy=\"18.8\" rx=\"6\" ry=\"2\" fill=\"#c9b18a\" opacity=\"0.65\"/><path d=\"M9.5 15.5 C8 12.5 7.6 9.5 8.2 7 L11 6.4 C10.6 9 11.2 12 13 14.8 Z\" fill=\"#7a5a3c\"/><path d=\"M8.6 13.5 C8.2 11 8.3 8.8 8.7 7.2\" stroke=\"#d8c9a8\" stroke-width=\"0.9\" opacity=\"0.6\" fill=\"none\"/><ellipse cx=\"8.6\" cy=\"5.2\" rx=\"2.2\" ry=\"1.7\" transform=\"rotate(-8 8.6 5.2)\" fill=\"#7a5a3c\"/><path d=\"M6.8 4.6 L4 5.4 L4.4 7.2 L7 6.8 Z\" fill=\"#6a4e34\"/><ellipse cx=\"4.3\" cy=\"6.4\" rx=\"0.65\" ry=\"0.5\" fill=\"#241c12\"/><circle cx=\"8\" cy=\"4.9\" r=\"0.95\" fill=\"#14100c\"/><circle cx=\"8.2\" cy=\"4.7\" r=\"0.28\" fill=\"#dfe6da\" opacity=\"0.9\"/><ellipse cx=\"9\" cy=\"2.1\" rx=\"0.95\" ry=\"1.7\" transform=\"rotate(-10 9 2.1)\" fill=\"#7a5a3c\"/><ellipse cx=\"9\" cy=\"2.2\" rx=\"0.45\" ry=\"1\" transform=\"rotate(-10 9 2.2)\" fill=\"#4a3826\"/><ellipse cx=\"11.2\" cy=\"2.3\" rx=\"0.85\" ry=\"1.5\" transform=\"rotate(14 11.2 2.3)\" fill=\"#7a5a3c\"/><ellipse cx=\"11.2\" cy=\"2.4\" rx=\"0.4\" ry=\"0.9\" transform=\"rotate(14 11.2 2.4)\" fill=\"#4a3826\"/><path d=\"M13.2 20.2 L12.8 24.6 L13 27.8 L14.5 27.8 L14.3 24.4 L14.6 20.2 Z\" fill=\"#6a4e34\"/><path d=\"M20.8 20.6 L21.6 24.6 L21.4 27.8 L22.9 27.8 L22.6 24.4 L22.2 20.6 Z\" fill=\"#6a4e34\"/><g fill=\"#241c12\"><rect x=\"12.8\" y=\"27\" width=\"1.8\" height=\"1.1\" rx=\"0.4\"/><rect x=\"21.2\" y=\"27\" width=\"1.8\" height=\"1.1\" rx=\"0.4\"/><rect x=\"10.6\" y=\"27\" width=\"1.7\" height=\"1.1\" rx=\"0.4\"/><rect x=\"23.2\" y=\"27\" width=\"1.7\" height=\"1.1\" rx=\"0.4\"/></g><path d=\"M24.5 15.2 L28 13.8 L27 17 L24.3 16.6 Z\" fill=\"#e8e0cc\"/></svg>`,
@@ -862,5 +862,135 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
     return calm || null;
   }
 
-  S.Sprites = { get, chainFor, plantSprite, itemSprite, monsterSprite, has: (id) => !!SPRITES[id] };
+  // villagerSprite(v): the sprite is generated FROM the person (Steve 2026-10-06).
+  // v: { id, skinTone, gender ('m'/'f'/'x'), age, clothing, echo? }
+  // Skin tone / age / gender / origin clothing pool all shape the figure.
+  // echo: deterministic monster-echo for SOME villagers — a hi-vis vest like the
+  // landlord's, a camera like the paparazzo's. The paranoia is "is that a
+  // villager or is that one of THEM?" — human-like monsters, not animals.
+  const SKIN_TONES = {
+    fair: '#f1c9a5', light: '#e0ac82', tan: '#c68642',
+    brown: '#8d5524', dark: '#5c3a21', deep: '#3b2416'
+  };
+  const CLOTHING = {
+    outdoor: ['#5a6e3f', '#7a4a2e', '#8a2e2e', '#4a5a6e'],
+    casual: ['#4a6e8a', '#6e6e6e', '#8a5a4a', '#5a4a6e'],
+    bright: ['#d4a017', '#c0392b', '#17a398', '#e67e22'],
+    workwear: ['#4a5a7a', '#8a7a5a', '#5a5a5a', '#9a7b1e']
+  };
+  const ECHOES = ['landlord', 'heckler', 'paparazzo', 'union_rep', 'moderator', 'warranty_caller', 'understudy'];
+  function hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+    return Math.abs(h);
+  }
+  function villagerEcho(v) {
+    if (!v || !v.id) return null;
+    if (v.echo) return v.echo; // explicit override wins
+    const h = hashStr(String(v.id));
+    if (h % 10 >= 3) return null; // ~30% carry an echo
+    return ECHOES[h % ECHOES.length];
+  }
+  function villagerSprite(v) {
+    v = v || {};
+    const skin = SKIN_TONES[v.skinTone] || SKIN_TONES.tan;
+    const skinShade = SKIN_TONES[v.skinTone] ? shade(SKIN_TONES[v.skinTone], -18) : '#a06838';
+    const gender = v.gender === 'f' ? 'f' : v.gender === 'm' ? 'm' : 'x';
+    const age = typeof v.age === 'number' ? v.age : 35;
+    const elder = age >= 60, young = age < 25;
+    const clothes = CLOTHING[v.clothing] || CLOTHING.casual;
+    const h = hashStr(String(v.id || 'anon'));
+    const shirt = clothes[h % clothes.length];
+    const pants = ['#3a3f4a', '#4a3f35', '#2e3a4a', '#5a4a3a'][h % 4];
+    const hairC = elder ? '#c8c8c8' : ['#2a2018', '#4a3220', '#6e4a26', '#8a8a8a', '#1a1a1a'][h % 5];
+    // posture: elders hunch, heckler-echo leans
+    const echo = villagerEcho(v);
+    const hunch = elder ? 1.5 : 0;
+    const lean = echo === 'heckler' ? 2 : 0;
+    const hx = 16 + lean, hy = 8.5 + hunch; // head center
+    let s = '';
+    // legs
+    s += `<rect x="13" y="22" width="2.6" height="7" rx="1" fill="${pants}"/><rect x="16.4" y="22" width="2.6" height="7" rx="1" fill="${pants}"/>`;
+    s += `<rect x="12.6" y="28.4" width="3.4" height="1.8" rx="0.8" fill="#2a241e"/><rect x="16" y="28.4" width="3.4" height="1.8" rx="0.8" fill="#2a241e"/>`;
+    // torso
+    const shoulderW = gender === 'f' ? 8 : gender === 'm' ? 10 : 9;
+    s += `<path d="M${16 - shoulderW/2} 13 L${16 + shoulderW/2} 13 L${16 + shoulderW/2 - 1} 23 L${16 - shoulderW/2 + 1} 23 Z" fill="${shirt}"/>`;
+    // arms
+    s += `<rect x="${16 - shoulderW/2 - 1.6}" y="13.5" width="2" height="7" rx="1" fill="${shirt}"/><rect x="${16 + shoulderW/2 - 0.4}" y="13.5" width="2" height="7" rx="1" fill="${shirt}"/>`;
+    s += `<circle cx="${16 - shoulderW/2 - 0.6}" cy="21" r="1.1" fill="${skin}"/><circle cx="${16 + shoulderW/2 + 0.6}" cy="21" r="1.1" fill="${skin}"/>`;
+    // neck + head
+    s += `<rect x="14.8" y="10.5" width="2.4" height="3" fill="${skinShade}"/>`;
+    // long hair goes BEHIND the head
+    if (gender === 'f') {
+      s += `<path d="M${hx - 4.6} ${hy - 3} L${hx + 4.6} ${hy - 3} L${hx + 5.2} ${hy + 7} L${hx - 5.2} ${hy + 7} Z" fill="${hairC}"/>`;
+    }
+    s += `<circle cx="${hx}" cy="${hy}" r="${young ? 3.6 : 4}" fill="${skin}"/>`;
+    // hair
+    if (gender === 'f') {
+      // top cap only — the back mass is already behind the head
+      s += `<path d="M${hx - 4} ${hy - 0.5} A4 3.6 0 0 1 ${hx + 4} ${hy - 0.5} L${hx + 4} ${hy - 2} A4 3.6 0 0 0 ${hx - 4} ${hy - 2} Z" fill="${hairC}"/>`;
+      s += `<ellipse cx="${hx}" cy="${hy - 2.6}" rx="3.9" ry="2" fill="${hairC}"/>`;
+    } else if (elder) {
+      s += `<path d="M${hx - 4} ${hy - 1} A4 3.4 0 0 1 ${hx + 4} ${hy - 1} L${hx + 4} ${hy - 2.5} A4 3.4 0 0 0 ${hx - 4} ${hy - 2.5} Z" fill="${hairC}"/>`;
+    } else {
+      s += `<ellipse cx="${hx}" cy="${hy - 2.8}" rx="3.9" ry="2.4" fill="${hairC}"/>`;
+    }
+    // face: eyes (understudy echo = blank, no mouth)
+    if (echo !== 'understudy') {
+      s += `<circle cx="${hx - 1.4}" cy="${hy}" r="0.45" fill="#1a1a1a"/><circle cx="${hx + 1.4}" cy="${hy}" r="0.45" fill="#1a1a1a"/>`;
+    }
+    if (echo === 'heckler') {
+      // wide grin
+      s += `<path d="M${hx - 2.2} ${hy + 1.8} Q${hx} ${hy + 3.4} ${hx + 2.2} ${hy + 1.8}" stroke="#1a1a1a" stroke-width="0.7" fill="none" stroke-linecap="round"/>`;
+    } else if (echo !== 'understudy') {
+      s += `<path d="M${hx - 1} ${hy + 2} Q${hx} ${hy + 2.6} ${hx + 1} ${hy + 2}" stroke="#1a1a1a" stroke-width="0.5" fill="none" stroke-linecap="round"/>`;
+    }
+    // ECHO accessories — things a real person could plausibly wear/hold,
+    // cut from the wave-2 humanoids' silhouettes.
+    if (echo === 'landlord') {
+      // hi-vis vest over the shirt
+      s += `<path d="M${16 - shoulderW/2} 13 L${16 + shoulderW/2} 13 L${16 + shoulderW/2 - 1} 23 L${16 - shoulderW/2 + 1} 23 Z" fill="#c96a1e" opacity="0.92"/>`;
+      s += `<rect x="${16 - 3}" y="14" width="6" height="1.4" fill="#e8d44a"/><rect x="${16 - 3}" y="18" width="6" height="1.4" fill="#e8d44a"/>`;
+      // sign board held up
+      s += `<rect x="${16 + shoulderW/2 - 1}" y="8" width="1" height="6" fill="#5a4a35"/>`;
+      s += `<rect x="${16 + shoulderW/2 - 3.4}" y="4.5" width="7" height="4.6" rx="0.6" fill="#d8cfb8" stroke="#5a4a35" stroke-width="0.7"/>`;
+      s += `<line x1="${16 + shoulderW/2 - 2.4}" y1="6.4" x2="${16 + shoulderW/2 + 2.4}" y2="6.4" stroke="#8a2e2e" stroke-width="0.8"/><line x1="${16 + shoulderW/2 - 2.4}" y1="8" x2="${16 + shoulderW/2 + 1}" y2="8" stroke="#333" stroke-width="0.6"/>`;
+    } else if (echo === 'heckler') {
+      // baseball cap
+      s += `<ellipse cx="${hx}" cy="${hy - 3.4}" rx="4" ry="1.8" fill="#2e4a7a"/>`;
+      s += `<rect x="${hx - 4}" y="${hy - 4.6}" width="8" height="1.6" rx="0.8" fill="#2e4a7a"/>`;
+      s += `<rect x="${hx + 2}" y="${hy - 4.2}" width="4.5" height="1.2" rx="0.6" fill="#243d66"/>`;
+    } else if (echo === 'paparazzo') {
+      // camera held up to the face
+      s += `<rect x="${hx - 2.6}" y="${hy - 1.6}" width="5.2" height="3.6" rx="0.8" fill="#2a2a2e"/>`;
+      s += `<circle cx="${hx}" cy="${hy + 0.2}" r="1.3" fill="#4a5a6e" stroke="#111" stroke-width="0.5"/>`;
+      s += `<circle cx="${hx}" cy="${hy + 0.2}" r="0.5" fill="#9ac8e8"/>`;
+    } else if (echo === 'union_rep') {
+      // clipboard + raised arm
+      s += `<rect x="${16 + shoulderW/2 - 0.4}" y="6" width="2" height="8" rx="1" fill="${shirt}"/>`;
+      s += `<rect x="${16 + shoulderW/2 - 2.6}" y="2.4" width="5" height="6.4" rx="0.7" fill="#d8cfb8" stroke="#5a4a35" stroke-width="0.7"/>`;
+      s += `<rect x="${16 + shoulderW/2 - 1.2}" y="1.8" width="2.4" height="1.4" rx="0.5" fill="#8a8a8a"/>`;
+      s += `<line x1="${16 + shoulderW/2 - 1.6}" y1="4.6" x2="${16 + shoulderW/2 + 1.6}" y2="4.6" stroke="#333" stroke-width="0.5"/><line x1="${16 + shoulderW/2 - 1.6}" y1="6" x2="${16 + shoulderW/2 + 1.6}" y2="6" stroke="#333" stroke-width="0.5"/>`;
+    } else if (echo === 'moderator') {
+      // hood + gavel
+      s += `<path d="M${hx - 5} ${hy + 1} C${hx - 5.5} ${hy - 6} ${hx + 5.5} ${hy - 6} ${hx + 5} ${hy + 1} L${hx + 4} ${hy - 1} C${hx + 3} ${hy - 4} ${hx - 3} ${hy - 4} ${hx - 4} ${hy - 1} Z" fill="#2e2a33"/>`;
+      s += `<rect x="${16 + shoulderW/2 - 0.6}" y="12" width="1.4" height="7" fill="#5a4a35"/>`;
+      s += `<rect x="${16 + shoulderW/2 - 2.4}" y="9.4" width="4.6" height="2.6" rx="0.8" fill="#6e5a3a"/>`;
+    } else if (echo === 'warranty_caller') {
+      // old phone receiver to the ear
+      s += `<rect x="${hx + 3.4}" y="${hy - 3}" width="1.8" height="6" rx="0.9" fill="#1a1a1a" transform="rotate(12 ${hx + 4.3} ${hy})"/>`;
+      s += `<circle cx="${hx + 4.3}" cy="${hy - 2.4}" r="1.1" fill="#2a2a2a"/><circle cx="${hx + 4.3}" cy="${hy + 2.4}" r="1.1" fill="#2a2a2a"/>`;
+    } else if (echo === 'understudy') {
+      // desaturated, blank — the gray understudy read
+      s = s.replace(new RegExp(shirt.replace(/[.#]/g, '\\$&'), 'g'), '#7a7a7a');
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite">${s}</svg>`;
+  }
+  function shade(hex, amt) {
+    const n = parseInt(hex.slice(1), 16);
+    const c = v => Math.max(0, Math.min(255, v + amt));
+    return '#' + [c(n >> 16), c((n >> 8) & 255), c(n & 255)].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  S.Sprites = { get, chainFor, plantSprite, itemSprite, monsterSprite, villagerSprite, villagerEcho, has: (id) => !!SPRITES[id] };
 })(globalThis);

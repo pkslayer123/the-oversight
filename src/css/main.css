@@ -404,6 +404,15 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 /* villagers: emoji on top, TINY name underneath. never swallows the tile. */
 .cell.villager { flex-direction: column; line-height: 1.1; }
 .cell.villager .vtoken { font-size: .89em; }
+/* VILLAGER SPRITES (Steve 2026-10-06): generated portraits sit in the token. */
+.cell.villager .vtoken .vsprite { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
+.cell.villager .vtoken .vsprite svg.sprite { width: 100%; height: 100%; display: block; }
+/* HUMANOID MONSTER SPRITES (Steve 2026-10-06): calm SVG on the grid. */
+.cell.creature .csprite { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
+.cell.creature .csprite svg.sprite { width: 100%; height: 100%; display: block; }
+/* VILLAGER PORTRAIT (Steve 2026-10-06): generated portrait in the person card. */
+.vportrait { display: inline-block; width: 44px; height: 44px; vertical-align: middle; margin-right: 8px; }
+.vportrait svg.sprite { width: 100%; height: 100%; display: block; }
 .cell.villager .vname {
   font-size: .39em; color: #9a9a9a;
   /* max-width must be relative to the TILE, not the tiny font: 1.6em of a
