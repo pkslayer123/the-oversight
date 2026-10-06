@@ -674,28 +674,6 @@
     // ---------- LURE ----------
     // "Hey, I found something in the woods. Come see." Is it real? Or a trap?
 
-    // Loot the fallen: they carried things. The practical horror of it.
-    lootFallen(vid) {
-      const vp = this.vpOf(vid);
-      const items = (vp && vp.items) || [];
-      if (!items.length) return;
-      // You take some of what they carried — not all. Even looters have limits.
-      // (Or: you can't carry everything. Grief is heavy.)
-      const take = items.filter(() => Math.random() < 0.6).slice(0, 3);
-      if (!take.length) return;
-      const s = this.state.scholar;
-      s.inventory = s.inventory || [];
-      for (const itemId of take) {
-        const idef = (this.data.items || []).find(i => i.id === itemId) || {};
-        s.inventory.push({
-          itemId, name: idef.name || itemId.replace(/_/g, ' '),
-          units: 1, kcalEach: 0, spoilDay: 9999, unit: 'piece', kg: 0.3,
-        });
-      }
-      const names = take.map(id => ((this.data.items || []).find(i => i.id === id) || {}).name || id.replace(/_/g, ' '));
-      this.say(`You take ${names.join(', ')} from the body. It feels like stealing. It IS stealing. They're past minding.`);
-    },
-
     lureCheck() {
       const v = this.partyState();
       if (v.lure) return; // one lure at a time
@@ -1160,10 +1138,35 @@
           v.followers = (v.followers || []).filter(id => id !== fled.villagerId);
         }
       }
-      // Loot the fallen: they carried things. The practical horror of it.
+      // LOOT-AS-ACTION (Steve 2026-10-06): no auto-loot. The betrayal-kill path
+      // missed the loot-as-action pass (f870716) — it vacuumed the victim's
+      // pack straight into the player's inventory at tbEnd. Their carried
+      // things go on the corpse instead; the player opens the pack
+      // deliberately (corpseTakeItem/corpseUseItem/corpseEatItem). The corpse
+      // was registered at the killing blow in tbDamage.
       try {
         const dead = f.fighters.find(x => x.kind === 'hostile' && !x.alive);
-        if (dead && dead.villagerId) this.lootFallen(dead.villagerId);
+        if (dead && dead.villagerId && this.corpses) {
+          const vp = this.vpOf(dead.villagerId);
+          const carried = (vp && vp.items) || [];
+          if (carried.length) {
+            const corpse = this.corpses().find(c => c.kind === 'person' && c.villagerId === dead.villagerId && !c.buried);
+            if (corpse) {
+              for (const itemId of carried) {
+                const idef = (this.data.items || []).find(i => i.id === itemId) || {};
+                corpse.items.push({
+                  plantId: itemId, itemId,
+                  name: idef.name || String(itemId).replace(/_/g, ' '),
+                  units: 1, kcalEach: idef.kcalEach || 0,
+                  spoilDay: 9999, unit: 'piece', kg: idef.kg || 0.3,
+                  prep: 'Carried. Now it is a question.',
+                });
+              }
+              vp.items = [];
+              this.say(`Their pack is there, on the body. What is in it is yours to take — or to leave with them.`);
+            }
+          }
+        }
       } catch (e) {}
       this.tbfight = null;
       try { this.betrayalAftermath(); } catch (e) {}
