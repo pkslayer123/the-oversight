@@ -2174,17 +2174,42 @@
     "behavior": "snake",
     "vibe": "a line of muscovy ducks, head to tail, moving as one. Break the line and you have two problems.",
     "telegraph": "The ducks stop quacking. All heads turn toward you at once.",
-    "tactics": {
-      "observed": "Kill from the tail forward. Break the middle and it splits into two snakes.",
-      "slain": "Contact burns \u2014 every segment is a mouth. Don't let it touch you. Don't touch it."
+    "systemDesignation": "Anas platyrhynchos domesticus (serial coordination)",
+    "codexStages": {
+      "unknown": "A line of waterfowl moving as one. Too precise. Too quiet. You counted six heads and they all turned at the same time.",
+      "observed": "Ducks in a row. The System took a farm animal and taught it the snake game: the line moves as one animal, head driving, and every segment is a mouth. It lines up (the tell), marches, nips as one, then regroups. Break the middle and it splits — but the tail half tries to REJOIN. Kill the tail half before it gets back in line, or you're back to six.",
+      "slain": "Moves: Line Up (the tell — quacking stops, aim lane), March (the line advances, contact burns), Nip (one coordinated bite from every adjacent beak), Regroup (recovery — the window). Break the line from the tail forward to avoid splits. A split tail half regroups toward the head half — kill it before it rejoins. Down to two ducks the head goes enraged: faster, screeching, nipping the instant it reaches you. Meat: duck. Feathers good for fletching."
     },
+    "cues": {
+      "curious": [
+        "Quacking, loose and wandering. Just ducks. Probably just ducks."
+      ],
+      "warn": [
+        "The quacking stopped. All heads turned toward you at once."
+      ],
+      "fearful": [
+        "The line breaks apart — ducks scattering, quacking over each other. For a moment it's just ducks."
+      ]
+    },
+    "weaknesses": [
+      "kill from the tail forward — breaking the middle splits it in two",
+      "a split tail half tries to rejoin the head half — kill it before it does",
+      "the regroup beat is the window: it doesn't attack while reforming"
+    ],
+    "parts": [
+      "duck feathers (fletching, insulation)",
+      "duck feet (broth)"
+    ],
     "loot": {
       "chance": 0.1,
       "tier": 2
     },
-    "edible": true,
+    "edible": {
+      "calories": 900,
+      "note": "Six ducks, head to tail. Pluck them all. Tastes like duck."
+    },
     "attack": {
-      "name": "bite",
+      "name": "Coordinated Nip",
       "damage": [
         5,
         8
@@ -2198,7 +2223,41 @@
     "armor": 1,
     "resistances": {},
     "encounter": {
-      "knownCue": "They're organized. Break the formation \u2014 isolate one."
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "line_up",
+        "march",
+        "nip",
+        "regroup"
+      ],
+      "phaseMap": {
+        "declare": "line_up",
+        "windup": "march",
+        "resolve": "nip",
+        "cooldown": "regroup",
+        "idle": "line_up"
+      },
+      "telegraphGate": "pattern",
+      "painSwitch": true,
+      "adjacencyOverride": 1,
+      "shortName": "duck",
+      "phaseBadges": {
+        "line_up": " \ud83e\udd86 LINING UP",
+        "march": " \ud83e\udd86 MARCHING",
+        "nip": " \ud83e\udd86 NIPPING",
+        "regroup": " \ud83e\udd86 REGROUPING"
+      },
+      "noticeAudio": "ducksQuack",
+      "aggroAudio": "ducksQuackCut",
+      "knownCue": "They're organized. Break the formation \u2014 isolate one.",
+      "knownTactics": "Tail forward, never the middle — unless you can kill the tail half before it rejoins. The regroup beat is your window: it can't nip while reforming.",
+      "threatLines": {
+        "notice": "Quacking, closer than it should be. Six heads, one line. It's noticed {who}.",
+        "pain": "The line wobbles — a gap where a duck was. The rest close ranks without breaking step.",
+        "snap": "The quacking stops dead. Every head turns at once. It has picked its line."
+      },
+      "comment": "Encounter framework client. SNAKE FORMATION: the head drives line_up (tell, aim lane) -> march (advance, contact damage) -> nip (one coordinated bite beat) -> regroup (recovery). Segments never declare. Split tail half regroups toward the head half and REJOINS if it reaches it — kill it first. At 2 segments the head enrages: faster, screeching, nips on contact. Kill the head and the next duck takes the lead (tbSnakeSplit)."
     }
   },
   {

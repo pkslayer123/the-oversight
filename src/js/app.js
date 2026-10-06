@@ -4753,6 +4753,148 @@
       bg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
       b.connect(bg); bg.connect(sfxBus); b.start(t + 0.4); b.stop(t + 1.05);
     }
+    // ---- DUCKS IN A ROW: the formation's voice ----
+    // One quack: a nasal burst — sawtooth pitched down through a bandpass.
+    // Ducks quack; the System's ducks quack in formation.
+    function duckQuackAt(t, baseFq, dur, vol) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(baseFq, t);
+      o.frequency.exponentialRampToValueAtTime(baseFq * 0.62, t + dur);
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass';
+      f.frequency.value = 750; f.Q.value = 2.5;
+      // the quack's rattle: amplitude wobble
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'square'; lfo.frequency.value = 28; lg.gain.value = vol * 0.35;
+      lfo.connect(lg); lg.connect(g.gain);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05);
+      lfo.start(t); lfo.stop(t + dur + 0.05);
+    }
+    function ducksQuack() {
+      // AMBIENT: just ducks. Loose, irregular, innocent — five quacks
+      // wandering in time. This is the sound before the silence.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const qs = [[0, 300], [0.34, 265], [0.61, 310], [1.02, 280], [1.31, 295]];
+      for (const [dt, fq] of qs) duckQuackAt(t + dt, fq, 0.16, 0.14);
+    }
+    function ducksQuackCut() {
+      // THE TELEGRAPH: the quacking STOPS. Two quacks, a third cut dead
+      // mid-burst — then nothing. The silence after is the scary part.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      duckQuackAt(t, 300, 0.16, 0.16);
+      duckQuackAt(t + 0.32, 275, 0.16, 0.16);
+      // third quack: starts, then the knife — gain slammed to zero mid-burst
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(290, t + 0.64);
+      o.frequency.exponentialRampToValueAtTime(200, t + 0.8);
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass';
+      f.frequency.value = 750; f.Q.value = 2.5;
+      g.gain.setValueAtTime(0.0001, t + 0.64);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.66);
+      g.gain.setValueAtTime(0.16, t + 0.72);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.74); // cut dead
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t + 0.64); o.stop(t + 0.8);
+      // the room tone dying: a breath of filtered noise fading to nothing
+      const nz = noise(1.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 400;
+        ng.gain.setValueAtTime(0.05, t + 0.74);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.74); nz.stop(t + 1.95);
+      }
+    }
+    function duckLineUp() {
+      // THE TELL: quacks snapping into lockstep — intervals shrink until
+      // six ducks quack as one. Too precise. Too quiet, after.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const gaps = [0.3, 0.24, 0.19, 0.15, 0.12];
+      let dt = 0;
+      duckQuackAt(t, 310, 0.14, 0.13);
+      for (let i = 0; i < gaps.length; i++) {
+        dt += gaps[i];
+        duckQuackAt(t + dt, 300 + i * 4, 0.13, 0.13 + i * 0.008);
+      }
+      // the unison beat: all six at once
+      duckQuackAt(t + dt + 0.12, 305, 0.2, 0.2);
+    }
+    function duckMarch() {
+      // MARCH: quacks in perfect military time. Do not be in the way.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 4; i++) duckQuackAt(t + i * 0.28, 300, 0.14, 0.15);
+    }
+    function duckNip() {
+      // NIP: six beak snaps, fast — short filtered noise bursts, no pitch.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 6; i++) {
+        const dt = t + i * 0.07;
+        const nz = noise(0.06), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) continue;
+        nf.type = 'bandpass'; nf.frequency.value = 2400; nf.Q.value = 4;
+        ng.gain.setValueAtTime(0.22, dt);
+        ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.06);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(dt); nz.stop(dt + 0.08);
+      }
+    }
+    function duckRegroup() {
+      // REGROUP: the formation loosens — quacks drift apart in time and
+      // pitch. For a moment the line is just ducks.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const qs = [[0, 290], [0.38, 320], [0.85, 270], [1.4, 305]];
+      for (const [dt, fq] of qs) duckQuackAt(t + dt, fq, 0.16, 0.11);
+    }
+    function duckScreech() {
+      // ENRAGED: the head is all that's left and it knows it — a harsh
+      // descending screech with a vibrato that sounds wrong on a duck.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.7;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(950, t);
+      o.frequency.exponentialRampToValueAtTime(320, t + dur);
+      const v = ctx.createOscillator(), vg = ctx.createGain();
+      v.type = 'sine'; v.frequency.value = 9; vg.gain.value = 90;
+      v.connect(vg); vg.connect(o.frequency);
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass';
+      f.frequency.value = 1400; f.Q.value = 1.8;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.2, t + 0.08);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05); v.start(t); v.stop(t + dur + 0.05);
+    }
+    function ducksRejoin() {
+      // REJOIN: the tail thrashes back into line — three relieved quacks
+      // falling into rhythm, then the lockstep resumes. The line is whole.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      duckQuackAt(t, 280, 0.15, 0.13);
+      duckQuackAt(t + 0.26, 295, 0.14, 0.14);
+      duckQuackAt(t + 0.5, 305, 0.14, 0.15);
+      duckQuackAt(t + 0.72, 305, 0.18, 0.18);
+      // formation click: the line snapping straight
+      const nz = noise(0.1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 3000;
+        ng.gain.setValueAtTime(0.12, t + 0.9);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.9); nz.stop(t + 1.02);
+      }
+    }
     function heronStatic() {
       // WHITE NOISE HERON: the air goes staticky — crackling wrongness.
       if (!ensure()) return;
@@ -6740,6 +6882,15 @@
       mothFlash() { mothFlash(); },
       mothFlutter() { mothFlutter(); },
       snakeSplit() { snakeSplit(); },
+      // Ducks in a row: the formation's voice (Steve 2026-10-06)
+      ducksQuack() { ducksQuack(); },
+      ducksQuackCut() { ducksQuackCut(); },
+      duckLineUp() { duckLineUp(); },
+      duckMarch() { duckMarch(); },
+      duckNip() { duckNip(); },
+      duckRegroup() { duckRegroup(); },
+      duckScreech() { duckScreech(); },
+      ducksRejoin() { ducksRejoin(); },
       stagConfused() { stagConfused(); },
       turtleBunker() { turtleBunker(); },
       wolfBreak() { wolfBreak(); },

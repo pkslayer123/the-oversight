@@ -328,6 +328,14 @@ function band(name, v, lo, hi) {
   const pet = Game.petitionVillage(near[0].id);
   ok('petition returns bool', typeof pet === 'boolean');
   Game.state.scholar.exiled = true; // petition may have succeeded; force for found test
+  Game.state.scholar.exileStartDay = Game.state.scholar.day;
+  // founding is a project now (Steve 2026-10-06) — complete it before the fork
+  Game.exileSelfDo('claimsite');
+  Game.state.scholar.day = Game.state.scholar.exileStartDay + 7;
+  Game.addWood(100);
+  Game.exileSelfDo('buildshelter');
+  Game.exileSelfDo('buildshelter');
+  Game.foundingState().stockpileKcal = 10000;
   Game.foundHaven();
   ok('founding works', Game.state.scholar.foundedHaven === true && Game.state.scholar.exiled === false);
 

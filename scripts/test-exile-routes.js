@@ -69,6 +69,13 @@ function petitionRate(crimeType, opts, runs) {
     for (let i = 0; i < 30; i++) {
       freshExile('theft');
       setPack(2000);
+      // Monte Carlo: reset the village each iteration — in the real game one
+      // exile petitions once; without the reset the village fills up (capacity
+      // is real) and later iterations refuse on room, not judgment.
+      if (ov._basePop == null) ov._basePop = ov.population;
+      ov.population = ov._basePop;
+      Game.state.scholar.probation = null;
+      Game.state.scholar.joinedVillage = null;
       if (Game.petitionVillage(ov.id, { giftKcal: 1500 })) accepted++;
     }
     return accepted;
@@ -101,9 +108,16 @@ function petitionRate(crimeType, opts, runs) {
   ok('gift deducted from pack', after === before - 700);
 
   // ---------- 6. foundHaven: clears exile, remembers, clears drift ----------
+  // founding is a project now (Steve 2026-10-06) — complete it first
   freshExile('theft');
   Game.state.scholar.drifting = true;
   const oldName = Game.state.village.name;
+  Game.exileSelfDo('claimsite');
+  Game.state.scholar.day = Game.state.scholar.exileStartDay + 7;
+  Game.addWood(100);
+  Game.exileSelfDo('buildshelter');
+  Game.exileSelfDo('buildshelter');
+  Game.foundingState().stockpileKcal = 10000;
   const fr = Game.foundHaven();
   ok('foundHaven returns true', fr === true);
   ok('foundHaven clears exile', Game.state.scholar.exiled === false);
@@ -166,7 +180,15 @@ function petitionRate(crimeType, opts, runs) {
   ok('drifting shows disabled drift state', acts2.some(a => a.id === 'drift' && a.disabled));
   Game.state.scholar.drifting = false;
   ok('exileSelfDo drift works', Game.exileSelfDo('drift') === true && Game.state.scholar.drifting === true);
-  ok('exileSelfDo foundhaven works', Game.exileSelfDo('foundhaven') === true && Game.state.scholar.exiled === false);
+  // founding is a project (Steve 2026-10-06) — instant founding is refused
+  ok('exileSelfDo foundhaven refused before the project', Game.exileSelfDo('foundhaven') !== true && Game.state.scholar.exiled === true);
+  Game.exileSelfDo('claimsite');
+  Game.state.scholar.day = Game.state.scholar.exileStartDay + 7;
+  Game.addWood(100);
+  Game.exileSelfDo('buildshelter');
+  Game.exileSelfDo('buildshelter');
+  Game.foundingState().stockpileKcal = 10000;
+  ok('exileSelfDo foundhaven works after the struggle', Game.exileSelfDo('foundhaven') === true && Game.state.scholar.exiled === false);
 
   // ---------- 10. petitionVillage unknown village ----------
   ok('petition unknown village returns null', Game.petitionVillage('nope') === null);

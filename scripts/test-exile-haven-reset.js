@@ -76,6 +76,22 @@ function ok(name, cond) {
   const playerCharBefore = (oldVillage.rosterChars || {})[pid];
   ok('player has a character record', !!playerCharBefore);
 
+  // the founding project (Steve 2026-10-06): founding is a struggle now —
+  // solo days, claimed site, hut+, full cache — before the fork happens
+  ok('foundHaven refused before the project is done', Game.foundHaven() !== true);
+  Game.exileSelfDo('claimsite');
+  ok('site claimed', Game.foundingState().siteClaimed === true);
+  s.day = s.exileStartDay + 7; // a week surviving solo
+  Game.addWood(100);
+  Game.exileSelfDo('buildshelter');
+  Game.exileSelfDo('buildshelter');
+  ok('hut raised (tier 2)', Game.foundingState().shelterTier === 2);
+  Game.foundingState().stockpileKcal = 10000; // (caching loop covered in test-exile-haven-struggle.js)
+  ok('founding checklist clear', Game.foundingMissing().length === 0);
+  // re-snapshot: the project legitimately changed the pack (wood in, timber
+  // spent) — the assertion below is that the FORK itself doesn't touch it
+  const packBeforeProject = JSON.stringify(scholarRef.inventory);
+
   console.log('== 2. foundHaven forks the village ==');
   const r = Game.foundHaven();
   ok('foundHaven returns true', r === true);
@@ -107,7 +123,7 @@ function ok(name, cond) {
   console.log('== 4. player-side state crosses over ==');
   ok('scholar object untouched (same ref)', Game.state.scholar === scholarRef);
   ok('codex object untouched (knowledge kept)', Game.state.codex === codexRef);
-  ok('pack/inventory unchanged', JSON.stringify(Game.state.scholar.inventory) === packBefore);
+  ok('pack/inventory unchanged', JSON.stringify(Game.state.scholar.inventory) === packBeforeProject);
   ok('codex plants kept', Object.keys(Game.state.codex.plants || {}).length === codexPlantsBefore);
   ok('player character record moved to new village', (nv.rosterChars || {})[pid] === playerCharBefore);
   ok('exile ended', Game.state.scholar.exiled === false);

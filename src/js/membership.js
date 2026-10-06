@@ -678,7 +678,9 @@
   var _foundHaven = G.foundHaven;
   G.foundHaven = function () {
     var r = _foundHaven ? _foundHaven.call(this) : undefined;
-    try { this.rejoinMembership(); } catch (e) {}
+    // only rejoin on SUCCESS — a refused founding (requirements unmet)
+    // must not clear the exile (2026-10-06: founding is a gated project now)
+    if (r) { try { this.rejoinMembership(); } catch (e) {} }
     return r;
   };
 

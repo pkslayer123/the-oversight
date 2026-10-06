@@ -439,6 +439,16 @@
       { min: 35, text: `${inviter} is carrying more than usual. You notice the weight of it.` },
       { min: 50, text: `Too eager. Asked twice. People with nothing planned don't ask twice.` },
       { min: 65, text: `Someone's already out there. You saw a figure heading that way earlier — and it wasn't alone.` },
+      // POOL EXPANSION (Steve 2026-10-06): high-perception readers earn
+      // sharper warnings — the observant don't just sense danger, they
+      // start naming it.
+      { min: 72, text: `${inviter} keeps glancing at the others — little check-ins, like making sure everyone's still in.` },
+      { min: 80, text: `The walk is wrong. Too quiet, too direct. Nobody wanders like this on purpose unless the purpose is already decided.` },
+      { min: 88, text: `${inviter} didn't eat at the fire tonight. People don't skip food before a friendly walk.` },
+      // KNOWLEDGE GATING: this never names the accomplice — whoTag is
+      // name-gated and would read as a broken possessive ("the person in
+      // their 30s's name"). At perception 95 you read the ROOM, not the roster.
+      { min: 95, text: `Someone's name came up at the fire earlier — ${inviter} went quiet, and so did everyone else. You didn't think anything of it then. You do now.` },
     ];
     return T.filter(t => p >= t.min).map(t => t.text);
   },
@@ -468,12 +478,31 @@
     const tells = plot.tells;
     this.say(`You walk out with ${this.displayName(plot.inviter)}. ${tells.length >= 3 ? 'Every warning bell you own is ringing.' : tells.length ? 'Something feels off, but you go anyway.' : 'Just a walk. Just people.'}`);
     this.say(`Halfway there, the shape of it changes. ${Cap(leader)} stops walking. ${beat2}`);
-    this.say(`"${pick([
+    // OPENER POOL (Steve 2026-10-06, pool expansion 4->9): the leader's
+    // opener is generated from WHO they are to you — a trusted friend's
+    // betrayal reads different from a stranger's, and temperament shapes
+    // the delivery. Bold leaders hold your eyes; the rest can't. The
+    // close-friend lines only land when trust was actually earned — that's
+    // the wound.
+    const ltemp = String((this.npcTemper && this.npcTemper(plot.leader)) || 'steady').toLowerCase();
+    const ltrust = ((this.state.village || {}).trust || {})[plot.leader];
+    const lclose = (ltrust || 0) >= 40;
+    const lhard = (ltemp === 'bold' || ltemp === 'intense');
+    const openers = [
       'You\'ve had this coming.',
       'Don\'t make this worse than it is.',
       'We\'re not monsters. We just need you gone.',
       'Nothing personal. That\'s the worst part, isn\'t it?',
-    ])}" ${leader} won't quite meet your eyes. Their hands are shaking.`);
+      lclose ? 'I keep trying to find a version of this where it isn\'t me. I can\'t.' : null,
+      lclose ? 'You were supposed to be one of the good ones. That\'s what makes this — ugh. That\'s what makes it.' : null,
+      lhard ? 'You knew this was coming. Everyone did. Don\'t insult us by pretending.' : null,
+      (ltemp === 'cautious' || ltemp === 'withdrawn') ? 'Please. Please don\'t — just listen. It\'s not what it looks like, except it is.' : null,
+      'The village can\'t carry you anymore. Somebody had to say it.',
+    ].filter(Boolean);
+    const eyeLine = lhard
+      ? `${leader} meets your eyes — steady, which is somehow worse. Their hands are shaking anyway.`
+      : `${leader} won't quite meet your eyes. Their hands are shaking.`;
+    this.say(`"${pick(openers)}" ${eyeLine}`);
     plot.round = 0; plot.talksLeft = 3;
     plot.aware = plot.tells.length >= 2;
     // open the ambush conversation: RUN / TALK / FIGHT each exchange
@@ -1303,8 +1332,18 @@
     // the old village continues; gossip carries your name
     try { this.seedGossip('exile_' + s.day, { trustworthy: -15 }, this.npcIds().slice(0, 4)); } catch (e) {}
     s.exiled = true;
+    s.exileStartDay = s.day; // the solo clock starts now — founding takes 7+ days alone
+    s.founding = null; // any previous founding project is gone with the old life
     try { this.recordTrauma('exile'); } catch (e) {}
     return true;
+  },
+  // villageRoom: beds and bowls are finite. A village has room or it doesn't —
+  // no forcing your way in. Capacity is set at generation; lazily repaired
+  // for older saves.
+  villageRoom(ov) {
+    if (!ov) return 0;
+    if (ov.capacity == null) ov.capacity = (ov.population || 8) + 1 + (R() < 0.5 ? 1 : 0);
+    return Math.max(0, ov.capacity - (ov.population || 0));
   },
   // petition a nearby village: they judge you. They've heard things.
   // opts: { giftKcal } — food offered from your pack. Gifts and skills
@@ -1313,6 +1352,12 @@
     opts = opts || {};
     const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
     if (!ov) return null;
+    // CAPACITY FIRST: a full village can't take you, no matter the plea.
+    // It's not judgment. It's arithmetic.
+    if (this.villageRoom(ov) <= 0) {
+      this.say(`${ov.name} listens — then shakes their heads. "We'd take you. There's just no room. Every bed's full, every bowl spoken for." It's not unkind. It's full.`);
+      return false;
+    }
     // catch-up: they've lived
     try { this.catchUpSim(ov); } catch (e) {}
     let judgment = 50;
@@ -1354,11 +1399,9 @@
     judgment += R() * 20 - 10; // noise: they're people, not calculators
     if (judgment >= 45) {
       const giftNote = giftGiven > 0 ? ` The food you laid down didn't hurt.` : '';
-      this.say(`${ov.name} listens. Argues. Votes. "You can stay. Probation. One winter to prove you're not what they said." It's more than you had yesterday.${giftNote}`);
-      try { this.joinVillage(villageId); } catch (e) { s.joinedVillage = villageId; }
-      s.exiled = false;
-      s.drifting = false;
-      try { this.justiceState().exiled = false; } catch (e) {}
+      this.say(`${ov.name} listens. Argues. Votes. "You can stay. Probation. Fourteen days to prove you're not what they said." It's more than you had yesterday.${giftNote}`);
+      try { this.joinVillageReal(villageId); } catch (e) { s.joinedVillage = villageId; }
+      try { this.rejoinMembership && this.rejoinMembership(); } catch (e) {}
       return true;
     }
     // The gift is spent either way — that keeps the judgment roll honest (a
@@ -1370,6 +1413,59 @@
       : '';
     this.say(`${ov.name} turns you away. "We've heard about Haven." The door — there is no door, it's a clearing, but it closes anyway.${giftNote}`);
     return false;
+  },
+  // joinVillageReal: you enter THEIR social web fresh. The old village is
+  // archived (hard reset — no continued residence with your exilers). Here
+  // you start wary and low: trust 5, half shares, 14 days of probation served
+  // at their fire. Earn it or you're back on the road.
+  joinVillageReal(villageId) {
+    const s = this.state.scholar;
+    const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
+    if (!ov) return null;
+    const old = this.state.village || {};
+    this.state.pastVillages = this.state.pastVillages || [];
+    if (!this.state.pastVillages.includes(old)) this.state.pastVillages.push(old);
+    this.state.oldVillage = this.state.oldVillage || old.name;
+    ov.population = (ov.population || 0) + 1;
+    ov.trust = 5; // wary — you're the exile they took a chance on
+    s.joinedVillage = villageId;
+    s.exiled = false;
+    s.drifting = false;
+    s.founding = null;
+    s.probation = { villageId, daysLeft: 14 };
+    try { this.justiceState().exiled = false; } catch (e) {}
+    try { this.journalNote && this.journalNote('village', 'join', 'Joined ' + ov.name + ' on probation — 14 days at their fire to prove it.'); } catch (e) {}
+    try { this.audioEvent && this.audioEvent('joinVillage'); } catch (e) {}
+    this.say(`Fourteen days. You eat half shares, you work full days, and at the end they vote again. You're not one of them — not yet. You're the chance they took. Don't waste it.`);
+    return true;
+  },
+  // probationTick: served at their fire — away days don't count. At day zero
+  // they vote: trust 15+ and you're in; below it, you're back on the road and
+  // the exile phase resumes (the road, not the sentence).
+  probationTick() {
+    const s = this.state.scholar;
+    const p = s.probation;
+    if (!p) return;
+    const ov = (this.state.otherVillages || []).find(x => x.id === p.villageId);
+    if (!ov) { s.probation = null; return; }
+    const d = this.map ? (Math.abs((ov.x || 0) - this.map.px) + Math.abs((ov.y || 0) - this.map.py)) : 99;
+    if (d > 1) return; // not at their fire — the clock waits
+    p.daysLeft -= 1;
+    if (p.daysLeft === 4) this.say(`Four days of probation left at ${ov.name}. They're watching — kindly, but watching. Work. Share. Be useful.`);
+    if (p.daysLeft > 0) return;
+    s.probation = null;
+    if ((ov.trust || 0) >= 15) {
+      try { this.journalNote && this.journalNote('village', 'member', 'Voted in at ' + ov.name + ' — full shares, full voice.'); } catch (e) {}
+      this.say(`${ov.name} votes again. This time it's not close. "You're one of us now." Full shares. Full voice. The exile is a story you tell, not a name you wear.`);
+    } else {
+      ov.population = Math.max(0, (ov.population || 1) - 1);
+      s.joinedVillage = null;
+      s.exiled = true;
+      s.drifting = true;
+      s.exileStartDay = s.day;
+      try { this.journalNote && this.journalNote('village', 'rejected', 'Turned away from ' + ov.name + ' after probation — back on the road.'); } catch (e) {}
+      this.say(`${ov.name} votes. "We tried." They don't meet your eyes when they say it. Your bed goes to someone else's cousin. The road takes you back — petition somewhere else, or build your own fire.`);
+    }
   },
   // drift: solo, between villages. The wild provides, or it doesn't.
   // A state, not a place — petition or founding ends it.
@@ -1406,6 +1502,25 @@
       this.say(`Drifting: another walker on the same road — wary, like you. You share a fire, no names. It helps more than you'd admit.`);
       try { this.recordTrauma && this.recordTrauma('drift_kindness'); } catch (e) {}
       s.driftMet = (s.driftMet || 0) + 1;
+    } else if (r < 0.64) {
+      // smoke on the horizon — the road has neighbors. Discovery for exiles
+      // sizing up where to petition.
+      try {
+        const px = (this.map && this.map.px) || 3, py = (this.map && this.map.py) || 3;
+        let best = null, bd = 99;
+        for (const v of (this.state.otherVillages || [])) {
+          const d = Math.abs((v.x || 0) - px) + Math.abs((v.y || 0) - py);
+          if (d < bd) { bd = d; best = v; }
+        }
+        if (best && bd > 1) {
+          const dx = (best.x || 0) - px, dy = (best.y || 0) - py;
+          const dir = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'east' : 'west') : (dy > 0 ? 'south' : 'north');
+          best.hinted = true;
+          this.say(`Drifting: smoke on the horizon, ${dir} — a thin column, cooking fires. Someone lives that way. Walk ${dir} and see who has room.`);
+        } else if (best) {
+          this.say(`Drifting: you're close enough to smell ${best.name}'s cooking fires. Walk in or walk on.`);
+        }
+      } catch (e) {}
     }
     // loneliness accrues: drift is a road, not a home
     s.driftDays = (s.driftDays || 0) + 1;
@@ -1427,9 +1542,15 @@
       ov.trust >= 60 ? ' · they trust you deeply' :
       ov.trust >= 30 ? ' · they trust you' :
       ov.trust >= 10 ? ' · they know your face' : ' · wary of you';
+    // room is legible to an exile sizing up their options
+    let roomWord = '';
+    if (s.exiled) {
+      const room = this.villageRoom(ov);
+      roomWord = room > 0 ? ` · room for ${room}` : ' · no room';
+    }
     const card = {
       name: ov.name,
-      sub: `${ov.population || '?'} people · ${ov.day || 0} days in · ${focusWord}${trustWord}`,
+      sub: `${ov.population || '?'} people · ${ov.day || 0} days in · ${focusWord}${trustWord}${roomWord}`,
       actions: [],
     };
     if (s.exiled) {
@@ -1495,6 +1616,11 @@
     ov.lastTalkDay = s.day;
     ov.trust = ov.trust || 0;
     const trustIn = ov.trust;
+    // outsider status bites: on probation you're the new mouth, and they
+    // let you feel it — politely.
+    if (s.probation && s.probation.villageId === villageId) {
+      this.say(`You're still the new mouth at ${ov.name} — ${Math.max(0, s.probation.daysLeft)} days of probation left. They're polite. Politeness is a wall with a door in it; you're looking for the door.`);
+    }
     const prof = ov.knowledgeProfile || {};
     const theirCodex = (ov.codex && ov.codex.plants) || {};
     const mine = (this.state.codex.plants = this.state.codex.plants || {});
@@ -1603,36 +1729,161 @@
     return true;
   },
   // exileSelfActions: the camp/self UI reads this while exiled. Pure data.
+  // Founding a haven is a PROJECT, not a button (Steve 2026-10-06): survive
+  // solo 7+ days, claim a site, raise at least a hut, cache 10000 kcal.
+  // Solo founding takes ~2 weeks of real work. Petitioning a village with
+  // room (at their 🏘️ tile) is the likelier road.
+  foundingReqs() {
+    return {
+      minSoloDays: 7, shelterTier: 2, stockpileKcal: 10000,
+      timberPerTier: [0, 8, 16, 24], // wood cost to reach each shelter tier
+      cachePerAction: 3000,
+    };
+  },
+  foundingState() {
+    const s = this.state.scholar;
+    if (!s.founding) s.founding = { siteClaimed: false, shelterTier: 0, stockpileKcal: 0 };
+    return s.founding;
+  },
+  foundingMissing() {
+    const s = this.state.scholar, f = this.foundingState(), RQ = this.foundingReqs();
+    const missing = [];
+    const soloDays = (s.day || 0) - (s.exileStartDay != null ? s.exileStartDay : (s.day || 0));
+    if (soloDays < RQ.minSoloDays) missing.push(`${RQ.minSoloDays - soloDays} more day(s) surviving solo`);
+    if (!f.siteClaimed) missing.push('a claimed campsite');
+    if (f.shelterTier < RQ.shelterTier) missing.push(`a hut or better (shelter tier ${f.shelterTier}/${RQ.shelterTier})`);
+    if (Math.round(f.stockpileKcal) < RQ.stockpileKcal) missing.push(`cached food (${Math.round(f.stockpileKcal)}/${RQ.stockpileKcal} kcal)`);
+    return missing;
+  },
   exileSelfActions() {
     const s = this.state.scholar;
     if (!s.exiled) return [];
-    const acts = [
-      { id: 'foundhaven', label: '🏕️ Found your own haven', hint: 'Hard reset. Day one, again — knowledge kept.' },
-    ];
-    if (!s.drifting) acts.push({ id: 'drift', label: '🚶 Drift', hint: "Solo. The wild provides, or it doesn't." });
-    else acts.push({ id: 'drift', label: '🚶 Drifting…', hint: `Day ${(s.driftDays || 0) + 1} on the road. Petition or found a haven to stop.`, disabled: true });
+    const f = this.foundingState(), RQ = this.foundingReqs();
+    const tierNames = ['open ground', 'lean-to', 'hut', 'cabin'];
+    const acts = [];
+    if (!f.siteClaimed) {
+      acts.push({ id: 'claimsite', label: '📍 Claim a campsite', hint: 'Walk the ground, mark it, make it yours. First step of a haven — costs a while.' });
+    } else {
+      if (f.shelterTier < 3) {
+        const cost = RQ.timberPerTier[f.shelterTier + 1];
+        let wood = 0;
+        try { wood = this.woodCount(); } catch (e) {}
+        acts.push({
+          id: 'buildshelter', label: `🪓 Raise a ${tierNames[f.shelterTier + 1]} (tier ${f.shelterTier}→${f.shelterTier + 1})`,
+          hint: `Needs ${cost} wood — you carry ${wood}. Hard labor, half a day.`,
+          disabled: wood < cost,
+        });
+      }
+      acts.push({ id: 'gathertimber', label: '🪵 Fell & haul timber', hint: 'A day-part of hard labor for the haven. +6–9 wood. Costs 400 kcal.' });
+      acts.push({ id: 'cachefood', label: `📦 Cache food (${Math.round(f.stockpileKcal)}/${RQ.stockpileKcal} kcal)`, hint: `Move up to ${RQ.cachePerAction} kcal from your pack into the haven cache. A haven starts on a full belly.` });
+    }
+    const missing = this.foundingMissing();
+    acts.push({
+      id: 'foundhaven', label: '🏕️ Found your haven',
+      hint: missing.length ? 'Not yet — need: ' + missing.join('; ') + '.' : 'The site is claimed, the hut stands, the cache is full. Day one.',
+      disabled: missing.length > 0,
+    });
+    if (!s.drifting) acts.push({ id: 'drift', label: '🚶 Drift', hint: "Solo. Petition a village at their 🏘️ tile, or build your own fire." });
+    else acts.push({ id: 'drift', label: '🚶 Drifting…', hint: `Day ${(s.driftDays || 0) + 1} on the road. Petition at a 🏘️ tile or found your haven to stop.`, disabled: true });
     return acts;
   },
   exileSelfDo(actionId) {
+    if (actionId === 'claimsite') return this.claimSite();
+    if (actionId === 'gathertimber') return this.gatherTimber();
+    if (actionId === 'buildshelter') return this.buildFoundShelter();
+    if (actionId === 'cachefood') return this.cacheFood();
     if (actionId === 'foundhaven') { const r = this.foundHaven(); try { this.state.scholar.drifting = false; } catch (e) {} return r; }
     if (actionId === 'drift') return this.drift();
     return null;
   },
-  // found your own haven: hard, slow, real
+  claimSite() {
+    const s = this.state.scholar;
+    if (!s.exiled) return null;
+    const f = this.foundingState();
+    if (f.siteClaimed) return null;
+    f.siteClaimed = true;
+    try { this.tickAction(32); } catch (e) {}
+    try { this.audioEvent && this.audioEvent('claimSite'); } catch (e) {}
+    this.say(`You walk the ground until it feels right — water near, wood near, wind wrong. You mark it with a cairn and a cut branch. This is yours now. Nothing here but a claim and a plan. The work starts tomorrow.`);
+    return true;
+  },
+  gatherTimber() {
+    const s = this.state.scholar;
+    if (!s.exiled) return null;
+    const f = this.foundingState();
+    if (!f.siteClaimed) { this.say('Claim a campsite first — timber with nowhere to go is just firewood.'); return null; }
+    const gain = 6 + Math.floor(R() * 4);
+    try { this.addWood(gain); } catch (e) {}
+    s.kcal = Math.max(0, (s.kcal || 0) - 400);
+    try { this.tickAction(48); } catch (e) {}
+    try { this.audioEvent && this.audioEvent('chopWood'); } catch (e) {}
+    this.say(`You fell, limb, and haul. Green wood is heavy and honest work. +${gain} wood for the haven. (−400 kcal, half a day.)`);
+    return true;
+  },
+  buildFoundShelter() {
+    const s = this.state.scholar;
+    if (!s.exiled) return null;
+    const f = this.foundingState(), RQ = this.foundingReqs();
+    if (!f.siteClaimed || f.shelterTier >= 3) return null;
+    const tierNames = ['open ground', 'lean-to', 'hut', 'cabin'];
+    const cost = RQ.timberPerTier[f.shelterTier + 1];
+    let wood = 0;
+    try { wood = this.woodCount(); } catch (e) {}
+    if (wood < cost) { this.say(`Not enough timber — a ${tierNames[f.shelterTier + 1]} needs ${cost} wood, you carry ${wood}. Fell more first.`); return null; }
+    try { this.spendWood(cost); } catch (e) {}
+    s.kcal = Math.max(0, (s.kcal || 0) - 300);
+    f.shelterTier += 1;
+    try { this.tickAction(48); } catch (e) {}
+    try { this.audioEvent && this.audioEvent('buildShelter'); } catch (e) {}
+    const enough = f.shelterTier >= RQ.shelterTier ? ' Good enough to found on.' : '';
+    this.say(`You raise the ${tierNames[f.shelterTier]} — ridgepole, walls, a roof that mostly keeps the rain out. Shelter tier ${f.shelterTier}/3.${enough} (−${cost} wood, −300 kcal, half a day.)`);
+    return true;
+  },
+  cacheFood() {
+    const s = this.state.scholar;
+    if (!s.exiled) return null;
+    const f = this.foundingState(), RQ = this.foundingReqs();
+    if (!f.siteClaimed) { this.say('Claim a campsite first — a cache needs a home.'); return null; }
+    let pack = 0;
+    try { pack = this.packKcal(this.villagerId); } catch (e) {}
+    const move = Math.min(RQ.cachePerAction, Math.round(pack));
+    if (move <= 0) { this.say(`Your pack is empty. The cache waits. Forage, hunt, pack food — then come back.`); return null; }
+    try { this.packSpend(this.villagerId, move); } catch (e) {}
+    f.stockpileKcal += move;
+    try { this.tickAction(16); } catch (e) {}
+    this.say(`You bury and hang ${move} kcal where animals won't find it — or not easily. The haven cache holds ${Math.round(f.stockpileKcal)} / ${RQ.stockpileKcal} kcal.`);
+    return true;
+  },
+  // found your own haven: the fork, gated behind the founding project.
+  // Steve (2026-10-06): a new haven CAN be founded, but not easily — the
+  // exile must struggle (solo days, claimed site, hut+, full cache) or,
+  // more likely, join an existing village with room.
+  foundHaven() {
+    const s = this.state.scholar;
+    if (!s.exiled) { this.say(`You already have a haven.`); return null; }
+    const missing = this.foundingMissing();
+    if (missing.length) {
+      this.say(`Not yet. A haven needs: ${missing.join('; ')}. The wild doesn't grade on effort — it grades on results.`);
+      return null;
+    }
+    return this._forkNewHaven();
+  },
+  // _forkNewHaven: the actual village fork, unchanged mechanics.
   // EXILE HARD RESET (Steve 2026-10-06): founding a new haven after exile is a
   // REAL village fork. The old village object is archived into pastVillages
   // (it continues without you — in fiction and in data). The new haven is a
   // fresh village object: new name, new faces to come, fresh trust, fresh
   // pantry, fresh gossip. What crosses the fire with you: yourself, your
   // Codex, your pack. Nothing else. ("Hard reset. Day one, again — kept.")
-  foundHaven() {
+  _forkNewHaven() {
     const s = this.state.scholar;
-    if (!s.exiled) { this.say(`You already have a haven.`); return null; }
     const pid = this.villagerId;
-    // 1. archive the old village — it continues without you
+    const f0 = s.founding || {};
+    // 1. archive the old village — it continues without you (guard: join-then-
+    // found arcs must not archive the same object twice)
     const old = this.state.village || {};
     this.state.pastVillages = this.state.pastVillages || [];
-    this.state.pastVillages.push(old);
+    if (!this.state.pastVillages.includes(old)) this.state.pastVillages.push(old);
     this.state.oldVillage = this.state.oldVillage || old.name;
     // 2. the founder crosses over: your character record moves to the new haven
     const playerChar = ((old.rosterChars || {})[pid]) || null;
@@ -1662,8 +1913,9 @@
       villagers: [pid],
       rosterChars: {},
       trust: { [pid]: 15 },
-      buildingType: 'camp',
-      spawnBuilding: 'your campfire',
+      // the shelter you raised is what you move into — not a generic camp
+      buildingType: (f0.shelterTier || 0) >= 3 ? 'cabin' : 'hut',
+      spawnBuilding: (f0.shelterTier || 0) >= 3 ? 'your cabin' : 'your hut',
       // every social surface starts clean
       needs: {}, memory: {}, requests: {},
       assignments: {}, sharedKnowledge: {},
@@ -1695,15 +1947,19 @@
     this.state.village = v;
     // social groups regenerate honestly on the new roster (solo → none)
     try { this.genGroups(); } catch (e) {}
-    // 4. the exile ends; the scholar, codex, and pack cross over untouched
+    // 4. the exile ends; the scholar, codex, and pack cross over untouched.
+    // the founding project is spent — it became the haven.
     s.exiled = false;
     s.drifting = false;
+    s.founding = null;
     try { this.justiceState().exiled = false; } catch (e) {}
     s.foundedHaven = true;
     s.foundedDay = s.day;
     try { this.journalNote && this.journalNote('village', 'haven', 'Founded ' + name + ' — hard reset. ' + (old.name || 'Haven') + ' continues without you.'); } catch (e) {}
     try { this.audioEvent && this.audioEvent('foundHaven'); } catch (e) {}
-    this.say(`You pick a spot. Clear it. Build the fire yourself. ${name} — day one, again, but this time you know what a day costs. Behind you, ${(old.name || 'Haven')} keeps its fire without you. Ahead: new faces, new names. What you carried is what you have: yourself, your pack, and everything you learned.`);
+    const fDone = f0.shelterTier || 0;
+    const shelterWord = fDone >= 3 ? 'the cabin you raised beam by beam' : 'the hut you raised with your own hands';
+    this.say(`You pick the spot you claimed weeks ago. The cache is full, ${shelterWord} stands against the wind. ${name} — day one, again, but this time you know what a day costs. Behind you, ${(old.name || 'Haven')} keeps its fire without you. Ahead: new faces, new names. What you carried is what you have: yourself, your pack, and everything you learned.`);
     return true;
   },
 
@@ -2639,6 +2895,7 @@
     try { this.caseDiscoveryTick(); } catch (e) {}
     try { this.playerCaseTick(); } catch (e) {}
     try { this.driftTick(); } catch (e) {}
+    try { this.probationTick(); } catch (e) {}
   },
 };
 
@@ -2684,8 +2941,41 @@
     Game.genVillages = function () {
       const r = _genVillages.call(this);
       try { this.ensureReachableVillage(); } catch (e) {}
+      // capacity: beds and bowls are finite. Most villages have room for
+      // one more mouth; some for two; none are infinite.
+      try {
+        for (const v of (this.state.otherVillages || [])) {
+          if (v.capacity == null) v.capacity = (v.population || 8) + 1 + (Math.random() < 0.5 ? 1 : 0);
+        }
+      } catch (e) {}
       return r;
     };
   }
+  // villageMeal wrap: outsiders eat last. On probation — or with trust below
+  // 15 at a joined village — you get half shares at their fire. (The home
+  // village's trust-scaled shares live in the base implementation.)
+  const _villageMeal = Game.villageMeal;
+  Game.villageMeal = function () {
+    try {
+      const s = (this.state && this.state.scholar) || {};
+      const jvId = s.joinedVillage;
+      if (jvId) {
+        const ov = (this.state.otherVillages || []).find(x => x.id === jvId);
+        const atJv = ov && this.map &&
+          (Math.abs((ov.x || 0) - this.map.px) + Math.abs((ov.y || 0) - this.map.py) <= 1);
+        const onProb = !!(s.probation && s.probation.villageId === jvId);
+        if (ov && atJv && (onProb || (ov.trust || 0) < 15)) {
+          const meal = Math.min(1000, Math.round(ov.pantryKcal || 0));
+          ov.pantryKcal = Math.max(0, (ov.pantryKcal || 0) - meal);
+          s.kcal = Math.min((s.kcal || 0) + meal, 3000);
+          this.say(`Village meal at ${ov.name}: +${meal} kcal. ` +
+            (onProb ? `Probation portions — half shares until they vote you in (${Math.max(0, s.probation.daysLeft)} days left).`
+                    : `New mouths eat last — earn their trust for full shares. (Trust ${Math.round(ov.trust || 0)}/15.)`));
+          return;
+        }
+      }
+    } catch (e) {}
+    return _villageMeal ? _villageMeal.call(this) : null;
+  };
 })();
 })();

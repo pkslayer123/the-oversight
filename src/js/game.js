@@ -15312,11 +15312,57 @@
       s.name = s.name.replace(/\(head\)|\(\d+\)/, i === 0 ? '(head)' : `(${i + 1})`);
       });
       // The before-side keeps the old snakeId, reindex not needed (still 0..n)
+      // DUCKS FLESH-OUT (Steve 2026-10-06): the tail half is REGROUPING — it
+      // doesn't want to fight, it wants to REJOIN. It marches back toward the
+      // head half; if it reaches it, the line goes whole again. Breaking the
+      // line is a tactical decision: two problems now, but kill the tail half
+      // before it rejoins or you're back to six.
+      after[0].duckRegroup = true;
+      after[0].duckHomeId = snakeId;
+      for (const s of after) this.encSetPhase(s, 'line_up');
       this.say(`🦆 The line breaks! The tail thrashes free — now there are TWO snakes.`);
       this.audioEvent('snakeSplit');
+    } else if (!before.length && after.length) {
+      // HEAD KILL (Steve 2026-10-06): the head died but the body lives — the
+      // next duck in line takes the lead without breaking step. (Was: no
+      // head left, tbSnakeMove never fired again, the snake froze forever.)
+      after[0].isHead = true;
+      after[0].name = after[0].name.replace(/\(head\)|\(\d+\)/, '(head)');
+      this.say('🦆 The head goes down — the next duck in line takes the lead without breaking step.');
     }
     // If only one side survives, no split — just a shorter snake.
     // (The head-side keeps going; the tail-side is gone.)
+    },
+
+    // SNAKE REJOIN (Steve 2026-10-06): the regrouping tail half reached the
+    // head half — the line goes whole again. Tail segments append behind the
+    // head half's tail; the regroup head stands down. Quacking resumes.
+    tbSnakeRejoin(regroupHead) {
+    const f = this.tbfight;
+    if (!f || !regroupHead || !regroupHead.alive) return false;
+    const homeId = regroupHead.duckHomeId;
+    const homeSegs = f.fighters
+      .filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.snake && x.snakeId === homeId)
+      .sort((a, b) => a.segmentIndex - b.segmentIndex);
+    if (!homeSegs.length) { regroupHead.duckRegroup = false; return false; } // home's gone — fight on
+    const tailSegs = f.fighters
+      .filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.snake && x.snakeId === regroupHead.snakeId)
+      .sort((a, b) => a.segmentIndex - b.segmentIndex);
+    const base = homeSegs.length;
+    tailSegs.forEach((s, i) => {
+      s.snakeId = homeId;
+      s.segmentIndex = base + i;
+      s.isHead = false;
+      s.duckRegroup = false;
+      s.duckHomeId = null;
+      try { s.name = s.name.replace(/\(head\)|\(\d+\)/, `(${base + i + 1})`); } catch (e) {}
+    });
+    // The rejoined line reforms — back to the top of the cycle.
+    const allSegs = homeSegs.concat(tailSegs);
+    for (const s of allSegs) this.encSetPhase(s, 'line_up');
+    this.say('🦆 The tail thrashes back into line — beak to tail, the formation snaps straight. The quacking resumes, lockstep. The line is WHOLE again.');
+    this.audioEvent('ducksRejoin');
+    return true;
     },
 
     // SNAKE CONTACT DAMAGE (Steve 2026-10-05): walking on a segment hurts.
@@ -17575,6 +17621,155 @@
         const dt = this.encCurrentTarget(m);
         return dt ? { f: dt, d: Math.max(Math.abs(dt.mx - m.mx), Math.abs(dt.my - m.my)) } : null;
       };
+
+      // ---- DUCKS IN A ROW: THE FORMATION ----
+      // line_up → march → nip → regroup. The head drives; the line is one
+      // animal. Segments never declare — the old per-segment direct bites
+      // were six uncoordinated telegraphs stacked on contact damage. The
+      // line_up beat (aim lane on the grid) is the tell; the march is the
+      // action; the nip lands one coordinated bite; regroup is the window.
+      // Kill the head and the next duck takes the lead (tbSnakeSplit).
+      if (this.duckIs(m)) {
+        const df = this.tbfight;
+        const dsegs = df.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled &&
+          x.mdef && x.mdef.snake && x.snakeId === m.snakeId)
+          .sort((a, b) => a.segmentIndex - b.segmentIndex);
+        const dhead = dsegs.find(s => s.isHead) || dsegs[0];
+        // segments: no independent turn — the head drives the formation.
+        if (m !== dhead) {
+          if (m.telegraph) m.telegraph = null;
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (!dhead) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+        const dff = fifoFoe(); if (dff) foe = dff;
+        const dtgt = (foe && foe.f && foe.f.alive && !foe.f.fled) ? foe.f : this.tbFighter('p');
+        if (!dtgt || !dtgt.alive) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+        const dknown = this.encTelegraphKnown(m);
+        const dkc = ((m.mdef || {}).encounter || {}).knownCue;
+        if (!dhead.beamPhase || !['line_up', 'march', 'nip', 'regroup'].includes(dhead.beamPhase)) {
+          this.encSetPhase(dhead, 'line_up');
+        }
+        const dSetPhase = (ph) => { for (const s of dsegs) this.encSetPhase(s, ph); };
+        const dfoes = () => df.fighters.filter(o => o.alive && !o.fled && o.key !== dhead.key && S.combat.isFoe(dhead, o));
+        const dTouching = () => dsegs.some(s => dfoes().some(o => Math.max(Math.abs(o.mx - s.mx), Math.abs(o.my - s.my)) <= 1));
+        // ENRAGED (Steve 2026-10-06): two ducks left and the head loses it —
+        // screech once, faster, and it never regroups. It just keeps coming.
+        const dEnraged = dsegs.length <= 2;
+        if (dEnraged && !dhead.duckEnraged) {
+          dhead.duckEnraged = true;
+          dhead.speed = (dhead.speed || 5) + 1;
+          this.say('The last ducks SCREECH — high, furious, wrong on a duck. The head is coming and it is not stopping.');
+          this.audioEvent('duckScreech', {});
+        }
+        const dph = dhead.beamPhase;
+        if (dph === 'line_up') {
+          // THE TELL. One full beat to read the aim lane before the line
+          // moves — the head's turn ends here; the march comes next turn.
+          // (Fast monsters open the fight, so this beat can land before the
+          // player's first turn — the lane must survive to a render.)
+          if (!dhead.duckLinedUp) {
+            dhead.duckLinedUp = true;
+            dhead.duckAim = { x: dtgt.mx, y: dtgt.my };
+            df.duckState = df.duckState || {}; df.duckState[m.snakeId] = { marchTurns: 0 };
+            // AGGRO IS THE SILENCE (Steve 2026-10-06): the first line_up cuts
+            // the ambient quacking dead mid-quack — the audible telegraph.
+            // After that, the formation snap is the tell.
+            if (!df.duckCutPlayed) {
+              df.duckCutPlayed = true;
+              this.audioEvent('ducksQuackCut', {});
+            }
+            this.say(dknown && dkc
+              ? `The ducks line up — head to tail, perfect order. The head dips toward you. ${dkc}`
+              : 'The ducks stop milling. One by one they fall into line — head to tail, too precise, too quiet. The head dips. It has picked a line.');
+            this.audioEvent('duckLineUp', {});
+            dSetPhase('line_up');
+            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+          }
+          dhead.duckLinedUp = false;
+          dhead.duckAim = { x: dtgt.mx, y: dtgt.my };
+          dSetPhase('march');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (dph === 'march') {
+          const dst = (df.duckState && df.duckState[m.snakeId]) || { marchTurns: 0 };
+          // REGROUPING TAIL (Steve 2026-10-06): the broken tail half doesn't
+          // hunt — it marches HOME. Reach the head half and the line goes
+          // whole again (tbSnakeRejoin). Kill it before it gets there.
+          if (dhead.duckRegroup) {
+            const dHome = df.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled &&
+              x.mdef && x.mdef.snake && x.snakeId === dhead.duckHomeId);
+            if (!dHome.length) { dhead.duckRegroup = false; } // home's gone — fight on
+            else {
+              let hhx = dHome[0].mx, hhy = dHome[0].my, hhd = 99;
+              for (const hs of dHome) {
+                const dd = Math.max(Math.abs(hs.mx - dhead.mx), Math.abs(hs.my - dhead.my));
+                if (dd < hhd) { hhd = dd; hhx = hs.mx; hhy = hs.my; }
+              }
+              this.tbSnakeMove(dhead, { mx: hhx, my: hhy, alive: true });
+              this.tbSnakeContactDamage();
+              const dReached = dHome.some(hs => Math.max(Math.abs(hs.mx - dhead.mx), Math.abs(hs.my - dhead.my)) <= 1);
+              if (dReached) this.tbSnakeRejoin(dhead);
+              else this.say('The broken tail hurries back toward the line — quacking, urgent. It wants to rejoin. Don\'t let it.');
+              this.audioEvent('duckMarch', {});
+              this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+            }
+          }
+          this.tbSnakeMove(dhead, dtgt);
+          this.tbSnakeContactDamage();
+          dst.marchTurns += 1;
+          df.duckState = df.duckState || {}; df.duckState[m.snakeId] = dst;
+          this.audioEvent('duckMarch', {});
+          if (dTouching()) {
+            dSetPhase('nip');
+            this.say('The line reaches you — beaks up, all down the row. NIP.');
+          } else if (dst.marchTurns >= 3 && !dEnraged) {
+            dSetPhase('regroup');
+            this.say('The line loses steam — the march falters, ducks milling. It will reform.');
+          } else if (dEnraged) {
+            this.say('It keeps coming — screeching, no formation left to keep. Just the head, and the beak.');
+          } else {
+            const marchLines = [
+              'The line marches — head to tail, straight at you. Do not be in the way.',
+              'Quack-quack-quack, in perfect time. The line keeps coming.',
+              'Six ducks, one mind, no gaps. It is gaining on you.',
+            ];
+            this.say(marchLines[Math.min(marchLines.length - 1, dst.marchTurns - 1)]);
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (dph === 'nip') {
+          // COORDINATED NIP: one beat, not six. Every foe next to the line
+          // takes exactly one bite.
+          const nipFoes = dfoes().filter(o =>
+            dsegs.some(s => Math.max(Math.abs(o.mx - s.mx), Math.abs(o.my - s.my)) <= 1));
+          const nipDmg = ((m.mdef.snake || {}).contactDamage) || [5, 8];
+          const nipName = this.encAttackName(m, (m.mdef.attack || {}).name);
+          if (nipFoes.length) {
+            for (const o of nipFoes) {
+              const nd = S.combat.roll(nipDmg);
+              const nwho = o.kind === 'player' ? 'you' : o.name;
+              this.say(`🦆 The line NIPS ${nwho} as it passes — beaks everywhere. (${nd})`);
+              this.tbDamage(o.key, nd, (this.encShortLabel(m) || 'ducks in a row') + "'s " + nipName, dhead.key, { quiet: true });
+              if (df.over) break;
+            }
+          } else {
+            this.say('The line nips at empty air — you are not where the beaks expected.');
+          }
+          this.audioEvent('duckNip', {});
+          this.tbLearnPattern(m);
+          dSetPhase('regroup');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // regroup: the recovery. The line reforms; no attacks. The knownCue
+        // lives here — earned coaching, never a leak.
+        this.tbSnakeReform(dhead, dsegs, dtgt);
+        this.say(dknown && dkc
+          ? `The line reforms — head to tail, perfect order. ${dkc}`
+          : 'The ducks mill about, regrouping. For a moment the line is just ducks.');
+        this.audioEvent('duckRegroup', {});
+        dSetPhase('line_up');
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
 
       // ---- VOICE MIMIC ("Static"): THE LURE ----
       // call → approach → reveal. The horror is the choice: the crying sounds
