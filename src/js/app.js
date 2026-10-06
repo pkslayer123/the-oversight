@@ -10243,8 +10243,12 @@
       // TURN BOUNDARY (Steve): if this step ended the turn (moveLeft reset for
       // a fresh turn), kill hold-to-move. A held D-pad finger must not spend
       // the NEW turn's movement — each turn starts with a conscious input.
+      // STUCK HOLD (Steve 2026-10-06): the old guard only cleared when it was
+      // STILL the player's turn with fresh moves. If the step advanced to the
+      // MONSTER's turn, the hold survived and auto-walked the player on their
+      // next turn — "I got put in a walk." Clear whenever the turn ends.
       const pAfter = Game.tbFighter('p');
-      if (pAfter && Game.tbIsPlayerTurn() && pAfter.moveLeft > mlBefore) {
+      if (!Game.tbIsPlayerTurn() || (pAfter && pAfter.moveLeft > mlBefore)) {
         MoveAnim.clearHold();
       }
       return { moved };
