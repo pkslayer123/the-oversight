@@ -7211,6 +7211,31 @@
       const chance = Math.min(0.95, (base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt + nightHuntBonus) * luck);
       this.noteToolUse(); // RELIC BOND: the spear, the snare, the knife.
       s.kcal = Math.max(0, s.kcal - 100);
+      // BITE (Steve 2026-10-05): if you're in grabbing range (dist <= 1) and
+      // not using a trap, the animal might bite. Cost of capture. Not a fight —
+      // just the reality that wild things have teeth.
+      if (dist <= 1) {
+        const t = this.playerTile();
+        const hasTrap = t && t.traps && t.traps.some(tr => 
+          Math.abs(tr.mx - a.mx) <= 1 && Math.abs(tr.my - a.my) <= 1);
+        if (!hasTrap) {
+          const adef2 = (this.data.animals || []).find(x => x.id === a.id) || {};
+          const biteChance = adef2.behavior === 'aggressive' ? 0.6 : 
+                            adef2.behavior === 'plays_dead' ? 0.3 : 0.2;
+          if (Math.random() < biteChance) {
+            const biteDmg = adef2.behavior === 'aggressive' ? 
+              Math.round(S.combat.roll([8, 15])) : Math.round(S.combat.roll([3, 8]));
+            this.say(`It bites! Teeth in your hand — ${biteDmg} damage. Wild things have teeth.`);
+            s.hp = Math.max(0, s.hp - biteDmg);
+            // The bite might make you fumble the catch
+            if (Math.random() < 0.3) {
+              this.say('You fumble — it wriggles free!');
+              this.animalTurn(); this.animalTurn();
+              return true;
+            }
+          }
+        }
+      }
       if (Math.random() < chance) {
         // caught!
         s.animal = null;
@@ -13381,6 +13406,28 @@
       return true;
     },
 
+    // WARN CELLS (Steve 2026-10-05): highlight danger zones on the grid.
+    // Like scorchCells but for telegraphs — shows where the attack WILL land,
+    // not where it HAS landed. The grid IS the telegraph.
+    warnCells(cells, turns = 1) {
+      const nkey = this.map.px + ',' + this.map.py;
+      this.state.warn = this.state.warn || {};
+      const node = this.state.warn[nkey] = this.state.warn[nkey] || {};
+      for (const c of cells || []) {
+        node[c.cx + ',' + c.cy] = turns;
+      }
+    },
+    cellWarned(cx, cy) {
+      const nkey = this.map.px + ',' + this.map.py;
+      const node = (this.state.warn || {})[nkey];
+      if (!node) return false;
+      return (node[cx + ',' + cy] || 0) > 0;
+    },
+    clearWarnCells() {
+      const nkey = this.map.px + ',' + this.map.py;
+      if (this.state.warn) delete this.state.warn[nkey];
+    },
+
     // The telegraph cue: SILENT in combat (Steve 2026-10-05). The grid IS the
     // telegraph — highlighted cells, monster posture, visual windup. Text
     // descriptions belong in the codex, not as intrusive combat spoilers.
@@ -15122,6 +15169,9 @@
         threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
         aim: { x: foe.f.mx, y: foe.f.my }, dir: null, aimKey: foe.f.key,
         angle: null, firing: 0, cueText: cueText || null };
+      // WARN CELLS (Steve 2026-10-05): highlight the danger zone on the grid.
+      // The grid IS the telegraph — players see where the attack will land.
+      this.warnCells(cells, pat.windup || 1);
       // WITNESS: seeing it wind up teaches you its attack (codex machinery).
       try {
         const me = this.ensureMonsterEntry(m.mdef.id);
