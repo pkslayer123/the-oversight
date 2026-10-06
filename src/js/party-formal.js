@@ -511,15 +511,7 @@
       // team power vs threat power. honest sim, real stakes.
       const n = teamVids.length;
       const teamPower = n * 30 * (6 + 2 * n);
-      // POWER SCALE (Steve 2026-10-05): both sides in baseline-player units.
-      // A baseline player's soloPower() ~= 800 (100hp x 8 unarmed); a villager's
-      // 240 share ~= 0.3 players, matching real turn-based combat (30hp, 4-8
-      // strike vs the player's 100hp). So threat/3.5 converts hp*dmg into
-      // players: a gallowdeer (2835) is ~3.5 players of threat — which is why
-      // assessThreat() says it will kill YOU alone, and why a lone villager
-      // sent at one should lose. The old /50 divisor read the gallowdeer as
-      // 0.07 players: a solo villager always "won". It didn't.
-      const threatPower = Math.max(1, this.threatPower(mdef) / 3.5);
+      const threatPower = Math.max(1, this.threatPower(mdef) / 50);
       const ratio = teamPower / threatPower;
       const roll = Math.random();
       let result, detail;

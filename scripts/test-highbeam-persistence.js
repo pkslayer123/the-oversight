@@ -28,7 +28,12 @@ function ok(name, cond) {
   let s = Game.state.scholar;
   Game.dayPart = 1; // daylight for visibility (scenario sets night)
   // Place player far (dist > 5) so deer stays grazing (hasn't noticed you)
+  // Move villagers far too — otherwise the deer notices THEM (correct!)
   s.mx = 1; s.my = 4;
+  const vpos = Game.state.village.positions || {};
+  for (const rid of Object.keys(vpos)) {
+    vpos[rid] = { mx: 0, my: 0 }; // far from deer at (7,4)
+  }
   s.monster.mx = 7; s.monster.my = 4; // dist 6
   // Ensure clear LOS by placing on same row (may still be blocked, retry logic below)
   Game.monsterTurn();
@@ -41,19 +46,22 @@ function ok(name, cond) {
   ok('deer has stance', !!(s.monster && s.monster.stance));
   ok('deer starts grazing (not territorial)', s.monster && s.monster.stance === 'grazing');
 
-  console.log('\n=== TEST 2: Spook the deer at close range → it flees ===');
+  console.log('\n=== TEST 2: Deer approached at close range → goes territorial (does NOT flee) ===');
+  // Steve 2026-10-05: monsters don't have self-preservation. The deer stands
+  // its ground and aims — it does NOT run.
   // Teleport player right next to deer (dist 1) while it's grazing
   s.monster = { id: 'gallowdeer', mx: 5, my: 4, stance: 'grazing', turns: 1 };
-  s.mx = 4; s.my = 4; // dist 1, deer not at edge (won't instantly flee to node)
+  s.mx = 4; s.my = 4; // dist 1
   Game.monsterTurn();
-  const fled2 = s.monster ? s.monster.stance === 'fearful' : !!Game.state.fledMonsters;
-  ok('deer became fearful when spooked (or fled to node)', fled2);
+  ok('deer became territorial (not fearful)', s.monster && s.monster.stance === 'territorial');
+  ok('deer did NOT flee', !!s.monster);
   if (s.monster) console.log(`    stance: ${s.monster.stance}`);
 
-  console.log('\n=== TEST 3: Fearful deer at edge → stored in fledMonsters (not deleted) ===');
-  // Fresh deer, make it fearful near the edge
-  s.monster = { id: 'gallowdeer', mx: 7, my: 4, stance: 'fearful', fearTurns: 0, turns: 1 };
-  s.mx = 4; s.my = 4; // player far, deer runs away (east)
+  console.log('\n=== TEST 3: Lockpick (exception) flees at edge → stored in fledMonsters ===');
+  // Steve 2026-10-05: lockpick raccoon is the exception — it's a thematic
+  // thief that steals and runs. It CAN be fearful and flee.
+  s.monster = { id: 'lockpick_raccoon', mx: 7, my: 4, stance: 'fearful', fearTurns: 0, turns: 1 };
+  s.mx = 4; s.my = 4; // player far, raccoon runs away (east)
   const startNode = Game.map.px + ',' + Game.map.py;
   Game.state.fledMonsters = {}; // clear from previous test
   // Run until it hits edge or 10 turns
@@ -64,10 +72,10 @@ function ok(name, cond) {
   ok('monster was stored in fledMonsters (not just deleted)', !!fledKey);
   if (fledKey) {
     console.log(`    fled to node: ${fledKey} (from ${startNode})`);
-    ok('fled monster is gallowdeer', Game.state.fledMonsters[fledKey].id === 'gallowdeer');
+    ok('fled monster is lockpick_raccoon', Game.state.fledMonsters[fledKey].id === 'lockpick_raccoon');
   }
 
-  console.log('\n=== TEST 4: Player follows to adjacent node → deer is findable ===');
+  console.log('\n=== TEST 4: Player follows to adjacent node → raccoon is findable ===');
   if (fledKey) {
     const [nx, ny] = fledKey.split(',').map(Number);
     // Simulate player crossing to that node
@@ -85,8 +93,8 @@ function ok(name, cond) {
       };
       delete Game.state.fledMonsters[fmKey];
     }
-    ok('deer restored to s.monster', !!s.monster && s.monster.id === 'gallowdeer');
-    ok('same monster (not a new spawn)', s.monster.id === 'gallowdeer');
+    ok('raccoon restored to s.monster', !!s.monster && s.monster.id === 'lockpick_raccoon');
+    ok('same monster (not a new spawn)', s.monster.id === 'lockpick_raccoon');
   }
 
   console.log('\n=== TEST 5: Territorial deer does NOT flee (committed) ===');
@@ -106,6 +114,20 @@ function ok(name, cond) {
   if (s.monster) { s.mx = 6; s.my = 4; } // dist 1
   Game.monsterTurn();
   ok('territorial deer does NOT flee when approached', s.monster && s.monster.stance !== 'fearful');
+
+  console.log('\n=== TEST 6: Deer notices villagers (not just player) ===');
+  // Steve 2026-10-05: deer walked up to villagers and did nothing because
+  // targeting only checked player distance. Now it targets nearest.
+  Game.debugScenario('headlight'); // fresh, places 2 villagers
+  s = Game.state.scholar;
+  Game.dayPart = 1;
+  // Move player far away (dist > 5 from deer)
+  s.mx = 0; s.my = 0;
+  s.monster.mx = 7; s.monster.my = 4;
+  s.monster.stance = 'grazing';
+  // Villagers are at [5,3] and [6,5] from the scenario
+  Game.monsterTurn();
+  ok('deer noticed villagers (became territorial)', s.monster && s.monster.stance === 'territorial');
 
   console.log(`\n=== RESULTS: ${pass} pass, ${fail} fail ===`);
   process.exit(fail > 0 ? 1 : 0);

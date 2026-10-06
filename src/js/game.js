@@ -9850,11 +9850,11 @@
       const agg = (mdef.aggression || '').toLowerCase();
       if (b === 'ambush') return 'ambush';
       if (b === 'curious' || b === 'drifter') return 'curious';
-      // SKITTISH+TERRITORIAL (Highbeam Deer, Steve 2026-10-05): starts grazing,
-      // unaware. Skittish at range before it locks on — spook it and it runs.
-      // Once it notices you and goes territorial, it commits: "It does not
-      // run. It does not bluff."
-      if (b === 'territorial' && agg === 'skittish') return 'grazing';
+      // HIGHBEAM DEER (Steve 2026-10-04/05): starts grazing, unaware. When it
+      // notices you, it goes territorial — freeze, aim, fight. It does NOT
+      // run. "Monsters don't have self-preservation — you flee from monsters,
+      // not the other way around." (Exception: lockpick raccoon, thematic thief.)
+      if (mdef.id === 'gallowdeer') return 'grazing';
       if (b === 'territorial') return 'territorial';
       if (b === 'pack' || b === 'swarm') return 'hungry';
       return 'curious';
@@ -9883,6 +9883,26 @@
         if (Math.max(Math.abs(vpos[rid].mx - x), Math.abs(vpos[rid].my - y)) <= r) n++;
       }
       return n;
+    },
+
+    // NEAREST TARGET (Steve 2026-10-05): monsters don't only care about the
+    // player. Find the closest target — player or villager — for targeting,
+    // distance checks, and movement. Returns {x, y, kind, id, dist}.
+    nearestTarget(mx, my) {
+      const s = this.state.scholar;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      let best = { x: px, y: py, kind: 'player', id: null,
+                   dist: Math.max(Math.abs(px - mx), Math.abs(py - my)) };
+      const vpos = (this.state.village && this.state.village.positions) || {};
+      for (const rid of Object.keys(vpos)) {
+        const vp = vpos[rid];
+        if (vp.mx === undefined) continue;
+        const d = Math.max(Math.abs(vp.mx - mx), Math.abs(vp.my - my));
+        if (d < best.dist) {
+          best = { x: vp.mx, y: vp.my, kind: 'villager', id: rid, dist: d };
+        }
+      }
+      return best;
     },
 
     // monsters move when you do. they're in the detail grid with you.
@@ -9920,7 +9940,12 @@
         return;
       }
       // LINE OF SIGHT: it can't hunt what it can't see.
-      if (!this.canSee(m.mx, m.my, px, py)) {
+      // VISIBILITY: can it see ANY target (player or villager)? Steve 2026-10-05:
+      // the deer walked up to villagers while the player was far away — the
+      // old code only checked player visibility, so it went "lost sight".
+      const _tgt = this.nearestTarget(m.mx, m.my);
+      const _canSeeAny = this.canSee(m.mx, m.my, px, py) || this.canSee(m.mx, m.my, _tgt.x, _tgt.y);
+      if (!_canSeeAny) {
         m.lostSight = (m.lostSight || 0) + 1;
         if (m.lostSight > 6) {
           s.monster = null;
@@ -9973,7 +9998,10 @@
       // nightlight: only hunts near water at night. otherwise it's just a glow.
       const isNightlight = m.id === 'nightlight_catfish';
       const nightlightActive = !isNightlight || (this.dayPart >= 3 && this.monsterNearCell(m, 'water', 3));
-      if (feared && m.stance !== 'ambush' && m.stance !== 'fearful') {
+      // NO SELF-PRESERVATION (Steve 2026-10-04/05): monsters don't flee from
+      // fear. You flee from monsters. Exception: lockpick_raccoon (thematic thief).
+      const canFlee = (m.id === 'lockpick_raccoon');
+      if (feared && canFlee && m.stance !== 'ambush' && m.stance !== 'fearful') {
         m.stance = 'fearful'; m.fearTurns = 0;
         maybeCue('fearful'); m.cueCd = 0;
         const fl = this.monsterCue(m.id, 'fearful'); if (fl) this.say(fl);
@@ -10013,7 +10041,12 @@
           break;
         }
         case 'territorial': {
-          if (dist > 4) { m.warned = false; m.warnTurns = 0; break; } // not your place, not its problem
+          // Target the NEAREST — player or villager. The deer doesn't only
+          // care about you (Steve 2026-10-05: it walked up to villagers and
+          // did nothing because this only checked player distance).
+          const tgt = this.nearestTarget(m.mx, m.my);
+          const tdist = tgt.dist;
+          if (tdist > 4) { m.warned = false; m.warnTurns = 0; break; } // not your place, not its problem
           if (!m.warned) {
             m.warned = true; m.warnTurns = 0;
             const w = this.monsterCue(m.id, 'warn');
@@ -10021,20 +10054,23 @@
           } else {
             m.warnTurns = (m.warnTurns || 0) + 1;
             if (m.warnTurns >= 2) { this.startCombat(m.id); }
-            else stepToward(); // closing. last chance to leave.
+            else {
+              // step toward the nearest target, not just the player
+              const dx = Math.sign(tgt.x - m.mx), dy = Math.sign(tgt.y - m.my);
+              if (Math.abs(tgt.x - m.mx) >= Math.abs(tgt.y - m.my)) mv(dx, 0); else mv(0, dy);
+            }
           }
           break;
         }
         case 'grazing': {
-          // HIGHBEAM (Steve 2026-10-05): grazing, unaware. Skittish at range.
-          // The generic fear check (movement within 2) spooks it before this
-          // runs — that's the "skittish at range before it locks on" weakness.
-          // If it sees you coming from a distance, it goes territorial
-          // instead — and then it does NOT run ("It does not run. It does not
-          // bluff.").
+          // HIGHBEAM (Steve 2026-10-04): grazing, unaware. Not fear — just
+          // not noticing you yet. When it sees anyone (player or villager),
+          // it goes territorial: freeze, aim, fight. It does NOT run.
+          // "The beam itself is the argument for leaving."
           maybeCue('curious');
-          if (dist <= 5) {
-            // noticed you. the freeze begins. it's aiming, not frozen.
+          const tgt = this.nearestTarget(m.mx, m.my);
+          if (tgt.dist <= 5) {
+            // noticed someone. the freeze begins. it's aiming, not frozen.
             m.stance = 'territorial'; m.warned = false; m.warnTurns = 0;
             const w = this.monsterCue(m.id, 'warn');
             this.say(w || 'It freezes. Like a deer in headlights. Light gathers behind its eyes.');
