@@ -22,6 +22,8 @@ const files = [
   'src/js/engine/combat.js',
   'src/js/game.js',
   'src/js/sprites.js',
+  'src/js/truth.js',
+  'src/js/contests.js',
   'src/js/debug-scenarios.js',
 ];
 files.forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
