@@ -12253,18 +12253,26 @@
         } else if (otherV) {
           g = '🏘️';
         } else {
-          // PRIMARY ONLY (Steve 2026-10-06): TileScenes.svgFor is the map.
-          // No fallbacks — mixed correct/incorrect is worse than none.
-          // If it returns blank for visited tiles, that's a worldgen bug to fix,
-          // not a fallback to paper over.
-          try {
-            if (TS && TS.svgFor) {
-              g = TS.svgFor(x, y, { seen });
-            } else {
-              g = ''; // TileScenes not loaded - blank, not mixed
-            }
-          } catch (e) {
-            g = ''; // Error - blank, not mixed
+          // SIMPLE TERRAIN (Steve 2026-10-06): TileScenes is broken in production.
+          // Use direct terrain SVG that Steve confirmed was working.
+          // Fog: unvisited = dark. Visited = terrain color + glyph.
+          if (!seen) {
+            g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
+              `<rect x="2" y="2" width="60" height="60" rx="8" fill="#0d120d" stroke="#1a2a1a" stroke-width="1"/></svg>`;
+          } else {
+            const ttype = tl ? tl.type : 'unknown';
+            const colors = {
+              forest_floor: '#241c12', grove: '#1b2f1c', meadow: '#28331b',
+              thicket: '#18291f', wetland: '#1a2830', creek: '#14303c',
+              trail_edge: '#322e1b', ruin: '#27272b', haven: '#20271f'
+            };
+            const isUnknown = !tl || ttype === 'unknown';
+            const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
+            const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
+            const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
+            g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
+              `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}"/>` +
+              `<text x="32" y="42" text-anchor="middle" font-size="28" fill="${textColor}">${glyph}</text></svg>`;
           }
         }
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
