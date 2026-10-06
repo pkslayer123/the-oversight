@@ -12963,7 +12963,18 @@
         });
       }
       // monsters: behavior drives count (pack/swarm bring friends)
-      const count = mdef.pack || 1;
+      // BELLTOAD DELAY (Steve 2026-10-05): the pack doesn't teleport in.
+      // 1 toad starts. The rest arrive after round 1.
+      let count = mdef.pack || 1;
+      let packDelayed = 0;
+      if (mdef.id === 'belltoad' && count > 1) {
+        packDelayed = count - 1;
+        count = 1;
+      }
+      // Store for round-2 arrival
+      if (packDelayed > 0) {
+        this._pendingPack = { id: mdef.id, count: packDelayed, mdef: mdef };
+      }
       const srcMx = (s.monster && s.monster.mx !== undefined) ? s.monster.mx : px;
       const srcMy = (s.monster && s.monster.my !== undefined) ? s.monster.my : py;
       const hasFear = this.hasAbility('fear_aura');
@@ -14282,6 +14293,35 @@
           f.turnIdx = 0; f.round++;
           this.sysSay(`ROUND ${f.round}!`);
           this.audioEvent('round', { round: f.round });
+          // BELLTOAD PACK ARRIVES (Steve 2026-10-05): delayed reinforcements
+          if (f.round === 2 && this._pendingPack) {
+            const pp = this._pendingPack;
+            this._pendingPack = null;
+            this.say('Another throat joins the chorus — the pack answers the call.');
+            this.audioEvent('belltoadCroak');
+            // Spawn the delayed pack members near the existing toad
+            const existing = f.fighters.find(x => x.kind === 'monster' && x.mdef && x.mdef.id === pp.id);
+            if (existing) {
+              for (let i = 0; i < pp.count; i++) {
+                const nx = Math.max(0, Math.min(8, existing.mx + (i % 2 === 0 ? 1 : -1))));
+                const ny = Math.max(0, Math.min(8, existing.my + 1));
+                const newFighter = {
+                  key: 'm' + Date.now() + i,
+                  kind: 'monster',
+                  mdef: pp.mdef,
+                  id: pp.id,
+                  mx: nx, my: ny,
+                  hp: pp.mdef.hp || 20,
+                  maxHp: pp.mdef.hp || 20,
+                  alive: true,
+                  moveLeft: 3,
+                  acted: false,
+                };
+                f.fighters.push(newFighter);
+                f.order.push(newFighter.key);
+              }
+            }
+          }
         }
         const c = this.tbFighter(f.order[f.turnIdx]);
         if (!c || !c.alive || c.fled) continue;
@@ -14885,6 +14925,19 @@
       return [base[0] + bonus, base[1] + bonus];
     },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
+    // encAttackName(m, attackName): the attack's true name only once the
+    // pattern is learned (tbPatternKnown) — the same gate as the telegraph
+    // cue's "You know this one". Before that, the attack is just "the attack":
+    // dread, not lecture. (The dead learn nothing; the living learn by
+    // surviving — tbLearnPattern writes the name to the codex at resolve.)
+    encAttackName(m, attackName) {
+      const name = attackName || ((m && m.mdef && m.mdef.attack) || {}).name;
+      if (!name) return 'the attack';
+      try {
+        if (m && m.mdef && this.tbPatternKnown && this.tbPatternKnown(m.mdef.id, name)) return name;
+      } catch (e) {}
+      return 'the attack';
+    },
     encThreatQueue(m) {
       if (!Array.isArray(m.threatQueue)) m.threatQueue = [];
       return m.threatQueue;
@@ -16002,7 +16055,12 @@
           // starts where it was aiming (declare lock) and sweeps toward you;
           // damage begins on the next tick. No more "shot immediately at me."
           tg.ignition = true;
-          this.say(`💥 ${tg.attackName}! A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE.`);
+          // ATTACK NAMES ARE EARNED: pre-pattern the beam is just light —
+          // the 💥 and the MOVE are the warning, not the name.
+          const ignName = this.encAttackName(m, tg.attackName);
+          this.say(ignName === 'the attack'
+            ? `💥 A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE.`
+            : `💥 ${ignName}! A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE.`);
           this.audioEvent('impact', { beam: (tg.pattern || {}).type === 'beam', highbeam: /highbeam/i.test(m.name || '') });
           this.tbBeamSweepTick(m, tg);
           tg.ignition = false;
@@ -16064,20 +16122,25 @@
             if (this.sunbaskerIs(m)) tg.dmg = this.sbBiteDmg(m);
             let dmg = S.combat.roll(tg.dmg), missed = false;
             if (m.blind > 0 && Math.random() < 0.5) { missed = true; }
-            if (missed) this.say(`${this.encShortLabel(m) || m.name}'s ${tg.attackName} swipes at sand-ghosts. Missed. (pocket_sand)`);
+            if (missed) this.say(`${this.encShortLabel(m) || m.name}'s ${this.encAttackName(m, tg.attackName)} swipes at sand-ghosts. Missed. (pocket_sand)`);
             else {
-              this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${tg.attackName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
-              this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s " + tg.attackName);
+              const hitName = this.encAttackName(m, tg.attackName);
+              this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${hitName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
+              this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s " + hitName);
             }
           }
         } else {
           // COVER WORKS: if the lane was fully blocked at declare time, the
           // beam dies against the trees. That's not a miss. That's the plan.
+          // (Attack name gated — pre-pattern it's just the light.)
+          const resName = this.encAttackName(m, tg.attackName);
           if (!tg.cells.length && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line')) {
-            this.say(`💥 ${tg.attackName}! The light shreds leaves and dies against the trees. Cover works. Remember that.`);
+            this.say(resName === 'the attack'
+              ? `💥 The light shreds leaves and dies against the trees. Cover works. Remember that.`
+              : `💥 ${resName}! The light shreds leaves and dies against the trees. Cover works. Remember that.`);
             this.audioEvent('beamBlocked');
           } else {
-          this.say(`💥 ${tg.attackName}!`);}
+          this.say(resName === 'the attack' ? `💥 The light hits!` : `💥 ${resName}!`);}
           // MOTH: the flash only goes forward — the facing locked at the fold
           // decides who it hits. Behind it, you're safe.
           let resCells = tg.cells;
