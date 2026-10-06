@@ -321,7 +321,7 @@
       });
       v.knownNames = {}; // strangers — descriptors, not names
       Game.say('🐞 SCENARIO: language barrier. Nobody here speaks English.');
-      Game.say('Talk to people. Watch what happens. Body language, fragments, frustration.');
+      Game.say('You are a stranger among strangers. Gestures, tone, the length of a silence — that is your whole vocabulary now.');
     },
 
     // 6. Liar's den — five villagers with forced, detectable lies.
@@ -346,8 +346,8 @@
         };
       });
       Game.say('🐞 SCENARIO: liar\'s den. Five villagers are lying about who they are.');
-      Game.say('Talk to them — ask about their past (occupation, where they\'re from). Then ask again later, or ask someone else about them. Bad liars slip: the story changes.');
-      Game.say('When you catch a contradiction, confront them. Watch what happens.');
+      Game.say('Brain surgeons, Navy SEALs, senators — so they say, around the fire. The words sit wrong in their mouths, like borrowed coats.');
+      Game.say('People are eating with them every night. Sooner or later the coats come off.');
     },
 
     // 7. Night hunt — midnight, nocturnal predator, spear in hand.
@@ -608,7 +608,7 @@
       Game.dayPart = 1; // midday — diurnal
       s.mx = 2; s.my = 4;
       s.monster = { id: 'speedbump_turtle', mx: 5, my: 4 };
-      Game.say('🐞 SCENARIO: speedbump turtle. It is not in a hurry. You should be.');
+      Game.say('🐞 SCENARIO: speedbump turtle. Midday sun on its shell. It is crossing your path at its own ancient pace.');
     },
 
     ducksinarow() {
@@ -710,7 +710,7 @@
         Game.say('🐞 accusation failed to open: ' + e.message);
       }
       Game.say('🐞 SCENARIO: you stand accused. Theft and assault on the books — the moot is coming.');
-      if (c) Game.say('The case is open. Your defense window is ticking: speak, call witnesses, press your accuser, or run.');
+      if (c) Game.say('Your name, spoken aloud in the wrong tone. The fire circle is being arranged — a ring of faces you know. The count is coming.');
       else Game.say('No case opened — check the log. The village may have nothing left unjudged to charge.');
     },
 
@@ -747,7 +747,7 @@
       Game.say('🐞 SCENARIO: moot as juror. Three villagers stand accused of an ambush that never quite happened.');
       if (c) {
         Game.say(`The accused: ${[leader, ...acc].map(npcName).join(', ')}. The target: ${npcName(target)}. Their story landed first — yours hasn't started.`);
-        Game.say('Work it: examine the site, name witnesses, press them separately, flip the weakest. Then vote.');
+        Game.say('Three people swearing they were nowhere near the creek. One person swearing otherwise. You hold a vote — and everyone will remember how you cast it.');
       }
     },
 
@@ -798,7 +798,7 @@
         Game.say('🐞 ambush failed to spring: ' + e.message);
       }
       Game.say('🐞 SCENARIO: the walk turned. Three people, placed around you — not wandering. Placed.');
-      Game.say('RUN, TALK, or FIGHT — each exchange costs. Running is the intended move. They\'re scared, not killers.');
+      Game.say('Three people you walked out with, now arranged around you like the start of something. Their hands are shaking. Whatever happens next, you will not be the same to this village.');
     },
 
     // 13. Exile — you walk. The moot voted (or you fled before it could).
@@ -810,14 +810,29 @@
       try {
         Game.recordCrime('attack', { victim: rosterIds()[0] });
       } catch (e) {}
-      try { Game.exilePlayer('debug'); } catch (e) {
-        Game.say('🐞 exile failed: ' + e.message);
+      // The 'debug' arg leaks "(debug)" into the persistent journal write
+      // (betrayal.js exilePlayer → journalNote('village','exile')). Strip the
+      // marker from everything said during the call AND scrub the persisted
+      // note — the journal is player-facing and fiction-only. (Steve 2026-10-06)
+      const _say = Game.say;
+      try {
+        Game.say = function (t) { return _say.call(this, String(t).replace(/\s*\(debug\)/i, '')); };
+        Game.exilePlayer('debug');
+      } catch (e) {
+        _say.call(Game, '🐞 exile failed: ' + e.message);
+      } finally {
+        Game.say = _say;
       }
+      try {
+        const notes = (Game.state.codex && Game.state.codex.notes) || [];
+        const n = notes.find(x => x && x.cat === 'village' && x.key === 'exile');
+        if (n) n.text = String(n.text).replace(/\s*\(debug\)/i, '');
+      } catch (e) {}
       // THE WALK: exile starts at the village edge — out of the hall, on
       // the grounds, Haven's fire behind you. Not the hall's center.
       try { Game.exitBuilding(); } catch (e) {}
       Game.say('🐞 SCENARIO: exiled. You leave with what you carry — nothing more.');
-      Game.say('Tap a 🏘️ tile on the minimap to approach & petition (they judge you — the gossip got there first). Your self bar has 🏕️ found-haven and 🚶 drift.');
+      Game.say('Haven\'s fire is behind you now, and it is not yours anymore. Out there: other fires, other judgments, other people who have already heard the gossip. Walk.');
     },
 
     // 14. Keepsake gamble — the gear-pick choice, restaged. A sentimental
@@ -966,7 +981,7 @@
       placeVillagers([[2,2],[6,6],[3,5]]);
       Game.addNotability('player', 'wave2Kill');
       Game.say('🐞 SCENARIO: contest eligibility. Day 15, you slew a wave-2 beast.');
-      Game.say('Check the leaderboard — you should be eligible with notability.');
+      Game.say('Somewhere overhead, something enormous has been watching. It has opinions about who is interesting. You have been noticed.');
       try {
         const { eligible } = Game.contestEligible();
         Game.say(`🐞 Eligible: ${eligible.length} (${eligible.map(e => e.name).join(', ')})`);
