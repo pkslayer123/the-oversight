@@ -107,9 +107,9 @@ const P = () => Game.tbFighter('p');
     b.declared ? b.declared.cells : 'never declared');
   ok('bulldozer off-axis charge hits (player hp dropped)', !!(b.resolved && b.resolved.php < 100),
     b.resolved ? `php=${b.resolved.php}` : 'never resolved');
-  // STAG live resolve: previously crashed on a sibling's uncommitted TDZ bug
-  // ("THE WHEEL" read anyoneHit before its let declaration). Fixed and
-  // committed since (2026-10-06); the live path below now runs clean.
+  // STAG live resolve currently crashes on a SIBLING's uncommitted TDZ bug
+  // ("THE WHEEL" reads anyoneHit before its let declaration). Not mine to fix;
+  // verify the declare/lane math, which is what the sign-snap fix covers.
   let st = null, stErr = null;
   try { st = await playCharge('mirror_stag', 8, 6, 4, 4); }
   catch (e) { stErr = e.message; }
