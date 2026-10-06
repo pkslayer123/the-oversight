@@ -1653,8 +1653,8 @@
     "name": "ducks in a row",
     "emoji": "🦆",
     "hp": [
-      15,
-      20
+      8,
+      12
     ],
     "speed": 7,
     "wave": 1,
@@ -1748,7 +1748,7 @@
       "noticeAudio": "ducksQuack",
       "aggroAudio": "ducksQuackCut",
       "knownCue": "They're organized. Break the formation — isolate one.",
-      "knownTactics": "Tail forward, never the middle — unless you can kill the tail half before it rejoins. The regroup beat is your window: it can't nip while reforming.",
+      "knownTactics": "Break the line and both halves hunt on their own — every fragment is its own snake. Thin them fast or get surrounded. The regroup beat is your window: it can't nip while reforming.",
       "threatLines": {
         "notice": "Quacking, closer than it should be. Six heads, one line. It's noticed {who}.",
         "pain": "The line wobbles — a gap where a duck was. The rest close ranks without breaking step.",

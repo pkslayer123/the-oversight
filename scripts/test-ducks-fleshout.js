@@ -102,45 +102,42 @@ function headOf(sid) { return segs().find(x => x.snakeId === sid && x.isHead); }
   ok('snakeSplit audio fired', firedCount('snakeSplit') >= 1);
   const newSid = [...ids].find(id => id !== sid0);
   const tailHead = headOf(newSid);
-  ok('tail half marked regrouping', tailHead && tailHead.duckRegroup === true);
-  ok('tail half knows home', tailHead && tailHead.duckHomeId === sid0);
-  ok('tail half phase line_up', tailHead.beamPhase === 'line_up', `phase=${tailHead.beamPhase}`);
+  ok('tail half is independent (NOT regrouping)', tailHead && tailHead.duckRegroup !== true);
+  ok('tail half has no home (no rejoin target)', tailHead && !tailHead.duckHomeId);
+  ok('tail half has its own head', tailHead && tailHead.isHead === true);
 
-  console.log('\n=== 5. TAIL MARCHES HOME ===');
-  const distToHome = () => {
-    const th = headOf(newSid); if (!th) return null;
-    const home = segs().filter(x => x.snakeId === sid0);
-    if (!home.length) return null;
-    return Math.min(...home.map(h => Math.max(Math.abs(h.mx - th.mx), Math.abs(h.my - th.my))));
+  console.log('\n=== 5. BOTH HALVES HUNT INDEPENDENTLY (Steve 2026-10-06) ===');
+  // Both fragments should close on the PLAYER, not on each other.
+  const distToPlayer = (sid) => {
+    const h = headOf(sid); if (!h || !Game.tbfight) return null;
+    const p = Game.tbFighter('p'); if (!p) return null;
+    return Math.max(Math.abs(p.mx - h.mx), Math.abs(p.my - h.my));
   };
-  // move the tail head far from home so we can watch it march back
-  // (it may already be adjacent — the rejoin path is tested in section 6)
-  const th0 = headOf(newSid);
-  if (th0) { th0.mx = 1; th0.my = 1; }
-  const dBefore = distToHome();
+  const hh0 = headOf(sid0), tt0 = headOf(newSid);
+  if (hh0) { hh0.mx = 1; hh0.my = 1; }
+  if (tt0) { tt0.mx = 7; tt0.my = 7; }
+  const pBeforeH = distToPlayer(sid0), pBeforeT = distToPlayer(newSid);
   for (let r = 0; r < 3 && Game.tbfight && !Game.tbfight.over; r++) endTurn();
-  const dAfter = distToHome();
-  const rejoinedEarly = new Set(segs().map(x => x.snakeId)).size === 1;
-  ok('tail half closes distance to home (regrouping, not hunting)',
-    rejoinedEarly || (dAfter !== null && dBefore !== null && dAfter < dBefore),
-    `before=${dBefore} after=${dAfter} rejoinedEarly=${rejoinedEarly}`);
-  // the head half should still be hunting the player (its distance to player shrinks or it nips)
-  ok('head half still aggressive (nip or march audio)',
-    firedCount('duckNip') >= 1 || firedCount('duckMarch') >= 3);
+  const pAfterH = distToPlayer(sid0), pAfterT = distToPlayer(newSid);
+  ok('head half hunts player (closes distance)',
+    pAfterH !== null && pBeforeH !== null && pAfterH <= pBeforeH,
+    `before=${pBeforeH} after=${pAfterH}`);
+  ok('tail half hunts player independently (closes distance, NOT marching home)',
+    pAfterT !== null && pBeforeT !== null && pAfterT <= pBeforeT,
+    `before=${pBeforeT} after=${pAfterT}`);
+  ok('still 2 snakes (no rejoin)', new Set(segs().map(x => x.snakeId)).size === 2);
 
-  console.log('\n=== 6. REJOIN ===');
-  // teleport tail head adjacent to a home segment, run a round
-  const th2 = headOf(newSid);
-  const homeSeg = segs().find(x => x.snakeId === sid0);
-  if (th2 && homeSeg) {
-    th2.mx = Math.max(1, Math.min(7, homeSeg.mx + 1)); th2.my = homeSeg.my;
-    // force march phase so the rejoin check runs this round
-    for (const x of segs().filter(x => x.snakeId === newSid)) Game.encSetPhase(x, 'march');
-    for (let r = 0; r < 2 && Game.tbfight && !Game.tbfight.over; r++) endTurn();
+  console.log('\n=== 6. RECURSIVE SPLIT: break a fragment again ===');
+  // Kill a middle duck of the tail fragment — should yield 3 snakes total.
+  const fragSegs = segs().filter(x => x.snakeId === newSid).sort((a, b) => a.segmentIndex - b.segmentIndex);
+  if (fragSegs.length >= 3) {
+    const fragMid = fragSegs[Math.floor(fragSegs.length / 2)];
+    Game.tbDamage(fragMid.key, 999, 'test', 'p', { quiet: true });
   }
   const idsAfter = new Set(segs().map(x => x.snakeId));
-  ok('rejoin merges back to 1 snake', idsAfter.size === 1, `got ${idsAfter.size}`);
-  ok('ducksRejoin audio fired', firedCount('ducksRejoin') >= 1);
+  ok('recursive split: 3 snakes from 2 fragments', idsAfter.size === 3, `got ${idsAfter.size}`);
+  ok('every fragment has exactly one head',
+    [...idsAfter].every(sid => segs().filter(x => x.snakeId === sid && x.isHead).length === 1));
 
   console.log('\n=== 7. ENRAGED HEAD (<=2 segments) ===');
   // fresh fight, kill down to 2

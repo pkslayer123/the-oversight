@@ -15950,7 +15950,10 @@
     const before = survivors.filter(s => s.segmentIndex < deadIdx);
     const after = survivors.filter(s => s.segmentIndex > deadIdx);
     if (before.length && after.length) {
-      // SPLIT! The after-side becomes a new snake.
+      // SPLIT! The after-side becomes a new, fully independent snake.
+      // (Steve 2026-10-06): both halves hunt on their own — no regrouping,
+      // no rejoining. Kill in multiple places and you get as many snakes
+      // as there are pieces.
       const newSnakeId = 'snake_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
       // The first survivor after the break becomes the new head
       after.sort((a, b) => a.segmentIndex - b.segmentIndex);
@@ -15963,15 +15966,7 @@
       s.name = s.name.replace(/\(head\)|\(\d+\)/, i === 0 ? '(head)' : `(${i + 1})`);
       });
       // The before-side keeps the old snakeId, reindex not needed (still 0..n)
-      // DUCKS FLESH-OUT (Steve 2026-10-06): the tail half is REGROUPING — it
-      // doesn't want to fight, it wants to REJOIN. It marches back toward the
-      // head half; if it reaches it, the line goes whole again. Breaking the
-      // line is a tactical decision: two problems now, but kill the tail half
-      // before it rejoins or you're back to six.
-      after[0].duckRegroup = true;
-      after[0].duckHomeId = snakeId;
-      for (const s of after) this.encSetPhase(s, 'line_up');
-      this.say(`🦆 The line breaks! The tail thrashes free — now there are TWO snakes.`);
+      this.say(`🦆 The line breaks! Now there are TWO snakes — and both are coming for you.`);
       this.audioEvent('snakeSplit');
     } else if (!before.length && after.length) {
       // HEAD KILL (Steve 2026-10-06): the head died but the body lives — the
@@ -15983,37 +15978,6 @@
     }
     // If only one side survives, no split — just a shorter snake.
     // (The head-side keeps going; the tail-side is gone.)
-    },
-
-    // SNAKE REJOIN (Steve 2026-10-06): the regrouping tail half reached the
-    // head half — the line goes whole again. Tail segments append behind the
-    // head half's tail; the regroup head stands down. Quacking resumes.
-    tbSnakeRejoin(regroupHead) {
-    const f = this.tbfight;
-    if (!f || !regroupHead || !regroupHead.alive) return false;
-    const homeId = regroupHead.duckHomeId;
-    const homeSegs = f.fighters
-      .filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.snake && x.snakeId === homeId)
-      .sort((a, b) => a.segmentIndex - b.segmentIndex);
-    if (!homeSegs.length) { regroupHead.duckRegroup = false; return false; } // home's gone — fight on
-    const tailSegs = f.fighters
-      .filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.snake && x.snakeId === regroupHead.snakeId)
-      .sort((a, b) => a.segmentIndex - b.segmentIndex);
-    const base = homeSegs.length;
-    tailSegs.forEach((s, i) => {
-      s.snakeId = homeId;
-      s.segmentIndex = base + i;
-      s.isHead = false;
-      s.duckRegroup = false;
-      s.duckHomeId = null;
-      try { s.name = s.name.replace(/\(head\)|\(\d+\)/, `(${base + i + 1})`); } catch (e) {}
-    });
-    // The rejoined line reforms — back to the top of the cycle.
-    const allSegs = homeSegs.concat(tailSegs);
-    for (const s of allSegs) this.encSetPhase(s, 'line_up');
-    this.say('🦆 The tail thrashes back into line — beak to tail, the formation snaps straight. The quacking resumes, lockstep. The line is WHOLE again.');
-    this.audioEvent('ducksRejoin');
-    return true;
     },
 
     // SNAKE CONTACT DAMAGE (Steve 2026-10-05): walking on a segment hurts.
@@ -18781,28 +18745,8 @@
         }
         if (dph === 'march') {
           const dst = (df.duckState && df.duckState[m.snakeId]) || { marchTurns: 0 };
-          // REGROUPING TAIL (Steve 2026-10-06): the broken tail half doesn't
-          // hunt — it marches HOME. Reach the head half and the line goes
-          // whole again (tbSnakeRejoin). Kill it before it gets there.
-          if (dhead.duckRegroup) {
-            const dHome = df.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled &&
-              x.mdef && x.mdef.snake && x.snakeId === dhead.duckHomeId);
-            if (!dHome.length) { dhead.duckRegroup = false; } // home's gone — fight on
-            else {
-              let hhx = dHome[0].mx, hhy = dHome[0].my, hhd = 99;
-              for (const hs of dHome) {
-                const dd = Math.max(Math.abs(hs.mx - dhead.mx), Math.abs(hs.my - dhead.my));
-                if (dd < hhd) { hhd = dd; hhx = hs.mx; hhy = hs.my; }
-              }
-              this.tbSnakeMove(dhead, { mx: hhx, my: hhy, alive: true });
-              this.tbSnakeContactDamage();
-              const dReached = dHome.some(hs => Math.max(Math.abs(hs.mx - dhead.mx), Math.abs(hs.my - dhead.my)) <= 1);
-              if (dReached) this.tbSnakeRejoin(dhead);
-              else this.say('The broken tail hurries back toward the line — quacking, urgent. It wants to rejoin. Don\'t let it.');
-              this.audioEvent('duckMarch', {});
-              this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-            }
-          }
+          // (Steve 2026-10-06): split halves are fully independent — each
+          // hunts the player on its own. No regrouping, no rejoining.
           this.tbSnakeMove(dhead, dtgt);
           this.tbSnakeContactDamage();
           dst.marchTurns += 1;
