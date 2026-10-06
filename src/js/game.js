@@ -8348,7 +8348,15 @@
           // BEFORE the carcass and the kill line, so the name is earned, not leaked.
           try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(animal.id); } catch (e) {}
           s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted'));
-          this.say(`Got it! ${animal.name}. About ${kcal} kcal of meat on the bone — gut it quickly (knife). It spoils fast.`);
+          // Knowledge-gated: don't leak the species name on first catch (Steve 2026-10-06)
+          const dispName = (this.encDescribeAnimal ? this.encDescribeAnimal(animal) : animal.name);
+          // If not known, don't give kcal details either - you don't know what it is
+          const known = this.encAnimalKnown ? this.encAnimalKnown(animal.id) : true;
+          if (known) {
+            this.say(`Got it! ${animal.name}. About ${kcal} kcal of meat on the bone — gut it quickly (knife). It spoils fast.`);
+          } else {
+            this.say(`Got it! ${dispName}. You don't know what it is yet — better figure it out before eating.`);
+          }
         }
         // knowledge: encounters
         this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
