@@ -8605,6 +8605,22 @@
         || (this.data.background_survivors || []).find(x => x.id === rid);
       return (vp && vp.personality && vp.personality.temperament) || 'steady';
     },
+    // npcAge / npcAgeBand: how old this person is. Age is identity — it
+    // persists on the villager record (genCharacter draws it from the
+    // occupation band; background survivors carry it in data). Bands match
+    // the player-side voice bands (conversation.js playerVoice): coarse life
+    // stages, not birthdays. (Steve 2026-10-06: villager age voice.)
+    npcAge(rid) {
+      const vp = (this.data.villagers || []).find(x => x.id === rid)
+        || (this.data.background_survivors || []).find(x => x.id === rid)
+        || ((this.state.village || {}).rosterChars || {})[rid];
+      const a = vp && (vp.age || (vp.personality || {}).age);
+      return typeof a === 'number' && a > 0 ? a : 30;
+    },
+    npcAgeBand(rid) {
+      const a = this.npcAge(rid);
+      return a <= 24 ? 'young' : a >= 55 ? 'elder' : 'adult';
+    },
     // npcIntel: how this person is smart. Primary from occupation (what the job
     // demanded), secondary from temperament+curiosity (who they are). Six kinds,
     // not IQ — an observant forager and an analytical programmer are both sharp,
@@ -11461,6 +11477,46 @@
       return this.relicItems().some(r => (r.enhancements || []).includes(id));
     },
 
+    // checkKeepsakeReveal: a keepsake never tells you what it does until the
+    // bond is real AND the System can translate it (Steve 2026-10-06).
+    // Concrete gates — BOTH must hold:
+    //   bond ≥ 10 (the first bond threshold: the System's first "elevated
+    //     attachment" notice — the same beat that unlocks enhancement offers)
+    //   integration stage ≥ 1 (Overlay: the System has arrived; before Day 7
+    //     there is no translator, so the meaning stays closed)
+    // The reveal is a moment: the System reads the item aloud. Afterwards the
+    // pack shows the effect (earned knowledge persists). Idempotent and safe
+    // to call daily — also backfills saves that predate the gate.
+    checkKeepsakeReveal(r) {
+      try {
+        if (!r || r.effectRevealed) return false;
+        if ((r.bond || 0) < 10) return false;
+        if (!this.state.systemArrived) return false;
+        const def = (this.data.items || []).find(i => i.id === (r.itemId || r.id)) || {};
+        if (def.class !== 'sentimental') return false;
+        r.effectRevealed = true;
+        if (def.baseEffect) {
+          const eff = String(def.baseEffect).replace(/^use:\s*/i, '');
+          this.say(`◈ "UNIT ${String(r.name || def.name || 'ITEM').toUpperCase()} — [TRANSLATION COMPLETE] — we have been watching you carry this. Attachment waveform: significant. Function decoded: ${eff}. You knew it mattered before we did. Cute."`);
+        }
+        return true;
+      } catch (e) { return false; }
+    },
+
+    // keepsakeEffectText: the display predicate for earned keepsake knowledge.
+    // Returns the effect text only after the bond + integration gates have
+    // opened (checkKeepsakeReveal). Null otherwise — "if you don't know, it
+    // doesn't show." Used by the pack view; the selection screen never calls
+    // it (selection shows flavor only, Steve 2026-10-06).
+    keepsakeEffectText(item) {
+      try {
+        if (!item || !item.effectRevealed) return null;
+        if (!(this.isKeepsake && this.isKeepsake(item))) return null;
+        const def = (this.data.items || []).find(i => i.id === (item.itemId || item.id)) || {};
+        return def.baseEffect || null;
+      } catch (e) { return null; }
+    },
+
     // accrueRelicBond: daily. Called during day resolution.
     accrueRelicBond() {
       const s = this.state.scholar;
@@ -11474,6 +11530,9 @@
         else if (used[id]) gain = 1; // meaningful use (1/day cap is inherent)
         if (!gain) continue;
         r.bond = (r.bond || 0) + gain;
+        // KEEPSAKE REVEAL (Steve 2026-10-06): checked daily for every relic —
+        // the gates are bond ≥ 10 and System arrival (integration stage 1+).
+        if (cls === 'sentimental') this.checkKeepsakeReveal(r);
         // Thresholds: 10 / 25 / 50. One offer at a time (UI simplicity).
         for (const t of [10, 25, 50]) {
           // No System offers before arrival — bond accrues silently, offers wait.
