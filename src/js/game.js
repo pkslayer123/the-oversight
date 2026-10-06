@@ -17336,11 +17336,20 @@
             // declare. Grid-clamped via patternCells — a hand-rolled lane once
             // ran off the grid and teleported the stag out of the world.
             // aimKey: the LOS-fizzle must check the RIGHT target's visibility.
+            // KNOWLEDGE-GATED CUE (Steve 2026-10-06): mirrors the glasswing
+            // declare — fresh players get dread, learned players get the
+            // coached variant. The imperative coaching ("MOVE SIDWAYS") and
+            // the pattern giveaway ("in a straight line") were leaking to
+            // first-timers through this unconditional cueText.
+            const known = this.encTelegraphKnown(m);
+            const stagCue = known
+              ? 'It lowers its head. The mirror catches the light. It\'s going to charge — in a straight line. MOVE SIDWAYS.'
+              : 'It lowers its head. The mirror catches the light — blinding. Something terrible is coming.';
             const cells = S.combat.patternCells(pat, m.mx, m.my, t.mx, t.my);
             m.telegraph = { kind: 'line', cells, dmg: (m.mdef.attack || {}).damage,
               attackName: atkName, pattern: pat, turnsLeft: 2, aimKey: t.key,
-              cueText: 'It lowers its head. The mirror catches the light. It\'s going to charge — in a straight line. MOVE SIDWAYS.' };
-            this.say('It lowers its head. The mirror face catches the light, blinding. It\'s going to charge.');
+              cueText: stagCue };
+            this.say(known ? stagCue : 'The mirror face swings toward you, blinding. Something is coming.');
             this.audioEvent('stagSnort');
           }
         }
@@ -17417,7 +17426,11 @@
             attackName: this.encAttackName(m, 'Scored Assessment'),
             pattern: pat, turnsLeft: 3,
             threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
-            cueText: '"DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGET. COMMENCING CORRECTIVE ACTION IN THREE. TWO." The line is drawn. Move OFF it.' };
+            // DEAD FALLBACK, GATED-DREAD (Steve 2026-10-06): tbBatch4Cue intercepts
+            // review_drone before this cueText is ever read, so it can't
+            // surface — but the imperative "Move OFF it" coaching was a live
+            // leak waiting for a refactor to resurrect. Dread-only now.
+            cueText: '"DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGET. COMMENCING CORRECTIVE ACTION IN THREE. TWO." The line is drawn.' };
           this.say('"SUBJECT LOCKED. COMMENCING CORRECTIVE ACTION IN THREE..." The projector draws a burning line across the dirt.');
           this.audioEvent('droneCount', { count: 3 });
           // (Windup ticks in the generic pending section — the countdown is
@@ -17465,7 +17478,11 @@
             dmg: [Math.round(swDmg[0] * swK), Math.round(swDmg[1] * swK)],
             attackName: this.encAttackName(m, 'Flash Mob'),
             pattern: pat, turnsLeft: 2,
-            cueText: '"ENGAGEMENT DROPPING! ESCALATING!" The shutters quicken — clickclickCLICK. Flash building. Radius 2. COVER YOUR EYES or MOVE.' };
+            // DEAD FALLBACK, GATED-DREAD (Steve 2026-10-06): tbBatch4Cue intercepts
+            // camera_swarm before this cueText is ever read, so it can't
+            // surface — but the "COVER YOUR EYES or MOVE" coaching was a live
+            // leak waiting for a refactor to resurrect. Dread-only now.
+            cueText: '"ENGAGEMENT DROPPING! ESCALATING!" The shutters quicken — clickclickCLICK.' };
           this.say('"SMILE! You\'re going VIRAL!" The cameras swarm closer, flashes building.');
           this.audioEvent('swarmBuild');
           swPhase = 'build'; // the phase changed — creep, don't dash, on the declare turn

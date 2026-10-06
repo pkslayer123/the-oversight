@@ -28,7 +28,7 @@ function hookOutput() {
   Game.clearTelegraph = () => {};
 }
 
-function setup(monId) {
+function preCombat(monId) {
   try { if (Game.tbfight) Game.tbEnd('fled'); } catch (e) {}
   Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
@@ -42,6 +42,9 @@ function setup(monId) {
   // bright_idea is nocturnal: daylight disperses it before it can declare.
   Game.dayPart = monId === 'bright_idea' ? 3 : 1;
   Game.canSee = () => true;
+}
+function setup(monId) {
+  preCombat(monId);
   Game.startCombat(monId);
   const m = Game.tbfight.fighters.find(x => x.kind === 'monster');
   if (m) m.hp = m.maxHp = 4000; // survive long enough to watch declares
@@ -95,10 +98,16 @@ function freshCue(id) {
   return { cue, said: said.slice(), danger: dangerCues.slice() };
 }
 function learnedCue(id, atk) {
-  setup(id);
-  // Simulate surviving the attack once: pattern learned, stage observed.
+  // Seed the codex BEFORE startCombat: the stag declares on spawn (dist 0),
+  // so a post-startCombat seed would miss the declare-time known check —
+  // exactly like real play, where the codex entry predates the fight.
+  preCombat(id);
   Game.state.codex.monsters = Game.state.codex.monsters || {};
   Game.state.codex.monsters[id] = { stage: 'observed', patterns: { [atk]: 'learned' }, attacksSeen: [atk] };
+  Game.startCombat(id);
+  const m = Game.tbfight.fighters.find(x => x.kind === 'monster');
+  if (m) m.hp = m.maxHp = 4000;
+  hookOutput();
   const cue = driveToDeclare(14);
   return { cue, said: said.slice(), danger: dangerCues.slice() };
 }
@@ -139,6 +148,11 @@ function check(cond, label) {
       // earned coaching SHOULD appear once learned
       const hasEarned = /You know this one|MOVE SIDWAYS|Move OFF|COVER YOUR EYES|BACK OFF|can't turn|cannot re-aim|Step off it|Keep moving|get it near fire|break line of sight|sidestep|RUN/i.test(lr.cue);
       console.log('  learned cue shows earned coaching:', hasEarned);
+      // mirror_stag: the knowledge-gated split — coached cue + knownCue only when learned
+      if (id === 'mirror_stag') {
+        check(lr.cue.includes('MOVE SIDWAYS'), 'mirror_stag learned: coached cue ("MOVE SIDWAYS") appears');
+        check(/You know this one/.test(lr.cue), 'mirror_stag learned: "You know this one" coaching appended');
+      }
     }
   }
 
