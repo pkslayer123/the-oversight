@@ -366,6 +366,15 @@
     // Discourse markers, not questions: a bare "Honestly?" / "Really?" /
     // "Right?" is a tag, not something the player must answer.
     if (/^(honestly|really|right|yeah|huh|eh)\?$/i.test(q)) return null;
+    // TAG QUESTIONS: ", yeah?" / ", right?" / ", huh?" trail a statement —
+    // rhetorical agreement-seeking, not a question to answer. ("Keep it
+    // between us, yeah? Forget it." — socialite playtest 2026-10-06)
+    if (/,\s*(yeah|right|huh|eh|ok|okay)\?$/i.test(q)) return null;
+    // RHETORICAL SELF-ANSWERED OPENERS: "You know what I miss? Minneapolis
+    // rain." — the speaker answers themselves in the same line. Only when
+    // the framing is rhetorical AND the line keeps talking after the "?".
+    const rest = t.slice(m[0].length).replace(/[\s"'“”‘’.,;:—–-]+/g, '');
+    if (/^(you know what|guess what|know what|wanna know|want to know)\b/i.test(q) && rest.length > 6) return null;
     if (/isn'?t that (weird|strange|something)|rhetorical/i.test(q)) return null;
     // Rhetorical markers can trail the question ("...? Don't answer that.")
     if (/don'?t answer|never mind/i.test(t)) return null;
@@ -374,8 +383,8 @@
     // Colloquial yes/no: "you ever...?", "have you ever...?"
     if (/^(do you ever|you ever|have you ever|did you ever)\b/i.test(q)) return { kind: 'yn', q };
     // Imperative-as-question: invitations and requests ("Grab an end?",
-    // "Walk with me?", "Smile for me?"). Yes/No fits.
-    if (/^(grab|take|walk|sits?|come|join|help|look|listen|smile|race|stay|wait|tell me)\b/i.test(q)) return { kind: 'yn', q };
+    // "Walk with me?", "Smile for me?", "Say that again?"). Yes/No fits.
+    if (/^(grab|take|walk|sits?|come|join|help|look|listen|smile|race|stay|wait|tell me|say|repeat)\b/i.test(q)) return { kind: 'yn', q };
     if (/^(do|did|is|are|can|could|would|should|will|have|has|was|were|does|am|don't|can't|won't|isn't|aren't|want to|wanna|shall we)\b/i.test(q)) return { kind: 'yn', q };
     return { kind: 'open', q };
   }
@@ -2450,7 +2459,7 @@
           const scamHint = ware.scam && this.tradeSavvy() >= 4
             ? (ware.scam.kind === 'overprice' ? ' (steep, for what it is)' : ' (something about this feels off)')
             : '';
-          done(`"${ware.blurb}" ${this.displayName(vid)} shows you the ${ware.name} — ${ware.price} kcal of finished food${ware.kg ? ` (${ware.kg} kg — you can feel the heft)` : ''}${scamHint}.`, '"Got anything to trade?"');
+          done(`"${ware.blurb}" ${this.displayName(vid)} shows you the ${ware.name} — ${ware.price} kcal of finished food${scamHint}.`, '"Got anything to trade?"');
         }
       } else if (choiceId === 'hawker_yes') {
         c.pendingHawk = null;
