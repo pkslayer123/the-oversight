@@ -9249,7 +9249,10 @@
       }
       // METABOLIC CRISIS (survivalist loop 2026-10-05): honest button — a body
       // running on empty won't recover tonight. Drink and eat first.
-      if ((s.hydration || 0) <= 0 || (s.kcal || 0) <= 0) {
+      // (Uses this.state.scholar explicitly: sleepPreview has no `s` binding —
+      // a bare `s` here is a ReferenceError in the live app.)
+      const sch = this.state.scholar || {};
+      if ((sch.hydration || 0) <= 0 || (sch.kcal || 0) <= 0) {
         warn = (warn ? warn + ' ' : '') + 'Running on empty — no water or no food means half healing and a wrung-out morning. Drink and eat before you sleep.';
       }
       return {
