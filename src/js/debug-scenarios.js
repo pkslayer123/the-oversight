@@ -346,7 +346,8 @@
         };
       });
       Game.say('🐞 SCENARIO: liar\'s den. Five villagers are lying about who they are.');
-      Game.say('Ask about them, gossip, watch them. Bad liars slip. Catch the contradictions.');
+      Game.say('Talk to them — ask about their past (occupation, where they\'re from). Then ask again later, or ask someone else about them. Bad liars slip: the story changes.');
+      Game.say('When you catch a contradiction, confront them. Watch what happens.');
     },
 
     // 7. Night hunt — midnight, nocturnal predator, spear in hand.

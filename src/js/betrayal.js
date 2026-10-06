@@ -506,8 +506,17 @@
       const waver = (plot.accomplices || []).length
         ? plot.accomplices[Math.floor(R() * plot.accomplices.length)]
         : plot.leader;
-      this.say(`You talk — hands visible, voice level. ${this.whoTag(waver)} looks away. Looks at the ground. The plan is leaking.`);
-      try { this.addDoubt(waver, 'observation', `${this.whoTag(waver)} wavered when you talked instead of running. They don't want this.`); } catch (e) {}
+      const wtag = this.whoTag(waver);
+      // ESCALATION (Steve 2026-10-05): each talk is different. The plan frays.
+      const n = plot.stalled;
+      if (n === 1) {
+        this.say(`You talk — hands visible, voice level. ${wtag} looks away. Looks at the ground. The plan is leaking.`);
+      } else if (n === 2) {
+        this.say(`You keep talking. ${wtag} is crying now, quietly. "I didn't — we weren't going to —" The leader snaps: "Shut it." But the crack is there.`);
+      } else {
+        this.say(`You talk through the shaking. ${wtag} has stopped pretending. "I'm sorry," they whisper. Not to you — to the leader. The whole thing is coming apart.`);
+      }
+      try { this.addDoubt(waver, 'observation', `${wtag} wavered when you talked instead of running. They don't want this.`); } catch (e) {}
       return { continue: true, line: `A long second. Nobody moves. You've bought a little distance — use it.` };
     }
     // fight
