@@ -1280,7 +1280,7 @@
       this.state.village.assignments = {}; // rid -> {task, assignedDay, assignedPart}
       this.state.village.sharedKnowledge = {}; // plantId -> {discoveredBy, day}
       this.state.village.grief = 0;  // days of village-wide grief (death)
-      this.state.village.cheer = 0;  // days of village-wide cheer (victory, donation)
+      this.state.village.cheer = 0;  // days of village-wide cheer (victory)
       for (const rid of this.state.village.roster) {
         if (rid === this.villagerId) continue;
         this.state.village.needs[rid] = {
@@ -8208,10 +8208,9 @@
         } else {
           this.say('They look at you differently now. The fire feels smaller, and you are the reason.');
         }
-      } else if (type === 'donation') {
-        v.cheer = Math.max(v.cheer || 0, 2);
-        for (const rid of (v.roster || [])) { if (rid !== this.villagerId) this.npcNeeds(rid).hunger = Math.max(0, this.npcNeeds(rid).hunger - 25); }
-        this.say('Full bellies change the weather inside people. The haven feels warmer.');
+      // (REMOVED 2026-10-05 miser loop: a 'donation' branch lived here but was
+      // never called by anything — donations feed the village through the
+      // real pantry now, with behavioral hunger synced in villageEats.)
       } else if (type === 'victory') {
         if (!atHaven) return;
         v.cheer = Math.max(v.cheer || 0, 1);
@@ -12457,6 +12456,20 @@
             v.health[rid] = Math.min(100, v.health[rid] + 2);
           }
         }
+      }
+      // BEHAVIORAL HUNGER mirrors the communal pot (miser loop 2026-10-05).
+      // The wants-layer hunger (npcNeeds.hunger) only ever rose (+11/part in
+      // tickNeeds) and was never touched by the communal meal — so every
+      // villager pinned at 100 hunger within two days no matter how full the
+      // pantry was, and begging never reflected real scarcity. A fed village
+      // is content; a starving one gets hungry eyes on your pack. This is
+      // the only daily reset — donations feed people through the real pantry
+      // now (see villageEats), and giveFood stays the personal-generosity verb.
+      for (const rid of (v.roster || [])) {
+        if (rid === this.villagerId) continue;
+        const n = this.npcNeeds(rid);
+        if (starving || v.pantry.length === 0) n.hunger = Math.min(100, (n.hunger || 0) + 15);
+        else n.hunger = Math.min(n.hunger || 0, 15);
       }
       if (v.pantryKcal <= 0) {
         v.hungryDays = (v.hungryDays || 0) + 1;
