@@ -765,7 +765,7 @@
 
   // Enraged hostiles hit harder — applied at damage time via wrapper on tbDamage.
   const origTbDamage = G.tbDamage;
-  G.tbDamage = function (targetKey, dmg, sourceLabel, sourceKey) {
+  G.tbDamage = function (targetKey, dmg, sourceLabel, sourceKey, opts) {
     const f = this.tbfight;
     if (f && sourceKey) {
       const src = this.tbFighter(sourceKey);
@@ -779,7 +779,7 @@
       const src = f.fighters.find(x => x.kind === 'hostile' && x.alive && x.name === sourceLabel && x.enraged);
       if (src) dmg = Math.round(dmg * 1.5);
     }
-    return origTbDamage.call(this, targetKey, dmg, sourceLabel, sourceKey);
+    return origTbDamage.call(this, targetKey, dmg, sourceLabel, sourceKey, opts);
   };
 
   // 'betrayal_bribed' isn't a thing anymore (bribe sets fled -> routed), but guard

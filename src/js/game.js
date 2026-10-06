@@ -16806,15 +16806,23 @@
         ['droneIs', 'droneRecalc', 'recalc',
           'The drone hovers, re-running the numbers. "RECALIBRATING METRICS."', 'droneRecalc'],
         ['hornIs', 'hypeCooldown', 'deflate',
-          'It sags, spent — the encouragement took everything out of it.', 'hypeDeflate'],
+          // Two sags, two stories: crowd-deflate = stage fright (it never
+          // encouraged anyone); post-detonation = spent. The comment at the
+          // crowd-deflate call site says "loses its nerve" — this is that.
+          (m) => m.hypeDeflateCrowd
+            ? 'It sags, shrinking from all those eyes. One-on-one or nothing — the crowd broke its nerve.'
+            : 'It sags, spent — the encouragement took everything out of it.', 'hypeDeflate'],
         ['beastIs', 'beastDebrief', 'debrief',
           'It dictates into nothing: "violence action item: closed. Scheduling retrospective."', 'delegateDebrief'],
       ];
       for (const [pred, field, phase, text, audio] of specs) {
         if (this[pred](m) && (m[field] || 0) > 0) {
           m[field] -= 1;
+          // The crowd-deflate flag dies with the cooldown — next hype cycle
+          // starts clean.
+          if (m[field] <= 0) delete m.hypeDeflateCrowd;
           this.encSetPhase(m, phase);
-          this.say(text);
+          this.say(typeof text === 'function' ? text(m) : text);
           if (audio) this.audioEvent(audio);
           this.tbRefreshTelegraphUI();
           this.tbEndCheck();
@@ -17031,6 +17039,10 @@
           m.telegraph = null;
           this.encSetPhase(m, 'deflate');
           m.hypeCooldown = 2;
+          // STAGE FRIGHT (Steve 2026-10-06): flag the crowd-deflate so the
+          // breather text matches — it never encouraged anyone here; the
+          // crowd broke its nerve. Distinct from the post-detonation sag.
+          m.hypeDeflateCrowd = true;
           this.saySituationOnce(m, 'deflate:crowd:' + live.slice().sort().join('+'),
             '📣 "YOU\'RE ALL WINNERS, I\'M JUST—" It deflates. It only does one-on-one.');
           this.audioEvent('hypeDeflate');
@@ -17267,7 +17279,12 @@
             else {
               const hitName = this.encAttackName(m, tg.attackName);
               this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${hitName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
-              this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s " + hitName);
+              // SUNBASKER (Steve 2026-10-06): the bite TRACKS — footwork can't
+              // dodge it. The fiction says "no dodging it" and means it; the
+              // counterplay is hitting it mid-windup to starve the charge.
+              // (Blindness can still make it whiff — that's not dodging.)
+              this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s " + hitName,
+                m.key, this.sunbaskerIs(m) ? { undodgeable: true } : undefined);
             }
           }
           // SUNBASKER: the bite spends the charge — dull brown again, already

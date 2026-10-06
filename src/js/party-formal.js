@@ -755,7 +755,7 @@
 
   // tbDamage: flank strikes land ×1.5; holders take ×0.6.
   const origTbDamage = Game.tbDamage;
-  Game.tbDamage = function (targetKey, dmg, sourceLabel, sourceKey) {
+  Game.tbDamage = function (targetKey, dmg, sourceLabel, sourceKey, opts) {
     try {
       const atk = sourceKey ? this.tbFighter(sourceKey) : null;
       if (atk && atk.flanking && atk.kind === 'villager') {
@@ -779,7 +779,7 @@
         }
       }
     } catch (e) {}
-    return origTbDamage.call(this, targetKey, dmg, sourceLabel, sourceKey);
+    return origTbDamage.call(this, targetKey, dmg, sourceLabel, sourceKey, opts);
   };
 
   // tbEnd: clear per-fight order flags; party victory beat on monster kills.

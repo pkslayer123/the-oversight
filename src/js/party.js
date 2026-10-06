@@ -1173,10 +1173,10 @@
   // tbDamage: hostile deaths never reach tbVillagerFalls (kind is 'hostile',
   // not 'villager'). Route them through so roster/party cleanup + aftermath run.
   const origTbDamage = Game.tbDamage;
-  Game.tbDamage = function (targetKey, dmg, sourceLabel, sourceKey) {
+  Game.tbDamage = function (targetKey, dmg, sourceLabel, sourceKey, opts) {
     const t = this.tbFighter(targetKey);
     const wasHostile = !!(t && t.kind === 'hostile' && t.alive);
-    const r = origTbDamage.call(this, targetKey, dmg, sourceLabel, sourceKey);
+    const r = origTbDamage.call(this, targetKey, dmg, sourceLabel, sourceKey, opts);
     try {
       if (wasHostile && t && !t.alive && !t._fallsHandled) {
         t._fallsHandled = true;
