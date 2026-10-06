@@ -12283,9 +12283,10 @@
             g = '·';
           }
         }
-        // Background color for terrain (set here since we removed SVG)
+        // Background color for terrain - applies to all tiles including player
+        // (player sprite overlays on top of terrain)
         let tileBg = '';
-        if (!isP && !isW && !otherV) {
+        if (!isW && !otherV) {
           try {
             const ttype2 = tl ? tl.type : 'unknown';
             const colors2 = {
