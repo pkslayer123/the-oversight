@@ -212,7 +212,7 @@ function drawMonsterSnap(snap) {
     const px = ox + cx * CELL, py = oy + cy * CELL;
     const k = cx + ',' + cy;
     let fill = '#2a2a3e', stroke = '#444', sw = 1, dash = null, arrow = null, arrowColor = '#ffb020', hatch = false;
-    let dozeHatch = false, pepRings = false, swarmDots = false, resRings = false, pepNote = false;
+    let dozeHatch = false, pepRings = false, swarmDots = false, resRings = false, pepNote = false, flashGlint = false;
     const has = (set) => set && set.has(k);
     const B = {};
     // beam lane (from game.js producers, like app.js)
@@ -232,7 +232,7 @@ function drawMonsterSnap(snap) {
     if (has(bucketsOf(snap, 'pepBurst'))) { fill = 'rgba(255,45,149,.25)'; stroke = '#ff2d95'; sw = 2; pepRings = true; pepNote = true; }
     if (has(bucketsOf(snap, 'swarmHum'))) { fill = 'rgba(140,140,160,.28)'; stroke = '#d8d8e4'; sw = 2; dash = '2,2'; swarmDots = true; }
     if (has(bucketsOf(snap, 'resonantBurst'))) { fill = 'rgba(57,211,83,.22)'; stroke = '#39d353'; sw = 2; resRings = true; }
-    if (has(bucketsOf(snap, 'flashBurst'))) { fill = 'rgba(232,244,255,.35)'; stroke = '#e8f4ff'; sw = 2; }
+    if (has(bucketsOf(snap, 'flashBurst'))) { fill = 'rgba(232,244,255,.35)'; stroke = '#e8f4ff'; sw = 2; flashGlint = true; }
     const w2a = (snap._mon || {})[k];
     if (w2a === 'mirror_stag') { fill = 'rgba(191,233,255,.30)'; stroke = '#bfe9ff'; sw = 2; }
     if (w2a === 'review_drone') { fill = 'rgba(77,243,255,.16)'; stroke = '#4df3ff'; sw = 2; dash = '4,3'; }
@@ -309,6 +309,10 @@ function drawMonsterSnap(snap) {
       const cxp = px + CELL / 2, cyp = py + CELL / 2;
       svg += `<circle cx="${cxp}" cy="${cyp}" r="6" fill="none" stroke="#39d353" stroke-width="1.8" opacity="0.85"/>`;
       svg += `<circle cx="${cxp}" cy="${cyp}" r="13" fill="none" stroke="#39d353" stroke-width="1.2" opacity="0.5"/>`;
+    }
+    if (flashGlint) {
+      // mirror glint: sheen slash across the cell — "catching light wrong"
+      svg += `<line x1="${px + CELL * 0.2}" y1="${py + CELL * 0.8}" x2="${px + CELL * 0.8}" y2="${py + CELL * 0.2}" stroke="rgba(255,255,255,.65)" stroke-width="${CELL * 0.12}" opacity="0.8"/>`;
     }
     if (diveMarker) {
       svg += `<text x="${px + CELL / 2}" y="${py + CELL / 2 + 6}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.9)">▼</text>`;

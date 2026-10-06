@@ -278,6 +278,9 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
    harder on/off, blue-silver tint). */
 .cell.flashBurst { position: relative; outline: 2px solid #e8f4ff; outline-offset: -2px;
   background-color: rgba(232,244,255,.35);
+  /* mirror glint: a sheen slash across each cell — "catching light wrong".
+     Static-visible, so the flash reads even between blinks. */
+  background-image: linear-gradient(135deg, transparent 42%, rgba(255,255,255,.65) 50%, transparent 58%);
   animation: flashBlink 0.55s steps(2, jump-none) infinite; }
 @keyframes flashBlink { 0%, 49% { filter: brightness(1.7); } 50%, 100% { filter: brightness(0.85); } }
 /* AMBUSH: ambush zone — dark, lurking */
