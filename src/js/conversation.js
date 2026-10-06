@@ -628,12 +628,12 @@
 
       // PROTOTYPE: Four Things (Steve 2026-10-05)
       // Want/Know/Feel/Secret per villager. Want surfaces as a hook (30%).
-      // Secret surfaces at trust 40+ (20%). These are authored, not generic.
+      // Secret surfaces at trust 40+ (20%).
+      // Villagers are randomly generated each game (12 random) — so we
+      // SYNTHESIZE from occupation/personality/backstory, not hand-author.
       const villager = (this.data.villagers || []).find(x => x.id === vid);
       let proto = villager && villager.prototype;
-      // SYNTHESIZE for generated villagers (no hand-authored prototype).
-      // Derive Want/Know/Feel from occupation, personality, backstory.
-      if (!proto && villager && (villager.id || '').startsWith('gen_')) {
+      if (!proto && villager) {
         proto = this.synthPrototype(villager);
       }
       if (proto) {

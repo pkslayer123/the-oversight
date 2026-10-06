@@ -40,17 +40,7 @@
   ],
   "kcalPerDay": 2000,
   "providesPerDay": 1500,
-  "providesWhat": "",
-  "prototype": {
-   "want": "She's running low on clean bandages. The clinic's supply won't last the week.",
-   "want_evolved": "She's out of bandages. Now she's tearing up old shirts and trying not to think about infection.",
-   "know": "ER triage \u2014 she can look at a wound and tell you if it's going to kill you, and how fast.",
-   "feel": "Controlled urgency. She's seen worse, but she's tired of seeing it.",
-   "secret": "She missed something on her last shift before the scattering. Someone died. She doesn't talk about it.",
-   "relationships": [
-    "Trusts Jesse \u2014 he brings her game, no questions asked."
-   ]
-  }
+  "providesWhat": ""
  },
  {
   "abilityWeights": {
@@ -93,17 +83,7 @@
    "Up. Good. You were in the bus depot, I think. I was in the garage.",
    "Woke up in there. Twelve of us. Strangers. Something dropped us here and forgot the food part.",
    "I can hunt. But I don't know if I trust these people yet. Do you?"
-  ],
-  "prototype": {
-   "want": "His snare line went empty three days running. He's starting to take it personally.",
-   "want_evolved": "He moved his snares east, near the creek. If that doesn't work, he's going to have to admit the game moved on.",
-   "know": "Hunting and cooking \u2014 he can track, kill, clean, and cook anything that walks.",
-   "feel": "Restless. A man who needs to be useful or he'll come apart.",
-   "secret": "He poached deer off-season before the burn. He's good at not getting caught \u2014 at a lot of things.",
-   "relationships": [
-    "Owes Mara \u2014 she stitched his hand when he was too proud to ask."
-   ]
-  }
+  ]
  },
  {
   "abilityWeights": {
@@ -146,17 +126,7 @@
    "You're awake. I was in the diner. Dreaming about rice.",
    "In there. I woke up dreaming about rice. Eleven strangers around me. I don't know if they're kind.",
    "I'm Aki. I can fish. But I won't starve for people I don't trust. Will you?"
-  ],
-  "prototype": {
-   "want": "She wants rice. Real rice. She's dreaming about it and it's making her angry.",
-   "want_evolved": "She's started experimenting with acorn flour. It's not rice, but it's something. She's almost excited.",
-   "know": "Precision with a knife \u2014 she can break down a fish or a rabbit in minutes, no waste.",
-   "feel": "Grief disguised as irritability. She misses her craft, her tools, her old life.",
-   "secret": "She was going to quit sushi and open a bakery. She never told her master.",
-   "relationships": [
-    "Fascinated by Priya's organization \u2014 wishes she could be that put-together."
-   ]
-  }
+  ]
  },
  {
   "id": "ruth_delgado",
@@ -199,17 +169,7 @@
    "Oh, you're up. I was in the school. You were... somewhere.",
    "I woke up in there. You were on the cot next to mine. Twelve strangers under one roof.",
    "I'm Ruth. I drove a bus for thirty years. I know people. And I don't know these people. Yet."
-  ],
-  "prototype": {
-   "want": "Her knees are getting worse. She's afraid she'll become a burden.",
-   "want_evolved": "She's started teaching the younger ones her bus routes \u2014 'in case.' She's planning for when she can't walk them.",
-   "know": "The whole county's roads from 30 years driving. She knows where everything is, or was.",
-   "feel": "Warm but fading. She's making peace with slowing down, and it hurts.",
-   "secret": "She has a granddaughter in Columbus. She doesn't know if she's alive. She checks the radio every night.",
-   "relationships": [
-    "Mother-hen to Theo \u2014 sees her grandson in him."
-   ]
-  }
+  ]
  },
  {
   "id": "theo_park",
@@ -252,17 +212,7 @@
    "Whoa, you're up. Okay. So. Twelve of us. Random spawn. No tutorial.",
    "Woke up in there. Twelve cots. Everyone's a stranger. No explanation. Just... here.",
    "We gotta figure out if we're a party or just twelve solo players. What's your build?"
-  ],
-  "prototype": {
-   "want": "He wants to prove he's not useless. He dropped out, he knows what people think.",
-   "want_evolved": "He fixed the water filter yesterday. He's been standing a little taller since.",
-   "know": "Scrappy engineering \u2014 he can fix anything with wire, tape, and stubbornness.",
-   "feel": "Defensive eagerness. He tries too hard because he's afraid it's not enough.",
-   "secret": "He's been stealing extra food. Not much, just a little. He's ashamed and he can't stop.",
-   "relationships": [
-    "Looks up to Jesse \u2014 wants to be that competent."
-   ]
-  }
+  ]
  },
  {
   "id": "priya_nair",
@@ -305,16 +255,6 @@
    "You're awake. I was in the library. You were in... does it matter?",
    "In there. Twelve cots. I've counted the food twice. It's not enough for twelve strangers.",
    "The question isn't what we have. It's whether we share it. I'm Priya. I don't trust easily."
-  ],
-  "prototype": {
-   "want": "She's trying to inventory everything. If she can count it, she can control it. She can't count the fear.",
-   "want_evolved": "Her inventory is done. Now she's making contingency plans. Plans for plans. It's the only way she sleeps.",
-   "know": "Systems and numbers \u2014 she can organize chaos into spreadsheets in her head.",
-   "feel": "Anxious competence. She's holding it together by holding everything else together.",
-   "secret": "She had a panic attack during the scattering. Someone saw. She's terrified they'll tell.",
-   "relationships": [
-    "Relies on Mara's calm \u2014 borrows it when her own runs out."
-   ]
-  }
+  ]
  }
 ]
