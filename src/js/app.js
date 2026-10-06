@@ -2074,6 +2074,197 @@
         o.start(dt); o.stop(dt + 0.9);
       }
     }
+    function staticCry(opts) {
+      // VOICE IN STATIC: filtered noise shaped like a cry. Freaky: it almost
+      // sounds like someone you know. Close = louder, clearer.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.1;
+      const close = opts && opts.close;
+      // Noise buffer for static
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      // Bandpass to shape it voice-like (formant-ish)
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(close ? 900 : 600, t);
+      bp.frequency.linearRampToValueAtTime(close ? 1400 : 900, t + dur * 0.4);
+      bp.frequency.linearRampToValueAtTime(500, t + dur);
+      bp.Q.value = 8;
+      // Cry envelope: swells like sobbing
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(close ? 0.3 : 0.18, t + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      // Wobble (crying vibrato)
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 6;
+      lg.gain.value = 200; lfo.connect(lg); lg.connect(bp.frequency);
+      src.connect(bp); bp.connect(g); g.connect(sfxBus);
+      src.start(t); lfo.start(t); src.stop(t + dur); lfo.stop(t + dur);
+    }
+    function staticBreak() {
+      // THE ACT BREAKS: voice fragments into pure static, then silence.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.6;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2000;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.25, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(hp); hp.connect(g); g.connect(sfxBus);
+      src.start(t); src.stop(t + dur);
+    }
+    function stagMirror() {
+      // GLASS HARMONICS, WRONG: high, pure, unsettling. The mirror sings.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.4;
+      // Detuned glass tones (beating)
+      for (const fq of [2093, 2107, 2637]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.08, t + 0.4);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur);
+      }
+      // Low dread under it
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.type = 'sine'; o2.frequency.value = 55;
+      g2.gain.setValueAtTime(0.0001, t);
+      g2.gain.exponentialRampToValueAtTime(0.15, t + 0.5);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o2.connect(g2); g2.connect(sfxBus); o2.start(t); o2.stop(t + dur);
+    }
+    function stagSnort() {
+      // AGGRO: sharp exhale, then low rumble. It's going to charge.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // Snort (noise burst)
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 400; bp.Q.value = 2;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.3, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      src.connect(bp); bp.connect(g); g.connect(sfxBus); src.start(t);
+      // Rumble (pawing the earth)
+      const o = ctx.createOscillator(), g2 = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(60, t + 0.15);
+      o.frequency.linearRampToValueAtTime(45, t + 0.8);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 150;
+      g2.gain.setValueAtTime(0.0001, t + 0.15);
+      g2.gain.exponentialRampToValueAtTime(0.2, t + 0.4);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      o.connect(lp); lp.connect(g2); g2.connect(sfxBus);
+      o.start(t + 0.15); o.stop(t + 1.0);
+    }
+    function droneHum() {
+      // EVALUATION DRONE: steady, bureaucratic hum. Freaky: it's too calm.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.0;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.value = 220;
+      const o2 = ctx.createOscillator();
+      o2.type = 'sawtooth'; o2.frequency.value = 221.5; // beating
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 800;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(sfxBus);
+      o.start(t); o2.start(t); o.stop(t + dur); o2.stop(t + dur);
+    }
+    function droneCount(opts) {
+      // COUNTDOWN: flat, synthesized voice-like beeps. 3... 2... 1...
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const count = (opts && opts.count) || 3;
+      // Higher pitch = more urgent
+      const freq = count === 3 ? 660 : count === 2 ? 740 : 880;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.3);
+    }
+    function droneBeam() {
+      // CORRECTIVE BEAM: harsh electric zap. Freaky: it sounds disappointed.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.5;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(1800, t);
+      o.frequency.exponentialRampToValueAtTime(200, t + dur);
+      const ws = ctx.createWaveShaper();
+      const curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) curve[i] = Math.tanh(3 * (i / 128 - 1));
+      ws.curve = curve;
+      g.gain.setValueAtTime(0.25, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(ws); ws.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur);
+    }
+    function droneRecalc() {
+      // RECALIBRATING: confused warble, pitch hunting.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.8;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(400, t);
+      // Warble: up-down-up-down
+      for (let i = 0; i < 4; i++) {
+        o.frequency.linearRampToValueAtTime(i % 2 ? 300 : 500, t + 0.2 * (i + 1));
+      }
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur);
+    }
+    function swarmFilm() {
+      // FILMING: tiny shutter clicks, irregular, creepy.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 5; i++) {
+        const dt = t + Math.random() * 0.8;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = 2500 + Math.random() * 1000;
+        g.gain.setValueAtTime(0.08, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.05);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.06);
+      }
+    }
+    function swarmBuild() {
+      // FLASH BUILDING: clicks quicken, pitch rises. Freaky: it's excited.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 8; i++) {
+        const dt = t + i * 0.09; // accelerating
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = 2000 + i * 300;
+        g.gain.setValueAtTime(0.1, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.04);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.05);
+      }
+    }
+    function swarmFlash() {
+      // FLASH MOB: blinding white noise burst. Freaky: it's too bright.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.4;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3000;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.4, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(hp); hp.connect(g); g.connect(sfxBus);
+      src.start(t); src.stop(t + dur);
+    }
     function glasswingLand() {
       // crash: dirt thud + tangled wing buzz.
       if (!ensure()) return;
@@ -2369,9 +2560,27 @@
       glasswingDive() { glasswingDive(); },
       glasswingLand() { glasswingLand(); },
       glasswingClimb() { glasswingClimb(); },
+      staticCry(opts) { staticCry(opts); },
+      staticBreak() { staticBreak(); },
+      stagMirror() { stagMirror(); },
+      stagSnort() { stagSnort(); },
+      droneHum() { droneHum(); },
+      droneCount(opts) { droneCount(opts); },
+      droneBeam() { droneBeam(); },
+      droneRecalc() { droneRecalc(); },
+      swarmFilm() { swarmFilm(); },
+      swarmBuild() { swarmBuild(); },
+      swarmFlash() { swarmFlash(); },
       belltoadCroak() { belltoadCroak(); },
       belltoadStun() { belltoadStun(); },
       belltoadChorus() { belltoadChorus(); },
+      hypeInflate() { hypeInflate(); },
+      hypeEncourage(d) { hypeEncourage(d); },
+      hypeDetonate() { hypeDetonate(); },
+      hypeDeflate() { hypeDeflate(); },
+      holdMusic() { holdMusic(); },
+      lineCut() { lineCut(); },
+      paperRustle(d) { paperRustle(d); },
       baskCharge(d) { baskCharge(d); },
       baskBreak() { baskBreak(); },
       baskFlatten() { baskFlatten(); },
@@ -2845,7 +3054,30 @@
   // NARRATION (Steve 2026-10-05): ONE box, ONE format, Pokémon-style.
   // Dialogue, combat, exploration — all narration renders here, identically.
   // No separate combat narr, no feedback card, no bottom log. One surface.
+  // Contest box: current phase text + choice buttons. One surface,
+  // no scrolling for the current beat (same discipline as dialogue).
+  function contestBoxHTML(ac) {
+    const phases = ac.phases || [];
+    const phase = phases[ac.phaseIdx || 0];
+    if (!phase) return '';
+    const text = String(phase.text || '').split('\n').map(l => `<p class="small" style="margin:6px 0">${esc(l) || '&nbsp;'}</p>`).join('');
+    const btns = (phase.choices || []).map((c, i) =>
+      `<button class="btn sm" data-contest-choice="${i}">${esc(c.label)}${c.sub ? ` <span class="small" style="opacity:.65">· ${esc(c.sub)}</span>` : ''}</button>`
+    ).join('');
+    const tag = ac.participant === 'player' ? '📺 CONTEST — YOU' : '📺 CONTEST — WATCHING';
+    return `<div class="dialogue-box contest-box"><div class="dlg-head">${tag}</div><div class="dlg-line">${text}</div><div class="inline-btns">${btns}</div></div>`;
+  }
+
   function narrationBoxHTML(st, chatView) {
+    // CONTEST (Steve 2026-10-05): active contests are modal — they take over
+    // the narration surface until resolved. Unavoidable means unavoidable.
+    try {
+      const ac = Game.state && Game.state.activeContest;
+      if (ac && ac.phases && ac.phase !== 'done') {
+        const html = contestBoxHTML(ac);
+        if (html) return html;
+      }
+    } catch (e) {}
     // PERSON CARD (Steve 2026-10-05): tapping a person shows their card HERE,
     // in the narration/chat area — not below the grid. One interaction surface.
     if (inlineView && inlineView.kind === 'person') {
@@ -4716,6 +4948,15 @@
     on('p-face', () => { Game.startCombat(); rerender(); });
     wireCombatPanel();
     wireDialogueBox();
+    // CONTEST in narration box: wire choice buttons (Steve 2026-10-05)
+    try {
+      const ac2 = Game.state && Game.state.activeContest;
+      if (narrBox && ac2 && ac2.phase !== 'done') {
+        narrBox.querySelectorAll('[data-contest-choice]').forEach(b => {
+          b.onclick = () => { try { Game.contestChoose(+b.dataset.contestChoice); } catch (e) {} rerender(); };
+        });
+      }
+    } catch (e) {}
     // PERSON CARD in narration box: wire its buttons (Steve 2026-10-05)
     const narrBox = document.querySelector('.ord-narration');
     if (narrBox && inlineView && inlineView.kind === 'person') {

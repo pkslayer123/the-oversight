@@ -13200,6 +13200,39 @@
               this.say('(It basks to charge — every sunny turn makes the bite worse. Hit it and the charge dies. Shade and dusk make it harmless.)');
             }
             this.audioEvent('baskCharge', { charge: 0 });
+          } else if (this.vmIs(mo)) {
+            // STATIC: first contact is dread, not a lecture. The voice is the
+            // whole fight — coaching only after the pattern is earned.
+            this.say('Crying, in the dark. A voice you know. It sounds exactly like them — but they\'re safe at the haven. Aren\'t they?');
+            const vstage = (this.ensureMonsterEntry('voice_mimic_radio') || {}).stage;
+            if (vstage === 'observed' || vstage === 'slain') {
+              this.say('(It\'s bait. Don\'t walk toward the crying — that feeds it. Stand still, resist, and the act breaks. Fire scrambles the signal.)');
+            }
+            this.audioEvent('staticCry', {});
+          } else if (this.stagIs(mo)) {
+            // GRIEF COUNSELOR: first contact is dread. The mirror is the fight.
+            this.say('It turns its face toward you. The face is a mirror. You see yourself — tired, dirty, afraid. It starts walking. Not running. Walking. That\'s worse.');
+            const ststage = (this.ensureMonsterEntry('mirror_stag') || {}).stage;
+            if (ststage === 'observed' || ststage === 'slain') {
+              this.say('(Don\'t meet its gaze — if it locks eyes, you FREEZE. Break line of sight, keep moving sideways. It charges in a straight line.)');
+            }
+            this.audioEvent('stagMirror');
+          } else if (this.droneIs(mo)) {
+            // PERFORMANCE REVIEW: first contact is dread. The grading is the fight.
+            this.say('"SUBJECT DETECTED. COMMENCING BASELINE EVALUATION." A drone hovers, projecting a grid over the ground. It is taking notes. On you.');
+            const dstage = (this.ensureMonsterEntry('review_drone') || {}).stage;
+            if (dstage === 'observed' || dstage === 'slain') {
+              this.say('(It counts down THREE-TWO-ONE then fires along the projected line. Move OFF the line. It can\'t handle crowds — bring friends.)');
+            }
+            this.audioEvent('droneHum');
+          } else if (this.swarmIs(mo)) {
+            // INFLUENCER: first contact is dread. The cameras are the fight.
+            this.say('Click. Clickclickclick. Dozens of tiny cameras on spindly legs, all pointed at you. "SMILE! You\'re going VIRAL!"');
+            const swstage = (this.ensureMonsterEntry('camera_swarm') || {}).stage;
+            if (swstage === 'observed' || swstage === 'slain') {
+              this.say('(The flashes build — burst radius 2. They\'re fragile (+25% damage). Fire scatters them. Don\'t let them surround you.)');
+            }
+            this.audioEvent('swarmFilm');
           }
         }
       } catch (e) {}
@@ -13933,6 +13966,22 @@
         cue += known
           ? ' It charges exactly the announced line, width 2 — sidestep FARTHER than feels necessary.'
           : ' It is staring down a line on the ground. You should not be on that line.';
+        return cue + learned;
+      }
+      if (mid === 'service_mimic') {
+        // No telegraph by design — but the cue system still needs SOMETHING.
+        // The dread is the absence: it already moved.
+        let cue = '📞 "Your fear is important to us." No telegraph — it just moved. That\'s the whole trick.';
+        cue += known
+          ? ' Please Hold: rush, no windup. It watches 2-3 turns first (curious) — use those. Fire within 3 tiles suppresses the rush. It only rushes once per approach.'
+          : ' It was watching. Now it isn\'t watching anymore. It\'s coming.';
+        return cue + learned;
+      }
+      if (mid === 'contract_golem') {
+        let cue = '📜 "BY REMAINING IN PROXIMITY, YOU HAVE ACCEPTED." Fine print crawls toward you across the dirt.';
+        cue += known
+          ? ' Binding Agreement: direct, range 3 — movement won\'t dodge it once declared. But it\'s speed 1. The clause only binds after 2 consecutive turns in range. WALK AWAY. Fire ends paper.'
+          : ' Small text is crawling up your legs. You should move. It only moves one tile a turn.';
         return cue + learned;
       }
       return null;
@@ -16633,6 +16682,165 @@
         this.tbRefreshTelegraphUI();
         this.tbEndCheck();
         return;
+      }
+
+      // ---- GRIEF COUNSELOR (mirror_stag): THE MIRROR ----
+      // mirror → confront → charge. The mirror face: if you meet its gaze
+      // (it faces you and you're within 4), you FREEZE (lose move). It walks,
+      // not runs — 2 steps/turn, deliberate. The charge is a 6-length line,
+      // telegraphed on the grid. Break gaze by moving sideways.
+      if (this.stagIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
+        if (!m.beamPhase) { this.encSetPhase(m, 'mirror'); }
+        let stPhase = m.beamPhase;
+        const dist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        // MIRROR GAZE: if within 4 and facing, freeze. Check facing via
+        // player's facing dir vs monster position.
+        if (stPhase === 'mirror' && dist <= 4 && dist > 1) {
+          // Does the monster face the player? (simplified: always faces nearest)
+          const p = this.tbFighter('p');
+          if (p && !p.stunned) {
+            // Gaze check: 40% chance per turn to lock eyes if you're looking at it
+            // (simplified: if you didn't move last turn, you're "looking")
+            if (Math.random() < 0.4) {
+              p.moveLeft = 0;
+              this.say('You meet its gaze in the mirror. Yourself, tired and afraid — and you can\'t look away. FROZEN.');
+              this.audioEvent('stagMirror');
+              this.encSetPhase(m, 'confront'); stPhase = 'confront';
+            } else {
+              this.say('It angles the mirror toward you. Don\'t look. Don\'t look.');
+            }
+          }
+        } else if (stPhase === 'confront' || (stPhase === 'mirror' && dist <= 1)) {
+          // CONFRONT → CHARGE: 2-turn windup, then 6-length charge
+          if (!m.telegraph) {
+            this.encSetPhase(m, 'confront');
+            const atkName = this.encAttackName(m, 'Confrontation');
+            // Grid telegraph: line from monster toward player, length 6
+            const dx = Math.sign(t.mx - m.mx), dy = Math.sign(t.my - m.my);
+            const cells = [];
+            for (let i = 1; i <= 6; i++) {
+              cells.push({ cx: m.mx + dx * i, cy: m.my + dy * i });
+            }
+            m.telegraph = { kind: 'line', cells, dmg: (m.mdef.attack || {}).damage,
+              attackName: atkName, pattern: pat, turnsLeft: 2,
+              cueText: 'It lowers its head. The mirror catches the light. It\'s going to charge — in a straight line. MOVE SIDWAYS.' };
+            this.say('It lowers its head. The mirror face catches the light, blinding. It\'s going to charge.');
+            this.audioEvent('stagSnort');
+          }
+        }
+        // Movement: slow, deliberate — 2 steps, only if not charging
+        if (!m.telegraph && stPhase !== 'confront') {
+          for (let i = 0; i < 2; i++) {
+            const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+            if (d <= 1) break;
+            const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+            if (!stp) break;
+            m.mx = stp.x; m.my = stp.y;
+          }
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- PERFORMANCE REVIEW (review_drone): THE EVALUATION ----
+      // project → countdown → correct → recalc. It projects a grid, counts down
+      // 3-2-1, then fires a 6-length beam along the projected line. The line is
+      // drawn on the ground BEFORE it fires — believe it. Crowd limit: >2
+      // subjects and it recalibrates (loses a turn).
+      if (this.droneIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
+        if (!m.beamPhase) { this.encSetPhase(m, 'project'); m.drCount = 0; }
+        let drPhase = m.beamPhase;
+        // CROWD LIMIT: more than 2 fighters (player + villagers) → recalc
+        const fighterCount = f.fighters.filter(x => x.alive && !x.fled).length;
+        if (fighterCount > 3 && drPhase !== 'recalc') { // player + 2 villagers max
+          this.encSetPhase(m, 'recalc'); drPhase = 'recalc';
+          this.say('"TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." It wobbles, overwhelmed.');
+          this.audioEvent('droneRecalc');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (drPhase === 'recalc') {
+          // Recalc takes 1 turn, then back to project
+          this.encSetPhase(m, 'project'); m.drCount = 0;
+          this.say('"RECALIBRATION COMPLETE. RESUMING EVALUATION."');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        if (drPhase === 'project' && !m.telegraph) {
+          // PROJECT: draw the line, start countdown
+          this.encSetPhase(m, 'countdown'); m.drCount = 3;
+          const dx = Math.sign(t.mx - m.mx), dy = Math.sign(t.my - m.my);
+          const cells = [];
+          for (let i = 1; i <= 6; i++) {
+            cells.push({ cx: m.mx + dx * i, cy: m.my + dy * i });
+          }
+          m.telegraph = { kind: 'line', cells, dmg: (m.mdef.attack || {}).damage,
+            attackName: this.encAttackName(m, 'Scored Assessment'),
+            pattern: pat, turnsLeft: 3,
+            cueText: '"DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGET. COMMENCING CORRECTIVE ACTION IN THREE. TWO." The line is drawn. Move OFF it.' };
+          this.say('"SUBJECT LOCKED. COMMENCING CORRECTIVE ACTION IN THREE..." The projector draws a burning line across the dirt.');
+          this.audioEvent('droneCount', { count: 3 });
+        } else if (drPhase === 'countdown' && m.telegraph) {
+          m.drCount--;
+          if (m.drCount > 0) {
+            this.say(`"${m.drCount}..." The line brightens.`);
+            this.audioEvent('droneCount', { count: m.drCount });
+            m.telegraph.turnsLeft = m.drCount;
+          }
+          // At 0, the generic telegraph resolver fires the beam
+        }
+        // Drone hovers: doesn't move while evaluating, drifts if no target
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- INFLUENCER (camera_swarm): THE FLASH MOB ----
+      // film → build → flash → scatter. Burst radius 2. Fragile (+25% damage).
+      // Speed 6 — it WILL catch you. Fire scatters it. The flashes build:
+      // each turn the shutters quicken. When it flashes, burst hits radius 2.
+      if (this.swarmIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = foe.f;
+        const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
+        if (!m.beamPhase) { this.encSetPhase(m, 'film'); m.swBuild = 0; }
+        let swPhase = m.beamPhase;
+        const dist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (swPhase === 'film' && dist <= 4 && !m.telegraph) {
+          // BUILD: shutters quicken, 2-turn windup
+          this.encSetPhase(m, 'build'); m.swBuild = 2;
+          const cells = [];
+          for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+            if (Math.max(Math.abs(dx), Math.abs(dy)) <= 2) {
+              cells.push({ cx: t.mx + dx, cy: t.my + dy });
+            }
+          }
+          m.telegraph = { kind: 'burst', cells, dmg: (m.mdef.attack || {}).damage,
+            attackName: this.encAttackName(m, 'Flash Mob'),
+            pattern: pat, turnsLeft: 2,
+            cueText: '"ENGAGEMENT DROPPING! ESCALATING!" The shutters quicken — clickclickCLICK. Flash building. Radius 2. COVER YOUR EYES or MOVE.' };
+          this.say('"SMILE! You\'re going VIRAL!" The cameras swarm closer, flashes building.');
+          this.audioEvent('swarmBuild');
+        } else if (swPhase === 'build' && m.telegraph) {
+          m.swBuild--;
+          if (m.swBuild > 0) {
+            this.say('"ENGAGEMENT DROPPING! ESCALATING!" ClickclickclickCLICK.');
+            this.audioEvent('swarmBuild');
+            m.telegraph.turnsLeft = m.swBuild;
+          }
+          // At 0, generic resolver fires the burst
+        }
+        // Movement: speed 6, chases the player (its muse). Creeps while building.
+        const speed = swPhase === 'build' ? 2 : 6;
+        for (let i = 0; i < speed; i++) {
+          const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+          if (d <= 1) break;
+          const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+          if (!stp) break;
+          m.mx = stp.x; m.my = stp.y;
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
       // ---- BRIGHT IDEA ("Inspiration"): THE BRIGHTENING ----
