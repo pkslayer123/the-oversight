@@ -7,11 +7,14 @@
 //   - contestPool()
 //   - pickContest()
 //   - pickShow()
+//   - fireShow(show) -> show (pull-away: a villager goes on TV for a silly reason)
 //   - fireContest(contest)
 //   - resolveContest()
 //   - contestInterruption(contest, participant) -> sequence
 //   - contestKnowledge(contestId) -> {seen,wins,level}
 //   - contestLearn(contestId, outcome)
+//   - _contestScaled(base, variant) -> contest (wave + hardened, both ends of fire->resolve)
+//   - _cxStorePhase(ac, idx, rendered) -> rendered (choice box renders ac.phases directly)
 //   - _contestDeathLine(contest, how, pname)
 //   - _contestRenderPhase(ac, phase, idx)
 //   - _contestCloserOdds(kind, wounds)
@@ -104,7 +107,14 @@
   G.contestTick = function() {
     const day = this.state.scholar.day || 1;
     if (day < 14) return null;
-    
+
+    // One interruption at a time (Steve 2026-10-06): never fire while one is
+    // pending or an interruption is still unresolved — a new fire would
+    // overwrite pendingContest or clobber the active modal.
+    if (this.state.pendingContest) return null;
+    const ac0 = this.state.activeContest;
+    if (ac0 && ac0.phase !== 'done') return null;
+
     this.state.showBudget = this.state.showBudget || { week: 0, used: 0 };
     const week = Math.floor(day / 7);
     if (this.state.showBudget.week !== week) {
@@ -238,13 +248,22 @@
     // Track that we've seen it
     this.state.contestsSeen = this.state.contestsSeen || {};
     this.state.contestsSeen[pick.id] = seen + 1;
-    
+
+    return this._contestScaled(pick, variant);
+  };
+
+  // SCALING (Steve 2026-10-06): wave scaling + hardened variant used to be
+  // applied only in pickContest, but resolveContest rebuilds the contest from
+  // the pool by id — the announced variant never reached the played sequence.
+  // One helper, applied at both ends, so what's announced is what's played.
+  G._contestScaled = function(base, variant) {
+    const wave = this.unlockedWave();
     // Wave scaling: higher waves = harder contests
     // (Risk increases, but so do prizes)
-    const scaled = Object.assign({}, pick);
+    const scaled = Object.assign({}, base);
     if (wave >= 3 && scaled.risk === 'medium') scaled.risk = 'high';
     if (wave >= 4 && scaled.risk === 'high') scaled.risk = 'extreme';
-    
+
     if (variant === 'hardened') {
       scaled.name = 'Hardened ' + scaled.name;
       scaled.desc += ' The rules have changed. The audience demanded it.';
@@ -254,14 +273,17 @@
       if (idx < 3) scaled.risk = risks[idx + 1];
       scaled.variant = 'hardened';
     }
-    
+
     return scaled;
   };
 
   // === TV SHOWS ===
+  // The in-between: not contests, but the cameras still come. High-drama,
+  // often silly — people get pulled away for the smallest reasons, and the
+  // village talks about it for days. (Steve 2026-10-05/06)
   G.showPool = function() {
     return [
-      { id: 'why_eat', name: 'WHY DO THEY EAT?', 
+      { id: 'why_eat', name: 'WHY DO THEY EAT?',
         desc: 'Cook for the aliens. They are horrified. The audience is delighted.' },
       { id: 'break_room', name: 'Break Room',
         desc: 'Gossip show. Your drama, aired to the galaxy.' },
@@ -271,12 +293,54 @@
         desc: 'Call-in show. Strangers ask you deeply uncomfortable questions.' },
       { id: 'death_reel', name: 'The Death Reel',
         desc: 'Highlights. Yes, including yours. Especially yours.' },
+      { id: 'nap_wars', name: 'Nap Wars',
+        desc: 'A villager is pulled mid-afternoon for competitive napping. The galaxy holds its breath. Someone always snores.' },
+      { id: 'tiny_door', name: 'The Tiny Door',
+        desc: 'A door appears in the village. It is very small. Someone has to go through. The audience has opinions about who.' },
+      { id: 'grudge_pudding', name: 'Grudge Pudding',
+        desc: 'Two villagers with a grudge must cook a pudding together. The pudding is a metaphor. The grudge is not.' },
+      { id: 'who_moved_it', name: 'Who Moved It?',
+        desc: "Someone's favorite thing has been moved three inches. A full investigation, televised. The culprit is always the last person you'd suspect. It's never them." },
+      { id: 'apology_tour', name: 'The Apology Tour',
+        desc: 'A villager is made to apologize for something they did in a dream. The dream is shown. Everyone has seen it.' },
+      { id: 'dance_off', name: 'Dance-Off at Dusk',
+        desc: 'The System demands dancing. No music is provided. The village provides its own. It goes better than anyone expects.' },
+      { id: 'mystery_smell', name: 'The Mystery Smell',
+        desc: 'Something smells incredible somewhere in the village. Find it before the cameras do. The chat already knows. They are not telling.' },
+      { id: 'complaint_box', name: 'The Complaint Box',
+        desc: 'Villagers file complaints about the aliens. The aliens read them aloud, wounded. The audience takes sides.' },
     ];
   };
 
   G.pickShow = function() {
     const pool = this.showPool();
     return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  // FIRE SHOW (Steve 2026-10-06): the in-between isn't just an announcement.
+  // Someone gets pulled away for a silly reason, the village talks about it.
+  // NOTE: game.js's dawn branch currently handles shows inline (sysSay only);
+  // wiring it to call fireShow(event) is a one-line game.js change — see
+  // goals/.../hidden_files/fleshout-20261006/contests-blocked.md.
+  G.fireShow = function(show) {
+    const s = (show && show.id) ? show : this.pickShow();
+    const roster = (this.state.village.roster || []).filter(id => id !== this.villagerId);
+    let pulled = null;
+    if (roster.length && Math.random() < 0.7) {
+      pulled = roster[Math.floor(Math.random() * roster.length)];
+    }
+    if (pulled) {
+      const pname = this.displayName(pulled);
+      this.sysSay(`📺 TONIGHT: ${s.name}. ${s.desc}`);
+      this.sysSay(`📺 The cameras want ${pname}. No reason. ${pname} is going on television.`);
+      this.sysSay(`📺 ${pname} will be back by morning. Probably. The village will talk about this for days.`);
+      this.addNotability(pulled, 'showmanship');
+    } else {
+      this.sysSay(`📺 TONIGHT: ${s.name}. ${s.desc}`);
+      this.sysSay(`📺 The village watches together. Someone brings snacks. It helps.`);
+    }
+    try { this.leadShift('showmanship', 1); } catch (e) {}
+    return s;
   };
 
   // === RESOLUTION ===
@@ -291,7 +355,9 @@
     let pick;
     if (Math.random() < 0.1) {
       pick = eligible[Math.floor(Math.random() * eligible.length)];
-      this.sysSay(`📺 The System's whim: ${pick.name} is *interesting*. ${pick.name} goes.`);
+      const wSubj = pick.id === 'player' ? 'You are' : pick.name + ' is';
+      const wGoes = pick.id === 'player' ? 'You go.' : pick.name + ' goes.';
+      this.sysSay(`📺 The System's whim: ${wSubj} *interesting*. ${wGoes}`);
     } else {
       pick = eligible.find(e => e.id === 'player') || eligible[Math.floor(Math.random() * eligible.length)];
     }
@@ -341,11 +407,16 @@
       if (givesChoice) {
         this.sysSay(`📺 The System offers you a choice: participate or refuse.`);
         // Real choice — refusal is a sequence via _contestRefuse, not a skip
-        const playable = this.contestPlayable(contest);
+        let playable;
+        try { playable = this.contestPlayable(contest); } catch (e) { playable = null; }
+        if (!playable || !playable.length) {
+          try { playable = this._contestGeneric(contest); } catch (e2) { playable = null; }
+        }
+        if (!playable) playable = [];
         const choicePhase = {
           text: `📺 ${contest.name}. ${contest.desc}\n\nThe System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.`,
           choices: [
-            { label: 'Participate', sub: 'step into the light', do: {}, next: 0 },
+            { label: 'Participate', sub: 'step into the light', do: {}, next: 1 },
             { label: 'Refuse', sub: 'say no on camera', do: {}, next: 'REFUSE' },
           ]
         };
@@ -358,14 +429,25 @@
           variant: contest.variant || null,
           wounds: 0,
         };
+        // Say the choice beat like every other phase (the box renders it, but
+        // the log is the record — keep both surfaces in sync).
+        this.sysSay('📺 ───');
+        const renderedChoice = this._contestRenderPhase(this.state.activeContest, choicePhase, 0);
+        this._cxStorePhase(this.state.activeContest, 0, renderedChoice);
+        this._cxPhaseSay(renderedChoice.text);
         return this.state.activeContest;
       } else {
         this.sysSay(`📺 ${pname} — you're grabbed. No choice. The cameras are already rolling.`);
       }
       // PLAYABLE (Steve 2026-10-05): the contest is a phase sequence with
       // real choices, not a dice roll. Phases render in the narration UI.
+      // Never leave the player in a modal with no phases — that's a stuck
+      // screen. Fall back to the generic sequence (Steve 2026-10-06).
       let phases;
       try { phases = this.contestPlayable(contest); } catch (e) { phases = null; }
+      if (!phases || !phases.length) {
+        try { phases = this._contestGeneric(contest); } catch (e2) { phases = null; }
+      }
       this.state.activeContest = {
         contestId: contest.id,
         participant: 'player',
@@ -377,7 +459,9 @@
       };
       if (phases && phases[0]) {
         this.sysSay('📺 ───');
-        this._cxPhaseSay(this._contestRenderPhase(this.state.activeContest, phases[0], 0).text);
+        const rendered = this._contestRenderPhase(this.state.activeContest, phases[0], 0);
+        this._cxStorePhase(this.state.activeContest, 0, rendered);
+        this._cxPhaseSay(rendered.text);
       }
     } else {
       // You're not in it — you WATCH. Especially if villagers are involved.
@@ -387,6 +471,9 @@
       this.sysSay(`📺 You watch. The cameras love this part.`);
       let wphases;
       try { wphases = this._contestWatchPhases(contest, participantId); } catch (e) { wphases = null; }
+      if (!wphases || !wphases.length) {
+        try { wphases = this._contestGeneric(contest); } catch (e2) { wphases = null; }
+      }
       this.state.activeContest = {
         contestId: contest.id,
         participant: participantId,
@@ -398,7 +485,9 @@
       };
       if (wphases && wphases[0]) {
         this.sysSay('📺 ───');
-        this._cxPhaseSay(wphases[0].text);
+        const wrendered = this._contestRenderPhase(this.state.activeContest, wphases[0], 0);
+        this._cxStorePhase(this.state.activeContest, 0, wrendered);
+        this._cxPhaseSay(wrendered.text);
       }
     }
     
@@ -413,8 +502,11 @@
     if (!pc) return;
     this.state.pendingContest = null;
     
-    const contest = this.contestPool().find(c => c.id === pc.contestId);
-    if (!contest) return;
+    const base = this.contestPool().find(c => c.id === pc.contestId);
+    if (!base) return;
+    // Re-apply wave scaling + variant: what was announced is what's played
+    // (Steve 2026-10-06: the fire->resolve rebuild used to drop these).
+    const contest = this._contestScaled(base, pc.variant || null);
     
     // INTERRUPTION (Steve 2026-10-05): the contest doesn't resolve via dice roll.
     // It INTERRUPTS. You go through the sequence. Participate or don't.
@@ -646,6 +738,10 @@
   // (choices carrying dieWounds), so the choice-phase prepend can't shift it.
   G._contestRenderPhase = function(ac, phase, idx) {
     if (!phase) return phase;
+    // Idempotent: the rendered phase is stored back into ac.phases (the
+    // choice box renders phases directly), so a second render must not
+    // stack another readout onto the text (Steve 2026-10-06).
+    if (phase._cxRendered) return phase;
     const hasCloser = (phase.choices || []).some(c => c.do && c.do.dieWounds);
     if (ac.contestId === 'gauntlet' && hasCloser) {
       const w = ac.wounds || 0;
@@ -663,9 +759,17 @@
         }
         return c;
       });
-      return { text, choices };
+      const rendered = { text, choices, _cxRendered: true };
+      return rendered;
     }
     return phase;
+  };
+
+  // Store the rendered phase back so the choice box (app.js contestBoxHTML,
+  // which renders ac.phases directly) shows the same readout the log got.
+  G._cxStorePhase = function(ac, idx, rendered) {
+    try { if (ac && ac.phases && rendered) ac.phases[idx] = rendered; } catch (e) {}
+    return rendered;
   };
 
   // --- HIDE AND SEEK (bespoke, weird/extreme) ---
@@ -1033,6 +1137,7 @@
     if (!np) return this._contestEnd(ac, 'lost', false);
     this.sysSay('📺 ───');
     const rendered = this._contestRenderPhase(ac, np, next);
+    this._cxStorePhase(ac, next, rendered);
     this._cxPhaseSay(rendered.text);
     return { phase: rendered, log };
   };
@@ -1137,6 +1242,23 @@
     this.sysSay(`📺 The Death Reel will be tasteful. It won't be.`);
     try { this.contestLearn(ac.contestId, 'died'); } catch (e) {}
     this.state.activeContest = null;
+    if (isWatch) {
+      // A villager died on camera. The village buries them; the player lives
+      // with having watched. (Steve 2026-10-06: this used to call playerDeath
+      // unconditionally — a watched death killed the PLAYER.)
+      try {
+        if (this.removeVillager) this.removeVillager(ac.participant, 'killed');
+        else {
+          const v = this.state.village;
+          v.roster = (v.roster || []).filter(id => id !== ac.participant);
+        }
+      } catch (e) {}
+      try { this.say(`☠ ${pname} is gone. The village will say the name for a long time.`); } catch (e) {}
+      try { this.leadShift('fracture', 2); } catch (e) {}
+      const s = this.state.scholar;
+      s.trauma = Math.min(100, (s.trauma || 0) + 12);
+      return { done: true, outcome: 'died' };
+    }
     try { this.playerDeath('contest'); } catch (e) { this.state.scholar.health = 0; this.state.over = true; }
     return { done: true, outcome: 'died' };
   };

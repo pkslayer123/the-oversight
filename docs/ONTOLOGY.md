@@ -99,7 +99,7 @@ Every villager is a living codex entry. Deepens while they live.
 ### contests (`contests.js`)
 Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama. UNAVOIDABLE — they interrupt whatever you're doing.
 
-**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence, contestKnowledge(contestId) -> {seen,wins,level}, contestLearn(contestId, outcome), _contestDeathLine(contest, how, pname), _contestRenderPhase(ac, phase, idx), _contestCloserOdds(kind, wounds), _cxCoaching(contest), _cxPhaseSay(text)
+**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireShow(show) -> show (pull-away: a villager goes on TV for a silly reason), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence, contestKnowledge(contestId) -> {seen,wins,level}, contestLearn(contestId, outcome), _contestScaled(base, variant) -> contest (wave + hardened, both ends of fire->resolve), _cxStorePhase(ac, idx, rendered) -> rendered (choice box renders ac.phases directly), _contestDeathLine(contest, how, pname), _contestRenderPhase(ac, phase, idx), _contestCloserOdds(kind, wounds), _cxCoaching(contest), _cxPhaseSay(text)
 
 **Rules:**
 - unlock_day: 14 (code: contestTick, contestEligible)
