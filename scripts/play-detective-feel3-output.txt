@@ -1,0 +1,118 @@
+
+######## SEED 7 — 11 villagers ########
+liars (analyst-only): 3/11
+
+===== DAY 1 =====
+  spark — Donna: ❓ Something's off. You wrote down "Denver" for Hank. Donna just told you "Columbus, Ohio". 📓 Journal: jotted down what they said (Hank). Donna lowers
+  NEW DOUBT — Hank [gossip] journalDoubts=[gossip]: Hank said "Denver" — but Donna says "Columbus, Ohio". One of them is wrong.
+  CONFRONT — Hank [gossip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""Wow." Hank looks hurt, then angry. "I share my food with you and this is what I get?""
+  eod: formed=1 open=1 sparks=1
+
+===== DAY 2 =====
+  spark — Kevin: ❓ Something's off. You wrote down "Denver" for Hank. Kevin just told you "Columbus, Ohio". 📓 Journal: jotted down what they said (Hank). Kevin lowers
+  NEW DOUBT — James [slip] journalDoubts=[slip]: the man, maybe 50s starts a story with "back when I was an EMT..." then corrects to something else mid-sentence. The correction is worse than the slip
+  NEW DOUBT — Hank [slip] journalDoubts=[gossip,slip,gossip]: Hank told you "Denver" — but something they just said doesn’t fit. A wrong detail, a bad correction.
+  NEW DOUBT — Hank [gossip] journalDoubts=[gossip,slip,gossip]: Hank said "Denver" — but Kevin says "Columbus, Ohio". One of them is wrong.
+  CONFRONT — Hank [gossip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""I'm not from Denver. I'm from Columbus, Ohio. If the wrong people know, it doesn't fall on me. It falls on them.""
+  CONFRONT — James [slip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""I wasn't an EMT. I was a carpenter. You looked at me like I mattered, and I wanted to keep that. So I gave you someone worth looking at. That person isn't real. This one is — and it's worse, isn't it"
+  CONFRONT — Hank [slip] liveLie=false → no-outcome (trust undefined->undefined, honest 0->0)
+    ""We went over this," Hank says, a little tired. "I already told you the truth about that.""
+  CONFRONT — Hank [gossip] liveLie=false → no-outcome (trust undefined->undefined, honest 0->0)
+    ""That again?" Hank sighs. "I confessed that already. I'm not confessing it twice for dramatic effect.""
+  eod: formed=4 open=0 sparks=1
+
+===== DAY 3 =====
+  eod: formed=4 open=0 sparks=0
+
+===== DAY 4 =====
+  eod: formed=4 open=0 sparks=0
+
+===== DAY 5 =====
+  eod: formed=4 open=0 sparks=0
+
+===== DAY 6 =====
+  eod: formed=4 open=0 sparks=0
+  PLAYER DIED or day stuck — stopping
+
+seed 7 SUMMARY: doubts=4 kinds={"gossip":2,"slip":2} confronts=5 noUI=0 obs=0/6 outcomes={"no-outcome":5}
+false-accusations (no live lie behind doubt):
+  Hank [slip] → no-outcome, trust undefined->undefined: ""We went over this," Hank says, a little tired. "I already told you the truth about that.""
+  Hank [gossip] → no-outcome, trust undefined->undefined: ""That again?" Hank sighs. "I confessed that already. I'm not confessing it twice for dramatic effect.""
+
+######## SEED 42 — 11 villagers ########
+liars (analyst-only): 3/11
+
+===== DAY 1 =====
+  observe — Jude: Someone asked Jude about tailor work. The answer was smooth — too smooth, like reciting. Then later, doing something a tailor does without thinking, J
+  NEW DOUBT — Jude [slip] journalDoubts=[slip,observation]: Jude told you "tailor" — but something they just said doesn’t fit. A wrong detail, a bad correction.
+  NEW DOUBT — Jude [observation] journalDoubts=[slip,observation]: Someone asked Jude about tailor work. The answer was smooth — too smooth, like reciting. Then later, doing something a tailor does without thinking, J
+  CONFRONT — Jude [slip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""Okay." Jude looks down. "Okay, you got me. I wasn't a tailor. I was a Fisherman. The less of me is out there, the less can be used against me." Their voice is small."
+  CONFRONT — Jude [observation] liveLie=false → no-outcome (trust undefined->undefined, honest 0->0)
+    "Jude looks at you, level. "I told you the truth. You can keep poking it, but it's told.""
+  eod: formed=2 open=0 sparks=0
+
+===== DAY 2 =====
+  NEW DOUBT — Jordan [slip] journalDoubts=[slip]: Jordan starts a story with "back when I was a mechanic..." then corrects to something else mid-sentence. The correction is worse than the slip.
+  CONFRONT — Jordan [slip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""I wasn't a mechanic. I was a roofer. It's safer if people don't know. Please don't tell the others.""
+  eod: formed=3 open=0 sparks=0
+
+===== DAY 3 =====
+  eod: formed=3 open=0 sparks=0
+
+===== DAY 4 =====
+  eod: formed=3 open=0 sparks=0
+
+===== DAY 5 =====
+  eod: formed=3 open=0 sparks=0
+
+===== DAY 6 =====
+  observe — Sofia: Sofia says they're from Denver. But their hands go still when Denver comes up — the way people do when a name costs them something.
+  NEW DOUBT — Sofia [slip] journalDoubts=[slip,observation]: Sofia mentions "Shanghai, China" like it's home — then says "I mean, Denver." The pause is doing a lot of work.
+  NEW DOUBT — Sofia [observation] journalDoubts=[slip,observation]: Sofia says they're from Denver. But their hands go still when Denver comes up — the way people do when a name costs them something.
+  CONFRONT — Sofia [slip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""That's not — that's not what happened." Sofia's hands won't stop moving. "You're twisting things.""
+  CONFRONT — Sofia [observation] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""What? No — I mean —" Sofia stumbles. "It's... it's complicated. Can we not do this right now?""
+  eod: formed=5 open=2 sparks=0
+  PLAYER DIED or day stuck — stopping
+
+seed 42 SUMMARY: doubts=5 kinds={"slip":3,"observation":2} confronts=5 noUI=0 obs=2/6 outcomes={"no-outcome":5}
+false-accusations (no live lie behind doubt):
+  Jude [observation] → no-outcome, trust undefined->undefined: "Jude looks at you, level. "I told you the truth. You can keep poking it, but it's told.""
+
+######## SEED 99 — 11 villagers ########
+liars (analyst-only): 4/11
+
+===== DAY 1 =====
+  eod: formed=0 open=0 sparks=0
+
+===== DAY 2 =====
+  NEW DOUBT — Lillian [slip] journalDoubts=[slip]: Someone asks Lillian a shop-talk question about doctor work. The pause before the answer is long enough to hear.
+  NEW DOUBT — Sofia [slip] journalDoubts=[slip]: the woman, maybe 30s, with a slouched posture names a street, a diner, a high school — all in Shanghai, China. Then catches your eye and goes very qui
+  CONFRONT — Lillian [slip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""Okay." Lillian looks down. "Okay, you got me. I wasn't a doctor. I was a carpenter. If the wrong people know, it doesn't fall on me. It falls on them." Their voice is small."
+  CONFRONT — Sofia [slip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""Nope. No." Sofia shakes their head too fast. "I don't know where you're getting this.""
+  eod: formed=2 open=1 sparks=0
+
+===== DAY 3 =====
+  CONFRONT — Sofia [slip] liveLie=true → no-outcome (trust undefined->undefined, honest 0->0)
+    ""I'm not from Denver. I'm from Shanghai, China. I was embarrassed. Everyone here was someone, and I was... that.""
+  eod: formed=2 open=0 sparks=0
+
+===== DAY 4 =====
+  eod: formed=2 open=0 sparks=0
+
+===== DAY 5 =====
+  eod: formed=2 open=0 sparks=0
+
+===== DAY 6 =====
+  eod: formed=2 open=0 sparks=0
+  PLAYER DIED or day stuck — stopping
+
+seed 99 SUMMARY: doubts=3 kinds={"slip":2} confronts=3 noUI=0 obs=0/6 outcomes={"no-outcome":3}

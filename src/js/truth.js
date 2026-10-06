@@ -1,6 +1,6 @@
 // @ontology
 // system: truth
-// description: Truth/distortion. Gossip spreads with distortion through retelling.
+// description: Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip distorts per retelling (code: game.js seedGossip).
 // provides:
 //   - trackClaim(vid, topic, claim)
 //   - getClaims(vid)
@@ -12,7 +12,7 @@
 //   - confrontDoubt(vid)
 //   - npcGossipAbout(vid)
 // rules:
-//   - distortion_per_retelling: true (code: truth.js)
+//   - claim_gossip_shares_truth_no_distortion: true (code: npcGossipAbout)
 //   - min_liars_per_village: 1 (code: newGame wrapper)
 //   - verbal_slips_require_shared_language: true (code: endDay slip loop)
 //   - observation_doubt_one_per_field: true (code: addDoubt)
