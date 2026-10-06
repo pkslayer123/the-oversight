@@ -1,0 +1,20 @@
+CONTENT GATE: OK — plant:26 monster:23 ability:69 villager:0 item:120 biome:1 relicEnhancement:23 background_survivor:36 animal:22 recipe:14 book:18 synergy:18
+PASS — validate-data.js exits 0
+PASS — gate reports OK
+PASS — plant.uses array-of-shape present in schema
+PASS — dandelion edibility in enum
+PASS — monster.encounter/loot/armor/resistances in schema
+PASS — glasswing encounter phases is string[]
+PASS — item class 'ammo' in enum
+PASS — animal butcher/huntText in schema
+PASS — recipe durable/kg in schema
+PASS — no dangling item -> relicEnhancement refs (second_skin fix)
+PASS — grassland in refAllowlist.biome
+PASS — all monster biomes resolve (registry or allowlist)
+
+CONTENT GATE: 1 error(s)
+  ✗ [plants.json] plants.json#0 (dandelion): unknown field 'bogusFieldThatShouldFail' (typo?)
+
+PASS — gate rejects unknown field in scratch copy
+
+ALL GREEN
