@@ -10706,9 +10706,9 @@
           <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
           <div class="toast-layer" id="toast-layer"></div>
           <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
+          ${st.activeQuest ? `<div class="ord-quest-top"><p class="small" style="border-left:3px solid #7fd67f;padding:6px 8px;margin:8px 0;background:rgba(127,214,127,0.08);border-radius:4px">📋 ${esc(st.activeQuest.text || (st.activeQuest.giverName + ' needs ' + st.activeQuest.qty + ' ' + st.activeQuest.plant + '.'))}</p></div>` : ''}
           <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-lowermenu">${lowerMenuHTML(st)}</div>
-          ${st.activeQuest ? `<p class="small ord-quest" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text || (st.activeQuest.giverName + ' needs ' + st.activeQuest.qty + ' ' + st.activeQuest.plant + '.'))}</p>` : ''}
           <div class="ord-panel">${panelFor(st, n)}</div>
           <div class="actions ord-codex">
             <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
