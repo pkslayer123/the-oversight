@@ -8052,7 +8052,13 @@
     // announced charge reads as ENCIRCLEMENT, not the generic charge lane)
     // and biHot (bright_idea — the burst goes white-hot on its last windup
     // tick, "about to break loose"). Knowledge-gated like every bucket.
-    const out = { burst: new Set(), charge: new Set(), encircle: new Set(), biHot: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), beam: new Set() };
+    // WING/BASK (Steve 2026-10-06): sbLock (sunbasker — the Sun-Charged
+    // Bite's tracking lock-on reads MOLTEN GOLD, not the generic purple
+    // lockOn). The glasswing's in-combat dive shadow is NOT a bucket: it
+    // renders diegetic-ungated via the Game.gwDiveShadow() overlay below
+    // (trap-shadow precedent) and is skipped from the generic buckets so
+    // the dive keeps its own visual voice.
+    const out = { burst: new Set(), charge: new Set(), encircle: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), beam: new Set() };
     // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity — which
     // monster each telegraph cell belongs to, so the grid can render each
     // monster's attack in its own visual voice (mirror-shimmer, projected
@@ -8092,15 +8098,24 @@
           const tgt = (f.fighters || []).find(x => x.key === tg.targetKey);
           if (tgt) {
             const k = tgt.mx + ',' + tgt.my;
-            out.direct.add(k);
+            // SUNBASKER (Steve 2026-10-06): the Sun-Charged Bite tracks — its
+            // lock-on is molten gold (sbLock), not the generic purple lockOn.
+            // The heat halo (Game.sbHeatKeys) is the charge meter; this cell
+            // is the bite itself. Knowledge-gated like every bucket.
+            if (mid === 'sunbasker') out.sbLock.add(k); else out.direct.add(k);
             if (w2a) out.mon[k] = mid;
           }
         } else if (tg.cells && tg.cells.length) {
+          // GLASSWING DIVE (Steve 2026-10-06): the in-combat dive's shadow is
+          // owned by the Game.gwDiveShadow() overlay (diegetic — renders
+          // ungated like the pre-combat trap shadow), not the generic
+          // targetTile. Skip it here so the dive keeps its own visual voice.
+          const gwDive = (mid === 'glasswing' && tg.kind === 'squares');
           for (const c of tg.cells) {
             const k = c.cx + ',' + c.cy;
             // Don't double-add beam cells (they have their own renderer)
             if (ptype === 'beam') { if (w2a) out.mon[k] = mid; continue; }
-            targetSet.add(k);
+            if (!gwDive) targetSet.add(k);
             if (w2a) out.mon[k] = mid;
           }
         }
@@ -8132,6 +8147,19 @@
     // it doesn't show." GUARDED: if absent, nothing renders.
     let _cfTell = null;
     try { _cfTell = (typeof Game.catfishTellCell === 'function') ? Game.catfishTellCell() : null; } catch (e) { _cfTell = null; }
+    // WING/BASK OVERLAYS (Steve 2026-10-06): diegetic combat visuals owned
+    // by game.js — collected once per render, applied per cell below.
+    //  Game.gwDiveShadow() — null or {phase:'circle',monster:{x,y}} |
+    //    {phase:'dive',tile:{x,y},turnsLeft,streak:[{x,y}]}: the in-combat
+    //    dive shadow + fall-path streak. Ungated (a shadow is physically
+    //    there); the coaching stays codex-gated.
+    //  Game.sbHeatKeys() — null or {charge,monster:{x,y},ring:[{x,y}]}: the
+    //    sunbasker's molten-gold heat halo, the solar charge made visible.
+    //    Ungated (gold scales physically glow); counterplay is codex-gated.
+    // GUARDED: if absent, nothing renders.
+    let _gwDive = null, _sbHeat = null;
+    try { _gwDive = (typeof Game.gwDiveShadow === 'function') ? Game.gwDiveShadow() : null; } catch (e) { _gwDive = null; }
+    try { _sbHeat = (typeof Game.sbHeatKeys === 'function') ? Game.sbHeatKeys() : null; } catch (e) { _sbHeat = null; }
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
       html += '<div class="drow">';
@@ -8303,6 +8331,7 @@
           (_tg.charge.has(_k) ? ' chargeLane' : '') +
           (_tg.encircle.has(_k) ? ' encircleLane' : '') +
           (_tg.biHot.has(_k) ? ' biHot' : '') +
+          (_tg.sbLock.has(_k) ? ' sbLock' : '') +
           (_tg.line.has(_k) ? ' lineCells' : '') +
           (_tg.single.has(_k) ? ' targetTile' : '') +
           (_tg.direct.has(_k) ? ' lockOn' : '') +
@@ -8339,6 +8368,55 @@
         const _mpKeys = (typeof Game.mpBeamKeys === 'function') ? Game.mpBeamKeys() : null;
         if (_mpKeys && _mpKeys.has(_k) && !_w2cStyle) {
           _w2cStyle = 'outline:2px solid #ffca7a;outline-offset:-2px;background-color:rgba(255,190,110,.16);box-shadow:inset 0 0 14px rgba(255,200,120,.45)';
+        }
+        // WING/BASK OVERLAYS (Steve 2026-10-06): inline styles keep this in
+        // app.js (no CSS file touch — precedent: glasswing trap, wave 2C).
+        //  dive-circle: faint sliding shadow under the circling monster —
+        //    "soar". The shadow slides across the grass while it chooses.
+        //  dive: the shadow detaches onto the TARGET tile — near-black and
+        //    growing as the dive commits (turnsLeft 1 = about to land), with
+        //    a ▼ impact marker and the fall-path streak from the sky-monster
+        //    to the target. Reads as "something is falling HERE, along THIS
+        //    line" — nothing else on the grid looks like it.
+        //  sbHeat: the sunbasker's molten-gold halo — the solar charge made
+        //    visible. The monster's tile glows gold and brightens with
+        //    charge; the ring shimmers around it. Flattened/shaded/night =
+        //    no glow (game.js returns null). Distinct from burst telegraphs:
+        //    it sits ON the monster, not on a blast zone.
+        //  sbLock: the Sun-Charged Bite's tracking lock-on — molten gold,
+        //    not the generic purple lockOn. The bite tracks; the gold is the
+        //    warning. Knowledge-gated (in the sbLock bucket).
+        // All diegetic overlays render ungated — the shadow and the gold are
+        // physically there. Coaching stays codex-gated in game.js.
+        let _wbStyle = '';
+        if (_tg.sbLock.has(_k)) {
+          _wbStyle = 'outline:2px solid #ffd34d;outline-offset:-2px;background-color:rgba(255,211,77,.28);box-shadow:inset 0 0 14px rgba(255,211,77,.55)';
+        } else if (_gwDive) {
+          if (_gwDive.phase === 'circle' && _gwDive.monster && _k === (_gwDive.monster.x + ',' + _gwDive.monster.y)) {
+            _wbStyle = 'box-shadow:inset 0 0 0 999px rgba(10,10,20,0.28)';
+          } else if (_gwDive.phase === 'dive' && _gwDive.tile) {
+            const _dk = _gwDive.tile.x + ',' + _gwDive.tile.y;
+            if (_k === _dk) {
+              const _dark = (_gwDive.turnsLeft || 1) <= 1 ? 0.72 : 0.45;
+              _wbStyle = `position:relative;box-shadow:inset 0 0 0 999px rgba(10,10,20,${_dark});outline:2px solid rgba(10,10,20,.85);outline-offset:-2px`;
+              g += `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;color:rgba(255,255,255,.9);text-shadow:0 0 6px rgba(0,0,0,.9);pointer-events:none">▼</span>`;
+            } else if ((_gwDive.streak || []).some(c => _k === (c.x + ',' + c.y))) {
+              _wbStyle = 'box-shadow:inset 0 0 0 999px rgba(10,10,20,0.14)';
+            }
+          }
+        }
+        if (!_wbStyle && _sbHeat && _sbHeat.monster) {
+          const _mk = _sbHeat.monster.x + ',' + _sbHeat.monster.y;
+          const _ch = Math.min(3, _sbHeat.charge || 0);
+          if (_k === _mk) {
+            const _op = [0.10, 0.18, 0.30, 0.45][_ch];
+            _wbStyle = `box-shadow:inset 0 0 0 999px rgba(255,180,60,${_op})` +
+              (_ch >= 3 ? ', inset 0 0 18px rgba(255,220,120,.9)' : '') +
+              `;outline:2px solid rgba(255,211,77,${0.35 + 0.15 * _ch});outline-offset:-2px`;
+          } else if ((_sbHeat.ring || []).some(c => _k === (c.x + ',' + c.y))) {
+            const _op = [0, 0.08, 0.15, 0.22][_ch];
+            if (_op > 0) _wbStyle = `box-shadow:inset 0 0 0 999px rgba(255,180,60,${_op})`;
+          }
         }
         // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity.
         // Each of the four tricksters renders its attack in its own visual
@@ -8379,7 +8457,7 @@
           _cfStyle = 'box-shadow:inset 0 0 0 999px rgba(120,255,170,0.16);outline:2px solid rgba(120,255,170,0.55);outline-offset:-2px';
           _cfCls = ' cftell';
         }
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_w2aCls}${_gwCls}${_cfCls}"${(_gwStyle || _cfStyle || _w2cStyle) ? ` style="${[_gwStyle, _cfStyle, _w2cStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_w2aCls}${_gwCls}${_cfCls}"${(_gwStyle || _cfStyle || _w2cStyle || _wbStyle) ? ` style="${[_gwStyle, _cfStyle, _w2cStyle, _wbStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }

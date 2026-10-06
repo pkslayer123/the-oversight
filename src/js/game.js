@@ -1973,7 +1973,7 @@
 
       if (youSaid) c.transcript.push({ who: 'you', text: youSaid });
       c.transcript.push({ who: 'them', text: line });
-      while (c.transcript.length > 8) c.transcript.shift();
+      while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       c.exchanges++;
       this.say(`${this.displayName(vid)}: "${line}"`);
 
@@ -1992,7 +1992,7 @@
           c.pendingQ = qd;
           c.qAskedThisConvo = true;
           c.transcript.push({ who: 'them', text: qd.q });
-          while (c.transcript.length > 8) c.transcript.shift();
+          while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
           this.say(`${this.displayName(vid)}: "${qd.q}"`);
           line = qd.q;
         }
@@ -2024,7 +2024,7 @@
         line = this.convoPickCycle(vid, 'exit', pool);
       }
       c.transcript.push({ who: 'them', text: line });
-      while (c.transcript.length > 8) c.transcript.shift();
+      while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       // WORDS ONLY GO SO FAR: talk caps at 40. Beyond that, do something real.
       const t = this.state.village.trust || (this.state.village.trust = {});
       const cur = t[vid] || 10;
@@ -10342,7 +10342,18 @@
               }
             }
           } catch (e) {}
-          s.monster = { id: trap.monsterId, mx: trap.tileX, my: trap.tileY, beamPhase: 'grounded', gwGrounded: 2 };
+          s.monster = { id: trap.monsterId, mx: trap.tileX, my: trap.tileY, beamPhase: 'grounded',
+            // GROUNDED WINDOW PARITY (Steve 2026-10-06): the in-combat dive
+            // miss sets gwGrounded=2 and the miss resolves ON the monster's
+            // turn — the player gets 2 actions before it escapes. The trap
+            // hit lands OUTSIDE combat and the speed-5 darter OPENS, burning
+            // a tick before the player moves — gwGrounded=2 would give the
+            // player a single strike vs 18-26 HP and the "kill it when it
+            // lands" window would be a lie. 3 ticks here = the same 2 player
+            // actions as the in-combat path. (The +50% grounded damage hook
+            // in tbDamage makes one good strike often lethal — the window is
+            // real, not a formality.)
+            gwGrounded: 3 };
           s.gwTrap = null;
           this.startCombat(trap.monsterId);
         } else {
@@ -10354,6 +10365,11 @@
       } else {
         const darkness = ['faint', 'darker', 'almost black'][trap.turns - 1] || 'darker';
         this.say(`A shadow on the ground — ${darkness}. Something is falling.`);
+        // SHADOW CLOSES IN (Steve 2026-10-06): the trap's darkening turns are
+        // a phase of the dive — audible, escalating. (Synth belongs to the
+        // audio worker; audioEvent no-ops until it lands — projectorFire
+        // precedent, 2026-10-06.)
+        this.audioEvent('glasswingShadowClose', { turns: trap.turns });
       }
     },
     // GLASSWING TRAP CELLS (Steve 2026-10-06): grid-render contract for the
@@ -10370,6 +10386,53 @@
         splash.push({ x: trap.tileX + dx, y: trap.tileY + dy });
       }
       return { tile: { x: trap.tileX, y: trap.tileY }, turns: trap.turns, splash };
+    },
+    // GLASSWING DIVE SHADOW (Steve 2026-10-06): in-combat grid-render
+    // contract for the dive — the shadow IS the telegraph. Returns null when
+    // no glasswing dive is in progress; otherwise:
+    //   { phase: 'circle', monster: {x, y} } — circling high: a faint shadow
+    //     slides under the monster's tile ("soar").
+    //   { phase: 'dive', tile: {x, y}, turnsLeft, streak: [{x, y}] } — the
+    //     dive is declared: the shadow sits on the TARGET tile, darkening as
+    //     turnsLeft drops, and the streak traces the fall path monster→target
+    //     ("shadow closes in" → DIVE). Aftermath (grounded/climb) shows on
+    //     the monster itself — no shadow needed.
+    // Diegetic (a shadow on the ground is physically there) → renders
+    // UNGATED, the glasswingTrapCells precedent. The coaching stays
+    // codex-gated (cueText at declare, knownCue, first-contact). The app.js
+    // renderer owns the visuals — keep the shape exact. GUARDED there: if
+    // absent, nothing renders.
+    gwDiveShadow() {
+      try {
+        const f = this.tbfight;
+        if (!f || f.over) return null;
+        for (const m of (f.fighters || [])) {
+          if (!this.glasswingIs(m) || !m.alive) continue;
+          if (m.beamPhase === 'circle' && !m.telegraph) {
+            return { phase: 'circle', monster: { x: m.mx, y: m.my } };
+          }
+          if (m.beamPhase === 'dive' && m.telegraph) {
+            const aim = m.telegraph.aim || ((m.telegraph.cells || [])[0] && { x: m.telegraph.cells[0].cx, y: m.telegraph.cells[0].cy });
+            if (!aim) continue;
+            const tx = aim.x, ty = aim.y;
+            // Fall path: chebyshev steps from the sky-monster to the target.
+            // The target tile itself is the shadow, not the streak.
+            const streak = [];
+            let sx = m.mx, sy = m.my, guard = 0;
+            const dx = Math.sign(tx - sx), dy = Math.sign(ty - sy);
+            while ((sx !== tx || sy !== ty) && guard++ < 12) {
+              if (sx !== tx) sx += dx;
+              if (sy !== ty) sy += dy;
+              if (sx === tx && sy === ty) break;
+              if (sx < 0 || sx > 8 || sy < 0 || sy > 8) break;
+              streak.push({ x: sx, y: sy });
+            }
+            return { phase: 'dive', tile: { x: tx, y: ty },
+              turnsLeft: m.telegraph.turnsLeft || 1, streak };
+          }
+        }
+      } catch (e) {}
+      return null;
     },
     // monsters move when you do. they're in the detail grid with you.
     monsterTurn() {
@@ -15548,6 +15611,37 @@
       const base = atk.damage || [8, 14];
       const bonus = 4 * Math.min(3, (m && m.sbCharge) || 0);
       return [base[0] + bonus, base[1] + bonus];
+    },
+    // SUNBASKER HEAT HALO (Steve 2026-10-06): grid-render contract for the
+    // solar charge — the halo IS the charge meter. Returns null when no
+    // sunbasker is basking in sunlight; otherwise
+    // { charge, monster: {x, y}, ring: [{x, y}] } — the monster's tile plus
+    // the chebyshev-1 ring, the heat shimmer spreading as sbCharge builds.
+    // Diegetic (molten gold scales physically glow) → renders UNGATED; the
+    // counterplay coaching stays codex-gated (knownCue). Flattened
+    // (shade/night — "no sun, no fight") → null: no sun, no glow. The app.js
+    // renderer owns the visuals — keep the shape exact. GUARDED there.
+    sbHeatKeys() {
+      try {
+        const f = this.tbfight;
+        if (!f || f.over) return null;
+        let night = false;
+        try { night = this.isNight(); } catch (e) {}
+        for (const m of (f.fighters || [])) {
+          if (!this.sunbaskerIs(m) || !m.alive) continue;
+          if (m.sbFlat || night || this.tbInShade(m.mx, m.my)) return null;
+          const charge = Math.min(3, m.sbCharge || 0);
+          const ring = [];
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            const cx = m.mx + dx, cy = m.my + dy;
+            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+            ring.push({ x: cx, y: cy });
+          }
+          return { charge, monster: { x: m.mx, y: m.my }, ring };
+        }
+      } catch (e) {}
+      return null;
     },
     encUsesFifo(m) { const c = this.encConfig(m); return !!(c && c.fifo); },
     // encAttackName(m, attackName): the attack's true name only once the

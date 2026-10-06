@@ -31,6 +31,18 @@ function ok(name, cond) {
 function flatGrid() {
   return Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => 'grass'));
 }
+// DETERMINISTIC PLAYER (Steve 2026-10-06): roster generation is random —
+// fear_aura (the monster hesitates on turn 1) and pocket_sand (blinds it 2
+// turns) shift the whole turn economy, and random AGI feeds the footwork
+// dodge vs the direct bite — all of it flakes the charge/dive damage beats.
+// This file measures monster mechanics, not player builds: strip them.
+function stripChaosAbilities(s) {
+  const bad = (a) => { const id = (a && a.id) || a; return id !== 'fear_aura' && id !== 'pocket_sand'; };
+  s.abilities = (s.abilities || []).filter(bad);
+  s.backgroundAbilities = (s.backgroundAbilities || []).filter(bad);
+  s.stats = s.stats || {}; s.stats.agi = 5; // footwork dodge needs agi > 5
+  if (s.passives) delete s.passives.footwork;
+}
 function startFight(scen) {
   try { if (Game.tbfight) Game.tbEnd('fled'); } catch (e) {}
   Game.genRoster('Columbus, Ohio');
@@ -44,6 +56,7 @@ function startFight(scen) {
   }
   Game.debugScenario(scen);
   const s = Game.state.scholar; // freshGame() replaces state — re-capture
+  stripChaosAbilities(s);
   s.mx = s.monster.mx + 1; s.my = s.monster.my;
   Game.canSee = () => true;
   for (let i = 0; i < 6 && !Game.tbfight; i++) Game.monsterTurn();
@@ -61,7 +74,9 @@ function startGlasswing() {
   const s0 = Game.state.scholar;
   s0.health = 500;
   Game.debugScenario('glasswing');
-  return Game.state.scholar;
+  const sg = Game.state.scholar; // freshGame() replaces state — re-capture
+  stripChaosAbilities(sg);
+  return sg;
 }
 function M() { return Game.tbfight.fighters.find(x => x.kind === 'monster'); }
 function P() { return Game.tbFighter('p'); }
@@ -114,6 +129,15 @@ function monsterActs() {
     ok('hit → grounded', gm && gm.beamPhase === 'grounded');
     ok('grounded crash line', Game.log.some(l => /GROUNDED/i.test(l)));
     ok('combat starts on grounded hit', !!Game.tbfight);
+    // GROUNDED-WINDOW PARITY (Steve 2026-10-06): the trap hit lands outside
+    // combat and the speed-5 darter OPENS, burning a tick before the player
+    // moves — so the trap sets gwGrounded=3 where the in-combat miss sets 2
+    // (the miss resolves on the monster's own turn). Read after the opener:
+    // 2 ticks left = 2 player actions = the same real window as the
+    // in-combat path. (The +50% grounded hook makes one good strike often
+    // lethal — the window is real, not a formality.)
+    ok('trap-hit grounded window: 2 ticks left after the opener (2 player actions)',
+      gm && gm.gwGrounded === 2, `gwGrounded=${gm && gm.gwGrounded}`);
     try { Game.tbEnd('fled'); } catch (e) {}
   }
   {
@@ -184,6 +208,145 @@ function monsterActs() {
   monsterActs();
   ok('shade: flattened', !!M().sbFlat);
   Game.genDetail = () => flatGrid();
+
+  // ================= WING/BASK VISUAL CONTRACTS (Steve 2026-10-06) =================
+  // gwDiveShadow(): in-combat dive shadow — circle (faint shadow under the
+  // circling monster) → dive (shadow on the target tile + fall-path streak).
+  // sbHeatKeys(): the sunbasker's heat halo — {charge, monster, ring}, null
+  // when flattened/shaded/night. Both are diegetic → UNGATED; the coaching
+  // stays codex-gated (cueText at declare, knownCue, first-contact).
+  {
+    // --- trap audio: shadow-closing turns are audible and escalating ---
+    const fired = [];
+    Game.audio = {
+      glasswingShadowClose(d) { fired.push(['shadowClose', d && d.turns]); },
+      glasswingDive() { fired.push(['dive']); },
+      glasswingClimb() { fired.push(['climb']); },
+      glasswingCircle() { fired.push(['circle']); },
+      glasswingLand() { fired.push(['land']); },
+      heartbeat() { fired.push(['heartbeat']); },
+    };
+    const s = startGlasswing();
+    s.mx = s.monster.mx + 1; s.my = s.monster.my;
+    Game.monsterTurn(); // trap set → circle + heartbeat
+    ok('trap set fires glasswingCircle', fired.some(f => f[0] === 'circle'));
+    Game.gwTrapTick(); // turn 1
+    Game.gwTrapTick(); // turn 2
+    ok('shadow-closing turns fire glasswingShadowClose (escalating 1,2)',
+      fired.filter(f => f[0] === 'shadowClose').map(f => f[1]).join(',') === '1,2');
+    s.mx = 0; s.my = 0; // dodge
+    Game.gwTrapTick(); // turn 3 → miss
+    ok('miss fires dive + climb', fired.some(f => f[0] === 'dive') && fired.some(f => f[0] === 'climb'));
+    delete Game.audio;
+  }
+  {
+    // --- in-combat dive shadow: circle → dive ---
+    const s = startGlasswing();
+    s.mx = s.monster.mx + 1; s.my = s.monster.my;
+    Game.monsterTurn(); // trap set
+    Game.gwTrapTick(); Game.gwTrapTick(); // turns 1-2
+    Game.gwTrapTick(); // turn 3 → standing still: dive hits → combat, grounded
+    ok('gwDiveShadow: null while grounded (aftermath needs no shadow)',
+      Game.gwDiveShadow() === null);
+    let gm = Game.tbfight.fighters.find(x => x.kind === 'monster');
+    gm.hp = gm.maxHp = 200;
+    P().hp = P().maxHp = 500;
+    // force a fresh circling pass out of dive range
+    gm.beamPhase = 'circle'; gm.telegraph = null; gm.gwGrounded = 0;
+    const p = P();
+    gm.mx = 0; gm.my = 0; p.mx = 7; p.my = 7; // dist 7 > diveRange 3
+    let sh = Game.gwDiveShadow();
+    ok('gwDiveShadow: circle phase — faint shadow under the circling monster',
+      sh && sh.phase === 'circle' && sh.monster.x === 0 && sh.monster.y === 0);
+    // close in → the dive declares on the player's tile
+    gm.mx = 5; gm.my = 6; // dist 2 <= 3
+    monsterActs();
+    gm = Game.tbfight.fighters.find(x => x.kind === 'monster');
+    ok('dive declared in combat', !!gm.telegraph && gm.beamPhase === 'dive');
+    sh = Game.gwDiveShadow();
+    ok('gwDiveShadow: dive shadow sits on the target tile',
+      sh && sh.phase === 'dive' && sh.tile.x === p.mx && sh.tile.y === p.my);
+    ok('gwDiveShadow: fall streak traces monster→target, grid-clamped',
+      sh && Array.isArray(sh.streak) && sh.streak.length > 0 &&
+      sh.streak.every(c => c.x >= 0 && c.x <= 8 && c.y >= 0 && c.y <= 8) &&
+      !sh.streak.some(c => c.x === sh.tile.x && c.y === sh.tile.y));
+    // unknown pattern: the shadow shows anyway (diegetic); the cue is dread
+    ok('dive shadow renders while pattern unknown (diegetic)',
+      !Game.encTelegraphKnown(gm) && !!Game.gwDiveShadow());
+    ok('dive cueText is dread when unknown — no coaching',
+      gm.telegraph.cueText && !/You know this one/.test(gm.telegraph.cueText));
+    // let the dive resolve on the player: hit → climb → pattern learned
+    const hpB = P().hp;
+    monsterActs(); // resolve
+    ok('dive hits the player tile', P().hp < hpB);
+    ok('Skyfall Dive learned after surviving it',
+      Game.tbPatternKnown('glasswing', 'Skyfall Dive'));
+    ok('codex wrote the dive down', /Codex: Skyfall Dive/.test(Game.log.join('\n')));
+    // second dive, pattern known → the cueText coaches
+    gm = Game.tbfight.fighters.find(x => x.kind === 'monster');
+    gm.beamPhase = 'circle'; gm.telegraph = null;
+    gm.mx = 5; gm.my = 6;
+    monsterActs();
+    gm = Game.tbfight.fighters.find(x => x.kind === 'monster');
+    const gwCue = Game.tbTelegraphCue(gm); // player-facing: cueText + earned knownTail
+    ok('known dive cueText coaches (shadow + move)',
+      gm.telegraph && /You know this one/.test(gwCue) && /Watch the shadow/.test(gwCue));
+    try { Game.tbEnd('fled'); } catch (e) {}
+  }
+  {
+    // --- sunbasker heat halo: the charge made visible ---
+    startFight('sunbasker');
+    m = M();
+    m.hp = m.maxHp = 200;
+    monsterActs(); // bask 1 → charge 1
+    m = M();
+    let heat = Game.sbHeatKeys();
+    ok('sbHeatKeys: halo while basking in sunlight', heat && heat.charge === 1);
+    ok('sbHeatKeys: monster tile + 8-cell ring',
+      heat && heat.monster.x === m.mx && heat.monster.y === m.my && heat.ring.length === 8);
+    ok('heat halo renders while pattern unknown (diegetic)',
+      !Game.encTelegraphKnown(m) && !!Game.sbHeatKeys());
+    monsterActs(); // bask 2 → bite declared (charge 2)
+    m = M();
+    heat = Game.sbHeatKeys();
+    ok('sbHeatKeys: charge 2 halo brighter tier', heat && heat.charge === 2);
+    ok('bite cueText is dread when unknown',
+      m.telegraph && !/You know this one/.test(m.telegraph.cueText));
+    // tier-3 shape (defensive cap): direct-set, ring still 8
+    m.sbCharge = 3;
+    heat = Game.sbHeatKeys();
+    ok('sbHeatKeys: charge 3 halo (cap tier)', heat && heat.charge === 3 && heat.ring.length === 8);
+    m.sbCharge = 2;
+    // learn the pattern by surviving the bite, then re-declare → coaching
+    P().hp = P().maxHp = 500;
+    monsterActs(); // bite resolves on the player
+    ok('Sun-Charged Bite learned after surviving it',
+      Game.tbPatternKnown('sunbasker', 'Sun-Charged Bite'));
+    m = M();
+    if (m && m.alive) {
+      m.beamPhase = 'bask'; m.telegraph = null; m.sbCharge = 1;
+      m.hp = m.maxHp = 200;
+      monsterActs(); // bask → charge 2 → declare
+      m = M();
+      const sbCue = Game.tbTelegraphCue(m); // player-facing: cueText + earned knownTail
+      ok('known bite cueText coaches (hit it / shade)',
+        m.telegraph && /You know this one/.test(sbCue) &&
+        /hit it NOW/.test(sbCue));
+    }
+    try { Game.tbEnd('fled'); } catch (e) {}
+  }
+  {
+    // --- heat halo dies with the sun ---
+    startFight('sunbasker');
+    m = M();
+    monsterActs(); // bask 1
+    ok('halo present while basking', !!Game.sbHeatKeys());
+    Game.dayPart = 3; // night
+    monsterActs();
+    ok('sbHeatKeys: null when flattened (night)', Game.sbHeatKeys() === null);
+    Game.dayPart = 1;
+    try { Game.tbEnd('fled'); } catch (e) {}
+  }
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

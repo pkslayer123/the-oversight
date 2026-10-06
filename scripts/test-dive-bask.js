@@ -45,6 +45,14 @@ function setup(monsterId, px, py, mx, my) {
   Game.depart();
   const s = Game.state.scholar;
   s.mx = px; s.my = py; s.kcal = 3000; s.energy = 60; s.health = 100;
+  // DETERMINISTIC PLAYER (Steve 2026-10-06): random roster abilities —
+  // fear_aura (hesitate), pocket_sand (blind), footwork/AGI (dodge) — flake
+  // turn-sensitive asserts. Strip/pin; this file measures monster mechanics.
+  const bad = (a) => { const id = (a && a.id) || a; return id !== 'fear_aura' && id !== 'pocket_sand'; };
+  s.abilities = (s.abilities || []).filter(bad);
+  s.backgroundAbilities = (s.backgroundAbilities || []).filter(bad);
+  s.stats = s.stats || {}; s.stats.agi = 5;
+  if (s.passives) delete s.passives.footwork;
   Game.genDetail = flatGrid;
   Game.log = [];
   giveSpear();
