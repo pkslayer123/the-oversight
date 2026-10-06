@@ -86,7 +86,9 @@ function drive(rounds, strat) {
     } else if (Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) > 2) {
       p.mx = Math.max(0, Math.min(8, p.mx + Math.sign(m.mx - p.mx)));
     } else {
-      try { Game.tbPlayerStrike(); } catch (e) {}
+      // P2-12 (Steve 2026-10-06): tbPlayerStrike() with no target no-ops
+      // (tbFighter(undefined) is null). Pass the monster's fighter key.
+      try { Game.tbPlayerStrike(m.key); } catch (e) {}
     }
   });
 
@@ -103,6 +105,6 @@ function drive(rounds, strat) {
     // naive: lingers in range (idiot), then runs at bound
     const d = Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my));
     if (m.beamPhase === 'bound' && d <= 3) { p.mx = Math.max(0, p.mx - 2); }
-    else if (d <= 2) { try { Game.tbPlayerStrike(); } catch (e) {} }
+    else if (d <= 2) { try { Game.tbPlayerStrike(m.key); } catch (e) {} }
   });
 })().catch(e => { console.error('FATAL', e); process.exit(2); });
