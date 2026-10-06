@@ -365,7 +365,7 @@ function ok(name, cond) {
     const said = []; const realSay = Game.say; Game.say = t => said.push(t);
     const offered = Game.offerSplit();
     Game.say = realSay;
-    ok('split offered with text', !!offered && said.join(' ').indexOf('TWO THREATS') !== -1);
+    ok('split offered with text', !!offered && said.join(' ').indexOf('Two threats') !== -1);
     if (VB) {
       const realR = Math.random;
       Math.random = () => 0.9; // force favorable-ish roll; outcome must still be valid

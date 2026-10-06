@@ -209,5 +209,50 @@ function setTemp(vid, t) {
   console.log(`  !! justified (self-defense) murders on the ladder: ${selfDefCrimes.length}`);
 
   console.log(`\n== ${pass} passed, ${fail} failed ==`);
+
+  // ---------- 8. REGRESSION (2026-10-05): tbEnd('won') with no monster fighter
+  // must not crash on undefined.mdef. Human-only fights are normally routed
+  // through the betrayal end path, but 'won' must still be safe if one ever
+  // lands here (tbEndCheck routes no-monster fights to 'won').
+  Game.tbfight = {
+    over: false, result: null, style: 10,
+    fighters: [
+      { key: 'p', kind: 'player', name: 'You', mx: 4, my: 4, hp: 90, maxHp: 100, alive: true, fled: false },
+      { key: 'h_x', kind: 'hostile', name: 'Raider', villagerId: 'gen_reg1', mx: 5, my: 5, hp: 0, maxHp: 30, alive: false, fled: false },
+    ],
+  };
+  let crash = null;
+  try { Game.tbEnd('won'); } catch (e) { crash = e; }
+  ok("tbEnd('won') with no monster fighter does not throw", crash === null, crash && crash.message);
+  ok('fight cleared after monster-less win', Game.tbfight === null);
+
+  // ---------- 9. REGRESSION (2026-10-05): tbPlayerStrike must not throw a
+  // TDZ ReferenceError on isHuman (armor block read the const before its
+  // declaration — every player strike crashed). Strike both a monster and a
+  // hostile human; both must return without throwing.
+  Game.tbfight = {
+    over: false, result: null, turnIdx: 0, order: ['p', 'm1'],
+    fighters: [
+      { key: 'p', kind: 'player', name: 'You', mx: 4, my: 4, hp: 100, maxHp: 100, alive: true, fled: false, moveLeft: 4, acted: false },
+      { key: 'm1', kind: 'monster', name: 'boar', monsterId: 'thornback_boar', mdef: { id: 'thornback_boar', name: 'Thornback boar', armor: 2 }, mx: 5, my: 5, hp: 60, maxHp: 60, alive: true, fled: false },
+    ],
+  };
+  let strikeCrash = null, strikeRet = null;
+  try { strikeRet = Game.tbPlayerStrike('m1'); } catch (e) { strikeCrash = e; }
+  ok('tbPlayerStrike on a monster does not throw', strikeCrash === null, strikeCrash && strikeCrash.message);
+  Game.tbfight = null;
+  Game.tbfight = {
+    over: false, result: null, turnIdx: 0, order: ['p', 'h1'],
+    fighters: [
+      { key: 'p', kind: 'player', name: 'You', mx: 4, my: 4, hp: 100, maxHp: 100, alive: true, fled: false, moveLeft: 4, acted: false },
+      { key: 'h1', kind: 'hostile', name: 'Raider', villagerId: 'gen_reg2', mx: 5, my: 5, hp: 30, maxHp: 30, alive: true, fled: false },
+    ],
+  };
+  let strikeCrash2 = null;
+  try { Game.tbPlayerStrike('h1'); } catch (e) { strikeCrash2 = e; }
+  ok('tbPlayerStrike on a human does not throw', strikeCrash2 === null, strikeCrash2 && strikeCrash2.message);
+  Game.tbfight = null;
+
+  console.log(`\n== ${pass} passed, ${fail} failed (with regressions) ==`);
   process.exit(fail ? 1 : 0);
 })();

@@ -13602,6 +13602,10 @@
       // visibly. (feastBurn states the burn itself.)
       if (this.feastBurn) { const fb = this.feastBurn(); if (fb > 0) d = Math.round(d * fb); }
       d = Math.round(d);
+      // isHuman is read by the armor block below AND the trauma block after:
+      // declare once, up front (TDZ crash 2026-10-05: the armor block read it
+      // before its const, breaking every player strike).
+      const isHuman = t.kind === 'hostile';
       // ARMOR & RESISTANCES (Steve 2026-10-05): monsters have armor (flat vs
       // physical) and resistances (percentage per damage type). Apply them here.
       if (!isHuman) {
@@ -13627,7 +13631,6 @@
       p.acted = true;
       // BETTER HUMAN: fighting is strength and agility practice.
       this.practice('str', 1); this.practice('agi', 1);
-      const isHuman = t.kind === 'hostile';
       if (isHuman) {
         // HUMAN COMBAT IS NOT FUN. It's traumatic. No cool moves, no style points.
         // The text says what happened. Your hands did it. You live with it.
@@ -16463,7 +16466,13 @@
       }
       if (result === 'won') {
         try { this.combatWitnessReact('kill'); } catch (e) {}
-        const mdef = f.fighters.find(x => x.kind === 'monster').mdef;
+        // MONSTER REWARDS need a monster. A 'won' with no monster fighter
+        // (e.g. a human-only fight that didn't route through the betrayal
+        // end path) skips the carcass economy instead of crashing on
+        // undefined.mdef (2026-10-05).
+        const mf = f.fighters.find(x => x.kind === 'monster');
+        const mdef = (mf && mf.mdef) || null;
+        if (mdef) {
         this.state.codex.monsters = this.state.codex.monsters || {};
         const cur = this.state.codex.monsters[mdef.id] || {};
         this.state.codex.monsters[mdef.id] = Object.assign(cur, { stage: 'slain' });
@@ -16497,6 +16506,7 @@
             }
           }
         } catch (e) {}
+        } // end monster-reward block
         this.notePlaystyle('bold');
         try { this.villageEvent('victory'); } catch (e) {}
         try { this.checkPromises('fight'); } catch (e) {}
