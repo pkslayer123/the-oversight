@@ -387,6 +387,80 @@
       return '"' + t + '"';
     },
 
+    // voiceMods: what has this person LIVED through? Voice isn't a static
+    // template from generation — people change during a run. A villager
+    // who's been threatened, betrayed, or grieved sounds different than on
+    // day 1. Derived from memory + trust + mood; no state writes.
+    // (Steve 2026-10-06: unique-person law — not the same person throughout.)
+    voiceMods(vid) {
+      const v = this.state.village || {};
+      const mods = [];
+      const mem = (v.memory || {})[vid] || [];
+      const day = (this.state.scholar || {}).day || 1;
+      const recent = n => mem.filter(m => day - (m.day || 0) <= n).map(m => m.t);
+      const r7 = recent(7), r4 = recent(4);
+      const has = (arr, ...ts) => ts.some(t => arr.indexOf(t) !== -1);
+      try { if (this.npcMood(vid) === 'grieving') mods.push('grieving'); } catch (e) {}
+      if (has(r7, 'confronted', 'hostile', 'you_threatened', 'moot_vote', 'observed')) mods.push('scarred');
+      if (has(r7, 'promise_broken', 'rumor_about_them', 'caught_you_stealing', 'suspects_you_stealing', 'deal_refused')) mods.push('betrayed');
+      if (has(r4, 'gift', 'private_gift', 'saved', 'hero', 'comforted', 'promise_kept', 'amends', 'mediated')) mods.push('grateful');
+      if (((v.trust || {})[vid] || 10) >= 55) mods.push('close');
+      return mods;
+    },
+
+    // voicePool: terse people say less. When selecting from a generic pool,
+    // prickly/withdrawn/grieving villagers prefer short lines — fragments,
+    // not paragraphs. Falls back to the full pool when nothing is short.
+    voicePool(vid, pool) {
+      if (!pool || pool.length < 4) return pool;
+      const temp = String(this.npcTemper(vid) || 'steady').toLowerCase();
+      const V = (this.data.characterGen || {}).voice || {};
+      const prof = (V.profiles || {})[temp] || {};
+      let terse = !!prof.terse;
+      if (!terse) {
+        for (const m of this.voiceMods(vid)) {
+          if ((((V.states || {})[m] || {}).terse)) { terse = true; break; }
+        }
+      }
+      if (!terse) return pool;
+      const short = pool.filter(s => String(s).length < 75);
+      return short.length >= 2 ? short : pool;
+    },
+
+    // voiceLine: HOW they say it, not what they say. The temperament profile
+    // is the base voice (who they are); voiceMods inflect it with what
+    // they've lived through (who they've become). Applies an opener OR a
+    // closer — never both; restraint is what keeps it voice, not mannerism.
+    // Only touches plain quoted speech; stage directions pass through.
+    // Never call on choice labels (sibling's lane) or turn-flow text.
+    voiceLine(vid, line) {
+      const t = String(line == null ? '' : line);
+      if (!/^".*"$/.test(t)) return line;
+      const temp = String(this.npcTemper(vid) || 'steady').toLowerCase();
+      const V = (this.data.characterGen || {}).voice || {};
+      const prof = (V.profiles || {})[temp] || (V.profiles || {}).steady || {};
+      const mods = this.voiceMods(vid);
+      let p = prof.p || 0.3;
+      let opens = (prof.open || []).slice();
+      let closes = (prof.close || []).slice();
+      for (const m of mods) {
+        const st = (V.states || {})[m] || {};
+        if (st.open) opens = opens.concat(st.open);
+        if (st.close) closes = closes.concat(st.close);
+        if (st.pMul) p *= st.pMul;
+        if (st.hush && st.hush.indexOf(temp) !== -1) p *= 0.35;
+      }
+      if ((!opens.length && !closes.length) || Math.random() >= p) return line;
+      const inner = t.slice(1, -1);
+      const isQ = /\?\s*$/.test(inner);
+      // Openers don't lead questions ("I think are you okay?" is broken).
+      const useOpen = opens.length && (!closes.length || (!isQ && Math.random() < 0.45));
+      const pool = useOpen ? opens : closes;
+      const bit = this.convoPick(vid, 'voice:' + temp + ':' + mods.join('+') + ':' + (useOpen ? 'o' : 'c'), pool);
+      if (!bit) return line;
+      return useOpen ? '"' + bit + inner + '"' : '"' + inner + ' ' + bit + '"';
+    },
+
     convoGet(vid) {
       const v = this.state.village;
       v.conv = v.conv || {};
@@ -563,15 +637,27 @@
       } catch (e) {}
       // Brief people are brief — but never cut off after a single exchange.
       // Floor 3: opener + two real turns before the wind-down can land.
-      return Math.max(3, Math.min(6, b));
+      // RELATIONSHIP AGE (Steve 2026-10-06): old friends linger — more to
+      // say, more comfortable saying it. Close tier gets +1 budget.
+      try {
+        if (this.convoVoiceTier && this.convoVoiceTier(vid) === 'close') b += 1;
+      } catch (e) {}
+      return Math.max(3, Math.min(7, b));
     },
 
     // convoHesitationMs: people don't respond instantly. A brief,
     // personality-shaped pause before their line lands — impulsive people
     // fire back, thoughtful people take their time. Deep or emotional beats
     // get a longer pause. Feels human, never laggy (200–950ms).
+    // RELATIONSHIP AGE (Steve 2026-10-06): the rhythm of a relationship.
+    // Strangers are careful — they weigh words, feel for the shape of you.
+    // Old friends fire back — shorthand, no performance. New +70ms, close
+    // -110ms. First meetings open slower (sizing each other up); reunions
+    // open quick (they saw you coming).
     convoHesitationMs(vid, choiceId, isOpening) {
-      let ms = isOpening ? 320 : 400;
+      const c = this.convoGet(vid);
+      const isFirstMeeting = (c.count || 0) <= 1;
+      let ms = isOpening ? (isFirstMeeting ? 380 : 260) : 400;
       const temp = (this.npcTemper && this.npcTemper(vid)) || '';
       if (temp === 'bold' || temp === 'intense' || temp === 'restless') ms -= 150;
       else if (temp === 'cautious' || temp === 'withdrawn' || temp === 'steady') ms += 230;
@@ -579,6 +665,11 @@
       // 'dry' and 'prickly' answer at their own pace — no modifier.
       const deep = choiceId && /^(ask:|more|theorize|confront|trade|teach|offer_help|invite_party|ans:)/.test(choiceId);
       if (deep) ms += 260;
+      try {
+        const tier = this.convoVoiceTier ? this.convoVoiceTier(vid) : 'new';
+        if (tier === 'new') ms += 70;
+        else if (tier === 'close') ms -= 110;
+      } catch (e) {}
       return Math.max(200, Math.min(950, ms + Math.floor(Math.random() * 120)));
     },
 
@@ -657,7 +748,7 @@
         // Secret at high trust
         if (trust >= 40 && proto.secret && !c.secretShared && Math.random() < 0.2) {
           c.secretShared = true;
-          return { line: `"Can I tell you something? ${proto.secret}"`, thread: 'secret' };
+          return { line: this.voiceLine(vid, `"Can I tell you something? ${proto.secret}"`), thread: 'secret' };
         }
         // Want as a hook (evolved if the world has moved)
         if (proto.want && !c.wantHooked && Math.random() < 0.3) {
@@ -665,7 +756,7 @@
           // Use evolved want if enough days have passed (simplified Change)
           const day = this.state.scholar.day || 1;
           const wantText = (day > 7 && proto.want_evolved) ? proto.want_evolved : proto.want;
-          return { line: `"${wantText}"`, thread: 'want' };
+          return { line: this.voiceLine(vid, `"${wantText}"`), thread: 'want' };
         }
       }
 
@@ -683,7 +774,8 @@
           `"I tried the ${pname} like you showed me. Didn't poison anyone, so that's a win."`,
           `"${pname} — I keep thinking about what you said. I'm seeing it everywhere now."`,
         ];
-        return { line: this.convoPick(vid, 'taughtref', refs) || refs[0], thread: 'taughtref' };
+        const tr = this.convoPick(vid, 'taughtref', refs) || refs[0];
+        return { line: this.voiceLine(vid, tr), thread: 'taughtref' };
       }
 
       // 1. THEY asked to talk — their reason leads, once. The stored line is
@@ -714,21 +806,21 @@
           '"Have you — sorry. I keep thinking about them."',
           '"It\'s quiet today. Wrong kind of quiet."',
         ]);
-        if (l) return { line: l, thread: 'grief' };
+        if (l) return { line: this.voiceLine(vid, l), thread: 'grief' };
       }
       if ((v.cheer || 0) > 0 && Math.random() < 0.5) {
         const l = this.convoPick(vid, 'cheer', [
           '"Good day, huh? Almost feels normal."',
           '"People are smiling. I forgot what that looked like."',
         ]);
-        if (l) return { line: l, thread: 'cheer' };
+        if (l) return { line: this.voiceLine(vid, l), thread: 'cheer' };
       }
       // 4. What they want — if they trust you enough to say it.
       const shareAt = temp === 'withdrawn' ? 60 : temp === 'prickly' ? 50
         : (temp === 'warm' || temp === 'gentle') ? 25 : 35;
       if (goalDef && trust >= shareAt) {
         const l = this.convoPick(vid, 'goal', goalDef.lines || []);
-        if (l) return { line: this.fillTalkLine(l, vp), thread: 'goal' };
+        if (l) return { line: this.voiceLine(vid, this.fillTalkLine(l, vp)), thread: 'goal' };
       }
       // 5. Contextual small talk — mood, temperament, reputation. Never repeated.
       const pool = [];
@@ -750,17 +842,26 @@
       }
       push(allT.slice(0, 8), 1);
       if (!pool.length) push(cg.openers || ['"Hey."'], 1);
-      const l = this.convoPick(vid, 'small', pool);
-      if (l) return { line: this.fillTalkLine(l, vp), thread: 'small' };
+      // Authored-voiced lines (mood/temperament/intel) already sound like
+      // someone — the voice layer only voices the generic pools.
+      const voiced = new Set();
+      for (const x of ((this.data.characterGen.moodTalk || {})[mood] || [])) voiced.add(x);
+      for (const x of ((this.data.characterGen.temperamentTalk || {})[temp] || [])) voiced.add(x);
+      try { for (const x of (((this.data.characterGen || {}).intelOpeners || {})[this.npcIntel(vid).primary] || [])) voiced.add(x); } catch (e) {}
+      const l = this.convoPick(vid, 'small', this.voicePool(vid, pool));
+      if (l) {
+        const filled = this.fillTalkLine(l, vp);
+        return { line: voiced.has(l) ? filled : this.voiceLine(vid, filled), thread: 'small' };
+      }
       // Reopeners: the small-talk well is dry, but you've talked before —
       // a familiar line beats a loop. (Previously dead data; now wired in.)
       if ((c.count || 0) > 1) {
         const rl = this.convoPick(vid, 'small', cg.reopeners || []);
-        if (rl) return { line: this.fillTalkLine(rl, vp), thread: 'small' };
+        if (rl) return { line: this.voiceLine(vid, this.fillTalkLine(rl, vp)), thread: 'small' };
       }
       // 6. Truly nothing new — said like a person, not a loop.
       const ex = this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know."']);
-      return { line: ex || '"Good to just be around people."', thread: 'small' };
+      return { line: this.voiceLine(vid, ex || '"Good to just be around people."'), thread: 'small' };
     },
 
     convoThreadHasMore(vid) {
@@ -823,9 +924,9 @@
         // them a person, not a template. (Steve 2026-10-05: wire up dead data)
         const talkLines = vp.talk || [];
         if (talkLines.length) {
-          const l = this.convoPick(vid, 'personal', talkLines);
+          const l = this.convoPick(vid, 'personal', this.voicePool(vid, talkLines));
           c.thread = 'personal'; c.depth = 1;
-          return l ? this.fillTalkLine(l, vp) : exh();
+          return l ? this.voiceLine(vid, this.fillTalkLine(l, vp)) : exh();
         }
         // Fallback if no personal lines (background survivors)
         return exh();
@@ -838,7 +939,7 @@
         this.state.village.goalsKnown[vid] = goal;
         this.remember(vid, 'shared_goal', goal || 'unknown');
         c.thread = 'goal'; c.depth = 1;
-        return l ? this.fillTalkLine(l, vp) : exh();
+        return l ? this.voiceLine(vid, this.fillTalkLine(l, vp)) : exh();
       }
       if (topic === 'past') {
         // DEFLECTORS don't do "before". Withdrawn/prickly people with low
@@ -860,9 +961,9 @@
         // (matches {occ}, {an_occ}, {Occ} — 'occ}' is the common tail)
         const occPool = all.filter(s => s.indexOf('occ}') !== -1);
         const pool = occPool.length ? occPool : all.filter(s => s.indexOf('{origin}') !== -1);
-        const l = this.convoPick(vid, 'past', pool.length ? pool : ['"Before? I was {an_occ}. Feels like someone else\'s life."']);
+        const l = this.convoPick(vid, 'past', this.voicePool(vid, pool.length ? pool : ['"Before? I was {an_occ}. Feels like someone else\'s life."']));
         c.thread = 'past'; c.depth = 1;
-        return l ? this.fillTalkLine(l, vp) : exh();
+        return l ? this.voiceLine(vid, this.fillTalkLine(l, vp)) : exh();
       }
       if (topic === 'village') {
         const vg = this.state.village;
@@ -880,48 +981,80 @@
         // idle lines reflect who's talking.
         const temp = ((vp.personality || {}).temperament || 'steady').toLowerCase();
         const idleByTemp = {
+          bold: [
+            'holding. Because we hold — that\'s the job.',
+            'fine. We decide it\'s fine, then we make it true.',
+            'better than it looks. I refuse to read it any other way.',
+          ],
+          cautious: [
+            '...okay, I think. Nothing\'s broken that I can see.',
+            'stable, probably. I\'m watching for the crack.',
+            'alright. For now. I keep checking.',
+          ],
           warm: [
             'holding together, somehow. People are good, you know?',
             'tired, but nobody\'s giving up. That counts for a lot.',
             'we\'re alright. We look out for each other.',
+          ],
+          prickly: [
+            'fine. Nobody died. High bar, cleared.',
+            'whatever "okay" means out here. We\'re it.',
+            'people are people. Still here.',
           ],
           steady: [
             'quiet. People keeping to themselves, mostly.',
             'stable. No crises today, which is its own kind of good.',
             'same as yesterday. I\'ll take boring.',
           ],
-          sharp: [
-            'better than yesterday. Worse than tomorrow, probably.',
-            'functional. Don\'t mistake that for fine.',
-            'people are coping. Coping isn\'t thriving, but it\'s not dying.',
-          ],
           restless: [
             'everyone\'s itchy. Too much sitting, not enough doing.',
             'fine, I guess. I need to move, though. You?',
             'okay. But okay feels like waiting for something.',
           ],
+          dry: [
+            'oh, thriving. Absolutely thriving. (We are not.)',
+            'fine, in the technical sense.',
+            'nobody\'s on fire. Today.',
+          ],
+          gentle: [
+            'we\'re... okay. Being gentle with each other, mostly.',
+            'tired, but kind. That\'s something.',
+            'holding each other up. Quietly.',
+          ],
+          intense: [
+            'everyone\'s awake now. Good. Awake is alive.',
+            'focused. Finally. Fear sharpens.',
+            'we\'re here. That\'s not nothing — that\'s everything.',
+          ],
+          withdrawn: [
+            '...fine. I think. Haven\'t really... yeah. Fine.',
+            'quiet. I like quiet. Mostly.',
+            'okay. Don\'t ask me for details.',
+          ],
         };
         const idlePool = idleByTemp[temp] || idleByTemp.steady;
         const line = bits.length ? bits.join('; ') + '.' : this.convoPickCycle(vid, 'villageidle', idlePool);
-        const fullLine = '"Honestly? ' + line + '"';
+        // Repeat-check on the raw line — voiceLine is probabilistic, so the
+        // voiced output can't be the dedupe key.
+        const rawLine = '"Honestly? ' + line + '"';
         // Village news can repeat when nothing changed — say it differently.
         c.said.villagelines = c.said.villagelines || [];
-        if (c.said.villagelines.indexOf(fullLine) !== -1) {
+        if (c.said.villagelines.indexOf(rawLine) !== -1) {
           c.thread = 'village'; c.depth = 1;
-          return '"Honestly? ' + this.convoPickCycle(vid, 'villageidle', [
+          return this.voiceLine(vid, '"Honestly? ' + this.convoPickCycle(vid, 'villageidle', [
             'same as before, mostly.',
             'no big changes. That\'s good news, out here.',
             'still standing. Ask me tomorrow.',
-          ]) + '"';
+          ]) + '"');
         }
-        c.said.villagelines.push(fullLine);
+        c.said.villagelines.push(rawLine);
         c.thread = 'village'; c.depth = 1;
-        return fullLine;
+        return this.voiceLine(vid, rawLine);
       }
       if (topic === 'plans') {
         const l = this.convoPick(vid, 'plansdeep', cg.plansFollow || []);
         c.thread = 'plans'; c.depth = 1;
-        return l ? this.fillTalkLine(l, vp) : exh();
+        return l ? this.voiceLine(vid, this.fillTalkLine(l, vp)) : exh();
       }
       if (topic === 'gossip') {
         // THE SOCIALITE'S VERB: "heard anything about anyone?" The gossip
@@ -935,7 +1068,7 @@
         this.say = origSay;
         c.thread = 'gossip'; c.depth = 1;
         const line = said.join(' ');
-        return line || exh();
+        return this.voiceLine(vid, line) || exh();
       }
       if (topic === 'spread_rumor') {
         // THE DRAMA VERB: start a rumor about someone. Two-step: pick target, then rumor type.
@@ -951,49 +1084,330 @@
       return null;
     },
 
-    // convoLabel: topic prompts are NOT identical every time. Each villager
-    // gets stable-per-person phrasing (seeded by id hash), so the "paths"
-    // stop looking like paths. You learn to talk to PEOPLE, not menus.
-    convoLabel(vid, key) {
-      const variants = {
-        goal: ['"What do you want? Out of all this."',
-               '"What are you hoping for, here?"',
-               '"What keeps you going?"'],
-        past: ['"What did you do — before?"',
-               '"What was your life, before?"',
-               '"Tell me about before."'],
-        village: ['"How\'s everyone holding up?"',
-                  '"What\'s the mood like around here?"',
-                  '"How are people doing?"'],
-        plans: ['"What\'s your plan for tomorrow?"',
-                '"Thought about what\'s next?"',
-                '"Any plans, or just getting through?"'],
-        gossip: ['"Heard anything about anyone?"',
-                 '"What\'s the word around the fire?"',
-                 '"Anyone saying anything interesting?"'],
-      };
-      const vs = variants[key] || [key];
-      const h = this._hashStr ? this._hashStr(vid + ':' + key) : 0;
-      return vs[Math.abs(h) % vs.length];
+    // playerVoice: WHO the player is this life. Steve's law (2026-10-06):
+    // every player is a completely unique person, and not the same person
+    // run to run. The player character is a full generated villager
+    // (rosterChars[villagerId]) with temperament, occupation, age. Choice
+    // labels draw from that identity: a gruff ex-soldier and a nervous
+    // teenager do not "say" the same things.
+    // voiceClass: blunt (bold/prickly/intense), soft (warm/gentle/cautious),
+    // dry (dry), plain (steady/restless/withdrawn — the neutral register).
+    // occTags: teachTags from the occupation def (medicinal, food) — a
+    // medic asks about injuries the way a cook asks about hunger.
+    playerVoice() {
+      const rc = (this.state.village.rosterChars || {})[this.villagerId] || {};
+      const temp = (rc.personality && rc.personality.temperament) || 'steady';
+      const occName = rc.formerOccupation || '';
+      const occDef = ((this.data || {}).characterGen || {}).occupations || [];
+      const def = occDef.find(o => o.name === occName) || {};
+      const voiceClass = { bold: 'blunt', prickly: 'blunt', intense: 'blunt',
+        warm: 'soft', gentle: 'soft', cautious: 'soft', dry: 'dry' }[temp] || 'plain';
+      return { temp, voiceClass, occName, occTags: def.teachTags || [],
+               age: rc.age || null, name: rc.name || null };
     },
 
-    // convoMoreLabel: "Tell me more." is not identical every time, and it
-    // reads differently per thread — "what happened next" for the past,
-    // "what would that look like" for a goal. Stable per person, like
-    // convoLabel: you learn to talk to PEOPLE, not menus.
+    // convoVoicePool: shared selection for tier x voice labels. Occupation
+    // flavor wins (a medic's check-in is about injuries), then temperament
+    // voice, then the relationship-tier default. Seeded per person so your
+    // phrasing is stable — you sound like YOU, consistently.
+    convoVoicePool(vid, def, seedKey) {
+      const tier = this.convoVoiceTier(vid);
+      const pv = this.playerVoice();
+      let pool = null;
+      if (def) {
+        if (def.occ && pv.occTags.length) {
+          for (const t of pv.occTags) { if (def.occ[t]) { pool = def.occ[t]; break; } }
+        }
+        if (!pool && def.voice && def.voice[pv.voiceClass]) pool = def.voice[pv.voiceClass];
+        if (!pool && def.tier) pool = def.tier[tier] || def.tier.new;
+      }
+      pool = pool || [seedKey];
+      const h = this._hashStr ? this._hashStr(vid + ':' + seedKey + ':' + tier + ':' + pv.voiceClass) : 0;
+      return pool[Math.abs(h) % pool.length];
+    },
+
+    // convoVoiceTier: the REGISTER the player speaks in to this villager.
+    // Not a stat — a voice. Strangers are careful and a little formal;
+    // friends are direct; close ones are blunt and warm. Choice labels
+    // should sound like a person whose relationship has a history, not
+    // a menu that never changes. Tier shifts as trust/conversations grow —
+    // your voice changing is the point, not a bug.
+    convoVoiceTier(vid) {
+      const trust = (this.state.village.trust || {})[vid] || 10;
+      const c = this.convoGet(vid);
+      const count = c.count || 0;
+      if (trust >= 55 || count >= 6) return 'close';
+      if (trust >= 30 || count >= 3) return 'warm';
+      return 'new';
+    },
+
+    // convoLabel: topic prompts are NOT identical every time, and they're
+    // not identical for every relationship. Each villager gets stable-per-
+    // person phrasing (seeded by id hash) WITHIN their voice tier, so the
+    // "paths" stop looking like paths and your voice deepens as trust grows.
+    // You learn to talk to PEOPLE, not menus.
+    convoLabel(vid, key) {
+      const variants = {
+        goal: {
+          tier: {
+            new: ['"What do you want? Out of all this."',
+                  '"What are you hoping for, here?"'],
+            warm: ['"What keeps you going?"',
+                   '"What are you working toward — really?"'],
+            close: ['"Tell me what you actually want. Not the polite version."',
+                    '"If you could do anything tomorrow, what would it be?"'],
+          },
+          voice: {
+            blunt: ['"What do you actually want?"', '"Endgame. What is it?"'],
+            soft: ['"What are you hoping for? If you don\'t mind me asking."'],
+            dry: ['"So. What\'s the dream?"'],
+          },
+        },
+        past: {
+          tier: {
+            new: ['"What did you do — before?"',
+                  '"Mind if I ask what your life was, before?"'],
+            warm: ['"What was your life, before?"',
+                   '"You\'ve never said what you did before all this."'],
+            close: ['"Tell me about before. The real version."',
+                    '"What do you miss most, from before?"'],
+          },
+          voice: {
+            blunt: ['"What were you, before?"', '"Before all this — what?"'],
+            soft: ['"Do you mind talking about before?"', '"What was your life like? Before, I mean."'],
+            dry: ['"What did you used to be?"'],
+          },
+        },
+        village: {
+          tier: {
+            new: ['"How\'s everyone holding up?"',
+                  '"How are people doing?"'],
+            warm: ['"What\'s the feeling around the fire lately?"',
+                   '"Who\'s struggling that I haven\'t noticed?"'],
+            close: ['"Be honest — how bad is it, really?"',
+                    '"Who do I need to check on?"'],
+          },
+          occ: {
+            medicinal: ['"Anyone hurt? Who needs looking at?"', '"How are the injured doing?"'],
+            food: ['"Is anyone going hungry?"', '"How\'s the food holding out — honestly?"'],
+          },
+          voice: {
+            blunt: ['"Everyone still breathing?"', '"Who\'s falling apart?"'],
+            soft: ['"Is everyone alright? Really alright?"'],
+            dry: ['"How\'s morale? Or shouldn\'t I ask."'],
+          },
+        },
+        plans: {
+          tier: {
+            new: ['"What\'s your plan for tomorrow?"',
+                  '"Thought about what\'s next?"'],
+            warm: ['"Any plans, or just getting through?"',
+                   '"What are you thinking for tomorrow?"'],
+            close: ['"So what\'s the move tomorrow?"',
+                    '"What do you need tomorrow to look like?"'],
+          },
+          voice: {
+            blunt: ['"Tomorrow. What\'s the plan?"'],
+            soft: ['"Have you thought about tomorrow at all?"'],
+            dry: ['"What\'s the plan, then?"'],
+          },
+        },
+        gossip: {
+          tier: {
+            new: ['"Heard anything about anyone?"',
+                  '"What\'s the word around the fire?"'],
+            warm: ['"Anyone saying anything interesting?"',
+                   '"What are people saying when they think I\'m not listening?"'],
+            close: ['"Give me the real gossip. All of it."',
+                    '"What aren\'t people saying out loud?"'],
+          },
+          voice: {
+            blunt: ['"What are people saying?"'],
+            soft: ['"Has anyone told you anything — about anyone?"'],
+            dry: ['"Any good gossip? I\'m bored."'],
+          },
+        },
+      };
+      const def = variants[key] || null;
+      // Unknown topic keys fall through to the action-voice system
+      // ('personal' lives there) rather than echoing a raw key.
+      if (!def) return this.convoActionLabel(vid, key);
+      return this.convoVoicePool(vid, def, 'ask:' + key);
+    },
+
+    // convoMoreLabel: continuers that fit the moment. A continuer should
+    // sound like a response to WHAT THEY JUST SAID — not a button.
+    // Gentle when they're grieving or scared; eager when they trail off
+    // mid-story; per-thread otherwise. Stable per person within context.
     convoMoreLabel(vid) {
       const c = this.convoGet(vid);
+      const thread = c.thread || 'small';
+      const mood = (this.npcMood && this.npcMood(vid)) || '';
+      const themLines = (c.transcript || []).filter(e => e.who === 'them');
+      const last = themLines.length ? String(themLines[themLines.length - 1].text || '') : '';
+      const trailsOff = /(\.\.\.|—|…)\s*"?$/.test(last);
+      const askedYou = /\?\s*"?$/.test(last);
+      let pool;
+      if (mood === 'grieving' || mood === 'scared') {
+        pool = ['"Take your time."', '"I\'m here. Go on."', '"You don\'t have to say it all at once."'];
+      } else if (trailsOff) {
+        pool = ['"What? What were you going to say?"', '"And then?"', '"Don\'t stop there —"'];
+      } else if (askedYou) {
+        pool = ['"Hm. Let me think — go on, first."', '"Good question. What do YOU think?"'];
+      } else {
+        const variants = {
+          past: ['"What happened next?"', '"Go on — what was it like?"', '"Then what?"'],
+          goal: ['"Say more about that."', '"What would that look like?"', '"How would that even work?"'],
+          plans: ['"And after that?"', '"What\'s the first step?"', '"How do you start?"'],
+          village: ['"Who else?"', '"How bad is it, really?"', '"What aren\'t you telling me?"'],
+          gossip: ['"Whoa — go on."', '"What else did you hear?"', '"Who told you that?"'],
+          personal: ['"Go on."', '"I\'m listening."', '"What else?"'],
+          small: ['"Go on."', '"I\'m listening."', '"Yeah?"'],
+        };
+        // Your voice colors even the continuer: a blunt person says "And?",
+        // a soft one says "Please, go on." Same moment, different person.
+        const pv = this.playerVoice();
+        const voiceMore = { blunt: ['"And?"', '"Keep going."'],
+                            soft: ['"Please, go on."', '"I\'m listening, I promise."'],
+                            dry: ['"Do go on."'] }[pv.voiceClass];
+        pool = voiceMore || variants[thread] || variants.small;
+      }
+      const pv = this.playerVoice();
+      const h = this._hashStr ? this._hashStr(vid + ':more:' + thread + ':' + pv.voiceClass + ':' + pool.length) : 0;
+      return pool[Math.abs(h) % pool.length];
+    },
+
+    // convoActionLabel: the player's ACTION lines (offer help, trade,
+    // teach, theorize, change subject, start a rumor...). Same principle:
+    // voiced per relationship tier, stable per person. Things a person
+    // would actually say out loud.
+    convoActionLabel(vid, key) {
       const variants = {
-        past: ['"Tell me more."', '"What happened next?"', '"Go on — what was it like?"'],
-        goal: ['"Tell me more."', '"Say more about that."', '"What would that look like?"'],
-        plans: ['"Tell me more."', '"And after that?"', '"What\'s the first step?"'],
-        village: ['"Tell me more."', '"Who else?"', '"How bad is it, really?"'],
-        gossip: ['"Tell me more."', '"Whoa — go on."', '"What else did you hear?"'],
-        small: ['"Tell me more."', '"Go on."', '"I\'m listening."'],
+        personal: {
+          tier: {
+            new: ['"I realize I don\'t actually know you. Who are you?"',
+                  '"So \u2014 who are you, when nobody\'s watching?"'],
+            warm: ['"Tell me about yourself \u2014 the parts you don\'t tell everyone."',
+                   '"I want to know you better. The real you."'],
+            close: ['"Talk to me. The real stuff."',
+                    '"You never really told me your story."'],
+          },
+          voice: {
+            blunt: ['"Who are you, then?"', '"Your story. Go."'],
+            soft: ['"I\'d like to know you better, if that\'s alright."'],
+            dry: ['"So what\'s your deal?"'],
+          },
+        },
+        spread_rumor: {
+          tier: {
+            new: ['"Can I tell you something? About someone..."',
+                  '"Between you and me \u2014 have you heard about...?"'],
+            warm: ['"I heard something. About someone here."',
+                   '"Can you keep a secret? It\'s about someone."'],
+            close: ['"You\'ll want to hear this. It\'s about someone."',
+                    '"Between us \u2014 I heard something about someone."'],
+          },
+          voice: {
+            blunt: ['"Heard about someone. You\'ll want to know."'],
+            dry: ['"I have gossip. Good gossip."'],
+          },
+        },
+        theorize: {
+          tier: {
+            new: ['"What do you think is actually going on here?"',
+                  '"Seriously \u2014 what do you make of all this?"'],
+            warm: ['"You ever wonder what this is all for?"',
+                   '"What\'s your theory? The real one."'],
+            close: ['"Okay, real talk \u2014 what IS this?"',
+                    '"You and me, honestly: what do you think is happening?"'],
+          },
+          voice: {
+            blunt: ['"What\'s your read on all this?"'],
+            soft: ['"What do you think it all means? I keep wondering."'],
+            dry: ['"Any theories? I\'m collecting."'],
+          },
+        },
+        offer_help: {
+          tier: {
+            new: ['"I could help with that."',
+                  '"If you need help, I\'m here."'],
+            warm: ['"Let me help. I mean it."',
+                   '"What if I helped with that?"'],
+            close: ['"I\'ve got you. We\'ll figure it out."',
+                    '"Say the word and I\'m in."'],
+          },
+          occ: {
+            medicinal: ['"I might be able to help \u2014 it\'s what I did."', '"Let me help. I know bodies."'],
+            food: ['"I can help with that \u2014 feeding people is what I do."'],
+          },
+          voice: {
+            blunt: ['"Point me at the problem."'],
+            soft: ['"Can I help? Please \u2014 let me."'],
+            dry: ['"I could be useful, if you want."'],
+          },
+        },
+        trade: {
+          tier: {
+            new: ['"You know things. I know things. Shall we trade?"'],
+            warm: ['"I\'ll show you mine if you show me yours \u2014 knowledge, I mean."',
+                   '"Trade you something I know for something you know?"'],
+            close: ['"Let\'s trade what we know."',
+                    '"Teach me something; I\'ll return the favor."'],
+          },
+          voice: {
+            blunt: ['"Trade knowledge. You in?"'],
+            dry: ['"Knowledge for knowledge. Fair trade."'],
+          },
+        },
+        teach: {
+          tier: {
+            new: ['"Could I show you something?"',
+                  '"Mind if I show you something I learned?"'],
+            warm: ['"Let me show you something."',
+                   '"Here \u2014 let me show you."'],
+            close: ['"Come here, I want to show you this."',
+                    '"Watch \u2014 this is useful."'],
+          },
+          occ: {
+            medicinal: ['"Let me show you \u2014 I did this for a living."'],
+            food: ['"Here, I know this one \u2014 let me show you."'],
+          },
+          voice: {
+            blunt: ['"Watch. This matters."'],
+            soft: ['"Can I show you something? It might help."'],
+          },
+        },
+        subject: {
+          tier: {
+            new: ['"Can I ask you something else?"',
+                  '"Actually \u2014 different question."'],
+            warm: ['"Can we talk about something else a minute?"',
+                   '"Changing the subject \u2014"'],
+            close: ['"Different thing \u2014"', '"Okay, new subject:"'],
+          },
+          voice: {
+            blunt: ['"Next subject."'],
+            soft: ['"Can we \u2014 can we talk about something else?"'],
+            dry: ['"Anyway \u2014"'],
+          },
+        },
+        invite_party: {
+          tier: {
+            new: ['"Want to come with me?"'],
+            warm: ['"Come with me. I could use you."',
+                   '"I\'m heading out \u2014 come along?"'],
+            close: ['"You\'re coming with me."',
+                    '"I need you on this one. Come on."'],
+          },
+          voice: {
+            blunt: ['"You\'re with me tomorrow."'],
+            soft: ['"Would you come with me? I\'d feel better."'],
+          },
+        },
       };
-      const vs = variants[c.thread] || variants.small;
-      const h = this._hashStr ? this._hashStr(vid + ':more:' + (c.thread || '')) : 0;
-      return vs[Math.abs(h) % vs.length];
+      const def = variants[key] || null;
+      if (!def) return key;
+      return this.convoVoicePool(vid, def, 'act:' + key);
     },
 
     convoChoices(vid) {
@@ -1068,7 +1482,7 @@
           if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
               !this.inParty(vid) && !this.partyFull()) {
             const trust = (this.state.village.trust || {})[vid] || 10;
-            if (this.hasDiscovered('party') && trust >= 20) choices.push({ id: 'invite_party', label: '"Want to come with me?"' });
+            if (this.hasDiscovered('party') && effTrust >= 20) choices.push({ id: 'invite_party', label: this.convoActionLabel(vid, 'invite_party') });
           }
         } catch (e) {}
       }
@@ -1083,6 +1497,12 @@
       // volunteer every topic — you get two, and you earn the rest.
       const trustNow = (this.state.village.trust || {})[vid] || 10;
       const convoCount = c.count || 0;
+      // MOOD (convo-mood.js): warmth opens doors, tension closes them.
+      // Effective trust for depth gates shifts with the conversation's
+      // temperature (±15). A tense villager shuts doors (fewer topics);
+      // a warm one volunteers more.
+      const moodBandNow = typeof this.convoMoodBand === 'function' ? this.convoMoodBand(vid) : 'neutral';
+      const effTrust = trustNow + (typeof this.convoMoodMod === 'function' ? this.convoMoodMod(vid) : 0);
       // TOPIC ASKS come first — the conversation itself. Discovery actions
       // (trade/teach/promise/invite) fill whatever slots remain; they never
       // crowd out the talk.
@@ -1090,17 +1510,19 @@
       const asked = c.askedTopics || [];
       const tempNow = this.npcTemper(vid);
       const topicCap = (tempNow === 'withdrawn' || tempNow === 'prickly' || tempNow === 'restless') ? 2 : 5;
-      const pastOpen = trustNow >= 20 || convoCount >= 2;
-      const goalOpen = trustNow >= 35 || convoCount >= 3;
+      // Tense conversations close down: one fewer door (min 1).
+      const topicCapMood = moodBandNow === 'tense' ? Math.max(1, topicCap - 1) : topicCap;
+      const pastOpen = effTrust >= 20 || convoCount >= 2;
+      const goalOpen = effTrust >= 35 || convoCount >= 3;
       // GOSSIP ASK: the socialite's core verb. "Heard anything about anyone?"
       // The detective layer is ask-able, not just receive-only. Same intimacy
       // gate as theorize; sits with the other topic asks, never crowding out
       // discovery actions.
-      const gossipOpen = trustNow >= 20 || convoCount >= 2;
+      const gossipOpen = effTrust >= 20 || convoCount >= 2;
       const asks = [];
       // PERSONAL: their own words — the talk lines generated from personality.
       // Always available and prioritized; it's who they are, not what they know.
-      if (asked.indexOf('personal') === -1) asks.push({ id: 'ask:personal', label: '"Tell me about yourself."' });
+      if (asked.indexOf('personal') === -1) asks.push({ id: 'ask:personal', label: this.convoActionLabel(vid, 'personal') });
       if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
       if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
       if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
@@ -1108,10 +1530,10 @@
       if (gossipOpen && asked.indexOf('gossip') === -1) asks.push({ id: 'ask:gossip', label: this.convoLabel(vid, 'gossip') });
       // SPREAD RUMOR: the player's drama verb. Start a rumor about someone.
       // Same gate as gossip — you need some rapport to be believed.
-      if (gossipOpen && asked.indexOf('spread_rumor') === -1) asks.push({ id: 'ask:spread_rumor', label: '"Can I tell you something? About someone..."' });
+      if (gossipOpen && asked.indexOf('spread_rumor') === -1) asks.push({ id: 'ask:spread_rumor', label: this.convoActionLabel(vid, 'spread_rumor') });
       let topicsAdded = 0;
       for (const a of asks) {
-        if (a.id === threadAsk || topicsAdded >= topicCap || choices.length >= MAXC) continue;
+        if (a.id === threadAsk || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
         choices.push(a); topicsAdded++;
       }
       // THEORIZE: joint discovery, a signature mechanic — not small talk.
@@ -1120,10 +1542,10 @@
       // monsters are the mystery.
       const theorized = c.theorized || [];
       const sysUp = !!this.state.systemArrived;
-      const theorizeOpen = trustNow >= 25 || convoCount >= 2;
+      const theorizeOpen = effTrust >= 25 || convoCount >= 2;
       const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
         theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
-      if (theorizeOpen && topicsLeft.length && choices.length < MAXC && !suppressPivot) choices.push({ id: 'theorize', label: '"What do you think is actually going on here?"' });
+      if (theorizeOpen && topicsLeft.length && choices.length < MAXC && !suppressPivot) choices.push({ id: 'theorize', label: this.convoActionLabel(vid, 'theorize') });
       // WATCH THEM: the detective's tool. Spend time observing — behavior may
       // contradict story. Available once you've talked enough to have a baseline
       // (2nd conversation+), or if you already have doubts about them.
@@ -1143,7 +1565,7 @@
       const alreadyPromised = !!((this.state.village.promises || {})[vid]);
       if (this.goalKnown(vid) && !c.offeredHelp && !alreadyPromised && choices.length < MAXC) {
         const openedUp = c.thread === 'goal' && (c.depth || 0) >= 2;
-        if (this.hasDiscovered('promise') || openedUp) choices.push({ id: 'offer_help', label: '"I could help with that."' });
+        if (this.hasDiscovered('promise') || openedUp) choices.push({ id: 'offer_help', label: this.convoActionLabel(vid, 'offer_help') });
       }
       // KNOWLEDGE TRADING is discovered through conversation: traders seed it
       // by mentioning it; once learned, you can raise it with any trader.
@@ -1163,7 +1585,7 @@
           const youKnow = Object.keys(this.state.codex.plants || {});
           const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
           if (youKnow.some(pid => theyKnow.indexOf(pid) === -1)) {
-            choices.push({ id: 'teach', label: this.hasDiscovered('teach') ? '"Let me show you something."' : '"Could I show you something?"' });
+            choices.push({ id: 'teach', label: this.convoActionLabel(vid, 'teach') });
           }
         } catch (e) {}
       }
@@ -1203,6 +1625,12 @@
       c.qCount = 0; c.theorized = [];
       c.traderMentioned = false; c.pendingTrade = null;
       c.reactiveQ = null; c.windingDown = false; c.pastDeflected = false;
+      // MOOD (convo-mood.js): every conversation starts at a temperature
+      // derived from the relationship as it stands and who they are right
+      // now — never stored, re-derived fresh each time (Steve 2026-10-06).
+      // Guarded: old harnesses may load conversation.js without convo-mood.js.
+      c.mood = typeof this.convoMoodInit === 'function' ? this.convoMoodInit(vid) : 0;
+      c.moodGuardUsed = false; c.moodGraceUsed = false; c.moodBeat = null;
       c.genericQ = null; c.floraMentioned = null;
       c.count++; c.lastDay = this.state.scholar.day;
       // TALKING COSTS A LITTLE ENERGY — 10 kcal to open a conversation, not
@@ -1283,6 +1711,9 @@
       const mood = this.npcMood(vid);
       let line = null, youSaid = null;
       const done = (l, you) => { line = l; youSaid = you || null; };
+      // MOOD-SAFE shift (convo-mood.js): old harnesses may load
+      // conversation.js without the mood module — never crash alone.
+      const mshift = (d) => { if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, d); };
       // answeredReactive: this turn engaged their direct question — the
       // follow-up logic must not fire. extraQ: a formal question that lands
       // as a second beat in the same turn (rq_personal -> real question).
@@ -1304,13 +1735,13 @@
         const regionNow = (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'there';
         react = react.replaceAll('{region}', regionNow);
         const saidLabel = ad && ad.label ? String(ad.label).replaceAll('{region}', regionNow) : null;
-        done(this.fillTalkLine(react, this.vpOf(vid)), saidLabel);
+        done(this.voiceLine(vid, this.fillTalkLine(react, this.vpOf(vid))), saidLabel);
         this.remember(vid, 'you_said', qid + '=' + aid);
         // FOLLOW-UP BEAT: answering a real question sometimes earns a second
         // beat — their thought continues instead of terminating. Not every
         // time; people don't monologue after every answer.
         if (qd && qd.follow && Math.random() < 0.5) {
-          extraLine = this.fillTalkLine(qd.follow, this.vpOf(vid));
+          extraLine = this.voiceLine(vid, this.fillTalkLine(qd.follow, this.vpOf(vid)));
         }
       } else if (choiceId === 'deflect_q') {
         const qid = c.pendingQ && c.pendingQ.id;
@@ -1318,6 +1749,8 @@
         if (qid && c.askedQs.indexOf(qid) === -1) c.askedQs.push(qid);
         const t = this.state.village.trust || {};
         t[vid] = Math.max(0, (t[vid] || 10) - 1);
+        // MOOD: dodging a direct question cools the room.
+        this.convoMoodShift(vid, -1);
         done('"Okay." Something shutters, just slightly.', '(avoid the question)');
       } else if (choiceId.indexOf('react:') === 0) {
         // REACTIVE ANSWER: engaged their direct question. The outcome must
@@ -1333,6 +1766,8 @@
           // "Let's go look. Together." — the contextual show, not burdock.
           const spooky = Math.random() < 0.5;
           t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
+          // MOOD: warmth follows the trust delta — bravery together warms.
+          this.convoMoodShift(vid, Math.sign(ad.trust || 0));
           c.thread = 'spooked'; c.depth = 1;
           try { this.convoDeepTick(vid); } catch (e) {}
           done(spooky
@@ -1348,6 +1783,8 @@
           if (!pool.length) pool = (cg2.questions || []).filter(q => c.askedQs.indexOf(q.id) === -1);
           const qd = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
           t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
+          // MOOD: warmth follows the trust delta.
+          this.convoMoodShift(vid, Math.sign(ad.trust || 0));
           c.thread = 'small'; c.depth = 1;
           done(ad.line || '"...Okay. Here it is."', ad.label);
           if (qd) {
@@ -1358,6 +1795,9 @@
           }
         } else if (ad) {
           t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + (ad.trust || 0)));
+          // MOOD: warmth follows the trust delta — kind answers warm,
+          // cruel or dismissive ones cool. No separate data needed.
+          this.convoMoodShift(vid, Math.sign(ad.trust || 0));
           if (rdef.thread) { c.thread = rdef.thread; c.depth = 1; }
           done(ad.line, ad.label);
         } else {
@@ -1400,7 +1840,7 @@
         if (wasGq && wasGq.kind === 'howru' && aid === 'bad') {
           try { this.convoDeepTick(vid); } catch (e) {}
         }
-        done(resp || '"Hm."', youLine);
+        done(this.voiceLine(vid, resp || '"Hm."'), youLine);
       } else if (choiceId.indexOf('ask:') === 0) {
         const topic = choiceId.slice(4);
         // DEEP BEATS build trust faster: asking about someone's past or what
@@ -1547,6 +1987,8 @@
           const poolA = Array.isArray(rawA) ? rawA : [rawA];
           const l = this.convoPick(vid, 'agree:' + temp, poolA)
             || this.convoPickCycle(vid, 'agreefill', ['"Yeah."', '"Mm."', '"Right."', 'Nods along.']);
+          // MOOD: being agreeable warms the room, a little, every time.
+          this.convoMoodShift(vid, 1);
           done(l, '"You\'re right."');
         }
       } else if (choiceId === 'joke') {
@@ -1570,6 +2012,9 @@
         const poolJ = Array.isArray(rawJ) ? rawJ : [rawJ];
         const l = this.convoPick(vid, key, poolJ)
           || this.convoPickCycle(vid, 'jokefill', ['A short laugh.', 'Snorts.', 'Grins.']);
+        // MOOD: jokes warm — unless they're grieving or scared, in which
+        // case it lands badly. Read the room.
+        this.convoMoodShift(vid, (mood === 'grieving' || mood === 'scared') ? -1 : 1);
         done(l, '(crack a joke)');
         const vg = this.state.village;
         vg.cheer = Math.max(vg.cheer || 0, 1);
@@ -1584,13 +2029,11 @@
           c.genericQ = null; answeredGeneric = true;
           done(this.convoPick(vid, 'gq:silence', GQ_ACK.gq_silence) || '...', '(say nothing)');
         } else {
-        const m = cg.silence || {};
-        const key = 'silence:' + temp;
-        const rawS = m[temp] || '"..."';
-        const poolS = Array.isArray(rawS) ? rawS : [rawS];
-        const l = this.convoPick(vid, key, poolS)
-          || this.convoPickCycle(vid, 'silencefill', ['...', 'The quiet holds.', 'Say nothing more.']);
-        done(l, '(say nothing)');
+        // MOOD: silence means different things at different temperatures —
+        // comfortable when warm, pointed when cold. (convo-mood.js)
+        const ms = this.convoMoodSilence(vid);
+        this.convoMoodShift(vid, ms.shift);
+        done(ms.line, '(say nothing)');
         }
       } else if (choiceId === 'subject') {
         // Change the subject — to a topic you haven't covered yet.
@@ -1639,6 +2082,10 @@
       while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       c.exchanges++;
       this.say(`${this.displayName(vid)}: "${line}"`);
+      // MOOD: a band-crossing or guard/grace beat lands here — after the
+      // line that caused it, reading as their reaction settling in.
+      // (convo-mood.js; does not touch turn flow.)
+      try { this.convoMoodFlush(vid); } catch (e) {}
 
       // extraQ: rq_personal's "Of course. Ask." lands the real question as a
       // second beat in the same turn — question and answers stay together.
@@ -1765,8 +2212,18 @@
       if (!c.pendingQ && c.exchanges >= c.budget) {
         if (!c.windingDown) {
           c.windingDown = true;
-          const wdPool = (cg.winddowns || {})[temp] || (cg.winddowns || {}).default
+          let wdPool = (cg.winddowns || {})[temp] || (cg.winddowns || {}).default
             || ['"Anyway — I should get back to it."'];
+          // RELATIONSHIP AGE (Steve 2026-10-06): old friends don't wind down
+          // formally. Close tier gets a brief, warm "I should..." — the
+          // conversation tapers like it does between people who'll talk
+          // again tomorrow.
+          try {
+            if (this.convoVoiceTier && this.convoVoiceTier(vid) === 'close' && Math.random() < 0.5) {
+              wdPool = ['"Alright — I should get back to it."', '"I should go. You know where to find me."',
+                        '"Okay. We\'ll pick this up later."'];
+            }
+          } catch (e) {}
           const wd = this.convoPickCycle(vid, 'winddown', wdPool);
           c.transcript.push({ who: 'them', text: wd });
           while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
@@ -1804,7 +2261,20 @@
       } else {
         const exits = cg.exits || {};
         const key = (mood === 'grieving' || mood === 'scared') ? mood : temp;
-        const pool = exits[key] || exits.steady || ['"I should go."'];
+        let pool = exits[key] || exits.steady || ['"I should go."'];
+        // RELATIONSHIP AGE (Steve 2026-10-06): old friends don't make
+        // speeches. Close tier sometimes gets short, warm shorthand —
+        // "Later." lands harder than a paragraph when you've talked a
+        // hundred times. 50/50 keeps it human: sometimes brief, sometimes
+        // the full temperament line. Grieving/scared always get the real
+        // goodbye — shorthand would read as cold.
+        try {
+          if (this.convoVoiceTier && this.convoVoiceTier(vid) === 'close' &&
+              mood !== 'grieving' && mood !== 'scared' && Math.random() < 0.5) {
+            pool = ['"Later."', '"Good talk."', '"Don\'t be a stranger."',
+                    '"See you at the fire."', '"Take care of yourself."'];
+          }
+        } catch (e) {}
         line = this.convoPickCycle(vid, 'exit', pool);
       }
       c.transcript.push({ who: 'them', text: line });
@@ -1813,10 +2283,24 @@
       const t = this.state.village.trust || (this.state.village.trust = {});
       const cur = t[vid] || 10;
       t[vid] = cur >= 40 ? cur : Math.min(40, cur + 3);
+      // MOOD LINGERS (convo-mood.js): how the conversation felt sticks to
+      // the relationship — ending warm earns a little trust, ending tense
+      // costs a little. Small, but felt over many conversations.
+      const cm = Math.max(-3, Math.min(3, c.mood || 0));
+      if (cm !== 0) t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + cm));
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
       try { this.checkPromises('social'); } catch (e) {}
       this.convoConflictFallout(vid, t[vid]);
       this.say(`${first}: ${line}`);
+      // MOOD GOODBYE: the parting beat carries the temperature out the door.
+      try {
+        const mgb = this.convoMoodGoodbye(vid);
+        if (mgb) {
+          c.transcript.push({ who: 'them', text: mgb });
+          while (c.transcript.length > 200) c.transcript.shift();
+          this.say(`${first}: ${mgb}`);
+        }
+      } catch (e) {}
       return { line, choices: [], ended: true, transcript: c.transcript.slice() };
     },
 

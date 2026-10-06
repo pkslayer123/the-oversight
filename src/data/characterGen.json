@@ -5728,8 +5728,8 @@
       "cautious": {
         "p": 0.4,
         "open": [
-          "I think ",
-          "Maybe ",
+          "I think — ",
+          "Maybe — ",
           "Probably — ",
           "I'm not sure, but "
         ],
@@ -5743,7 +5743,7 @@
         "p": 0.35,
         "open": [
           "Hey — ",
-          "Listen, ",
+          "Listen — ",
           "Come here — "
         ],
         "close": [
@@ -5806,9 +5806,9 @@
       "gentle": {
         "p": 0.35,
         "open": [
-          "I feel like ",
+          "I feel like — ",
           "It's just — ",
-          "Maybe it's only me, but "
+          "Maybe it's only me — "
         ],
         "close": [
           "...if that makes sense.",
