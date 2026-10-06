@@ -605,7 +605,7 @@
     a.aware = Math.min(1, a.aware + rate);
     if (!wasWary && a.aware >= 0.5 && a.pstate === 'graze') {
       a.pstate = 'wary';
-      this.say(this.encCap(label) + ' freezes — ears up, deciding about you.');
+      this.say(this.encCap(label) + ' goes still — ears up, deciding about you.');
     }
     // Bolt threshold is behavior-aware: the skittish rabbit goes at a
     // shadow (0.75); the wary deer at the white tail (0.7, above); most at 1.
