@@ -1598,6 +1598,15 @@
   //   boarCharge, wolfSilence/wolfSnarl, heronUnfold/heronStrike, turtleSnap
   //   (wired as speedbump_turtle encounter.resolveAudio in monsters.json).
   //   horrorSting() — the UI dread-beat sting (was referenced, undefined).
+  //   CONTESTS + JUSTICE OUTCOMES (Steve 2026-10-06) — hooks for systems
+  //   that fired no audio (contests.js, truth.js fire zero audioEvents):
+  //   contestCall() — contest window announced (game-show jingle curdles)
+  //   contestTaken() — the grab: you are chosen (reverse swell + slow klaxon)
+  //   contestSpared() — announced not-taken (relief with a dissonant shadow)
+  //   justiceVerdict() — the moot decides (one heavy strike + cold held tone)
+  //   exileWalk() — footsteps receding, village hum dropping voices
+  //   NOTE: dispatch wiring for these lives in the contests/truth workers'
+  //   files, not here — this section only owns the synths.
   const CombatAudio = (() => {
     let ctx = null, hbTimer = null;
     let master = null, hbBus = null, sfxBus = null;
@@ -4514,8 +4523,153 @@
         v.start(t); v.stop(t + 1.7);
       });
     }
+    // CONTESTS + JUSTICE OUTCOMES (Steve 2026-10-06): the contest system and
+    // justice outcomes fired no audio at all. These synths are the hooks —
+    // dispatch wiring belongs to the contests/truth workers. Freaky bar: the
+    // wave-2 and glasswing sets. The System is twisted and out of touch but
+    // genuinely trying: game-show joy over real dread.
+    function contestCall() {
+      // THE CALL: a contest window opens. A bright game-show arpeggio — with
+      // one voice sliding off pitch, and a crowd swell that cuts dead.
+      // Someone might be taken. It might be you.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6 — bright, televised
+      notes.forEach((fq, i) => {
+        const dt = t + i * 0.16;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq * (i === 3 ? 0.94 : 1); // the last one slides off
+        if (i === 3) o.frequency.exponentialRampToValueAtTime(fq * 0.89, dt + 0.3);
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.2, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.4);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.45);
+      });
+      // crowd: noise swell that cuts dead — the audience, then nothing
+      const nz = noise(0.9), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 0.7;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.12, t + 0.7);
+        ng.gain.setValueAtTime(0.12, t + 0.78);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.8); // cut dead
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.85);
+      }
+    }
+    function contestTaken() {
+      // THE GRAB: you are chosen. The air sucks out (reverse swell), then a
+      // klaxon that's slightly too slow — the System is savoring it.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // reverse swell: the world inhaling
+      const nz = noise(0.7), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.setValueAtTime(300, t);
+        nf.frequency.exponentialRampToValueAtTime(4000, t + 0.7);
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.3, t + 0.65);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.75);
+      }
+      // too-slow klaxon: 3 blasts, each a hair longer than the last
+      for (let i = 0; i < 3; i++) {
+        const dt = t + 0.75 + i * 0.5;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(620, dt);
+        o.frequency.exponentialRampToValueAtTime(440, dt + 0.28 + i * 0.06);
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.22, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.35 + i * 0.06);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.42 + i * 0.06);
+      }
+    }
+    function contestSpared() {
+      // NOT TAKEN: announced spared. A relieved exhale that doesn't quite
+      // land — a soft major tone with a dissonant shadow that outlives it.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(392, t);
+      o.frequency.exponentialRampToValueAtTime(523, t + 0.5); // G4 → C5, relief
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.95);
+      // the shadow: a minor-second shadow that stays after the relief fades
+      const s = ctx.createOscillator(), sg = ctx.createGain();
+      s.type = 'sine'; s.frequency.value = 554; // C#5 against the C5 — wrong
+      sg.gain.setValueAtTime(0.0001, t + 0.5);
+      sg.gain.exponentialRampToValueAtTime(0.05, t + 0.9);
+      sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+      s.connect(sg); sg.connect(sfxBus); s.start(t + 0.5); s.stop(t + 1.65);
+    }
+    function justiceVerdict() {
+      // THE VERDICT: the moot has decided. The three drums compress into one
+      // heavy strike, and a cold tone holds too long afterward — the System
+      // letting the decision sit in the room.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(65, t);
+      o.frequency.exponentialRampToValueAtTime(38, t + 0.5);
+      g.gain.setValueAtTime(0.5, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.85);
+      // the strike's crack: splintered attack transient
+      const nz = noise(0.15), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 1800;
+        ng.gain.setValueAtTime(0.2, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.18);
+      }
+      // the cold tone that holds too long
+      [110, 116.5].forEach(fq => { // A2 vs Bb2 — a semitone of unease
+        const v = ctx.createOscillator(), vg = ctx.createGain();
+        v.type = 'sine'; v.frequency.value = fq;
+        vg.gain.setValueAtTime(0.0001, t + 0.3);
+        vg.gain.exponentialRampToValueAtTime(0.06, t + 1.0);
+        vg.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+        v.connect(vg); vg.connect(sfxBus); v.start(t + 0.3); v.stop(t + 2.25);
+      });
+    }
+    function exileWalk() {
+      // THE WALK: footsteps receding, and the village hum dropping one voice
+      // at a time. Nobody follows. The hum thins until it's one voice, then
+      // none — then just the footsteps, then not even those.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // village hum: 4 detuned voices, dropping out one by one
+      [130, 131.2, 138.5, 140].forEach((fq, i) => {
+        const v = ctx.createOscillator(), vg = ctx.createGain();
+        v.type = 'triangle'; v.frequency.value = fq;
+        const stopAt = t + 0.6 + i * 0.7;
+        vg.gain.setValueAtTime(0.0001, t);
+        vg.gain.exponentialRampToValueAtTime(0.07, t + 0.4);
+        vg.gain.setValueAtTime(0.07, stopAt - 0.15);
+        vg.gain.exponentialRampToValueAtTime(0.0001, stopAt); // each voice drops
+        v.connect(vg); vg.connect(sfxBus); v.start(t); v.stop(stopAt + 0.05);
+      });
+      // footsteps: 6 steps, getting quieter and further (lowpass closes)
+      for (let i = 0; i < 6; i++) {
+        const dt = t + 0.3 + i * 0.55;
+        const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+        o.type = 'sine'; o.frequency.setValueAtTime(120, dt);
+        o.frequency.exponentialRampToValueAtTime(55, dt + 0.12);
+        f.type = 'lowpass'; f.frequency.value = 900 - i * 120; // receding
+        g.gain.setValueAtTime(0.22 - i * 0.03, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
+        o.connect(f); f.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.2);
+      }
+    }
     function genesis_plant() {
       // ALIEN GENESIS: something growing that shouldn't — wet, vegetal, wrong.
+      // The second voice starts late and grows DOWNWARD while the first grows
+      // up: something growing wrong inside the wrong thing. (deepened Steve 2026-10-06)
       if (!ensure()) return;
       const t = ctx.currentTime, dur = 1.4;
       const o = ctx.createOscillator(), g = ctx.createGain();
@@ -4534,21 +4688,55 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(f); f.connect(g); g.connect(sfxBus);
       o.start(t); lfo.start(t); o.stop(t + dur); lfo.stop(t + dur);
+      // the wrong growth: joins late, climbs down, wobbles faster — sicker
+      const w = ctx.createOscillator(), wg = ctx.createGain(), wf = ctx.createBiquadFilter();
+      const wt = t + 0.5;
+      w.type = 'triangle'; w.frequency.setValueAtTime(300, wt);
+      w.frequency.exponentialRampToValueAtTime(120, wt + dur * 0.7); // growing DOWN
+      const wl = ctx.createOscillator(), wlg = ctx.createGain();
+      wl.type = 'sine'; wl.frequency.value = 11; // faster wobble: feverish
+      wlg.gain.value = 35; wl.connect(wlg); wlg.connect(w.frequency);
+      wf.type = 'bandpass'; wf.Q.value = 6;
+      wf.frequency.setValueAtTime(900, wt);
+      wf.frequency.exponentialRampToValueAtTime(350, wt + dur * 0.7);
+      wg.gain.setValueAtTime(0.0001, wt);
+      wg.gain.exponentialRampToValueAtTime(0.13, wt + 0.3);
+      wg.gain.exponentialRampToValueAtTime(0.0001, wt + dur * 0.7);
+      w.connect(wf); wf.connect(wg); wg.connect(sfxBus);
+      w.start(wt); wl.start(wt); w.stop(wt + dur * 0.7 + 0.05); wl.stop(wt + dur * 0.7 + 0.05);
     }
     function gravity_well() {
       // GRAVITY DISTORTS: everything pitches down — the world gets heavy.
+      // Two voices fall at DIFFERENT rates: the stretch is uneven, which is
+      // what makes your stomach drop. When they bottom out, a sub-bass thump
+      // lands like the world hitting the floor. (deepened Steve 2026-10-06)
       if (!ensure()) return;
       const t = ctx.currentTime, dur = 1.2;
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'sawtooth'; o.frequency.setValueAtTime(400, t);
       o.frequency.exponentialRampToValueAtTime(60, t + dur); // falling into the well
+      // the partner: starts a fifth up, falls slower — the uneven stretch
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.type = 'sawtooth'; o2.frequency.setValueAtTime(600, t);
+      o2.frequency.exponentialRampToValueAtTime(110, t + dur * 1.15);
+      g2.gain.setValueAtTime(0.0001, t);
+      g2.gain.exponentialRampToValueAtTime(0.12, t + 0.3);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       const f = ctx.createBiquadFilter(); f.type = 'lowpass';
       f.frequency.setValueAtTime(2000, t);
       f.frequency.exponentialRampToValueAtTime(200, t + dur);
       g.gain.setValueAtTime(0.25, t);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(f); f.connect(g); g.connect(sfxBus);
-      o.start(t); o.stop(t + dur);
+      o.connect(f); o2.connect(f); f.connect(g); f.connect(g2); g.connect(sfxBus); g2.connect(sfxBus);
+      o.start(t); o.stop(t + dur); o2.start(t); o2.stop(t + dur * 1.15);
+      // bottoming out: the world hits the floor
+      const th = ctx.createOscillator(), thg = ctx.createGain();
+      th.type = 'sine'; th.frequency.setValueAtTime(70, t + dur * 0.9);
+      th.frequency.exponentialRampToValueAtTime(30, t + dur + 0.25);
+      thg.gain.setValueAtTime(0.0001, t + dur * 0.9);
+      thg.gain.exponentialRampToValueAtTime(0.4, t + dur + 0.03);
+      thg.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.4);
+      th.connect(thg); thg.connect(sfxBus); th.start(t + dur * 0.9); th.stop(t + dur + 0.45);
     }
     function waveUnlock() {
       // NEW WAVE: a fanfare — but wrong. The celebration is for THEM, not you.
@@ -5579,6 +5767,14 @@
       delegateCircle() { managerCircle(); },
       // System events
       confront() { confront(); },
+      // CONTESTS + JUSTICE OUTCOMES (Steve 2026-10-06): hooks for the
+      // contest/truth workers to wire dispatch to. Registered and verified
+      // here; dispatch sites belong to those workers' files.
+      contestCall() { contestCall(); },     // contest window announced
+      contestTaken() { contestTaken(); },   // the grab: you are chosen
+      contestSpared() { contestSpared(); }, // announced not-taken
+      justiceVerdict() { justiceVerdict(); }, // the moot has decided
+      exileWalk() { exileWalk(); },         // footsteps receding, hum thinning
       genesis_plant() { genesis_plant(); },
       gravity_well() { gravity_well(); },
       waveUnlock() { waveUnlock(); },
