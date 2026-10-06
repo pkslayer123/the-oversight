@@ -186,7 +186,9 @@
    "bonus": 8,
    "type": "melee",
    "range": 1
-  }
+  },
+  "findable": true,
+  "findContext": "ruins"
  },
  {
   "class": "sentimental",
@@ -1365,7 +1367,7 @@
   "name": "Fusion cell",
   "class": "material",
   "origin": "alien",
-  "lootTier": 2,
+  "lootTier": 4,
   "flavor": "A pellet's big brother. Do not bury. Do not drop. Do not lick. Burns for hours.",
   "kg": 0.4,
   "findable": false,
@@ -1837,11 +1839,11 @@
   "origin": "crafted",
   "flavor": "Yew and sinew and patience. The arrow knows where it's going before you loose it.",
   "kg": 0.8,
-  "damage": 25,
+  "damage": 50,
   "range": 5,
-  "baseEffect": "+25 damage, range 5, uses arrows",
+  "baseEffect": "+50 damage, range 5, uses arrows",
   "weapon": {
-   "bonus": 25,
+   "bonus": 50,
    "type": "ranged",
    "range": 5,
    "ammo": "arrow",
@@ -1869,11 +1871,11 @@
   "origin": "crafted",
   "flavor": "Crank, lock, loose. Less art than the bow, more certainty. The bolt doesn't care about your form.",
   "kg": 2.5,
-  "damage": 35,
+  "damage": 65,
   "range": 6,
-  "baseEffect": "+35 damage, range 6, uses bolts",
+  "baseEffect": "+65 damage, range 6, uses bolts",
   "weapon": {
-   "bonus": 35,
+   "bonus": 65,
    "type": "ranged",
    "range": 6,
    "ammo": "bolt",
@@ -1949,7 +1951,7 @@
    "bonus": 120,
    "type": "ranged",
    "range": 8,
-   "ammo": "cell",
+   "ammo": "fusion_cell",
    "damageType": "energy",
    "charsMeat": true
   }
