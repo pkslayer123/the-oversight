@@ -7238,8 +7238,20 @@
         // field_dressing: you know where the meat is. More yield per kill.
         const kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories));
         // FOOD REALITY: a kill is a carcass, not food. Clean it (knife) quickly.
-        s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted'));
-        this.say(`Got it! ${animal.name}. About ${kcal} kcal of meat on the bone — gut it quickly (knife). It spoils fast.`);
+        // ENERGY WEAPONS (Steve 2026-10-05): beam weapons and overkill elemental
+        // abilities char the meat. You get charred remains — 10% calories, no
+        // proper butchering. You can't hunt with a searcaster.
+        const eqW = (this.state.scholar.equipped || {}).weapon;
+        const wdef = eqW && this.data.items.find(i => i.id === eqW.itemId);
+        const charsMeat = wdef && wdef.weapon && wdef.weapon.charsMeat;
+        if (charsMeat) {
+          const charredKcal = Math.round(kcal * 0.1);
+          s.inventory.push(this.foodCarcass(animal, charredKcal, s.day, 'charred'));
+          this.say(`The beam takes it apart. Charred remains — about ${charredKcal} kcal of edible bits. Energy weapons don't hunt, they unmake.`);
+        } else {
+          s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted'));
+          this.say(`Got it! ${animal.name}. About ${kcal} kcal of meat on the bone — gut it quickly (knife). It spoils fast.`);
+        }
         // knowledge: encounters
         this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
         this.state.codex.animalEncounters[animal.id] = (this.state.codex.animalEncounters[animal.id] || 0) + 1;
