@@ -1692,6 +1692,14 @@
           { id: 'leave', label: '"I should go."' },
         ];
       }
+      // HAWKER THREAD: a villager's offer. Same shape as the trade thread.
+      if (c.pendingHawk) {
+        return [
+          { id: 'hawker_yes', label: '"Deal."' },
+          { id: 'hawker_no', label: '"Not today."' },
+          { id: 'leave', label: '"I should go."' },
+        ];
+      }
       // CONTINUER (Steve 2026-10-05): one-beat turns. When the engine held
       // follow-on beats, the continuer leads the choices — voiced per
       // person, mood, and thread (convoMoreLabel), never a hardcoded
@@ -1942,6 +1950,31 @@
           const tradeable = isTrader ? (this.traderKnowledge(vid) || []) : [];
           if (isTrader && tradeable.length && (this.hasDiscovered('trade') || c.traderMentioned)) {
             choices.push({ id: 'trade', label: '"You know things. I know things. Shall we trade?"' });
+          }
+        } catch (e) {}
+      }
+      // CALLOUT (Steve 2026-10-06): they taught you wrong and you KNOW better.
+      // Knowledge-gated — the choice only exists when contested exists.
+      if (!onThread && choices.length < MAXC) {
+        try {
+          const contested = this.hasContestedWith ? this.hasContestedWith(vid) : [];
+          if (contested.length) {
+            const e = (this.state.codex.plants || {})[contested[0]] || {};
+            const claim = (e.contested || {}).claim || 'something';
+            choices.push({ id: 'callout_quiet', label: `"About that ${claim} — can we talk? Privately."` });
+            const witnesses = ((this.state.village || {}).roster || []).length;
+            if (witnesses >= 3 && choices.length < MAXC) {
+              choices.push({ id: 'callout_public', label: `"${claim}? In front of everyone — that's not ${claim}."` });
+            }
+          }
+        } catch (e) {}
+      }
+      // HAWKING (Steve 2026-10-06): trading is a verb. Villagers with the
+      // entrepreneurial spirit sell goods too — not a trader class.
+      if (!onThread && choices.length < MAXC) {
+        try {
+          if (this.tradeSpirit && this.tradeSpirit(vid) >= 1) {
+            choices.push({ id: 'hawker', label: '"Got anything to trade?"' });
           }
         } catch (e) {}
       }
@@ -2393,8 +2426,39 @@
           done('"..."', '"Deal."');
         }
       } else if (choiceId === 'trade_no') {
-        c.pendingTrade = null; c.thread = null;
-        done('"Another time, then. Knowledge keeps."', '"Another time, maybe."');
+        c.pendingTrade = null; c.thread = null;        done('"Another time, then. Knowledge keeps."', '"Another time, maybe."');
+      } else if (choiceId === 'callout_quiet' || choiceId === 'callout_public') {
+        // CALLOUT (Steve 2026-10-06): you know better — say so. Quiet or
+        // public, the social consequences are real either way.
+        const contested = this.hasContestedWith(vid) || [];
+        if (!contested.length) {
+          done('"Never mind."', '"Actually — never mind."');
+        } else {
+          const pid = contested[0];
+          const isPublic = choiceId === 'callout_public';
+          this.callOutTeaching(vid, pid, { public: isPublic });
+          done(isPublic ? '"Everyone heard that." (you said it loud)' : '"Just between us." (you kept it quiet)',
+               isPublic ? '"That wasn\'t right, and everyone should know it."' : '"Can we talk about that? Privately."');
+        }
+      } else if (choiceId === 'hawker') {
+        // HAWKER (Steve 2026-10-06): villagers with the spirit sell goods.
+        const ware = this.hawkerOffer(vid);
+        if (!ware || ware.sold) {
+          done('"Sold out, friend. The road provides — sometimes."', '"Got anything to trade?"');
+        } else {
+          c.pendingHawk = true;
+          const scamHint = ware.scam && this.tradeSavvy() >= 4
+            ? (ware.scam.kind === 'overprice' ? ' (steep, for what it is)' : ' (something about this feels off)')
+            : '';
+          done(`"${ware.blurb}" ${this.displayName(vid)} shows you the ${ware.name} — ${ware.price} kcal of finished food${scamHint}.`, '"Got anything to trade?"');
+        }
+      } else if (choiceId === 'hawker_yes') {
+        c.pendingHawk = null;
+        const ok = this.hawkerBuy(vid);
+        done(ok ? '"Pleasure." (the deal is done)' : '"Another time." (you couldn\'t pay)', '"Deal."');
+      } else if (choiceId === 'hawker_no') {
+        c.pendingHawk = null;
+        done('"No hurry. It\'ll keep."', '"Not today."');
       } else if (choiceId === 'teach') {
         // Teaching happens in conversation now — show, don't menu.
         // TOPICAL TEACH (Steve, Rule 2): show/teach must relate to what's

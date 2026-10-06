@@ -26,6 +26,14 @@
 //   - traderKnowsItem(vis, it)
 //   - traderItemKey(it)
 //   - seedTraderKnowledge() -> { staples, specialties }
+//   - tradeSpirit(person) -> 0-2 (entrepreneurial spirit: trading is a verb)
+//   - scamminess(person) -> 0-3
+//   - tradeSavvy() / theirReadOfYou(person)
+//   - maybeScamWare(person, ware)
+//   - recordScam(whoName, whoId, kind, wareName)
+//   - scamDaily()
+//   - confrontScammer(vis, s) / resolveConfront(vis, s, how)
+//   - hawkerOffer(vid) / hawkerBuy(vid)
 //   - visitorHtml()
 //   - visitorDaily()
 // rules:
@@ -1273,7 +1281,8 @@
     // shrug at a killing, even a shaky one
     if (avg < weregildAt || sev >= 4) {
       const payVerb = this.isPlayer(c.accused[0]) ? 'pay' : 'pays';
-      this.say(`The sentence is spoken low, like something heavy set down. "${cnameCap} ${payVerb}. And stays — this time."`);
+      const stayVerb = this.isPlayer(c.accused[0]) ? 'stay' : 'stays';
+      this.say(`The sentence is spoken low, like something heavy set down. "${cnameCap} ${payVerb}. And ${stayVerb} — this time."`);
       return this.resolveCase(c.id, 'weregild');
     }
     // weak conviction → schism or cold war
@@ -2019,11 +2028,26 @@
       day: this.state.scholar.day,
       leavesDay: this.state.scholar.day + 1, // traders don't wait forever (see visitorDaily)
     };
-    // TRADER KNOWLEDGE (Steve 2026-10-06): the trader is a person with
-    // knowledge like anyone else. His appraisal of YOUR goods is gated on
-    // what HE knows. Common staples + 3 random specialties he "knows a buyer
-    // for" (the potential-recognition beat).
-    if (type === 'trader') {
+    // ENTREPRENEURIAL SPIRIT (Steve 2026-10-06): trading is a VERB, not a
+    // role. "Trader" is someone — inside or outside the village — who happens
+    // to have the spirit. The type is arrival flavor; the trait gates trade.
+    // Shady/desperate feed the scam system (see scamminess).
+    visitor.entrepreneurial = type === 'trader' ? true : R() < 0.25;
+    visitor.shady = R() < (type === 'fleeing' ? 0.05 : 0.2);
+    visitor.desperate = R() < 0.3;
+    // RETURNING SCAMMER (Steve 2026-10-06): if an unresolved discovered scam
+    // is on the ledger, the same face may come back down the road — and then
+    // there's a reckoning.
+    const ledger = (this.state.village || {}).scamLedger || [];
+    const open = ledger.filter(s => s.discovered && !s.resolved);
+    if (open.length && visitor.entrepreneurial && R() < 0.4) {
+      const s = open[Math.floor(R() * open.length)];
+      visitor.name = s.whoName; visitor.returningScammer = true; visitor.scamRef = s.id;
+      visitor.shady = true;
+    }
+    // TRADE KNOWLEDGE (Steve 2026-10-06): anyone with the spirit appraises —
+    // knowledge-gated like anyone's brain. (De-roled: not a trader class.)
+    if (visitor.entrepreneurial) {
       const tk = this.seedTraderKnowledge() || {};
       visitor.traderKnows = tk.staples || [];
       visitor.traderSpecialties = tk.specialties || [];
@@ -2050,28 +2074,39 @@
       this.say(`You welcome ${vis.name}. Food shared, stories traded. Word of Haven travels a little further.`);
       bs.strangersHeard = (bs.strangersHeard || 0) + 1;
       try { v.pantryKcal = Math.max(0, (v.pantryKcal || 0) - 500); } catch (e) {}
-    } else if (how === 'trade' && vis.type === 'trader') {
+    } else if (how === 'trade' && this.tradeSpirit(vis) > 0) {
       // THE TRADER'S CART (Steve 2026-10-06): the old beat said "You trade"
       // but no goods moved. Now the cart opens for real — wares below.
       vis.trading = true; vis.selling = false;
       this.visitorWares(vis);
-      this.say(`The trader swings the cart's side panel down. Three things, laid out neat on a blanket. "Finished food only — I can't sell a raw turkey at the next village. The good stuff goes first to whoever's hungry for it."`);
+      // RECKONING (Steve 2026-10-06): that face. The one that scammed you.
+      // They're back — and they know you know.
+      if (vis.returningScammer && vis.scamRef) {
+        const s = ((this.state.village || {}).scamLedger || []).find(x => x.id === vis.scamRef);
+        if (s && !s.resolved) return this.confrontScammer(vis, s);
+      }
+      const who = vis.name || 'The hawker';
+      this.say(`${who} swings the cart's side panel down. Goods laid out neat on a blanket. "Finished food only — I can't sell a raw turkey at the next village. The good stuff goes first to whoever's hungry for it."`);
       return true;
-    } else if (how === 'sell' && vis.type === 'trader') {
+    } else if (how === 'sell' && this.tradeSpirit(vis) > 0) {
       // SELL TO TRADER (Steve 2026-10-06): he appraises YOUR goods, and his
       // appraisal is knowledge-gated like anyone's brain. You see why the
       // price is what it is.
       vis.selling = true; vis.trading = false;
-      this.say(`"Show me what you've got." The trader folds their arms and waits.`);
+      this.say(`"Show me what you've got." ${vis.name} folds their arms and waits.`);
       return true;
-    } else if (how === 'shelve' && vis.type === 'trader') {
+    } else if (how === 'shelve' && this.tradeSpirit(vis) > 0) {
       vis.trading = false; vis.selling = false;
-      this.say(`You step back from the cart. The trader waits — the road can wait a little.`);
+      this.say(`You step back from the cart. ${vis.name} waits — the road can wait a little.`);
       return true;
-    } else if (how === 'done' && vis.type === 'trader') {
-      this.say(`The trader folds the blanket back over the cart. "Pleasure doing almost-business. I'll be gone by morning — the road doesn't wait."`);
+    } else if (how === 'done' && this.tradeSpirit(vis) > 0) {
+      this.say(`${vis.name || 'The hawker'} folds the blanket back over the cart. "Pleasure doing almost-business. I'll be gone by morning — the road doesn't wait."`);
       v.visitors = (v.visitors || []).filter(x => x.id !== visitorId);
       return true;
+    } else if ((how === 'confront' || how === 'letslide') && vis.pendingConfront) {
+      const s = ((this.state.village || {}).scamLedger || []).find(x => x.id === vis.pendingConfront);
+      if (!s) { vis.pendingConfront = null; return true; }
+      return this.resolveConfront(vis, s, how);
     } else if (how === 'invite' && (vis.type === 'fleeing' || vis.type === 'curious')) {
       this.say(`${this.capFirst(vis.name)} ${vis.type === 'fleeing' ? 'cries — relief, mostly' : 'grins wide'}. Haven grows by one.`);
       // they join the roster as a background survivor
@@ -2086,6 +2121,27 @@
     return true;
   },
 
+  // tradeSpirit(person): entrepreneurial spirit, 0-2. Trading is a VERB —
+  // anyone with the spirit hawks goods. Villagers: flag or occupation trace
+  // (shopkeep blood); visitors: rolled at spawn. (Steve 2026-10-06: de-role
+  // the trader — people, not classes.)
+  tradeSpirit(person) {
+    if (!person) return 0;
+    if (person.entrepreneurial) return 2;
+    try {
+      const vp = (this.data.villagers || []).find(x => x.id === (person.id || person))
+        || (this.data.background_survivors || []).find(x => x.id === (person.id || person)) || {};
+      if (vp.entrepreneurial) return 2;
+      const occ = String(vp.formerOccupation || '').toLowerCase();
+      if (['merchant', 'shopkeep', 'sales', 'peddler', 'trader', 'hawker'].some(w => occ.includes(w))) return 2;
+      if (vp._tradeSpiritRolled == null) {
+        const temp = (vp.personality || {}).temperament;
+        vp._tradeSpiritRolled = (temp === 'bold' && R() < 0.3) ? 1 : 0;
+      }
+      return vp._tradeSpiritRolled;
+    } catch (e) {}
+    return 0;
+  },
   // seedTraderKnowledge(): what a road trader plausibly knows. Staples are
   // common road foods; specialties are 3 things he "knows a buyer for" —
   // the potential-recognition beat (Steve 2026-10-06).
@@ -2169,12 +2225,251 @@
       return { verdict: 'prime', pricePerUnit: p,
         line: `He nods approvingly at the ${name}. "Proper trail food, this. ${p} a piece."` };
     }
-    return { verdict: 'fair', pricePerUnit: base,
+    const honest = { verdict: 'fair', pricePerUnit: base,
       line: `"${this.capFirst(name)} — ${base} a piece. Fair's fair."` };
+    // UNDER-APPRAISAL SCAM (Steve 2026-10-06): the mirror con. A dishonest
+    // buyer claims your fresh goods are "turning" to discount them. You know
+    // your own goods — sharp eyes spot the lie at the counter.
+    try {
+      const sc = this.scamminess(vis);
+      if (sc > 0 && !spoiled && base > 0 && this.theirReadOfYou(vis) < 2 && R() < 0.15 + 0.15 * sc) {
+        const p = Math.max(5, Math.round(base * 0.55));
+        const entry = this.recordScam(vis.name || 'the buyer', vis.id || null, 'underappraise', name);
+        const playerKnows = this.plantKnown && it.plantId && this.plantKnown(it.plantId);
+        const ap = { verdict: 'discount', pricePerUnit: p,
+          line: `He sniffs the ${name}, pulls a face. "Hmm. Turning, I'd say — see the edges? ${p} a piece, and I'm being generous."`,
+          scam: { kind: 'underappraise', truePrice: base, ledgerId: entry.id } };
+        if (playerKnows) {
+          ap.scam.discovered = true; entry.discovered = true;
+          ap.line += ` (You know this ${name} — you picked it, you prepped it. It is NOT turning.)`;
+        }
+        return ap;
+      }
+    } catch (e) {}
+    return honest;
+  },
+  // ---------- SCAMS (Steve 2026-10-06) ----------
+  // Scamming is NOT a trader-class behavior. Anyone can run one — driven by
+  // dishonesty, desperation, and their read of YOUR ignorance. The trader is
+  // just whoever happens to be hawking right now. (People, not classes.)
+  //
+  // scamminess(person): 0-3. Malicious dark tell = a dishonest streak.
+  // Desperation is situational: hungry village, or a road-desperate visitor.
+  scamminess(person) {
+    let s = 0;
+    try {
+      const pid = person && (person.id || person);
+      const vp = (this.data.villagers || []).find(x => x.id === pid)
+        || (this.data.background_survivors || []).find(x => x.id === pid) || null;
+      if (vp && vp.personality && vp.personality.dark && vp.personality.dark.kind === 'malicious') s += 2;
+      if (person && person.shady) s += 2;
+      if (person && person.desperate) s += 1;
+      const v = this.state.village || {};
+      if ((v.hungryDays || 0) > 0 && vp) s += 1; // hungry people do hungry things
+    } catch (e) {}
+    return Math.min(3, s);
+  },
+  // tradeSavvy(): how sharp the PLAYER is about trade. Scammers read this.
+  tradeSavvy() {
+    const s = this.state.scholar || {};
+    const codexBreadth = Object.keys(this.state.codex.plants || {}).length;
+    return (s.tradesDone || 0) + (s.scamsCalledOut || 0) * 2 + Math.min(4, Math.floor(codexBreadth / 4));
+  },
+  // theirReadOfYou(person): 0 green, 1 ordinary, 2 sharp. They can misread.
+  theirReadOfYou(person) {
+    const savvy = this.tradeSavvy();
+    let read = savvy >= 8 ? 2 : savvy >= 3 ? 1 : 0;
+    if (R() < 0.25) read = Math.max(0, Math.min(2, read + (R() < 0.5 ? -1 : 1))); // misread
+    return read;
+  },
+  // maybeScamWare(person, ware): roll once per ware at generation. Marks
+  // ware.scam = { kind, ...truth } and adjusts the LIE the player sees.
+  // Kinds: overprice (inflated price), spoiled_as_fresh (hidden early spoil),
+  // tier_lie (advertised tier above real tier, alien loot only).
+  maybeScamWare(person, ware) {
+    if (!ware || ware.sold) return ware;
+    const sc = this.scamminess(person);
+    if (sc <= 0) return ware;
+    const read = this.theirReadOfYou(person);
+    let chance = 0.12 + 0.18 * sc + (read === 0 ? 0.25 : read === 1 ? 0.1 : -0.12);
+    chance = Math.max(0, Math.min(0.65, chance));
+    if (R() > chance) return ware;
+    const kinds = ['overprice'];
+    if (ware.kind === 'alien') kinds.push('tier_lie');
+    // spoiled_as_fresh needs something that CAN spoil — food-ish wares only
+    if (ware.kind !== 'alien') kinds.push('spoiled_as_fresh');
+    const kind = kinds[Math.floor(R() * kinds.length)];
+    ware.scam = { kind, by: person.name || 'the hawker', byId: person.id || null, day: (this.state.scholar || {}).day || 0 };
+    if (kind === 'overprice') {
+      ware.scam.truePrice = ware.price;
+      ware.price = Math.round(ware.price * (1.6 + R() * 0.6));
+    } else if (kind === 'spoiled_as_fresh') {
+      // presented fresh; actually turns in 1-2 days
+      ware.scam.trueSpoilIn = 1 + Math.floor(R() * 2);
+      ware.blurb += ` "Fresh as morning, I swear it."`;
+    } else if (kind === 'tier_lie') {
+      const def = (this.data.items || []).find(i => i.id === ware.itemId) || {};
+      const realTier = def.tier || 1;
+      ware.scam.advertisedTier = Math.min(4, realTier + 1 + Math.floor(R() * 2));
+      ware.scam.trueTier = realTier;
+      ware.name = (ware.name || 'curio') + ` (tier ${ware.scam.advertisedTier})`;
+      ware.blurb = `"Tier ${ware.scam.advertisedTier}, straight off the sky. Feel the weight of it."`;
+    }
+    return ware;
+  },
+  // recordScam: the ledger. Discovered scams can be confronted when the face
+  // comes back down the road.
+  recordScam(whoName, whoId, kind, wareName) {
+    const v = this.state.village || {};
+    v.scamLedger = v.scamLedger || [];
+    const entry = { id: 'scam_' + Date.now().toString(36) + Math.floor(R() * 99), whoName, whoId,
+      kind, wareName, day: (this.state.scholar || {}).day || 0, discovered: false, resolved: false };
+    v.scamLedger.push(entry);
+    return entry;
+  },
+  // scamDaily: delayed discovery — a knowledgeable villager remarks on what
+  // you bought. Runs from betrayalDaily.
+  scamDaily() {
+    try {
+      const v = this.state.village || {};
+      const ledger = v.scamLedger || [];
+      const pending = ledger.filter(s => !s.discovered && !s.resolved);
+      if (!pending.length) return;
+      // a sharp-eyed villager (trade spirit or deep codex) might notice
+      const roster = v.roster || [];
+      const sharp = roster.find(rid => this.tradeSpirit(rid) >= 1);
+      if (!sharp || R() > 0.35) return;
+      const s = pending[Math.floor(R() * pending.length)];
+      s.discovered = true;
+      const remark = {
+        overprice: `"You paid ${s.paid || 'that much'} for ${s.wareName}? ${s.whoName} saw you coming, friend."`,
+        spoiled_as_fresh: `"That ${s.wareName} from ${s.whoName} — smelled off to me when you brought it in. Check it before you trust it."`,
+        tier_lie: `"${s.whoName} called that a tier ${s.advertisedTier}? I've seen tier ${s.advertisedTier}. That wasn't it."`,
+      }[s.kind] || `"Keep an eye on ${s.whoName}. Something about that deal stank."`;
+      this.say(`${this.displayName(sharp)} sidles up. ${remark} (You can confront them next time that face shows up.)`);
+      try { this.journalNote && this.journalNote('village', 'stranger', `Scammed by ${s.whoName} (${s.kind} on ${s.wareName}) — ${sharp} noticed.`); } catch (e) {}
+    } catch (e) {}
+  },
+  // confrontScammer(vis, s): the reckoning. You were scammed, you found out,
+  // and that face came back. Nerve + witnesses decide: bluster, discount,
+  // or gone by morning. Theft by other means gets the social punishment.
+  confrontScammer(vis, s) {
+    vis.pendingConfront = s.id;
+    const kindLine = { overprice: 'overcharged you', spoiled_as_fresh: 'sold you rotten rations as fresh',
+      tier_lie: 'sold you a painted tier', underappraise: 'robbed you blind on the appraisal' }[s.kind] || 'cheated you';
+    this.say(`That face. ${vis.name} — the one who ${kindLine} last time they came through. They see the recognition hit. Their smile doesn't quite make it. "...Back again. The road's a circle."`);
+    return true;
+  },
+  // resolveConfront(vis, s, how): 'confront' or 'letslide'.
+  resolveConfront(vis, s, how) {
+    const v = this.state.village || {};
+    vis.pendingConfront = null;
+    if (how === 'letslide') {
+      s.resolved = true; s.letSlide = true;
+      try { this.state.scholar.letSlide = (this.state.scholar.letSlide || 0) + 1; } catch (e) {}
+      this.say(`You let it go. ${vis.name}'s smile comes back, a little too fast. They'll remember you as an easy mark.`);
+      return true;
+    }
+    // CONFRONT. Nerve: the desperate fold, the shady bluster, the rest pay.
+    const witnesses = (v.roster || []).length;
+    const nerve = vis.desperate ? 'fold' : (vis.shady ? 'bluster' : 'pay');
+    s.resolved = true;
+    try { this.state.scholar.scamsCalledOut = (this.state.scholar.scamsCalledOut || 0) + 1; } catch (e) {}
+    try { this.journalNote && this.journalNote('village', 'stranger', `Confronted ${vis.name} over the ${s.kind} scam. They ${nerve === 'bluster' ? 'blustered' : nerve === 'fold' ? 'folded and ran' : 'paid up'}.`); } catch (e) {}
+    if (nerve === 'bluster') {
+      vis.leavesDay = (this.state.scholar || {}).day || 0; // gone by morning
+      this.say(`"Me? Cheat YOU?" ${vis.name} goes loud — the bluster of the caught. Nobody's buying it${witnesses >= 3 ? ', and the whole village is watching' : ''}. They pack the cart an hour later. Word will travel ahead of them now.`);
+    } else if (nerve === 'fold') {
+      vis.leavesDay = (this.state.scholar || {}).day || 0;
+      this.say(`${vis.name} goes pale. No bluster in them — just fear. "Look, times are hard —" They don't finish. The cart is gone before dark.${witnesses >= 3 ? ' Everyone saw.' : ''}`);
+    } else {
+      vis.confrontDiscount = 0.7;
+      this.say(`${vis.name} holds up both hands. "Alright. Alright." Shame looks strange on them. "Thirty percent off — everything — and we forget the whole thing. Deal?" (Their prices are cut until they leave.)`);
+    }
+    if (witnesses >= 3) {
+      try { this.betrayalState().strangersHeard = (this.betrayalState().strangersHeard || 0) + 1; } catch (e) {}
+      this.say(`Word travels. The next hawker down the road will have heard about this.`);
+    }
+    return true;
+  },
+  // hawkerOffer(vid): an entrepreneurial VILLAGER hawks. Anyone with the
+  // spirit can sell — the village has its own merchants. One ware, offered
+  // in conversation; scams ride the same rails as visitor wares.
+  hawkerOffer(vid) {
+    const v = this.state.village || {};
+    v.hawkerStock = v.hawkerStock || {};
+    let ware = v.hawkerStock[vid];
+    if (!ware || ware.sold) {
+      // build one ware: a tool they "found", or trail food they made
+      const day = (this.state.scholar || {}).day || 0;
+      if (R() < 0.5) {
+        try {
+          const carried = new Set((this.state.scholar.inventory || []).map(i => i.itemId || i.id));
+          const tools = (this.data.items || []).filter(i => i.class === 'tool' && !carried.has(i.id));
+          const def = (tools.length ? tools[Math.floor(R() * tools.length)] : {}) || {};
+          if (def.id) ware = { kind: 'tool', itemId: def.id, name: def.name || def.id, sold: false,
+            price: 400 + Math.floor(R() * 5) * 100, blurb: `"Found it. Fixed it. Yours if the price is right."` };
+        } catch (e) {}
+      }
+      if (!ware) {
+        ware = { kind: 'food', itemId: 'hawker_food', name: 'Smoked strips', sold: false,
+          price: 300 + Math.floor(R() * 3) * 100, units: 2, kcalEach: 300, spoilDay: day + 5,
+          blurb: `"Smoked them myself. Good for the road."` };
+      }
+      const person = { id: vid, name: this.displayName(vid), shady: this.scamminess(vid) >= 2, desperate: (v.hungryDays || 0) > 0 };
+      try { this.maybeScamWare(person, ware); } catch (e) {}
+      v.hawkerStock[vid] = ware;
+    }
+    return ware;
+  },
+  // hawkerBuy(vid): buy the villager's offered ware. Same payment rails.
+  hawkerBuy(vid) {
+    const v = this.state.village || {};
+    const ware = (v.hawkerStock || {})[vid];
+    if (!ware || ware.sold) return null;
+    const person = { id: vid, name: this.displayName(vid) };
+    // seed their appraisal brain if needed (for future sell-side)
+    // (villagers appraise via traderAppraise with traderKnows seeded lazily)
+    let price = ware.price;
+    const pay = this.traderPay(price);
+    if (!pay.ok) {
+      this.say(`${this.displayName(vid)} shakes their head. "${price} kcal of finished food — and you're about ${pay.short} short. Come back with a full pack."`);
+      return null;
+    }
+    ware.sold = true;
+    const savvy = this.tradeSavvy();
+    if (ware.scam && !ware.scam.discovered) {
+      if (ware.scam.kind === 'overprice' && savvy >= 3) {
+        ware.scam.discovered = true;
+        this.say(`(You've bought enough to know: ${ware.scam.truePrice} is honest for this. They're asking ${ware.price}.)`);
+      }
+      const entry = this.recordScam(this.displayName(vid), vid, ware.scam.kind, ware.name);
+      entry.paid = ware.price; entry.discovered = !!ware.scam.discovered;
+      ware.scam.ledgerId = entry.id;
+    }
+    try { this.state.scholar.tradesDone = (this.state.scholar.tradesDone || 0) + 1; } catch (e) {}
+    if (ware.kind === 'food') {
+      const day = (this.state.scholar || {}).day || 0;
+      const entry = { itemId: ware.itemId, name: ware.name, units: ware.units || 1, kcalEach: ware.kcalEach || 300,
+        spoilDay: ware.spoilDay != null ? ware.spoilDay : day + 5, unit: 'ration', kg: 0.4 };
+      if (ware.scam && ware.scam.kind === 'spoiled_as_fresh') {
+        entry.spoilDay = day + ware.scam.trueSpoilIn;
+        entry.scamSpoiled = true; entry.scamLedgerId = ware.scam.ledgerId;
+      }
+      (this.state.scholar.inventory = this.state.scholar.inventory || []).push(entry);
+    } else {
+      const def = (this.data.items || []).find(i => i.id === ware.itemId) || {};
+      (this.state.scholar.inventory = this.state.scholar.inventory || []).push({ itemId: ware.itemId, name: ware.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
+    }
+    const took = pay.taken.map(t => `${t.units}× ${t.name}`).join(', ');
+    this.say(`Done — the ${ware.name} is yours for ${took}. ${this.displayName(vid)} pockets the food with a merchant's neat hands.`);
+    // SOCIAL: a villager who scams YOU faces the village, not the road.
+    // Discovery lands via scamDaily remarks; trust does the punishing.
+    try { this.observe('trade', { noTrust: true }); } catch (e) {}
+    return true;
   },
   // traderSellStock(vis): pack food stacks with appraisals, for the sell view.
-  traderSellStock(vis) {
-    const inv = this.state.scholar.inventory || [];
+  traderSellStock(vis) {    const inv = this.state.scholar.inventory || [];
     return inv.map((it, idx) => ({ idx, it, ap: this.traderAppraise(vis, it) }))
       .filter(e => (e.it.kcalEach || 0) > 0 && (e.it.units || 0) > 0);
   },
@@ -2183,7 +2478,7 @@
   traderSell(visId, packIdx) {
     const v = this.state.village;
     const vis = (v.visitors || []).find(x => x.id === visId);
-    if (!vis || vis.type !== 'trader') return null;
+    if (!vis || this.tradeSpirit(vis) <= 0) return null;
     const inv = this.state.scholar.inventory || [];
     const it = inv[packIdx];
     if (!it || (it.units || 0) <= 0) return null;
@@ -2246,7 +2541,23 @@
       kind: 'news', name: 'Road news', sold: false, price: 300,
       blurb: `"Two villages you've never heard named, and which road feeds you between them."`,
     });
+    // 4. trail rations, sometimes: a hawker eats too. Real food, real spoil.
+    //    (This is what spoiled_as_fresh scams ride on.)
+    if (R() < 0.5) {
+      const day = (this.state.scholar || {}).day || 0;
+      wares.push({
+        kind: 'food', itemId: 'trail_rations', name: 'Trail rations', sold: false,
+        price: 400 + Math.floor(R() * 4) * 100, units: 3,
+        kcalEach: 350, spoilDay: day + 4,
+        blurb: `"Smoked, salted, honest. Four days easy, probably more."`,
+      });
+    }
     vis.wares = wares;
+    // SCAMS (Steve 2026-10-06): anyone with the spirit might run one — keyed
+    // off THEIR dishonesty and THEIR read of you, not a role flag.
+    try {
+      for (const w of wares) this.maybeScamWare(vis, w);
+    } catch (e) {}
     return wares;
   },
   // traderPay(kcal): spend finished food from the pack until the price is met.
@@ -2284,14 +2595,16 @@
   visitorBuyWare(visId, idx) {
     const v = this.state.village;
     const vis = (v.visitors || []).find(x => x.id === visId);
-    if (!vis || vis.type !== 'trader') return null;
+    if (!vis || this.tradeSpirit(vis) <= 0) return null;
     const w = (this.visitorWares(vis) || [])[idx];
     if (!w) return null;
     if (w.sold) { this.say('Already sold. The blanket has a bare patch where it sat.'); return null; }
     // TAB FIRST (Steve 2026-10-06): credit from selling to the trader spends
     // before the pack does. If the pack can't cover the remainder, the tab
     // spend is rolled back — no partial purchases.
+    // CONFRONTATION DISCOUNT: shamed hawkers cut prices until they leave.
     let price = w.price;
+    if (vis.confrontDiscount && vis.confrontDiscount < 1) price = Math.max(1, Math.round(price * vis.confrontDiscount));
     const tabUsed = Math.min(vis.credit || 0, price);
     vis.credit = (vis.credit || 0) - tabUsed;
     price -= tabUsed;
@@ -2299,15 +2612,52 @@
     if (price > 0) pay = this.traderPay(price);
     if (!pay.ok) {
       vis.credit = (vis.credit || 0) + tabUsed; // roll back
-      this.say(`The trader shakes their head. "${w.price} kcal of finished food for the ${w.name} — and you're about ${pay.short} short${tabUsed ? ` even after your ${tabUsed} tab` : ''}. The smoked stuff counts extra, if you've got any."`);
+      this.say(`${vis.name} shakes their head. "${w.price} kcal of finished food for the ${w.name} — and you're about ${pay.short} short${tabUsed ? ` even after your ${tabUsed} tab` : ''}. The smoked stuff counts extra, if you've got any."`);
       return null;
     }
     w.sold = true;
     const took = pay.taken.map(t => `${t.units}× ${t.name}${t.preserved ? ' (preserved)' : ''}`).join(', ');
     const tabNote = tabUsed ? ` ${tabUsed} off your tab${took ? ',' : ''}` : '';
+    // SCAM DISCOVERY, at the counter (Steve 2026-10-06): a sharp eye spots
+    // the lie before money changes hands. Knowledge is the counterplay.
+    const savvy = this.tradeSavvy();
+    if (w.scam && !w.scam.discovered) {
+      if (w.scam.kind === 'overprice' && savvy >= 3) {
+        w.scam.discovered = true;
+        this.say(`(You've bought enough on the road to know: ${w.scam.truePrice} is the honest price for this. They're asking ${w.price}.)`);
+      } else if (w.scam.kind === 'tier_lie' && savvy >= 5) {
+        w.scam.discovered = true;
+        this.say(`(The "tier ${w.scam.advertisedTier}" sigil looks painted on. Your gut says tier ${w.scam.trueTier}, tops.)`);
+      }
+      // ledger it either way — a sharp villager may notice later
+      const entry = this.recordScam(vis.name, vis.id, w.scam.kind, w.name);
+      entry.paid = w.price; entry.advertisedTier = w.scam.advertisedTier;
+      entry.discovered = !!w.scam.discovered;
+      w.scam.ledgerId = entry.id;
+    }
+    try { this.state.scholar.tradesDone = (this.state.scholar.tradesDone || 0) + 1; } catch (e) {}
     if (w.kind === 'alien') {
-      this.alienLootGrant(w.itemId);
-      this.say(`Done. The ${w.name} is yours —${tabNote}${took ? ' ' + took : ''} for it. The trader watches you turn it over. "No idea what it does. You'll figure it out — everybody does, eventually." (Try using it.)`);
+      const granted = this.alienLootGrant(w.itemId);
+      // tier lie rides on the granted item — revealed at first use
+      if (w.scam && w.scam.kind === 'tier_lie' && granted && granted.entry) {
+        granted.entry.scamTierLie = true;
+        granted.entry.advertisedTier = w.scam.advertisedTier;
+        granted.entry.scamLedgerId = w.scam.ledgerId;
+      }
+      this.say(`Done. The ${w.name} is yours —${tabNote}${took ? ' ' + took : ''} for it. ${vis.name} watches you turn it over. "No idea what it does. You'll figure it out — everybody does, eventually." (Try using it.)`);
+    } else if (w.kind === 'food') {
+      const day = (this.state.scholar || {}).day || 0;
+      const entry = { itemId: w.itemId || 'trail_rations', name: w.name, units: w.units || 1,
+        kcalEach: w.kcalEach || 300, spoilDay: w.spoilDay != null ? w.spoilDay : day + 4,
+        unit: 'ration', kg: 0.4 };
+      // spoiled_as_fresh: sold as fresh, actually turns almost immediately.
+      // The early rot IS the discovery — undeniable, dated, damning.
+      if (w.scam && w.scam.kind === 'spoiled_as_fresh') {
+        entry.spoilDay = day + w.scam.trueSpoilIn;
+        entry.scamSpoiled = true; entry.scamLedgerId = w.scam.ledgerId;
+      }
+      (this.state.scholar.inventory = this.state.scholar.inventory || []).push(entry);
+      this.say(`Done. The ${w.name} ${w.units > 1 ? `(${w.units} rations)` : ''} ${w.units > 1 ? 'are' : 'is'} yours —${tabNote}${took ? ' ' + took : ''} for ${w.units > 1 ? 'them' : 'it'}. "Eat well on the road."`);
     } else if (w.kind === 'tool') {
       const def = (this.data.items || []).find(i => i.id === w.itemId) || {};
       (this.state.scholar.inventory = this.state.scholar.inventory || []).push({ itemId: w.itemId, name: w.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
@@ -2319,8 +2669,8 @@
       bs.strangersHeard = (bs.strangersHeard || 0) + 2;
       try { this.journalNote && this.journalNote('village', 'stranger', `Road news from the trader: ${named.length ? named.join(', ') : 'two villages down the river'} — and which road feeds you between them.`); } catch (e) {}
       this.say(named.length
-        ? `The trader sketches a map in the dirt: "${named.join(' — ')}. Three days if the road's kind. There's orchards gone wild halfway; eat your fill, nobody's claimed them." Word of Haven travels a little further, too.`
-        : `The trader sketches a map in the dirt: "Two villages down the river — you'll smell their smoke before you see them. There's orchards gone wild halfway; eat your fill, nobody's claimed them." Word of Haven travels a little further, too.`);
+        ? `${vis.name} sketches a map in the dirt: "${named.join(' — ')}. Three days if the road's kind. There's orchards gone wild halfway; eat your fill, nobody's claimed them." Word of Haven travels a little further, too.`
+        : `${vis.name} sketches a map in the dirt: "Two villages down the river — you'll smell their smoke before you see them. There's orchards gone wild halfway; eat your fill, nobody's claimed them." Word of Haven travels a little further, too.`);
     }
     try { this.observe('trade', { noTrust: true }); } catch (e) {}
     try { this.tickAction(8); } catch (e) {}
@@ -2335,8 +2685,10 @@
     return vs.map(vis => {
       const leaving = vis.leavesDay != null && vis.leavesDay <= d ? ' — leaving tonight' : '';
       let acts = '';
-      if (vis.type === 'trader') {
-        if (vis.trading) {
+      if (this.tradeSpirit(vis) > 0) {
+        if (vis.pendingConfront) {
+          acts = `<button class="btn sm" data-visitor-act="${vis.id}" data-how="confront">"You scammed me."</button> <button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="letslide">(let it slide)</button>`;
+        } else if (vis.trading) {
           acts = `<button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="shelve">Step back</button>`;
         } else if (vis.selling) {
           acts = `<button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="shelve">Done selling</button>`;
@@ -2350,13 +2702,13 @@
         acts += ` <button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="away">Turn away</button>`;
       }
       let cart = '';
-      if (vis.type === 'trader' && vis.trading) {
+      if (this.tradeSpirit(vis) > 0 && vis.trading) {
         cart = `<br>🛒 <b>The cart is open.</b> Finished food only — the perishable stuff goes first, preserved counts extra.${(vis.credit || 0) > 0 ? ` Your tab: <b>${vis.credit} kcal</b>.` : ''}<br>` +
           this.visitorWares(vis).map((w, i) =>
             `<span class="small">· <b>${w.name}</b> — ${w.price} kcal${w.sold ? ' <i>(sold)</i>' : ` <button class="btn ghost sm" data-ware-buy="${vis.id}:${i}">Buy</button>`}<br><span style="opacity:.7">${w.blurb}</span></span>`
           ).join('<br>');
       }
-      if (vis.type === 'trader' && vis.selling) {
+      if (this.tradeSpirit(vis) > 0 && vis.selling) {
         // SELL VIEW (Steve 2026-10-06): every stack appraised in the open,
         // with the trader's reasoning. His brain is knowledge-gated too.
         const stock = this.traderSellStock(vis);
@@ -2410,6 +2762,7 @@
     try { this.npcInviteTick(); } catch (e) {}
     try { this.dayOneNudge(); } catch (e) {}
     try { this.considerStrangers(); } catch (e) {}
+    try { this.scamDaily(); } catch (e) {} // delayed scam discovery: sharp villagers remark
     try { this.visitorDaily(); } catch (e) {} // stale visitors move on; frees the stranger slot
     // simmer: conflicts gain a little tension; grievances fade very slowly
     try {
