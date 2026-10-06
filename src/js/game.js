@@ -9986,12 +9986,37 @@
       const px = s.mx ?? 4, py = s.my ?? 4;
       trap.turns++;
       if (trap.turns >= 3) {
-        const stillThere = (px === trap.tileX && py === trap.tileY);
-        if (stillThere) {
-          const dmg = 20 + Math.floor(Math.random() * 10);
+        const dist = Math.max(Math.abs(px - trap.tileX), Math.abs(py - trap.tileY));
+        // AOE DIVE (Steve 2026-10-05): like bulldozer shrapnel. Direct hit
+        // on the tile, splash to adjacent. You can dodge the worst by moving,
+        // but the wings thrash wide.
+        if (dist <= 1) {
+          const direct = dist === 0;
+          const dmg = direct ? 20 + Math.floor(Math.random() * 10) : 8 + Math.floor(Math.random() * 6);
           s.health = Math.max(0, s.health - dmg);
-          this.say(`Something SLAMS into you from above! ${dmg} damage. Wings thrash — it's GROUNDED.`);
+          if (direct) {
+            this.say(`Something SLAMS into you from above! ${dmg} damage. Wings thrash — it's GROUNDED.`);
+          } else {
+            this.say(`The darter crashes down beside you — wingbeats like knives! ${dmg} damage from the thrash. It's GROUNDED.`);
+          }
           this.audioEvent('glasswingDive');
+          // Villagers in blast radius also hit (they were warned by the shadow too)
+          try {
+            const v = this.state.village;
+            if (v.positions) {
+              for (const rid of Object.keys(v.positions)) {
+                const pos = v.positions[rid];
+                const vd = Math.max(Math.abs(pos.mx - trap.tileX), Math.abs(pos.my - trap.tileY));
+                if (vd <= 1) {
+                  const vdmg = vd === 0 ? dmg : Math.floor(dmg / 2);
+                  // Apply to villager health (simplified)
+                  if (v.health && v.health[rid] !== undefined) {
+                    v.health[rid] = Math.max(0, v.health[rid] - vdmg);
+                  }
+                }
+              }
+            }
+          } catch (e) {}
           s.monster = { id: trap.monsterId, mx: trap.tileX, my: trap.tileY, beamPhase: 'grounded', gwGrounded: 2 };
           s.gwTrap = null;
           this.startCombat(trap.monsterId);
@@ -15202,7 +15227,7 @@
           if (!t.alive || t.fled || t.key === o.key) continue;
           if (t.kind !== 'player' && t.kind !== 'villager') continue;
           if (hitKeys.has(t.mx + ',' + t.my)) {
-            this.tbDamage(t.key, S.combat.roll(((o.mdef || {}).attack || {}).damage || [8, 12]), (this.encShortLabel(o) || o.name) + "'s Resonant Croak");
+            this.tbDamage(t.key, S.combat.roll(((o.mdef || {}).attack || {}).damage || [8, 12]), (this.encShortLabel(o) || o.name) + "'s " + this.encAttackName(o, 'Resonant Croak'));
           }
         }
         o.telegraph = null;
@@ -15425,7 +15450,7 @@
             if (!o.alive || o.fled || o.key === m.key) continue;
             if (o.kind !== 'player' && o.kind !== 'villager') continue;
             if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) <= 2) {
-              this.tbDamage(o.key, S.combat.roll(atk.damage || [12, 20]), (this.encShortLabel(m) || m.name) + "'s Lure and Grasp");
+              this.tbDamage(o.key, S.combat.roll(atk.damage || [12, 20]), (this.encShortLabel(m) || m.name) + "'s " + this.encAttackName(m, 'Lure and Grasp'));
             }
           }
           this.tbLearnPattern(m);
@@ -16203,7 +16228,7 @@
           const p1 = this.tbFighter('p');
           if (tg.threatenedPlayer && !playerHit && p1 && p1.alive) {
             this.say('You\'re not where it landed. Clean dodge.');
-            this.tbStyle(15, `dodged the ${tg.attackName}!`);
+            this.tbStyle(15, `dodged the ${this.encAttackName(m, tg.attackName)}!`);
           }
           if ((m.mdef.attack.pattern || {}).type === 'charge') {
             const last = tg.cells[tg.cells.length - 1];
@@ -16478,9 +16503,16 @@
         m.vmLastDist = dNow; // post-move baseline for next turn's lure check
         if (dNow <= (pat.range || 3) && !m.telegraph) {
           m.vmDeclared = true;
+          // ATTACK NAMES ARE EARNED: pre-pattern the declare is dread without
+          // the name — the name arrives via tbLearnPattern at resolve.
+          const vmAtk = this.encAttackName(m, atk.name);
           this.encDeclareDirect(m, t, vmPhase === 'reveal'
-            ? `The radio SCREAMS — no voice left, just noise and fury. ${atk.name} incoming. No dodging it.`
-            : `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. ${atk.name} is coming — and moving won't help once it has your voice.`);
+            ? (vmAtk === 'the attack'
+              ? `The radio SCREAMS — no voice left, just noise and fury. No dodging it.`
+              : `The radio SCREAMS — no voice left, just noise and fury. ${vmAtk} incoming. No dodging it.`)
+            : (vmAtk === 'the attack'
+              ? `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. Something is coming — and moving won't help once it has your voice.`
+              : `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. ${vmAtk} is coming — and moving won't help once it has your voice.`));
         } else if (!m.telegraph) {
           if (vmPhase === 'call') {
             const cries = [
