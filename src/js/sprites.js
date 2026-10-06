@@ -225,75 +225,99 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
     // === MONSTER SPRITES (Steve 2026-10-06): calm = the real animal/mundane thing,
     // aggro = the monster revealed. Steve's law: identical until aggro. ===
         bulldozer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\"><!-- bulldozer calm: wild boar rooting, head down --><ellipse cx=\"19\" cy=\"15\" rx=\"8.5\" ry=\"5.5\" fill=\"#4a4038\"/><ellipse cx=\"13.5\" cy=\"11.5\" rx=\"5.2\" ry=\"3.8\" fill=\"#54483c\"/><ellipse cx=\"17\" cy=\"11.5\" rx=\"6\" ry=\"2.2\" fill=\"#5d5248\" opacity=\"0.6\"/><path d=\"M14 12 C11 16 8 20 6 24 L9 26 C11 22 13 18 16 14 Z\" fill=\"#4a4038\"/><ellipse cx=\"9.5\" cy=\"22\" rx=\"2.6\" ry=\"2\" fill=\"#54483c\"/><ellipse cx=\"6.2\" cy=\"25.2\" rx=\"1.9\" ry=\"1.5\" fill=\"#241f1a\"/><circle cx=\"5.5\" cy=\"25.2\" r=\"0.35\" fill=\"#0f0c09\"/><circle cx=\"6.9\" cy=\"25.2\" r=\"0.35\" fill=\"#0f0c09\"/><path d=\"M7.8 24.5 C8.2 23 9 22 10.2 21.6\" stroke=\"#e8ddc0\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"11.5,10.5 12.8,7.2 14.2,10.2\" fill=\"#33291f\"/><circle cx=\"10.8\" cy=\"17\" r=\"0.75\" fill=\"#14100c\"/><circle cx=\"11\" cy=\"16.8\" r=\"0.22\" fill=\"#b9b2a4\" opacity=\"0.8\"/><path d=\"M10 8.5 l0.8 -2 M12 8 l0.8 -2.2 M14 7.8 l0.8 -2.2 M16 7.8 l0.8 -2 M18 8 l0.8 -2 M20 8.4 l0.8 -1.8 M22 9 l0.8 -1.6\" stroke=\"#241f1a\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><g fill=\"#33291f\"><rect x=\"11.5\" y=\"20.2\" width=\"1.8\" height=\"6.8\" rx=\"0.8\"/><rect x=\"14.5\" y=\"20.4\" width=\"1.8\" height=\"6.6\" rx=\"0.8\"/><rect x=\"20.5\" y=\"20.4\" width=\"1.8\" height=\"6.6\" rx=\"0.8\"/><rect x=\"23.5\" y=\"20.2\" width=\"1.8\" height=\"6.8\" rx=\"0.8\"/></g><g fill=\"#1c1611\"><rect x=\"11.5\" y=\"25.4\" width=\"1.8\" height=\"1.8\" rx=\"0.6\"/><rect x=\"14.5\" y=\"25.4\" width=\"1.8\" height=\"1.8\" rx=\"0.6\"/><rect x=\"20.5\" y=\"25.4\" width=\"1.8\" height=\"1.8\" rx=\"0.6\"/><rect x=\"23.5\" y=\"25.4\" width=\"1.8\" height=\"1.8\" rx=\"0.6\"/></g><path d=\"M27 13 q2 0.5 1.5 2.5\" stroke=\"#33291f\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"28.3\" cy=\"15.8\" r=\"0.8\" fill=\"#241f1a\"/></svg>`,
-    bulldozer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-  <!-- bulldozer aggro: head-low charge, tusks forward, quills raised. Charge anatomy: bulk + head-down battering posture -->
-  <!-- rear legs, braced -->
-  <path d=\"M20 20 L22.3 26.8\" stroke=\"#2a1f14\" stroke-width=\"2.6\" stroke-linecap=\"round\"/>
-  <path d=\"M23.8 20 L26.2 26.8\" stroke=\"#2a1f14\" stroke-width=\"2.6\" stroke-linecap=\"round\"/>
-  <!-- tail -->
-  <path d=\"M25.2 15.5 C27 16.5 27.8 18 27.6 20\" stroke=\"#2a1f14\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/>
-  <!-- body mass -->
-  <ellipse cx=\"17\" cy=\"15.5\" rx=\"8.5\" ry=\"5.5\" fill=\"#3a2c1e\"/>
-  <ellipse cx=\"17\" cy=\"13\" rx=\"6.5\" ry=\"3\" fill=\"#2a1f14\"/>
-  <!-- shoulder hump: the battering mass -->
-  <ellipse cx=\"11\" cy=\"13.5\" rx=\"4.5\" ry=\"4\" fill=\"#443522\"/>
-  <!-- quills along the back -->
-  <g stroke=\"#1c140c\" stroke-width=\"1.2\" stroke-linecap=\"round\">
-    <path d=\"M11 9.5 L9.5 6.5\"/><path d=\"M14 8.5 L13.2 5.4\"/><path d=\"M17 8.2 L16.8 5\"/><path d=\"M20 8.6 L20.4 5.6\"/><path d=\"M23 9.6 L24 6.8\"/>
+    bulldozer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- bulldozer aggro: THE CHARGE. Head dropped LOW as a battering ram, tusks forward,
+       rear coiled high, front legs braced. Body is a loaded spring aimed at YOU. -->
+  <!-- hindquarters: coiled HIGH, weight loaded -->
+  <ellipse cx=\"22\" cy=\"13.5\" rx=\"7\" ry=\"5.5\" fill=\"#3a3229\"/>
+  <ellipse cx=\"21\" cy=\"10.5\" rx=\"5\" ry=\"2.4\" fill=\"#453c32\" opacity=\"0.7\"/>
+  <!-- bristles raised along the back -->
+  <g stroke=\"#1c1611\" stroke-width=\"1.1\" stroke-linecap=\"round\">
+    <path d=\"M16 8.2 l-0.7 -2.2 M18.4 7.6 l-0.7 -2.2 M20.8 7.4 l-0.6 -2.2 M23.2 7.8 l-0.4 -2.2 M25.4 8.6 l-0.2 -2.1\"/>
   </g>
-  <!-- ear pinned back -->
-  <path d=\"M10.5 13.5 L8.8 10.8 L12 11.8 Z\" fill=\"#2a1f14\"/>
-  <!-- head lowered between shoulders, facing left -->
-  <path d=\"M10 15 L4.5 19.5 L5.5 23.5 L11 21.5 Z\" fill=\"#3a2c1e\"/>
-  <ellipse cx=\"7\" cy=\"20.2\" rx=\"2.4\" ry=\"2.8\" fill=\"#443522\"/>
-  <!-- snout -->
-  <ellipse cx=\"5\" cy=\"21.8\" rx=\"1.5\" ry=\"1.2\" fill=\"#2a1f14\"/>
-  <circle cx=\"4.4\" cy=\"21.6\" r=\"0.35\" fill=\"#14100c\"/>
-  <!-- TUSKS: curving up-forward, the weapons -->
-  <path d=\"M5.4 21 C4.2 19.8 3.6 18.2 3.6 16.4\" stroke=\"#e8ddc0\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"/>
-  <path d=\"M6.6 22.4 C5.8 21.6 5.2 20.6 5 19.4\" stroke=\"#d9cda8\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/>
-  <!-- eye: ember, fixed on you -->
-  <circle cx=\"8.8\" cy=\"17.6\" r=\"0.9\" fill=\"#ff5a2a\"/>
-  <ellipse cx=\"8.8\" cy=\"17.6\" rx=\"0.45\" ry=\"0.7\" fill=\"#1c0a04\"/>
-  <!-- front legs driving forward -->
-  <path d=\"M9.5 20.5 L6.5 26.5\" stroke=\"#2a1f14\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>
-  <path d=\"M12.5 20.8 L10 27\" stroke=\"#241a10\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>
-  <!-- hooves -->
-  <g fill=\"#0f0a06\">
-    <rect x=\"5.7\" y=\"25.9\" width=\"1.7\" height=\"1.7\" rx=\"0.5\"/>
-    <rect x=\"9.2\" y=\"26.4\" width=\"1.7\" height=\"1.7\" rx=\"0.5\"/>
-    <rect x=\"21.5\" y=\"26.2\" width=\"1.7\" height=\"1.7\" rx=\"0.5\"/>
-    <rect x=\"25.4\" y=\"26.2\" width=\"1.7\" height=\"1.7\" rx=\"0.5\"/>
+  <!-- shoulder hump: the driving muscle -->
+  <ellipse cx=\"15\" cy=\"16.5\" rx=\"5.5\" ry=\"4.5\" fill=\"#443a30\"/>
+  <ellipse cx=\"13\" cy=\"14.5\" rx=\"4\" ry=\"2.4\" fill=\"#52463a\" opacity=\"0.8\"/>
+  <!-- head: DROPPED LOW, wedged into a ram, snout at tile bottom-left -->
+  <path d=\"M14.5 17 C11.5 19.5 8.5 22.5 6 26.5 L9.5 28.5 C12 24.5 14.5 21.5 17 19.5 Z\" fill=\"#3a3229\"/>
+  <ellipse cx=\"8.2\" cy=\"26\" rx=\"3.2\" ry=\"2.6\" fill=\"#443a30\"/>
+  <!-- snout disc: flat ram face -->
+  <ellipse cx=\"5.6\" cy=\"27.4\" rx=\"1.9\" ry=\"1.6\" fill=\"#241f1a\"/>
+  <ellipse cx=\"5\" cy=\"27.2\" rx=\"0.45\" ry=\"0.6\" fill=\"#0f0c09\"/>
+  <ellipse cx=\"6.2\" cy=\"27.2\" rx=\"0.45\" ry=\"0.6\" fill=\"#0f0c09\"/>
+  <!-- TUSKS: driven forward like spears, catching light -->
+  <path d=\"M6.4 26.2 C7 24.4 8.4 23 10.4 22.4 C8.8 23.6 7.8 25.2 7.4 27 Z\" fill=\"#e8ddc0\"/>
+  <path d=\"M7.4 28.4 C7.6 26.6 8.4 25 9.8 23.8 C8.4 25 7.8 26.6 7.8 28.6 Z\" fill=\"#b9ac90\"/>
+  <path d=\"M4.6 25.4 C4.4 23.6 4.8 21.9 5.8 20.4 C5.4 22.1 5.4 23.9 5.8 25.6 Z\" fill=\"#e8ddc0\" opacity=\"0.9\"/>
+  <!-- eye: low, bloodshot, locked on target -->
+  <circle cx=\"10.2\" cy=\"24.2\" r=\"0.8\" fill=\"#14100c\"/>
+  <circle cx=\"10.2\" cy=\"24.2\" r=\"0.5\" fill=\"#a01a10\"/>
+  <circle cx=\"10.4\" cy=\"24\" r=\"0.16\" fill=\"#e8ddc0\"/>
+  <!-- ears: pinned flat back against the skull -->
+  <path d=\"M13 21.5 L16 19.8 L14.8 22.4 Z\" fill=\"#2c241c\"/>
+  <!-- front legs: braced, planted wide -->
+  <g stroke=\"#2c241c\" stroke-width=\"2.2\" stroke-linecap=\"round\">
+    <path d=\"M13.5 20.5 L11.5 27.5\"/>
+    <path d=\"M16.5 20 L15.5 27.5\"/>
   </g>
+  <!-- rear legs: folded, loaded, claws dug -->
+  <g stroke=\"#2c241c\" stroke-width=\"2.2\" stroke-linecap=\"round\">
+    <path d=\"M21 18 L19.5 25.5 L21.5 26.5\"/>
+    <path d=\"M24.5 17.5 L24 25 L26.2 25.5\"/>
+  </g>
+  <!-- tail: stiff, bristled -->
+  <path d=\"M28.5 12 q0.6 0.8 0.5 2.2\" stroke=\"#2c241c\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"/>
 </svg>`,
     hushwolf_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <g transform=\"translate(16 16) scale(0.95) translate(-16 -16)\">
 <!-- hushwolf calm: wolf standing alert --><path d=\"M24 14 C27 16 27.5 20 25.5 23.5\" stroke=\"#4a4e55\" stroke-width=\"2.6\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"16\" cy=\"15\" rx=\"8\" ry=\"4\" fill=\"#6b6f75\"/><ellipse cx=\"16\" cy=\"13.4\" rx=\"6.4\" ry=\"2.2\" fill=\"#7a7e85\" opacity=\"0.7\"/><ellipse cx=\"10\" cy=\"13\" rx=\"3.5\" ry=\"3.5\" fill=\"#7d7a70\"/><polygon points=\"10,9.5 4,11.5 2.5,15 6,16.5 10,14\" fill=\"#6b6f75\"/><polygon points=\"6,13 9,13.5 7.5,16\" fill=\"#a89f8d\" opacity=\"0.7\"/><polygon points=\"7,10 8,6.5 9.2,9.8\" fill=\"#4a4e55\"/><polygon points=\"9.5,9.8 10.8,6.8 11.8,10\" fill=\"#4a4e55\"/><polygon points=\"7.8,9.4 8.3,7.6 8.9,9.3\" fill=\"#2e3138\"/><circle cx=\"3\" cy=\"14.5\" r=\"0.9\" fill=\"#22252b\"/><ellipse cx=\"7\" cy=\"12.5\" rx=\"0.8\" ry=\"0.6\" fill=\"#d9a13b\"/><rect x=\"6.8\" y=\"12\" width=\"0.4\" height=\"1\" fill=\"#1c1a10\"/><g fill=\"#565a61\"><rect x=\"10\" y=\"18\" width=\"1.6\" height=\"9.5\" rx=\"0.7\"/><rect x=\"13\" y=\"18.4\" width=\"1.6\" height=\"9.1\" rx=\"0.7\"/><rect x=\"19\" y=\"18.4\" width=\"1.6\" height=\"9.1\" rx=\"0.7\"/><rect x=\"22\" y=\"18\" width=\"1.6\" height=\"9.5\" rx=\"0.7\"/></g><g fill=\"#33363d\"><rect x=\"10\" y=\"25.8\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"13\" y=\"25.8\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"19\" y=\"25.8\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/><rect x=\"22\" y=\"25.8\" width=\"1.6\" height=\"1.8\" rx=\"0.6\"/></g>
 </g>
 </svg>`,
-    hushwolf_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-  <!-- hushwolf aggro: silent full stride, low and long. No motion lines, no rush indicator: the silence is the tell -->
-  <!-- body: lean, stretched -->
-  <path d=\"M9 18.5 C12 14.8 17 13.8 22 15.2 C25 16.2 26.5 18.2 26 20.6 C25.5 22.9 22 23.6 18 23.1 C14 22.6 10.5 21.2 9 18.5 Z\" fill=\"#23252e\"/>
-  <!-- back shading -->
-  <path d=\"M10 17 C13 15 17.5 14.5 21.5 15.5 C18 15.8 13.5 16.5 11 18 Z\" fill=\"#2c303a\" opacity=\"0.9\"/>
-  <!-- head thrust forward, low -->
-  <path d=\"M9.5 17.8 L3.8 19.2 L2.4 21.2 L6.4 22.6 L9.8 20.8 Z\" fill=\"#23252e\"/>
-  <!-- ear: pricked forward, tracking (the lead's tell) -->
-  <path d=\"M7.5 17.6 L6 14.6 L8.8 16 Z\" fill=\"#23252e\"/>
-  <path d=\"M9 17.4 L8.2 14.2 L10.6 16.2 Z\" fill=\"#1a1c22\"/>
-  <!-- muzzle -->
-  <ellipse cx=\"4.2\" cy=\"20.8\" rx=\"1.1\" ry=\"0.9\" fill=\"#1a1c22\"/>
-  <!-- eye: pale, locked on -->
-  <circle cx=\"6.6\" cy=\"19.4\" r=\"0.65\" fill=\"#9fd8e8\"/>
-  <ellipse cx=\"6.6\" cy=\"19.4\" rx=\"0.3\" ry=\"0.45\" fill=\"#0a0b10\"/>
-  <!-- tail: streaming straight back -->
-  <path d=\"M25.8 18.5 C27.6 18.8 28.6 19.3 29.2 20.1\" stroke=\"#23252e\" stroke-width=\"1.4\" fill=\"none\" stroke-linecap=\"round\"/>
-  <!-- legs: full stride, extended -->
-  <path d=\"M12 21.5 L8.5 26.5 L6 26\" stroke=\"#2c303a\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/>
-  <path d=\"M16 22 L14.5 27.5 L12.5 27.2\" stroke=\"#2c303a\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/>
-  <path d=\"M21 21.5 L24.5 26 L26.8 25.2\" stroke=\"#2c303a\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/>
-  <path d=\"M23.5 20.8 L27 24 L28.8 26.2\" stroke=\"#2c303a\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/>
+    hushwolf_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- hushwolf aggro: SILENT RUSH. Feral dog mid-lunge, jaws open in a SOUNDLESS snarl —
+       no motion lines, no speed marks, no sound marks. Ears tuned forward,
+       eyes locked. The violence has no audio track. -->
+  <!-- hindquarters: driving, low -->
+  <ellipse cx=\"23\" cy=\"19\" rx=\"6.5\" ry=\"4.5\" fill=\"#1c1e26\"/>
+  <!-- back line: level, arrow-straight -->
+  <path d=\"M8.5 18.5 C13 15.5 19 15 24.5 17\" stroke=\"#262a34\" stroke-width=\"3.2\" fill=\"none\" stroke-linecap=\"round\"/>
+  <!-- head + neck: thrust forward at shoulder height -->
+  <path d=\"M10 16.8 L3.8 17.5 L2.6 20.2 L7.5 21.8 L11.5 20 Z\" fill=\"#1c1e26\"/>
+  <!-- ears: tuned FORWARD, both pricked -->
+  <path d=\"M7.6 16.6 L6.2 13 L8.8 15.4 Z\" fill=\"#1c1e26\"/>
+  <path d=\"M9.4 16.4 L8.8 12.8 L10.8 15.6 Z\" fill=\"#262a34\"/>
+  <!-- THE SILENT SNARL: upper jaw lifted, teeth bared, muzzle wrinkled -->
+  <path d=\"M2.2 20.2 L7.5 21.8 L7.8 22.8 L2.6 21.4 Z\" fill=\"#14161c\"/>
+  <!-- open mouth: black void -->
+  <path d=\"M3.4 21.2 L7.4 22.4 L7 24.6 L3.2 23.6 Z\" fill=\"#050507\"/>
+  <!-- teeth: upper row hanging, lower row rising — fangs longest -->
+  <g fill=\"#d8d4c8\">
+    <path d=\"M3.4 21.4 l0.35 1.15 l0.35 -1.05 Z\"/>
+    <path d=\"M4.5 21.65 l0.35 1.5 l0.4 -1.4 Z\"/>
+    <path d=\"M5.7 21.9 l0.35 1.05 l0.35 -0.95 Z\"/>
+    <path d=\"M6.7 22.15 l0.3 0.85 l0.3 -0.8 Z\"/>
+    <path d=\"M3.6 23.4 l0.35 -0.9 l0.35 0.95 Z\"/>
+    <path d=\"M5 23.65 l0.4 -1.1 l0.4 1.15 Z\"/>
+  </g>
+  <!-- nose -->
+  <ellipse cx=\"3.1\" cy=\"20.4\" rx=\"0.7\" ry=\"0.55\" fill=\"#0c0d12\"/>
+  <!-- eye: pale, unblinking, locked — NO anger, just targeting -->
+  <circle cx=\"6.2\" cy=\"18.6\" r=\"0.75\" fill=\"#cfe6ee\"/>
+  <ellipse cx=\"6.2\" cy=\"18.6\" rx=\"0.32\" ry=\"0.5\" fill=\"#06070b\"/>
+  <circle cx=\"6.4\" cy=\"18.35\" r=\"0.14\" fill=\"#ffffff\"/>
+  <!-- hackles: a raised ridge along the neck -->
+  <g stroke=\"#101218\" stroke-width=\"1\" stroke-linecap=\"round\">
+    <path d=\"M9.5 15.8 l-0.8 -1.4 M11.5 15.4 l-0.8 -1.4 M13.5 15.2 l-0.7 -1.4\"/>
+  </g>
+  <!-- legs: gathered under for the lunge — front paws already leaving ground -->
+  <g stroke=\"#262a34\" stroke-width=\"1.9\" stroke-linecap=\"round\" fill=\"none\">
+    <path d=\"M12.5 21.5 L10 26 L7.8 25.4\"/>
+    <path d=\"M15 22 L13.5 27.2 L11.4 27\"/>
+    <path d=\"M21.5 21.5 L24 26.2 L26.3 25.4\"/>
+    <path d=\"M24 20.8 L27 24 L28.4 25.6\"/>
+  </g>
+  <!-- tail: straight out, taut as a wire -->
+  <path d=\"M28.6 17.6 C29 17.4 29.2 17.6 29.2 18\" stroke=\"#1c1e26\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/>
 </svg>`,
     gallowdeer_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <g transform=\"translate(16 16) scale(0.94) translate(-16 -16)\">
@@ -302,45 +326,68 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 </g>
 </g>
 </svg>`,
-    gallowdeer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-  <!-- gallowdeer aggro: FROZEN and AIMING. Headlight-lens beam eyes are the weapon anatomy; antlers are permanent equipment -->
+    gallowdeer_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- gallowdeer aggro: FROZEN, AIMING. Body is a statue — the HEAD is turned full
+       front toward you, and the eyes are headlight LENSES at full charge:
+       white-hot cores, amber gathering rings, beam warmup spilling forward.
+       The eyes are hardware. The shot is coming. -->
+  <defs>
+    <radialGradient id=\"lensGlow2\" cx=\"50%\" cy=\"50%\" r=\"50%\">
+      <stop offset=\"0%\" stop-color=\"#fffbe8\"/>
+      <stop offset=\"40%\" stop-color=\"#ffe98a\"/>
+      <stop offset=\"100%\" stop-color=\"#ffe98a\" stop-opacity=\"0\"/>
+    </radialGradient>
+    <linearGradient id=\"beamCore2\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">
+      <stop offset=\"0%\" stop-color=\"#ff9a2e\" stop-opacity=\"0\"/>
+      <stop offset=\"100%\" stop-color=\"#fffbe8\" stop-opacity=\"0.95\"/>
+    </linearGradient>
+  </defs>
   <!-- legs: planted, statue-still -->
   <g fill=\"#2a2318\">
-    <rect x=\"12\" y=\"19.5\" width=\"1.4\" height=\"8\" rx=\"0.6\"/>
-    <rect x=\"14.8\" y=\"19.5\" width=\"1.4\" height=\"8\" rx=\"0.6\"/>
-    <rect x=\"20.5\" y=\"19.5\" width=\"1.4\" height=\"8\" rx=\"0.6\"/>
-    <rect x=\"23.3\" y=\"19.5\" width=\"1.4\" height=\"8\" rx=\"0.6\"/>
+    <rect x=\"15.5\" y=\"20\" width=\"1.5\" height=\"8\" rx=\"0.6\"/>
+    <rect x=\"18.2\" y=\"20\" width=\"1.5\" height=\"8\" rx=\"0.6\"/>
+    <rect x=\"23.5\" y=\"20\" width=\"1.5\" height=\"8\" rx=\"0.6\"/>
+    <rect x=\"26.2\" y=\"20\" width=\"1.5\" height=\"8\" rx=\"0.6\"/>
   </g>
-  <!-- body -->
-  <ellipse cx=\"17.5\" cy=\"16.5\" rx=\"7\" ry=\"3.6\" fill=\"#3d3428\"/>
-  <ellipse cx=\"17.5\" cy=\"14.6\" rx=\"5.2\" ry=\"2\" fill=\"#322a20\"/>
-  <!-- neck rising to the aiming head -->
-  <path d=\"M11.5 14.5 L8.5 6.5 L12 5.5 L14.5 13.5 Z\" fill=\"#3d3428\"/>
-  <!-- head -->
-  <path d=\"M10.2 6.8 L5.5 5.5 L4.5 8.5 L7.5 10.5 L10.5 9.5 Z\" fill=\"#3d3428\"/>
-  <ellipse cx=\"6\" cy=\"8.5\" rx=\"1.2\" ry=\"1.5\" fill=\"#322a20\"/>
-  <!-- ANTLERS: permanent equipment, branching -->
-  <g stroke=\"#1c1610\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\">
-    <path d=\"M9 5.5 L8 2.5 M8.4 3.8 L6.6 3 M9.4 4.4 L11 3.4\"/>
-    <path d=\"M11.5 5.8 L12.2 2.8 M11.8 4 L10.2 3.2 M12.4 4.2 L13.8 3.6\"/>
+  <!-- body: frozen, profile -->
+  <ellipse cx=\"20.8\" cy=\"17\" rx=\"6.2\" ry=\"3.4\" fill=\"#33291e\"/>
+  <ellipse cx=\"20.8\" cy=\"15.4\" rx=\"4.6\" ry=\"1.8\" fill=\"#2b2318\"/>
+  <!-- neck rising, twisting the head FRONT toward the viewer -->
+  <path d=\"M15.5 15 L12.5 8.5 L16.5 7.5 L18.5 14 Z\" fill=\"#33291e\"/>
+  <!-- HEAD: facing viewer, broad -->
+  <ellipse cx=\"13.5\" cy=\"7.5\" rx=\"4\" ry=\"3.6\" fill=\"#2b2318\"/>
+  <!-- antlers: branching above, catching lens light -->
+  <g stroke=\"#1c1610\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\">
+    <path d=\"M11.5 4.9 L10.3 2.8 M10.8 3.8 L8.9 3.2 M11.9 4.2 L13.2 3.2\"/>
+    <path d=\"M15.5 4.9 L16.7 2.8 M16.2 3.8 L18.1 3.2 M15.1 4.2 L13.8 3.2\"/>
   </g>
   <!-- ears -->
-  <path d=\"M9.5 9.8 L6.8 10.8 L8.6 12 Z\" fill=\"#2a2318\"/>
-  <!-- THE EYES: twin headlight lenses, gathering light. Beam anatomy. -->
-  <circle cx=\"5.8\" cy=\"7\" r=\"3\" fill=\"#ffe98a\" opacity=\"0.25\"/>
-  <circle cx=\"5.8\" cy=\"7\" r=\"2.1\" fill=\"#f5e9c8\"/>
-  <circle cx=\"5.8\" cy=\"7\" r=\"2.1\" stroke=\"#8a7a4a\" stroke-width=\"0.6\" fill=\"none\"/>
-  <circle cx=\"5.8\" cy=\"7\" r=\"1.4\" stroke=\"#b3a05e\" stroke-width=\"0.5\" fill=\"none\"/>
-  <circle cx=\"5.8\" cy=\"7\" r=\"0.9\" fill=\"#fff8e0\"/>
-  <circle cx=\"5.8\" cy=\"7\" r=\"0.45\" fill=\"#ffffff\"/>
-  <circle cx=\"9.2\" cy=\"6.2\" r=\"2.4\" fill=\"#ffe98a\" opacity=\"0.25\"/>
-  <circle cx=\"9.2\" cy=\"6.2\" r=\"1.7\" fill=\"#f5e9c8\"/>
-  <circle cx=\"9.2\" cy=\"6.2\" r=\"1.7\" stroke=\"#8a7a4a\" stroke-width=\"0.6\" fill=\"none\"/>
-  <circle cx=\"9.2\" cy=\"6.2\" r=\"1.1\" stroke=\"#b3a05e\" stroke-width=\"0.5\" fill=\"none\"/>
-  <circle cx=\"9.2\" cy=\"6.2\" r=\"0.65\" fill=\"#fff8e0\"/>
-  <circle cx=\"9.2\" cy=\"6.2\" r=\"0.32\" fill=\"#ffffff\"/>
-  <!-- tail: white flag, raised -->
-  <path d=\"M24.3 15.5 L27.5 13.5 L26.5 17 Z\" fill=\"#e8e4da\"/>
+  <path d=\"M10.2 9.8 L7.5 10.6 L9.2 12 Z\" fill=\"#241c12\"/>
+  <path d=\"M16.8 9.8 L19.5 10.6 L17.8 12 Z\" fill=\"#241c12\"/>
+  <!-- eye SOCKETS: darkened wells -->
+  <ellipse cx=\"11.6\" cy=\"7.6\" rx=\"2.6\" ry=\"2.8\" fill=\"#0c0906\"/>
+  <ellipse cx=\"15.4\" cy=\"7.6\" rx=\"2.6\" ry=\"2.8\" fill=\"#0c0906\"/>
+  <!-- charge halos -->
+  <circle cx=\"11.6\" cy=\"7.6\" r=\"3\" fill=\"url(#lensGlow2)\"/>
+  <circle cx=\"15.4\" cy=\"7.6\" r=\"3\" fill=\"url(#lensGlow2)\"/>
+  <!-- THE LENSES: amber housing, hot ring, white core -->
+  <circle cx=\"11.6\" cy=\"7.6\" r=\"2\" fill=\"#ff9a2e\"/>
+  <circle cx=\"11.6\" cy=\"7.6\" r=\"1.4\" fill=\"#ffd94a\"/>
+  <circle cx=\"11.6\" cy=\"7.6\" r=\"0.8\" fill=\"#fffbe8\"/>
+  <circle cx=\"15.4\" cy=\"7.6\" r=\"2\" fill=\"#ff9a2e\"/>
+  <circle cx=\"15.4\" cy=\"7.6\" r=\"1.4\" fill=\"#ffd94a\"/>
+  <circle cx=\"15.4\" cy=\"7.6\" r=\"0.8\" fill=\"#fffbe8\"/>
+  <!-- reflector facet rings: the eye is hardware -->
+  <g stroke=\"#ff9a2e\" stroke-width=\"0.4\" opacity=\"0.85\" fill=\"none\">
+    <circle cx=\"11.6\" cy=\"7.6\" r=\"2.35\"/>
+    <circle cx=\"15.4\" cy=\"7.6\" r=\"2.35\"/>
+  </g>
+  <!-- BEAM WARMUP: glow spilling forward from both lenses — the shot is coming -->
+  <path d=\"M13.5 7.6 L7.5 9.6 L7.5 5.6 Z\" fill=\"url(#beamCore2)\" opacity=\"0.5\"/>
+  <!-- muzzle: small, still — the weapon needs no jaw -->
+  <ellipse cx=\"13.5\" cy=\"10.6\" rx=\"1.6\" ry=\"1\" fill=\"#241c12\"/>
+  <ellipse cx=\"12.9\" cy=\"10.5\" rx=\"0.3\" ry=\"0.4\" fill=\"#0f0c09\"/>
+  <ellipse cx=\"14.1\" cy=\"10.5\" rx=\"0.3\" ry=\"0.4\" fill=\"#0f0c09\"/>
 </svg>`,
     mirrormoth_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <g transform=\"translate(16 16) scale(0.9) translate(-16 -16)\">
@@ -668,37 +715,43 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
   <circle cx=\"21.8\" cy=\"5.3\" r=\"0.38\" fill=\"#1a1a1a\"/>
 </g>
 </svg>`,
-    white_noise_heron_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-  <!-- white_noise_heron aggro: UNFOLDED to full height, spear-beak leveled. The beak IS the strike line. Body not-quite-there: ghost afterimage + static flicker -->
-  <!-- ghost afterimage: the body that isn't quite there -->
-  <ellipse cx=\"14.2\" cy=\"19.2\" rx=\"5.2\" ry=\"3.9\" fill=\"none\" stroke=\"#b7c0c7\" stroke-width=\"1\" stroke-dasharray=\"2.4 1.8\" opacity=\"0.35\"/>
-  <!-- legs: planted, still -->
-  <path d=\"M12.5 22.5 L12.2 28.5\" stroke=\"#4a3f35\" stroke-width=\"1.2\" stroke-linecap=\"round\"/>
-  <path d=\"M15.5 22.5 L15.8 28.5\" stroke=\"#4a3f35\" stroke-width=\"1.2\" stroke-linecap=\"round\"/>
-  <!-- body -->
-  <ellipse cx=\"13\" cy=\"20\" rx=\"5.2\" ry=\"3.9\" fill=\"#9fb0bd\"/>
-  <!-- folded wing, feather layering -->
-  <path d=\"M8.8 18 C12 17 15.5 17.4 17.6 19 C16 21 12.5 22 9.5 21.2 C8 20.2 7.8 18.8 8.8 18 Z\" fill=\"#7c8b98\"/>
-  <path d=\"M9.2 19 C12 18.4 15 18.8 16.8 20\" stroke=\"#5d6b77\" stroke-width=\"0.7\" fill=\"none\" stroke-linecap=\"round\"/>
-  <!-- static flicker around the body -->
-  <g stroke=\"#e3e8ec\" stroke-width=\"0.7\" stroke-linecap=\"round\" opacity=\"0.85\">
-    <path d=\"M7 14.5 l1.1 0.5 M18.6 16 l1.2 -0.3 M6.8 23 l1.1 0.7 M18 24 l1.1 0.6\"/>
+    white_noise_heron_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- white_noise_heron aggro: THE SPEAR. Neck locked into one straight line with the
+       beak — the whole head assembly is a javelin frozen at full extension,
+       body leaning into the throw. The strike line is the composition's horizon. -->
+  <!-- legs: braced, wide -->
+  <path d=\"M11.5 21 L11.1 28.6\" stroke=\"#4a3f35\" stroke-width=\"1.4\" stroke-linecap=\"round\"/>
+  <path d=\"M15.8 21 L16.4 28.6\" stroke=\"#4a3f35\" stroke-width=\"1.4\" stroke-linecap=\"round\"/>
+  <!-- body: coiled low, leaning INTO the strike (right) -->
+  <ellipse cx=\"13.2\" cy=\"19.3\" rx=\"6\" ry=\"4.6\" fill=\"#8b99a5\"/>
+  <!-- folded wing: feathers slicked back by the lunge -->
+  <path d=\"M7.6 17 C11.5 15.5 16.2 16 18.4 18.2 C16.8 21 12.4 22.4 8.2 21.6 C6.4 20.3 6.4 18.2 7.6 17 Z\" fill=\"#6d7c88\"/>
+  <g stroke=\"#4d5a64\" stroke-width=\"0.7\" fill=\"none\" stroke-linecap=\"round\">
+    <path d=\"M8.4 17.8 C11.5 17 14.8 17.4 17 18.6\"/>
+    <path d=\"M8.6 19.6 C11.5 19 14.5 19.2 16.6 20\"/>
   </g>
-  <!-- neck: the spear shaft, extended straight up -->
-  <path d=\"M15.5 17 C17.5 13.5 18 10 17.4 7.4\" stroke=\"#e3e8ec\" stroke-width=\"2.4\" fill=\"none\" stroke-linecap=\"round\"/>
-  <path d=\"M15.5 17 C17.5 13.5 18 10 17.4 7.4\" stroke=\"#8b979f\" stroke-width=\"0.7\" opacity=\"0.5\" fill=\"none\"/>
-  <!-- head -->
-  <ellipse cx=\"18.6\" cy=\"6.4\" rx=\"2.2\" ry=\"1.6\" fill=\"#e3e8ec\"/>
-  <path d=\"M17 5.4 C18.2 4.2 20.6 4.2 21.6 5.6 L21.2 6.3 C20 5.3 18.4 5.3 17.4 6.2 Z\" fill=\"#23272e\"/>
-  <!-- eye: locked on target -->
-  <circle cx=\"18.9\" cy=\"6.2\" r=\"0.8\" fill=\"#e8b93c\"/>
-  <circle cx=\"18.9\" cy=\"6.2\" r=\"0.4\" fill=\"#1a1a1a\"/>
-  <!-- THE SPEAR: beak leveled horizontal, the line attack -->
-  <polygon points=\"20.4,5.6 28.4,6.4 20.4,7.4\" fill=\"#ffd76a\"/>
-  <polygon points=\"20.4,5.6 24.5,6.4 20.4,7.4\" fill=\"#e0992e\" opacity=\"0.55\"/>
-  <path d=\"M21.2 6.1 L27.6 6.4\" stroke=\"#fff\" stroke-width=\"0.6\" opacity=\"0.9\" stroke-linecap=\"round\"/>
-  <!-- crest plume: ruffled by the static -->
-  <path d=\"M17.2 5 C15.4 4.2 13.8 4.2 12.6 5 C13.9 4.9 15.5 5.2 16.9 5.9 Z\" fill=\"#23272e\"/>
+  <!-- NECK: the spear shaft — one locked straight line, thickened muscle -->
+  <path d=\"M16 17 L23 12.8 L24 15 L16.8 19.2 Z\" fill=\"#cfd6da\"/>
+  <path d=\"M16.4 18 L23.4 13.8\" stroke=\"#8b979f\" stroke-width=\"0.8\" opacity=\"0.7\"/>
+  <!-- neck muscle ridges: tensed, coiled power -->
+  <g stroke=\"#aeb8bd\" stroke-width=\"0.7\" stroke-linecap=\"round\" opacity=\"0.9\">
+    <path d=\"M18 16.4 l-0.6 2.4 M20 15.5 l-0.6 2.4 M22 14.6 l-0.6 2.4\"/>
+  </g>
+  <!-- head: flattened into the line, no S-curve left -->
+  <path d=\"M23 12.8 L27 12 L26.7 15 L23.4 14.8 Z\" fill=\"#dfe4e8\"/>
+  <!-- black cap flattened back -->
+  <path d=\"M23.3 12.4 C24.7 11.6 26.5 11.6 27.1 12.6 L26.8 13.4 C25.7 12.7 24.3 12.7 23.3 13.4 Z\" fill=\"#23272e\"/>
+  <!-- eye: narrowed, down the strike line -->
+  <path d=\"M24.3 13.4 L25.8 13.1\" stroke=\"#e8b93c\" stroke-width=\"1\" stroke-linecap=\"round\"/>
+  <circle cx=\"25\" cy=\"13.25\" r=\"0.3\" fill=\"#1a1a1a\"/>
+  <!-- THE SPEAR TIP: bill locked dead-level, the strike's whole length -->
+  <path d=\"M26.7 12.8 L29.4 12.3 L26.8 14.4 Z\" fill=\"#e0992e\"/>
+  <path d=\"M26.7 12.8 L29.4 12.3 L28 13.2 Z\" fill=\"#f2b84b\" opacity=\"0.7\"/>
+  <path d=\"M29.4 12.3 l-0.6 0.45\" stroke=\"#8a5f1c\" stroke-width=\"0.5\"/>
+  <!-- tail: counterweight kicked back -->
+  <path d=\"M7.6 18 L3.6 20 L7.3 21.2 Z\" fill=\"#6d7c88\"/>
+  <!-- ghost: the body position a heartbeat ago — it was never still -->
+  <ellipse cx=\"11\" cy=\"20.2\" rx=\"5\" ry=\"3.8\" fill=\"none\" stroke=\"#b7c0c7\" stroke-width=\"0.9\" stroke-dasharray=\"2.2 1.8\" opacity=\"0.3\"/>
 </svg>`,
     hummice_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <g transform=\"translate(16 16) scale(0.94) translate(-16 -16)\">
@@ -795,46 +848,42 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
   <!-- shell highlight -->
   <ellipse cx=\"14.5\" cy=\"14\" rx=\"4\" ry=\"2\" fill=\"#5d5248\" opacity=\"0.5\"/>
 </svg>`,
-    speedbump_turtle_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-  <!-- speedbump_turtle aggro: an armored bunker with a lunging snapping head. Snap anatomy: thick neck, hooked open beak -->
-  <!-- rear feet -->
-  <path d=\"M22 24.5 L23 28 M25.5 24.5 L26 28\" stroke=\"#4a4436\" stroke-width=\"1.8\" stroke-linecap=\"round\"/>
-  <!-- tail stub -->
-  <path d=\"M28.2 22 q1.2 0.4 1 1.8\" stroke=\"#35301f\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"/>
-  <!-- SHELL: heavy dome, plated scutes -->
-  <path d=\"M6 24 C6 13 11 6.5 18.5 6.5 C25.5 6.5 28.8 13 28.8 24 Z\" fill=\"#35301f\"/>
-  <!-- scute seams radiating from apex -->
-  <g stroke=\"#1c1a10\" stroke-width=\"0.8\" fill=\"none\" opacity=\"0.9\">
-    <path d=\"M18.5 6.5 L18.5 12 M18.5 6.5 L14 9.5 M18.5 6.5 L22 9.5\"/>
-    <path d=\"M14 9.5 L12 15 M22 9.5 L23.8 15 M18.5 12 L18.5 18\"/>
-    <path d=\"M12 15 L10.5 21 M23.8 15 L25 20.5 M18.5 18 L18.5 24\"/>
+    speedbump_turtle_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- speedbump_turtle aggro: THE SNAP. Shell sunk rock-still, matte-dark, feet braced —
+       but the neck is out IMPOSSIBLY far, mid-strike, hooked beak gaping.
+       The horror is stillness breaking: nothing on the body moves except the jaw. -->
+  <!-- braced rear leg, dug in -->
+  <ellipse cx=\"25.5\" cy=\"25\" rx=\"1.9\" ry=\"2.6\" fill=\"#2e2820\"/>
+  <g fill=\"#b8a877\"><polygon points=\"24.3,26.8 24.9,25.5 25.5,26.8\"/><polygon points=\"25.9,26.9 26.5,25.6 27.1,26.9\"/></g>
+  <!-- shell: sunk LOW, rock-still, darker + matte vs calm -->
+  <path d=\"M13 24 C13 14.5 17 11 21.5 11 C26 11 29.4 14.5 29.4 24 Z\" fill=\"#33291c\"/>
+  <ellipse cx=\"21.2\" cy=\"24\" rx=\"8.2\" ry=\"1.9\" fill=\"#241c12\"/>
+  <path d=\"M21.5 11.5 C21.5 15.5 21.5 19.5 21.5 23.5\" stroke=\"#1c1510\" stroke-width=\"0.8\" opacity=\"0.8\" fill=\"none\"/>
+  <!-- markings: dimmed, like a stone -->
+  <g stroke=\"#8a6f35\" stroke-width=\"0.9\" stroke-linecap=\"round\" opacity=\"0.5\" fill=\"none\">
+    <path d=\"M17.5 14 l-1.2 2.2\"/><path d=\"M19.5 13 l-0.5 2.4\"/><path d=\"M23.5 13.1 l0.5 2.3\"/><path d=\"M25.7 14 l1.2 2.1\"/>
+    <path d=\"M16 17.5 l-1.6 1.6\"/><path d=\"M27 17.5 l1.6 1.6\"/>
   </g>
-  <!-- scute plate highlights -->
-  <g stroke=\"#57512e\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.8\">
-    <path d=\"M15.5 8.5 L13.5 12 M20.8 8.5 L22.5 12 M16 14.5 L14.5 18\"/>
-  </g>
-  <!-- armored rim -->
-  <path d=\"M6 24 C6 22.5 7 21.8 8.5 21.6 L26.5 21.6 C27.8 21.8 28.8 22.5 28.8 24 L6 24 Z\" fill=\"#2a2718\"/>
-  <!-- THE SNAP: thick neck lunging from under the shell -->
-  <path d=\"M10.5 19.5 C8.5 19 7 19.2 5.7 20.2 L6.5 23.5 C8 23 9.5 22.8 11 23 Z\" fill=\"#3a352a\"/>
-  <!-- head -->
-  <ellipse cx=\"6.7\" cy=\"21.4\" rx=\"2.2\" ry=\"1.9\" fill=\"#3a352a\"/>
-  <!-- hooked upper beak, OPEN -->
-  <path d=\"M8.3 20.2 L4.1 20.6 Q3.3 20.8 3.9 21.4 L6.1 22.6 Z\" fill=\"#4a4436\"/>
-  <path d=\"M4.1 20.6 Q3.7 21 4.1 21.3\" stroke=\"#24211a\" stroke-width=\"0.7\" fill=\"none\"/>
-  <!-- lower beak dropped -->
-  <path d=\"M8.3 22.4 L4.9 24.4 Q4.3 24.7 4.7 24 L6.3 22.8 Z\" fill=\"#4a4436\"/>
-  <!-- gaping mouth interior -->
-  <ellipse cx=\"5.9\" cy=\"22.2\" rx=\"1.2\" ry=\"0.75\" fill=\"#120c08\"/>
-  <!-- eye: furious, fixed -->
-  <circle cx=\"7.3\" cy=\"20.4\" r=\"0.85\" fill=\"#e8d878\"/>
-  <ellipse cx=\"7.3\" cy=\"20.4\" rx=\"0.28\" ry=\"0.55\" fill=\"#1c1610\"/>
-  <!-- front feet: clawed, braced -->
-  <path d=\"M10.5 24 L9.5 28 M13.5 24 L13 28\" stroke=\"#4a4436\" stroke-width=\"1.8\" stroke-linecap=\"round\"/>
-  <g fill=\"#d9cda8\">
-    <polygon points=\"8.4,28.6 9,27.4 9.6,28.6\"/><polygon points=\"10.4,28.6 11,27.4 11.6,28.6\"/>
-    <polygon points=\"11.9,28.6 12.5,27.4 13.1,28.6\"/><polygon points=\"13.9,28.6 14.5,27.4 15.1,28.6\"/>
-  </g>
+  <ellipse cx=\"18.3\" cy=\"15\" rx=\"3.4\" ry=\"1.7\" fill=\"#3d3830\" opacity=\"0.4\"/>
+  <!-- front leg: planted, braced against the lunge -->
+  <path d=\"M14.8 24.5 L12.2 28.8\" stroke=\"#3a3226\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>
+  <g fill=\"#b8a877\"><polygon points=\"11.1,28.8 11.8,27.5 12.5,28.9\"/></g>
+  <!-- neck: stretched IMPOSSIBLY far — a thick taut cable, no slack -->
+  <path d=\"M14.5 18.6 C10.5 20 7 21.4 4.4 23.2 L2.6 27.2 C6.8 25.6 11.2 24.2 14.5 24 Z\" fill=\"#4a4036\"/>
+  <path d=\"M13.6 19.8 C10.2 21.2 7.2 22.4 4.6 24\" stroke=\"#332c20\" stroke-width=\"0.5\" fill=\"none\"/>
+  <path d=\"M13.2 19.2 C10 20.5 7 21.6 4.6 23\" stroke=\"#6a5f4c\" stroke-width=\"0.5\" opacity=\"0.7\" fill=\"none\"/>
+  <!-- head at the far end of the stretch: mid-snap -->
+  <path d=\"M8.4 20.6 L3.8 21.8 L3.4 24.2 L7.8 25.2 L8.8 23 Z\" fill=\"#3d362a\"/>
+  <!-- THE GAPE: open-beak V — black wedge between the jaws -->
+  <path d=\"M3.6 24 L7.6 25 L4.4 29.4 L3.2 28.4 Z\" fill=\"#050505\"/>
+  <!-- hooked upper beak, thrown open -->
+  <path d=\"M3.8 21.8 L7 21 L6.4 24 L3.6 24.4 Z\" fill=\"#4a4036\"/>
+  <path d=\"M3.8 21.8 L5 20.4 L5.8 22.4 Z\" fill=\"#241d12\"/>
+  <!-- lower jaw: dropped bar, separated from the beak -->
+  <path d=\"M3.2 28.2 L7 29.2 L6.4 29.4 L2.8 28.4 Z\" fill=\"#2e2518\"/>
+  <!-- eye: wide, caught mid-snap -->
+  <circle cx=\"6.4\" cy=\"23.4\" r=\"1\" fill=\"#0f0c09\"/>
+  <circle cx=\"6.65\" cy=\"23.15\" r=\"0.3\" fill=\"#e8ddc0\"/>
 </svg>`,
     nightlight_catfish_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <g transform=\"translate(16 16) scale(0.88) translate(-16 -16)\">
@@ -870,62 +919,48 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
   <g fill=\"#e2f5c8\" opacity=\"0.7\"><circle cx=\"1\" cy=\"11.5\" r=\"0.55\"/><circle cx=\"0.6\" cy=\"15.6\" r=\"0.5\"/><circle cx=\"1.2\" cy=\"20\" r=\"0.5\"/><circle cx=\"3\" cy=\"20.5\" r=\"0.45\"/></g>
 </g>
 </svg>`,
-    nightlight_catfish_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-  <!-- nightlight_catfish aggro: the lure dangles, the mouth gapes. Lure-and-grasp anatomy: glowing orb, grasping barbels, electric arcs -->
-  <!-- tail: forked -->
-  <polygon points=\"22.5,12.5 28.5,9.5 26.8,14.5\" fill=\"#23282e\"/>
-  <polygon points=\"22.5,17 28.5,20 26.8,14.5\" fill=\"#23282e\"/>
-  <!-- body -->
-  <path d=\"M6 13.5 C8.5 11.2 12.5 10.8 16.5 11.6 C19.8 12.2 21.5 13 23.5 13.8 L23.5 15.6 C21.5 16.4 19.8 17.1 16.5 17.7 C12.5 18.4 8.5 18 6 16.6 Z\" fill=\"#23282e\"/>
-  <!-- back shading -->
-  <path d=\"M6 13.5 C8.5 11.2 12.5 10.8 16.5 11.6 C19.8 12.2 21.5 13 23.5 13.8 L23.5 14.2 C18 13.2 12 12.6 7.5 13 C6.6 13.1 6.1 13.3 6 13.5 Z\" fill=\"#2e343c\"/>
-  <!-- mottling -->
-  <g fill=\"#171b21\" opacity=\"0.9\">
-    <ellipse cx=\"14\" cy=\"13.8\" rx=\"1.6\" ry=\"1\"/><ellipse cx=\"18.5\" cy=\"15\" rx=\"1.4\" ry=\"0.9\"/>
-    <ellipse cx=\"16\" cy=\"16.4\" rx=\"1.1\" ry=\"0.7\"/><ellipse cx=\"11\" cy=\"15.6\" rx=\"1\" ry=\"0.7\"/>
-  </g>
-  <!-- dorsal spines elongated -->
-  <polygon points=\"13.5,11.4 14.2,6.8 15.2,11.2\" fill=\"#171b21\"/>
-  <polygon points=\"16,11.6 17.4,7.8 17.8,11.8\" fill=\"#171b21\"/>
-  <!-- head: broad, flat -->
-  <ellipse cx=\"7.5\" cy=\"14.8\" rx=\"3.2\" ry=\"2.7\" fill=\"#23282e\"/>
-  <!-- GAPING mouth -->
-  <ellipse cx=\"6.4\" cy=\"15.2\" rx=\"2.6\" ry=\"2.1\" fill=\"#0a0508\"/>
-  <!-- teeth ring -->
-  <g fill=\"#e8e4d0\">
-    <polygon points=\"4.6,13.8 5.2,14.8 4.4,15\"/><polygon points=\"6,13.2 6.5,14.2 5.6,14.3\"/>
-    <polygon points=\"7.6,13.1 7.8,14.2 6.9,14\"/><polygon points=\"9,13.6 8.8,14.6 8,14.2\"/>
-    <polygon points=\"4.4,16.6 5.2,16.2 4.8,15.4\"/><polygon points=\"5.8,17.1 6.4,16.4 5.6,16.1\"/>
-    <polygon points=\"7.4,17.3 7.6,16.4 6.8,16.5\"/><polygon points=\"8.8,16.8 8.6,15.9 7.9,16.2\"/>
-  </g>
-  <ellipse cx=\"6.4\" cy=\"15.2\" rx=\"1.2\" ry=\"0.9\" fill=\"#1c0f14\"/>
-  <!-- grasping barbels: curled like fingers -->
-  <g stroke=\"#c9c2a8\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\">
-    <path d=\"M6 13.2 C4.4 12 3.4 10.8 3.1 9\"/>
-    <path d=\"M5.2 14 C4.2 13.6 3.6 14 3.1 15.2\"/>
-    <path d=\"M5.2 16 C3.8 16.6 3 17.8 2.6 19.4\"/>
-    <path d=\"M6.8 16.8 C6.2 18.4 6.2 20 7 21.4\"/>
-    <path d=\"M8.2 16.6 C8.8 18.4 9.8 19.8 11.2 20.6\"/>
-  </g>
-  <!-- electric arcs jumping between barbel tips -->
-  <g stroke-linecap=\"round\" fill=\"none\">
-    <path d=\"M3.1 9 L4.2 10.2 L3.5 11.6 L4.8 12.8\" stroke=\"#fff36a\" stroke-width=\"1.5\" opacity=\"0.3\"/>
-    <path d=\"M3.1 9 L4.2 10.2 L3.5 11.6 L4.8 12.8\" stroke=\"#fff36a\" stroke-width=\"0.8\"/>
-    <path d=\"M2.9 15.2 L3.9 16 L3.3 17.6 L4.6 18.2\" stroke=\"#fff36a\" stroke-width=\"1.5\" opacity=\"0.3\"/>
-    <path d=\"M2.9 15.2 L3.9 16 L3.3 17.6 L4.6 18.2\" stroke=\"#fff36a\" stroke-width=\"0.8\"/>
-  </g>
-  <!-- THE LURE: stalk + glowing orb dangling before the mouth -->
-  <path d=\"M8 11.8 C7 10.2 6.2 9 5.6 7.6\" stroke=\"#6a8a3a\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>
-  <circle cx=\"5.4\" cy=\"6.4\" r=\"2.8\" fill=\"#9dff57\" opacity=\"0.22\"/>
-  <circle cx=\"5.4\" cy=\"6.4\" r=\"2.1\" fill=\"#9dff57\" opacity=\"0.35\"/>
-  <circle cx=\"5.4\" cy=\"6.4\" r=\"1.4\" fill=\"#d8ff5e\"/>
-  <circle cx=\"5.4\" cy=\"6.4\" r=\"0.75\" fill=\"#f4ffd8\"/>
-  <!-- eye: glowing -->
-  <circle cx=\"10.4\" cy=\"12.8\" r=\"1.1\" fill=\"#d8ff5e\"/>
-  <ellipse cx=\"10.4\" cy=\"12.8\" rx=\"0.32\" ry=\"0.75\" fill=\"#1a1a1a\"/>
-  <circle cx=\"10.4\" cy=\"12.8\" r=\"1.6\" fill=\"none\" stroke=\"#d8ff5e\" stroke-width=\"0.5\" opacity=\"0.5\"/>
-  <!-- pectoral fin -->
-  <path d=\"M11 16.8 L9 19.4 L12 18.6 Z\" fill=\"#171b21\"/>
+    nightlight_catfish_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+<!-- nightlight_catfish AGGRO: beauty as bait — the lure glows perfect green while the mouth below is a dislocated trap of inward teeth, barbels grasping, electric arcs crackling. -->
+<circle cx=\"7.4\" cy=\"7.8\" r=\"4.6\" fill=\"#57ff8a\" opacity=\"0.10\"/>
+<circle cx=\"7.4\" cy=\"7.8\" r=\"3.2\" fill=\"#57ff8a\" opacity=\"0.16\"/>
+<path d=\"M9.4 11.6 C8.4 10.4 7.8 9.2 7.4 8.4\" stroke=\"#9fe8b8\" stroke-width=\"0.9\" fill=\"none\" opacity=\"1\"/>
+<circle cx=\"7.4\" cy=\"7.8\" r=\"2.3\" fill=\"#2fd65f\"/>
+<circle cx=\"7.4\" cy=\"7.8\" r=\"1.5\" fill=\"#a9ffc4\"/>
+<circle cx=\"7.4\" cy=\"7.8\" r=\"0.75\" fill=\"#f4fff8\"/>
+<line x1=\"6.5\" y1=\"6.9\" x2=\"7.1\" y2=\"7.5\" stroke=\"#ffffff\" stroke-width=\"0.5\" stroke-linecap=\"round\" opacity=\"0.9\"/>
+<polygon points=\"28.6,13.8 29.6,11.6 29.3,15\" fill=\"#1a1f26\"/>
+<polygon points=\"28.6,16.2 29.6,18.4 29.3,15\" fill=\"#1a1f26\"/>
+<path d=\"M9 12.5 C12 10.6 17 10.4 22 11.8 C25 12.6 27 13.2 28.6 13.8 L28.6 16.2 C27 16.8 25 17.4 22 18.2 C17 19.4 12 19.2 9 17.6 Z\" fill=\"#20262e\"/>
+<path d=\"M9 12.5 C12 10.6 17 10.4 22 11.8 C25 12.6 27 13.2 28.6 13.8 L28.6 14.4 C24 13.6 18 13.2 13 13.4 C11 13.5 9.8 13 9 12.5 Z\" fill=\"#2c333d\"/>
+<g fill=\"#14181e\" opacity=\"0.9\"><ellipse cx=\"17\" cy=\"14.6\" rx=\"1.7\" ry=\"1.1\"/><ellipse cx=\"22.5\" cy=\"15.8\" rx=\"1.4\" ry=\"1\"/><ellipse cx=\"14\" cy=\"17\" rx=\"1.1\" ry=\"0.8\"/></g>
+<polygon points=\"14,11 14.9,6.2 16,10.8\" fill=\"#14181e\"/>
+<polygon points=\"17.5,11.2 19.2,7.4 19.6,11.6\" fill=\"#14181e\"/>
+<ellipse cx=\"9.5\" cy=\"15\" rx=\"3.2\" ry=\"2.9\" fill=\"#20262e\"/>
+<ellipse cx=\"6\" cy=\"17.5\" rx=\"3.4\" ry=\"3.2\" fill=\"#060304\" transform=\"rotate(-15 6 17.5)\"/>
+<ellipse cx=\"6.2\" cy=\"18.2\" rx=\"2.1\" ry=\"2.1\" fill=\"#0e0508\"/>
+<g>
+<polygon points=\"2.5,14.6 3.9,14.6 4.2,17.2\" fill=\"#ded8bc\"/>
+<polygon points=\"4.2,14 5.6,14 5.6,16.4\" fill=\"#ded8bc\"/>
+<polygon points=\"6.1,13.8 7.5,13.8 7,16.2\" fill=\"#ded8bc\"/>
+<polygon points=\"8,14.2 9.4,14.2 8.4,16.4\" fill=\"#ded8bc\"/>
+<polygon points=\"2.3,20.4 3.7,20.4 4.2,18.4\" fill=\"#ded8bc\"/>
+<polygon points=\"4,21.2 5.4,21.2 5.6,18.8\" fill=\"#ded8bc\"/>
+<polygon points=\"5.9,21.4 7.3,21.4 7,19\" fill=\"#ded8bc\"/>
+<polygon points=\"7.8,20.9 9.2,20.9 8.4,18.6\" fill=\"#ded8bc\"/>
+</g>
+<circle cx=\"10.4\" cy=\"13.2\" r=\"0.8\" fill=\"#3a1010\"/>
+<circle cx=\"10.6\" cy=\"13\" r=\"0.3\" fill=\"#ff5a4a\" opacity=\"0.8\"/>
+<g stroke=\"#c9c2a8\" stroke-width=\"0.65\" fill=\"none\" stroke-linecap=\"round\">
+<path d=\"M5.2 16 C3.8 16.4 3.2 17.6 2.8 19.2\"/>
+<path d=\"M5 17.4 C3.8 18.2 3.2 19.4 2.7 21\"/>
+<path d=\"M9 19 C8 20.2 7.4 21.6 7.2 23.2\"/>
+</g>
+<g fill=\"#a9ffc4\" opacity=\"0.85\"><circle cx=\"2.8\" cy=\"19.2\" r=\"0.4\"/><circle cx=\"2.7\" cy=\"21\" r=\"0.4\"/><circle cx=\"7.2\" cy=\"23.2\" r=\"0.4\"/></g>
+<g stroke=\"#d6ffe8\" stroke-width=\"0.55\" fill=\"none\" opacity=\"0.9\">
+<path d=\"M20.2 15.6 L21.4 15.4 L21.9 16.8 L23.5 15.2 L21.6 19.9\" />
+<path d=\"M17.7 17 L17.6 18 L17 18.9 L18.6 20 L18.7 21\" />
+<path d=\"M15.7 15.4 L14.9 16 L14.1 16.8 L12.9 16.7 L13.1 18.8\" />
+</g>
 </svg>`,
     ducks_in_a_row_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <g transform=\"translate(16 16) scale(0.92) translate(-16 -16)\">
@@ -1040,37 +1075,45 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
   <!-- legs -->
   <path d=\"M15.2 16 l-2.4 3 M16.8 16 l2.4 3 M15.2 19 l-2 3.4 M16.8 19 l2 3.4\" stroke=\"#1c1c1c\" stroke-width=\"0.45\"/>
 </svg>`,
-    glasswing_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-  <!-- glasswing aggro: a dart falling out of the sky. Dive anatomy: elongated strike body, swept-back glass wings, hawk eyes -->
-  <!-- body: the dart, head-down along the dive diagonal -->
-  <path d=\"M11 5.5 L13.4 17 L12 28 L9.6 17 Z\" fill=\"#0c0f14\"/>
-  <path d=\"M9.6 13 L13.4 13 M9.8 17 L13.2 17 M10.2 21 L12.8 21\" stroke=\"#a02323\" stroke-width=\"0.5\" opacity=\"0.9\"/>
-  <!-- head at the dart tip -->
-  <circle cx=\"11\" cy=\"26.5\" r=\"1.9\" fill=\"#0c0f14\"/>
-  <!-- hawk eyes: burning -->
-  <circle cx=\"10.2\" cy=\"26.3\" r=\"0.6\" fill=\"#ff2a2a\"/>
-  <circle cx=\"11.8\" cy=\"26.3\" r=\"0.6\" fill=\"#ff2a2a\"/>
-  <circle cx=\"10.2\" cy=\"26.3\" r=\"0.85\" fill=\"none\" stroke=\"#ff2a2a\" stroke-width=\"0.4\" opacity=\"0.6\"/>
-  <circle cx=\"11.8\" cy=\"26.3\" r=\"0.85\" fill=\"none\" stroke=\"#ff2a2a\" stroke-width=\"0.4\" opacity=\"0.6\"/>
-  <!-- swept-back glass forewings -->
-  <path d=\"M11.5 9 L4 20 L8.5 22.5 L12.5 12 Z\" fill=\"#ffffff\" opacity=\"0.28\" stroke=\"#a85f1c\" stroke-width=\"0.6\"/>
-  <path d=\"M12.5 9 L22.5 15.5 L20 20 L11.5 12 Z\" fill=\"#ffffff\" opacity=\"0.28\" stroke=\"#a85f1c\" stroke-width=\"0.6\"/>
-  <!-- cracked wrong-glass veins -->
-  <g stroke=\"#a02323\" stroke-width=\"0.5\" opacity=\"0.95\">
-    <path d=\"M11 11 L6.5 18.5 L8.5 19.8\"/>
-    <path d=\"M10.6 13.5 L6 18\"/>
-    <path d=\"M13 11 L19.5 15.5 L18 17.5\"/>
-    <path d=\"M13.6 13.5 L20 16.5\"/>
+    glasswing_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- glasswing aggro: THE DIVE. A living dart falling out of the sky on the diagonal —
+       wings folded flat back along the body, head at the strike tip,
+       burning eyes leading. No flutter left in it. -->
+  <!-- body: the dart, elongated along the dive diagonal -->
+  <path d=\"M22 3.5 L24.6 13 L22.6 22.5 L20.2 13.5 Z\" fill=\"#0c0f14\"/>
+  <!-- strike bands: dark red, wrong-glass veins -->
+  <path d=\"M20.6 8.5 L24.2 8.5 M20.9 12.5 L23.9 12.5 M21.3 16.5 L23.5 16.5\" stroke=\"#a02323\" stroke-width=\"0.6\" opacity=\"0.95\"/>
+  <!-- wings: folded TIGHT back along the dart, swept to the tail -->
+  <path d=\"M22.6 10 L13.5 20 L17.5 23.5 L23.4 14.5 Z\" fill=\"#ffffff\" opacity=\"0.26\" stroke=\"#a85f1c\" stroke-width=\"0.6\"/>
+  <path d=\"M23.6 10 L29 16.5 L26.5 20.5 L23 14.5 Z\" fill=\"#ffffff\" opacity=\"0.26\" stroke=\"#a85f1c\" stroke-width=\"0.6\"/>
+  <!-- cracked veins: pressure fractures in the folded glass -->
+  <g stroke=\"#a02323\" stroke-width=\"0.55\" opacity=\"0.95\">
+    <path d=\"M22.4 12 L16.5 18.5 L18.5 20\"/>
+    <path d=\"M22 15 L17 20\"/>
+    <path d=\"M24.2 12 L27.5 16.5 L26 18\"/>
   </g>
-  <!-- glass wing glints -->
-  <path d=\"M6.5 19 L8.5 20.5 M18.5 16.5 L20 18\" stroke=\"#ffffff\" stroke-width=\"0.7\" opacity=\"0.85\" stroke-linecap=\"round\"/>
-  <!-- swept hindwings -->
-  <path d=\"M11 15 L5.5 24 L9 25.5 L12 18 Z\" fill=\"#ffffff\" opacity=\"0.22\" stroke=\"#a85f1c\" stroke-width=\"0.55\"/>
-  <path d=\"M12.8 15 L21 20.5 L19 24 L11.8 18 Z\" fill=\"#ffffff\" opacity=\"0.22\" stroke=\"#a85f1c\" stroke-width=\"0.55\"/>
-  <!-- tail spike: the stinger end of the dart -->
-  <path d=\"M12 28 L11.2 29.4\" stroke=\"#0c0f14\" stroke-width=\"1.2\" stroke-linecap=\"round\"/>
-  <!-- tucked legs -->
-  <path d=\"M10 16 l-2 2.5 M12.5 16.5 l2.5 2\" stroke=\"#0c0f14\" stroke-width=\"0.6\"/>
+  <!-- glass glints on the fold edges -->
+  <path d=\"M15.5 19.5 L17.5 21 M27 16.5 L28.2 18\" stroke=\"#ffffff\" stroke-width=\"0.7\" opacity=\"0.85\" stroke-linecap=\"round\"/>
+  <!-- hindwing tips tucked past the tail -->
+  <path d=\"M22.4 18 L18 26 L21.5 27 L23.2 19 Z\" fill=\"#ffffff\" opacity=\"0.2\" stroke=\"#a85f1c\" stroke-width=\"0.5\"/>
+  <!-- head: AT THE DART TIP, leading the fall -->
+  <ellipse cx=\"21.4\" cy=\"24.5\" rx=\"2.2\" ry=\"2.4\" fill=\"#0c0f14\"/>
+  <!-- mandibles: open at the strike point -->
+  <path d=\"M19.6 26.2 L18.2 28.6 L20.4 27.4 Z\" fill=\"#1c1c1c\"/>
+  <path d=\"M23.2 26.2 L24.6 28.6 L22.4 27.4 Z\" fill=\"#1c1c1c\"/>
+  <!-- THE EYES: burning, locked on the ground below -->
+  <circle cx=\"20.5\" cy=\"24.2\" r=\"0.85\" fill=\"#ff2a2a\"/>
+  <circle cx=\"22.4\" cy=\"24.2\" r=\"0.85\" fill=\"#ff2a2a\"/>
+  <circle cx=\"20.5\" cy=\"24.2\" r=\"0.4\" fill=\"#ffd0d0\"/>
+  <circle cx=\"22.4\" cy=\"24.2\" r=\"0.4\" fill=\"#ffd0d0\"/>
+  <circle cx=\"20.5\" cy=\"24.2\" r=\"1.25\" fill=\"none\" stroke=\"#ff2a2a\" stroke-width=\"0.4\" opacity=\"0.6\"/>
+  <circle cx=\"22.4\" cy=\"24.2\" r=\"1.25\" fill=\"none\" stroke=\"#ff2a2a\" stroke-width=\"0.4\" opacity=\"0.6\"/>
+  <!-- legs: swept back into the slipstream -->
+  <g stroke=\"#0c0f14\" stroke-width=\"0.6\" fill=\"none\">
+    <path d=\"M21 14 L18.5 19 M23.6 14 L26 19\"/>
+  </g>
+  <!-- antennae: streaming back -->
+  <path d=\"M20.8 22.6 Q17 18 14.5 15.5 M22 22.6 Q25 18.5 27.5 16.5\" stroke=\"#0c0f14\" stroke-width=\"0.5\" fill=\"none\"/>
 </svg>`,
     sunbasker_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <g transform=\"translate(16 16) scale(0.92) translate(-16 -16)\">
@@ -1108,56 +1151,62 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
   <path d=\"M2.6 21 q1.6 0.4 3.4 0.2\" stroke=\"#6b4e2a\" stroke-width=\"0.5\" fill=\"none\"/>
 </g>
 </svg>`,
-    sunbasker_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-  <!-- sunbasker aggro: MOLTEN GOLD and fully charged. Sun-charged bite anatomy: glowing open jaws, molten cracks, collar band -->
-  <!-- tail -->
-  <path d=\"M22.5 20 Q27 21 29.5 24 Q26 23.6 22.8 22.2 Z\" fill=\"#b5762e\"/>
-  <!-- legs -->
-  <path d=\"M10 21.8 L8 25 M12 21.8 L10.8 25.2\" stroke=\"#b5762e\" stroke-width=\"1.3\" stroke-linecap=\"round\"/>
-  <path d=\"M20.5 21.8 L22.5 25 M22.5 21.8 L24.2 24.8\" stroke=\"#b5762e\" stroke-width=\"1.3\" stroke-linecap=\"round\"/>
-  <g stroke=\"#5c3410\" stroke-width=\"0.6\" stroke-linecap=\"round\">
-    <path d=\"M8 25 l-1 0.8 M8 25 l0.2 1 M8 25 l1 0.6\"/>
-    <path d=\"M22.5 25 l-1 0.8 M22.5 25 l0.2 1 M22.5 25 l1 0.6\"/>
+    sunbasker_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- sunbasker aggro: THE CHARGED BITE. Rearing up off the ground, jaws thrown open,
+       scales shifted from dull brown to MOLTEN GOLD — the whole head assembly is
+       a heating element, heat shimmer lifting off the back. The bite is already hot. -->
+  <defs>
+    <radialGradient id=\"mouthGlow\" cx=\"50%\" cy=\"50%\" r=\"50%\">
+      <stop offset=\"0%\" stop-color=\"#ffedb0\"/>
+      <stop offset=\"55%\" stop-color=\"#ffb63e\"/>
+      <stop offset=\"100%\" stop-color=\"#ff8a00\" stop-opacity=\"0\"/>
+    </radialGradient>
+  </defs>
+  <!-- tail: raised, whipping behind -->
+  <path d=\"M24 21 Q28 21 29.4 24 Q27 23.6 24.5 23.2 Z\" fill=\"#8a6a3d\"/>
+  <!-- body: reared UP, chest off the ground -->
+  <path d=\"M8 23 C10 18.5 14 14.5 19.5 13.5 C23 13 26 14.5 26.5 17.5 C26.8 20 24 22 20 22.8 C16 23.6 10.5 24 8 23 Z\" fill=\"#a87f47\"/>
+  <!-- scales: burning gold along the spine -->
+  <g fill=\"#ffcf5a\" opacity=\"0.95\">
+    <circle cx=\"13\" cy=\"18.6\" r=\"0.55\"/><circle cx=\"15.5\" cy=\"17.2\" r=\"0.55\"/><circle cx=\"18\" cy=\"16.2\" r=\"0.55\"/>
+    <circle cx=\"20.5\" cy=\"15.6\" r=\"0.55\"/><circle cx=\"22.8\" cy=\"15.6\" r=\"0.55\"/>
   </g>
-  <!-- body: molten gold -->
-  <ellipse cx=\"16\" cy=\"20\" rx=\"7.6\" ry=\"2.8\" fill=\"#d9a13b\"/>
-  <ellipse cx=\"16\" cy=\"21.4\" rx=\"6.4\" ry=\"1.4\" fill=\"#b5762e\" opacity=\"0.7\"/>
-  <!-- molten cracks: the charge showing through -->
-  <g stroke=\"#ff7a1a\" stroke-width=\"0.8\" opacity=\"0.95\" fill=\"none\" stroke-linecap=\"round\">
-    <path d=\"M11.5 18.2 l1.5 1.2 l1 1.6 M15.5 17.8 l1 1.8 l1.5 1 M19.5 18 l1.2 1.4 l0.8 1.8 M23 18.8 l1 1.4\"/>
-    <path d=\"M12.5 21.5 l3 0.4 M17.5 21.8 l3.5 0.2\" opacity=\"0.7\"/>
+  <g fill=\"#ff9a2e\" opacity=\"0.9\">
+    <circle cx=\"14.2\" cy=\"19.6\" r=\"0.45\"/><circle cx=\"16.8\" cy=\"18.4\" r=\"0.45\"/><circle cx=\"19.4\" cy=\"17.6\" r=\"0.45\"/>
+    <circle cx=\"21.8\" cy=\"17.4\" r=\"0.45\"/>
   </g>
-  <!-- collar band: the collared lizard's signature, dark against the gold -->
-  <path d=\"M10.5 17.6 Q11 20 10.8 22.4 Q9.8 22.4 9.2 21.8 Q9.4 20 9.6 17.8 Z\" fill=\"#5c3410\"/>
-  <path d=\"M12.2 17.4 Q12.7 20 12.5 22.6 Q11.6 22.6 11 22 Q11.2 19.8 11.4 17.6 Z\" fill=\"#5c3410\"/>
-  <!-- head: jaws AGAPE -->
-  <path d=\"M10 19.6 L3.5 16.8 Q2.7 16.5 3.1 17.6 L4.8 21 Z\" fill=\"#d9a13b\"/>
-  <!-- upper jaw raised -->
-  <path d=\"M10 19.6 L3.2 17 Q2.4 16.7 2.8 17.8 L4 20.2 Z\" fill=\"#e8b44c\"/>
-  <!-- lower jaw dropped -->
-  <path d=\"M10.2 21.8 L4.2 25 Q3.4 25.4 3.6 24.4 L4.4 22.4 Z\" fill=\"#b5762e\"/>
-  <!-- MOLTEN mouth interior: the sun-charged bite -->
-  <path d=\"M9 19.8 L3.6 18.4 Q3 18.3 3.3 19.2 L4.8 22.8 L9.2 22 Z\" fill=\"#ff4d00\"/>
-  <path d=\"M7.8 19.9 L4.4 19 Q4 19 4.2 19.6 L5.4 22.2 L8 21.6 Z\" fill=\"#ffd23f\"/>
-  <!-- teeth -->
-  <g fill=\"#fff8ea\">
-    <path d=\"M4 18.2 l0.5 1 l0.5 -1 Z M5.4 18 l0.5 1 l0.5 -1 Z M6.8 18.2 l0.5 1 l0.5 -1 Z\"/>
-    <path d=\"M5 23.8 l0.5 -1 l0.5 1 Z M6.4 23.4 l0.5 -1 l0.5 1 Z\"/>
+  <!-- HEAT SHIMMER: rising wavy lines off the back — the air is wrong above it -->
+  <g stroke=\"#ffcf5a\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.65\" stroke-linecap=\"round\">
+    <path d=\"M14 14.5 q0.8 -1.6 0 -3.2 q-0.8 -1.6 0 -3.2\"/>
+    <path d=\"M17.5 13.8 q0.8 -1.6 0 -3.2 q-0.8 -1.6 0 -3.2\"/>
+    <path d=\"M21 13.6 q0.8 -1.6 0 -3.2 q-0.8 -1.6 0 -3.2\"/>
   </g>
-  <!-- burning eye -->
-  <circle cx=\"5.8\" cy=\"17.6\" r=\"0.95\" fill=\"#2a1505\"/>
-  <circle cx=\"5.8\" cy=\"17.6\" r=\"0.55\" fill=\"#fff200\"/>
-  <circle cx=\"5.8\" cy=\"17.6\" r=\"0.95\" fill=\"none\" stroke=\"#ff4d00\" stroke-width=\"0.5\" opacity=\"0.8\"/>
-  <!-- heat shimmer rising off the back -->
-  <g stroke=\"#ffdd55\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.55\">
-    <path d=\"M13.5 14.5 q1 -1.5 0 -3 q-1 -1.5 0 -3\"/>
-    <path d=\"M17.5 14.5 q1 -1.5 0 -3 q-1 -1.5 0 -3\"/>
-    <path d=\"M21.5 14.5 q1 -1.5 0 -3 q-1 -1.5 0 -3\"/>
+  <!-- front leg: lifted, braced for the strike -->
+  <path d=\"M13.5 22.5 L11 26.5\" stroke=\"#8a6a3d\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>
+  <!-- neck rearing into the strike -->
+  <path d=\"M9.5 20.5 C8 17.5 7.5 14.5 8.5 12 L12.5 13 C11.8 15.5 12.2 18 13.5 20.5 Z\" fill=\"#b58a4e\"/>
+  <!-- head: tilted UP, jaws gaping -->
+  <path d=\"M9.2 12.5 L4.5 10.8 L3.8 13.8 L8 15.6 L10.4 14.4 Z\" fill=\"#c69a5e\"/>
+  <!-- MOLTEN UPPER JAW: glowing gold, teeth lit from within -->
+  <path d=\"M4.5 10.8 L9.2 12.5 L8.8 14 L4 12.6 Z\" fill=\"#ffcf5a\"/>
+  <path d=\"M3.8 11.4 L2.6 9.8 L4.6 10.4 Z\" fill=\"#ff8a00\"/>
+  <!-- THE GAPE: lower jaw dropped, mouth interior burning -->
+  <path d=\"M3.8 13.8 L8 15.6 L7.4 19.4 L3.4 18.2 Z\" fill=\"#7a5a30\"/>
+  <circle cx=\"5.8\" cy=\"16.4\" r=\"2.6\" fill=\"url(#mouthGlow)\"/>
+  <path d=\"M4.3 14.2 L7.2 15.2 L6.9 17.6 L4.2 16.9 Z\" fill=\"#1a0e04\"/>
+  <circle cx=\"5.7\" cy=\"15.9\" r=\"1.2\" fill=\"#ff8a00\" opacity=\"0.85\"/>
+  <circle cx=\"5.7\" cy=\"15.9\" r=\"0.55\" fill=\"#ffedb0\"/>
+  <!-- teeth: rimmed in light -->
+  <g fill=\"#ffe9c0\">
+    <path d=\"M4.6 12.4 l0.3 1.2 l0.35 -1.1 Z\"/>
+    <path d=\"M5.8 12.7 l0.3 1.2 l0.35 -1.1 Z\"/>
+    <path d=\"M7 13 l0.3 1.1 l0.35 -1 Z\"/>
+    <path d=\"M4.8 17.6 l0.3 -1 l0.35 1.05 Z\"/>
+    <path d=\"M6 17.9 l0.3 -1 l0.35 1.05 Z\"/>
   </g>
-  <!-- embers -->
-  <g fill=\"#ff7a1a\" opacity=\"0.9\">
-    <circle cx=\"10.5\" cy=\"12.5\" r=\"0.5\"/><circle cx=\"24\" cy=\"11.5\" r=\"0.4\"/><circle cx=\"20\" cy=\"8.5\" r=\"0.55\"/>
-  </g>
+  <!-- eye: slit, lit amber -->
+  <circle cx=\"8.6\" cy=\"13\" r=\"0.75\" fill=\"#ff9a2e\"/>
+  <ellipse cx=\"8.6\" cy=\"13\" rx=\"0.28\" ry=\"0.55\" fill=\"#1a0e04\"/>
 </svg>`,
         voice_mimic_radio_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <!-- voice_mimic_radio calm: ordinary vintage table radio -->
@@ -1222,26 +1271,54 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 <path d=\"M11.2 3.7 C12.6 3.1 14 3 15.4 3.2 M13.4 3.2 L14 4.5 M12 3.2 L11.8 4.6\"/>
 </g>
 </svg>`,
-    mirror_stag_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<!-- mirror_stag aggro: Confrontation — the mirror face turns toward you, cracked -->
-<g stroke=\"#5a646b\" stroke-width=\"0.9\" stroke-linecap=\"round\" opacity=\"0.7\">
-<line x1=\"25.5\" y1=\"18\" x2=\"28.5\" y2=\"18\"/><line x1=\"26\" y1=\"21\" x2=\"28.5\" y2=\"21\"/><line x1=\"25.5\" y1=\"24\" x2=\"28\" y2=\"24\"/>
+    mirror_stag_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+<!-- mirror_stag AGGRO (\"Confrontation\"): head lowered, mirror face CRACKED with grief seeping through the cracks — and the reflection inside is WRONG. Antlers grown to shards. -->
+<g fill=\"#5a422c\">
+<rect x=\"12\" y=\"19.5\" width=\"1.3\" height=\"8\" rx=\"0.6\"/>
+<rect x=\"14.6\" y=\"19.7\" width=\"1.3\" height=\"7.8\" rx=\"0.6\"/>
+<rect x=\"20\" y=\"19.7\" width=\"1.3\" height=\"7.8\" rx=\"0.6\"/>
+<rect x=\"22.6\" y=\"19.5\" width=\"1.3\" height=\"8\" rx=\"0.6\"/>
 </g>
-<ellipse cx=\"15\" cy=\"21\" rx=\"7.5\" ry=\"3.4\" fill=\"#3a3128\"/>
-<g stroke=\"#2a231c\" stroke-width=\"1.8\" stroke-linecap=\"round\">
-<line x1=\"10\" y1=\"23.5\" x2=\"8\" y2=\"28.5\"/><line x1=\"13\" y1=\"24\" x2=\"11.5\" y2=\"29\"/><line x1=\"19\" y1=\"24\" x2=\"20.5\" y2=\"29\"/><line x1=\"22\" y1=\"23.5\" x2=\"24\" y2=\"28.5\"/>
+<ellipse cx=\"17\" cy=\"17.5\" rx=\"7\" ry=\"3.6\" fill=\"#5f4630\"/>
+<ellipse cx=\"17\" cy=\"18.9\" rx=\"5.4\" ry=\"1.7\" fill=\"#a68e68\" opacity=\"0.55\"/>
+<path d=\"M13 15.5 C11 12.5 10.2 11 10 9.4 L13 8.8 C13.6 11 14.4 13 15.8 15 Z\" fill=\"#5f4630\"/>
+<ellipse cx=\"9.4\" cy=\"8.8\" rx=\"3\" ry=\"2.6\" fill=\"#5f4630\"/>
+<g fill=\"#d8d2c2\">
+<polygon points=\"8.4,6.6 9.2,6.6 6,3.2\" />
+<polygon points=\"9.6,6.4 10.4,6.4 8.8,3\" />
+<polygon points=\"10.8,6.6 11.6,6.6 12,3\" />
+<polygon points=\"7.3,7 8.2,7 4,5\" />
+<polygon points=\"9.3,6.5 9.9,6.5 7.6,4.3\" />
 </g>
-<g stroke=\"#4a3826\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\">
-<path d=\"M10.5 8 C8 6.5 5.5 6 3.5 6.2 M6.5 6.2 L5.5 4.4 M8.5 6.1 L8.2 4\"/>
-<path d=\"M21.5 8 C24 6.5 26.5 6 28.5 6.2 M25.5 6.2 L26.5 4.4 M23.5 6.1 L23.8 4\"/>
+<g fill=\"#8a2a1a\" opacity=\"0.85\">
+<circle cx=\"6\" cy=\"3.2\" r=\"0.5\"/>
+<circle cx=\"8.8\" cy=\"3\" r=\"0.5\"/>
+<circle cx=\"12\" cy=\"3\" r=\"0.5\"/>
+<circle cx=\"4\" cy=\"5\" r=\"0.5\"/>
+<circle cx=\"7.6\" cy=\"4.3\" r=\"0.5\"/>
 </g>
-<rect x=\"9.5\" y=\"6\" width=\"13\" height=\"10\" rx=\"4\" fill=\"#3a3128\"/>
-<ellipse cx=\"16\" cy=\"11\" rx=\"4.8\" ry=\"3.8\" fill=\"#dfe7ea\" stroke=\"#6a757c\" stroke-width=\"0.8\"/>
-<ellipse cx=\"16\" cy=\"11.6\" rx=\"2.2\" ry=\"1.6\" fill=\"#9aa4ab\" opacity=\"0.55\"/>
-<g stroke=\"#5a646b\" stroke-width=\"0.6\" fill=\"none\">
-<path d=\"M16 7.4 V14.6 M11.6 9.6 L20.4 12.4 M20.4 9.6 L11.6 12.4 M13.4 7.8 L14.8 14.2 M18.6 7.8 L17.2 14.2\"/>
+<ellipse cx=\"12\" cy=\"7.2\" rx=\"1\" ry=\"1.4\" transform=\"rotate(25 12 7.2)\" fill=\"#5f4630\"/>
+<ellipse cx=\"8.2\" cy=\"9\" rx=\"2.4\" ry=\"2.1\" fill=\"#c9d4d8\"/>
+<ellipse cx=\"8.2\" cy=\"9\" rx=\"2.4\" ry=\"2.1\" fill=\"none\" stroke=\"#5a6a72\" stroke-width=\"0.7\"/>
+<line x1=\"7\" y1=\"8\" x2=\"8\" y2=\"9\" stroke=\"#ffffff\" stroke-width=\"0.7\" stroke-linecap=\"round\" opacity=\"0.8\"/>
+<ellipse cx=\"8.4\" cy=\"9.2\" rx=\"1.35\" ry=\"1.15\" fill=\"#2a3138\" opacity=\"0.92\"/>
+<circle cx=\"8\" cy=\"8.9\" r=\"0.3\" fill=\"#000\"/>
+<circle cx=\"9.1\" cy=\"9.3\" r=\"0.24\" fill=\"#000\"/>
+<path d=\"M7.9 10 q0.8 0.45 1.5 0.1\" stroke=\"#000\" stroke-width=\"0.35\" fill=\"none\"/>
+<g stroke=\"#1c2226\" stroke-width=\"0.5\" fill=\"none\" opacity=\"0.95\">
+<path d=\"M8.5 9.1 L9.2 9.3 L10 9.4 L10.8 9\" />
+<path d=\"M8.3 9.3 L8.6 10 L9.1 10.6 L9.8 11\" />
+<path d=\"M8.1 9.3 L7.6 9.9 L7.7 10.8 L6.7 11.2\" />
+<path d=\"M7.9 9.1 L7.2 9.2 L6.5 9.6 L5.9 10.2\" />
+<path d=\"M7.9 8.8 L7.3 8.5 L6.7 8 L6.2 7.4\" />
+<path d=\"M8.2 8.7 L8 8 L8.6 7.2 L7.2 6.6\" />
+<path d=\"M8.4 8.8 L8.8 8.1 L9.7 7.9 L10.4 7.6\" />
 </g>
-<line x1=\"14.4\" y1=\"10.2\" x2=\"15.8\" y2=\"11.2\" stroke=\"#ffffff\" stroke-width=\"0.8\" stroke-linecap=\"round\" opacity=\"0.9\"/>
+<g stroke=\"#8a2a1a\" stroke-width=\"0.6\" opacity=\"0.9\">
+<path d=\"M7.4 10.4 q0.1 1.1 -0.3 2\"/>
+<path d=\"M9.2 10.2 q-0.1 1.1 0.2 2.1\"/>
+<path d=\"M8.3 10.6 q0 1 -0.2 1.8\"/>
+</g>
 </svg>`,
     review_drone_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <!-- review_drone calm: assessment drone, clipboard in tow -->
@@ -1298,28 +1375,42 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 <line x1=\"14.1\" y1=\"23.2\" x2=\"17.9\" y2=\"23.2\" stroke=\"#6a6f76\" stroke-width=\"0.7\"/>
 <ellipse cx=\"16\" cy=\"24.6\" rx=\"1\" ry=\"0.7\" fill=\"#565a61\"/>
 </svg>`,
-    bright_idea_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<!-- bright_idea aggro: Eureka — detonation bloom -->
-<g stroke-linecap=\"round\">
-<g stroke=\"#ff9a3a\" stroke-width=\"1.6\">
-<line x1=\"16\" y1=\"3.4\" x2=\"16\" y2=\"6\"/><line x1=\"16\" y1=\"26\" x2=\"16\" y2=\"28.6\"/>
-<line x1=\"5\" y1=\"7.4\" x2=\"7.2\" y2=\"9.6\"/><line x1=\"27\" y1=\"7.4\" x2=\"24.8\" y2=\"9.6\"/>
-<line x1=\"5\" y1=\"24.6\" x2=\"7.2\" y2=\"22.4\"/><line x1=\"27\" y1=\"24.6\" x2=\"24.8\" y2=\"22.4\"/>
-<line x1=\"3.4\" y1=\"16\" x2=\"6\" y2=\"16\"/><line x1=\"28.6\" y1=\"16\" x2=\"26\" y2=\"16\"/>
+    bright_idea_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+<!-- bright_idea AGGRO (\"Eureka\"): the bulb is a bomb — white-hot core, glass cracked from overload, a ring of inward glass-shard teeth. It is about to go off. -->
+<circle cx=\"16\" cy=\"13.5\" r=\"10.5\" fill=\"none\" stroke=\"#ffdf8a\" stroke-width=\"0.6\" opacity=\"0.22\" stroke-dasharray=\"4 2.5\"/>
+<circle cx=\"16\" cy=\"13.5\" r=\"8.8\" fill=\"none\" stroke=\"#ffdf8a\" stroke-width=\"0.5\" opacity=\"0.4\" stroke-dasharray=\"3 2\"/>
+<circle cx=\"16\" cy=\"13.5\" r=\"6.9\" fill=\"#ff9a3a\" opacity=\"0.28\"/>
+<circle cx=\"16\" cy=\"13.5\" r=\"5.4\" fill=\"#ffe9a8\" opacity=\"0.5\"/>
+<circle cx=\"16\" cy=\"13.5\" r=\"5.4\" fill=\"none\" stroke=\"#d8a83a\" stroke-width=\"0.7\" opacity=\"0.8\"/>
+<polygon points=\"20.6,13.5 21.5,14.6 19.9,15.1 19.9,16.1 19.3,16.8 19.1,18.2 17.6,17.4 16.9,18.1 16,18.1 14.9,19 14.4,17.4 13.4,17.4 12.7,16.8 11.3,16.6 12.1,15.1 11.4,14.4 11.4,13.5 10.5,12.4 12.1,11.9 12.1,10.9 12.7,10.2 12.9,8.8 14.4,9.6 15.1,8.9 16,8.9 17.1,8 17.6,9.6 18.6,9.6 19.3,10.2 20.7,10.4 19.9,11.9 20.6,12.6\" fill=\"#fff3c0\" opacity=\"0.85\"/>
+<circle cx=\"16\" cy=\"13.5\" r=\"3.9\" fill=\"#fff6d8\"/>
+<circle cx=\"16\" cy=\"13.5\" r=\"2.3\" fill=\"#ffffff\"/>
+<polygon points=\"22.9,14.3 22.3,16.2 20.2,14.6\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"21.5,17.6 20.1,19 19,16.5\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"18.7,19.8 16.8,20.4 17.1,17.7\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"15.2,20.4 13.3,19.8 14.9,17.7\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"11.9,19 10.5,17.6 13,16.5\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"9.7,16.2 9.1,14.3 11.8,14.6\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"9.1,12.7 9.7,10.8 11.8,12.4\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"10.5,9.4 11.9,8 13,10.5\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"13.3,7.2 15.2,6.6 14.9,9.3\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"16.8,6.6 18.7,7.2 17.1,9.3\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"20.1,8 21.5,9.4 19,10.5\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<polygon points=\"22.3,10.8 22.9,12.7 20.2,12.4\" fill=\"#ffe9a8\" stroke=\"#8a5a1a\" stroke-width=\"0.5\"/>
+<g stroke=\"#4a2a10\" stroke-width=\"0.5\" fill=\"none\" opacity=\"0.85\">
+<path d=\"M18.5 14.2 L19.9 14.1 L21.3 13.7 L21.7 16.9\" />
+<path d=\"M17.3 15.8 L18.6 16.5 L18.1 18.3 L19.5 19.1\" />
+<path d=\"M15.7 16.1 L14.6 17.2 L16 18.8 L15.3 20.1\" />
+<path d=\"M13.8 14.9 L12.9 16 L11.2 15.6 L10.6 17.2\" />
+<path d=\"M13.4 13.1 L12.1 12.8 L10.7 13.2 L10 10.9\" />
+<path d=\"M14.5 11.4 L13.6 10.4 L12.1 10 L12.3 8\" />
+<path d=\"M16.8 11 L16.2 9.6 L16.8 8.3 L16 6.9\" />
+<path d=\"M18.3 12.3 L19.5 11.8 L19.8 9.9 L21.4 9.7\" />
 </g>
-<g stroke=\"#ffffff\" stroke-width=\"1.1\">
-<line x1=\"9.7\" y1=\"4.9\" x2=\"11.2\" y2=\"6.4\"/><line x1=\"22.3\" y1=\"4.9\" x2=\"20.8\" y2=\"6.4\"/>
-<line x1=\"9.7\" y1=\"27.1\" x2=\"11.2\" y2=\"25.6\"/><line x1=\"22.3\" y1=\"27.1\" x2=\"20.8\" y2=\"25.6\"/>
-</g>
-</g>
-<circle cx=\"16\" cy=\"16\" r=\"7\" fill=\"#ffd76a\" opacity=\"0.3\"/>
-<path d=\"M16 10.5 c-2.8 0 -4.5 2.2 -4.5 4.7 c0 1.9 1.1 3 2.2 4.1 c0.8 0.9 1.3 1.6 1.3 2.7 h2 c0 -1.1 0.5 -1.8 1.3 -2.7 c1.1 -1.1 2.2 -2.2 2.2 -4.1 c0 -2.5 -1.7 -4.7 -4.5 -4.7 Z\" fill=\"#fff6dc\"/>
-<g stroke=\"#ffffff\" stroke-width=\"0.8\" fill=\"none\">
-<path d=\"M12.4 12.5 L10.8 10.8 M19.6 12.5 L21.2 10.8 M12 17.5 L9.8 17.2 M20 17.5 L22.2 17.2\"/>
-</g>
-<circle cx=\"16\" cy=\"15.5\" r=\"3\" fill=\"#ffffff\"/>
-<rect x=\"14.3\" y=\"22\" width=\"3.4\" height=\"2.6\" rx=\"0.9\" fill=\"#6a6f76\"/>
-<g fill=\"#ff9a3a\"><circle cx=\"8.5\" cy=\"20\" r=\"0.9\"/><circle cx=\"23.5\" cy=\"20\" r=\"0.9\"/><circle cx=\"16\" cy=\"27.8\" r=\"0.9\"/></g>
+<rect x=\"13.8\" y=\"21.8\" width=\"4.4\" height=\"3.2\" rx=\"1\" fill=\"#7a5a34\"/>
+<rect x=\"13.8\" y=\"21.8\" width=\"4.4\" height=\"1\" fill=\"#ff5a2a\" opacity=\"0.85\"/>
+<line x1=\"13.8\" y1=\"23.4\" x2=\"18.2\" y2=\"23.4\" stroke=\"#3a2a18\" stroke-width=\"0.7\"/>
+<ellipse cx=\"16\" cy=\"25.6\" rx=\"1\" ry=\"0.7\" fill=\"#4a3a24\"/>
 </svg>`,
     memory_projector_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <!-- memory_projector calm: vintage film projector -->
@@ -1337,26 +1428,34 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 <rect x=\"10.5\" y=\"22.5\" width=\"1.7\" height=\"4.5\" rx=\"0.7\" fill=\"#33373d\"/>
 <rect x=\"19.8\" y=\"22.5\" width=\"1.7\" height=\"4.5\" rx=\"0.7\" fill=\"#33373d\"/>
 </svg>`,
-    memory_projector_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<!-- memory_projector aggro: Home Movies — it shows you home, then you walk toward it -->
-<circle cx=\"11.5\" cy=\"10\" r=\"2.6\" fill=\"#565b63\"/>
-<g fill=\"#2b2f36\"><circle cx=\"11.5\" cy=\"8.2\" r=\"0.45\"/><circle cx=\"13\" cy=\"9.3\" r=\"0.45\"/><circle cx=\"12.6\" cy=\"11.3\" r=\"0.45\"/><circle cx=\"10.4\" cy=\"11.3\" r=\"0.45\"/><circle cx=\"10\" cy=\"9.3\" r=\"0.45\"/></g>
-<circle cx=\"11.5\" cy=\"10\" r=\"0.8\" fill=\"#2b2f36\"/>
-<circle cx=\"18.5\" cy=\"10\" r=\"2.6\" fill=\"#565b63\"/>
-<g fill=\"#2b2f36\"><circle cx=\"18.5\" cy=\"8.2\" r=\"0.45\"/><circle cx=\"20\" cy=\"9.3\" r=\"0.45\"/><circle cx=\"19.6\" cy=\"11.3\" r=\"0.45\"/><circle cx=\"17.4\" cy=\"11.3\" r=\"0.45\"/><circle cx=\"17\" cy=\"9.3\" r=\"0.45\"/></g>
-<circle cx=\"18.5\" cy=\"10\" r=\"0.8\" fill=\"#2b2f36\"/>
-<rect x=\"7.5\" y=\"13.5\" width=\"12\" height=\"8.5\" rx=\"1.5\" fill=\"#3a3f47\"/>
-<rect x=\"18.5\" y=\"15.5\" width=\"4\" height=\"4\" rx=\"1.2\" fill=\"#1c1e24\"/>
-<circle cx=\"21.5\" cy=\"17.5\" r=\"1.5\" fill=\"#ffe9a8\"/>
-<polygon points=\"22.5,15.8 22.5,19.2 30,12.5 30,22.5\" fill=\"#ffe9a8\" opacity=\"0.3\"/>
-<polygon points=\"22.5,16.6 22.5,18.4 28,15 28,20\" fill=\"#fff3d0\" opacity=\"0.5\"/>
-<g opacity=\"0.95\">
-<rect x=\"24.8\" y=\"16.4\" width=\"3.2\" height=\"2.4\" fill=\"#8a6a4a\"/>
-<polygon points=\"24.3,16.4 26.4,14.8 28.5,16.4\" fill=\"#6e5238\"/>
-<rect x=\"26\" y=\"17.4\" width=\"0.9\" height=\"1.4\" fill=\"#3a2c1c\"/>
+    memory_projector_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+<!-- memory_projector AGGRO (\"Home Movies\"): the beam is the attack — inside the projection cone stands a figure with arms too long and a head too small. The film frames show it too. -->
+<circle cx=\"11\" cy=\"8.5\" r=\"3.2\" fill=\"#565b63\"/>
+<circle cx=\"11\" cy=\"8.5\" r=\"1\" fill=\"#2b2f36\"/>
+<circle cx=\"19\" cy=\"8.5\" r=\"3.2\" fill=\"#565b63\"/>
+<circle cx=\"19\" cy=\"8.5\" r=\"1\" fill=\"#2b2f36\"/>
+<path d=\"M14.2 8.5 h1.6\" stroke=\"#2b2f36\" stroke-width=\"1.6\"/>
+<g fill=\"#101216\"><rect x=\"13.4\" y=\"7.6\" width=\"1.1\" height=\"1.8\"/><rect x=\"15.5\" y=\"7.6\" width=\"1.1\" height=\"1.8\"/></g>
+<g fill=\"#7df9ff\" opacity=\"0.5\"><circle cx=\"13.95\" cy=\"8.5\" r=\"0.2\"/><circle cx=\"16.05\" cy=\"8.5\" r=\"0.2\"/></g>
+<rect x=\"7.5\" y=\"12\" width=\"14\" height=\"8\" rx=\"1.5\" fill=\"#3a3e45\"/>
+<line x1=\"9.5\" y1=\"14\" x2=\"13\" y2=\"14\" stroke=\"#24272c\" stroke-width=\"0.8\"/>
+<line x1=\"9.5\" y1=\"16\" x2=\"13\" y2=\"16\" stroke=\"#24272c\" stroke-width=\"0.8\"/>
+<rect x=\"20.5\" y=\"13.5\" width=\"4.5\" height=\"3.6\" rx=\"1\" fill=\"#24272c\" transform=\"rotate(-18 22.7 15.3)\"/>
+<circle cx=\"25.6\" cy=\"13.2\" r=\"1.5\" fill=\"#eafcff\"/>
+<circle cx=\"25.6\" cy=\"13.2\" r=\"1.5\" fill=\"none\" stroke=\"#101216\" stroke-width=\"0.6\"/>
+<circle cx=\"25.6\" cy=\"13.2\" r=\"0.6\" fill=\"#ffffff\"/>
+<polygon points=\"26.4,11.4 29.4,2.8 29.4,25.2 26.4,15\" fill=\"#f5f0d8\" opacity=\"0.16\"/>
+<polygon points=\"26.4,11.4 29.4,2.8 29.4,25.2 26.4,15\" fill=\"none\" stroke=\"#f5f0d8\" stroke-width=\"0.5\" opacity=\"0.5\"/>
+<g fill=\"#23242c\">
+<ellipse cx=\"28.2\" cy=\"11.8\" rx=\"0.5\" ry=\"0.6\"/>
+<path d=\"M27.7 12.4 C27.3 14 27.4 15.8 27.9 17.6 L28.6 17.6 C29 15.8 29 14 28.7 12.4 Z\"/>
+<path d=\"M27.8 13.2 C26.7 14.6 26.1 16.4 25.9 18.4 L26.4 18.5 C26.7 16.6 27.3 15 28.3 13.6 Z\"/>
+<path d=\"M28.6 13.2 C29.1 15 29.3 17 29.3 19 L29.8 19 C29.8 17 29.6 15 29.1 13.2 Z\"/>
+<path d=\"M27.9 17.6 C27.7 19.4 27.7 21 27.8 22.6 L28.3 22.6 C28.3 21 28.3 19.4 28.4 17.6 Z\"/>
+<path d=\"M28.6 17.6 C28.7 19.4 28.8 21 28.9 22.6 L29.3 22.6 C29.2 21 29.1 19.4 29 17.6 Z\"/>
 </g>
-<rect x=\"9.5\" y=\"22\" width=\"1.7\" height=\"5\" rx=\"0.7\" fill=\"#2b2f36\"/>
-<rect x=\"15.8\" y=\"22\" width=\"1.7\" height=\"5\" rx=\"0.7\" fill=\"#2b2f36\"/>
+<rect x=\"9.5\" y=\"20\" width=\"1.7\" height=\"4.5\" rx=\"0.7\" fill=\"#24272c\"/>
+<rect x=\"18\" y=\"20\" width=\"1.7\" height=\"4.5\" rx=\"0.7\" fill=\"#24272c\"/>
 </svg>`,
     warranty_caller_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <!-- warranty_caller calm: an old rotary phone, just sitting there -->
@@ -1370,24 +1469,55 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 <circle cx=\"24.5\" cy=\"16.3\" r=\"1.1\" fill=\"#242a32\"/>
 <path d=\"M22 26 c2 0.5 3.5 0 4.5 -1\" stroke=\"#242a32\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/>
 </svg>`,
-    warranty_caller_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<!-- warranty_caller aggro: The Pitch — receiver off the hook, already talking -->
-<rect x=\"14\" y=\"21\" width=\"12\" height=\"5.5\" rx=\"2\" fill=\"#262c34\"/>
-<circle cx=\"20\" cy=\"23.7\" r=\"1.9\" fill=\"#c9c4b8\"/>
-<circle cx=\"20\" cy=\"23.7\" r=\"0.85\" fill=\"#ff3b2a\"/>
-<path d=\"M14 24.5 l-2.2 -1 2.2 -1 -2.2 -1\" stroke=\"#242a32\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/>
-<line x1=\"8\" y1=\"12\" x2=\"16\" y2=\"5\" stroke=\"#3a4048\" stroke-width=\"3.4\" stroke-linecap=\"round\"/>
-<circle cx=\"16.5\" cy=\"4.6\" r=\"1.6\" fill=\"#242a32\"/>
-<circle cx=\"8\" cy=\"12\" r=\"2.4\" fill=\"#c0392b\"/>
-<circle cx=\"8\" cy=\"12\" r=\"1.5\" fill=\"#7a1f14\"/>
-<circle cx=\"8\" cy=\"12\" r=\"0.7\" fill=\"#2a0a06\"/>
-<g stroke=\"#ff5a3a\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\">
-<circle cx=\"8\" cy=\"12\" r=\"3.8\" opacity=\"0.75\"/>
-<circle cx=\"8\" cy=\"12\" r=\"5.4\" opacity=\"0.4\"/>
-<path d=\"M13.5 8.5 l1.8 -1.6 M14.2 12.5 l2.2 -0.5 M13.2 16 l2 0.8\" opacity=\"0.8\"/>
+    warranty_caller_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+<!-- warranty_caller AGGRO (\"The Pitch\"): the receiver is off the hook and SPLIT OPEN — both ends are maws that will not stop talking. The cord is alive. The ringing never stops. -->
+<rect x=\"8\" y=\"20\" width=\"16\" height=\"6\" rx=\"2\" fill=\"#23272e\"/>
+<circle cx=\"16\" cy=\"23\" r=\"2.1\" fill=\"#c9c4b6\"/>
+<g fill=\"#23272e\">
+<circle cx=\"17.2\" cy=\"22.5\" r=\"0.4\"/>
+<circle cx=\"17.2\" cy=\"23.6\" r=\"0.4\"/>
+<circle cx=\"16.2\" cy=\"24.3\" r=\"0.4\"/>
+<circle cx=\"15.1\" cy=\"24\" r=\"0.4\"/>
+<circle cx=\"14.7\" cy=\"22.9\" r=\"0.4\"/>
+<circle cx=\"15.2\" cy=\"21.9\" r=\"0.4\"/>
+<circle cx=\"16.4\" cy=\"21.7\" r=\"0.4\"/>
 </g>
-<g stroke=\"#8a94a0\" stroke-width=\"1\" stroke-linecap=\"round\" opacity=\"0.8\">
-<line x1=\"27\" y1=\"21\" x2=\"28.5\" y2=\"21\"/><line x1=\"27\" y1=\"24.5\" x2=\"28.5\" y2=\"24.5\"/>
+<circle cx=\"16\" cy=\"23\" r=\"0.55\" fill=\"#0a0c0e\"/>
+<g fill=\"none\" stroke-linecap=\"round\">
+<path d=\"M6.8 18.3 L6.8 17.4 L7.6 17 L8.1 16.5 L8.4 15.7 L8.8 15 L9.8 15.1 L10.3 14.4 L11.1 14.2 L11.4 13.2 L12.2 13.1 L12.9 12.8 L13.8 12.9 L14.4 12.5 L15.3 12.8 L16 12.8 L16.7 12.9 L17.5 12.7 L18.2 13.2 L19.1 12.7 L19.8 13 L20.5 13.5 L21.2 13.8 L21.8 14.2 L22.7 14.4 L23 15.2 L23.5 15.8 L23.8 16.5 L24.9 16.6 L25.2 17.4 L25.6 18.1\" stroke=\"#ff5a4a\" stroke-width=\"0.7\" opacity=\"0.28\"/>
+<path d=\"M5.2 17.5 L5.6 16.7 L6.1 16 L6.8 15.4 L7.1 14.5 L8.1 14.2 L8.8 13.7 L9.4 13 L10 12.4 L10.9 12.3 L11.5 11.4 L12.6 11.7 L13.3 10.9 L14.2 10.5 L15.1 11 L16 11.2 L16.9 10.9 L17.8 10.5 L18.6 11.4 L19.6 10.9 L20.5 11.2 L21.3 11.8 L22 12.4 L22.8 12.8 L23.7 13 L24.3 13.8 L25.1 14.2 L25 15.5 L25.9 16 L26.4 16.7 L27.2 17.3\" stroke=\"#ff5a4a\" stroke-width=\"0.7\" opacity=\"0.2\"/>
+<path d=\"M3.7 16.7 L4.6 16.1 L5.1 15.3 L5.3 14.1 L5.7 13.1 L6.7 12.7 L7.3 11.8 L8.5 11.7 L9.1 10.7 L10.1 10.4 L10.9 9.7 L12 9.9 L13 9.4 L14.1 9.8 L15 9.2 L16 9.2 L17 9.7 L18 9.2 L19 9.6 L20 9.8 L20.8 10.4 L21.9 10.4 L22.9 10.8 L23.9 11.1 L24.3 12.2 L25.2 12.8 L25.7 13.7 L26.6 14.2 L27.2 15.1 L28.2 15.6 L28.7 16.5\" stroke=\"#ff5a4a\" stroke-width=\"0.7\" opacity=\"0.13\"/>
+</g>
+<path d=\"M22 20 C23.5 17 21 15.5 22.5 13 C24 10.8 22 9.5 22.8 7.8\" stroke=\"#3a2020\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/>
+<path d=\"M22 20 C23.5 17 21 15.5 22.5 13 C24 10.8 22 9.5 22.8 7.8\" stroke=\"#8a2a1a\" stroke-width=\"0.5\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.8\"/>
+<g transform=\"rotate(18 14 9)\">
+<rect x=\"6\" y=\"7.4\" width=\"16\" height=\"3.4\" rx=\"1.7\" fill=\"#2f3640\"/>
+<ellipse cx=\"6.2\" cy=\"9.1\" rx=\"1.9\" ry=\"2.1\" fill=\"#0a0508\"/>
+<polygon points=\"8.3,8.7 8.3,9.5 7,9.1\" fill=\"#d8d3c8\"/>
+<polygon points=\"8.1,10 7.7,10.6 6.8,9.6\" fill=\"#d8d3c8\"/>
+<polygon points=\"7.2,11 6.5,11.2 6.4,9.9\" fill=\"#d8d3c8\"/>
+<polygon points=\"5.9,11.2 5.2,11 6,9.9\" fill=\"#d8d3c8\"/>
+<polygon points=\"4.7,10.6 4.3,10 5.6,9.6\" fill=\"#d8d3c8\"/>
+<polygon points=\"4.1,9.5 4.1,8.7 5.4,9.1\" fill=\"#d8d3c8\"/>
+<polygon points=\"4.3,8.2 4.7,7.6 5.6,8.6\" fill=\"#d8d3c8\"/>
+<polygon points=\"5.2,7.2 5.9,7 6,8.3\" fill=\"#d8d3c8\"/>
+<polygon points=\"6.5,7 7.2,7.2 6.4,8.3\" fill=\"#d8d3c8\"/>
+<polygon points=\"7.7,7.6 8.1,8.2 6.8,8.6\" fill=\"#d8d3c8\"/>
+<ellipse cx=\"21.8\" cy=\"9.1\" rx=\"1.9\" ry=\"2.1\" fill=\"#0a0508\"/>
+<polygon points=\"23.9,9.4 23.7,10.1 22.6,9.3\" fill=\"#d8d3c8\"/>
+<polygon points=\"23.3,10.6 22.7,11 22.3,9.7\" fill=\"#d8d3c8\"/>
+<polygon points=\"22.2,11.2 21.4,11.2 21.8,9.9\" fill=\"#d8d3c8\"/>
+<polygon points=\"20.9,11 20.3,10.6 21.3,9.7\" fill=\"#d8d3c8\"/>
+<polygon points=\"19.9,10.1 19.7,9.4 21,9.4\" fill=\"#d8d3c8\"/>
+<polygon points=\"19.7,8.8 19.9,8.1 21,8.9\" fill=\"#d8d3c8\"/>
+<polygon points=\"20.3,7.6 20.9,7.2 21.3,8.5\" fill=\"#d8d3c8\"/>
+<polygon points=\"21.4,7 22.2,7 21.8,8.3\" fill=\"#d8d3c8\"/>
+<polygon points=\"22.7,7.2 23.3,7.6 22.3,8.5\" fill=\"#d8d3c8\"/>
+<polygon points=\"23.7,8.1 23.9,8.8 22.6,8.8\" fill=\"#d8d3c8\"/>
+<g stroke=\"#ff5a4a\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.9\">
+<path d=\"M6.2 11.6 l-1.6 1.6 l1.2 1.2 l-1.6 1.6 l1.2 1.2\"/>
+<path d=\"M21.8 11.6 l1.8 1.8 l-1.4 1.4 l1.8 1.8 l-1.4 1.4 l1.6 1.6\"/>
+</g>
 </g>
 </svg>`,
         understudy_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
@@ -1400,27 +1530,53 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 <rect x=\"16.6\" y=\"27\" width=\"2.2\" height=\"2.6\" rx=\"1\" fill=\"#8b9097\"/>
 </svg>`,
     understudy_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<!-- understudy aggro: Your Move — it learned your stance and is already in it -->
-<g opacity=\"0.4\" transform=\"translate(-4.5 0.5)\">
-<circle cx=\"16\" cy=\"8\" r=\"3\" fill=\"#cfd4da\"/>
-<path d=\"M16 11.2 C11.6 11.2 10.6 15.2 10.6 20 L10.6 27 L21.4 27 L21.4 20 C21.4 15.2 20.4 11.2 16 11.2 Z\" fill=\"#cfd4da\"/>
-<rect x=\"13.2\" y=\"27\" width=\"2.2\" height=\"2.2\" rx=\"1\" fill=\"#cfd4da\"/>
-<rect x=\"16.6\" y=\"27\" width=\"2.2\" height=\"2.2\" rx=\"1\" fill=\"#cfd4da\"/>
+<!-- understudy aggro: \"Your Move\" — it goes still, doing the thing you do before you do it.
+     Half-formed copy of YOU: viewer-left half unfinished (melting mannequin grey, blank face, six-fingered hand),
+     viewer-right half crisp and already mid your wind-up, stolen blade raised. The seam between them is still copying. -->
+<!-- ghost arms: the swing it stole, refining toward the present pose -->
+<g stroke=\"#8a93a0\" stroke-width=\"1.6\" stroke-linecap=\"round\" fill=\"none\" opacity=\"0.18\">
+<path d=\"M20.5 13.5 L24.5 12\"/>
+<path d=\"M20.5 13.5 L25.5 9.5\"/>
 </g>
-<g stroke=\"#8b9097\" stroke-width=\"0.8\" stroke-linecap=\"round\" opacity=\"0.8\">
-<line x1=\"9\" y1=\"14\" x2=\"6.5\" y2=\"13\"/><line x1=\"9.5\" y1=\"18\" x2=\"7\" y2=\"17.5\"/><line x1=\"10\" y1=\"22\" x2=\"7.5\" y2=\"22\"/>
+<!-- legs: left (unformed) leg melts, right (copied) leg plants for the swing -->
+<path d=\"M13.8 23.5 L13 26.5 Q12.8 28 13.5 29 L16 29 Q15.4 27.5 15.6 26 L15.4 23.5 Z\" fill=\"#6a6f76\"/>
+<circle cx=\"13.2\" cy=\"28.6\" r=\"0.8\" fill=\"#6a6f76\"/>
+<path d=\"M17.6 23.5 L18.4 29 L21 29 L20 23.5 Z\" fill=\"#2f343b\"/>
+<rect x=\"18.2\" y=\"28.6\" width=\"2.8\" height=\"1.2\" rx=\"0.6\" fill=\"#24292f\"/>
+<!-- torso: unfinished left half melts, copied right half crisp -->
+<path d=\"M16 11 L11.5 11 C10.2 15 10.6 19.5 11.4 23.8 L16 23.8 Z\" fill=\"#6a6f76\"/>
+<path d=\"M16 11 L21 11 C22.4 15 22 19.5 21.2 23.8 L16 23.8 Z\" fill=\"#3a3f47\"/>
+<path d=\"M17.5 11.5 L19.8 11.5 L19.4 15.5 L17.2 15.5 Z\" fill=\"#2b2f36\"/>
+<!-- left arm: too long, six fingers, still dripping -->
+<path d=\"M11.6 13.5 L8.2 18.6\" stroke=\"#6a6f76\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>
+<circle cx=\"7.8\" cy=\"19.2\" r=\"1.3\" fill=\"#6a6f76\"/>
+<g stroke=\"#565b63\" stroke-width=\"0.7\" stroke-linecap=\"round\">
+<line x1=\"7\" y1=\"20.2\" x2=\"5.6\" y2=\"21.8\"/><line x1=\"7.5\" y1=\"20.5\" x2=\"6.6\" y2=\"22.4\"/>
+<line x1=\"8.1\" y1=\"20.5\" x2=\"7.7\" y2=\"22.5\"/><line x1=\"8.7\" y1=\"20.3\" x2=\"8.9\" y2=\"22.3\"/>
+<line x1=\"9.2\" y1=\"19.9\" x2=\"10.1\" y2=\"21.6\"/><line x1=\"6.6\" y1=\"19.4\" x2=\"5\" y2=\"20.4\"/>
 </g>
-<circle cx=\"18\" cy=\"8\" r=\"3\" fill=\"#6a6f76\"/>
-<path d=\"M18 11.2 C13.6 11.2 12.6 15.2 12.6 20 L12.6 27 L23.4 27 L23.4 20 C23.4 15.2 22.4 11.2 18 11.2 Z\" fill=\"#4a4e55\"/>
-<rect x=\"15.2\" y=\"27\" width=\"2.2\" height=\"2.6\" rx=\"1\" fill=\"#3a3f47\"/>
-<rect x=\"18.6\" y=\"27\" width=\"2.2\" height=\"2.6\" rx=\"1\" fill=\"#3a3f47\"/>
-<g transform=\"rotate(-38 23 15)\">
-<rect x=\"21.9\" y=\"5.5\" width=\"2.2\" height=\"11\" rx=\"1.1\" fill=\"#5a6068\"/>
+<!-- right arm raised: your wind-up, already stolen -->
+<path d=\"M20.5 13.5 L25 6.5\" stroke=\"#3a3f47\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>
+<circle cx=\"25.2\" cy=\"6\" r=\"1.4\" fill=\"#3a3f47\"/>
+<!-- stolen blade: copied wrong — edge kinks the wrong way -->
+<path d=\"M25.4 4.8 L28.4 2.3 L29.1 3.2 L26.3 5.9 Z\" fill=\"#d7dde4\"/>
+<path d=\"M25.4 4.8 L27.9 3\" stroke=\"#f2f5f8\" stroke-width=\"0.6\"/>
+<path d=\"M26.8 4.5 L27.4 3.9 L28 4.5 L28.6 3.8\" stroke=\"#565b63\" stroke-width=\"0.6\" fill=\"none\"/>
+<!-- head: blank mannequin grey, right half copied over -->
+<circle cx=\"16\" cy=\"7.5\" r=\"3.3\" fill=\"#9aa0a8\"/>
+<path d=\"M16 4.2 A3.3 3.3 0 0 1 16 10.8 Z\" fill=\"#3a3f47\"/>
+<!-- unformed side: a smudge where the eye should be -->
+<ellipse cx=\"14.2\" cy=\"7\" rx=\"0.9\" ry=\"0.5\" fill=\"#7d838b\" opacity=\"0.6\"/>
+<!-- copied side: your eye, your grimace, almost right -->
+<circle cx=\"17.8\" cy=\"7\" r=\"1\" fill=\"#ffffff\"/>
+<circle cx=\"18\" cy=\"7.1\" r=\"0.45\" fill=\"#14101a\"/>
+<path d=\"M16.4 9.6 Q18.1 10.4 19.6 9.1\" stroke=\"#14101a\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\"/>
+<!-- the seam: still copying, toxic green -->
+<line x1=\"16\" y1=\"4.2\" x2=\"16\" y2=\"23.8\" stroke=\"#a6ff4d\" stroke-width=\"0.7\" opacity=\"0.85\"/>
+<g stroke=\"#a6ff4d\" stroke-width=\"0.6\" opacity=\"0.6\" stroke-linecap=\"round\">
+<line x1=\"16\" y1=\"9\" x2=\"13.9\" y2=\"10.1\"/><line x1=\"16\" y1=\"13.8\" x2=\"14.1\" y2=\"15.3\"/>
+<line x1=\"16\" y1=\"18.5\" x2=\"14.4\" y2=\"20\"/>
 </g>
-<circle cx=\"18.2\" cy=\"7.6\" r=\"1.1\" fill=\"#6a6f76\"/>
-<circle cx=\"16.9\" cy=\"7.6\" r=\"0.55\" fill=\"#ffffff\"/>
-<circle cx=\"19.1\" cy=\"7.6\" r=\"0.55\" fill=\"#ffffff\"/>
-<rect x=\"9.8\" y=\"13.5\" width=\"2.4\" height=\"10\" rx=\"1.2\" fill=\"#4a4e55\"/>
 </svg>`,
     landlord_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <!-- landlord calm: hi-vis vest, rent sign, keys on the belt -->
@@ -1444,27 +1600,49 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 </g>
 </svg>`,
     landlord_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<!-- landlord aggro: Eviction Notice — the keys are out and the sign has your name crossed out -->
-<rect x=\"5\" y=\"21\" width=\"2\" height=\"8\" rx=\"0.9\" fill=\"#4a3826\"/>
-<rect x=\"3\" y=\"15.5\" width=\"10\" height=\"6.5\" rx=\"1\" fill=\"#f3ead8\" stroke=\"#4a3826\" stroke-width=\"1\"/>
-<g stroke=\"#c0392b\" stroke-width=\"1.6\" stroke-linecap=\"round\">
-<line x1=\"5\" y1=\"17\" x2=\"11\" y2=\"20.5\"/><line x1=\"11\" y1=\"17\" x2=\"5\" y2=\"20.5\"/>
+<!-- landlord aggro: \"Eviction Notice\" — it doesn't chase you. it owns where you stand.
+     Looming hi-vis figure, face in shadow, mouthless. The eviction notice raised like a cudgel:
+     torn paper with a serrated claim-edge, stamped in red. Keys dangling heavy in the other hand. -->
+<!-- left arm down, keys heavy -->
+<path d=\"M10.8 14 L8.6 21\" stroke=\"#23272e\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>
+<circle cx=\"8.4\" cy=\"21.6\" r=\"1.3\" fill=\"#8a5a34\"/>
+<circle cx=\"8.4\" cy=\"24.4\" r=\"1.8\" fill=\"none\" stroke=\"#c9a227\" stroke-width=\"1.2\"/>
+<g stroke=\"#e8b64c\" stroke-width=\"1.2\" stroke-linecap=\"round\">
+<line x1=\"7.4\" y1=\"26\" x2=\"7.4\" y2=\"28.4\"/><line x1=\"8.6\" y1=\"26.1\" x2=\"8.6\" y2=\"29\"/>
+<line x1=\"9.6\" y1=\"25.9\" x2=\"9.6\" y2=\"27.8\"/>
 </g>
-<circle cx=\"17\" cy=\"7\" r=\"3.4\" fill=\"#c98f5a\"/>
-<path d=\"M17 5.2 C15.2 5.2 14 6.2 13.8 7.6 C15.6 6.6 18.4 6.6 20.2 7.6 C20 6.2 18.8 5.2 17 5.2 Z\" fill=\"#241a12\"/>
-<path d=\"M17 10.4 C12.6 10.4 12 14.6 12 19 L12 27 L22 27 L22 19 C22 14.6 21.4 10.4 17 10.4 Z\" fill=\"#b34a12\"/>
-<rect x=\"12\" y=\"15.5\" width=\"10\" height=\"1.8\" fill=\"#f7c948\"/>
-<rect x=\"12\" y=\"19.5\" width=\"10\" height=\"1.8\" fill=\"#f7c948\"/>
-<circle cx=\"15.8\" cy=\"7\" r=\"0.65\" fill=\"#ff3b2a\"/>
-<circle cx=\"18.2\" cy=\"7\" r=\"0.65\" fill=\"#ff3b2a\"/>
-<line x1=\"21.5\" y1=\"13.5\" x2=\"24.8\" y2=\"10.2\" stroke=\"#c98f5a\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>
-<circle cx=\"24.8\" cy=\"10.2\" r=\"1.3\" fill=\"#c98f5a\"/>
-<circle cx=\"24.8\" cy=\"13\" r=\"1.7\" fill=\"none\" stroke=\"#e8b64c\" stroke-width=\"1.3\"/>
-<line x1=\"24.8\" y1=\"14.7\" x2=\"24.8\" y2=\"19.8\" stroke=\"#e8b64c\" stroke-width=\"1.4\" stroke-linecap=\"round\"/>
-<line x1=\"24.8\" y1=\"16.8\" x2=\"26.4\" y2=\"16.8\" stroke=\"#e8b64c\" stroke-width=\"1.2\" stroke-linecap=\"round\"/>
-<line x1=\"24.8\" y1=\"18.8\" x2=\"26.1\" y2=\"18.8\" stroke=\"#e8b64c\" stroke-width=\"1.2\" stroke-linecap=\"round\"/>
-<rect x=\"14.8\" y=\"27\" width=\"2.2\" height=\"2.6\" rx=\"1\" fill=\"#2f3640\"/>
-<rect x=\"17.4\" y=\"27\" width=\"2.2\" height=\"2.6\" rx=\"1\" fill=\"#2f3640\"/>
+<g fill=\"#e8b64c\">
+<circle cx=\"7.4\" cy=\"27.6\" r=\"0.7\"/><circle cx=\"8.6\" cy=\"28.4\" r=\"0.7\"/><circle cx=\"9.6\" cy=\"27.2\" r=\"0.6\"/>
+</g>
+<!-- coat body, looming -->
+<path d=\"M16 10 C11 10 9.5 13.2 9.5 17.5 L9.5 26 L22.5 26 L22.5 17.5 C22.5 13.2 21 10 16 10 Z\" fill=\"#23272e\"/>
+<!-- hi-vis bands -->
+<rect x=\"10\" y=\"15.6\" width=\"12\" height=\"2\" fill=\"#f7c948\"/>
+<rect x=\"10\" y=\"16.2\" width=\"12\" height=\"0.8\" fill=\"#cfd4da\"/>
+<rect x=\"10\" y=\"21.6\" width=\"12\" height=\"2\" fill=\"#f7c948\"/>
+<rect x=\"10\" y=\"22.2\" width=\"12\" height=\"0.8\" fill=\"#cfd4da\"/>
+<!-- feet -->
+<rect x=\"11.4\" y=\"26\" width=\"3.4\" height=\"2.6\" rx=\"1\" fill=\"#16181d\"/>
+<rect x=\"17.2\" y=\"26\" width=\"3.4\" height=\"2.6\" rx=\"1\" fill=\"#16181d\"/>
+<!-- right arm raised with the NOTICE -->
+<path d=\"M21.2 13 L24.6 7.2\" stroke=\"#23272e\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>
+<circle cx=\"24.8\" cy=\"6.8\" r=\"1.5\" fill=\"#8a5a34\"/>
+<!-- the eviction notice: torn paper slab, serrated claim-edge, red stamp -->
+<path d=\"M22.8 2.4 L28.8 2.4 L28.8 8.4 L28 7.5 L27.2 8.4 L26.4 7.5 L25.6 8.4 L24.8 7.5 L24 8.4 L23.2 7.5 L22.8 7.9 Z\" fill=\"#e8e0cf\" stroke=\"#4a3826\" stroke-width=\"0.8\"/>
+<circle cx=\"25.8\" cy=\"4.9\" r=\"1.5\" fill=\"none\" stroke=\"#d42a1a\" stroke-width=\"1\" opacity=\"0.95\"/>
+<path d=\"M24.9 4 L26.7 5.8 M26.7 4 L24.9 5.8\" stroke=\"#d42a1a\" stroke-width=\"0.8\" stroke-linecap=\"round\" opacity=\"0.95\"/>
+<g fill=\"#d42a1a\" opacity=\"0.85\">
+<circle cx=\"23.6\" cy=\"3.4\" r=\"0.35\"/><circle cx=\"27.9\" cy=\"6.6\" r=\"0.3\"/><circle cx=\"27.4\" cy=\"3\" r=\"0.28\"/>
+</g>
+<!-- head in shadow, mouthless; cold white eyes -->
+<circle cx=\"16\" cy=\"6.6\" r=\"3\" fill=\"#8a5a34\"/>
+<path d=\"M13 5.6 A3 3 0 0 1 19 5.6 L19 6.4 A3.6 3 3 0 0 13 6.4 Z\" fill=\"#241a12\" opacity=\"0.85\"/>
+<path d=\"M13.2 5.9 Q16 5.1 18.8 5.9 L18.8 7 Q16 6.3 13.2 7 Z\" fill=\"#241a12\"/>
+<circle cx=\"14.9\" cy=\"7.3\" r=\"0.8\" fill=\"#e8f0ff\"/>
+<circle cx=\"17.1\" cy=\"7.3\" r=\"0.8\" fill=\"#e8f0ff\"/>
+<circle cx=\"14.9\" cy=\"7.3\" r=\"0.28\" fill=\"#14101a\"/>
+<circle cx=\"17.1\" cy=\"7.3\" r=\"0.28\" fill=\"#14101a\"/>
+<!-- no mouth. -->
 </svg>`,
     heckler_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <!-- heckler calm: just a guy in a flat cap, already smirking -->
@@ -1478,25 +1656,44 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
 <path d=\"M16 15.8 C12 15.8 10.8 18.6 10.8 22 L10.8 27 L21.2 27 L21.2 22 C21.2 18.6 20 15.8 16 15.8 Z\" fill=\"#5a6c7d\"/>
 </svg>`,
     heckler_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
-<!-- heckler aggro: \"You call that a swing?\" — the taunt, made visible -->
-<g stroke=\"#ff6a5a\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\">
-<path d=\"M6.5 8 L4 6.5 L6.8 5.2 L5 3.4\"/>
-<path d=\"M25.5 8 L28 6.5 L25.2 5.2 L27 3.4\"/>
-<path d=\"M5.5 16 L3.8 15.5 L5.4 13.8\"/>
-<path d=\"M26.5 16 L28.2 15.5 L26.6 13.8\"/>
+<!-- heckler aggro: \"You Call That A Swing?\" — it doesn't want to kill you. it wants you to quit.
+     Leaning in too close: head huge and tilted toward you, cap knocked back. The grin is too wide,
+     too many teeth, corners tearing the cheeks. Half-lidded contempt. The mockery ripples off the mouth. -->
+<!-- hunched shoulders -->
+<path d=\"M16 19.8 C11 19.8 9.6 23.2 9.6 27.5 L22.4 27.5 C22.4 23.2 21 19.8 16 19.8 Z\" fill=\"#4a5a6c\"/>
+<path d=\"M11.5 21.5 L10 27 M20.5 21.5 L22 27\" stroke=\"#3a4856\" stroke-width=\"1\" stroke-linecap=\"round\"/>
+<g transform=\"rotate(-9 16 13)\">
+<!-- head, too close -->
+<circle cx=\"16\" cy=\"12.6\" r=\"7\" fill=\"#d9a066\"/>
+<!-- cap pushed back by the lean -->
+<ellipse cx=\"15.2\" cy=\"6.9\" rx=\"6\" ry=\"1.9\" fill=\"#2c3846\"/>
+<ellipse cx=\"15.2\" cy=\"6.2\" rx=\"4.4\" ry=\"1.2\" fill=\"#3a4a5c\"/>
+<!-- the grin: impossibly wide, too many teeth -->
+<path d=\"M9.6 14.4 Q16 11.2 22.4 14.4 Q21.2 19.8 16 20.2 Q10.8 19.8 9.6 14.4 Z\" fill=\"#4a0e0e\"/>
+<path d=\"M10.4 14.2 L11.4 15.9 L12.4 14.2 L13.4 15.9 L14.4 14.2 L15.4 15.9 L16.4 14.2 L17.4 15.9 L18.4 14.2 L19.4 15.9 L20.4 14.2 L21.4 15.7\" stroke=\"#ffffff\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/>
+<path d=\"M12.4 18.6 L13.1 17.4 L13.8 18.6 L14.5 17.4 L15.2 18.6 L15.9 17.4 L16.6 18.6 L17.3 17.4 L18 18.6 L18.7 17.4 L19.4 18.6\" stroke=\"#e8e0d0\" stroke-width=\"0.8\" fill=\"none\" stroke-linecap=\"round\"/>
+<!-- corners tearing the cheeks -->
+<path d=\"M9.6 14.4 L8.4 13.4 M22.4 14.4 L23.6 13.4\" stroke=\"#7a2a1a\" stroke-width=\"0.9\" stroke-linecap=\"round\"/>
+<!-- eyes: half-lidded, looking down at you -->
+<ellipse cx=\"13.4\" cy=\"10.6\" rx=\"1.7\" ry=\"1.2\" fill=\"#ffffff\"/>
+<ellipse cx=\"18.6\" cy=\"10.6\" rx=\"1.7\" ry=\"1.2\" fill=\"#ffffff\"/>
+<rect x=\"11.5\" y=\"8.9\" width=\"3.8\" height=\"1.1\" fill=\"#d9a066\"/>
+<rect x=\"16.7\" y=\"8.9\" width=\"3.8\" height=\"1.1\" fill=\"#d9a066\"/>
+<circle cx=\"14.2\" cy=\"11.1\" r=\"0.5\" fill=\"#14101a\"/>
+<circle cx=\"17.8\" cy=\"11.1\" r=\"0.5\" fill=\"#14101a\"/>
+<!-- brows: one arched high in mock surprise, one flat -->
+<path d=\"M12 8.1 Q13.6 6.6 15.6 7.6\" stroke=\"#241a12\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\"/>
+<line x1=\"17\" y1=\"8.2\" x2=\"19.6\" y2=\"8.2\" stroke=\"#241a12\" stroke-width=\"1\" stroke-linecap=\"round\"/>
+<!-- nose, almost an afterthought -->
+<path d=\"M16 11.6 L15.6 13.4\" stroke=\"#b07a4a\" stroke-width=\"0.9\" stroke-linecap=\"round\"/>
 </g>
-<circle cx=\"16\" cy=\"12.5\" r=\"5.6\" fill=\"#d9a066\"/>
-<ellipse cx=\"16\" cy=\"8.4\" rx=\"5.8\" ry=\"2\" fill=\"#2c3846\"/>
-<g stroke=\"#241a12\" stroke-width=\"1\" stroke-linecap=\"round\">
-<line x1=\"12.6\" y1=\"10.4\" x2=\"15\" y2=\"11.2\"/><line x1=\"19.4\" y1=\"10.4\" x2=\"17\" y2=\"11.2\"/>
-</g>
-<line x1=\"13\" y1=\"12.4\" x2=\"14.8\" y2=\"12.8\" stroke=\"#241a12\" stroke-width=\"1.1\" stroke-linecap=\"round\"/>
-<line x1=\"19\" y1=\"12.4\" x2=\"17.2\" y2=\"12.8\" stroke=\"#241a12\" stroke-width=\"1.1\" stroke-linecap=\"round\"/>
-<ellipse cx=\"16\" cy=\"16.4\" rx=\"2.8\" ry=\"3.1\" fill=\"#5a1414\"/>
-<g stroke=\"#ffffff\" stroke-width=\"0.8\"><line x1=\"14.2\" y1=\"14.6\" x2=\"14.2\" y2=\"16.2\"/><line x1=\"16\" y1=\"14.4\" x2=\"16\" y2=\"16\"/><line x1=\"17.8\" y1=\"14.6\" x2=\"17.8\" y2=\"16.2\"/></g>
-<path d=\"M16 18.4 C12.4 18.4 11 21.4 11 25 L11 28.5 L21 28.5 L21 25 C21 21.4 19.6 18.4 16 18.4 Z\" fill=\"#4a5a6c\"/>
+<!-- saliva stringing off the grin corner -->
+<path d=\"M9.7 15.2 Q9.4 18.6 10.4 21.4\" stroke=\"#cfe8ff\" stroke-width=\"0.7\" fill=\"none\"/>
+<circle cx=\"10.4\" cy=\"22.1\" r=\"0.7\" fill=\"#cfe8ff\" opacity=\"0.85\"/>
+<!-- the mockery, bursting off the mouth corners -->
 <g stroke=\"#ff6a5a\" stroke-width=\"1\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.85\">
-<path d=\"M9 21.5 L6.5 22.5 M23 21.5 L25.5 22.5\"/>
+<path d=\"M8.2 16.4 L6.4 17.4 L6.8 19.4\"/>
+<path d=\"M23.8 16.4 L25.6 17.4 L25.2 19.4\"/>
 </g>
 </svg>`,
     paparazzo_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
