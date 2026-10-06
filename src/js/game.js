@@ -13633,8 +13633,15 @@
       // VETERAN VARIANT (Steve 2026-10-05): old-wave monsters in a new wave
       // are hardened. +50% HP, +3 damage, +1 speed. They've survived too.
       const isVeteran = (s.monster && s.monster.veteran) || false;
+      // VARIANT (Steve 2026-10-06): veterans aren't just stat bumps — each
+      // has a variant with 1-2 new tricks. Scarred braces your opening.
+      // Elder can't be stunned. Pack-leader brings friends.
+      let veteranVariant = null;
       if (isVeteran) {
-        this.say(`⚠ This one is different — scarred, seasoned. A veteran.`);
+        const vr = Math.random();
+        veteranVariant = vr < 0.34 ? 'scarred' : (vr < 0.67 ? 'elder' : 'pack-leader');
+        const vNames = { scarred: 'Scarred', elder: 'Elder', 'pack-leader': 'Pack-leader' };
+        this.say(`⚠ This one is different — ${veteranVariant === 'scarred' ? 'scarred, braced, waiting for your opening' : veteranVariant === 'elder' ? 'old, patient, unhurried — it has seen your kind before' : 'bigger, and it didn\'t come alone'}. A ${vNames[veteranVariant]} veteran.`);
       }
       const detail = this.genDetail(this.map.px, this.map.py);
       const terrainBlocked = (x, y) => {
@@ -13724,10 +13731,11 @@
           takenSpots.add(fx + ',' + fy);
           let hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
           let spd = mdef.speed || 5;
+          const vName = veteranVariant ? (veteranVariant === 'pack-leader' ? 'Pack-leader ' : veteranVariant === 'elder' ? 'Elder ' : 'Scarred ') : (isVeteran ? 'Veteran ' : '');
           if (isVeteran) { hp = Math.round(hp * 1.5); spd += 1; }
           fighters.push({
             key: 'm_snake_' + i, kind: 'monster', monsterId: mdef.id,
-            name: (isVeteran ? 'Veteran ' : '') + this.monsterDisplayName(mdef.id) + (i === 0 ? ' (head)' : ` (${i + 1})`),
+            name: vName + this.monsterDisplayName(mdef.id) + (i === 0 ? ' (head)' : ` (${i + 1})`),
             emoji: mdef.emoji || '🦆',
             hp, maxHp: hp, speed: spd, mx: fx, my: fy,
             alive: true, fled: false, telegraph: null, mdef,
@@ -13735,7 +13743,7 @@
             // Snake-specific
             snakeId, segmentIndex: i, isHead: i === 0,
             threatQueue: [],
-            veteran: isVeteran,
+            veteran: isVeteran, veteranVariant,
           });
         }
       } else for (let i = 0; i < count; i++) {
@@ -13743,10 +13751,13 @@
         takenSpots.add(spot.x + ',' + spot.y);
         let hp = mdef.hp[0] + Math.floor(Math.random() * (mdef.hp[1] - mdef.hp[0]));
         let spd = mdef.speed || 3;
+        const vName2 = veteranVariant ? (veteranVariant === 'pack-leader' ? 'Pack-leader ' : veteranVariant === 'elder' ? 'Elder ' : 'Scarred ') : (isVeteran ? 'Veteran ' : '');
         if (isVeteran) { hp = Math.round(hp * 1.5); spd += 1; }
+        // PACK-LEADER: brings 1 extra packmate (applied after fighter creation)
+        const extraPackmate = (veteranVariant === 'pack-leader' && i === 0);
         fighters.push({
           key: 'm_' + i, kind: 'monster', monsterId: mdef.id,
-          name: (isVeteran ? 'Veteran ' : '') + this.monsterDisplayName(mdef.id) + (count > 1 ? ' ' + (i + 1) : ''), emoji: mdef.emoji || '👹',
+          name: vName2 + this.monsterDisplayName(mdef.id) + (count > 1 ? ' ' + (i + 1) : ''), emoji: mdef.emoji || '👹',
           hp, maxHp: hp, speed: spd, mx: spot.x, my: spot.y,
           alive: true, fled: false, telegraph: null, mdef,
           hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
@@ -13757,8 +13768,28 @@
             (mdef.encounter && mdef.encounter.phaseMap && mdef.encounter.phaseMap.idle) || 'stalk',
           gwGrounded: (s.monster && s.monster.gwGrounded) || 0,
           threatQueue: [],
-          veteran: isVeteran,
+          veteran: isVeteran, veteranVariant,
+          // SCARRED: braces your opening — first strike each combat -3
+          scarBraced: veteranVariant === 'scarred',
+          // ELDER: can't be stunned — has seen it all
+          elderCalm: veteranVariant === 'elder',
         });
+        // PACK-LEADER extra packmate: a second fighter of the same type
+        if (extraPackmate) {
+          const pmSpot = freeSpotNear(srcMx, srcMy, takenSpots);
+          takenSpots.add(pmSpot.x + ',' + pmSpot.y);
+          fighters.push({
+            key: 'm_packmate', kind: 'monster', monsterId: mdef.id,
+            name: this.monsterDisplayName(mdef.id) + ' (packmate)', emoji: mdef.emoji || '👹',
+            hp: Math.round(hp * 0.7), maxHp: Math.round(hp * 0.7), speed: spd,
+            mx: pmSpot.x, my: pmSpot.y,
+            alive: true, fled: false, telegraph: null, mdef,
+            hesitate: 0, blind: 0, stunned: 0,
+            beamCooldown: 0, dwellTaught: false,
+            beamPhase: 'stalk', threatQueue: [],
+            veteran: false, packmateOf: 'm_0',
+          });
+        }
       }
 
       this.tbfight = {
@@ -14990,6 +15021,16 @@
           }
         }
       } catch (e) {}
+      // SCARRED VETERAN (Steve 2026-10-06): it braces your opening. First
+      // strike each combat deals -3 (min 1). Probe first, commit second.
+      if (t.scarBraced) {
+        t.scarBraced = false;
+        const braceCut = Math.min(d - 1, 3);
+        if (braceCut > 0) {
+          d -= braceCut;
+          this.say('It saw the opening coming — braced, scar tissue white. Your first strike glances off. (SCARRED: -3 first strike)');
+        }
+      }
       this.tbDamage(t.key, d, 'you', null, { quiet: true });
       // UNDERSTUDY (Steve 2026-10-06): it watches you fight and learns. Record
       // the weapon + damage for any watching understudy in this fight.
@@ -15115,6 +15156,11 @@
       let n = 0;
       for (const m of f.fighters) {
         if (m.kind !== 'monster' || !m.alive) continue;
+        // ELDER VETERAN (Steve 2026-10-06): has seen it all. Can't be stunned.
+        if (m.elderCalm) {
+          this.say(`The Elder ${this.monsterDisplayName(m.monsterId)} doesn't even flinch — it has heard worse. (ELDER: immune to stun)`);
+          continue;
+        }
         m.stunned = 1;
         if (m.telegraph) { m.telegraph = null; n++; }
       }
@@ -15517,12 +15563,27 @@
       let final = Math.max(0, Math.round(dmg));
       // UNION REP SOLIDARITY (Steve 2026-10-06): while a rep organizes, the
       // picket line hits harder. Applies to monster damage vs the player.
+      // PACK-LEADER (Steve 2026-10-06): the leader's packmates hit +2 while
+      // it lives. Kill the leader first.
       try {
         const f4 = this.tbfight;
         if (f4 && t.kind === 'player' && sourceLabel !== 'you') {
           for (const rm of f4.fighters) {
             if (this.urIs(rm) && rm.alive && !rm.fled && rm.beamPhase !== 'stalk') {
               final += (rm.beamPhase === 'walkout' ? 8 : 3);
+              break;
+            }
+          }
+          // Pack-leader: the leader coordinates its pack. +2 when the source
+          // is the leader or its packmate (matched via sourceLabel).
+          for (const pl of f4.fighters) {
+            if (pl.veteranVariant === 'pack-leader' && pl.alive && !pl.fled) {
+              const leaderName = this.monsterDisplayName(pl.monsterId);
+              const srcIsPack = sourceLabel && (
+                sourceLabel.includes(leaderName) ||
+                sourceLabel.includes('(packmate)')
+              );
+              if (srcIsPack) { final += 2; }
               break;
             }
           }
