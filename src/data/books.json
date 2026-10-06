@@ -3,28 +3,117 @@
     "id": "field_guide_edible",
     "name": "Field Guide to Edible Plants",
     "description": "a battered field guide, pages stained with berry juice",
-    "unlocks": {"plants": ["dandelion", "cattail", "chickweed"], "level": 1},
+    "unlocks": {
+      "plants": [
+        "dandelion",
+        "cattail",
+        "chickweed"
+      ],
+      "level": 1
+    },
     "flavor": "Someone loved this book. Margins full of notes."
   },
   {
     "id": "foxfires_journal",
     "name": "Foxfire Journal",
     "description": "a handwritten journal, cooking stains on every page",
-    "unlocks": {"plants": ["dandelion", "cattail"], "level": 2, "recipes": ["cook_spit"]},
+    "unlocks": {
+      "plants": [
+        "dandelion",
+        "cattail"
+      ],
+      "level": 2,
+      "recipes": [
+        "cook_spit"
+      ]
+    },
     "flavor": "Recipes and failures. Day 43: FINALLY got the acorns right."
   },
   {
     "id": "trappers_handbook",
     "name": "Trapper Handbook",
     "description": "a slim volume on snares and deadfalls",
-    "unlocks": {"recipes": ["snare", "deadfall"], "animals": ["cottontail_rabbit"]},
+    "unlocks": {
+      "recipes": [
+        "snare",
+        "deadfall"
+      ],
+      "animals": [
+        "cottontail_rabbit"
+      ]
+    },
     "flavor": "Diagrams of knots. Check at dawn. Always."
   },
   {
     "id": "medicinal_plants",
     "name": "Medicinal Plants of the Southeast",
     "description": "a clinical guide, precise illustrations",
-    "unlocks": {"plants": ["wood_sorrel", "wild_onion"], "level": 3},
+    "unlocks": {
+      "plants": [
+        "wood_sorrel",
+        "wild_onion"
+      ],
+      "level": 3
+    },
     "flavor": "Dosages and warnings. Whoever owned this was careful."
+  },
+  {
+    "id": "system_field_manual_fauna",
+    "name": "System Field Manual: Edible Fauna (Rev. 3)",
+    "description": "a System-printed pamphlet, cheerful pictograms, one page glued shut",
+    "unlocks": {
+      "animals": [
+        "bullfrog",
+        "crayfish",
+        "creek_chub"
+      ],
+      "skills": [
+        "animal_behavior"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "REV. 3 NOTES: The small green jumpers are FRIEND-SHAPED. They are not friends. They are FOOD-SHAPED. We apologize for Rev. 2. The glued page is glued for your safety."
+  },
+  {
+    "id": "smoke_and_salt",
+    "name": "Smoke and Salt: A Meat-Keeper's Notes",
+    "description": "a grease-spotted notebook, smoke worked into the binding",
+    "unlocks": {
+      "recipes": [
+        "cook_spit"
+      ],
+      "skills": [
+        "preserve_food"
+      ],
+      "skillLevel": 2
+    },
+    "flavor": "Grease-spotted pages. 'Day 11: the smokehouse worked. Day 12: the raccoons found the smokehouse. Day 13: smoked raccoon.'"
+  },
+  {
+    "id": "almanac_turned_year",
+    "name": "A Forager's Almanac of the Turned Year",
+    "description": "a hand-bound almanac, moon charts corrected in red ink",
+    "unlocks": {
+      "plants": [
+        "ramps",
+        "pawpaw",
+        "elderberry"
+      ],
+      "level": 2
+    },
+    "flavor": "'The moons moved. Everything fruits a month late now. Don't argue with the sky — write it down.'"
+  },
+  {
+    "id": "scattered_ledger",
+    "name": "The Scattered Ledger",
+    "description": "a water-warped ledger, names and tallies in three different hands",
+    "unlocks": {
+      "skills": [
+        "read_people",
+        "mediate"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "Forty-one names, each with a debt or a debt owed. The last page just says: start again."
   }
 ]
