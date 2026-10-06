@@ -16705,7 +16705,19 @@
       // no end-turn ceremony. Spend moves + the acted action and it advances
       // on its own. (Wait forfeits the rest via tbPlayerWait.)
       const p = this.tbFighter('p');
-      if (p && p.moveLeft <= 0 && p.acted) this.tbAdvance();
+      // STUCK FIX (Steve 2026-10-06): if the player has no moves and cannot
+      // use their action (no valid targets), the turn must advance. Otherwise
+      // they soft-lock with 0 move + 1 unusable act.
+      let canAct = false;
+      if (p && !p.acted && p.moveLeft <= 0) {
+        try {
+          const wr = this.equippedWeapon ? this.equippedWeapon().range : 1;
+          canAct = (this.tbfight.fighters || []).some(m =>
+            (m.kind === 'monster' || m.kind === 'hostile') && m.alive && !m.fled &&
+            Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= wr);
+        } catch (e) {}
+      }
+      if (p && p.moveLeft <= 0 && (p.acted || !canAct)) this.tbAdvance();
       else this.tbRefreshTelegraphUI();
     },
 
