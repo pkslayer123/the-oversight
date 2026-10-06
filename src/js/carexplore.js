@@ -166,7 +166,7 @@
       this.remember(vid, 'gift', `unasked-for food (${amount})`);
     }
 
-    setTrust.call(this, vid, trust + trustGain);
+    setTrust.call(this, vid, trust + this.trustGainMult(trustGain));
 
     // PUBLIC: the village watches. Generosity is visible — and it creates
     // expectation. Feed people publicly and the hungry will come asking.

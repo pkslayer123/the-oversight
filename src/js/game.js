@@ -2264,7 +2264,7 @@
           // diplomat multiplies (still capped at 40 — words only go so far).
           const dipLvl2 = this.abilityLevel('diplomat');
           const dipMult2 = dipLvl2 >= 2 ? 3 : dipLvl2 >= 1 ? 2 : 1;
-          const gain = Math.max(1, Math.floor(8 * (1 - cur / 50) * dipMult2));
+          const gain = this.trustGainMult(Math.max(1, Math.floor(8 * (1 - cur / 50) * dipMult2)));
           // Talking can raise trust toward 40, but never drag it down.
           this.state.village.trust[vid] = cur >= 40 ? cur : Math.min(40, cur + gain);
         }
@@ -4019,7 +4019,9 @@
       // unset defaults to 10, but a real 0 must stay 0 — `|| 10` used to
       // resurrect hated villagers back toward 10 on every bump.
       const cur = v.trust[vid] === undefined ? 10 : v.trust[vid];
-      v.trust[vid] = Math.max(0, Math.min(100, cur + n));
+      // trust.gain_mult applies to GAINS only, not losses
+      const adj = n > 0 ? this.trustGainMult(n) : n;
+      v.trust[vid] = Math.max(0, Math.min(100, cur + adj));
     },
 
     // ============ LIVING WORLD: the land remembers ============
@@ -5763,7 +5765,12 @@
       // The 2026-10-04 "free steps" fix went too far — walking the map felt
       // costless. 2 kcal is perceptible over distance (9x9 crossing ≈ 32 kcal)
       // without making exploration tedious. Time cost (1 tick) unchanged.
-      const cost = 2;
+      // SECOND SKIN / WANDERER: travel.cost_mult reduces the kcal cost.
+      let cost = 2;
+      try {
+        const mult = this.modTarget('travel.cost_mult', 1);
+        if (mult !== 1) cost = Math.max(1, Math.round(cost * mult));
+      } catch (e) {}
       // Movement is baseline. Power doesn't tax walking.
       s.kcal = Math.max(0, s.kcal - cost);
       s.mx = cx; s.my = cy;
@@ -6077,9 +6084,17 @@
     },
     armorBonus() {
       const eq = (this.state.scholar.equipped || {}).armor;
-      if (!eq) return 0;
-      const def = this.data.items.find(i => i.id === eq.itemId);
-      return (def && def.armor) ? def.armor.protection : 0;
+      let bonus = 0;
+      if (eq) {
+        const def = this.data.items.find(i => i.id === eq.itemId);
+        bonus = (def && def.armor) ? def.armor.protection : 0;
+      }
+      // CHITIN SKIN: +30 armor from the ability (armor.flat modifier)
+      try {
+        const flat = this.modTarget('armor.flat', 0);
+        if (flat > 0) bonus += flat;
+      } catch (e) {}
+      return bonus;
     },
 
     isWeapon(item) {
@@ -6921,7 +6936,7 @@
       const genMult = genLvl >= 1 ? 2 : 1;
       v.trust = v.trust || {}; v.gives = v.gives || {};
       v.gives[vid] = (v.gives[vid] || 0) + kcal;
-      const trustGain = Math.min(10, Math.floor(kcal / 500)) * genMult;
+      const trustGain = this.trustGainMult(Math.min(10, Math.floor(kcal / 500)) * genMult);
       v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + trustGain);
       this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${trustGain}. They'll remember this.`);
       this.observe('donate');
@@ -7151,8 +7166,19 @@
       const net = (v.gives[vid] || 0) - (v.takes[vid] || 0);
       // if you're taking way more than giving, trust drops
       if (net < -5000) {
-        v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
-        if (Math.random() < 0.3) this.say('Someone watches you take food. They say nothing, but you feel it.');
+        // THIEF (Light Fingers): 50% chance to steal without trust loss.
+        // If caught, -20 trust (worse than the normal -2).
+        if (this.hasAbility('thief')) {
+          if (Math.random() < 0.5) {
+            this.say('You palm the food cleanly. No one sees.');
+          } else {
+            v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 20);
+            this.say('Caught red-handed! They saw you steal. Trust -20.');
+          }
+        } else {
+          v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
+          if (Math.random() < 0.3) this.say('Someone watches you take food. They say nothing, but you feel it.');
+        }
       }
       // Single takes add up: check the running total for blatant theft.
       try { this.theftConfrontation((v.takes[vid] || 0)); } catch (e) {}
@@ -10962,7 +10988,8 @@
       const s = this.state.scholar;
       const v = this.state.village; v.trust = v.trust || {};
       const trustAll = (amt, why) => {
-        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.max(0, (v.trust[vid] || 15) + amt);
+        const adj = amt > 0 ? this.trustGainMult(amt) : amt;
+        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.max(0, (v.trust[vid] || 15) + adj);
         this.say(why);
       };
       if (id === 'pact') {
@@ -11203,7 +11230,7 @@
         this.say('\u{1F6B6} A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
         // mediator: peace is a skill. You talk the village through it.
         if (this.hasAbility('mediator')) {
-          const bonus = Math.round(this.modTarget('drama.resolve_bonus', 8));
+          const bonus = this.trustGainMult(Math.round(this.modTarget('drama.resolve_bonus', 8)));
           const v = this.state.village; v.trust = v.trust || {};
           for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + bonus);
           this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${bonus})`);
@@ -12029,6 +12056,14 @@
     },
     abilityLevel(id) {
       return (globalThis.Scattering && globalThis.Scattering.abilityLevel(this.state.scholar, id)) || 0;
+    },
+    // trustGainMult: applies trust.gain_mult modifier (Hoarder, Chitin Skin,
+    // Fear Aura reduce trust gains). Use for ALL trust increases.
+    trustGainMult(amount) {
+      try {
+        const mult = this.modTarget('trust.gain_mult', 1);
+        return Math.round(amount * mult);
+      } catch (e) { return amount; }
     },
 
     // allModifiers: abilities + relics + KNOWLEDGE. One pipeline.
@@ -13954,6 +13989,13 @@
       if (this.hasAbility('rage') && hpFrac < 0.5) { d *= 2; this.say('RAGE: +100% damage.'); }
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
       if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
+      // PATIENT AIM: 2x damage on round 1 (combat.strike_damage modifier)
+      try {
+        if (f.round === 1) {
+          const paMult = this.modTarget('combat.strike_damage', 1, { round: 1 });
+          if (paMult > 1) { d = Math.round(d * paMult); this.say('PATIENT AIM: first strike, doubled.'); }
+        }
+      } catch (e) {}
       // THE RESERVE: food is humanity's superpower. A full furnace hits harder —
       // visibly. (feastBurn states the burn itself.)
       if (this.feastBurn) { const fb = this.feastBurn(); if (fb > 0) d = Math.round(d * fb); }
@@ -14318,8 +14360,10 @@
       const quiet = !!(opts && opts.quiet);
       // FOOTWORK (passive): agility lets you dodge. Not a guarantee — a chance.
       // Only vs direct attacks, not beams/AoE (you can't dodge a flood).
+      // ADRENALINE CONTROL: +15% dodge chance from the ability (combat.dodge_chance).
       if (t.kind === 'player' && !(opts && opts.undodgeable)) {
-        const dodgeCh = this.passiveBonus('footwork') + Math.max(0, (this.stat('agi') - 5) * 0.02);
+        let dodgeCh = this.passiveBonus('footwork') + Math.max(0, (this.stat('agi') - 5) * 0.02);
+        try { dodgeCh += this.modTarget('combat.dodge_chance', 0); } catch (e) {}
         if (dodgeCh > 0 && Math.random() < dodgeCh) {
           this.say('You slip aside — it misses clean. (footwork)');
           this.practice('agi', 1); // dodging is agility practice
