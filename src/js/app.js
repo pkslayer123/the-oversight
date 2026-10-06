@@ -12253,40 +12253,49 @@
         } else if (otherV) {
           g = '🏘️';
         } else {
-          // DIRECT VISUAL (Steve 2026-10-06): show, don't tell. Terrain-colored
-          // square with glyph. No dependency on external generator.
-          try {
-            const ttype = tl ? tl.type : 'unknown';
-            const colors = {
-              forest_floor: '#241c12', grove: '#1b2f1c', meadow: '#28331b',
-              thicket: '#18291f', wetland: '#1a2830', creek: '#14303c',
-              trail_edge: '#322e1b', ruin: '#27272b', haven: '#20271f'
-            };
-            // UNKNOWN SEEN TILES (Steve 2026-10-06): if seen but no data,
-            // show a visible "explored" tile, not blank dark.
-            const isUnknown = !tl || ttype === 'unknown';
-            const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
-            const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
-            const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
-            // SVG terrain tile (Steve 2026-10-06): simple and robust
+          // FOG OF WAR (Steve 2026-10-06): unvisited tiles are dark, not terrain.
+          // Visited tiles get detailed SVG scenes.
+          if (!seen) {
+            // Unvisited: dark fog tile
             g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
-              `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}"/>` +
-              `<text x="32" y="42" text-anchor="middle" font-size="28" fill="${textColor}">${glyph}</text></svg>`;
-            // Try the full scene generator as enhancement, not requirement
+              `<rect x="2" y="2" width="60" height="60" rx="8" fill="#0d120d" stroke="#1a2a1a" stroke-width="1"/></svg>`;
+          } else {
+            // Visited: try detailed TileScenes first, fall back to simple terrain
+            let usedDetailed = false;
             if (TS) {
               try {
                 const full = TS.svgFor(x, y, { seen });
-                if (full && full.length > 100) g = full;
+                if (full && full.length > 50) { g = full; usedDetailed = true; }
               } catch (e) {}
             }
+            if (!usedDetailed) {
+              try {
+                const ttype = tl ? tl.type : 'unknown';
+                const colors = {
+                  forest_floor: '#241c12', grove: '#1b2f1c', meadow: '#28331b',
+                  thicket: '#18291f', wetland: '#1a2830', creek: '#14303c',
+                  trail_edge: '#322e1b', ruin: '#27272b', haven: '#20271f'
+                };
+                const isUnknown = !tl || ttype === 'unknown';
+                const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
+                const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
+                const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
+                g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
+                  `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}"/>` +
+                  `<text x="32" y="42" text-anchor="middle" font-size="28" fill="${textColor}">${glyph}</text></svg>`;
+              } catch (e) {
+                g = '·';
+              }
+            }
+          }
           } catch (e) {
             g = '·';
           }
         }
-        // Background color for terrain - applies to all tiles including player
-        // (player sprite overlays on top of terrain)
+        // Background color for terrain - only for visited tiles
+        // (unvisited get dark fog SVG, player sprite overlays on terrain)
         let tileBg = '';
-        if (!isW && !otherV) {
+        if (seen && !isW && !otherV) {
           try {
             const ttype2 = tl ? tl.type : 'unknown';
             const colors2 = {
