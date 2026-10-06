@@ -11495,6 +11495,8 @@
         } else {
           scholar.spawnMisses = misses + 1; // rolled but nothing spawnable — pity keeps counting
         }
+      } else if (!scholar.monster) {
+        scholar.spawnMisses = misses + 1;
       }
       // slice 1: the Bulldozer wanders from day 3 — visible, patrols, encounter on contact
       // WANDERER RECURRENCE (Steve 2026-10-06): one-shot per run meant the

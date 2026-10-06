@@ -231,6 +231,7 @@ function nearWater(detail, x, y) {
 
   console.log('== 4. 100 WETLAND ENCOUNTERS: water monsters only with water present ==');
   {
+    Game.dayPart = 3; // night: the nocturnal water predator is actually active then
     Game.map.px = 3; Game.map.py = 3;
     Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
     const mdefs = Game.monsterWavePool();
