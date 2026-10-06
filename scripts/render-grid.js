@@ -52,15 +52,30 @@ function renderGridSVG() {
         fill = '#4a4a6e';
         emoji = '🧍';
       }
-      // Monster
+      // Monster — use REAL SPRITE, not emoji (Steve 2026-10-06)
+      let monsterSprite = '';
       if (s.monster && s.monster.mx === x && s.monster.my === y) {
         const mdef = (Game.data.monsters || []).find(m => m.id === s.monster.id) || {};
         fill = '#6e2a2a';
-        emoji = mdef.emoji || '👹';
+        try {
+          const S = globalThis.Scattering || {};
+          if (S.Sprites && S.Sprites.monsterSprite) {
+            const spr = S.Sprites.monsterSprite(s.monster.id, true);
+            if (spr) {
+              // Embed the SVG directly, scaled to fit the cell
+              // Sprites are 32x32 viewBox, cell is 40px
+              const sized = spr.replace('<svg ', `<svg x="${px + 4}" y="${py + 4}" width="32" height="32" `);
+              monsterSprite = sized;
+            }
+          }
+        } catch (e) {}
+        if (!monsterSprite) emoji = mdef.emoji || '👹';
       }
       
       svg += `<rect x="${px}" y="${py}" width="${CELL}" height="${CELL}" fill="${fill}" stroke="#444" stroke-width="1"/>`;
-      if (emoji) {
+      if (monsterSprite) {
+        svg += monsterSprite;
+      } else if (emoji) {
         svg += `<text x="${px + CELL/2}" y="${py + CELL/2 + 8}" text-anchor="middle" font-size="24">${emoji}</text>`;
       }
     }
