@@ -12548,36 +12548,75 @@
       // You learn preparation (how to eat it) by doing it, even if you don't
       // know what it is yet. Preparation is a separate track from identification.
       if (it.plantId) {
-        const entry = this.state.codex.plants[it.plantId] = this.state.codex.plants[it.plantId] || { level: 0, harvests: 0, tastings: 0 };
-        if (!entry.prepKnown) {
-          entry.prepKnown = true;
-          const p = this.data.plants.find(x => x.id === it.plantId);
-          const pname = p ? p.name : it.plantId;
-          // If you don't know what it is, you're honest about it
-          if ((entry.level || 0) < 1) {
-            this.say(`You don't know what it is, but you know it's edible now — and how much it fills you. (${kcal} kcal/${it.unit || 'unit'})`);
-          } else {
-            this.say(`Eating it teaches you: ${pname} gives ${kcal} kcal per ${it.unit || 'unit'}.`);
+        // MEAT (Steve 2026-10-06): meat rides the ANIMAL track, never the
+        // plant track. A kill teaches the species (encIdentifyAnimal) before
+        // the carcass exists — so claiming "you don't know what it is" at the
+        // first bite contradicts the hunt you just lived. And filing meat_*
+        // under codex.plants polluted the plant codex with phantom entries.
+        const meatAid = String(it.plantId).replace(/^meat_/, '');
+        const adef = (this.data.animals || []).find(a => a.id === meatAid);
+        const mdef = !adef && (this.data.monsters || []).find(m => m.id === meatAid);
+        if (adef || mdef) {
+          const mprep = (this.state.codex.animalPrep = this.state.codex.animalPrep || {});
+          const mentry = mprep[meatAid] = mprep[meatAid] || { tastings: 0 };
+          if (!mentry.prepKnown) {
+            mentry.prepKnown = true;
+            if (adef) {
+              const aKnown = this.encAnimalKnown ? this.encAnimalKnown(meatAid) : false;
+              this.say(aKnown
+                ? `Eating it teaches you: ${adef.name} gives ${kcal} kcal per ${it.unit || 'portion'}${it.diseaseRisk ? ' raw — cook it for the full cut' : ''}.`
+                : `You don't know what animal this was, but you know it's edible now — and how much it fills you. (${kcal} kcal/${it.unit || 'portion'})`);
+            } else {
+              // MONSTER FLESH: the testing system owns the identity question —
+              // eating doesn't teach it. Stay honest, pollute nothing.
+              this.say(`You don't know what this flesh truly is, but you know it's edible now — and how much it fills you. (${kcal} kcal/${it.unit || 'portion'})`);
+            }
           }
-        }
-        // LEVEL 3: Uses. Eat it 3 times at L2, you learn what it does to you.
-        // (Ported from the retired bulk-eat: eatOne is the live path since the
-        // Eat button was removed — Steve 2026-10-05 UI restructure. Without
-        // this, L3 was unreachable through the actual UI.)
-        if (entry.level === 2) {
-          entry.tastings = (entry.tastings || 0) + 1;
-          if (entry.tastings >= 3) {
-            entry.level = 3;
-            const p3 = this.data.plants.find(x => x.id === it.plantId);
-            this.say(`Deeper knowledge: ${p3.name}. ${p3.knowledgeLevels['3']} (+5 health when eaten). All uses known: ${this.plantUsesText(it.plantId) || '—'}.`);
+          mentry.tastings = (mentry.tastings || 0) + 1;
+          // DEEPENING (Steve 2026-10-06): eating the same game three times
+          // teaches the parts — this is what animals.json knowledgeLevels[2]
+          // is for. The name was only the start.
+          if (adef && mentry.tastings >= 3 && !mentry.deepKnown) {
+            mentry.deepKnown = true;
+            const kl2 = (adef.knowledgeLevels || {})['2'];
+            if (kl2) this.say(`Deeper knowledge: ${adef.name}. ${kl2}`);
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
-        }
-        // L3 benefit, as announced: knowing a plant deeply means eating it
-        // well — the knowledgeable get real nourishment from it.
-        if (entry.level >= 3) {
-          scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
-        }
+          if (mentry.deepKnown) {
+            scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
+          }
+        } else {
+          const entry = this.state.codex.plants[it.plantId] = this.state.codex.plants[it.plantId] || { level: 0, harvests: 0, tastings: 0 };
+          if (!entry.prepKnown) {
+            entry.prepKnown = true;
+            const p = this.data.plants.find(x => x.id === it.plantId);
+            const pname = p ? p.name : it.plantId;
+            // If you don't know what it is, you're honest about it
+            if ((entry.level || 0) < 1) {
+              this.say(`You don't know what it is, but you know it's edible now — and how much it fills you. (${kcal} kcal/${it.unit || 'unit'})`);
+            } else {
+              this.say(`Eating it teaches you: ${pname} gives ${kcal} kcal per ${it.unit || 'unit'}.`);
+            }
+          }
+          // LEVEL 3: Uses. Eat it 3 times at L2, you learn what it does to you.
+          // (Ported from the retired bulk-eat: eatOne is the live path since the
+          // Eat button was removed — Steve 2026-10-05 UI restructure. Without
+          // this, L3 was unreachable through the actual UI.)
+          if (entry.level === 2) {
+            entry.tastings = (entry.tastings || 0) + 1;
+            if (entry.tastings >= 3) {
+              entry.level = 3;
+              const p3 = this.data.plants.find(x => x.id === it.plantId);
+              this.say(`Deeper knowledge: ${p3.name}. ${p3.knowledgeLevels['3']} (+5 health when eaten). All uses known: ${this.plantUsesText(it.plantId) || '—'}.`);
+              scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
+            }
+          }
+          // L3 benefit, as announced: knowing a plant deeply means eating it
+          // well — the knowledgeable get real nourishment from it.
+          if (entry.level >= 3) {
+            scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
+          }
+        } // end else (plant track) — meat took the animal branch above
       }
       // COMBAT: eating from pack costs an action (Steve 2026-10-05)
       if (scholar.monster || this.state.inCombat) {

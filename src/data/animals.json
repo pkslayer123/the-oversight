@@ -28,7 +28,7 @@
     "fleeDifficulty": "medium",
     "huntText": "It freezes. You hold your breath. Then — white tail flashing — it bolts!",
     "killText": "About {kcal} kcal — lean meat, one good meal. All protein, no fat: eat it with something greasy or you’ll run hollow (rabbit starvation is real).",
-    "tell": "freezes mid-hop, one ear swiveling toward you.",
+    "tell": "locks mid-hop, one ear swiveling toward you.",
     "butcher": {
       "hide": 1,
       "bone": 1
@@ -617,7 +617,7 @@
     "fleeDifficulty": "hard",
     "huntText": "The whistle splits the meadow — sharp, twice. Then it's running, low and fast, straight for the dark hole in the bank. Cut it off or lose it.",
     "killText": "About {kcal} kcal — surprisingly good eating. Late-summer groundhogs are fat; spring ones are lean and mean.",
-    "tell": "rears up on its haunches, nose high — then the whistle.",
+    "tell": "rears up on its haunches, nose high — listening for your next move.",
     "butcher": {
       "hide": 1,
       "bone": 1
@@ -827,7 +827,7 @@
     "behaviorDesc": "Mobs anything it dislikes — hawks, owls, you. The racket carries a quarter mile and every animal in earshot hears it. Crows give you away. They also give monsters away, which is worth more.",
     "fleeDifficulty": "hard",
     "huntText": "A crow spots you and the cawing starts — three sharp barks, then the whole treeline joins in. Everything within earshot now knows exactly where you are standing.",
-    "tell": "the cawing shifts pitch and moves — the mob is following something that is not you.",
+    "tell": "the cawing shifts pitch and moves — the whole treeline is tracking you now.",
     "butcher": {
       "feather": 4
     },
@@ -895,7 +895,7 @@
     "behaviorDesc": "Nonvenomous. Kills rats by wrapping and waiting. Freezes when spotted, betting everything on being mistaken for a stick. Grabbed, it musks and bites — but the bite is a scratch, and the musk washes off.",
     "fleeDifficulty": "medium",
     "huntText": "A gray coil on the log, thick as your wrist. No rattle sounds — but your hands do not believe that yet. It has not moved. It is hoping you walk past.",
-    "tell": "goes utterly still on the log, head raised an inch, tasting the air.",
+    "tell": "goes utterly still — not a scale moving.",
     "butcher": {},
     "killText": "About {kcal} kcal — cooks like eel. The meat is clean; the musk washes off the hands, not the memory."
   }

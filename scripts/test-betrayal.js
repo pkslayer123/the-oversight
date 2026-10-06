@@ -351,6 +351,12 @@ function band(name, v, lo, hi) {
   ok('stranger arrives when notable', !!vis);
   if (vis) {
     Game.visitorInteract(vis.id, vis.type === 'trader' ? 'trade' : 'welcome');
+    if (vis.type === 'trader') {
+      // TRADER'S CART (miser loop 2026-10-06): 'trade' opens the cart — the
+      // visitor stays until 'done' closes the deal.
+      ok('trade opens the cart, visitor stays', (v13.visitors || []).length === 1 && v13.visitors[0].trading === true);
+      Game.visitorInteract(vis.id, 'done');
+    }
     ok('visitor leaves after interaction', (v13.visitors || []).length === 0);
   }
   // no strangers when obscure

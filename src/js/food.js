@@ -1242,6 +1242,12 @@
       })();
       if (!canBolt) fleeP = Math.min(fleeP, 0.08);
       if (Math.random() < fleeP) {
+        // NO SILENT ACTIONS (Steve 2026-10-06): the lunge costs you 50 kcal —
+        // name it in the bolt text, not just in the code comment. And when it
+        // saw you coming (aware ≥ 0.9 before the strike), the game coaches
+        // the lesson once per encounter: strikes need a calm animal — that's
+        // what the approach and the tracking skill are FOR.
+        var sawItComing = (a.aware >= 0.9);
         // it bolts — one tile, framework state
         const tryMove = (nx, ny) => {
           nx = Math.max(0, Math.min(8, nx)); ny = Math.max(0, Math.min(8, ny));
@@ -1267,16 +1273,20 @@
         a.stamina = Math.max(0, (a.stamina || 1) - 1);
         if (a.stamina <= 0) {
           a.pstate = 'winded';
-          this.say(`${cap} explodes away — but it's winded already, sides heaving.`);
+          this.say(`${cap} explodes away — but it's winded already, sides heaving. (-50 kcal)`);
         } else {
           if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
             a.edgeTurns = (a.edgeTurns || 0) + 1;
-            if (a.edgeTurns >= 2) { s.animal = null; this.say(`${cap} melts into the treeline. Gone.`); }
-            else this.say(`${cap} catches your move and explodes away!`);
+            if (a.edgeTurns >= 2) { s.animal = null; this.say(`${cap} melts into the treeline. Gone. (-50 kcal)`); }
+            else this.say(`${cap} catches your move and explodes away! (-50 kcal)`);
           } else {
             a.edgeTurns = 0;
-            this.say(`${cap} catches your move and explodes away!`);
+            this.say(`${cap} catches your move and explodes away! (-50 kcal)`);
           }
+        }
+        if (sawItComing && !a._strikeCoached) {
+          a._strikeCoached = true;
+          this.say('It saw you coming — a calm animal is a hittable animal. Stalk it close while it grazes, or run it down until it tires.');
         }
         s.kcal = Math.max(0, s.kcal - 50); // the lunge cost you
         return true;

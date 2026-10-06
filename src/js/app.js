@@ -9732,6 +9732,9 @@
     document.querySelectorAll('[data-stash-give]').forEach(b => b.onclick = () => { Game.donateMaterial(b.dataset.stashGive, 9999); refresh(); });
     document.querySelectorAll('[data-stash-take]').forEach(b => b.onclick = () => { Game.takeMaterial(b.dataset.stashTake, 5); refresh(); });
     document.querySelectorAll('[data-stash-tool]').forEach(b => b.onclick = () => { Game.takeTool(b.dataset.stashTool); refresh(); });
+    // Visitors (Haven panel). Trade opens the cart; ware buys are real exchanges.
+    document.querySelectorAll('[data-visitor-act]').forEach(b => b.onclick = () => { Game.visitorInteract(b.dataset.visitorAct, b.dataset.how); refresh(); });
+    document.querySelectorAll('[data-ware-buy]').forEach(b => b.onclick = () => { const p = b.dataset.wareBuy.split(':'); Game.visitorBuyWare(p[0], +p[1]); refresh(); });
     // Membership: remote applications + shelter building (Haven panel).
     document.querySelectorAll('[data-mship-accept]').forEach(b => b.onclick = () => { Game.acceptApplication(b.dataset.mshipAccept); refresh(); });
     document.querySelectorAll('[data-mship-refuse]').forEach(b => b.onclick = () => { Game.refuseApplication(b.dataset.mshipRefuse); refresh(); });
@@ -10020,7 +10023,8 @@
         return `${sysNote}
         <button class="btn sm" id="x-pantry">Take from pantry</button>
         <div id="haven-stores-slot"></div>
-        ${Game.stashHtml()}`;
+        ${Game.stashHtml()}
+        ${Game.visitorHtml ? Game.visitorHtml() : ''}`;
       })()}
       <button class="btn sm ghost" id="x-caches">📍 Caches</button>
       ${sleepHintHTML()}

@@ -17,6 +17,11 @@
 //   - whoTag(vid)
 //   - isPlayer(vid)
 //   - pairAffinity(a, b)
+//   - visitorWares(vis)
+//   - traderPay(kcal)
+//   - visitorBuyWare(visId, idx)
+//   - visitorHtml()
+//   - visitorDaily()
 // rules:
 //   - betrayal_requires_motive: true (code: betrayal.js)
 // consumes:
@@ -1993,10 +1998,20 @@
     if (n < 40) return;
     if (R() > (n - 35) / 100) return;
     const type = pick(['trader', 'trader', 'scout', 'curious', 'fleeing']);
+    // VISITOR NAMES (Steve 2026-10-06): the old shared pool could name a
+    // trader "a frightened family" — a family operating a trade cart breaks
+    // the fiction. Names follow the type now.
+    const NAMES = {
+      trader: ['a weathered trader', 'a sharp-eyed peddler', 'a cart-driver with flour on their sleeves'],
+      scout: ['a lean scout'],
+      curious: ['a curious wanderer'],
+      fleeing: ['a frightened family'],
+    };
     const visitor = {
       id: 'vis_' + Date.now().toString(36), type,
-      name: pick(['a weathered trader', 'a lean scout', 'a curious wanderer', 'a frightened family']),
+      name: pick(NAMES[type] || NAMES.curious),
       day: this.state.scholar.day,
+      leavesDay: this.state.scholar.day + 1, // traders don't wait forever (see visitorDaily)
     };
     v.visitors = v.visitors || [];
     v.visitors.push(visitor);
@@ -2021,8 +2036,16 @@
       bs.strangersHeard = (bs.strangersHeard || 0) + 1;
       try { v.pantryKcal = Math.max(0, (v.pantryKcal || 0) - 500); } catch (e) {}
     } else if (how === 'trade' && vis.type === 'trader') {
-      this.say(`The trader opens the cart. Fair prices, sharp eyes. You trade — and hear news of two other villages you'd never heard named.`);
-      bs.strangersHeard = (bs.strangersHeard || 0) + 2;
+      // THE TRADER'S CART (Steve 2026-10-06): the old beat said "You trade"
+      // but no goods moved. Now the cart opens for real — wares below.
+      vis.trading = true;
+      this.visitorWares(vis);
+      this.say(`The trader swings the cart's side panel down. Three things, laid out neat on a blanket. "Finished food only — I can't sell a raw turkey at the next village. The good stuff goes first to whoever's hungry for it."`);
+      return true;
+    } else if (how === 'done' && vis.type === 'trader') {
+      this.say(`The trader folds the blanket back over the cart. "Pleasure doing almost-business. I'll be gone by morning — the road doesn't wait."`);
+      v.visitors = (v.visitors || []).filter(x => x.id !== visitorId);
+      return true;
     } else if (how === 'invite' && (vis.type === 'fleeing' || vis.type === 'curious')) {
       this.say(`${this.capFirst(vis.name)} ${vis.type === 'fleeing' ? 'cries — relief, mostly' : 'grins wide'}. Haven grows by one.`);
       // they join the roster as a background survivor
@@ -2035,6 +2058,164 @@
     }
     v.visitors = (v.visitors || []).filter(x => x.id !== visitorId);
     return true;
+  },
+
+  // ---------- 8b. THE TRADER'S CART (Steve 2026-10-06) ----------
+  // The trader buys FINISHED food from your pack (perishable-first: they eat
+  // on the road; rot becomes their problem, not yours) and sells three wares.
+  // Preserved food (smoked/dried/salted) counts 1.5x toward the price — trail
+  // food is trail food. This is the miser's honest outlet: perishables that
+  // would rot in the pantry become alien goods, tools, and news.
+  visitorWares(vis) {
+    if (vis.wares && vis.wares.length) return vis.wares;
+    const wares = [];
+    // 1. off-world curiosity: tier-1 only. The trader is not the System; their
+    //    best stock is small things that fell out of the sky. The name is the
+    //    System's narration (visible); what it DOES, you learn by using it.
+    try {
+      const alienId = this.rollAlienLoot({ loot: { chance: 1, tier: 1 }, wave: 1 });
+      const def = (this.data.items || []).find(i => i.id === alienId) || {};
+      if (alienId) wares.push({
+        kind: 'alien', itemId: alienId, name: def.name || alienId, sold: false,
+        price: 1200 + Math.floor(R() * 9) * 100,
+        blurb: `"Came down in a care package. No idea what it does. That's the fun part."`,
+      });
+    } catch (e) {}
+    // 2. a good tool: fell-tier if the cart has one (a miser without an axe
+    //    feels this in their bones), else whatever sharp thing is handy.
+    //    Never a duplicate of what's already in your pack.
+    try {
+      const carried = new Set((this.state.scholar.inventory || []).map(i => i.itemId || i.id));
+      const tools = (this.data.items || []).filter(i => i.class === 'tool' && !carried.has(i.id));
+      // functional tools first (a duffel bag is class 'tool' but nobody's
+      // buying a duffel bag as "good steel"); fell-tier before the rest.
+      const functional = tools.filter(i => i.tool && typeof i.tool === 'object');
+      const fell = functional.filter(i => i.tool.woodcut === 'fell');
+      const def = pick(fell.length ? fell : (functional.length ? functional : tools)) || {};
+      if (def.id) wares.push({
+        kind: 'tool', itemId: def.id, name: def.name || def.id, sold: false,
+        price: 500 + Math.floor(R() * 6) * 100,
+        blurb: def.tool && def.tool.woodcut === 'fell'
+          ? `"Fells trees. You know what that means out here."`
+          : `"Good steel. Somebody's grandfather kept this sharp."`,
+      });
+    } catch (e) {}
+    // 3. news: names of real other villages + a road tip for the journal.
+    //    Word of Haven travels — and word travels back.
+    wares.push({
+      kind: 'news', name: 'Road news', sold: false, price: 300,
+      blurb: `"Two villages you've never heard named, and which road feeds you between them."`,
+    });
+    vis.wares = wares;
+    return wares;
+  },
+  // traderPay(kcal): spend finished food from the pack until the price is met.
+  // Most-perishable first. Two-pass so a failed payment leaves the pack
+  // untouched.
+  traderPay(kcal) {
+    const inv = this.state.scholar.inventory || [];
+    const scored = [];
+    inv.forEach((it, idx) => {
+      if (!this.isFinishedFood || !this.isFinishedFood(it)) return;
+      if ((it.units || 0) <= 0 || (it.kcalEach || 0) <= 0) return;
+      const preserved = /smoked|dried|salted|pickled|cured/i.test(String(it.prep || it.name || ''));
+      scored.push({ idx, it, preserved, rate: preserved ? 1.5 : 1 });
+    });
+    scored.sort((a, b) => (a.it.spoilDay ?? 99999) - (b.it.spoilDay ?? 99999));
+    let need = kcal;
+    const plan = [];
+    for (const e of scored) {
+      if (need <= 0) break;
+      const kcalEach = (e.it.kcalEach || 0) * e.rate;
+      const take = Math.min(e.it.units || 0, Math.ceil(need / kcalEach));
+      if (take <= 0) continue;
+      plan.push({ idx: e.idx, take, name: e.it.name, preserved: e.preserved, kcal: Math.round(take * (e.it.kcalEach || 0)) });
+      need -= take * kcalEach;
+    }
+    if (need > 0) return { ok: false, short: Math.ceil(need) };
+    const taken = [];
+    for (const p of plan) {
+      inv[p.idx].units -= p.take;
+      taken.push({ name: p.name, units: p.take, preserved: p.preserved, kcal: p.kcal });
+    }
+    this.state.scholar.inventory = inv.filter(i => (i.units || 0) > 0 || !(i.kcalEach > 0));
+    return { ok: true, taken, paid: taken.reduce((t, x) => t + x.kcal, 0) };
+  },
+  visitorBuyWare(visId, idx) {
+    const v = this.state.village;
+    const vis = (v.visitors || []).find(x => x.id === visId);
+    if (!vis || vis.type !== 'trader') return null;
+    const w = (this.visitorWares(vis) || [])[idx];
+    if (!w) return null;
+    if (w.sold) { this.say('Already sold. The blanket has a bare patch where it sat.'); return null; }
+    const pay = this.traderPay(w.price);
+    if (!pay.ok) {
+      this.say(`The trader shakes their head. "${w.price} kcal of finished food for the ${w.name} — and you're about ${pay.short} short. The smoked stuff counts extra, if you've got any."`);
+      return null;
+    }
+    w.sold = true;
+    const took = pay.taken.map(t => `${t.units}× ${t.name}${t.preserved ? ' (preserved)' : ''}`).join(', ');
+    if (w.kind === 'alien') {
+      this.alienLootGrant(w.itemId);
+      this.say(`Done. The ${w.name} is yours — ${took} for it. The trader watches you turn it over. "No idea what it does. You'll figure it out — everybody does, eventually." (Try using it.)`);
+    } else if (w.kind === 'tool') {
+      const def = (this.data.items || []).find(i => i.id === w.itemId) || {};
+      (this.state.scholar.inventory = this.state.scholar.inventory || []).push({ itemId: w.itemId, name: w.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
+      this.say(`Done. The ${w.name} is yours — ${took} for it. Good steel has a way of paying for itself.`);
+    } else {
+      // news: real village names from the world, a road tip, word spreads
+      const bs = this.betrayalState();
+      const named = (this.state.otherVillages || []).filter(x => x && x.name).slice(0, 2).map(x => x.name);
+      bs.strangersHeard = (bs.strangersHeard || 0) + 2;
+      try { this.journalNote && this.journalNote('village', 'stranger', `Road news from the trader: ${named.length ? named.join(', ') : 'two villages down the river'} — and which road feeds you between them.`); } catch (e) {}
+      this.say(named.length
+        ? `The trader sketches a map in the dirt: "${named.join(' — ')}. Three days if the road's kind. There's orchards gone wild halfway; eat your fill, nobody's claimed them." Word of Haven travels a little further, too.`
+        : `The trader sketches a map in the dirt: "Two villages down the river — you'll smell their smoke before you see them. There's orchards gone wild halfway; eat your fill, nobody's claimed them." Word of Haven travels a little further, too.`);
+    }
+    try { this.observe('trade', { noTrust: true }); } catch (e) {}
+    try { this.tickAction(8); } catch (e) {}
+    return true;
+  },
+  // visitorHtml: the Haven panel block. Traders get the cart UI; other
+  // visitor types get the honest options they always should have had.
+  visitorHtml() {
+    const vs = this.state.village.visitors || [];
+    if (!vs.length) return '';
+    const d = this.state.scholar.day;
+    return vs.map(vis => {
+      const leaving = vis.leavesDay != null && vis.leavesDay <= d ? ' — leaving tonight' : '';
+      let acts = '';
+      if (vis.type === 'trader') {
+        acts = vis.trading
+          ? `<button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="done">Done trading</button>`
+          : `<button class="btn sm" data-visitor-act="${vis.id}" data-how="trade">🛒 Trade</button>`;
+        acts += ` <button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="welcome">Welcome</button> <button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="away">Turn away</button>`;
+      } else {
+        acts = `<button class="btn sm" data-visitor-act="${vis.id}" data-how="welcome">Welcome</button>`;
+        if (vis.type === 'fleeing' || vis.type === 'curious') acts += ` <button class="btn sm" data-visitor-act="${vis.id}" data-how="invite">Invite to stay</button>`;
+        acts += ` <button class="btn sm ghost" data-visitor-act="${vis.id}" data-how="away">Turn away</button>`;
+      }
+      let cart = '';
+      if (vis.type === 'trader' && vis.trading) {
+        cart = '<br>🛒 <b>The cart is open.</b> Finished food only — the perishable stuff goes first, preserved counts extra.<br>' +
+          this.visitorWares(vis).map((w, i) =>
+            `<span class="small">· <b>${w.name}</b> — ${w.price} kcal${w.sold ? ' <i>(sold)</i>' : ` <button class="btn ghost sm" data-ware-buy="${vis.id}:${i}">Buy</button>`}<br><span style="opacity:.7">${w.blurb}</span></span>`
+          ).join('<br>');
+      }
+      return `<p class="small" style="margin-top:8px"><b>🧳 Visitor:</b> ${this.capFirst(vis.name)} (${vis.type})${leaving}${cart}<br>${acts}</p>`;
+    }).join('');
+  },
+  // visitorDaily: traders don't wait forever. Unvisited by the next day, they
+  // move on — which also frees the stranger slot (before this, one ignored
+  // visitor blocked every future stranger, silently, forever).
+  visitorDaily() {
+    const v = this.state.village, d = this.state.scholar.day;
+    const vs = v.visitors || [];
+    for (const x of vs) if (x.leavesDay == null) x.leavesDay = (x.day || d) + 1;
+    const leaving = vs.filter(x => (x.leavesDay ?? 999999) <= d && !x.trading);
+    if (!leaving.length) return;
+    for (const x of leaving) this.say(`${this.capFirst(x.name)} waits a while, then moves on down the road. Word travels about that, too.`);
+    v.visitors = vs.filter(x => !leaving.includes(x));
   },
 
   // ---------- 11. DAILY + WORLDGEN ----------
@@ -2065,6 +2246,7 @@
     try { this.npcInviteTick(); } catch (e) {}
     try { this.dayOneNudge(); } catch (e) {}
     try { this.considerStrangers(); } catch (e) {}
+    try { this.visitorDaily(); } catch (e) {} // stale visitors move on; frees the stranger slot
     // simmer: conflicts gain a little tension; grievances fade very slowly
     try {
       for (const c of (this.state.village.conflicts || [])) {

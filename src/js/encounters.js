@@ -351,7 +351,11 @@
     var d = this.encAnimalDef(a.id);
     var label = this.encAnimalLabel(a);
     var tell = (d && d.tell) || 'goes still — ears up, deciding about you.';
-    return this.encCap(label) + ' ' + tell;
+    // PERIOD JOIN (Steve 2026-10-06): the descriptor is a sentence; the tell
+    // is another one. Comma-joining made run-ons ("head jerking the heads
+    // jerk up"). The tell escalates the descriptor: idle motion, then the
+    // telegraph.
+    return this.encCap(label) + '. ' + this.encCap(tell);
   };
   // Bolt direction: away from the player. If you're standing ON its tile
   // (dist 0), "away" is undefined — it shoves past you in a random
@@ -1037,7 +1041,7 @@
     // telegraph — you know it's about to sprint for the hole.
     if (beh === 'alarmed' && a.aware >= 0.5 && !a.whistled) {
       a.whistled = true;
-      this.say(this.encWaryText(a) + ' — and the whistle splits the meadow, sharp, twice. Every animal for a hundred yards heard that. (the woods are on edge)');
+      this.say(this.encWaryText(a) + ' The whistle splits the meadow, sharp, twice. Every animal for a hundred yards heard that. (the woods are on edge)');
       try { this.audioEvent('animalWhistle'); } catch (e) {}
       try { s.whAlert = { day: s.day }; } catch (e) {}
     }
