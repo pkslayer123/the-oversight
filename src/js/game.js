@@ -1479,6 +1479,14 @@
       scholar.mx = 4; scholar.my = 4; // spawn: center of the hall
       scholar.facing = { x: 0, y: 1 };
       this.state.scholar = scholar;
+      // OVER-PACKED START (Steve 2026-10-06): if your five plus food and
+      // water already strain the pack, you feel it on minute one. The choice
+      // of what to leave behind starts now — the woods don't mind.
+      try {
+        if (this.packWeight() > this.carryCapacity()) {
+          this.say('Your pack is already straining — too much grabbed in the panic. Something will have to be left behind, or cached.');
+        }
+      } catch (e) {}
       this.state.codex = S.state.newCodex();
       // TREE SPECIES: common trees start known at weak level (L1) — it's common
       // knowledge. Rare trees start unknown. (Steve 2026-10-05)
@@ -4626,7 +4634,66 @@
     save() {
       if (this.over) return;
       this.syncRun();
+      // FIGHT PERSISTENCE (Steve 2026-10-06): backgrounding mid-fight must
+      // NOT grant a free reset. The fight snapshots into the save; on load
+      // it resumes exactly where it left off. No exploit, no mercy.
+      this.state.tbfightSnap = this.snapFight();
       S.state.save(this.state);
+    },
+    // snapFight: serializable snapshot of the live fight, or null.
+    // mdef objects are replaced with ids; restoreFightSnap re-links them.
+    snapFight() {
+      const f = this.tbfight;
+      if (!f || f.over) return null;
+      try {
+        const fighters = f.fighters.map(o => {
+          const c = {};
+          for (const k of Object.keys(o)) {
+            if (k === 'mdef') { c.mdefId = o.mdef && o.mdef.id; continue; }
+            c[k] = o[k];
+          }
+          return c;
+        });
+        return {
+          fighters, order: f.order.slice(), turnIdx: f.turnIdx, round: f.round,
+          terraform: f.terraform || {},
+          savedAt: Date.now(),
+        };
+      } catch (e) { return null; }
+    },
+    // restoreFightSnap: rebuild the live fight from a snapshot. Returns true
+    // if the fight resumed. Corrupt snapshots fail closed (no fight, but the
+    // monster stays hostile in the world — see tbEnd fallback).
+    restoreFightSnap(snap) {
+      try {
+        if (!snap || !snap.fighters || !snap.fighters.length) return false;
+        const fighters = [];
+        for (const c of snap.fighters) {
+          const o = Object.assign({}, c);
+          if (c.mdefId) {
+            const mdef = (this.data.monsters || []).find(m => m.id === c.mdefId);
+            if (!mdef && o.kind === 'monster') return false; // unknown monster: fail closed
+            o.mdef = mdef || null;
+          }
+          delete o.mdefId;
+          fighters.push(o);
+        }
+        // The player fighter is the authority during combat — sync the scholar.
+        const p = fighters.find(x => x.key === 'p');
+        if (p && this.state.scholar) {
+          this.state.scholar.mx = p.mx; this.state.scholar.my = p.my;
+          if (typeof p.hp === 'number') this.state.scholar.health = p.hp;
+        }
+        this.tbfight = {
+          fighters, order: snap.order.slice(), turnIdx: snap.turnIdx || 0,
+          round: snap.round || 1, over: false, result: null,
+          terraform: snap.terraform || {},
+        };
+        // Clear the snapshot so a second load doesn't double-restore.
+        this.state.tbfightSnap = null;
+        this.say('The fight is still on. It waited for you.');
+        return true;
+      } catch (e) { return false; }
     },
     hasSave() {
       try { return S.state.listSaves().length > 0; } catch (e) { return false; }
@@ -4653,6 +4720,9 @@
       // SYNERGIES: recompute on load (saves predate the resonance system).
       // Discovered ones stay discovered; no re-announcement (checkSynergies only says on new).
       this.recomputeActiveSynergies();
+      // FIGHT PERSISTENCE (Steve 2026-10-06): resume a fight that was live
+      // at save time. No free reset for backgrounding mid-fight.
+      if (s.tbfightSnap) this.restoreFightSnap(s.tbfightSnap);
       return true;
     },
     wipe() {
@@ -6073,8 +6143,9 @@
         const mult = this.modTarget('travel.cost_mult', 1);
         if (mult !== 1) cost = Math.max(1, Math.round(cost * mult));
       } catch (e) {}
-      // Movement is baseline. Power doesn't tax walking.
-      s.kcal = Math.max(0, s.kcal - cost);
+      // Movement is baseline — but WEIGHT taxes walking (Steve 2026-10-06).
+      // Power doesn't tax walking; the pack does.
+      s.kcal = Math.max(0, s.kcal - this.moveBurn(cost));
       s.mx = cx; s.my = cy;
       // MONSTERS MOVE WHEN YOU DO. A step can spook, warn, or trigger —
       // the stance machine runs on steps, not just on interacts. (It didn't.
@@ -6086,6 +6157,31 @@
       this.ensureVillagerPositions();
       this.tickAction(1);
       return true;
+    },
+
+    // rubblePull: one pull from a rubble pile's loot type. Returns an
+    // inventory item or null. Cans are SCAVENGED items (rare by weight);
+    // tools/cloth are pre-Burn debris finds.
+    rubblePull(lootType) {
+      const day = (this.state.scholar || {}).day || 0;
+      if (lootType === 'cans') {
+        const item = SCAVENGED[Math.floor(Math.random() * SCAVENGED.length)];
+        if (!item) return null;
+        return { plantId: item.id, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg };
+      }
+      if (lootType === 'tools') {
+        const tools = [
+          { id: 'wrench', name: 'Wrench', kg: 0.4, text: 'Pre-Burn steel. Still turns.' },
+          { id: 'prybar', name: 'Prybar', kg: 0.8, text: 'For opening things that don\'t want opening.' },
+          { id: 'screwdriver', name: 'Screwdriver', kg: 0.15, text: 'Small, honest, useful.' },
+        ];
+        const t = tools[Math.floor(Math.random() * tools.length)];
+        return { toolId: t.id, units: 1, name: t.name, unit: 'tool', prep: t.text, kg: t.kg, spoilDay: 9999, kcalEach: 0 };
+      }
+      if (lootType === 'cloth') {
+        return { clothId: 'cloth_scrap', units: 1, name: 'Cloth scrap', unit: 'cloth', prep: 'Bandage, filter, patch. Cloth is never just cloth.', kg: 0.1, spoilDay: 9999, kcalEach: 0 };
+      }
+      return null;
     },
 
     // cellInteract: tap a cell to USE it. but it's a MAYBE — you learn the truth up close.
@@ -6231,6 +6327,8 @@
       // FIRE: warm
       if (cell === 'fire') { this.say('You warm your hands. The fire pops.'); return true; }
       // RUBBLE: might have loot. shifting rubble is dangerous.
+      // DEPLETION (Steve 2026-10-06): rubble spots are FINITE — each has
+      // secret.amount pulls, then it's picked clean. No more infinite cans.
       if (cell === 'rubble') {
         const mod = t.modifiers && t.modifiers[key];
         if (mod) mod.known = true;
@@ -6243,13 +6341,28 @@
             this.say('A stone slips — your ankle twists. (-50 kcal)');
           }
         }
-        if (secret && secret.loot && secret.loot !== 'none') {
-          this.say(`You find ${secret.amount} ${secret.loot}.`);
-        } else if (secret) {
-          this.say('Picked clean. Nothing.');
+        if (!secret || !secret.loot || secret.loot === 'none' || (secret.amount || 0) <= 0) {
+          this.say('Picked clean. Nothing but dust and broken concrete.');
           return true;
         }
-        return this.doAction('forage', { cx, cy });
+        // One pull per search. Grant the actual item, then decrement.
+        const pull = this.rubblePull(secret.loot);
+        if (pull && !this.canCarry(pull.kg)) {
+          this.say(`You spot ${pull.name} in the debris — too heavy for your pack right now. It'll keep.`);
+          return true;
+        }
+        if (pull) {
+          this.state.scholar.inventory.push(pull);
+          secret.amount = (secret.amount || 1) - 1;
+          if (secret.amount <= 0) secret.loot = 'none';
+          const left = secret.amount > 0 ? ` (${secret.amount} more ${secret.amount === 1 ? 'find' : 'finds'} here, maybe)` : ` That's everything. This pile is done.`;
+          this.say(`You work the rubble and pull out ${pull.name} (${pull.kg} kg).${left}`);
+        } else {
+          this.say('Nothing but dust and broken concrete.');
+          secret.loot = 'none';
+        }
+        this.tickAction(20);
+        return true;
       }
       // RUIN WALLS: pre-Burn bones. Looking is cheap and always says
       // something — knowledge sticks. (Explorer loop 2026-10-05: ruin walls
@@ -6592,7 +6705,9 @@
       const sx = s.mx ?? 4, sy = s.my ?? 4;
       const path = this.findPath(sx, sy, tx, ty);
       if (!path) { this.say('No path there.'); return false; }
-      const cost = path.length * 10;
+      // WEIGHT TAXES THE WALK (Steve 2026-10-06): burden multiplies the cost.
+      const heavyTrip = this.burden().frac >= 0.7;
+      const cost = this.moveBurn(path.length * 10);
       if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return false; }
       s.kcal -= cost;
       if (path.length >= 2) {
@@ -6604,6 +6719,7 @@
       }
       s.mx = tx; s.my = ty;
       this.say(`Walked ${path.length} squares (${cost} kcal).`);
+      if (heavyTrip) this.gainStrain(1); // hauling builds the body
       this.ensureVillagerPositions();
       // Committed walks cross monster territory too — it notices per square.
       for (let i = 0; i < path.length && !this.tbfight; i++) { this.monsterTurn(); this.animalTurn(); }
@@ -6622,7 +6738,11 @@
       if (tx === sx && ty === sy) return [];
       const path = this.findPath(sx, sy, tx, ty);
       if (!path) { this.say('No path there.'); return null; }
-      const cost = path.length * 10;
+      // WEIGHT TAXES THE WALK (Steve 2026-10-06). Flag the trip for strain:
+      // pathStep awards it per 4 heavy steps (below).
+      s._heavyTrip = this.burden().frac >= 0.7;
+      s._tripSteps = 0;
+      const cost = this.moveBurn(path.length * 10);
       if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return null; }
       s.kcal -= cost;
       const [lx, ly] = path[path.length - 1];
@@ -6647,7 +6767,13 @@
       if (this.cellProps(cell).blocks) return false;
       s.facing = { x: Math.sign(tx - px), y: Math.sign(ty - py) };
       // Same 2 kcal/step as microMove — committed walks aren't free either.
-      s.kcal = Math.max(0, (s.kcal || 0) - 2);
+      // Weight taxes every step (Steve 2026-10-06). Heavy trips accrue
+      // strain per 4 steps: distance under load is what builds the body.
+      s.kcal = Math.max(0, (s.kcal || 0) - this.moveBurn(2));
+      if (s._heavyTrip) {
+        s._tripSteps = (s._tripSteps || 0) + 1;
+        if (s._tripSteps >= 4) { s._tripSteps = 0; this.gainStrain(1); }
+      }
       s.mx = tx; s.my = ty;
       // MONSTERS MOVE WHEN YOU DO — per square, same as microMove.
       this.monsterTurn(); this.animalTurn();
@@ -6747,7 +6873,7 @@
       s.water = s.water || [];
       // WATER HAS MASS. 1L = 1kg against your carry limit — the pack from the
       // pantry UI already gates on this; filling a bottle at a creek must too.
-      // (2026-10-05: wild runs filled 15-20L unboundedly past 20kg with no refusal.)
+      // (2026-10-05: wild runs filled 15-20L unboundedly past capacity with no refusal.)
       if (!this.canCarry(1)) {
         this.say(`Your pack is full — water is heavy (1L = 1kg). Drink some or drop weight before filling.`);
         return null;
@@ -7359,14 +7485,17 @@
       return null;
     },
 
-    // carryCapacity: base 20kg. Abilities, items, and strength boost it.
+    // carryCapacity (Steve 2026-10-06): base 12kg, not 20. Twenty made packing
+    // a non-decision — starter gear plus a full haul never forced a choice.
+    // Twelve is a real day-pack: you feel what you bring, and the haul home
+    // is a genuine constraint. Abilities, items, and strength boost it.
     carryCapacity() {
-      let cap = 20;
+      let cap = 12;
       const s = this.state.scholar;
       // Abilities
       const has = (id) => (s.abilities || []).some(a => a.id === id) || (s.backgroundAbilities || []).some(a => a.id === id);
-      if (has('pack_rat')) cap += 5;
-      if (has('hoarder')) cap += 10;
+      if (has('pack_rat')) cap += 3;
+      if (has('hoarder')) cap += 6;
       // Items: backpacks, etc. (equipped or in inventory)
       for (const item of (s.inventory || [])) {
         const def = this.data.items.find(i => i.id === (item.itemId || item.id));
@@ -7376,6 +7505,53 @@
       const str = (s.stats || {}).str || 5;
       if (str > 5) cap += (str - 5) * 2;
       return cap;
+    },
+
+    // burden: how heavy the pack feels right now. Tiers from the calorie
+    // engine: light / laden / heavy / straining. Weight burns calories.
+    burden() {
+      return S.calories.burdenTier(this.packWeight(), this.carryCapacity());
+    },
+
+    // moveBurn: movement cost scaled by burden. A heavy pack makes every
+    // step cost more — the haul-home loop is the workout. Pure cost math;
+    // strain accrues at the trip level, not per step.
+    moveBurn(base) {
+      const t = this.burden();
+      const scaled = Math.round(base * t.moveMult);
+      // voice: the body complains on committed walks under a heavy pack.
+      // micro-steps (base 2) stay quiet — no narration spam per square.
+      if ((t.name === 'heavy' || t.name === 'straining') && base >= 4) {
+        const lines = [
+          'The pack digs into your shoulders with every step.',
+          'Your legs feel the weight. This is the real work.',
+          'You shift the pack. It doesn\'t help. Keep moving.',
+        ];
+        this.say(lines[Math.floor(Math.random() * lines.length)]);
+      }
+      return scaled;
+    },
+
+    // gainStrain: heavy labor builds the body (Steve 2026-10-06). No XP bar,
+    // no gaminess — your shoulders change because you haul. Enough heavy
+    // work = +1 str (cap 10 via hauling; background can start higher).
+    // You FEEL it before the System quantifies it: narration first, the
+    // capacity number just moves in the pack UI. The stat screen never
+    // explains why — your body isn't a System readout.
+    gainStrain(n) {
+      const s = this.state.scholar;
+      s.strain = (s.strain || 0) + n;
+      if (s.strain >= 30 && ((s.stats || {}).str || 5) < 10) {
+        s.strain = 0;
+        s.stats = s.stats || {};
+        s.stats.str = (s.stats.str || 5) + 1;
+        const lines = [
+          'Something\'s changed. The pack rides higher on your shoulders than it used to — your body has adapted to the hauling.',
+          'You hoist the pack and it feels... lighter. Not the pack. You. Weeks of heavy work have rebuilt your shoulders.',
+          'Your hands find the straps without thinking. The weight that used to slow you is just Tuesday now.',
+        ];
+        this.say('💪 ' + lines[Math.floor(Math.random() * lines.length)]);
+      }
     },
 
     // THEFT IS ALLOWED. Nothing stops your hand — but the village has eyes.
@@ -12220,7 +12396,7 @@
                 bookId: book.id, units: 1, name: book.name, kcalEach: 0,
                 spoilDay: 9999, unit: 'book', prep: 'Read it.', kg: 0.5
               });
-              this.say(`You find a book: "${book.name}". ${book.description}. (Read it from your pack.)`);
+              this.say(`You find a book: "${book.name}" (0.5 kg). ${book.description}. (Read it from your pack.)`);
               // ACTION CLOCK: searching a ruin = 2 chunks (64 ticks) + 100 kcal effort.
               scholar.kcal = Math.max(0, (scholar.kcal || 0) - 100);
               return this.tickAction(64) || this.status();
@@ -12242,7 +12418,7 @@
             const item2 = SCAVENGED.find(s => s.id === lootId2);
             if (item2 && this.canCarry(item2.kg)) {
               scholar.inventory.push({ plantId: lootId2, units: 1, kcalEach: item2.kcal, spoilDay: 9999, name: item2.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item2.kg });
-              this.say(`Scrounger: you spot another — ${item2.name}.`);
+              this.say(`Scrounger: you spot another — ${item2.name} (${item2.kg} kg).`);
             } else if (item2) {
               t.loot.unshift(lootId2); // too heavy, leave it
             }
@@ -12254,11 +12430,11 @@
             const bonus = SCAVENGED.find(x => x.id === bonusId);
             if (bonus && this.canCarry(bonus.kg)) {
               scholar.inventory.push({ plantId: bonusId, units: 1, kcalEach: bonus.kcal, spoilDay: 9999, name: bonus.name, unit: 'can', prep: 'No prep.', kg: bonus.kg });
-              this.say(`Taste vision: behind the loose panel — ${bonus.name}. The walls were right.`);
+              this.say(`Taste vision: behind the loose panel — ${bonus.name} (${bonus.kg} kg). The walls were right.`);
             } else if (bonus) t.loot.unshift(bonusId);
           }
           scholar.kcal -= 100;
-          msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
+          msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal, ${item.kg} kg). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
           this.say(msg);
           this.tele('scavenge', { item: item.name, kcal: item.kcal, lootLeft: t.loot.length, packKg: Math.round(this.packWeight() * 10) / 10 });
           // ACTION CLOCK: searching a ruin = 2 chunks (64 ticks). 100 kcal effort above.
@@ -12421,11 +12597,11 @@
         for (const h of harvested) {
           if (h.cell === 'bush' && Math.random() < 0.3) {
             scholar.inventory.push({ material: 'vine', units: 1, name: 'Vine', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
-            this.say('You also take some vine (crafting material).');
+            this.say('You also take some vine (0.1 kg, crafting material).');
           }
           if ((h.cell === 'tree' || h.cell === 'bigtree') && Math.random() < 0.4) {
             scholar.inventory.push({ material: 'stick', units: 1, name: 'Stick', kcalEach: 0, spoilDay: 9999, kg: 0.2 });
-            this.say('A sturdy stick (crafting material).');
+            this.say('A sturdy stick (0.2 kg, crafting material).');
           }
         }
         // squirrel_friend: sometimes they leave you nuts. Random gifts, real food.
@@ -12453,7 +12629,11 @@
             scholar.inventory.push({ plantId: 'rare_herb', units: 1, kcalEach: 300, spoilDay: scholar.day + 4, name: this.plantKnown('rare_herb') ? rp.name : (rp.description || 'unfamiliar plant'), unit: 'bundle', prep: 'Potent. The Codex is interested.', kg: 0.3 });
           }
         }
-        scholar.kcal -= S.calories.ACTION_COSTS.forage;
+        scholar.kcal -= S.calories.ACTION_COSTS.forage + this.burden().workAdd;
+        // WEIGHT TAXES WORK (Steve 2026-10-06): a heavy pack makes the forage
+        // beat cost more — the haul IS the workout. Sustained heavy labor
+        // builds the body (strain), not just the pantry.
+        if (this.burden().frac >= 0.7) this.gainStrain(2);
         // THE MESSAGE: honest. Named hauls for what you knew; lumps for what
         // you didn't. Blind sweeps say so; deliberate ones feel it.
         const knownBits = [], unknownBits = [];
@@ -12463,15 +12643,19 @@
         }
         // NO SILENT ACTIONS: deadfall is reported too — the pines gave wood,
         // and the player should know the press wasn't wasted.
+        // WEIGHT IS ALWAYS KNOWN (Steve 2026-10-06): the haul's mass is
+        // physical — named or unnamed, you feel the bag get heavier.
+        const haulKg = Object.values(bySpecies).reduce((t, e) => t + (e.units || 0) * 0.1, 0);
+        const haulBit = haulKg > 0 ? ` (+${haulKg.toFixed(1)} kg in the bag)` : '';
         const woodBit = woodSticks ? ` You also gather deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}.` : '';
         if (woodSticks && !knownBits.length && !unknownBits.length) {
           msg = `No food in these trees — but the ground gives deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}. This patch is picked clean — it'll recover in a few days.`;
         } else if (knownBits.length && !unknownBits.length) {
-          msg = `You work the patch with practiced hands: ${knownBits.join(', ')} (${totalKcalKnown} kcal).${woodBit} This patch is picked clean — it'll recover in a few days.`;
+          msg = `You work the patch with practiced hands: ${knownBits.join(', ')} (${totalKcalKnown} kcal)${haulBit}.${woodBit} This patch is picked clean — it'll recover in a few days.`;
         } else if (unknownBits.length && !knownBits.length) {
-          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.)${woodBit} This patch is picked clean — it'll recover in a few days.`;
+          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}${haulBit}. Into the bag, unnamed. (Not food until identified — sort them at camp.)${woodBit} This patch is picked clean — it'll recover in a few days.`;
         } else {
-          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet.${woodBit} This patch is picked clean — it'll recover in a few days.`;
+          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet${haulBit}.${woodBit} This patch is picked clean — it'll recover in a few days.`;
         }
         this.say(msg);
         // discovery labels the place: the map remembers the BEST find here.
@@ -19853,6 +20037,25 @@
             const stp = this.tbStepAway(m, t.mx, t.my, blocked, danger);
             if (stp) { m.mx = stp.x; m.my = stp.y; }
           }
+          // THE PROD (Steve 2026-10-06): a passive player starves it of
+          // observations and the fight stalls — purposeless disengagement.
+          // After 3 watching turns with nothing learned, it comes to find
+          // out: a clumsy improvised shove. (The trap: hitting back is
+          // exactly what it wants — it finally gets to watch.)
+          if (totalSeen === 0) { m.usWatchTurns = (m.usWatchTurns || 0) + 1; } else { m.usWatchTurns = 0; }
+          if ((m.usWatchTurns || 0) >= 3) {
+            m.usWatchTurns = 0;
+            const pd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+            if (pd > 1) {
+              const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+              if (stp) { m.mx = stp.x; m.my = stp.y; }
+            }
+            const prod = 4 + Math.floor(Math.random() * 5);
+            this.say('"Nothing to learn? Then I\'ll make you MOVE." It shoves you, clumsily, improvising. (It is provoking you — every swing you take teaches it.)');
+            this.tbDamage('p', prod, "The Understudy's clumsy shove", m.key, { quiet: true });
+            try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
+            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+          }
           if (!m.usWatchSaid) {
             m.usWatchSaid = true;
             this.say(known ? 'It is watching you fight. Taking notes. In your handwriting. (Attack it — every round it watches, it learns.)'
@@ -20196,12 +20399,13 @@
           // punished slow play and never fired vs a fast kill; now the
           // second act is reachable whenever you plant your feet.)
           const pzStill = m.pzLastPx === t.mx && m.pzLastPy === t.my;
-          m.pzPrediction = Math.min(4, (m.pzPrediction || 0) + (pzStill ? 2 : 1));
-          m.pzLastPx = t.mx; m.pzLastPy = t.my;
-          if (pzStill && !m.pzStillSaid && m.pzPrediction < 4) {
+          const pzBoost = pzStill ? 2 : 1;
+          if (pzStill && !m.pzStillSaid && (m.pzPrediction || 0) < 4) {
             m.pzStillSaid = true;
             this.say('"Hold still. Yes. Just like that." Standing still makes it learn you FASTER. (Prediction climbing double.)');
           }
+          m.pzPrediction = Math.min(4, (m.pzPrediction || 0) + pzBoost);
+          m.pzLastPx = t.mx; m.pzLastPy = t.my;
           // Unavoidable is phase-locked: the money shot, the ⭐ EXCLUSIVE
           // badge, and the paparazzoExclusive sting all land on the same turn.
           const unavoidable = m.beamPhase === 'exclusive';
@@ -20920,7 +21124,8 @@
               // System's confused narration — they announce. The mechanical
               // baseEffect stays hidden until first use (alienLootReveal):
               // "if you don't know, it doesn't show."
-              this.say(`✨ ALIEN LOOT: ${granted.def.name}. ${granted.def.flavor || ''}`);
+                            // Weight, though, is always known (Steve 2026-10-06) — you feel the heft the moment it lands.
+              this.say(`✨ ALIEN LOOT: ${granted.def.name} (${granted.entry.kg} kg). ${granted.def.flavor || ''}`);
             }
           }
         } catch (e) {}
@@ -21112,7 +21317,7 @@
         pantryDays: this.pantryDaysEstimate(),
         waterClean: Math.round((this.state.village.water || {}).clean || 0),
         waterDirty: Math.round((this.state.village.water || {}).dirty || 0),
-        // Weight: everything has mass. Carrying capacity 20kg.
+        // Weight: everything has mass. Carrying capacity scales with body + gear.
         carryKg: (s.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0),
         villageEat: Math.round(this.state.village.lastEat || 800),
         villageGive: Math.round(this.state.village.lastGive || 0),
