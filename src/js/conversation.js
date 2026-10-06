@@ -2093,6 +2093,53 @@
       } else if (choiceId === 'invite_party') {
         const r = (this.inviteToParty && this.inviteToParty(vid)) || { ok: false, msg: '...' };
         done(r.msg || '...', '"Want to come with me?"');
+      } else if (choiceId.indexOf('rumor:tgt:') === 0) {
+        // RUMOR STEP 1: who are we talking about. The listener is in on
+        // the secret — they become the rumor's first hearer. (Fix
+        // 2026-10-06: the thread dangled here with no follow-up choices.)
+        const tid = choiceId.slice('rumor:tgt:'.length);
+        c.rumorTarget = tid;
+        c.thread = 'spread_rumor'; c.depth = 1;
+        done(`"${this.displayName(tid).split(' ')[0]}? Okay. And what's the word — what am I hearing?"`,
+          `"${this.displayName(tid)}."`);
+      } else if (choiceId.indexOf('rumor:type:') === 0) {
+        // RUMOR STEP 2: what's the word. The drama verb completes: the
+        // rumor enters the gossip system WITH the listener as first hearer,
+        // so spreadGossip has a teller and it can actually travel. (Fix
+        // 2026-10-06: heard: [] meant rumors died on arrival.)
+        const type = choiceId.slice('rumor:type:'.length);
+        const rtarget = c.rumorTarget;
+        const tname = this.displayName(rtarget).split(' ')[0];
+        const typeLabels = {
+          stingy: `"${tname}'s been holding back. Keeping the good stuff close."`,
+          untrustworthy: `"Can't trust ${tname}. Watch your back around them."`,
+          generous: `"${tname}'s been generous. Sharing around, no questions asked."`,
+          scheming: `"${tname}'s scheming. Planning something — I can see it."`,
+          coward: `"${tname} froze when it mattered. Coward."`,
+        };
+        const g = this.spreadRumor(rtarget, type, vid);
+        c.rumorDone = true; c.thread = null; c.rumorTarget = null; c.rumorTargets = null;
+        // Sharing a secret is intimate: a little trust, and they remember.
+        const t = this.state.village.trust || {};
+        t[vid] = Math.min(100, (t[vid] || 10) + 2);
+        this.remember(vid, 'you_told_rumor', `${type} about ${this.displayName(rtarget)}`);
+        try { this.socialTick(vid); } catch (e) {}
+        // Reaction in their temperament voice — not a canned pivot.
+        const temp = this.npcTemper(vid);
+        const reacts = {
+          warm: [`"Oh no. Really? ...Thanks for trusting me with that."`],
+          gentle: [`"...That's hard to hear. I'll keep it between us."`],
+          prickly: [`"Huh. Noted. I'll be watching them."`],
+          bold: [`"Interesting. I'll keep my eyes open."`],
+          intense: [`"${tname}? Are you sure? ...Okay. Okay, noted."`],
+          withdrawn: [`"...I won't say who told me."`],
+          cautious: [`"...I didn't hear it from you. Got it."`],
+          dry: [`"Juicy. Filed away."`],
+          restless: [`"Huh — okay, that's worth knowing."`],
+        };
+        const pool = reacts[temp] || [`"Oh? ...I'll keep that in mind."`];
+        done(g ? this.convoPick(vid, 'rumorreact:' + type, pool) : `"Hmm. No one's around to hear that yet."`,
+          typeLabels[type] || `"Word about ${tname}."`);
       } else if (choiceId === 'theorize') {
         // Think TOGETHER. Topic order: the System (if it's here), the monsters,
         // the situation. Each NPC theorizes in their intelligence voice — and
