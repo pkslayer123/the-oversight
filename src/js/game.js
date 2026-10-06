@@ -19951,10 +19951,16 @@
             cells.push({ cx, cy });
           }
           const pzDmg = (m.mdef.attack || {}).damage || [12, 18];
+          const pzP0 = this.tbFighter('p');
           m.telegraph = { kind: 'burst', cells,
             dmg: pzDmg, attackName: this.encAttackName(m, 'Flash Photography'),
             pattern: { type: 'burst' }, turnsLeft: 1,
             unavoidable: unavoidable,
+            // DODGE ACK (Steve 2026-10-06): the generic "Clean dodge" block
+            // needs threatenedPlayer — without it a footwork dodge of the
+            // flash resolved silently. The flash IS dodgeable pre-exclusive,
+            // so the dodge must read.
+            threatenedPlayer: !!(pzP0 && pzP0.alive && cells.some(c => c.cx === pzP0.mx && c.cy === pzP0.my)),
             cueText: cue };
           this.say(cue);
           try { this.audioEvent('paparazzoShutter', { prediction: m.pzPrediction }); } catch (e) {}
