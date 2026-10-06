@@ -12082,7 +12082,8 @@
       html += '<div class="mrow">';
       for (let x = 0; x < 7; x++) {
         const tl = Game.tileAt(x, y);
-        const isP = (x === st.px && y === st.py);
+        const mpp = Game.map || {};
+        const isP = (x === mpp.px && y === mpp.py);
         const seen = Game.mapSeen ? Game.mapSeen(x, y) : (tl.revealed ? 'visited' : null);
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
