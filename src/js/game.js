@@ -54,18 +54,59 @@
     { id: 'can_soup', name: 'Canned soup', kcal: 450, kg: 0.35, text: 'Chicken soup. Tastes like before.' },
     { id: 'jar_peaches', name: 'Jarred peaches', kcal: 700, kg: 0.5, text: 'Home-canned. Whoever sealed this knew what they were doing.' },
   ];
-  // first-visit arrival moments — destinations reveal something
+  // first-visit arrival moments — destinations reveal something.
+  // ARRIVAL POOLS (explorer loop 2026-10-05): one fixed copy per tile type
+  // got monotonous — every forest floor read identically. Each type now has
+  // a small pool; a node rolls its flavor once on first visit and keeps it,
+  // so the map doesn't repeat itself but each place has an identity.
   const ARRIVAL = {
-    forest_floor: { title: 'Under the canopy', text: 'Leaf litter, birdcall, the smell of rot becoming soil. The woods, being the woods.' },
-    grove: { title: 'Nut trees', text: 'Hickories and oaks, heavy with mast. This is a pantry that grows.' },
-    meadow: { title: 'Open ground', text: 'Grasses head-high. Good greens, good visibility, nowhere to hide.' },
-    thicket: { title: 'Thick brush', text: 'Thorns and tangle. Things live in here that don\'t want to be seen.' },
-    wetland: { title: 'Still water, cattails', text: 'Cattails mean starch. Still water means boil it first — the Codex insists.' },
-    creek: { title: 'Moving water', text: 'Cold, clear, moving. The best thing you\'ve seen all day.' },
-    trail_edge: { title: 'An old trail', text: 'Something walked here regularly, before. The path remembers even if no one does.' },
-    ruin: { title: 'Pre-Burn ruin', text: '' }, // ruinStory fills this
-    haven: { title: 'Haven', text: 'Canvas, cookfire, twelve people who are glad you\'re back. Home is a tile on the map like any other — it just matters more.' },
+    forest_floor: { title: 'Under the canopy', texts: [
+      'Leaf litter, birdcall, the smell of rot becoming soil. The woods, being the woods.',
+      'Old growth. The canopy closes overhead and the light comes down in shafts. Something rustled, and decided not to be seen.',
+      'Fallen trunks lie like sleeping animals, furred with moss. The ground gives underfoot — centuries of leaf-mold.',
+      'A woodpecker works somewhere you can\'t see. Down here it smells of mushrooms and cold shade.',
+    ] },
+    grove: { title: 'Nut trees', texts: [
+      'Hickories and oaks, heavy with mast. This is a pantry that grows.',
+      'The trees here fruit on their own schedule. Right now the schedule is generous.',
+      'Mast crunches underfoot — last season\'s nuts, sprouting or rotting. The trees don\'t waste anything.',
+    ] },
+    meadow: { title: 'Open ground', texts: [
+      'Grasses head-high. Good greens, good visibility, nowhere to hide.',
+      'Wind moves through the grass in waves. Seeds catch on your clothes, hitching a ride.',
+      'Open sky for the first time in a while. Hawks circle — something down there is being watched.',
+    ] },
+    thicket: { title: 'Thick brush', texts: [
+      'Thorns and tangle. Things live in here that don\'t want to be seen.',
+      'The brush closes behind you like water. You learn to move sideways, leading with a shoulder.',
+      'Bramble over your head in places. Berries somewhere in the tangle, if you\'re willing to bleed for them.',
+    ] },
+    wetland: { title: 'Still water, cattails', texts: [
+      'Cattails mean starch. Still water means boil it first — the Codex insists.',
+      'Your boots sink and sigh. Frogs go silent in a widening ring around you.',
+      'Standing water, black as tea. Dragonflies stitch the air. Watch where you step — the ground lies.',
+    ] },
+    creek: { title: 'Moving water', texts: [
+      'Cold, clear, moving. The best thing you\'ve seen all day.',
+      'Water over stone, loud enough to cover your noise. You could drink here without announcing it.',
+      'The creek braids around gravel bars. Crawdads flick backward into the shadows of rocks.',
+    ] },
+    trail_edge: { title: 'An old trail', texts: [
+      'Something walked here regularly, before. The path remembers even if no one does.',
+      'The trail is worn smooth as an old coin. Deer, probably. Probably.',
+      'A game trail crosses your path — two toes, heart-shaped, heading for water.',
+    ] },
+    ruin: { title: 'Pre-Burn ruin', texts: [] }, // ruinStory fills this
+    haven: { title: 'Haven', texts: ['Canvas, cookfire, twelve people who are glad you\'re back. Home is a tile on the map like any other — it just matters more.'] },
   };
+  // ruin wall examine: cheap discovery, knowledge sticks. no loot promised.
+  const WALL_EXAMINE = [
+    'The wall stands out of spite. Cinderblock, scorched. Someone built this square and true — you can feel the hands in it.',
+    'Brick, blackened. A window frame with no window. The Burn took the glass and the wires and left the bones.',
+    'Handprints in the concrete — small ones. Kids, from before. You don\'t touch them.',
+    'A doorframe with no door. The threshold is worn smooth by feet that aren\'t coming back.',
+    'Foundation stone, mossy on the north side. Whatever stood here was proud of itself once.',
+  ];
 
   const Game = {
     data: null, state: null, map: null,
@@ -1402,6 +1443,12 @@
       scholar.facing = { x: 0, y: 1 };
       this.state.scholar = scholar;
       this.state.codex = S.state.newCodex();
+      // TREE SPECIES: common trees start known at weak level (L1) — it's common
+      // knowledge. Rare trees start unknown. (Steve 2026-10-05)
+      this.state.codex.trees = this.state.codex.trees || {};
+      for (const sp of ['oak', 'hickory']) {
+        this.state.codex.trees[sp] = { level: 1, learnedDay: 0, via: 'common knowledge' };
+      }
       // KNOWLEDGE TAXONOMY: your occupation IS knowledge. Not flavor — mechanical.
       // An electrician knows circuits. A nurse knows wound care. Day 1, real Codex entries.
       // This is the "background = starting knowledge" principle.
@@ -5647,7 +5694,7 @@
       if (!tile.visited) {
         tile.visited = true;
         const arr = ARRIVAL[tile.type];
-        msg += `\n— ${arr.title} —\n${tile.ruinStory || arr.text}`;
+        msg += `\n— ${arr.title} —\n${tile.ruinStory || this.arrivalTextFor(tile)}`;
         // no free lessons on arrival — the land teaches when you work it, not when you walk in.
       }
       // Walking into fog: the wanderer system (checkEncounter) handles "something is there."
@@ -5732,6 +5779,24 @@
       // (Tuning: if travel feels free, raise the needs tick / energy cost
       // in travelTimeStep. If punishing, lower it. See docs/TIME-ECONOMY.md.)
       this.travelTimeStep();
+    },
+
+    // ARRIVAL POOLS (explorer loop 2026-10-05): one fixed copy per tile type
+    // got monotonous — every forest floor read identically. Each node rolls
+    // its flavor once, on first visit, and keeps it: the map doesn't repeat
+    // itself, but each place has an identity. Ruin tiles keep their generated
+    // ruinStory. Stored on the tile object so revisits and the node card
+    // agree with the arrival log line.
+    arrivalTextFor(tile) {
+      if (!tile) return '';
+      if (tile.type === 'ruin') return tile.ruinStory || '';
+      const arr = ARRIVAL[tile.type];
+      if (!arr) return '';
+      if (!tile.arrivalText) {
+        const pool = (arr.texts && arr.texts.length) ? arr.texts : [''];
+        tile.arrivalText = pool[Math.floor(Math.random() * pool.length)];
+      }
+      return tile.arrivalText;
     },
 
     // travelTimeStep: the world moves while you travel. NPCs take a full
@@ -5823,7 +5888,10 @@
         if (secret && !secret.known) {
           secret.known = true;
           if (mod) mod.known = true;
-          const desc = mod ? `${mod.species}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'a tree';
+          // TREE SPECIES GATING (Steve 2026-10-05): species name only if known.
+          // No hints — unknown trees show generic "tree", not "oak-like".
+          const speciesName = mod ? this.treeName(mod.species) : null;
+          const desc = mod ? `${speciesName || 'a tree'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'a tree';
           if (secret.yield === 0) {
             this.say(`This ${desc}. Nothing to take. You note it — you won\'t waste time here again.`);
             return true;
@@ -5948,6 +6016,23 @@
         }
         return this.doAction('forage', { cx, cy });
       }
+      // RUIN WALLS: pre-Burn bones. Looking is cheap and always says
+      // something — knowledge sticks. (Explorer loop 2026-10-05: ruin walls
+      // were dead taps: no Examine, no interact, total silence in a
+      // discovery tile.) Wild ruin walls only; haven interior walls stay quiet.
+      if (cell === 'wall' && t.type === 'ruin') {
+        const line = WALL_EXAMINE[Math.floor(Math.random() * WALL_EXAMINE.length)];
+        t.secrets = t.secrets || {};
+        if (secret && !secret.known) {
+          secret.known = true;
+          this.say(line);
+          return true;
+        }
+        if (secret && secret.known) { this.say('The same standing wall. You read it already.'); return true; }
+        t.secrets[key] = { known: true };
+        this.say(line);
+        return true;
+      }
       return null;
     },
 
@@ -6029,7 +6114,7 @@
         // wary: freeze, assess. you can feel it deciding.
         if (!a.alerted) {
           a.alerted = true;
-          if (Math.random() < 0.5) this.say(`${this.encCap(aname)} freezes — ears up, deciding about you.`);
+          if (Math.random() < 0.5) this.say(`${this.encCap(aname)} goes still — ears up, deciding about you.`);
         }
         // FOOD REALITY: the wary ones sometimes decide early and bolt.
         // Stalkers (tracker) get closer; the clumsy watch lunch leave.
@@ -9584,6 +9669,11 @@
             (this.state.scholar.inventory || []).some(i => i.kind === 'tent' && (i.units || 0) > 0)) {
           actions.push('Pitch tent');
         }
+      } else if (cell === 'wall' && t.type === 'ruin') {
+        // RUIN WALLS (explorer loop 2026-10-05): dead taps were the explorer's
+        // complaint — a pre-Burn ruin with silent walls. Walls get Examine;
+        // knowledge sticks, looking is cheap, no loot is promised.
+        if (!sec || !sec.known) actions.push('Examine');
       } else if (cell === 'door') {
         // DOORS ARE REAL. This is how you leave the building.
         actions.push('Step outside');
@@ -10489,7 +10579,7 @@
       if (this.wanderer && this.wanderer.x === this.map.px && this.wanderer.y === this.map.py) here.push('⚠ something big is here');
       return {
         type: t.type, title: arr.title, epithet: this.nodeEpithet(this.map.px, this.map.py),
-        text: t.ruinStory || arr.text, here,
+        text: t.ruinStory || this.arrivalTextFor(t), here,
         isRuin: t.type === 'ruin',
         canForage: t.type === 'ruin' ? (t.loot || []).length > 0 : S.forage.canForage(t),
         canTreat: t.type === 'creek' || t.type === 'wetland',
@@ -11581,6 +11671,8 @@
             entry.harvests = (entry.harvests || 0) + 1;
             if (entry.level === 1 && entry.harvests >= 5) {
               entry.level = 2;
+              // L2 includes preparation knowledge — you now know how to prepare it
+              entry.prepKnown = true;
               this.say(`\u2605 Deeper knowledge: ${h.plant.name}. ${h.plant.knowledgeLevels['2']} (Yield +50%). Use unlocked: ${this.plantUsesText(h.plantId) || 'not yet'}.`);
             }
             if (entry.level === 3 && entry.harvests >= 15) {
@@ -11975,6 +12067,23 @@
       if (it.units <= 0) scholar.inventory.splice(idx, 1);
       scholar.energy = Math.min(100, scholar.energy + 5);
       this.say(`You eat the ${it.name}. (+${kcal} kcal)`);
+      // EXPERIENTIAL LEARNING (Steve 2026-10-05): eating teaches you the calories.
+      // You learn preparation (how to eat it) by doing it, even if you don't
+      // know what it is yet. Preparation is a separate track from identification.
+      if (it.plantId) {
+        const entry = this.state.codex.plants[it.plantId] = this.state.codex.plants[it.plantId] || { level: 0, harvests: 0, tastings: 0 };
+        if (!entry.prepKnown) {
+          entry.prepKnown = true;
+          const p = this.data.plants.find(x => x.id === it.plantId);
+          const pname = p ? p.name : it.plantId;
+          // If you don't know what it is, you're honest about it
+          if ((entry.level || 0) < 1) {
+            this.say(`You don't know what it is, but you know it's edible now — and how much it fills you. (${kcal} kcal/${it.unit || 'unit'})`);
+          } else {
+            this.say(`Eating it teaches you: ${pname} gives ${kcal} kcal per ${it.unit || 'unit'}.`);
+          }
+        }
+      }
       // COMBAT: eating from pack costs an action (Steve 2026-10-05)
       if (scholar.monster || this.state.inCombat) {
         this.spendCombatAction('eat');
@@ -14459,6 +14568,12 @@
             if (pp.count <= 0) this._pendingPack = null;
             this.say('Another throat joins the chorus — the pack answers the call.');
             this.audioEvent('belltoadChorus');
+            // UNIQUE SPAWN KEYS (Steve 2026-10-05): Date.now() collides when
+            // two arrivals land in the same millisecond — the live duplicate
+            // shared a key with a corpse, couldn't be targeted, and the fight
+            // soft-locked forever. Per-fight monotonic counter instead.
+            f.spawnSeq = (f.spawnSeq || 0) + 1;
+            const spawnKey = 'm_spawn_' + f.spawnSeq;
             // Spawn the delayed pack members near the existing toad
             const existing = f.fighters.find(x => x.kind === 'monster' && x.mdef && x.mdef.id === pp.id);
             if (existing) {
@@ -14471,7 +14586,7 @@
                 const hpRoll = Array.isArray(hpDef) ? hpDef[0] + Math.random() * (hpDef[1] - hpDef[0]) : (hpDef || 20);
                 const hpInt = Math.round(hpRoll);
                 const newFighter = {
-                  key: 'm' + Date.now() + i,
+                  key: spawnKey,
                   kind: 'monster',
                   mdef: pp.mdef,
                   id: pp.id,
@@ -14501,7 +14616,7 @@
               const hpRoll = Array.isArray(hpDef) ? hpDef[0] + Math.random() * (hpDef[1] - hpDef[0]) : (hpDef || 20);
               const hpInt = Math.round(hpRoll);
               const newFighter = {
-                key: 'm' + Date.now() + '_solo',
+                key: spawnKey + '_solo',
                 kind: 'monster',
                 mdef: pp.mdef,
                 id: pp.id,
@@ -18073,6 +18188,17 @@
       const e = (this.state.codex.plants || {})[pid];
       return (e && e.level) || 0;
     },
+    // TREE SPECIES KNOWLEDGE (Steve 2026-10-05): tree species must be learned.
+    // No hints — unknown trees show generic "tree", not "oak-like". Common trees
+    // (oak, hickory) start at L1 for most survivors — it's common knowledge.
+    treeLevel(species) {
+      const e = (this.state.codex.trees || {})[species];
+      return (e && e.level) || 0;
+    },
+    treeName(species) {
+      // Returns the species name if known, null if not. No hints.
+      return this.treeLevel(species) >= 1 ? species : null;
+    },
     // USES ARE EARNED: every forageable has at least one real use, but
     // uselessness is ignorance, not a property of the plant. L2 unlocks the
     // primary use; L3 unlocks the rest. L0/L1: no uses known.
@@ -18215,8 +18341,17 @@
         const e = this.state.codex.plants[pid];
         if (!p || !e) return null;
         const lvl = e.level || 1;
-        return { pid, name: p.name, level: lvl, kcal: p.caloriesPerUnit, unit: p.unit,
-          prep: p.preparation, text: p.codex, knowledge: (p.knowledgeLevels || {})[String(lvl)] || '',
+        // KCAL GATING (Steve 2026-10-05): kcal requires preparation knowledge,
+        // not just identification. prepKnown is a separate track from level —
+        // you can know HOW to prepare something without knowing WHAT it is.
+        const prepKnown = !!(e.prepKnown || lvl >= 2);
+        return { pid, name: p.name, level: lvl,
+          kcal: prepKnown ? p.caloriesPerUnit : null,
+          kcalKnown: prepKnown,
+          unit: p.unit,
+          prep: prepKnown ? p.preparation : null,
+          prepKnown,
+          text: p.codex, knowledge: (p.knowledgeLevels || {})[String(lvl)] || '',
           uses: this.plantUsesText(pid),
           harvests: e.harvests || 0, tastings: e.tastings || 0 };
       }).filter(Boolean);

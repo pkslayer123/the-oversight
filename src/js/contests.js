@@ -10,6 +10,13 @@
 //   - fireContest(contest)
 //   - resolveContest()
 //   - contestInterruption(contest, participant) -> sequence
+//   - contestKnowledge(contestId) -> {seen,wins,level}
+//   - contestLearn(contestId, outcome)
+//   - _contestDeathLine(contest, how, pname)
+//   - _contestRenderPhase(ac, phase, idx)
+//   - _contestCloserOdds(kind, wounds)
+//   - _cxCoaching(contest)
+//   - _cxPhaseSay(text)
 // rules:
 //   - unlock_day: 14 (code: contestTick, contestEligible)
 //   - weekly_budget: 2 combined contests+shows (code: contestTick)
@@ -20,11 +27,15 @@
 //   - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
 //   - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 //   - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
+//   - single_prefix: phase texts carry their own 📺 prefix; _cxPhaseSay never doubles it (code: _cxPhaseSay, Steve 2026-10-05)
+//   - wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
+//   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 // consumes:
 //   - scholar.day
 //   - state.showBudget
 //   - state.pendingContest
 //   - state.contestsSeen
+//   - state.codex.contests
 // CONTESTS & SHOWS (Steve 2026-10-05)
 // The aliens' flagship is OVERSIGHT. Contests are its teeth. TV shows are its gossip.
 // Both interrupt your life. Neither asks permission.
@@ -345,6 +356,7 @@
           phaseIdx: 0,
           phases: [choicePhase, ...playable],
           variant: contest.variant || null,
+          wounds: 0,
         };
         return this.state.activeContest;
       } else {
@@ -361,10 +373,11 @@
         phaseIdx: 0,
         phases: phases,
         variant: contest.variant || null,
+        wounds: 0,
       };
       if (phases && phases[0]) {
         this.sysSay('📺 ───');
-        this.sysSay('📺 ' + phases[0].text);
+        this._cxPhaseSay(this._contestRenderPhase(this.state.activeContest, phases[0], 0).text);
       }
     } else {
       // You're not in it — you WATCH. Especially if villagers are involved.
@@ -381,10 +394,11 @@
         phaseIdx: 0,
         phases: wphases,
         variant: contest.variant || null,
+        wounds: 0,
       };
       if (wphases && wphases[0]) {
         this.sysSay('📺 ───');
-        this.sysSay('📺 ' + wphases[0].text);
+        this._cxPhaseSay(wphases[0].text);
       }
     }
     
@@ -489,7 +503,7 @@
       medium: 'People have been hurt in this one. Not always.',
       high: 'People die in this one. Regularly.',
       extreme: 'Almost nobody walks away from this one.' }[contest.risk] || '';
-    return `📺 ${contest.name}. ${contest.desc}\n\n${riskLine}\n\nThe lights come up. You can hear the crowd — millions of them, somewhere past the sky.`;
+    return `📺 ${contest.name}. ${contest.desc}\n\n${riskLine}\n\nThe lights come up. You can hear the crowd — millions of them, somewhere past the sky.` + this._cxCoaching(contest);
   };
 
   G._cxWin = function(contest, prizeText) {
@@ -500,6 +514,69 @@
   G._cxLose = function(contest, text) {
     return { text: `📺 ${contest.name} — OVER.\n\n${text || 'You survived. The audience is polite. Polite is worse than booing.'}`,
       choices: [{ label: 'Walk away', sub: 'alive, barely', do: {}, next: 'LOSE' }] };
+  };
+
+  // Phase texts carry their own 📺 prefix (see _cxIntro). Say them as-is;
+  // never stack another 📺 in front (Steve 2026-10-05: double-prefix fix).
+  G._cxPhaseSay = function(text) {
+    this.sysSay(/^📺/.test(text) ? text : ('📺 ' + text));
+  };
+
+  // === CONTEST KNOWLEDGE (Steve 2026-10-05) ===
+  // Surviving, losing, or watching a contest teaches its beats. Knowledge
+  // compounds: doing teaches double. Level 1 = witnessed (in the codex).
+  // Level 2 = know the beats (intro shows coaching — "if you don't know,
+  // it doesn't show" cuts the other way too: earned knowledge IS shown).
+  // Level 3 = veteran: you read the hits coming (contest damage reduced).
+  G.contestKnowledge = function(contestId) {
+    const c = (this.state.codex || {}).contests || {};
+    return c[contestId] || { seen: 0, wins: 0, level: 0 };
+  };
+
+  G.contestLearn = function(contestId, outcome) {
+    // outcome: 'won' | 'lost' | 'died' | 'refused' | 'watched'
+    this.state.codex = this.state.codex || {};
+    this.state.codex.contests = this.state.codex.contests || {};
+    const k = this.state.codex.contests[contestId] || { seen: 0, wins: 0, level: 0 };
+    const did = outcome === 'won' || outcome === 'lost' || outcome === 'died';
+    k.seen += did ? 2 : 1;
+    if (outcome === 'won') k.wins += 1;
+    const lvl = k.seen >= 6 ? 3 : k.seen >= 3 ? 2 : 1;
+    if (lvl > k.level) {
+      k.level = lvl;
+      const cname = (this.contestPool().find(c => c.id === contestId) || {}).name || contestId;
+      if (lvl === 2) this.sysSay(`📚 ${cname}: you know its beats now. The intro will tell you what you've learned.`);
+      if (lvl === 3) this.sysSay(`📚 ${cname}: veteran. You read the hits coming now — the System hates that.`);
+    }
+    this.state.codex.contests[contestId] = k;
+    return k;
+  };
+
+  // Coaching: what level-2+ knowledge actually tells you. Short, real intel —
+  // the kind of thing a survivor would mutter to a first-timer.
+  G._cxCoaching = function(contest) {
+    if (this.contestKnowledge(contest.id).level < 2) return '';
+    const LINES = {
+      pit: 'The beast feints first, commits second. Sand buys a full second. The sidestep wins cleaner than the charge.',
+      gauntlet: "Wave two hits hardest — don't spend everything on wave one. The closer smells blood: arrive hurt and it knows.",
+      duel: 'The drone calls it fast. Mercy plays better than cruelty — unless you mean it.',
+      drop: "Ridge line beats valley. Don't eat the snow. Night movement is a gamble.",
+      starve: 'Sleep through day one. The broth is a trap and the cameras saw you.',
+      moot: 'The audience votes with attention. Confession disarms; the perfect lie wins the moment.',
+      lies: 'The scanner hates hesitation more than lies. Commit to the bit.',
+      cookfight: "Befriend first, wrestle second. The judges have never tasted anything — novelty beats technique.",
+      fetch: 'Weird beats shiny. The story of the thing matters more than the thing.',
+      hide: "Stillness beats speed. It hears running from a mile off.",
+      box: "The chat lies half the time. Trust the pattern you built, not the crowd.",
+      pattern: 'Small bites, right order. Your gut knows before you do.',
+      whoate: "Watch the quiet one. Alibis that almost hold don't.",
+      informant: 'The informant tests the exits early. Watch the doors, not the faces.',
+      calorie_run: 'Deep woods pay double and charge double. The edges are safe and middling.',
+      pantry_raid: "The locals have routines — learn them before you grab. Leave an offering; they'll let you walk.",
+      wheel: "Nothing helps. That's the point. Take it standing.",
+      lottery: "Nothing helps. That's the point. Laugh anyway.",
+    };
+    return '\n\n📚 What you know: ' + (LINES[contest.id] || "You've seen this before. Trust your instincts.");
   };
 
   // --- THE PIT (bespoke, blood) ---
@@ -531,7 +608,7 @@
   G._contestGauntlet = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nThree gates. Three waves. No rest between.\n\nThe System: "WAVE ONE. TRY TO LOOK SURPRISED."\n\nThe first beast is fast and stupid. It wants you tired for what's next.`,
+      { text: intro + `\n\nThree gates. Three waves. No rest between.\n\nThe System: "WAVE ONE. TRY TO LOOK SURPRISED."\n\nThe System adds, almost kindly: "THE CLOSER SMELLS BLOOD, CONTESTANT. ARRIVE HURT AND IT KNOWS."\n\nThe first beast is fast and stupid. It wants you tired for what's next.`,
         choices: [
           { label: 'Kill it fast', sub: 'spend everything', do: { dmg: [10, 20], kcal: -300, note: 'You go all out. It dies quick. You\'re breathing hard already.' }, next: 1 },
           { label: 'Wear it down', sub: 'patient, costly', do: { dmg: [6, 12], kcal: -150, note: 'You let it waste itself on your guard. Slow. Smart. Tiring anyway.' }, next: 1 },
@@ -545,11 +622,50 @@
         ] },
       { text: `WAVE THREE. The gate opens and what comes out is wrong in ways the first two weren't.\n\nThis is the one the Death Reel is for.`,
         choices: [
-          { label: 'Stand and fight', sub: 'the only way out is through', do: { prize: true,  dmg: [25, 45], die: 0.3, note: 'You stand. It comes. The next minute is the longest of your life.' }, next: 'WIN' },
-          { label: 'Run the clock', sub: 'dodge until it tires', do: { prize: true,  dmg: [12, 22], die: 0.12, kcal: -400, note: 'You run. The arena is small and the crowd counts your laps. It tires. You nearly don\'t.' }, next: 'WIN' },
-          { label: 'Offer yourself', sub: 'a different bargain', do: { die: 0.5, note: 'You stop, spread your arms, and offer it something it didn\'t expect: stillness. It hesitates. The System leans in, fascinated.' }, next: 'LOSE' },
+          // CLOSER (Steve 2026-10-05): no flat dice. The closer's kill odds scale
+          // with the wounds you carried in (dieWounds), and the System displays
+          // them — readable danger, earned by how you fought waves 1-2.
+          { label: 'Stand and fight', sub: 'the only way out is through', do: { prize: true,  dmg: [25, 45], dieWounds: 'stand', note: 'You stand. It comes. The next minute is the longest of your life.' }, next: 'WIN' },
+          { label: 'Run the clock', sub: 'dodge until it tires', do: { prize: true,  dmg: [12, 22], dieWounds: 'run', kcal: -400, note: 'You run. The arena is small and the crowd counts your laps. It tires. You nearly don\'t.' }, next: 'WIN' },
+          { label: 'Offer yourself', sub: 'a different bargain — about a coin flip', do: { die: 0.5, note: 'You stop, spread your arms, and offer it something it didn\'t expect: stillness. It hesitates. The System leans in, fascinated.' }, next: 'LOSE' },
         ] },
     ];
+  };
+
+  // GAUNTLET CLOSER (Steve 2026-10-05): the closer smells blood. Death odds
+  // scale with wounds taken during the contest — readable, escalating,
+  // earned. Standing your ground is riskier than running, always.
+  G._contestCloserOdds = function(kind, wounds) {
+    const spec = { stand: [0.08, 0.006, 0.45], run: [0.03, 0.005, 0.30] }[kind] || [0.10, 0.005, 0.40];
+    return Math.min(spec[2], spec[0] + (wounds || 0) * spec[1]);
+  };
+
+  // Render a phase for display. For the Gauntlet closer, append the wound
+  // readout and per-choice death odds — the System displays them, because
+  // it's television and it wants you to know. Identified structurally
+  // (choices carrying dieWounds), so the choice-phase prepend can't shift it.
+  G._contestRenderPhase = function(ac, phase, idx) {
+    if (!phase) return phase;
+    const hasCloser = (phase.choices || []).some(c => c.do && c.do.dieWounds);
+    if (ac.contestId === 'gauntlet' && hasCloser) {
+      const w = ac.wounds || 0;
+      const cond = w >= 45 ? 'You are barely standing. The closer can smell the blood.'
+        : w >= 25 ? 'You are hurt — limping, bleeding, loud. The closer likes that.'
+        : w >= 10 ? 'You are nicked and winded. It could be worse.'
+        : 'You are barely scratched. The closer looks... disappointed.';
+      const text = phase.text +
+        `\n\n📺 ${cond} (Damage taken so far: ${w}.)` +
+        `\n📺 The System helpfully displays your odds. It wants you to know.`;
+      const choices = (phase.choices || []).map(c => {
+        if (c.do && c.do.dieWounds) {
+          const odds = Math.round(this._contestCloserOdds(c.do.dieWounds, w) * 100);
+          return Object.assign({}, c, { sub: `${c.sub} — death odds ~${odds}%` });
+        }
+        return c;
+      });
+      return { text, choices };
+    }
+    return phase;
   };
 
   // --- HIDE AND SEEK (bespoke, weird/extreme) ---
@@ -850,11 +966,27 @@
 
     // Apply effects
     const d = choice.do || {};
+    // Wounds BEFORE this choice resolve — the Gauntlet closer's odds are
+    // computed from what you carried in, so the displayed number is the
+    // number rolled (Steve 2026-10-05: readable danger, no lying odds).
+    const woundsBeforeChoice = ac.wounds || 0;
     if (d.note) { this.sysSay('📺 ' + d.note); log.push(d.note); }
     if (d.dmg) {
-      const amt = d.dmg[0] + Math.floor(Math.random() * (d.dmg[1] - d.dmg[0] + 1));
+      let amt = d.dmg[0] + Math.floor(Math.random() * (d.dmg[1] - d.dmg[0] + 1));
+      // VETERAN (contest knowledge level 3): you read the hits coming.
+      try {
+        const ck = this.contestKnowledge(ac.contestId);
+        if (ck.level >= 3 && amt > 1 && ac.participant === 'player') {
+          const cut = Math.min(amt - 1, Math.max(1, Math.round(amt * 0.25)));
+          amt -= cut;
+          this.sysSay(`📺 You read it coming. (-${cut})`);
+          log.push(`read it coming -${cut}`);
+        }
+      } catch (e) {}
       if (amt > 0) {
         s.health = Math.max(0, (s.health || 0) - amt);
+        // Wounds feed the Gauntlet closer (and anything else that reads them)
+        ac.wounds = (ac.wounds || 0) + amt;
         this.sysSay(`📺 You take ${amt} damage.`);
         log.push(`-${amt} hp`);
       }
@@ -863,7 +995,14 @@
         return this._contestDie(ac, 'The damage was too much.');
       }
     }
-    if (d.die && Math.random() < d.die) {
+    // dieWounds: Gauntlet closer — death odds computed from wounds taken,
+    // not a flat roll (Steve 2026-10-05).
+    let dieChance = d.die || 0;
+    if (d.dieWounds) {
+      dieChance = this._contestCloserOdds(d.dieWounds, woundsBeforeChoice);
+      log.push(`closer odds ${Math.round(dieChance * 100)}% on ${woundsBeforeChoice} wounds`);
+    }
+    if (dieChance > 0 && Math.random() < dieChance) {
       return this._contestDie(ac, choice.label + ' — it went wrong.');
     }
     if (d.heal) {
@@ -893,8 +1032,9 @@
     const np = phases[next];
     if (!np) return this._contestEnd(ac, 'lost', false);
     this.sysSay('📺 ───');
-    this.sysSay('📺 ' + np.text);
-    return { phase: np, log };
+    const rendered = this._contestRenderPhase(ac, np, next);
+    this._cxPhaseSay(rendered.text);
+    return { phase: rendered, log };
   };
 
   G._contestEnd = function(ac, outcome, prize) {
@@ -904,6 +1044,7 @@
     const pname = isWatch ? this.displayName(ac.participant) : 'You';
     ac.phase = 'done';
     if (outcome === 'won') {
+      try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'won'); } catch (e) {}
       if (isWatch) {
         // Villager won — resolve THEIR fate, not the player's
         this.sysSay(`📺 ${contest.name} — ${pname.toUpperCase()} WINS. The crowd is a weather system.`);
@@ -931,6 +1072,7 @@
         s.health = Math.max(1, (s.health || 0) - 5);
       }
     } else {
+      try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'lost'); } catch (e) {}
       if (isWatch) {
         this.sysSay(`📺 ${contest.name} — over. ${pname} survived. The audience is polite.`);
         this.sysSay(`📺 You go to ${pname}. They're quiet. They'll talk about it later. Or never.`);
@@ -945,11 +1087,55 @@
     return { done: true, outcome };
   };
 
+  // BESPOKE DEATH LINES (Steve 2026-10-05): contests must be FEARED. A generic
+  // "did not come home" is placeholder text — every contest kills you in its
+  // own voice. pname is 'You' or a villager name; lines work for both.
+  G._contestDeathLine = function(contest, how, pname) {
+    const you = pname === 'You';
+    const them = you ? 'you' : 'them';
+    const poss = you ? 'Your' : pname + "'s";
+    const LINES = {
+      pit: `${pname} fed the Pit. The beast doesn't celebrate — it eats. The crowd observes four seconds of silence (respect), then the betting opens on the next contestant.`,
+      gauntlet: `${pname} almost cleared the Gauntlet. ALMOST is what the Death Reel is for — it will run the last ten seconds in slow motion, forever.`,
+      duel: `"Not to the death," they said. The ref-drone logs it as an accident. ${poss} opponent doesn't stop shaking for a week.`,
+      drop: `The beacon kept blinking. ${pname} stopped walking toward it a mile out. The snow does the rest — quietly, the way it does for everyone.`,
+      starve: `Day three. ${pname} broke — first, last, all the way. The System notes the exact time of death for the highlight package.`,
+      moot: `The audience voted. The verdict wasn't guilty — it was boring. The System doesn't keep boring contestants. The cameras cut away before it finished.`,
+      lies: `The scanner caught the big one. The audience's delight curdled into something else. The System doesn't like being lied to twice.`,
+      cookfight: `The ingredients stopped fighting back. That's how you know. Dinner is served.`,
+      fetch: `${pname} brought them something interesting. It brought ${them}. The judges award posthumous points for irony.`,
+      hide: `It found ${pname}. It was always going to find ${them}. The "FOUND YOU" sting plays over the part where the running stopped.`,
+      box: `The box is bigger inside than out. There's room in there for one more. The audience finally gets the manual. It doesn't help.`,
+      pattern: `Wrong order. Fifteen seconds of footage. It will outlive everyone who loved ${them}.`,
+      whoate: `${pname} named the wrong name. The real thief is still hungry. The System is merciless with editors — and with wrong answers.`,
+      informant: `${pname} found the exit before finding the liar. The informant sends flowers. The card reads: "Thanks for the cover."`,
+      calorie_run: `${pname} pushed past the safe line for the calories. The forest collected. It always collects.`,
+      pantry_raid: `The locals objected. ${pname} didn't listen. "Bring back food or don't come back" — ${you ? 'you' : 'they'} didn't come back.`,
+      wheel: `The teeth decided. They were very close to ${you ? 'your' : 'their'} name. Then they weren't close at all.`,
+      lottery: `${pname} drew the black token. The audience loves an underdog. This underdog is dead.`,
+    };
+    const CAT = {
+      blood: `${pname} bled out for the cameras. The Death Reel thanks ${them} for the content.`,
+      endurance: `${poss} body filed its last complaint. The System stamps the timecode.`,
+      moot: `The audience has rendered its verdict on ${pname}. There is no appeal. There is only the Reel.`,
+      weird: `${pname} was interesting right up to the end. The judges give full marks. Posthumously.`,
+      puzzle: `${pname} never solved it. The puzzle keeps the pieces. The audience keeps the clip.`,
+      detective: `${pname} got it wrong on camera. Wrong answers have consequences. The Reel has the receipts.`,
+      forage: `The wild took ${pname} as payment. The harvest was good this year.`,
+      chance: `The odds were never with ${pname}. That's what made it television.`,
+    };
+    return LINES[contest.id] || CAT[contest.cat] || `${pname} did not come home from ${contest.name}.`;
+  };
+
   G._contestDie = function(ac, how) {
-    const contest = this.contestPool().find(c => c.id === ac.contestId) || { name: ac.contestId };
+    const contest = this.contestPool().find(c => c.id === ac.contestId) || { name: ac.contestId, id: ac.contestId };
+    const isWatch = ac.participant && ac.participant !== 'player';
+    const pname = isWatch ? this.displayName(ac.participant) : 'You';
     ac.phase = 'done';
     this.sysSay(`📺 ${contest.name} — ${how}`);
+    this.sysSay('📺 ' + this._contestDeathLine(contest, how, pname));
     this.sysSay(`📺 The Death Reel will be tasteful. It won't be.`);
+    try { this.contestLearn(ac.contestId, 'died'); } catch (e) {}
     this.state.activeContest = null;
     try { this.playerDeath('contest'); } catch (e) { this.state.scholar.health = 0; this.state.over = true; }
     return { done: true, outcome: 'died' };
@@ -964,6 +1150,7 @@
     this.addNotability('player', 'showmanship');
     const s = this.state.scholar;
     s.trauma = Math.min(100, (s.trauma || 0) + 5);
+    try { this.contestLearn(ac.contestId, 'refused'); } catch (e) {}
     ac.phase = 'done';
     this.state.activeContest = null;
     return { done: true, outcome: 'refused' };

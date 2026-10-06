@@ -99,7 +99,7 @@ Every villager is a living codex entry. Deepens while they live.
 ### contests (`contests.js`)
 Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama. UNAVOIDABLE — they interrupt whatever you're doing.
 
-**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence
+**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence, contestKnowledge(contestId) -> {seen,wins,level}, contestLearn(contestId, outcome), _contestDeathLine(contest, how, pname), _contestRenderPhase(ac, phase, idx), _contestCloserOdds(kind, wounds), _cxCoaching(contest), _cxPhaseSay(text)
 
 **Rules:**
 - unlock_day: 14 (code: contestTick, contestEligible)
@@ -111,8 +111,11 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
 - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
+- single_prefix: phase texts carry their own 📺 prefix; _cxPhaseSay never doubles it (code: _cxPhaseSay, Steve 2026-10-05)
+- wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
+- contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 
-**Consumes:** scholar.day, state.showBudget, state.pendingContest, state.contestsSeen
+**Consumes:** scholar.day, state.showBudget, state.pendingContest, state.contestsSeen, state.codex.contests
 
 ### conversation (`conversation.js`)
 Real back-and-forth dialogue. Player always has response choices.
