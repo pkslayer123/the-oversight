@@ -10708,7 +10708,7 @@
           <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
           <div class="ord-status">${statusBars(st)}</div>
           <div class="ord-lowermenu">${lowerMenuHTML(st)}</div>
-          ${st.activeQuest ? `<p class="small ord-quest" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
+          ${st.activeQuest ? `<p class="small ord-quest" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text || (st.activeQuest.giverName + ' needs ' + st.activeQuest.qty + ' ' + st.activeQuest.plant + '.'))}</p>` : ''}
           <div class="ord-panel">${panelFor(st, n)}</div>
           <div class="actions ord-codex">
             <button class="btn sm ghost" id="x-codex">${Game.journalName()} (${st.codexCount})</button>
@@ -12232,7 +12232,8 @@
     for (let y = 0; y < 7; y++) {
       html += '<div class="mrow">';
       for (let x = 0; x < 7; x++) {
-        const tl = Game.tileAt(x, y);
+        let tl = null;
+        try { tl = Game.tileAt(x, y); } catch (e) { tl = null; }
         const mpp = Game.map || {};
         const isP = (x === mpp.px && y === mpp.py);
         const seen = Game.mapSeen ? Game.mapSeen(x, y) : (tl.revealed ? 'visited' : null);
