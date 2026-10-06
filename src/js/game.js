@@ -16384,7 +16384,8 @@
     // Mute enforcement choke point. Called at the top of tbPlayerStrike /
     // tbPlayerMove. If the verb is muted AND the player stands inside the
     // suppression field, the attempt is a VIOLATION: the turn is spent, the
-    // violation is logged (+3 to its strikes), and the turn advances.
+    // violation is logged (+3 to its strikes), the player is marked DEFIANT
+    // (no compliance graze on the next Notice), and the turn advances.
     // Returns true when the attempt was consumed as a violation.
     modVerbBlocked(verb) {
       const m = this.modLive(); if (!m) return false;
@@ -16395,8 +16396,15 @@
       if (!this.modPlayerInField(m)) return false;
       const p = this.tbFighter('p'); if (!p) return false;
       m.modViolations = (m.modViolations || 0) + 1;
+      m.modDefiant = true; // defiance voids the compliance graze
       const vLabel = verb === 'strike' ? 'STRIKE' : 'MOVE';
-      this.say(`🚫 ${vLabel} IS MUTED inside the suppression field. Your ${verb === 'strike' ? 'swing dies in your hands' : 'feet refuse the order'} — flagged as a violation. (PRIOR VIOLATIONS: ${m.modViolations} — its Notices hit +${m.modViolations * 3} harder. Step OUT of the purple field.)`);
+      // VERB-AWARE COACHING (Steve 2026-10-06): "step out of the field" is a
+      // lie when MOVE is the muted verb — the attempt to leave IS the
+      // violation. Coach the real escape: flip the mute (strike/wait), then walk.
+      const escape = verb === 'strike'
+        ? 'Step OUT of the purple field, or vary your verbs to flip the mute.'
+        : 'You cannot walk out while MOVE is muted — STRIKE or WAIT to flip the mute, then move.';
+      this.say(`🚫 ${vLabel} IS MUTED inside the suppression field. Your ${verb === 'strike' ? 'swing dies in your hands' : 'feet refuse the order'} — flagged as a violation. (PRIOR VIOLATIONS: ${m.modViolations} — its Notices hit +${m.modViolations * 3} harder. ${escape})`);
       try { this.audioEvent('modViolation', { violations: m.modViolations }); } catch (e) {}
       p.acted = true; p.moveLeft = 0;
       this.tbAfterPlayerAction();
@@ -20102,7 +20110,8 @@
       // works again; vary your verbs to keep the mute chasing the wrong one.
       // At 50% HP it drops the SHADOWBAN: field widens to radius 3, the
       // shadowed ground itself rejects you (2 on entry), Deplatform hits
-      // 22-32, and the mute keeps chasing your most-used verb. The wave-1
+      // 20-28 (14-18 compliant) with a full-round windup — the hammer RISES
+      // before it falls — and the mute keeps chasing your most-used verb. The wave-1
       // answer (dodge the telegraph) fails
       // because the strikes are unavoidable direct — the counterplay is the
       // field and your habits, not your feet.
@@ -20133,11 +20142,20 @@
           const top = this.modTopVerbs(1);
           if (top.join(',') !== (m.modMuted || []).join(',')) {
             m.modMuted = top;
-            const names = top.map(v => v.toUpperCase()).join(' + ');
-            this.say(known
-              ? `🔇 ${names} MUTED inside the suppression field. (It mutes what you lean on — vary your verbs, or step out of the purple.)`
-              : `🔇 The hammer comes down. "${names} — REMOVED FOR VIOLATING COMMUNITY STANDARDS." Your ${top[0] === 'strike' ? 'hands' : 'feet'} feel the rule settle over them — but only inside the circle.`);
-            try { this.audioEvent('modMute', { verbs: top }); } catch (e) {}
+            if (!top.length) {
+              // THE LIFT (Steve 2026-10-06): silence is a verb the algorithm
+              // cannot moderate — enough quiet and it loses the thread. Say
+              // the lift PLAINLY: announcing a lift as a mute is a lie the
+              // player cannot see through (the grid shows no mute either).
+              this.say('The hammer hovers — then lowers. It lost the thread. The mute LIFTS. (Quiet works. Vary your verbs and it keeps losing you.)');
+              try { this.audioEvent('modMute', { lift: true }); } catch (e) {}
+            } else {
+              const names = top.map(v => v.toUpperCase()).join(' + ');
+              this.say(known
+                ? `🔇 ${names} MUTED inside the suppression field. (It mutes what you lean on — vary your verbs, or step out of the purple. Comply with the mute and its Notices GRAZE; defy it and every violation hits +3 harder.)`
+                : `🔇 The hammer comes down. "${names} — REMOVED FOR VIOLATING COMMUNITY STANDARDS." Your ${top[0] === 'strike' ? 'hands' : 'feet'} feel the rule settle over them — but only inside the circle.`);
+              try { this.audioEvent('modMute', { verbs: top }); } catch (e) {}
+            }
           }
         }
         // Project the suppression field — it follows the moderator.
@@ -20154,8 +20172,15 @@
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         // Strike: declare via the generic engine, damage overridden per phase.
+        // COMPLIANCE (Steve 2026-10-06): it is a content moderator — obeying
+        // the mute (no violations since its last Notice) makes the Notice
+        // GRAZE; defying it voids the leniency. The flip game is defense as
+        // well as offense, and going quiet is a real tactic, not a stall.
+        // (Undertale rule: the wacky counter is learning the trick.)
         if (!m.telegraph) {
           const bonus = this.modStrikeBonus(m);
+          const defiant = !!m.modDefiant;
+          m.modDefiant = false; // read-and-clear: one Notice per verdict
           let dmg, cue;
           if (phase === 'observing') {
             dmg = [6, 10];
@@ -20163,17 +20188,24 @@
               : 'It taps you with the flat of the hammer, almost gentle. Taking your measure.';
             try { this.audioEvent('modNoted', {}); } catch (e) {}
           } else if (phase === 'muting') {
-            dmg = [12 + bonus, 18 + bonus];
-            cue = known ? `"REMOVAL NOTICE." The hammer falls${bonus ? ` — PRIOR VIOLATIONS make it hit +${bonus} harder` : ''}. (Unavoidable. The mute is the counterplay, not the dodge.)`
-              : '"YOUR CONTENT HAS BEEN FLAGGED. REMOVAL IMMINENT." There is nowhere the notice does not reach.';
+            dmg = defiant ? [12 + bonus, 18 + bonus] : [8 + bonus, 12 + bonus];
+            cue = known ? `"REMOVAL NOTICE." The hammer falls${bonus ? ` — PRIOR VIOLATIONS make it hit +${bonus} harder` : ''}. (Unavoidable. ${defiant ? 'Defiance noted.' : 'Compliant — it GRAZES.'} The mute is the counterplay, not the dodge.)`
+              : (defiant ? '"YOUR CONTENT HAS BEEN FLAGGED. REMOVAL IMMINENT." There is nowhere the notice does not reach.'
+                         : '"CONTENT ACCEPTABLE... FOR NOW." The hammer falls lighter than it could. It noticed that you noticed the rules.');
             try { this.audioEvent('modRemoval', {}); } catch (e) {}
           } else {
-            dmg = [22 + bonus, 32 + bonus];
-            cue = '"DEPLATFORMED." The hammer comes down like a period at the end of you.';
+            // DEPLATFORM WINDUP (Steve 2026-10-06): the hammer RISES for a
+            // full round before it falls — the apex's tell. The windup round
+            // is the player's to use: reposition, flip the mute, breathe.
+            // The slam itself stays the hardest single hit in the game.
+            dmg = defiant ? [20 + bonus, 28 + bonus] : [14 + bonus, 18 + bonus];
+            cue = defiant ? '"DEPLATFORMED." The hammer RISES — slowly, savoring it. It falls next round. (Nowhere to dodge. The mute is the counterplay, not the dodge.)'
+                          : '"DEPLATFORMED." The hammer rises — lighter than it could. Compliance buys inches, not mercy. (It falls next round.)';
             try { this.audioEvent('modRemoval', { final: true }); } catch (e) {}
           }
           this.encDeclareDirect(m, t, cue);
           m.telegraph.dmg = dmg;
+          if (phase === 'shadowban') m.telegraph.turnsLeft = 2; // the rise before the fall
         }
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }

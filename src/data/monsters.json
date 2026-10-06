@@ -2459,7 +2459,7 @@
     "codexStages": {
       "unknown": "There's a thing in the clearing with a hammer, drawing a circle on the dirt. The circle is purple. It feels like being watched by a rule.",
       "observed": "The System's escalation arm: a content enforcement unit. It stopped grading and started removing. It draws a suppression field (radius 2) and MUTES the verb you use most — strike or move — inside that field. The mute is real: try the verb and your turn is spent, flagged as a violation.",
-      "slain": "Moves: Content Noted (weak ranging chip, 6-10, while it reviews you), Removal Notice (12-18, once it starts muting), Deplatform (22-32 at half HP: the mute keeps chasing your most-used verb, field widens to radius 3, and the shadowed ground itself rejects you for 2). Every violation — every muted verb you attempt — makes its strikes hit +3 harder. The counterplay is the field: step OUT of it and muted verbs work again, and vary your verbs so the mute keeps chasing the wrong one. Parts: banhammer head, your printed violations, its mute button (trophy)."
+      "slain": "Moves: Content Noted (weak ranging chip, 6-10, while it reviews you), Removal Notice (12-18 defiant, 8-12 if you comply with the mute, once it starts muting), Deplatform (20-28 defiant, 14-18 compliant, at half HP: the hammer RISES a full round before it falls — use the windup — the mute keeps chasing your most-used verb, field widens to radius 3, and the shadowed ground itself rejects you for 2). Every violation — every muted verb you attempt — makes its strikes hit +3 harder AND voids the compliance graze. The counterplay is the field and your habits: step OUT of it and muted verbs work again, vary your verbs so the mute keeps chasing the wrong one, and obey the mute to make its Notices graze. Parts: banhammer head, your printed violations, its mute button (trophy)."
     },
     "systemDesignation": "Content enforcement unit (field model)",
     "encounter": {
@@ -2485,14 +2485,14 @@
       "painText": "The hammer dips — then rises higher. \"ESCALATION AUTHORIZED. PRIORITY: MAXIMUM.\" Hurting it only hurries the paperwork.",
       "proximityText": "\"PROXIMITY FLAGGED.\" The circle redraws itself around {who} — the field follows.",
       "comment": "Wave-2 apex encounter. FIFO enforcement unit: suppression field (grid-visible), verb muting (strike/move, most-used first), violation escalation (+3/strike per violation). Counterplay is positional (leave the field) and behavioral (vary verbs).",
-      "knownCue": "It mutes the verb you lean on — strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one."
+      "knownCue": "It mutes the verb you lean on — strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one. Comply with the mute — don't touch the muted verb at all — and its Notices GRAZE (Removal Notice 8-12, Deplatform 14-18). Defy it and they hit full, +3 harder per violation."
     },
     "loot": {
       "chance": 0.2,
       "tier": 4,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Wave-2 apex slot: tier 4 (Steve 2026-10-06)."
     },
-    "armor": 6,
+    "armor": 4,
     "resistances": {
       "psychic": 0.5
     },
