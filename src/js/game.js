@@ -18203,25 +18203,35 @@
           // kill on a flattened lizard. stepToward already takes an
           // avoidCells set, so feed it shade (merged with the shared
           // telegraph-danger set) and the approach routes around shade while
-          // still closing in. If every improving step is shaded it steps in
-          // anyway — better to approach than freeze — and the flatten branch
-          // below is honest about what that costs.
+          // still closing in.
+          // SUNBOUND (Steve 2026-10-06): the avoid set only deprioritizes —
+          // stepToward's fallback still steps into shade when every improving
+          // step is shaded, and the flatten branch then ends the fight for
+          // good (it never leaves shade on its own). "No sun, no fight" cuts
+          // both ways: the sunbasker never VOLUNTARILY leaves the sun to
+          // approach. If the only way in is through shade, it holds its sunny
+          // patch and waits — you come to it, or there is no fight.
           const shadeAvoid = { has: (k) => {
             if (danger && danger.has(k)) return true;
             const c = k.indexOf(',');
             return this.tbInShade(+k.slice(0, c), +k.slice(c + 1));
           } };
+          let sbMoved = false;
           for (let i = 0; i < (m.speed || 3); i++) {
             const dd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
             if (dd <= 1) break;
             const stp = this.tbStepToward(m, t.mx, t.my, blocked, shadeAvoid);
             if (!stp) break;
-            m.mx = stp.x; m.my = stp.y;
+            if (!this.tbInShade(m.mx, m.my) && this.tbInShade(stp.x, stp.y)) break;
+            m.mx = stp.x; m.my = stp.y; sbMoved = true;
           }
-          this.say(this.pickFresh([
+          this.say(sbMoved ? this.pickFresh([
             'A rustle in the grass. Something gold catches the light.',
             'It scuttles sideways, keeping the sun on its back.',
-          ], 'sbStalk'));
+          ], 'sbStalk') : this.pickFresh([
+            'It holds its patch of sun, unwilling to trade light for ground.',
+            'It paces the edge of the shade but will not enter it. The sun is the fight.',
+          ], 'sbHold'));
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         if (!m.telegraph) {
