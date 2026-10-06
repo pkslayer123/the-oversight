@@ -5462,7 +5462,14 @@
         this.state.scholar.inventory.push({ material: 'stone', units: n, name: 'Stone', kcalEach: 0, spoilDay: 9999, kg: 0.3 });
         this.say(`You pocket ${n} good throwing stone${n > 1 ? 's' : ''}. (sling ammo)`);
       } else if (bf.type === 'washed_out') {
-        return this.buildBridge(x, y); // washed out needs a bridge
+        // WASHED OUT (Steve 2026-10-05): if you have wood, build a proper
+        // bridge. If not, you can scramble through with effort — never
+        // leave the player stuck with no options.
+        if (this.woodCount() >= 4) {
+          return this.buildBridge(x, y);
+        }
+        this.state.scholar.kcal = Math.max(0, this.state.scholar.kcal - 80);
+        this.say('You scramble through the washed-out gap, mud to your knees. The path is passable, barely.');
       } else {
         // unknown blockage type: never delete it silently, never eat the work.
         this.say('You can\'t clear that by hand.');
@@ -15930,7 +15937,7 @@
           // (The stag's commitCharge is the same idea via config.)
           if (this.beastIs(m)) {
             this.say('It charges the announced line — exactly where it said it would. Attendance was mandatory.');
-          } else if (ptype !== 'beam' && ptype !== 'line' && !rcfg.commitCharge) {
+          } else if (ptype !== 'beam' && ptype !== 'line' && !rcfg.commitCharge && !tg.commitCells) {
             const foe = S.combat.nearestEnemy(f.fighters, m);
             if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
           }
@@ -16116,7 +16123,10 @@
         // BATCH 1 RHYTHM: the charge/strike lands — and the turn ENDS there.
         // Each beat gets its own turn (boar: the trample; heron: stillness;
         // stag: the mirror again). No resolve-and-redeclare in a single turn.
-        if (this.boarIs(m) || this.stagIs(m) || this.heronIs(m)) return;
+        // (Glasswing/sunbasker: the dive aftermath and charge-spend are the
+        // whole turn — re-entering act-by-pattern would eat the grounded
+        // window and double-bask.)
+        if (this.boarIs(m) || this.stagIs(m) || this.heronIs(m) || this.glasswingIs(m) || this.sunbaskerIs(m)) return;
         // MONSTER BATCH 2: the spent phase must read for a full turn — a
         // post-flash moth, post-chorus toad, or post-hum mouse doesn't act twice.
         if ((this.mothIs(m) || this.toadIs(m) || this.humiceIs(m)) && (m.encCooldown || 0) > 0) return;
@@ -16474,7 +16484,7 @@
           const p0 = this.tbFighter('p');
           m.telegraph = { kind: 'squares', cells: [{ cx: t.mx, cy: t.my }],
             dmg: (m.mdef.attack || {}).damage, attackName: (m.mdef.attack || {}).name,
-            pattern: pat, turnsLeft: 1,
+            pattern: pat, turnsLeft: 1, commitCells: true,
             threatenedPlayer: !!(p0 && p0.alive && p0.mx === t.mx && p0.my === t.my),
             aim: { x: t.mx, y: t.my }, dir: null, aimKey: t.key,
             angle: null, firing: 0, cueText };
