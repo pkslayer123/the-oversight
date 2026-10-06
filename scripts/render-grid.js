@@ -84,7 +84,17 @@ function renderGridSVG() {
   
   const scenario = process.argv[2];
   if (scenario) {
-    Game.debugScenario(scenario);
+    // freshGame() is defined in debug-scenarios.js and sets up Game.state
+    // We need to call it via the scenario, which does it internally
+    const ok = Game.debugScenario(scenario);
+    if (!ok) {
+      console.error('Scenario failed or not found:', scenario);
+      process.exit(1);
+    }
+  } else {
+    console.error('Usage: node scripts/render-grid.js [scenario]');
+    console.log('Available:', Game.debugScenarioList().slice(0, 10).join(', '));
+    process.exit(1);
   }
   
   const svg = renderGridSVG();
