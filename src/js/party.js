@@ -500,6 +500,7 @@
 
     // YOU strike first. The classic MMO move.
     playerAttacks(vid) {
+      if (this.over) return false; // the dead don't start fights
       if (this.tbfight) { this.say('Not in the middle of a fight.'); return false; }
       const v = this.partyState();
       const dname = this.displayName(vid);
@@ -1125,6 +1126,22 @@
         const bname = f.betrayer ? this.displayName(f.betrayer) : 'them';
         if (f.aggressor === 'player') {
           this.say(`It's done. ${bname} is dead. Your hands won't stop shaking.`);
+          // UNSOLVED (Steve 2026-10-06): a killing nobody saw leaves no heat —
+          // the same rule unwitnessed murder follows (justiceHeat: the village
+          // doesn't know, so no heat — the crime stays on the books for the
+          // detective/moot path). The opening 'attack' crime was recorded at
+          // fight start, before witnesses were knowable; if the victim died
+          // unseen, mark it unsolved too. A living victim (yield/flee) tells
+          // everyone themselves — those stay witnessed.
+          try {
+            const seen = f.fighters.some(x => x.kind === 'villager' && x.alive && !x.fled && x.villagerId && x.villagerId !== f.betrayer);
+            if (!seen && f.betrayer) {
+              const j = this.justiceState();
+              for (const c of (j.crimes || [])) {
+                if (c.type === 'attack' && c.victim === f.betrayer && !c.caseId && c.witnessed !== false) c.witnessed = false;
+              }
+            }
+          } catch (e) {}
         } else {
           this.say(`${bname} is down. You survived their knife. Barely feels like winning.`);
         }

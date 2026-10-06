@@ -83,7 +83,10 @@
         const judged = !!c.caseId;
         const w = judged ? 0.5 : 1;
         if (c.type === 'murder') heat += (c.witnessed === false ? 0 : (c.justified ? 15 : 40)) * w;
-        else if (c.type === 'attack') heat += 20 * w;
+        // (Steve 2026-10-06): an attack nobody saw is unsolved like the murder
+        // it opened — the opening 'attack' is marked witnessed:false at tbEnd
+        // when the victim dies unseen (party.js). No heat; stays on the books.
+        else if (c.type === 'attack') heat += (c.witnessed === false ? 0 : 20) * w;
         // theft/intimidation: real heat, but the village can forgive —
         // amends credit wears it down, unlike murder.
         else if (c.type === 'theft') heat += 15 * w;
