@@ -6477,7 +6477,6 @@
       // cook it: rawKcal -> kcalEach (cooked)
       item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult1);
       item.rawKcal = null; // it's cooked now
-      item.needsCooking = false; // cooked — the pack UI must drop the "needs cooking" badge
       item.safe = true; // cooking kills the risk (mostly)
       if (item.needsCooking && cost1 > 0) {
         const spent = this.spendCleanWater(cost1);
@@ -6486,6 +6485,8 @@
       } else {
         this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now.`);
       }
+      item.needsCooking = false; // cooked — the pack UI drops the "needs cooking" badge
+      // (after the water spend above, which keys off needsCooking)
       // ACTION CLOCK: cooking = 1 chunk (32 ticks, tending the fire).
       // A camp pot works faster — proper cookware.
       this.tickAction(hasPot ? 16 : 32);
@@ -6742,7 +6743,9 @@
       this.say(hints[Math.min(fc.attempts - 1, hints.length - 1)]);
       return null;
     },
-    // feedFire: lay another log on a live player-made fire (+192 ticks).
+    // feedFire: lay another branch on a live player-made fire (+64 ticks,
+    // one FIRE_BRANCH_TICKS). A log burns longer (+192). Feeding through the
+    // evening is the survivalist's whole game: the flame has to outlast the dark.
     feedFire(cx, cy) {
       if (this.over) return null;
       this.sweepDeadFires();
