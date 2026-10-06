@@ -10649,8 +10649,9 @@
             if (otherV && Game.villageCard) {
               const card = Game.villageCard(otherV.id);
               if (card) { overlay.classList.add('hidden'); Game.say(card); refresh(); }
-            } else if (tl && tl.revealed) {
-              Game.say(`${S.TILE_GLYPH[tl.type] || '·'} ${tl.type} — ${tl.revealed ? 'explored' : 'unknown'}`);
+            } else if (tl && Game.mapSeen && Game.mapSeen(x, y)) {
+              const how = Game.mapSeen(x, y) === 'shared' ? ' — shown to you by someone' : '';
+              Game.say(`${S.TILE_GLYPH[tl.type] || '·'} ${tl.type}${how}`);
               refresh();
             }
           };
@@ -10685,10 +10686,12 @@
             return;
           }
         }
-        if (!tl.revealed) {
+        const seenHow = Game.mapSeen ? Game.mapSeen(x, y) : null;
+        if (!seenHow) {
           info.innerHTML = `<div class="card"><p>🌫 <b>Unexplored.</b><br><span class="small">No one has been there. Walk to the edge and head out to see what's really there.</span></p></div>`;
         } else {
-          info.innerHTML = `<div class="card"><p>🗺 ${esc(S.TILE_NAME[tl.type] || tl.type)}.<br><span class="small">Walk to the edge of the map to travel there.</span></p></div>`;
+          const via = seenHow === 'shared' ? '<br><span class="small" style="opacity:.7">Someone showed you this ground — you haven\'t walked it yourself.</span>' : '';
+          info.innerHTML = `<div class="card"><p>🗺 ${esc(S.TILE_NAME[tl.type] || tl.type)}.<br><span class="small">Walk to the edge of the map to travel there.</span>${via}</p></div>`;
         }
       };
     });
@@ -11584,15 +11587,17 @@
         // by the cell chain below, making villagers invisible on grass/dirt.)
         let entityHere = false;
         if (isMe) {
-          // DIRECTIONAL MARKER: you are a pulsing ring with a facing wedge.
-          // Facing comes from your last step — the marker shows where you're headed.
-          const f = Game.state.scholar.facing || { x: 0, y: 1 };
-          const ang = Math.round(Math.atan2(f.x, -f.y) * 180 / Math.PI);
-          // PLAYER-COINCIDENT ALERTS (Steve 2026-10-06): a telegraph on your
-          // own tile would hide under the white marker — the marker carries
-          // the ring itself (diveTarget red / sbLockTarget gold, styled below).
+          // YOU ARE A VILLAGER (Steve 2026-10-06): no special marker, no
+          // arrow, no pulsing ring. You find yourself the way you find
+          // anyone else — by recognizing your own face. Telegraph alerts
+          // (diveTarget/sbLockTarget) still ring the token: danger is
+          // danger, not a "you are here" sign.
           const _alert = tgPlayerAlertClasses(_tg, _gwDive, pmx, pmy).join(' ');
-          g = `<span class="pmark${_alert ? ' ' + _alert : ''}" data-ent="me"><span class="ptoken">🧑</span><span class="pdir" style="transform:rotate(${ang}deg)">▲</span></span>`;
+          const meVp = Game.data.villagers.find(v => v.id === Game.villagerId) || (Game.data.background_survivors || []).find(v => v.id === Game.villagerId);
+          const _mspr = villagerSpriteHtml(meVp);
+          const meKnown = true; // you know your own name
+          const meName = meKnown && meVp ? meVp.name.split(' ')[0] : '';
+          g = `<span class="vent${_alert ? ' ' + _alert : ''}" data-ent="me"><span class="vtoken">${_mspr || '🧍'}</span>` + (meName ? `<span class="vname">${esc(meName)}</span>` : '') + `</span>`;
           cls += ' me';
           entityHere = true;
         }
@@ -11984,18 +11989,25 @@
    you). diveTarget: warning red (glasswing dive shadow on you). diveTarget
    is listed after, so the red wins when both coincide (the dive landing is
    the more urgent read; the gold tile fill still shows underneath). */
-.cell.me .pmark.sbLockTarget::before {
-  border: 3px solid #ffd34d;
+.cell.me .vent.sbLockTarget::before {
+  content: ''; position: absolute; inset: -2px;
+  border: 3px solid #ffd34d; border-radius: 50%;
   box-shadow: 0 0 14px rgba(255,211,77,.95), inset 0 0 8px rgba(255,211,77,.55);
-  animation-duration: .7s;
+  animation: ppulse .7s ease-in-out infinite; pointer-events: none;
 }
-.cell.me .pmark.diveTarget::before {
-  border: 3px solid #ff2d2d;
+.cell.me .vent.diveTarget::before {
+  content: ''; position: absolute; inset: -2px;
+  border: 3px solid #ff2d2d; border-radius: 50%;
   box-shadow: 0 0 14px rgba(255,45,45,.95), inset 0 0 8px rgba(255,45,45,.55);
-  animation-duration: .55s;
+  animation: ppulse .55s ease-in-out infinite; pointer-events: none;
+}
+.cell.me .vent.diveTarget, .cell.me .vent.sbLockTarget { position: relative; }
+@keyframes ppulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .6; transform: scale(.92); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cell.me .pmark.diveTarget::before, .cell.me .pmark.sbLockTarget::before { animation: none; }
+  .cell.me .vent.diveTarget::before, .cell.me .vent.sbLockTarget::before { animation: none; }
 }
 </style>`;
     return html;
@@ -12054,26 +12066,46 @@
 
   function renderMap(st, tset) {
     let html = '';
+    // PLAYER PERSON (Steve 2026-10-06): you render as your villager sprite —
+    // like any villager. No marker, no arrow, no "you are here". You find
+    // yourself by recognizing your own face.
+    let meVp = null, meSpr = '';
+    try {
+      meVp = Game.data.villagers.find(v => v.id === Game.villagerId) || (Game.data.background_survivors || []).find(v => v.id === Game.villagerId);
+      meSpr = villagerSpriteHtml(meVp);
+    } catch (e) {}
+    // SVG TILE SCENES (Steve 2026-10-06): tiles render as miniature scenes
+    // when the module is loaded; glyph fallback otherwise.
+    const TS = (typeof Scattering !== 'undefined' && Scattering.TileScenes) || null;
     for (let y = 0; y < 7; y++) {
       html += '<div class="mrow">';
       for (let x = 0; x < 7; x++) {
         const tl = Game.tileAt(x, y);
         const isP = (x === st.px && y === st.py);
-        const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && tl.revealed;
+        const seen = Game.mapSeen ? Game.mapSeen(x, y) : (tl.revealed ? 'visited' : null);
+        const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
-        const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && tl.revealed) ? ' spent' : '');
-        const pathCls = (tl.wornPath && tl.revealed) ? 'worn-path' : '';
-        const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '');
+        const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
+        const pathCls = (tl.wornPath && seen) ? 'worn-path' : '';
+        const shrCls = seen === 'shared' ? ' shared' : '';
+        const cls = 'tile' + (seen ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '') + shrCls;
         // other villages: show 🏘️ if generated (you've been near)
         const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
-        // PLAYER MARKER (Steve 2026-10-05, enhanced 2026-10-06): always show YOU
-        // clearly, even on fog. The old code showed the tile glyph which could
-        // hide you. 2026-10-06: playtester couldn't find herself — the small
-        // cyan arrow on green was low-contrast. Now: bold white arrow, larger.
-        const g = isP ? '📍' : isW ? '🐗' : otherV ? '🏘️' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
-        const pf = Game.state.scholar.facing || { x: 0, y: 1 };
-        const pang = Math.round(Math.atan2(pf.x, -pf.y) * 180 / Math.PI);
-        html += `<div class="${cls}" data-x="${x}" data-y="${y}"${isP ? ' data-you="1" aria-label="You are here"' : ''}>${isP ? `<span class="mface youface" style="transform:rotate(${pang}deg)">➤</span>` : g}</div>`;
+        let g;
+        if (isP) {
+          g = meSpr ? `<span class="mface msprite">${meSpr}</span>` : '🧍';
+        } else if (!seen) {
+          g = ''; // FOG OF WAR (Steve 2026-10-06): unvisited is blank, not '?'.
+        } else if (isW) {
+          g = '🐗';
+        } else if (otherV) {
+          g = '🏘️';
+        } else if (TS) {
+          try { g = TS.svgFor(x, y, { seen }); } catch (e) { g = S.TILE_GLYPH[tl.type]; }
+        } else {
+          g = S.TILE_GLYPH[tl.type];
+        }
+        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
       }
       html += '</div>';
     }
@@ -12163,6 +12195,37 @@
     return head + `<p class="small">${esc(el.reason || "The show isn't casting yet.")}</p>`;
   }
 
+  // VILLAGE MAP (Steve 2026-10-06): the codex keeps the VILLAGE's
+  // cumulative map — everywhere anyone has been and shared. Union of every
+  // villager's visited tiles plus your own seen tiles. This is the shared
+  // knowledge surface; your personal map may know less.
+  function villageMapSection() {
+    try {
+      const seen = {};
+      const mark = (k) => { seen[k] = 1; };
+      const st = Game.state.scholar || {};
+      for (const k of Object.keys(st.seenTiles || {})) mark(k);
+      const all = (Game.data.villagers || []).concat(Game.data.background_survivors || []);
+      for (const vp of all) for (const k of (vp.visitedTiles || [])) mark(k);
+      const n = Object.keys(seen).length;
+      if (!n) return '';
+      let cells = '';
+      for (let y = 0; y < 7; y++) {
+        cells += '<div class="mrow">';
+        for (let x = 0; x < 7; x++) {
+          const k = x + ',' + y;
+          const tl = Game.tileAt(x, y);
+          const mine = st.seenTiles && st.seenTiles[k];
+          cells += `<div class="tile${seen[k] ? '' : ' fog'}" title="${seen[k] ? esc((S.TILE_NAME || {})[tl.type] || tl.type) : 'unknown'}">${seen[k] ? (S.TILE_GLYPH[tl.type] || '·') : ''}</div>`;
+        }
+        cells += '</div>';
+      }
+      return `<h1 class="title" style="font-size:18px">MAPS</h1>
+        <p class="small"><i>everywhere the village has walked, pooled together. ${n} place${n === 1 ? '' : 's'} known.</i></p>
+        <div class="map minimap" style="margin:8px 0">${cells}</div>`;
+    } catch (e) { return ''; }
+  }
+
   function codexScreen() {
     const entries = Game.codexEntries();
     const inprog = Game.codexInProgress();
@@ -12180,6 +12243,7 @@
       ${bar('scattering://codex', entries.length + ' entries')}
       <h1 class="title" style="font-size:22px">${Game.journalName().toUpperCase()}</h1>
       <p class="small"><i>${Game.journalName() === 'Codex' ? 'the village keeps what you write. the System is watching.' : 'field journal — your handwriting. what you learned, so far just yours.'}</i></p>
+      ${villageMapSection()}
       ${entries.length ? entries.map(e => `
         <div class="card codex"><h3>${e.wrongAs ? esc(e.wrongAs) + ' <span class="small" style="opacity:.6">(as taught)</span>' : e.name} <span class="small">· ${e.kcalKnown ? `${e.kcal} kcal/${e.unit}` : `<i>kcal unknown — learn preparation</i>`}</span> <span class="small" style="opacity:.7">[${LVL[e.level] || 'L1'}]</span></h3>
         ${e.contested ? `<p class="small" style="color:#e8a13c"><b>⚠ Disputed:</b> ${esc(e.contested.byName)} insists this is <b>${esc(e.contested.claim)}</b> — you know it's ${esc(e.name)}.${e.contested.deliberate ? ' (You think they knew better.)' : ''}</p>` : ''}

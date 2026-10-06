@@ -86,21 +86,8 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 }
 .tile.fog { color: #1c241c; background: #0d120d; border-color: #141a14; }
 .tile.me { color: var(--bg); background: var(--acc); font-weight: bold; }
-/* WORLD MAP PLAYER (Steve 2026-10-06): the playtester couldn't find herself.
-   The flat green square blended into grass tiles. Now: white-hot outline that
-   breathes + glow, impossible to miss at a glance on mobile. Distinct from
-   .dest (opacity pulse) and .beast (red border). */
-.minimap .tile.me {
-  outline: 3px solid #fff; outline-offset: -3px;
-  box-shadow: 0 0 14px var(--acc), 0 0 4px #fff;
-  animation: mepulse 1.1s ease-in-out infinite;
-  position: relative; z-index: 2;
-  opacity: 1 !important;
-}
-@keyframes mepulse {
-  0%, 100% { box-shadow: 0 0 14px var(--acc), 0 0 4px #fff; outline-color: #fff; }
-  50% { box-shadow: 0 0 22px var(--acc), 0 0 10px #fff; outline-color: var(--acc); }
-}
+/* (world-map player outline removed Steve 2026-10-06: no "you are here"
+   marker — you render as your villager sprite, like anyone else.) */
 .tile.beast { color: var(--bad); border-color: var(--bad); animation: pulse 1.6s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 .tile.move { border-color: var(--acc); color: var(--acc); }
@@ -251,9 +238,6 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 @keyframes chargePulse { from { outline-color: #ffd23f; } to { outline-color: #ff9f1c; } }
 /* LINE: straight line — clean red line */
 .cell.lineCells { outline: 2px solid #e71d36; outline-offset: -2px; background-color: rgba(231, 29, 54, .22); }
-/* AIRBORNE (Steve 2026-10-06): high flyers show a small ▲ under the emoji —
-   observable, never knowledge-gated. */
-.cell .airbadge { display: block; font-size: 9px; line-height: 1; margin-top: -4px; color: #9adcff; text-shadow: 0 0 4px rgba(0,0,0,.9); }
 /* SINGLE: target tile — crosshair, one tile */
 .cell.targetTile { outline: 3px solid #ff3b30; outline-offset: -3px; background-color: rgba(255, 59, 48, .3); animation: targetBlink 0.5s infinite alternate; }
 @keyframes targetBlink { from { outline-color: #ff3b30; } to { outline-color: #ff8a80; } }
@@ -346,47 +330,21 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .cell.c-fire { background: #3a1a0d; }
 .cell.c-tent { background: #1f2a1f; }
 .cell.c-rubble { background: #2b2b26; }
-.cell.me {
-  outline: 3px solid #4df3ff; outline-offset: -3px; position: relative; z-index: 2;
-  background: radial-gradient(circle, rgba(77,243,255,.35) 0%, rgba(77,243,255,.08) 75%) !important;
-  box-shadow: 0 0 12px rgba(77,243,255,.55);
-}
-.cell.me .pmark {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
-}
-.cell.me .pmark::before {
-  content: ''; position: absolute; inset: 0;
-  border: 3px solid #4df3ff; border-radius: 50%;
-  box-shadow: 0 0 10px #4df3ff, inset 0 0 6px rgba(77,243,255,.6);
-  animation: ppulse 1.1s ease-in-out infinite;
-}
-.cell.me .ptoken {
-  font-size: 1.15em; line-height: 1;
-  filter: drop-shadow(0 0 4px #4df3ff);
-}
-.cell.me .pdir {
-  position: absolute; top: -.67em; left: 50%;
-  margin-left: -.5em; font-size: 1em; color: #fff;
-  text-shadow: 0 0 6px #4df3ff, 0 0 2px #000; line-height: 1;
-  transform-origin: .5em 1.33em;
-}
-@keyframes ppulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: .6; transform: scale(.9); }
-}
+/* (player marker removed Steve 2026-10-06: you render as your villager
+   sprite, like anyone else. .cell.me remains as a telegraph hook only.) */
+.cell.me .vent.diveTarget, .cell.me .vent.sbLockTarget { position: relative; }
 .minimap .tile .mface {
   display: inline-block; font-size: 1.05em; color: #4df3ff;
   text-shadow: 0 0 3px #000; line-height: 1;
 }
-/* WORLD MAP YOU-ARE-HERE (Steve 2026-10-06): the facing arrow on your tile
-   is now big, white, and high-contrast — not the small cyan one that
-   vanished against the green background. */
-.minimap .tile .mface.youface {
-  font-size: 1.5em; color: #fff; font-weight: 900;
-  text-shadow: 0 0 4px #000, 0 0 8px #000, 0 1px 2px #000;
-}
+/* PLAYER ON THE WORLD MAP (Steve 2026-10-06): your villager sprite, no marker.
+   Same size language as villager tokens on the grid. */
+.minimap .tile .mface.msprite { display: inline-block; width: 1.5em; height: 1.5em; vertical-align: middle; }
+.minimap .tile .mface.msprite .vsprite { display: inline-block; width: 100%; height: 100%; }
+.minimap .tile .mface.msprite .vsprite svg.sprite { width: 100%; height: 100%; display: block; }
+/* SHARED TILES (Steve 2026-10-06): ground someone showed you, not ground
+   you've walked. Slightly muted — secondhand knowledge looks secondhand. */
+.minimap .tile.shared { filter: saturate(.55) brightness(.82); }
 /* inline tile panel: context actions without leaving the world */
 .tilepanel {
   border: 1px solid var(--line); border-left: 3px solid #4df3ff;

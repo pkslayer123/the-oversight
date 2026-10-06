@@ -29,6 +29,9 @@
 //   - kcalCap() (delegates to food.js)
 //   - hydrateSeed(seed) -> full person (unified person system: seed -> genCharacter depth)
 //   - getPerson(id) -> person | null (unified lookup: villagers + hydrated seeds)
+//   - markSeen(x, y, kind, by), mapSeen(x, y) -> 'visited'|'shared'|null (player map knowledge: fog of war display)
+//   - seedVillagerMaps() (every villager gets visitedTiles: haven + nearby)
+//   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge)
 // rules:
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
@@ -38,6 +41,8 @@
 //   - moderator_phases: observing -> muting -> shadowban (code: tbMonsterTurn)
 //   - multitile_occupancy: size 2 = 2x2 block, mx,my is top-left (code: fighterTiles)
 //   - multitile_validation: all tiles walkable before each move (code: tbCanOccupy)
+//   - map_is_seen_only: world map displays only visited + map-shared tiles; unvisited renders blank (code: mapSeen, Steve 2026-10-06)
+//   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
 //   - sleep_heal_bunk: 35 (code: sleepPreview)
@@ -1712,6 +1717,11 @@
         this.state.village.taught[rid] = plantsByFamiliarity(tags).slice(0, tierCount[tier] || 1);
       }
       const scholar = S.state.newScholar(this.villagerId);
+      // MAP KNOWLEDGE (Steve 2026-10-06): you start knowing only home.
+      // The world map fills in as you walk it or compare maps with people.
+      // (Seeded after genMap below — this.map doesn't exist yet here.)
+      scholar.seenTiles = {};
+      this.state.scholar = scholar;
       // BETTER HUMAN (Steve 2026-10-05): background sets your starting stats.
       // You were someone before the scattering — that body remembers.
       try {
@@ -1830,6 +1840,12 @@
       this.wipe();
       this.genMap();
       this.genVillages();
+      // MAP KNOWLEDGE (Steve 2026-10-06): the map starts showing only home.
+      // Walk tiles or compare maps with villagers to fill it in.
+      try {
+        this.markSeen(this.map.px, this.map.py, 'visited');
+        this.seedVillagerMaps();
+      } catch (e) {}
       this.say('Haven. Twelve people. The fire is lit.');
       // BARREN HAVEN FIX: a new player must understand within minutes that
       // food is OUT THERE. A villager says it; the journal keeps it.
@@ -5870,6 +5886,62 @@
     tileAt(x, y) { return this.map.tiles[y][x]; },
     playerTile() { return this.tileAt(this.map.px, this.map.py); },
 
+    // MAP KNOWLEDGE (Steve 2026-10-06): the world map shows ONLY what the
+    // player has seen — tiles they've stood on, plus tiles learned by
+    // comparing maps with villagers. Separate from tile.revealed, which
+    // drives travel mechanics. seenTiles: "x,y" -> {k:'v'|'s', by}.
+    markSeen(x, y, kind, by) {
+      try {
+        const s = this.state.scholar;
+        s.seenTiles = s.seenTiles || {};
+        const k = x + ',' + y;
+        const cur = s.seenTiles[k];
+        if (!cur || (cur.k === 's' && kind === 'visited')) s.seenTiles[k] = { k: kind === 'visited' ? 'v' : 's', by: by || null };
+      } catch (e) {}
+    },
+    mapSeen(x, y) {
+      try {
+        const e = (this.state.scholar.seenTiles || {})[x + ',' + y];
+        return e ? (e.k === 'v' ? 'visited' : 'shared') : null;
+      } catch (e) { return null; }
+    },
+    // VILLAGER MAPS (Steve 2026-10-06): everyone has been somewhere.
+    // Villagers' visited tiles seed their life experience — haven plus a
+    // few nearby tiles. Comparing maps merges theirs into yours.
+    seedVillagerMaps() {
+      try {
+        const v = this.state.village;
+        const hx = (v && v.px !== undefined) ? v.px : 3, hy = (v && v.py !== undefined) ? v.py : 3;
+        const all = (this.data.villagers || []).concat(this.data.background_survivors || []);
+        for (const vp of all) {
+          if (vp.visitedTiles && vp.visitedTiles.length) continue;
+          const set = new Set([hx + ',' + hy]);
+          const n = 2 + Math.floor(Math.random() * 4);
+          for (let i = 0; i < n; i++) {
+            const x = Math.max(0, Math.min(6, hx + Math.floor(Math.random() * 5) - 2));
+            const y = Math.max(0, Math.min(6, hy + Math.floor(Math.random() * 5) - 2));
+            set.add(x + ',' + y);
+          }
+          vp.visitedTiles = [...set];
+        }
+      } catch (e) {}
+    },
+    // COMPARE MAPS (Steve 2026-10-06): a conversation action. Their visited
+    // tiles become your shared knowledge. Returns new tile count.
+    compareMaps(vid) {
+      let added = 0;
+      try {
+        const vp = (this.data.villagers || []).find(v => v.id === vid) || (this.data.background_survivors || []).find(v => v.id === vid) || {};
+        if (!vp.visitedTiles || !vp.visitedTiles.length) this.seedVillagerMaps();
+        const mine = this.state.scholar.seenTiles || {};
+        for (const k of (vp.visitedTiles || [])) {
+          if (!mine[k]) { mine[k] = { k: 's', by: vid }; added++; }
+        }
+        this.state.scholar.seenTiles = mine;
+      } catch (e) {}
+      return { newCount: added };
+    },
+
     // HAVEN STORES ACCESS (Steve 2026-10-04): the pantry, caches, and village
     // stash are PHYSICAL. You use them with your hands, inside the hall — not
     // by thinking about them from the treeline. Returns 'inside' (in the
@@ -6211,6 +6283,7 @@
       this.map.px = x; this.map.py = y;
       this.state.scholar.facing = { x: odx || 0, y: ody || 1 };
       this.reveal(x, y);
+      this.markSeen(x, y, 'visited');
       const tile = this.playerTile();
       // NODE TRAVEL IS FREE (Steve 2026-10-05): crossing a node boundary is
       // just walking. The steps to reach the edge already cost. No extra

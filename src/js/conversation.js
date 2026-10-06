@@ -9,6 +9,7 @@
 //   - convoSpeakBackChoice(vid, suppressPivot)
 //   - convoUI() -> {active, transcript, choices}
 // rules:
+//   - compare_maps: choiceId 'compare_maps' merges their visited tiles into your shared map knowledge (code: convoTurn, via Game.compareMaps)
 //   - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
 //   - one_beat_turns: a choice yields exactly one new THEM beat; follow-ons queue in c.heldBeats and surface as a voiced continuer ('goon', convoMoreLabel per person/mood/thread); unspoken beats die when the player moves on (code: conversation.js convoTurn, Steve 2026-10-05)
 //   - tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length; lands on their reply, not your echoed line (code: app.js chatChoice, Steve 2026-10-05)
@@ -1567,6 +1568,21 @@
                     '"I\'ve done this before. Let me."'],
           },
         },
+        compare_maps: {
+          tier: {
+            new: ['"Can we compare maps? Show me where you\'ve been."',
+                  '"I\'m trying to learn this ground. Where have you walked?"'],
+            warm: ['"Let\'s compare maps — I want to see what you\'ve seen."',
+                   '"Show me your ground. I\'ll show you mine."'],
+            close: ['"Maps. Yours, mine, let\'s put them together."',
+                    '"Walk me through where you\'ve been. All of it."'],
+          },
+          voice: {
+            blunt: ['"Maps. Compare. Go."'],
+            soft: ['"Would you mind — could we look at maps together?"'],
+            dry: ['"Cartography time. You bring the landmarks."'],
+          },
+        },
         trade: {
           tier: {
             new: ['"You know things. I know things. Shall we trade?"'],
@@ -1927,6 +1943,12 @@
       const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
         theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
       if (!onThread && theorizeOpen && topicsLeft.length && choices.length < MAXC && !suppressPivot) choices.push({ id: 'theorize', label: this.convoActionLabel(vid, 'theorize') });
+      // COMPARE MAPS (Steve 2026-10-06): "show me where you've been." A
+      // pre-System social action — their visited tiles become your shared
+      // map knowledge. Practical, not intimate: low gate.
+      if (!onThread && choices.length < MAXC && !suppressPivot && (effTrust >= 15 || convoCount >= 1)) {
+        choices.push({ id: 'compare_maps', label: this.convoActionLabel(vid, 'compare_maps') });
+      }
       // WATCH THEM: the detective's tool. Spend time observing — behavior may
       // contradict story. Available once you've talked enough to have a baseline
       // (2nd conversation+), or if you already have doubts about them.
@@ -2585,6 +2607,33 @@
         const tcur = tt[vid] || 10;
         if (tcur < 40) tt[vid] = Math.min(40, tcur + 2);
         done(line, '"What do you think is actually going on here?"');
+      } else if (choiceId === 'compare_maps') {
+        // COMPARE MAPS (Steve 2026-10-06): their visited tiles become your
+        // shared map knowledge. Voiced by the villager — some people draw
+        // in the dirt, some people just point and talk.
+        const cmp = this.compareMaps(vid);
+        const vp = this.vpOf(vid);
+        const vname = (vp && vp.name ? vp.name.split(' ')[0] : 'They');
+        let line;
+        if (cmp.newCount > 0) {
+          const spots = [
+            `"Here — and here." ${vname} sketches in the dirt with a stick, quick sure lines. "Don't go there after rain. And this one's worth the walk."`,
+            `"I've been all through here." A finger traces routes you haven't walked. "The ground's different than it looks from far off. Now you know."`,
+            `${vname} talks you through their ground — where the path holds, where it doesn't, what's worth seeing. Your map grows by ${cmp.newCount} place${cmp.newCount === 1 ? '' : 's'}.`,
+          ];
+          line = this.convoPick(vid, 'maps:shared', spots);
+        } else {
+          const spots = [
+            `"Huh. We've walked the same ground, you and I." ${vname} shrugs. "Nothing new on mine."`,
+            `"Let me see... no, you've got everything I've got. We're even."`,
+          ];
+          line = this.convoPick(vid, 'maps:nonenew', spots);
+        }
+        // Sharing ground is trust-building — practical intimacy.
+        const tt = this.state.village.trust || {};
+        const tcur = tt[vid] || 10;
+        if (tcur < 40) tt[vid] = Math.min(40, tcur + 1);
+        done(line, '"Can we compare maps?"');
       } else if (choiceId === 'agree') {
         // Reactive-aware: "You're right" IS an answer to a direct question.
         const rrA = c.reactiveQ && REACTIVE_DEFS[c.reactiveQ.id];
