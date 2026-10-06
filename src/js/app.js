@@ -163,7 +163,7 @@
       // PHASE BADGE (Steve): unearned specialness is stripped. The badge only
       // shows once the codex knows the pattern — discovered, not announced.
       const known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : false;
-      const phase = (known && Game.deerPhaseBadge) ? Game.deerPhaseBadge(m) : '';
+      const phase = (known && Game.encPhaseBadge) ? Game.encPhaseBadge(m) : '';
       // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
       // knowledge, just like the phase badge. First encounter: no warning
       // symbols — just beam visuals + audio dread.
@@ -7057,6 +7057,12 @@
     // zone. Should a future ambush monster declare with cells, `out[ptype] ||
     // out.single` below falls back to the targetTile highlight (no crash).
     const out = { burst: new Set(), charge: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), beam: new Set() };
+    // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity — which
+    // monster each telegraph cell belongs to, so the grid can render each
+    // monster's attack in its own visual voice (mirror-shimmer, projected
+    // grid, flashbulbs, voice-ripple). Knowledge-gated like the rest.
+    out.mon = {};
+    const W2A_IDS = { mirror_stag: 1, review_drone: 1, camera_swarm: 1, voice_mimic_radio: 1 };
     try {
       const f = Game.tbfight;
       if (!f) return out;
@@ -7070,18 +7076,23 @@
           known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : true;
         } catch (e) {}
         if (!known) continue;
+        const mid = (m.mdef || {}).id;
+        const w2a = W2A_IDS[mid];
         const targetSet = out[ptype] || out.single;
         if (tg.kind === 'direct' && tg.targetKey) {
           const tgt = (f.fighters || []).find(x => x.key === tg.targetKey);
           if (tgt) {
-            out.direct.add(tgt.mx + ',' + tgt.my);
+            const k = tgt.mx + ',' + tgt.my;
+            out.direct.add(k);
+            if (w2a) out.mon[k] = mid;
           }
         } else if (tg.cells && tg.cells.length) {
           for (const c of tg.cells) {
             const k = c.cx + ',' + c.cy;
             // Don't double-add beam cells (they have their own renderer)
-            if (ptype === 'beam') continue;
+            if (ptype === 'beam') { if (w2a) out.mon[k] = mid; continue; }
             targetSet.add(k);
+            if (w2a) out.mon[k] = mid;
           }
         }
       }
@@ -7287,6 +7298,16 @@
           (_tg.rush.has(_k) ? ' rushIndicator' : '');
         // (no ambushZone: the speedbump's snap is no-warning by design —
         // see tbAllTelegraphCells note. Steve 2026-10-06)
+        // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity.
+        // Each of the four tricksters renders its attack in its own visual
+        // voice, layered over the pattern class above. Knowledge-gated: the
+        // mon map is only populated once the pattern is learned.
+        const _w2aMon = (_tg.mon || {})[_k];
+        const _w2aCls =
+          (_w2aMon === 'mirror_stag' ? ' w2aStag' : '') +
+          (_w2aMon === 'review_drone' ? ' w2aDrone' : '') +
+          (_w2aMon === 'camera_swarm' ? ' w2aSwarm' : '') +
+          (_w2aMon === 'voice_mimic_radio' ? ' w2aStatic' : '');
         // GLASSWING TRAP SHADOW: the target tile darkens with turns
         // (faint → darker → almost black); splash tiles get a light mark.
         // Inline styles keep this in app.js (no CSS file touch).
@@ -7316,10 +7337,35 @@
           _cfStyle = 'box-shadow:inset 0 0 0 999px rgba(120,255,170,0.16);outline:2px solid rgba(120,255,170,0.55);outline-offset:-2px';
           _cfCls = ' cftell';
         }
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_gwCls}${_cfCls}"${(_gwStyle || _cfStyle) ? ` style="${[_gwStyle, _cfStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_w2aCls}${_gwCls}${_cfCls}"${(_gwStyle || _cfStyle) ? ` style="${[_gwStyle, _cfStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }
+    // WAVE 2 GROUP A telegraph voices (Steve 2026-10-06): per-monster visual
+    // identity, layered over the generic pattern classes. Injected here (not
+    // main.css) to keep the tricksters' render additions in app.js.
+    //  w2aStag: mirror-shimmer lane — pale glass, not the bulldozer's hazard stripes.
+    //  w2aDrone: projected grid — cyan dotted, the beam is a presentation.
+    //  w2aSwarm: flashbulbs — white strobe on the burst.
+    //  w2aStatic: voice-ripple — violet pulse on the lock-on.
+    html += `<style>
+.cell.w2aStag { outline: 2px solid #bfe9ff !important; outline-offset: -2px;
+  background: linear-gradient(135deg, rgba(191,233,255,.30), rgba(191,233,255,.08) 50%, rgba(191,233,255,.30)) !important;
+  animation: w2aShimmer 1.1s infinite alternate; }
+@keyframes w2aShimmer { from { filter: brightness(1.0); } to { filter: brightness(1.5); } }
+.cell.beamLane.w2aDrone { outline: 2px dotted #4df3ff !important; outline-offset: -2px;
+  background-color: rgba(77,243,255,.16) !important; animation: w2aProject 0.7s infinite alternate; }
+@keyframes w2aProject { from { filter: brightness(1.0); } to { filter: brightness(1.35); } }
+.cell.w2aSwarm { outline: 2px solid #ffffff !important; outline-offset: -2px;
+  background-color: rgba(255,255,255,.30) !important; animation: w2aStrobe 0.32s infinite alternate; }
+@keyframes w2aStrobe { from { filter: brightness(1.6); } to { filter: brightness(2.4); } }
+.cell.w2aStatic { outline: 2px solid #b388ff !important; outline-offset: -2px;
+  box-shadow: inset 0 0 14px rgba(179,136,255,.55) !important; animation: w2aRipple 0.9s infinite alternate; }
+@keyframes w2aRipple { from { filter: brightness(1.0); } to { filter: brightness(1.4); } }
+@media (prefers-reduced-motion: reduce) {
+  .cell.w2aStag, .cell.beamLane.w2aDrone, .cell.w2aSwarm, .cell.w2aStatic { animation: none; }
+}
+</style>`;
     return html;
   }
 
