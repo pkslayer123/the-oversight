@@ -51,12 +51,13 @@
 //   - recast_dead: countdown outlives contestant → each missing contestant recast from living eligible, or cancelled if no one is left (code: resolveContest, Steve 2026-10-06)
 //   - multi_take: contest.participants count is REAL — the System takes that many people at once (more taken = more FEARED); pc.participants[] carried fire->resolve->interruption (code: fireContest, resolveContest, contestInterruption, Steve 2026-10-06)
 //   - others_fates: villagers taken alongside the player get their own off-screen contests — rolled at the player's sequence end, can win/lose/die (code: _contestResolveOthers, _contestEnd, _contestDie, _contestRefuse, Steve 2026-10-06)
+//   - bespoke_death_lines: every contest kills in its own voice — the generic fallback is placeholder text, not doctrine (code: _contestDeathLine, Steve 2026-10-05); price/impress/exchange/auction lines added 2026-10-06
 //   - death_is_real: contest deaths remove the villager from the roster via _cxKillContestant (removeVillager is an unhooked no-op wrapper; the old else-fallback never ran) (code: _cxKillContestant, _contestDie, _contestResolveOthers, Steve 2026-10-06)
 //   - watcher_agency: watch choices have real consequences — cheer moves win odds (+5%/+10% veteran, cap +15%, cameras notice), study teaches, bets are real kcal (2x payout on the first taken), comfort lands as trust/mourning (code: _contestWatchPhases, contestChoose, _contestVerdict, Steve 2026-10-06)
 //   - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 //   - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 //   - watched_deaths: watch verdict rolls risk-scaled death — villagers can die on camera (code: _contestVerdict, Steve 2026-10-06)
-//   - watch_beats_specific: each contest gets its own 3 watch beats (setup/turn/ending) — the fiction of THAT contest, not generic filler; veteran watchers get a coaching line (code: _contestWatchBeat, _contestWatchPhases, Steve 2026-10-06)
+//   - watch_beats_specific: each contest gets its own 3 watch beats (setup/turn/ending) — the fiction of THAT contest, not generic filler; veteran watchers get a coaching line (code: _contestWatchBeat, _contestWatchPhases, Steve 2026-10-06); price/impress/exchange/auction beats added — generic fallback no longer reachable by any pool contest (code: _contestWatchBeat T table, Steve 2026-10-06)
 //   - single_prefix: phase texts carry their own 📺 prefix; _cxPhaseSay never doubles it (code: _cxPhaseSay, Steve 2026-10-05)
 //   - wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
@@ -66,7 +67,7 @@
 //   - risk_rebalance_20261006: HIGH RISK rebalance — brave choices now usually kill (~50% death across full aggressive runs), smart choices live but cost heavily. Pit aggressive: 0.08/0.12 -> 0.20/0.30. Hide: 0.20/0.18/0.25 -> 0.32/0.25/0.38. Siege/hold: 0.20 -> 0.30. Rewards NOT nerfed — high risk justifies high reward (code: contestChoose die odds, Steve 2026-10-06)
 //   - pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
 //   - pool_expansion_20261006b: the four smallest pools (puzzle/detective/forage/chance, 3 each) each gain a bespoke variant — sorting (conveyor triage), witness (fabrication hunt), cache (audit heist), longodds (push-your-luck dice). NOT reskins: sorting is triage-under-time not Q&A (riddle); witness is forgery-forensics not liar-hunting (informant); cache is hiding not gathering (calorie_run); longodds is stakes-escalation not pure draw (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
-//   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06)
+//   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06); price/impress/exchange/auction beats now resolve (justiceVerdict+exileWalk, levelup+contestSpared, contestCall+rushHit, contestCall+horrorSting) — were silent no-ops (code: CX_BEAT_DEFS, Steve 2026-10-06)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 // consumes:
 //   - scholar.day
@@ -900,6 +901,14 @@
     contestCache: ['contestTaken', 'exileWalk'],
     // The Long Odds: the table — game-show call under the dice slam.
     contestDice: ['contestCall', 'rushHit'],
+    // The Price: the village decides — the moot's verdict over receding footsteps.
+    contestPrice: ['justiceVerdict', 'exileWalk'],
+    // Impress Us: something new is felt — an unlock over relief's shadow.
+    contestImpress: ['levelup', 'contestSpared'],
+    // The Exchange: the relay — the game-show call under pounding feet.
+    contestExchange: ['contestCall', 'rushHit'],
+    // The Auction: the cruelest show — the call curdles into dread.
+    contestAuction: ['contestCall', 'horrorSting'],
   };
   G._cxBeat = function(name) {
     try {
@@ -2018,7 +2027,7 @@
         text: intro + `\n\nThe System auctions three lots of alien tech. Currency: memories, years of life, body parts. Your choice.\n\n"ALL BIDS ARE FINAL," the auctioneer says. "ALL BIDDERS PAY. WINNER TAKES THE LOT."\n\nThe crowd leans in. This is the cruelest show. Everyone loves it.`,
         choices: [
           { label: 'Bid a memory', sub: 'the summer afternoon', do: { trauma: 8, note: 'You bid the summer afternoon — the whole thing. The auctioneer tastes it, nods. "A FINE VINTAGE." You remember remembering it. The shape is gone.' }, next: 1 },
-          { label: 'Bid years', sub: 'two years', do: { dmg: [0, 0], note: 'You bid two years of your life. The auctioneer marks it. You feel... lighter. Shorter. The crowd gasps — years are the serious currency.', notability: 'highroller' }, next: 1 },
+          { label: 'Bid years', sub: 'two years', do: { trauma: 10, note: 'You bid two years of your life. The auctioneer marks it. You feel... lighter. Shorter. The crowd gasps — years are the serious currency.', notability: 'highroller' }, next: 1 },
           { label: 'Bid small', sub: 'a finger', do: { dmg: [8, 14], note: 'You bid a finger. The auctioneer examines it. "ACCEPTABLE." The crowd winces in seventeen languages. You are now the kind of person who bids fingers.', notability: 'hardcore' }, next: 1 },
         ] },
       { beat: 'contestAuction',
@@ -2292,6 +2301,10 @@
       witness: `${pname} named the wrong witness. The village armed against a monster that never came, and the real one walked in through the unguarded treeline. The System kept the footage. It always keeps the footage.`,
       cache: `The drone didn't miss. ${pname} is a tax the village couldn't afford. The cache made it home, though. That's something. It's not enough.`,
       longodds: `${pname} went all in on the last roll. The dice landed wrong. The champion bowed — a real bow, almost respectful. The house always collects.`,
+      price: `${pname} walked up willingly — or the village's vote did the walking. The System named its price and collected. The village will argue about that vote for a generation. It won't bring ${them} back.`,
+      impress: `${pname} gave the judges something new. They logged it carefully — seventeen new emotions — and kept the receipt. The galaxy applauds. ${poss} village buries what's left of the performance.`,
+      exchange: `The lit gate stayed lit. ${pname} stopped running a hundred yards out — the badlands collected. Gray Hollow took the leg, and the tithe. The village runs the replay anyway. It always will.`,
+      auction: `The hammer fell and ${pname} was the price. Everything bid — memories, years, parts — was already gone before the end. The lot went to someone else. The System keeps the ledger. The village keeps the silence.`,
     };
     const CAT = {
       blood: `${pname} bled out for the cameras. The Death Reel thanks ${them} for the content.`,
@@ -2575,6 +2588,31 @@
         turn: p => `📺 The Long Odds — down two. The champion hasn't stopped smiling.\n\n${p} is deciding how much of themselves to push into the middle. The crowd has opinions. The crowd is very loud about them.`,
         end: p => `📺 The Long Odds — the last roll. Everything ${p} staked is in the middle of the table, and the dice are in the air.\n\nThe champion is watching the dice. For the first time tonight, it is not smiling.`,
         knows: p => `📚 You've sat at that table. The dice are fair; the champion isn't — it reads hesitation the way the scanner reads lies. Commit to the bit.`,
+      },
+      // --- NEW STYLES (Steve 2026-10-06) ---
+      price: {
+        setup: p => `📺 The Price. ${p} has been taken.\n\nThe System's voice, almost gentle: "ONE OF YOU. FOR THE SEASON. THE VILLAGE CHOOSES. YOU HAVE UNTIL DUSK."\n\nThe cameras pull back. The whole village is looking at each other. Nobody is looking at ${p}. Yet.`,
+        turn: p => `📺 The Price — the debate is vicious and televised. Alliances form and break in real time.\n\n${p}'s name is on the short list. The System is taking notes on who argues for whom — it finds loyalty fascinating and doomed. The village is screaming at itself, and you are part of the screaming.`,
+        end: p => `📺 The Price — dusk. The System calls for the name.\n\nThe envelope is opened. The cameras push in. The whole village holds one breath. Whatever name is in that envelope, the village will have to live next to the people who voted for it.`,
+        knows: p => `📚 You've seen the Price before. Volunteering is the only move that doesn't fracture the village. If ${p} walks up willingly, the System respects it — and the village never forgets it.`,
+      },
+      impress: {
+        setup: p => `📺 Impress Us. ${p} has been taken.\n\nFive aliens. They have catalogued 40,000 emotions across the galaxy.\n\n"IMPRESS US," they say. "WE HAVE FELT EVERYTHING."\n\n${p} stands alone under the lights, thinking. You have never seen anyone look so small and so interesting at once.`,
+        turn: p => `📺 Impress Us — ${p} is doing... something. The judges are conferring in frequencies that make your teeth ache.\n\n"WE DO NOT UNDERSTAND," the lead judge says. It sounds frustrated. Curious. The translator gives up on the nuance. The audience is leaning in. Nobody has ever confused the judges before.`,
+        end: p => `📺 Impress Us — the final offering. The judges are changed; you can see it in the way they hold themselves.\n\n"ONE MORE," they say. "SOMETHING ONLY THEY COULD GIVE."\n\nThe whole village leans forward with the audience. Whatever ${p} gives next, it can't be taken back.`,
+        knows: p => `📚 You've watched this one before. They've felt everything except being human. The winners don't perform — they offer the thing they'd never show anyone. That's the only currency the judges don't have.`,
+      },
+      exchange: {
+        setup: p => `📺 The Exchange. ${p} has been taken — one of three runners.\n\nYour village against Gray Hollow. A relay through the badlands — three legs, no rules about what runs between the markers. Losers tithe a season of food.\n\nThe cameras split three ways. Every eye in the village is on your team's feed.`,
+        turn: p => `📺 The Exchange — mid-race. Gray Hollow is ahead — their runner is fast and fearless and slightly inhuman, which the System insists is legal.\n\n${p} is running like the village is watching. It is. Both villages are at the barriers, screaming each other's names. The gap is closing. Or opening. The cameras won't say.`,
+        end: p => `📺 The Exchange — final leg. Neck and neck. The finish is a lit gate.\n\nThis is the part they'll replay for years. ${p} is running like the world is ending. It isn't, but the season's food might as well be.`,
+        knows: p => `📚 You've run this one before. Gray Hollow always fades late — they run proud, not patient. The steady runner passes them at the line. The shortcut through the nest works once, for the cameras, and never again.`,
+      },
+      auction: {
+        setup: p => `📺 The Auction. ${p} has been taken.\n\nThe System auctions three lots of alien tech. Currency: memories, years of life, body parts.\n\n"ALL BIDS ARE FINAL," the auctioneer says. "ALL BIDDERS PAY. WINNER TAKES THE LOT."\n\nThe crowd leans in. This is the cruelest show. Everyone loves it. ${p} is already doing the math of what they're willing to lose.`,
+        turn: p => `📺 The Auction — bidding war. A Gray Hollow contestant just bid their childhood. Someone else bid a lung (they have two, they point out, which is technically true).\n\nThe lots are extraordinary. The prices are obscene. The audience is euphoric. ${p}'s hand is hovering. You want to shout at them to stop. You can't.`,
+        end: p => `📺 The Auction — final lot. The hammer is raised. Everything bid so far is already gone — paid, taken, consumed.\n\nThis is the last chance. The tech on the block could change the village's winter. ${p} is deciding what they're worth. The whole village is doing the same math, and hating it.`,
+        knows: p => `📚 You've sat through this auction before. The auctioneer can smell bluff but the rules bind it anyway. The winners are the ones who knew their price before the hammer — not the ones who found it during the bidding.`,
       },
     };
     const b = T[contest.id];
