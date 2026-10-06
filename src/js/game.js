@@ -1581,6 +1581,7 @@
       // One registry, one lookup — no more villagers-vs-background_survivors split.
       // The hydrateSeed fills in backstory, traits, languages, goals, etc. using
       // the same pools and logic as genCharacter. Seed identity is authoritative.
+      this.state.village.rosterChars = this.state.village.rosterChars || {};
       for (const id of bg) {
         const seed = (this.data.background_survivors || []).find(s => s.id === id);
         if (seed) {
@@ -1594,7 +1595,7 @@
         }
       }
       // persist the generated cast (they don't exist in the JSON — the save carries them)
-      this.state.village.rosterChars = {};
+      // (rosterChars already initialized above; hydrated seeds are in there too)
       for (const c of this.generatedRoster) this.state.village.rosterChars[c.id] = c;
       // who has met whom: language barriers are discovered in conversation, not listed
       this.state.village.met = {};
@@ -6804,10 +6805,9 @@
       if (!item) return null;
       const def = this.data.items.find(i => i.id === (item.itemId || item.id));
       if (!def) return null;
-      // validate slot
+      // validate slot (EQUIPMENT 2026-10-06: body-part slots + misc)
       if (slot === 'weapon' && def.class !== 'weapon') { this.say('That\'s not a weapon.'); return null; }
       if (slot === 'armor' && !def.armor) { this.say('That\'s not armor.'); return null; }
-      // validate slot (EQUIPMENT 2026-10-06: body-part slots + misc)
       try {
         if (S.equipment) {
           const wantSlot = S.equipment.slotForItem(def);
@@ -6820,6 +6820,7 @@
             this.say("You can't wear that there.");
             return null;
           }
+          // full set anchors on torso
           if (S.equipment.isFullSet(def.id) && slot !== 'torso' && slot !== 'armor') {
             this.say('That covers everything — wear it as your armor.');
             return null;
@@ -6848,11 +6849,13 @@
       this.state.scholar.inventory.splice(itemIdx, 1);
       this.say(`Equipped ${def.name} (${slot}).`);
       // EQUIPMENT (Steve 2026-10-06): the set-vs-pieces crossover moment.
+      // When your fitted pieces start beating the full set, you feel it.
       try {
         if (S.equipment) {
           const sch = this.state.scholar;
           S.equipment.migrateEquipment(sch);
           const v = { equipped: sch.equipped || {}, items: (sch.inventory || []).map(i => i.itemId || i.id) };
+          // include equipped items in the pool for comparison
           for (const s of Object.values(v.equipped)) if (s && s.itemId) v.items.push(s.itemId);
           const cmp = S.equipment.compareSetVsPieces(v, this.data.items);
           const wasSet = sch._gearWinner || 'none';
@@ -6887,10 +6890,11 @@
         if (S.equipment) {
           const sch = this.state.scholar || {};
           S.equipment.migrateEquipment(sch);
+          // build a villager-shaped view for armorOf
           const v = { equipped: sch.equipped || {} };
           let bonus = S.equipment.armorOf(v, this.data.items);
-          const flat0 = this.modTarget('armor.flat', 0);
-          if (flat0 > 0) bonus += flat0;
+          const flat = this.modTarget('armor.flat', 0);
+          if (flat > 0) bonus += flat;
           return bonus;
         }
       } catch (e) {}
