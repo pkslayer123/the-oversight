@@ -12115,9 +12115,9 @@
         } else if (otherV) {
           g = '🏘️';
         } else if (TS) {
-          try { g = TS.svgFor(x, y, { seen }); } catch (e) { g = S.TILE_GLYPH[tl.type]; }
+          try { g = TS.svgFor(x, y, { seen }) || (S.TILE_GLYPH[tl.type] || '·'); } catch (e) { g = S.TILE_GLYPH[tl.type] || '·'; }
         } else {
-          g = S.TILE_GLYPH[tl.type];
+          g = S.TILE_GLYPH[tl.type] || '·';
         }
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
       }
