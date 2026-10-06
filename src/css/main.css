@@ -251,6 +251,9 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 @keyframes chargePulse { from { outline-color: #ffd23f; } to { outline-color: #ff9f1c; } }
 /* LINE: straight line — clean red line */
 .cell.lineCells { outline: 2px solid #e71d36; outline-offset: -2px; background-color: rgba(231, 29, 54, .22); }
+/* AIRBORNE (Steve 2026-10-06): high flyers show a small ▲ under the emoji —
+   observable, never knowledge-gated. */
+.cell .airbadge { display: block; font-size: 9px; line-height: 1; margin-top: -4px; color: #9adcff; text-shadow: 0 0 4px rgba(0,0,0,.9); }
 /* SINGLE: target tile — crosshair, one tile */
 .cell.targetTile { outline: 3px solid #ff3b30; outline-offset: -3px; background-color: rgba(255, 59, 48, .3); animation: targetBlink 0.5s infinite alternate; }
 @keyframes targetBlink { from { outline-color: #ff3b30; } to { outline-color: #ff8a80; } }

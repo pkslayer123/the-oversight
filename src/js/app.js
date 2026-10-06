@@ -11653,7 +11653,10 @@
               // tile-to-tile instead of teleporting them on re-render.
               // INDISTINCT (Steve 2026-10-05): creatures render the same whether
               // monster or animal — the emoji shows what it looks like, not what it is.
-              g = `<span data-ent="creature:${esc(mf.monsterId || mf.mdef && mf.mdef.id || ('tb' + _mfi))}">${esc(mf.emoji || '👹')}</span>`;
+              // AIRBORNE (Steve 2026-10-06): high flyers read as airborne on the
+              // grid — a small ▲ under the emoji. Observable, never gated.
+              const _air = (typeof Game.flyerAirborne === 'function' && Game.flyerAirborne(mf));
+              g = `<span data-ent="creature:${esc(mf.monsterId || mf.mdef && mf.mdef.id || ('tb' + _mfi))}">${esc(mf.emoji || '👹')}${_air ? '<span class="airbadge">▲</span>' : ''}</span>`;
               cls += ' creature';
               drawn = true; break;
             }
@@ -11661,7 +11664,8 @@
           if (!drawn && mon && !_inside && cx === mon.mx && cy === mon.my) {
             const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
             // INDISTINCT (Steve 2026-10-05): same 'creature' class as animals
-            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${esc(mdef.emoji || '👹')}</span>`;
+            const _wair = !!(mdef && mdef.flight);
+            g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${esc(mdef.emoji || '👹')}${_wair ? '<span class="airbadge">▲</span>' : ''}</span>`;
             cls += ' creature'; drawn = true;
           }
           if (!drawn && ani && cx === ani.mx && cy === ani.my) {

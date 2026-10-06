@@ -10913,9 +10913,13 @@
         if (line) { this.say(line); m.cueCd = 5; }
       };
       const detail = this.genDetail(this.map.px, this.map.py);
+      // FLIGHT (Steve 2026-10-06): flyers ignore terrain blocking in the
+      // world too — trees and walls are scenery from the air.
+      const mIsFlyer = !!mdef.flight;
       const mv = (dx, dy) => {
         const nx = m.mx + dx, ny = m.my + dy;
         if (nx < 0 || nx > 8 || ny < 0 || ny > 8) return false;
+        if (mIsFlyer) { m.mx = nx; m.my = ny; return true; }
         const cell = detail[ny] && detail[ny][nx];
         if (cell && !this.cellProps(cell).blocks) { m.mx = nx; m.my = ny; return true; }
         return false;
@@ -14255,6 +14259,37 @@
               this.say('(It dives at where you STAND — the shadow is the warning. Move when it grows. It can\'t turn mid-dive.)');
             }
             this.audioEvent('glasswingCircle');
+          } else if (this.nevermoreIs(mo)) {
+            // NEVERMORE: first contact is dread, not a lecture. A crow that
+            // watches too long — the coaching only lands once the pattern is
+            // earned (codex observed/slain). First-timers learn by doing.
+            mo.beamPhase = 'perch'; mo.altitude = 'high'; mo.nmGrounded = 0;
+            this.say('A crow on the treeline. Watching. It has been watching for some time — and it has not blinked.');
+            const nmstage = (this.ensureMonsterEntry('nevermore') || {}).stage;
+            if (nmstage === 'observed' || nmstage === 'slain') {
+              this.say('(It strafes a straight lane — the SHADOW is the warning. Step OFF the lane, not along it. It always lands after a run.)');
+            }
+            this.audioEvent('nevermoreCroak');
+          } else if (this.nightcourtIs(mo)) {
+            // NIGHTCOURT: first contact is dread, not a lecture. No wingsound
+            // — the coaching only lands once the pattern is earned.
+            mo.beamPhase = 'roost'; mo.altitude = 'high'; mo.ncGrounded = 0;
+            this.say('Two eyes, forward-facing, unblinking. No wingsound. Owls don\'t make sound when they hunt — that\'s the problem.');
+            const ncstage = (this.ensureMonsterEntry('nightcourt') || {}).stage;
+            if (ncstage === 'observed' || ncstage === 'slain') {
+              this.say('(Watch the GROUND-shadow, not the sky. It dives twice — dodge the second one too.)');
+            }
+            this.audioEvent('nightcourtSilence');
+          } else if (this.statickiteIs(mo)) {
+            // STATIC KITE: first contact is dread, not a lecture. A kite with
+            // no string — the coaching only lands once the pattern is earned.
+            mo.beamPhase = 'rise'; mo.altitude = 'high'; mo.skCd = 0;
+            this.say('A kite over the treeline. Nobody is holding the string. On its screen, for a frame: you, from above.');
+            const skstage = (this.ensureMonsterEntry('statickite') || {}).stage;
+            if (skstage === 'observed' || skstage === 'slain') {
+              this.say('(It marks a 3x3 square — two beats to move. When it dips to transmit, it\'s at melee height. That\'s the window.)');
+            }
+            this.audioEvent('kiteHum');
           } else if (this.sunbaskerIs(mo)) {
             // SUNBASKER: first contact is dread, not a lecture. The bask is
             // the tell — the coaching only lands once the pattern is earned.
@@ -15296,14 +15331,19 @@
         this.tbAfterPlayerAction();
         return true;
       }
-      // GLASSWING (circling): it's high — out of reach. The shadow is the
-      // fight, not the bug: wait for the dive, dodge it, punish the crash.
+      // FLYERS (Steve 2026-10-06): airborne = out of melee/spear reach
+      // (range <= 2). The shadow/lane/mark is the fight, not the bird: wait
+      // for it to come down, dodge, punish the landing. Sling (4) and bow
+      // (5) CAN reach a high flyer — building ranged answers pays off.
       // Coaching is codex-gated — first-timers just learn it's too high.
-      if (this.glasswingIs(t) && this.encUsesFifo(t) && t.beamPhase === 'circle') {
+      if (this.flyerAirborne(t) && this.encUsesFifo(t) && w.range <= 2) {
         p.acted = true;
-        this.say(this.encTelegraphKnown(t)
-          ? "It's circling high — out of spear reach. Watch the shadow, not the bug."
-          : "It's circling high above spear reach — a shadow moving against the sun.");
+        const fk = this.encTelegraphKnown(t);
+        const fname = this.nevermoreIs(t) ? 'crow' : this.nightcourtIs(t) ? 'owl'
+          : this.statickiteIs(t) ? 'kite' : 'bug';
+        this.say(fk
+          ? `It's high overhead — out of ${w.name || 'melee'} reach. Watch the ${this.statickiteIs(t) ? 'mark' : 'shadow'}, not the ${fname}.`
+          : `It's circling high above reach — ${this.statickiteIs(t) ? 'a screen glinting in the sun' : 'a shadow moving against the sun'}.`);
         this.tbAfterPlayerAction();
         return true;
       }
@@ -16079,12 +16119,17 @@
           this.say('Cameras shatter across the dirt — the swarm is FRAGILE. Every hit knocks lenses out of the sky.');
         }
       }
-      // GLASSWING (grounded): wings tangled — it takes the hit badly.
-      if (t.kind === 'monster' && this.glasswingIs(t) && t.beamPhase === 'grounded' && final > 0) {
+      // FLYERS, GROUNDED (Steve 2026-10-06): wings in the dirt — out of their
+      // element. Any flyer at 'low' altitude takes +50% while it's down.
+      // (Generalizes the old glasswing-only rule; same numbers.)
+      if (t.kind === 'monster' && this.flyerIs(t) && (t.altitude || 'high') === 'low' && final > 0) {
         final = Math.round(final * 1.5);
         if (!t.groundedNoted) {
           t.groundedNoted = true;
-          this.say('Wings tangled — it takes the hit badly. (+50% while grounded)');
+          this.say(this.nevermoreIs(t) ? 'Wings tangled in the dirt — it takes the hit badly. (+50% while grounded)'
+            : this.nightcourtIs(t) ? 'Spent, wings dragging — it takes the hit badly. (+50% while grounded)'
+            : this.statickiteIs(t) ? 'It dipped too low to transmit — exposed, it takes the hit badly. (+50% while low)'
+            : 'Wings tangled — it takes the hit badly. (+50% while grounded)');
         }
       }
       // SUNBASKER: a solid hit knocks the solar charge out of its scales —
@@ -16502,6 +16547,15 @@
     catfishIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'nightlight_catfish')); },
     glasswingIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'glasswing')); },
     sunbaskerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'sunbasker')); },
+    // FLYERS (Steve 2026-10-06): monsters with flight:true in monsters.json.
+    // m.altitude: 'high' (airborne — out of melee/spear reach) | 'low'
+    // (landed/descended — melee-vulnerable, +50% damage). Defaults to 'high'
+    // for flyers that never set it.
+    nevermoreIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'nevermore')); },
+    nightcourtIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'nightcourt')); },
+    statickiteIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'statickite')); },
+    flyerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'glasswing' || (m.mdef || {}).flight === true)); },
+    flyerAirborne(m) { return this.flyerIs(m) && (m.altitude || 'high') === 'high'; },
     // Names pre-knowledge are strange descriptors ("a toad like a war drum") —
     // composing them after "the"/"The" doubles the article ("the a toad").
     // Strip the leading article for sentence composition. Post-naming names
@@ -17843,9 +17897,43 @@
       if (m && m.gravityHeld > 0) return null;
       return S.combat.stepToward(m.mx, m.my, tx, ty, blocked, danger);
     },
+    // tbAirStepToward (Steve 2026-10-06): FLIGHT. Flyers ignore terrain
+    // blocking entirely — trees, walls, water are scenery from the air.
+    // Only the grid edge stops them (and they never leave the 9x9: the
+    // fight is the node). They must still END on a real cell — landing is
+    // handled per-monster (dive/strafe/grounded phases descend adjacent to
+    // the target on a non-blocking cell).
+    tbAirStepToward(m, tx, ty, danger) {
+      if (m && m.gravityHeld > 0) return null;
+      return S.combat.stepToward(m.mx, m.my, tx, ty,
+        (x, y) => x < 0 || x > 8 || y < 0 || y > 8, danger);
+    },
     tbStepAway(m, tx, ty, blocked, danger) {
       if (m && m.gravityHeld > 0) return null;
       return S.combat.stepAway(m.mx, m.my, tx, ty, blocked, danger);
+    },
+    // NEVERMORE (Steve 2026-10-06): it speaks with the voices of the run's
+    // dead. Dead villagers (vpOf().dead) feed the fragments — the System's
+    // archive fills the gaps. Unique-person law: the horror is personal.
+    nevermoreVoice() {
+      try {
+        const dead = ((this.data.villagers || []).concat(this.data.background_survivors || []))
+          .filter(v => v && v.dead && v.name);
+        if (dead.length && Math.random() < 0.7) {
+          const v = dead[Math.floor(Math.random() * dead.length)];
+          const first = String(v.name).split(' ')[0];
+          return this.pickFresh([
+            `"—${first}? ${first}, is that—"`,
+            `"—told ${first} the creek was—"`,
+            `"—${first} never came home, did—"`,
+          ], 'nmVoiceDead');
+        }
+      } catch (e) {}
+      return this.pickFresh([
+        '"—nevermore—"',
+        '"—told you the creek was—"',
+        '"—still here? still here?—"',
+      ], 'nmVoice');
     },
     tbMonsterTurn(m) {
       const f = this.tbfight;
@@ -18511,6 +18599,7 @@
             m.mx = dc.cx; m.my = dc.cy;
             if (anyoneHit) {
               if (useFifo) this.encSetPhase(m, 'circle');
+              m.altitude = 'high'; // climbed back into the sky
               const vt = this.tbFighter(tg.aimKey);
               const vname = vt ? (vt.kind === 'player' ? 'you' : vt.name) : 'its target';
               this.say(`It snatches at ${vname} and climbs — screaming, back into the sun.`);
@@ -18540,6 +18629,56 @@
               this.audioEvent('glasswingLand');
             }
           }
+          // NEVERMORE: the strafing run ends at the far end of its lane —
+          // landed, low, vulnerable. Hit: 1 turn. Miss: 2 turns.
+          if (this.nevermoreIs(m) && tg.kind === 'squares') {
+            let lx = m.mx, ly = m.my;
+            for (let i = tg.cells.length - 1; i >= 0; i--) {
+              if (!this.tbBlocked(tg.cells[i].cx, tg.cells[i].cy)) { lx = tg.cells[i].cx; ly = tg.cells[i].cy; break; }
+            }
+            m.mx = lx; m.my = ly; m.altitude = 'low';
+            if (useFifo) this.encSetPhase(m, 'grounded');
+            m.groundedNoted = false;
+            if (anyoneHit) {
+              m.nmGrounded = 1;
+              this.say('It tears through — talons out — and lands at the end of the lane, mantling. GROUNDED. One turn.');
+            } else {
+              m.nmGrounded = 2;
+              this.say('It strafes empty ground — the lane was a lie you didn\'t believe. It lands hard, wings tangled. GROUNDED. Two turns.');
+            }
+            this.audioEvent('nevermoreLand');
+          }
+          // NIGHTCOURT: a MISSED first dive doesn't end the threat — it turns
+          // mid-air and comes again IMMEDIATELY, re-aimed at where you moved.
+          // (The wave-1 answer — dodge once, step in, punish — gets you hit
+          // by the second hearing.) Hit, or second dive resolved: grounded 2.
+          if (this.nightcourtIs(m) && tg.kind === 'squares') {
+            if (!anyoneHit && !m.ncWasRedive) {
+              m.ncRedove = true;
+              this.say('It misses — and it does not climb. It TURNS, mid-air, impossibly. It learned where you went.');
+              // no audio. The silence is the telegraph.
+            } else {
+              const dc = (tg.cells && tg.cells[0]) || { cx: m.mx, cy: m.my };
+              m.mx = dc.cx; m.my = dc.cy; m.altitude = 'low';
+              if (useFifo) this.encSetPhase(m, 'grounded');
+              m.ncGrounded = 2; m.groundedNoted = false; m.ncWasRedive = false;
+              this.say(anyoneHit
+                ? 'It lands on its kill — wings mantling, head turned too far. It stands there, breathing. Grounded.'
+                : 'Two dives, nothing. It drops into the dirt, spent. GROUNDED. Now.');
+              this.audioEvent('nightcourtLand');
+            }
+          }
+          // STATIC KITE: THE DIP. It descends to transmit — low, vulnerable
+          // (+50%), one turn. It never lands; the dip is the only window.
+          if (this.statickiteIs(m) && tg.kind === 'squares') {
+            if (useFifo) this.encSetPhase(m, 'transmit');
+            m.altitude = 'low'; m.skDip = 1; m.groundedNoted = false;
+            if (tg.aim) { m.mx = tg.aim.x; m.my = tg.aim.y; }
+            this.say(anyoneHit
+              ? 'The square SCREAMS — static made solid. And the kite DIPS, low, its screen strobing with footage of you. IT\'S YOURS. NOW.'
+              : 'The square screams at empty ground — you\'re not in the frame. The kite dips anyway, transmitting to no one. IT\'S YOURS. NOW.');
+            this.audioEvent('kiteBroadcast');
+          }
           // (SUNBASKER charge-spend lives in the direct branch above — the bite
           // is a direct telegraph.)
         }
@@ -18566,7 +18705,11 @@
         // next monster turn flips it to ember via the existing check. Without
         // this, the turn falls through to the bespoke block below, which flips
         // bloom→ember before any render — the EUREKA badge never shows.
-        if (this.boarIs(m) || this.stagIs(m) || this.heronIs(m) || this.glasswingIs(m) || this.sunbaskerIs(m) || this.biIs(m)) return;
+        // FLYERS (Steve 2026-10-06): same rhythm — the strafe/dive/mark
+        // aftermath is the whole turn. Re-entering the bespoke block below
+        // would eat the grounded/dip window or double-declare.
+        if (this.boarIs(m) || this.stagIs(m) || this.heronIs(m) || this.glasswingIs(m) || this.sunbaskerIs(m) || this.biIs(m)
+          || this.nevermoreIs(m) || this.nightcourtIs(m) || this.statickiteIs(m)) return;
         // MONSTER BATCH 2: the spent phase must read for a full turn — a
         // post-flash moth, post-chorus toad, or post-hum mouse doesn't act twice.
         if ((this.mothIs(m) || this.toadIs(m) || this.humiceIs(m)) && (m.encCooldown || 0) > 0) return;
@@ -19420,9 +19563,10 @@
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
         const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
-        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'circle'); m.gwDive = null; }
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'circle'); m.gwDive = null; m.altitude = 'high'; }
         // GROUNDED: crashed. It doesn't act — wings tangled. The window is real.
         if (m.beamPhase === 'grounded') {
+          m.altitude = 'low';
           m.gwGrounded = (m.gwGrounded || 1) - 1;
           if (m.gwGrounded <= 0) {
             // ESCAPE (Steve 2026-10-05): if you didn't kill it while it was down,
@@ -19443,6 +19587,7 @@
         if (d <= diveRange && !m.telegraph) {
           // DECLARE THE DIVE: lock the target's tile. One turn to move.
           this.encSetPhase(m, 'dive');
+          m.altitude = 'low'; // descending — it's coming down to you now
           const known = this.encTelegraphKnown(m);
           const cueText = known
             ? 'The shadow detaches — it\'s diving at YOUR tile. MOVE. (Watch the shadow, not the bug.)'
@@ -19484,6 +19629,266 @@
           this.audioEvent('glasswingCircle');
         }
         // (dive windup ticks in the generic pending section; resolve lands below)
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- NEVERMORE: THE UNKIND CUT ----
+      // perch (high) -> strafe (3-lane strafing dive) -> grounded. It speaks
+      // with the voices of the run's dead (nevermoreVoice). The shadow moves
+      // FIRST — the lane IS the telegraph. Step OFF it, not along it. It
+      // always lands after a run, hit (1 turn) or miss (2 turns) — punish it.
+      if (this.nevermoreIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = (foe && foe.f && foe.f.alive && !foe.f.fled) ? foe.f : this.tbFighter('p');
+        if (!t || !t.alive) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+        const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'perch'); m.altitude = 'high'; m.nmGrounded = 0; }
+        // GROUNDED: landed after the run. Beak hammering shut, four ways.
+        if (m.beamPhase === 'grounded') {
+          m.altitude = 'low';
+          m.nmGrounded = (m.nmGrounded || 1) - 1;
+          if (m.nmGrounded <= 0) {
+            if (useFifo) this.encSetPhase(m, 'perch');
+            m.altitude = 'high'; m.groundedNoted = false;
+            for (let i = 0; i < 2; i++) {
+              const stp = this.tbAirStepToward(m, m.mx * 2 - t.mx, m.my * 2 - t.my, danger);
+              if (!stp) break;
+              m.mx = stp.x; m.my = stp.y;
+            }
+            this.say('It hammers its beak shut — four ways at once — and climbs, still talking, back into the dark.');
+            this.audioEvent('nevermoreClimb');
+          } else {
+            this.say(this.pickFresh([
+              'It lands hard at the end of the lane — wings tangled, beak hammering. GROUNDED. Now.',
+              'The run ends in the dirt. It glares up at you with borrowed eyes. NOW.',
+            ], 'nmGrounded'));
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (d <= 3 && !m.telegraph) {
+          // DECLARE THE STRAFE: a 3-length lane from its position through the
+          // target. Locked at declare (commitCells) — it can't turn mid-run.
+          this.encSetPhase(m, 'strafe');
+          m.altitude = 'low'; // descending into the run
+          const known = this.encTelegraphKnown(m);
+          const cells = S.combat.patternCells(Object.assign({}, pat, { type: 'line', length: 3, width: 1 }), m.mx, m.my, t.mx, t.my);
+          const cueText = known
+            ? 'The shadow detaches — a black lane across the ground. It\'s strafing THAT lane. MOVE OFF IT.'
+            : 'Its shadow slides off the branch without it — a straight black lane, growing.';
+          const p0 = this.tbFighter('p');
+          m.telegraph = { kind: 'squares', cells, dmg: (m.mdef.attack || {}).damage,
+            attackName: this.encAttackName(m, (m.mdef.attack || {}).name), pattern: pat,
+            turnsLeft: pat.windup || 1, commitCells: true,
+            threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
+            aim: { x: t.mx, y: t.my }, dir: null, aimKey: t.key, angle: null, firing: 0, cueText };
+          try {
+            const me = this.ensureMonsterEntry(m.mdef.id);
+            const anm = (m.mdef.attack || {}).name;
+            if (anm && !me.attacksSeen.includes(anm)) {
+              me.attacksSeen.push(anm);
+              if (me.stage === 'encountered') me.stage = 'observed';
+            }
+          } catch (e) {}
+          this.say(known ? cueText : 'Its shadow slides off the branch without it. Then, in a voice you buried — ' + this.nevermoreVoice());
+          this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
+          this.audioEvent('nevermoreStrafe');
+        } else if (!m.telegraph) {
+          // PERCH: airborne, closing to strafe range. Out of reach.
+          for (let i = 0; i < (m.speed || 5); i++) {
+            const dd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+            if (dd <= 3) break;
+            const stp = this.tbAirStepToward(m, t.mx, t.my, danger);
+            if (!stp) break;
+            m.mx = stp.x; m.my = stp.y;
+          }
+          this.say(this.pickFresh([
+            'A crow on the wind — watching. It has been watching for some time.',
+            'It tilts its head. In a voice like someone you lost: "—still here?—"',
+            'Black wings, unhurried. It is choosing its lane.',
+          ], 'nmPerch'));
+          this.audioEvent('nevermoreCroak');
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- NIGHTCOURT: ADJOURNMENT ----
+      // roost (high, silent) -> dive (single-tile moon-shadow) -> redive (a
+      // MISSED dive is re-aimed IMMEDIATELY at where you moved — no extra
+      // windup) -> grounded (2 turns, spent). The dive makes NO sound; the
+      // shadow is the only telegraph. Dodge twice or take it twice.
+      if (this.nightcourtIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = (foe && foe.f && foe.f.alive && !foe.f.fled) ? foe.f : this.tbFighter('p');
+        if (!t || !t.alive) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+        const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'roost'); m.altitude = 'high'; m.ncGrounded = 0; m.ncRedove = false; m.ncWasRedive = false; }
+        // GROUNDED: spent after the second dive. It doesn't fly — it pants.
+        if (m.beamPhase === 'grounded') {
+          m.altitude = 'low';
+          m.ncGrounded = (m.ncGrounded || 1) - 1;
+          if (m.ncGrounded <= 0) {
+            if (useFifo) this.encSetPhase(m, 'roost');
+            m.altitude = 'high'; m.groundedNoted = false; m.ncRedove = false; m.ncWasRedive = false;
+            for (let i = 0; i < 2; i++) {
+              const stp = this.tbAirStepToward(m, m.mx * 2 - t.mx, m.my * 2 - t.my, danger);
+              if (!stp) break;
+              m.mx = stp.x; m.my = stp.y;
+            }
+            this.say('It blinks — once, slowly — and the night takes it back. Gone, upward.');
+            this.audioEvent('nightcourtClimb');
+          } else {
+            this.say(this.pickFresh([
+              'It stands in the dirt, wings dragging, head still turned too far. SPENT. Now.',
+              'Two dives and nothing. It pants — owls shouldn\'t pant. NOW.',
+            ], 'ncGrounded'));
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        const diveRange = pat.range || 4;
+        if (d <= diveRange && !m.telegraph) {
+          // DECLARE THE DIVE — or the REDIVE (re-aimed at your CURRENT tile).
+          const isRedive = !!m.ncRedove;
+          this.encSetPhase(m, isRedive ? 'redive' : 'dive');
+          m.altitude = 'low'; // descending
+          m.ncRedove = false; m.ncWasRedive = isRedive;
+          const known = this.encTelegraphKnown(m);
+          const cueText = isRedive
+            ? (known ? 'It\'s already turning — SECOND DIVE, at where you are NOW. MOVE AGAIN.' : 'No sound. It\'s coming again — already.')
+            : (known ? 'The moon-shadow is growing under you. Silent dive. MOVE.' : 'No sound. The shadow on the ground is growing.');
+          const p0 = this.tbFighter('p');
+          m.telegraph = { kind: 'squares', cells: [{ cx: t.mx, cy: t.my }], dmg: (m.mdef.attack || {}).damage,
+            attackName: this.encAttackName(m, (m.mdef.attack || {}).name), pattern: pat,
+            turnsLeft: 1, commitCells: true,
+            threatenedPlayer: !!(p0 && p0.alive && p0.mx === t.mx && p0.my === t.my),
+            aim: { x: t.mx, y: t.my }, dir: null, aimKey: t.key, angle: null, firing: 0, cueText };
+          try {
+            const me = this.ensureMonsterEntry(m.mdef.id);
+            const anm = (m.mdef.attack || {}).name;
+            if (anm && !me.attacksSeen.includes(anm)) {
+              me.attacksSeen.push(anm);
+              if (me.stage === 'encountered') me.stage = 'observed';
+            }
+          } catch (e) {}
+          this.say(isRedive ? cueText : (known ? cueText : 'No sound. That is the warning.'));
+          this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
+          // DELIBERATE: no dive audio. The silence IS the telegraph.
+        } else if (!m.telegraph) {
+          // ROOST: airborne, closing. Silent.
+          for (let i = 0; i < (m.speed || 4); i++) {
+            const dd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+            if (dd <= diveRange) break;
+            const stp = this.tbAirStepToward(m, t.mx, t.my, danger);
+            if (!stp) break;
+            m.mx = stp.x; m.my = stp.y;
+          }
+          this.say(this.pickFresh([
+            'Two eyes, forward-facing, unblinking. Closer now.',
+            'Still no sound. That\'s the worst part.',
+            'Its head rotates — too far — tracking you.',
+          ], 'ncRoost'));
+        }
+        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- STATIC KITE: THE BROADCAST ----
+      // rise (high, holds standoff range) -> mark (3x3 scan-zone, 2-beat
+      // windup) -> transmit (zone damage + DIPS to low — melee-vulnerable,
+      // +50%, one turn) -> recover (climbs, cooldown). Not an animal. It
+      // never lands. The mark is the mercy.
+      if (this.statickiteIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        const t = (foe && foe.f && foe.f.alive && !foe.f.fled) ? foe.f : this.tbFighter('p');
+        if (!t || !t.alive) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+        const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'rise'); m.altitude = 'high'; m.skCd = 0; m.skDip = 0; }
+        // THE DIP: it descended to transmit. It doesn't move — it broadcasts.
+        if (m.beamPhase === 'transmit') {
+          m.altitude = 'low';
+          m.skDip = (m.skDip || 1) - 1;
+          this.say(this.pickFresh([
+            'It dips — low, too low — and the screen strobes. On it: you, sleeping. From above. Through the haven roof. IT\'S YOURS. NOW.',
+            'The kite hangs low, transmitting. The ticker ribbon spells your name. While it\'s down — HIT IT.',
+          ], 'skDip'));
+          this.audioEvent('kiteTransmit');
+          if (m.skDip <= 0) {
+            if (useFifo) this.encSetPhase(m, 'recover');
+            m.altitude = 'high'; m.groundedNoted = false; m.skCd = 2;
+            this.say('The screen goes dark. It climbs — the string that isn\'t there pulling it back into the sky.');
+            this.audioEvent('kiteClimb');
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // RECOVER: climbing, re-framing. Drifts, doesn't mark.
+        if ((m.skCd || 0) > 0 && !m.telegraph) {
+          m.skCd -= 1;
+          if (useFifo && m.beamPhase !== 'recover') this.encSetPhase(m, 'recover');
+          m.altitude = 'high';
+          for (let i = 0; i < (m.speed || 3); i++) {
+            const dd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+            if (dd === 4) break;
+            const stp = dd < 4
+              ? this.tbAirStepToward(m, m.mx * 2 - t.mx, m.my * 2 - t.my, danger)
+              : this.tbAirStepToward(m, t.mx, t.my, danger);
+            if (!stp) break;
+            m.mx = stp.x; m.my = stp.y;
+          }
+          this.say(this.pickFresh([
+            'The kite tilts, re-framing. Still filming.',
+            'Static crawls across its screen. It\'s choosing the next shot.',
+          ], 'skRecover'));
+          this.audioEvent('kiteHum');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        if (d <= 6 && !m.telegraph) {
+          // DECLARE THE MARK: 3x3 scan-zone centered on the target, 2 beats.
+          this.encSetPhase(m, 'mark');
+          m.altitude = 'high'; // stays high while marking
+          const known = this.encTelegraphKnown(m);
+          const cells = [];
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            const cx = t.mx + dx, cy = t.my + dy;
+            if (cx >= 0 && cx <= 8 && cy >= 0 && cy <= 8) cells.push({ cx, cy });
+          }
+          const cueText = known
+            ? 'Scan-grid on the ground — a 3x3 square of your life. TWO beats. MOVE.'
+            : 'The ground lights up in a grid under you. It\'s framing the shot.';
+          const p0 = this.tbFighter('p');
+          m.telegraph = { kind: 'squares', cells, dmg: (m.mdef.attack || {}).damage,
+            attackName: this.encAttackName(m, (m.mdef.attack || {}).name), pattern: pat,
+            turnsLeft: pat.windup || 2, commitCells: true,
+            threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
+            aim: { x: t.mx, y: t.my }, dir: null, aimKey: t.key, angle: null, firing: 0, cueText };
+          try {
+            const me = this.ensureMonsterEntry(m.mdef.id);
+            const anm = (m.mdef.attack || {}).name;
+            if (anm && !me.attacksSeen.includes(anm)) {
+              me.attacksSeen.push(anm);
+              if (me.stage === 'encountered') me.stage = 'observed';
+            }
+          } catch (e) {}
+          this.say(known ? cueText : 'The kite stops dead. Below it, the ground lights up in a grid.');
+          this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
+          this.audioEvent('kiteMark');
+        } else if (!m.telegraph) {
+          // RISE: drifts at standoff range (~4), high. Out of reach.
+          for (let i = 0; i < (m.speed || 3); i++) {
+            const dd = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+            if (dd === 4) break;
+            const stp = dd < 4
+              ? this.tbAirStepToward(m, m.mx * 2 - t.mx, m.my * 2 - t.my, danger)
+              : this.tbAirStepToward(m, t.mx, t.my, danger);
+            if (!stp) break;
+            m.mx = stp.x; m.my = stp.y;
+          }
+          this.say(this.pickFresh([
+            'The kite holds station, tilting. On its screen: you, from above.',
+            'A hum from the sky — dead television, tuned to you.',
+          ], 'skRise'));
+          this.audioEvent('kiteHum');
+        }
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
