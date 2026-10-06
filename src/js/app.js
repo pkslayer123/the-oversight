@@ -661,12 +661,16 @@
   // CONTEXTUAL ACTION STRIP: when you're on/adjacent to something you can use,
   // the actions surface quietly below the grid. No tapping around, no popups.
   // Maps Game.cellActions labels to real calls.
-  function doContextAction(cx, cy, label) {
+  function doContextAction(cx, cy, label, extra) {
     const mon = Game.state.scholar.monster;
     if (label === 'Fight' && mon && mon.mx === cx && mon.my === cy) { Game.startCombat(mon.id); return; }
     if (label === 'Hunt') { Game.huntAnimal(); return; }
     if (label === 'Stalk') { Game.stalkAnimal(); return; }
     if (label === 'Talk') { talkAction(); return; }
+    if (label === 'Clear the way' && extra && extra.blockX !== undefined) {
+      Game.clearBlockage(extra.blockX, extra.blockY);
+      return;
+    }
     if (label === 'Cut down (big job)') { Game.cutTree(cx, cy); return; }
     if (label === 'Prune branches') { Game.pruneBranches(cx, cy); return; }
     if (label === 'Gather fallen') { Game.gatherFallen(cx, cy); return; }
@@ -704,6 +708,26 @@
         if (seen.has(label)) continue;
         seen.add(label);
         items.push({ cx, cy, label });
+      }
+    }
+    // BLOCKED EXITS (Steve 2026-10-05): if you're at the grid edge and the
+    // node exit is blocked, offer to clear it. Without this, you can get
+    // stuck in a node with all exits blocked.
+    if ((px === 0 || px === 8 || py === 0 || py === 8)) {
+      const dirs = [];
+      if (px === 0) dirs.push({ dx: -1, dy: 0, dir: 'west' });
+      if (px === 8) dirs.push({ dx: 1, dy: 0, dir: 'east' });
+      if (py === 0) dirs.push({ dx: 0, dy: -1, dir: 'north' });
+      if (py === 8) dirs.push({ dx: 0, dy: 1, dir: 'south' });
+      for (const d of dirs) {
+        try {
+          const nx = Game.map.px + d.dx, ny = Game.map.py + d.dy;
+          const block = Game.travelBlockage(nx, ny);
+          if (block && block.blockType !== 'creek' && !seen.has('Clear the way')) {
+            seen.add('Clear the way');
+            items.push({ cx: px, cy: py, label: 'Clear the way', blockDir: d.dir, blockX: nx, blockY: ny });
+          }
+        } catch (e) {}
       }
     }
     return items;
@@ -758,7 +782,7 @@
       b.onclick = () => {
         const it = items[+b.dataset.ctx];
         if (!it) return;
-        actAndRefresh(() => doContextAction(it.cx, it.cy, it.label));
+        actAndRefresh(() => doContextAction(it.cx, it.cy, it.label, it));
       };
     });
   }
@@ -4616,7 +4640,9 @@
         const cls = 'tile' + (isP ? ' me' : '') + (tl.revealed ? '' : ' fog') + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '');
         // other villages: show 🏘️ if generated (you've been near)
         const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
-        const g = isW ? '🐗' : otherV ? '🏘️' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
+        // PLAYER MARKER (Steve 2026-10-05): always show YOU clearly, even on
+        // fog. The old code showed the tile glyph which could hide you.
+        const g = isP ? '📍' : isW ? '🐗' : otherV ? '🏘️' : (tl.revealed ? S.TILE_GLYPH[tl.type] : '?');
         const pf = Game.state.scholar.facing || { x: 0, y: 1 };
         const pang = Math.round(Math.atan2(pf.x, -pf.y) * 180 / Math.PI);
         html += `<div class="${cls}" data-x="${x}" data-y="${y}">${isP ? `<span class="mface" style="transform:rotate(${pang}deg)">➤</span>` : g}</div>`;
