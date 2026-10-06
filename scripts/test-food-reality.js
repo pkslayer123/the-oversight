@@ -106,44 +106,50 @@ const origRandom = Math.random;
     ok('messy clean: risky + spoils fast', !!raw.diseaseRisk && raw.spoilDay === s.day + 2);
     ok('messy clean: teaches', Game.knowsTechnique('clean') === true);
 
-    // skilled clean on a fresh turkey
+    // skilled clean on a fresh turkey.
+    // (cleanCarcass drops feather/bone byproducts, so locate the carcass by
+    // state instead of a hardcoded index.)
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
-    Game.cleanCarcass(2);
-    const raw2 = s.inventory[2];
+    const carIdx2 = s.inventory.findIndex(i => i.foodState === 'carcass');
+    Game.cleanCarcass(carIdx2);
+    const raw2 = s.inventory[carIdx2];
     ok('skilled clean: 40% yield', raw2.kcalEach === 300 && raw2.units === 4);
 
     // cook requires fire; cooking is a technique (messy first time)
     const origNear = Game.nearFire;
     Game.nearFire = () => false;
     Game.cookAll();
-    ok('cookAll refused without fire', s.inventory[2].foodState === 'cleaned');
+    ok('cookAll refused without fire', s.inventory[carIdx2].foodState === 'cleaned');
     Game.nearFire = () => true;
     ok('cook technique unknown before first cook', Game.knowsTechnique('cook') === false);
     Game.cookAll();
-    const cooked = s.inventory[2];
+    const cooked = s.inventory[carIdx2];
     ok('messy cook: 85% kcal', cooked.kcalEach === 638); // 3000*0.85/4 portions
     ok('messy cook: safe + spoilDay +5', cooked.safe === true && !cooked.diseaseRisk && cooked.spoilDay === s.day + 5);
     ok('messy cook: teaches', Game.knowsTechnique('cook') === true);
     // skilled cook on a fresh turkey: full value
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
-    Game.cleanCarcass(3);
+    const carIdx3 = s.inventory.findIndex(i => i.foodState === 'carcass');
+    Game.cleanCarcass(carIdx3);
     Game.cookAll();
-    ok('skilled cook: full kcal', s.inventory[3].kcalEach === 750); // 3000/4 portions
+    ok('skilled cook: full kcal', s.inventory[carIdx3].kcalEach === 750); // 3000/4 portions
     Game.nearFire = origNear;
 
     // preserve
     Game.nearFire = () => true;
-    Game.preserveFood(2);
-    const smoked = s.inventory[2];
+    const cookIdx = s.inventory.findIndex(i => i.foodState === 'cooked');
+    Game.preserveFood(cookIdx);
+    const smoked = s.inventory[cookIdx];
     ok('preserved messy: keeps ~2 weeks', smoked.foodState === 'preserved' && smoked.spoilDay === s.day + 15);
     ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(638 * 0.8)); // messy: no technique
     // skilled preserve: full month
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     Game.state.codex.techniques.preserve = true;
-    Game.cleanCarcass(4);
+    const carIdx4 = s.inventory.findIndex(i => i.foodState === 'carcass');
+    Game.cleanCarcass(carIdx4);
     Game.cookAll();
-    Game.preserveFood(4);
-    ok('preserved skilled: keeps ~month', s.inventory[4].spoilDay === s.day + 30);
+    Game.preserveFood(carIdx4);
+    ok('preserved skilled: keeps ~month', s.inventory[carIdx4].spoilDay === s.day + 30);
     Game.nearFire = origNear;
   }
 
@@ -234,9 +240,10 @@ const origRandom = Math.random;
     Game.askSpecialist(fakeId, 0);
     const cleaned = s.inventory[0];
     ok('specialist clean: 48% yield (skill 2)', cleaned.kcalEach === 360 && cleaned.units === 4);
-    // watching twice teaches
+    // watching twice teaches (locate the fresh carcass: byproducts shift indices)
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
-    Game.askSpecialist(fakeId, 1);
+    const carIdxW = s.inventory.findIndex(i => i.foodState === 'carcass');
+    Game.askSpecialist(fakeId, carIdxW);
     ok('watched twice: learned cleaning', Game.knowsTechnique('clean') === true);
   }
 

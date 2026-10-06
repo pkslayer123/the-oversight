@@ -74,7 +74,10 @@ function setCell(kind, cx, cy) {
   Game.identifyPlant('chickweed', 'observation');
   const idLog = Game.log.slice(-3).join(' | ');
   ok('identified message has no doubled name', !idLog.includes('Chickweed. Chickweed') && !idLog.includes('Chickweed, Chickweed'));
-  ok('identified message names it once', (idLog.match(/Chickweed/g) || []).length === 1);
+  // the witness line ("...was watching. Now they know Chickweed too.") is a
+  // separate beat and legitimately names it again — count only the IDENTIFIED line.
+  const idLine = Game.log.slice(-3).find(l => l.includes('IDENTIFIED')) || '';
+  ok('identified message names it once', (idLine.match(/Chickweed/g) || []).length === 1);
 
   // 4. TARGETED FORAGING: the tapped cell depletes, not a random neighbor.
   freshGame();

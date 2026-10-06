@@ -35,24 +35,27 @@ function freshGame() {
   await Game.init();
 
   // 1. PLAYER HAUL: real items land in the pantry, counter stays honest.
+  // KEEP-A-DAY (73dce8e): returnToVillage keeps 2000 kcal for the player and
+  // unloads only the surplus — vacuuming everything starved the player next
+  // to a full pantry. So the haul must exceed a day's food to test unloading.
   freshGame();
   const relicCount = Game.state.scholar.inventory.filter(i => i.bonded).length;
   ok('starts with bonded relics', relicCount >= 5);
-  Game.state.scholar.inventory.push({ plantId: 'dandelion', units: 6, kcalEach: 75, spoilDay: 3, name: 'Dandelion greens', unit: 'handful', kg: 0.6 });
+  Game.state.scholar.inventory.push({ plantId: 'dandelion', units: 40, kcalEach: 75, spoilDay: 3, name: 'Dandelion greens', unit: 'handful', kg: 4.0 });
   const beforeItems = Game.state.village.pantry.length;
   const beforeKcal = itemsKcal();
-  const unloadedKcal = Game.state.scholar.inventory.reduce((t, i) => t + ((i.kcalEach || 0) > 0 ? (i.units || 0) * (i.kcalEach || 0) : 0), 0);
   Game.returnToVillage();
+  const packDand = Game.state.scholar.inventory.find(i => i.plantId === 'dandelion');
+  const pantryDand = Game.state.village.pantry.find(i => i.plantId === 'dandelion');
   ok('haul adds real pantry items', Game.state.village.pantry.length > beforeItems);
-  const haulItem = Game.state.village.pantry.find(i => i.plantId === 'dandelion');
-  ok('hauled dandelion is a real item with units', !!haulItem && haulItem.units === 6 && haulItem.kcalEach === 75);
+  ok('surplus unloads as a real item', !!pantryDand && pantryDand.kcalEach === 75 && pantryDand.units > 0 && pantryDand.units === 40 - (packDand ? packDand.units : 0));
+  ok("pack keeps a day's food", !!packDand && packDand.units > 0 && packDand.units * 75 <= 2000);
   ok('pantryKcal equals items-derived value', Game.state.village.pantryKcal === itemsKcal());
-  ok('pantryKcal grew by the haul', Game.state.village.pantryKcal === beforeKcal + unloadedKcal);
+  ok('pantryKcal grew by the surplus', Game.state.village.pantryKcal === beforeKcal + pantryDand.units * 75);
 
   // 2. NON-FOOD SURVIVES the trip home (relics, tools, materials).
   const afterRelics = Game.state.scholar.inventory.filter(i => i.bonded).length;
   ok('bonded relics survive returnToVillage', afterRelics === relicCount);
-  ok('no food left in pack (it was unloaded)', !Game.state.scholar.inventory.some(i => (i.kcalEach || 0) > 0 && (i.units || 0) > 0));
 
   // 3. HAUL SURVIVES endDay (the old phantom number evaporated at the sync).
   const haulKcalBefore = itemsKcal();
@@ -85,7 +88,9 @@ function freshGame() {
   // tracks true composition underneath.
   const nutLump = () => Game.state.scholar.inventory.find(i => i.lumpForm === 'nuts');
   ok('oak tree yields acorns', !!nutLump() && !!nutLump().lump.acorn_white_oak);
-  // walk adjacent to (3,4): stand at (4,4) is distance 1 from (3,4)? |4-3|=1 yes
+  // tap-to-step (forager loop): the oak tap stepped us onto (5,4), so (3,4)
+  // is "too far" now — step back to (4,4) first, like a player would.
+  Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
   Game.cellInteract(3, 4);
   ok('hickory tree yields hickory nuts', !!nutLump() && !!nutLump().lump.hickory_nut);
   ok('nut lump is one stack', Game.state.scholar.inventory.filter(i => i.lumpForm === 'nuts').length === 1);
