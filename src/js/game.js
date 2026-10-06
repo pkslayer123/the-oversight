@@ -9827,11 +9827,28 @@
       };
       const aff = (mdef && mdef.waterAffinity) || null;
       if (aff === 'in' && water.length) {
-        // ON a water cell — the lure needs its pool. Near enough to notice,
-        // never on the player's own cell.
-        const cands = water.filter(c => cheb(c.x, c.y) > 0 && cheb(c.x, c.y) >= minDist);
-        const pool = cands.length ? cands : water.filter(c => cheb(c.x, c.y) > 0);
-        if (pool.length) return pool[Math.floor(Math.random() * pool.length)];
+        // ON a water cell — the lure needs its pool. Prefer the water's EDGE
+        // (a water cell adjacent to walkable shore): the fight must stay
+        // reachable. A catfish mid-lake can grasp at range 2 while no melee
+        // can ever close to range 1 — an unwinnable punching bag (2026-10-06
+        // playtest: 41 rounds, 0 strikes, 83 damage taken, no way in).
+        const edgeWater = water.filter(c => {
+          for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
+            if (!ox && !oy) continue;
+            const nx = c.x + ox, ny = c.y + oy;
+            if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
+            const ncell = detail[ny] && detail[ny][nx];
+            if (ncell && !this.cellProps(ncell).blocks) return true;
+          }
+          return false;
+        });
+        const src = edgeWater.length ? edgeWater : water;
+        const cands = src.filter(c => cheb(c.x, c.y) > 0 && cheb(c.x, c.y) >= minDist);
+        const pool = cands.length ? cands : src.filter(c => cheb(c.x, c.y) > 0);
+        if (pool.length) {
+          const c = pool[Math.floor(Math.random() * pool.length)];
+          return { mx: c.x, my: c.y };
+        }
         return base();
       }
       if (aff === 'near' && water.length) {
@@ -9852,7 +9869,8 @@
         if (shores.length) {
           const want = shores.filter(c => cheb(c.x, c.y) >= Math.max(2, minDist) && cheb(c.x, c.y) <= minDist + 5);
           const pick = want.length ? want : shores;
-          return pick[Math.floor(Math.random() * pick.length)];
+          const c = pick[Math.floor(Math.random() * pick.length)];
+          return { mx: c.x, my: c.y };
         }
       }
       return base();
