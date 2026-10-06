@@ -7056,7 +7056,11 @@
     // changed.") + the ROCK phase badge + the codex knownCue — never a grid
     // zone. Should a future ambush monster declare with cells, `out[ptype] ||
     // out.single` below falls back to the targetTile highlight (no crash).
-    const out = { burst: new Set(), charge: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), beam: new Set() };
+    // WAVE 2 GROUP C (Steve 2026-10-06): encircle (delegate_beast — its
+    // announced charge reads as ENCIRCLEMENT, not the generic charge lane)
+    // and biHot (bright_idea — the burst goes white-hot on its last windup
+    // tick, "about to break loose"). Knowledge-gated like every bucket.
+    const out = { burst: new Set(), charge: new Set(), encircle: new Set(), biHot: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), beam: new Set() };
     // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity — which
     // monster each telegraph cell belongs to, so the grid can render each
     // monster's attack in its own visual voice (mirror-shimmer, projected
@@ -7078,7 +7082,20 @@
         if (!known) continue;
         const mid = (m.mdef || {}).id;
         const w2a = W2A_IDS[mid];
-        const targetSet = out[ptype] || out.single;
+        let targetSet = out[ptype] || out.single;
+        // DELEGATE BEAST (Steve 2026-10-06): route its announced charge to
+        // the encircle bucket — the ENCIRCLEMENT visual, not chargeLane.
+        // Capture the charge direction (first→last telegraph cell) for the
+        // ➤ arrow overlays in renderDetail.
+        if (mid === 'delegate_beast' && ptype === 'charge') {
+          targetSet = out.encircle;
+          if (tg.cells && tg.cells.length >= 2) {
+            const _a = tg.cells[0], _b = tg.cells[tg.cells.length - 1];
+            out.encircleAngle = Math.round(Math.atan2(_b.cy - _a.cy, _b.cx - _a.cx) * 180 / Math.PI);
+          }
+        }
+        // BRIGHT IDEA (Steve 2026-10-06): last windup tick → white-hot.
+        if (mid === 'bright_idea' && ptype === 'burst' && tg.turnsLeft <= 1) targetSet = out.biHot;
         if (tg.kind === 'direct' && tg.targetKey) {
           const tgt = (f.fighters || []).find(x => x.key === tg.targetKey);
           if (tgt) {
@@ -7292,12 +7309,45 @@
         const _tgCls =
           (_tg.burst.has(_k) ? ' burstRadius' : '') +
           (_tg.charge.has(_k) ? ' chargeLane' : '') +
+          (_tg.encircle.has(_k) ? ' encircleLane' : '') +
+          (_tg.biHot.has(_k) ? ' biHot' : '') +
           (_tg.line.has(_k) ? ' lineCells' : '') +
           (_tg.single.has(_k) ? ' targetTile' : '') +
           (_tg.direct.has(_k) ? ' lockOn' : '') +
           (_tg.rush.has(_k) ? ' rushIndicator' : '');
         // (no ambushZone: the speedbump's snap is no-warning by design —
         // see tbAllTelegraphCells note. Steve 2026-10-06)
+        // WAVE 2 GROUP C telegraph identity (Steve 2026-10-06): inline styles
+        // keep this in app.js (no CSS file touch — precedent: glasswing trap).
+        //  encircleLane: the delegate's announced charge reads as
+        //    ENCIRCLEMENT — amber lane with ➤ arrows riding the charge
+        //    direction (angle from first→last telegraph cell).
+        //  biHot: the bright idea's burst, white-hot on the last windup
+        //    tick — "about to break loose", distinct from burstPulse.
+        //  circleRing: the delegate's closing circle — dotted amber ring at
+        //    chebyshev distance 2 around the player while it paces 'circle'.
+        //  mpBeam tint: the memory projector's film-beam — warm amber
+        //    home-light, not the highbeam deer's harsh red. (The generic
+        //    beamLane renderer also covers these cells; the inline tint
+        //    overrides it.)
+        // All of these are knowledge-gated in game.js: if you don't know,
+        // it doesn't show.
+        let _w2cStyle = '';
+        if (_tg.encircle.has(_k)) {
+          _w2cStyle = 'position:relative;outline:2px solid #ffb020;outline-offset:-2px;background-color:rgba(255,176,32,.18);box-shadow:inset 0 0 12px rgba(255,176,32,.35)';
+          const _ang = _tg.encircleAngle || 0;
+          g += `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(${_ang}deg);font-size:15px;line-height:1;color:#ffb020;text-shadow:0 0 5px rgba(0,0,0,.9);pointer-events:none">➤</span>`;
+        } else if (_tg.biHot.has(_k)) {
+          _w2cStyle = 'outline:3px solid #ffffff;outline-offset:-3px;background-color:rgba(255,255,255,.42);box-shadow:inset 0 0 20px rgba(255,255,255,.95)';
+        }
+        const _circle = (typeof Game.beastCircleKeys === 'function') ? Game.beastCircleKeys() : null;
+        if (_circle && _circle.has(_k) && !_w2cStyle) {
+          _w2cStyle = 'outline:2px dotted #ffb020;outline-offset:-2px;background-color:rgba(255,176,32,.07)';
+        }
+        const _mpKeys = (typeof Game.mpBeamKeys === 'function') ? Game.mpBeamKeys() : null;
+        if (_mpKeys && _mpKeys.has(_k) && !_w2cStyle) {
+          _w2cStyle = 'outline:2px solid #ffca7a;outline-offset:-2px;background-color:rgba(255,190,110,.16);box-shadow:inset 0 0 14px rgba(255,200,120,.45)';
+        }
         // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity.
         // Each of the four tricksters renders its attack in its own visual
         // voice, layered over the pattern class above. Knowledge-gated: the
@@ -7337,7 +7387,7 @@
           _cfStyle = 'box-shadow:inset 0 0 0 999px rgba(120,255,170,0.16);outline:2px solid rgba(120,255,170,0.55);outline-offset:-2px';
           _cfCls = ' cftell';
         }
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_w2aCls}${_gwCls}${_cfCls}"${(_gwStyle || _cfStyle) ? ` style="${[_gwStyle, _cfStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}${_w2aCls}${_gwCls}${_cfCls}"${(_gwStyle || _cfStyle || _w2cStyle) ? ` style="${[_gwStyle, _cfStyle, _w2cStyle].filter(Boolean).join(';')}"` : ''} data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }

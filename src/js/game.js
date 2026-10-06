@@ -13638,7 +13638,15 @@
 
     // === earned knowledge ===
     // Pattern descriptions: what the Codex writes after you've SURVIVED an attack.
-    tbPatternDesc(pattern) {
+    tbPatternDesc(pattern, mdef) {
+      // CODEX TEXT ENGINE (Steve 2026-10-06): a monster's own data can
+      // override the generic per-pattern text — attack.pattern.codexDesc.
+      // Only the monsters that set the field diverge; everything else keeps
+      // the generic line (backward-compatible).
+      try {
+        const cd = mdef && mdef.attack && mdef.attack.pattern && mdef.attack.pattern.codexDesc;
+        if (cd) return cd;
+      } catch (e) {}
       const t = (pattern && pattern.type) || 'burst';
       if (t === 'beam' && pattern && pattern.sweep) {
         return 'fires a sweeping beam that tracks you while it burns — outrun it sideways, block it with walls, or close in and break its aim';
@@ -13671,7 +13679,7 @@
       const c = this.state.codex.monsters[m.mdef.id] || (this.state.codex.monsters[m.mdef.id] = {});
       c.patterns = c.patterns || {};
       if (!c.patterns[atk.name]) {
-        c.patterns[atk.name] = this.tbPatternDesc(atk.pattern);
+        c.patterns[atk.name] = this.tbPatternDesc(atk.pattern, m.mdef);
         this.say(`📖 Codex: ${atk.name} — ${c.patterns[atk.name]}. You won't forget this.`);
       }
     },
@@ -14215,7 +14223,7 @@
       // only appears after that. Knowledge is earned, not given.
       const knownTail = () => {
         if (!this.tbPatternKnown(m.mdef.id, atk.name)) return '';
-        let t = ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`;
+        let t = ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern, m.mdef)}.`;
         const enc = (m.mdef || {}).encounter || {};
         const kc = enc.knownCue;
         if (this.encUsesFifo(m) && kc) t += ' ' + kc;
@@ -14258,7 +14266,7 @@
       if (mid !== 'review_drone' && mid !== 'camera_swarm' && mid !== 'hype_horn' && mid !== 'delegate_beast') return null;
       const known = this.encUsesFifo(m) ? this.encTelegraphKnown(m) : true;
       const learned = this.tbPatternKnown(mid, atk.name)
-        ? ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern)}.`
+        ? ` You know this one: ${atk.name} ${this.tbPatternDesc(atk.pattern, m.mdef)}.`
         : '';
       if (mid === 'review_drone') {
         const eff = this.droneEff(m);
@@ -16266,6 +16274,26 @@
       return false;
     },
 
+    // MEMORY PROJECTOR (Steve 2026-10-06): the film-beam cells for the grid
+    // overlay — the projector's telegraph cells, gated exactly like the
+    // deer's lane (tbBeamLaneCells): hidden until the pattern is learned,
+    // always visible while firing. Rendered warm amber (home-light), not the
+    // deer's harsh red. Returns a Set of "x,y".
+    mpBeamKeys() {
+      const set = new Set();
+      try {
+        const f = this.tbfight;
+        if (!f) return set;
+        for (const m of f.fighters) {
+          if (!this.mpIs(m) || !m.alive || !m.telegraph) continue;
+          if (this.encUsesFifo(m) && !(m.telegraph.firing > 0) && !this.encTelegraphKnown(m)) continue;
+          if (((m.telegraph.pattern || {}).type || '') !== 'beam') continue;
+          for (const c of (m.telegraph.cells || [])) set.add(c.cx + ',' + c.cy);
+        }
+      } catch (e) {}
+      return set;
+    },
+
     // nearest fire cell within range (chebyshev) of (x,y) — the swarm's bane.
     tbNearestFire(x, y, range) {
       const detail = this.genDetail(this.map.px, this.map.py);
@@ -16429,6 +16457,33 @@
         }
       }
       return cells;
+    },
+
+    // DELEGATE BEAST (Steve 2026-10-06): the closing circle. While the beast
+    // paces phase 'circle', the dotted ring at chebyshev distance 2 around the
+    // PLAYER is the encirclement closing — the telegraph IS the circling.
+    // Knowledge-gated: unknown players don't get the read. Grid-clamped.
+    // Returns a Set of "x,y".
+    beastCircleKeys() {
+      const set = new Set();
+      try {
+        const f = this.tbfight;
+        if (!f) return set;
+        const p = this.tbFighter('p');
+        if (!p || !p.alive) return set;
+        for (const m of f.fighters) {
+          if (!this.beastIs(m) || !m.alive) continue;
+          if (m.beamPhase !== 'circle') continue;
+          if (!this.encTelegraphKnown(m)) continue;
+          for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+            if (Math.max(Math.abs(dx), Math.abs(dy)) !== 2) continue;
+            const cx = p.mx + dx, cy = p.my + dy;
+            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+            set.add(cx + ',' + cy);
+          }
+        }
+      } catch (e) {}
+      return set;
     },
 
     // tbStepToward: gravity-aware movement. A gravity-held monster strains
@@ -16736,6 +16791,13 @@
           this.say('WHITE. The idea detonates — light with teeth. Then the long gutter down.');
           this.audioEvent('eurekaDetonate');
         }
+        // MEMORY PROJECTOR: the reel fires — the picture LOCKS. The bespoke
+        // payoff beat: home, sharp, impossibly close — and the light has
+        // edges. (The projectorFire synth belongs to the audio worker.)
+        if (this.mpIs(m) && ((tg.pattern || {}).type || '') === 'beam') {
+          this.say('The picture LOCKS — home, sharp, impossibly close. And the light has edges. The edges are sharp.');
+          this.audioEvent('projectorFire');
+        }
         let anyoneHit = false;
         if (tg.kind === 'direct') {
           const t = this.tbFighter(tg.targetKey);
@@ -16989,7 +17051,12 @@
         // (Glasswing/sunbasker: the dive aftermath and charge-spend are the
         // whole turn — re-entering act-by-pattern would eat the grounded
         // window and double-bask.)
-        if (this.boarIs(m) || this.stagIs(m) || this.heronIs(m) || this.glasswingIs(m) || this.sunbaskerIs(m)) return;
+        // BATCH 2 / WAVE 2 (Steve 2026-10-06): the bright_idea's bloom must read
+        // for a full turn — the detonation beat ends the turn on 'bloom'; the
+        // next monster turn flips it to ember via the existing check. Without
+        // this, the turn falls through to the bespoke block below, which flips
+        // bloom→ember before any render — the EUREKA badge never shows.
+        if (this.boarIs(m) || this.stagIs(m) || this.heronIs(m) || this.glasswingIs(m) || this.sunbaskerIs(m) || this.biIs(m)) return;
         // MONSTER BATCH 2: the spent phase must read for a full turn — a
         // post-flash moth, post-chorus toad, or post-hum mouse doesn't act twice.
         if ((this.mothIs(m) || this.toadIs(m) || this.humiceIs(m)) && (m.encCooldown || 0) > 0) return;
@@ -17447,10 +17514,17 @@
           this.encSetPhase(m, 'brighten'); m.biDeclared = true;
           const cells = S.combat.patternCells(pat, m.mx, m.my, foe.f.mx, foe.f.my);
           const p0 = this.tbFighter('p');
+          const known = this.encTelegraphKnown(m);
+          // CUE TEXT (Steve 2026-10-06): sayTelegraphOnce is SILENT in combat —
+          // the BACK OFF coaching was invisible. The telegraph carries the cue
+          // itself now, so the telegraph UI shows it every render while armed.
+          const biCue = known
+            ? '⚠ It\'s brightening. Two beats from glow to boom — BACK OFF. Radius 2.'
+            : '⚠ ' + (atk.telegraph || 'It brightens.');
           m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
             attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 2,
             threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
-            aim: null, dir: null, aimKey: null, angle: null, firing: 0, cueText: null };
+            aim: null, dir: null, aimKey: null, angle: null, firing: 0, cueText: biCue };
           try {
             const me = this.ensureMonsterEntry(m.mdef.id);
             if (atk.name && !me.attacksSeen.includes(atk.name)) {
@@ -17458,10 +17532,7 @@
               if (me.stage === 'encountered') me.stage = 'observed';
             }
           } catch (e) {}
-          const known = this.encTelegraphKnown(m);
-          this.sayTelegraphOnce(m, known
-            ? '⚠ It\'s brightening. Two beats from glow to boom — BACK OFF. Radius 2.'
-            : '⚠ ' + (atk.telegraph || 'It brightens.'));
+          this.sayTelegraphOnce(m, biCue);
           this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'burst' });
           this.audioEvent('eurekaCharge');
         } else if (!m.telegraph) {
