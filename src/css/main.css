@@ -816,16 +816,6 @@ body.in-combat .ord-log { order: 5.3; }
   color: inherit; font-size: 14px; opacity: .7; cursor: pointer;
   animation: dlgBlink 1.2s infinite;
 }
-.dlg-advance { display: flex; align-items: center; justify-content: center; gap: 12px; }
-.dlg-advance .dlg-next { margin: 2px 0 0; }
-/* INTERRUPT (Steve 2026-10-05): cut through NPC beats to your choices.
-   Small, unobtrusive — but visible. Cutting someone off is a choice. */
-.dlg-interrupt {
-  background: none; border: 1px solid rgba(255,255,255,.25); border-radius: 6px;
-  color: inherit; font-size: 12px; opacity: .55; cursor: pointer;
-  padding: 2px 8px;
-}
-.dlg-interrupt:active { opacity: 1; background: rgba(255,255,255,.1); }
 @keyframes dlgBlink { 0%, 100% { opacity: .7; } 50% { opacity: .2; } }
 .ord-ctx { order: 6; }
 /* SELF BAR: your persistent body-actions (Eat, Sleep, Pack, Wait). Personal

@@ -17,7 +17,9 @@ function ok(name, cond, extra) {
 (async () => {
   await Game.init();
   const ids = Game.data.monsters.map(m => m.id);
-  ok('20 monsters in sweep', ids.length === 20, `got ${ids.length}`);
+  // sanity: data loaded (count moves as monsters are added — the loop below
+  // covers every monster in data, whatever the count)
+  ok('monster data loaded for sweep', ids.length > 0, `got ${ids.length}`);
 
   const bad = [];
   for (const id of ids) {
@@ -37,11 +39,11 @@ function ok(name, cond, extra) {
   }
   if (bad.length) { fail++; console.log('FAIL unresolved fights:\n  ' + bad.join('\n  ')); }
 
-  // the sweep models the hunter build: spear equipped (range 2, +25), so
-  // fleeAt/routed dynamics and real TTK show up in the numbers
+  // the sweep models the hunter build: fire-hardened spear equipped (range 2),
+  // so fleeAt/routed dynamics and real TTK show up in the numbers
   sim.setup();
   const w = Game.equippedWeapon();
-  ok('sweep equips the hunter spear', w && w.range === 2 && w.bonus === 25,
+  ok('sweep equips the hunter spear', w && w.range === 2 && w.bonus === 15,
     `got range=${w && w.range} bonus=${w && w.bonus}`);
 
   // spawns must be path-connected (unreachable pockets fake stalemates)

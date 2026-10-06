@@ -3872,7 +3872,11 @@
     let idx = 0;
     if (lastBefore) {
       const li = t.lastIndexOf(lastBefore);
-      idx = li >= 0 ? Math.min(li + 1, Math.max(0, t.length - 1)) : 0;
+      idx = li >= 0 ? li + 1 : 0;
+      // ONE-BEAT TURNS (Steve 2026-10-05): your own line lives in the
+      // history, not paginated back at you — land on their reply.
+      while (idx < t.length && t[idx].who === 'you') idx++;
+      idx = Math.min(idx, Math.max(0, t.length - 1));
     }
     chatView.msgIndex = idx;
     chatView.history = false;
@@ -3939,18 +3943,11 @@
       histBody = `<div class="dlg-history">${transcript.map(renderEntry).join('')}</div>`;
     }
     const showBody = cv.history && histBody ? histBody : body;
-    // INTERRUPT (Steve 2026-10-05): tapping through 3-4 NPC beats to reach your
-    // choices is pagination, not conversation (2.4 reading-taps per playing-tap
-    // measured). The interrupt button cuts to your choices immediately — but
-    // cutting someone off has a social cost. Real conversations have this.
-    const interruptBtn = (!cv.history && more)
-      ? `<button class="dlg-interrupt" id="dlg-interrupt" aria-label="interrupt" title="Cut in (they'll notice)">…!</button>`
-      : '';
     return `<div class="dialogue-box">
       <div class="dlg-speaker"><button class="dlg-hist" id="dlg-hist" aria-label="conversation history" title="See full conversation">💬 ${esc(titleName)} ${cv.history ? '▾' : '▸'}</button><button class="dlg-x" id="dlg-end" aria-label="end conversation">✕</button></div>
       ${showBody}
       ${!cv.history && choiceBtns ? `<div class="dlg-choices">${choiceBtns}</div>` : ''}
-      ${!cv.history && more ? `<div class="dlg-advance"><button class="dlg-next" id="dlg-next" aria-label="continue">▼</button>${interruptBtn}</div>` : ''}
+      ${!cv.history && more ? `<button class="dlg-next" id="dlg-next" aria-label="continue">▼</button>` : ''}
     </div>`;
   }
 
@@ -4002,8 +3999,6 @@
   function wireDialogueBox() {
     const nx = document.getElementById('dlg-next');
     if (nx) nx.onclick = () => chatAdvance();
-    const intr = document.getElementById('dlg-interrupt');
-    if (intr) intr.onclick = (e) => { e.stopPropagation(); chatInterrupt(); };
     const hist = document.getElementById('dlg-hist');
     if (hist) hist.onclick = (e) => {
       e.stopPropagation();
@@ -4035,43 +4030,6 @@
     if (!convo || !convo.active) { chatView = null; refresh(); return; }
     const n = (convo.transcript || []).length;
     chatView.msgIndex = Math.min((chatView.msgIndex || 0) + 1, Math.max(0, n - 1));
-    refresh();
-  }
-
-  // INTERRUPT (Steve 2026-10-05): cut through NPC beats straight to your
-  // choices. Real conversations have interruptions — but cutting someone off
-  // has a social cost. The NPC notices, trust dips, and they may comment.
-  function chatInterrupt() {
-    if (!chatView || chatView.thinking) return;
-    const vid = chatView.vid;
-    const convo = Game.convoUI ? Game.convoUI(vid) : null;
-    if (!convo || !convo.active) { chatView = null; refresh(); return; }
-    const n = (convo.transcript || []).length;
-    // Jump to the end — choices appear immediately
-    chatView.msgIndex = Math.max(0, n - 1);
-    // Mark it: the engine picks this up on the next turn
-    try {
-      const c = Game.convoGet(vid);
-      c.interrupted = (c.interrupted || 0) + 1;
-      // Social cost: -2 trust each time, and they remember
-      const v = Game.state.village;
-      v.trust = v.trust || {};
-      v.trust[vid] = Math.max(0, (v.trust[vid] || 10) - 2);
-      // Immediate reaction beat — they notice being cut off.
-      // Second+ interruption in the same conversation lands harder.
-      const reactions = c.interrupted >= 2 ? [
-        '"Okay — you clearly don\'t want to hear it. Fine."',
-        'They go quiet. "I\'ll just... stop talking, then."',
-      ] : [
-        '"—oh. Okay. Go ahead."',
-        '"...Right. Sorry, I was going on."',
-        'They stop mid-thought. "Yeah?"',
-      ];
-      const r = reactions[Math.floor(Math.random() * reactions.length)];
-      c.transcript.push({ who: 'them', text: r });
-      while (c.transcript.length > 200) c.transcript.shift();
-      chatView.msgIndex = c.transcript.length - 1;
-    } catch (e) {}
     refresh();
   }
 

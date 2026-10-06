@@ -30,9 +30,9 @@ function setup() {
   const s = Game.state.scholar;
   const c = freeCell();
   s.mx = c.x; s.my = c.y; s.health = 100;
-  // the hunter's kit: a real hunter brings a spear (range 2, +25).
+  // the hunter's kit: a real hunter brings a spear (range 2).
   // (The old sweep fought unarmed — range 1, +0 — which understated the
-  // hunter build by ~3x damage and hid fleeAt/routed dynamics.)
+  // hunter build and hid fleeAt/routed dynamics.)
   s.equipped = { weapon: { itemId: 'fire_hardened_spear', name: 'Fire-hardened spear', range: 2 } };
   Game.ensureVillagerPositions();
   // pull 2 villagers near the player for party testing

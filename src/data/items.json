@@ -612,7 +612,7 @@
   "name": "Sling",
   "class": "weapon",
   "flavor": "Two cords and a pouch. David's technology, still working.",
-  "baseEffect": "Ranged. Bonus +15. Quiet.",
+  "baseEffect": "Ranged. Bonus +8. Quiet.",
   "weapon": {
    "bonus": 8,
    "type": "ranged",
@@ -644,7 +644,7 @@
   "name": "Fire-hardened spear",
   "class": "weapon",
   "flavor": "The tip is black and hard as iron. Fire did half the work.",
-  "baseEffect": "Melee. Bonus +25.",
+  "baseEffect": "Melee. Bonus +15.",
   "weapon": {
    "bonus": 15,
    "type": "melee",
@@ -673,7 +673,7 @@
   "name": "Hatchet",
   "class": "weapon",
   "flavor": "Chops wood. Chops other things. The edge doesn't judge.",
-  "baseEffect": "Melee. Bonus +25. Also a tool.",
+  "baseEffect": "Melee. Bonus +15. Also a tool.",
   "weapon": {
    "bonus": 15,
    "type": "melee",
@@ -730,7 +730,7 @@
   "name": "Crude bow",
   "class": "weapon",
   "flavor": "Bent stick, twisted cord. The arrows are straighter than the bow.",
-  "baseEffect": "Ranged. Bonus +40.",
+  "baseEffect": "Ranged. Bonus +18.",
   "weapon": {
    "bonus": 18,
    "type": "ranged",
@@ -1025,7 +1025,7 @@
   "name": "Crowbar",
   "class": "weapon",
   "flavor": "Opens doors. Opens cans. Opens arguments.",
-  "baseEffect": "Melee. Bonus +20. Pries things open.",
+  "baseEffect": "Melee. Bonus +12. Pries things open.",
   "weapon": {
    "bonus": 12,
    "type": "melee",
