@@ -11,13 +11,11 @@
 //   - cache_is_keyed: cache entries live on tile._sceneCache as {key, svg}; the key fingerprints tile type + quantized stock + scene version + entity signature (code: fingerprint, Steve 2026-10-06)
 //   - touch_is_the_bump: forage/harvest/structure-build call touch(x, y) to force re-render; stock quantization alone is too coarse for visual freshness (code: touch, Steve 2026-10-06)
 //   - miniature_not_sprite: detail cells render as simple shapes, never full sprites — this is a 40px-readable miniature (code: markerFor, Steve 2026-10-06)
-//   - entities_are_local: player/villager/animal markers only render on the player's tile, from detail-grid mx/my coords (code: entityMarkers, Steve 2026-10-06)
-//   - no_monster_markers: the map shows geography only, never live monster positions (code: entityMarkers, Steve 2026-10-06)
+//   - entities_are_local: player/villager/monster/animal markers only render on the player's tile, from detail-grid mx/my coords (code: entityMarkers, Steve 2026-10-06)
 //   - no_dom: composition is pure string building; safe to call from hot paths and off-thread tests (code: compose, Steve 2026-10-06)
 // consumes:
 //   - Game.tileAt, Game.genDetail (detail-grid generation)
-//   - Game.map.px/py (player tile), Game.state.scholar (mx,my,animal)
-//   - Game.state.worldMonsters (NOT rendered on map — geography only, Steve 2026-10-06)
+//   - Game.map.px/py (player tile), Game.state.scholar (mx,my,monster,animal)
 //   - Game.state.village.positions (villager detail-grid positions)
 // ============ TILE SCENES: miniature SVG scenes per world-map tile ============
 // Steve 2026-10-06: "start the real SVG project" — tiles as auto-composed SVG
@@ -165,22 +163,14 @@
   }
 
   function entityMarkers(g, x, y) {
-    if (!g || !g.map) return '';
+    if (!g || !g.map || g.map.px !== x || g.map.py !== y) return '';
     const st = g.state || {};
     const sch = st.scholar || {};
-    const onPlayerTile = (g.map.px === x && g.map.py === y);
     let s = '';
     const dot = (mx, my, shape) => {
       if (typeof mx !== 'number' || typeof my !== 'number') return '';
       return shape(cx2x(Math.max(0, Math.min(8, mx))), cy2y(Math.max(0, Math.min(8, my))));
     };
-    const diamond = (mx, my) => dot(mx, my, (px, py) =>
-      '<path d="M' + px + ' ' + r1(py - 3) + ' L' + r1(px + 3) + ' ' + py +
-      ' L' + px + ' ' + r1(py + 3) + ' L' + r1(px - 3) + ' ' + py + ' Z" fill="#e04040"/>');
-    // NO MONSTER MARKERS (Steve 2026-10-06): the map is the map. It shows
-    // geography, not live monster positions. Monster tracking is a future
-    // codex/ability feature (hunt or combat affinity), not a map default.
-    if (!onPlayerTile) return s;
     // player: white dot with ring
     s += dot(sch.mx != null ? sch.mx : 4, sch.my != null ? sch.my : 4, (px, py) =>
       '<circle cx="' + px + '" cy="' + py + '" r="3.6" fill="none" stroke="#ffffff" stroke-width="1.2"/>' +
@@ -192,6 +182,12 @@
       s += dot(pos.mx, pos.my, (px, py) =>
         '<circle cx="' + px + '" cy="' + py + '" r="2.2" fill="#a8d5a2" stroke="#3a5a3a" stroke-width="0.8"/>');
     }
+    // monster: red diamond
+    if (sch.monster) {
+      s += dot(sch.monster.mx, sch.monster.my, (px, py) =>
+        '<path d="M' + px + ' ' + r1(py - 3) + ' L' + r1(px + 3) + ' ' + py +
+        ' L' + px + ' ' + r1(py + 3) + ' L' + r1(px - 3) + ' ' + py + ' Z" fill="#e04040"/>');
+    }
     // animal: small brown dot
     if (sch.animal) {
       s += dot(sch.animal.mx, sch.animal.my, (px, py) =>
@@ -201,30 +197,19 @@
   }
 
   function compose(g, t, x, y) {
-    // ROBUST (Steve 2026-10-06): the generator must not fail. If detail
-    // isn't available, show the base terrain — never blank, never throw.
-    try {
-      const pal = TILE_BASE[t.type] || FALLBACK_BASE;
-      let detail = null;
-      try {
-        detail = t.detail;
-        if (!detail && g.genDetail) detail = g.genDetail(x, y);
-      } catch (e) { detail = null; }
-      const stockFrac = (typeof t.stock === 'number' && typeof t.maxStock === 'number' && t.maxStock > 0)
-        ? Math.max(0, Math.min(1, t.stock / t.maxStock)) : 1;
-      let svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
-        '<rect x="0.5" y="0.5" width="63" height="63" rx="7" fill="' + pal.base + '"/>';
-      try { svg += texture(x, y, pal); } catch (e) {}
-      try { if (detail) svg += detailMarkers(detail, stockFrac); } catch (e) {}
-      try { svg += entityMarkers(g, x, y); } catch (e) {}
-      svg += '</svg>';
-      return svg;
-    } catch (e) {
-      // Absolute last resort: solid terrain color, never blank.
-      const pal = FALLBACK_BASE;
-      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
-        '<rect x="0.5" y="0.5" width="63" height="63" rx="7" fill="' + pal.base + '"/></svg>';
+    const pal = TILE_BASE[t.type] || FALLBACK_BASE;
+    let detail = t.detail;
+    if (!detail && g.genDetail) {
+      try { detail = g.genDetail(x, y); } catch (e) { detail = null; }
     }
+    const stockFrac = (typeof t.stock === 'number' && typeof t.maxStock === 'number' && t.maxStock > 0)
+      ? Math.max(0, Math.min(1, t.stock / t.maxStock)) : 1;
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+      '<rect x="0.5" y="0.5" width="63" height="63" rx="7" fill="' + pal.base + '"/>' +
+      texture(x, y, pal) +
+      (detail ? detailMarkers(detail, stockFrac) : '') +
+      entityMarkers(g, x, y) +
+      '</svg>';
   }
 
   function fingerprint(g, t, x, y) {
@@ -233,9 +218,6 @@
     const ver = t._sceneVer || 0;
     // Entity signature: rounded detail-grid coords so the cache busts when
     // anyone moves; villagers are rid->pos pairs on the player tile.
-    // No monster positions in fingerprint (Steve 2026-10-06): map shows
-    // geography only, not live monsters.
-    let wms = '';
     let ent = '';
     if (g && g.map && g.map.px === x && g.map.py === y && g.state) {
       const sch = g.state.scholar || {};
@@ -245,10 +227,11 @@
         return rid + ':' + Math.round(p.mx || 0) + ',' + Math.round(p.my || 0);
       }).join(';');
       ent = [Math.round(sch.mx != null ? sch.mx : 4), Math.round(sch.my != null ? sch.my : 4),
+        sch.monster ? (Math.round(sch.monster.mx) + ',' + Math.round(sch.monster.my)) : '-',
         sch.animal ? (Math.round(sch.animal.mx) + ',' + Math.round(sch.animal.my)) : '-',
         vps].join('|');
     }
-    return [t.type, stock, ver, wms, ent].join('|');
+    return [t.type, stock, ver, ent].join('|');
   }
 
   function safeTile(g, x, y) {

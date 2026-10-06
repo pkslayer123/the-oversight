@@ -21,9 +21,6 @@ const files = [
   'src/js/engine/forage.js',
   'src/js/engine/combat.js',
   'src/js/game.js',
-  'src/js/sprites.js',
-  'src/js/truth.js',
-  'src/js/contests.js',
   'src/js/debug-scenarios.js',
 ];
 files.forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
@@ -52,30 +49,15 @@ function renderGridSVG() {
         fill = '#4a4a6e';
         emoji = '🧍';
       }
-      // Monster — use REAL SPRITE, not emoji (Steve 2026-10-06)
-      let monsterSprite = '';
+      // Monster
       if (s.monster && s.monster.mx === x && s.monster.my === y) {
         const mdef = (Game.data.monsters || []).find(m => m.id === s.monster.id) || {};
         fill = '#6e2a2a';
-        try {
-          const S = globalThis.Scattering || {};
-          if (S.Sprites && S.Sprites.monsterSprite) {
-            const spr = S.Sprites.monsterSprite(s.monster.id, true);
-            if (spr) {
-              // Embed the SVG directly, scaled to fit the cell
-              // Sprites are 32x32 viewBox, cell is 40px
-              const sized = spr.replace('<svg ', `<svg x="${px + 4}" y="${py + 4}" width="32" height="32" `);
-              monsterSprite = sized;
-            }
-          }
-        } catch (e) {}
-        if (!monsterSprite) emoji = mdef.emoji || '👹';
+        emoji = mdef.emoji || '👹';
       }
       
       svg += `<rect x="${px}" y="${py}" width="${CELL}" height="${CELL}" fill="${fill}" stroke="#444" stroke-width="1"/>`;
-      if (monsterSprite) {
-        svg += monsterSprite;
-      } else if (emoji) {
+      if (emoji) {
         svg += `<text x="${px + CELL/2}" y="${py + CELL/2 + 8}" text-anchor="middle" font-size="24">${emoji}</text>`;
       }
     }
@@ -102,17 +84,7 @@ function renderGridSVG() {
   
   const scenario = process.argv[2];
   if (scenario) {
-    // freshGame() is defined in debug-scenarios.js and sets up Game.state
-    // We need to call it via the scenario, which does it internally
-    const ok = Game.debugScenario(scenario);
-    if (!ok) {
-      console.error('Scenario failed or not found:', scenario);
-      process.exit(1);
-    }
-  } else {
-    console.error('Usage: node scripts/render-grid.js [scenario]');
-    console.log('Available:', Game.debugScenarioList().slice(0, 10).join(', '));
-    process.exit(1);
+    Game.debugScenario(scenario);
   }
   
   const svg = renderGridSVG();

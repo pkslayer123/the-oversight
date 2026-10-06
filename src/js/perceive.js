@@ -4,9 +4,7 @@
 // provides:
 //   - perceptionHints()
 // rules:
-//   - unknown_trees_stay_trees: species name and nut promise gated on treeLevel >= 1; unknown trees are just trees (code: perceptionHints, Steve 2026-10-06)
-//   - whispers_never_label: curiosity whispers hint at hidden features, never name them; one whisper at a time, quiet (code: perceptionHints, Steve 2026-10-06)
-//   - monsters_gated_by_codex: monster names show only via monsterKnown/monsterDesc (village-agreed or System); people via displayName (socially earned) (code: perceptionHints, Steve 2026-10-06)
+//   - (none documented)
 // consumes:
 //   - scholar.perception
 // ============ PERCEPTION HINTS ============
@@ -178,18 +176,12 @@
             } else if (cell === 'plant') {
               push(`Something green and low-growing. Might be edible.`, 44);
             } else {
-              // TREE SPECIES GATING (Steve 2026-10-06): name only if known.
-              // Unknown trees are just trees. The old fallback called them
-              // "nut tree" and promised nuts — that taught the species'
-              // food value before the player earned it. Now the earned loop
-              // holds: learn -> recognize -> forage deliberately.
-              const sp = (mod.species && this.treeLevel(mod.species) >= 1) ? mod.species : null;
-              if (sp) {
-                const art = /^[aeiou]/i.test(sp) ? 'An' : 'A';
-                push(`${art} ${sp}. There might be nuts.`, 44);
-              } else {
-                push(`A tree with a full, heavy canopy.`, 44);
-              }
+              // TREE SPECIES GATING (Steve 2026-10-06): name only if known —
+              // the bush branch 10 lines above gates on codex.plants level; the
+              // tree branch gets the same treatment via treeLevel.
+              const sp = (mod.species && this.treeLevel(mod.species) >= 1) ? mod.species : 'nut tree';
+              const art = /^[aeiou]/i.test(sp) ? 'An' : 'A';
+              push(`${art} ${sp}. There might be nuts.`, 44);
             }
             forageSaid = true;
           }
@@ -220,55 +212,18 @@
     // to learn what it is. Once revealed, the whisper goes quiet.
     // (Without this, examine is a blind 2-tick lottery across 81 cells —
     // tedium, not exploration.)
-    //
-    // WHISPER VARIANTS (Steve 2026-10-06): each feature has 3 whispers that
-    // rotate by day. Same tile, same day: same whisper (no chatter). A new
-    // day brings fresh ears. Never a label — hints, not answers.
     try {
       if (typeof this.tileFeature === 'function') {
-        const curiosityWhispers = {
-          tracks: [
-            'The ground here looks disturbed. Worth a closer look.',
-            "Something crossed here — the mud remembers, even if you don't.",
-            'Prints, or the ghost of prints. Whatever made them is gone.',
-          ],
-          oldcamp: [
-            'Something about this spot feels... used. Lived in.',
-            'Cold ash under the leaves. Somebody camped here once.',
-            "The stones are arranged. That doesn't happen by itself.",
-          ],
-          strange: [
-            "The ground here is wrong in a way you can't name.",
-            'Your skin prickles. Nothing to see — which is worse, somehow.',
-            'The air sits differently here. You notice it before you understand it.',
-          ],
-          remnant: [
-            "That rubble doesn't look accidental.",
-            'Broken things, placed. Or dropped running — hard to say.',
-            "Somebody built here, or unbuilt. The pieces don't agree.",
-          ],
-          hollow: [
-            'That tree has a dark hollow at its base.',
-            'A hollow at the base, big enough for a hand. Or a home.',
-            "The trunk opens at the bottom. Dark inside. Worth a look — carefully.",
-          ],
-          banktracks: [
-            'The mud at the bank looks trampled.',
-            'Something drinks here regularly. The bank is worn smooth.',
-            "Wet prints going in, none coming out. It's still in there, or it left by water.",
-          ],
-        };
-        const whisperFor = (feat, salt) => {
-          const vs = curiosityWhispers[feat];
-          if (!vs) return null;
-          let h = 0;
-          const s = feat + '|' + salt;
-          for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-          const dayN = (this.state.scholar || {}).day || 0;
-          return vs[(Math.abs(h) + dayN) % vs.length];
-        };
         const detail = this.genDetail(this.map.px, this.map.py);
         const examined = (this.state.codex || {}).examined || {};
+        const curiosityLines = {
+          tracks: 'The ground here looks disturbed. Worth a closer look.',
+          oldcamp: 'Something about this spot feels... used. Lived in.',
+          strange: 'The ground here is wrong in a way you can\'t name.',
+          remnant: 'That rubble doesn\'t look accidental.',
+          hollow: 'That tree has a dark hollow at its base.',
+          banktracks: 'The mud at the bank looks trampled.',
+        };
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
             const cx = px + dx, cy = py + dy;
@@ -280,8 +235,7 @@
             if (!feat) continue;
             const featKey = `${this.map.px},${this.map.py},${cx},${cy}:feat`;
             if (examined[featKey]) continue;
-            const w = whisperFor(feat, featKey);
-            if (w) { push(w, 37); }
+            if (curiosityLines[feat]) { push(curiosityLines[feat], 37); }
             dy = 2; // one whisper at a time
             break;
           }

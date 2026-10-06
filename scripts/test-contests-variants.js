@@ -76,7 +76,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
   {
     fresh();
     const pool = Game.contestPool();
-    ok('N1 pool grew to 38', pool.length === 38, `got ${pool.length}`);
+    ok('N1 pool grew to 27', pool.length === 27, `got ${pool.length}`);
     for (const id of NEW_CONTESTS) {
       const c = pool.find(x => x.id === id);
       ok(`N1 ${id} in pool with full fields`,
@@ -106,9 +106,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
     Game.state.waveKills = { 1: 4 };
     unrig = rig(() => 0.5);
     const w2 = [];
-    // N2 sampling note (Steve 2026-10-06): pool grew 27->38, so 25 rigged picks no
-    // longer cover every candidate. 40 even picks over <=38 candidates hits each one.
-    for (let i = 0; i < 40; i++) { const u2 = rig(() => (i + 0.5) / 40); w2.push(Game.pickContest().id); u2(); }
+    for (let i = 0; i < 25; i++) { const u2 = rig(() => (i + 0.5) / 25); w2.push(Game.pickContest().id); u2(); }
     unrig();
     ok('N2 wave2: tithe offered', w2.includes('tithe'));
     ok('N2 wave2: maw offered', w2.includes('maw'));
@@ -120,7 +118,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
     Game.state.waveKills = { 2: 8 };
     unrig = rig(() => 0.5);
     const w3 = [];
-    for (let i = 0; i < 40; i++) { const u2 = rig(() => (i + 0.5) / 40); w3.push(Game.pickContest().id); u2(); }
+    for (let i = 0; i < 27; i++) { const u2 = rig(() => (i + 0.5) / 27); w3.push(Game.pickContest().id); u2(); }
     unrig();
     ok('N2 wave3: siege offered', w3.includes('siege'));
     ok('N2 wave3: gauntlet offered', w3.includes('gauntlet'));
@@ -173,7 +171,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
       const cleared = Game.state.activeContest === null;
       if (!(res && res.done && cleared)) { allDone = false; bad.push(`${base.id}:steps=${steps}`); }
     }
-    ok('N4 all 38 contests drive to completion via real path', allDone, bad.join('; '));
+    ok('N4 all 27 contests drive to completion via real path', allDone, bad.join('; '));
   }
 
   // ============ N5. Death lines bespoke for new contests ============

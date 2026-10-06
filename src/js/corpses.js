@@ -12,27 +12,15 @@
 //   - corpseEatItem(cid, idx)
 //   - registerDeath(vid, cause)
 //   - corpseStage(c)
-//   - corpseStageInfo(c)
 //   - corpseGlyph(c)
-//   - corpseMeatRead(c)
-//   - corpseRotBeat(c)
-//   - corpseTrauma(c, opts)
 //   - knowsDeath(vid)
 //   - generatePossessions(vid)
 //   - payRespects(cid)
 //   - codexDeathSync()
-//   - codexAttunement()
-//   - partyDeathNotify(corpse)
-//   - fightWitnesses(excludeVid)
 // rules:
-//   - loot is a deliberate per-item action; kills never auto-grant items into the pack (code: corpses.js)
-//   - first handling of a corpse applies trauma + disease once per corpse, not per item (code: corpses.js)
-//   - meat left on the body rots on its own clock; the loss is announced, never silent (code: corpses.js)
-//   - unknown flesh stays knowledge-gated: weight is honest, edibility and calories hidden until learned (code: corpses.js)
-//   - rot stages are visible in the loot voice: the countdown reads on the body, not after the fact (code: corpses.js)
+//   - (none documented)
 // consumes:
 //   - state.corpses
-//   - state.scholar
 /* CORPSE SYSTEM
  *
  * Steve's design: "One of the most essential parts of knowledge is confirming
@@ -117,44 +105,6 @@
       if (c.kind === 'person') return st.glyphPerson;
       if (c.kind === 'monster') return st.glyphMonster;
       return st.glyphAnimal;
-    },
-
-    // ---------- rot visibility ----------
-
-    // corpseMeatRead(c): which lootable items on this body are on a rot
-    // clock, and how many days they have left. The countdown reads ON the
-    // body — the player sees the window closing, not just the aftermath.
-    corpseMeatRead(c) {
-      const day = (this.state.scholar || {}).day || 0;
-      const out = [];
-      for (const it of (c.items || [])) {
-        if (!it || (it.units == null ? 1 : it.units) <= 0) continue;
-        if (it.spoilDay == null || it.spoilDay >= 9000) continue;
-        if (this.isSpoiled && this.isSpoiled(it)) continue; // sweep announces those
-        out.push({ it, daysLeft: it.spoilDay - day });
-      }
-      return out;
-    },
-
-    // corpseRotBeat(c): the tense one-liner for the loot moment. Meat left
-    // on a body rots — leaving it is a decision with a visible deadline.
-    corpseRotBeat(c) {
-      const reads = this.corpseMeatRead(c);
-      if (!reads.length) return null;
-      const min = Math.min.apply(null, reads.map(r => r.daysLeft));
-      if (c.kind === 'monster' || c.kind === 'animal') {
-        // one carcass, one clock
-        if (min > 1) return `The carcass holds for ${min} more days. After that it's flies.`;
-        if (min === 1) return 'The carcass is turning — dark at the edges, sour smell. Today or never.';
-        return 'The meat is past saving — maggots got there first.';
-      }
-      const lines = reads.map(r => {
-        const nm = (r.it.name || 'it').toLowerCase();
-        if (r.daysLeft > 1) return `The ${nm} keeps ${r.daysLeft} more days — then it feeds the flies.`;
-        if (r.daysLeft === 1) return `The ${nm} is turning — dark at the edges. Today or never.`;
-        return `The ${nm} is past saving — maggots got there first.`;
-      });
-      return lines.join(' ');
     },
 
     // ---------- death registration ----------
@@ -315,30 +265,6 @@
       if (!c || c._touched) return;
       c._touched = true;
       const st = this.corpseStageInfo(c);
-      // THE MOMENT (Steve 2026-10-06): opening a body is not a menu action.
-      // The sensory beat lands first — what your hands and nose tell you —
-      // then the rot clock, so the deadline reads at the moment of decision.
-      const isBody = c.kind === 'person';
-      const TOUCH_BEATS = {
-        fresh: isBody
-          ? "The body hasn't cooled all the way. It happened recently — the ground still remembers."
-          : 'The carcass is still warm. Field-dressing starts now.',
-        stiff: isBody
-          ? 'Rigor holds the body in the shape of its last moment. You work around it.'
-          : "The carcass has stiffened — you'll work harder for every cut.",
-        bloating: isBody
-          ? 'The body has swollen in the heat. The smell is a wall. You breathe through your mouth and work fast.'
-          : 'Gas bloats the belly. The meat is going; cut fast or walk away.',
-        rotting: isBody
-          ? "Flies rise in a black curtain as you kneel. What's under your hands barely holds together."
-          : "Flies, stink, spoiling meat. What's salvageable is buried in the rot.",
-        bones: isBody
-          ? "Bone and old cloth. The body doesn't mind you anymore. That's the worst part."
-          : "Picked clean by everything that got here first. Whatever's left is yours.",
-      };
-      this.say(TOUCH_BEATS[st.id] || TOUCH_BEATS.fresh);
-      const rot = this.corpseRotBeat(c);
-      if (rot) this.say(rot);
       const trauma = this.corpseTrauma(c, {});
       try { this.addTrauma(trauma); } catch (e) {}
       const s = this.state.scholar;
@@ -382,12 +308,6 @@
       it.units = 0;
       const nm = this.itemDisplayName ? this.itemDisplayName(it) : (it.name || 'it');
       this.say(`Taken: ${nm} x${units}.`);
-      // KEEPSAKE WEIGHT: the photograph costs extra — in trauma and in voice.
-      // Taking it is a choice with a name, not a stack increment.
-      if (it.keepsake) {
-        try { this.addTrauma(3); } catch (e) {}
-        this.say(`You take ${nm}. It was theirs. It isn't yours. That's the whole of it. (+3 trauma)`);
-      }
       if (!c.items.some(i => (i.units == null ? 1 : i.units) > 0)) {
         c.looted = true;
         this.say('The body is stripped. What\'s left isn\'t worth taking.');
@@ -423,17 +343,7 @@
       if (!this._corpseCheckRange(c)) return null;
       const it = (c.items || [])[idx];
       if (!it || (it.units == null ? 1 : it.units) <= 0) { this.say('Nothing left of that.'); return null; }
-      // HONEST, NOT BLIND (Steve): "That's not food" is a lie when you
-      // simply don't know. Unknown flesh says so; unprepped food says WHY.
-      // Edibility stays knowledge-gated — this never reveals hiddenKcal.
-      if (!((it.kcalEach || 0) > 0 && it.edible !== false)) {
-        if (it.foodKind === 'meat') {
-          this.say(it.prep || '⚠️ Unknown flesh. You have no idea if this is food or poison. Clean it, test it cautiously, or ask someone who knows.');
-        } else {
-          this.say(it.prep || "That's not food.");
-        }
-        return null;
-      }
+      if (!((it.kcalEach || 0) > 0 && it.edible !== false)) { this.say("That's not food."); return null; }
       this._corpseFirstTouch(c);
       const s = this.state.scholar;
       it.units = (it.units || 1) - 1;
@@ -471,10 +381,7 @@
       return Math.max(1, Math.round(n));
     },
 
-    // lootCorpse(id, takeAll): legacy grab path. The player UI routes through
-    // the per-item primitives (corpseTakeItem/corpseUseItem/corpseEatItem);
-    // this is retained because progression.js wraps it (taken keepsakes
-    // become bonded sentimental items) and for non-player looting paths.
+    // lootCorpse(id, takeAll): search the body. Weight, trauma, disease, witnesses.
     lootCorpse(id, takeAll) {
       const c = this.corpses().find(x => x.id === id);
       if (!c || c.buried) { this.say('Nothing there.'); return null; }
@@ -594,10 +501,6 @@
         this.say(c.kind === 'person'
           ? `They're still wearing their life: ${remaining} thing${remaining > 1 ? 's' : ''} worth taking. Whether you should is another question.`
           : `The carcass has ${remaining} thing${remaining > 1 ? 's' : ''} worth cutting free.`);
-        // THE CLOCK: the rot countdown reads on the body, at the moment of
-        // looking — not three nights later in an announcement.
-        const rot = this.corpseRotBeat(c);
-        if (rot) this.say(rot);
       } else if (c.looted) {
         this.say('Stripped already. Nothing left but the fact of it.');
       }

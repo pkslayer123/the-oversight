@@ -89,14 +89,7 @@
   // Animals: 3 encounters (or a kill) teaches the name. Mirrors the plant
   // knowledge rule: knowing the name is only the start (knowledgeLevels).
   G.encAnimalKnown = function (id) {
-    try {
-      // COMMON ANIMALS (Steve 2026-10-06): broadly-known North American species
-      // are recognized on sight. Knowledge gating is for behavior/edibility,
-      // not the basic name — most people know a deer when they see one.
-      const adef = (this.data.animals || []).find(a => a.id === id);
-      if (adef && adef.common) return true;
-      return ((this.state.codex.animalEncounters || {})[id] || 0) >= 3;
-    }
+    try { return ((this.state.codex.animalEncounters || {})[id] || 0) >= 3; }
     catch (e) { return false; }
   };
   G.encDescribeAnimal = function (adef) {

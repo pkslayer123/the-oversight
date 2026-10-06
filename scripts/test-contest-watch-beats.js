@@ -30,7 +30,7 @@ const GENERIC_TELL = "it's going badly. Or well.";
 
   console.log('=== Contest Watch Beats ===\n');
   const pool = Game.contestPool();
-  ok('pool has 38 contests', pool.length === 38, `got ${pool.length}`);
+  ok('pool has 27 contests', pool.length === 27, `got ${pool.length}`);
 
   const turnBeats = new Set();
   for (const c of pool) {

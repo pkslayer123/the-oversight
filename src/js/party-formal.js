@@ -164,7 +164,7 @@
         if (f) for (const x of f.fighters) {
           if (x.kind === 'monster' && x.alive && !x.fled) seen.add(x.key);
         }
-        const sm = (typeof this.playerMonster === 'function') ? this.playerMonster() : this.state.scholar.monster;
+        const sm = this.state.scholar.monster;
         if (sm && sm.id) seen.add('node:' + sm.id);
       } catch (e) {}
       return seen.size;
@@ -815,11 +815,10 @@
   const origCheckEncounter = Game.checkEncounter;
   Game.checkEncounter = function () {
     let had = null;
-    try { const _pmh = (typeof this.playerMonster === 'function') ? this.playerMonster() : this.state.scholar.monster; had = _pmh ? _pmh.id : null; } catch (e) {}
+    try { had = this.state.scholar.monster ? this.state.scholar.monster.id : null; } catch (e) {}
     const r = origCheckEncounter.call(this);
     try {
-      const _pmn = (typeof this.playerMonster === 'function') ? this.playerMonster() : this.state.scholar.monster;
-      const now = _pmn ? _pmn.id : null;
+      const now = this.state.scholar.monster ? this.state.scholar.monster.id : null;
       if (now && now !== had) {
         const bonus = this.partyExpeditionBonus ? this.partyExpeditionBonus() : null;
         if (bonus && bonus.scout) {

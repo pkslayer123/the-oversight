@@ -21,9 +21,6 @@
 
   // All sprites: viewBox 0 0 32 32, designed to read at 32px grid size.
   const SPRITES = {
-    weapon_generic: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite"><path d="M8 24 L20 12" stroke="#8a8a8a" stroke-width="3" stroke-linecap="round"/><path d="M20 12 L24 8" stroke="#c0c0c0" stroke-width="2" stroke-linecap="round"/><rect x="6" y="22" width="6" height="4" rx="1" fill="#5a4326" transform="rotate(-45 9 24)"/></svg>`,
-    tool_generic: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite"><rect x="14" y="8" width="4" height="16" rx="2" fill="#8a6a3e"/><rect x="10" y="6" width="12" height="6" rx="2" fill="#6b6b6b"/></svg>`,
-    clothing_generic: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite"><path d="M10 8 L14 6 L18 6 L22 8 L24 14 L20 16 L20 26 L12 26 L12 16 L8 14 Z" fill="#4a6a8a" stroke="#2a3a4a" stroke-width="1"/></svg>`,
     generic_plant: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite"><path d="M16 28 L16 14" stroke="#3f7a33" stroke-width="2" stroke-linecap="round"/><ellipse cx="11" cy="18" rx="4" ry="2.4" fill="#4da63f" transform="rotate(-25 11 18)"/><ellipse cx="21" cy="18" rx="4" ry="2.4" fill="#4da63f" transform="rotate(25 21 18)"/><ellipse cx="12" cy="12" rx="3" ry="2" fill="#578a45" transform="rotate(-15 12 12)"/><ellipse cx="20" cy="12" rx="3" ry="2" fill="#578a45" transform="rotate(15 20 12)"/></svg>`,
     generic_bush: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite"><rect x="14.5" y="24" width="3" height="6" rx="1" fill="#5a4326"/><ellipse cx="10" cy="21" rx="6.5" ry="5.5" fill="#3d6b2f"/><ellipse cx="22" cy="21" rx="6.5" ry="5.5" fill="#3d6b2f"/><ellipse cx="16" cy="17.5" rx="8" ry="6.5" fill="#4a7d3a"/><ellipse cx="12" cy="15" rx="3.5" ry="2.5" fill="#578a45" opacity="0.8"/><ellipse cx="20" cy="16" rx="3" ry="2.2" fill="#578a45" opacity="0.8"/></svg>`,
     generic_tree: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite"><rect x="14" y="18" width="4" height="12" rx="1.5" fill="#5a4326"/><ellipse cx="16" cy="12" rx="10" ry="8" fill="#3d6b2f"/><ellipse cx="11" cy="9" rx="5" ry="4" fill="#4a7d3a"/><ellipse cx="21" cy="10" rx="5" ry="4" fill="#4a7d3a"/><ellipse cx="16" cy="7" rx="4" ry="3" fill="#578a45" opacity="0.85"/></svg>`,
@@ -829,16 +826,6 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
   const UNKNOWN_ITEM = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite"><rect x="8" y="10" width="16" height="13" rx="2" fill="#6b5b3e" stroke="#4a3f30" stroke-width="1"/><path d="M8 14 L24 14" stroke="#4a3f30" stroke-width="1"/><text x="16" y="21" text-anchor="middle" font-size="9" fill="#2a2419" font-family="monospace">?</text></svg>`;
   function itemSprite(itemId, known) {
     if (known && SPRITES[itemId]) return SPRITES[itemId];
-    if (known) {
-      try {
-        const data = (global.Scattering.Game && global.Scattering.Game.data) || {};
-        const def = (data.items || []).find(i => i.id === itemId);
-        const cls = def ? def.class : null;
-        if (cls === 'weapon') return SPRITES['weapon_generic'] || UNKNOWN_ITEM;
-        if (cls === 'tool') return SPRITES['tool_generic'] || UNKNOWN_ITEM;
-        if (cls === 'clothing') return SPRITES['clothing_generic'] || UNKNOWN_ITEM;
-      } catch (e) {}
-    }
     return UNKNOWN_ITEM;
   }
 

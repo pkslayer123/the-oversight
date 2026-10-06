@@ -92,9 +92,7 @@ function ok(name, cond, extra) {
     Game.addNotability('player', 'contestWin');
     const e2 = Game.contestEligible();
     const me = e2.eligible.find(x => x.id === 'player');
-    // (Steve 2026-10-06): 583ded1 fixed the grammar to 'won a contest' / 'won N contests';
-    // the old /won 1 contest/ expectation was stale.
-    return me && me.notability.some(n => /won a contest/.test(n));
+    return me && me.notability.some(n => /won 1 contest/.test(n));
   })());
   ok('pre-day-14 gives the reason, not a list', (() => {
     Game.state.scholar.day = 5;
@@ -166,7 +164,7 @@ function ok(name, cond, extra) {
   ok('frequency cap: no week exceeds 2 events', Object.values(perWeek).every(n => n <= 2),
     JSON.stringify(perWeek));
 
-  // === NO DEAD-ENDS: phase-graph audit across all 38 contests ===
+  // === NO DEAD-ENDS: phase-graph audit across all 27 contests ===
   // Every phase has ≥1 choice; every next resolves to a real phase or a
   // terminal ('WIN'|'LOSE'|'DIE'|'REFUSE'|'VERDICT'); no self-loops; every
   // path terminates within 12 steps. Covers both knowledge variants and

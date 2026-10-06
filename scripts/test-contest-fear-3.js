@@ -39,7 +39,7 @@ function fresh(day) {
   {
     fresh();
     const ids = Game.contestPool().map(c => c.id);
-    ok('pool has 38 contests', ids.length === 38, String(ids.length));
+    ok('pool has 27 contests', ids.length === 27, String(ids.length));
     const missBeat = [], missDeath = [], missCoach = [], genericDeath = [];
     for (const id of ids) {
       const c = { id, name: id, cat: 'blood', risk: 'high', desc: 'x' };

@@ -259,11 +259,7 @@
       comp[plant.id] = e;
       lump.units += units;
       lump.spoilDay = Math.min(lump.spoilDay, day + (plant.spoilageDays || 2));
-      // LUMP WEIGHT FIX (forager loop 2026-10-06): kg is PER-UNIT everywhere
-      // (packWeight sums units*kg). The old line stored the TOTAL here
-      // (units*0.1), so the lump weighed 0.1*N^2 kg — a 12-unit lump hit
-      // 14.4kg and filled the pack in two sweeps. Per-unit stays 0.1.
-      lump.kg = 0.1;
+      lump.kg = Math.max(0.1, Math.round(lump.units * 0.1 * 10) / 10);
       return lump;
     },
 
@@ -306,8 +302,7 @@
         if (cp && comp[cpid]) minSpoil = Math.min(minSpoil, comp[cpid].day + (cp.spoilageDays || 2));
       }
       lump.spoilDay = isFinite(minSpoil) ? minSpoil : this.state.scholar.day;
-      // (forager loop 2026-10-06): kg is per-unit — see addUnknownToLump.
-      lump.kg = 0.1;
+      lump.kg = Math.max(0.1, Math.round(lump.units * 0.1 * 10) / 10);
       cont.push(item);
       if (lump.units <= 0) {
         const ix = cont.indexOf(lump);
@@ -1469,8 +1464,7 @@
             }
             target.units += it.units;
             target.spoilDay = Math.min(target.spoilDay, it.spoilDay);
-            // (forager loop 2026-10-06): kg is per-unit — see addUnknownToLump.
-            target.kg = 0.1;
+            target.kg = Math.max(0.1, Math.round(target.units * 0.1 * 10) / 10);
           } else {
             stash.push(it);
           }
