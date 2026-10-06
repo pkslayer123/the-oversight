@@ -5709,5 +5709,283 @@
         "\"Steady on. We'll get there.\""
       ]
     }
+  },
+  "voice": {
+    "profiles": {
+      "bold": {
+        "p": 0.35,
+        "open": [
+          "Let me be straight — ",
+          "Here's the thing — ",
+          "I'll tell you plain — "
+        ],
+        "close": [
+          "That's the truth of it.",
+          "No point pretending otherwise.",
+          "Mark my words."
+        ]
+      },
+      "cautious": {
+        "p": 0.4,
+        "open": [
+          "I think ",
+          "Maybe ",
+          "Probably — ",
+          "I'm not sure, but "
+        ],
+        "close": [
+          "...at least, that's how it looks to me.",
+          "Could be wrong, though.",
+          "Just my read."
+        ]
+      },
+      "warm": {
+        "p": 0.35,
+        "open": [
+          "Hey — ",
+          "Listen, ",
+          "Come here — "
+        ],
+        "close": [
+          "How are you holding up, though?",
+          "Anyway — how are YOU doing?",
+          "You doing okay?"
+        ]
+      },
+      "prickly": {
+        "p": 0.4,
+        "terse": true,
+        "open": [
+          "Look. ",
+          "Fine — ",
+          "What? "
+        ],
+        "close": [
+          "Happy?",
+          "There. Said it.",
+          "Don't make me repeat it."
+        ]
+      },
+      "steady": {
+        "p": 0.25,
+        "open": [
+          "Honestly, ",
+          "Well, "
+        ],
+        "close": [
+          "One step at a time.",
+          "That's where we are."
+        ]
+      },
+      "restless": {
+        "p": 0.35,
+        "open": [
+          "Okay, okay — ",
+          "Quick version — ",
+          "So — "
+        ],
+        "close": [
+          "Anyway, I should move.",
+          "Gotta keep moving.",
+          "Can't sit still, you know?"
+        ]
+      },
+      "dry": {
+        "p": 0.35,
+        "open": [
+          "Well. ",
+          "Funny thing — ",
+          "So. "
+        ],
+        "close": [
+          "Allegedly.",
+          "But what do I know.",
+          "Extremely normal, all of it."
+        ]
+      },
+      "gentle": {
+        "p": 0.35,
+        "open": [
+          "I feel like ",
+          "It's just — ",
+          "Maybe it's only me, but "
+        ],
+        "close": [
+          "...if that makes sense.",
+          "Be kind to yourself, okay?",
+          "No pressure, though."
+        ]
+      },
+      "intense": {
+        "p": 0.4,
+        "open": [
+          "Listen to me — ",
+          "This matters — ",
+          "Hear me out — "
+        ],
+        "close": [
+          "Do you understand?",
+          "I need you to hear that.",
+          "Don't look away from this."
+        ]
+      },
+      "withdrawn": {
+        "p": 0.45,
+        "terse": true,
+        "open": [
+          "...Sorry — ",
+          "I, uh — ",
+          "..."
+        ],
+        "close": [
+          "...never mind.",
+          "...sorry, lost it.",
+          "Forget it."
+        ]
+      }
+    },
+    "states": {
+      "grieving": {
+        "terse": true,
+        "pMul": 1.3,
+        "close": [
+          "Anyway.",
+          "Doesn't matter now.",
+          "...sorry."
+        ]
+      },
+      "scarred": {
+        "close": [
+          "I've said enough.",
+          "Watch yourself out there.",
+          "Don't make me regret saying that."
+        ]
+      },
+      "betrayed": {
+        "open": [
+          "Why do you ask? ",
+          "What's this about? "
+        ],
+        "close": [
+          "Just... be straight with me.",
+          "I mean it."
+        ]
+      },
+      "grateful": {
+        "close": [
+          "Thank you. Really.",
+          "I won't forget that.",
+          "That means something."
+        ]
+      },
+      "close": {
+        "hush": [
+          "prickly",
+          "withdrawn",
+          "cautious"
+        ],
+        "open": [
+          "Can I be honest? ",
+          "Between us — "
+        ]
+      }
+    }
+  },
+  "topicPack": {
+    "_comment": "TOPIC PACK (Steve 2026-10-06): generated conversation topics. Labels/more-labels live here; the generation logic lives in src/js/convoTopics.js. Topics are generated from villager identity (backstory, fears, hopes, occupation) and run events — never a fixed list.",
+    "labels": {
+      "lately": [
+        "\"Anything on your mind lately?\"",
+        "\"How are you holding up — really?\"",
+        "\"What's weighing on you right now?\""
+      ],
+      "you": [
+        "\"What do you think of me — honestly?\"",
+        "\"How am I doing, by your lights?\"",
+        "\"Be straight with me. What am I to you?\""
+      ],
+      "fears": [
+        "\"What scares you?\"",
+        "\"What keeps you up at night?\"",
+        "\"What are you afraid of?\""
+      ],
+      "oldworld": [
+        "\"What do you miss about before?\"",
+        "\"What was the old world like?\"",
+        "\"Tell me something good about the world before.\""
+      ],
+      "skills": [
+        "\"What are you good at?\"",
+        "\"What did you do best, before?\"",
+        "\"What's your thing — what are you for?\""
+      ],
+      "others": [
+        "\"Who's on your mind around here?\"",
+        "\"What do you make of the others?\"",
+        "\"Anyone here I should understand better?\""
+      ],
+      "systemtake": [
+        "\"What do you make of the System?\"",
+        "\"How do you feel about the System?\"",
+        "\"The System — friend or leash?\""
+      ],
+      "advice": [
+        "\"What should I know?\"",
+        "\"Got any advice for me?\"",
+        "\"What would you tell someone trying to survive this?\""
+      ],
+      "loved": [
+        "\"Is there someone you're hoping to find?\"",
+        "\"Anyone waiting for you out there?\"",
+        "\"Who did you leave behind?\""
+      ]
+    },
+    "moreLabels": {
+      "lately": [
+        "\"And then?\"",
+        "\"What happened next?\"",
+        "\"Go on.\""
+      ],
+      "you": [
+        "\"Say more.\"",
+        "\"What else?\"",
+        "\"Go on — I can take it.\""
+      ],
+      "fears": [
+        "\"And?\"",
+        "\"What else scares you?\"",
+        "\"Go on.\""
+      ],
+      "oldworld": [
+        "\"What else do you remember?\"",
+        "\"Tell me another.\"",
+        "\"Go on.\""
+      ],
+      "skills": [
+        "\"How'd you learn that?\"",
+        "\"What else are you good at?\"",
+        "\"Go on.\""
+      ],
+      "others": [
+        "\"Tell me more about them.\"",
+        "\"What else?\"",
+        "\"Go on.\""
+      ],
+      "systemtake": [
+        "\"Say more.\"",
+        "\"What else about it?\"",
+        "\"Go on.\""
+      ],
+      "advice": [
+        "\"What else?\"",
+        "\"And?\"",
+        "\"Go on.\""
+      ],
+      "loved": [
+        "\"Tell me about them.\"",
+        "\"What were they like?\"",
+        "\"Go on.\""
+      ]
+    }
   }
 }
