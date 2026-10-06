@@ -4,6 +4,9 @@
 // provides:
 //   - startConvo()
 //   - convoChoices(vid)
+//   - convoBeatOf(choiceId, thread)
+//   - convoFollowups(vid, topic)
+//   - convoSpeakBackChoice(vid, suppressPivot)
 //   - convoUI() -> {active, transcript, choices}
 // rules:
 //   - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
@@ -257,6 +260,30 @@
       },
     },
   };
+
+  // ============ TOPIC FOLLOW-UPS (Steve 2026-10-06) ============
+  // Thread coherence: after you ask about a topic, the next menu leads with
+  // 2-3 things a person would actually say next — not the full topic dump.
+  // Follow-ups reuse the thread's beat machinery ('more'), so the response
+  // is always on-thread. When the thread has no more beats, the fallback
+  // pools below carry the moment honestly instead of pivoting away.
+  const TOPIC_FOLLOWUPS = {
+    village: ['"Who keeps things running here?"', '"How long have you been here?"', '"What\'s the hardest part of living here?"'],
+    past: ['"What was that like?"', '"Do you miss it?"', '"How did you end up here?"'],
+    goal: ['"How can I help with that?"', '"What\'s in the way?"', '"Why does that matter to you?"'],
+    plans: ['"When?"', '"Want company?"', '"What do you need for that?"'],
+    gossip: ['"Who else knows about this?"', '"What do you make of that?"', '"Tell me more about them."'],
+    personal: ['"Tell me more."', '"How do you feel about that?"', '"What happened next?"'],
+  };
+  const TOPIC_FOLLOWUP_FALLBACK = {
+    village: ['"It\'s home. Wasn\'t always, but it is now."', '"We make do. Everyone pulls weight — that\'s the whole secret."', '"Ask me again in a week. It changes that fast out here."'],
+    past: ['"Feels like someone else\'s life, most days."', '"I don\'t think about it much. Then something reminds me."', '"It made me who I am. For better or worse."'],
+    goal: ['"It\'s the thing that gets me up in the morning."', '"I think about it more than I say."', '"One step at a time. That\'s all anyone can do."'],
+    plans: ['"We\'ll see. Plans out here are more like intentions."', '"Soon, I hope. Nothing\'s certain, but soon."', '"I\'ve been turning it over. I think it\'s time."'],
+    gossip: ['"That\'s all I know. For now."', '"Keep it between us, yeah?"', '"People talk. I just listen."'],
+    personal: ['"That\'s me, I suppose."', '"Funny, saying it out loud."', '"Not everyone asks. Thanks for asking."'],
+  };
+  const TOPIC_THREADS = ['village', 'past', 'goal', 'plans', 'gossip', 'personal'];
 
   // ============ GENERIC QUESTION ANSWERS (Rule 4) ============
   // NPCs ask direct questions all over the opener/small-talk pools — far
@@ -557,6 +584,7 @@
       if (!c.heldBeats) c.heldBeats = [];
       if (typeof c.heldAsk === 'undefined') c.heldAsk = false;
       if (typeof c.winddownQueued === 'undefined') c.winddownQueued = false;
+      if (!c.followUsed) c.followUsed = {};
       return c;
     },
 
@@ -1594,6 +1622,49 @@
       return this.convoVoicePool(vid, def, 'act:' + key);
     },
 
+    // convoBeatOf: what just happened, in one small record — so the NEXT
+    // choice list can lead with on-thread options instead of a grab-bag.
+    // (Steve 2026-10-06: conversation choices were non-sequitur soup.)
+    convoBeatOf(choiceId, thread) {
+      if (!choiceId) return null;
+      if (choiceId.indexOf('ask:') === 0) return { kind: 'ask', id: choiceId.slice(4), thread };
+      if (choiceId.indexOf('follow:') === 0) { const p = choiceId.split(':'); return { kind: 'follow', id: p[1], thread }; }
+      if (choiceId === 'more') return { kind: 'more', id: thread, thread };
+      if (choiceId === 'subject') return { kind: 'pivot', id: 'subject', thread: null };
+      if (choiceId.indexOf('react:') === 0 || choiceId === 'agree' || choiceId === 'joke' || choiceId === 'silence') return { kind: 'react', id: choiceId, thread };
+      if (choiceId === 'theorize') return { kind: 'theorize', id: thread, thread };
+      if (choiceId === 'teach') return { kind: 'teach', id: null, thread };
+      if (choiceId === 'speak_back') return { kind: 'speak', id: null, thread };
+      return { kind: 'other', id: choiceId, thread };
+    },
+
+    // convoFollowups: the 2-3 things you'd actually say next on this topic.
+    // Already-used follow-ups are skipped (tracked per topic per convo).
+    convoFollowups(vid, topic) {
+      const c = this.convoGet(vid);
+      const pool = TOPIC_FOLLOWUPS[topic] || [];
+      const used = ((c.followUsed || {})[topic]) || [];
+      const out = [];
+      for (let i = 0; i < pool.length && out.length < 3; i++) {
+        if (used.indexOf(i) === -1) out.push({ id: 'follow:' + topic + ':' + i, label: pool[i] });
+      }
+      return out;
+    },
+
+    // convoSpeakBackChoice: the extracted speak-back offer — usable both in
+    // the on-thread menu (with the follow-ups) and the opener menu below.
+    convoSpeakBackChoice(vid, suppressPivot) {
+      const c = this.convoGet(vid);
+      if (c.speakBackDone || suppressPivot) return null;
+      try {
+        const nlang = this.npcNativeLang(vid);
+        if (nlang && nlang !== 'english' && this.langExposure(nlang) >= 3 && this.translatorStage() < 2) {
+          return { id: 'speak_back', label: `(try your ${this.langDef(nlang).name})` };
+        }
+      } catch (e) {}
+      return null;
+    },
+
     convoChoices(vid) {
       const c = this.convoGet(vid);
       const choices = [];
@@ -1687,6 +1758,11 @@
       // (7: five topic asks can now be open at once — gossip joined them —
       // and discovery actions must still fit behind topics/theorize/observe.)
       const MAXC = reactiveDef ? reactiveDef.answers.length + 2 : gqActive ? gqAnswers.length + 3 : 7;
+      // THREAD COHERENCE (Steve 2026-10-06): mid-topic-thread, the menu is
+      // the thread — follow-ups lead, off-thread verbs wait behind the
+      // subject-change. Computed once, used by invite_party below and the
+      // topic assembly further down.
+      const onThread = !c.choosingSubject && TOPIC_THREADS.indexOf(c.thread) !== -1;
       if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: this.convoMoreLabel(vid) });
       // DEPTH GATING: what they'll talk about depends on how well they know
       // you. Little hits over time, like real people. Defined once, used by
@@ -1713,7 +1789,8 @@
       // Sits with 'more', AHEAD of the topic asks: a trust-earned, contextual
       // person-action must never be crowded out by small talk. When you've
       // earned the right to ask, the ask is there.
-      if (choices.length < MAXC) {
+      // (Thread coherence: mid-thread it waits — one subject-change away.)
+      if (!onThread && choices.length < MAXC) {
         try {
           if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
               !this.inParty(vid) && !this.partyFull()) {
@@ -1759,25 +1836,69 @@
       // talk forever. 'lately' always qualifies: live events cut the queue.
       // Once a generated topic's been discussed, it joins the rotation behind
       // the main asks. Shared budget — the cap never grows.
-      let topicsAdded = 0;
+      // Split the generated topics into fresh vs already-discussed (used by
+      // both the subject menu and the opener below).
       const t2said = (this.convoGet(vid).said || {});
       const t2list = this.topic2Asks ? this.topic2Asks(vid) : [];
+      const t2fresh = t2list.filter(a => { const tid = a.id.slice(4); return tid === 'lately' || !(t2said['t2:' + tid] || []).length; });
+      const t2discussed = t2list.filter(a => { const tid = a.id.slice(4); return tid !== 'lately' && (t2said['t2:' + tid] || []).length; });
       const freshCap = topicCapMood <= 2 ? 1 : 2;
-      for (const a of t2list) {
-        const tid = a.id.slice(4);
-        if (tid !== 'lately' && (t2said['t2:' + tid] || []).length) continue;
-        if (a.id === threadAsk || topicsAdded >= freshCap || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
-        choices.push(a); topicsAdded++;
+
+      // SUBJECT MENU (Steve 2026-10-06): after "can I ask you something
+      // else?", the uncovered topics are listed plainly — the player picks,
+      // no random jump. Choosing one clears choosingSubject (ask: handler).
+      if (c.choosingSubject && !reactiveDef && !gqActive) {
+        const sub = [];
+        let n = 0;
+        for (const a of t2fresh) {
+          if (a.id === threadAsk || n >= freshCap || n >= topicCapMood) continue;
+          sub.push(a); n++;
+        }
+        for (const a of asks) {
+          if (a.id === threadAsk || n >= topicCapMood) continue;
+          sub.push(a); n++;
+        }
+        sub.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
+        return sub;
       }
-      for (const a of asks) {
-        if (a.id === threadAsk || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
-        choices.push(a); topicsAdded++;
-      }
-      for (const a of t2list) {
-        const tid = a.id.slice(4);
-        if (tid === 'lately' || !(t2said['t2:' + tid] || []).length) continue;
-        if (a.id === threadAsk || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
-        choices.push(a); topicsAdded++;
+
+      // THREAD COHERENCE (Steve 2026-10-06): mid-thread, the menu IS the
+      // thread. Follow-ups lead; other topics wait behind the explicit
+      // subject-change; discovery actions return once the thread resolves.
+      // A real conversation has a thread — changing the subject should feel
+      // like changing the subject, not like the menu reshuffled.
+      let reactPushed = false;
+      const pushReact = () => {
+        const reacts = [
+          { id: 'agree', label: '"You\'re right."' },
+          { id: 'joke', label: '"Ha — yeah."' },
+          { id: 'silence', label: '"..."' },
+        ];
+        choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
+        reactPushed = true;
+      };
+      if (onThread) {
+        for (const f of this.convoFollowups(vid, c.thread)) {
+          if (choices.length >= MAXC) break;
+          choices.push(f);
+        }
+        const sb = this.convoSpeakBackChoice(vid, suppressPivot);
+        if (sb && choices.length < MAXC) choices.push(sb);
+        if (choices.length < MAXC) pushReact();
+      } else {
+        let topicsAdded = 0;
+        for (const a of t2fresh) {
+          if (a.id === threadAsk || topicsAdded >= freshCap || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
+          choices.push(a); topicsAdded++;
+        }
+        for (const a of asks) {
+          if (a.id === threadAsk || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
+          choices.push(a); topicsAdded++;
+        }
+        for (const a of t2discussed) {
+          if (a.id === threadAsk || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
+          choices.push(a); topicsAdded++;
+        }
       }
       // THEORIZE: joint discovery, a signature mechanic — not small talk.
       // GATED: thinking together is intimate. System talk only makes sense
@@ -1788,12 +1909,13 @@
       const theorizeOpen = effTrust >= 25 || convoCount >= 2;
       const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
         theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
-      if (theorizeOpen && topicsLeft.length && choices.length < MAXC && !suppressPivot) choices.push({ id: 'theorize', label: this.convoActionLabel(vid, 'theorize') });
+      if (!onThread && theorizeOpen && topicsLeft.length && choices.length < MAXC && !suppressPivot) choices.push({ id: 'theorize', label: this.convoActionLabel(vid, 'theorize') });
       // WATCH THEM: the detective's tool. Spend time observing — behavior may
       // contradict story. Available once you've talked enough to have a baseline
       // (2nd conversation+), or if you already have doubts about them.
       // (observePerson lives in truth.js; guarded in case that module is absent.)
-      if (choices.length < MAXC && typeof this.observePerson === 'function') {
+      // (Thread coherence: waits for the thread to resolve — one subject-change away.)
+      if (!onThread && choices.length < MAXC && typeof this.observePerson === 'function') {
         const hasDoubts = this.getDoubts && this.getDoubts(vid).length > 0;
         if (convoCount >= 2 || hasDoubts) {
           choices.push({ id: 'observe', label: hasDoubts ? '"I\'ve been watching you. Keep talking."' : '(watch them for a while)' });
@@ -1805,14 +1927,16 @@
       // concept, the offer only surfaces when they've really opened up
       // (deep in their goal thread). After that, any known goal will do.
       // The handler makes a FORMAL tracked promise — keep it or break it.
+      // (Thread coherence: off-thread verbs wait for the thread to resolve.)
       const alreadyPromised = !!((this.state.village.promises || {})[vid]);
-      if (this.goalKnown(vid) && !c.offeredHelp && !alreadyPromised && choices.length < MAXC) {
+      if (!onThread && this.goalKnown(vid) && !c.offeredHelp && !alreadyPromised && choices.length < MAXC) {
         const openedUp = c.thread === 'goal' && (c.depth || 0) >= 2;
         if (this.hasDiscovered('promise') || openedUp) choices.push({ id: 'offer_help', label: this.convoActionLabel(vid, 'offer_help') });
       }
       // KNOWLEDGE TRADING is discovered through conversation: traders seed it
       // by mentioning it; once learned, you can raise it with any trader.
-      if (choices.length < MAXC) {
+      // (Thread coherence: off-thread — waits behind the subject-change.)
+      if (!onThread && choices.length < MAXC) {
         try {
           const isTrader = this.isKnowledgeTrader && this.isKnowledgeTrader(vid);
           const tradeable = isTrader ? (this.traderKnowledge(vid) || []) : [];
@@ -1823,7 +1947,8 @@
       }
       // TEACHING happens in conversation now — show, don't menu.
       // Suppressed while a direct question hangs: no burdock non sequiturs.
-      if (choices.length < MAXC && !suppressPivot) {
+      // (Thread coherence: off-thread — waits behind the subject-change.)
+      if (!onThread && choices.length < MAXC && !suppressPivot) {
         try {
           const youKnow = Object.keys(this.state.codex.plants || {});
           const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
@@ -1838,21 +1963,22 @@
       // under live translate: why reach for words the System hands you.
       // Under the memory aid the device feeds you the phrase first — a
       // study partner, not a replacement.
-      if (choices.length < MAXC && !suppressPivot && !c.speakBackDone) {
-        try {
-          const nlang = this.npcNativeLang(vid);
-          if (nlang && nlang !== 'english' && this.langExposure(nlang) >= 3 && this.translatorStage() < 2) {
-            choices.push({ id: 'speak_back', label: `(try your ${this.langDef(nlang).name})` });
-          }
-        } catch (e) {}
+      // (On-thread it's placed with the follow-ups above; here for openers.)
+      if (!onThread) {
+        const sb = this.convoSpeakBackChoice(vid, suppressPivot);
+        if (sb && choices.length < MAXC) choices.push(sb);
       }
-      const reacts = [
-        { id: 'agree', label: '"You\'re right."' },
-        { id: 'joke', label: '"Ha — yeah."' },
-        { id: 'silence', label: '"..."' },
-      ];
-      if (choices.length < MAXC) choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
-      if (c.thread && c.thread !== 'small' && choices.length < MAXC) choices.push({ id: 'subject', label: '"Can I ask you something else?"' });
+      if (!reactPushed && choices.length < MAXC) {
+        const reacts = [
+          { id: 'agree', label: '"You\'re right."' },
+          { id: 'joke', label: '"Ha — yeah."' },
+          { id: 'silence', label: '"..."' },
+        ];
+        choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
+      }
+      // The subject-change is always available mid-thread (it's the explicit
+      // pivot); on openers it rides the remaining slots as before.
+      if (c.thread && c.thread !== 'small' && (onThread || choices.length < MAXC)) choices.push({ id: 'subject', label: '"Can I ask you something else?"' });
       choices.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
       return choices;
     },
@@ -1878,6 +2004,7 @@
       const c = this.convoGet(vid);
       c.active = true; c.exchanges = 0; c.budget = this.convoBudget(vid);
       c.thread = null; c.depth = 0; c.transcript = []; c.pendingQ = null;
+      c.choosingSubject = false; c.lastBeat = null; c.followUsed = {};
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
       c.qCount = 0; c.theorized = [];
       c.traderMentioned = false; c.pendingTrade = null;
@@ -2189,6 +2316,27 @@
         }
         // TOPIC PACK (Steve 2026-10-06): generated topics carry their own labels.
         done(this.convoAskTopic(vid, topic), this.topic2AskLabel ? this.topic2AskLabel(vid, topic) : this.convoLabel(vid, topic));
+        c.choosingSubject = false;
+      } else if (choiceId.indexOf('follow:') === 0) {
+        // THREAD FOLLOW-UP (Steve 2026-10-06): the natural next thing to say
+        // on this topic. Reuses the thread's beat machinery so the response
+        // is always on-thread; the fallback pools carry the moment when the
+        // thread's beats are spent.
+        const parts = choiceId.split(':');
+        const ftopic = parts[1], fi = +(parts[2] || 0);
+        c.followUsed = c.followUsed || {};
+        c.followUsed[ftopic] = c.followUsed[ftopic] || [];
+        if (c.followUsed[ftopic].indexOf(fi) === -1) c.followUsed[ftopic].push(fi);
+        const flabel = (TOPIC_FOLLOWUPS[ftopic] || [])[fi] || '"Tell me more."';
+        const fbeat = this.convoThreadBeat(vid);
+        if (fbeat) {
+          done(fbeat, flabel);
+        } else {
+          c.depth = (c.depth || 0) + 1;
+          const fb = this.convoPickCycle(vid, 'follow:' + ftopic, TOPIC_FOLLOWUP_FALLBACK[ftopic] || ['"Hm."']);
+          done(this.voiceLine(vid, this.fillTalkLine(fb, this.vpOf(vid))), flabel);
+        }
+        c.choosingSubject = false;
       } else if (choiceId === 'observe') {
         // WATCH THEM: the detective's tool. Costs time, may reveal that
         // behavior doesn't match story. (observePerson lives in truth.js.)
@@ -2426,24 +2574,17 @@
         done(ms.line, '(say nothing)');
         }
       } else if (choiceId === 'subject') {
-        // Change the subject — to a topic you haven't covered yet.
-        const asked = c.askedTopics || [];
-        const opts = [];
-        if (!this.goalKnown(vid) && asked.indexOf('goal') === -1) opts.push('goal');
-        if (asked.indexOf('past') === -1) opts.push('past');
-        if (asked.indexOf('village') === -1) opts.push('village');
-        if (asked.indexOf('plans') === -1) opts.push('plans');
-        // TOPIC PACK (Steve 2026-10-06): generated topics are subject-change
-        // options too (gated — no 'loved' at trust 10).
-        if (this.topic2SubjectOpts) for (const t of this.topic2SubjectOpts(vid)) opts.push(t);
-        if (!opts.length) {
-          done(this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I think we\'ve covered everything."']), '"Actually — different subject."');
-        } else {
-          const nt = opts[Math.floor(Math.random() * opts.length)];
-          // TOPIC PACK: generated topics carry their own labels.
-          const ntLabel = this.topic2AskLabel ? this.topic2AskLabel(vid, nt) : this.convoLabel(vid, nt);
-          done(this.convoAskTopic(vid, nt), '"Actually — different subject." ' + ntLabel);
-        }
+        // Change the subject — but LET THE PLAYER PICK, not a random jump.
+        // (Steve 2026-10-06: the random topic leap was a non sequitur.)
+        // Sets choosingSubject; the next menu lists uncovered topics plainly.
+        c.choosingSubject = true;
+        c.thread = null; c.depth = 0;
+        const sack = this.convoPickCycle(vid, 'subjectack', [
+          '"Oh — sure. What\'s on your mind?"',
+          '"Yeah, alright. Different subject."',
+          '"Mm. Okay — what else?"',
+        ]);
+        done(this.voiceLine(vid, this.fillTalkLine(sack, this.vpOf(vid))), '"Actually — can I ask you something else?"');
       } else if (choiceId.indexOf('nv:') === 0) {
         const kind = choiceId.slice(3);
         const outs = {
@@ -2505,9 +2646,15 @@
       // trading, teaching, promises, invites, answering personal questions.
       // Small talk (agree, joke, silence, subject-change) is free — you're
       // already here. Graduated cost keeps long conversations affordable.
-      if (/^(ask:|more|theorize|trade_yes|teach|offer_help|invite_party|ans:)/.test(choiceId || '')) {
+      if (/^(ask:|more|theorize|trade_yes|teach|offer_help|invite_party|ans:|follow:)/.test(choiceId || '')) {
         this.convoDeepTick(vid);
       }
+
+      // THREAD COHERENCE (Steve 2026-10-06): remember what just happened so
+      // the next choice list leads with on-thread options, not a grab-bag.
+      // Recorded here — after the whole choice chain, before the final menu
+      // is built — so c.thread reflects the post-choice state.
+      try { c.lastBeat = this.convoBeatOf(choiceId, c.thread); } catch (e) {}
 
       // THEY ask YOU things. Conversations go both ways — but they follow
       // the player's lead. A question never stomps a live thread: if the
