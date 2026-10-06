@@ -1243,7 +1243,14 @@
       try { this.justiceState().exiled = false; } catch (e) {}
       return true;
     }
-    this.say(`${ov.name} turns you away. "We've heard about Haven." The door — there is no door, it's a clearing, but it closes anyway.`);
+    // The gift is spent either way — that keeps the judgment roll honest (a
+    // gift you get back on rejection would be a free re-roll). But a village
+    // that takes your food owes you the honesty of saying so: 700 kcal must
+    // never vanish into the void silently.
+    const giftNote = giftGiven > 0
+      ? ` They take your food — all ${giftGiven} kcal of it — and turn you away anyway.`
+      : '';
+    this.say(`${ov.name} turns you away. "We've heard about Haven." The door — there is no door, it's a clearing, but it closes anyway.${giftNote}`);
     return false;
   },
   // drift: solo, between villages. The wild provides, or it doesn't.
@@ -2238,12 +2245,30 @@
       this.notePlayerEvidence(c, `A seam in the story — the ${inc.field} didn't sit right (${this.displayName(vid)}).`);
       return reveal(`${name} frowns. "Something about the ${inc.field} didn't sit right. Press ${this.whoTag(c.accuser)} on it — and watch their face."`, 'contradiction');
     }
-    // 5. nothing useful — never a dead end the UI could enumerate
-    return reveal(pick([
+    // 5. nothing useful — never a dead end the UI could enumerate.
+    // A DEEP pool with per-case rotation: the case shuffles the shrugs once
+    // and hands each asker the next one, so six gossip-mongers never parrot
+    // the same line at you. Random-per-villager would still collide (birthday
+    // problem); rotation can't. Cycles only after all 8 are used.
+    const nothingPool = [
       `${name} shrugs. "I hear the fire crackle and people talking. That's all I know, and I know it well."`,
       `"Honestly?" ${name} says. "I try not to listen. Safer that way."`,
       `${name} shakes their head. "Nobody tells me anything. Maybe ask someone closer to it."`,
-    ]), null);
+      `${name} spreads their hands. "Ask me about the ridge path, ask me about fishing the creek. The moot? I keep my head down."`,
+      `"I wasn't at that fire," ${name} says. "Whatever was said got said without me in it."`,
+      `${name} looks at the ground. "People remember wrong on purpose sometimes. I try to remember nothing at all."`,
+      `"Moot talk," ${name} says — and the way they say it closes the subject like a door.`,
+      `${name} laughs, short. "You want the truth? I was asleep. Best alibi I own."`,
+    ];
+    if (!c.nothingOrder) {
+      c.nothingOrder = nothingPool.map((_, i) => i);
+      for (let i = c.nothingOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(R() * (i + 1));
+        [c.nothingOrder[i], c.nothingOrder[j]] = [c.nothingOrder[j], c.nothingOrder[i]];
+      }
+    }
+    c.nothingIdx = c.nothingIdx || 0;
+    return reveal(nothingPool[c.nothingOrder[c.nothingIdx++ % nothingPool.length]], null);
   },
   // ----- tell them your side: per-person, only when it matters -----
   tellSide(caseId, vid) {

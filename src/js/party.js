@@ -837,20 +837,48 @@
       if (d2 <= 1) {
         const dmg = S_combat.roll ? S_combat.roll([6, 12]) : 8;
         // Not cool verbs. Desperate ones.
+        // NOTE on keying: templates are NAME-FREE ({n}/{t} placeholders) so
+        // the fight-scoped pickFresh cycle ('humanRetaliate' on tbfight._fresh)
+        // dedupes the TEMPLATE across speakers — no identical line from 2+
+        // attackers in one scene, deterministically, until all 16 are used.
+        // (Embedding h.name in the pool defeats the cycle: "Malik swings…"
+        // !== "Rosa swings…" as tracked text. Per-fighter keys can't fix it
+        // either: 4 attackers > N verbs, and random first-picks still collide.)
+        // Pool is deep (16) so a full uprising brawl (~11-13 barks) never
+        // exhausts it.
+        const tgt = foe.kind === 'player' ? 'you' : foe.name;
         const verbs = [
-          `${h.name} swings wildly at ${foe.kind === 'player' ? 'you' : foe.name} — eyes shut, screaming.`,
-          `${h.name} lashes out, panicking. It connects anyway. That's the worst part.`,
-          `${h.name} fights like a cornered animal. Because that's what this is.`,
+          `{n} swings wildly at {t} — eyes shut, screaming.`,
+          `{n} lashes out, panicking. It connects anyway. That's the worst part.`,
+          `{n} fights like a cornered animal. Because that's what this is.`,
+          `{n} throws themself at {t}, all elbows and terror.`,
+          `{n} swings and misses, swings again — crying now, still swinging.`,
+          `{n} gets a hand on {t} and doesn't let go. None of this is fighting. It's drowning.`,
+          `{n} hits {t} with the flat panic of someone who has never done this before.`,
+          `{n} screams while they swing — at {t}, at themselves, at the whole night.`,
+          `{n} lunges, off-balance, desperate to end it before they have to feel it.`,
+          `{n}'s hands are shaking so hard the blow lands sideways. It still lands.`,
+          `{n} doesn't aim. Aiming would mean deciding. They just swing.`,
+          `{n} catches {t} with a wild backhand and looks horrified at their own arm.`,
+          `{n} barrels into {t} shoulder-first, the way you'd shove a door that's stuck.`,
+          `{n} swings at {t} and keeps swinging after it lands, like stopping would be worse.`,
+          `{n} grabs for {t}'s weapon hand and they go down together, scrabbling.`,
+          `{n} strikes at {t} with a sound caught between a sob and a snarl.`,
         ];
-        this.say(`🔪 ${this.pickFresh(verbs, 'humanRetaliate')}`);
+        this.say(`🔪 ${this.pickFresh(verbs, 'humanRetaliate').replace('{n}', () => h.name).replace('{t}', () => tgt)}`);
         this.tbDamage(foe.key, dmg, h.name);
         // Hurting someone costs the hurter too. Even them.
       } else {
+        // Same fight-scoped no-repeat semantics as the attack verbs above.
         const circ = [
-          `${h.name} backs off, breathing hard, looking for a way out that isn't through you.`,
-          `${h.name} circles — not hunting an opening. Looking for an exit.`,
+          `{n} backs off, breathing hard, looking for a way out that isn't through you.`,
+          `{n} circles — not hunting an opening. Looking for an exit.`,
+          `{n} keeps their distance, eyes flicking past you to the dark behind you.`,
+          `{n} feints toward you, then checks themself — they don't want to close.`,
+          `{n} paces a wide arc, weapon low. Stalling. Hoping you'll run first.`,
+          `{n} glances over their shoulder. Whatever they're looking for, it isn't you.`,
         ];
-        this.say(`🔪 ${this.pickFresh(circ, 'humanCircle')}`);
+        this.say(`🔪 ${this.pickFresh(circ, 'humanCircle').replace('{n}', () => h.name)}`);
       }
       if (this.tbEndCheck()) return;
     },
