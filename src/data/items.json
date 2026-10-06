@@ -71,7 +71,7 @@
       }
     ],
     "secretEvolution": "her_handwriting",
-    "memory": "Kitchen table, burnt pancakes. You told her the sun needed holding, and she took you literally — drew you carrying it with both hands. She was six. The sky changed three weeks later.",
+    "memory": "Kitchen table, burnt pancakes. You told her the sun needed holding, and she took you literally \u2014 drew you carrying it with both hands. She was six. The sky changed three weeks later.",
     "reveals": {
       "type": "plant",
       "id": "dandelion",
@@ -130,7 +130,7 @@
   },
   {
     "class": "sentimental",
-    "flavor": "His coil. Fifty feet of paracord, coiled the way his grandfather taught him at eight — every loop the same size. 'A knot is a promise.' He's never tied a bad one since.",
+    "flavor": "His coil. Fifty feet of paracord, coiled the way his grandfather taught him at eight \u2014 every loop the same size. 'A knot is a promise.' He's never tied a bad one since.",
     "id": "rope_50ft",
     "name": "Grandfather's Rope",
     "kg": 0.5,
@@ -138,7 +138,7 @@
   },
   {
     "class": "sentimental",
-    "flavor": "Sixty years of mornings on the porch — coffee, rain or shine. 'A cup is a house you can hold.' Dented, older than you, and it'll probably outlast you too.",
+    "flavor": "Sixty years of mornings on the porch \u2014 coffee, rain or shine. 'A cup is a house you can hold.' Dented, older than you, and it'll probably outlast you too.",
     "id": "tin_cup",
     "name": "Grandma's Tin Cup",
     "kg": 0.08,
@@ -190,7 +190,7 @@
   },
   {
     "class": "sentimental",
-    "flavor": "His father carried it for forty years, then handed it over without a word — the way men in his family said everything important. Small, grey, irreplaceable.",
+    "flavor": "His father carried it for forty years, then handed it over without a word \u2014 the way men in his family said everything important. Small, grey, irreplaceable.",
     "id": "whetstone",
     "name": "Father's Whetstone",
     "kg": 0.15,
@@ -237,11 +237,11 @@
     "flavor": "Canvas, thirty-one years of bus routes. Currently holds: everything.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
-    "memory": "Thirty-one years of bus routes in this canvas. The driver on the 42 used to wait when he saw you running — all those years, he waited. You never learned his name. You think about him at every campfire.",
+    "memory": "Thirty-one years of bus routes in this canvas. The driver on the 42 used to wait when he saw you running \u2014 all those years, he waited. You never learned his name. You think about him at every campfire.",
     "reveals": {
       "type": "place",
       "id": "depot",
-      "note": "The depot on 5th — buses, tools, dry storage. If anyone is left, they would be there."
+      "note": "The depot on 5th \u2014 buses, tools, dry storage. If anyone is left, they would be there."
     },
     "kin": "none",
     "kg": 0.25
@@ -250,14 +250,14 @@
     "id": "reading_glasses",
     "name": "Reading Glasses",
     "class": "sentimental",
-    "flavor": "Hers. She read everything twice — contracts, can labels, your excuses. The apocalypse has fine print; she'd have read that too.",
+    "flavor": "Hers. She read everything twice \u2014 contracts, can labels, your excuses. The apocalypse has fine print; she'd have read that too.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
     "memory": "You read the fine print on medicine bottles for {kin} next door, because their hands shook. Dosages, warnings, the tiny words that matter. The apocalypse has fine print too.",
     "reveals": {
       "type": "plant",
       "id": "plantain_leaf",
-      "note": "The broad-leafed weed by every path — a poultice for stings and bites. You read about it once."
+      "note": "The broad-leafed weed by every path \u2014 a poultice for stings and bites. You read about it once."
     },
     "kin": "neighbor",
     "kg": 0.03
@@ -266,10 +266,10 @@
     "id": "bus_schedule",
     "name": "Bus Schedule",
     "class": "sentimental",
-    "flavor": "The 42, laminated by your own hand. Eleven years of on-time departures. Kept to remind the universe about punctuality — it never learned.",
+    "flavor": "The 42, laminated by your own hand. Eleven years of on-time departures. Kept to remind the universe about punctuality \u2014 it never learned.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
-    "memory": "The 42. 6:14, 6:44, 7:14 — never late, even the last week, when the driver ran an empty bus through an empty city because the schedule said so.",
+    "memory": "The 42. 6:14, 6:44, 7:14 \u2014 never late, even the last week, when the driver ran an empty bus through an empty city because the schedule said so.",
     "reveals": {
       "type": "skill",
       "id": "navigation",
@@ -282,10 +282,10 @@
     "id": "hard_candy",
     "name": "Hard Candy",
     "class": "sentimental",
-    "flavor": "Butterscotch. Grandma doled them out like medals — good news, bad news, Tuesdays. This is the last one. It stays wrapped.",
+    "flavor": "Butterscotch. Grandma doled them out like medals \u2014 good news, bad news, Tuesdays. This is the last one. It stays wrapped.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
-    "memory": "Butterscotch, doled out like medals — good report card, brave dentist visit, the day the dog died. Small sweetness, on purpose.",
+    "memory": "Butterscotch, doled out like medals \u2014 good report card, brave dentist visit, the day the dog died. Small sweetness, on purpose.",
     "reveals": {
       "type": "flag",
       "id": "comfort",
@@ -305,7 +305,7 @@
     "reveals": {
       "type": "plant",
       "id": "yarrow",
-      "note": "Yarrow — white flowers, feathery leaves. Stops bleeding. The medic taught you."
+      "note": "Yarrow \u2014 white flowers, feathery leaves. Stops bleeding. The medic taught you."
     },
     "universal": true,
     "kin": "none",
@@ -319,11 +319,11 @@
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
     "secretEvolution": "last_message",
-    "memory": "Cracked screen, 2% forever. The last text, unsent: 'call when you can.' It was from {kin} — your brother. You have carried the unsent message for years. Maybe he is still out there.",
+    "memory": "Cracked screen, 2% forever. The last text, unsent: 'call when you can.' It was from {kin} \u2014 your brother. You have carried the unsent message for years. Maybe he is still out there.",
     "reveals": {
       "type": "name",
       "id": "brother",
-      "note": "Your brother — last known heading west. Someone, somewhere, might have seen him."
+      "note": "Your brother \u2014 last known heading west. Someone, somewhere, might have seen him."
     },
     "kin": "brother",
     "kg": 0.17
@@ -351,11 +351,11 @@
     "flavor": "Empty. The last real one got split three ways on the worst day, and it was somehow enough. The label gets read when you need the numbers to mean something.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [],
-    "memory": "Empty. You used to read the nutrition label when you missed numbers — calories, protein, the math of staying alive. Funny, the math that matters now.",
+    "memory": "Empty. You used to read the nutrition label when you missed numbers \u2014 calories, protein, the math of staying alive. Funny, the math that matters now.",
     "reveals": {
       "type": "plant",
       "id": "acorn_white_oak",
-      "note": "White oak mast — sweetest of the acorns, food if you know the work. You know the work."
+      "note": "White oak mast \u2014 sweetest of the acorns, food if you know the work. You know the work."
     },
     "universal": true,
     "kin": "none",
@@ -429,7 +429,7 @@
   {
     "id": "bus_map",
     "name": "Marked Bus Map",
-    "flavor": "Her mother's handwriting on every route — the 42 to work, the 16 to Grandma's, the night bus home. Marked so she'd never get lost. None of them go here.",
+    "flavor": "Her mother's handwriting on every route \u2014 the 42 to work, the 16 to Grandma's, the night bus home. Marked so she'd never get lost. None of them go here.",
     "class": "sentimental",
     "kg": 0.02,
     "kin": "none"
@@ -453,7 +453,7 @@
   {
     "id": "tasting_spoon",
     "name": "Tasting Spoon",
-    "flavor": "Hers. Twenty years in restaurant kitchens — tap it on the pot rim twice, taste, and know. 'Salt is a decision, not an accident.' She fed hundreds on a Saturday night. Now she feeds twelve.",
+    "flavor": "Hers. Twenty years in restaurant kitchens \u2014 tap it on the pot rim twice, taste, and know. 'Salt is a decision, not an accident.' She fed hundreds on a Saturday night. Now she feeds twelve.",
     "class": "sentimental",
     "kg": 0.02,
     "kin": "none"
@@ -461,7 +461,7 @@
   {
     "id": "thermos",
     "name": "Dad's Thermos",
-    "flavor": "Coffee at 5 AM, every morning for thirty years — he'd tap it twice before the first sip, like knocking before entering the day. It still keeps things hot. Hot is a memory now.",
+    "flavor": "Coffee at 5 AM, every morning for thirty years \u2014 he'd tap it twice before the first sip, like knocking before entering the day. It still keeps things hot. Hot is a memory now.",
     "class": "sentimental",
     "kg": 0.5,
     "kin": "none"
@@ -475,7 +475,7 @@
     "reveals": {
       "type": "name",
       "id": "sister",
-      "note": "Your sister — she was visiting the coast. The coast is far. Far is not gone."
+      "note": "Your sister \u2014 she was visiting the coast. The coast is far. Far is not gone."
     },
     "kin": "sister",
     "kg": 0.8
@@ -486,7 +486,8 @@
     "weapon": {
       "bonus": 5,
       "type": "melee",
-      "range": 1
+      "range": 1,
+      "damageType": "physical"
     },
     "craftable": true,
     "materials": {
@@ -503,7 +504,8 @@
     "weapon": {
       "bonus": 12,
       "type": "melee",
-      "range": 1
+      "range": 1,
+      "damageType": "physical"
     },
     "craftable": true,
     "materials": {
@@ -524,7 +526,8 @@
     "weapon": {
       "bonus": 30,
       "type": "melee",
-      "range": 2
+      "range": 2,
+      "damageType": "physical"
     },
     "craftable": true,
     "materials": {
@@ -542,7 +545,8 @@
     "weapon": {
       "bonus": 8,
       "type": "melee",
-      "range": 1
+      "range": 1,
+      "damageType": "physical"
     },
     "findable": true,
     "class": "weapon",
@@ -611,7 +615,8 @@
       "bonus": 8,
       "type": "ranged",
       "range": 4,
-      "ammo": "stone"
+      "ammo": "stone",
+      "damageType": "physical"
     },
     "craftable": true,
     "materials": {
@@ -640,7 +645,8 @@
     "weapon": {
       "bonus": 15,
       "type": "melee",
-      "range": 2
+      "range": 2,
+      "damageType": "physical"
     },
     "craftable": true,
     "materials": {
@@ -668,7 +674,8 @@
     "weapon": {
       "bonus": 15,
       "type": "melee",
-      "range": 1
+      "range": 1,
+      "damageType": "physical"
     },
     "findable": true,
     "bondThresholds": [
@@ -695,7 +702,8 @@
     "weapon": {
       "bonus": 35,
       "type": "melee",
-      "range": 1
+      "range": 1,
+      "damageType": "physical"
     },
     "findable": true,
     "bondThresholds": [
@@ -724,7 +732,8 @@
       "bonus": 40,
       "type": "ranged",
       "range": 5,
-      "ammo": "arrow"
+      "ammo": "arrow",
+      "damageType": "physical"
     },
     "craftable": true,
     "materials": {
@@ -906,7 +915,7 @@
         ]
       }
     ],
-    "memory": "Gold band, worn thin. Inside: initials and a date. You remember the day — the rain, the borrowed suit, the laughter during the vows. Grief is just love with nowhere to go.",
+    "memory": "Gold band, worn thin. Inside: initials and a date. You remember the day \u2014 the rain, the borrowed suit, the laughter during the vows. Grief is just love with nowhere to go.",
     "reveals": {
       "type": "flag",
       "id": "deep_grief",
@@ -919,7 +928,7 @@
     "id": "mixtape",
     "name": "Mixtape",
     "class": "sentimental",
-    "flavor": "Hand-labeled in her block letters: 'FOR THE DRIVE.' No player. The songs are in your head anyway — her voice between the tracks.",
+    "flavor": "Hand-labeled in her block letters: 'FOR THE DRIVE.' No player. The songs are in your head anyway \u2014 her voice between the tracks.",
     "baseEffect": "+resolve when carried (morale)",
     "bondThresholds": [
       {
@@ -931,7 +940,7 @@
         ]
       }
     ],
-    "memory": "Hand-labeled: 'FOR THE DRIVE.' No player. The songs are in your head anyway — you hum them when you work, and the work goes faster.",
+    "memory": "Hand-labeled: 'FOR THE DRIVE.' No player. The songs are in your head anyway \u2014 you hum them when you work, and the work goes faster.",
     "reveals": {
       "type": "flag",
       "id": "work_song",
@@ -956,7 +965,7 @@
         ]
       }
     ],
-    "memory": "Not yours. {kin}'s. You carry them so someone is remembered — the promise you made in the dust. {kin} would laugh at you carrying them into the apocalypse.",
+    "memory": "Not yours. {kin}'s. You carry them so someone is remembered \u2014 the promise you made in the dust. {kin} would laugh at you carrying them into the apocalypse.",
     "reveals": {
       "type": "skill",
       "id": "tracking",
@@ -1016,7 +1025,8 @@
     "weapon": {
       "bonus": 12,
       "type": "melee",
-      "range": 1
+      "range": 1,
+      "damageType": "physical"
     },
     "findable": true,
     "bondThresholds": [
@@ -1089,7 +1099,7 @@
     "id": "flannel_shirt",
     "name": "Flannel Shirt",
     "class": "clothing",
-    "flavor": "Red and black check. Warm even damp — wool doesn't care about rain.",
+    "flavor": "Red and black check. Warm even damp \u2014 wool doesn't care about rain.",
     "baseEffect": "Warmth. (Bond to unlock more.)",
     "kg": 0.35,
     "armor": {
@@ -1165,7 +1175,7 @@
     "class": "sentimental",
     "flavor": "Two photos inside, both fading. Opens with a click you can feel in your teeth.",
     "baseEffect": "+resolve when carried (morale)",
-    "memory": "Brass. Two photos inside, both fading. It opens with a click you can feel in your teeth — {kin}'s click, then your mother's, now yours.",
+    "memory": "Brass. Two photos inside, both fading. It opens with a click you can feel in your teeth \u2014 {kin}'s click, then your mother's, now yours.",
     "reveals": {
       "type": "place",
       "id": "farmhouse",
@@ -1193,13 +1203,13 @@
     "id": "paperback",
     "name": "Beat-up Paperback",
     "class": "sentimental",
-    "flavor": "A field guide to edible plants, ironically. Her copy — spine cracked at the mushroom chapter, margins full of corrections. She'd have loved being right about this.",
+    "flavor": "A field guide to edible plants, ironically. Her copy \u2014 spine cracked at the mushroom chapter, margins full of corrections. She'd have loved being right about this.",
     "baseEffect": "+resolve when carried (morale)",
-    "memory": "A field guide to edible plants, ironically. Spine cracked at the mushroom chapter — you were always going to learn mushrooms, someday. Someday is now.",
+    "memory": "A field guide to edible plants, ironically. Spine cracked at the mushroom chapter \u2014 you were always going to learn mushrooms, someday. Someday is now.",
     "reveals": {
       "type": "plant",
       "id": "jewelweed",
-      "note": "Jewelweed — the orange touch-me-not by creeks. Poison ivy’s antidote. The book taught you."
+      "note": "Jewelweed \u2014 the orange touch-me-not by creeks. Poison ivy\u2019s antidote. The book taught you."
     },
     "kin": "none",
     "kg": 0.2
@@ -1321,7 +1331,8 @@
     "weapon": {
       "bonus": 45,
       "type": "melee",
-      "range": 1
+      "range": 1,
+      "damageType": "physical"
     },
     "baseEffect": "+45 melee (range 1)"
   },
@@ -1367,7 +1378,7 @@
     "class": "sentimental",
     "origin": "alien",
     "lootTier": 2,
-    "flavor": "You watched an old woman trade her wedding ring for antibiotics and sign with this — her hand shaking, the quill perfectly steady. It has excellent penmanship and terrible intentions.",
+    "flavor": "You watched an old woman trade her wedding ring for antibiotics and sign with this \u2014 her hand shaking, the quill perfectly steady. It has excellent penmanship and terrible intentions.",
     "kg": 0.1,
     "findable": false,
     "tradeValue": 600,
@@ -1378,7 +1389,7 @@
     "id": "field_suture_kit",
     "name": "Field suture kit",
     "class": "sentimental",
-    "flavor": "From the ambulance bag. Still packed the way you were taught — needle, thread, steady hands.",
+    "flavor": "From the ambulance bag. Still packed the way you were taught \u2014 needle, thread, steady hands.",
     "memory": "You practiced on an orange. 'People are just oranges that bleed,' your instructor said, and then taught you how to not flinch. You haven't flinched since.",
     "baseEffect": "+resolve when carried; usable: +15 health",
     "bondThresholds": [
@@ -1411,7 +1422,7 @@
     "id": "knife_roll",
     "name": "Knife roll",
     "class": "sentimental",
-    "flavor": "His. Eight knives, every edge shaving-sharp — 'a dull knife is a tired cook.' He fed the whole block out of a kitchen the size of a closet.",
+    "flavor": "His. Eight knives, every edge shaving-sharp \u2014 'a dull knife is a tired cook.' He fed the whole block out of a kitchen the size of a closet.",
     "memory": "The dinner rush, the pass, the tickets coming faster than thought. You survived your first Saturday service at sixteen. The roll was the prize.",
     "baseEffect": "+resolve when carried; camp cooking goes further",
     "bondThresholds": [
@@ -1444,7 +1455,7 @@
     "name": "Carpenter's square",
     "class": "sentimental",
     "flavor": "Steel square, edges worn bright. Your father's. It built half the porches on Alder Street, and it has never measured wrong.",
-    "memory": "Your first solo frame, checked and found true. The nod that followed was the whole ceremony. Measure twice, cut once — it's in your hands now.",
+    "memory": "Your first solo frame, checked and found true. The nod that followed was the whole ceremony. Measure twice, cut once \u2014 it's in your hands now.",
     "baseEffect": "+resolve when carried; building and repairs hold better",
     "bondThresholds": [
       {
@@ -1476,7 +1487,7 @@
     "name": "Trail compass",
     "class": "sentimental",
     "flavor": "Brass compass, glass cracked but needle true. His father's. The glass broke on the last ridge they climbed together. The needle never lied, and neither did he.",
-    "memory": "Lost above the fog line, visibility down to your boots. You didn't panic — just held the compass flat, found north, and walked out like it was nothing. It was not nothing.",
+    "memory": "Lost above the fog line, visibility down to your boots. You didn't panic \u2014 just held the compass flat, found north, and walked out like it was nothing. It was not nothing.",
     "baseEffect": "+resolve when carried; harder to get truly lost",
     "bondThresholds": [
       {
@@ -1508,8 +1519,8 @@
     "id": "dispatchers_headset",
     "name": "Dispatcher's headset",
     "class": "sentimental",
-    "flavor": "One earcup cracked. Her voice came through it on the worst night the town ever had — 'stay with me, stay with me.' It still says it, when it's quiet.",
-    "memory": "You learned the voice — low, steady, unhurried. 'Panic is just information arriving too fast.' You hear it in your own voice now when it counts.",
+    "flavor": "One earcup cracked. Her voice came through it on the worst night the town ever had \u2014 'stay with me, stay with me.' It still says it, when it's quiet.",
+    "memory": "You learned the voice \u2014 low, steady, unhurried. 'Panic is just information arriving too fast.' You hear it in your own voice now when it counts.",
     "baseEffect": "+resolve when carried; calm under pressure",
     "bondThresholds": [
       {
@@ -1542,7 +1553,7 @@
     "name": "Busker's harmonica",
     "class": "sentimental",
     "flavor": "Dented harmonica in C. Your brother's. He played every corner that would have him, and some that wouldn't. The corners are empty now.",
-    "memory": "Rain, an open case, three dollars and a sandwich. You played anyway — the street owes you nothing, so everything it gives is a gift. You still believe that.",
+    "memory": "Rain, an open case, three dollars and a sandwich. You played anyway \u2014 the street owes you nothing, so everything it gives is a gift. You still believe that.",
     "baseEffect": "+resolve when carried; music steadies the camp",
     "bondThresholds": [
       {
@@ -1564,7 +1575,7 @@
     "reveals": {
       "type": "flag",
       "id": "work_song",
-      "note": "Music steadies hands. Yours, and the camp’s."
+      "note": "Music steadies hands. Yours, and the camp\u2019s."
     }
   },
   {
@@ -1633,7 +1644,7 @@
     "name": "Boot stone",
     "class": "sentimental",
     "flavor": "A smooth stone, carried in the boot for years. Guilt has a weight. This is exactly that weight.",
-    "memory": "You carry a guilt like a stone in the boot. So you carry a stone in the boot — the scattering took the one person you were keeping alive, and this is the shape of that. It keeps you honest.",
+    "memory": "You carry a guilt like a stone in the boot. So you carry a stone in the boot \u2014 the scattering took the one person you were keeping alive, and this is the shape of that. It keeps you honest.",
     "baseEffect": "+resolve when carried",
     "bondThresholds": [
       {
@@ -1766,7 +1777,8 @@
       "bonus": 60,
       "type": "melee",
       "range": 1,
-      "ignoresArmor": true
+      "ignoresArmor": true,
+      "damageType": "physical"
     }
   },
   {
@@ -1804,7 +1816,8 @@
     "weapon": {
       "bonus": 80,
       "type": "melee",
-      "range": 2
+      "range": 2,
+      "damageType": "physical"
     }
   },
   {

@@ -13602,6 +13602,28 @@
       // visibly. (feastBurn states the burn itself.)
       if (this.feastBurn) { const fb = this.feastBurn(); if (fb > 0) d = Math.round(d * fb); }
       d = Math.round(d);
+      // ARMOR & RESISTANCES (Steve 2026-10-05): monsters have armor (flat vs
+      // physical) and resistances (percentage per damage type). Apply them here.
+      if (!isHuman) {
+        const mid = t.monsterId || (t.mdef && t.mdef.id);
+        const mdef = (this.data.monsters || []).find(m => m.id === mid) || {};
+        const wType = (w.weapon && w.weapon.damageType) || 'physical';
+        // Armor: flat reduction vs physical damage only
+        if (wType === 'physical' && mdef.armor > 0) {
+          const absorbed = Math.min(d, mdef.armor);
+          d -= absorbed;
+          if (absorbed > 0) this.say(`(${mdef.name}'s hide absorbs ${absorbed}.)`);
+        }
+        // Resistances: percentage reduction per type (negative = vulnerability)
+        const res = (mdef.resistances || {})[wType] || 0;
+        if (res !== 0) {
+          const oldD = d;
+          d = Math.round(d * (1 - res));
+          if (res > 0) this.say(`(${mdef.name} resists ${wType} — ${oldD} → ${d}.)`);
+          else this.say(`(${mdef.name} is vulnerable to ${wType}! ${oldD} → ${d}.)`);
+        }
+        d = Math.max(1, d); // always at least 1 damage
+      }
       p.acted = true;
       // BETTER HUMAN: fighting is strength and agility practice.
       this.practice('str', 1); this.practice('agi', 1);

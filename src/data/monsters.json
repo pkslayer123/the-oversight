@@ -21,7 +21,8 @@
         "type": "charge",
         "length": 5,
         "width": 1
-      }
+      },
+      "damageType": "physical"
     },
     "weaknesses": [
       "soft flanks (HARRY then STRIKE)",
@@ -101,6 +102,10 @@
       "chance": 0.1,
       "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 8,
+    "resistances": {
+      "fire": 0.25
     }
   },
   {
@@ -123,7 +128,8 @@
       "telegraph": "No telegraph you can hear. Watch the birds \u2014 when they go quiet, the pack is already moving.",
       "pattern": {
         "type": "rush"
-      }
+      },
+      "damageType": "physical"
     },
     "weaknesses": [
       "fire (they remember being dogs)",
@@ -198,7 +204,9 @@
       "chance": 0.1,
       "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
-    }
+    },
+    "armor": 2,
+    "resistances": {}
   },
   {
     "id": "gallowdeer",
@@ -227,7 +235,8 @@
         "fireTurns": 6,
         "sweepRate": 0.28,
         "cooldownTurns": 2
-      }
+      },
+      "damageType": "psychic"
     },
     "weaknesses": [
       "interrupt the freeze (HARRY)",
@@ -296,6 +305,10 @@
       "chance": 0.22,
       "tier": 4,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 0,
+    "resistances": {
+      "psychic": 0.5
     }
   },
   {
@@ -319,7 +332,8 @@
       "pattern": {
         "type": "burst",
         "radius": 2
-      }
+      },
+      "damageType": "psychic"
     },
     "weaknesses": [
       "attack from behind (it must face you to flash)",
@@ -391,6 +405,10 @@
       "chance": 0.1,
       "tier": 1,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 0,
+    "resistances": {
+      "psychic": 0.75
     }
   },
   {
@@ -414,7 +432,8 @@
       "pattern": {
         "type": "burst",
         "radius": 2
-      }
+      },
+      "damageType": "sonic"
     },
     "weaknesses": [
       "deafened by its own chorus (loud noises scatter the pack)",
@@ -486,6 +505,10 @@
       "chance": 0.08,
       "tier": 1,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 3,
+    "resistances": {
+      "sonic": 0.5
     }
   },
   {
@@ -509,7 +532,8 @@
       "pattern": {
         "type": "direct",
         "range": 2
-      }
+      },
+      "damageType": "physical"
     },
     "weaknesses": [
       "distract with food (it cannot resist)",
@@ -580,7 +604,9 @@
       "chance": 0.12,
       "tier": 1,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
-    }
+    },
+    "armor": 2,
+    "resistances": {}
   },
   {
     "id": "white_noise_heron",
@@ -605,7 +631,8 @@
         "length": 4,
         "width": 1,
         "windup": 2
-      }
+      },
+      "damageType": "psychic"
     },
     "weaknesses": [
       "it casts no shadow \u2014 watch the water, not the bird",
@@ -680,6 +707,11 @@
       "chance": 0.1,
       "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 1,
+    "resistances": {
+      "psychic": 0.5,
+      "sonic": 0.25
     }
   },
   {
@@ -703,7 +735,8 @@
       "pattern": {
         "type": "burst",
         "radius": 2
-      }
+      },
+      "damageType": "sonic"
     },
     "weaknesses": [
       "the hum needs the swarm \u2014 scatter them",
@@ -775,7 +808,11 @@
       "tier": 1,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     },
-    "blocks": false
+    "blocks": false,
+    "armor": 0,
+    "resistances": {
+      "sonic": 0.75
+    }
   },
   {
     "id": "speedbump_turtle",
@@ -798,7 +835,8 @@
       "pattern": {
         "type": "ambush",
         "radius": 1
-      }
+      },
+      "damageType": "physical"
     },
     "weaknesses": [
       "it cannot chase (it is a turtle)",
@@ -871,6 +909,10 @@
       "chance": 0.1,
       "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 15,
+    "resistances": {
+      "physical": 0.5
     }
   },
   {
@@ -894,7 +936,8 @@
       "pattern": {
         "type": "direct",
         "range": 3
-      }
+      },
+      "damageType": "electric"
     },
     "weaknesses": [
       "don't wade at night (obvious, ignored)",
@@ -965,6 +1008,10 @@
       "chance": 0.1,
       "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 4,
+    "resistances": {
+      "electric": 0.75
     }
   },
   {
@@ -989,7 +1036,8 @@
       "pattern": {
         "type": "direct",
         "range": 3
-      }
+      },
+      "damageType": "sonic"
     },
     "behavior": "curious",
     "aggression": "hungry",
@@ -1056,6 +1104,11 @@
       "chance": 0.15,
       "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 3,
+    "resistances": {
+      "sonic": 0.5,
+      "electric": 0.25
     }
   },
   {
@@ -1082,7 +1135,8 @@
         "length": 6,
         "width": 1,
         "windup": 2
-      }
+      },
+      "damageType": "psychic"
     },
     "behavior": "territorial",
     "aggression": "territorial",
@@ -1159,6 +1213,10 @@
       "chance": 0.15,
       "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 2,
+    "resistances": {
+      "psychic": 0.75
     }
   },
   {
@@ -1185,7 +1243,8 @@
         "length": 6,
         "width": 1,
         "windup": 3
-      }
+      },
+      "damageType": "electric"
     },
     "behavior": "territorial",
     "aggression": "territorial",
@@ -1254,6 +1313,10 @@
       "chance": 0.15,
       "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 6,
+    "resistances": {
+      "electric": 0.5
     }
   },
   {
@@ -1279,7 +1342,8 @@
         "type": "burst",
         "radius": 2,
         "windup": 2
-      }
+      },
+      "damageType": "physical"
     },
     "behavior": "swarm",
     "aggression": "hungry",
@@ -1348,7 +1412,9 @@
       "chance": 0.15,
       "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
-    }
+    },
+    "armor": 0,
+    "resistances": {}
   },
   {
     "id": "hype_horn",
@@ -1373,7 +1439,8 @@
         "type": "burst",
         "radius": 3,
         "windup": 3
-      }
+      },
+      "damageType": "sonic"
     },
     "behavior": "pack",
     "aggression": "hungry",
@@ -1442,6 +1509,10 @@
       "chance": 0.15,
       "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 4,
+    "resistances": {
+      "sonic": 0.75
     }
   },
   {
@@ -1465,7 +1536,8 @@
       "telegraph": "No telegraph. That's the point. One moment the night is quiet. The next, something is right behind you, and a syrupy voice says: 'Your fear is important to us.'",
       "pattern": {
         "type": "rush"
-      }
+      },
+      "damageType": "psychic"
     },
     "behavior": "curious",
     "aggression": "curious",
@@ -1532,6 +1604,10 @@
       "chance": 0.18,
       "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 2,
+    "resistances": {
+      "psychic": 0.25
     }
   },
   {
@@ -1556,7 +1632,8 @@
       "pattern": {
         "type": "direct",
         "range": 3
-      }
+      },
+      "damageType": "physical"
     },
     "behavior": "drifter",
     "aggression": "hungry",
@@ -1623,6 +1700,10 @@
       "chance": 0.22,
       "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 12,
+    "resistances": {
+      "fire": -0.5
     }
   },
   {
@@ -1648,7 +1729,8 @@
         "type": "charge",
         "length": 4,
         "width": 2
-      }
+      },
+      "damageType": "physical"
     },
     "behavior": "pack",
     "aggression": "hungry",
@@ -1716,7 +1798,9 @@
       "chance": 0.25,
       "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
-    }
+    },
+    "armor": 5,
+    "resistances": {}
   },
   {
     "id": "bright_idea",
@@ -1741,7 +1825,8 @@
         "type": "burst",
         "radius": 2,
         "windup": 2
-      }
+      },
+      "damageType": "psychic"
     },
     "behavior": "ambush",
     "aggression": "hungry",
@@ -1811,6 +1896,10 @@
       "chance": 0.15,
       "tier": 2,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 0,
+    "resistances": {
+      "physical": 0.75
     }
   },
   {
@@ -1837,7 +1926,8 @@
         "length": 5,
         "width": 1,
         "windup": 2
-      }
+      },
+      "damageType": "psychic"
     },
     "behavior": "curious",
     "aggression": "curious",
@@ -1904,6 +1994,10 @@
       "chance": 0.15,
       "tier": 3,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 2,
+    "resistances": {
+      "psychic": 0.5
     }
   },
   {
@@ -1948,8 +2042,11 @@
       "pattern": {
         "type": "direct"
       },
-      "telegraph": "The heads turn toward you."
-    }
+      "telegraph": "The heads turn toward you.",
+      "damageType": "physical"
+    },
+    "armor": 1,
+    "resistances": {}
   },
   {
     "id": "glasswing",
@@ -1973,7 +2070,8 @@
       "pattern": {
         "type": "single",
         "range": 3
-      }
+      },
+      "damageType": "physical"
     },
     "weaknesses": [
       "move when the shadow comes \u2014 it can't turn mid-dive",
@@ -2038,7 +2136,9 @@
       "chance": 0.1,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05).",
       "tier": 1
-    }
+    },
+    "armor": 0,
+    "resistances": {}
   },
   {
     "id": "sunbasker",
@@ -2062,7 +2162,8 @@
       "pattern": {
         "type": "single",
         "range": 1
-      }
+      },
+      "damageType": "fire"
     },
     "weaknesses": [
       "attack it while it basks \u2014 it loses the charge",
@@ -2127,6 +2228,11 @@
       "chance": 0.1,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05).",
       "tier": 1
+    },
+    "armor": 5,
+    "resistances": {
+      "fire": 0.75,
+      "cold": -0.5
     }
   }
 ]
