@@ -14314,6 +14314,13 @@
       const c = this.tbCurrent();
       if (!c) return;
       if (c.kind === 'player') {
+        // POS SYNC (Steve 2026-10-06): the grid renders scholar.mx but combat
+        // moves the fighter. If they ever disagree (barrier crossings, etc.),
+        // the fighter is the truth — snap the render to it. A desync reads as
+        // a teleport on the next move.
+        if (c.mx !== this.state.scholar.mx || c.my !== this.state.scholar.my) {
+          this.state.scholar.mx = c.mx; this.state.scholar.my = c.my;
+        }
         // STUNNED (mirror-stag gaze, belltoad croak): the stun is set during a
         // monster's turn, so it must be consumed HERE — tbBeginTurn otherwise
         // wipes moveLeft/acted and the freeze silently never happens.
@@ -14819,7 +14826,11 @@
         const d = S.combat.roll([10, 16]);
         const who = o.kind === 'player' ? 'you' : o.name;
         this.say(`The ${m.name} thrashes its antlers at ${who} — getting close has a price. (${d})`);
-        this.tbDamage(o.key, d, m.name + "'s antlers");
+        // POSSESSIVE (Steve 2026-10-06): unknown descriptors ("the thing with
+        // headlights...") can't take 's — "standing too still's antlers" is
+        // broken. Use "the antlers of X" for descriptor-style names.
+        const src = /^(the|a|an) /i.test(m.name) ? `the antlers of ${m.name}` : m.name + "'s antlers";
+        this.tbDamage(o.key, d, src);
         hit = true;
         if (f.over) return true;
       }
@@ -15170,6 +15181,11 @@
             // Player enters from the opposite edge
             p.mx = Math.max(0, Math.min(8, 4 + dx * 3));
             p.my = Math.max(0, Math.min(8, 4 + dy * 3));
+            // POS SYNC (Steve 2026-10-06): the grid renders scholar.mx — travelTo
+            // just set it to the node entry, but the fighter is the truth in
+            // combat. Desync = the player SEES one tile and MOVES from another,
+            // and the next step visibly teleports. Keep them together.
+            this.state.scholar.mx = p.mx; this.state.scholar.my = p.my;
             this.tbRefreshTelegraphUI();
             return true;
           }
