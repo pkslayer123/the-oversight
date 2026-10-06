@@ -88,7 +88,10 @@ function measure(Game, s, n) {
 
 (async () => {
   const NEW_SRC = fs.readFileSync(path.join(ROOT, 'src/js/game.js'), 'utf8');
-  const OLD_SRC = execSync('git show HEAD~1:src/js/game.js', { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 }).toString();
+  // BEFORE baseline: pinned to the pre-audit commit, NOT HEAD~1 — relative
+  // refs shift as this branch grows and silently turn "before" into "after".
+  const BEFORE_COMMIT = '02b096a';
+  const OLD_SRC = execSync(`git show ${BEFORE_COMMIT}:src/js/game.js`, { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 }).toString();
 
   // ============ AFTER: new behavior ============
   console.log('AFTER (worktree):');
