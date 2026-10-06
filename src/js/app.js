@@ -3622,33 +3622,62 @@
     }
     // WAVE-2 REDESIGN (Steve 2026-10-06): five new monsters, five new voices.
     function understudyLearn() {
-      // LEARNING: an echo that corrects itself — two tones, the second
-      // slightly sharper, like it's tuning to you. Then a third, exact.
+      // LEARNING (deepened 2026-10-06): an echo that corrects itself — the
+      // first tone lands alone and sure. The second arrives as two throats
+      // nearly in unison, beating against each other, wobbling as they
+      // search. The third locks: one exact tone with a high shimmer. You
+      // can HEAR it figure you out.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      [440, 445, 440].forEach((fq, i) => {
-        const dt = t + i * 0.22;
+      const voice = (fq, dt, dur, peak, wobble) => {
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.type = 'triangle'; o.frequency.value = fq;
+        if (wobble) { // searching: the pitch hunts
+          const lfo = ctx.createOscillator(), lg = ctx.createGain();
+          lfo.type = 'sine'; lfo.frequency.value = 6; lg.gain.value = wobble;
+          lfo.connect(lg); lg.connect(o.frequency);
+          lfo.start(dt); lfo.stop(dt + dur);
+        }
         g.gain.setValueAtTime(0.0001, dt);
-        g.gain.exponentialRampToValueAtTime(0.12, dt + 0.05);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.2);
-        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.22);
-      });
+        g.gain.exponentialRampToValueAtTime(peak, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + dur);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + dur + 0.02);
+      };
+      voice(440, t, 0.2, 0.12);                    // sure
+      voice(445, t + 0.24, 0.24, 0.1, 14);          // searching, low
+      voice(447.8, t + 0.24, 0.24, 0.1, 14);        // searching, high: beats
+      voice(440, t + 0.5, 0.26, 0.12);              // locked
+      voice(880, t + 0.5, 0.3, 0.04);               // the shimmer of certainty
     }
     function understudyCopy() {
-      // THE COPY: your move, played back at you — a perfect mirror, then
-      // a semitone off, mocking. Cold.
+      // THE COPY (deepened 2026-10-06): your move, played back at you — a
+      // perfect mirror, then a semitone off AND sour: a third voice beating
+      // against the mockery, with a cold ring-modulated shimmer on top. Not
+      // a laugh. A correction.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      [523, 554].forEach((fq, i) => {
-        const dt = t + i * 0.18;
+      const voice = (fq, dt, dur, peak, type) => {
         const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sawtooth'; o.frequency.value = fq;
-        g.gain.setValueAtTime(0.1, dt);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
-        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.18);
-      });
+        o.type = type || 'sawtooth'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(peak, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + dur);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + dur + 0.02);
+      };
+      voice(523, t, 0.16, 0.1);              // the mirror: exact
+      const dt2 = t + 0.18;
+      voice(554, dt2, 0.2, 0.09);            // the mockery: a semitone off
+      voice(557.2, dt2, 0.2, 0.09);          // sour: beating against it
+      // cold shimmer: ring-modulated edge on the mockery
+      const sh = ctx.createOscillator(), shg = ctx.createGain();
+      sh.type = 'triangle'; sh.frequency.value = 1108;
+      const am = ctx.createOscillator(), amg = ctx.createGain();
+      am.type = 'sine'; am.frequency.value = 23; amg.gain.value = 0.03;
+      am.connect(amg); amg.connect(shg.gain);
+      shg.gain.setValueAtTime(0.03, dt2);
+      shg.gain.exponentialRampToValueAtTime(0.0001, dt2 + 0.25);
+      sh.connect(shg); shg.connect(sfxBus);
+      sh.start(dt2); sh.stop(dt2 + 0.27); am.start(dt2); am.stop(dt2 + 0.27);
     }
     function landlordStamp() {
       // THE STAMP: a heavy official thud — wood on paper, final. Then the
@@ -3670,20 +3699,50 @@
         nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
         nz.start(t + 0.15); nz.stop(t + 0.5);
       }
+      // the rubber squeak: the stamp gripping the paper, two detuned
+      // sawtooths beating through a bandpass — officialdom has a sound,
+      // and it is unpleasant
+      [1350, 1358].forEach((fq) => {
+        const sq = ctx.createOscillator(), sqf = ctx.createBiquadFilter(), sqg = ctx.createGain();
+        sq.type = 'sawtooth';
+        sq.frequency.setValueAtTime(fq, t + 0.05);
+        sq.frequency.exponentialRampToValueAtTime(fq * 1.35, t + 0.23);
+        sqf.type = 'bandpass'; sqf.frequency.value = 1500; sqf.Q.value = 4;
+        sqg.gain.setValueAtTime(0.0001, t + 0.05);
+        sqg.gain.exponentialRampToValueAtTime(0.045, t + 0.12);
+        sqg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        sq.connect(sqf); sqf.connect(sqg); sqg.connect(sfxBus);
+        sq.start(t + 0.05); sq.stop(t + 0.32);
+      });
     }
     function landlordClaim() {
-      // JURISDICTION SPREADING: a low brass note that widens — the claim
-      // getting bigger. Unpleasant in a civic way.
+      // JURISDICTION SPREADING (deepened 2026-10-06): a low brass note that
+      // widens — the claim getting bigger. A second sawtooth a hair off the
+      // first beats as the jurisdiction spreads (civic and wrong), with
+      // paperwork rustling underneath it all.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(110, t);
-      o.frequency.exponentialRampToValueAtTime(165, t + 0.8);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.1, t + 0.2);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.95);
+      // the brass: two detuned saws, widening together
+      [[110, 0.1], [110.9, 0.08]].forEach(([fq, peak]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 1.5, t + 0.8);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(peak, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.95);
+      });
+      // paperwork: the forms, always the forms
+      const nz = noise(1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 1600;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.06, t + 0.25);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.9);
+      }
     }
     function hecklerTaunt() {
       // THE TAUNT: mocking laughter — three descending jeers, nasal and mean.
@@ -3705,42 +3764,71 @@
       });
     }
     function hecklerPileOn() {
-      // PILE-ON: the taunt multiplies — overlapping jeers, a chorus of mean.
+      // PILE-ON (deepened 2026-10-06): the taunt multiplies — overlapping
+      // jeers, a chorus of mean, each one wobbling. The last jeer slides
+      // down into something nastier than laughter.
       if (!ensure()) return;
       const t = ctx.currentTime;
       for (let i = 0; i < 4; i++) {
         const dt = t + i * 0.09;
+        const last = i === 3;
         const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square'; o.frequency.value = 300 + Math.random() * 150;
-        g.gain.setValueAtTime(0.07, dt);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
-        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.13);
+        o.type = 'square';
+        if (last) { // the slide: jeer curdling downward
+          o.frequency.setValueAtTime(280, dt);
+          o.frequency.exponentialRampToValueAtTime(180, dt + 0.3);
+        } else {
+          o.frequency.value = 300 + Math.random() * 150;
+        }
+        // vibrato: every jeer wobbles with meanness
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 9; lg.gain.value = 20;
+        lfo.connect(lg); lg.connect(o.frequency);
+        const dur = last ? 0.32 : 0.13;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(last ? 0.1 : 0.07, dt + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + dur);
+        o.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + dur + 0.02); lfo.start(dt); lfo.stop(dt + dur + 0.02);
       }
     }
     function paparazzoShutter(opts) {
-      // THE SHUTTER: a single expensive click — not a swarm, a sniper.
-      // Prediction level raises the pitch: it knows.
+      // THE SHUTTER (deepened 2026-10-06): an expensive click — not a swarm,
+      // a sniper. Prediction level raises the pitch: it knows. The lens
+      // whirrs, hunting focus, wobbling as it locks — then the motor drive
+      // fires a second frame, worn and lower. It is not done with you.
       if (!ensure()) return;
       const t = ctx.currentTime;
       const pred = (opts && opts.prediction) || 0;
       const baseFq = 2000 + pred * 300;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'square'; o.frequency.value = baseFq;
-      g.gain.setValueAtTime(0.12, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.07);
-      // the lens whirr: focusing, hunting
+      const click = (dt, fq, peak) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(peak, dt + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.06);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.07);
+      };
+      click(t, baseFq, 0.12);                 // the sniper frame
+      click(t + 0.09, baseFq * 0.85, 0.09);  // the motor drive: worn, lower
+      // the lens whirr: focusing, hunting, wobbling as it locks
       const o2 = ctx.createOscillator(), g2 = ctx.createGain();
       o2.type = 'sine';
       o2.frequency.setValueAtTime(800, t);
       o2.frequency.exponentialRampToValueAtTime(1200, t + 0.3);
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 11; lg.gain.value = 40;
+      lfo.connect(lg); lg.connect(o2.frequency);
       g2.gain.setValueAtTime(0.05, t);
       g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
-      o2.connect(g2); g2.connect(sfxBus); o2.start(t); o2.stop(t + 0.36);
+      o2.connect(g2); g2.connect(sfxBus);
+      o2.start(t); o2.stop(t + 0.36); lfo.start(t); lfo.stop(t + 0.36);
     }
     function paparazzoFlash() {
-      // THE FLASH: white burst, but personal — aimed at YOU, not a crowd.
-      // Shorter, crueler than the swarm's.
+      // THE FLASH (deepened 2026-10-06): white burst, but personal — aimed
+      // at YOU, not a crowd. After it dies, an afterimage whine hangs in
+      // the air: two thin tones beating against each other, slowly fading,
+      // with a slow flutter. Underneath, a low thump: you have been seen.
       if (!ensure()) return;
       const t = ctx.currentTime, dur = 0.25;
       const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
@@ -3753,30 +3841,571 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       src.connect(hp); hp.connect(g); g.connect(sfxBus);
       src.start(t); src.stop(t + dur);
+      // afterimage: two thin tones, beating, with a slow flutter
+      [3520, 3531].forEach((fq) => {
+        const w = ctx.createOscillator(), wg = ctx.createGain();
+        w.type = 'sine'; w.frequency.value = fq;
+        const fl = ctx.createOscillator(), flg = ctx.createGain();
+        fl.type = 'sine'; fl.frequency.value = 4.5; flg.gain.value = 0.015;
+        fl.connect(flg); flg.connect(wg.gain);
+        wg.gain.setValueAtTime(0.0001, t + 0.05);
+        wg.gain.exponentialRampToValueAtTime(0.035, t + 0.2);
+        wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+        w.connect(wg); wg.connect(sfxBus);
+        w.start(t + 0.05); w.stop(t + 1.25); fl.start(t + 0.05); fl.stop(t + 1.25);
+      });
+      // you're exposed: a low thump under the whine
+      const th = ctx.createOscillator(), thg = ctx.createGain();
+      th.type = 'sine'; th.frequency.setValueAtTime(70, t + 0.1);
+      th.frequency.exponentialRampToValueAtTime(40, t + 0.35);
+      thg.gain.setValueAtTime(0.0001, t + 0.1);
+      thg.gain.exponentialRampToValueAtTime(0.18, t + 0.14);
+      thg.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      th.connect(thg); thg.connect(sfxBus); th.start(t + 0.1); th.stop(t + 0.45);
     }
     function unionRepChant() {
-      // THE CHANT: rhythmic, low, collective — a picket line finding its beat.
-      // Three pulses, then a fourth that lands harder.
+      // THE CHANT (deepened 2026-10-06): a picket line finding its beat —
+      // not one voice but a crowd. Each pulse is three detuned throats
+      // (beating against each other) over a sub stomp that drops in pitch
+      // like a boot hitting dirt, with breath noise between the pulses.
+      // The fourth pulse lands harder: the crowd swells in behind it.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      [0, 0.22, 0.44, 0.66].forEach((dt, i) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'triangle'; o.frequency.value = i === 3 ? 98 : 110;
-        g.gain.setValueAtTime(0.14, t + dt);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.18);
-        o.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + 0.2);
+      [0, 0.26, 0.52, 0.78].forEach((dt, i) => {
+        const hard = i === 3;
+        // the throats: detuned, beating
+        [110, 111.5, 107].forEach((fq) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'triangle'; o.frequency.value = fq;
+          const peak = hard ? 0.11 : 0.07;
+          g.gain.setValueAtTime(0.0001, t + dt);
+          g.gain.exponentialRampToValueAtTime(peak, t + dt + 0.04);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dt + (hard ? 0.3 : 0.2));
+          o.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + 0.32);
+        });
+        // the floor: a sub stomp that drops like a boot in dirt
+        const s = ctx.createOscillator(), sg = ctx.createGain();
+        s.type = 'sine';
+        s.frequency.setValueAtTime(60, t + dt);
+        s.frequency.exponentialRampToValueAtTime(36, t + dt + 0.22);
+        sg.gain.setValueAtTime(0.0001, t + dt);
+        sg.gain.exponentialRampToValueAtTime(hard ? 0.25 : 0.15, t + dt + 0.03);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.28);
+        s.connect(sg); sg.connect(sfxBus); s.start(t + dt); s.stop(t + dt + 0.3);
+        if (hard) {
+          // the swell: the crowd comes in behind the fourth pulse
+          const nz = noise(1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+          if (nz) {
+            nf.type = 'lowpass'; nf.frequency.value = 900;
+            ng.gain.setValueAtTime(0.0001, t + dt);
+            ng.gain.exponentialRampToValueAtTime(0.14, t + dt + 0.2);
+            ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.7);
+            nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+            nz.start(t + dt); nz.stop(t + dt + 0.75);
+          }
+        }
       });
+      // breath between the pulses: the line is alive
+      const br = noise(1), bf = ctx.createBiquadFilter(), bg = ctx.createGain();
+      if (br) {
+        bf.type = 'bandpass'; bf.frequency.value = 700; bf.Q.value = 0.8;
+        bg.gain.setValueAtTime(0.0001, t + 0.1);
+        bg.gain.linearRampToValueAtTime(0.05, t + 0.4);
+        bg.gain.linearRampToValueAtTime(0.0001, t + 1.0);
+        br.connect(bf); bf.connect(bg); bg.connect(sfxBus);
+        br.start(t); br.stop(t + 1.05);
+      }
     }
     function unionRepWhistle() {
-      // THE WHISTLE: a sharp blast — the line moves. Attention must be paid.
+      // THE WHISTLE (deepened 2026-10-06): a pea-whistle blast — the line
+      // moves. Two harmonics with a 28Hz AM flutter (the pea rattling), a
+      // breath puff at the attack, and the pitch sagging at the end like
+      // the blower's lungs give out. Attention must be paid.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.5;
+      [[2200, 0.1], [4400, 0.035]].forEach(([fq, peak]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(peak, t + 0.02);
+        g.gain.setValueAtTime(peak, t + dur - 0.12);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        // the pea: AM flutter on the gain
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 28; lg.gain.value = peak * 0.6;
+        lfo.connect(lg); lg.connect(g.gain);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur + 0.02); lfo.start(t); lfo.stop(t + dur + 0.02);
+      });
+      // pitch sag: the lungs giving out
+      const s = ctx.createOscillator(), sg = ctx.createGain();
+      s.type = 'sawtooth';
+      s.frequency.setValueAtTime(2100, t);
+      s.frequency.exponentialRampToValueAtTime(1200, t + dur);
+      sg.gain.setValueAtTime(0.04, t);
+      sg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s.connect(sg); sg.connect(sfxBus); s.start(t); s.stop(t + dur + 0.02);
+      // breath puff at the attack
+      const nz = noise(0.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 3000;
+        ng.gain.setValueAtTime(0.12, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.12);
+      }
+    }
+    function unionBullhorn() {
+      // THE BULLHORN (Steve 2026-10-06): "STAND TOGETHER!" through a megaphone
+      // that hates you. Two nasal blasts (square through a 1500Hz bandpass =
+      // cheap plastic horn), a feedback ring blooming over them, and the
+      // chant already starting underneath. Solidarity has a sound, and it
+      // is loud.
       if (!ensure()) return;
       const t = ctx.currentTime;
+      [0, 0.3].forEach((dt, i) => {
+        const dur = i === 1 ? 0.34 : 0.22;
+        const o = ctx.createOscillator(), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = 523;
+        bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 2.5;
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.22, t + dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + dur);
+        o.connect(bp); bp.connect(g); g.connect(sfxBus);
+        o.start(t + dt); o.stop(t + dt + dur + 0.02);
+      });
+      // feedback: the horn hears itself, wobbling
+      const f = ctx.createOscillator(), fg = ctx.createGain();
+      f.type = 'sine';
+      f.frequency.setValueAtTime(3050, t);
+      f.frequency.exponentialRampToValueAtTime(3350, t + 0.8);
+      const fl = ctx.createOscillator(), flg = ctx.createGain();
+      fl.type = 'sine'; fl.frequency.value = 5.5; flg.gain.value = 60;
+      fl.connect(flg); flg.connect(f.frequency);
+      fg.gain.setValueAtTime(0.0001, t + 0.1);
+      fg.gain.exponentialRampToValueAtTime(0.05, t + 0.4);
+      fg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      f.connect(fg); fg.connect(sfxBus);
+      f.start(t); f.stop(t + 0.95); fl.start(t); fl.stop(t + 0.95);
+      // the chant starts under it
+      [110, 98].forEach((fq, i) => {
+        const dt = t + 0.15 + i * 0.26;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.08, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.22);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.24);
+      });
+    }
+    function unionWalkout() {
+      // THE WALKOUT (Steve 2026-10-06): the rep climbs onto the bullhorn and
+      // stops fighting entirely. First the fight's noise thins — a low
+      // receding rumble, near-silence — then the picket-line stomp: four
+      // floor-shaking thuds under a rising wail made of two voices that
+      // can't quite agree, never resolving. It is not attacking you anymore.
+      // That is somehow worse.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the thinning: everything drops away
+      const r = ctx.createOscillator(), rg = ctx.createGain();
+      r.type = 'sine';
+      r.frequency.setValueAtTime(90, t);
+      r.frequency.exponentialRampToValueAtTime(38, t + 0.7);
+      rg.gain.setValueAtTime(0.14, t);
+      rg.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
+      r.connect(rg); rg.connect(sfxBus); r.start(t); r.stop(t + 0.8);
+      // the stomp: picket-line cadence
+      [0.5, 0.85, 1.2, 1.55].forEach((dt) => {
+        const s = ctx.createOscillator(), sg = ctx.createGain();
+        s.type = 'sine'; s.frequency.value = 52;
+        sg.gain.setValueAtTime(0.0001, t + dt);
+        sg.gain.exponentialRampToValueAtTime(0.3, t + dt + 0.02);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.25);
+        s.connect(sg); sg.connect(sfxBus); s.start(t + dt); s.stop(t + dt + 0.3);
+      });
+      // the wail: two voices rising, never agreeing, never resolving
+      [[280, 880, 420], [281.5, 883, 421]].forEach(([f0, f1, f2]) => {
+        const w = ctx.createOscillator(), wg = ctx.createGain();
+        w.type = 'sawtooth';
+        w.frequency.setValueAtTime(f0, t + 0.6);
+        w.frequency.linearRampToValueAtTime(f1, t + 1.6);
+        w.frequency.linearRampToValueAtTime(f2, t + 2.2);
+        wg.gain.setValueAtTime(0.0001, t + 0.6);
+        wg.gain.exponentialRampToValueAtTime(0.07, t + 1.0);
+        wg.gain.exponentialRampToValueAtTime(0.0001, t + 2.3);
+        w.connect(wg); wg.connect(sfxBus); w.start(t + 0.6); w.stop(t + 2.35);
+      });
+    }
+    function unionPicket() {
+      // THE PICKET LINE (Steve 2026-10-06): a wave-1 monster lumbers in
+      // holding a tiny sign. Shuffling steps, the sign's squeaky waggle —
+      // and then the worst part: it joins the chant. Wrong. A tritone off
+      // the line, proud of itself.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // shuffles: three dragged steps
+      [0, 0.28, 0.56].forEach((dt) => {
+        const nz = noise(0.3), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'lowpass';
+        nf.frequency.setValueAtTime(1200, t + dt);
+        nf.frequency.exponentialRampToValueAtTime(400, t + dt + 0.22);
+        ng.gain.setValueAtTime(0.0001, t + dt);
+        ng.gain.exponentialRampToValueAtTime(0.16, t + dt + 0.05);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.24);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + dt); nz.stop(t + dt + 0.26);
+      });
+      // the sign waggle: thin, squeaky, wobbling
+      const sq = ctx.createOscillator(), sqg = ctx.createGain();
+      sq.type = 'sine';
+      sq.frequency.setValueAtTime(2400, t + 0.7);
+      sq.frequency.linearRampToValueAtTime(3100, t + 1.3);
+      const sql = ctx.createOscillator(), sqlg = ctx.createGain();
+      sql.type = 'sine'; sql.frequency.value = 7; sqlg.gain.value = 120;
+      sql.connect(sqlg); sqlg.connect(sq.frequency);
+      sqg.gain.setValueAtTime(0.0001, t + 0.7);
+      sqg.gain.exponentialRampToValueAtTime(0.05, t + 0.85);
+      sqg.gain.exponentialRampToValueAtTime(0.0001, t + 1.35);
+      sq.connect(sqg); sqg.connect(sfxBus);
+      sq.start(t + 0.7); sq.stop(t + 1.4); sql.start(t + 0.7); sql.stop(t + 1.4);
+      // the chant, joined WRONG: the line's 110Hz against a proud tritone
+      [0.85, 1.15].forEach((dt) => {
+        [110, 155.5].forEach((fq) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'triangle'; o.frequency.value = fq;
+          const peak = fq === 155.5 ? 0.09 : 0.06;
+          g.gain.setValueAtTime(0.0001, t + dt);
+          g.gain.exponentialRampToValueAtTime(peak, t + dt + 0.05);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.26);
+          o.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + 0.28);
+        });
+      });
+    }
+    function understudyWatch() {
+      // THE WATCH (Steve 2026-10-06): a blank shape at the tree line,
+      // watching. Learning. Quiet paper scratches — it is taking notes, in
+      // your handwriting — under a thin tone that rises like a question,
+      // trying to be a voice. Not quite. A second scratch answers the
+      // first: it is practicing your rhythm.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.35, 0.62, 1.05].forEach((dt) => {
+        const nz = noise(0.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'bandpass'; nf.frequency.value = 2800; nf.Q.value = 3;
+        ng.gain.setValueAtTime(0.0001, t + dt);
+        ng.gain.exponentialRampToValueAtTime(0.07, t + dt + 0.04);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.16);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + dt); nz.stop(t + dt + 0.18);
+      });
+      // the almost-voice: thin, rising like a question, wobbling
+      const v = ctx.createOscillator(), vg = ctx.createGain();
+      v.type = 'sine';
+      v.frequency.setValueAtTime(620, t + 0.2);
+      v.frequency.linearRampToValueAtTime(950, t + 1.1);
+      const vl = ctx.createOscillator(), vlg = ctx.createGain();
+      vl.type = 'sine'; vl.frequency.value = 5; vlg.gain.value = 25;
+      vl.connect(vlg); vlg.connect(v.frequency);
+      vg.gain.setValueAtTime(0.0001, t + 0.2);
+      vg.gain.exponentialRampToValueAtTime(0.05, t + 0.5);
+      vg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      v.connect(vg); vg.connect(sfxBus);
+      v.start(t + 0.2); v.stop(t + 1.25); vl.start(t + 0.2); vl.stop(t + 1.25);
+      // the echo: a second tone almost in unison, beating while they overlap
+      const e = ctx.createOscillator(), eg = ctx.createGain();
+      e.type = 'triangle'; e.frequency.value = 622.5;
+      eg.gain.setValueAtTime(0.0001, t + 0.25);
+      eg.gain.exponentialRampToValueAtTime(0.03, t + 0.4);
+      eg.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      e.connect(eg); eg.connect(sfxBus); e.start(t + 0.25); e.stop(t + 0.85);
+    }
+    function understudyRehearse() {
+      // THE REHEARSAL (Steve 2026-10-06): it is doing the thing you do
+      // before you do it. Badly. But recognizably. A tone starts at the
+      // right pitch and slides off, wobbling as it tries; the retry comes
+      // closer but sour — a beating pair that can't quite lock. Then a
+      // small frustrated puff of breath.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const attempt = (f0, f1, dt, peak) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(f0, dt);
+        o.frequency.exponentialRampToValueAtTime(f1, dt + 0.3);
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 7; lg.gain.value = 10;
+        lfo.connect(lg); lg.connect(o.frequency); // the trying wobble
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(peak, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.34);
+        o.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.36); lfo.start(dt); lfo.stop(dt + 0.36);
+      };
+      attempt(440, 415, t, 0.1);            // the right pitch, sliding off
+      attempt(445, 438, t + 0.4, 0.09);     // trying again...
+      attempt(447.8, 443, t + 0.4, 0.09);   // ...closer, but sour: beats
+      // frustrated puff
+      const nz = noise(0.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 800;
+        ng.gain.setValueAtTime(0.09, t + 0.75);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.75); nz.stop(t + 1.0);
+      }
+    }
+    function understudyPerform() {
+      // THE PERFORMANCE (Steve 2026-10-06): "I've got it now." The confident
+      // copy — the exact mirror, then the mockery, colder: the beating pair
+      // with a ring-modulated edge, over a low drone that locks in like a
+      // held breath. It stands the way you stand now.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const voice = (fq, dt, dur, peak, type) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = type || 'sawtooth'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(peak, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + dur);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + dur + 0.02);
+      };
+      voice(523, t, 0.16, 0.1);              // the mirror: exact
+      const dt2 = t + 0.18;
+      voice(554, dt2, 0.22, 0.09);           // the mockery
+      voice(557.2, dt2, 0.22, 0.09);         // sour: beating
+      // cold edge: ring-modulated shimmer on the mockery
+      const sh = ctx.createOscillator(), shg = ctx.createGain();
+      sh.type = 'triangle'; sh.frequency.value = 1108;
+      const am = ctx.createOscillator(), amg = ctx.createGain();
+      am.type = 'sine'; am.frequency.value = 23; amg.gain.value = 0.03;
+      am.connect(amg); amg.connect(shg.gain);
+      shg.gain.setValueAtTime(0.03, dt2);
+      shg.gain.exponentialRampToValueAtTime(0.0001, dt2 + 0.28);
+      sh.connect(shg); shg.connect(sfxBus);
+      sh.start(dt2); sh.stop(dt2 + 0.3); am.start(dt2); am.stop(dt2 + 0.3);
+      // the held breath: a low drone locking in under it all
+      const dr = ctx.createOscillator(), drg = ctx.createGain();
+      dr.type = 'sine';
+      dr.frequency.setValueAtTime(65, t);
+      dr.frequency.linearRampToValueAtTime(65.8, t + 0.6);
+      drg.gain.setValueAtTime(0.0001, t);
+      drg.gain.exponentialRampToValueAtTime(0.12, t + 0.3);
+      drg.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      dr.connect(drg); drg.connect(sfxBus); dr.start(t); dr.stop(t + 0.85);
+    }
+    function landlordSpread() {
+      // THE ADDENDUM (Steve 2026-10-06): "this agreement now covers a WIDER
+      // AREA." The claim widening, bigger than the brass note: three
+      // detuned saws spreading apart as they rise, the ground itself
+      // rumbling lower, paperwork rustling over it all. The safe ground
+      // shrinks and you can hear it.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [[110, 0.09], [110.7, 0.08], [111.4, 0.07]].forEach(([fq, peak]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 1.5, t + 1.0);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(peak, t + 0.25);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 1.15);
+      });
+      // the ground, giving way
+      const r = ctx.createOscillator(), rg = ctx.createGain();
+      r.type = 'sine';
+      r.frequency.setValueAtTime(48, t);
+      r.frequency.exponentialRampToValueAtTime(30, t + 0.9);
+      rg.gain.setValueAtTime(0.0001, t);
+      rg.gain.exponentialRampToValueAtTime(0.2, t + 0.2);
+      rg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+      r.connect(rg); rg.connect(sfxBus); r.start(t); r.stop(t + 1.05);
+      // paperwork over it all
+      const nz = noise(1.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 2500;
+        ng.gain.setValueAtTime(0.0001, t + 0.1);
+        ng.gain.exponentialRampToValueAtTime(0.08, t + 0.4);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.1); nz.stop(t + 1.15);
+      }
+    }
+    function landlordEvict() {
+      // THE EVICTION (Steve 2026-10-06): "EVICTION NOTICE. It serves the
+      // paperwork. Personally." Three hammer knocks driving the sign into
+      // the dirt — the last one landing crooked, beating wrong — then the
+      // deep stamp of finality, then the paper sliding across. It always
+      // had your name on it.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.2, 0.4].forEach((dt, i) => {
+        const last = i === 2;
+        // knock: thump + woody crack; the last knock lands crooked
+        [95, last ? 96.5 : 95].forEach((fq, k) => {
+          if (k === 1 && !last) return;
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(fq, t + dt);
+          o.frequency.exponentialRampToValueAtTime(50, t + dt + 0.1);
+          g.gain.setValueAtTime(0.0001, t + dt);
+          g.gain.exponentialRampToValueAtTime(last ? 0.22 : 0.25, t + dt + 0.015);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.16);
+          o.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + 0.18);
+        });
+        const nz = noise(0.15), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (nz) {
+          nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 2;
+          ng.gain.setValueAtTime(0.12, t + dt);
+          ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.08);
+          nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+          nz.start(t + dt); nz.stop(t + dt + 0.1);
+        }
+      });
+      // the stamp of finality
+      const s = ctx.createOscillator(), sg = ctx.createGain();
+      s.type = 'sine';
+      s.frequency.setValueAtTime(90, t + 0.65);
+      s.frequency.exponentialRampToValueAtTime(45, t + 0.8);
+      sg.gain.setValueAtTime(0.0001, t + 0.65);
+      sg.gain.exponentialRampToValueAtTime(0.3, t + 0.68);
+      sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+      s.connect(sg); sg.connect(sfxBus); s.start(t + 0.65); s.stop(t + 1.0);
+      // the paper, sliding across
+      const pz = noise(0.4), pf = ctx.createBiquadFilter(), pg = ctx.createGain();
+      if (pz) {
+        pf.type = 'highpass'; pf.frequency.value = 4000;
+        pg.gain.setValueAtTime(0.0001, t + 0.9);
+        pg.gain.exponentialRampToValueAtTime(0.06, t + 1.0);
+        pg.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+        pz.connect(pf); pf.connect(pg); pg.connect(sfxBus);
+        pz.start(t + 0.9); pz.stop(t + 1.35);
+      }
+    }
+    function hecklerHeadliner() {
+      // THE HEADLINER (Steve 2026-10-06): "Oh, we've got a LIVE ONE!" The
+      // show starts — a cheap spotlight fanfare that curdles: two rising
+      // square tones with a mocking wobble, then the slide down into
+      // something meaner, while a crowd that isn't there swells and is
+      // gone. It has your number now.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [[392, 0], [523, 0.16]].forEach(([fq, dt]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = fq;
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 8; lg.gain.value = 18;
+        lfo.connect(lg); lg.connect(o.frequency); // the mocking wobble
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.09, t + dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.3);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + dt); o.stop(t + dt + 0.32); lfo.start(t + dt); lfo.stop(t + dt + 0.32);
+      });
+      // the curdle: the fanfare slides down into a jeer
+      const c = ctx.createOscillator(), cg = ctx.createGain();
+      c.type = 'sawtooth';
+      c.frequency.setValueAtTime(523, t + 0.34);
+      c.frequency.exponentialRampToValueAtTime(196, t + 0.7);
+      cg.gain.setValueAtTime(0.0001, t + 0.34);
+      cg.gain.exponentialRampToValueAtTime(0.1, t + 0.4);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
+      c.connect(cg); cg.connect(sfxBus); c.start(t + 0.34); c.stop(t + 0.8);
+      // the crowd that isn't there
+      const nz = noise(1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 1200; nf.Q.value = 0.7;
+        ng.gain.setValueAtTime(0.0001, t + 0.3);
+        ng.gain.exponentialRampToValueAtTime(0.1, t + 0.55);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.3); nz.stop(t + 1.05);
+      }
+    }
+    function hecklerJibe(d) {
+      // THE JIBE (Steve 2026-10-06): it narrates your miss. A pointed,
+      // descending jeer — sharper and higher the more shame is stacked,
+      // the wobble quickening with it — ending in a nasty little flick of
+      // noise. The laugh has notes, and every note is about you.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const shame = Math.min(10, Math.max(0, (d && d.shame) || 0));
+      const fq = 400 + shame * 60;
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'square'; o.frequency.value = 2200;
-      g.gain.setValueAtTime(0.1, t);
-      g.gain.setValueAtTime(0.1, t + 0.15);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
-      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.32);
+      o.type = 'square';
+      o.frequency.setValueAtTime(fq, t);
+      o.frequency.exponentialRampToValueAtTime(fq * 0.65, t + 0.22);
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 10 + shame; lg.gain.value = 22;
+      lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.1, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.28); lfo.start(t); lfo.stop(t + 0.28);
+      // the flick: a nasty little noise at the end
+      const nz = noise(0.15), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 5000;
+        ng.gain.setValueAtTime(0.08, t + 0.22);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.22); nz.stop(t + 0.34);
+      }
+    }
+    function paparazzoExclusive() {
+      // THE MONEY SHOT (Steve 2026-10-06): "GOT IT." The lens winds up — a
+      // motor whirr climbing and wobbling — then the flash, bigger this
+      // time, with the beating afterimage hanging longer, and underneath
+      // a deep satisfied thump. It knows exactly where you'll go.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the wind-up: motor climbing
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sawtooth';
+      w.frequency.setValueAtTime(500, t);
+      w.frequency.exponentialRampToValueAtTime(1700, t + 0.5);
+      const wl = ctx.createOscillator(), wlg = ctx.createGain();
+      wl.type = 'sine'; wl.frequency.value = 13; wlg.gain.value = 60;
+      wl.connect(wlg); wlg.connect(w.frequency);
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(0.06, t + 0.15);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      w.connect(wg); wg.connect(sfxBus);
+      w.start(t); w.stop(t + 0.6); wl.start(t); wl.stop(t + 0.6);
+      // the flash: white burst, personal
+      const dur = 0.3, ft = t + 0.5;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3500;
+      const fg = ctx.createGain();
+      fg.gain.setValueAtTime(0.4, ft);
+      fg.gain.exponentialRampToValueAtTime(0.0001, ft + dur);
+      src.connect(hp); hp.connect(fg); fg.connect(sfxBus);
+      src.start(ft); src.stop(ft + dur);
+      // afterimage: beating pair, hanging longer this time
+      [3300, 3312].forEach((fq) => {
+        const a = ctx.createOscillator(), ag = ctx.createGain();
+        a.type = 'sine'; a.frequency.value = fq;
+        ag.gain.setValueAtTime(0.0001, ft + 0.05);
+        ag.gain.exponentialRampToValueAtTime(0.04, ft + 0.25);
+        ag.gain.exponentialRampToValueAtTime(0.0001, ft + 1.6);
+        a.connect(ag); ag.connect(sfxBus); a.start(ft + 0.05); a.stop(ft + 1.65);
+      });
+      // gotcha: the satisfied thump
+      const th = ctx.createOscillator(), thg = ctx.createGain();
+      th.type = 'sine';
+      th.frequency.setValueAtTime(75, ft);
+      th.frequency.exponentialRampToValueAtTime(42, ft + 0.25);
+      thg.gain.setValueAtTime(0.0001, ft);
+      thg.gain.exponentialRampToValueAtTime(0.22, ft + 0.04);
+      thg.gain.exponentialRampToValueAtTime(0.0001, ft + 0.35);
+      th.connect(thg); thg.connect(sfxBus); th.start(ft); th.stop(ft + 0.4);
     }
     function glasswingLand() {
       // CRASH: dirt thud + tangled wing buzz — then the glass talks back:
@@ -7710,6 +8339,19 @@
       paparazzoFlash() { paparazzoFlash(); },
       unionRepChant() { unionRepChant(); },
       unionRepWhistle() { unionRepWhistle(); },
+      unionBullhorn() { unionBullhorn(); }, // (Steve 2026-10-06): solidarity — the bullhorn
+      unionWalkout() { unionWalkout(); },   // (Steve 2026-10-06): the walkout — stomp + wail
+      unionPicket() { unionPicket(); },     // (Steve 2026-10-06): picket line summoned
+      // WAVE-2 SIBLING HOOKS (Steve 2026-10-06): the roster redesign fired
+      // these with no synth at all — the other four monsters' voices.
+      understudyWatch() { understudyWatch(); },       // blank shape, watching
+      understudyRehearse() { understudyRehearse(); }, // doing your move badly
+      understudyPerform() { understudyPerform(); },   // "I've got it now"
+      landlordSpread() { landlordSpread(); },   // ADDENDUM — wider area
+      landlordEvict() { landlordEvict(); },     // EVICTION NOTICE
+      hecklerHeadliner(d) { hecklerHeadliner(d); }, // "we've got a LIVE ONE!"
+      hecklerJibe(d) { hecklerJibe(d); },       // narrated miss, shame-scaled
+      paparazzoExclusive() { paparazzoExclusive(); }, // the money shot
       belltoadCroak() { belltoadCroak(); },
       belltoadStun() { belltoadStun(); },
       belltoadChorus() { belltoadChorus(); },
