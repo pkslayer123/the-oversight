@@ -30,29 +30,34 @@ let sayHook = null;
 function P() { return Game.tbFighter('p'); }
 function horns() { return (Game.tbfight ? Game.tbfight.fighters : []).filter(x => x.kind === 'monster' && x.alive && (x.mdef || {}).id === 'hype_horn'); }
 
-function playerTurn(fn) {
-  // spend the player's turn via fn, then advance the round
-  if (Game.tbIsPlayerTurn()) fn();
-  Game.tbAdvance();
+// TURN HYGIENE FIX (Steve 2026-10-06): tbPlayerStrike/tbAfterPlayerAction already
+// advance the round when the player's turn is spent. The old
+// playerTurn(fn){ if (tbIsPlayerTurn()) fn(); tbAdvance(); } pattern ran a
+// trailing UNCONDITIONAL tbAdvance(), SKIPPING the player's next turn — every
+// AI acted TWICE per player action. All earlier verdicts were gathered at 2x
+// monster speed. endTurn() advances exactly one AI round, never two.
+function endTurn() {
+  if (!Game.tbfight || Game.tbfight.over) return;
+  if (!Game.tbIsPlayerTurn()) return; // already advanced (strike advances internally)
+  const p = P(); p.moveLeft = 0; p.acted = true;
+  Game.tbAfterPlayerAction(); // advances exactly once — the turn is spent
 }
-function waitTurn() {
-  playerTurn(() => { const p = P(); p.moveLeft = 0; p.acted = true; Game.tbAfterPlayerAction(); });
-}
+function waitTurn() { endTurn(); }
 function moveTo(tx, ty) {
-  playerTurn(() => {
-    const p = P();
-    // walk step by step toward target (1 tile per move point)
-    let guard = 12;
-    while (guard-- > 0 && (p.mx !== tx || p.my !== ty) && p.moveLeft > 0 && Game.tbIsPlayerTurn()) {
-      const dx = Math.sign(tx - p.mx), dy = Math.sign(ty - p.my);
-      if (!Game.tbPlayerMove(p.mx + dx, p.my + dy)) break;
-    }
-    p.acted = true; Game.tbAfterPlayerAction();
-  });
+  if (!Game.tbIsPlayerTurn()) return;
+  const p = P();
+  // walk step by step toward target (1 tile per move point)
+  let guard = 12;
+  while (guard-- > 0 && (p.mx !== tx || p.my !== ty) && p.moveLeft > 0 && Game.tbIsPlayerTurn()) {
+    const dx = Math.sign(tx - p.mx), dy = Math.sign(ty - p.my);
+    if (!Game.tbPlayerMove(p.mx + dx, p.my + dy)) break;
+  }
+  endTurn();
 }
 function strike(key) {
   let res = false;
-  playerTurn(() => { res = Game.tbPlayerStrike(key); });
+  if (Game.tbIsPlayerTurn()) res = Game.tbPlayerStrike(key);
+  endTurn();
   return res;
 }
 function dist(a, b) { return Math.max(Math.abs(a.mx - b.mx), Math.abs(a.my - b.my)); }
