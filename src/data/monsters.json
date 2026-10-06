@@ -1656,15 +1656,15 @@
       15,
       20
     ],
-    "speed": 5,
+    "speed": 7,
     "wave": 1,
     "pack": 1,
     "blocks": false,
     "snake": {
-      "segments": 6,
+      "segments": 14,
       "contactDamage": [
-        5,
-        8
+        6,
+        9
       ],
       "splitOnBreak": true
     },
@@ -1673,8 +1673,8 @@
     "telegraph": "The hissing stops. All heads turn toward you at once.",
     "systemDesignation": "Anas platyrhynchos domesticus (serial coordination)",
     "codexStages": {
-      "unknown": "A line of waterfowl moving as one. Too precise. Too quiet. You counted six heads and they all turned at the same time.",
-      "observed": "Ducks in a row. The System took a farm animal and taught it the snake game: the line moves as one animal, head driving, and every segment is a mouth. It lines up (the tell), marches, nips as one, then regroups. Break the middle and it splits — but the tail half tries to REJOIN. Kill the tail half before it gets back in line, or you're back to six.",
+      "unknown": "A line of waterfowl moving as one. Too precise. Too quiet. You counted fourteen heads and they all turned at the same time.",
+      "observed": "Ducks in a row. The System took a farm animal and taught it the snake game: the line moves as one animal, head driving, and every segment is a mouth. It lines up (the tell), marches, nips as one, then regroups. Break the middle and it splits — but the tail half tries to REJOIN. Kill the tail half before it gets back in line, or you're back to fourteen.",
       "slain": "Moves: Line Up (the tell — hissing stops, aim lane), March (the line advances, contact burns), Nip (one coordinated bite from every adjacent beak), Regroup (recovery — the window). Break the line from the tail forward to avoid splits. A split tail half regroups toward the head half — kill it before it rejoins. Down to two ducks the head goes enraged: faster, screeching, nipping the instant it reaches you. Meat: duck. Feathers good for fletching."
     },
     "cues": {
@@ -1702,14 +1702,14 @@
       "tier": 2
     },
     "edible": {
-      "calories": 900,
-      "note": "Six ducks, head to tail. Pluck them all. Tastes like duck."
+      "calories": 2100,
+      "note": "Fourteen ducks, head to tail. Pluck them all. Tastes like duck."
     },
     "attack": {
       "name": "Coordinated Nip",
       "damage": [
-        5,
-        8
+        6,
+        9
       ],
       "pattern": {
         "type": "direct"

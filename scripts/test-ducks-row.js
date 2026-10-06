@@ -33,7 +33,7 @@ function ok(name, cond, extra) {
   ok('fight started', !!f);
   
   const segs = f.fighters.filter(x => x.kind === 'monster' && x.mdef.snake);
-  ok('6 segments spawned', segs.length === 6, `got ${segs.length}`);
+  ok('14 segments spawned', segs.length === 14, `got ${segs.length}`);
   
   const head = segs.find(x => x.isHead);
   ok('head exists', !!head);
@@ -44,7 +44,7 @@ function ok(name, cond, extra) {
   ok('blocks=false', mdef.blocks === false);
   
   // Speed
-  ok('speed 5 (scary fast)', head.speed === 5, `got ${head.speed}`);
+  ok('speed 7 (scary fast)', head.speed === 7, `got ${head.speed}`);
   
   // Split test: kill middle segment (index 2)
   const mid = segs.find(x => x.segmentIndex === 2);

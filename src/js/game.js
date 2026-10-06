@@ -15831,32 +15831,83 @@
     if (!segs.length) return;
     // Record positions before move (for follow-the-leader)
     const prevPos = segs.map(s => ({ x: s.mx, y: s.my }));
-    // Head moves toward player, up to speed tiles
-    const speed = m.speed || 5;
+    // SNAKE PATHFINDING (Steve 2026-10-06): the head must not cross its own
+    // body. Body tiles are forbidden EXCEPT the tail tip (it vacates as the
+    // line advances). Obstacles are routed around, not surrendered to.
+    const bodySet = new Set();
+    for (let i = 0; i < segs.length - 1; i++) bodySet.add(segs[i].mx + ',' + segs[i].my);
+    const detail = this.genDetail(this.map.px, this.map.py);
+    const tileBlocked = (x, y) => {
+      if (x < 0 || x > 8 || y < 0 || y > 8) return true;
+      const cell = detail[y] && detail[x];
+      return !!(cell && this.cellProps(cell).blocks);
+    };
+    // Head moves toward player, up to speed tiles. Record the full trail —
+    // the body slithers along it (true snake), so the train stays contiguous.
+    const speed = m.speed || 7;
+    const trail = [{ x: m.mx, y: m.my }];
     let hx = m.mx, hy = m.my;
     for (let i = 0; i < speed; i++) {
       const dx = Math.sign(p.mx - hx), dy = Math.sign(p.my - hy);
-      // Prefer the axis with greater distance
-      let nx = hx, ny = hy;
-      if (Math.abs(p.mx - hx) >= Math.abs(p.my - hy)) {
-      nx = hx + dx;
-      } else {
-      ny = hy + dy;
+      const cands = [];
+      const axX = Math.abs(p.mx - hx) >= Math.abs(p.my - hy);
+      if (axX && dx) cands.push([dx, 0]);
+      if (!axX && dy) cands.push([0, dy]);
+      if (!axX && dx) cands.push([dx, 0]);
+      if (axX && dy) cands.push([0, dy]);
+      if (dx) { cands.push([dx, 1]); cands.push([dx, -1]); }
+      if (dy) { cands.push([1, dy]); cands.push([-1, dy]); }
+      cands.push([1, 0]); cands.push([-1, 0]); cands.push([0, 1]); cands.push([0, -1]);
+      let moved = false;
+      const tried = new Set();
+      for (const [cx, cy] of cands) {
+        if (!cx && !cy) continue;
+        const k2 = cx + ',' + cy;
+        if (tried.has(k2)) continue;
+        tried.add(k2);
+        const nx = hx + cx, ny = hy + cy;
+        if (tileBlocked(nx, ny)) continue;
+        if (nx !== p.mx || ny !== p.my) {
+          if (bodySet.has(nx + ',' + ny)) continue;
+          if (trail.some(t => t.x === nx && t.y === ny)) continue;
+        }
+        hx = nx; hy = ny;
+        moved = true;
+        break;
       }
-      // Stay in bounds, avoid terrain (but NOT other segments — non-blocking)
-      if (nx < 0 || nx > 8 || ny < 0 || ny > 8) break;
-      const detail = this.genDetail(this.map.px, this.map.py);
-      const cell = detail[ny] && detail[nx];
-      if (cell && this.cellProps(cell).blocks) break;
-      hx = nx; hy = ny;
-      // Reached player? Stop (contact damage happens separately)
+      if (!moved) break;
+      trail.push({ x: hx, y: hy });
       if (hx === p.mx && hy === p.my) break;
     }
+    const steps = trail.length - 1;
     m.mx = hx; m.my = hy;
-    // Segments follow: each moves to the previous position of the one ahead
+    // TRUE SNAKE FOLLOW: segment i takes the tile the head was at i steps ago;
+    // beyond the fresh trail, segments shuffle along old body positions.
     for (let i = 1; i < segs.length; i++) {
-      segs[i].mx = prevPos[i - 1].x;
-      segs[i].my = prevPos[i - 1].y;
+      if (i <= steps) {
+        const tp = trail[trail.length - 1 - i];
+        segs[i].mx = tp.x; segs[i].my = tp.y;
+      } else {
+        const op = prevPos[i - steps];
+        segs[i].mx = op.x; segs[i].my = op.y;
+      }
+    }
+    // TRAIN PASS-OVER: if the head's trail crossed the player's tile, every
+    // segment on the trail behind the crossing point bites as it passes.
+    // (A segment that ENDS on the player is skipped; contact damage gets it.)
+    const crossIdx = trail.findIndex(t => t.x === p.mx && t.y === p.my);
+    if (crossIdx >= 0 && crossIdx < trail.length - 1) {
+      const passing = steps - crossIdx;
+      const dmg = (m.mdef.snake || {}).contactDamage || [6, 9];
+      for (let s = 1; s <= passing && s < segs.length; s++) {
+        const seg = segs[s];
+        if (!seg.alive) continue;
+        if (seg.mx === p.mx && seg.my === p.my) continue;
+        const amount = dmg[0] + Math.floor(Math.random() * (dmg[1] - dmg[0]));
+        this.say('🦆 The train drives over you — duck ' + (s + 1) + ' bites as it passes! (' + amount + ')');
+        this.tbDamage('p', amount, 'duck bite (train)', seg.key, { quiet: true });
+        if (!p.alive) break;
+      }
     }
     },
 
@@ -18769,7 +18820,7 @@
             const marchLines = [
               'The line marches — head to tail, straight at you. Do not be in the way.',
               'Quack-quack-quack, in perfect time. The line keeps coming.',
-              'Six ducks, one mind, no gaps. It is gaining on you.',
+              'Fourteen ducks, one mind, no gaps. It is gaining on you.',
             ];
             this.say(marchLines[Math.min(marchLines.length - 1, dst.marchTurns - 1)]);
           }

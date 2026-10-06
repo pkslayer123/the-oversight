@@ -76,7 +76,7 @@ function headOf(sid) { return segs().find(x => x.snakeId === sid && x.isHead); }
   s.monster = { id: 'ducks_in_a_row', mx: 6, my: 4 };
   Game.startCombat('ducks_in_a_row');
   ok('noticeAudio ducksQuack fired at combat start', firedCount('ducksQuack') >= 1, `fired=${firedCount('ducksQuack')}`);
-  ok('6 segments', segs().length === 6, `got ${segs().length}`);
+  ok('14 segments', segs().length === 14, `got ${segs().length}`);
   // knowledge gating: pre-knowledge names must not leak the true name
   const preNames = segs().map(x => x.name).join(' | ');
   ok('segment names gated pre-knowledge', !/ducks in a row/i.test(preNames), preNames.slice(0, 80));
@@ -161,7 +161,7 @@ function headOf(sid) { return segs().find(x => x.snakeId === sid && x.isHead); }
   endTurn(); // head's turn: enraged check fires
   const eh = headOf(sidA);
   ok('enraged flag set', !!(eh && eh.duckEnraged));
-  ok('enraged speed+1', eh && eh.speed === 6, `speed=${eh && eh.speed}`);
+  ok('enraged speed+1', eh && eh.speed === 8, `speed=${eh && eh.speed}`);
   ok('duckScreech fired', firedCount('duckScreech') >= 1);
   console.log('--- transcript (enraged) ---');
   for (const l of Game.log.slice(-6)) console.log('  ' + l);

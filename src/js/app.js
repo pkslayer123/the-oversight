@@ -6256,7 +6256,7 @@
     }
     function duckLineUp() {
       // THE TELL: hisses snapping into lockstep — intervals shrink until
-      // six ducks quack as one. Too precise. Too quiet, after.
+      // fourteen ducks quack as one. Too precise. Too quiet, after.
       if (!ensure()) return;
       const t = ctx.currentTime;
       const gaps = [0.3, 0.24, 0.19, 0.15, 0.12];
