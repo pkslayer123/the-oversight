@@ -13185,10 +13185,35 @@
       const cut = [];
       for (const c of cells || []) {
         const cell = detail[c.cy] && detail[c.cy][c.cx];
-        if (cell && blocks[cell]) break;
+        // BULLDOZER (Steve 2026-10-05): it does NOT stop at trees/walls.
+        // It smashes through them. The environment breaks.
+        if (cell && blocks[cell]) {
+          this.destroyCell(c.cx, c.cy, 'bulldozer');
+          // Keep going — the charge continues through the wreckage
+        }
         cut.push(c);
       }
       return cut;
+    },
+
+    // DESTROY CELL (Steve 2026-10-05): monsters break the environment.
+    // Trees fall, walls crumble. The world remembers.
+    destroyCell(cx, cy, cause) {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      if (!detail[cy] || !detail[cy][cx]) return;
+      const cell = detail[cy][cx];
+      const cellName = cell.type || cell;
+      // Clear the cell
+      detail[cy][cx] = null;
+      // Narrative
+      const causes = {
+        'bulldozer': `The Bulldozer SMASHES through the ${cellName}! Wood splinters, the ground shakes.`,
+        'terraform': `The ground churns and reshapes itself.`,
+      };
+      this.say(causes[cause] || `The ${cellName} is destroyed!`);
+      this.audioEvent('crash', { cause });
+      // Mark the map as changed so it saves
+      this.map.dirty = true;
     },
 
     // TRAMPLE: the boar's missed charge ends here — grinding hooves on

@@ -109,7 +109,9 @@
     "armor": 8,
     "resistances": {
       "fire": 0.25
-    }
+    },
+    "terraform": "trample",
+    "terraformDesc": "Smashes through trees and walls. Leaves a trail of wreckage."
   },
   {
     "id": "hushwolf",
@@ -1730,7 +1732,9 @@
     "armor": 12,
     "resistances": {
       "fire": -0.5
-    }
+    },
+    "terraform": "paper",
+    "terraformDesc": "Sheds legal documents. The ground becomes difficult terrain (paper cuts)."
   },
   {
     "id": "delegate_beast",
@@ -1932,7 +1936,9 @@
     "armor": 0,
     "resistances": {
       "physical": 0.75
-    }
+    },
+    "terraform": "crater",
+    "terraformDesc": "Detonation leaves a scorched crater. The ground remembers."
   },
   {
     "id": "memory_projector",
@@ -2269,6 +2275,8 @@
     "resistances": {
       "fire": 0.75,
       "cold": -0.5
-    }
+    },
+    "terraform": "scorch",
+    "terraformDesc": "Where it basks, the grass blackens. Solar charge scorches the earth."
   }
 ]
