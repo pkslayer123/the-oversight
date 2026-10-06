@@ -271,5 +271,147 @@
     "2": "Materials: 4 fiber. Twist two strands against each other, feed in more as you go, braid three twisted strands.",
     "3": "You can twist it. Roll fiber on your thigh until it kinks, let it ply back on itself, braid three plies. Slow work, strong cord."
   }
+},
+{
+  "id": "minnow_trap",
+  "name": "Minnow Trap",
+  "description": "a small woven funnel, baited. minnows and crayfish swim in looking for the meal; the weave keeps them. the surest way to turn scraps into bait for bigger fishing.",
+  "materials": {
+    "branch": 3,
+    "vine": 2,
+    "bait": 1
+  },
+  "uses": 6,
+  "catches": [
+    "creek_chub",
+    "creek_chub",
+    "crayfish",
+    "crayfish",
+    "bullfrog"
+  ],
+  "knowledgeLevels": {
+    "1": "A little funnel basket with bait inside. Small fish go in, small fish stay in.",
+    "2": "Materials: 3 branches + 2 vine + bait. Weave it tight — minnows slip anything loose. Set it in the shallows.",
+    "3": "You can weave one. Chub are the prize: not much meat on them, but a live chub on a line is how the real fish get caught."
+  }
+},
+{
+  "id": "rabbit_stick",
+  "name": "Rabbit Stick",
+  "description": "a short heavy throwing stick, weighted at one end. the oldest ranged weapon there is — for rabbits, squirrels, and birds too slow to matter.",
+  "materials": {
+    "wood": 1
+  },
+  "durable": true,
+  "kg": 0.4,
+  "knowledgeLevels": {
+    "1": "A throwing stick. Heavy end forward. Older than the bow and half as proud.",
+    "2": "Materials: 1 wood log, shaped. Throw sidearm, lead the target — it flies flat and true to about twenty paces.",
+    "3": "You can shape one. Rabbits freeze before they run; that frozen second is the whole weapon. A squirrel on a trunk is a gift — throw for the far side so the stick clips it either way."
+  }
+},
+{
+  "id": "pit_trap",
+  "name": "Pit Trap",
+  "description": "a pit with sharpened stakes at the bottom, brushed over with leaves. labor to dig, brutal to fall in — deer and boar both. mark it well: your own pit will take you too.",
+  "materials": {
+    "stick": 2
+  },
+  "uses": 4,
+  "catches": [
+    "white_tailed_deer",
+    "white_tailed_deer",
+    "wild_boar",
+    "raccoon",
+    "opossum"
+  ],
+  "knowledgeLevels": {
+    "1": "A pit with stakes in the bottom. Dig it on a trail, brush it over, wait.",
+    "2": "Materials: 2 sticks (sharpened for the stakes). Dig it deep — chest deep for deer. Angle the stakes inward.",
+    "3": "You can dig one. It is a day's work with a digging stick and it ruins your hands, but a pit on a deer trail works while you sleep. Check it every morning. A boar in a pit is a butchering problem with teeth — spear it from above before you climb down."
+  }
+},
+{
+  "id": "frog_gig",
+  "name": "Frog Gig",
+  "description": "a stick with stone barbs lashed at the head. for frogs at night and fish in the shallows — pin, don't stab, and the barbs do the holding.",
+  "materials": {
+    "stick": 1,
+    "stone": 1,
+    "fiber": 1
+  },
+  "durable": true,
+  "kg": 0.3,
+  "knowledgeLevels": {
+    "1": "A pronged spear for frogs. Night work, by light.",
+    "2": "Materials: 1 stick + 1 stone (knapped to barbs) + fiber to lash. Pin the frog to the mud — a stab tears free.",
+    "3": "You can lash one. Walk the shallows slow with a light; frogs freeze in it. Pin, scoop, and the legs are yours. The same gig takes suckers and chub in daylight shallows."
+  }
+},
+{
+  "id": "lean_to",
+  "name": "Lean-To",
+  "description": "two forked posts, a ridgepole, and a roof of branches shingled against the rain. the difference between sleeping through a storm and surviving one.",
+  "materials": {
+    "stick": 6,
+    "branch": 4,
+    "fiber": 2
+  },
+  "durable": true,
+  "knowledgeLevels": {
+    "1": "A slanted roof on two posts. The first architecture.",
+    "2": "Materials: 6 sticks + 4 branches + 2 fiber. Back to the wind, low end into the weather, roof shingled thick — water runs down, not through.",
+    "3": "You can raise one. Face the opening away from the prevailing wind, bed it with dry leaves, and keep the fire just outside the drip line. A good lean-to and a fire is the difference between a wet night and a dangerous one."
+  }
+},
+{
+  "id": "fire_plow",
+  "name": "Fire Plow",
+  "description": "a hardwood base and a rubbing stick. friction and patience — the plow groove fills with hot dust, and the dust becomes a coal. fire without a match, the hard way.",
+  "materials": {
+    "wood": 2
+  },
+  "durable": true,
+  "knowledgeLevels": {
+    "1": "Rubbing two sticks together. It is exactly as hard as the jokes say.",
+    "2": "Materials: 2 wood logs — one soft for the base, one hard for the plow. Cut a groove, plow hard and fast, and have the tinder bundle ready BEFORE the coal comes.",
+    "3": "You can do it. Dry wood only, full-body pressure, and the coal dies in seconds if the tinder is not waiting. Blind attempts almost never work; your hands learn this in the failing. Once the coal is in the bundle, blow gentle — impatience kills more fires than rain."
+  }
+},
+{
+  "id": "stone_boiler",
+  "name": "Stone Boiler",
+  "description": "fire-heated stones dropped in water. the stones do the boiling — soup, stew, and water made safe, no pot required.",
+  "materials": {
+    "stone": 3
+  },
+  "uses": 12,
+  "knowledgeLevels": {
+    "1": "Hot rocks in water. The water boils; the rocks do not care.",
+    "2": "Materials: 3 stones. Heat them till they glow dull red — never use stones from the creek, wet stones explode in fire.",
+    "3": "You can boil without a pot. Drop the stones in with sticks, fish them out the same way, repeat till it rolls. A watertight bark trough or a hide sling holds the water. This is how you make questionable water safe and thin soup into stew."
+  }
+},
+{
+  "id": "squirrel_pole",
+  "name": "Squirrel Pole",
+  "description": "a fallen log with snare loops set along it, each loop tied off to a sapling. squirrels run logs like highways — the pole just collects the toll.",
+  "materials": {
+    "stick": 1,
+    "vine": 2
+  },
+  "uses": 8,
+  "catches": [
+    "gray_squirrel",
+    "gray_squirrel",
+    "gray_squirrel",
+    "raccoon",
+    "gray_squirrel"
+  ],
+  "knowledgeLevels": {
+    "1": "Snares set along a fallen log. Squirrels run the log; the loop does the rest.",
+    "2": "Materials: 1 stick + 2 vine. Set the loops upright on the log where it crosses a trail, tied to a bent sapling that lifts the catch clear.",
+    "3": "You can set one. Find a log squirrels already run — bark worn smooth, droppings on top. Raccoons use the same highways at night, which is a bonus until it is a fight. Check at dawn and reset by noon."
+  }
 }
 ]

@@ -739,5 +739,140 @@
       "hide": 1,
       "bone": 2
     }
+  },
+  {
+    "id": "nine_banded_armadillo",
+    "activity": "nocturnal",
+    "name": "Nine-banded Armadillo",
+    "scientific": "Dasypus novemcinctus",
+    "biomes": [
+      "thicket",
+      "meadow",
+      "trail_edge"
+    ],
+    "description": "an armadillo rooting in the leaf litter, armor clanking",
+    "calories": 1500,
+    "difficulty": "medium",
+    "method": [
+      "hands",
+      "trap"
+    ],
+    "knowledgeLevels": {
+      "1": "An armadillo. Armor-plated, snout down, digging for grubs.",
+      "2": "Parts: the whole body under the shell; the shell itself is not food. Startle it and it jumps straight UP — then runs for the nearest hole.",
+      "3": "Uses: real meat, poor man's pork, and it walks right up to you half the time. Corner it against a bank at night with a light, grab the tail — it cannot bite you from there. Cook it THOROUGH; armadillos can carry leprosy, and heat is the cure.",
+      "4": "Mastery: they follow the same grub trails night after night. Find the rooted-up litter, set a snare on the trail, and the armadillo delivers itself."
+    },
+    "unknown": "something armored crashing through the leaves at night",
+    "behavior": "armored",
+    "behaviorDesc": "Roots for grubs, head down, deaf to the world. Startle it and it leaps straight up — a vertical jump that startles back — then bolts for the nearest burrow. Cornered against a bank or a log, it has no plan B.",
+    "fleeDifficulty": "easy",
+    "huntText": "A clanking in the leaf litter — an armadillo, snout down, digging for grubs. It has not noticed you. It will not notice you until it is far too late.",
+    "tell": "the clanking stops. A pink ear rises above the litter, swiveling.",
+    "butcher": {
+      "shell": 1,
+      "bone": 1
+    },
+    "killText": "About {kcal} kcal — poor man’s pork. Cook it through; the shell makes a bowl if you’re patient."
+  },
+  {
+    "id": "american_crow",
+    "activity": "diurnal",
+    "name": "American Crow",
+    "scientific": "Corvus brachyrhynchos",
+    "biomes": [
+      "meadow",
+      "grove",
+      "trail_edge"
+    ],
+    "description": "a crow watching you from a dead branch, head cocked",
+    "calories": 350,
+    "difficulty": "hard",
+    "method": [
+      "trap",
+      "snare"
+    ],
+    "knowledgeLevels": {
+      "1": "A crow. Black, loud, watching you.",
+      "2": "Crows remember faces for years and tell each other. They mob hawks, owls, and anything else they do not like — loudly, for a quarter mile.",
+      "3": "Uses: stringy meat in a famine, but the real use is reading them. A crow racket that moves is a crow following something — a predator, a person, a monster. The crows know before you do.",
+      "4": "Mastery: never hunt where the crows are watching unless you want everything in earshot to know exactly where you are. And when the crows go suddenly, completely silent — look up, look around, and get your back to something."
+    },
+    "unknown": "a black shape cawing from the treetops",
+    "emoji": "🐦‍⬛",
+    "behavior": "sentinel_mob",
+    "behaviorDesc": "Mobs anything it dislikes — hawks, owls, you. The racket carries a quarter mile and every animal in earshot hears it. Crows give you away. They also give monsters away, which is worth more.",
+    "fleeDifficulty": "hard",
+    "huntText": "A crow spots you and the cawing starts — three sharp barks, then the whole treeline joins in. Everything within earshot now knows exactly where you are standing.",
+    "tell": "the cawing shifts pitch and moves — the mob is following something that is not you.",
+    "butcher": {
+      "feather": 4
+    },
+    "killText": "About {kcal} kcal — stringy and dark. Famine meat; the feathers are the real prize."
+  },
+  {
+    "id": "bluegill",
+    "activity": "diurnal",
+    "name": "Bluegill",
+    "scientific": "Lepomis macrochirus",
+    "biomes": [
+      "creek",
+      "wetland"
+    ],
+    "description": "a bluegill nosing around a shallow bed",
+    "calories": 150,
+    "difficulty": "easy",
+    "method": [
+      "line",
+      "hands"
+    ],
+    "knowledgeLevels": {
+      "1": "A bluegill. Small, blue-flecked, everywhere in warm water.",
+      "2": "Parts: the whole panfish — fry it whole, eat around the bones. In warm months the males fan circular beds in the shallows and refuse to leave them.",
+      "3": "Uses: a worm on a line over a bed is nearly unfair. The small ones are sweet; the big bulls are dinner. Hands work too — move slow, pin it to the bottom.",
+      "4": "Mastery: bed-fishing in the spawn feeds a village. Take the bulls, leave a few beds alone, and the creek refills itself."
+    },
+    "unknown": "a flash of blue-green in the shallows",
+    "emoji": "🐟",
+    "behavior": "bedding",
+    "behaviorDesc": "In warm months the males fan circular beds in the shallows and guard them against everything. A fish sitting on a visible bed is a fish that has chosen not to run.",
+    "fleeDifficulty": "easy",
+    "huntText": "Circles on the creek bottom — bluegill beds, each one guarded by a fish that refuses to leave. You could almost reach down and pick one up.",
+    "tell": "the circles on the bottom are fresh, edges sharp, a shadow hovering over each.",
+    "butcher": {},
+    "killText": "About {kcal} kcal — sweet panfish. Fry whole, eat around the bones."
+  },
+  {
+    "id": "gray_rat_snake",
+    "activity": "diurnal",
+    "name": "Gray Rat Snake",
+    "scientific": "Pantherophis spiloides",
+    "biomes": [
+      "thicket",
+      "forest_floor",
+      "trail_edge",
+      "grove"
+    ],
+    "description": "a long gray snake coiled on a sunlit log",
+    "calories": 500,
+    "difficulty": "medium",
+    "method": [
+      "hands",
+      "stick"
+    ],
+    "knowledgeLevels": {
+      "1": "A big gray snake. Rattler until proven otherwise — treat it that way.",
+      "2": "Proof: no rattle, no triangular head, no pit between eye and nostril. Rat snake. It eats rats and it wants nothing to do with you.",
+      "3": "Uses: good meat, cooks like eel. Pin it behind the head with a forked stick — it will musk and bite, but the bite is a scratch. Freezes when spotted, counting on you to mistake stillness for a stick.",
+      "4": "Mastery: where rat snakes hunt, rodents run thick — which means grain, which means people were storing food here. A snake is a signpost. Follow the sign."
+    },
+    "unknown": "a thick gray snake on the trail — rattler until proven otherwise",
+    "behavior": "constrictor",
+    "behaviorDesc": "Nonvenomous. Kills rats by wrapping and waiting. Freezes when spotted, betting everything on being mistaken for a stick. Grabbed, it musks and bites — but the bite is a scratch, and the musk washes off.",
+    "fleeDifficulty": "medium",
+    "huntText": "A gray coil on the log, thick as your wrist. No rattle sounds — but your hands do not believe that yet. It has not moved. It is hoping you walk past.",
+    "tell": "a shed skin hangs on the brambles, scale-pattern crisp, longer than your arm.",
+    "butcher": {},
+    "killText": "About {kcal} kcal — cooks like eel. The meat is clean; the musk washes off the hands, not the memory."
   }
 ]

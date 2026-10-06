@@ -23,6 +23,7 @@ const FILES = {
   'recipes.json': 'recipe',
   'books.json': 'book',
   'synergies.json': 'synergy',
+  'locations.json': 'location',
 };
 // Schemas exist for these but no data file is authored yet — absence is expected, not an error.
 const MISSING_OK = new Set(['events.json', 'systemMessages.json', 'shop.json', 'trials.json']);

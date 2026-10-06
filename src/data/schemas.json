@@ -536,7 +536,8 @@
     "shell": "number?",
     "tusk": "number?",
     "quill": "number?"
-   }
+   },
+   "killText": "string?"
   }
  },
  "recipe": {
@@ -608,5 +609,40 @@
    "grassland"
   ]
  },
- "$refAllowlistComment": "grassland: planned future biome referenced by wave-2 monsters (glasswing, sunbasker); not yet defined in biomes.json. The cross-ref gate allows it so aspirational data survives until the biome ships."
+ "$refAllowlistComment": "grassland: planned future biome referenced by wave-2 monsters (glasswing, sunbasker); not yet defined in biomes.json. The cross-ref gate allows it so aspirational data survives until the biome ships.",
+ "location": {
+  "required": [
+   "id",
+   "name",
+   "description",
+   "tagline",
+   "gen",
+   "spawnType"
+  ],
+  "types": {
+   "id": "string",
+   "name": "string",
+   "description": "string",
+   "tagline": "string",
+   "hazard": "string?",
+   "spawnType": [
+    "countryside",
+    "city"
+   ],
+   "gen": {
+    "creeks": "number",
+    "groveBlobs": "number",
+    "groveSize": "number",
+    "lootMult": "number",
+    "meadowSize": "number",
+    "ruinMaxDist": "number",
+    "startReveal": "number",
+    "stockMult": "number",
+    "thickets": "number",
+    "trailLines": "number",
+    "wetlands": "number"
+   },
+   "startMod": "object?"
+  }
+ }
 }
