@@ -298,6 +298,10 @@ function nearWater(detail, x, y) {
     Game.state.scholar.monster = { id: 'nightlight_catfish', mx: 4, my: 4 }; // ON water
     Game.state.scholar.equipped = { weapon: Object.assign({}, SPEAR) };
     Game.state.scholar.health = 120;
+    Game.state.scholar.stats = Object.assign({}, Game.state.scholar.stats, { agi: 1 }); // no dodge: the grasp must land, that's the test
+    Game.state.scholar.passives = {}; // no footwork dodge either
+    Game.state.scholar.backgroundAbilities = [];
+    Game.state.scholar.backgroundAbilities = []; // no adrenaline_control dodge either
     let turns = 0;
     while (!Game.tbfight && turns++ < 10) Game.monsterTurn();
     check('F1: night ambush near water starts combat', !!Game.tbfight, `turns=${turns}`);
@@ -328,6 +332,7 @@ function nearWater(detail, x, y) {
     check('F1: lure beat played', sawLure);
     check('F1: still beat played', sawStill);
     check('F1: grasp beat fired and hurt (the teeth)', sawGrasp && graspDmg > 0, `grasp=${sawGrasp} dmg=${graspDmg}`);
+    console.log('  DEBUG:', JSON.stringify(says.filter(s => /slip aside|bsorb|GRASP|teeth|hide/i)));
     check('F1: player strikes killed it from the shore', strikes >= 1 && result === 'won', `strikes=${strikes} result=${result}`);
     note('F1: feel', `won in ${rounds} rounds, ${strikes} spear strikes from shore, took ${graspDmg} grasp dmg`);
   }
@@ -339,6 +344,9 @@ function nearWater(detail, x, y) {
     Game.map.px = 3; Game.map.py = 3;
     Game.state.scholar.mx = 4; Game.state.scholar.my = 6;
     Game.state.scholar.health = 150;
+    Game.state.scholar.stats = Object.assign({}, Game.state.scholar.stats, { agi: 1 }); // no dodge
+    Game.state.scholar.passives = {}; // no footwork dodge either
+    Game.state.scholar.backgroundAbilities = [];
     Game.state.scholar.equipped = {}; // hands: range 1
     // REAL placement: the shoreline water cell the spawn code would choose.
     const wspot = Game.placeSpawnMonster(byId('nightlight_catfish'));
