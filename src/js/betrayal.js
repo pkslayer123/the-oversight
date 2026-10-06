@@ -1619,19 +1619,91 @@
     return null;
   },
   // found your own haven: hard, slow, real
+  // EXILE HARD RESET (Steve 2026-10-06): founding a new haven after exile is a
+  // REAL village fork. The old village object is archived into pastVillages
+  // (it continues without you — in fiction and in data). The new haven is a
+  // fresh village object: new name, new faces to come, fresh trust, fresh
+  // pantry, fresh gossip. What crosses the fire with you: yourself, your
+  // Codex, your pack. Nothing else. ("Hard reset. Day one, again — kept.")
   foundHaven() {
     const s = this.state.scholar;
     if (!s.exiled) { this.say(`You already have a haven.`); return null; }
-    this.say(`You pick a spot. Clear it. Build the fire yourself. Day one, again — but this time you know what a day costs.`);
-    // seed a new micro-haven: just you, for now
-    this.state.village = this.state.village || {};
-    // keep the old village in memory: it continues without you
-    this.state.oldVillage = this.state.oldVillage || this.state.village.name;
+    const pid = this.villagerId;
+    // 1. archive the old village — it continues without you
+    const old = this.state.village || {};
+    this.state.pastVillages = this.state.pastVillages || [];
+    this.state.pastVillages.push(old);
+    this.state.oldVillage = this.state.oldVillage || old.name;
+    // 2. the founder crosses over: your character record moves to the new haven
+    const playerChar = ((old.rosterChars || {})[pid]) || null;
+    // 3. fresh village object — same shape the game expects, founder-only contents
+    const havenNames = ['Emberhold', 'Cinderfall', 'Ashgrove', 'Thornrest', 'Firstfire', 'Dawnrest', 'Emberwake'];
+    const usedNames = new Set((this.state.pastVillages || []).map(x => x && x.name).filter(Boolean));
+    const namePool = havenNames.filter(n => !usedNames.has(n));
+    const pool = namePool.length ? namePool : havenNames;
+    const name = pool[Math.floor(R() * pool.length)];
+    const px = (this.map && this.map.px != null) ? this.map.px : (old.px != null ? old.px : 3);
+    const py = (this.map && this.map.py != null) ? this.map.py : (old.py != null ? old.py : 3);
+    const v = {
+      name, day: 1, season: old.season || 'spring',
+      px, py,
+      // founder's cache: a few days for one person, cached along the road out.
+      // not a village stockpile — the scarcity starts now.
+      pantry: [
+        { name: 'Dried meat', kcalEach: 400, units: 6, spoilDay: 9999, safe: true, kg: 0.3, unit: 'strip' },
+        { name: 'Trail mix', kcalEach: 400, units: 4, spoilDay: 9999, safe: true, kg: 0.3, unit: 'bag' },
+        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 20, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
+      ],
+      pantryKcal: 0, // (kept for compat, computed from pantry)
+      water: { clean: 6, dirty: 0 },
+      waterL: 6, morale: 'steady', favor: 0, fallen: [],
+      // roster: just you. New faces arrive via the strangers system — earned, not given.
+      roster: [pid],
+      villagers: [pid],
+      rosterChars: {},
+      trust: { [pid]: 15 },
+      buildingType: 'camp',
+      spawnBuilding: 'your campfire',
+      // every social surface starts clean
+      needs: {}, memory: {}, requests: {},
+      assignments: {}, sharedKnowledge: {},
+      grief: 0, cheer: 0,
+      conflicts: [], groups: [],
+      gossip: [], truthClaims: [],
+      taught: {},
+      met: {},
+      positions: {}, nodePos: {}, away: {},
+      // lazily-initialized systems (betrayal, justice, mship) start fresh
+      // automatically on the new object via their || guards.
+    };
+    if (playerChar) v.rosterChars[pid] = playerChar;
+    // the founder teaches what they knew from their old life — like newGame
+    try {
+      const tags = (playerChar && playerChar.originTags) || [];
+      const tier = (this.familiarityTier ? this.familiarityTier(tags) : 'stranger');
+      const tierCount = { local: 3, visitor: 2, stranger: 1 };
+      const tl = (tags || []).map(t => String(t).toLowerCase());
+      const local = [], other = [];
+      for (const p of (this.data.plants || [])) {
+        const pr = (p.regions || []).map(x => String(x).toLowerCase());
+        (pr.some(r => tl.includes(r)) ? local : other).push(p.id);
+      }
+      for (let i = local.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1));[local[i], local[j]] = [local[j], local[i]]; }
+      for (let i = other.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1));[other[i], other[j]] = [other[j], other[i]]; }
+      v.taught[pid] = [...local, ...other].slice(0, tierCount[tier] || 1);
+    } catch (e) { v.taught[pid] = []; }
+    this.state.village = v;
+    // social groups regenerate honestly on the new roster (solo → none)
+    try { this.genGroups(); } catch (e) {}
+    // 4. the exile ends; the scholar, codex, and pack cross over untouched
     s.exiled = false;
     s.drifting = false;
     try { this.justiceState().exiled = false; } catch (e) {}
     s.foundedHaven = true;
     s.foundedDay = s.day;
+    try { this.journalNote && this.journalNote('village', 'haven', 'Founded ' + name + ' — hard reset. ' + (old.name || 'Haven') + ' continues without you.'); } catch (e) {}
+    try { this.audioEvent && this.audioEvent('foundHaven'); } catch (e) {}
+    this.say(`You pick a spot. Clear it. Build the fire yourself. ${name} — day one, again, but this time you know what a day costs. Behind you, ${(old.name || 'Haven')} keeps its fire without you. Ahead: new faces, new names. What you carried is what you have: yourself, your pack, and everything you learned.`);
     return true;
   },
 

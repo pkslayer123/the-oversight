@@ -209,9 +209,12 @@ Food reality system. Food must be known-edible AND in edible state. Processing c
 ### game-core (`game.js`)
 Central game controller. Owns state, map, day loop, actions, encounters, combat, village simulation. UI renders from it.
 
-**Provides:** state (scholar, village, world), tickAction(n), doAction(actionId), sleep(), eat(), eatOne(idx), spendCombatAction(kind), tbFighter(id), tbAdvance(), tbAfterPlayerAction(), contestTick() (delegates to contests.js), fireShow(event) -> show (TV pull-away; called from dawn branch), glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract), sleepQuality(), sleepPreview(), kcalCap()
+**Provides:** state (scholar, village, world), tickAction(n), doAction(actionId), sleep(), eat(), eatOne(idx), spendCombatAction(kind), tbFighter(id), tbAdvance(), tbAfterPlayerAction(), contestTick() (delegates to contests.js), fireShow(event) -> show (TV pull-away; called from dawn branch), glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract), tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped), tbTerrainAt(x, y) -> type | null, tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double), sleepQuality(), sleepPreview(), kcalCap()
 
 **Rules:**
+- terraform_difficult_cost: 2 (code: tbTerrainCost)
+- terraform_entry_damage: 1 (code: tbTerrainStep)
+- terraform_scope: fight-scoped, dies with the fight (code: tbTerraform)
 - day_parts: 4 nested (code: TIME)
 - ticks_per_day: defined in TIME (code: tickAction)
 - sleep_heal_bunk: 35 (code: sleepPreview)
