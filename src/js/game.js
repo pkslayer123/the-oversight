@@ -15,10 +15,16 @@
 //   - contestTick() (delegates to contests.js)
 //   - fireShow(event) -> show (TV pull-away; called from dawn branch)
 //   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
+//   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
+//   - tbTerrainAt(x, y) -> type | null
+//   - tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double)
 //   - sleepQuality()
 //   - sleepPreview()
 //   - kcalCap()
 // rules:
+//   - terraform_difficult_cost: 2 (code: tbTerrainCost)
+//   - terraform_entry_damage: 1 (code: tbTerrainStep)
+//   - terraform_scope: fight-scoped, dies with the fight (code: tbTerraform)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
 //   - sleep_heal_bunk: 35 (code: sleepPreview)
@@ -13760,6 +13766,7 @@
         order: S.combat.turnOrder(fighters),
         turnIdx: 0, round: 1,
         over: false, result: null,
+        terraform: {}, // TERRAFORM (Steve 2026-10-06): monster-reshaped ground, "x,y" -> type
       };
       // HIGHBEAM: anyone already too close is on the list from the first
       // bell — silently. The deer will announce itself soon enough.
@@ -14710,7 +14717,10 @@
       if (!p || p.moveLeft <= 0) { this.say('No movement left this turn.'); return false; }
       const path = this.findPath(p.mx, p.my, cx, cy);
       if (!path || !path.length) { this.say('No path there.'); return false; }
-      if (path.length > p.moveLeft) { this.say(`Too far — ${p.moveLeft} squares left.`); return false; }
+      // TERRAFORM (Steve 2026-10-06): difficult terrain costs 2 per tile —
+      // price the whole path honestly up front.
+      const pathCost = path.reduce((s, [tx, ty]) => s + this.tbTerrainCost(tx, ty), 0);
+      if (pathCost > p.moveLeft) { this.say(`Too far — ${p.moveLeft} squares left.`); return false; }
       for (const o of f.fighters) {
         if ((o.kind === 'monster' || o.kind === 'hostile') && o.alive && o.mx === cx && o.my === cy) {
           // Descriptors start with "a"/"an" ("a light in the dark...") — don't double the article.
@@ -14718,14 +14728,16 @@
           this.say("You don't stroll through " + onm + '.'); return false;
         }
       }
-      p.moveLeft -= path.length;
       // STEP BY STEP: each tile is an action, and during the firing phase the
       // beam answers every step with a sweep tick (action-locked). Walk the
       // path tile by tile so the beam tracks your actual movement, not just
-      // where you land.
+      // where you land. TERRAFORM: movement is deducted per tile here —
+      // difficult ground eats 2 per tile (priced up front above).
       for (const [tx, ty] of path) {
+        p.moveLeft -= this.tbTerrainCost(tx, ty);
         p.mx = tx; p.my = ty;
         this.state.scholar.mx = tx; this.state.scholar.my = ty;
+        this.tbTerrainStep(tx, ty);
         this.tbBeamActionTick();
         if (!this.tbfight || this.tbfight.over) return true;
       }
@@ -15688,6 +15700,54 @@
         for (const c of m.telegraph.cells) set.add(c.cx + ',' + c.cy);
       }
       return set;
+    },
+
+    // TERRAFORM (Steve 2026-10-06): monsters reshape the ground. Terrain
+    // lives on the fight object (f.terraform: "x,y" -> type) and dies with
+    // the fight. Two mechanical kinds, four fictions:
+    //   trample (bulldozer charge lane), crater (bright_idea detonation):
+    //     difficult ground — 2 movement per tile instead of 1.
+    //   paper (contract_golem shedding), scorch (sunbasker bask):
+    //     1 damage when you step onto it.
+    // The visuals always show — wreckage, paper, craters and scorched earth
+    // are physically there. The MECHANICAL effect is learned by touch: first
+    // contact narrates, the way the hummice teaches through sensation.
+    // Monsters ignore terrain (it's their weapon); the player pays.
+    tbTerraform(x, y, type) {
+      const f = this.tbfight; if (!f) return;
+      if (x < 0 || x > 8 || y < 0 || y > 8) return;
+      f.terraform || (f.terraform = {});
+      const k = x + ',' + y;
+      if (f.terraform[k]) return; // first layer wins; terrain doesn't stack
+      f.terraform[k] = type;
+    },
+    tbTerrainAt(x, y) {
+      const f = this.tbfight; if (!f || !f.terraform) return null;
+      return f.terraform[x + ',' + y] || null;
+    },
+    tbTerrainCost(x, y) {
+      const t = this.tbTerrainAt(x, y);
+      return (t === 'trample' || t === 'crater') ? 2 : 1;
+    },
+    // On-entry effects for the player stepping onto terrain. Returns damage
+    // dealt. Narrates verbosely on first contact per type, briefly after.
+    tbTerrainStep(x, y) {
+      const t = this.tbTerrainAt(x, y);
+      if (t !== 'paper' && t !== 'scorch') return 0;
+      const f = this.tbfight;
+      const p = this.tbFighter('p');
+      if (!p || !p.alive || p.fled) return 0;
+      f.terraformFelt || (f.terraformFelt = {});
+      const first = !f.terraformFelt[t];
+      f.terraformFelt[t] = true;
+      if (t === 'paper') {
+        this.say(first ? 'Paper cuts! The fine print bites. (1)' : 'Paper cuts. (1)');
+        this.tbDamage('p', 1, 'paper cuts', null, { quiet: true });
+      } else {
+        this.say(first ? 'The scorched earth burns your feet. (1)' : 'Scorched ground. (1)');
+        this.tbDamage('p', 1, 'scorched earth', null, { quiet: true });
+      }
+      return 1;
     },
 
     tbBlocked(x, y) {
@@ -17250,6 +17310,12 @@
             if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
           }
           if (rcfg.bulldoze && ptype === 'charge') tg.cells = this.tbBulldozeCells(tg.cells);
+          // TERRAFORM (Steve 2026-10-06): the Bulldozer's charge leaves a
+          // trail of wreckage — difficult terrain on the lane it just ran.
+          if (this.boarIs(m) && rcfg.bulldoze && ptype === 'charge' && (tg.cells || []).length) {
+            for (const c of tg.cells) this.tbTerraform(c.cx, c.cy, 'trample');
+            this.say('The charge leaves the ground churned and broken — wreckage underfoot. It will slow you down.');
+          }
         }
         this.audioEvent('impact');
         if (rcfg.resolveAudio) this.audioEvent(rcfg.resolveAudio);
@@ -17257,6 +17323,10 @@
         if (this.biIs(m) && (tg.pattern || {}).type === 'burst') {
           if (useFifo) this.encSetPhase(m, 'bloom');
           this.say('WHITE. The idea detonates — light with teeth. Then the long gutter down.');
+          // TERRAFORM (Steve 2026-10-06): detonation leaves a scorched
+          // crater. The ground remembers — difficult terrain.
+          for (const c of tg.cells || []) this.tbTerraform(c.cx, c.cy, 'crater');
+          this.say('Where the light struck, the ground is cratered and black.');
           this.audioEvent('eurekaDetonate');
         }
         // MEMORY PROJECTOR: the reel fires — the picture LOCKS. The bespoke
@@ -18449,6 +18519,13 @@
         if (!m.telegraph) {
           // BASK: the charge builds. At 2+ the bite is declared.
           m.sbCharge = Math.min(3, (m.sbCharge || 0) + 1);
+          // TERRAFORM (Steve 2026-10-06): where it basks, the grass
+          // blackens. Scorched earth — hot underfoot.
+          this.tbTerraform(m.mx, m.my, 'scorch');
+          if (!this.tbfight.terraformScorched) {
+            this.tbfight.terraformScorched = true;
+            this.say('Where it basks, the grass blackens. The ground is still hot.');
+          }
           if (useFifo) this.encSetPhase(m, (m.sbCharge || 0) >= 2 ? 'charged' : 'bask');
           const known = this.encTelegraphKnown(m);
           if (m.sbCharge >= 2) {
@@ -18671,7 +18748,16 @@
         // speed 1: one deliberate step toward the list-head
         if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) > (pat.range || 3)) {
           const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
-          if (stp) { m.mx = stp.x; m.my = stp.y; }
+          if (stp) {
+            // TERRAFORM (Steve 2026-10-06): it sheds as it goes — paper on
+            // the tile it leaves. The fine print, everywhere.
+            this.tbTerraform(m.mx, m.my, 'paper');
+            if (this.tbfight && !this.tbfight.terraformShed) {
+              this.tbfight.terraformShed = true;
+              this.say('Paper scatters behind it — the fine print, everywhere. Watch your step.');
+            }
+            m.mx = stp.x; m.my = stp.y;
+          }
         }
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         if (d <= (pat.range || 3)) {

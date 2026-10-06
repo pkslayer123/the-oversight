@@ -464,6 +464,23 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   font-size: 10px; color: var(--dim); opacity: .8;
 }
 
+/* TERRAFORM (Steve 2026-10-06): monster-reshaped ground. The tint is the
+   tell — wreckage, paper, craters and scorched earth are physically there,
+   so they render ungated. The mechanical effect is learned by touch. */
+.cell[class*="terr-"] { position: relative; }
+.cell.terr-trample { background-color: rgba(139, 90, 43, .38); }
+.cell.terr-paper { background-color: rgba(225, 225, 215, .22); }
+.cell.terr-crater { background-color: rgba(15, 15, 15, .55); box-shadow: inset 0 0 8px #000; }
+.cell.terr-scorch { background-color: rgba(80, 25, 10, .5); }
+.cell[class*="terr-"]::after {
+  position: absolute; bottom: 1px; right: 3px;
+  font-size: 9px; opacity: .75;
+}
+.cell.terr-trample::after { content: '≋'; color: #c08a3e; }
+.cell.terr-paper::after { content: '▤'; color: #e8e8e0; }
+.cell.terr-crater::after { content: '○'; color: #777; }
+.cell.terr-scorch::after { content: '▲'; color: #e05545; }
+
 /* PWA update banner: subtle top strip, appears only when a newer build is ready. */
 #update-banner {
   position: fixed; top: 0; left: 0; right: 0; z-index: 60;
