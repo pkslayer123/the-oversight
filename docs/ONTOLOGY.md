@@ -109,6 +109,7 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 - system_whim_chance: 0.1 random participant override (code: fireContest)
 - countdown_days: 1 (code: fireContest)
 - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
+- recast_dead: countdown outlives contestant → recast from living eligible, or cancel with the System's disappointment (code: resolveContest, Steve 2026-10-06)
 - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 - watched_deaths: watch verdict rolls risk-scaled death — villagers can die on camera (code: _contestVerdict, Steve 2026-10-06)
@@ -246,7 +247,9 @@ Village justice + combat dialogue. Crimes have consequences.
 **Provides:** reportCrime(), holdTrial()
 
 **Rules:**
-- (none documented)
+- one_ladder: cold shoulder -> confrontation -> moot -> uprising; the moot is the ONE formal track (code: justiceTick)
+- confrontation_first: heat 50+ holds the formal track until the ladder demands the moot — refusal, silence-timeout, or heat 70+ (code: considerPlayerAccusation, justiceTick)
+- refused_payment_not_taken: a failed restitution offer costs nothing — refused food stays in the pack (code: justiceRespond)
 
 **Consumes:** village.laws, scholar.crimes
 
