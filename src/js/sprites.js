@@ -1115,6 +1115,177 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
   <!-- antennae: streaming back -->
   <path d=\"M20.8 22.6 Q17 18 14.5 15.5 M22 22.6 Q25 18.5 27.5 16.5\" stroke=\"#0c0f14\" stroke-width=\"0.5\" fill=\"none\"/>
 </svg>`,
+
+    nevermore_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- nevermore calm: an ordinary crow, standing. Nothing wrong with it. Yet. -->
+  <!-- tail -->
+  <path d=\"M21 15 L29 9 L27.5 13.5 L22.5 17.5 Z\" fill=\"#141416\"/>
+  <!-- body -->
+  <ellipse cx=\"16\" cy=\"17\" rx=\"7\" ry=\"4.6\" fill=\"#1a1a1e\"/>
+  <!-- folded wing -->
+  <path d=\"M13 14.5 Q18 13 22 16.5 Q18 19.5 13.5 18.5 Z\" fill=\"#232328\"/>
+  <path d=\"M14 15.5 L20 16.5 M14.5 17 L19.5 17.8\" stroke=\"#101013\" stroke-width=\"0.7\" fill=\"none\"/>
+  <!-- head -->
+  <circle cx=\"9.5\" cy=\"12.5\" r=\"3.2\" fill=\"#1a1a1e\"/>
+  <!-- beak -->
+  <polygon points=\"6.8,11.3 2.8,12.9 6.8,14.2\" fill=\"#55565c\"/>
+  <!-- eye: dark, ordinary -->
+  <circle cx=\"8.9\" cy=\"11.7\" r=\"0.6\" fill=\"#0a0a0a\"/>
+  <circle cx=\"9.1\" cy=\"11.5\" r=\"0.18\" fill=\"#cfd6dd\" opacity=\"0.7\"/>
+  <!-- throat hackles -->
+  <path d=\"M8 15.5 l-1 1.6 M9.5 16 l-0.7 1.7\" stroke=\"#101013\" stroke-width=\"0.6\"/>
+  <!-- legs -->
+  <path d=\"M14 21.2 L13.6 27.5 M18 21.2 L18.4 27.5\" stroke=\"#3a3a3f\" stroke-width=\"1\"/>
+  <path d=\"M13.6 27.5 l-1.6 1 M13.6 27.5 l0.2 1.8 M13.6 27.5 l1.5 1.2 M18.4 27.5 l-1.5 1.2 M18.4 27.5 l-0.2 1.8 M18.4 27.5 l1.6 1\" stroke=\"#3a3a3f\" stroke-width=\"0.7\"/>
+</svg>`,
+    nevermore_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- nevermore aggro: THE UNFOLDING. Wings spread into black blades, beak split
+       four ways, eyes burning. Its shadow detaches below — the shadow moves first. -->
+  <!-- the detached shadow -->
+  <ellipse cx=\"17.5\" cy=\"29\" rx=\"8\" ry=\"1.6\" fill=\"#000000\" opacity=\"0.45\"/>
+  <!-- left blade-wing -->
+  <path d=\"M15 16 L2 3 L5 8 L3.5 9.5 L7 11 L5.5 13.5 L9.5 14.5 L8.5 17.5 L13 17 L12.5 20 L16 18.5 Z\" fill=\"#0a0a0c\"/>
+  <path d=\"M14 16.5 L6 8 M13.5 17.5 L8.5 12.5\" stroke=\"#2a2a30\" stroke-width=\"0.7\" fill=\"none\"/>
+  <!-- right blade-wing -->
+  <path d=\"M17 16 L30 3 L27 8 L28.5 9.5 L25 11 L26.5 13.5 L22.5 14.5 L23.5 17.5 L19 17 L19.5 20 L16 18.5 Z\" fill=\"#0a0a0c\"/>
+  <path d=\"M18 16.5 L26 8 M18.5 17.5 L23.5 12.5\" stroke=\"#2a2a30\" stroke-width=\"0.7\" fill=\"none\"/>
+  <!-- body, hunched -->
+  <ellipse cx=\"16\" cy=\"19\" rx=\"4.6\" ry=\"5.2\" fill=\"#121214\"/>
+  <!-- head, thrown back -->
+  <circle cx=\"16\" cy=\"11.5\" r=\"2.8\" fill=\"#121214\"/>
+  <!-- THE BEAK: split four ways -->
+  <polygon points=\"14.5,9.5 12,4.5 15.2,8\" fill=\"#3a3a40\"/>
+  <polygon points=\"17.5,9.5 20,4.5 16.8,8\" fill=\"#3a3a40\"/>
+  <polygon points=\"14.5,13.5 12.5,17.5 15.5,14\" fill=\"#2c2c31\"/>
+  <polygon points=\"17.5,13.5 19.5,17.5 16.5,14\" fill=\"#2c2c31\"/>
+  <!-- THE EYES: burning amber -->
+  <circle cx=\"14.6\" cy=\"11\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"17.4\" cy=\"11\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"14.6\" cy=\"11\" r=\"0.4\" fill=\"#fff3d0\"/>
+  <circle cx=\"17.4\" cy=\"11\" r=\"0.4\" fill=\"#fff3d0\"/>
+  <circle cx=\"14.6\" cy=\"11\" r=\"1.45\" fill=\"none\" stroke=\"#ffb020\" stroke-width=\"0.4\" opacity=\"0.6\"/>
+  <circle cx=\"17.4\" cy=\"11\" r=\"1.45\" fill=\"none\" stroke=\"#ffb020\" stroke-width=\"0.4\" opacity=\"0.6\"/>
+  <!-- talons, spread for the run -->
+  <path d=\"M13.5 23.5 L11 28 M18.5 23.5 L21 28\" stroke=\"#1c1c20\" stroke-width=\"1\"/>
+  <path d=\"M11 28 l-1.2 1 M11 28 l1.2 1 M21 28 l-1.2 1 M21 28 l1.2 1\" stroke=\"#3a3a40\" stroke-width=\"0.8\"/>
+  <!-- falling feather-shards -->
+  <polygon points=\"7,22 8.5,24.5 6.5,24\" fill=\"#0a0a0c\"/>
+  <polygon points=\"25,23 26.5,25.5 24.5,25\" fill=\"#0a0a0c\"/>
+</svg>`,
+    nightcourt_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+  <!-- nightcourt calm: a great horned owl, perched. Mottled brown, ear tufts,
+       big forward eyes. An ordinary owl. -->
+  <!-- ear tufts -->
+  <polygon points=\"10.5,7.5 8.5,2.5 13,5.5\" fill=\"#5a4530\"/>
+  <polygon points=\"21.5,7.5 23.5,2.5 19,5.5\" fill=\"#5a4530\"/>
+  <!-- body -->
+  <ellipse cx=\"16\" cy=\"18.5\" rx=\"6.5\" ry=\"8\" fill=\"#6b5136\"/>
+  <!-- wing folds -->
+  <path d=\"M10.5 15 Q9 20 11 25 M21.5 15 Q23 20 21 25\" stroke=\"#4a3826\" stroke-width=\"1.2\" fill=\"none\"/>
+  <!-- facial disks -->
+  <circle cx=\"13\" cy=\"11\" r=\"3.6\" fill=\"#c9b18a\"/>
+  <circle cx=\"19\" cy=\"11\" r=\"3.6\" fill=\"#c9b18a\"/>
+  <!-- eyes -->
+  <circle cx=\"13\" cy=\"11\" r=\"1.7\" fill=\"#ffb020\"/>
+  <circle cx=\"19\" cy=\"11\" r=\"1.7\" fill=\"#ffb020\"/>
+  <circle cx=\"13\" cy=\"11\" r=\"0.9\" fill=\"#1a120a\"/>
+  <circle cx=\"19\" cy=\"11\" r=\"0.9\" fill=\"#1a120a\"/>
+  <circle cx=\"13.4\" cy=\"10.6\" r=\"0.3\" fill=\"#fff\" opacity=\"0.85\"/>
+  <circle cx=\"19.4\" cy=\"10.6\" r=\"0.3\" fill=\"#fff\" opacity=\"0.85\"/>
+  <!-- beak -->
+  <polygon points=\"14.8,13.2 17.2,13.2 16,15.5\" fill=\"#2a2a2a\"/>
+  <!-- chest barring -->
+  <path d=\"M11 18 h10 M11.5 20.5 h9 M12 23 h8 M12.5 25.5 h7\" stroke=\"#4a3826\" stroke-width=\"0.8\" opacity=\"0.8\"/>
+  <!-- feet -->
+  <ellipse cx=\"13\" cy=\"27.5\" rx=\"1.6\" ry=\"1\" fill=\"#8a7a5c\"/>
+  <ellipse cx=\"19\" cy=\"27.5\" rx=\"1.6\" ry=\"1\" fill=\"#8a7a5c\"/>
+  <path d=\"M11.8 28.2 q-0.8 0.8 -1.4 0.4 M14.2 28.2 q0.8 0.8 1.4 0.4 M17.8 28.2 q-0.8 0.8 -1.4 0.4 M20.2 28.2 q0.8 0.8 1.4 0.4\" stroke=\"#2a2a2a\" stroke-width=\"0.8\" fill=\"none\"/>
+</svg>`,
+    nightcourt_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- nightcourt aggro: THE SILENT JUDGE. Head rotated past possible, talons
+       overgrown into gavel-hooks, eyes huge and pale. The arcs collapsing
+       inward are the silence — sound going INTO the owl. -->
+  <!-- half-spread wings -->
+  <path d=\"M10 16 L2 12 L4 17 L2.5 19 L7 20 Z\" fill=\"#241a10\"/>
+  <path d=\"M22 16 L30 12 L28 17 L29.5 19 L25 20 Z\" fill=\"#241a10\"/>
+  <!-- body, dark -->
+  <ellipse cx=\"16\" cy=\"19\" rx=\"6\" ry=\"7.5\" fill=\"#3a2c1e\"/>
+  <path d=\"M11 17 h10 M11.5 20 h9 M12 23 h8\" stroke=\"#241a10\" stroke-width=\"1\" opacity=\"0.9\"/>
+  <!-- neck ruff, twisted -->
+  <path d=\"M11 12 Q16 9 21 12 L20 15 Q16 13 12 15 Z\" fill=\"#4a3826\"/>
+  <!-- HEAD: twisted 270 degrees — the face stares sideways out of a rotated skull -->
+  <ellipse cx=\"16\" cy=\"8\" rx=\"4.2\" ry=\"3.4\" fill=\"#4a3826\"/>
+  <path d=\"M12.5 7 Q16 4.5 19.5 7 Q16 6 12.5 7 Z\" fill=\"#c9b18a\" opacity=\"0.9\"/>
+  <path d=\"M12 8.5 Q16 11 20 8.5\" stroke=\"#241a10\" stroke-width=\"0.8\" fill=\"none\"/>
+  <!-- twist creases in the neck -->
+  <path d=\"M13.5 10.5 Q16 11.5 18.5 10.5\" stroke=\"#241a10\" stroke-width=\"0.7\" fill=\"none\" opacity=\"0.8\"/>
+  <!-- THE EYES: huge, pale, forward — courtroom lights -->
+  <circle cx=\"12.5\" cy=\"7.5\" r=\"2.2\" fill=\"#e8e4d8\"/>
+  <circle cx=\"12.5\" cy=\"7.5\" r=\"0.7\" fill=\"#0a0a0a\"/>
+  <circle cx=\"19.5\" cy=\"7.5\" r=\"2.2\" fill=\"#e8e4d8\"/>
+  <circle cx=\"19.5\" cy=\"7.5\" r=\"0.7\" fill=\"#0a0a0a\"/>
+  <!-- hooked beak, oversized -->
+  <path d=\"M15 10 Q16 13.5 13.5 14.5 Q15.5 14 16 12 Z\" fill=\"#1c1c1c\"/>
+  <!-- GAVEL TALONS: overgrown hooks -->
+  <path d=\"M11 25.5 Q8 28 9.5 30.5 Q9 28.5 12 27.5 Z\" fill=\"#d8ccaa\"/>
+  <path d=\"M21 25.5 Q24 28 22.5 30.5 Q23 28.5 20 27.5 Z\" fill=\"#d8ccaa\"/>
+  <path d=\"M9.5 30.5 L8.5 31.5 M22.5 30.5 L23.5 31.5\" stroke=\"#1c1c1c\" stroke-width=\"1\"/>
+  <!-- THE SILENCE: sound collapsing inward -->
+  <g stroke=\"#8a93a0\" stroke-width=\"1\" fill=\"none\" opacity=\"0.85\">
+    <path d=\"M4 8 Q7 10 8.5 12\"/>
+    <path d=\"M2.5 5 Q7 8 9.5 11\"/>
+    <path d=\"M28 8 Q25 10 23.5 12\"/>
+    <path d=\"M29.5 5 Q25 8 22.5 11\"/>
+  </g>
+</svg>`,
+    statickite_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
+<g transform=\"translate(16 17) scale(1.28) translate(-16 -17)\">
+  <!-- statickite calm: a dead kite, draped and sagging. Screen dark. Nobody
+       is holding the string. -->
+  <!-- sagging diamond -->
+  <path d=\"M16 7 Q20 11 22.5 16.5 Q19 21 15 25.5 Q11 21 9.5 16.5 Q12 11 16 7 Z\" fill=\"#2a2d33\"/>
+  <!-- slack spars -->
+  <path d=\"M16 7 Q16.5 16 15 25.5 M9.5 16.5 Q16 15.5 22.5 16.5\" stroke=\"#4a4e55\" stroke-width=\"0.8\" fill=\"none\"/>
+  <!-- dead screen -->
+  <path d=\"M16 11.5 Q18.5 14 19.5 16.5 Q18 19 15.5 21.5 Q13.5 19 12.8 16.5 Q13.8 14 16 11.5 Z\" fill=\"#0a0a0c\"/>
+  <!-- loose string -->
+  <path d=\"M15 25.5 Q13 28 14.5 31\" stroke=\"#6a6e75\" stroke-width=\"0.7\" fill=\"none\"/>
+  <path d=\"M22.5 16.5 Q26 17.5 27.5 20\" stroke=\"#6a6e75\" stroke-width=\"0.6\" fill=\"none\" opacity=\"0.7\"/>
+</g>
+</svg>`,
+    statickite_aggro: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\">
+  <!-- statickite aggro: THE BROADCAST. The kite snaps taut — a lattice of
+       static-glass. The screen shows YOU, from above. The ribbon tail ticks
+       your name. -->
+  <!-- taut diamond frame -->
+  <polygon points=\"16,3 27.5,15 16,27 4.5,15\" fill=\"#dfe6ee\" opacity=\"0.92\"/>
+  <!-- lattice -->
+  <path d=\"M16 3 L16 27 M4.5 15 L27.5 15 M10 9 L22 21 M22 9 L10 21\" stroke=\"#8a93a0\" stroke-width=\"0.7\" opacity=\"0.8\"/>
+  <!-- static noise -->
+  <g fill=\"#ffffff\" opacity=\"0.85\">
+    <rect x=\"8\" y=\"10\" width=\"1.4\" height=\"0.9\"/><rect x=\"20\" y=\"8\" width=\"1.1\" height=\"1.2\"/>
+    <rect x=\"13\" y=\"19\" width=\"1.3\" height=\"0.8\"/><rect x=\"23\" y=\"17\" width=\"1\" height=\"1\"/>
+    <rect x=\"10\" y=\"21\" width=\"1.2\" height=\"0.9\"/>
+  </g>
+  <g fill=\"#5a6270\" opacity=\"0.9\">
+    <rect x=\"18\" y=\"12\" width=\"1.2\" height=\"0.9\"/><rect x=\"11\" y=\"14\" width=\"1\" height=\"1.1\"/>
+    <rect x=\"21\" y=\"20\" width=\"1.3\" height=\"0.8\"/>
+  </g>
+  <!-- THE SCREEN: footage of you, from above -->
+  <rect x=\"11.5\" y=\"10.5\" width=\"9\" height=\"9\" fill=\"#0c0f14\" stroke=\"#ffb020\" stroke-width=\"0.8\"/>
+  <circle cx=\"16\" cy=\"13.5\" r=\"1.3\" fill=\"#e8ecf5\"/>
+  <path d=\"M16 14.8 L16 17.5 M16 15.5 L14 16.5 M16 15.5 L18 16.5 M16 17.5 L14.8 19 M16 17.5 L17.2 19\" stroke=\"#e8ecf5\" stroke-width=\"0.8\"/>
+  <!-- scanlines -->
+  <path d=\"M11.5 12.5 h9 M11.5 14.5 h9 M11.5 16.5 h9 M11.5 18.5 h9\" stroke=\"#7df9ff\" stroke-width=\"0.3\" opacity=\"0.5\"/>
+  <!-- spar joints, hot -->
+  <circle cx=\"16\" cy=\"3\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"27.5\" cy=\"15\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"16\" cy=\"27\" r=\"1\" fill=\"#ffb020\"/>
+  <circle cx=\"4.5\" cy=\"15\" r=\"1\" fill=\"#ffb020\"/>
+  <!-- TICKER RIBBON: your name, ticking past -->
+  <path d=\"M16 27 Q14 29.5 16 31.5 Q18 29.5 16 27\" fill=\"#c0392b\"/>
+  <path d=\"M14.8 28.5 h2.4 M14.6 29.7 h2.8 M14.9 30.8 h2.2\" stroke=\"#ffffff\" stroke-width=\"0.5\" opacity=\"0.85\"/>
+</svg>`,
     sunbasker_calm: `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" class=\"sprite\">
 <g transform=\"translate(16 16) scale(0.92) translate(-16 -16)\">
   <!-- tail -->
