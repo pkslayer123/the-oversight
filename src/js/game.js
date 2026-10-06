@@ -13333,7 +13333,11 @@
           alive: true, fled: false, telegraph: null, mdef,
           hesitate: hasFear ? 1 : 0, blind: hasSand ? 2 : 0, stunned: 0,
           beamCooldown: 0, dwellTaught: false,
-          beamPhase: (mdef.encounter && mdef.encounter.phaseMap && mdef.encounter.phaseMap.idle) || 'stalk',
+          // TRAP SETUP (glasswing): the world monster may carry a phase
+          // (grounded after the dive) — preserve it, don't reset to idle.
+          beamPhase: (s.monster && s.monster.beamPhase) ||
+            (mdef.encounter && mdef.encounter.phaseMap && mdef.encounter.phaseMap.idle) || 'stalk',
+          gwGrounded: (s.monster && s.monster.gwGrounded) || 0,
           threatQueue: [],
           veteran: isVeteran,
         });
@@ -13398,7 +13402,8 @@
             // GLASSWING: first contact is dread, not a lecture. The shadow is
             // the whole fight — the coaching only lands once the pattern is
             // earned (codex observed/slain). First-timers learn by doing.
-            mo.beamPhase = 'circle';
+            // (Trap arrival: already grounded from the dive — don't overwrite.)
+            if (mo.beamPhase !== 'grounded') mo.beamPhase = 'circle';
             this.say('A shadow moves wrong against the sun — circling. Something up there is looking down at you.');
             const gstage = (this.ensureMonsterEntry('glasswing') || {}).stage;
             if (gstage === 'observed' || gstage === 'slain') {
@@ -16520,8 +16525,10 @@
         const rcfg = this.encConfig(m) || {};
         // MIRROR STAG: break line of sight during the mirror beat and it loses
         // you. The charge dies unspent — that's the counterplay, and it's earned.
-        if (this.stagIs(m) && tg.kind === 'squares') {
-          const lost = this.tbFighter(tg.aimKey);
+        // (The stag's telegraph is kind 'line', not 'squares' — the fizzle must
+        // cover it, or the codex-taught counterplay silently never fires.)
+        if (this.stagIs(m) && (tg.kind === 'squares' || tg.kind === 'line')) {
+          const lost = tg.aimKey ? this.tbFighter(tg.aimKey) : this.tbFighter('p');
           if (!lost || !lost.alive || !this.canSee(m.mx, m.my, lost.mx, lost.my)) {
             m.telegraph = null;
             if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));

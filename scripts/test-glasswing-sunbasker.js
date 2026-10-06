@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Glasswing Darter + Sunbasker mechanics tests (Steve 2026-10-05):
-// dive and bask were TODO — the attacks literally whiffed (patternCells has
-// no 'single' case; telegraphs resolved with empty cells). Now:
-//  - glasswing: circle (untargetable) → dive (tile-locked shadow telegraph,
-//    dodge by moving) → grounded on miss (vulnerable 1 turn) / climb on hit
+//  - glasswing (TRAP design): within 5 tiles it vanishes and sets a 3-turn
+//    shadow trap. Stand still → dive hits (direct/splash) → grounded → combat.
+//    Move away → hits empty dirt, climbs back into the sun. No turn-based on
+//    approach — the trick is preserved.
 //  - sunbasker: bask builds charge (+dmg), hits reset it, bite spends it,
 //    shade/dusk flattens it (passive)
 //  - codex: tbPatternDesc('single') no longer claims "hits an area around it"
@@ -51,6 +51,18 @@ function startFight(scen) {
   m.hp = m.maxHp = 200; // survive observation; mechanics, not lethality
   return Game.tbfight;
 }
+// Glasswing uses the trap design (Steve 2026-10-05) — no turn-based on
+// approach. Separate setup: place the scenario, don't force combat.
+function startGlasswing() {
+  try { if (Game.tbfight) Game.tbEnd('fled'); } catch (e) {}
+  Game.genRoster('Columbus, Ohio');
+  Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
+  Game.depart();
+  const s0 = Game.state.scholar;
+  s0.health = 500;
+  Game.debugScenario('glasswing');
+  return Game.state.scholar;
+}
 function M() { return Game.tbfight.fighters.find(x => x.kind === 'monster'); }
 function P() { return Game.tbFighter('p'); }
 // run monster turns until it's the player turn (ends there, turn open)
@@ -70,71 +82,54 @@ function monsterActs() {
   ok("tbPatternDesc('single') is not the area lie",
     !/area around it/i.test(Game.tbPatternDesc({ type: 'single' })));
 
-  // ================= GLASSWING =================
-  startFight('glasswing');
-  let m = M();
-  ok('glasswing opens circling or already diving (opening pass)',
-    m.beamPhase === 'circle' || m.beamPhase === 'dive');
-  ok('glasswing opening dread line',
-    Game.log.some(l => /circling\. Something up there/i.test(l)));
-  ok('opens on the player turn', Game.tbIsPlayerTurn());
-
-  // --- circling is untargetable (strike now: no monster turn intervenes) ---
-  m.telegraph = null; m.beamPhase = 'circle';
-  m.mx = 4; m.my = 4; P().mx = 5; P().my = 4;
-  Game.tbPlayerStrike(m.key);
-  ok('circling strike refused (out of reach)', Game.log.some(l => /spear reach/i.test(l)));
-  ok('circling strike did no damage', m.hp === m.maxHp);
-
-  // --- while circling it closes in (airborne) ---
-  m.mx = 8; m.my = 8; P().mx = 0; P().my = 0;
-  monsterActs();
-  const dAfterCircle = Math.max(Math.abs(M().mx - 0), Math.abs(M().my - 0));
-  ok('circling closes distance', dAfterCircle < 8);
-
-  // --- dive declares on the player's tile; flee before it resolves ---
-  let declared = false;
-  for (let i = 0; i < 8 && !declared; i++) {
-    if (monsterActs() === 'over') break;
-    if (M().telegraph) {
-      const p = P(); p.mx = 7; p.my = 7; // flee the locked tile THIS turn
-      declared = true;
-    }
+  // ================= GLASSWING (trap design, Steve 2026-10-05) =================
+  // No turn-based combat on approach — within 5 tiles it VANISHES and sets a
+  // 3-turn shadow trap. Stand still → dive hits → grounded → combat starts.
+  // Move away → it hits empty dirt and climbs back into the sun.
+  {
+    const s = startGlasswing();
+    s.mx = s.monster.mx + 1; s.my = s.monster.my; // dist 1, within 5
+    Game.monsterTurn();
+    ok('glasswing vanishes within 5', !s.monster);
+    ok('trap set', !!s.gwTrap);
+    ok('trap dread line', Game.log.some(l => /The air feels wrong/i.test(l)));
   }
-  m = M();
-  ok('dive declared', declared && !!m.telegraph && m.beamPhase === 'dive');
-  ok('dive locks exactly one cell', m.telegraph && m.telegraph.cells.length === 1);
-  ok('dive locked the tile the player fled', m.telegraph &&
-    m.telegraph.cells[0].cx === 0 && m.telegraph.cells[0].cy === 0);
-  ok('dive dread line, no coaching for the unknown',
-    Game.log.some(l => /shadow detaches from the clouds/i.test(l)));
-
-  // --- resolve: miss → grounded, vulnerable ---
-  const hpBefore = P().hp;
-  monsterActs();
-  m = M();
-  ok('dodge: no damage taken', P().hp === hpBefore);
-  ok('miss → grounded', m.beamPhase === 'grounded');
-  ok('grounded crash line', Game.log.some(l => /GROUNDED/i.test(l)));
-  ok('clean dodge line', Game.log.some(l => /Clean dodge/i.test(l)));
-  ok('darter landed on the dive tile', m.mx === 0 && m.my === 0);
-
-  // --- grounded punish: close in and strike for +50%, then it climbs ---
-  // (player turn is open; step up to the crashed darter like a real player)
-  P().mx = 1; P().my = 0;
-  Game.tbPlayerStrike(m.key);
-  ok('grounded strike lands with vulnerability note', Game.log.some(l => /Wings tangled/i.test(l)));
-  ok('grounded strike dealt damage', M().hp < M().maxHp);
-  monsterActs();
-  ok('climbs back to circle', M().beamPhase === 'circle');
-
-  // --- stand still → dive hits → climbs (not grounded) ---
-  for (let i = 0; i < 8 && !M().telegraph; i++) monsterActs();
-  ok('dive re-declared', !!M().telegraph);
-  const hp2 = P().hp;
-  monsterActs(); // resolve: player still on the tile → hit
-  ok('standing still: dive hits', P().hp < hp2);
-  ok('hit → climbs, not grounded', M().beamPhase === 'circle');
+  {
+    // shadow warnings escalate, then the dive
+    const s = startGlasswing();
+    s.mx = s.monster.mx + 1; s.my = s.monster.my;
+    Game.monsterTurn(); // trap set
+    Game.gwTrapTick(); // turn 1
+    ok('shadow faint', Game.log.some(l => /shadow on the ground — faint/i.test(l)));
+    Game.gwTrapTick(); // turn 2
+    ok('shadow darker', Game.log.some(l => /shadow on the ground — darker/i.test(l)));
+    // player stands still on the trap tile → direct hit
+    const hpBefore = s.health;
+    Game.gwTrapTick(); // turn 3 → dive
+    ok('standing still: dive hits', s.health < hpBefore);
+    ok('direct hit hurts (20-29)', hpBefore - s.health >= 20 && hpBefore - s.health <= 29);
+    // s.monster is cleared on startCombat ("it's in the fight now") — the
+    // grounded phase lives on the fighter.
+    const gm = Game.tbfight.fighters.find(x => x.kind === 'monster');
+    ok('hit → grounded', gm && gm.beamPhase === 'grounded');
+    ok('grounded crash line', Game.log.some(l => /GROUNDED/i.test(l)));
+    ok('combat starts on grounded hit', !!Game.tbfight);
+    try { Game.tbEnd('fled'); } catch (e) {}
+  }
+  {
+    // moving away dodges the dive
+    const s = startGlasswing();
+    const tx = s.monster.mx, ty = s.monster.my;
+    s.mx = tx + 1; s.my = ty;
+    Game.monsterTurn(); // trap set on the player's tile
+    Game.gwTrapTick(); Game.gwTrapTick(); // turns 1-2
+    s.mx = 0; s.my = 0; // far from the trap tile
+    const hpBefore = s.health;
+    Game.gwTrapTick(); // turn 3 → miss
+    ok('moved away: no damage', s.health === hpBefore);
+    ok('miss: no combat, trap cleared', !Game.tbfight && !s.gwTrap);
+    ok('miss line', Game.log.some(l => /hits empty dirt/i.test(l)));
+  }
 
   // ================= SUNBASKER =================
   startFight('sunbasker');

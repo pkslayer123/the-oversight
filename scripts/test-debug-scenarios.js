@@ -28,7 +28,7 @@ function eq(name, got, want) {
 
   // --- list ---
   const list = Game.debugScenarioList();
-  eq('20 scenarios listed (9 original + 11 new)', list.length, 20);
+  eq('scenarios listed', list.length, 54);
   ok('all have ids+labels', list.every(([id, label]) => id && label));
 
   // --- 1. deer ---

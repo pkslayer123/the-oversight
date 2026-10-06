@@ -56,7 +56,7 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
 
   // ================= CONFIG SHAPE =================
   for (const [id, phases] of [
-    ['thornback_boar', ['root', 'paw', 'charge', 'trample', 'spent']],
+    ['bulldozer', ['root', 'paw', 'charge', 'trample', 'spent']],
     ['hushwolf', ['silence', 'circle', 'rush', 'withdraw']],
     ['white_noise_heron', ['still', 'unfold', 'strike']],
     ['speedbump_turtle', ['rock', 'snap', 'bunker']],
@@ -74,23 +74,25 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
 
   // ================= THORNBACK BOAR =================
   {
-    freshFight('thornback_boar', 2, 4, 7, 4);
+    freshFight('bulldozer', 2, 4, 7, 4);
     ok('boar initial phase root', M('m_0').beamPhase === 'root', M('m_0').beamPhase);
     aiRound(); // boar: advance + PAW declare
     const b = M('m_0');
     ok('boar paw on declare', b.beamPhase === 'paw' && !!b.telegraph, b.beamPhase);
-    ok('boar telegraph renders fiction', log().includes('It has never gone around anything'));
+    ok('boar telegraph carries fiction', Game.tbTelegraphCue(b).includes('It has never gone around anything'));
     const lane = b.telegraph.cells.map(c => c.cx + ',' + c.cy);
     ok('boar lane declared', lane.length > 0);
     // codex gate: lane hidden pre-knowledge
     ok('boar lane hidden pre-knowledge', Game.tbBeamLaneCells().size === 0);
-    Game.state.codex.monsters = { thornback_boar: { patterns: { 'China-Shop Charge': 'x' } } };
+    Game.state.codex.monsters = { bulldozer: { patterns: { 'China-Shop Charge': 'x' } } };
     ok('boar lane shown post-knowledge', Game.tbBeamLaneCells().size === lane.length, `${Game.tbBeamLaneCells().size}/${lane.length}`);
     ok('boar known tactics appended', Game.tbTelegraphCue(b).includes('Sidestep the lane'));
-    // sidestep: move player off the lane, resolve -> miss
+    // sidestep: move player off the lane, resolve -> miss.
+    // (Avoid grid edges: walking off the edge FLEES the node (Steve 2026-10-05),
+    // which would end the fight instead of dodging the charge.)
     const p = M('p');
     let side = null;
-    for (let y = 0; y < 9 && !side; y++) for (let x = 0; x < 9 && !side; x++) {
+    for (let y = 1; y < 8 && !side; y++) for (let x = 1; x < 8 && !side; x++) {
       if (lane.includes(x + ',' + y)) continue;
       const path = Game.findPath(p.mx, p.my, x, y);
       if (path && path.length > 0 && path.length <= p.moveLeft) side = [x, y];
@@ -115,18 +117,20 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
     ok('boar winded takes +50%', bhp0 - bb.hp === 30, `${bhp0 - bb.hp}`);
   }
   {
-    // bulldoze: trees shred, walls stop
-    freshFight('thornback_boar', 2, 4, 7, 4);
+    // bulldoze: smashes THROUGH trees and walls (Steve 2026-10-05 — the
+    // Bulldozer does not stop; the environment breaks. Only haven structures
+    // are unbreakable). The charge continues through the wreckage.
+    freshFight('bulldozer', 2, 4, 7, 4);
     Game.genDetail = () => gridWith([[5, 4, 'tree']]);
     const cut1 = Game.tbBulldozeCells([{ cx: 6, cy: 4 }, { cx: 5, cy: 4 }, { cx: 4, cy: 4 }]);
-    ok('bulldoze shreds trees', cut1.length === 3);
+    ok('bulldoze smashes through trees', cut1.length === 3);
     Game.genDetail = () => gridWith([[5, 4, 'wall']]);
     const cut2 = Game.tbBulldozeCells([{ cx: 6, cy: 4 }, { cx: 5, cy: 4 }, { cx: 4, cy: 4 }]);
-    ok('bulldoze stops at walls', cut2.length === 1 && cut2[0].cx === 6);
+    ok('bulldoze smashes through walls', cut2.length === 3, JSON.stringify(cut2));
   }
   {
     // a HIT charge: no trample armed
-    freshFight('thornback_boar', 2, 4, 7, 4);
+    freshFight('bulldozer', 2, 4, 7, 4);
     aiRound(); // declare
     const b = M('m_0');
     const lane = b.telegraph.cells;
@@ -189,7 +193,10 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
     aiRound();
     const h2 = M('m_0');
     ok('heron unfold on declare', h2.beamPhase === 'unfold' && !!h2.telegraph);
-    ok('heron telegraph renders fiction', log().includes("You just couldn't see it until it moved"));
+    // Telegraph cues are grid-visual now (sayTelegraphOnce is silent — the
+    // grid shows it, text lives in the codex). The fiction still attaches to
+    // the cue for the codex/grid rendering.
+    ok('heron telegraph carries fiction', Game.tbTelegraphCue(h2).includes("couldn't see it until it moved"));
     ok('heron lane hidden pre-knowledge', Game.tbBeamLaneCells().size === 0);
     aiRound(); // windup tick
     ok('heron windup escalates', log().includes('The air goes staticky; the creek goes flat'));
@@ -197,7 +204,7 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
     const lane = new Set(h2.telegraph.cells.map(c => c.cx + ',' + c.cy));
     const p = M('p');
     let side = null;
-    for (let y = 0; y < 9 && !side; y++) for (let x = 0; x < 9 && !side; x++) {
+    for (let y = 1; y < 8 && !side; y++) for (let x = 1; x < 8 && !side; x++) {
       if (lane.has(x + ',' + y)) continue;
       const path = Game.findPath(p.mx, p.my, x, y);
       if (path && path.length > 0 && path.length <= p.moveLeft) side = [x, y];
@@ -216,7 +223,7 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
     const hh = M('m_0');
     const pp = M('p');
     let spot = null;
-    for (let y = 0; y < 9 && !spot; y++) for (let x = 0; x < 9 && !spot; x++) {
+    for (let y = 1; y < 8 && !spot; y++) for (let x = 1; x < 8 && !spot; x++) {
       if (Math.max(Math.abs(x - hh.mx), Math.abs(y - hh.my)) !== 2) continue;
       const path = Game.findPath(pp.mx, pp.my, x, y);
       if (path && path.length <= pp.moveLeft) spot = [x, y];
@@ -273,51 +280,61 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
   }
 
   // ================= MIRROR STAG =================
+  // GRIEF COUNSELOR design (Wave 2, Steve 2026-10-05): mirror → confront → charge.
+  // The mirror phase is gaze danger, NOT a line telegraph — the telegraph only
+  // commits on confront (dist <= 1 or gaze lock). No line to dodge until then.
   {
     freshFight('mirror_stag', 1, 4, 8, 4); // d=7 > noticeRange 6: no silent notice at combat start
     ok('stag initial phase mirror', M('m_0').beamPhase === 'mirror');
-    aiRound(); // advance + MIRROR declare
+    ok('stag mirror declare fiction', log().includes('The face is a mirror'));
+    aiRound(); // advance; mirror holds — gaze danger, no line telegraph
     const s = M('m_0');
-    ok('stag mirror on declare', s.beamPhase === 'mirror' && !!s.telegraph);
-    ok('stag telegraph renders fiction', log().includes('The face is a mirror'));
+    ok('stag mirror: no line telegraph (danger is the gaze)', s.beamPhase === 'mirror' && !s.telegraph);
+  }
+  {
+    // CONFRONT: stag closes to dist 1 → the line telegraph commits.
+    // (Player starts at dist 3; the stag's 2-step advance closes to dist 1.)
+    freshFight('mirror_stag', 5, 4, 8, 4);
+    aiRound();
+    const s = M('m_0');
+    ok('stag confront on approach', s.beamPhase === 'confront' && !!s.telegraph);
     const lane = s.telegraph.cells.map(c => c.cx + ',' + c.cy);
     ok('stag 6-tile lane', lane.length > 0 && lane.length <= 6, lane.length);
-    aiRound(); // windup -> CONFRONT; the turn-2 threat scan notices visibly
-    ok('stag queue notice (not quiet)', log().includes("The stag's head swings toward you"));
-    ok('stag confront on windup', M('m_0').beamPhase === 'confront');
-    ok('stag confront narrated', log().includes('The reflection sharpens'));
-    // sidestep the committed lane
+    // sidestep the committed lane (avoid edges: leaving the grid flees the node)
     const laneSet = new Set(lane);
     const p = M('p');
     let side = null;
-    for (let y = 0; y < 9 && !side; y++) for (let x = 0; x < 9 && !side; x++) {
+    for (let y = 1; y < 8 && !side; y++) for (let x = 1; x < 8 && !side; x++) {
       if (laneSet.has(x + ',' + y)) continue;
       const path = Game.findPath(p.mx, p.my, x, y);
       if (path && path.length > 0 && path.length <= p.moveLeft) side = [x, y];
     }
+    ok('stag test: sidestep found', !!side, JSON.stringify(side));
     Game.tbPlayerMove(side[0], side[1]);
     const php0 = M('p').hp;
-    aiRound(); // resolve
-    ok('stag charge committed: sidestep dodges', M('p').hp === php0);
+    aiRound(); // windup tick → the reflection sharpens
+    ok('stag confront narrated', log().includes('The reflection sharpens'));
+    aiRound(); // resolve → charge misses the sidestepped player
+    ok('stag charge committed: sidestep dodges', M('p').hp === php0, `hp ${php0} -> ${M('p') && M('p').hp}`);
   }
   {
-    // LOS break: the charge dies unspent
-    freshFight('mirror_stag', 2, 4, 8, 4, [[4, 4, 'tree'], [5, 5, 'tree']]);
-    aiRound(); // MIRROR declare
+    // LOS break: the charge dies unspent (the codex-taught counterplay).
+    // Start adjacent so confront declares immediately, then hide behind a tree.
+    freshFight('mirror_stag', 7, 4, 8, 4, [[7, 3, 'tree']]);
     const s = M('m_0');
-    ok('stag declares (bulldoze lane through trees)', s.telegraph && s.telegraph.cells.length > 0);
-    // hide behind the trees
-    let hid = null;
+    ok('stag confront declares adjacent', s.beamPhase === 'confront' && s.telegraph && s.telegraph.cells.length > 0);
+    // hide behind the tree (reachable within moveLeft, hidden from the stag)
     const p = M('p');
-    for (let y = 0; y < 9 && !hid; y++) for (let x = 0; x < 9 && !hid; x++) {
+    let hid = null;
+    for (let y = 1; y < 8 && !hid; y++) for (let x = 1; x < 8 && !hid; x++) {
       const path = Game.findPath(p.mx, p.my, x, y);
-      if (!path || path.length > p.moveLeft) continue;
+      if (!path || !path.length || path.length > p.moveLeft) continue;
       if (!Game.canSee(s.mx, s.my, x, y)) hid = [x, y];
     }
     ok('stag test: hiding spot found', !!hid, JSON.stringify(hid));
     Game.tbPlayerMove(hid[0], hid[1]);
-    aiRound(); // CONFRONT
-    aiRound(); // RESOLVE -> fizzle
+    aiRound(); // windup tick
+    aiRound(); // resolve tick → LOS check → fizzle (charge dies unspent)
     ok('stag LOS break: charge dies unspent', log().includes('It lost you'));
     ok('stag fizzle clears telegraph', !M('m_0').telegraph);
     ok('stag back to mirror', M('m_0').beamPhase === 'mirror');
@@ -332,11 +349,11 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
 
   // ================= NAME LEAK AUDIT =================
   {
-    freshFight('thornback_boar', 2, 4, 7, 4);
+    freshFight('bulldozer', 2, 4, 7, 4);
     aiRound(); aiRound();
     const L = log();
     for (const [id, names] of [
-      ['thornback_boar', ['Bulldozer', 'Thornback Boar']],
+      ['bulldozer', ['Bulldozer']],
       ['hushwolf', ['Hushpuppy']],
       ['white_noise_heron', ['White Noise']],
       ['speedbump_turtle', ['Speedbump']],
@@ -357,12 +374,14 @@ function rig(v) { const o = Math.random; Math.random = () => v; return () => { M
     ok('deer resolve->firing', Game.encPhaseFor(fake, 'resolve') === 'firing');
     ok('deer idle->stalk', Game.encPhaseFor(fake, 'idle') === 'stalk');
     ok('deer badge intact', Game.encPhaseBadge({ mdef: d, beamPhase: 'aim' }) === ' 👁 AIMING');
-    // live declare still works through the modified branch
+    // live declare still works through the reworked deer (Highbeam: relentless
+    // tracking — it declares and commits fast; the aim beat is behavioral now,
+    // not a telegraph line. The bellow and the beam are the tells.)
     freshFight('gallowdeer', 2, 4, 7, 4, null, 3);
     aiRound();
     const dd = M('m_0');
-    ok('deer still declares (aim)', dd.beamPhase === 'aim' && !!dd.telegraph, dd.beamPhase);
-    ok('deer telegraph cue intact', log().includes('It is not frozen. It is aiming.'));
+    ok('deer declares and commits', !!dd.telegraph, dd.beamPhase);
+    ok('deer beam fires', log().includes('A ray of light lances FROM ITS EYES'));
     ok('deer bellow intact', log().includes('It BELLOWS'));
   }
 

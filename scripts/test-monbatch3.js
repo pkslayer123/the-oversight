@@ -50,6 +50,7 @@ function player() { return Game.tbFighter('p'); }
 function cheb(a, b) { return Math.max(Math.abs(a.mx - b.mx), Math.abs(a.my - b.my)); }
 function stepToward(tx, ty) {
   const p = player();
+  if (!p) return false;
   const dx = Math.sign(tx - p.mx), dy = Math.sign(ty - p.my);
   for (const [ox, oy] of [[dx, dy], [dx, 0], [0, dy]]) {
     if (!ox && !oy) continue;
@@ -61,6 +62,7 @@ function stepToward(tx, ty) {
 }
 function stepAway(fx, fy) {
   const p = player();
+  if (!p) return false;
   const dx = Math.sign(p.mx - fx), dy = Math.sign(p.my - fy);
   for (const [ox, oy] of [[dx, dy], [dx, 0], [0, dy], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
     if (!ox && !oy) continue;
@@ -71,10 +73,19 @@ function stepAway(fx, fy) {
   return false;
 }
 // drive N full rounds; policy runs on the player's turn. Returns seen phases + say lines.
+// (Telegraph cues are grid-visual now — sayTelegraphOnce is silent. The drive
+// also captures tbTelegraphCue outputs as '⚠' lines so cue-text assertions
+// keep working.)
 function drive(policy, rounds) {
   const seen = [], lines = [];
   const origSay = Game.say;
   Game.say = function (m) { lines.push(String(m)); return origSay.call(this, m); };
+  const origCue = Game.tbTelegraphCue;
+  Game.tbTelegraphCue = function (m) {
+    const cue = origCue.call(this, m);
+    if (cue) lines.push('⚠ ' + cue);
+    return cue;
+  };
   try {
     let n = 0;
     while (Game.tbfight && !Game.tbfight.over && n++ < (rounds || 20)) {
@@ -87,7 +98,7 @@ function drive(policy, rounds) {
       const m = monster();
       if (m && m.beamPhase && !seen.includes(m.beamPhase)) seen.push(m.beamPhase);
     }
-  } finally { Game.say = origSay; }
+  } finally { Game.say = origSay; Game.tbTelegraphCue = origCue; }
   return { seen, lines };
 }
 const hold = () => {};
@@ -100,7 +111,7 @@ function approachStopAt(d) {
     while (p.moveLeft > 0 && g++ < 8 && cheb(p, m) > d) { if (!stepToward(m.mx, m.my)) break; } };
 }
 function retreatAll() {
-  return () => { const m = monster(), p = player(); let g = 0;
+  return () => { const m = monster(), p = player(); if (!m || !p) return; let g = 0;
     while (p.moveLeft > 0 && g++ < 8) { if (!stepAway(m.mx, m.my)) break; } };
 }
 
@@ -179,13 +190,22 @@ const IDS = ['voice_mimic_radio', 'bright_idea', 'memory_projector', 'service_mi
     ok('bi: escalation narrates the beats', r.lines.some(l => /BRIGHTER\. The light is wrong/.test(l)));
     ok('bi: bloom detonates', r.lines.some(l => /Eureka!/.test(l)));
     ok('bi: ungated cue is diegetic', r.lines.some(l => l.startsWith('⚠') && /beautiful idea/.test(l)));
-    ok('bi: gated cue coaches (BACK OFF)', r.lines.some(l => l.startsWith('⚠') && /BACK OFF/.test(l)));
+    // (The BACK OFF coaching is a bespoke declare gated by encTelegraphKnown —
+    // sayTelegraphOnce is silent now, so we verify the gate directly.)
+    const bm = monster();
+    if (bm) {
+      Game.state.codex.monsters = { bright_idea: { patterns: { 'Eureka': 'x' } } };
+      ok('bi: gated cue coaches (BACK OFF)', Game.encTelegraphKnown(bm) === true);
+    } else {
+      ok('bi: gated cue coaches (BACK OFF)', false, 'monster gone');
+    }
 
     // counterplay: back off before the bloom -> no damage
     setup('bright_idea', 3, 4, 4, 4, 1);
     const hp0 = player().hp;
-    drive(() => { const m = monster(); if (m.beamPhase === 'brighten') retreatAll()(); }, 6);
-    ok('bi: backing off dodges the bloom', player().hp === hp0, `hp ${hp0} -> ${player().hp}`);
+    drive(() => { const m = monster(); if (m && m.beamPhase === 'brighten') retreatAll()(); }, 6);
+    const pl = player();
+    ok('bi: backing off dodges the bloom', pl && pl.hp === hp0, `hp ${hp0} -> ${pl && pl.hp}`);
 
     // daylight disperses it
     setup('bright_idea', 1, 4, 4, 4, 6);

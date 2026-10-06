@@ -368,7 +368,7 @@
     vpOf(vid) {
       return (this.data.villagers || []).find(x => x.id === vid)
         || (this.data.background_survivors || []).find(x => x.id === vid)
-        || ((this.state.village || {}).rosterChars || {})[vid] || {};
+        || ((((this.state || {}).village) || {}).rosterChars || {})[vid] || {};
     },
 
     // cleanDialogue: defense-in-depth against doubled quotes. Dialogue data
