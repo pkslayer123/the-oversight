@@ -9313,6 +9313,8 @@
       const coldNight = nightWeather === 'cold';
       const exposed = coldNight && (prev.quality === 'ground' || !fireLasts);
       let rested, exposureNote = '';
+      // crisisHeal: metabolic crisis also blunts the night (see below).
+      let crisisHeal = prev.heal;
       if (exposed) {
         const fireDied = prev.quality === 'fireside';
         s.health = Math.max(1, Math.round(s.health || 0) - 18);
@@ -9331,6 +9333,7 @@
         // netted positive at the hall, so the DEHYDRATED warning was a lie.)
         const crisis = (s.hydration || 0) <= 0 || (s.kcal || 0) <= 0;
         const healAmt = crisis ? Math.floor(prev.heal / 2) : prev.heal;
+        crisisHeal = healAmt;
         s.health = Math.min(this.maxHealth(), Math.round(s.health || 0) + healAmt);
         s.energy = crisis ? 60 : 100;
         rested = crisis ? 'wrung out and unrepaired'
@@ -9355,7 +9358,8 @@
         s.trauma = Math.max(0, trauma - 2); // time dulls it, slightly
       }
       const wakeAcct = exposureNote
-        ? `(-18 health, restless night.${conservedNote}${exposureNote})`
+        ? (exposed ? `(-18 health, restless night.${conservedNote}${exposureNote})`
+                   : `(+${crisisHeal} health, wrung-out morning.${conservedNote}${exposureNote})`)
         : `(+${prev.heal} health, energy restored.${conservedNote} ${prev.note})`;
       this.say(`Dawn. You wake ${rested}. ${wakeAcct}${nightmareNote}`);
       return this.status();

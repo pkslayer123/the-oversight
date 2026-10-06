@@ -26,6 +26,7 @@ function ok(name, cond) {
   console.log('\n=== TEST 1: Deer starts grazing (skittish phase) ===');
   Game.debugScenario('headlight');
   let s = Game.state.scholar;
+  Game.dayPart = 1; // daylight for visibility (scenario sets night)
   // Place player far (dist > 5) so deer stays grazing (hasn't noticed you)
   s.mx = 1; s.my = 4;
   s.monster.mx = 7; s.monster.my = 4; // dist 6
@@ -91,16 +92,20 @@ function ok(name, cond) {
   console.log('\n=== TEST 5: Territorial deer does NOT flee (committed) ===');
   Game.debugScenario('headlight'); // fresh
   s = Game.state.scholar;
-  Game.monsterTurn(); // sets grazing
+  // Force daylight so the deer can see (it's night in the scenario, and
+  // canSee fails at dist 4-5 in the dark — correct behavior, but the test
+  // needs visibility to exercise the stance machine).
+  Game.dayPart = 1;
+  Game.monsterTurn(); // sets grazing, then notices at dist 5 -> territorial
   // Move to dist 3-5 (notice range) to trigger territorial
   s.monster.mx = 7; s.monster.my = 4;
   s.mx = 3; s.my = 4; // dist 4
   Game.monsterTurn();
-  ok('deer became territorial when noticed at range', s.monster.stance === 'territorial');
+  ok('deer became territorial when noticed at range', s.monster && s.monster.stance === 'territorial');
   // Now get close — it should NOT become fearful
-  s.mx = 6; s.my = 4; // dist 1
+  if (s.monster) { s.mx = 6; s.my = 4; } // dist 1
   Game.monsterTurn();
-  ok('territorial deer does NOT flee when approached', s.monster.stance !== 'fearful');
+  ok('territorial deer does NOT flee when approached', s.monster && s.monster.stance !== 'fearful');
 
   console.log(`\n=== RESULTS: ${pass} pass, ${fail} fail ===`);
   process.exit(fail > 0 ? 1 : 0);
