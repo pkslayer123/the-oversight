@@ -8,6 +8,10 @@
 // Output (evidence stays OUT of the repo):
 //   ~/workspace/goals/the-scattering-roguelite-survival-game/hidden_files/fleshout-20261006/tele-<id>.{svg,png}
 //   .../fleshout-20261006/telegraph-captures-20261006.json
+// Also renders the WAVE 1 STYLE VOICES (Steve 2026-10-06): dozeLane, pepBurst,
+// swarmHum (+◎ on each declaring mouse), resonantBurst, flashBurst — the
+// burstStyle/chargeStyle routing in tbAllTelegraphCells. Pre-routing, those
+// buckets are empty and the monsters render their generic fallbacks.
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -63,6 +67,7 @@ const TARGETS = [
   { id: 'voice_mimic_radio', scenario: 'static', label: 'Voice Mimic (Static)' },
   { id: 'belltoad', scenario: 'choir', label: 'Belltoad (Choir Toad)' },
   { id: 'glasswing', scenario: 'glasswing', label: 'Glasswing Darter' },
+  { id: 'mirrormoth', scenario: 'flashbulb', label: 'Mirrormoth (Flashbulb)' },
 ];
 
 // RUSH patterns never declare a telegraph — by design ("gives no warning —
@@ -141,7 +146,7 @@ function snapTelegraph(t) {
   try { source = Game.tbBeamSourceCell ? Game.tbBeamSourceCell() : null; } catch (e) {}
   try { const h = Game.tbBeamHaloCells ? Game.tbBeamHaloCells() : null; halo = h ? [...h] : null; } catch (e) {}
   const bsum = {};
-  for (const k of ['burst', 'charge', 'encircle', 'biHot', 'sbLock', 'line', 'single', 'direct', 'rush', 'beam'])
+  for (const k of ['burst', 'charge', 'encircle', 'biHot', 'sbLock', 'line', 'single', 'direct', 'dozeLane', 'pepBurst', 'swarmHum', 'resonantBurst', 'flashBurst', 'beam'])
     bsum[k] = buckets[k] ? buckets[k].size : 0;
   bsum.beamCells = lane ? lane.length : 0;
   // WING/BASK overlays (not buckets): sunbasker heat halo + glasswing dive shadow
@@ -188,11 +193,11 @@ function drawMonsterSnap(snap) {
   const clines = wrapText('cue: ' + cue, 44);
   clines.forEach((l, i) => { svg += `<text x="15" y="${60 + i * 16}" fill="#ffd88a" font-size="11" font-family="monospace">${escXml(l)}</text>`; });
   if (snap.noTelegraphByDesign) {
-    svg += `<text x="15" y="${60 + clines.length * 16 + 16}" fill="#ff8a80" font-size="11" font-family="monospace">NO TELEGRAPH BY DESIGN — rush: it just moves and hits (bucket "rush" unreachable)</text>`;
+    svg += `<text x="15" y="${60 + clines.length * 16 + 16}" fill="#ff8a80" font-size="11" font-family="monospace">NO TELEGRAPH BY DESIGN — rush: it just moves and hits</text>`;
   }
   const bparts = [];
-  for (const k of ['burst', 'charge', 'encircle', 'biHot', 'sbLock', 'line', 'single', 'direct', 'rush']) if (snap.buckets[k]) bparts.push(`${k}×${snap.buckets[k]}`);
-  if (snap.buckets.beamCells) bparts.push(`telegraphCells×${snap.buckets.beamCells}`); // tbBeamLaneCells = ALL telegraph cells, not just beams
+  for (const k of ['burst', 'charge', 'encircle', 'biHot', 'sbLock', 'line', 'single', 'direct', 'dozeLane', 'pepBurst', 'swarmHum', 'resonantBurst', 'flashBurst']) if (snap.buckets[k]) bparts.push(`${k}×${snap.buckets[k]}`);
+  if (snap.buckets.beamCells) bparts.push(`telegraphCells×${snap.buckets.beamCells}`); // tbBeamLaneCells — pre-fix this was ALL telegraph cells, not just beams
   if (snap.w2a.length) bparts.push('w2a:' + snap.w2a.join(','));
   if (snap.gwTrap) bparts.push(`gwTrap@${snap.gwTrap.tile ? snap.gwTrap.tile.x + ',' + snap.gwTrap.tile.y : '?'} t${snap.gwTrap.turns}`);
   if (snap.gwDive) bparts.push(`gwDive:${snap.gwDive.phase}${snap.gwDive.tile ? `@${snap.gwDive.tile.x},${snap.gwDive.tile.y}` : ''}${snap.gwDive.turnsLeft !== undefined ? ` tl${snap.gwDive.turnsLeft}` : ''}`);
@@ -206,7 +211,8 @@ function drawMonsterSnap(snap) {
   for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
     const px = ox + cx * CELL, py = oy + cy * CELL;
     const k = cx + ',' + cy;
-    let fill = '#2a2a3e', stroke = '#444', sw = 1, dash = null, arrow = null, hatch = false;
+    let fill = '#2a2a3e', stroke = '#444', sw = 1, dash = null, arrow = null, arrowColor = '#ffb020', hatch = false;
+    let dozeHatch = false, pepRings = false, swarmDots = false, resRings = false, pepNote = false;
     const has = (set) => set && set.has(k);
     const B = {};
     // beam lane (from game.js producers, like app.js)
@@ -221,7 +227,12 @@ function drawMonsterSnap(snap) {
     if (has(bucketsOf(snap, 'line'))) { fill = 'rgba(231,29,54,.22)'; stroke = '#e71d36'; sw = 2; }
     if (has(bucketsOf(snap, 'single'))) { fill = 'rgba(255,59,48,.30)'; stroke = '#ff3b30'; sw = 3; }
     if (has(bucketsOf(snap, 'direct'))) { fill = 'rgba(157,78,221,.20)'; stroke = '#9d4edd'; sw = 2; }
-    if (has(bucketsOf(snap, 'rush'))) { fill = 'rgba(6,255,165,.18)'; stroke = '#06ffa5'; sw = 2; }
+    // WAVE 1 STYLE VOICES (Steve 2026-10-06): mirrors the main.css classes.
+    if (has(bucketsOf(snap, 'dozeLane'))) { fill = 'rgba(150,100,50,.38)'; stroke = '#8a5a2b'; sw = 2; dozeHatch = true; arrow = snap.dozeAngle || 0; arrowColor = '#c98a3d'; }
+    if (has(bucketsOf(snap, 'pepBurst'))) { fill = 'rgba(255,45,149,.25)'; stroke = '#ff2d95'; sw = 2; pepRings = true; pepNote = true; }
+    if (has(bucketsOf(snap, 'swarmHum'))) { fill = 'rgba(140,140,160,.28)'; stroke = '#d8d8e4'; sw = 2; dash = '2,2'; swarmDots = true; }
+    if (has(bucketsOf(snap, 'resonantBurst'))) { fill = 'rgba(57,211,83,.22)'; stroke = '#39d353'; sw = 2; resRings = true; }
+    if (has(bucketsOf(snap, 'flashBurst'))) { fill = 'rgba(232,244,255,.35)'; stroke = '#e8f4ff'; sw = 2; }
     const w2a = (snap._mon || {})[k];
     if (w2a === 'mirror_stag') { fill = 'rgba(191,233,255,.30)'; stroke = '#bfe9ff'; sw = 2; }
     if (w2a === 'review_drone') { fill = 'rgba(77,243,255,.16)'; stroke = '#4df3ff'; sw = 2; dash = '4,3'; }
@@ -262,7 +273,42 @@ function drawMonsterSnap(snap) {
       svg += `<line x1="${px}" y1="${py + CELL / 2}" x2="${px + CELL / 2}" y2="${py}" stroke="${stroke}" stroke-width="2" opacity="0.5"/>`;
     }
     if (arrow !== null) {
-      svg += `<text x="${px + CELL / 2}" y="${py + CELL / 2 + 6}" text-anchor="middle" font-size="16" fill="#ffb020" transform="rotate(${arrow} ${px + CELL / 2} ${py + CELL / 2})">➤</text>`;
+      svg += `<text x="${px + CELL / 2}" y="${py + CELL / 2 + 6}" text-anchor="middle" font-size="16" fill="${arrowColor}" transform="rotate(${arrow} ${px + CELL / 2} ${py + CELL / 2})">➤</text>`;
+    }
+    if (dozeHatch) {
+      // wide brown chevrons — the dust wall, not the deer's tight yellow hatch
+      svg += `<line x1="${px}" y1="${py + CELL}" x2="${px + CELL}" y2="${py}" stroke="#8a5a2b" stroke-width="3" opacity="0.55"/>`;
+      svg += `<line x1="${px + CELL / 2}" y1="${py + CELL}" x2="${px + CELL}" y2="${py + CELL / 2}" stroke="#8a5a2b" stroke-width="3" opacity="0.55"/>`;
+      svg += `<line x1="${px}" y1="${py + CELL / 2}" x2="${px + CELL / 2}" y2="${py}" stroke="#8a5a2b" stroke-width="3" opacity="0.55"/>`;
+    }
+    if (pepRings) {
+      // concentric sound rings + ♪ — the pep-burst's voice made visible
+      const cxp = px + CELL / 2, cyp = py + CELL / 2;
+      svg += `<circle cx="${cxp}" cy="${cyp}" r="6" fill="none" stroke="#ff2d95" stroke-width="1.6" opacity="0.8"/>`;
+      svg += `<circle cx="${cxp}" cy="${cyp}" r="12" fill="none" stroke="#ff2d95" stroke-width="1.2" opacity="0.55"/>`;
+      svg += `<circle cx="${cxp}" cy="${cyp}" r="18" fill="none" stroke="#ff2d95" stroke-width="1" opacity="0.35"/>`;
+    }
+    if (pepNote) {
+      svg += `<text x="${px + CELL / 2}" y="${py + CELL / 2 + 5}" text-anchor="middle" font-size="13" fill="#ff8cc8">♪</text>`;
+    }
+    if (swarmDots) {
+      // dotted "many small bodies" texture
+      for (let dy = 5; dy < CELL; dy += 9) for (let dx = 5; dx < CELL; dx += 9) {
+        svg += `<circle cx="${px + dx}" cy="${py + dy}" r="1.6" fill="rgba(240,240,250,.6)"/>`;
+      }
+    }
+    if ((snap._swarmSrc || []).some(s => s.x === cx && s.y === cy)) {
+      // ◎ hum ring on each declaring mouse — the hum's throats
+      const cxp = px + CELL / 2, cyp = py + CELL / 2;
+      svg += `<circle cx="${cxp}" cy="${cyp}" r="10" fill="none" stroke="#e8e8f2" stroke-width="2" opacity="0.9"/>`;
+      svg += `<circle cx="${cxp}" cy="${cyp}" r="15" fill="none" stroke="#e8e8f2" stroke-width="1.2" opacity="0.45"/>`;
+      svg += `<text x="${cxp}" y="${cyp + 5}" text-anchor="middle" font-size="13" fill="#e8e8f2">◎</text>`;
+    }
+    if (resRings) {
+      // green concentric croak rings — the throat-pulse
+      const cxp = px + CELL / 2, cyp = py + CELL / 2;
+      svg += `<circle cx="${cxp}" cy="${cyp}" r="6" fill="none" stroke="#39d353" stroke-width="1.8" opacity="0.85"/>`;
+      svg += `<circle cx="${cxp}" cy="${cyp}" r="13" fill="none" stroke="#39d353" stroke-width="1.2" opacity="0.5"/>`;
     }
     if (diveMarker) {
       svg += `<text x="${px + CELL / 2}" y="${py + CELL / 2 + 6}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.9)">▼</text>`;
@@ -277,8 +323,10 @@ function drawMonsterSnap(snap) {
   const legend = [
     ['#ff6b35', 'burstRadius'], ['#ffd23f', 'chargeLane'], ['#ffb020', 'encircle'],
     ['#fff', 'biHot'], ['#e71d36', 'line'], ['#ff3b30', 'targetTile'],
-    ['#9d4edd', 'lockOn'], ['#06ffa5', 'rush'], ['#bfe9ff', 'w2aStag'],
+    ['#9d4edd', 'lockOn'], ['#bfe9ff', 'w2aStag'],
     ['#4df3ff', 'w2aDrone'], ['#b388ff', 'w2aStatic'], ['#ffd34d', 'sbLock'],
+    ['#8a5a2b', 'dozeLane'], ['#ff2d95', 'pepBurst'], ['#d8d8e4', 'swarmHum'],
+    ['#39d353', 'resonantBurst'], ['#e8f4ff', 'flashBurst'],
   ];
   let lx = 15;
   svg += `<text x="15" y="${ly}" fill="#888" font-size="10" font-family="monospace">legend:</text>`;
@@ -367,10 +415,12 @@ function toPng(svgPath, pngPath, height) {
     let buckets = {};
     try { buckets = tbAllTelegraphCells(); } catch (e) {}
     snap._bucketCells = {};
-    for (const k of ['burst', 'charge', 'encircle', 'biHot', 'sbLock', 'line', 'single', 'direct', 'rush', 'beam'])
+    for (const k of ['burst', 'charge', 'encircle', 'biHot', 'sbLock', 'line', 'single', 'direct', 'dozeLane', 'pepBurst', 'swarmHum', 'resonantBurst', 'flashBurst', 'beam'])
       snap._bucketCells[k] = buckets[k] ? [...buckets[k]] : [];
     snap._mon = buckets.mon ? { ...buckets.mon } : {};
     snap.encircleAngle = buckets.encircleAngle;
+    snap.dozeAngle = buckets.dozeAngle;
+    snap._swarmSrc = buckets.swarmSrc ? [...buckets.swarmSrc] : [];
     try { const l = Game.tbBeamLaneCells ? Game.tbBeamLaneCells() : null; snap._lane = new Set(l ? [...l] : []); } catch (e) { snap._lane = new Set(); }
     try { const g = Game.tbBeamPrevLaneCells ? Game.tbBeamPrevLaneCells() : null; snap._ghost = new Set(g ? [...g] : []); } catch (e) { snap._ghost = new Set(); }
     try { const c = Game.beastCircleKeys ? Game.beastCircleKeys() : null; snap._circle = new Set(c ? [...c] : []); } catch (e) { snap._circle = new Set(); }
