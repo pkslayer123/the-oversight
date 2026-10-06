@@ -16,11 +16,13 @@
         18,
         26
       ],
-      "telegraph": "Lowers its head, paws the earth. It is not going around the tree. It has never gone around anything.",
+      "telegraph": "Lowers its head, paws the earth. Dust rises. It is not going around the tree. It has never gone around anything.",
       "pattern": {
         "type": "charge",
         "length": 5,
-        "width": 1
+        "width": 1,
+        "chargeStyle": "bulldozer",
+        "chargeDesc": "Straight-line demolition. Tramples through obstacles, never turns."
       },
       "damageType": "physical"
     },
@@ -96,7 +98,8 @@
       "aggroAudio": "boarSnort",
       "resolveAudio": "boarCharge",
       "knownTactics": "Sidestep the lane \u2014 never try to outrun it. It never goes around.",
-      "comment": "Bulldozer: root->paw->charge. Charge line LOCKED at declare (commitCharge), shreds everything but real walls (bulldoze). Missed charge -> winded (soft flanks: +50% damage taken, 2 turns) + trample next turn."
+      "comment": "Bulldozer: root->paw->charge. Charge line LOCKED at declare (commitCharge), shreds everything but real walls (bulldoze). Missed charge -> winded (soft flanks: +50% damage taken, 2 turns) + trample next turn.",
+      "knownCue": "It never turns. When it lowers its head, it's committed \u2014 sidestep, don't backpedal."
     },
     "loot": {
       "chance": 0.1,
@@ -198,7 +201,8 @@
       "noticeAudio": "wolfSilence",
       "aggroAudio": "wolfSnarl",
       "knownTactics": "Wound the lead and the pack breaks. They fear fire \u2014 they remember being dogs.",
-      "comment": "Pack hunter: birds go quiet at combat start; first-spawned is the lead. Wounding the lead below half breaks coordination (pack hesitates, stops focusing); killing the lead usually routs the rest."
+      "comment": "Pack hunter: birds go quiet at combat start; first-spawned is the lead. Wounding the lead below half breaks coordination (pack hesitates, stops focusing); killing the lead usually routs the rest.",
+      "knownCue": "They go quiet before the rush. If the birds stop, they're already moving."
     },
     "loot": {
       "chance": 0.1,
@@ -299,7 +303,8 @@
       "adjacencyOverride": 1,
       "relentless": true,
       "shortName": "deer",
-      "comment": "Encounter framework client: FIFO threat queue, turn phases, codex-gated telegraph. Highbeam-specific: sweep budget, anchored ray, recharge paw, deer audio."
+      "comment": "Encounter framework client: FIFO threat queue, turn phases, codex-gated telegraph. Highbeam-specific: sweep budget, anchored ray, recharge paw, deer audio.",
+      "knownCue": "The freeze is the tell. When it goes still, the beam is coming \u2014 MOVE, don't stare."
     },
     "loot": {
       "chance": 0.22,
@@ -331,7 +336,9 @@
       "telegraph": "It lands. It folds its wings. The light in the clearing changes, like someone adjusting a lamp.",
       "pattern": {
         "type": "burst",
-        "radius": 2
+        "radius": 2,
+        "burstStyle": "flash",
+        "burstDesc": "Blinding flash. Closes your eyes \u2014 you fight blind for a turn."
       },
       "damageType": "psychic"
     },
@@ -431,7 +438,9 @@
       "telegraph": "Its throat swells. The air goes thick. Every frog for a mile answers at once.",
       "pattern": {
         "type": "burst",
-        "radius": 2
+        "radius": 2,
+        "burstStyle": "resonant",
+        "burstDesc": "Sound wave. The croak harmonizes with itself, building \u2014 cover your ears or get out."
       },
       "damageType": "sonic"
     },
@@ -701,7 +710,8 @@
       "aggroAudio": "heronUnfold",
       "resolveAudio": "heronStrike",
       "knownTactics": "When it unfolds, sidestep \u2014 it commits to the line and can't correct. Watch the water, not the bird.",
-      "comment": "Statue predator: never advances (statue); strikes when a foe is within 4. Ranged attacks at a still heron often hit empty air. After a strike it may reposition unseen."
+      "comment": "Statue predator: never advances (statue); strikes when a foe is within 4. Ranged attacks at a still heron often hit empty air. After a strike it may reposition unseen.",
+      "knownCue": "It strikes where you were, not where you are. Keep moving after it unfolds."
     },
     "loot": {
       "chance": 0.1,
@@ -734,7 +744,9 @@
       "telegraph": "A low hum rises from the grass. It harmonizes with itself. Your teeth ache.",
       "pattern": {
         "type": "burst",
-        "radius": 2
+        "radius": 2,
+        "burstStyle": "swarm",
+        "burstDesc": "The hum stacks. Each mouse adds to it. Kill mice to reduce the hum, or SHOUT to break it."
       },
       "damageType": "sonic"
     },
@@ -903,7 +915,8 @@
       "quiet": true,
       "resolveAudio": "turtleSnap",
       "knownTactics": "Don't step next to it. It can't chase \u2014 just walk around. When it seals up, wait it out.",
-      "comment": "A rock with opinions: never moves, snaps anything adjacent with no warning. Below half HP it bunkers (2 turns, ~invulnerable). The queue stays silent \u2014 it's a rock."
+      "comment": "A rock with opinions: never moves, snaps anything adjacent with no warning. Below half HP it bunkers (2 turns, ~invulnerable). The queue stays silent \u2014 it's a rock.",
+      "knownCue": "It's slow but the snap is fast. Don't stand in front of it."
     },
     "loot": {
       "chance": 0.1,
@@ -1098,7 +1111,8 @@
         "approach": " \ud83d\udcfb CLOSING IN",
         "reveal": " \ud83d\udcfb REVEALED"
       },
-      "comment": "Encounter framework client. THE LURE: call (holds its ground, cries in a voice you know \u2014 walking toward it feeds the lure and it creeps to meet you) \u2192 approach (voice sharpens, commits) \u2192 reveal (resist 2 turns: the act breaks, honest fight, exposed, takes hits badly). Distress Call is direct/range 3, undodgeable once declared."
+      "comment": "Encounter framework client. THE LURE: call (holds its ground, cries in a voice you know \u2014 walking toward it feeds the lure and it creeps to meet you) \u2192 approach (voice sharpens, commits) \u2192 reveal (resist 2 turns: the act breaks, honest fight, exposed, takes hits badly). Distress Call is direct/range 3, undodgeable once declared.",
+      "knownCue": "The voice is bait. It wants you to come closer \u2014 don't."
     },
     "loot": {
       "chance": 0.15,
@@ -1129,12 +1143,14 @@
         20,
         30
       ],
-      "telegraph": "It turns its face toward you. The face is a mirror. You see yourself \u2014 tired, dirty, scared. It holds the reflection for one breath. Then it lowers its head and the mirror becomes a weapon.",
+      "telegraph": "It turns its face toward you. The face is a mirror. You see yourself \u2014 tired, dirty, afraid. It starts walking. Not running. Walking. That's worse.",
       "pattern": {
         "type": "charge",
         "length": 6,
         "width": 1,
-        "windup": 2
+        "windup": 2,
+        "chargeStyle": "mirror",
+        "chargeDesc": "Psychological charge. The mirror face locks you in \u2014 if you meet its gaze, you freeze."
       },
       "damageType": "psychic"
     },
@@ -1207,7 +1223,8 @@
       "aggroAudio": "stagSnort",
       "resolveAudio": "stagCharge",
       "knownTactics": "Break line of sight during the mirror beat and the charge dies unspent. Or sidestep \u2014 it can't turn mid-charge.",
-      "comment": "Grief Counselor: mirror->confront->charge. Shows you your face first (it wants you to SEE it coming). 6-tile charge locked at declare; shreds cover; never goes around. Break LOS and it loses you."
+      "comment": "Grief Counselor: mirror->confront->charge. Shows you your face first (it wants you to SEE it coming). 6-tile charge locked at declare; shreds cover; never goes around. Break LOS and it loses you.",
+      "knownCue": "Don't look at the reflection. Look at its feet \u2014 they tell you where it's going."
     },
     "loot": {
       "chance": 0.15,
@@ -1307,7 +1324,8 @@
       "noticeText": "The drone's lens swivels to {who}. \"SUBJECT ADDED TO EVALUATION QUEUE.\" You're all being graded now.",
       "painText": "It wobbles \u2014 then the lens LOCKS onto {who}. \"PAIN RESPONSE LOGGED. PRIORITY ESCALATED.\" Pain gets graded first.",
       "proximityText": "\"PROXIMITY VIOLATION.\" The projector snaps to {who} \u2014 closeness overrules the queue.",
-      "comment": "Encounter framework client: FIFO evaluation queue, announced 3-count beam (the line is projected on the dirt \u2014 believe it), dodge-efficiency grading, crowd overload. The counterplay is moving off the line."
+      "comment": "Encounter framework client: FIFO evaluation queue, announced 3-count beam (the line is projected on the dirt \u2014 believe it), dodge-efficiency grading, crowd overload. The counterplay is moving off the line.",
+      "knownCue": "It scores your dodges. Unpredictable movement breaks its lock."
     },
     "loot": {
       "chance": 0.15,
@@ -1341,7 +1359,9 @@
       "pattern": {
         "type": "burst",
         "radius": 2,
-        "windup": 2
+        "windup": 2,
+        "burstStyle": "flashmob",
+        "burstDesc": "Cameras surround you. The flashes come from all sides \u2014 no single direction to dodge."
       },
       "damageType": "physical"
     },
@@ -1406,7 +1426,8 @@
       "noticeText": "A dozen lenses swing to {who}. \"NEW ANGLE! NEW CONTENT!\" You're all being filmed now.",
       "painText": "Cameras smash \u2014 the rest whirl toward {who}. \"OH, THAT'S GOING VIRAL.\" Pain is content.",
       "proximityText": "Too close \u2014 the swarm pours toward {who}. Proximity is engagement.",
-      "comment": "Encounter framework client: FIFO content queue, chases the PLAYER (its muse), creeps while the flash builds, fragile (+25% damage), fire scatters it, dodged flashes escalate. Lead it into hazards."
+      "comment": "Encounter framework client: FIFO content queue, chases the PLAYER (its muse), creeps while the flash builds, fragile (+25% damage), fire scatters it, dodged flashes escalate. Lead it into hazards.",
+      "knownCue": "They want you centered in frame. Break line of sight."
     },
     "loot": {
       "chance": 0.15,
@@ -1438,7 +1459,9 @@
       "pattern": {
         "type": "burst",
         "radius": 3,
-        "windup": 3
+        "windup": 3,
+        "burstStyle": "pep",
+        "burstDesc": "Sonic encouragement. The louder it gets, the more it hurts. Silence it or flee."
       },
       "damageType": "sonic"
     },
@@ -1503,7 +1526,8 @@
       "noticeText": "\"HELLO, CHAMPION!\" It has noticed {who} too. It is SO EXCITED. You're all getting pep talks now.",
       "painText": "It winces mid-sentence \u2014 then rounds on {who}. \"PAIN IS JUST WEAKNESS LEAVING THE BODY!\"",
       "proximityText": "Too close. It whirls on {who}: \"I BELIEVE IN YOU!\" \u2014 proximity overrules the pep-talk queue.",
-      "comment": "Encounter framework client: FIFO encouragement queue, big slow burst (radius 3, windup 3 \u2014 get clear), deflates in a crowd. The encouragement is about to become physical."
+      "comment": "Encounter framework client: FIFO encouragement queue, big slow burst (radius 3, windup 3 \u2014 get clear), deflates in a crowd. The encouragement is about to become physical.",
+      "knownCue": "The pep talk is a weapon. Cover your ears or get out of range."
     },
     "loot": {
       "chance": 0.15,
@@ -1598,7 +1622,8 @@
         "dialing": " \ud83d\udcde DIALING",
         "hold": " \ud83d\udcde ON HOLD"
       },
-      "comment": "Encounter framework client. THE WATCH: watching (2-3 turns of escalating politeness, no attack \u2014 your window: leave, or get fire near you) \u2192 dialing (ONE rush, no telegraph) \u2192 hold (resets, doesn't chase). Fire within 3 of the player suppresses the rush."
+      "comment": "Encounter framework client. THE WATCH: watching (2-3 turns of escalating politeness, no attack \u2014 your window: leave, or get fire near you) \u2192 dialing (ONE rush, no telegraph) \u2192 hold (resets, doesn't chase). Fire within 3 of the player suppresses the rush.",
+      "knownCue": "It's stalling. The 'hold' is the attack \u2014 interrupt it."
     },
     "loot": {
       "chance": 0.18,
@@ -1694,7 +1719,8 @@
         "clause": " \ud83d\udcdc CLAUSE",
         "bound": " \ud83d\udcdc BOUND"
       },
-      "comment": "Encounter framework client. THE FINE PRINT: speed 1 \u2014 just walk away. unfold (spreads, 1 tile/turn) \u2192 clause (1st consecutive turn in range 3: the text tightens) \u2192 bound (2nd consecutive turn: Binding Agreement declared, direct/range 3, undodgeable). Leaving resets the clause. Never flees. Torch \u00d73 (it's paper)."
+      "comment": "Encounter framework client. THE FINE PRINT: speed 1 \u2014 just walk away. unfold (spreads, 1 tile/turn) \u2192 clause (1st consecutive turn in range 3: the text tightens) \u2192 bound (2nd consecutive turn: Binding Agreement declared, direct/range 3, undodgeable). Leaving resets the clause. Never flees. Torch \u00d73 (it's paper).",
+      "knownCue": "Read the fine print \u2014 it telegraphs where the binding lands. And bring fire."
     },
     "loot": {
       "chance": 0.22,
@@ -1724,11 +1750,13 @@
         18,
         28
       ],
-      "telegraph": "It paces a wide circle around you, dictating into nothing: 'Per my last roar... circling back on the violence action item... let's take this OFFLINE.' It lowers its horns. The meeting has been scheduled. Attendance is mandatory.",
+      "telegraph": "It paces a wide circle around you, dictating into nothing: \"Per my last roar...\" The circle tightens. It's not asking. It's telling.",
       "pattern": {
         "type": "charge",
         "length": 4,
-        "width": 2
+        "width": 2,
+        "chargeStyle": "circle",
+        "chargeDesc": "Circles wide, then charges from the flank. The telegraph is the circling \u2014 the charge comes from where you aren't looking."
       },
       "damageType": "physical"
     },
@@ -1792,7 +1820,8 @@
       "noticeText": "It adds {who} to the meeting invite. \"LOOPING IN \u2014 attendance mandatory.\" You're all on the agenda now.",
       "painText": "It snorts \u2014 then squares on {who}. \"PER MY LAST ROAR: pain gets prioritized.\"",
       "proximityText": "Too close. It pivots to {who}: \"LET'S TAKE THIS OFFLINE.\" Proximity overrules the agenda.",
-      "comment": "Encounter framework client: FIFO meeting agenda, always circles first (announcing the charge), wide locked line (width 2 \u2014 sidestep far), post-charge debrief. The line it announces is the line it charges."
+      "comment": "Encounter framework client: FIFO meeting agenda, always circles first (announcing the charge), wide locked line (width 2 \u2014 sidestep far), post-charge debrief. The line it announces is the line it charges.",
+      "knownCue": "It circles to cut off escape. Keep your back to open ground."
     },
     "loot": {
       "chance": 0.25,
@@ -1824,7 +1853,9 @@
       "pattern": {
         "type": "burst",
         "radius": 2,
-        "windup": 2
+        "windup": 2,
+        "burstStyle": "detonation",
+        "burstDesc": "It glows brighter and brighter. When it flares white, it detonates. RUN."
       },
       "damageType": "psychic"
     },
@@ -1890,7 +1921,8 @@
         "bloom": " \ud83d\udca1 EUREKA",
         "ember": " \ud83d\udca1 EMBER"
       },
-      "comment": "Encounter framework client. THE BRIGHTENING: settle (drifts until a foe is within 4, then SETS \u2014 never moves once set) \u2192 brighten (2 beats, escalating, holds position) \u2192 bloom (burst radius 2, 22-34) \u2192 ember (2 turns spent, harmless). Daylight disperses it."
+      "comment": "Encounter framework client. THE BRIGHTENING: settle (drifts until a foe is within 4, then SETS \u2014 never moves once set) \u2192 brighten (2 beats, escalating, holds position) \u2192 bloom (burst radius 2, 22-34) \u2192 ember (2 turns spent, harmless). Daylight disperses it.",
+      "knownCue": "It glows brighter before detonation. When it flares, RUN."
     },
     "loot": {
       "chance": 0.15,
@@ -1988,7 +2020,8 @@
         "spell": " \ud83d\udcfc SPELLBOUND",
         "static": " \ud83d\udcfc STATIC"
       },
-      "comment": "Encounter framework client. THE SPELL: watch (2 turns, curious \u2014 leave now) \u2192 spell (Home Movies declared: beam length 5, windup 2, aim locked; the light PULLS a still target 1 tile/turn toward it; moving 2+ tiles breaks the spell) \u2192 static (1 turn, confused). It fears movement."
+      "comment": "Encounter framework client. THE SPELL: watch (2 turns, curious \u2014 leave now) \u2192 spell (Home Movies declared: beam length 5, windup 2, aim locked; the light PULLS a still target 1 tile/turn toward it; moving 2+ tiles breaks the spell) \u2192 static (1 turn, confused). It fears movement.",
+      "knownCue": "The picture holds you still. Keep moving and it can't lock on."
     },
     "loot": {
       "chance": 0.15,
@@ -2046,7 +2079,10 @@
       "damageType": "physical"
     },
     "armor": 1,
-    "resistances": {}
+    "resistances": {},
+    "encounter": {
+      "knownCue": "They're organized. Break the formation \u2014 isolate one."
+    }
   },
   {
     "id": "glasswing",
