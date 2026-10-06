@@ -88,6 +88,24 @@
 
   function show(html) { banner.innerHTML = html; banner.classList.remove('hidden'); }
 
+  var PENDING_HTML = '&#9203; New version isn&rsquo;t ready to download yet &mdash; <b>tap to check again</b>.';
+
+  // Steve 2026-10-06: version.json goes live on push, but GitHub Pages can
+  // lag minutes behind. The new build is only "available" when its files are
+  // actually downloadable — otherwise tap -> reload-old -> banner-again loops
+  // forever with a banner that never dismisses. Every script URL in the
+  // served index.html is cache-busted with the version tag, so the new tag's
+  // presence there proves the new build is live.
+  function assetsLive(remote) {
+    var url = 'index.html?t=' + Date.now().toString(36);
+    return fetch(url, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) return false;
+      return r.text();
+    }).then(function (text) {
+      return typeof text === 'string' && text.indexOf(remote) !== -1;
+    }).catch(function () { return false; });
+  }
+
   function check() {
     var local = window.BUILD_VERSION || '';
     var url = 'version.json?t=' + Date.now().toString(36);
@@ -96,14 +114,20 @@
       return r.json();
     }).then(function (j) {
       var remote = (j && j.version) || '';
-      if (isNewer(local, remote)) {
+      if (!isNewer(local, remote)) return false;
+      return assetsLive(remote).then(function (live) {
+        if (!live) {
+          // Not downloadable yet — stay silent (or keep the pending notice).
+          // The 15-min / foreground re-check is the auto-retry.
+          if (state !== 'pending') state = 'idle';
+          return false;
+        }
         remoteVersion = remote;
         state = 'available';
         failCount = 0;
         show('&#11015; A new version is ready &mdash; <b>tap to update</b>');
         return true;
-      }
-      return false;
+      });
     }).catch(function () { return false; }); // offline: stay silent
   }
 
@@ -166,14 +190,25 @@
 
   banner.addEventListener('click', function () {
     if (state === 'available' || state === 'failed') apply();
+    else if (state === 'pending') check(); // manual re-check: way out of the stuck state
   });
 
   // Clean the cache-buster param after an update navigation.
+  // Recovery (Steve 2026-10-06): if we navigated here FOR an update (?v=X)
+  // but we're still on the old build, the new files weren't downloadable
+  // yet. Say so plainly instead of showing a tappable banner that loops.
+  // Tapping the notice re-checks — the way out of the stuck state.
   try {
     var u0 = new URL(window.location.href);
+    var attempted = u0.searchParams.get('v');
     if (u0.searchParams.has('v') || u0.searchParams.has('fresh')) {
       u0.search = '';
       window.history.replaceState(null, '', u0.toString());
+    }
+    if (attempted && /^[0-9a-f]{7}-\d{8}-\d{6}$/.test(attempted) &&
+        attempted !== (window.BUILD_VERSION || '')) {
+      state = 'pending';
+      show(PENDING_HTML);
     }
   } catch (e) {}
 
