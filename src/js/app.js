@@ -43,7 +43,17 @@
       return svg ? `<span class="csprite">${svg}</span>` : '';
     } catch (e) { return ''; }
   }
-  function villagerSpriteHtml(vp) {
+  // MONSTER SPRITE HELPER (Steve 2026-10-06): get SVG for monster, fallback to emoji.
+  function monsterSpriteHtml(mid, aggro) {
+    try {
+      if (mid && S.Sprites && S.Sprites.monsterSprite) {
+        const svg = S.Sprites.monsterSprite(mid, aggro);
+        if (svg) return `<span class="msprite">${svg}</span>`;
+      }
+    } catch (e) {}
+    return '';
+  }
+    function villagerSpriteHtml(vp) {
     try {
       if (!vp || !S.Sprites || !S.Sprites.villagerSprite) return '';
       const svg = S.Sprites.villagerSprite(vp);
@@ -217,7 +227,8 @@
       // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
       // knowledge, just like the phase badge. First encounter: no warning
       // symbols — just beam visuals + audio dread.
-      return `${m.emoji || '👹'} ${esc(label)}${(m.telegraph && known) ? ' ⚠' : ''}${phase}`;
+      const _mspr1 = monsterSpriteHtml(m.id || m.monsterId, true);
+      return `${_mspr1 || (m.emoji || '👹')} ${esc(label)}${(m.telegraph && known) ? ' ⚠' : ''}${phase}`;
     }).join(' · ') || '⚔ COMBAT';
     const tg = mons.find(m => m.telegraph);
     // INFO LEAK FIX (Steve): the telegraph cue line is gated behind codex
@@ -11286,7 +11297,8 @@
       const maxHp = g.reduce((s, x) => s + (x.maxHp || 1), 0);
       const frac = Math.max(0, Math.min(1, hp / maxHp));
       const count = g.length > 1 ? ` ×${g.length}` : '';
-      return `${m.emoji} ${esc(name)}${count} <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>`;
+      const _mspr2 = monsterSpriteHtml(m.id || m.monsterId, true);
+      return `${_mspr2 || m.emoji} ${esc(name)}${count} <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>`;
     }).join(' · ');
     return `<div class="combat-enemies" style="font-size:12px;opacity:.85;margin:0 6px 4px">${enemyLine} <span style="opacity:.6">· ${p.moveLeft || 0} move · ${p.acted ? 0 : 1} act</span></div>` +
     `<div class="selfbar">
@@ -11331,7 +11343,8 @@
       const count = g.length > 1 ? ` ×${g.length}` : '';
       // INFO LEAK FIX (Steve): the ⚠ warning marker is gated behind codex
       // knowledge. First encounter: no warning symbols.
-      return `<span class="cs-mon">${m.emoji} <b>${esc(name)}</b>${count}` +
+      const _mspr3 = monsterSpriteHtml(m.id || m.monsterId, true);
+      return `<span class="cs-mon">${_mspr3 || m.emoji} <b>${esc(name)}</b>${count}` +
         `<span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>` +
         `${(g.some(x => x.telegraph) && known) ? ' ⚠' : ''}${badge}</span>`;
     }).join(' · ');
