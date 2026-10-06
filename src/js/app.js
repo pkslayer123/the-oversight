@@ -10716,21 +10716,11 @@
               el.dataset.village = otherV.id;
               return;
             }
-            // Second tap on a seen tile: travel there (if adjacent).
-            if (el.dataset.armed === '1') {
-              const dx = Math.abs(x - Game.map.px), dy = Math.abs(y - Game.map.py);
-              if (dx + dy === 1 && Game.travelTo) {
-                overlay.classList.add('hidden');
-                Game.travelTo(x, y);
-                refresh();
-                return;
-              }
-              el.dataset.armed = '';
-            }
+            // MAP IS FOR VIEWING (Steve 2026-10-06): no travel from the map.
+            // Travel happens by walking. The map shows where you've been.
             const how = seen === 'shared' ? ' <span class="dim">(shown to you by someone)</span>' : '';
             const glyph = (typeof S !== 'undefined' && S.TILE_GLYPH && tl) ? (S.TILE_GLYPH[tl.type] || '·') : '·';
-            mapInfoEl.innerHTML = `${glyph} <b>${esc(tl ? tl.type : 'unknown')}</b>${how} — tap again to travel.`;
-            el.dataset.armed = '1';
+            mapInfoEl.innerHTML = `${glyph} <b>${esc(tl ? tl.type : 'unknown')}</b>${how}.`;
           };
         });
       };
