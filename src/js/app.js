@@ -3468,6 +3468,23 @@
     if (dw) dw.innerHTML = dayTickBar(st);
     const sb = document.querySelector('.ord-status');
     if (sb) sb.innerHTML = statusBars(st);
+    // ACTIONS (Steve 2026-10-05): buttons must refresh EVERY step. The old
+    // code only updated them on "big" changes, so they'd disappear or appear
+    // late as the player moved. Contextual actions depend on position.
+    const actWrap = document.querySelector('.ord-actions');
+    if (actWrap) {
+      const inCombat = !!Game.tbfight;
+      actWrap.innerHTML = `
+        <div class="ord-self">${inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
+        <div class="ord-ctx">${inCombat ? '' : contextBarHTML()}</div>
+        <div class="ord-target">${targetBarHTML()}</div>
+        <div class="ord-danger">${dangerBarHTML()}</div>
+        <div class="ord-ability">${abilityBarHTML()}</div>`;
+      // Re-wire the new buttons (each bar has its own wirer)
+      try { wireSelfBar(); } catch (e) {}
+      try { wireContextBar(); } catch (e) {}
+      try { wireAbilityBar(); } catch (e) {}
+    }
   }
   MoveAnim.hooks.step = moveStepHook;
   MoveAnim.hooks.render = renderMoveGrid;
