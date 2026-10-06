@@ -2653,6 +2653,34 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(lp); lp.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + dur);
+          // (deepened Steve 2026-10-06): the bulb pops first — then the picture
+      // falls in glass sprinkles, and the hum dies down through a warble.
+      const pop = ctx.createOscillator(), popg = ctx.createGain();
+      pop.type = 'sine';
+      pop.frequency.setValueAtTime(2400, t);
+      pop.frequency.exponentialRampToValueAtTime(300, t + 0.1); // implosion
+      popg.gain.setValueAtTime(0.3, t);
+      popg.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      pop.connect(popg); popg.connect(sfxBus);
+      pop.start(t); pop.stop(t + 0.15);
+      for (let i = 0; i < 7; i++) { // glass sprinkles
+        const gdt = t + 0.1 + i * (0.05 + Math.random() * 0.05);
+        const go = ctx.createOscillator(), gg = ctx.createGain();
+        go.type = 'sine'; go.frequency.value = 4200 + Math.random() * 2600;
+        gg.gain.setValueAtTime(0.06, gdt);
+        gg.gain.exponentialRampToValueAtTime(0.0001, gdt + 0.05);
+        go.connect(gg); gg.connect(sfxBus); go.start(gdt); go.stop(gdt + 0.06);
+      }
+      const hum = ctx.createOscillator(), humg = ctx.createGain();
+      hum.type = 'sawtooth'; hum.frequency.value = 120;
+      const hwb = ctx.createOscillator(), hwbg = ctx.createGain();
+      hwb.type = 'sine'; hwb.frequency.value = 9; hwbg.gain.value = 40;
+      hwb.connect(hwbg); hwbg.connect(hum.frequency); // death warble
+      humg.gain.setValueAtTime(0.1, t + 0.1);
+      humg.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.4);
+      hum.connect(humg); humg.connect(sfxBus);
+      hum.start(t + 0.1); hwb.start(t + 0.1);
+      hum.stop(t + dur + 0.45); hwb.stop(t + dur + 0.45);
     }
     function projectorPull() {
       // THE SPELL PULLS: one warm insistent tug. You take a step closer
@@ -2667,6 +2695,26 @@
       g.gain.exponentialRampToValueAtTime(0.16, t + 0.25);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur);
+          // (deepened Steve 2026-10-06): the machine behind the pull — a film
+      // spool whirring up, sprockets clattering in irregular rhythm.
+      const sw = ctx.createOscillator(), swg = ctx.createGain();
+      sw.type = 'sawtooth';
+      sw.frequency.setValueAtTime(80, t);
+      sw.frequency.exponentialRampToValueAtTime(210, t + dur);
+      const swf = ctx.createBiquadFilter(); swf.type = 'bandpass'; swf.frequency.value = 500; swf.Q.value = 2;
+      swg.gain.setValueAtTime(0.0001, t);
+      swg.gain.exponentialRampToValueAtTime(0.07, t + 0.4);
+      swg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      sw.connect(swf); swf.connect(swg); swg.connect(sfxBus);
+      sw.start(t); sw.stop(t + dur);
+      for (let i = 0; i < 6; i++) { // sprocket clatter
+        const cdt = t + i * (0.09 + Math.random() * 0.05);
+        const co = ctx.createOscillator(), cg = ctx.createGain();
+        co.type = 'square'; co.frequency.value = 1700 + Math.random() * 500;
+        cg.gain.setValueAtTime(0.05, cdt);
+        cg.gain.exponentialRampToValueAtTime(0.0001, cdt + 0.03);
+        co.connect(cg); cg.connect(sfxBus); co.start(cdt); co.stop(cdt + 0.04);
+      }
     }
     function projectorFire() {
       // THE PICTURE LOCKS — then the edges cut. Projector whine swelling
@@ -3537,18 +3585,31 @@
       o.connect(f); f.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
     }
-    function holdMusic() {
+    function holdMusic(d) {
       // muzak from nowhere: tinny, looping, wrong. Two detuned triangles.
+      // (deepened Steve 2026-10-06): now hears { broken } (the tape warps —
+      // pitch wobbles, notes drop out) and { watching } (hushed, one voice
+      // leaning on a wrong fifth). These are the service_mimic's moods.
       if (!ensure()) return;
       const t = ctx.currentTime, dur = 1.6;
+      const broken = !!(d && d.broken), watching = !!(d && d.watching);
       const notes = [392, 440, 523, 440];
+      if (watching) notes[2] = 523 * 1.5 * 1.02; // a wrong fifth, slightly off
       notes.forEach((fr, i) => {
         const dt = t + i * 0.38;
+        if (broken && Math.random() < 0.3) return; // tape dropout
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.type = 'triangle';
         o.frequency.setValueAtTime(fr * 1.01, dt); // slightly sharp = wrong
+        if (broken) { // the tape warps mid-note: wobble + sag
+          const wb = ctx.createOscillator(), wbg = ctx.createGain();
+          wb.type = 'sine'; wb.frequency.value = 1.7; wbg.gain.value = fr * 0.045;
+          wb.connect(wbg); wbg.connect(o.frequency);
+          o.frequency.exponentialRampToValueAtTime(fr * 0.93, dt + 0.34);
+          wb.start(dt); wb.stop(dt + 0.4);
+        }
         g.gain.setValueAtTime(0.0001, dt);
-        g.gain.exponentialRampToValueAtTime(0.10, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(watching ? 0.05 : 0.10, dt + 0.05); // hushed when watching
         g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.36);
         // telephone bandpass: it comes through a headset
         const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1200; f.Q.value = 1.2;
@@ -4572,6 +4633,28 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(g); g.connect(sfxBus);
       o.start(t); lfo.start(t); o.stop(t + dur); lfo.stop(t + dur);
+          // (deepened Steve 2026-10-06): a second shimmer a semitone sharp — the
+      // flash doubles you — and an after-image gliss falling out of the world.
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.type = 'sine';
+      o2.frequency.setValueAtTime(3715, t); // +1 semitone, beating against the first
+      o2.frequency.exponentialRampToValueAtTime(5297, t + 0.15);
+      const lfo2 = ctx.createOscillator(), lg2 = ctx.createGain();
+      lfo2.type = 'sine'; lfo2.frequency.value = 37; lg2.gain.value = 0.08;
+      lfo2.connect(lg2); lg2.connect(g2.gain);
+      g2.gain.setValueAtTime(0.12, t);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o2.connect(g2); g2.connect(sfxBus);
+      o2.start(t); lfo2.start(t); o2.stop(t + dur); lfo2.stop(t + dur);
+      const a = ctx.createOscillator(), ag = ctx.createGain();
+      a.type = 'sine';
+      a.frequency.setValueAtTime(4800, t + 0.2);
+      a.frequency.exponentialRampToValueAtTime(900, t + 1.0); // the brightness falls away
+      ag.gain.setValueAtTime(0.0001, t + 0.2);
+      ag.gain.exponentialRampToValueAtTime(0.1, t + 0.35);
+      ag.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+      a.connect(ag); ag.connect(sfxBus);
+      a.start(t + 0.2); a.stop(t + 1.05);
     }
     function mothFlutter() {
       // WING FLUTTER: soft rapid papery beats — and the scale-dust: a high
@@ -4721,6 +4804,31 @@
       g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.25);
       o.connect(f); f.connect(g); g.connect(sfxBus);
       o.start(dt); o.stop(dt + 0.28);
+          // (deepened Steve 2026-10-06): the correction arrives over a channel —
+      // radio squelch gated by a stutter, and a servo whine inside the drone
+      // as it adjusts you. The beeps were the paperwork; this is the hand.
+      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 2200; nf.Q.value = 3;
+        const sq = ctx.createOscillator(), sqg = ctx.createGain(); // squelch gate
+        sq.type = 'square'; sq.frequency.value = 25;
+        sqg.gain.value = 0.09;
+        sq.connect(sqg); sqg.connect(ng.gain);
+        ng.gain.setValueAtTime(0.12, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.55); sq.start(t); sq.stop(t + 0.55);
+      }
+      const sv = ctx.createOscillator(), svg = ctx.createGain();
+      sv.type = 'sawtooth';
+      sv.frequency.setValueAtTime(190, t + 0.2);
+      sv.frequency.exponentialRampToValueAtTime(260, t + 0.75);
+      const svf = ctx.createBiquadFilter(); svf.type = 'bandpass'; svf.frequency.value = 700; svf.Q.value = 5;
+      svg.gain.setValueAtTime(0.0001, t + 0.2);
+      svg.gain.exponentialRampToValueAtTime(0.05, t + 0.45);
+      svg.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      sv.connect(svf); svf.connect(svg); svg.connect(sfxBus);
+      sv.start(t + 0.2); sv.stop(t + 0.85);
     }
     function swarmEscalate() {
       // ENGAGEMENT DROPPING: shutters accelerate — it's getting desperate.
@@ -4738,9 +4846,35 @@
         o.start(dt); o.stop(dt + 0.05);
         dt += Math.max(0.03, gap);
       }
+          // (deepened Steve 2026-10-06): the swarm's weight lands too — bass
+      // pulses accelerating under the pips, and a servo grinding to keep up.
+      let bdt = t;
+      for (let i = 0; i < 5; i++) {
+        const bo = ctx.createOscillator(), bg = ctx.createGain();
+        bo.type = 'sine';
+        bo.frequency.setValueAtTime(90 - i * 8, bdt);
+        bo.frequency.exponentialRampToValueAtTime(55, bdt + 0.12);
+        bg.gain.setValueAtTime(0.22, bdt);
+        bg.gain.exponentialRampToValueAtTime(0.0001, bdt + 0.14);
+        bo.connect(bg); bg.connect(sfxBus); bo.start(bdt); bo.stop(bdt + 0.16);
+        bdt += 0.16 - i * 0.02; // accelerating with the pips
+      }
+      const sv = ctx.createOscillator(), svg = ctx.createGain();
+      sv.type = 'square';
+      sv.frequency.setValueAtTime(180, t);
+      sv.frequency.exponentialRampToValueAtTime(320, t + 0.8);
+      const svf = ctx.createBiquadFilter(); svf.type = 'lowpass'; svf.frequency.value = 700;
+      svg.gain.setValueAtTime(0.0001, t);
+      svg.gain.exponentialRampToValueAtTime(0.07, t + 0.3);
+      svg.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+      sv.connect(svf); svf.connect(svg); svg.connect(sfxBus);
+      sv.start(t); sv.stop(t + 0.9);
     }
     function swarmScatter() {
       // SCATTERED: clicks fly apart — dopplering in all directions.
+      // (deepened Steve 2026-10-06): each click now pans across the field,
+      // and a dying whirr trails the scatter — the swarm's engine spinning
+      // down as it breaks.
       if (!ensure()) return;
       const t = ctx.currentTime;
       for (let i = 0; i < 8; i++) {
@@ -4751,23 +4885,57 @@
         o.frequency.exponentialRampToValueAtTime(4000, dt + 0.1); // fleeing upward
         g.gain.setValueAtTime(0.07, dt);
         g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
-        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.14);
+        o.connect(g);
+        if (ctx.createStereoPanner) { // each click flies its own direction
+          const p = ctx.createStereoPanner();
+          p.pan.setValueAtTime(Math.random() * 2 - 1, dt);
+          g.connect(p); p.connect(sfxBus);
+        } else g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.14);
       }
+      // the whirr winding down behind them
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sawtooth';
+      w.frequency.setValueAtTime(900, t);
+      w.frequency.exponentialRampToValueAtTime(140, t + 0.7);
+      const wf = ctx.createBiquadFilter(); wf.type = 'lowpass'; wf.frequency.value = 1200;
+      wg.gain.setValueAtTime(0.09, t);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
+      w.connect(wf); wf.connect(wg); wg.connect(sfxBus);
+      w.start(t); w.stop(t + 0.8);
     }
-    function swarmShutters() {
+    function swarmShutters(d) {
       // SHUTTERS: irregular tiny clicks — it's filming you.
+      // (deepened Steve 2026-10-06): the { urgency } the game passes is now
+      // heard — fewer turns left, faster and sharper the shutters. A film
+      // whir rides underneath, spooling up as the engagement collapses.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      for (let i = 0; i < 5; i++) {
-        const dt = t + i * (0.11 + Math.random() * 0.08); // irregular
+      const urg = Math.max(1, Math.min(6, (d && d.urgency) || 1));
+      const n = 3 + urg;                          // more clicks as it counts down
+      const base = 0.12 / Math.sqrt(urg);         // rhythm tightens
+      for (let i = 0; i < n; i++) {
+        const dt = t + i * (base + Math.random() * 0.06); // still irregular
         const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square'; o.frequency.value = 3400;
-        g.gain.setValueAtTime(0.09, dt);
+        o.type = 'square'; o.frequency.value = 3400 + urg * 200; // pitch climbs
+        g.gain.setValueAtTime(0.06 + urg * 0.008, dt);
         g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.03);
         const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000;
         o.connect(f); f.connect(g); g.connect(sfxBus);
         o.start(dt); o.stop(dt + 0.04);
       }
+      // film whir: a spool spinning up, faster and thinner with urgency
+      const wdur = base * n + 0.3;
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sawtooth';
+      w.frequency.setValueAtTime(140 + urg * 30, t);
+      w.frequency.exponentialRampToValueAtTime(340 + urg * 60, t + wdur);
+      const wf = ctx.createBiquadFilter(); wf.type = 'bandpass'; wf.frequency.value = 900; wf.Q.value = 2;
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(0.06, t + 0.15);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + wdur);
+      w.connect(wf); wf.connect(wg); wg.connect(sfxBus);
+      w.start(t); w.stop(t + wdur);
     }
     // ---- SYSTEM EVENTS ----
     function confront() {
@@ -6065,7 +6233,7 @@
       hypeEncourage(d) { hypeEncourage(d); },
       hypeDetonate() { hypeDetonate(); },
       hypeDeflate() { hypeDeflate(); },
-      holdMusic() { holdMusic(); },
+      holdMusic(d) { holdMusic(d); }, // (Steve 2026-10-06): broken/watching moods
       lineCut() { lineCut(); },
       paperRustle(d) { paperRustle(d); },
       baskCharge(d) { baskCharge(d); },
@@ -6115,7 +6283,7 @@
       droneCorrect() { droneCorrect(); },
       swarmEscalate() { swarmEscalate(); },
       swarmScatter() { swarmScatter(); },
-      swarmShutters() { swarmShutters(); },
+      swarmShutters(d) { swarmShutters(d); }, // (Steve 2026-10-06): urgency now heard
       // Middle Manager fires delegate* names; the synths are the manager* set
       delegateAnnounce() { managerAnnounce(); },
       delegateCharge() { managerCharge(); },
