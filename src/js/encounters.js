@@ -257,6 +257,8 @@
     var label = _origEncAnimalLabel.call(this, a);
     if (a && a.pstate === 'playing_dead') label += ' — limp and still';
     if (a && a.pstate === 'taunt') label += ' — watching you, just out of reach';
+    if (a && a.pstate === 'cornered') label += ' — cornered, eyes wild';
+    if (a && a.pstate === 'regroup') label += ' — regrouping, wings half-folded';
     return label;
   };
 
@@ -377,7 +379,8 @@
     var BADGE = {
       graze: 'grazing', wary: '⚠ wary', bolt: '💨 bolting', winded: '😮‍💨 winded',
       hiding: '🫥 hiding', playing_dead: '💀 playing dead', taunt: '👀 toying with you',
-      hunkered: '🛡 hunkered', pawing: '⚠ pawing ground', advancing: '🪿 advancing', charging: '💥 charging'
+      hunkered: '🛡 hunkered', pawing: '⚠ pawing ground', advancing: '🪿 advancing', charging: '💥 charging',
+      cornered: '😱 cornered', regroup: '🦃 regrouping'
     };
     return BADGE[p] || p;
   };
@@ -554,6 +557,7 @@
     var s = this.state.scholar;
     if (s.week1) s.week1.hunt++;
     try { if (this.gainAbilityXP) this.gainAbilityXP('tracker', 1); } catch (e) {}
+    try { this.encHuntPracticed('strike'); } catch (e) {} // striking the "dead" opossum is still practice
     s.kcal = Math.max(0, s.kcal - 100);
     try { if (this.noteToolUse) this.noteToolUse(); } catch (e) {}
     if (Math.random() < 0.25) {
@@ -654,6 +658,18 @@
     var dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
     var detail = this.genDetail(this.map.px, this.map.py);
     var BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
+    // NOISE TRACKING (Steve 2026-10-06): the woods key on sound. How loud
+    // was the player's last beat? Stalk steps are crouch-quiet (the stalked
+    // flag is consumed below); standing still is quieter than walking;
+    // moving 2+ tiles in one beat is RUNNING — it announces you. Real
+    // anchor: a deer hears a running human at ~40m, a walking one at ~15m,
+    // a still one at ~5m. BALANCING 5-question: (1) anchor = real deer
+    // hearing; (2) too-loud = unhuntable, too-quiet = free meat — the
+    // multipliers below sit between the existing stalk 0.35 and parity;
+    // (3-5) feel-verified in scripts/test-encounters-prey-20261006.js.
+    var pSteps = (a.lastPX == null) ? 1 : Math.max(Math.abs(px - a.lastPX), Math.abs(py - a.lastPY));
+    a.lastPX = px; a.lastPY = py;
+    var ranLoud = pSteps >= 2;
     function tryMove(nx, ny) {
       nx = Math.max(0, Math.min(8, nx)); ny = Math.max(0, Math.min(8, ny));
       var cell = detail[ny] && detail[ny][nx];
@@ -1008,8 +1024,10 @@
         return;
       }
     }
-    if (beh === 'wary' && a.aware >= 0.7 && a.pstate !== 'bolt' && a.pstate !== 'winded') {
+    if (beh === 'wary' && a.aware >= 0.7 && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'cornered' && a.pstate !== 'regroup') {
       // DEER: the white tail goes up early. Explodes into motion.
+      // (cornered/regroup excluded: a trapped or regrouping deer doesn't
+      // re-bolt — the panic branch and the regroup rhythm own those turns.)
       a.pstate = 'bolt'; a.aware = 1;
       this.say(this.encCap(label) + ' — white tail up — explodes into motion!');
       try { this.audioEvent('animalSnort'); } catch (e) {}
@@ -1063,7 +1081,11 @@
     }
     // SKUNK SPRAY (Steve 2026-10-06): you smell. Everything with a nose
     // notices you sooner — animals and monsters alike.
-    var noticeRange = cfg.notice + (s.skunkScent > 0 ? 2 : 0);
+    // NOISE-TRIGGERED FLEE RADIUS (Steve 2026-10-06): running announces you
+    // — the notice radius grows a tile. Stillness does the opposite work
+    // below (awareness rate), so crouch-sneak and patience both close
+    // distance, honestly.
+    var noticeRange = cfg.notice + (s.skunkScent > 0 ? 2 : 0) + (ranLoud ? 1 : 0);
     // WOODCOCK (Steve 2026-10-06): leaf-litter camouflage. You only notice it
     // when you're right on top of it (range 1), and awareness builds slowly.
     // At dist <= 1 with high awareness it EXPLODES from under your feet.
@@ -1087,7 +1109,17 @@
       return;
     }
     // within notice: awareness builds. stalkers and trackers buy time.
-    var rate = cfg.awareRate * (stalked ? 0.35 : 1) * (1 - Math.min(0.45, trackLvl * 0.15));
+    // APPROACH VECTOR + NOISE (Steve 2026-10-06): crouch-sneaking (stalk)
+    // is quietest; standing still is quieter than walking; running is
+    // loudest. Closing head-on is scarier than circling — a direct approach
+    // reads as a charge, a lateral drift as weather. Real anchor: prey keys
+    // on approach geometry as much as volume (a deer watches a closing
+    // human, tolerates a passing one).
+    var pNoise = stalked ? 0.35 : pSteps === 0 ? 0.55 : ranLoud ? 1.4 : 1;
+    var closing = (a.apprDist == null) ? 0 : (a.apprDist - dist);
+    a.apprDist = dist;
+    var approach = closing >= 1 ? 1.25 : closing < 0 ? 0.85 : 1;
+    var rate = cfg.awareRate * pNoise * approach * (1 - Math.min(0.45, trackLvl * 0.15));
     try {
       if (this.isNight && this.isNight() && this.skillKnown && this.skillKnown('night_hunting', 2)) rate *= 0.7;
     } catch (e) {}
@@ -1105,7 +1137,9 @@
     // the bobcat is the one doing the hunting; the snake and the snapper
     // return early above (kept here as documentation).
     var boltAt = beh === 'skittish' ? 0.75 : 1;
-    if (!this.encNeverBolt(beh) && a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead') {
+    // cornered/regroup excluded: those states own their turns (panic branch,
+    // regroup rhythm) — the threshold must not yank them back to 'bolt'.
+    if (!this.encNeverBolt(beh) && a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead' && a.pstate !== 'cornered' && a.pstate !== 'regroup') {
       a.pstate = 'bolt';
       // Flee narration is knowledge-gated (encFleeText): the vivid huntText
       // is earned; the ignorant get the generic version.
@@ -1117,34 +1151,147 @@
       try { this.audioEvent('animalBolt'); } catch (e) {}
     }
     if (a.pstate === 'winded') return; // spent. your move.
+    if (a.pstate === 'regroup') {
+      // TURKEY REGROUP: landed, gathering itself. One turn of stillness —
+      // the window the flutter-rhythm buys you. Then back in the air.
+      a.pstate = 'bolt'; a.aware = Math.max(0.4, (a.aware || 0) - 0.3);
+      return;
+    }
+    if (a.pstate === 'cornered') {
+      // CORNER PANIC (Steve 2026-10-06): trapped prey doesn't freeze — it
+      // explodes. Real-world: a cornered deer kicks (ribs break), a cornered
+      // turkey spurs, a cornered rabbit screams and thrashes. About half the
+      // time it lashes out at what's trapping it; otherwise it breaks for
+      // the nearest edge, THROUGH you if it must. Panic is honest
+      // perception — ungated — and it has its own audio hook (animalPanic).
+      if (dist <= 1 && Math.random() < 0.5) {
+        var panicDmg = { wary: [4, 8], flock: [2, 5], skittish: [1, 3] }[beh] || [2, 4];
+        var pd = panicDmg[0] + Math.floor(Math.random() * (panicDmg[1] - panicDmg[0] + 1));
+        try { s.health = Math.max(0, (s.health || 100) - pd); } catch (e) {}
+        var panicVerb = beh === 'wary' ? 'lashes out — hooves flashing, a kick that could break ribs'
+          : beh === 'flock' ? 'spurs wildly — wings hammering your face, claws raking'
+          : beh === 'skittish' ? 'THRASHES — a scream like a stepped-on toy, claws everywhere'
+          : 'explodes — teeth and claws and panic';
+        this.say(this.encCap(label) + ' ' + panicVerb + '! (-' + pd + ' HP) Cornered things don\'t surrender. They detonate.');
+        try { this.audioEvent('animalPanic'); } catch (e) {}
+        try { this.audioEvent('animalBite'); } catch (e) {}
+        return;
+      }
+      // desperation dash: nearest edge, up to 2 tiles. A panicking animal
+      // does not treat your tile as a wall — it shoves past.
+      var ex = a.mx <= 4 ? 0 : 8, ey = a.my <= 4 ? 0 : 8;
+      var ddx = Math.sign(ex - a.mx), ddy = Math.sign(ey - a.my);
+      var dashed = 0;
+      for (var di = 0; di < 2; di++) {
+        if (!ddx && !ddy) break;
+        var nx2 = a.mx + ddx, ny2 = a.my + ddy;
+        if (nx2 < 0 || nx2 > 8 || ny2 < 0 || ny2 > 8) break;
+        var cell2 = detail[ny2] && detail[ny2][nx2];
+        var shoveThru = (nx2 === px && ny2 === py);
+        if (!BLOCKS[cell2] || shoveThru) {
+          if (shoveThru && !a.shovedOnce) {
+            a.shovedOnce = true;
+            this.say(this.encCap(label) + ' shoves PAST you — a blur of panic, hooves and claws raking as it goes.');
+            try { this.audioEvent('animalPanic'); } catch (e) {}
+          }
+          a.mx = nx2; a.my = ny2; dashed++;
+        } else if (!(tryMove(a.mx + ddx, a.my) || tryMove(a.mx, a.my + ddy))) break;
+      }
+      if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
+        s.animal = null;
+        this.say(this.encCap(label) + ' breaks past everything and is GONE — just torn grass and your hammering heart.');
+        try { this.audioEvent('animalBolt'); } catch (e) {}
+        return;
+      }
+      if (dashed > 0) {
+        a.pstate = 'bolt'; // it broke the trap — back to the chase
+        a.shovedOnce = false;
+      } else {
+        // still trapped, still narrated — no silent turns (Steve's rule).
+        this.say(this.encCap(label) + ' wheels, snorting — looking for a way out. There isn\'t one.');
+        try { this.audioEvent('animalPanic'); } catch (e) {}
+      }
+      return;
+    }
     if (a.pstate === 'bolt') {
       var bd = this.encBoltDir(a, px, py);
       var dx = bd[0], dy = bd[1];
-      if (beh === 'skittish' && Math.random() < 0.6) {
-        // RABBIT: zigzag, not straight away. Don't chase the line — cut it off.
+      if (beh === 'flock' && (a.flutterHops || 0) >= 2) {
+        // TURKEY (Steve 2026-10-06): poor sustained fliers — flutter, land,
+        // regroup, flutter. Real turkeys burst-fly 100-200m, then land and
+        // gather themselves. The regroup turn is your window: still, close,
+        // hittable. Distinct from the deer's line and the rabbit's zigzag.
+        a.flutterHops = 0; a.pstate = 'regroup';
+        this.say(this.encCap(label) + ' lands hard — wings half-folded, breast heaving. Gathering itself. Your window.');
+        try { this.audioEvent('animalRustle'); } catch (e) {}
+        return;
+      }
+      // FLEE STYLES (Steve 2026-10-06): species-distinct gaits, not one bolt.
+      var steps = 1, stepCost = 1;
+      if (beh === 'wary' && a.stamina >= cfg.stamina - 1) {
+        // DEER: straight-line burst. 30 mph vs your 12 — on fresh legs it
+        // OUTPACES you, early game especially. You don't run a deer down;
+        // you out-think it (stalk close, cut the line, or wind it). The
+        // burst costs double stamina: sprinting is real, and it ends.
+        steps = 2; stepCost = 2;
+      }
+      if (beh === 'skittish') {
+        // RABBIT: zigzag, never the same hop twice in a row. Cottontails
+        // jink at 18-29 mph — don't chase the line, cut it off. The stored
+        // lastZig forces the change; a straight chase loses.
         var zdirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-        var zd = zdirs[Math.floor(Math.random() * zdirs.length)];
-        dx = zd[0]; dy = zd[1];
+        var zd = null, zk = null, zt = 0;
+        do {
+          zd = zdirs[Math.floor(Math.random() * zdirs.length)];
+          zk = zd[0] + ',' + zd[1]; zt++;
+        } while (zt < 8 && zk === a.lastZig);
+        a.lastZig = zk; dx = zd[0]; dy = zd[1];
       }
-      // ONE tile, not two — the chase is real now, and so is the hunt.
-      // GROUNDHOG: two. It sprints for the burrow — low, fast, straight.
-      // You get one chase: wind it before the hole, or it's down and gone.
-      if (!tryMove(a.mx + dx, a.my + dy)) {
-        tryMove(a.mx + dx, a.my) || tryMove(a.mx, a.my + dy) || tryMove(a.mx - dy, a.my + dx);
+      var movedAny = false;
+      var ox0 = a.mx, oy0 = a.my;
+      for (var si = 0; si < steps; si++) {
+        var okStep = tryMove(a.mx + dx, a.my + dy);
+        if (!okStep) okStep = tryMove(a.mx + dx, a.my) || tryMove(a.mx, a.my + dy) || tryMove(a.mx - dy, a.my + dx);
+        movedAny = movedAny || okStep;
       }
+      // staying on your own tile is not moving (tryMove counts it as a
+      // success) — a walled-in animal is cornered, not "fleeing in place."
+      if (a.mx === ox0 && a.my === oy0) movedAny = false;
+      if (beh === 'flock') a.flutterHops = (a.flutterHops || 0) + 1; // one flutter per bolt-turn
+      // GROUNDHOG: the second move stays. It sprints for the burrow — low,
+      // fast, straight. You get one chase: wind it before the hole, or it's
+      // down and gone.
       if (beh === 'alarmed' && (a.mx !== 0 && a.mx !== 8 && a.my !== 0 && a.my !== 8)) {
         if (!tryMove(a.mx + dx, a.my + dy)) {
           tryMove(a.mx + dx, a.my) || tryMove(a.mx, a.my + dy);
         }
       }
-      a.stamina -= 1;
+      a.stamina -= stepCost;
       if (a.stamina <= 0) {
         a.pstate = 'winded';
         this.say(this.encCap(label) + " is winded — sides heaving, head low. Now's your chance.");
         try { this.audioEvent('animalPant'); } catch (e) {}
         return;
       }
-      if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
+      // CORNERED (Steve 2026-10-06): nowhere to run with you closing in is
+      // panic, not a quiet slip away. Trapped prey detonates — see the
+      // 'cornered' branch above. (food.js's strike-path corner is the same
+      // fiction from the other side: nowhere to run = desperate, not gone.)
+      // Cornered means NO EXIT: walled in away from the edge, or pressed
+      // against the treeline with you right on top of it (dist <= 1 — it
+      // can't slip past you). An animal AT the edge with room to breathe
+      // still melts into the treeline (edgeTurns) — the exit is the exit.
+      var atEdge = (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8);
+      var distNow = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
+      var noExit = !movedAny && !atEdge;
+      var pressedAtEdge = atEdge && distNow <= 1;
+      if ((noExit && distNow <= 3) || pressedAtEdge) {
+        a.pstate = 'cornered'; a.aware = 1;
+        this.say(this.encCap(label) + ' is TRAPPED — nowhere left to run. It wheels on you, eyes wild. (cornered: it may lash out — or break through)');
+        try { this.audioEvent('animalPanic'); } catch (e) {}
+        return;
+      }
+      if (atEdge) {
         a.edgeTurns += 1;
         // GROUNDHOG: one edge turn is enough — the hole is right there.
         var edgeNeed = beh === 'alarmed' ? 1 : 2;
@@ -1295,6 +1442,45 @@
     return false;
   };
 
+  // HUNT PRACTICE (Steve 2026-10-06 — role-audit fix #4): the competence
+  // counter for the hunt. Kept here, on the scholar, owned end to end by
+  // this module — the shared tree is hot (game.js/app.js are OFF LIMITS),
+  // so no cross-file helpers. The pattern follows the audit's "correct"
+  // examples (lifeseed occCategory, food.js techniques): background sets
+  // the START — a former hunter opens with 3 practice points ("that body
+  // remembers") — and lived experience moves the number: every strike
+  // adds 1, a clean kill teaches double. Cap +0.2 at 5 points, same ceiling
+  // the old flat buff had — but now it's earned, by anyone.
+  // BALANCING 5-question: (1) anchor = real skill acquisition — a handful
+  // of hunts teaches competence, not mastery; the tracker ABILITY stays the
+  // big earned lever (+0.3/+0.5). (2) too-fast = the hunter head start is
+  // meaningless; too-slow = the audit's complaint returns. 5 strikes to
+  // cap is one good afternoon. (5) respects the fiction: practice, not
+  // pedigree.
+  G.encHuntXPBonus = function (villager) {
+    var s = null;
+    try { s = this.state.scholar; } catch (e) {}
+    if (!s) return 0;
+    if (s.huntXPSeeded == null) {
+      // one-time seed per life: background sets the start, never the ceiling.
+      var hunterBack = false;
+      try { hunterBack = ((villager && (villager.formerOccupation || '')) + '').toLowerCase().indexOf('hunter') !== -1; } catch (e) {}
+      s.huntXPSeeded = true;
+      s.huntXP = hunterBack ? 3 : 0;
+      if (hunterBack) this.say('Old habits wake up — you hunted before the world ended. A head start, not a destiny.');
+    }
+    var xp = s.huntXP || 0;
+    if (xp <= 0) return 0;
+    return Math.min(0.2, 0.04 * xp); // +0.04 per practice point, capped at +0.2
+  };
+  G.encHuntPracticed = function (kind) {
+    try {
+      var s = this.state.scholar; if (!s) return;
+      if (s.huntXPSeeded == null) { s.huntXPSeeded = true; s.huntXP = 0; }
+      s.huntXP = (s.huntXP || 0) + (kind === 'kill' ? 2 : 1);
+    } catch (e) {}
+  };
+
   // HUNT: the strike. Range-gated, awareness-penalized, three outcomes:
   // kill (it teaches you what it was), near-miss (bolts, heart hammering),
   // clean miss (bolts). No silent failures — every outcome is narrated.
@@ -1335,13 +1521,18 @@
     }
     // the strike's moment of truth — behavior pre-check, then the framework
     // reaction (food.js preyReaction), then behavior post-bolt. One fiction.
-    if (this.encStrikeReact(a)) return true; // it bolted (or flopped)
+    // A swing is a swing — practice accrues even when it bolts or flops.
+    if (this.encStrikeReact(a)) { this.encHuntPracticed('strike'); return true; } // it bolted (or flopped)
     var base = animal.difficulty === 'easy' ? 0.7 : animal.difficulty === 'medium' ? 0.4 : 0.15;
     try { base = this.modTarget('hunt.find_chance', base); } catch (e) {}
     var self = this;
     var villager = null;
     try { villager = (this.data.villagers || []).find(function (v) { return v.id === self.villagerId; }); } catch (e) {}
-    var isHunter = villager && ((villager.formerOccupation || '').toLowerCase().indexOf('hunter') !== -1);
+    // ROLE-AUDIT FIX #4 (Steve 2026-10-06): the old isHunter flat +0.2 was
+    // a permanent backstory buff — practice-independent, forever. It's
+    // gone. Background sets the start, lived experience moves the number
+    // (see G.encHuntXPBonus / G.encHuntPracticed above).
+    var practiceBonus = this.encHuntXPBonus(villager);
     var wbonus = 0;
     try { wbonus = this.weaponBonus() / 100; } catch (e) {}
     var trackLvl = 0;
@@ -1366,7 +1557,7 @@
     var awarePen = 1 - Math.min(0.5, (a.aware || 0) * 0.5);
     // winded prey barely dodges.
     if (a.pstate === 'winded') awarePen = 1.25;
-    var chance = Math.min(0.95, (base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt + nightHuntBonus) * luck * awarePen);
+    var chance = Math.min(0.95, (base + practiceBonus + wbonus + trackBonus + relicHunt + nightHuntBonus) * luck * awarePen);
     try { if (this.noteToolUse) this.noteToolUse(); } catch (e) {}
     s.kcal = Math.max(0, s.kcal - 100);
     // HANDS VS BIG GAME (Steve 2026-10-05): one-shot at range with appropriate
@@ -1500,6 +1691,7 @@
     var roll = Math.random();
     if (roll < chance) {
       s.animal = null;
+      this.encHuntPracticed('kill'); // a clean kill teaches double
       var kcal = animal.calories;
       try { kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories)); } catch (e) {}
       this.encIdentifyAnimal(a.id); // a kill teaches you what it was — BEFORE the name is said
@@ -1541,6 +1733,7 @@
       // win, so the weapon isn't the subject. You miss. Clean.)
       this.feedback('So close — ' + label + ' jinks at the last breath. You miss with your ' + wname + '.');
       try { this.audioEvent('animalBolt'); } catch (e) {}
+      this.encHuntPracticed('strike'); // a near-miss still teaches
       var nmEnded = this.encMissReact(a, animal);
       if (!nmEnded) this.animalTurn();
       return true;
@@ -1554,6 +1747,7 @@
       : ' bolts. (-100 kcal)';
     this.feedback('Missed! ' + this.encCap(label) + missVerb);
     try { this.audioEvent('animalBolt'); } catch (e) {}
+    this.encHuntPracticed('strike'); // a clean miss still teaches
     var mEnded = this.encMissReact(a, animal);
     if (!mEnded) this.animalTurn();
     return true;
@@ -1567,6 +1761,7 @@
       '2. Prey: Game.ENC_PREY entry {notice, awareRate, stamina} — loop is free.',
       '2b. Behavior: "behavior" + "method" + "tell" in animals.json drive the flee, the strike, and the windup telegraph (encAnimalBehavior / encWeaponMethod / encWaryText). Wrong tool = worse odds, honestly said. NO proper tool at all = long shot, missing piece named (encMethodToolReady).',
       '2c. Miss reactions: encMissReact owns what a miss means per behavior (boar charges, goose retaliates, bobcat slashes and leaves). encNeverBolt lists the animals that never bolt.',
+      '2d. Flee styles (Steve 2026-10-06): deer bursts 2 tiles on fresh legs (costs 2 stamina), turkey flutters then regroups (pstate regroup = your window), rabbit zigzags never repeating a hop (a.lastZig). Trapped prey corners (pstate cornered): lashes out or breaks through — panic audio animalPanic. Noise: stalk 0.35 / still 0.55 / walk 1.0 / run 1.4 on awareness; running extends notice +1. Hunt practice XP (encHuntXPBonus/encHuntPracticed): background seeds 3, strikes +1, kills +2, capped +0.2 — no permanent backstory buff.',
       '3. Threats: "encounter" config in monsters.json + game.js enc* interface.',
       '4. Telegraph: Game.encTelegraphKnown(m); cue via Game.encPickCue.',
       '5. Phases: Game.encSetPhase / Game.encPhase(ent, phase, beats).',
