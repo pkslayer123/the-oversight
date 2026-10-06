@@ -1887,8 +1887,14 @@
         this.markSeen(this.map.px, this.map.py, 'visited');
         this.seedVillagerMaps();
       } catch (e) {}
+      // TUTORIALS AS MEMORY (Steve 2026-10-06): your hands remember what your
+      // old life taught you. Not a lecture — a recollection, after you care.
+      // (Said BEFORE the wake-up so the wake-up is the visible last beat.)
+      this.say('📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.');
+      this.say('📖 Your hands remember: weave cloth (3 plant fiber), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn\'t have to stay dirty.');
       // THE WAKE-UP (Steve 2026-10-06): you are a person, not a tutorial.
-      // Ground the player in their character, the strangeness, the stakes.
+      // OPENING AS ONE BEAT: narration shows only the last say() — the
+      // wake-up + hook must land as a single cohesive moment.
       try {
         const me = this.vpOf(this.villagerId) || {};
         const myName = me.name || 'You';
@@ -1898,11 +1904,15 @@
           const d = (this.data.items || []).find(i => i.id === id);
           return d ? d.name : null;
         }).filter(Boolean);
-        this.say('You wake up on cold ground. The sky is the wrong color.');
-        this.say(`${myName}. ${myOcc.charAt(0).toUpperCase() + myOcc.slice(1)}. From ${myHome}. That was yesterday. This is now.`);
-        if (myItems.length) this.say(`You have: ${myItems.join(', ')}. That's everything you own in this world.`);
+        const itemsLine = myItems.length ? ` You have: ${myItems.join(', ')}. That's everything you own in this world.` : '';
+        const hooks = [
+          'Last night, something moved past the treeline. Too big. Too quiet. Nobody wants to talk about it.',
+          'There are lights in the sky that aren\'t stars. They watch. You can feel it.',
+          'Someone found tracks near the water this morning. Nothing we know makes tracks like that.',
+        ];
+        const hook = hooks[Math.floor(Math.random() * hooks.length)];
+        this.say(`You wake up on cold ground. The sky is the wrong color. ${myName}. ${myOcc.charAt(0).toUpperCase() + myOcc.slice(1)}. From ${myHome}. That was yesterday. This is now.${itemsLine} Haven. Twelve people. The fire is lit. ${hook}`);
       } catch (e) {}
-      this.say('Haven. Twelve people. The fire is lit.');
       // BARREN HAVEN FIX: a new player must understand within minutes that
       // food is OUT THERE. A villager says it; the journal keeps it.
       try {
@@ -1918,20 +1928,7 @@
         this.say(`${who}: "${line}"`);
         if (this.journalNote) this.journalNote('haven', 'outward', 'Food won\'t come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.');
       } catch (e) {}
-      // THE HOOK (Steve 2026-10-06): something strange on day 1. A question
-      // the player wants answered. Not a tutorial — a mystery.
-      try {
-        const hooks = [
-          'Last night, something moved past the treeline. Too big. Too quiet. Nobody wants to talk about it.',
-          'There are lights in the sky that aren\'t stars. They watch. You can feel it.',
-          'Someone found tracks near the water this morning. Nothing we know makes tracks like that.',
-        ];
-        this.say(hooks[Math.floor(Math.random() * hooks.length)]);
-      } catch (e) {}
-      // TUTORIALS AS MEMORY (Steve 2026-10-06): your hands remember what your
-      // old life taught you. Not a lecture — a recollection, after you care.
-      this.say('📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.');
-      this.say('📖 Your hands remember: weave cloth (3 plant fiber), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn\'t have to stay dirty.');
+
       return this.status();
     },
 
