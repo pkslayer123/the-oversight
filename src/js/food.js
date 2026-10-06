@@ -1189,12 +1189,28 @@
       if (this.isNight && this.isNight()) fleeP -= 0.08; // dark hides you
       if (dist <= 1) fleeP -= 0.10; // point blank: less time to react
       // cornered: nowhere to run. Desperate, not gone.
-      const dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
+      // same-tile strike: "away from you" is undefined — it panics past you
+      // in a random direction instead of bolting in place (which burned
+      // stamina and cost you 50 kcal for nothing). encBoltDir owns the
+      // fiction (encounters.js); the fallback stays local if it's not loaded.
+      let dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
+      let panicScatter = false;
+      if (!dx && !dy) {
+        panicScatter = true;
+        let bd = null;
+        try { bd = this.encBoltDir ? this.encBoltDir(a, px, py) : null; } catch (e) {}
+        if (!bd) bd = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(Math.random() * 4)];
+        dx = bd[0]; dy = bd[1];
+      }
       const detail = this.genDetail(this.map.px, this.map.py);
       const BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
       const canBolt = (() => {
-        for (const [mx, my] of [[a.mx + dx, a.my + dy], [a.mx - dy, a.my + dx]]) {
-          const nx = Math.max(0, Math.min(8, mx)), ny = Math.max(0, Math.min(8, my));
+        // panic scatter checks the whole ring — any open tile means it runs
+        const opts = panicScatter
+          ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+          : [[dx, dy], [-dy, dx]];
+        for (const [ox, oy] of opts) {
+          const nx = Math.max(0, Math.min(8, a.mx + ox)), ny = Math.max(0, Math.min(8, a.my + oy));
           const cell = detail[ny] && detail[ny][nx];
           if (!BLOCKS[cell]) return true;
         }
@@ -1205,11 +1221,24 @@
         // it bolts — one tile, framework state
         const tryMove = (nx, ny) => {
           nx = Math.max(0, Math.min(8, nx)); ny = Math.max(0, Math.min(8, ny));
+          // clamped back onto its own tile (board edge) is not a move
+          if (nx === a.mx && ny === a.my) return false;
           const cell = detail[ny] && detail[ny][nx];
           if (!BLOCKS[cell]) { a.mx = nx; a.my = ny; return true; }
           return false;
         };
         tryMove(a.mx + dx, a.my + dy) || tryMove(a.mx - dy, a.my + dx) || tryMove(a.mx + dx, a.my);
+        if (panicScatter && a.mx === px && a.my === py) {
+          // first bolt pick hit a wall — shuffled ring: it finds ANY open
+          // tile rather than bolting in place. A fully surrounded animal
+          // stays put, which is honest (nowhere to run).
+          const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+          for (let i = ring.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [ring[i], ring[j]] = [ring[j], ring[i]];
+          }
+          for (const [ox, oy] of ring) { if (tryMove(a.mx + ox, a.my + oy)) break; }
+        }
         a.aware = 1; a.pstate = 'bolt';
         a.stamina = Math.max(0, (a.stamina || 1) - 1);
         if (a.stamina <= 0) {

@@ -47,7 +47,7 @@
   {
     "id": "box_trap",
     "name": "Box Trap",
-    "description": "a woven sapling cage with a drop door. for clever medium game — raccoon, opossum, the occasional fox.",
+    "description": "a woven sapling cage with a drop door. for medium game — raccoon, opossum, muskrat, the occasional fox... and sometimes a skunk, which you will regret.",
     "materials": {
       "stick": 4,
       "vine": 2,
@@ -59,12 +59,16 @@
       "raccoon",
       "opossum",
       "opossum",
-      "gray_fox"
+      "muskrat",
+      "muskrat",
+      "gray_fox",
+      "striped_skunk",
+      "timber_rattlesnake"
     ],
     "knowledgeLevels": {
       "1": "A box trap. Woven saplings, a drop door, bait inside. For clever medium game.",
       "2": "Materials: 4 sticks + 2 vine + bait (meat scraps work best). The door counterweights shut behind them.",
-      "3": "You can build one. Set it by dens and water for raccoon, on night trails for opossum. Foxes are shy of traps — bait it well, leave it alone, check at dawn."
+      "3": "You can build one. Set it by dens and water for raccoon and muskrat, on night trails for opossum. Foxes are shy of traps — bait it well, leave it alone, check at dawn. Skunks wander in too: open it from upwind, with a long stick, and have a change of clothes. A rattlesnake in the box means the weave held and your luck did too — pin it before you reach in."
     }
   },
   {
