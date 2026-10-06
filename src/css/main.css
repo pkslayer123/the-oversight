@@ -363,9 +363,9 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 }
 /* villagers: emoji on top, TINY name underneath. never swallows the tile. */
 .cell.villager, .cell.me { flex-direction: column; line-height: 1.1; }
-.cell.villager .vtoken, .cell.me .vtoken { font-size: .89em; }
+.cell.villager .vtoken, .cell.me .vtoken { font-size: 1.2em; } /* Steve 2026-10-06: bigger */
 /* VILLAGER SPRITES (Steve 2026-10-06): generated portraits sit in the token. */
-.cell.villager .vtoken .vsprite, .cell.me .vtoken .vsprite { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
+.cell.villager .vtoken .vsprite, .cell.me .vtoken .vsprite { display: inline-block; width: 2em; height: 2em; vertical-align: -0.2em; } /* Steve 2026-10-06: bigger player in grid */
 /* HARD CONSTRAINT (Steve 2026-10-06): player sprite was massive, breaking grid */
 .cell .vsprite, .detail .vsprite { max-width: 100% !important; max-height: 100% !important; }
 .cell .vsprite svg, .detail .vsprite svg { max-width: 40px !important; max-height: 40px !important; width: auto !important; height: auto !important; }
