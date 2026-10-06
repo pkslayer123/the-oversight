@@ -5,6 +5,7 @@
 //   - spreadGossip()
 // rules:
 //   - distortion_per_retelling: true (code: truth.js)
+//   - min_liars_per_village: 1 (code: newGame wrapper)
 // consumes:
 //   - village.gossip
 // ============ TRUTH-FINDING ============
@@ -1074,6 +1075,42 @@
         }
         // behavior observations: goal vs actions (ambient, more common now)
         if (Math.random() < 0.08) this.behaviorCheck(vid);
+      }
+    } catch (e) {}
+    return r;
+  };
+
+  // 6. newGame: SOMEONE IS LYING. Every village gets at least one liar — the
+  // detective loop dies in the ~5% of villages that roll zero liars at the
+  // 0.20 base rate ("dead villages teach nothing" is why the rate was raised).
+  // Runs after newGame so the roster and the player's pick are final: the
+  // forced liar is never the player themself. Uses the normal genLies
+  // machinery (motive/field logic) so the guaranteed liar is
+  // indistinguishable from a rolled one.
+  const origNewGame = Game.newGame;
+  if (origNewGame) Game.newGame = function () {
+    const r = origNewGame.apply(this, arguments);
+    try {
+      const v = this.state.village || {};
+      const npcIds = (v.roster || []).filter(id => id !== this.villagerId);
+      const isLiar = (id) => {
+        const l = this.npcLies(id);
+        return !!(l && Object.values(l).some(x => x && x.told));
+      };
+      if (npcIds.length && !npcIds.some(isLiar)) {
+        const order = npcIds.slice().sort(() => Math.random() - 0.5);
+        for (const id of order) {
+          const vp = this.vpOf(id);
+          if (!vp || !vp.id) continue;
+          let guard = 0;
+          while (guard++ < 12) {
+            const lies = this.genLies(vp);
+            vp.lies = lies;
+            if (lies && Object.values(lies).some(x => x && x.told)) break;
+          }
+          const l = vp.lies || {};
+          if (Object.values(l).some(x => x && x.told)) break;
+        }
       }
     } catch (e) {}
     return r;
