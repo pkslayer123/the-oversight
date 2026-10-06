@@ -21150,7 +21150,7 @@
             this.encSetPhase(m, 'rehearsing');
             this.say(known
               ? '"Nothing? Then I\'ll do you." Three rounds it has watched you stand there — and now it stands the way you stand. It is coming. (COLD READ: it learned your stillness. It attacks with your own body, badly.)'
-              : 'It stops watching. It stands the way you stand. It is coming at you.');
+              : 'It stops watching. It stands the way you stand. It is coming at you. (Done waiting — hit it first.)');
             try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
             // Fall through to the attack below — cold-read damage, no weapon.
           } else {
@@ -21503,12 +21503,17 @@
           // punished slow play and never fired vs a fast kill; now the
           // second act is reachable whenever you plant your feet.)
           const pzStill = m.pzLastPx === t.mx && m.pzLastPy === t.my;
-          m.pzPrediction = Math.min(4, (m.pzPrediction || 0) + (pzStill ? 2 : 1));
-          m.pzLastPx = t.mx; m.pzLastPy = t.my;
-          if (pzStill && !m.pzStillSaid && m.pzPrediction < 4) {
+          // COACHING BEFORE THE MATH (Steve 2026-10-06): the "posing for the
+          // camera" warning must fire whenever the player is still and the
+          // model isn't maxed — checking after the +2 increment skipped it
+          // on the exact turn prediction hit 4 (move-then-plant players never
+          // saw the warning before the EXCLUSIVE).
+          if (pzStill && !m.pzStillSaid && (m.pzPrediction || 0) < 4) {
             m.pzStillSaid = true;
             this.say('"Hold still. Yes. Just like that." Standing still makes it learn you FASTER. (Prediction climbing double.)');
           }
+          m.pzPrediction = Math.min(4, (m.pzPrediction || 0) + (pzStill ? 2 : 1));
+          m.pzLastPx = t.mx; m.pzLastPy = t.my;
           // Unavoidable is phase-locked: the money shot, the ⭐ EXCLUSIVE
           // badge, and the paparazzoExclusive sting all land on the same turn.
           const unavoidable = m.beamPhase === 'exclusive';
