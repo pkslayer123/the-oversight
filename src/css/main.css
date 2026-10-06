@@ -866,8 +866,27 @@ body.in-combat .ord-log { order: 5.3; }
   }
   body:has(.game-cols) .game-col-main,
   body:has(.game-cols) .game-col-side { display: block; min-width: 0; }
+  /* DESKTOP: interactive elements stay visible without scrolling (Steve 2026-10-05).
+     Side column is sticky: dpad, actions, chat/narration, status stay in view.
+     Haven menu/panel scrolls below if needed — info, not interaction. */
+  body:has(.game-cols) .game-col-side {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+  /* Interactive first, info below — even on desktop */
+  body:has(.game-cols) .ord-controls { order: -3; }
+  body:has(.game-cols) .ord-narration { order: -2; }
+  body:has(.game-cols) .ord-status { order: -1; }
+  body:has(.game-cols) .game-col-side {
+    display: flex;
+    flex-direction: column;
+  }
   body:has(.game-cols) .sheet { max-width: 640px; }
   body:has(.game-cols) .minimap { max-width: 430px; }
+  /* Node map (compass) stays with the grid in the main column */
+  body:has(.game-cols) .ord-compass { margin-top: 12px; }
 }
 
 /* ============ SUN/MOON DIAL ============ */

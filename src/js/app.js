@@ -3616,20 +3616,6 @@
             <div class="detail">${renderDetail(st)}</div>
             ${perceiveHTML()}
             <div id="inlineslot"></div>
-            <div class="ord-controls">
-              <div class="ord-dpad ${Game.dpadSide() === 'right' ? 'dpad-right' : 'dpad-left'}">${dpadHTML()}</div>
-              <div class="ord-actions ${Game.dpadSide() === 'right' ? 'dpad-right' : 'dpad-left'}">
-                <div class="ord-self">${st.inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
-                <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
-                <div class="ord-target">${targetBarHTML()}</div>
-                <div class="ord-danger">${dangerBarHTML()}</div>
-                <div class="ord-ability">${abilityBarHTML()}</div>
-              </div>
-            </div>
-            <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
-            <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
-            <div class="ord-status">${statusBars(st)}</div>
-            <div class="ord-lowermenu">${lowerMenuHTML(st)}</div>
           </div>
           <p class="small ord-epithet">👁 ${esc(Game.nodeDetail().epithet)} — this ground, up close</p>
           ${isTutorialDone() ? '' : '<p class="small ord-taphint" id="taphint">🧭 d-pad walks a step · hold to keep walking · tap a far tile to walk the full path · 🗺 walk to the edge, tap yourself, head out <button class="linklike" id="taphint-x" style="font-size:12px">got it</button></p>'}
@@ -3637,6 +3623,20 @@
           <div id="mapoverlay" class="mapoverlay hidden"></div>
         </div>
         <div class="game-col-side">
+          <div class="ord-controls">
+            <div class="ord-dpad ${Game.dpadSide() === 'right' ? 'dpad-right' : 'dpad-left'}">${dpadHTML()}</div>
+            <div class="ord-actions ${Game.dpadSide() === 'right' ? 'dpad-right' : 'dpad-left'}">
+              <div class="ord-self">${st.inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
+              <div class="ord-ctx">${st.inCombat ? '' : contextBarHTML()}</div>
+              <div class="ord-target">${targetBarHTML()}</div>
+              <div class="ord-danger">${dangerBarHTML()}</div>
+              <div class="ord-ability">${abilityBarHTML()}</div>
+            </div>
+          </div>
+          <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
+          <div class="ord-narration">${narrationBoxHTML(st, chatView)}</div>
+          <div class="ord-status">${statusBars(st)}</div>
+          <div class="ord-lowermenu">${lowerMenuHTML(st)}</div>
           ${st.activeQuest ? `<p class="small ord-quest" style="border-left:3px solid #7fd67f;padding-left:8px">📋 ${esc(st.activeQuest.text)}</p>` : ''}
           <div class="ord-panel">${panelFor(st, n)}</div>
           <div class="actions ord-codex">
