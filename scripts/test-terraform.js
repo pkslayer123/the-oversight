@@ -23,13 +23,16 @@ function check(cond, label) {
   Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
 
-  // ---- 1. data flags exist on the four monsters ----
+  // ---- 1. data flags exist on the terraforming monsters ----
+  // (contract_golem was REMOVED from monsters.json by 6943235 "Wave-2 roster"
+  // — its paper-shed code (cgIs) in game.js is now unreachable. The paper
+  // terrain mechanic itself is still exercised below, hand-laid.)
   const tdefs = {};
   for (const m of Game.data.monsters || []) {
     if (m.terraform) tdefs[m.id] = m.terraform;
   }
   check(tdefs['bulldozer'] === 'trample', 'bulldozer has terraform=trample');
-  check(tdefs['contract_golem'] === 'paper', 'contract_golem has terraform=paper');
+  check(!('contract_golem' in tdefs), 'contract_golem gone from roster (paper unlaid by any monster)');
   check(tdefs['bright_idea'] === 'crater', 'bright_idea has terraform=crater');
   check(tdefs['sunbasker'] === 'scorch', 'sunbasker has terraform=scorch');
 
@@ -95,10 +98,14 @@ function check(cond, label) {
   if (Game.tbfight) { Game.tbfight.over = true; Game.tbfight = null; }
   Game.state.scholar.monster = null;
 
-  // ---- 4. paper cuts: 1 damage on entry ----
+  // ---- 4. paper cuts: 1 damage on entry (terrain mechanic, hand-laid) ----
+  // NOTE: no live monster sheds paper anymore (contract_golem was removed
+  // from the roster; startCombat('contract_golem') would silently fall back
+  // to monsters[0] = bulldozer — a false green. This checks the terrain
+  // entry mechanic itself, honestly labeled.
   s.health = 100; s.mx = 4; s.my = 4;
-  Game.startCombat('contract_golem');
-  check(!!Game.tbfight, 'contract_golem combat starts');
+  Game.startCombat('bulldozer');
+  check(!!Game.tbfight, 'bulldozer combat starts (paper mechanic host)');
   {
     const p2 = Game.tbFighter('p');
     Game.tbTerraform(5, 4, 'paper');
@@ -154,6 +161,73 @@ function check(cond, label) {
   Game.state.scholar.monster = null;
   Game.startCombat('bulldozer');
   check(Game.tbTerrainAt(2, 2) === null, 'new fight has clean terrain');
+  if (Game.tbfight) { Game.tbfight.over = true; Game.tbfight = null; }
+  Game.state.scholar.monster = null;
+
+  // ---- 7. LIVE: the bulldozer's charge lays trample through its real turn ----
+  s.health = 10000; s.mx = 4; s.my = 1; s.monster = { id: 'bulldozer', mx: 4, my: 7 };
+  Game.startCombat('bulldozer');
+  check(!!Game.tbfight, 'bulldozer live-charge fight starts');
+  {
+    let trampled = false;
+    guard = 0;
+    while (Game.tbfight && !Game.tbfight.over && guard++ < 40) {
+      const cur = Game.tbCurrent();
+      if (!cur) break;
+      if (cur.kind === 'player') Game.tbPlayerWait();
+      else Game.tbAdvance();
+      if (Game.tbfight && Object.values(Game.tbfight.terraform || {}).includes('trample')) { trampled = true; break; }
+      if (!Game.tbfight) break;
+    }
+    check(trampled, 'bulldozer charge laid trample via its own declare+resolve');
+    check(Game.log.some(l => /churned and broken/.test(l)), 'trample announce in the log');
+  }
+  if (Game.tbfight) { Game.tbfight.over = true; Game.tbfight = null; }
+  Game.state.scholar.monster = null;
+
+  // ---- 8. LIVE: bright_idea detonation lays crater (night only) ----
+  s.health = 10000; s.mx = 4; s.my = 1; s.monster = { id: 'bright_idea', mx: 4, my: 6 };
+  Game.dayPart = 3; // nocturnal — it flees at dawn
+  Game.startCombat('bright_idea');
+  check(!!Game.tbfight, 'bright_idea live-detonation fight starts');
+  {
+    let cratered = false;
+    guard = 0;
+    while (Game.tbfight && !Game.tbfight.over && guard++ < 40) {
+      const cur = Game.tbCurrent();
+      if (!cur) break;
+      if (cur.kind === 'player') Game.tbPlayerWait();
+      else Game.tbAdvance();
+      if (Game.tbfight && Object.values(Game.tbfight.terraform || {}).includes('crater')) { cratered = true; break; }
+      if (!Game.tbfight) break;
+    }
+    check(cratered, 'bright_idea detonation laid crater via its own resolve');
+    check(Game.log.some(l => /cratered and black/.test(l)), 'crater announce in the log');
+  }
+  if (Game.tbfight) { Game.tbfight.over = true; Game.tbfight = null; }
+  Game.state.scholar.monster = null;
+
+  // ---- 9. LIVE: monsters ignore difficult terrain (full speed through trample) ----
+  s.health = 10000; s.mx = 4; s.my = 1; s.monster = { id: 'bulldozer', mx: 4, my: 8 };
+  Game.startCombat('bulldozer');
+  check(!!Game.tbfight, 'bulldozer approach fight starts');
+  {
+    Game.tbTerraform(4, 7, 'trample'); Game.tbTerraform(4, 6, 'trample');
+    const boar = Game.tbfight.fighters.find(x => x.kind === 'monster');
+    const startY = boar.my;
+    guard = 0;
+    while (Game.tbfight && !Game.tbfight.over && guard++ < 40 && boar.my === startY) {
+      const cur = Game.tbCurrent();
+      if (!cur) break;
+      if (cur.kind === 'player') Game.tbPlayerWait();
+      else Game.tbAdvance();
+      if (!Game.tbfight) break;
+    }
+    // want-range 4 stops it at y=5 (dist 4) — a full 3-step approach THROUGH
+    // trample. If it paid terrain cost it could only afford 1-2 steps.
+    check(boar.my < startY, 'bulldozer took a turn through trample');
+    check(startY - boar.my === 3, `bulldozer moved full speed through trample (${startY} -> ${boar.my})`);
+  }
   if (Game.tbfight) { Game.tbfight.over = true; Game.tbfight = null; }
   Game.state.scholar.monster = null;
 
