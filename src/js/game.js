@@ -16775,7 +16775,14 @@
             Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= wr);
         } catch (e) {}
       }
-      if (p && p.moveLeft <= 0 && (p.acted || !canAct)) this.tbAdvance();
+      if (p && p.moveLeft <= 0 && (p.acted || !canAct)) {
+        // ASYNC COMBAT (Steve 2026-10-06): stepped turns for dramatic cadence.
+        if (typeof window !== 'undefined' && typeof setTimeout !== 'undefined') {
+          this.tbAdvanceAsync();
+        } else {
+          this.tbAdvance();
+        }
+      }
       else this.tbRefreshTelegraphUI();
     },
 
@@ -16902,6 +16909,48 @@
         }
         if (this.tbEndCheck()) return;
       }
+    },
+    // STEPPED COMBAT (Steve 2026-10-06): async turn pacing for dramatic cadence.
+    // Each monster gets a visible beat (550ms) with highlight. Prevents
+    // instantaneous grid jumps that cause motion sickness.
+    tbAdvanceAsync() {
+      const f = this.tbfight;
+      if (!f || f.over) return;
+      if (this.tbIsPlayerTurn()) { f.actingKey = null; return; }
+      this.tbAdvanceOneAsync();
+    },
+    tbAdvanceOneAsync() {
+      const f = this.tbfight;
+      if (!f || f.over) return;
+      f.turnIdx++;
+      if (f.turnIdx >= f.order.length) {
+        f.turnIdx = 0; f.round++;
+        try { this.sysSay(`ROUND ${f.round}!`); } catch (e) {}
+        try { this.audioEvent('round', { round: f.round }); } catch (e) {}
+      }
+      const key = f.order[f.turnIdx];
+      const c = this.tbFighter(key);
+      if (!c || !c.alive || c.fled) { this.tbAdvanceOneAsync(); return; }
+      if (key === 'p') {
+        f.actingKey = null;
+        try { this.tbRefreshTelegraphUI(); } catch (e) {}
+        try {
+          if (typeof window !== 'undefined')
+            window.dispatchEvent(new CustomEvent('tb-turn', { detail: { phase: 'player' } }));
+        } catch (e) {}
+        return;
+      }
+      // Monster's turn: highlight, act, pause for drama
+      f.actingKey = key;
+      try {
+        if (typeof window !== 'undefined')
+          window.dispatchEvent(new CustomEvent('tb-turn', {
+            detail: { phase: 'monster', key, name: c.name || 'Monster' }
+          }));
+      } catch (e) {}
+      try { this.tbMonsterTurn(c); } catch (e) {}
+      if (this.tbEndCheck()) { f.actingKey = null; return; }
+      setTimeout(() => { this.tbAdvanceOneAsync(); }, 550);
     },
 // SNAKE MOVEMENT (Steve 2026-10-05): ducks in a row.
     // Head moves toward player (speed 5, scary fast). Segments follow the

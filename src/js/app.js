@@ -10590,6 +10590,32 @@
   // be re-rendered mid-hold — the stop must not depend on the button living.)
   window.addEventListener('pointerup', () => MoveAnim.clearHold());
   window.addEventListener('pointercancel', () => MoveAnim.clearHold());
+  // COMBAT CADENCE (Steve 2026-10-06): highlight the acting monster during
+  // async stepped turns. Each monster gets a visible beat — no more
+  // instantaneous grid jumps.
+  window.addEventListener('tb-turn', (e) => {
+    try {
+      const d = e.detail || {};
+      if (d.phase === 'player') {
+        // Player's turn: clear highlights, re-render
+        document.querySelectorAll('.cell.creature.acting').forEach(el => {
+          el.classList.remove('acting');
+        });
+      } else if (d.phase === 'monster' && d.key) {
+        // Monster acting: highlight its cell(s)
+        document.querySelectorAll('.cell.creature.acting').forEach(el => {
+          el.classList.remove('acting');
+        });
+        const sel = document.querySelector(`[data-ent="creature:${CSS.escape(d.key)}"]`);
+        if (sel) {
+          const cell = sel.closest('.cell');
+          if (cell) cell.classList.add('acting');
+        }
+      }
+      // Re-render to show the updated state
+      if (typeof refresh === 'function') refresh();
+    } catch (err) {}
+  });
   // DESKTOP QA: arrow keys walk. Only when the walk pad is on screen and the
   // user isn't typing. Key repeat = hold-to-walk.
   document.addEventListener('keydown', (e) => {

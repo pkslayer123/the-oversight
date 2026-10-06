@@ -368,6 +368,16 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 /* HUMANOID MONSTER SPRITES (Steve 2026-10-06): calm SVG on the grid. */
 /* SPRITE SIZE (Steve 2026-10-06): sprites must FILL the cell, not hide in the corner.
    Emoji set the bar: font-size clamp(16px, 5.2vw, 44px). Sprites match it. */
+/* ACTING HIGHLIGHT (Steve 2026-10-06): the currently-acting monster pulses.
+   Combat has cadence — you see WHO is acting, not just the aftermath. */
+.cell.creature.acting {
+  animation: acting-pulse 0.6s ease-in-out infinite;
+  z-index: 10;
+}
+@keyframes acting-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255,200,80,.9), 0 0 12px 4px rgba(255,180,60,.5); }
+  50% { box-shadow: 0 0 0 3px rgba(255,220,100,1), 0 0 20px 8px rgba(255,180,60,.7); }
+}
 .cell.creature .csprite { display: inline-block; width: 2.2em; height: 2.2em; vertical-align: middle; }
 .cell.creature .csprite svg.sprite { width: 100%; height: 100%; display: block; }
 .cell .msprite { display: inline-block; width: 2.2em; height: 2.2em; vertical-align: middle; }
