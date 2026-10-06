@@ -3,6 +3,16 @@
 // description: Encounter framework. Every animal and monster follows the same pattern.
 // provides:
 //   - encAnimalKnown()
+//   - encAnimalDef()
+//   - encAnimalBehavior()
+//   - encAnimalCue()
+//   - encFleeText()
+//   - encWeaponMethod()
+//   - encMethodWords()
+//   - encPossumFlop()
+//   - encBehaviorStrikeReact()
+//   - encBehaviorAfterBolt()
+//   - encStrikeDeadPossum()
 //   - spawnEncounter()
 // rules:
 //   - knowledge_gated: true (code: encounters.js)
@@ -214,6 +224,149 @@
     s = String(s || '');
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   };
+  // Playing-dead / treed animals read differently on the grid and in popups.
+  // Honest perception, not knowledge: anyone can see it's limp or up a tree.
+  var _origEncAnimalLabel = G.encAnimalLabel;
+  G.encAnimalLabel = function (a) {
+    var label = _origEncAnimalLabel.call(this, a);
+    if (a && a.pstate === 'playing_dead') label += ' — limp and still';
+    if (a && a.pstate === 'treed') label += ' — up the trunk';
+    if (a && a.pstate === 'taunt') label += ' — watching you, just out of reach';
+    return label;
+  };
+
+  // ================= 6b. BEHAVIOR ENGINE =================
+  // animals.json carries per-species `behavior` (skittish, arboreal, wary,
+  // aquatic, aquatic_ambush, aquatic_defensive, flock, plays_dead, slow,
+  // cunning, curious, aggressive) and `method` (snare, chase, trap, bow,
+  // hands, line). The stalk/strike/flee loop was generic — every animal fled
+  // the same way and the data fields sat unused. This engine turns both
+  // into play: flee looks different per animal, and the wrong tool is
+  // honestly worse. Steve's tool-gated doctrine, translated for the hunt:
+  // never hide the strike (moment-to-moment play), but never pretend a
+  // spear is a snare either.
+  G.encAnimalDef = function (id) {
+    try { return (this.data.animals || []).find(function (x) { return x.id === id; }) || null; } catch (e) { return null; }
+  };
+  G.encAnimalBehavior = function (id) {
+    var d = this.encAnimalDef(id);
+    return (d && d.behavior) || 'skittish';
+  };
+  // knownCue coaching, Highbeam-Deer style: once you've learned the animal
+  // (3 encounters or a kill), the game tells you its trick up front.
+  G.encAnimalCue = function (id) {
+    if (!this.encAnimalKnown(id)) return null;
+    var b = this.encAnimalBehavior(id);
+    var CUES = {
+      plays_dead: "You know this one's trick: it plays dead. Don't fall for it — or do, and be ready when it wakes.",
+      arboreal: "It'll go straight up a tree when spooked. Bring something ranged, or wait it out.",
+      skittish: "Skittish — it bolts at a shadow. Come in slow, or run it down.",
+      wary: "Wary. Ears always tracking. Get close before it knows you're there.",
+      aquatic: "One splash and it's gone. Corner it away from the water.",
+      aquatic_ambush: "It sits still until you're close — then it's gone. Cover the last steps fast.",
+      aquatic_defensive: "Grab it right behind the claws, fast. It pinches.",
+      flock: "Spook the flock and one might lag behind. Watch for the straggler.",
+      slow: "Slow. Walk up and pick it up. That's the whole hunt.",
+      cunning: "Clever. It'll stay just out of reach, toying with you. Run it down.",
+      curious: "Curious, not scared. It'll come look at you. Let it.",
+      aggressive: "Do NOT grab this one. The beak is real. Ranged, or a trap."
+    };
+    return CUES[b] || null;
+  };
+  // Flee narration: the vivid huntText is EARNED (knowledge-gated). The
+  // ignorant get the generic version — "if you don't know, it doesn't show."
+  G.encFleeText = function (a, generic) {
+    var d = this.encAnimalDef(a.id);
+    if (d && d.huntText && this.encAnimalKnown(a.id)) return d.huntText;
+    return generic || 'It bolts!';
+  };
+  // Weapon -> hunt method. Spears are hand tools; slings and bows are 'bow'.
+  G.encWeaponMethod = function () {
+    var w = null;
+    try { w = this.equippedWeapon(); } catch (e) {}
+    if (!w || w.unarmed) return 'hands';
+    if (w.type === 'ranged' || (w.range || 1) >= 3) return 'bow';
+    return 'hands';
+  };
+  G.encMethodWords = function (m) {
+    return { snare: 'a snare', chase: 'running it down', trap: 'a trap', bow: 'a bow', hands: 'your hands', line: 'a fishing line' }[m] || m;
+  };
+  // The flop. Shared by the strike path and the awareness path.
+  G.encPossumFlop = function (a) {
+    a.pstate = 'playing_dead'; a.deadTurns = 0; a.aware = 1;
+    var label = this.encAnimalLabel(a);
+    var known = false;
+    try { known = this.encAnimalKnown(a.id); } catch (e) {}
+    this.say(this.encCap(label) + (known
+      ? ' hisses, shows its teeth — then flops over. Tongue lolling. Dead. Except the eye that tracks you. You know it\'s faking.'
+      : ' flops over — tongue lolling, utterly still. Dead.'));
+    try { this.audioEvent('animalFlop'); } catch (e) {}
+  };
+  // Strike-moment reaction, before the generic flee roll. Returns:
+  //   true  — handled, strike aborted (it flopped)
+  //   false — explicitly no flee (winded), strike proceeds
+  //   null  — defer to the generic preyReaction flee roll
+  G.encBehaviorStrikeReact = function (a) {
+    var b = this.encAnimalBehavior(a.id);
+    if (a.pstate === 'winded') return false;
+    if (b === 'plays_dead' && (a.aware || 0) >= 0.9 && a.pstate !== 'playing_dead') {
+      this.encPossumFlop(a);
+      return true;
+    }
+    return null;
+  };
+  // After a generic bolt, behavior takes over: treed, dove, straggler,
+  // taunt. Returns true if the encounter ended (dove).
+  G.encBehaviorAfterBolt = function (a) {
+    var s = this.state.scholar;
+    if (!s.animal) return true;
+    var b = this.encAnimalBehavior(a.id);
+    var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
+    var detail = null;
+    try { detail = this.genDetail(this.map.px, this.map.py); } catch (e) {}
+    function nearKind(kinds) {
+      for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+        var row = detail && detail[a.my + dy];
+        var c = row && row[a.mx + dx];
+        if (c && kinds.indexOf(c) !== -1) return true;
+      }
+      return false;
+    }
+    var cap = this.encCap(this.encAnimalLabel(a));
+    var known = false;
+    try { known = this.encAnimalKnown(a.id); } catch (e) {}
+    if (b === 'arboreal' && nearKind(['tree', 'bigtree'])) {
+      a.pstate = 'treed'; a.treedTurns = 3;
+      this.say(cap + (known
+        ? ' drops, grabs, and spirals up the trunk before you move. Out of reach — ranged, or wait.'
+        : ' shoots up the nearest trunk. Gone — into the branches.'));
+      try { this.audioEvent('animalChatter'); } catch (e) {}
+      return false;
+    }
+    if ((b === 'aquatic' || b === 'aquatic_ambush') && nearKind(['water'])) {
+      s.animal = null;
+      this.say(cap + (known ? ' — a flash of silver under the rock. Gone.'
+        : ' splashes — gone. The ripples are still spreading.'));
+      try { this.audioEvent('animalSplash'); } catch (e) {}
+      return true;
+    }
+    if (b === 'flock' && Math.random() < 0.45) {
+      // the flock is gone; one bird lags behind
+      s.animal = { id: a.id, mx: a.mx, my: a.my, aware: 0.2, stamina: 1, pstate: 'wary', edgeTurns: 0 };
+      this.say(cap + ' erupts — wings like thunder, all going different ways. One hen didn\'t get the memo: half-folded wings, your chance.');
+      try { this.audioEvent('animalBolt'); } catch (e) {}
+      return false;
+    }
+    if (b === 'cunning') {
+      var d2 = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
+      if (d2 >= 5) {
+        a.pstate = 'taunt'; a.aware = 0.6;
+        this.say(cap + ' trots, just out of range, looking back. It\'s toying with you.');
+        return false;
+      }
+    }
+    return false;
+  };
 
   // ================= 7. PREY ENCOUNTER LOOP =================
   // Replaces the old teleport-bolt: awareness builds per step, bolting moves
@@ -271,6 +424,123 @@
     s.stalked = false; // consumed — one quiet step buys one quiet reaction
     var trackLvl = 0;
     try { trackLvl = this.abilityLevel ? this.abilityLevel('tracker') : 0; } catch (e) {}
+    var adef = null;
+    try { adef = (this.data.animals || []).find(function (x) { return x.id === a.id; }) || null; } catch (e) {}
+    var beh = (adef && adef.behavior) || '';
+    // PER-ANIMAL BEHAVIOR (Steve 2026-10-05): animals are not monsters and not
+    // interchangeable. Each behavior runs before the generic graze/wary/bolt.
+    if (beh === 'slow') {
+      // BOX TURTLE: it walks. That's it. Total confidence. Free pickup.
+      if (Math.random() < 0.2) tryMove(a.mx + rnd3(), a.my + rnd3());
+      return;
+    }
+    if (beh === 'plays_dead' && a.pstate !== 'playing_dead') {
+      // OPOSSUM: threatened → flops over, tongue out. Not dead. Waiting.
+      // Doesn't flee; easy catch — but teeth (bite handled in huntAnimal).
+      // Plays dead instead of bolting at any threatening range.
+      if (dist <= 4) {
+        a.pstate = 'playing_dead'; a.aware = 1;
+        this.say(this.encCap(label) + ' flops over, tongue lolling — playing dead. It\'s not dead. It\'s waiting for you to leave.');
+        return;
+      }
+    }
+    if (beh === 'plays_dead' && a.pstate === 'playing_dead') {
+      if (dist >= 4) { // you left: it gets up and wanders off
+        s.animal = null;
+        this.say('The opossum was already gone — just a rustle in the grass.');
+      }
+      return; // stays put while you watch
+    }
+    if (beh === 'aggressive') {
+      // SNAPPING TURTLE: does NOT flee. Hisses, lunges. The beak is the hunt.
+      if (dist <= 2 && !a.hissed) {
+        a.hissed = true; a.aware = 1;
+        this.say(this.encCap(label) + ' hisses and lunges — that beak can take a finger. Keep your distance or commit.');
+      }
+      if (dist <= 1 && Math.random() < 0.35) {
+        var snapDmg = 6 + Math.floor(Math.random() * 8);
+        try { s.health = Math.max(0, (s.health || 100) - snapDmg); } catch (e) {}
+        this.say('It snaps! ' + snapDmg + ' damage — that beak means it.');
+      }
+      return; // never bolts
+    }
+    if (beh === 'curious' && dist >= cfg.notice) {
+      // RACCOON: not afraid. Watches with clever hands. Sometimes approaches.
+      a.pstate = 'graze'; a.aware = Math.max(0, a.aware - 0.25); a.edgeTurns = 0;
+      if (Math.random() < 0.3) {
+        var rdx = Math.sign(px - a.mx), rdy = Math.sign(py - a.my);
+        if (tryMove(a.mx + rdx, a.my + rdy)) this.say(this.encCap(label) + ' ambles closer, curious. Clever hands.');
+      } else if (Math.random() < 0.3) {
+        tryMove(a.mx + rnd3(), a.my + rnd3());
+      }
+      return;
+    }
+    if (beh === 'curious' && dist <= 1 && Math.random() < 0.15) {
+      // RACCOON STEALS: clever hands. Lifts your lightest food and bolts.
+      var inv = s.inventory || [];
+      var fi = -1, fk = Infinity;
+      for (var si = 0; si < inv.length; si++) {
+        var it = inv[si];
+        if (it && (it.kcalEach > 0 || it.foodKind) && (it.units || 1) > 0) {
+          var k = (it.kcalEach || 0) * (it.units || 1);
+          if (k < fk && k > 0) { fk = k; fi = si; }
+        }
+      }
+      if (fi >= 0) {
+        var stolen = inv.splice(fi, 1)[0];
+        this.say(this.encCap(label) + ' snatches your ' + (stolen.name || 'food') + ' and bolts — clever hands!');
+        var sdx = Math.sign(a.mx - px), sdy = Math.sign(a.my - py);
+        tryMove(a.mx + sdx * 2, a.my + sdy * 2) || tryMove(a.mx + sdx, a.my + sdy);
+        a.pstate = 'bolt'; a.aware = 1;
+        if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) s.animal = null;
+        return;
+      }
+    }
+    if ((beh === 'aquatic' || beh === 'aquatic_ambush' || beh === 'aquatic_defensive') && a.pstate === 'bolt') {
+      // WATER ESCAPE: darts for the nearest water cell and dives. Gone.
+      var best = null, bd = 99;
+      for (var wy = 0; wy < 9; wy++) for (var wx = 0; wx < 9; wx++) {
+        var wc = detail[wy] && detail[wy][wx];
+        if (wc === 'water' || wc === 'creek') {
+          var wd = Math.abs(wx - a.mx) + Math.abs(wy - a.my);
+          if (wd < bd) { bd = wd; best = [wx, wy]; }
+        }
+      }
+      if (best && bd <= 2) {
+        a.mx = best[0]; a.my = best[1]; s.animal = null;
+        this.say(this.encCap(label) + ' dives — gone under. The water keeps it.');
+        return;
+      }
+    }
+    if (beh === 'arboreal' && a.pstate === 'bolt') {
+      // SQUIRREL: reaches a trunk → spirals up. Uncatchable in the tree.
+      var tc = detail[a.my] && detail[a.my][a.mx];
+      if (tc === 'tree' || tc === 'bigtree') {
+        s.animal = null;
+        this.say(this.encCap(label) + ' spirals up the trunk — chattering at you from the branches. Catch it on the ground next time.');
+        return;
+      }
+    }
+    if (beh === 'cunning' && a.pstate === 'bolt' && Math.random() < 0.35) {
+      // FOX: jukes. Doesn't run straight — cuts sideways. Harder to corner.
+      var fdx = Math.sign(a.mx - px), fdy = Math.sign(a.my - py);
+      if (tryMove(a.mx - fdy, a.my + fdx) || tryMove(a.mx + fdy, a.my - fdx)) {
+        this.say(this.encCap(label) + ' jukes sideways — leading you in circles.');
+        a.stamina -= 1;
+        if (a.stamina <= 0) { a.pstate = 'winded'; this.say(this.encCap(label) + ' is winded — sides heaving. Now\'s your chance.'); }
+        return;
+      }
+    }
+    if (beh === 'wary' && a.aware >= 0.7 && a.pstate !== 'bolt' && a.pstate !== 'winded') {
+      // DEER: the white tail goes up early. Explodes into motion.
+      a.pstate = 'bolt'; a.aware = 1;
+      this.say(this.encCap(label) + ' — white tail up — explodes into motion!');
+    }
+    if (beh === 'flock' && a.pstate === 'bolt' && !a.flockSaid) {
+      // TURKEY: one spots, they all know. Loud panic, every direction.
+      a.flockSaid = true;
+      this.say('The flock explodes — wings hammering, panic in every direction.');
+    }
     if (dist >= cfg.notice) {
       // grazing. it doesn't know you're here. or doesn't care yet.
       a.pstate = 'graze';
@@ -444,18 +714,60 @@
     var chance = Math.min(0.95, (base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt + nightHuntBonus) * luck * awarePen);
     try { if (this.noteToolUse) this.noteToolUse(); } catch (e) {}
     s.kcal = Math.max(0, s.kcal - 100);
+    // HANDS VS BIG GAME (Steve 2026-10-05): one-shot at range with appropriate
+    // damage. Bare hands can't take a deer — the method field says how.
+    var unarmedHunt = !w || (w && w.unarmed) || /^hands$/i.test(String(wname));
+    if (unarmedHunt) {
+      if ((animal.calories || 0) >= 10000) {
+        this.feedback('You can\'t take ' + animal.name.toLowerCase() + ' with your hands. Bring a bow, a spear — or a trap.');
+        return true;
+      }
+      if ((animal.method || []).indexOf('hands') === -1) {
+        chance *= 0.5; // wrong tool for the job
+      }
+    }
+    // BITE (Steve 2026-10-05): close capture can cost you. Wild things have
+    // teeth — not a fight, just the price of grabbing. Traps avoid this.
+    if (dist <= 1) {
+      var bBeh = animal.behavior || '';
+      var biteP = bBeh === 'aggressive' ? 0.6 : bBeh === 'plays_dead' ? 0.3 : 0.2;
+      if (Math.random() < biteP) {
+        var biteDmg = bBeh === 'aggressive' ? 8 + Math.floor(Math.random() * 8) : 3 + Math.floor(Math.random() * 6);
+        try { s.health = Math.max(0, (s.health || 100) - biteDmg); } catch (e) {}
+        this.feedback('It bites! Teeth in your hand — ' + biteDmg + ' damage. Wild things have teeth.');
+        if (Math.random() < 0.3) {
+          this.feedback('You fumble — it wriggles free!');
+          this.animalTurn(); this.animalTurn();
+          return true;
+        }
+      }
+    }
     var roll = Math.random();
     if (roll < chance) {
       s.animal = null;
       var kcal = animal.calories;
       try { kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories)); } catch (e) {}
-      try { s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted')); } catch (e) {}
+      // ENERGY WEAPONS (Steve 2026-10-05): beams char meat — 10% calories as
+      // charred remains, no hide/bones. You can't hunt with a searcaster.
+      var charsMeat = false;
+      try {
+        var eqW = (s.equipped || {}).weapon;
+        var wdef = eqW && (this.data.items || []).find(function (i) { return i.id === eqW.itemId; });
+        charsMeat = !!(wdef && wdef.weapon && wdef.weapon.charsMeat);
+      } catch (e) {}
+      if (charsMeat) {
+        var charredKcal = Math.round(kcal * 0.1);
+        try { s.inventory.push(this.foodCarcass(animal, charredKcal, s.day, 'charred')); } catch (e) {}
+        this.feedback('The beam takes it apart. Charred remains — about ' + charredKcal + ' kcal of edible bits. Energy weapons don\'t hunt, they unmake.');
+      } else {
+        try { s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted')); } catch (e) {}
+        this.feedback('Got it — ' + animal.name + '! About ' + kcal + ' kcal of meat on the bone — gut it quickly (knife). It spoils fast.');
+      }
       this.encIdentifyAnimal(a.id); // a kill teaches you what it was
       try {
         this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
         this.state.codex.animalEncounters[a.id] = (this.state.codex.animalEncounters[a.id] || 0) + 1;
       } catch (e) {}
-      this.feedback('Got it — ' + animal.name + '! About ' + kcal + ' kcal of meat on the bone — gut it quickly (knife). It spoils fast.');
       return true;
     }
     if (roll < chance + 0.15) {

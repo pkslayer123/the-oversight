@@ -26,7 +26,11 @@
     "behavior": "skittish",
     "behaviorDesc": "Freezes, then bolts in a zigzag. Fast but predictable \u2014 it runs in a straight line after the first juke.",
     "fleeDifficulty": "medium",
-    "huntText": "It freezes. You hold your breath. Then \u2014 white tail flashing \u2014 it bolts!"
+    "huntText": "It freezes. You hold your breath. Then \u2014 white tail flashing \u2014 it bolts!",
+    "butcher": {
+      "hide": 1,
+      "bone": 1
+    }
   },
   {
     "id": "gray_squirrel",
@@ -55,7 +59,10 @@
     "behavior": "arboreal",
     "behaviorDesc": "Stays in trees. Drops to grab nuts, then spirals up the trunk. You need to catch it on the ground.",
     "fleeDifficulty": "hard",
-    "huntText": "It chatters at you from the branch \u2014 scolding, not scared. Then it drops, grabs, and spirals up before you move."
+    "huntText": "It chatters at you from the branch \u2014 scolding, not scared. Then it drops, grabs, and spirals up before you move.",
+    "butcher": {
+      "hide": 1
+    }
   },
   {
     "id": "white_tailed_deer",
@@ -84,7 +91,12 @@
     "behavior": "wary",
     "behaviorDesc": "Grazes with head down, ears swiveling. At the first wrong sound, the white tail goes up and it's gone.",
     "fleeDifficulty": "hard",
-    "huntText": "It grazes, ears tracking every sound. The white tail flicks \u2014 once, twice \u2014 then it explodes into motion."
+    "huntText": "It grazes, ears tracking every sound. The white tail flicks \u2014 once, twice \u2014 then it explodes into motion.",
+    "butcher": {
+      "hide": 2,
+      "bone": 4,
+      "antler": 2
+    }
   },
   {
     "id": "creek_chub",
@@ -113,7 +125,10 @@
     "behavior": "aquatic",
     "behaviorDesc": "Stays in water. Darts under rocks when shadow falls. You need a line, not hands.",
     "fleeDifficulty": "medium",
-    "huntText": "A flash of silver in the creek. It darts under the rock before your shadow even touches the water."
+    "huntText": "A flash of silver in the creek. It darts under the rock before your shadow even touches the water.",
+    "butcher": {
+      "bone": 1
+    }
   },
   {
     "id": "wild_turkey",
@@ -142,7 +157,11 @@
     "behavior": "flock",
     "behaviorDesc": "Moves in flocks. One spots you, they all know. Loud, big, but they panic in different directions.",
     "fleeDifficulty": "medium",
-    "huntText": "Gobble-gobble-gobble. The flock erupts \u2014 wings like thunder, all going different ways. Pick one and commit."
+    "huntText": "Gobble-gobble-gobble. The flock erupts \u2014 wings like thunder, all going different ways. Pick one and commit.",
+    "butcher": {
+      "feather": 6,
+      "bone": 2
+    }
   },
   {
     "id": "opossum",
@@ -171,7 +190,11 @@
     "behavior": "plays_dead",
     "behaviorDesc": "When threatened, it flops over, tongue out, playing dead. It's not dead. It's waiting for you to leave.",
     "fleeDifficulty": "easy",
-    "huntText": "It hisses, shows teeth \u2014 then flops over. Tongue lolling. Dead. Except the eye that tracks you. It's faking."
+    "huntText": "It hisses, shows teeth \u2014 then flops over. Tongue lolling. Dead. Except the eye that tracks you. It's faking.",
+    "butcher": {
+      "hide": 1,
+      "bone": 1
+    }
   },
   {
     "id": "bullfrog",
@@ -200,7 +223,8 @@
     "behavior": "aquatic_ambush",
     "behaviorDesc": "Sits at the water's edge. At the splash, it dives. You need to be fast or use a gig.",
     "fleeDifficulty": "medium",
-    "huntText": "It croaks \u2014 a deep jug-o-rum. You step closer. Splash. Gone. The ripples are still spreading."
+    "huntText": "It croaks \u2014 a deep jug-o-rum. You step closer. Splash. Gone. The ripples are still spreading.",
+    "butcher": {}
   },
   {
     "id": "box_turtle",
@@ -228,7 +252,11 @@
     "behavior": "slow",
     "behaviorDesc": "It walks. That's it. It just walks, slowly, with total confidence that you're not a threat. You can pick it up.",
     "fleeDifficulty": "trivial",
-    "huntText": "It plods along, head out, utterly unconcerned. You could pick it up with one hand. It knows. It doesn't care."
+    "huntText": "It plods along, head out, utterly unconcerned. You could pick it up with one hand. It knows. It doesn't care.",
+    "butcher": {
+      "shell": 1,
+      "bone": 1
+    }
   },
   {
     "id": "gray_fox",
@@ -257,7 +285,11 @@
     "behavior": "cunning",
     "behaviorDesc": "It watches you watching it. Circles downwind to scent you. If you chase, it leads you in circles.",
     "fleeDifficulty": "very_hard",
-    "huntText": "Amber eyes in the underbrush. It doesn't run \u2014 it trots, just out of range, looking back. It's toying with you."
+    "huntText": "Amber eyes in the underbrush. It doesn't run \u2014 it trots, just out of range, looking back. It's toying with you.",
+    "butcher": {
+      "hide": 1,
+      "bone": 1
+    }
   },
   {
     "id": "crayfish",
@@ -286,7 +318,10 @@
     "behavior": "aquatic_defensive",
     "behaviorDesc": "Under rocks in the creek. When you lift the rock, it darts backward, claws up. Grab behind the claws.",
     "fleeDifficulty": "easy",
-    "huntText": "You lift the rock. It shoots backward, claws raised like a tiny boxer. Grab it right behind the claws \u2014 fast."
+    "huntText": "You lift the rock. It shoots backward, claws raised like a tiny boxer. Grab it right behind the claws \u2014 fast.",
+    "butcher": {
+      "shell": 1
+    }
   },
   {
     "id": "raccoon",
@@ -314,7 +349,11 @@
     "behavior": "curious",
     "behaviorDesc": "Not afraid of you. Watches with clever hands. Might try to steal from you instead of fleeing.",
     "fleeDifficulty": "easy",
-    "huntText": "It sits up, paws dangling, watching you with unsettling intelligence. It's not scared. It's assessing."
+    "huntText": "It sits up, paws dangling, watching you with unsettling intelligence. It's not scared. It's assessing.",
+    "butcher": {
+      "hide": 1,
+      "bone": 1
+    }
   },
   {
     "id": "snapping_turtle",
@@ -343,6 +382,10 @@
     "behavior": "aggressive",
     "behaviorDesc": "Does NOT flee. Hisses, lunges, snaps. That beak can take a finger. Use a stick, keep distance.",
     "fleeDifficulty": "dangerous",
-    "huntText": "It hisses \u2014 a sound like a tire leaking \u2014 and LUNGES. The beak snaps shut where your hand was. Do not grab this."
+    "huntText": "It hisses \u2014 a sound like a tire leaking \u2014 and LUNGES. The beak snaps shut where your hand was. Do not grab this.",
+    "butcher": {
+      "shell": 1,
+      "bone": 2
+    }
   }
 ]

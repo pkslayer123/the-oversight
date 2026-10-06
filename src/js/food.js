@@ -189,11 +189,13 @@
       // POISON: belltoad throat sac is toxic. Eating it poisons you.
       // (Purify cures it — every problem needs an answer.)
       const isToad = animal.id === 'belltoad';
+      const charred = how === 'charred';
       return {
         plantId: 'meat_' + animal.id, foodKind: 'meat', foodState: 'carcass',
         edible: false, units: 1, kcalEach: 0, hiddenKcal: kcal,
         spoilDay: day + 2, unit: 'carcass',
-        name: animal.name + (how === 'trapped' ? ' (trapped)' : ' (carcass)'),
+        ...(charred ? { charred: true } : {}),
+        name: animal.name + (how === 'trapped' ? ' (trapped)' : charred ? ' (charred remains)' : ' (carcass)'),
         prep: isToad
           ? 'Gut it carefully — the throat sac is POISON. Do not eat the throat sac.'
           : 'Gut it quickly — clean with a knife. Spoils in ~2 days.',
@@ -413,11 +415,32 @@
         }
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
         it.spoilDay = this.state.scholar.day + 2;
-        it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '') + ' (cleaned)';
+        it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';
         // unknown flesh keeps its warning — the generic risky-raw prep would
         // bury the honest "you don't know if this is food" state.
         if (foodSafe) it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it. Spoils in ~2 days.';
         it.kg = Math.max(0.2, gross * yfrac / 1000);
+        // BUTCHERING YIELDS (Steve 2026-10-05): hide, bones, feathers, antlers,
+        // shell — the parts the knowledge text promises. Charred remains give
+        // nothing but the meat (the beam unmade the rest).
+        if (!it.charred) {
+          const aid = (it.plantId || '').replace(/^meat_/, '');
+          const adef = (this.data.animals || []).find(x => x.id === aid) || {};
+          const by = adef.butcher || {};
+          const matName = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell' };
+          const matKg = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0 };
+          const got = [];
+          for (const mk of Object.keys(by)) {
+            const n2 = by[mk] || 0;
+            if (n2 <= 0) continue;
+            this.state.scholar.inventory.push({
+              material: mk, units: n2, name: (matName[mk] || mk) + (n2 > 1 ? 's' : ''),
+              kcalEach: 0, spoilDay: 9999, kg: (matKg[mk] || 0.3) * n2,
+            });
+            got.push(n2 + ' ' + (matName[mk] || mk).toLowerCase() + (n2 > 1 ? 's' : ''));
+          }
+          if (got.length) this.say('Butchering yields: ' + got.join(', ') + '.');
+        }
         n++;
         if (!knows) {
           it._messyCleans = (it._messyCleans || 0) + 1;
@@ -588,10 +611,28 @@
         it.kcalEach = foodSafe ? per : 0; it.hiddenKcal = gross;
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
         it.spoilDay = day + 2;
-        it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '') + ' (cleaned)';
+        it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';
         if (foodSafe) it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it.';
         else it.prep = '\u26A0\uFE0F Unknown flesh. You have no idea if this is food or poison. Test it cautiously, or ask someone who knows.';
         it.kg = Math.max(0.2, gross * yfrac / 1000);
+        if (!it.charred) {
+          const aid2 = (it.plantId || '').replace(/^meat_/, '');
+          const adef2 = (this.data.animals || []).find(x => x.id === aid2) || {};
+          const by2 = adef2.butcher || {};
+          const matName2 = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell' };
+          const matKg2 = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0 };
+          const got2 = [];
+          for (const mk of Object.keys(by2)) {
+            const n3 = by2[mk] || 0;
+            if (n3 <= 0) continue;
+            this.state.scholar.inventory.push({
+              material: mk, units: n3, name: (matName2[mk] || mk) + (n3 > 1 ? 's' : ''),
+              kcalEach: 0, spoilDay: 9999, kg: (matKg2[mk] || 0.3) * n3,
+            });
+            got2.push(n3 + ' ' + (matName2[mk] || mk).toLowerCase() + (n3 > 1 ? 's' : ''));
+          }
+          if (got2.length) this.say('Butchering yields: ' + got2.join(', ') + '.');
+        }
         this.say(foodSafe
           ? `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. ${4 * per} kcal of raw portions. You watch closely.`
           : `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. But they won't vouch for the flesh: "Never seen its like. Test it before you trust it."`);
