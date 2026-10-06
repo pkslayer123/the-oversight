@@ -70,16 +70,22 @@ async function journey(seed, mode, narrate) {
   const visited = new Set(['3,3']);
   const blocked = new Set();
   let heading = null, prev = { x: 3, y: 3 };
-  let legs = 0, forages = 0, blocks = 0, sleeps = 0, drinks = 0;
+  let legs = 0, forages = 0, blocks = 0, sleeps = 0, drinks = 0, roadFights = 0;
   let discovered = null, died = null;
   const trace = [];
   const MAX_DAYS = 6;
+  let dayIter = 0;
 
-  while ((s.day || 1) <= MAX_DAYS && !Game.over) {
+  while ((Game.state.scholar.day || 1) <= MAX_DAYS && !Game.over && dayIter++ < 14) {
+    const sc = Game.state.scholar; // re-capture: state object can be replaced
+    if (narrate) console.log(`[day ${sc.day} part ${Game.dayPart} tick ${sc.dayTicks} legs ${legs} kcal ${Math.round(sc.kcal||0)}]`);
     // walk while it's light
     let guard = 0;
     while (Game.dayPart < 3 && guard++ < 40 && !Game.over) {
-      const cands = Game.travelTargets().filter(t => !blocked.has(`${Game.map.px},${Game.map.py}>${t.x},${t.y}`));
+      // HONEST UI FLOW: the world screen only lets you head out from the grid
+      // edge to an ADJACENT node (tap-yourself -> "Head {dir}"). d>1 jumps
+      // are a script cheat that turns travel into free teleport ping-pong.
+      const cands = Game.travelTargets().filter(t => t.d === 1 && !blocked.has(`${Game.map.px},${Game.map.py}>${t.x},${t.y}`));
       if (!cands.length) break;
       let pick = null;
       if (mode === 'random') {
@@ -89,20 +95,41 @@ async function journey(seed, mode, narrate) {
         for (const t of cands) {
           const key = `${t.x},${t.y}`;
           const back = (t.x === prev.x && t.y === prev.y);
-          let score = 0;
+          let score = Math.random() * 400; // noise: not a perfect optimizer
           try { score += Game.turfKcal(t.x, t.y); } catch (e) {}
-          if (!visited.has(key)) score += 1500;
-          if (back && cands.length > 1) score -= 5000;
+          if (!visited.has(key)) score += 3000;
+          if (back) score -= 10000;
           if (heading) {
             const dx = Math.sign(t.x - Game.map.px), dy = Math.sign(t.y - Game.map.py);
-            if (dx === heading.x && dy === heading.y) score += 1200;
+            if (dx === heading.x && dy === heading.y) score += 1500;
+            else if (dx === -heading.x && dy === -heading.y) score -= 1500;
           }
-          score -= 300 * t.d; // nearer legs first
+          // drift outward: unexplored frontiers over the home turf
+          score += 200 * (Math.abs(t.x - 3) + Math.abs(t.y - 3));
           if (score > best) { best = score; pick = t; }
         }
       }
       if (!pick) break;
       const fx = Game.map.px, fy = Game.map.py;
+      // HONEST WALK: the UI makes you cross the 9x9 detail grid on foot to
+      // reach the edge (micro-moves: 2 kcal + 1 tick each). Simulate ~6 steps
+      // of grid walking per node — the boundary itself is free, the steps cost.
+      try {
+        for (let st = 0; st < 6 && !Game.over; st++) {
+          Game.state.scholar.kcal = Math.max(0, (Game.state.scholar.kcal || 0) - 2);
+          Game.tickAction(1);
+          if (Game.tbfight || Game.pendingEncounter) break;
+        }
+      } catch (e) {}
+      if (Game.over) break;
+      // road risk is honest: wandering monsters interrupt the walk. Record it,
+      // then slip away — this experiment measures discovery, not combat.
+      if (Game.tbfight || Game.pendingEncounter) {
+        roadFights++;
+        try { if (Game.tbfight) Game.tbEnd('fled'); } catch (e) {}
+        Game.pendingEncounter = false;
+        if (narrate) trace.push(`  ! road encounter on the way to (${pick.x},${pick.y}) — slipped away`);
+      }
       const ret = Game.travelTo(pick.x, pick.y);
       if (ret && ret.blockType) {
         blocked.add(`${fx},${fy}>${pick.x},${pick.y}`);
@@ -115,14 +142,14 @@ async function journey(seed, mode, narrate) {
       visited.add(`${pick.x},${pick.y}`);
       legs++;
       if (legs % 4 === 0) { forageHere(); forages++; }
-      if ((s.kcal || 0) < 1100) eatUp();
-      if ((s.hydration || 0) < 35) { drinkUp(); drinks++; }
-      if (narrate) trace.push(`leg ${legs}: -> (${pick.x},${pick.y}) ${Game.playerTile().type} kcal=${Math.round(s.kcal)} hyd=${Math.round(s.hydration)} hp=${Math.round(s.health)} part=${Game.dayPart} tick=${s.dayTicks}`);
+      if ((sc.kcal || 0) < 1100) eatUp();
+      if ((sc.hydration || 0) < 35) { drinkUp(); drinks++; }
+      if (narrate) trace.push(`leg ${legs}: -> (${pick.x},${pick.y}) ${Game.playerTile().type} kcal=${Math.round(sc.kcal)} hyd=${Math.round(sc.hydration)} hp=${Math.round(sc.health)} part=${Game.dayPart} tick=${sc.dayTicks}`);
       const found = (Game.state.otherVillages || []).find(v => v.generated);
       if (found && !discovered) {
-        discovered = { name: found.name, day: s.day, legs, x: found.x, y: found.y };
+        discovered = { name: found.name, day: sc.day, legs, x: found.x, y: found.y };
         const smoke = sayLog.filter(l => l.includes(found.name)).slice(-3);
-        if (narrate) { trace.push(`*** DISCOVERED ${found.name} at (${found.x},${found.y}) on day ${s.day}, leg ${legs} ***`); smoke.forEach(l => trace.push('  | ' + l)); }
+        if (narrate) { trace.push(`*** DISCOVERED ${found.name} at (${found.x},${found.y}) on day ${sc.day}, leg ${legs} ***`); smoke.forEach(l => trace.push('  | ' + l)); }
       }
       if (Game.over) break;
     }
@@ -132,12 +159,12 @@ async function journey(seed, mode, narrate) {
       try { Game.sleep(); sleeps++; } catch (e) { trace.push('sleep threw: ' + e.message); break; }
       eatUp();
     }
-    if (Game.over) { died = `day ${s.day}`; break; }
+    if (Game.over) { died = `day ${sc.day}`; break; }
   }
   return {
-    seed, mode, legs, forages, blocks, sleeps, drinks, discovered,
-    died, over: !!Game.over, endDay: s.day,
-    kcal: Math.round(s.kcal || 0), hp: Math.round(s.health || 0), hyd: Math.round(s.hydration || 0),
+    seed, mode, legs, forages, blocks, sleeps, drinks, roadFights, discovered,
+    died, over: !!Game.over, endDay: Game.state.scholar.day,
+    kcal: Math.round(Game.state.scholar.kcal || 0), hp: Math.round(Game.state.scholar.health || 0), hyd: Math.round(Game.state.scholar.hydration || 0),
     visitedTiles: visited.size, villages, trace,
     smokeLines: sayLog.filter(l => /smoke on the horizon/i.test(l)),
   };
@@ -151,7 +178,7 @@ async function journey(seed, mode, narrate) {
     console.log(`villages on this map: ${r.villages.map(v => `${v.name}@(${v.x},${v.y})`).join('  ')}`);
     r.trace.forEach(l => console.log('  ' + l));
     console.log(`\nRESULT: ${r.discovered ? `FOUND ${r.discovered.name} day ${r.discovered.day} after ${r.discovered.legs} legs` : 'NEVER FOUND ANYONE'}${r.died ? ` — DIED ${r.died}` : ''}`);
-    console.log(`legs=${r.legs} visited=${r.visitedTiles}/49 forages=${r.forages} blocks=${r.blocks} sleeps=${r.sleeps} end kcal=${r.kcal} hp=${r.hp} hyd=${r.hyd}`);
+    console.log(`legs=${r.legs} visited=${r.visitedTiles}/49 forages=${r.forages} blocks=${r.blocks} roadFights=${r.roadFights} sleeps=${r.sleeps} end kcal=${r.kcal} hp=${r.hp} hyd=${r.hyd}`);
     console.log(`smoke announcements: ${r.smokeLines.length}`);
     r.smokeLines.forEach(l => console.log('  > ' + l.slice(0, 200)));
     return;
