@@ -1832,6 +1832,20 @@
           }
         } catch (e) {}
       }
+      // SPEAK IT BACK (Steve 2026-10-06): try your hard-won words on a
+      // native speaker. Offered at exposure 3+ — the heart of the human
+      // path (lean into it: this is where trust is actually built). Never
+      // under live translate: why reach for words the System hands you.
+      // Under the memory aid the device feeds you the phrase first — a
+      // study partner, not a replacement.
+      if (choices.length < MAXC && !suppressPivot && !c.speakBackDone) {
+        try {
+          const nlang = this.npcNativeLang(vid);
+          if (nlang && nlang !== 'english' && this.langExposure(nlang) >= 3 && this.translatorStage() < 2) {
+            choices.push({ id: 'speak_back', label: `(try your ${this.langDef(nlang).name})` });
+          }
+        } catch (e) {}
+      }
       const reacts = [
         { id: 'agree', label: '"You\'re right."' },
         { id: 'joke', label: '"Ha — yeah."' },
@@ -2272,6 +2286,10 @@
           try { this.convoDeepTick(vid); } catch (e) {}
           done(respLine || `You show them ${pname} — where it grows, how to tell it apart. Their eyes widen. "I never knew that."`, youLine);
         }
+      } else if (choiceId === 'speak_back') {
+        // SPEAK IT BACK: the human path. One beat, trust is the currency.
+        const r = this.speakBack(vid);
+        done(r.line, r.youSaid);
       } else if (choiceId === 'invite_party') {
         const r = (this.inviteToParty && this.inviteToParty(vid)) || { ok: false, msg: '...' };
         done(r.msg || '...', '"Want to come with me?"');
@@ -2767,11 +2785,80 @@
       return p ? Object.assign({ lang }, p) : null;
     },
 
-    // translatorActive: the System in your head, translating live.
+    // translatorStage: 0 = no ability. 1 = MEMORY AID (Steve 2026-10-06):
+    // the translator starts as a better remembering device — it logs every
+    // foreign word you hear and replays them on demand. It does NOT
+    // translate novel speech. It helps you learn; it's a study tool, not
+    // a replacement. 2 = LIVE TRANSLATE (integration 60+): your extended
+    // mind translates live, System biases baked in — cheerful, slightly
+    // wrong, misses tone entirely.
+    // (Steve 2026-10-06, fiction correction: your brain IS the system.
+    // There is no "your brain" vs "the System" — one extended mind. The
+    // old "your brain doesn't bother learning" framing is dead.)
+    translatorStage() {
+      if (!this.state.systemArrived || !this.hasAbility('translator')) return 0;
+      return ((this.state.scholar || {}).integration || 0) >= 60 ? 2 : 1;
+    },
+    // translatorActive: LIVE translate only (stage 2). The memory aid is
+    // not "active" in this sense — it helps you learn, never replaces it.
     translatorActive() {
-      return !!this.state.systemArrived && this.hasAbility('translator');
+      return this.translatorStage() === 2;
+    },
+    memoryAidActive() {
+      return this.translatorStage() >= 1;
+    },
+    // mediatedBySystem: live translate is on AND you share no tongue with
+    // them. The System gives you the words — the human work doesn't happen.
+    mediatedBySystem(vid) {
+      try {
+        if (this.translatorStage() !== 2) return false;
+        const cl = this.commLevel ? this.commLevel(vid) : null;
+        return !cl || cl.level === 'none';
+      } catch (e) { return false; }
+    },
+    // translatorStageCheck: journal the stage transitions once each.
+    // Called lazily from the language paths — the beats land where the
+    // language lives, not in some distant ability-grant handler.
+    translatorStageCheck(vid) {
+      const s = this.state.scholar || {};
+      const now = this.translatorStage();
+      const seen = s._translatorStageSeen || 0;
+      if (now === seen) return;
+      s._translatorStageSeen = now;
+      if (seen === 0 && now >= 1) {
+        this.say('\u25C8 The translator settles in \u2014 not as a voice, but as a ledger. Every foreign word you hear gets logged, replayable on demand. It will not translate anything new. That part is still on you, and that\u2019s the point.');
+        try { this.journalLearn(vid, 'note', 'translator earned: a memory aid, not a shortcut. It logs words; I still have to learn them', {}); } catch (e) {}
+      }
+      if (seen <= 1 && now === 2) {
+        this.say('\u25C8 The translator wakes up all the way. Words arrive in English now \u2014 your extended mind doing the work, cheerful and slightly wrong, missing the tone entirely. You\u2019ll never have to earn a single word again. That\u2019s the trade: the words come free. The person doesn\u2019t.');
+        try { this.journalLearn(vid, 'note', 'translator went live at high integration. I understand every word now — and I\u2019m starting to miss the people saying them', {}); } catch (e) {}
+      }
+    },
+    // translatorLogPhrase: the memory aid logs every keyword gloss it sees.
+    // scholar.translatorWords[lang] = {word: gloss}. Checked BEFORE logging
+    // the current phrase, so novel speech is never translated on first
+    // hearing — the device only replays what you\u2019ve already heard.
+    translatorLogPhrase(lang, phrase) {
+      if (this.translatorStage() < 1 || !phrase || !phrase.kw) return;
+      const s = this.state.scholar || {};
+      s.translatorWords = s.translatorWords || {};
+      const log = s.translatorWords[lang] || (s.translatorWords[lang] = {});
+      for (const [w, g] of Object.entries(phrase.kw)) if (!log[w]) log[w] = g;
     },
 
+    // trustGain: rapport flows through the human channel. When live
+    // translate mediates (stage 2, no shared tongue), the System gives you
+    // the words without the work — rapport gains halve. Your extended mind
+    // learns the vocabulary fine; it's the relationship that starves.
+    // Penalties are never softened: embarrassment and consequences land
+    // whole. (Steve 2026-10-06)
+    trustGain(vid, n) {
+      const t = this.state.village.trust || (this.state.village.trust = {});
+      let g = n;
+      try { if (n > 0 && this.mediatedBySystem(vid)) g = Math.ceil(n / 2); } catch (e) {}
+      t[vid] = Math.min(100, Math.max(0, (t[vid] || 10) + g));
+      return g;
+    },
     // langExposure: words of this tongue you've absorbed. 0..25+.
     langExposure(lang) {
       const e = (this.state.scholar || {}).langExposure || {};
@@ -2779,38 +2866,123 @@
     },
 
     // langExposureGain: listening teaches. Thresholds: 3 (words), 10 (shape
-    // of sentences), 25 (you get by — level 1, earned). The translator
-    // short-circuits learning: the System does it for you, your brain
-    // never bothers. That's the tradeoff.
+    // of sentences), 25 (you get by — level 1, earned).
+    // STAGE EFFECTS (Steve 2026-10-06):
+    // - memory aid (1): +1 bonus per gain — the device drills you. It's a
+    //   study tool; learning still happens in YOU.
+    // - live translate (2): vocabulary still accrues (your extended mind
+    //   forgets nothing; "what you lose isn't vocabulary — it's the
+    //   person"). The tradeoff is social, not neurological: rapport gains
+    //   halve while the System mediates (trustGain), and villagers react
+    //   to being heard through the machine.
     langExposureGain(vid, lang, n) {
+      try { this.translatorStageCheck(vid); } catch (e) {}
       const s = this.state.scholar || {};
-      if (this.translatorActive()) {
+      const def = this.langDef(lang);
+      const stage = this.translatorStage();
+      if (stage === 2) {
         const f = s._translatorNote || (s._translatorNote = {});
         if (!f[lang]) {
           f[lang] = true;
-          this.say('The translator hums behind your eyes. Your brain doesn\'t bother learning — why would it?');
+          this.say(`The ${def.name} comes to you in English now — your extended mind translating live. You understand every word, and miss the person saying them. The System means well. The System always means well. That's the problem.`);
         }
-        return this.langExposure(lang);
       }
       s.langExposure = s.langExposure || {};
       const before = s.langExposure[lang] || 0;
-      const after = before + (n || 1);
+      const after = before + (n || 1) + (stage === 1 ? 1 : 0);
       s.langExposure[lang] = after;
-      const def = this.langDef(lang);
       if (before < 3 && after >= 3) {
         this.say(`💡 You're starting to catch words in ${def.name}. Not sentences — words.`);
-        try { this.journalLearn(vid, 'note', { text: `picking up ${def.name}, a word at a time` }, { quiet: true }); } catch (e) {}
+        try { this.journalLearn(vid, 'note', `picking up ${def.name}, a word at a time`, { quiet: true }); } catch (e) {}
       } else if (before < 10 && after >= 10) {
         this.say(`💡 ${def.name} is starting to make sense. You catch the shape of sentences now.`);
-        try { this.journalLearn(vid, 'note', { text: `${def.name}: catching whole phrases now` }, { quiet: true }); } catch (e) {}
+        try { this.journalLearn(vid, 'note', `${def.name}: catching whole phrases now`, { quiet: true }); } catch (e) {}
       } else if (before < 25 && after >= 25) {
         s.languages = s.languages || {};
         s.languages[lang] = 1;
         this.say(`💡 You can get by in ${def.name} now. A few dozen words — all earned the hard way. Gestures. Patience. Embarrassment.`);
-        try { this.journalLearn(vid, 'note', { text: `can get by in ${def.name} now — learned it live` }, {}); } catch (e) {}
+        try { this.journalLearn(vid, 'note', `can get by in ${def.name} now — learned it live`, {}); } catch (e) {}
         try { this.discover('language'); } catch (e) {}
       }
       return after;
+    },
+
+    // speakBack: the player tries their hard-won words on a native speaker.
+    // One beat, well-written, not a minigame. THE HEART OF THE HUMAN PATH
+    // (Steve 2026-10-06): the villager who teaches you gives you trust,
+    // warmth, correction, laughter. The System gives you subtitles.
+    // Outcomes scale with exposure; consequences are social only —
+    // embarrassment is the currency. Never damage, never hard locks.
+    // The villager reacts in their own voice (age band + temperament): a
+    // young eager one teaches you on the spot; an elder pretends not to
+    // understand to make you try harder.
+    speakBack(vid) {
+      const c = this.convoGet(vid);
+      const lang = this.npcNativeLang(vid);
+      const def = this.langDef(lang);
+      const exp = this.langExposure(lang);
+      const trust = (this.state.village.trust || {})[vid] || 10;
+      const temp = this.npcTemper(vid);
+      const band = (this.npcAgeBand ? this.npcAgeBand(vid) : 'adult') || 'adult';
+      const fname = (this.firstRef ? this.firstRef(vid) : this.displayName(vid)) || 'them';
+      const aid = this.translatorStage() === 1;
+      c.speakBackDone = true;
+      const mshift = (d) => { if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, d); };
+      if (!lang || lang === 'english' || exp < 3) {
+        return { line: 'The moment passes — you don\u2019t have the words yet.', youSaid: '(the words won\u2019t come)' };
+      }
+      // What you try: a REAL simple phrase from their tongue. Never
+      // gibberish — the phrase is real; it's your DELIVERY that's wrong.
+      const fd = (this.data.foreignSpeech || {})[lang] || {};
+      const pool = fd.agree || fd.warm || fd.openers || [];
+      const ph = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+      const attempt = ph ? ph.t : '...';
+      const aidLine = aid ? ' The device replays the phrase in your head first \u2014 a study partner, not a replacement.' : '';
+      const gain = (n) => { try { this.langExposureGain(vid, lang, n + (aid ? 1 : 0)); } catch (e) {} };
+      try { this.remember(vid, 'spoke_' + lang, 'tried'); } catch (e) {}
+      let line, youSaid, jtext;
+      if (exp >= 25) {
+        // LEVEL: it works. Simple things land. Just two people talking.
+        youSaid = `"${attempt}." It comes out right \u2014 a little stiff, a little proud.${aidLine}`;
+        const reacts = [
+          `${fname} answers in ${def.name}, fast \u2014 then catches themselves, slows down, delighted. You catch most of it. For a minute it\u2019s just two people talking, and the System has nothing to do.`,
+          `"WAIT. Say that again!" ${fname} grabs your sleeve. "You SOUND like my grandmother. Say more!" You do. Some of it even lands.`,
+        ];
+        line = this.convoPick(vid, 'speakback:level', reacts) || reacts[0];
+        gain(1); this.trustGain(vid, 3); mshift(1);
+        jtext = `spoke ${def.name} with ${fname} \u2014 it worked. Just two people talking`;
+      } else if (exp >= 10) {
+        // MID: the shape is right, one word wrong — a funny misunderstanding.
+        youSaid = `"${attempt}." The shape is right this time \u2014 but one word veers off somewhere.${aidLine}`;
+        const reacts = [
+          `${fname} blinks. Then cracks up. "You said that BEAUTIFULLY. It means nothing like what you think it means." They teach you the right word, still laughing.`,
+          `"Hm. Almost." ${fname} corrects the one word, gently, like setting a bone. "Again." You say it right. They nod, satisfied with both of you.`,
+        ];
+        line = this.convoPick(vid, 'speakback:mid', reacts) || reacts[0];
+        gain(1); this.trustGain(vid, 2); mshift(1);
+        jtext = `tried speaking ${def.name} with ${fname} \u2014 one wrong word, we both laughed`;
+      } else {
+        // LOW: mostly wrong, charming failure. The correction teaches.
+        youSaid = `You try it in ${def.name}: "${attempt}." The tones go sideways halfway through.${aidLine}`;
+        let react;
+        if (band === 'young' || temp === 'eager') {
+          react = `${fname} lights up. "No, no \u2014 like this." They say it slowly, twice, watching your mouth shape it. "${attempt}." You try again. Closer. They grin like you just scored the winning point.`;
+        } else if (band === 'elder') {
+          react = `${fname} tilts their head. "...What?" You try again, slower, redder. A long beat. Then the smallest smile. "${attempt}," they say \u2014 perfectly. "You meant." They knew all along; they just wanted to watch you work for it.`;
+        } else if (temp === 'prickly') {
+          react = `${fname} snorts. "That was \u2014 no. Say it like you mean it." They correct you anyway, because even they can\u2019t leave it standing that wrong.`;
+        } else {
+          react = `${fname} laughs \u2014 with you, mostly. "Good try! Again \u2014 ${attempt}." They walk you through it, patient as sunrise.`;
+        }
+        line = react;
+        gain(2);
+        // Endearing if rapport is high, awkward if not. Never punished —
+        // awkward is a beat, not a penalty.
+        if (trust >= 30) { this.trustGain(vid, 1); mshift(1); }
+        jtext = `tried speaking ${def.name} with ${fname} \u2014 mangled it, they corrected me${trust >= 30 ? ' and laughed' : ''}`;
+      }
+      try { this.journalLearn(vid, 'note', jtext, {}); } catch (e) {}
+      return { line, youSaid };
     },
 
     // langExposureReport: for the journal's LANGUAGES section.
@@ -2837,9 +3009,11 @@
       const lang = phrase.lang;
       const c = this.convoGet(vid);
       const t = phrase.t;
-      // TRANSLATOR: the System in your head, always on, inescapable. It takes
+      // TRANSLATOR (stage 2): your extended mind, translating live. It takes
       // priority even over a human interpreter — which is exactly what's
-      // unsettling about it. Works. Slightly off. Cheerful. Misses tone entirely.
+      // unsettling about it. Works. Slightly off. Cheerful. Misses tone
+      // entirely. (Steve 2026-10-06: this is not a separate System vs your
+      // brain — it's your bigger mind, with the System's biases baked in.)
       if (this.translatorActive()) {
         let en = phrase.en;
         if (Math.random() < 0.3) {
@@ -2861,6 +3035,21 @@
       }
       const exp = this.langExposure(lang);
       const def = this.langDef(lang);
+      // MEMORY AID (stage 1): no translation of novel speech — but the
+      // device replays logged words, even below your own exposure
+      // thresholds. The log is read BEFORE this phrase is logged, so a
+      // word is only replayed if you've actually heard it before.
+      if (this.translatorStage() === 1 && phrase.kw) {
+        const wlog = (((this.state.scholar || {}).translatorWords || {})[lang]) || {};
+        const known = Object.entries(phrase.kw).filter(([w]) => wlog[w]);
+        try { this.translatorLogPhrase(lang, phrase); } catch (e) {}
+        if (known.length) {
+          const gloss = known.map(([w, g]) => `'${w}' meant '${g}'`).join('; ');
+          return { text: `«${t}» (the device replays: ${gloss})`, foreign: lang };
+        }
+      } else {
+        try { this.translatorLogPhrase(lang, phrase); } catch (e) {}
+      }
       if (exp >= 10) return { text: `«${t}» (${phrase.en} — you're fairly sure)`, foreign: lang };
       if (exp >= 3) {
         const kws = Object.entries(phrase.kw || {}).slice(0, 2);
@@ -2925,7 +3114,12 @@
       // NPC "just started talking". Now the opening line states it plainly,
       // and THEN they speak: real words in a real tongue. No English. Not even a little.
       const first = this.displayName(vid);
-      const barrier = `${first} speaks only ${def.icon} ${def.name}. No shared words at all — just eyes, hands, and patience.`;
+      // LIVE TRANSLATE (Steve 2026-10-06): the barrier is one-way now. You
+      // hear them in English — your extended mind, cheerful and slightly
+      // off. They hear only your English, and understand none of it.
+      const barrier = this.translatorStage() === 2
+        ? `${first} speaks only ${def.icon} ${def.name}. You hear them in English — your extended mind translating live, cheerful and slightly off. They hear only your English, and understand none of it. Eyes, hands, and patience — one direction only.`
+        : `${first} speaks only ${def.icon} ${def.name}. No shared words at all — just eyes, hands, and patience.`;
       this.say(barrier);
       const ph = this.foreignLine(vid, 'openers');
       const r = this.renderForeign(vid, ph);
@@ -2948,11 +3142,32 @@
       const c = this.convoGet(vid);
       const lang = c.nativeLang || this.npcNativeLang(vid);
       const t = this.state.village.trust || {};
+      // SYSTEM MEDIATION (Steve 2026-10-06): under live translate they can
+      // TELL you're hearing them through the machine. Once per conversation,
+      // voiced by age and temperament — elders may find it rude, the young
+      // find it funny, most find it faintly unsettling. Social, not
+      // mechanical: this is the relationship cost, stated in the fiction.
+      let mediatedNote = '';
+      if (!c._mediatedReacted && this.mediatedBySystem(vid)) {
+        c._mediatedReacted = true;
+        const mband = (this.npcAgeBand ? this.npcAgeBand(vid) : 'adult') || 'adult';
+        const mtemp = this.npcTemper(vid);
+        if (mband === 'elder') {
+          mediatedNote = ' They notice your eyes unfocus \u2014 listening to something behind their words. "Talk to ME," they sign, irritated, "not through it."';
+          t[vid] = Math.max(0, (t[vid] || 10) - 1); // rude. lands whole, never halved.
+        } else if (mband === 'young') {
+          mediatedNote = ' They catch on fast \u2014 you flinch at the wrong moments, hearing the System\u2019s version under their voice. They grin and ham it up for the audience in your head.';
+        } else if (mtemp === 'prickly') {
+          mediatedNote = ' Something about the way you tilt your head \u2014 hearing them twice, once in their voice and once in the System\u2019s cheerful wrongness. It puts their teeth on edge.';
+        } else {
+          mediatedNote = ' Something about the way you tilt your head \u2014 hearing them twice, once in their voice and once in the System\u2019s. It unsettles them, a little.';
+        }
+      }
       if (kind === 'listen') {
         const ph = this.foreignLine(vid, 'questions') || this.foreignLine(vid, 'openers');
         this.langExposureGain(vid, lang, 3);
         const r = this.renderForeign(vid, ph);
-        return `You listen hard, watching their mouth shape the words. ${r ? r.text : 'Sounds, and the shape of meaning just out of reach.'}`;
+        return `You listen hard, watching their mouth shape the words. ${r ? r.text : 'Sounds, and the shape of meaning just out of reach.'}${mediatedNote}`;
       }
       if (kind === 'translate') {
         const yid = c.interpreter;
@@ -2961,7 +3176,7 @@
         const r = this.renderForeign(vid, ph);
         const yt = this.state.village.trust || {};
         yt[yid] = Math.min(100, (yt[yid] || 10) + 2);
-        return r ? r.text : 'They speak; the translation falters.';
+        return (r ? r.text : 'They speak; the translation falters.') + mediatedNote;
       }
       const reactKind = { nod: 'agree', smile: 'warm', pointself: 'warm' }[kind] || 'agree';
       const ph = this.foreignLine(vid, reactKind);
@@ -2974,7 +3189,7 @@
         pointself: 'You tap your chest, then theirs. Us. They nod, emphatic.',
       }[kind] || 'You gesture.';
       const frag = this.maybeEnglishFragment(vid);
-      return `${r ? r.text : 'They answer at length.'} ${narr}${frag ? ` "${frag}"` : ''}`;
+      return `${r ? r.text : 'They answer at length.'} ${narr}${frag ? ` "${frag}"` : ''}${mediatedNote}`;
     },
 
     // nvEndLine: gesture exits. No fluent English goodbyes from someone
@@ -3027,6 +3242,15 @@
         const yn = this.firstRef(yid);
         out.push({ id: 'nv:translate', label: `(ask ${yn} to translate)` });
       }
+      // SPEAK IT BACK (Steve 2026-10-06): the nonverbal thread is exactly
+      // where trying your hard-won words belongs — you can't converse yet,
+      // but you can try a phrase. Same gates as the verbal menu.
+      try {
+        if (!c.speakBackDone && lang && lang !== 'english' &&
+            this.langExposure(lang) >= 3 && this.translatorStage() < 2) {
+          out.push({ id: 'speak_back', label: `(try your ${this.langDef(lang).name})` });
+        }
+      } catch (e) {}
       out.push({ id: 'leave', label: '(walk away)' });
       // ONE-BEAT TURNS (Steve 2026-10-05): queued beats surface as a
       // gestural continuer, first.

@@ -152,25 +152,36 @@ function looksLikeEnglishSpeech(e) {
   ok('translation shows foreign + english', tr.line.includes('«') && tr.line.includes('translates:'));
   Game.endConvo(A, 'natural');
 
-  // ============ 7. TRANSLATOR ABILITY ============
+  // ============ 7. TRANSLATOR ABILITY: TWO STAGES (Steve 2026-10-06) ============
   // Offer: langStruggle >= 2 forces it into first ability choices
   s.week1 = s.week1 || {}; s.week1.langStruggle = 3;
   const fac = Game.firstAbilityChoices();
   ok('translator offered after language struggle', (fac || []).some(x => x.id === 'translator'));
-  // Behavior: it works, it's in your head, it's slightly off
   Game.state.systemArrived = true;
-  Game.grantAbility && null; // noop
   s.abilities = s.abilities || [];
   if (!s.abilities.some(a => a.id === 'translator')) s.abilities.push({ id: 'translator' });
-  ok('translatorActive with ability', Game.translatorActive());
+  // STAGE 1 (memory aid): no live translation — a ledger, not a voice.
+  // Learning is boosted: the device drills you.
+  s.integration = 10;
+  ok('stage 1: memory aid, not live', Game.translatorStage() === 1 && !Game.translatorActive());
+  s.langExposure.italian = 0; s.translatorWords = {};
+  const rt1 = Game.renderForeign(A, ph);
+  ok('stage 1: novel speech NOT auto-translated', !/→/.test(rt1.text));
+  Game.langExposureGain(A, 'italian', 5);
+  eq('stage 1: exposure boosted (+1 per gain)', Game.langExposure('italian'), 6);
+  // STAGE 2 (live, integration 60+): full translation, cheerful and slightly
+  // wrong — and vocabulary STILL accrues. The tradeoff is social now, not
+  // neural: your extended mind keeps the words; it's the person you lose.
+  s.integration = 70;
+  ok('stage 2: translatorActive', Game.translatorActive());
   const rt = Game.renderForeign(A, ph);
-  ok('translator renders → with translation', /→/.test(rt.text));
-  // ...and it blocks learning (the tradeoff)
+  ok('stage 2: translator renders → with translation', /→/.test(rt.text));
   s.langExposure.italian = 0;
   Game.langExposureGain(A, 'italian', 5);
-  eq('translator blocks exposure gain', Game.langExposure('italian'), 0);
+  eq('stage 2: exposure still accrues (words kept; the person is the cost)', Game.langExposure('italian'), 5);
   // Strip it back for the remaining tests
   s.abilities = s.abilities.filter(a => a.id !== 'translator');
+  s.integration = 0;
   Game.state.systemArrived = false;
   ok('translatorActive false without it', !Game.translatorActive());
 

@@ -1139,8 +1139,8 @@
   {
     "id": "translator",
     "name": "Translator",
-    "description": "The System translates every tongue in real time, right inside your head. You understand everyone. Mostly. (Slight System editorializing included. Tone sold separately.)",
-    "flavor": "OH WE LOVE THIS ONE! All the words! Right in your brain! Don't worry about the buzzing! That's just... us! In there! With the words!",
+    "description": "The System logs every foreign word you hear and replays them on demand — a memory aid, not a shortcut. Novel speech stays novel until YOU learn it. (Deep integration may wake it up further.)",
+    "flavor": "OH WE LOVE THIS ONE! Every word! Logged! Replayable! Like a little notebook! In your HEAD! The full translating part comes later. Probably. We're working on it!",
     "pool": "system",
     "tier": "utility",
     "unlock": {
