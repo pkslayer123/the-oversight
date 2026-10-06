@@ -2340,8 +2340,15 @@
       } else if (choiceId === 'observe') {
         // WATCH THEM: the detective's tool. Costs time, may reveal that
         // behavior doesn't match story. (observePerson lives in truth.js.)
+        // The observation is the PLAYER's narration — it is said directly,
+        // never rendered as the villager's own dialogue. Their actual beat
+        // is their reaction to being watched.
         const r = this.observePerson(vid);
-        done(r.text, r.found ? '"I\'ve been watching you. Keep talking."' : '(watch them for a while)');
+        if (r && r.text) this.say(r.text);
+        const react = (this.drawTruthLine && this.drawTruthLine('observedReact', vid))
+          || '"Something on your mind?"';
+        done(this.voiceLine(vid, react),
+          r && r.found ? '"I\'ve been watching you. Keep talking."' : '(watch them for a while)');
       } else if (choiceId === 'offer_help') {
         c.offeredHelp = true;
         // A promise is a FORMAL tracked commitment now — not just +2 trust.

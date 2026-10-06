@@ -1267,7 +1267,8 @@
     // shrug at a killing, even a shaky one
     if (avg < weregildAt || sev >= 4) {
       const payVerb = this.isPlayer(c.accused[0]) ? 'pay' : 'pays';
-      this.say(`The sentence is spoken low, like something heavy set down. "${cnameCap} ${payVerb}. And stays — this time."`);
+      const stayVerb = this.isPlayer(c.accused[0]) ? 'stay' : 'stays';
+      this.say(`The sentence is spoken low, like something heavy set down. "${cnameCap} ${payVerb}. And ${stayVerb} — this time."`);
       return this.resolveCase(c.id, 'weregild');
     }
     // weak conviction → schism or cold war

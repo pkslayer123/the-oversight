@@ -118,6 +118,20 @@
         `A whole afternoon with {first} in your eyeline. They complain about the same things everyone complains about. Nothing hidden, or hidden well.`,
         `{first} catches you looking and just nods, easy. No flinch, no performance. Whatever they're holding, it isn't guilt.`,
       ],
+      // the villager's spoken reaction to being watched. The observation
+      // itself is the PLAYER's narration (said by the convo branch, never as
+      // the villager's dialogue) — this pool is what they actually say when
+      // they notice your eyes on them. (Steve 2026-10-06 audit: the
+      // observation was rendering as `Name: "You study Name..."` dialogue,
+      // and the calm case said it twice.)
+      observedReact: [
+        `"You keep looking at me like that, people'll talk."`,
+        `They shift under your gaze, then settle. "Something on your mind?"`,
+        `"Alright. Look all you want." A shrug that isn't quite casual.`,
+        `"See something interesting?" {first} asks, half-amused, half-wary.`,
+        `{first} meets your eyes for a second, then looks away. "I'm an open book. Mostly."`,
+        `"You do that a lot," {first} says. "Watch people. I don't mind. Just — don't stare while I eat."`,
+      ],
       observeTellOcc: [
         // KNOWLEDGE GATING (Steve 2026-10-06): these lines used to name the
         // TRUE trade in the narrator's voice ("{truthCap} have stories in
@@ -597,9 +611,12 @@
       }
       // honest observation — nothing wrong, which is itself information.
       // No-repeat pool: watching the same person on loop shouldn't recycle
-      // the same three sentences.
+      // the same three sentences. NOTE: the caller narrates the returned
+      // text (the convo branch says it as the player's narration). Don't
+      // say it here — saying it here AND letting the caller render it
+      // produced a duplicate, and the caller was rendering it as the
+      // villager's own dialogue.
       const line = this.drawTruthLine('observeCalm', vid);
-      this.say(line);
       return { ok: true, found: false, text: line };
     },
 
