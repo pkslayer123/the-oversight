@@ -6,6 +6,8 @@
 //   - journalLearn(vid, topic)
 //   - journalTraitWord(vid)
 //   - peopleJournal()
+//   - occupationKnown(vid)
+//   - occupationLabel(vid)
 // rules:
 //   - pre_system_manual: true (code: journal.js)
 // consumes:
@@ -116,6 +118,29 @@
         const e = this.journalPerson(vid);
         return { vid, e };
       }).sort((a, b) => (a.e.metDay || 0) - (b.e.metDay || 0));
+    },
+
+    // occupationKnown: gated like names (Steve 2026-10-06). Learned via
+    // talk ('past' topic), gossip, or confession — or given by the System
+    // overlay post-arrival. Read-only: never creates journal entries.
+    occupationKnown(vid) {
+      if (Game.state.systemArrived) return true;
+      const p = (Game.state.codex.people || {})[vid];
+      return !!(p && p.occupation && p.occupation.value);
+    },
+
+    // occupationLabel: display string for a villager's occupation, or null
+    // when unknown. Unsure claims keep their "?" — honest, never "???".
+    occupationLabel(vid) {
+      if (Game.state.systemArrived) {
+        const v = (Game.data.villagers || []).find(x => x.id === vid)
+          || (Game.data.background_survivors || []).find(x => x.id === vid) || {};
+        return v.formerOccupation || null;
+      }
+      const p = (Game.state.codex.people || {})[vid];
+      const o = p && p.occupation;
+      if (!o || !o.value) return null;
+      return o.sure ? o.value : o.value + '?';
     },
 
     // journalTraitWord: temperament in plain observed language.

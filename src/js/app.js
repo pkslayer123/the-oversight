@@ -10708,7 +10708,11 @@
         const hb = h >= 70 ? '🟢' : h >= 40 ? '🟡' : '🔴';
         const lang = p.langNote ? ` <span style="opacity:.7">${p.langNote}</span>` : '';
         const conf = p.conflictNote ? `<br><span style="opacity:.7">${p.conflictNote}</span>` : '';
-        return `<p class="small">${hb} <b>${p.name}</b> — ${p.formerOccupation} (${h})${lang}${conf}</p>`; }).join('')}
+        // OCCUPATION GATE (Steve 2026-10-06): gated until learned, like names.
+        // Unknown → omitted, not "???".
+        const occ = (typeof Game.occupationLabel === 'function') ? Game.occupationLabel(p.id) : p.formerOccupation;
+        const occBit = occ ? ` — ${esc(occ)}` : '';
+        return `<p class="small">${hb} <b>${p.name}</b>${occBit} (${h})${lang}${conf}</p>`; }).join('')}
       <p class="small" style="margin-top:8px;opacity:.75"><b>Also here:</b> ${bg.map(p => `${p.name}`).join(' · ')}</p>
       ${(() => {
         const asg = (Game.state.village.assignments || {});
