@@ -523,15 +523,27 @@
         const cell = detail[y] && detail[y][x];
         return this.cellProps(cell).blocks;
       };
+      // BETRAYAL SPAWN (Steve 2026-10-06): every fighter gets their OWN tile.
+      // Same stacking bug class as the uprising fix (justice.js ff9daaf): the
+      // old code called freeSpotNear fresh per fighter with the same anchor
+      // and no occupancy tracking, so the betrayer and every loyal party
+      // member stacked on ONE tile. Door tiles are never spawn points: the
+      // door is the player's way out, it stays clear.
+      const taken = new Set([px + ',' + py]);
       const freeSpotNear = (cx, cy) => {
         for (let r = 1; r <= 4; r++) {
           for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
             const nx = cx + dx, ny = cy + dy;
-            if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || (nx === px && ny === py)) continue;
-            if (!blocked(nx, ny)) return { x: nx, y: ny };
+            if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || taken.has(nx + ',' + ny)) continue;
+            const cell = detail[ny] && detail[ny][nx];
+            if (cell === 'door') continue; // the escape stays clear
+            if (!blocked(nx, ny)) { taken.add(nx + ',' + ny); return { x: nx, y: ny }; }
           }
         }
-        return { x: cx, y: cy };
+        // No free tile in range: ring-offset fallback so fighters never stack.
+        const fb = { x: Math.max(0, Math.min(8, cx + taken.size)), y: Math.max(0, Math.min(8, cy)) };
+        taken.add(fb.x + ',' + fb.y);
+        return fb;
       };
       const fighters = [];
       fighters.push({
@@ -1133,6 +1145,24 @@
       return;
     }
     const r = origTbEnd.call(this, result);
+    // BETRAYAL FLEE (Steve 2026-10-06): game.js's flee-by-door path stashes
+    // 'hostile' fighters as "waiting monsters" with id = monsterId. Betrayal
+    // fighters are villagers — they have NO monsterId — so the stash holds
+    // {id:undefined} and the next door exit calls startCombat(undefined),
+    // which falls back to 'bulldozer': a phantom monster spawned by a social
+    // fight (same bug class as the justice.js uprising fix, ff9daaf). The
+    // betrayer is socially resolved by betrayalAftermath; strip the id-less
+    // entries so no phantom spawns. Real monster stashes (from other fights)
+    // pass through untouched.
+    if (wasBetrayalFight && result === 'fled') {
+      try {
+        const st = this.state.doorFledMonsters;
+        if (Array.isArray(st) && st.length) {
+          const kept = st.filter(m => m && m.id);
+          this.state.doorFledMonsters = kept.length ? kept : null;
+        }
+      } catch (e) {}
+    }
     try {
       // Non-betrayal fight that had betrayal context pending: still run aftermath.
       if (this._lastBetrayal && !this.tbfight) this.betrayalAftermath();
