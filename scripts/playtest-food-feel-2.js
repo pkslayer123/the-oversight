@@ -231,7 +231,9 @@ const fresh = () => {
   const v4 = Game.state.village;
   v4.taught = {};
   // A1: perishable pantry stack rots overnight and is announced BY NAME
-  v4.pantry.push({ name: 'Fresh-picked berries', kcalEach: 100, units: 10, spoilDay: s4.day + 1, safe: true, kg: 0.2 });
+  // (post-89dae4b the village eats perishable-first, so the stack must exceed
+  // the village's daily need (~24k kcal) for berries to genuinely go uneaten)
+  v4.pantry.push({ name: 'Fresh-picked berries', kcalEach: 100, units: 300, spoilDay: s4.day + 1, safe: true, kg: 0.2 });
   topStats(s4);
   said.length = 0; Game.endDay(); const a1 = drain();
   check('A1 pantry rot announced by name', /Fresh-picked berries/i.test(a1), a1.slice(-200));
@@ -262,10 +264,12 @@ const fresh = () => {
   const um = Game.foodMarker(ulump);
   check('A12 unknown lump marker keeps mystery AND clock', /unknown/.test(um) && /spoils tomorrow/.test(um), 'marker=' + um);
   // A13: once the player knows preservation, the village message shortens (no re-teaching)
+  // (300 units: village eats perishable-first post-89dae4b, so the stack must
+  // exceed daily need for rot to genuinely occur)
   const s7 = fresh();
   const v7 = Game.state.village;
   Game.learnTechnique('preserve', 'trial');
-  v7.pantry.push({ name: 'Fresh-picked berries', kcalEach: 100, units: 10, spoilDay: s7.day + 1, safe: true, kg: 0.2 });
+  v7.pantry.push({ name: 'Fresh-picked berries', kcalEach: 100, units: 300, spoilDay: s7.day + 1, safe: true, kg: 0.2 });
   topStats(s7); said.length = 0; Game.endDay(); const a13 = drain();
   check('A13 village rot message shortens when preservation known', /smoke rack going cold/.test(a13) && !/Old Mara/.test(a13), a13.slice(-200));
   check('A10 eatOne refuses spoiled mid-day', (() => {
