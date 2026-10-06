@@ -5661,6 +5661,22 @@
           this.state.scholar.monster = null; // it didn't care enough to follow
         }
       }
+      // FLED MONSTER RECOVERY (Steve 2026-10-05): if a monster fled to this
+      // node, it's here. Restore it at the edge opposite your entry.
+      try {
+        const fmKey = this.map.px + ',' + this.map.py;
+        const fled = (this.state.fledMonsters || {})[fmKey];
+        if (fled && !this.state.scholar.monster) {
+          const mdef = this.data.monsters.find(m => m.id === fled.id) || {};
+          this.state.scholar.monster = {
+            id: fled.id, mx: fled.mx, my: fled.my,
+            stance: 'fearful', fearTurns: 0,
+            hp: fled.hp, maxHp: fled.maxHp,
+          };
+          delete this.state.fledMonsters[fmKey];
+          this.say(`You find it — ${mdef.name || 'the thing'} didn't get far. It's still running scared.`);
+        }
+      } catch (e) {}
       this.state.scholar.animal = null; // animals don't follow
       if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
@@ -9231,6 +9247,11 @@
         if (q === 'ground') warn = 'Cold snap — sleeping exposed will hurt you. Find shelter or build a fire.';
         else if (q === 'fireside' && !this.fireLastsTillDawn()) warn = 'Cold snap — your fire dies before dawn. Feed it, or pitch a tent.';
       }
+      // METABOLIC CRISIS (survivalist loop 2026-10-05): honest button — a body
+      // running on empty won't recover tonight. Drink and eat first.
+      if ((s.hydration || 0) <= 0 || (s.kcal || 0) <= 0) {
+        warn = (warn ? warn + ' ' : '') + 'Running on empty — no water or no food means half healing and a wrung-out morning. Drink and eat before you sleep.';
+      }
       return {
         quality: q,
         heal: { bunk: 35, tent: 25, hall: 20, fireside: 18, ground: 12 }[q] || 12,
@@ -9301,9 +9322,20 @@
           ? ' Your fire died in the night, and the cold got in — no healing, and it took its cut. (Feed the fire before sleeping on cold nights.)'
           : ' The cold got in — no healing, and it took its cut. (Sleeping unsheltered in a cold snap is a mistake you only make once.)';
       } else {
-        s.health = Math.min(this.maxHealth(), Math.round(s.health || 0) + prev.heal);
-        s.energy = 100;
-        rested = prev.quality === 'bunk' ? 'deeply rested' : prev.quality === 'ground' ? 'stiff and cold' : 'rested';
+        // METABOLIC CRISIS (survivalist loop 2026-10-05): a body running on
+        // empty does not recover in sleep. Dehydrated (hydration 0) or starving
+        // (kcal 0) at bedtime — the spiral already took its cut in endDay —
+        // and shelter can't paper over it: healing halved, a wrung-out
+        // half-rest (energy only to 60). Water and food first; rest second.
+        // (Before this, any shelter sleep fully erased the spiral: -15/+20
+        // netted positive at the hall, so the DEHYDRATED warning was a lie.)
+        const crisis = (s.hydration || 0) <= 0 || (s.kcal || 0) <= 0;
+        const healAmt = crisis ? Math.floor(prev.heal / 2) : prev.heal;
+        s.health = Math.min(this.maxHealth(), Math.round(s.health || 0) + healAmt);
+        s.energy = crisis ? 60 : 100;
+        rested = crisis ? 'wrung out and unrepaired'
+          : prev.quality === 'bunk' ? 'deeply rested' : prev.quality === 'ground' ? 'stiff and cold' : 'rested';
+        if (crisis) exposureNote = ' You ran on empty — no water, no food, no real recovery. The body keeps score. (Drink and eat before you sleep.)';
       }
       // NIGHTMARES: trauma follows you into sleep. You did things. The dark replays them.
       let nightmareNote = '';
@@ -9811,8 +9843,14 @@
     // stanceFor: initial stance from data. behavior + aggression, not dice.
     stanceFor(mdef) {
       const b = (mdef.behavior || '').toLowerCase();
+      const agg = (mdef.aggression || '').toLowerCase();
       if (b === 'ambush') return 'ambush';
       if (b === 'curious' || b === 'drifter') return 'curious';
+      // SKITTISH+TERRITORIAL (Highbeam Deer, Steve 2026-10-05): starts grazing,
+      // unaware. Skittish at range before it locks on — spook it and it runs.
+      // Once it notices you and goes territorial, it commits: "It does not
+      // run. It does not bluff."
+      if (b === 'territorial' && agg === 'skittish') return 'grazing';
       if (b === 'territorial') return 'territorial';
       if (b === 'pack' || b === 'swarm') return 'hungry';
       return 'curious';
@@ -9983,6 +10021,29 @@
           }
           break;
         }
+        case 'grazing': {
+          // HIGHBEAM (Steve 2026-10-05): grazing, unaware. Skittish at range.
+          // The generic fear check (movement within 2) spooks it before this
+          // runs — that's the "skittish at range before it locks on" weakness.
+          // If it sees you coming from a distance, it goes territorial
+          // instead — and then it does NOT run ("It does not run. It does not
+          // bluff.").
+          maybeCue('curious');
+          if (dist <= 5) {
+            // noticed you. the freeze begins. it's aiming, not frozen.
+            m.stance = 'territorial'; m.warned = false; m.warnTurns = 0;
+            const w = this.monsterCue(m.id, 'warn');
+            this.say(w || 'It freezes. Like a deer in headlights. Light gathers behind its eyes.');
+          } else {
+            // still grazing. drift a little.
+            if (Math.random() < 0.3) {
+              const dx = Math.floor(Math.random() * 3) - 1;
+              const dy = Math.floor(Math.random() * 3) - 1;
+              mv(dx, dy);
+            }
+          }
+          break;
+        }
         case 'hungry': {
           stepToward();
           if (m.mx === px && m.my === py) this.startCombat(m.id);
@@ -10004,8 +10065,31 @@
           const dx = Math.sign(m.mx - px), dy = Math.sign(m.my - py);
           mv(dx, 0); mv(0, dy);
           if (m.fearTurns >= 4 || m.mx === 0 || m.mx === 8 || m.my === 0 || m.my === 8) {
-            s.monster = null;
-            this.say('It melts back into the treeline. Gone.');
+            // FLED ACROSS BOUNDARY (Steve 2026-10-05): a fleeing monster doesn't
+            // vanish — it runs to the adjacent node. Store it there so the
+            // player can follow and find it. The `follows` flag is about the
+            // monster CHASING the player; fleeing is different.
+            const atEdge = (m.mx === 0 || m.mx === 8 || m.my === 0 || m.my === 8);
+            if (atEdge) {
+              const nx = this.map.px + (m.mx === 0 ? -1 : m.mx === 8 ? 1 : 0);
+              const ny = this.map.py + (m.my === 0 ? -1 : m.my === 8 ? 1 : 0);
+              const key = nx + ',' + ny;
+              this.state.fledMonsters = this.state.fledMonsters || {};
+              // preserve the monster data (id, hp if wounded, etc.)
+              this.state.fledMonsters[key] = {
+                id: m.id, mx: m.mx === 0 ? 8 : m.mx === 8 ? 0 : m.mx,
+                my: m.my === 0 ? 8 : m.my === 8 ? 0 : m.my,
+                stance: 'fearful', fearTurns: 0,
+                hp: m.hp, maxHp: m.maxHp,
+              };
+              s.monster = null;
+              const dir = m.mx === 0 ? 'west' : m.mx === 8 ? 'east' : m.my === 0 ? 'north' : 'south';
+              this.say(`It bolts ${dir}, across the treeline. It's still out there.`);
+            } else {
+              // gave up after 4 turns without reaching an edge — truly gone
+              s.monster = null;
+              this.say('It melts back into the treeline. Gone.');
+            }
           }
           break;
         }
