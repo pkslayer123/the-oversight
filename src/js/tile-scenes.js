@@ -197,19 +197,30 @@
   }
 
   function compose(g, t, x, y) {
-    const pal = TILE_BASE[t.type] || FALLBACK_BASE;
-    let detail = t.detail;
-    if (!detail && g.genDetail) {
-      try { detail = g.genDetail(x, y); } catch (e) { detail = null; }
+    // ROBUST (Steve 2026-10-06): the generator must not fail. If detail
+    // isn't available, show the base terrain — never blank, never throw.
+    try {
+      const pal = TILE_BASE[t.type] || FALLBACK_BASE;
+      let detail = null;
+      try {
+        detail = t.detail;
+        if (!detail && g.genDetail) detail = g.genDetail(x, y);
+      } catch (e) { detail = null; }
+      const stockFrac = (typeof t.stock === 'number' && typeof t.maxStock === 'number' && t.maxStock > 0)
+        ? Math.max(0, Math.min(1, t.stock / t.maxStock)) : 1;
+      let svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+        '<rect x="0.5" y="0.5" width="63" height="63" rx="7" fill="' + pal.base + '"/>';
+      try { svg += texture(x, y, pal); } catch (e) {}
+      try { if (detail) svg += detailMarkers(detail, stockFrac); } catch (e) {}
+      try { svg += entityMarkers(g, x, y); } catch (e) {}
+      svg += '</svg>';
+      return svg;
+    } catch (e) {
+      // Absolute last resort: solid terrain color, never blank.
+      const pal = FALLBACK_BASE;
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+        '<rect x="0.5" y="0.5" width="63" height="63" rx="7" fill="' + pal.base + '"/></svg>';
     }
-    const stockFrac = (typeof t.stock === 'number' && typeof t.maxStock === 'number' && t.maxStock > 0)
-      ? Math.max(0, Math.min(1, t.stock / t.maxStock)) : 1;
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
-      '<rect x="0.5" y="0.5" width="63" height="63" rx="7" fill="' + pal.base + '"/>' +
-      texture(x, y, pal) +
-      (detail ? detailMarkers(detail, stockFrac) : '') +
-      entityMarkers(g, x, y) +
-      '</svg>';
   }
 
   function fingerprint(g, t, x, y) {
