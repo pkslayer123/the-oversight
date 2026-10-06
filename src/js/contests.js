@@ -1676,12 +1676,15 @@
           { label: 'Watch silently', sub: 'tense', do: { note: 'You watch without a sound. Your hands hurt from gripping.' }, next: 1 },
           { label: 'Look away', sub: 'can\'t watch', do: { note: 'You look away. The cameras catch it anyway. The audience understands.', trauma: 3 }, next: 1 },
         ] },
-      { text: `📺 It's going badly. Or well. It's hard to tell through the lights.\n\n${pname} is still in it. The crowd is restless.`,
+      // Watchability (Steve 2026-10-06): mid/late watch phases name the
+      // contest — without it the show reads as the same generic beat for
+      // all 27 contests.
+      { text: `📺 ${contest.name} — it's going badly. Or well. It's hard to tell through the lights.\n\n${pname} is still in it. The crowd is restless.`,
         choices: [
           { label: 'Shout advice', sub: 'maybe helps', do: { note: `You shout something useful. Whether ${pname} hears it over the noise is another question.` }, next: 2 },
           { label: 'Hold your breath', sub: 'tense', do: { note: 'You stop breathing. Everyone does. The village is one held breath.' }, next: 2 },
         ] },
-      { text: `📺 It's over.\n\nThe outcome scrolls across the sky in letters the size of weather.`,
+      { text: `📺 ${contest.name} — it's over.\n\nThe outcome scrolls across the sky in letters the size of weather.`,
         choices: [
           { label: 'Go to them', sub: 'after', do: { note: `You go to ${pname} after. Win or lose, they need a familiar face more than applause.` }, next: 'VERDICT' },
           { label: 'Give them space', sub: 'respect', do: { note: 'You give them space. The cameras move on. You don\'t.' }, next: 'VERDICT' },
