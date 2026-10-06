@@ -74,9 +74,16 @@ function eatLoop(Game, idx, n) {
 
 (async () => {
   const newGameSrc = fs.readFileSync(path.join(ROOT, 'src/js/game.js'), 'utf8');
-  const oldGameSrc = execSync('git show HEAD:src/js/game.js', { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  // BEFORE baseline: the tree as it was before this worker's animals commit
+  // (HEAD has since advanced past it — the restore commit and siblings).
+  let baseRef = 'HEAD';
+  try {
+    const ac = execSync('git log --format=%H --grep="Animals flesh-out: stalk audio hook" -1', { cwd: ROOT, encoding: 'utf8', maxBuffer: 1024 * 1024 }).trim();
+    if (ac) baseRef = ac + '^';
+  } catch (e) {}
+  const oldGameSrc = execSync(`git show ${baseRef}:src/js/game.js`, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const newAppSrc = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
-  const oldAppSrc = execSync('git show HEAD:src/js/app.js', { cwd: ROOT, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024 });
+  const oldAppSrc = execSync(`git show ${baseRef}:src/js/app.js`, { cwd: ROOT, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024 });
 
   console.log('== 1. STALK AUDIO HOOK — before/after ==');
   ok('BEFORE: no animalStalk synth in app.js', !/function animalStalk\(\)/.test(oldAppSrc));
