@@ -11,7 +11,7 @@
 //   - encPhase(ent, phase, beats)
 //   - encAudio(name, data)
 //   - encKillLine(animal, kcal)
-//   - encButcherHonesty(kcal)
+//   - encButcherHonesty(kcal, animal)
 //   - feedback(msg)
 //   - feedbackLines()
 //   - feedbackMark()
@@ -372,25 +372,35 @@
       }
     } catch (e) {}
     if (!core) core = 'About ' + kcal + ' kcal of meat on the bone.';
-    return core + ' ' + this.encButcherHonesty(kcal);
+    return core + ' ' + this.encButcherHonesty(kcal, animal);
   };
   // BUTCHER HONESTY (Steve 2026-10-06): yield honesty — what the player
   // actually gets vs what the kill promises. The {kcal} above is the gross
   // on the bone; cleaning (knife, learned technique) keeps 40% in 4 raw
-  // portions, 30% while the hands are learning. Raw portions are a real
-  // gamble (food.js RISK.rawMeat: ~1-in-3 sickens — fever by nightfall,
-  // logged as disease, not an HP ding). Processing states named in order:
-  // clean (knife) → cook (fire) → smoke (fire + know-how). The knife gate
-  // is honest-blind: no knife in the pack gets named, with the fix.
-  G.encButcherHonesty = function (kcal) {
-    var knowsClean = false, hasKnife = false;
+  // portions, 30% while the hands are learning. DISEASE LAW (Steve
+  // 2026-10-06): sickness is feared, not chipped — raw meat is a vector,
+  // and every species carries its own real one (animals.json diseaseVector:
+  // ticks/Lyme on deer, trichinella in boar, tularemia in rabbits...). The
+  // vector note is KNOWLEDGE-GATED (encAnimalKnown) — if you don't know the
+  // animal, you don't know its diseases. Treatment is gated and honest:
+  // Herbal Remedy cures disease (plant knowledge, once a day) — no remedy,
+  // no cure. Processing states named in order: clean (knife) → cook (fire)
+  // → smoke (fire + know-how). The knife gate is honest-blind: no knife in
+  // the pack gets named, with the fix.
+  G.encButcherHonesty = function (kcal, animal) {
+    var knowsClean = false, hasKnife = false, vec = '';
     try { knowsClean = !!this.knowsTechnique('clean'); } catch (e) {}
     try { hasKnife = !!this.hasCuttingTool(); } catch (e) {}
+    try {
+      if (animal && animal.diseaseVector && this.encAnimalKnown(animal.id)) vec = animal.diseaseVector;
+    } catch (e) {}
     var frac = knowsClean ? 0.40 : 0.30;
     var per = Math.round((kcal || 0) * frac / 4);
     var line = 'Cleans to ~' + per + ' kcal × 4 raw portions' +
       (knowsClean ? ' (you know the cuts)' : ' (your hands are learning — technique keeps more)') +
-      '. Raw is a gamble — about 1-in-3 sickens you, fever by nightfall. Cook it over fire; smoke what you can\'t eat soon. Gut it fast — the carcass spoils in ~2 days.';
+      '. Raw is a gamble — about 1-in-3 sickens you: fever by nightfall, logged as disease. Herbal Remedy cures it (plant knowledge, once a day) — no remedy, no cure.' +
+      (vec ? ' ' + vec : '') +
+      ' Cook it over fire; smoke what you can\'t eat soon. Gut it fast — the carcass spoils in ~2 days.';
     if (!hasKnife) line += ' You have no knife — knap a Stone knife (stone + vine, Craft in your pack) or this stays a carcass.';
     return line;
   };

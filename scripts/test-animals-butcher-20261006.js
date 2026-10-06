@@ -180,6 +180,16 @@ function drain(label) {
     check('known kill: killText with {kcal} substituted', /About 20000 kcal/.test(line) && /Organs first/.test(line));
     check('known kill: cleaned yield math (known 40% → 2000×4)',
       /Cleans to ~2000 kcal × 4 raw portions/.test(line) && /you know the cuts/.test(line));
+    // DISEASE LAW (Steve 2026-10-06): named real vectors, knowledge-gated
+    check('known kill: species disease vector named (ticks/Lyme on deer)',
+      /Lyme disease is real/.test(line), line.slice(-260));
+    check('known kill: treatment gated and honest (Herbal Remedy, once a day)',
+      /Herbal Remedy cures it \(plant knowledge, once a day\)/.test(line));
+    // unknown: the vector stays hidden — if you don't know, it doesn't show
+    Game.state.codex.animalEncounters = {};
+    line = Game.encKillLine(deer, 20000);
+    check('unknown kill: disease vector NOT leaked pre-knowledge', !/Lyme/.test(line));
+    check('unknown kill: generic raw gamble + cure still honest', /1-in-3/.test(line) && /Herbal Remedy/.test(line));
   }
 
   console.log('\n=== A6. animals.json COMPLETENESS AUDIT ===');
@@ -193,6 +203,7 @@ function drain(label) {
       const kl = Object.keys(a.knowledgeLevels || {});
       if (missing.length || kl.length !== 4) { holes++; console.log(`  HOLE ${a.id}: ${missing.join(',')}${kl.length !== 4 ? ' knowledgeLevels!=4' : ''}`); }
       if (!/\{kcal\}/.test(a.killText || '')) { holes++; console.log(`  HOLE ${a.id}: killText has no {kcal}`); }
+      if (!a.diseaseVector || !a.diseaseVector.trim()) { holes++; console.log(`  HOLE ${a.id}: no diseaseVector`); }
     }
     check('all 26 species complete (no data holes)', holes === 0, holes + ' holes');
     const turkey = Game.data.animals.find(x => x.id === 'wild_turkey');
@@ -260,13 +271,16 @@ function drain(label) {
 
     // CLEAN — blind hands (no technique yet): messy, 30%, teaches
     Game.log = [];
+    const grossKcal = s.inventory[carcassIdx].hiddenKcal || 0;
     Game.cleanCarcass(carcassIdx);
     drain('clean');
     const meatIdx = s.inventory.findIndex(i => i.foodKind === 'meat' && i.foodState === 'cleaned');
     const meat = s.inventory[meatIdx];
     check('arc: cleaning yields 4 raw portions', meat && meat.units === 4, meat && `units=${meat.units}`);
-    check('arc: blind clean = 30% (messy 225/portion on 3000 gross)', meat && meat.kcalEach === 225,
-      meat && `kcalEach=${meat.kcalEach}`);
+    const expectPer = Math.round(grossKcal * 0.30 / 4);
+    check('arc: blind clean = 30% of actual gross (messy)',
+      meat && meat.kcalEach === expectPer,
+      meat && `kcalEach=${meat.kcalEach} expected=${expectPer} gross=${grossKcal}`);
     check('arc: raw portions carry disease risk', meat && meat.diseaseRisk && meat.diseaseRisk.p === 0.35,
       meat && JSON.stringify(meat.diseaseRisk));
     check('arc: raw prep warns honestly', meat && /Risky: raw meat/.test(meat.prep || ''), meat && meat.prep);

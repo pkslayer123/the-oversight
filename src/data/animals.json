@@ -32,7 +32,8 @@
     "butcher": {
       "hide": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "Rabbits carry tularemia — wear gloves gutting, and cook it through. Ticks ride them too."
   },
   {
     "id": "gray_squirrel",
@@ -66,7 +67,8 @@
     "tell": "goes silent mid-chatter, tail flicking hard.",
     "butcher": {
       "hide": 1
-    }
+    },
+    "diseaseVector": "Squirrels carry ticks and fleas. Cook the meat through."
   },
   {
     "id": "white_tailed_deer",
@@ -102,7 +104,8 @@
       "hide": 2,
       "bone": 4,
       "antler": 2
-    }
+    },
+    "diseaseVector": "Deer carry ticks — Lyme disease is real. Check the hide before you wear it, and cook the venison through."
   },
   {
     "id": "creek_chub",
@@ -136,7 +139,8 @@
     "tell": "holds perfectly still in the current, fins barely moving.",
     "butcher": {
       "bone": 1
-    }
+    },
+    "diseaseVector": "Raw freshwater fish can carry parasites. Cook it."
   },
   {
     "id": "wild_turkey",
@@ -171,7 +175,8 @@
     "butcher": {
       "feather": 6,
       "bone": 2
-    }
+    },
+    "diseaseVector": "Raw poultry carries salmonella. Cook it through — no pink."
   },
   {
     "id": "opossum",
@@ -206,7 +211,8 @@
     "butcher": {
       "hide": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "Opossums rarely carry rabies, but raw meat is raw meat. Cook it through."
   },
   {
     "id": "bullfrog",
@@ -238,7 +244,8 @@
     "huntText": "It croaks — a deep jug-o-rum. You step closer. Splash. Gone. The ripples are still spreading.",
     "killText": "About {kcal} kcal — it’s all in the legs. The rest is skin and attitude. Fry them like chicken.",
     "tell": "the croak cuts off mid-note. The ripples flatten.",
-    "butcher": {}
+    "butcher": {},
+    "diseaseVector": "Frogs carry salmonella. Cook the legs through."
   },
   {
     "id": "box_turtle",
@@ -272,7 +279,8 @@
     "butcher": {
       "shell": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "Reptiles carry salmonella. Wash up, cook it through."
   },
   {
     "id": "gray_fox",
@@ -307,7 +315,8 @@
     "butcher": {
       "hide": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "Foxes are a rabies vector — never handle one acting strange. Cook the meat through."
   },
   {
     "id": "crayfish",
@@ -341,7 +350,8 @@
     "tell": "freezes under its rock, claws raised.",
     "butcher": {
       "shell": 1
-    }
+    },
+    "diseaseVector": "Raw crayfish can carry lung fluke. Boil them."
   },
   {
     "id": "raccoon",
@@ -375,7 +385,8 @@
     "butcher": {
       "hide": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "Raccoons carry roundworm and rabies. Wash your hands after gutting; cook through."
   },
   {
     "id": "snapping_turtle",
@@ -410,7 +421,8 @@
     "butcher": {
       "shell": 1,
       "bone": 2
-    }
+    },
+    "diseaseVector": "Reptiles carry salmonella — cook through. (The head bites after death: cut wide, bury it.)"
   },
   {
     "id": "timber_rattlesnake",
@@ -445,7 +457,8 @@
     "butcher": {
       "hide": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "The venom is in the head, not the meat — but reptiles carry salmonella. Cook through; bury the head deep."
   },
   {
     "id": "striped_skunk",
@@ -480,7 +493,8 @@
     "butcher": {
       "hide": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "Skunks are a rabies vector. Cook through — and never nick the musk glands."
   },
   {
     "id": "muskrat",
@@ -515,7 +529,8 @@
     "butcher": {
       "hide": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "Muskrats can carry tularemia. Cook through."
   },
   {
     "id": "wild_boar",
@@ -551,7 +566,8 @@
       "hide": 1,
       "bone": 3,
       "tusk": 2
-    }
+    },
+    "diseaseVector": "Wild pork can carry trichinella — cook it through, no exceptions. No pink, ever."
   },
   {
     "id": "north_american_porcupine",
@@ -586,7 +602,8 @@
     "butcher": {
       "hide": 1,
       "quill": 12
-    }
+    },
+    "diseaseVector": "Low disease risk, but raw is raw. Cook it through."
   },
   {
     "id": "groundhog",
@@ -621,7 +638,8 @@
     "butcher": {
       "hide": 1,
       "bone": 1
-    }
+    },
+    "diseaseVector": "Groundhogs carry ticks and can carry tularemia. Cook through."
   },
   {
     "id": "canada_goose",
@@ -656,7 +674,8 @@
     "butcher": {
       "feather": 8,
       "bone": 2
-    }
+    },
+    "diseaseVector": "Raw waterfowl carries salmonella. Cook it through."
   },
   {
     "id": "american_woodcock",
@@ -690,7 +709,8 @@
     "tell": "nothing. That is the tell. The leaf litter is a little too still, a little too bird-shaped.",
     "butcher": {
       "feather": 2
-    }
+    },
+    "diseaseVector": "Low risk, but raw is raw. Cook it through."
   },
   {
     "id": "north_american_beaver",
@@ -725,7 +745,8 @@
     "butcher": {
       "hide": 2,
       "bone": 2
-    }
+    },
+    "diseaseVector": "Beavers swim in giardia water and can carry tularemia. Cook the meat through."
   },
   {
     "id": "bobcat",
@@ -760,7 +781,8 @@
     "butcher": {
       "hide": 1,
       "bone": 2
-    }
+    },
+    "diseaseVector": "Wild cats can carry toxoplasma — cook through. (If you're pregnant, let someone else gut it.)"
   },
   {
     "id": "nine_banded_armadillo",
@@ -791,12 +813,13 @@
     "behaviorDesc": "Roots for grubs, head down, deaf to the world. Startle it and it leaps straight up — a vertical jump that startles back — then bolts for the nearest burrow. Cornered against a bank or a log, it has no plan B.",
     "fleeDifficulty": "easy",
     "huntText": "A clanking in the leaf litter — an armadillo, snout down, digging for grubs. It has not noticed you. It will not notice you until it is far too late.",
-    "tell": "stops clanking \u2014 a pink ear rises above the litter, swiveling.",
+    "tell": "stops clanking — a pink ear rises above the litter, swiveling.",
     "butcher": {
       "shell": 1,
       "bone": 1
     },
-    "killText": "About {kcal} kcal — poor man’s pork. Cook it through; the shell makes a bowl if you’re patient."
+    "killText": "About {kcal} kcal — poor man’s pork. Cook it through; the shell makes a bowl if you’re patient.",
+    "diseaseVector": "Armadillos can carry leprosy — rare, real. Wear gloves gutting; cook through."
   },
   {
     "id": "american_crow",
@@ -831,7 +854,8 @@
     "butcher": {
       "feather": 4
     },
-    "killText": "About {kcal} kcal — stringy and dark. Famine meat; the feathers are the real prize."
+    "killText": "About {kcal} kcal — stringy and dark. Famine meat; the feathers are the real prize.",
+    "diseaseVector": "Crows don't give you West Nile from the meat (that's mosquitoes), but raw is raw. Cook through."
   },
   {
     "id": "bluegill",
@@ -863,7 +887,8 @@
     "huntText": "Circles on the creek bottom — bluegill beds, each one guarded by a fish that refuses to leave. You could almost reach down and pick one up.",
     "tell": "the circles on the bottom are fresh, edges sharp, a shadow hovering over each.",
     "butcher": {},
-    "killText": "About {kcal} kcal — sweet panfish. Fry whole, eat around the bones."
+    "killText": "About {kcal} kcal — sweet panfish. Fry whole, eat around the bones.",
+    "diseaseVector": "Low risk — cook it through anyway."
   },
   {
     "id": "gray_rat_snake",
@@ -897,6 +922,7 @@
     "huntText": "A gray coil on the log, thick as your wrist. No rattle sounds — but your hands do not believe that yet. It has not moved. It is hoping you walk past.",
     "tell": "goes utterly still — not a scale moving.",
     "butcher": {},
-    "killText": "About {kcal} kcal — cooks like eel. The meat is clean; the musk washes off the hands, not the memory."
+    "killText": "About {kcal} kcal — cooks like eel. The meat is clean; the musk washes off the hands, not the memory.",
+    "diseaseVector": "Reptiles carry salmonella. Cook it through."
   }
 ]

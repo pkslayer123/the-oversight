@@ -50,8 +50,24 @@ Fun: the chase reads like a real hunt; the honesty footer turns the gross
 into an eating plan. Friction: the arc crosses three UI surfaces
 (grid → pack clean → fire cook); the kill line now names all three.
 
+## Second pass — disease law (Steve 2026-10-06, same run)
+
+4. **Disease modeling sharpened to the disease law.** `animals.json` now
+   carries a per-species `diseaseVector` (all 26, real-world: deer ticks →
+   Lyme, boar → trichinella, rabbit/muskrat/groundhog → tularemia, raccoon →
+   roundworm, armadillo → leprosy, bobcat → toxoplasma, reptiles → salmonella,
+   crayfish → lung fluke, fox/skunk → rabies vector...). The kill-line footer
+   names the vector **knowledge-gated** (unknown animal → generic "raw is a
+   gamble"; known → the specific vector), and names treatment honestly:
+   "Herbal Remedy cures it (plant knowledge, once a day) — no remedy, no
+   cure" (matches game.js: herbal_remedy, sick-only, once/day).
+   Deliberate boundary: multi-stat degradation ("not just HP") and distinct
+   lethal conditions are food.js/game.js systems — off-limits here. The kill
+   line claims only what the code does today (fever by nightfall, logged as
+   disease); the full degradation pass needs the owner of those files.
+
 ## Proof
-`scripts/test-animals-butcher-20261006.js` — 56/56 pass (Part A seeded
+`scripts/test-animals-butcher-20261006.js` — 60/60 pass (Part A seeded
 audio/kill-line/data audits + Part B played arc, real randomness).
 Ontology validator: 35 systems validated, release permitted.
 
