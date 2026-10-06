@@ -359,7 +359,7 @@
           ? `It was old before the Scattering. The canopy swallows the light.`
           : `Young enough to still be reaching. Old enough to have opinions.`;
       } else {
-        text = `You circle the ${species}. `;
+        text = `You circle the ${species.replace(/^(a|an)\s+/i, '')}. `;
         const scars = hashStr(key + 'scars') % 3;
         if (scars === 0) text += `Bark scarred on the north side — something large rubbed against it, hard. Old marks, healed over. Whatever did it hasn't been back in a while. `;
         else if (scars === 1) text += `Claw marks, shoulder-high. Not fresh — the bark's grown back around them. You memorize the pattern without meaning to. `;
