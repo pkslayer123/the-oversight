@@ -9,6 +9,9 @@
 //   - encQueueOf(m)
 //   - encPickCue(known, rawCue, knownCue)
 //   - encPhase(ent, phase, beats)
+//   - encAudio(name, data)
+//   - encKillLine(animal, kcal)
+//   - encButcherHonesty(kcal)
 //   - feedback(msg)
 //   - feedbackLines()
 //   - feedbackMark()
@@ -151,6 +154,30 @@
     if (txt) this.say(txt);
     if (b.audio && this.audioEvent) { try { this.audioEvent(b.audio); } catch (e) {} }
     return phase;
+  };
+  // ================= 4b. HUNT AUDIO RESOLUTION =================
+  // AUDIO FALLBACK (Steve 2026-10-06): Game.audioEvent silently no-ops when
+  // the CombatAudio registry (app.js) has no such synth — and 'animalPanic'
+  // (cornered-prey detonation, fired in the cornered branch) has no
+  // registry entry. A cornered deer screaming cannot be silent. encAudio
+  // keeps the hook-name contract: if app.js ever ships a real animalPanic
+  // synth it wins automatically; until then the panic composes from
+  // registered freaks (bolt-thrash + brush-rustle, plus the bite-snap the
+  // cornered branch already fires on top). Zero silent beats.
+  var ENC_AUDIO_FALLBACK = {
+    animalPanic: ['animalBolt', 'animalRustle'],
+  };
+  G.encAudio = function (name, data) {
+    var fn = null;
+    try { fn = this.audio && this.audio[name]; } catch (e) {}
+    if (typeof fn === 'function') { try { fn.call(this.audio, data || {}); } catch (e) {} return true; }
+    var fb = ENC_AUDIO_FALLBACK[name] || [];
+    for (var i = 0; i < fb.length; i++) {
+      var f2 = null;
+      try { f2 = this.audio && this.audio[fb[i]]; } catch (e) {}
+      if (typeof f2 === 'function') { try { f2.call(this.audio, data || {}); } catch (e) {} }
+    }
+    return fb.length > 0;
   };
   // NOTE: encPhaseBadge(m) lives in game.js (the shared enc* interface) —
   // it reads m.beamPhase via the mdef.encounter config. This module does not
@@ -334,15 +361,38 @@
   // what you were holding (encIdentifyAnimal runs before the name is said).
   // {kcal} is replaced with the real yield. Real-world anchored: fat vs
   // lean, organs first, the hazard in the guts — the parts the knowledge
-  // text promises, said once, at the body.
+  // text promises, said once, at the body. The butcher-honesty footer says
+  // what you actually EAT: the gross on the bone is not the meal.
   G.encKillLine = function (animal, kcal) {
     var kt = animal && animal.killText;
+    var core = null;
     try {
       if (kt && this.encAnimalKnown(animal.id)) {
-        return String(kt).split('{kcal}').join(String(kcal));
+        core = String(kt).split('{kcal}').join(String(kcal));
       }
     } catch (e) {}
-    return 'About ' + kcal + ' kcal of meat on the bone — gut it quickly (knife). It spoils fast.';
+    if (!core) core = 'About ' + kcal + ' kcal of meat on the bone.';
+    return core + ' ' + this.encButcherHonesty(kcal);
+  };
+  // BUTCHER HONESTY (Steve 2026-10-06): yield honesty — what the player
+  // actually gets vs what the kill promises. The {kcal} above is the gross
+  // on the bone; cleaning (knife, learned technique) keeps 40% in 4 raw
+  // portions, 30% while the hands are learning. Raw portions are a real
+  // gamble (food.js RISK.rawMeat: ~1-in-3 sickens — fever by nightfall,
+  // logged as disease, not an HP ding). Processing states named in order:
+  // clean (knife) → cook (fire) → smoke (fire + know-how). The knife gate
+  // is honest-blind: no knife in the pack gets named, with the fix.
+  G.encButcherHonesty = function (kcal) {
+    var knowsClean = false, hasKnife = false;
+    try { knowsClean = !!this.knowsTechnique('clean'); } catch (e) {}
+    try { hasKnife = !!this.hasCuttingTool(); } catch (e) {}
+    var frac = knowsClean ? 0.40 : 0.30;
+    var per = Math.round((kcal || 0) * frac / 4);
+    var line = 'Cleans to ~' + per + ' kcal × 4 raw portions' +
+      (knowsClean ? ' (you know the cuts)' : ' (your hands are learning — technique keeps more)') +
+      '. Raw is a gamble — about 1-in-3 sickens you, fever by nightfall. Cook it over fire; smoke what you can\'t eat soon. Gut it fast — the carcass spoils in ~2 days.';
+    if (!hasKnife) line += ' You have no knife — knap a Stone knife (stone + vine, Craft in your pack) or this stays a carcass.';
+    return line;
   };
   // Windup tell: the moment an animal decides about you. Highbeam-Deer rule —
   // distinct telegraph text per species, not a generic "goes still". This is
@@ -698,6 +748,10 @@
     // interchangeable. Each behavior runs before the generic graze/wary/bolt.
     if (beh === 'slow') {
       // BOX TURTLE: it walks. That's it. Total confidence. Free pickup.
+      // (Steve 2026-10-06): the branch returned before the wary text, so
+      // the tell never showed. The turtle notices you too — it just doesn't
+      // care. The tell is honest perception, ungated; shown once.
+      if (dist <= 3 && !a.toldSlow) { a.toldSlow = true; this.say(this.encWaryText(a)); }
       if (Math.random() < 0.2) tryMove(a.mx + rnd3(), a.my + rnd3());
       return;
     }
@@ -1163,7 +1217,9 @@
       // turkey spurs, a cornered rabbit screams and thrashes. About half the
       // time it lashes out at what's trapping it; otherwise it breaks for
       // the nearest edge, THROUGH you if it must. Panic is honest
-      // perception — ungated — and it has its own audio hook (animalPanic).
+      // perception — ungated — and it has its own audio hook (animalPanic,
+      // resolved via encAudio — a real synth wins, otherwise bolt+rustle;
+      // never silent).
       if (dist <= 1 && Math.random() < 0.5) {
         var panicDmg = { wary: [4, 8], flock: [2, 5], skittish: [1, 3] }[beh] || [2, 4];
         var pd = panicDmg[0] + Math.floor(Math.random() * (panicDmg[1] - panicDmg[0] + 1));
@@ -1173,7 +1229,7 @@
           : beh === 'skittish' ? 'THRASHES — a scream like a stepped-on toy, claws everywhere'
           : 'explodes — teeth and claws and panic';
         this.say(this.encCap(label) + ' ' + panicVerb + '! (-' + pd + ' HP) Cornered things don\'t surrender. They detonate.');
-        try { this.audioEvent('animalPanic'); } catch (e) {}
+        try { this.encAudio('animalPanic'); } catch (e) {}
         try { this.audioEvent('animalBite'); } catch (e) {}
         return;
       }
@@ -1192,7 +1248,7 @@
           if (shoveThru && !a.shovedOnce) {
             a.shovedOnce = true;
             this.say(this.encCap(label) + ' shoves PAST you — a blur of panic, hooves and claws raking as it goes.');
-            try { this.audioEvent('animalPanic'); } catch (e) {}
+            try { this.encAudio('animalPanic'); } catch (e) {}
           }
           a.mx = nx2; a.my = ny2; dashed++;
         } else if (!(tryMove(a.mx + ddx, a.my) || tryMove(a.mx, a.my + ddy))) break;
@@ -1209,7 +1265,7 @@
       } else {
         // still trapped, still narrated — no silent turns (Steve's rule).
         this.say(this.encCap(label) + ' wheels, snorting — looking for a way out. There isn\'t one.');
-        try { this.audioEvent('animalPanic'); } catch (e) {}
+        try { this.encAudio('animalPanic'); } catch (e) {}
       }
       return;
     }
@@ -1288,7 +1344,7 @@
       if ((noExit && distNow <= 3) || pressedAtEdge) {
         a.pstate = 'cornered'; a.aware = 1;
         this.say(this.encCap(label) + ' is TRAPPED — nowhere left to run. It wheels on you, eyes wild. (cornered: it may lash out — or break through)');
-        try { this.audioEvent('animalPanic'); } catch (e) {}
+        try { this.encAudio('animalPanic'); } catch (e) {}
         return;
       }
       if (atEdge) {
@@ -1761,7 +1817,7 @@
       '2. Prey: Game.ENC_PREY entry {notice, awareRate, stamina} — loop is free.',
       '2b. Behavior: "behavior" + "method" + "tell" in animals.json drive the flee, the strike, and the windup telegraph (encAnimalBehavior / encWeaponMethod / encWaryText). Wrong tool = worse odds, honestly said. NO proper tool at all = long shot, missing piece named (encMethodToolReady).',
       '2c. Miss reactions: encMissReact owns what a miss means per behavior (boar charges, goose retaliates, bobcat slashes and leaves). encNeverBolt lists the animals that never bolt.',
-      '2d. Flee styles (Steve 2026-10-06): deer bursts 2 tiles on fresh legs (costs 2 stamina), turkey flutters then regroups (pstate regroup = your window), rabbit zigzags never repeating a hop (a.lastZig). Trapped prey corners (pstate cornered): lashes out or breaks through — panic audio animalPanic. Noise: stalk 0.35 / still 0.55 / walk 1.0 / run 1.4 on awareness; running extends notice +1. Hunt practice XP (encHuntXPBonus/encHuntPracticed): background seeds 3, strikes +1, kills +2, capped +0.2 — no permanent backstory buff.',
+      '2d. Flee styles (Steve 2026-10-06): deer bursts 2 tiles on fresh legs (costs 2 stamina), turkey flutters then regroups (pstate regroup = your window), rabbit zigzags never repeating a hop (a.lastZig). Trapped prey corners (pstate cornered): lashes out or breaks through — panic audio animalPanic (encAudio: real synth preferred, bolt+rustle fallback — never silent). Noise: stalk 0.35 / still 0.55 / walk 1.0 / run 1.4 on awareness; running extends notice +1. Hunt practice XP (encHuntXPBonus/encHuntPracticed): background seeds 3, strikes +1, kills +2, capped +0.2 — no permanent backstory buff.',
       '3. Threats: "encounter" config in monsters.json + game.js enc* interface.',
       '4. Telegraph: Game.encTelegraphKnown(m); cue via Game.encPickCue.',
       '5. Phases: Game.encSetPhase / Game.encPhase(ent, phase, beats).',
