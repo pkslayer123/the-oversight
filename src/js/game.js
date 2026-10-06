@@ -8018,6 +8018,80 @@
         distortion: 0, day: this.state.scholar.day, partKey, noTrust: !!noTrust,
       });
     },
+    // gossipActionDims: map rumor actions to reputation dims.
+    // For player-action gossip, dims already contain rep dims (e.g. {honest: -15}).
+    // For who-gossip (e.g. {who: subj} with action 'stingy'), map the action
+    // to the reputation effect. Returns {} if no reputation effect.
+    gossipActionDims(action, dims) {
+      // If dims already have rep keys (not just 'who'), use them directly
+      const repKeys = Object.keys(dims).filter(k => k !== 'who');
+      if (repKeys.length) {
+        const out = {};
+        for (const k of repKeys) out[k] = dims[k];
+        return out;
+      }
+      // Map rumor actions to reputation effects
+      const map = {
+        'stingy': { generous: -12 },
+        'generous': { generous: 10 },
+        'theft': { honest: -15, generous: -10 },
+        'bully': { honest: -12, generous: -10 },
+        'untrustworthy': { honest: -15, trustworthy: -12 },
+        'scheming': { honest: -10, trustworthy: -8 },
+        'brave': { brave: 10 },
+        'coward': { brave: -10 },
+        'competent': { competent: 10 },
+        'useless': { competent: -10 },
+        'departure': {}, // not a rep effect, just news
+        'death': {}, // not a rep effect
+        'deed': {}, // generic, dims should be provided
+      };
+      return map[action] || {};
+    },
+    // spreadRumor: PLAYER starts a rumor about someone. The drama verb.
+    // targetId: who the rumor is about. rumorType: 'stingy', 'untrustworthy', etc.
+    // The rumor spreads via the normal gossip mechanics. If caught lying,
+    // the player's reputation tanks.
+    spreadRumor(targetId, rumorType) {
+      const v = this.state.village;
+      const target = this.displayName(targetId);
+      const teller = this.villagerId; // player is the source
+      
+      // Seed the gossip with the player as the initial hearer (they're telling it)
+      // Actually, the player TELLS someone — find a listener in the current conversation
+      // For now, seed with empty heard and let it spread from the player
+      // The player tells it to whoever they're talking to (handled by caller)
+      
+      const actionMap = {
+        'stingy': `You've been telling people ${target} has been holding back. Keeping the good stuff close.`,
+        'untrustworthy': `You've been telling people ${target} can't be trusted. Watch your back around them.`,
+        'generous': `You've been telling people ${target} has been generous. Sharing around, no questions asked.`,
+        'scheming': `You've been telling people ${target} is scheming. Planning something. You can see it in their eyes.`,
+        'coward': `You've been telling people ${target} is a coward. Froze when it mattered.`,
+      };
+      const line = actionMap[rumorType] || `You've been talking about ${target}.`;
+      this.say(line);
+      
+      // The rumor is now "out there" — seed it with the player as source
+      // heardBy starts empty; the player tells it directly (caller adds the listener)
+      v.gossip = v.gossip || [];
+      const partKey = this.state.scholar.day + ':' + this.dayPart + ':rumor:' + targetId;
+      if (v.gossip.some(g => g.partKey === partKey)) {
+        this.say("You've already started that rumor. It's out there.");
+        return null;
+      }
+      const g = {
+        action: rumorType, dims: { who: targetId }, heard: [],
+        distortion: 0, day: this.state.scholar.day, partKey,
+        noTrust: false, source: teller, playerRumor: true,
+      };
+      v.gossip.push(g);
+      
+      // Remember that the player started this
+      this.remember(teller, 'started_rumor', `${rumorType} about ${target}`);
+      this.notePlaystyle('social');
+      return g;
+    },
     // spreadGossip: each part, hearers tell non-hearers — preferring their own
     // circle. Gossips spread fast; private people don't. Stories mutate.
     spreadGossip() {
@@ -8041,14 +8115,27 @@
           g.distortion++;
           const dims = { ...g.dims };
           if (g.distortion >= 2 && Math.random() < 0.45) {
-            const keys = Object.keys(dims);
-            const k = keys[Math.floor(Math.random() * keys.length)];
-            dims[k] = Math.round(dims[k] * 1.6 + (Math.random() < 0.25 ? -Math.sign(dims[k] || 1) * 5 : 0));
+            const keys = Object.keys(dims).filter(k => k !== 'who');
+            if (keys.length) {
+              const k = keys[Math.floor(Math.random() * keys.length)];
+              dims[k] = Math.round(dims[k] * 1.6 + (Math.random() < 0.25 ? -Math.sign(dims[k] || 1) * 5 : 0));
+            }
             if (Math.random() < 0.3) {
               this.say(`You catch fragments by the fire — ${this.displayName(teller)} telling ${this.displayName(listener)} about you. The story's getting bigger than what happened.`);
             }
           }
-          this.applyRep(listener, dims, 0.4, g.noTrust);
+          // Apply reputation to the SUBJECT of the gossip, not the listener.
+          // (Bug fix 2026-10-05: was applying to listener, so gossip had no effect on subject's rep.)
+          const subject = dims.who || this.villagerId;
+          const repDims = this.gossipActionDims(g.action, dims);
+          if (Object.keys(repDims).length) {
+            this.applyRep(subject, repDims, 0.4, g.noTrust);
+          }
+          // TRACING: the subject might figure out who started this.
+          // Higher distortion = harder to trace. Direct witness = easy.
+          if (subject !== this.villagerId && Math.random() < 0.15) {
+            this.remember(subject, 'rumor_about_them', `heard a rumor about themselves, traced to ${teller}`);
+          }
         }
       }
       // stories fade after ~3 days
@@ -12082,6 +12169,24 @@
           } else {
             this.say(`Eating it teaches you: ${pname} gives ${kcal} kcal per ${it.unit || 'unit'}.`);
           }
+        }
+        // LEVEL 3: Uses. Eat it 3 times at L2, you learn what it does to you.
+        // (Ported from the retired bulk-eat: eatOne is the live path since the
+        // Eat button was removed — Steve 2026-10-05 UI restructure. Without
+        // this, L3 was unreachable through the actual UI.)
+        if (entry.level === 2) {
+          entry.tastings = (entry.tastings || 0) + 1;
+          if (entry.tastings >= 3) {
+            entry.level = 3;
+            const p3 = this.data.plants.find(x => x.id === it.plantId);
+            this.say(`Deeper knowledge: ${p3.name}. ${p3.knowledgeLevels['3']} (+5 health when eaten). All uses known: ${this.plantUsesText(it.plantId) || '—'}.`);
+            scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
+          }
+        }
+        // L3 benefit, as announced: knowing a plant deeply means eating it
+        // well — the knowledgeable get real nourishment from it.
+        if (entry.level >= 3) {
+          scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
         }
       }
       // COMBAT: eating from pack costs an action (Steve 2026-10-05)
