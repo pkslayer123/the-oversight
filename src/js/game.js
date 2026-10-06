@@ -20301,6 +20301,27 @@
       const e = (this.state.codex.plants || {})[pid];
       return !!(e && e.level >= 1);
     },
+    // PANTRY KNOWLEDGE GATE (Steve 2026-10-06): the village stash must not
+    // reveal counts of items you haven't discovered. Identity rides on plantId:
+    // foraged plants gate on plantKnown; monster meat ('meat_<mid>') gates on
+    // whether the monster has been named (villageName or System arrival —
+    // same gate as monsterDisplayName). Items with no identity (staples,
+    // generics like 'Foraged food') are mundane — always shown. Villager
+    // knowledge alone does NOT reveal: it stays hidden until they teach you,
+    // which flows through identifyPlant into your codex.
+    pantryItemKnown(p) {
+      if (!p) return false;
+      const pid = p.plantId;
+      if (!pid) return true;
+      if (String(pid).indexOf('meat_') === 0) {
+        const mid = String(pid).slice(5);
+        const mdef = (this.data.monsters || []).find(m => m.id === mid);
+        if (!mdef) return true;
+        const e = (this.state.codex.monsters || {})[mid];
+        return !!((e && e.villageName) || this.state.systemArrived);
+      }
+      return this.plantKnown(pid);
+    },
     // MONSTER FOOD SAFETY (Steve 2026-10-05): if you don't know it's safe,
     // the UI doesn't show edibility or calories. Learned via cautious testing,
     // villager word-of-mouth, or Codex. Stored on the monster codex entry.

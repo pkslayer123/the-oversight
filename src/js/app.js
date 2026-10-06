@@ -9861,11 +9861,24 @@
       } catch (e) { return ''; } })()}
       ${waterRow}
       <div id="packlist">
-      ${pantry.length ? pantry.map((p, idx) => {
-        const density = p.kg ? Math.round(p.kcalEach / p.kg) : 0;
-        const unit = p.unit || 'item';
-        return `<div class="card" style="margin:6px 0;padding:8px 10px">
-          <p class="small"><b>${p.name}</b> \u00D7${p.units} ${unit}s
+      ${(() => {
+        // PANTRY KNOWLEDGE GATE (Steve 2026-10-06): the stash must not reveal
+        // names, counts, or stats of items you haven't discovered. Known items
+        // render as before (original pantry index kept in data-pack so
+        // takeFromPantryBulk still lines up). Unknown items collapse into one
+        // honest line -- no count, no stats, no take-slider: you can't
+        // deliberately pack what you can't identify. Aggregate pantry kcal
+        // above stays (the pile's size is observable; its contents aren't).
+        // Caches are untouched -- you buried them, you know what's in them.
+        const knownIdx = [], unknownIdx = [];
+        pantry.forEach((p, idx) => { (Game.pantryItemKnown(p) ? knownIdx : unknownIdx).push(idx); });
+        const rows = knownIdx.map(idx => {
+          const p = pantry[idx];
+          const density = p.kg ? Math.round(p.kcalEach / p.kg) : 0;
+          const unit = p.unit || 'item';
+          const dname = Game.itemDisplayName ? Game.itemDisplayName(p) : (p.name || 'something');
+          return `<div class="card" style="margin:6px 0;padding:8px 10px">
+          <p class="small"><b>${dname}</b> \u00D7${p.units} ${unit}s
           ${p.safe ? '' : ' \u26A0 UNSAFE'}${p.spoilDay <= st.day ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \uD83C\uDF73 needs cooking' : ''}${(() => { try { const fm = Game.foodMarker ? Game.foodMarker(p) : ''; return fm ? ' \u00B7 ' + fm : ''; } catch (e) { return ''; } })()}<br>
           <span style="opacity:.7">${p.kcalEach} kcal/${unit} \u00B7 ${p.kg} kg/${unit} \u00B7 <b>${density} kcal/kg</b></span></p>
           <div style="display:flex;align-items:center;gap:8px">
@@ -9873,7 +9886,13 @@
             <span class="small" id="packq-${idx}" style="min-width:44px;text-align:right">0</span>
           </div>
         </div>`;
-      }).join('') : '<p class="small">Empty.</p>'}
+        });
+        if (unknownIdx.length) rows.push(`<div class="card" style="margin:6px 0;padding:8px 10px;border-left:3px solid #8a8a8a">
+          <p class="small"><b>Unfamiliar provisions</b><br>
+          <span style="opacity:.7">Things in the pile you don't recognize yet -- no telling what's what. Learn them (forage, ask around, codex) to pack them deliberately.</span></p>
+        </div>`);
+        return rows.length ? rows.join('') : '<p class="small">Empty.</p>';
+      })()}
       </div>
       <div class="card" id="packsummary" style="border-left:3px solid #7fd67f">
         <p class="small"><b>Packing:</b> <span id="ps-items">nothing yet</span></p>
@@ -9904,7 +9923,7 @@
           const p = pantry[idx];
           kg += q * (p.kg || 0);
           kcal += q * p.kcalEach;
-          parts.push(`${q} ${p.name}`);
+          parts.push(`${q} ${(Game.itemDisplayName ? Game.itemDisplayName(p) : (p.name || 'something'))}`);
         }
       });
       slot.querySelector('#ps-items').textContent = parts.length ? parts.join(', ') : 'nothing yet';
