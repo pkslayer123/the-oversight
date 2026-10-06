@@ -329,8 +329,24 @@
       const givesChoice = contest.givesChoice || Math.random() < 0.3;
       if (givesChoice) {
         this.sysSay(`📺 The System offers you a choice: participate or refuse.`);
-        this.sysSay(`📺 (Choice UI coming — for now, you're grabbed. The refusal sequence is a real path.)`);
-        // TODO: actual choice UI — refusal is a sequence, not a skip
+        // Real choice — refusal is a sequence via _contestRefuse, not a skip
+        const playable = this.contestPlayable(contest);
+        const choicePhase = {
+          text: `📺 ${contest.name}. ${contest.desc}\n\nThe System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.`,
+          choices: [
+            { label: 'Participate', sub: 'step into the light', do: {}, next: 0 },
+            { label: 'Refuse', sub: 'say no on camera', do: {}, next: 'REFUSE' },
+          ]
+        };
+        this.state.activeContest = {
+          contestId: contest.id,
+          participant: 'player',
+          phase: 'choice',
+          phaseIdx: 0,
+          phases: [choicePhase, ...playable],
+          variant: contest.variant || null,
+        };
+        return this.state.activeContest;
       } else {
         this.sysSay(`📺 ${pname} — you're grabbed. No choice. The cameras are already rolling.`);
       }
@@ -504,8 +520,8 @@
         ] },
       { text: `It's bleeding. You're bleeding. The crowd can smell both.\n\nThe beast gathers itself for one last rush. This is the moment the Death Reel loves.`,
         choices: [
-          { label: 'Meet the rush', sub: 'end it now', do: { dmg: [15, 30], die: 0.12, note: 'You plant your feet and meet it head-on. Something has to give.' }, next: 'WIN' },
-          { label: 'Sidestep and strike', sub: 'precision over courage', do: { dmg: [6, 14], note: 'You slide aside at the last breath and open its flank as it passes.' }, next: 'WIN' },
+          { label: 'Meet the rush', sub: 'end it now', do: { prize: true,  dmg: [15, 30], die: 0.12, note: 'You plant your feet and meet it head-on. Something has to give.' }, next: 'WIN' },
+          { label: 'Sidestep and strike', sub: 'precision over courage', do: { prize: true,  dmg: [6, 14], note: 'You slide aside at the last breath and open its flank as it passes.' }, next: 'WIN' },
           { label: 'Play dead', sub: 'desperate', do: { dmg: [0, 6], die: 0.05, note: 'You drop. It sniffs you. The crowd holds its breath... it turns away, confused. Cowardice, televised — but breathing.' }, next: 'LOSE' },
         ] },
     ];
@@ -529,8 +545,8 @@
         ] },
       { text: `WAVE THREE. The gate opens and what comes out is wrong in ways the first two weren't.\n\nThis is the one the Death Reel is for.`,
         choices: [
-          { label: 'Stand and fight', sub: 'the only way out is through', do: { dmg: [25, 45], die: 0.3, note: 'You stand. It comes. The next minute is the longest of your life.' }, next: 'WIN' },
-          { label: 'Run the clock', sub: 'dodge until it tires', do: { dmg: [12, 22], die: 0.12, kcal: -400, note: 'You run. The arena is small and the crowd counts your laps. It tires. You nearly don\'t.' }, next: 'WIN' },
+          { label: 'Stand and fight', sub: 'the only way out is through', do: { prize: true,  dmg: [25, 45], die: 0.3, note: 'You stand. It comes. The next minute is the longest of your life.' }, next: 'WIN' },
+          { label: 'Run the clock', sub: 'dodge until it tires', do: { prize: true,  dmg: [12, 22], die: 0.12, kcal: -400, note: 'You run. The arena is small and the crowd counts your laps. It tires. You nearly don\'t.' }, next: 'WIN' },
           { label: 'Offer yourself', sub: 'a different bargain', do: { die: 0.5, note: 'You stop, spread your arms, and offer it something it didn\'t expect: stillness. It hesitates. The System leans in, fascinated.' }, next: 'LOSE' },
         ] },
     ];
@@ -554,8 +570,8 @@
         ] },
       { text: `The count is almost up. You can hear the System warming up the "FOUND YOU" sting.\n\nIt's right there. You can see its eyes catch the light.`,
         choices: [
-          { label: 'Stay hidden', sub: 'trust the spot', do: { dmg: [0, 12], die: 0.18, note: 'You do not move. You barely breathe. The eyes sweep past — or stop.' }, next: 'WIN' },
-          { label: 'Confront it', sub: 'scare it off', do: { dmg: [15, 30], die: 0.25, note: 'You burst out screaming, arms wide. Predators hate surprises. Usually.' }, next: 'WIN' },
+          { label: 'Stay hidden', sub: 'trust the spot', do: { prize: true,  dmg: [0, 12], die: 0.18, note: 'You do not move. You barely breathe. The eyes sweep past — or stop.' }, next: 'WIN' },
+          { label: 'Confront it', sub: 'scare it off', do: { prize: true,  dmg: [15, 30], die: 0.25, note: 'You burst out screaming, arms wide. Predators hate surprises. Usually.' }, next: 'WIN' },
           { label: 'Surrender', sub: 'live, lose', do: { note: 'You stand up with your hands out. It blinks. The System sighs — found, but boring.' }, next: 'LOSE' },
         ] },
     ];
@@ -573,8 +589,8 @@
         ] },
       { text: `They yield — or they don't. The ref-drone hovers, sensors hot.\n\nThe crowd wants blood. The System wants a story. You want to go home.`,
         choices: [
-          { label: 'Press the advantage', sub: 'finish it', do: { dmg: [12, 24], die: 0.1, trauma: 10, note: 'You press. They go down. The drone calls it. Your hands won\'t stop shaking.' }, next: 'WIN' },
-          { label: 'Accept their yield', sub: 'mercy, televised', do: { note: 'They tap out. You step back. The crowd boos the mercy and loves you for it, both at once.' }, next: 'WIN' },
+          { label: 'Press the advantage', sub: 'finish it', do: { prize: true,  dmg: [12, 24], die: 0.1, trauma: 10, note: 'You press. They go down. The drone calls it. Your hands won\'t stop shaking.' }, next: 'WIN' },
+          { label: 'Accept their yield', sub: 'mercy, televised', do: { prize: true,  note: 'They tap out. You step back. The crowd boos the mercy and loves you for it, both at once.' }, next: 'WIN' },
           { label: 'Take the dive', sub: 'lose on purpose', do: { dmg: [8, 16], note: 'You go down easy. They "win." The System knows. It always knows. But the deal was the deal.' }, next: 'LOSE' },
         ] },
     ];
@@ -837,9 +853,12 @@
     if (d.note) { this.sysSay('📺 ' + d.note); log.push(d.note); }
     if (d.dmg) {
       const amt = d.dmg[0] + Math.floor(Math.random() * (d.dmg[1] - d.dmg[0] + 1));
-      s.health = Math.max(0, (s.health || 0) - amt);
-      this.sysSay(`📺 You take ${amt} damage.`);
-      log.push(`-${amt} hp`);
+      if (amt > 0) {
+        s.health = Math.max(0, (s.health || 0) - amt);
+        this.sysSay(`📺 You take ${amt} damage.`);
+        log.push(`-${amt} hp`);
+      }
+      // (Zero damage rolls are silent — no "You take 0 damage" noise)
       if ((s.health || 0) <= 0) {
         return this._contestDie(ac, 'The damage was too much.');
       }
@@ -881,26 +900,44 @@
   G._contestEnd = function(ac, outcome, prize) {
     const contest = this.contestPool().find(c => c.id === ac.contestId) || { name: ac.contestId };
     const s = this.state.scholar;
+    const isWatch = ac.participant && ac.participant !== 'player';
+    const pname = isWatch ? this.displayName(ac.participant) : 'You';
     ac.phase = 'done';
     if (outcome === 'won') {
-      this.sysSay(`📺 ${contest.name} — YOU WIN. The crowd is a weather system.`);
-      this.addNotability('player', 'contestWin');
-      try { this.leadShift('showmanship', 2); } catch (e) {}
-      if (prize) {
-        try {
-          const loot = this.rollAlienLoot({ wave: this.unlockedWave(), loot: { chance: 1, tier: this.unlockedWave() } });
-          if (loot) {
-            this.sysSay(`📺 Prize: ${loot}!`);
-            s.inventory = s.inventory || [];
-            s.inventory.push({ itemId: loot, units: 1 });
-          }
-        } catch (e) { this.sysSay('📺 Prize: the System\'s favor (and a story).'); }
+      if (isWatch) {
+        // Villager won — resolve THEIR fate, not the player's
+        this.sysSay(`📺 ${contest.name} — ${pname.toUpperCase()} WINS. The crowd is a weather system.`);
+        this.sysSay(`📺 ${pname} is alive. Shaking, grinning, alive. You were there to see it.`);
+        this.addNotability(ac.participant, 'contestWin');
+        // Villager gets the prize (not the player)
+        if (prize) {
+          this.sysSay(`📺 Prize for ${pname}: the System's favor (and a story they'll tell forever).`);
+        }
+      } else {
+        this.sysSay(`📺 ${contest.name} — YOU WIN. The crowd is a weather system.`);
+        this.addNotability('player', 'contestWin');
+        try { this.leadShift('showmanship', 2); } catch (e) {}
+        if (prize) {
+          try {
+            const loot = this.rollAlienLoot({ wave: this.unlockedWave(), loot: { chance: 1, tier: this.unlockedWave() } });
+            if (loot) {
+              this.sysSay(`📺 Prize: ${loot}!`);
+              s.inventory = s.inventory || [];
+              s.inventory.push({ itemId: loot, units: 1 });
+            }
+          } catch (e) { this.sysSay('📺 Prize: the System\'s favor (and a story).'); }
+        }
+        // FEARED means winning costs: winners are marked
+        s.health = Math.max(1, (s.health || 0) - 5);
       }
-      // FEARED means winning costs: winners are marked
-      s.health = Math.max(1, (s.health || 0) - 5);
     } else {
-      this.sysSay(`📺 ${contest.name} — over. You survived. The audience is polite.`);
-      try { this.leadShift('showmanship', 1); } catch (e) {}
+      if (isWatch) {
+        this.sysSay(`📺 ${contest.name} — over. ${pname} survived. The audience is polite.`);
+        this.sysSay(`📺 You go to ${pname}. They're quiet. They'll talk about it later. Or never.`);
+      } else {
+        this.sysSay(`📺 ${contest.name} — over. You survived. The audience is polite.`);
+        try { this.leadShift('showmanship', 1); } catch (e) {}
+      }
     }
     // Clear after a beat — the village processes what happened
     this.state.activeContest = null;
