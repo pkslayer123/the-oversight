@@ -19747,9 +19747,11 @@
         }
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         const diveRange = pat.range || 4;
-        if (d <= diveRange && !m.telegraph) {
+        // THE SECOND HEARING doesn't check range — it's already turning
+        // mid-air, re-aimed at where you moved. (The stag's wheel precedent.)
+        const isRedive = !!m.ncRedove;
+        if ((d <= diveRange || isRedive) && !m.telegraph) {
           // DECLARE THE DIVE — or the REDIVE (re-aimed at your CURRENT tile).
-          const isRedive = !!m.ncRedove;
           this.encSetPhase(m, isRedive ? 'redive' : 'dive');
           m.altitude = 'low'; // descending
           m.ncRedove = false; m.ncWasRedive = isRedive;

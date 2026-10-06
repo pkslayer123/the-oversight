@@ -2692,12 +2692,6 @@
         "redive": " \u2b07\u2b07 SECOND HEARING",
         "grounded": " \ud83e\udeb6 SPENT"
       },
-      "phaseMap": {
-        "declare": "dive",
-        "windup": "dive",
-        "resolve": "dive",
-        "idle": "roost"
-      },
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "owl",
@@ -2718,8 +2712,7 @@
     "resistances": {
       "sonic": 0.5
     }
-  },
-  {
+  },  {
     "id": "statickite",
     "activity": "both",
     "name": "The Static Kite",
