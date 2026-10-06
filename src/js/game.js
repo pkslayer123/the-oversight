@@ -6666,33 +6666,36 @@
       if (dist > 1) { this.say('Too far. Step closer.'); return null; }
 
       // TREE: modifiers synthesize. you see species, health, ivy. you learn the system.
-      // EXAMINE IS INSPECTION. The first look describes the tree and takes THIS
-      // tree's own nuts (examine + this cell's loot, like searchRoom) — it does
-      // NOT run the area forage sweep. (Explorer loop 2026-10-05: Examine fired
-      // the full 3x3 sweep — 16 ticks, full-patch depletion, pack flood —
-      // behind an inspection tap. Steve's rule: low-effort inspection must not
-      // eat the day. The sweep stays where the player asked for it: 'Forage nuts'.)
+      // EXAMINE IS INSPECTION (Steve 2026-10-06): pure knowledge, no loot.
+      // Examine describes and identifies. It does NOT take nuts, does NOT
+      // forage, does NOT fill the pack. "Examine is not the same as forage.
+      // Stop mixing up knowledge." Forage nuts is a separate action.
       if (cell === 'tree' || cell === 'bigtree') {
         const mod = t.modifiers && t.modifiers[key];
         if (secret && !secret.known) {
           secret.known = true;
           if (mod) mod.known = true;
           // TREE SPECIES GATING (Steve 2026-10-05): species name only if known.
-          // No hints — unknown trees show generic "tree", not "oak-like".
-          const speciesName = mod ? this.treeName(mod.species) : null;
-          const desc = mod ? `${speciesName || 'tree'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'tree';
+          // If not known, uncertain description — not the species name.
+          const speciesKnown = mod && mod.speciesKnown;
+          const speciesName = (mod && speciesKnown) ? this.treeName(mod.species) : null;
+          const desc = mod ? `${speciesName || 'a tree you don\'t recognize'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'a tree';
           if (secret.yield === 0) {
             this.say(`This ${desc}. Nothing to take. You note it — you won\'t waste time here again.`);
             return true;
-          } else if (mod && (mod.species === 'oak' || mod.species === 'hickory')) {
-            this.say(`This ${desc}. Nuts — about ${secret.yield} worth.`);
-            this.takeTreeNuts(t, cx, cy, secret);
           } else {
-            // pine (and unknown trees): no nut plant in the content pool.
-            // honest: you're working the ground around it, not harvesting nuts.
-            this.say(`This ${desc}. No nuts worth the trouble — but something might grow in its shade.`);
+            // Describe, don't take. Forage is separate.
+            const hasNuts = mod && (mod.species === 'oak' || mod.species === 'hickory');
+            if (hasNuts && speciesKnown) {
+              this.say(`This ${desc}. Nuts — about ${secret.yield} worth. (Use 'Forage nuts' to gather.)`);
+            } else if (hasNuts) {
+              this.say(`This ${desc}. There might be nuts, but you're not sure what kind of tree this is.`);
+            } else {
+              this.say(`This ${desc}.`);
+            }
+            return true;
           }
-          return true; // examined. the sweep is a separate, explicit choice ('Forage nuts').
+          return true; // examined. no loot taken. forage is separate.
         } else if (secret && secret.known && secret.yield === 0) {
           this.say('You already checked. Nothing.');
           return true;
