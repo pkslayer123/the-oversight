@@ -99,17 +99,22 @@ Every villager is a living codex entry. Deepens while they live.
 ### contests (`contests.js`)
 Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama. UNAVOIDABLE — they interrupt whatever you're doing.
 
-**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireShow(show) -> show (pull-away: a villager goes on TV for a silly reason), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence, contestKnowledge(contestId) -> {seen,wins,level}, contestLearn(contestId, outcome), _contestScaled(base, variant) -> contest (wave + hardened, both ends of fire->resolve), _cxStorePhase(ac, idx, rendered) -> rendered (choice box renders ac.phases directly), _contestDeathLine(contest, how, pname), _contestRenderPhase(ac, phase, idx), _contestCloserOdds(kind, wounds), _contestVerdict(ac) -> watch-mode verdict roll (risk-scaled win/lose/die), _contestWatchBeat(contest, pname) -> [setup, turn, ending] contest-specific watch beats (Steve 2026-10-06), _cxCoaching(contest), _cxPhaseSay(text), _contestTithe(contest) -> phases (knowledge-gated measure), _contestSiege(contest) -> phases, _contestMaw(contest) -> phases, _contestOath(contest) -> phases, _contestBeastmaster(contest) -> phases, _contestRiddle(contest) -> phases (memory-cost puzzle), _contestConfession(contest) -> phases (social-fear detective), _contestHoney(contest) -> phases (swarm forage), _contestSecrets(contest) -> phases (secret-cost chance)
+**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireShow(show) -> show (pull-away: a villager goes on TV for a silly reason), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence, contestKnowledge(contestId) -> {seen,wins,level}, contestLearn(contestId, outcome), _contestScaled(base, variant) -> contest (wave + hardened, both ends of fire->resolve), _cxStorePhase(ac, idx, rendered) -> rendered (choice box renders ac.phases directly), _contestDeathLine(contest, how, pname), _contestRenderPhase(ac, phase, idx), _contestCloserOdds(kind, wounds), _contestVerdict(ac) -> multi-participant watch-mode verdict roll (risk-scaled win/lose/die each, cheer-adjusted, bet payout, comfort) (code: _contestVerdict, Steve 2026-10-06), _contestResolveOthers(ac) -> fates for villagers taken alongside the player (code: _contestResolveOthers, Steve 2026-10-06), _cxNameList(ids, capPlayer) -> "Mara" / "Mara and Tove" / "Mara, Tove and Sef", _cxTakenLine(ids) -> taken announcement (single or multi), _cxPluralBeats(text, name) -> verb-agreement fix for multi-take watch beats, _cxKillContestant(pid) -> real roster removal for contest deaths (removeVillager wrapper is a no-op), _contestWatchBeat(contest, pname) -> [setup, turn, ending] contest-specific watch beats (Steve 2026-10-06), _cxCoaching(contest), _cxPhaseSay(text), _contestTithe(contest) -> phases (knowledge-gated measure), _contestSiege(contest) -> phases, _contestMaw(contest) -> phases, _contestOath(contest) -> phases, _contestBeastmaster(contest) -> phases, _contestRiddle(contest) -> phases (memory-cost puzzle), _contestConfession(contest) -> phases (social-fear detective), _contestHoney(contest) -> phases (swarm forage), _contestSecrets(contest) -> phases (secret-cost chance)
 
 **Rules:**
 - unlock_day: 14 (code: contestTick, contestEligible)
+- eligible_villagers: alive + member in good standing + fighting age 15-72, player alive/health>0/not exiled (code: contestEligible, Steve 2026-10-06)
 - weekly_budget: 2 combined contests+shows (code: contestTick)
 - daily_chance: 0.3 (code: contestTick)
 - contest_vs_show_ratio: 0.6 (code: contestTick)
 - system_whim_chance: 0.1 random participant override (code: fireContest)
 - countdown_days: 1 (code: fireContest)
 - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
-- recast_dead: countdown outlives contestant → recast from living eligible, or cancel with the System's disappointment (code: resolveContest, Steve 2026-10-06)
+- recast_dead: countdown outlives contestant → each missing contestant recast from living eligible, or cancelled if no one is left (code: resolveContest, Steve 2026-10-06)
+- multi_take: contest.participants count is REAL — the System takes that many people at once (more taken = more FEARED); pc.participants[] carried fire->resolve->interruption (code: fireContest, resolveContest, contestInterruption, Steve 2026-10-06)
+- others_fates: villagers taken alongside the player get their own off-screen contests — rolled at the player's sequence end, can win/lose/die (code: _contestResolveOthers, _contestEnd, _contestDie, _contestRefuse, Steve 2026-10-06)
+- death_is_real: contest deaths remove the villager from the roster via _cxKillContestant (removeVillager is an unhooked no-op wrapper; the old else-fallback never ran) (code: _cxKillContestant, _contestDie, _contestResolveOthers, Steve 2026-10-06)
+- watcher_agency: watch choices have real consequences — cheer moves win odds (+5%/+10% veteran, cap +15%, cameras notice), study teaches, bets are real kcal (2x payout on the first taken), comfort lands as trust/mourning (code: _contestWatchPhases, contestChoose, _contestVerdict, Steve 2026-10-06)
 - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 - watched_deaths: watch verdict rolls risk-scaled death — villagers can die on camera (code: _contestVerdict, Steve 2026-10-06)
@@ -122,7 +127,7 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 9 wave-2+ contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added (code: _contestWatchBeat, Steve 2026-10-06)
 - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 
-**Consumes:** scholar.day, state.showBudget, state.pendingContest, state.contestsSeen, state.codex.contests
+**Consumes:** scholar.day, state.showBudget, state.pendingContest, state.activeContest.participants/cheer/bet/comfort/others, state.contestsSeen, state.codex.contests
 
 ### conversation (`conversation.js`)
 Real back-and-forth dialogue. Player always has response choices.

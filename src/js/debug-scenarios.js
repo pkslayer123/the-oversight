@@ -983,7 +983,9 @@
           // fireContest prefers the player; this forces the villager pick so
           // the watch branch of contestInterruption is directly testable.
           const pc = Game.state.pendingContest;
-          if (pc) { pc.participant = placed[0]; Game.resolveContest(); }
+          // MULTI-TAKE (Steve 2026-10-06): override the whole cast, not just
+          // the first — resolveContest recasts from pc.participants.
+          if (pc) { pc.participant = placed[0]; pc.participants = [placed[0]]; Game.resolveContest(); }
         }
       } catch (e) { Game.say('🐞 contest watch failed: ' + e.message); }
     },

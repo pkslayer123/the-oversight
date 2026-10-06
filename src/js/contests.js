@@ -18,7 +18,12 @@
 //   - _contestDeathLine(contest, how, pname)
 //   - _contestRenderPhase(ac, phase, idx)
 //   - _contestCloserOdds(kind, wounds)
-//   - _contestVerdict(ac) -> watch-mode verdict roll (risk-scaled win/lose/die)
+//   - _contestVerdict(ac) -> multi-participant watch-mode verdict roll (risk-scaled win/lose/die each, cheer-adjusted, bet payout, comfort) (code: _contestVerdict, Steve 2026-10-06)
+//   - _contestResolveOthers(ac) -> fates for villagers taken alongside the player (code: _contestResolveOthers, Steve 2026-10-06)
+//   - _cxNameList(ids, capPlayer) -> "Mara" / "Mara and Tove" / "Mara, Tove and Sef"
+//   - _cxTakenLine(ids) -> taken announcement (single or multi)
+//   - _cxPluralBeats(text, name) -> verb-agreement fix for multi-take watch beats
+//   - _cxKillContestant(pid) -> real roster removal for contest deaths (removeVillager wrapper is a no-op)
 //   - _contestWatchBeat(contest, pname) -> [setup, turn, ending] contest-specific watch beats (Steve 2026-10-06)
 //   - _cxCoaching(contest)
 //   - _cxPhaseSay(text)
@@ -33,13 +38,18 @@
 //   - _contestSecrets(contest) -> phases (secret-cost chance)
 // rules:
 //   - unlock_day: 14 (code: contestTick, contestEligible)
+//   - eligible_villagers: alive + member in good standing + fighting age 15-72, player alive/health>0/not exiled (code: contestEligible, Steve 2026-10-06)
 //   - weekly_budget: 2 combined contests+shows (code: contestTick)
 //   - daily_chance: 0.3 (code: contestTick)
 //   - contest_vs_show_ratio: 0.6 (code: contestTick)
 //   - system_whim_chance: 0.1 random participant override (code: fireContest)
 //   - countdown_days: 1 (code: fireContest)
 //   - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
-//   - recast_dead: countdown outlives contestant → recast from living eligible, or cancel with the System's disappointment (code: resolveContest, Steve 2026-10-06)
+//   - recast_dead: countdown outlives contestant → each missing contestant recast from living eligible, or cancelled if no one is left (code: resolveContest, Steve 2026-10-06)
+//   - multi_take: contest.participants count is REAL — the System takes that many people at once (more taken = more FEARED); pc.participants[] carried fire->resolve->interruption (code: fireContest, resolveContest, contestInterruption, Steve 2026-10-06)
+//   - others_fates: villagers taken alongside the player get their own off-screen contests — rolled at the player's sequence end, can win/lose/die (code: _contestResolveOthers, _contestEnd, _contestDie, _contestRefuse, Steve 2026-10-06)
+//   - death_is_real: contest deaths remove the villager from the roster via _cxKillContestant (removeVillager is an unhooked no-op wrapper; the old else-fallback never ran) (code: _cxKillContestant, _contestDie, _contestResolveOthers, Steve 2026-10-06)
+//   - watcher_agency: watch choices have real consequences — cheer moves win odds (+5%/+10% veteran, cap +15%, cameras notice), study teaches, bets are real kcal (2x payout on the first taken), comfort lands as trust/mourning (code: _contestWatchPhases, contestChoose, _contestVerdict, Steve 2026-10-06)
 //   - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 //   - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 //   - watched_deaths: watch verdict rolls risk-scaled death — villagers can die on camera (code: _contestVerdict, Steve 2026-10-06)
@@ -55,6 +65,7 @@
 //   - scholar.day
 //   - state.showBudget
 //   - state.pendingContest
+//   - state.activeContest.participants/cheer/bet/comfort/others
 //   - state.contestsSeen
 //   - state.codex.contests
 // CONTESTS & SHOWS (Steve 2026-10-05)
@@ -68,36 +79,42 @@
 
   // === ELIGIBILITY ===
   // Visible, legible. Player can always answer "who can go, and why."
+  // Eligibility is REAL state, not a position check (Steve 2026-10-06):
+  // alive, on the roster, not severed (isMember), of fighting age.
+  // The System doesn't draft children or the very old — a rare mercy
+  // that makes the rest of it scarier.
   G.contestEligible = function() {
     const day = this.state.scholar.day || 1;
     if (day < 14) return { eligible: [], reason: 'Show not yet casting (day 14+)' };
-    
+
     const eligible = [];
     const roster = (this.state.village.roster || []);
-    
-    // Player always eligible if alive and not exiled
+
+    // Player: alive, not exiled, and with health to stand on. A dying
+    // scholar (health<=0) is a corpse, not a contestant — but an
+    // exhausted, battered scholar IS eligible. The System is not kind.
     const s = this.state.scholar;
-    if (!this.state.over && !s.exiled) {
+    if (!this.state.over && (s.health || 0) > 0 && !s.exiled) {
       const notes = [];
       const nota = this.notability('player');
       if (nota.length) notes.push(...nota);
       eligible.push({ id: 'player', name: 'You', notability: nota, notes });
     }
-    
-    // Villagers: check each
+
+    // Villagers: check each — alive, a member in good standing, of
+    // fighting age. Notability notes are the earned "why was I picked".
     for (const rid of roster) {
-      const vp = (this.data.villagers || []).find(v => v.id === rid);
-      if (!vp) continue;
-      // Ineligible: gravely wounded, very young/old, exiled
-      // (Simplified: skip if health < 30)
+      if (rid === this.villagerId) continue; // player handled above
+      if (!this.isMember(rid)) continue;     // dead or severed: not drafted
       const vpos = (this.state.village.positions || {})[rid];
       if (!vpos) continue;
-      // For now, all villagers with positions are eligible
-      // TODO: age, health checks when those systems exist
+      const vp = this.vpOf(rid);
+      const age = (vp && typeof vp.age === 'number') ? vp.age : 30;
+      if (age < 15 || age > 72) continue;    // children and the very old stay
       const nota = this.notability(rid);
       eligible.push({ id: rid, name: this.displayName(rid), notability: nota, notes: [] });
     }
-    
+
     return { eligible, reason: null };
   };
 
@@ -428,7 +445,10 @@
   // Wired: game.js's dawn branch calls fireShow(event) for non-contest events.
   G.fireShow = function(show) {
     const s = (show && show.id) ? show : this.pickShow();
-    const roster = (this.state.village.roster || []).filter(id => id !== this.villagerId);
+    // SIBLING (Steve 2026-10-06): same dead/severed exclusion as
+    // contestEligible — a corpse can't be pulled for TV either.
+    const roster = (this.state.village.roster || []).filter(id =>
+      id !== this.villagerId && this.isMember(id));
     let pulled = null;
     if (roster.length && Math.random() < 0.7) {
       pulled = roster[Math.floor(Math.random() * roster.length)];
@@ -453,19 +473,31 @@
   G.fireContest = function(contest) {
     const { eligible } = this.contestEligible();
     if (!eligible.length) return;
-    
-    // Pick participant: prefer player if eligible, else random villager
-    // (System's whim: 10% chance of random pick regardless)
-    let pick;
+
+    // MULTI-TAKE (Steve 2026-10-06): the contest's participant count is
+    // real — the System takes that many people, not one. Four contestants
+    // means four of yours, gone to the lights. More taken = more FEARED.
+    const want = Math.max(1, Math.min(contest.participants || 1, eligible.length));
+    const pool = eligible.slice();
+    const picks = [];
+    // First pick: prefer the player (System's whim: 10% random override)
+    let whim = false;
     if (Math.random() < 0.1) {
-      pick = eligible[Math.floor(Math.random() * eligible.length)];
-      const wSubj = pick.id === 'player' ? 'You are' : pick.name + ' is';
-      const wGoes = pick.id === 'player' ? 'You go.' : pick.name + ' goes.';
-      this.sysSay(`📺 The System's whim: ${wSubj} *interesting*. ${wGoes}`);
+      whim = true;
+      picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
     } else {
-      pick = eligible.find(e => e.id === 'player') || eligible[Math.floor(Math.random() * eligible.length)];
+      const pi = pool.findIndex(e => e.id === 'player');
+      picks.push(pi >= 0 ? pool.splice(pi, 1)[0] : pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
     }
-    
+    while (picks.length < want && pool.length) {
+      picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    }
+    const ids = picks.map(p => p.id);
+    if (whim) {
+      const wSubj = picks[0].id === 'player' ? 'You are' : picks[0].name + ' is';
+      this.sysSay(`📺 The System's whim: ${wSubj} *interesting*.`);
+    }
+
     this.sysSay(`📺 CONTEST: ${contest.name}. ${contest.desc}`);
     if (contest.arena) {
       this.sysSay(`📺 Arena:\n${contest.arena}`);
@@ -473,27 +505,52 @@
     if (contest.variant === 'hardened') {
       this.sysSay(`📺 ⚠️ HARDENED VARIANT — you've seen this before. It's worse now.`);
     }
-    this.sysSay(`📺 ${pick.id === 'player' ? 'You have' : pick.name + ' has'} been chosen. The village holds its breath.`);
+    this.sysSay(`📺 ${this._cxTakenLine(ids)} The village holds its breath.`);
     // AUDIO (Steve 2026-10-06): the contest window gets its own sting —
     // game-show jingle curdles. No-op when no audio system is attached.
     this.audioEvent('contestCall');
-    
+
     // Countdown: 1 day (simplified)
     this.state.pendingContest = {
       contestId: contest.id,
-      participant: pick.id,
+      participant: ids[0],
+      participants: ids,
       firesDay: (this.state.scholar.day || 1) + 1,
       variant: contest.variant || null,
     };
+  };
+
+  // Name list for multi-take announcements: "Mara", "Mara and Tove",
+  // "Mara, Tove and Sef". The player renders as You/you.
+  G._cxNameList = function(ids, capPlayer) {
+    const names = (ids || []).map(id => id === 'player' ? (capPlayer ? 'You' : 'you') : this.displayName(id));
+    if (!names.length) return 'no one';
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return names[0] + ' and ' + names[1];
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  };
+
+  // "You have been chosen." / "Mara has been chosen." /
+  // "The System has taken Mara, Tove and you."
+  G._cxTakenLine = function(ids) {
+    if (!ids || !ids.length) return 'No one has been chosen.';
+    if (ids.length === 1) {
+      return ids[0] === 'player' ? 'You have been chosen.' : this.displayName(ids[0]) + ' has been chosen.';
+    }
+    return 'The System has taken ' + this._cxNameList(ids, true) + '.';
   };
 
   // CONTEST INTERRUPTION (Steve 2026-10-05):
   // Contests are UNAVOIDABLE. When the time comes, you go through the sequence
   // no matter where you are or what you're doing. Participate or don't —
   // but skipping isn't a thing. If you're not involved, you watch the show.
-  G.contestInterruption = function(contest, participantId) {
-    const isPlayer = participantId === 'player';
-    const pname = isPlayer ? 'You' : this.displayName(participantId);
+  G.contestInterruption = function(contest, participantIds) {
+    // MULTI-TAKE (Steve 2026-10-06): participantIds is an array — the
+    // System takes several people at once. Old single-id callers still work.
+    const ids = Array.isArray(participantIds) ? participantIds.slice() : [participantIds];
+    const isPlayer = ids.includes('player');
+    const others = ids.filter(id => id !== 'player');
+    const pname = isPlayer ? 'You' : this._cxNameList(ids, true);
     
     // The interruption itself — this is the sequence you can't skip
     this.sysSay(`📺 ═══ CONTEST INTERRUPTION ═══`);
@@ -544,12 +601,19 @@
         this.state.activeContest = {
           contestId: contest.id,
           participant: 'player',
+          participants: ids,
+          others: others,
           phase: 'choice',
           phaseIdx: 0,
           phases: [choicePhase, ...shifted],
           variant: contest.variant || null,
           wounds: 0,
         };
+        // MULTI-TAKE (Steve 2026-10-06): name the others taken with you —
+        // the choice is yours; their fates are their own.
+        if (others.length) {
+          this.sysSay(`📺 Taken with you: ${this._cxNameList(others, true)}. Different lights. Same cameras.`);
+        }
         // Say the choice beat like every other phase (the box renders it, but
         // the log is the record — keep both surfaces in sync).
         this.sysSay('📺 ───');
@@ -572,12 +636,19 @@
       this.state.activeContest = {
         contestId: contest.id,
         participant: 'player',
+        participants: ids,
+        others: others,
         phase: 'intro',
         phaseIdx: 0,
         phases: phases,
         variant: contest.variant || null,
         wounds: 0,
       };
+      // MULTI-TAKE (Steve 2026-10-06): name the others who were taken with
+      // you — they have their own arenas, their own fates.
+      if (others.length) {
+        this.sysSay(`📺 Taken with you: ${this._cxNameList(others, true)}. Different lights. Same cameras.`);
+      }
       if (phases && phases[0]) {
         this.sysSay('📺 ───');
         const rendered = this._contestRenderPhase(this.state.activeContest, phases[0], 0);
@@ -588,19 +659,20 @@
       // You're not in it — you WATCH. Especially if villagers are involved.
       // (Steve 2026-10-05: "we should aspire to essentially put on a show
       //  they can watch, especially if other villagers are involved")
-      this.sysSay(`📺 ${pname} has been chosen. The village holds its breath.`);
+      this.sysSay(`📺 ${ids.length > 1 ? pname + ' have been taken' : pname + ' has been chosen'}. The village holds its breath.`);
       this.sysSay(`📺 You watch. The cameras love this part.`);
       // AUDIO (Steve 2026-10-06): announced not-taken — relief with a
       // dissonant shadow. Someone else is going on, and you're glad.
       this.audioEvent('contestSpared');
       let wphases;
-      try { wphases = this._contestWatchPhases(contest, participantId); } catch (e) { wphases = null; }
+      try { wphases = this._contestWatchPhases(contest, ids); } catch (e) { wphases = null; }
       if (!wphases || !wphases.length) {
         try { wphases = this._contestGeneric(contest); } catch (e2) { wphases = null; }
       }
       this.state.activeContest = {
         contestId: contest.id,
-        participant: participantId,
+        participant: ids[0],
+        participants: ids,
         phase: 'watching',
         phaseIdx: 0,
         phases: wphases,
@@ -636,28 +708,43 @@
     // killed, exiled, or vanished overnight. The show still comes
     // (unavoidable), but a corpse can't be televised: recast from the living
     // eligible, or cancel with the System's disappointment on the record.
-    let who = pc.participant;
+    // RECAST (Steve 2026-10-06): the countdown can outlive its contestants —
+    // killed, exiled, or vanished overnight. The show still comes
+    // (unavoidable), but corpses can't be televised: each missing contestant
+    // is recast from the living eligible, or the show is cancelled if no one
+    // is left at all. Debug/scenario overrides that set pc.participant
+    // directly (without touching pc.participants) win over the stored array.
+    let ids = (pc.participants && pc.participants.length) ? pc.participants.slice() : [pc.participant];
+    if (pc.participant && !ids.includes(pc.participant)) ids = [pc.participant];
     const s = this.state.scholar;
     const roster = (this.state.village.roster || []);
     const playerAlive = !this.state.over && (s.health || 0) > 0 && !s.exiled;
-    const alive = who === 'player' ? playerAlive : roster.includes(who);
-    if (!alive) {
-      const { eligible } = this.contestEligible();
-      const living = (eligible || []).filter(e => e.id !== 'player' || playerAlive);
+    // Villager liveness uses the same bar as eligibility: dead or severed
+    // villagers can't be televised (Steve 2026-10-06 — was roster.includes,
+    // which let the dead stay cast).
+    const { eligible } = this.contestEligible();
+    const finalIds = [];
+    const takenSet = new Set();
+    for (const who of ids) {
+      const alive = who === 'player' ? playerAlive : this.isMember(who);
+      if (alive) { finalIds.push(who); takenSet.add(who); continue; }
+      const candidates = (eligible || []).filter(e => !takenSet.has(e.id) && (e.id !== 'player' || playerAlive));
       const goneName = who === 'player' ? 'You' : this.displayName(who);
-      if (!living.length) {
-        this.sysSay(`📺 The System was going to take ${goneName}. ${goneName} ${who === 'player' ? 'are' : 'is'} gone — and there is no one left to take. The show is cancelled. The galaxy boos.`);
-        return;
+      if (!candidates.length) {
+        this.sysSay(`📺 The System was going to take ${goneName}. There is no one left to take instead — the show is cancelled. The galaxy boos.`);
+        continue;
       }
-      const recast = living[Math.floor(Math.random() * living.length)];
+      const recast = candidates[Math.floor(Math.random() * candidates.length)];
       this.sysSay(`📺 The System was going to take ${goneName}. ${who === 'player' ? 'You are' : goneName + ' is'} gone. The show must go on — it takes ${recast.id === 'player' ? 'YOU' : recast.name} instead.`);
-      who = recast.id;
+      finalIds.push(recast.id);
+      takenSet.add(recast.id);
     }
+    if (!finalIds.length) return;
 
     // INTERRUPTION (Steve 2026-10-05): the contest doesn't resolve via dice roll.
     // It INTERRUPTS. You go through the sequence. Participate or don't.
     // If you're not involved, you watch.
-    return this.contestInterruption(contest, who);
+    return this.contestInterruption(contest, finalIds);
   };
 
   // === PLAYABLE CONTEST ENGINE (Steve 2026-10-05) ===
@@ -1517,6 +1604,38 @@
       this.addNotability('player', d.notability);
       log.push(`noted: ${d.notability}`);
     }
+    // WATCHER AGENCY (Steve 2026-10-06): watcher choices move the odds.
+    // Cheering is real support — capped, and the cameras notice.
+    if (d.cheer) {
+      ac.cheer = Math.min(0.15, (ac.cheer || 0) + d.cheer);
+      log.push(`cheer +${Math.round(d.cheer * 100)}% win odds`);
+    }
+    // Studying the pattern teaches without bleeding: knowledge progression
+    // for watchers, not just contestants.
+    if (d.study) {
+      try { this.contestLearn(ac.contestId, 'studied'); } catch (e) {}
+      log.push('studied the pattern');
+    }
+    // Betting: the System honors wagers. Real kcal, real stakes, once per
+    // contest. The bet rides on the first taken.
+    if (d.bet && d.bet.amount > 0 && !ac.bet) {
+      const amt = d.bet.amount;
+      if ((s.kcal || 0) >= amt) {
+        s.kcal -= amt;
+        ac.bet = { amount: amt };
+        const bp = ac.participant === 'player' ? 'yourself' : this.displayName(ac.participant);
+        this.sysSay(`📺 You put ${amt} kcal on ${bp}. The System notes the wager — the audience loves a believer.`);
+        log.push(`bet ${amt} kcal`);
+      } else {
+        this.sysSay(`📺 You haven't got ${amt} kcal to wager. The moment passes.`);
+      }
+    }
+    // Comfort: going to them after. Resolved at verdict — the living feel
+    // it (trust), the dead are mourned (trauma).
+    if (d.comfort) {
+      ac.comfort = true;
+      log.push('will go to them after');
+    }
 
     // Advance
     const next = choice.next;
@@ -1542,10 +1661,13 @@
     const pname = isWatch ? this.displayName(ac.participant) : 'You';
     ac.phase = 'done';
     if (outcome === 'won') {
-      try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'won'); } catch (e) {}
+      // MULTI-TAKE learn pacing (Steve 2026-10-06): only the primary's fate
+      // teaches — otherwise one four-person contest would mint a veteran.
+      if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'won'); } catch (e) {} }
       if (isWatch) {
         // Villager won — resolve THEIR fate, not the player's
-        this.sysSay(`📺 ${contest.name} — ${pname.toUpperCase()} WINS. The crowd is a weather system.`);
+        const multiWin = ac.participants && ac.participants.length > 1;
+        this.sysSay(`📺 ${contest.name} — ${pname.toUpperCase()} WIN${multiWin ? '' : 'S'}. The crowd is a weather system.`);
         this.sysSay(`📺 ${pname} is alive. Shaking, grinning, alive. You were there to see it.`);
         this.addNotability(ac.participant, 'contestWin');
         // Villager gets the prize (not the player)
@@ -1578,7 +1700,7 @@
         s.health = Math.max(1, (s.health || 0) - 5);
       }
     } else {
-      try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'lost'); } catch (e) {}
+      if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'lost'); } catch (e) {} }
       if (isWatch) {
         this.sysSay(`📺 ${contest.name} — over. ${pname} survived. The audience is polite.`);
         this.sysSay(`📺 You go to ${pname}. They're quiet. They'll talk about it later. Or never.`);
@@ -1586,6 +1708,11 @@
         this.sysSay(`📺 ${contest.name} — over. You survived. The audience is polite.`);
         try { this.leadShift('showmanship', 1); } catch (e) {}
       }
+    }
+    // MULTI-TAKE (Steve 2026-10-06): the others who were taken have their
+    // own fates, rolled now. You had your fight; they had theirs.
+    if (!isWatch && ac.others && ac.others.length) {
+      try { this._contestResolveOthers(ac); } catch (e) {}
     }
     // Clear after a beat — the village processes what happened
     this.state.activeContest = null;
@@ -1650,24 +1777,25 @@
     this.sysSay(`📺 ${contest.name} — ${how}`);
     this.sysSay('📺 ' + this._contestDeathLine(contest, how, pname));
     this.sysSay(`📺 The Death Reel will be tasteful. It won't be.`);
-    try { this.contestLearn(ac.contestId, 'died'); } catch (e) {}
+    if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, 'died'); } catch (e) {} }
     this.state.activeContest = null;
     if (isWatch) {
       // A villager died on camera. The village buries them; the player lives
       // with having watched. (Steve 2026-10-06: this used to call playerDeath
       // unconditionally — a watched death killed the PLAYER.)
-      try {
-        if (this.removeVillager) this.removeVillager(ac.participant, 'killed');
-        else {
-          const v = this.state.village;
-          v.roster = (v.roster || []).filter(id => id !== ac.participant);
-        }
-      } catch (e) {}
+      // _cxKillContestant: removeVillager alone is a no-op wrapper — the
+      // dead must actually leave the roster.
+      this._cxKillContestant(ac.participant);
       try { this.say(`☠ ${pname} is gone. The village will say the name for a long time.`); } catch (e) {}
       try { this.leadShift('fracture', 2); } catch (e) {}
       const s = this.state.scholar;
       s.trauma = Math.min(100, (s.trauma || 0) + 12);
       return { done: true, outcome: 'died' };
+    }
+    // MULTI-TAKE (Steve 2026-10-06): the others who were taken have their
+    // own fates, rolled now. You had your fight; they had theirs.
+    if (ac.others && ac.others.length) {
+      try { this._contestResolveOthers(ac); } catch (e) {}
     }
     try { this.playerDeath('contest'); } catch (e) { this.state.scholar.health = 0; this.state.over = true; }
     return { done: true, outcome: 'died' };
@@ -1683,6 +1811,12 @@
     const s = this.state.scholar;
     s.trauma = Math.min(100, (s.trauma || 0) + 5);
     try { this.contestLearn(ac.contestId, 'refused'); } catch (e) {}
+    // MULTI-TAKE (Steve 2026-10-06): the others were taken anyway —
+    // refusal is yours alone.
+    if (ac.others && ac.others.length) {
+      this.sysSay(`📺 You said no. They didn't get asked.`);
+      try { this._contestResolveOthers(ac); } catch (e) {}
+    }
     ac.phase = 'done';
     this.state.activeContest = null;
     return { done: true, outcome: 'refused' };
@@ -1690,10 +1824,14 @@
 
   // === WATCH MODE (villager participant) ===
   // When someone else is taken, you watch. The show plays out as
-  // narrated beats with occasional choices (cheer? intervene? look away?).
-  // The watcher doesn't decide the outcome — the VERDICT roll does, scaled
-  // by contest risk. Villagers CAN die on camera (Steve 2026-10-06: watched
-  // contests were bloodless, which broke FEARED).
+  // narrated beats with choices that MATTER (Steve 2026-10-06): cheering
+  // moves the win odds for your people (capped, cameras notice), studying
+  // the pattern teaches without bleeding, bets are real kcal, and going to
+  // them after lands as trust or mourning. The VERDICT roll is scaled by
+  // contest risk plus your cheer. Villagers CAN die on camera (Steve
+  // 2026-10-06: watched contests were bloodless, which broke FEARED).
+  // Multiple villagers can be taken at once (multi-take) — each gets their
+  // own verdict roll.
   // CONTEST-SPECIFIC WATCH BEATS (Steve 2026-10-06): the three watch phases
   // were identical across all 27 contests ("it's going badly. Or well.").
   // Watching hide-and-seek should feel like hide-and-seek — the count, the
@@ -1875,32 +2013,80 @@
   // The three watch beats ARE the show (Steve 2026-10-06): each contest gets
   // its own fiction now. Generic is fallback only — no contest in the pool
   // should ever reach it.
-  G._contestWatchPhases = function(contest, participantId) {
-    const pname = this.displayName(participantId);
+  // PLURAL BEATS (Steve 2026-10-06): the 27 contest-specific watch beats
+  // were written for one taken villager ("Mara has been taken", "how Mara
+  // dies"). When several are taken, the verbs must agree — "Amy and
+  // Vanessa have been taken", "how Amy and Vanessa die". Literal,
+  // subject-anchored swaps; possessives ("Amy and Vanessa's arms") and
+  // past tense already read fine and are left alone.
+  G._cxPluralBeats = function(text, name) {
+    if (!text || !name) return text;
+    const VERBS = [
+      [' has ', ' have '], [' is ', ' are '], [' dies', ' die'],
+      [' does ', ' do '], [" doesn't ", " don't "], [" isn't ", " aren't "],
+      [' runs', ' run'], [' studies', ' study'], [' picks', ' pick'],
+      [' works', ' work'], [' wants', ' want'], [' touches', ' touch'],
+      [' steps', ' step'], [' stands', ' stand'], [' spends', ' spend'],
+      [' speaks', ' speak'], [' reaches', ' reach'], [' points', ' point'],
+      [' mounts', ' mount'], [' knows', ' know'], [' draws', ' draw'],
+      [' crosses', ' cross'], [' calls', ' call'], [' answers', ' answer'],
+    ];
+    let out = text;
+    for (const [sg, pl] of VERBS) {
+      out = out.split(name + sg).join(name + pl);
+    }
+    return out;
+  };
+  // WATCHER AGENCY (Steve 2026-10-06): watching is not passive. Cheering
+  // moves the win odds for your people — but the cameras notice loud
+  // supporters (showmanship notability: the System files you under
+  // *interesting*). Studying the pattern teaches without bleeding
+  // (knowledge progression for watchers). Betting is real kcal with real
+  // payout. Comfort lands after the verdict — the living feel it.
+  G._contestWatchPhases = function(contest, participantIds) {
+    const ids = Array.isArray(participantIds) ? participantIds : [participantIds];
+    const pname = this._cxNameList(ids, true);
+    const primary = ids[0] === 'player' ? 'You' : this.displayName(ids[0]);
+    let veteran = false;
+    try { veteran = this.contestKnowledge(contest.id).level >= 2; } catch (e) {}
+    const canBet = (this.state.scholar.kcal || 0) >= 200;
     let beats = null;
     try { beats = this._contestWatchBeat(contest, pname); } catch (e) { beats = null; }
     if (!beats) {
       beats = [
-        `📺 ${contest.name}. ${pname} has been taken.\n\nYou watch with the village. The cameras love the watchers almost as much as the watched.`,
-        `📺 ${contest.name} — it's going badly. Or well. It's hard to tell through the lights.\n\n${pname} is still in it. The crowd is restless.`,
+        `📺 ${contest.name}. ${pname} ${ids.length > 1 ? 'have' : 'has'} been taken.\n\nYou watch with the village. The cameras love the watchers almost as much as the watched.`,
+        `📺 ${contest.name} — it's going badly. Or well. It's hard to tell through the lights.\n\n${pname} ${ids.length > 1 ? 'are' : 'is'} still in it. The crowd is restless.`,
         `📺 ${contest.name} — it's over.\n\nThe outcome scrolls across the sky in letters the size of weather.`,
       ];
+    }
+    // Multi-take: the contest-specific beats were written singular —
+    // fix verb agreement for a group.
+    if (ids.length > 1 && beats) {
+      beats = beats.map(b => this._cxPluralBeats(b, pname));
+    }
+    const phase1Choices = [
+      veteran
+        ? { label: 'Shout a real warning', sub: 'you know this one', do: { cheer: 0.10, notability: 'showmanship', note: `You shout the thing that matters — the tell you learned the hard way. ${primary} flinches... then adjusts. That landed. The cameras swing to you for a second.` }, next: 2 }
+        : { label: 'Shout advice', sub: 'maybe helps', do: { cheer: 0.05, note: `You shout something useful. Whether ${pname} hear${ids.length > 1 ? '' : 's'} it over the noise is another question.` }, next: 2 },
+      { label: 'Hold your breath', sub: 'tense', do: { note: 'You stop breathing. Everyone does. The village is one held breath.' }, next: 2 },
+    ];
+    if (canBet) {
+      // The bet rides on the first taken. Wager 200 kcal, pays 400.
+      phase1Choices.splice(1, 0,
+        { label: `Bet 200 kcal on ${primary}`, sub: 'the System honors wagers', do: { bet: { amount: 200 } }, next: 2 });
     }
     return [
       { text: beats[0],
         choices: [
-          { label: 'Cheer them on', sub: 'loud', do: { note: `You cheer for ${pname}. They hear it. It matters more than you'd think.` }, next: 1 },
+          { label: 'Cheer them on', sub: 'loud — the cameras notice', do: { cheer: 0.05, notability: 'showmanship', note: `You cheer for ${pname}. They hear it. The cameras swing toward YOU for a second — the System files you under *interesting*.` }, next: 1 },
           { label: 'Watch silently', sub: 'tense', do: { note: 'You watch without a sound. Your hands hurt from gripping.' }, next: 1 },
+          { label: 'Study the pattern', sub: 'learn without bleeding', do: { study: true, note: `You watch the way it moves — the tells, the rhythm. If you ever go in there yourself, you'll remember this.` }, next: 1 },
           { label: 'Look away', sub: 'can\'t watch', do: { note: 'You look away. The cameras catch it anyway. The audience understands.', trauma: 3 }, next: 1 },
         ] },
-      { text: beats[1],
-        choices: [
-          { label: 'Shout advice', sub: 'maybe helps', do: { note: `You shout something useful. Whether ${pname} hears it over the noise is another question.` }, next: 2 },
-          { label: 'Hold your breath', sub: 'tense', do: { note: 'You stop breathing. Everyone does. The village is one held breath.' }, next: 2 },
-        ] },
+      { text: beats[1], choices: phase1Choices },
       { text: beats[2],
         choices: [
-          { label: 'Go to them', sub: 'after', do: { note: `You go to ${pname} after. Win or lose, they need a familiar face more than applause.` }, next: 'VERDICT' },
+          { label: 'Go to them', sub: 'after', do: { comfort: true, note: `You go to ${pname} after. Win or lose, they need a familiar face more than applause.` }, next: 'VERDICT' },
           { label: 'Give them space', sub: 'respect', do: { note: 'You give them space. The cameras move on. You don\'t.' }, next: 'VERDICT' },
         ] },
     ];
@@ -1910,14 +2096,116 @@
   // own terms, not the watcher's choices. Death odds scale with contest risk
   // — blood/extreme contests kill villagers on camera.
   G._contestVerdict = function(ac) {
-    const contest = this.contestPool().find(c => c.id === ac.contestId) || { risk: 'medium' };
+    const contest = this.contestPool().find(c => c.id === ac.contestId) || { risk: 'medium', name: ac.contestId };
+    const dieBase = { low: 0, medium: 0.03, high: 0.10, extreme: 0.20 }[contest.risk] || 0;
+    const winBase = { low: 0.70, medium: 0.55, high: 0.40, extreme: 0.25 }[contest.risk] || 0.5;
+    // WATCHER AGENCY (Steve 2026-10-06): cheering moves the needle for your
+    // people. Capped at +15% — the audience's love is real but not rigged.
+    const cheer = Math.min(0.15, ac.cheer || 0);
+    const pids = (ac.participants && ac.participants.length) ? ac.participants.slice() : [ac.participant];
+    const s = this.state.scholar;
+    let anyWon = false;
+    const fates = [];
+    pids.forEach((pid, i) => {
+      ac.participant = pid;
+      // MULTI-TAKE learn pacing: only the primary's fate teaches.
+      ac._suppressLearn = i > 0;
+      const winOdds = Math.min(0.95, winBase + cheer);
+      let outcome;
+      if (dieBase > 0 && Math.random() < dieBase) {
+        this._contestDie(ac, 'The verdict came down hard.');
+        outcome = 'died';
+      } else {
+        const won = Math.random() < winOdds;
+        this._contestEnd(ac, won ? 'won' : 'lost', won);
+        outcome = won ? 'won' : 'lost';
+        if (won) anyWon = true;
+      }
+      fates.push({ pid, outcome });
+      // The bet rides on the first taken. The System honors wagers: 2x.
+      if (i === 0 && ac.bet) {
+        const amt = ac.bet.amount;
+        if (outcome === 'won') {
+          s.kcal = (s.kcal || 0) + amt * 2;
+          this.sysSay(`📺 Your bet pays out: +${amt * 2} kcal. The System honors wagers.`);
+        } else {
+          this.sysSay(`📺 Your ${amt} kcal is gone. The house always eats.`);
+        }
+      }
+      // Comfort: the living feel it; the dead are mourned.
+      if (ac.comfort && pid !== 'player') {
+        try {
+          const v = this.state.village;
+          v.trust = v.trust || {};
+          if (outcome === 'died') {
+            s.trauma = Math.min(100, (s.trauma || 0) + 5);
+            this.sysSay(`📺 You go to ${this.displayName(pid)} anyway. There is nothing to say. You stay until the cameras leave.`);
+          } else {
+            const cur = v.trust[pid] === undefined ? 10 : v.trust[pid];
+            v.trust[pid] = Math.max(0, Math.min(100, cur + 3));
+          }
+        } catch (e) {}
+      }
+      // The fate calls above clear activeContest — restore it for the next
+      // contestant's verdict.
+      this.state.activeContest = ac;
+    });
+    if (cheer > 0 && anyWon) {
+      this.sysSay(`📺 They heard you. Somewhere in the noise, your voice got through.`);
+    }
+    ac.participant = pids[0];
+    ac._suppressLearn = false;
+    this.state.activeContest = null;
+    this.state.lastContestDay = s.day;
+    // Single contestant: preserve the old outcome contract ('died'/'won'/
+    // 'lost'). Multi: report every fate.
+    if (fates.length === 1) return { done: true, outcome: fates[0].outcome };
+    return { done: true, outcome: 'verdict', fates };
+  };
+
+  // KILL-CONTESTANT (Steve 2026-10-06): removeVillager is a hook-wrapper
+  // with no hook attached anywhere — calling it alone leaves the dead on
+  // the roster, eligible to be taken AGAIN (the pre-existing watch-death
+  // branch had the same hole). Belt and suspenders: call it for any module
+  // hooks, then filter the roster directly so death is real.
+  G._cxKillContestant = function(pid) {
+    try { if (this.removeVillager) this.removeVillager(pid, 'killed'); } catch (e) {}
+    try {
+      const v = this.state.village;
+      v.roster = (v.roster || []).filter(id => id !== pid);
+      if (v.positions) delete v.positions[pid];
+    } catch (e2) {}
+  };
+  // MULTI-TAKE FATES (Steve 2026-10-06): when the player is taken alongside
+  // villagers, each of them has their own off-screen contest. Their fates
+  // roll here at the end of the player's sequence — they can win, lose, or
+  // die, and the village feels it. No knowledge for watching from the
+  // inside: you had your own arena to survive.
+  G._contestResolveOthers = function(ac) {
+    const others = (ac.others || []).filter(id => id !== 'player');
+    if (!others.length) return;
+    const contest = this.contestPool().find(c => c.id === ac.contestId) || { risk: 'medium', name: ac.contestId, id: ac.contestId };
     const dieOdds = { low: 0, medium: 0.03, high: 0.10, extreme: 0.20 }[contest.risk] || 0;
     const winOdds = { low: 0.70, medium: 0.55, high: 0.40, extreme: 0.25 }[contest.risk] || 0.5;
-    if (dieOdds > 0 && Math.random() < dieOdds) {
-      return this._contestDie(ac, 'The verdict came down hard.');
+    const s = this.state.scholar;
+    this.sysSay(`📺 ───`);
+    this.sysSay(`📺 While you fought your fight, they fought theirs.`);
+    for (const pid of others) {
+      const pname = this.displayName(pid);
+      if (dieOdds > 0 && Math.random() < dieOdds) {
+        this.sysSay(`📺 ${pname} didn't come home.`);
+        this.sysSay('📺 ' + this._contestDeathLine(contest, '', pname));
+        this._cxKillContestant(pid);
+        try { this.say(`☠ ${pname} is gone. The village will say the name for a long time.`); } catch (e) {}
+        try { this.leadShift('fracture', 1); } catch (e) {}
+        s.trauma = Math.min(100, (s.trauma || 0) + 8);
+      } else if (Math.random() < winOdds) {
+        this.sysSay(`📺 ${pname} WON. You didn't see it — you had your own arena. The village will tell you about it for weeks.`);
+        this.addNotability(pid, 'contestWin');
+      } else {
+        this.sysSay(`📺 ${pname} survived. Barely, by the look of them when the lights came up.`);
+      }
     }
-    const won = Math.random() < winOdds;
-    return this._contestEnd(ac, won ? 'won' : 'lost', won);
   };
 
 })();

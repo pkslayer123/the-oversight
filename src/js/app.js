@@ -191,7 +191,15 @@
       const pc = Game.state && Game.state.pendingContest;
       if (pc) {
         const daysLeft = Math.max(0, (pc.firesDay || 1) - (Game.state.scholar.day || 1));
-        const who = pc.participant === 'player' ? 'YOU' : (pc.participant || 'someone');
+        // MULTI-TAKE (Steve 2026-10-06): show everyone taken, not just the
+        // first — the countdown is the dread.
+        let who;
+        try {
+          const ids = (pc.participants && pc.participants.length) ? pc.participants : [pc.participant];
+          who = ids.map(id => id === 'player' ? 'YOU' : (Game.displayName ? Game.displayName(id) : id)).join(' + ');
+        } catch (e) {
+          who = pc.participant === 'player' ? 'YOU' : (pc.participant || 'someone');
+        }
         // Show the contest's display name, not the raw id ("gauntlet" -> "Gauntlet").
         const cname = (typeof Game.contestPool === 'function'
           ? (Game.contestPool().find(c => c.id === pc.contestId) || {}).name
