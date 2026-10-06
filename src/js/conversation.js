@@ -1750,7 +1750,7 @@
         const t = this.state.village.trust || {};
         t[vid] = Math.max(0, (t[vid] || 10) - 1);
         // MOOD: dodging a direct question cools the room.
-        this.convoMoodShift(vid, -1);
+        mshift(-1);
         done('"Okay." Something shutters, just slightly.', '(avoid the question)');
       } else if (choiceId.indexOf('react:') === 0) {
         // REACTIVE ANSWER: engaged their direct question. The outcome must
@@ -1767,7 +1767,7 @@
           const spooky = Math.random() < 0.5;
           t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
           // MOOD: warmth follows the trust delta — bravery together warms.
-          this.convoMoodShift(vid, Math.sign(ad.trust || 0));
+          mshift(Math.sign(ad.trust || 0));
           c.thread = 'spooked'; c.depth = 1;
           try { this.convoDeepTick(vid); } catch (e) {}
           done(spooky
@@ -1784,7 +1784,7 @@
           const qd = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
           t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
           // MOOD: warmth follows the trust delta.
-          this.convoMoodShift(vid, Math.sign(ad.trust || 0));
+          mshift(Math.sign(ad.trust || 0));
           c.thread = 'small'; c.depth = 1;
           done(ad.line || '"...Okay. Here it is."', ad.label);
           if (qd) {
@@ -1797,7 +1797,7 @@
           t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + (ad.trust || 0)));
           // MOOD: warmth follows the trust delta — kind answers warm,
           // cruel or dismissive ones cool. No separate data needed.
-          this.convoMoodShift(vid, Math.sign(ad.trust || 0));
+          mshift(Math.sign(ad.trust || 0));
           if (rdef.thread) { c.thread = rdef.thread; c.depth = 1; }
           done(ad.line, ad.label);
         } else {
@@ -1988,7 +1988,7 @@
           const l = this.convoPick(vid, 'agree:' + temp, poolA)
             || this.convoPickCycle(vid, 'agreefill', ['"Yeah."', '"Mm."', '"Right."', 'Nods along.']);
           // MOOD: being agreeable warms the room, a little, every time.
-          this.convoMoodShift(vid, 1);
+          mshift(1);
           done(l, '"You\'re right."');
         }
       } else if (choiceId === 'joke') {
@@ -2014,7 +2014,7 @@
           || this.convoPickCycle(vid, 'jokefill', ['A short laugh.', 'Snorts.', 'Grins.']);
         // MOOD: jokes warm — unless they're grieving or scared, in which
         // case it lands badly. Read the room.
-        this.convoMoodShift(vid, (mood === 'grieving' || mood === 'scared') ? -1 : 1);
+        mshift((mood === 'grieving' || mood === 'scared') ? -1 : 1);
         done(l, '(crack a joke)');
         const vg = this.state.village;
         vg.cheer = Math.max(vg.cheer || 0, 1);
@@ -2031,8 +2031,9 @@
         } else {
         // MOOD: silence means different things at different temperatures —
         // comfortable when warm, pointed when cold. (convo-mood.js)
-        const ms = this.convoMoodSilence(vid);
-        this.convoMoodShift(vid, ms.shift);
+        const ms = typeof this.convoMoodSilence === 'function'
+          ? this.convoMoodSilence(vid) : { line: '"..."', shift: 0 };
+        mshift(ms.shift);
         done(ms.line, '(say nothing)');
         }
       } else if (choiceId === 'subject') {
