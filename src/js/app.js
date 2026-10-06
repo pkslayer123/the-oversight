@@ -11510,9 +11510,11 @@
         const tg = m.telegraph;
         const ptype = (tg.pattern && tg.pattern.type) || 'single';
         // If pattern not learned, skip entirely — no telegraph markers at all
-        let known = true;
+        // TELEGRAPH KNOWLEDGE GATE (Steve 2026-10-06): if you don't know
+        // the pattern, you don't see the telegraph. Default to HIDDEN.
+        let known = false;
         try {
-          known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : true;
+          known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : false;
         } catch (e) {}
         if (!known) continue;
         const mid = (m.mdef || {}).id;
