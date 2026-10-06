@@ -573,6 +573,23 @@
       const goalDef = (this.data.characterGen.goals || []).find(g => g.id === goal);
       const vp = this.vpOf(vid);
 
+      // TAUGHT PLANTS (Steve 2026-10-05): if you taught them something, they
+      // remember. The one real conversation mechanic was invisible — now it's
+      // visible. They reference what you taught them.
+      const taught = (v.taught || {})[vid] || [];
+      if (taught.length > 0 && !c.taughtMentioned && Math.random() < 0.4) {
+        c.taughtMentioned = true;
+        const pid = taught[Math.floor(Math.random() * taught.length)];
+        const plant = (this.data.plants || []).find(p => p.id === pid);
+        const pname = plant ? plant.name : 'that plant';
+        const refs = [
+          `"Hey — I found some ${pname} today. You were right, it was right where you said."`,
+          `"I tried the ${pname} like you showed me. Didn't poison anyone, so that's a win."`,
+          `"${pname} — I keep thinking about what you said. I'm seeing it everywhere now."`,
+        ];
+        return this.convoPick(vid, 'taughtref', refs) || refs[0];
+      }
+
       // 1. THEY asked to talk — their reason leads, once. The stored line is
       // a template: the requester's name may have been earned since the
       // request fired, so it renders fresh here, never stale.
@@ -749,12 +766,32 @@
         if (scared > 2) bits.push('people are scared');
         const heat = Object.values(vg.heat || {}).filter(h => h > 0).length;
         if (heat) bits.push("there's tension about who's in charge");
-        const idlePool = [
-          'holding together, somehow.',
-          'tired, but nobody\'s giving up. That counts for a lot.',
-          'quiet. People keeping to themselves, mostly.',
-          'better than yesterday. Worse than tomorrow, probably.',
-        ];
+        // TEMPERAMENT-SPECIFIC (Steve 2026-10-05): the same generic pool made
+        // every villager sound identical ("better than yesterday" x3). Now the
+        // idle lines reflect who's talking.
+        const idleByTemp = {
+          warm: [
+            'holding together, somehow. People are good, you know?',
+            'tired, but nobody\'s giving up. That counts for a lot.',
+            'we\'re alright. We look out for each other.',
+          ],
+          steady: [
+            'quiet. People keeping to themselves, mostly.',
+            'stable. No crises today, which is its own kind of good.',
+            'same as yesterday. I\'ll take boring.',
+          ],
+          sharp: [
+            'better than yesterday. Worse than tomorrow, probably.',
+            'functional. Don\'t mistake that for fine.',
+            'people are coping. Coping isn\'t thriving, but it\'s not dying.',
+          ],
+          restless: [
+            'everyone\'s itchy. Too much sitting, not enough doing.',
+            'fine, I guess. I need to move, though. You?',
+            'okay. But okay feels like waiting for something.',
+          ],
+        };
+        const idlePool = idleByTemp[temp] || idleByTemp.steady;
         const line = bits.length ? bits.join('; ') + '.' : this.convoPickCycle(vid, 'villageidle', idlePool);
         const fullLine = '"Honestly? ' + line + '"';
         // Village news can repeat when nothing changed — say it differently.
@@ -884,7 +921,7 @@
       const gqAnswers = gqActive ? this.convoGenericAnswers(vid, c.genericQ) : [];
       for (const a of gqAnswers) choices.push(a);
       if (gqActive) {
-        const gr = [['agree', '"You\'re right."'], ['joke', '(crack a joke)'], ['silence', '(say nothing)']];
+        const gr = [['agree', '"You\'re right."'], ['joke', '"Ha — yeah."'], ['silence', '"..."']];
         const pick = gr[Math.floor(Math.random() * gr.length)];
         choices.push({ id: pick[0], label: pick[1] });
       }
@@ -1005,11 +1042,11 @@
       }
       const reacts = [
         { id: 'agree', label: '"You\'re right."' },
-        { id: 'joke', label: '(crack a joke)' },
-        { id: 'silence', label: '(say nothing)' },
+        { id: 'joke', label: '"Ha — yeah."' },
+        { id: 'silence', label: '"..."' },
       ];
       if (choices.length < MAXC) choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
-      if (c.thread && c.thread !== 'small' && choices.length < MAXC) choices.push({ id: 'subject', label: '"Actually — different subject."' });
+      if (c.thread && c.thread !== 'small' && choices.length < MAXC) choices.push({ id: 'subject', label: '"Can I ask you something else?"' });
       choices.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
       return choices;
     },
