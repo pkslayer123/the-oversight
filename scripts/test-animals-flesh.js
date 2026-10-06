@@ -84,7 +84,9 @@ function withRand(values, fn) {
   for (const a of animals) {
     putAnimal(s, a.id, 5, 4);
     const t = Game.encWaryText(s.animal);
-    ok('wary text for ' + a.id, t.includes(a.tell), t);
+    // (Steve 2026-10-06): the tell is sentence-cased after the period join —
+    // match case-insensitively, the tell's presence is what matters.
+    ok('wary text for ' + a.id, t.toLowerCase().includes(a.tell.toLowerCase()), t);
     ok('wary text gated for ' + a.id, !t.toLowerCase().includes(a.name.toLowerCase()), t);
     s.animal = null;
   }
