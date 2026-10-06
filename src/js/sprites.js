@@ -984,6 +984,67 @@ L23.8 3.2 L25.5 1.5 Q26.5 2 26 3.2 L24.8 5.5 L27.5 5.2 Q28.5 5.8 27.8 6.8 L25.5 
       // desaturated, blank — the gray understudy read
       s = s.replace(new RegExp(shirt.replace(/[.#]/g, '\\$&'), 'g'), '#7a7a7a');
     }
+    // EQUIPMENT LAYERS (Steve 2026-10-06): equipped gear renders ON the sprite.
+    // Threat must read at grid distance — weapons held OUT, armor bulks the torso.
+    const veq = v.equipped || {};
+    const handX = 16 + shoulderW/2 + 0.6, handY = 21; // right hand
+    if (veq.weapon && veq.weapon.wkind) {
+      const wk = veq.weapon.wkind;
+      const steel = '#b8c4cc', wood = '#6e4f30', dark = '#3a3a3a';
+      if (wk === 'spear') {
+        s += `<line x1="${handX}" y1="${handY - 2}" x2="${handX + 9}" y2="${handY - 12}" stroke="${wood}" stroke-width="1.4" stroke-linecap="round"/>`;
+        s += `<path d="M${handX + 9} ${handY - 12} l3.2 -1.2 l-1.6 3.4 Z" fill="${steel}"/>`;
+      } else if (wk === 'blade') {
+        s += `<line x1="${handX}" y1="${handY}" x2="${handX + 5.5}" y2="${handY - 4}" stroke="${dark}" stroke-width="1.2" stroke-linecap="round"/>`;
+        s += `<path d="M${handX + 5.5} ${handY - 4} l2.6 -2.2 l-0.6 3.2 Z" fill="${steel}"/>`;
+      } else if (wk === 'axe') {
+        s += `<line x1="${handX}" y1="${handY + 1}" x2="${handX + 4}" y2="${handY - 6}" stroke="${wood}" stroke-width="1.4" stroke-linecap="round"/>`;
+        s += `<path d="M${handX + 4} ${handY - 6} l3.4 -0.6 l-0.8 3 Z" fill="${steel}"/>`;
+      } else if (wk === 'bow') {
+        s += `<path d="M${handX + 1} ${handY + 3} Q${handX + 7} ${handY - 2} ${handX + 1} ${handY - 7}" stroke="${wood}" stroke-width="1.3" fill="none"/>`;
+        s += `<line x1="${handX + 1}" y1="${handY + 3}" x2="${handX + 1}" y2="${handY - 7}" stroke="#d8d8d8" stroke-width="0.5"/>`;
+      } else if (wk === 'blunt') {
+        s += `<line x1="${handX}" y1="${handY}" x2="${handX + 5}" y2="${handY - 5}" stroke="${wood}" stroke-width="1.8" stroke-linecap="round"/>`;
+      } else {
+        s += `<rect x="${handX}" y="${handY - 4}" width="3.4" height="2.2" rx="0.6" fill="${dark}"/>`;
+      }
+    }
+    if (veq.torso) {
+      if (veq.torso.fullSet) {
+        s += `<path d="M${16 - shoulderW/2 - 1} 12.5 L${16 + shoulderW/2 + 1} 12.5 L${16 + shoulderW/2} 23.5 L${16 - shoulderW/2} 23.5 Z" fill="#2e3138" opacity="0.95"/>`;
+        s += `<rect x="${16 - 3.5}" y="14" width="7" height="1.2" fill="#4a4f58"/><rect x="${16 - 3.5}" y="18" width="7" height="1.2" fill="#4a4f58"/>`;
+        s += `<rect x="${hx - 4.2}" y="${hy - 4.4}" width="8.4" height="2.6" rx="1.2" fill="#2e3138"/>`;
+        s += `<rect x="${hx - 4.2}" y="${hy - 2.6}" width="8.4" height="0.9" fill="#8a8f98"/>`;
+        s += `<rect x="12.4" y="22" width="3.4" height="7" rx="1.2" fill="#2e3138" opacity="0.9"/><rect x="16.2" y="22" width="3.4" height="7" rx="1.2" fill="#2e3138" opacity="0.9"/>`;
+      } else if (veq.torso.armorTier) {
+        const tier = veq.torso.armorTier;
+        const col = tier === 'heavy' ? '#5a5f6a' : tier === 'medium' ? '#6e6250' : shirt;
+        const op = tier === 'light' ? 0.45 : 0.92;
+        const bulk = tier === 'heavy' ? 1.6 : tier === 'medium' ? 0.8 : 0;
+        s += `<path d="M${16 - shoulderW/2 - bulk} 13 L${16 + shoulderW/2 + bulk} 13 L${16 + shoulderW/2 + bulk - 1} 23 L${16 - shoulderW/2 - bulk + 1} 23 Z" fill="${col}" opacity="${op}"/>`;
+        if (tier !== 'light') {
+          s += `<line x1="${16 - shoulderW/2 - bulk + 1}" y1="17" x2="${16 + shoulderW/2 + bulk - 1}" y2="17" stroke="#2a2a2a" stroke-width="0.7" opacity="0.6"/>`;
+        }
+      }
+    }
+    if (veq.head && !(veq.torso && veq.torso.fullSet)) {
+      const hk = veq.head.headKind || 'other';
+      if (hk === 'pot') {
+        s += `<path d="M${hx - 3.6} ${hy - 3.2} L${hx + 3.6} ${hy - 3.2} L${hx + 2.8} ${hy - 6.4} L${hx - 2.8} ${hy - 6.4} Z" fill="#8a8f96" stroke="#5a5f66" stroke-width="0.6"/>`;
+        s += `<ellipse cx="${hx}" cy="${hy - 6.4}" rx="2.8" ry="0.9" fill="#6a6f76"/>`;
+      } else if (hk === 'cap' || hk === 'helmet') {
+        s += `<ellipse cx="${hx}" cy="${hy - 3.2}" rx="4" ry="1.9" fill="#4a4a52"/>`;
+        s += `<rect x="${hx - 4}" y="${hy - 4.4}" width="8" height="1.5" rx="0.7" fill="#4a4a52"/>`;
+      } else {
+        s += `<rect x="${hx - 3.4}" y="${hy - 4.6}" width="6.8" height="1.8" rx="0.8" fill="#5a5a5a"/>`;
+      }
+    }
+    if (veq.feet) {
+      s += `<rect x="12.6" y="28.4" width="3.4" height="1.8" rx="0.8" fill="#1e1a14"/><rect x="16" y="28.4" width="3.4" height="1.8" rx="0.8" fill="#1e1a14"/>`;
+    }
+    if (veq.hands) {
+      s += `<circle cx="${16 - shoulderW/2 - 0.6}" cy="21" r="1.3" fill="#4a3f30"/><circle cx="${16 + shoulderW/2 + 0.6}" cy="21" r="1.3" fill="#4a3f30"/>`;
+    }
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="sprite">${s}</svg>`;
   }
   function shade(hex, amt) {

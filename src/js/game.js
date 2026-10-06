@@ -758,6 +758,8 @@
         // ITEMS (Steve 2026-10-05): generated with full char context so kin
         // keepsakes are THAT person's — named from their own culture.
         char.items = this.genItemCandidates(occ, char);
+        // EQUIPMENT (Steve 2026-10-06): villagers wear what they have.
+        try { if (S.equipment) S.equipment.autoEquip(char, this.data.items); } catch (e) {}
         return char;
     },
 
@@ -974,6 +976,8 @@
         fromSeed: true, // marks unified-system seeds vs generated
       };
       char.items = this.genItemCandidates(occ, char);
+      // EQUIPMENT (Steve 2026-10-06): villagers wear what they have.
+      try { if (S.equipment) S.equipment.autoEquip(char, this.data.items); } catch (e) {}
       return char;
     },
 
@@ -6803,10 +6807,39 @@
       // validate slot
       if (slot === 'weapon' && def.class !== 'weapon') { this.say('That\'s not a weapon.'); return null; }
       if (slot === 'armor' && !def.armor) { this.say('That\'s not armor.'); return null; }
+      // validate slot (EQUIPMENT 2026-10-06: body-part slots + misc)
+      try {
+        if (S.equipment) {
+          const wantSlot = S.equipment.slotForItem(def);
+          const miscOk = /^misc[1-3]$/.test(slot || '');
+          if (!miscOk && wantSlot && wantSlot !== slot && !(slot === 'armor' && wantSlot === 'torso')) {
+            this.say(`That goes on your ${wantSlot}, not your ${slot}.`);
+            return null;
+          }
+          if (!miscOk && !wantSlot && !['head'].includes(slot)) {
+            this.say("You can't wear that there.");
+            return null;
+          }
+          if (S.equipment.isFullSet(def.id) && slot !== 'torso' && slot !== 'armor') {
+            this.say('That covers everything — wear it as your armor.');
+            return null;
+          }
+        }
+      } catch (e) {}
       this.state.scholar.equipped = this.state.scholar.equipped || {};
       // unequip current (back to inventory, stays there)
       // equip new (remove from inventory, set slot)
-      this.state.scholar.equipped[slot] = { itemId: def.id, name: def.name,
+      // EQUIPMENT (Steve 2026-10-06): render hints for the sprite layer.
+      let _hints = {};
+      try {
+        if (S.equipment) {
+          if (slot === 'weapon') _hints.wkind = S.equipment.weaponKind(def);
+          if (def.armor) _hints.armorTier = S.equipment.armorTier(def.armor.protection || 0);
+          if (slot === 'head') _hints.headKind = S.equipment.headKind(def);
+          if (S.equipment.isFullSet(def.id)) _hints.fullSet = true;
+        }
+      } catch (e) {}
+      this.state.scholar.equipped[slot] = { itemId: def.id, name: def.name, ..._hints,
         ...(item.bonded ? { bonded: true, bond: item.bond || 0, bondOffered: item.bondOffered || [], enhancements: item.enhancements || [] } : {}),
         // ALIEN LOOT (Steve 2026-10-06): the knowledge-gate flag travels with
         // the weapon — first swing is the learning moment (tbPlayerStrike).
@@ -6814,6 +6847,25 @@
       // remove from inventory (it's worn, not carried)
       this.state.scholar.inventory.splice(itemIdx, 1);
       this.say(`Equipped ${def.name} (${slot}).`);
+      // EQUIPMENT (Steve 2026-10-06): the set-vs-pieces crossover moment.
+      try {
+        if (S.equipment) {
+          const sch = this.state.scholar;
+          S.equipment.migrateEquipment(sch);
+          const v = { equipped: sch.equipped || {}, items: (sch.inventory || []).map(i => i.itemId || i.id) };
+          for (const s of Object.values(v.equipped)) if (s && s.itemId) v.items.push(s.itemId);
+          const cmp = S.equipment.compareSetVsPieces(v, this.data.items);
+          const wasSet = sch._gearWinner || 'none';
+          if (cmp.winner !== wasSet && cmp.winner !== 'none' && wasSet !== 'none') {
+            if (cmp.winner === 'pieces' && wasSet === 'set') {
+              this.say(`Your pieced-together gear (${cmp.piecesTotal}) now outperforms the full set (${cmp.setTotal}). Fitted beats issued.`);
+            } else if (cmp.winner === 'set' && wasSet === 'pieces') {
+              this.say(`The full set (${cmp.setTotal}) is back on top over your pieces (${cmp.piecesTotal}). Sometimes simple wins.`);
+            }
+          }
+          if (cmp.winner !== 'none') sch._gearWinner = cmp.winner;
+        }
+      } catch (e) {}
       return null;
     },
     unequip(slot) {
@@ -6830,6 +6882,18 @@
       return null;
     },
     armorBonus() {
+      // EQUIPMENT (Steve 2026-10-06): unified slot system. Old saves migrate armor->torso.
+      try {
+        if (S.equipment) {
+          const sch = this.state.scholar || {};
+          S.equipment.migrateEquipment(sch);
+          const v = { equipped: sch.equipped || {} };
+          let bonus = S.equipment.armorOf(v, this.data.items);
+          const flat0 = this.modTarget('armor.flat', 0);
+          if (flat0 > 0) bonus += flat0;
+          return bonus;
+        }
+      } catch (e) {}
       const eq = (this.state.scholar.equipped || {}).armor;
       let bonus = 0;
       if (eq) {
@@ -14654,11 +14718,20 @@
         if (!vp) continue;
         const temp = (vp.personality && vp.personality.temperament) || 'steady';
         const ai = temp === 'bold' ? 'brave' : temp === 'cautious' ? 'cautious' : 'helpful';
+        // EQUIPMENT (Steve 2026-10-06): villagers fight with what they're wearing.
+        let vwbonus = 0, varmor = 0;
+        try {
+          if (S.equipment) {
+            vwbonus = S.equipment.weaponBonusOf(vp, this.data.items);
+            varmor = S.equipment.armorOf(vp, this.data.items);
+          }
+        } catch (e) {}
         fighters.push({
           key: 'v_' + rid, kind: 'villager', villagerId: rid,
           name: this.displayName(rid), emoji: '🧍',
           hp: 30, maxHp: 30, speed: 3, mx: pos.mx, my: pos.my,
           alive: true, fled: false, ai, helped: false,
+          wbonus: vwbonus, varmor: varmor,
         });
       }
       // monsters: behavior drives count (pack/swarm bring friends)
@@ -16756,6 +16829,12 @@
         const prot = this.armorBonus();
         if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
       }
+      // EQUIPMENT (Steve 2026-10-06): villagers' worn armor absorbs too.
+      if (t.kind === 'villager' && (t.varmor || 0) > 0) {
+        const prot = t.varmor;
+        final = Math.max(0, final - prot);
+        this.say(`${t.name}'s gear absorbs ${Math.min(dmg, prot)}.`);
+      }
       // PHASE BLADE (alien loot): ignores armor — the sealed shell might as
       // well not be there. Checked the same way as the torch-vs-golem rule.
       let ignoresArmor = false;
@@ -17142,7 +17221,10 @@
       if (a.type === 'strike' || a.type === 'harry') {
         const t = this.tbFighter(a.target);
         if (t && t.alive) {
-          const dmg = a.type === 'strike' ? S.combat.roll([4, 8]) : S.combat.roll([2, 4]);
+          // EQUIPMENT (Steve 2026-10-06): villagers hit with their equipped weapon.
+          // Half bonus — they're helpers, not heroes. A spear still matters (+15).
+          const wb = Math.round((v.wbonus || 0) / 2);
+          const dmg = a.type === 'strike' ? S.combat.roll([4 + wb, 8 + wb]) : S.combat.roll([2, 4]);
           this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${this.encTheName(t)}.`);
           this.tbDamage(t.key, dmg, v.name);
           // HIGHBEAM: hurting the deer moves them to the front of its list.
