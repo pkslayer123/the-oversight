@@ -1159,12 +1159,17 @@
         const ordered = [...favored, ...rest];
         for (let k = 0; k < n && ordered.length; k++) result.push(ordered.shift());
       };
-      take('tool', 2); take('weapon', 1); take('clothing', 2);
+      take('tool', 2);
+      // STARTER WEAPONS (Steve 2026-10-06): no high-tier loot at spawn.
+      // Jackpots exist, but you don't start with a searcaster.
+      take('weapon', 1, def => (def.lootTier || 1) <= 2 && def.origin !== 'alien');
+      take('clothing', 2);
       // sentimental: age-gate kin (no grandchildren at 19), then personalize.
       // A keepsake that survives the gate is THAT person's — named, dated.
       take('sentimental', 2, def => this.kinAgeOk(def.kin || 'none', charAge));
       // wild card: one more from anywhere but food (bonded relics aren't snacks)
-      const all = (this.data.items || []).filter(i => i.class !== 'food' && !result.includes(i.id)).map(i => i.id);
+      // — and no high-tier loot either (Steve 2026-10-06).
+      const all = (this.data.items || []).filter(i => i.class !== 'food' && !result.includes(i.id) && (i.lootTier || 1) <= 2 && i.origin !== 'alien').map(i => i.id);
       if (all.length) result.push(all[Math.floor(Math.random() * all.length)]);
       // PERSONALIZE (Steve 2026-10-05): kin keepsakes get their person.
       // Stored per-character; the pick screen and inventory read the override.
