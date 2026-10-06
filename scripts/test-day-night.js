@@ -97,17 +97,20 @@ function ok(name, cond) {
     if (id === Game.villagerId) continue;
     v.positions[id] = v.positions[id] || { mx: 4, my: 4 };
   }
-  const rid = (v.roster || []).find(id => id !== Game.villagerId && v.positions && v.positions[id]);
-  if (rid) {
-    const before = JSON.stringify(v.positions[rid]);
-    let moved = 0;
-    for (let i = 0; i < 10; i++) {
-      const b = JSON.stringify(v.positions[rid]);
+  const rids = (v.roster || []).filter(id => id !== Game.villagerId && v.positions && v.positions[id]);
+  if (rids.length) {
+    // FLAKE FIX (2026-10-06): the old assertion sampled ONE npc × 10 batches
+    // at p=0.25/move — P(>3 moves) ≈ 22%, so it failed ~1 run in 5. Assert the
+    // move RATE over ~100 npc-batches instead: expected 0.25, ceiling 0.40.
+    let moved = 0, total = 0;
+    for (let i = 0; i < 25; i++) {
+      const before = rids.map(id => JSON.stringify(v.positions[id]));
       Game.npcBatchTurn();
-      if (JSON.stringify(v.positions[rid]) !== b) moved++;
+      rids.forEach((id, k) => { total++; if (JSON.stringify(v.positions[id]) !== before[k]) moved++; });
     }
-    ok('NPCs barely move at night (<=3 moves in 10 batches)', moved <= 3);
-    console.log(`   night movement: ${moved}/10 batches moved (should be small)`);
+    const rate = moved / total;
+    ok('NPCs barely move at night (move rate <= 0.40 over npc-batches)', rate <= 0.40);
+    console.log(`   night movement: ${moved}/${total} npc-batches moved (rate ${rate.toFixed(2)}, expected ~0.25)`);
   } else console.log('SKIP night settle: no NPC with position');
 
   // --- 7. sleep: advances to dawn, heals, restores ---

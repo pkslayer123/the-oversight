@@ -36,20 +36,23 @@ function lastSay() { return Game.log.slice(-1)[0] || ''; }
   // ---- 1. deadfall bait ----
   let s = fresh();
   Game.learnRecipe('deadfall', 3);
-  s.inventory.push({ material: 'stick', units: 4, name: 'Stick' });
-  s.inventory.push({ material: 'stone', units: 2, name: 'Stone' });
+  // materials for up to 6 attempts (each attempt consumes its materials, even on a fail)
+  s.inventory.push({ material: 'stick', units: 12, name: 'Stick' });
+  s.inventory.push({ material: 'stone', units: 6, name: 'Stone' });
   // strip starting rations — the no-food case must really have no food
   s.inventory = s.inventory.filter(i => !((i.kcalEach || 0) > 0));
   clearLog();
   ok('deadfall without food: blocked', Game.craft('deadfall') === null);
   ok('deadfall without food: honest bait message', /bait/i.test(lastSay()));
   // berries count as bait
-  s.inventory.push({ name: 'Blackberries', units: 3, kcalEach: 40, foodState: 'raw', plantId: 'blackberry', spoilDay: 999 });
-  let made = null;
-  for (let i = 0; i < 6 && !made; i++) made = Game.craft('deadfall'); // 85% per attempt
+  s.inventory.push({ name: 'Blackberries', units: 7, kcalEach: 40, foodState: 'raw', plantId: 'blackberry', spoilDay: 999 });
+  let made = null, attempts = 0;
+  for (let i = 0; i < 6 && !made; i++) { attempts++; made = Game.craft('deadfall'); } // 85% per attempt
   ok('deadfall with berries as bait: crafts', !!made);
   const berries = s.inventory.find(i => i.name === 'Blackberries');
-  ok('deadfall craft consumes 1 bait unit', berries && berries.units === 2);
+  // FLAKE FIX (2026-10-06): every attempt consumes its materials — a failed
+  // attempt still eats 1 bait. Assert per-attempt consumption, not a fixed total.
+  ok('deadfall craft consumes 1 bait per attempt', berries && berries.units === 7 - attempts);
   ok('deadfall lands in tools', (s.tools || []).some(t => t.recipeId === 'deadfall'));
   // snare still crafts the old way (regression)
   Game.learnRecipe('snare', 3);
