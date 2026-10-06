@@ -7211,28 +7211,24 @@
       const chance = Math.min(0.95, (base + (isHunter ? 0.2 : 0) + wbonus + trackBonus + relicHunt + nightHuntBonus) * luck);
       this.noteToolUse(); // RELIC BOND: the spear, the snare, the knife.
       s.kcal = Math.max(0, s.kcal - 100);
-      // BITE (Steve 2026-10-05): if you're in grabbing range (dist <= 1) and
-      // not using a trap, the animal might bite. Cost of capture. Not a fight —
-      // just the reality that wild things have teeth.
+      // BITE (Steve 2026-10-05): if you're in grabbing range (dist <= 1),
+      // the animal might bite. Cost of capture. Not a fight — just the
+      // reality that wild things have teeth. Traps avoid this entirely
+      // (they're passive: craft, set, check at dawn).
       if (dist <= 1) {
-        const t = this.playerTile();
-        const hasTrap = t && t.traps && t.traps.some(tr => 
-          Math.abs(tr.mx - a.mx) <= 1 && Math.abs(tr.my - a.my) <= 1);
-        if (!hasTrap) {
-          const adef2 = (this.data.animals || []).find(x => x.id === a.id) || {};
-          const biteChance = adef2.behavior === 'aggressive' ? 0.6 : 
-                            adef2.behavior === 'plays_dead' ? 0.3 : 0.2;
-          if (Math.random() < biteChance) {
-            const biteDmg = adef2.behavior === 'aggressive' ? 
-              Math.round(S.combat.roll([8, 15])) : Math.round(S.combat.roll([3, 8]));
-            this.say(`It bites! Teeth in your hand — ${biteDmg} damage. Wild things have teeth.`);
-            s.hp = Math.max(0, s.hp - biteDmg);
-            // The bite might make you fumble the catch
-            if (Math.random() < 0.3) {
-              this.say('You fumble — it wriggles free!');
-              this.animalTurn(); this.animalTurn();
-              return true;
-            }
+        const adef2 = (this.data.animals || []).find(x => x.id === a.id) || {};
+        const biteChance = adef2.behavior === 'aggressive' ? 0.6 : 
+                          adef2.behavior === 'plays_dead' ? 0.3 : 0.2;
+        if (Math.random() < biteChance) {
+          const biteDmg = adef2.behavior === 'aggressive' ? 
+            Math.round(S.combat.roll([8, 15])) : Math.round(S.combat.roll([3, 8]));
+          this.say(`It bites! Teeth in your hand — ${biteDmg} damage. Wild things have teeth.`);
+          s.hp = Math.max(0, s.hp - biteDmg);
+          // The bite might make you fumble the catch
+          if (Math.random() < 0.3) {
+            this.say('You fumble — it wriggles free!');
+            this.animalTurn(); this.animalTurn();
+            return true;
           }
         }
       }
