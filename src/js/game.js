@@ -15769,6 +15769,14 @@
 
     tbVillagerTurn(v) {
       const f = this.tbfight;
+      // ON THE LINE (warranty caller, Steve 2026-10-06): a villager the
+      // caller reached is stuck listening — they lose the turn. Hurting the
+      // caller mid-call hangs it up (the bad-connection rule is the peel).
+      if ((v.stunned || 0) > 0) {
+        v.stunned -= 1;
+        this.say(`${v.name} is on the line — the voice won't stop, and they can't hang up. They lose the turn.`);
+        return;
+      }
       const danger = this.tbDangerCells(); // instinct, not knowledge
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === v.mx && y === v.my);
       const dec = S.combat.villagerDecide(v, f.fighters, blocked, danger);
@@ -15946,6 +15954,18 @@
     smIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'service_mimic')); },
     cgIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'contract_golem')); },
     wcIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'warranty_caller')); },
+    // FASTER REDIALS (Steve 2026-10-06): wave-2 escalation. Every redial is
+    // a cycle; the hold music gets shorter as it learns your number —
+    // 2 turns, then 1. The pressure ratchets. Narrated once when it shortens.
+    wcRedialFor(m) {
+      m.wcCycle = (m.wcCycle || 0) + 1;
+      const turns = Math.max(1, 2 - Math.floor(m.wcCycle / 2));
+      if (turns < 2 && !m.wcFastNoted) {
+        m.wcFastNoted = true;
+        this.say('The hold music is shorter this time. It knows your number now. The calls come faster.');
+      }
+      return turns;
+    },
     // MONSTER BATCH 4 (corporate horrors): id gates for the bespoke layer,
     // following the deerIs pattern. The generic engine does the rest.
     droneIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'review_drone')); },
@@ -16764,6 +16784,7 @@
       m.mpTx = px; m.mpTy = py;
       const who = tgt.kind === 'player' ? 'You' : tgt.name;
       if (moved >= 2) {
+        m.mpStill = 0;
         m.telegraph = null;
         m.mpDeclared = false;
         this.encSetPhase(m, 'watch'); m.mpWatch = 2;
@@ -16772,6 +16793,10 @@
         return true;
       }
       if (moved === 0) {
+        // HOMESICK (Steve 2026-10-06): wave-2 escalation. Consecutive still
+        // beats mark you as an easy picture — the next watch finds you
+        // faster. Keep moving or it has you.
+        m.mpStill = (m.mpStill || 0) + 1;
         const dx = Math.sign(m.mx - px), dy = Math.sign(m.my - py);
         if (dx || dy) {
           const nx = px + dx, ny = py + dy;
@@ -17224,6 +17249,20 @@
             const shout = tg.turnsLeft === 2 ? "YOU'RE A WINNER!" : tg.turnsLeft === 1 ? 'NEVER GIVE UP!' : "YOU'VE GOT THIS!";
             this.say(`📣 "${shout}" It's swelling — the air ripples. GET CLEAR.`);
             this.audioEvent('hypeEncourage', { n: tg.turnsLeft });
+            // ADVANCING ENCOURAGEMENT (Steve 2026-10-06): wave-2 escalation.
+            // It doesn't hold still while it winds up — it advances on you,
+            // one step per beat. The radius-3 burst can't be outwalked; you
+            // must sprint, break line of sight, or silence it mid-shout.
+            // (The burst re-centers at resolve, so the threat genuinely moves.)
+            const ht = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
+            if (ht && ht.alive && !ht.fled) {
+              const hd = Math.max(Math.abs(ht.mx - m.mx), Math.abs(ht.my - m.my));
+              if (hd > 1) {
+                const hstp = this.tbStepToward(m, ht.mx, ht.my,
+                  (x, y) => x < 0 || x > 8 || y < 0 || y > 8 || this.tbBlocked(x, y));
+                if (hstp) { m.mx = hstp.x; m.my = hstp.y; }
+              }
+            }
           }
           this.tbRefreshTelegraphUI();
           this.audioEvent('telegraph', { urgency: tg.turnsLeft, windupTick: true });
@@ -17447,6 +17486,18 @@
               }
             }
           }
+          // BRIGHT IDEA: the bloom dazzles — caught in the white, you see
+          // spots for two rounds. Wave-2 escalation: the punishment for
+          // eating the burst isn't just damage, it's the next two rounds
+          // fought half-blind.
+          if (this.biIs(m) && (tg.pattern || {}).type === 'burst') {
+            for (const o of hitFighters) {
+              if (o.kind === 'player' && o.alive) {
+                o.blindTurns = Math.max(o.blindTurns || 0, 2);
+                this.say('White — then spots that won\'t clear. You\'re dazzled. (blinded 2 rounds)');
+              }
+            }
+          }
           // BELLTOAD: the croak hits like a wall. 15% chance to stun (full turn
           // loss). This is the primary toad's own croak — the signature mechanic
           // must work with 1 toad, not just in the chorus (Steve 2026-10-05).
@@ -17485,29 +17536,60 @@
             if (useFifo) this.encSetPhase(m, 'spent');
             this.say('It thunders past — and finds only air. It stands at the end of its lane, sides heaving. Flanks soft. But it is turning, and it is angry.');
           }
+          // GRIEF COUNSELOR — THE WHEEL (Steve 2026-10-06): wave-2 escalation.
+          // A MISSED charge doesn't end the threat — it wheels on a hoof and
+          // comes again with no windup, aimed at where you are now. Dodge
+          // once, step in to punish, and it's already turning. The punish
+          // window opens only after the wheel. (A connected charge, or a
+          // wheel that already went around, goes back to the mirror — it
+          // wants you to see it coming.)
+          if (this.stagIs(m) && (m.mdef.attack.pattern || {}).type === 'charge' && !anyoneHit && !tg.isWheel) {
+            m.stagWheel = true;
+            if (useFifo) this.encSetPhase(m, 'confront');
+          }
           // MIDDLE MANAGER: every charge ends in debrief — hit or miss. It stops,
           // takes notes, horns down. One full turn of vulnerability. The meeting
           // must be minuted.
+          // THE FOLLOW-UP (Steve 2026-10-06): wave-2 escalation. A charge that
+          // CONNECTED gets an immediate follow-up — "let's circle back" —
+          // short, no circle, no windup. Dodge the first and you earn the
+          // debrief; take the hit and the meeting continues without minutes.
           if (this.beastIs(m) && (m.mdef.attack.pattern || {}).type === 'charge') {
             this.audioEvent('managerCharge');
-            if (useFifo) this.encSetPhase(m, 'debrief');
-            m.beastDebrief = 1; m.beastCircled = false;
-            this.say(anyoneHit
-              ? '"Noted. Pain points logged." It stops at the end of its line, already writing. Horns down — it\'s debriefing.'
-              : '"Hm. Let\'s circle back on why that missed." It stops, confused, taking notes. Horns down — it\'s debriefing.');
+            if (anyoneHit && !m.beastFollowedUp) {
+              m.beastFollowup = true; m.beastFollowedUp = true;
+              if (useFifo) this.encSetPhase(m, 'announce');
+              this.say('"Let\'s circle back —" It doesn\'t stop. It doesn\'t take notes. It\'s coming again, RIGHT NOW, shorter and meaner.');
+            } else {
+              if (useFifo) this.encSetPhase(m, 'debrief');
+              m.beastDebrief = 1; m.beastCircled = false; m.beastFollowedUp = false;
+              this.say(anyoneHit
+                ? '"Noted. Pain points logged." It stops at the end of its line, already writing. Horns down — it\'s debriefing.'
+                : '"Hm. Let\'s circle back on why that missed." It stops, confused, taking notes. Horns down — it\'s debriefing.');
+            }
             this.audioEvent('managerDebrief');
           }
-          // WHITE NOISE: after the strike it is somewhere else. You didn't see it move.
-          if (this.heronIs(m)) {
-            if (Math.random() < 0.5) this.tbHeronDrift(m);
-            else if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
-          }
+          // WHITE NOISE (Steve 2026-10-06): the drift happens on the NEXT turn,
+          // not at resolve — the strike beat ('strike' phase, set above)
+          // reads for its full turn first. See the heronStatue branch.
+          // (Was: drifted instantly; the 🗡 STRIKE badge never showed.)
           // BATCH 4 post-resolve bookkeeping: the joke has consequences.
           if (this.droneIs(m)) {
             if (useFifo) this.encSetPhase(m, 'correct');
             if (tg.threatenedPlayer) {
               const eff = this.droneScore(m, !playerHit);
               this.say(`📊 DODGE EFFICIENCY: ${eff}% — ${!playerHit ? 'CLEAN DODGE. LOGGED.' : 'HIT TAKEN. LOGGED.'} ${eff >= 60 ? 'ABOVE TARGET. IT NOTICES.' : 'BELOW TARGET. CORRECTIVE ACTION SCHEDULED.'}`);
+              // PREDICTIVE AIM (Steve 2026-10-06): it records WHERE you went.
+              // Dodge clean and it learns the direction — the next declared
+              // line leads you by one tile. Getting hit wipes the model (pain
+              // is data too, but the wrong kind).
+              if (!playerHit) {
+                const dt2 = this.tbFighter(tg.aimKey) || (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
+                if (dt2 && m.drAimBase) {
+                  const ddx = Math.sign(dt2.mx - m.drAimBase.x), ddy = Math.sign(dt2.my - m.drAimBase.y);
+                  if (ddx || ddy) m.drDodge = { x: ddx, y: ddy };
+                }
+              } else m.drDodge = null;
             }
             this.audioEvent('droneCorrect');
             m.droneRecalc = 1; // it re-runs the numbers before grading again
@@ -17520,7 +17602,7 @@
               this.say('📸 "ENGAGEMENT DROPPING! ESCALATING!" The swarm got no reaction — the next flash will hit harder.');
               this.audioEvent('swarmEscalate');
             } else if (m.escalation) {
-              m.escalation = 0;
+              m.escalation = 0; m.swWidened = false;
               this.say('📸 "WE HAVE ENGAGEMENT!" The swarm got its reaction. For now.');
             }
             this.audioEvent('swarmFlash');
@@ -17879,6 +17961,7 @@
           m.vmDeclared = false;
           if (m.beamPhase === 'reveal') {
             this.say('The static crackles, furious. No voice left. Just the radio — and it wants you dead.');
+            m.vmRushCd = 2; // re-spool: one breath before it rushes again
           } else {
             m.vmLure = 1;
             this.encSetPhase(m, 'call');
@@ -17886,6 +17969,7 @@
           }
         }
         let vmPhase = m.beamPhase;
+        if ((m.vmRushCd || 0) > 0) m.vmRushCd--;
         // the lure: did YOU move toward the crying? The baseline is the
         // post-move distance from last turn, so the mimic's own creep
         // doesn't count as you approaching — only your feet do.
@@ -17921,18 +18005,34 @@
         }
         const dNow = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         m.vmLastDist = dNow; // post-move baseline for next turn's lure check
-        if (dNow <= (pat.range || 3) && !m.telegraph) {
+        if (dNow <= (pat.range || 3) && !m.telegraph && !(vmPhase === 'reveal' && (m.vmRushCd || 0) > 0)) {
           m.vmDeclared = true;
           // ATTACK NAMES ARE EARNED: pre-pattern the declare is dread without
           // the name — the name arrives via tbLearnPattern at resolve.
           const vmAtk = this.encAttackName(m, atk.name);
-          this.encDeclareDirect(m, t, vmPhase === 'reveal'
-            ? (vmAtk === 'the attack'
-              ? `The radio SCREAMS — no voice left, just noise and fury. No dodging it.`
-              : `The radio SCREAMS — no voice left, just noise and fury. ${vmAtk} incoming. No dodging it.`)
-            : (vmAtk === 'the attack'
-              ? `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. Something is coming — and moving won't help once it has your voice.`
-              : `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. ${vmAtk} is coming — and moving won't help once it has your voice.`));
+          // THE REPLAY (Steve 2026-10-06): wave-2 escalation. Revealed, the
+          // act is broken — no more crying, no more direct call. It rushes
+          // the voice it collected (yours): no telegraph, no warning. The
+          // wave-1 answer (resist the lure, close in, punish) puts you in
+          // reach of a rusher. Back off and make it come to you instead.
+          if (vmPhase === 'reveal') {
+            for (let i = 0; i < (m.speed || 3); i++) {
+              if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) break;
+              const vstp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
+              if (!vstp) break;
+              m.mx = vstp.x; m.my = vstp.y;
+            }
+            if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) {
+              this.say('Your own voice screams out of the radio — no words, just fury — and it\'s already on you. No voice. No warning. Teeth of static.');
+              this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+              this.tbLearnPattern(m);
+            } else {
+              this.say('Static shrieks — it lunges for the voice it stole, and finds only air.');
+            }
+            try { this.audioEvent('staticScream'); } catch (e) {}
+          } else this.encDeclareDirect(m, t, vmAtk === 'the attack'
+            ? `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. Something is coming — and moving won't help once it has your voice.`
+            : `A voice you know is crying your name in the dark. It sounds exactly like ${vdisp}. It is not ${vneg}. ${vmAtk} is coming — and moving won't help once it has your voice.`);
           // AUDIO (Steve 2026-10-06): the reveal-scream — no voice left, just noise and fury.
           if (vmPhase === 'reveal') { try { this.audioEvent('staticScream'); } catch (e) {} }
         } else if (!m.telegraph) {
@@ -17967,6 +18067,25 @@
         }
         let stPhase = m.beamPhase;
         const dist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+        // THE WHEEL (Steve 2026-10-06): a missed charge wheels — it declares
+        // again IMMEDIATELY, one-turn windup, aimed at where you are now.
+        // The wave-1 rhythm (dodge once, step in, punish) gets you run over:
+        // respect the wheel, then punish.
+        if (m.stagWheel && !m.telegraph) {
+          m.stagWheel = false;
+          this.encSetPhase(m, 'confront'); stPhase = 'confront';
+          const wheelAtk = this.encAttackName(m, 'Confrontation');
+          const wheelKnown = this.encTelegraphKnown(m);
+          const wheelCells = S.combat.patternCells(pat, m.mx, m.my, t.mx, t.my);
+          m.telegraph = { kind: 'line', cells: wheelCells, dmg: (m.mdef.attack || {}).damage,
+            attackName: wheelAtk, pattern: pat, turnsLeft: 1, aimKey: t.key, isWheel: true,
+            cueText: wheelKnown ? 'It wheels on a hoof — no windup this time. MOVE.' : 'It wheels — impossibly fast — the mirror already on you.' };
+          this.say(wheelKnown
+            ? 'It wheels on a hoof — no windup this time. The mirror is already on you. MOVE.'
+            : 'It wheels — impossibly fast. The mirror finds you again.');
+          this.audioEvent('stagSnort');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
         // MIRROR GAZE: if within 4 and facing, freeze. Check facing via
         // player's facing dir vs monster position.
         if (stPhase === 'mirror' && dist <= 4 && dist > 1) {
@@ -18086,7 +18205,19 @@
           // not immunity. Resetting it re-armed the crowd check every other
           // turn and stalled the drone forever against a standing crowd
           // (the fight went free). Monsters were sent to fight.
-          const cells = S.combat.patternCells(pat, m.mx, m.my, t.mx, t.my);
+          // PREDICTIVE AIM (Steve 2026-10-06): wave-2 escalation. The drone
+          // watched your last dodge — the line shifts one tile toward your
+          // habitual dodge side. Same sidestep twice gets you hit. Vary it.
+          // (The shifted line renders on the grid like any telegraph — the
+          // counterplay is reading it, not memorizing it. Shift the AIM, not
+          // the cells: shifting rasterized cells makes a jagged line.)
+          m.drAimBase = { x: t.mx, y: t.my };
+          const drAimX = t.mx + ((m.drDodge && m.drDodge.x) || 0);
+          const drAimY = t.my + ((m.drDodge && m.drDodge.y) || 0);
+          const cells = S.combat.patternCells(pat, m.mx, m.my, drAimX, drAimY);
+          if (m.drDodge && (m.drDodge.x || m.drDodge.y)) {
+            this.say('📊 "DODGE PATTERN RECOGNIZED. ADJUSTING AIM." The projected line slides sideways — toward where you went last time.');
+          }
           const p0 = this.tbFighter('p');
           m.telegraph = { kind: 'line', cells, dmg: (m.mdef.attack || {}).damage,
             attackName: this.encAttackName(m, 'Scored Assessment'),
@@ -18128,8 +18259,15 @@
           // BUILD: shutters quicken, 2-turn windup. The burst is centered on
           // the target's tile AT DECLARE — keep moving and it lands where you
           // were. Grid-clamped. (Windup ticks in the generic pending section.)
+          // WIDENING THE SHOT (Steve 2026-10-06): wave-2 escalation. Starve
+          // it of engagement and the flash gets BIGGER — the safe zone
+          // shrinks the longer you dodge perfectly.
           this.encSetPhase(m, 'build');
-          const r = (pat.radius || 2);
+          const r = (pat.radius || 2) + ((m.escalation || 0) >= 2 ? 1 : 0);
+          if ((m.escalation || 0) >= 2 && !m.swWidened) {
+            m.swWidened = true;
+            this.say('📸 "ENGAGEMENT DROPPING! WIDENING THE SHOT!" The ring of lenses pulls back — the next flash covers more ground.');
+          }
           const cells = [];
           for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
             if (Math.max(Math.abs(dx), Math.abs(dy)) > r) continue;
@@ -18194,15 +18332,21 @@
         const ff = fifoFoe(); if (ff) foe = ff;
         if (!m.beamPhase || m.beamPhase === 'stalk') this.encSetPhase(m, 'settle');
         // post-detonation: the bloom resolved → ember
+        // REKINDLE (Steve 2026-10-06): wave-2 escalation. Each detonation
+        // teaches it how to come back — the ember burns out faster every
+        // cycle (2 turns, then 1, then none). The safe window shrinks; the
+        // third bloom barely gives you a breath.
         if ((m.beamPhase === 'brighten' || m.beamPhase === 'bloom') && !m.telegraph && m.biDeclared) {
           m.biDeclared = false;
-          this.encSetPhase(m, 'ember'); m.biEmber = 2;
-          this.say('The light gutters down to a dying ember. It\'s spent — dim, flickering, harmless. For now.');
+          m.biCycles = (m.biCycles || 0) + 1;
+          this.encSetPhase(m, 'ember'); m.biEmber = Math.max(0, 3 - m.biCycles);
+          this.say('The light gutters down to a dying ember. It\'s spent — dim, flickering, harmless.'
+            + (m.biCycles >= 2 ? ' But it guttered faster this time. It\'s learning how to come back.' : ' For now.'));
           this.audioEvent('eurekaSpent');
         }
         const biPhase = m.beamPhase;
         if (biPhase === 'ember') {
-          m.biEmber = (m.biEmber || 2) - 1;
+          m.biEmber = (m.biEmber === undefined ? 2 : m.biEmber) - 1;
           if (m.biEmber <= 0) {
             this.encSetPhase(m, 'settle');
             this.say('The ember steadies. Somewhere inside the glass, an idea is forming again.');
@@ -18292,6 +18436,9 @@
         }
         // watch: curious. It watches first — that's your window to leave.
         m.mpWatch = (m.mpWatch === undefined ? 2 : m.mpWatch) - 1;
+        // HOMESICK: a still target is an easy picture. Stood in the light
+        // through the last spell and it finds you faster this time.
+        if ((m.mpStill || 0) >= 2) m.mpWatch = Math.min(m.mpWatch, 1);
         if (m.mpWatch <= 0 && !m.telegraph) {
           this.encSetPhase(m, 'spell'); m.mpDeclared = true;
           const t = foe.f;
@@ -18300,6 +18447,7 @@
           this.encDeclareBeam(m, foe, known
             ? 'It\'s showing you home to hold you still. The beam runs along your line of gaze — MOVE. Keep moving and the picture can\'t hold.'
             : atk.telegraph);
+          if ((m.mpStill || 0) >= 2) this.say('It barely watches this time. It knows you\'ll stand still. It\'s counting on it.');
           this.audioEvent('projectorHum', { spell: true });
         } else {
           const watchLines = [
@@ -18321,6 +18469,30 @@
       if (this.beastIs(m)) {
         const ff = fifoFoe(); if (ff) foe = ff;
         if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'circle'); m.beastCircled = false; }
+        // THE FOLLOW-UP (Steve 2026-10-06): a connected charge circles back
+        // immediately — short lane (length 2, width 2), one-turn windup, no
+        // circling first. commitCells: the short lane is the deal, the
+        // generic resolve must not re-extend it.
+        if (m.beastFollowup && !m.telegraph) {
+          m.beastFollowup = false;
+          const fuT = foe.f;
+          const fuPat = (m.mdef.attack && m.mdef.attack.pattern) || {};
+          const fuCells = this.beastLineCells(m.mx, m.my, fuT.mx, fuT.my, 2, fuPat.width || 2);
+          const fuP0 = this.tbFighter('p');
+          const fuKnown = this.encTelegraphKnown(m);
+          m.telegraph = { kind: 'squares', cells: fuCells, dmg: (m.mdef.attack || {}).damage,
+            attackName: this.encAttackName(m, 'Circle Back'), pattern: fuPat, turnsLeft: 1,
+            commitCells: true,
+            threatenedPlayer: !!(fuP0 && fuP0.alive && fuCells.some(c => c.cx === fuP0.mx && c.cy === fuP0.my)),
+            aimKey: fuT.key,
+            cueText: fuKnown ? '"CIRCLING BACK." Short charge, no windup. MOVE.' : '"CIRCLING BACK—" It\'s already moving.' };
+          this.encSetPhase(m, 'announce');
+          this.say(fuKnown
+            ? '"CIRCLING BACK." It comes again — shorter, no windup, no mercy. MOVE.'
+            : '"CIRCLING BACK—" It wheels mid-note, already charging. No circle this time.');
+          this.audioEvent('managerCharge');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
         // DEBRIEF: post-charge recovery. It doesn't act — it's taking notes.
         // The window is real: it can't charge, can't circle, just writes.
         if (m.beamPhase === 'debrief') {
@@ -18622,6 +18794,15 @@
             ? `"Your fear is important to us." No telegraph — it just moved. (${atk.name}.)`
             : 'Something is right behind you, and a syrupy voice says: "Your fear is important to us."');
           this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+          // PLEASE HOLD (Steve 2026-10-06): wave-2 escalation. The rush
+          // doesn't just hurt — it puts you ON HOLD: your next turn is hold
+          // music, no move, no act. The 2-3 turns of watching were the
+          // warning; this is the price of letting it reach you.
+          if (t.kind === 'player') {
+            t.stunned = Math.max(t.stunned || 0, 1);
+            t.stunFull = 1;
+            this.say('"Please hold—" The music swells and the world tilts. You\'re on hold. (stunned: next turn lost)');
+          }
           // AUDIO (Steve 2026-10-06): the rush resolve — hold music slammed into motion.
           try { this.audioEvent('serviceRush'); } catch (e) {}
           this.audioEvent('impact', {});
@@ -18646,6 +18827,14 @@
       // projector's gaze-pull.
       if (this.wcIs(m)) {
         const ff = fifoFoe(); if (ff) foe = ff;
+        // WRONG NUMBER (Steve 2026-10-06): wave-2 escalation. A dialed
+        // villager stays the target through ring + pitch — it's not always
+        // calling you. Hurting the caller mid-call hangs it up for them.
+        if (m.wcDialKey && (m.beamPhase === 'ring' || m.beamPhase === 'pitch')) {
+          const wcDt = this.tbFighter(m.wcDialKey);
+          if (wcDt && wcDt.alive && !wcDt.fled) foe = { f: wcDt, d: Math.max(Math.abs(wcDt.mx - m.mx), Math.abs(wcDt.my - m.my)) };
+          else m.wcDialKey = null;
+        }
         const t = foe.f;
         if (!m.beamPhase || !['dial', 'ring', 'pitch', 'redial'].includes(m.beamPhase)) {
           this.encSetPhase(m, 'dial'); m.wcRedial = 0;
@@ -18655,7 +18844,7 @@
         const wcTookHit = m.hp < (m.wcLastHp === undefined ? m.hp : m.wcLastHp);
         m.wcLastHp = m.hp;
         if (wcTookHit && m.beamPhase !== 'redial') {
-          this.encSetPhase(m, 'redial'); m.wcRedial = 2;
+          this.encSetPhase(m, 'redial'); m.wcRedial = this.wcRedialFor(m); m.wcDialKey = null;
           this.say('"—BAD CONNECTION—" The voice fragments, furious. It hangs up. It is already redialing.');
           this.audioEvent('lineCut', { dropped: true });
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
@@ -18664,13 +18853,30 @@
         const wcKc = ((m.mdef || {}).encounter || {}).knownCue;
         if (m.beamPhase === 'dial') {
           this.encSetPhase(m, 'ring');
-          m.wcDialPos = { x: t.mx, y: t.my };
-          const dials = [
-            '"We\'ve been trying to reach you about your car\'s extended warranty." The voice is coming from the treeline.',
-            'Ring-ring. "Hello? This is an URGENT call about your vehicle." It\'s getting closer.',
-            '"Don\'t hang up — this is your FINAL notice." It has your number. It has everyone\'s number.',
-          ];
-          this.say(dials[Math.floor(Math.random() * dials.length)]);
+          // WRONG NUMBER: it sometimes dials a friend instead of you.
+          // They're "on the line" until you hang it up for them — the
+          // bad-connection rule (hurt the caller) is the peel.
+          // (Available from the first dial — it has everyone's number.)
+          let wcDialT = t;
+          m.wcDialKey = null;
+          if (useFifo) {
+            const wcQueue = this.encThreatQueue(m) || [];
+            const wcVills = wcQueue.map(k => this.tbFighter(k)).filter(x => x && x.kind === 'villager' && x.alive && !x.fled);
+            if (wcVills.length && Math.random() < 0.5) {
+              wcDialT = wcVills[Math.floor(Math.random() * wcVills.length)];
+              m.wcDialKey = wcDialT.key;
+              this.say(`Ring-ring. It's not calling you this time. It's calling ${wcDialT.name} — and they're reaching for a phone that isn't there.`);
+            }
+          }
+          if (!m.wcDialKey) {
+            const dials = [
+              '"We\'ve been trying to reach you about your car\'s extended warranty." The voice is coming from the treeline.',
+              'Ring-ring. "Hello? This is an URGENT call about your vehicle." It\'s getting closer.',
+              '"Don\'t hang up — this is your FINAL notice." It has your number. It has everyone\'s number.',
+            ];
+            this.say(dials[Math.floor(Math.random() * dials.length)]);
+          }
+          m.wcDialPos = { x: wcDialT.mx, y: wcDialT.my };
           this.audioEvent('lineCut', {});
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
@@ -18678,7 +18884,7 @@
           // THE TELL. Moved 2+ tiles since it dialed → CALL DROPPED.
           const wcMoved = Math.max(Math.abs(t.mx - m.wcDialPos.x), Math.abs(t.my - m.wcDialPos.y));
           if (wcMoved >= 2) {
-            this.encSetPhase(m, 'redial'); m.wcRedial = 2;
+            this.encSetPhase(m, 'redial'); m.wcRedial = this.wcRedialFor(m); m.wcDialKey = null;
             this.say('The ringing stops mid-trill. "CALL DROPPED." A pause. Then, patiently: ring-ring.');
             this.audioEvent('lineCut', { dropped: true });
             this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
@@ -18686,7 +18892,9 @@
           this.encSetPhase(m, 'pitch');
           // CODEX-GATED: first-timers get dread (a ringing phone in the
           // trees); veterans get the tell — the data knownCue, earned.
-          this.say(wcKnown
+          if (t.kind === 'villager') {
+            this.say(`Ring-ring. It's calling ${t.name} — and they're just standing there, listening. MOVE THEM or break the line.`);
+          } else this.say(wcKnown
             ? 'Ring-ring. It\'s calling YOU. Don\'t be where you were. ' + (wcKc || '')
             : 'A phone is ringing. In the trees. It\'s ringing for you.');
           this.audioEvent('holdMusic', { ringing: true });
@@ -18709,6 +18917,12 @@
                 : `"Your warranty has EXPIRED." ${wcAtk} — the words hit like a slap.`)
               : 'The voice drops all pretense of politeness, and the WORDS hit you.');
             this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+            // WRONG NUMBER CONNECTS: they're on the line — stunned, listening.
+            // Hurt the caller to hang it up for them.
+            if (t.kind === 'villager') {
+              t.stunned = Math.max(t.stunned || 0, 1);
+              this.say(`${t.name} is on the line — the voice won't stop. Hit the caller to hang it up.`);
+            }
             this.audioEvent('serviceRush', {});
             this.audioEvent('impact', {});
           } else {
@@ -18716,7 +18930,7 @@
           }
           // Surviving the call teaches the pattern — the ring means the rush.
           this.tbLearnPattern(m);
-          this.encSetPhase(m, 'redial'); m.wcRedial = 2;
+          this.encSetPhase(m, 'redial'); m.wcRedial = this.wcRedialFor(m); m.wcDialKey = null;
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         // redial: the cooldown. Two turns of hold music, then it dials again.
@@ -18745,8 +18959,22 @@
           this.say('The ink dries. The pages settle. It begins unfolding again — there is always more fine print.');
         }
         const t = foe.f;
+        // SPREADING JURISDICTION (Steve 2026-10-06): wave-2 escalation. The
+        // longer you stay in its reach, the further its reach extends —
+        // pages spreading across the ground. Walking away still works, but
+        // the safe distance grows. Leaving resets it (proximity was the
+        // whole contract).
+        const cgBase = (pat.range || 3);
+        // +1 because the clause below increments after this read: two
+        // consecutive turns in proximity grows the range.
+        const cgRange = Math.min(6, cgBase + Math.floor(((m.cgClause || 0) + 1) / 2));
+        if (cgRange > cgBase && cgRange > (m.cgRangeShown || cgBase)) {
+          m.cgRangeShown = cgRange;
+          this.say('"ADDENDUM: this agreement now covers a WIDER AREA." The pages spread further across the ground.');
+          this.audioEvent('paperRustle', { spread: true });
+        }
         // speed 1: one deliberate step toward the list-head
-        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) > (pat.range || 3)) {
+        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) > cgRange) {
           const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
           if (stp) {
             // TERRAFORM (Steve 2026-10-06): it sheds as it goes — paper on
@@ -18760,7 +18988,7 @@
           }
         }
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
-        if (d <= (pat.range || 3)) {
+        if (d <= cgRange) {
           m.cgClause = (m.cgClause || 0) + 1;
           if (m.cgClause === 1) {
             this.encSetPhase(m, 'clause');
@@ -18777,7 +19005,7 @@
           }
         } else {
           if ((m.cgClause || 0) > 0) this.say('The text loosens as you leave its reach. Proximity was the whole contract.');
-          m.cgClause = 0;
+          m.cgClause = 0; m.cgRangeShown = 0;
           if (m.beamPhase !== 'unfold') this.encSetPhase(m, 'unfold');
           this.say('It unfolds — paper and ink and fine print, spreading across the ground toward you. So slowly. One tile a turn.');
           this.audioEvent('paperRustle', {});

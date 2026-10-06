@@ -1038,8 +1038,8 @@
       "se_woodlands"
     ],
     "hp": [
-      45,
-      60
+      65,
+      90
     ],
     "attack": {
       "name": "Distress Call",
@@ -1090,7 +1090,7 @@
     "codexStages": {
       "unknown": "Someone was crying in the woods last night. Everyone was accounted for in the morning.",
       "observed": "Voice-mimic predator. The System watched humans run toward crying and concluded distress is bait. It plays the voices of people you know. The voices are always crying. It never learned any other emotion.",
-      "slain": "Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Fire scrambles the signal. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours."
+      "slain": "Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Fire scrambles the signal. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours. Break the act \u2014 don't go to the crying, twice \u2014 and it drops the voice and RUSHES, no telegraph at all. Back off then; don't stand in reach of the replay."
     },
     "systemDesignation": "Acoustic lure unit (audience-tested)",
     "encounter": {
@@ -1137,8 +1137,8 @@
       "se_woodlands"
     ],
     "hp": [
-      55,
-      75
+      80,
+      110
     ],
     "attack": {
       "name": "Confrontation",
@@ -1193,7 +1193,7 @@
     "codexStages": {
       "unknown": "Something in the woods has your face. You told no one. They wouldn't believe you.",
       "observed": "Mirror-faced deer. The System noticed humans stare at their reflections in water and concluded self-image is a vulnerability. It shows you yourself, then charges through the moment of recognition. The charge is long \u2014 6 tiles, telegraphed, destroys cover.",
-      "slain": "Moves: Confrontation (6-tile charge, heavy, telegraphed \u2014 it shows your face first). Like the Bulldozer, it never goes around. Unlike the Bulldozer, it wants you to SEE it coming. That's the point. Flanks are soft. Meat: good. The mirror shards make excellent signal mirrors."
+      "slain": "Moves: Confrontation (6-tile charge, heavy, telegraphed \u2014 it shows your face first). Like the Bulldozer, it never goes around. Unlike the Bulldozer, it wants you to SEE it coming. That's the point. Flanks are soft. Meat: good. The mirror shards make excellent signal mirrors. Dodge the charge and it WHEELS \u2014 a second charge with no windup, aimed at where you are now. Respect the wheel; punish after."
     },
     "systemDesignation": "Reflective ungulate (therapeutic model)",
     "encounter": {
@@ -1248,8 +1248,8 @@
       "se_woodlands"
     ],
     "hp": [
-      35,
-      50
+      80,
+      110
     ],
     "attack": {
       "name": "Scored Assessment",
@@ -1302,7 +1302,7 @@
     "codexStages": {
       "unknown": "There's a thing in the clearing with a clipboard. It watched me forage for an hour. I felt judged.",
       "observed": "Floating assessment drone. The System loves metrics and assumed you do too. It grades your survival in real time, announces the scores, and fires 'corrective beams' along projected lines. The windup is long \u2014 3 beats \u2014 and the line is drawn on the ground before it fires.",
-      "slain": "Moves: Scored Assessment (6-tile beam, 3-beat windup, line pre-drawn on ground \u2014 just don't be on it). It fears crowds (numbers) \u2014 it can't evaluate more than two subjects at once. Bring friends. Parts: lens (starts fires), projector bulb, and a printed performance review of YOU. Frame it."
+      "slain": "Moves: Scored Assessment (6-tile beam, 3-beat windup, line pre-drawn on ground \u2014 just don't be on it). It fears crowds (numbers) \u2014 it can't evaluate more than two subjects at once. Bring friends. Parts: lens (starts fires), projector bulb, and a printed performance review of YOU. Frame it. It learns your dodge \u2014 same sidestep twice and the next line leads you by a tile. Vary it."
     },
     "systemDesignation": "Metrics enforcement unit",
     "encounter": {
@@ -1351,8 +1351,8 @@
       "se_woodlands"
     ],
     "hp": [
-      30,
-      42
+      50,
+      70
     ],
     "attack": {
       "name": "Flash Mob",
@@ -1406,7 +1406,7 @@
     "codexStages": {
       "unknown": "I keep seeing flashes in the trees. Like paparazzi. There's no one famous here.",
       "observed": "Camera swarm. The System's audience wanted MORE footage, so it built a thing that never stops filming. It follows. It's fast. When engagement drops it escalates to flash bursts \u2014 radius 2, blinding, burning. It doesn't hate you. You're just content.",
-      "slain": "Moves: Flash Mob (burst radius 2, telegraphed by quickening shutters). Speed 6 \u2014 it WILL catch you. Fire scatters it. It's fragile: area damage shreds the swarm. Loot the memory cards \u2014 it's been filming you for days. Watch what it saw. Learn what it learned."
+      "slain": "Moves: Flash Mob (burst radius 2, telegraphed by quickening shutters). Speed 6 \u2014 it WILL catch you. Fire scatters it. It's fragile: area damage shreds the swarm. Loot the memory cards \u2014 it's been filming you for days. Watch what it saw. Learn what it learned. Starve it of engagement and the flash WIDENS (radius 3) as well as hitting harder \u2014 the safe zone shrinks."
     },
     "systemDesignation": "Content acquisition swarm",
     "encounter": {
@@ -1452,8 +1452,8 @@
       "se_woodlands"
     ],
     "hp": [
-      50,
-      68
+      75,
+      100
     ],
     "attack": {
       "name": "Pep Talk",
@@ -1508,7 +1508,7 @@
     "codexStages": {
       "unknown": "At dusk something shouts 'YOU CAN DO IT' from the treeline. It's not wrong. It's not right either.",
       "observed": "Sonic predator. The System studied human motivation and concluded volume equals sincerity. It inflates and detonates encouragement \u2014 burst radius 3, the largest of any burst so far. It hunts in packs. It only targets individuals; crowds confuse it.",
-      "slain": "Moves: Pep Talk (burst radius 3 \u2014 BIG, get clear, slow windup). Pack hunter. Fears numbers \u2014 bring friends and it can't pick a target. Meat: tough but filling. The resonating sac makes a fine waterskin. You'll never hear 'you've got this' the same way again."
+      "slain": "Moves: Pep Talk (burst radius 3 \u2014 BIG, get clear, slow windup). Pack hunter. Fears numbers \u2014 bring friends and it can't pick a target. Meat: tough but filling. The resonating sac makes a fine waterskin. You'll never hear 'you've got this' the same way again. It advances while it encourages \u2014 the burst walks toward you. Sprint or break line of sight; outwalking won't do."
     },
     "systemDesignation": "Morale enforcement organism",
     "encounter": {
@@ -1556,8 +1556,8 @@
       "se_woodlands"
     ],
     "hp": [
-      40,
-      55
+      60,
+      85
     ],
     "attack": {
       "name": "Please Hold",
@@ -1607,7 +1607,7 @@
     "codexStages": {
       "unknown": "Something called out to me last night. Polite. Professional. I ran anyway.",
       "observed": "Ambush mimic. No telegraph on the rush \u2014 it just moves and hits, like the Hushpuppy, but smarter: it watches first (curious stance), learns your rhythm, THEN rushes. The voice is bait. The politeness is bait. Everything is bait.",
-      "slain": "Moves: Please Hold (rush \u2014 NO telegraph, it just goes). Counter: it spends 2-3 turns watching (curious) before rushing. Use those turns \u2014 get fire between you and it, or just leave. It only rushes once per approach. Parts: a working headset. The hold music is still playing. You can turn it off. You should turn it off."
+      "slain": "Moves: Please Hold (rush \u2014 NO telegraph, it just goes). Counter: it spends 2-3 turns watching (curious) before rushing. Use those turns \u2014 get fire between you and it, or just leave. It only rushes once per approach. Parts: a working headset. The hold music is still playing. You can turn it off. You should turn it off. If the rush connects, you're ON HOLD \u2014 your next turn is hold music. Don't let it touch you."
     },
     "systemDesignation": "Support interface (field model)",
     "encounter": {
@@ -1653,8 +1653,8 @@
       "se_woodlands"
     ],
     "hp": [
-      70,
-      90
+      100,
+      130
     ],
     "attack": {
       "name": "Binding Agreement",
@@ -1705,7 +1705,7 @@
     "codexStages": {
       "unknown": "The papers by the creek arranged themselves into paragraphs. I didn't read them. I left.",
       "observed": "Paper golem. The System discovered human legal documents and found them DELIGHTFUL \u2014 binding agreements without consent! It built one. The attack locks on (direct, range 3, undodgeable by movement). But it's speed 1. The slowest thing in the woods. Just... walk away. It's paper. Fire ends it.",
-      "slain": "Moves: Binding Agreement (direct, range 3 \u2014 moving won't dodge it, but WALKING AWAY will, it's speed 1). 70-90 HP, never flees. The joke is that it's terrifying and trivial at once. Burn it. Loot the vellum \u2014 real paper is worth more than gold out here."
+      "slain": "Moves: Binding Agreement (direct, range 3 \u2014 moving won't dodge it, but WALKING AWAY will, it's speed 1). 70-90 HP, never flees. The joke is that it's terrifying and trivial at once. Burn it. Loot the vellum \u2014 real paper is worth more than gold out here. Its jurisdiction SPREADS the longer you stay \u2014 range grows to 6. 100-130 HP now, never flees."
     },
     "systemDesignation": "Agreement enforcement construct",
     "encounter": {
@@ -1754,8 +1754,8 @@
       "se_woodlands"
     ],
     "hp": [
-      55,
-      72
+      80,
+      110
     ],
     "attack": {
       "name": "Circle Back",
@@ -1810,7 +1810,7 @@
     "codexStages": {
       "unknown": "There's a thing in the woods that schedules meetings. I declined.",
       "observed": "Pack alpha. The System watched human hierarchies and built the perfect middle predator: fast, circling, delegating violence to itself. The charge is WIDE (width 2) \u2014 harder to sidestep than the Bulldozer's. But it always circles first. Watch the circle. Read the line.",
-      "slain": "Moves: Circle Back (charge, length 4, WIDTH 2 \u2014 sidestep further than you think). Pack hunter, speed 5, fears crowds. The telegraph is the circling \u2014 it always does one full loop before charging. Use it. Meat: excellent. The tiny tie is worth a fortune in trade. Nobody knows why."
+      "slain": "Moves: Circle Back (charge, length 4, WIDTH 2 \u2014 sidestep further than you think). Pack hunter, speed 5, fears crowds. The telegraph is the circling \u2014 it always does one full loop before charging. Use it. Meat: excellent. The tiny tie is worth a fortune in trade. Nobody knows why. A charge that CONNECTS gets an immediate FOLLOW-UP \u2014 shorter, no windup. Dodge the first and you earn the debrief."
     },
     "systemDesignation": "Hierarchy enforcement predator",
     "encounter": {
@@ -1855,8 +1855,8 @@
       "se_woodlands"
     ],
     "hp": [
-      35,
-      48
+      55,
+      80
     ],
     "attack": {
       "name": "Eureka",
@@ -1911,7 +1911,7 @@
     "codexStages": {
       "unknown": "There was a light in the woods last night. Beautiful. I didn't go toward it. Good.",
       "observed": "Detonation predator. Like the Speedbump it sits perfectly still \u2014 but where the Speedbump snaps, this DETONATES. Burst radius 2, the hardest-hitting burst in either wave. The tell is the brightening: 2 beats from glow to boom. It fears daylight \u2014 it only sets its ambush at night.",
-      "slain": "Moves: Eureka (burst radius 2, 22-34 damage \u2014 the biggest burst so far, telegraphed by brightening). It never moves once placed. The counterplay is simple: see the glow, don't approach, wait for dawn. It seemed like a good idea at the time. Parts: filament (excellent fire-starter), glass, and the lingering feeling you almost did something stupid."
+      "slain": "Moves: Eureka (burst radius 2, 22-34 damage \u2014 the biggest burst so far, telegraphed by brightening). It never moves once placed. The counterplay is simple: see the glow, don't approach, wait for dawn. It seemed like a good idea at the time. Parts: filament (excellent fire-starter), glass, and the lingering feeling you almost did something stupid. Each detonation teaches it to rekindle faster \u2014 the ember shrinks from 2 turns to none. And the bloom dazzles (blinded 2 rounds) if it catches you."
     },
     "systemDesignation": "Illumination event (contained)",
     "encounter": {
@@ -1961,8 +1961,8 @@
       "se_woodlands"
     ],
     "hp": [
-      42,
-      58
+      65,
+      90
     ],
     "attack": {
       "name": "Home Movies",
@@ -2015,7 +2015,7 @@
     "codexStages": {
       "unknown": "At dusk I saw my street. My actual street. I stood there for I don't know how long.",
       "observed": "Memory lure. The System mined your homesickness and built a projector for it. It shows you home \u2014 real footage, somehow \u2014 and while you stand there aching, it fires a beam along the line of your gaze. Windup 2. The cruelty is the point. The audience wept. (The audience loved it.)",
-      "slain": "Moves: Home Movies (beam length 5, windup 2 \u2014 the line follows your gaze, so MOVE). It fears movement: keep walking and the image can't hold. It spends turns watching (curious) \u2014 that's your window to leave. The reels it drops show your memories. Don't watch them. Or do. The System already did."
+      "slain": "Moves: Home Movies (beam length 5, windup 2 \u2014 the line follows your gaze, so MOVE). It fears movement: keep walking and the image can't hold. It spends turns watching (curious) \u2014 that's your window to leave. The reels it drops show your memories. Don't watch them. Or do. The System already did. Stand still through a spell and the next watch barely happens \u2014 it knows you'll stand still."
     },
     "systemDesignation": "Affective recall projector",
     "encounter": {
@@ -2061,8 +2061,8 @@
       "se_woodlands"
     ],
     "hp": [
-      35,
-      50
+      80,
+      110
     ],
     "attack": {
       "name": "The Pitch",
@@ -2111,7 +2111,7 @@
     "codexStages": {
       "unknown": "A phone rang in the woods last night. Three times. Nobody has a phone anymore.",
       "observed": "Robocall predator. The System found twenty-first-century telemarketing and was DELIGHTED — humans who answer unknown calls! It dials stationary targets: the ring is the tell, and if you move 2+ tiles the call DROPS. It redials. It always redials. Hurting it mid-call gives it a bad connection — it hangs up, furious, and starts over.",
-      "slain": "Moves: The Pitch (rush — NO grid telegraph, the RING is the tell). dial (picks its target) → ring (1 turn — MOVE, 2+ tiles drops the call) → pitch (it rushes, the words hit) → redial (2 turns). Pain = bad connection = it hangs up and redials. It never stops calling. Parts: a phone that only calls you. Don't answer."
+      "slain": "Moves: The Pitch (rush \u2014 NO grid telegraph, the RING is the tell). dial (picks its target) \u2192 ring (1 turn \u2014 MOVE, 2+ tiles drops the call) \u2192 pitch (it rushes, the words hit) \u2192 redial (2 turns). Pain = bad connection = it hangs up and redials. It never stops calling. Parts: a phone that only calls you. Don't answer. The redials come FASTER each cycle (2 turns, then 1). It doesn't always call you: it dials friends too, and they're on the line until you hurt the caller and hang it up for them."
     },
     "systemDesignation": "Automotive protection plan (predatory)",
     "encounter": {
@@ -2217,7 +2217,7 @@
       "pattern": {
         "type": "direct"
       },
-      "telegraph": "The heads turn toward you.",
+      "telegraph": "The line reaches you — beaks up, all down the row.",
       "damageType": "physical"
     },
     "armor": 1,
