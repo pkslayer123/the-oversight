@@ -1094,6 +1094,7 @@
     },
     "systemDesignation": "Acoustic lure unit (audience-tested)",
     "encounter": {
+      "aggroAudio": "staticCry",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -1305,6 +1306,7 @@
     },
     "systemDesignation": "Metrics enforcement unit",
     "encounter": {
+      "aggroAudio": "droneHum",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -1407,6 +1409,7 @@
     },
     "systemDesignation": "Content acquisition swarm",
     "encounter": {
+      "aggroAudio": "swarmFilm",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -1507,6 +1510,7 @@
     },
     "systemDesignation": "Morale enforcement organism",
     "encounter": {
+      "aggroAudio": "hypeInflate",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -1605,6 +1609,7 @@
     },
     "systemDesignation": "Support interface (field model)",
     "encounter": {
+      "aggroAudio": "holdMusic",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -1702,6 +1707,7 @@
     },
     "systemDesignation": "Agreement enforcement construct",
     "encounter": {
+      "aggroAudio": "paperRustle",
       "fifo": true,
       "noticeRange": 4,
       "phases": [
@@ -1804,6 +1810,7 @@
     },
     "systemDesignation": "Hierarchy enforcement predator",
     "encounter": {
+      "aggroAudio": "managerAnnounce",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -1905,6 +1912,7 @@
     },
     "systemDesignation": "Illumination event (contained)",
     "encounter": {
+      "aggroAudio": "eurekaTick",
       "fifo": true,
       "noticeRange": 6,
       "phases": [
@@ -2008,6 +2016,7 @@
     },
     "systemDesignation": "Affective recall projector",
     "encounter": {
+      "aggroAudio": "projectorHum",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
