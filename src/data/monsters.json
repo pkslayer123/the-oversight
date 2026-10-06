@@ -497,6 +497,7 @@
       "painSwitch": true,
       "adjacencyOverride": 1,
       "shortName": "toad",
+      "aggroAudio": "belltoadCroak",
       "phaseBadges": {
         "stalk": " \ud83d\udc38 LURKING",
         "swell": " \ud83d\udc38 SWELLING",

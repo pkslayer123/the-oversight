@@ -14445,11 +14445,12 @@
           // 25% chance to call another. More toads = more croaking = higher chance.
           // 1 toad: 25%/round, 2 toads: 44%/round. Up to 3 max. The chorus builds.
           if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0) {
-            const aliveToads = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && x.mdef && x.mdef.id === 'belltoad').length;
-            // Each toad rolls: 25% chance to call
+            // Each PENDING toad rolls: 30% chance to answer the call.
+            // The chorus continues even if all alive toads are dead (Steve 2026-10-05).
+            const pendingCount = this._pendingPack.count;
             let called = false;
-            for (let i = 0; i < aliveToads && !called; i++) {
-              if (Math.random() < 0.25) called = true;
+            for (let i = 0; i < pendingCount && !called; i++) {
+              if (Math.random() < 0.30) called = true;
             }
             if (called) {
             const pp = this._pendingPack;
@@ -14464,21 +14465,59 @@
               for (let i = 0; i < 1; i++) {
                 const nx = Math.max(0, Math.min(8, existing.mx + (i % 2 === 0 ? 1 : -1)));
                 const ny = Math.max(0, Math.min(8, existing.my + 1));
+                // Roll HP properly (mdef.hp is [min,max], not a number)
+                const hpDef = pp.mdef.hp;
+                const hpRoll = Array.isArray(hpDef) ? hpDef[0] + Math.random() * (hpDef[1] - hpDef[0]) : (hpDef || 20);
+                const hpInt = Math.round(hpRoll);
                 const newFighter = {
                   key: 'm' + Date.now() + i,
                   kind: 'monster',
                   mdef: pp.mdef,
                   id: pp.id,
+                  name: pp.mdef.name || 'Choir Toad',
+                  emoji: pp.mdef.emoji || '🐸',
                   mx: nx, my: ny,
-                  hp: pp.mdef.hp || 20,
-                  maxHp: pp.mdef.hp || 20,
+                  hp: hpInt,
+                  maxHp: hpInt,
                   alive: true,
+                  speed: pp.mdef.speed || 3,
                   moveLeft: 3,
                   acted: false,
+                  stunned: 0,
+                  threatQueue: [],
                 };
                 f.fighters.push(newFighter);
                 f.order.push(newFighter.key);
               }
+            } else {
+              // No living toad to anchor to — spawn near the player instead
+              // (the chorus answers even when the pack is wiped)
+              const p = this.tbFighter('p');
+              const px = p ? p.mx : 4, py = p ? p.my : 4;
+              const nx = Math.max(0, Math.min(8, px + 2));
+              const ny = Math.max(0, Math.min(8, py));
+              const hpDef = pp.mdef.hp;
+              const hpRoll = Array.isArray(hpDef) ? hpDef[0] + Math.random() * (hpDef[1] - hpDef[0]) : (hpDef || 20);
+              const hpInt = Math.round(hpRoll);
+              const newFighter = {
+                key: 'm' + Date.now() + '_solo',
+                kind: 'monster',
+                mdef: pp.mdef,
+                id: pp.id,
+                name: pp.mdef.name || 'Choir Toad',
+                emoji: pp.mdef.emoji || '🐸',
+                mx: nx, my: ny,
+                hp: hpInt,
+                maxHp: hpInt,
+                alive: true,
+                speed: pp.mdef.speed || 3,
+                moveLeft: 3,
+                acted: false,
+                stunned: 0,
+                threatQueue: [],
+              };
+              f.fighters.push(newFighter);
+              f.order.push(newFighter.key);
             }
             }
           }
@@ -15390,7 +15429,7 @@
         joined++;
       }
       if (joined > 0) {
-        this.audioEvent('toadChorus');
+        this.audioEvent('belltoadChorus');
         this.say(`The chorus lands as ONE sound — then every throat goes slack. (chorus ×${joined + 1})`);
       } else {
         this.say('Its croak echoes alone. No answer. The pack is broken.');
@@ -16374,6 +16413,24 @@
               if (o.kind === 'player' && o.alive) {
                 o.blindTurns = 1;
                 this.say('Spots bloom across your vision — the flash is still in your eyes. (blinded 1 round)');
+              }
+            }
+          }
+          // BELLTOAD: the croak hits like a wall. 15% chance to stun (full turn
+          // loss). This is the primary toad's own croak — the signature mechanic
+          // must work with 1 toad, not just in the chorus (Steve 2026-10-05).
+          if (this.toadIs(m)) {
+            this.audioEvent('belltoadCroak');
+            for (const o of hitFighters) {
+              if (o.kind === 'player' && o.alive && Math.random() < 0.15) {
+                const p = this.tbFighter('p');
+                if (p) {
+                  p.moveLeft = 0;
+                  p.acted = true;
+                  p.stunned = 1;
+                  this.say('Your ears ring — the world tilts. The croak hits like a wall. You lose your turn.');
+                  this.audioEvent('belltoadStun');
+                }
               }
             }
           }
