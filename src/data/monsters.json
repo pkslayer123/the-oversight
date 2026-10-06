@@ -1767,7 +1767,8 @@
         "length": 4,
         "width": 2,
         "chargeStyle": "circle",
-        "chargeDesc": "Circles wide, then charges from the flank. The telegraph is the circling \u2014 the charge comes from where you aren't looking."
+        "chargeDesc": "Circles wide, then charges from the flank. The telegraph is the circling \u2014 the charge comes from where you aren't looking.",
+        "codexDesc": "circles wide to cut off escape, then charges the announced line \u2014 wide (width 2), exactly where it said. The telegraph is the circling; read the line, sidestep far"
       },
       "damageType": "physical"
     },
