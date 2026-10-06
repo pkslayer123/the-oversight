@@ -107,9 +107,9 @@ function driveCombat(playerFn, maxTurns) {
   const mdef = Game.data.monsters.find(m => m.id === 'gallowdeer');
 
   // --- 1. data ---
-  eq('windup is 2 (aim -> charge -> fire)', mdef.attack.pattern.windup, 2);
+  eq('windup is 1 (aim -> fire)', mdef.attack.pattern.windup, 1);
   eq('discharge damage [22,32]', JSON.stringify(mdef.attack.damage), JSON.stringify([22, 32]));
-  eq('deer hp [95,115]', JSON.stringify(mdef.hp), JSON.stringify([95, 115]));
+  eq('deer hp [150,170]', JSON.stringify(mdef.hp), JSON.stringify([150, 170]));
   ok('deer never flees (no fleeAt)', !('fleeAt' in mdef));
   ok('codex no longer claims it bolts', !/flees at 50%/.test(mdef.codexStages.slain));
   eq('beam sweeps', mdef.attack.pattern.sweep, true);

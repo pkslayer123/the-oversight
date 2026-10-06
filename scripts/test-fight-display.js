@@ -50,20 +50,24 @@ Game.debugScenario('hummice');
   Game.log = [];
   const mice = f.fighters.filter(x => x.kind === 'monster' && x.alive);
   ok('four mice', mice.length === 4);
+  // (sayTelegraphOnce is silent now — cues render on the grid. We verify the
+  // per-monster-id-per-round dedup via the cueSaid map. Clear any cues the
+  // live AI already said.)
+  f.cueSaid = {};
   for (const m of mice) {
     m.telegraph = { attackName: 'hum', turnsLeft: 1 };
     Game.sayTelegraphOnce(m, '⚠ TEST CUE hum');
   }
-  const cues = Game.log.filter(l => /TEST CUE/.test(l));
-  ok('one cue for four mice, same round', cues.length === 1);
+  const saidKeys = Object.keys(f.cueSaid || {});
+  ok('one cue for four mice, same round', saidKeys.length === 1, saidKeys.join(','));
   // next round: cue fires again (it's a new warning)
   f.round = (f.round || 0) + 1;
   for (const m of mice) Game.sayTelegraphOnce(m, '⚠ TEST CUE hum');
-  ok('cue fires again next round', Game.log.filter(l => /TEST CUE/.test(l)).length === 2);
+  ok('cue fires again next round', Object.keys(f.cueSaid || {}).length === 2);
   // different monster id: separate cue same round
   const fake = { mdef: { id: 'other_beast' }, key: 'x1', telegraph: { attackName: 'hum' } };
   Game.sayTelegraphOnce(fake, '⚠ TEST CUE other');
-  ok('different monster gets own cue', Game.log.filter(l => /TEST CUE/.test(l)).length === 3);
+  ok('different monster gets own cue', Object.keys(f.cueSaid || {}).length === 3);
 }
 
 // --- 2. offerSplit: groups packs, correct count, no code leak ---
