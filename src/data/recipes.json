@@ -136,5 +136,140 @@
       "2": "Materials: stone + vine. Strike the stone to knap an edge, bind it with vine.",
       "3": "You can knap one. A few good strikes, a working edge. The oldest tool there is."
     }
+  },
+{
+  "id": "spring_snare",
+  "name": "Spring-Pole Snare",
+  "description": "a bent sapling staked down, a vine loop on a game trail. the sapling does the lifting — the loop only has to be in the right place.",
+  "materials": {
+    "vine": 2,
+    "stick": 2,
+    "bait": 1
+  },
+  "uses": 8,
+  "catches": [
+    "cottontail_rabbit",
+    "gray_squirrel",
+    "wild_turkey",
+    "gray_fox",
+    "cottontail_rabbit",
+    "gray_squirrel"
+  ],
+  "knowledgeLevels": {
+    "1": "A snare with a bent sapling for a spring. Faster than a plain loop.",
+    "2": "Materials: 2 vine + 2 sticks + bait. The sapling does the lifting — the loop only has to be in the right place.",
+    "3": "You can build one. Bend the sapling down, stake it, run the vine loop on a game trail and tie off to the trigger. Foxes take these on night trails; turkeys walk into them on dusting flats. Check at dawn — a spring-pole holds its catch off the ground, away from other teeth."
   }
+},
+{
+  "id": "fish_basket",
+  "name": "Funnel Fish Basket",
+  "description": "branches woven into a funnel, wide at the mouth and narrow at the throat. fish swim in; the weave keeps them.",
+  "materials": {
+    "branch": 4,
+    "vine": 2
+  },
+  "uses": 6,
+  "catches": [
+    "creek_chub",
+    "creek_chub",
+    "crayfish",
+    "crayfish",
+    "bullfrog",
+    "snapping_turtle"
+  ],
+  "knowledgeLevels": {
+    "1": "A woven funnel basket. Fish swim in, the weave keeps them.",
+    "2": "Materials: 4 branches + 2 vine. Weave the funnel narrow at the throat, wide at the mouth; stake it facing downstream.",
+    "3": "You can weave one. Set it in the creek throat where the water narrows, mouth upstream. Chub and crayfish pile in overnight. A snapping turtle is a bonus and a hazard — pin the head before you reach past it."
+  }
+},
+{
+  "id": "noose_pole",
+  "name": "Turkey Noose Pole",
+  "description": "sticks lashed into a long pole with a vine slip-noose at the end. for birds that roost in low branches.",
+  "materials": {
+    "stick": 3,
+    "vine": 1,
+    "bait": 1
+  },
+  "uses": 6,
+  "catches": [
+    "wild_turkey",
+    "wild_turkey",
+    "cottontail_rabbit",
+    "opossum"
+  ],
+  "knowledgeLevels": {
+    "1": "A long pole with a slip noose at the end. For birds that sleep in low branches.",
+    "2": "Materials: 3 sticks (lashed long) + 1 vine + bait. The noose cinches when you pull.",
+    "3": "You can make one. Lash the sticks into a pole, tie the vine noose, bait the clearing and wait for dusk. Turkeys roost low; slip the noose over the head and pull sharp. Miss and the whole flock is gone for a week."
+  }
+},
+{
+  "id": "trotline",
+  "name": "Trotline",
+  "description": "a vine line strung bank to bank with baited drops hanging off it. fishes while you sleep.",
+  "materials": {
+    "stick": 1,
+    "vine": 3,
+    "bait": 2
+  },
+  "uses": 10,
+  "catches": [
+    "creek_chub",
+    "creek_chub",
+    "creek_chub",
+    "bullfrog",
+    "snapping_turtle",
+    "crayfish"
+  ],
+  "knowledgeLevels": {
+    "1": "A line strung across the creek with baited drops. Fishes while you sleep.",
+    "2": "Materials: 1 stick + 3 vine + bait (2). Tie drop lines along the main line, bait each, anchor both banks.",
+    "3": "You can rig one. Stretch the vine across a narrow run, hang the drops a hand deep, bait with whatever is going soft. Run it at dawn and dusk. A turtle on the line means the line held and your luck did — cut it loose from upstream."
+  }
+},
+{
+  "id": "drying_rack",
+  "name": "Drying Rack",
+  "description": "a raised frame of lashed sticks. air and thin smoke do the preserving; the rack just holds the meat up where the dogs cannot reach.",
+  "materials": {
+    "wood": 2,
+    "stick": 4
+  },
+  "knowledgeLevels": {
+    "1": "A rack for drying meat and fish. Air does the work.",
+    "2": "Materials: 2 wood + 4 sticks. Lash a frame waist-high, keep it over thin smoke.",
+    "3": "You can lash one. Hang thin strips over faint smoke, not flame. Two dry days and the meat keeps. This is how winter gets survived."
+  }
+},
+{
+  "id": "stone_axe",
+  "name": "Stone Axe",
+  "description": "a knapped stone head bound to a wood handle with vine. fells saplings, splits kindling, and drives the stakes your traps stand on.",
+  "materials": {
+    "stone": 1,
+    "wood": 1,
+    "vine": 2
+  },
+  "knowledgeLevels": {
+    "1": "A stone head on a wood handle. The oldest axe there is.",
+    "2": "Materials: stone + wood + 2 vine. Knap the edge, seat the head, bind it tight and let the vine dry to shrink.",
+    "3": "You can make one. It will not fell an oak, but it will take saplings and split kindling all day. Rebind it when the vine loosens."
+  }
+},
+{
+  "id": "braided_cord",
+  "name": "Braided Cord",
+  "description": "plant fiber twisted and braided into cord. binds everything a vine can bind, and fits in a pocket.",
+  "materials": {
+    "fiber": 4
+  },
+  "knowledgeLevels": {
+    "1": "Twisted plant fiber, strong as thin rope.",
+    "2": "Materials: 4 fiber. Twist two strands against each other, feed in more as you go, braid three twisted strands.",
+    "3": "You can twist it. Roll fiber on your thigh until it kinks, let it ply back on itself, braid three plies. Slow work, strong cord."
+  }
+}
 ]

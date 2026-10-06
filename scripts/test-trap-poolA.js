@@ -39,7 +39,9 @@ for (const r of trapRecipes) {
 }
 
 // 3. Trap recipe schema sanity.
-const KNOWN_MATS = new Set(['vine', 'stick', 'stone', 'bait', 'cloth', 'charcoal', 'container']);
+// Synced to MAT_DEFS in src/js/storage.js (+ 'bait', special-cased in craft,
+// + cloth/charcoal/container used by the legacy water_filter recipe).
+const KNOWN_MATS = new Set(['wood', 'branch', 'stone', 'fiber', 'vine', 'stick', 'bait', 'cloth', 'charcoal', 'container']);
 for (const r of trapRecipes) {
   ok(`schema ${r.id}: name/desc`, typeof r.name === 'string' && typeof r.description === 'string');
   ok(`schema ${r.id}: materials`, r.materials && typeof r.materials === 'object' && Object.keys(r.materials).length > 0);

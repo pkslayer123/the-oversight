@@ -41,7 +41,7 @@ for (const id of ['timber_rattlesnake', 'striped_skunk', 'muskrat']) {
 console.log('books.json');
 const bookIds = new Set();
 for (const b of books) { assert(!bookIds.has(b.id), 'dup book ' + b.id); bookIds.add(b.id); }
-ok(books.length === 8, `pool grew 4 -> ${books.length}`);
+ok(books.length >= 8, `pool grew 4 -> ${books.length} (dynamic: later expansions may add more)`);
 const plantIds = new Set(plants.map(p => p.id));
 const recipeIds = new Set(recipes.map(r => r.id));
 const skillIds = new Set(knowledge.map(k => k.id));
