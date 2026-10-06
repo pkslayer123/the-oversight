@@ -5914,8 +5914,12 @@
         } else if (tg.cells && tg.cells.length) {
           for (const c of tg.cells) {
             const k = c.cx + ',' + c.cy;
-            // Don't double-add beam cells (they have their own renderer)
-            if (ptype === 'beam') continue;
+            // Don't double-add beam cells to pattern sets (they have their own renderer),
+            // but DO add to vague set for knowledge gating
+            if (ptype === 'beam') {
+              if (!known) out.vague.add(k);
+              continue;
+            }
             targetSet.add(k);
             if (!known) out.vague.add(k);
           }
@@ -6093,7 +6097,9 @@
           (_tg.direct.has(_k) ? ' lockOn' + _vague : '') +
           (_tg.rush.has(_k) ? ' rushIndicator' + _vague : '') +
           (_tg.ambush.has(_k) ? ' ambushZone' + _vague : '');
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        // Beam classes also get vague for knowledge gating (the beam was bypassing it)
+        const _beamVague = _vague ? _vague : '';
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_beamVague}${_srcCls}${_beamVague}${_haloCls}${_beamVague}${_tgCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }
