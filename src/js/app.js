@@ -2074,6 +2074,331 @@
         o.start(dt); o.stop(dt + 0.9);
       }
     }
+    // ============ WAVE 2 GROUP C: INSPIRATION / NOSTALGIA / MIDDLE MANAGER ============
+    function eurekaTick(opts) {
+      // BRIGHTENING TICK: glassy ping, sharper as the boom nears. urgency =
+      // turnsLeft (2 → 1): pitch climbs, the pretty becomes painful.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.5;
+      const urg = (opts && opts.urgency) || 2;
+      const base = urg > 1 ? 1568 : 2093; // G6 → C7: brighter = closer
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(base, t);
+      o.frequency.exponentialRampToValueAtTime(base * 1.5, t + dur * 0.6);
+      // glassy harmonic, slightly detuned (beautiful but wrong)
+      const o2 = ctx.createOscillator();
+      o2.type = 'sine'; o2.frequency.setValueAtTime(base * 2.01, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(urg > 1 ? 0.14 : 0.22, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); o2.connect(g); g.connect(sfxBus);
+      o.start(t); o2.start(t); o.stop(t + dur); o2.stop(t + dur);
+    }
+    function eurekaCharge() {
+      // THE GATHERING: rising shimmer — beautiful, luring, wrong. It wants
+      // you to watch. Don't.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.4;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(440, t);
+      o.frequency.exponentialRampToValueAtTime(1760, t + dur);
+      // shimmer: amplitude tremolo, quickening
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.setValueAtTime(4, t);
+      lfo.frequency.exponentialRampToValueAtTime(14, t + dur);
+      lg.gain.value = 0.08; lfo.connect(lg); lg.connect(g.gain);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + dur * 0.7);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
+    }
+    function eurekaDetonate() {
+      // DETONATION: white flare. The idea goes off — light with teeth.
+      // Not an explosion: a chord resolving too loud, then the ring.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.0;
+      // the chord: major, too bright
+      const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+      for (const fr of freqs) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = fr;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4000;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.1, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.6);
+        o.connect(lp); lp.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur * 0.65);
+      }
+      // the ring: high sine that lingers after
+      const r = ctx.createOscillator(), rg = ctx.createGain();
+      r.type = 'sine'; r.frequency.value = 3136; // G7
+      rg.gain.setValueAtTime(0.0001, t + 0.1);
+      rg.gain.exponentialRampToValueAtTime(0.08, t + 0.2);
+      rg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      r.connect(rg); rg.connect(sfxBus); r.start(t + 0.1); r.stop(t + dur);
+    }
+    function eurekaSpent() {
+      // GUTTERING TO EMBER: the fizzle. High sizzle collapsing to a dull pulse.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.9;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(1200, t);
+      o.frequency.exponentialRampToValueAtTime(90, t + dur);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(3000, t);
+      lp.frequency.exponentialRampToValueAtTime(200, t + dur);
+      g.gain.setValueAtTime(0.14, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(lp); lp.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur);
+    }
+    function eurekaDisperse() {
+      // DAWN DISPERSAL: thinning, evaporating. It was never meant for daytime.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.1;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(880, t);
+      o.frequency.exponentialRampToValueAtTime(1760, t + dur); // rises as it thins
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      // breathy: bandpass sweep upward
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 3;
+      bp.frequency.setValueAtTime(900, t);
+      bp.frequency.exponentialRampToValueAtTime(3600, t + dur);
+      o.connect(bp); bp.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur);
+    }
+    function eurekaDrift() {
+      // SOFT DRIFTING GLOW: gentle, luring. A light that wasn't there yesterday.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.8;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 660;
+      const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 663;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.07, t + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); o2.connect(g); g.connect(sfxBus);
+      o.start(t); o2.start(t); o.stop(t + dur); o2.stop(t + dur);
+    }
+    function projectorHum(opts) {
+      // OLD PROJECTOR: film clatter + mains hum. spell=true adds the low
+      // pull-tone — warm, insistent, wrong. It wants you nearer.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.2;
+      // clatter: filtered noise ticks, ~12fps projector rhythm
+      const nb = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const ch = nb.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) {
+        const ph = (i / ctx.sampleRate * 12) % 1;
+        ch[i] = (Math.random() * 2 - 1) * (ph < 0.08 ? 0.5 : 0.02);
+      }
+      const src = ctx.createBufferSource(); src.buffer = nb;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2500; bp.Q.value = 1.5;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.1, t + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(bp); bp.connect(g); g.connect(sfxBus); src.start(t);
+      // mains hum
+      const o = ctx.createOscillator(), g2 = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.value = 120;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400;
+      g2.gain.setValueAtTime(0.0001, t);
+      g2.gain.exponentialRampToValueAtTime(0.05, t + 0.3);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(lp); lp.connect(g2); g2.connect(sfxBus);
+      o.start(t); o.stop(t + dur);
+      if (opts && opts.spell) {
+        // the pull: low warm tone, slowly swelling — it wants you closer
+        const p = ctx.createOscillator(), pg = ctx.createGain();
+        p.type = 'sine'; p.frequency.setValueAtTime(65, t);
+        p.frequency.linearRampToValueAtTime(72, t + dur);
+        pg.gain.setValueAtTime(0.0001, t);
+        pg.gain.exponentialRampToValueAtTime(0.14, t + dur * 0.8);
+        pg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        p.connect(pg); pg.connect(sfxBus); p.start(t); p.stop(t + dur);
+      }
+    }
+    function projectorStatic() {
+      // GRAY STATIC: confused hiss. The picture won't come back yet.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.8;
+      const nb = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const ch = nb.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * 0.3;
+      const src = ctx.createBufferSource(); src.buffer = nb;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1500;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(hp); hp.connect(g); g.connect(sfxBus); src.start(t);
+    }
+    function projectorBreak() {
+      // IMAGE BREAKING UP: judder, tear. Too fast — it can't hold the picture.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.6;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(220, t);
+      // judder: stepped drops
+      for (let i = 0; i < 5; i++) {
+        o.frequency.setValueAtTime(220 - i * 30, t + i * 0.11);
+      }
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+      g.gain.setValueAtTime(0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(lp); lp.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur);
+    }
+    function projectorPull() {
+      // THE SPELL PULLS: one warm insistent tug. You take a step closer
+      // without deciding to.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.7;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(98, t);
+      o.frequency.exponentialRampToValueAtTime(130, t + dur * 0.7);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur);
+    }
+    function managerCircle() {
+      // PACING + DICTATION: rhythmic hoofbeats in a circle, under a faint
+      // warble — it's dictating into nothing. "Per my last roar..."
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 4; i++) {
+        const dt = t + i * 0.32;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(95 - i * 4, dt);
+        o.frequency.exponentialRampToValueAtTime(60, dt + 0.12);
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.22, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.2);
+      }
+      // dictation warble: thin, self-important
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'triangle'; w.frequency.setValueAtTime(520, t);
+      w.frequency.linearRampToValueAtTime(480, t + 1.3);
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 9; lg.gain.value = 25;
+      lfo.connect(lg); lg.connect(w.frequency);
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(0.05, t + 0.4);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+      w.connect(wg); wg.connect(sfxBus);
+      w.start(t); w.stop(t + 1.35); lfo.start(t); lfo.stop(t + 1.35);
+    }
+    function managerAnnounce() {
+      // MEETING CALLED TO ORDER: sharp horn blast + paper slap. Attendance mandatory.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.7;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(196, t); // G3: the horn
+      o.frequency.setValueAtTime(196, t + 0.35);
+      o.frequency.setValueAtTime(147, t + 0.36); // drop: E3, final
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.24, t + 0.06);
+      g.gain.setValueAtTime(0.24, t + 0.5);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(lp); lp.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur);
+      // paper slap
+      const nb = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
+      const ch = nb.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ch.length * 0.15));
+      const src = ctx.createBufferSource(); src.buffer = nb;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2000;
+      const g2 = ctx.createGain(); g2.gain.value = 0.18;
+      src.connect(hp); hp.connect(g2); g2.connect(sfxBus); src.start(t + 0.4);
+    }
+    function managerCharge() {
+      // THE CHARGE: thundering hooves, low and inevitable — plus the tie
+      // flapping like a flag. It delegated the violence to itself.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 6; i++) {
+        const dt = t + i * 0.16;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(80 - i * 3, dt);
+        o.frequency.exponentialRampToValueAtTime(50, dt + 0.1);
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.26, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.14);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.16);
+      }
+      // tie flap: thin rapid flutter
+      const f = ctx.createOscillator(), fg = ctx.createGain();
+      f.type = 'square'; f.frequency.value = 55;
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 22; lg.gain.value = 20;
+      lfo.connect(lg); lg.connect(f.frequency);
+      fg.gain.setValueAtTime(0.0001, t);
+      fg.gain.exponentialRampToValueAtTime(0.05, t + 0.3);
+      fg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+      f.connect(fg); fg.connect(sfxBus);
+      f.start(t); f.stop(t + 1.05); lfo.start(t); lfo.stop(t + 1.05);
+    }
+    function managerDebrief() {
+      // TAKING NOTES: pen scratching + a satisfied sigh. The meeting is minuted.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.0;
+      const nb = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const ch = nb.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) {
+        const ph = (i / ctx.sampleRate * 7) % 1; // scratch rhythm
+        ch[i] = (Math.random() * 2 - 1) * (ph < 0.3 ? 0.25 : 0.03);
+      }
+      const src = ctx.createBufferSource(); src.buffer = nb;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3000;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(hp); hp.connect(g); g.connect(sfxBus); src.start(t);
+      // satisfied sigh: descending breathy tone
+      const o = ctx.createOscillator(), g2 = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(300, t + 0.5);
+      o.frequency.exponentialRampToValueAtTime(180, t + 1.0);
+      g2.gain.setValueAtTime(0.0001, t + 0.5);
+      g2.gain.exponentialRampToValueAtTime(0.06, t + 0.65);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + 1.05);
+      o.connect(g2); g2.connect(sfxBus); o.start(t + 0.5); o.stop(t + 1.1);
+    }
+    function managerFear() {
+      // RETREAT: hoofbeats receding + nervous paper rustle. Too many stakeholders.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 4; i++) {
+        const dt = t + i * 0.28;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(100, dt);
+        o.frequency.exponentialRampToValueAtTime(65, dt + 0.1);
+        const amp = 0.2 - i * 0.04; // receding
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.05, amp), dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.14);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.16);
+      }
+      // nervous paper rustle
+      const nb = ctx.createBuffer(1, ctx.sampleRate * 0.9, ctx.sampleRate);
+      const ch = nb.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * 0.12 * (0.5 + 0.5 * Math.sin(i / 900));
+      const src = ctx.createBufferSource(); src.buffer = nb;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4000;
+      const g = ctx.createGain(); g.gain.value = 0.5;
+      src.connect(hp); hp.connect(g); g.connect(sfxBus); src.start(t + 0.2);
+    }
     function staticCry(opts) {
       // VOICE IN STATIC: filtered noise shaped like a cry. Freaky: it almost
       // sounds like someone you know. Close = louder, clearer.
@@ -2574,6 +2899,21 @@
       belltoadCroak() { belltoadCroak(); },
       belltoadStun() { belltoadStun(); },
       belltoadChorus() { belltoadChorus(); },
+      eurekaTick(d) { eurekaTick(d); },
+      eurekaCharge() { eurekaCharge(); },
+      eurekaDetonate() { eurekaDetonate(); },
+      eurekaSpent() { eurekaSpent(); },
+      eurekaDisperse() { eurekaDisperse(); },
+      eurekaDrift() { eurekaDrift(); },
+      projectorHum(d) { projectorHum(d); },
+      projectorStatic() { projectorStatic(); },
+      projectorBreak() { projectorBreak(); },
+      projectorPull() { projectorPull(); },
+      managerCircle() { managerCircle(); },
+      managerAnnounce() { managerAnnounce(); },
+      managerCharge() { managerCharge(); },
+      managerDebrief() { managerDebrief(); },
+      managerFear() { managerFear(); },
       hypeInflate() { hypeInflate(); },
       hypeEncourage(d) { hypeEncourage(d); },
       hypeDetonate() { hypeDetonate(); },

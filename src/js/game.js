@@ -10197,6 +10197,7 @@
       } else if (!feared && fear === 'numbers' && this.villagersNear(px, py, 3) >= 2 && m.stance !== 'ambush' && m.stance !== 'cautious') {
         m.stance = 'cautious';
         const fl = this.monsterCue(m.id, 'fearful'); if (fl) this.say(fl);
+        if (m.id === 'delegate_beast') this.audioEvent('managerFear');
       }
       // --- stance behavior ---
       switch (m.stance) {
@@ -15291,6 +15292,7 @@
       if (this.mothIs(m)) return 'fold';
       if (this.toadIs(m)) return 'swell';
       if (this.humiceIs(m)) return (((this.tbfight || {}).humStacks || 0) >= 3) ? 'tide' : 'hum';
+      if (this.beastIs(m)) return 'announce';
       return 'aim';
     },
 
@@ -16331,6 +16333,12 @@
         }
         this.audioEvent('impact');
         if (rcfg.resolveAudio) this.audioEvent(rcfg.resolveAudio);
+        // INSPIRATION: the bloom. White flare, then the long gutter down.
+        if (this.biIs(m) && (tg.pattern || {}).type === 'burst') {
+          if (useFifo) this.encSetPhase(m, 'bloom');
+          this.say('WHITE. The idea detonates — light with teeth. Then the long gutter down.');
+          this.audioEvent('eurekaDetonate');
+        }
         let anyoneHit = false;
         if (tg.kind === 'direct') {
           const t = this.tbFighter(tg.targetKey);
@@ -16452,6 +16460,18 @@
             m.boarWinded = 2;
             if (useFifo) this.encSetPhase(m, 'spent');
             this.say('It thunders past — and finds only air. It stands at the end of its lane, sides heaving. Flanks soft. But it is turning, and it is angry.');
+          }
+          // MIDDLE MANAGER: every charge ends in debrief — hit or miss. It stops,
+          // takes notes, horns down. One full turn of vulnerability. The meeting
+          // must be minuted.
+          if (this.beastIs(m) && (m.mdef.attack.pattern || {}).type === 'charge') {
+            this.audioEvent('managerCharge');
+            if (useFifo) this.encSetPhase(m, 'debrief');
+            m.beastDebrief = 1; m.beastCircled = false;
+            this.say(anyoneHit
+              ? '"Noted. Pain points logged." It stops at the end of its line, already writing. Horns down — it\'s debriefing.'
+              : '"Hm. Let\'s circle back on why that missed." It stops, confused, taking notes. Horns down — it\'s debriefing.');
+            this.audioEvent('managerDebrief');
           }
           // WHITE NOISE: after the strike it is somewhere else. You didn't see it move.
           if (this.heronIs(m)) {
@@ -16910,7 +16930,7 @@
         const ff = fifoFoe(); if (ff) foe = ff;
         if (!m.beamPhase || m.beamPhase === 'stalk') this.encSetPhase(m, 'settle');
         // post-detonation: the bloom resolved → ember
-        if (m.beamPhase === 'brighten' && !m.telegraph && m.biDeclared) {
+        if ((m.beamPhase === 'brighten' || m.beamPhase === 'bloom') && !m.telegraph && m.biDeclared) {
           m.biDeclared = false;
           this.encSetPhase(m, 'ember'); m.biEmber = 2;
           this.say('The light gutters down to a dying ember. It\'s spent — dim, flickering, harmless. For now.');
@@ -17022,6 +17042,66 @@
           this.audioEvent('projectorHum', {});
         }
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+      }
+
+      // ---- MIDDLE MANAGER ("delegate_beast"): THE MEETING ----
+      // circle → announce → charge → debrief. It never charges cold: it always
+      // paces one full circle first (the circle IS the telegraph — read the line).
+      // The charge is width 2, committed via beastLineCells. Post-charge it
+      // DEBRIEFS (one turn, vulnerable, taking notes). It fears numbers: 3+
+      // live threats and it backs off ("too many stakeholders").
+      if (this.beastIs(m)) {
+        const ff = fifoFoe(); if (ff) foe = ff;
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'circle'); m.beastCircled = false; }
+        // DEBRIEF: post-charge recovery. It doesn't act — it's taking notes.
+        // The window is real: it can't charge, can't circle, just writes.
+        if (m.beamPhase === 'debrief') {
+          m.beastDebrief = (m.beastDebrief || 1) - 1;
+          if (m.beastDebrief <= 0) {
+            this.encSetPhase(m, 'circle'); m.beastCircled = false;
+            this.say('"OK — learnings captured. Action items assigned." It squares up, starting a fresh circle.');
+          } else {
+            this.say('"Let\'s circle back on what just happened." It\'s taking notes, horns down. NOW — while it\'s writing.');
+          }
+          this.audioEvent('managerDebrief');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // FEARS NUMBERS: expressed in the overworld (villagersNear >= 2 →
+        // cautious stance). In combat it's committed — the meeting is happening.
+        // CIRCLE FIRST: it always paces one full circle before announcing.
+        // Orbit step: perpendicular to the player, closing slightly.
+        if (!m.beastCircled && !m.telegraph) {
+          const t = foe.f;
+          const dx = t.mx - m.mx, dy = t.my - m.my;
+          // perpendicular (orbit) + slight inward
+          const px = -Math.sign(dy), py = Math.sign(dx);
+          const ix = Math.sign(dx), iy = Math.sign(dy);
+          const cands = [
+            { x: m.mx + px, y: m.my + py },
+            { x: m.mx - px, y: m.my - py },
+            { x: m.mx + px + ix, y: m.my + py + iy },
+            { x: m.mx - px + ix, y: m.my - py + iy },
+          ];
+          for (const c of cands) {
+            if (c.x < 0 || c.x > 8 || c.y < 0 || c.y > 8) continue;
+            if (blocked(c.x, c.y)) continue;
+            m.mx = c.x; m.my = c.y; break;
+          }
+          m.beastCircled = true;
+          this.encSetPhase(m, 'circle');
+          const known = this.encTelegraphKnown(m);
+          this.say(known
+            ? '"Per my last roar..." It paces its circle — dictating into nothing. The charge comes next, width 2. Watch the line.'
+            : '"Per my last roar..." It paces a wide circle around you, dictating into nothing. The circle tightens.');
+          this.audioEvent('managerCircle');
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
+        }
+        // Circled and no telegraph yet: fall through to the generic declare
+        // below — it announces the width-2 line (phase 'announce' via the
+        // encDeclarePhase hook, cue via tbBatch4Cue, audio via declareAudio).
+        // If a telegraph already exists, the countdown section handled it;
+        // just refresh here.
+        if (m.telegraph) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
       }
 
       // ---- GLASSWING DARTER: THE DIVE ----
@@ -17456,7 +17536,7 @@
         // Declare phase: per-monster (batch 2's encDeclarePhase) where defined,
         // else the config phaseMap (batch 1's encPhaseFor). The deer gets 'aim' either way.
         if (useFifo) {
-          const hasDeclare = this.mothIs(m) || this.toadIs(m) || this.humiceIs(m);
+          const hasDeclare = this.mothIs(m) || this.toadIs(m) || this.humiceIs(m) || this.beastIs(m);
           this.encSetPhase(m, hasDeclare ? this.encDeclarePhase(m) : this.encPhaseFor(m, 'declare'));
         }
         this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: the beast itself must be audible (Steve heard only beam)

@@ -1825,7 +1825,8 @@
       "painText": "It snorts \u2014 then squares on {who}. \"PER MY LAST ROAR: pain gets prioritized.\"",
       "proximityText": "Too close. It pivots to {who}: \"LET'S TAKE THIS OFFLINE.\" Proximity overrules the agenda.",
       "comment": "Encounter framework client: FIFO meeting agenda, always circles first (announcing the charge), wide locked line (width 2 \u2014 sidestep far), post-charge debrief. The line it announces is the line it charges.",
-      "knownCue": "It circles to cut off escape. Keep your back to open ground."
+      "knownCue": "It circles to cut off escape. Keep your back to open ground.",
+      "declareAudio": "managerAnnounce"
     },
     "loot": {
       "chance": 0.25,
