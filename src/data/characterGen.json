@@ -5889,6 +5889,158 @@
           "Between us — "
         ]
       }
+    },
+    "ageSets": {
+      "young": {
+        "eager": {
+          "open": [
+            "Oh! ",
+            "Wait, wait — ",
+            "I can help — "
+          ],
+          "close": [
+            "Does that make sense?",
+            "I really think so.",
+            "Just saying!"
+          ]
+        },
+        "brash": {
+          "open": [
+            "Okay so — ",
+            "Obviously — ",
+            "Watch this — "
+          ],
+          "close": [
+            "Trust me.",
+            "Easy.",
+            "Told you."
+          ]
+        },
+        "wry": {
+          "open": [
+            "So, uh — ",
+            "Fun development — ",
+            "Update: "
+          ],
+          "close": [
+            "Just an idea.",
+            "Moving on.",
+            "Cool, cool."
+          ]
+        },
+        "quiet": {
+          "open": [
+            "Um — ",
+            "I mean — ",
+            "Can I just — "
+          ],
+          "close": [
+            "...if that helps.",
+            "I don't know, though.",
+            "...yeah."
+          ]
+        }
+      },
+      "adult": {
+        "measured": {
+          "open": [
+            "The way I read it — ",
+            "Here's what I think — ",
+            "Practical view: "
+          ],
+          "close": [
+            "That's my read.",
+            "Makes sense to me.",
+            "Worth considering."
+          ]
+        },
+        "weathered": {
+          "open": [
+            "Heh. ",
+            "Yeah — ",
+            "Mm. "
+          ],
+          "close": [
+            "Seen worse.",
+            "It'll pass.",
+            "Give it time."
+          ]
+        },
+        "driven": {
+          "open": [
+            "We need to — ",
+            "Short version — ",
+            "Bottom line: "
+          ],
+          "close": [
+            "Let's move.",
+            "That's the priority.",
+            "No time to waste."
+          ]
+        },
+        "easy": {
+          "open": [
+            "Right, so — ",
+            "Tell you what — ",
+            "Real talk — "
+          ],
+          "close": [
+            "You know?",
+            "Anyway, that's me.",
+            "Good talking."
+          ]
+        }
+      },
+      "elder": {
+        "unhurried": {
+          "open": [
+            "Now — ",
+            "Let's see — ",
+            "Now then — "
+          ],
+          "close": [
+            "Take your time with it.",
+            "No rush.",
+            "It'll keep."
+          ]
+        },
+        "flinty": {
+          "open": [
+            "Hm. ",
+            "Right. ",
+            "Say it plain. "
+          ],
+          "close": [
+            "Don't waste it.",
+            "Think, then act.",
+            "This isn't new."
+          ]
+        },
+        "tender": {
+          "open": [
+            "Come, sit — ",
+            "Tell me — ",
+            "Oh — "
+          ],
+          "close": [
+            "I'm listening.",
+            "You're doing fine.",
+            "Rest when you can."
+          ]
+        },
+        "arch": {
+          "open": [
+            "Well now — ",
+            "Interesting — ",
+            "Is that so? "
+          ],
+          "close": [
+            "Life's funny that way.",
+            "You'll see.",
+            "We all learn."
+          ]
+        }
+      }
     }
   },
   "topicPack": {

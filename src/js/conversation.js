@@ -428,9 +428,67 @@
       return short.length >= 2 ? short : pool;
     },
 
+    // npcVoiceSet: WHICH age-voice this villager speaks in. Seeded by
+    // villager id -- stable for the whole run, unique per person. Same age
+    // band, different set: two young villagers with the same temperament
+    // still sound like different people. (Steve 2026-10-06: diversity --
+    // not one voice per age band.)
+    npcVoiceSet(vid) {
+      const bandOf = (id) => (this.npcAgeBand ? this.npcAgeBand(id) : 'adult') || 'adult';
+      const tempOf = (id) => String(this.npcTemper(id) || 'steady').toLowerCase();
+      const band = bandOf(vid);
+      const sets = ((((this.data || {}).characterGen || {}).voice || {}).ageSets || {})[band] || {};
+      const ids = Object.keys(sets);
+      if (!ids.length) return null;
+      const rawPick = (id) => {
+        const h = this._hashStr ? this._hashStr('ageset:' + id) : 0;
+        return ids[Math.abs(h) % ids.length];
+      };
+      // UNIQUE-PERSON LAW (Steve 2026-10-06): no two villagers share a full
+      // voice fingerprint. Collisions resolve in canonical vid order -- each
+      // villager keeps their seeded pick unless an earlier villager with the
+      // same band+temperament already holds it, then takes the first free
+      // set. Same roster always yields the same assignment; call order
+      // never matters.
+      try {
+        const roster = (((this.state || {}).village || {}).roster || []).slice().sort();
+        if (roster.indexOf(vid) !== -1) {
+          const myTemp = tempOf(vid);
+          const taken = new Set();
+          for (const other of roster) {
+            if (other === vid) break;
+            if (bandOf(other) !== band || tempOf(other) !== myTemp) continue;
+            let op = rawPick(other);
+            if (taken.has(op)) {
+              const alt = ids.find(id => !taken.has(id));
+              if (alt) op = alt;
+            }
+            taken.add(op);
+          }
+          let pick = rawPick(vid);
+          if (taken.has(pick)) {
+            const alt = ids.find(id => !taken.has(id));
+            if (alt) pick = alt;
+          }
+          return pick;
+        }
+      } catch (e) {}
+      return rawPick(vid);
+    },
+    // npcVoiceFingerprint: the full voice identity -- age band + age set +
+    // temperament. Two villagers sharing all three would sound alike; the
+    // uniqueness test (test-npc-age-voice.js) enforces no collisions across
+    // a generated roster. (Steve 2026-10-06 unique-person law.)
+    npcVoiceFingerprint(vid) {
+      const band = (this.npcAgeBand ? this.npcAgeBand(vid) : 'adult') || 'adult';
+      const set = this.npcVoiceSet(vid) || 'none';
+      const temp = String(this.npcTemper(vid) || 'steady').toLowerCase();
+      return band + ':' + set + ':' + temp;
+    },
     // voiceLine: HOW they say it, not what they say. The temperament profile
-    // is the base voice (who they are); voiceMods inflect it with what
-    // they've lived through (who they've become). Applies an opener OR a
+    // is the base voice (who they are); the age set inflects it with life
+    // stage (how long they've been who they are); voiceMods inflect it with
+    // what they've lived through (who they've become). Applies an opener OR a
     // closer — never both; restraint is what keeps it voice, not mannerism.
     // Only touches plain quoted speech; stage directions pass through.
     // Never call on choice labels (sibling's lane) or turn-flow text.
@@ -444,6 +502,16 @@
       let p = prof.p || 0.3;
       let opens = (prof.open || []).slice();
       let closes = (prof.close || []).slice();
+      // AGE VOICE (Steve 2026-10-06): a brash young bold villager and a
+      // flinty elder bold villager share a temperament and sound nothing
+      // alike. The age set layers with temperament -- never overrides it.
+      const ageSetId = this.npcVoiceSet(vid);
+      const ageBand = (this.npcAgeBand ? this.npcAgeBand(vid) : 'adult') || 'adult';
+      if (ageSetId) {
+        const aset = (((V.ageSets || {})[ageBand] || {})[ageSetId]) || {};
+        if (aset.open) opens = opens.concat(aset.open);
+        if (aset.close) closes = closes.concat(aset.close);
+      }
       for (const m of mods) {
         const st = (V.states || {})[m] || {};
         if (st.open) opens = opens.concat(st.open);
@@ -459,7 +527,7 @@
       const pool = useOpen ? opens : closes;
       // Mannerisms cycle, never exhaust: real people repeat their tics.
       // convoPickCycle reshuffles when the pool runs dry.
-      const bit = this.convoPickCycle(vid, 'voice:' + temp + ':' + mods.join('+') + ':' + (useOpen ? 'o' : 'c'), pool);
+      const bit = this.convoPickCycle(vid, 'voice:' + temp + ':' + ageBand + ':' + (ageSetId || 'none') + ':' + mods.join('+') + ':' + (useOpen ? 'o' : 'c'), pool);
       if (!bit) return line;
       return useOpen ? '"' + bit + inner + '"' : '"' + inner + ' ' + bit + '"';
     },

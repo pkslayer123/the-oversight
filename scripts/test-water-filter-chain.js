@@ -45,8 +45,8 @@ function lightFire() {
   // ---- 1. recipes known from game start ----
   const R = Game.state.codex.recipes || {};
   ok('cloth recipe known at L3', (R.cloth || {}).level === 3);
-  ok('wooden_cup recipe known at L3', (R.wooden_cup || {}).level === 3);
   ok('water_filter recipe known at L3', (R.water_filter || {}).level === 3);
+  ok('no wooden_cup recipe (containers assumed, not crafted)', !R.wooden_cup);
   ok('opening narration mentions the filter chain', /water filter/i.test(openingLog));
 
   // ---- 2. weave cloth from plant fiber ----
@@ -58,16 +58,7 @@ function lightFire() {
   ok('cloth item carries material key', !!cloth && cloth.units >= 1);
   say();
 
-  // ---- 3. burn-hollow a wooden cup ----
-  s.inventory.push({ material: 'branch', units: 4, name: 'Branch', kcalEach: 0, spoilDay: 9999, kg: 0.5 });
-  made = null;
-  for (let i = 0; i < 8 && !made; i++) made = Game.craft('wooden_cup');
-  ok('wooden cup crafts from 2 branches', !!made);
-  const cup = s.inventory.find(i => i.material === 'container');
-  ok('cup item carries container material key', !!cup);
-  say();
-
-  // ---- 4. rake charcoal from a campfire ----
+  // ---- 3. rake charcoal from a campfire ----
   lightFire();
   ok('nearFire true with lit fire', Game.nearFire());
   const before = Game.materialCount('charcoal');
@@ -82,8 +73,8 @@ function lightFire() {
   ok('second raking refused (daily limit)', /already raked/i.test(log2));
   ok('no extra charcoal on refused raking', Game.materialCount('charcoal') === after);
 
-  // ---- 5. craft the water filter ----
-  ok('have all three materials', Game.materialCount('cloth') >= 1 && Game.materialCount('charcoal') >= 1 && Game.materialCount('container') >= 1);
+  // ---- 4. craft the water filter (containers assumed, not crafted) ----
+  ok('have both materials', Game.materialCount('cloth') >= 1 && Game.materialCount('charcoal') >= 1);
   made = null;
   for (let i = 0; i < 8 && !made; i++) made = Game.craft('water_filter');
   ok('water filter crafts', !!made);

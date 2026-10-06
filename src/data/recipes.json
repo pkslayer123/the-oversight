@@ -113,34 +113,17 @@
     }
   },
   {
-    "id": "wooden_cup",
-    "name": "Wooden cup",
-    "description": "a branch section burned hollow. holds water, mostly.",
-    "materials": {
-      "branch": 2
-    },
-    "durable": true,
-    "producesMaterial": "container",
-    "kg": 0.3,
-    "knowledgeLevels": {
-      "1": "A wooden cup, charred inside. Someone burned it hollow.",
-      "2": "Materials: 2 branches. Lay a coal on the cut face, blow it hollow, scrape the char.",
-      "3": "You can make one. Set a coal on the flat-cut branch end and nurse it inward — the char is the cup. Scrape it smooth."
-    }
-  },
-  {
     "id": "water_filter",
     "name": "Water Filter",
-    "description": "cloth and charcoal in a container. makes murky water safe.",
+    "description": "cloth and charcoal layered in any container. makes murky water safe.",
     "materials": {
       "cloth": 1,
-      "charcoal": 1,
-      "container": 1
+      "charcoal": 1
     },
     "uses": 20,
     "knowledgeLevels": {
       "1": "A filter. Dirty water in, clean out.",
-      "2": "Materials: cloth + charcoal (from fire) + container. Layer them.",
+      "2": "Materials: cloth + charcoal (from fire). Layer them in a container.",
       "3": "You can make one. Cloth on bottom, charcoal, pour through."
     }
   },
