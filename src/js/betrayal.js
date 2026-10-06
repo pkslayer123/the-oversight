@@ -2097,6 +2097,17 @@
     if (!s || s.exiled) return;
     // backstop: the justice ladder demanded a moot — the formal track is not optional
     try { if (this.justiceState().mootDemanded) return this.forcePlayerAccusation(); } catch (e) {}
+    // LADDER PRECEDENCE (Steve 2026-10-06): the justice ladder owns the
+    // player's arc — cold shoulder, then confrontation, THEN the moot.
+    // While heat sits in the confrontation zone (50+) and the ladder hasn't
+    // gone formal, the village confronts instead of convening: the intimate
+    // "blocks your path" beat gets its chance before the fire-trial machinery.
+    // The ladder hands the case over itself (mootDemanded) on refusal,
+    // silence-timeout, or heat that keeps climbing.
+    try {
+      const j = this.justiceState();
+      if (j && !j.mootDemanded && j.stage <= 2 && this.justiceHeat() >= 50) return;
+    } catch (e) {}
     const bs = this.betrayalState();
     if ((bs.cases || []).some(c => (c.status === 'open' || c.status === 'dormant') && c.accused.includes(this.villagerId))) return;
     let crimes = [];

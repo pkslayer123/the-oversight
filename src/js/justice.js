@@ -5,7 +5,9 @@
 //   - reportCrime()
 //   - holdTrial()
 // rules:
-//   - (none documented)
+//   - one_ladder: cold shoulder -> confrontation -> moot -> uprising; the moot is the ONE formal track (code: justiceTick)
+//   - confrontation_first: heat 50+ holds the formal track until the ladder demands the moot — refusal, silence-timeout, or heat 70+ (code: considerPlayerAccusation, justiceTick)
+//   - refused_payment_not_taken: a failed restitution offer costs nothing — refused food stays in the pack (code: justiceRespond)
 // consumes:
 //   - village.laws
 //   - scholar.crimes
@@ -119,6 +121,17 @@
       // STAGE 2 -> 3: refused, or heat keeps climbing -> the village goes formal.
       // The moot (betrayal.js) is the ONE formal track. No parallel exile vote,
       // no double jeopardy: one crime spree, one trial.
+      // Silence times out: two days with a pending confrontation and no answer
+      // counts as refusal — the village won't wait on you forever.
+      if (j.stage === 2 && j.pendingConfront && !j.mootDemanded) {
+        const day = this.state.scholar.day;
+        if (day - (j.confrontDay || day) >= 2) {
+          const cname = j.confrontedBy ? this.displayName(j.confrontedBy) : 'The village';
+          this.say(`⚖ ${cname} waited two days for your answer. None came. "Silence is an answer too."`);
+          j.confrontRefused = true;
+          j.pendingConfront = false;
+        }
+      }
       if (j.stage === 2 && (j.confrontRefused || heat >= 70)) {
         j.stage = 3;
         if (!j.mootDemanded) {
@@ -169,11 +182,15 @@
       if (!vid) return;
       j.confrontedBy = vid;
       j.pendingConfront = true;
+      // CONFRONTATION TIMEOUT (Steve 2026-10-06): silence is an answer too.
+      // Ignoring the confronter doesn't stall the ladder — two days with no
+      // answer and the village goes formal on its own.
+      j.confrontDay = this.state.scholar.day;
       const name = this.displayName(vid);
       const murders = j.crimes.filter(c => c.type === 'murder').length;
       const line = murders > 0
-        ? `"${name} steps in front of you. \"We know what you did. Say it wasn't you — go on, try.\" Their hands are shaking. Not from fear. \"You pay it back, or you go. Those are the choices.\""`
-        : `"${name} blocks your path. \"We need to talk about the stores. About what you've been taking.\" A few others are watching, not approaching. \"Make it right, or leave. Your call.\""`
+        ? `${name} steps in front of you. "We know what you did. Say it wasn't you — go on, try." Their hands are shaking. Not from fear. "You pay it back, or you go. Those are the choices."`
+        : `${name} blocks your path. "We need to talk about the stores. About what you've been taking." A few others are watching, not approaching. "Make it right, or leave. Your call."`
       ;
       this.say('⚖ ' + line);
       this.say('(Find them and answer — pay restitution, or refuse. Attacking them answers too.)');
@@ -197,14 +214,21 @@
     // Player answers the confrontation: 'pay' | 'refuse'
     justiceRespond(choice) {
       const j = this.justiceState();
+      // No pending confrontation, no answer: the button only renders while
+      // justicePendingConfront is true, but the function must not double-charge.
+      if (!j.pendingConfront || !j.confrontedBy) return null;
       const vid = j.confrontedBy;
       const name = vid ? this.displayName(vid) : 'They';
       if (choice === 'pay') {
         const owed = this.justiceRestitutionOwed();
-        // pay from inventory food first, then pantry contribution credit
-        let paid = 0;
+        // Plan the payment BEFORE moving anything. The fiction is they LOOK
+        // at what you offer and refuse it — refused food stays in your pack.
+        // (Before 2026-10-06 the food was moved to the pantry first, so a
+        // failed offer cost you the food AND the confrontation. "They didn't
+        // accept it" has to mean they didn't take it.)
         const inv = this.state.scholar.inventory || [];
-        // edible items: move kcal worth into the pantry
+        const plan = [];
+        let paid = 0;
         for (const it of inv) {
           if (paid >= owed) break;
           const kcalEach = it.kcalEach || 0;
@@ -212,16 +236,20 @@
           const need = owed - paid;
           const takeUnits = Math.min(it.units, Math.ceil(need / kcalEach));
           if (takeUnits <= 0) continue;
+          plan.push([it, takeUnits]);
           paid += takeUnits * kcalEach;
-          it.units -= takeUnits;
-          try { this.addPantryKcal ? this.addPantryKcal(takeUnits * kcalEach) : null; } catch (e) {}
         }
-        // clean up emptied stacks
-        this.state.scholar.inventory = inv.filter(i => (i.units || 0) > 0);
         if (paid < owed * 0.5) {
           this.say(`${name} looks at what you offer. "That's not enough. Not close." The confrontation isn't over.`);
           return { paid, enough: false };
         }
+        // pay from inventory food first, then pantry contribution credit
+        for (const [it, takeUnits] of plan) {
+          it.units -= takeUnits;
+          try { this.addPantryKcal ? this.addPantryKcal(takeUnits * (it.kcalEach || 0)) : null; } catch (e) {}
+        }
+        // clean up emptied stacks
+        this.state.scholar.inventory = inv.filter(i => (i.units || 0) > 0);
         j.amendsCredit = (j.amendsCredit || 0) + Math.round(paid / 100);
         j.pendingConfront = false;
         j.confrontedBy = null;
