@@ -140,14 +140,41 @@
     var navigated = false;
     function go() {
       if (navigated) return; navigated = true;
-      // Steve 2026-10-06: iOS PWA navigation is broken (black screens).
-      // Don't navigate - just tell user to close/reopen. 100% reliable.
+      show('&#8635; Reloading into the new version&hellip;');
       try {
-        if (remoteVersion) sessionStorage.setItem('oversight_expect_version', remoteVersion);
-      } catch (e) {}
-      show('&#9989; Update ready!<br><br><b>Close the app completely</b> (swipe up from app switcher)<br>then reopen it to load the new version.');
-      state = 'manual';
+        var u = new URL(window.location.href);
+        u.search = '';
+        u.searchParams.set('v', remoteVersion || Date.now().toString(36));
+        window.location.href = u.toString();
+      } catch (e) {
+        try { window.location.reload(); } catch (e2) { fail(); }
+      }
     }
+    function withTimeout(p, ms) {
+      return Promise.race([p, new Promise(function (res) { setTimeout(res, ms); })]);
+    }
+    try {
+      var cleanups = [];
+      if ('serviceWorker' in navigator) {
+        cleanups.push(withTimeout(
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return withTimeout(Promise.all(regs.map(function (r) {
+              return withTimeout(r.unregister().catch(function () {}), 2000);
+            })), 2500);
+          }).catch(function () {}), 3000));
+      }
+      if ('caches' in window) {
+        cleanups.push(withTimeout(
+          caches.keys().then(function (ks) {
+            return withTimeout(Promise.all(ks.map(function (k) {
+              return withTimeout(caches.delete(k).catch(function () {}), 2000);
+            })), 2500);
+          }).catch(function () {}), 3000));
+      }
+      withTimeout(Promise.all(cleanups), 7000).then(go).catch(go);
+      // Absolute backstop: navigate in 8s no matter what hangs.
+      setTimeout(go, 8000);
+    } catch (e) { go(); }
     function withTimeout(p, ms) {
       return Promise.race([p, new Promise(function (res) { setTimeout(res, ms); })]);
     }
