@@ -492,6 +492,24 @@
       return c;
     },
 
+    // UNIQUE-PERSON LAW (Steve 2026-10-06): two villagers asking the player
+    // the identical verbatim question reads as a fixed cast, not unique
+    // individuals. Track question ids asked by ANYONE village-wide; draws
+    // prefer globally-unasked questions and only repeat when the pool is
+    // exhausted (a small camp does circle back to the same worries).
+    villageAskedQs() {
+      const v = this.state.village || {};
+      v.askedQsAny = v.askedQsAny || [];
+      return v.askedQsAny;
+    },
+    noteAskedQ(qid) {
+      if (!qid) return;
+      try {
+        const a = this.villageAskedQs();
+        if (a.indexOf(qid) === -1) a.push(qid);
+      } catch (e) {}
+    },
+
     // synthPrototype: derive Want/Know/Feel/Secret for generated villagers
     // from their occupation, personality, and backstory. Not hand-authored,
     // but specific enough to feel like a person, not a template.
@@ -1867,6 +1885,7 @@
             c.pendingQ = hb.ask;
             c.qCount = (c.qCount || 0) + 1;
             if (c.askedQs.indexOf(hb.ask.id) === -1) c.askedQs.push(hb.ask.id);
+            try { this.noteAskedQ(hb.ask.id); } catch (e) {}
             c.heldAsk = false;
           }
           const gl = this.convoGoonLabel(vid);
@@ -1897,6 +1916,7 @@
         const ad = qd && qd.answers.find(a => a.id === aid);
         c.answered[qid] = aid;
         if (c.askedQs.indexOf(qid) === -1) c.askedQs.push(qid);
+        try { this.noteAskedQ(qid); } catch (e) {}
         c.pendingQ = null;
         let react = (ad && ad.react) || '"Huh. Okay."';
         const regionNow = (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'there';
@@ -1914,6 +1934,7 @@
         const qid = c.pendingQ && c.pendingQ.id;
         c.pendingQ = null;
         if (qid && c.askedQs.indexOf(qid) === -1) c.askedQs.push(qid);
+        try { this.noteAskedQ(qid); } catch (e) {}
         const t = this.state.village.trust || {};
         t[vid] = Math.max(0, (t[vid] || 10) - 1);
         // MOOD: dodging a direct question cools the room.
@@ -1946,9 +1967,15 @@
           // question with real answers (pendingQ machinery).
           const cg2 = (this.data.characterGen || {}).convo || {};
           const prefer = ['q_miss', 'q_regret', 'q_first_memory', 'q_hope', 'q_scared', 'q_trust'];
-          let pool = (cg2.questions || []).filter(q => prefer.indexOf(q.id) !== -1 && c.askedQs.indexOf(q.id) === -1);
+          const askedAny = this.villageAskedQs();
+          let pool = (cg2.questions || []).filter(q => prefer.indexOf(q.id) !== -1 && c.askedQs.indexOf(q.id) === -1 && askedAny.indexOf(q.id) === -1);
+          if (!pool.length) pool = (cg2.questions || []).filter(q => prefer.indexOf(q.id) !== -1 && c.askedQs.indexOf(q.id) === -1);
+          if (!pool.length) pool = (cg2.questions || []).filter(q => c.askedQs.indexOf(q.id) === -1 && askedAny.indexOf(q.id) === -1);
           if (!pool.length) pool = (cg2.questions || []).filter(q => c.askedQs.indexOf(q.id) === -1);
           const qd = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+          // village-wide note at draw time: the next "ask me something real"
+          // draws from what's left, even before this one is revealed.
+          try { this.noteAskedQ(qd && qd.id); } catch (e) {}
           t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
           // MOOD: warmth follows the trust delta.
           mshift(Math.sign(ad.trust || 0));
@@ -1957,8 +1984,7 @@
           // ONE-BEAT TURNS (Steve 2026-10-05): the question queues behind
           // "Of course. Ask." — pendingQ/askedQs/qCount land when the
           // continuer reveals it, never before the player has seen it asked.
-          if (qd) extraQ = qd;
-        } else if (ad) {
+          if (qd) extraQ = qd;        } else if (ad) {
           t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + (ad.trust || 0)));
           // MOOD: warmth follows the trust delta — kind answers warm,
           // cruel or dismissive ones cool. No separate data needed.
@@ -2387,9 +2413,14 @@
         } else if (!droveThread && !justAnswered && !c.windingDown && (forceQ || ((c.qCount || 0) < 2 && Math.random() < 0.3))) {
           const trust = (this.state.village.trust || {})[vid] || 10;
           const moodNow = this.npcMood(vid);
-          const cands = (cg.questions || []).filter(q =>
-            c.askedQs.indexOf(q.id) === -1 && trust >= (q.minTrust || 0) &&
-            (!q.when || q.when === moodNow));
+          const askedAny = this.villageAskedQs();
+          const qok = (q) => trust >= (q.minTrust || 0) && (!q.when || q.when === moodNow);
+          // prefer questions nobody has asked the player yet (unique-person
+          // law) — fall back to per-villager-unasked when the pool runs dry.
+          let cands = (cg.questions || []).filter(q =>
+            c.askedQs.indexOf(q.id) === -1 && askedAny.indexOf(q.id) === -1 && qok(q));
+          if (!cands.length) cands = (cg.questions || []).filter(q =>
+            c.askedQs.indexOf(q.id) === -1 && qok(q));
           if (cands.length) {
             const qd = cands[Math.floor(Math.random() * cands.length)];
             // BRIDGE: pivoting off a live thread without a breath reads as
@@ -2408,7 +2439,10 @@
             }
             // Asked is asked — but only when it's actually asked: pendingQ,
             // qCount, and askedQs land when the continuer reveals the
-            // question, never before the player has seen it.
+            // question, never before the player has seen it. The
+            // village-wide note lands at queue time (idempotent) so two
+            // back-to-back conversations can't draw the same question.
+            try { this.noteAskedQ(qd.id); } catch (e) {}
             c.heldBeats.push({ text: qd.q, ask: qd });
             c.heldAsk = true;
             // The answer and their question stay SEPARATE transcript entries —

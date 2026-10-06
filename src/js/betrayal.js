@@ -167,7 +167,20 @@
             if (heard) role = ', the ' + String(heard).toLowerCase().replace(/\s*\(.*?\)/g, '').trim();
           }
         } catch (e) {}
-        return 'the ' + who + ' in ' + poss + ' ' + band + role;
+        // UNIQUE-PERSON LAW (Steve 2026-10-06): two villagers can share pro +
+        // age band, so whoTag would print "the person in their 30s" for two
+        // different suspects and the player can't tell them apart. Mirror
+        // game.js's personDescriptor collision handling: append a stable,
+        // purely-observable trait (no knowledge leak — hair, build, marks).
+        let traitBit = '';
+        try {
+          if (this.descriptorCollides && this.descriptorCollides(vid) &&
+              typeof this.personVisibleTrait === 'function') {
+            const trait = this.personVisibleTrait(vid);
+            if (trait) traitBit = ', ' + trait;
+          }
+        } catch (e2) {}
+        return 'the ' + who + ' in ' + poss + ' ' + band + traitBit + role;
       } catch (e) { return 'someone'; }
     },
 
@@ -461,7 +474,7 @@
       'We\'re not monsters. We just need you gone.',
       'Nothing personal. That\'s the worst part, isn\'t it?',
     ])}" ${leader} won't quite meet your eyes. Their hands are shaking.`);
-    plot.round = 0; plot.talksLeft = 2;
+    plot.round = 0; plot.talksLeft = 3;
     plot.aware = plot.tells.length >= 2;
     // open the ambush conversation: RUN / TALK / FIGHT each exchange
     try {
@@ -519,8 +532,11 @@
     }
     if (choice === 'talk') {
       if ((plot.talksLeft || 0) <= 0) {
-        this.say(`"No more talking." The moment's gone.`);
-        return { continue: true };
+        // the UI hides TALK once talks run out (convoChoices gate), but a
+        // raw call must not spin forever: the beat is over, the confrontation
+        // moves on. (Steve 2026-10-06: ambush talk-loop stuck state)
+        this.say(`"No more talking." The moment's gone — and they know it.`);
+        return { continue: false, line: `No more talking. The moment's gone.` };
       }
       plot.talksLeft--;
       plot.stalled = (plot.stalled || 0) + 1;
@@ -548,6 +564,22 @@
           : `You talk through the shaking. ${Wtag} has stopped pretending. "I'm sorry," they whisper. Not to you — to the leader. The whole thing is coming apart.`);
       }
       try { this.addDoubt(waver, 'observation', `${wtag} wavered when you talked instead of running. They don't want this.`); } catch (e) {}
+      // TALK-DOWN (Steve 2026-10-06): three rounds of talk fray the plan to
+      // the breaking point — the fiction already promises "the whole thing
+      // is coming apart," so the mechanics have to let it actually come
+      // apart. Talk becomes a real path: likely, not certain. On failure they
+      // snap back and the confrontation continues (run/fight only).
+      if (n >= 3) {
+        const p = alone ? 0.6 : 0.7;
+        if (R() < p) {
+          const leaderTag = this.whoTag(plot.leader);
+          this.say(alone
+            ? `${Wtag} puts their hands down. "I can't—" A breath. "I can't do this." They back off a step, then another. The walk home is going to be the longest of their life.`
+            : `${Wtag} drops their hands. "Stop. Just — stop." ${this.capFirst(leaderTag)} stares at them like a stranger. The others look at the ground. Nobody moves to stop you leaving.`);
+          return this.ambushAftermath(plot, 'talked_down');
+        }
+        this.say(`${this.capFirst(this.whoTag(plot.leader))} shakes their head hard, like clearing water from their ears. "No. We're doing this." The crack is still there — but they've decided to walk past it.`);
+      }
       return { continue: true, line: `A long second. Nobody moves. You've bought a little distance — use it.` };
     }
     // fight
@@ -647,7 +679,20 @@
       s.health = Math.max(1, (s.health || 100) - 10);
       try { this.addTrauma(18); } catch (e) {}
     }
+    if (outcome === 'talked_down') {
+      // nobody bled — but the village still hears about the plot, and the
+      // talk-down itself is evidence: they backed off when confronted.
+      this.say(`You walk back to Haven with all of them, at a distance, in silence. Alive — and nobody's hands are clean, least of all theirs.`);
+      try { this.addTrauma(6); } catch (e) {}
+    }
     const c = this.openCase(plot, 'ambush');
+    if (outcome === 'talked_down') {
+      c.talkedDown = true;
+      try {
+        this.notePlayerEvidence && this.notePlayerEvidence(c, 'Talked them down at the site — they backed off when confronted.');
+        this.moveBelief(c, -6, 'the target talked them down, unharmed');
+      } catch (e) {}
+    }
     // THEIR story gets out first — first-mover advantage (seeded in openCase)
     // witnesses: who saw you leave together
     try {
@@ -1208,7 +1253,7 @@
     } else if (path === 'weregild') {
       // verb agreement: "you" takes "pay", a single third person takes "pays"
       const wergildVerb = (c.accused.length === 1 && this.isPlayer(c.accused[0])) || c.accused.length > 1 ? 'pay' : 'pays';
-      this.say(`Weregild. ${namesCap} ${wergildVerb} — food, work, public apology. The price of staying.`);
+      this.say(`Food, work, public apology — ${namesCap} ${wergildVerb} it in the open, where everyone can see. The price of staying.`);
       try {
         v.pantryKcal = (v.pantryKcal || 0) + 3000;
         // the player pays from their own stores — it has to hurt
