@@ -11534,9 +11534,14 @@
           // COMBAT-OVER GUARD (Steve 2026-10-06): if the fight is over but
           // tbfight hasn't cleared yet (or got stuck), do NOT render fighters.
           // Dead fighters on the grid after combat = the softlock bug.
+          // INSIDE SCOPING (Steve 2026-10-06): fights happen OUTSIDE. If the
+          // player is inside Haven, never render field fighters — "they show
+          // on the grid inside too" was the bug. Combat inside is impossible;
+          // the door-flee path ends it.
+          const _inside = Game.state.scholar && Game.state.scholar.insideHaven;
           const tbf = Game.tbfight;
           let drawn = false;
-          if (tbf && !tbf.over) {
+          if (tbf && !tbf.over && !_inside) {
             for (let _mfi = 0; _mfi < tbf.fighters.length; _mfi++) {
               const mf = tbf.fighters[_mfi];
               if (mf.kind !== 'monster' && mf.kind !== 'hostile') continue;
@@ -11550,7 +11555,7 @@
               drawn = true; break;
             }
           }
-          if (!drawn && mon && cx === mon.mx && cy === mon.my) {
+          if (!drawn && mon && !_inside && cx === mon.mx && cy === mon.my) {
             const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
             // INDISTINCT (Steve 2026-10-05): same 'creature' class as animals
             g = `<span data-ent="creature:${esc(mon.id || 'wild')}">${esc(mdef.emoji || '👹')}</span>`;
