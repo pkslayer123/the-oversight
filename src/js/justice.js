@@ -313,15 +313,27 @@
         const cell = detail[y] && detail[y][x];
         return this.cellProps(cell).blocks;
       };
+      // UPRISING SPAWN (Steve 2026-10-06): every fighter gets their OWN tile.
+      // The old code called freeSpotNear fresh per attacker with the same
+      // anchor and no occupancy tracking, so the whole mob stacked on ONE
+      // tile — a "mob" that read as one person, and in tight geometry could
+      // body-block the player's only escape. Door tiles are never spawn
+      // points: the door is the player's way out, it stays clear.
+      const taken = new Set([px + ',' + py]);
       const freeSpotNear = (cx, cy) => {
         for (let r = 1; r <= 5; r++) {
           for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
             const nx = cx + dx, ny = cy + dy;
-            if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || (nx === px && ny === py)) continue;
-            if (!blocked(nx, ny)) return { x: nx, y: ny };
+            if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || taken.has(nx + ',' + ny)) continue;
+            const cell = detail[ny] && detail[ny][nx];
+            if (cell === 'door') continue; // the escape stays clear
+            if (!blocked(nx, ny)) { taken.add(nx + ',' + ny); return { x: nx, y: ny }; }
           }
         }
-        return { x: cx, y: cy };
+        // No free tile in range: ring-offset fallback so fighters never stack.
+        const fb = { x: Math.max(0, Math.min(8, cx + taken.size)), y: Math.max(0, Math.min(8, cy)) };
+        taken.add(fb.x + ',' + fb.y);
+        return fb;
       };
       const fighters = [{
         key: 'p', kind: 'player', name: 'You', emoji: '🧑',
@@ -377,6 +389,14 @@
       }
       this.say('');
       this.say('What do you do? FIGHT, FLEE, or TALK?');
+      // FLEE is a real verb here, not a menu ghost — name the way out, plainly.
+      // Violence in this game is desperate and traumatic, never casual; running
+      // should read like tearing something, not like skipping a cutscene.
+      if (s.insideHaven) {
+        this.say('The doors are behind you. FLEE means through them — into the dark, don\'t stop, don\'t look back. There\'s nothing left in this hall worth turning around for.');
+      } else {
+        this.say('FLEE means the treeline. Walk to the edge of the clearing and push through — run like the dark is on fire. They might follow. Run anyway.');
+      }
       this.sysSay('OH!!! THE VILLAGE IS DOING A JUSTICE!!! The audience is SO conflicted!!! The gamblers don\'t know WHO to bet on!!!');
       this.audioEvent('combatStart');
       // Seed aftermath context at combat START so flee/yield outcomes still resolve.
@@ -420,9 +440,28 @@
         this.say('(The village won\'t rise again. There\'s nothing left to rise. Haven is yours the way a grave is yours.)');
         try { if (this.journalNote) this.journalNote('village', 'uprising', 'They came at me. All of them. I\'m still here. I don\'t know what that means.'); } catch (e) {}
       } else if (result === 'fled') {
+        // You ran. That's a choice too, and the village will treat it as one —
+        // consequences social and permanent, not a mechanical reset.
         this.say('You run. Behind you, the village — was the village. The exile is permanent now. There\'s no vote that brings you back from this.');
+        const allies = lb.uprisingAllies || [];
+        if (allies.length) {
+          const anames = allies.map(id => this.displayName(id)).join(', ');
+          this.say(`${anames} stood with you. The village saw. Whatever this cost you, it cost them more — don't forget who paid it.`);
+        }
+        this.say('Don\'t go back inside. There\'s nothing in there for you anymore.');
+        for (const id of attackers) {
+          if ((v.roster || []).includes(id) && v.trust) v.trust[id] = 0;
+        }
+        try { this.seedGossip('fled_uprising', { trustworthy: -15, brave: -10 }, attackers.slice(0, 3)); } catch (e) {}
+        try { this.addTrauma(10); } catch (e) {}
+        // Door-flee stashes the mob as "waiting monsters" (game.js) — but these
+        // are villagers, not a monster pack, and the uprising is socially
+        // resolved. Clear it, or the next building exit ambushes you with a
+        // phantom bulldozer (startCombat(undefined) fallback).
+        try { this.state.doorFledMonsters = null; } catch (e) {}
         const j = this.justiceState();
         j.stage = 4; j.exiled = true;
+        try { if (this.journalNote) this.journalNote('village', 'uprising', 'I ran. They\'ll call it guilt. Let them. I\'m alive, and the world is big.'); } catch (e) {}
       } else if (result === 'betrayal_yielded') {
         // They yielded — the uprising collapses.
         this.say('One by one, they stop. Weapons lower. Someone is crying. The uprising ends not with victory but with exhaustion.');
@@ -722,6 +761,23 @@
       const lb = this._lastBetrayal;
       if (lb && lb.uprising) lb.result = result;
     } catch (e) {}
+    // UPRISING FLEE (Steve 2026-10-06): game.js's shared combat path says
+    // "You escape. The thicket keeps its secrets." on every 'fled' — monster
+    // fiction, wrong for a social fight, and it lands one line before the
+    // uprising aftermath speaks for itself. Swallow just that line here
+    // rather than touching the shared path.
+    if (result === 'fled' && this.tbfight && this.tbfight.uprising) {
+      const origSay = this.say;
+      this.say = function (s) {
+        if (String(s) === 'You escape. The thicket keeps its secrets.') return;
+        return origSay.call(this, s);
+      };
+      try {
+        return origTbEndJ.call(this, result);
+      } finally {
+        this.say = origSay;
+      }
+    }
     return origTbEndJ.call(this, result);
   };
 
