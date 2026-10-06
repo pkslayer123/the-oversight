@@ -2436,6 +2436,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "Was? Ich verstehe nicht.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Was": "what"
+    }
+   },
+   {
+    "t": "Hä? Sag das noch mal.",
+    "en": "Huh? Say that again.",
+    "kw": {
+     "Sag": "say"
+    }
+   },
+   {
+    "t": "Was sagst du da?",
+    "en": "What are you saying?",
+    "kw": {
+     "Was": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...entschuldige, entschuldige.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "entschuldige": "sorry"
+    }
+   },
+   {
+    "t": "Du bringst mich zum Lachen!",
+    "en": "You make me laugh!",
+    "kw": {
+     "Lachen": "laughter"
+    }
+   },
+   {
+    "t": "Wie lustig!",
+    "en": "How funny!",
+    "kw": {
+     "lustig": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Hilfe... hilf mir, bitte.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Hilfe": "help"
+    }
+   },
+   {
+    "t": "Bitte, ich brauche dich.",
+    "en": "Please, I need you.",
+    "kw": {
+     "brauche": "I need"
+    }
+   },
+   {
+    "t": "Allein schaffe ich das nicht.",
+    "en": "I can't do it alone.",
+    "kw": {
+     "Allein": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Wasser... bitte, Wasser.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Wasser": "water"
+    }
+   },
+   {
+    "t": "Ich habe Durst. Gibst du mir Wasser?",
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "Durst": "thirst"
+    }
+   },
+   {
+    "t": "Meine Kehle ist trocken.",
+    "en": "My throat is dry.",
+    "kw": {
+     "trocken": "dry"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -2545,6 +2637,98 @@
     "en": "We have to go. Right now!",
     "kw": {
      "行く": "to go"
+    }
+   }
+  ],
+  "confused": [
+   {
+    "t": "え？わかりません。",
+    "en": "Huh? I don't understand.",
+    "kw": {
+     "え": "what"
+    }
+   },
+   {
+    "t": "もう一度？",
+    "en": "Say again?",
+    "kw": {
+     "もう一度": "once more"
+    }
+   },
+   {
+    "t": "何を言ってるの？",
+    "en": "What are you saying?",
+    "kw": {
+     "何": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "あはは！…ごめん、ごめん。",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "ごめん": "sorry"
+    }
+   },
+   {
+    "t": "面白いよ、あなた！",
+    "en": "You're funny!",
+    "kw": {
+     "面白い": "funny"
+    }
+   },
+   {
+    "t": "おかしい！",
+    "en": "How funny!",
+    "kw": {
+     "おかしい": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "助けて…助けて、お願い。",
+    "en": "Help... help me, please.",
+    "kw": {
+     "助けて": "help"
+    }
+   },
+   {
+    "t": "お願い、あなたが必要なの。",
+    "en": "Please, I need you.",
+    "kw": {
+     "お願い": "please"
+    }
+   },
+   {
+    "t": "一人じゃ無理だよ。",
+    "en": "I can't do it alone.",
+    "kw": {
+     "一人": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "水…お願い、水。",
+    "en": "Water... please, water.",
+    "kw": {
+     "水": "water"
+    }
+   },
+   {
+    "t": "喉が渇いた。水をくれる？",
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "喉": "throat"
+    }
+   },
+   {
+    "t": "喉がカラカラだ。",
+    "en": "My throat is parched.",
+    "kw": {
+     "喉": "throat"
     }
    }
   ],
@@ -2660,6 +2844,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "뭐? 이해가 안 돼요.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "뭐": "what"
+    }
+   },
+   {
+    "t": "어? 다시 말해요?",
+    "en": "Huh? Say it again?",
+    "kw": {
+     "다시": "again"
+    }
+   },
+   {
+    "t": "뭐라고 하는 거예요?",
+    "en": "What are you saying?",
+    "kw": {
+     "뭐": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "하하! ...미안해요, 미안해요.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "미안해요": "sorry"
+    }
+   },
+   {
+    "t": "너무 웃겨요!",
+    "en": "You're too funny!",
+    "kw": {
+     "웃겨요": "funny"
+    }
+   },
+   {
+    "t": "너무 웃겨서 눈물이 나요.",
+    "en": "I'm laughing till I cry.",
+    "kw": {
+     "웃겨서": "so funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "살려줘요... 도와주세요, 제발.",
+    "en": "Save me... help me, please.",
+    "kw": {
+     "살려줘요": "save me"
+    }
+   },
+   {
+    "t": "제발, 당신이 필요해요.",
+    "en": "Please, I need you.",
+    "kw": {
+     "제발": "please"
+    }
+   },
+   {
+    "t": "혼자서는 안 돼요.",
+    "en": "I can't alone.",
+    "kw": {
+     "혼자서": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "물... 제발, 물.",
+    "en": "Water... please, water.",
+    "kw": {
+     "물": "water"
+    }
+   },
+   {
+    "t": "목말라요. 물 좀 주세요?",
+    "en": "I'm thirsty. Give me water?",
+    "kw": {
+     "목말라요": "thirsty"
+    }
+   },
+   {
+    "t": "목이 다 말랐어요.",
+    "en": "My throat is all dried out.",
+    "kw": {
+     "목": "throat"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -2769,6 +3045,98 @@
     "en": "We have to go. Right now!",
     "kw": {
      "đi": "to go"
+    }
+   }
+  ],
+  "confused": [
+   {
+    "t": "Gì? Tôi không hiểu.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Gì": "what"
+    }
+   },
+   {
+    "t": "Hả? Nói lại đi?",
+    "en": "Huh? Say again?",
+    "kw": {
+     "Hả": "huh"
+    }
+   },
+   {
+    "t": "Bạn đang nói gì vậy?",
+    "en": "What are you saying?",
+    "kw": {
+     "gì": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...xin lỗi, xin lỗi.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "xin lỗi": "sorry"
+    }
+   },
+   {
+    "t": "Bạn làm tôi cười quá!",
+    "en": "You make me laugh!",
+    "kw": {
+     "cười": "laugh"
+    }
+   },
+   {
+    "t": "Buồn cười quá!",
+    "en": "So funny!",
+    "kw": {
+     "Buồn cười": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Cứu... cứu tôi với, làm ơn.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Cứu": "help"
+    }
+   },
+   {
+    "t": "Làm ơn, tôi cần bạn.",
+    "en": "Please, I need you.",
+    "kw": {
+     "cần": "need"
+    }
+   },
+   {
+    "t": "Một mình tôi không được.",
+    "en": "Alone I can't.",
+    "kw": {
+     "Một mình": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Nước... làm ơn, nước.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Nước": "water"
+    }
+   },
+   {
+    "t": "Tôi khát. Cho tôi nước được không?",
+    "en": "I'm thirsty. Can you give me water?",
+    "kw": {
+     "khát": "thirsty"
+    }
+   },
+   {
+    "t": "Cổ họng tôi khô khốc.",
+    "en": "My throat is dry.",
+    "kw": {
+     "khô": "dry"
     }
    }
   ],
@@ -2884,6 +3252,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "Ano? Hindi ko maintindihan.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Ano": "what"
+    }
+   },
+   {
+    "t": "Ha? Pakiulit?",
+    "en": "Huh? Repeat?",
+    "kw": {
+     "Pakiulit": "repeat"
+    }
+   },
+   {
+    "t": "Anong sinasabi mo?",
+    "en": "What are you saying?",
+    "kw": {
+     "Ano": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...pasensya, pasensya.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "pasensya": "sorry"
+    }
+   },
+   {
+    "t": "Nakakatawa ka!",
+    "en": "You're funny!",
+    "kw": {
+     "Nakakatawa": "funny"
+    }
+   },
+   {
+    "t": "Ang nakakatawa!",
+    "en": "So funny!",
+    "kw": {
+     "nakakatawa": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Tulong... tulungan mo ako, pakiusap.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Tulong": "help"
+    }
+   },
+   {
+    "t": "Pakiusap, kailangan kita.",
+    "en": "Please, I need you.",
+    "kw": {
+     "kailangan": "need"
+    }
+   },
+   {
+    "t": "Hindi ko kayang mag-isa.",
+    "en": "I can't do it alone.",
+    "kw": {
+     "mag-isa": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Tubig... pakiusap, tubig.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Tubig": "water"
+    }
+   },
+   {
+    "t": "Nauuhaw ako. Pahingi ng tubig?",
+    "en": "I'm thirsty. Can I have water?",
+    "kw": {
+     "Nauuhaw": "thirsty"
+    }
+   },
+   {
+    "t": "Tuyo na ang lalamunan ko.",
+    "en": "My throat is already dry.",
+    "kw": {
+     "Tuyo": "dry"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -2993,6 +3453,98 @@
     "en": "We have to go. Right now!",
     "kw": {
      "ale": "to go"
+    }
+   }
+  ],
+  "confused": [
+   {
+    "t": "Kisa? Mwen pa konprann.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Kisa": "what"
+    }
+   },
+   {
+    "t": "Han? Repete?",
+    "en": "Huh? Repeat?",
+    "kw": {
+     "Repete": "repeat"
+    }
+   },
+   {
+    "t": "Kisa w ap di la a?",
+    "en": "What are you saying there?",
+    "kw": {
+     "Kisa": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...padon, padon.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "padon": "sorry"
+    }
+   },
+   {
+    "t": "Ou fè m ri!",
+    "en": "You make me laugh!",
+    "kw": {
+     "ri": "laugh"
+    }
+   },
+   {
+    "t": "Ala dròl!",
+    "en": "How funny!",
+    "kw": {
+     "dròl": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Sekou... ede m, tanpri.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Sekou": "help"
+    }
+   },
+   {
+    "t": "Tanpri, mwen bezwen ou.",
+    "en": "Please, I need you.",
+    "kw": {
+     "bezwen": "need"
+    }
+   },
+   {
+    "t": "Mwen pa ka pou kont mwen.",
+    "en": "I can't by myself.",
+    "kw": {
+     "pou kont mwen": "by myself"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Dlo... tanpri, dlo.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Dlo": "water"
+    }
+   },
+   {
+    "t": "Mwen swaf. Ou ka ban m dlo?",
+    "en": "I'm thirsty. Can you give me water?",
+    "kw": {
+     "swaf": "thirsty"
+    }
+   },
+   {
+    "t": "Gòj mwen sèch.",
+    "en": "My throat is dry.",
+    "kw": {
+     "sèch": "dry"
     }
    }
   ],
@@ -3108,6 +3660,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "อะไร? ผมไม่เข้าใจ",
+    "en": "What? I don't understand.",
+    "kw": {
+     "อะไร": "what"
+    }
+   },
+   {
+    "t": "ห๊ะ? พูดอีกที?",
+    "en": "Huh? Say again?",
+    "kw": {
+     "พูด": "speak"
+    }
+   },
+   {
+    "t": "คุณพูดอะไรอยู่?",
+    "en": "What are you saying?",
+    "kw": {
+     "อะไร": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "ฮ่าฮ่า! ...ขอโทษ ขอโทษ",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "ขอโทษ": "sorry"
+    }
+   },
+   {
+    "t": "คุณทำให้ผมหัวเราะ!",
+    "en": "You make me laugh!",
+    "kw": {
+     "หัวเราะ": "laugh"
+    }
+   },
+   {
+    "t": "ตลกมาก!",
+    "en": "So funny!",
+    "kw": {
+     "ตลก": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "ช่วยด้วย... ช่วยผมหน่อย ขอร้อง",
+    "en": "Help... help me, please.",
+    "kw": {
+     "ช่วยด้วย": "help"
+    }
+   },
+   {
+    "t": "ขอร้อง ผมต้องการคุณ",
+    "en": "I beg you, I need you.",
+    "kw": {
+     "ต้องการ": "need"
+    }
+   },
+   {
+    "t": "ผมทำคนเดียวไม่ได้",
+    "en": "I can't do it alone.",
+    "kw": {
+     "คนเดียว": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "น้ำ... ขอร้อง น้ำ",
+    "en": "Water... please, water.",
+    "kw": {
+     "น้ำ": "water"
+    }
+   },
+   {
+    "t": "ผมหิวน้ำ ให้น้ำผมหน่อยได้ไหม?",
+    "en": "I'm thirsty. Can you give me water?",
+    "kw": {
+     "หิวน้ำ": "thirsty"
+    }
+   },
+   {
+    "t": "คอผมแห้งแล้ว",
+    "en": "My throat is dry.",
+    "kw": {
+     "แห้ง": "dry"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -3217,6 +3861,98 @@
     "en": "We must go. Immediately!",
     "kw": {
      "Gitmeliyiz": "we must go"
+    }
+   }
+  ],
+  "confused": [
+   {
+    "t": "Ne? Anlamadım.",
+    "en": "What? I didn't understand.",
+    "kw": {
+     "Ne": "what"
+    }
+   },
+   {
+    "t": "Hı? Tekrar eder misin?",
+    "en": "Huh? Will you repeat?",
+    "kw": {
+     "Tekrar": "repeat"
+    }
+   },
+   {
+    "t": "Ne diyorsun?",
+    "en": "What are you saying?",
+    "kw": {
+     "Ne": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...özür dilerim, özür dilerim.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "özür": "sorry"
+    }
+   },
+   {
+    "t": "Beni güldürüyorsun!",
+    "en": "You make me laugh!",
+    "kw": {
+     "güldürüyorsun": "you make laugh"
+    }
+   },
+   {
+    "t": "Ne komik!",
+    "en": "How funny!",
+    "kw": {
+     "komik": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "İmdat... yardım et, lütfen.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "İmdat": "help"
+    }
+   },
+   {
+    "t": "Lütfen, sana ihtiyacım var.",
+    "en": "Please, I need you.",
+    "kw": {
+     "ihtiyacım": "I need"
+    }
+   },
+   {
+    "t": "Tek başıma yapamam.",
+    "en": "I can't do it alone.",
+    "kw": {
+     "Tek başıma": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Su... lütfen, su.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Su": "water"
+    }
+   },
+   {
+    "t": "Susadım. Bana su verir misin?",
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "Susadım": "thirsty"
+    }
+   },
+   {
+    "t": "Boğazım kurudu.",
+    "en": "My throat dried out.",
+    "kw": {
+     "kurudu": "dried"
     }
    }
   ],
@@ -3332,6 +4068,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "Co? Nie rozumiem.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Co": "what"
+    }
+   },
+   {
+    "t": "Słucham? Powtórz?",
+    "en": "Pardon? Repeat?",
+    "kw": {
+     "Powtórz": "repeat"
+    }
+   },
+   {
+    "t": "Co ty mówisz?",
+    "en": "What are you saying?",
+    "kw": {
+     "Co": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...przepraszam, przepraszam.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "przepraszam": "sorry"
+    }
+   },
+   {
+    "t": "Rozśmieszasz mnie!",
+    "en": "You make me laugh!",
+    "kw": {
+     "Rozśmieszasz": "you amuse"
+    }
+   },
+   {
+    "t": "Ale śmieszne!",
+    "en": "How funny!",
+    "kw": {
+     "śmieszne": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Pomocy... pomóż mi, proszę.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Pomocy": "help"
+    }
+   },
+   {
+    "t": "Proszę, potrzebuję cię.",
+    "en": "Please, I need you.",
+    "kw": {
+     "potrzebuję": "I need"
+    }
+   },
+   {
+    "t": "Sam nie dam rady.",
+    "en": "I can't manage alone.",
+    "kw": {
+     "Sam": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Woda... proszę, woda.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Woda": "water"
+    }
+   },
+   {
+    "t": "Chce mi się pić. Dasz mi wody?",
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "pić": "to drink"
+    }
+   },
+   {
+    "t": "Mam sucho w gardle.",
+    "en": "My throat is dry.",
+    "kw": {
+     "sucho": "dry"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -3441,6 +4269,98 @@
     "en": "Need to go. Immediately!",
     "kw": {
      "йти": "to go"
+    }
+   }
+  ],
+  "confused": [
+   {
+    "t": "Що? Не розумію.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Що": "what"
+    }
+   },
+   {
+    "t": "Га? Повтори?",
+    "en": "Huh? Repeat?",
+    "kw": {
+     "Повтори": "repeat"
+    }
+   },
+   {
+    "t": "Що ти кажеш?",
+    "en": "What are you saying?",
+    "kw": {
+     "Що": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Хаха! ...вибач, вибач.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "вибач": "sorry"
+    }
+   },
+   {
+    "t": "Ти мене смішиш!",
+    "en": "You make me laugh!",
+    "kw": {
+     "смішиш": "you amuse"
+    }
+   },
+   {
+    "t": "Як смішно!",
+    "en": "How funny!",
+    "kw": {
+     "смішно": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Допоможіть... допоможи мені, будь ласка.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Допоможіть": "help"
+    }
+   },
+   {
+    "t": "Будь ласка, ти мені потрібен.",
+    "en": "Please, I need you.",
+    "kw": {
+     "потрібен": "needed"
+    }
+   },
+   {
+    "t": "Я сам не впораюся.",
+    "en": "I can't manage alone.",
+    "kw": {
+     "сам": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Вода... будь ласка, вода.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Вода": "water"
+    }
+   },
+   {
+    "t": "Хочу пити. Даси води?",
+    "en": "I want to drink. Will you give water?",
+    "kw": {
+     "пити": "to drink"
+    }
+   },
+   {
+    "t": "У мене пересохло в горлі.",
+    "en": "My throat dried out.",
+    "kw": {
+     "пересохло": "dried out"
     }
    }
   ],
@@ -3556,6 +4476,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "কী? আমি বুঝতে পারছি না।",
+    "en": "What? I can't understand.",
+    "kw": {
+     "কী": "what"
+    }
+   },
+   {
+    "t": "হ্যাঁ? আবার বলো?",
+    "en": "Huh? Say again?",
+    "kw": {
+     "আবার": "again"
+    }
+   },
+   {
+    "t": "তুমি কী বলছো?",
+    "en": "What are you saying?",
+    "kw": {
+     "কী": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "হাহা! ...দুঃখিত, দুঃখিত।",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "দুঃখিত": "sorry"
+    }
+   },
+   {
+    "t": "তুমি আমাকে হাসাচ্ছো!",
+    "en": "You make me laugh!",
+    "kw": {
+     "হাসাচ্ছো": "you make laugh"
+    }
+   },
+   {
+    "t": "কী মজার!",
+    "en": "How funny!",
+    "kw": {
+     "মজার": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "বাঁচাও... আমাকে সাহায্য করো, দয়া করে।",
+    "en": "Help... help me, please.",
+    "kw": {
+     "বাঁচাও": "save"
+    }
+   },
+   {
+    "t": "দয়া করে, তোমাকে আমার দরকার।",
+    "en": "Please, I need you.",
+    "kw": {
+     "দরকার": "need"
+    }
+   },
+   {
+    "t": "একা পারবো না।",
+    "en": "I can't alone.",
+    "kw": {
+     "একা": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "পানি... দয়া করে, পানি।",
+    "en": "Water... please, water.",
+    "kw": {
+     "পানি": "water"
+    }
+   },
+   {
+    "t": "আমার পিপাসা লেগেছে। পানি দেবে?",
+    "en": "I'm thirsty. Will you give water?",
+    "kw": {
+     "পিপাসা": "thirst"
+    }
+   },
+   {
+    "t": "গলা শুকিয়ে গেছে।",
+    "en": "Throat has dried up.",
+    "kw": {
+     "শুকিয়ে": "dried"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -3665,6 +4677,98 @@
     "en": "We must go now!",
     "kw": {
      "መሄድ": "to go"
+    }
+   }
+  ],
+  "confused": [
+   {
+    "t": "ምን? አልገባኝም።",
+    "en": "What? I don't understand.",
+    "kw": {
+     "ምን": "what"
+    }
+   },
+   {
+    "t": "እንደገና?",
+    "en": "Again?",
+    "kw": {
+     "እንደገና": "again"
+    }
+   },
+   {
+    "t": "ምን እያልክ ነው?",
+    "en": "What are you saying?",
+    "kw": {
+     "ምን": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "ሀሀ! ...ይቅርታ፣ ይቅርታ።",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "ይቅርታ": "forgiveness"
+    }
+   },
+   {
+    "t": "አስቂኝ ነህ!",
+    "en": "You are funny!",
+    "kw": {
+     "አስቂኝ": "funny"
+    }
+   },
+   {
+    "t": "ምን አስቂኝ ነው!",
+    "en": "How funny!",
+    "kw": {
+     "አስቂኝ": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "እርዳኝ... እርዳኝ፣ እባክህ።",
+    "en": "Help me... help me, please.",
+    "kw": {
+     "እርዳኝ": "help me"
+    }
+   },
+   {
+    "t": "እባክህ፣ እፈልጋለሁ።",
+    "en": "Please, I need you.",
+    "kw": {
+     "እፈልጋለሁ": "I need"
+    }
+   },
+   {
+    "t": "ብቻዬን አልችልም።",
+    "en": "I can't alone.",
+    "kw": {
+     "ብቻዬን": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "ውሃ... እባክህ፣ ውሃ።",
+    "en": "Water... please, water.",
+    "kw": {
+     "ውሃ": "water"
+    }
+   },
+   {
+    "t": "ተጠምቻለሁ። ውሃ ትሰጠኛለህ?",
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "ተጠምቻለሁ": "I'm thirsty"
+    }
+   },
+   {
+    "t": "ጉሮሬ ደርቋል።",
+    "en": "My throat is dry.",
+    "kw": {
+     "ደርቋል": "dried"
     }
    }
   ],
@@ -3780,6 +4884,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "Apa? Aku tidak mengerti.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Apa": "what"
+    }
+   },
+   {
+    "t": "Hah? Ulangi?",
+    "en": "Huh? Repeat?",
+    "kw": {
+     "Ulangi": "repeat"
+    }
+   },
+   {
+    "t": "Kamu bilang apa?",
+    "en": "What are you saying?",
+    "kw": {
+     "Apa": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...maaf, maaf.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "maaf": "sorry"
+    }
+   },
+   {
+    "t": "Kamu bikin aku ketawa!",
+    "en": "You make me laugh!",
+    "kw": {
+     "ketawa": "laugh"
+    }
+   },
+   {
+    "t": "Lucu sekali!",
+    "en": "So funny!",
+    "kw": {
+     "Lucu": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Tolong... tolong aku, kumohon.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Tolong": "help"
+    }
+   },
+   {
+    "t": "Tolong, aku butuh kamu.",
+    "en": "Please, I need you.",
+    "kw": {
+     "butuh": "need"
+    }
+   },
+   {
+    "t": "Aku tidak bisa sendirian.",
+    "en": "I can't alone.",
+    "kw": {
+     "sendirian": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Air... tolong, air.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Air": "water"
+    }
+   },
+   {
+    "t": "Aku haus. Kasih aku air?",
+    "en": "I'm thirsty. Give me water?",
+    "kw": {
+     "haus": "thirsty"
+    }
+   },
+   {
+    "t": "Tenggorokanku kering.",
+    "en": "My throat is dry.",
+    "kw": {
+     "kering": "dry"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -3889,6 +5085,98 @@
     "en": "We must go. Now!",
     "kw": {
      "gå": "to go"
+    }
+   }
+  ],
+  "confused": [
+   {
+    "t": "Hva? Jeg forstår ikke.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Hva": "what"
+    }
+   },
+   {
+    "t": "Hæ? Kan du gjenta?",
+    "en": "Huh? Can you repeat?",
+    "kw": {
+     "gjenta": "repeat"
+    }
+   },
+   {
+    "t": "Hva er det du sier?",
+    "en": "What are you saying?",
+    "kw": {
+     "Hva": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...unnskyld, unnskyld.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "unnskyld": "sorry"
+    }
+   },
+   {
+    "t": "Du får meg til å le!",
+    "en": "You make me laugh!",
+    "kw": {
+     "le": "to laugh"
+    }
+   },
+   {
+    "t": "Så morsomt!",
+    "en": "So funny!",
+    "kw": {
+     "morsomt": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Hjelp... hjelp meg, vær så snill.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Hjelp": "help"
+    }
+   },
+   {
+    "t": "Vær så snill, jeg trenger deg.",
+    "en": "Please, I need you.",
+    "kw": {
+     "trenger": "I need"
+    }
+   },
+   {
+    "t": "Jeg klarer det ikke alene.",
+    "en": "I can't manage alone.",
+    "kw": {
+     "alene": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Vann... vær så snill, vann.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Vann": "water"
+    }
+   },
+   {
+    "t": "Jeg er tørst. Gir du meg vann?",
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "tørst": "thirsty"
+    }
+   },
+   {
+    "t": "Halsen min er tørr.",
+    "en": "My throat is dry.",
+    "kw": {
+     "tørr": "dry"
     }
    }
   ],
@@ -4004,6 +5292,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "Kí? Èmi kò lóye.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Kí": "what"
+    }
+   },
+   {
+    "t": "Ẹhẹ́n? Sọ lẹ́ẹ̀kan sí i.",
+    "en": "Hmm? Say it again.",
+    "kw": {
+     "Sọ": "say"
+    }
+   },
+   {
+    "t": "Kí ni o ń sọ?",
+    "en": "What are you saying?",
+    "kw": {
+     "Kí": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Háhá! ...ẹ dáríjì, ẹ dáríjì.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "ẹ dáríjì": "sorry"
+    }
+   },
+   {
+    "t": "O mú mi ẹ̀rín.",
+    "en": "You made me laugh.",
+    "kw": {
+     "ẹ̀rín": "laughter"
+    }
+   },
+   {
+    "t": "Ó jẹ́ kí n rẹ́rìn gan!",
+    "en": "It really makes me laugh!",
+    "kw": {
+     "rẹ́rìn": "laugh"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Ìrànlọ́wọ́... ràn mí lọ́wọ́, ẹ jọ̀wọ́.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Ìrànlọ́wọ́": "help"
+    }
+   },
+   {
+    "t": "Ẹ jọ̀wọ́, ìrànlọ́wọ́ rẹ ni mo ń fẹ́.",
+    "en": "Please, it's your help I want.",
+    "kw": {
+     "ìrànlọ́wọ́": "help"
+    }
+   },
+   {
+    "t": "Ní ìkán mi, èmi kò lè ṣe é.",
+    "en": "By myself, I can't do it.",
+    "kw": {
+     "ìkán mi": "by myself"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Omi... ẹ jọ̀wọ́, omi.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Omi": "water"
+    }
+   },
+   {
+    "t": "Oǹgbẹ ń gbẹ mí. Ṣe o lè fún mi ní omi?",
+    "en": "Thirst is drying me. Can you give me water?",
+    "kw": {
+     "Oǹgbẹ": "thirst"
+    }
+   },
+   {
+    "t": "Ọ̀fun mi gbẹ.",
+    "en": "My throat is dry.",
+    "kw": {
+     "gbẹ": "dry"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -4116,6 +5496,98 @@
     }
    }
   ],
+  "confused": [
+   {
+    "t": "Dɛn? Mente aseɛ.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Dɛn": "what"
+    }
+   },
+   {
+    "t": "Hã? Ka bio?",
+    "en": "Huh? Say again?",
+    "kw": {
+     "Ka": "say"
+    }
+   },
+   {
+    "t": "Dɛn na woreka?",
+    "en": "What are you saying?",
+    "kw": {
+     "Dɛn": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...kafara, kafara.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "kafara": "pardon"
+    }
+   },
+   {
+    "t": "Woma me sere!",
+    "en": "You made me laugh!",
+    "kw": {
+     "sere": "laugh"
+    }
+   },
+   {
+    "t": "Ɛyɛ anika kɛse!",
+    "en": "It's so funny!",
+    "kw": {
+     "anika": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Mmoa... boa me, mesrɛ wo.",
+    "en": "Help... help me, I beg you.",
+    "kw": {
+     "Mmoa": "help"
+    }
+   },
+   {
+    "t": "Mesrɛ wo, mehia wo.",
+    "en": "I beg you, I need you.",
+    "kw": {
+     "mehia": "need"
+    }
+   },
+   {
+    "t": "Mentumi nyɛ nko ara.",
+    "en": "I can't do it alone.",
+    "kw": {
+     "nko ara": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Nsuo... mesrɛ wo, nsuo.",
+    "en": "Water... I beg you, water.",
+    "kw": {
+     "Nsuo": "water"
+    }
+   },
+   {
+    "t": "Nsukɔm de me. Wobɛma me nsuo?",
+    "en": "Thirst has caught me. Will you give me water?",
+    "kw": {
+     "Nsukɔm": "thirst"
+    }
+   },
+   {
+    "t": "M'anomu wo.",
+    "en": "My mouth is dry.",
+    "kw": {
+     "anomu": "mouth"
+    }
+   }
+  ],
   "fewWords": [
    "Hello?",
    "Food?",
@@ -4225,6 +5697,98 @@
     "en": "We must leave. Right now!",
     "kw": {
      "tuondoke": "we leave"
+    }
+   }
+  ],
+  "confused": [
+   {
+    "t": "Nini? Sielewi.",
+    "en": "What? I don't understand.",
+    "kw": {
+     "Nini": "what"
+    }
+   },
+   {
+    "t": "Eh? Rudia?",
+    "en": "Huh? Repeat?",
+    "kw": {
+     "Rudia": "repeat"
+    }
+   },
+   {
+    "t": "Unasema nini?",
+    "en": "What are you saying?",
+    "kw": {
+     "nini": "what"
+    }
+   }
+  ],
+  "laugh": [
+   {
+    "t": "Haha! ...samahani, samahani.",
+    "en": "Haha! ...sorry, sorry.",
+    "kw": {
+     "samahani": "sorry"
+    }
+   },
+   {
+    "t": "Unanichekesha!",
+    "en": "You make me laugh!",
+    "kw": {
+     "chekesha": "make laugh"
+    }
+   },
+   {
+    "t": "Inachekesha sana!",
+    "en": "So funny!",
+    "kw": {
+     "chekesha": "funny"
+    }
+   }
+  ],
+  "need_help": [
+   {
+    "t": "Msaada... nisaidie, tafadhali.",
+    "en": "Help... help me, please.",
+    "kw": {
+     "Msaada": "help"
+    }
+   },
+   {
+    "t": "Tafadhali, nakuhitaji.",
+    "en": "Please, I need you.",
+    "kw": {
+     "hitaji": "need"
+    }
+   },
+   {
+    "t": "Siwezi peke yangu.",
+    "en": "I can't alone.",
+    "kw": {
+     "peke yangu": "alone"
+    }
+   }
+  ],
+  "need_water": [
+   {
+    "t": "Maji... tafadhali, maji.",
+    "en": "Water... please, water.",
+    "kw": {
+     "Maji": "water"
+    }
+   },
+   {
+    "t": "Nina kiu. Utanipa maji?",
+    "en": "I'm thirsty. Will you give me water?",
+    "kw": {
+     "kiu": "thirst"
+    }
+   },
+   {
+    "t": "Koo langu limekauka.",
+    "en": "My throat is dry.",
+    "kw": {
+     "kauka": "dry"
     }
    }
   ],

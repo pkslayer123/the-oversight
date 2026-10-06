@@ -332,5 +332,163 @@
       "tease1": "Death filed the paperwork. You lost it. Death is getting annoyed.",
       "tease2": "You came back *again*, and for a moment death itself seemed to hesitate \u2014 like it was checking its notes, confused. Then it remembered its job."
     }
+  },
+{
+  "id": "field_pharmacy",
+  "name": "Field Pharmacy",
+  "requires": [
+    "field_medicine",
+    "herbal_remedy"
+  ],
+  "minLevel": 1,
+  "modifiers": [
+    {
+      "target": "healing.amount",
+      "op": "multiply",
+      "value": 1.2
+    }
+  ],
+  "flags": [],
+  "flavor": "Grow the cure. Apply the cure. Repeat.",
+  "discovery": "\"You GROW the medicine AND you USE the medicine?! Vertical integration! The sponsors want to franchise you! One location! MANY wounds! DOCTOR! DOCTOR!\"",
+  "discovery_method": {
+    "type": "sequential",
+    "order": [
+      "herbal_remedy",
+      "field_medicine"
+    ],
+    "hint": "Gather the right plants, then treat the wound. The order matters.",
+    "tease1": "The poultice felt... correct today. The herbs wanted to be exactly where you put them.",
+    "tease2": "Your hands reached for the bandage before your brain finished the diagnosis. They already knew. Two more treatments and they'll know it by heart."
   }
+},
+{
+  "id": "surgeons_calm",
+  "name": "Surgeon's Calm",
+  "requires": [
+    "triage",
+    "steady_hands"
+  ],
+  "minLevel": 1,
+  "modifiers": [
+    {
+      "target": "healing.amount",
+      "op": "add",
+      "value": 6
+    }
+  ],
+  "flags": [],
+  "flavor": "Assess first. Shake never.",
+  "discovery": "\"You LOOK at the wound AND your hands DON'T SHAKE?! The drama division just lost its best cliffhanger! Boring! MAGNIFICENT! BORING!\"",
+  "discovery_method": {
+    "type": "sequential",
+    "order": [
+      "triage",
+      "steady_hands"
+    ],
+    "hint": "Size up the wound first, then work it slow and steady.",
+    "tease1": "You caught yourself pausing before touching the wound. Actually LOOKING at it first. Since when do you do that?",
+    "tease2": "Your hands were steady. Eerily steady. The bleeding stopped cooperating with panic. One more calm treatment and this becomes a habit."
+  }
+},
+{
+  "id": "critter_network",
+  "name": "Critter Network",
+  "requires": [
+    "bird_whisperer",
+    "squirrel_friend"
+  ],
+  "minLevel": 1,
+  "modifiers": [
+    {
+      "target": "forage.gift_chance",
+      "op": "add",
+      "value": 0.1
+    }
+  ],
+  "flags": [],
+  "flavor": "Every small thing owes you a favor.",
+  "discovery": "\"The BIRDS talk to you AND the SQUIRRELS talk to you?! A whole INTELLIGENCE AGENCY of small mammals! The squirrels deny everything! WE HAVE FOOTAGE!\"",
+  "discovery_method": {
+    "type": "sustained",
+    "hint": "Befriend the small things, day after day. Listen more than you speak.",
+    "tease1": "A jay followed you all morning, scolding. It felt like a briefing.",
+    "tease2": "The squirrel left something on your pack. A maple key. Arranged. Deliberately. It was a message. You almost understood it."
+  }
+},
+{
+  "id": "cornered_fury",
+  "name": "Cornered Fury",
+  "requires": [
+    "adrenaline_control",
+    "cornered_rat"
+  ],
+  "minLevel": 1,
+  "modifiers": [
+    {
+      "target": "combat.strike_damage",
+      "op": "multiply",
+      "value": 1.25
+    }
+  ],
+  "flags": [],
+  "flavor": "Backs to walls hit harder. Violence stays desperate, never clean.",
+  "discovery": "\"You let them SURROUND you ON PURPOSE?! That's not a plan! That's a LIFESTYLE! The safety counselors are concerned! The audience is THRILLED!\"",
+  "discovery_method": {
+    "type": "simultaneous",
+    "hint": "Let them surround you. Then stop holding back.",
+    "tease1": "Outnumbered, your hands stopped shaking. That was new. And a little frightening.",
+    "tease2": "Cornered in the last fight, you felt the fear turn. Not away, but INTO something. Into aim. One more corner and it won't turn back."
+  }
+},
+{
+  "id": "clean_plate",
+  "name": "Clean Plate",
+  "requires": [
+    "purify",
+    "iron_stomach"
+  ],
+  "minLevel": 1,
+  "modifiers": [
+    {
+      "target": "food.poison_chance",
+      "op": "multiply",
+      "value": 0.5
+    }
+  ],
+  "flags": [],
+  "flavor": "Clean what you can. Stomach the rest.",
+  "discovery": "\"You CLEAN the food AND your gut forgives EVERYTHING?! The food-safety division is OUTRAGED! The gamblers ate a questionable mushroom in your honor! It's FINE! Probably!\"",
+  "discovery_method": {
+    "type": "sustained",
+    "hint": "Clean your food carefully, day after day. Trust your gut. Literally.",
+    "tease1": "The water tasted wrong today and your stomach just... handled it. Rude of it. Helpful, though.",
+    "tease2": "You ate the thing nobody else would touch. It was fine. Your gut gurgled in a way that sounded almost smug. It's learning your habits."
+  }
+},
+{
+  "id": "polyglots_ledger",
+  "name": "Polyglot's Ledger",
+  "requires": [
+    "translator",
+    "open_book"
+  ],
+  "minLevel": 1,
+  "modifiers": [
+    {
+      "target": "trust.gain_mult",
+      "op": "multiply",
+      "value": 1.25
+    }
+  ],
+  "flags": [],
+  "flavor": "Every language is a door. You carry the keys.",
+  "discovery": "\"You READ their stories AND you SPEAK their tongue?! The subtitling department is OUT OF A JOB! We had to give them hats! KEEP TALKING!\"",
+  "discovery_method": {
+    "type": "sustained",
+    "hint": "Read their world. Listen to their words. Day after day.",
+    "tease1": "A word in their tongue came to you uninvited today. It just arrived, wearing a little hat of context.",
+    "tease2": "You dreamed in two languages and understood both. The journal pages are starting to annotate themselves. Almost."
+  }
+}
 ]

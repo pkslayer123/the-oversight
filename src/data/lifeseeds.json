@@ -10,7 +10,12 @@
     "the summer the grid flickered and never quite came back",
     "the year the deer ate the garden down to the dirt",
     "the winter the river froze loud enough to hear from {town}",
-    "the spring the {workplace} flooded and they worked from boats"
+    "the spring the {workplace} flooded and they worked from boats",
+    "the year the {workplace} switched to nights and forgot to tell the families",
+    "the flood that put the church basement underwater twice in one spring",
+    "the winter the propane ran out in {town} and the school gym became a dormitory",
+    "the spring the well went sulfur and the whole street boiled their water",
+    "the summer the cicadas came and you couldn't hear yourself think"
   ],
   "kin": [
     {
@@ -473,6 +478,116 @@
         "the school",
         "the clinic"
       ]
+    },
+    {
+      "id": "alaska",
+      "label": "the Far North",
+      "land": "tundra, spruce forest, and a winter that eats the sun",
+      "matchTags": [
+        "alaska",
+        "fairbanks",
+        "anchorage",
+        "juneau",
+        "far north",
+        "tundra",
+        "nome"
+      ],
+      "towns": [
+        "Fairbanks",
+        "Juneau",
+        "Anchorage",
+        "Nome",
+        "Bethel",
+        "Sitka"
+      ],
+      "workplaces": [
+        "the cannery",
+        "the air base",
+        "the fishing boat",
+        "the oil field"
+      ]
+    },
+    {
+      "id": "hawaii",
+      "label": "the Islands",
+      "land": "lava rock, cane fields, and rain that comes sideways",
+      "matchTags": [
+        "hawaii",
+        "honolulu",
+        "oahu",
+        "maui",
+        "kauai",
+        "the islands",
+        "aloha"
+      ],
+      "towns": [
+        "Hilo",
+        "Honolulu",
+        "Kahului",
+        "Lihue",
+        "Waimea",
+        "Kailua"
+      ],
+      "workplaces": [
+        "the hotel",
+        "the harbor",
+        "the coffee farm",
+        "the old cannery"
+      ]
+    },
+    {
+      "id": "florida",
+      "label": "Florida",
+      "land": "swamp, sawgrass, and hurricane-season skies",
+      "matchTags": [
+        "florida",
+        "miami",
+        "tampa",
+        "gulf coast",
+        "everglades",
+        "key west"
+      ],
+      "towns": [
+        "Tampa",
+        "Pensacola",
+        "Ocala",
+        "Fort Myers",
+        "Tallahassee",
+        "Key West"
+      ],
+      "workplaces": [
+        "the citrus grove",
+        "the marina",
+        "the airboat dock",
+        "the roadside motel"
+      ]
+    },
+    {
+      "id": "ozarks",
+      "label": "the Ozarks",
+      "land": "oak-hickory hollows, clear springs, and old lead mines",
+      "matchTags": [
+        "ozarks",
+        "arkansas",
+        "missouri",
+        "fayetteville",
+        "branson",
+        "ouachita"
+      ],
+      "towns": [
+        "Fayetteville",
+        "Branson",
+        "Eureka Springs",
+        "Harrison",
+        "Mountain Home",
+        "Jasper"
+      ],
+      "workplaces": [
+        "the sawmill",
+        "the lead mine",
+        "the float-trip outfitter",
+        "the poultry farm"
+      ]
     }
   ],
   "skillOrigins": {
@@ -480,34 +595,41 @@
       "in {kin}'s kitchen",
       "during the hungry years near {town}",
       "salting pork with {kin} every November",
-      "stretching soup at {workplace} when the money ran thin"
+      "stretching soup at {workplace} when the money ran thin",
+      "watching {kin} turn nothing into dinner, winter after winter"
     ],
     "forecast": [
       "from {kin}, who could smell weather coming",
-      "working outdoors near {town}, watching the sky"
+      "working outdoors near {town}, watching the sky",
+      "counting the seconds between lightning and thunder over {town}"
     ],
     "medicinal": [
       "from {kin}, who learned from theirs",
-      "at {workplace}, where it mattered"
+      "at {workplace}, where it mattered",
+      "the winter {kin} got sick and there was no doctor to call"
     ],
     "mending": [
       "from {kin}: measure twice, fix what you can reach",
-      "keeping old machines alive at {workplace}"
+      "keeping old machines alive at {workplace}",
+      "the porch that sagged every spring until {first} fixed it for good"
     ],
     "navigation": [
       "because {kin} made sure of that",
-      "driving the back roads around {town} at night"
+      "driving the back roads around {town} at night",
+      "running messages between {place} and {town} as a kid"
     ],
     "tracking": [
       "from {kin}, before {first} could read books",
       "following deer trails out past {place}",
       "reading bent grass with {kin} on the way to {place}",
-      "learning which birds go quiet when something's coming"
+      "learning which birds go quiet when something's coming",
+      "watching {kin} read the ground like a newspaper"
     ],
     "trapping": [
       "from {kin} at twelve, in the woods past {town}",
       "running a trapline with {kin} one hard winter",
-      "checking {kin}'s trapline before school, fingers too cold to work"
+      "checking {kin}'s trapline before school, fingers too cold to work",
+      "the hard winter when {kin}'s trapline kept them both eating"
     ]
   },
   "wants": [
@@ -520,7 +642,12 @@
     "teach somebody everything {first} knows before it's gone",
     "find {kin}'s grave, if there is one",
     "make the System say one true thing",
-    "keep {kin}'s name from going quiet"
+    "keep {kin}'s name from going quiet",
+    "hear {kin}'s voice one more time, even through static",
+    "put a real meal in front of every person here, once, just to watch their faces",
+    "find a map that still means something",
+    "keep the dog fed — the rest will follow",
+    "make it to spring with everybody still here"
   ],
   "wounds": [
     "{first} doesn't talk about the last winter before the scattering.",
@@ -532,6 +659,11 @@
     "{first} laughed the day the sky changed. {first} has never forgiven themself for it.",
     "The last thing {first} said to {kin} was ordinary. It should not have been ordinary.",
     "Somebody is alive because {first} was a coward that day. {first} can't decide how to feel about it.",
-    "{first} traded something precious for something useless, and everyone in {town} knows it."
+    "{first} traded something precious for something useless, and everyone in {town} knows it.",
+    "{first} left {kin} at the shelter door and walked away. It seemed sensible at the time.",
+    "The last good summer, {first} wasted everything — food, time, people.",
+    "{first} saw the signs before the sky changed and told no one.",
+    "Somebody {first} fed once asked for more, and {first} said no. Nobody has seen them since.",
+    "{first} remembers exactly what they were arguing about the morning the sky changed."
   ]
 }
