@@ -5886,11 +5886,11 @@
   // ATTACK VISUALS (Steve 2026-10-05): the grid IS the telegraph.
   // Collects telegraph cells by pattern type for ALL monsters, not just beams.
   // Returns { patternType: Set("x,y"), ... } plus direct-target keys.
-  // Knowledge gating: if pattern not learned (codex), cells are still shown
-  // but with a 'vague' flag — the UI renders them dimmer (you see danger,
-  // but not the exact shape).
+  // Knowledge gating: if pattern not learned, the telegraph does NOT show at all.
+  // (Steve 2026-10-05: "Not dimmed if not learned. They don't show up. Dimmed will still give it away.")
+  // The beam WHILE FIRING is always visible — you see it happening.
   function tbAllTelegraphCells() {
-    const out = { burst: new Set(), charge: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), ambush: new Set(), beam: new Set(), vague: new Set() };
+    const out = { burst: new Set(), charge: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), ambush: new Set(), beam: new Set() };
     try {
       const f = Game.tbfight;
       if (!f) return out;
@@ -5898,30 +5898,24 @@
         if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || !m.telegraph) continue;
         const tg = m.telegraph;
         const ptype = (tg.pattern && tg.pattern.type) || 'single';
-        // Knowledge gating: is this pattern learned?
+        // If pattern not learned, skip entirely — no telegraph markers at all
         let known = true;
         try {
           known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : true;
         } catch (e) {}
+        if (!known) continue;
         const targetSet = out[ptype] || out.single;
         if (tg.kind === 'direct' && tg.targetKey) {
-          // Find the target's position
           const tgt = (f.fighters || []).find(x => x.key === tg.targetKey);
           if (tgt) {
             out.direct.add(tgt.mx + ',' + tgt.my);
-            if (!known) out.vague.add(tgt.mx + ',' + tgt.my);
           }
         } else if (tg.cells && tg.cells.length) {
           for (const c of tg.cells) {
             const k = c.cx + ',' + c.cy;
-            // Don't double-add beam cells to pattern sets (they have their own renderer),
-            // but DO add to vague set for knowledge gating
-            if (ptype === 'beam') {
-              if (!known) out.vague.add(k);
-              continue;
-            }
+            // Don't double-add beam cells (they have their own renderer)
+            if (ptype === 'beam') continue;
             targetSet.add(k);
-            if (!known) out.vague.add(k);
           }
         }
       }
@@ -6094,23 +6088,17 @@
         const _srcCls = (_src && _src === _k) ? ' beamSource' : '';
         const _haloCls = (_halo && _halo.has(_k)) ? ' beamLight' : '';
         // ATTACK VISUALS: pattern-specific telegraph classes. The grid IS the telegraph.
-        // vague: pattern not learned yet — dimmer (you see danger, not the shape).
-        // BUT: the beam WHILE FIRING is always fully visible (Steve 2026-10-05).
-        // What's gated is the telegraph — the predicted path, source, ghost.
-        const _vague = _tg.vague.has(_k) ? ' vague' : '';
-        const _isFiring = _live && _beamCls.includes('beamLive');
+        // If pattern not learned, the telegraph does NOT show at all (Steve 2026-10-05).
+        // The beam WHILE FIRING is always visible.
         const _tgCls =
-          (_tg.burst.has(_k) ? ' burstRadius' + _vague : '') +
-          (_tg.charge.has(_k) ? ' chargeLane' + _vague : '') +
-          (_tg.line.has(_k) ? ' lineCells' + _vague : '') +
-          (_tg.single.has(_k) ? ' targetTile' + _vague : '') +
-          (_tg.direct.has(_k) ? ' lockOn' + _vague : '') +
-          (_tg.rush.has(_k) ? ' rushIndicator' + _vague : '') +
-          (_tg.ambush.has(_k) ? ' ambushZone' + _vague : '');
-        // Beam classes: the beam WHILE FIRING is always fully visible (Steve 2026-10-05).
-        // The telegraph (predicted lane, source, ghost) is gated when not learned.
-        const _beamVague = (!_isFiring && _vague) ? _vague : '';
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_beamVague}${_srcCls}${_beamVague}${_haloCls}${_beamVague}${_tgCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+          (_tg.burst.has(_k) ? ' burstRadius' : '') +
+          (_tg.charge.has(_k) ? ' chargeLane' : '') +
+          (_tg.line.has(_k) ? ' lineCells' : '') +
+          (_tg.single.has(_k) ? ' targetTile' : '') +
+          (_tg.direct.has(_k) ? ' lockOn' : '') +
+          (_tg.rush.has(_k) ? ' rushIndicator' : '') +
+          (_tg.ambush.has(_k) ? ' ambushZone' : '');
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }
