@@ -5703,16 +5703,7 @@
         : dy < 0 ? { dx: 0, dy: -1, dir: 'north' }
         : { dx: 0, dy: 1, dir: 'south' };
       const nx = this.map.px + ex.dx, ny = this.map.py + ex.dy;
-      // WORLD EDGE (explorer loop 2026-10-06): the known world ends at the
-      // map border. NO SILENT ACTIONS — say so once per game, not on every
-      // hold-to-walk bump into the edge.
-      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) {
-        if (!this.state.worldEdgeTold) {
-          this.state.worldEdgeTold = true;
-          this.say('The known world ends here — beyond is unmapped, no path. Turn back.');
-        }
-        return null;
-      }
+      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) return null;
       const block = this.travelBlockage(nx, ny);
       if (block) return { blocked: block, dir: ex.dir };
       this.travelTo(nx, ny);
@@ -5745,18 +5736,11 @@
       return { x: 4, y: 4 }; // unreachable in practice — every detail has walkable cells
     },
     travelTo(x, y, force) {
-      // WORLD EDGE (explorer loop 2026-10-06): the 7x7 map is the whole
-      // known world. A rim tap on a border node passes out-of-bounds coords
-      // (e.g. (-1,3)) — tileAt is undefined there, and the old order crashed
-      // on dest.revealed BEFORE the travelTargets guard. Guard first: no
-      // target, no travel, no exception. (The tap-self popup no longer
-      // offers a travel button into the void; tryNodeExit tells the player
-      // the world ends here.)
+      const dest = this.tileAt(x, y);
+      const wasUnknown = !dest.revealed;
       if (this.over) return null;
       const t = this.travelTargets().find(t => t.x === x && t.y === y);
       if (!t) return null;
-      const dest = this.tileAt(x, y);
-      const wasUnknown = !dest.revealed;
       // blocked? don't travel — return the blockage so the UI can offer solutions.
       // (force bypasses: swimming doesn't fix the path, it just gets you across.)
       if (!force) {

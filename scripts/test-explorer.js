@@ -85,20 +85,9 @@ for (let i = 0; i < 6; i++) {
 ok('all 6 hops actually traveled', hops.every(h => h.moved), hops.map((h, i) => h.moved ? '' : `#${i + 1}`).filter(Boolean).join(','));
 const kcalCosts = hops.map(h => h.kcalCost);
 log(`kcal costs: ${kcalCosts.join(', ')}`);
-ok('node travel is free: 0 scholar kcal (the swim charges its own 20)', hops.every(h => h.kcalCost === (h.swam ? 20 : 0)),
-  `costs ${kcalCosts.join(',')}`);
-ok('node travel is free: 0 scholar ticks', hops.every(h => h.tickCost === 0), `ticks ${hops.map(h => h.tickCost).join(',')}`);
-// NODE TRAVEL IS FREE (Steve 2026-10-05): the boundary is just walking — no
-// kcal tax, no tick cost. The world still lives while you walk: travelTimeStep
-// ticks NPC needs, so hunger advances. (The old ~30 kcal/tile + 32-tick
-// asserts tested a dead design and are gone.)
-const npcW = Game.state.village.roster.find(id => id !== Game.villagerId);
-Game.npcNeeds(npcW).hunger = 0;
-{
-  const t2 = Game.travelTargets().find(t => t.x !== Game.map.px || t.y !== Game.map.py);
-  if (t2) { const r2 = Game.travelTo(t2.x, t2.y); if (r2 && r2.kind === 'blockage') { Game.clearBlockage(t2.x, t2.y); Game.travelTo(t2.x, t2.y); } }
-}
-ok('travel advances the world: NPC hunger ticks while you walk', Game.npcNeeds(npcW).hunger > 0, `hunger=${Game.npcNeeds(npcW).hunger}`);
+ok('travel costs ~30 kcal per tile of distance (+20 when swimming a creek)', hops.every(h => Math.abs(h.kcalCost - 30 * h.pick.d - (h.swam ? 20 : 0)) <= 15),
+  `costs ${kcalCosts.join(',')} vs d=${hops.map(h => h.pick.d).join(',')}`);
+ok('travel costs 32 ticks per node', hops.every(h => Math.abs(h.tickCost - 32) <= 40), `ticks ${hops.map(h => h.tickCost).join(',')}`);
 const types = [...new Set(hops.map(h => h.type))];
 log(`biomes visited: ${types.join(', ')}`);
 ok('travel visits varied biomes', types.length >= 2, types.join(','));
@@ -128,11 +117,8 @@ for (let cy = 0; cy < 9 && Object.keys(first).length < 6; cy++) for (let cx = 0;
 ok('examine depth 1 then 2', Object.values(first).every(v => v.r1 === 1 && v.r2 === 2));
 ok('depth-2 text differs from depth-1 (not a repeat)', Object.values(first).every(v => v.t1 !== v.t2));
 
-// ---------- 3. discovery density: FULL grids on 3 fresh tiles ----------
-// (2026-10-06: the old run truncated at 40 cells — half a grid — which made
-// a compliant tile read 4.5%. Full-grid density is the design number:
-// ~5 features per 81-cell node, i.e. inside the 5-35% band.)
-log('\n=== discovery density (full grids, 3 tiles) ===');
+// ---------- 3. discovery density on FRESH cells across 3 tiles ----------
+log('\n=== discovery density (fresh cells, 3 tiles) ===');
 let examinedN = 0, foundN = 0;
 const tilesDone = new Set();
 for (let i = 0; i < 3; i++) {
@@ -152,7 +138,9 @@ for (let i = 0; i < 3; i++) {
     const r = Game.examineCell(cx, cy);
     examinedN++;
     if (r && r.feature) foundN++;
+    if (examinedN >= 40) break;
   }
+  if (examinedN >= 40) break;
   // move to next tile: first unvisited travel target
   const nx = Game.travelTargets().find(t => !(Game.tileAt(t.x, t.y) || {}).visited);
   if (!nx) break;

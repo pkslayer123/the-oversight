@@ -1021,23 +1021,16 @@
       if (exit && outTile) {
         const nx = Game.map.px + exit.dx, ny = Game.map.py + exit.dy;
         const nt = (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) ? Game.tileAt(nx, ny) : null;
-        const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the edge of the known world';
+        const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the void';
         const block = nt ? Game.travelBlockage(nx, ny) : null;
-        // WORLD EDGE (explorer loop 2026-10-06): no travel button into the
-        // void — the 7x7 map is the whole known world. The old button called
-        // Game.travelTo with out-of-bounds coords and crashed the tap.
-        if (nt) {
-          const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;
-          actions.push([label, () => {
-            if (block) { showBlockage({ kind: 'blockage', blockType: block.blockType, x: nx, y: ny }); refresh(); return; }
-            const res = Game.travelTo(nx, ny);
-            if (res && res.kind === 'blockage') { showBlockage(res); }
-            refresh();
-          }]);
-          desc += ` You're on the ${exit.dir}ern edge — ${nm} lies that way.`;
-        } else {
-          desc += ` You're on the ${exit.dir}ern edge of the known world. Beyond is unmapped — there's no path to take.`;
-        }
+        const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;
+        actions.push([label, () => {
+          if (block) { showBlockage({ kind: 'blockage', blockType: block.blockType, x: nx, y: ny }); refresh(); return; }
+          const res = Game.travelTo(nx, ny);
+          if (res && res.kind === 'blockage') { showBlockage(res); }
+          refresh();
+        }]);
+        desc += ` You're on the ${exit.dir}ern edge — ${nm} lies that way.`;
       } else if (inside) {
         desc += ' You\'re inside the hall. To leave Haven: tap the 🚪 door, step outside, walk to the edge of the grounds, then tap yourself.';
       }

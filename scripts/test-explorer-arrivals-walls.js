@@ -89,29 +89,23 @@ function check(name, cond, extra) {
   const acts2 = Game.cellActions(0, 0) || [];
   check('haven wall offers no Examine', !acts2.includes('Examine'), 'got: ' + acts2.join(','));
 
-  // WARY TELL (rewritten 2026-10-06): the legacy game.js animalTurn line
-  // ("goes still — ears up, deciding about you") is dead code — encounters.js
-  // superseded animalTurn with the per-species telegraph system (the
-  // Highbeam-Deer rule: distinct tell per species, not a generic line).
-  // What must hold now: the per-species tell fires when awareness crosses
-  // 0.5, period-joined to the unknown descriptor, with no template stutter.
-  console.log('== 3. wary tell (per-species telegraph) ==');
+  console.log('== 3. wary stutter ==');
   Game.map.px = 2; Game.map.py = 2;
   const s = Game.state.scholar;
   s.mx = 4; s.my = 4; s.animal = null; s.monster = null;
   const detail2 = Game.genDetail(Game.map.px, Game.map.py);
   detail2[4][4] = 'grass'; detail2[4][7] = 'grass';
   s.animal = { id: 'cottontail_rabbit', mx: 7, my: 4, aware: 0.499, stamina: 5, pstate: 'graze', edgeTurns: 0 };
-  const expectedTell = Game.encWaryText(s.animal); // capture before the turn: a bolt may clear s.animal
   said.length = 0;
   try { Game.animalTurn(); } catch (e) { /* errors surface via say capture */ }
   const out = said.join(' | ');
-  check('per-species wary tell fired', said.some(x => x.includes(expectedTell)), 'said: ' + out.slice(0, 140));
-  const tellLine = said.find(x => x.includes(expectedTell)) || '';
-  check('tell is period-joined to the descriptor', /hops\. Locks mid-hop/.test(tellLine), tellLine.slice(0, 120));
-  check('no template stutter ("freezes" never repeats the descriptor)', !/freezing between hops[^.]*freezes/i.test(tellLine), tellLine.slice(0, 120));
-  check('legacy generic line is gone from live play', !/goes still — ears up, deciding about you/.test(out), 'said: ' + out.slice(0, 140));
-  check('rabbit tell text', expectedTell === 'A brown blur with a white tail-flag, freezing between hops. Locks mid-hop, one ear swiveling toward you.', expectedTell);
+  const waryLine = said.find(x => /ears up, deciding about you/.test(x));
+  check('wary line fired', !!waryLine, 'said: ' + out.slice(0, 120));
+  if (waryLine) {
+    check('wary line uses "goes still"', /goes still/.test(waryLine), waryLine);
+    check('no template "freezes" duplication', !/freezes\b/i.test(waryLine), waryLine);
+    check('descriptor + template read clean', !/freezing between hops freezes/.test(waryLine), waryLine);
+  }
 
   console.log(fails ? `\n${fails} FAILURES` : '\nALL PASS');
   process.exit(fails ? 1 : 0);
