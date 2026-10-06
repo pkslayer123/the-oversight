@@ -9817,6 +9817,7 @@
       if (!m || m.mx === undefined) return;
       const px = s.mx ?? 4, py = s.my ?? 4;
       const mDist = Math.max(Math.abs(px - m.mx), Math.abs(py - m.my));
+      const oldMx = m.mx, oldMy = m.my;
       // HUMMICE hunt by EAR, not eye (Steve 2026-10-04): the hum is a sonar.
       // Within 4 tiles they hear you breathing and close on the sound — dark
       // and trees don't matter. You hear the hum getting louder first. This
@@ -9978,6 +9979,20 @@
         default: {
           stepToward();
           if (m.mx === px && m.my === py) this.startCombat(m.id);
+        }
+      }
+      // WORLD TAKES ITS TURN (Steve 2026-10-05): if the monster moved,
+      // make it visible. Not a full banner (that would spam every step),
+      // but a subtle cue that the world acted.
+      if ((m.mx !== oldMx || m.my !== oldMy) && mDist <= 5) {
+        const mdef = (this.data.monsters || []).find(x => x.id === m.id) || {};
+        const mEmoji = mdef.emoji || '👹';
+        // Only cue if the player can see it (within 5 tiles)
+        if (!m._movedCueCd || m._movedCueCd <= 0) {
+          this.say(`${mEmoji} It moves.`);
+          m._movedCueCd = 3; // don't spam
+        } else {
+          m._movedCueCd -= 1;
         }
       }
     },
@@ -13834,8 +13849,18 @@
         const c = this.tbFighter(f.order[f.turnIdx]);
         if (!c || !c.alive || c.fled) continue;
         if (c.kind === 'player') { this.tbBeginTurn(); return; }
-        if (c.kind === 'villager') this.tbVillagerTurn(c);
-        else this.tbMonsterTurn(c);
+        // WORLD TAKES ITS TURN (Steve 2026-10-05): monsters and villagers
+        // get a visible turn banner. Things shouldn't spontaneously manifest —
+        // you should FEEL the world acting.
+        if (c.kind === 'villager') {
+          this.sysSay(`${c.name}'s turn`);
+          this.tbVillagerTurn(c);
+        } else {
+          const mName = (c.mdef && c.mdef.name) || c.name || 'the monster';
+          const mEmoji = (c.mdef && c.mdef.emoji) || '👹';
+          this.sysSay(`${mEmoji} ${mName}'s turn`);
+          this.tbMonsterTurn(c);
+        }
         if (this.tbEndCheck()) return;
       }
     },
