@@ -12269,9 +12269,11 @@
             } catch (e) {
               g = ''; // Error - blank, not mixed
             }
-            // If TileScenes returned blank (failed), use simple fallback
+            // If TileScenes returned blank/fog (failed), use simple fallback
             // (better than blank - Steve confirmed simple version works)
-            if (!g || g.length < 100) {
+            // Blank SVG is 130 chars with fog color #0d120d - must detect it
+            const isBlank = !g || g.length < 100 || g.indexOf('#0d120d') !== -1;
+            if (isBlank) {
               const ttype = tl ? tl.type : 'unknown';
               const colors = {
                 forest_floor: '#241c12', grove: '#1b2f1c', meadow: '#28331b',
