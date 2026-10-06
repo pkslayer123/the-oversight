@@ -11783,8 +11783,20 @@
               // HUMANOID SPRITES (Steve 2026-10-06): human-like horrors show
               // their calm SVG — the paranoia needs a real silhouette.
               const _hkey = mf.monsterId || (mf.mdef && mf.mdef.id) || ('tb' + _mfi);
-              const _hspr = humanoidSpriteHtml(mf.monsterId || (mf.mdef && mf.mdef.id));
-              g = `<span data-ent="creature:${esc(_hkey)}">${_hspr || esc(mf.emoji || '👹')}</span>`;
+              const _mid = mf.monsterId || (mf.mdef && mf.mdef.id);
+              // MONSTER SVGS (Steve 2026-10-06): use the custom SVG for all monsters,
+              // not just humanoids. The emoji is a last resort.
+              let _mspr = '';
+              try {
+                if (_mid && S.Sprites && S.Sprites.monsterSprite) {
+                  const _aggro = true; // combat = aggro form
+                  const _svg = S.Sprites.monsterSprite(_mid, _aggro);
+                  if (_svg) _mspr = `<span class="csprite">${_svg}</span>`;
+                }
+              } catch (e) {}
+              // Humanoids get the special ambiguous treatment; others get their SVG
+              const _hspr = humanoidSpriteHtml(_mid);
+              g = `<span data-ent="creature:${esc(_hkey)}">${_hspr || _mspr || esc(mf.emoji || '👹')}</span>`;
               cls += ' creature';
               drawn = true; break;
             }
