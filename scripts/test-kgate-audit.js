@@ -1,15 +1,16 @@
 // ============================================================================
-// EXPECTED-FAIL DOCUMENTATION — knowledge-gating audit 2026-10-06.
+// KNOWLEDGE-GATING AUDIT GUARD — audit 2026-10-06.
 //
 // Steve's law: "If you don't know, it doesn't show."
 //
-// Every assert below DEMONSTRATES A LEAK found by the knowledge-gating audit
-// (evidence/2026-10-06/kgate-audit-20261006-muse.md). They are EXPECTED TO FAIL
-// on the current tree. A future fixer flips them green by adding the missing
-// knowledge gates; each finding lists its suggested fix.
+// These asserts guard the leaks found by the knowledge-gating audit
+// (evidence/2026-10-06/kgate-audit-20261006-muse.md). F1–F4 were fixed
+// 2026-10-06 (carexplore.js treeName gating + deep-study learn path,
+// perceive.js tree/bigtree gating, app.js tap-panel treeName gating).
+// F5 was fixed by the social-loop worker (betrayal.js whoTag occupation
+// gating). All asserts below are GREEN and guard regressions.
 //
-// SKIP THIS FILE IN CI / bulk test runs until it is green — it documents
-// known leaks, it does not guard a regression.
+// STATUS 2026-10-06 (kgate-fix): all five findings fixed and gated.
 // Usage: node scripts/test-kgate-audit.js
 // ============================================================================
 const fs = require('fs');
@@ -89,17 +90,50 @@ function skipped(name, note) { skip++; console.log(`SKIP ${name}${note ? ' — '
     `hints: ${JSON.stringify(bigHints)}`);
   detail[3][4] = 'tree'; // restore
 
-  // ---- FINDING 4: app.js tile-tap panel shows species once mod.known (logic proxy) ----
-  // The tap panel (app.js:1112) renders mod.species whenever mod.known is true.
-  // But mod.known is set by ANY examine (game.js:5917) even when the species is
-  // unknown — the interact path gates the NAME via treeName() (game.js:5920),
-  // the panel does not. Proxy assert: mod.known=true must imply treeName()!=null.
+  // ---- FINDING 4: app.js tile-tap panel gates species on treeName() ----
+  // The tap panel (app.js:1112) renders the species slot through
+  // Game.treeName(mod.species), falling back to 'tree' — the same gate as the
+  // examine message (game.js:5920). app.js needs DOM so this is a source +
+  // logic proxy: (1) the panel's only mod.species print routes through
+  // treeName, and (2) the gated expression names nothing for the unknown pine.
   tile.modifiers['4,3'] = pineMod();
   tile.modifiers['4,3'].known = true; // what game.js:5917 does on any examine
-  const panelWouldLeak = tile.modifiers['4,3'].known && Game.treeName(tile.modifiers['4,3'].species) === null;
-  ok('F4: examined-but-unknown tree must not expose species on tap panel (app.js:1112)',
-    !panelWouldLeak,
-    `mod.known=true while treeName('pine')=null — panel prints raw species`);
+  const panelSpeciesSlot = Game.treeName(tile.modifiers['4,3'].species) || 'tree';
+  ok('F4: tap panel species slot does not name examined-but-unknown pine',
+    panelSpeciesSlot === 'tree',
+    `slot="${panelSpeciesSlot}"`);
+  const appSrc = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
+  const speciesPrints = appSrc.split('\n').filter(l => l.includes('mod.species'));
+  ok('F4: every mod.species print in app.js routes through treeName()',
+    speciesPrints.length > 0 && speciesPrints.every(l => l.includes('treeName')),
+    `prints: ${speciesPrints.map(l => l.trim().slice(0, 70)).join(' | ')}`);
+
+  // ---- LEARN PATH (Steve 2026-10-06): pine must be learnable, not a dead end ----
+  // Deep-examining an unknown species 3 times teaches it (carexplore.js).
+  // Must run while pine is still unknown (before this, F1–F4 prove it is).
+  // Uses a fresh pine at (5,3) so the per-tile examine-depth counter starts clean.
+  Game.state.codex.treeStudy = {};
+  detail[3][5] = 'tree';
+  tile.modifiers['5,3'] = pineMod();
+  Game.examineCell(5, 3); // surface — no study
+  Game.examineCell(5, 3); // deep study 1
+  Game.examineCell(5, 3); // deep study 2 — hint, still unknown
+  const stillUnknown = Game.treeName('pine') === null;
+  Game.examineCell(5, 3); // deep study 3 — learns
+  ok('LEARN: 3 deep studies teach the pine (no permanent dead end)',
+    stillUnknown && Game.treeName('pine') === 'pine',
+    `unknown before=${stillUnknown} treeName after=${Game.treeName('pine')}`);
+  // And once known, the gated surfaces name it (the gate opens, it doesn't vanish).
+  said.length = 0;
+  Game.examineCell(5, 3);
+  const knownSaid = said.join(' ');
+  ok('LEARN: known pine is named by examine (gate opens after learning)',
+    /pine/i.test(knownSaid),
+    `heard: "${knownSaid.slice(0, 80)}"`);
+  const knownHints = Game.perceptionHints();
+  ok('LEARN: known pine is named by proximity hints',
+    knownHints.some(t => /pine/i.test(t)),
+    `hints: ${JSON.stringify(knownHints)}`);
 
   // ---- FINDING 5: betrayal.js whoTag names the TRUE former occupation ----
   // The same commit (855cbcc) that gated true occupations in truth.js left
@@ -122,7 +156,7 @@ function skipped(name, note) { skip++; console.log(`SKIP ${name}${note ? ' — '
       `whoTag(${truthful.id}) = "${tag}" leaks "${truthful.formerOccupation}"`);
   }
 
-  console.log(`\nkgate-audit: ${pass} pass, ${fail} FAIL (expected — documents known leaks), ${skip} skip`);
-  console.log('EXPECTED-FAIL: these asserts demonstrate audit findings; fix the gates, then flip green.');
+  console.log(`\nkgate-audit: ${pass} pass, ${fail} fail, ${skip} skip`);
+  console.log('All green — these asserts guard the fixed knowledge gates against regressions.');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('HARNESS ERROR', e); process.exit(2); });

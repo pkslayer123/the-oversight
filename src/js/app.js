@@ -192,7 +192,11 @@
       if (pc) {
         const daysLeft = Math.max(0, (pc.firesDay || 1) - (Game.state.scholar.day || 1));
         const who = pc.participant === 'player' ? 'YOU' : (pc.participant || 'someone');
-        contestRow = `<div class="statrow contest-pending">📺 CONTEST: ${esc(pc.contestId || 'unknown')} — ${who} in ${daysLeft}d</div>`;
+        // Show the contest's display name, not the raw id ("gauntlet" -> "Gauntlet").
+        const cname = (typeof Game.contestPool === 'function'
+          ? (Game.contestPool().find(c => c.id === pc.contestId) || {}).name
+          : null) || pc.contestId || 'unknown';
+        contestRow = `<div class="statrow contest-pending">📺 CONTEST: ${esc(cname)} — ${who} in ${daysLeft}d</div>`;
       }
     } catch (e) {}
     return statRow('HEALTH', st.health, st.health, st.health < 35) +
@@ -1109,7 +1113,11 @@
       // what you know: modifiers + synthesized result.
       if (mod && mod.known) {
         if ((cell === 'tree' || cell === 'bigtree')) {
-          desc = `${mod.species}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}. `;
+          // TREE SPECIES GATING (Steve 2026-10-06): species name only if known.
+          // mod.known is set by ANY examine (game.js) regardless of species
+          // knowledge — the examine message gates via treeName(), so the panel
+          // must too, or the name leaks on every revisit.
+          desc = `${Game.treeName(mod.species) || 'tree'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}. `;
           desc += sec && sec.yield === 0 ? 'Nothing.' : `Nuts (about ${sec ? sec.yield : '?'}).`;
         } else if (cell === 'water') {
           desc = `${mod.flow}, ${mod.clarity}, ${mod.source}. `;

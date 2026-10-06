@@ -131,7 +131,9 @@
           const mod = mods[cx + ',' + cy] || {};
           const depleted = !!regrow[cx + ',' + cy];
           if (!treeSaid && cell === 'bigtree') {
-            const species = mod.species || 'tree';
+            // TREE SPECIES GATING (Steve 2026-10-06): name only if known —
+            // treeLevel, same as the bush branch's codex.plants level check.
+            const species = (mod.species && this.treeLevel(mod.species) >= 1) ? mod.species : 'tree';
             let t;
             if (typeof this.cutInfo === 'function') {
               // cutInfo (storage.js): canFell / canPrune / toolName, data-driven.
@@ -174,7 +176,10 @@
             } else if (cell === 'plant') {
               push(`Something green and low-growing. Might be edible.`, 44);
             } else {
-              const sp = mod.species || 'nut tree';
+              // TREE SPECIES GATING (Steve 2026-10-06): name only if known —
+              // the bush branch 10 lines above gates on codex.plants level; the
+              // tree branch gets the same treatment via treeLevel.
+              const sp = (mod.species && this.treeLevel(mod.species) >= 1) ? mod.species : 'nut tree';
               const art = /^[aeiou]/i.test(sp) ? 'An' : 'A';
               push(`${art} ${sp}. There might be nuts.`, 44);
             }

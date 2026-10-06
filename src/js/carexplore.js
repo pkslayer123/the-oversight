@@ -351,7 +351,12 @@
 
     // ---- TREE / BIGTREE ----
     if (cell === 'tree' || cell === 'bigtree') {
-      const species = (mod && mod.species) || (cell === 'bigtree' ? 'an old giant' : 'a tree');
+      // TREE SPECIES GATING (Steve 2026-10-06): name only if known — the same
+      // treeName() gate the game.js interact path uses. Unknown trees stay
+      // "a tree" / "an old giant"; no "oak-like" hints.
+      const rawSpecies = (mod && mod.species) || null;
+      const knownSpecies = rawSpecies ? this.treeName(rawSpecies) : null;
+      const species = knownSpecies || (cell === 'bigtree' ? 'an old giant' : 'a tree');
       const health = (mod && mod.health) || 'healthy';
       if (!deep) {
         text = `${species.charAt(0).toUpperCase() + species.slice(1)}, ${health}. `;
@@ -385,6 +390,28 @@
         }
       } else {
         this.say(text);
+      }
+      // TREE SPECIES LEARNING (Steve 2026-10-06): no one hands you tree names —
+      // you earn them by studying. Deep-examining an unknown species teaches it
+      // after 3 careful studies (bark, needles/cones, the whole look); earlier
+      // studies plant the hint that a name is close. Study counts per species,
+      // so learning transfers across individual trees.
+      if (deep && rawSpecies && !knownSpecies) {
+        const study = (this.state.codex.treeStudy = this.state.codex.treeStudy || {});
+        study[rawSpecies] = (study[rawSpecies] || 0) + 1;
+        if (study[rawSpecies] >= 3) {
+          this.state.codex.trees = this.state.codex.trees || {};
+          this.state.codex.trees[rawSpecies] = {
+            level: 1,
+            learnedDay: (this.state.scholar || {}).day || 0,
+            via: 'deep study',
+          };
+          const cap = rawSpecies.charAt(0).toUpperCase() + rawSpecies.slice(1);
+          this.say(`${cap}. You've stared at this bark long enough — the needles, the cones, the way it holds itself. ${cap}. You know it now, and you'll know it everywhere.`);
+          delete study[rawSpecies];
+        } else if (study[rawSpecies] === 2) {
+          this.say(`You study the bark, the needles, what's dropped underneath. A pattern is settling in — the name of this one is close. One more careful look should do it.`);
+        }
       }
       feedKnowledge('track_read', observant ? 2 : 1);
     }
