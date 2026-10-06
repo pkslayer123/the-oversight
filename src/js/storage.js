@@ -411,7 +411,20 @@
       const node = { x: this.map.px, y: this.map.py };
       let place = 'here';
       try { place = this.nodeEpithet(node.x, node.y) || 'here'; } catch (e) {}
-      const desc = `${label} — buried at ${place}, day ${day()}`;
+      // BEARING (Steve 2026-10-06): the journal is your memory, and "forest
+      // floor" exists on forty tiles. The note needs the walk back — how
+      // far, which way from Haven — or two caches at one node are
+      // indistinguishable in the list until you dig.
+      let bearing = '';
+      try {
+        const hv = this.state.village || {};
+        const dx = node.x - (hv.px ?? 3), dy = node.y - (hv.py ?? 3);
+        const d = Math.abs(dx) + Math.abs(dy);
+        if (d > 0) bearing = `, ${d} tile${d === 1 ? '' : 's'} ` +
+          (dy < 0 ? 'north' : dy > 0 ? 'south' : '') +
+          (dx > 0 ? 'east' : dx < 0 ? 'west' : '') + ' of Haven';
+      } catch (e) {}
+      const desc = `${label} — buried at ${place}${bearing}, day ${day()}`;
       const caches = this.playerCaches();
       caches.push({
         id: 'c' + day() + '_' + Math.random().toString(36).slice(2, 7),
@@ -442,7 +455,20 @@
         this.say(`Not here. Your ${this.journalName()} says: ${c.desc || ('buried at ' + where)}.`);
         return null;
       }
-      if (c.found) { this.say('You dig where you buried it. Disturbed earth. Nothing. Someone got here first.'); caches.splice(i, 1); return this.tickAction(16) || this.status(); }
+      if (c.found) {
+        this.say('You dig where you buried it. Disturbed earth. Nothing. Someone got here first.');
+        // DISCOVERY (Steve 2026-10-06): this hole is where the player LEARNS
+        // the cache was robbed. The codex entry lands here — not at robbery
+        // time, when the player was nodes away and knew nothing.
+        c.discovered = true;
+        try {
+          const cxd = this.state.codex;
+          cxd.places = cxd.places || [];
+          cxd.places.push({ day: day(), text: `Cache robbed: ${c.desc}` });
+        } catch (e) {}
+        caches.splice(i, 1);
+        return this.tickAction(16) || this.status();
+      }
       // SPOILAGE UNDERGROUND: the earth doesn't stop time. Perishables rot in
       // a buried cache just like in your pack — you find out when you dig, at
       // the hole, not the morning after. Materials never rot. The lesson is
@@ -524,6 +550,9 @@
       const d = this.addDoubt(vid, 'observation', text,
         [`${wName} saw them near ${place} (day ${day()})`, `cache robbed: ${c.label}`]);
       if (d) d.theft = { cacheId: c.id, label: c.label, place, day: day(), witness };
+      // The gossip told the player outright: this cache's DISTURBED marker
+      // is knowledge-consistent from here on.
+      c.discovered = true;
       return d;
     },
     // isStashableTool: can this inventory item be donated as a shared tool?
@@ -536,10 +565,16 @@
     // cachesHtml: inline-view body for the stash/caches screen.
     cachesHtml() {
       const caches = this.playerCaches();
-      const list = caches.length ? caches.map(c =>
-        `<p class="small">📍 ${c.desc}${c.found ? ' — <b style="color:#e05c5c">DISTURBED</b>' : ''} ` +
-        `<button class="btn ghost sm" data-cache-dig="${c.id}">${c.found ? 'Check' : 'Dig up'}</button></p>`
-      ).join('') : '<p class="small" style="opacity:.6">No caches. Bury something and it\'ll be here.</p>';
+      // A robbed cache the player hasn't discovered yet looks untouched — the
+      // DISTURBED marker is knowledge, and if you don't know, it doesn't show.
+      // (Steve 2026-10-06: the marker used to appear the instant the robbery
+      // fired, nodes away. Now it appears when gossip names it or when the
+      // player digs.) The button reads "Check" once the player knows.
+      const list = caches.length ? caches.map(c => {
+        const disturbed = c.found && c.discovered;
+        return `<p class="small">📍 ${c.desc}${disturbed ? ' — <b style="color:#e05c5c">DISTURBED</b>' : ''} ` +
+          `<button class="btn ghost sm" data-cache-dig="${c.id}">${disturbed ? 'Check' : 'Dig up'}</button></p>`;
+      }).join('') : '<p class="small" style="opacity:.6">No caches. Bury something and it\'ll be here.</p>';
       // bury form: materials you carry + food you carry
       const inv = this.state.scholar.inventory || [];
       const mats = MAT_IDS.filter(m => this.materialCount(m) > 0)
@@ -679,7 +714,11 @@
     // name to land on, so the crime keeps its culprit.)
     const robber = this.pickCacheRobber();
     if (robber) c.robbedBy = robber;
-    this.say('You check your cache. Disturbed earth. Empty. Someone found it.');
+    // DISCOVERY, NOT ANNOUNCEMENT (Steve 2026-10-06): the player learns at
+    // the hole (digUpCache) or through gossip (the trace below plants a real
+    // doubt). No instant say — the old "You check your cache" fired while
+    // the player sat in the hall, nodes away, having checked nothing — and
+    // the codex entry no longer lands before the player could know.
     // A TRACE, SOMETIMES: the woods are big, but people talk. A witness
     // mentions seeing the robber out there — a real sighting of the real
     // culprit, delivered as gossip, which is how information travels.
@@ -687,11 +726,6 @@
     if (robber && Math.random() < 0.5) {
       try { this.plantCacheTheftSuspicion(robber, c); } catch (e) {}
     }
-    try {
-      const cx2 = this.state.codex;
-      cx2.places = cx2.places || [];
-      cx2.places.push({ day: day(), text: `Cache robbed: ${c.desc}` });
-    } catch (e) {}
   };
 
 })();

@@ -93,10 +93,23 @@ function buryFood(name, kcalEach, units, spoilInDays, kg) {
     Game.materialCount('branch') >= 10);
   ok('no rot announced for materials', !said.some(t => /gone bad|went bad|worms/i.test(t)));
 
-  // ---------- 5. robbed codex entry: label said once ----------
+  // ---------- 5. robbed codex entry: label said once, discovered at the hole ----------
   freshGame();
   const c5 = buryFood('Dried meat', 400, 2, 9999);
+  const placesBefore = (Game.state.codex.places || []).length;
+  const origRand5 = Math.random;
+  Math.random = () => 0.9; // trace roll >= 0.5 -> no gossip: the player learns nothing yet
   Game.resolveCacheRobbery(c5);
+  Math.random = origRand5;
+  ok('robbery is not announced (player was not at the hole)',
+    !said.some(t => /check your cache/i.test(t)));
+  ok('codex holds no robbery entry before discovery',
+    (Game.state.codex.places || []).length === placesBefore);
+  ok('robbed cache looks untouched in the list before discovery',
+    !Game.cachesHtml().includes('DISTURBED'));
+  said = [];
+  Game.digUpCache(c5.id); // at the node: the discovery scene
+  ok('discovery scene plays at the hole', said.some(t => /Someone got here first/i.test(t)));
   const places = Game.state.codex.places || [];
   const entry = places[places.length - 1];
   ok('robbed entry exists', entry && /Cache robbed/.test(entry.text));

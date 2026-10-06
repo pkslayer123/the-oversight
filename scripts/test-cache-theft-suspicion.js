@@ -31,11 +31,15 @@ function setTemp(vid, t) {
 }
 
 const ME = () => Game.state.scholar.villagerId;
+let said = [];
 function freshGame() {
+  said = [];
   Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
   Game.state.scholar.inventory = [];
+  const origSay = Game.say.bind(Game);
+  Game.say = (t) => { said.push(String(t)); try { return origSay(t); } catch (e) {} };
 }
 function makeCache(label) {
   const caches = Game.playerCaches();
@@ -75,8 +79,19 @@ const doubts = () => (Game.state.codex.doubts || []);
   ok('doubt names a witness', d1 && d1.theft.witness && d1.theft.witness !== c1.robbedBy && d1.theft.witness !== ME());
   ok('doubt text mentions the witness', d1 && d1.text.indexOf(Game.displayName(d1.theft.witness)) >= 0);
   ok('doubt is unresolved', d1 && d1.resolved === false);
-  const codexHit = (Game.state.codex.places || []).some(p => /Cache robbed/.test(p.text));
-  ok('codex records the robbery', codexHit);
+  const codexRobbed = () => (Game.state.codex.places || []).some(p => /Cache robbed/.test(p.text));
+  ok('robbery is NOT announced to the player (no instant say)', !said.some(t => /check your cache|disturbed earth/i.test(t)));
+  ok('codex does NOT record the robbery before discovery', !codexRobbed());
+  // trace fired -> gossip named it -> the cache list may show DISTURBED
+  ok('trace: cache marked discovered via gossip', c1.discovered === true);
+  ok('cache list shows DISTURBED once gossip named it', Game.cachesHtml().includes('DISTURBED'));
+  // walk to the hole and dig: the discovery scene lands there
+  Game.map.px = 3; Game.map.py = 2;
+  said = [];
+  Game.digUpCache(c1.id);
+  ok('discovery scene plays at the hole', said.some(t => /Someone got here first/i.test(t)));
+  ok('codex records the robbery at discovery', codexRobbed());
+  ok('robbed cache leaves the list after discovery', !Game.playerCaches().some(c => c.id === c1.id));
 
   // ---------- 3. robbery without trace: no doubt, robber still real ----------
   freshGame();
