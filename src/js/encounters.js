@@ -1432,7 +1432,7 @@
             if (!self2.encMethodToolReady(hm)) missing.push(self2.encMethodToolName(hm));
           }
           this.feedback('You don\'t have the right tool for this one — no ' + missing.join(', no ') +
-            '. Your ' + wname + ' is a real long shot.');
+            '. Your ' + wname + (/^hands$/i.test(wname) ? ' are' : ' is') + ' a real long shot.');
         }
       }
     }

@@ -13828,6 +13828,15 @@
         if (c.stunned > 0) {
           c.stunned -= 1;
           c.moveLeft = 0;
+          // ACTED RESET (Steve 2026-10-06): the stun is set during the
+          // monster's turn, AFTER the player's turn ended with acted=true.
+          // Without this reset, the leftover acted=true hits the
+          // `if (c.acted) tbAdvance()` below and the stag's gaze-freeze —
+          // which should cost MOVEMENT only ("lose move", still act) —
+          // silently skips the WHOLE turn like the toad's stunFull.
+          // stunFull re-sets acted=true explicitly below; the gaze leaves it
+          // false so the frozen player can still strike.
+          c.acted = false;
           if (c.stunFull) { c.acted = true; c.stunFull = 0; }
           this.say(c.acted ? 'You can\'t act — the world tilts, and the turn slips past.' : 'You\'re frozen — you can\'t move. (stunned)');
           this.tbRefreshTelegraphUI();
@@ -14186,7 +14195,11 @@
         const cell = detail[c.cy] && detail[c.cy][c.cx];
         // BULLDOZER (Steve 2026-10-05): it does NOT stop at trees/walls.
         // It smashes through them. The environment breaks.
-        if (cell && blocks[cell]) {
+        // (Steve 2026-10-06): trees are cover too — the lane shreds them, not
+        // just walls. beamBlockingCells is the BEAM's stop-set; the bulldoze
+        // smashes trees as well ("Wood splinters", 6e8c024: "SMASHES through
+        // trees/walls"). destroyCell still guards the unbreakable (havens).
+        if (cell && (blocks[cell] || cell === 'tree' || cell === 'bigtree')) {
           this.destroyCell(c.cx, c.cy, 'bulldozer');
           // Keep going — the charge continues through the wreckage
         }
@@ -17663,7 +17676,12 @@
             this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
           }
           this.encSetPhase(m, 'countdown');
-          m.drRecalcs = 0; // it committed — the adaptation counter resets
+          // ADAPTATION PERSISTS (Steve 2026-10-06): the drRecalcs counter is
+          // NOT reset here. After one recalc the drone has narrowed scope and
+          // grades the primary subject anyway — crowds buy one breather turn,
+          // not immunity. Resetting it re-armed the crowd check every other
+          // turn and stalled the drone forever against a standing crowd
+          // (the fight went free). Monsters were sent to fight.
           const cells = S.combat.patternCells(pat, m.mx, m.my, t.mx, t.my);
           const p0 = this.tbFighter('p');
           m.telegraph = { kind: 'line', cells, dmg: (m.mdef.attack || {}).damage,
