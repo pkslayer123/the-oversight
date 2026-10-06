@@ -510,8 +510,41 @@
       giveWeapon('fire_hardened_spear');
       s.insideHaven = false;
       Game.dayPart = 1; // midday — it basks in sunlight
-      s.mx = 2; s.my = 4;
-      s.monster = { id: 'sunbasker', mx: 5, my: 4 };
+      // SUN GUARANTEE (Steve 2026-10-06): the sunbasker flattens in shade by
+      // design ("no sun, no fight") — a shaded spawn makes the scenario a
+      // non-event. Relocate to the nearest sun tile so the fight is real.
+      let mmx = 5, mmy = 4;
+      try {
+        if (Game.tbInShade(mmx, mmy)) {
+          const detail = Game.genDetail(Game.map.px, Game.map.py);
+          const spotOK = (x, y) => {
+            const c = detail[y] && detail[y][x];
+            return c && !Game.cellProps(c).blocks;
+          };
+          let best = null, bestD = 1e9;
+          for (let y = 0; y < 9; y++) for (let x = 3; x < 9; x++) {
+            if (!spotOK(x, y) || !spotOK(x - 3, y)) continue; // monster + player tiles
+            if (Game.tbInShade(x, y)) continue;
+            const d = Math.abs(x - 5) + Math.abs(y - 4);
+            if (d < bestD) { bestD = d; best = { x, y }; }
+          }
+          if (best) { mmx = best.x; mmy = best.y; }
+          else {
+            // Fallback: clear shade-makers orthogonally adjacent to (5,4)
+            // and make sure the player's west tile (2,4) is walkable.
+            for (const dd of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+              const cx = mmx + dd[0], cy = mmy + dd[1];
+              const c = detail[cy] && detail[cy][cx];
+              if (c === 'tree' || c === 'bigtree') detail[cy][cx] = 'grass';
+            }
+            const pc = detail[4] && detail[4][2];
+            if (!pc || Game.cellProps(pc).blocks) detail[4][2] = 'grass';
+          }
+        }
+      } catch (e) {}
+      // Player three tiles west of the monster keeps the intro line true.
+      s.mx = mmx - 3; s.my = mmy;
+      s.monster = { id: 'sunbasker', mx: mmx, my: mmy };
       Game.say('🐞 SCENARIO: sunbasker. Gold in the grass, three tiles east. It was not there, then it was.');
     },
 
