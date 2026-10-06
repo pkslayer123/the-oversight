@@ -605,8 +605,8 @@
       s.insideHaven = false;
       Game.dayPart = 1; // midday
       s.mx = 2; s.my = 4;
-      s.monster = { id: 'camera_swarm', mx: 5, my: 4 };
-      Game.say('🐞 SCENARIO: influencer swarm. Cameras, three tiles east. They want content. You are content.');
+      s.monster = { id: 'paparazzo', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: paparazzo. Flashbulbs, three tiles east. They want content. You are content.');
     },
 
     customerservice() {
@@ -617,8 +617,8 @@
       s.insideHaven = false;
       Game.dayPart = 3; // night
       s.mx = 2; s.my = 4;
-      s.monster = { id: 'service_mimic', mx: 5, my: 4 };
-      Game.say('🐞 SCENARIO: customer service mimic. "Hello! How can I help you today?" Three tiles east.');
+      s.monster = { id: 'understudy', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: understudy. It has been watching how you fight. Three tiles east. It is learning.');
     },
 
     inspiration() {
@@ -689,8 +689,8 @@
       s.insideHaven = false;
       Game.dayPart = 2; // dusk — crepuscular
       s.mx = 2; s.my = 4;
-      s.monster = { id: 'hype_horn', mx: 5, my: 4 };
-      Game.say('🐞 SCENARIO: motivational speaker. "YOU CAN DO IT!" Three tiles east. It is shouting.');
+      s.monster = { id: 'heckler', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: heckler. "YOU CALL THAT A FIGHT?" Three tiles east. It is shouting.');
     },
 
     termsconditions() {
@@ -701,8 +701,8 @@
       s.insideHaven = false;
       Game.dayPart = 1; // midday — diurnal
       s.mx = 2; s.my = 4;
-      s.monster = { id: 'contract_golem', mx: 5, my: 4 };
-      Game.say('🐞 SCENARIO: terms & conditions. It is very large and very legal. Three tiles east.');
+      s.monster = { id: 'landlord', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: landlord. It is very large and very legal. Three tiles east. It is already claiming the ground.');
     },
 
     middlemanager() {
@@ -713,8 +713,8 @@
       s.insideHaven = false;
       Game.dayPart = 1; // midday — both (active day and night)
       s.mx = 2; s.my = 4;
-      s.monster = { id: 'delegate_beast', mx: 5, my: 4 };
-      Game.say('🐞 SCENARIO: middle manager. It is circling. It wants to "sync up." Three tiles east.');
+      s.monster = { id: 'union_rep', mx: 5, my: 4 };
+      Game.say('🐞 SCENARIO: union rep. It is circling. It wants to "sync up." Three tiles east.');
     },
 
     nostalgia() {
