@@ -346,10 +346,15 @@
 
     // getActiveLie(vid, topic): returns the lie object if they're lying about
     // this topic RIGHT NOW, else null. Trust matters — but not for everyone.
+    // 'personal' smalltalk covers occupation/origin too: the personal talk
+    // lines are baked from the TRUE occupation at generation, so the wrapper
+    // scrubs them (see lieScrubLine) — otherwise "I'd like to know you
+    // better" hands the player the truth for free and breaks the detective
+    // loop. (Steve 2026-10-06)
     getActiveLie(vid, topic) {
       const lies = this.npcLies(vid);
       if (!lies) return null;
-      const field = topic === 'past' ? (lies.occupation ? 'occupation' : lies.origin ? 'origin' : null)
+      const field = (topic === 'past' || topic === 'personal') ? (lies.occupation ? 'occupation' : lies.origin ? 'origin' : null)
                   : topic === 'goal' ? (lies.goal ? 'goal' : null) : null;
       if (!field || !lies[field]) return null;
       const lie = lies[field];
@@ -361,6 +366,20 @@
       if (trust > 60 && !(dark && dark.kind === 'malicious' && lie.motive === 'pathological')) return null;
       if (trust > 30 && Math.random() < 0.5) return null; // warming up → sometimes honest
       return lie;
+    },
+
+    // lieScrubLine(line, truth, cover): replace the TRUTH occupation/origin
+    // in a finished line with the cover story, the way a careful liar would.
+    // Needed for 'personal' talk lines: they're baked at character creation
+    // with {occ}/{origin} already filled from the TRUE values, so the
+    // vp-field temp-swap in the convoAskTopic wrapper can't hide the truth
+    // there. Case-insensitive, whole-word(ish); tolerates a trailing plural.
+    // (Steve 2026-10-06)
+    lieScrubLine(line, truth, cover) {
+      if (!line || !truth || !cover) return line;
+      const esc = String(truth).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp('\\b' + esc + 's?\\b', 'gi');
+      return String(line).replace(re, cover);
     },
 
     // ---- claim tracking ----
@@ -901,18 +920,18 @@
       // track truthful claims too (baseline for future contradictions)
       try {
         const vp = this.vpOf(vid);
-        if (topic === 'past' && vp.formerOccupation) this.trackClaimSilent(vid, 'occupation', vp.formerOccupation);
-        if (topic === 'past' && vp.homeRegion) this.trackClaimSilent(vid, 'origin', vp.homeRegion);
+        if ((topic === 'past' || topic === 'personal') && vp.formerOccupation) this.trackClaimSilent(vid, 'occupation', vp.formerOccupation);
+        if ((topic === 'past' || topic === 'personal') && vp.homeRegion) this.trackClaimSilent(vid, 'origin', vp.homeRegion);
         if (topic === 'goal') this.trackClaimSilent(vid, 'goal', this.npcGoal(vid));
       } catch (e) {}
       return line;
     }
     const vp = this.vpOf(vid);
     const swaps = [];
-    if (lie.field === 'occupation' && topic === 'past' && vp.formerOccupation) {
+    if (lie.field === 'occupation' && (topic === 'past' || topic === 'personal') && vp.formerOccupation) {
       swaps.push(['formerOccupation', vp.formerOccupation]); vp.formerOccupation = lie.told;
     }
-    if (lie.field === 'origin' && topic === 'past' && vp.homeRegion) {
+    if (lie.field === 'origin' && (topic === 'past' || topic === 'personal') && vp.homeRegion) {
       swaps.push(['homeRegion', vp.homeRegion]); vp.homeRegion = lie.told;
     }
     if (lie.field === 'goal' && topic === 'goal' && vp.goal) {
@@ -921,6 +940,13 @@
     let line;
     try { line = origAskTopic.call(this, vid, topic); }
     finally { for (const [k, val] of swaps) vp[k] = val; }
+    // PERSONAL talk lines are baked at generation from the TRUE
+    // occupation/origin — the field swap above can't reach them. Scrub the
+    // truth out of the finished line so "I'd like to know you better" can't
+    // hand the player the truth for free. (Steve 2026-10-06)
+    if (topic === 'personal' && line && (lie.field === 'occupation' || lie.field === 'origin')) {
+      line = this.lieScrubLine(line, lie.truth, lie.told);
+    }
     // track the false claim (may trigger contradiction doubt)
     this.trackClaim(vid, lie.field, lie.told);
     // BAD LIARS SLIP IN CONVERSATION: non-pathological liars sometimes get
@@ -1020,7 +1046,7 @@
       const youSaid = '"I need to ask you something."';
       c.transcript.push({ who: 'you', text: youSaid });
       c.transcript.push({ who: 'them', text: r.line });
-      while (c.transcript.length > 8) c.transcript.shift();
+      while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       c.exchanges++;
       try { this.tickAction(1); } catch (e) {} // confrontation takes a moment
       this.sayLine(vid, r.line);

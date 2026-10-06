@@ -290,12 +290,12 @@
       Game.say('  3. Moot (formal trial)');
       Game.say('  4. UPRISING (they come at you)');
       Game.say('');
-      Game.say('You\'re at stage 4. There\'s no talking your way out of this.');
+      Game.say('You\'re at stage 4. Nobody here came to talk. But you\'ll try anyway — desperate people say desperate things.');
       // Trigger the uprising via the justice system
       try {
         const j = Game.justiceState();
         j.stage = 4;
-        Game.startVillageUprising('debug scenario: theft + assault + defiance');
+        Game.startVillageUprising('theft, assault, and refusing the moot');
       } catch (e) {
         Game.say('🐞 uprising failed to start: ' + e.message);
         Game.say('You can still act: move, talk to villagers, or flee the haven.');
@@ -831,7 +831,7 @@
         Game.say('🐞 ambush failed to spring: ' + e.message);
       }
       Game.say('🐞 SCENARIO: the walk turned. Three people, placed around you — not wandering. Placed.');
-      Game.say('Three people you walked out with, now arranged around you like the start of something. Their hands are shaking. Whatever happens next, you will not be the same to this village.');
+      Game.say('Three people you walked out with, now arranged around you like the start of something. Breathing too fast, knuckles white. Whatever happens next, you will not be the same to this village.');
     },
 
     // 13. Exile — you walk. The moot voted (or you fled before it could).

@@ -756,7 +756,18 @@
     const c = this.getCase(caseId); if (!c) return null;
     if (!c.accused.includes(vid)) { this.say(`They weren't there.`); return null; }
     const inc = (c.inconsistencies || []).find(i => !i.found && i.claims[vid]);
-    if (!inc) { this.say(`Their story holds — this time. The rehearsed parts are smooth.`); return null; }
+    if (!inc) {
+      // EXHAUSTED PRESS (Steve 2026-10-06): rotate the fallback — never the
+      // same line twice in a row. The story holding is still information.
+      this.say(this.convoPickCycle(vid, 'pressheld', [
+        'Their story holds — this time. The rehearsed parts are smooth.',
+        'You walk it back again, slower. Nothing shifts. That, too, is an answer.',
+        'They tell it the same way twice. Either it\'s true, or it\'s been rehearsed a lot.',
+        'No crack this time. You watch their hands instead of their words. Steady.',
+        'You press; they don\'t bend. It tells you something anyway.',
+      ]));
+      return null;
+    }
     inc.found = true;
     const other = c.accused.find(a => a !== vid && inc.claims[a]);
     const line = `"Walk me through it again. Slowly." ${this.whoTag(vid)} says ${inc.claims[vid]}. But ${other ? this.whoTag(other) + ' said ' + inc.claims[other] + '.' : 'that\'s not what the ground says.'} Somebody's lying.`;
@@ -1740,7 +1751,7 @@
       try {
         if (you) c.transcript.push({ who: 'you', text: you });
         c.transcript.push({ who: 'them', text: line });
-        while (c.transcript.length > 8) c.transcript.shift();
+        while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
         c.exchanges = (c.exchanges || 0) + 1;
         // One quote layer via sayLine: lines arriving pre-quoted (e.g. from
         // ambushExchange/acceptInvite) keep their layer; bare narration gets
@@ -1763,7 +1774,19 @@
     }
     if (act === 'accept') { const r = this.acceptInvite(vid); return finish((r && r.line) || 'You go.', '"Sure."'); }
     if (act === 'decline') { const l = this.declineInvite(vid); return finish(l, '"Not this time."'); }
-    if (act === 'press') { this.pressAccomplice(parts[2], parts[3]); return finish('Done — their story has a crack in it now.', '"Slowly."'); }
+    if (act === 'press') {
+      const broke = !!this.pressAccomplice(parts[2], parts[3]);
+      // OUTCOME-AWARE (Steve 2026-10-06): the box must not claim a crack when
+      // the story held. Rotate the held box line like the narration.
+      return finish(
+        broke ? 'Done — their story has a crack in it now.'
+              : this.convoPickCycle(vid, 'pressheldbox', [
+                  'Nothing new — their story holds. For now.',
+                  'Their story holds. You file that away.',
+                  'Same story, second telling. No crack — yet.',
+                ]),
+        '"Slowly."');
+    }
     if (act === 'approach') {
       const ok = this.approachWeakest(parts[2], true);
       return finish(ok ? 'They talked. Everything changes now.' : 'Not yet. The offer stands.', '"Talk first. Leniency."');
