@@ -76,7 +76,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
   {
     fresh();
     const pool = Game.contestPool();
-    ok('N1 pool grew to 23', pool.length === 23, `got ${pool.length}`);
+    ok('N1 pool grew to 27', pool.length === 27, `got ${pool.length}`);
     for (const id of NEW_CONTESTS) {
       const c = pool.find(x => x.id === id);
       ok(`N1 ${id} in pool with full fields`,
@@ -84,7 +84,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
         JSON.stringify(c && { id: c.id, risk: c.risk }));
     }
     const shows = Game.showPool();
-    ok('N1 show pool grew to 21', shows.length === 21, `got ${shows.length}`);
+    ok('N1 show pool grew to 29', shows.length === 29, `got ${shows.length}`);
     for (const id of NEW_SHOWS) {
       const s = shows.find(x => x.id === id);
       ok(`N1 show ${id} has name+desc`, !!(s && s.name && s.desc));
@@ -97,7 +97,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
     fresh();
     let unrig = rig(() => 0.5);
     const w1 = [];
-    for (let i = 0; i < 18; i++) { const u2 = rig(() => (i + 0.5) / 18); w1.push(Game.pickContest().id); u2(); }
+    for (let i = 0; i < 22; i++) { const u2 = rig(() => (i + 0.5) / 22); w1.push(Game.pickContest().id); u2(); }
     unrig();
     ok('N2 wave1: no extreme contests offered', w1.every(id => Game.contestPool().find(c => c.id === id).risk !== 'extreme'), w1.join(','));
     ok('N2 wave1: no tithe/siege/maw/gauntlet', w1.every(id => !['tithe', 'siege', 'maw', 'gauntlet'].includes(id)));
@@ -106,7 +106,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
     Game.state.waveKills = { 1: 4 };
     unrig = rig(() => 0.5);
     const w2 = [];
-    for (let i = 0; i < 21; i++) { const u2 = rig(() => (i + 0.5) / 21); w2.push(Game.pickContest().id); u2(); }
+    for (let i = 0; i < 25; i++) { const u2 = rig(() => (i + 0.5) / 25); w2.push(Game.pickContest().id); u2(); }
     unrig();
     ok('N2 wave2: tithe offered', w2.includes('tithe'));
     ok('N2 wave2: maw offered', w2.includes('maw'));
@@ -118,7 +118,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
     Game.state.waveKills = { 2: 8 };
     unrig = rig(() => 0.5);
     const w3 = [];
-    for (let i = 0; i < 23; i++) { const u2 = rig(() => (i + 0.5) / 23); w3.push(Game.pickContest().id); u2(); }
+    for (let i = 0; i < 27; i++) { const u2 = rig(() => (i + 0.5) / 27); w3.push(Game.pickContest().id); u2(); }
     unrig();
     ok('N2 wave3: siege offered', w3.includes('siege'));
     ok('N2 wave3: gauntlet offered', w3.includes('gauntlet'));
@@ -171,7 +171,7 @@ const NEW_SHOWS = ['hot_take', 'who_farted', 'stare_down', 'crib_mine', 'talent_
       const cleared = Game.state.activeContest === null;
       if (!(res && res.done && cleared)) { allDone = false; bad.push(`${base.id}:steps=${steps}`); }
     }
-    ok('N4 all 23 contests drive to completion via real path', allDone, bad.join('; '));
+    ok('N4 all 27 contests drive to completion via real path', allDone, bad.join('; '));
   }
 
   // ============ N5. Death lines bespoke for new contests ============

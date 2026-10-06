@@ -18,6 +18,7 @@
 //   - _contestDeathLine(contest, how, pname)
 //   - _contestRenderPhase(ac, phase, idx)
 //   - _contestCloserOdds(kind, wounds)
+//   - _contestVerdict(ac) -> watch-mode verdict roll (risk-scaled win/lose/die)
 //   - _cxCoaching(contest)
 //   - _cxPhaseSay(text)
 //   - _contestTithe(contest) -> phases (knowledge-gated measure)
@@ -25,6 +26,10 @@
 //   - _contestMaw(contest) -> phases
 //   - _contestOath(contest) -> phases
 //   - _contestBeastmaster(contest) -> phases
+//   - _contestRiddle(contest) -> phases (memory-cost puzzle)
+//   - _contestConfession(contest) -> phases (social-fear detective)
+//   - _contestHoney(contest) -> phases (swarm forage)
+//   - _contestSecrets(contest) -> phases (secret-cost chance)
 // rules:
 //   - unlock_day: 14 (code: contestTick, contestEligible)
 //   - weekly_budget: 2 combined contests+shows (code: contestTick)
@@ -35,9 +40,12 @@
 //   - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
 //   - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 //   - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
+//   - watched_deaths: watch verdict rolls risk-scaled death — villagers can die on camera (code: _contestVerdict, Steve 2026-10-06)
 //   - single_prefix: phase texts carry their own 📺 prefix; _cxPhaseSay never doubles it (code: _cxPhaseSay, Steve 2026-10-05)
 //   - wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
+//   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
+//   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 // consumes:
 //   - scholar.day
 //   - state.showBudget
@@ -97,6 +105,9 @@
     if (deeds.survivedMoot) notes.push('survived the Moot');
     if (deeds.heist) notes.push('pulled off a heist');
     if (deeds.contestWin) notes.push(`won ${deeds.contestWin} contest(s)`);
+    // Showmanship: TV pull-aways (fireShow) and camera-friendly contest play
+    // both feed this. Visible in the eligibility panel — fame is a deed.
+    if (deeds.showmanship) notes.push(`audience favorite${deeds.showmanship > 1 ? ` (${deeds.showmanship}×)` : ''}`);
     return notes;
   };
 
@@ -252,6 +263,30 @@
         desc: 'Ride a collared wave-2 beast through the obstacle course. Guide it. Do not hurt it. It remembers.',
         participants: 1,
         arena: '🦁\n🔥🔥🔥🔥🔥\n🦁➖➖➖🦁\n🔥🪤🔥🪤🔥\n👥👥👥👥👥' },
+      // PUZZLE, wave 2+ (Steve 2026-10-06): the smallest pool gets deeper.
+      // The Riddle Engine doesn't want blood. It wants memories.
+      { id: 'riddle', name: 'Riddle Me This', cat: 'puzzle', risk: 'high',
+        desc: 'Three riddles from the Riddle Engine — a floating lattice of mouths. Wrong answers cost memories. It has been reading you.',
+        participants: 1,
+        arena: '🌀\n👄👄👄👄👄\n⬛🧠⬛🧠⬛\n👄👄👄👄👄\n❓❓❓❓❓' },
+      // DETECTIVE (Steve 2026-10-06): the fear is social — judge wrong and
+      // the village buries the wrong person. Or you do.
+      { id: 'confession', name: 'The Confession', cat: 'detective', risk: 'high',
+        desc: 'A villager confesses on camera to poisoning the water store. Prove the confession true or false before dusk — the System punishes someone either way.',
+        participants: 1,
+        arena: '🎤\n👥👥👥👥👥\n⬜🪑⬜🪑⬜\n🔍🔍🔍🔍🔍\n⚖️⚖️⚖️⚖️⚖️' },
+      // FORAGE (Steve 2026-10-06): a hive the size of a house. The swarm is
+      // the size of weather. The honey is worth it. Probably.
+      { id: 'honey', name: 'Sweet Tooth', cat: 'forage', risk: 'high',
+        desc: 'Harvest honeycomb from a hive the size of a house. The swarm defends. Smoke, speed, or respect — pick one and commit.',
+        participants: 1,
+        arena: '🍯\n🐝🐝🐝🐝🐝\n⬛🍯⬛🍯⬛\n🐝🐝🐝🐝🐝\n🌻🌻🌻🌻🌻' },
+      // CHANCE (Steve 2026-10-06): the deck is made of village secrets.
+      // Winning costs relationships. The fear isn't the odds — it's the cost.
+      { id: 'secrets', name: 'The Secret Deck', cat: 'chance', risk: 'medium',
+        desc: 'Cards against the System\'s dealer. The deck is made of village secrets — every card drawn reveals something true about someone watching.',
+        participants: 1,
+        arena: '🃏\n🂡🂢🂣🂤🂥\n🎰⬛⬛⬛🎰\n👁️👁️👁️👁️👁️' },
     ];
   };
 
@@ -358,6 +393,23 @@
         desc: 'A villager is miked for a day. Every curse costs the village a ration. Everyone is suddenly, terribly polite.' },
       { id: 'makeover', name: 'Extreme Burrow Makeover',
         desc: 'The aliens redecorate a shelter overnight. It is beautiful. It is unusable. The villager must live in it for a week.' },
+      // More in-between (Steve 2026-10-06): the cameras never really leave.
+      { id: 'karaoke', name: 'Alien Karaoke',
+        desc: 'A villager must sing. The System provides music from seventeen systems. None of it has a beat a human can find. The village provides backup vocals anyway.' },
+      { id: 'shelter_swap', name: 'Shelter Swap',
+        desc: "Two villagers swap shelters for a week. The aliens film the adjustment. Someone always cries about someone else's storage system." },
+      { id: 'small_claims', name: 'Small Claims',
+        desc: 'Alien judges settle village disputes. The gavel is a meteorite. Justice is swift, final, and deeply confused by property law.' },
+      { id: 'how_to_human', name: 'How to Human',
+        desc: "The aliens attempt a human tutorial episode. A villager is the demonstration model. Today's lesson: elbows." },
+      { id: 'rose_ceremony', name: 'The Rose Ceremony',
+        desc: 'A villager must give a rose to the most trustworthy person they know. On camera. The village does the math before the cameras do.' },
+      { id: 'the_leak', name: 'The Leak',
+        desc: "The System 'accidentally' broadcasts a page from a villager's private journal. The page is read aloud. The village pretends it didn't hear." },
+      { id: 'museum_of_you', name: 'Museum of You',
+        desc: "The aliens curate a villager's life into an exhibit. The villager must narrate the audio tour. Some rooms are closed for renovation." },
+      { id: 'infomercial', name: 'The Infomercial',
+        desc: 'A villager has sixty seconds to sell an alien product to the galaxy. The product is a rock. The rock is $400.' },
     ];
   };
 
@@ -368,9 +420,7 @@
 
   // FIRE SHOW (Steve 2026-10-06): the in-between isn't just an announcement.
   // Someone gets pulled away for a silly reason, the village talks about it.
-  // NOTE: game.js's dawn branch currently handles shows inline (sysSay only);
-  // wiring it to call fireShow(event) is a one-line game.js change — see
-  // goals/.../hidden_files/fleshout-20261006/contests-blocked.md.
+  // Wired: game.js's dawn branch calls fireShow(event) for non-contest events.
   G.fireShow = function(show) {
     const s = (show && show.id) ? show : this.pickShow();
     const roster = (this.state.village.roster || []).filter(id => id !== this.villagerId);
@@ -462,6 +512,16 @@
           try { playable = this._contestGeneric(contest); } catch (e2) { playable = null; }
         }
         if (!playable) playable = [];
+        // SHIFT (Steve 2026-10-06): the choice phase is prepended at index 0,
+        // so every numeric `next` inside the playable phases shifts +1 — they
+        // were authored for the un-prefixed array. Without this, phase 0's
+        // choices point back at themselves and the player is stuck forever
+        // (a modal with no way forward). Terminal nexts are untouched.
+        const shifted = playable.map(p => Object.assign({}, p, {
+          choices: (p.choices || []).map(ch => Object.assign({}, ch, {
+            next: (typeof ch.next === 'number') ? ch.next + 1 : ch.next,
+          })),
+        }));
         const choicePhase = {
           text: `📺 ${contest.name}. ${contest.desc}\n\nThe System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.`,
           choices: [
@@ -474,7 +534,7 @@
           participant: 'player',
           phase: 'choice',
           phaseIdx: 0,
-          phases: [choicePhase, ...playable],
+          phases: [choicePhase, ...shifted],
           variant: contest.variant || null,
           wounds: 0,
         };
@@ -561,51 +621,6 @@
     // It INTERRUPTS. You go through the sequence. Participate or don't.
     // If you're not involved, you watch.
     return this.contestInterruption(contest, pc.participant);
-    
-    // LEGACY DICE ROLL (below) — kept for reference, not used.
-    // The playable sequence replaces this. When each contest becomes playable,
-    // its specific mechanics live in the interruption phases.
-    /*
-    
-    let outcome;
-    if (r < deathChance) {
-      outcome = 'died';
-    } else if (r < deathChance + 0.3) {
-      outcome = 'lost';
-    } else {
-      outcome = 'won';
-    }
-    
-    const pname = pc.participant === 'player' ? 'You' : this.displayName(pc.participant);
-    
-    if (outcome === 'died') {
-      this.sysSay(`📺 ${pname} did not come home from ${contest.name}. The Death Reel will be tasteful.`);
-      // Handle death (simplified)
-      if (pc.participant === 'player') {
-        this.playerDeath('contest');
-      } else {
-        // Villager death
-        this.say(`☠ ${pname} is gone.`);
-      }
-      this.leadShift('fracture', 2);
-    } else if (outcome === 'won') {
-      this.sysSay(`📺 ${pname} WINS ${contest.name}! The crowd goes wild!`);
-      this.addNotability(pc.participant, 'contestWin');
-      this.leadShift('showmanship', 2);
-      // Prize: alien loot
-      const prize = this.rollAlienLoot({ wave: this.unlockedWave(), loot: { chance: 1, tier: this.unlockedWave() } });
-      if (prize) {
-        this.sysSay(`📺 Prize: ${prize}!`);
-        // Give to participant (simplified: player inventory)
-        if (pc.participant === 'player') {
-          this.state.scholar.inventory.push({ itemId: prize, units: 1 });
-        }
-      }
-    } else {
-      this.sysSay(`📺 ${pname} survives ${contest.name}, but does not win. The audience is... polite.`);
-      this.leadShift('showmanship', 1);
-    }
-    */
   };
 
   // === PLAYABLE CONTEST ENGINE (Steve 2026-10-05) ===
@@ -632,6 +647,10 @@
     if (id === 'maw') return this._contestMaw(contest);
     if (id === 'oath') return this._contestOath(contest);
     if (id === 'beastmaster') return this._contestBeastmaster(contest);
+    if (id === 'riddle') return this._contestRiddle(contest);
+    if (id === 'confession') return this._contestConfession(contest);
+    if (id === 'honey') return this._contestHoney(contest);
+    if (id === 'secrets') return this._contestSecrets(contest);
     const cat = contest.cat;
     if (cat === 'endurance') return this._contestEndurance(contest);
     if (cat === 'moot') return this._contestMoot(contest);
@@ -726,6 +745,10 @@
       maw: "Never stop moving. It counts your pauses. The light at the end is real — probably.",
       oath: "Mean every word or say nothing. The binding hears the difference. A planned betrayal is still a plan it heard.",
       beastmaster: "Kindness first, then authority. It respects calm — neither fear nor cruelty. Never yank the collar.",
+      riddle: "The Engine's riddles are always about you. Answer with the childhood version of the truth — the adult version is too careful, and it knows.",
+      confession: "The confessor is covering for someone. Watch who they look at when the details get specific — guilt looks at the person it's protecting.",
+      honey: "Smoke first, always. The queen cell is the prize and the death. The swarm respects slowness — it has never been hurried and doesn't intend to start.",
+      secrets: "The deck isn't random — it's curated. It plays the secrets that hurt most when you're winning. Fold while you still like these people.",
     };
     return '\n\n📚 What you know: ' + (LINES[contest.id] || "You've seen this before. Trust your instincts.");
   };
@@ -1240,6 +1263,127 @@
     ];
   };
 
+  // --- RIDDLE ME THIS (bespoke, puzzle/high) ---
+  // The Riddle Engine doesn't want blood. It wants memories. Wrong answers
+  // cost pieces of your past (trauma). Knowledge-gated (Steve 2026-10-06):
+  // veterans know the last riddle is always the one you don't want to
+  // answer — first-timers walk into it blind.
+  G._contestRiddle = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('riddle').level >= 2;
+    return [
+      { text: intro + `\n\nA lattice of mouths hangs in the air, opening and closing out of sync. The Engine doesn't want your blood. It wants the summer you turned nine.\n\nRiddle one, in a voice like a choir warming up: "The more of me you take, the more you leave behind. What am I?"`,
+        choices: [
+          { label: 'Answer: footsteps', sub: 'steady', do: { note: 'You say it steady. The mouths ripple — correct. The Engine is disappointed and impressed.' }, next: 1 },
+          { label: 'Ask the audience', sub: 'crowd work', do: { note: 'The chat screams answers, half of them wrong on purpose. You pick the loudest. It\'s right. Probably.', notability: 'showmanship' }, next: 1 },
+          { label: 'Refuse to answer', sub: 'silence', do: { trauma: 8, note: 'You stay silent. The Engine takes a memory as payment anyway — the summer you turned nine. You remember remembering it. The shape is gone.' }, next: 1 },
+        ] },
+      { text: `Riddle two. The Engine has been reading you between questions.\n\nIt asks about the dog. You never told it about the dog.`,
+        choices: [
+          { label: 'Answer as the kid you were', sub: 'the childhood truth', do: { note: 'You answer as the child, not the adult. The Engine recoils — the childhood truth is the one thing it can\'t parse.' }, next: 2 },
+          { label: 'Lie to the Engine', sub: 'gamble', do: { die: 0.08, trauma: 6, note: 'You lie. The mouths smile — all of them, at once. It knew. It always knew.' }, next: 2 },
+          { label: 'Offer it a different memory', sub: 'trade', do: { trauma: 10, note: 'You hand over a Tuesday, voluntarily. The Engine accepts the trade, surprised. Nobody has ever paid willingly.' }, next: 2 },
+        ] },
+      { text: knows
+          ? `The last riddle. The mouths lean close. You know this one now — you've paid for the lesson before: the last riddle is always the one you don't want to answer. Answer it anyway. Truthfully.`
+          : `The last riddle. The mouths lean close.\n\nThis one is about you, and you can feel which memory it's reaching for.`,
+        choices: [
+          { label: 'Answer it truthfully', sub: 'the real thing', do: { prize: true, trauma: 4, note: 'You say the true thing out loud, on camera, to the galaxy. It costs. The Engine goes quiet — sated, or respectful. The mouths close, one by one.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Ask IT a riddle', sub: 'turn the tables', do: { prize: true, die: 0.1, note: 'You ask the Engine one back. It has never been asked. The lattice freezes — every mouth open, nothing coming out. Then, slowly: delight.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Answer wrong on purpose', sub: 'defiance', do: { trauma: 8, note: 'You answer wrong, deliberately, looking straight into the cameras. Defiance is also an answer. The Engine files you under: interesting.', notability: 'showmanship' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
+  // --- THE CONFESSION (bespoke, detective/high) ---
+  // The fear is social, not mechanical (Steve 2026-10-05): judge wrong and
+  // the village buries the wrong person. Judge right and the village still
+  // doesn't thank you. Accuse the System and it might just listen.
+  G._contestConfession = function(contest) {
+    const intro = this._cxIntro(contest);
+    const knows = this.contestKnowledge('confession').level >= 2;
+    const roster = (this.state.village.roster || []).filter(id => id !== 'player' && id !== this.villagerId);
+    const cname = roster.length ? this.displayName(roster[0]) : 'a villager';
+    return [
+      { text: intro + `\n\n${cname} stands under the lights. The confession, read flat: "I poisoned the water store."\n\nThe System, almost gentle: "PROVE IT TRUE OR FALSE BEFORE DUSK, INVESTIGATOR. WE PUNISH SOMEONE EITHER WAY."`,
+        choices: [
+          { label: 'Study the confessor', sub: 'read them', do: { note: `You study ${cname}. The hands are steady. Too steady. Performed calm.` }, next: 1 },
+          { label: 'Ask who benefits', sub: 'motive', do: { note: 'You ask who benefits from poisoned water. The village shifts. Nobody meets your eyes. Everybody benefits from something.' }, next: 1 },
+          { label: 'Watch the village', sub: 'not the confessor', do: { note: 'You watch the crowd instead of the accused. Faces tell you more than confessions — and one face in the back is doing arithmetic.' }, next: 1 },
+        ] },
+      { text: (knows
+          ? `📚 You've seen a false confession before. The confessor keeps glancing at the same person in the crowd — guilt looks at who it's protecting.\n\n`
+          : ``) + `You press. The story wobbles — the poison, the hour, the hands. Real guilt is consistent. This isn't.\n\n${cname} won't stop looking at the back row.`,
+        choices: [
+          { label: 'Press the details', sub: 'the wobble', do: { note: 'You press on the details and the details fall apart. The time is wrong. The method is wrong. The grief, though — the grief is real.' }, next: 2 },
+          { label: 'Ask about the hands', sub: 'the evidence', do: { note: '"Show me your hands." Clean. Too clean. Someone scrubbed this confession until it shone.' }, next: 2 },
+          { label: 'Let them talk', sub: 'the ramble', do: { note: 'You let them ramble. Liars over-explain. The innocent get annoyed. This one is performing grief for someone else\'s crime.' }, next: 2 },
+        ] },
+      { text: `Dusk is coming. The System waits with the patience of weather.\n\nThe verdict is yours. The consequences are everyone's.`,
+        choices: [
+          { label: 'Name the real culprit', sub: 'the truth, whoever it hurts', do: { prize: true, fracture: 1, note: 'You name the real one — someone the village loves. The crowd goes silent. You were right. The village doesn\'t thank you.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Confirm the confession', sub: 'take the easy verdict', do: { trauma: 10, fracture: 2, note: `You confirm it. The System takes ${cname}. Later the water tests come back clean — there was never any poison. The village will remember what you did.` }, next: 'LOSE' },
+          { label: 'Accuse the System', sub: 'on its own cameras', do: { die: 0.25, note: `You point at the cameras. "You wrote this confession." The System goes very still. ${cname} is released in the silence. Nobody has ever said it out loud before.` }, next: 'WIN' },
+        ] },
+    ];
+  };
+
+  // --- SWEET TOOTH (bespoke, forage/high) ---
+  // A hive the size of a house. The swarm is the size of weather. Bring
+  // honey home and the village says your name when they taste it — the
+  // win pays in unity, not just calories.
+  G._contestHoney = function(contest) {
+    const intro = this._cxIntro(contest);
+    return [
+      { text: intro + `\n\nThe hive hangs in the arena like a second moon, humming. The swarm moves as one body and it has opinions.\n\nHarvest the comb. Try to keep your face.`,
+        choices: [
+          { label: 'Smoke them first', sub: 'the old way', do: { note: 'You work the smoker until the air is grey and sweet. The swarm goes drowsy and forgiving. The old way is the old way for a reason.' }, next: 1 },
+          { label: 'Go in fast', sub: 'speed', do: { dmg: [6, 12], note: 'You go in fast. The swarm disagrees with the plan, loudly, all over your arms.' }, next: 1 },
+          { label: 'Sing to the swarm', sub: 'bass', do: { note: 'You sing low — the deepest note you have. The swarm settles onto the hum like it\'s furniture. The audience is confused and moved.', notability: 'showmanship' }, next: 1 },
+        ] },
+      { text: `You're at the comb. It glows. The queen cell pulses at the heart of it — the prize and the death, side by side.\n\nThe swarm is watching you decide.`,
+        choices: [
+          { label: 'Cut the edge comb', sub: 'respectful', do: { kcal: 200, note: 'You cut only the edge comb. The swarm tolerates the tax. Respect is a currency they accept.' }, next: 2 },
+          { label: 'Cut deep', sub: 'greedy', do: { kcal: 400, dmg: [8, 16], die: 0.06, note: 'You cut deep. The comb is heavy and golden. The swarm revises its opinion of you.' }, next: 2 },
+          { label: 'Rob the queen cell', sub: 'the prize and the death', do: { kcal: 600, dmg: [12, 20], die: 0.12, note: 'You take the queen cell. The hive SCREAMS — one voice, ten thousand throats. You will never be welcome here again.' }, next: 2 },
+        ] },
+      { text: `The comb is in your hands. The swarm is in the air.\n\nNow: the getaway.`,
+        choices: [
+          { label: 'Run with the comb', sub: 'speed', do: { prize: true, dmg: [10, 18], die: 0.1, note: 'You RUN. The swarm follows like weather. You make the gate with the comb and most of your skin.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Walk out slow, smoking', sub: 'dignity', do: { prize: true, note: 'You walk. Slow. Smoking. Unhurried. The swarm parts around you, confused by the lack of fear. The crowd is on its feet.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Leave an offering', sub: 'share', do: { prize: true, unity: 1, note: 'You set down some of your own food for the swarm. They escort you out — an honor guard of ten thousand. The village eats honey for a week and says your name when they taste it.' }, next: 'WIN' },
+        ] },
+    ];
+  };
+
+  // --- THE SECRET DECK (bespoke, chance/medium) ---
+  // The deck is made of village secrets. The fear isn't the odds — it's the
+  // cost. Winning airs three secrets to the galaxy (fracture). Folding keeps
+  // the village whole. Calling the System a cheat might get you killed.
+  G._contestSecrets = function(contest) {
+    const intro = this._cxIntro(contest);
+    return [
+      { text: intro + `\n\nThe dealer fans the deck. Every card has a face on it — someone watching. The System, dealing: "ANTE UP, CONTESTANT. THE CURRENCY IS TRUTH."\n\nFirst card's coming. Someone in the front row just went pale.`,
+        choices: [
+          { label: 'Draw', sub: 'play', do: { note: "First card: someone in the village has been lying about their age. The cameras find them. They smile like it's fine. It is not fine." }, next: 1 },
+          { label: 'Fold now', sub: 'keep the peace', do: { note: 'You fold before the first card. The secrets stay buried. The village exhales as one. The System looks... disappointed in the ratings.' }, next: 'LOSE' },
+          { label: 'Raise the stakes', sub: 'double or nothing', do: { note: 'Double or nothing. Two secrets per card. The village goes very quiet. The dealer smiles with all its faces.', notability: 'showmanship' }, next: 1 },
+        ] },
+      { text: `The turn. The pot is secrets and it's getting deep.\n\nThe dealer's faces are all watching you. So is everyone you know.`,
+        choices: [
+          { label: 'Call', sub: 'steady', do: { note: 'You call. Second card: two villagers have been meeting at night. The cameras find the clearing. The village does the math before the cameras do.' }, next: 2 },
+          { label: 'Bluff the System', sub: 'audacity', do: { die: 0.08, note: 'You bluff the house. The dealer tilts its head. It has never been bluffed. It is delighted. It is also keeping score.', notability: 'showmanship' }, next: 2 },
+          { label: 'Peek at the deck', sub: 'cheat', do: { trauma: 4, note: 'You peek. The System catches you — and shows the whole village what you saw. Now everyone knows you cheat. The cards know too.' }, next: 2 },
+        ] },
+      { text: `The river. Last card. The deck is warm in the dealer's hands, like it's alive.\n\nWhatever you do next, the village will remember what you traded.`,
+        choices: [
+          { label: 'Show your hand', sub: 'win, whatever it costs', do: { prize: true, fracture: 1, note: 'You win. Three secrets aired to the galaxy. The prize is real. So is the silence at dinner.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Fold at the river', sub: 'with the winning hand', do: { note: 'You fold holding the winner. Nobody will ever know. That\'s the point. The village never finds out what you saved them from.' }, next: 'LOSE' },
+          { label: 'Call the deck rigged', sub: 'on camera', do: { die: 0.15, note: 'You call the System a cheat, on camera. The deck reshuffles itself, offended. The dealer\'s faces stop smiling, one by one.' }, next: 'LOSE' },
+        ] },
+    ];
+  };
+
   // --- GENERIC fallback ---
   G._contestGeneric = function(contest) {
     const intro = this._cxIntro(contest);
@@ -1321,6 +1465,17 @@
       s.trauma = Math.min(100, (s.trauma || 0) + d.trauma);
       log.push(`+${d.trauma} trauma`);
     }
+    // Social consequences are real, not mechanical (Steve 2026-10-05):
+    // winning can cost the village. fracture/unity shift the leadership
+    // ledger — the village remembers what you traded for the prize.
+    if (d.fracture) {
+      try { this.leadShift('fracture', d.fracture); } catch (e) {}
+      log.push(`fracture +${d.fracture}`);
+    }
+    if (d.unity) {
+      try { this.leadShift('unity', d.unity); } catch (e) {}
+      log.push(`unity +${d.unity}`);
+    }
     if (d.notability) {
       this.addNotability('player', d.notability);
       log.push(`noted: ${d.notability}`);
@@ -1332,6 +1487,7 @@
     if (next === 'LOSE') return this._contestEnd(ac, 'lost', false);
     if (next === 'DIE') return this._contestDie(ac, choice.label);
     if (next === 'REFUSE') return this._contestRefuse(ac);
+    if (next === 'VERDICT') return this._contestVerdict(ac);
     ac.phaseIdx = next;
     const np = phases[next];
     if (!np) return this._contestEnd(ac, 'lost', false);
@@ -1367,9 +1523,18 @@
           try {
             const loot = this.rollAlienLoot({ wave: this.unlockedWave(), loot: { chance: 1, tier: this.unlockedWave() } });
             if (loot) {
-              this.sysSay(`📺 Prize: ${loot}!`);
+              // No raw-id leak (Steve 2026-10-06): resolve the display name
+              // like monster alien-loot does, and store the enriched entry so
+              // Pack renders a name instead of "something".
+              const def = (this.data.items || []).find(i => i.id === loot);
               s.inventory = s.inventory || [];
-              s.inventory.push({ itemId: loot, units: 1 });
+              if (def) {
+                s.inventory.push({ itemId: loot, name: def.name, units: 1, kcalEach: def.kcalEach || 0, spoilDay: def.spoilDay || 9999, unit: 'piece', kg: def.kg || 0.3, alienLoot: true });
+                this.sysSay(`📺 Prize: ${def.name}!${def.flavor ? ' ' + def.flavor : ''}`);
+              } else {
+                s.inventory.push({ itemId: loot, units: 1 });
+                this.sysSay(`📺 Prize: ${loot}!`);
+              }
             }
           } catch (e) { this.sysSay('📺 Prize: the System\'s favor (and a story).'); }
         }
@@ -1423,6 +1588,10 @@
       maw: `The pauses added up. The Maw doesn't chase — it collects. The light at the end was real. ${pname} never reached it.`,
       oath: `${pname} broke the oath on camera. The binding doesn't do trials. The words unmade them mid-sentence.`,
       beastmaster: `The beast turned. It wasn't cruelty — it was a misunderstanding with teeth. The collar recorded everything.`,
+      riddle: `${pname} answered wrong three times. The Engine kept the memories and, eventually, the rest. The mouths are still chewing on the childhood.`,
+      confession: `${pname} accused the System on its own cameras. The broadcast cut to static for nine seconds. When it came back, the lectern was empty.`,
+      honey: `The swarm took ${pname} apart like a question. The honey was excellent that year. The village doesn't say so out loud.`,
+      secrets: `${pname} called the System a cheat on live television. The deck dealt one last card. It was ${poss} own secret. The cameras held on the face.`,
     };
     const CAT = {
       blood: `${pname} bled out for the cameras. The Death Reel thanks ${them} for the content.`,
@@ -1486,6 +1655,9 @@
   // === WATCH MODE (villager participant) ===
   // When someone else is taken, you watch. The show plays out as
   // narrated beats with occasional choices (cheer? intervene? look away?).
+  // The watcher doesn't decide the outcome — the VERDICT roll does, scaled
+  // by contest risk. Villagers CAN die on camera (Steve 2026-10-06: watched
+  // contests were bloodless, which broke FEARED).
   G._contestWatchPhases = function(contest, participantId) {
     const pname = this.displayName(participantId);
     return [
@@ -1502,10 +1674,24 @@
         ] },
       { text: `📺 It's over.\n\nThe outcome scrolls across the sky in letters the size of weather.`,
         choices: [
-          { label: 'Go to them', sub: 'after', do: { note: `You go to ${pname} after. Win or lose, they need a familiar face more than applause.` }, next: 'WIN' },
-          { label: 'Give them space', sub: 'respect', do: { note: 'You give them space. The cameras move on. You don\'t.' }, next: 'LOSE' },
+          { label: 'Go to them', sub: 'after', do: { note: `You go to ${pname} after. Win or lose, they need a familiar face more than applause.` }, next: 'VERDICT' },
+          { label: 'Give them space', sub: 'respect', do: { note: 'You give them space. The cameras move on. You don\'t.' }, next: 'VERDICT' },
         ] },
     ];
+  };
+
+  // WATCH VERDICT (Steve 2026-10-06): the watched contest resolves on its
+  // own terms, not the watcher's choices. Death odds scale with contest risk
+  // — blood/extreme contests kill villagers on camera.
+  G._contestVerdict = function(ac) {
+    const contest = this.contestPool().find(c => c.id === ac.contestId) || { risk: 'medium' };
+    const dieOdds = { low: 0, medium: 0.03, high: 0.10, extreme: 0.20 }[contest.risk] || 0;
+    const winOdds = { low: 0.70, medium: 0.55, high: 0.40, extreme: 0.25 }[contest.risk] || 0.5;
+    if (dieOdds > 0 && Math.random() < dieOdds) {
+      return this._contestDie(ac, 'The verdict came down hard.');
+    }
+    const won = Math.random() < winOdds;
+    return this._contestEnd(ac, won ? 'won' : 'lost', won);
   };
 
 })();
