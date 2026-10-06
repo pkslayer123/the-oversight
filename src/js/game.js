@@ -17965,6 +17965,7 @@
           // dodge, so footwork doesn't save you. (tg.unavoidable was set at
           // declare but never read: "UNAVOIDABLE" was text-only. Now it's real.)
           let resCells = tg.cells;
+          let pzLosFizzle = false;
           if (this.pzIs(m) && tg.unavoidable) {
             const pt = (this.encUsesFifo(m) && this.encCurrentTarget(m)) || this.tbFighter('p');
             if (pt && pt.alive) {
@@ -17975,6 +17976,25 @@
                 rc.push({ cx, cy });
               }
               tg.cells = rc; resCells = rc;
+              // PAPARAZZO LOS COUNTERPLAY (Steve 2026-10-06): the codex
+              // promises "break line of sight — it cannot photograph what it
+              // cannot see." The prediction still re-centers (it learned your
+              // dodge), but the FLASH needs a clear line. No LOS → the shot
+              // dies in the cover: no damage, no freeze, and the model loses
+              // the thread (prediction drops to 1 — it has to learn you over).
+              if (!this.canSee(m.mx, m.my, pt.mx, pt.my)) {
+                pzLosFizzle = true;
+                m.pzPrediction = 1;
+                // Back to tracking: the NEXT flashes are dodgeable again until
+                // it rebuilds to 4 and re-enters exclusive. (Without this the
+                // phase would sit at 'exclusive' and every flash would stay
+                // unavoidable even at prediction 1.)
+                this.encSetPhase(m, 'tracking');
+                tg.cells = []; resCells = [];
+                tg.threatenedPlayer = false;
+                this.say('The flash fires — and dies in the cover between you. No line of sight, no shot. It got NOTHING. (Prediction resets — it has to learn you all over again.)');
+                try { this.audioEvent('paparazzoShutter', { prediction: 1 }); } catch (e) {}
+              }
             }
           }
           if (this.mothIs(m)) resCells = this.tbMothArcCells(m, tg.cells);
@@ -18058,7 +18078,9 @@
                 this.say(`FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`);
               }
             }
-            if (!hitFighters.some(o => o.kind === 'player')) {
+            // LOS FIZZLE (Steve 2026-10-06): the fizzle line already said it —
+            // don't also print the generic "it missed" line.
+            if (!pzLosFizzle && !hitFighters.some(o => o.kind === 'player')) {
               this.say(`Click. It missed — but the shutter keeps clicking. (Prediction ${m.pzPrediction}/4 anyway — it learns from the miss too.)`);
             }
           }
