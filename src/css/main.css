@@ -880,6 +880,15 @@ body.in-combat .ord-log { order: 5.3; }
   font-size: 14px; line-height: 1.45; cursor: pointer;
   animation: combatArrive 0.2s ease-out;
 }
+/* NARRATION IMPACT (Steve 2026-10-06): narration must land, not whisper.
+   Larger, left-accented, unmissable. */
+.dialogue-box.narr-box {
+  font-size: 16px; line-height: 1.5;
+  border-left: 4px solid #e8b34a;
+  background: rgba(20, 16, 8, .95);
+  margin: 8px 4px;
+  padding: 12px 14px 10px;
+}
 .dlg-speaker {
   display: flex; justify-content: space-between; align-items: center;
   font-weight: bold; font-size: 13px; margin: -8px -10px 6px;

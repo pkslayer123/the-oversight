@@ -6375,6 +6375,13 @@
       this.reveal(x, y);
       this.markSeen(x, y, 'visited');
       const tile = this.playerTile();
+      // ANIMAL CONTINUITY: if you left an animal here, it's still here.
+      try {
+        if (tile && tile.animal && !this.state.scholar.animal) {
+          this.state.scholar.animal = tile.animal;
+          delete tile.animal;
+        }
+      } catch (e) {}
       // NODE TRAVEL IS FREE (Steve 2026-10-05): crossing a node boundary is
       // just walking. The steps to reach the edge already cost. No extra
       // kcal tax, no tick cost for the boundary itself.
@@ -6452,7 +6459,16 @@
           this.say(`You find it — the ${this.monsterNoun(fled.id)} didn't get far. It's still running scared.`);
         }
       } catch (e) {}
-      this.state.scholar.animal = null; // animals don't follow
+      // ANIMAL CONTINUITY (Steve 2026-10-06): animals don't follow you, but
+      // they don't vanish either. They stay where you left them.
+      try {
+        const oldX = this.map.px, oldY = this.map.py;
+        const oldTile = this.tileAt(oldX, oldY);
+        if (this.state.scholar.animal && oldTile) {
+          oldTile.animal = this.state.scholar.animal;
+        }
+      } catch (e) {}
+      this.state.scholar.animal = null;
       if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
       this.checkAnimals();
