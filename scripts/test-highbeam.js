@@ -138,6 +138,14 @@ function driveCombat(playerFn, maxTurns) {
     const s = Game.state.scholar;
     const realCanSee = Game.canSee.bind(Game);
     Game.canSee = () => true; // isolate the stance machine from random LoS
+    // The headlight scenario places villagers near the deer (they join the
+    // fight) — park them far away so detection tests isolate player distance.
+    Game.ensureVillagerPositions();
+    for (const rid of Object.keys(Game.state.village.positions || {})) {
+      Game.state.village.positions[rid] = { mx: 0, my: 0 };
+    }
+    // Clear any warn state the villagers may have triggered
+    if (s.monster) { s.monster.warned = false; s.monster.warnTurns = 0; }
     for (let i = 0; i < 3; i++) Game.monsterTurn();
     ok('unaware at dist 5 (no warn, no combat)', !Game.tbfight && !(s.monster || {}).warned);
     s.mx = 3; // dist 4
