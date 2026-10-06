@@ -2103,6 +2103,151 @@
       o.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + dur + 0.05);
     }
+
+    // ============ WAVE 2 GROUP B: corporate horrors audio ============
+    function hypeInflate() {
+      // swelling bagpipe of encouragement: low sine swelling up, getting louder.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.0;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(110, t);
+      o.frequency.exponentialRampToValueAtTime(220, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.30, t + dur * 0.9);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.1);
+    }
+    function hypeEncourage(data) {
+      // escalating shout: each beat louder. n = turnsLeft (3,2,1).
+      if (!ensure()) return;
+      const n = (data && data.n) || 2;
+      const t = ctx.currentTime, dur = 0.45;
+      const vol = n === 3 ? 0.18 : n === 2 ? 0.26 : 0.36;
+      const base = n === 3 ? 300 : n === 2 ? 380 : 480;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(base, t);
+      o.frequency.linearRampToValueAtTime(base * 1.25, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1800;
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    function hypeDetonate() {
+      // sonic encouragement detonation: big boom + ringing.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.1;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(160, t);
+      o.frequency.exponentialRampToValueAtTime(38, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.5, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur + 0.05);
+      // metallic ring on top
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.type = 'triangle'; o2.frequency.setValueAtTime(1240, t);
+      g2.gain.setValueAtTime(0.0001, t);
+      g2.gain.exponentialRampToValueAtTime(0.10, t + 0.08);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      o2.connect(g2); g2.connect(sfxBus);
+      o2.start(t); o2.stop(t + 0.75);
+    }
+    function hypeDeflate() {
+      // sad trombone deflate: descending wah-wah.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.9;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(320, t);
+      o.frequency.exponentialRampToValueAtTime(90, t + dur);
+      // wah-wah wobble
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 6; lg.gain.value = 40;
+      lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.20, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
+    }
+    function holdMusic() {
+      // muzak from nowhere: tinny, looping, wrong. Two detuned triangles.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.6;
+      const notes = [392, 440, 523, 440];
+      notes.forEach((fr, i) => {
+        const dt = t + i * 0.38;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(fr * 1.01, dt); // slightly sharp = wrong
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.10, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.36);
+        // telephone bandpass: it comes through a headset
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1200; f.Q.value = 1.2;
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.4);
+      });
+    }
+    function lineCut() {
+      // the voice cuts out: abrupt digital dropout + click.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.setValueAtTime(880, t);
+      g.gain.setValueAtTime(0.14, t);
+      g.gain.setValueAtTime(0.14, t + 0.12);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.2);
+      // click
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.type = 'sine'; o2.frequency.setValueAtTime(2400, t + 0.13);
+      g2.gain.setValueAtTime(0.12, t + 0.13);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      o2.connect(g2); g2.connect(sfxBus);
+      o2.start(t + 0.13); o2.stop(t + 0.25);
+    }
+    function paperRustle(data) {
+      // dry paper unfolding: filtered noise bursts.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const binding = data && data.binding;
+      const bursts = binding ? 5 : 3;
+      for (let i = 0; i < bursts; i++) {
+        const dt = t + i * (binding ? 0.16 : 0.22);
+        const dur = 0.18;
+        const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let s = 0; s < ch.length; s++) ch[s] = (Math.random() * 2 - 1) * (1 - s / ch.length);
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = binding ? 2500 : 3200;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(binding ? 0.20 : 0.13, dt);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + dur);
+        src.connect(f); f.connect(g); g.connect(sfxBus);
+        src.start(dt);
+      }
+      if (binding) {
+        // low tightening tone under the rustle: the clauses closing.
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(140, t);
+        o.frequency.exponentialRampToValueAtTime(70, t + 0.9);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.22, t + 0.3);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + 1.05);
+      }
+    }
     function baskCharge(d) {
       // heat shimmer: soft rising shimmer, brighter with charge.
       if (!ensure()) return;
@@ -4601,7 +4746,50 @@
     apt: '🏢', lobby: '🛋️', cube: '💼', break: '☕', conf: '📊',
     bunk: '🛏️', lodge: '🏠',
   };
+  // ATTACK VISUALS (Steve 2026-10-05): the grid IS the telegraph.
+  // Collects telegraph cells by pattern type for ALL monsters, not just beams.
+  // Returns { patternType: Set("x,y"), ... } plus direct-target keys.
+  // Knowledge gating: if pattern not learned (codex), cells are still shown
+  // but with a 'vague' flag — the UI renders them dimmer (you see danger,
+  // but not the exact shape).
+  function tbAllTelegraphCells() {
+    const out = { burst: new Set(), charge: new Set(), line: new Set(), single: new Set(), direct: new Set(), rush: new Set(), ambush: new Set(), beam: new Set(), vague: new Set() };
+    try {
+      const f = Game.tbfight;
+      if (!f) return out;
+      for (const m of (f.fighters || [])) {
+        if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || !m.telegraph) continue;
+        const tg = m.telegraph;
+        const ptype = (tg.pattern && tg.pattern.type) || 'single';
+        // Knowledge gating: is this pattern learned?
+        let known = true;
+        try {
+          known = Game.encTelegraphKnown ? Game.encTelegraphKnown(m) : true;
+        } catch (e) {}
+        const targetSet = out[ptype] || out.single;
+        if (tg.kind === 'direct' && tg.targetKey) {
+          // Find the target's position
+          const tgt = (f.fighters || []).find(x => x.key === tg.targetKey);
+          if (tgt) {
+            out.direct.add(tgt.mx + ',' + tgt.my);
+            if (!known) out.vague.add(tgt.mx + ',' + tgt.my);
+          }
+        } else if (tg.cells && tg.cells.length) {
+          for (const c of tg.cells) {
+            const k = c.cx + ',' + c.cy;
+            // Don't double-add beam cells (they have their own renderer)
+            if (ptype === 'beam') continue;
+            targetSet.add(k);
+            if (!known) out.vague.add(k);
+          }
+        }
+      }
+    } catch (e) {}
+    return out;
+  }
   function renderDetail(st) {
+    // Collect telegraph visuals once per render (not per cell)
+    const _tg = tbAllTelegraphCells();
     const cells = Game.genDetail(st.px, st.py);
     const tile = Game.playerTile();
     const pmx = Game.state.scholar.mx ?? 4, pmy = Game.state.scholar.my ?? 4;
@@ -4757,7 +4945,18 @@
         const _beamCls = (_lane && _lane.has(_k)) ? (' beamLane' + (_live ? ' beamLive' : '')) : ((_ghost && _ghost.has(_k)) ? ' beamGhost' : '');
         const _srcCls = (_src && _src === _k) ? ' beamSource' : '';
         const _haloCls = (_halo && _halo.has(_k)) ? ' beamLight' : '';
-        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
+        // ATTACK VISUALS: pattern-specific telegraph classes. The grid IS the telegraph.
+        // vague: pattern not learned yet — dimmer (you see danger, not the shape).
+        const _vague = _tg.vague.has(_k) ? ' vague' : '';
+        const _tgCls =
+          (_tg.burst.has(_k) ? ' burstRadius' + _vague : '') +
+          (_tg.charge.has(_k) ? ' chargeLane' + _vague : '') +
+          (_tg.line.has(_k) ? ' lineCells' + _vague : '') +
+          (_tg.single.has(_k) ? ' targetTile' + _vague : '') +
+          (_tg.direct.has(_k) ? ' lockOn' + _vague : '') +
+          (_tg.rush.has(_k) ? ' rushIndicator' + _vague : '') +
+          (_tg.ambush.has(_k) ? ' ambushZone' + _vague : '');
+        html += `<div class="${cls}${targetingCells().has(_k) ? ' targetable' : ''}${Game.cellScorched && Game.cellScorched(cx, cy) ? ' scorched' : ''}${_beamCls}${_srcCls}${_haloCls}${_tgCls}" data-cx="${cx}" data-cy="${cy}">${g}</div>`;
       }
       html += '</div>';
     }

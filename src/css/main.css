@@ -220,6 +220,27 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 .cell.beamLight { filter: brightness(1.45); background-color: rgba(255, 190, 90, .20); }
 /* BEAM GHOST: where the beam just was — the sweep arc reads as motion. */
 .cell.beamGhost { outline: 2px solid rgba(255, 130, 40, .55); outline-offset: -2px; background-color: rgba(255, 130, 40, .22); }
+/* ATTACK VISUALS (Steve 2026-10-05): the grid IS the telegraph. Pattern-specific. */
+/* BURST: radius circle — pulsing red-orange, danger zone */
+.cell.burstRadius { outline: 2px solid #ff6b35; outline-offset: -2px; background-color: rgba(255, 107, 53, .25); animation: burstPulse 0.9s infinite alternate; }
+@keyframes burstPulse { from { background-color: rgba(255, 107, 53, .18); } to { background-color: rgba(255, 107, 53, .35); } }
+/* CHARGE: lane — directional stripes, the beast is coming through */
+.cell.chargeLane { outline: 2px solid #ffd23f; outline-offset: -2px; background: repeating-linear-gradient(45deg, rgba(255, 210, 63, .25), rgba(255, 210, 63, .25) 4px, rgba(255, 210, 63, .1) 4px, rgba(255, 210, 63, .1) 8px); animation: chargePulse 0.6s infinite alternate; }
+@keyframes chargePulse { from { outline-color: #ffd23f; } to { outline-color: #ff9f1c; } }
+/* LINE: straight line — clean red line */
+.cell.lineCells { outline: 2px solid #e71d36; outline-offset: -2px; background-color: rgba(231, 29, 54, .22); }
+/* SINGLE: target tile — crosshair, one tile */
+.cell.targetTile { outline: 3px solid #ff3b30; outline-offset: -3px; background-color: rgba(255, 59, 48, .3); animation: targetBlink 0.5s infinite alternate; }
+@keyframes targetBlink { from { outline-color: #ff3b30; } to { outline-color: #ff8a80; } }
+/* DIRECT: lock-on — corner brackets, the beast has you */
+.cell.lockOn { outline: 2px solid #9d4edd; outline-offset: -2px; background-color: rgba(157, 78, 221, .2); box-shadow: inset 0 0 12px rgba(157, 78, 221, .4); }
+/* RUSH: rush indicator — fast-moving chevrons */
+.cell.rushIndicator { outline: 2px solid #06ffa5; outline-offset: -2px; background-color: rgba(6, 255, 165, .18); animation: rushSlide 0.4s infinite alternate; }
+@keyframes rushSlide { from { background-color: rgba(6, 255, 165, .12); } to { background-color: rgba(6, 255, 165, .28); } }
+/* AMBUSH: ambush zone — dark, lurking */
+.cell.ambushZone { outline: 2px dashed #5c5c5c; outline-offset: -2px; background-color: rgba(40, 40, 40, .4); }
+/* VAGUE: pattern not learned yet — dimmer, you see danger but not the shape */
+.cell.vague { opacity: 0.5; filter: saturate(0.5); }
 /* IGNITE FLASH: full-screen flinch on discharge. */
 #beamflash { position: fixed; inset: 0; pointer-events: none; z-index: 90; opacity: 0;
   background: radial-gradient(circle, rgba(255, 242, 205, .9), rgba(255, 165, 60, .38) 55%, transparent 80%); }
