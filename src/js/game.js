@@ -13205,8 +13205,12 @@
       if (!detail[cy] || !detail[cy][cx]) return;
       const cell = detail[cy][cx];
       const cellType = typeof cell === 'string' ? cell : cell.type;
-      // UNBREAKABLE: haven structures and alien structures
-      const unbreakable = ['tent', 'fire', 'hall', 'bunk', 'lodge', 'haven', 'sanct', 'base'];
+      // UNBREAKABLE (Steve 2026-10-05): ONLY haven buildings (the starting
+      // village structures) and alien structures. Player-built tents, lodges,
+      // etc. are BREAKABLE. Havens are home — they do not break.
+      // Note: the haven interior is a separate map. Outdoor 'wall' cells are
+      // wild ruins — breakable. The haven's walls are never on the outdoor grid.
+      const unbreakable = ['hall', 'fire', 'bunk', 'door', 'haven', 'sanct', 'base'];
       if (unbreakable.includes(cellType)) {
         this.say(`The ${cellType} holds. Havens do not break.`);
         return false;
