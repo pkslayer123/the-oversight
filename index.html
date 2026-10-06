@@ -141,18 +141,29 @@
     function go() {
       if (navigated) return; navigated = true;
       show('&#8635; Reloading into the new version&hellip;');
-      // Store expected version for post-reload verification
-      // (Steve 2026-10-06: URL navigation was black-screening on iOS PWA)
       try {
         if (remoteVersion) sessionStorage.setItem('oversight_expect_version', remoteVersion);
       } catch (e) {}
-      // Simple reload - caches were already wiped, fresh files will load
-      // No URL construction = no black screen risk
+      // Try multiple reload methods - iOS PWA is finicky
+      // (Steve 2026-10-06: reload() was black-screening)
       try {
-        window.location.reload();
-      } catch (e) {
-        fail();
+        // Method 1: href navigation with cache-buster (most reliable)
+        var href = window.location.href.split('?')[0].split('#')[0];
+        window.location.href = href + '?fresh=' + Date.now().toString(36);
+      } catch (e1) {
+        try {
+          // Method 2: plain reload
+          window.location.reload();
+        } catch (e2) {
+          fail();
+        }
       }
+      // If we're still here after 5s, the navigation failed - show manual instructions
+      setTimeout(function() {
+        if (!navigated) return; // already handled
+        show('&#9888; Automatic reload failed. Please <b>close the app completely</b> (swipe up in app switcher) and reopen it.');
+        state = 'failed';
+      }, 5000);
     }
     function withTimeout(p, ms) {
       return Promise.race([p, new Promise(function (res) { setTimeout(res, ms); })]);
