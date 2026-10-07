@@ -4,10 +4,10 @@
     "id": "triage",
     "modifiers": [
       {
-        "target": "healing.amount",
         "op": "multiply",
-        "value": 1.5,
-        "scale": "level"
+        "scale": "level",
+        "target": "healing.amount",
+        "value": 1.5
       }
     ],
     "name": "Triage",
@@ -24,10 +24,10 @@
     "id": "steady_hands",
     "modifiers": [
       {
-        "target": "craft.success",
         "op": "multiply",
-        "value": 1.25,
-        "scale": "level"
+        "scale": "level",
+        "target": "craft.success",
+        "value": 1.25
       }
     ],
     "name": "Steady Hands",
@@ -41,10 +41,10 @@
     "id": "game_sense",
     "modifiers": [
       {
-        "target": "hunt.find_chance",
         "op": "multiply",
-        "value": 1.4,
-        "scale": "level"
+        "scale": "level",
+        "target": "hunt.find_chance",
+        "value": 1.4
       }
     ],
     "name": "Game Sense",
@@ -61,10 +61,10 @@
     "id": "patient_aim",
     "modifiers": [
       {
-        "target": "combat.strike_damage",
+        "condition": "round:1",
         "op": "multiply",
-        "value": 2,
-        "condition": "round:1"
+        "target": "combat.strike_damage",
+        "value": 2
       }
     ],
     "name": "Patient Aim",
@@ -78,10 +78,10 @@
     "id": "field_dressing",
     "modifiers": [
       {
-        "target": "hunt.meat_yield",
         "op": "multiply",
-        "value": 1.3,
-        "scale": "level"
+        "scale": "level",
+        "target": "hunt.meat_yield",
+        "value": 1.3
       }
     ],
     "name": "Field Dressing",
@@ -98,10 +98,10 @@
     "id": "preservation_instinct",
     "modifiers": [
       {
-        "target": "food.spoilage_days",
         "op": "add",
-        "value": 2,
-        "scale": "level"
+        "scale": "level",
+        "target": "food.spoilage_days",
+        "value": 2
       }
     ],
     "name": "Preservation Instinct",
@@ -115,8 +115,8 @@
     "id": "forage_identification",
     "modifiers": [
       {
-        "target": "forage.learn_threshold",
         "op": "add",
+        "target": "forage.learn_threshold",
         "value": -1
       }
     ],
@@ -128,14 +128,25 @@
     }
   },
   {
+    "actions": [
+      {
+        "context": "explore",
+        "cost": {
+          "kcal": 30
+        },
+        "effect": "Settle your gut until the next part of the day. Unsafe food can't poison you while it lasts.",
+        "id": "push_through",
+        "name": "Push Through"
+      }
+    ],
     "description": "Your gut handles what it shouldn't. A useful lie your body tells itself.",
     "id": "iron_stomach",
     "modifiers": [
       {
-        "target": "food.poison_chance",
         "op": "multiply",
-        "value": 0.25,
-        "scale": "level"
+        "scale": "level",
+        "target": "food.poison_chance",
+        "value": 0.25
       }
     ],
     "name": "Iron Stomach",
@@ -150,10 +161,10 @@
     "id": "soft_step",
     "modifiers": [
       {
-        "target": "travel.encounter_chance",
         "op": "multiply",
-        "value": 0.7,
-        "scale": "level"
+        "scale": "level",
+        "target": "travel.encounter_chance",
+        "value": 0.7
       }
     ],
     "name": "Soft Step",
@@ -168,10 +179,10 @@
     "id": "taught_hands",
     "modifiers": [
       {
-        "target": "craft.success",
         "op": "add",
-        "value": 0.1,
-        "scale": "level"
+        "scale": "level",
+        "target": "craft.success",
+        "value": 0.1
       }
     ],
     "name": "Taught Hands",
@@ -186,10 +197,10 @@
     "id": "pattern_recognition",
     "modifiers": [
       {
-        "target": "forage.rare_find_chance",
         "op": "add",
-        "value": 0.1,
-        "scale": "level"
+        "scale": "level",
+        "target": "forage.rare_find_chance",
+        "value": 0.1
       }
     ],
     "name": "Pattern Recognition",
@@ -204,10 +215,10 @@
     "id": "adrenaline_control",
     "modifiers": [
       {
-        "target": "combat.dodge_chance",
         "op": "add",
-        "value": 0.15,
-        "scale": "level"
+        "scale": "level",
+        "target": "combat.dodge_chance",
+        "value": 0.15
       }
     ],
     "name": "Adrenaline Control",
@@ -221,975 +232,1212 @@
     }
   },
   {
-    "id": "green_thumb",
-    "name": "Green Thumb",
     "description": "Foraging yields +50%. You know where to look.",
     "flavor": "PLANTS LIKE YOU! We asked them!",
+    "id": "green_thumb",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [],
+    "name": "Green Thumb",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "tracker",
-    "name": "Tracker",
     "description": "Hunting success +30%. You read the ground.",
     "flavor": "You see the footprints! We only see feet!",
+    "id": "tracker",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [],
+    "name": "Tracker",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "diplomat",
-    "name": "Diplomat",
     "description": "Trust builds 2x faster. People open up to you.",
     "flavor": "You make the sad faces go away! Teach us?",
+    "id": "diplomat",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [],
+    "name": "Diplomat",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "camp_cook",
-    "name": "Camp Cook",
     "description": "Cooking uses half the water. +10% kcal.",
     "flavor": "The food sings! We hear it! Do you hear it?",
+    "id": "camp_cook",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [],
+    "name": "Camp Cook",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "generous",
-    "name": "Generous Heart",
     "description": "Donating gives 2x trust.",
     "flavor": "Sharing! We love sharing! Have our moon!",
-    "pool": "system",
-    "tier": "utility",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [],
+    "id": "generous",
     "metabolic": {
       "daily": 25
-    }
-  },
-  {
-    "id": "scrounger",
-    "name": "Scrounger",
-    "description": "Ruin looting finds +1 item.",
-    "flavor": "You find the shiny things in the broken places!",
+    },
+    "modifiers": [],
+    "name": "Generous Heart",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "squirrel_friend",
-    "name": "Squirrel Friend",
-    "description": "Squirrels sometimes leave you nuts. (Random gifts.)",
-    "flavor": "The tiny tree-people like you! They pay rent in acorns!",
+    "description": "Ruin looting finds +1 item.",
+    "flavor": "You find the shiny things in the broken places!",
+    "id": "scrounger",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [],
+    "name": "Scrounger",
     "pool": "system",
-    "tier": "wacky",
+    "tier": "utility",
     "unlock": {
       "type": "system_offer"
+    }
+  },
+  {
+    "description": "Squirrels sometimes leave you nuts. (Random gifts.)",
+    "flavor": "The tiny tree-people like you! They pay rent in acorns!",
+    "id": "squirrel_friend",
+    "metabolic": {
+      "daily": 25
     },
     "modifiers": [
       {
-        "target": "forage.gift_chance",
         "op": "add",
+        "target": "forage.gift_chance",
         "value": 0.25
       }
     ],
-    "metabolic": {
-      "daily": 25
-    }
-  },
-  {
-    "id": "rain_dancer",
-    "name": "Rain Dancer",
-    "description": "When it rains, +1L water free. (You dance. It works.)",
-    "flavor": "You wiggle and the sky cries! We tried wiggling! Nothing happened!",
+    "name": "Squirrel Friend",
     "pool": "system",
     "tier": "wacky",
     "unlock": {
       "type": "system_offer"
+    }
+  },
+  {
+    "description": "When it rains, +1L water free. (You dance. It works.)",
+    "flavor": "You wiggle and the sky cries! We tried wiggling! Nothing happened!",
+    "id": "rain_dancer",
+    "metabolic": {
+      "daily": 25
     },
     "modifiers": [
       {
-        "target": "water.rain_catch",
         "op": "add",
+        "target": "water.rain_catch",
         "value": 1
       }
     ],
-    "metabolic": {
-      "daily": 25
-    }
-  },
-  {
-    "id": "loud_chewer",
-    "name": "Loud Chewer",
-    "description": "Eating is 2x louder (monsters hear you). But +5 morale.",
-    "flavor": "CRONCH CRONCH! We love the cronch! The monsters love it too! Oops!",
+    "name": "Rain Dancer",
     "pool": "system",
     "tier": "wacky",
     "unlock": {
       "type": "system_offer"
+    }
+  },
+  {
+    "description": "Eating is 2x louder (monsters hear you). But +5 morale.",
+    "flavor": "CRONCH CRONCH! We love the cronch! The monsters love it too! Oops!",
+    "id": "loud_chewer",
+    "metabolic": {
+      "daily": 25
     },
     "modifiers": [
       {
-        "target": "monster.hear_mult",
         "op": "multiply",
+        "target": "monster.hear_mult",
         "value": 2
       }
     ],
-    "metabolic": {
-      "daily": 25
+    "name": "Loud Chewer",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "hoarder",
-    "name": "Hoarder",
     "description": "+10kg carry, but villagers trust you 20% less. (They notice.)",
     "flavor": "You keep the things! ALL the things! We... are concerned! But impressed!",
-    "pool": "system",
-    "tier": "vile",
-    "unlock": {
-      "type": "system_offer"
+    "id": "hoarder",
+    "metabolic": {
+      "daily": 75
     },
     "modifiers": [
       {
-        "target": "trust.gain_mult",
         "op": "multiply",
+        "target": "trust.gain_mult",
         "value": 0.8
       }
     ],
-    "metabolic": {
-      "daily": 75
-    }
-  },
-  {
-    "id": "thief",
-    "name": "Light Fingers",
-    "description": "Steal from pantry without trust loss (50%). If caught, -20 trust.",
-    "flavor": "The food disappears! Magic! (It's not magic. We saw you.)",
+    "name": "Hoarder",
     "pool": "system",
     "tier": "vile",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
+    }
+  },
+  {
+    "description": "Steal from pantry without trust loss (50%). If caught, -20 trust.",
+    "flavor": "The food disappears! Magic! (It's not magic. We saw you.)",
+    "id": "thief",
     "metabolic": {
       "daily": 75
+    },
+    "modifiers": [],
+    "name": "Light Fingers",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "photosynthesis",
-    "name": "Photosynthesis",
     "description": "Gain 100 kcal/hour in sunlight. (You're becoming a plant.)",
     "flavor": "YOU EAT THE SUN! We eat... we don't eat! But WOW!",
-    "pool": "system",
-    "tier": "overpowered",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [],
+    "id": "photosynthesis",
     "metabolic": {
       "daily": 150
-    }
-  },
-  {
-    "id": "second_wind",
-    "name": "Second Wind",
-    "description": "Once per day, when you'd die, you don't. (1 HP, 500 kcal.)",
-    "flavor": "You were almost gone! Then you WEREN'T! How?! We want to know!",
+    },
+    "modifiers": [],
+    "name": "Photosynthesis",
     "pool": "system",
     "tier": "overpowered",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 200
     }
   },
   {
-    "id": "lucky_rock",
-    "name": "Lucky Rock",
-    "description": "Your lucky rock. +5% to everything. (It's not the rock. It's you believing in the rock. The System finds this adorable and helps a little.)",
-    "flavor": "The rock! It is lucky! We checked! It's... a rock! But YOU believe! Belief is power! (We added 4%.)",
+    "description": "Once per day, when you'd die, you don't. (1 HP, 500 kcal.)",
+    "flavor": "You were almost gone! Then you WEREN'T! How?! We want to know!",
+    "id": "second_wind",
+    "metabolic": {
+      "daily": 200
+    },
+    "modifiers": [],
+    "name": "Second Wind",
     "pool": "system",
-    "tier": "underpowered",
+    "tier": "overpowered",
     "unlock": {
       "type": "system_offer"
+    }
+  },
+  {
+    "description": "Your lucky rock. +5% to everything. (It's not the rock. It's you believing in the rock. The System finds this adorable and helps a little.)",
+    "flavor": "The rock! It is lucky! We checked! It's... a rock! But YOU believe! Belief is power! (We added 4%.)",
+    "id": "lucky_rock",
+    "metabolic": {
+      "daily": 10
     },
     "modifiers": [
       {
-        "target": "luck.global",
         "op": "multiply",
+        "target": "luck.global",
         "value": 1.05
       }
     ],
-    "metabolic": {
-      "daily": 10
-    }
-  },
-  {
-    "id": "bird_whisperer",
-    "name": "Bird Whisperer",
-    "description": "Birds land on you. They also warn you: +20% chance to detect monsters before they detect you. (The birds see everything.)",
-    "flavor": "The sky-flappers are your spies! They tell you secrets! Mostly about breadcrumbs! But sometimes about TEETH!",
+    "name": "Lucky Rock",
     "pool": "system",
     "tier": "underpowered",
     "unlock": {
       "type": "system_offer"
+    }
+  },
+  {
+    "description": "Birds land on you. They also warn you: +20% chance to detect monsters before they detect you. (The birds see everything.)",
+    "flavor": "The sky-flappers are your spies! They tell you secrets! Mostly about breadcrumbs! But sometimes about TEETH!",
+    "id": "bird_whisperer",
+    "metabolic": {
+      "daily": 25
     },
     "modifiers": [
       {
-        "target": "monster.detect_chance",
         "op": "add",
+        "target": "monster.detect_chance",
         "value": 0.2
       }
     ],
-    "metabolic": {
-      "daily": 25
+    "name": "Bird Whisperer",
+    "pool": "system",
+    "tier": "underpowered",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "chitin_skin",
-    "name": "Chitin Skin",
     "description": "Your skin hardens into plates. +30 armor, but -20% trust (you look wrong).",
     "flavor": "You are becoming the beetle! The beetle is strong! The beetle is... lonely! But strong!",
-    "pool": "system",
-    "tier": "body_horror",
-    "unlock": {
-      "type": "system_offer"
+    "id": "chitin_skin",
+    "metabolic": {
+      "daily": 150
     },
     "modifiers": [
       {
-        "target": "armor.flat",
         "op": "add",
+        "target": "armor.flat",
         "value": 30
       },
       {
-        "target": "trust.gain_mult",
         "op": "multiply",
+        "target": "trust.gain_mult",
         "value": 0.8
       }
     ],
-    "metabolic": {
-      "daily": 150
-    }
-  },
-  {
-    "id": "extra_stomach",
-    "name": "Extra Stomach",
-    "description": "You grow a second stomach. Bank twice the calories \u2014 but the hunger doubles too. (It's always hungry.)",
-    "flavor": "Two tummies! Twice the hunger! Twice the... we didn't think this through! But WOW!",
+    "name": "Chitin Skin",
     "pool": "system",
     "tier": "body_horror",
     "unlock": {
       "type": "system_offer"
+    }
+  },
+  {
+    "description": "You grow a second stomach. Bank twice the calories \u2014 but the hunger doubles too. (It's always hungry.)",
+    "flavor": "Two tummies! Twice the hunger! Twice the... we didn't think this through! But WOW!",
+    "id": "extra_stomach",
+    "metabolic": {
+      "daily": 2200
     },
     "modifiers": [
       {
-        "target": "food.eat_target_mult",
         "op": "multiply",
+        "target": "food.eat_target_mult",
         "value": 2
       }
     ],
-    "metabolic": {
-      "daily": 2200
-    }
-  },
-  {
-    "id": "deep_reserves",
-    "name": "Deep Reserves",
-    "description": "Your body learns to bank calories like a war chest. Bank 5\u00d7 the energy. The furnace is always lit \u2014 but it must be FED.",
-    "flavor": "FIVE stomachs?! We lost count! The furnace DEMANDS tribute! FEED IT! (It's worth it. Probably.)",
+    "name": "Extra Stomach",
     "pool": "system",
     "tier": "body_horror",
     "unlock": {
       "type": "system_offer"
+    }
+  },
+  {
+    "description": "Your body learns to bank calories like a war chest. Bank 5\u00d7 the energy. The furnace is always lit \u2014 but it must be FED.",
+    "flavor": "FIVE stomachs?! We lost count! The furnace DEMANDS tribute! FEED IT! (It's worth it. Probably.)",
+    "id": "deep_reserves",
+    "metabolic": {
+      "daily": 150
     },
     "modifiers": [
       {
-        "target": "food.bank_mult",
         "op": "multiply",
+        "target": "food.bank_mult",
         "value": 5
       }
     ],
-    "metabolic": {
-      "daily": 150
+    "name": "Deep Reserves",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "eyes_in_back",
-    "name": "Eyes in the Back",
     "description": "You see behind you. Can't be ambushed. But you see... things. (-5 morale when alone.)",
     "flavor": "You see the behind! We see the... we don't want to see the behind! Too many teeth!",
+    "id": "eyes_in_back",
+    "metabolic": {
+      "daily": 100
+    },
+    "modifiers": [],
+    "name": "Eyes in the Back",
     "pool": "system",
     "tier": "body_horror",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 100
     }
   },
   {
-    "id": "molt",
-    "name": "Molt",
     "description": "Once per week, shed your skin. Heal to full, but lose all equipped gear (it's stuck in the old skin).",
     "flavor": "You peel! Like the fruit! The new you is shiny! The old you is... leave it! Run!",
+    "id": "molt",
+    "metabolic": {
+      "daily": 150
+    },
+    "modifiers": [],
+    "name": "Molt",
     "pool": "system",
     "tier": "body_horror",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 150
     }
   },
   {
-    "id": "blood_magic",
-    "name": "Blood Price",
     "description": "Spend 10 HP to gain 500 kcal. (Your body eats itself. It's efficient. It's horrifying.)",
     "flavor": "You burn the red! The red becomes... lunch?! We are CONCERNED! (We checked the math twice. The math is as confused as we are.)",
+    "id": "blood_magic",
+    "metabolic": {
+      "daily": 100
+    },
+    "modifiers": [],
+    "name": "Blood Price",
     "pool": "system",
     "tier": "risky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 100
     }
   },
   {
-    "id": "rage",
-    "name": "Berserker Rage",
     "description": "+100% damage, but you attack the nearest thing (friend or foe). Lasts 3 rounds.",
     "flavor": "ANGRY! SO ANGRY! Hit the... oh no! That was a friend! ...they'll understand! Maybe!",
+    "id": "rage",
+    "metabolic": {
+      "daily": 150
+    },
+    "modifiers": [],
+    "name": "Berserker Rage",
     "pool": "system",
     "tier": "risky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 150
     }
   },
   {
-    "id": "cannibal_frenzy",
-    "name": "Red Hunger",
     "description": "When starving, you can eat anything (even people). +1000 kcal, but -30 trust permanently.",
     "flavor": "The hunger is LOUD! It says 'eat the... oh! OH! We didn't mean THEM! But... you did!'",
-    "pool": "system",
-    "tier": "risky",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [],
+    "id": "cannibal_frenzy",
     "metabolic": {
       "daily": 100
-    }
-  },
-  {
-    "id": "pact",
-    "name": "Pact with Static",
-    "description": "Gain a random overpowered ability, but lose a random utility ability. (The Static gives. The Static takes.)",
-    "flavor": "You whisper to the between! It answers! It ALWAYS answers! That's the problem!",
+    },
+    "modifiers": [],
+    "name": "Red Hunger",
     "pool": "system",
     "tier": "risky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
+    }
+  },
+  {
+    "description": "Gain a random overpowered ability, but lose a random utility ability. (The Static gives. The Static takes.)",
+    "flavor": "You whisper to the between! It answers! It ALWAYS answers! That's the problem!",
+    "id": "pact",
     "metabolic": {
       "daily": 150
+    },
+    "modifiers": [],
+    "name": "Pact with Static",
+    "pool": "system",
+    "tier": "risky",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "scream_cheese",
-    "name": "Scream Cheese",
     "description": "You can scream so loud it curdles milk (and stuns monsters for 1 round). 1/day.",
     "flavor": "AAAAA! The milk is cheese now! The monsters are dizzy! Your throat hurts! Worth it!",
+    "id": "scream_cheese",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [],
+    "name": "Scream Cheese",
     "pool": "system",
     "tier": "wacky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "pocket_sand",
-    "name": "Pocket Sand",
     "description": "Throw sand in eyes. Blinds for 2 rounds. (You always have sand. Don't ask where.)",
     "flavor": "SAND! In the eyes! It's in YOUR pocket! How?! We don't know! But it's there!",
-    "pool": "system",
-    "tier": "wacky",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [],
+    "id": "pocket_sand",
     "metabolic": {
       "daily": 25
-    }
-  },
-  {
-    "id": "taste_vision",
-    "name": "Taste Vision",
-    "description": "You can taste colors. (Reveals hidden loot: +30% find chance in ruins. The walls taste like secrets.)",
-    "flavor": "The red tastes like... copper! The blue tastes like... hiding places! Lick the walls!",
+    },
+    "modifiers": [],
+    "name": "Pocket Sand",
     "pool": "system",
     "tier": "wacky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "ruin.find_mult",
-        "op": "multiply",
-        "value": 1.3,
-        "scale": "level"
-      }
-    ],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "poisoner",
-    "name": "Poisoner",
-    "description": "You can poison food/water. (Useful against monsters. Or... others.)",
-    "flavor": "The food is spicy now! The spicy is... death! We are worried about you! But impressed!",
-    "pool": "system",
-    "tier": "vile",
-    "unlock": {
-      "type": "system_offer"
+    "description": "You can taste colors. (Reveals hidden loot: +30% find chance in ruins. The walls taste like secrets.)",
+    "flavor": "The red tastes like... copper! The blue tastes like... hiding places! Lick the walls!",
+    "id": "taste_vision",
+    "metabolic": {
+      "daily": 50
     },
     "modifiers": [
       {
-        "target": "hunt.trap_catch",
         "op": "multiply",
+        "scale": "level",
+        "target": "ruin.find_mult",
+        "value": 1.3
+      }
+    ],
+    "name": "Taste Vision",
+    "pool": "system",
+    "tier": "wacky",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "description": "You can poison food/water. (Useful against monsters. Or... others.)",
+    "flavor": "The food is spicy now! The spicy is... death! We are worried about you! But impressed!",
+    "id": "poisoner",
+    "metabolic": {
+      "daily": 75
+    },
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "hunt.trap_catch",
         "value": 1.5
       }
     ],
-    "metabolic": {
-      "daily": 75
-    }
-  },
-  {
-    "id": "fear_aura",
-    "name": "Dread",
-    "description": "Villagers and monsters are uneasy around you. -10 trust, but monsters hesitate (+1 round before attacking).",
-    "flavor": "You are the scary! We are scared! The monsters are scared! Everyone is scared! ...fun!",
+    "name": "Poisoner",
     "pool": "system",
     "tier": "vile",
     "unlock": {
       "type": "system_offer"
+    }
+  },
+  {
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Stand still and let them look. Each enemy hesitates \u2014 loses its next round. Villagers watching lose 5 trust.",
+        "id": "loom",
+        "name": "Loom"
+      }
+    ],
+    "description": "Villagers and monsters are uneasy around you. -10 trust, but monsters hesitate (+1 round before attacking).",
+    "flavor": "You are the scary! We are scared! The monsters are scared! Everyone is scared! ...fun!",
+    "id": "fear_aura",
+    "metabolic": {
+      "daily": 100
     },
     "modifiers": [
       {
-        "target": "trust.gain_mult",
         "op": "multiply",
+        "target": "trust.gain_mult",
         "value": 0.9
       }
     ],
-    "metabolic": {
-      "daily": 100
-    }
-  },
-  {
-    "id": "grave_robber",
-    "name": "Grave Robber",
-    "description": "You can loot the dead (villagers, monsters). Good gear. -15 trust if seen.",
-    "flavor": "The dead don't need the shiny! You need the shiny! The living... disagree!",
+    "name": "Dread",
     "pool": "system",
     "tier": "vile",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 75
     }
   },
   {
-    "id": "time_skip",
-    "name": "Time Skip",
+    "description": "You can loot the dead (villagers, monsters). Good gear. -15 trust if seen.",
+    "flavor": "The dead don't need the shiny! You need the shiny! The living... disagree!",
+    "id": "grave_robber",
+    "metabolic": {
+      "daily": 75
+    },
+    "modifiers": [],
+    "name": "Grave Robber",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
     "description": "Skip to the next day part instantly. (Ages you 1 day. The time has to come from somewhere.)",
     "flavor": "You JUMP the time! The time JUMPS you back! You are OLDER! But... FASTER?! We took notes! The notes make no sense!",
-    "pool": "system",
-    "tier": "overpowered",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [],
+    "id": "time_skip",
     "metabolic": {
       "daily": 250
-    }
-  },
-  {
-    "id": "hive_mind",
-    "name": "Hive Mind",
-    "description": "You know what all villagers are doing (map reveals). But they know what YOU'RE doing too. (-10 trust.)",
-    "flavor": "All the brains touch! It's cozy! It's invasive! It's... both! We love it!",
+    },
+    "modifiers": [],
+    "name": "Time Skip",
     "pool": "system",
     "tier": "overpowered",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
+    }
+  },
+  {
+    "description": "You know what all villagers are doing (map reveals). But they know what YOU'RE doing too. (-10 trust.)",
+    "flavor": "All the brains touch! It's cozy! It's invasive! It's... both! We love it!",
+    "id": "hive_mind",
     "metabolic": {
       "daily": 200
+    },
+    "modifiers": [],
+    "name": "Hive Mind",
+    "pool": "system",
+    "tier": "overpowered",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "ant_trail",
-    "name": "Ant Trail",
     "description": "You can follow ant trails to water and sugar. Ants know things.",
     "flavor": "The tiny marchers! They never get lost! Follow them! (Watch where you step!)",
+    "id": "ant_trail",
+    "metabolic": {
+      "daily": 25
+    },
+    "modifiers": [],
+    "name": "Ant Trail",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 25
     }
   },
   {
-    "id": "cold_blooded",
-    "name": "Cold-Blooded",
     "description": "You need 20% less food in cold weather. Your body budgets like an accountant.",
     "flavor": "You are the lizard! Slow! Efficient! We envy your heating bill! (You don't have one!)",
+    "id": "cold_blooded",
+    "metabolic": {
+      "daily": 25
+    },
+    "modifiers": [],
+    "name": "Cold-Blooded",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 25
     }
   },
   {
-    "id": "echo_location",
-    "name": "Echo Location",
     "description": "Clap once: you sense the layout of any 9x9 grid (reveals blocked cells). 1/day.",
     "flavor": "CLAP! The sound comes back with a MAP! You are the bat! (The bat is jealous!)",
+    "id": "echo_location",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [],
+    "name": "Echo Location",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "compost_king",
-    "name": "Compost King",
     "description": "Spoiled food becomes fertilizer: bury it, and forage yields +10% on that tile next season.",
     "flavor": "The rot becomes the GROWTH! Nothing is wasted! We love this one! (We eat... nothing! But still!)",
+    "id": "compost_king",
+    "metabolic": {
+      "daily": 25
+    },
+    "modifiers": [],
+    "name": "Compost King",
     "pool": "system",
     "tier": "wacky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 25
     }
   },
   {
-    "id": "beard_moss",
-    "name": "Beard Moss",
     "description": "Moss grows in your beard/hair. You always have tinder. (Looks great, honestly.)",
     "flavor": "You are the WALKING FOREST! The moss chose YOU! Fashion AND function!",
+    "id": "beard_moss",
+    "metabolic": {
+      "daily": 25
+    },
+    "modifiers": [],
+    "name": "Beard Moss",
     "pool": "system",
     "tier": "wacky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 25
     }
   },
   {
-    "id": "dowsing",
-    "name": "Dowsing",
     "description": "A forked stick twitches toward water. Works 70% of the time. Nobody knows why. Including us.",
     "flavor": "The stick KNOWS! We tested it! We don't understand it! Science is hard!",
+    "id": "dowsing",
+    "metabolic": {
+      "daily": 25
+    },
+    "modifiers": [],
+    "name": "Dowsing",
     "pool": "system",
     "tier": "wacky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 25
     }
   },
   {
-    "id": "cornered_rat",
-    "name": "Cornered Rat",
     "description": "When surrounded (3+ enemies), +100% damage and +50% dodge. Desperation is a weapon.",
     "flavor": "BACK AGAINST THE WALL! Teeth BARE! We are cheering SO loud right now!",
+    "id": "cornered_rat",
+    "metabolic": {
+      "daily": 75
+    },
+    "modifiers": [],
+    "name": "Cornered Rat",
     "pool": "system",
     "tier": "combat",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 75
     }
   },
   {
-    "id": "dead_aim",
-    "name": "Dead Aim",
     "description": "First attack in any combat is a guaranteed critical if you waited 1 round. Patience, then thunder.",
     "flavor": "You WAIT! You BREATHE! Then \u2014 BOOM! The audience gasps! We gasped!",
+    "id": "dead_aim",
+    "metabolic": {
+      "daily": 75
+    },
+    "modifiers": [],
+    "name": "Dead Aim",
     "pool": "system",
     "tier": "combat",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 75
     }
   },
   {
-    "id": "second_skin",
-    "name": "Second Skin",
     "description": "Your armor never slows you. Move full speed in any armor. You wear it like weather.",
     "flavor": "The metal is your SKIN now! Clank clank! Fashionable AND functional!",
-    "pool": "system",
-    "tier": "combat",
-    "unlock": {
-      "type": "system_offer"
+    "id": "second_skin",
+    "metabolic": {
+      "daily": 50
     },
     "modifiers": [
       {
-        "target": "travel.cost_mult",
         "op": "multiply",
+        "target": "travel.cost_mult",
         "value": 0.85
       }
     ],
-    "metabolic": {
-      "daily": 50
+    "name": "Second Skin",
+    "pool": "system",
+    "tier": "combat",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "open_book",
-    "name": "Open Book",
     "description": "Villagers tell you their real trust level and one secret fear. You just... know how to ask.",
     "flavor": "You ASK and they TELL! What is this power?! We want to learn it! (We can't. We tried.)",
+    "id": "open_book",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [],
+    "name": "Open Book",
     "pool": "system",
     "tier": "social",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "mediator",
-    "name": "Mediator",
     "description": "You can resolve villager disputes (drama events) with a talk check. Peace is a skill.",
     "flavor": "You make the angry people UN-angry! With WORDS! We don't understand! But WOW!",
+    "id": "mediator",
+    "metabolic": {
+      "daily": 50
+    },
+    "modifiers": [
+      {
+        "op": "add",
+        "scale": "level",
+        "target": "drama.resolve_bonus",
+        "value": 0.25
+      }
+    ],
+    "name": "Mediator",
     "pool": "system",
     "tier": "social",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "drama.resolve_bonus",
-        "op": "add",
-        "value": 0.25,
-        "scale": "level"
-      }
-    ],
-    "metabolic": {
-      "daily": 50
     }
   },
   {
-    "id": "leech",
-    "name": "Leech",
     "description": "When an ally takes damage near you, you can take half of it. They owe you. (They know it.)",
     "flavor": "You DRINK their pain! Not literally! (Unless you want to! We won't judge!)",
+    "id": "leech",
+    "metabolic": {
+      "daily": 100
+    },
+    "modifiers": [],
+    "name": "Leech",
     "pool": "system",
     "tier": "vile",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 100
     }
   },
   {
-    "id": "scarecrow",
-    "name": "Scarecrow",
     "description": "You can stage a fake injury to lure monsters into traps. They fall for it. Every time.",
     "flavor": "You PRETEND to be hurt! They come! TRAPPED! Devious! We LOVE it! (We're a little scared of you!)",
-    "pool": "system",
-    "tier": "vile",
-    "unlock": {
-      "type": "system_offer"
+    "id": "scarecrow",
+    "metabolic": {
+      "daily": 75
     },
     "modifiers": [
       {
-        "target": "hunt.trap_catch",
         "op": "multiply",
+        "target": "hunt.trap_catch",
         "value": 2.0
       }
     ],
-    "metabolic": {
-      "daily": 75
+    "name": "Scarecrow",
+    "pool": "system",
+    "tier": "vile",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "hollow_bones",
-    "name": "Hollow Bones",
     "description": "You weigh 30% less for carry calculations. Your bones are birdlike. (Don't think about it.)",
     "flavor": "Your bones are HOLLOW! Like the bird! You are light! Do NOT think about why!",
-    "pool": "system",
-    "tier": "body_horror",
-    "unlock": {
-      "type": "system_offer"
+    "id": "hollow_bones",
+    "metabolic": {
+      "daily": 100
     },
     "modifiers": [
       {
-        "target": "carry.weight_mult",
         "op": "multiply",
+        "target": "carry.weight_mult",
         "value": 0.7
       }
     ],
-    "metabolic": {
-      "daily": 100
-    }
-  },
-  {
-    "id": "third_eye",
-    "name": "Third Eye",
-    "description": "A small eye opens on your forehead when danger is near. +30% ambush detection. It weeps when you lie.",
-    "flavor": "ANOTHER EYE! It sees the danger! It also sees your LIES! (We see them too! We don't mind!)",
+    "name": "Hollow Bones",
     "pool": "system",
     "tier": "body_horror",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "monster.detect_chance",
-        "op": "add",
-        "value": 0.3
-      }
-    ],
-    "metabolic": {
-      "daily": 100
     }
   },
   {
-    "id": "phoenix_clause",
-    "name": "Phoenix Clause",
+    "description": "A small eye opens on your forehead when danger is near. +30% ambush detection. It weeps when you lie.",
+    "flavor": "ANOTHER EYE! It sees the danger! It also sees your LIES! (We see them too! We don't mind!)",
+    "id": "third_eye",
+    "metabolic": {
+      "daily": 100
+    },
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "monster.detect_chance",
+        "value": 0.3
+      }
+    ],
+    "name": "Third Eye",
+    "pool": "system",
+    "tier": "body_horror",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
     "description": "Once per run: when you die, you explode (damaging everything nearby) and respawn at Haven with 1 HP. The System calls it 'great television.'",
     "flavor": "You DIE! Then \u2014 KABOOM! \u2014 you're BACK! The audience LOVED it! The ratings! THE RATINGS!",
+    "id": "phoenix_clause",
+    "metabolic": {
+      "daily": 300
+    },
+    "modifiers": [],
+    "name": "Phoenix Clause",
     "pool": "system",
     "tier": "overpowered",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 300
     }
   },
   {
-    "id": "symbiote",
-    "name": "Symbiote",
     "description": "A small alien organism lives in your gut. It eats 200 kcal/day but warns you of poisoned food and purifies risky water slowly (1L/day).",
     "flavor": "You have a FRIEND inside! It eats your food! It cleans your water! It's... rent! Symbiosis! (Don't think about what happens if you starve it!)",
+    "id": "symbiote",
+    "metabolic": {
+      "daily": 200
+    },
+    "modifiers": [],
+    "name": "Symbiote",
     "pool": "system",
     "tier": "risky",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 200
     }
   },
   {
-    "id": "survivor",
-    "name": "Survivor",
-    "tier": "utility",
-    "pool": "fallback",
     "description": "You endured. +10 max health.",
     "flavor": "You lived! We are SO proud!",
-    "unlock": {
-      "type": "fallback"
+    "id": "survivor",
+    "metabolic": {
+      "daily": 0
     },
     "modifiers": [
       {
-        "target": "health.max_add",
         "op": "add",
+        "target": "health.max_add",
         "value": 10
       }
     ],
-    "metabolic": {
-      "daily": 0
+    "name": "Survivor",
+    "pool": "fallback",
+    "tier": "utility",
+    "unlock": {
+      "type": "fallback"
     }
   },
   {
-    "id": "wanderer",
-    "name": "Wanderer",
-    "tier": "utility",
-    "pool": "fallback",
     "description": "You kept moving. -10% travel cost.",
     "flavor": "You go places! FAR places! We sent a camera crew! (They got lost. It's fine.)",
-    "unlock": {
-      "type": "fallback"
+    "id": "wanderer",
+    "metabolic": {
+      "daily": 0
     },
     "modifiers": [
       {
-        "target": "travel.cost_mult",
         "op": "multiply",
+        "target": "travel.cost_mult",
         "value": 0.9
       }
     ],
-    "metabolic": {
-      "daily": 0
+    "name": "Wanderer",
+    "pool": "fallback",
+    "tier": "utility",
+    "unlock": {
+      "type": "fallback"
     }
   },
   {
-    "id": "swimmer",
-    "name": "Swimmer",
     "description": "Cross water freely. Rivers are roads to you.",
     "flavor": "WE NEVER THOUGHT OF SWIMMING. The water is just... there? And you go IN it?",
-    "pool": "system",
-    "tier": "utility",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [],
+    "id": "swimmer",
     "metabolic": {
       "daily": 40
+    },
+    "modifiers": [],
+    "name": "Swimmer",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
     }
   },
   {
-    "id": "night_eyes",
-    "name": "Night Eyes",
     "description": "Your eyes drink the dark. At night you spot trouble before it spots you, and nocturnal game can't hide from a patient hunter.",
     "flavor": "THE DARK IS JUST... SLOW LIGHT? You see it anyway. Rude. We were going to sell that.",
-    "pool": "system",
-    "tier": "utility",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [],
+    "id": "night_eyes",
     "metabolic": {
       "daily": 30
-    }
-  },
-  {
-    "id": "translator",
-    "name": "Translator",
-    "description": "The System logs every foreign word you hear and replays them on demand — a memory aid, not a shortcut. Novel speech stays novel until YOU learn it. (Deep integration may wake it up further.)",
-    "flavor": "OH WE LOVE THIS ONE! Every word! Logged! Replayable! Like a little notebook! In your HEAD! The full translating part comes later. Probably. We're working on it!",
+    },
+    "modifiers": [],
+    "name": "Night Eyes",
     "pool": "system",
     "tier": "utility",
     "unlock": {
       "type": "system_offer"
-    },
-    "modifiers": []
+    }
   },
   {
-    "id": "field_medicine",
-    "name": "Field Medicine",
-    "pool": "care",
-    "description": "Clean wounds, poultice infections, set bones in the field. Heal 20 HP (once per day part).",
+    "description": "The System logs every foreign word you hear and replays them on demand \u2014 a memory aid, not a shortcut. Novel speech stays novel until YOU learn it. (Deep integration may wake it up further.)",
+    "flavor": "OH WE LOVE THIS ONE! Every word! Logged! Replayable! Like a little notebook! In your HEAD! The full translating part comes later. Probably. We're working on it!",
+    "id": "translator",
     "modifiers": [],
+    "name": "Translator",
+    "pool": "system",
+    "tier": "utility",
     "unlock": {
-      "type": "granted"
-    },
+      "type": "system_offer"
+    }
+  },
+  {
     "active": {
-      "type": "heal",
       "amount": 20,
       "cooldown": "daypart",
-      "target": "self"
+      "target": "self",
+      "type": "heal"
+    },
+    "description": "Clean wounds, poultice infections, set bones in the field. Heal 20 HP (once per day part).",
+    "id": "field_medicine",
+    "modifiers": [],
+    "name": "Field Medicine",
+    "pool": "care",
+    "unlock": {
+      "type": "granted"
     }
   },
   {
+    "active": {
+      "cooldown": "day",
+      "type": "cure_disease"
+    },
+    "description": "You know which plants draw fever out. Cure disease.",
     "id": "herbal_remedy",
+    "modifiers": [],
     "name": "Herbal Remedy",
     "pool": "care",
-    "description": "You know which plants draw fever out. Cure disease.",
-    "modifiers": [],
     "unlock": {
       "type": "granted"
-    },
-    "active": {
-      "type": "cure_disease",
-      "cooldown": "day"
     }
   },
   {
+    "active": {
+      "cooldown": "day",
+      "type": "cure_poison"
+    },
+    "description": "Charcoal, clean water, time. Neutralize poison.",
     "id": "purify",
+    "modifiers": [],
     "name": "Purify",
     "pool": "care",
-    "description": "Charcoal, clean water, time. Neutralize poison.",
-    "modifiers": [],
     "unlock": {
       "type": "granted"
-    },
-    "active": {
-      "type": "cure_poison",
-      "cooldown": "day"
+    }
+  },
+  {
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "hp": 10,
+          "turn": true
+        },
+        "effect": "Take 10 damage voluntarily. Your next 3 attacks deal +50% damage. The pain focuses you.",
+        "id": "open_trade",
+        "name": "Open the Trade"
+      },
+      {
+        "context": "combat",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Cash in: deal bonus damage equal to 50% of damage taken this fight. Once per fight.",
+        "id": "settle_debt",
+        "name": "Settle the Debt"
+      }
+    ],
+    "description": "Trade damage like currency. You can afford the exchange rate.",
+    "flavor": "Every hit you take is a hit you're about to give back with interest.",
+    "id": "trade_of_blows",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "combat.trade_window",
+        "value": 1
+      }
+    ],
+    "name": "Trade of Blows",
+    "paths": [
+      "brawler"
+    ],
+    "pool": "combat",
+    "tier": "uncommon",
+    "unlock": {
+      "trial": "take_50_damage_in_one_fight",
+      "type": "trial"
+    }
+  },
+  {
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Plant your feet. Reduce next incoming damage by 60%. You cannot be knocked down this turn.",
+        "id": "brace",
+        "name": "Brace"
+      },
+      {
+        "context": "combat",
+        "cost": {
+          "kcal": 50
+        },
+        "effect": "Clear stun, slow, and bleed. Once per fight. Costs 50 kcal \u2014 your body burns fuel to keep going.",
+        "id": "shake_off",
+        "name": "Shake It Off"
+      }
+    ],
+    "description": "You don't go down. Not today. Not ever, if you have anything to say about it.",
+    "flavor": "The System filed a complaint about your pain receptors. You filed it under 'suggestions.'",
+    "id": "unbreakable",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "combat.knockdown_resist",
+        "value": 0.4
+      },
+      {
+        "op": "multiply",
+        "target": "combat.stun_duration",
+        "value": 0.5
+      }
+    ],
+    "name": "Unbreakable",
+    "paths": [
+      "brawler",
+      "survivalist"
+    ],
+    "pool": "combat",
+    "tier": "rare",
+    "unlock": {
+      "type": "system_offer"
+    }
+  },
+  {
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "kcal": 30,
+          "turn": true
+        },
+        "effect": "All enemies must pass a courage check or lose their next turn. Beasts may flee outright.",
+        "id": "bellow",
+        "name": "War Cry"
+      },
+      {
+        "context": "social",
+        "cost": {
+          "time_min": 5
+        },
+        "effect": "Challenge a villager to a non-lethal bout. Winner gains respect. Loser gains humility.",
+        "id": "challenge",
+        "name": "Issue Challenge"
+      }
+    ],
+    "description": "A sound from somewhere older than language. Things that hear it reconsider.",
+    "flavor": "It's not the volume. It's the promise.",
+    "id": "war_cry",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "social.intimidate",
+        "value": 0.2
+      }
+    ],
+    "name": "War Cry",
+    "paths": [
+      "brawler",
+      "socialite"
+    ],
+    "pool": "combat",
+    "tier": "uncommon",
+    "unlock": {
+      "type": "practice"
+    }
+  },
+  {
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "kcal": 40,
+          "turn": true
+        },
+        "effect": "A massive swing: 2.5x damage, but -30% accuracy. If it misses, you're off-balance (enemies get +hit next turn).",
+        "id": "throw_haymaker",
+        "name": "Haymaker"
+      }
+    ],
+    "description": "One big swing. Everything you have, all at once. Subtlety is for people with time.",
+    "flavor": "The windup is the telegraph. The landing is the punctuation.",
+    "id": "haymaker",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "combat.heavy_damage",
+        "value": 1.2
+      }
+    ],
+    "name": "Haymaker",
+    "paths": [
+      "brawler"
+    ],
+    "pool": "combat",
+    "tier": "common",
+    "unlock": {
+      "type": "practice"
+    }
+  },
+  {
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Read the fight before it starts. +2 speed for the rest of the fight (turn order re-sorts from next round).",
+        "id": "read_fight",
+        "name": "Read the Fight"
+      }
+    ],
+    "description": "You read a fight before it starts. The body tells you what the mouth won't.",
+    "id": "brawler_instinct",
+    "modifiers": [
+      {
+        "op": "add",
+        "scale": "level",
+        "target": "combat.player_speed",
+        "value": 2
+      }
+    ],
+    "name": "Brawler's Instinct",
+    "pool": "combat",
+    "synergyHints": [
+      "With Adrenaline Control: act first, hit hard"
+    ],
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Lock eyes with an enemy (choose target). 50% chance it backs off and disengages. Fearless foes are immune.",
+        "id": "stare_down",
+        "name": "Stare Down"
+      }
+    ],
+    "description": "You don't have to fight. Most people decide not to, just looking at you.",
+    "id": "intimidating_presence",
+    "modifiers": [
+      {
+        "op": "add",
+        "scale": "level",
+        "target": "social.intimidate",
+        "value": 0.25
+      }
+    ],
+    "name": "Intimidating Presence",
+    "pool": "combat",
+    "unlock": {
+      "trial": "intimidate_someone",
+      "type": "trial"
     }
   }
 ]
