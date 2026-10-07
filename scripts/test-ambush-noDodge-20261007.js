@@ -179,7 +179,7 @@ function strikeFor(mkey) {
   check('abilityActions.js: no can\'t-dodge promises', aaHits.length === 0, aaHits.join(' | '));
   check('abilities.json: no can\'t-dodge promises', abHits.length === 0, abHits.join(' | '));
   const abData = JSON.parse(abJson);
-  const amb = abData.abilities.find(a => a.id === 'ambush');
+  const amb = (Array.isArray(abData) ? abData : abData.abilities).find(a => a.id === 'ambush');
   const se = amb && amb.actions.find(x => x.id === 'set_ambush');
   check('set_ambush card text is the honest rewrite',
     se && se.effect === 'Spend turn preparing. Next attack is 2x damage \u2014 they never see it coming.',
