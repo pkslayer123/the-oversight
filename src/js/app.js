@@ -1379,17 +1379,75 @@
   // bars — never scroll to read what just happened. The engine marks the log
   // at action start (Game.feedbackMark); every say() after the mark lands in
   // the feedback card. Wrap every action invocation with actAndRefresh.
+  //
+  // APP-SIDE FALLBACK (Steve 2026-10-07): the engine currently exposes no
+  // feedbackMark/feedbackLines, which silently no-ops the feedback card and
+  // every actAndRefresh call. The mark is purely presentation — a bookmark
+  // into Game.log, which the engine still maintains via say() — so app.js
+  // keeps its own. If the engine ever defines these, the engine wins: no
+  // clobber, no logic change, presentation only.
+  let _fbMarkIdx = 0;
+  if (typeof Game !== 'undefined' && Game) {
+    if (typeof Game.feedbackMark !== 'function') {
+      Game.feedbackMark = function() { try { _fbMarkIdx = (Game.log || []).length; } catch (e) {} };
+    }
+    if (typeof Game.feedbackLines !== 'function') {
+      Game.feedbackLines = function() { try { return (Game.log || []).slice(_fbMarkIdx); } catch (e) { return []; } };
+    }
+  }
   function actAndRefresh(fn) {
     try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
     try { fn(); } catch (e) { console.error(e); }
     refresh();
   }
 
+  // SYNERGY TEASE STRINGS currently alive: tease1 (attempt 1) / tease2
+  // (attempt 2) for undiscovered synergies with 1-2 attempts whose
+  // requirements are held. Used to style their moment-of-use log lines as a
+  // distinct block — a tease must land, not drown in log noise.
+  function _synTeaseSet() {
+    const set = new Set();
+    try {
+      const sch = Game.state.scholar;
+      const syns = Game.data.synergies || [];
+      const attempts = sch.synergyAttempts || {};
+      const discovered = sch.synergies || [];
+      for (const syn of syns) {
+        if (discovered.includes(syn.id)) continue;
+        const dm = syn.discovery_method || {};
+        const key = syn.id + (dm.type === 'sustained' ? '_days' : '');
+        const n = attempts[key] || 0;
+        if (n !== 1 && n !== 2) continue;
+        const minLvl = syn.minLevel || 1;
+        const held = (syn.requires || []).every(rid => { try { return Game.abilityLevel(rid) >= minLvl; } catch (e) { return false; } });
+        if (!held) continue;
+        if (n === 1 && dm.tease1) set.add(dm.tease1);
+        if (n === 2 && dm.tease2) set.add(dm.tease2);
+      }
+    } catch (e) {}
+    return set;
+  }
+
+  function _isSynTeaseLine(l, teases) {
+    if (teases.has(l)) return true;
+    // game.js's attempt-2 nudge ("Something wants to happen when you do...
+    // whatever you just did. (2/3)") is part of the tease beat.
+    return /^Something wants to happen when you do/.test(l);
+  }
+
   function feedbackInner() {
     let lines = [];
     try { lines = (Game.feedbackLines && Game.feedbackLines()) || []; } catch (e) {}
     if (!lines.length) return '';
-    return lines.map(l => `<p class="fb-line">${esc(l)}</p>`).join('');
+    const teases = _synTeaseSet();
+    return lines.map(l => {
+      if (_isSynTeaseLine(l, teases)) {
+        // IN-THE-MOMENT TEASE: distinct styled block, right under the action
+        // bars — the shiver you felt using those two abilities together.
+        return `<p class="fb-line fb-syntease" style="border-left:3px solid #b48cff;padding:6px 8px;background:rgba(150,100,255,.09);border-radius:6px;font-style:italic;margin:6px 0">🌀 ${esc(l)}</p>`;
+      }
+      return `<p class="fb-line">${esc(l)}</p>`;
+    }).join('');
   }
   function feedbackHTML() {
     const inner = feedbackInner();
@@ -10528,7 +10586,8 @@
   }
 
   // BUILD ARCHETYPE INDICATOR (Steve 2026-10-07): specialist/generalist are
-  // real bonuses (Game.buildBonus) but invisible. One compact line.
+  // real bonuses (Game.buildBonus) but invisible. One compact line in the
+  // pack, next to the ability list — a badge you EARNED, not a label.
   function renderBuildIndicator() {
     try {
       if (!Game.buildArchetype || !Game.buildBonus) return '';
@@ -10536,16 +10595,21 @@
       if (!arch) return '';
       const bonus = Game.buildBonus();
       const title = bonus ? esc(bonus.desc) : '';
-      const label = arch.type === 'specialist'
-        ? `\u{1F3AF} ${esc(arch.pool)} Specialist +25% <span style="opacity:.7">(${esc(arch.pool)} avg L${arch.avgLevel})</span>`
-        : `\u{1F310} Generalist +10% <span style="opacity:.7">(${arch.pools.length} pools)</span>`;
-      return `<p class="small" title="${title}"><b>Build:</b> ${label}</p>`;
+      if (arch.type === 'specialist') {
+        const icons = { combat: '\u2694\uFE0F', care: '\u{1F49A}', fieldcraft: '\u{1F33F}', craft: '\u{1F528}', social: '\u{1F4AC}', exploration: '\u{1F9ED}', investigation: '\u{1F50E}' };
+        const verbs = { combat: 'strikes hit harder', care: 'healing flows stronger', fieldcraft: 'the land yields more', craft: 'your craft holds true', social: 'your words carry weight', exploration: 'you cover ground faster', investigation: "the truth can't hide" };
+        const poolName = arch.pool.charAt(0).toUpperCase() + arch.pool.slice(1);
+        return `<p class="small buildbadge" title="${title}">${icons[arch.pool] || '\u{1F3AF}'} <b>${esc(poolName)} Specialist</b> <span style="color:#ffd166">+25%</span> <span style="opacity:.75">\u2014 ${esc(verbs[arch.pool] || 'your mastery deepens')}. Mastery has its rewards.</span></p>`;
+      }
+      return `<p class="small buildbadge" title="${title}">\u{1F310} <b>Versatile Generalist</b> <span style="color:#ffd166">+10%</span> <span style="opacity:.75">to everything \u2014 no lock you can't work around.</span></p>`;
     } catch (e) { return ''; }
   }
 
   // SYNERGY STIRRINGS (Steve 2026-10-07): an undiscovered synergy with 1-2
-  // attempts whose requirements you hold is ALIVE — surface its tease/hint
-  // in the HUD so you don't have to dig for it.
+  // attempts whose requirements you hold is ALIVE — surface its tease in the
+  // pack so the thread stays warm between visits. The full hint is earned at
+  // attempt 2 (mirrors game.js: tease1 -> tease2 + hint) — showing it at
+  // attempt 1 would short-circuit the discovery loop. Knowledge gating holds.
   function renderSynergyStirrings() {
     try {
       const sch = Game.state.scholar;
@@ -10565,9 +10629,12 @@
         });
         if (!held) continue;
         const tease = n === 1 ? dm.tease1 : dm.tease2;
-        let line = `<b>\u{1F300} ${esc(syn.name)}</b> <span style="opacity:.7">(${n}/3)</span>`;
+        const pips = '\u25CF'.repeat(n) + '\u25CB'.repeat(3 - n);
+        let line = `<b>\u{1F300} ${esc(syn.name)}</b> <span style="opacity:.7">${pips}</span>`;
         if (tease) line += ` \u2014 <i>${esc(tease)}</i>`;
-        if (dm.hint) line += ` <span style="opacity:.85">Hint: ${esc(dm.hint)}</span>`;
+        // attempt 2: the game itself nudges toward the hint — the HUD may
+        // name it outright. Attempt 1 keeps only the tease.
+        if (n === 2 && dm.hint) line += ` <span style="opacity:.85">\u{1F4A1} ${esc(dm.hint)}</span>`;
         rows.push(`<p class="small">${line}</p>`);
       }
       return rows.join('');
@@ -10575,7 +10642,9 @@
   }
 
   // SYSTEM INTEGRATION LEVEL (Steve 2026-10-07): game.js tracks linkedCodices
-  // -> systemIntegrationLevel 0-3. Show the current level + progress to next.
+  // -> systemIntegrationLevel 0-3. One compact line: pips, what the System
+  // sees at this level, and the next step. The level-up itself announces in
+  // the moment (feedback card) — this is the standing readout.
   function renderIntegrationLevel() {
     try {
       if (!Game.systemIntegrationLevel) return '';
@@ -10583,8 +10652,12 @@
       const linked = (sch.linkedCodices || []).length;
       const lvl = Game.systemIntegrationLevel();
       if (!Game.state.systemArrived && lvl === 0) return '';
-      const prog = lvl >= 3 ? 'fully integrated' : `link ${lvl + 1 - linked} more codex for L${lvl + 1}`;
-      return `<p class="small" title="Link village codices to deepen the System's integration. The HUD gets more sophisticated as you link."><b>\u2B22 Integration:</b> L${lvl} \u00B7 ${esc(prog)}</p>`;
+      const pips = '\u25CF'.repeat(lvl) + '\u25CB'.repeat(Math.max(0, 3 - lvl));
+      const sees = ['the System barely knows you', 'village power on the map', 'wildlife + travelers tracked', 'full rosters, codex summaries, strategy intel'];
+      const prog = lvl >= 3
+        ? 'fully integrated'
+        : `study 1 more village codex \u2192 L${lvl + 1}`;
+      return `<p class="small" title="Study village codices to link them. The System integrates — and the HUD literally gets smarter."><b>\u2B22 Integration</b> <span style="color:#b48cff">${pips}</span> <span style="opacity:.75">${esc(sees[Math.min(lvl, 3)] || sees[0])}</span> <span style="opacity:.6">\u00B7 ${esc(prog)}</span></p>`;
     } catch (e) { return ''; }
   }
 
@@ -10915,7 +10988,8 @@ ${renderBuildIndicator()}
         <div class="ord-ctx">${inCombat ? '' : contextBarHTML()}</div>
         <div class="ord-target">${targetBarHTML()}</div>
         <div class="ord-danger">${dangerBarHTML()}</div>
-        <div class="ord-ability">${abilityBarHTML()}</div>`;
+        <div class="ord-ability">${abilityBarHTML()}</div>
+        ${feedbackHTML()}`;
       // Re-wire the new buttons (each bar has its own wirer)
       try { wireSelfBar(); } catch (e) {}
       try { wireContextBar(); } catch (e) {}
@@ -11110,6 +11184,7 @@ ${renderBuildIndicator()}
               <div class="ord-target">${targetBarHTML()}</div>
               <div class="ord-danger">${dangerBarHTML()}</div>
               <div class="ord-ability">${abilityBarHTML()}</div>
+              ${feedbackHTML()}
             </div>
           </div>
           <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
