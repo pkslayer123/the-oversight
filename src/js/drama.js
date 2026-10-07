@@ -63,6 +63,8 @@
 //   - villageArgue: red crackle between two villagers' tiles (Steve 2026-10-07, Drama D3)
 //   - childPlay: small sparkles + laughter marks (Steve 2026-10-07, Drama D3)
 //   - audioFor: audio-mate lookup — maps a drama kind to its CombatAudio event name, null when the call site already fires audio or no fitting synth exists (Steve 2026-10-07, Drama E1)
+//   - renderEffect: generic data-driven renderer — reads src/data/dramaEffects.json, visual output identical to hand-written methods (Steve 2026-10-07, Scaffold #4)
+//   - effectRegistry: data-driven effect definitions, set by game.js after data load (Steve 2026-10-07, Scaffold #4)
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
 //   - All animations use transform/opacity/translate only — GPU-composited, no layout/paint (code: drama.js).
@@ -77,6 +79,7 @@
   const Drama = {
     overlay: null,
     disabled: false, // E2 perf: setDisabled(true) silences the overlay (testing / low-end devices)
+    effectRegistry: null, // Scaffold #4 (Steve 2026-10-07): data-driven effect definitions from src/data/dramaEffects.json. Set by game.js after data load.
 
     // ensure the overlay exists, positioned over the grid
     ensureOverlay() {
@@ -128,6 +131,94 @@
       requestAnimationFrame(() => el.classList.add(animClass));
       setTimeout(() => el.remove(), (duration || 600) + 100);
       return el;
+    },
+
+    // renderEffect(id, args): generic data-driven renderer (Steve 2026-10-07, Scaffold #4).
+    // Reads src/data/dramaEffects.json instead of bespoke methods. Visual output
+    // is IDENTICAL — the JSON contains the same expressions, evaluated in the
+    // same scope. Migrated incrementally; unmigrated methods stay hand-written.
+    renderEffect(id, args) {
+      args = args || {};
+      const def = (this.effectRegistry || {})[id];
+      if (!def) return null;
+      const scope = Object.assign({}, args);
+      // computed expressions, in definition order (can reference params + earlier computed)
+      if (def.computed) {
+        for (const key of Object.keys(def.computed)) {
+          scope[key] = this._evalExpr(def.computed[key], scope);
+        }
+      }
+      // anchor coords: tile -> cx/cy from tileCenter
+      if (def.anchor === 'tile' && typeof args.x === 'number' && typeof args.y === 'number') {
+        const c = this.tileCenter(args.x, args.y);
+        scope.cx = c.x; scope.cy = c.y;
+      }
+      for (const step of (def.steps || [])) {
+        if (step.when && !this._evalExpr(step.when, scope)) continue;
+        if (step.do === 'spawn') {
+          this.spawn(
+            this._evalTemplate(step.html || '', scope),
+            this._evalTemplate(step.css || '', scope),
+            step.animClass,
+            this._evalField(step.duration, scope)
+          );
+        } else if (step.do === 'particles') {
+          const count = this._evalField(step.count, scope);
+          const stagger = step.stagger || 0;
+          for (let i = 0; i < count; i++) {
+            const pscope = Object.assign({ i: i }, scope);
+            if (step.vary) {
+              for (const vk of Object.keys(step.vary)) {
+                const v = step.vary[vk];
+                pscope[vk] = Array.isArray(v) ? v[i % v.length] : this._evalExpr(v, pscope);
+              }
+            }
+            // Capture synchronously (matches original: values computed before setTimeout)
+            const html = this._evalTemplate(step.html || '', pscope);
+            const css = this._evalTemplate(step.css || '', pscope);
+            const duration = this._evalField(step.duration, pscope);
+            const animClass = step.animClass;
+            setTimeout(() => { this.spawn(html, css, animClass, duration); }, i * stagger);
+          }
+        } else if (step.do === 'call') {
+          const callArgs = (step.args || []).map(a => this._evalField(a, scope));
+          if (typeof this[step.method] === 'function') this[step.method].apply(this, callArgs);
+        }
+      }
+      return true;
+    },
+
+    // _evalExpr: evaluate a JS expression with scope vars + Math available.
+    // Expressions come from our own dramaEffects.json — not user input.
+    _evalExpr(expr, scope) {
+      const keys = Object.keys(scope);
+      const fn = new Function(...keys, 'Math', '"use strict"; return (' + expr + ');');
+      return fn.apply(null, keys.map(k => scope[k]).concat([Math]));
+    },
+
+    // _evalTemplate: substitute {expression} placeholders in a string.
+    _evalTemplate(tpl, scope) {
+      return tpl.replace(/\{([^{}]+)\}/g, (m, expr) => {
+        try {
+          const v = this._evalExpr(expr, scope);
+          return (v === undefined || v === null) ? '' : String(v);
+        } catch (e) { return ''; }
+      });
+    },
+
+    // _evalField: if the whole field is a single {expr}, return the raw value
+    // (preserves numbers for duration/count). Otherwise template-substitute.
+    // Numeric strings are returned as numbers (matches original number args).
+    _evalField(field, scope) {
+      if (typeof field !== 'string') return field;
+      const m = /^\{([^{}]+)\}$/.exec(field.trim());
+      if (m) {
+        try { return this._evalExpr(m[1], scope); }
+        catch (e) { return field; }
+      }
+      const sub = this._evalTemplate(field, scope);
+      if (/^-?\d+(\.\d+)?$/.test(sub.trim())) return Number(sub);
+      return sub;
     },
 
     // impact starburst at grid coords
@@ -242,13 +333,8 @@
 
     // soul wisp: death effect
     soulWisp(x, y) {
-      const c = this.tileCenter(x, y);
-      this.spawn(
-        `<svg width="30" height="40" viewBox="0 0 30 40"><ellipse cx="15" cy="20" rx="10" ry="15" fill="rgba(180,220,255,0.7)"/></svg>`,
-        `position:absolute;left:${c.x - 15}px;top:${c.y - 20}px;`,
-        'drama-wisp',
-        1200
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('soulWisp', {x: x, y: y});
     },
 
     // exclaim: ! or ? above an NPC who wants attention (loosely bound — floats above tile)
@@ -459,20 +545,8 @@
 
     // Audience cheers: gold sparkles rain
     contestCheer(integration) {
-      integration = integration || 0;
-      const count = 3 + integration * 2; // 3 → 9 sparkles
-      for (let i = 0; i < count; i++) {
-        const x = 20 + Math.random() * 60; // % across screen
-        const delay = i * 80;
-        setTimeout(() => {
-          this.spawn(
-            `<div style="font-size:${16 + integration * 4}px;color:#ffd54a;text-shadow:0 0 8px #ffd54a;">✨</div>`,
-            `position:absolute;left:${x}%;top:15%;`,
-            'drama-cheer',
-            1200
-          );
-        }, delay);
-      }
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('contestCheer', {integration: integration});
     },
 
     // Audience boos: red pulses from the edges
@@ -495,19 +569,8 @@
 
     // Judging: slow-mo — brief desaturation + spotlight
     contestJudging(integration) {
-      integration = integration || 0;
-      this.spawn(
-        '',
-        `position:absolute;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:grayscale(0.7);`,
-        'drama-judge-dim',
-        1500 + (integration * 300)
-      );
-      this.spawn(
-        `<div style="font-size:20px;font-weight:bold;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,1);letter-spacing:4px;">JUDGING</div>`,
-        `position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);`,
-        'drama-judge-text',
-        1500 + (integration * 300)
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('contestJudging', {integration: integration});
     },
 
     // ================= COMBAT SPECTACLE (Steve 2026-10-07, Drama B1) =================
@@ -551,24 +614,8 @@
 
     // lootSparkle: monster death — gold sparkles where it fell.
     lootSparkle(x, y, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const count = 5 + integration * 3; // 5 → 14 sparkles
-      for (let i = 0; i < count; i++) {
-        const ang = (i / count) * Math.PI * 2 + Math.random() * 0.5;
-        const dist = 15 + Math.random() * (20 + integration * 10);
-        const sx = c.x + Math.cos(ang) * dist;
-        const sy = c.y + Math.sin(ang) * dist;
-        const sz = 8 + Math.random() * 8;
-        setTimeout(() => {
-          this.spawn(
-            `<div style="width:${sz}px;height:${sz}px;background:#ffd54a;clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);"></div>`,
-            `position:absolute;left:${sx}px;top:${sy}px;transform:translate(-50%,-50%);`,
-            'drama-sparkle',
-            900
-          );
-        }, i * 50);
-      }
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('lootSparkle', {x: x, y: y, integration: integration});
     },
 
     // critHit: player crit — oversized starburst + CRIT! + damage number.
@@ -668,40 +715,15 @@
     // ambushWarning: monsters about to ambush — red vignette pulse + warning at location.
     // Steve 2026-10-07: wilderness drama. Vignette scales with integration.
     ambushWarning(x, y, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      // red vignette: radial gradient overlay
-      this.spawn(
-        '',
-        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 40%, rgba(255,30,30,0.35) 100%);',
-        'drama-vignette',
-        900 + (integration * 200)
-      );
-      // warning marker at the ambush location
-      this.spawn(
-        '<div style="font-size:32px;text-shadow:0 2px 8px rgba(0,0,0,0.9);">⚠️</div>',
-        `position:absolute;left:${c.x}px;top:${c.y - 20}px;transform:translate(-50%,-100%);`,
-        'drama-ambushmark',
-        1200
-      );
-      // L2+: the System names the danger
-      if (integration >= 2) {
-        this.floatText(c.x, c.y - 50, 'AMBUSH', { color: '#ff5252', size: 20 });
-      }
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('ambushWarning', {x: x, y: y, integration: integration});
     },
 
     // wildRipple: subtle green ripple when wildlife appears or flees.
     // Steve 2026-10-07: wilderness drama. Quiet — animals aren't the System's business.
     wildRipple(x, y, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 50 + (integration * 10);
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 80 80"><circle cx="40" cy="40" r="30" fill="none" stroke="#7cfc9a" stroke-width="2" opacity="0.5"/></svg>`,
-        `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
-        'drama-ripple',
-        600
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('wildRipple', {x: x, y: y, integration: integration});
     },
 
     // weatherShift: screen-wide weather effect.
@@ -743,16 +765,8 @@
     // trailMark: faint footprint marker for tracking — accumulates, doesn't fade fast.
     // Steve 2026-10-07: wilderness drama. For trail_eyes and tracking play.
     trailMark(x, y, direction, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const arrow = direction === 'n' ? '↑' : direction === 's' ? '↓' : direction === 'e' ? '→' : direction === 'w' ? '←' : '•';
-      const opacity = 0.4 + (integration * 0.15); // clearer with integration
-      this.spawn(
-        `<div style="font-size:20px;opacity:${opacity};text-shadow:0 1px 3px rgba(0,0,0,0.7);">🐾${arrow}</div>`,
-        `position:absolute;left:${c.x}px;top:${c.y}px;transform:translate(-50%,-50%);`,
-        'drama-trail',
-        3000
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('trailMark', {x: x, y: y, direction: direction, integration: integration});
     },
 
     // socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1).
@@ -1599,83 +1613,36 @@
     // dawnBreak: soft golden wash as the day begins.
     // Steve 2026-10-07: village rhythms (Round D3). Ambient — L1 barely there, L3 warm.
     dawnBreak(integration) {
-      integration = integration || 0;
-      const alpha = 0.06 + (integration * 0.04); // 0.06 -> 0.18
-      this.spawn(
-        '',
-        `position:absolute;inset:0;background:linear-gradient(to bottom, rgba(255,205,130,${alpha}), rgba(255,240,200,${alpha * 0.5}) 60%, transparent);`,
-        'drama-dawnwash',
-        1600 + (integration * 300)
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('dawnBreak', {integration: integration});
     },
 
     // duskFall: purple-orange fade as night comes.
     // Steve 2026-10-07: village rhythms (Round D3).
     duskFall(integration) {
-      integration = integration || 0;
-      const alpha = 0.08 + (integration * 0.04); // 0.08 -> 0.20
-      this.spawn(
-        '',
-        `position:absolute;inset:0;background:linear-gradient(to bottom, rgba(110,60,140,${alpha}), rgba(255,140,60,${alpha * 0.7}) 70%, transparent);`,
-        'drama-duskwash',
-        1600 + (integration * 300)
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('duskFall', {integration: integration});
     },
 
     // harvestGlow: wheat-gold motes drift up when the village brings food home.
     // Steve 2026-10-07: village rhythms (Round D3).
     harvestGlow(integration) {
-      integration = integration || 0;
-      const count = 3 + (integration * 2); // 3 -> 9
-      const golds = ['#ffd54a', '#e8b83a', '#fff2b0'];
-      for (let i = 0; i < count; i++) {
-        const left = 10 + ((i * 37) % 80);
-        const top = 30 + ((i * 53) % 40);
-        const g = golds[i % golds.length];
-        const size = 12 + (i % 3) * 4;
-        setTimeout(() => {
-          this.spawn(
-            `<div style="font-size:${size}px;color:${g};text-shadow:0 1px 4px rgba(0,0,0,0.7);">\u2726</div>`,
-            `position:absolute;left:${left}%;top:${top}%;`,
-            'drama-goldmote',
-            1400 + (integration * 200)
-          );
-        }, i * 120);
-      }
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('harvestGlow', {integration: integration});
     },
 
     // celebration: music notes drift up when the village is in high spirits.
     // Steve 2026-10-07: village rhythms (Round D3). Ambient — smaller than contest winner.
     celebration(integration) {
-      integration = integration || 0;
-      const notes = ['\u266A', '\u266B', '\u266A'];
-      const count = 3 + integration; // 3 -> 6
-      for (let i = 0; i < count; i++) {
-        const left = 15 + ((i * 41) % 70);
-        const color = i % 2 ? '#ffd54a' : '#9be8ff';
-        const size = 18 + (i % 2) * 6;
-        setTimeout(() => {
-          this.spawn(
-            `<div style="font-size:${size}px;color:${color};text-shadow:0 1px 4px rgba(0,0,0,0.7);">${notes[i % notes.length]}</div>`,
-            `position:absolute;left:${left}%;top:35%;`,
-            'drama-celebrate',
-            1800 + (integration * 200)
-          );
-        }, i * 150);
-      }
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('celebration', {integration: integration});
     },
 
     // mourning: gray veil when the village grieves.
     // Steve 2026-10-07: village rhythms (Round D3).
     mourning(integration) {
-      integration = integration || 0;
-      const alpha = 0.08 + (integration * 0.05); // 0.08 -> 0.23
-      this.spawn(
-        '',
-        `position:absolute;inset:0;background:linear-gradient(to bottom, rgba(110,118,130,${alpha}), rgba(80,88,100,${alpha * 0.6}) 70%, transparent);`,
-        'drama-mourn',
-        2000 + (integration * 300)
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('mourning', {integration: integration});
     },
 
     // villageArgue: red crackle drawn between two villagers' tiles.

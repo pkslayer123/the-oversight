@@ -1,0 +1,334 @@
+{
+ "_comment": "Drama effect registry (Steve 2026-10-07, Scaffold #4). Data-driven definitions for drama overlay effects. Each effect is a sequence of steps (spawn, particles, call) with JS expressions evaluated in scope. Visual output is IDENTICAL to the hand-written methods — the JSON contains the same expressions. Migrated incrementally: 12 effects in v1, proving the pattern before the remaining 50+.",
+ "_schema": {
+  "anchor": "'screen' | 'tile' — tile provides cx/cy from tileCenter(x,y)",
+  "audio": "audio cue name or null (wired via Drama.audioFor)",
+  "computed": "ordered map of name -> JS expression, evaluated in scope (can reference params and earlier computed)",
+  "id": "effect name, matches the Drama method name",
+  "params": "list of expected args (documentation)",
+  "step.animClass": "CSS animation class (defined in drama.js injected CSS)",
+  "step.count": "for particles: {expression} evaluating to integer",
+  "step.do": "'spawn' | 'particles' | 'call'",
+  "step.duration": "{expression} or number (ms)",
+  "step.html/step.css": "templates with {expression} placeholders",
+  "step.method/step.args": "for call: Drama method name and array of {expression} args",
+  "step.stagger": "for particles: ms between spawns",
+  "step.vary": "for particles: per-particle vars — array (cycled by i) or JS expression (evaluated with i in scope)",
+  "step.when": "optional JS expression — skip step if falsy",
+  "steps": "array of steps to execute in order"
+ },
+ "ambushWarning": {
+  "anchor": "tile",
+  "audio": null,
+  "computed": {
+   "integration": "integration || 0",
+   "vignetteDuration": "900 + integration * 200"
+  },
+  "params": [
+   "x",
+   "y",
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-vignette",
+    "css": "position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 40%, rgba(255,30,30,0.35) 100%);",
+    "do": "spawn",
+    "duration": "{vignetteDuration}",
+    "html": ""
+   },
+   {
+    "animClass": "drama-ambushmark",
+    "css": "position:absolute;left:{cx}px;top:{cy - 20}px;transform:translate(-50%,-100%);",
+    "do": "spawn",
+    "duration": "1200",
+    "html": "<div style=\"font-size:32px;text-shadow:0 2px 8px rgba(0,0,0,0.9);\">⚠️</div>"
+   },
+   {
+    "animClass": "drama-float",
+    "css": "position:absolute;left:{cx}px;top:{cy - 50}px;transform:translate(-50%,-50%);color:#ff5252;font-size:20px;font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.8);white-space:nowrap;",
+    "do": "spawn",
+    "duration": "800",
+    "html": "AMBUSH",
+    "when": "integration >= 2"
+   }
+  ]
+ },
+ "celebration": {
+  "anchor": "screen",
+  "audio": null,
+  "computed": {
+   "count": "3 + integration",
+   "duration": "1800 + integration * 200",
+   "integration": "integration || 0"
+  },
+  "params": [
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-celebrate",
+    "count": "{count}",
+    "css": "position:absolute;left:{left}%;top:35%;",
+    "do": "particles",
+    "duration": "{duration}",
+    "html": "<div style=\"font-size:{size}px;color:{color};text-shadow:0 1px 4px rgba(0,0,0,0.7);\">{note}</div>",
+    "stagger": 150,
+    "vary": {
+     "color": "i % 2 ? '#ffd54a' : '#9be8ff'",
+     "left": "15 + ((i * 41) % 70)",
+     "note": [
+      "♪",
+      "♫",
+      "♪"
+     ],
+     "size": "18 + (i % 2) * 6"
+    }
+   }
+  ]
+ },
+ "contestCheer": {
+  "anchor": "screen",
+  "audio": null,
+  "computed": {
+   "count": "3 + integration * 2",
+   "fontSize": "16 + integration * 4",
+   "integration": "integration || 0"
+  },
+  "params": [
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-cheer",
+    "count": "{count}",
+    "css": "position:absolute;left:{x}%;top:15%;",
+    "do": "particles",
+    "duration": "1200",
+    "html": "<div style=\"font-size:{fontSize}px;color:#ffd54a;text-shadow:0 0 8px #ffd54a;\">✨</div>",
+    "stagger": 80,
+    "vary": {
+     "x": "20 + Math.random() * 60"
+    }
+   }
+  ]
+ },
+ "contestJudging": {
+  "anchor": "screen",
+  "audio": null,
+  "computed": {
+   "duration": "1500 + integration * 300",
+   "integration": "integration || 0"
+  },
+  "params": [
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-judge-dim",
+    "css": "position:absolute;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:grayscale(0.7);",
+    "do": "spawn",
+    "duration": "{duration}",
+    "html": ""
+   },
+   {
+    "animClass": "drama-judge-text",
+    "css": "position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);",
+    "do": "spawn",
+    "duration": "{duration}",
+    "html": "<div style=\"font-size:20px;font-weight:bold;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,1);letter-spacing:4px;\">JUDGING</div>"
+   }
+  ]
+ },
+ "dawnBreak": {
+  "anchor": "screen",
+  "audio": null,
+  "computed": {
+   "alpha": "0.06 + integration * 0.04",
+   "duration": "1600 + integration * 300",
+   "integration": "integration || 0"
+  },
+  "params": [
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-dawnwash",
+    "css": "position:absolute;inset:0;background:linear-gradient(to bottom, rgba(255,205,130,{alpha}), rgba(255,240,200,{alpha * 0.5}) 60%, transparent);",
+    "do": "spawn",
+    "duration": "{duration}",
+    "html": ""
+   }
+  ]
+ },
+ "duskFall": {
+  "anchor": "screen",
+  "audio": null,
+  "computed": {
+   "alpha": "0.08 + integration * 0.04",
+   "duration": "1600 + integration * 300",
+   "integration": "integration || 0"
+  },
+  "params": [
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-duskwash",
+    "css": "position:absolute;inset:0;background:linear-gradient(to bottom, rgba(110,60,140,{alpha}), rgba(255,140,60,{alpha * 0.7}) 70%, transparent);",
+    "do": "spawn",
+    "duration": "{duration}",
+    "html": ""
+   }
+  ]
+ },
+ "harvestGlow": {
+  "anchor": "screen",
+  "audio": null,
+  "computed": {
+   "count": "3 + integration * 2",
+   "duration": "1400 + integration * 200",
+   "integration": "integration || 0"
+  },
+  "params": [
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-goldmote",
+    "count": "{count}",
+    "css": "position:absolute;left:{left}%;top:{top}%;",
+    "do": "particles",
+    "duration": "{duration}",
+    "html": "<div style=\"font-size:{size}px;color:{g};text-shadow:0 1px 4px rgba(0,0,0,0.7);\">✦</div>",
+    "stagger": 120,
+    "vary": {
+     "g": [
+      "#ffd54a",
+      "#e8b83a",
+      "#fff2b0"
+     ],
+     "left": "10 + ((i * 37) % 80)",
+     "size": "12 + (i % 3) * 4",
+     "top": "30 + ((i * 53) % 40)"
+    }
+   }
+  ]
+ },
+ "lootSparkle": {
+  "anchor": "tile",
+  "audio": null,
+  "computed": {
+   "count": "5 + integration * 3",
+   "integration": "integration || 0"
+  },
+  "params": [
+   "x",
+   "y",
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-sparkle",
+    "count": "{count}",
+    "css": "position:absolute;left:{sx}px;top:{sy}px;transform:translate(-50%,-50%);",
+    "do": "particles",
+    "duration": "900",
+    "html": "<div style=\"width:{sz}px;height:{sz}px;background:#ffd54a;clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);\"></div>",
+    "stagger": 50,
+    "vary": {
+     "ang": "(i / count) * Math.PI * 2 + Math.random() * 0.5",
+     "dist": "15 + Math.random() * (20 + integration * 10)",
+     "sx": "cx + Math.cos(ang) * dist",
+     "sy": "cy + Math.sin(ang) * dist",
+     "sz": "8 + Math.random() * 8"
+    }
+   }
+  ]
+ },
+ "mourning": {
+  "anchor": "screen",
+  "audio": null,
+  "computed": {
+   "alpha": "0.08 + integration * 0.05",
+   "duration": "2000 + integration * 300",
+   "integration": "integration || 0"
+  },
+  "params": [
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-mourn",
+    "css": "position:absolute;inset:0;background:linear-gradient(to bottom, rgba(110,118,130,{alpha}), rgba(80,88,100,{alpha * 0.6}) 70%, transparent);",
+    "do": "spawn",
+    "duration": "{duration}",
+    "html": ""
+   }
+  ]
+ },
+ "soulWisp": {
+  "anchor": "tile",
+  "audio": null,
+  "computed": {},
+  "params": [
+   "x",
+   "y"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-wisp",
+    "css": "position:absolute;left:{cx - 15}px;top:{cy - 20}px;",
+    "do": "spawn",
+    "duration": "1200",
+    "html": "<svg width=\"30\" height=\"40\" viewBox=\"0 0 30 40\"><ellipse cx=\"15\" cy=\"20\" rx=\"10\" ry=\"15\" fill=\"rgba(180,220,255,0.7)\"/></svg>"
+   }
+  ]
+ },
+ "trailMark": {
+  "anchor": "tile",
+  "audio": null,
+  "computed": {
+   "arrow": "direction === 'n' ? '↑' : direction === 's' ? '↓' : direction === 'e' ? '→' : direction === 'w' ? '←' : '•'",
+   "integration": "integration || 0",
+   "opacity": "0.4 + integration * 0.15"
+  },
+  "params": [
+   "x",
+   "y",
+   "direction",
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-trail",
+    "css": "position:absolute;left:{cx}px;top:{cy}px;transform:translate(-50%,-50%);",
+    "do": "spawn",
+    "duration": "3000",
+    "html": "<div style=\"font-size:20px;opacity:{opacity};text-shadow:0 1px 3px rgba(0,0,0,0.7);\">🐾{arrow}</div>"
+   }
+  ]
+ },
+ "wildRipple": {
+  "anchor": "tile",
+  "audio": null,
+  "computed": {
+   "integration": "integration || 0",
+   "size": "50 + integration * 10"
+  },
+  "params": [
+   "x",
+   "y",
+   "integration"
+  ],
+  "steps": [
+   {
+    "animClass": "drama-ripple",
+    "css": "position:absolute;left:{cx - size / 2}px;top:{cy - size / 2}px;",
+    "do": "spawn",
+    "duration": "600",
+    "html": "<svg width=\"{size}\" height=\"{size}\" viewBox=\"0 0 80 80\"><circle cx=\"40\" cy=\"40\" r=\"30\" fill=\"none\" stroke=\"#7cfc9a\" stroke-width=\"2\" opacity=\"0.5\"/></svg>"
+   }
+  ]
+ }
+}
