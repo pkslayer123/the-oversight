@@ -13707,6 +13707,20 @@
       if (pools.length >= 4) return { type: 'generalist', pools };
       return null;
     },
+    // drama: fire a drama overlay effect (loosely-bound, GPU-cheap).
+    // The overlay is not bound to grid lines — it's for emphasis.
+    drama(kind, ...args) {
+      try {
+        const D = globalThis.Scattering && globalThis.Scattering.Drama;
+        if (!D) return;
+        if (kind === 'hit') D.hit(...args);
+        else if (kind === 'text') D.floatText(...args);
+        else if (kind === 'flash') D.flash(...args);
+        else if (kind === 'shake') D.shake(...args);
+        else if (kind === 'hero') D.heroCard(...args);
+        else if (kind === 'wisp') D.soulWisp(...args);
+      } catch (e) {}
+    },
     // buildBonus: the mechanical reward for your build archetype.
     // Specialists get +25% to their pool's core action. Generalists get +10% to everything.
     buildBonus() {
@@ -14959,6 +14973,8 @@
       const sch = this.state.scholar;
       if (!sch.synergies.includes(syn.id)) {
         sch.synergies.push(syn.id);
+        // DRAMA (Steve 2026-10-07): synergy discovery is a hero moment
+        try { this.drama('hero', syn.name, syn.discovery || syn.flavor || '', '✨'); } catch (e) {}
         // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): synergy discovery moment.
         this.audioEvent('knowledgeReveal', { kind: 'synergy', id: syn.id });
         // SYNERGY FANFARE (Round 2 wiring, Steve 2026-10-07): discovery is an
