@@ -8341,6 +8341,12 @@
         const charsMeat = wdef && wdef.weapon && wdef.weapon.charsMeat;
         if (charsMeat) {
           const charredKcal = Math.round(kcal * 0.1);
+          // a kill teaches you what it was — you're holding the body. Identify
+          // BEFORE the carcass, so the name is earned, not leaked. (Mirrors the
+          // hunted branch below; the live encounters.js huntAnimal wrapper
+          // already identifies at the kill — this is defense-in-depth on the
+          // shadowed branch, Steve 2026-10-06.)
+          try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(animal.id); } catch (e) {}
           s.inventory.push(this.foodCarcass(animal, charredKcal, s.day, 'charred'));
           this.say(`The beam takes it apart. Charred remains — about ${charredKcal} kcal of edible bits. Energy weapons don't hunt, they unmake.`);
         } else {
@@ -17858,7 +17864,7 @@
     // unit — mutes the player's most-used verb inside its suppression field.
     modIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'moderator')); },
     // MODERATOR HELPERS (Steve 2026-10-06): the mute machinery. All state is
-    // fight-scoped (f.modRecent: rolling window of the player's last 6 verbs;
+    // fight-scoped (f.modRecent: rolling window of the player's last 5 verbs;
     // m.modMuted: currently muted verb list; m.modField: projected field keys).
     modLive() {
       const f = this.tbfight; if (!f) return null;
@@ -17873,7 +17879,10 @@
     // Most-used verbs in the rolling window. WAIT counts too — silence is a
     // verb the algorithm cannot moderate: if the window holds no strike/move,
     // there is nothing to mute and the mute LIFTS ("it loses the thread").
-    // Ties break by recency. Window of 5: three quiet rounds flip a habit.
+    // Ties break by recency. Window of 5: five quiet rounds flip a habit.
+    // (TUNING QUESTION for Steve: was 3 the intended number? The window holds
+    // 5 entries — the lift takes 5 quiet rounds. Flagged 2026-10-06, numbers
+    // unchanged.)
     modTopVerbs(n) {
       const f = this.tbfight;
       const recent = (f && f.modRecent) || [];
