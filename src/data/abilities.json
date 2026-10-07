@@ -179,6 +179,17 @@
   {
     "description": "Your gut handles what it shouldn't. A useful lie your body tells itself.",
     "id": "iron_stomach",
+    "actions": [
+      {
+        "context": "explore",
+        "cost": {
+          "kcal": 30
+        },
+        "effect": "Settle your gut until the next part of the day. Unsafe food can't poison you while it lasts.",
+        "id": "push_through",
+        "name": "Push Through"
+      }
+    ],
     "modifiers": [
       {
         "target": "food.poison_chance",
@@ -469,6 +480,15 @@
   },
   {
     "id": "second_wind",
+    "actions": [
+      {
+        "id": "refuse_death",
+        "context": "combat",
+        "name": "Refuse",
+        "cost": {},
+        "effect": "Once per day, when you would die: you don't. Drop to 1 HP, gain 500 kcal from sheer spite. Automatic trigger."
+      }
+    ],
     "name": "Second Wind",
     "description": "Once per day, when you'd die, you don't. (1 HP, 500 kcal.)",
     "flavor": "You were almost gone! Then you WEREN'T! How?! We want to know!",
@@ -669,6 +689,18 @@
   },
   {
     "id": "rage",
+    "actions": [
+      {
+        "id": "unleash_rage",
+        "context": "combat",
+        "name": "Unleash Rage",
+        "cost": {
+          "turn": true,
+          "kcal": 60
+        },
+        "effect": "+100% damage for 3 rounds, but you attack the nearest thing (friend or foe). You cannot retreat while raging."
+      }
+    ],
     "name": "Berserker Rage",
     "description": "+100% damage, but you attack the nearest thing (friend or foe). Lasts 3 rounds.",
     "flavor": "ANGRY! SO ANGRY! Hit the... oh no! That was a friend! ...they'll understand! Maybe!",
@@ -831,6 +863,26 @@
   },
   {
     "id": "fear_aura",
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Stand still and let them look. Each enemy hesitates \u2014 loses its next round. Villagers watching lose 5 trust.",
+        "id": "loom",
+        "name": "Loom"
+      },
+      {
+        "id": "menace",
+        "context": "social",
+        "name": "Menace",
+        "cost": {
+          "time_min": 10
+        },
+        "effect": "Make your point without raising a hand. +intimidation in this conversation, -trust afterward."
+      }
+    ],
     "name": "Dread",
     "description": "Villagers and monsters are uneasy around you. -10 trust, but monsters hesitate (+1 round before attacking).",
     "flavor": "You are the scary! We are scared! The monsters are scared! Everyone is scared! ...fun!",
@@ -1416,6 +1468,17 @@
   },
   {
     "id": "brawler_instinct",
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Read the fight before it starts. +2 speed for the rest of the fight (turn order re-sorts from next round).",
+        "id": "read_fight",
+        "name": "Read the Fight"
+      }
+    ],
     "name": "Brawler's Instinct",
     "pool": "combat",
     "description": "You read a fight before it starts. The body tells you what the mouth won't.",
@@ -1457,6 +1520,26 @@
   },
   {
     "id": "intimidating_presence",
+    "actions": [
+      {
+        "context": "combat",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Lock eyes with an enemy (choose target). 50% chance it backs off and disengages. Fearless foes are immune.",
+        "id": "stare_down",
+        "name": "Stare Down"
+      },
+      {
+        "id": "end_it_before",
+        "context": "social",
+        "name": "End It Before It Starts",
+        "cost": {
+          "time_min": 5
+        },
+        "effect": "Your reputation precedes you. Most disputes resolve in your favor without violence. Some resent you for it."
+      }
+    ],
     "name": "Intimidating Presence",
     "pool": "combat",
     "description": "You don't have to fight. Most people decide not to, just looking at you.",
