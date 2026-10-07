@@ -1706,6 +1706,14 @@
   //   once per round), delegateDebrief() (was fired by tbFifoBreather, silent).
   //   projectorFire() (memory_projector resolve: whine swelling into the cold
   //   pull tone, hard cut — the light has edges).
+  //   WAVE-2 FLYER VOICES (Steve 2026-10-06): nevermoreCroak/nevermoreStrafe/
+  //   nevermoreLand/nevermoreClimb (beak-hammer percussion + detuned corvid
+  //   croak — wired: game.js first-contact/strafe/land/climb dispatch),
+  //   nightcourtSilence/nightcourtLand/nightcourtClimb (negative space, hush,
+  //   sub-bass — the dive makes NO sound; silence is the telegraph; wired:
+  //   game.js), kiteHum/kiteMark/kiteTransmit/kiteBroadcast/kiteClimb
+  //   (detuned kite-string whine + radio-static bursts — wired: game.js
+  //   first-contact/mark/transmit/broadcast/climb dispatch).
   //   WAVE-1 CONTRACT, NOW DEFINED (Steve 2026-10-06): boarNotice/boarSnort/
   //   boarCharge, wolfSilence/wolfSnarl, heronUnfold/heronStrike, turtleSnap
   //   (wired as speedbump_turtle encounter.resolveAudio in monsters.json).
@@ -8628,6 +8636,391 @@
         el.classList.add('go');
       } catch (e) {}
     }
+
+    // ======== WAVE-2 FLYER VOICES (Steve 2026-10-06) ========
+    // The flyer redesign (nevermore / nightcourt / statickite) fired 12
+    // hooks with no registered synth — every signature beat played mute.
+    // These are the voices, freaky not generic:
+    //   nevermore  = beak-hammer percussion + detuned corvid croak
+    //   nightcourt = negative space / hush with sub-bass (the dive makes NO
+    //                sound — the silence IS the telegraph)
+    //   statickite = detuned kite-string whine + radio-static bursts
+    //                (dead television, tuned to you)
+
+    // A single corvid croak: detuned saw pair a semitone apart (it doesn't
+    // sit right), rattled by a square LFO on the bus gain (the harsh throat),
+    // pitch sagging as the croak runs out.
+    function nmCroak(t, dur, vol, f0) {
+      const bus = ctx.createGain(); bus.connect(sfxBus);
+      [f0, f0 * 1.0595].forEach(fq => { // minor 2nd: wrong on purpose
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.72, t + dur); // sags
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 1.4;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(f); f.connect(g); g.connect(bus);
+        o.start(t); o.stop(t + dur + 0.05);
+      });
+      // the rattle: 27 Hz square gnawing the bus gain — the corvid throat
+      const r = ctx.createOscillator(), rg = ctx.createGain();
+      r.type = 'square'; r.frequency.value = 27;
+      rg.gain.value = vol * 0.55;
+      r.connect(rg); rg.connect(bus.gain);
+      r.start(t); r.stop(t + dur + 0.05);
+    }
+    // A beak hammer: a dry knock — triangle, high, gone before it lands.
+    function nmBeak(t, vol, fq) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = fq || 1900;
+      const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 900;
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.1);
+    }
+    function nevermoreCroak() {
+      // FIRST CONTACT: "A crow on the treeline. Watching." Three croaks,
+      // spaced — it is in no hurry. Each sags and ends in a beak clack.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.55, 1.25].forEach((dt, i) => {
+        nmCroak(t + dt, 0.42, 0.22, 392 - i * 40);
+        nmBeak(t + dt + 0.42, 0.16, 1750 + i * 200);
+      });
+    }
+    function nevermoreStrafe() {
+      // THE STRAFE DECLARED — "in a voice you buried". The run is FAST: a
+      // croak dopplering down the lane, wingbeat flaps, and the beak hammer
+      // slamming shut at the end of the pass.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.15;
+      // the passing croak: a pair sweeping down hard, like a doppler pass
+      [440, 466].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(fq * 1.6, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.5, t + dur);
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass'; f.frequency.value = 1100; f.Q.value = 1.1;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.3, t + 0.25);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur + 0.05);
+      });
+      // wingbeats: noise thumped at ~9 Hz, close then gone
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 700;
+        const fl = ctx.createOscillator(), flg = ctx.createGain();
+        fl.type = 'sine'; fl.frequency.value = 9; flg.gain.value = 0.14;
+        fl.connect(flg); flg.connect(ng.gain);
+        ng.gain.setValueAtTime(0.14, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + dur); fl.start(t); fl.stop(t + dur);
+      }
+      // the hammer at the end of the lane
+      nmBeak(t + dur - 0.08, 0.3, 1500);
+      nmBeak(t + dur + 0.02, 0.22, 2100);
+    }
+    function nevermoreLand() {
+      // THE RUN ENDS IN THE DIRT: talons-out impact, a wing-tangle scrape,
+      // and one last beak clack. GROUNDED. Now.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // dirt thud
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(95, t);
+      o.frequency.exponentialRampToValueAtTime(32, t + 0.3);
+      g.gain.setValueAtTime(0.5, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.45);
+      // talon scrape: bandpassed noise sweeping down
+      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 2.2;
+        nf.frequency.setValueAtTime(4200, t);
+        nf.frequency.exponentialRampToValueAtTime(700, t + 0.4);
+        ng.gain.setValueAtTime(0.2, t + 0.02);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.5);
+      }
+      nmBeak(t + 0.45, 0.2, 1800); // ...beak hammering. GROUNDED. Now.
+    }
+    function nevermoreClimb() {
+      // "It hammers its beak shut — four ways at once — and climbs, still
+      // talking, back into the dark." Four hammers, then muttered croak
+      // fragments rising away as the lowpass closes.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [1500, 1750, 2000, 2300].forEach((fq, i) => {
+        nmBeak(t + i * 0.11, 0.26, fq);
+      });
+      // still talking, climbing: fragments that rise and thin into the dark
+      const bus = ctx.createGain();
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(2400, t + 0.5);
+      lp.frequency.exponentialRampToValueAtTime(300, t + 1.9);
+      bus.connect(lp); lp.connect(sfxBus);
+      [0.55, 0.95, 1.3].forEach((dt, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(300 + i * 60, t + dt);
+        o.frequency.exponentialRampToValueAtTime(520 + i * 60, t + dt + 0.3);
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.14, t + dt + 0.06);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.32);
+        o.connect(g); g.connect(bus);
+        o.start(t + dt); o.stop(t + dt + 0.4);
+      });
+    }
+
+    function nightcourtSilence() {
+      // FIRST CONTACT: "No wingsound. Owls don't make sound when they hunt —
+      // that's the problem." This is a DELIBERATE near-silence, not a missing
+      // synth. The world ducks (the heartbeat thins) and almost nothing comes
+      // back: a sub-bass pressure bloom you feel more than hear, and one soft
+      // blink. The absence is the telegraph.
+      if (!ensure()) return;
+      duckHeartbeat(0.06, 0.1, 1.2); // the world holds its breath
+      const t = ctx.currentTime;
+      // pressure bloom: 28 Hz, felt not heard, bending flat = wrong
+      const sb = ctx.createOscillator(), sbg = ctx.createGain();
+      sb.type = 'sine';
+      sb.frequency.setValueAtTime(28, t + 0.3);
+      sb.frequency.exponentialRampToValueAtTime(25.5, t + 1.1);
+      sbg.gain.setValueAtTime(0.0001, t + 0.3);
+      sbg.gain.exponentialRampToValueAtTime(0.1, t + 0.7);
+      sbg.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+      sb.connect(sbg); sbg.connect(sfxBus);
+      sb.start(t + 0.3); sb.stop(t + 1.45);
+      // the blink: once, slowly — a soft blip at the edge of hearing
+      const bl = ctx.createOscillator(), blg = ctx.createGain();
+      bl.type = 'sine'; bl.frequency.value = 1250;
+      blg.gain.setValueAtTime(0.0001, t + 0.9);
+      blg.gain.exponentialRampToValueAtTime(0.05, t + 0.98);
+      blg.gain.exponentialRampToValueAtTime(0.0001, t + 1.15);
+      bl.connect(blg); blg.connect(sfxBus);
+      bl.start(t + 0.9); bl.stop(t + 1.2);
+    }
+    function nightcourtLand() {
+      // LANDED: "wings mantling, head turned too far. It stands there,
+      // breathing." A muted thud, a feather drag — and the breathing,
+      // because owls shouldn't pant.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // muted thud: the dive's energy, swallowed
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(70, t);
+      o.frequency.exponentialRampToValueAtTime(30, t + 0.35);
+      const lf = ctx.createBiquadFilter(); lf.type = 'lowpass'; lf.frequency.value = 220;
+      g.gain.setValueAtTime(0.4, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      o.connect(lf); lf.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.5);
+      // the breathing: two slow, wrong swells of low noise
+      const nz = noise(2.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 400;
+        [0.5, 1.5].forEach((dt, i) => {
+          ng.gain.setValueAtTime(0.0001, t + dt);
+          ng.gain.exponentialRampToValueAtTime(i ? 0.11 : 0.09, t + dt + 0.35);
+          ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.8);
+        });
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.4); nz.stop(t + 2.6);
+      }
+    }
+    function nightcourtClimb() {
+      // "It blinks — once, slowly — and the night takes it back. Gone,
+      // upward." The hush lifts: a sub tone rising slightly, thinning into
+      // nothing, the dark closing over it. What leaves is less than what came.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const sb = ctx.createOscillator(), sbg = ctx.createGain();
+      sb.type = 'sine';
+      sb.frequency.setValueAtTime(26, t);
+      sb.frequency.exponentialRampToValueAtTime(34, t + 1.3); // rising away
+      sbg.gain.setValueAtTime(0.09, t + 0.1);
+      sbg.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      sb.connect(sbg); sbg.connect(sfxBus);
+      sb.start(t); sb.stop(t + 1.55);
+      // the night closing: dark noise that swells and seals shut
+      const nz = noise(1.6), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 260;
+        ng.gain.setValueAtTime(0.0001, t + 0.2);
+        ng.gain.exponentialRampToValueAtTime(0.07, t + 0.7);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.2); nz.stop(t + 1.6);
+      }
+    }
+
+    // A detuned kite-string whine: two thin sines a few Hz apart, beating
+    // against each other — dead television, fluorescent, mosquito.
+    function skWhine(t, dur, vol, f0, f1) {
+      [f0, f1].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.15);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur + 0.05);
+      });
+    }
+    // Radio-static burst: bandpassed noise, bitten by a square gate.
+    function skStatic(t, dur, vol, bpFq, gateHz) {
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (!nz) return;
+      nf.type = 'bandpass'; nf.frequency.value = bpFq; nf.Q.value = 0.8;
+      const gl = ctx.createOscillator(), glg = ctx.createGain();
+      gl.type = 'square'; gl.frequency.value = gateHz; glg.gain.value = vol * 0.5;
+      gl.connect(glg); glg.connect(ng.gain);
+      ng.gain.setValueAtTime(vol * 0.5, t);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+      nz.start(t); nz.stop(t + dur); gl.start(t); gl.stop(t + dur);
+    }
+    function kiteHum() {
+      // FIRST CONTACT: "A kite over the treeline. Nobody is holding the
+      // string." The string whine with no string — and under it, a dead
+      // channel crackling to itself.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 2.0;
+      skWhine(t, dur, 0.075, 3150, 3188); // the beating pair
+      skStatic(t, dur, 0.05, 2600, 7);   // the dead channel
+    }
+    function kiteMark() {
+      // THE MARK DECLARED: "The ground lights up in a grid under you. It's
+      // framing the shot." A lens focusing — the whine sweeping up, tighter —
+      // then the shot: static burst + shutter snap.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // focus sweep: rising pair, converging
+      [[3150, 3450], [3188, 3470]].forEach(([f0, f1]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(f1, t + 0.7);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.09, t + 0.5);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + 0.85);
+      });
+      // the shot
+      skStatic(t + 0.72, 0.35, 0.22, 3400, 31);
+      // shutter snap: a dry click
+      const c = ctx.createOscillator(), cg = ctx.createGain();
+      c.type = 'square'; c.frequency.setValueAtTime(2400, t + 0.74);
+      cg.gain.setValueAtTime(0.14, t + 0.74);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      c.connect(cg); cg.connect(sfxBus);
+      c.start(t + 0.74); c.stop(t + 0.82);
+    }
+    function kiteTransmit() {
+      // THE DIP: "the screen strobes. On it: you, sleeping." It hangs low,
+      // broadcasting: rhythmic packet bursts of gated static, a garbled data
+      // whine descending, the strobe chopping the air.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.8;
+      skStatic(t, dur, 0.2, 2900, 13); // packet bursts
+      // garbled data: two saws stepping down wrong, strobed
+      [1180, 1247].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.55, t + dur);
+        const f = ctx.createBiquadFilter();
+        f.type = 'lowpass'; f.frequency.value = 2600;
+        const strobe = ctx.createOscillator(), sg = ctx.createGain();
+        strobe.type = 'square'; strobe.frequency.value = 9; sg.gain.value = 0.05;
+        strobe.connect(sg); sg.connect(g.gain);
+        g.gain.setValueAtTime(0.05, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur + 0.05);
+        strobe.start(t); strobe.stop(t + dur);
+      });
+    }
+    function kiteBroadcast() {
+      // THE SQUARE SCREAMS: static made solid. Full-band white violence, a
+      // detuned scream with vibrato, and a hard sub bite underneath — it
+      // hits the body too.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.1;
+      // the solid static: full-band, gated hard
+      skStatic(t, dur, 0.34, 1800, 47);
+      // the scream: two saws a semitone apart, vibrato gnawing
+      [1567, 1661].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = fq;
+        const vib = ctx.createOscillator(), vg = ctx.createGain();
+        vib.type = 'sine'; vib.frequency.value = 11; vg.gain.value = 60;
+        vib.connect(vg); vg.connect(o.frequency);
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass'; f.frequency.value = 2400; f.Q.value = 0.7;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.16, t + 0.08);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur + 0.05);
+        vib.start(t); vib.stop(t + dur);
+      });
+      // the bite: sub drop under the scream
+      const sb = ctx.createOscillator(), sbg = ctx.createGain();
+      sb.type = 'sine';
+      sb.frequency.setValueAtTime(110, t);
+      sb.frequency.exponentialRampToValueAtTime(36, t + 0.5);
+      sbg.gain.setValueAtTime(0.35, t);
+      sbg.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      sb.connect(sbg); sbg.connect(sfxBus);
+      sb.start(t); sb.stop(t + 0.65);
+    }
+    function kiteClimb() {
+      // "The screen goes dark. It climbs — the string that isn't there
+      // pulling it back." The whine thins and rises away, the static
+      // dissolves — and one phantom creak, a string that doesn't exist.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.6;
+      // whine rising away + lowpass closing = distance
+      const bus = ctx.createGain();
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(6000, t);
+      lp.frequency.exponentialRampToValueAtTime(500, t + dur);
+      bus.connect(lp); lp.connect(sfxBus);
+      [3150, 3188].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 1.35, t + dur); // rising away
+        g.gain.setValueAtTime(0.07, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(bus);
+        o.start(t); o.stop(t + dur + 0.05);
+      });
+      // the phantom creak: a triangle bending up, then gone
+      const c = ctx.createOscillator(), cg = ctx.createGain();
+      c.type = 'triangle';
+      c.frequency.setValueAtTime(220, t + 0.4);
+      c.frequency.exponentialRampToValueAtTime(660, t + 0.75);
+      cg.gain.setValueAtTime(0.0001, t + 0.4);
+      cg.gain.exponentialRampToValueAtTime(0.08, t + 0.55);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      c.connect(cg); cg.connect(sfxBus);
+      c.start(t + 0.4); c.stop(t + 0.85);
+    }
+
     return {
       ensureAudio() { return ensure(); },
       combatStart() { combatStartHit(); heartbeat(72); }, // (Steve 2026-10-06): the opening now lands its own wrong-horn sting, then the heartbeat takes over
@@ -8737,6 +9130,20 @@
       modRemoval(d) { modRemoval(d); },         // REMOVAL IMMINENT / Deplatform
       modShadow() { modShadow(); },             // SHADOWBAN
       modDown() { modDown(); },                 // deplatformed
+      // WAVE-2 FLYER VOICES (Steve 2026-10-06): the flyer redesign fired
+      // these 12 hooks with no synth — every signature beat played mute.
+      nevermoreCroak() { nevermoreCroak(); },       // first contact: the crow that has been watching
+      nevermoreStrafe() { nevermoreStrafe(); },     // the unkind cut: strafing run declared
+      nevermoreLand() { nevermoreLand(); },         // the run ends in the dirt
+      nevermoreClimb() { nevermoreClimb(); },       // beak hammered shut, four ways — climbs, still talking
+      nightcourtSilence() { nightcourtSilence(); }, // first contact: no wingsound — that's the problem (deliberate hush)
+      nightcourtLand() { nightcourtLand(); },       // landed on its kill — wings mantling, breathing
+      nightcourtClimb() { nightcourtClimb(); },     // the night takes it back
+      kiteHum() { kiteHum(); },                     // first contact: dead television, tuned to you
+      kiteMark() { kiteMark(); },                   // the mark: framing the shot
+      kiteTransmit() { kiteTransmit(); },           // the dip: transmitting at melee height
+      kiteBroadcast() { kiteBroadcast(); },         // the square SCREAMS — static made solid
+      kiteClimb() { kiteClimb(); },                 // the screen goes dark; the string that isn't there pulls
       belltoadCroak() { belltoadCroak(); },
       belltoadStun() { belltoadStun(); },
       belltoadChorus() { belltoadChorus(); },
