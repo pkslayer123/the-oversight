@@ -1424,4 +1424,423 @@
     "skinTone": "deep",
     "clothing": "casual"
   }
+,
+  {
+    "id": "ines_duarte",
+    "name": "Ines Duarte",
+    "age": 33,
+    "formerOccupation": "florist",
+    "line": "Grows flowers nobody can eat. Morale is a crop too.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Lisbon, Portugal",
+    "homeRegion": "Lisbon, Portugal",
+    "skinTone": "tan",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "thabo_maseko",
+    "name": "Thabo Maseko",
+    "age": 41,
+    "formerOccupation": "taxi driver",
+    "line": "Drove the same route for eleven years. Now the route is wherever the village needs.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "dry",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Cape Town, South Africa",
+    "homeRegion": "Cape Town, South Africa",
+    "skinTone": "deep",
+    "clothing": "casual"
+  },
+  {
+    "id": "sigrun_eiriksdottir",
+    "name": "Sigrun Eiriksdottir",
+    "age": 47,
+    "formerOccupation": "night security guard",
+    "line": "Prefers the night shift. The dark never small-talks.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "fair",
+      "temperament": "withdrawn",
+      "curiosity": "wary"
+    },
+    "gender": "f",
+    "origin": "Reykjavík, Iceland",
+    "homeRegion": "Reykjavík, Iceland",
+    "skinTone": "fair",
+    "clothing": "workwear"
+  },
+  {
+    "id": "mateo_alvarez",
+    "name": "Mateo Alvarez",
+    "age": 36,
+    "formerOccupation": "barber",
+    "line": "Gives the best haircuts in the village. Everyone's hair is longer now, so it matters.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "bold",
+      "curiosity": "curious"
+    },
+    "gender": "m",
+    "origin": "Buenos Aires, Argentina",
+    "homeRegion": "Buenos Aires, Argentina",
+    "skinTone": "tan",
+    "clothing": "casual"
+  },
+  {
+    "id": "somchai_prasert",
+    "name": "Somchai Prasert",
+    "age": 28,
+    "formerOccupation": "bike messenger",
+    "line": "Can outrun anything on two wheels. Off them too, if the wheels break.",
+    "kcalPerDay": 2500,
+    "providesPerDay": 1700,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "restless",
+      "curiosity": "curious"
+    },
+    "gender": "m",
+    "origin": "Bangkok, Thailand",
+    "homeRegion": "Bangkok, Thailand",
+    "skinTone": "tan",
+    "clothing": "bright"
+  },
+  {
+    "id": "nadia_khoury",
+    "name": "Nadia Khoury",
+    "age": 29,
+    "formerOccupation": "radio DJ",
+    "line": "Does a morning show for nobody. The village is her only listener and she takes requests.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1350,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "f",
+    "origin": "Toronto, Canada",
+    "homeRegion": "Toronto, Canada",
+    "skinTone": "light",
+    "clothing": "bright"
+  },
+  {
+    "id": "ruby_callaghan",
+    "name": "Ruby Callaghan",
+    "age": 24,
+    "formerOccupation": "lifeguard",
+    "line": "Counts heads at the river. Hasn't lost one yet.",
+    "kcalPerDay": 2300,
+    "providesPerDay": 1600,
+    "personality": {
+      "sharing": "fair",
+      "temperament": "bold",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Sydney, Australia",
+    "homeRegion": "Sydney, Australia",
+    "skinTone": "fair",
+    "clothing": "bright"
+  },
+  {
+    "id": "brian_otieno",
+    "name": "Brian Otieno",
+    "age": 31,
+    "formerOccupation": "zookeeper",
+    "line": "Knows which animals bluff. Says the monsters do too.",
+    "kcalPerDay": 2200,
+    "providesPerDay": 1650,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "gentle",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "m",
+    "origin": "Nairobi, Kenya",
+    "homeRegion": "Nairobi, Kenya",
+    "skinTone": "dark",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "valeria_quispe",
+    "name": "Valeria Quispe",
+    "age": 39,
+    "formerOccupation": "pottery instructor",
+    "line": "Fires clay in a pit kiln. Every bowl is a small argument with the old world.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1600,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Lima, Peru",
+    "homeRegion": "Lima, Peru",
+    "skinTone": "brown",
+    "clothing": "casual"
+  },
+  {
+    "id": "omar_farouk",
+    "name": "Omar Farouk",
+    "age": 58,
+    "formerOccupation": "piano tuner",
+    "line": "Tunes by ear in a world with no pianos. Says the village hums off-key.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "fair",
+      "temperament": "dry",
+      "curiosity": "wary"
+    },
+    "gender": "m",
+    "origin": "Cairo, Egypt",
+    "homeRegion": "Cairo, Egypt",
+    "skinTone": "brown",
+    "clothing": "casual"
+  },
+  {
+    "id": "elif_demir",
+    "name": "Elif Demir",
+    "age": 45,
+    "formerOccupation": "hotel housekeeper",
+    "line": "Folds everything. Calls it triage for chaos.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "prickly",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Istanbul, Turkey",
+    "homeRegion": "Istanbul, Turkey",
+    "skinTone": "light",
+    "clothing": "workwear"
+  },
+  {
+    "id": "sari_wulandari",
+    "name": "Sari Wulandari",
+    "age": 43,
+    "formerOccupation": "postal worker",
+    "line": "Walked her route through two floods. Rain is just weather with opinions.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1500,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "steady",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Jakarta, Indonesia",
+    "homeRegion": "Jakarta, Indonesia",
+    "skinTone": "tan",
+    "clothing": "workwear"
+  },
+  {
+    "id": "miguel_santos",
+    "name": "Miguel Santos",
+    "age": 49,
+    "formerOccupation": "dockworker",
+    "line": "Unloaded ships for twenty years. Still checks the horizon for one.",
+    "kcalPerDay": 2400,
+    "providesPerDay": 1700,
+    "personality": {
+      "sharing": "transactional",
+      "temperament": "intense",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Manila, Philippines",
+    "homeRegion": "Manila, Philippines",
+    "skinTone": "brown",
+    "clothing": "workwear"
+  },
+  {
+    "id": "aroha_ngata",
+    "name": "Aroha Ngata",
+    "age": 27,
+    "formerOccupation": "comic shop owner",
+    "line": "Runs the story corner. Kids trade chores for the good chapters.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1250,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "curious"
+    },
+    "gender": "f",
+    "origin": "Auckland, New Zealand",
+    "homeRegion": "Auckland, New Zealand",
+    "skinTone": "brown",
+    "clothing": "casual"
+  },
+  {
+    "id": "onni_korhonen",
+    "name": "Onni Korhonen",
+    "age": 63,
+    "formerOccupation": "chimney sweep",
+    "line": "Sweeps chimneys that mostly don't exist anymore. Climbs like he's sixty-three going on forty.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "fair",
+      "temperament": "cautious",
+      "curiosity": "wary"
+    },
+    "gender": "m",
+    "origin": "Helsinki, Finland",
+    "homeRegion": "Helsinki, Finland",
+    "skinTone": "fair",
+    "clothing": "workwear"
+  },
+  {
+    "id": "jovan_milic",
+    "name": "Jovan Milic",
+    "age": 26,
+    "formerOccupation": "tattoo artist",
+    "line": "Inks by hand now. Every mark in the village is a decision nobody rushes.",
+    "kcalPerDay": 2200,
+    "providesPerDay": 1250,
+    "personality": {
+      "sharing": "transactional",
+      "temperament": "bold",
+      "curiosity": "curious"
+    },
+    "gender": "m",
+    "origin": "Belgrade, Serbia",
+    "homeRegion": "Belgrade, Serbia",
+    "skinTone": "light",
+    "clothing": "casual"
+  },
+  {
+    "id": "giulia_bianchi",
+    "name": "Giulia Bianchi",
+    "age": 69,
+    "formerOccupation": "crossing guard",
+    "line": "Stops traffic that isn't there. The children cross anyway, safely, which is the point.",
+    "kcalPerDay": 1800,
+    "providesPerDay": 1100,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "warm",
+      "curiosity": "practical"
+    },
+    "gender": "f",
+    "origin": "Rome, Italy",
+    "homeRegion": "Rome, Italy",
+    "skinTone": "light",
+    "clothing": "bright"
+  },
+  {
+    "id": "nikos_papadopoulos",
+    "name": "Nikos Papadopoulos",
+    "age": 54,
+    "formerOccupation": "aquarium keeper",
+    "line": "Kept sharks alive in Athens. Says the river fish are easier and lie less.",
+    "kcalPerDay": 2100,
+    "providesPerDay": 1550,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "gentle",
+      "curiosity": "curious"
+    },
+    "gender": "m",
+    "origin": "Athens, Greece",
+    "homeRegion": "Athens, Greece",
+    "skinTone": "tan",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "tashi_sherpa",
+    "name": "Tashi Sherpa",
+    "age": 34,
+    "formerOccupation": "arborist",
+    "line": "Climbs the trees nobody else will. Comes down with the fruit and the weather report.",
+    "kcalPerDay": 2300,
+    "providesPerDay": 1650,
+    "personality": {
+      "sharing": "fair",
+      "temperament": "steady",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "m",
+    "origin": "Kathmandu, Nepal",
+    "homeRegion": "Kathmandu, Nepal",
+    "skinTone": "tan",
+    "clothing": "outdoor"
+  },
+  {
+    "id": "naran_tumen",
+    "name": "Naran Tumen",
+    "age": 60,
+    "formerOccupation": "bus driver",
+    "line": "Drove the night bus in Ulaanbaatar. Says the village roads are shorter but the passengers are stranger.",
+    "kcalPerDay": 2000,
+    "providesPerDay": 1400,
+    "personality": {
+      "sharing": "pragmatic",
+      "temperament": "dry",
+      "curiosity": "practical"
+    },
+    "gender": "m",
+    "origin": "Ulaanbaatar, Mongolia",
+    "homeRegion": "Ulaanbaatar, Mongolia",
+    "skinTone": "tan",
+    "clothing": "workwear"
+  },
+  {
+    "id": "nino_kapanadze",
+    "name": "Nino Kapanadze",
+    "age": 56,
+    "formerOccupation": "dry cleaner",
+    "line": "Presses creases into clothes the apocalypse keeps wrinkling. It's defiance, dry-cleaned.",
+    "kcalPerDay": 1900,
+    "providesPerDay": 1300,
+    "personality": {
+      "sharing": "transactional",
+      "temperament": "prickly",
+      "curiosity": "wary"
+    },
+    "gender": "f",
+    "origin": "Tbilisi, Georgia",
+    "homeRegion": "Tbilisi, Georgia",
+    "skinTone": "light",
+    "clothing": "casual"
+  },
+  {
+    "id": "desmond_clarke",
+    "name": "Desmond Clarke",
+    "age": 19,
+    "formerOccupation": "sign painter",
+    "line": "Paints signs for places that had no names. Now everything has one.",
+    "kcalPerDay": 2200,
+    "providesPerDay": 1350,
+    "personality": {
+      "sharing": "generous",
+      "temperament": "restless",
+      "curiosity": "hungry-to-learn"
+    },
+    "gender": "m",
+    "origin": "Kingston, Jamaica",
+    "homeRegion": "Kingston, Jamaica",
+    "skinTone": "dark",
+    "clothing": "workwear"
+  }
 ]

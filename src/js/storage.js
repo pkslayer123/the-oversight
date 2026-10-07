@@ -240,7 +240,10 @@
       const ids = (v.roster || []).filter(id => id !== this.state.scholar.villagerId);
       if (!ids.length) return 'open';
       const t = v.trust || {};
-      const avg = ids.reduce((s, id) => s + (t[id] || 15), 0) / ids.length;
+      // NOTE (miser loop 2026-10-07): t[id] === undefined means "never set",
+      // default 15. A villager at trust 0 is DISTRUSTED, not unset — the old
+      // `t[id] || 15` counted them as 15 and lifted the average.
+      const avg = ids.reduce((s, id) => s + (t[id] === undefined ? 15 : t[id]), 0) / ids.length;
       return avg >= 50 ? 'open' : avg >= 25 ? 'wary' : 'closed';
     },
     donateMaterial(mat, n) {
@@ -254,7 +257,7 @@
       this.stashLog('give', def.name, n);
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
-      v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + 1);
+      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 1);
       v.stashGives = v.stashGives || {};
       v.stashGives[vid] = (v.stashGives[vid] || 0) + n;
       this.observe('donate');
@@ -289,7 +292,10 @@
       const net = (v.stashGives[vid] || 0) - (v.stashTakes[vid] || 0);
       if (net < -20) {
         v.trust = v.trust || {};
-        v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
+        // NOTE (miser loop 2026-10-07): explicit undefined check — the old
+        // `(v.trust[vid] || 15)` reset trust to 13 the take after hitting 0
+        // (0 || 15 → 15-2), so stash-skimming trust could never bottom out.
+        v.trust[vid] = Math.max(0, (v.trust[vid] === undefined ? 15 : v.trust[vid]) - 2);
         this.observe('hoard');
         if (Math.random() < 0.4) this.say('Someone watches you take from the stash. They say nothing. The ledger says everything.');
       }
@@ -313,7 +319,7 @@
       this.stashLog('give', item.name || def.name, 1);
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
-      v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + 2);
+      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
       this.say(`Left your ${item.name || def.name} in the stash. Anyone who needs it can take it.`);
       return this.tickAction(2) || this.status();
     },
@@ -385,8 +391,33 @@
     },
     // cacheTheftChance(dist): Steve's rule — personal-cache theft risk falls
     // with Manhattan distance from the nearest village/haven.
+    // DAILY RATE (Steve 2026-10-07): was per-batch (~0.8%/batch compounded to
+    // near-certain robbery over a season); now per-day. ~0.8%/day at the
+    // haven's doorstep → ~0.05%/day far wild. Far caches usually survive the
+    // season; near caches are a real gamble. The miser promise holds.
     cacheTheftChance(dist) {
       return 0.008 * Math.max(0.06, 1 - dist / 12);
+    },
+    // dailyCacheCheck(): one theft roll per cache per day (called from endDay).
+    // Buried things are safer, not safe — but far wild is now actually safer.
+    dailyCacheCheck() {
+      try {
+        const spots = [];
+        if (this.state.village) spots.push({ x: this.state.village.px ?? 4, y: this.state.village.py ?? 4 });
+        for (const ov of (this.state.otherVillages || [])) spots.push(ov);
+        for (const c of this.playerCaches()) {
+          if (c.found) continue;
+          const cn = c.node || {};
+          let nearest = Infinity;
+          for (const s of spots) {
+            const d = Math.abs((s.x || 0) - (cn.x || 0)) + Math.abs((s.y || 0) - (cn.y || 0));
+            if (d < nearest) nearest = d;
+          }
+          if (!isFinite(nearest)) nearest = 5;
+          const p = this.cacheTheftChance(nearest);
+          if (Math.random() < p) this.resolveCacheRobbery(c);
+        }
+      } catch (e) {}
     },
     // buryCache(kind, key, qty): kind 'material' (key = mat id) or 'food' (key = inventory idx).
     buryCache(kind, key, qty) {
@@ -423,7 +454,7 @@
       let bearing = '';
       try {
         const hv = this.state.village || {};
-        const dx = node.x - (hv.px ?? 3), dy = node.y - (hv.py ?? 3);
+        const dx = node.x - (hv.px ?? 4), dy = node.y - (hv.py ?? 4);
         const d = Math.abs(dx) + Math.abs(dy);
         if (d > 0) bearing = `, ${d} tile${d === 1 ? '' : 's'} ` +
           (dy < 0 ? 'north' : dy > 0 ? 'south' : '') +
@@ -768,24 +799,9 @@
           this.observe('stole');
         }
       }
-      // CACHES: buried things are safer, not safe. Steve's rule: theft risk
-      // falls with distance from any village/haven — bury far from people,
-      // safer from people. ~0.8%/batch at the haven's doorstep → ~0.05%/batch far wild.
-      const spots = [];
-      if (this.state.village) spots.push({ x: this.state.village.px ?? 3, y: this.state.village.py ?? 3 });
-      for (const ov of (this.state.otherVillages || [])) spots.push(ov);
-      for (const c of this.playerCaches()) {
-        if (c.found) continue;
-        const cn = c.node || {};
-        let nearest = Infinity;
-        for (const s of spots) {
-          const d = Math.abs((s.x || 0) - (cn.x || 0)) + Math.abs((s.y || 0) - (cn.y || 0));
-          if (d < nearest) nearest = d;
-        }
-        if (!isFinite(nearest)) nearest = 5;
-        const p = this.cacheTheftChance(nearest);
-        if (Math.random() < p) this.resolveCacheRobbery(c);
-      }
+      // CACHES: moved to daily roll in endDay (Steve 2026-10-07) — the per-batch
+      // gate compounded to near-certain robbery over a season, making the
+      // miser promise (bury far for winter) unreachable. Now one roll per day.
     } catch (e) {}
     return r;
   };

@@ -16,8 +16,12 @@
 //   - tbAfterPlayerAction()
 //   - contestTick() (delegates to contests.js)
 //   - fireShow(event) -> show (delegates to contests.js)
+//   - triggerEvent(ev) (event engine: generic dispatcher reading events.json; checks once/cooldown, calls named handler)
+//   - evFirstHunt(ev), evStranger(ev), evHushwolfPack(ev), evSystemTask(ev) (event handlers; pure extraction from old if/else chain)
+//   - scheduleSystemEvents() (schedules from events.json scheduledDay; data-driven)
 //   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
 //   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
+//   - tbSeedAmbushZone(m, pattern, opts) -> zone | null, tbAmbushZoneTick() (seeded-ground ambush: visible arming beat when stepped in, fires a beat later; fight-scoped; code: combat.js 'ambush-zone'/zoneArmed)
 //   - tbTerrainAt(x, y) -> type | null
 //   - tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double)
 //   - modIs(m) (wave-2 apex id gate: the Moderator)
@@ -45,6 +49,8 @@
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
 //   - terraform_scope: fight-scoped, dies with the fight (code: tbTerraform)
+//   - ambush_zone_beat: seeded zone arms when stepped in with a visible beat (text + grid + audio), fires one beat later at whoever is inside (code: tbSeedAmbushZone/tbAmbushZoneTick)
+//   - lockon_relock: lockon telegraphs re-lock at fire time against the locked target's current square — windup-cells == action-cells per call (code: tbMonsterTurn resolve 'lockon')
 //   - moderator_field: radius 2, 3 in shadowban; re-projected each of its turns (code: modProjectField)
 //   - moderator_violation: muted verb inside the field spends the turn, +3 strike damage each (code: modVerbBlocked)
 //   - moderator_phases: observing -> muting -> shadowban (code: tbMonsterTurn)
@@ -62,6 +68,7 @@
 //   - sleep_heal_ground: 12 (code: sleepPreview)
 //   - home_narration_presence: villageLives/ambientSocial/firesideTeaching narrate only when playerAtHaven(); sim still runs; home deaths queue to scholar.awayNews, delivered by returnToVillage (code: playerAtHaven)
 //   - homecoming_beat: returnToVillage says a return line after >=2 days away, tracked via scholar.lastHavenDay (code: returnToVillage)
+//   - broker_knowledge_presence: identifying a plant while away queues it in scholar.awayLearned — no home witness line, no home rumor, and the absent player is excluded from spreadPlantKnowledge; returnToVillage fires the broker's teaching beat and seeds the rumor only then (code: identifyPlant/spreadPlantKnowledge/returnToVillage, Steve 2026-10-07)
 //   - combat_action_economy: move + acted (code: tbAfterPlayerAction)
 // consumes:
 //   - state.scholar, state.village, state.codex (central game state roots)
@@ -92,71 +99,8 @@
     { id: 'can_soup', name: 'Canned soup', kcal: 450, kg: 0.35, text: 'Chicken soup. Tastes like before.' },
     { id: 'jar_peaches', name: 'Jarred peaches', kcal: 700, kg: 0.5, text: 'Home-canned. Whoever sealed this knew what they were doing.' },
   ];
-  // first-visit arrival moments — destinations reveal something.
-  // ARRIVAL POOLS (explorer loop 2026-10-05): one fixed copy per tile type
-  // got monotonous — every forest floor read identically. Each type now has
-  // a small pool; a node rolls its flavor once on first visit and keeps it,
-  // so the map doesn't repeat itself but each place has an identity.
-  const ARRIVAL = {
-    forest_floor: { title: 'Under the canopy', texts: [
-      'Leaf litter, birdcall, the smell of rot becoming soil. The woods, being the woods.',
-      'Old growth. The canopy closes overhead and the light comes down in shafts. Something rustled, and decided not to be seen.',
-      'Fallen trunks lie like sleeping animals, furred with moss. The ground gives underfoot — centuries of leaf-mold.',
-      'A woodpecker works somewhere you can\'t see. Down here it smells of mushrooms and cold shade.',
-      'Saplings push up through last year\'s deadfall, racing each other for the light. The forest never stops trying.',
-      'Mushrooms thumb up through the duff in a ring — a fairy ring, old as the path. You step around it, not through it. Some rules are older than knowledge.',
-    ] },
-    grove: { title: 'Nut trees', texts: [
-      'Hickories and oaks, heavy with mast. This is a pantry that grows.',
-      'The trees here fruit on their own schedule. Right now the schedule is generous.',
-      'Mast crunches underfoot — last season\'s nuts, sprouting or rotting. The trees don\'t waste anything.',
-      'The canopy here is a roof built by a thousand architects who never met. Light comes through in coins.',
-      'Bark stripped at deer height on a young hickory — teeth, winter, hunger. Somebody winters here. Maybe you will too.',
-      'A hollow log big enough to crawl into. You don\'t crawl in. You note where it is, in case the weather ever makes the offer again.',
-    ] },
-    meadow: { title: 'Open ground', texts: [
-      'Grasses head-high. Good greens, good visibility, nowhere to hide.',
-      'Wind moves through the grass in waves. Seeds catch on your clothes, hitching a ride.',
-      'Open sky for the first time in a while. Hawks circle — something down there is being watched.',
-      'Grasshoppers rise in a clicking wave ahead of you. Something fork-tailed rides the wind above them, waiting for the careless ones.',
-      'Wildflowers in clumps — purple, white, yellow. You don\'t know their names yet, and the not-knowing is a kind of hunger.',
-      'The grass is bent in a long smooth run, like something heavy slid through it. You walk the other way around.',
-    ] },
-    thicket: { title: 'Thick brush', texts: [
-      'Thorns and tangle. Things live in here that don\'t want to be seen.',
-      'The brush closes behind you like water. You learn to move sideways, leading with a shoulder.',
-      'Bramble over your head in places. Berries somewhere in the tangle, if you\'re willing to bleed for them.',
-      'Greenbrier wraps everything, armed and patient. You move like you\'re underwater — slow, deliberate, getting nowhere fast.',
-      'Something rustles ahead, then goes very still. You go very still too. After a while you both agree to pretend it didn\'t happen.',
-      'Old nests in the thorns, built and abandoned and built again. This tangle has been home to a hundred tenants. None of them are you.',
-    ] },
-    wetland: { title: 'Still water, cattails', texts: [
-      'Cattails mean starch. Still water means boil it first — the Codex insists.',
-      'Your boots sink and sigh. Frogs go silent in a widening ring around you.',
-      'Standing water, black as tea. Dragonflies stitch the air. Watch where you step — the ground lies.',
-      'Reeds taller than you. The wind makes them talk to each other, and you are not part of the conversation.',
-      'Black water under green duckweed. A turtle slides off a log with a sound like a sigh. This place has been unbothered for a long time.',
-      'The ground here is a rumor — solid until it isn\'t. You test every step and think about how far the deep parts go.',
-    ] },
-    creek: { title: 'Moving water', texts: [
-      'Cold, clear, moving. The best thing you\'ve seen all day.',
-      'Water over stone, loud enough to cover your noise. You could drink here without announcing it.',
-      'The creek braids around gravel bars. Crawdads flick backward into the shadows of rocks.',
-      'Something big drank here recently — the mud is churned to soup on the far bank. You drink from the near side, upstream of whatever it was.',
-      'The water is cold enough to hurt your teeth. Downstream the creek bends out of sight, and you want to follow it. That\'s the problem with creeks.',
-      'A kingfisher works the far bank, patient as a tax collector. It catches something silver and is gone before you can envy it properly.',
-    ] },
-    trail_edge: { title: 'An old trail', texts: [
-      'Something walked here regularly, before. The path remembers even if no one does.',
-      'The trail is worn smooth as an old coin. Deer, probably. Probably.',
-      'A game trail crosses your path — two toes, heart-shaped, heading for water.',
-      'The trail splits around a boulder and rejoins — the world\'s oldest traffic decision. You follow the deeper-worn side.',
-      'Scat on the trail, still soft. You study it longer than is dignified and learn exactly one thing: walk louder.',
-      'Where the trail crosses bare rock, someone scratched a mark — an arrow, or a tally, or a prayer. Pre-Burn. You add nothing. You remember it.',
-    ] },
-    ruin: { title: 'Pre-Burn ruin', texts: [] }, // ruinStory fills this
-    haven: { title: 'Haven', texts: ['Canvas, cookfire, twelve people who are glad you\'re back. Home is a tile on the map like any other — it just matters more.'] },
-  };
+  // ARRIVAL TEXT (Steve 2026-10-07): migrated to src/data/arrivalText.json.
+  // Regions can override per-tile flavor via regionOverrides. See arrivalPoolFor().
   // ruin wall examine: cheap discovery, knowledge sticks. no loot promised.
   const WALL_EXAMINE = [
     'The wall stands out of spite. Cinderblock, scorched. Someone built this square and true — you can feel the hands in it.',
@@ -201,9 +145,14 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json', 'statusEffects.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects };
+      // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
+      try {
+        const D = globalThis.Scattering && globalThis.Scattering.Drama;
+        if (D) D.effectRegistry = dramaEffects;
+      } catch (e) {}
       return this.data;
     },
 
@@ -1735,7 +1684,7 @@
       this.state.village.nodePos = {};
       this.state.village.away = {}; // rid -> {nx, ny, purpose, returnPart, returnDay}: NPCs out in the world
       {
-        const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+        const hx = this.state.village.px ?? 4, hy = this.state.village.py ?? 4;
         for (const rid of this.state.village.roster) {
           if (rid === this.villagerId) continue;
           this.state.village.nodePos[rid] = { nx: hx, ny: hy };
@@ -2900,6 +2849,8 @@
     // CRAFT: make a recipe you know (L3). Consumes materials. Creates an item with uses.
     // Items degrade: snare breaks after 2 catches. You make another.
     craft(recipeId) {
+      // DRAMA (Steve 2026-10-07): crafting gets an amber spark
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#d4a017'); } catch (e) {}
       const recipe = this.data.recipes.find(r => r.id === recipeId);
       if (!recipe) return null;
       const known = (this.state.codex.recipes || {})[recipeId];
@@ -2975,13 +2926,9 @@
 
     // LEARN RECIPE: like plants. Seen (L1), taught materials (L2), practiced (L3).
     learnRecipe(recipeId, level) {
-      this.state.codex.recipes = this.state.codex.recipes || {};
-      const cur = this.state.codex.recipes[recipeId] || { level: 0 };
-      if (level > cur.level) {
-        this.state.codex.recipes[recipeId] = { level };
-        const recipe = this.data.recipes.find(r => r.id === recipeId);
-        this.say(`Recipe: ${recipe.name}. ${recipe.knowledgeLevels[String(level)]}`);
-      }
+      // Delegates to the unified grant engine (Steve 2026-10-07).
+      // Preserves behavior; now records learnedFrom/learnedDay metadata.
+      return this.grantKnowledge('recipe', recipeId, level, { type: 'discovery' });
     },
 
     // SET TRAP: place a snare/deadfall. Check it later.
@@ -3028,7 +2975,7 @@
         const dir = [ns, ew].filter(Boolean).join('-') || 'here';
         return `${d} ${d === 1 ? 'tile' : 'tiles'} ${dir}`;
       };
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t.traps || !t.traps.length) continue;
         for (const trap of [...t.traps]) {
@@ -3050,7 +2997,24 @@
             this.state.scholar.inventory.push(this.foodCarcass(animal, animal.calories, this.state.scholar.day, 'trapped'));
             // a body in hand teaches you what it was — same as a kill.
             try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(catchId); } catch (e) {}
-            this.say(`Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife).`);
+            // TRAP PRIORITY (Steve 2026-10-07): trap catches were getting buried
+            // mid-dawn-log (~8 messages) — on mobile one-screen that's dinner
+            // vs rot. The 🪤 TRAP: prefix makes the catch visually scannable
+            // even mid-list; the rot warning is explicit, not implied.
+            this.say(`🪤 TRAP: Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife). It rots fast.`);
+            // STRIPED SKUNK (hunter loop 2026-10-07): the box-trap recipe
+            // warns "a skunk, which you will regret." Deliver the regret —
+            // opening the box is the spray moment, same as pressing one on
+            // the trail. L3 recipe readers open it from upwind with the long
+            // stick like the text says: +3 scent, not +5. Knowledge earns.
+            if (catchId === 'striped_skunk') {
+              const careful = ((this.state.codex.recipes || {})['box_trap'] || {}).level >= 3;
+              this.state.scholar.skunkScent = (this.state.scholar.skunkScent || 0) + (careful ? 3 : 5);
+              this.say(careful
+                ? `You open the box from upwind, with the long stick, like the recipe says. It helps — a little. The skunk was already awake and already offended. Your eyes are on fire. The smell will follow you for days.`
+                : `The skunk is in the box — and the box is in your hands. You fumble it open and it gets you full in the face. Your eyes are on fire, and the smell will follow you for days. Everything with a nose knows where you've been.`);
+              try { this.audioEvent('animalSpray'); } catch (e) {}
+            }
             trap.uses -= 1;
             if (trap.uses <= 0) {
               this.say(`The ${recipe.name} broke. You\\'ll need another.`);
@@ -3081,7 +3045,7 @@
       return this.tickAction(16) || this.status();
     },
     checkNets() {
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t.nets || !t.nets.length) continue;
         for (const net of [...t.nets]) {
@@ -3119,12 +3083,13 @@
       return this.tickAction(16) || this.status();
     },
     checkGenesis() {
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t.genesis || t.genesis.daysLeft <= 0) continue;
         t.genesis.daysLeft -= 1;
         const kcal = 500;
-        const atHaven = (x === 0 && y === 0);
+        // HAVEN COORD (fix 2026-10-07): tile type, not coordinates.
+        const atHaven = !!(t && (t.type === 'haven' || t.isHaven));
         const px = this.map.px, py = this.map.py;
         if (x === px && y === py) {
           this.state.scholar.inventory.push({ name: 'Genesis fruit', kcalEach: kcal, units: 1, spoilDay: this.state.scholar.day + 3, safe: true, kg: 0.5, unit: 'fruit' });
@@ -3145,25 +3110,18 @@
       if (!book) return null;
       this.say(`You open "${book.name}". ${book.flavor}`);
       const unlocks = book.unlocks || {};
-      // plants
+      // plants (via grantKnowledge engine — Steve 2026-10-07)
       for (const pid of (unlocks.plants || [])) {
         const level = unlocks.level || 1;
-        this.state.codex.plants[pid] = { identifiedDay: this.state.scholar.day, level, harvests: 0, tastings: 0 };
-        this.state.codex.encounters[pid] = 99;
-        this.refreshItemNames(pid);
-        const plant = this.data.plants.find(p => p.id === pid);
-        this.say(`\u2605 Learned: ${plant.name} (Level ${level}). ${plant.knowledgeLevels[String(level)]}`);
+        this.grantKnowledge('plant', pid, level, { type: 'read', by: book.name });
       }
-      // recipes
+      // recipes (via grantKnowledge engine — Steve 2026-10-07)
       for (const rid of (unlocks.recipes || [])) {
-        this.learnRecipe(rid, 3);
+        this.grantKnowledge('recipe', rid, 3, { type: 'read', by: book.name });
       }
-      // animals
+      // animals (via grantKnowledge engine — Steve 2026-10-07)
       for (const aid of (unlocks.animals || [])) {
-        this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
-        this.state.codex.animalEncounters[aid] = 99;
-        const animal = this.data.animals.find(a => a.id === aid);
-        this.say(`Learned: ${animal.name}.`);
+        this.grantKnowledge('animal', aid, 1, { type: 'read', by: book.name });
       }
       this.integrate(5, 'book');
       // KNOWLEDGE TAXONOMY: books can unlock skills too, not just plants.
@@ -3373,7 +3331,7 @@
             this.bumpTrust(vid, -25);
             markBully();
             this.say(`🥊 ${dname} swings. Desperate, not skilled. Nobody wanted this — least of all them.`);
-            try { if (this.npcBetrays) this.npcBetrays(vid); } catch (e) {}
+            try { if (this.npcBetrays) this.npcBetrays(vid, { reason: 'snap' }); } catch (e) {}
             return 'fight';
           }
           // RUN: they leave. Haven isn't worth this.
@@ -3381,7 +3339,16 @@
           this.say(`Nobody stops them. A few people watched the whole thing happen, and nobody stops them.`);
           this.bumpTrust(vid, -25);
           markBully();
-          try { this.seedGossip('bully', { honest: -15, generous: -12 }, [vid]); } catch (e) {}
+          // The victim can't spread this — they're leaving. But people watched:
+          // seed the flight with real onlookers so the story travels. A distinct
+          // 'drove_off' action (same-day 'bully' dedupe would eat another one),
+          // and spreadGossip skips tellers who are no longer on the roster,
+          // which the victim is about to be. (Fix 2026-10-07: the old 'bully'
+          // seed named only the fleeing victim, so it never reached anyone.)
+          try {
+            const onlookers = (v.roster || []).filter(id => id !== vid && id !== this.villagerId).slice(0, 3);
+            if (onlookers.length) this.seedGossip('drove_off', { honest: -20, generous: -15, brave: 2 }, onlookers);
+          } catch (e) {}
           try { this.removeVillager(vid, 'fled'); } catch (e) {}
           return 'fled';
         }
@@ -3410,7 +3377,7 @@
         const fear = (this.npcNeeds(vid).fear || 0);
         if (fear < 30 && Math.random() < 0.4 && this.npcBetrays) {
           this.say(`🥊 ${dname} swings first. Desperate, not skilled. Nobody wanted this.`);
-          this.npcBetrays(vid);
+          this.npcBetrays(vid, { reason: 'rage' });
           return 'fight';
         }
         try { this.seedGossip('bully', { honest: -12, generous: -10, brave: 2 }, [vid]); } catch (e) {}
@@ -3753,8 +3720,7 @@
     },
     // goalKnown: post-System it's displayed; pre-System it's learned via askAbout
     goalKnown(vid) {
-      if (this.state.systemArrived) return true;
-      return !!((this.state.village.goalsKnown || {})[vid]);
+      return this.canShow('npc', vid, 'mechanics');
     },
 
     // DISCOVERIES: social mechanics are learned through conversation, not
@@ -4086,6 +4052,11 @@
     // 60-80: codex/inventory overlay. 80+: full neural integration.
     integrate(amount, reason) {
       const s = this.state.scholar;
+      // SLOT BEAT (Round 2 wiring, Steve 2026-10-07): abilitySlots() gates on
+      // THIS scale (scholar.integration, neural depth) — not on
+      // systemIntegrationLevel() (codices linked). Snapshot before the gain so
+      // a threshold crossing that opens a new slot can be announced honestly.
+      const slotsBefore = this.abilitySlots();
       s.integration = Math.min(100, (s.integration || 5) + amount);
       const thresholds = [20, 40, 60, 80];
       for (const t of thresholds) {
@@ -4100,6 +4071,11 @@
             80: 'SYSTEM: Deep integration. You see the world through us now.',
           };
           this.say(msgs[t]);
+          const slotsNow = this.abilitySlots();
+          if (slotsNow > slotsBefore) {
+            this.say(`⬢ SYSTEM: "Neural depth ${t}. I can hold more of you now — ability slots: ${slotsNow}."`);
+            this.audioEvent('knowledgeReveal', { kind: 'slots', slots: slotsNow, integration: Math.round(s.integration) });
+          }
         }
       }
       if (reason) this.tele('integrate', { amount, reason, total: Math.round(s.integration) });
@@ -4541,10 +4517,10 @@
         // reveal tiles around haven + small chance of a find
         let revealed = 0;
         try {
-          const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+          const hx = this.state.village.px ?? 4, hy = this.state.village.py ?? 4;
           for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
             const nx = hx + dx, ny = hy + dy;
-            if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+            if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue; // 9x9 world (2026-10-07)
             const t = this.tileAt(nx, ny);
             // SCOUT = mapping, not visiting. A scout's report reveals the tile
             // on the map (revealed) but never marks it visited — the player's
@@ -4576,7 +4552,7 @@
       const s = this.state.scholar;
       // WORLD MONSTERS (Steve 2026-10-06): patrols hunt the nearest roaming
       // threat to Haven, not a single player-tethered monster.
-      const hx = (this.state.village || {}).px ?? 3, hy = (this.state.village || {}).py ?? 3;
+      const hx = (this.state.village || {}).px ?? 4, hy = (this.state.village || {}).py ?? 4;
       const m = this.nearestWorldMonster(hx, hy);
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         /* unified: getPerson */ || {};
@@ -4653,7 +4629,22 @@
       const cur = v.trust[vid] === undefined ? 10 : v.trust[vid];
       // trust.gain_mult applies to GAINS only, not losses
       const adj = n > 0 ? this.trustGainMult(n) : n;
-      v.trust[vid] = Math.max(0, Math.min(100, cur + adj));
+      const neu = Math.max(0, Math.min(100, cur + adj));
+      v.trust[vid] = neu;
+      // NPC ATTENTION (Steve 2026-10-07, Drama A1): trust crossing a milestone
+      // is a visible moment — ❤️ when friendship deepens (up through 50/75),
+      // 💔 when it cracks (down through 50/25). Only when you're there to see
+      // it and they have a tile. Gated by systemArrived inside Game.drama.
+      try {
+        const crossed = (t) => (cur < t && neu >= t) || (cur >= t && neu < t);
+        let kind = null;
+        if (n > 0 && (crossed(50) || crossed(75))) kind = 'heart';
+        else if (n < 0 && (crossed(50) || crossed(25))) kind = 'break';
+        if (kind && this.playerAtHaven && this.playerAtHaven()) {
+          const p = (v.positions || {})[vid];
+          if (p) this.drama('npcAlert', p.mx, p.my, kind);
+        }
+      } catch (e2) {}
     },
 
     // ============ LIVING WORLD: the land remembers ============
@@ -4686,7 +4677,7 @@
       const vp = (this.data.villagers || []).find(v => v.id === vid)
         || (this.data.background_survivors || []).find(v => v.id === vid) || {};
       const temp = (vp.personality && vp.personality.temperament) || 'steady';
-      // rings are Manhattan distance from haven (3,3). Ring 0 = haven itself (no forage).
+      // rings are Manhattan distance from haven (4,4). Ring 0 = haven itself (no forage).
       if (temp === 'bold') return { min: 2, max: 3, label: 'far afield' };
       if (temp === 'cautious') return { min: 1, max: 1, label: 'close to home' };
       return { min: 1, max: 2, label: 'the near wilds' };
@@ -4696,7 +4687,7 @@
     forageTilesInZone(zone, count) {
       const hx = 3, hy = 3; // haven
       const candidates = [];
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (x === hx && y === hy) continue;
         const dist = Math.abs(x - hx) + Math.abs(y - hy);
         if (dist < zone.min || dist > zone.max) continue;
@@ -4737,14 +4728,7 @@
       for (const [pid, entry] of Object.entries(shared)) {
         if ((this.state.codex.plants || {})[pid]) continue;
         const plant = (this.data.plants || []).find(p => p.id === pid);
-        this.state.codex.plants = this.state.codex.plants || {};
-        this.state.codex.plants[pid] = {
-          identifiedDay: this.state.scholar.day,
-          level: 1, harvests: 0, tastings: 0,
-          viaShare: 'village',
-          sharedHeadStart: true,
-        };
-        flowed++;
+        if (this.grantKnowledge('plant', pid, 1, { type: 'shared', by: 'village' })) flowed++;
         const dVill = (this.data.villagers || []).find(x => x.id === entry.discoveredBy)
           /* unified: getPerson */ || {};
         const discoverer = entry.discoveredBy ? (dVill.name || 'someone').split(' ')[0] : 'someone';
@@ -4854,7 +4838,7 @@
       // no day advance here — endDay owns the clock. this is just coming home.
       const s = this.state.scholar;
       // PIN: you are at the village now (safe even when called without walking).
-      try { this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3; } catch (e) {}
+      try { this.map.px = this.state.village.px ?? 4; this.map.py = this.state.village.py ?? 4; } catch (e) {}
       // HOMECOMING (drifter loop, Steve 2026-10-06): walking back into Haven
       // after days away lands as a beat. No leaks: this names nothing you
       // didn't live. Sets homecomingSaid so the haul block below doesn't
@@ -4879,6 +4863,31 @@
           this.say(`While you were gone — ${news.length === 1 ? 'one thing' : news.length + ' things'} you missed:`);
           for (const n of news.slice(0, 5)) this.say(n);
           if (news.length > 5) this.say(`...and ${news.length - 5} more. Ask around — they'll tell you.`);
+        }
+        // THE BROKER'S RETURN (drifter loop, Steve 2026-10-07): knowledge you
+        // learned while away comes home WITH you — never before. identifyPlant
+        // queues away-learned plants in scholar.awayLearned; here the fire
+        // gathers for them, the rumor seeds, and word of mouth takes it from
+        // there. This fires on a knowledge-only return too — the existing
+        // teaching moment below is gated on a food haul, but a drifter who
+        // brings KNOWLEDGE instead of calories still has something to teach.
+        const brokered = (s.awayLearned || []).filter(pid => this.plantKnown(pid));
+        s.awayLearned = [];
+        if (brokered.length) {
+          const vv = this.state.village;
+          vv.plantRumors = vv.plantRumors || {};
+          const fresh = [];
+          for (const pid of brokered) {
+            const otherKnows = (vv.roster || []).some(rid =>
+              rid !== this.villagerId && ((vv.taught || {})[rid] || []).includes(pid));
+            if (otherKnows) continue; // old news at home — no fanfare
+            if (!vv.plantRumors[pid]) vv.plantRumors[pid] = { day: dayNow };
+            const p = (this.data.plants || []).find(x => x.id === pid);
+            fresh.push(p ? p.name : pid);
+          }
+          if (fresh.length) {
+            this.say(`That night at the fire, they ask where you've been. You tell them — and what you learned out there: ${fresh.join(', ')}. Someone leans closer to the light. "Show us. Slowly." The knowledge is home now. It'll get around.`);
+          }
         }
       }
       // PENDING VILLAGE EVENT: if something happened while you were away, they tell you.
@@ -5101,6 +5110,7 @@
             return ft;
           });
           this.tbfight = {
+            id: tbS.id || ('f' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e9).toString(36)),
             fighters,
             order: (typeof S !== 'undefined' && S.combat && S.combat.turnOrder)
               ? S.combat.turnOrder(fighters) : fighters.map(f => f.key),
@@ -5135,8 +5145,8 @@
       // loop burned out and dropped villages in corners or on haven itself.
       // Relative to the map always resolves.)
       const cands = [];
-      for (let vy = 0; vy < 7; vy++) for (let vx = 0; vx < 7; vx++) {
-        if (Math.abs(vx - 3) + Math.abs(vy - 3) < 3) continue; // not too close to haven
+      for (let vy = 0; vy < 9; vy++) for (let vx = 0; vx < 9; vx++) {
+        if (Math.abs(vx - 4) + Math.abs(vy - 4) < 3) continue; // not too close to haven
         cands.push({ x: vx, y: vy, tk: this.turfKcal(vx, vy) });
       }
       cands.sort((a, b) => b.tk - a.tk);
@@ -5189,7 +5199,7 @@
     // works). Home-village convention: 1 stock ≈ 200 kcal.
     turfKcal(x, y) {
       let cap = 0;
-      for (let ty = 0; ty < 7; ty++) for (let tx = 0; tx < 7; tx++) {
+      for (let ty = 0; ty < 9; ty++) for (let tx = 0; tx < 9; tx++) {
         const t = this.tileAt(tx, ty);
         if (!t || t.type === 'haven' || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
         if (Math.abs(tx - x) + Math.abs(ty - y) <= 4) cap += (t.stock || 0);
@@ -5197,6 +5207,174 @@
       return cap * 200;
     },
 
+    // studyVillageCodex: LINK THE CODICES (Steve 2026-10-07).
+    // Spend time studying a village's codex. You learn what they know that
+    // you don't — techniques, recipes, plant knowledge, animal lore.
+    // Each village's strategy gives DIFFERENT knowledge. A fisher's codex
+    // teaches you things a farmer's never would. That's why you link them.
+    studyVillageCodex(villageId) {
+      const v = (this.state.otherVillages || []).find(x => x.id === villageId);
+      if (!v || !v.codex) return 'No codex here.';
+      // must be at the village (or have joined it)
+      const px = this.map.px, py = this.map.py;
+      const dist = Math.abs(v.x - px) + Math.abs(v.y - py);
+      const joined = (this.state.scholar.joinedVillage === villageId);
+      if (dist > 2 && !joined) return 'You need to be at the village to study their codex.';
+      const learned = [];
+      const learnedCounts = { plants: 0, techniques: 0, recipes: 0, animals: 0 };
+      const scholar = this.state.scholar;
+      scholar.codex = scholar.codex || { plants: {}, techniques: {}, recipes: {}, animals: {} };
+      // plants: learn what they know deeper than you (via grantKnowledge — Steve 2026-10-07)
+      for (const [pid, entry] of Object.entries(v.codex.plants || {})) {
+        if (this.grantKnowledge('plant', pid, entry.level || 1, { type: 'taught', by: v.name })) {
+          const pdef = (this.data.plants || []).find(p => p.id === pid);
+          learned.push(`🌿 ${(pdef || {}).name || pid} (L${entry.level})`);
+          learnedCounts.plants++;
+        }
+      }
+      // techniques: learn their strategy's signature moves (via grantKnowledge — Steve 2026-10-07)
+      for (const [tid, entry] of Object.entries(v.codex.techniques || {})) {
+        if (this.grantKnowledge('technique', tid, entry.level || 1, { type: 'taught', by: v.name })) {
+          learned.push(`🔧 ${tid.replace(/_/g, ' ')} (${entry.strategy})`);
+          learnedCounts.techniques++;
+        }
+      }
+      // recipes: learn their food ways (via grantKnowledge — Steve 2026-10-07)
+      for (const [rid, entry] of Object.entries(v.codex.recipes || {})) {
+        if (this.grantKnowledge('recipe', rid, 3, { type: 'taught', by: v.name })) {
+          learned.push(`🍲 ${rid.replace(/_/g, ' ')}`);
+          learnedCounts.recipes++;
+        }
+      }
+      // animals: learn their territory's wildlife (via grantKnowledge — Steve 2026-10-07)
+      for (const [aid, entry] of Object.entries(v.codex.animals || {})) {
+        if (this.grantKnowledge('animal', aid, entry.level || 1, { type: 'taught', by: v.name })) {
+          const adef = (this.data.animals || []).find(a => a.id === aid);
+          learned.push(`🐾 ${(adef || {}).name || aid}`);
+          learnedCounts.animals++;
+        }
+      }
+      // costs time: studying is a day-part activity
+      try { this.spendDayPart(1); } catch (e) {}
+      // LINK THE CODEX: studying links their codex to yours. The System integrates.
+      // TWO INTEGRATION SCALES — not the same thing (Steve 2026-10-07):
+      //   systemIntegrationLevel() 0-3: CODICES LINKED. How much of the WORLD the
+      //     System understands. Grows ONLY here. Drives HUD sophistication:
+      //     L1 map village power, L2 wildlife + travelers, L3 rosters + strategy.
+      //   scholar.integration 0-100: NEURAL INTERFACE DEPTH. How much of YOU the
+      //     System can hold. Grows via integrate() (discoveries, books, quests).
+      //     Gates abilitySlots(): 20->2, 40->3, 60->4, 80->6.
+      // Linking a codex does NOT grant ability slots. The beat below keeps the
+      // two honest: the System celebrates its sharper eyes, then reminds you
+      // where slots actually come from.
+      const scholar2 = this.state.scholar;
+      scholar2.linkedCodices = scholar2.linkedCodices || [];
+      if (!scholar2.linkedCodices.includes(villageId)) {
+        scholar2.linkedCodices.push(villageId);
+        const newLevel = this.systemIntegrationLevel();
+        if (newLevel > (scholar2.lastIntegrationLevel || 0)) {
+          scholar2.lastIntegrationLevel = newLevel;
+          // 1. THE VILLAGE REACTS: the codex keeper is a person, not a popup.
+          const keeperLines = [
+            `The keeper of ${v.name}'s codex watches you copy the final page. "You're the first outsider to read it all," they say quietly. "Our dead wrote some of that. Carry it well."`,
+            `"${v.name} learned these the hard way," the codex keeper says, closing the book for you. "Every page cost somebody a winter. Don't waste it."`,
+          ];
+          this.say(keeperLines[Math.floor(Math.random() * keeperLines.length)]);
+          // 2. THE SYSTEM: names what the new tier actually sees.
+          const tierLines = {
+            1: `⬢ SYSTEM INTEGRATION L1: "${v.name}'s codex is linked. I can see their lights on the map now — village power at a glance. The HUD sharpens."`,
+            2: `⬢ SYSTEM INTEGRATION L2: "Two codices. I see wildlife movement, travelers between villages. The world is filling in around you."`,
+            3: `⬢ SYSTEM INTEGRATION L3: "Three codices. Full rosters, strategy intel, codex summaries. You are my favorite cartographer."`,
+          };
+          this.say(tierLines[newLevel] || `⬢ SYSTEM INTEGRATION L${newLevel}: The System sees more now. Your HUD sharpens.`);
+          // DRAMA (Steve 2026-10-07, Round D2): the book opens. A village's knowledge is yours.
+          try { this.drama('codexLinked', v.name); } catch (e) {}
+          // 3. THE SLOT REMINDER — honestly tied to the NEURAL scale.
+          const integ = Math.round(scholar2.integration || 5);
+          const slots = this.abilitySlots();
+          const next = [20, 40, 60, 80].find(t => integ < t);
+          this.say(`⬢ SYSTEM: "One clarification, scholar: linking codices sharpens MY eyes. Ability slots grow from YOUR neural integration — ${integ}/100, holding ${slots} slot${slots === 1 ? '' : 's'}${next ? ` (next at ${next})` : ' (maxed)'}. Discover, practice, survive — let the interface learn you."`);
+          // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): system integration level-up.
+          this.audioEvent('knowledgeReveal', { kind: 'integration', level: newLevel });
+          // DRAMA (Steve 2026-10-07): integration is a moment — the System is really here
+          try { this.drama('integration', newLevel); } catch (e) {}
+        }
+      }
+      if (learned.length) {
+        // KNOWLEDGE REVEAL AUDIO (Round 2 wiring, Steve 2026-10-07): the village
+        // codex taught you things — one aggregate reveal with the breakdown,
+        // not one ping per page.
+        this.audioEvent('knowledgeReveal', {
+          kind: 'codex', village: villageId, total: learned.length,
+          plants: learnedCounts.plants, techniques: learnedCounts.techniques,
+          recipes: learnedCounts.recipes, animals: learnedCounts.animals,
+        });
+      }
+      if (!learned.length) return `${v.name}'s codex holds nothing you don't already know.`;
+      return `You study ${v.name}'s codex (${v.knowledgeProfile?.focus || 'survivors'}). Learned: ${learned.join(', ')}.`;
+    },
+    // systemIntegrationLevel: how integrated is the System with the world?
+    // Increases as you LINK CODICES (study village codices). Each linked
+    // village = deeper integration. The HUD gets more sophisticated:
+    // L0: basic. L1: village power on map. L2: wildlife + travelers.
+    // L3: full rosters, codex summaries, strategy intel.
+    // (Steve 2026-10-07: "more and more sophisticated HUD as system integrates")
+    systemIntegrationLevel() {
+      const linked = (this.state.scholar.linkedCodices || []).length;
+      if (linked >= 3) return 3;
+      if (linked >= 2) return 2;
+      if (linked >= 1) return 1;
+      return 0;
+    },
+    // villagePower: how strong is this village? Based on TIME ALIVE, KNOWLEDGE,
+    // and POPULATION — never distance from the player. A village 2 tiles north
+    // that's lived 100 days is STRONG. Distance doesn't make you weak.
+    // (Steve 2026-10-07: "Early villages will get killed if they stay weak
+    // because they are close.")
+    villagePower(village) {
+      const days = village.day || 0;
+      const pop = village.population || 6;
+      const know = village.knowledge || 0;
+      // Days alive: 0-100 days → 0-40 power
+      const agePower = Math.min(40, days * 0.4);
+      // Knowledge: 0-20 → 0-30 power
+      const knowPower = Math.min(30, know * 1.5);
+      // Population: 6-20 → 0-30 power
+      const popPower = Math.min(30, (pop - 6) * 2.1);
+      return Math.round(agePower + knowPower + popPower);
+    },
+    // genVillageRoster: distant villages are PEOPLE, not spreadsheets.
+    // Each gets a roster of named individuals with ages and relationships.
+    // When you return after 20 days, you hear "Mara had a baby" — not "pop 14→12".
+    // (Steve 2026-10-07: the world must live whether you're there or not.)
+    genVillageRoster(village) {
+      const roster = [];
+      const n = village.population || 8;
+      // Generate adults (70%) and children (30%)
+      for (let i = 0; i < n; i++) {
+        const isChild = Math.random() < 0.3;
+        const age = isChild ? Math.floor(Math.random() * 14) + 1 : Math.floor(Math.random() * 40) + 18;
+        const nm = this.genNameForOrigin('village', true);
+        roster.push({
+          id: `${village.id}_p${i}`,
+          name: nm.name,
+          age: age,
+          alive: true,
+          partner: null,
+          children: [],
+        });
+      }
+      // Pair up some adults as partners
+      const adults = roster.filter(p => p.age >= 18);
+      for (let i = 0; i < adults.length - 1; i += 2) {
+        if (Math.random() < 0.6) {
+          adults[i].partner = adults[i+1].id;
+          adults[i+1].partner = adults[i].id;
+        }
+      }
+      village.roster = roster;
+      village.news = village.news || []; // "what happened while you were away"
+    },
     // catchUpSim: when you approach a village, simulate all days since game start.
     // They're not fresh — they've been living, foraging, competing.
     // LIVING WORLD: their knowledge EMERGES from who they are, where they are,
@@ -5210,6 +5388,10 @@
       if (!village.knowledgeProfile) {
         village.knowledgeProfile = this.genVillageKnowledgeProfile(village);
       }
+      // generate their PEOPLE on first sim — they're not numbers, they're names
+      if (!village.roster) {
+        this.genVillageRoster(village);
+      }
       // Fast sim: each day, they forage (depleting the world), eat, maybe grow.
       for (let d = 0; d < daysToSim; d++) {
         // the land heals overnight, like it does between your days — then they work it
@@ -5217,6 +5399,16 @@
         this.simVillageDay(village);
       }
       village.generated = true;
+    },
+
+    // directionTo: compass direction from (fx,fy) to (tx,ty), for rumor text.
+    // (Traveler rumors 2026-10-07 called this but it was never defined —
+    // the rumor roll threw TypeError instead of queuing the rumor.)
+    directionTo(fx, fy, tx, ty) {
+      const dx = (tx || 0) - (fx || 0), dy = (ty || 0) - (fy || 0);
+      const vert = dy < 0 ? 'north' : dy > 0 ? 'south' : '';
+      const horiz = dx > 0 ? 'east' : dx < 0 ? 'west' : '';
+      return (vert + horiz) || 'nearby';
     },
 
     // simVillageDay: ONE lived day for a distant village — extracted from
@@ -5234,12 +5426,30 @@
       const effKnow = Math.max(village.knowledge || 0, plantCount / 3);
       const perPerson = (1500 + Math.random() * 700) * Math.min(1.8, 1 + 0.12 * effKnow);
       const need = village.population * 2000;
+      // STRATEGY MATTERS (Steve 2026-10-07): each village's survival strategy
+      // gives them an edge in their domain. Fishers pull more from water,
+      // farmers from fields, etc. This isn't flavor — it's why their codex
+      // is worth linking. Different strategies, different strengths.
+      const focus = (village.knowledgeProfile || {}).focus || 'forager';
+      const turf = this.turfKcal(village.x, village.y);
+      let strategyBonus = 1.0;
+      // check if their turf matches their strategy
+      const tileTypes = {};
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const tx = village.x + dx, ty = village.y + dy;
+        if (tx < 0 || tx > 8 || ty < 0 || ty > 8) continue; // 9x9 world: edge villages (2026-10-07)
+        const t = this.tileAt(tx, ty);
+        if (t) tileTypes[t.type] = (tileTypes[t.type] || 0) + 1;
+      }
+      if (focus === 'fisher' && ((tileTypes['creek'] || 0) + (tileTypes['wetland'] || 0) >= 2)) strategyBonus = 1.3;
+      else if (focus === 'farmer' && ((tileTypes['meadow'] || 0) >= 3)) strategyBonus = 1.3;
+      else if (focus === 'forager' && ((tileTypes['grove'] || 0) + (tileTypes['forest_floor'] || 0) >= 4)) strategyBonus = 1.25;
+      else if (focus === 'scavenger' && ((tileTypes['ruin'] || 0) >= 1)) strategyBonus = 1.2;
       // THE LAND SETS THE CEILING. They take what their turf grows — the
       // rest is ranging, traps, and work the sim doesn't map, covering about
       // 60% of need. Strangers start near 60% self-sufficient and learn.
       // A stripped turf means lean days; lean days mean hunger.
-      const turf = this.turfKcal(village.x, village.y);
-      const fromTurf = Math.min(village.population * perPerson, turf);
+      const fromTurf = Math.min(village.population * perPerson * strategyBonus, turf);
       const stillHungry = Math.max(0, need - fromTurf);
       const ranged = Math.min(stillHungry, need * 0.6);
       const forage = fromTurf + ranged;
@@ -5262,16 +5472,114 @@
       // starvation: lean days cost people, slowly. Never below 6 — a village
       // of six is the smallest viable peer: they can still trade, teach, and
       // take you in. (The old sim never starved anyone; pantries ballooned.)
+      // DEATHS HAVE NAMES (Steve 2026-10-07): the roster tracks individuals.
+      // When someone dies, it's "Joren died of hunger" — not "pop 14→13".
       if (village.pantryKcal <= 0 && forage < need) {
         village.pantryKcal = 0;
         if (Math.random() < 0.3 && village.population > 6) {
           village.population--;
+          // kill someone from the roster (oldest or weakest first)
+          const roster = village.roster || [];
+          const living = roster.filter(p => p.alive);
+          if (living.length) {
+            // hunger takes the old and the very young first
+            living.sort((a, b) => {
+              const aVuln = a.age > 60 ? 3 : a.age < 5 ? 2 : 1;
+              const bVuln = b.age > 60 ? 3 : b.age < 5 ? 2 : 1;
+              return bVuln - aVuln;
+            });
+            const victim = living[0];
+            victim.alive = false;
+            victim.deathDay = village.day;
+            victim.cause = 'hunger';
+            village.news = village.news || [];
+            if (village.news.length < 20) {
+              village.news.push(`💀 ${victim.name} died of hunger on day ${village.day}.`);
+            }
+            // DRAMA (Steve 2026-10-07, Round C2): the village mourns — gray wisp, bell toll.
+            try { this.drama('villageDeath', victim.name.split(' ')[0], 'hunger'); } catch (e) {}
+          }
+        }
+      }
+      // BIRTHS (Steve 2026-10-07): RARE. Human gestation is 9 months — a birth
+      // only happens after the village has existed 270+ days, and even then
+      // it's uncommon. The game is a year; most playthroughs see zero births.
+      // That's realistic. (The old 2%/day was ~7 babies/year — absurd.)
+      if (village.roster && village.day >= 270 && Math.random() < 0.005) {
+        const couples = village.roster.filter(p => p.alive && p.partner && p.age >= 18 && p.age <= 40);
+        if (couples.length >= 2) {
+          const parent = couples[Math.floor(Math.random() * couples.length)];
+          const nm = this.genNameForOrigin('village', true);
+          const baby = {
+            id: `${village.id}_p${Date.now()}_${Math.floor(Math.random()*1000)}`,
+            name: nm.name,
+            age: 0,
+            alive: true,
+            partner: null,
+            children: [],
+            parents: [parent.id, parent.partner],
+          };
+          village.roster.push(baby);
+          village.population++;
+          village.news = village.news || [];
+          if (village.news.length < 20) {
+            const parentName = parent.name.split(' ')[0];
+            village.news.push(`👶 ${nm.name.split(' ')[0]} was born to ${parentName} on day ${village.day}.`);
+          }
+          // DRAMA (Steve 2026-10-07, Round C2): rare and soft — pink glow for the new arrival.
+          try { this.drama('villageBirth', nm.name.split(' ')[0], parent.name.split(' ')[0]); } catch (e) {}
+        }
+      }
+      // AGING: everyone gets older
+      if (village.roster) {
+        for (const p of village.roster) {
+          if (p.alive) p.age += 1/365; // fractional aging per day
+        }
+        // old age deaths (rare, natural)
+        for (const p of village.roster) {
+          if (p.alive && p.age > 75 && Math.random() < 0.005) {
+            p.alive = false;
+            p.deathDay = village.day;
+            p.cause = 'old age';
+            village.population--;
+            village.news = village.news || [];
+            if (village.news.length < 20) {
+              village.news.push(`🕯️ ${p.name} died of old age on day ${village.day}, at ${Math.floor(p.age)}.`);
+            }
+            // DRAMA (Steve 2026-10-07, Round C2): the village mourns — gray wisp, bell toll.
+            try { this.drama('villageDeath', p.name.split(' ')[0], 'old age'); } catch (e) {}
+          }
         }
       }
       // knowledge grows: they learn what they forage. SLOWLY, like real people.
       // each day, small chance to deepen knowledge of a plant from their profile.
       if (Math.random() < 0.3) {
         this.villageLearn(village);
+      }
+      // TRAVELERS (Steve 2026-10-07): villages send travelers. A traveler passing
+      // through your haven means you HEAR about their village — even if you've
+      // never been there. Closer villages are heard about sooner (travelers walk).
+      // This is how you find the village 2 tiles north "pretty early" — not by
+      // stumbling into it, but because someone told you.
+      if (!village.rumored && !village.generated) {
+        const hx = 4, hy = 4; // haven at center of 9x9
+        const dist = Math.abs(village.x - hx) + Math.abs(village.y - hy);
+        // Closer = more likely to hear about. 2 tiles: ~5%/day. 8 tiles: ~1%/day.
+        const rumorChance = Math.max(0.01, 0.06 - dist * 0.007);
+        if (Math.random() < rumorChance) {
+          village.rumored = true;
+          village.rumorDay = village.day;
+          // queue the rumor for the player (delivered via gossip or map)
+          const s = this.state.scholar;
+          s.rumors = s.rumors || [];
+          const dir = this.directionTo(hx, hy, village.x, village.y);
+          s.rumors.push({
+            type: 'village',
+            villageId: village.id,
+            text: `A traveler passed through yesterday, talking about a village to the ${dir} called ${village.name}.`,
+            day: this.state.scholar.day,
+          });
+        }
       }
       village.day++;
     },
@@ -5311,7 +5619,7 @@
       const tileTypes = {};
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
         const tx = village.x + dx, ty = village.y + dy;
-        if (tx < 0 || tx > 6 || ty < 0 || ty > 6) continue;
+        if (tx < 0 || tx > 8 || ty < 0 || ty > 8) continue; // 9x9 world (2026-10-07)
         const t = this.tileAt(tx, ty);
         if (t) tileTypes[t.type] = (tileTypes[t.type] || 0) + 1;
       }
@@ -5353,10 +5661,50 @@
           profile.plants[p.id] = { level: 1 + Math.floor(Math.random() * 2), learnedDay: 0 }; // L1-L2
         }
       }
-      // village.codex mirrors the profile so villageTalk can trade knowledge both ways
-      village.codex = village.codex || { plants: {} };
+      // VILLAGE CODEX (Steve 2026-10-07): each village keeps its own codex —
+      // a body of knowledge worth linking to. Not just plants: techniques,
+      // recipes, animal lore. Each strategy (fisher/farmer/forager/scavenger)
+      // has DISTINCT knowledge. A fishing village knows things a farming
+      // village doesn't, and vice versa. That's why you link codices.
+      village.codex = village.codex || { plants: {}, techniques: {}, recipes: {}, animals: {} };
       for (const [pid, e] of Object.entries(profile.plants)) {
         village.codex.plants[pid] = { level: e.level, identifiedDay: 0 };
+      }
+      // STRATEGY TECHNIQUES: each focus has signature survival techniques
+      const strategyTechniques = {
+        fisher: ['net_mending', 'tide_reading', 'smoke_preserving'],
+        farmer: ['seed_saving', 'soil_reading', 'root_cellaring'],
+        forager: ['plant_tracking', 'season_reading', 'trail_blazing'],
+        scavenger: ['salvage_sight', 'tool_repair', 'ruin_reading'],
+      };
+      const techs = strategyTechniques[profile.focus] || strategyTechniques.forager;
+      for (const tech of techs) {
+        village.codex.techniques[tech] = {
+          level: 1 + Math.floor(Math.random() * 2),
+          learnedDay: 0,
+          strategy: profile.focus,
+        };
+      }
+      // STRATEGY RECIPES: food preservation and preparation unique to their way
+      const strategyRecipes = {
+        fisher: ['smoked_fish', 'fish_stew'],
+        farmer: ['root_mash', 'grain_porridge'],
+        forager: ['trail_mix', 'herb_tea'],
+        scavenger: ['scrap_stew', 'can_cookery'],
+      };
+      const recipes = strategyRecipes[profile.focus] || strategyRecipes.forager;
+      for (const r of recipes) {
+        village.codex.recipes[r] = { known: true, learnedDay: 0 };
+      }
+      // ANIMAL LORE: they know the animals in their territory
+      const animals = (this.data.animals || []).filter(a => {
+        const biomes = (a.biomes || []).join(' ').toLowerCase();
+        if (profile.focus === 'fisher') return biomes.includes('water') || biomes.includes('creek');
+        if (profile.focus === 'farmer') return biomes.includes('meadow') || biomes.includes('field');
+        return true; // foragers and scavengers know a bit of everything
+      }).slice(0, 3);
+      for (const a of animals) {
+        village.codex.animals[a.id] = { level: 1, learnedDay: 0 };
       }
       return profile;
     },
@@ -5412,37 +5760,111 @@
       }
     },
 
+    // initTileWildlife: what animals live on this tile? Based on biome.
+    // Returns { speciesId: count }. Counts are small (1-4) — these are the
+    // animals actually present, not an abstract abundance.
+    initTileWildlife(biomeType, rnd) {
+      const wildlife = {};
+      const animals = (this.data.animals || []).filter(a => (a.biomes || []).includes(biomeType));
+      // 1-3 species per tile, 1-4 individuals each
+      const nSpecies = 1 + Math.floor((rnd || Math.random)() * 3);
+      for (let i = 0; i < nSpecies && i < animals.length; i++) {
+        const a = animals[Math.floor((rnd || Math.random)() * animals.length)];
+        if (a && !wildlife[a.id]) {
+          wildlife[a.id] = 1 + Math.floor((rnd || Math.random)() * 4);
+        }
+      }
+      return wildlife;
+    },
+    // simEcology: ONE day of wildlife sim, map-wide. Called from endDay.
+    // Populations breed (logistic growth toward carrying capacity), migrate
+    // to adjacent tiles, and die from natural causes. The world lives.
+    simEcology() {
+      const K = 8; // carrying capacity per species per tile
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        const t = this.map.tiles[y][x];
+        if (!t.wildlife) t.wildlife = {};
+        // breed: logistic growth
+        for (const sid of Object.keys(t.wildlife)) {
+          const n = t.wildlife[sid];
+          if (n <= 0) { delete t.wildlife[sid]; continue; }
+          // growth rate ~20%/day, capped by K
+          const growth = n * 0.2 * (1 - n / K);
+          t.wildlife[sid] = Math.min(K, Math.round(n + growth + (Math.random() < 0.3 ? 1 : 0)));
+          // natural death: 5%/day
+          if (Math.random() < 0.05 && t.wildlife[sid] > 0) {
+            t.wildlife[sid]--;
+            if (t.wildlife[sid] <= 0) delete t.wildlife[sid];
+          }
+        }
+        // migrate: 10% chance per species to move 1 individual to adjacent tile
+        for (const sid of Object.keys(t.wildlife)) {
+          if (t.wildlife[sid] > 1 && Math.random() < 0.1) {
+            const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+            const [dx, dy] = dirs[Math.floor(Math.random() * 4)];
+            const nx = x + dx, ny = y + dy;
+            if (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) {
+              const nt = this.map.tiles[ny][nx];
+              if (!nt.wildlife) nt.wildlife = {};
+              // only migrate if the biome supports the species
+              const adef = (this.data.animals || []).find(a => a.id === sid);
+              if (adef && (adef.biomes || []).includes(nt.type)) {
+                t.wildlife[sid]--;
+                nt.wildlife[sid] = (nt.wildlife[sid] || 0) + 1;
+                if (t.wildlife[sid] <= 0) delete t.wildlife[sid];
+              }
+            }
+          }
+        }
+      }
+    },
+    // mulberry32: seeded PRNG for deterministic world generation.
+    // Same seed → same world. The seed is saved with the map.
+    mulberry32(seed) {
+      let a = seed >>> 0;
+      return function() {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    },
     genMap() {
       // Procedural with logic: creek flows, wetlands hug water, groves cluster,
       // thickets edge, meadows open, one ruin with a story.
       // The LANDING ZONE shapes the map: creek bottoms are wet and rich,
       // ridgelines are exposed, old suburbs are scavenger country.
+      // WORLD SEED (Steve 2026-10-07): the 9x9 world is generated from a seed
+      // once per game. The seed is saved with the map — the world stays put
+      // when you come back. Minecraft-like: same seed, same world.
+      const worldSeed = Math.floor(Math.random() * 2147483647);
+      const R = this.mulberry32(worldSeed);
       const P = this.locParams();
       const tiles = [];
-      for (let y = 0; y < 7; y++) {
+      for (let y = 0; y < 9; y++) {
         const row = [];
-        for (let x = 0; x < 7; x++) row.push({ type: 'forest_floor', revealed: false, stock: 1, maxStock: 1, visited: false });
+        for (let x = 0; x < 9; x++) row.push({ type: 'forest_floor', revealed: false, stock: 1, maxStock: 1, visited: false });
         tiles.push(row);
       }
-      const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < 7 && y < 7) tiles[y][x].type = t; };
-      const at = (x, y) => (x >= 0 && y >= 0 && x < 7 && y < 7) ? tiles[y][x].type : null;
+      const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < 9 && y < 9) tiles[y][x].type = t; };
+      const at = (x, y) => (x >= 0 && y >= 0 && x < 9 && y < 9) ? tiles[y][x].type : null;
 
       // creeks: random walks top→bottom (some landing zones have more water)
       for (let cw = 0; cw < P.creeks; cw++) {
-        let cx = 1 + Math.floor(Math.random() * 5), cy = 0;
+        let cx = 1 + Math.floor(R() * 7), cy = 0;
         set(cx, cy, 'creek');
-        while (cy < 6) {
-          const mv = Math.random();
+        while (cy < 8) {
+          const mv = R();
           if (mv < 0.45) cy++;
           else if (mv < 0.7) cx = Math.max(0, cx - 1);
-          else cx = Math.min(6, cx + 1);
+          else cx = Math.min(8, cx + 1);
           set(cx, cy, 'creek');
         }
       }
       // wetlands: adjacent to creek
       let placed = 0, guard = 0;
       while (placed < P.wetlands && guard++ < 80) {
-        const x = Math.floor(Math.random() * 7), y = Math.floor(Math.random() * 7);
+        const x = Math.floor(R() * 9), y = Math.floor(R() * 9);
         if (at(x, y) !== 'forest_floor') continue;
         const nearWater = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy) === 'creek');
         if (nearWater) { set(x, y, 'wetland'); placed++; }
@@ -5451,50 +5873,50 @@
       const blob = (sx, sy, t, n) => {
         let p = 0, g = 0;
         while (p < n && g++ < 40) {
-          const x = sx + Math.floor(Math.random() * 3) - 1, y = sy + Math.floor(Math.random() * 3) - 1;
+          const x = sx + Math.floor(R() * 3) - 1, y = sy + Math.floor(R() * 3) - 1;
           if (at(x, y) === 'forest_floor') { set(x, y, t); p++; }
         }
       };
       for (let gb = 0; gb < P.groveBlobs; gb++) {
-        blob(Math.floor(Math.random() * 7), Math.floor(Math.random() * 7), 'grove', P.groveSize);
+        blob(Math.floor(R() * 9), Math.floor(R() * 9), 'grove', P.groveSize);
       }
       // meadow: one open blob
-      blob(2 + Math.floor(Math.random() * 3), 2 + Math.floor(Math.random() * 3), 'meadow', P.meadowSize);
+      blob(3 + Math.floor(R() * 3), 3 + Math.floor(R() * 3), 'meadow', P.meadowSize);
       // thickets: edges
       placed = 0; guard = 0;
       while (placed < P.thickets && guard++ < 80) {
-        const edge = Math.random() < 0.5;
-        const x = edge ? (Math.random() < 0.5 ? 0 : 6) : Math.floor(Math.random() * 7);
-        const y = edge ? Math.floor(Math.random() * 7) : (Math.random() < 0.5 ? 0 : 6);
+        const edge = R() < 0.5;
+        const x = edge ? (R() < 0.5 ? 0 : 8) : Math.floor(R() * 9);
+        const y = edge ? Math.floor(R() * 9) : (R() < 0.5 ? 0 : 8);
         if (at(x, y) === 'forest_floor') { set(x, y, 'thicket'); placed++; }
       }
       // trails: old paths through the land (suburbs have more)
       for (let tl = 0; tl < P.trailLines; tl++) {
-        const tx = Math.max(1, Math.min(5, 3 + (tl - (P.trailLines - 1) / 2) * 2));
-        for (let i = 1; i < 6; i++) { if (at(tx, i) === 'forest_floor') set(tx, i, 'trail_edge'); }
+        const tx = Math.max(1, Math.min(7, 4 + (tl - (P.trailLines - 1) / 2) * 2));
+        for (let i = 1; i < 8; i++) { if (at(tx, i) === 'forest_floor') set(tx, i, 'trail_edge'); }
       }
       // ruin: one, deliberate, with a story. GUARANTEED.
-      // SCAVENGER VIABILITY: the ruin must be within Manhattan d<=3 of haven (3,3),
+      // SCAVENGER VIABILITY: the ruin must be within Manhattan d<=3 of haven (4,4),
       // i.e. reachable via revealed tiles in week 1. Scavenging is a real path now.
       // (The old try-60-times loop silently failed ~2% of the time, leaving worlds
       // with no ruin at all — and scavengers with nowhere to go.)
       const ruinCandidates = [];
-      for (let ry2 = 0; ry2 < 7; ry2++) for (let rx2 = 0; rx2 < 7; rx2++) {
-        const dHaven = Math.abs(rx2 - 3) + Math.abs(ry2 - 3);
+      for (let ry2 = 0; ry2 < 9; ry2++) for (let rx2 = 0; rx2 < 9; rx2++) {
+        const dHaven = Math.abs(rx2 - 4) + Math.abs(ry2 - 4);
         if (dHaven <= P.ruinMaxDist && dHaven > 0 && at(rx2, ry2) === 'forest_floor' &&
             at(rx2 + 1, ry2) !== 'creek' && at(rx2 - 1, ry2) !== 'creek') ruinCandidates.push([rx2, ry2]);
       }
       let ruinXY;
       if (ruinCandidates.length) {
-        ruinXY = ruinCandidates[Math.floor(Math.random() * ruinCandidates.length)];
+        ruinXY = ruinCandidates[Math.floor(R() * ruinCandidates.length)];
       } else {
         // degenerate map: force it. pick a ring cell, make it forest_floor, put the ruin there.
         const ring = [];
-        for (let ry2 = 0; ry2 < 7; ry2++) for (let rx2 = 0; rx2 < 7; rx2++) {
-          const dHaven = Math.abs(rx2 - 3) + Math.abs(ry2 - 3);
+        for (let ry2 = 0; ry2 < 9; ry2++) for (let rx2 = 0; rx2 < 9; rx2++) {
+          const dHaven = Math.abs(rx2 - 4) + Math.abs(ry2 - 4);
           if (dHaven <= 3 && dHaven > 0) ring.push([rx2, ry2]);
         }
-        ruinXY = ring[Math.floor(Math.random() * ring.length)];
+        ruinXY = ring[Math.floor(R() * ring.length)];
         set(ruinXY[0], ruinXY[1], 'forest_floor');
       }
       {
@@ -5502,22 +5924,22 @@
         set(rx3, ry3, 'ruin');
         tiles[ry3][rx3].ruinStory = ['A collapsed barn. Pre-Burn. The wiring is gone — everything is gone — but the stones remember the shape of work.',
           'A farmhouse foundation. Someone\'s kitchen. The Burn took the wires from the walls; the walls kept standing out of spite.',
-          'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(Math.random() * 3)];
+          'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(R() * 3)];
         // finite pantry: 3-5 cans, scaled by landing zone. the houses feed you until they don't.
-        const nLoot = Math.max(1, Math.round((3 + Math.floor(Math.random() * 3)) * P.lootMult));
+        const nLoot = Math.max(1, Math.round((3 + Math.floor(R() * 3)) * P.lootMult));
         tiles[ry3][rx3].loot = [];
-        for (let i = 0; i < nLoot; i++) tiles[ry3][rx3].loot.push(SCAVENGED[Math.floor(Math.random() * SCAVENGED.length)].id);
+        for (let i = 0; i < nLoot; i++) tiles[ry3][rx3].loot.push(SCAVENGED[Math.floor(R() * SCAVENGED.length)].id);
       }
       // stock: rich ground gives more pulls. number of times depends on the biome and landing zone.
       // (computed inline — this.map doesn't exist yet during gen)
       const RICH = { grove: 1.5, wetland: 1.4, creek: 1.3, meadow: 1.3, thicket: 1.2, trail_edge: 1.0, forest_floor: 0.8 };
       for (const k of Object.keys(RICH)) RICH[k] = RICH[k] * P.stockMult;
-      for (let yy = 0; yy < 7; yy++) for (let xx = 0; xx < 7; xx++) {
+      for (let yy = 0; yy < 9; yy++) for (let xx = 0; xx < 9; xx++) {
         let r = RICH[tiles[yy][xx].type] || 1;
         for (let dy = -1; dy <= 1 && r < 1.8; dy++) for (let dx = -1; dx <= 1; dx++) {
           if (!dx && !dy) continue;
           const nx = xx + dx, ny = yy + dy;
-          if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+          if (nx < 0 || ny < 0 || nx > 8 || ny > 8) continue; // 9x9 world (2026-10-07)
           const nt = tiles[ny][nx].type;
           if (nt === 'creek' || nt === 'wetland') { r += 0.3; break; }
         }
@@ -5526,48 +5948,61 @@
       }
       // Haven was built where the land is good — guarantee a breadbasket by the door.
       // twelve people didn't settle on barren ground, and the first lesson shouldn't be a bad map roll.
-      const doors = [[2, 3], [4, 3], [3, 2], [3, 4]];
-      const door = doors[Math.floor(Math.random() * doors.length)];
+      const doors = [[3, 4], [5, 4], [4, 3], [4, 5]];
+      const door = doors[Math.floor(R() * doors.length)];
       if (tiles[door[1]][door[0]].type !== 'ruin') {
         tiles[door[1]][door[0]].type = 'grove';
         // breadbasket is safety, not sufficiency: stock 2, not 3. a full day's work means ranging out.
         tiles[door[1]][door[0]].maxStock = 2; tiles[door[1]][door[0]].stock = 2;
       }
       // Haven is a tile, not a separate screen. home is a place you walk to.
-      tiles[3][3].type = 'haven';
-      tiles[3][3].stock = 0; tiles[3][3].maxStock = 0;
-      tiles[3][3].revealed = true; tiles[3][3].visited = true;
+      // (9x9 migration 2026-10-07: haven sits at the 9x9 center 4,4, where the
+      // player spawns — the map UI, atCamp, playerAtHaven, and returnToVillage
+      // all assume 4,4. Leaving the tile at 3,3 split haven's identity: the
+      // player woke on a wild tile wearing haven's costume — no dawn meal
+      // (pantryInReach), no camp ritual (atCamp), villagers simulated on the
+      // wrong detail grid.)
+      tiles[4][4].type = 'haven';
+      tiles[4][4].stock = 0; tiles[4][4].maxStock = 0;
+      tiles[4][4].revealed = true; tiles[4][4].visited = true;
       // FOG OF WAR: unexplored tiles are fully hidden. No hints, no guesses —
       // if you haven't been there, you don't see it. Revealed on visit.
       // BLOCKED ROADS: some paths in are obstructed. Always multiple solutions:
       // cut (fallen tree), clear (rubble), bridge (washed out / hard creek), swim, or go around.
       // CONSTRUCTION (future): tile.structures[] holds anything built here — walls, palisades, etc.
       const DIRS = [[0,-1],[1,0],[0,1],[-1,0]]; // n,e,s,w
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = tiles[y][x];
         t.structures = []; // future: walls, palisades, shelters
         // blockages: ~12% of wild tiles have one obstructed approach.
         // never block haven, never block the ruin approach (scavengers need in).
-        if (t.type !== 'haven' && t.type !== 'ruin' && Math.random() < 0.12) {
-          const [dx, dy] = DIRS[Math.floor(Math.random() * 4)];
+        if (t.type !== 'haven' && t.type !== 'ruin' && R() < 0.12) {
+          const [dx, dy] = DIRS[Math.floor(R() * 4)];
           const nx = x + dx, ny = y + dy;
-          if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
           if (tiles[ny][nx].type === 'haven') continue;
-          const roll = Math.random();
+          const roll = R();
           // -dx,-dy: the direction you'd be coming FROM to enter this tile
           t.blockFrom = { dx: -dx, dy: -dy, type: roll < 0.4 ? 'fallen_tree' : roll < 0.7 ? 'rubble' : 'washed_out' };
         }
         // hard creek crossings: ~35% of creek tiles need a bridge or a swimmer.
-        if (t.type === 'creek' && Math.random() < 0.35) t.needsBridge = true;
+        if (t.type === 'creek' && R() < 0.35) t.needsBridge = true;
       }
-      this.map = { tiles, px: 3, py: 3 };
+      // ECOLOGY (Steve 2026-10-07): each tile gets a wildlife population.
+      // Animals LIVE here — they breed, migrate, and die whether you're
+      // watching or not. Hunting depletes; absence lets them recover.
+      for (let wy = 0; wy < 9; wy++) for (let wx = 0; wx < 9; wx++) {
+        const t = tiles[wy][wx];
+        t.wildlife = this.initTileWildlife(t.type, R);
+      }
+      this.map = { tiles, px: 4, py: 4, worldSeed, worldSize: 9 };
       // STRICT FOG: at start you see haven and the ground south of it — the
       // door faces south, so south is all you can see. Everything else is
       // dark until you walk there. (reveal() is still used on travel: arriving
       // somewhere maps its surroundings.)
-      tiles[3][3].revealed = true;
-      tiles[4][3].revealed = true;
-      const start = this.tileAt(3, 3);
+      tiles[4][4].revealed = true;
+      tiles[5][4].revealed = true;
+      const start = this.tileAt(4, 4);
       start.visited = true;
     },
 
@@ -5723,20 +6158,21 @@
           for (let cy = 0; cy < 9; cy++) {
             const row = [];
             for (let cx = 0; cx < 9; cx++) {
-              // lodge footprint: rows 0-1, cols 3-5
-              if (cy <= 1 && cx >= 3 && cx <= 5) { row.push('lodge'); continue; }
+              // lodge footprint: CENTERED — rows 3-4, cols 3-5
+              // Steve 2026-10-07: haven should be center of its detail grid
+              if (cy >= 3 && cy <= 4 && cx >= 3 && cx <= 5) { row.push('lodge'); continue; }
               const r = ornd();
               row.push(r < 0.35 ? 'dirt' : 'grass');
             }
             cells.push(row);
           }
-          // clear the lodge doorstep: walkable ground at (4,2)
-          cells[2][4] = 'dirt';
-          // fire pit near the lodge, not blocking
-          cells[2][2] = 'fire';
+          // clear the lodge doorstep: walkable ground south of lodge at (4,5)
+          cells[5][4] = 'dirt';
+          // fire pit near the lodge, not blocking — west side
+          cells[4][2] = 'fire';
           // THE CAMP: a few tents, placed deliberately in a loose cluster west
           // of the lodge — homes, not a maze. Spots jitter with the seed.
-          const tentSpots = [[1, 3], [2, 4], [1, 5]];
+          const tentSpots = [[3, 3], [4, 4], [3, 5]];
           for (const [tx, ty] of tentSpots) {
             const jx = tx + Math.floor(ornd() * 2), jy = ty + Math.floor(ornd() * 2);
             if (cells[jy] && cells[jy][jx] !== 'lodge') cells[jy][jx] = 'tent';
@@ -5745,7 +6181,7 @@
           // teaching patch, not a farm. A new player learns the forage verb
           // HERE, then understands food is OUT THERE. (Barren Haven fix.)
           // Clustered SE so it's findable but not central.
-          const garden = [[6,5],[7,5],[6,6],[7,6],[5,6]];
+          const garden = [[6,6],[7,6],[6,7],[7,7],[5,7]];
           for (const [gx, gy] of garden) {
             if (cells[gy] && cells[gy][gx] !== 'lodge') cells[gy][gx] = (gx + gy) % 2 ? 'plant' : 'bush';
           }
@@ -5797,7 +6233,7 @@
       }
       const nType = (dx, dy) => {
         const nx = x + dx, ny = y + dy;
-        return (nx < 0 || ny < 0 || nx > 6 || ny > 6) ? t.type : this.tileAt(nx, ny).type;
+        return (nx < 0 || ny < 0 || nx > 8 || ny > 8) ? t.type : this.tileAt(nx, ny).type; // 9x9 world (2026-10-07)
       };
       // base cell picker by tile type
       const pick = (type) => {
@@ -6020,7 +6456,7 @@
     },
 
     reveal(cx, cy) {
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (Math.abs(x - cx) + Math.abs(y - cy) <= 2) this.map.tiles[y][x].revealed = true;
       }
     },
@@ -6068,7 +6504,7 @@
     seedVillagerMaps() {
       try {
         const v = this.state.village;
-        const hx = (v && v.px !== undefined) ? v.px : 3, hy = (v && v.py !== undefined) ? v.py : 3;
+        const hx = (v && v.px !== undefined) ? v.px : 4, hy = (v && v.py !== undefined) ? v.py : 4;
         const all = (this.data.villagers || []).concat(this.data.background_survivors || []);
         for (const vp of all) {
           if (vp.visitedTiles && vp.visitedTiles.length) continue;
@@ -6200,7 +6636,7 @@
     // You don't know what's there until you arrive. Hope nothing's waiting.
     travelTargets() {
       const out = [];
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
         const t = this.tileAt(x, y);
         // revealed within 3, OR adjacent unrevealed (walking into fog)
@@ -6365,7 +6801,7 @@
       // WORLD EDGE (explorer loop 2026-10-06): the known world ends at the
       // map border. NO SILENT ACTIONS — say so once per game, not on every
       // hold-to-walk bump into the edge.
-      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) {
+      if (nx < 0 || nx > 8 || ny < 0 || ny > 8) { // 9x9 world (2026-10-07)
         if (!this.state.worldEdgeTold) {
           this.state.worldEdgeTold = true;
           this.say('The known world ends here — beyond is unmapped, no path. Turn back.');
@@ -6404,7 +6840,7 @@
       return { x: 4, y: 4 }; // unreachable in practice — every detail has walkable cells
     },
     travelTo(x, y, force) {
-      // WORLD EDGE (explorer loop 2026-10-06): the 7x7 map is the whole
+      // WORLD EDGE (explorer loop 2026-10-06): the 9x9 map is the whole
       // known world. A rim tap on a border node passes out-of-bounds coords
       // (e.g. (-1,3)) — tileAt is undefined there, and the old order crashed
       // on dest.revealed BEFORE the travelTargets guard. Guard first: no
@@ -6464,13 +6900,30 @@
       let msg = `Travel ${t.d} tile${t.d > 1 ? 's' : ''} to ${S.TILE_NAME[tile.type]}.`;
       if (!tile.visited) {
         tile.visited = true;
-        const arr = ARRIVAL[tile.type];
+        const arr = this.arrivalPoolFor(tile.type);
         msg += `\n— ${arr.title} —\n${tile.ruinStory || this.arrivalTextFor(tile)}`;
         // no free lessons on arrival — the land teaches when you work it, not when you walk in.
       }
       // Walking into fog: the wanderer system (checkEncounter) handles "something is there."
       // No invented ambush odds. If the Bulldozer is on this tile, you'll meet it.
       this.say(msg);
+      // PIT TRAP (hunter loop 2026-10-07): the recipe warns "mark it well:
+      // your own pit will take you too." Made real. A pit you dug on an
+      // earlier day can take you when you walk back onto its tile — 50%,
+      // because you marked it... mostly. The trap is sprung by the fall.
+      // Same-day pits never trigger: you just dug it, you're watching it.
+      const _pit = (this.playerTile().traps || []).find(t => t.recipeId === 'pit_trap');
+      if (_pit && _pit.setDay < this.state.scholar.day) {
+        if (Math.random() < 0.5) {
+          const _dmg = 15 + Math.floor(Math.random() * 11);
+          this.state.scholar.health = Math.max(0, (this.state.scholar.health || 100) - _dmg);
+          _pit.uses = (_pit.uses || 1) - 1;
+          if (_pit.uses <= 0) this.playerTile().traps = this.playerTile().traps.filter(t => t !== _pit);
+          this.say(`Your foot goes through the brush cover — YOUR pit, the one you dug. Sharpened stakes, your own leg. ${_dmg} damage. Mark it well next time.`);
+        } else {
+          this.say(`You skirt the brushed-over hollow where your pit waits. Marked, this time.`);
+        }
+      }
       // CONTINUOUS TRAVEL: you walk off one map, you walk onto the next.
       // Enter at the edge you came from (opposite the travel direction),
       // keeping your column/row so the world feels connected.
@@ -6490,7 +6943,7 @@
       this.state.scholar.insideHaven = false;
       // Party/followers travel with you — they're outside too, same sub-state.
       try { for (const vid of this.travelingWith()) this.npcSetInside(vid, false); } catch (e) {}
-      const ht = this.tileAt(3, 3);
+      const ht = this.tileAt(4, 4);
       if (ht && ht.type === 'haven') ht.detail = null;
       // WORLD MONSTERS (Steve 2026-10-06): monsters live on tiles, not on
       // you. The one you left behind STAYS behind (continuity — it's still
@@ -6515,7 +6968,13 @@
           oldMonster.mx = fe.x; oldMonster.my = fe.y;
           oldMonster.lostSight = 0; // it saw you cross. it's on your trail.
           this.touchTileScene(fromX, fromY); this.touchTileScene(x, y);
-          this.say(`It followed you. The ${this.monsterNoun(mdef.id)} is here.`);
+          // Explorer loop 2026-10-06 (bug 2): monsterNoun may return a vague
+          // descriptor rather than a noun ("something huge, rooting in the
+          // underbrush", or the 'something' fallback) — never compose
+          // "The something…" or "The something huge…".
+          const mn = this.monsterNoun(mdef.id);
+          if (/^something\b/i.test(mn)) this.say(`It followed you. ${mn.charAt(0).toUpperCase() + mn.slice(1)} is here.`);
+          else this.say(`It followed you. The ${mn} is here.`);
         }
         // else: it stays on the old tile. Continuity — the world must live.
       }
@@ -6564,7 +7023,11 @@
         else this.say(`${hereV.name}'s clearing. Voices, a cookfire, somebody else's home. You're a guest here — act like it.`);
       }
       // TIME ECONOMY: moving between nodes is a BIG time step on the unified clock.
-      // travelTimeStep ticks 32 (a "bigger tick"): NPC batch + day timer advance
+      // travelTimeStep: cost-free by Steve's rule (node travel costs no kcal and
+      // no day ticks — the NPC-batch + day-timer advance it performs is a
+      // "bigger tick" of world time, not a player cost). Previously this comment
+      // said "ticks 32"; the player-time cost was removed, the world-time
+      // batch remains.
       // proportionally, like everything else. No separate clock, no free moves.
       // (Tuning: if travel feels free, raise the needs tick / energy cost
       // in travelTimeStep. If punishing, lower it. See docs/TIME-ECONOMY.md.)
@@ -6577,10 +7040,20 @@
     // itself, but each place has an identity. Ruin tiles keep their generated
     // ruinStory. Stored on the tile object so revisits and the node card
     // agree with the arrival log line.
+    // DATA-DRIVEN (Steve 2026-10-07): pools live in src/data/arrivalText.json.
+    // Regions override via regionOverrides — checked first, base tiles as fallback.
+    arrivalPoolFor(tileType) {
+      const at = (this.data && this.data.arrivalText) || {};
+      const region = (this.state && this.state.region) || null;
+      if (region && at.regionOverrides && at.regionOverrides[region] && at.regionOverrides[region][tileType]) {
+        return at.regionOverrides[region][tileType];
+      }
+      return (at.tiles && at.tiles[tileType]) || null;
+    },
     arrivalTextFor(tile) {
       if (!tile) return '';
       if (tile.type === 'ruin') return tile.ruinStory || '';
-      const arr = ARRIVAL[tile.type];
+      const arr = this.arrivalPoolFor(tile.type);
       if (!arr) return '';
       if (!tile.arrivalText) {
         const pool = (arr.texts && arr.texts.length) ? arr.texts : [''];
@@ -6635,6 +7108,9 @@
       // the stance machine runs on steps, not just on interacts. (It didn't.
       // Walking up to a deer did nothing until you touched something.)
       this.monsterTurn(); this.animalTurn();
+      // EVERYONE ACTS (Steve 2026-10-07): your step is your turn — each NPC
+      // on this node then takes one action, in roster order.
+      try { this.villagerTurn(); } catch (e) {}
       // ACTION CLOCK: a step is 1 tick. Strolling is time-only — no effort cost.
       // Monsters, animals, and villagers move on their own schedule (or when you ACT).
       // But steps ACCUMULATE: every TICKS_PER_BATCH ticks, NPCs take a batch turn.
@@ -6677,10 +7153,14 @@
           secret.known = true;
           if (mod) mod.known = true;
           // TREE SPECIES GATING (Steve 2026-10-05): species name only if known.
-          // If not known, uncertain description — not the species name.
-          const speciesKnown = mod && mod.speciesKnown;
-          const speciesName = (mod && speciesKnown) ? this.treeName(mod.species) : null;
-          const desc = mod ? `${speciesName || 'a tree you don\'t recognize'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'a tree';
+          // Knowledge lives in codex.trees (oak/hickory = L1 common knowledge
+          // at game start; deep study teaches the rest). mod.speciesKnown was
+          // a dead field (written nowhere) that welded the gate shut for
+          // every tree — restored to the codex read on 2026-10-07. If not
+          // known, uncertain description — not the species name.
+          const speciesName = mod ? this.treeName(mod.species) : null;
+          const speciesKnown = !!speciesName;
+          const desc = mod ? `${speciesName || 'tree you don\'t recognize'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'tree';
           if (secret.yield === 0) {
             this.say(`This ${desc}. Nothing to take. You note it — you won\'t waste time here again.`);
             return true;
@@ -6767,14 +7247,26 @@
         // Learning the bush: it gets a species (game truth), neighbors chain-reveal.
         // The NAME is knowledge-gated: you recognize the patch only if you
         // know the species. Otherwise it's berries of unknown kind.
+        // LECTURE ONCE (forager loop 2026-10-07): the description says only
+        // when it teaches something new — unknown->unknown and known->known
+        // taps stay quiet; unknown->known (learned at camp since) names it.
         const species = this.revealBush(cx, cy);
-        if (this.plantKnown(species)) {
-          const sp = this.data.plants.find(pp => pp.id === species);
-          this.say(`It's a ${sp ? sp.name.toLowerCase() : species}. You'll recognize the patch now.`);
-        } else {
-          this.say(`A berry bush — berries, certainly, but you don't know which kind. (The harvest sorts at camp, with someone who knows.)`);
+        const wantNote = this.plantKnown(species) ? species : 'unknown';
+        t.bushNotes = t.bushNotes || {};
+        if (t.bushNotes[key] !== wantNote) {
+          if (this.plantKnown(species)) {
+            const sp = this.data.plants.find(pp => pp.id === species);
+            this.say(`That's ${(sp ? sp.name : species).toLowerCase()} — you'll recognize the patch now.`);
+          } else {
+            this.say(`A berry bush — berries, certainly, but you don't know which kind. (The harvest sorts at camp, with someone who knows.)`);
+          }
+          t.bushNotes[key] = wantNote;
         }
-        if (secret && secret.thorns) {
+        // THORN HONESTY (forager loop 2026-10-07): thorns scratch only when
+        // there's actually a harvest — taxing blood on a picked-clean bush
+        // while saying "you get the berries" is a lie and a punishment.
+        const pickedClean = t.detailRegrow && t.detailRegrow[key];
+        if (!pickedClean && secret && secret.thorns) {
           this.state.scholar.kcal -= 20; // thorns scratch
           this.say('Thorns. You get the berries, but they take a little blood. (-20 kcal)');
         }
@@ -6803,6 +7295,8 @@
         }
         if (secret && secret.loot && secret.loot !== 'none') {
           this.say(`You find ${secret.amount} ${secret.loot}.`);
+          // DRAMA (Steve 2026-10-07): secret discovery is a hero moment — shimmer + card
+          try { this.drama('secret', '✨ SECRET FOUND', `Hidden in the rubble: ${secret.amount} ${secret.loot}.`); } catch (e) {}
         } else if (secret) {
           this.say('Picked clean. Nothing.');
           return true;
@@ -6824,6 +7318,21 @@
         if (secret && secret.known) { this.say('The same standing wall. You read it already.'); return true; }
         t.secrets[key] = { known: true };
         this.say(line);
+        return true;
+      }
+      // DIRT / GRASS (forager loop 2026-10-07): re-tapping a swept patch or
+      // tapping empty ground was completely silent — a tap is an action and
+      // gets an honest read, never nothing. (Steve: no silent actions.)
+      if (cell === 'dirt') {
+        if (t.detailRegrow && t.detailRegrow[key]) {
+          this.say('Worked earth. This patch is picked clean — it\'ll recover in a few days.');
+        } else {
+          this.say('Bare dirt. Nothing growing here.');
+        }
+        return true;
+      }
+      if (cell === 'grass') {
+        this.say('Just grass. Forage where it\'s green.');
         return true;
       }
       return null;
@@ -6860,7 +7369,14 @@
       const t = this.playerTile();
       const s = this.state.scholar;
       if (s.animal || Math.random() > 0.3) return; // 30% chance per tile entry
-      const candidates = (this.data.animals || []).filter(a => (a.biomes || []).includes(t.type));
+      // ECOLOGY (Steve 2026-10-07): animals come from the LOCAL population —
+      // not thin air. If you've hunted this tile clean, it's empty. If you've
+      // been away, wildlife has recovered. The world lives.
+      const wt = this.map.tiles[this.map.py][this.map.px];
+      const wildlife = (wt && wt.wildlife) || {};
+      const localSpecies = Object.keys(wildlife).filter(sid => wildlife[sid] > 0);
+      if (!localSpecies.length) return; // hunted out — nothing here
+      const candidates = (this.data.animals || []).filter(a => localSpecies.includes(a.id) && (a.biomes || []).includes(t.type));
       if (!candidates.length) return;
       // NIGHT ECOLOGY: different animals after dark. The night has its own game —
       // opossum, raccoon, bullfrog instead of squirrel and turkey. Learn the schedule.
@@ -6873,7 +7389,29 @@
         tries++;
       } while (tries < 20 && Math.abs(ax - px) + Math.abs(ay - py) < 3);
       s.animal = { id: animal.id, mx: ax, my: ay };
+      // LAY IN WAIT (hunter loop 2026-10-07): the ambush you laid holds for
+      // the next animal encounter — it starts with you hidden (aware 0, the
+      // way the encounters.js spawn does it explicitly).
+      try {
+        if ((this.state.scholar || {}).layWaitActive) {
+          this.state.scholar.layWaitActive = false;
+          s.animal.aware = 0;
+          this.say('(Lay in Wait: you are part of the landscape. It has no idea you are here.)');
+        }
+      } catch (e) {}
+      // The animal left the tile population to wander the detail grid
+      if (wt.wildlife[animal.id] > 0) wt.wildlife[animal.id]--;
       this.say(`Movement — ${animal.description}.`);
+      // DRAMA (Steve 2026-10-07): wildlife appears — subtle green ripple
+      try { this.drama('wild', ax, ay); } catch (e) {}
+      // TRACKING (Steve 2026-10-07): trackers see where it came from — faint trail marks
+      try {
+        if (this.trackKnown && this.trackKnown()) {
+          const dir = ax > px ? 'w' : ax < px ? 'e' : ay > py ? 'n' : 's';
+          this.drama('trail', Math.max(0, ax - 1), ay, dir);
+          this.drama('trail', Math.max(0, ax - 2), ay, dir);
+        }
+      } catch (e) {}
     },
 
     // animals flee when you move. they're scared of you.
@@ -6915,13 +7453,26 @@
         if (wP > 0 && Math.random() < wP) {
           a.bolted = true;
           this.say(`The ${aname} decides you're trouble and bolts!`);
+          // DRAMA (Steve 2026-10-07): wildlife flees — green ripple at bolt point
+          try { this.drama('wild', a.mx, a.my); } catch (e) {}
           const dx2 = Math.sign(a.mx - px), dy2 = Math.sign(a.my - py);
           tryMove(a.mx + dx2 * 2, a.my + dy2 * 2) || tryMove(a.mx + dx2, a.my + dy2);
-          if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) s.animal = null;
+          if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
+            // bolted off the grid — returns to the wild population
+            const wt2 = this.map.tiles[this.map.py][this.map.px];
+            if (wt2 && wt2.wildlife && a.id) {
+              wt2.wildlife[a.id] = (wt2.wildlife[a.id] || 0) + 1;
+            }
+            s.animal = null;
+          }
         }
       } else {
         // bolt: away, fast.
-        if (!a.bolted) { a.bolted = true; this.say(`The ${aname} bolts!`); }
+        if (!a.bolted) {
+          a.bolted = true; this.say(`The ${aname} bolts!`);
+          // DRAMA (Steve 2026-10-07): close-range bolt — ripple
+          try { this.drama('wild', a.mx, a.my); } catch (e) {}
+        }
         const dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
         tryMove(a.mx + dx * 2, a.my + dy * 2) || tryMove(a.mx + dx, a.my + dy);
       }
@@ -7314,6 +7865,8 @@
     // cookFood: at a fire, raw -> cooked. More calories, safer.
     // Requires: fire nearby, knowledge (L3 tells you it needs cooking).
     cookFood(idx) {
+      // DRAMA (Steve 2026-10-07): cooking gets a warm glow
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#ff9d45'); } catch (e) {}
       const item = this.state.scholar.inventory[idx];
       if (!item) return null;
       // need fire (in detail grid)
@@ -7439,7 +7992,11 @@
         // TENDING A FIRE IS WORK. 30 kcal. (prevents free infinite purification)
         s.kcal = Math.max(0, (s.kcal || 0) - 30);
       }
-      this.say(n ? `Boiled ${n}L. Bacteria dead.${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+      // COST HONESTY (survivalist loop 2026-10-07): the 30 kcal charge was
+      // silent. Name it. Moss-tinder boiling (no fire) still costs the work —
+      // coaxing damp moss into enough heat to boil a liter is real labor.
+      const mossBoil = n > 0 && !this.nearFire() && this.hasAbility('beard_moss');
+      this.say(n ? `Boiled ${n}L. Bacteria dead. (-30 kcal ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
       return null;
     },
     // gatherCharcoal: rake charcoal from a campfire's ashes. Wood fires make
@@ -7447,6 +8004,8 @@
     // old-timers swear by it for poison (see: Purify). One raking per fire
     // per day keeps it honest; the fire has to be burning.
     gatherCharcoal() {
+      // DRAMA (Steve 2026-10-07): gathering gets an earth-tone puff
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#8b7355'); } catch (e) {}
       const s = this.state.scholar;
       if (!this.nearFire()) { this.say('Need a burning fire — charcoal comes from the ash bed.'); return null; }
       const t = this.playerTile();
@@ -7621,7 +8180,11 @@
       s.kcal = Math.max(0, (s.kcal || 0) - kcalCost);
       this.tickAction(ticks);
       fc.attempts++;
-      let p = 0.40 + (known ? 0.30 : 0) + (moss ? 0.15 : 0) + Math.min(0.30, 0.05 * (fc.successes || 0));
+      // FAILURE PITY (Steve 2026-10-07): each failed attempt teaches the hands —
+      // +8% per failure, capped at +32%. Six straight failures at base 40%
+      // was half a day gone with nothing to show; the pity keeps the new-fire
+      // grind from being a slot machine while the knack (3 successes) stays earned.
+      let p = 0.40 + (known ? 0.30 : 0) + (moss ? 0.15 : 0) + Math.min(0.30, 0.05 * (fc.successes || 0)) + Math.min(0.32, 0.08 * (fc.failures || 0));
       if (hasDrill && !known) { p += 0.30; fireNote = fireNote || 'The hand drill does what knowledge would — mechanics instead of memory.'; }
       if (hasTorch) { p += 0.25; fireNote = fireNote || 'You coax the torch\'s flame onto the fuel.'; }
       if (fc.knack) p = 1;
@@ -7650,13 +8213,18 @@
       }
       // FAILURE IS HONEST: attempts 1-2 tease what practice earns, the way
       // synergy discovery does — a hint of what could happen, never the how.
+      // Failures feed the pity above (fc.failures), so the hands learn even
+      // when the spark doesn't catch.
+      fc.failures = (fc.failures || 0) + 1;
       const hints = [
         "Sparks, then nothing. The tinder's too coarse — shred it finer next time.",
         "A wisp of smoke, gone. Slower breath. Shelter the spark with your body.",
         "Nothing. Your arms ache. But your hands know a little more than they did.",
         "The coal glows... and dies. Closer. You're closer.",
       ];
-      this.say(hints[Math.min(fc.attempts - 1, hints.length - 1)]);
+      let hint = hints[Math.min(fc.attempts - 1, hints.length - 1)];
+      if (fc.failures >= 3) hint += " Your hands are learning the rhythm — it has to catch soon.";
+      this.say(hint);
       return null;
     },
     // feedFire: lay another branch on a live player-made fire (+64 ticks,
@@ -7816,6 +8384,8 @@
     // water — the deep cut, the shade line — and catch. The ignorant thrash
     // the shallows and hope. Button honest: it always works, just worse blind.
     fish() {
+      // DRAMA (Steve 2026-10-07): fishing gets a blue ripple
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#4da6ff'); } catch (e) {}
       if (this.over) return null;
       const s = this.state.scholar;
       // TOOL-GATED: no tackle, no fishing. (The action is hidden in the UI;
@@ -8270,6 +8840,8 @@
     },
 
     huntAnimal() {
+      // DRAMA (Steve 2026-10-07): the hunt is a moment — red burst
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#ff5252'); } catch (e) {}
       const s = this.state.scholar;
       const a = s.animal;
       if (!a) return null;
@@ -8386,7 +8958,7 @@
       const v = this.state.village;
       v.nodePos = v.nodePos || {};
       if (!v.nodePos[vid]) {
-        const hx = v.px ?? 3, hy = v.py ?? 3;
+        const hx = v.px ?? 4, hy = v.py ?? 4;
         v.nodePos[vid] = { nx: hx, ny: hy };
       }
       return v.nodePos[vid];
@@ -8443,7 +9015,7 @@
       v.positions = v.positions || {};
       // On the Haven node, the door is real: only NPCs on YOUR side of it
       // render. Inside villagers don't teleport out when you step outside.
-      const havenNode = (px === (v.px ?? 3) && py === (v.py ?? 3));
+      const havenNode = (px === (v.px ?? 4) && py === (v.py ?? 4));
       const playerInside = havenNode ? (this.state.scholar.insideHaven !== false) : true;
       // Clear positions for NPCs who aren't on this node anymore — or who are
       // on the other side of the Haven door.
@@ -8485,7 +9057,7 @@
       const v = this.state.village;
       const s = this.state.scholar;
       if (this.over) return;
-      const hx = v.px ?? 3, hy = v.py ?? 3;
+      const hx = v.px ?? 4, hy = v.py ?? 4;
       const night = this.isNight();
       for (const rid of (v.roster || [])) {
         if (rid === this.villagerId) continue;
@@ -8641,7 +9213,7 @@
     // Every user-facing reference to a person goes through displayName() —
     // raw IDs (gen_a1b2c3) must NEVER reach the UI.
     nameKnown(vid) {
-      return !!((this.state.village.knownNames || {})[vid]);
+      return this.canShow('npc', vid, 'name');
     },
     revealName(vid, how) {
       const village = this.state.village;
@@ -9159,10 +9731,16 @@
       v.taught = v.taught || {};
       const roster = v.roster || [];
       if (roster.length < 2) return;
+      // PRESENCE (drifter loop, Steve 2026-10-07): word of mouth needs mouths
+      // in the same place. The away player can neither teach the fire nor
+      // learn from it — their knowledge waits for the homecoming beat.
+      const away = !this.playerAtHaven();
+      const me = this.villagerId;
       for (const pid of Object.keys(v.plantRumors)) {
-        const knows = rid => (v.taught[rid] || []).includes(pid);
+        const knows = rid => (v.taught[rid] || []).includes(pid) && !(away && rid === me);
+        const canLearn = rid => !(away && rid === me);
         const knowers = roster.filter(knows);
-        const learners = roster.filter(rid => !knows(rid));
+        const learners = roster.filter(rid => !knows(rid) && canLearn(rid));
         if (!learners.length) { delete v.plantRumors[pid]; continue; }
         if (!knowers.length) continue;
         if (Math.random() < 0.35) {
@@ -9356,7 +9934,7 @@
     villageEvent(type, opts) {
       opts = opts || {};
       const v = this.state.village;
-      const atHaven = this.map.px === 3 && this.map.py === 3;
+      const atHaven = this.map.px === 4 && this.map.py === 4;
       if (type === 'monster_attack') {
         if (!atHaven) return;
         for (const rid of (v.roster || [])) { if (rid !== this.villagerId) this.npcNeeds(rid).fear = Math.min(100, this.npcNeeds(rid).fear + 35); }
@@ -9674,10 +10252,16 @@
             `"Don't suppose you've got food," ${first} says, trying for casual and missing.`,
           ];
           this.say(lines[Math.floor(Math.random() * lines.length)]);
+          // NPC ATTENTION (Steve 2026-10-07, Drama A1): a hungry villager
+          // asking for food is a ! — a need, not small talk.
+          try { const p = v.positions[rid]; if (p) this.drama('npcAlert', p.mx, p.my, 'talk'); } catch (e2) {}
           return;
         }
         if (n.fear > 70 && Math.random() < 0.3) {
           stepToward(); done();
+          // NPC ATTENTION (Steve 2026-10-07, Drama A1): a scared villager
+          // warning you is a ⚠️ — danger, not conversation.
+          try { const p = v.positions[rid]; if (p) this.drama('npcAlert', p.mx, p.my, 'warn'); } catch (e2) {}
           // NO SHARED LANGUAGE: fear needs no translation — but the words
           // are theirs, not yours.
           if (this.commLevel(rid).level === 'none') {
@@ -9732,6 +10316,16 @@
             // ATTENTION CUE (Steve 2026-10-05): they came to YOU — chime so
             // the player actually notices. The quiet dot wasn't enough.
             this.audioEvent('talkAttention');
+            // NPC ATTENTION (Steve 2026-10-07, Drama A1): ! above their tile.
+            // Strangers (trust < 30) read as curious (?) — they don't know you
+            // yet. Gated by systemArrived inside Game.drama.
+            try {
+              const p = v.positions[rid];
+              if (p) {
+                const t = (v.trust || {})[rid] === undefined ? 10 : v.trust[rid];
+                this.drama('npcAlert', p.mx, p.my, t < 30 ? 'curious' : 'talk');
+              }
+            } catch (e2) {}
             return;
           }
         }
@@ -9748,6 +10342,9 @@
             const plant = (this.data.plants || []).find(p => p.id === pid);
             this.say(`${first} presses something into your hand. "${plant ? plant.name : 'This'} — for what you did. Look for the ${plant ? (plant.leaf || 'leaves') : 'sign'}. You'll know it."`);
             this.identifyPlant(pid, first);
+            // NPC ATTENTION (Steve 2026-10-07, Drama A1): they just taught
+            // you something real — 💬 marks new knowledge worth following up on.
+            try { const p = v.positions[rid]; if (p) this.drama('npcAlert', p.mx, p.my, 'dialogue'); } catch (e2) {}
           } else if (act === 'encourage') {
             this.state.scholar.energy = Math.min(100, (this.state.scholar.energy || 0) + 15);
             this.say(`${first} claps your shoulder. "You're doing better than you think." (+15 energy — morale is real.)`);
@@ -10034,8 +10631,7 @@
 
     // skillKnown: do you know this skill at this level?
     skillKnown(skillId, minLevel) {
-      const e = (this.state.codex.skills || {})[skillId];
-      return !!(e && (e.level || 0) >= (minLevel || 1));
+      return this.canShow('skill', skillId, 'mechanics', { minLevel: minLevel || 1 });
     },
 
     // learnSkill: gain knowledge. One path, every source. Like identifyPlant for skills.
@@ -10054,8 +10650,177 @@
       };
       const journalWord = this.state.systemArrived ? 'Codex' : 'Journal';
       this.say(`📖 LEARNED: ${k.name} (Level ${newLevel}). ${k.levels[String(newLevel)] || ''}`);
+      // DRAMA (Steve 2026-10-07, Round D2): learning should FEEL like learning.
+      try { this.drama('skillGained', this.map.px, this.map.py, k.name); } catch (e) {}
+      // KNOWLEDGE REVEAL AUDIO (Round 2 wiring, Steve 2026-10-07): skill level-up.
+      // learnSkill is the one path for every source (practice, books, background,
+      // codex study, jackpots), so the hook fires exactly once per genuine gain.
+      this.audioEvent('knowledgeReveal', { kind: 'skill', id: skillId, level: newLevel, via: via || 'discovery' });
       // knowledge-ability synergy check: does this unlock a technique?
       this.checkKnowledgeAbilitySynergy(skillId, newLevel);
+      return true;
+    },
+
+    // grantKnowledge: THE one path for gaining knowledge. Every domain, every source.
+    // (Steve 2026-10-07): 35 scattered grant sites with 12 distinct patterns unified here.
+    // Like identifyPlant for plants and learnSkill for skills — now one dispatcher.
+    //
+    // domain: 'plant' | 'animal' | 'recipe' | 'technique' | 'skill' | 'tree' | 'monster'
+    // id: the knowledge ID
+    // level: target level (1-4, or appropriate for domain)
+    // source: {type, by, day}
+    //   type: 'observed'|'taught'|'read'|'experiment'|'background'|'shared'|'discovery'
+    //   by: villager name/id who taught you (or null)
+    //   day: game day (defaults to current)
+    //
+    // Returns true if new knowledge was granted (level increased), false otherwise.
+    // Never downgrades. Records learnedFrom/learnedDay/via metadata consistently.
+    // Fires knowledgeReveal audio. Narrates the gain (this IS the learning moment,
+    // so it shows — knowledge gating applies to UNLEARNED things, not to the
+    // moment of learning).
+    grantKnowledge(domain, id, level, source) {
+      source = source || {};
+      const day = (this.state.scholar || {}).day || 0;
+      const src = {
+        type: source.type || 'discovery',
+        by: source.by || null,
+        day: (source.day != null) ? source.day : day,
+      };
+      level = level || 1;
+      switch (domain) {
+        case 'plant': return this._grantPlant(id, level, src);
+        case 'skill': return this.learnSkill(id, level, src.type);
+        case 'recipe': return this._grantRecipe(id, level, src);
+        case 'animal': return this._grantAnimal(id, level, src);
+        case 'technique': return this._grantTechnique(id, level, src);
+        case 'tree': return this._grantTree(id, level, src);
+        case 'monster': return this._grantMonster(id, level, src);
+        default: return false;
+      }
+    },
+
+    // _grantPlant: plant knowledge via the unified path.
+    // L1 identification goes through identifyPlant (rich logic: village spread,
+    // drama, audio, journal framing). Level-ups beyond L1 update directly.
+    _grantPlant(pid, level, src) {
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return false;
+      this.state.codex.plants = this.state.codex.plants || {};
+      const cur = this.state.codex.plants[pid];
+      const curLevel = cur ? (cur.level || 0) : 0;
+      if (level <= curLevel) return false; // no downgrade, no repeat
+      // L1 identification: use the rich path (unless already identified)
+      if (!cur && level >= 1) {
+        const teacherName = src.by || (src.type === 'taught' ? 'your teacher' : null);
+        const idSource = src.type === 'taught' ? 'taught'
+          : src.type === 'read' ? 'book'
+          : src.type === 'shared' ? 'shared'
+          : src.type === 'background' ? 'background'
+          : 'discovery';
+        return this.identifyPlant(pid, idSource, teacherName);
+      }
+      // Level-up beyond L1: update directly with metadata
+      this.state.codex.plants[pid] = Object.assign({}, cur, {
+        level: level,
+        learnedDay: src.day,
+        learnedFrom: src.by || (cur.learnedFrom || null),
+        via: src.type,
+      });
+      this.say(`\u2605 ${p.name} — deeper understanding (Level ${level}).`);
+      this.audioEvent('knowledgeReveal', { kind: 'plant', id: pid, level: level });
+      return true;
+    },
+
+    // _grantRecipe: recipe knowledge via the unified path.
+    // Records learnedFrom/learnedDay metadata consistently (learnRecipe didn't).
+    _grantRecipe(recipeId, level, src) {
+      const recipe = (this.data.recipes || []).find(r => r.id === recipeId);
+      if (!recipe) return false;
+      this.state.codex.recipes = this.state.codex.recipes || {};
+      const cur = this.state.codex.recipes[recipeId] || { level: 0 };
+      if (level <= (cur.level || 0)) return false;
+      this.state.codex.recipes[recipeId] = {
+        level: level,
+        learnedDay: src.day,
+        learnedFrom: src.by || null,
+        via: src.type,
+      };
+      const kl = (recipe.knowledgeLevels || {})[String(level)] || '';
+      this.say(`Recipe: ${recipe.name} (Level ${level}). ${kl}`);
+      this.audioEvent('knowledgeReveal', { kind: 'recipe', id: recipeId, level: level });
+      return true;
+    },
+
+    // _grantAnimal: animal knowledge via the unified path.
+    // Unifies direct writes, book unlocks, and villager sync.
+    _grantAnimal(aid, level, src) {
+      const animal = (this.data.animals || []).find(a => a.id === aid);
+      if (!animal) return false;
+      this.state.codex.animals = this.state.codex.animals || {};
+      const cur = this.state.codex.animals[aid];
+      const curLevel = cur ? (cur.level || 0) : 0;
+      if (level <= curLevel) return false;
+      this.state.codex.animals[aid] = {
+        level: level,
+        learnedDay: src.day,
+        learnedFrom: src.by || null,
+        via: src.type,
+      };
+      this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
+      this.state.codex.animalEncounters[aid] = Math.max(this.state.codex.animalEncounters[aid] || 0, 99);
+      this.say(`\uD83D\uDC3E Learned: ${animal.name} (Level ${level}).`);
+      this.audioEvent('knowledgeReveal', { kind: 'animal', id: aid, level: level });
+      return true;
+    },
+
+    // _grantTechnique: technique knowledge via the unified path.
+    // Preserves the drama beat (scroll unrolls) from villager sync.
+    _grantTechnique(tid, level, src) {
+      this.state.codex.techniques = this.state.codex.techniques || {};
+      const cur = this.state.codex.techniques[tid];
+      if (cur) return false; // techniques are binary (known/not known)
+      this.state.codex.techniques[tid] = {
+        level: level || 1,
+        learnedDay: src.day,
+        learnedFrom: src.by || null,
+        via: src.type,
+      };
+      const label = tid.replace(/_/g, ' ');
+      this.say(`\uD83D\uDD27 Technique learned: ${label}.`);
+      try { this.drama('techniqueLearned', this.map.px, this.map.py, tid); } catch (e) {}
+      this.audioEvent('knowledgeReveal', { kind: 'technique', id: tid });
+      return true;
+    },
+
+    // _grantTree: tree knowledge via the unified path.
+    _grantTree(sp, level, src) {
+      this.state.codex.trees = this.state.codex.trees || {};
+      const cur = this.state.codex.trees[sp];
+      const curLevel = cur ? (cur.level || 0) : 0;
+      if (level <= curLevel) return false;
+      this.state.codex.trees[sp] = {
+        level: level,
+        learnedDay: src.day,
+        learnedFrom: src.by || null,
+        via: src.type || 'common knowledge',
+      };
+      return true;
+    },
+
+    // _grantMonster: monster codex entry via the unified path.
+    // Uses ensureMonsterEntry infrastructure. Level maps to encounter depth:
+    // 1 = encountered, 2 = observed (patterns), 3 = named by village.
+    _grantMonster(mid, level, src) {
+      const e = this.ensureMonsterEntry(mid);
+      const stages = ['encountered', 'observed', 'named'];
+      const targetStage = stages[Math.min(level, 3) - 1] || 'encountered';
+      const stageRank = { encountered: 1, observed: 2, named: 3 };
+      const curRank = stageRank[e.stage] || 0;
+      const newRank = stageRank[targetStage] || 1;
+      if (newRank <= curRank && e.learnedDay != null) return false;
+      e.stage = targetStage;
+      e.learnedDay = src.day;
+      if (src.by) e.learnedFrom = src.by;
       return true;
     },
 
@@ -10182,6 +10947,10 @@
           unlockedDay: this.state.scholar.day,
         };
         this.say(`⚡ TECHNIQUE UNLOCKED: ${syn.technique}! ${syn.effect} (Your knowledge of ${k.name} amplifies your ${syn.ability}.)`);
+        // DRAMA (Steve 2026-10-07, Round D2): the click of understanding.
+        try { this.drama('ahaMoment', this.map.px, this.map.py); } catch (e) {}
+        // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): codex technique unlock.
+        this.audioEvent('knowledgeReveal', { kind: 'technique', id: techId });
         if (this.state.systemArrived) {
           this.sysSay(`"OH! OH! ${syn.technique.toUpperCase()}! The audience did NOT see that coming! Knowledge AMPLIFIES power! The gamblers are recalculating EVERYTHING!"`);
         }
@@ -10466,7 +11235,7 @@
       const px = this.map.px, py = this.map.py;
       const aff = (mdef && mdef.waterAffinity) || null;
       const cands = [];
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (x === px && y === py) continue;
         if (this.isSafeTile(x, y)) continue;
         const t = this.tileAt(x, y);
@@ -10511,7 +11280,7 @@
         const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
         const d = dirs[Math.floor(Math.random() * dirs.length)];
         const nx = m.tx + d[0], ny = m.ty + d[1];
-        if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue; // 9x9 world (2026-10-07)
         if (this.isSafeTile(nx, ny)) continue;
         const ox = m.tx, oy = m.ty;
         m.tx = nx; m.ty = ny;
@@ -10560,7 +11329,7 @@
         const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => Math.random() - 0.5);
         for (const d of dirs) {
           const nx = m.tx + d[0], ny = m.ty + d[1];
-          if (nx < 0 || nx > 6 || ny < 0 || ny > 6 || this.isSafeTile(nx, ny)) continue;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || this.isSafeTile(nx, ny)) continue; // 9x9 world (2026-10-07)
           const ox = m.tx, oy = m.ty;
           m.tx = nx; m.ty = ny;
           this.touchTileScene(ox, oy); this.touchTileScene(nx, ny);
@@ -11020,10 +11789,18 @@
       } else if (trauma > 0) {
         s.trauma = Math.max(0, trauma - 2); // time dulls it, slightly
       }
+      // NET HEALTH (survivalist loop 2026-10-07): the old line reported only
+      // the sleep's own healing ("+10 health") while the night's full books
+      // could be negative — midnight spiral damage, nightmares stealing half
+      // the heal. The player compares the number to their health bar, so the
+      // wake line reports the NET change across the whole night. The parts
+      // (spiral warnings at midnight, nightmare note) are still narrated.
+      const netHealth = Math.round(s.health || 0) - healthBefore;
+      const netTxt = (netHealth >= 0 ? '+' : '') + netHealth;
       const wakeAcct = exposureNote
-        ? (exposed ? `(-18 health, restless night.${conservedNote}${exposureNote})`
-                   : `(+${crisisHeal} health, wrung-out morning.${conservedNote}${exposureNote})`)
-        : `(+${prev.heal} health, energy restored.${conservedNote} ${prev.note})`;
+        ? (exposed ? `(${netTxt} health, restless night.${conservedNote}${exposureNote})`
+                   : `(${netTxt} health, wrung-out morning.${conservedNote}${exposureNote})`)
+        : `(${netTxt} health, energy restored.${conservedNote} ${prev.note})`;
       this.say(`Dawn. You wake ${rested}. ${wakeAcct}${nightmareNote}`);
       // DIAGNOSTIC: log health after
       if (typeof console !== 'undefined') console.log(`[SLEEP] health after: ${Math.round(s.health || 0)}, expected gain: ${prev.heal}`);
@@ -11031,38 +11808,392 @@
     },
     clearDialGlitch() { this.state.dialGlitch = false; },
 
+    // EVERYONE ACTS (Steve 2026-10-07): every living person gets 1 action per
+    // turn. The player acts, then each NPC on the player's node acts in roster
+    // order. No coin flips — they ACT, even if the action is rest or watch.
+    // Actions are needs-driven (hunger/fear/social/energy) and cost the same
+    // as the player's: movement burns energy, work burns energy, food restores.
+    // Works on ANY node you're on — positions are per-node (ensureVillagerPositions).
     villagerTurn() {
       const v = this.state.village;
-      if (this.map.px !== 3 || this.map.py !== 3) return;
       if (!v.positions) return;
-      const detail = this.genDetail(3, 3);
-      for (const rid of Object.keys(v.positions)) {
-        const pos = v.positions[rid];
-        // 50% chance to move (downtime), else stay
-        if (Math.random() > 0.5) continue;
-        // FLEE: trust < 20 and you're close? They move AWAY. Strangers are scary.
-        const trust = (v.trust && v.trust[rid]) || 0;
-        const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
-        const dist = Math.abs(pos.mx - px) + Math.abs(pos.my - py);
-        let dx, dy;
-        if (trust < 20 && dist <= 3 && Math.random() < 0.6) {
-          // run from you
-          dx = Math.sign(pos.mx - px); dy = Math.sign(pos.my - py);
-          if (dx === 0 && dy === 0) { dx = 1; }
-        } else {
-          dx = Math.floor(Math.random() * 3) - 1;
-          dy = Math.floor(Math.random() * 3) - 1;
+      if (this._npcActing) return; // re-entrancy guard
+      this._npcActing = true;
+      try {
+        const detail = this.genDetail(this.map.px, this.map.py);
+        const ctx = { night: this.isNight(), announced: 0 };
+        // roster order: stable, fair turn order. Skip the player, the dead,
+        // the engaged (mid-conversation with you), and anyone off-grid.
+        const order = (v.roster || []).filter(rid =>
+          rid !== this.villagerId && v.positions[rid] && !this.isEngaged(rid) &&
+          !(this.vpOf(rid) || {}).dead);
+        for (const rid of order) {
+          if (this.over) break;
+          try { this.npcTakeAction(rid, detail, ctx); } catch (e) {}
         }
+        // ALIVE: they come to you. wants with legs.
+        try { this.villagerInitiative(); } catch (e) {}
+      } finally {
+        this._npcActing = false;
+      }
+    },
+
+    // npcTakeAction: one NPC's turn. Needs-driven, O(81) worst case per scan.
+    // Priority: fear > hunger > energy > social > purposeful idle.
+    // Every action is visible: movement shows on the grid; forage/rest/talk
+    // deplete the shared world (same cells you use) and announce when you're
+    // close enough to plausibly notice (chatter budget: 1 per turn).
+    npcTakeAction(rid, detail, ctx) {
+      const v = this.state.village;
+      const pos = v.positions[rid];
+      if (!pos) return;
+      const n = this.npcNeeds(rid);
+      const name = this.displayName(rid);
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      const near = Math.max(Math.abs(pos.mx - px), Math.abs(pos.my - py)) <= 5;
+      const t = this.playerTile();
+
+      // chatter budget: at most one NPC announcement per turn — the log
+      // doesn't flood while a dozen people live their lives around you.
+      const announce = (msg) => {
+        if (ctx.announced > 0 || !near || Math.random() > 0.4) return;
+        ctx.announced++;
+        this.say(msg);
+      };
+
+      // one step toward (tx,ty) if the square is walkable. Costs energy,
+      // like your 2 kcal/step — movement is never free.
+      const stepToward = (tx, ty) => {
+        const dx = Math.sign(tx - pos.mx), dy = Math.sign(ty - pos.my);
+        if (!dx && !dy) return false;
         const nx = Math.max(0, Math.min(8, pos.mx + dx));
         const ny = Math.max(0, Math.min(8, pos.my + dy));
         const cell = detail[ny] && detail[ny][nx];
-        // wander only onto walkable cells — never into walls, fire, tents.
         if (cell && !this.cellProps(cell).blocks) {
           pos.mx = nx; pos.my = ny;
+          n.energy = Math.max(0, (n.energy || 0) - 1);
+          n.hunger = Math.min(100, (n.hunger || 0) + 0.5);
+          return true;
+        }
+        return false;
+      };
+
+      // nearest cell on the 9x9 matching pred. Cheap: 81 cells max.
+      const nearestCell = (pred) => {
+        let best = null, bd = 99;
+        for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
+          const cell = detail[cy] && detail[cy][cx];
+          if (!pred(cell, cx, cy)) continue;
+          const d = Math.max(Math.abs(cx - pos.mx), Math.abs(cy - pos.my));
+          if (d < bd) { bd = d; best = { cx, cy, cell, d }; }
+        }
+        return best;
+      };
+
+      const depleted = (cx, cy) => !!(t.detailRegrow && t.detailRegrow[cx + ',' + cy]);
+      const FORAGEABLE = (cell, cx, cy) =>
+        (cell === 'plant' || cell === 'bush' || cell === 'tree' || cell === 'bigtree') && !depleted(cx, cy);
+      const RESTFUL = (cell) => cell === 'tent' || cell === 'bunk' || cell === 'fire';
+      const greenName = (cell) => cell === 'plant' ? 'greens' : cell === 'bush' ? 'the bushes' : 'the trees';
+
+      // CHILDREN (Steve 2026-10-07): kids live the same turn — 1 action per
+      // turn, same energy costs — but choose like kids: play, follow a
+      // grown-up, watch and learn, hide when scared. Never adult foraging.
+      if (this.npcAge(rid) < 15) {
+        return this.npcChildAction(rid, detail, ctx,
+          { pos, n, name, announce, nearestCell, depleted, RESTFUL });
+      }
+
+      // 1. FEAR: run from danger. Low trust + you're close = you're the scary thing.
+      if ((n.fear || 0) > 70) {
+        const trust = (v.trust && v.trust[rid]) || 0;
+        const dist = Math.abs(pos.mx - px) + Math.abs(pos.my - py);
+        if (trust < 20 && dist <= 3) {
+          const dx = Math.sign(pos.mx - px) || 1, dy = Math.sign(pos.my - py);
+          const nx = Math.max(0, Math.min(8, pos.mx + dx));
+          const ny = Math.max(0, Math.min(8, pos.my + dy));
+          const cell = detail[ny] && detail[ny][nx];
+          if (cell && !this.cellProps(cell).blocks) {
+            pos.mx = nx; pos.my = ny;
+            n.energy = Math.max(0, (n.energy || 0) - 1);
+          }
+          n.fear = Math.max(0, n.fear - 5);
+          announce(`${name} edges away from you, wary.`);
+          return;
+        }
+        // otherwise: safety in numbers — drift to the fire
+        const fire = nearestCell((c) => c === 'fire');
+        if (fire) {
+          stepToward(fire.cx, fire.cy);
+          n.fear = Math.max(0, n.fear - 3);
+          return;
         }
       }
-      // ALIVE: they come to you. wants with legs.
-      try { this.villagerInitiative(); } catch (e) {}
+
+      // 2. HUNGER: forage an adjacent green, else step toward one.
+      // Same world as you: the cell depletes for everyone (detailRegrow).
+      if ((n.hunger || 0) > 60) {
+        const adj = nearestCell((c, cx, cy) =>
+          FORAGEABLE(c, cx, cy) && Math.max(Math.abs(cx - pos.mx), Math.abs(cy - pos.my)) <= 1);
+        if (adj) {
+          t.detailRegrow = t.detailRegrow || {};
+          t.detailRegrow[adj.cx + ',' + adj.cy] = { day: this.state.scholar.day + 2, was: adj.cell };
+          if (adj.cell === 'plant') detail[adj.cy][adj.cx] = 'dirt'; // picked clean, like yours
+          n.hunger = Math.max(0, n.hunger - 25);
+          n.energy = Math.max(0, (n.energy || 0) - 3);
+          // they eat some, bring some home for the village
+          // WORK VISIBLE (Steve 2026-10-07): kids watch grown-ups work.
+          // ctx.worked records who did real work this turn — npcChildAction
+          // reads it for the learn-by-watching beat.
+          ctx.worked = ctx.worked || {};
+          ctx.worked[rid] = true;
+          if (Math.random() < 0.4) this.stockPantry(80 + Math.floor(Math.random() * 120), 'Foraged food');
+          announce(`${name} forages ${greenName(adj.cell)}.`);
+          return;
+        }
+        // pantry: eat from the common store if there's food
+        const pantryKcal = (v.pantry || []).reduce((s, i) => s + (i.kcalEach || 0) * (i.units || 1), 0);
+        if (pantryKcal > 200) {
+          const item = v.pantry.find(i => (i.kcalEach || 0) > 0 && (i.units || 1) > 0);
+          if (item) {
+            item.units = (item.units || 1) - 1;
+            if (item.units <= 0) v.pantry.splice(v.pantry.indexOf(item), 1);
+            v.pantryKcal = (v.pantry || []).reduce((s, i) => s + (i.kcalEach || 0) * (i.units || 1), 0);
+            n.hunger = Math.max(0, n.hunger - 30);
+            announce(`${name} eats from the pantry.`);
+            return;
+          }
+        }
+        const green = nearestCell(FORAGEABLE);
+        if (green) { stepToward(green.cx, green.cy); return; }
+      }
+
+      // 3. ENERGY: rest at a rest spot, else drift toward one, else sit.
+      if ((n.energy || 0) < 30) {
+        const spot = nearestCell((c, cx, cy) =>
+          RESTFUL(c) && Math.max(Math.abs(cx - pos.mx), Math.abs(cy - pos.my)) <= 1);
+        if (spot) {
+          n.energy = Math.min(100, n.energy + 8);
+          announce(`${name} rests by the ${spot.cell === 'fire' ? 'fire' : spot.cell}.`);
+          return;
+        }
+        const rs = nearestCell(RESTFUL);
+        if (rs) { stepToward(rs.cx, rs.cy); return; }
+        n.energy = Math.min(100, n.energy + 3); // sit where you are
+        return;
+      }
+
+      // 4. SOCIAL: drift toward people; talk if adjacent. Real mechanics:
+      // both calm down, a little trust grows.
+      if ((n.social || 0) > 70) {
+        let best = null, bd = 99;
+        for (const oid of Object.keys(v.positions)) {
+          if (oid === rid) continue;
+          const op = v.positions[oid];
+          const d = Math.max(Math.abs(op.mx - pos.mx), Math.abs(op.my - pos.my));
+          if (d < bd) { bd = d; best = oid; }
+        }
+        if (best && bd <= 1) {
+          const on = this.npcNeeds(best);
+          n.social = Math.max(0, n.social - 20);
+          on.social = Math.max(0, (on.social || 0) - 10);
+          try { this.bumpTrust(rid, 1); } catch (e) {}
+          // BOTH WAYS (Steve 2026-10-07): a good chat warms both villagers
+          // toward you — the listener's trust in the player rises too, not
+          // just the talker's. This is the ambient repair path for damaged
+          // relationships: a village that talks heals.
+          try { this.bumpTrust(best, 1); } catch (e) {}
+          announce(`${name} talks with ${this.displayName(best)}.`);
+          return;
+        }
+        if (best) { stepToward(v.positions[best].mx, v.positions[best].my); return; }
+      }
+
+      // 5. PURPOSEFUL IDLE: night → drift to the fire's warmth; day → drift
+      // to the green (work); else meander a step. Never marching, never frozen.
+      if (ctx.night) {
+        const fire = nearestCell((c) => c === 'fire');
+        if (fire && Math.max(Math.abs(fire.cx - pos.mx), Math.abs(fire.cy - pos.my)) > 2) {
+          stepToward(fire.cx, fire.cy);
+          return;
+        }
+      } else if (Math.random() < 0.5) {
+        const work = nearestCell((c, cx, cy) =>
+          (c === 'plant' || c === 'bush') && !depleted(cx, cy));
+        if (work) { stepToward(work.cx, work.cy); return; }
+      }
+      const dx = Math.floor(Math.random() * 3) - 1, dy = Math.floor(Math.random() * 3) - 1;
+      if (dx || dy) {
+        const nx = Math.max(0, Math.min(8, pos.mx + dx));
+        const ny = Math.max(0, Math.min(8, pos.my + dy));
+        const cell = detail[ny] && detail[ny][nx];
+        if (cell && !this.cellProps(cell).blocks) {
+          pos.mx = nx; pos.my = ny;
+          n.energy = Math.max(0, (n.energy || 0) - 1);
+        }
+      }
+    },
+
+    // npcChildAction: a child's turn. Same structure as adults — 1 action per
+    // turn, same energy costs — but a kid's priorities, in order:
+    //   1. HIDE when scared: to the nearest grown-up, or the tents. Kids
+    //      never flee into the wilds.
+    //   2. EAT: the village feeds its kids first — pantry threshold ~zero,
+    //      not the adult 200. Kids don't forage; that's grown-up work. If
+    //      the pantry's bare, they find a grown-up (someone figures it out).
+    //   3. REST when tired, like everyone else.
+    //   4. LEARN: adjacent to a grown-up who worked this turn (ctx.worked)
+    //      → watch, eyes wide. Builds trust with the teacher.
+    //   5. PLAY: other kids first — chase, tumble, butterfly hunts.
+    //   6. FOLLOW: orbit a grown-up at a step or two.
+    //   7. IDLE near the fire. Kids never meander to the edges.
+    // Safety: all movement is interior-only (1..7) and stays 3+ tiles from
+    // any node monster. A child is never alone in danger.
+    npcChildAction(rid, detail, ctx, H) {
+      const v = this.state.village;
+      const { pos, n, name, announce, nearestCell, RESTFUL } = H;
+
+      const alive = (id) => id !== rid && id !== this.villagerId &&
+        v.positions[id] && !(this.vpOf(id) || {}).dead;
+      const isKid = (id) => alive(id) && this.npcAge(id) < 15;
+      const isAdult = (id) => alive(id) && this.npcAge(id) >= 15;
+      const cheb = (a, b) => Math.max(Math.abs(a.mx - b.mx), Math.abs(a.my - b.my));
+
+      // the node monster, if any — kids give it a wide berth
+      let mon = null;
+      try {
+        const m = this.playerMonster && this.playerMonster();
+        if (m && m.mx !== undefined) mon = m;
+      } catch (e) {}
+
+      // one child-safe step: interior only, never toward a monster.
+      // Same energy cost as everyone else — movement is never free.
+      const childStep = (tx, ty) => {
+        const dx = Math.sign(tx - pos.mx), dy = Math.sign(ty - pos.my);
+        if (!dx && !dy) return false;
+        const nx = Math.max(1, Math.min(7, pos.mx + dx));
+        const ny = Math.max(1, Math.min(7, pos.my + dy));
+        if (nx === pos.mx && ny === pos.my) return false;
+        if (mon && Math.max(Math.abs(nx - mon.mx), Math.abs(ny - mon.my)) <= 2) return false;
+        const cell = detail[ny] && detail[ny][nx];
+        if (cell && !this.cellProps(cell).blocks) {
+          pos.mx = nx; pos.my = ny;
+          n.energy = Math.max(0, (n.energy || 0) - 1);
+          n.hunger = Math.min(100, (n.hunger || 0) + 0.5);
+          return true;
+        }
+        return false;
+      };
+
+      const nearestWho = (pred) => {
+        let best = null, bd = 99;
+        for (const oid of Object.keys(v.positions)) {
+          if (!pred(oid)) continue;
+          const d = cheb(pos, v.positions[oid]);
+          if (d < bd) { bd = d; best = oid; }
+        }
+        return best ? { id: best, d: bd } : null;
+      };
+      const nearestAdult = () => nearestWho(isAdult);
+      const nearestKid = () => nearestWho(isKid);
+
+      // 1. FEAR: hide — with a grown-up, or small near the tents.
+      if ((n.fear || 0) > 70) {
+        const a = nearestAdult();
+        if (a) {
+          if (a.d > 1) childStep(v.positions[a.id].mx, v.positions[a.id].my);
+          announce(`${name} hides behind ${this.displayName(a.id)}.`);
+        } else {
+          const tent = nearestCell((c) => c === 'tent' || c === 'bunk');
+          if (tent) childStep(tent.cx, tent.cy);
+          announce(`${name} curls up small near the tents.`);
+        }
+        n.fear = Math.max(0, n.fear - 8);
+        return;
+      }
+
+      // 2. HUNGER: kids eat first — the pantry threshold is ~zero for them.
+      if ((n.hunger || 0) > 60) {
+        const item = (v.pantry || []).find(i => (i.kcalEach || 0) > 0 && (i.units || 1) > 0);
+        if (item) {
+          item.units = (item.units || 1) - 1;
+          if (item.units <= 0) v.pantry.splice(v.pantry.indexOf(item), 1);
+          n.hunger = Math.max(0, n.hunger - 30);
+          announce(`${name} eats from the pantry.`);
+          return;
+        }
+        // pantry bare: find a grown-up — someone will figure it out
+        const a = nearestAdult();
+        if (a) {
+          if (a.d > 1) childStep(v.positions[a.id].mx, v.positions[a.id].my);
+          announce(`${name} tugs at ${this.displayName(a.id)}'s sleeve, hungry.`);
+          return;
+        }
+      }
+
+      // 3. ENERGY: rest, like everyone else.
+      if ((n.energy || 0) < 30) {
+        const spot = nearestCell((c, cx, cy) =>
+          RESTFUL(c) && Math.max(Math.abs(cx - pos.mx), Math.abs(cy - pos.my)) <= 1);
+        if (spot) {
+          n.energy = Math.min(100, n.energy + 8);
+          announce(`${name} naps by the ${spot.cell === 'fire' ? 'fire' : spot.cell}.`);
+          return;
+        }
+        const rs = nearestCell(RESTFUL);
+        if (rs) { childStep(rs.cx, rs.cy); return; }
+        n.energy = Math.min(100, n.energy + 3);
+        return;
+      }
+
+      // 4. LEARN: a grown-up worked this turn and you're close enough to
+      // watch — eyes wide. Watching builds the bond with the teacher.
+      const worked = ctx.worked || {};
+      let teacher = null, td = 99;
+      for (const oid of Object.keys(worked)) {
+        if (!isAdult(oid)) continue;
+        const d = cheb(pos, v.positions[oid]);
+        if (d <= 1 && d < td) { td = d; teacher = oid; }
+      }
+      if (teacher && Math.random() < 0.5) {
+        n.social = Math.max(0, (n.social || 0) - 10);
+        n.learned = (n.learned || 0) + 1;
+        try { this.bumpTrust(teacher, 1); } catch (e) {}
+        announce(`${name} watches ${this.displayName(teacher)} work, eyes wide.`);
+        return;
+      }
+
+      // 5. PLAY: other kids first.
+      const k = nearestKid();
+      if (k) {
+        if (k.d <= 1) {
+          const kn = this.npcNeeds(k.id);
+          n.social = Math.max(0, (n.social || 0) - 15);
+          kn.social = Math.max(0, (kn.social || 0) - 10);
+          const bits = [
+            `${name} and ${this.displayName(k.id)} chase each other around the fire.`,
+            `${name} chases a butterfly through the grass.`,
+            `${name} and ${this.displayName(k.id)} tumble in the dirt, laughing.`,
+          ];
+          announce(bits[Math.floor(Math.random() * bits.length)]);
+          return;
+        }
+        childStep(v.positions[k.id].mx, v.positions[k.id].my);
+        return;
+      }
+
+      // 6. FOLLOW: no kids around — orbit a grown-up at a step or two.
+      const a = nearestAdult();
+      if (a && a.d > 2) { childStep(v.positions[a.id].mx, v.positions[a.id].my); return; }
+
+      // 7. IDLE: drift to the fire's warmth. Kids don't meander outward.
+      const fire = nearestCell((c) => c === 'fire');
+      if (fire && Math.max(Math.abs(fire.cx - pos.mx), Math.abs(fire.cy - pos.my)) > 2) {
+        childStep(fire.cx, fire.cy);
+        return;
+      }
+      const dx = Math.floor(Math.random() * 3) - 1, dy = Math.floor(Math.random() * 3) - 1;
+      if (dx || dy) childStep(pos.mx + dx, pos.my + dy);
     },
 
     // searchRoom: examine + loot in ONE action. You look, you take what's there.
@@ -11234,7 +12365,7 @@
     // heavily pressured land recovers slower; detail cells come back in 3 days.
     // Called by endDay() and by the distant-village catch-up sim per simulated day.
     regrowTiles() {
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.map.tiles[y][x];
         if (t.maxStock > 0) {
           const pressure = t.foragePressure || 0;
@@ -11295,7 +12426,7 @@
     depleteRandomTile(amount, cx, cy) {
       // find tiles with stock, deplete near the foragers first
       const near = [], mid = [];
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t || t.type === 'haven' || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
         const d = (cx == null || cy == null) ? 99 : Math.abs(x - cx) + Math.abs(y - cy);
@@ -11346,8 +12477,7 @@
     // "Is that a deer or a Highbeam Deer? You don't want to get close enough
     // to find out." The descriptor system covers beasts too.
     monsterKnown(mid) {
-      const st = (this.state.codex.monsters || {})[mid];
-      return st && (st.stage === 'observed' || st.stage === 'slain');
+      return this.canShow('monster', mid, 'name');
     },
     monsterDesc(mid) {
       return this.monsterDisplayName(mid);
@@ -11396,9 +12526,17 @@
         // grass is humming in harmony" composed as "The grass is humming in
         // harmony is here"). A finite verb in the descriptor means it's a
         // sentence, not a name — fall back to 'something' (dread, not
-        // grammar). Participles (", rooting in the underbrush") are fine:
-        // they modify a noun head.
+        // grammar).
         if (/\b(am|is|are|was|were|has|have|had|do|does|did|will|would|shall|should|can|could|may|might|must)\b/i.test(n)) return 'something';
+        // COMMA = the descriptor continues into a clause (explorer loop
+        // 2026-10-06: "The moth the size of a dinner plate, catching light
+        // wrong is here", "The phone ringing in the trees, and no phone
+        // anywhere is here"). monsterNoun needs a noun phrase: keep only
+        // what's before the first comma — the head noun composes clean
+        // ("the moth the size of a dinner plate"), the clause after it
+        // doesn't. Convention for content workers: head noun phrase first.
+        const commaAt = n.indexOf(',');
+        if (commaAt > 0) n = n.slice(0, commaAt);
         const stripped = n.replace(/^((an?)|the)\s+/i, '');
         const base = stripped !== n ? stripped : n;
         return base.charAt(0).toLowerCase() + base.slice(1);
@@ -12142,7 +13280,7 @@
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         if (!dx && !dy) continue;
         const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+        if (nx < 0 || ny < 0 || nx > 8 || ny > 8) continue; // 9x9 world (2026-10-07)
         nb.add(this.tileAt(nx, ny).type);
       }
       const has = (...ts) => ts.some(t => nb.has(t));
@@ -12188,7 +13326,7 @@
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         if (!dx && !dy) continue;
         const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+        if (nx < 0 || ny < 0 || nx > 8 || ny > 8) continue; // 9x9 world (2026-10-07)
         const nt = this.tileAt(nx, ny).type;
         if (nt === 'creek' || nt === 'wetland') { bonus = 0.3; break; }
       }
@@ -12200,7 +13338,7 @@
     // --- node detail: each tile is a node; arriving reveals its detail ---
     nodeDetail() {
       const t = this.playerTile();
-      const arr = ARRIVAL[t.type];
+      const arr = this.arrivalPoolFor(t.type);
       if (t.type === 'haven') {
         return {
           type: 'haven', title: arr.title, epithet: 'Haven', text: arr.text, here: ['home'],
@@ -12346,7 +13484,7 @@
       if (scholar.day >= 3 && scholar.day >= wNext && !this.wanderer) {
         // spawn at a random revealed-edge thicket, or near player
         const spots = [];
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
           if (this.map.tiles[y][x].type === 'thicket') spots.push({ x, y });
         }
         const s = spots.length ? spots[Math.floor(Math.random() * spots.length)] : { x: 5, y: 5 };
@@ -12395,7 +13533,7 @@
       const w = this.wanderer;
       if (!w) return;
       const nx = w.x + w.dir;
-      if (nx < 0 || nx > 6) { w.dir *= -1; return; }
+      if (nx < 0 || nx > 8) { w.dir *= -1; return; } // 9x9 world (2026-10-07)
       w.x = nx;
       // contact check after it moves (it can walk into you)
       if (w.x === this.map.px && w.y === this.map.py && !this.encounterDone) {
@@ -12536,10 +13674,10 @@
         this.scheduleSystemEvents();
         // If you're NOT at Haven, the village talks about it without you.
         // When you return, they'll tell you what happened. (Drama: you missed it.)
-        // Haven sits at 3,3; village.px/py may be unset on older saves — same
-        // ?? 3 convention as returnToVillage/travel code, so standing at Haven
-        // actually counts as being there.
-        const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+        // Haven sits at 4,4 (9x9 center); village.px/py may be unset on older
+        // saves — same ?? 4 convention as returnToVillage/travel code, so
+        // standing at Haven actually counts as being there.
+        const hx = this.state.village.px ?? 4, hy = this.state.village.py ?? 4;
         const atHaven = this.map && this.map.px === hx && this.map.py === hy;
         if (!atHaven) {
           s.pendingVillageEvent = {
@@ -12642,7 +13780,7 @@
       s.dayTicks = 0;
       s.actionClock = 0;
       this.dayPart = 0;
-      this.map.px = v.px ?? 3; this.map.py = v.py ?? 3;
+      this.map.px = v.px ?? 4; this.map.py = v.py ?? 4;
       s.mx = 4; s.my = 4;
       this.ensureVillagerPositions();
       this.say('');
@@ -12978,7 +14116,7 @@
       } else if (id === 'hive_mind') {
         trustAll(-10, 'You know what everyone is doing. They can feel you knowing. (hive_mind: trust -10)');
         // the map opens. Every tile revealed — you see the whole board.
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.reveal(x, y);
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) this.reveal(x, y);
         this.say('HIVE MIND: the map is open. Every tile, revealed. They know you\'re watching.');
       }
     },
@@ -13040,7 +14178,7 @@
         if (this.state.weather === 'rain') this.noteAbilityUse('rain_dancer');
         // 70%: reveal the nearest water tile. Nobody knows why it works. Including us.
         let best = null, bestD = 99;
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
           const t = this.tileAt(x, y);
           if (t.type === 'creek' || t.type === 'wetland') {
             const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
@@ -13057,7 +14195,7 @@
         s.echoDay = s.day;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           const nx = this.map.px + dx, ny = this.map.py + dy;
-          if (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) this.reveal(nx, ny);
+          if (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) this.reveal(nx, ny);
         }
         this.say('You clap once. The echo comes back with the shape of the land — 3x3 revealed. (echo_location)');
       } else if (id === 'field_medicine') {
@@ -13076,14 +14214,14 @@
         if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return null; }
         if (!(s.diseases || []).length) { this.say('Not sick.'); return null; }
         s.herbalDay = s.day;
-        s.diseases = [];
-        this.say('Herbal remedy: bitter tea, steam, rest. The fever breaks.');
+        // CURE (statusEffects engine, Steve 2026-10-07): clears engine + legacy.
+        this.cureStatus('scholar', 'disease', 'herbal remedy');
       } else if (id === 'purify') {
         if (s.purifyDay === s.day) { this.say('Already purified today.'); return null; }
         if (!(s.poisons || []).length) { this.say('Not poisoned.'); return null; }
         s.purifyDay = s.day;
-        s.poisons = [];
-        this.say('Purify: charcoal, clean water, time. The poison leaves your system.');
+        // CURE (statusEffects engine, Steve 2026-10-07): clears engine + legacy.
+        this.cureStatus('scholar', 'poison', 'purify');
         const idx = (s.inventory || []).findIndex(i => (i.kcalEach || 0) > 0);
         if (idx === -1) { this.say('No food to bury.'); return null; }
         const it = s.inventory[idx];
@@ -13126,6 +14264,8 @@
         ab.xp = 0;
         const bonus = this.abilityLevelBonus(ab.id, ab.level);
         this.say(`⬆️ ${ab.name} deepened to L${ab.level}! ${bonus}`);
+        // DRAMA (Steve 2026-10-07, Round C2): golden burst — the ability deepens visibly.
+        try { this.drama('levelUp', s.mx, s.my, ab.name, ab.level); } catch (e) {}
         // The System finds your growing comprehension entertaining. The gamblers agree.
         const insights = [
           `"Oh! OH! You're starting to GET it! The audience loves the little ah-ha moments! The odds just shifted!"`,
@@ -13138,23 +14278,229 @@
         this.recomputeActiveSynergies();
       }
     },
+    // buildArchetype: are you a SPECIALIST or GENERALIST?
+    // SPECIALIST: 3+ abilities in one pool, average L3+ → deep mastery bonus.
+    // GENERALIST: abilities in 4+ different pools → versatile adaptability bonus.
+    // Both are rewarded. Specializing gives power; generalizing gives flexibility.
+    // (Steve 2026-10-07: "specializing should have rewards just like generalizing should")
+    buildArchetype() {
+      const s = this.state.scholar;
+      const held = s.abilities || [];
+      if (held.length < 3) return null;
+      // count by pool
+      const byPool = {};
+      for (const aid of held) {
+        const adef = (this.data.abilities || []).find(a => a.id === aid);
+        if (!adef) continue;
+        const pool = adef.pool || 'unknown';
+        byPool[pool] = byPool[pool] || { count: 0, levels: [] };
+        byPool[pool].count++;
+        byPool[pool].levels.push(this.abilityLevel(aid));
+      }
+      // SPECIALIST: 3+ in one pool, avg L3+
+      for (const [pool, data] of Object.entries(byPool)) {
+        if (data.count >= 3) {
+          const avg = data.levels.reduce((a,b) => a+b, 0) / data.levels.length;
+          if (avg >= 3) return { type: 'specialist', pool, avgLevel: Math.round(avg) };
+        }
+      }
+      // GENERALIST: 4+ different pools
+      const pools = Object.keys(byPool).filter(p => p !== 'system' && p !== 'fallback');
+      if (pools.length >= 4) return { type: 'generalist', pools };
+      return null;
+    },
+    // drama: fire a drama overlay effect (loosely-bound, GPU-cheap).
+    // The overlay is not bound to grid lines — it's for emphasis.
+    drama(kind, ...args) {
+      try {
+        const D = globalThis.Scattering && globalThis.Scattering.Drama;
+        if (!D) return;
+        // Steve 2026-10-07: ALL drama is OFF before the System arrives (day 7).
+        // The game starts simple and quiet. Then the System integrates and the
+        // world comes alive — it's really happening to your character.
+        if (!this.state.systemArrived) return;
+        // Steve 2026-10-07: all drama scales with system integration.
+        // Higher integration = more elaborate effects. The System watches more closely.
+        let integ = 0;
+        try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
+        if ((kind === 'abilityBurst' || kind === 'hit') && args.length >= 3) {
+          const lastArg = args[args.length - 1];
+          if (typeof lastArg === 'string') {
+            args.push(integ);
+          } else if (typeof lastArg === 'object' && lastArg !== null) {
+            lastArg.integration = lastArg.integration || integ;
+          }
+        }
+        // NPC ATTENTION (Steve 2026-10-07, Drama A1): npcAlert(x, y, kind, opts?)
+        // — inject integration into opts so markers scale with the System's gaze.
+        if (kind === 'npcAlert' && args.length >= 3) {
+          const o = args[3];
+          if (o && typeof o === 'object') { o.integration = o.integration || integ; }
+          else { args[3] = { integration: integ }; }
+        }
+        // DRAMA C3: exclaim(x, y, icon, opts?) — inject integration for L1/L2/L3 languages.
+        if (kind === 'exclaim' && args.length >= 3) {
+          const o = args[3];
+          if (o && typeof o === 'object') { o.integration = o.integration || integ; }
+          else { args[3] = { integration: integ }; }
+        }
+        // DRAMA C3: commentary(text, opts?) — inject integration; renders only at L2+.
+        if (kind === 'commentary' && args.length >= 1) {
+          const o = args[1];
+          if (o && typeof o === 'object') { o.integration = o.integration || integ; }
+          else { args[1] = { integration: integ }; }
+        }
+        // Wilderness kinds (Steve 2026-10-07): auto-append integration if not provided
+        if (kind === 'secret' || kind === 'ambush' || kind === 'wild' || kind === 'weather' || kind === 'trail') {
+          const lastArg = args[args.length - 1];
+          if (typeof lastArg !== 'number') args.push(integ);
+        }
+        // COMBAT SPECTACLE (Steve 2026-10-07, Drama B1): integration is the
+        // last parameter of every B1 combat method — append unconditionally.
+        // (Extra args are ignored if a caller passed it explicitly.)
+        if ((kind === 'phaseShift' || kind === 'enrage' || kind === 'lootSparkle' ||
+             kind === 'critHit' || kind === 'playerHurt' || kind === 'dodgeMiss')) {
+          args.push(integ);
+        }
+        // TRANSITIONS (Steve 2026-10-07, Drama C2): life/death moments — integration
+        // is the last parameter of every C2 method. Append unconditionally.
+        if ((kind === 'playerDeath' || kind === 'newLife' || kind === 'levelUp' ||
+             kind === 'synergyShimmer' || kind === 'villageBirth' || kind === 'villageDeath')) {
+          args.push(integ);
+        }
+        // KNOWLEDGE (Steve 2026-10-07, Drama D2): learning moments — integration
+        // is the last parameter of every D2 method. Append unconditionally.
+        if ((kind === 'plantIdentified' || kind === 'techniqueLearned' || kind === 'codexLinked' ||
+             kind === 'skillGained' || kind === 'teaseFaint' || kind === 'ahaMoment')) {
+          args.push(integ);
+        }
+        if (kind === 'hit') D.hit(...args);
+        else if (kind === 'text') D.floatText(...args);
+        else if (kind === 'flash') D.flash(...args);
+        else if (kind === 'shake') D.shake(...args);
+        else if (kind === 'hero') D.heroCard(...args);
+        else if (kind === 'wisp') D.soulWisp(...args);
+        else if (kind === 'exclaim') D.exclaim(...args);
+        else if (kind === 'npcAlert') D.npcAlert(...args);
+        else if (kind === 'abilityBurst') D.abilityBurst(...args);
+        else if (kind === 'contest') D.contestFlash(...args);
+        else if (kind === 'integration') D.integrationPulse(...args);
+        else if (kind === 'secret') D.secretShimmer(...args);
+        else if (kind === 'ambush') D.ambushWarning(...args);
+        else if (kind === 'wild') D.wildRipple(...args);
+        else if (kind === 'weather') D.weatherShift(...args);
+        else if (kind === 'trail') D.trailMark(...args);
+        else if (kind === 'phaseShift') D.phaseShift(...args);
+        else if (kind === 'enrage') D.enrage(...args);
+        else if (kind === 'lootSparkle') D.lootSparkle(...args);
+        else if (kind === 'critHit') D.critHit(...args);
+        else if (kind === 'playerHurt') D.playerHurt(...args);
+        else if (kind === 'dodgeMiss') D.dodgeMiss(...args);
+        else if (kind === 'playerDeath') D.playerDeath(...args);
+        else if (kind === 'newLife') D.newLife(...args);
+        else if (kind === 'levelUp') D.abilityLevelUp(...args);
+        else if (kind === 'synergyShimmer') D.synergyShimmer(...args);
+        else if (kind === 'villageBirth') D.villageBirth(...args);
+        else if (kind === 'villageDeath') D.villageDeath(...args);
+        else if (kind === 'plantIdentified') D.plantIdentified(...args);
+        else if (kind === 'techniqueLearned') D.techniqueLearned(...args);
+        else if (kind === 'codexLinked') D.codexLinked(...args);
+        else if (kind === 'skillGained') D.skillGained(...args);
+        else if (kind === 'teaseFaint') D.teaseFaint(...args);
+        else if (kind === 'ahaMoment') D.ahaMoment(...args);
+        // SOCIAL SPECTACLE (Steve 2026-10-07, Drama C1): spec object carries
+        // type + integration — inject integration like other object forms.
+        else if (kind === 'social') {
+          const spec = args[0];
+          if (spec && typeof spec === 'object') { spec.integration = spec.integration || integ; }
+          D.socialFlash(...args);
+        }
+        // ABILITY SIGNATURES (Steve 2026-10-07, Drama D1): signature(abilityId, x, y, color, pool)
+        // — append integration as the last arg.
+        if (kind === 'signature') {
+          args.push(integ);
+        }
+        if (kind === 'signature') D.abilitySignature(...args);
+        else if (kind === 'commentary') D.systemCommentary(...args);
+        // AUDIO-VISUAL SYNC (Steve 2026-10-07, Drama E1): the visual's audio
+        // mate fires here — one central place, so call sites never double-fire.
+        // Kinds whose sites already fire audio (hit->monsterHurt via tbDamage,
+        // wisp->monsterDown, enrage->wound*, npcAlert->talkAttention, contest
+        // announce->contestCall) map to null in D.audioFor and stay silent.
+        // The day-7 systemArrived gate above covers audio too: pre-System the
+        // game is quiet as well as still.
+        try {
+          const syncName = D.audioFor(kind, args[0]);
+          if (syncName) this.audioEvent(syncName, { drama: kind });
+        } catch (e3) {}
+      } catch (e) {}
+    },
+    // buildBonus: the mechanical reward for your build archetype.
+    // Specialists get +25% to their pool's core action. Generalists get +10% to everything.
+    buildBonus() {
+      const arch = this.buildArchetype();
+      if (!arch) return null;
+      if (arch.type === 'specialist') {
+        const poolTargets = {
+          combat: 'combat.strike_damage',
+          care: 'healing.amount',
+          fieldcraft: 'forage.yield',
+          craft: 'craft.success',
+          social: 'social.persuade',
+          exploration: 'travel.speed',
+          investigation: 'truth.detect_chance',
+        };
+        return {
+          name: `${arch.pool} Specialist`,
+          target: poolTargets[arch.pool] || 'all',
+          mult: 1.25,
+          desc: `Specialist (${arch.pool} L${arch.avgLevel}): +25% to ${arch.pool} actions. Mastery has its rewards.`
+        };
+      }
+      // generalist
+      return {
+        name: 'Versatile Generalist',
+        target: 'all',
+        mult: 1.1,
+        desc: 'Generalist (4+ pools): +10% to everything. Breadth has its rewards.'
+      };
+    },
     // abilityLevelBonus: what does leveling up give? (Per ability.)
     abilityLevelBonus(id, level) {
       const bonuses = {
-        green_thumb: { 2: '+100% yield (was +50%).', 3: 'You sense rich ground. Forage spots glow.' },
-        tracker: { 2: '+50% hunt success (was +30%).', 3: 'You see tracks from 2 tiles away.' },
-        diplomat: { 2: 'Trust builds 3x (was 2x).', 3: 'Villagers tell you secrets unprompted.' },
-        camp_cook: { 2: 'No water needed for cooking.', 3: '+25% kcal (was +10%).' },
+        green_thumb: { 2: '+100% yield (was +50%).', 3: 'You sense rich ground. Forage spots glow.', 4: '+150% yield. You can smell ripeness.', 5: 'MASTER: Plants yield double. The green recognizes you.' },
+        tracker: { 2: '+50% hunt success (was +30%).', 3: 'You see tracks from 2 tiles away.', 4: 'You read age, weight, and mood from tracks.', 5: 'MASTER: The wild tells you where everything is.' },
+        diplomat: { 2: 'Trust builds 3x (was 2x).', 3: 'Villagers tell you secrets unprompted.', 4: 'You can end feuds with a conversation.', 5: 'MASTER: Your word is law. Villages follow you.' },
+        camp_cook: { 2: 'No water needed for cooking.', 3: '+25% kcal (was +10%).', 4: '+40% kcal. You can cook for 20.', 5: 'MASTER: Your food heals wounds. People travel for your fire.' },
+        // BRAWLER (Steve 2026-10-07): mid/late game fighter progression
+        brawler_instinct: { 2: 'You act first in every fight.', 3: 'You see the killing blow before they do.', 4: 'Fights end before they start. You choose.', 5: 'MASTER: You are the fight. Others just attend.' },
+        adrenaline_control: { 2: '+60% damage (was +30%).', 3: 'You fight through pain. Wounds don\'t slow you.', 4: 'You can take a killing blow and keep standing.', 5: 'MASTER: Death has to ask permission.' },
+        intimidating_presence: { 2: 'Most back down. Some join you.', 3: 'Monsters hesitate. They feel you.', 4: 'You can rout a pack with a look.', 5: 'MASTER: Your name ends fights.' },
+        // SOCIAL (Steve 2026-10-07)
+        silver_tongue: { 2: 'You can talk your way out of anything.', 3: 'People believe you. Even when they shouldn\'t.', 4: 'You can turn enemies into allies mid-fight.', 5: 'MASTER: Your words reshape villages.' },
+        gossip_network: { 2: 'You hear everything. Nothing is secret.', 3: 'Travelers seek you out with news.', 4: 'You know things before they happen.', 5: 'MASTER: The world whispers to you.' },
+        peacemaker: { 2: 'You can stop any fight.', 3: 'Warring villages ask you to mediate.', 4: 'Your presence prevents violence.', 5: 'MASTER: Peace follows you like weather.' },
+        // EXPLORATION (Steve 2026-10-07)
+        pathfinder: { 2: 'You travel 50% faster.', 3: 'You never get lost. Ever.', 4: 'You find shortcuts no one else sees.', 5: 'MASTER: Distance is a suggestion.' },
+        eagle_eye: { 2: 'You spot from 3 tiles away.', 3: 'You see through fog. The System is impressed.', 4: 'You can see a village\'s smoke from across the map.', 5: 'MASTER: Nothing hides. Nowhere.' },
+        // INVESTIGATION (Steve 2026-10-07)
+        lie_detector: { 2: 'You catch 50% of lies.', 3: 'You know WHY they\'re lying.', 4: 'You can see the truth they\'re hiding.', 5: 'MASTER: No one lies to you. Ever.' },
+        evidence_board: { 2: 'Contradictions glow.', 3: 'You reconstruct events from fragments.', 4: 'You can prove guilt with whispers.', 5: 'MASTER: Truth is your weapon.' },
       };
       return (bonuses[id] && bonuses[id][level]) || 'Stronger. The System is pleased.';
     },
     scheduleSystemEvents() {
       const s = this.state.scholar;
       s.timedEvents = s.timedEvents || [];
-      s.timedEvents.push({ day: 8, type: 'challenge', id: 'first_hunt', done: false });
-      s.timedEvents.push({ day: 9, type: 'drama', id: 'stranger', done: false });
-      s.timedEvents.push({ day: 10, type: 'monster', id: 'hushwolf_pack', done: false });
-      s.timedEvents.push({ day: 12, type: 'quest', id: 'system_task', done: false });
+      // EVENT ENGINE (Steve 2026-10-07): schedule from events.json data.
+      // New events are data-only: add to events.json with scheduledDay, done.
+      const events = (this.data.events && this.data.events.events) || [];
+      for (const def of events) {
+        if (def.scheduledDay == null) continue;
+        // Don't double-schedule on re-entry (e.g., newGame called twice)
+        if (s.timedEvents.some(e => e.id === def.id)) continue;
+        s.timedEvents.push({ day: def.scheduledDay, type: def.type, id: def.id, done: false });
+      }
       // JACKPOT: knowledgeable stranger. Rare, exciting, memorable.
       // Not scheduled — random chance each day after day 5 (5% per day).
       // "Occasionally you hit a vein."
@@ -13181,26 +14527,63 @@
         }
       }
     },
+    // EVENT ENGINE (Steve 2026-10-07): generic dispatcher.
+    // triggerEvent(ev) looks up the event definition in events.json,
+    // checks once/repeatable + cooldown, dispatches to the named handler,
+    // and records the firing. New events: add to events.json + implement
+    // the handler method. No if/else chain to extend.
     triggerEvent(ev) {
-      if (ev.id === 'first_hunt') {
-        this.say('\u{1F4E2} SYSTEM CHALLENGE: "Catch something! Anything! We want to see how you do it!" (Hunt an animal today for a reward.)');
-        this.state.scholar.activeChallenge = { id: 'first_hunt', desc: 'Hunt an animal', reward: 'Ability point' };
-      } else if (ev.id === 'stranger') {
-        this.say('\u{1F6B6} A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
-        // mediator: peace is a skill. You talk the village through it.
-        if (this.hasAbility('mediator')) {
-          const bonus = this.trustGainMult(Math.round(this.modTarget('drama.resolve_bonus', 8)));
-          const v = this.state.village; v.trust = v.trust || {};
-          for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + bonus);
-          this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${bonus})`);
-          this.noteAbilityUse('mediator');
-        }
-      } else if (ev.id === 'hushwolf_pack') {
-        this.say('\u{1F43A} HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
-      } else if (ev.id === 'system_task') {
-        this.say('\u{1F4DC} SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Bring us a plant you\'ve fully identified (Codex L3)."');
-        this.state.scholar.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
+      const eid = ev && ev.id;
+      if (!eid) return;
+      const events = (this.data.events && this.data.events.events) || [];
+      const def = events.find(e => e.id === eid);
+      if (!def) return; // unknown event — ignore silently (defensive)
+      // Once-events: check if already fired
+      this.state.firedEvents = this.state.firedEvents || {};
+      const fired = this.state.firedEvents[eid] || {};
+      if (def.once && fired.done) return;
+      // Cooldown for repeatable events
+      if (def.repeatable && def.cooldownDays > 0) {
+        const lastDay = fired.lastDay || -999;
+        const today = (this.state.scholar || {}).day || 0;
+        if (today - lastDay < def.cooldownDays) return;
       }
+      // Dispatch to named handler
+      const handler = def.handler;
+      if (handler && typeof this[handler] === 'function') {
+        this[handler](ev);
+      }
+      // Record firing
+      this.state.firedEvents[eid] = {
+        done: !!def.once,
+        lastDay: (this.state.scholar || {}).day || 0,
+        count: (fired.count || 0) + 1
+      };
+    },
+    // Event handlers — one per event id in events.json.
+    // Pure extraction from the old triggerEvent if/else chain (Steve 2026-10-07).
+    // Behavior is IDENTICAL; only the dispatch mechanism changed.
+    evFirstHunt(ev) {
+      this.say('\u{1F4E2} SYSTEM CHALLENGE: "Catch something! Anything! We want to see how you do it!" (Hunt an animal today for a reward.)');
+      this.state.scholar.activeChallenge = { id: 'first_hunt', desc: 'Hunt an animal', reward: 'Ability point' };
+    },
+    evStranger(ev) {
+      this.say('\u{1F6B6} A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
+      // mediator: peace is a skill. You talk the village through it.
+      if (this.hasAbility('mediator')) {
+        const bonus = this.trustGainMult(Math.round(this.modTarget('drama.resolve_bonus', 8)));
+        const v = this.state.village; v.trust = v.trust || {};
+        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + bonus);
+        this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${bonus})`);
+        this.noteAbilityUse('mediator');
+      }
+    },
+    evHushwolfPack(ev) {
+      this.say('\u{1F43A} HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
+    },
+    evSystemTask(ev) {
+      this.say('\u{1F4DC} SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Bring us a plant you\'ve fully identified (Codex L3)."');
+      this.state.scholar.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
     },
 
     // CODEX NETWORKING: codexes talk within friendly organizations.
@@ -13246,6 +14629,19 @@
       if (this.over) return null;
       const scholar = this.state.scholar;
       let msg = '';
+      // DRAMA (Steve 2026-10-07): every action gets a visual beat — the game feels alive.
+      // Colors: forage green, move neutral, talk pink, rest blue, etc.
+      try {
+        const actionColors = {
+          forage: '#7cfc9a', hunt: '#ff5252', fish: '#4da6ff', cook: '#ff9d45',
+          craft: '#d4a017', gather: '#8b7355', talk: '#ff6b9d', rest: '#4da6ff',
+          sleep: '#6b7cff', explore: '#4df3ff', chop: '#8b5a2b', mine: '#9e9e9e'
+        };
+        const color = actionColors[kind];
+        if (color && this.map) {
+          this.drama('abilityBurst', this.map.px, this.map.py, color);
+        }
+      } catch (e) {}
       if (kind !== 'forage') this._packFullStreak = 0; // guidance streak is per-stuck-episode
       if (kind === 'forage') {
         const t = this.playerTile();
@@ -13597,6 +14993,9 @@
         // a silent time-burn landmine. Unknown = 1 tick + warned, never taxed.
         try { console.warn('[doAction] unknown kind:', kind); } catch (e) {}
       }
+      // EVERYONE ACTS (Steve 2026-10-07): your action is your turn —
+      // each NPC on this node then takes one action, in roster order.
+      try { this.villagerTurn(); } catch (e) {}
       return this.tickAction(ticks) || this.status();
     },
 
@@ -13671,32 +15070,25 @@
         // iron_stomach: unsafe food is a gamble. Base 20% chance of -5 health;
         // an iron stomach shrugs most of it off.
         if (it.safe === false) {
-          // PUSH THROUGH (iron_stomach, Steve 2026-10-07): while the gut is
-          // settled, unsafe food can't poison you. The action does something.
-          if ((scholar.pushThroughParts || 0) > 0) {
-            this.say(`The ${it.name} is suspect — but your gut is settled. You push through. (Push Through)`);
-          } else {
-            const pChance = this.modTarget('food.poison_chance', 0.2);
-            if (Math.random() < pChance) {
-              scholar.health = Math.max(0, scholar.health - 5);
-              this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
-            }
+          const pChance = this.modTarget('food.poison_chance', 0.2);
+          if (Math.random() < pChance) {
+            scholar.health = Math.max(0, scholar.health - 5);
+            this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
           }
         }
         // FOOD REALITY: state-based disease risk. Raw meat, must-cook plants.
         // Shown honestly before eating ("Risky: raw") — the gamble is informed.
         if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
           scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
-          // Track disease so herbal_remedy can cure it (Steve 2026-10-05)
-          scholar.diseases = scholar.diseases || [];
-          scholar.diseases.push({ name: it.diseaseRisk.note || 'food poisoning', day: scholar.day });
+          // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
+          this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
         // POISON: belltoad throat sac, etc. Purify cures it.
         if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
           scholar.health = Math.max(0, (scholar.health || 100) - 10);
-          scholar.poisons = scholar.poisons || [];
-          scholar.poisons.push({ name: it.poisonRisk.note || 'toxin', day: scholar.day });
+          // POISON (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
+          this.applyStatus('scholar', 'poison', { name: it.poisonRisk.note || 'toxin', source: 'the ' + it.name });
           this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
         }
         scholar.kcal += kcal; ate += kcal;
@@ -13822,28 +15214,22 @@
         this.say(`Your gut churns a warning — the ${it.name} is wrong. (symbiote: unsafe food)`);
       }
       if (it.safe === false) {
-        // PUSH THROUGH (iron_stomach, Steve 2026-10-07): while the gut is
-        // settled, unsafe food can't poison you. The action does something.
-        if ((scholar.pushThroughParts || 0) > 0) {
-          this.say(`The ${it.name} is suspect — but your gut is settled. You push through. (Push Through)`);
-        } else {
-          const pChance = this.modTarget('food.poison_chance', 0.2);
-          if (Math.random() < pChance) {
-            scholar.health = Math.max(0, scholar.health - 5);
-            this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
-          }
+        const pChance = this.modTarget('food.poison_chance', 0.2);
+        if (Math.random() < pChance) {
+          scholar.health = Math.max(0, scholar.health - 5);
+          this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
         }
       }
       if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
         scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
-        scholar.diseases = scholar.diseases || [];
-        scholar.diseases.push({ name: it.diseaseRisk.note || 'food poisoning', day: scholar.day });
+        // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
+        this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
         this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
       }
       if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
         scholar.health = Math.max(0, (scholar.health || 100) - 10);
-        scholar.poisons = scholar.poisons || [];
-        scholar.poisons.push({ name: it.poisonRisk.note || 'toxin', day: scholar.day });
+        // POISON (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
+        this.applyStatus('scholar', 'poison', { name: it.poisonRisk.note || 'toxin', source: 'the ' + it.name });
         this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
       }
       const kcal = it.kcalEach;
@@ -13999,15 +15385,8 @@
       try { this.npcNodeTravel(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
-      // PUSH THROUGH (iron_stomach, Steve 2026-10-07): the gut-settle wears
-      // off with the day part. Expedition clock, not wall clock.
-      try {
-        const psc = this.state.scholar;
-        if (psc.pushThroughParts > 0) {
-          psc.pushThroughParts--;
-          if (psc.pushThroughParts <= 0) this.say('Your gut unclenches — back to normal. The push-through has worn off.');
-        }
-      } catch (e) {}
+      // STATUS EFFECTS (Steve 2026-10-07): dayPart-scale ticks (disease fever, poison).
+      try { this.tickStatuses('scholar', 'dayPart'); } catch (e) {}
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
       // (You're becoming a plant. The metabolic cost already took its cut.)
       if (this.hasAbility('photosynthesis') && this.dayPart < 3) {
@@ -14070,7 +15449,7 @@
     playerAtHaven() {
       const v = this.state.village || {};
       if (!this.map) return true;
-      const hx = v.px ?? 3, hy = v.py ?? 3;
+      const hx = v.px ?? 4, hy = v.py ?? 4;
       return Math.abs(this.map.px - hx) + Math.abs(this.map.py - hy) <= 1;
     },
 
@@ -14108,13 +15487,13 @@
           // COMPETITION: they depleted a real tile. the world is shared.
           // (2026-10-05: was called without coords — a silent no-op. Home turf
           // is the village's turf: pass haven so the depletion is real.)
-          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 3, v.py ?? 3);
+          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
           if (present) this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
         } else if (r < 0.35) {
           // brings food: a real haul. from the world, not thin air.
           const kcal = Math.round((400 + Math.floor(Math.random() * 401)) * boldMult * shareMult);
           this.stockPantry(kcal, 'Foraged food');
-          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 3, v.py ?? 3);
+          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
           if (present) this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {
           // wounded: health bars. -20 to -35 per bad day.
@@ -14211,6 +15590,105 @@
       } catch (e) { return amount; }
     },
 
+    // PROGRESSIVE TRUST (Steve 2026-10-07): higher trust is harder to earn.
+    // 0-50: full rate. 50-75: half rate. 75-90: quarter rate. 90-100: one point
+    // at a time, only for extraordinary acts. Getting someone to die for you
+    // should feel like an achievement, not a grind.
+    trustGainProgressive(vid, baseAmount) {
+      const v = this.state.village;
+      const cur = (v.trust || {})[vid] === undefined ? this.trustStartingValue(vid) : v.trust[vid];
+      let scaled = baseAmount;
+      if (cur >= 90) {
+        // 90-100: only extraordinary acts move the needle, one point at a time
+        scaled = baseAmount >= 5 ? 1 : 0;
+      } else if (cur >= 75) {
+        scaled = Math.max(1, Math.floor(baseAmount * 0.25));
+      } else if (cur >= 50) {
+        scaled = Math.max(1, Math.floor(baseAmount * 0.5));
+      }
+      // Individual disposition: some people just don't warm up fast
+      scaled = Math.round(scaled * this.trustDispositionMult(vid));
+      return this.trustGainMult(scaled);
+    },
+
+    // trustBand: what does this trust level MEAN?
+    // 0-10: hostile, 11-24: distrustful, 25-49: wary, 50-74: friendly,
+    // 75-89: loyal, 90-100: devoted
+    trustBand(vid) {
+      const v = this.state.village;
+      const cur = (v.trust || {})[vid] === undefined ? 15 : v.trust[vid];
+      if (cur >= 90) return 'devoted';
+      if (cur >= 75) return 'loyal';
+      if (cur >= 50) return 'friendly';
+      if (cur >= 25) return 'wary';
+      if (cur >= 11) return 'distrustful';
+      return 'hostile';
+    },
+
+    // trustBandDesc: what can you expect at this band?
+    trustBandDesc(band) {
+      const descs = {
+        hostile: "Will work against you. May steal. Won't help.",
+        distrustful: "Won't share. Watches you. Minimal cooperation.",
+        wary: "Cautious cooperation. Fair trades, shares gossip. Won't take risks for you.",
+        friendly: "Shares food. Helps with work. Trusts your judgment.",
+        loyal: "Takes risks for you. Defends you. Shares secrets.",
+        devoted: "Would die for you. This is rare and precious."
+      };
+      return descs[band] || descs.wary;
+    },
+
+    // TRUST NUANCE (Steve 2026-10-07): not everyone trusts equally.
+    // Each villager has a trust disposition from temperament + lived experience.
+    // This affects BOTH starting trust AND how quickly they warm up.
+    trustDisposition(vid) {
+      const v = this.state.village;
+      const villager = (v.roster || []).find(r => (r.id || r) === vid);
+      const temp = (villager && villager.personality && villager.personality.temperament) || this.npcTemper(vid);
+      
+      // Map temperament to trust disposition
+      const tempMap = {
+        'bold': 'open', 'warm': 'open', 'generous': 'open',
+        'cautious': 'guarded', 'withdrawn': 'guarded', 'suspicious': 'cynical',
+        'intense': 'passionate', 'steady': 'measured', 'practical': 'measured'
+      };
+      let disp = tempMap[temp] || 'measured';
+      
+      // Lived experience modifies it: betrayed villagers trust less
+      const mem = (v.memory || {})[vid] || {};
+      if (mem.betrayed) disp = 'cynical';
+      if (mem.savedLife) disp = 'open'; // you saved them, they're grateful
+      
+      return disp;
+    },
+
+    // Starting trust varies by disposition, not flat 15
+    trustStartingValue(vid) {
+      const disp = this.trustDisposition(vid);
+      const ranges = {
+        'open': [20, 35],      // warm people give you a chance
+        'measured': [10, 25],  // normal villagers, cautious but fair
+        'guarded': [5, 15],    // takes time to warm up
+        'passionate': [15, 30], // intense either way, starts hopeful
+        'cynical': [0, 10]      // been burned before, prove yourself
+      };
+      const [min, max] = ranges[disp] || ranges.measured;
+      return min + Math.floor(Math.random() * (max - min + 1));
+    },
+
+    // Trust gain multiplier by disposition: some people just don't warm up fast
+    trustDispositionMult(vid) {
+      const disp = this.trustDisposition(vid);
+      const mults = {
+        'open': 1.3,       // easy to win over
+        'measured': 1.0,   // normal rate
+        'passionate': 1.1, // feels strongly, moves fast both ways
+        'guarded': 0.7,    // slow to trust
+        'cynical': 0.5     // really hard to win over
+      };
+      return mults[disp] || 1.0;
+    },
+
     // allModifiers: abilities + relics + KNOWLEDGE. One pipeline.
     // Knowledge isn't separate from powers — it amplifies them.
     allModifiers() {
@@ -14243,7 +15721,9 @@
     //
     // noteAbilityUse: log an ability use, then check for synergy discoveries.
     // Called from gainAbilityXP (passive uses), activateAbility (activatables),
-    // and maybeCheatDeath (death cheats). context: { target }.
+    // and maybeCheatDeath (death cheats). context: { target, synthetic } —
+    // synthetic marks technique/skill synthesis events (see
+    // checkSynergyDiscovery), which must not re-trigger synthesis.
     noteAbilityUse(abilityId, context) {
       const sch = this.state.scholar;
       if (!sch || !abilityId) return;
@@ -14253,7 +15733,19 @@
       sch.abilityUseLog = sch.abilityUseLog || [];
       sch.abilityUseLog.push({ id: abilityId, day, part, target: context.target || null });
       if (sch.abilityUseLog.length > 40) sch.abilityUseLog.shift();
-      this.checkSynergyDiscovery(abilityId, { day, part, target: context.target || null });
+      // DRAMA D1 (Steve 2026-10-07): every ability fires its SIGNATURE visual —
+      // unique for the 10 core abilities, pool-styled for the rest. The day-7
+      // systemArrived gate and integration scaling live inside Game.drama.
+      try {
+        const adef = (this.data.abilities || []).find(a => a.id === abilityId);
+        const poolColors = { combat: '#ff5252', care: '#7cfc9a', fieldcraft: '#7cfc9a', craft: '#d4a017', social: '#ff6b9d', exploration: '#4df3ff', investigation: '#c792ea', system: '#4df3ff', fallback: '#9e9e9e' };
+        const pool = (adef || {}).pool || 'system';
+        const sigColor = poolColors[pool] || '#4df3ff';
+        const px = (this.map && this.map.px != null) ? this.map.px : 4;
+        const py = (this.map && this.map.py != null) ? this.map.py : 4;
+        this.drama('signature', abilityId, px, py, sigColor, pool);
+      } catch (e) {}
+      this.checkSynergyDiscovery(abilityId, { day, part, target: context.target || null, synthetic: !!context.synthetic });
     },
 
     // checkSynergyDiscovery: did this ability use complete a combined use?
@@ -14263,33 +15755,89 @@
       const syns = this.data.synergies || [];
       sch.synergies = sch.synergies || [];       // discovered synergy ids
       sch.synergyAttempts = sch.synergyAttempts || {};  // synId -> attempt count
+      // SYNERGY LEGS (hunter loop 2026-10-07): a leg can name another synergy
+      // (apex_predator requires clean_kill). abilityLevel() returns 0 for
+      // non-abilities, so synergy legs are satisfied by DISCOVERY — you bring
+      // a mastered synergy to bear by holding it.
+      const synIds = new Set(syns.map(x => x.id));
       for (const syn of syns) {
         if (sch.synergies.includes(syn.id)) continue;   // already discovered
         const dm = syn.discovery_method;
         if (!dm) continue;
+        // MULTI-PATH (Steve 2026-10-07): requires_any allows multiple ways to
+        // unlock a synergy. Each inner array is one valid path — if ANY path
+        // is fully satisfied, the synergy unlocks. This prevents linear
+        // chains where missing one ability blocks the whole tree.
+        const reqsAny = syn.requires_any || null;
         const reqs = syn.requires || [];
-        if (!reqs.includes(usedId)) continue;
-        // Must hold both abilities at minLevel to make progress.
+        // PATH-AWARE (hunter loop 2026-10-07): the effective leg lists are the
+        // requires_any paths (or [requires] for classic synergies). Only paths
+        // containing the used ability can progress on this use.
+        const legLists = reqsAny || [reqs];
+        // PREFIX-AWARE (fix 2026-10-07): requires may have tech:/skill: prefixes,
+        // but usedId is bare. Check both bare and prefixed forms.
+        const legMatchesUsed = (r) => r === usedId || r === `tech:${usedId}` || r === `skill:${usedId}`;
+        const livePaths = legLists.filter(pl => pl.some(legMatchesUsed));
+        if (!livePaths.length) continue;
+        // Must hold all requirements at minLevel to make progress.
+        // SYNERGY ACROSS BOUNDARIES (Steve 2026-10-07): requires can be
+        // abilities, skills, OR techniques. The best synergies need adjacent
+        // skills — not just ability+ability. A technique from a village codex
+        // + your skill level + an ability = something greater.
         const minLvl = syn.minLevel || 1;
-        if (!reqs.every(rid => this.abilityLevel(rid) >= minLvl)) continue;
-        const otherId = reqs.find(r => r !== usedId);
+        const hasReq = (rid) => {
+          // synergy leg: discovered counts as held
+          if (synIds.has(rid)) return (sch.synergies || []).includes(rid);
+          // technique (from village codex): must know it
+          if (rid.startsWith('tech:')) {
+            const tid = rid.slice(5);
+            return !!((this.state.scholar.codex || {}).techniques || {})[tid];
+          }
+          // skill: must have level
+          if (rid.startsWith('skill:')) {
+            const skid = rid.slice(6);
+            return (((this.state.codex || {}).skills || {})[skid] || {}).level >= minLvl;
+          }
+          // ability (default)
+          return this.abilityLevel(rid) >= minLvl;
+        };
+        // Check requires (all must match) OR requires_any (any LIVE path —
+        // one containing the used ability — must match)
+        let reqsMet = false;
+        if (reqsAny) {
+          reqsMet = livePaths.some(path => path.every(hasReq));
+        } else {
+          reqsMet = reqs.every(hasReq);
+        }
+        if (!reqsMet) continue;
+        // PREFIX-AWARE (fix 2026-10-07): the "other" legs must exclude the
+        // used leg in bare AND prefixed form — otherwise a tech leg matches
+        // itself and simultaneous/same-target checks compare wrong ids.
+        // PATH-AWARE (hunter loop 2026-10-07): other legs come from the live
+        // paths' union, not just requires.
+        const otherLegs = [...new Set(livePaths.flat())].filter(r => !legMatchesUsed(r));
         const log = sch.abilityUseLog || [];
+        // otherSeen: has this "other" leg been brought to bear? Synergy legs
+        // count when discovered (mastery travels with you); ability/skill/tech
+        // legs count when the use log shows them under the method's conditions.
+        const otherSeen = (r, test) => synIds.has(r) ? (sch.synergies || []).includes(r) : log.some(u => u.id === r && test(u));
         let combined = false;
         if (dm.type === 'simultaneous') {
           // Both used in the same day-part.
-          combined = log.some(u => u.id === otherId && u.day === ctx.day && u.part === ctx.part);
+          combined = otherLegs.some(r => otherSeen(r, u => u.day === ctx.day && u.part === ctx.part));
         } else if (dm.type === 'sequential') {
           // Used second in the defined order, other was first earlier today.
-          const order = dm.order || reqs;
-          if (usedId === order[1]) {
-            combined = log.some(u => u.id === order[0] && u.day === ctx.day);
+          // PATH-AWARE: without an explicit dm.order, use the first live path.
+          const order = dm.order || livePaths[0] || reqs;
+          if (usedId === order[1] || `tech:${usedId}` === order[1] || `skill:${usedId}` === order[1]) {
+            combined = otherSeen(order[0], u => u.day === ctx.day);
           }
         } else if (dm.type === 'same_target') {
           // Both applied to the same target today.
-          combined = !!(ctx.target && log.some(u => u.id === otherId && u.target === ctx.target && u.day === ctx.day));
+          combined = !!(ctx.target && otherLegs.some(r => otherSeen(r, u => u.target === ctx.target && u.day === ctx.day)));
         } else if (dm.type === 'sustained') {
           // Both used today — counts as one day toward a 3-day streak.
-          const otherUsedToday = log.some(u => u.id === otherId && u.day === ctx.day);
+          const otherUsedToday = otherLegs.some(r => otherSeen(r, u => u.day === ctx.day));
           if (otherUsedToday) {
             const dayKey = syn.id + '_days';
             const lastKey = syn.id + '_lastday';
@@ -14324,6 +15872,47 @@
           }
         }
       }
+      // TECHNIQUE/SKILL SYNTHESIS (Steve 2026-10-07): techniques and skills
+      // are applied knowledge — there is no "activate technique" button and
+      // no game code logs tech/skill uses, so cross-boundary sequences could
+      // never complete for a real player even after the prefix fix
+      // (socialite playtest 2026-10-07). When you use an ability while
+      // HOLDING a technique/skill that an undiscovered synergy pairs it
+      // with, that counts as bringing the knowledge to bear: the technique
+      // is used THROUGH the ability. The synthetic event runs the same
+      // discovery logic (bare tech id, matching the prefixed requires via
+      // the prefix-aware check above and the bare-id order arrays in data).
+      // Synthetic events never re-trigger synthesis (ctx.synthetic).
+      if (!ctx.synthetic) {
+        // One synthetic event per technique/skill per real use: several
+        // synergies can pair the same ability+technique (trailblazers_promise
+        // and green_highway both pair pathfinder+trail_blazing) — firing one
+        // event per synergy would multi-count a single moment of use.
+        const synthIds = new Set();
+        for (const syn of syns) {
+          if (sch.synergies.includes(syn.id)) continue;
+          // PATH-AWARE (hunter loop 2026-10-07): multi-path synergies keep
+          // their tech/skill legs in requires_any — union the paths.
+          const reqsAny2 = syn.requires_any || null;
+          const reqs2 = reqsAny2 ? [...new Set(reqsAny2.flat())] : (syn.requires || []);
+          if (!reqs2.some(r => r === usedId)) continue; // used ability must be a leg
+          const minLvl2 = syn.minLevel || 1;
+          for (const leg of reqs2) {
+            let bare = null, held = false;
+            if (leg.startsWith('tech:')) {
+              bare = leg.slice(5);
+              held = !!(((this.state.scholar.codex || {}).techniques || {})[bare]);
+            } else if (leg.startsWith('skill:')) {
+              bare = leg.slice(6);
+              held = ((((this.state.codex || {}).skills || {})[bare] || {}).level || 0) >= minLvl2;
+            }
+            if (bare && held) synthIds.add(bare);
+          }
+        }
+        for (const bare of synthIds) {
+          this.noteAbilityUse(bare, { day: ctx.day, part: ctx.part, target: ctx.target || null, synthetic: true });
+        }
+      }
       this.recomputeActiveSynergies();
     },
 
@@ -14338,8 +15927,16 @@
       const seenKey = syn.id + '_teased_' + n;
       if (sch.synergyAttempts[seenKey]) return;
       sch.synergyAttempts[seenKey] = 1;
+      if (n === 1) {
+        // DRAMA (Steve 2026-10-07, Round D2): the 1st tease is a whisper, not a shimmer.
+        // Escalation reads: whisper (1st) -> shimmer (2nd) -> hero card (unlock).
+        try { this.drama('teaseFaint'); } catch (e) {}
+      }
       this.say(tease);
       if (n === 2 && dm.hint) {
+        // DRAMA (Steve 2026-10-07, Round C2): the pre-reveal — something is happening.
+        // The hero card comes at unlock; this is the shimmer before.
+        try { this.drama('synergyShimmer'); } catch (e) {}
         this.say(`Something wants to happen when you do... whatever you just did. (${n}/3)`);
       }
     },
@@ -14349,9 +15946,22 @@
       const sch = this.state.scholar;
       if (!sch.synergies.includes(syn.id)) {
         sch.synergies.push(syn.id);
+        // DRAMA (Steve 2026-10-07): synergy discovery is a hero moment
+        try { this.drama('hero', syn.name, syn.discovery || syn.flavor || '', '✨'); } catch (e) {}
+        // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): synergy discovery moment.
+        this.audioEvent('knowledgeReveal', { kind: 'synergy', id: syn.id });
+        // SYNERGY FANFARE (Round 2 wiring, Steve 2026-10-07): discovery is an
+        // EVENT, not a log line. The System's excited voice gets its own frame
+        // (the 📺 SYSTEM tag is arrival-gated — pre-arrival the overlay never
+        // speaks first; see identifyPlant's voice gate), and the audio worker
+        // gets a distinct 'synergyDiscovered' hook so the fanfare can sound
+        // different from a quiet codex reveal.
+        this.audioEvent('synergyDiscovered', { id: syn.id, name: syn.name });
         this.say(`\u2728 SYNERGY DISCOVERED: ${syn.name}!`);
         if (syn.flavor) this.say(syn.flavor);
-        if (syn.discovery) this.say(syn.discovery);
+        const discovery = syn.discovery || 'Oh! OH! That combination! The audience did NOT see that coming!';
+        if (this.state.systemArrived) this.say(`📺 SYSTEM: "${discovery}"`);
+        else this.say(discovery);
       }
       this.recomputeActiveSynergies();
     },
@@ -14362,11 +15972,29 @@
       const sch = this.state.scholar;
       if (!sch) return;
       const syns = this.data.synergies || [];
+      // SYNERGY LEGS (hunter loop 2026-10-07): see checkSynergyDiscovery —
+      // a leg naming another synergy is held when that synergy is discovered.
+      const synIds = new Set(syns.map(x => x.id));
       const active = [];
       for (const syn of syns) {
         if (!(sch.synergies || []).includes(syn.id)) continue;
         const minLvl = syn.minLevel || 1;
-        const held = (syn.requires || []).every(rid => this.abilityLevel(rid) >= minLvl);
+        // PREFIX-AWARE (fix 2026-10-07): tech:/skill: requires need special checks
+        const hasReq = (rid) => {
+          if (synIds.has(rid)) return (sch.synergies || []).includes(rid);
+          if (rid.startsWith('tech:')) {
+            return !!((sch.codex || {}).techniques || {})[rid.slice(5)];
+          }
+          if (rid.startsWith('skill:')) {
+            return (((this.state.codex || {}).skills || {})[rid.slice(6)] || {}).level >= minLvl;
+          }
+          return this.abilityLevel(rid) >= minLvl;
+        };
+        // PATH-AWARE (hunter loop 2026-10-07): requires_any paths gate
+        // activation too. An empty requires[] used to mean "always active" —
+        // a discovered-but-unheld multi-path synergy fired forever.
+        const paths = syn.requires_any || [syn.requires || []];
+        const held = paths.some(p => p.every(hasReq));
         if (held) active.push(syn.id);
       }
       sch.activeSynergies = active;
@@ -14376,6 +16004,165 @@
     hasSynergy(sid) {
       const sch = this.state.scholar;
       return !!((sch.activeSynergies || []).includes(sid));
+    },
+
+    // SYNERGY HELPERS (Steve 2026-10-07): for the Discoveries menu.
+    // Three states: Active (firing now), Near (1 requirement away), Discovered (known but inactive).
+    getActiveSynergies() {
+      try {
+        const active = this.state.scholar.activeSynergies || [];
+        const syns = this.data.synergies || [];
+        return active.map(sid => {
+          const syn = syns.find(x => x.id === sid);
+          if (!syn) return null;
+          return {
+            id: sid,
+            name: syn.name || sid,
+            flavor: syn.flavor || syn.description || '',
+            triggers: this._synergyTriggers(syn),
+          };
+        }).filter(Boolean);
+      } catch (e) { return []; }
+    },
+
+    // _synergyTriggers: what abilities/skills are making this synergy fire?
+    _synergyTriggers(syn) {
+      const out = [];
+      try {
+        const reqs = syn.requires || [];
+        const minLvl = syn.minLevel || 1;
+        for (const rid of reqs) {
+          if (rid.startsWith('skill:')) {
+            const skid = rid.slice(6);
+            const sk = ((this.state.codex || {}).skills || {})[skid];
+            if (sk && (sk.level || 0) >= minLvl) out.push({ type: 'skill', id: skid, level: sk.level });
+          } else if (rid.startsWith('tech:')) {
+            out.push({ type: 'technique', id: rid.slice(5) });
+          } else {
+            const lvl = this.abilityLevel(rid);
+            if (lvl >= minLvl) {
+              const ab = (this.data.abilities || []).find(a => a.id === rid);
+              out.push({ type: 'ability', id: rid, name: ab ? ab.name : rid, level: lvl });
+            }
+          }
+        }
+        // requires_any: show which path is active
+        const reqsAny = syn.requires_any || [];
+        for (const path of reqsAny) {
+          const pathMet = path.every(rid => {
+            if (rid.startsWith('skill:')) {
+              const sk = ((this.state.codex || {}).skills || {})[rid.slice(6)];
+              return sk && (sk.level || 0) >= minLvl;
+            }
+            return this.abilityLevel(rid) >= minLvl;
+          });
+          if (pathMet) {
+            for (const rid of path) {
+              const ab = (this.data.abilities || []).find(a => a.id === rid);
+              out.push({ type: 'ability', id: rid, name: ab ? ab.name : rid, level: this.abilityLevel(rid) });
+            }
+            break; // only show the first satisfied path
+          }
+        }
+      } catch (e) {}
+      return out;
+    },
+
+    // getNearSynergies: synergies where you're 1 requirement away from unlocking.
+    // Returns [{id, name, have, need, needName}] — "Clean Kill: 2/3 — need Stalk"
+    getNearSynergies() {
+      try {
+        const syns = this.data.synergies || [];
+        const active = this.state.scholar.activeSynergies || [];
+        const discovered = this.state.scholar.synergies || [];
+        const out = [];
+        for (const syn of syns) {
+          if (active.includes(syn.id)) continue; // already active
+          const minLvl = syn.minLevel || 1;
+          // Check requires_any paths first (multi-path synergies)
+          const reqsAny = syn.requires_any || null;
+          if (reqsAny) {
+            let bestPath = null, bestHave = 0, bestNeed = [];
+            for (const path of reqsAny) {
+              const have = [];
+              const need = [];
+              for (const rid of path) {
+                const met = rid.startsWith('skill:')
+                  ? (((this.state.codex || {}).skills || {})[rid.slice(6)] || {}).level >= minLvl
+                  : this.abilityLevel(rid) >= minLvl;
+                if (met) have.push(rid);
+                else need.push(rid);
+              }
+              if (need.length === 1 && have.length > bestHave) {
+                bestHave = have.length;
+                bestNeed = need;
+                bestPath = path;
+              }
+            }
+            if (bestPath && bestNeed.length === 1) {
+              const needId = bestNeed[0].startsWith('skill:') ? bestNeed[0].slice(6) : bestNeed[0];
+              const ab = (this.data.abilities || []).find(a => a.id === needId);
+              out.push({
+                id: syn.id,
+                name: syn.name || syn.id,
+                have: bestHave,
+                total: bestPath.length,
+                need: needId,
+                needName: ab ? ab.name : needId,
+                discovered: discovered.includes(syn.id),
+              });
+            }
+            continue;
+          }
+          // Standard requires
+          const reqs = syn.requires || [];
+          if (!reqs.length) continue;
+          const have = [];
+          const need = [];
+          for (const rid of reqs) {
+            const met = rid.startsWith('skill:')
+              ? (((this.state.codex || {}).skills || {})[rid.slice(6)] || {}).level >= minLvl
+              : rid.startsWith('tech:')
+                ? !!(((this.state.scholar.codex || {}).techniques || {})[rid.slice(5)])
+                : this.abilityLevel(rid) >= minLvl;
+            if (met) have.push(rid);
+            else need.push(rid);
+          }
+          if (need.length === 1 && have.length >= 1) {
+            const needId = need[0].startsWith('skill:') ? need[0].slice(6)
+              : need[0].startsWith('tech:') ? need[0].slice(5) : need[0];
+            const ab = (this.data.abilities || []).find(a => a.id === needId);
+            out.push({
+              id: syn.id,
+              name: syn.name || syn.id,
+              have: have.length,
+              total: reqs.length,
+              need: needId,
+              needName: ab ? ab.name : needId,
+              discovered: discovered.includes(syn.id),
+            });
+          }
+        }
+        return out;
+      } catch (e) { return []; }
+    },
+
+    // getDiscoveredSynergies: known but not active and not near (0-1 requirements met, or missing 2+).
+    getDiscoveredSynergies() {
+      try {
+        const discovered = this.state.scholar.synergies || [];
+        const active = this.state.scholar.activeSynergies || [];
+        const near = this.getNearSynergies().map(s => s.id);
+        const syns = this.data.synergies || [];
+        return discovered
+          .filter(sid => !active.includes(sid) && !near.includes(sid))
+          .map(sid => {
+            const syn = syns.find(x => x.id === sid);
+            if (!syn) return null;
+            return { id: sid, name: syn.name || sid, flavor: syn.flavor || syn.description || '' };
+          })
+          .filter(Boolean);
+      } catch (e) { return []; }
     },
 
     // synergyMods: passive synergy effects, fed into the modifier pipeline.
@@ -14395,7 +16182,16 @@
     // mods: all active ability modifiers for the scholar (system + background + synergies).
     mods() {
       const base = globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities);
-      return base.concat(this.synergyMods());
+      const mods = base.concat(this.synergyMods());
+      // BUILD BONUS (Steve 2026-10-07): specialists and generalists both get
+      // rewarded. The bonus applies as a modifier so it stacks with everything.
+      try {
+        const bb = this.buildBonus();
+        if (bb) {
+          mods.push({ target: bb.target, op: 'multiply', value: bb.mult, source: bb.name });
+        }
+      } catch (e) {}
+      return mods;
     },
 
     // modTarget: resolve one computed value through the modifier pipeline.
@@ -14486,16 +16282,21 @@
       }
       scholar.kcal = Math.min((scholar.kcal || 0) + taken, 3000);
       // WATER with the meal (from village storage).
+      // HONEST (survivalist loop 2026-10-07): the old message said "+1L water"
+      // whenever vw.clean >= 0 — which is true even when the cistern is dry
+      // and no bottle was given. Track the gift with a boolean instead.
       const vw = v.water || { clean: 0 };
+      let gotWater = false;
       if (vw.clean >= 1) {
         vw.clean -= 1;
         scholar.water = scholar.water || [];
         scholar.water.push({ liters: 1, quality: 'clean', source: 'Village meal' });
+        gotWater = true;
       }
       if (taken > 0) {
-        this.say(`Village meal: +${Math.round(taken)} kcal${vw.clean >= 0 ? ', +1L water' : ''} from the communal pantry.${trust < 30 ? ' (Half ration — they don\'t trust you yet.)' : ''}`);
+        this.say(`Village meal: +${Math.round(taken)} kcal${gotWater ? ', +1L water' : ''} from the communal pantry.${trust < 30 ? ' (Half ration — they don\'t trust you yet.)' : ''}`);
       } else {
-        this.say('No food in the pantry. The village is hungry.');
+        this.say(`No food in the pantry. The village is hungry.${gotWater ? ' You still get your 1L water.' : ''}`);
       }
     },
 
@@ -14714,13 +16515,23 @@
       } catch (e) {}
       // PROMISES ROT: unchecked daily — 7+ days ignored and they break.
       try { this.checkPromises(); } catch (e) {}
+      // CACHES: one theft roll per cache per day (Steve 2026-10-07) — was per
+      // NPC batch, which compounded to certain robbery. Far wild is safer now.
+      try { this.dailyCacheCheck(); } catch (e) {}
       // evening: run metabolism
       scholar._preDayHealth = scholar.health;
       // WEATHER: the sky does what it wants. Clear most days, rain sometimes, cold snaps.
       // rain_dancer: when it rains, +1L water free. (You dance. It works.)
       // cold_blooded: on cold days your body budgets — 20% less food needed.
       const wr = Math.random();
+      const prevWeather = this.state.weather;
       this.state.weather = wr < 0.7 ? 'clear' : wr < 0.9 ? 'rain' : 'cold';
+      // DRAMA (Steve 2026-10-07): dramatic weather change — screen-wide effect
+      try {
+        if (this.state.weather !== prevWeather && (this.state.weather === 'rain' || this.state.weather === 'cold')) {
+          this.drama('weather', this.state.weather);
+        }
+      } catch (e) {}
       if (this.state.weather === 'rain') {
         const catchL = Math.round(this.modTarget('water.rain_catch', 0));
         if (catchL > 0) {
@@ -14800,6 +16611,8 @@
       try { if (this.playerAtHaven()) scholar.lastHavenDay = scholar.day || 1; } catch (e) {}
       this.villageLives();
       this.villageEats();
+      // ECOLOGY (Steve 2026-10-07): wildlife lives whether you're watching or not
+      try { this.simEcology(); } catch (e) {}
       this.checkTraps();
       try { this.checkNets(); } catch (e) {}
       try { this.checkGenesis(); } catch (e) {}
@@ -14809,7 +16622,7 @@
       this.socialSimmer();
       // depletion: every 5 days, the easy food is gone. the land gets tired.
       if (this.state.scholar.day % 5 === 0) {
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
           const t = this.tileAt(x, y);
           if (t.type !== 'haven' && t.type !== 'ruin' && t.maxStock > 1) {
             t.maxStock -= 1;
@@ -14869,13 +16682,6 @@
     // A loaded pack reacts slower.
     playerSpeed() {
       let sp = 3;
-      // READ THE FIGHT (Steve 2026-10-07): banked +2 speed from Read the
-      // Fight, plus the brawler_instinct passive (combat.player_speed).
-      try {
-        const fr = (this.state.scholar || {}).fightRead;
-        if (fr && fr.speedBonus) sp += fr.speedBonus;
-      } catch (e) {}
-      try { sp += this.modTarget('combat.player_speed', 0); } catch (e) {}
       try {
         const bt = (globalThis.Scattering.calories || {}).burdenTier;
         if (bt) sp -= bt(this.packWeight(), this.packCapacity()).speedPen;
@@ -15061,10 +16867,6 @@
 
     startCombat(monsterId) {
       const s = this.state.scholar;
-      // BRAWLER (Steve 2026-10-07): per-fight damage ledger for Settle the
-      // Debt. (The audit found "once per fight" flags were once-per-save;
-      // at minimum the ledger itself must reset or the debt is dishonest.)
-      s.fightDamageTaken = 0;
       this.syncMonsterAlias();
       const px = s.mx ?? 4, py = s.my ?? 4;
       // WANDERER CONTACT (forager loop 2026-10-05): the "Face it" button calls
@@ -15122,9 +16924,6 @@
         speed: this.playerSpeed(), mx: px, my: py,
         alive: true, fled: false, moveLeft: 0, acted: false, aimed: false,
       });
-      // READ THE FIGHT (Steve 2026-10-07): banked +2 speed consumed into the
-      // fighter. The fighter keeps it for the whole fight.
-      if (s.fightRead && s.fightRead.speedBonus) { try { delete s.fightRead; } catch (e) {} }
       // party: villagers within 4 squares join the fight (nearest 4 — no zerg)
       const vpos = (this.state.village && this.state.village.positions) || {};
       const roster = (this.state.village && this.state.village.roster) || [];
@@ -15290,6 +17089,10 @@
       }
 
       this.tbfight = {
+        // FIGHT ID (hunter loop 2026-10-07): read_stance keys "once per fight"
+        // off tbfight.id — it must exist, or undefined===undefined makes the
+        // first read claim "already read".
+        id: 'f' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e9).toString(36),
         fighters,
         order: S.combat.turnOrder(fighters),
         turnIdx: 0, round: 1,
@@ -15536,9 +17339,12 @@
           this.tbRefreshTelegraphUI();
           if (c.acted) { this.tbAdvance(); return; }
         } else {
-          c.moveLeft = c.speed; c.acted = false; c.beamTicks = 0;
+          // SLOW (statusEffects engine, Steve 2026-10-07): heavy limbs.
+          c.moveLeft = Math.max(0, Math.floor((c.speed || 0) * this.seMoveMod(c))); c.acted = false; c.beamTicks = 0;
         }
       }
+      // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks (bleed/burn), duration, expiry.
+      if (this.seTickFighter(c)) return;
       this.tbRefreshTelegraphUI();
     },
 
@@ -15570,8 +17376,7 @@
     },
 
     tbPatternKnown(monsterId, attackName) {
-      const c = (this.state.codex.monsters || {})[monsterId];
-      return !!(c && c.patterns && c.patterns[attackName]);
+      return this.canShow('monster', monsterId, 'mechanics', { pattern: attackName });
     },
 
     // Called when an attack resolves and you live to think about it.
@@ -16225,6 +18030,96 @@
       return null;
     },
 
+    // === AMBUSH-ZONE: seeded ground (Steve 2026-10-07) ===
+    // combat.js 'ambush-zone' patterns: the zone is centered on
+    // pattern.center (fixed ground, not the attacker), arms when stepped
+    // in, and runs a visible arming beat before firing. The beat is the
+    // dodge window. Fight-scoped: zones die with the fight, like terraform.
+    // tbSeedAmbushZone: a monster lays the trap. Returns the zone.
+    tbSeedAmbushZone(m, pattern, opts) {
+      const f = this.tbfight;
+      if (!f || f.over || !m || !pattern || pattern.type !== 'ambush-zone') return null;
+      f.ambushZones = f.ambushZones || [];
+      const zone = {
+        pattern: Object.assign({ radius: 1 }, pattern),
+        seededBy: m.key,
+        seedId: (m.mdef || {}).id || '?',
+        attackName: (opts && opts.attackName) || ((m.mdef || {}).attack || {}).name || 'seeded ambush',
+        dmg: (opts && opts.dmg) || ((m.mdef || {}).attack || {}).damage || '2d6',
+        armed: false, beatsLeft: 0, spent: false,
+      };
+      f.ambushZones.push(zone);
+      // THE BULGE: seeding is visible ground. The grid marks the circle —
+      // the grid IS the telegraph. Knowledge gates the coaching, never the mark.
+      const cells = S.combat.patternCells(zone.pattern, m.mx, m.my, m.mx, m.my);
+      this.warnCells(cells, 99);
+      const known = this.tbPatternKnown(zone.seedId, zone.attackName);
+      this.say('⚠ ' + S.combat.telegraphText(zone.pattern, 'windup', known));
+      this.tbRefreshTelegraphUI();
+      return zone;
+    },
+    // tbAmbushZoneTick: run after every player action and on each round —
+    // the ground checks itself. Unarmed zones ARM the moment a fighter
+    // steps in (visible arming beat: text + grid + audio); armed zones
+    // FIRE one beat later at whatever is still inside.
+    tbAmbushZoneTick() {
+      const f = this.tbfight;
+      if (!f || f.over) return;
+      const zones = f.ambushZones || [];
+      if (!zones.length) return;
+      for (const z of zones) {
+        if (z.spent) continue;
+        if (!z.armed) {
+          // Keep the marked circle lit while it waits.
+          this.warnCells(S.combat.patternCells(z.pattern, 0, 0, 0, 0), 2);
+          // Arming: anyone (not the seeder) standing in seeded ground?
+          const stepped = (f.fighters || []).some(fr =>
+            fr.alive && !fr.fled && fr.key !== z.seededBy &&
+            S.combat.zoneArmed(z.pattern, fr.mx, fr.my));
+          if (stepped) {
+            z.armed = true; z.beatsLeft = 1;
+            this.warnCells(S.combat.patternCells(z.pattern, 0, 0, 0, 0), 2);
+            const known = this.tbPatternKnown(z.seedId, z.attackName);
+            // THE ARMING BEAT: the ground stirs. One beat — MOVE. Spoken
+            // (not silent like windup cues) because this is the last dodge
+            // window before the spines come up.
+            this.say('⚠ ' + S.combat.telegraphText(z.pattern, 'arming', known));
+            this.audioEvent('telegraph', { urgency: 1, pattern: 'ambush-zone' });
+            // DRAMA (Steve 2026-10-07): ambush arming — red vignette + warning at zone center
+            try {
+              const zc = (z.pattern && z.pattern.center) || { x: 4, y: 4 };
+              this.drama('ambush', zc.x, zc.y);
+            } catch (e) {}
+            this.tbRefreshTelegraphUI();
+          }
+        } else {
+          z.beatsLeft -= 1;
+          if (z.beatsLeft > 0) continue;
+          // FIRE: spines through every fighter (not the seeder) still inside.
+          const cells = S.combat.patternCells(z.pattern, 0, 0, 0, 0);
+          const victims = (f.fighters || []).filter(fr =>
+            fr.alive && !fr.fled && fr.key !== z.seededBy &&
+            cells.some(c => c.cx === fr.mx && c.cy === fr.my));
+          const known = this.tbPatternKnown(z.seedId, z.attackName);
+          this.say('💥 ' + S.combat.telegraphText(z.pattern, 'action', known));
+          this.audioEvent('ambushSnap');
+          for (const v of victims) {
+            const dmg = S.combat.roll(z.dmg);
+            this.tbDamage(v.key, dmg, (z.seedId || 'something') + "'s " + z.attackName, z.seededBy);
+          }
+          z.spent = true;
+          // Surviving teaches the pattern: the codex earns it, never given.
+          for (const v of victims) {
+            if (v.kind === 'player' && v.alive) {
+              const seeder = this.tbFighter(z.seededBy);
+              if (seeder) this.tbLearnPattern(seeder);
+            }
+          }
+          this.tbRefreshTelegraphUI();
+        }
+      }
+    },
+
     // audioEvent: optional hook for the Web Audio terror system (app.js).
     // If no audio system is attached, this is a silent no-op.
     audioEvent(name, data) {
@@ -16366,7 +18261,7 @@
       }
       const nx = this.map.px + dx, ny = this.map.py + dy;
       // World edge: can't leave the map.
-      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) {
+      if (nx < 0 || nx > 8 || ny < 0 || ny > 8) { // 9x9 world (2026-10-07)
         this.say('The known world ends here — no pushing through. Turn back.');
         return true; // consumed the push attempt
       }
@@ -16448,7 +18343,11 @@
       // RANGED: no ammo, no shot.
       // FLASHBLIND: the moth's flash leaves spots in your eyes — your strike
       // may catch only afterimages. (Mirrors the pocket_sand miss rule.)
-      if (p.blindTurns > 0) {
+      // TAKE AIM (hunter loop 2026-10-07): "cannot miss" — a guaranteed aimed
+      // shot punches through the afterimages. The aim is still consumed.
+      let aimGuaranteed = false;
+      try { aimGuaranteed = !!((this.state.scholar || {}).aimBonus || {}).guaranteed; } catch (e) {}
+      if (p.blindTurns > 0 && !aimGuaranteed) {
         p.blindTurns -= 1;
         if (Math.random() < 0.5) {
           p.acted = true;
@@ -16457,6 +18356,9 @@
           return true;
         }
         this.say('You blink the spots away and strike through them.');
+      } else if (p.blindTurns > 0 && aimGuaranteed) {
+        p.blindTurns -= 1;
+        this.say('Spots swim in your eyes — but the aim holds. The shot goes where you pictured it. (Take Aim — cannot miss.)');
       }
       if (w.ammo) {
         if (this.ammoCount(w.ammo) < 1) {
@@ -16472,12 +18374,21 @@
       const hpFrac = p.hp / p.maxHp;
       if (this.hasAbility('rage') && hpFrac < 0.5) { d *= 2; this.say('RAGE: +100% damage.'); }
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
-      if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
+      let wasCrit = false; // DRAMA B1: crits get the full spectacle
+      if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; wasCrit = true; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
+      // ABILITY ACTIONS (Steve 2026-10-07): consume take_aim, ambush, haymaker,
+      // trade_of_blows, rage, etc. flags set by Game.useAbility(). Each flag
+      // is single-use unless noted; the hook narrates and clears.
+      try { if (typeof this._applyAbilityActionMods === 'function') d = this._applyAbilityActionMods(d, p, t); } catch (e) {}
       // PATIENT AIM: 2x damage on round 1 (combat.strike_damage modifier)
       try {
         if (f.round === 1) {
           const paMult = this.modTarget('combat.strike_damage', 1, { round: 1 });
           if (paMult > 1) { d = Math.round(d * paMult); this.say('PATIENT AIM: first strike, doubled.'); }
+          // AMBUSH (hunter loop 2026-10-07): the ambush passive — first
+          // strikes hit harder. Declared in data, previously never consumed.
+          const amMult = this.modTarget('combat.first_strike_damage', 1, { round: 1 });
+          if (amMult > 1) { d = Math.round(d * amMult); this.say(`AMBUSH: first blood. ×${amMult}.`); }
         }
       } catch (e) {}
       // THE RESERVE: food is humanity's superpower. A full furnace hits harder —
@@ -16499,10 +18410,18 @@
         // true name is never free, even mid-fight.
         const tName = this.encShortLabel(t) || this.encTheName(t);
         // Armor: flat reduction vs physical damage only
-        if (wType === 'physical' && mdef.armor > 0) {
+        // DEAD AIM (hunter loop 2026-10-07): "armor won't save them" — the
+        // ignoreArmorNext flag is set by dead_aim_shot and consumed here, on
+        // the next strike. Without this it lingered forever: one Dead Aim
+        // meant permanent armor-piercing on every later strike.
+        let ignoreArmor = false;
+        try { ignoreArmor = !!this.state.scholar.ignoreArmorNext; this.state.scholar.ignoreArmorNext = false; } catch (e) {}
+        if (wType === 'physical' && mdef.armor > 0 && !ignoreArmor) {
           const absorbed = Math.min(d, mdef.armor);
           d -= absorbed;
           if (absorbed > 0) this.say(`(${tName}'s hide absorbs ${absorbed}.)`);
+        } else if (ignoreArmor && wType === 'physical' && mdef.armor > 0) {
+          this.say(`(${tName}'s hide might as well not be there. (Dead Aim — armor ignored.))`);
         }
         // Resistances: percentage reduction per type (negative = vulnerability)
         let res = (mdef.resistances || {})[wType] || 0;
@@ -16539,6 +18458,13 @@
           }
         }
         d = Math.max(1, d); // always at least 1 damage
+        // APEX PREDATOR (hunter loop 2026-10-07): "you are the thing other
+        // things fear" — bonus damage vs beasts. Declared in data, previously
+        // never consumed.
+        try {
+          const vbMult = this.modTarget('combat.vs_beast_damage', 1);
+          if (vbMult > 1) { d = Math.round(d * vbMult); this.say(`APEX PREDATOR: you are the thing other things fear. ×${vbMult}.`); }
+        } catch (e) {}
       }
       p.acted = true;
       // BETTER HUMAN: fighting is strength and agility practice.
@@ -16633,6 +18559,12 @@
         }
       } catch (e) {}
       this.tbDamage(t.key, d, 'you', null, { quiet: true });
+      // DRAMA (Steve 2026-10-07, B1): the strike LANDS — starburst on the monster.
+      // Crits (DEAD AIM) get the full spectacle: CRIT! + damage number + shake.
+      try {
+        if (wasCrit) this.drama('critHit', t.mx, t.my, d);
+        else if (!isHuman) this.drama('hit', t.mx, t.my, { color: '#ffd54a' });
+      } catch (e) {}
       // UNDERSTUDY (Steve 2026-10-06): it watches you fight and learns. Record
       // the weapon + damage for any watching understudy in this fight.
       // (Records SHAMED damage — the heckler's words affect the copy too.)
@@ -16750,7 +18682,8 @@
           this.say(`The Elder ${this.monsterDisplayName(m.monsterId)} doesn't even flinch — it has heard worse. (ELDER: immune to stun)`);
           continue;
         }
-        m.stunned = 1;
+        // STUN (statusEffects engine, Steve 2026-10-07): data-driven.
+        this.applyStatus(m, 'stun', { turns: 1, source: 'your scream', silent: true });
         if (m.telegraph) { m.telegraph = null; n++; }
       }
       this.say(`You SCREAM. Milk curdles somewhere.${n ? ' Its focus shatters — the attack fizzles.' : ''} It freezes. (stunned)`);
@@ -16830,6 +18763,9 @@
       // tbAdvance only checks after AI turns, so check here too. Otherwise
       // killing the final foe soft-locks the fight on your turn forever.
       if (this.tbEndCheck()) return;
+      // AMBUSH-ZONE (Steve 2026-10-07): seeded ground checks after every
+      // player action — stepping into a zone arms it with a visible beat.
+      this.tbAmbushZoneTick();
       // ACTION ECONOMY (Steve): the turn ends when you're out of actions —
       // no end-turn ceremony. Spend moves + the acted action and it advances
       // on its own. (Wait forfeits the rest via tbPlayerWait.)
@@ -16866,18 +18802,10 @@
         f.turnIdx++;
         if (f.turnIdx >= f.order.length) {
           f.turnIdx = 0; f.round++;
-          // READ THE FIGHT (Steve 2026-10-07): speed changed mid-fight —
-          // re-sort the order from the new round. Nobody gains or loses a
-          // turn mid-round; the new speed bites next round.
-          if (f.orderDirty) {
-            try {
-              const SC = globalThis.Scattering;
-              if (SC && SC.combat && SC.combat.turnOrder) f.order = SC.combat.turnOrder(f.fighters);
-            } catch (e) {}
-            f.orderDirty = false;
-          }
           this.sysSay(`ROUND ${f.round}!`);
           this.audioEvent('round', { round: f.round });
+          // AMBUSH-ZONE (Steve 2026-10-07): the ground ticks with the round.
+          this.tbAmbushZoneTick();
           // BELLTOAD CHORUS (Steve 2026-10-05): the sound IS the mechanic.
           // Every 2 rounds, another answers the call (up to 4), even if the
           // original is dead. The croak carries for miles.
@@ -17008,6 +18936,8 @@
         f.turnIdx = 0; f.round++;
         try { this.sysSay(`ROUND ${f.round}!`); } catch (e) {}
         try { this.audioEvent('round', { round: f.round }); } catch (e) {}
+        // AMBUSH-ZONE (Steve 2026-10-07): the ground ticks with the round (async path).
+        try { this.tbAmbushZoneTick(); } catch (e) {}
       }
       const key = f.order[f.turnIdx];
       const c = this.tbFighter(key);
@@ -17250,6 +19180,8 @@
         if (dodgeCh > 0 && Math.random() < dodgeCh) {
           this.say('You slip aside — it misses clean. (footwork)');
           this.practice('agi', 1); // dodging is agility practice
+          // DRAMA (Steve 2026-10-07, B1): the dodge READS — MISS + ghost.
+          try { this.drama('dodgeMiss', t.mx, t.my); } catch (e) {}
           return;
         }
       }
@@ -17385,23 +19317,13 @@
         final = t.hp - 1;
         this.say(`It should drop — but the light behind ${t.name}'s eyes is already gathered. The body won't fall until it fires.`);
       }
-      // ABILITY DEFENSE (Steve 2026-10-07): Brace (unbreakable) and other
-      // defensive flags. _applyAbilityDefenseMods had zero callers — the
-      // 60% reduction never fired. Wired here, the single incoming-damage
-      // integration point, after armor and before HP is removed.
-      if (t.kind === 'player' && typeof this._applyAbilityDefenseMods === 'function') {
-        try { final = this._applyAbilityDefenseMods(final, sourceLabel); } catch (e) {}
-      }
-      // TRADE OF BLOWS (Steve 2026-10-07): Settle the Debt read
-      // s.fightDamageTaken, which nothing wrote. Track real damage taken
-      // this fight (post-armor, post-brace). Reset in startCombat.
-      if (t.kind === 'player' && final > 0) {
-        this.state.scholar.fightDamageTaken = (this.state.scholar.fightDamageTaken || 0) + final;
-      }
       t.hp -= final;
       if (t.kind === 'player') {
         this.state.scholar.health = Math.max(0, t.hp);
         if (final > 0) this.noteAbilityUse('chitin_skin');
+        // DRAMA (Steve 2026-10-07, B1): getting hit HURTS visibly — red
+        // vignette + shake. Throttled to real hits (5+), not chip damage.
+        if (final >= 5) try { this.drama('playerHurt', final); } catch (e) {}
         // WITNESS JUDGEMENT: a hard hit on you gets a visible gasp (once per
         // fight — not every chip). People nearby react to you bleeding.
         const ff = this.tbfight;
@@ -17456,6 +19378,23 @@
         if (this.encUsesFifo(t)) this.encSetPhase(t, 'bunker');
         this.say('It withdraws. The shell seals with a sound like a door closing. (BUNKER: nearly invulnerable for 2 turns — wait it out.)');
         this.audioEvent('turtleBunker');
+      }
+      // HALF-HP TEMPERAMENT (Steve 2026-10-07, Drama B1): monsters CHANGE at
+      // half HP — enraged, cunning, or desperate. encWoundCheck (encounters.js)
+      // was defined but never called; wire it here so the shift narrates once
+      // AND reads visually: red aura + 💢 + shake.
+      if (t.kind === 'monster' && t.hp > 0 && !t.encWound && t.hp < t.maxHp * 0.5) {
+        try {
+          const wlabel = this.encShortLabel(t) || t.name;
+          const wline = (typeof this.encWoundCheck === 'function') ? this.encWoundCheck(t, wlabel) : null;
+          if (wline) this.say(wline);
+          else {
+            // fallback if encounters.js didn't set it: default enraged
+            t.encWound = t.encWound || 'enraged';
+            this.say(`${wlabel} is BLEEDING — and it likes it. Louder, faster, no more feints.`);
+          }
+          this.drama('enrage', t.mx, t.my, t.encWound || 'enraged');
+        } catch (e) {}
       }
       if (t.hp <= 0) {
         t.alive = false;
@@ -17516,6 +19455,13 @@
         }
         else {
           this.say(`${this.encSubject(t)} falls.`);
+          // DRAMA (Steve 2026-10-07, B1): death is a moment — the soul leaves,
+          // and the loot glints. (Loot is still a deliberate action; this is
+          // just the glint that says "something's here.")
+          try {
+            this.drama('wisp', t.mx, t.my);
+            this.drama('lootSparkle', t.mx, t.my);
+          } catch (e) {}
           // MONSTER BATCH 2: a lockpick killed mid-job doesn't get to keep
           // your things — the loot is still in its hands.
           if (t.stolen) {
@@ -17732,6 +19678,8 @@
 
     tbVillagerTurn(v) {
       const f = this.tbfight;
+      // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks (bleed/burn), expiry.
+      if (this.seTickFighter(v)) return;
       // ON THE LINE (warranty caller, Steve 2026-10-06): a villager the
       // caller reached is stuck listening — they lose the turn. Hurting the
       // caller mid-call hangs it up (the bad-connection rule is the peel).
@@ -18121,7 +20069,21 @@
       const c = this.encConfig(m);
       return (c && c.noticeRange) || 5; // chebyshev; line of sight required
     },
-    encSetPhase(m, phase) { m.beamPhase = phase; },
+    encSetPhase(m, phase) {
+      const changed = m.beamPhase !== phase;
+      m.beamPhase = phase;
+      // DRAMA (Steve 2026-10-07, B1): phase transitions are visible beats —
+      // windup → strike → recovery reads on the grid, not just in text.
+      // Only in combat, only on actual change.
+      if (changed && this.tbfight && m && m.kind === 'monster') {
+        try {
+          const bucket = /windup|charge|aim|stalk|telegraph|channel/i.test(phase) ? 'windup'
+            : /strike|fire|attack|discharge|bite|lunge|trample|dive|perform/i.test(phase) ? 'strike'
+            : /recover|cooldown|bask|bunker|ember/i.test(phase) ? 'recovery' : phase;
+          if (bucket !== 'idle') this.drama('phaseShift', m.mx, m.my, bucket);
+        } catch (e) {}
+      }
+    },
     encNoticeFighter(m, key, silent) {
       const q = this.encThreatQueue(m);
       if (q.includes(key)) return false;
@@ -18390,8 +20352,8 @@
               if (p) {
                 p.moveLeft = 0;
                 p.acted = true;
-                p.stunned = 1;
-                p.stunFull = 1; // the toad's stun is a FULL turn loss — consumed in tbBeginTurn
+                // STUN (statusEffects engine, Steve 2026-10-07): full turn loss.
+                this.applyStatus(p, 'stun_full', { turns: 1, source: 'the belltoad croak', silent: true });
                 this.say('Your ears ring — the world tilts. The croak hits like a wall. You lose your turn.');
                 this.audioEvent('belltoadStun');
               }
@@ -19224,14 +21186,9 @@
         if (this.tbEndCheck()) return;
         return;
       }
-      // LOOM (fear_aura, Steve 2026-10-07): you stood still and let it look.
-      // It hesitates one full round instead of acting.
-      if (m.loomHesitate) {
-        m.loomHesitate = false;
-        this.say(`${this.encSubject(m)} hesitates — still seeing you standing there, not moving. (Loom)`);
-        if (this.tbEndCheck()) return;
-        return;
-      }
+      // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks, then fear fizzle.
+      if (this.seTickFighter(m)) return;
+      if (this.seFizzle(m)) return;
       // GRAVITY HELD: the well has it. No movement — it can still act at range.
       if (m.gravityHeld > 0) {
         m.gravityHeld -= 1;
@@ -19244,6 +21201,10 @@
       const isDeer = this.deerIs(m);
       const useFifo = this.encUsesFifo(m);
       if (useFifo) this.encScanThreats(m);
+      // BEHAVIOR TABLE (monsterBehaviors.json + src/js/monsterBehaviors.js, Steve 2026-10-07):
+      // data-driven pre-turn hooks. Migrated species run their verbatim-extracted logic from the registry.
+      // mbRunPreTurn returns true if a hook consumed the turn.
+      if (this.mbRunPreTurn && this.mbRunPreTurn(m)) return;
       // HIGHBEAM (Steve 2026-10-05): closing in is risky EVERY turn, not just
       // while the beam fires. The antlers thrash anyone adjacent IN ADDITION
       // to whatever the deer is doing — you take damage standing next to it
@@ -19527,6 +21488,24 @@
           // (The stag's commitCharge is the same idea via config.)
           if (this.beastIs(m)) {
             this.say('It charges the announced line — exactly where it said it would. Attendance was mandatory.');
+          } else if (ptype === 'lockon') {
+            // LOCK-ON RE-LOCK (Steve 2026-10-07): at fire time, re-call
+            // patternCells with the LOCKED target's current square (combat.js
+            // 'lockon' contract: windup-cells == action-cells per call). The
+            // mark is a lie about TIMING, not about aim — dodge by moving,
+            // not by standing behind someone nearer.
+            let locked = tg.aimKey ? this.tbFighter(tg.aimKey) : null;
+            if (!locked || !locked.alive || locked.fled) {
+              const ne = S.combat.nearestEnemy(f.fighters, m);
+              locked = ne ? ne.f : null;
+            }
+            if (locked && locked.alive && !locked.fled) {
+              tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, locked.mx, locked.my);
+              tg.aim = { x: locked.mx, y: locked.my };
+              tg.aimKey = locked.key;
+              // The re-locked square flashes: the gaze moved with you.
+              this.warnCells(tg.cells, 1);
+            }
           } else if (ptype !== 'beam' && ptype !== 'line' && !rcfg.commitCharge && !tg.commitCells) {
             const foe = S.combat.nearestEnemy(f.fighters, m);
             if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
@@ -19745,7 +21724,8 @@
           if (this.pzIs(m) && (tg.pattern || {}).type === 'burst') {
             for (const o of hitFighters) {
               if (o.kind === 'player' && o.alive) {
-                o.stunned = Math.max(o.stunned || 0, 1);
+                // STUN (statusEffects engine, Steve 2026-10-07): lose movement, keep action.
+                this.applyStatus(o, 'stun', { turns: 1, source: 'the paparazzo flash', silent: true });
                 this.say(`FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`);
               }
             }
@@ -19766,8 +21746,8 @@
                 if (p) {
                   p.moveLeft = 0;
                   p.acted = true;
-                  p.stunned = 1;
-                  p.stunFull = 1; // the toad's stun is a FULL turn loss — consumed in tbBeginTurn
+                  // STUN (statusEffects engine, Steve 2026-10-07): full turn loss.
+                  this.applyStatus(p, 'stun_full', { turns: 1, source: 'the belltoad croak', silent: true });
                   this.say('Your ears ring — the world tilts. The croak hits like a wall. You lose your turn.');
                   this.audioEvent('belltoadStun');
                 }
@@ -20281,6 +22261,10 @@
           this.audioEvent('staticCry', { close: true });
         } else if (vmPhase !== 'reveal' && (m.vmResist || 0) >= 2) {
           this.encSetPhase(m, 'reveal'); vmPhase = 'reveal'; m.vmResist = 0;
+          // REVEAL BREATH (Steve 2026-10-06): the pending Distress Call
+          // resolves this same turn — the rush must wait one round, or the
+          // reveal double-dips (call damage + rush in one monster turn).
+          m.vmRushCd = 1;
           this.say('You don\'t move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It\'s a radio. It was always a radio.');
           this.audioEvent('staticBreak');
         }
@@ -21360,8 +23344,8 @@
           // music, no move, no act. The 2-3 turns of watching were the
           // warning; this is the price of letting it reach you.
           if (t.kind === 'player') {
-            t.stunned = Math.max(t.stunned || 0, 1);
-            t.stunFull = 1;
+            // STUN (statusEffects engine, Steve 2026-10-07): full turn loss.
+            this.applyStatus(t, 'stun_full', { turns: 1, source: 'the hold music', silent: true });
             this.say('"Please hold—" The music swells and the world tilts. You\'re on hold. (stunned: next turn lost)');
           }
           // AUDIO (Steve 2026-10-06): the rush resolve — hold music slammed into motion.
@@ -22108,11 +24092,16 @@
           this.say('"Hold the line! Hold the LINE!"');
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
-        // PICKET LINE: summon a wave-1 monster (once per fight per missing ally)
-        if (allies.length < 2 && !m.urSummoned) {
+        // PICKET LINE: summon a wave-1 monster (once per fight per missing ally).
+        // ORGANIZING WINDOW (Steve 2026-10-06): the rep must visibly organize
+        // for 2 turns before the line forms — "union-bust it before the picket
+        // forms" needs to be true. No apex on the picket line: gallowdeer is
+        // not picket fodder.
+        m.urOrgTurns = (m.urOrgTurns || 0) + 1;
+        if (allies.length < 2 && !m.urSummoned && m.urOrgTurns >= 2) {
           m.urSummoned = true;
           this.encSetPhase(m, 'picketing');
-          const w1 = (this.data.monsters || []).filter(x => (x.wave || 1) === 1 && x.id !== 'bulldozer');
+          const w1 = (this.data.monsters || []).filter(x => (x.wave || 1) === 1 && x.id !== 'bulldozer' && x.id !== 'gallowdeer');
           const pick = w1[Math.floor(Math.random() * w1.length)];
           this.say(`"PICKET LINE!" A ${pick.name} lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)`);
           try { this.audioEvent('unionPicket', {}); } catch (e) {}
@@ -22392,6 +24381,11 @@
         if (dcfg.bulldoze && pat.type === 'charge') cells = this.tbBulldozeCells(cells);
         // COMMIT: lock the lane now. It will not re-aim at resolve.
         if (dcfg.commitCharge) { aim = { x: foe.f.mx, y: foe.f.my }; aimKey = foe.f.key; }
+        // LOCK-ON: pin the gaze at declare — the windup marks THIS fighter's
+        // square NOW (combat.js patternCells 'lockon'). At fire time the
+        // resolve re-locks against this target's current square, so the gaze
+        // never slides to a nearer bystander mid-windup.
+        if (pat.type === 'lockon' && !aimKey) { aim = { x: foe.f.mx, y: foe.f.my }; aimKey = foe.f.key; }
         if (pat.sweep && (pat.type === 'beam' || pat.type === 'line')) {
           // SWEEPING BEAM: a ray FROM THE DEER that rotates toward you. It
           // locks its bearing at declare, then sweeps while it fires. Only
@@ -22928,7 +24922,7 @@
           this.say('PHOENIX CLAUSE: you EXPLODE — 60 damage to everything nearby.');
         }
         s.health = 1; s.kcal = 500;
-        this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3;
+        this.map.px = this.state.village.px ?? 4; this.map.py = this.state.village.py ?? 4;
         s.mx = 4; s.my = 4; this.fight = null; this.syncMonsterAlias();
         this.say('You wake at Haven, 1 HP, ash in your mouth. The audience applauds. (phoenix_clause: once per run)');
         this.noteAbilityUse('phoenix_clause');
@@ -23027,10 +25021,129 @@
       }));
     },
 
+    // KNOWLEDGE GATE (Steve 2026-10-07): THE unified gate. Every "do I know
+    // this?" check routes through here. Domains: plant, animal, monster, npc,
+    // skill, alien, item. Aspects: name, stats, kcal, edibility, mechanics, lore.
+    // "If you don't know, it doesn't show."
+    //
+    // Aspect semantics per domain:
+    //   plant: name=L1, kcal/edibility=L2, stats=L3, lore/mechanics=L4
+    //   animal: name=region-known or 3+ encounters (all aspects gate on name for now)
+    //   monster: name=observed/slain, stats=slain, mechanics=patterns known, lore=village-named
+    //   npc: name=knownNames, mechanics=goalsKnown (or System arrived)
+    //   skill: mechanics=name=level>=minLevel (opts.minLevel, default 1)
+    //   alien: name=revealed
+    //   item: composite — delegates to plant/monster gates via pantryItemKnown logic
+    canShow(domain, id, aspect, opts) {
+      aspect = aspect || 'name';
+      const s = this.state;
+      try {
+        switch (domain) {
+          case 'plant': {
+            const e = (s.codex.plants || {})[id];
+            const lvl = e ? (e.level || 0) : 0;
+            switch (aspect) {
+              case 'name': return lvl >= 1;
+              case 'kcal':
+              case 'edibility': return lvl >= 2;
+              case 'stats': return lvl >= 3;
+              case 'lore':
+              case 'mechanics': return lvl >= 4;
+              default: return lvl >= 1;
+            }
+          }
+          case 'animal': {
+            // Region-aware: "common" means common for YOUR region. Mirrors the
+            // encAnimalKnown rule: region overlap, or 3+ encounters.
+            try {
+              const adef = (this.data.animals || []).find(a => a.id === id);
+              if (adef && adef.common) {
+                const tags = ((s.scholar || {}).originTags || []).map(t => String(t).toLowerCase());
+                const aregions = (adef.regions || ['north_america']).map(r => String(r).toLowerCase());
+                const overlap = tags.some(t => aregions.includes(t));
+                const isNorthAmerican = tags.includes('north_america') || tags.some(t =>
+                  ['united states', 'usa', 'america', 'canada'].includes(t));
+                if (overlap || (isNorthAmerican && aregions.includes('north_america'))) return true;
+              }
+            } catch (e) {}
+            return (((s.codex || {}).animalEncounters || {})[id] || 0) >= 3;
+          }
+          case 'monster': {
+            const e = (s.codex.monsters || {})[id] || {};
+            const pat = opts && opts.pattern;
+            switch (aspect) {
+              case 'name': return !!(e.stage === 'observed' || e.stage === 'slain');
+              case 'stats': return e.stage === 'slain';
+              case 'mechanics':
+                if (pat) return !!(e.patterns && e.patterns[pat]);
+                return !!(e.patterns && Object.keys(e.patterns).length);
+              case 'lore': return !!(e.villageName);
+              default: return !!(e.stage === 'observed' || e.stage === 'slain');
+            }
+          }
+          case 'npc': {
+            switch (aspect) {
+              case 'name': return !!(((s.village || {}).knownNames || {})[id]);
+              case 'mechanics': return !!(s.systemArrived || (((s.village || {}).goalsKnown || {})[id]));
+              default: return !!(((s.village || {}).knownNames || {})[id]);
+            }
+          }
+          case 'skill': {
+            const e = (s.codex.skills || {})[id];
+            const lvl = e ? (e.level || 0) : 0;
+            const min = (opts && opts.minLevel) || 1;
+            return lvl >= min;
+          }
+          case 'alien': {
+            const ap = (typeof this.apState === 'function') ? this.apState() : null;
+            return !!(ap && ap.known && ap.known[id]);
+          }
+          case 'item': {
+            // Composite gate for inventory/pantry items. Identity rides on
+            // plantId: foraged plants gate on plant kcal; monster meat gates
+            // on monster name; items with no identity are mundane (always shown).
+            const p = id; // id is the item object here
+            if (!p) return false;
+            const pid = p.plantId;
+            if (!pid) return true;
+            if (String(pid).indexOf('meat_') === 0) {
+              const mid = String(pid).slice(5);
+              const mdef = (this.data.monsters || []).find(m => m.id === mid);
+              if (!mdef) return true;
+              const e = (s.codex.monsters || {})[mid];
+              return !!((e && e.villageName) || s.systemArrived);
+            }
+            // Non-plant plantIds (tools, keepsakes stamped as plantId) show.
+            if (!(this.data.plants || []).some(x => x.id === pid)) return true;
+            return this.canShow('plant', pid, (opts && opts.itemAspect) || 'name');
+          }
+          default: return false;
+        }
+      } catch (e) { return false; }
+    },
+
     // KNOWLEDGE DISPLAY: names are earned, not given. Until L1, plants are descriptors.
     plantKnown(pid) {
-      const e = (this.state.codex.plants || {})[pid];
-      return !!(e && e.level >= 1);
+      return this.canShow('plant', pid, 'name');
+    },
+    // PANTRY KNOWLEDGE GATE (Steve 2026-10-06): the village stash must not
+    // reveal counts of items you haven't discovered. Identity rides on plantId:
+    // foraged plants gate on plantKnown; monster meat ('meat_<mid>') gates on
+    // whether the monster has been named (villageName or System arrival —
+    // same gate as monsterDisplayName). Items with no identity (staples,
+    // generics like 'Foraged food') are mundane — always shown. Villager
+    // knowledge alone does NOT reveal: it stays hidden until they teach you,
+    // which flows through identifyPlant into your codex.
+    pantryItemKnown(p) {
+      return this.canShow('item', p, 'name');
+    },
+    // MONSTER FOOD SAFETY (Steve 2026-10-05): if you don't know it's safe,
+    // the UI doesn't show edibility or calories. Learned via cautious testing,
+    // villager word-of-mouth, or Codex. Stored on the monster codex entry.
+
+    // KNOWLEDGE DISPLAY: names are earned, not given. Until L1, plants are descriptors.
+    plantKnown(pid) {
+      return this.canShow('plant', pid, 'name');
     },
     // PANTRY KNOWLEDGE GATE (Steve 2026-10-06): the village stash must not
     // reveal counts of items you haven't discovered. Identity rides on plantId:
@@ -23204,6 +25317,10 @@
       this.state.codex.encounters[pid] = 99;
       this.refreshItemNames(pid);
       this.integrate(source === 'taught' ? 2 : 3, source === 'taught' ? 'taught' : 'discovery');
+      // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): codex plant unlock.
+      // 'knowledgeReveal' is the audio worker's mapped hook (app.js); the
+      // emitter no-ops safely until the synth lands.
+      this.audioEvent('knowledgeReveal', { kind: 'plant', id: pid });
       // celebration: identification is an EVENT, not a log line.
       // knowledgeLevels['1'] often starts with the name ("Chickweed. Low, tiny
       // white flowers.") — strip it so we don't print "Chickweed. Chickweed."
@@ -23212,6 +25329,8 @@
       // match the name ("Lamb's Quarters" vs "Lamb's quarters.").
       kl1 = kl1.replace(new RegExp('^' + p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.\\s:\u2014-]*', 'i'), '');
       this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1} Uses unknown — harvest, taste, and learn.`);
+      // DRAMA (Steve 2026-10-07, Round D2): identification is a SEEING moment.
+      try { this.drama('plantIdentified', this.map.px, this.map.py, p.name); } catch (e) {}
       // RECOGNITION (Steve 2026-10-06): if you examined this species before it
       // was named, the vague description CLICKS. The observation memory
       // resolves into the name — a revelation, not a database unlock.
@@ -23238,16 +25357,31 @@
       try {
         const v = this.state.village;
         this.villagerLearnsPlant(this.villagerId, pid, source);
-        const witnesses = (v.roster || []).filter(rid => rid !== this.villagerId);
-        if (witnesses.length && Math.random() < 0.5) {
-          const w = witnesses[Math.floor(Math.random() * witnesses.length)];
-          if (this.villagerLearnsPlant(w, pid, 'observed')) {
-            this.say(`${this.displayName(w)} was watching. Now they know ${p.name} too.`);
+        // PRESENCE (drifter loop, Steve 2026-10-07): witnesses are people who
+        // are actually HERE. If you identify a plant while away — studying a
+        // distant codex, foraging five tiles out — nobody at home "was
+        // watching," and the rumor does NOT seed at home. The knowledge
+        // travels in your head and reaches home on return (returnToVillage's
+        // broker beat). That's the drifter's job: the bridge, not a teleport.
+        const present = this.playerAtHaven();
+        if (present) {
+          const witnesses = (v.roster || []).filter(rid => rid !== this.villagerId);
+          if (witnesses.length && Math.random() < 0.5) {
+            const w = witnesses[Math.floor(Math.random() * witnesses.length)];
+            if (this.villagerLearnsPlant(w, pid, 'observed')) {
+              this.say(`${this.displayName(w)} was watching. Now they know ${p.name} too.`);
+            }
           }
+          // seed the slow rumor: this plant is "going around" now
+          v.plantRumors = v.plantRumors || {};
+          if (!v.plantRumors[pid]) v.plantRumors[pid] = { day: this.state.scholar.day };
+        } else {
+          // away: queue for the homecoming. returnToVillage teaches it around
+          // the fire, and only then does the rumor start.
+          const sc = this.state.scholar;
+          sc.awayLearned = sc.awayLearned || [];
+          if (!sc.awayLearned.includes(pid)) sc.awayLearned.push(pid);
         }
-        // seed the slow rumor: this plant is "going around" now
-        v.plantRumors = v.plantRumors || {};
-        if (!v.plantRumors[pid]) v.plantRumors[pid] = { day: this.state.scholar.day };
       } catch (e) {}
       return true;
     },

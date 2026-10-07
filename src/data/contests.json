@@ -1,0 +1,398 @@
+[
+  {
+    "id": "pit",
+    "name": "The Pit",
+    "cat": "blood",
+    "risk": "high",
+    "desc": "Thrown into an arena with a wave-appropriate beast. Kill or be killed. The audience votes on weapons.",
+    "participants": 1,
+    "arena": "🕳️\n🪨🪨🪨🪨🪨\n🪨⬛⬛⬛🪨\n🪨⬛🦴⬛🪨\n🪨⬛⬛⬛🪨\n🪨🪨🪨🪨🪨\n👥👥👥👥👥"
+  },
+  {
+    "id": "gauntlet",
+    "name": "Gauntlet",
+    "cat": "blood",
+    "risk": "extreme",
+    "desc": "Three waves, no rest. Survive all three and the crowd goes wild. Most don't see wave two.",
+    "participants": 1,
+    "arena": "⚔️\n🔥🔥🔥🔥🔥\n🔥⬛⬛⬛🔥\n🔥⬛⚔️⬛🔥\n🔥⬛⬛⬛🔥\n🔥🔥🔥🔥🔥"
+  },
+  {
+    "id": "duel",
+    "name": "Duel",
+    "cat": "blood",
+    "risk": "high",
+    "desc": "You vs another contestant. Not to the death — to the yield. But accidents happen.",
+    "participants": 2,
+    "arena": "🤺\n➖➖➖➖➖\n⬜⬜⚔️⬜⬜\n➖➖➖➖➖\n👥👥👥👥👥"
+  },
+  {
+    "id": "drop",
+    "name": "The Drop",
+    "cat": "endurance",
+    "risk": "high",
+    "desc": "Dropped somewhere with nothing. First back to the beacon eats. The others... walk.",
+    "participants": 3,
+    "arena": "🏔️\n⛰️⛰️⛰️⛰️⛰️\n⛰️❄️❄️❄️⛰️\n⛰️❄️🚩❄️⛰️\n⛰️❄️❄️❄️⛰️\n⛰️⛰️⛰️⛰️⛰️"
+  },
+  {
+    "id": "starve",
+    "name": "Hollow Belly",
+    "cat": "endurance",
+    "risk": "medium",
+    "desc": "No food for three days. The System watches who breaks first. Water provided. Dignity not.",
+    "participants": 4,
+    "arena": "🍽️\n⬛⬛⬛⬛⬛\n⬛🍽️⬛🍽️⬛\n⬛⬛⬛⬛⬛\n⬛🍽️⬛🍽️⬛\n⬛⬛⬛⬛⬛"
+  },
+  {
+    "id": "moot",
+    "name": "The Moot",
+    "cat": "moot",
+    "risk": "medium",
+    "desc": "Televised trial. Defend yourself against accusations (true or not). The audience is the jury.",
+    "participants": 1,
+    "arena": "⚖️\n👥👥👥👥👥\n⬜⬜🎤⬜⬜\n⬜⬜⬜⬜⬜\n👥👥👥👥👥"
+  },
+  {
+    "id": "lies",
+    "name": "Lie Detector",
+    "cat": "moot",
+    "risk": "low",
+    "desc": "Answer questions. The System knows when you lie. The audience loves when you do.",
+    "participants": 2,
+    "arena": "🤥\n🔍🔍🔍🔍🔍\n⬜⬜🪑⬜⬜\n⬜⬜⬜⬜⬜\n📺📺📺📺📺"
+  },
+  {
+    "id": "cookfight",
+    "name": "Cooking With Teeth",
+    "cat": "weird",
+    "risk": "medium",
+    "desc": "Cook a meal. The ingredients fight back. Presentation matters. Survival matters more.",
+    "participants": 2,
+    "arena": "🍳\n🔪🔪🔪🔪🔪\n🍳🦷🦷🦷🍳\n🔪🔪🔪🔪🔪\n👨‍🍳👨‍🍳👨‍🍳"
+  },
+  {
+    "id": "fetch",
+    "name": "Bring Us Something Interesting",
+    "cat": "weird",
+    "risk": "low",
+    "desc": "One mile radius. One hour. Most interesting thing wins. Judged by beings who have never touched grass.",
+    "participants": 3,
+    "arena": "🔍\n🌿🌿🌿🌿🌿\n🌿❓🌿❓🌿\n🌿🌿🌿🌿🌿\n🌿❓🌿❓🌿"
+  },
+  {
+    "id": "hide",
+    "name": "Hide and Seek",
+    "cat": "weird",
+    "risk": "extreme",
+    "desc": "Hide. The seeker is a wave-2 predator. It's very good at seeking.",
+    "participants": 3,
+    "arena": "👁️\n🌲🌲🌲🌲🌲\n🌲👤🌲👤🌲\n🌲🌲🌲🌲🌲\n🌲👤🌲🐺🌲"
+  },
+  {
+    "id": "box",
+    "name": "The Box",
+    "cat": "puzzle",
+    "risk": "medium",
+    "desc": "An alien puzzle box. Solve it or be stuck inside the arena until you do. The audience has the manual.",
+    "participants": 1,
+    "arena": "📦\n⬛⬛⬛⬛⬛\n⬛🧩🧩🧩⬛\n⬛🧩📦🧩⬛\n⬛🧩🧩🧩⬛\n⬛⬛⬛⬛⬛"
+  },
+  {
+    "id": "pattern",
+    "name": "Pattern Hunger",
+    "cat": "puzzle",
+    "risk": "low",
+    "desc": "A sequence of foods. Eat them in the right order. The wrong order... disagrees with you.",
+    "participants": 2,
+    "arena": "🧩\n🍎🍌🍇🍊🍎\n❓❓❓❓❓\n🍽️🍽️🍽️🍽️🍽️"
+  },
+  {
+    "id": "whoate",
+    "name": "Who Ate It?",
+    "cat": "detective",
+    "risk": "low",
+    "desc": "Someone stole the prize. Interrogate the suspects. The thief is among you.",
+    "participants": 3,
+    "arena": "🔍\n👤👤👤👤👤\n❓❓❓❓❓\n🍖🍖🍖🍖🍖"
+  },
+  {
+    "id": "informant",
+    "name": "The Informant",
+    "cat": "detective",
+    "risk": "medium",
+    "desc": "One of you is lying about everything. Find them before they find the exit.",
+    "participants": 4,
+    "arena": "🕵️\n👤🤥👤🤥👤\n🔍🔍🔍🔍🔍\n🚪🚪🚪🚪🚪"
+  },
+  {
+    "id": "calorie_run",
+    "name": "Calorie Run",
+    "cat": "forage",
+    "risk": "medium",
+    "desc": "One hour. Whoever collects the most calorie-dense materials wins. The forest is... competitive.",
+    "participants": 3,
+    "arena": "🌿\n🌳🍎🌳🍇🌳\n🌳🌿🌳🌿🌳\n🌳🍒🌳🌰🌳\n🌳🌿🌳🌿🌳"
+  },
+  {
+    "id": "pantry_raid",
+    "name": "Pantry Raid",
+    "cat": "forage",
+    "risk": "high",
+    "desc": "Gather from a dangerous location. The locals object. Bring back food or don't come back.",
+    "participants": 2,
+    "arena": "🏚️\n⚠️⚠️⚠️⚠️⚠️\n🏚️🍖🏚️🍖🏚️\n⚠️⚠️⚠️⚠️⚠️\n🐺🐺🐺🐺🐺"
+  },
+  {
+    "id": "wheel",
+    "name": "Wheel of Teeth",
+    "cat": "chance",
+    "risk": "medium",
+    "desc": "Spin the wheel. The teeth decide. The audience holds its breath.",
+    "participants": 1,
+    "arena": "🎡\n🦷🦷🦷🦷🦷\n🎡⬛⬛⬛🎡\n🦷🦷🦷🦷🦷"
+  },
+  {
+    "id": "lottery",
+    "name": "The Lottery",
+    "cat": "chance",
+    "risk": "low",
+    "desc": "Pure luck. Draw a token. The audience loves an underdog.",
+    "participants": 5,
+    "arena": "🎰\n🎫🎫🎫🎫🎫\n🎰⬛⬛⬛🎰\n🎫🎫🎫🎫🎫"
+  },
+  {
+    "id": "tithe",
+    "name": "The Blood Tithe",
+    "cat": "blood",
+    "risk": "extreme",
+    "desc": "Bleed into the System's altar, measure by measure. Too little and it finds you wanting. Too much and it keeps the rest.",
+    "participants": 1,
+    "arena": "🩸\n⬛⬛⬛⬛⬛\n⬛🩸⬛🩸⬛\n⬛⬛🏺⬛⬛\n⬛🩸⬛🩸⬛\n⬛⬛⬛⬛⬛"
+  },
+  {
+    "id": "siege",
+    "name": "Siege",
+    "cat": "blood",
+    "risk": "extreme",
+    "desc": "Hold the chokepoint for three waves while the village watches from the walls. The line holds, or you don't.",
+    "participants": 1,
+    "arena": "🏰\n🧱🧱🧱🧱🧱\n🧱⚔️🧱⚔️🧱\n🧱🧱🧱🧱🧱\n👥👥👥👥👥"
+  },
+  {
+    "id": "maw",
+    "name": "The Maw",
+    "cat": "endurance",
+    "risk": "extreme",
+    "desc": "A dark tunnel. Something patient behind you. Walk. Don't stop. It counts your pauses.",
+    "participants": 1,
+    "arena": "🕳️\n⬛⬛⬛⬛⬛\n🌑🌑🌑🌑🌑\n🌑👤🌑👁️🌑\n🌑🌑🌑🌑🌑\n⬛⬛⬛⬛⬛"
+  },
+  {
+    "id": "oath",
+    "name": "The Oath",
+    "cat": "moot",
+    "risk": "high",
+    "desc": "Swear three binding oaths on camera. Mean every word — the binding hears the difference.",
+    "participants": 1,
+    "arena": "🤝\n📜📜📜📜📜\n⬜⬜🎤⬜⬜\n⛓️⛓️⛓️⛓️⛓️\n👥👥👥👥👥"
+  },
+  {
+    "id": "beastmaster",
+    "name": "Beastmaster",
+    "cat": "weird",
+    "risk": "high",
+    "desc": "Ride a collared wave-2 beast through the obstacle course. Guide it. Do not hurt it. It remembers.",
+    "participants": 1,
+    "arena": "🦁\n🔥🔥🔥🔥🔥\n🦁➖➖➖🦁\n🔥🪤🔥🪤🔥\n👥👥👥👥👥"
+  },
+  {
+    "id": "riddle",
+    "name": "Riddle Me This",
+    "cat": "puzzle",
+    "risk": "high",
+    "desc": "Three riddles from the Riddle Engine — a floating lattice of mouths. Wrong answers cost memories. It has been reading you.",
+    "participants": 1,
+    "arena": "🌀\n👄👄👄👄👄\n⬛🧠⬛🧠⬛\n👄👄👄👄👄\n❓❓❓❓❓"
+  },
+  {
+    "id": "confession",
+    "name": "The Confession",
+    "cat": "detective",
+    "risk": "high",
+    "desc": "A villager confesses on camera to poisoning the water store. Prove the confession true or false before dusk — the System punishes someone either way.",
+    "participants": 1,
+    "arena": "🎤\n👥👥👥👥👥\n⬜🪑⬜🪑⬜\n🔍🔍🔍🔍🔍\n⚖️⚖️⚖️⚖️⚖️"
+  },
+  {
+    "id": "honey",
+    "name": "Sweet Tooth",
+    "cat": "forage",
+    "risk": "high",
+    "desc": "Harvest honeycomb from a hive the size of a house. The swarm defends. Smoke, speed, or respect — pick one and commit.",
+    "participants": 1,
+    "arena": "🍯\n🐝🐝🐝🐝🐝\n⬛🍯⬛🍯⬛\n🐝🐝🐝🐝🐝\n🌻🌻🌻🌻🌻"
+  },
+  {
+    "id": "secrets",
+    "name": "The Secret Deck",
+    "cat": "chance",
+    "risk": "medium",
+    "desc": "Cards against the System's dealer. The deck is made of village secrets — every card drawn reveals something true about someone watching.",
+    "participants": 1,
+    "arena": "🃏\n🂡🂢🂣🂤🂥\n🎰⬛⬛⬛🎰\n👁️👁️👁️👁️👁️"
+  },
+  {
+    "id": "quiet",
+    "name": "The Quiet Room",
+    "cat": "moot",
+    "risk": "high",
+    "desc": "One silent hour in a white room. The System reads your thoughts aloud to the village. You cannot argue with the broadcast — you can only steer what surfaces.",
+    "participants": 1,
+    "arena": "🤫\n⬜⬜⬜⬜⬜\n⬜🪑⬜🪑⬜\n⬜⬜⬜⬜⬜\n👥👥👥👥👥\n📢📢📢📢📢"
+  },
+  {
+    "id": "guest",
+    "name": "The Guest",
+    "cat": "weird",
+    "risk": "medium",
+    "desc": "An alien ambassador is coming to dinner at your haven. Televised. Serve something it finds interesting, and survive an etiquette you were never taught.",
+    "participants": 1,
+    "arena": "👽\n🍽️🍽️🍽️🍽️🍽️\n⬜🕯️⬜🕯️⬜\n🍲🍲🍲🍲🍲\n👥👥👥👥👥"
+  },
+  {
+    "id": "vigil",
+    "name": "The Vigil",
+    "cat": "endurance",
+    "risk": "high",
+    "desc": "One night, alone on the haven wall, the lamp lit. Below in the dark, something large is circling. Hold your post until dawn. Do not abandon the light.",
+    "participants": 1,
+    "arena": "🕯️\n⬛⬛⬛⬛⬛\n🌑🌑🌑🌑🌑\n🕯️👤🕯️👁️🕯️\n🌑🌑🌑🌑🌑\n⬛⬛⬛⬛⬛"
+  },
+  {
+    "id": "sorting",
+    "name": "The Sorting",
+    "cat": "puzzle",
+    "risk": "high",
+    "desc": "The System empties your pack and the tithe crate onto a conveyor. Its sorter keeps the shiny and burns the useful. Redirect what matters before it burns.",
+    "participants": 1,
+    "arena": "🏭\n📦➡️🔥⬅️📦\n⬜⬜🏭⬜⬜\n📦📦📦📦📦\n👥👥👥👥👥"
+  },
+  {
+    "id": "witness",
+    "name": "The Witness",
+    "cat": "detective",
+    "risk": "high",
+    "desc": "Three witnesses describe last night's attack on the trap-line. Two are true memories. One the System wrote. Name the fabrication — the village arms for whatever you name.",
+    "participants": 1,
+    "arena": "🕵️\n👤🎤👤🎤👤\n🔍🔍🔍🔍🔍\n🌲🌲🐾🌲🌲\n👥👥👥👥👥"
+  },
+  {
+    "id": "cache",
+    "name": "The Cache",
+    "cat": "forage",
+    "risk": "medium",
+    "desc": "At dawn the System's surveyors map every hidden food cache in the valley. Tonight you move the winter store — every move the cameras catch is taxed. Move it all. Let them see nothing.",
+    "participants": 2,
+    "arena": "🌙\n📦📦📦📦📦\n🌲👤📦👤🌲\n📷📷📷📷📷\n🌙🌙🌙🌙🌙"
+  },
+  {
+    "id": "longodds",
+    "name": "The Long Odds",
+    "cat": "chance",
+    "risk": "medium",
+    "desc": "Dice against the house champion — a smug alien who has never lost on camera. The dice are fair. The stakes are the game. Raise, hold, or walk — but the table is unavoidable.",
+    "participants": 1,
+    "arena": "🎲\n🎰⬛🎲⬛🎰\n👽🎲🎲🎲👽\n🎲⬛🎲⬛🎲\n👥👥👥👥👥"
+  },
+  {
+    "id": "price",
+    "name": "The Price",
+    "cat": "moot",
+    "risk": "extreme",
+    "desc": "The System names a price: one villager, for the season. The village chooses who. You can volunteer, campaign, or scheme — but someone pays.",
+    "participants": 1,
+    "arena": "⚖️\n👥👥👥👥👥\n⬜💀⬜💀⬜\n🎤🎤🎤🎤🎤\n👥👥👥👥👥"
+  },
+  {
+    "id": "impress",
+    "name": "Impress Us",
+    "cat": "weird",
+    "risk": "medium",
+    "desc": "Make the aliens feel something they have never felt. They have felt everything. Almost. The judges are baffled by you, which is your only edge.",
+    "participants": 1,
+    "arena": "🎭\n👽👽👽👽👽\n⬜🎨⬜🎭⬜\n✨✨✨✨✨\n👥👥👥👥👥"
+  },
+  {
+    "id": "exchange",
+    "name": "The Exchange",
+    "cat": "endurance",
+    "risk": "high",
+    "desc": "Your village versus theirs. A relay through the badlands — three legs, no rules about what runs between the markers. Losers tithe.",
+    "participants": 3,
+    "arena": "🏃\n🏁🌲🌲🌲🏁\n🌲⚠️🌲⚠️🌲\n🏁🌲🌲🌲🏁\n👥👥👥👥👥"
+  },
+  {
+    "id": "auction",
+    "name": "The Auction",
+    "cat": "chance",
+    "risk": "high",
+    "desc": "The System auctions alien tech. Bid with memories, years, or body parts. Everyone pays their bid — winner takes the lot, losers take the loss.",
+    "participants": 3,
+    "arena": "🔨\n💰💰💰💰💰\n⬜🏺⬜🏺⬜\n👽🔨👽🔨👽\n👥👥👥👥👥"
+  },
+  {
+    "id": "lockpick",
+    "name": "The Iron Pantry",
+    "cat": "puzzle",
+    "risk": "high",
+    "desc": "An alien vault-lock on a full pantry. Five tumblers, one hour of air. Pick it and the village eats. Jam it and the cameras watch you starve politely.",
+    "participants": 1,
+    "arena": "🔒\n⚙️⚙️⚙️⚙️⚙️\n⬛🔒⬛🔒⬛\n⚙️⚙️⚙️⚙️⚙️\n🥫🥫🥫🥫🥫"
+  },
+  {
+    "id": "wrongmap",
+    "name": "The Wrong Map",
+    "cat": "puzzle",
+    "risk": "medium",
+    "desc": "The System hands you a map to buried alien rations. Exactly one thing on it is a lie. Find the lie, find the food.",
+    "participants": 2,
+    "arena": "🗺️\n🌲🌲🏔️🌲🌲\n🌲❌🌲❌🌲\n🌊🌊🌊🌊🌊\n📍📍📍📍📍"
+  },
+  {
+    "id": "alibi",
+    "name": "The Alibi Chain",
+    "cat": "detective",
+    "risk": "medium",
+    "desc": "Five villagers, each vouched for by the next, a chain that ends at midnight. One link is false. Break the chain before the chain breaks the village.",
+    "participants": 1,
+    "arena": "⛓️\n👤👤👤👤👤\n🔗🔗🔗🔗🔗\n🌙🌙🌙🌙🌙\n⚖️⚖️⚖️⚖️⚖️"
+  },
+  {
+    "id": "echo",
+    "name": "The Echo",
+    "cat": "detective",
+    "risk": "high",
+    "desc": "One witness, two tellings. The story of last night, told at dawn and told at noon — and the details moved between tellings. Find what the teller added for the cameras.",
+    "participants": 1,
+    "arena": "🔁\n🎤🎤🎤🎤🎤\n🌅🌅🌅🌅🌅\n🌞🌞🌞🌞🌞\n👥👥👥👥👥"
+  },
+  {
+    "id": "tidepool",
+    "name": "The Tide Clock",
+    "cat": "forage",
+    "risk": "high",
+    "desc": "The tidal pools are rich and the causeway is drowning. Harvest while the water lets you. The tide doesn't negotiate, and the cameras love a deadline.",
+    "participants": 2,
+    "arena": "🌊\n🦀🐚🦀🐚🦀\n🌊🌊🌊🌊🌊\n🪨🪨🪨🪨🪨\n🏃🏃🏃🏃🏃"
+  },
+  {
+    "id": "windfall",
+    "name": "Windfall",
+    "cat": "forage",
+    "risk": "medium",
+    "desc": "A storm dropped a fortune — fruit, game, a stranded fish haul — and every bit of it is rotting on camera. Beat the rot: eat, dry, haul. The clock is spoilage.",
+    "participants": 3,
+    "arena": "🍂\n🍎🍎🐟🍎🍎\n🍂🍂🍂🍂🍂\n🦌🍎🦌🍎🦌\n☀️☀️☀️☀️☀️"
+  }
+]

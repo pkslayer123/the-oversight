@@ -309,5 +309,331 @@
    "target": "hunt.memory",
    "value": 0.2
   }
+ },
+ {
+  "id": "many_pockets",
+  "name": "Many Pockets",
+  "class": "clothing",
+  "description": "Seventeen pockets. You counted. Twice. Everything has a place, and every place is on you.",
+  "systemCommentary": "Pocket density: maximal. Carrying capacity +15%. We are unreasonably proud of the pockets.",
+  "effect": {
+   "op": "multiply",
+   "target": "carry.weight_mult",
+   "value": 1.15
+  }
+ },
+ {
+  "id": "forest_scent",
+  "name": "Forest Scent",
+  "class": "clothing",
+  "hidden": true,
+  "rare": 0.3,
+  "affinity": {
+   "playstyle": "solitary"
+  },
+  "description": "Smells like leaf litter and rain. The forest keeps mistaking you for itself.",
+  "systemCommentary": "Olfactory camouflage deployed. Monster detection -8%. You smell like a Tuesday in the woods. This is a compliment.",
+  "effect": {
+   "op": "add",
+   "target": "monster.detect_chance",
+   "value": -0.08
+  }
+ },
+ {
+  "id": "warm_bones",
+  "name": "Warm Bones",
+  "class": "clothing",
+  "affinity": {
+   "temperament": "steady"
+  },
+  "description": "The cold gets tired before you do. Your bones stay warm and uncomplaining.",
+  "systemCommentary": "Thermoregulation: outsourced to fabric. Travel costs -10%. Your steadiness is load-bearing. Literally.",
+  "effect": {
+   "op": "multiply",
+   "target": "travel.cost_mult",
+   "value": 0.9
+  }
+ },
+ {
+  "id": "stay_put",
+  "name": "Stay-Put Bandages",
+  "class": "clothing",
+  "description": "Dressings that believe in staying on. Wounds close faster when they are not arguing with the bandage.",
+  "systemCommentary": "Adhesion improved 400%. Healing +4. The bandage believes in you. We believe in the bandage.",
+  "effect": {
+   "op": "add",
+   "target": "healing.amount",
+   "value": 4
+  }
+ },
+ {
+  "id": "rain_funnel",
+  "name": "Rain Funnel",
+  "class": "clothing",
+  "description": "Wide brim, clever channels. Rain runs off it and into your bottle. The sky is feeding you.",
+  "systemCommentary": "Precipitation redirected: +1 liter per storm, approximately. The clouds have not consented. We did not ask.",
+  "effect": {
+   "op": "add",
+   "target": "water.rain_catch",
+   "value": 1
+  }
+ },
+ {
+  "id": "light_feet",
+  "name": "Light Feet",
+  "class": "clothing",
+  "affinity": {
+   "temperament": "bold"
+  },
+  "description": "Soft soles, quiet steps. Your feet have opinions about being hit, and they vote with their absence.",
+  "systemCommentary": "Evasion +5%. Your feet are now 5% more philosophical about impact.",
+  "effect": {
+   "op": "add",
+   "target": "combat.dodge_chance",
+   "value": 0.05
+  }
+ },
+ {
+  "id": "butchers_friend",
+  "name": "Butcher's Friend",
+  "class": "tool",
+  "affinity": {
+   "temperament": "cautious"
+  },
+  "description": "It finds the joint. Every time. Nothing wasted, nothing rushed. The carcass almost thanks you.",
+  "systemCommentary": "Carcass utilization +15%. The animal would approve. We have not asked the animal. We will not ask the animal.",
+  "effect": {
+   "op": "multiply",
+   "target": "hunt.meat_yield",
+   "value": 1.15
+  }
+ },
+ {
+  "id": "smoke_keeper",
+  "name": "Smoke Keeper",
+  "class": "tool",
+  "description": "A little smoker that fits in your pack. Meat goes in fresh and comes out patient. Decay can wait.",
+  "systemCommentary": "Decay postponed 24 hours. The bacteria have filed a complaint. Denied.",
+  "effect": {
+   "op": "add",
+   "target": "food.spoilage_days",
+   "value": 1
+  }
+ },
+ {
+  "id": "calm_stone",
+  "name": "Calm Stone",
+  "class": "sentimental",
+  "hidden": true,
+  "rare": 0.35,
+  "description": "Smooth from years of thumbs \u2014 yours now. When voices rise, yours does not. It remembers calmer hands.",
+  "systemCommentary": "Conflict de-escalation +4. The stone has absorbed 11,000 worries. Capacity remaining: infinite.",
+  "effect": {
+   "op": "add",
+   "target": "drama.resolve_bonus",
+   "value": 4
+  }
+ },
+ {
+  "id": "true_measure",
+  "name": "True Measure",
+  "class": "tool",
+  "affinity": {"temperament":"cautious"},
+  "description": "A knotted cord, each knot a job remembered. Measure once. Cut right. The cord has never been wrong.",
+  "systemCommentary": "Measurement error: approaching zero. The cord has opinions about accuracy. We agree with the cord.",
+  "effect": {
+   "op": "multiply",
+   "target": "craft.success",
+   "value": 1.15
+  }
+ },
+ {
+  "id": "patient_wire",
+  "name": "Patient Wire",
+  "class": "tool",
+  "affinity": {"playstyle":"solitary"},
+  "hidden": true,
+  "rare": 0.3,
+  "description": "Snare wire that holds its tension true through frost and thaw. It waits better than you do.",
+  "systemCommentary": "Tension decay: none detected. The wire is more patient than the user. We note this without judgment. [JUDGMENT DETECTED] Disregard.",
+  "effect": {
+   "op": "add",
+   "target": "hunt.trap_catch",
+   "value": 0.08
+  }
+ },
+ {
+  "id": "glass_eye",
+  "name": "Glass Eye",
+  "class": "tool",
+  "description": "A cracked hand lens. Game sign leaps out through the fracture — the break focuses what the whole lens could not.",
+  "systemCommentary": "Optical flaw repurposed as feature. Detection +10%. The crack is load-bearing. Do not fix it.",
+  "effect": {
+   "op": "add",
+   "target": "hunt.find_chance",
+   "value": 0.1
+  }
+ },
+ {
+  "id": "hot_stone",
+  "name": "Hot Stone",
+  "class": "tool",
+  "description": "A flat river stone, heat-blackened. It warms evenly and holds it. Food cooked on it tastes like it was meant to.",
+  "systemCommentary": "Thermal distribution: uniform. Cooking yield +10%. The stone has achieved culinary enlightenment.",
+  "effect": {
+   "op": "multiply",
+   "target": "cook.kcal",
+   "value": 1.1
+  }
+ },
+ {
+  "id": "field_guide",
+  "name": "Field Guide",
+  "class": "tool",
+  "description": "Annotated in three hands, two of them dead. The margins argue with the text. The margins are usually right.",
+  "systemCommentary": "Knowledge acquisition accelerated 10%. The annotators were efficient. We miss them. We did not know them.",
+  "effect": {
+   "op": "multiply",
+   "target": "forage.learn_threshold",
+   "value": 0.9
+  }
+ },
+ {
+  "id": "tasters_spoon",
+  "name": "Taster's Spoon",
+  "class": "tool",
+  "description": "A wooden spoon that turns faintly bitter on the tongue when food is turning. It complains before your stomach has to.",
+  "systemCommentary": "Spoilage pre-detection: active. Poisoning chance -30%. The spoon is a hero. We will not eat off it.",
+  "effect": {
+   "op": "multiply",
+   "target": "food.poison_chance",
+   "value": 0.7
+  }
+ },
+ {
+  "id": "grey_cloak",
+  "name": "Grey Cloak",
+  "class": "clothing",
+  "affinity": {"temperament":"steady"},
+  "description": "Dyed with oak galls to the exact color of bad weather. Wearing it, you register as weather, not wildlife.",
+  "systemCommentary": "Visual signature: precipitation-adjacent. Encounters -25%. You are now meteorologically camouflaged.",
+  "effect": {
+   "op": "multiply",
+   "target": "travel.encounter_chance",
+   "value": 0.75
+  }
+ },
+ {
+  "id": "winter_lining",
+  "name": "Winter Lining",
+  "class": "clothing",
+  "description": "A liner stuffed with thistledown, quilted by hands that understood February. The cold has to work harder than you do.",
+  "systemCommentary": "Insulation: exceptional. Travel cost -8%. February has filed a complaint. Denied.",
+  "effect": {
+   "op": "multiply",
+   "target": "travel.cost_mult",
+   "value": 0.92
+  }
+ },
+ {
+  "id": "quiet_soles",
+  "name": "Quiet Soles",
+  "class": "clothing",
+  "affinity": {"playstyle":"solitary"},
+  "hidden": true,
+  "rare": 0.3,
+  "description": "Soft deerhide moccasins, the soles worn to suede. Your steps land like a decision you made quietly.",
+  "systemCommentary": "Acoustic footprint: minimal. Detection by sound -15%. The deer would approve. The deer are unavailable for comment.",
+  "effect": {
+   "op": "multiply",
+   "target": "monster.hear_mult",
+   "value": 0.85
+  }
+ },
+ {
+  "id": "spare_plating",
+  "name": "Spare Plating",
+  "class": "clothing",
+  "affinity": {"temperament":"bold"},
+  "description": "Scavenged road-sign lamellar sewn under the collar. Heavy. Honest. It has already stopped one thing with teeth.",
+  "systemCommentary": "Armor +2. The sign used to say STOP. It still does, mechanically.",
+  "effect": {
+   "op": "add",
+   "target": "armor.flat",
+   "value": 2
+  }
+ },
+ {
+  "id": "lucky_coin",
+  "name": "Lucky Coin",
+  "class": "sentimental",
+  "affinity": {"temperament":"bold"},
+  "description": "Worn smooth from a grandfather's pocket, then a mother's, then yours. Luck, it turns out, is inheritable.",
+  "systemCommentary": "Fortune modifier +15%. The coin has no mass worth noting. Its significance is statistically anomalous.",
+  "effect": {
+   "op": "multiply",
+   "target": "luck.global",
+   "value": 1.15
+  }
+ },
+ {
+  "id": "come_home",
+  "name": "Come Home",
+  "class": "sentimental",
+  "description": "A creased photo of a porch light, left on. The promise you made: come home. Your body has decided to keep it.",
+  "systemCommentary": "Maximum health +10. The porch light is still on. We checked. It is. Somehow.",
+  "effect": {
+   "op": "add",
+   "target": "health.max_add",
+   "value": 10
+  }
+ },
+ {
+  "id": "ledger_of_debts",
+  "name": "Ledger of Debts",
+  "class": "sentimental",
+  "description": "Every favor kept, every grudge forgiven, written down in a careful hand. Debts settle faster when someone is keeping score.",
+  "systemCommentary": "Conflict resolution +5. The ledger balances. The ledger always balances. We find this reassuring.",
+  "effect": {
+   "op": "add",
+   "target": "drama.resolve_bonus",
+   "value": 5
+  }
+ },
+ {
+  "id": "hearth_song",
+  "name": "Hearth Song",
+  "class": "sentimental",
+  "description": "The chorus everyone knew, the one sung while the bread baked. You hum it while you work. The work goes easier.",
+  "systemCommentary": "Rest efficiency +20%. The song is structurally simple. Its effects are not. We have stopped analyzing it.",
+  "effect": {
+   "op": "multiply",
+   "target": "rest.energy",
+   "value": 1.2
+  }
+ },
+ {
+  "id": "mothers_compass",
+  "name": "Mother's Compass",
+  "class": "sentimental",
+  "description": "It doesn't point north. It points like she did: toward whoever in the room needs you most.",
+  "systemCommentary": "Trust gains +30%. Magnetic north is irrelevant. Emotional north is a real direction. We have the data.",
+  "effect": {
+   "op": "multiply",
+   "target": "trust.gain_mult",
+   "value": 1.3
+  }
+ },
+ {
+  "id": "harvest_memory",
+  "name": "Harvest Memory",
+  "class": "sentimental",
+  "description": "A pressed flower from the first garden you ever grew, kept between the pages. The earth remembers you, and remembers kindly.",
+  "systemCommentary": "Forage gift chance +5%. The flower is dead. The memory is photosynthesizing. We do not fully understand this.",
+  "effect": {
+   "op": "add",
+   "target": "forage.gift_chance",
+   "value": 0.05
+  }
  }
 ]

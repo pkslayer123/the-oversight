@@ -8,8 +8,20 @@
 //   - recordMoment(text)
 //   - contestStandings()
 //   - viewershipBoard()
+//   - unityState()            (felt unified/fractured state machine)
+//   - foodStance()            (sharer/even/hoarder from foodShared vs foodHoarded)
+//   - legendSurface()         (the story so far, as the world tells it)
+//   - shareFood(kcal, toName) (WIRING: game.js calls when food goes outward)
+//   - hoardFood(kcal)         (WIRING: game.js calls when food is stashed privately)
+//   - hearGossipAboutSelf(source) (WIRING: conversation.js calls on NPC gossip re: player)
+//   - exposeFallout(caseId, voterId) (named consequences when a truth goes public)
+//   - flushLedgerBeats()      (fires queued beats whose knowledge gates now pass)
+//   - hearsAboutSelf()        (knowledge gate: has the player heard their own legend?)
 // rules:
-//   - (none documented)
+//   - threshold beats fire once per run per dimension, knowledge-gated (gossip always, show needs viewership, system needs the overlay, lived/witness always); ungated beats queue and fire when the world catches up (code: _checkDimBeats, flushLedgerBeats)
+//   - unified/fractured is a felt state machine, not a number; transitions are narrated, direction-aware, always visible — you live it (code: unityState, _checkUnityTransition)
+//   - foodShared vs foodHoarded resolve to a felt stance; stance transitions are narrated with social consequences (code: foodStance, _checkFoodStance)
+//   - the player's own epithet is never shown until hearsAboutSelf() (code: ledgerBeat)
 // consumes:
 //   - state.leadership
 // ============ THE LEADERSHIP VECTOR ============
@@ -26,8 +38,8 @@
 //   showmanship            — how much you played to the audience
 //   embrace / defiance     — integration stance toward the System
 //   exposed                — truths dragged into the light (bribes, plots)
-//   unified / fractured    — humanity's shape under you
-//   foodShared             — the food truth: shared outward, or hoarded?
+//   unified / fractured    — humanity's shape under you (felt state machine)
+//   foodShared / foodHoarded — the food truth: shared outward, or hoarded?
 //   protected / killed     — the moral ledger
 //
 // Ending frames: the Indispensable, the Feared, the Beloved, the Witness,
@@ -104,6 +116,108 @@
     ],
   };
 
+  // ============ THRESHOLD BEATS — the ending written in real time ============
+  // Steve's decision (2026-10-04): "You feel your ending being written
+  // before you arrive." Counters are silent; beats are not. When a dimension
+  // crosses a threshold, the world REACTS — village gossip, show narration,
+  // System commentary, or the lived feel of the thing itself.
+  //
+  // Knowledge gating ("if you don't know, it doesn't show"):
+  //   gossip  — overhearing IS the channel. Always fireable; the first
+  //             gossip beat marks you talked-about (hearsAboutSelf).
+  //   show    — the show must actually be watching: viewership >= 12 or a
+  //             broadcast you've seen. Otherwise the beat waits in the queue.
+  //   system  — needs the overlay: integrationStage() >= 1.
+  //   lived   — you live it. Always visible.
+  //   witness — the exposure was public at the moot. Always visible.
+  // Each beat fires once per run. Queued beats fire when the world catches up.
+  function beatVillage(g) {
+    try { return g.distantVillageName() || 'the outer villages'; }
+    catch (e) { return 'the outer villages'; }
+  }
+
+  const LEDGER_BEATS = {
+    might: [
+      { at: 5, kind: 'gossip', text: g => `Riders from ${beatVillage(g)} are telling the deer story again — with your name attached this time.` },
+      { at: 12, kind: 'show', text: () => `📺 The show has started calling you "the strong one of Haven." They play the deer footage underneath, whether you want them to or not.` },
+      { at: 20, kind: 'lived', text: () => `You notice the village gives you room on the path now. Not fear, exactly. Room.` },
+    ],
+    brokerage: [
+      { at: 5, kind: 'gossip', text: g => `A rider says in ${beatVillage(g)} you're "the one who makes deals hold." Nobody remembers when that started being true.` },
+      { at: 12, kind: 'show', text: () => `📺 The broadcast calls you "Haven's tongue." The audience loves a deal; they love the person who closes it more.` },
+      { at: 20, kind: 'system', text: () => `🌟 "MEDIATION REQUESTS ROUTED TO YOU: SEVEN." The System pauses. "You are... efficient at this. We have noticed. (We notice everything. But this, we noticed twice.)"` },
+    ],
+    showmanship: [
+      { at: 6, kind: 'show', text: () => `📺 The audience has a favorite, and it's you. The chant doesn't have words. It doesn't need them.` },
+      { at: 15, kind: 'show', text: () => `📺 Strangers paint your face on their walls. In other villages. Villages you've never been to.` },
+      { at: 25, kind: 'show', text: () => `📺 The show has stopped introducing you. Everybody knows.` },
+    ],
+    embrace: [
+      { at: 3, kind: 'system', text: () => `The overlay's tone has changed around you. Warmer. It notices you noticing.` },
+      { at: 8, kind: 'system', text: () => `🌟 "We ask your opinion before we act now." The System says it like a confession. "That is not normal. That is not nothing."` },
+      { at: 14, kind: 'system', text: () => `The System has started finishing your sentences. It's trying to be helpful. It's succeeding, which is the unsettling part.` },
+    ],
+    defiance: [
+      { at: 3, kind: 'system', text: () => `The System's messages have gotten careful around you. It chooses its words the way you choose footing on ice.` },
+      { at: 8, kind: 'system', text: () => `🌟 "We have stopped arguing with you." A pause. "Do not mistake this for agreement."` },
+      { at: 14, kind: 'system', text: () => `Somewhere in the light, a subroutine files you under UNRESOLVED. You can feel the label.` },
+    ],
+    exposed: [
+      { at: 2, kind: 'witness', text: () => `People bring you their suspicions, written down. You keep every one.` },
+      { at: 6, kind: 'witness', text: () => `Three more names. The list is getting heavy. Strangers send you their truths now — sealed, hopeful, terrified.` },
+      { at: 12, kind: 'show', text: () => `📺 The broadcast calls you "the one who kept the list." The judges are watching. Good.` },
+    ],
+    protected: [
+      { at: 5, kind: 'lived', text: () => `A child drew you on the haven wall. You're very tall, and there are a lot of teeth on the other side.` },
+      { at: 12, kind: 'gossip', text: g => `In ${beatVillage(g)}, mothers tell the story of the night you stood between. The children ask for it by name.` },
+    ],
+    killed: [
+      { at: 3, kind: 'lived', text: () => `The village doesn't talk about what you did. That is its own kind of talking.` },
+      { at: 8, kind: 'lived', text: () => `Someone moved their sleeping roll farther from yours. Nobody mentions it. Everybody knows.` },
+    ],
+    betrayed: [
+      { at: 2, kind: 'lived', text: () => `Someone trusted you once. The village remembers the shape of it, the way a mouth remembers a missing tooth.` },
+    ],
+    foodShared: [
+      { at: 5, kind: 'lived', text: g => `A mother from ${beatVillage(g)} pressed a carved token into your hand: "for the winter you fed us." You didn't know there was a winter you'd fed.` },
+      { at: 12, kind: 'gossip', text: () => `Riders say your name the way people say "harvest."` },
+      { at: 20, kind: 'show', text: () => `📺 The broadcast ran the numbers: how much of Haven's food left Haven in your hands. The audience went quiet — the good kind of quiet.` },
+    ],
+    foodHoarded: [
+      { at: 4, kind: 'lived', text: () => `You've started counting the pantry twice. People notice who's watching the stores.` },
+      { at: 10, kind: 'lived', text: () => `Someone asked why the stores stay full while bellies don't. Nobody answered. Everybody heard.` },
+    ],
+  };
+
+  // Unified/fractured is not a number the player watches — it's a state the
+  // player LIVES IN. Tiers keyed by (unified − fractured); transitions are
+  // narrated, direction-aware, and always visible. You don't need knowledge
+  // to feel your village coming apart.
+  const UNITY_TIERS = [
+    { key: 'as-one', min: 8, label: 'As one',
+      worse: `The village has started finishing each other's sentences. A dispute about fence lines ended in laughter yesterday. Nobody can say when it changed.` },
+    { key: 'close-knit', min: 3, label: 'Close-knit',
+      worse: `The effortless closeness takes effort now. People notice the effort, and love each other for it.`,
+      better: `You've noticed: people cover for each other without being asked. The gaps close themselves.` },
+    { key: 'holding', min: -2, label: 'Holding together',
+      worse: `The easy closeness has thinned a little. Nobody's fault. Weather changes.`,
+      better: `Dinner is loud again. Not the good loud yet — the trying loud. It's a start.` },
+    { key: 'fraying', min: -7, label: 'Fraying',
+      worse: `Two tables at dinner now. Nobody planned it; it just happened. The fence dispute turned into something else.`,
+      better: `One table again. Not the old easy one — a deliberately shared one. It counts.` },
+    { key: 'fractured', min: -Infinity, label: 'Fractured',
+      worse: `Two hearths. Two councils, almost. Dinner is quiet in the way a held breath is quiet. Haven is two villages wearing one name.` },
+  ];
+
+  // The food truth has two sides. The stance is felt, not counted — but the
+  // village keeps its own accounts, and the transition beats are the social
+  // consequences.
+  const FOOD_STANCES = {
+    sharer: { label: 'Sharer', enter: `The pantry is everyone's and everyone knows it. That is worth more than the food.` },
+    even: { label: 'Even', enter: `Give and take, take and give. The village keeps its own accounts — and yours are balanced. For now.` },
+    hoarder: { label: 'Hoarder', enter: `Your stores are yours. The village has stopped asking about them. That silence has a price.` },
+  };
+
   const methods = {
 
     // ---------- THE LEDGER ----------
@@ -112,15 +226,22 @@
       if (pg.ledger && pg.ledger.betrayed === undefined) pg.ledger.betrayed = 0;
       pg.ledger = pg.ledger || {
         might: 0, brokerage: 0, showmanship: 0, embrace: 0, defiance: 0,
-        exposed: 0, unified: 0, fractured: 0, foodShared: 0,
+        exposed: 0, unified: 0, fractured: 0, foodShared: 0, foodHoarded: 0,
         protected: 0, killed: 0, betrayed: 0,
       };
+      // backfill for runs saved before foodHoarded existed
+      if (pg.ledger.foodHoarded === undefined) pg.ledger.foodHoarded = 0;
       return pg.ledger;
     },
     ledgerAdd(dim, n) {
       try {
         const L = this.ledger();
-        if (dim in L) L[dim] = (L[dim] || 0) + n;
+        if (dim in L) {
+          const before = L[dim] || 0;
+          L[dim] = before + n;
+          // the world reacts: threshold beats, knowledge-gated
+          try { this._checkDimBeats(dim, before, L[dim]); } catch (e) {}
+        }
       } catch (e) {}
     },
 
@@ -169,7 +290,11 @@
         assimilated: 'The overlay feels like home. That should probably worry you.',
       }[f] || '';
       const vname = this.distantVillageName ? this.distantVillageName() : 'the outer villages';
-      this.say(`◈ WORD TRAVELS — riders from ${vname} have heard of you. Out there they call you ${ep}. ${flavor}`);
+      // "if you don't know, it doesn't show": you hear the SHAPE of your
+      // legend before you hear the name. The name arrives when others have
+      // talked about you (gossip beats, viewership, broadcasts).
+      const heard = this.hearsAboutSelf();
+      this.say(`◈ WORD TRAVELS — riders from ${vname} bring talk of Haven. ${heard ? `Out there they call you ${ep}. ` : `They describe someone who sounds like you — but the name hasn't reached you yet. `}${flavor}`);
       // the contest: standings every so often. Notability is ratings.
       try {
         if (this.state.systemArrived && (s.day || 0) % 24 < 12) {
@@ -187,6 +312,241 @@
         if (ovs.length) return ovs[Math.floor(R() * ovs.length)].name || 'the outer villages';
       } catch (e) {}
       return 'the outer villages';
+    },
+
+    // ---------- THRESHOLD BEATS — the ending written in real time ----------
+    // The queue + firing machinery for LEDGER_BEATS. Beats fire from
+    // ledgerAdd (immediate when the gate passes) or wait in pg.ledgerQueue
+    // until flushLedgerBeats (endDay) when the world catches up.
+    _beatsFired() {
+      try { const pg = this.progState(); pg.ledgerBeatsFired = pg.ledgerBeatsFired || {}; return pg.ledgerBeatsFired; }
+      catch (e) { return {}; }
+    },
+    _beatQueue() {
+      try { const pg = this.progState(); pg.ledgerQueue = pg.ledgerQueue || []; return pg.ledgerQueue; }
+      catch (e) { return []; }
+    },
+    _beatGate(kind) {
+      // "if you don't know, it doesn't show" — per-kind visibility.
+      try {
+        if (kind === 'gossip' || kind === 'lived' || kind === 'witness') return true;
+        if (kind === 'system') return this.integrationStage ? this.integrationStage() >= 1 : false;
+        if (kind === 'show') {
+          const v = this.state.village || {};
+          const vw = v.viewership == null ? this.havenViewership() : v.viewership;
+          if (vw >= 12) return true;
+          const b = this.progState().broadcast;
+          if (b && b.length) return true;
+          return false;
+        }
+      } catch (e) {}
+      return kind !== 'system' && kind !== 'show';
+    },
+    _fireBeat(dim, idx) {
+      try {
+        const beat = (LEDGER_BEATS[dim] || [])[idx];
+        if (!beat) return;
+        const fired = this._beatsFired();
+        const key = dim + ':' + idx;
+        if (fired[key]) return;
+        fired[key] = true;
+        const pg = this.progState();
+        let text = beat.text(this);
+        if (beat.kind === 'gossip' && !pg.selfTalkedAbout) {
+          // the first time you overhear yourself as a story: that's the
+          // moment you learn you have a legend. It gets framing.
+          pg.selfTalkedAbout = true;
+          text = 'You overhear it at the fire, and stop pretending not to listen. ' + text;
+        }
+        this.say(text);
+        pg.legendBeats = pg.legendBeats || [];
+        pg.legendBeats.push({ day: (this.state.scholar || {}).day || 0, kind: beat.kind, dim, text });
+        pg.legendBeats = pg.legendBeats.slice(-40);
+      } catch (e) {}
+    },
+    _checkDimBeats(dim, before, after) {
+      try {
+        const beats = LEDGER_BEATS[dim] || [];
+        if (!beats.length) return;
+        const fired = this._beatsFired();
+        const q = this._beatQueue();
+        for (let i = 0; i < beats.length; i++) {
+          const key = dim + ':' + i;
+          if (fired[key]) continue;
+          if (before < beats[i].at && after >= beats[i].at) {
+            if (this._beatGate(beats[i].kind)) this._fireBeat(dim, i);
+            else if (!q.some(e => e.k === key)) {
+              q.push({ k: key, dim, idx: i });
+              if (q.length > 12) q.shift();
+            }
+          }
+        }
+      } catch (e) {}
+    },
+    flushLedgerBeats() {
+      // beats whose gates failed wait here. The world catches up and the
+      // beat lands late, not never. Called every endDay.
+      try {
+        const q = this._beatQueue();
+        for (let i = q.length - 1; i >= 0; i--) {
+          const e = q[i];
+          const beat = (LEDGER_BEATS[e.dim] || [])[e.idx];
+          if (!beat || this._beatsFired()[e.k]) { q.splice(i, 1); continue; }
+          if (this._beatGate(beat.kind)) { q.splice(i, 1); this._fireBeat(e.dim, e.idx); }
+        }
+      } catch (e) {}
+      return null;
+    },
+    // You don't see your own legend until others talk about you. Gossip
+    // beats set it; high viewership or a seen broadcast counts too.
+    hearsAboutSelf() {
+      try {
+        const pg = this.progState();
+        if (pg.selfTalkedAbout) return true;
+        const v = this.state.village || {};
+        const vw = v.viewership == null ? this.havenViewership() : v.viewership;
+        if (vw >= 12) return true;
+        if (pg.broadcast && pg.broadcast.length) return true;
+      } catch (e) {}
+      return false;
+    },
+    hearGossipAboutSelf(source) {
+      // WIRING (conversation.js owner, 2026-10-07): call when an NPC gossips
+      // about the player — a name, a quote, a rumor overheard at the fire.
+      // The first call is the moment the player learns they have a legend;
+      // later calls are just the world continuing to talk.
+      try {
+        const pg = this.progState();
+        if (!pg.selfTalkedAbout) {
+          pg.selfTalkedAbout = true;
+          this.say(`You overhear ${source || 'riders at the fire'} talking about you — and stop pretending not to listen. Out there, you are becoming a story.`);
+        }
+      } catch (e) {}
+      return null;
+    },
+    legendSurface() {
+      // The story so far, AS THE WORLD TELLS IT — only beats whose
+      // knowledge gates already passed. WIRING (journal.js / codex owner,
+      // 2026-10-07): render this on the Codex legend page. Never show raw
+      // ledger numbers; the numbers are not the story.
+      try { return (this.progState().legendBeats || []).slice(); }
+      catch (e) { return []; }
+    },
+
+    // ---------- UNITY — a felt state, not a number ----------
+    // unified/fractured resolve to a tier the player lives inside.
+    // Transitions narrate themselves, direction-aware, always visible.
+    unityState() {
+      try {
+        const L = this.ledger();
+        const diff = (L.unified || 0) - (L.fractured || 0);
+        for (const t of UNITY_TIERS) if (diff >= t.min) return { key: t.key, label: t.label, diff };
+      } catch (e) {}
+      return { key: 'holding', label: 'Holding together', diff: 0 };
+    },
+    _checkUnityTransition() {
+      // big swings walk every tier they cross, direction-aware — no
+      // teleporting from "two hearths" to "as one" without the road between.
+      try {
+        const pg = this.progState();
+        const cur = this.unityState().key;
+        const prev = pg.unityTier;
+        if (!prev) { pg.unityTier = cur; return; } // first read: silent baseline
+        if (prev === cur) return;
+        const order = UNITY_TIERS.map(t => t.key);
+        const from = order.indexOf(prev), to = order.indexOf(cur);
+        if (from < 0 || to < 0) { pg.unityTier = cur; return; }
+        const improving = to < from;
+        const step = improving ? -1 : 1;
+        pg.unityTier = cur;
+        for (let i = from + step; improving ? i >= to : i <= to; i += step) {
+          const tier = UNITY_TIERS[i] || {};
+          const text = improving ? tier.better : tier.worse;
+          if (text) this.say('◈ HAVEN — ' + text);
+        }
+        const dest = UNITY_TIERS[to] || {};
+        try { this.recordMoment('Haven feels ' + String(dest.label || cur).toLowerCase() + '.'); } catch (e) {}
+      } catch (e) {}
+    },
+
+    // ---------- THE FOOD TRUTH — sharer, even, hoarder ----------
+    // foodShared vs foodHoarded resolve to a stance with social
+    // consequences. The stance transition IS the consequence.
+    foodStance() {
+      try {
+        const L = this.ledger();
+        const s = L.foodShared || 0, h = L.foodHoarded || 0;
+        const key = s >= h + 6 ? 'sharer' : (h >= s + 6 ? 'hoarder' : 'even');
+        return { key, shared: s, hoarded: h };
+      } catch (e) { return { key: 'even', shared: 0, hoarded: 0 }; }
+    },
+    _checkFoodStance() {
+      try {
+        const pg = this.progState();
+        const cur = this.foodStance().key;
+        const prev = pg.foodStanceKey;
+        if (!prev) { pg.foodStanceKey = cur; return; }
+        if (prev === cur) return;
+        pg.foodStanceKey = cur;
+        const st = FOOD_STANCES[cur];
+        if (st && st.enter) {
+          this.say('◈ FOOD TRUTH — ' + st.enter);
+          try { this.recordMoment('The village has decided what kind of keeper you are.'); } catch (e) {}
+        }
+      } catch (e) {}
+    },
+    shareFood(kcal, toName) {
+      // WIRING (game.js owner, 2026-10-07): call when the player gives food
+      // OUTWARD — to other villages, travelers, the hungry outside Haven.
+      // Roughly +1 per 1000 kcal, min 1. Teaching (inward sharing) already
+      // writes foodShared via the convoTurn wrap; this is the outward half.
+      try {
+        const n = Math.max(1, Math.round((kcal || 500) / 1000));
+        this.ledgerAdd('foodShared', n);
+        try { this.recordMoment(`Shared food outward${toName ? ' — ' + toName : ''}.`); } catch (e) {}
+      } catch (e) {}
+      return null;
+    },
+    hoardFood(kcal) {
+      // WIRING (game.js owner, 2026-10-07): call when the player stashes
+      // food privately while the village is hungry. Deliberately quiet —
+      // no broadcast, no moment. The stance transition is the consequence.
+      try {
+        const n = Math.max(1, Math.round((kcal || 500) / 1000));
+        this.ledgerAdd('foodHoarded', n);
+      } catch (e) {}
+      return null;
+    },
+
+    // ---------- EXPOSED — truths have consequences ----------
+    // Called from the exposeBribery wrap on success. The bribe is already
+    // public at the moot; this is the part people LIVE with: names named,
+    // eyes avoided, the village remembering the way it remembers winters.
+    exposeFallout(caseId, voterId) {
+      try {
+        // named when the case data is at hand; the generic nouns are
+        // deliberate when it isn't — "someone" would read as a bug.
+        let briberLine = `The one who paid doesn't meet your eye anymore.`;
+        let boughtLine = `The one who was bought has gone quiet around the fire.`;
+        let crimeLine = `someone tried to buy a voice`;
+        let momentLine = null;
+        try {
+          const c = this.getCase ? this.getCase(caseId) : null;
+          const b = c && (c.bribes || []).find(x => x.voter === voterId);
+          if (b) {
+            const bn = this.displayName(b.by).split(' ')[0];
+            const vn = this.displayName(b.voter).split(' ')[0];
+            briberLine = `${bn} doesn't meet your eye anymore.`;
+            boughtLine = `${vn}'s friends have gone quiet around the fire.`;
+            crimeLine = `${bn} tried to buy a voice${b.amount ? ` — ${b.amount} kcal changed hands` : ''}`;
+            momentLine = `Exposed: ${bn} bought ${vn}.`;
+          }
+        } catch (e) {}
+        this.say(`⚖️ ${briberLine} ${boughtLine}`);
+        this.say(`The village will remember this the way it remembers winters: ${crimeLine}. It didn't stay secret.`);
+        try { this.recordMoment(momentLine || 'Exposed a bought voice at the moot.'); } catch (e) {}
+      } catch (e) {}
+      return null;
     },
 
     // ---------- THE TABLE ----------
@@ -285,6 +645,9 @@
       try { this.removeVillager(oldId, 'killed'); } catch (e) {}
       this.lineage().push({ name: oldName, epithet: this.leadershipEpithet(), day: s.day || 0, cause: cause || 'the wild' });
       this.say(`🕯️ ${oldName} is dead — ${cause || 'the wild'}. The village stops. Somebody screams. Somebody else starts digging.`);
+      // DRAMA (Steve 2026-10-07, Round C2): the death is a moment — fade to black,
+      // soul rises. The Oversight's tone: the story continues. (Gated by systemArrived inside Game.drama.)
+      try { this.drama('playerDeath', s.mx, s.my, oldName, cause || 'the wild'); } catch (e) {}
       // successor: the village chooses. Trust decides.
       let candidates = [];
       try { candidates = this.npcIds(); } catch (e) {}
@@ -328,9 +691,11 @@
       s.kcal = 1500;
       try { s.health = this.maxHealth(); } catch (e) { s.health = 100; }
       s.trauma = 10; // the shock of stepping up
+      // STATUS EFFECTS (Steve 2026-10-07): new body, no old afflictions.
+      s.statuses = []; s.diseases = []; s.poisons = [];
       s.mx = 4; s.my = 4;
       try {
-        if (this.map) { this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3; }
+        if (this.map) { this.map.px = this.state.village.px ?? 4; this.map.py = this.state.village.py ?? 4; }
       } catch (e) {}
       // background abilities are THEIRS — their past, their hands.
       try {
@@ -344,6 +709,8 @@
       // System abilities pass with the mantle — the System recognizes the
       // office, not the face. It's alien like that.
       this.say('🌟 "MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)"');
+      // DRAMA (Steve 2026-10-07, Round C2): bright emergence — a new scholar awakens.
+      try { this.drama('newLife', newName); } catch (e) {}
       this.say(`📖 The Codex turns a page: ${oldName}, ${s.day || 0} days. The mantle passes to ${newName}.`);
       try { this.recordMoment(`${oldName} died. ${newFirst} picked up the Codex.`); } catch (e) {}
       // the trust of the office transfers, discounted — the person must earn the rest
@@ -705,11 +1072,14 @@
       return r;
     };
 
-    // exposing corruption is witness-work
+    // exposing corruption is witness-work — and truths dragged into the
+    // light have consequences: names named, eyes avoided.
     const _expose = Game.exposeBribery;
     Game.exposeBribery = function (caseId, voterId) {
       const r = _expose ? _expose.call(this, caseId, voterId) : undefined;
-      try { if (r) this.ledgerAdd('exposed', 2); } catch (e) {}
+      try {
+        if (r) { this.ledgerAdd('exposed', 2); this.exposeFallout(caseId, voterId); }
+      } catch (e) {}
       return r;
     };
 
@@ -763,6 +1133,11 @@
       const r = _endDay ? _endDay.call(this) : undefined;
       try {
         this.ledgerBeat();
+        // threshold beats whose gates failed wait for the world to catch up
+        this.flushLedgerBeats();
+        // unity and the food truth are felt states — transitions narrate
+        this._checkUnityTransition();
+        this._checkFoodStance();
         const pg = this.progState();
         if (pg.tableWaiting && !pg.tableDone && this.state.systemArrived) this.tableScene();
       } catch (e) {}

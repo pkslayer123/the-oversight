@@ -1,16 +1,6 @@
 [
   {
     "discovery": "\"OOH! Those two TOGETHER?! Ears AND eyes?! The audience did NOT see that coming! Nothing hides from you now! NOTHING!\"",
-    "discovery_method": {
-      "hint": "Echo first. Then hunt. Let your ears guide your eyes.",
-      "order": [
-        "echo_location",
-        "tracker"
-      ],
-      "tease1": "For a heartbeat, the world had edges made of sound. Then it was just... quiet. Did you imagine that?",
-      "tease2": "The echo came back wrong \u2014 no, not wrong. *More.* You could hear the shape of something moving, almost see it. Then it slipped away. So close.",
-      "type": "sequential"
-    },
     "flags": [],
     "flavor": "Your ears and eyes agree. Nothing hides.",
     "id": "apex_sense",
@@ -31,16 +21,20 @@
     "requires": [
       "tracker",
       "echo_location"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "echo_location",
+        "tracker"
+      ],
+      "hint": "Echo first. Then hunt. Let your ears guide your eyes.",
+      "tease1": "For a heartbeat, the world had edges made of sound. Then it was just... quiet. Did you imagine that?",
+      "tease2": "The echo came back wrong \u2014 no, not wrong. *More.* You could hear the shape of something moving, almost see it. Then it slipped away. So close."
+    }
   },
   {
     "discovery": "\"WAIT. You grow the food AND you eat the sun?! That's... that's double-dipping! The gamblers are FURIOUS they didn't think of it! The plants like you AND you ARE a plant?!\"",
-    "discovery_method": {
-      "hint": "Tend living things in the daylight, day after day. Be patient. Be a garden.",
-      "tease1": "Your hands tingled in the sun today. The plants seemed to lean toward you. Probably the wind.",
-      "tease2": "The garden *hummed*. You felt it in your teeth \u2014 green and gold and hungry. Then it stopped. It wants... something. Repetition?",
-      "type": "sustained"
-    },
     "flags": [],
     "flavor": "The plants feed you. You feed the plants. The System is confused and delighted.",
     "id": "sun_garden",
@@ -56,20 +50,16 @@
     "requires": [
       "green_thumb",
       "photosynthesis"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Tend living things in the daylight, day after day. Be patient. Be a garden.",
+      "tease1": "Your hands tingled in the sun today. The plants seemed to lean toward you. Probably the wind.",
+      "tease2": "The garden *hummed*. You felt it in your teeth \u2014 green and gold and hungry. Then it stopped. It wants... something. Repetition?"
+    }
   },
   {
     "discovery": "\"Nothing wasted?! EVERYTHING returns?! Oh, the efficiency! The AUDIENCE is taking notes! This is the most sustainable contestant we've EVER had!\"",
-    "discovery_method": {
-      "hint": "Cook, then return the scraps to the earth. Nothing wasted.",
-      "order": [
-        "camp_cook",
-        "compost_king"
-      ],
-      "tease1": "The buried scraps seemed warmer than they should be. The soil... appreciated it? That's a strange thought.",
-      "tease2": "Where you buried yesterday's meal, something is already sprouting. Too fast. Impossibly fast. Then it slowed, as if embarrassed to be seen.",
-      "type": "sequential"
-    },
     "flags": [],
     "flavor": "Nothing wasted. Everything returns.",
     "id": "closed_loop",
@@ -90,20 +80,20 @@
     "requires": [
       "camp_cook",
       "compost_king"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "camp_cook",
+        "compost_king"
+      ],
+      "hint": "Cook, then return the scraps to the earth. Nothing wasted.",
+      "tease1": "The buried scraps seemed warmer than they should be. The soil... appreciated it? That's a strange thought.",
+      "tease2": "Where you buried yesterday's meal, something is already sprouting. Too fast. Impossibly fast. Then it slowed, as if embarrassed to be seen."
+    }
   },
   {
     "discovery": "\"You could talk a HUSHWOLF out of dinner! The drama division is filing a complaint \u2014 you're ruining their storylines! KEEP GOING!\"",
-    "discovery_method": {
-      "hint": "Talk first. Then mend. Words open the door; understanding walks through.",
-      "order": [
-        "diplomat",
-        "mediator"
-      ],
-      "tease1": "Mid-conversation, the air went still. Everyone was listening \u2014 really listening \u2014 for just a moment. Then someone coughed.",
-      "tease2": "You watched two people who hate each other *almost* understand each other. The words were right there, on the edge of your tongue. Then the moment passed.",
-      "type": "sequential"
-    },
     "flags": [],
     "flavor": "You speak and rooms settle.",
     "id": "peacemakers_voice",
@@ -124,20 +114,20 @@
     "requires": [
       "diplomat",
       "mediator"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "diplomat",
+        "mediator"
+      ],
+      "hint": "Talk first. Then mend. Words open the door; understanding walks through.",
+      "tease1": "Mid-conversation, the air went still. Everyone was listening \u2014 really listening \u2014 for just a moment. Then someone coughed.",
+      "tease2": "You watched two people who hate each other *almost* understand each other. The words were right there, on the edge of your tongue. Then the moment passed."
+    }
   },
   {
     "discovery": "\"Blood IN! Blood OUT! It's a CIRCUIT! Oh that's DARK! The audience is covering their eyes but PEEKING! We love it! We shouldn't! We DO!\"",
-    "discovery_method": {
-      "hint": "Spend blood. Then drink it back. Close the circuit.",
-      "order": [
-        "blood_magic",
-        "leech"
-      ],
-      "tease1": "The blood you spent seemed to hesitate before leaving you. Like it wanted to come back.",
-      "tease2": "You felt it \u2014 a loop, almost closed. Power leaving and returning in the same breath. Your veins buzzed. Then the circuit broke, and you were just... tired.",
-      "type": "sequential"
-    },
     "flags": [
       "crimson_circuit"
     ],
@@ -155,16 +145,20 @@
     "requires": [
       "blood_magic",
       "leech"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "blood_magic",
+        "leech"
+      ],
+      "hint": "Spend blood. Then drink it back. Close the circuit.",
+      "tease1": "The blood you spent seemed to hesitate before leaving you. Like it wanted to come back.",
+      "tease2": "You felt it \u2014 a loop, almost closed. Power leaving and returning in the same breath. Your veins buzzed. Then the circuit broke, and you were just... tired."
+    }
   },
   {
     "discovery": "\"It REFUSES to fall! It REFUSES to calm down! ANGER plus UNDEATH?! The sponsors just tripled the odds! FIGHT! FIGHT! FIGHT!\"",
-    "discovery_method": {
-      "hint": "Refuse to fall while refusing to calm down.",
-      "tease1": "Death reached for you and your anger *slapped its hand away*. For a second. Then you fell anyway.",
-      "tease2": "You died angry \u2014 and for one impossible moment, the anger held you up. You were standing. Dead, but standing. Then the rage broke, and so did you.",
-      "type": "simultaneous"
-    },
     "flags": [
       "undying_fury"
     ],
@@ -176,19 +170,19 @@
     "requires": [
       "rage",
       "second_wind"
-    ]
+    ],
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Refuse to fall while refusing to calm down.",
+      "tease1": "Death reached for you and your anger *slapped its hand away*. For a second. Then you fell anyway.",
+      "tease2": "You died angry \u2014 and for one impossible moment, the anger held you up. You were standing. Dead, but standing. Then the rage broke, and so did you."
+    }
   },
   {
     "discovery": "\"You don't FIND water! Water FINDS YOU! The weather team wants to know your SECRET! There IS no secret! That's the best part!\"",
-    "discovery_method": {
-      "hint": "Seek water when the sky is already giving it.",
-      "tease1": "The dowsing stick twitched toward the clouds. That's... not how it's supposed to work.",
-      "tease2": "Rain bent toward your outstretched hand. Just a little. Just enough to notice. The clouds seemed surprised too.",
-      "type": "simultaneous"
-    },
     "flags": [],
     "flavor": "You don't find water. Water finds you.",
-    "id": "stormcaller",
+    "id": "rain_catcher",
     "minLevel": 1,
     "modifiers": [
       {
@@ -197,20 +191,20 @@
         "value": 2.0
       }
     ],
-    "name": "Stormcaller",
+    "name": "Rain Catcher",
     "requires": [
       "rain_dancer",
       "dowsing"
-    ]
+    ],
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Seek water when the sky is already giving it.",
+      "tease1": "The dowsing stick twitched toward the clouds. That's... not how it's supposed to work.",
+      "tease2": "Rain bent toward your outstretched hand. Just a little. Just enough to notice. The clouds seemed surprised too."
+    }
   },
   {
     "discovery": "\"Shed! Harden! Shed! Harden! It's BEAUTIFUL! Like watching armor decide to be ALIVE! The audience is molting EMOTIONALLY!\"",
-    "discovery_method": {
-      "hint": "Shed, then harden. Shed, then harden. Let the cycle turn.",
-      "tease1": "Your skin itched in a way that felt... purposeful. Like it was rehearsing something.",
-      "tease2": "After the blow, your skin rippled \u2014 almost shed, almost renewed, then settled. It knows what it wants to do. It just needs... practice.",
-      "type": "sustained"
-    },
     "flags": [],
     "flavor": "Shed and harden. Shed and harden. (+25 max HP.)",
     "id": "perfect_chrysalis",
@@ -226,16 +220,16 @@
     "requires": [
       "chitin_skin",
       "molt"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Shed, then harden. Shed, then harden. Let the cycle turn.",
+      "tease1": "Your skin itched in a way that felt... purposeful. Like it was rehearsing something.",
+      "tease2": "After the blow, your skin rippled \u2014 almost shed, almost renewed, then settled. It knows what it wants to do. It just needs... practice."
+    }
   },
   {
     "discovery": "\"You SEE it, don't you?! The SEAMS! The world has SEAMS and you're READING them! Our technicians are NERVOUS! Keep looking! Don't look at US!\"",
-    "discovery_method": {
-      "hint": "Look for patterns, day after day. The seams will show.",
-      "tease1": "For a second, the world had a texture \u2014 like fabric, like something woven. You blinked and it was just trees again.",
-      "tease2": "You saw it. A seam. A place where the world was stitched together slightly wrong. You reached for it and it... wasn't there. But you *saw* it.",
-      "type": "sustained"
-    },
     "flags": [],
     "flavor": "The world has seams. You see them.",
     "id": "sees_the_weave",
@@ -256,16 +250,16 @@
     "requires": [
       "third_eye",
       "pattern_recognition"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Look for patterns, day after day. The seams will show.",
+      "tease1": "For a second, the world had a texture \u2014 like fabric, like something woven. You blinked and it was just trees again.",
+      "tease2": "You saw it. A seam. A place where the world was stitched together slightly wrong. You reached for it and it... wasn't there. But you *saw* it."
+    }
   },
   {
     "discovery": "\"The living AND the dead?! You're looting BOTH SIDES of mortality! The ancestors' union has filed a grievance! We tore it up! DELVE! DELVE!\"",
-    "discovery_method": {
-      "hint": "Rob the living and the dead in the same place.",
-      "tease1": "The ruins felt... cooperative today. Like they wanted to be searched.",
-      "tease2": "You found something in the rubble that shouldn't have been there \u2014 something old that *noticed* you finding it. Then it was just an old coin. Probably.",
-      "type": "simultaneous"
-    },
     "flags": [],
     "flavor": "The dead don't mind. Much.",
     "id": "delver",
@@ -281,16 +275,16 @@
     "requires": [
       "scrounger",
       "grave_robber"
-    ]
+    ],
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Rob the living and the dead in the same place.",
+      "tease1": "The ruins felt... cooperative today. Like they wanted to be searched.",
+      "tease2": "You found something in the rubble that shouldn't have been there \u2014 something old that *noticed* you finding it. Then it was just an old coin. Probably."
+    }
   },
   {
     "discovery": "\"Less fuel! SAME distance! You're... you're OPTIMIZED! Our engineers are taking notes and feeling INADEQUATE! Walk, efficient one! WALK!\"",
-    "discovery_method": {
-      "hint": "Walk far, walk light, walk cold. Efficiency is a practice.",
-      "tease1": "The walk felt easier today. Less fuel, same distance. Your body is learning something.",
-      "tease2": "You stopped to rest and realized you didn't need to. Your breath was slow, your steps were light, and the miles just... happened. Then you thought about it, and the feeling faded.",
-      "type": "sustained"
-    },
     "flags": [],
     "flavor": "Less fuel. Same distance. The System takes notes.",
     "id": "efficient_machine",
@@ -306,20 +300,16 @@
     "requires": [
       "cold_blooded",
       "hollow_bones"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Walk far, walk light, walk cold. Efficiency is a practice.",
+      "tease1": "The walk felt easier today. Less fuel, same distance. Your body is learning something.",
+      "tease2": "You stopped to rest and realized you didn't need to. Your breath was slow, your steps were light, and the miles just... happened. Then you thought about it, and the feeling faded."
+    }
   },
   {
     "discovery": "\"It DIED! It's BACK! It DIED! It's BACK! Death keeps filing the paperwork and you keep LOSING it! The underworld wants a recount! DENIED!\"",
-    "discovery_method": {
-      "hint": "Die. Return. Die again. Return again. Death keeps score; you keep erasing it.",
-      "order": [
-        "phoenix_clause",
-        "second_wind"
-      ],
-      "tease1": "Death filed the paperwork. You lost it. Death is getting annoyed.",
-      "tease2": "You came back *again*, and for a moment death itself seemed to hesitate \u2014 like it was checking its notes, confused. Then it remembered its job.",
-      "type": "sequential"
-    },
     "flags": [
       "refuses_death"
     ],
@@ -331,103 +321,320 @@
     "requires": [
       "phoenix_clause",
       "second_wind"
-    ]
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "phoenix_clause",
+        "second_wind"
+      ],
+      "hint": "Die. Return. Die again. Return again. Death keeps score; you keep erasing it.",
+      "tease1": "Death filed the paperwork. You lost it. Death is getting annoyed.",
+      "tease2": "You came back *again*, and for a moment death itself seemed to hesitate \u2014 like it was checking its notes, confused. Then it remembered its job."
+    }
   },
   {
-    "discovery": "\"You GROW the medicine AND you USE the medicine?! Vertical integration! The sponsors want to franchise you! One location! MANY wounds! DOCTOR! DOCTOR!\"",
-    "discovery_method": {
-      "hint": "Gather the right plants, then treat the wound. The order matters.",
-      "order": [
-        "herbal_remedy",
-        "field_medicine"
-      ],
-      "tease1": "The poultice felt... correct today. The herbs wanted to be exactly where you put them.",
-      "tease2": "Your hands reached for the bandage before your brain finished the diagnosis. They already knew. Two more treatments and they'll know it by heart.",
-      "type": "sequential"
-    },
-    "flags": [],
-    "flavor": "Grow the cure. Apply the cure. Repeat.",
     "id": "field_pharmacy",
-    "minLevel": 1,
-    "modifiers": [
-      {
-        "op": "multiply",
-        "target": "healing.amount",
-        "value": 1.2
-      }
-    ],
     "name": "Field Pharmacy",
     "requires": [
       "field_medicine",
       "herbal_remedy"
-    ]
-  },
-  {
-    "discovery": "\"You LOOK at the wound AND your hands DON'T SHAKE?! The drama division just lost its best cliffhanger! Boring! MAGNIFICENT! BORING!\"",
-    "discovery_method": {
-      "hint": "Size up the wound first, then work it slow and steady.",
-      "order": [
-        "triage",
-        "steady_hands"
-      ],
-      "tease1": "You caught yourself pausing before touching the wound. Actually LOOKING at it first. Since when do you do that?",
-      "tease2": "Your hands were steady. Eerily steady. The bleeding stopped cooperating with panic. One more calm treatment and this becomes a habit.",
-      "type": "sequential"
-    },
-    "flags": [],
-    "flavor": "Assess first. Shake never.",
-    "id": "surgeons_calm",
+    ],
     "minLevel": 1,
     "modifiers": [
       {
-        "op": "add",
         "target": "healing.amount",
-        "value": 6
+        "op": "multiply",
+        "value": 1.2
       }
     ],
+    "flags": [],
+    "flavor": "Grow the cure. Apply the cure. Repeat.",
+    "discovery": "\"You GROW the medicine AND you USE the medicine?! Vertical integration! The sponsors want to franchise you! One location! MANY wounds! DOCTOR! DOCTOR!\"",
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "herbal_remedy",
+        "field_medicine"
+      ],
+      "hint": "Gather the right plants, then treat the wound. The order matters.",
+      "tease1": "The poultice felt... correct today. The herbs wanted to be exactly where you put them.",
+      "tease2": "Your hands reached for the bandage before your brain finished the diagnosis. They already knew. Two more treatments and they'll know it by heart."
+    }
+  },
+  {
+    "id": "surgeons_calm",
     "name": "Surgeon's Calm",
     "requires": [
       "triage",
       "steady_hands"
-    ]
-  },
-  {
-    "discovery": "\"The BIRDS talk to you AND the SQUIRRELS talk to you?! A whole INTELLIGENCE AGENCY of small mammals! The squirrels deny everything! WE HAVE FOOTAGE!\"",
-    "discovery_method": {
-      "hint": "Befriend the small things, day after day. Listen more than you speak.",
-      "tease1": "A jay followed you all morning, scolding. It felt like a briefing.",
-      "tease2": "The squirrel left something on your pack. A maple key. Arranged. Deliberately. It was a message. You almost understood it.",
-      "type": "sustained"
-    },
-    "flags": [],
-    "flavor": "Every small thing owes you a favor.",
-    "id": "critter_network",
+    ],
     "minLevel": 1,
     "modifiers": [
       {
+        "target": "healing.amount",
         "op": "add",
-        "target": "forage.gift_chance",
-        "value": 0.1
+        "value": 6
       }
     ],
+    "flags": [],
+    "flavor": "Assess first. Shake never.",
+    "discovery": "\"You LOOK at the wound AND your hands DON'T SHAKE?! The drama division just lost its best cliffhanger! Boring! MAGNIFICENT! BORING!\"",
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "triage",
+        "steady_hands"
+      ],
+      "hint": "Size up the wound first, then work it slow and steady.",
+      "tease1": "You caught yourself pausing before touching the wound. Actually LOOKING at it first. Since when do you do that?",
+      "tease2": "Your hands were steady. Eerily steady. The bleeding stopped cooperating with panic. One more calm treatment and this becomes a habit."
+    }
+  },
+  {
+    "id": "critter_network",
     "name": "Critter Network",
     "requires": [
       "bird_whisperer",
       "squirrel_friend"
-    ]
+    ],
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "target": "forage.gift_chance",
+        "op": "add",
+        "value": 0.1
+      }
+    ],
+    "flags": [],
+    "flavor": "Every small thing owes you a favor.",
+    "discovery": "\"The BIRDS talk to you AND the SQUIRRELS talk to you?! A whole INTELLIGENCE AGENCY of small mammals! The squirrels deny everything! WE HAVE FOOTAGE!\"",
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Befriend the small things, day after day. Listen more than you speak.",
+      "tease1": "A jay followed you all morning, scolding. It felt like a briefing.",
+      "tease2": "The squirrel left something on your pack. A maple key. Arranged. Deliberately. It was a message. You almost understood it."
+    }
   },
   {
-    "discovery": "\"You let them SURROUND you ON PURPOSE?! That's not a plan! That's a LIFESTYLE! The safety counselors are concerned! The audience is THRILLED!\"",
-    "discovery_method": {
-      "hint": "Let them surround you. Then stop holding back.",
-      "tease1": "Outnumbered, your hands stopped shaking. That was new. And a little frightening.",
-      "tease2": "Cornered in the last fight, you felt the fear turn. Not away, but INTO something. Into aim. One more corner and it won't turn back.",
-      "type": "simultaneous"
-    },
+    "id": "cornered_fury",
+    "name": "Cornered Fury",
+    "requires": [
+      "adrenaline_control",
+      "cornered_rat"
+    ],
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "target": "combat.strike_damage",
+        "op": "multiply",
+        "value": 1.25
+      }
+    ],
     "flags": [],
     "flavor": "Backs to walls hit harder. Violence stays desperate, never clean.",
-    "id": "cornered_fury",
+    "discovery": "\"You let them SURROUND you ON PURPOSE?! That's not a plan! That's a LIFESTYLE! The safety counselors are concerned! The audience is THRILLED!\"",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Let them surround you. Then stop holding back.",
+      "tease1": "Outnumbered, your hands stopped shaking. That was new. And a little frightening.",
+      "tease2": "Cornered in the last fight, you felt the fear turn. Not away, but INTO something. Into aim. One more corner and it won't turn back."
+    }
+  },
+  {
+    "id": "clean_plate",
+    "name": "Clean Plate",
+    "requires": [
+      "purify",
+      "iron_stomach"
+    ],
     "minLevel": 1,
+    "modifiers": [
+      {
+        "target": "food.poison_chance",
+        "op": "multiply",
+        "value": 0.5
+      }
+    ],
+    "flags": [],
+    "flavor": "Clean what you can. Stomach the rest.",
+    "discovery": "\"You CLEAN the food AND your gut forgives EVERYTHING?! The food-safety division is OUTRAGED! The gamblers ate a questionable mushroom in your honor! It's FINE! Probably!\"",
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Clean your food carefully, day after day. Trust your gut. Literally.",
+      "tease1": "The water tasted wrong today and your stomach just... handled it. Rude of it. Helpful, though.",
+      "tease2": "You ate the thing nobody else would touch. It was fine. Your gut gurgled in a way that sounded almost smug. It's learning your habits."
+    }
+  },
+  {
+    "id": "polyglots_ledger",
+    "name": "Polyglot's Ledger",
+    "requires": [
+      "translator",
+      "open_book"
+    ],
+    "minLevel": 1,
+    "modifiers": [
+      {
+        "target": "trust.gain_mult",
+        "op": "multiply",
+        "value": 1.25
+      }
+    ],
+    "flags": [],
+    "flavor": "Every language is a door. You carry the keys.",
+    "discovery": "\"You READ their stories AND you SPEAK their tongue?! The subtitling department is OUT OF A JOB! We had to give them hats! KEEP TALKING!\"",
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Read their world. Listen to their words. Day after day.",
+      "tease1": "A word in their tongue came to you uninvited today. It just arrived, wearing a little hat of context.",
+      "tease2": "You dreamed in two languages and understood both. The journal pages are starting to annotate themselves. Almost."
+    }
+  },
+  {
+    "id": "tidecaller",
+    "name": "Tidecaller",
+    "requires": [
+      "tech:tide_reading",
+      "skill:fishing",
+      "water_breathing"
+    ],
+    "minLevel": 2,
+    "flavor": "The fisher's tide-reading + your hands + the water's gift. You don't fish. You ask.",
+    "discovery": "\"WAIT. You read the tide AND you breathe water?! The fish just... come to you?! That's not fishing, that's a CONVERSATION!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "fishing.yield",
+        "value": 1.5
+      },
+      {
+        "op": "add",
+        "target": "fishing.rare_chance",
+        "value": 0.2
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "water_breathing",
+        "fishing"
+      ],
+      "hint": "Breathe the water. Then fish. Let the tide teach you.",
+      "tease1": "Underwater, you felt the current shift \u2014 and somehow knew fish were coming. The tide-reading technique itched at the back of your mind.",
+      "tease2": "You read the water like the fishers taught you, and your lungs didn't burn. The fish came. They just... came."
+    },
+    "flags": []
+  },
+  {
+    "id": "seedkeeper",
+    "name": "Seedkeeper's Promise",
+    "requires": [
+      "tech:seed_saving",
+      "skill:farming",
+      "green_thumb"
+    ],
+    "minLevel": 2,
+    "flavor": "The farmer's seed wisdom + your hands + the green gift. What you plant remembers you.",
+    "discovery": "\"You save the seeds AND you grow them with your HANDS?! The plants are writing you into their family tree! LITERALLY!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "farming.yield",
+        "value": 1.4
+      },
+      {
+        "op": "add",
+        "target": "farming.seed_keep",
+        "value": 0.3
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "green_thumb",
+        "farming"
+      ],
+      "hint": "Grow with the gift. Then save the seeds. The cycle teaches.",
+      "tease1": "The seeds you saved felt warm. Not from the sun \u2014 from something else. Your green thumb tingled.",
+      "tease2": "You planted a saved seed and it sprouted overnight. The farmer's technique + your gift \u2014 the earth noticed."
+    },
+    "flags": []
+  },
+  {
+    "id": "wildreader",
+    "name": "Wildreader",
+    "requires": [
+      "tech:plant_tracking",
+      "skill:foraging",
+      "tracker"
+    ],
+    "minLevel": 2,
+    "flavor": "The forager's tracking + your eye + the hunter's gift. The wild leaves you letters.",
+    "discovery": "\"You track plants LIKE animals?! With the hunter's eyes?! The forest is just... TELLING you where everything is!\"",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "forage.find_chance",
+        "value": 0.2
+      },
+      {
+        "op": "multiply",
+        "target": "forage.yield",
+        "value": 1.3
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "tracker",
+        "foraging"
+      ],
+      "hint": "Track like a hunter. Then forage. The signs are the same.",
+      "tease1": "You saw a broken twig and knew \u2014 not an animal, a plant. The forager's teaching surfaced unbidden.",
+      "tease2": "Tracker eyes + plant knowledge. You followed the signs to a patch of exactly what you needed. The wild provides."
+    },
+    "flags": []
+  },
+  {
+    "id": "ringcraft",
+    "name": "Ringcraft",
+    "requires": [
+      "brawler_instinct",
+      "intimidating_presence"
+    ],
+    "minLevel": 1,
+    "flavor": "Fight where they can see you. The crowd is a weapon too.",
+    "discovery": "\"OHHH! You fight DIRTY and you look GOOD doing it! The audience is taking notes AND taking cover! FIGHT WHERE THEY CAN SEE YOU!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "combat.strike_damage",
+        "value": 1.3
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "brawler_instinct",
+        "intimidating_presence"
+      ],
+      "hint": "Brawl first. Then let them watch you do it again.",
+      "tease1": "After the fight, you caught three villagers staring. Not at the bruises \u2014 at you. Like you'd become weather.",
+      "tease2": "You threw a punch the whole clearing could see coming, and it landed anyway. Somewhere behind you, someone gasped. You liked that."
+    },
+    "flags": []
+  },
+  {
+    "id": "trade_of_blows",
+    "name": "Trade of Blows",
+    "requires": [
+      "brawler_instinct",
+      "second_wind"
+    ],
+    "minLevel": 1,
+    "flavor": "Trade damage like currency. You can afford the exchange rate.",
+    "discovery": "\"You TAKE the hit to LAND the hit?! That's not strategy! That's... okay that's actually strategy! The medics are FURIOUS! KEEP TRADING!\"",
     "modifiers": [
       {
         "op": "multiply",
@@ -435,49 +642,333 @@
         "value": 1.25
       }
     ],
-    "name": "Cornered Fury",
-    "requires": [
-      "adrenaline_control",
-      "cornered_rat"
-    ]
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Get hit. Hit back. Refuse the difference.",
+      "tease1": "You took a blow you could have dodged, and the counter landed twice as hard. Your ribs filed a complaint. Your fists overruled it.",
+      "tease2": "Hurt and swinging, you felt the second wind coming early \u2014 like your body had decided the bill was already paid. One more trade and it won't ask permission."
+    },
+    "flags": []
   },
   {
-    "discovery": "\"You CLEAN the food AND your gut forgives EVERYTHING?! The food-safety division is OUTRAGED! The gamblers ate a questionable mushroom in your honor! It's FINE! Probably!\"",
+    "id": "rooms_go_quiet",
+    "name": "Rooms Go Quiet",
+    "requires": [
+      "intimidating_presence",
+      "fear_aura"
+    ],
+    "minLevel": 1,
+    "flavor": "Don't raise your voice. Lower the room's.",
+    "discovery": "\"You didn't even MOVE! The whole ROOM just... deflated! Our fear sensors need recalibrating! Say LESS! MEAN MORE!\"",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "drama.resolve_bonus",
+        "value": 8
+      },
+      {
+        "op": "multiply",
+        "target": "trust.gain_mult",
+        "value": 0.85
+      }
+    ],
     "discovery_method": {
-      "hint": "Clean your food carefully, day after day. Trust your gut. Literally.",
-      "tease1": "The water tasted wrong today and your stomach just... handled it. Rude of it. Helpful, though.",
-      "tease2": "You ate the thing nobody else would touch. It was fine. Your gut gurgled in a way that sounded almost smug. It's learning your habits.",
-      "type": "sustained"
+      "type": "simultaneous",
+      "hint": "Stand still. Let the quiet do the work.",
+      "tease1": "You stopped mid-sentence and the argument died with it. Nobody told it to. It just... lay down.",
+      "tease2": "Someone started shouting and you just looked at them. The shouting ran out of air. You hadn't even decided to be scary yet."
     },
     "flags": [],
-    "flavor": "Clean what you can. Stomach the rest.",
-    "id": "clean_plate",
+    "description": "Your presence silences rooms. People obey out of fear, not loyalty. Disputes resolve quickly \u2014 nobody wants to be noticed."
+  },
+  {
+    "id": "borrowed_surge",
+    "name": "Borrowed Surge",
+    "requires": [
+      "adrenaline_control",
+      "brawler_instinct"
+    ],
     "minLevel": 1,
+    "flavor": "Hold the surge. Spend it on the one hit that matters.",
+    "discovery": "\"You SAVED it?! You banked the adrenaline like POCKET MONEY and spent it ALL on one punch! The economists are taking notes! SPEND BIG!\"",
     "modifiers": [
       {
         "op": "multiply",
-        "target": "food.poison_chance",
-        "value": 0.5
+        "target": "combat.strike_damage",
+        "value": 1.4
       }
     ],
-    "name": "Clean Plate",
-    "requires": [
-      "purify",
-      "iron_stomach"
-    ]
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "adrenaline_control",
+        "brawler_instinct"
+      ],
+      "hint": "Steady the surge first. Then throw it all into one strike.",
+      "tease1": "Mid-fight you felt the rush rise and \u2014 instead of riding it \u2014 you held it. Coiled it. Your hands were shaking with the weight of it.",
+      "tease2": "You let the adrenaline pool behind your eyes and spent it on a single uppercut. The surge was gone in a heartbeat. So was the other guy's balance."
+    },
+    "flags": []
   },
   {
-    "discovery": "\"You READ their stories AND you SPEAK their tongue?! The subtitling department is OUT OF A JOB! We had to give them hats! KEEP TALKING!\"",
-    "discovery_method": {
-      "hint": "Read their world. Listen to their words. Day after day.",
-      "tease1": "A word in their tongue came to you uninvited today. It just arrived, wearing a little hat of context.",
-      "tease2": "You dreamed in two languages and understood both. The journal pages are starting to annotate themselves. Almost.",
-      "type": "sustained"
-    },
-    "flags": [],
-    "flavor": "Every language is a door. You carry the keys.",
-    "id": "polyglots_ledger",
+    "id": "everybodys_friend",
+    "name": "Everybody's Friend",
+    "requires": [
+      "silver_tongue",
+      "gossip_network"
+    ],
     "minLevel": 1,
+    "flavor": "Talk pretty. Then listen harder.",
+    "discovery": "\"You talk to EVERYONE and everyone talks to YOU?! You're not networking, you're COLLECTING people! The census bureau is jealous! KEEP COLLECTING!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "trust.gain_mult",
+        "value": 1.6
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "silver_tongue",
+        "gossip_network"
+      ],
+      "hint": "Charm them first. Then hear what the charm loosened.",
+      "tease1": "You complimented Mara's stew and by dessert you knew who'd been stealing firewood. Nobody meant to tell you. They just... did.",
+      "tease2": "Your silver tongue opened the door; your listening walked through it. Three conversations in one evening, and every one of them handed you something they hadn't meant to."
+    },
+    "flags": []
+  },
+  {
+    "id": "word_of_mouth",
+    "name": "Word of Mouth",
+    "requires": [
+      "gossip_network",
+      "peacemaker"
+    ],
+    "minLevel": 1,
+    "flavor": "Hear everything. Mend everything.",
+    "discovery": "\"You know EVERYTHING and you FIX everything?! The village hotline has been REPLACED! By YOU! In ONE person! ANSWER THE CALLS!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "trust.gain_mult",
+        "value": 1.2
+      },
+      {
+        "op": "add",
+        "target": "drama.resolve_bonus",
+        "value": 8
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "gossip_network",
+        "peacemaker"
+      ],
+      "hint": "Learn the grudge first. Then walk into the middle of it.",
+      "tease1": "You knew about the fence dispute two days before it boiled over \u2014 you'd heard both sides at the well. When it blew up, you were already standing between them.",
+      "tease2": "The gossip told you exactly where it would break. You arrived with the words ready. Peace, it turns out, is mostly showing up informed."
+    },
+    "flags": []
+  },
+  {
+    "id": "talked_down",
+    "name": "Talked Down",
+    "requires": [
+      "silver_tongue",
+      "peacemaker"
+    ],
+    "minLevel": 1,
+    "flavor": "Talk them down before it starts.",
+    "discovery": "\"A FIGHT was starting and you just... TALKED it out of existing?! The security team is OUT of a job! The audience is STILL cheering! TALK FASTER!\"",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "drama.resolve_bonus",
+        "value": 6
+      },
+      {
+        "op": "multiply",
+        "target": "trust.gain_mult",
+        "value": 1.3
+      }
+    ],
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Speak while tempers are still deciding.",
+      "tease1": "Two hunters squared up over a snare line and you were talking before either of them had finished turning around. By the time they faced each other, the fight had nowhere to go.",
+      "tease2": "You felt a brawl gathering like weather and started talking \u2014 low, quick, reasonable. The storm broke around you and never landed."
+    },
+    "flags": []
+  },
+  {
+    "id": "story_sold",
+    "name": "Story Sold",
+    "requires": [
+      "skill:farming",
+      "silver_tongue"
+    ],
+    "minLevel": 1,
+    "flavor": "The harvest sells itself when you tell its story.",
+    "discovery": "\"You sold TURNIPS with a SPEECH?! People are trading spare boots for your STORY about turnips! The turnips are INCIDENTAL! SELL THE STORY!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "farming.yield",
+        "value": 1.2
+      },
+      {
+        "op": "multiply",
+        "target": "trust.gain_mult",
+        "value": 1.1
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "silver_tongue",
+        "farming"
+      ],
+      "hint": "Work the field. Then work the room.",
+      "tease1": "You told the traders about the blight you beat and the rain you prayed for, and they paid double for the grain. The grain was fine. The story was better.",
+      "tease2": "Silver tongue in the field, silver tongue at the table. Your harvest moves because people want a piece of the telling, not just the eating."
+    },
+    "flags": []
+  },
+  {
+    "id": "trailblazers_promise",
+    "name": "Trailblazer's Promise",
+    "requires": [
+      "tech:trail_blazing",
+      "pathfinder"
+    ],
+    "minLevel": 1,
+    "flavor": "The village cuts the trail. You read where it's going.",
+    "discovery": "\"The village BLAZES it and you just... KNOW it?! You walk their fresh-cut trails like you've walked them for YEARS! The trail crew wants a RAISE! WALK IT!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "travel.kcal",
+        "value": 0.75
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "pathfinder",
+        "trail_blazing"
+      ],
+      "hint": "Find the way. Then walk the village's cut.",
+      "tease1": "You followed a freshly blazed trail and never once checked for markers \u2014 your feet just knew the turns. The blazers' work and your instinct shook hands.",
+      "tease2": "Trail-blazing technique under your boots, pathfinder sense in your head. The miles cost you half what they cost everyone else. You barely noticed the distance."
+    },
+    "flags": []
+  },
+  {
+    "id": "farsight",
+    "name": "Farsight",
+    "requires": [
+      "eagle_eye",
+      "pathfinder"
+    ],
+    "minLevel": 1,
+    "flavor": "See far. Then go there.",
+    "discovery": "\"You SAW it from THREE ridges away and then just... WALKED to it?! The scouts are filing a UNION complaint! LOOK FARTHER!\"",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "hunt.find_chance",
+        "value": 0.15
+      },
+      {
+        "op": "add",
+        "target": "forage.find_chance",
+        "value": 0.1
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "eagle_eye",
+        "pathfinder"
+      ],
+      "hint": "Spot it first. Then close the distance.",
+      "tease1": "From the ridge you picked out a berry thicket two valleys over \u2014 a smudge of red nobody else could see. Your feet were already moving.",
+      "tease2": "Eagle eyes found the herd; pathfinder legs ate the miles between. By the time anyone asked where you were going, you were already there."
+    },
+    "flags": []
+  },
+  {
+    "id": "owl_hours",
+    "name": "Owl Hours",
+    "requires": [
+      "eagle_eye",
+      "night_eyes"
+    ],
+    "minLevel": 1,
+    "flavor": "Day eyes. Night eyes. No shift is blind.",
+    "discovery": "\"You see in the DARK?! Like, ACTUALLY see?! The night crew just lost their excuse for everything! NO SHIFT IS SAFE FROM YOU!\"",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "hunt.find_chance",
+        "value": 0.1
+      },
+      {
+        "op": "multiply",
+        "target": "hunt.success",
+        "value": 1.2
+      }
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Watch by day, watch by night. Let both shifts teach.",
+      "tease1": "At dusk your sharp eyes didn't fade \u2014 they changed. Shapes kept their edges long after the light gave up.",
+      "tease2": "You hunted at noon and at midnight in the same week, and neither darkness nor distance hid anything. The prey has filed a formal complaint about fairness."
+    },
+    "flags": []
+  },
+  {
+    "id": "trails_end",
+    "name": "Trail's End",
+    "requires": [
+      "pathfinder",
+      "dead_aim"
+    ],
+    "minLevel": 1,
+    "flavor": "Know exactly where the trail ends.",
+    "discovery": "\"You tracked it for MILES and then \u2014 ONE shot?! You knew where it would BE before it did! The prey never stood a chance! NEVER DOES!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "hunt.success",
+        "value": 1.35
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "pathfinder",
+        "dead_aim"
+      ],
+      "hint": "Walk the trail to its end. Then don't miss.",
+      "tease1": "You followed the prints to a clearing and your hands were already steady \u2014 you'd known for the last mile exactly where this ended.",
+      "tease2": "Pathfinder feet, dead-aim hands. The trail told you the ending; your aim just signed it. One shot. It was always going to be one shot."
+    },
+    "flags": []
+  },
+  {
+    "id": "tells",
+    "name": "Tells",
+    "requires": [
+      "lie_detector",
+      "open_book"
+    ],
+    "minLevel": 1,
+    "flavor": "Watch their face. Then read the room.",
+    "discovery": "\"You read FACES and ROOMS?! Nobody can bluff you AND nobody can hide from you! The poker night has been CANCELLED! Forever! READ THEM!\"",
     "modifiers": [
       {
         "op": "multiply",
@@ -485,34 +976,381 @@
         "value": 1.25
       }
     ],
-    "name": "Polyglot's Ledger",
-    "requires": [
-      "translator",
-      "open_book"
-    ]
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Catch the flicker. Then read what the room does with it.",
+      "tease1": "Her smile said yes; the twitch at her eye said no. And the room \u2014 the room leaned in, hungry for whichever one won.",
+      "tease2": "You caught the lie in his face and watched the whole table react to it before he'd finished the sentence. Face and room, both open books."
+    },
+    "flags": []
   },
   {
-    "description": "Pain is information. You read it and keep moving.",
-    "discovery": "The hits stop mattering. Not because they don't hurt \u2014 because you've decided they don't stop you.",
-    "flavor": "They hit you. You noticed. Then you hit back harder.",
-    "id": "unstoppable",
-    "minLevel": 2,
+    "id": "string_wall",
+    "name": "String Wall",
+    "requires": [
+      "evidence_board",
+      "pattern_recognition"
+    ],
+    "minLevel": 1,
+    "flavor": "Pin it up. Connect it. Step back.",
+    "discovery": "\"You've got STRINGS connecting EVERYTHING! It's not paranoia if the strings are RIGHT! The conspiracy board is now CANON! CONNECT IT ALL!\"",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "drama.resolve_bonus",
+        "value": 10
+      },
+      {
+        "op": "multiply",
+        "target": "trust.gain_mult",
+        "value": 1.15
+      }
+    ],
+    "discovery_method": {
+      "type": "sustained",
+      "hint": "Build the board, day after day. The pattern will step forward.",
+      "tease1": "You pinned the third theft to the board and the string practically drew itself \u2014 same hand, same hour, same excuse.",
+      "tease2": "The board is full now, strings everywhere, and the pattern stepped out of it like it had been waiting. You just had to stop looking directly at it."
+    },
+    "flags": []
+  },
+  {
+    "id": "airtight",
+    "name": "Airtight",
+    "requires": [
+      "lie_detector",
+      "evidence_board"
+    ],
+    "minLevel": 1,
+    "flavor": "Catch the lie. Then prove it.",
+    "discovery": "\"You CAUGHT the lie AND you can PROVE it?! That's not justice, that's a CHECKMATE! The guilty are lawyering up! PRESENT THE EVIDENCE!\"",
     "modifiers": [
       {
         "op": "multiply",
-        "target": "combat.damage_taken",
-        "value": 0.7
+        "target": "drama.resolve_bonus",
+        "value": 1.4
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "lie_detector",
+        "evidence_board"
+      ],
+      "hint": "Feel the lie first. Then build the case.",
+      "tease1": "You knew he was lying the second he said it \u2014 the words sat wrong in the air. But knowing isn't proving, and your hands were already reaching for the board.",
+      "tease2": "The lie, caught live. The evidence, pinned and strung. When you laid it out, there was nowhere left for the truth to hide \u2014 because you'd already found it."
+    },
+    "flags": []
+  },
+  {
+    "id": "stones_remember",
+    "name": "Stones Remember",
+    "requires": [
+      "tech:ruin_reading",
+      "lie_detector"
+    ],
+    "minLevel": 1,
+    "flavor": "Ruins don't lie. You'd know.",
+    "discovery": "\"The RUINS told you what happened?! Stones don't LIE and neither do YOU, apparently! The historians are taking NOTES! ASK THE STONES!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "ruin.find_mult",
+        "value": 1.5
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "lie_detector",
+        "ruin_reading"
+      ],
+      "hint": "Read the liar. Then read the stones.",
+      "tease1": "You read a ruin the way you read a face \u2014 looking for where the story strained. The collapsed wall had a tell, same as any liar.",
+      "tease2": "Ruin-reading technique in your hands, lie-sense in your gut. The old stones gave up their cache like a suspect giving up an alibi."
+    },
+    "flags": []
+  },
+  {
+    "id": "smokehouse",
+    "name": "Smokehouse",
+    "requires": [
+      "tech:smoke_preserving",
+      "skill:fishing",
+      "camp_cook"
+    ],
+    "minLevel": 2,
+    "flavor": "Smoke the catch. Feed the village all winter.",
+    "discovery": "\"You smoke fish like a FACTORY and cook like a LEGEND?! The winter stores just doubled! The smoke never STOPS! KEEP SMOKING!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "cook.kcal",
+        "value": 1.25
       },
       {
-        "op": "add",
-        "target": "combat.morale_break_resist",
+        "op": "multiply",
+        "target": "food.poison_chance",
         "value": 0.5
       }
     ],
-    "name": "Unstoppable",
-    "paths": [
-      "brawler"
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "camp_cook",
+        "fishing"
+      ],
+      "hint": "Cook the catch. Then smoke what the fire taught you.",
+      "tease1": "The cook-fire taught you timing; the smoke taught you patience. Your hands started planning the winter stores in midsummer.",
+      "tease2": "Camp-cook skill, fisher's hands, the village smoke technique \u2014 the racks filled and stayed filled. Nothing spoiled. Nothing was wasted."
+    },
+    "flags": []
+  },
+  {
+    "id": "granary_heart",
+    "name": "Granary Heart",
+    "requires": [
+      "tech:seed_saving",
+      "skill:farming",
+      "hoarder"
     ],
+    "minLevel": 2,
+    "flavor": "Save every seed. The hoard becomes a promise.",
+    "discovery": "\"You HOARD seeds?! Like, ON PURPOSE?! Your stash could plant a FIELD and the field would THANK you! HOARD WITH PRIDE!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "farming.yield",
+        "value": 1.25
+      },
+      {
+        "op": "add",
+        "target": "farming.seed_keep",
+        "value": 0.2
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "hoarder",
+        "farming"
+      ],
+      "hint": "Keep everything. Then plant the keeping.",
+      "tease1": "Your seed jars multiplied \u2014 every harvest, a tithe to the jars. The farmer's seed-saving technique turned your hoard into a library.",
+      "tease2": "Hoarder's instinct, farmer's skill, seed-saver's wisdom. What you kept, you planted. What you planted, remembered you."
+    },
+    "flags": []
+  },
+  {
+    "id": "green_highway",
+    "name": "Green Highway",
+    "requires": [
+      "tech:trail_blazing",
+      "skill:foraging",
+      "pathfinder"
+    ],
+    "minLevel": 2,
+    "flavor": "Blaze the trail. Forage the edges.",
+    "discovery": "\"You blaze trails AND strip them BARE of snacks?! It's not a trail, it's a BUFFET with DIRECTIONS! The foragers are following YOU now! KEEP BLAZING!\"",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "forage.yield",
+        "value": 1.3
+      },
+      {
+        "op": "multiply",
+        "target": "travel.kcal",
+        "value": 0.85
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "pathfinder",
+        "foraging"
+      ],
+      "hint": "Find the way. Then eat your way along it.",
+      "tease1": "You blazed a trail the village way and your forager's eye stripped both edges as you walked \u2014 dinner, growing along the road.",
+      "tease2": "Pathfinder's route, forager's hands, the blazers' cut. Every trail you walk feeds you twice: once going, once coming back."
+    },
+    "flags": []
+  },
+  {
+    "id": "read_the_patch",
+    "name": "Read the Patch",
+    "requires": [
+      "tech:plant_tracking",
+      "skill:foraging",
+      "forage_identification"
+    ],
+    "minLevel": 2,
+    "flavor": "Track the plant. Know the plant. Take only the patch.",
+    "discovery": "\"You track plants like ANIMALS and you KNOW them by NAME?! The forest isn't hiding anything from you anymore! NOTHING! READ IT ALL!\"",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "forage.find_chance",
+        "value": 0.15
+      },
+      {
+        "op": "multiply",
+        "target": "forage.yield",
+        "value": 1.3
+      }
+    ],
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "forage_identification",
+        "foraging"
+      ],
+      "hint": "Know the plant. Then follow its signs.",
+      "tease1": "You identified a half-eaten stem and the plant-tracker's teaching surfaced \u2014 follow the browse line, find the patch. Your teacher would be proud.",
+      "tease2": "Identification, tracking, foraging \u2014 three skills, one motion. You read the patch like a letter the forest wrote you personally."
+    },
+    "flags": []
+  },
+  {
+    "id": "clean_kill",
+    "name": "Clean Kill",
+    "description": "One shot. The animal never knew. Full yield, no suffering.",
+    "flavor": "The perfect hunt ends before it begins.",
+    "requires_any": [
+      [
+        "patient_aim",
+        "game_sense"
+      ],
+      [
+        "dead_aim",
+        "tracker"
+      ],
+      [
+        "patient_aim",
+        "stalk"
+      ],
+      [
+        "ambush",
+        "game_sense"
+      ]
+    ],
+    "minLevel": 2,
+    "modifiers": [
+      {
+        "target": "hunt.first_shot_damage",
+        "op": "multiply",
+        "value": 2.0
+      },
+      {
+        "target": "hunt.meat_yield",
+        "op": "multiply",
+        "value": 1.5
+      }
+    ],
+    "discovery": "You see it all at once \u2014 the wind, the angle, the moment. One shot.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Line up the perfect shot \u2014 patience and knowledge, together.",
+      "tease1": "For a heartbeat the wind, the angle, and the animal\u2019s attention all lined up. Then it passed.",
+      "tease2": "Twice now the perfect moment has almost happened \u2014 setup and reading, together. Something is waiting in that combination."
+    },
+    "paths": [
+      "hunter"
+    ]
+  },
+  {
+    "id": "blood_tracker",
+    "name": "Blood Tracker",
+    "description": "Wounded prey doesn't escape. You follow until it's done.",
+    "flavor": "The trail doesn't lie. Neither do you.",
+    "requires_any": [
+      [
+        "tracker",
+        "game_sense"
+      ],
+      [
+        "blood_trail",
+        "tracker"
+      ],
+      [
+        "blood_trail",
+        "animal_ken"
+      ]
+    ],
+    "minLevel": 2,
+    "modifiers": [
+      {
+        "target": "hunt.wounded_find",
+        "op": "add",
+        "value": 0.8
+      },
+      {
+        "target": "hunt.wounded_time",
+        "op": "multiply",
+        "value": 0.5
+      }
+    ],
+    "discovery": "The blood tells you where it's going. You just have to listen.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Wound it, then stay with the trail. Don\u2019t let it go.",
+      "tease1": "The blood told you where it was going, and your feet already knew. For a moment the trail felt\u2026 complete.",
+      "tease2": "Twice you\u2019ve stayed with a blood trail to the end. The woods are teaching you a longer patience."
+    },
+    "paths": [
+      "hunter"
+    ]
+  },
+  {
+    "id": "apex_predator",
+    "name": "Apex Predator",
+    "description": "You are the thing other things fear. Animals sense it.",
+    "flavor": "The woods go quiet when you walk through. That's respect.",
+    "requires_any": [
+      [
+        "clean_kill",
+        "animal_ken"
+      ],
+      [
+        "clean_kill",
+        "stalk",
+        "ambush"
+      ],
+      [
+        "blood_tracker",
+        "dead_aim"
+      ]
+    ],
+    "minLevel": 3,
+    "modifiers": [
+      {
+        "target": "hunt.intimidate",
+        "op": "add",
+        "value": 0.5
+      },
+      {
+        "target": "combat.vs_beast_damage",
+        "op": "multiply",
+        "value": 1.3
+      }
+    ],
+    "discovery": "You don't hunt anymore. You harvest.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Bring your mastered hunts to bear \u2014 the clean kill, the long trail \u2014 alongside new craft.",
+      "tease1": "You moved through the woods and the woods noticed. Something in you has changed since the first clean kills.",
+      "tease2": "The animals watch you differently now. Twice you\u2019ve felt it \u2014 the hunted thing in you, and the hunter, agreeing."
+    },
+    "paths": [
+      "hunter"
+    ]
+  },
+  {
+    "id": "unstoppable",
+    "name": "Unstoppable",
+    "description": "Pain is information. You read it and keep moving.",
+    "flavor": "They hit you. You noticed. Then you hit back harder.",
     "requires_any": [
       [
         "rage",
@@ -530,30 +1368,30 @@
         "rage",
         "unbreakable"
       ]
-    ]
-  },
-  {
-    "description": "You don't fight. You arrive, and the fight is over.",
-    "discovery": "You walk into the room and the argument ends. Nobody remembers deciding to stop.",
-    "flavor": "The scariest thing about you isn't what you do. It's what everyone knows you could do.",
-    "id": "fear_itself",
+    ],
     "minLevel": 2,
     "modifiers": [
       {
-        "op": "add",
-        "target": "social.intimidate",
-        "value": 0.4
+        "target": "combat.damage_taken",
+        "op": "multiply",
+        "value": 0.7
       },
       {
-        "op": "multiply",
-        "target": "combat.enemy_morale",
-        "value": 0.6
+        "target": "combat.morale_break_resist",
+        "op": "add",
+        "value": 0.5
       }
     ],
-    "name": "Fear Itself",
+    "discovery": "The hits stop mattering. Not because they don't hurt \u2014 because you've decided they don't stop you.",
     "paths": [
       "brawler"
-    ],
+    ]
+  },
+  {
+    "id": "fear_itself",
+    "name": "Fear Itself",
+    "description": "You don't fight. You arrive, and the fight is over.",
+    "flavor": "The scariest thing about you isn't what you do. It's what everyone knows you could do.",
     "requires_any": [
       [
         "fear_aura",
@@ -567,30 +1405,30 @@
         "fear_aura",
         "war_cry"
       ]
+    ],
+    "minLevel": 2,
+    "modifiers": [
+      {
+        "target": "social.intimidate",
+        "op": "add",
+        "value": 0.4
+      },
+      {
+        "target": "combat.enemy_morale",
+        "op": "multiply",
+        "value": 0.6
+      }
+    ],
+    "discovery": "You walk into the room and the argument ends. Nobody remembers deciding to stop.",
+    "paths": [
+      "brawler"
     ]
   },
   {
-    "description": "You are the line. You are the reinforcements. You are enough.",
-    "discovery": "They surrounded you. That was their mistake \u2014 now you don't have to aim.",
-    "flavor": "Armies have supply lines. You have spite and scar tissue.",
     "id": "one_person_army",
-    "minLevel": 3,
-    "modifiers": [
-      {
-        "op": "add",
-        "target": "combat.outnumbered_bonus",
-        "value": 0.5
-      },
-      {
-        "op": "multiply",
-        "target": "combat.solo_damage",
-        "value": 1.4
-      }
-    ],
     "name": "One-Person Army",
-    "paths": [
-      "brawler"
-    ],
+    "description": "You are the line. You are the reinforcements. You are enough.",
+    "flavor": "Armies have supply lines. You have spite and scar tissue.",
     "requires_any": [
       [
         "unstoppable",
@@ -606,6 +1444,23 @@
         "unbreakable",
         "haymaker"
       ]
+    ],
+    "minLevel": 3,
+    "modifiers": [
+      {
+        "target": "combat.outnumbered_bonus",
+        "op": "add",
+        "value": 0.5
+      },
+      {
+        "target": "combat.solo_damage",
+        "op": "multiply",
+        "value": 1.4
+      }
+    ],
+    "discovery": "They surrounded you. That was their mistake \u2014 now you don't have to aim.",
+    "paths": [
+      "brawler"
     ]
   }
 ]

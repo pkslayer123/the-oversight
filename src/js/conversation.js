@@ -8,15 +8,57 @@
 //   - convoFollowups(vid, topic)
 //   - convoSpeakBackChoice(vid, suppressPivot)
 //   - convoUI() -> {active, transcript, choices}
+//   - convoTopicLedger(vid)
+//   - convoNoteTopic(vid, tid, label)
+//   - convoNoteBeat(vid, thread, line)
+//   - convoNoteSpokenBeat(vid, line)
+//   - convoThreadOpen(vid, tid, label, why, snippet)
+//   - convoThreadResolve(vid, tid)
+//   - convoOpenThreads(vid)
+//   - convoResumeOpener(vid)
+//   - convoTopicLabel(vid, tid)
+//   - convoPlantOpenThread(vid, how)
+//   - convoRecapLine(vid)
+//   - convoRecapChoice(vid)
+//   - convoDrift(vid)
+//   - convoComputeDrift(vid)
+//   - convoDriftedTemper(vid)
+//   - convoSpeechDNA(vid)
+//   - convoSpeechMarkers(vid)
+//   - convoSkillOriginLine(vid, skill)
+//   - convoVoiceState(name)
+//   - convoSaidFacts(vid)
+//   - convoSaidFact(vid, key, value)
+//   - convoFactRecalled(vid, key)
+//   - convoFactConflict(vid, key, value)
+//   - convoVoiceSig(vid)
+//   - convoDriftNote(vid)
+//   - convoThreadAbout(vid, tid, label)
+//   - convoCloseLine(vid)
+//   - convoLapseLine(vid)
 // rules:
 //   - compare_maps: choiceId 'compare_maps' merges their visited tiles into your shared map knowledge (code: convoTurn, via Game.compareMaps)
 //   - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
 //   - one_beat_turns: a choice yields exactly one new THEM beat; follow-ons queue in c.heldBeats and surface as a voiced continuer ('goon', convoMoreLabel per person/mood/thread); unspoken beats die when the player moves on (code: conversation.js convoTurn, Steve 2026-10-05)
 //   - tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length; lands on their reply, not your echoed line (code: app.js chatChoice, Steve 2026-10-05)
 //   - history_view: speaker tab toggles full scrollable transcript (code: app.js dialogueBoxHTML, Steve 2026-10-05)
+//   - topic_ledger: per-villager topic memory — discussed counts plus open threads; leaving mid-thread or changing the subject plants an open thread, and open threads can resurface at the next conversation's opening (code: convoTopicLedger/convoNoteBeat/convoResumeOpener, Steve 2026-10-07)
+//   - drift_derived: personality drift recomputed from lived events at most once per day and stored on the char; npcTemper() stays authoritative for sibling systems, the conversation layer reads convoDriftedTemper() (code: convoDrift/convoDriftedTemper, Steve 2026-10-07)
+//   - speech_dna: discourse markers derive from the lifeseed register/pace/humor/address and merge into voiceLine's pools under the same one-marker-per-line restraint (code: convoSpeechDNA/convoSpeechMarkers, Steve 2026-10-07)
+//   - recap_verb: the player can always ask what the conversation is about; the recap re-anchors from the per-conversation thread log (code: convoRecapLine/convoRecapChoice, Steve 2026-10-07)
+//   - said_facts: stated facts go on the record (village.saidFacts) — generation sites record their claims and check before inventing, so speech never contradicts what was said earlier; convoFactConflict is the vetting primitive (code: convoSaidFact/convoFactRecalled/convoFactConflict, Steve 2026-10-07)
+//   - voice_signature_stable: register|pace|humor|address is lifeseed-derived and immutable across turns and days; drift bends temper, never the signature (code: convoVoiceSig, Steve 2026-10-07)
+//   - drift_visible: when a drift channel crosses >=2 since the last note, the next conversation opens with one short stage-direction beat showing the change — at most once per day per villager, always matching the actual drift state (code: convoDriftNote, Steve 2026-10-07)
+//   - thread_lifecycle: open threads older than 14 days lapse into a remembered lapsed list (never silently deleted); resuming a lapsed topic gets an honest nod, and a hanging thread that gets discussed earns its closing beat at goodbye (code: convoTopicLedger/convoCloseLine/convoLapseLine, Steve 2026-10-07)
+//   - resume_honest_time: the resume opener names how long the thread hung (a 12-day-old thread is not "last time") and nods at other hanging threads so none feel orphaned (code: convoResumeOpener, Steve 2026-10-07)
 // consumes:
 //   - village.villagers
 //   - state.convos
+//   - village.topicLog
+//   - village.saidFacts
+//   - village.memory
+//   - lifeseedVoice(char)
+//   - npcNeeds(rid)
 // ============ CONVERSATIONS ============
 // Real back-and-forth dialogue. The player always has response choices —
 // never just "continue". NPCs ask questions back, remember your answers,
@@ -30,6 +72,30 @@
 (function () {
   const Game = (globalThis.Scattering || {}).Game;
   if (!Game) return;
+
+  // CONVO_DRIFT_VOICE (Steve 2026-10-07): speech inflections for drift
+  // states. Kept in code (not data/characterGen.json — sibling-owned) so
+  // the drift layer stays self-contained; convoVoiceState() merges these
+  // under the data states.
+  const CONVO_DRIFT_VOICE = {
+    haunted:    { open: ['"…sorry. ', 'I keep thinking — '], close: [' …sorry.', ' Or something.'], terse: true, pMul: 0.8 },
+    embittered: { open: ['Hah. ', 'Sure — '], close: [' Not that it matters.', " You'd know about that."], pMul: 1.1 },
+    guarded:    { open: ['Careful — ', "I'll say this much: "], close: [" That's all I'll say.", ' …for now.'], terse: true, pMul: 0.9 },
+    softened:   { open: ['You know — ', 'Honestly? '], close: [' Thank you for asking.', ', friend.'], pMul: 1.1 },
+    hardened:   { open: ['Listen. ', "Here's how it is: "], close: [" That's the way of it.", ' End of story.'], pMul: 1.0 },
+  };
+
+  // CONVO_REGISTER_MARKERS (Steve 2026-10-07): discourse markers per
+  // lifeseed speech register — HOW they talk, not what they say. Fed into
+  // voiceLine's opener/closer pools by convoSpeechMarkers().
+  const CONVO_REGISTER_MARKERS = {
+    plainspoken: { open: ['Look — ', "Here's the thing: "], close: [" That's the whole of it.", ' Simple as that.'] },
+    laconic:     { open: [], close: [' Hm.', ' …', '.'] },
+    effusive:    { open: ['Oh! ', 'You know what — '], close: [' — ask anyone!', '!'] },
+    wry:         { open: ['Well — ', 'Funny thing: '], close: [' Funny how that works.', ' — or so they tell me.'] },
+    formal:      { open: ['If I may — ', 'Permit me: '], close: [' That is all.', ', as it were.'] },
+    halting:     { open: ['I… ', '…'], close: [' …sorry.', ' …if that makes sense.'] },
+  };
 
   // ============ REACTIVE QUESTIONS ============
   // NPC lines phrased as DIRECT questions that the old system delivered as
@@ -443,6 +509,17 @@
       if (has(r7, 'promise_broken', 'rumor_about_them', 'caught_you_stealing', 'suspects_you_stealing', 'deal_refused')) mods.push('betrayed');
       if (has(r4, 'gift', 'private_gift', 'saved', 'hero', 'comforted', 'promise_kept', 'amends', 'mediated')) mods.push('grateful');
       if (((v.trust || {})[vid] || 10) >= 55) mods.push('close');
+      // DRIFT (Steve 2026-10-07): what they've lived through keeps bending
+      // the voice. A grieving person halts; a betrayed one hardens. These
+      // states resolve through convoVoiceState() (drift table under data).
+      try {
+        const dr = this.convoDrift(vid) || {};
+        if ((dr.grief || 0) >= 2) mods.push('haunted');
+        if ((dr.bitterness || 0) >= 2) mods.push('embittered');
+        if ((dr.wariness || 0) >= 2) mods.push('guarded');
+        if ((dr.warmth || 0) >= 2) mods.push('softened');
+        if ((dr.hardness || 0) >= 2) mods.push('hardened');
+      } catch (e) {}
       return mods;
     },
 
@@ -457,7 +534,7 @@
       let terse = !!prof.terse;
       if (!terse) {
         for (const m of this.voiceMods(vid)) {
-          if ((((V.states || {})[m] || {}).terse)) { terse = true; break; }
+          if (((this.convoVoiceState(m) || {}).terse)) { terse = true; break; }
         }
       }
       if (!terse) return pool;
@@ -550,12 +627,24 @@
         if (aset.close) closes = closes.concat(aset.close);
       }
       for (const m of mods) {
-        const st = (V.states || {})[m] || {};
+        const st = this.convoVoiceState(m) || {};
         if (st.open) opens = opens.concat(st.open);
         if (st.close) closes = closes.concat(st.close);
         if (st.pMul) p *= st.pMul;
         if (st.hush && st.hush.indexOf(temp) !== -1) p *= 0.35;
       }
+      // SPEECH DNA (Steve 2026-10-07): per-person discourse markers from the
+      // lifeseed backstory — register, pace, humor, what they call you. A
+      // laconic elder and an effusive youth never share mannerisms, even at
+      // the same temperament. Same restraint as everything else: the pools
+      // merge, still one marker per line, cycling never exhausting.
+      try {
+        const dna = this.convoSpeechMarkers(vid);
+        if (dna) {
+          if (dna.open) opens = opens.concat(dna.open);
+          if (dna.close) closes = closes.concat(dna.close);
+        }
+      } catch (e) {}
       if ((!opens.length && !closes.length) || Math.random() >= p) return line;
       const inner = t.slice(1, -1);
       const isQ = /\?\s*$/.test(inner);
@@ -574,9 +663,21 @@
     // "only touches plain quoted speech"), so a blind `Name: "line"` wrap
     // produced `Name: ""line""`. A line that already opens with a quote
     // carries its own layer; bare narration still gets wrapped. (Steve 2026-10-06)
+    // QUOTE HYGIENE (fix 2026-10-07): beats that mix stage direction with
+    // quoted speech (`leans in. "Oh?"`) carry their own speech layer too —
+    // wrapping those produced `Name: "leans in. "Oh?""`. If the beat contains
+    // a quoted segment anywhere, it keeps its own layer. (Socialite playtest
+    // 2026-10-07; the cleanDialogue defense only covered edge doublings.)
     sayLine(vid, line) {
       const t = String(line == null ? '' : line);
-      this.say(`${this.displayName(vid)}: ${/^"/.test(t) ? t : `"${t}"`}`);
+      const ownQuotes = /^"/.test(t) || /"[^"]+"/.test(t);
+      this.say(`${this.displayName(vid)}: ${ownQuotes ? t : `"${t}"`}`);
+      // TOPIC LEDGER (Steve 2026-10-07): every spoken NPC line is a beat on
+      // the current thread. The dialogue layer (convo-dialogue.js) speaks
+      // its beats through here, so this is the one hook that sees both the
+      // base turns and the dlg: turns — the ledger stays complete even
+      // though the dialogue layer intercepts dlg: choices before convoTurn.
+      try { this.convoNoteSpokenBeat(vid, t); } catch (e) {}
     },
 
     convoGet(vid) {
@@ -595,7 +696,601 @@
       if (typeof c.heldAsk === 'undefined') c.heldAsk = false;
       if (typeof c.winddownQueued === 'undefined') c.winddownQueued = false;
       if (!c.followUsed) c.followUsed = {};
+      if (!c.threadLog) c.threadLog = [];
       return c;
+    },
+
+    // ============ CONVERSATION DEPTH (Steve 2026-10-07) ============
+    // Dialogue coherence is the highest-leverage open problem. Four
+    // deepening systems for the BASE conversation layer (this file only):
+    //
+    //   1. TOPIC LEDGER: per-villager memory of what was discussed, what's
+    //      still open, and what was left hanging. Open threads resurface at
+    //      the next conversation's opening.
+    //   2. DRIFT: personality is not static. Lived events (death, betrayal,
+    //      hunger, exile, kindness) shift a per-villager drift vector; the
+    //      drifted temperament bends speech, never the stored npcTemper.
+    //   3. SPEECH DNA: per-person discourse markers derived from the
+    //      lifeseed backstory (register, pace, humor, address) — not a
+    //      fixed cast of voices. Layered into voiceLine with the same
+    //      one-marker-per-line restraint.
+    //   4. COHERENCE STATE: a per-conversation thread log, a recap verb for
+    //      long exchanges, and wiring points the convo-* scenario files use.
+    //
+    // WIRING POINTS for convo-*.js scenario files (sibling-owned — call
+    // these, do not reimplement):
+    //   Game.convoNoteTopic(vid, tid, label)       — a topic was discussed
+    //   Game.convoNoteBeat(vid, thread, line)      — an NPC beat landed on a thread
+    //   Game.convoThreadOpen(vid, tid, label, why, snippet) — mark unfinished
+    //   Game.convoThreadResolve(vid, tid)          — mark finished
+    //   Game.convoOpenThreads(vid)                 — [{tid,label,day,why,snippet}]
+    //   Game.convoResumeOpener(vid)                — {line, thread} | null
+    //   Game.convoDrift(vid)                       — {grief,bitterness,wariness,warmth,hardness}
+    //   Game.convoDriftedTemper(vid)               — effective temperament string
+    //   Game.convoSpeechDNA(vid)                   — per-person speech profile
+    //   Game.convoSpeechMarkers(vid)               — {open:[], close:[]} for voiceLine
+    //   Game.convoSkillOriginLine(vid, skill?)     — "who taught them" line
+    //   Game.convoRecapLine(vid)                   — "what were we talking about?"
+    //   Game.convoRecapChoice(vid)                 — menu choice object for the recap
+    //   Game.convoVoiceState(name)                 — merged data + drift voice states
+    //   Game.convoSaidFact(vid, key, value)        — put a stated fact on the record
+    //   Game.convoFactRecalled(vid, key)           — what did they say about this before?
+    //   Game.convoFactConflict(vid, key, value)    — would asserting this contradict the record?
+    //   Game.convoVoiceSig(vid)                    — immutable register|pace|humor|address
+    //   Game.convoDriftNote(vid)                   — visible drift-change beat (≤1/day)
+    //   Game.convoThreadAbout(vid, tid, label)     — grammatical thread phrase for closing frames
+    //   Game.convoCloseLine(vid)                   — closing beat for a resolved thread
+    //   Game.convoLapseLine(vid)                   — honest nod for a lapsed thread
+    //
+    // Threads the ledger treats as substantive (worth resuming). Small talk,
+    // requests, and nonverbal are never planted as open threads.
+    // (module-level consts live just inside the IIFE, below the methods.)
+
+    // ---------- 1. TOPIC LEDGER ----------
+    // village.topicLog[vid] = { discussed: {tid: {times, firstDay, lastDay, label}},
+    //                           open: [{tid, label, day, why, snippet}] }
+    convoTopicLedger(vid) {
+      const v = this.state.village || {};
+      v.topicLog = v.topicLog || {};
+      if (!v.topicLog[vid]) v.topicLog[vid] = { discussed: {}, open: [] };
+      const L = v.topicLog[vid];
+      if (!L.discussed) L.discussed = {};
+      if (!L.open) L.open = [];
+      if (!L.lapsed) L.lapsed = [];
+      // People move on: open threads older than 14 days lapse — REMEMBERED
+      // as lapsed, not deleted (COHERENCE Steve 2026-10-07). Circling back
+      // to a lapsed topic gets an honest "we never did finish that one",
+      // never a fresh-start lie. Resume openers only draw from L.open.
+      const day = (this.state.scholar || {}).day || 1;
+      const still = [];
+      for (const o of L.open) {
+        if (day - (o.day || 0) <= 14) { still.push(o); continue; }
+        if (!L.lapsed.some(x => x.tid === o.tid)) {
+          L.lapsed.push(o);
+          if (L.lapsed.length > 4) L.lapsed.shift();
+        }
+      }
+      L.open = still;
+      return L;
+    },
+
+    // convoTopicLabel: a human phrase for a thread id, for resume lines and
+    // the ledger. Generated topics resolve through the topic2 labels.
+    convoTopicLabel(vid, tid) {
+      if (!tid) return 'something';
+      const base = {
+        personal: 'themselves', goal: 'what they want', past: 'their past',
+        village: 'the village', plans: 'their plans', gossip: 'the gossip',
+        spread_rumor: 'that rumor', small: 'small talk', spooked: 'what spooked them',
+        secret: 'their secret', want: 'what they want', request: 'their request',
+        theorize: 'the big questions', trade: 'trading knowledge',
+        situation: 'the situation', lately: "what's been happening",
+        // SCENARIO THREADS (fix 2026-10-07): teach-offer and recall threads
+        // can hang open via convoPlantOpenThread — without labels the
+        // resume/recap lines leak the raw tid ("talking about taughtref").
+        taughtref: 'that lesson they offered', recall: 'what you told them',
+      };
+      if (base[tid]) return base[tid];
+      try {
+        if (this.topic2Label && this.topic2Has && this.topic2Has(tid)) {
+          const l = String(this.topic2Label(vid, tid) || '').replace(/^"+|"+$/g, '').replace(/^Ask about /i, '');
+          if (l) return l.slice(0, 60);
+        }
+      } catch (e) {}
+      return String(tid).replace(/^t2:?/, '').replace(/_/g, ' ').slice(0, 60) || 'something';
+    },
+
+    // convoNoteTopic: this topic was discussed. Also resolves any open
+    // thread on it — talked-about is finished, or at least no longer hanging.
+    // COHERENCE (Steve 2026-10-07): resolving a thread that WAS open records
+    // lastClosed (it earns its closing beat at goodbye via convoCloseLine);
+    // discussing a LAPSED thread records lastLapsed (honest nod, never a
+    // fresh-start lie). convoThreadOpen clears lastClosed when it re-plants
+    // the same thread — walked away AGAIN is not "settled".
+    convoNoteTopic(vid, tid, label) {
+      if (!tid) return;
+      try {
+        const L = this.convoTopicLedger(vid);
+        const day = (this.state.scholar || {}).day || 1;
+        const d = L.discussed[tid] || { times: 0, firstDay: day };
+        d.times++; d.lastDay = day;
+        if (label && !d.label) d.label = String(label).slice(0, 80);
+        L.discussed[tid] = d;
+        const c = this.convoGet(vid) || {};
+        const oi = L.open.findIndex(o => o.tid === tid);
+        if (oi !== -1) {
+          const was = L.open.splice(oi, 1)[0];
+          L.lastClosed = { tid, label: was.label || label || tid, day, convo: c.count };
+        }
+        const li = (L.lapsed || []).findIndex(o => o.tid === tid);
+        if (li !== -1) {
+          const was = L.lapsed.splice(li, 1)[0];
+          L.lastLapsed = { tid, label: was.label || label || tid, day, convo: c.count };
+        }
+      } catch (e) {}
+    },
+
+    // convoThreadOpen: plant an unfinished thread. Cap 4 — people can only
+    // hold so many loose ends; oldest lapses first.
+    convoThreadOpen(vid, tid, label, why, snippet) {
+      if (!tid || tid === 'small' || tid === 'nonverbal' || tid === 'request') return;
+      try {
+        const L = this.convoTopicLedger(vid);
+        // Re-planting the same thread revokes its closing beat: leaving
+        // mid-thread AGAIN is not "settled".
+        if (L.lastClosed && L.lastClosed.tid === tid) L.lastClosed = null;
+        if (L.open.some(o => o.tid === tid)) return;
+        if (L.open.length >= 4) L.open.shift();
+        L.open.push({
+          tid, label: String(label || tid).slice(0, 80),
+          day: (this.state.scholar || {}).day || 1,
+          why: why || 'unfinished',
+          snippet: snippet ? String(snippet).slice(0, 110) : null,
+        });
+      } catch (e) {}
+    },
+
+    convoThreadResolve(vid, tid) {
+      try {
+        const L = this.convoTopicLedger(vid);
+        L.open = (L.open || []).filter(o => o.tid !== tid);
+      } catch (e) {}
+    },
+
+    convoOpenThreads(vid) {
+      try { return this.convoTopicLedger(vid).open.slice(); }
+      catch (e) { return []; }
+    },
+
+    // convoNoteBeat: one NPC beat landed on a thread. Records the topic as
+    // discussed, appends a snippet to the per-conversation thread log, and
+    // detects subject changes: leaving a live substantive thread for
+    // another plants the old one as open. Consecutive duplicates (the same
+    // line noted twice via sayLine + turn tail) collapse.
+    convoNoteBeat(vid, thread, line) {
+      if (!thread || thread === 'nonverbal') return;
+      try {
+        const c = this.convoGet(vid);
+        this.convoNoteTopic(vid, thread, this.convoTopicLabel(vid, thread));
+        const clean = String(line == null ? '' : line).replace(/^"+|"+$/g, '').slice(0, 110);
+        c.threadLog = c.threadLog || [];
+        const last = c.threadLog[c.threadLog.length - 1];
+        if (clean && (!last || last.thread !== thread || last.snippet !== clean)) {
+          c.threadLog.push({ thread, snippet: clean, ex: c.exchanges || 0 });
+          if (c.threadLog.length > 12) c.threadLog.shift();
+        }
+        // SUBJECT CHANGE: the old thread was live and we moved on.
+        const prev = c._beatThread;
+        if (prev && prev !== thread && prev !== 'small' && thread !== 'small') {
+          this.convoThreadOpen(vid, prev, this.convoTopicLabel(vid, prev), 'changed the subject');
+        }
+        c._beatThread = thread;
+      } catch (e) {}
+    },
+
+    // convoNoteSpokenBeat: the sayLine hook. The dialogue layer speaks its
+    // beats through sayLine, so this sees dlg: turns that never reach
+    // methods.convoTurn. Guarded: only live conversations record.
+    convoNoteSpokenBeat(vid, line) {
+      try {
+        const c = this.convoGet(vid);
+        if (!c.active || !c.thread) return;
+        this.convoNoteBeat(vid, c.thread, line);
+      } catch (e) {}
+    },
+
+    // convoPlantOpenThread: end-of-conversation planting. Called from
+    // endConvo BEFORE c.thread is cleared. Walking away mid-thread, or
+    // ending with a question hanging, leaves it open. A conversation that
+    // ran its course plants nothing.
+    convoPlantOpenThread(vid, how) {
+      try {
+        const c = this.convoGet(vid);
+        const thread = c.thread;
+        if (!thread || thread === 'small' || thread === 'nonverbal' || thread === 'request') return;
+        const depth = c.depth || 0;
+        if (depth < 1) return;
+        const unresolved = c.pendingQ || c.reactiveQ || (c.heldBeats || []).length ||
+          (typeof this.convoThreadHasMore === 'function' && this.convoThreadHasMore(vid));
+        // Record the discussion FIRST (it resolves any stale open entry for
+        // this thread), THEN plant the new open thread — order matters,
+        // because noting a topic as discussed resolves its open thread.
+        this.convoNoteTopic(vid, thread, this.convoTopicLabel(vid, thread));
+        if (how === 'left') {
+          this.convoThreadOpen(vid, thread, this.convoTopicLabel(vid, thread), 'walked away mid-thread');
+        } else if (unresolved) {
+          this.convoThreadOpen(vid, thread, this.convoTopicLabel(vid, thread), 'unfinished business');
+        }
+      } catch (e) {}
+    },
+
+    // convoResumeOpener: an unfinished thread resurfaces as the next
+    // conversation's opening. Never ahead of a talk request, never twice
+    // running, gated on a little trust — strangers don't pick up old threads.
+    convoResumeOpener(vid) {
+      const v = this.state.village || {};
+      const treq = (v.talkRequests || {})[vid];
+      if (treq && !treq.delivered) return null;
+      const c = this.convoGet(vid);
+      if (c._resumedOnce) return null;
+      const trust = ((v.trust || {})[vid] || 10);
+      if (trust < 15) return null;
+      const open = this.convoOpenThreads(vid);
+      if (!open.length) return null;
+      if (Math.random() > 0.65) return null;
+      const o = open[Math.floor(Math.random() * open.length)];
+      c._resumedOnce = true;
+      const label = o.label || o.tid;
+      // COHERENCE (Steve 2026-10-07): the resume must not contradict the
+      // timeline — a thread left hanging 12 days ago is not "last time".
+      const day = (this.state.scholar || {}).day || 1;
+      const ago = Math.max(0, day - (o.day || day));
+      const whyLine = {
+        'walked away mid-thread': 'we got cut off',
+        'changed the subject': 'we wandered off it',
+        'unfinished business': 'we never finished',
+        'unanswered': 'you never answered',
+      }[o.why] || 'we left it hanging';
+      let inner;
+      if (ago > 7) {
+        inner = `We never did finish talking about ${label} — that was ${ago} days back. Still on your mind?`;
+      } else {
+        inner = `We never finished talking about ${label} — ${whyLine} last time.`;
+      }
+      // MULTI-THREAD AWARENESS (Steve 2026-10-07): no orphaned threads — if
+      // more than one thread is hanging, the other gets a brief nod so it
+      // doesn't feel forgotten. One sentence, inside the same breath.
+      const others = open.filter(x => x.tid !== o.tid);
+      if (others.length && Math.random() < 0.5) {
+        const o2 = others[Math.floor(Math.random() * others.length)];
+        const about = this.convoThreadAbout(vid, o2.tid, o2.label || o2.tid);
+        inner += ` We still owe ${about} a proper ending, too.`;
+      }
+      const line = this.voiceLine(vid, `"${inner}"`);
+      return { line, thread: o.tid };
+    },
+
+    // ---------- 4. COHERENCE: recap ----------
+    // convoRecapLine: "what were we talking about?" — re-anchors a long
+    // exchange from the thread log. Two threads deep, it names the arc;
+    // one thread, it restates it. Always voiced, never a dead end.
+    convoRecapLine(vid) {
+      const c = this.convoGet(vid);
+      const log = (c.threadLog || []).filter(e => e.thread && e.thread !== 'small' && e.thread !== 'nonverbal');
+      if (!log.length) return this.voiceLine(vid, '"We were just talking. Nothing important."');
+      const labelOf = (t) => this.convoTopicLabel(vid, t);
+      const last = log[log.length - 1];
+      let line;
+      if (log.length >= 2) {
+        const prev = log[log.length - 2];
+        line = prev.thread === last.thread
+          ? `"Still on ${labelOf(last.thread)}."`
+          : `"We started on ${labelOf(prev.thread)}, then got onto ${labelOf(last.thread)}."`;
+      } else {
+        line = `"We were talking about ${labelOf(last.thread)}."`;
+      }
+      return this.voiceLine(vid, line);
+    },
+
+    // convoRecapChoice: the menu object. Sibling menu code (convoChoices /
+    // dialogueResponses) inserts this where it fits — the base 'recap'
+    // branch in convoTurn already handles it.
+    convoRecapChoice(vid) {
+      return { id: 'recap', label: '"Wait — what were we talking about?"' };
+    },
+
+    // ---------- 5. SAID FACTS: what they told you, on the record ----------
+    // COHERENCE (Steve 2026-10-07): a villager's speech must not contradict
+    // what they said earlier. village.saidFacts[vid] is the on-the-record
+    // ledger: {key: {value, day}}. Generation sites RECORD their claims
+    // (hardstory wound, who they're thinking about, skill origin stories)
+    // and CHECK the ledger before inventing — once said, the fact is reused,
+    // never re-rolled. convoFactConflict is the vetting primitive for
+    // scenario code: ask before asserting, pick an alternate line on true.
+    convoSaidFacts(vid) {
+      const v = this.state.village || {};
+      v.saidFacts = v.saidFacts || {};
+      if (!v.saidFacts[vid]) v.saidFacts[vid] = {};
+      return v.saidFacts[vid];
+    },
+
+    // convoSaidFact: put a stated fact on the record.
+    convoSaidFact(vid, key, value) {
+      if (!vid || !key) return false;
+      try {
+        this.convoSaidFacts(vid)[key] = {
+          value: String(value == null ? '' : value).slice(0, 140),
+          day: (this.state.scholar || {}).day || 1,
+        };
+        return true;
+      } catch (e) { return false; }
+    },
+
+    // convoFactRecalled: what did they say about this before? value or null.
+    convoFactRecalled(vid, key) {
+      try {
+        const f = this.convoSaidFacts(vid)[key];
+        return f ? f.value : null;
+      } catch (e) { return null; }
+    },
+
+    // convoFactConflict: would asserting (key, value) contradict the record?
+    convoFactConflict(vid, key, value) {
+      try {
+        const f = this.convoSaidFacts(vid)[key];
+        return !!(f && String(f.value) !== String(value));
+      } catch (e) { return false; }
+    },
+
+    // ---------- 6. VOICE SIGNATURE + DRIFT VISIBILITY ----------
+    // convoVoiceSig: the immutable part of how this person talks —
+    // register|pace|humor|address, all lifeseed-derived. Stable across
+    // turns and days; drift bends the temper, never the signature.
+    convoVoiceSig(vid) {
+      try {
+        const dna = this.convoSpeechDNA(vid) || {};
+        return [dna.register || 'plainspoken', dna.pace || 'measured',
+          dna.humor || 'none', String(dna.address || 'you').split(/\s+/)[0]].join('|');
+      } catch (e) { return 'plainspoken|measured|none|you'; }
+    },
+
+    // convoDriftNote: when lived events have visibly changed them since the
+    // last conversation, the player SEES it — drift is never silent. Fires
+    // at most once per day per villager: the first channel to cross >=2
+    // since the last FIRED note earns one short stage-direction beat. The
+    // stamp is only written when a note fires — a quiet check must not
+    // swallow a crossing that lands later the same day. The note always
+    // matches the actual drift state (never contradicts voiceMods).
+    convoDriftNote(vid) {
+      try {
+        const vp = this.vpOf(vid) || {};
+        const day = (this.state.scholar || {}).day || 1;
+        const d = this.convoDrift(vid) || {};
+        const vec = { grief: d.grief || 0, bitterness: d.bitterness || 0, wariness: d.wariness || 0, warmth: d.warmth || 0, hardness: d.hardness || 0 };
+        const noted = vp.convoDriftNoted || null;
+        if (noted && noted.day === day) return null;
+        const prev = (noted && noted.vec) || {};
+        const crossed = [
+          ['grief', 'looks hollowed out — grief\'s been sitting heavy.'],
+          ['bitterness', 'has an edge today — something curdled.'],
+          ['wariness', 'keeps glancing past you — braced for something.'],
+          ['warmth', 'seems lighter — something good landed recently.'],
+          ['hardness', 'looks weathered — the hard days are showing.'],
+        ].filter(([k]) => (vec[k] || 0) >= 2 && (prev[k] || 0) < 2);
+        if (!crossed.length) return null;
+        vp.convoDriftNoted = { day, vec };
+        const name = (this.displayName(vid) || 'they').split(' ')[0];
+        return name + ' ' + crossed[0][1];
+      } catch (e) { return null; }
+    },
+
+    // ---------- 7. THREAD LIFECYCLE: resume honestly, close cleanly ----------
+    // convoThreadAbout: a grammatical phrase for a thread in closing frames.
+    // The ledger label 'themselves' (personal) breaks third-person frames
+    // ("talking about themselves") — rendered as 'your story'. The ledger
+    // label itself is untouched (sibling proof tests pin it verbatim).
+    convoThreadAbout(vid, tid, label) {
+      try {
+        const l = label || this.convoTopicLabel(vid, tid);
+        return l === 'themselves' ? 'your story' : l;
+      } catch (e) { return label || tid || 'that'; }
+    },
+
+    // convoCloseLine: a thread that was hanging got discussed this
+    // conversation — it earns its closing beat at goodbye. Fires once per
+    // (thread, day); a re-planted thread (walked away AGAIN) is not closed.
+    // Spoken plain, not through voiceLine: the beat is a complete thought
+    // and a prepended discourse marker ("Maybe it's only me — Good — …")
+    // would garble it.
+    convoCloseLine(vid) {
+      try {
+        const L = this.convoTopicLedger(vid);
+        const lc = L.lastClosed;
+        if (!lc) return null;
+        const day = (this.state.scholar || {}).day || 1;
+        const c = this.convoGet(vid) || {};
+        if (lc.convo !== c.count || lc.day !== day) return null;
+        if (L.closeGiven === lc.tid + ':' + day) return null;
+        L.closeGiven = lc.tid + ':' + day;
+        L.lastClosed = null;
+        const about = this.convoThreadAbout(vid, lc.tid, lc.label);
+        return '"Good — ' + about + ', settled. Feels better said out loud."';
+      } catch (e) { return null; }
+    },
+
+    // convoLapseLine: a thread that lapsed (>14 days) got circled back to —
+    // the honest nod, never a fresh-start lie. Fires once per (thread, day).
+    // Spoken plain, same voiceLine reason as the close beat.
+    convoLapseLine(vid) {
+      try {
+        const L = this.convoTopicLedger(vid);
+        const ll = L.lastLapsed;
+        if (!ll) return null;
+        const day = (this.state.scholar || {}).day || 1;
+        const c = this.convoGet(vid) || {};
+        if (ll.convo !== c.count || ll.day !== day) return null;
+        if (L.lapseGiven === ll.tid + ':' + day) return null;
+        L.lapseGiven = ll.tid + ':' + day;
+        L.lastLapsed = null;
+        const about = this.convoThreadAbout(vid, ll.tid, ll.label);
+        return '"It\'s been a while since we left ' + about + ' hanging. Glad we circled back."';
+      } catch (e) { return null; }
+    },
+
+    // ---------- 2. DRIFT: people change during a run ----------
+    // convoDrift: the per-villager drift vector, recomputed at most once
+    // per day from lived events. Stored on the char (not derived fresh
+    // every line) so a person's arc is stable within a day.
+    //   grief: death around them / their own losses
+    //   bitterness: betrayals, theft, broken promises
+    //   wariness: threats, hostility, being watched
+    //   warmth: kindness received
+    //   hardness: hunger endured, attacks survived
+    convoDrift(vid) {
+      const vp = this.vpOf(vid) || {};
+      const day = (this.state.scholar || {}).day || 1;
+      let d = vp.convoDrift;
+      if (!d || d.updatedDay !== day) {
+        d = this.convoComputeDrift(vid);
+        d.updatedDay = day;
+        try { vp.convoDrift = d; } catch (e) {}
+      }
+      return d;
+    },
+
+    convoComputeDrift(vid) {
+      const d = { grief: 0, bitterness: 0, wariness: 0, warmth: 0, hardness: 0 };
+      try {
+        const v = this.state.village || {};
+        const day = (this.state.scholar || {}).day || 1;
+        const mem = (v.memory || {})[vid] || [];
+        const recent = n => mem.filter(m => day - (m.day || 0) <= n).map(m => m.t);
+        const r14 = recent(14);
+        const count = (arr, ...ts) => arr.filter(t => ts.indexOf(t) !== -1).length;
+        d.grief = Math.min(3, count(r14, 'mourned', 'death_witnessed', 'loss') + ((v.grief || 0) > 0 ? 1 : 0));
+        d.bitterness = Math.min(3, count(r14, 'promise_broken', 'caught_you_stealing', 'suspects_you_stealing', 'rumor_about_them', 'deal_refused', 'theft_victim'));
+        d.wariness = Math.min(3, count(r14, 'confronted', 'hostile', 'you_threatened', 'observed', 'moot_vote'));
+        d.warmth = Math.min(3, count(r14, 'gift', 'private_gift', 'saved', 'hero', 'comforted', 'promise_kept', 'amends', 'mediated', 'welcomed'));
+        let hard = count(r14, 'hunger_survived', 'monster_attack', 'fought');
+        try { if ((this.npcNeeds(vid).hunger || 0) > 70) hard += 1; } catch (e) {}
+        try { if ((this.npcNeeds(vid).fear || 0) > 70) hard += 1; } catch (e) {}
+        d.hardness = Math.min(3, hard);
+        // Lifeseed lived events: what happened TO them, not just with you.
+        // recordLifeseedEvent kinds: death_of_kin, death_witnessed, betrayal,
+        // hunger_survived, kill, spared, feast_shared, exile, welcomed,
+        // kindness, theft_victim, theft_done, loss.
+        const ls = (this.vpOf(vid) || {}).lifeseed || {};
+        const lived = (ls.lived || []).filter(e => day - (e.day || 0) <= 14).map(e => e.kind);
+        d.grief = Math.min(3, d.grief + count(lived, 'death_of_kin', 'death_witnessed', 'loss'));
+        d.bitterness = Math.min(3, d.bitterness + count(lived, 'betrayal', 'theft_victim'));
+        d.wariness = Math.min(3, d.wariness + count(lived, 'betrayal', 'exile'));
+        d.warmth = Math.min(3, d.warmth + count(lived, 'kindness', 'welcomed', 'feast_shared', 'spared'));
+        d.hardness = Math.min(3, d.hardness + count(lived, 'hunger_survived', 'exile'));
+      } catch (e) {}
+      return d;
+    },
+
+    // convoDriftedTemper: who they are NOW. Base temperament bent by what
+    // they've lived through — grief withdraws, bitterness prickles, wariness
+    // cautions, hardship hardens, kindness warms. npcTemper() stays the
+    // authority for sibling systems; this is the conversation layer's read.
+    convoDriftedTemper(vid) {
+      let base = 'steady';
+      try { base = String(this.npcTemper(vid) || 'steady').toLowerCase(); } catch (e) {}
+      const d = this.convoDrift(vid) || {};
+      if ((d.grief || 0) >= 2) return 'withdrawn';
+      if ((d.bitterness || 0) >= 2) return 'prickly';
+      if ((d.wariness || 0) >= 2) return 'cautious';
+      if ((d.hardness || 0) >= 2) return 'intense';
+      if ((d.warmth || 0) >= 2) return 'warm';
+      return base;
+    },
+
+    // ---------- 3. SPEECH DNA ----------
+    // convoSpeechDNA: how THIS person talks, derived from their lifeseed —
+    // register (plainspoken/laconic/effusive/wry/formal/halting), pace,
+    // humor, address term, skill origins (who taught them), home, kin.
+    // Never a fixed cast: two villagers with the same temperament get
+    // different DNA from different lives.
+    convoSpeechDNA(vid) {
+      const vp = this.vpOf(vid) || {};
+      const ls = vp.lifeseed || {};
+      let lv = null;
+      try { lv = (typeof this.lifeseedVoice === 'function') ? this.lifeseedVoice(vp) : (ls.voice || null); }
+      catch (e) { lv = ls.voice || null; }
+      return {
+        vid,
+        register: (lv && lv.register) || 'plainspoken',
+        pace: (lv && lv.pace) || 'measured',
+        humor: (lv && lv.humor) || 'none',
+        address: (lv && lv.address) || 'you',
+        temperament: String(((vp.personality || {}).temperament) || 'steady').toLowerCase(),
+        driftedTemper: this.convoDriftedTemper(vid),
+        skillOrigins: ls.skillOrigins || {},
+        hometown: ls.hometown || null,
+        regionLand: ls.regionLand || null,
+        kin: (ls.people || []).slice(0, 2).map(p => ({
+          name: (p.name || '').split(' ')[0], relation: p.relation, fate: p.fate,
+        })),
+        woundTone: (lv && lv.woundTone) || null,
+      };
+    },
+
+    // convoSpeechMarkers: discourse markers from the DNA — HOW they talk,
+    // not what they say. Merged into voiceLine's opener/closer pools, so
+    // the same one-marker-per-line restraint and cycling apply. Drift bends
+    // the markers: grief halts a plainspoken person, bitterness sours them.
+    convoSpeechMarkers(vid) {
+      const dna = this.convoSpeechDNA(vid);
+      const reg = CONVO_REGISTER_MARKERS[dna.register] || CONVO_REGISTER_MARKERS.plainspoken;
+      let open = reg.open.slice(), close = reg.close.slice();
+      if (dna.pace === 'quick') close.push(' — anyway.');
+      if (dna.pace === 'slow') close.push(' …');
+      if (dna.humor === 'gallows') close.push(' Ha. Funny.');
+      if (dna.humor === 'dry') close.push(' — comedy.');
+      // What they call you lands as a closer, once in a while.
+      const addr = String(dna.address || '').replace(/\s*\(.*\)\s*/, '').trim().split(/\s+/)[0];
+      if (addr && addr !== 'you' && addr.length <= 8) close.push(', ' + addr + '.');
+      try {
+        const d = this.convoDrift(vid) || {};
+        if ((d.grief || 0) >= 2 || (d.wariness || 0) >= 2) {
+          open = ['I… '].concat(open.filter(o => o !== 'I… '));
+          close.push(' …sorry.');
+        }
+        if ((d.bitterness || 0) >= 2) open = ['Hah. '].concat(open.filter(o => o !== 'Hah. '));
+      } catch (e) {}
+      return { open, close };
+    },
+
+    // convoSkillOriginLine: "who taught THEM" — a skill's origin story in
+    // their own voice, from lifeseed skillOrigins. Wiring point for
+    // teach/learn scenario code (convo-wants dlg:learn and friends).
+    convoSkillOriginLine(vid, skill) {
+      const dna = this.convoSpeechDNA(vid);
+      const keys = Object.keys(dna.skillOrigins || {});
+      if (!keys.length) return null;
+      const sk = (skill && dna.skillOrigins[skill]) ? skill : keys[Math.floor(Math.random() * keys.length)];
+      // COHERENCE (Steve 2026-10-07): once they've told their origin story
+      // for a skill, it's on the record — "show me" teaches THIS skill, not
+      // a re-rolled one (convoTeachSkill prefers the recorded story).
+      try { this.convoSaidFact(vid, 'skillstory', sk); } catch (e) {}
+      const how = String(dna.skillOrigins[sk] || 'the hard way').replace(/\.$/, '');
+      const skName = { food: 'finding food', medicinal: 'patching people up', mending: 'fixing things', navigation: 'never getting lost', tracking: 'reading ground', trapping: 'traps', forecast: 'reading the sky' }[sk] || sk;
+      const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+      const pool = [
+        `"I learned ${skName} ${how}."`,
+        `"${cap(skName)} — ${how}, and I'm still learning."`,
+        `"${cap(how)} — that's where the ${skName} came from."`,
+      ];
+      return this.voiceLine(vid, pool[Math.floor(Math.random() * pool.length)]);
+    },
+
+    // convoVoiceState: merged voice-state lookup — data states first
+    // (characterGen.voice.states), drift states underneath. Keeps the drift
+    // layer self-contained in code instead of touching sibling-owned data.
+    convoVoiceState(name) {
+      const V = (this.data.characterGen || {}).voice || {};
+      return ((V.states || {})[name]) || CONVO_DRIFT_VOICE[name] || {};
     },
 
     // UNIQUE-PERSON LAW (Steve 2026-10-06): two villagers asking the player
@@ -1221,7 +1916,26 @@
         try { this.askAbout(vid, 'gossip'); } catch (e) {}
         this.say = origSay;
         c.thread = 'gossip'; c.depth = 1;
-        const line = said.join(' ');
+        // QUOTE HYGIENE (fix 2026-10-07): askAbout formats beats as
+        // `Name: "line"` (or `Name lowers their voice. "..."`) for the
+        // person-card path (app.js), which renders them raw. This path
+        // re-wraps via voiceLine/sayLine, which adds the name itself — strip
+        // the attribution so it doesn't double
+        // (`Jamal: "Jamal: "Nothing new.""`). Journal toasts (📓) captured
+        // mid-ask are re-emitted outside the spoken line so they don't
+        // pollute it. Socialite playtest 2026-10-07.
+        let line;
+        try {
+          const asides = said.filter(t => /^\s*📓/.test(t));
+          const beats = said.filter(t => !/^\s*📓/.test(t));
+          for (const a of asides) { try { this.say(a); } catch (e) {} }
+          line = beats.join(' ');
+          const nm = String(this.displayName(vid) || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (nm) {
+            line = line.replace(new RegExp('^' + nm + ':\\s*'), '')
+                       .replace(new RegExp('^' + nm + '\\s+lowers their voice\\.\\s*'), '');
+          }
+        } catch (e) { line = said.join(' '); }
         return this.voiceLine(vid, line) || exh();
       }
       if (topic === 'spread_rumor') {
@@ -1857,11 +2571,17 @@
       // unreachable until you'd exhausted every other topic. (socialite
       // playtest 2026-10-06)
       if (gossipOpen && asked.indexOf('gossip') === -1) asks.push({ id: 'ask:gossip', label: this.convoLabel(vid, 'gossip') });
-      // SPREAD RUMOR: the player's drama verb. Start a rumor about someone.
-      // Same gate as gossip — you need some rapport to be believed.
+      // SPREAD RUMOR (fix 2026-10-07): the player's drama verb was starved by
+      // the topic cap — it sat 4th and never surfaced. Now it's 2nd, right
+      // after gossip. If you have the rapport to gossip, you have the rapport
+      // to start a rumor.
       if (gossipOpen && asked.indexOf('spread_rumor') === -1) asks.push({ id: 'ask:spread_rumor', label: this.convoActionLabel(vid, 'spread_rumor') });
-      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
+      // INTERVIEW VERB (Steve 2026-10-07): ask:past is the detective's core
+      // tool — it sat 5th behind the topic cap and was unreachable whenever
+      // fresh topics existed. Now it rides right behind gossip; the interview
+      // verbs are 2nd and 3rd, never starved.
       if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
+      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
       if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
       if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
       // TOPIC PACK (Steve 2026-10-06): fresh generated topics get first crack
@@ -2069,6 +2789,11 @@
       c.active = true; c.exchanges = 0; c.budget = this.convoBudget(vid);
       c.thread = null; c.depth = 0; c.transcript = []; c.pendingQ = null;
       c.choosingSubject = false; c.lastBeat = null; c.followUsed = {};
+      c.threadLog = []; c._beatThread = null; c._resumedOnce = false;
+      // COHERENCE (Steve 2026-10-07): per-conversation teaching state resets
+      // here — the teach skill is sticky WITHIN a conversation, not forever,
+      // and "one lesson per conversation" means per conversation.
+      c.teachSkill = null; c.learnedOnce = false; c.learnedWhat = null;
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
       c.qCount = 0; c.theorized = [];
       c.traderMentioned = false; c.pendingTrade = null;
@@ -2113,7 +2838,16 @@
         // speak their actual tongue.
         return this.nvOpen(vid);
       }
-      const op = this.convoOpening(vid);
+      const op = (() => {
+        // RESUME (Steve 2026-10-07): an unfinished thread from a previous
+        // conversation resurfaces — people remember what was left hanging.
+        // Never ahead of a talk request (convoOpening owns that priority).
+        try {
+          const rs = this.convoResumeOpener(vid);
+          if (rs) return rs;
+        } catch (e) {}
+        return this.convoOpening(vid);
+      })();
       // DEFENSIVE (Steve 2026-10-05): convoOpening must return {line, thread}.
       // A bare-string return once rendered as `Name: "undefined"` — normalize
       // here so no future branch can leak that into the fiction.
@@ -2139,6 +2873,17 @@
       this.convoNoteFlora(vid, opLine);
       c.transcript.push({ who: 'them', text: opLine });
       this.sayLine(vid, opLine);
+      // COHERENCE (Steve 2026-10-07): drift is never silent. When lived
+      // events have visibly changed them since the last conversation, the
+      // player SEES it — one short stage-direction beat, at most once a day.
+      try {
+        const dn = this.convoDriftNote(vid);
+        if (dn) {
+          c.transcript.push({ who: 'them', text: dn });
+          while (c.transcript.length > 200) c.transcript.shift();
+          this.say(`${this.displayName(vid)}: ${dn}`);
+        }
+      } catch (e) {}
       // SEEDING: knowledge traders mention their trade in conversation — the
       // mechanic is discovered by talking, not by a button. Once you've
       // learned the concept, you can bring it up with any trader yourself.
@@ -2368,6 +3113,12 @@
           try { this.convoDeepTick(vid); } catch (e) {}
         }
         done(this.voiceLine(vid, resp || '"Hm."'), youLine);
+      } else if (choiceId === 'recap') {
+        // RECAP (Steve 2026-10-07): long exchanges stay coherent — the
+        // player can always ask what the conversation is actually about.
+        // The recap re-anchors from the thread log; the thread continues.
+        // (Menu insertion is the sibling's lane: Game.convoRecapChoice(vid).)
+        done(this.convoRecapLine(vid), '"Wait — what were we talking about?"');
       } else if (choiceId.indexOf('ask:') === 0) {
         const topic = choiceId.slice(4);
         // DEEP BEATS build trust faster: asking about someone's past or what
@@ -2904,11 +3655,19 @@
           return this.endConvo(vid, 'natural');
         }
       }
+      // LEDGER (Steve 2026-10-07): the turn's beat lands on the current
+      // thread — topic memory + subject-change detection. (dlg: turns speak
+      // through sayLine instead; both collapse consecutive duplicates.)
+      try { this.convoNoteBeat(vid, c.thread, line); } catch (e) {}
       return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
     },
 
     endConvo(vid, how) {
       const c = this.convoGet(vid);
+      // OPEN THREADS (Steve 2026-10-07): leaving mid-thread plants it in the
+      // topic ledger — the next conversation can resume it. Must run before
+      // c.thread is cleared below.
+      try { this.convoPlantOpenThread(vid, how); } catch (e) {}
       const cg = (this.data.characterGen || {}).convo || {};
       const temp = this.npcTemper(vid);
       const mood = this.npcMood(vid);
@@ -2916,6 +3675,11 @@
       c.active = false; c.over = true; c.thread = null; c.pendingQ = null;
       c.reactiveQ = null;
       c.heldBeats = []; c.heldAsk = false; c.winddownQueued = false; c.windingDown = false;
+      // ENGAGEMENT ENDS (Steve 2026-10-07): the conversation is over — they're
+      // free to live again immediately. Without this they stand frozen until
+      // the batch-turn lapse (2 batches ≈ 64 ticks) instead of resuming their
+      // needs-driven life (fleeing, foraging, seeking people).
+      try { if (this.state.village.engaged) delete this.state.village.engaged[vid]; } catch (e) {}
       let line;
       if (how === 'left') {
         line = this.convoPickCycle(vid, 'leftexit', [
@@ -2956,6 +3720,20 @@
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
       try { this.checkPromises('social'); } catch (e) {}
       this.convoConflictFallout(vid, t[vid]);
+      // COHERENCE (Steve 2026-10-07): close out what got closed. A thread
+      // that was hanging and got discussed this conversation earns its
+      // closing beat at goodbye; a lapsed thread circled back to gets the
+      // honest nod, never a fresh-start lie. Close beats take precedence.
+      try {
+        const closeBeat = (typeof this.convoCloseLine === 'function') ? this.convoCloseLine(vid) : null;
+        const lapseBeat = closeBeat ? null : ((typeof this.convoLapseLine === 'function') ? this.convoLapseLine(vid) : null);
+        const cbeat = closeBeat || lapseBeat;
+        if (cbeat) {
+          c.transcript.push({ who: 'them', text: cbeat });
+          while (c.transcript.length > 200) c.transcript.shift();
+          this.sayLine(vid, cbeat);
+        }
+      } catch (e) {}
       this.say(`${first}: ${line}`);
       // MOOD GOODBYE: the parting beat carries the temperature out the door.
       try {

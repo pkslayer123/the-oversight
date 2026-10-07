@@ -101,7 +101,7 @@
       ],
       "level": 2
     },
-    "flavor": "'The moons moved. Everything fruits a month late now. Don't argue with the sky — write it down.'"
+    "flavor": "'The moons moved. Everything fruits a month late now. Don't argue with the sky \u2014 write it down.'"
   },
   {
     "id": "scattered_ledger",
@@ -116,171 +116,397 @@
     },
     "flavor": "Forty-one names, each with a debt or a debt owed. The last page just says: start again."
   },
-{
-  "id": "system_manual_traps",
-  "name": "System Field Manual: Small Game (Rev. 5)",
-  "description": "a System-printed pamphlet, cheerful pictograms, one page chewed by something",
-  "unlocks": {
-    "recipes": [
-      "spring_snare"
-    ],
-    "animals": [
-      "gray_squirrel",
-      "opossum"
-    ],
-    "skills": [
-      "animal_behavior"
-    ],
-    "skillLevel": 1
+  {
+    "id": "system_manual_traps",
+    "name": "System Field Manual: Small Game (Rev. 5)",
+    "description": "a System-printed pamphlet, cheerful pictograms, one page chewed by something",
+    "unlocks": {
+      "recipes": [
+        "spring_snare"
+      ],
+      "animals": [
+        "gray_squirrel",
+        "opossum"
+      ],
+      "skills": [
+        "animal_behavior"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "REV. 5 NOTES: The spring-pole method has been DEEMED SPORTING. The pole does the work. You do the waiting. Waiting is the hard part. We believe in you."
   },
-  "flavor": "REV. 5 NOTES: The spring-pole method has been DEEMED SPORTING. The pole does the work. You do the waiting. Waiting is the hard part. We believe in you."
-},
-{
-  "id": "basket_weavers_primer",
-  "name": "Basketry for Beginners",
-  "description": "a library discard, due-date card stamped 2019, someone's practice weave tucked inside",
-  "unlocks": {
-    "recipes": [
-      "fish_basket",
-      "braided_cord"
-    ],
-    "skills": [
-      "cordage"
-    ],
-    "skillLevel": 1
+  {
+    "id": "basket_weavers_primer",
+    "name": "Basketry for Beginners",
+    "description": "a library discard, due-date card stamped 2019, someone's practice weave tucked inside",
+    "unlocks": {
+      "recipes": [
+        "fish_basket",
+        "braided_cord"
+      ],
+      "skills": [
+        "cordage"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "Someone checked this out in 2019 and never brought it back. The librarian's stamp says OVERDUE in red. There is no librarian now. There is no overdue."
   },
-  "flavor": "Someone checked this out in 2019 and never brought it back. The librarian's stamp says OVERDUE in red. There is no librarian now. There is no overdue."
-},
-{
-  "id": "smokehouse_ledger",
-  "name": "The Smokehouse Ledger",
-  "description": "a smoke-stained account book, columns of dates, weights, and weather",
-  "unlocks": {
-    "recipes": [
-      "drying_rack"
-    ],
-    "skills": [
-      "preserve_food"
-    ],
-    "skillLevel": 2
+  {
+    "id": "smokehouse_ledger",
+    "name": "The Smokehouse Ledger",
+    "description": "a smoke-stained account book, columns of dates, weights, and weather",
+    "unlocks": {
+      "recipes": [
+        "drying_rack"
+      ],
+      "skills": [
+        "preserve_food"
+      ],
+      "skillLevel": 2
+    },
+    "flavor": "'Day 9: hung the venison too low. Day 10: the dog is a genius. Day 11: hung it higher.'"
   },
-  "flavor": "'Day 9: hung the venison too low. Day 10: the dog is a genius. Day 11: hung it higher.'"
-},
-{
-  "id": "butchers_notes",
-  "name": "Notes of a Country Butcher",
-  "description": "a spiral notebook, forty years of diagrams in pencil, blood on the edges",
-  "unlocks": {
-    "animals": [
-      "white_tailed_deer",
-      "wild_turkey"
-    ],
-    "skills": [
-      "anatomy"
-    ],
-    "skillLevel": 1
+  {
+    "id": "butchers_notes",
+    "name": "Notes of a Country Butcher",
+    "description": "a spiral notebook, forty years of diagrams in pencil, blood on the edges",
+    "unlocks": {
+      "animals": [
+        "white_tailed_deer",
+        "wild_turkey"
+      ],
+      "skills": [
+        "anatomy"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "'Respect the animal. Waste nothing. The gut pile feeds the woods that fed you.'"
   },
-  "flavor": "'Respect the animal. Waste nothing. The gut pile feeds the woods that fed you.'"
-}
-,
-{
-  "id": "hedge_witch_herbarium",
-  "name": "The Hedge-Witch's Herbarium",
-  "description": "a hand-stitched herbarium, pressed leaves between every page",
-  "unlocks": {
-    "plants": [
-      "yarrow",
-      "plantain_leaf",
-      "jewelweed"
-    ],
-    "skills": [
-      "herbal_medicine",
-      "wound_care"
-    ],
-    "skillLevel": 2
+  {
+    "id": "hedge_witch_herbarium",
+    "name": "The Hedge-Witch's Herbarium",
+    "description": "a hand-stitched herbarium, pressed leaves between every page",
+    "unlocks": {
+      "plants": [
+        "yarrow",
+        "plantain_leaf",
+        "jewelweed"
+      ],
+      "skills": [
+        "herbal_medicine",
+        "wound_care"
+      ],
+      "skillLevel": 2
+    },
+    "flavor": "'Yarrow stops the bleed. Plantain draws the sting. Jewelweed owes the poison ivy a debt -- rub it on within the hour.'"
   },
-  "flavor": "'Yarrow stops the bleed. Plantain draws the sting. Jewelweed owes the poison ivy a debt -- rub it on within the hour.'"
-},
-{
-  "id": "night_walkers_guide",
-  "name": "Night Walker's Guide",
-  "description": "a slim pamphlet, ink smudged, margins full of moon phases",
-  "unlocks": {
-    "animals": [
-      "raccoon",
-      "striped_skunk",
-      "gray_fox"
-    ],
-    "skills": [
-      "nocturnal_patterns"
-    ],
-    "skillLevel": 1
+  {
+    "id": "night_walkers_guide",
+    "name": "Night Walker's Guide",
+    "description": "a slim pamphlet, ink smudged, margins full of moon phases",
+    "unlocks": {
+      "animals": [
+        "raccoon",
+        "striped_skunk",
+        "gray_fox"
+      ],
+      "skills": [
+        "nocturnal_patterns"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "Everything worth catching is out at night. So is everything that catches you. The pamphlet is honest about both."
   },
-  "flavor": "Everything worth catching is out at night. So is everything that catches you. The pamphlet is honest about both."
-},
-{
-  "id": "birds_of_the_scattering",
-  "name": "Birds of the Scattering",
-  "description": "a watercolored bird guide, species from three counties crossed out, new ones inked in",
-  "unlocks": {
-    "animals": [
-      "wild_turkey",
-      "canada_goose",
-      "american_woodcock"
-    ],
-    "skills": [
-      "animal_behavior"
-    ],
-    "skillLevel": 1
+  {
+    "id": "birds_of_the_scattering",
+    "name": "Birds of the Scattering",
+    "description": "a watercolored bird guide, species from three counties crossed out, new ones inked in",
+    "unlocks": {
+      "animals": [
+        "wild_turkey",
+        "canada_goose",
+        "american_woodcock"
+      ],
+      "skills": [
+        "animal_behavior"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "Someone crossed out the migration maps and wrote 'GONE?' in the margins. The feeding-behavior notes are better than the pictures."
   },
-  "flavor": "Someone crossed out the migration maps and wrote 'GONE?' in the margins. The feeding-behavior notes are better than the pictures."
-},
-{
-  "id": "fishers_ledger",
-  "name": "The Fisher's Ledger",
-  "description": "a waterproof logbook, knots and rigs sketched between tallies",
-  "unlocks": {
-    "recipes": [
-      "fish_weir",
-      "trotline"
-    ],
-    "skills": [
-      "water_systems"
-    ],
-    "skillLevel": 2
+  {
+    "id": "fishers_ledger",
+    "name": "The Fisher's Ledger",
+    "description": "a waterproof logbook, knots and rigs sketched between tallies",
+    "unlocks": {
+      "recipes": [
+        "fish_weir",
+        "trotline"
+      ],
+      "skills": [
+        "water_systems"
+      ],
+      "skillLevel": 2
+    },
+    "flavor": "'June 3: trotline lost to a turtle. June 4: ate the turtle. June 5: new trotline, deeper set.'"
   },
-  "flavor": "'June 3: trotline lost to a turtle. June 4: ate the turtle. June 5: new trotline, deeper set.'"
-},
-{
-  "id": "mend_and_make_do",
-  "name": "Mend and Make Do",
-  "description": "a pamphlet on repairs, corners curled, held together with its own advice",
-  "unlocks": {
-    "recipes": [
-      "braided_cord"
-    ],
-    "skills": [
-      "sewing"
-    ],
-    "skillLevel": 1
+  {
+    "id": "mend_and_make_do",
+    "name": "Mend and Make Do",
+    "description": "a pamphlet on repairs, corners curled, held together with its own advice",
+    "unlocks": {
+      "recipes": [
+        "braided_cord"
+      ],
+      "skills": [
+        "sewing"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "Rule one: a cord is a rope that hasn't decided yet. Rule two: nothing with a handle is truly broken."
   },
-  "flavor": "Rule one: a cord is a rope that hasn't decided yet. Rule two: nothing with a handle is truly broken."
-},
-{
-  "id": "gardeners_winter",
-  "name": "The Gardener's Winter",
-  "description": "a seed-company almanac with forty years of handwritten corrections",
-  "unlocks": {
-    "plants": [
-      "ramps",
-      "wild_onion",
-      "lambs_quarters"
-    ],
-    "skills": [
-      "preserve_food"
-    ],
-    "skillLevel": 1
+  {
+    "id": "gardeners_winter",
+    "name": "The Gardener's Winter",
+    "description": "a seed-company almanac with forty years of handwritten corrections",
+    "unlocks": {
+      "plants": [
+        "ramps",
+        "wild_onion",
+        "lambs_quarters"
+      ],
+      "skills": [
+        "preserve_food"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "Printed dates: useless. Marginalia: everything. 'The onions don't care what the packet says.'"
   },
-  "flavor": "Printed dates: useless. Marginalia: everything. 'The onions don't care what the packet says.'"
-}
+  {
+    "id": "nut_gatherers_handbook",
+    "name": "The Nut Gatherer's Handbook",
+    "description": "a forester's guide, shell fragments pressed between the pages",
+    "unlocks": {
+      "plants": [
+        "black_walnut",
+        "hickory_nut",
+        "acorn_white_oak"
+      ],
+      "level": 2
+    },
+    "flavor": "Every chapter ends with the same note about patience. The pressed shell fragments still smell faintly of rain."
+  },
+  {
+    "id": "thicket_field_guide",
+    "name": "A Field Guide to the Thicket",
+    "description": "a trail-club pamphlet, thorn tears mended with electrical tape",
+    "unlocks": {
+      "plants": [
+        "blackberry",
+        "muscadine",
+        "wild_strawberry",
+        "persimmon"
+      ],
+      "level": 2
+    },
+    "flavor": "Taped thorn tears on every other page. 'If you come out clean, you didn't go deep enough.'"
+  },
+  {
+    "id": "roots_and_reasons",
+    "name": "Roots & Reasons",
+    "description": "a schoolteacher's notebook, drawings in colored pencil",
+    "unlocks": {
+      "plants": [
+        "burdock",
+        "purslane",
+        "sassafras"
+      ],
+      "level": 1
+    },
+    "flavor": "Colored-pencil drawings, each dated like a small portrait. The teacher signed every page."
+  },
+  {
+    "id": "late_summer_herbarium",
+    "name": "The Late-Summer Herbarium",
+    "description": "a pressed-flower collection with a botanist's typed labels",
+    "unlocks": {
+      "plants": [
+        "goldenrod",
+        "staghorn_sumac",
+        "mayapple"
+      ],
+      "level": 3
+    },
+    "flavor": "Latin names, pressed stems, and one page that only says DO NOT RUSH in large letters."
+  },
+  {
+    "id": "small_game_almanac",
+    "name": "The Small-Game Hunter's Almanac",
+    "description": "a dog-eared pamphlet, acorn doodles in the margins",
+    "unlocks": {
+      "animals": [
+        "eastern_chipmunk",
+        "groundhog",
+        "american_crow"
+      ],
+      "skills": [
+        "animal_behavior"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "Acorn doodles in the margins. 'The woods are a pantry with legs.'"
+  },
+  {
+    "id": "fur_takers_journal",
+    "name": "The Fur-Taker's Winter Journal",
+    "description": "a trapper's ledger with a frost-cracked cover",
+    "unlocks": {
+      "animals": [
+        "american_mink",
+        "muskrat",
+        "north_american_beaver"
+      ],
+      "skills": [
+        "animal_behavior"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "'Check the line before the freeze. Check it again after.' The handwriting gets shakier as winter deepens."
+  },
+  {
+    "id": "system_manual_predator_sign",
+    "name": "System Field Manual: Predator Sign (Rev. 2)",
+    "description": "a System-printed pamphlet, track diagrams in cheerful green",
+    "unlocks": {
+      "animals": [
+        "bobcat",
+        "eastern_coyote",
+        "gray_rat_snake",
+        "timber_rattlesnake"
+      ],
+      "skills": [
+        "animal_behavior"
+      ],
+      "skillLevel": 2
+    },
+    "flavor": "REV. 2 NOTES: Tracks are QUESTIONS, not answers. A big print and an empty belly are a bad combination. Walk LOUD. We mean it."
+  },
+  {
+    "id": "pond_watchers_notes",
+    "name": "The Pond-Watcher's Notes",
+    "description": "a damp notebook with a heron sketched on every third page",
+    "unlocks": {
+      "animals": [
+        "bluegill",
+        "box_turtle",
+        "snapping_turtle",
+        "green_heron"
+      ],
+      "skills": [
+        "water_systems"
+      ],
+      "skillLevel": 1
+    },
+    "flavor": "A heron sketched on every third page, each one more patient than the last."
+  },
+  {
+    "id": "night_shift_notebook",
+    "name": "The Night Shift Notebook",
+    "description": "a third-shift worker's notebook, written by headlamp",
+    "unlocks": {
+      "animals": [
+        "great_horned_owl",
+        "big_brown_bat",
+        "nine_banded_armadillo"
+      ],
+      "skills": [
+        "nocturnal_patterns"
+      ],
+      "skillLevel": 2
+    },
+    "flavor": "Written by headlamp on night shifts. 'The dark is busy. You're just not invited to the schedule meeting.'"
+  },
+  {
+    "id": "big_game_small_margin",
+    "name": "Big Game, Small Margin",
+    "description": "a hunter's memoir, one chapter per scar",
+    "unlocks": {
+      "animals": [
+        "wild_boar",
+        "north_american_porcupine"
+      ],
+      "skills": [
+        "anatomy"
+      ],
+      "skillLevel": 2
+    },
+    "flavor": "One chapter per scar. The shortest chapter is titled 'The Boar.' The longest is 'The Fence.'"
+  },
+  {
+    "id": "peddlers_sample_tin",
+    "name": "The Peddler's Sample Tin",
+    "description": "a dented sample tin, paper packets labeled in looping salesman's script, half the packets empty",
+    "unlocks": {
+      "plants": [
+        "spicebush",
+        "american_hazelnut"
+      ],
+      "level": 2
+    },
+    "flavor": "'Two for a song, friend. The song is extra.'"
+  },
+  {
+    "id": "nanas_tuber_cards",
+    "name": "Nana's Tuber Cards",
+    "description": "a rusted tin of index cards, every card in the same shaky pencil, every card about roots",
+    "unlocks": {
+      "plants": [
+        "sunchoke",
+        "groundnut"
+      ],
+      "level": 2
+    },
+    "flavor": "'Card 12: If the ground is still hard, wait. The waiting is the hard part.'"
+  },
+  {
+    "id": "crayon_herbarium",
+    "name": "The Crayon Herbarium",
+    "description": "a kid's sketchbook, green crayon tangles on every page, one plant circled in red",
+    "unlocks": {
+      "plants": [
+        "stinging_nettle",
+        "greenbrier"
+      ],
+      "level": 2
+    },
+    "flavor": "'The red-circled one is MEAN. The thorny one is just pointy.'"
+  },
+  {
+    "id": "june_notebook",
+    "name": "The June Notebook",
+    "description": "a pocket notebook, June dates on every page, the cover stained dark purple",
+    "unlocks": {
+      "plants": [
+        "maypop",
+        "wild_cherry",
+        "serviceberry"
+      ],
+      "level": 2
+    },
+    "flavor": "'June 9: the birds got there first. June 10: earlier. June 11: EARLIER.'"
+  },
+  {
+    "id": "wardens_notebook",
+    "name": "The Warden's Notebook",
+    "description": "a warden's field notebook, three pages flagged with red tape, the rest blank",
+    "unlocks": {
+      "plants": [
+        "pokeweed",
+        "american_ginseng",
+        "wild_ginger"
+      ],
+      "level": 3
+    },
+    "flavor": "'Counted, not collected. Some pages stay blank on purpose.'"
+  }
 ]
