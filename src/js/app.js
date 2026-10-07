@@ -12640,7 +12640,15 @@
       html += '<div class="mrow">';
       for (let x = 0; x < 7; x++) {
         let tl = null;
-        try { tl = Game.tileAt(x, y); } catch (e) { tl = null; }
+        try {
+          // Try direct tiles access first (old saves may have map without tiles via tileAt)
+          const tiles = Game.map && Game.map.tiles;
+          if (tiles && tiles[y] && tiles[y][x]) {
+            tl = tiles[y][x];
+          } else {
+            tl = Game.tileAt(x, y);
+          }
+        } catch (e) { tl = null; }
         const mpp = Game.map || {};
         const isP = (x === mpp.px && y === mpp.py);
         // Steve 2026-10-06: FOG DISABLED until it works. Show all geography.
@@ -12684,22 +12692,24 @@
             // Blank SVG is 130 chars with fog color #0d120d - must detect it
             const isBlank = !g || g.length < 100 || g.indexOf('#0d120d') !== -1;
             if (isBlank) {
-              // DEBUG BRIGHT (Steve 2026-10-06): use BRIGHT RED to see if fallback renders
-              // If map shows red squares, fallback works but tile data is null
-              // If map still black, SVG isn't rendering at all
               const ttype = tl ? tl.type : 'unknown';
+              const colors = {
+                forest_floor: '#3a5f3a', grove: '#2d5a2d', meadow: '#5a6b3a',
+                thicket: '#1e4a2e', wetland: '#3a5a6b', creek: '#2a6b8a',
+                trail_edge: '#6b5a3a', ruin: '#5a5a5a', haven: '#4a6b4a'
+              };
+              // If no tile data (old save), show as unexplored terrain
+              // (better than black - indicates map data issue, not empty world)
               const isUnknown = !tl || ttype === 'unknown';
-              const base = isUnknown ? '#ff0000' : '#00ff00'; // RED=unknown, GREEN=known
-              const glyph = isUnknown ? '?' : '✓';
+              const base = isUnknown ? '#1a2a1a' : (colors[ttype] || '#2a3a2a');
+              const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
               g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
-                `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}"/>` +
-                `<text x="32" y="42" text-anchor="middle" font-size="28" fill="white">${glyph}</text></svg>`;
+                `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}" stroke="#2a4a2a" stroke-width="1"/>` +
+                `<text x="32" y="42" text-anchor="middle" font-size="28" fill="#8aaa8a">${glyph}</text></svg>`;
             }
           }
         }
-        // DEBUG: bright red background on the DIV itself (not just SVG)
-        // If map shows red, HTML renders but SVG doesn't. If black, HTML broken.
-        html += `<div class="${cls}" data-x="${x}" data-y="${y}" style="background:#ff0000 !important; min-width:40px; min-height:40px;">${g}</div>`;
+        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
       }
       html += '</div>';
     }
