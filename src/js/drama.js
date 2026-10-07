@@ -3,15 +3,16 @@
 // description: Drama overlay — loosely-bound animation layer for emphasis.
 // provides:
 //   - ensureOverlay: creates the .drama-overlay div over the grid
-//   - hit: impact starburst at grid coords (tile center, but free-floating)
+//   - hit: impact starburst — L1 standard, L2 larger+secondary, L3 massive+shockwave (Steve 2026-10-07, Drama C3)
 //   - floatText: damage numbers / labels that drift up and fade
 //   - flash: full-screen color pulse for big moments
 //   - shake: screen shake (transform on grid container, GPU-cheap)
 //   - heroCard: centered high-res moment card (synergy, integration)
 //   - soulWisp: death wisp floats up from tile
-//   - exclaim: !/? above NPCs who want attention (Steve 2026-10-07)
-//   - npcAlert: semantic NPC attention marker — talk/curious/dialogue/warn/heart/break (Steve 2026-10-07, Drama A1)
-//   - abilityBurst: radial pulse on ability use, color by pool
+//   - systemCommentary: L2+ floating System observations — L2 cyan-gold, L3 👁️ white-gold (Steve 2026-10-07, Drama C3)
+//   - exclaim: !/? above NPCs who want attention — L1 flat, L2 glow, L3 glow + 👁️ (Steve 2026-10-07, Drama C3)
+//   - npcAlert: semantic NPC attention marker — talk/curious/dialogue/warn/heart/break; L2 glow, L3 + 👁️ (Steve 2026-10-07, Drama A1/C3)
+//   - abilityBurst: radial pulse on ability use, color by pool — L1 thin ring, L2 double+glow, L3 triple+sparkles (Steve 2026-10-07, Drama C3)
 //   - contestFlash: TV show moment banner
 //   - integrationPulse: System presence evolves with integration level
 //   - contestAnnounce: full-screen CONTEST INCOMING banner (Steve 2026-10-07)
@@ -31,6 +32,13 @@
 //   - critHit: oversized starburst + CRIT! + damage (Steve 2026-10-07, Drama B1)
 //   - playerHurt: red vignette + shake when hurt (Steve 2026-10-07, Drama B1)
 //   - dodgeMiss: MISS float + ghost afterimage (Steve 2026-10-07, Drama B1)
+//   - socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1)
+//   - mootGather: village gathers — fire pulse + banner (Steve 2026-10-07, Drama C1)
+//   - mootVote: vote tally bar with visual weight (Steve 2026-10-07, Drama C1)
+//   - exileMoment: dark vignette + EXILED banner (Steve 2026-10-07, Drama C1)
+//   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
+//   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
+//   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
 //   - All animations use transform/opacity only — GPU-composited, no layout/paint (code: drama.js).
@@ -88,19 +96,60 @@
     },
 
     // impact starburst at grid coords
-    // Steve 2026-10-07: scales with integration — bigger, more dramatic
+    // INTEGRATION VISUAL LANGUAGES (Steve 2026-10-07, Drama C3):
+    //   L1 LINKED:    standard starburst. The System observes.
+    //   L2 ATTUNED:   larger starburst + secondary smaller burst. The System participates.
+    //   L3 INTEGRATED: massive starburst + expanding shockwave ring. The System celebrates.
     hit(x, y, opts) {
       opts = opts || {};
       const c = this.tileCenter(x, y);
       const color = opts.color || '#ffd54a';
       const integ = opts.integration || 0;
-      const size = (opts.size || 60) + (integ * 15); // 60 → 105
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><g fill="${color}"><polygon points="30,0 35,20 55,15 40,30 55,45 35,40 30,60 25,40 5,45 20,30 5,15 25,20"/></g></svg>`,
-        `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
-        'drama-hit',
-        400
-      );
+      const star = (size) =>
+        `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><g fill="${color}"><polygon points="30,0 35,20 55,15 40,30 55,45 35,40 30,60 25,40 5,45 20,30 5,15 25,20"/></g></svg>`;
+      if (integ >= 3) {
+        // L3 INTEGRATED: massive starburst + expanding shockwave ring
+        const size = opts.size || 120;
+        this.spawn(
+          star(size),
+          `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
+          'drama-hit',
+          500
+        );
+        const wave = 170;
+        this.spawn(
+          `<svg width="${wave}" height="${wave}" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.8"/></svg>`,
+          `position:absolute;left:${c.x - wave/2}px;top:${c.y - wave/2}px;`,
+          'drama-shockwave',
+          700
+        );
+        this.flash('rgba(255,255,255,0.08)', 250);
+      } else if (integ >= 2) {
+        // L2 ATTUNED: larger starburst + secondary smaller burst, slightly offset
+        const size = opts.size || 95;
+        this.spawn(
+          star(size),
+          `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
+          'drama-hit',
+          450
+        );
+        const size2 = 46;
+        this.spawn(
+          star(size2),
+          `position:absolute;left:${c.x + 18 - size2/2}px;top:${c.y - 22 - size2/2}px;`,
+          'drama-hit',
+          400
+        );
+      } else {
+        // L1/L0 LINKED: standard starburst — the System observes
+        const size = opts.size || 60;
+        this.spawn(
+          star(size),
+          `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
+          'drama-hit',
+          400
+        );
+      }
     },
 
     // floating text (damage, labels)
@@ -169,12 +218,25 @@
 
     // exclaim: ! or ? above an NPC who wants attention (loosely bound — floats above tile)
     // Steve 2026-10-07: "Exclamations above player characters when they want to catch your attention as they walk by"
+    // INTEGRATION VISUAL LANGUAGES (Steve 2026-10-07, Drama C3):
+    //   L1 LINKED:    standard icon. The System observes.
+    //   L2 ATTUNED:   icon + subtle colored glow. The System participates.
+    //   L3 INTEGRATED: icon + glow + tiny System eye 👁️ beneath. The System celebrates.
     exclaim(x, y, icon, opts) {
       opts = opts || {};
+      const integ = opts.integration || 0;
       const c = this.tileCenter(x, y);
       const color = icon === '!' ? '#ff5252' : icon === '?' ? '#ffd54a' : '#4df3ff';
+      let html;
+      if (integ >= 3) {
+        html = `<div style="text-align:center;font-size:30px;line-height:1.1;font-weight:bold;color:${color};text-shadow:0 0 14px ${color},0 2px 6px rgba(0,0,0,0.9);">${icon}<div style="font-size:12px;">👁️</div></div>`;
+      } else if (integ >= 2) {
+        html = `<div style="font-size:28px;font-weight:bold;color:${color};text-shadow:0 0 12px ${color},0 2px 6px rgba(0,0,0,0.9);">${icon}</div>`;
+      } else {
+        html = `<div style="font-size:28px;font-weight:bold;color:${color};text-shadow:0 2px 6px rgba(0,0,0,0.9);">${icon}</div>`;
+      }
       this.spawn(
-        `<div style="font-size:28px;font-weight:bold;color:${color};text-shadow:0 2px 6px rgba(0,0,0,0.9);">${icon}</div>`,
+        html,
         `position:absolute;left:${c.x}px;top:${c.y - 30}px;transform:translate(-50%,-100%);`,
         'drama-exclaim',
         opts.duration || 1500
@@ -198,8 +260,14 @@
       const integ = opts.integration || 0;
       const size = 28 + integ * 4; // 28 → 40px across L0–L3
       const c = this.tileCenter(x, y);
+      // INTEGRATION VISUAL LANGUAGES (Steve 2026-10-07, Drama C3):
+      //   L1: flat icon. L2: colored glow — the System participates. L3: glow + tiny 👁️.
+      let shadow = 'text-shadow:0 2px 6px rgba(0,0,0,0.9);';
+      if (integ >= 3) shadow = `text-shadow:0 0 14px ${k.color},0 2px 6px rgba(0,0,0,0.9);`;
+      else if (integ >= 2) shadow = `text-shadow:0 0 10px ${k.color},0 2px 6px rgba(0,0,0,0.9);`;
+      const eye = integ >= 3 ? '<div style="font-size:12px;">👁️</div>' : '';
       this.spawn(
-        `<div style="font-size:${size}px;font-weight:bold;color:${k.color};text-shadow:0 2px 6px rgba(0,0,0,0.9);">${k.icon}</div>`,
+        `<div style="text-align:center;font-size:${size}px;line-height:1.1;font-weight:bold;color:${k.color};${shadow}">${k.icon}${eye}</div>`,
         `position:absolute;left:${c.x}px;top:${c.y - 30}px;transform:translate(-50%,-100%);`,
         'drama-exclaim',
         opts.duration || ((kind === 'heart' || kind === 'break') ? 2000 : 1500)
@@ -207,26 +275,65 @@
     },
 
     // abilityBurst: radial pulse when an ability fires (color by pool)
-    // Steve 2026-10-07: scales with system integration — L0 subtle, L3 spectacle
+    // INTEGRATION VISUAL LANGUAGES (Steve 2026-10-07, Drama C3):
+    //   L1 LINKED:    clean, minimal, blue — one thin ring, quiet fade. The System observes.
+    //   L2 ATTUNED:   richer, layered, cyan-gold — double ring + inner glow. The System participates.
+    //   L3 INTEGRATED: spectacular, white-gold — triple ring + prismatic sparkles + flash. The System celebrates.
     abilityBurst(x, y, color, integration) {
       const c = this.tileCenter(x, y);
       color = color || '#4df3ff';
       integration = integration || 0;
-      // Scale: size and rings grow with integration
-      const size = 80 + (integration * 20); // 80 → 140
-      const rings = integration >= 2 ? 2 : 1;
-      const ringsSvg = rings === 2
-        ? `<circle cx="40" cy="40" r="35" fill="none" stroke="${color}" stroke-width="3" opacity="0.8"/><circle cx="40" cy="40" r="25" fill="none" stroke="${color}" stroke-width="2" opacity="0.5"/>`
-        : `<circle cx="40" cy="40" r="35" fill="none" stroke="${color}" stroke-width="3" opacity="0.8"/>`;
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 80 80">${ringsSvg}</svg>`,
-        `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
-        'drama-burst',
-        500 + (integration * 100)
-      );
-      // L3: the System acknowledges the action
       if (integration >= 3) {
-        this.flash(color.replace(')', ',0.1)').replace('#', 'rgba(').replace(/([0-9a-f]{2})/gi, m => parseInt(m, 16) + ','), 300);
+        // L3 INTEGRATED: triple ring, white-gold, prismatic sparkles, System flash
+        const size = 150;
+        const rings =
+          `<circle cx="40" cy="40" r="36" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.95"/>` +
+          `<circle cx="40" cy="40" r="28" fill="none" stroke="${color}" stroke-width="3" opacity="0.85"/>` +
+          `<circle cx="40" cy="40" r="17" fill="${color}" opacity="0.3"/>`;
+        this.spawn(
+          `<svg width="${size}" height="${size}" viewBox="0 0 80 80">${rings}</svg>`,
+          `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
+          'drama-burst',
+          700
+        );
+        // prismatic sparkles scattered around the ring
+        for (let i = 0; i < 6; i++) {
+          const ang = (i / 6) * Math.PI * 2 + 0.26;
+          const sx = c.x + Math.cos(ang) * 62;
+          const sy = c.y + Math.sin(ang) * 62;
+          const spark = ['#ffffff', '#ffd54a', color][i % 3];
+          this.spawn(
+            `<div style="width:8px;height:8px;background:${spark};clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);box-shadow:0 0 8px ${spark};"></div>`,
+            `position:absolute;left:${sx}px;top:${sy}px;transform:translate(-50%,-50%);`,
+            'drama-sparkle',
+            800
+          );
+        }
+        // the System celebrates with you: white flash
+        this.flash('rgba(255,255,255,0.12)', 300);
+      } else if (integration >= 2) {
+        // L2 ATTUNED: double ring + inner glow, cyan outer, gold inner
+        const size = 112;
+        const rings =
+          `<circle cx="40" cy="40" r="35" fill="none" stroke="${color}" stroke-width="3" opacity="0.85"/>` +
+          `<circle cx="40" cy="40" r="25" fill="none" stroke="#ffd54a" stroke-width="2" opacity="0.6"/>` +
+          `<circle cx="40" cy="40" r="15" fill="${color}" opacity="0.22"/>`;
+        this.spawn(
+          `<svg width="${size}" height="${size}" viewBox="0 0 80 80">${rings}</svg>`,
+          `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
+          'drama-burst',
+          600
+        );
+      } else {
+        // L1/L0 LINKED: one thin clean ring, quiet fade — the System observes
+        const size = 90;
+        const rings = `<circle cx="40" cy="40" r="35" fill="none" stroke="${color}" stroke-width="1.5" opacity="0.7"/>`;
+        this.spawn(
+          `<svg width="${size}" height="${size}" viewBox="0 0 80 80">${rings}</svg>`,
+          `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
+          'drama-burst',
+          450
+        );
       }
     },
 
@@ -259,6 +366,25 @@
         `position:absolute;left:50%;top:25%;transform:translate(-50%,-50%);`,
         'drama-contest',
         2000
+      );
+    },
+
+    // systemCommentary: floating System observations (Steve 2026-10-07, Drama C3).
+    // L2 ATTUNED: plain cyan-gold italic text, drifts up — the System participates.
+    // L3 INTEGRATED: 👁️ prefix + white-gold glow, longer — the System celebrates.
+    // Silent below L2: the System only speaks once Attuned.
+    systemCommentary(text, opts) {
+      opts = opts || {};
+      const integ = opts.integration || 0;
+      if (integ < 2) return;
+      const body = integ >= 3
+        ? `<div style="font-size:15px;font-style:italic;color:#fff3c4;text-shadow:0 0 12px #ffd54a,0 2px 6px rgba(0,0,0,0.9);">👁️ ${text}</div>`
+        : `<div style="font-size:14px;font-style:italic;color:#9be8ff;text-shadow:0 2px 6px rgba(0,0,0,0.9);">${text}</div>`;
+      this.spawn(
+        body,
+        `position:absolute;left:50%;top:18%;transform:translate(-50%,-50%);max-width:300px;text-align:center;`,
+        'drama-commentary',
+        integ >= 3 ? 2600 : 2000
       );
     },
 
@@ -593,6 +719,166 @@
         3000
       );
     },
+
+    // socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1).
+    // Game.drama('social', spec) routes here. spec.type:
+    // 'moot' | 'vote' | 'exile' | 'liar' | 'reconcile' | 'betray'
+    socialFlash(spec) {
+      if (!spec || typeof spec !== 'object' || !spec.type) return;
+      const integ = spec.integration || 0;
+      switch (spec.type) {
+        case 'moot': return this.mootGather(spec.caller || 'Someone', integ);
+        case 'vote': return this.mootVote(spec.guilty || 0, spec.total || 0, integ);
+        case 'exile': return this.exileMoment(spec.name || 'The accused', integ);
+        case 'liar': return this.liarExposed(spec.name || 'The liar', integ);
+        case 'reconcile': return this.reconcileGlow(spec.name || '', integ);
+        case 'betray': return this.betraySlash(spec.name || 'The betrayer', integ);
+        default: return;
+      }
+    },
+
+    // mootGather: the village gathers — warm fire pulse, crowd converges
+    mootGather(caller, integration) {
+      integration = integration || 0;
+      // fire glow: warm radial pulse from center
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,150,50,0.25) 0%, transparent 60%);',
+        'drama-moot-glow',
+        2000 + (integration * 400)
+      );
+      this.spawn(
+        `<div style="font-size:22px;font-weight:bold;color:#ffb347;text-shadow:0 2px 8px rgba(0,0,0,0.9);letter-spacing:1px;">🔥 MOOT CALLED<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${caller} summons the village</span></div>`,
+        'position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-moot-banner',
+        2500
+      );
+      if (integration >= 2) {
+        this.floatText('50%', '45%', '📺 The System tunes in — the galaxy watches', { color: '#ff6b9d', size: 13 });
+      }
+    },
+
+    // mootVote: vote tally with visual weight — guilty votes stack red, innocent green
+    mootVote(guilty, total, integration) {
+      integration = integration || 0;
+      const innocent = total - guilty;
+      const guiltyPct = total > 0 ? Math.round((guilty / total) * 100) : 0;
+      const barW = 200 + (integration * 20);
+      this.spawn(
+        `<div style="text-align:center;background:rgba(10,10,10,0.9);padding:16px;border-radius:8px;border:1px solid #666;">
+          <div style="font-size:16px;font-weight:bold;color:#fff;margin-bottom:8px;">THE COUNT</div>
+          <div style="display:flex;width:${barW}px;height:24px;border-radius:4px;overflow:hidden;margin:0 auto;">
+            <div style="width:${guiltyPct}%;background:#c0392b;"></div>
+            <div style="width:${100 - guiltyPct}%;background:#27ae60;"></div>
+          </div>
+          <div style="font-size:13px;color:#ccc;margin-top:6px;"><span style="color:#ff6b6b;">${guilty} guilty</span> · <span style="color:#7cfc9a;">${innocent} innocent</span></div>
+        </div>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);',
+        'drama-vote',
+        3000
+      );
+      // verdict flash: red for guilty, green for not
+      if (guilty > innocent) {
+        this.flash('rgba(192,57,43,0.2)', 600);
+      } else {
+        this.flash('rgba(39,174,96,0.15)', 600);
+      }
+    },
+
+    // exileMoment: dark dramatic — red-black vignette, EXILED banner, crowd turns away
+    exileMoment(name, integration) {
+      integration = integration || 0;
+      // dark vignette closing in
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 20%, rgba(20,0,0,0.85) 100%);',
+        'drama-exile-vignette',
+        3000 + (integration * 500)
+      );
+      this.spawn(
+        `<div style="font-size:36px;font-weight:bold;color:#c0392b;text-shadow:0 3px 12px rgba(0,0,0,1);letter-spacing:4px;">EXILED<br><span style="font-size:16px;font-weight:normal;color:#999;letter-spacing:1px;">${name} walks until the trees close</span></div>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-exile-banner',
+        3500
+      );
+      this.shake(6 + (integration * 2));
+      if (integration >= 2) {
+        this.floatText('50%', '60%', '📺 The galaxy watches them go', { color: '#666', size: 13 });
+      }
+    },
+
+    // liarExposed: tension — spotlight narrows, ⚡ crackle when the lie breaks
+    liarExposed(name, integration) {
+      integration = integration || 0;
+      // narrowing spotlight: dark edges closing in
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 10%, rgba(0,0,0,0.9) 70%);',
+        'drama-liar-spot',
+        2000
+      );
+      // crackle burst
+      const c = { x: '50%', y: '40%' };
+      this.spawn(
+        `<div style="font-size:48px;text-shadow:0 0 20px #ffd54a;">⚡</div>`,
+        'position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);',
+        'drama-liar-crack',
+        1200
+      );
+      this.spawn(
+        `<div style="font-size:20px;font-weight:bold;color:#ffd54a;text-shadow:0 2px 8px rgba(0,0,0,0.9);">THE LIE BREAKS<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${name} is exposed</span></div>`,
+        'position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-liar-text',
+        2500
+      );
+      this.flash('rgba(255,213,74,0.15)', 400);
+    },
+
+    // reconcileGlow: warm healing — golden glow, hearts rise
+    reconcileGlow(name, integration) {
+      integration = integration || 0;
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,200,100,0.2) 0%, transparent 70%);',
+        'drama-reconcile-glow',
+        2500 + (integration * 300)
+      );
+      const hearts = 3 + integration; // 3 → 6 hearts
+      for (let i = 0; i < hearts; i++) {
+        const dx = (i - (hearts - 1) / 2) * 40;
+        setTimeout(() => {
+          this.spawn(
+            `<div style="font-size:24px;">❤️</div>`,
+            `position:absolute;left:calc(50% + ${dx}px);top:45%;transform:translate(-50%,-50%);`,
+            'drama-heart-rise',
+            1500
+          );
+        }, i * 200);
+      }
+      if (name) {
+        this.floatText('50%', '35%', `${name} — forgiven`, { color: '#ff6b9d', size: 16 });
+      }
+    },
+
+    // betraySlash: sharp red slash across the screen + gasp
+    betraySlash(name, integration) {
+      integration = integration || 0;
+      // diagonal red slash
+      this.spawn(
+        `<svg width="400" height="100" viewBox="0 0 400 100"><line x1="20" y1="90" x2="380" y2="10" stroke="#c0392b" stroke-width="${6 + integration * 2}" stroke-linecap="round"/></svg>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-5deg);',
+        'drama-betray-slash',
+        800
+      );
+      this.spawn(
+        `<div style="font-size:22px;font-weight:bold;color:#ff5252;text-shadow:0 2px 8px rgba(0,0,0,0.9);">BETRAYED<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${name}</span></div>`,
+        'position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-betray-text',
+        2500
+      );
+      this.flash('rgba(192,57,43,0.25)', 500);
+      this.shake(8 + (integration * 2));
+    },
   };
 
   S.Drama = Drama;
@@ -647,6 +933,32 @@
     .drama-confetti.drama-confetti { opacity: 0.3; transform: translateY(400px) rotate(720deg); }
     .drama-loser-dim { opacity: 0; transition: opacity 0.8s ease-out; }
     .drama-loser-dim.drama-loser-dim { opacity: 1; }
+    /* Social scenario spectacle (Steve 2026-10-07, Drama C1) — all GPU transform/opacity */
+    .drama-moot-glow { opacity: 0; transition: opacity 1s ease-out; }
+    .drama-moot-glow.drama-moot-glow { opacity: 1; animation: drama-fireflicker 0.8s ease-in-out infinite; }
+    @keyframes drama-fireflicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+    .drama-moot-banner { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
+    .drama-moot-banner.drama-moot-banner { opacity: 1; transform: translate(-50%, -50%); }
+    .drama-vote { opacity: 0; transform: translate(-50%, -40%) scale(0.9); transition: all 0.5s ease-out; }
+    .drama-vote.drama-vote { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .drama-exile-vignette { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-exile-vignette.drama-exile-vignette { opacity: 1; }
+    .drama-exile-banner { opacity: 0; transform: translate(-50%, -50%) scale(0.8); transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1); }
+    .drama-exile-banner.drama-exile-banner { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .drama-liar-spot { opacity: 0; transition: opacity 0.8s ease-out; }
+    .drama-liar-spot.drama-liar-spot { opacity: 1; }
+    .drama-liar-crack { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: all 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); }
+    .drama-liar-crack.drama-liar-crack { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+    .drama-liar-text { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s ease-out; }
+    .drama-liar-text.drama-liar-text { opacity: 1; transform: translate(-50%, -50%); }
+    .drama-reconcile-glow { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-reconcile-glow.drama-reconcile-glow { opacity: 1; }
+    .drama-heart-rise { opacity: 0; transform: translate(-50%, -30%); transition: all 1.5s ease-out; }
+    .drama-heart-rise.drama-heart-rise { opacity: 1; transform: translate(-50%, -150%); }
+    .drama-betray-slash { opacity: 0; transform: translate(-50%, -50%) rotate(-5deg) scaleX(0); transition: all 0.4s cubic-bezier(0.3, 1.4, 0.4, 1); }
+    .drama-betray-slash.drama-betray-slash { opacity: 1; transform: translate(-50%, -50%) rotate(-5deg) scaleX(1); }
+    .drama-betray-text { opacity: 0; transform: translate(-50%, -30%); transition: all 0.5s ease-out; }
+    .drama-betray-text.drama-betray-text { opacity: 1; transform: translate(-50%, -50%); }
     .drama-loser-heart { opacity: 0; transform: translate(-50%, -30%) scale(0.6); transition: all 1s ease-out; }
     .drama-loser-heart.drama-loser-heart { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     .drama-phase { opacity: 0; transform: scale(0.8) rotate(-4deg); transition: all 0.5s cubic-bezier(0.2, 1.2, 0.4, 1); }
@@ -660,6 +972,10 @@
     .drama-vignette-red.drama-vignette-red { opacity: 1; }
     .drama-afterimage { opacity: 0; transition: all 0.6s ease-out; }
     .drama-afterimage.drama-afterimage { opacity: 0.6; transform: translate(-30%, -50%); }
+    .drama-shockwave { opacity: 0; transform: scale(0.3); transition: all 0.7s cubic-bezier(0.1, 0.6, 0.3, 1); }
+    .drama-shockwave.drama-shockwave { opacity: 0.9; transform: scale(1.35); }
+    .drama-commentary { opacity: 0; transition: all 1.4s ease-out; }
+    .drama-commentary.drama-commentary { opacity: 1; transform: translate(-50%, -130%); }
     .drama-shake { animation: drama-shake-anim 0.4s ease-out; }
     @keyframes drama-shake-anim {
       0%, 100% { transform: translate(0, 0); }

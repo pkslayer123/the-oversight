@@ -13800,6 +13800,18 @@
           if (o && typeof o === 'object') { o.integration = o.integration || integ; }
           else { args[3] = { integration: integ }; }
         }
+        // DRAMA C3: exclaim(x, y, icon, opts?) — inject integration for L1/L2/L3 languages.
+        if (kind === 'exclaim' && args.length >= 3) {
+          const o = args[3];
+          if (o && typeof o === 'object') { o.integration = o.integration || integ; }
+          else { args[3] = { integration: integ }; }
+        }
+        // DRAMA C3: commentary(text, opts?) — inject integration; renders only at L2+.
+        if (kind === 'commentary' && args.length >= 1) {
+          const o = args[1];
+          if (o && typeof o === 'object') { o.integration = o.integration || integ; }
+          else { args[1] = { integration: integ }; }
+        }
         // Wilderness kinds (Steve 2026-10-07): auto-append integration if not provided
         if (kind === 'secret' || kind === 'ambush' || kind === 'wild' || kind === 'weather' || kind === 'trail') {
           const lastArg = args[args.length - 1];
@@ -13834,6 +13846,7 @@
         else if (kind === 'critHit') D.critHit(...args);
         else if (kind === 'playerHurt') D.playerHurt(...args);
         else if (kind === 'dodgeMiss') D.dodgeMiss(...args);
+        else if (kind === 'commentary') D.systemCommentary(...args);
       } catch (e) {}
     },
     // buildBonus: the mechanical reward for your build archetype.
