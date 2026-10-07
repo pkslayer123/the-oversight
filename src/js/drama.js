@@ -46,6 +46,19 @@
 //   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
 //   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
 //   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
+//   - playerDeath: slow fade to black + soul wisp + "THE STORY CONTINUES" (Steve 2026-10-07, Drama C2)
+//   - newLife: bright emergence — "A NEW SCHOLAR AWAKENS" (Steve 2026-10-07, Drama C2)
+//   - abilityLevelUp: golden burst + LEVEL UP + ability name (Steve 2026-10-07, Drama C2)
+//   - synergyShimmer: pre-reveal shimmer — "something is happening" (Steve 2026-10-07, Drama C2)
+//   - villageBirth: soft pink glow + baby (Steve 2026-10-07, Drama C2)
+//   - villageDeath: gray wisp + bell toll (Steve 2026-10-07, Drama C2)
+//   - socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1)
+//   - mootGather: village gathers — fire pulse + banner (Steve 2026-10-07, Drama C1)
+//   - mootVote: vote tally bar with visual weight (Steve 2026-10-07, Drama C1)
+//   - exileMoment: dark vignette + EXILED banner (Steve 2026-10-07, Drama C1)
+//   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
+//   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
+//   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
 //   - All animations use transform/opacity only — GPU-composited, no layout/paint (code: drama.js).
@@ -1046,6 +1059,145 @@
       this.flash('rgba(192,57,43,0.25)', 500);
       this.shake(8 + (integration * 2));
     },
+    // playerDeath: the bearer falls. Slow fade to black, soul wisp rises.
+    // The Oversight's tone is NOT Dark Souls bleak — the mantle passes, the
+    // story continues. "THE STORY CONTINUES" lands as the black lifts.
+    // Steve 2026-10-07: transitions drama (Round C2).
+    playerDeath(x, y, name, cause, integration) {
+      integration = integration || 0;
+      // slow fade to black: in 1.5s, hold, out 1.5s — the game continues after
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:#000;',
+        'drama-deathfade',
+        4200
+      );
+      // soul wisp rises from where they fell
+      setTimeout(() => { this.soulWisp(x, y); }, 800);
+      // the Oversight's epitaph — not bleak, the story continues
+      setTimeout(() => {
+        this.spawn(
+          `<div style="text-align:center;">
+             <div style="font-size:15px;color:#8a8a9a;letter-spacing:3px;margin-bottom:8px;">${(name || 'THE SCHOLAR').toUpperCase()} IS GONE</div>
+             <div style="font-size:22px;font-weight:bold;color:#e8e8f0;letter-spacing:1px;">THE STORY CONTINUES</div>
+             ${integration >= 2 ? '<div style="font-size:13px;color:#4df3ff;margin-top:10px;font-style:italic;">"Oh no. OH NO. The audience is standing. Somebody get the next one ready — the show goes ON."</div>' : ''}
+           </div>`,
+          'position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);',
+          'drama-deathtext',
+          2600
+        );
+      }, 1400);
+    },
+
+    // newLife: the mantle passes — bright emergence. A new scholar awakens.
+    // Brighter and longer with integration: the System makes a show of it.
+    // Steve 2026-10-07: transitions drama (Round C2).
+    newLife(name, integration) {
+      integration = integration || 0;
+      // bright bloom: white-gold flash that settles
+      this.flash('rgba(255,250,230,0.55)', 900 + (integration * 300));
+      setTimeout(() => {
+        this.spawn(
+          `<div style="text-align:center;padding:22px 26px;background:rgba(12,14,10,0.94);border:2px solid #ffd54a;border-radius:12px;max-width:290px;">
+             <div style="font-size:44px;margin-bottom:6px;">🌅</div>
+             <div style="font-size:19px;font-weight:bold;color:#ffd54a;margin-bottom:4px;letter-spacing:2px;">A NEW SCHOLAR AWAKENS</div>
+             <div style="font-size:15px;color:#e8e8f0;">${name || 'Someone'}</div>
+             <div style="font-size:13px;color:#9a9aa8;margin-top:6px;font-style:italic;">The Codex turns a page. The mantle passes.</div>
+             ${integration >= 3 ? '<div style="font-size:13px;color:#4df3ff;margin-top:8px;">⬢ "New face! Same job! We hardly noticed. (We noticed.)"</div>' : ''}
+           </div>`,
+          'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(0.85);',
+          'drama-rebirth',
+          2800 + (integration * 300)
+        );
+      }, 500);
+    },
+
+    // abilityLevelUp: golden burst + LEVEL UP + ability name at the player.
+    // Steve 2026-10-07: transitions drama (Round C2).
+    abilityLevelUp(x, y, abilityName, level, integration) {
+      integration = integration || 0;
+      const c = this.tileCenter(x, y);
+      const size = 90 + (integration * 25);
+      this.spawn(
+        `<svg width="${size}" height="${size}" viewBox="0 0 80 80"><circle cx="40" cy="40" r="36" fill="none" stroke="#ffd54a" stroke-width="4" opacity="0.9"/><circle cx="40" cy="40" r="26" fill="none" stroke="#fff2b0" stroke-width="2" opacity="0.6"/></svg>`,
+        `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
+        'drama-levelup-ring',
+        900 + (integration * 150)
+      );
+      this.spawn(
+        `<div style="text-align:center;">
+           <div style="font-size:20px;font-weight:bold;color:#ffd54a;letter-spacing:3px;text-shadow:0 2px 6px rgba(0,0,0,0.9);">LEVEL UP</div>
+           <div style="font-size:15px;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,0.9);">${abilityName || ''} → L${level || ''}</div>
+         </div>`,
+        `position:absolute;left:${c.x}px;top:${c.y - 44}px;transform:translate(-50%,-100%);`,
+        'drama-levelup-text',
+        1600 + (integration * 200)
+      );
+      if (integration >= 3) {
+        this.flash('rgba(255,213,74,0.12)', 400);
+      }
+    },
+
+    // synergyShimmer: the pre-reveal — "something is happening." Fires on the
+    // 2nd tease, before the hero card at unlock. Iridescent, brief, unmissable.
+    // Steve 2026-10-07: transitions drama (Round C2).
+    synergyShimmer(integration) {
+      integration = integration || 0;
+      const alpha = 0.10 + (integration * 0.05);
+      this.spawn(
+        '',
+        `position:absolute;inset:0;background:linear-gradient(115deg, transparent 20%, rgba(199,146,234,${alpha}) 40%, rgba(77,243,255,${alpha}) 60%, transparent 80%);`,
+        'drama-synshimmer',
+        1200 + (integration * 200)
+      );
+      this.floatText('50%', '30%', 'something is happening…', { color: '#c792ea', size: 15 + integration });
+    },
+
+    // villageBirth: rare and soft — pink glow, a baby emoji, the System coos at L2+.
+    // Steve 2026-10-07: transitions drama (Round C2). Births are gated to 270+ days.
+    villageBirth(babyName, parentName, integration) {
+      integration = integration || 0;
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,182,213,0.22) 0%, transparent 60%);',
+        'drama-birthglow',
+        2200 + (integration * 300)
+      );
+      this.spawn(
+        `<div style="text-align:center;">
+           <div style="font-size:42px;">👶</div>
+           <div style="font-size:16px;font-weight:bold;color:#ffc4dd;text-shadow:0 2px 6px rgba(0,0,0,0.9);">${babyName || 'A child'}</div>
+           <div style="font-size:13px;color:#d8d8e2;">born to ${parentName || 'the village'}</div>
+           ${integration >= 2 ? '<div style="font-size:13px;color:#4df3ff;margin-top:8px;font-style:italic;">⬢ "A NEW VIEWER! ...a new person! We mean person! Welcome, tiny human!"</div>' : ''}
+         </div>`,
+        'position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(0.9);',
+        'drama-birthcard',
+        2600 + (integration * 300)
+      );
+    },
+
+    // villageDeath: gray wisp rises, a bell tolls (visual pulse). Muted, respectful.
+    // Steve 2026-10-07: transitions drama (Round C2).
+    villageDeath(name, cause, integration) {
+      integration = integration || 0;
+      // gray wisp — the village dead are off-screen, this is memorial
+      this.spawn(
+        `<svg width="36" height="48" viewBox="0 0 30 40"><ellipse cx="15" cy="20" rx="10" ry="15" fill="rgba(160,160,175,0.6)"/></svg>`,
+        'position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);',
+        'drama-villagerwisp',
+        1800 + (integration * 200)
+      );
+      this.spawn(
+        `<div style="text-align:center;">
+           <div style="font-size:34px;">🔔</div>
+           <div style="font-size:15px;color:#b8b8c4;">${name || 'Someone'} — ${cause || 'gone'}</div>
+           <div style="font-size:13px;color:#8a8a96;font-style:italic;">the village mourns</div>
+         </div>`,
+        'position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);',
+        'drama-belltoll',
+        2400 + (integration * 200)
+      );
+    },
   };
 
   S.Drama = Drama;
@@ -1169,6 +1321,29 @@
     .drama-shockwave.drama-shockwave { opacity: 0.9; transform: scale(1.35); }
     .drama-commentary { opacity: 0; transition: all 1.4s ease-out; }
     .drama-commentary.drama-commentary { opacity: 1; transform: translate(-50%, -130%); }
+    .drama-deathfade { opacity: 0; animation: drama-deathfade-anim 4.2s ease-in-out forwards; }
+    @keyframes drama-deathfade-anim { 0% { opacity: 0; } 35% { opacity: 0.92; } 70% { opacity: 0.92; } 100% { opacity: 0; } }
+    .drama-deathtext { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-deathtext.drama-deathtext { opacity: 1; }
+    .drama-rebirth { opacity: 0; transform: translate(-50%, -50%) scale(0.85); transition: all 0.7s cubic-bezier(0.2, 1.2, 0.4, 1); }
+    .drama-rebirth.drama-rebirth { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .drama-levelup-ring { opacity: 0; transform: scale(0.4); transition: all 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .drama-levelup-ring.drama-levelup-ring { opacity: 1; transform: scale(1.25); }
+    .drama-levelup-text { opacity: 0; transition: all 1.2s ease-out; }
+    .drama-levelup-text.drama-levelup-text { opacity: 1; transform: translate(-50%, -130%); }
+    .drama-synshimmer { opacity: 0; transition: opacity 0.4s ease-out; }
+    .drama-synshimmer.drama-synshimmer { opacity: 1; animation: drama-shimmer-sweep 1.2s ease-in-out infinite; }
+    @keyframes drama-shimmer-sweep { 0%, 100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(40deg); } }
+    .drama-birthglow { opacity: 0; transition: opacity 1s ease-out; }
+    .drama-birthglow.drama-birthglow { opacity: 1; animation: drama-birth-pulse 2s ease-in-out infinite; }
+    @keyframes drama-birth-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
+    .drama-birthcard { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
+    .drama-birthcard.drama-birthcard { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .drama-villagerwisp { opacity: 0; transition: all 1.8s ease-out; }
+    .drama-villagerwisp.drama-villagerwisp { opacity: 1; transform: translate(-50%, -120%); }
+    .drama-belltoll { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: all 0.8s ease-out; }
+    .drama-belltoll.drama-belltoll { opacity: 1; transform: translate(-50%, -50%) scale(1); animation: drama-bell-sway 1.6s ease-in-out infinite; }
+    @keyframes drama-bell-sway { 0%, 100% { margin-left: 0; } 25% { margin-left: -4px; } 75% { margin-left: 4px; } }
     .drama-shake { animation: drama-shake-anim 0.4s ease-out; }
     @keyframes drama-shake-anim {
       0%, 100% { transform: translate(0, 0); }

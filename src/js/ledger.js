@@ -645,6 +645,9 @@
       try { this.removeVillager(oldId, 'killed'); } catch (e) {}
       this.lineage().push({ name: oldName, epithet: this.leadershipEpithet(), day: s.day || 0, cause: cause || 'the wild' });
       this.say(`🕯️ ${oldName} is dead — ${cause || 'the wild'}. The village stops. Somebody screams. Somebody else starts digging.`);
+      // DRAMA (Steve 2026-10-07, Round C2): the death is a moment — fade to black,
+      // soul rises. The Oversight's tone: the story continues. (Gated by systemArrived inside Game.drama.)
+      try { this.drama('playerDeath', s.mx, s.my, oldName, cause || 'the wild'); } catch (e) {}
       // successor: the village chooses. Trust decides.
       let candidates = [];
       try { candidates = this.npcIds(); } catch (e) {}
@@ -704,6 +707,8 @@
       // System abilities pass with the mantle — the System recognizes the
       // office, not the face. It's alien like that.
       this.say('🌟 "MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)"');
+      // DRAMA (Steve 2026-10-07, Round C2): bright emergence — a new scholar awakens.
+      try { this.drama('newLife', newName); } catch (e) {}
       this.say(`📖 The Codex turns a page: ${oldName}, ${s.day || 0} days. The mantle passes to ${newName}.`);
       try { this.recordMoment(`${oldName} died. ${newFirst} picked up the Codex.`); } catch (e) {}
       // the trust of the office transfers, discounted — the person must earn the rest

@@ -5552,6 +5552,8 @@
             if (village.news.length < 20) {
               village.news.push(`💀 ${victim.name} died of hunger on day ${village.day}.`);
             }
+            // DRAMA (Steve 2026-10-07, Round C2): the village mourns — gray wisp, bell toll.
+            try { this.drama('villageDeath', victim.name.split(' ')[0], 'hunger'); } catch (e) {}
           }
         }
       }
@@ -5580,6 +5582,8 @@
             const parentName = parent.name.split(' ')[0];
             village.news.push(`👶 ${nm.name.split(' ')[0]} was born to ${parentName} on day ${village.day}.`);
           }
+          // DRAMA (Steve 2026-10-07, Round C2): rare and soft — pink glow for the new arrival.
+          try { this.drama('villageBirth', nm.name.split(' ')[0], parent.name.split(' ')[0]); } catch (e) {}
         }
       }
       // AGING: everyone gets older
@@ -5598,6 +5602,8 @@
             if (village.news.length < 20) {
               village.news.push(`🕯️ ${p.name} died of old age on day ${village.day}, at ${Math.floor(p.age)}.`);
             }
+            // DRAMA (Steve 2026-10-07, Round C2): the village mourns — gray wisp, bell toll.
+            try { this.drama('villageDeath', p.name.split(' ')[0], 'old age'); } catch (e) {}
           }
         }
       }
@@ -13728,6 +13734,8 @@
         ab.xp = 0;
         const bonus = this.abilityLevelBonus(ab.id, ab.level);
         this.say(`⬆️ ${ab.name} deepened to L${ab.level}! ${bonus}`);
+        // DRAMA (Steve 2026-10-07, Round C2): golden burst — the ability deepens visibly.
+        try { this.drama('levelUp', s.mx, s.my, ab.name, ab.level); } catch (e) {}
         // The System finds your growing comprehension entertaining. The gamblers agree.
         const insights = [
           `"Oh! OH! You're starting to GET it! The audience loves the little ah-ha moments! The odds just shifted!"`,
@@ -13824,6 +13832,12 @@
              kind === 'critHit' || kind === 'playerHurt' || kind === 'dodgeMiss')) {
           args.push(integ);
         }
+        // TRANSITIONS (Steve 2026-10-07, Drama C2): life/death moments — integration
+        // is the last parameter of every C2 method. Append unconditionally.
+        if ((kind === 'playerDeath' || kind === 'newLife' || kind === 'levelUp' ||
+             kind === 'synergyShimmer' || kind === 'villageBirth' || kind === 'villageDeath')) {
+          args.push(integ);
+        }
         if (kind === 'hit') D.hit(...args);
         else if (kind === 'text') D.floatText(...args);
         else if (kind === 'flash') D.flash(...args);
@@ -13846,6 +13860,12 @@
         else if (kind === 'critHit') D.critHit(...args);
         else if (kind === 'playerHurt') D.playerHurt(...args);
         else if (kind === 'dodgeMiss') D.dodgeMiss(...args);
+        else if (kind === 'playerDeath') D.playerDeath(...args);
+        else if (kind === 'newLife') D.newLife(...args);
+        else if (kind === 'levelUp') D.abilityLevelUp(...args);
+        else if (kind === 'synergyShimmer') D.synergyShimmer(...args);
+        else if (kind === 'villageBirth') D.villageBirth(...args);
+        else if (kind === 'villageDeath') D.villageDeath(...args);
         // SOCIAL SPECTACLE (Steve 2026-10-07, Drama C1): spec object carries
         // type + integration — inject integration like other object forms.
         else if (kind === 'social') {
@@ -15158,6 +15178,9 @@
       sch.synergyAttempts[seenKey] = 1;
       this.say(tease);
       if (n === 2 && dm.hint) {
+        // DRAMA (Steve 2026-10-07, Round C2): the pre-reveal — something is happening.
+        // The hero card comes at unlock; this is the shimmer before.
+        try { this.drama('synergyShimmer'); } catch (e) {}
         this.say(`Something wants to happen when you do... whatever you just did. (${n}/3)`);
       }
     },
