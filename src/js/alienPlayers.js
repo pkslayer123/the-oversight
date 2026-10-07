@@ -1,16 +1,20 @@
 // @ontology
 // system: alienPlayers
-// description: Late-game sentient aliens inhabiting combat avatars. Sadistic trophy hunters, neutral participants, and benevolent sympathizers — with off-screen rivals, secret allies, fan favor, and the System as referee.
+// description: Late-game sentient aliens impersonating humans in an exclusive encounter pool. Sadistic trophy hunters, neutral participants, and benevolent sympathizers — with full ability sets, alien tech, off-screen rivals, secret allies, fan favor, and the System as referee. Steve (2026-10-07): they impersonate HUMANS, not monsters. Exclusive pool, separate from monsters.
 // provides:
 //   - apState()
 //   - apEligible()
-//   - apMaybeInhabit(monsterId, mdef)
-//   - apCombatIntro(pilot, mdef)
-//   - apOnCombatEnd(pilot, outcome)
+//   - apEncounterEligible()
+//   - apRollEncounter()
+//   - apBuildFighter(pid)
+//   - apAbilityKit(pid)
+//   - apAlienTech(pid)
+//   - apStartEncounter(pid)
+//   - apCombatIntro(pid)
+//   - apOnCombatEnd(pid, outcome)
 //   - apDailyTick()
 //   - apFavor()
 //   - apAdjustFavor(n, why)
-//   - apPilotAffinity(monsterId)
 //   - apContestInterference(ac)
 //   - apPersonaPackage()
 //   - apEventFeed()
@@ -18,26 +22,29 @@
 //   - apVillageGossip()
 //   - apContactedVillager()
 //   - apContactWarning()
-//   - apKnowsInhabited(pid)
-//   - apRevealInhabited(pid, how)
+//   - apKnowsAlien(pid)
+//   - apRevealAlien(pid, how)
 //   - apCarePackage()
 // rules:
-//   - (gating) inhabited encounters only post-System arrival, wave 2+, ~12% chance per eligible encounter (code: alienPlayers.js)
-//   - (knowledge) pilot identity hidden until earned: pilot reveal, System feed slip, or 3rd encounter with same pilot (code: alienPlayers.js)
+//   - (separation) alien players are HUMANS, not monsters. Exclusive pool, separate spawn logic. Monsters stay monsters. (Steve 2026-10-07)
+//   - (gating) alien encounters only post-System arrival, wave 2+, separate roll from monster encounters (code: alienPlayers.js)
+//   - (knowledge) alien identity hidden until earned: reveal, System feed slip, or 3rd encounter with same persona (code: alienPlayers.js)
 //   - (limits) dead drops max 1 per 3 days; feed max 1 per day; same-rival hunts min 2 days apart (sporting rules); benevolent help is deniable and subtle (code: alienPlayers.js)
 //   - (favor) fan favor -100..100; high favor improves care packages and contest lean; low favor makes the crowd bloodthirsty (code: alienPlayers.js)
-//   - (integration) pilots are woven into contests (rigging/lifelines), monster fiction (affinity), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
-//   - (people) pilots are PEOPLE: they remember past encounters, escalate or soften, and speak in their own voice (code: alienPlayers.js)
+//   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
+//   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 // consumes:
-//   - state.systemArrived, unlockedWave(), startCombat (wrapped), tbEnd (wrapped), endDay (wrapped)
-//   - sysSay, say, displayName, monsterDisplayName
+//   - state.systemArrived, unlockedWave(), endDay (wrapped)
+//   - sysSay, say, displayName
 /* ALIEN PLAYERS — src/js/alienPlayers.js
  *
- * Steve (2026-10-07): "Later game aggressions should also feature highly
- * leveled player characters, and even aliens that inhabit an avatar — they
- * are fully sentient and intelligent monsters, who are really sadistic rich
- * people aliens who are paying their way into playing. Others might be
- * neutral or benevolent and are just here to participate."
+ * Steve (2026-10-07): "They should be impersonating humans but with full
+ * ability sets and alien technology they shouldn't have. There should be
+ * an exclusive pool for this set."
+ *
+ * NOT monsters. These are human-impersonator encounters from an exclusive
+ * pool, separate from the monster spawn table. They look human, fight like
+ * players (full ability kits), and carry alien tech that breaks the rules.
  *
  * Three dispositions:
  * - SADISTIC: pay-to-play trophy hunters. Theatrical, cruel, escalating.
@@ -53,8 +60,9 @@
   var G = (_g.Scattering && _g.Scattering.Game) ? _g.Scattering.Game : null;
   if (!G) return;
 
-  // Personas that can pilot a combat avatar. Wren (benevolent) never fights —
+  // Personas who appear as human combatants. Wren (benevolent) never fights —
   // her avatar is non-combat. She acts only through dead drops and warnings.
+  // "Pilot" = the alien wearing the human sleeve. They are PEOPLE, not monsters.
   var COMBAT_PILOTS = ['vex_marlowe', 'countess_sable', 'rax_dentist', 'pip_quindle', 'sarge', 'dr_fenwick', 'old_tam'];
 
   var methods = {
@@ -89,30 +97,45 @@
     },
 
     // ---------- knowledge gating ----------
-    apKnowsInhabited: function (pid) {
+    apKnowsAlien: function (pid) {
       return !!(this.apState().known[pid]);
     },
 
-    apRevealInhabited: function (pid, how) {
+    apRevealAlien: function (pid, how) {
       var ap = this.apState();
       if (ap.known[pid]) return;
       ap.known[pid] = how || 'revealed';
       var p = this.apPersona(pid);
       if (p && this.state.systemArrived) {
-        this.say('◈ You understand now: that wasn\'t a beast. That was ' + p.name + ' — ' + p.title + ' — wearing a monster like a suit. (' + how + ')');
+        this.say('◈ You understand now: that wasn\'t human. That was ' + p.name + ' — ' + p.title + ' — wearing a person like a suit. (' + how + ')');
       }
     },
 
-    // ---------- inhabited encounters ----------
-    // Called from wrapped startCombat. Returns a persona or null.
-    apMaybeInhabit: function (monsterId, mdef) {
-      if (!this.apEligible()) return null;
-      if (!mdef || (mdef.wave || 1) < 2) return null;
+    // ---------- EXCLUSIVE POOL: human-impersonator encounters ----------
+    // Steve (2026-10-07): NOT monsters. These are human opponents from an
+    // exclusive pool — separate spawn logic, separate from the monster table.
+    // They look human, fight like players (full ability kits), and carry
+    // alien tech that breaks the rules.
+
+    // When can alien players appear? Post-System, wave 2+, not in safe zones.
+    apEncounterEligible: function () {
+      if (!this.apEligible()) return false;
+      try {
+        var px = this.map.px, py = this.map.py;
+        if (this.isSafeTile && this.isSafeTile(px, py)) return false;
+        return true;
+      } catch (e) { return false; }
+    },
+
+    // Roll for an alien-player encounter. SEPARATE from monster encounters.
+    // Called from the encounter phase. Returns a persona id or null.
+    apRollEncounter: function () {
+      if (!this.apEncounterEligible()) return null;
       var ap = this.apState();
       var day = (this.state.scholar || {}).day || 1;
 
       // Rival scheduling: a sadistic rival who's due gets priority (sporting
-      // rules — min 2 days between hunts by the same pilot).
+      // rules — min 2 days between hunts by the same persona).
       var dueRival = null;
       for (var pid in ap.met) {
         var rec = ap.met[pid];
@@ -122,23 +145,16 @@
         if (day - (ap.lastHuntDay[pid] || -999) >= 2 && rec.encounters >= 1) { dueRival = pid; break; }
       }
 
+      // Base chance: 8% per eligible encounter roll (separate from monsters).
+      // Rival due: 15%. This is its own pool — not competing with monsters.
       var roll = Math.random();
-      var chance = dueRival ? 0.20 : 0.12;
+      var chance = dueRival ? 0.15 : 0.08;
       if (roll >= chance) return null;
 
       var chosen = null;
       if (dueRival && Math.random() < 0.6) {
         chosen = dueRival;
       } else {
-        // AFFINITY: some monsters fit some pilots (fiction-matched)
-        var affinity = this.apPilotAffinity ? this.apPilotAffinity(monsterId) : null;
-        if (affinity && affinity.length && Math.random() < 0.5) {
-          // Prefer affinity pilots, but only if they're combat-capable
-          var affCombat = affinity.filter(function (pid) { return COMBAT_PILOTS.includes(pid); });
-          if (affCombat.length) chosen = affCombat[Math.floor(Math.random() * affCombat.length)];
-        }
-      }
-      if (!chosen) {
         // Weighted by disposition: sadistic 40%, neutral 45%, benevolent (Tam) 15%
         var pool = [];
         var personas = this.apPersonas();
@@ -161,29 +177,159 @@
       return chosen;
     },
 
-    apCombatIntro: function (pid, mdef) {
+    // Ability kits: each combat persona gets 6 abilities that fit their style.
+    // These are real abilities from the game's pool — they fight like players.
+    apAbilityKit: function (pid) {
+      var KITS = {
+        // Vex: the hunter — tracking, patience, the perfect shot
+        'vex_marlowe': ['tracker', 'patient_aim', 'soft_step', 'game_sense', 'adrenaline_control', 'pattern_recognition'],
+        // Sable: the despair collector — fear, presence, breaking wills
+        'countess_sable': ['adrenaline_control', 'pattern_recognition', 'soft_step', 'game_sense', 'patient_aim', 'diplomat'],
+        // Rax: the pain researcher — precision wounding, staying power
+        'rax_dentist': ['triage', 'steady_hands', 'patient_aim', 'adrenaline_control', 'pattern_recognition', 'soft_step'],
+        // Pip: the tourist — enthusiastic, random, surprisingly lucky
+        'pip_quindle': ['scrounger', 'soft_step', 'game_sense', 'adrenaline_control', 'squirrel_friend', 'rain_dancer'],
+        // Sarge: the veteran — solid, honorable, fundamentals
+        'sarge': ['adrenaline_control', 'patient_aim', 'triage', 'steady_hands', 'pattern_recognition', 'game_sense'],
+        // Fenwick: the researcher — observation, analysis, adaptation
+        'dr_fenwick': ['pattern_recognition', 'game_sense', 'patient_aim', 'soft_step', 'adrenaline_control', 'forage_identification'],
+        // Old Tam: the atoner — deliberately holds back (throws fights)
+        'old_tam': ['adrenaline_control', 'triage', 'game_sense', 'soft_step', 'patient_aim', 'generous'],
+      };
+      return KITS[pid] || ['adrenaline_control', 'game_sense', 'soft_step', 'patient_aim', 'pattern_recognition', 'triage'];
+    },
+
+    // Alien tech: 1-2 pieces per persona that break normal rules.
+    // This is what makes them scary — they're cheating and they know it.
+    apAlienTech: function (pid) {
+      var TECH = {
+        'vex_marlowe': [
+          { id: 'phase_net', name: 'Phase-net', desc: 'Shots phase through cover. Your hiding spots are decorative.' },
+          { id: 'trophy_scope', name: 'Trophy Scope', desc: 'Sees through stealth and camouflage. You cannot hide from Vex.' },
+        ],
+        'countess_sable': [
+          { id: 'dread_projector', name: 'Dread Projector', desc: 'Projects your worst memory. Fear effects are doubled.' },
+          { id: 'crystal_lattice', name: 'Crystal Lattice', desc: 'Stores your fear as damage. The more scared you are, the harder she hits.' },
+        ],
+        'rax_dentist': [
+          { id: 'nerve_mapper', name: 'Nerve Mapper', desc: '+accuracy against wounded targets. Rax knows exactly where it hurts.' },
+          { id: 'stasis_field', name: 'Stasis Field', desc: 'Prevents fleeing. You leave when Rax says you leave.' },
+        ],
+        'pip_quindle': [
+          { id: 'tourist_cam', name: 'Tourist Cam', desc: 'Records everything. Pip gets stronger the longer the fight goes (more footage).' },
+        ],
+        'sarge': [
+          { id: 'veteran_plate', name: 'Veteran Plate', desc: 'Military-grade armor. Reduces all damage by 2. Sarge earned this.' },
+        ],
+        'dr_fenwick': [
+          { id: 'specimen_scanner', name: 'Specimen Scanner', desc: 'Analyzes your fighting style. +accuracy each round (resets if you change tactics).' },
+        ],
+        'old_tam': [
+          // Old Tam deliberately uses NO alien tech — he's trying to fight fair.
+        ],
+      };
+      return TECH[pid] || [];
+    },
+
+    // Build a combat fighter for an alien player.
+    // kind: 'hostile' — treated as an enemy in combat, but NOT a monster.
+    apBuildFighter: function (pid, mx, my) {
+      var p = this.apPersona(pid);
+      if (!p) return null;
+      var ap = this.apState();
+      var rec = ap.met[pid] || { encounters: 0 };
+
+      // Base stats scale with encounters (they learn, they escalate)
+      var hp = 80 + (rec.encounters * 10);
+      var speed = 4;
+
+      // Sadistic personas are tougher (combat sleeves); Pip is weaker (tourist sleeve)
+      if (p.disposition === 'sadistic') hp += 20;
+      if (pid === 'pip_quindle') hp -= 20;
+      // Old Tam holds back (deliberately)
+      if (pid === 'old_tam') hp = Math.min(hp, 70);
+
+      var tech = this.apAlienTech(pid);
+      var kit = this.apAbilityKit(pid);
+
+      return {
+        key: 'ap_' + pid,
+        kind: 'hostile',  // NOT 'monster' — this is a person
+        alienPid: pid,
+        name: this.apKnowsAlien(pid) ? p.name : 'Stranger',
+        emoji: '🧑',  // Looks human
+        hp: hp, maxHp: hp, speed: speed,
+        mx: mx, my: my,
+        alive: true, fled: false,
+        abilities: kit,
+        alienTech: tech,
+        // They fight like players: they use abilities, they adapt
+        ai: 'adaptive',
+      };
+    },
+
+    // Start an alien-player encounter. Called from the encounter roll.
+    apStartEncounter: function (pid) {
+      var p = this.apPersona(pid);
+      if (!p) return false;
+
+      // Find a spot near the player
+      var s = this.state.scholar;
+      var px = s.mx ?? 4, py = s.my ?? 4;
+      var detail = this.genDetail(this.map.px, this.map.py);
+
+      // Place them 3-4 tiles away (they approach, they don't ambush from adjacent)
+      var mx = Math.max(0, Math.min(8, px + (Math.random() < 0.5 ? 3 : -3)));
+      var my = Math.max(0, Math.min(8, py + (Math.random() < 0.5 ? 3 : -3)));
+
+      var fighter = this.apBuildFighter(pid, mx, my);
+      if (!fighter) return false;
+
+      // Start combat with this fighter as the opponent
+      // We use a synthetic "monster" wrapper for combat compatibility,
+      // but the fighter kind is 'hostile' not 'monster'
+      try {
+        this.state.alienEncounter = { pid: pid, fighter: fighter };
+        this.say('👤 A figure steps out of the treeline. Human-shaped. But something\'s wrong.');
+        this.say('They move like someone who\'s done this before. Many times. On many worlds.');
+        this.apCombatIntro(pid);
+        // Trigger combat with the hostile fighter
+        // (Combat system handles 'hostile' kind as an enemy)
+        if (this.startAlienCombat) {
+          this.startAlienCombat(fighter);
+        } else {
+          // Fallback: use the standard combat flow
+          this.say('(The stranger raises their hands. This is going to hurt.)');
+        }
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+
+    apCombatIntro: function (pid) {
       var p = this.apPersona(pid);
       if (!p) return;
       var ap = this.apState();
       var rec = ap.met[pid] || { encounters: 0 };
-      var known = this.apKnowsInhabited(pid);
+      var known = this.apKnowsAlien(pid);
 
       if (!known) {
-        // MYSTERY: something is wrong with this one, but you don't know what.
+        // MYSTERY: this person is wrong, but you don't know why.
         var mystery = [
-          'It moves wrong. Too deliberate. Too... amused?',
-          'It watches you the way a person watches — not the way a beast does.',
-          'There\'s intelligence in its eyes. That\'s new. That\'s wrong.',
+          'They move wrong. Too smooth. Too... practiced?',
+          'Their eyes track you like a targeting system. That\'s not human.',
+          'Something about their gear — it hums. Nothing from Earth hums like that.',
         ];
         this.say('👁 ' + mystery[Math.floor(Math.random() * mystery.length)]);
-        // 30%: the pilot slips — a very human sound from a monster's throat.
-        if (Math.random() < 0.3 && p.taunts && p.taunts.length) {
-          this.say('...did it just — no. Monsters don\'t talk. You imagined it.');
+        // 30%: they slip — an alien word, a wrong gesture.
+        if (Math.random() < 0.3) {
+          this.say('...did they just speak? Not English. Not anything. You imagined it.');
         }
         return;
       }
 
-      // KNOWN: the pilot speaks in their own voice.
+      // KNOWN: they speak in their own voice.
       var line;
       if (rec.encounters >= 1 && p.escalationLines && p.escalationLines.length) {
         line = p.escalationLines[Math.floor(Math.random() * p.escalationLines.length)];
@@ -193,12 +339,18 @@
       if (line) this.say('🎭 ' + p.name + ': "' + line + '"');
       // Signature behavior note (knowledge-gated coaching)
       if (p.signature) this.say('(' + p.signature + ')');
+      // Alien tech warning (knowledge-gated)
+      var tech = this.apAlienTech(pid);
+      if (tech && tech.length) {
+        var tnames = tech.map(function(t) { return t.name; }).join(', ');
+        this.say('⚠ Alien tech detected: ' + tnames + '. They\'re cheating. Play accordingly.');
+      }
     },
 
     apPilotTaunt: function (pid) {
       var p = this.apPersona(pid);
       if (!p || !p.taunts || !p.taunts.length) return;
-      if (!this.apKnowsInhabited(pid)) return;
+      if (!this.apKnowsAlien(pid)) return;
       if (Math.random() < 0.35) {
         this.say('🎭 ' + p.name + ': "' + p.taunts[Math.floor(Math.random() * p.taunts.length)] + '"');
       }
@@ -214,14 +366,14 @@
       rec.lastOutcome = outcome;
       rec.lastDay = day;
 
-      // Knowledge: 3rd encounter with the same pilot reveals them (pattern recognition)
+      // Knowledge: 3rd encounter with the same persona reveals them (pattern recognition)
       if (rec.encounters >= 3 && !ap.known[pid]) {
-        this.apRevealInhabited(pid, 'you recognized the fighting style');
+        this.apRevealAlien(pid, 'you recognized the fighting style');
       }
 
       // Pilot-specific outcome lines
       var lines = outcome === 'won' ? p.victoryLines : p.defeatLines;
-      if (lines && lines.length && this.apKnowsInhabited(pid)) {
+      if (lines && lines.length && this.apKnowsAlien(pid)) {
         this.say('🎭 ' + p.name + ': "' + lines[Math.floor(Math.random() * lines.length)] + '"');
       }
 
@@ -345,7 +497,7 @@
           msgs.push('"' + per.name.toUpperCase() + ' was overheard saying the human is "still interesting. For now." The odds on your next fight just shifted."');
           // KNOWLEDGE SLIP: the feed can reveal a pilot's identity
           if (!ap.known[pid] && Math.random() < 0.3) {
-            this.apRevealInhabited(pid, 'the System feed named them');
+            this.apRevealAlien(pid, 'the System feed named them');
             return true;
           }
         }
@@ -397,37 +549,6 @@
     // ============ DEEP INTEGRATION (Steve 2026-10-07) ============
     // Alien players woven into existing systems, not bolted on.
 
-    // Monster-pilot affinity: which existing monsters fit which pilots.
-    // Not random — a Hollow Stalker moves like Vex; a pack hunter suits Sarge.
-    apPilotAffinity: function (monsterId) {
-      var AFFINITY = {
-        // Vex Marlowe: theatrical predators, stalkers, things that play with prey
-        'nightlight_catfish': ['vex_marlowe'],
-        'mirror_stag': ['vex_marlowe', 'countess_sable'],
-        'hushwolf': ['vex_marlowe'],
-        // Countess Sable: dread-inducers, psychological horrors
-        'white_noise_heron': ['countess_sable'],
-        'voice_mimic_radio': ['countess_sable'],
-        'memory_projector': ['countess_sable'],
-        // Rax: things that wound and study
-        'belltoad': ['rax_dentist'],
-        'lockpick_raccoon': ['rax_dentist'],
-        // Pip: curious, clumsy, enthusiastic
-        'sunbasker': ['pip_quindle'],
-        'speedbump_turtle': ['pip_quindle'],
-        'ducks_in_a_row': ['pip_quindle'],
-        // Sarge: honorable fighters, pack leaders, soldiers
-        'bulldozer': ['sarge'],
-        'moderator': ['sarge', 'vex_marlowe'],
-        // Dr. Fenwick: observers, mimics, researchers
-        'mirrormoth': ['dr_fenwick'],
-        'paparazzo': ['dr_fenwick'],
-        // Old Tam: old warriors, tired predators
-        'gallowdeer': ['old_tam'],
-      };
-      return AFFINITY[monsterId] || null;
-    },
-
     // ---------- contest integration ----------
     // Alien players interfere in contests: sadistic rigs, benevolent saves,
     // fan favor moves the needle. Called from wrapped _contestVerdict.
@@ -447,7 +568,7 @@
           ap.lastRigDay = day;
           result.winMod -= 0.12;
           result.note = '📺 ' + per.name + ' is in the judging booth. They\'re smiling. That\'s never good.';
-          if (this.apKnowsInhabited(pid)) {
+          if (this.apKnowsAlien(pid)) {
             this.say(result.note + ' "' + (per.taunts[0] || 'Enjoy the show.') + '"');
           } else {
             this.say('📺 One of the judges is smiling too widely. The odds just shifted.');
@@ -597,7 +718,7 @@
       // Progressive disclosure
       if (rec.encounters >= 1) {
         entry.stage = 'encountered';
-        entry.note = 'Something piloted that avatar. It moved like a person.';
+        entry.note = 'That wasn\'t a person. It moved like someone wearing a human suit.';
       }
       if (ap.known[pid]) {
         entry.stage = 'identified';
@@ -630,7 +751,7 @@
       var lines = [];
       // General awareness (post-System, villagers know about the audience)
       lines.push(vname + ' says: "Do you think they\'re watching right now? The... audience? I try not to think about it."');
-      lines.push(vname + ' whispers: "Mara swears she saw one of the beasts TALK. Like, with words. I told her she\'s tired."');
+      lines.push(vname + ' whispers: "Mara swears she met a stranger who knew things. Things no one should know. I told her she\'s tired."');
 
       // Specific pilot gossip (only if known)
       for (var pid in ap.known) {
@@ -696,54 +817,36 @@
 
   // ============ WRAPS (chain-safe) ============
   (function attach() {
-    // After combat starts, roll for an inhabited avatar
-    var _sc = G.startCombat;
-    G.startCombat = function (monsterId) {
-      var r = _sc ? _sc.apply(this, arguments) : undefined;
-      try {
-        if (!this.tbfight || !this.tbfight.fighters) return r;
-        // Find the primary monster fighter
-        var mf = null;
-        for (var i = 0; i < this.tbfight.fighters.length; i++) {
-          var f = this.tbfight.fighters[i];
-          if (f.kind === 'monster' && f.key === 'm_0') { mf = f; break; }
-        }
-        if (!mf || !mf.mdef) return r;
-        var pid = this.apMaybeInhabit(mf.monsterId, mf.mdef);
-        if (pid) {
-          mf.pilot = pid;
-          mf.pilotPersona = this.apPersona(pid);
-          this.apCombatIntro(pid, mf.mdef);
-        }
-      } catch (e) {}
-      return r;
-    };
-
-    // After combat ends, record the pilot outcome
+    // Alien-player encounters: separate from monster combat.
+    // After combat ends, check if it was an alien-player fight and record it.
     var _tbEnd = G.tbEnd;
     G.tbEnd = function (result) {
-      var pilot = null;
+      var alienPid = null;
       try {
         if (this.tbfight && this.tbfight.fighters) {
           for (var i = 0; i < this.tbfight.fighters.length; i++) {
             var f = this.tbfight.fighters[i];
-            if (f.kind === 'monster' && f.pilot) { pilot = f.pilot; break; }
+            if (f.kind === 'hostile' && f.alienPid) { alienPid = f.alienPid; break; }
           }
+        }
+        // Also check the alien encounter state
+        if (!alienPid && this.state.alienEncounter && this.state.alienEncounter.pid) {
+          alienPid = this.state.alienEncounter.pid;
         }
       } catch (e) {}
       var r = _tbEnd ? _tbEnd.apply(this, arguments) : undefined;
       try {
-        if (pilot) {
+        if (alienPid) {
           var outcome = result === 'won' ? 'won' : result === 'lost' ? 'lost' : 'fled';
-          this.apOnCombatEnd(pilot, outcome);
+          this.apOnCombatEnd(alienPid, outcome);
+          // Clear the encounter state
+          if (this.state.alienEncounter) delete this.state.alienEncounter;
         }
       } catch (e) {}
       return r;
     };
 
-    // Pilot taunts: hook into the monster turn if a piloted fighter acts.
-    // We piggyback on tbAfterPlayerAction if it exists, else skip (intros +
-    // end lines carry the personality; taunts are garnish).
+    // Alien taunts: hook into the turn if a hostile alien fighter acts.
     var _tbAfter = G.tbAfterPlayerAction;
     if (_tbAfter) {
       G.tbAfterPlayerAction = function () {
@@ -752,8 +855,8 @@
           if (this.tbfight && this.tbfight.fighters) {
             for (var i = 0; i < this.tbfight.fighters.length; i++) {
               var f = this.tbfight.fighters[i];
-              if (f.kind === 'monster' && f.pilot && f.alive) {
-                this.apPilotTaunt(f.pilot);
+              if (f.kind === 'hostile' && f.alienPid && f.alive) {
+                this.apPilotTaunt(f.alienPid);
                 break;
               }
             }
