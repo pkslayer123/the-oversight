@@ -734,11 +734,22 @@
     if (a.stamina == null) a.stamina = cfg.stamina;
     if (!a.pstate) a.pstate = 'graze';
     if (a.edgeTurns == null) a.edgeTurns = 0;
+    // ANIMAL HUNGER (Steve 2026-10-07): hunger 0-100, rises ~1/turn. Hungry
+    // animals graze for REAL — depleting the shared tile via detailRegrow,
+    // the same system player/NPC foraging uses. A deer eating the greens
+    // means fewer greens for you. Hunger also competes with fear: starving
+    // animals hold their ground longer (boldness scales the bolt threshold).
+    if (a.hunger == null) a.hunger = 30 + Math.floor(Math.random() * 30);
+    a.hunger = Math.min(100, a.hunger + 1);
+    // BOLDNESS: hunger bids against fear. Starving animals tolerate more of
+    // you before bolting — the bolt threshold rises up to +0.2 at hunger 100.
+    var boldBonus = (a.hunger || 0) > 70 ? Math.min(0.2, ((a.hunger || 0) - 70) / 150) : 0;
     a.turns = (a.turns || 0) + 1; // encounter age — the tracker's freshness read
     var label = this.encAnimalLabel(a);
     var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
     var dist = Math.max(Math.abs(a.mx - px), Math.abs(a.my - py));
     var detail = this.genDetail(this.map.px, this.map.py);
+    var ptile = this.playerTile(); // for shared tile depletion (detailRegrow)
     var BLOCKS = { wall: 1, water: 1, bigtree: 1, tree: 1, tent: 1, fire: 1 };
     // NOISE TRACKING (Steve 2026-10-06): the woods key on sound. How loud
     // was the player's last beat? Stalk steps are crouch-quiet (the stalked
@@ -757,6 +768,41 @@
       var cell = detail[ny] && detail[ny][nx];
       if (!BLOCKS[cell]) { a.mx = nx; a.my = ny; return true; }
       return false;
+    }
+    // ANIMAL HUNGER helpers: graze depletes the shared world (detailRegrow),
+    // exactly like player/NPC foraging. plant->dirt; bush stays but is marked
+    // stripped until it regrows.
+    var self = this;
+    function depleted(cx, cy) { return !!(ptile.detailRegrow && ptile.detailRegrow[cx + ',' + cy]); }
+    function grazeable(cell, cx, cy) { return (cell === 'plant' || cell === 'bush') && !depleted(cx, cy); }
+    function graze() {
+      for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+        var cx = a.mx + dx, cy = a.my + dy;
+        if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+        var cell = detail[cy] && detail[cy][cx];
+        if (!grazeable(cell, cx, cy)) continue;
+        ptile.detailRegrow = ptile.detailRegrow || {};
+        ptile.detailRegrow[cx + ',' + cy] = { day: s.day + 2, was: cell };
+        if (cell === 'plant') detail[cy][cx] = 'dirt'; // picked clean, like yours
+        a.hunger = Math.max(0, a.hunger - 35);
+        a.mx = cx; a.my = cy;
+        if (dist <= 5 && Math.random() < 0.5) {
+          self.say(self.encCap(label) + ' nibbles ' + (cell === 'plant' ? 'the greens' : 'the bush') + ' bare.');
+        }
+        try { self.drama('wild', cx, cy); } catch (e) {}
+        return true;
+      }
+      return false;
+    }
+    function nearestGraze() {
+      var best = null, bd = 99;
+      for (var cy = 0; cy < 9; cy++) for (var cx = 0; cx < 9; cx++) {
+        var cell = detail[cy] && detail[cy][cx];
+        if (!grazeable(cell, cx, cy)) continue;
+        var d = Math.max(Math.abs(cx - a.mx), Math.abs(cy - a.my));
+        if (d < bd) { bd = d; best = { cx: cx, cy: cy, d: d }; }
+      }
+      return best;
     }
     var stalked = !!s.stalked;
     s.stalked = false; // consumed — one quiet step buys one quiet reaction
@@ -1110,7 +1156,7 @@
         return;
       }
     }
-    if (beh === 'wary' && a.aware >= 0.7 && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'cornered' && a.pstate !== 'regroup') {
+    if (beh === 'wary' && a.aware >= 0.7 + boldBonus && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'cornered' && a.pstate !== 'regroup') {
       // DEER: the white tail goes up early. Explodes into motion.
       // (cornered/regroup excluded: a trapped or regrouping deer doesn't
       // re-bolt — the panic branch and the regroup rhythm own those turns.)
@@ -1191,7 +1237,21 @@
       a.pstate = 'graze';
       a.aware = Math.max(0, a.aware - 0.25);
       a.edgeTurns = 0;
-      if (Math.random() < 0.3) tryMove(a.mx + rnd3(), a.my + rnd3());
+      // ANIMAL HUNGER: grazing is for real now. Hungry animals eat the tile
+      // underfoot (shared depletion); with nothing in reach they drift toward
+      // the nearest green. Full animals just amble, decorative as before.
+      if ((a.hunger || 0) > 40) {
+        if (!graze()) {
+          var ng = nearestGraze();
+          if (ng && ng.d > 0 && Math.random() < 0.6) {
+            tryMove(a.mx + Math.sign(ng.cx - a.mx), a.my + Math.sign(ng.cy - a.my));
+          } else if (Math.random() < 0.3) {
+            tryMove(a.mx + rnd3(), a.my + rnd3());
+          }
+        }
+      } else if (Math.random() < 0.3) {
+        tryMove(a.mx + rnd3(), a.my + rnd3());
+      }
       return;
     }
     // within notice: awareness builds. stalkers and trackers buy time.
@@ -1223,6 +1283,8 @@
     // the bobcat is the one doing the hunting; the snake and the snapper
     // return early above (kept here as documentation).
     var boltAt = beh === 'skittish' ? 0.75 : 1;
+    // ANIMAL HUNGER: starving animals hold their ground (boldBonus above).
+    if ((a.hunger || 0) > 70) boltAt += boldBonus;
     // cornered/regroup excluded: those states own their turns (panic branch,
     // regroup rhythm) — the threshold must not yank them back to 'bolt'.
     if (!this.encNeverBolt(beh) && a.aware >= boltAt && a.pstate !== 'bolt' && a.pstate !== 'winded' && a.pstate !== 'taunt' && a.pstate !== 'playing_dead' && a.pstate !== 'cornered' && a.pstate !== 'regroup') {
@@ -1235,6 +1297,19 @@
       // (aware jumps 0.5→1.0 in one turn for the normal player).
       if (beh === 'wary') { try { this.audioEvent('animalSnort'); } catch (e) {} }
       try { this.audioEvent('animalBolt'); } catch (e) {}
+    }
+    // ANIMAL HUNGER: desperate — starving but only wary (hasn't bolted), it
+    // creeps toward food even with you in sight. You can SEE hunger beating
+    // fear. Next turn, if it reaches the green, it eats.
+    if ((a.hunger || 0) > 80 && a.pstate === 'wary') {
+      var ng2 = nearestGraze();
+      if (ng2 && ng2.d <= 3 && ng2.d > 0) {
+        if (tryMove(a.mx + Math.sign(ng2.cx - a.mx), a.my + Math.sign(ng2.cy - a.my))) {
+          if (dist <= 5 && Math.random() < 0.4) {
+            this.say(this.encCap(label) + ' is too hungry to fear you — it creeps toward the greens.');
+          }
+        }
+      }
     }
     if (a.pstate === 'winded') return; // spent. your move.
     if (a.pstate === 'regroup') {
