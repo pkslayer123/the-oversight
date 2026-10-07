@@ -64,6 +64,7 @@
   const S = global.Scattering = global.Scattering || {};
 
   const Drama = {
+    effectRegistry: null, // Scaffold #4 (Steve 2026-10-07): data-driven effect definitions from src/data/dramaEffects.json. Set by game.js after data load.
     overlay: null,
 
     // ensure the overlay exists, positioned over the grid
@@ -114,6 +115,94 @@
     //   L1 LINKED:    standard starburst. The System observes.
     //   L2 ATTUNED:   larger starburst + secondary smaller burst. The System participates.
     //   L3 INTEGRATED: massive starburst + expanding shockwave ring. The System celebrates.
+    // renderEffect(id, args): generic data-driven renderer (Steve 2026-10-07, Scaffold #4).
+    // Reads src/data/dramaEffects.json instead of bespoke methods. Visual output
+    // is IDENTICAL — the JSON contains the same expressions, evaluated in the
+    // same scope. Migrated incrementally; unmigrated methods stay hand-written.
+    renderEffect(id, args) {
+      args = args || {};
+      const def = (this.effectRegistry || {})[id];
+      if (!def) return null;
+      const scope = Object.assign({}, args);
+      // computed expressions, in definition order (can reference params + earlier computed)
+      if (def.computed) {
+        for (const key of Object.keys(def.computed)) {
+          scope[key] = this._evalExpr(def.computed[key], scope);
+        }
+      }
+      // anchor coords: tile -> cx/cy from tileCenter
+      if (def.anchor === 'tile' && typeof args.x === 'number' && typeof args.y === 'number') {
+        const c = this.tileCenter(args.x, args.y);
+        scope.cx = c.x; scope.cy = c.y;
+      }
+      for (const step of (def.steps || [])) {
+        if (step.when && !this._evalExpr(step.when, scope)) continue;
+        if (step.do === 'spawn') {
+          this.spawn(
+            this._evalTemplate(step.html || '', scope),
+            this._evalTemplate(step.css || '', scope),
+            step.animClass,
+            this._evalField(step.duration, scope)
+          );
+        } else if (step.do === 'particles') {
+          const count = this._evalField(step.count, scope);
+          const stagger = step.stagger || 0;
+          for (let i = 0; i < count; i++) {
+            const pscope = Object.assign({ i: i }, scope);
+            if (step.vary) {
+              for (const vk of Object.keys(step.vary)) {
+                const v = step.vary[vk];
+                pscope[vk] = Array.isArray(v) ? v[i % v.length] : this._evalExpr(v, pscope);
+              }
+            }
+            // Capture synchronously (matches original: values computed before setTimeout)
+            const html = this._evalTemplate(step.html || '', pscope);
+            const css = this._evalTemplate(step.css || '', pscope);
+            const duration = this._evalField(step.duration, pscope);
+            const animClass = step.animClass;
+            setTimeout(() => { this.spawn(html, css, animClass, duration); }, i * stagger);
+          }
+        } else if (step.do === 'call') {
+          const callArgs = (step.args || []).map(a => this._evalField(a, scope));
+          if (typeof this[step.method] === 'function') this[step.method].apply(this, callArgs);
+        }
+      }
+      return true;
+    },
+
+    // _evalExpr: evaluate a JS expression with scope vars + Math available.
+    // Expressions come from our own dramaEffects.json — not user input.
+    _evalExpr(expr, scope) {
+      const keys = Object.keys(scope);
+      const fn = new Function(...keys, 'Math', '"use strict"; return (' + expr + ');');
+      return fn.apply(null, keys.map(k => scope[k]).concat([Math]));
+    },
+
+    // _evalTemplate: substitute {expression} placeholders in a string.
+    _evalTemplate(tpl, scope) {
+      return tpl.replace(/\{([^{}]+)\}/g, (m, expr) => {
+        try {
+          const v = this._evalExpr(expr, scope);
+          return (v === undefined || v === null) ? '' : String(v);
+        } catch (e) { return ''; }
+      });
+    },
+
+    // _evalField: if the whole field is a single {expr}, return the raw value
+    // (preserves numbers for duration/count). Otherwise template-substitute.
+    // Numeric strings are returned as numbers (matches original number args).
+    _evalField(field, scope) {
+      if (typeof field !== 'string') return field;
+      const m = /^\{([^{}]+)\}$/.exec(field.trim());
+      if (m) {
+        try { return this._evalExpr(m[1], scope); }
+        catch (e) { return field; }
+      }
+      const sub = this._evalTemplate(field, scope);
+      if (/^-?\d+(\.\d+)?$/.test(sub.trim())) return Number(sub);
+      return sub;
+    },
+
     hit(x, y, opts) {
       opts = opts || {};
       const c = this.tileCenter(x, y);
