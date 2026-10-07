@@ -16960,17 +16960,6 @@
       delete s.braceActive;
       delete s.shakeOffUsed;
       delete s.haymakerReady;
-      // BRAWLER FLAG HYGIENE (wired 2026-10-07): the remaining per-fight flags
-      // must not leak across fights either. (fightRead is intentionally NOT
-      // cleared — read_fight banks +2 speed for the NEXT fight when used out
-      // of combat.)
-      delete s.rageActive;
-      delete s.tradeOpen;
-      delete s.debtSettled;
-      delete s.settleDebtBonus;
-      delete s.braceActive;
-      delete s.shakeOffUsed;
-      delete s.haymakerReady;
       this.syncMonsterAlias();
       const px = s.mx ?? 4, py = s.my ?? 4;
       // WANDERER CONTACT (forager loop 2026-10-05): the "Face it" button calls
