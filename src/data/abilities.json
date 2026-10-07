@@ -1839,7 +1839,7 @@
         "cost": {
           "turn": true
         },
-        "effect": "Spend turn preparing. Next attack is 2x damage and target can't dodge."
+        "effect": "Spend turn preparing. Next attack is 2x damage \u2014 they never see it coming."
       },
       {
         "id": "lay_wait",

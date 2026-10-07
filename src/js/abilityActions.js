@@ -341,11 +341,11 @@
         this.say('DEAD AIM: one perfect shot. ×' + s.deadAimShot.mult + ', armor means nothing.');
         delete s.deadAimShot;
       }
-      // AMBUSH: 2x, target can't dodge.
+      // AMBUSH: 2x -- they never saw it coming. (No dodge mechanic on the
+      // player-strike path: monsters don't dodge strikes, so there is no
+      // no-dodge flag to set. The fiction is the surprise, not a mechanic.)
       if (s.ambushReady) {
         d = Math.round(d * s.ambushReady.mult);
-        // No-dodge: set flag for the dodge check.
-        s.noDodgeNext = true;
         this.say('AMBUSH: they never saw it coming. ×' + s.ambushReady.mult + '.');
         delete s.ambushReady;
       }
@@ -713,8 +713,8 @@
 
     'ambush.set_ambush': function (game, target) {
       var s = game.state.scholar;
-      s.ambushReady = { mult: 2.0, noDodge: true };
-      game.say('You pick your ground, settle your weight, and wait. Next attack: 2x damage, and they won\'t dodge it. (Ambush — prepared.)');
+      s.ambushReady = { mult: 2.0 };
+      game.say('You pick your ground, settle your weight, and wait. Next attack: 2x damage — they never see it coming. (Ambush — prepared.)');
       return true;
     },
 
