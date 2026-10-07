@@ -11,6 +11,20 @@
 //   - apAlienTech(pid)
 //   - apStartEncounter(pid)
 //   - apCombatIntro(pid)
+//   - apCombatLine(pid, situation)
+//   - apSayCombat(pid, situation, chance)
+//   - apCombatChatter(pid, event, fighter, playerHpRatio)
+//   - apWealthOf(pid)
+//   - apWealthStance(pid, fighter)
+//   - apApplyWealthStance(pid, fighter)
+//   - apProgressRate(pid)
+//   - apProgressLevel(pid)
+//   - apProgressiveKit(pid)
+//   - apProgressiveTech(pid)
+//   - apGroupEligible()
+//   - apRollGroupEncounter()
+//   - apGroupBanter(pids)
+//   - apStartGroupEncounter(pids)
 //   - apOnCombatEnd(pid, outcome)
 //   - apDailyTick()
 //   - apFavor()
@@ -33,6 +47,10 @@
 //   - (favor) fan favor -100..100; high favor improves care packages and contest lean; low favor makes the crowd bloodthirsty (code: alienPlayers.js)
 //   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
+//   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
+//   - (wealth) broke personas retreat when losing (can't afford another body); rich never retreat and enrage when hurt (death is an inconvenience) (code: alienPlayers.js)
+//   - (progression) alien players level alongside you: kit grows 3->6 abilities, tech upgrades; rich progress faster (buy), broke slower (earn) (code: alienPlayers.js)
+//   - (groups) rare late-game 2-3 persona team encounters (day 40+, 3%, 14-day cooldown, needs 2+ established rivals) with inter-alien banter (code: alienPlayers.js)
 // consumes:
 //   - state.systemArrived, unlockedWave(), endDay (wrapped)
 //   - sysSay, say, displayName
@@ -249,8 +267,12 @@
       // Old Tam holds back (deliberately)
       if (pid === 'old_tam') hp = Math.min(hp, 70);
 
-      var tech = this.apAlienTech(pid);
-      var kit = this.apAbilityKit(pid);
+      // PROGRESSION (Steve 2026-10-07): kit and tech grow with encounters.
+      // Rich personas progress faster (they buy upgrades).
+      var tech = this.apProgressiveTech(pid);
+      var kit = this.apProgressiveKit(pid);
+      var wealth = this.apWealthOf(pid);
+      var progLevel = this.apProgressLevel(pid);
 
       return {
         key: 'ap_' + pid,
@@ -263,6 +285,13 @@
         alive: true, fled: false,
         abilities: kit,
         alienTech: tech,
+        // WEALTH (Steve 2026-10-07): affects self-preservation behavior.
+        // broke = retreats when losing; rich = never retreats, enrages when hurt.
+        wealth: wealth,
+        progLevel: progLevel,
+        _stance: 'normal',
+        _enraged: false,
+        _wantsRetreat: false,
         // They fight like players: they use abilities, they adapt
         ai: 'adaptive',
       };
@@ -355,6 +384,285 @@
         this.say('🎭 ' + p.name + ': "' + p.taunts[Math.floor(Math.random() * p.taunts.length)] + '"');
       }
     },
+
+    // ============ UNHINGED COMBAT COMMENTARY (Steve 2026-10-07) ============
+    // Heavy mid-combat dialogue. Each persona has 15+ lines across 5 situations.
+    // This is what makes them feel like PEOPLE, not stat blocks.
+
+    // Pick a combat line for a situation. Returns null if none/not known.
+    apCombatLine: function (pid, situation) {
+      var p = this.apPersona(pid);
+      if (!p || !p.combatLines) return null;
+      var pool = p.combatLines[situation];
+      if (!pool || !pool.length) return null;
+      if (!this.apKnowsAlien(pid)) return null; // knowledge-gated
+      return pool[Math.floor(Math.random() * pool.length)];
+    },
+
+    // Say a combat line. situation: onHit, onHurt, onWinning, onLosing, unhinged.
+    apSayCombat: function (pid, situation, chance) {
+      var line = this.apCombatLine(pid, situation);
+      if (!line) return false;
+      if (chance === undefined) chance = 0.5;
+      if (Math.random() > chance) return false;
+      var p = this.apPersona(pid);
+      this.say('🎭 ' + p.name + ': "' + line + '"');
+      return true;
+    },
+
+    // Situational commentary driver. Call with the fighter and what happened.
+    // event: 'hit' (they landed a hit), 'hurt' (they took a hit),
+    //        'winning' (their HP high, yours low), 'losing' (reverse),
+    //        'banter' (random unhinged observation)
+    apCombatChatter: function (pid, event, fighter, playerHpRatio) {
+      var p = this.apPersona(pid);
+      if (!p || !this.apKnowsAlien(pid)) return;
+      var situation = null, chance = 0.4;
+      if (event === 'hit') { situation = 'onHit'; chance = 0.45; }
+      else if (event === 'hurt') { situation = 'onHurt'; chance = 0.45; }
+      else if (event === 'winning') { situation = 'onWinning'; chance = 0.35; }
+      else if (event === 'losing') { situation = 'onLosing'; chance = 0.4; }
+      else if (event === 'banter') { situation = 'unhinged'; chance = 0.25; }
+      if (!situation) return;
+      // Rich personas talk MORE (they're performing for an audience)
+      var wealth = this.apWealthOf(pid);
+      if (wealth === 'rich') chance = Math.min(0.75, chance + 0.2);
+      if (wealth === 'broke') chance = Math.max(0.15, chance - 0.1);
+      this.apSayCombat(pid, situation, chance);
+    },
+
+    // ============ WEALTH-BASED SELF-PRESERVATION (Steve 2026-10-07) ============
+    // Broke: can't afford another body — fights cautiously, retreats when losing.
+    // Comfortable: fights hard but won't throw life away — tactical retreats.
+    // Rich: death is an inconvenience — never retreats, gets MORE aggressive hurt.
+
+    apWealthOf: function (pid) {
+      var p = this.apPersona(pid);
+      return (p && p.wealth) || 'comfortable';
+    },
+
+    // Current tactical stance based on wealth + HP. Returns:
+    // 'normal', 'cautious' (broke/comfortable pulling back),
+    // 'retreating' (broke at critical HP — WILL flee),
+    // 'enraged' (rich at low HP — MORE dangerous, not less)
+    apWealthStance: function (pid, fighter) {
+      var wealth = this.apWealthOf(pid);
+      if (!fighter || !fighter.maxHp) return 'normal';
+      var ratio = fighter.hp / fighter.maxHp;
+
+      if (wealth === 'rich') {
+        // The rich don't retreat. They escalate.
+        if (ratio < 0.5) return 'enraged';
+        return 'normal';
+      }
+      if (wealth === 'broke') {
+        // Can't afford another body. Survival first.
+        if (ratio < 0.35) return 'retreating';
+        if (ratio < 0.6) return 'cautious';
+        return 'normal';
+      }
+      // comfortable: tactical
+      if (ratio < 0.2) return 'retreating';
+      if (ratio < 0.45) return 'cautious';
+      return 'normal';
+    },
+
+    // Apply wealth stance to a fighter. Called when HP changes significantly.
+    // Sets flags the combat AI can read. Rich enrage = +damage. Broke retreat = flee check.
+    apApplyWealthStance: function (pid, fighter) {
+      if (!fighter) return;
+      var stance = this.apWealthStance(pid, fighter);
+      var prev = fighter._stance;
+      fighter._stance = stance;
+
+      // Announce stance changes (they're theatrical about it)
+      if (stance !== prev && this.apKnowsAlien(pid)) {
+        var p = this.apPersona(pid);
+        if (stance === 'enraged') {
+          var enrageLines = {
+            'vex_marlowe': "Oh, you've made a MISTAKE. I'm buying a better body AFTER I kill you with this one.",
+            'countess_sable': "You DARE? You dare HURT me? I'll preserve your SCREAMS.",
+            'rax_dentist': "PAIN DATA SPIKE! This is INCREDIBLE! MORE!",
+          };
+          var el = enrageLines[pid] || "You've made me angry. That was expensive.";
+          this.say('🎭 ' + p.name + ': "' + el + '"');
+          this.say('(⚠ ' + p.name + ' is ENRAGED — hitting harder, fighting recklessly.)');
+          fighter._enraged = true;
+        } else if (stance === 'retreating') {
+          var retreatLines = {
+            'pip_quindle': "Okay okay okay I can't afford another one of these! I'm OUT! Great fight though!",
+            'sarge': "...Tactical withdrawal. Nothing personal.",
+            'dr_fenwick': "The data suggests I should NOT be here anymore! Withdrawing!",
+            'old_tam': "That's enough. I'm too old and too poor for this.",
+          };
+          var rl = retreatLines[pid] || "I can't afford to die here. Falling back!";
+          this.say('🎭 ' + p.name + ': "' + rl + '"');
+          fighter._wantsRetreat = true;
+        } else if (stance === 'cautious' && prev === 'normal') {
+          this.apSayCombat(pid, 'onLosing', 0.5);
+        }
+      }
+      return stance;
+    },
+
+    // ============ PROGRESSION (Steve 2026-10-07) ============
+    // Alien players level up alongside you. Rich ones buy upgrades (fast).
+    // Broke ones earn them (slow). Tracked in ap.met[pid].sessions.
+
+    // How fast does this persona progress? Rich = 1.0, comfortable = 0.7, broke = 0.4
+    apProgressRate: function (pid) {
+      var w = this.apWealthOf(pid);
+      return w === 'rich' ? 1.0 : w === 'comfortable' ? 0.7 : 0.4;
+    },
+
+    // Current progression level (0-5). Grows with encounters, scaled by wealth.
+    apProgressLevel: function (pid) {
+      var ap = this.apState();
+      var rec = ap.met[pid] || { encounters: 0 };
+      var rate = this.apProgressRate(pid);
+      // Level = encounters * rate, capped at 5. Rich hits 5 in ~5 encounters, broke in ~12.
+      return Math.min(5, Math.floor((rec.encounters || 0) * rate));
+    },
+
+    // Progressive ability kit: starts with 3-4 core abilities, grows to full 6.
+    // Rich personas unlock faster. Each level adds depth, not just power.
+    apProgressiveKit: function (pid) {
+      var fullKit = this.apAbilityKit(pid);
+      var level = this.apProgressLevel(pid);
+      // Level 0: 3 abilities. Each level adds depth. Level 3+: full kit.
+      var count = Math.min(fullKit.length, 3 + level);
+      return fullKit.slice(0, count);
+    },
+
+    // Progressive alien tech: base tech at level 0, upgrades at levels 2 and 4.
+    // Rich personas get enhanced versions (they buy the good stuff).
+    apProgressiveTech: function (pid) {
+      var base = this.apAlienTech(pid);
+      var level = this.apProgressLevel(pid);
+      var wealth = this.apWealthOf(pid);
+      var tech = base.map(function (t) {
+        return { id: t.id, name: t.name, desc: t.desc };
+      });
+
+      // Level 2+: tech gets a "+" upgrade (rich only get the best versions)
+      if (level >= 2 && wealth === 'rich') {
+        tech = tech.map(function (t) {
+          return { id: t.id + '_plus', name: t.name + ' Mk.II', desc: t.desc + ' (Upgraded. Of course.)' };
+        });
+      } else if (level >= 4 && wealth !== 'rich') {
+        // Broke/comfortable eventually catch up (they earn it)
+        tech = tech.map(function (t) {
+          return { id: t.id + '_plus', name: t.name + ' (tuned)', desc: t.desc + ' (Carefully maintained.)' };
+        });
+      }
+      return tech;
+    },
+
+    // ============ RARE GROUP ENCOUNTERS (Steve 2026-10-07) ============
+    // Sometimes (rare, late-game) you face 2-3 alien players together.
+    // They have team dynamics. This is a MAJOR EVENT, not a regular fight.
+
+    // Can a group encounter happen? Very late game, low chance, needs rivals.
+    apGroupEligible: function () {
+      if (!this.apEncounterEligible()) return false;
+      var ap = this.apState();
+      var day = (this.state.scholar || {}).day || 1;
+      if (day < 40) return false; // LATE GAME only
+      // Need at least 2 personas you've met 2+ times (real rivals)
+      var rivals = 0;
+      for (var pid in ap.met) {
+        if (ap.met[pid].encounters >= 2 && COMBAT_PILOTS.includes(pid)) rivals++;
+      }
+      if (rivals < 2) return false;
+      // Cooldown: max 1 group encounter per 14 days
+      if (day - (ap.lastGroupDay || -999) < 14) return false;
+      return true;
+    },
+
+    // Roll for a group encounter. 3% when eligible. Returns array of pids or null.
+    apRollGroupEncounter: function () {
+      if (!this.apGroupEligible()) return null;
+      if (Math.random() > 0.03) return null;
+
+      var ap = this.apState();
+      // Pick 2-3 from your established rivals
+      var candidates = [];
+      for (var pid in ap.met) {
+        if (ap.met[pid].encounters >= 2 && COMBAT_PILOTS.includes(pid)) {
+          candidates.push(pid);
+        }
+      }
+      if (candidates.length < 2) return null;
+
+      // Shuffle and take 2-3
+      for (var i = candidates.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tmp;
+      }
+      var size = Math.min(candidates.length, Math.random() < 0.3 ? 3 : 2);
+      var group = candidates.slice(0, size);
+
+      ap.lastGroupDay = (this.state.scholar || {}).day || 1;
+      return group;
+    },
+
+    // Team banter: they talk to EACH OTHER, not just you.
+    apGroupBanter: function (pids) {
+      if (!pids || pids.length < 2) return;
+      var names = pids.map(function (pid) {
+        var p = this.apPersona(pid);
+        return p ? p.name : 'Someone';
+      }, this);
+
+      // Personality-driven team dynamics
+      var hasVex = pids.includes('vex_marlowe');
+      var hasSable = pids.includes('countess_sable');
+      var hasSarge = pids.includes('sarge');
+      var hasPip = pids.includes('pip_quindle');
+      var hasRax = pids.includes('rax_dentist');
+      var hasFenwick = pids.includes('dr_fenwick');
+      var hasTam = pids.includes('old_tam');
+
+      this.say('👥 ' + names.join(' and ') + ' step out together. This is... not good.');
+
+      if (hasVex && hasSable) {
+        this.say('🎭 Vex Marlowe: "Sable. Darling. Try not to break this one before I get my shot."');
+        this.say('🎭 Countess Sable: "Try not to bore it to death first, Vex. We all have our collections."');
+      } else if (hasSarge) {
+        this.say('🎭 Sarge: "Formation. No heroics. We do this clean."');
+        if (hasPip) this.say('🎭 Pip Quindle: "Ooh, formation! Like in the movies! Which one am I?"');
+      } else if (hasRax && hasFenwick) {
+        this.say('🎭 Dr. Fenwick: "Fascinating — a multi-subject trial! Rax, you take pain responses, I\'ll take behavioral."');
+        this.say('🎭 Rax "The Dentist": "Dibs on the screaming data."');
+      } else if (hasPip) {
+        this.say('🎭 Pip Quindle: "OH WOW, it\'s a TEAM UP! This is just like the season finale!"');
+      } else if (hasTam) {
+        this.say('🎭 Old Tam: "...I didn\'t agree to this. But I\'m here. Let\'s get it over with."');
+      } else {
+        // Generic team-up
+        this.say('🎭 ' + names[0] + ': "Together, then. Don\'t get in my way."');
+        this.say('🎭 ' + names[1] + ': "Wouldn\'t dream of it. Probably."');
+      }
+
+      this.say('(⚠ MULTIPLE alien players. This is a major event. The System is watching closely.)');
+      try { this.apAdjustFavor(5, 'survived a group encounter setup — the crowd loves a spectacle'); } catch (e) {}
+    },
+
+    // Start a group encounter with 2-3 alien players
+    apStartGroupEncounter: function (pids) {
+      if (!pids || pids.length < 2) return false;
+      this.apGroupBanter(pids);
+      // Build fighters for each (they'll be added to the encounter)
+      // For now, start with the first and note the others as incoming
+      // (Full multi-fighter combat integration is a deeper change)
+      var first = pids[0];
+      this.say('(The others are circling. They\'ll join the fight in turn.)');
+      try {
+        this.state.alienGroup = { pids: pids, current: 0 };
+      } catch (e) {}
+      return this.apStartEncounter(first);
+    },
+
 
     apOnCombatEnd: function (pid, outcome) {
       var p = this.apPersona(pid);
@@ -856,7 +1164,25 @@
             for (var i = 0; i < this.tbfight.fighters.length; i++) {
               var f = this.tbfight.fighters[i];
               if (f.kind === 'hostile' && f.alienPid && f.alive) {
-                this.apPilotTaunt(f.alienPid);
+                var pid = f.alienPid;
+                // WEALTH STANCE: check if their tactical situation changed
+                // (broke ones start thinking about retreat, rich ones enrage)
+                try { this.apApplyWealthStance(pid, f); } catch (e) {}
+                // SITUATIONAL CHATTER: winning/losing/banter based on HP
+                try {
+                  var s = this.state.scholar || {};
+                  var pRatio = (s.hp || 100) / (s.maxHp || 100);
+                  var fRatio = (f.hp || 1) / (f.maxHp || 1);
+                  if (fRatio > 0.7 && pRatio < 0.4) {
+                    this.apCombatChatter(pid, 'winning', f, pRatio);
+                  } else if (fRatio < 0.4 && pRatio > 0.6) {
+                    this.apCombatChatter(pid, 'losing', f, pRatio);
+                  } else {
+                    // Random banter or legacy taunt
+                    if (Math.random() < 0.5) this.apCombatChatter(pid, 'banter', f, pRatio);
+                    else this.apPilotTaunt(pid);
+                  }
+                } catch (e) {}
                 break;
               }
             }
