@@ -169,7 +169,7 @@ function advanceDays(n) {
   // haul to camp: atCamp needs map at village tile
   {
     const v = Game.state.village;
-    Game.map.px = v.px ?? 3; Game.map.py = v.py ?? 3;
+    Game.map.px = v.px ?? 4; Game.map.py = v.py ?? 4;
     Game.state.scholar.insideHaven = true;
   }
   console.log('atCamp:', Game.atCamp());

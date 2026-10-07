@@ -693,7 +693,7 @@
       s.trauma = 10; // the shock of stepping up
       s.mx = 4; s.my = 4;
       try {
-        if (this.map) { this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3; }
+        if (this.map) { this.map.px = this.state.village.px ?? 4; this.map.py = this.state.village.py ?? 4; }
       } catch (e) {}
       // background abilities are THEIRS — their past, their hands.
       try {

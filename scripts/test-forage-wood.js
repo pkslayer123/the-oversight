@@ -118,7 +118,7 @@ function stickCount() {
   {
     Game.debugScenario('day1');
     const hv = Game.state.village;
-    Game.map.px = hv.px ?? 3; Game.map.py = hv.py ?? 3;
+    Game.map.px = hv.px ?? 4; Game.map.py = hv.py ?? 4;
     const s = Game.state.scholar;
     s.insideHaven = true;
     s.inventory = (s.inventory || []).filter(i => i.material !== 'stick' && i.material !== 'vine');

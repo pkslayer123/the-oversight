@@ -30,9 +30,9 @@ function clock() { return Game.state.scholar.dayTicks || 0; }
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
 
-  // ---- Haven interior ----
-  Game.map.px = 3; Game.map.py = 3;
-  const detail = Game.genDetail(3, 3);
+  // ---- Haven interior (haven tile = 9x9 center 4,4) ----
+  Game.map.px = 4; Game.map.py = 4;
+  const detail = Game.genDetail(4, 4);
   function findCell(want) {
     for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++)
       if (detail[cy][cx] === want) return { cx, cy };
@@ -66,8 +66,8 @@ function clock() { return Game.state.scholar.dayTicks || 0; }
 
   // ---- lodge: on the Haven grounds (outside the building) ----
   Game.state.scholar.insideHaven = false;
-  Game.tileAt(3, 3).detail = null; // regen grounds
-  const gdetail = Game.genDetail(3, 3);
+  Game.tileAt(4, 4).detail = null; // regen grounds
+  const gdetail = Game.genDetail(4, 4);
   function findCellG(want) {
     for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++)
       if (gdetail[cy][cx] === want) return { cx, cy };
@@ -90,12 +90,12 @@ function clock() { return Game.state.scholar.dayTicks || 0; }
     ok('lodge depth2 not "declines"', !/declines to be interesting/.test(t2));
   })();
   Game.state.scholar.insideHaven = true;
-  Game.tileAt(3, 3).detail = null; // back inside for the remaining tests
+  Game.tileAt(4, 4).detail = null; // back inside for the remaining tests
 
   // ---- building rooms (pre-Burn): drive examineCell directly on a ruin tile ----
   // (room cells aren't placed by current map gen; verify the content branch directly)
   const ruin = (() => {
-    for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++)
+    for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++)
       if ((Game.tileAt(x, y) || {}).type === 'ruin') return { x, y };
     return null;
   })();

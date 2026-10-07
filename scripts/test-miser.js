@@ -112,7 +112,7 @@ const ME = () => Game.state.scholar.villagerId;
 
   // ---------- ACT 3: theft pressure over time ----------
   freshGame();
-  const hx = Game.state.village.px ?? 3, hy = Game.state.village.py ?? 3;
+  const hx = Game.state.village.px ?? 4, hy = Game.state.village.py ?? 4;
   Game.playerCaches().push({ id: 'near', node: { x: hx, y: hy }, desc: 'near', label: 'near', items: [{ name: 'x' }], found: false, day: 0 });
   Game.playerCaches().push({ id: 'far', node: { x: hx + 14, y: hy + 14 }, desc: 'far', label: 'far', items: [{ name: 'x' }], found: false, day: 0 });
   let nearHit = 0, farHit = 0;

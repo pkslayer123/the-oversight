@@ -24,7 +24,7 @@ const T = () => Game.TIME;
 const snap = () => `hyd=${Math.round(s().hydration)} kcal=${Math.round(s().kcal)} hp=${Math.round(s().health)} en=${Math.round(s().energy)} well=${Math.round((v().water && v().water.clean) || 0)}L bottles=${(s().water || []).length}`;
 
 function goHome() {
-  const hx = (v().px ?? 3), hy = (v().py ?? 3);
+  const hx = (v().px ?? 4), hy = (v().py ?? 4);
   try { Game.travelTo(hx, hy); } catch (e) {}
 }
 function nearestTileOfType(type) {

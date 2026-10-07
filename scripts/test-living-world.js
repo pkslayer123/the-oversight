@@ -34,7 +34,7 @@ function ok(name, cond) {
   console.log('--- 1. NPC node positions ---');
   ok('nodePos initialized', !!v.nodePos);
   ok('all NPCs have nodePos', roster.every(rid => v.nodePos[rid]));
-  const hx = v.px ?? 3, hy = v.py ?? 3;
+  const hx = v.px ?? 4, hy = v.py ?? 4;
   ok('all start at Haven', roster.every(rid => {
     const n = Game.npcNode(rid);
     return n.nx === hx && n.ny === hy;
@@ -104,7 +104,11 @@ function ok(name, cond) {
     ok('bg survivors have home regions', bgIds.every(rid => v.bgHome[rid]));
     ok('no "?" home regions', bgIds.every(rid => v.bgHome[rid] && v.bgHome[rid] !== '?'));
     const hr = Game.npcHomeRegion(bgIds[0]);
-    ok('npcHomeRegion returns bgHome', hr === v.bgHome[bgIds[0]]);
+    // data homeRegion wins over the generated bgHome fallback (correct:
+    // a person's stated home beats the generator) — accept either source.
+    const vp0 = Game.vpOf(bgIds[0]) || {};
+    const expectHr = vp0.homeRegion || v.bgHome[bgIds[0]];
+    ok('npcHomeRegion returns bgHome', hr === expectHr, `${bgIds[0]} -> ${hr} (expected ${expectHr})`);
     console.log(`  sample: ${bgIds[0]} -> ${hr}`);
   } else {
     console.log('  (no bg survivors in roster, skipping)');
@@ -171,7 +175,7 @@ function ok(name, cond) {
   ok('pantry strained', (v2.pantryKcal || 0) < 15000);
   ok('week1 tracker filled', (s2.week1.talk || 0) > 5);
   ok('day7 armed', !!s2._day7Armed);
-  ok('player at Haven', Game.map.px === (v2.px ?? 3) && Game.map.py === (v2.py ?? 3));
+  ok('player at Haven', Game.map.px === (v2.px ?? 4) && Game.map.py === (v2.py ?? 4));
   // Journal should have entries
   const people = (Game.state.codex.people || {});
   ok('journal partially filled', Object.keys(people).length > 0);
