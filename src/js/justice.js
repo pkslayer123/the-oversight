@@ -204,6 +204,45 @@
       return roster.slice().sort((a, b) => score(b) - score(a))[0];
     },
 
+    // JUSTICE VOICE (Steve 2026-10-07): dialogue templates live in
+    // src/data/justiceVoice.json. These helpers select and fill them.
+    // The KNOWLEDGE GATING stays here in code — unwitnessed crimes never
+    // reach the voice layer. Conditions (close/wary/bold/seriousType) are
+    // evaluated here; the JSON only holds text + condition declarations.
+    justiceVoiceData() {
+      return (this.data && this.data.justiceVoice) || null;
+    },
+    justiceVoiceMatch(templates, ctx) {
+      // Filter templates by 'when' conditions, return eligible ones.
+      return (templates || []).filter(t => {
+        const w = t.when || {};
+        for (const k of Object.keys(w)) {
+          if (k === 'seriousType') { if (ctx.seriousType !== w[k]) return false; }
+          else if (k === 'noSerious') { if (!!ctx.noSerious !== !!w[k]) return false; }
+          else { if (!!ctx[k] !== !!w[k]) return false; }
+        }
+        return true;
+      });
+    },
+    justiceVoiceFill(text, vars) {
+      let out = String(text || '');
+      for (const k of Object.keys(vars || {})) {
+        out = out.split('{' + k + '}').join(String(vars[k] == null ? '' : vars[k]));
+      }
+      return out;
+    },
+    justiceVoicePick(section, key, ctx, vars) {
+      // Pick a random eligible template from justiceVoice[section][key],
+      // fill variables. Returns null if no data or no eligible templates.
+      const data = this.justiceVoiceData();
+      const templates = data && data[section] && data[section][key];
+      if (!templates || !templates.length) return null;
+      const eligible = this.justiceVoiceMatch(templates, ctx || {});
+      if (!eligible.length) return null;
+      const t = eligible[Math.floor(Math.random() * eligible.length)];
+      return this.justiceVoiceFill(t.text, vars);
+    },
+
     justiceConfront() {
       const j = this.justiceState();
       const vid = this.justicePickConfronter();
@@ -236,32 +275,23 @@
       const close = trust >= 40;
       const temp = String((this.npcTemper && this.npcTemper(vid)) || 'steady').toLowerCase();
       const wary = (temp === 'cautious' || temp === 'withdrawn');
+      // Voice templates from justiceVoice.json (Steve 2026-10-07).
+      // The crime counts above are KNOWLEDGE-GATED — only witnessed crimes
+      // reach the voice layer. Template selection by relationship/temperament.
+      const voiceCtx = { close, wary };
+      const voiceVars = { name };
       let line;
       if (murders > 0) {
-        line = pick([
-          `${name} steps in front of you. "We know what you did. Say it wasn't you — go on, try." Their hands are shaking. Not from fear. "You pay it back, or you go. Those are the choices."`,
-          close ? `${name} finds you alone, away from the fire. "Tell me it wasn't you." A pause — you can see them hoping. "Please. Tell me it wasn't you."` : null,
-          `${name} doesn't raise their voice. That's how you know it's serious. "Someone's dead. And everyone knows whose hands. Talk."`,
-        ].filter(Boolean));
+        line = this.justiceVoicePick('confrontation', 'murder', voiceCtx, voiceVars);
       } else if (attacks > 0) {
-        line = pick([
-          `${name} plants themself in your way, jaw set. "You put hands on one of ours. That doesn't wash off with an apology — but an apology is where it starts."`,
-          wary ? `${name} waits until the fire's low and it's just you two. "I saw what happened. I'm not here to fight — I'm here because next time, someone won't ask first."` : null,
-          close ? `${name} looks sick. "I told them you wouldn't — I said that, out loud, to people. Don't make me the fool here. Fix it."` : null,
-        ].filter(Boolean));
+        line = this.justiceVoicePick('confrontation', 'attack', voiceCtx, voiceVars);
       } else if (thefts > 0) {
-        line = pick([
-          `${name} blocks your path. "We need to talk about the stores. About what you've been taking." A few others are watching, not approaching. "Make it right, or leave. Your call."`,
-          close ? `${name} won't look at you. "The stores. I covered for you once — told them it was a miscount. Don't make me a liar too."` : null,
-          `${name} corners you by the stores, voice low. "Count it with me. Right now. If I'm wrong I'll say so in front of everyone."`,
-        ].filter(Boolean));
+        line = this.justiceVoicePick('confrontation', 'theft', voiceCtx, voiceVars);
       } else {
-        line = pick([
-          `${name} steps close. "Something's off and everyone's felt it. I drew the short straw — so here I am. Talk to me before the village decides it doesn't need to."`,
-          close ? `${name} sits down next to you like nothing's wrong, which is how you know everything is. "People are talking. I wanted you to hear it from me first."` : null,
-          wary ? `${name} catches your eye across the fire and tilts their head — follow me. Away from everyone: "I'm asking as a friend, not the village. What happened?"` : null,
-        ].filter(Boolean));
+        line = this.justiceVoicePick('confrontation', 'generic', voiceCtx, voiceVars);
       }
+      // Fallback if voice data isn't loaded (shouldn't happen in production).
+      if (!line) line = `${name} steps close. "We need to talk."`;
       this.say('⚖ ' + line);
       this.say('(Find them and answer — pay restitution, or refuse. Attacking them answers too.)');
       try { this.audioEvent('confront'); } catch (e) {}
@@ -378,37 +408,21 @@
       const R = Math.random;
       const pick = (arr) => arr[Math.floor(R() * arr.length)];
       const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-      let line;
-      if (reason === 'silence') {
-        line = pick([
-          `${name} waited two days for your answer. None came — so the question goes to everyone. "${cap(chargeWord)}, in the open. Be there, or don't. It happens either way."`,
-          close ? `${name} doesn't look at you when they say it. "I waited. Two days. The moot hears ${chargeWord} — all of it, in the open."` : null,
-          `${name} stands. "Silence is an answer. Fine. Here's ours: a moot. ${cap(chargeWord)}, in the open, where silence doesn't work."`,
-        ].filter(Boolean));
-      } else if (reason === 'refused') {
-        line = pick([
-          bold ? `${name} stands, and the fire goes quiet around them. "No more talking around it. ${cap(chargeWord)} gets a moot — all of it, in the open. You said no to me. Say it to everyone."` : null,
-          wary ? `${name} says it low, and the low carries. "There'll be a moot. ${cap(chargeWord)} — in the open. I asked you quiet. You chose loud."` : null,
-          close ? `${name} looks sick saying it. "I asked you as —" A breath. "There's a moot. ${cap(chargeWord)}, in the open. I didn't want this."` : null,
-          serious && serious.type === 'murder' ? `${name}'s voice doesn't shake. That's how you know. "A moot. For the killing. In the open, where everyone has to hear it."` : null,
-          serious && serious.type === 'attack' ? `${name} doesn't dress it up. "You put hands on one of ours. The moot hears ${chargeWord} — all of it, in the open."` : null,
-          serious && serious.type === 'theft' ? `${name} looks around the fire. "The stores. The counts. All of it — in the open. There's a moot."` : null,
-          serious && serious.type === 'intimidation' ? `${name} keeps their voice level. "Threats stop working when everyone hears them. A moot — in the open."` : null,
-          // nothing provable (shouldn't happen — the accusation would bail):
-          // the old generic line, kept as the last resort only.
-          !serious ? `${name} looks around the fire. "No more talking around it. There'll be a moot — all of it, in the open."` : null,
-        ].filter(Boolean));
-      } else {
-        // heat climbed past talking: the confronter never even got their answer
-        line = pick([
-          `"It's past asking," ${name} says. "The fire hears ${chargeWord} — tonight, in the open."`,
-          close ? `${name} won't meet your eyes. "I was going to talk to you. It's past that now. The moot hears ${chargeWord} — in the open."` : null,
-          `${name} doesn't bother with preamble. "A moot. ${cap(chargeWord)}. In the open."`,
-        ].filter(Boolean));
-      }
+      // Voice templates from justiceVoice.json (Steve 2026-10-07).
+      // The 'serious' crime above is KNOWLEDGE-GATED — only witnessed,
+      // unjudged crimes reach the voice layer. Template selection by
+      // reason/relationship/temperament/seriousType.
+      const voiceCtx = { close, wary, bold, seriousType: serious ? serious.type : null, noSerious: !serious };
+      const voiceVars = { name, chargeWord, ChargeWord: cap(chargeWord) };
+      let line = this.justiceVoicePick('summons', reason, voiceCtx, voiceVars);
       // last resort: never render "undefined" — a broken summons line is
-      // worse than a plain one.
-      if (!line) line = `${name} looks around the fire. "No more talking around it. There'll be a moot — all of it, in the open."`;
+      // worse than a plain one. Falls back to the JSON fallback, then hardcoded.
+      if (!line) {
+        const data = this.justiceVoiceData();
+        line = (data && data.summons && data.summons.fallback)
+          ? this.justiceVoiceFill(data.summons.fallback, voiceVars)
+          : `${name} looks around the fire. "No more talking around it. There'll be a moot — all of it, in the open."`;
+      }
       this.say('⚖ ' + line);
       try { if (this.journalNote) this.journalNote('village', 'moot', 'They demanded a moot. Formal. No more hallway justice.'); } catch (e) {}
       if (typeof this.forcePlayerAccusation === 'function') {
