@@ -12670,9 +12670,11 @@
         // This is the PRIMARY visibility logic.
         let seen = null;
         try {
-          const mp = Game.map || {};
-          const dx = Math.abs(x - (mp.px || 3));
-          const dy = Math.abs(y - (mp.py || 3));
+          // Player pos is in scholar.mx/my (NOT Game.map.px/py) - Steve 2026-10-06
+          const sch = (Game.state && Game.state.scholar) || {};
+          const ppx = sch.mx ?? 3, ppy = sch.my ?? 3;
+          const dx = Math.abs(x - ppx);
+          const dy = Math.abs(y - ppy);
           if (dx <= 1 && dy <= 1) {
             seen = (dx === 0 && dy === 0) ? 'visited' : 'shared';
           } else {
