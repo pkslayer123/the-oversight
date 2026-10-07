@@ -177,23 +177,6 @@
     }
   },
   {
-    "description": "Tell dandelion from disaster at a glance. The woods start talking.",
-    "id": "forage_identification",
-    "modifiers": [
-      {
-        "target": "forage.learn_threshold",
-        "op": "add",
-        "value": -1
-      }
-    ],
-    "name": "Forage Identification",
-    "pool": "fieldcraft",
-    "unlock": {
-      "detail": "Identify 5 plants correctly",
-      "type": "discovery"
-    }
-  },
-  {
     "description": "Your gut handles what it shouldn't. A useful lie your body tells itself.",
     "id": "iron_stomach",
     "modifiers": [
@@ -209,22 +192,7 @@
     "unlock": {
       "detail": "Trial of Hunger survived",
       "type": "trial"
-    },
-    "actions": [
-      {
-        "id": "push_through",
-        "context": "explore",
-        "name": "Push Through",
-        "cost": {
-          "kcal": 40
-        },
-        "effect": "Ignore poison, nausea, or food sickness for 4 hours. Your gut handles what it shouldn't."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "survivalist"
-    ]
+    }
   },
   {
     "description": "Move through woods like weather. Less noise, fewer surprises.",
@@ -242,42 +210,6 @@
     "unlock": {
       "detail": "Traverse 20 tiles undetected",
       "type": "discovery"
-    }
-  },
-  {
-    "description": "Someone taught you this over a long winter. Knowledge is the only inheritance.",
-    "id": "taught_hands",
-    "modifiers": [
-      {
-        "target": "craft.success",
-        "op": "add",
-        "value": 0.1,
-        "scale": "level"
-      }
-    ],
-    "name": "Taught Hands",
-    "pool": "craft",
-    "unlock": {
-      "detail": "Learn from a village elder",
-      "type": "mentorship"
-    }
-  },
-  {
-    "description": "The System noticed you noticing patterns. It approves, in its way.",
-    "id": "pattern_recognition",
-    "modifiers": [
-      {
-        "target": "forage.rare_find_chance",
-        "op": "add",
-        "value": 0.1,
-        "scale": "level"
-      }
-    ],
-    "name": "Pattern Recognition",
-    "pool": "system",
-    "unlock": {
-      "detail": "Offered after 3 novel discoveries",
-      "type": "trial"
     }
   },
   {
@@ -548,20 +480,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 200
-    },
-    "actions": [
-      {
-        "id": "refuse_death",
-        "context": "combat",
-        "name": "Refuse",
-        "cost": {},
-        "effect": "Once per day, when you would die: you don't. Drop to 1 HP, gain 500 kcal from sheer spite. Automatic trigger."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "survivalist"
-    ]
+    }
   },
   {
     "id": "lucky_rock",
@@ -761,22 +680,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 150
-    },
-    "actions": [
-      {
-        "id": "unleash_rage",
-        "context": "combat",
-        "name": "Unleash Rage",
-        "cost": {
-          "turn": true,
-          "kcal": 60
-        },
-        "effect": "+100% damage for 3 rounds, but you attack the nearest thing (friend or foe). You cannot retreat while raging."
-      }
-    ],
-    "paths": [
-      "brawler"
-    ]
+    }
   },
   {
     "id": "cannibal_frenzy",
@@ -944,31 +848,7 @@
     ],
     "metabolic": {
       "daily": 100
-    },
-    "actions": [
-      {
-        "id": "loom",
-        "context": "combat",
-        "name": "Loom",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Stand still and let them look at you. Enemies hesitate: +1 round before they attack. Villagers lose 5 trust."
-      },
-      {
-        "id": "menace",
-        "context": "social",
-        "name": "Menace",
-        "cost": {
-          "time_min": 10
-        },
-        "effect": "Make your point without raising a hand. +intimidation in this conversation, -trust afterward."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "socialite"
-    ]
+    }
   },
   {
     "id": "grave_robber",
@@ -1044,37 +924,6 @@
     "metabolic": {
       "daily": 200
     }
-  },
-  {
-    "id": "ant_trail",
-    "name": "Ant Trail",
-    "description": "You can follow ant trails to water and sugar. Ants know things.",
-    "flavor": "The tiny marchers! They never get lost! Follow them! (Watch where you step!)",
-    "pool": "system",
-    "tier": "utility",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [],
-    "metabolic": {
-      "daily": 25
-    },
-    "actions": [
-      {
-        "id": "follow_ants",
-        "context": "explore",
-        "name": "Follow Ants",
-        "cost": {
-          "time_min": 20
-        },
-        "effect": "Follow ant trails to water and sugar. Ants know things. Reveals nearest water source or sweet food."
-      }
-    ],
-    "paths": [
-      "forager",
-      "survivalist",
-      "explorer"
-    ]
   },
   {
     "id": "cold_blooded",
@@ -1583,21 +1432,6 @@
     },
     "synergyHints": [
       "With Adrenaline Control: act first, hit hard"
-    ],
-    "actions": [
-      {
-        "id": "read_fight",
-        "context": "combat",
-        "name": "Read the Fight",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Study the enemy's stance. Learn their next likely move and +2 initiative for the rest of the fight."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "hunter"
     ]
   },
   {
@@ -1637,31 +1471,7 @@
     "unlock": {
       "type": "trial",
       "trial": "intimidate_someone"
-    },
-    "actions": [
-      {
-        "id": "stare_down",
-        "context": "combat",
-        "name": "Stare Down",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Lock eyes. One enemy must pass courage or back off (disengage). Does not work on the truly fearless."
-      },
-      {
-        "id": "end_it_before",
-        "context": "social",
-        "name": "End It Before It Starts",
-        "cost": {
-          "time_min": 5
-        },
-        "effect": "Your reputation precedes you. Most disputes resolve in your favor without violence. Some resent you for it."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "socialite"
-    ]
+    }
   },
   {
     "id": "silver_tongue",
@@ -2021,169 +1831,36 @@
     ]
   },
   {
-    "id": "trade_of_blows",
-    "name": "Trade of Blows",
-    "description": "Trade damage like currency. You can afford the exchange rate.",
-    "flavor": "Every hit you take is a hit you're about to give back with interest.",
-    "pool": "combat",
-    "tier": "uncommon",
-    "unlock": {
-      "type": "trial",
-      "trial": "take_50_damage_in_one_fight"
-    },
-    "modifiers": [
-      {
-        "target": "combat.trade_window",
-        "op": "add",
-        "value": 1
-      }
-    ],
-    "actions": [
-      {
-        "id": "open_trade",
-        "context": "combat",
-        "name": "Open the Trade",
-        "cost": {
-          "turn": true,
-          "hp": 10
-        },
-        "effect": "Take 10 damage voluntarily. Your next 3 attacks deal +50% damage. The pain focuses you."
-      },
-      {
-        "id": "settle_debt",
-        "context": "combat",
-        "name": "Settle the Debt",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Cash in: deal bonus damage equal to 50% of damage taken this fight. Once per fight."
-      }
-    ],
-    "paths": [
-      "brawler"
-    ]
-  },
-  {
-    "id": "unbreakable",
-    "name": "Unbreakable",
-    "description": "You don't go down. Not today. Not ever, if you have anything to say about it.",
-    "flavor": "The System filed a complaint about your pain receptors. You filed it under 'suggestions.'",
-    "pool": "combat",
+    "id": "water_breathing",
+    "name": "Water Breathing",
+    "description": "You can breathe underwater. Gills, magic, or just really good lungs \u2014 the System doesn't explain.",
+    "flavor": "The System filed this under 'respiratory flexibility.' You just call it not drowning.",
+    "pool": "system",
     "tier": "rare",
     "unlock": {
       "type": "system_offer"
     },
     "modifiers": [
       {
-        "target": "combat.knockdown_resist",
+        "target": "water.breath_time",
         "op": "add",
-        "value": 0.4
-      },
-      {
-        "target": "combat.stun_duration",
-        "op": "multiply",
-        "value": 0.5
+        "value": 999
       }
     ],
     "actions": [
       {
-        "id": "brace",
-        "context": "combat",
-        "name": "Brace",
+        "id": "dive_deep",
+        "context": "explore",
+        "name": "Dive Deep",
         "cost": {
-          "turn": true
+          "time_min": 30
         },
-        "effect": "Plant your feet. Reduce next incoming damage by 60%. You cannot be knocked down this turn."
-      },
-      {
-        "id": "shake_off",
-        "context": "combat",
-        "name": "Shake It Off",
-        "cost": {
-          "kcal": 50
-        },
-        "effect": "Clear stun, slow, and bleed. Once per fight. Costs 50 kcal \u2014 your body burns fuel to keep going."
+        "effect": "Explore underwater areas. Find things others can't reach."
       }
     ],
     "paths": [
-      "brawler",
+      "explorer",
       "survivalist"
-    ]
-  },
-  {
-    "id": "war_cry",
-    "name": "War Cry",
-    "description": "A sound from somewhere older than language. Things that hear it reconsider.",
-    "flavor": "It's not the volume. It's the promise.",
-    "pool": "combat",
-    "tier": "uncommon",
-    "unlock": {
-      "type": "practice"
-    },
-    "modifiers": [
-      {
-        "target": "social.intimidate",
-        "op": "add",
-        "value": 0.2
-      }
-    ],
-    "actions": [
-      {
-        "id": "bellow",
-        "context": "combat",
-        "name": "War Cry",
-        "cost": {
-          "turn": true,
-          "kcal": 30
-        },
-        "effect": "All enemies must pass a courage check or lose their next turn. Beasts may flee outright."
-      },
-      {
-        "id": "challenge",
-        "context": "social",
-        "name": "Issue Challenge",
-        "cost": {
-          "time_min": 5
-        },
-        "effect": "Challenge a villager to a non-lethal bout. Winner gains respect. Loser gains humility."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "socialite"
-    ]
-  },
-  {
-    "id": "haymaker",
-    "name": "Haymaker",
-    "description": "One big swing. Everything you have, all at once. Subtlety is for people with time.",
-    "flavor": "The windup is the telegraph. The landing is the punctuation.",
-    "pool": "combat",
-    "tier": "common",
-    "unlock": {
-      "type": "practice"
-    },
-    "modifiers": [
-      {
-        "target": "combat.heavy_damage",
-        "op": "multiply",
-        "value": 1.2
-      }
-    ],
-    "actions": [
-      {
-        "id": "throw_haymaker",
-        "context": "combat",
-        "name": "Haymaker",
-        "cost": {
-          "turn": true,
-          "kcal": 40
-        },
-        "effect": "A massive swing: 2.5x damage, but -30% accuracy. If it misses, you're off-balance (enemies get +hit next turn)."
-      }
-    ],
-    "paths": [
-      "brawler"
     ]
   }
 ]
