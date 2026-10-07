@@ -240,7 +240,10 @@
       const ids = (v.roster || []).filter(id => id !== this.state.scholar.villagerId);
       if (!ids.length) return 'open';
       const t = v.trust || {};
-      const avg = ids.reduce((s, id) => s + (t[id] || 15), 0) / ids.length;
+      // NOTE (miser loop 2026-10-07): t[id] === undefined means "never set",
+      // default 15. A villager at trust 0 is DISTRUSTED, not unset — the old
+      // `t[id] || 15` counted them as 15 and lifted the average.
+      const avg = ids.reduce((s, id) => s + (t[id] === undefined ? 15 : t[id]), 0) / ids.length;
       return avg >= 50 ? 'open' : avg >= 25 ? 'wary' : 'closed';
     },
     donateMaterial(mat, n) {
@@ -254,7 +257,7 @@
       this.stashLog('give', def.name, n);
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
-      v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + 1);
+      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 1);
       v.stashGives = v.stashGives || {};
       v.stashGives[vid] = (v.stashGives[vid] || 0) + n;
       this.observe('donate');
@@ -289,7 +292,10 @@
       const net = (v.stashGives[vid] || 0) - (v.stashTakes[vid] || 0);
       if (net < -20) {
         v.trust = v.trust || {};
-        v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
+        // NOTE (miser loop 2026-10-07): explicit undefined check — the old
+        // `(v.trust[vid] || 15)` reset trust to 13 the take after hitting 0
+        // (0 || 15 → 15-2), so stash-skimming trust could never bottom out.
+        v.trust[vid] = Math.max(0, (v.trust[vid] === undefined ? 15 : v.trust[vid]) - 2);
         this.observe('hoard');
         if (Math.random() < 0.4) this.say('Someone watches you take from the stash. They say nothing. The ledger says everything.');
       }
@@ -313,7 +319,7 @@
       this.stashLog('give', item.name || def.name, 1);
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
-      v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + 2);
+      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
       this.say(`Left your ${item.name || def.name} in the stash. Anyone who needs it can take it.`);
       return this.tickAction(2) || this.status();
     },
