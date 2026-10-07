@@ -210,8 +210,8 @@
   }
 
   function compose(g, t, x, y) {
-    // ROBUST (Steve 2026-10-06): the generator must not fail. If detail
-    // isn't available, show the base terrain — never blank, never throw.
+    // DIAGNOSTIC (Steve 2026-10-06): always red. If Steve sees red, compose runs.
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="0" y="0" width="64" height="64" fill="#ff0000"/></svg>';
     try {
       const pal = TILE_BASE[t.type] || FALLBACK_BASE;
       let detail = null;
