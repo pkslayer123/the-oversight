@@ -15554,6 +15554,52 @@
       } catch (e) { return amount; }
     },
 
+    // PROGRESSIVE TRUST (Steve 2026-10-07): higher trust is harder to earn.
+    // 0-50: full rate. 50-75: half rate. 75-90: quarter rate. 90-100: one point
+    // at a time, only for extraordinary acts. Getting someone to die for you
+    // should feel like an achievement, not a grind.
+    trustGainProgressive(vid, baseAmount) {
+      const v = this.state.village;
+      const cur = (v.trust || {})[vid] === undefined ? 15 : v.trust[vid];
+      let scaled = baseAmount;
+      if (cur >= 90) {
+        // 90-100: only extraordinary acts move the needle, one point at a time
+        scaled = baseAmount >= 5 ? 1 : 0;
+      } else if (cur >= 75) {
+        scaled = Math.max(1, Math.floor(baseAmount * 0.25));
+      } else if (cur >= 50) {
+        scaled = Math.max(1, Math.floor(baseAmount * 0.5));
+      }
+      return this.trustGainMult(scaled);
+    },
+
+    // trustBand: what does this trust level MEAN?
+    // 0-10: hostile, 11-24: distrustful, 25-49: wary, 50-74: friendly,
+    // 75-89: loyal, 90-100: devoted
+    trustBand(vid) {
+      const v = this.state.village;
+      const cur = (v.trust || {})[vid] === undefined ? 15 : v.trust[vid];
+      if (cur >= 90) return 'devoted';
+      if (cur >= 75) return 'loyal';
+      if (cur >= 50) return 'friendly';
+      if (cur >= 25) return 'wary';
+      if (cur >= 11) return 'distrustful';
+      return 'hostile';
+    },
+
+    // trustBandDesc: what can you expect at this band?
+    trustBandDesc(band) {
+      const descs = {
+        hostile: "Will work against you. May steal. Won't help.",
+        distrustful: "Won't share. Watches you. Minimal cooperation.",
+        wary: "Cautious cooperation. Fair trades, shares gossip. Won't take risks for you.",
+        friendly: "Shares food. Helps with work. Trusts your judgment.",
+        loyal: "Takes risks for you. Defends you. Shares secrets.",
+        devoted: "Would die for you. This is rare and precious."
+      };
+      return descs[band] || descs.wary;
+    },
+
     // allModifiers: abilities + relics + KNOWLEDGE. One pipeline.
     // Knowledge isn't separate from powers — it amplifies them.
     allModifiers() {
