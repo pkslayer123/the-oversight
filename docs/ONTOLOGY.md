@@ -46,20 +46,21 @@ Releases are blocked if the ledger doesn't match reality.
 ### ui (`app.js`)
 Renders all screens from game state. Mobile-first PWA UI. Grid, D-pad, action bars, sheets, status.
 
-**Provides:** expeditionScreen(), statusBars(st), lowerMenuHTML(st), renderInvInline(slot, view), invSheet(), combatActionsHTML(st)
+**Provides:** expeditionScreen(), statusBars(st), lowerMenuHTML(st), renderInvInline(slot, view), invSheet(), combatActionsHTML(st), modNotice(), modNoted(), modMute(), modViolation(), modRemoval(), modShadow(), modDown() (Moderator audio suite)
 
 **Rules:**
 - mobile_breakpoint: 899px (code: CSS media queries)
 - grid_size: 9x9 (code: renderDetail)
 - one_screen_rule: moment-to-moment play never scrolls (code: CSS)
 - lower_menu: Pack/Sleep/Wait/Map below status (code: lowerMenuHTML)
+- moderator_audio: every mod* audioEvent fired by game.js resolves in Game.audio (code: Game.audio registry)
 
 **Consumes:** Game.state, Game.status()
 
 ### betrayal (`betrayal.js`)
 Betrayal, accusation, trial & exile. Micro-quests disguise later betrayals; aftermath is the game.
 
-**Provides:** betrayalState(), grievanceBetween(a, b), motiveBetween(a, b), recordGrievance(g), inviteHistory(), pendingInvite(), acceptInvite(id), declineInvite(id), resolveInvite(id), inviteReward(id), npcInviteTick(), dayOneNudge(), whoTag(vid), isPlayer(vid), pairAffinity(a, b), visitorWares(vis), traderPay(kcal), visitorBuyWare(visId, idx), visitorHtml(), visitorDaily()
+**Provides:** betrayalState(), grievanceBetween(a, b), motiveBetween(a, b), recordGrievance(g), inviteHistory(), pendingInvite(), acceptInvite(id), declineInvite(id), resolveInvite(id), inviteReward(id), npcInviteTick(), dayOneNudge(), whoTag(vid), isPlayer(vid), pairAffinity(a, b), visitorWares(vis), traderPay(kcal), visitorBuyWare(visId, idx), traderSell(visId, packIdx), traderSellStock(vis), traderAppraise(vis, it) -> { verdict, pricePerUnit, line }, traderKnowsItem(vis, it), traderItemKey(it), seedTraderKnowledge() -> { staples, specialties }, tradeSpirit(person) -> 0-2 (entrepreneurial spirit: trading is a verb), scamminess(person) -> 0-3, tradeSavvy() / theirReadOfYou(person), maybeScamWare(person, ware), recordScam(whoName, whoId, kind, wareName), scamDaily(), confrontScammer(vis, s) / resolveConfront(vis, s, how), hawkerOffer(vid) / hawkerBuy(vid), visitorHtml(), visitorDaily()
 
 **Rules:**
 - betrayal_requires_motive: true (code: betrayal.js)
@@ -89,17 +90,20 @@ Care and exploration decisions. Care was a vending machine — now it requires r
 ### codex-people (`codex-people.js`)
 Every villager is a living codex entry. Deepens while they live.
 
-**Provides:** checkPersonLevel(vid), personDepth(vid), personFirst(vid), theirViewOfYou(vid), noteSharedHistory(vid, text), closePersonBook(vid), codexPersonTick(), confirmField(vid, field), ensurePersonLifeseed(vid), posthumousReveal(vid), revealForLevel(vid), personDepthHTML(vid)
+**Provides:** checkPersonLevel(vid), personDepth(vid), personFirst(vid), theirViewOfYou(vid), noteSharedHistory(vid, text), closePersonBook(vid), codexPersonTick(), confirmField(vid, field), ensurePersonLifeseed(vid), posthumousReveal(vid), revealForLevel(vid), personDepthHTML(vid), personTeachTopics(vid), teachFromPerson(vid, skillId)
 
 **Rules:**
-- (none documented)
+- teaching_needs_trust: people teach only at depth >= 2; strangers won't (code: teachFromPerson, Steve 2026-10-06)
+- topics_never_leak_names: teachable topics use plain labels, never knowledge.json entry names (code: personTeachTopics, Steve 2026-10-06)
+- good_teaching_lands_deep: trusted (L3) teachers grant 2 knowledge levels at once, shown properly (code: teachFromPerson, Steve 2026-10-06)
+- integration_surface: game.js calls in via Game.teachFromPerson(vid, skillId) and Game.personTeachTopics(vid); the codex "Could teach you" section renders topics (code: personDepthHTML, Steve 2026-10-06)
 
-**Consumes:** village.villagers, state.codex.people
+**Consumes:** village.villagers, state.codex.people, Game.learnSkill, Game.skillKnown, Game.data.knowledge, state.codex.skills
 
 ### contests (`contests.js`)
 Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama. UNAVOIDABLE — they interrupt whatever you're doing.
 
-**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireShow(show) -> show (pull-away: a villager goes on TV for a silly reason), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence, contestKnowledge(contestId) -> {seen,wins,level}, contestLearn(contestId, outcome), _contestScaled(base, variant) -> contest (wave + hardened, both ends of fire->resolve), _cxStorePhase(ac, idx, rendered) -> rendered (choice box renders ac.phases directly), _contestDeathLine(contest, how, pname), _contestRenderPhase(ac, phase, idx), _contestCloserOdds(kind, wounds), _contestVerdict(ac) -> multi-participant watch-mode verdict roll (risk-scaled win/lose/die each, cheer-adjusted, bet payout, comfort) (code: _contestVerdict, Steve 2026-10-06), _contestResolveOthers(ac) -> fates for villagers taken alongside the player (code: _contestResolveOthers, Steve 2026-10-06), _cxNameList(ids, capPlayer) -> "Mara" / "Mara and Tove" / "Mara, Tove and Sef", _cxTakenLine(ids) -> taken announcement (single or multi), _cxPluralBeats(text, name) -> verb-agreement fix for multi-take watch beats, _cxKillContestant(pid) -> real roster removal for contest deaths (removeVillager wrapper is a no-op), _contestWatchBeat(contest, pname) -> [setup, turn, ending] contest-specific watch beats (Steve 2026-10-06), _cxCoaching(contest), _cxPhaseSay(text), _contestTithe(contest) -> phases (knowledge-gated measure), _contestSiege(contest) -> phases, _contestMaw(contest) -> phases, _contestOath(contest) -> phases, _contestBeastmaster(contest) -> phases, _contestRiddle(contest) -> phases (memory-cost puzzle), _contestConfession(contest) -> phases (social-fear detective), _contestHoney(contest) -> phases (swarm forage), _contestSecrets(contest) -> phases (secret-cost chance)
+**Provides:** contestEligible() -> {eligible, reason}, contestTick() -> event|null, contestPool(), pickContest(), pickShow(), fireShow(show) -> show (pull-away: a villager goes on TV for a silly reason), fireContest(contest), resolveContest(), contestInterruption(contest, participant) -> sequence, contestKnowledge(contestId) -> {seen,wins,level}, contestLearn(contestId, outcome), _contestScaled(base, variant) -> contest (wave + hardened, both ends of fire->resolve), _cxStorePhase(ac, idx, rendered) -> rendered (choice box renders ac.phases directly), _contestDeathLine(contest, how, pname), _contestRenderPhase(ac, phase, idx), _contestCloserOdds(kind, wounds), _contestVerdict(ac) -> multi-participant watch-mode verdict roll (risk-scaled win/lose/die each, cheer-adjusted, bet payout, comfort) (code: _contestVerdict, Steve 2026-10-06), _contestResolveOthers(ac) -> fates for villagers taken alongside the player (code: _contestResolveOthers, Steve 2026-10-06), _cxNameList(ids, capPlayer) -> "Mara" / "Mara and Tove" / "Mara, Tove and Sef", _cxTakenLine(ids) -> taken announcement (single or multi), _cxPluralBeats(text, name) -> verb-agreement fix for multi-take watch beats, _cxKillContestant(pid) -> real roster removal for contest deaths (removeVillager wrapper is a no-op), _contestWatchBeat(contest, pname) -> [setup, turn, ending] contest-specific watch beats (Steve 2026-10-06), _cxCoaching(contest), _cxPhaseSay(text), _contestTithe(contest) -> phases (knowledge-gated measure), _contestSiege(contest) -> phases, _contestMaw(contest) -> phases, _contestOath(contest) -> phases, _contestBeastmaster(contest) -> phases, _contestRiddle(contest) -> phases (memory-cost puzzle), _contestConfession(contest) -> phases (social-fear detective), _contestHoney(contest) -> phases (swarm forage), _contestSecrets(contest) -> phases (secret-cost chance), _contestQuiet(contest) -> phases (involuntary thought broadcast; knowledge-gated defense; social costs), _contestGuest(contest) -> phases (televised alien dinner; knowledge-gated palate/etiquette), _contestVigil(contest) -> phases (night watchpost; stillness discipline; alarm ends the vigil)
 
 **Rules:**
 - unlock_day: 14 (code: contestTick, contestEligible)
@@ -113,18 +117,23 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 - recast_dead: countdown outlives contestant → each missing contestant recast from living eligible, or cancelled if no one is left (code: resolveContest, Steve 2026-10-06)
 - multi_take: contest.participants count is REAL — the System takes that many people at once (more taken = more FEARED); pc.participants[] carried fire->resolve->interruption (code: fireContest, resolveContest, contestInterruption, Steve 2026-10-06)
 - others_fates: villagers taken alongside the player get their own off-screen contests — rolled at the player's sequence end, can win/lose/die (code: _contestResolveOthers, _contestEnd, _contestDie, _contestRefuse, Steve 2026-10-06)
+- bespoke_death_lines: every contest kills in its own voice — the generic fallback is placeholder text, not doctrine (code: _contestDeathLine, Steve 2026-10-05); price/impress/exchange/auction lines added 2026-10-06
 - death_is_real: contest deaths remove the villager from the roster via _cxKillContestant (removeVillager is an unhooked no-op wrapper; the old else-fallback never ran) (code: _cxKillContestant, _contestDie, _contestResolveOthers, Steve 2026-10-06)
 - watcher_agency: watch choices have real consequences — cheer moves win odds (+5%/+10% veteran, cap +15%, cameras notice), study teaches, bets are real kcal (2x payout on the first taken), comfort lands as trust/mourning (code: _contestWatchPhases, contestChoose, _contestVerdict, Steve 2026-10-06)
 - choice_sometimes: player may get choice to participate, usually grabbed (code: fireContest, Steve 2026-10-05)
 - watch_mode: non-participants watch as a show (code: contestInterruption, Steve 2026-10-05)
 - watched_deaths: watch verdict rolls risk-scaled death — villagers can die on camera (code: _contestVerdict, Steve 2026-10-06)
-- watch_beats_specific: each contest gets its own 3 watch beats (setup/turn/ending) — the fiction of THAT contest, not generic filler; veteran watchers get a coaching line (code: _contestWatchBeat, _contestWatchPhases, Steve 2026-10-06)
+- watch_beats_specific: each contest gets its own 3 watch beats (setup/turn/ending) — the fiction of THAT contest, not generic filler; veteran watchers get a coaching line (code: _contestWatchBeat, _contestWatchPhases, Steve 2026-10-06); price/impress/exchange/auction beats added — generic fallback no longer reachable by any pool contest (code: _contestWatchBeat T table, Steve 2026-10-06)
 - single_prefix: phase texts carry their own 📺 prefix; _cxPhaseSay never doubles it (code: _cxPhaseSay, Steve 2026-10-05)
 - wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
 - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
 - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it) (code: contestPlayable, contestChoose, Steve 2026-10-06)
-- watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 9 wave-2+ contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added (code: _contestWatchBeat, Steve 2026-10-06)
+- watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 16 knowledge-gated contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added, then quiet/guest/vigil, then sorting/witness/cache/longodds (code: _contestWatchBeat, Steve 2026-10-06)
+- risk_rebalance_20261006: HIGH RISK rebalance — brave choices now usually kill (~50% death across full aggressive runs), smart choices live but cost heavily. Pit aggressive: 0.08/0.12 -> 0.20/0.30. Hide: 0.20/0.18/0.25 -> 0.32/0.25/0.38. Siege/hold: 0.20 -> 0.30. Rewards NOT nerfed — high risk justifies high reward (code: contestChoose die odds, Steve 2026-10-06)
+- pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
+- pool_expansion_20261006b: the four smallest pools (puzzle/detective/forage/chance, 3 each) each gain a bespoke variant — sorting (conveyor triage), witness (fabrication hunt), cache (audit heist), longodds (push-your-luck dice). NOT reskins: sorting is triage-under-time not Q&A (riddle); witness is forgery-forensics not liar-hunting (informant); cache is hiding not gathering (calorie_run); longodds is stakes-escalation not pure draw (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
+- beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06); price/impress/exchange/auction beats now resolve (justiceVerdict+exileWalk, levelup+contestSpared, contestCall+rushHit, contestCall+horrorSting) — were silent no-ops (code: CX_BEAT_DEFS, Steve 2026-10-06)
 - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 
 **Consumes:** scholar.day, state.showBudget, state.pendingContest, state.activeContest.participants/cheer/bet/comfort/others, state.contestsSeen, state.codex.contests
@@ -132,15 +141,45 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 ### conversation (`conversation.js`)
 Real back-and-forth dialogue. Player always has response choices.
 
-**Provides:** startConvo(), convoChoices(vid), convoUI() -> {active, transcript, choices}
+**Provides:** startConvo(), convoChoices(vid), convoBeatOf(choiceId, thread), convoFollowups(vid, topic), convoSpeakBackChoice(vid, suppressPivot), convoUI() -> {active, transcript, choices}
 
 **Rules:**
+- compare_maps: choiceId 'compare_maps' merges their visited tiles into your shared map knowledge (code: convoTurn, via Game.compareMaps)
 - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
 - one_beat_turns: a choice yields exactly one new THEM beat; follow-ons queue in c.heldBeats and surface as a voiced continuer ('goon', convoMoreLabel per person/mood/thread); unspoken beats die when the player moves on (code: conversation.js convoTurn, Steve 2026-10-05)
 - tap_advance: one message per tap; msgIndex anchored on entry identity, never raw length; lands on their reply, not your echoed line (code: app.js chatChoice, Steve 2026-10-05)
 - history_view: speaker tab toggles full scrollable transcript (code: app.js dialogueBoxHTML, Steve 2026-10-05)
 
 **Consumes:** village.villagers, state.convos
+
+### convo-beats (`convo-beats.js`)
+Beat-tagged conversation. Every NPC line is tagged at generation time with its beat (offer, question, news, feeling, small). Replies are generated from beat + topic, never a generic grab-bag. Topic changes carry explicit bridge lines.
+
+**Provides:** threadBeatTag(thread) -> beat tag for a conversation thread, Game.beatOf(vid) -> current beat {tag, topic, line}, Game.bridgeLine(vid, fromTopic) -> contextual bridge when leaving a topic, dialogueResponses(vid) -> beat+topic aware replies with variation
+
+**Rules:**
+- tag_at_source: every NPC line is tagged when generated, not classified after the fact (code: convo-beats.js wrapOpening/wrapThreadBeat, Steve 2026-10-06)
+- beat_drives_replies: reply options derive from (beat, topic), never from state flags alone (code: dialogueResponses, Steve 2026-10-06)
+- bridge_on_shift: topic changes speak a bridge line tied to the old topic (code: bridgeLine, Steve 2026-10-06)
+- no_repeat_replies: reply pools rotate via convoPickCycle — two conversations never show identical menus (code: dialogueResponses, Steve 2026-10-06)
+- four_rules_kept: transcript_cap, one_beat_turns, tap_advance, history_view untouched (code: conversation.js ontology)
+- probe_on_news_and_small: the "That doesn't add up" soft probe is offered on news and small beats (wherever the hard confrontation is reachable); withheld on feeling/offer beats (code: dialogueResponses, Steve 2026-10-06)
+
+**Consumes:** village.villagers, state.convos, convoGet(vid), convoPickCycle(vid, key, pool), playerVoice()
+
+### convo-dialogue (`convo-dialogue.js`)
+Dialogue-driven conversation. Every NPC beat generates its own response options — what a person would actually say back to THIS specific thing, not a topic grab-bag.
+
+**Provides:** dialogueBeatKind(vid) -> classifies what the NPC just said/did, dialogueResponses(vid) -> 3-4 responses TO the current beat, convoTurn(vid, choiceId) -> advance the dialogue one beat, convoChoices(vid) -> dialogue-model choices (overrides conversation.js)
+
+**Rules:**
+- beat_drives_menu: responses derive from the NPC's last utterance, not from state flags (code: dialogueResponses, Steve 2026-10-06)
+- no_feature_cut: every existing conversation feature remains reachable — mapped, not removed (code: DIALOGUE_FEATURE_MAP, Steve 2026-10-06)
+- subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: dialogueResponses, Steve 2026-10-06)
+- thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: dialogueResponses + dlg:more/dlg:react, 2026-10-06)
+- soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
+
+**Consumes:** village.villagers, state.convos, convoGet(vid), playerVoice()
 
 ### convo-mood (`convo-mood.js`)
 Per-conversation emotional state (rapport). Warmth and tension shift as you talk; mood is derived from who they are now, never stored per villager.
@@ -157,6 +196,19 @@ Per-conversation emotional state (rapport). Warmth and tension shift as you talk
 
 **Consumes:** state.village.conv (c.mood, per-conversation only), village.trust, village.memory, npcMood, npcTemper
 
+### convo-wants (`convo-wants.js`)
+Want-driven conversation architecture. Every conversation has an NPC want that gives it direction; beats acknowledge what the player said; endings plant seeds for next time.
+
+**Provides:** convoSelectWant(vid) -> want object, convoWantOpener(vid, want) -> {line, thread}, convoComposeBeat(vid, rawBeat, playerSaid) -> composed beat that acknowledges the player, convoPlantSeed(vid, seed), convoCheckSeeds(vid) -> pending seed or null, convoAdvanceWant(vid, playerChoiceKind)
+
+**Rules:**
+- want_driven: every conversation selects one NPC want at start; the want shapes the opening and provides beats (code: convoSelectWant, Steve 2026-10-06)
+- beat_acknowledgment: NPC beats must acknowledge the player's last utterance before delivering new content — no non-sequiturs (code: convoComposeBeat, Steve 2026-10-06)
+- seeds: unresolved wants plant seeds; next conversation opens with the seed (code: convoPlantSeed/convoCheckSeeds, Steve 2026-10-06)
+- arc: want stages 0 (unspoken) -> 1 (surfaced) -> 2 (engaged) -> 3 (resolved); endings record the resolution (code: convoAdvanceWant, Steve 2026-10-06)
+
+**Consumes:** village.villagers, state.convos, npcNeeds (hunger/fear/social/energy)
+
 ### conversation-topics (`convoTopics.js`)
 Generated conversation topics. Every villager is a unique person
 
@@ -170,12 +222,16 @@ Generated conversation topics. Every villager is a unique person
 ### corpses (`corpses.js`)
 Corpse system. Dead bodies persist, can be butchered, buried, or left.
 
-**Provides:** buryCorpse(cid), corpseAt(x, y), corpseDesc(c), examineCorpse(cid), lootCorpse(cid), registerDeath(vid, cause), corpseStage(c), corpseGlyph(c), knowsDeath(vid), generatePossessions(vid), payRespects(cid), codexDeathSync()
+**Provides:** buryCorpse(cid), corpseAt(x, y), corpseDesc(c), examineCorpse(cid), lootCorpse(cid), corpseTakeItem(cid, idx), corpseUseItem(cid, idx), corpseEatItem(cid, idx), registerDeath(vid, cause), corpseStage(c), corpseStageInfo(c), corpseGlyph(c), corpseMeatRead(c), corpseRotBeat(c), corpseTrauma(c, opts), knowsDeath(vid), generatePossessions(vid), payRespects(cid), codexDeathSync(), codexAttunement(), partyDeathNotify(corpse), fightWitnesses(excludeVid)
 
 **Rules:**
-- (none documented)
+- loot is a deliberate per-item action; kills never auto-grant items into the pack (code: corpses.js)
+- first handling of a corpse applies trauma + disease once per corpse, not per item (code: corpses.js)
+- meat left on the body rots on its own clock; the loss is announced, never silent (code: corpses.js)
+- unknown flesh stays knowledge-gated: weight is honest, edibility and calories hidden until learned (code: corpses.js)
+- rot stages are visible in the loot voice: the countdown reads on the body, not after the fact (code: corpses.js)
 
-**Consumes:** state.corpses
+**Consumes:** state.corpses, state.scholar
 
 ### debug (`debug-scenarios.js`)
 One-tap preloaded scenarios for the debug panel. Testing only.
@@ -190,7 +246,7 @@ One-tap preloaded scenarios for the debug panel. Testing only.
 ### encounters (`encounters.js`)
 Encounter framework. Every animal and monster follows the same pattern.
 
-**Provides:** encAnimalKnown(id), encDescribeAnimal(adef), encIdentifyAnimal(id), encDescribeMonster(mdef), encQueueOf(m), encPickCue(known, rawCue, knownCue), encPhase(ent, phase, beats), feedback(msg), feedbackLines(), feedbackMark()
+**Provides:** encAnimalKnown(id), encDescribeAnimal(adef), encIdentifyAnimal(id), encDescribeMonster(mdef), encQueueOf(m), encPickCue(known, rawCue, knownCue), encPhase(ent, phase, beats), encAudio(name, data), encKillLine(animal, kcal), encButcherHonesty(kcal, animal), feedback(msg), feedbackLines(), feedbackMark()
 
 **Rules:**
 - knowledge_gated: true (code: encounters.js)
@@ -257,6 +313,39 @@ State factories, versioned save/load. Village / scholars / Codex / run are indep
 
 **Consumes:** (none documented)
 
+### equipment (`equipment.js`)
+Villagers and the player wear and equip items across body-part slots (head, torso, legs, hands, feet, weapon — one item each) plus misc trinket slots. Full-set items (riot gear) cover all body slots at once: strong and simple early, outpaced by optimized individual pieces mid-late game. AI equips intelligently with personality flavor. Equipped gear renders on sprites and affects combat. Threat is readable at grid distance from the gear itself.
+
+**Provides:** autoEquip(v, itemDefs) -> equip best gear (set-vs-pieces decision + personality), slotForItem(def) -> main slot for an item, or null, isFullSet(itemId) -> boolean, equipScore(itemId, slot, personality, itemDefs) -> numeric score, armorOf(v, itemDefs) -> total protection (pieces + coordination, or set), coordinationBonus(v) -> +2 per fitted piece beyond the first, compareSetVsPieces(v, itemDefs) -> { setTotal, piecesTotal, winner } for UI, weaponBonusOf(v, itemDefs) -> melee bonus from equipped weapon, threatLevel(v, itemDefs) -> 0-3: unarmed, carrying, armored, dangerous, threatLabel(level) -> readable label, gearDescription(v) -> prose for examine/person card, migrateEquipment(person) -> old-save migration (armor -> torso), weaponKind(def) -> spear|blade|axe|bow|blunt|other render hint, armorTier(protection) -> light|medium|heavy render hint, headKind(def) -> pot|cap|helmet|other render hint
+
+**Rules:**
+- one_per_body_slot: each main slot holds exactly one item; full sets occupy all five body slots via the torso key with fullSet flag (code: autoEquip, Steve 2026-10-06)
+- set_vs_pieces_arc: riot set (30) beats early junk (~17) but loses to optimized pieces (~57); coordination bonus (+2/piece) rewards fitted gear (code: coordinationBonus, compareSetVsPieces, Steve 2026-10-06)
+- equip_from_inventory: equipment comes from the person's own items, never conjured (code: autoEquip, Steve 2026-10-06)
+- personality_flavor: showoffs pick flashy, pragmatists pick practical, cautious picks defensive (code: equipScore, Steve 2026-10-06)
+- threat_is_diegetic: threat reads from visible gear, not UI chrome (code: threatLevel, Steve 2026-10-06)
+- head_is_fun: head slot takes anything — a camp pot is a valid helmet (code: equipScore, Steve 2026-10-06)
+
+**Consumes:** Game.data.items (weapon/armor definitions), state.scholar.equipped (player equipment)
+
+### examine-recognition (`examine.js`)
+Examine action + observation memory + recognition. Looking closely at a plant is cheap (time, tiny kcal); foraging costs more energy. Examining yields a vague description (never the name) and creates an observation memory. When someone later teaches you that species, the observation CLICKS — the vague description resolves into the name. That's what unlocks the visual change (sprite depth 1→2).
+
+**Provides:** observePlant(pid, via) -> record an observation memory, observationOf(pid) -> observation record or null, observedPlant(pid) -> boolean: any observation exists, examineQuality() -> 1-3 based on perception skill, examineDescription(pid, quality) -> vague description, never leaks the name, examinePlantCell(cx, cy) -> the Examine action (cheap look, no harvest), recognitionBeat(pid, teacherName) -> revelation narration on identify, plantVisualDepth(pid) -> 0 unknown, 1 examined, 2 known, scrubName(text, name) -> gated text with every name mention removed, learnDifficulty(pid) -> {tier, reason}: how hard THIS character finds it, teachQuality(teacherVid, pid, opts) -> 0-3: quality of a teaching moment, teachPlant(pid, teacherVid, opts) -> the haven teaching moment (applies)
+
+**Rules:**
+- examine_never_names: examine output never contains the species name unless plantKnown (code: scrubName, Steve 2026-10-06)
+- examine_is_cheap: examine costs time + tiny kcal, never harvests (code: examinePlantCell, Steve 2026-10-06)
+- observation_precedes_recognition: identifyPlant on an observed species fires the recognition beat (code: recognitionBeat, Steve 2026-10-06)
+- quality_varies: botanist/herbalist/green_thumb deepen the vague description (code: examineQuality, Steve 2026-10-06)
+- forage_also_observes: harvesting records an observation too — handling teaches (code: observePlant via doAction, Steve 2026-10-06)
+- teaching_quality_gates_depth: good teaching needs knowledge + trust + showing; hearsay caps at partial (code: teachQuality, Steve 2026-10-06)
+- foreign_plants_resist_telling: hard-difficulty plants can't be learned by hearsay — they must be SHOWN (code: teachPlant, Steve 2026-10-06)
+- shown_properly_lands_deep: Q3 teaching grants uses (level 2), not just the name (code: teachPlant, Steve 2026-10-06)
+- integration_surface: game.js calls in via Scattering.Examine.teachPlant(pid, vid, {shown, hearsay}) and Game.teachPlant (alias); the haven-haul beat is the intended caller (code: teachPlant, Steve 2026-10-06)
+
+**Consumes:** state.codex.observations, state.codex.plants (plantKnown), Game.data.plants (description, taxon, seasons, tileAffinity, lookalikeNote), Game.plantLevel, Game.identifyPlant, Game.personDepth, Game.vpOf, Game.parseOrigin, state.map cell species (plantSpecies/bushSpecies/tree per tile), state.village.plantKnowledge
+
 ### food (`food.js`)
 Food reality system. Food must be known-edible AND in edible state. Processing changes net calories.
 
@@ -271,12 +360,20 @@ Food reality system. Food must be known-edible AND in edible state. Processing c
 ### game-core (`game.js`)
 Central game controller. Owns state, map, day loop, actions, encounters, combat, village simulation. UI renders from it.
 
-**Provides:** state (scholar, village, world), tickAction(n), doAction(actionId), sleep(), eat(), eatOne(idx), spendCombatAction(kind), tbFighter(id), tbAdvance(), tbAfterPlayerAction(), contestTick() (delegates to contests.js), fireShow(event) -> show (delegates to contests.js), glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract), tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped), tbTerrainAt(x, y) -> type | null, tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double), sleepQuality(), sleepPreview(), kcalCap() (delegates to food.js)
+**Provides:** state (scholar, village, world), tickAction(n), doAction(actionId), sleep(), eat(), eatOne(idx), spendCombatAction(kind), tbFighter(id), fighterSize(f), fighterTiles(f) (multi-tile occupancy), tbCanOccupy(f, nx, ny), tbMoveFighter(f, nx, ny) (validated movement), tbAdvance(), tbAfterPlayerAction(), contestTick() (delegates to contests.js), fireShow(event) -> show (delegates to contests.js), glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract), tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped), tbTerrainAt(x, y) -> type | null, tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double), modIs(m) (wave-2 apex id gate: the Moderator), modVerbBlocked(verb) (mute enforcement at the player choke points), modProjectField(m, r, type) (suppression field projection, follows the monster), sleepQuality(), sleepPreview(), playerAtHaven() (drifter presence gate for home-village narration), kcalCap() (delegates to food.js), hydrateSeed(seed) -> full person (unified person system: seed -> genCharacter depth), getPerson(id) -> person | null (unified lookup: villagers + hydrated seeds), markSeen(x, y, kind, by), mapSeen(x, y) -> 'visited'|'shared'|null (player map knowledge: fog of war display), worldMonsters() -> [{id,tx,ty,mx,my,hp,...}] (living world: monsters on tiles, independent of the player), monsterAt(tx, ty) -> monster | null, playerMonster() -> monster | null (the monster on the player's tile; replaces scholar.monster reads; adopts debug-set alias), syncMonsterAlias() (scholar.monster mirrors the player-tile monster for unmigrated consumers), spawnWorldMonster(mdef, tx, ty, opts) -> monster, removeWorldMonster(m), nearestWorldMonster(tx, ty) -> monster | null, worldMonsterCap() -> int (3 base, 5 arrived, 8 deep, +1 night), maintainWorldMonsters(), wanderWorldMonsters(), villagerMonsterTick(), worldTick() (living-world step on tile entry), seedVillagerMaps() (every villager gets visitedTiles: haven + nearby), compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge)
 
 **Rules:**
 - terraform_difficult_cost: 2 (code: tbTerrainCost)
 - terraform_entry_damage: 1 (code: tbTerrainStep)
 - terraform_scope: fight-scoped, dies with the fight (code: tbTerraform)
+- moderator_field: radius 2, 3 in shadowban; re-projected each of its turns (code: modProjectField)
+- moderator_violation: muted verb inside the field spends the turn, +3 strike damage each (code: modVerbBlocked)
+- moderator_phases: observing -> muting -> shadowban (code: tbMonsterTurn)
+- multitile_occupancy: size 2 = 2x2 block, mx,my is top-left (code: fighterTiles)
+- multitile_validation: all tiles walkable before each move (code: tbCanOccupy)
+- map_is_seen_only: world map displays only visited + map-shared tiles; unvisited renders blank (code: mapSeen, Steve 2026-10-06)
+- world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
+- maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 - day_parts: 4 nested (code: TIME)
 - ticks_per_day: defined in TIME (code: tickAction)
 - sleep_heal_bunk: 35 (code: sleepPreview)
@@ -284,6 +381,8 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 - sleep_heal_hall: 20 (code: sleepPreview)
 - sleep_heal_fireside: 18 (code: sleepPreview)
 - sleep_heal_ground: 12 (code: sleepPreview)
+- home_narration_presence: villageLives/ambientSocial/firesideTeaching narrate only when playerAtHaven(); sim still runs; home deaths queue to scholar.awayNews, delivered by returnToVillage (code: playerAtHaven)
+- homecoming_beat: returnToVillage says a return line after >=2 days away, tracked via scholar.lastHavenDay (code: returnToVillage)
 - combat_action_economy: move + acted (code: tbAfterPlayerAction)
 
 **Consumes:** state.scholar, state.village, state.codex (central game state roots)
@@ -301,7 +400,7 @@ Inter-village hierarchy. Villages have relationships, rivalries, trade.
 ### journal (`journal.js`)
 People journal. Facts fill in as you learn them. Pre-System manual, post-System automatic.
 
-**Provides:** journalPerson(vid), journalLearn(vid, topic), journalTraitWord(vid), peopleJournal()
+**Provides:** journalPerson(vid), journalLearn(vid, topic), journalTraitWord(vid), peopleJournal(), occupationKnown(vid), occupationLabel(vid)
 
 **Rules:**
 - pre_system_manual: true (code: journal.js)
@@ -370,6 +469,7 @@ Formal party mechanics. Roles, formations.
 
 **Rules:**
 - (none documented)
+- turn_guard: convoTurn rejects non-string choice ids with null (UI-safe) instead of throwing on .indexOf (code: convoTurn, 2026-10-06)
 
 **Consumes:** state.party
 
@@ -389,7 +489,9 @@ Perception system. Proximity hints, spotting.
 **Provides:** perceptionHints()
 
 **Rules:**
-- (none documented)
+- unknown_trees_stay_trees: species name and nut promise gated on treeLevel >= 1; unknown trees are just trees (code: perceptionHints, Steve 2026-10-06)
+- whispers_never_label: curiosity whispers hint at hidden features, never name them; one whisper at a time, quiet (code: perceptionHints, Steve 2026-10-06)
+- monsters_gated_by_codex: monster names show only via monsterKnown/monsterDesc (village-agreed or System); people via displayName (socially earned) (code: perceptionHints, Steve 2026-10-06)
 
 **Consumes:** scholar.perception
 
@@ -403,6 +505,16 @@ Character progression. XP, levels, abilities.
 
 **Consumes:** scholar.xp, scholar.abilities
 
+### sprites (`sprites.js`)
+Custom SVG sprite registry for the visual identity law.
+
+**Provides:** —
+
+**Rules:**
+—
+
+**Consumes:** —
+
 ### tools-stashes (`storage.js`)
 Tool prerequisites, raw materials, village stash ledger, personal caches. (Save/load lives in engine/state.js.)
 
@@ -413,17 +525,34 @@ Tool prerequisites, raw materials, village stash ledger, personal caches. (Save/
 
 **Consumes:** scholar.inventory, state.codex
 
+### tile-scenes (`tile-scenes.js`)
+Composes each world-map tile as a miniature auto-composed SVG scene: terrain base + a simplified sampling of detail-grid cells (structures, water, trees, plants as mini shapes) + entity markers for player/villagers/monster/animal when they occupy the tile. Cached per tile on tile._sceneCache, keyed by a cheap state fingerprint; re-rendered only when meaningful state changes. Fog-of-war aware: unseen tiles render a blank dark square. Terminal aesthetic, string building only (no DOM), ~64x64 viewBox readable at 40px.
+
+**Provides:** svgFor(x, y, opts) -> SVG string for the tile (opts.seen decides fog), invalidate(x, y) -> drop the cached scene for one tile, invalidateAll() -> drop cached scenes for all tiles, touch(x, y) -> bump the tile's scene version so the next svgFor re-renders
+
+**Rules:**
+- fog_is_blank: svgFor with opts.seen falsy returns a blank dark square and never generates detail (code: svgFor, Steve 2026-10-06)
+- cache_is_keyed: cache entries live on tile._sceneCache as {key, svg}; the key fingerprints tile type + quantized stock + scene version + entity signature (code: fingerprint, Steve 2026-10-06)
+- touch_is_the_bump: forage/harvest/structure-build call touch(x, y) to force re-render; stock quantization alone is too coarse for visual freshness (code: touch, Steve 2026-10-06)
+- miniature_not_sprite: detail cells render as simple shapes, never full sprites — this is a 40px-readable miniature (code: markerFor, Steve 2026-10-06)
+- entities_are_local: player/villager/animal markers only render on the player's tile, from detail-grid mx/my coords (code: entityMarkers, Steve 2026-10-06)
+- no_monster_markers: the map shows geography only, never live monster positions (code: entityMarkers, Steve 2026-10-06)
+- no_dom: composition is pure string building; safe to call from hot paths and off-thread tests (code: compose, Steve 2026-10-06)
+
+**Consumes:** Game.tileAt, Game.genDetail (detail-grid generation), Game.map.px/py (player tile), Game.state.scholar (mx,my,animal), Game.state.worldMonsters (NOT rendered on map — geography only, Steve 2026-10-06), Game.state.village.positions (villager detail-grid positions)
+
 ### truth (`truth.js`)
-Truth/distortion. Gossip spreads with distortion through retelling.
+Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip distorts per retelling (code: game.js seedGossip).
 
 **Provides:** trackClaim(vid, topic, claim), getClaims(vid), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), confrontDoubt(vid), npcGossipAbout(vid)
 
 **Rules:**
-- distortion_per_retelling: true (code: truth.js)
+- claim_gossip_shares_truth_no_distortion: true (code: npcGossipAbout)
 - min_liars_per_village: 1 (code: newGame wrapper)
 - verbal_slips_require_shared_language: true (code: endDay slip loop)
 - observation_doubt_one_per_field: true (code: addDoubt)
 - gossip_intel_forms_lead_without_claim: true (code: checkGossipClaim)
+- prods_raise_confess_odds: each 'prodded' soft-probe evidence entry adds +5% confess chance (cap +15%) — softening before the hard confrontation (code: confrontDoubt, Steve 2026-10-06)
 - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 
 **Consumes:** village.gossip
