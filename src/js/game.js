@@ -13725,6 +13725,10 @@
       try {
         const D = globalThis.Scattering && globalThis.Scattering.Drama;
         if (!D) return;
+        // Steve 2026-10-07: ALL drama is OFF before the System arrives (day 7).
+        // The game starts simple and quiet. Then the System integrates and the
+        // world comes alive — it's really happening to your character.
+        if (!this.state.systemArrived) return;
         // Steve 2026-10-07: all drama scales with system integration.
         // Higher integration = more elaborate effects. The System watches more closely.
         let integ = 0;
