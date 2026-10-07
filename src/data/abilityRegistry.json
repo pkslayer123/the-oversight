@@ -1,0 +1,2128 @@
+{
+  "_schema": "abilityRegistry/1",
+  "_generated": "2026-10-07",
+  "_docs": "Ability Registry — the source of truth for ability wiring. Each ability in src/data/abilities.json gets one entry here documenting HOW it's wired into the game. STATUS VALUES: 'wired' = has code references, modifiers, or synergy participation. 'partial' = synergy-only (no direct code path). 'dead' = no wiring at all (flag for Steve, do not delete). ORPHAN CODE REFS: ability IDs referenced in code but missing from abilities.json. DEAD ACTIVE DEFS: abilities with an 'active' field that no code reads (the active/cooldown system was never built). To add a new ability: 1) add to abilities.json, 2) add entry here with wiring info, 3) run scripts/validate-ability-registry.js.",
+  "_stats": {
+    "total": 69,
+    "wired": 69,
+    "partial": 0,
+    "dead": 0
+  },
+  "orphanCodeRefs": [
+    {
+      "id": "observer",
+      "foundIn": [
+        "betrayal.js:462"
+      ],
+      "note": "hasAbility('observer') check; no such ability in abilities.json. Likely renamed or never added."
+    },
+    {
+      "id": "social_read",
+      "foundIn": [
+        "betrayal.js:461",
+        "betrayal.js:3361"
+      ],
+      "note": "hasAbility('social_read') checks; no such ability in abilities.json. Likely renamed or never added."
+    }
+  ],
+  "deadActiveDefs": [
+    {
+      "id": "field_medicine",
+      "active": {
+        "type": "heal",
+        "amount": 20,
+        "cooldown": "daypart",
+        "target": "self"
+      },
+      "note": "Active/cooldown system was never implemented. No code reads the 'active' field."
+    },
+    {
+      "id": "herbal_remedy",
+      "active": {
+        "type": "cure_disease",
+        "cooldown": "day"
+      },
+      "note": "Same — dead active def."
+    },
+    {
+      "id": "purify",
+      "active": {
+        "type": "cure_poison",
+        "cooldown": "day"
+      },
+      "note": "Same — dead active def."
+    }
+  ],
+  "abilities": {
+    "triage": {
+      "id": "triage",
+      "name": "Triage",
+      "description": "Stop bleeding, set bones, treat infection. Your hands remember the ER.",
+      "tier": null,
+      "pool": "care",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "healing.amount",
+            "op": "multiply",
+            "value": 1.5,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": [
+          "Adrenaline Control: stabilize then fight on"
+        ]
+      },
+      "wiring": {
+        "codeRefs": [
+          "debug-scenarios.js:1281",
+          "debug-scenarios.js:1292",
+          "debug-scenarios.js:1303",
+          "debug-scenarios.js:1316",
+          "alienPlayers.js:232",
+          "alienPlayers.js:236",
+          "alienPlayers.js:240",
+          "alienPlayers.js:242"
+        ],
+        "codeRefCount": 8,
+        "synergies": [
+          "surgeons_calm"
+        ],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    },
+    "steady_hands": {
+      "id": "steady_hands",
+      "name": "Steady Hands",
+      "description": "Fine work under pressure. Dressing game, stitching wounds, tying snares — no shake.",
+      "tier": null,
+      "pool": "care",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "craft.success",
+            "op": "multiply",
+            "value": 1.25,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "debug-scenarios.js:1292",
+          "debug-scenarios.js:1303",
+          "debug-scenarios.js:1316",
+          "alienPlayers.js:232",
+          "alienPlayers.js:236"
+        ],
+        "codeRefCount": 5,
+        "synergies": [
+          "surgeons_calm"
+        ],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    },
+    "game_sense": {
+      "id": "game_sense",
+      "name": "Game Sense",
+      "description": "Read sign: tracks, scat, browse lines. You know what's been here and how long ago.",
+      "tier": null,
+      "pool": "fieldcraft",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "hunt.find_chance",
+            "op": "multiply",
+            "value": 1.4,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": [
+          "Patient Aim: find it, then drop it clean"
+        ]
+      },
+      "wiring": {
+        "codeRefs": [
+          "debug-scenarios.js:1270",
+          "debug-scenarios.js:1281",
+          "debug-scenarios.js:1292",
+          "debug-scenarios.js:1303",
+          "debug-scenarios.js:1327",
+          "alienPlayers.js:228",
+          "alienPlayers.js:230",
+          "alienPlayers.js:234",
+          "alienPlayers.js:236",
+          "alienPlayers.js:238"
+        ],
+        "codeRefCount": 12,
+        "synergies": [],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    },
+    "patient_aim": {
+      "id": "patient_aim",
+      "name": "Patient Aim",
+      "description": "One shot. You don't take the shot unless it's the shot.",
+      "tier": null,
+      "pool": "combat",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "combat.strike_damage",
+            "op": "multiply",
+            "value": 2,
+            "condition": "round:1"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "debug-scenarios.js:1270",
+          "debug-scenarios.js:1281",
+          "debug-scenarios.js:1292",
+          "debug-scenarios.js:1303",
+          "alienPlayers.js:228",
+          "alienPlayers.js:230",
+          "alienPlayers.js:232",
+          "alienPlayers.js:236",
+          "alienPlayers.js:238",
+          "alienPlayers.js:240"
+        ],
+        "codeRefCount": 11,
+        "synergies": [],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    },
+    "field_dressing": {
+      "id": "field_dressing",
+      "name": "Field Dressing",
+      "description": "Break down game fast and clean. Less waste, more meat, usable parts.",
+      "tier": null,
+      "pool": "craft",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "hunt.meat_yield",
+            "op": "multiply",
+            "value": 1.3,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": [
+          "Preservation Instinct: harvest, then keep it"
+        ]
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    },
+    "preservation_instinct": {
+      "id": "preservation_instinct",
+      "name": "Preservation Instinct",
+      "description": "You think in shelf life. Smoking, drying, salting — food that lasts is food that saves.",
+      "tier": null,
+      "pool": "craft",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "food.spoilage_days",
+            "op": "add",
+            "value": 2,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    },
+    "forage_identification": {
+      "id": "forage_identification",
+      "name": "Forage Identification",
+      "description": "Tell dandelion from disaster at a glance. The woods start talking.",
+      "tier": null,
+      "pool": "fieldcraft",
+      "unlock": {
+        "detail": "Identify 5 plants correctly",
+        "type": "discovery"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "forage.learn_threshold",
+            "op": "add",
+            "value": -1
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "debug-scenarios.js:1327",
+          "alienPlayers.js:238"
+        ],
+        "codeRefCount": 2,
+        "synergies": [],
+        "grantPath": "discovery action"
+      },
+      "status": "wired"
+    },
+    "iron_stomach": {
+      "id": "iron_stomach",
+      "name": "Iron Stomach",
+      "description": "Your gut handles what it shouldn't. A useful lie your body tells itself.",
+      "tier": null,
+      "pool": "care",
+      "unlock": {
+        "detail": "Trial of Hunger survived",
+        "type": "trial"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "food.poison_chance",
+            "op": "multiply",
+            "value": 0.25,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [
+          "clean_plate"
+        ],
+        "grantPath": "trial completion"
+      },
+      "status": "wired"
+    },
+    "soft_step": {
+      "id": "soft_step",
+      "name": "Soft Step",
+      "description": "Move through woods like weather. Less noise, fewer surprises.",
+      "tier": null,
+      "pool": "fieldcraft",
+      "unlock": {
+        "detail": "Traverse 20 tiles undetected",
+        "type": "discovery"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "travel.encounter_chance",
+            "op": "multiply",
+            "value": 0.7,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "debug-scenarios.js:1292",
+          "debug-scenarios.js:1303",
+          "debug-scenarios.js:1327",
+          "alienPlayers.js:228",
+          "alienPlayers.js:230",
+          "alienPlayers.js:232",
+          "alienPlayers.js:234",
+          "alienPlayers.js:238",
+          "alienPlayers.js:240",
+          "alienPlayers.js:242"
+        ],
+        "codeRefCount": 10,
+        "synergies": [],
+        "grantPath": "discovery action"
+      },
+      "status": "wired"
+    },
+    "taught_hands": {
+      "id": "taught_hands",
+      "name": "Taught Hands",
+      "description": "Someone taught you this over a long winter. Knowledge is the only inheritance.",
+      "tier": null,
+      "pool": "craft",
+      "unlock": {
+        "detail": "Learn from a village elder",
+        "type": "mentorship"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "craft.success",
+            "op": "add",
+            "value": 0.1,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "mentorship"
+      },
+      "status": "wired"
+    },
+    "pattern_recognition": {
+      "id": "pattern_recognition",
+      "name": "Pattern Recognition",
+      "description": "The System noticed you noticing patterns. It approves, in its way.",
+      "tier": null,
+      "pool": "system",
+      "unlock": {
+        "detail": "Offered after 3 novel discoveries",
+        "type": "trial"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "forage.rare_find_chance",
+            "op": "add",
+            "value": 0.1,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14894",
+          "alienPlayers.js:228",
+          "alienPlayers.js:230",
+          "alienPlayers.js:232",
+          "alienPlayers.js:236",
+          "alienPlayers.js:238",
+          "alienPlayers.js:242"
+        ],
+        "codeRefCount": 7,
+        "synergies": [
+          "sees_the_weave"
+        ],
+        "grantPath": "trial completion"
+      },
+      "status": "wired"
+    },
+    "adrenaline_control": {
+      "id": "adrenaline_control",
+      "name": "Adrenaline Control",
+      "description": "Burn bright, pay later. Once per expedition, act twice.",
+      "tier": null,
+      "pool": "combat",
+      "unlock": {
+        "detail": "Trial of Blood survived",
+        "type": "trial"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "combat.dodge_chance",
+            "op": "add",
+            "value": 0.15,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": [
+          "Triage: stabilize then fight on"
+        ]
+      },
+      "wiring": {
+        "codeRefs": [
+          "debug-scenarios.js:1281",
+          "debug-scenarios.js:1292",
+          "debug-scenarios.js:1303",
+          "alienPlayers.js:228",
+          "alienPlayers.js:230",
+          "alienPlayers.js:232",
+          "alienPlayers.js:234",
+          "alienPlayers.js:236",
+          "alienPlayers.js:238",
+          "alienPlayers.js:240"
+        ],
+        "codeRefCount": 11,
+        "synergies": [
+          "cornered_fury"
+        ],
+        "grantPath": "trial completion"
+      },
+      "status": "wired"
+    },
+    "green_thumb": {
+      "id": "green_thumb",
+      "name": "Green Thumb",
+      "description": "Foraging yields +50%. You know where to look.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14666",
+          "game.js:14888",
+          "examine.js:72"
+        ],
+        "codeRefCount": 3,
+        "synergies": [
+          "sun_garden"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "tracker": {
+      "id": "tracker",
+      "name": "Tracker",
+      "description": "Hunting success +30%. You read the ground.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:4373",
+          "game.js:4385",
+          "game.js:7549",
+          "game.js:8953",
+          "game.js:8974",
+          "game.js:10576",
+          "food.js:1208",
+          "examine.js:73",
+          "encounters.js:699",
+          "encounters.js:748"
+        ],
+        "codeRefCount": 15,
+        "synergies": [
+          "apex_sense"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "diplomat": {
+      "id": "diplomat",
+      "name": "Diplomat",
+      "description": "Trust builds 2x faster. People open up to you.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:2359",
+          "game.js:2619",
+          "game.js:2946",
+          "conversation.js:2820",
+          "alienPlayers.js:230"
+        ],
+        "codeRefCount": 5,
+        "synergies": [
+          "peacemakers_voice"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "camp_cook": {
+      "id": "camp_cook",
+      "name": "Camp Cook",
+      "description": "Cooking uses half the water. +10% kcal.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:7989",
+          "game.js:8571",
+          "game.js:8598"
+        ],
+        "codeRefCount": 3,
+        "synergies": [
+          "closed_loop"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "generous": {
+      "id": "generous",
+      "name": "Generous Heart",
+      "description": "Donating gives 2x trust.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "storage.js:620",
+          "game.js:3770",
+          "game.js:3776",
+          "game.js:8626",
+          "game.js:8637",
+          "game.js:8639",
+          "game.js:9519",
+          "game.js:9716",
+          "game.js:9745",
+          "game.js:13671"
+        ],
+        "codeRefCount": 13,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "scrounger": {
+      "id": "scrounger",
+      "name": "Scrounger",
+      "description": "Ruin looting finds +1 item.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14623",
+          "game.js:14631",
+          "alienPlayers.js:234"
+        ],
+        "codeRefCount": 3,
+        "synergies": [
+          "delver"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "squirrel_friend": {
+      "id": "squirrel_friend",
+      "name": "Squirrel Friend",
+      "description": "Squirrels sometimes leave you nuts. (Random gifts.)",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "forage.gift_chance",
+            "op": "add",
+            "value": 0.25
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "alienPlayers.js:234"
+        ],
+        "codeRefCount": 1,
+        "synergies": [
+          "critter_network"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "rain_dancer": {
+      "id": "rain_dancer",
+      "name": "Rain Dancer",
+      "description": "When it rains, +1L water free. (You dance. It works.)",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "water.rain_catch",
+            "op": "add",
+            "value": 1
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14160",
+          "alienPlayers.js:234"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "stormcaller"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "loud_chewer": {
+      "id": "loud_chewer",
+      "name": "Loud Chewer",
+      "description": "Eating is 2x louder (monsters hear you). But +5 morale.",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "monster.hear_mult",
+            "op": "multiply",
+            "value": 2
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "hoarder": {
+      "id": "hoarder",
+      "name": "Hoarder",
+      "description": "+10kg carry, but villagers trust you 20% less. (They notice.)",
+      "tier": "vile",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "trust.gain_mult",
+            "op": "multiply",
+            "value": 0.8
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "storage.js:619",
+          "ledger.js:479",
+          "game.js:8668"
+        ],
+        "codeRefCount": 3,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "thief": {
+      "id": "thief",
+      "name": "Light Fingers",
+      "description": "Steal from pantry without trust loss (50%). If caught, -20 trust.",
+      "tier": "vile",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:8868"
+        ],
+        "codeRefCount": 1,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "photosynthesis": {
+      "id": "photosynthesis",
+      "name": "Photosynthesis",
+      "description": "Gain 100 kcal/hour in sunlight. (You're becoming a plant.)",
+      "tier": "overpowered",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14892",
+          "game.js:15331"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "sun_garden"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "second_wind": {
+      "id": "second_wind",
+      "name": "Second Wind",
+      "description": "Once per day, when you'd die, you don't. (1 HP, 500 kcal.)",
+      "tier": "overpowered",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:24533",
+          "game.js:24539"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "undying_fury",
+          "refuses_death"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "lucky_rock": {
+      "id": "lucky_rock",
+      "name": "Lucky Rock",
+      "description": "Your lucky rock. +5% to everything. (It's not the rock. It's you believing in the rock. The System finds this adorable and helps a little.)",
+      "tier": "underpowered",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "luck.global",
+            "op": "multiply",
+            "value": 1.05
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:13753"
+        ],
+        "codeRefCount": 1,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "bird_whisperer": {
+      "id": "bird_whisperer",
+      "name": "Bird Whisperer",
+      "description": "Birds land on you. They also warn you: +20% chance to detect monsters before they detect you. (The birds see everything.)",
+      "tier": "underpowered",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "monster.detect_chance",
+            "op": "add",
+            "value": 0.2
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [
+          "critter_network"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "chitin_skin": {
+      "id": "chitin_skin",
+      "name": "Chitin Skin",
+      "description": "Your skin hardens into plates. +30 armor, but -20% trust (you look wrong).",
+      "tier": "body_horror",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "armor.flat",
+            "op": "add",
+            "value": 30
+          },
+          {
+            "target": "trust.gain_mult",
+            "op": "multiply",
+            "value": 0.8
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14094",
+          "game.js:18918"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "perfect_chrysalis"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "extra_stomach": {
+      "id": "extra_stomach",
+      "name": "Extra Stomach",
+      "description": "You grow a second stomach. Bank twice the calories — but the hunger doubles too. (It's always hungry.)",
+      "tier": "body_horror",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "food.eat_target_mult",
+            "op": "multiply",
+            "value": 2
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "deep_reserves": {
+      "id": "deep_reserves",
+      "name": "Deep Reserves",
+      "description": "Your body learns to bank calories like a war chest. Bank 5× the energy. The furnace is always lit — but it must be FED.",
+      "tier": "body_horror",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "food.bank_mult",
+            "op": "multiply",
+            "value": 5
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "eyes_in_back": {
+      "id": "eyes_in_back",
+      "name": "Eyes in the Back",
+      "description": "You see behind you. Can't be ambushed. But you see... things. (-5 morale when alone.)",
+      "tier": "body_horror",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "party.js:478",
+          "game.js:13430"
+        ],
+        "codeRefCount": 2,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "molt": {
+      "id": "molt",
+      "name": "Molt",
+      "description": "Once per week, shed your skin. Heal to full, but lose all equipped gear (it's stuck in the old skin).",
+      "tier": "body_horror",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:24520",
+          "game.js:24526"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "perfect_chrysalis"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "blood_magic": {
+      "id": "blood_magic",
+      "name": "Blood Price",
+      "description": "Spend 10 HP to gain 500 kcal. (Your body eats itself. It's efficient. It's horrifying.)",
+      "tier": "risky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14112",
+          "game.js:14149"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "crimson_circuit"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "rage": {
+      "id": "rage",
+      "name": "Berserker Rage",
+      "description": "+100% damage, but you attack the nearest thing (friend or foe). Lasts 3 rounds.",
+      "tier": "risky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "justice.js:762",
+          "game.js:17994",
+          "game.js:24535",
+          "game.js:24537",
+          "game.js:24540"
+        ],
+        "codeRefCount": 5,
+        "synergies": [
+          "undying_fury"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "cannibal_frenzy": {
+      "id": "cannibal_frenzy",
+      "name": "Red Hunger",
+      "description": "When starving, you can eat anything (even people). +1000 kcal, but -30 trust permanently.",
+      "tier": "risky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14134",
+          "game.js:14213"
+        ],
+        "codeRefCount": 2,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "pact": {
+      "id": "pact",
+      "name": "Pact with Static",
+      "description": "Gain a random overpowered ability, but lose a random utility ability. (The Static gives. The Static takes.)",
+      "tier": "risky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14074",
+          "game.js:14076"
+        ],
+        "codeRefCount": 2,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "scream_cheese": {
+      "id": "scream_cheese",
+      "name": "Scream Cheese",
+      "description": "You can scream so loud it curdles milk (and stuns monsters for 1 round). 1/day.",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:18270",
+          "app.js:11890",
+          "app.js:11962"
+        ],
+        "codeRefCount": 3,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "pocket_sand": {
+      "id": "pocket_sand",
+      "name": "Pocket Sand",
+      "description": "Throw sand in eyes. Blinds for 2 rounds. (You always have sand. Don't ask where.)",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:16610"
+        ],
+        "codeRefCount": 1,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "taste_vision": {
+      "id": "taste_vision",
+      "name": "Taste Vision",
+      "description": "You can taste colors. (Reveals hidden loot: +30% find chance in ruins. The walls taste like secrets.)",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "ruin.find_mult",
+            "op": "multiply",
+            "value": 1.3,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "poisoner": {
+      "id": "poisoner",
+      "name": "Poisoner",
+      "description": "You can poison food/water. (Useful against monsters. Or... others.)",
+      "tier": "vile",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "hunt.trap_catch",
+            "op": "multiply",
+            "value": 1.5
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "fear_aura": {
+      "id": "fear_aura",
+      "name": "Dread",
+      "description": "Villagers and monsters are uneasy around you. -10 trust, but monsters hesitate (+1 round before attacking).",
+      "tier": "vile",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "trust.gain_mult",
+            "op": "multiply",
+            "value": 0.9
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14096",
+          "game.js:16609"
+        ],
+        "codeRefCount": 2,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "grave_robber": {
+      "id": "grave_robber",
+      "name": "Grave Robber",
+      "description": "You can loot the dead (villagers, monsters). Good gear. -15 trust if seen.",
+      "tier": "vile",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14625",
+          "game.js:24408"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "delver"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "time_skip": {
+      "id": "time_skip",
+      "name": "Time Skip",
+      "description": "Skip to the next day part instantly. (Ages you 1 day. The time has to come from somewhere.)",
+      "tier": "overpowered",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14113",
+          "game.js:14154"
+        ],
+        "codeRefCount": 2,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "hive_mind": {
+      "id": "hive_mind",
+      "name": "Hive Mind",
+      "description": "You know what all villagers are doing (map reveals). But they know what YOU'RE doing too. (-10 trust.)",
+      "tier": "overpowered",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14098"
+        ],
+        "codeRefCount": 1,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "ant_trail": {
+      "id": "ant_trail",
+      "name": "Ant Trail",
+      "description": "You can follow ant trails to water and sugar. Ants know things.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:16197"
+        ],
+        "codeRefCount": 1,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "cold_blooded": {
+      "id": "cold_blooded",
+      "name": "Cold-Blooded",
+      "description": "You need 20% less food in cold weather. Your body budgets like an accountant.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:7019",
+          "game.js:16176"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "efficient_machine"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "echo_location": {
+      "id": "echo_location",
+      "name": "Echo Location",
+      "description": "Clap once: you sense the layout of any 9x9 grid (reveals blocked cells). 1/day.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14115",
+          "game.js:14175"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "apex_sense"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "compost_king": {
+      "id": "compost_king",
+      "name": "Compost King",
+      "description": "Spoiled food becomes fertilizer: bury it, and forage yields +10% on that tile next season.",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14130",
+          "game.js:14132"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "closed_loop"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "beard_moss": {
+      "id": "beard_moss",
+      "name": "Beard Moss",
+      "description": "Moss grows in your beard/hair. You always have tinder. (Looks great, honestly.)",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:8089",
+          "game.js:8263"
+        ],
+        "codeRefCount": 2,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "dowsing": {
+      "id": "dowsing",
+      "name": "Dowsing",
+      "description": "A forked stick twitches toward water. Works 70% of the time. Nobody knows why. Including us.",
+      "tier": "wacky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14114",
+          "game.js:14158"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "stormcaller"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "cornered_rat": {
+      "id": "cornered_rat",
+      "name": "Cornered Rat",
+      "description": "When surrounded (3+ enemies), +100% damage and +50% dodge. Desperation is a weapon.",
+      "tier": "combat",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:17995"
+        ],
+        "codeRefCount": 1,
+        "synergies": [
+          "cornered_fury"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "dead_aim": {
+      "id": "dead_aim",
+      "name": "Dead Aim",
+      "description": "First attack in any combat is a guaranteed critical if you waited 1 round. Patience, then thunder.",
+      "tier": "combat",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:18259"
+        ],
+        "codeRefCount": 1,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "second_skin": {
+      "id": "second_skin",
+      "name": "Second Skin",
+      "description": "Your armor never slows you. Move full speed in any armor. You wear it like weather.",
+      "tier": "combat",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "travel.cost_mult",
+            "op": "multiply",
+            "value": 0.85
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "open_book": {
+      "id": "open_book",
+      "name": "Open Book",
+      "description": "Villagers tell you their real trust level and one secret fear. You just... know how to ask.",
+      "tier": "social",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:24638"
+        ],
+        "codeRefCount": 1,
+        "synergies": [
+          "polyglots_ledger"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "mediator": {
+      "id": "mediator",
+      "name": "Mediator",
+      "description": "You can resolve villager disputes (drama events) with a talk check. Peace is a skill.",
+      "tier": "social",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "drama.resolve_bonus",
+            "op": "add",
+            "value": 0.25,
+            "scale": "level"
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14514",
+          "game.js:14519"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "peacemakers_voice"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "leech": {
+      "id": "leech",
+      "name": "Leech",
+      "description": "When an ally takes damage near you, you can take half of it. They owe you. (They know it.)",
+      "tier": "vile",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:15444",
+          "game.js:15450"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "crimson_circuit"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "scarecrow": {
+      "id": "scarecrow",
+      "name": "Scarecrow",
+      "description": "You can stage a fake injury to lure monsters into traps. They fall for it. Every time.",
+      "tier": "vile",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "hunt.trap_catch",
+            "op": "multiply",
+            "value": 2.0
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [],
+        "codeRefCount": 0,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "hollow_bones": {
+      "id": "hollow_bones",
+      "name": "Hollow Bones",
+      "description": "You weigh 30% less for carry calculations. Your bones are birdlike. (Don't think about it.)",
+      "tier": "body_horror",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "carry.weight_mult",
+            "op": "multiply",
+            "value": 0.7
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:7020"
+        ],
+        "codeRefCount": 1,
+        "synergies": [
+          "efficient_machine"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "third_eye": {
+      "id": "third_eye",
+      "name": "Third Eye",
+      "description": "A small eye opens on your forehead when danger is near. +30% ambush detection. It weeps when you lie.",
+      "tier": "body_horror",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "monster.detect_chance",
+            "op": "add",
+            "value": 0.3
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14893"
+        ],
+        "codeRefCount": 1,
+        "synergies": [
+          "sees_the_weave"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "phoenix_clause": {
+      "id": "phoenix_clause",
+      "name": "Phoenix Clause",
+      "description": "Once per run: when you die, you explode (damaging everything nearby) and respawn at Haven with 1 HP. The System calls it 'great television.'",
+      "tier": "overpowered",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:24546",
+          "game.js:24556"
+        ],
+        "codeRefCount": 2,
+        "synergies": [
+          "refuses_death"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "symbiote": {
+      "id": "symbiote",
+      "name": "Symbiote",
+      "description": "A small alien organism lives in your gut. It eats 200 kcal/day but warns you of poisoned food and purifies risky water slowly (1L/day).",
+      "tier": "risky",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:15006",
+          "game.js:15153",
+          "game.js:16202"
+        ],
+        "codeRefCount": 3,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "survivor": {
+      "id": "survivor",
+      "name": "Survivor",
+      "description": "You endured. +10 max health.",
+      "tier": "utility",
+      "pool": "fallback",
+      "unlock": {
+        "type": "fallback"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "health.max_add",
+            "op": "add",
+            "value": 10
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "truth.js:348",
+          "game.js:634",
+          "game.js:664",
+          "game.js:723",
+          "game.js:787",
+          "game.js:840",
+          "game.js:872",
+          "game.js:894",
+          "game.js:959",
+          "game.js:1016"
+        ],
+        "codeRefCount": 17,
+        "synergies": [],
+        "grantPath": "fallback (did nothing week 1)"
+      },
+      "status": "wired"
+    },
+    "wanderer": {
+      "id": "wanderer",
+      "name": "Wanderer",
+      "description": "You kept moving. -10% travel cost.",
+      "tier": "utility",
+      "pool": "fallback",
+      "unlock": {
+        "type": "fallback"
+      },
+      "effects": {
+        "modifiers": [
+          {
+            "target": "travel.cost_mult",
+            "op": "multiply",
+            "value": 0.9
+          }
+        ],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "villager-agency.js:150",
+          "villager-agency.js:156",
+          "villager-agency.js:187",
+          "game.js:13752"
+        ],
+        "codeRefCount": 4,
+        "synergies": [],
+        "grantPath": "fallback (did nothing week 1)"
+      },
+      "status": "wired"
+    },
+    "swimmer": {
+      "id": "swimmer",
+      "name": "Swimmer",
+      "description": "Cross water freely. Rivers are roads to you.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:6782",
+          "game.js:6783",
+          "app.js:683",
+          "app.js:684"
+        ],
+        "codeRefCount": 4,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "night_eyes": {
+      "id": "night_eyes",
+      "name": "Night Eyes",
+      "description": "Your eyes drink the dark. At night you spot trouble before it spots you, and nocturnal game can't hide from a patient hunter.",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "party.js:478",
+          "game.js:8986",
+          "game.js:13358",
+          "encounters.js:1781"
+        ],
+        "codeRefCount": 4,
+        "synergies": [],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "translator": {
+      "id": "translator",
+      "name": "Translator",
+      "description": "The System logs every foreign word you hear and replays them on demand — a memory aid, not a shortcut. Novel speech stays novel until YOU learn it. (Deep integration may wake it up further.)",
+      "tier": "utility",
+      "pool": "system",
+      "unlock": {
+        "type": "system_offer"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": null,
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:13769",
+          "game.js:13770",
+          "conversation.js:3853"
+        ],
+        "codeRefCount": 3,
+        "synergies": [
+          "polyglots_ledger"
+        ],
+        "grantPath": "System offer (integration milestones)"
+      },
+      "status": "wired"
+    },
+    "field_medicine": {
+      "id": "field_medicine",
+      "name": "Field Medicine",
+      "description": "Clean wounds, poultice infections, set bones in the field. Heal 20 HP (once per day part).",
+      "tier": null,
+      "pool": "care",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": {
+          "type": "heal",
+          "amount": 20,
+          "cooldown": "daypart",
+          "target": "self"
+        },
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14118",
+          "game.js:14120",
+          "game.js:14183"
+        ],
+        "codeRefCount": 3,
+        "synergies": [
+          "field_pharmacy"
+        ],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    },
+    "herbal_remedy": {
+      "id": "herbal_remedy",
+      "name": "Herbal Remedy",
+      "description": "You know which plants draw fever out. Cure disease.",
+      "tier": null,
+      "pool": "care",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": {
+          "type": "cure_disease",
+          "cooldown": "day"
+        },
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14122",
+          "game.js:14124",
+          "game.js:14195"
+        ],
+        "codeRefCount": 3,
+        "synergies": [
+          "field_pharmacy"
+        ],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    },
+    "purify": {
+      "id": "purify",
+      "name": "Purify",
+      "description": "Charcoal, clean water, time. Neutralize poison.",
+      "tier": null,
+      "pool": "care",
+      "unlock": {
+        "type": "granted"
+      },
+      "effects": {
+        "modifiers": [],
+        "active": {
+          "type": "cure_poison",
+          "cooldown": "day"
+        },
+        "synergyHints": []
+      },
+      "wiring": {
+        "codeRefs": [
+          "game.js:14126",
+          "game.js:14128",
+          "game.js:14201"
+        ],
+        "codeRefCount": 3,
+        "synergies": [
+          "clean_plate"
+        ],
+        "grantPath": "background (character creation)"
+      },
+      "status": "wired"
+    }
+  }
+}
