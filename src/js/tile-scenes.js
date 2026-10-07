@@ -221,7 +221,7 @@
       } catch (e) { detail = null; }
       const stockFrac = (typeof t.stock === 'number' && typeof t.maxStock === 'number' && t.maxStock > 0)
         ? Math.max(0, Math.min(1, t.stock / t.maxStock)) : 1;
-      let svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+      let svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">' +
         '<rect x="0.5" y="0.5" width="63" height="63" rx="7" fill="' + pal.base + '"/>';
       try { svg += texture(x, y, pal); } catch (e) {}
       try { if (detail) svg += detailMarkers(detail, stockFrac); } catch (e) {}
@@ -231,7 +231,7 @@
     } catch (e) {
       // Absolute last resort: solid terrain color, never blank.
       const pal = FALLBACK_BASE;
-      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">' +
         '<rect x="0.5" y="0.5" width="63" height="63" rx="7" fill="' + pal.base + '"/></svg>';
     }
   }
