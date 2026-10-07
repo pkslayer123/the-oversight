@@ -1943,7 +1943,7 @@
   "name": "Searcaster",
   "class": "weapon",
   "origin": "alien",
-  "lootTier": 5,
+  "lootTier": 4,
   "flavor": "A beam of focused starlight. It doesn't kill so much as unmake. Do NOT point at dinner.",
   "kg": 1.2,
   "damage": 120,

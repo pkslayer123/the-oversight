@@ -22077,7 +22077,7 @@
         if ((m.beamPhase === 'brighten' || m.beamPhase === 'bloom') && !m.telegraph && m.biDeclared) {
           m.biDeclared = false;
           m.biCycles = (m.biCycles || 0) + 1;
-          this.encSetPhase(m, 'ember'); m.biEmber = Math.max(0, 3 - m.biCycles);
+          this.encSetPhase(m, 'ember'); m.biEmber = Math.max(1, 3 - m.biCycles); // LOOT-AUDIT FIX (Steve 2026-10-07): ember window never 0 — the third cycle must give 1 punish turn or the fight is unwinnable.
           this.say('The light gutters down to a dying ember. It\'s spent — dim, flickering, harmless.'
             + (m.biCycles >= 2 ? ' But it guttered faster this time. It\'s learning how to come back.' : ' For now.'));
           this.audioEvent('eurekaSpent');
@@ -22847,10 +22847,23 @@
           this.encSetPhase(m, 'dial'); m.wcRedial = 0;
         }
         // BAD CONNECTION: hurting it mid-call hangs it up. Track hp across
-        // turns — any damage since its last turn is a bad connection.
-        const wcTookHit = m.hp < (m.wcLastHp === undefined ? m.hp : m.wcLastHp);
+        // turns — meaningful damage since its last turn is a bad connection.
+        // LOOT-AUDIT FIX (Steve 2026-10-07): chip damage (<5 HP or <10% max) from
+        // villagers no longer perma-locks it in redial. After 3 consecutive
+        // bad-connections it gets impatient and rushes instead of redialing.
+        const wcPrevHp = (m.wcLastHp === undefined ? m.hp : m.wcLastHp);
+        const wcDmg = wcPrevHp - m.hp;
+        const wcMaxHp = (m.mdef && m.mdef.hp && m.mdef.hp[1]) || 100;
+        const wcTookHit = wcDmg >= Math.max(5, wcMaxHp * 0.1);
         m.wcLastHp = m.hp;
-        if (wcTookHit && m.beamPhase !== 'redial') {
+        m.wcConsecutiveRedials = (wcTookHit && m.beamPhase !== 'redial') ? ((m.wcConsecutiveRedials || 0) + 1) : 0;
+        if (m.wcConsecutiveRedials >= 3) {
+          // Impatient: stops redialing, rushes the player directly.
+          m.wcConsecutiveRedials = 0;
+          this.encSetPhase(m, 'rush');
+          this.say('"—FORGET THE HOLD MUSIC—" It stops dialing. It is coming to you directly.');
+          this.audioEvent('lineCut', { dropped: true });
+        } else if (wcTookHit && m.beamPhase !== 'redial') {
           this.encSetPhase(m, 'redial'); m.wcRedial = this.wcRedialFor(m); m.wcDialKey = null;
           this.say('"—BAD CONNECTION—" The voice fragments, furious. It hangs up. It is already redialing.');
           this.audioEvent('lineCut', { dropped: true });
