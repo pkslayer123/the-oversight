@@ -4115,6 +4115,11 @@
     // 60-80: codex/inventory overlay. 80+: full neural integration.
     integrate(amount, reason) {
       const s = this.state.scholar;
+      // SLOT BEAT (Round 2 wiring, Steve 2026-10-07): abilitySlots() gates on
+      // THIS scale (scholar.integration, neural depth) — not on
+      // systemIntegrationLevel() (codices linked). Snapshot before the gain so
+      // a threshold crossing that opens a new slot can be announced honestly.
+      const slotsBefore = this.abilitySlots();
       s.integration = Math.min(100, (s.integration || 5) + amount);
       const thresholds = [20, 40, 60, 80];
       for (const t of thresholds) {
@@ -4129,6 +4134,11 @@
             80: 'SYSTEM: Deep integration. You see the world through us now.',
           };
           this.say(msgs[t]);
+          const slotsNow = this.abilitySlots();
+          if (slotsNow > slotsBefore) {
+            this.say(`⬢ SYSTEM: "Neural depth ${t}. I can hold more of you now — ability slots: ${slotsNow}."`);
+            this.audioEvent('knowledgeReveal', { kind: 'slots', slots: slotsNow, integration: Math.round(s.integration) });
+          }
         }
       }
       if (reason) this.tele('integrate', { amount, reason, total: Math.round(s.integration) });
@@ -5240,6 +5250,7 @@
       const joined = (this.state.scholar.joinedVillage === villageId);
       if (dist > 2 && !joined) return 'You need to be at the village to study their codex.';
       const learned = [];
+      const learnedCounts = { plants: 0, techniques: 0, recipes: 0, animals: 0 };
       const scholar = this.state.scholar;
       scholar.codex = scholar.codex || { plants: {}, techniques: {}, recipes: {}, animals: {} };
       // plants: learn what they know deeper than you
@@ -5250,6 +5261,7 @@
           scholar.codex.plants[pid] = { level: entry.level, learnedFrom: v.name };
           const pdef = (this.data.plants || []).find(p => p.id === pid);
           learned.push(`🌿 ${(pdef || {}).name || pid} (L${entry.level})`);
+          learnedCounts.plants++;
         }
       }
       // techniques: learn their strategy's signature moves
@@ -5259,6 +5271,7 @@
           scholar.codex.techniques = scholar.codex.techniques || {};
           scholar.codex.techniques[tid] = { level: entry.level, learnedFrom: v.name, strategy: entry.strategy };
           learned.push(`🔧 ${tid.replace(/_/g, ' ')} (${entry.strategy})`);
+          learnedCounts.techniques++;
         }
       }
       // recipes: learn their food ways
@@ -5268,6 +5281,7 @@
           scholar.codex.recipes = scholar.codex.recipes || {};
           scholar.codex.recipes[rid] = { known: true, learnedFrom: v.name };
           learned.push(`🍲 ${rid.replace(/_/g, ' ')}`);
+          learnedCounts.recipes++;
         }
       }
       // animals: learn their territory's wildlife
@@ -5278,11 +5292,22 @@
           scholar.codex.animals[aid] = { level: entry.level, learnedFrom: v.name };
           const adef = (this.data.animals || []).find(a => a.id === aid);
           learned.push(`🐾 ${(adef || {}).name || aid}`);
+          learnedCounts.animals++;
         }
       }
       // costs time: studying is a day-part activity
       try { this.spendDayPart(1); } catch (e) {}
       // LINK THE CODEX: studying links their codex to yours. The System integrates.
+      // TWO INTEGRATION SCALES — not the same thing (Steve 2026-10-07):
+      //   systemIntegrationLevel() 0-3: CODICES LINKED. How much of the WORLD the
+      //     System understands. Grows ONLY here. Drives HUD sophistication:
+      //     L1 map village power, L2 wildlife + travelers, L3 rosters + strategy.
+      //   scholar.integration 0-100: NEURAL INTERFACE DEPTH. How much of YOU the
+      //     System can hold. Grows via integrate() (discoveries, books, quests).
+      //     Gates abilitySlots(): 20->2, 40->3, 60->4, 80->6.
+      // Linking a codex does NOT grant ability slots. The beat below keeps the
+      // two honest: the System celebrates its sharper eyes, then reminds you
+      // where slots actually come from.
       const scholar2 = this.state.scholar;
       scholar2.linkedCodices = scholar2.linkedCodices || [];
       if (!scholar2.linkedCodices.includes(villageId)) {
@@ -5290,10 +5315,37 @@
         const newLevel = this.systemIntegrationLevel();
         if (newLevel > (scholar2.lastIntegrationLevel || 0)) {
           scholar2.lastIntegrationLevel = newLevel;
-          this.say(`⬢ SYSTEM INTEGRATION L${newLevel}: The System sees more now. Your HUD sharpens.`);
+          // 1. THE VILLAGE REACTS: the codex keeper is a person, not a popup.
+          const keeperLines = [
+            `The keeper of ${v.name}'s codex watches you copy the final page. "You're the first outsider to read it all," they say quietly. "Our dead wrote some of that. Carry it well."`,
+            `"${v.name} learned these the hard way," the codex keeper says, closing the book for you. "Every page cost somebody a winter. Don't waste it."`,
+          ];
+          this.say(keeperLines[Math.floor(Math.random() * keeperLines.length)]);
+          // 2. THE SYSTEM: names what the new tier actually sees.
+          const tierLines = {
+            1: `⬢ SYSTEM INTEGRATION L1: "${v.name}'s codex is linked. I can see their lights on the map now — village power at a glance. The HUD sharpens."`,
+            2: `⬢ SYSTEM INTEGRATION L2: "Two codices. I see wildlife movement, travelers between villages. The world is filling in around you."`,
+            3: `⬢ SYSTEM INTEGRATION L3: "Three codices. Full rosters, strategy intel, codex summaries. You are my favorite cartographer."`,
+          };
+          this.say(tierLines[newLevel] || `⬢ SYSTEM INTEGRATION L${newLevel}: The System sees more now. Your HUD sharpens.`);
+          // 3. THE SLOT REMINDER — honestly tied to the NEURAL scale.
+          const integ = Math.round(scholar2.integration || 5);
+          const slots = this.abilitySlots();
+          const next = [20, 40, 60, 80].find(t => integ < t);
+          this.say(`⬢ SYSTEM: "One clarification, scholar: linking codices sharpens MY eyes. Ability slots grow from YOUR neural integration — ${integ}/100, holding ${slots} slot${slots === 1 ? '' : 's'}${next ? ` (next at ${next})` : ' (maxed)'}. Discover, practice, survive — let the interface learn you."`);
           // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): system integration level-up.
           this.audioEvent('knowledgeReveal', { kind: 'integration', level: newLevel });
         }
+      }
+      if (learned.length) {
+        // KNOWLEDGE REVEAL AUDIO (Round 2 wiring, Steve 2026-10-07): the village
+        // codex taught you things — one aggregate reveal with the breakdown,
+        // not one ping per page.
+        this.audioEvent('knowledgeReveal', {
+          kind: 'codex', village: villageId, total: learned.length,
+          plants: learnedCounts.plants, techniques: learnedCounts.techniques,
+          recipes: learnedCounts.recipes, animals: learnedCounts.animals,
+        });
       }
       if (!learned.length) return `${v.name}'s codex holds nothing you don't already know.`;
       return `You study ${v.name}'s codex (${v.knowledgeProfile?.focus || 'survivors'}). Learned: ${learned.join(', ')}.`;
@@ -10526,6 +10578,10 @@
       };
       const journalWord = this.state.systemArrived ? 'Codex' : 'Journal';
       this.say(`📖 LEARNED: ${k.name} (Level ${newLevel}). ${k.levels[String(newLevel)] || ''}`);
+      // KNOWLEDGE REVEAL AUDIO (Round 2 wiring, Steve 2026-10-07): skill level-up.
+      // learnSkill is the one path for every source (practice, books, background,
+      // codex study, jackpots), so the hook fires exactly once per genuine gain.
+      this.audioEvent('knowledgeReveal', { kind: 'skill', id: skillId, level: newLevel, via: via || 'discovery' });
       // knowledge-ability synergy check: does this unlock a technique?
       this.checkKnowledgeAbilitySynergy(skillId, newLevel);
       return true;
@@ -14905,9 +14961,18 @@
         sch.synergies.push(syn.id);
         // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): synergy discovery moment.
         this.audioEvent('knowledgeReveal', { kind: 'synergy', id: syn.id });
+        // SYNERGY FANFARE (Round 2 wiring, Steve 2026-10-07): discovery is an
+        // EVENT, not a log line. The System's excited voice gets its own frame
+        // (the 📺 SYSTEM tag is arrival-gated — pre-arrival the overlay never
+        // speaks first; see identifyPlant's voice gate), and the audio worker
+        // gets a distinct 'synergyDiscovered' hook so the fanfare can sound
+        // different from a quiet codex reveal.
+        this.audioEvent('synergyDiscovered', { id: syn.id, name: syn.name });
         this.say(`\u2728 SYNERGY DISCOVERED: ${syn.name}!`);
         if (syn.flavor) this.say(syn.flavor);
-        if (syn.discovery) this.say(syn.discovery);
+        const discovery = syn.discovery || 'Oh! OH! That combination! The audience did NOT see that coming!';
+        if (this.state.systemArrived) this.say(`📺 SYSTEM: "${discovery}"`);
+        else this.say(discovery);
       }
       this.recomputeActiveSynergies();
     },
