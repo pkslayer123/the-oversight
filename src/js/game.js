@@ -7153,9 +7153,13 @@
           secret.known = true;
           if (mod) mod.known = true;
           // TREE SPECIES GATING (Steve 2026-10-05): species name only if known.
-          // If not known, uncertain description — not the species name.
-          const speciesKnown = mod && mod.speciesKnown;
-          const speciesName = (mod && speciesKnown) ? this.treeName(mod.species) : null;
+          // Knowledge lives in codex.trees (oak/hickory = L1 common knowledge
+          // at game start; deep study teaches the rest). mod.speciesKnown was
+          // a dead field (written nowhere) that welded the gate shut for
+          // every tree — restored to the codex read on 2026-10-07. If not
+          // known, uncertain description — not the species name.
+          const speciesName = mod ? this.treeName(mod.species) : null;
+          const speciesKnown = !!speciesName;
           const desc = mod ? `${speciesName || 'tree you don\'t recognize'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'tree';
           if (secret.yield === 0) {
             this.say(`This ${desc}. Nothing to take. You note it — you won\'t waste time here again.`);
