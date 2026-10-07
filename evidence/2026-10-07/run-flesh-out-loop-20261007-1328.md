@@ -50,6 +50,14 @@ Both: new-files-only, private-index commit-tree recipe (-p HEAD, --add, one trip
 - Coordinator bare-`git commit` after `git add <run-note>` SWEPT the sibling's 206 staged deletions (their cleanup) into commit 812f265 (275 files, 54,142 deletions) — the documented BARE-COMMIT SWEEP hazard, repeated despite the standing rule. Caught immediately: HEAD was still 812f265 with no sibling commit on top (reflog check), so `git reset --soft 2275cc1` restored the shared index to its armed state intact; run note then committed via the private-index route as 76e4821 (exactly 1 file). Sibling's staged cleanup untouched.
 
 ## Completion flow
-1. Commits verified linear: ... → 44e46b8 (bump 962c74c-20261007-191243) → 358545d (run note) → 014e3e0 (Worker A, +874/−0, 2 new files).
+1. Commits verified linear: ... → 44e46b8 (bump 962c74c-20261007-191243) → 358545d (run note) → 014e3e0 (Worker A, +874/−0, 2 new files) → 0f802c6 (run note) → 3735502 (bump 0f802c6-20261007-191909).
 2. Worker A proof re-run GREEN from committed state (85/85, seed 20261007, exit 0). Worker B proof 146/146 green per handoff (seeds 7/42/123). Index-tag proof green (45 tags, pinned order).
-3. (pending push/bump/live-verify)
+3. Pushed origin/master (44e46b8..3735502, fast-forward).
+4. Version bump `0f802c6-20261007-191909` (ontology: 46 systems validated); version commit 3735502 via private index (exactly 4 files); pushed.
+5. **LIVE VERIFIED (14:25 CDT):** version.json serves 0f802c6-20261007-191909; live build.js BUILD_VERSION matches. Repair + both workers' work deployed.
+
+## Queue status after this run
+- DONE this run: wave-2c fight play-audit (all 4 pass deer bar: hushwolf FUN, heron FUN, hummice GOOD, turtle GOOD-slow); glasswing dive/bask play-audit (both work, enjoyable, 146/146); live-breaker repair (3 script tags restored + proof script guarding the class).
+- Wiring backlog additions (engine owner): burst telegraph re-center at resolve vs declare grid (hummice); unreachable knownCues (hushwolf/turtle never declare); hummice declare→deerAggro fallback; antlerThrash double-run hazard; data hygiene (unreachable phases, unbaded SHOUT quiet); glasswing: dead m.gwDive modifier, dead 'almost black' text, codex "vulnerable 1 turn" vs 2 strikes, trap 20–30 vs combat [10,16] needs Steve's call; floatText 8-site patch still pending (drama owner); brawler restore done by sibling 2c2d6c5.
+- Standing hazards (carried forward): shared index STILL armed with sibling's staged cleanup (now sweeping even fresh worker scripts — scripts/play-feel-20261007-wave2c.js shows staged-deleted; content safe in commit 014e3e0 + worktree); 3 stale-base reverts in two days — process fix still open.
+- Flagged for Steve: nothing new beyond backlog — no live breakage, all fights pass the deer bar.
