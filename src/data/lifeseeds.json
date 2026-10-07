@@ -15,7 +15,19 @@
     "the flood that put the church basement underwater twice in one spring",
     "the winter the propane ran out in {town} and the school gym became a dormitory",
     "the spring the well went sulfur and the whole street boiled their water",
-    "the summer the cicadas came and the noise drowned out thought"
+    "the summer the cicadas came and the noise drowned out thought",
+    "the year the tornado took the south side of {town}",
+    "the spring the levy vote failed and everybody knew what came next",
+    "the winter {kin} worked the shelter kitchen and barely slept",
+    "the summer the wildfire smoke turned the sun red for weeks",
+    "the year the bridge went out and {town} was an island for a month",
+    "the fall the coyotes got bold and came down off the ridge",
+    "the spring the hail took every windshield in the {workplace} lot",
+    "the winter the ice storm split the old oak behind {workplace}",
+    "the year the train stopped running through {town}",
+    "the summer the lake dropped low enough to walk out to the island",
+    "the spring {town} argued about the dam until nobody was speaking",
+    "the year the harvest failed and the bank bought everybody's debt"
   ],
   "kin": [
     {
@@ -191,7 +203,10 @@
       "names": [
         "the quarry",
         "Miller's creek",
-        "the old swimming hole"
+        "the old swimming hole",
+        "the creek behind {workplace}",
+        "the pond past {town}",
+        "the spring {kin} swore by"
       ]
     },
     {
@@ -199,7 +214,10 @@
       "names": [
         "{workplace}",
         "the night shift",
-        "the shop floor"
+        "the shop floor",
+        "the loading dock at {workplace}",
+        "the back room at {workplace}",
+        "the parking lot after second shift"
       ]
     },
     {
@@ -208,7 +226,9 @@
         "the fort {first} and {kin} built in the woods",
         "the drainpipe behind {workplace}",
         "the treehouse out past {town}",
-        "the storm shelter at {first}'s house"
+        "the storm shelter at {first}'s house",
+        "the deer stand past {town}",
+        "the quarry office {first} jimmied"
       ]
     },
     {
@@ -217,7 +237,9 @@
         "the farmers' market in {town}",
         "the flea market on {street}",
         "the corner store with the good penny candy",
-        "the feed store where {kin} haggled for hours"
+        "the feed store where {kin} haggled for hours",
+        "the auction barn outside {town}",
+        "the yard-sale circuit on {street}"
       ]
     },
     {
@@ -225,7 +247,10 @@
       "names": [
         "the cemetery on the hill past {town}",
         "{kin}'s grave",
-        "the small plot behind the old church"
+        "the small plot behind the old church",
+        "the plot where {kin} lies",
+        "the unmarked row past {town}",
+        "the riverbank where they scattered {kin}"
       ]
     },
     {
@@ -233,7 +258,64 @@
       "names": [
         "the long road out of {town}",
         "the bus route to {workplace}",
-        "the trail {first} walked to clear {first}'s head"
+        "the trail {first} walked to clear {first}'s head",
+        "the gravel road {first} wore thin",
+        "the highway pullout past {town}",
+        "the shortcut through the woods"
+      ]
+    },
+    {
+      "kind": "school",
+      "names": [
+        "the elementary on {street}",
+        "the school gym in {town}",
+        "the one-room schoolhouse past {town}",
+        "the night classes {first} almost finished"
+      ]
+    },
+    {
+      "kind": "church",
+      "names": [
+        "the little white church off {street}",
+        "the revival tent outside {town}",
+        "the storefront chapel by {workplace}",
+        "the parish hall that fed everybody through the flood year"
+      ]
+    },
+    {
+      "kind": "woods",
+      "names": [
+        "the pine stand past {town}",
+        "the hickory grove behind {workplace}",
+        "the cedar swamp where {kin} hunted",
+        "the blackberry tangle behind {first}'s house"
+      ]
+    },
+    {
+      "kind": "field",
+      "names": [
+        "the back forty",
+        "the hay meadow past {town}",
+        "the garden plot behind {workplace}",
+        "the alfalfa field where {first} learned to drive"
+      ]
+    },
+    {
+      "kind": "garage",
+      "names": [
+        "{kin}'s garage on {street}",
+        "the gas station past {town}",
+        "the body shop by the tracks",
+        "the lean-to where {first} kept the truck"
+      ]
+    },
+    {
+      "kind": "clinic",
+      "names": [
+        "the free clinic on {street}",
+        "the county health office",
+        "the doc's house past {town}",
+        "the ER waiting room {kin} knew by heart"
       ]
     }
   ],
@@ -682,6 +764,54 @@
       "the hard winter when {kin}'s trapline kept them both eating",
       "{kin}'s rule: a trap is a promise, checked every day, hungry or not",
       "the first snare {first} ever set, and the rabbit it actually caught"
+    ],
+    "fishing": [
+      "with {kin}, before {first} could tie a shoe",
+      "at {place}, where {kin} swore the big ones ran",
+      "crappie season with {kin} every April",
+      "the trotline {kin} ran across the creek at {town}",
+      "learning which knots hold from {kin}, losing everything else",
+      "night fishing off the {workplace} dock, lights off"
+    ],
+    "butchery": [
+      "with {kin}, every November, deer season",
+      "helping {kin} hang and quarter before the flies woke",
+      "{kin}'s rule: respect the animal, waste nothing",
+      "the winter {town} needed meat and {kin} taught everybody",
+      "rendering lard with {kin} in the back kitchen",
+      "the first rabbit {first} ever cleaned, hands shaking"
+    ],
+    "canning": [
+      "with {kin} every August, jars lined up like soldiers",
+      "{kin}'s pressure canner, older than {first}, trusted anyway",
+      "the summer the garden went wild and {town} canned everything",
+      "learning the pop of a sealed lid from {kin}",
+      "pickles the way {kin}'s mother made them — no arguing",
+      "the winter the shelves carried the whole street"
+    ],
+    "sewing": [
+      "with {kin}, mending what the town couldn't afford to replace",
+      "the machine {kin} oiled like it was alive",
+      "patching {first}'s jeans every spring until they were mostly patch",
+      "{kin}'s quilts — every scrap had a story {kin} would tell",
+      "the sewing circle at {workplace}, winter afternoons",
+      "learning to darn a sock right from {kin}, not from any book"
+    ],
+    "carpentry": [
+      "with {kin}, summers at the building site near {town}",
+      "{kin}'s level, square, and the patience to use both",
+      "framing {first}'s first wall at fourteen, crooked and proud",
+      "the porch {first} rebuilt for {kin}, twice, until it was true",
+      "roofing in August with {kin}, tar and heat and no complaining",
+      "the woodshed at {place} — {first}'s cuts, {kin}'s corrections"
+    ],
+    "husbandry": [
+      "with {kin}, mornings at the dairy outside {town}",
+      "feeding the chickens at {place} before school, every day",
+      "birthing calves with {kin}, winter, two a.m., no complaining",
+      "{kin}'s rule: you eat after the animals do",
+      "the goat {first} raised from a bottle and never quite let go of",
+      "vaccinating the flock with {kin}, one weekend every spring"
     ]
   },
   "wants": [
@@ -699,7 +829,17 @@
     "put a real meal in front of every person here, once, just to watch their faces",
     "find a map that still means something",
     "keep the dog fed — the rest will follow",
-    "make it to spring with everybody still here"
+    "make it to spring with everybody still here",
+    "find the letter {kin} never finished writing",
+    "learn {kin}'s recipe the way {kin} actually made it",
+    "get {first}'s hands to stop shaking",
+    "owe nobody anything, ever again",
+    "build a fence that means something",
+    "find somebody who remembers {town} the way {first} does",
+    "sleep one full night without the watch rota",
+    "teach a kid to read the sky the way {kin} could",
+    "make the System useful for once",
+    "find the road back to {place} and stand there a while"
   ],
   "wounds": [
     "{first} doesn't talk about the last winter before the scattering.",
@@ -716,6 +856,16 @@
     "The last good summer, {first} wasted everything — food, time, people.",
     "{first} saw the signs before the sky changed and told no one.",
     "Somebody {first} fed once asked for more, and {first} said no. Nobody has seen them since.",
-    "{first} remembers exactly what they were arguing about the morning the sky changed."
+    "{first} remembers exactly what they were arguing about the morning the sky changed.",
+    "{first} promised {kin} they'd leave together. {first} left first.",
+    "The thing {first} buried behind {place} is still there, or it isn't.",
+    "{first} sold {kin}'s tools for less than they were worth, and {kin} found out.",
+    "There was a second letter. {first} never opened it.",
+    "{first} chose the {workplace} pension over {kin}. The pension died anyway.",
+    "{first} heard {kin} calling from the road and kept walking.",
+    "The dog waited at the gate for a month after {first} left {town}.",
+    "{first} knows whose fault the fire was. Everyone asks; nobody gets told.",
+    "{first} kept the good coat and gave {kin} the thin one. {first} still has it.",
+    "Somebody believed in {first} once. {first} spent it like money."
   ]
 }
