@@ -2238,5 +2238,301 @@
       "herb",
       "wild_ginger"
     ]
+  },
+{
+ "id": "prickly_pear",
+ "name": "Prickly Pear",
+ "scientific": "Opuntia engelmannii",
+ "biomes": [
+  "se_woodlands"
+ ],
+ "caloriesPerUnit": 40,
+ "unit": "pad/fruit",
+ "knowledgeLevels": {
+  "1": "Prickly pear. Flat pads, sharp spines. The fruits are called tunas.",
+  "2": "Parts: pads (nopal \u2014 vegetable), fruits (tuna \u2014 sweet). Burn off spines first or use tongs.",
+  "3": "Uses: pads are food AND water \u2014 chew for moisture. Fruits are high in sugar.",
+  "4": "Mastery: singe spines over fire, then peel. Pads keep for days. In the desert, this plant is life."
+ },
+ "preparation": "Burn or scrape off glochids (tiny spines). Pads: grill or boil. Fruits: peel and eat.",
+ "regions": [
+  "southwest_desert"
+ ],
+ "confidence": "high",
+ "idDifficulty": 2,
+ "description": "flat paddle-shaped cactus pads, wicked spines, red-purple fruits",
+ "seasons": [
+  "summer",
+  "fall"
+ ],
+ "spoilageDays": 5,
+ "tileAffinity": [
+  "meadow",
+  "thicket"
+ ],
+ "waterContent": "very high",
+ "codex": "Desert grocery store. Food, water, and medicine in one spiny package.",
+ "uses": [
+  {
+   "kind": "food",
+   "detail": "pads and fruits"
+  },
+  {
+   "kind": "water",
+   "detail": "chew pads for moisture"
   }
+ ]
+},
+{
+ "id": "mesquite",
+ "name": "Mesquite",
+ "scientific": "Prosopis velutina",
+ "biomes": [
+  "se_woodlands"
+ ],
+ "caloriesPerUnit": 60,
+ "unit": "pod",
+ "knowledgeLevels": {
+  "1": "Mesquite. Thorny tree, long bean pods. Desert staple.",
+  "2": "Parts: pods (sweet, grindable into flour), wood (best firewood in the desert).",
+  "3": "Mesquite flour is protein-rich and sweet. Pods can be eaten raw when ripe.",
+  "4": "Mastery: harvest pods when dry and tan. Grind between stones. The wood burns hot and long \u2014 worth the thorns."
+ },
+ "preparation": "Pods: eat raw when ripe, or dry and grind into flour. Wood: best desert fuel.",
+ "regions": [
+  "southwest_desert"
+ ],
+ "confidence": "high",
+ "idDifficulty": 1,
+ "description": "thorny spreading tree, long tan bean pods, feathery leaves",
+ "seasons": [
+  "summer"
+ ],
+ "spoilageDays": 30,
+ "tileAffinity": [
+  "meadow",
+  "thicket"
+ ],
+ "waterContent": "low",
+ "codex": "The desert's bread tree. Pods are candy and flour; wood is the finest fuel.",
+ "uses": [
+  {
+   "kind": "food",
+   "detail": "pods, flour"
+  },
+  {
+   "kind": "fuel",
+   "detail": "premium firewood"
+  }
+ ]
+},
+{
+ "id": "salmonberry",
+ "name": "Salmonberry",
+ "scientific": "Rubus spectabilis",
+ "biomes": [
+  "se_woodlands"
+ ],
+ "caloriesPerUnit": 25,
+ "unit": "berry",
+ "knowledgeLevels": {
+  "1": "Salmonberry. Pink-orange berries, thorny canes. First berry of spring.",
+  "2": "Parts: berries (eat fresh), young shoots (peel and eat like asparagus).",
+  "3": "They're watery \u2014 good for hydration, not calories. Eat by the handful while working.",
+  "4": "Mastery: follow the salmonberry bloom \u2014 it marks the start of foraging season. Shoots are best before they leaf out."
+ },
+ "preparation": "Eat berries fresh. Peel young shoots and eat raw or steamed.",
+ "regions": [
+  "pacific_northwest"
+ ],
+ "confidence": "high",
+ "idDifficulty": 1,
+ "description": "tall thorny canes, magenta flowers, salmon-colored raspberry-like berries",
+ "seasons": [
+  "spring",
+  "summer"
+ ],
+ "spoilageDays": 1,
+ "tileAffinity": [
+  "grove",
+  "creek"
+ ],
+ "waterContent": "very high",
+ "codex": "Spring's first gift. Not calorie-dense, but they tell you the forest is waking up.",
+ "uses": [
+  {
+   "kind": "food",
+   "detail": "berries, shoots"
+  }
+ ]
+},
+{
+ "id": "huckleberry",
+ "name": "Huckleberry",
+ "scientific": "Vaccinium membranaceum",
+ "biomes": [
+  "se_woodlands"
+ ],
+ "caloriesPerUnit": 30,
+ "unit": "berry",
+ "knowledgeLevels": {
+  "1": "Huckleberry. Small dark berries, mountain slopes. Bears love them.",
+  "2": "Parts: berries only. Richer than blueberries, harder to find.",
+  "3": "Where huckleberries grow, bears feed. Pick noisily and in groups.",
+  "4": "Mastery: they fruit heavily every 2-3 years. Remember the good patches \u2014 they're worth defending."
+ },
+ "preparation": "Eat fresh or dry for winter. Excellent dried.",
+ "regions": [
+  "pacific_northwest"
+ ],
+ "confidence": "high",
+ "idDifficulty": 2,
+ "description": "low shrubs, small dark-purple berries, mountain slopes and clearings",
+ "seasons": [
+  "summer",
+  "fall"
+ ],
+ "spoilageDays": 3,
+ "tileAffinity": [
+  "grove",
+  "meadow"
+ ],
+ "waterContent": "medium",
+ "codex": "The mountain's candy. Worth the climb, worth watching for bears.",
+ "uses": [
+  {
+   "kind": "food",
+   "detail": "berries, dried"
+  }
+ ]
+},
+{
+ "id": "yaupon_holly",
+ "name": "Yaupon Holly",
+ "scientific": "Ilex vomitoria",
+ "biomes": [
+  "se_woodlands"
+ ],
+ "caloriesPerUnit": 5,
+ "unit": "leaf",
+ "knowledgeLevels": {
+  "1": "Yaupon holly. Evergreen shrub, red berries. The leaves make tea.",
+  "2": "It's the only native North American caffeine plant. Roast the leaves, steep like tea.",
+  "3": "The 'vomitoria' name is from ceremonial overuse \u2014 normal tea won't hurt you. Don't eat the berries.",
+  "4": "Mastery: roast leaves dark for best flavor. This is coffee when there's no coffee. Trade-worthy."
+ },
+ "preparation": "Roast leaves in a pan until dark, then steep in hot water. Do NOT eat berries.",
+ "regions": [
+  "deep_south_bayou",
+  "florida"
+ ],
+ "confidence": "high",
+ "idDifficulty": 2,
+ "description": "evergreen shrub, small red berries, oval leaves",
+ "seasons": [
+  "fall",
+  "winter",
+  "spring",
+  "summer"
+ ],
+ "spoilageDays": 60,
+ "tileAffinity": [
+  "thicket",
+  "forest_floor"
+ ],
+ "waterContent": "low",
+ "codex": "North America's only native caffeine. The bayou's coffee.",
+ "uses": [
+  {
+   "kind": "stimulant",
+   "detail": "caffeinated tea"
+  },
+  {
+   "kind": "trade",
+   "detail": "valuable"
+  }
+ ]
+},
+{
+ "id": "saw_palmetto",
+ "name": "Saw Palmetto",
+ "scientific": "Serenoa repens",
+ "biomes": [
+  "se_woodlands"
+ ],
+ "caloriesPerUnit": 35,
+ "unit": "berry",
+ "knowledgeLevels": {
+  "1": "Saw palmetto. Fan palms with saw-tooth stems. Blue-black berries.",
+  "2": "Parts: berries (edible, peppery-sweet), heart of palm (the growing tip \u2014 kills the plant).",
+  "3": "Berries are calorie-dense for their size. The saw teeth will cut you \u2014 harvest carefully.",
+  "4": "Mastery: berries ripen in fall. Dry them for winter. Don't take the heart unless you're starving \u2014 it kills the plant."
+ },
+ "preparation": "Berries: eat raw or dried. Heart of palm: only in emergency (kills plant).",
+ "regions": [
+  "florida"
+ ],
+ "confidence": "high",
+ "idDifficulty": 1,
+ "description": "low fan palms, serrated stems, clusters of blue-black berries",
+ "seasons": [
+  "fall"
+ ],
+ "spoilageDays": 7,
+ "tileAffinity": [
+  "thicket",
+  "meadow"
+ ],
+ "waterContent": "medium",
+ "codex": "Florida's pantry palm. Berries feed you; the saw teeth remind you to be careful.",
+ "uses": [
+  {
+   "kind": "food",
+   "detail": "berries"
+  }
+ ]
+},
+{
+ "id": "sugar_maple",
+ "name": "Sugar Maple",
+ "scientific": "Acer saccharum",
+ "biomes": [
+  "se_woodlands"
+ ],
+ "caloriesPerUnit": 50,
+ "unit": "sap",
+ "knowledgeLevels": {
+  "1": "Sugar maple. The sap makes syrup. Bark is grey, leaves turn brilliant in fall.",
+  "2": "Tap in late winter \u2014 when days thaw and nights freeze. Drill, spile, bucket.",
+  "3": "40 gallons of sap = 1 gallon of syrup. Boil it down. It's work, but it's sugar.",
+  "4": "Mastery: tap trees 10+ inches diameter, one tap each. The run lasts 4-6 weeks. Syrup keeps indefinitely."
+ },
+ "preparation": "Tap in late winter. Boil sap down 40:1 for syrup. Can also just drink the sap (slightly sweet water).",
+ "regions": [
+  "northeast"
+ ],
+ "confidence": "high",
+ "idDifficulty": 2,
+ "description": "tall tree, grey bark, five-lobed leaves that flame orange in fall",
+ "seasons": [
+  "spring"
+ ],
+ "spoilageDays": 365,
+ "tileAffinity": [
+  "grove",
+  "forest_floor"
+ ],
+ "waterContent": "high",
+ "codex": "Liquid gold from a tree. The northeast's answer to sugar cane.",
+ "uses": [
+  {
+   "kind": "food",
+   "detail": "sap, syrup"
+  },
+  {
+   "kind": "trade",
+   "detail": "syrup is valuable"
+  }
+ ]
+}
 ]

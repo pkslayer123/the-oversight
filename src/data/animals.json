@@ -1024,5 +1024,593 @@
     "regions": [
       "north_america"
     ]
-  }
+  },
+{
+ "id": "javelina",
+ "activity": "diurnal",
+ "name": "Javelina",
+ "scientific": "Pecari tajacu",
+ "biomes": [
+  "meadow",
+  "thicket"
+ ],
+ "description": "a compact wild pig with a musky smell and no fear",
+ "calories": 12000,
+ "difficulty": "medium",
+ "method": [
+  "bow",
+  "trap"
+ ],
+ "knowledgeLevels": {
+  "1": "Javelina. Wild pig of the desert. Travels in herds. Smells terrible.",
+  "2": "Parts: meat (pork-like), hide (tough). Musk gland \u2014 remove it or the meat stinks.",
+  "3": "Uses: good eating if you cut the musk gland first. Herds mean multiple animals.",
+  "4": "Mastery: they have poor eyesight but great noses. Approach downwind. The herd will defend young."
+ },
+ "unknown": "a musky smell, then a herd of pig-like shapes in the scrub",
+ "emoji": "\ud83d\udc17",
+ "behavior": "defensive",
+ "behaviorDesc": "Travels in noisy herds. Poor eyesight, excellent nose. Mothers defend young aggressively.",
+ "fleeDifficulty": "medium",
+ "huntText": "The herd grunts and shifts \u2014 a wall of bristly backs. The big sow turns to face you, head low.",
+ "killText": "About {kcal} kcal. Cut out the musk gland FIRST (on the back) or the meat is ruined. Pork is pork \u2014 smoke it.",
+ "tell": "a sharp musky smell on the wind \u2014 then grunting.",
+ "butcher": {
+  "hide": 1,
+  "bone": 2
+ },
+ "common": true,
+ "regions": [
+  "southwest_desert"
+ ]
+},
+{
+ "id": "roadrunner",
+ "activity": "diurnal",
+ "name": "Greater Roadrunner",
+ "scientific": "Geococcyx californianus",
+ "biomes": [
+  "meadow",
+  "trail_edge"
+ ],
+ "description": "a long-legged bird that runs instead of flying, crest bobbing",
+ "calories": 900,
+ "difficulty": "hard",
+ "method": [
+  "snare",
+  "chase"
+ ],
+ "knowledgeLevels": {
+  "1": "Roadrunner. Fast bird, runs instead of flying. Hard to catch.",
+  "2": "Parts: small amount of meat. Better as a sign \u2014 where roadrunners hunt, lizards and snakes live.",
+  "3": "Uses: not much meat, but they eat rattlesnakes. A roadrunner territory is safer ground.",
+  "4": "Mastery: don't chase it. Snare on its regular paths \u2014 it patrols the same route daily."
+ },
+ "unknown": "a blur of brown feathers sprinting across the open ground",
+ "emoji": "\ud83d\udc26",
+ "behavior": "skittish",
+ "behaviorDesc": "Sprints between cover, crest up, tail long. Stops to look back \u2014 mocking you.",
+ "fleeDifficulty": "hard",
+ "huntText": "It freezes mid-stride, crest raised \u2014 then it's gone, a brown streak between the scrub.",
+ "killText": "About {kcal} kcal. Small bird, quick meal. The real prize is knowing this ground has fewer rattlesnakes.",
+ "tell": "a rapid coo-coo-coo from the scrub, getting closer.",
+ "common": true,
+ "regions": [
+  "southwest_desert"
+ ]
+},
+{
+ "id": "gila_monster",
+ "activity": "nocturnal",
+ "name": "Gila Monster",
+ "scientific": "Heloderma suspectum",
+ "biomes": [
+  "thicket",
+  "trail_edge"
+ ],
+ "description": "a fat orange-and-black lizard, slow and venomous",
+ "calories": 0,
+ "difficulty": "hard",
+ "method": [
+  "avoid"
+ ],
+ "knowledgeLevels": {
+  "1": "Gila monster. Venomous lizard. Slow. Do not touch.",
+  "2": "The venom won't kill a healthy adult but the bite won't let go. Painful for days.",
+  "3": "They're protected and rare. Leave it alone \u2014 it's not food, it's a warning.",
+  "4": "Mastery: if bitten, submerge it in water or pry the jaw. Then treat for infection, not venom."
+ },
+ "unknown": "something orange and black moving very slowly through the rocks",
+ "emoji": "\ud83e\udd8e",
+ "behavior": "slow",
+ "behaviorDesc": "Moves deliberately, tongue flicking. In no hurry. It has never needed to hurry.",
+ "fleeDifficulty": "easy",
+ "huntText": "It doesn't flee. It turns its beaded head toward you, slowly, and opens its mouth.",
+ "killText": "You don't eat gila monsters. Leave it be.",
+ "tell": "a dry rustling in the rocks, unhurried.",
+ "common": false,
+ "regions": [
+  "southwest_desert"
+ ]
+},
+{
+ "id": "roosevelt_elk",
+ "activity": "crepuscular",
+ "name": "Roosevelt Elk",
+ "scientific": "Cervus canadensis roosevelti",
+ "biomes": [
+  "grove",
+  "meadow"
+ ],
+ "description": "a massive elk, dark-maned, bugling in the mist",
+ "calories": 45000,
+ "difficulty": "hard",
+ "method": [
+  "bow",
+  "trap"
+ ],
+ "knowledgeLevels": {
+  "1": "Roosevelt elk. Huge. Bigger than the deer back east. Dangerous in rut.",
+  "2": "Parts: enormous meat yield, thick hide, antlers. Gut immediately \u2014 that much meat spoils fast.",
+  "3": "Uses: one elk feeds a village for weeks. Fat is rich. Bones make tools for a year.",
+  "4": "Mastery: hunt the edges of meadows at dawn. A big bull is a project, not a meal \u2014 bring help and a plan for the meat."
+ },
+ "unknown": "a bugling cry in the mist, then something enormous moving between the trees",
+ "emoji": "\ud83e\udece",
+ "behavior": "wary",
+ "behaviorDesc": "Grazes in herds, always one head up. The bull bugles \u2014 a sound that rearranges your priorities.",
+ "fleeDifficulty": "hard",
+ "huntText": "The herd lifts their heads as one. The bull steps forward, bugling \u2014 a challenge and a warning.",
+ "killText": "About {kcal} kcal \u2014 this is a village-feeding animal. Work fast: gut, quarter, hang. The organs go first. Don't waste anything.",
+ "tell": "a bugle in the mist \u2014 high, wild, unmistakable.",
+ "butcher": {
+  "hide": 3,
+  "bone": 6,
+  "antler": 2
+ },
+ "common": true,
+ "regions": [
+  "pacific_northwest"
+ ]
+},
+{
+ "id": "black_bear",
+ "activity": "crepuscular",
+ "name": "Black Bear",
+ "scientific": "Ursus americanus",
+ "biomes": [
+  "grove",
+  "forest_floor"
+ ],
+ "description": "a black bear, powerful and intelligent-eyed",
+ "calories": 30000,
+ "difficulty": "hard",
+ "method": [
+  "bow",
+  "avoid"
+ ],
+ "knowledgeLevels": {
+  "1": "Black bear. Strong, smart, fast. Don't corner it. Don't get between it and cubs.",
+  "2": "Parts: rich meat, thick fat (excellent), hide (warm). The fat is the real prize \u2014 calories for winter.",
+  "3": "Uses: bear fat is the best cooking fat in the woods. Meat must be cooked through (trichinosis).",
+  "4": "Mastery: they're food-motivated, not aggressive. Secure your camp and they'll usually move on. If you must hunt one, it's a serious undertaking \u2014 bring a real weapon and a real plan."
+ },
+ "unknown": "a dark shape that resolves into shoulders, a dish-faced head, intelligent eyes",
+ "emoji": "\ud83d\udc3b",
+ "behavior": "cautious",
+ "behaviorDesc": "Moves with surprising quiet for its size. Stands to look at you \u2014 assessing, not threatening. Usually.",
+ "fleeDifficulty": "medium",
+ "huntText": "It rises on its hind legs, sniffing the air \u2014 two hundred pounds of muscle deciding what you are.",
+ "killText": "About {kcal} kcal. Render the fat FIRST (it's liquid gold). Cook all meat thoroughly. The hide makes a winter coat.",
+ "tell": "a deep huffing sound, and the smell of wet fur.",
+ "butcher": {
+  "hide": 2,
+  "bone": 4,
+  "fat": 3
+ },
+ "diseaseVector": "Trichinosis \u2014 cook bear meat to 160\u00b0F internal. No exceptions.",
+ "common": true,
+ "regions": [
+  "pacific_northwest",
+  "appalachian",
+  "northeast"
+ ]
+},
+{
+ "id": "spotted_owl",
+ "activity": "nocturnal",
+ "name": "Northern Spotted Owl",
+ "scientific": "Strix occidentalis caurina",
+ "biomes": [
+  "grove"
+ ],
+ "description": "a dark-eyed owl watching from the old growth",
+ "calories": 400,
+ "difficulty": "hard",
+ "method": [
+  "snare"
+ ],
+ "knowledgeLevels": {
+  "1": "Spotted owl. Night hunter of the old forest. Rare.",
+  "2": "Where spotted owls live, the forest is healthy. They're an indicator \u2014 like a canary, but for ecosystems.",
+  "3": "Not really food \u2014 too small, too rare. But finding one tells you this grove is old and intact.",
+  "4": "Mastery: leave it alone. Its presence means the forest here can support you too."
+ },
+ "unknown": "two dark eyes in the canopy, watching without blinking",
+ "emoji": "\ud83e\udd89",
+ "behavior": "still",
+ "behaviorDesc": "Perches motionless for hours. Turns its head to track you \u2014 then goes back to waiting.",
+ "fleeDifficulty": "hard",
+ "huntText": "It doesn't move. It just watches you with those dark, depthless eyes.",
+ "killText": "You don't eat spotted owls. Some things are worth more alive.",
+ "tell": "a soft four-note hoot in the dark timber.",
+ "common": false,
+ "regions": [
+  "pacific_northwest"
+ ]
+},
+{
+ "id": "american_alligator",
+ "activity": "nocturnal",
+ "name": "American Alligator",
+ "scientific": "Alligator mississippiensis",
+ "biomes": [
+  "wetland",
+  "creek"
+ ],
+ "description": "an alligator, armored and patient, eyes just above the black water",
+ "calories": 15000,
+ "difficulty": "hard",
+ "method": [
+  "trap",
+  "avoid"
+ ],
+ "knowledgeLevels": {
+  "1": "Alligator. Armored, patient, fast in short bursts. Respect it.",
+  "2": "Parts: tail meat (excellent, tastes like chicken-pork), hide (armor-grade leather).",
+  "3": "They're ambush predators \u2014 the danger is the water's edge, not the deep. Never swim where they live.",
+  "4": "Mastery: a big gator is a serious hunt. Secure the jaw first \u2014 the tail can break your leg. The tail meat is worth it."
+ },
+ "unknown": "two eyes and a ridged back breaking the black water's surface",
+ "emoji": "\ud83d\udc0a",
+ "behavior": "patient",
+ "behaviorDesc": "Floats motionless for hours. Only the eyes move, tracking. Explodes when it decides.",
+ "fleeDifficulty": "medium",
+ "huntText": "The water erupts \u2014 a wall of armored muscle and teeth where the log used to be.",
+ "killText": "About {kcal} kcal. Tail meat first (the best part). The hide makes exceptional leather. Respect the animal \u2014 it was here first.",
+ "tell": "a low bellow that you feel in your chest more than hear.",
+ "butcher": {
+  "hide": 2,
+  "bone": 3
+ },
+ "common": true,
+ "regions": [
+  "deep_south_bayou",
+  "florida"
+ ]
+},
+{
+ "id": "nutria",
+ "activity": "crepuscular",
+ "name": "Nutria",
+ "scientific": "Myocastor coypus",
+ "biomes": [
+  "wetland",
+  "creek"
+ ],
+ "description": "a huge orange-toothed rodent swimming in the shallows",
+ "calories": 3000,
+ "difficulty": "easy",
+ "method": [
+  "snare",
+  "chase"
+ ],
+ "knowledgeLevels": {
+  "1": "Nutria. Big swamp rat with orange teeth. Invasive, but edible.",
+  "2": "Parts: decent meat, usable fur. The orange teeth are iron-rich enamel \u2014 normal for them.",
+  "3": "They destroy wetlands, so eating them is practically conservation. Easy to trap.",
+  "4": "Mastery: set snares on their regular trails along the bank. They're creatures of habit."
+ },
+ "unknown": "a beaver-sized shape in the shallows with improbably orange teeth",
+ "emoji": "\ud83e\udda6",
+ "behavior": "wary",
+ "behaviorDesc": "Swims with just eyes and nose above water. Dives at the first wrong sound.",
+ "fleeDifficulty": "easy",
+ "huntText": "It surfaces with a snort, orange teeth bared \u2014 then dives with barely a ripple.",
+ "killText": "About {kcal} kcal. Swamp rabbit, basically. The fur is usable if you need it.",
+ "tell": "a splashing grunt from the cattails.",
+ "common": true,
+ "regions": [
+  "deep_south_bayou"
+ ]
+},
+{
+ "id": "cottonmouth",
+ "activity": "diurnal",
+ "name": "Cottonmouth",
+ "scientific": "Agkistrodon piscivorus",
+ "biomes": [
+  "wetland",
+  "creek"
+ ],
+ "description": "a thick-bodied pit viper, mouth gaping white in threat",
+ "calories": 0,
+ "difficulty": "hard",
+ "method": [
+  "avoid"
+ ],
+ "knowledgeLevels": {
+  "1": "Cottonmouth. Venomous water snake. The white mouth is the warning \u2014 believe it.",
+  "2": "They don't chase, but they don't move either. Most bites happen when people step on them.",
+  "3": "Watch where you put hands and feet near water. They bask on logs and banks.",
+  "4": "Mastery: give it space and it gives you space. If bitten, keep the limb still and get help \u2014 don't cut, don't suck."
+ },
+ "unknown": "a thick dark coil by the water, mouth opening to show startling white",
+ "emoji": "\ud83d\udc0d",
+ "behavior": "defensive",
+ "behaviorDesc": "Coils and gapes \u2014 the white mouth is unmistakable. Holds its ground.",
+ "fleeDifficulty": "easy",
+ "huntText": "It doesn't flee. The mouth opens wider, white as cotton, and the tail vibrates.",
+ "killText": "You don't eat cottonmouths. Walk around.",
+ "tell": "a dry rattle-like buzz from the bank vegetation.",
+ "common": false,
+ "regions": [
+  "deep_south_bayou"
+ ]
+},
+{
+ "id": "bison",
+ "activity": "diurnal",
+ "name": "American Bison",
+ "scientific": "Bison bison",
+ "biomes": [
+  "meadow"
+ ],
+ "description": "a bison, a ton of muscle and bad temper under a shaggy hump",
+ "calories": 60000,
+ "difficulty": "hard",
+ "method": [
+  "bow",
+  "trap"
+ ],
+ "knowledgeLevels": {
+  "1": "Bison. Enormous. Can run 35 mph and jump six feet. Do not approach.",
+  "2": "Parts: everything. Meat, hide (the best winter robe), bones, horns. One bison is a season's food.",
+  "3": "They're not aggressive unless provoked, but 'provoked' includes 'within 50 yards.' Give them the whole meadow.",
+  "4": "Mastery: hunting bison alone is how you die famous. This is a group project \u2014 or a trap-and-wait game. The meat will feed everyone; the hide will keep you alive in winter."
+ },
+ "unknown": "a brown mountain that moves, with a massive humped head",
+ "emoji": "\ud83e\uddac",
+ "behavior": "unpredictable",
+ "behaviorDesc": "Grazes placidly, tail swishing \u2014 then the head comes up and the whole ton of it is looking at you.",
+ "fleeDifficulty": "hard",
+ "huntText": "The herd shifts. A big bull turns broadside, pawing the dirt \u2014 the universal sign for 'reconsider.'",
+ "killText": "About {kcal} kcal. This is the big one. Work for days: butcher, dry, smoke, render. The hide is a winter coat. Nothing wasted.",
+ "tell": "a deep grunt that rolls across the prairie, and the thud of heavy hooves.",
+ "butcher": {
+  "hide": 3,
+  "bone": 8,
+  "horn": 2
+ },
+ "common": true,
+ "regions": [
+  "great_plains"
+ ]
+},
+{
+ "id": "pronghorn",
+ "activity": "diurnal",
+ "name": "Pronghorn",
+ "scientific": "Antilocapra americana",
+ "biomes": [
+  "meadow"
+ ],
+ "description": "a pronghorn, the fastest land animal in the Americas, watching from impossible distance",
+ "calories": 8000,
+ "difficulty": "hard",
+ "method": [
+  "bow",
+  "trap"
+ ],
+ "knowledgeLevels": {
+  "1": "Pronghorn. Fastest thing on four legs out here. You will not chase it down.",
+  "2": "Parts: lean meat, light hide. They're built for speed, not fat.",
+  "3": "They can see you from a mile. The only way is ambush or a very long shot.",
+  "4": "Mastery: they follow the same trails to water. Wait, don't chase. Patience is the only weapon that works."
+ },
+ "unknown": "a tan-and-white shape that was there and then, impossibly, is a quarter-mile away",
+ "emoji": "\ud83e\udd8c",
+ "behavior": "skittish",
+ "behaviorDesc": "Stands motionless, watching from absurd distance. Vanishes in a white-rumped flash.",
+ "fleeDifficulty": "hard",
+ "huntText": "It was watching you the whole time. Now it's a dust plume on the horizon.",
+ "killText": "About {kcal} kcal. Lean and clean. You earned this one \u2014 pronghorn don't make mistakes.",
+ "tell": "a snort on the wind, impossibly far away.",
+ "common": true,
+ "regions": [
+  "great_plains"
+ ]
+},
+{
+ "id": "prairie_dog",
+ "activity": "diurnal",
+ "name": "Prairie Dog",
+ "scientific": "Cynomys ludovicianus",
+ "biomes": [
+  "meadow"
+ ],
+ "description": "a prairie dog standing upright at its burrow, barking alarm",
+ "calories": 600,
+ "difficulty": "easy",
+ "method": [
+  "snare",
+  "chase"
+ ],
+ "knowledgeLevels": {
+  "1": "Prairie dog. Small, social, loud. Lives in towns.",
+  "2": "Easy to snare at burrow entrances. Not much meat per animal, but there are hundreds.",
+  "3": "Their towns aerate the soil. Where prairie dogs thrive, the grass is good.",
+  "4": "Mastery: they're the prairie's alarm system. When the barking stops, something big is coming."
+ },
+ "unknown": "a small upright shape that barks sharply and vanishes down a hole",
+ "emoji": "\ud83d\udc3f\ufe0f",
+ "behavior": "social",
+ "behaviorDesc": "Stands sentry while others feed. One bark and the whole town disappears underground.",
+ "fleeDifficulty": "easy",
+ "huntText": "The sentry barks \u2014 sharp, urgent \u2014 and the town explodes into burrows.",
+ "killText": "About {kcal} kcal. Small but plentiful. Where there's one town, there's dinner for a week.",
+ "tell": "a chorus of sharp barks rolling across the grass.",
+ "common": true,
+ "regions": [
+  "great_plains"
+ ]
+},
+{
+ "id": "moose",
+ "activity": "crepuscular",
+ "name": "Moose",
+ "scientific": "Alces alces",
+ "biomes": [
+  "wetland",
+  "grove"
+ ],
+ "description": "a moose, seven feet at the shoulder, regarding you with ancient indifference",
+ "calories": 50000,
+ "difficulty": "hard",
+ "method": [
+  "bow",
+  "avoid"
+ ],
+ "knowledgeLevels": {
+  "1": "Moose. Enormous. More dangerous than bears when provoked. Give it the whole wetland.",
+  "2": "Parts: massive meat yield, thick hide. The nose is a delicacy, if you're into that.",
+  "3": "Rut season (fall) is when they're dangerous. A cow with a calf is dangerous always.",
+  "4": "Mastery: you don't hunt moose casually. This is an expedition \u2014 weapon, help, and a plan for 500 pounds of meat before it spoils."
+ },
+ "unknown": "long legs and a massive palmate rack emerging from the mist over the water",
+ "emoji": "\ud83e\udece",
+ "behavior": "unpredictable",
+ "behaviorDesc": "Stands in the shallows, cropping willows. Ears swivel toward you \u2014 deciding.",
+ "fleeDifficulty": "medium",
+ "huntText": "It lifts its massive head, water streaming from its muzzle, and just... looks at you. Deciding.",
+ "killText": "About {kcal} kcal. The biggest animal in these woods. This is a village event \u2014 butcher fast, share widely.",
+ "tell": "a deep grunt and the sound of something very large moving through willows.",
+ "butcher": {
+  "hide": 3,
+  "bone": 6,
+  "antler": 2
+ },
+ "common": true,
+ "regions": [
+  "northeast"
+ ]
+},
+{
+ "id": "snowshoe_hare",
+ "activity": "nocturnal",
+ "name": "Snowshoe Hare",
+ "scientific": "Lepus americanus",
+ "biomes": [
+  "thicket",
+  "forest_floor"
+ ],
+ "description": "a snowshoe hare, white in winter and brown in summer, huge hind feet",
+ "calories": 700,
+ "difficulty": "medium",
+ "method": [
+  "snare",
+  "chase"
+ ],
+ "knowledgeLevels": {
+  "1": "Snowshoe hare. Changes color with the season. Big feet for deep snow.",
+  "2": "Same snaring as rabbits, but they're wilder \u2014 deeper woods, less predictable.",
+  "3": "Their population cycles every 10 years. In boom years, they're everywhere.",
+  "4": "Mastery: in winter, follow the tracks in fresh snow. They're creatures of habit, even in the deep woods."
+ },
+ "unknown": "a flash of white (or brown) between the trees, impossibly large feet kicking up snow",
+ "emoji": "\ud83d\udc07",
+ "behavior": "skittish",
+ "behaviorDesc": "Freezes against the snow (or leaf litter), invisible until it moves. Then it's gone.",
+ "fleeDifficulty": "medium",
+ "huntText": "It was a stump. Now it's a hare, already twenty yards away, those huge feet barely touching snow.",
+ "killText": "About {kcal} kcal. Northern rabbit. Same rules \u2014 lean meat, need fat alongside.",
+ "tell": "a soft thumping in the underbrush, then silence.",
+ "common": true,
+ "regions": [
+  "northeast"
+ ]
+},
+{
+ "id": "florida_panther",
+ "activity": "crepuscular",
+ "name": "Florida Panther",
+ "scientific": "Puma concolor coryi",
+ "biomes": [
+  "thicket",
+  "forest_floor"
+ ],
+ "description": "a florida panther, tawny and silent, with a kinked tail",
+ "calories": 12000,
+ "difficulty": "hard",
+ "method": [
+  "bow",
+  "avoid"
+ ],
+ "knowledgeLevels": {
+  "1": "Florida panther. Big cat. Endangered. You do not want to meet one hungry.",
+  "2": "They're ambush predators \u2014 if you see it, it's already decided not to kill you. Probably.",
+  "3": "Make noise in panther country. They avoid people who announce themselves.",
+  "4": "Mastery: hunting one is a bad idea ecologically and practically. But if it comes to it \u2014 never run, make yourself big, fight back."
+ },
+ "unknown": "tawny movement at the edge of vision, gone before you turn \u2014 and a feeling of being watched",
+ "emoji": "\ud83d\udc06",
+ "behavior": "stealthy",
+ "behaviorDesc": "You never see it coming. The first sign is usually the feeling \u2014 the woods going quiet in a specific way.",
+ "fleeDifficulty": "hard",
+ "huntText": "The birds go silent. Then you see it \u2014 low, fluid, already too close \u2014 and it sees you seeing it.",
+ "killText": "About {kcal} kcal. You survived a panther. Tell the story for the rest of your life.",
+ "tell": "a scream like a woman in the night \u2014 once heard, never forgotten.",
+ "common": false,
+ "regions": [
+  "florida"
+ ]
+},
+{
+ "id": "burmese_python",
+ "activity": "nocturnal",
+ "name": "Burmese Python",
+ "scientific": "Python bivittatus",
+ "biomes": [
+  "wetland",
+  "thicket"
+ ],
+ "description": "a burmese python, fifteen feet of invasive muscle patterned like giraffe spots",
+ "calories": 8000,
+ "difficulty": "hard",
+ "method": [
+  "trap",
+  "avoid"
+ ],
+ "knowledgeLevels": {
+  "1": "Burmese python. Invasive. Huge. Not supposed to be here.",
+  "2": "They eat everything \u2014 deer, gators, pets. Killing them is conservation.",
+  "3": "Constriction, not venom. If grabbed, unwind from the tail \u2014 never the head.",
+  "4": "Mastery: hunt them at night with a light. They're eating the Everglades; every one you take helps."
+ },
+ "unknown": "something enormous moving through the sawgrass, patterned like a giraffe",
+ "emoji": "\ud83d\udc0d",
+ "behavior": "ambush",
+ "behaviorDesc": "Lies motionless for days. When it moves, it's already too late for whatever it wanted.",
+ "fleeDifficulty": "medium",
+ "huntText": "The grass parts \u2014 and keeps parting \u2014 and then you understand how big fifteen feet really is.",
+ "killText": "About {kcal} kcal. Good eating, and you just did the ecosystem a favor. The skin makes excellent gear.",
+ "tell": "a heavy sliding sound in the sawgrass, too regular for wind.",
+ "butcher": {
+  "hide": 2
+ },
+ "common": false,
+ "regions": [
+  "florida"
+ ]
+}
 ]

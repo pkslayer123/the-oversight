@@ -204,9 +204,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'alienPlayers.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers, regions] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'alienPlayers.json', 'regions.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers, regions };
       return this.data;
     },
 
@@ -278,17 +278,62 @@
       return pool.length ? pool[Math.floor(Math.random() * pool.length)] : {};
     },
 
+    // REGIONS (Steve 2026-10-07): 8 American landing regions. Each works as both
+    // an origin (starting knowledge via asOrigin) and a haven location (biome gen
+    // via asHaven). See docs/REGIONS.md for the scaffold. regions.json is the
+    // source of truth; these helpers query it.
+    regionDef(id) {
+      return (this.data.regions || []).find(r => r.id === id) || null;
+    },
+    // regionsForOrigin: all regions whose originKeys overlap the given tags.
+    // A tag can map to multiple regions (e.g. kentucky -> middle_america +
+    // appalachian); callers merge.
+    regionsForOrigin(tags) {
+      const lower = (tags || []).map(t => String(t).toLowerCase());
+      return (this.data.regions || []).filter(r =>
+        (r.originKeys || []).some(k => lower.includes(String(k).toLowerCase())));
+    },
+    // regionKnownPlants: merged {plantId: level} across all matching regions
+    // (highest level wins on conflict).
+    regionKnownPlants(tags) {
+      const merged = {};
+      for (const r of this.regionsForOrigin(tags)) {
+        const kp = (r.asOrigin && r.asOrigin.knownPlants) || {};
+        for (const [pid, lvl] of Object.entries(kp)) {
+          if (!(pid in merged) || lvl > merged[pid]) merged[pid] = lvl;
+        }
+      }
+      return merged;
+    },
+    // regionKnownAnimals: merged list of animal IDs across matching regions.
+    regionKnownAnimals(tags) {
+      const seen = new Set(), out = [];
+      for (const r of this.regionsForOrigin(tags)) {
+        for (const aid of ((r.asOrigin && r.asOrigin.knownAnimals) || [])) {
+          if (!seen.has(aid)) { seen.add(aid); out.push(aid); }
+        }
+      }
+      return out;
+    },
+
     // locParams: genMap tuning for the chosen landing zone (with safe defaults).
+    // REGION GEN: the haven region (state.region, default middle_america)
+    // provides base gen params; the landing zone overrides per-key.
+    // middle_america's gen matches the old defaults, so existing behavior
+    // is unchanged until a region is explicitly chosen.
     locParams() {
       const loc = (this.data.locations || []).find(l => l.id === (this.state && this.state.startLocation));
       const g = (loc && loc.gen) || {};
+      const region = this.regionDef(this.state && this.state.region || 'middle_america');
+      const rg = (region && region.asHaven && region.asHaven.gen) || {};
+      const pick = (k, dflt) => g[k] ?? rg[k] ?? dflt;
       return {
-        creeks: g.creeks ?? 1, wetlands: g.wetlands ?? 3,
-        groveBlobs: g.groveBlobs ?? 2, groveSize: g.groveSize ?? 4,
-        meadowSize: g.meadowSize ?? 5, thickets: g.thickets ?? 5,
-        trailLines: g.trailLines ?? 1, ruinMaxDist: g.ruinMaxDist ?? 3,
-        lootMult: g.lootMult ?? 1, stockMult: g.stockMult ?? 1,
-        startReveal: g.startReveal ?? 0,
+        creeks: pick('creeks', 1), wetlands: pick('wetlands', 3),
+        groveBlobs: pick('groveBlobs', 2), groveSize: pick('groveSize', 4),
+        meadowSize: pick('meadowSize', 5), thickets: pick('thickets', 5),
+        trailLines: pick('trailLines', 1), ruinMaxDist: pick('ruinMaxDist', 3),
+        lootMult: pick('lootMult', 1), stockMult: pick('stockMult', 1),
+        startReveal: pick('startReveal', 0),
       };
     },
 
@@ -1862,18 +1907,20 @@
         this.state.codex.encounters = this.state.codex.encounters || {};
         this.state.codex.encounters[pid] = 99;
       }
-      // OHIO ROOTS (Steve 2026-10-07): a kid from Columbus knows the state
-      // fruit. Pawpaw isn't just a name — it's level 2 (edible parts known).
-      // "Yeah, pawpaws. You eat the custardy part, not the seeds." Other
-      // Ohio plants come via the taught[] familiarity system above.
+      // REGIONAL ROOTS (Steve 2026-10-07): your origin region seeds starting
+      // plant knowledge. A kid from Columbus knows pawpaw at level 2
+      // ("you eat the custardy part, not the seeds"); a desert kid knows
+      // prickly pear. Driven by regions.json asOrigin.knownPlants.
+      // (Replaces the old ohio-only pawpaw block; middle_america keeps pawpaw:2.)
       {
         const myTags = (parsed.tags || []).map(t => String(t).toLowerCase());
-        if (myTags.includes('ohio') || myTags.includes('columbus')) {
-          const pp = (this.data.plants || []).find(p => p.id === 'pawpaw');
-          if (pp) {
-            this.state.codex.plants['pawpaw'] = { identifiedDay: 0, level: 2, harvests: 0, tastings: 0 };
+        const knownPlants = this.regionKnownPlants(myTags);
+        for (const [pid, level] of Object.entries(knownPlants)) {
+          const pl = (this.data.plants || []).find(p => p.id === pid);
+          if (pl) {
+            this.state.codex.plants[pid] = { identifiedDay: 0, level, harvests: 0, tastings: 0 };
             this.state.codex.encounters = this.state.codex.encounters || {};
-            this.state.codex.encounters['pawpaw'] = 99;
+            this.state.codex.encounters[pid] = 99;
           }
         }
       }
