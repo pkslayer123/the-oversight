@@ -42,7 +42,7 @@
       "fates": [
         "worked {workplace} for thirty years",
         "is buried on the hill above {town}",
-        "hasn't been heard from since the sky changed"
+        "his chair's been empty since the sky changed"
       ],
       "relation": "father"
     },
@@ -64,15 +64,15 @@
     },
     {
       "fates": [
-        "sent one text: 'call when you can'",
-        "is somewhere west, last anyone knew",
+        "left one voicemail, half static",
+        "was headed west when the sky changed, last anyone knew",
         "could fix anything with an engine"
       ],
       "relation": "brother"
     },
     {
       "fates": [
-        "was visiting the coast when the sky changed",
+        "had just moved to the city when the sky changed",
         "kept every letter {first} ever wrote",
         "laughs like their mother"
       ],
@@ -173,6 +173,86 @@
         "loved the butterscotch ones best"
       ],
       "relation": "grandchildren"
+    },
+    {
+      "fates": [
+        "beat {first} at everything, kindly",
+        "left for the {workplace} job and never moved back",
+        "covered for {first}, always"
+      ],
+      "relation": "older brother"
+    },
+    {
+      "fates": [
+        "braided {first}'s hair before the school bus",
+        "wrote {first}'s name in all her notebooks",
+        "wanted to see the ocean, just once"
+      ],
+      "relation": "younger sister"
+    },
+    {
+      "fates": [
+        "shared a bedroom every summer",
+        "could outswim anyone in the family",
+        "moved away for work and visited rarely"
+      ],
+      "relation": "cousin"
+    },
+    {
+      "fates": [
+        "drew {first} a birthday card every year",
+        "wanted {first}'s old bike",
+        "asked if monsters were real, laughing"
+      ],
+      "relation": "niece"
+    },
+    {
+      "fates": [
+        "followed {first} around like a shadow",
+        "broke his arm on {first}'s dare",
+        "kept a frog in his pocket for a week"
+      ],
+      "relation": "nephew"
+    },
+    {
+      "fates": [
+        "left before the sky changed, mercifully",
+        "kept the dog, lost the argument",
+        "sent a letter {first} never opened"
+      ],
+      "relation": "ex"
+    },
+    {
+      "fates": [
+        "beat {first} to the {workplace} job",
+        "never lost an argument, only paused them",
+        "shook {first}'s hand like it hurt"
+      ],
+      "relation": "rival"
+    },
+    {
+      "fates": [
+        "covered {first}'s shifts without asking",
+        "knew the {workplace} machines better than anyone",
+        "retired two months before the sky changed"
+      ],
+      "relation": "coworker"
+    },
+    {
+      "fates": [
+        "kept {first} after class, kindly",
+        "wrote in the yearbook: keep asking",
+        "believed {first} before anyone else did"
+      ],
+      "relation": "teacher"
+    },
+    {
+      "fates": [
+        "ran drills till the parking lot emptied",
+        "said: leave it on the field",
+        "believed in {first}'s left foot"
+      ],
+      "relation": "coach"
     }
   ],
   "places": [
@@ -703,6 +783,116 @@
         "the lead mine",
         "the float-trip outfitter",
         "the poultry farm"
+      ]
+    },
+    {
+      "id": "great_lakes",
+      "label": "the Great Lakes",
+      "land": "freshwater coasts, dune grass, and quiet factory towns",
+      "matchTags": [
+        "great lakes",
+        "lake superior",
+        "lake erie",
+        "upper peninsula",
+        "marquette",
+        "green bay",
+        "door county"
+      ],
+      "towns": [
+        "Marquette",
+        "Green Bay",
+        "Traverse City",
+        "Erie",
+        "Sandusky",
+        "Muskegon"
+      ],
+      "workplaces": [
+        "the ore dock",
+        "the auto plant",
+        "the brewery",
+        "the dairy"
+      ]
+    },
+    {
+      "id": "gulf_coast",
+      "label": "the Gulf Coast",
+      "land": "bayous, shrimp docks, and hurricane-season sky",
+      "matchTags": [
+        "bayou",
+        "cajun",
+        "biloxi",
+        "gulfport",
+        "lake charles",
+        "houma"
+      ],
+      "towns": [
+        "Biloxi",
+        "Gulfport",
+        "Lake Charles",
+        "Houma",
+        "Bay St. Louis",
+        "Pascagoula"
+      ],
+      "workplaces": [
+        "the shrimp dock",
+        "the bait shop",
+        "the casino",
+        "the sugar mill"
+      ]
+    },
+    {
+      "id": "texas_hill_country",
+      "label": "the Texas Hill Country",
+      "land": "limestone hills, cedar brakes, and spring-fed rivers",
+      "matchTags": [
+        "hill country",
+        "austin",
+        "san antonio",
+        "fredericksburg",
+        "kerrville",
+        "boerne"
+      ],
+      "towns": [
+        "Fredericksburg",
+        "Kerrville",
+        "Boerne",
+        "Wimberley",
+        "Marble Falls",
+        "Dripping Springs"
+      ],
+      "workplaces": [
+        "the peach orchard",
+        "the feed store",
+        "the dance hall",
+        "the limestone quarry"
+      ]
+    },
+    {
+      "id": "great_basin",
+      "label": "the Great Basin",
+      "land": "sagebrush seas, salt flats, and basin ranges",
+      "matchTags": [
+        "great basin",
+        "nevada",
+        "reno",
+        "elko",
+        "winnemucca",
+        "salt flats",
+        "sagebrush"
+      ],
+      "towns": [
+        "Reno",
+        "Elko",
+        "Winnemucca",
+        "Ely",
+        "Battle Mountain",
+        "Fallon"
+      ],
+      "workplaces": [
+        "the silver mine",
+        "the truck stop",
+        "the ranch",
+        "the geothermal plant"
       ]
     }
   ],
