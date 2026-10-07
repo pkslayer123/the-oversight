@@ -5335,6 +5335,8 @@
           this.say(`⬢ SYSTEM: "One clarification, scholar: linking codices sharpens MY eyes. Ability slots grow from YOUR neural integration — ${integ}/100, holding ${slots} slot${slots === 1 ? '' : 's'}${next ? ` (next at ${next})` : ' (maxed)'}. Discover, practice, survive — let the interface learn you."`);
           // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): system integration level-up.
           this.audioEvent('knowledgeReveal', { kind: 'integration', level: newLevel });
+          // DRAMA (Steve 2026-10-07): integration is a moment — the System is really here
+          try { this.drama('integration', newLevel); } catch (e) {}
         }
       }
       if (learned.length) {

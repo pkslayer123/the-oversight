@@ -9,6 +9,10 @@
 //   - shake: screen shake (transform on grid container, GPU-cheap)
 //   - heroCard: centered high-res moment card (synergy, integration)
 //   - soulWisp: death wisp floats up from tile
+//   - exclaim: !/? above NPCs who want attention (Steve 2026-10-07)
+//   - abilityBurst: radial pulse on ability use, color by pool
+//   - contestFlash: TV show moment banner
+//   - integrationPulse: System presence evolves with integration level
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
 //   - All animations use transform/opacity only — GPU-composited, no layout/paint (code: drama.js).
@@ -142,6 +146,57 @@
         1200
       );
     },
+
+    // exclaim: ! or ? above an NPC who wants attention (loosely bound — floats above tile)
+    // Steve 2026-10-07: "Exclamations above player characters when they want to catch your attention as they walk by"
+    exclaim(x, y, icon, opts) {
+      opts = opts || {};
+      const c = this.tileCenter(x, y);
+      const color = icon === '!' ? '#ff5252' : icon === '?' ? '#ffd54a' : '#4df3ff';
+      this.spawn(
+        `<div style="font-size:28px;font-weight:bold;color:${color};text-shadow:0 2px 6px rgba(0,0,0,0.9);">${icon}</div>`,
+        `position:absolute;left:${c.x}px;top:${c.y - 30}px;transform:translate(-50%,-100%);`,
+        'drama-exclaim',
+        opts.duration || 1500
+      );
+    },
+
+    // abilityBurst: radial pulse when an ability fires (color by pool)
+    abilityBurst(x, y, color) {
+      const c = this.tileCenter(x, y);
+      color = color || '#4df3ff';
+      this.spawn(
+        `<svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="35" fill="none" stroke="${color}" stroke-width="3" opacity="0.8"/></svg>`,
+        `position:absolute;left:${c.x - 40}px;top:${c.y - 40}px;`,
+        'drama-burst',
+        500
+      );
+    },
+
+    // contestFlash: TV show moment — full-screen colored pulse + banner
+    contestFlash(title, color) {
+      color = color || '#ff6b9d';
+      this.flash(color.replace(')', ',0.25)').replace('rgb', 'rgba'), 600);
+      this.spawn(
+        `<div style="font-size:24px;font-weight:bold;color:${color};text-shadow:0 2px 8px rgba(0,0,0,0.9);letter-spacing:2px;">${title}</div>`,
+        `position:absolute;left:50%;top:25%;transform:translate(-50%,-50%);`,
+        'drama-contest',
+        2000
+      );
+    },
+
+    // integrationPulse: the System is watching — evolves with integration level
+    // L1: subtle blue pulse. L2: eye opens. L3: full overlay presence.
+    integrationPulse(level) {
+      if (level >= 3) {
+        this.heroCard('⬢ SYSTEM', 'Full integration. I see everything you see.', '👁️');
+      } else if (level >= 2) {
+        this.flash('rgba(77,243,255,0.2)', 800);
+        this.floatText('50%', '35%', '👁️ The System watches', { color: '#4df3ff', size: 16 });
+      } else if (level >= 1) {
+        this.flash('rgba(77,243,255,0.08)', 400);
+      }
+    },
   };
 
   S.Drama = Drama;
@@ -164,6 +219,13 @@
     .drama-hero.drama-hero { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     .drama-wisp { opacity: 0; transition: all 1.2s ease-out; }
     .drama-wisp.drama-wisp { opacity: 1; transform: translateY(-60px); }
+    .drama-exclaim { opacity: 0; transform: translate(-50%, -80%); transition: all 0.3s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .drama-exclaim.drama-exclaim { opacity: 1; transform: translate(-50%, -100%); animation: drama-bob 1s ease-in-out infinite; }
+    @keyframes drama-bob { 0%, 100% { margin-top: 0; } 50% { margin-top: -6px; } }
+    .drama-burst { opacity: 0; transform: scale(0.5); transition: all 0.5s ease-out; }
+    .drama-burst.drama-burst { opacity: 1; transform: scale(1.3); }
+    .drama-contest { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s ease-out; }
+    .drama-contest.drama-contest { opacity: 1; transform: translate(-50%, -50%); }
     .drama-shake { animation: drama-shake-anim 0.4s ease-out; }
     @keyframes drama-shake-anim {
       0%, 100% { transform: translate(0, 0); }
