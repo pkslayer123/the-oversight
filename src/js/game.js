@@ -5279,8 +5279,32 @@
       }
       // costs time: studying is a day-part activity
       try { this.spendDayPart(1); } catch (e) {}
+      // LINK THE CODEX: studying links their codex to yours. The System integrates.
+      const scholar2 = this.state.scholar;
+      scholar2.linkedCodices = scholar2.linkedCodices || [];
+      if (!scholar2.linkedCodices.includes(villageId)) {
+        scholar2.linkedCodices.push(villageId);
+        const newLevel = this.systemIntegrationLevel();
+        if (newLevel > (scholar2.lastIntegrationLevel || 0)) {
+          scholar2.lastIntegrationLevel = newLevel;
+          this.say(`⬢ SYSTEM INTEGRATION L${newLevel}: The System sees more now. Your HUD sharpens.`);
+        }
+      }
       if (!learned.length) return `${v.name}'s codex holds nothing you don't already know.`;
       return `You study ${v.name}'s codex (${v.knowledgeProfile?.focus || 'survivors'}). Learned: ${learned.join(', ')}.`;
+    },
+    // systemIntegrationLevel: how integrated is the System with the world?
+    // Increases as you LINK CODICES (study village codices). Each linked
+    // village = deeper integration. The HUD gets more sophisticated:
+    // L0: basic. L1: village power on map. L2: wildlife + travelers.
+    // L3: full rosters, codex summaries, strategy intel.
+    // (Steve 2026-10-07: "more and more sophisticated HUD as system integrates")
+    systemIntegrationLevel() {
+      const linked = (this.state.scholar.linkedCodices || []).length;
+      if (linked >= 3) return 3;
+      if (linked >= 2) return 2;
+      if (linked >= 1) return 1;
+      return 0;
     },
     // villagePower: how strong is this village? Based on TIME ALIVE, KNOWLEDGE,
     // and POPULATION — never distance from the player. A village 2 tiles north
@@ -14687,9 +14711,27 @@
         if (!dm) continue;
         const reqs = syn.requires || [];
         if (!reqs.includes(usedId)) continue;
-        // Must hold both abilities at minLevel to make progress.
+        // Must hold all requirements at minLevel to make progress.
+        // SYNERGY ACROSS BOUNDARIES (Steve 2026-10-07): requires can be
+        // abilities, skills, OR techniques. The best synergies need adjacent
+        // skills — not just ability+ability. A technique from a village codex
+        // + your skill level + an ability = something greater.
         const minLvl = syn.minLevel || 1;
-        if (!reqs.every(rid => this.abilityLevel(rid) >= minLvl)) continue;
+        const hasReq = (rid) => {
+          // technique (from village codex): must know it
+          if (rid.startsWith('tech:')) {
+            const tid = rid.slice(5);
+            return !!((this.state.scholar.codex || {}).techniques || {})[tid];
+          }
+          // skill: must have level
+          if (rid.startsWith('skill:')) {
+            const skid = rid.slice(6);
+            return (((this.state.codex || {}).skills || {})[skid] || {}).level >= minLvl;
+          }
+          // ability (default)
+          return this.abilityLevel(rid) >= minLvl;
+        };
+        if (!reqs.every(hasReq)) continue;
         const otherId = reqs.find(r => r !== usedId);
         const log = sch.abilityUseLog || [];
         let combined = false;

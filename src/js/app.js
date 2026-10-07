@@ -12683,7 +12683,18 @@
         } else if (isW && seen) {
           g = '🐗';
         } else if (otherV) {
-          g = '🏘️';
+          // SYSTEM INTEGRATION (Steve 2026-10-07): L1+ shows village power.
+          // The System sees more as you link codices. Your HUD sharpens.
+          let vInfo = '';
+          try {
+            const integ = Game.systemIntegrationLevel ? Game.systemIntegrationLevel() : 0;
+            if (integ >= 1 && Game.villagePower) {
+              const pw = Game.villagePower(otherV);
+              const focus = (otherV.knowledgeProfile || {}).focus || 'survivors';
+              vInfo = ` title="${otherV.name} (Pwr ${pw}, ${focus})"`;
+            }
+          } catch (e) {}
+          g = `<span${vInfo}>🏘️</span>`;
         } else {
           // HAVEN/VILLAGE ICON (Steve 2026-10-06): havens and villages ALWAYS
           // show the 🏘️ icon, not terrain. You need to see where people are.
