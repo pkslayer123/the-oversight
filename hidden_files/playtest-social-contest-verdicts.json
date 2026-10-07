@@ -1,0 +1,160 @@
+{
+  "at": "2026-10-07T04:38:23.199Z",
+  "verdicts": [
+    {
+      "scenario": "uprising",
+      "ok": true,
+      "note": "talk attempt during uprising: villager responds (desperate talk exists)"
+    },
+    {
+      "scenario": "uprising",
+      "ok": true,
+      "note": "after waiting: justice stage=4, player hp 100→100"
+    },
+    {
+      "scenario": "uprising",
+      "ok": true,
+      "note": "flee verb missing/unavailable — stage-4 must have an out"
+    },
+    {
+      "scenario": "uprising",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    },
+    {
+      "scenario": "starving",
+      "ok": true,
+      "note": "take-from-pantry works; villager reaction text: present"
+    },
+    {
+      "scenario": "starving",
+      "ok": true,
+      "note": "scarcity legible: pantry lines mention NO kcal — numbers should be visible here"
+    },
+    {
+      "scenario": "starving",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    },
+    {
+      "scenario": "language",
+      "ok": true,
+      "note": "talk with barrier: talks but barrier NOT legible — \"\"Kira,\" they say, touching their chest. \"I'm Kira.\" You'll remember that. Kira: \"Hey — I f\""
+    },
+    {
+      "scenario": "language",
+      "ok": true,
+      "note": "progression hint: ABSENT — barrier with no visible path = frustration"
+    },
+    {
+      "scenario": "language",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    },
+    {
+      "scenario": "contestPit",
+      "ok": true,
+      "note": "contest pending: pit, participant=player"
+    },
+    {
+      "scenario": "contestPit",
+      "ok": true,
+      "note": "interruption live: 3 phases"
+    },
+    {
+      "scenario": "contestPit",
+      "ok": true,
+      "note": "played 3 phases [0:3ch → 1:3ch → 2:3ch] → outcome=won"
+    },
+    {
+      "scenario": "contestPit",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    },
+    {
+      "scenario": "contestHide",
+      "ok": true,
+      "note": "hide contest fired"
+    },
+    {
+      "scenario": "contestHide",
+      "ok": true,
+      "note": "played 4 phases → outcome=died; hp 100→100 (DIED — extreme risk legible)"
+    },
+    {
+      "scenario": "contestHide",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    },
+    {
+      "scenario": "contestForage",
+      "ok": true,
+      "note": "calorie_run fired"
+    },
+    {
+      "scenario": "contestForage",
+      "ok": true,
+      "note": "played 3 phases → outcome=won"
+    },
+    {
+      "scenario": "contestForage",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    },
+    {
+      "scenario": "contestWatch",
+      "ok": true,
+      "note": "watch mode live: taken=gen_2ak7kg9 (villager — correct)"
+    },
+    {
+      "scenario": "contestWatch",
+      "ok": true,
+      "note": "watcher agency across phases: present (Cheer them on | Watch silently | Study the pattern | Look away | Shout advice)"
+    },
+    {
+      "scenario": "contestWatch",
+      "ok": true,
+      "note": "watched 3 beats → outcome=won"
+    },
+    {
+      "scenario": "contestWatch",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    },
+    {
+      "scenario": "showWhyEat",
+      "ok": true,
+      "note": "show announced: \"⚡ TECHNIQUE UNLOCKED: Deep Read! You don't just read trust — you read intent. Know what they'll do next. (Your knowledge...\""
+    },
+    {
+      "scenario": "showWhyEat",
+      "ok": true,
+      "note": "show interactivity: announcement only — fine for a show, but note it"
+    },
+    {
+      "scenario": "showWhyEat",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    },
+    {
+      "scenario": "contestEligible",
+      "ok": true,
+      "note": "eligibility listed: 4 eligible (You, Wren, Lucia, Felix)"
+    },
+    {
+      "scenario": "contestEligible",
+      "ok": true,
+      "note": "fiction legible: yes — the enormous watcher has opinions"
+    },
+    {
+      "scenario": "contestEligible",
+      "ok": true,
+      "note": "player-facing text explains: yes"
+    },
+    {
+      "scenario": "contestEligible",
+      "ok": true,
+      "note": "no dev-marker leaks in player text"
+    }
+  ]
+}
