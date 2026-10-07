@@ -22800,6 +22800,13 @@
           this.say('The light gutters down to a dying ember. It\'s spent — dim, flickering, harmless.'
             + (m.biCycles >= 2 ? ' But it guttered faster this time. It\'s learning how to come back.' : ' For now.'));
           this.audioEvent('eurekaSpent');
+          // The transition turn IS the first ember turn — the countdown starts
+          // next turn, or "2 turns, then 1, then 0" loses a turn to the transition itself.
+          if (m.biEmber <= 0) { // cycle 3+: no safe window — settle immediately
+            this.encSetPhase(m, 'settle');
+            this.say('The ember steadies. Somewhere inside the glass, an idea is forming again.');
+          }
+          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         const biPhase = m.beamPhase;
         if (biPhase === 'ember') {
