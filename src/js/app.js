@@ -4619,25 +4619,47 @@
       }
     }
     function modViolation(d) {
-      // THE FLAG (Steve 2026-10-06): you used a muted verb. Two harsh buzzes
-      // — the second angrier, pitched up by how many violations you've stacked
-      // — then the stamp comes down on the paperwork. With your name on it.
+      // THE FLAG, ANGRIER (Steve 2026-10-07): bitcrushed buzzes, a detuned
+      // fifth sliding up a semitone between buzzes (the second buzz knows
+      // more about you), a 31Hz AM stutter — prime, alien throat-clearing —
+      // and a paper-tear static sweep down before the stamp lands.
       if (!ensure()) return;
       const t = ctx.currentTime;
       const v = Math.min(8, Math.max(0, (d && d.violations) || 1));
+      const curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(3 * x); }
       [0, 0.28].forEach((dt, i) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sawtooth'; o.frequency.value = 110 + v * 14 + i * 22;
-        const lfo = ctx.createOscillator(), lg = ctx.createGain();
-        lfo.type = 'sine'; lfo.frequency.value = 28; lg.gain.value = 0.5;
-        lfo.connect(lg); lg.connect(g.gain);
-        g.gain.setValueAtTime(0.0001, t + dt);
-        g.gain.exponentialRampToValueAtTime(0.11, t + dt + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.24);
-        o.connect(g); g.connect(sfxBus);
-        o.start(t + dt); o.stop(t + dt + 0.28); lfo.start(t + dt); lfo.stop(t + dt + 0.28);
+        const bb = ctx.createGain(); bb.connect(sfxBus);
+        const f0 = 110 + v * 14 + i * 22;
+        [[f0, 1], [f0 * 1.5, 1.0595]].forEach(([fq, slide]) => {
+          const o = ctx.createOscillator(), g = ctx.createGain(), ws = ctx.createWaveShaper();
+          ws.curve = curve; ws.oversample = '2x';
+          o.type = 'sawtooth';
+          o.frequency.setValueAtTime(fq, t + dt);
+          o.frequency.exponentialRampToValueAtTime(fq * slide, t + dt + 0.22);
+          o.connect(ws); ws.connect(g); g.connect(bb);
+          g.gain.setValueAtTime(0.0001, t + dt);
+          g.gain.exponentialRampToValueAtTime(0.08, t + dt + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.24);
+          o.start(t + dt); o.stop(t + dt + 0.28);
+        });
+        const am = ctx.createOscillator(), amg = ctx.createGain();
+        am.type = 'square'; am.frequency.value = 31; amg.gain.value = 0.6;
+        am.connect(amg); amg.connect(bb.gain);
+        am.start(t + dt); am.stop(t + dt + 0.28);
       });
-      thump(t + 0.55, 0.5);
+      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass';
+        nf.frequency.setValueAtTime(6000, t + 0.5);
+        nf.frequency.exponentialRampToValueAtTime(800, t + 0.75);
+        ng.gain.setValueAtTime(0.0001, t + 0.5);
+        ng.gain.exponentialRampToValueAtTime(0.1, t + 0.58);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.5); nz.stop(t + 0.85);
+      }
+      thump(t + 0.8, 0.5);
     }
     function modRemoval(d) {
       // THE NOTICE (Steve 2026-10-06): "REMOVAL IMMINENT." A send-whoosh —
@@ -7131,33 +7153,67 @@
       });
     }
     function exileWalk() {
-      // THE WALK: footsteps receding, and the village hum dropping one voice
-      // at a time. Nobody follows. The hum thins until it's one voice, then
-      // none — then just the footsteps, then not even those.
+      // THE WALK, LONELIER (Steve 2026-10-07): each hum voice goes flat as it
+      // drops — the village forgets the note. A limping gait with gravel
+      // under every step. A lone wandering wind arrives after the voices are
+      // gone. One distant bell partial rings once and never resolves.
       if (!ensure()) return;
       const t = ctx.currentTime;
-      // village hum: 4 detuned voices, dropping out one by one
       [130, 131.2, 138.5, 140].forEach((fq, i) => {
         const v = ctx.createOscillator(), vg = ctx.createGain();
-        v.type = 'triangle'; v.frequency.value = fq;
+        v.type = 'triangle';
         const stopAt = t + 0.6 + i * 0.7;
+        v.frequency.setValueAtTime(fq, t);
+        v.frequency.exponentialRampToValueAtTime(fq * 0.94, stopAt);
         vg.gain.setValueAtTime(0.0001, t);
         vg.gain.exponentialRampToValueAtTime(0.07, t + 0.4);
         vg.gain.setValueAtTime(0.07, stopAt - 0.15);
-        vg.gain.exponentialRampToValueAtTime(0.0001, stopAt); // each voice drops
+        vg.gain.exponentialRampToValueAtTime(0.0001, stopAt);
         v.connect(vg); vg.connect(sfxBus); v.start(t); v.stop(stopAt + 0.05);
       });
-      // footsteps: 6 steps, getting quieter and further (lowpass closes)
-      for (let i = 0; i < 6; i++) {
-        const dt = t + 0.3 + i * 0.55;
+      const gait = [0.55, 0.62, 0.51, 0.58, 0.66, 0.55];
+      let dt = t + 0.3;
+      gait.forEach((step, i) => {
         const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
-        o.type = 'sine'; o.frequency.setValueAtTime(120, dt);
+        o.type = 'sine';
+        o.frequency.setValueAtTime(120, dt);
         o.frequency.exponentialRampToValueAtTime(55, dt + 0.12);
-        f.type = 'lowpass'; f.frequency.value = 900 - i * 120; // receding
-        g.gain.setValueAtTime(0.22 - i * 0.03, dt);
+        f.type = 'lowpass'; f.frequency.value = 900 - i * 120;
+        g.gain.setValueAtTime(0.2 - i * 0.028, dt);
         g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
         o.connect(f); f.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.2);
-      }
+        const nz2 = noise(0.08), nf2 = ctx.createBiquadFilter(), ng2 = ctx.createGain();
+        if (nz2) {
+          nf2.type = 'highpass'; nf2.frequency.value = 2500;
+          ng2.gain.setValueAtTime(Math.max(0.012, 0.05 - i * 0.006), dt);
+          ng2.gain.exponentialRampToValueAtTime(0.0001, dt + 0.07);
+          nz2.connect(nf2); nf2.connect(ng2); ng2.connect(sfxBus);
+          nz2.start(dt); nz2.stop(dt + 0.1);
+        }
+        dt += step;
+      });
+      [196, 196.9].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = fq;
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 0.07; lg.gain.value = 1.2;
+        lfo.connect(lg); lg.connect(o.frequency);
+        g.gain.setValueAtTime(0.0001, t + 1.5);
+        g.gain.exponentialRampToValueAtTime(0.035, t + 2.5);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 5.5);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + 1.5); o.stop(t + 5.6); lfo.start(t + 1.5); lfo.stop(t + 5.6);
+      });
+      const lastDrop = t + 0.6 + 3 * 0.7;
+      [[660, 0.05], [1320, 0.018]].forEach(([fq, peak]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, lastDrop);
+        g.gain.exponentialRampToValueAtTime(peak, lastDrop + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, lastDrop + 2.6);
+        o.connect(g); g.connect(sfxBus);
+        o.start(lastDrop); o.stop(lastDrop + 2.7);
+      });
     }
     // ---- HAVEN ARC (Steve 2026-10-06): a sibling's exile/betrayal system
     // fired joinVillage/claimSite/chopWood/buildShelter/foundHaven with no
@@ -8597,25 +8653,59 @@
     }
     // ============ AMBIENT STING (Steve 2026-10-06) ============
     function horrorSting() {
-      // THE MISSING STING: referenced by the UI dread-beat (app.js top),
-      // never defined until now. A detuned swell that never resolves —
-      // something noticed you noticing it.
+      // THE STING THAT NOTICES YOU NOTICING (Steve 2026-10-07): tritone pair
+      // rising, never arriving — under it, three sines spiral DOWN an octave
+      // (your ear can't tell which way is up). Static gated at 17.3Hz — the
+      // System doesn't keep time like you do — then a sub drop: the flinch.
       if (!ensure()) return;
       const t = ctx.currentTime, dur = 1.8;
-      [110, 116.5].forEach(fq => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
+      [[110, 165], [155.56, 233]].forEach(([f0, f1]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
         o.type = 'sawtooth';
-        o.frequency.setValueAtTime(fq, t);
-        o.frequency.exponentialRampToValueAtTime(fq * 1.5, t + dur); // rising, never arriving
-        const f = ctx.createBiquadFilter(); f.type = 'lowpass';
-        f.frequency.setValueAtTime(400, t);
-        f.frequency.exponentialRampToValueAtTime(900, t + dur);
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+        f.type = 'lowpass';
+        f.frequency.setValueAtTime(320, t);
+        f.frequency.exponentialRampToValueAtTime(750, t + dur);
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.1, t + dur * 0.6);
+        g.gain.exponentialRampToValueAtTime(0.09, t + dur * 0.6);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         o.connect(f); f.connect(g); g.connect(sfxBus);
         o.start(t); o.stop(t + dur);
       });
+      [220, 440, 880].forEach((f0, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(f0 / 2, t + dur);
+        const a0 = t + i * 0.25;
+        g.gain.setValueAtTime(0.0001, a0);
+        g.gain.exponentialRampToValueAtTime(0.06, a0 + 0.3);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(sfxBus);
+        o.start(a0); o.stop(t + dur);
+      });
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 2;
+        const gate = ctx.createOscillator(), gg = ctx.createGain();
+        gate.type = 'square'; gate.frequency.value = 17.3; gg.gain.value = 0.5;
+        gate.connect(gg); gg.connect(ng.gain);
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.12, t + 0.5);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 1.6); gate.start(t); gate.stop(t + 1.6);
+      }
+      const s = ctx.createOscillator(), sg = ctx.createGain();
+      s.type = 'sine';
+      s.frequency.setValueAtTime(64, t + 1.3);
+      s.frequency.exponentialRampToValueAtTime(27, t + 1.8);
+      sg.gain.setValueAtTime(0.0001, t + 1.3);
+      sg.gain.exponentialRampToValueAtTime(0.22, t + 1.42);
+      sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+      s.connect(sg); sg.connect(sfxBus);
+      s.start(t + 1.3); s.stop(t + 1.95);
     }
 
     // on beam fire — brief, violent, unmistakable. The phone screen itself

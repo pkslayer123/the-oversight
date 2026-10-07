@@ -402,15 +402,15 @@ for (const [current, v2, args] of PROPOSALS) {
   ok(`PART D — ${current} v2 is layered (>=6 sources, >=4 enveloped layers)`,
     st.sources >= 6 && st.enveloped >= 4,
     `${st.sources} sources, ${st.enveloped} enveloped layers, ${st.totalNodes} nodes`);
-  // Compare against the SHIPPED v1 driven once with the same args
-  // (baseline[] in Part C is cumulative across arg shapes — not comparable).
+  // Landed 2026-10-07: shipped code IS the v2 proposal — assert identity
+  // (no throw, same source count as the verified proposal).
   resetGraph();
   let v1threw = null, v1sources = 0;
   try { audio[current](...args); v1sources = graphStats().sources; }
   catch (e) { v1threw = e && e.message; }
-  ok(`PART D — ${current} v2 is more layered than the shipped v1`,
-    v1threw === null && st.sources > v1sources,
-    v1threw ? `shipped v1 threw: ${v1threw}` : `v2=${st.sources} sources vs shipped=${v1sources}`);
+  ok(`PART D — ${current} v2 landed: shipped matches the verified proposal`,
+    v1threw === null && st.sources === v1sources,
+    v1threw ? `shipped threw: ${v1threw}` : `v2=${st.sources} sources vs shipped=${v1sources}`);
   ok(`PART D — ${current} v2 is phone-safe (peak gain <= 0.55, shipped thump level)`,
     st.peak <= 0.55, `peak=${st.peak.toFixed(3)}`);
 }
