@@ -10527,6 +10527,67 @@
     return html;
   }
 
+  // BUILD ARCHETYPE INDICATOR (Steve 2026-10-07): specialist/generalist are
+  // real bonuses (Game.buildBonus) but invisible. One compact line.
+  function renderBuildIndicator() {
+    try {
+      if (!Game.buildArchetype || !Game.buildBonus) return '';
+      const arch = Game.buildArchetype();
+      if (!arch) return '';
+      const bonus = Game.buildBonus();
+      const title = bonus ? esc(bonus.desc) : '';
+      const label = arch.type === 'specialist'
+        ? `\u{1F3AF} ${esc(arch.pool)} Specialist +25% <span style="opacity:.7">(${esc(arch.pool)} avg L${arch.avgLevel})</span>`
+        : `\u{1F310} Generalist +10% <span style="opacity:.7">(${arch.pools.length} pools)</span>`;
+      return `<p class="small" title="${title}"><b>Build:</b> ${label}</p>`;
+    } catch (e) { return ''; }
+  }
+
+  // SYNERGY STIRRINGS (Steve 2026-10-07): an undiscovered synergy with 1-2
+  // attempts whose requirements you hold is ALIVE — surface its tease/hint
+  // in the HUD so you don't have to dig for it.
+  function renderSynergyStirrings() {
+    try {
+      const sch = Game.state.scholar;
+      const syns = Game.data.synergies || [];
+      const attempts = sch.synergyAttempts || {};
+      const discovered = sch.synergies || [];
+      const rows = [];
+      for (const syn of syns) {
+        if (discovered.includes(syn.id)) continue;
+        const dm = syn.discovery_method || {};
+        const n = attempts[syn.id + (dm.type === 'sustained' ? '_days' : '')] || 0;
+        if (n < 1 || n > 2) continue;
+        // requirements held? same check game.js uses for activation.
+        const minLvl = syn.minLevel || 1;
+        const held = (syn.requires || []).every(rid => {
+          try { return Game.abilityLevel(rid) >= minLvl; } catch (e) { return false; }
+        });
+        if (!held) continue;
+        const tease = n === 1 ? dm.tease1 : dm.tease2;
+        let line = `<b>\u{1F300} ${esc(syn.name)}</b> <span style="opacity:.7">(${n}/3)</span>`;
+        if (tease) line += ` \u2014 <i>${esc(tease)}</i>`;
+        if (dm.hint) line += ` <span style="opacity:.85">Hint: ${esc(dm.hint)}</span>`;
+        rows.push(`<p class="small">${line}</p>`);
+      }
+      return rows.join('');
+    } catch (e) { return ''; }
+  }
+
+  // SYSTEM INTEGRATION LEVEL (Steve 2026-10-07): game.js tracks linkedCodices
+  // -> systemIntegrationLevel 0-3. Show the current level + progress to next.
+  function renderIntegrationLevel() {
+    try {
+      if (!Game.systemIntegrationLevel) return '';
+      const sch = Game.state.scholar;
+      const linked = (sch.linkedCodices || []).length;
+      const lvl = Game.systemIntegrationLevel();
+      if (!Game.state.systemArrived && lvl === 0) return '';
+      const prog = lvl >= 3 ? 'fully integrated' : `link ${lvl + 1 - linked} more codex for L${lvl + 1}`;
+      return `<p class="small" title="Link village codices to deepen the System's integration. The HUD gets more sophisticated as you link."><b>\u2B22 Integration:</b> L${lvl} \u00B7 ${esc(prog)}</p>`;
+    } catch (e) { return ''; }
+  }
+
   // inventory: your pack. Inline — one screen, no overlay hopping.
   function renderInvInline(slot, view) {
     const st = Game.status();
@@ -10539,6 +10600,9 @@
         ${(() => { const bg = Game.state.scholar.backgroundAbilities || []; if (!bg.length) return ''; return `<p class="small"><b>Background:</b> ${bg.map(a => `${a.name} L${a.level}`).join(', ')}</p>`; })()}
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; let cc = ''; try { const t = Game.challengeCountdownText ? Game.challengeCountdownText() : ''; if (t) cc = ` · <b style="color:#ff5d5d">${t}</b>`; } catch (e) {} return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)${Game.integrationStageName ? ` · ${Game.integrationStageName()}` : ''}${Game.arcName ? ` · ${Game.arcName()}` : ''}${cc}</p>`; })()}
         ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
+${renderBuildIndicator()}
+        ${renderSynergyStirrings()}
+        ${renderIntegrationLevel()}
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''}</p>`; })()}
         ${inv.length ? inv.map((i, idx) => {
           // FOOD REALITY: per-item processing buttons + state markers.
