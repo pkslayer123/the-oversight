@@ -2048,4 +2048,610 @@
   "tier": 4,
   "alienTech": true
  }
+,
+ {
+  "id": "commanders_coat",
+  "name": "Commander's Coat",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "The dead follow orders. The living follow the coat.",
+  "baseEffect": "+2 party size, allies within 3 tiles gain +10% damage",
+  "lootTier": 4,
+  "armor": {
+   "protection": 30
+  },
+  "kg": 1.8,
+  "findable": true
+ },
+ {
+  "id": "war_horn",
+  "name": "War Horn",
+  "class": "tool",
+  "flavor": "One blast and the scared remember they have somewhere to stand.",
+  "baseEffect": "Rally: party immune to fear for the rest of the fight",
+  "lootTier": 3,
+  "kg": 0.9,
+  "findable": true
+ },
+ {
+  "id": "banner_of_the_fallen",
+  "name": "Banner of the Fallen",
+  "class": "tool",
+  "flavor": "Every name stitched into it ever fell beside someone. They don't mind falling again.",
+  "baseEffect": "+1 party size; fallen allies fight on as echoes until the fight ends",
+  "lootTier": 4,
+  "kg": 1.2,
+  "findable": true
+ },
+ {
+  "id": "death_mask",
+  "name": "Death Mask",
+  "class": "clothing",
+  "slot": "head",
+  "flavor": "Wear the face of the recently gone. They'll talk. They always have more to say.",
+  "baseEffect": "Speak with the recently dead; reveals what they knew (detection)",
+  "lootTier": 3,
+  "armor": {
+   "protection": 10
+  },
+  "kg": 0.4,
+  "findable": true
+ },
+ {
+  "id": "apex_bow",
+  "name": "Apex Bow",
+  "class": "weapon",
+  "slot": "ranged",
+  "flavor": "The last thing the old world ever built right. It doesn't miss. Neither do you.",
+  "baseEffect": "+95 damage, range 9, silent",
+  "lootTier": 4,
+  "damage": 95,
+  "range": 9,
+  "kg": 0.9,
+  "findable": true,
+  "weapon": {
+   "bonus": 95,
+   "type": "ranged",
+   "range": 9,
+   "ammo": "arrow",
+   "silent": true,
+   "damageType": "physical"
+  }
+ },
+ {
+  "id": "ghost_camo",
+  "name": "Ghost Camo",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Stand still and the forest files you under 'weather'.",
+  "baseEffect": "Near-invisible while still (enemies can't detect you until you move)",
+  "lootTier": 3,
+  "armor": {
+   "protection": 10
+  },
+  "kg": 1.1,
+  "findable": true
+ },
+ {
+  "id": "predators_trophy",
+  "name": "Predator's Trophy",
+  "class": "tool",
+  "flavor": "A claw the size of your forearm. Beasts know what it means. They remember being prey.",
+  "baseEffect": "Fear aura vs beasts (they may hesitate and not act)",
+  "lootTier": 3,
+  "kg": 0.5,
+  "findable": true
+ },
+ {
+  "id": "heartseeker_arrows",
+  "name": "Heartseeker Arrows",
+  "class": "ammo",
+  "flavor": "Fletched with something that wanted to fly straight. Twelve of them. They all do.",
+  "baseEffect": "+20 damage per arrow, arrows fly truer (+accuracy)",
+  "lootTier": 3,
+  "kg": 0.24,
+  "units": 12,
+  "findable": true
+ },
+ {
+  "id": "seed_vault",
+  "name": "Seed Vault",
+  "class": "tool",
+  "flavor": "Every seed you have ever pocketed, kept dry and dreaming. It weighs almost nothing. Almost.",
+  "baseEffect": "Carry every seed you own (seeds weigh nothing); plant any seed anywhere",
+  "lootTier": 4,
+  "kg": 0.6,
+  "findable": true
+ },
+ {
+  "id": "living_soil_robes",
+  "name": "Living Soil Robes",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "The hem is composting. The shoulders are sprouting. You are a walking garden bed.",
+  "baseEffect": "+50% forage yields; plants regrow twice as fast",
+  "lootTier": 3,
+  "armor": {
+   "protection": 12
+  },
+  "kg": 1.4,
+  "findable": true
+ },
+ {
+  "id": "harvest_scythe",
+  "name": "Harvest Scythe",
+  "class": "weapon",
+  "slot": "melee",
+  "flavor": "It was made for wheat. It works on everything. The swing is the same.",
+  "baseEffect": "+40 damage (range 1); harvest sweeps double radius",
+  "lootTier": 3,
+  "damage": 40,
+  "range": 1,
+  "kg": 1.3,
+  "findable": true,
+  "weapon": {
+   "bonus": 40,
+   "type": "melee",
+   "range": 1,
+   "damageType": "physical"
+  }
+ },
+ {
+  "id": "rain_caller_charm",
+  "name": "Rain Caller Charm",
+  "class": "tool",
+  "flavor": "A cloud in a bottle, stoppered with a cork. It gets restless. Let it out sometimes.",
+  "baseEffect": "Call rain: 60% chance of rain where you stand",
+  "lootTier": 2,
+  "kg": 0.1,
+  "findable": true
+ },
+ {
+  "id": "worldroot_plate",
+  "name": "Worldroot Plate",
+  "class": "clothing",
+  "slot": "torso",
+  "fullBody": true,
+  "flavor": "Grown, not forged. The root remembers every axe that ever failed against it.",
+  "baseEffect": "+60 protection, full-body (blocks head/legs/shoes)",
+  "lootTier": 4,
+  "armor": {
+   "protection": 60
+  },
+  "kg": 14.0,
+  "findable": true
+ },
+ {
+  "id": "undying_heart",
+  "name": "Undying Heart",
+  "class": "tool",
+  "flavor": "It beats once a day, whether you need it or not. On the day you need it, it beats twice.",
+  "baseEffect": "Cheat death once per day (survive at 1 HP)",
+  "lootTier": 4,
+  "kg": 0.3,
+  "findable": true
+ },
+ {
+  "id": "scar_tissue_wraps",
+  "name": "Scar Tissue Wraps",
+  "class": "clothing",
+  "slot": "hands",
+  "flavor": "Layer upon layer of old almost-died. The skin underneath has stopped asking questions.",
+  "baseEffect": "Wounds close twice as fast (+healing rate)",
+  "lootTier": 3,
+  "armor": {
+   "protection": 8
+  },
+  "kg": 0.2,
+  "findable": true
+ },
+ {
+  "id": "deep_earth_boots",
+  "name": "Deep Earth Boots",
+  "class": "clothing",
+  "slot": "shoes",
+  "flavor": "Soles like bedrock. The ground has agreed to hold you up. It signed in triplicate.",
+  "baseEffect": "Cannot be knocked down",
+  "lootTier": 3,
+  "armor": {
+   "protection": 12
+  },
+  "kg": 1.5,
+  "findable": true
+ },
+ {
+  "id": "worldbreaker_maul",
+  "name": "Worldbreaker Maul",
+  "class": "weapon",
+  "slot": "melee",
+  "flavor": "The handle is a young tree. The head is an argument. The ground files a complaint every swing.",
+  "baseEffect": "+120 damage (range 1); the shockwave frightens enemies within 2 tiles",
+  "lootTier": 4,
+  "damage": 120,
+  "range": 1,
+  "kg": 6.0,
+  "findable": true,
+  "weapon": {
+   "bonus": 120,
+   "type": "melee",
+   "range": 1,
+   "damageType": "physical"
+  }
+ },
+ {
+  "id": "bloodplate",
+  "name": "Bloodplate",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "It drinks what you spill and gives it back as momentum. A fair trade, it insists.",
+  "baseEffect": "Damage taken feeds your attacks (+1 damage per 2 HP lost this fight)",
+  "lootTier": 4,
+  "armor": {
+   "protection": 40
+  },
+  "kg": 9.0,
+  "findable": true
+ },
+ {
+  "id": "rage_bindings",
+  "name": "Rage Bindings",
+  "class": "clothing",
+  "slot": "hands",
+  "flavor": "Wrap them tight when you're bleeding. They get stronger the worse it gets. So do you.",
+  "baseEffect": "+damage when wounded (up to +40 below half HP)",
+  "lootTier": 3,
+  "armor": {
+   "protection": 8
+  },
+  "kg": 0.3,
+  "findable": true
+ },
+ {
+  "id": "skull_helm",
+  "name": "Skull Helm",
+  "class": "clothing",
+  "slot": "head",
+  "flavor": "Something big died in this. People can tell. They decide not to be next.",
+  "baseEffect": "Fear aura vs humans (they hesitate)",
+  "lootTier": 3,
+  "armor": {
+   "protection": 18
+  },
+  "kg": 1.2,
+  "findable": true
+ },
+ {
+  "id": "truth_lenses",
+  "name": "Truth Lenses",
+  "class": "tool",
+  "slot": "head",
+  "flavor": "The world, unredacted. Lies show up as smudges. Hidden things show up as outlines.",
+  "baseEffect": "See lies in conversation; see hidden things (detection)",
+  "lootTier": 4,
+  "kg": 0.15,
+  "findable": true
+ },
+ {
+  "id": "investigators_coat",
+  "name": "Investigator's Coat",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Twenty-seven pockets, and you remember what's in all of them. That's the real trick.",
+  "baseEffect": "+deduction (detection); endless pockets (+6kg carry)",
+  "lootTier": 3,
+  "armor": {
+   "protection": 12
+  },
+  "carryBonus": 6,
+  "kg": 1.6,
+  "findable": true
+ },
+ {
+  "id": "the_ledger",
+  "name": "The Ledger",
+  "class": "tool",
+  "flavor": "Everything you ever witnessed, written down in your own hand. Even the things you wish you hadn't.",
+  "baseEffect": "Perfect recall of everything witnessed (detection; witnessed knowledge never fades)",
+  "lootTier": 4,
+  "kg": 0.8,
+  "findable": true
+ },
+ {
+  "id": "whisper_catchers",
+  "name": "Whisper Catchers",
+  "class": "tool",
+  "flavor": "Copper cones, old spy gear. Point them at a window three streets over. Works better than it should.",
+  "baseEffect": "Hear distant conversations (detection, +3 tiles)",
+  "lootTier": 2,
+  "kg": 0.2,
+  "findable": true
+ },
+ {
+  "id": "vault_key",
+  "name": "Vault Key",
+  "class": "tool",
+  "flavor": "One key. Every cache you ever buried answers to it, from anywhere. Don't lose it. You won't.",
+  "baseEffect": "Open any of your caches from anywhere (trade)",
+  "lootTier": 4,
+  "kg": 0.05,
+  "findable": true
+ },
+ {
+  "id": "merchants_seals",
+  "name": "Merchant's Seals",
+  "class": "tool",
+  "flavor": "Stamped by traders who never met you but heard the stories. Doors open. Prices drop.",
+  "baseEffect": "Traders seek you out; +25% better trade rates",
+  "lootTier": 3,
+  "kg": 0.1,
+  "findable": true
+ },
+ {
+  "id": "gilded_pack",
+  "name": "Gilded Pack",
+  "class": "tool",
+  "flavor": "Gold leaf over packcloth. Absurd. Also: it holds a month of everything.",
+  "baseEffect": "+25kg carrying capacity",
+  "lootTier": 3,
+  "carryBonus": 25,
+  "kg": 2.5,
+  "findable": true
+ },
+ {
+  "id": "misers_eye",
+  "name": "Miser's Eye",
+  "class": "tool",
+  "flavor": "A loupe with opinions. Hold it over anything and it tells you what it's really worth. Out loud.",
+  "baseEffect": "Appraise anything instantly (know its true trade value)",
+  "lootTier": 2,
+  "kg": 0.1,
+  "findable": true
+ },
+ {
+  "id": "farstrider_boots",
+  "name": "Farstrider Boots",
+  "class": "clothing",
+  "slot": "shoes",
+  "flavor": "Broken in across three biomes. Mud, scree, thorns \u2014 the boots have a policy: walk through.",
+  "baseEffect": "+move speed; ignore difficult terrain",
+  "lootTier": 4,
+  "armor": {
+   "protection": 12
+  },
+  "kg": 0.9,
+  "findable": true
+ },
+ {
+  "id": "wayfinders_atlas",
+  "name": "Wayfinder's Atlas",
+  "class": "tool",
+  "flavor": "Half the pages are places that don't exist yet. The other half are places you haven't been. Same thing.",
+  "baseEffect": "Never lost; map reveals twice as fast (detection)",
+  "lootTier": 4,
+  "kg": 0.7,
+  "findable": true
+ },
+ {
+  "id": "stormcloak",
+  "name": "Stormcloak",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Woven from the calm inside a storm. Weather happens to other people.",
+  "baseEffect": "Immune to weather (storms, rain, heat)",
+  "lootTier": 3,
+  "armor": {
+   "protection": 15
+  },
+  "kg": 1.2,
+  "findable": true
+ },
+ {
+  "id": "trail_rations_pouch",
+  "name": "Trail Rations Pouch",
+  "class": "tool",
+  "flavor": "Lined with something the System refuses to explain. The jerky from spring is still good. It's fall.",
+  "baseEffect": "Food stored inside never spoils",
+  "lootTier": 2,
+  "kg": 0.4,
+  "findable": true
+ },
+ {
+  "id": "phase_shawl",
+  "name": "Phase Shawl",
+  "class": "clothing",
+  "flavor": "Sometimes your shoulder isn't where the spear lands. The shawl knows. Don't ask how.",
+  "baseEffect": "25% chance to phase-avoid any damage",
+  "lootTier": 4,
+  "kg": 0.3,
+  "findable": true
+ },
+ {
+  "id": "between_boots",
+  "name": "Between Boots",
+  "class": "clothing",
+  "slot": "shoes",
+  "flavor": "They land between the twigs. Every step is the step nobody heard.",
+  "baseEffect": "+dodge; move silently",
+  "lootTier": 3,
+  "armor": {
+   "protection": 8
+  },
+  "kg": 0.7,
+  "findable": true
+ },
+ {
+  "id": "anchors_locket",
+  "name": "Anchor's Locket",
+  "class": "tool",
+  "flavor": "Inside: a sketch of home, drawn from memory, getting more accurate the further you roam.",
+  "baseEffect": "Always find your way back to Haven (detection)",
+  "lootTier": 3,
+  "kg": 0.1,
+  "findable": true
+ },
+ {
+  "id": "hollow_bone_charm",
+  "name": "Hollow Bone Charm",
+  "class": "tool",
+  "flavor": "A bird's bone, hollowed by something patient. Wear it and you weigh less than your shadow.",
+  "baseEffect": "Lighter, quieter (+stealth)",
+  "lootTier": 2,
+  "kg": 0.05,
+  "findable": true
+ },
+ {
+  "id": "surgeons_kit",
+  "name": "Surgeon's Kit",
+  "class": "tool",
+  "flavor": "Everything sterile, everything labeled, everything exactly where your hands expect it.",
+  "baseEffect": "Treat any wound in the field (heal 80 HP, cure infections)",
+  "lootTier": 4,
+  "healAmount": 80,
+  "kg": 1.5,
+  "findable": true
+ },
+ {
+  "id": "ward_banner",
+  "name": "Ward Banner",
+  "class": "tool",
+  "flavor": "Plant it and the air gets kinder. Wounds itch less. People stand straighter. Nobody knows why.",
+  "baseEffect": "Party regenerates HP near the banner (+healing)",
+  "lootTier": 3,
+  "kg": 1.0,
+  "findable": true
+ },
+ {
+  "id": "lifebound_vestments",
+  "name": "Lifebound Vestments",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Their pain arrives as warmth in your chest. You take it. That's the job. That's the whole job.",
+  "baseEffect": "Absorb allies' damage as your own; share healing with the party",
+  "lootTier": 4,
+  "armor": {
+   "protection": 35
+  },
+  "kg": 1.4,
+  "findable": true
+ },
+ {
+  "id": "poultice_bandolier",
+  "name": "Poultice Bandolier",
+  "class": "tool",
+  "flavor": "Twelve pouches, each with a different green smell. You can load one blindfolded. You have.",
+  "baseEffect": "Quick-apply poultices; +50% healing from poultices",
+  "lootTier": 2,
+  "kg": 0.6,
+  "findable": true
+ },
+ {
+  "id": "second_skin_suit",
+  "name": "Second Skin Suit",
+  "class": "clothing",
+  "slot": "torso",
+  "fullBody": true,
+  "flavor": "It learns. Burned once, it runs cool. Cut once, it runs thick. It is always one lesson behind you.",
+  "baseEffect": "Adaptive protection (+50); hardens against what last hurt you",
+  "lootTier": 4,
+  "armor": {
+   "protection": 50
+  },
+  "kg": 3.0,
+  "findable": true
+ },
+ {
+  "id": "whispering_compass",
+  "name": "Whispering Compass",
+  "class": "tool",
+  "flavor": "It doesn't point north. It points at the thing you need most and won't admit to.",
+  "baseEffect": "Points to what you need most (detection)",
+  "lootTier": 3,
+  "kg": 0.2,
+  "findable": true
+ },
+ {
+  "id": "feast_king_cauldron",
+  "name": "Feast-King Cauldron",
+  "class": "tool",
+  "flavor": "Feeds forty. Has fed forty. Will feed forty again tomorrow. Bring a bigger spoon.",
+  "baseEffect": "Cook for armies; bulk recipes use half the fuel, double the yield",
+  "lootTier": 3,
+  "kg": 8.0,
+  "findable": true
+ },
+ {
+  "id": "oath_ring",
+  "name": "Oath Ring",
+  "class": "sentimental",
+  "flavor": "One ring, one person, one promise with no fine print. It has never been taken off. It never will be.",
+  "baseEffect": "+resolve when carried; permanently bond one ally",
+  "lootTier": 4,
+  "bondThresholds": [
+   {
+    "uses": 21,
+    "offers": [
+     "resolve",
+     "anchor",
+     "open_hearth"
+    ]
+   }
+  ],
+  "kg": 0.02,
+  "findable": true
+ },
+ {
+  "id": "godslayer_spear",
+  "name": "Godslayer Spear",
+  "class": "weapon",
+  "slot": "melee",
+  "flavor": "Made for one job. The point is patient. Apex things can feel it coming.",
+  "baseEffect": "+85 damage (range 2); +100% damage vs apex and wave-2 monsters",
+  "lootTier": 4,
+  "damage": 85,
+  "range": 2,
+  "kg": 1.1,
+  "findable": true,
+  "weapon": {
+   "bonus": 85,
+   "type": "melee",
+   "range": 2,
+   "damageType": "physical"
+  }
+ },
+ {
+  "id": "deep_pocket_coat",
+  "name": "Deep Pocket Coat",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "The pockets go down further than the coat does. Nobody has found the bottom. Stop looking.",
+  "baseEffect": "+8kg carrying capacity",
+  "lootTier": 2,
+  "armor": {
+   "protection": 8
+  },
+  "carryBonus": 8,
+  "kg": 1.2,
+  "findable": true
+ },
+ {
+  "id": "trackers_blind",
+  "name": "Tracker's Blind",
+  "class": "tool",
+  "flavor": "Folds flat, pops up silent, smells faintly of last season. The deer never learn.",
+  "baseEffect": "Deployable blind: +stealth while watching game trails",
+  "lootTier": 2,
+  "kg": 2.0,
+  "findable": true
+ },
+ {
+  "id": "field_surgeons_satchel",
+  "name": "Field Surgeon's Satchel",
+  "class": "tool",
+  "flavor": "Not the full kit \u2014 the honest one. Bandages, splints, and the good knife.",
+  "baseEffect": "Field healing kit (heal 50 HP)",
+  "lootTier": 2,
+  "healAmount": 50,
+  "kg": 0.9,
+  "findable": true
+ }
 ]
