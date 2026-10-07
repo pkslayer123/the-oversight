@@ -104,7 +104,7 @@
   var methods = {
     // Look up a monster's behavior table entry.
     monsterBehavior: function (id) {
-      return ((this.data || {}).monsterBehaviors || {})[id] || null;
+      return (((this.data || {}).monsterBehaviors || {}).behaviors || {})[id] || null;
     },
 
     // Run data-driven pre-turn hooks for a monster. Returns true if a hook

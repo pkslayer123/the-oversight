@@ -204,9 +204,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers, regions, dramaEffects] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers, regions, dramaEffects };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers, regions, dramaEffects, monsterBehaviors] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers, regions, dramaEffects, monsterBehaviors };
       // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
       try {
         const D = globalThis.Scattering && globalThis.Scattering.Drama;
@@ -20813,56 +20813,16 @@
       // how long — but the cue escalates and the heartbeat tells you).
       // HIGHBEAM: threat scan first — anyone too close joins the list, and
       // the deer takes its turn deliberately. Each phase reads clearly.
-      const isDeer = this.deerIs(m);
       const useFifo = this.encUsesFifo(m);
       if (useFifo) this.encScanThreats(m);
-      // HIGHBEAM (Steve 2026-10-05): closing in is risky EVERY turn, not just
-      // while the beam fires. The antlers thrash anyone adjacent IN ADDITION
-      // to whatever the deer is doing — you take damage standing next to it
-      // AND the beam keeps coming. You get in, you hit, you get OUT.
-      if (isDeer && m.beamPhase !== 'firing') {
-        this.tbAntlerThrash(m);
-        if (this.tbEndCheck()) return;
-      }
-      // BUNKER (speedbump): sealed in its shell. It doesn't act — it waits
-      // you out. Nearly invulnerable; the answer is patience, not force.
-      if (this.turtleIs(m) && (m.turtleBunker || 0) > 0) {
-        m.turtleBunker -= 1;
-        if (m.turtleBunker <= 0) {
-          m.bunkerNoted = false;
-          if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
-          this.say('The shell unseals with a soft pop. The bad attitude is back.');
-        } else {
-          this.say('The boulder sits. Sealed. Waiting you out.');
-        }
-        this.tbRefreshTelegraphUI();
-        if (this.tbEndCheck()) return;
-        return;
-      }
-      // HUMMICE: the swarm checks itself every turn — deaths drop voices,
-      // distance thins the hum.
-      if (this.humiceIs(m)) this.tbHumSwarmCheck(m);
-      // CROWD OVERLOAD (drone): it can't grade a crowd. More live targets
-      // than crowdLimit on the queue and the evaluation stalls out.
-      // Bring friends. (The deer is unaffected.)
-      if (useFifo && this.droneIs(m)) {
-        const limit = ((this.encConfig(m) || {}).crowdLimit) || 2;
-        const live = this.encThreatQueue(m).filter(k => {
-          const t = this.tbFighter(k); return t && t.alive && !t.fled;
-        });
-        // ADAPTATION: after 1 recalc the drone narrows scope and grades
-        // anyway (see the drone's bespoke block). Crowds buy time, not immunity.
-        if (live.length > limit && (m.drRecalcs || 0) < 1) {
-          m.drRecalcs = (m.drRecalcs || 0) + 1;
-          m.telegraph = null;
-          this.encSetPhase(m, 'recalc');
-          this.say('📊 "TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." The drone backs off, overwhelmed by the crowd.');
-          this.audioEvent('droneRecalc');
-          this.tbRefreshTelegraphUI();
-          if (this.tbEndCheck()) return;
-          return;
-        }
-      }
+      // BEHAVIOR TABLE (monsterBehaviors.json + src/js/monsterBehaviors.js, Steve 2026-10-07):
+      // data-driven pre-turn hooks. Migrated species (gallowdeer, speedbump_turtle,
+      // hummice, review_drone) run their verbatim-extracted logic from the registry.
+      // mbRunPreTurn returns true if a hook consumed the turn.
+      if (this.mbRunPreTurn(m)) return;
+      // DEAD BRANCHES below (hornIs/swarmIs reference deleted monster ids
+      // hype_horn/camera_swarm — these never fire; kept for visibility, flagged
+      // for removal once Steve confirms the rename intent).
       // CROWD DEFLATE (horn): it can't encourage a crowd — it only does
       // one-on-one. The windup fizzles and it loses its nerve for two turns.
       if (useFifo && this.hornIs(m)) {
@@ -20955,7 +20915,7 @@
             const pcfg = this.encConfig(m) || {};
             if (this.deerIs(m) || (pcfg.phaseMap && pcfg.phaseMap.windup)) this.encSetPhase(m, this.encPhaseFor(m, 'windup'));
           }
-          if (isDeer) {
+          if (this.deerIs(m)) {
             if (!tg.chargeNarrated) {
               tg.chargeNarrated = true;
               this.say('The light behind its eyes swells to a painful glare. The whine climbs past hearing. It is done aiming — now it is only waiting to loose.');
@@ -21640,7 +21600,7 @@
         if (useFifo) this.encSetPhase(m, 'cooldown');
         const bd = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         if (bd <= 1) {
-          if (this.tbRechargePaw(m) && isDeer) this.audioEvent('deerSnort');
+          if (this.tbRechargePaw(m) && this.deerIs(m)) this.audioEvent('deerSnort');
         } else if (m.beamCooldown <= 0) {
           if (useFifo) this.encSetPhase(m, 'stalk');
           this.say(`${this.encSubject(m)} shakes its head — the light behind its eyes rekindles.`);
@@ -24128,7 +24088,7 @@
           // alias played the same synth a third time per declare.
         }
         this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: each monster's own sound (Steve heard only beam; toad was playing deer bellow)
-        if (isDeer) {
+        if (this.deerIs(m)) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
         }
       }
