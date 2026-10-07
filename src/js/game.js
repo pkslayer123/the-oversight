@@ -4970,7 +4970,13 @@
         s.inventory = s.inventory.filter(i => !giveSet.has(i));
         vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
         const givenKcal = Math.round(give.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0));
-        this.say(`You keep a day's food (${Math.round(kept)} kcal) and unload ${givenKcal} kcal into Haven's pantry.`);
+        // (Fix 2026-10-07: "unload 0 kcal" reads awkward when the whole day's
+        // food is kept — say so honestly instead.)
+        if (givenKcal > 0) {
+          this.say(`You keep a day's food (${Math.round(kept)} kcal) and unload ${givenKcal} kcal into Haven's pantry.`);
+        } else {
+          this.say(`You keep a day's food (${Math.round(kept)} kcal) — nothing extra for the pantry this time.`);
+        }
       }
       if (brought > 0 || hasUnprocessed) {
         // PREP STASH: only FINISHED food goes to the pantry. Unprocessed hauls
@@ -4988,6 +4994,17 @@
           }
         }
         if (staged) this.say(`${staged} unprocessed haul${staged > 1 ? 's' : ''} onto the counter — the clock is ticking.`);
+        // first return with unprocessed-only haul: the pantry block above never
+        // ran, so the pooling explanation never fired. The first-return intent
+        // ("someone explains the pooling") shouldn't miss the most common
+        // early-game case. (Fix 2026-10-07.)
+        {
+          const vv2 = this.state.village;
+          if (!vv2.pooledFoodExplained && staged) {
+            vv2.pooledFoodExplained = true;
+            this.say('Someone by the fire nods at the counter. "We pool food here. Keep what you need for the road — the rest feeds everyone, once it\'s food."');
+          }
+        }
         // TEACHING MOMENT: you show your haul. they gather. someone might know something.
         // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
         // find a villager who knows something you don't, and trusts you enough to share
