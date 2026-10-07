@@ -24,6 +24,7 @@ const FILES = {
   'books.json': 'book',
   'synergies.json': 'synergy',
   'locations.json': 'location',
+  'alienPlayers.json': 'alienPlayer',
 };
 // Schemas exist for these but no data file is authored yet — absence is expected, not an error.
 const MISSING_OK = new Set(['events.json', 'systemMessages.json', 'shop.json', 'trials.json']);
@@ -155,6 +156,7 @@ function main() {
   get('trials.json').forEach(t => (t.offers || []).forEach(id => ref('trials.json', t.id, 'ability', id)));
   get('items.json').forEach(it => (it.bondThresholds || []).forEach(bt => (bt.offers || []).forEach(id => ref('items.json', it.id, 'relicEnhancement', id))));
   get('events.json').forEach(e => (e.choices || []).forEach(c => (c.outcomes || []).forEach(() => {}))); // effects are freeform strings for now
+  get('alienPlayers.json').forEach(p => (p.abilityKit || []).forEach(id => ref('alienPlayers.json', p.id, 'ability', id)));
 
   if (errors.length) {
     console.error(`\nCONTENT GATE: ${errors.length} error(s)\n` + errors.map(e => '  ✗ ' + e).join('\n') + '\n');

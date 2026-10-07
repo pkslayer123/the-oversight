@@ -60,7 +60,28 @@
         "You fight like my third wife. She also left me."
       ]
     },
-    "experience": "veteran"
+    "experience": "veteran",
+    "abilityKit": [
+      "tracker",
+      "patient_aim",
+      "soft_step",
+      "game_sense",
+      "adrenaline_control",
+      "pattern_recognition"
+    ],
+    "alienTech": [
+      {
+        "id": "phase_net",
+        "name": "Phase-net",
+        "desc": "Shots phase through cover. Your hiding spots are decorative."
+      },
+      {
+        "id": "trophy_scope",
+        "name": "Trophy Scope",
+        "desc": "Sees through stealth and camouflage. You cannot hide from Vex."
+      }
+    ],
+    "combat": true
   },
   {
     "backstory": "Meridian aristocracy. Doesn't collect objects — collects emotional states, preserved in crystal. Despair is her specialty. Earth's apocalypse is a vintage year. She finds your struggle... aesthetic.",
@@ -123,7 +144,28 @@
         "Do you dream? I do hope you dream. I collect those too."
       ]
     },
-    "experience": "veteran"
+    "experience": "veteran",
+    "abilityKit": [
+      "adrenaline_control",
+      "pattern_recognition",
+      "soft_step",
+      "game_sense",
+      "patient_aim",
+      "diplomat"
+    ],
+    "alienTech": [
+      {
+        "id": "dread_projector",
+        "name": "Dread Projector",
+        "desc": "Projects your worst memory. Fear effects are doubled."
+      },
+      {
+        "id": "crystal_lattice",
+        "name": "Crystal Lattice",
+        "desc": "Stores your fear as damage. The more scared you are, the harder she hits."
+      }
+    ],
+    "combat": true
   },
   {
     "backstory": "Not actually a dentist. Not actually licensed for anything. K'thari pleasure-seekers experience pain as data — rich, textured data. Rax paid for the most sensitive avatar sleeve available and turned every safety off. This is research. Probably.",
@@ -186,7 +228,28 @@
         "Is it weird that I'm enjoying this? Don't answer. It's data."
       ]
     },
-    "experience": "veteran"
+    "experience": "veteran",
+    "abilityKit": [
+      "triage",
+      "steady_hands",
+      "patient_aim",
+      "adrenaline_control",
+      "pattern_recognition",
+      "soft_step"
+    ],
+    "alienTech": [
+      {
+        "id": "nerve_mapper",
+        "name": "Nerve Mapper",
+        "desc": "+accuracy against wounded targets. Rax knows exactly where it hurts."
+      },
+      {
+        "id": "stasis_field",
+        "name": "Stasis Field",
+        "desc": "Prevents fleeing. You leave when Rax says you leave."
+      }
+    ],
+    "combat": true
   },
   {
     "backstory": "Burlap are small, fuzzy, and pathologically curious. Pip saved for six years to afford a tourist-grade avatar sleeve for Earth. This is the trip of a lifetime. Has a camera. Will absolutely ask for a selfie after trying to kill you.",
@@ -253,7 +316,23 @@
         "After this, can you show me where the bathrooms are? Asking for the vlog."
       ]
     },
-    "experience": "rookie"
+    "experience": "rookie",
+    "abilityKit": [
+      "scrounger",
+      "soft_step",
+      "game_sense",
+      "adrenaline_control",
+      "squirrel_friend",
+      "rain_dancer"
+    ],
+    "alienTech": [
+      {
+        "id": "tourist_cam",
+        "name": "Tourist Cam",
+        "desc": "Records everything. Pip gets stronger the longer the fight goes (more footage)."
+      }
+    ],
+    "combat": true
   },
   {
     "backstory": "Twenty years in the K'thari Expeditionary. Retired with honors and nightmares. Came to Earth because peace was killing him slower than war did. Fights because it's the only thing that makes sense. Respects anyone who stands their ground.",
@@ -316,7 +395,23 @@
         "I've seen worse. Not much worse."
       ]
     },
-    "experience": "veteran"
+    "experience": "veteran",
+    "abilityKit": [
+      "adrenaline_control",
+      "patient_aim",
+      "triage",
+      "steady_hands",
+      "pattern_recognition",
+      "game_sense"
+    ],
+    "alienTech": [
+      {
+        "id": "veteran_plate",
+        "name": "Veteran Plate",
+        "desc": "Military-grade armor. Reduces all damage by 2. Sarge earned this."
+      }
+    ],
+    "combat": true
   },
   {
     "backstory": "Studies humans the way humans study ants — with genuine fascination and questionable ethics. The avatar sleeve is a research grant. Every fight is data. Every conversation is data. You are the most interesting thing Dr. Fenwick has ever met.",
@@ -379,7 +474,23 @@
         "Hold on, I need to write this down. Don't go anywhere. Actually, keep fighting."
       ]
     },
-    "experience": "veteran"
+    "experience": "veteran",
+    "abilityKit": [
+      "pattern_recognition",
+      "game_sense",
+      "patient_aim",
+      "soft_step",
+      "adrenaline_control",
+      "forage_identification"
+    ],
+    "alienTech": [
+      {
+        "id": "specimen_scanner",
+        "name": "Specimen Scanner",
+        "desc": "Analyzes your fighting style. +accuracy each round (resets if you change tactics)."
+      }
+    ],
+    "combat": true
   },
   {
     "backstory": "Young Vexari on a cultural exchange. Was supposed to observe. Started actually watching — really watching — and got sick. The games are wrong. Everyone knows it. Nobody says it. Wren says it, quietly, to you, in dead drops and warnings.",
@@ -408,7 +519,10 @@
     "victoryLines": [],
     "voice": "Young, earnest, scared but determined",
     "wealth": "broke",
-    "experience": "veteran"
+    "experience": "veteran",
+    "abilityKit": [],
+    "alienTech": [],
+    "combat": false
   },
   {
     "backstory": "Hunted for sport for thirty years. Then on some forgotten planet, something looked back at him — really looked — and he put down the spear. Came to Earth to make amends the only way he knows: by losing, gracefully, to those who deserve to win.",
@@ -473,6 +587,16 @@
         "Eat something after. You look thin."
       ]
     },
-    "experience": "veteran"
+    "experience": "veteran",
+    "abilityKit": [
+      "adrenaline_control",
+      "triage",
+      "game_sense",
+      "soft_step",
+      "patient_aim",
+      "generous"
+    ],
+    "alienTech": [],
+    "combat": true
   }
 ]

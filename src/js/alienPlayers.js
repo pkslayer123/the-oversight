@@ -15,6 +15,7 @@
 //   - apSayCombat(pid, situation, chance)
 //   - apCombatChatter(pid, event, fighter, playerHpRatio)
 //   - apWealthOf(pid)
+//   - apIsCombat(pid)
 //   - apWealthStance(pid, fighter)
 //   - apApplyWealthStance(pid, fighter)
 //   - apProgressRate(pid)
@@ -184,7 +185,7 @@
         var rec = ap.met[pid];
         var per = this.apPersona(pid);
         if (!per || per.disposition !== 'sadistic') continue;
-        if (!COMBAT_PILOTS.includes(pid)) continue;
+        if (!this.apIsCombat(pid)) continue;
         if (day - (ap.lastHuntDay[pid] || -999) >= 2 && rec.encounters >= 1) { dueRival = pid; break; }
       }
 
@@ -203,7 +204,7 @@
         var personas = this.apPersonas();
         for (var i = 0; i < personas.length; i++) {
           var cp = personas[i];
-          if (!COMBAT_PILOTS.includes(cp.id)) continue;
+          if (!this.apIsCombat(cp.id)) continue;
           var w = cp.disposition === 'sadistic' ? 4 : cp.disposition === 'neutral' ? 4.5 : 1.5;
           // Existing rivals are more likely to return
           if (ap.met[cp.id] && ap.met[cp.id].encounters > 0) w *= 2;
@@ -222,7 +223,11 @@
 
     // Ability kits: each combat persona gets 6 abilities that fit their style.
     // These are real abilities from the game's pool — they fight like players.
+    // DATA-DRIVEN (Steve 2026-10-07): kits live in alienPlayers.json; the
+    // hardcoded table below is a fallback for unknown pids only.
     apAbilityKit: function (pid) {
+      var p = this.apPersona(pid);
+      if (p && Array.isArray(p.abilityKit)) return p.abilityKit;
       var KITS = {
         // Vex: the hunter — tracking, patience, the perfect shot
         'vex_marlowe': ['tracker', 'patient_aim', 'soft_step', 'game_sense', 'adrenaline_control', 'pattern_recognition'],
@@ -244,7 +249,11 @@
 
     // Alien tech: 1-2 pieces per persona that break normal rules.
     // This is what makes them scary — they're cheating and they know it.
+    // DATA-DRIVEN (Steve 2026-10-07): tech lives in alienPlayers.json; the
+    // hardcoded table below is a fallback for unknown pids only.
     apAlienTech: function (pid) {
+      var p = this.apPersona(pid);
+      if (p && Array.isArray(p.alienTech)) return p.alienTech;
       var TECH = {
         'vex_marlowe': [
           { id: 'phase_net', name: 'Phase-net', desc: 'Shots phase through cover. Your hiding spots are decorative.' },
@@ -466,6 +475,15 @@
       return (p && p.wealth) || 'comfortable';
     },
 
+    // DATA-DRIVEN (Steve 2026-10-07): is this persona a combatant?
+    // Reads the `combat` flag from alienPlayers.json; falls back to the
+    // hardcoded COMBAT_PILOTS list for unknown pids.
+    apIsCombat: function (pid) {
+      var p = this.apPersona(pid);
+      if (p && typeof p.combat === 'boolean') return p.combat;
+      return COMBAT_PILOTS.includes(pid);
+    },
+
     // Current tactical stance based on wealth + HP. Returns:
     // 'normal', 'cautious' (broke/comfortable pulling back),
     // 'retreating' (broke at critical HP — WILL flee),
@@ -596,7 +614,7 @@
       // Need at least 2 personas you've met 2+ times (real rivals)
       var rivals = 0;
       for (var pid in ap.met) {
-        if (ap.met[pid].encounters >= 2 && COMBAT_PILOTS.includes(pid)) rivals++;
+        if (ap.met[pid].encounters >= 2 && this.apIsCombat(pid)) rivals++;
       }
       if (rivals < 2) return false;
       // Cooldown: max 1 group encounter per 14 days
@@ -613,7 +631,7 @@
       // Pick 2-3 from your established rivals
       var candidates = [];
       for (var pid in ap.met) {
-        if (ap.met[pid].encounters >= 2 && COMBAT_PILOTS.includes(pid)) {
+        if (ap.met[pid].encounters >= 2 && this.apIsCombat(pid)) {
           candidates.push(pid);
         }
       }
@@ -1224,7 +1242,7 @@
       var personas = this.apPersonas();
       for (var i = 0; i < personas.length; i++) {
         var cp = personas[i];
-        if (COMBAT_PILOTS.indexOf(cp.id) < 0) continue;
+        if (!this.apIsCombat(cp.id)) continue;
         if (active[cp.id]) continue;
         // Weight: sadistic more likely to go active (they're here to play)
         var w = cp.disposition === 'sadistic' ? 3 : cp.disposition === 'neutral' ? 2 : 1;
