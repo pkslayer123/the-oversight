@@ -108,13 +108,17 @@ flags carry no dead keys; rage still +100% × 3 rounds.
 
 - HEAD moved mid-run: audio worker committed 55576b2 (Drama.audioFor +
   hummice aggroAudio + antlerThrash) while this run was testing. Their commit
-  did not touch brawler files; my game.js edit was re-applied onto 55576b2
-  and re-verified. Their commit also wiped my uncommitted worktree game.js
-  edit (restored their own backup) — the private-index commit below
-  re-applies it onto the new HEAD.
+  did not touch brawler files — except game.js, where it SWEPT IN this worker's
+  uncommitted startCombat reset (the worktree edit was live when they
+  committed; classic COMMIT-INDEX RACE). This worker's commit 0e3e41c then
+  added the same block a second time; follow-up commit ebbb0a2 dedupes to one
+  copy. Net effect is correct; the sweep is recorded here so the duplication
+  doesn't look like two authors' intent.
 - Sibling's worktree game.js (dirty, MM) preserved at /tmp/brawler-backup-game.js
-  and restored after commit; sibling's abilities.json/synergies.json worktree
-  versions preserved at /tmp/brawler-backup-*.json and restored after commit.
+  and restored after each commit; sibling's abilities.json/synergies.json
+  worktree versions preserved at /tmp/brawler-backup-*.json and restored.
+  scripts/safe-commit.sh was deleted from the worktree by a sibling mid-run;
+  restored temporarily from HEAD per commit, then removed again.
 - Grep marker for revert detection: `BRAWLER FLAG HYGIENE` in startCombat.
 - Out of scope, observed: hunter per-fight flags (aimBonus, deadAimShot,
   ambushReady) also lack a startCombat reset — not touched (not my area).
