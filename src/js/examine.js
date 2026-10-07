@@ -85,7 +85,12 @@
     if (!p) return 'a plant.';
     // KNOWN: no need for vagueness — you know what it is.
     if (g.plantKnown && g.plantKnown(pid)) {
-      return `${p.name}. ${(p.knowledgeLevels || {})['1'] || p.description || ''}`.trim();
+      // Explorer loop 2026-10-06 (bug 1b): knowledgeLevels['1'] often starts
+      // with the name ("Yarrow. Feathery leaves…") — strip it case-insensitively
+      // (mirrors identifyPlant in game.js) so we don't print "Yarrow. Yarrow."
+      let kl1 = (p.knowledgeLevels || {})['1'] || p.description || '';
+      kl1 = kl1.replace(new RegExp('^' + String(p.name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.\\s:\\u2014-]*', 'i'), '');
+      return `${p.name}. ${kl1}`.trim();
     }
     const q = quality || examineQuality();
     let desc = p.description || 'a plant';

@@ -6515,7 +6515,13 @@
           oldMonster.mx = fe.x; oldMonster.my = fe.y;
           oldMonster.lostSight = 0; // it saw you cross. it's on your trail.
           this.touchTileScene(fromX, fromY); this.touchTileScene(x, y);
-          this.say(`It followed you. The ${this.monsterNoun(mdef.id)} is here.`);
+          // Explorer loop 2026-10-06 (bug 2): monsterNoun may return a vague
+          // descriptor rather than a noun ("something huge, rooting in the
+          // underbrush", or the 'something' fallback) — never compose
+          // "The something…" or "The something huge…".
+          const mn = this.monsterNoun(mdef.id);
+          if (/^something\b/i.test(mn)) this.say(`It followed you. ${mn.charAt(0).toUpperCase() + mn.slice(1)} is here.`);
+          else this.say(`It followed you. The ${mn} is here.`);
         }
         // else: it stays on the old tile. Continuity — the world must live.
       }
@@ -6564,7 +6570,11 @@
         else this.say(`${hereV.name}'s clearing. Voices, a cookfire, somebody else's home. You're a guest here — act like it.`);
       }
       // TIME ECONOMY: moving between nodes is a BIG time step on the unified clock.
-      // travelTimeStep ticks 32 (a "bigger tick"): NPC batch + day timer advance
+      // travelTimeStep: cost-free by Steve's rule (node travel costs no kcal and
+      // no day ticks — the NPC-batch + day-timer advance it performs is a
+      // "bigger tick" of world time, not a player cost). Previously this comment
+      // said "ticks 32"; the player-time cost was removed, the world-time
+      // batch remains.
       // proportionally, like everything else. No separate clock, no free moves.
       // (Tuning: if travel feels free, raise the needs tick / energy cost
       // in travelTimeStep. If punishing, lower it. See docs/TIME-ECONOMY.md.)
@@ -11390,9 +11400,17 @@
         // grass is humming in harmony" composed as "The grass is humming in
         // harmony is here"). A finite verb in the descriptor means it's a
         // sentence, not a name — fall back to 'something' (dread, not
-        // grammar). Participles (", rooting in the underbrush") are fine:
-        // they modify a noun head.
+        // grammar).
         if (/\b(am|is|are|was|were|has|have|had|do|does|did|will|would|shall|should|can|could|may|might|must)\b/i.test(n)) return 'something';
+        // COMMA = the descriptor continues into a clause (explorer loop
+        // 2026-10-06: "The moth the size of a dinner plate, catching light
+        // wrong is here", "The phone ringing in the trees, and no phone
+        // anywhere is here"). monsterNoun needs a noun phrase: keep only
+        // what's before the first comma — the head noun composes clean
+        // ("the moth the size of a dinner plate"), the clause after it
+        // doesn't. Convention for content workers: head noun phrase first.
+        const commaAt = n.indexOf(',');
+        if (commaAt > 0) n = n.slice(0, commaAt);
         const stripped = n.replace(/^((an?)|the)\s+/i, '');
         const base = stripped !== n ? stripped : n;
         return base.charAt(0).toLowerCase() + base.slice(1);
