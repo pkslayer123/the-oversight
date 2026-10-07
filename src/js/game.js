@@ -11826,6 +11826,11 @@
           n.social = Math.max(0, n.social - 20);
           on.social = Math.max(0, (on.social || 0) - 10);
           try { this.bumpTrust(rid, 1); } catch (e) {}
+          // BOTH WAYS (Steve 2026-10-07): a good chat warms both villagers
+          // toward you — the listener's trust in the player rises too, not
+          // just the talker's. This is the ambient repair path for damaged
+          // relationships: a village that talks heals.
+          try { this.bumpTrust(best, 1); } catch (e) {}
           announce(`${name} talks with ${this.displayName(best)}.`);
           return;
         }

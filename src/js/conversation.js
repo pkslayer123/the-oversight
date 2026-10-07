@@ -3675,6 +3675,11 @@
       c.active = false; c.over = true; c.thread = null; c.pendingQ = null;
       c.reactiveQ = null;
       c.heldBeats = []; c.heldAsk = false; c.winddownQueued = false; c.windingDown = false;
+      // ENGAGEMENT ENDS (Steve 2026-10-07): the conversation is over — they're
+      // free to live again immediately. Without this they stand frozen until
+      // the batch-turn lapse (2 batches ≈ 64 ticks) instead of resuming their
+      // needs-driven life (fleeing, foraging, seeking people).
+      try { if (this.state.village.engaged) delete this.state.village.engaged[vid]; } catch (e) {}
       let line;
       if (how === 'left') {
         line = this.convoPickCycle(vid, 'leftexit', [
