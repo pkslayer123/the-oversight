@@ -12658,55 +12658,44 @@
           if (_st[x + ',' + y]) _seenSimple = true;
         } catch (e) {}
         if (_seenSimple) {
-          // Get tile data
+          // Get tile type
           let _tl = null, _ttype = 'meadow';
-          let _tsStatus = 'ok';
           try {
             const _tiles = Game.map && Game.map.tiles;
             if (_tiles && _tiles[y] && _tiles[y][x]) {
               _tl = _tiles[y][x];
               if (_tl.type) _ttype = _tl.type;
             }
-          } catch (e) { _tsStatus = 'tile-err'; }
-          // Check TS availability
-          try {
-            if (typeof Scattering === 'undefined') _tsStatus = 'no-Scattering';
-            else if (!Scattering.TileScenes) _tsStatus = 'no-TileScenes';
-            else if (!Scattering.TileScenes.svgFor) _tsStatus = 'no-svgFor';
-            else if (!_tl) _tsStatus = 'no-tl';
-          } catch (e) { _tsStatus = 'ts-err'; }
-          // Haven always shows icon (Steve 2026-10-06)
-          const _isHaven = (x === 3 && y === 3);
-          if (_isHaven) {
+          } catch (e) {}
+          // Haven always shows 🏘️ (Steve 2026-10-06)
+          if (x === 3 && y === 3) {
             html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:#7cbd6b;width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">🏘️</div></div>`;
             continue;
           }
-          // Bright DIV with emoji (Steve 2026-10-06)
-          // TileScenes SVG renders dark; DIV works. Using DIV.
-          const _terrain = {
-            forest_floor: ['#8a5a3a', '🌲'], forest: ['#5a8a3a', '🌲'],
-            grove: ['#7cbd6b', '🌳'], meadow: ['#7cbd6b', '🌿'],
-            field: ['#a0d060', '🌾'], thicket: ['#4a8a3a', '🌳'],
-            wetland: ['#5aa0b0', '💧'], swamp: ['#5aa0b0', '💧'],
-            creek: ['#4a9ad0', '💧'], water: ['#4a9ad0', '🌊'],
-            river: ['#4a9ad0', '🌊'], trail_edge: ['#c0a060', '🟫'],
-            trail: ['#c0a060', '🟫'], path: ['#c0a060', '🟫'],
-            ruin: ['#9a9a9a', '🏚️'],
-          };
-          const _t = _terrain[_ttype] || _terrain['meadow'];
-          // Try TileScenes SVG (status is ok, so it should work)
+          // Try TileScenes SVG for detailed terrain
           let _svgOut = null;
-          if (_tsStatus === 'ok') {
-            try {
-              _svgOut = Scattering.TileScenes.svgFor(x, y, { seen: true, tile: _tl });
-            } catch (e) { _svgOut = null; }
-          }
+          try {
+            const _TS = (typeof Scattering !== 'undefined' && Scattering.TileScenes) || null;
+            if (_TS && _TS.svgFor && _tl) {
+              _svgOut = _TS.svgFor(x, y, { seen: true, tile: _tl });
+            }
+          } catch (e) {}
           const _svgValid = _svgOut && _svgOut.length > 100 && _svgOut.indexOf('#0d120d') === -1;
           if (_svgValid) {
-            // Use the SVG terrain!
             html += `<div class="tile" data-x="${x}" data-y="${y}">${_svgOut}</div>`;
           } else {
-            // Fallback: bright DIV with biome emoji
+            // Fallback: bright biome DIV with emoji
+            const _terrain = {
+              forest_floor: ['#8a5a3a', '🌲'], forest: ['#5a8a3a', '🌲'],
+              grove: ['#7cbd6b', '🌳'], meadow: ['#7cbd6b', '🌿'],
+              field: ['#a0d060', '🌾'], thicket: ['#4a8a3a', '🌳'],
+              wetland: ['#5aa0b0', '💧'], swamp: ['#5aa0b0', '💧'],
+              creek: ['#4a9ad0', '💧'], water: ['#4a9ad0', '🌊'],
+              river: ['#4a9ad0', '🌊'], trail_edge: ['#c0a060', '🟫'],
+              trail: ['#c0a060', '🟫'], path: ['#c0a060', '🟫'],
+              ruin: ['#9a9a9a', '🏚️'],
+            };
+            const _t = _terrain[_ttype] || _terrain['meadow'];
             html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">${_t[1]}</div></div>`;
           }
           continue;
