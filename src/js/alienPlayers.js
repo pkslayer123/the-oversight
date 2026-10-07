@@ -61,7 +61,7 @@
 //   - apRevealAlien(pid, how)
 //   - apCarePackage()
 // rules:
-//   - (separation) alien players are HUMANS, not monsters. Exclusive pool, separate spawn logic. Monsters stay monsters. (Steve 2026-10-07)
+//   - (separation) alien players are HUMANS, not monsters. Exclusive pool, separate spawn logic. Monsters stay monsters. (Steve 2026-10-07) (code: alienPlayers.js)
 //   - (gating) alien encounters only post-System arrival, wave 2+, separate roll from monster encounters (code: alienPlayers.js)
 //   - (knowledge) alien identity hidden until earned: reveal, System feed slip, or 3rd encounter with same persona (code: alienPlayers.js)
 //   - (limits) dead drops max 1 per 3 days; feed max 1 per day; same-rival hunts min 2 days apart (sporting rules); benevolent help is deniable and subtle (code: alienPlayers.js)
