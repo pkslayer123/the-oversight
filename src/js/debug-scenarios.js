@@ -133,6 +133,10 @@
       toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
       const s = Game.state.scholar;
       giveWeapon('crude_bow', 'arrow', 12);
+      // STONE KNIFE (Steve 2026-10-07): the hunter can butcher the kill —
+      // cleanCarcass gates on a knife, and the scenario is about the full
+      // hunt-to-meat arc, not just the stalk.
+      s.inventory.push({ itemId: 'stone_knife', units: 1, kcalEach: 0, kg: 0.3, name: 'stone knife', bonded: true, bond: 0, bondOffered: [], enhancements: [] });
       s.insideHaven = false;
       Game.dayPart = 0; // dawn — deer are crepuscular
       spawnAnimalNear('white_tailed_deer');

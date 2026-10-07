@@ -2329,11 +2329,15 @@
       // unreachable until you'd exhausted every other topic. (socialite
       // playtest 2026-10-06)
       if (gossipOpen && asked.indexOf('gossip') === -1) asks.push({ id: 'ask:gossip', label: this.convoLabel(vid, 'gossip') });
+      // INTERVIEW VERB (Steve 2026-10-07): ask:past is the detective's core
+      // tool — it sat 5th behind the topic cap and was unreachable whenever
+      // fresh topics existed. Now it rides right behind gossip; the interview
+      // verbs are 2nd and 3rd, never starved.
+      if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
       // SPREAD RUMOR: the player's drama verb. Start a rumor about someone.
       // Same gate as gossip — you need some rapport to be believed.
       if (gossipOpen && asked.indexOf('spread_rumor') === -1) asks.push({ id: 'ask:spread_rumor', label: this.convoActionLabel(vid, 'spread_rumor') });
       if (!this.goalKnown(vid) && asked.indexOf('goal') === -1 && goalOpen) asks.push({ id: 'ask:goal', label: this.convoLabel(vid, 'goal') });
-      if (asked.indexOf('past') === -1 && pastOpen) asks.push({ id: 'ask:past', label: this.convoLabel(vid, 'past') });
       if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: this.convoLabel(vid, 'village') });
       if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: this.convoLabel(vid, 'plans') });
       // TOPIC PACK (Steve 2026-10-06): fresh generated topics get first crack

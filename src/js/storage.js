@@ -385,8 +385,33 @@
     },
     // cacheTheftChance(dist): Steve's rule — personal-cache theft risk falls
     // with Manhattan distance from the nearest village/haven.
+    // DAILY RATE (Steve 2026-10-07): was per-batch (~0.8%/batch compounded to
+    // near-certain robbery over a season); now per-day. ~0.8%/day at the
+    // haven's doorstep → ~0.05%/day far wild. Far caches usually survive the
+    // season; near caches are a real gamble. The miser promise holds.
     cacheTheftChance(dist) {
       return 0.008 * Math.max(0.06, 1 - dist / 12);
+    },
+    // dailyCacheCheck(): one theft roll per cache per day (called from endDay).
+    // Buried things are safer, not safe — but far wild is now actually safer.
+    dailyCacheCheck() {
+      try {
+        const spots = [];
+        if (this.state.village) spots.push({ x: this.state.village.px ?? 3, y: this.state.village.py ?? 3 });
+        for (const ov of (this.state.otherVillages || [])) spots.push(ov);
+        for (const c of this.playerCaches()) {
+          if (c.found) continue;
+          const cn = c.node || {};
+          let nearest = Infinity;
+          for (const s of spots) {
+            const d = Math.abs((s.x || 0) - (cn.x || 0)) + Math.abs((s.y || 0) - (cn.y || 0));
+            if (d < nearest) nearest = d;
+          }
+          if (!isFinite(nearest)) nearest = 5;
+          const p = this.cacheTheftChance(nearest);
+          if (Math.random() < p) this.resolveCacheRobbery(c);
+        }
+      } catch (e) {}
     },
     // buryCache(kind, key, qty): kind 'material' (key = mat id) or 'food' (key = inventory idx).
     buryCache(kind, key, qty) {
@@ -768,24 +793,9 @@
           this.observe('stole');
         }
       }
-      // CACHES: buried things are safer, not safe. Steve's rule: theft risk
-      // falls with distance from any village/haven — bury far from people,
-      // safer from people. ~0.8%/batch at the haven's doorstep → ~0.05%/batch far wild.
-      const spots = [];
-      if (this.state.village) spots.push({ x: this.state.village.px ?? 3, y: this.state.village.py ?? 3 });
-      for (const ov of (this.state.otherVillages || [])) spots.push(ov);
-      for (const c of this.playerCaches()) {
-        if (c.found) continue;
-        const cn = c.node || {};
-        let nearest = Infinity;
-        for (const s of spots) {
-          const d = Math.abs((s.x || 0) - (cn.x || 0)) + Math.abs((s.y || 0) - (cn.y || 0));
-          if (d < nearest) nearest = d;
-        }
-        if (!isFinite(nearest)) nearest = 5;
-        const p = this.cacheTheftChance(nearest);
-        if (Math.random() < p) this.resolveCacheRobbery(c);
-      }
+      // CACHES: moved to daily roll in endDay (Steve 2026-10-07) — the per-batch
+      // gate compounded to near-certain robbery over a season, making the
+      // miser promise (bury far for winter) unreachable. Now one roll per day.
     } catch (e) {}
     return r;
   };

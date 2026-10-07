@@ -140,6 +140,14 @@
         `{first} claims {told}, but they flinched at the old place-names. Not recognition — dread. {told} is where they're from the way a wound is where you're from.`,
         `{first} told a story about {told} winters. Nobody from {told} would describe a winter like that. They've never been cold there — or they've never been there.`,
       ],
+      observeTellGoal: [
+        // GOAL LIES (Steve 2026-10-07): the crack, never the true goal.
+        // What they DO doesn't match what they SAY they want.
+        `{first} says they want "{told}". But you watched them spend the whole afternoon doing the opposite — not once, not idly, like it was the real plan all along.`,
+        `{first} talks about "{told}" like it's everything. Then someone offered them a straight path to it and they... didn't take it. Hesitated. Changed the subject.`,
+        `"{told}" — that's what {first} says they're after. But their days don't point there. People's days always point at what they actually want. {first}'s days point somewhere else.`,
+        `{first} says "{told}". Funny — everything they actually do serves a different hunger. You don't need to know what it is to see it isn't this.`,
+      ],
       clears: [
         `"Oh — that?" {first} laughs, relieved. "No, no, you've got it wrong — let me explain..." And they do, and it makes sense, and you feel a little foolish for doubting them.`,
         `"Huh? Oh!" {first} looks genuinely confused, then it clicks. "No — I see why you'd think that. Here's what actually happened..." The explanation holds together.`,
@@ -494,6 +502,15 @@
       cx.doubts.push(doubt);
       // surface in the journal as a ❓ note — visible in the current UI
       try { this.journalLearn(vid, 'note', '❓ ' + text, { via: 'doubt', quiet: false }); } catch (e) {}
+      // FIRST-DOUBT EXPLAINER (Steve 2026-10-07): the doubt system was never
+      // explained anywhere — a new player didn't know what to do with their
+      // first doubt. Once, plainly, in the moment it matters.
+      if (!cx.doubtExplained) {
+        cx.doubtExplained = true;
+        try {
+          this.say(`❓ You jot that down — something doesn't add up. Doubts live in your journal. Gather more evidence (watch them, ask around, catch contradictions), then confront them when you're sure. Evidence makes confessions likelier; false accusations cost trust.`);
+        } catch (e) {}
+      }
       return doubt;
     },
 
@@ -721,6 +738,12 @@
       if (lies && lies.origin && !lies.origin.confessed && Math.random() < lieP) {
         options.push({ field: 'origin', truth: lies.origin.truth, lie: lies.origin.told });
       }
+      // GOAL LIES (Steve 2026-10-07): goal-only liars were gossip-invisible —
+      // npcGossipAbout only covered occupation/origin. Neighbors notice when
+      // someone's stated wants don't match their life.
+      if (lies && lies.goal && !lies.goal.confessed && Math.random() < lieP) {
+        options.push({ field: 'goal', truth: lies.goal.truth, lie: lies.goal.told });
+      }
       // mundane true facts (not about lies — just village talk)
       if (!options.length && Math.random() < 0.25 && vp.formerOccupation) {
         options.push({ field: 'occupation', truth: vp.formerOccupation, lie: null });
@@ -730,9 +753,9 @@
       const teller = this.displayName(tellerVid);
       const first = this.firstRef(targetVid);
       const an = (w) => /^[aeiou]/i.test(w) ? 'an' : 'a';
-      // field-aware phrasing: "were a surgeon" vs "were from Denver"
-      const lieWord = g.field === 'origin' ? `from ${g.lie}` : `${an(g.lie)} ${g.lie}`;
-      const truthWord = g.field === 'origin' ? `from ${g.truth}` : `${an(g.truth)} ${g.truth}`;
+      // field-aware phrasing: "were a surgeon" vs "were from Denver" vs "wants to belong"
+      const lieWord = g.field === 'origin' ? `from ${g.lie}` : g.field === 'goal' ? `to ${g.lie}` : `${an(g.lie)} ${g.lie}`;
+      const truthWord = g.field === 'origin' ? `from ${g.truth}` : g.field === 'goal' ? `to ${g.truth}` : `${an(g.truth)} ${g.truth}`;
       let line;
       if (g.lie) {
         // teller knows the truth and it contradicts the lie — but only frame
@@ -741,7 +764,7 @@
         // Lines come from the per-game no-repeat pools — two villagers never
         // parrot the same line verbatim about one target.
         const heardClaim = this.getClaims(targetVid, g.field).length > 0;
-        const truthCap = g.field === 'origin' ? `From ${g.truth}` : `${an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}`;
+        const truthCap = g.field === 'origin' ? `From ${g.truth}` : g.field === 'goal' ? `Wants to ${g.truth}` : `${an(g.truth).replace(/^./, c => c.toUpperCase())} ${g.truth}`;
         line = this.drawTruthLine(heardClaim ? 'gossipHeard' : 'gossipIntel', tellerVid,
           { first, teller, lieWord, truthWord, truthCap });
       } else {

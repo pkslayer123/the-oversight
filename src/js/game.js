@@ -3050,7 +3050,11 @@
             this.state.scholar.inventory.push(this.foodCarcass(animal, animal.calories, this.state.scholar.day, 'trapped'));
             // a body in hand teaches you what it was — same as a kill.
             try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(catchId); } catch (e) {}
-            this.say(`Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife).`);
+            // TRAP PRIORITY (Steve 2026-10-07): trap catches were getting buried
+            // mid-dawn-log (~8 messages) — on mobile one-screen that's dinner
+            // vs rot. The 🪤 TRAP: prefix makes the catch visually scannable
+            // even mid-list; the rot warning is explicit, not implied.
+            this.say(`🪤 TRAP: Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife). It rots fast.`);
             // STRIPED SKUNK (hunter loop 2026-10-07): the box-trap recipe
             // warns "a skunk, which you will regret." Deliver the regret —
             // opening the box is the spray moment, same as pressing one on
@@ -7660,7 +7664,11 @@
       s.kcal = Math.max(0, (s.kcal || 0) - kcalCost);
       this.tickAction(ticks);
       fc.attempts++;
-      let p = 0.40 + (known ? 0.30 : 0) + (moss ? 0.15 : 0) + Math.min(0.30, 0.05 * (fc.successes || 0));
+      // FAILURE PITY (Steve 2026-10-07): each failed attempt teaches the hands —
+      // +8% per failure, capped at +32%. Six straight failures at base 40%
+      // was half a day gone with nothing to show; the pity keeps the new-fire
+      // grind from being a slot machine while the knack (3 successes) stays earned.
+      let p = 0.40 + (known ? 0.30 : 0) + (moss ? 0.15 : 0) + Math.min(0.30, 0.05 * (fc.successes || 0)) + Math.min(0.32, 0.08 * (fc.failures || 0));
       if (hasDrill && !known) { p += 0.30; fireNote = fireNote || 'The hand drill does what knowledge would — mechanics instead of memory.'; }
       if (hasTorch) { p += 0.25; fireNote = fireNote || 'You coax the torch\'s flame onto the fuel.'; }
       if (fc.knack) p = 1;
@@ -7689,13 +7697,16 @@
       }
       // FAILURE IS HONEST: attempts 1-2 tease what practice earns, the way
       // synergy discovery does — a hint of what could happen, never the how.
+      fc.failures = (fc.failures || 0) + 1;
       const hints = [
         "Sparks, then nothing. The tinder's too coarse — shred it finer next time.",
         "A wisp of smoke, gone. Slower breath. Shelter the spark with your body.",
         "Nothing. Your arms ache. But your hands know a little more than they did.",
         "The coal glows... and dies. Closer. You're closer.",
       ];
-      this.say(hints[Math.min(fc.attempts - 1, hints.length - 1)]);
+      let hint = hints[Math.min(fc.attempts - 1, hints.length - 1)];
+      if (fc.failures >= 3) hint += " Your hands are learning the rhythm — it has to catch soon.";
+      this.say(hint);
       return null;
     },
     // feedFire: lay another branch on a live player-made fire (+64 ticks,
@@ -14732,6 +14743,9 @@
       } catch (e) {}
       // PROMISES ROT: unchecked daily — 7+ days ignored and they break.
       try { this.checkPromises(); } catch (e) {}
+      // CACHES: one theft roll per cache per day (Steve 2026-10-07) — was per
+      // NPC batch, which compounded to certain robbery. Far wild is safer now.
+      try { this.dailyCacheCheck(); } catch (e) {}
       // evening: run metabolism
       scholar._preDayHealth = scholar.health;
       // WEATHER: the sky does what it wants. Clear most days, rain sometimes, cold snaps.

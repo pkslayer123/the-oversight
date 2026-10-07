@@ -240,7 +240,7 @@
         "windup": 1,
         "sweep": true,
         "fireTurns": 6,
-        "sweepRate": 0.28,
+        "sweepRate": 0.18,
         "cooldownTurns": 2
       },
       "damageType": "psychic"
@@ -1656,6 +1656,7 @@
     "id": "ducks_in_a_row",
     "activity": "diurnal",
     "name": "ducks in a row",
+        "unknown": "a line of ducks, walking in perfect formation. In the dark. That is not normal duck behavior.",
     "emoji": "🦆",
     "hp": [
       8,
