@@ -4694,7 +4694,22 @@
       const cur = v.trust[vid] === undefined ? 10 : v.trust[vid];
       // trust.gain_mult applies to GAINS only, not losses
       const adj = n > 0 ? this.trustGainMult(n) : n;
-      v.trust[vid] = Math.max(0, Math.min(100, cur + adj));
+      const neu = Math.max(0, Math.min(100, cur + adj));
+      v.trust[vid] = neu;
+      // NPC ATTENTION (Steve 2026-10-07, Drama A1): trust crossing a milestone
+      // is a visible moment — ❤️ when friendship deepens (up through 50/75),
+      // 💔 when it cracks (down through 50/25). Only when you're there to see
+      // it and they have a tile. Gated by systemArrived inside Game.drama.
+      try {
+        const crossed = (t) => (cur < t && neu >= t) || (cur >= t && neu < t);
+        let kind = null;
+        if (n > 0 && (crossed(50) || crossed(75))) kind = 'heart';
+        else if (n < 0 && (crossed(50) || crossed(25))) kind = 'break';
+        if (kind && this.playerAtHaven && this.playerAtHaven()) {
+          const p = (v.positions || {})[vid];
+          if (p) this.drama('npcAlert', p.mx, p.my, kind);
+        }
+      } catch (e2) {}
     },
 
     // ============ LIVING WORLD: the land remembers ============
@@ -7306,6 +7321,8 @@
         }
         if (secret && secret.loot && secret.loot !== 'none') {
           this.say(`You find ${secret.amount} ${secret.loot}.`);
+          // DRAMA (Steve 2026-10-07): secret discovery is a hero moment — shimmer + card
+          try { this.drama('secret', '✨ SECRET FOUND', `Hidden in the rubble: ${secret.amount} ${secret.loot}.`); } catch (e) {}
         } else if (secret) {
           this.say('Picked clean. Nothing.');
           return true;
@@ -7386,6 +7403,16 @@
       // The animal left the tile population to wander the detail grid
       if (wt.wildlife[animal.id] > 0) wt.wildlife[animal.id]--;
       this.say(`Movement — ${animal.description}.`);
+      // DRAMA (Steve 2026-10-07): wildlife appears — subtle green ripple
+      try { this.drama('wild', ax, ay); } catch (e) {}
+      // TRACKING (Steve 2026-10-07): trackers see where it came from — faint trail marks
+      try {
+        if (this.trackKnown && this.trackKnown()) {
+          const dir = ax > px ? 'w' : ax < px ? 'e' : ay > py ? 'n' : 's';
+          this.drama('trail', Math.max(0, ax - 1), ay, dir);
+          this.drama('trail', Math.max(0, ax - 2), ay, dir);
+        }
+      } catch (e) {}
     },
 
     // animals flee when you move. they're scared of you.
@@ -7427,6 +7454,8 @@
         if (wP > 0 && Math.random() < wP) {
           a.bolted = true;
           this.say(`The ${aname} decides you're trouble and bolts!`);
+          // DRAMA (Steve 2026-10-07): wildlife flees — green ripple at bolt point
+          try { this.drama('wild', a.mx, a.my); } catch (e) {}
           const dx2 = Math.sign(a.mx - px), dy2 = Math.sign(a.my - py);
           tryMove(a.mx + dx2 * 2, a.my + dy2 * 2) || tryMove(a.mx + dx2, a.my + dy2);
           if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
@@ -7440,7 +7469,11 @@
         }
       } else {
         // bolt: away, fast.
-        if (!a.bolted) { a.bolted = true; this.say(`The ${aname} bolts!`); }
+        if (!a.bolted) {
+          a.bolted = true; this.say(`The ${aname} bolts!`);
+          // DRAMA (Steve 2026-10-07): close-range bolt — ripple
+          try { this.drama('wild', a.mx, a.my); } catch (e) {}
+        }
         const dx = Math.sign(a.mx - px), dy = Math.sign(a.my - py);
         tryMove(a.mx + dx * 2, a.my + dy * 2) || tryMove(a.mx + dx, a.my + dy);
       }
@@ -10210,10 +10243,16 @@
             `"Don't suppose you've got food," ${first} says, trying for casual and missing.`,
           ];
           this.say(lines[Math.floor(Math.random() * lines.length)]);
+          // NPC ATTENTION (Steve 2026-10-07, Drama A1): a hungry villager
+          // asking for food is a ! — a need, not small talk.
+          try { const p = v.positions[rid]; if (p) this.drama('npcAlert', p.mx, p.my, 'talk'); } catch (e2) {}
           return;
         }
         if (n.fear > 70 && Math.random() < 0.3) {
           stepToward(); done();
+          // NPC ATTENTION (Steve 2026-10-07, Drama A1): a scared villager
+          // warning you is a ⚠️ — danger, not conversation.
+          try { const p = v.positions[rid]; if (p) this.drama('npcAlert', p.mx, p.my, 'warn'); } catch (e2) {}
           // NO SHARED LANGUAGE: fear needs no translation — but the words
           // are theirs, not yours.
           if (this.commLevel(rid).level === 'none') {
@@ -10268,6 +10307,16 @@
             // ATTENTION CUE (Steve 2026-10-05): they came to YOU — chime so
             // the player actually notices. The quiet dot wasn't enough.
             this.audioEvent('talkAttention');
+            // NPC ATTENTION (Steve 2026-10-07, Drama A1): ! above their tile.
+            // Strangers (trust < 30) read as curious (?) — they don't know you
+            // yet. Gated by systemArrived inside Game.drama.
+            try {
+              const p = v.positions[rid];
+              if (p) {
+                const t = (v.trust || {})[rid] === undefined ? 10 : v.trust[rid];
+                this.drama('npcAlert', p.mx, p.my, t < 30 ? 'curious' : 'talk');
+              }
+            } catch (e2) {}
             return;
           }
         }
@@ -10284,6 +10333,9 @@
             const plant = (this.data.plants || []).find(p => p.id === pid);
             this.say(`${first} presses something into your hand. "${plant ? plant.name : 'This'} — for what you did. Look for the ${plant ? (plant.leaf || 'leaves') : 'sign'}. You'll know it."`);
             this.identifyPlant(pid, first);
+            // NPC ATTENTION (Steve 2026-10-07, Drama A1): they just taught
+            // you something real — 💬 marks new knowledge worth following up on.
+            try { const p = v.positions[rid]; if (p) this.drama('npcAlert', p.mx, p.my, 'dialogue'); } catch (e2) {}
           } else if (act === 'encourage') {
             this.state.scholar.energy = Math.min(100, (this.state.scholar.energy || 0) + 15);
             this.say(`${first} claps your shoulder. "You're doing better than you think." (+15 energy — morale is real.)`);
@@ -13741,6 +13793,25 @@
             lastArg.integration = lastArg.integration || integ;
           }
         }
+        // NPC ATTENTION (Steve 2026-10-07, Drama A1): npcAlert(x, y, kind, opts?)
+        // — inject integration into opts so markers scale with the System's gaze.
+        if (kind === 'npcAlert' && args.length >= 3) {
+          const o = args[3];
+          if (o && typeof o === 'object') { o.integration = o.integration || integ; }
+          else { args[3] = { integration: integ }; }
+        }
+        // Wilderness kinds (Steve 2026-10-07): auto-append integration if not provided
+        if (kind === 'secret' || kind === 'ambush' || kind === 'wild' || kind === 'weather' || kind === 'trail') {
+          const lastArg = args[args.length - 1];
+          if (typeof lastArg !== 'number') args.push(integ);
+        }
+        // COMBAT SPECTACLE (Steve 2026-10-07, Drama B1): integration is the
+        // last parameter of every B1 combat method — append unconditionally.
+        // (Extra args are ignored if a caller passed it explicitly.)
+        if ((kind === 'phaseShift' || kind === 'enrage' || kind === 'lootSparkle' ||
+             kind === 'critHit' || kind === 'playerHurt' || kind === 'dodgeMiss')) {
+          args.push(integ);
+        }
         if (kind === 'hit') D.hit(...args);
         else if (kind === 'text') D.floatText(...args);
         else if (kind === 'flash') D.flash(...args);
@@ -13748,9 +13819,21 @@
         else if (kind === 'hero') D.heroCard(...args);
         else if (kind === 'wisp') D.soulWisp(...args);
         else if (kind === 'exclaim') D.exclaim(...args);
+        else if (kind === 'npcAlert') D.npcAlert(...args);
         else if (kind === 'abilityBurst') D.abilityBurst(...args);
         else if (kind === 'contest') D.contestFlash(...args);
         else if (kind === 'integration') D.integrationPulse(...args);
+        else if (kind === 'secret') D.secretShimmer(...args);
+        else if (kind === 'ambush') D.ambushWarning(...args);
+        else if (kind === 'wild') D.wildRipple(...args);
+        else if (kind === 'weather') D.weatherShift(...args);
+        else if (kind === 'trail') D.trailMark(...args);
+        else if (kind === 'phaseShift') D.phaseShift(...args);
+        else if (kind === 'enrage') D.enrage(...args);
+        else if (kind === 'lootSparkle') D.lootSparkle(...args);
+        else if (kind === 'critHit') D.critHit(...args);
+        else if (kind === 'playerHurt') D.playerHurt(...args);
+        else if (kind === 'dodgeMiss') D.dodgeMiss(...args);
       } catch (e) {}
     },
     // buildBonus: the mechanical reward for your build archetype.
@@ -15470,7 +15553,14 @@
       // rain_dancer: when it rains, +1L water free. (You dance. It works.)
       // cold_blooded: on cold days your body budgets — 20% less food needed.
       const wr = Math.random();
+      const prevWeather = this.state.weather;
       this.state.weather = wr < 0.7 ? 'clear' : wr < 0.9 ? 'rain' : 'cold';
+      // DRAMA (Steve 2026-10-07): dramatic weather change — screen-wide effect
+      try {
+        if (this.state.weather !== prevWeather && (this.state.weather === 'rain' || this.state.weather === 'cold')) {
+          this.drama('weather', this.state.weather);
+        }
+      } catch (e) {}
       if (this.state.weather === 'rain') {
         const catchL = Math.round(this.modTarget('water.rain_catch', 0));
         if (catchL > 0) {
@@ -17018,6 +17108,11 @@
             // window before the spines come up.
             this.say('⚠ ' + S.combat.telegraphText(z.pattern, 'arming', known));
             this.audioEvent('telegraph', { urgency: 1, pattern: 'ambush-zone' });
+            // DRAMA (Steve 2026-10-07): ambush arming — red vignette + warning at zone center
+            try {
+              const zc = (z.pattern && z.pattern.center) || { x: 4, y: 4 };
+              this.drama('ambush', zc.x, zc.y);
+            } catch (e) {}
             this.tbRefreshTelegraphUI();
           }
         } else {
@@ -17295,7 +17390,8 @@
       const hpFrac = p.hp / p.maxHp;
       if (this.hasAbility('rage') && hpFrac < 0.5) { d *= 2; this.say('RAGE: +100% damage.'); }
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
-      if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
+      let wasCrit = false; // DRAMA B1: crits get the full spectacle
+      if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; wasCrit = true; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
       // PATIENT AIM: 2x damage on round 1 (combat.strike_damage modifier)
       try {
         if (f.round === 1) {
@@ -17456,6 +17552,12 @@
         }
       } catch (e) {}
       this.tbDamage(t.key, d, 'you', null, { quiet: true });
+      // DRAMA (Steve 2026-10-07, B1): the strike LANDS — starburst on the monster.
+      // Crits (DEAD AIM) get the full spectacle: CRIT! + damage number + shake.
+      try {
+        if (wasCrit) this.drama('critHit', t.mx, t.my, d);
+        else if (!isHuman) this.drama('hit', t.mx, t.my, { color: '#ffd54a' });
+      } catch (e) {}
       // UNDERSTUDY (Steve 2026-10-06): it watches you fight and learns. Record
       // the weapon + damage for any watching understudy in this fight.
       // (Records SHAMED damage — the heckler's words affect the copy too.)
@@ -18070,6 +18172,8 @@
         if (dodgeCh > 0 && Math.random() < dodgeCh) {
           this.say('You slip aside — it misses clean. (footwork)');
           this.practice('agi', 1); // dodging is agility practice
+          // DRAMA (Steve 2026-10-07, B1): the dodge READS — MISS + ghost.
+          try { this.drama('dodgeMiss', t.mx, t.my); } catch (e) {}
           return;
         }
       }
@@ -18209,6 +18313,9 @@
       if (t.kind === 'player') {
         this.state.scholar.health = Math.max(0, t.hp);
         if (final > 0) this.noteAbilityUse('chitin_skin');
+        // DRAMA (Steve 2026-10-07, B1): getting hit HURTS visibly — red
+        // vignette + shake. Throttled to real hits (5+), not chip damage.
+        if (final >= 5) try { this.drama('playerHurt', final); } catch (e) {}
         // WITNESS JUDGEMENT: a hard hit on you gets a visible gasp (once per
         // fight — not every chip). People nearby react to you bleeding.
         const ff = this.tbfight;
@@ -18263,6 +18370,23 @@
         if (this.encUsesFifo(t)) this.encSetPhase(t, 'bunker');
         this.say('It withdraws. The shell seals with a sound like a door closing. (BUNKER: nearly invulnerable for 2 turns — wait it out.)');
         this.audioEvent('turtleBunker');
+      }
+      // HALF-HP TEMPERAMENT (Steve 2026-10-07, Drama B1): monsters CHANGE at
+      // half HP — enraged, cunning, or desperate. encWoundCheck (encounters.js)
+      // was defined but never called; wire it here so the shift narrates once
+      // AND reads visually: red aura + 💢 + shake.
+      if (t.kind === 'monster' && t.hp > 0 && !t.encWound && t.hp < t.maxHp * 0.5) {
+        try {
+          const wlabel = this.encShortLabel(t) || t.name;
+          const wline = (typeof this.encWoundCheck === 'function') ? this.encWoundCheck(t, wlabel) : null;
+          if (wline) this.say(wline);
+          else {
+            // fallback if encounters.js didn't set it: default enraged
+            t.encWound = t.encWound || 'enraged';
+            this.say(`${wlabel} is BLEEDING — and it likes it. Louder, faster, no more feints.`);
+          }
+          this.drama('enrage', t.mx, t.my, t.encWound || 'enraged');
+        } catch (e) {}
       }
       if (t.hp <= 0) {
         t.alive = false;
@@ -18323,6 +18447,13 @@
         }
         else {
           this.say(`${this.encSubject(t)} falls.`);
+          // DRAMA (Steve 2026-10-07, B1): death is a moment — the soul leaves,
+          // and the loot glints. (Loot is still a deliberate action; this is
+          // just the glint that says "something's here.")
+          try {
+            this.drama('wisp', t.mx, t.my);
+            this.drama('lootSparkle', t.mx, t.my);
+          } catch (e) {}
           // MONSTER BATCH 2: a lockpick killed mid-job doesn't get to keep
           // your things — the loot is still in its hands.
           if (t.stolen) {
@@ -18928,7 +19059,21 @@
       const c = this.encConfig(m);
       return (c && c.noticeRange) || 5; // chebyshev; line of sight required
     },
-    encSetPhase(m, phase) { m.beamPhase = phase; },
+    encSetPhase(m, phase) {
+      const changed = m.beamPhase !== phase;
+      m.beamPhase = phase;
+      // DRAMA (Steve 2026-10-07, B1): phase transitions are visible beats —
+      // windup → strike → recovery reads on the grid, not just in text.
+      // Only in combat, only on actual change.
+      if (changed && this.tbfight && m && m.kind === 'monster') {
+        try {
+          const bucket = /windup|charge|aim|stalk|telegraph|channel/i.test(phase) ? 'windup'
+            : /strike|fire|attack|discharge|bite|lunge|trample|dive|perform/i.test(phase) ? 'strike'
+            : /recover|cooldown|bask|bunker|ember/i.test(phase) ? 'recovery' : phase;
+          if (bucket !== 'idle') this.drama('phaseShift', m.mx, m.my, bucket);
+        } catch (e) {}
+      }
+    },
     encNoticeFighter(m, key, silent) {
       const q = this.encThreatQueue(m);
       if (q.includes(key)) return false;
