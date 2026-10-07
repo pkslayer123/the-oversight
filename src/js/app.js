@@ -12669,33 +12669,20 @@
             html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:#7cbd6b;width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">🏘️</div></div>`;
             continue;
           }
-          // Try TileScenes SVG
-          let _svg = null;
-          try {
-            const _TS = (typeof Scattering !== 'undefined' && Scattering.TileScenes) || null;
-            if (_TS && _TS.svgFor && _tl) {
-              _svg = _TS.svgFor(x, y, { seen: true, tile: _tl });
-            }
-          } catch (e) { _svg = null; }
-          // If SVG is valid (long, not fog), use it. Otherwise fallback to DIV.
-          const _isValidSvg = _svg && _svg.length > 100 && _svg.indexOf('#0d120d') === -1;
-          if (_isValidSvg) {
-            html += `<div class="tile" data-x="${x}" data-y="${y}">${_svg}</div>`;
-          } else {
-            // Fallback: bright DIV with emoji
-            const _terrain = {
-              forest_floor: ['#8a5a3a', '🌲'], forest: ['#5a8a3a', '🌲'],
-              grove: ['#7cbd6b', '🌳'], meadow: ['#7cbd6b', '🌿'],
-              field: ['#a0d060', '🌾'], thicket: ['#4a8a3a', '🌳'],
-              wetland: ['#5aa0b0', '💧'], swamp: ['#5aa0b0', '💧'],
-              creek: ['#4a9ad0', '💧'], water: ['#4a9ad0', '🌊'],
-              river: ['#4a9ad0', '🌊'], trail_edge: ['#c0a060', '🟫'],
-              trail: ['#c0a060', '🟫'], path: ['#c0a060', '🟫'],
-              ruin: ['#9a9a9a', '🏚️'],
-            };
-            const _t = _terrain[_ttype] || _terrain['meadow'];
-            html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">${_t[1]}</div></div>`;
-          }
+          // Bright DIV with emoji (Steve 2026-10-06)
+          // TileScenes SVG renders dark; DIV works. Using DIV.
+          const _terrain = {
+            forest_floor: ['#8a5a3a', '🌲'], forest: ['#5a8a3a', '🌲'],
+            grove: ['#7cbd6b', '🌳'], meadow: ['#7cbd6b', '🌿'],
+            field: ['#a0d060', '🌾'], thicket: ['#4a8a3a', '🌳'],
+            wetland: ['#5aa0b0', '💧'], swamp: ['#5aa0b0', '💧'],
+            creek: ['#4a9ad0', '💧'], water: ['#4a9ad0', '🌊'],
+            river: ['#4a9ad0', '🌊'], trail_edge: ['#c0a060', '🟫'],
+            trail: ['#c0a060', '🟫'], path: ['#c0a060', '🟫'],
+            ruin: ['#9a9a9a', '🏚️'],
+          };
+          const _t = _terrain[_ttype] || _terrain['meadow'];
+          html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">${_t[1]}</div></div>`;
           continue;
         }
         let tl = null;
