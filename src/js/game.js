@@ -2903,6 +2903,8 @@
     // CRAFT: make a recipe you know (L3). Consumes materials. Creates an item with uses.
     // Items degrade: snare breaks after 2 catches. You make another.
     craft(recipeId) {
+      // DRAMA (Steve 2026-10-07): crafting gets an amber spark
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#d4a017'); } catch (e) {}
       const recipe = this.data.recipes.find(r => r.id === recipeId);
       if (!recipe) return null;
       const known = (this.state.codex.recipes || {})[recipeId];
@@ -7831,6 +7833,8 @@
     // cookFood: at a fire, raw -> cooked. More calories, safer.
     // Requires: fire nearby, knowledge (L3 tells you it needs cooking).
     cookFood(idx) {
+      // DRAMA (Steve 2026-10-07): cooking gets a warm glow
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#ff9d45'); } catch (e) {}
       const item = this.state.scholar.inventory[idx];
       if (!item) return null;
       // need fire (in detail grid)
@@ -7964,6 +7968,8 @@
     // old-timers swear by it for poison (see: Purify). One raking per fire
     // per day keeps it honest; the fire has to be burning.
     gatherCharcoal() {
+      // DRAMA (Steve 2026-10-07): gathering gets an earth-tone puff
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#8b7355'); } catch (e) {}
       const s = this.state.scholar;
       if (!this.nearFire()) { this.say('Need a burning fire — charcoal comes from the ash bed.'); return null; }
       const t = this.playerTile();
@@ -8342,6 +8348,8 @@
     // water — the deep cut, the shade line — and catch. The ignorant thrash
     // the shallows and hope. Button honest: it always works, just worse blind.
     fish() {
+      // DRAMA (Steve 2026-10-07): fishing gets a blue ripple
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#4da6ff'); } catch (e) {}
       if (this.over) return null;
       const s = this.state.scholar;
       // TOOL-GATED: no tackle, no fishing. (The action is hidden in the UI;
@@ -8796,6 +8804,8 @@
     },
 
     huntAnimal() {
+      // DRAMA (Steve 2026-10-07): the hunt is a moment — red burst
+      try { this.drama('abilityBurst', this.map.px, this.map.py, '#ff5252'); } catch (e) {}
       const s = this.state.scholar;
       const a = s.animal;
       if (!a) return null;
@@ -13875,6 +13885,19 @@
       if (this.over) return null;
       const scholar = this.state.scholar;
       let msg = '';
+      // DRAMA (Steve 2026-10-07): every action gets a visual beat — the game feels alive.
+      // Colors: forage green, move neutral, talk pink, rest blue, etc.
+      try {
+        const actionColors = {
+          forage: '#7cfc9a', hunt: '#ff5252', fish: '#4da6ff', cook: '#ff9d45',
+          craft: '#d4a017', gather: '#8b7355', talk: '#ff6b9d', rest: '#4da6ff',
+          sleep: '#6b7cff', explore: '#4df3ff', chop: '#8b5a2b', mine: '#9e9e9e'
+        };
+        const color = actionColors[kind];
+        if (color && this.map) {
+          this.drama('abilityBurst', this.map.px, this.map.py, color);
+        }
+      } catch (e) {}
       if (kind !== 'forage') this._packFullStreak = 0; // guidance streak is per-stuck-episode
       if (kind === 'forage') {
         const t = this.playerTile();
@@ -14851,7 +14874,9 @@
     //
     // noteAbilityUse: log an ability use, then check for synergy discoveries.
     // Called from gainAbilityXP (passive uses), activateAbility (activatables),
-    // and maybeCheatDeath (death cheats). context: { target }.
+    // and maybeCheatDeath (death cheats). context: { target, synthetic } —
+    // synthetic marks technique/skill synthesis events (see
+    // checkSynergyDiscovery), which must not re-trigger synthesis.
     noteAbilityUse(abilityId, context) {
       const sch = this.state.scholar;
       if (!sch || !abilityId) return;
@@ -14861,7 +14886,7 @@
       sch.abilityUseLog = sch.abilityUseLog || [];
       sch.abilityUseLog.push({ id: abilityId, day, part, target: context.target || null });
       if (sch.abilityUseLog.length > 40) sch.abilityUseLog.shift();
-      this.checkSynergyDiscovery(abilityId, { day, part, target: context.target || null });
+      this.checkSynergyDiscovery(abilityId, { day, part, target: context.target || null, synthetic: !!context.synthetic });
     },
 
     // checkSynergyDiscovery: did this ability use complete a combined use?
@@ -14901,7 +14926,10 @@
           return this.abilityLevel(rid) >= minLvl;
         };
         if (!reqs.every(hasReq)) continue;
-        const otherId = reqs.find(r => r !== usedId);
+        // PREFIX-AWARE (fix 2026-10-07): the "other" leg must exclude the
+        // used leg in bare AND prefixed form — otherwise a tech leg matches
+        // itself and simultaneous/same-target checks compare wrong ids.
+        const otherId = reqs.find(r => r !== usedId && r !== `tech:${usedId}` && r !== `skill:${usedId}`);
         const log = sch.abilityUseLog || [];
         let combined = false;
         if (dm.type === 'simultaneous') {
@@ -14951,6 +14979,44 @@
           } else {
             this.synergyTease(syn, n);
           }
+        }
+      }
+      // TECHNIQUE/SKILL SYNTHESIS (Steve 2026-10-07): techniques and skills
+      // are applied knowledge — there is no "activate technique" button and
+      // no game code logs tech/skill uses, so cross-boundary sequences could
+      // never complete for a real player even after the prefix fix
+      // (socialite playtest 2026-10-07). When you use an ability while
+      // HOLDING a technique/skill that an undiscovered synergy pairs it
+      // with, that counts as bringing the knowledge to bear: the technique
+      // is used THROUGH the ability. The synthetic event runs the same
+      // discovery logic (bare tech id, matching the prefixed requires via
+      // the prefix-aware check above and the bare-id order arrays in data).
+      // Synthetic events never re-trigger synthesis (ctx.synthetic).
+      if (!ctx.synthetic) {
+        // One synthetic event per technique/skill per real use: several
+        // synergies can pair the same ability+technique (trailblazers_promise
+        // and green_highway both pair pathfinder+trail_blazing) — firing one
+        // event per synergy would multi-count a single moment of use.
+        const synthIds = new Set();
+        for (const syn of syns) {
+          if (sch.synergies.includes(syn.id)) continue;
+          const reqs2 = syn.requires || [];
+          if (!reqs2.some(r => r === usedId)) continue; // used ability must be a leg
+          const minLvl2 = syn.minLevel || 1;
+          for (const leg of reqs2) {
+            let bare = null, held = false;
+            if (leg.startsWith('tech:')) {
+              bare = leg.slice(5);
+              held = !!(((this.state.scholar.codex || {}).techniques || {})[bare]);
+            } else if (leg.startsWith('skill:')) {
+              bare = leg.slice(6);
+              held = ((((this.state.codex || {}).skills || {})[bare] || {}).level || 0) >= minLvl2;
+            }
+            if (bare && held) synthIds.add(bare);
+          }
+        }
+        for (const bare of synthIds) {
+          this.noteAbilityUse(bare, { day: ctx.day, part: ctx.part, target: ctx.target || null, synthetic: true });
         }
       }
       this.recomputeActiveSynergies();
