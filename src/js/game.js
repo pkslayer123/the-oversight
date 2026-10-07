@@ -8409,6 +8409,23 @@
     waterWeight() {
       return (this.state.scholar.water || []).length; // 1 bottle = 1L = 1kg
     },
+    // pourWater: pour out 1L. Water is heavy, and sometimes you carried too
+    // much — or the risky stuff isn't worth the weight. Risky goes first
+    // (you'd dump the dubious stuff). Free, like dropItem: shedding weight
+    // is not a decision the clock charges for. (Survivalist loop 2026-10-07:
+    // a marcher can accumulate 9L with no outlet but drinking; everything
+    // else in the pack can be left for the woods, water couldn't.)
+    pourWater() {
+      const s = this.state.scholar;
+      s.water = s.water || [];
+      if (!s.water.length) { this.say('No water to pour out.'); return null; }
+      let idx = s.water.findIndex(b => b.quality === 'risky');
+      if (idx === -1) idx = 0;
+      const b = s.water[idx];
+      s.water.splice(idx, 1);
+      this.say(`You pour out 1L (${b.quality}${b.source ? ' — ' + b.source : ''}). Lighter now.`);
+      return null;
+    },
     // FISH: the knowledge-gated skill contract applied. Fisherfolk read the
     // water — the deep cut, the shade line — and catch. The ignorant thrash
     // the shallows and hope. Button honest: it always works, just worse blind.

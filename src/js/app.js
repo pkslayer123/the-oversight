@@ -11130,7 +11130,7 @@
 ${renderBuildIndicator()}
         ${renderSynergyStirrings()}
         ${renderIntegrationLevel()}
-        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''}</p>`; })()}
+        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''} <button class="btn ghost sm" data-pourwater="1" title="Pour out 1L, risky first. Water is heavy.">Pour out 1L</button></p>`; })()}
         ${inv.length ? inv.map((i, idx) => {
           // FOOD REALITY: per-item processing buttons + state markers.
           let foodBtns = '';
@@ -11212,6 +11212,8 @@ ${renderBuildIndicator()}
     slot.querySelectorAll('[data-shell]').forEach(b => b.onclick = rewire(() => Game.shellNuts(+b.dataset.shell), 'Shelled.'));
     // WATER FILTER: pour risky water through the filter, anywhere.
     slot.querySelectorAll('[data-filterwater]').forEach(b => b.onclick = rewire(() => Game.filterWater(), 'Filtered.'));
+    // POUR OUT: shed water weight — water is heavy, and the pack is honest.
+    slot.querySelectorAll('[data-pourwater]').forEach(b => b.onclick = rewire(() => Game.pourWater(), 'Poured out.'));
     // UNKNOWN MEAT: test cautiously to learn if it's food.
     slot.querySelectorAll('[data-meattest]').forEach(b => b.onclick = rewire(() => Game.testMonsterMeat(+b.dataset.meattest, packOf()), 'Tested.'));
     // FIELD IDENTIFICATION: the cautious test works from the pack, anywhere.
