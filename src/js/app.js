@@ -10745,7 +10745,16 @@ ${renderBuildIndicator()}
             // note: data-cook below covers cookable via the extended condition
             i._cookable = cookable;
           } catch (e) {}
-          return `<p class="small">${itemSpriteHtml(i)}${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.foodKind === "meat" && i.edible === false) ? "?" : (i.kcalEach || 0) * i.units} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
+          return `<p class="small">${itemSpriteHtml(i)}${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(() => { try {
+            // KNOWLEDGE GATE (Steve 2026-10-07): kcal hidden for unknown plants.
+            // "If you don't know it's food, you don't know its calories."
+            if (i.foodKind === "meat" && i.edible === false) return "?";
+            if (i.plantId && !String(i.plantId).startsWith('meat_')) {
+              const isPlant = (Game.data.plants || []).some(x => x.id === i.plantId);
+              if (isPlant && !Game.canShow('plant', i.plantId, 'kcal')) return "?";
+            }
+            return (i.kcalEach || 0) * i.units;
+          } catch (e) { return (i.kcalEach || 0) * i.units; } })()} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
@@ -10863,7 +10872,15 @@ ${renderBuildIndicator()}
       // WEIGHT IS ALWAYS KNOWN (Steve): physical, even when identity isn't.
       const kg = (((it.kg || 0.1)) * units).toFixed(1);
       // kcal gated: unknown meat shows "?", like the pack.
-      const kcalStr = (it.foodKind === 'meat' && it.edible === false) ? '?' : ((it.kcalEach || 0) * units);
+      // KNOWLEDGE GATE (Steve 2026-10-07): kcal hidden for unknown plants, like the pack.
+      const kcalStr = (() => { try {
+        if (it.foodKind === 'meat' && it.edible === false) return '?';
+        if (it.plantId && !String(it.plantId).startsWith('meat_')) {
+          const isPlant = (Game.data.plants || []).some(x => x.id === it.plantId);
+          if (isPlant && !Game.canShow('plant', it.plantId, 'kcal')) return '?';
+        }
+        return ((it.kcalEach || 0) * units);
+      } catch (e) { return ((it.kcalEach || 0) * units); } })();
       let spoilMark = '';
       try {
         if (it.spoilDay !== undefined && it.spoilDay !== null) {
@@ -11616,7 +11633,15 @@ ${renderBuildIndicator()}
           return `<div class="card" style="margin:6px 0;padding:8px 10px">
           <p class="small">${itemSpriteHtml(p)}<b>${dname}</b> \u00D7${p.units} ${unit}s
           ${p.safe ? '' : ' \u26A0 UNSAFE'}${p.spoilDay <= st.day ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \uD83C\uDF73 needs cooking' : ''}${(() => { try { const fm = Game.foodMarker ? Game.foodMarker(p) : ''; return fm ? ' \u00B7 ' + fm : ''; } catch (e) { return ''; } })()}<br>
-          <span style="opacity:.7">${p.kcalEach} kcal/${unit} \u00B7 ${p.kg} kg/${unit} \u00B7 <b>${density} kcal/kg</b></span></p>
+          <span style="opacity:.7">${(() => { try {
+            // KNOWLEDGE GATE (Steve 2026-10-07): pantry shows kcal only if YOU
+            // know it's food. Name-known (L1) isn't enough.
+            if (p.plantId && !String(p.plantId).startsWith('meat_')) {
+              const isPlant = (Game.data.plants || []).some(x => x.id === p.plantId);
+              if (isPlant && !Game.canShow('plant', p.plantId, 'kcal')) return '?';
+            }
+            return p.kcalEach;
+          } catch (e) { return p.kcalEach; } })()} kcal/${unit} \u00B7 ${p.kg} kg/${unit} \u00B7 <b>${density} kcal/kg</b></span></p>
           <div style="display:flex;align-items:center;gap:8px">
             <input type="range" min="0" max="${p.units}" value="0" data-pack="${idx}" style="flex:1">
             <span class="small" id="packq-${idx}" style="min-width:44px;text-align:right">0</span>

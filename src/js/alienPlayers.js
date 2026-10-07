@@ -139,7 +139,9 @@
 
     // ---------- knowledge gating ----------
     apKnowsAlien: function (pid) {
-      return !!(this.apState().known[pid]);
+      // KNOWLEDGE GATE (Steve 2026-10-07): delegates to the unified canShow.
+      try { return this.canShow('alien', pid, 'name'); }
+      catch (e) { return !!(this.apState().known[pid]); }
     },
 
     apRevealAlien: function (pid, how) {

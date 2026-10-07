@@ -3846,8 +3846,7 @@
     },
     // goalKnown: post-System it's displayed; pre-System it's learned via askAbout
     goalKnown(vid) {
-      if (this.state.systemArrived) return true;
-      return !!((this.state.village.goalsKnown || {})[vid]);
+      return this.canShow('npc', vid, 'mechanics');
     },
 
     // DISCOVERIES: social mechanics are learned through conversation, not
@@ -9318,7 +9317,7 @@
     // Every user-facing reference to a person goes through displayName() —
     // raw IDs (gen_a1b2c3) must NEVER reach the UI.
     nameKnown(vid) {
-      return !!((this.state.village.knownNames || {})[vid]);
+      return this.canShow('npc', vid, 'name');
     },
     revealName(vid, how) {
       const village = this.state.village;
@@ -10730,8 +10729,7 @@
 
     // skillKnown: do you know this skill at this level?
     skillKnown(skillId, minLevel) {
-      const e = (this.state.codex.skills || {})[skillId];
-      return !!(e && (e.level || 0) >= (minLevel || 1));
+      return this.canShow('skill', skillId, 'mechanics', { minLevel: minLevel || 1 });
     },
 
     // learnSkill: gain knowledge. One path, every source. Like identifyPlant for skills.
@@ -12407,8 +12405,7 @@
     // "Is that a deer or a Highbeam Deer? You don't want to get close enough
     // to find out." The descriptor system covers beasts too.
     monsterKnown(mid) {
-      const st = (this.state.codex.monsters || {})[mid];
-      return st && (st.stage === 'observed' || st.stage === 'slain');
+      return this.canShow('monster', mid, 'name');
     },
     monsterDesc(mid) {
       return this.monsterDisplayName(mid);
@@ -17005,8 +17002,7 @@
     },
 
     tbPatternKnown(monsterId, attackName) {
-      const c = (this.state.codex.monsters || {})[monsterId];
-      return !!(c && c.patterns && c.patterns[attackName]);
+      return this.canShow('monster', monsterId, 'mechanics', { pattern: attackName });
     },
 
     // Called when an attack resolves and you live to think about it.
@@ -24653,10 +24649,110 @@
       }));
     },
 
+    // KNOWLEDGE GATE (Steve 2026-10-07): THE unified gate. Every "do I know
+    // this?" check routes through here. Domains: plant, animal, monster, npc,
+    // skill, alien, item. Aspects: name, stats, kcal, edibility, mechanics, lore.
+    // "If you don't know, it doesn't show."
+    //
+    // Aspect semantics per domain:
+    //   plant: name=L1, kcal/edibility=L2, stats=L3, lore/mechanics=L4
+    //   animal: name=region-known or 3+ encounters (all aspects gate on name for now)
+    //   monster: name=observed/slain, stats=slain, mechanics=patterns known, lore=village-named
+    //   npc: name=knownNames, mechanics=goalsKnown (or System arrived)
+    //   skill: mechanics=name=level>=minLevel (opts.minLevel, default 1)
+    //   alien: name=revealed
+    //   item: composite — delegates to plant/monster gates via pantryItemKnown logic
+    canShow(domain, id, aspect, opts) {
+      aspect = aspect || 'name';
+      const s = this.state;
+      try {
+        switch (domain) {
+          case 'plant': {
+            const e = (s.codex.plants || {})[id];
+            const lvl = e ? (e.level || 0) : 0;
+            switch (aspect) {
+              case 'name': return lvl >= 1;
+              case 'kcal':
+              case 'edibility': return lvl >= 2;
+              case 'stats': return lvl >= 3;
+              case 'lore':
+              case 'mechanics': return lvl >= 4;
+              default: return lvl >= 1;
+            }
+          }
+          case 'animal': {
+            // Region-aware: "common" means common for YOUR region. Mirrors the
+            // encAnimalKnown rule: region overlap, or 3+ encounters.
+            try {
+              const adef = (this.data.animals || []).find(a => a.id === id);
+              if (adef && adef.common) {
+                const tags = ((s.scholar || {}).originTags || []).map(t => String(t).toLowerCase());
+                const aregions = (adef.regions || ['north_america']).map(r => String(r).toLowerCase());
+                const overlap = tags.some(t => aregions.includes(t));
+                const isNorthAmerican = tags.includes('north_america') || tags.some(t =>
+                  ['united states', 'usa', 'america', 'canada'].includes(t));
+                if (overlap || (isNorthAmerican && aregions.includes('north_america'))) return true;
+              }
+            } catch (e) {}
+            return (((s.codex || {}).animalEncounters || {})[id] || 0) >= 3;
+          }
+          case 'monster': {
+            const e = (s.codex.monsters || {})[id] || {};
+            const pat = opts && opts.pattern;
+            switch (aspect) {
+              case 'name': return !!(e.stage === 'observed' || e.stage === 'slain');
+              case 'stats': return e.stage === 'slain';
+              case 'mechanics':
+                if (pat) return !!(e.patterns && e.patterns[pat]);
+                return !!(e.patterns && Object.keys(e.patterns).length);
+              case 'lore': return !!(e.villageName);
+              default: return !!(e.stage === 'observed' || e.stage === 'slain');
+            }
+          }
+          case 'npc': {
+            switch (aspect) {
+              case 'name': return !!(((s.village || {}).knownNames || {})[id]);
+              case 'mechanics': return !!(s.systemArrived || (((s.village || {}).goalsKnown || {})[id]));
+              default: return !!(((s.village || {}).knownNames || {})[id]);
+            }
+          }
+          case 'skill': {
+            const e = (s.codex.skills || {})[id];
+            const lvl = e ? (e.level || 0) : 0;
+            const min = (opts && opts.minLevel) || 1;
+            return lvl >= min;
+          }
+          case 'alien': {
+            const ap = (typeof this.apState === 'function') ? this.apState() : null;
+            return !!(ap && ap.known && ap.known[id]);
+          }
+          case 'item': {
+            // Composite gate for inventory/pantry items. Identity rides on
+            // plantId: foraged plants gate on plant kcal; monster meat gates
+            // on monster name; items with no identity are mundane (always shown).
+            const p = id; // id is the item object here
+            if (!p) return false;
+            const pid = p.plantId;
+            if (!pid) return true;
+            if (String(pid).indexOf('meat_') === 0) {
+              const mid = String(pid).slice(5);
+              const mdef = (this.data.monsters || []).find(m => m.id === mid);
+              if (!mdef) return true;
+              const e = (s.codex.monsters || {})[mid];
+              return !!((e && e.villageName) || s.systemArrived);
+            }
+            // Non-plant plantIds (tools, keepsakes stamped as plantId) show.
+            if (!(this.data.plants || []).some(x => x.id === pid)) return true;
+            return this.canShow('plant', pid, (opts && opts.itemAspect) || 'name');
+          }
+          default: return false;
+        }
+      } catch (e) { return false; }
+    },
+
     // KNOWLEDGE DISPLAY: names are earned, not given. Until L1, plants are descriptors.
     plantKnown(pid) {
-      const e = (this.state.codex.plants || {})[pid];
-      return !!(e && e.level >= 1);
+      return this.canShow('plant', pid, 'name');
     },
     // PANTRY KNOWLEDGE GATE (Steve 2026-10-06): the village stash must not
     // reveal counts of items you haven't discovered. Identity rides on plantId:
@@ -24667,17 +24763,7 @@
     // knowledge alone does NOT reveal: it stays hidden until they teach you,
     // which flows through identifyPlant into your codex.
     pantryItemKnown(p) {
-      if (!p) return false;
-      const pid = p.plantId;
-      if (!pid) return true;
-      if (String(pid).indexOf('meat_') === 0) {
-        const mid = String(pid).slice(5);
-        const mdef = (this.data.monsters || []).find(m => m.id === mid);
-        if (!mdef) return true;
-        const e = (this.state.codex.monsters || {})[mid];
-        return !!((e && e.villageName) || this.state.systemArrived);
-      }
-      return this.plantKnown(pid);
+      return this.canShow('item', p, 'name');
     },
     // MONSTER FOOD SAFETY (Steve 2026-10-05): if you don't know it's safe,
     // the UI doesn't show edibility or calories. Learned via cautious testing,

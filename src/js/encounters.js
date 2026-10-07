@@ -89,29 +89,9 @@
   // Animals: 3 encounters (or a kill) teaches the name. Mirrors the plant
   // knowledge rule: knowing the name is only the start (knowledgeLevels).
   G.encAnimalKnown = function (id) {
-    try {
-      // REGION-AWARE KNOWLEDGE (Steve 2026-10-06): "common" means common for
-      // YOUR region, not universally. An American knows deer; someone from
-      // Brazil doesn't. The framework checks origin tags against animal regions.
-      const adef = (this.data.animals || []).find(a => a.id === id);
-      if (adef && adef.common) {
-        // Get player's origin tags
-        const s = this.state.scholar || {};
-        const tags = (s.originTags || []).map(t => String(t).toLowerCase());
-        // Animal regions (default to north_america for legacy data)
-        const aregions = (adef.regions || ['north_america']).map(r => String(r).toLowerCase());
-        // Known if player's origin overlaps with animal's native regions
-        // OR if player is from north_america (the game's default setting)
-        const overlap = tags.some(t => aregions.includes(t));
-        const isNorthAmerican = tags.includes('north_america') || tags.some(t => 
-          ['united states', 'usa', 'america', 'canada'].includes(t));
-        if (overlap || (isNorthAmerican && aregions.includes('north_america'))) {
-          return true;
-        }
-        // Not from a matching region: needs encounters to learn
-      }
-      return ((this.state.codex.animalEncounters || {})[id] || 0) >= 3;
-    }
+    // KNOWLEDGE GATE (Steve 2026-10-07): delegates to the unified canShow.
+    // The region + encounter logic lives in Game.canShow('animal', ...).
+    try { return this.canShow('animal', id, 'name'); }
     catch (e) { return false; }
   };
   G.encDescribeAnimal = function (adef) {
