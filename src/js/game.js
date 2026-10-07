@@ -3381,7 +3381,16 @@
           this.say(`Nobody stops them. A few people watched the whole thing happen, and nobody stops them.`);
           this.bumpTrust(vid, -25);
           markBully();
-          try { this.seedGossip('bully', { honest: -15, generous: -12 }, [vid]); } catch (e) {}
+          // The victim can't spread this — they're leaving. But people watched:
+          // seed the flight with real onlookers so the story travels. A distinct
+          // 'drove_off' action (same-day 'bully' dedupe would eat another one),
+          // and spreadGossip skips tellers who are no longer on the roster,
+          // which the victim is about to be. (Fix 2026-10-07: the old 'bully'
+          // seed named only the fleeing victim, so it never reached anyone.)
+          try {
+            const onlookers = (v.roster || []).filter(id => id !== vid && id !== this.villagerId).slice(0, 3);
+            if (onlookers.length) this.seedGossip('drove_off', { honest: -20, generous: -15, brave: 2 }, onlookers);
+          } catch (e) {}
           try { this.removeVillager(vid, 'fled'); } catch (e) {}
           return 'fled';
         }
