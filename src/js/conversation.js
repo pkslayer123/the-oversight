@@ -663,9 +663,15 @@
     // "only touches plain quoted speech"), so a blind `Name: "line"` wrap
     // produced `Name: ""line""`. A line that already opens with a quote
     // carries its own layer; bare narration still gets wrapped. (Steve 2026-10-06)
+    // QUOTE HYGIENE (fix 2026-10-07): beats that mix stage direction with
+    // quoted speech (`leans in. "Oh?"`) carry their own speech layer too —
+    // wrapping those produced `Name: "leans in. "Oh?""`. If the beat contains
+    // a quoted segment anywhere, it keeps its own layer. (Socialite playtest
+    // 2026-10-07; the cleanDialogue defense only covered edge doublings.)
     sayLine(vid, line) {
       const t = String(line == null ? '' : line);
-      this.say(`${this.displayName(vid)}: ${/^"/.test(t) ? t : `"${t}"`}`);
+      const ownQuotes = /^"/.test(t) || /"[^"]+"/.test(t);
+      this.say(`${this.displayName(vid)}: ${ownQuotes ? t : `"${t}"`}`);
       // TOPIC LEDGER (Steve 2026-10-07): every spoken NPC line is a beat on
       // the current thread. The dialogue layer (convo-dialogue.js) speaks
       // its beats through here, so this is the one hook that sees both the
@@ -779,6 +785,10 @@
         secret: 'their secret', want: 'what they want', request: 'their request',
         theorize: 'the big questions', trade: 'trading knowledge',
         situation: 'the situation', lately: "what's been happening",
+        // SCENARIO THREADS (fix 2026-10-07): teach-offer and recall threads
+        // can hang open via convoPlantOpenThread — without labels the
+        // resume/recap lines leak the raw tid ("talking about taughtref").
+        taughtref: 'that lesson they offered', recall: 'what you told them',
       };
       if (base[tid]) return base[tid];
       try {
@@ -1906,7 +1916,26 @@
         try { this.askAbout(vid, 'gossip'); } catch (e) {}
         this.say = origSay;
         c.thread = 'gossip'; c.depth = 1;
-        const line = said.join(' ');
+        // QUOTE HYGIENE (fix 2026-10-07): askAbout formats beats as
+        // `Name: "line"` (or `Name lowers their voice. "..."`) for the
+        // person-card path (app.js), which renders them raw. This path
+        // re-wraps via voiceLine/sayLine, which adds the name itself — strip
+        // the attribution so it doesn't double
+        // (`Jamal: "Jamal: "Nothing new.""`). Journal toasts (📓) captured
+        // mid-ask are re-emitted outside the spoken line so they don't
+        // pollute it. Socialite playtest 2026-10-07.
+        let line;
+        try {
+          const asides = said.filter(t => /^\s*📓/.test(t));
+          const beats = said.filter(t => !/^\s*📓/.test(t));
+          for (const a of asides) { try { this.say(a); } catch (e) {} }
+          line = beats.join(' ');
+          const nm = String(this.displayName(vid) || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (nm) {
+            line = line.replace(new RegExp('^' + nm + ':\\s*'), '')
+                       .replace(new RegExp('^' + nm + '\\s+lowers their voice\\.\\s*'), '');
+          }
+        } catch (e) { line = said.join(' '); }
         return this.voiceLine(vid, line) || exh();
       }
       if (topic === 'spread_rumor') {
