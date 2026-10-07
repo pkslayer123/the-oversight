@@ -1972,5 +1972,80 @@
    "stone": 1
   },
   "craftYield": 2
+ } ,
+ {
+  "id": "alien_helm",
+  "name": "Alien helm",
+  "class": "clothing",
+  "flavor": "Seamless. No visor, no seams \u2014 you just see through it. It hums when beam weapons are near.",
+  "armor": {
+   "protection": 25,
+   "beamResist": true
+  },
+  "findable": false,
+  "universal": true,
+  "kg": 0.8,
+  "tier": 4,
+  "alienTech": true
+ },
+ {
+  "id": "alien_carapace",
+  "name": "Alien carapace",
+  "class": "clothing",
+  "flavor": "Grown, not made. It flexes like muscle and hardens like shell when threatened. Smells faintly of ozone.",
+  "armor": {
+   "protection": 40,
+   "beamResist": true
+  },
+  "findable": false,
+  "universal": true,
+  "kg": 1.2,
+  "tier": 4,
+  "alienTech": true
+ },
+ {
+  "id": "alien_greaves",
+  "name": "Alien greaves",
+  "class": "clothing",
+  "flavor": "They don\u2019t quite touch the ground. You hover, barely, when you run.",
+  "armor": {
+   "protection": 25,
+   "beamResist": true
+  },
+  "findable": false,
+  "universal": true,
+  "kg": 0.9,
+  "tier": 4,
+  "alienTech": true
+ },
+ {
+  "id": "alien_gauntlets",
+  "name": "Alien gauntlets",
+  "class": "clothing",
+  "flavor": "Your fingers leave afterimages. The gauntlets are learning your hands.",
+  "armor": {
+   "protection": 20,
+   "beamResist": true
+  },
+  "findable": false,
+  "universal": true,
+  "kg": 0.6,
+  "tier": 4,
+  "alienTech": true
+ },
+ {
+  "id": "alien_boots",
+  "name": "Alien boots",
+  "class": "clothing",
+  "flavor": "Silent. Completely silent. Even on gravel. Especially on gravel.",
+  "armor": {
+   "protection": 20,
+   "beamResist": true
+  },
+  "findable": false,
+  "universal": true,
+  "kg": 0.7,
+  "tier": 4,
+  "alienTech": true
  }
 ]

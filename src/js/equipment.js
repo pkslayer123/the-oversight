@@ -49,6 +49,11 @@
     canvas_pants: 'legs',
     work_gloves: 'hands',
     good_boots: 'feet', wool_socks: 'feet', running_shoes: 'feet',
+    alien_boots: 'feet',
+    alien_helm: 'head',
+    alien_carapace: 'torso',
+    alien_greaves: 'legs',
+    alien_gauntlets: 'hands',
   };
 
   // Full-set items: ONE item covering ALL body slots at once.

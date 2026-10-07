@@ -38,6 +38,13 @@
 //   - apPlaygroundDuel()
 //   - apFactionAligned()
 //   - apVillagerFear()
+//   - apBeamResistPieces()
+//   - apBeamResistLevel()
+//   - apBeamResistText()
+//   - apReadinessCheck()
+//   - apBeamHit(targetKey, dmg, sourceLabel, opts)
+//   - apArmorName()
+//   - apMaybeBeamAttack(fighter)
 //   - apIsArsonist()
 //   - apExperience()
 //   - apFavor()
@@ -699,6 +706,49 @@
       var lines = outcome === 'won' ? p.victoryLines : p.defeatLines;
       if (lines && lines.length && this.apKnowsAlien(pid)) {
         this.say('🎭 ' + p.name + ': "' + lines[Math.floor(Math.random() * lines.length)] + '"');
+      }
+
+      // ALIEN ARMOR SALVAGE (Steve 2026-10-07): defeating an alien player
+      // lets you strip their armor. This is how you GET beam-resistant gear.
+      // The transition: kill them (hard, risky) → take their armor → survive beams.
+      if (outcome === 'won') {
+        try {
+          var armorPool = ['alien_helm', 'alien_carapace', 'alien_greaves', 'alien_gauntlets', 'alien_boots'];
+          // Don't drop what you already have
+          var have = {};
+          try {
+            var eq = (this.state.scholar || {}).equipped || {};
+            for (var sk in eq) {
+              var it = eq[sk];
+              if (it) have[it.itemId || it.id] = true;
+            }
+            var inv2 = (this.state.scholar || {}).inventory || [];
+            for (var ii = 0; ii < inv2.length; ii++) {
+              if (inv2[ii]) have[inv2[ii].itemId || inv2[ii].id] = true;
+            }
+          } catch (e) {}
+          var available = armorPool.filter(function(id) { return !have[id]; });
+          if (available.length > 0 && Math.random() < 0.6) {
+            var dropId = available[Math.floor(Math.random() * available.length)];
+            var dropDef = null;
+            var allItems = this.data.items || [];
+            for (var di = 0; di < allItems.length; di++) {
+              if (allItems[di].id === dropId) { dropDef = allItems[di]; break; }
+            }
+            if (dropDef) {
+              try {
+                if (this.giveItem) this.giveItem(dropId, 1);
+                else {
+                  var inv3 = this.state.scholar.inventory = this.state.scholar.inventory || [];
+                  inv3.push({ itemId: dropId, id: dropId });
+                }
+                this.say('◈ You strip ' + dropDef.name.toLowerCase() + ' from their body. It\'s warm. It\'s still humming. This will stop beam weapons.');
+              } catch (e) {}
+            }
+          } else if (available.length === 0) {
+            this.say('◈ They were wearing standard gear — nothing you don\'t already have.');
+          }
+        } catch (e) {}
       }
 
       // Fan favor: the audience judges your performance
@@ -1603,6 +1653,252 @@
       }
     },
 
+
+    // ============ ALIEN ARMOR TRANSITION (Steve 2026-10-07) ============
+    // Alien beam weapons vs human armor = nearly instant lethal.
+    // Alien armor OR sufficiently bonded sentimental gear = resistant.
+    // Until you have a full set, every alien encounter is tremendous risk.
+    //
+    // The three concepts stay separate:
+    // - MONSTER TIERS (wave 1/2/veterans) = how hard the monster is
+    // - LOOT TIERS (1-4) = how strong the item is
+    // - BEAM RESISTANCE = whether your gear stops alien beam weapons
+    // Beam resistance is its own axis. It doesn't care about waves or tiers.
+
+    // apBeamResistPieces: count beam-resistant pieces the player is wearing.
+    // Two sources:
+    // 1. Alien armor (armor.beamResist:true in items.json) — grown, not made.
+    // 2. Sentimental gear with bond >= 25 — your love for it creates resonance
+    //    that deflects beam weapons. Your grandmother's knife protects you
+    //    because you LOVE it. (Bond 10 reveals the keepsake; 25 is deep.)
+    // Returns array of {slot, itemId, source:'alien'|'bonded'}.
+    apBeamResistPieces: function () {
+      var pieces = [];
+      try {
+        var s = this.state.scholar || {};
+        var equipped = s.equipped || {};
+        var slots = ['head', 'torso', 'legs', 'hands', 'feet'];
+        for (var i = 0; i < slots.length; i++) {
+          var slot = slots[i];
+          var item = equipped[slot];
+          if (!item) continue;
+          var itemId = item.itemId || item.id;
+          if (!itemId) continue;
+          var def = null;
+          try {
+            var items = this.data.items || [];
+            for (var j = 0; j < items.length; j++) {
+              if (items[j].id === itemId) { def = items[j]; break; }
+            }
+          } catch (e) {}
+          if (!def) continue;
+          // Source 1: alien armor
+          if (def.armor && def.armor.beamResist) {
+            pieces.push({ slot: slot, itemId: itemId, source: 'alien' });
+            continue;
+          }
+          // Source 2: sufficiently bonded sentimental gear
+          // (bonded relics AND equipped sentimental items both count)
+          if (def.class === 'sentimental' && (item.bond || 0) >= 25) {
+            pieces.push({ slot: slot, itemId: itemId, source: 'bonded' });
+          }
+        }
+        // Also check bonded relics in inventory that are "worn close"
+        // (sentimental items accrue bond just by being kept — they count
+        // even if not in an armor slot, if bond is deep enough)
+        try {
+          var inv = s.inventory || [];
+          for (var k = 0; k < inv.length; k++) {
+            var r = inv[k];
+            if (!r || !r.bonded) continue;
+            var rid = r.itemId || r.id;
+            var rdef = null;
+            var allItems = this.data.items || [];
+            for (var m = 0; m < allItems.length; m++) {
+              if (allItems[m].id === rid) { rdef = allItems[m]; break; }
+            }
+            if (!rdef || rdef.class !== 'sentimental') continue;
+            if ((r.bond || 0) < 25) continue;
+            // Don't double-count if already equipped
+            var already = false;
+            for (var n = 0; n < pieces.length; n++) {
+              if (pieces[n].itemId === rid) { already = true; break; }
+            }
+            if (!already) pieces.push({ slot: 'kept', itemId: rid, source: 'bonded' });
+          }
+        } catch (e) {}
+      } catch (e) {}
+      return pieces;
+    },
+
+    // apBeamResistLevel: none (0), partial (1-2), substantial (3-4), full (5+).
+    // 5 armor slots; bonded keepsakes in inventory can push beyond 5.
+    apBeamResistLevel: function () {
+      var n = this.apBeamResistPieces().length;
+      if (n <= 0) return 'none';
+      if (n <= 2) return 'partial';
+      if (n <= 4) return 'substantial';
+      return 'full';
+    },
+
+    // apBeamResistText: player-facing resistance readout.
+    // The player should KNOW when they're not ready.
+    apBeamResistText: function () {
+      var level = this.apBeamResistLevel();
+      var pieces = this.apBeamResistPieces();
+      if (level === 'none') {
+        return '⚠ BEAM VULNERABILITY: CRITICAL — no resistant gear. Alien beam weapons will nearly kill you outright.';
+      } else if (level === 'partial') {
+        return '⚠ Beam resistance: PARTIAL (' + pieces.length + '/5). You might survive a glancing hit. You will not survive a second.';
+      } else if (level === 'substantial') {
+        return '◈ Beam resistance: SUBSTANTIAL (' + pieces.length + '/5). You can take a hit. Don\'t get cocky.';
+      }
+      return '◈ Beam resistance: FULL (' + pieces.length + '). You can stand against beam weapons. Still a hard fight.';
+    },
+
+    // apReadinessCheck: spawn gating. Don't spawn alien players until the
+    // player has at least a slight chance with a party.
+    // Factors: party size, threat rating, day, System integration.
+    // Returns { ready: bool, score, reasons[] }.
+    apReadinessCheck: function () {
+      var reasons = [];
+      var score = 0;
+      try {
+        var s = this.state.scholar || {};
+        var day = s.day || 1;
+        // Party: each ally is 25 points (Steve: "slight chance with a party")
+        var party = (this.state.party || []).length;
+        score += party * 25;
+        if (party >= 2) reasons.push(party + ' allies at your side');
+        else reasons.push('only ' + party + ' ' + (party === 1 ? 'ally' : 'allies') + ' (need 2+)');
+        // Threat rating: existing system, gear + stats + party + performance
+        var threat = 0;
+        try { threat = this.threatRating() || 0; } catch (e) {}
+        score += Math.min(threat, 100);
+        if (threat >= 60) reasons.push('threat rating ' + threat + ' (solid)');
+        else reasons.push('threat rating ' + threat + ' (need 60+)');
+        // Day: no aliens before day 30 (they're late-game)
+        if (day >= 30) { score += 25; reasons.push('day ' + day + ' (seasoned)'); }
+        else reasons.push('day ' + day + ' (need 30+)');
+        // System integration: must have arrived (already gated, but count it)
+        var sysInt = this.state.systemIntegration || 0;
+        if (sysInt >= 1) { score += 25; }
+        // Beam resistance: having ANY resistant gear is a big plus
+        var resistPieces = this.apBeamResistPieces().length;
+        score += resistPieces * 15;
+        if (resistPieces > 0) reasons.push(resistPieces + ' beam-resistant ' + (resistPieces === 1 ? 'piece' : 'pieces'));
+      } catch (e) {}
+      // Threshold: 100. A day-30 player with 2 allies (50), threat 60 (60),
+      // day bonus (25) = 135. Ready. A solo day-10 player = ~30. Not ready.
+      var ready = score >= 100;
+      return { ready: ready, score: Math.round(score), reasons: reasons };
+    },
+
+    // apBeamHit: alien beam weapon damage resolution.
+    // Called from the tbDamage wrap when damageType is 'alien_beam'.
+    // Normal armor does NOTHING. Only beam-resistant gear helps.
+    // 0 pieces: nearly instant lethal (90-110% of max HP).
+    // Each piece multiplies damage by 0.7. Full set (5): ~17% — hard but fair.
+    apBeamHit: function (targetKey, dmg, sourceLabel, opts) {
+      var s = this.state.scholar || {};
+      var maxHp = s.maxHp || 100;
+      var pieces = this.apBeamResistPieces();
+      var n = pieces.length;
+      // Base beam damage: devastating. This is the "oh shit" weapon.
+      var base = Math.round(maxHp * (0.9 + Math.random() * 0.2));
+      // Each resistant piece multiplies by 0.7
+      var mult = Math.pow(0.7, n);
+      var final = Math.max(1, Math.round(base * mult));
+      // THE "OH SHIT" MOMENT: first beam hit with no resistance.
+      // The game tells you, clearly: your armor will not save you from this.
+      if (n === 0 && !s._beamHorrorSeen) {
+        s._beamHorrorSeen = true;
+        this.say('💀 The beam doesn\'t care about your armor. It goes through like it isn\'t there.');
+        this.say('💀 Your ' + this.apArmorName() + ' might as well be paper. You need alien armor — or something you love enough to resonate.');
+        this.say('💀 THIS IS NOT A FAIR FIGHT. Run, or find resistant gear.');
+        try { this.drama('beamHorror', s.mx, s.my); } catch (e) {}
+      } else if (n > 0 && n < 5 && !s._beamPartialSeen) {
+        s._beamPartialSeen = true;
+        this.say('◈ Your resistant gear flares — ' + n + ' ' + (n === 1 ? 'piece' : 'pieces') + ' catching the beam. It helps. It\'s not enough for a second hit.');
+      } else if (n >= 5 && !s._beamFullSeen) {
+        s._beamFullSeen = true;
+        this.say('◈ Your full resistant set sings — the beam breaks across it like water on stone. You can fight them now. It\'s still going to hurt.');
+      }
+      // Apply the damage via the normal path (bypassing armor since we
+      // already calculated final — pass a flag to skip armor reduction)
+      var newOpts = {};
+      try { for (var k in (opts || {})) newOpts[k] = opts[k]; } catch (e) {}
+      newOpts._beamFinal = true; // tbDamage wrap checks this to skip armor
+      // We can't easily re-enter tbDamage, so apply directly:
+      try {
+        var t = this.tbFighter(targetKey);
+        if (t && t.alive) {
+          t.hp = Math.max(0, (t.hp || maxHp) - final);
+          var who = targetKey === 'player' ? 'You take' : (t.name || 'They take');
+          this.say('🔆 ' + who + ' ' + final + ' beam damage' + (n > 0 ? ' (' + n + ' resistant ' + (n === 1 ? 'piece' : 'pieces') + ' absorbing)' : ' (no resistance)') + ' — ' + sourceLabel + '.');
+          if (t.hp <= 0) {
+            t.alive = false;
+            try { this.tbKill(t, sourceLabel); } catch (e) {}
+          }
+        }
+      } catch (e) {}
+      return final;
+    },
+
+    // apArmorName: what the player is currently wearing (for the horror text).
+    apArmorName: function () {
+      try {
+        var s = this.state.scholar || {};
+        var eq = (s.equipped || {}).torso;
+        if (eq) {
+          var def = null;
+          var items = this.data.items || [];
+          var id = eq.itemId || eq.id;
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].id === id) { def = items[i]; break; }
+          }
+          if (def) return def.name.toLowerCase();
+        }
+      } catch (e) {}
+      return 'armor';
+    },
+
+    // apMaybeBeamAttack: called when an alien fighter attacks. Chance to use
+    // beam weapon instead of normal attack. Rich/sadistic ones use it more.
+    apMaybeBeamAttack: function (fighter) {
+      try {
+        if (!fighter || !fighter.alienPid) return false;
+        var pid = fighter.alienPid;
+        var per = this.apPersona(pid);
+        if (!per) return false;
+        // Who uses beams? Sadistic ones love them. Others use them when serious.
+        var chance = 0.25;
+        if (per.disposition === 'sadistic') chance = 0.4;
+        if (fighter._enraged) chance += 0.2;
+        // Don't beam spam: max once per 3 rounds
+        var f = this.tbfight;
+        if (f && f._beamCooldown > 0) return false;
+        if (Math.random() >= chance) return false;
+        if (f) f._beamCooldown = 3;
+        // FIRE THE BEAM
+        var beamNames = {
+          'vex_marlowe': 'Vex\'s phase lance',
+          'countess_sable': 'Sable\'s dread beam',
+          'rax_dentist': 'Rax\'s nerve scalpel',
+          'pip_quindle': 'Pip\'s tourist zapper (it\'s set to "stun"! mostly)',
+          'sarge': 'Sarge\'s service beam',
+          'dr_fenwick': 'Fenwick\'s specimen beam',
+          'old_tam': null, // Tam doesn't use beams. He fights fair.
+        };
+        var beamName = beamNames[pid];
+        if (!beamName) return false; // Tam won't
+        this.say('🔆 ' + per.name + ' raises ' + beamName + '. The air tastes like copper.');
+        // Player is the target (beam weapons are for the player)
+        this.apBeamHit('player', 0, beamName, { damageType: 'alien_beam' });
+        return true;
+      } catch (e) { return false; }
+    },
+
   };
 
   Object.assign(G, methods);
@@ -1701,5 +1997,70 @@
         return _verdict.apply(this, arguments);
       };
     }
+
+    // ============ ARMOR TRANSITION WRAPS (Steve 2026-10-07) ============
+
+    // 1. READINESS GATE: don't spawn alien players until the player has
+    // at least a slight chance with a party.
+    var _apEligible = G.apEncounterEligible;
+    G.apEncounterEligible = function () {
+      try {
+        if (_apEligible && !_apEligible.apply(this, arguments)) return false;
+        var check = this.apReadinessCheck ? this.apReadinessCheck() : { ready: true };
+        if (!check.ready) return false;
+        return true;
+      } catch (e) { return false; }
+    };
+
+    // 2. BEAM DAMAGE INTERCEPT: alien_beam damage type bypasses normal armor.
+    // Only beam-resistant gear (alien armor, bonded sentimental) reduces it.
+    var _tbDamage = G.tbDamage;
+    G.tbDamage = function (targetKey, dmg, sourceLabel, sourceKey, opts) {
+      try {
+        if (opts && opts.damageType === 'alien_beam' && !opts._beamFinal) {
+          // Route through the beam resolver (handles resistance + horror beat)
+          if (this.apBeamHit) return this.apBeamHit(targetKey, dmg, sourceLabel, opts);
+        }
+        // _beamFinal flag: apBeamHit already calculated final damage,
+        // skip normal armor reduction (beam ignores human armor entirely).
+        if (opts && opts._beamFinal) {
+          var t = this.tbFighter ? this.tbFighter(targetKey) : null;
+          if (t && t.alive) {
+            var final = Math.max(0, Math.round(dmg));
+            t.hp = Math.max(0, (t.hp || 100) - final);
+            return final;
+          }
+        }
+      } catch (e) {}
+      return _tbDamage ? _tbDamage.apply(this, arguments) : undefined;
+    };
+
+    // 3. BEAM ATTACKS IN COMBAT: alien fighters sometimes fire beam weapons.
+    // Hooked into the existing alien turn wrap (after chatter).
+    var _tbAfterBeam = G.tbAfterPlayerAction;
+    // Note: the alien chatter wrap already exists above. We chain onto it
+    // by wrapping again — the beam check runs after chatter.
+    (function () {
+      var prev = G.tbAfterPlayerAction;
+      G.tbAfterPlayerAction = function () {
+        var r = prev ? prev.apply(this, arguments) : undefined;
+        try {
+          if (this.tbfight && this.tbfight.fighters) {
+            for (var i = 0; i < this.tbfight.fighters.length; i++) {
+              var f = this.tbfight.fighters[i];
+              if (f.kind === 'hostile' && f.alienPid && f.alive && !f.fled) {
+                // Decrement beam cooldown
+                if (this.tbfight._beamCooldown > 0) this.tbfight._beamCooldown--;
+                // Maybe fire the beam (replaces their normal attack this turn)
+                if (this.apMaybeBeamAttack) this.apMaybeBeamAttack(f);
+                break;
+              }
+            }
+          }
+        } catch (e) {}
+        return r;
+      };
+    })();
+
   })();
 })(typeof window !== 'undefined' ? window : global);
