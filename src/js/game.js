@@ -14800,6 +14800,13 @@
         }
       }
       scholar.day += 1;
+      // VILLAGE CLOCK (BUG 2026-10-07): the player village's day was frozen at
+      // 1 forever — villageEats stamped villagers' shared surplus spoilDay =
+      // v.day+3 = 4, so from day 4 on fresh surplus was deposited already
+      // spoiled and swept the same night; noteAbilityUse logged every ability
+      // use as day 1, so multi-day synergy streaks could never complete.
+      // The village lives on the same clock as its scholar.
+      if (this.state.village) this.state.village.day = scholar.day;
       scholar.relicResolveUsed = false;
       this.dayPart = 0; this.ap = 1;
       scholar.dayTicks = 0; scholar.actionClock = 0; // action clock: new day, fresh budget
