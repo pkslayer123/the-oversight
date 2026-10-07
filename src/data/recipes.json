@@ -11,7 +11,8 @@
     "catches": [
       "cottontail_rabbit",
       "gray_squirrel",
-      "opossum"
+      "opossum",
+      "eastern_chipmunk"
     ],
     "knowledgeLevels": {
       "1": "You have seen a snare. A loop, a stick, an animal.",
@@ -68,7 +69,8 @@
       "north_american_beaver",
       "bobcat",
       "nine_banded_armadillo",
-      "nine_banded_armadillo"
+      "nine_banded_armadillo",
+      "american_mink"
     ],
     "knowledgeLevels": {
       "1": "A box trap. Woven saplings, a drop door, bait inside. For clever medium game.",
@@ -175,7 +177,8 @@
     "canada_goose",
     "american_crow",
     "cottontail_rabbit",
-    "gray_squirrel"
+    "gray_squirrel",
+    "great_horned_owl"
   ],
   "knowledgeLevels": {
     "1": "A snare with a bent sapling for a spring. Faster than a plain loop.",
@@ -345,7 +348,8 @@
     "white_tailed_deer",
     "wild_boar",
     "raccoon",
-    "opossum"
+    "opossum",
+    "eastern_coyote"
   ],
   "knowledgeLevels": {
     "1": "A pit with stakes in the bottom. Dig it on a trail, brush it over, wait.",
@@ -434,6 +438,24 @@
     "1": "Snares set along a fallen log. Squirrels run the log; the loop does the rest.",
     "2": "Materials: 1 stick + 2 vine. Set the loops upright on the log where it crosses a trail, tied to a bent sapling that lifts the catch clear.",
     "3": "You can set one. Find a log squirrels already run — bark worn smooth, droppings on top. Raccoons use the same highways at night, which is a bonus until it is a fight. Check at dawn and reset by noon."
+  }
+},
+{
+  "id": "flight_net",
+  "name": "Flight Net",
+  "description": "a fine vine mesh strung across a trail gap at dusk. bats fly the same corridor every night — the net just waits in it.",
+  "materials": {
+    "vine": 2,
+    "stick": 2
+  },
+  "uses": 6,
+  "catches": [
+    "big_brown_bat"
+  ],
+  "knowledgeLevels": {
+    "1": "A fine net strung where bats fly. Vine mesh, staked across a gap.",
+    "2": "Materials: 2 vine + 2 sticks. String it across a trail gap at dusk, where the corridor narrows — bats fly the same line every night.",
+    "3": "You can string one. Dusk is the hour: find the corridor where they stitch back and forth, stake both sides, hang the mesh loose so it gives. Check it before full dark — a bat in a net is dinner, and a colony left alone is mosquito control all season."
   }
 }
 ]

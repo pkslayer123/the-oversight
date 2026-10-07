@@ -3051,6 +3051,19 @@
             // a body in hand teaches you what it was — same as a kill.
             try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(catchId); } catch (e) {}
             this.say(`Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife).`);
+            // STRIPED SKUNK (hunter loop 2026-10-07): the box-trap recipe
+            // warns "a skunk, which you will regret." Deliver the regret —
+            // opening the box is the spray moment, same as pressing one on
+            // the trail. L3 recipe readers open it from upwind with the long
+            // stick like the text says: +3 scent, not +5. Knowledge earns.
+            if (catchId === 'striped_skunk') {
+              const careful = ((this.state.codex.recipes || {})['box_trap'] || {}).level >= 3;
+              this.state.scholar.skunkScent = (this.state.scholar.skunkScent || 0) + (careful ? 3 : 5);
+              this.say(careful
+                ? `You open the box from upwind, with the long stick, like the recipe says. It helps — a little. The skunk was already awake and already offended. Your eyes are on fire. The smell will follow you for days.`
+                : `The skunk is in the box — and the box is in your hands. You fumble it open and it gets you full in the face. Your eyes are on fire, and the smell will follow you for days. Everything with a nose knows where you've been.`);
+              try { this.audioEvent('animalSpray'); } catch (e) {}
+            }
             trap.uses -= 1;
             if (trap.uses <= 0) {
               this.say(`The ${recipe.name} broke. You\\'ll need another.`);
@@ -6480,6 +6493,23 @@
       // Walking into fog: the wanderer system (checkEncounter) handles "something is there."
       // No invented ambush odds. If the Bulldozer is on this tile, you'll meet it.
       this.say(msg);
+      // PIT TRAP (hunter loop 2026-10-07): the recipe warns "mark it well:
+      // your own pit will take you too." Made real. A pit you dug on an
+      // earlier day can take you when you walk back onto its tile — 50%,
+      // because you marked it... mostly. The trap is sprung by the fall.
+      // Same-day pits never trigger: you just dug it, you're watching it.
+      const _pit = (this.playerTile().traps || []).find(t => t.recipeId === 'pit_trap');
+      if (_pit && _pit.setDay < this.state.scholar.day) {
+        if (Math.random() < 0.5) {
+          const _dmg = 15 + Math.floor(Math.random() * 11);
+          this.state.scholar.health = Math.max(0, (this.state.scholar.health || 100) - _dmg);
+          _pit.uses = (_pit.uses || 1) - 1;
+          if (_pit.uses <= 0) this.playerTile().traps = this.playerTile().traps.filter(t => t !== _pit);
+          this.say(`Your foot goes through the brush cover — YOUR pit, the one you dug. Sharpened stakes, your own leg. ${_dmg} damage. Mark it well next time.`);
+        } else {
+          this.say(`You skirt the brushed-over hollow where your pit waits. Marked, this time.`);
+        }
+      }
       // CONTINUOUS TRAVEL: you walk off one map, you walk onto the next.
       // Enter at the edge you came from (opposite the travel direction),
       // keeping your column/row so the world feels connected.
