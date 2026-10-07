@@ -11135,7 +11135,16 @@
         const tset = new Set(); // travel dest, if any
         try { const td = Game.travelDest ? Game.travelDest() : null; if (td) for (const k of td) tset.add(k); } catch (e) {}
         const _seenCount = Object.keys((Game.state.scholar || {}).seenTiles || {}).length;
-        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World (${_seenCount} seen)</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
+        // DEBUG (Steve 2026-10-06): show map data status
+        let _dbg = '';
+        try {
+          const hasMap = !!(Game.map);
+          const hasTiles = !!(Game.map && Game.map.tiles);
+          const tileCount = hasTiles ? Game.map.tiles.length : 0;
+          const sample = hasTiles && Game.map.tiles[3] && Game.map.tiles[3][3] ? Game.map.tiles[3][3].type : 'none';
+          _dbg = `<div style="font-size:10px;color:#888;">map:${hasMap} tiles:${hasTiles} count:${tileCount} sample:${sample}</div>`;
+        } catch (e) { _dbg = `<div style="font-size:10px;color:red;">debug err</div>`; }
+        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World (${_seenCount} seen)</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div>${_dbg}<div class="map minimap">${renderMap(st, tset)}</div></div>`;
         overlay.classList.remove('hidden');
         overlay.querySelector('#mapoverlay-x').onclick = () => overlay.classList.add('hidden');
         overlay.querySelector('.mapoverlay-back').onclick = () => overlay.classList.add('hidden');
