@@ -571,6 +571,13 @@
     // AUDIO (Steve 2026-10-06): the contest window gets its own sting —
     // game-show jingle curdles. No-op when no audio system is attached.
     this.audioEvent('contestCall');
+    // DRAMA (Steve 2026-10-07): contest announcement is a TV moment —
+    // full-screen banner. Gated by systemArrived inside Game.drama.
+    try {
+      let integ = 0;
+      try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
+      this.drama('contest', { type: 'announce', name: contest.name, integration: integ });
+    } catch (e) {}
 
     // Countdown: 1 day (simplified)
     this.state.pendingContest = {
@@ -2139,6 +2146,12 @@
     if (d.cheer) {
       ac.cheer = Math.min(0.15, (ac.cheer || 0) + d.cheer);
       log.push(`cheer +${Math.round(d.cheer * 100)}% win odds`);
+      // DRAMA (Steve 2026-10-07): cheering gets gold sparkles — the audience sees you
+      try {
+        let integ = 0;
+        try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
+        this.drama('contest', { type: 'cheer', integration: integ });
+      } catch (e) {}
     }
     // Studying the pattern teaches without bleeding: knowledge progression
     // for watchers, not just contestants.
@@ -2191,6 +2204,12 @@
     const pname = isWatch ? this.displayName(ac.participant) : 'You';
     ac.phase = 'done';
     if (outcome === 'won') {
+      // DRAMA (Steve 2026-10-07): winning is a TV moment — confetti + hero card
+      try {
+        let integ = 0;
+        try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
+        this.drama('contest', { type: 'winner', name: pname, integration: integ });
+      } catch (e) {}
       // MULTI-TAKE learn pacing (Steve 2026-10-06): only the primary's fate
       // teaches — otherwise one four-person contest would mint a veteran.
       if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'won'); } catch (e) {} }
@@ -2314,6 +2333,12 @@
     this.sysSay(`📺 ${contest.name} — ${how}`);
     this.sysSay('📺 ' + this._contestDeathLine(contest, how, pname));
     this.sysSay(`📺 The Death Reel will be tasteful. It won't be.`);
+    // DRAMA (Steve 2026-10-07): death on camera gets the sympathetic dim
+    try {
+      let integ = 0;
+      try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
+      this.drama('contest', { type: 'loser', name: pname, integration: integ });
+    } catch (e) {}
     if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, 'died'); } catch (e) {} }
     this.state.activeContest = null;
     if (isWatch) {
@@ -2676,6 +2701,12 @@
   // own terms, not the watcher's choices. Death odds scale with contest risk
   // — blood/extreme contests kill villagers on camera.
   G._contestVerdict = function(ac) {
+    // DRAMA (Steve 2026-10-07): the verdict is a judging moment — slow-mo
+    try {
+      let integ = 0;
+      try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
+      this.drama('contest', { type: 'judging', integration: integ });
+    } catch (e) {}
     const contest = this.contestPool().find(c => c.id === ac.contestId) || { risk: 'medium', name: ac.contestId };
     const dieBase = { low: 0, medium: 0.03, high: 0.10, extreme: 0.20 }[contest.risk] || 0;
     const winBase = { low: 0.70, medium: 0.55, high: 0.40, extreme: 0.25 }[contest.risk] || 0.5;
