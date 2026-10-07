@@ -5223,6 +5223,55 @@
       return cap * 200;
     },
 
+    // villagePower: how strong is this village? Based on TIME ALIVE, KNOWLEDGE,
+    // and POPULATION — never distance from the player. A village 2 tiles north
+    // that's lived 100 days is STRONG. Distance doesn't make you weak.
+    // (Steve 2026-10-07: "Early villages will get killed if they stay weak
+    // because they are close.")
+    villagePower(village) {
+      const days = village.day || 0;
+      const pop = village.population || 6;
+      const know = village.knowledge || 0;
+      // Days alive: 0-100 days → 0-40 power
+      const agePower = Math.min(40, days * 0.4);
+      // Knowledge: 0-20 → 0-30 power
+      const knowPower = Math.min(30, know * 1.5);
+      // Population: 6-20 → 0-30 power
+      const popPower = Math.min(30, (pop - 6) * 2.1);
+      return Math.round(agePower + knowPower + popPower);
+    },
+    // genVillageRoster: distant villages are PEOPLE, not spreadsheets.
+    // Each gets a roster of named individuals with ages and relationships.
+    // When you return after 20 days, you hear "Mara had a baby" — not "pop 14→12".
+    // (Steve 2026-10-07: the world must live whether you're there or not.)
+    genVillageRoster(village) {
+      const roster = [];
+      const n = village.population || 8;
+      // Generate adults (70%) and children (30%)
+      for (let i = 0; i < n; i++) {
+        const isChild = Math.random() < 0.3;
+        const age = isChild ? Math.floor(Math.random() * 14) + 1 : Math.floor(Math.random() * 40) + 18;
+        const nm = this.genNameForOrigin('village', true);
+        roster.push({
+          id: `${village.id}_p${i}`,
+          name: nm.name,
+          age: age,
+          alive: true,
+          partner: null,
+          children: [],
+        });
+      }
+      // Pair up some adults as partners
+      const adults = roster.filter(p => p.age >= 18);
+      for (let i = 0; i < adults.length - 1; i += 2) {
+        if (Math.random() < 0.6) {
+          adults[i].partner = adults[i+1].id;
+          adults[i+1].partner = adults[i].id;
+        }
+      }
+      village.roster = roster;
+      village.news = village.news || []; // "what happened while you were away"
+    },
     // catchUpSim: when you approach a village, simulate all days since game start.
     // They're not fresh — they've been living, foraging, competing.
     // LIVING WORLD: their knowledge EMERGES from who they are, where they are,
@@ -5235,6 +5284,10 @@
       // generate their knowledge profile on first sim (geography + people)
       if (!village.knowledgeProfile) {
         village.knowledgeProfile = this.genVillageKnowledgeProfile(village);
+      }
+      // generate their PEOPLE on first sim — they're not numbers, they're names
+      if (!village.roster) {
+        this.genVillageRoster(village);
       }
       // Fast sim: each day, they forage (depleting the world), eat, maybe grow.
       for (let d = 0; d < daysToSim; d++) {
@@ -5288,16 +5341,108 @@
       // starvation: lean days cost people, slowly. Never below 6 — a village
       // of six is the smallest viable peer: they can still trade, teach, and
       // take you in. (The old sim never starved anyone; pantries ballooned.)
+      // DEATHS HAVE NAMES (Steve 2026-10-07): the roster tracks individuals.
+      // When someone dies, it's "Joren died of hunger" — not "pop 14→13".
       if (village.pantryKcal <= 0 && forage < need) {
         village.pantryKcal = 0;
         if (Math.random() < 0.3 && village.population > 6) {
           village.population--;
+          // kill someone from the roster (oldest or weakest first)
+          const roster = village.roster || [];
+          const living = roster.filter(p => p.alive);
+          if (living.length) {
+            // hunger takes the old and the very young first
+            living.sort((a, b) => {
+              const aVuln = a.age > 60 ? 3 : a.age < 5 ? 2 : 1;
+              const bVuln = b.age > 60 ? 3 : b.age < 5 ? 2 : 1;
+              return bVuln - aVuln;
+            });
+            const victim = living[0];
+            victim.alive = false;
+            victim.deathDay = village.day;
+            victim.cause = 'hunger';
+            village.news = village.news || [];
+            if (village.news.length < 20) {
+              village.news.push(`💀 ${victim.name} died of hunger on day ${village.day}.`);
+            }
+          }
+        }
+      }
+      // BIRTHS (Steve 2026-10-07): RARE. Human gestation is 9 months — a birth
+      // only happens after the village has existed 270+ days, and even then
+      // it's uncommon. The game is a year; most playthroughs see zero births.
+      // That's realistic. (The old 2%/day was ~7 babies/year — absurd.)
+      if (village.roster && village.day >= 270 && Math.random() < 0.005) {
+        const couples = village.roster.filter(p => p.alive && p.partner && p.age >= 18 && p.age <= 40);
+        if (couples.length >= 2) {
+          const parent = couples[Math.floor(Math.random() * couples.length)];
+          const nm = this.genNameForOrigin('village', true);
+          const baby = {
+            id: `${village.id}_p${Date.now()}_${Math.floor(Math.random()*1000)}`,
+            name: nm.name,
+            age: 0,
+            alive: true,
+            partner: null,
+            children: [],
+            parents: [parent.id, parent.partner],
+          };
+          village.roster.push(baby);
+          village.population++;
+          village.news = village.news || [];
+          if (village.news.length < 20) {
+            const parentName = parent.name.split(' ')[0];
+            village.news.push(`👶 ${nm.name.split(' ')[0]} was born to ${parentName} on day ${village.day}.`);
+          }
+        }
+      }
+      // AGING: everyone gets older
+      if (village.roster) {
+        for (const p of village.roster) {
+          if (p.alive) p.age += 1/365; // fractional aging per day
+        }
+        // old age deaths (rare, natural)
+        for (const p of village.roster) {
+          if (p.alive && p.age > 75 && Math.random() < 0.005) {
+            p.alive = false;
+            p.deathDay = village.day;
+            p.cause = 'old age';
+            village.population--;
+            village.news = village.news || [];
+            if (village.news.length < 20) {
+              village.news.push(`🕯️ ${p.name} died of old age on day ${village.day}, at ${Math.floor(p.age)}.`);
+            }
+          }
         }
       }
       // knowledge grows: they learn what they forage. SLOWLY, like real people.
       // each day, small chance to deepen knowledge of a plant from their profile.
       if (Math.random() < 0.3) {
         this.villageLearn(village);
+      }
+      // TRAVELERS (Steve 2026-10-07): villages send travelers. A traveler passing
+      // through your haven means you HEAR about their village — even if you've
+      // never been there. Closer villages are heard about sooner (travelers walk).
+      // This is how you find the village 2 tiles north "pretty early" — not by
+      // stumbling into it, but because someone told you.
+      if (!village.rumored && !village.generated) {
+        const hx = 4, hy = 4; // haven at center of 9x9
+        const dist = Math.abs(village.x - hx) + Math.abs(village.y - hy);
+        // Closer = more likely to hear about. 2 tiles: ~5%/day. 8 tiles: ~1%/day.
+        const rumorChance = Math.max(0.01, 0.06 - dist * 0.007);
+        if (Math.random() < rumorChance) {
+          village.rumored = true;
+          village.rumorDay = village.day;
+          // queue the rumor for the player (delivered via gossip or map)
+          const s = this.state.scholar;
+          s.rumors = s.rumors || [];
+          const dir = this.directionTo(hx, hy, village.x, village.y);
+          s.rumors.push({
+            type: 'village',
+            villageId: village.id,
+            text: `A traveler passed through yesterday, talking about a village to the ${dir} called ${village.name}.`,
+            day: this.state.scholar.day,
+          });
+        }
       }
       village.day++;
     },
@@ -5438,6 +5583,64 @@
       }
     },
 
+    // initTileWildlife: what animals live on this tile? Based on biome.
+    // Returns { speciesId: count }. Counts are small (1-4) — these are the
+    // animals actually present, not an abstract abundance.
+    initTileWildlife(biomeType, rnd) {
+      const wildlife = {};
+      const animals = (this.data.animals || []).filter(a => (a.biomes || []).includes(biomeType));
+      // 1-3 species per tile, 1-4 individuals each
+      const nSpecies = 1 + Math.floor((rnd || Math.random)() * 3);
+      for (let i = 0; i < nSpecies && i < animals.length; i++) {
+        const a = animals[Math.floor((rnd || Math.random)() * animals.length)];
+        if (a && !wildlife[a.id]) {
+          wildlife[a.id] = 1 + Math.floor((rnd || Math.random)() * 4);
+        }
+      }
+      return wildlife;
+    },
+    // simEcology: ONE day of wildlife sim, map-wide. Called from endDay.
+    // Populations breed (logistic growth toward carrying capacity), migrate
+    // to adjacent tiles, and die from natural causes. The world lives.
+    simEcology() {
+      const K = 8; // carrying capacity per species per tile
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        const t = this.map.tiles[y][x];
+        if (!t.wildlife) t.wildlife = {};
+        // breed: logistic growth
+        for (const sid of Object.keys(t.wildlife)) {
+          const n = t.wildlife[sid];
+          if (n <= 0) { delete t.wildlife[sid]; continue; }
+          // growth rate ~20%/day, capped by K
+          const growth = n * 0.2 * (1 - n / K);
+          t.wildlife[sid] = Math.min(K, Math.round(n + growth + (Math.random() < 0.3 ? 1 : 0)));
+          // natural death: 5%/day
+          if (Math.random() < 0.05 && t.wildlife[sid] > 0) {
+            t.wildlife[sid]--;
+            if (t.wildlife[sid] <= 0) delete t.wildlife[sid];
+          }
+        }
+        // migrate: 10% chance per species to move 1 individual to adjacent tile
+        for (const sid of Object.keys(t.wildlife)) {
+          if (t.wildlife[sid] > 1 && Math.random() < 0.1) {
+            const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+            const [dx, dy] = dirs[Math.floor(Math.random() * 4)];
+            const nx = x + dx, ny = y + dy;
+            if (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) {
+              const nt = this.map.tiles[ny][nx];
+              if (!nt.wildlife) nt.wildlife = {};
+              // only migrate if the biome supports the species
+              const adef = (this.data.animals || []).find(a => a.id === sid);
+              if (adef && (adef.biomes || []).includes(nt.type)) {
+                t.wildlife[sid]--;
+                nt.wildlife[sid] = (nt.wildlife[sid] || 0) + 1;
+                if (t.wildlife[sid] <= 0) delete t.wildlife[sid];
+              }
+            }
+          }
+        }
+      }
+    },
     // mulberry32: seeded PRNG for deterministic world generation.
     // Same seed → same world. The seed is saved with the map.
     mulberry32(seed) {
@@ -5601,6 +5804,13 @@
         }
         // hard creek crossings: ~35% of creek tiles need a bridge or a swimmer.
         if (t.type === 'creek' && R() < 0.35) t.needsBridge = true;
+      }
+      // ECOLOGY (Steve 2026-10-07): each tile gets a wildlife population.
+      // Animals LIVE here — they breed, migrate, and die whether you're
+      // watching or not. Hunting depletes; absence lets them recover.
+      for (let wy = 0; wy < 9; wy++) for (let wx = 0; wx < 9; wx++) {
+        const t = tiles[wy][wx];
+        t.wildlife = this.initTileWildlife(t.type, R);
       }
       this.map = { tiles, px: 4, py: 4, worldSeed, worldSize: 9 };
       // STRICT FOG: at start you see haven and the ground south of it — the
@@ -6941,7 +7151,14 @@
       const t = this.playerTile();
       const s = this.state.scholar;
       if (s.animal || Math.random() > 0.3) return; // 30% chance per tile entry
-      const candidates = (this.data.animals || []).filter(a => (a.biomes || []).includes(t.type));
+      // ECOLOGY (Steve 2026-10-07): animals come from the LOCAL population —
+      // not thin air. If you've hunted this tile clean, it's empty. If you've
+      // been away, wildlife has recovered. The world lives.
+      const wt = this.map.tiles[this.map.py][this.map.px];
+      const wildlife = (wt && wt.wildlife) || {};
+      const localSpecies = Object.keys(wildlife).filter(sid => wildlife[sid] > 0);
+      if (!localSpecies.length) return; // hunted out — nothing here
+      const candidates = (this.data.animals || []).filter(a => localSpecies.includes(a.id) && (a.biomes || []).includes(t.type));
       if (!candidates.length) return;
       // NIGHT ECOLOGY: different animals after dark. The night has its own game —
       // opossum, raccoon, bullfrog instead of squirrel and turkey. Learn the schedule.
@@ -6954,6 +7171,8 @@
         tries++;
       } while (tries < 20 && Math.abs(ax - px) + Math.abs(ay - py) < 3);
       s.animal = { id: animal.id, mx: ax, my: ay };
+      // The animal left the tile population to wander the detail grid
+      if (wt.wildlife[animal.id] > 0) wt.wildlife[animal.id]--;
       this.say(`Movement — ${animal.description}.`);
     },
 
@@ -6998,7 +7217,14 @@
           this.say(`The ${aname} decides you're trouble and bolts!`);
           const dx2 = Math.sign(a.mx - px), dy2 = Math.sign(a.my - py);
           tryMove(a.mx + dx2 * 2, a.my + dy2 * 2) || tryMove(a.mx + dx2, a.my + dy2);
-          if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) s.animal = null;
+          if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
+            // bolted off the grid — returns to the wild population
+            const wt2 = this.map.tiles[this.map.py][this.map.px];
+            if (wt2 && wt2.wildlife && a.id) {
+              wt2.wildlife[a.id] = (wt2.wildlife[a.id] || 0) + 1;
+            }
+            s.animal = null;
+          }
         }
       } else {
         // bolt: away, fast.
@@ -14880,6 +15106,8 @@
       try { if (this.playerAtHaven()) scholar.lastHavenDay = scholar.day || 1; } catch (e) {}
       this.villageLives();
       this.villageEats();
+      // ECOLOGY (Steve 2026-10-07): wildlife lives whether you're watching or not
+      try { this.simEcology(); } catch (e) {}
       this.checkTraps();
       try { this.checkNets(); } catch (e) {}
       try { this.checkGenesis(); } catch (e) {}
