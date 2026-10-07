@@ -35,10 +35,21 @@ Both: new-files-only, private-index commit-tree recipe (-p HEAD, --add, one trip
 - **LIVE VERIFIED (14:15 CDT):** version.json serves 962c74c-20261007-191243; live index.html contains all 3 tags. Combat no longer at risk.
 
 ### Worker A — wave-2c fight play-audit
-(pending)
+(pending — replaced below)
+
+### Worker A — wave-2c fight play-audit (DONE 14:17 CDT)
+- Commit `014e3e0` (parent 358545d, linear, exactly 2 new files, +874/−0, no push by worker). Files: scripts/play-feel-20261007-wave2c.js + evidence/2026-10-07/wave2c-playtest-notes-20261007.md.
+- **All 4 PASS the deer bar.** Hushwolf — PASS, FUN (silence is the fight; wounding the lead shatters coordination). White-noise heron — PASS, FUN (locked 4-cell lane, honest 2-beat windup, sidestep dodge real). Hummice — PASS, GOOD (hum stacks 1→4, SHOUT breaks the music, earned-knowledge gates work). Speedbump turtle — PASS, GOOD slow (SNAP with zero warning, bunker at half HP, walking around is the answer).
+- Proof re-run GREEN by coordinator: 85/85 on seed 20261007, exit 0, base 014e3e0.
+- **Note:** the 4 are wave 1 in monsters.json (task mislabeled them wave-2); loot tiers 1–2.
+- Worker A's harness worked around the index.html tag bug by loading the 3 files manually (same bug coordinator already repaired + deployed live at 962c74c-20261007-191243).
+- Engine-owner backlog: burst telegraphs re-center at resolve vs declare-position windup grid (hummice live case); unreachable knownCues for hushwolf/turtle (never declare — service_mimic precedent); hummice declare falls back to deerAggro (no aggroAudio in data); antlerThrash hook + inline branch double-run hazard; data hygiene (hushwolf unreachable silence/circle phases, hummice SHOUT 'quiet' phase unbaded).
+- STATUS: verified, sequenced.
 
 ## Incident (13:45 CDT)
 - Coordinator bare-`git commit` after `git add <run-note>` SWEPT the sibling's 206 staged deletions (their cleanup) into commit 812f265 (275 files, 54,142 deletions) — the documented BARE-COMMIT SWEEP hazard, repeated despite the standing rule. Caught immediately: HEAD was still 812f265 with no sibling commit on top (reflog check), so `git reset --soft 2275cc1` restored the shared index to its armed state intact; run note then committed via the private-index route as 76e4821 (exactly 1 file). Sibling's staged cleanup untouched.
 
 ## Completion flow
-- Repair + Worker B sequenced and live. Awaiting Worker A for final completion flow.
+1. Commits verified linear: ... → 44e46b8 (bump 962c74c-20261007-191243) → 358545d (run note) → 014e3e0 (Worker A, +874/−0, 2 new files).
+2. Worker A proof re-run GREEN from committed state (85/85, seed 20261007, exit 0). Worker B proof 146/146 green per handoff (seeds 7/42/123). Index-tag proof green (45 tags, pinned order).
+3. (pending push/bump/live-verify)
