@@ -72,7 +72,7 @@
       if (!game.inCombat()) {
         return { ok: false, why: 'This costs your combat turn — only usable in a fight.' };
       }
-      game.spendCombatAction('ability');
+      game.spendCombatAction('focus');
       return { ok: true };
     }
   };
@@ -515,11 +515,16 @@
     'game_sense.read_stance': function (game, target) {
       // Once per fight: reveal monster's likely next move (knowledge-gated).
       var s = game.state.scholar;
-      if (s.stanceReadFight === game.tbfight.id) {
+      // NULL-GUARD (hunter loop 2026-10-07): tbfight.id must exist for the
+      // once-per-fight check — undefined===undefined made the FIRST read of
+      // every fight claim "already read". (tbfight.id is now set at creation,
+      // but old saves / odd states still guard here.)
+      var fid = game.tbfight ? game.tbfight.id : null;
+      if (fid != null && s.stanceReadFight === fid) {
         game.say('You\'ve already read this fight. Trust what you saw. (Read Stance — once per fight.)');
         return false;
       }
-      s.stanceReadFight = game.tbfight.id;
+      s.stanceReadFight = fid;
       // Pick the first alive monster as the read target.
       var m = game.tbFighter(target);
       if (!m && game.tbfight) {
@@ -562,20 +567,33 @@
     },
 
     'field_dressing.dress_game': function (game, target) {
-      // Break down game: 1.3x meat, usable parts.
+      // Break down game: convert a carcass to usable meat + parts.
       var s = game.state.scholar;
-      // Find the most recent corpse or hunted animal.
-      var corpses = game.state.corpses || [];
-      if (!corpses.length) {
-        game.say('No game to dress. Hunt something first, then break it down clean. (Field Dress)');
+      // Find the most recent unprocessed carcass in the pack. (Hunted game
+      // lands in the inventory as foodCarcass — state.corpses is the
+      // person/monster death ledger, which carries no meat.)
+      var inv = s.inventory || [];
+      var idx = -1;
+      for (var i = inv.length - 1; i >= 0; i--) {
+        var it = inv[i];
+        if (it && it.foodKind === 'meat' && it.foodState === 'carcass' && !it.charred) { idx = i; break; }
+      }
+      if (idx === -1) {
+        game.say('No game to dress. Hunt or trap something first, then break it down clean. (Field Dress)');
         return false;
       }
-      var c = corpses[corpses.length - 1];
-      var baseYield = c.meatYield || 100;
-      var yield_ = Math.round(baseYield * 1.3);
-      game.say('You work fast and clean — hide, sinew, bone, all usable. +' + yield_ + ' kcal of meat, plus parts. (Field Dress — 1.3x yield)');
-      // Add to inventory (simplified — real impl would use food system)
+      var c = inv[idx];
+      // NO DOUBLE-DIP (hunter loop 2026-10-07): the hunt.meat_yield modifier
+      // is already baked into hiddenKcal at the kill — your skill earned the
+      // bigger carcass then. Dressing converts it to usable meat + parts; it
+      // multiplies nothing. (The old impl re-multiplied ×1.3 on top.)
+      var yield_ = Math.round(c.hiddenKcal || 100);
+      var mult = 1;
+      try { mult = game.modTarget('hunt.meat_yield', 100) / 100; } catch (e) {}
+      var multTxt = mult > 1.001 ? ' (Field Dressing ×' + (Math.round(mult * 100) / 100) + ' — your skill kept more of the carcass.)' : '';
+      inv.splice(idx, 1);
       s.kcal = (s.kcal || 0) + yield_;
+      game.say('You work fast and clean — hide, sinew, bone, all usable. +' + yield_ + ' kcal of meat, plus parts.' + multTxt + ' (Field Dress)');
       return true;
     },
 
@@ -587,6 +605,14 @@
     'stalk.stalk_prey': function (game, target) {
       var s = game.state.scholar;
       s.stalkActive = true;
+      // STALK CALMS (hunter loop 2026-10-07): the promise is "animals won't
+      // flee your approach" — if an animal encounter is active, the slow
+      // approach settles it. Its awareness drops; the flag still covers the
+      // next strike (preyReaction consumes it there).
+      try {
+        var a = s.animal;
+        if (a) a.aware = Math.min(a.aware == null ? 0.6 : a.aware, 0.2);
+      } catch (e) {}
       game.say('You become uninteresting. Just another shadow, just wind in grass. Animals won\'t flee your approach — until you act. (Stalk — once per approach.)');
       return true;
     },

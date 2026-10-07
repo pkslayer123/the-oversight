@@ -5084,6 +5084,7 @@
             return ft;
           });
           this.tbfight = {
+            id: tbS.id || ('f' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e9).toString(36)),
             fighters,
             order: (typeof S !== 'undefined' && S.combat && S.combat.turnOrder)
               ? S.combat.turnOrder(fighters) : fighters.map(f => f.key),
@@ -7358,6 +7359,16 @@
         tries++;
       } while (tries < 20 && Math.abs(ax - px) + Math.abs(ay - py) < 3);
       s.animal = { id: animal.id, mx: ax, my: ay };
+      // LAY IN WAIT (hunter loop 2026-10-07): the ambush you laid holds for
+      // the next animal encounter — it starts with you hidden (aware 0, the
+      // way the encounters.js spawn does it explicitly).
+      try {
+        if ((this.state.scholar || {}).layWaitActive) {
+          this.state.scholar.layWaitActive = false;
+          s.animal.aware = 0;
+          this.say('(Lay in Wait: you are part of the landscape. It has no idea you are here.)');
+        }
+      } catch (e) {}
       // The animal left the tile population to wander the detail grid
       if (wt.wildlife[animal.id] > 0) wt.wildlife[animal.id]--;
       this.say(`Movement — ${animal.description}.`);
@@ -15609,6 +15620,11 @@
       const syns = this.data.synergies || [];
       sch.synergies = sch.synergies || [];       // discovered synergy ids
       sch.synergyAttempts = sch.synergyAttempts || {};  // synId -> attempt count
+      // SYNERGY LEGS (hunter loop 2026-10-07): a leg can name another synergy
+      // (apex_predator requires clean_kill). abilityLevel() returns 0 for
+      // non-abilities, so synergy legs are satisfied by DISCOVERY — you bring
+      // a mastered synergy to bear by holding it.
+      const synIds = new Set(syns.map(x => x.id));
       for (const syn of syns) {
         if (sch.synergies.includes(syn.id)) continue;   // already discovered
         const dm = syn.discovery_method;
@@ -15619,10 +15635,15 @@
         // chains where missing one ability blocks the whole tree.
         const reqsAny = syn.requires_any || null;
         const reqs = syn.requires || [];
+        // PATH-AWARE (hunter loop 2026-10-07): the effective leg lists are the
+        // requires_any paths (or [requires] for classic synergies). Only paths
+        // containing the used ability can progress on this use.
+        const legLists = reqsAny || [reqs];
         // PREFIX-AWARE (fix 2026-10-07): requires may have tech:/skill: prefixes,
         // but usedId is bare. Check both bare and prefixed forms.
-        const matchesUsed = reqs.some(r => r === usedId || r === `tech:${usedId}` || r === `skill:${usedId}`);
-        if (!matchesUsed) continue;
+        const legMatchesUsed = (r) => r === usedId || r === `tech:${usedId}` || r === `skill:${usedId}`;
+        const livePaths = legLists.filter(pl => pl.some(legMatchesUsed));
+        if (!livePaths.length) continue;
         // Must hold all requirements at minLevel to make progress.
         // SYNERGY ACROSS BOUNDARIES (Steve 2026-10-07): requires can be
         // abilities, skills, OR techniques. The best synergies need adjacent
@@ -15630,6 +15651,8 @@
         // + your skill level + an ability = something greater.
         const minLvl = syn.minLevel || 1;
         const hasReq = (rid) => {
+          // synergy leg: discovered counts as held
+          if (synIds.has(rid)) return (sch.synergies || []).includes(rid);
           // technique (from village codex): must know it
           if (rid.startsWith('tech:')) {
             const tid = rid.slice(5);
@@ -15643,35 +15666,43 @@
           // ability (default)
           return this.abilityLevel(rid) >= minLvl;
         };
-        // Check requires (all must match) OR requires_any (any path must match)
+        // Check requires (all must match) OR requires_any (any LIVE path —
+        // one containing the used ability — must match)
         let reqsMet = false;
         if (reqsAny) {
-          reqsMet = reqsAny.some(path => path.every(hasReq));
+          reqsMet = livePaths.some(path => path.every(hasReq));
         } else {
           reqsMet = reqs.every(hasReq);
         }
         if (!reqsMet) continue;
-        // PREFIX-AWARE (fix 2026-10-07): the "other" leg must exclude the
+        // PREFIX-AWARE (fix 2026-10-07): the "other" legs must exclude the
         // used leg in bare AND prefixed form — otherwise a tech leg matches
         // itself and simultaneous/same-target checks compare wrong ids.
-        const otherId = reqs.find(r => r !== usedId && r !== `tech:${usedId}` && r !== `skill:${usedId}`);
+        // PATH-AWARE (hunter loop 2026-10-07): other legs come from the live
+        // paths' union, not just requires.
+        const otherLegs = [...new Set(livePaths.flat())].filter(r => !legMatchesUsed(r));
         const log = sch.abilityUseLog || [];
+        // otherSeen: has this "other" leg been brought to bear? Synergy legs
+        // count when discovered (mastery travels with you); ability/skill/tech
+        // legs count when the use log shows them under the method's conditions.
+        const otherSeen = (r, test) => synIds.has(r) ? (sch.synergies || []).includes(r) : log.some(u => u.id === r && test(u));
         let combined = false;
         if (dm.type === 'simultaneous') {
           // Both used in the same day-part.
-          combined = log.some(u => u.id === otherId && u.day === ctx.day && u.part === ctx.part);
+          combined = otherLegs.some(r => otherSeen(r, u => u.day === ctx.day && u.part === ctx.part));
         } else if (dm.type === 'sequential') {
           // Used second in the defined order, other was first earlier today.
-          const order = dm.order || reqs;
-          if (usedId === order[1]) {
-            combined = log.some(u => u.id === order[0] && u.day === ctx.day);
+          // PATH-AWARE: without an explicit dm.order, use the first live path.
+          const order = dm.order || livePaths[0] || reqs;
+          if (usedId === order[1] || `tech:${usedId}` === order[1] || `skill:${usedId}` === order[1]) {
+            combined = otherSeen(order[0], u => u.day === ctx.day);
           }
         } else if (dm.type === 'same_target') {
           // Both applied to the same target today.
-          combined = !!(ctx.target && log.some(u => u.id === otherId && u.target === ctx.target && u.day === ctx.day));
+          combined = !!(ctx.target && otherLegs.some(r => otherSeen(r, u => u.target === ctx.target && u.day === ctx.day)));
         } else if (dm.type === 'sustained') {
           // Both used today — counts as one day toward a 3-day streak.
-          const otherUsedToday = log.some(u => u.id === otherId && u.day === ctx.day);
+          const otherUsedToday = otherLegs.some(r => otherSeen(r, u => u.day === ctx.day));
           if (otherUsedToday) {
             const dayKey = syn.id + '_days';
             const lastKey = syn.id + '_lastday';
@@ -15725,7 +15756,10 @@
         const synthIds = new Set();
         for (const syn of syns) {
           if (sch.synergies.includes(syn.id)) continue;
-          const reqs2 = syn.requires || [];
+          // PATH-AWARE (hunter loop 2026-10-07): multi-path synergies keep
+          // their tech/skill legs in requires_any — union the paths.
+          const reqsAny2 = syn.requires_any || null;
+          const reqs2 = reqsAny2 ? [...new Set(reqsAny2.flat())] : (syn.requires || []);
           if (!reqs2.some(r => r === usedId)) continue; // used ability must be a leg
           const minLvl2 = syn.minLevel || 1;
           for (const leg of reqs2) {
@@ -15803,12 +15837,16 @@
       const sch = this.state.scholar;
       if (!sch) return;
       const syns = this.data.synergies || [];
+      // SYNERGY LEGS (hunter loop 2026-10-07): see checkSynergyDiscovery —
+      // a leg naming another synergy is held when that synergy is discovered.
+      const synIds = new Set(syns.map(x => x.id));
       const active = [];
       for (const syn of syns) {
         if (!(sch.synergies || []).includes(syn.id)) continue;
         const minLvl = syn.minLevel || 1;
         // PREFIX-AWARE (fix 2026-10-07): tech:/skill: requires need special checks
         const hasReq = (rid) => {
+          if (synIds.has(rid)) return (sch.synergies || []).includes(rid);
           if (rid.startsWith('tech:')) {
             return !!((sch.codex || {}).techniques || {})[rid.slice(5)];
           }
@@ -15817,7 +15855,11 @@
           }
           return this.abilityLevel(rid) >= minLvl;
         };
-        const held = (syn.requires || []).every(hasReq);
+        // PATH-AWARE (hunter loop 2026-10-07): requires_any paths gate
+        // activation too. An empty requires[] used to mean "always active" —
+        // a discovered-but-unheld multi-path synergy fired forever.
+        const paths = syn.requires_any || [syn.requires || []];
+        const held = paths.some(p => p.every(hasReq));
         if (held) active.push(syn.id);
       }
       sch.activeSynergies = active;
@@ -16912,6 +16954,10 @@
       }
 
       this.tbfight = {
+        // FIGHT ID (hunter loop 2026-10-07): read_stance keys "once per fight"
+        // off tbfight.id — it must exist, or undefined===undefined makes the
+        // first read claim "already read".
+        id: 'f' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e9).toString(36),
         fighters,
         order: S.combat.turnOrder(fighters),
         turnIdx: 0, round: 1,
@@ -18162,7 +18208,11 @@
       // RANGED: no ammo, no shot.
       // FLASHBLIND: the moth's flash leaves spots in your eyes — your strike
       // may catch only afterimages. (Mirrors the pocket_sand miss rule.)
-      if (p.blindTurns > 0) {
+      // TAKE AIM (hunter loop 2026-10-07): "cannot miss" — a guaranteed aimed
+      // shot punches through the afterimages. The aim is still consumed.
+      let aimGuaranteed = false;
+      try { aimGuaranteed = !!((this.state.scholar || {}).aimBonus || {}).guaranteed; } catch (e) {}
+      if (p.blindTurns > 0 && !aimGuaranteed) {
         p.blindTurns -= 1;
         if (Math.random() < 0.5) {
           p.acted = true;
@@ -18171,6 +18221,9 @@
           return true;
         }
         this.say('You blink the spots away and strike through them.');
+      } else if (p.blindTurns > 0 && aimGuaranteed) {
+        p.blindTurns -= 1;
+        this.say('Spots swim in your eyes — but the aim holds. The shot goes where you pictured it. (Take Aim — cannot miss.)');
       }
       if (w.ammo) {
         if (this.ammoCount(w.ammo) < 1) {
@@ -18197,6 +18250,10 @@
         if (f.round === 1) {
           const paMult = this.modTarget('combat.strike_damage', 1, { round: 1 });
           if (paMult > 1) { d = Math.round(d * paMult); this.say('PATIENT AIM: first strike, doubled.'); }
+          // AMBUSH (hunter loop 2026-10-07): the ambush passive — first
+          // strikes hit harder. Declared in data, previously never consumed.
+          const amMult = this.modTarget('combat.first_strike_damage', 1, { round: 1 });
+          if (amMult > 1) { d = Math.round(d * amMult); this.say(`AMBUSH: first blood. ×${amMult}.`); }
         }
       } catch (e) {}
       // THE RESERVE: food is humanity's superpower. A full furnace hits harder —
@@ -18218,10 +18275,18 @@
         // true name is never free, even mid-fight.
         const tName = this.encShortLabel(t) || this.encTheName(t);
         // Armor: flat reduction vs physical damage only
-        if (wType === 'physical' && mdef.armor > 0) {
+        // DEAD AIM (hunter loop 2026-10-07): "armor won't save them" — the
+        // ignoreArmorNext flag is set by dead_aim_shot and consumed here, on
+        // the next strike. Without this it lingered forever: one Dead Aim
+        // meant permanent armor-piercing on every later strike.
+        let ignoreArmor = false;
+        try { ignoreArmor = !!this.state.scholar.ignoreArmorNext; this.state.scholar.ignoreArmorNext = false; } catch (e) {}
+        if (wType === 'physical' && mdef.armor > 0 && !ignoreArmor) {
           const absorbed = Math.min(d, mdef.armor);
           d -= absorbed;
           if (absorbed > 0) this.say(`(${tName}'s hide absorbs ${absorbed}.)`);
+        } else if (ignoreArmor && wType === 'physical' && mdef.armor > 0) {
+          this.say(`(${tName}'s hide might as well not be there. (Dead Aim — armor ignored.))`);
         }
         // Resistances: percentage reduction per type (negative = vulnerability)
         let res = (mdef.resistances || {})[wType] || 0;
@@ -18258,6 +18323,13 @@
           }
         }
         d = Math.max(1, d); // always at least 1 damage
+        // APEX PREDATOR (hunter loop 2026-10-07): "you are the thing other
+        // things fear" — bonus damage vs beasts. Declared in data, previously
+        // never consumed.
+        try {
+          const vbMult = this.modTarget('combat.vs_beast_damage', 1);
+          if (vbMult > 1) { d = Math.round(d * vbMult); this.say(`APEX PREDATOR: you are the thing other things fear. ×${vbMult}.`); }
+        } catch (e) {}
       }
       p.acted = true;
       // BETTER HUMAN: fighting is strength and agility practice.

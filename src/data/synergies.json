@@ -1249,6 +1249,12 @@
       }
     ],
     "discovery": "You see it all at once \u2014 the wind, the angle, the moment. One shot.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Line up the perfect shot \u2014 patience and knowledge, together.",
+      "tease1": "For a heartbeat the wind, the angle, and the animal\u2019s attention all lined up. Then it passed.",
+      "tease2": "Twice now the perfect moment has almost happened \u2014 setup and reading, together. Something is waiting in that combination."
+    },
     "paths": [
       "hunter"
     ]
@@ -1286,6 +1292,12 @@
       }
     ],
     "discovery": "The blood tells you where it's going. You just have to listen.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Wound it, then stay with the trail. Don\u2019t let it go.",
+      "tease1": "The blood told you where it was going, and your feet already knew. For a moment the trail felt\u2026 complete.",
+      "tease2": "Twice you\u2019ve stayed with a blood trail to the end. The woods are teaching you a longer patience."
+    },
     "paths": [
       "hunter"
     ]
@@ -1324,6 +1336,12 @@
       }
     ],
     "discovery": "You don't hunt anymore. You harvest.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Bring your mastered hunts to bear \u2014 the clean kill, the long trail \u2014 alongside new craft.",
+      "tease1": "You moved through the woods and the woods noticed. Something in you has changed since the first clean kills.",
+      "tease2": "The animals watch you differently now. Twice you\u2019ve felt it \u2014 the hunted thing in you, and the hunter, agreeing."
+    },
     "paths": [
       "hunter"
     ]
