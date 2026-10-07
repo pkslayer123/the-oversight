@@ -11,6 +11,7 @@
 //   - no_feature_cut: every existing conversation feature remains reachable — mapped, not removed (code: DIALOGUE_FEATURE_MAP, Steve 2026-10-06)
 //   - subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: dialogueResponses, Steve 2026-10-06)
 //   - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: dialogueResponses + dlg:more/dlg:react, 2026-10-06)
+//   - soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -55,7 +56,7 @@
     invite: 'positive beat + trust → "want to come with us?" (contextual)',
     // CONFLICT
     confrontation: 'doubts → "I need to ask you something" (contextual)',
-    lies: 'their story → "that doesn\'t add up" (when you have doubts)',
+    lies: 'their story → "that doesn\'t add up" (soft probe: rattles them, mounts evidence that makes the hard confrontation more likely to crack them)',
     observation: 'contextual — "I\'ve been watching you" (2nd convo+ or doubts)',
     // PERSONAL (via subject menu — explicitly changing the subject)
     past: 'subject menu → ask:past',
@@ -181,6 +182,9 @@
       out.push({ id: 'dlg:cant', label: voice('"Can\'t right now."', '"I wish I could, but not right now."', '"Not right now, sorry."') });
     } else {
       // Small talk — natural responses.
+      // NOTE: this dialogueResponses is OVERRIDDEN by convo-beats.js (beat-tagged
+      // replies) — the live menu builder. Menu-shape changes belong there; the
+      // dlg: turn handlers below are still live (convo-beats wraps convoTurn).
       if (!threadDry) out.push({ id: 'dlg:more', label: voice('"Yeah?"', '"Mmhm."', '"Go on."') });
       out.push({ id: 'dlg:react', label: voice('"Huh."', '"Oh nice."', '"I see."') });
     }
@@ -297,15 +301,34 @@
       }
 
       if (dlg === 'help') {
-        // "How can I help?" — engage with their want.
+        // "How can I help?" — engage with their want (Steve 2026-10-06).
+        // The NPC must STATE the favor concretely, not loop on "Here's the thing —".
         c.transcript.push({ who: 'you', text: '"How can I help?"' });
         try { this.trustGain(vid, 2); } catch (e) {}
-        // Route to the want system's favor flow, or a generic beat.
-        const line = '"Really? ...Okay. Here\'s the thing —"';
+        // Get the specific favor from the want system, or generate one.
+        let favorLine = null;
+        try {
+          const want = c.want;
+          if (want && want.id === 'ask_favor') {
+            // State a concrete favor based on NPC needs (Steve 2026-10-06).
+            const n = this.npcNeeds ? this.npcNeeds(vid) : {};
+            if (n.hunger > 70) favorLine = '"Really? ...Okay. Food. Anything you can spare - I\'m running on empty."';
+            else if (n.fear > 70) favorLine = '"Really? ...Okay. Just - stay close tonight? I don\'t want to be alone when it gets dark."';
+            else if (n.energy < 30) favorLine = '"Really? ...Okay. Could you take my watch for a bit? I\'m running on empty."';
+            else favorLine = '"Really? ...Okay. I need an extra pair of hands tomorrow. Can you help?"';
+          } else {
+            favorLine = '"Really? ...Thank you. I\'ll let you know what I need."';
+          }
+        } catch (e) {
+          favorLine = '"Really? ...Thank you for offering."';
+        }
+        const line = favorLine;
         c.transcript.push({ who: 'them', text: line });
         this.sayLine(vid, line);
-        // Mark that help was offered — the want system picks it up.
+        // Mark help offered AND resolve the want so we don't loop.
+        // The favor is now stated; the beat should move on.
         c.offeredHelp = true;
+        if (c.want) c.want.stage = 1; // engaged, not looping
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
       }
 
@@ -334,12 +357,36 @@
       }
 
       if (dlg === 'doubt') {
-        // "That doesn't add up" — confrontation.
+        // "That doesn't add up" — a SOFT PROBE, distinct from the hard
+        // confrontation (the confront: choice, added by truth.js).
+        // DETECTIVE (Steve 2026-10-06): this used to be a dead verb — a
+        // flavor line with no mechanics sitting next to the real
+        // confrontation, so players could pick it and never find the verb
+        // that actually works. Now it's real: the probe rattles them and
+        // mounts 'prodded' evidence on the first open doubt, which raises
+        // the odds that a later hard confrontation cracks them (truth.js).
+        // Distinct verb, real effect, honest fiction.
         c.transcript.push({ who: 'you', text: '"That doesn\'t quite add up."' });
         try {
           if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, -1);
         } catch (e) {}
-        const line = '"...What\'s that supposed to mean?" Their voice goes careful.';
+        let prods = 0;
+        try {
+          const doubts = (typeof this.getDoubts === 'function' && this.getDoubts(vid)) || [];
+          const d = doubts[0];
+          if (d) {
+            d.evidence = d.evidence || [];
+            const dayN = (this.state.scholar || {}).day || 0;
+            d.evidence.push('prodded (day ' + dayN + ') — got careful');
+            prods = d.evidence.filter(e => String(e).indexOf('prodded') === 0).length;
+          }
+        } catch (e) {}
+        // The fiction tracks the pressure: repeated prods visibly rattle them.
+        const line = prods <= 1
+          ? '"...What\'s that supposed to mean?" Their voice goes careful.'
+          : prods === 2
+          ? '"What are you getting at?" A glance away, then back. They\'re choosing their words now.'
+          : 'They\'re rattled — hands busy, eyes everywhere but on you. "I\'ve told you what I\'ve told you."';
         c.transcript.push({ who: 'them', text: line });
         this.sayLine(vid, line);
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };

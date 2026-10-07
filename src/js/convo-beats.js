@@ -12,6 +12,7 @@
 //   - bridge_on_shift: topic changes speak a bridge line tied to the old topic (code: bridgeLine, Steve 2026-10-06)
 //   - no_repeat_replies: reply pools rotate via convoPickCycle — two conversations never show identical menus (code: dialogueResponses, Steve 2026-10-06)
 //   - four_rules_kept: transcript_cap, one_beat_turns, tap_advance, history_view untouched (code: conversation.js ontology)
+//   - probe_on_news_and_small: the "That doesn't add up" soft probe is offered on news and small beats (wherever the hard confrontation is reachable); withheld on feeling/offer beats (code: dialogueResponses, Steve 2026-10-06)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -44,7 +45,19 @@
     switch (thread) {
       case 'request': return 'question';   // they asked to talk — there's a reason
       case 'secret': return 'news';
-      case 'want': return 'offer';          // they need something from you
+      case 'want': {
+        // Distinguish by want ID (Steve 2026-10-06).
+        // Only ask_favor is truly an 'offer' (they need something FROM you).
+        // The DIALOGUE_FEATURE_MAP specifies the correct beat per want type.
+        const wid = c && c.want && c.want.id;
+        if (wid === 'ask_favor') return 'offer';
+        if (wid === 'seek_comfort') return 'feeling';
+        if (wid === 'share_news') return 'news';
+        if (wid === 'warn_you') return 'news';
+        if (wid === 'curious') return 'question';
+        if (wid === 'just_company') return 'small';
+        return 'offer'; // fallback for unknown wants
+      }
       case 'taughtref': return 'news';
       case 'recall': return 'news';
       case 'grief': return 'feeling';
@@ -102,9 +115,28 @@
   }
 
   // beatOf: the current beat. Reads the tag — never guesses from text.
+  // Re-classifies 'want' threads by want ID (Steve 2026-10-06): the lastBeat
+  // is cached from the opening, before c.want is set, so it may have the
+  // wrong tag for the actual want type.
   Game.beatOf = function (vid) {
     const c = this.convoGet(vid);
-    if (c.lastBeat && c.lastBeat.tag) return c.lastBeat;
+    if (c.lastBeat && c.lastBeat.tag) {
+      // Re-classify want threads by want ID — the cached tag may be wrong.
+      if (c.lastBeat.tag === 'offer' && c.thread === 'want' && c.want && c.want.id) {
+        const wid = c.want.id;
+        let newTag = 'offer';
+        if (wid === 'seek_comfort') newTag = 'feeling';
+        else if (wid === 'share_news') newTag = 'news';
+        else if (wid === 'warn_you') newTag = 'news';
+        else if (wid === 'curious') newTag = 'question';
+        else if (wid === 'just_company') newTag = 'small';
+        // ask_favor stays 'offer'
+        if (newTag !== 'offer') {
+          return { tag: newTag, topic: c.lastBeat.topic, line: c.lastBeat.line };
+        }
+      }
+      return c.lastBeat;
+    }
     // Fallback for conversations started before tagging (or nonstandard flows).
     const tag = threadBeatTag(c.thread, c);
     return { tag, topic: c.thread || 'small', line: null };
@@ -258,6 +290,11 @@
     const pools = REPLY_POOLS[tag] || REPLY_POOLS.small;
     const topicPool = pools[topic] || pools._default || REPLY_POOLS.small._default;
 
+    // THREAD DRY (Steve 2026-10-06): "tell me more" is honest only while the
+    // thread has beats. Once dry, drop it and let the thread wind down.
+    // (This was in convo-dialogue.js but lost in the beats override.)
+    const threadDry = !!(c.thread && c.threadDryFor && c.thread === c.threadDryFor);
+
     // Doubts unlock confrontation — contextual, not menued.
     let hasDoubts = false;
     try { hasDoubts = this.getDoubts && this.getDoubts(vid).length > 0; } catch (e) {}
@@ -266,6 +303,8 @@
     const seen = new Set();
     for (const entry of topicPool) {
       if (seen.has(entry.id)) continue;
+      // Skip "tell me more" if the thread is dry.
+      if (threadDry && entry.id === 'dlg:more') continue;
       seen.add(entry.id);
       const label = (typeof this.convoPickCycle === 'function')
         ? this.convoPickCycle(vid, 'reply:' + tag + ':' + topic + ':' + entry.id, entry.v)
@@ -275,8 +314,14 @@
       out.push({ id: entry.id, label });
     }
 
-    // Doubt surfaces on news beats when you have doubts.
-    if (tag === 'news' && hasDoubts && !seen.has('dlg:doubt')) {
+    // Doubt surfaces on news AND small beats when you have doubts.
+    // DETECTIVE (Steve 2026-10-06): the hard confrontation (confront:,
+    // truth.js) is offered on every beat, so the soft probe must be
+    // reachable wherever the player can confront — otherwise the
+    // soften-then-confront tactic is unplayable. Withheld on feeling/offer
+    // beats: pressing a suspicion while they're grieving or asking for help
+    // reads cruel.
+    if ((tag === 'news' || tag === 'small') && hasDoubts && !seen.has('dlg:doubt')) {
       out.push({ id: 'dlg:doubt', label: '"That doesn\'t quite add up."' });
     }
     // Theorize surfaces contextually on mystery beats.
