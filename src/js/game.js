@@ -5223,6 +5223,65 @@
       return cap * 200;
     },
 
+    // studyVillageCodex: LINK THE CODICES (Steve 2026-10-07).
+    // Spend time studying a village's codex. You learn what they know that
+    // you don't — techniques, recipes, plant knowledge, animal lore.
+    // Each village's strategy gives DIFFERENT knowledge. A fisher's codex
+    // teaches you things a farmer's never would. That's why you link them.
+    studyVillageCodex(villageId) {
+      const v = (this.state.otherVillages || []).find(x => x.id === villageId);
+      if (!v || !v.codex) return 'No codex here.';
+      // must be at the village (or have joined it)
+      const px = this.map.px, py = this.map.py;
+      const dist = Math.abs(v.x - px) + Math.abs(v.y - py);
+      const joined = (this.state.scholar.joinedVillage === villageId);
+      if (dist > 2 && !joined) return 'You need to be at the village to study their codex.';
+      const learned = [];
+      const scholar = this.state.scholar;
+      scholar.codex = scholar.codex || { plants: {}, techniques: {}, recipes: {}, animals: {} };
+      // plants: learn what they know deeper than you
+      for (const [pid, entry] of Object.entries(v.codex.plants || {})) {
+        const mine = (scholar.codex.plants || {})[pid];
+        if (!mine || (mine.level || 0) < (entry.level || 0)) {
+          scholar.codex.plants = scholar.codex.plants || {};
+          scholar.codex.plants[pid] = { level: entry.level, learnedFrom: v.name };
+          const pdef = (this.data.plants || []).find(p => p.id === pid);
+          learned.push(`🌿 ${(pdef || {}).name || pid} (L${entry.level})`);
+        }
+      }
+      // techniques: learn their strategy's signature moves
+      for (const [tid, entry] of Object.entries(v.codex.techniques || {})) {
+        const mine = (scholar.codex.techniques || {})[tid];
+        if (!mine) {
+          scholar.codex.techniques = scholar.codex.techniques || {};
+          scholar.codex.techniques[tid] = { level: entry.level, learnedFrom: v.name, strategy: entry.strategy };
+          learned.push(`🔧 ${tid.replace(/_/g, ' ')} (${entry.strategy})`);
+        }
+      }
+      // recipes: learn their food ways
+      for (const [rid, entry] of Object.entries(v.codex.recipes || {})) {
+        const mine = (scholar.codex.recipes || {})[rid];
+        if (!mine) {
+          scholar.codex.recipes = scholar.codex.recipes || {};
+          scholar.codex.recipes[rid] = { known: true, learnedFrom: v.name };
+          learned.push(`🍲 ${rid.replace(/_/g, ' ')}`);
+        }
+      }
+      // animals: learn their territory's wildlife
+      for (const [aid, entry] of Object.entries(v.codex.animals || {})) {
+        const mine = (scholar.codex.animals || {})[aid];
+        if (!mine) {
+          scholar.codex.animals = scholar.codex.animals || {};
+          scholar.codex.animals[aid] = { level: entry.level, learnedFrom: v.name };
+          const adef = (this.data.animals || []).find(a => a.id === aid);
+          learned.push(`🐾 ${(adef || {}).name || aid}`);
+        }
+      }
+      // costs time: studying is a day-part activity
+      try { this.spendDayPart(1); } catch (e) {}
+      if (!learned.length) return `${v.name}'s codex holds nothing you don't already know.`;
+      return `You study ${v.name}'s codex (${v.knowledgeProfile?.focus || 'survivors'}). Learned: ${learned.join(', ')}.`;
+    },
     // villagePower: how strong is this village? Based on TIME ALIVE, KNOWLEDGE,
     // and POPULATION — never distance from the player. A village 2 tiles north
     // that's lived 100 days is STRONG. Distance doesn't make you weak.
@@ -5313,12 +5372,28 @@
       const effKnow = Math.max(village.knowledge || 0, plantCount / 3);
       const perPerson = (1500 + Math.random() * 700) * Math.min(1.8, 1 + 0.12 * effKnow);
       const need = village.population * 2000;
+      // STRATEGY MATTERS (Steve 2026-10-07): each village's survival strategy
+      // gives them an edge in their domain. Fishers pull more from water,
+      // farmers from fields, etc. This isn't flavor — it's why their codex
+      // is worth linking. Different strategies, different strengths.
+      const focus = (village.knowledgeProfile || {}).focus || 'forager';
+      const turf = this.turfKcal(village.x, village.y);
+      let strategyBonus = 1.0;
+      // check if their turf matches their strategy
+      const tileTypes = {};
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const t = this.tileAt(village.x + dx, village.y + dy);
+        if (t) tileTypes[t.type] = (tileTypes[t.type] || 0) + 1;
+      }
+      if (focus === 'fisher' && ((tileTypes['creek'] || 0) + (tileTypes['wetland'] || 0) >= 2)) strategyBonus = 1.3;
+      else if (focus === 'farmer' && ((tileTypes['meadow'] || 0) >= 3)) strategyBonus = 1.3;
+      else if (focus === 'forager' && ((tileTypes['grove'] || 0) + (tileTypes['forest_floor'] || 0) >= 4)) strategyBonus = 1.25;
+      else if (focus === 'scavenger' && ((tileTypes['ruin'] || 0) >= 1)) strategyBonus = 1.2;
       // THE LAND SETS THE CEILING. They take what their turf grows — the
       // rest is ranging, traps, and work the sim doesn't map, covering about
       // 60% of need. Strangers start near 60% self-sufficient and learn.
       // A stripped turf means lean days; lean days mean hunger.
-      const turf = this.turfKcal(village.x, village.y);
-      const fromTurf = Math.min(village.population * perPerson, turf);
+      const fromTurf = Math.min(village.population * perPerson * strategyBonus, turf);
       const stillHungry = Math.max(0, need - fromTurf);
       const ranged = Math.min(stillHungry, need * 0.6);
       const forage = fromTurf + ranged;
@@ -5524,10 +5599,50 @@
           profile.plants[p.id] = { level: 1 + Math.floor(Math.random() * 2), learnedDay: 0 }; // L1-L2
         }
       }
-      // village.codex mirrors the profile so villageTalk can trade knowledge both ways
-      village.codex = village.codex || { plants: {} };
+      // VILLAGE CODEX (Steve 2026-10-07): each village keeps its own codex —
+      // a body of knowledge worth linking to. Not just plants: techniques,
+      // recipes, animal lore. Each strategy (fisher/farmer/forager/scavenger)
+      // has DISTINCT knowledge. A fishing village knows things a farming
+      // village doesn't, and vice versa. That's why you link codices.
+      village.codex = village.codex || { plants: {}, techniques: {}, recipes: {}, animals: {} };
       for (const [pid, e] of Object.entries(profile.plants)) {
         village.codex.plants[pid] = { level: e.level, identifiedDay: 0 };
+      }
+      // STRATEGY TECHNIQUES: each focus has signature survival techniques
+      const strategyTechniques = {
+        fisher: ['net_mending', 'tide_reading', 'smoke_preserving'],
+        farmer: ['seed_saving', 'soil_reading', 'root_cellaring'],
+        forager: ['plant_tracking', 'season_reading', 'trail_blazing'],
+        scavenger: ['salvage_sight', 'tool_repair', 'ruin_reading'],
+      };
+      const techs = strategyTechniques[profile.focus] || strategyTechniques.forager;
+      for (const tech of techs) {
+        village.codex.techniques[tech] = {
+          level: 1 + Math.floor(Math.random() * 2),
+          learnedDay: 0,
+          strategy: profile.focus,
+        };
+      }
+      // STRATEGY RECIPES: food preservation and preparation unique to their way
+      const strategyRecipes = {
+        fisher: ['smoked_fish', 'fish_stew'],
+        farmer: ['root_mash', 'grain_porridge'],
+        forager: ['trail_mix', 'herb_tea'],
+        scavenger: ['scrap_stew', 'can_cookery'],
+      };
+      const recipes = strategyRecipes[profile.focus] || strategyRecipes.forager;
+      for (const r of recipes) {
+        village.codex.recipes[r] = { known: true, learnedDay: 0 };
+      }
+      // ANIMAL LORE: they know the animals in their territory
+      const animals = (this.data.animals || []).filter(a => {
+        const biomes = (a.biomes || []).join(' ').toLowerCase();
+        if (profile.focus === 'fisher') return biomes.includes('water') || biomes.includes('creek');
+        if (profile.focus === 'farmer') return biomes.includes('meadow') || biomes.includes('field');
+        return true; // foragers and scavengers know a bit of everything
+      }).slice(0, 3);
+      for (const a of animals) {
+        village.codex.animals[a.id] = { level: 1, learnedDay: 0 };
       }
       return profile;
     },
