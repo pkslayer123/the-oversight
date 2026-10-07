@@ -503,7 +503,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 75
-    }
+    },
+    "actions": [
+      {
+        "id": "steal_pantry",
+        "context": "camp",
+        "name": "Light Fingers",
+        "cost": {
+          "time_min": 10
+        },
+        "effect": "Steal from the pantry. 50% chance of no trust loss. If caught: -20 trust."
+      }
+    ],
+    "paths": [
+      "drifter",
+      "miser"
+    ]
   },
   {
     "id": "photosynthesis",
@@ -686,7 +701,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 150
-    }
+    },
+    "actions": [
+      {
+        "id": "shed_skin",
+        "context": "camp",
+        "name": "Molt",
+        "cost": {
+          "time_min": 60,
+          "kcal": 100
+        },
+        "effect": "Shed your skin. Heal to full HP. Lose all equipped gear (stuck in old skin). Once per week."
+      }
+    ],
+    "paths": [
+      "survivalist"
+    ]
   },
   {
     "id": "blood_magic",
@@ -701,7 +731,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 100
-    }
+    },
+    "actions": [
+      {
+        "id": "blood_price",
+        "context": "camp",
+        "name": "Blood Price",
+        "cost": {
+          "hp": 10
+        },
+        "effect": "Spend 10 HP to gain 500 kcal. Your body eats itself. Reduced to 7 HP with crimson_circuit synergy."
+      }
+    ],
+    "paths": [
+      "survivalist",
+      "brawler"
+    ]
   },
   {
     "id": "rage",
@@ -746,7 +791,20 @@
     "modifiers": [],
     "metabolic": {
       "daily": 100
-    }
+    },
+    "actions": [
+      {
+        "id": "feed_hunger",
+        "context": "camp",
+        "name": "Feed the Red Hunger",
+        "cost": {},
+        "effect": "+1000 kcal from anything (even people). -30 trust, permanently. Only when starving (<500 kcal)."
+      }
+    ],
+    "paths": [
+      "survivalist",
+      "brawler"
+    ]
   },
   {
     "id": "pact",
@@ -776,7 +834,23 @@
     "modifiers": [],
     "metabolic": {
       "daily": 50
-    }
+    },
+    "actions": [
+      {
+        "id": "scream",
+        "context": "combat",
+        "name": "Scream",
+        "cost": {
+          "turn": true,
+          "kcal": 20
+        },
+        "effect": "Scream so loud it curdles milk. Stuns all monsters for 1 round. Once per day."
+      }
+    ],
+    "paths": [
+      "brawler",
+      "socialite"
+    ]
   },
   {
     "id": "pocket_sand",
@@ -791,7 +865,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 25
-    }
+    },
+    "actions": [
+      {
+        "id": "throw_sand",
+        "context": "combat",
+        "name": "Pocket Sand",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Throw sand in eyes. Blinds target for 2 rounds (attacks have disadvantage). You always have sand."
+      }
+    ],
+    "paths": [
+      "brawler",
+      "drifter"
+    ]
   },
   {
     "id": "taste_vision",
@@ -894,7 +983,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 75
-    }
+    },
+    "actions": [
+      {
+        "id": "rob_grave",
+        "context": "explore",
+        "name": "Rob the Dead",
+        "cost": {
+          "time_min": 20
+        },
+        "effect": "Loot a corpse thoroughly. Better gear than normal looting. -15 trust if seen doing it."
+      }
+    ],
+    "paths": [
+      "drifter",
+      "miser"
+    ]
   },
   {
     "id": "time_skip",
@@ -909,7 +1013,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 250
-    }
+    },
+    "actions": [
+      {
+        "id": "skip_time",
+        "context": "camp",
+        "name": "Time Skip",
+        "cost": {
+          "age_days": 1
+        },
+        "effect": "Skip to the next day part instantly. Ages you 1 day. The time has to come from somewhere."
+      }
+    ],
+    "paths": [
+      "drifter",
+      "explorer"
+    ]
   },
   {
     "id": "hive_mind",
@@ -939,7 +1058,23 @@
     "modifiers": [],
     "metabolic": {
       "daily": 25
-    }
+    },
+    "actions": [
+      {
+        "id": "follow_ants",
+        "context": "explore",
+        "name": "Follow Ants",
+        "cost": {
+          "time_min": 20
+        },
+        "effect": "Follow ant trails to water and sugar. Ants know things. Reveals nearest water source or sweet food."
+      }
+    ],
+    "paths": [
+      "forager",
+      "survivalist",
+      "explorer"
+    ]
   },
   {
     "id": "cold_blooded",
@@ -969,7 +1104,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 50
-    }
+    },
+    "actions": [
+      {
+        "id": "echo_locate",
+        "context": "explore",
+        "name": "Echo-locate",
+        "cost": {
+          "kcal": 10
+        },
+        "effect": "Clap once: sense the layout of the 9x9 around you (reveals blocked cells). Once per day. Works in combat too."
+      }
+    ],
+    "paths": [
+      "explorer",
+      "hunter"
+    ]
   },
   {
     "id": "compost_king",
@@ -1117,7 +1267,22 @@
     ],
     "metabolic": {
       "daily": 50
-    }
+    },
+    "actions": [
+      {
+        "id": "mediate_dispute",
+        "context": "social",
+        "name": "Mediate",
+        "cost": {
+          "time_min": 30
+        },
+        "effect": "Resolve a villager dispute with a talk check. Peace is a skill. Bonus from drama.resolve_bonus."
+      }
+    ],
+    "paths": [
+      "socialite",
+      "caregiver"
+    ]
   },
   {
     "id": "leech",
@@ -1132,7 +1297,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 100
-    }
+    },
+    "actions": [
+      {
+        "id": "leech_stance",
+        "context": "combat",
+        "name": "Leech Stance",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Enter leech stance: when an ally takes damage near you this round, you take half of it. They owe you. (They know it.)"
+      }
+    ],
+    "paths": [
+      "caregiver",
+      "brawler"
+    ]
   },
   {
     "id": "scarecrow",
@@ -1153,7 +1333,22 @@
     ],
     "metabolic": {
       "daily": 75
-    }
+    },
+    "actions": [
+      {
+        "id": "stage_injury",
+        "context": "explore",
+        "name": "Stage Injury",
+        "cost": {
+          "time_min": 30,
+          "kcal": 20
+        },
+        "effect": "Stage a fake injury to lure monsters into your traps. They fall for it. Every time. Next trap is guaranteed to trigger."
+      }
+    ],
+    "paths": [
+      "hunter"
+    ]
   },
   {
     "id": "hollow_bones",
@@ -1215,7 +1410,7 @@
   {
     "id": "symbiote",
     "name": "Symbiote",
-    "description": "A small alien organism lives in your gut. It eats 200 kcal/day but warns you of poisoned food and purifies risky water slowly (1L/day).",
+    "description": "A small alien organism lives in your gut. It eats 200 kcal/day. Passively: warns you of poisoned food before you eat, purifies 1L of risky water per day on its own.",
     "flavor": "You have a FRIEND inside! It eats your food! It cleans your water! It's... rent! Symbiosis! (Don't think about what happens if you starve it!)",
     "pool": "system",
     "tier": "risky",
@@ -1353,7 +1548,22 @@
     "active": {
       "type": "cure_poison",
       "cooldown": "day"
-    }
+    },
+    "actions": [
+      {
+        "id": "purify_poison",
+        "context": "camp",
+        "name": "Purify",
+        "cost": {
+          "time_min": 30
+        },
+        "effect": "Neutralize poison using charcoal and clean water. Once per day. Knowledge of plants helps."
+      }
+    ],
+    "paths": [
+      "caregiver",
+      "forager"
+    ]
   },
   {
     "id": "brawler_instinct",
@@ -1504,7 +1714,31 @@
     "unlock": {
       "type": "trial",
       "trial": "stop_a_fight"
-    }
+    },
+    "actions": [
+      {
+        "id": "walk_in",
+        "context": "combat",
+        "name": "Walk In",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Walk into a fight and attempt to end it peacefully. Talk check with deescalate bonus. If it fails, you are exposed."
+      },
+      {
+        "id": "make_friends",
+        "context": "social",
+        "name": "Make Friends",
+        "cost": {
+          "time_min": 30
+        },
+        "effect": "Turn a tense social situation friendly. You walk in, you walk out with friends. It is a gift."
+      }
+    ],
+    "paths": [
+      "socialite",
+      "caregiver"
+    ]
   },
   {
     "id": "pathfinder",
