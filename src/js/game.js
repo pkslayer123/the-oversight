@@ -18156,7 +18156,10 @@
           if (t.usStealArmed === wname) {
             t.usStealArmed = null;
             d = Math.max(1, Math.ceil(d / 2));
-            this.say(`It knew that one was coming — it was already gone. Your ${wname} glances off its guard. (OPENING STEAL: anticipated — half damage. Switch weapons.)`);
+            const usKnown1c = this.tbPatternKnown(t.mdef.id, (t.mdef.attack || {}).name);
+            this.say(usKnown1c
+              ? `It knew that one was coming — it was already gone. Your ${wname} glances off its guard. (OPENING STEAL: anticipated — half damage. Switch weapons.)`
+              : `It knew that one was coming — it was already gone. Your ${wname} glances off its guard. (It read you — try something else.)`);
             const srec = (t.usSeen && t.usSeen[wname]) || { dmg: d };
             const cpy = S.combat.roll([Math.max(1, Math.round(srec.dmg * 0.8)), Math.max(2, Math.round(srec.dmg * 0.8 * 1.2))]);
             this.say(`It answers with YOUR ${wname}.`);
@@ -21160,7 +21163,10 @@
               // UNDERSTUDY DESPERATE IMPROV (Steve 2026-10-06): the chain
               // reads as two of YOUR moves, not one generic hit.
               if (this.usIs(m) && tg.usImprov && tg.usImprovNames) {
-                this.say(`💥 ${this.encShortLabel(m) || m.name}'s DESPERATE IMPROV — your ${tg.usImprovNames[0]}, then your ${tg.usImprovNames[1]} — finds you. Badly. Frantically.`);
+                const usKnown1e = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
+                this.say(usKnown1e
+                  ? `💥 ${this.encShortLabel(m) || m.name}'s DESPERATE IMPROV — your ${tg.usImprovNames[0]}, then your ${tg.usImprovNames[1]} — finds you. Badly. Frantically.`
+                  : `💥 ${this.encShortLabel(m) || m.name}'s attack — your ${tg.usImprovNames[0]}, then your ${tg.usImprovNames[1]} — finds you. Badly. Frantically.`);
                 this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s Desperate Improv", m.key);
               } else {
                 this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${hitName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
@@ -21333,13 +21339,19 @@
             for (const o of hitFighters) {
               if (o.kind === 'player' && o.alive) {
                 o.stunned = Math.max(o.stunned || 0, 1);
-                this.say(`FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`);
+                const pzKnownHit = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
+                this.say(pzKnownHit
+                  ? `FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`
+                  : `FLASH. The world goes white — you're frozen mid-step.`);
               }
             }
             // LOS FIZZLE (Steve 2026-10-06): the fizzle line already said it —
             // don't also print the generic "it missed" line.
             if (!pzLosFizzle && !hitFighters.some(o => o.kind === 'player')) {
-              this.say(`Click. It missed — but the shutter keeps clicking. (Prediction ${m.pzPrediction}/4 anyway — it learns from the miss too.)`);
+              const pzKnownMiss = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
+              this.say(pzKnownMiss
+                ? `Click. It missed — but the shutter keeps clicking. (Prediction ${m.pzPrediction}/4 anyway — it learns from the miss too.)`
+                : `Click. It missed — but the shutter keeps clicking.`);
             }
           }
           // BELLTOAD: the croak hits like a wall. 15% chance to stun (full turn
@@ -23208,7 +23220,10 @@
         // has happened or the observations are undeniable.
         if (learned && hpFrac < 0.3 && m.beamPhase !== 'improv' && (m.usPerformed || totalSeen >= 4)) {
           this.encSetPhase(m, 'improv');
-          this.say('"No no no—" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (DESPERATE IMPROV: it chains everything it learned — two of your moves, badly, frantically.)');
+          const usKnown1d = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
+          this.say(usKnown1d
+            ? '"No no no—" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (DESPERATE IMPROV: it chains everything it learned — two of your moves, badly, frantically.)'
+            : '"No no no—" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (It is falling apart — and lashing out.)');
           try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
         }
         // OPENING STEAL (Steve 2026-10-06): the moment it starts performing,
@@ -23221,14 +23236,23 @@
           this.encSetPhase(m, 'performing');
           m.usPerformed = true;
           m.usStealArmed = best ? best.name : null;
+          const usKnown1b = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
           this.say('It stands the way you stand. Moves the way you move. "I\'ve got it now."'
-            + (m.usStealArmed
-              ? ` Your ${m.usStealArmed} — it has seen that one ${best.count} times. It knows where it lands. (OPENING STEAL: your next ${m.usStealArmed} strike is anticipated — switch weapons.)`
-              : ' (It copies at 80% — kill it or be unpredictable.)'));
+            + (usKnown1b
+              ? (m.usStealArmed
+                ? ` Your ${m.usStealArmed} — it has seen that one ${best.count} times. It knows where it lands. (OPENING STEAL: your next ${m.usStealArmed} strike is anticipated — switch weapons.)`
+                : ' (It copies at 80% — kill it or be unpredictable.)')
+              : ' (It has you now. Be unpredictable.)'));
           try { this.audioEvent('understudyPerform', {}); } catch (e) {}
+          // TEACH-MOMENT (Steve 2026-10-07): the performing transition reveals
+          // the pattern — like the heckler headliner, surviving the beat teaches it.
+          try { this.tbLearnPattern(m); } catch (e) {}
         } else if (totalSeen >= 2 && m.beamPhase === 'watching') {
           this.encSetPhase(m, 'rehearsing');
-          this.say('It is doing the thing you do before you do it. Badly. But recognizably. (It copies at 50% — it learns fast.)');
+          const usKnown1a = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
+          this.say(usKnown1a
+            ? 'It is doing the thing you do before you do it. Badly. But recognizably. (It copies at 50% — it learns fast.)'
+            : 'It is doing the thing you do before you do it. Badly. But recognizably. (It is studying you — end this fast.)');
           try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
         }
         if (m.beamPhase === 'watching') {
@@ -23404,7 +23428,10 @@
           }
           if (m.llAddenda >= 2 && m.beamPhase !== 'foreclosing') {
             this.encSetPhase(m, 'foreclosing');
-            this.say('"FORECLOSURE PROCEEDINGS INITIATED." The signs multiply. The rent climbs. (Its healing climbs too — end this.)');
+            const llKnown = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
+            this.say(llKnown
+              ? '"FORECLOSURE PROCEEDINGS INITIATED." The signs multiply. The rent climbs. (Its healing climbs too — end this.)'
+              : '"FORECLOSURE PROCEEDINGS INITIATED." The signs multiply. The rent climbs. (End this. Now.)');
           } else {
             if (m.beamPhase === 'claiming') this.encSetPhase(m, 'collecting');
             this.say(`"ADDENDUM #${m.llAddenda}: this agreement now covers a WIDER AREA." The leased ground spreads. The safe ground shrinks.`);
@@ -23573,7 +23600,9 @@
         const known = this.encTelegraphKnown(m);
         if (m.pzPrediction >= 4 && m.beamPhase !== 'exclusive') {
           this.encSetPhase(m, 'exclusive');
-          this.say('"GOT IT. The money shot." It knows exactly where you\'ll go. (PREDICTION 4: the flash is now UNBLOCKABLE — break line of sight.)');
+          this.say(known
+            ? '"GOT IT. The money shot." It knows exactly where you\'ll go. (PREDICTION 4: the flash is now UNBLOCKABLE — break line of sight.)'
+            : '"GOT IT. The money shot." It knows exactly where you\'ll go. (There is nowhere to dodge. Break line of sight.)');
           try { this.audioEvent('paparazzoExclusive', {}); } catch (e) {}
         } else if (m.pzPrediction >= 2 && m.beamPhase === 'candid') {
           this.encSetPhase(m, 'tracking');
@@ -23615,7 +23644,9 @@
           // saw the warning before the EXCLUSIVE).
           if (pzStill && !m.pzStillSaid && (m.pzPrediction || 0) < 4) {
             m.pzStillSaid = true;
-            this.say('"Hold still. Yes. Just like that." Standing still makes it learn you FASTER. (Prediction climbing double.)');
+            this.say(known
+              ? '"Hold still. Yes. Just like that." Standing still makes it learn you FASTER. (Prediction climbing double.)'
+              : '"Hold still. Yes. Just like that." Do not stand still.');
           }
           m.pzPrediction = Math.min(4, (m.pzPrediction || 0) + (pzStill ? 2 : 1));
           m.pzLastPx = t.mx; m.pzLastPy = t.my;
@@ -23690,7 +23721,9 @@
           this.encSetPhase(m, 'walkout');
           m.urWalkout = true;
           for (const a of allies) a.urDmgBonus = (a.urDmgBonus || 0) + 5;
-          this.say('"WALKOUT! WALKOUT!" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (Allies +8 damage. The rep is UNTARGETABLE while coordinating.)');
+          this.say(known
+            ? '"WALKOUT! WALKOUT!" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (Allies +8 damage. The rep is UNTARGETABLE while coordinating.)'
+            : '"WALKOUT! WALKOUT!" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (You cannot reach it while it coordinates. Kill the allies first.)');
           try { this.audioEvent('unionWalkout', {}); } catch (e) {}
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
@@ -23723,7 +23756,8 @@
           this.encSetPhase(m, 'picketing');
           const w1 = (this.data.monsters || []).filter(x => (x.wave || 1) === 1 && x.id !== 'bulldozer' && x.id !== 'gallowdeer');
           const pick = w1[Math.floor(Math.random() * w1.length)];
-          this.say(`"PICKET LINE!" A ${pick.name} lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)`);
+          const pickLabel = this.canShow('monster', pick.id, 'name') ? pick.name : (pick.unknown || 'something');
+          this.say(`"PICKET LINE!" A ${pickLabel} lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)`);
           try { this.audioEvent('unionPicket', {}); } catch (e) {}
           // Spawn adjacent to rep
           const spot = { x: Math.min(8, m.mx + 1), y: m.my };
