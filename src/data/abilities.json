@@ -1862,5 +1862,171 @@
       "explorer",
       "survivalist"
     ]
+  },
+  {
+    "id": "trade_of_blows",
+    "name": "Trade of Blows",
+    "description": "Trade damage like currency. You can afford the exchange rate.",
+    "flavor": "Every hit you take is a hit you're about to give back with interest.",
+    "pool": "combat",
+    "tier": "uncommon",
+    "unlock": {
+      "type": "trial",
+      "trial": "take_50_damage_in_one_fight"
+    },
+    "modifiers": [
+      {
+        "target": "combat.trade_window",
+        "op": "add",
+        "value": 1
+      }
+    ],
+    "actions": [
+      {
+        "id": "open_trade",
+        "context": "combat",
+        "name": "Open the Trade",
+        "cost": {
+          "turn": true,
+          "hp": 10
+        },
+        "effect": "Take 10 damage voluntarily. Your next 3 attacks deal +50% damage. The pain focuses you."
+      },
+      {
+        "id": "settle_debt",
+        "context": "combat",
+        "name": "Settle the Debt",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Cash in: deal bonus damage equal to 50% of damage taken this fight. Once per fight."
+      }
+    ],
+    "paths": [
+      "brawler"
+    ]
+  },
+  {
+    "id": "unbreakable",
+    "name": "Unbreakable",
+    "description": "You don't go down. Not today. Not ever, if you have anything to say about it.",
+    "flavor": "The System filed a complaint about your pain receptors. You filed it under 'suggestions.'",
+    "pool": "combat",
+    "tier": "rare",
+    "unlock": {
+      "type": "system_offer"
+    },
+    "modifiers": [
+      {
+        "target": "combat.knockdown_resist",
+        "op": "add",
+        "value": 0.4
+      },
+      {
+        "target": "combat.stun_duration",
+        "op": "multiply",
+        "value": 0.5
+      }
+    ],
+    "actions": [
+      {
+        "id": "brace",
+        "context": "combat",
+        "name": "Brace",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Plant your feet. Reduce next incoming damage by 60%. You cannot be knocked down this turn."
+      },
+      {
+        "id": "shake_off",
+        "context": "combat",
+        "name": "Shake It Off",
+        "cost": {
+          "kcal": 50
+        },
+        "effect": "Clear stun, slow, and bleed. Once per fight. Costs 50 kcal \u2014 your body burns fuel to keep going."
+      }
+    ],
+    "paths": [
+      "brawler",
+      "survivalist"
+    ]
+  },
+  {
+    "id": "war_cry",
+    "name": "War Cry",
+    "description": "A sound from somewhere older than language. Things that hear it reconsider.",
+    "flavor": "It's not the volume. It's the promise.",
+    "pool": "combat",
+    "tier": "uncommon",
+    "unlock": {
+      "type": "practice"
+    },
+    "modifiers": [
+      {
+        "target": "social.intimidate",
+        "op": "add",
+        "value": 0.2
+      }
+    ],
+    "actions": [
+      {
+        "id": "bellow",
+        "context": "combat",
+        "name": "War Cry",
+        "cost": {
+          "turn": true,
+          "kcal": 30
+        },
+        "effect": "All enemies must pass a courage check or lose their next turn. Beasts may flee outright."
+      },
+      {
+        "id": "challenge",
+        "context": "social",
+        "name": "Issue Challenge",
+        "cost": {
+          "time_min": 5
+        },
+        "effect": "Challenge a villager to a non-lethal bout. Winner gains respect. Loser gains humility."
+      }
+    ],
+    "paths": [
+      "brawler",
+      "socialite"
+    ]
+  },
+  {
+    "id": "haymaker",
+    "name": "Haymaker",
+    "description": "One big swing. Everything you have, all at once. Subtlety is for people with time.",
+    "flavor": "The windup is the telegraph. The landing is the punctuation.",
+    "pool": "combat",
+    "tier": "common",
+    "unlock": {
+      "type": "practice"
+    },
+    "modifiers": [
+      {
+        "target": "combat.heavy_damage",
+        "op": "multiply",
+        "value": 1.2
+      }
+    ],
+    "actions": [
+      {
+        "id": "throw_haymaker",
+        "context": "combat",
+        "name": "Haymaker",
+        "cost": {
+          "turn": true,
+          "kcal": 40
+        },
+        "effect": "A massive swing: 2.5x damage, but -30% accuracy. If it misses, you're off-balance (enemies get +hit next turn)."
+      }
+    ],
+    "paths": [
+      "brawler"
+    ]
   }
 ]
