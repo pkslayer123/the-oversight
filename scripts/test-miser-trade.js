@@ -8,19 +8,6 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
-// Seeded RNG BEFORE the evals (PROOF-TEST RNG STABILITY lesson, AGENTS.md):
-// betrayal.js and friends capture `const R = Math.random` at load, so the
-// patch must land first or their coin flips stay unseeded. SEED env override.
-{
-  const SEED = parseInt(process.env.SEED || '20261007', 10);
-  let a = SEED;
-  Math.random = function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
  'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js', 'src/js/party.js', 'src/js/justice.js',
@@ -55,10 +42,6 @@ function forceTrader() {
   s().day = 8; V().pantryKcal = 20000; V().visitors = [];
   let vis = null;
   for (let i = 0; i < 300 && !vis; i++) { const c = Game.considerStrangers(); if (c && c.type === 'trader') vis = c; V().visitors = (V().visitors || []).filter(x => x.type === 'trader'); }
-  // honest trader: the price-math sections assume honest wares; scam-ware
-  // behavior (maybeScamWare) is covered by the betrayal suites.
-  vis.shady = false;
-  vis.desperate = false;
   return vis;
 }
 const unitsOf = (re) => { const it = (s().inventory || []).find(i => re.test(i.name)); return it ? it.units : 0; };
@@ -79,18 +62,16 @@ const unitsOf = (re) => { const it = (s().inventory || []).find(i => re.test(i.n
   ok('Haven panel shows the visitor block', html.includes('🧳 Visitor:'));
   ok('trade button wired', html.includes(`data-visitor-act="${vis.id}"`) && html.includes('data-how="trade"'));
 
-  // 2. opening the cart generates the wares: 3 guaranteed (alien/tool/news)
-  // plus sometimes trail rations (a coin flip in visitorWares) — the count
-  // is chance, the guaranteed kinds are not.
+  // 2. opening the cart generates 3 real wares
   Game.visitorInteract(vis.id, 'trade');
   ok('visitor stays while trading (not dismissed)', (V().visitors || []).some(x => x.id === vis.id));
   const wares = Game.visitorWares(vis);
-  ok('wares generated', wares.length >= 3 && wares.length <= 4);
+  ok('three wares', wares.length === 3);
   ok('ware kinds alien/tool/news', ['alien', 'tool', 'news'].every(k => wares.some(w => w.kind === k)));
   ok('wares memoized per visitor', Game.visitorWares(vis) === wares);
   ok('cart line says something', said.some(t => /side panel down/.test(t)));
   const html2 = Game.visitorHtml();
-  ok('buy buttons render per ware', (html2.match(/data-ware-buy/g) || []).length === wares.length);
+  ok('buy buttons render per ware', (html2.match(/data-ware-buy/g) || []).length === 3);
   ok('step-back button replaces trade button', html2.includes('data-how="shelve"'));
 
   // 3. news purchase: perishable-first payment

@@ -163,7 +163,7 @@
       if (this.over) return;
       var v = this.state.village;
       var a = this.agencyState();
-      var hx = v.px ?? 4, hy = v.py ?? 4;
+      var hx = v.px ?? 3, hy = v.py ?? 3;
       var roster = v.roster || [];
       var playerAtHaven = (this.map.px === hx && this.map.py === hy);
       for (var i = 0; i < roster.length; i++) {
@@ -505,7 +505,7 @@
       // not a popup saying "an NPC is better than you" — just the village
       // talking, and you overhearing.
       var v = this.state.village;
-      var hx = v.px ?? 4, hy = v.py ?? 4;
+      var hx = v.px ?? 3, hy = v.py ?? 3;
       var atHaven = false;
       try { atHaven = (this.map.px === hx && this.map.py === hy); } catch (e) {}
       if (atHaven && mag >= 4 && R() < 0.7) this.say('📣 ' + text);

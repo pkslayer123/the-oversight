@@ -31,30 +31,6 @@
         "quirk": "whispers to themselves when they think no one is listening",
         "note": "Twice now {they} have been caught mid-whisper, mid-conversation with no one, and both times {they} covered it with a cough that fooled nobody.",
         "assessment": "Everyone talks to themselves sometimes. Nobody else does it in the middle of a conversation, though."
-      },
-      {
-        "id": "salt_lines",
-        "quirk": "pours little lines of salt across thresholds before sleeping",
-        "note": "{They} were seen tipping salt from a pouch in a thin line across the shelter doorway before bed. When asked {they} shrugged: old habit, keeps the bad dreams on the other side.",
-        "assessment": "The salt lines wash away in the rain. Every night, new lines. Nobody's asked twice."
-      },
-      {
-        "id": "name_rollcall",
-        "quirk": "whispers names of people who aren't here, like a roll call",
-        "note": "At dusk {they} were heard reciting names under {their} breath — a dozen of {them}, steady as a roster. {They} stopped when {they} noticed being watched, and smiled like it was nothing.",
-        "assessment": "Everyone's lost people. Not everyone takes attendance."
-      },
-      {
-        "id": "empty_seat",
-        "quirk": "always leaves one empty seat at the fire, and gets tense if someone takes it",
-        "note": "{They} set out a spare log at the fire every evening and go quiet if anyone sits on it. No explanation offered. The log stays empty. The fire doesn't care.",
-        "assessment": "The empty seat has become furniture. Nobody sits in it. Nobody talks about why."
-      },
-      {
-        "id": "mirror_avoid",
-        "quirk": "won't look at their own reflection in still water",
-        "note": "{They} bent to drink at the creek and froze, eyes fixed past {their} own reflection like it was someone else's face. {They} drank with {their} eyes closed after that.",
-        "assessment": "It's not vanity. It's the opposite of vanity. That's what's unsettling."
       }
     ],
     "malicious": [
@@ -81,24 +57,6 @@
         "quirk": "remembers exactly what everyone owes them, to the calorie",
         "note": "{They} keep a mental ledger nobody asked for. Three weeks ago {first} took an extra strip of jerky — {they} remember. {They} smile when {they} remind you. It's always a smile.",
         "assessment": "Nobody likes being remembered that precisely. It feels less like memory and more like evidence."
-      },
-      {
-        "id": "kindness_audit",
-        "quirk": "keeps mental score of every kindness, and collects on them",
-        "note": "{first} remembers the extra portion {they} gave you two weeks ago the way a banker remembers a loan. The reminder always comes with a smile and a small, specific ask.",
-        "assessment": "Generosity with interest. People have started refusing the first gift."
-      },
-      {
-        "id": "pain_catalog",
-        "quirk": "asks detailed questions about other people's injuries — a little too interested",
-        "note": "{They} asked how exactly the cut happened, how deep, how long it bled. The questions kept going past concern into something else. {They} noticed being noticed, and stopped. Smiled.",
-        "assessment": "Curiosity is normal. This had the wrong kind of patience behind it."
-      },
-      {
-        "id": "sleep_watcher",
-        "quirk": "sits awake some nights just watching the others sleep",
-        "note": "Twice now {they} have been found sitting upright in the dark, not on watch — just watching. Breathing slow. When spoken to {they} said {they} couldn't sleep. {Their} eyes said otherwise.",
-        "assessment": "Everyone's had a bad night. Nobody else spends it staring at the sleepers."
       }
     ]
   },
@@ -108,13 +66,7 @@
     "wary",
     "skeptical",
     "hungry-to-learn",
-    "indifferent",
-    "restless",
-    "methodical",
-    "guarded",
-    "dreamy",
-    "meticulous",
-    "disengaged"
+    "indifferent"
   ],
   "firstNames": [
     "Maya",
@@ -353,12 +305,7 @@
     "You gesture. {first} gestures back. Somewhere in the exchange, something important was lost.",
     "{first} says something urgent-sounding in {lang}. You catch one word. Probably.",
     "You try to explain. {first} looks more confused than before. You both laugh. It helps, a little.",
-    "{first} draws a picture in the dirt. It's either a plant or a warning. You choose to believe plant.",
-    "{first} points at the pot, then at you, then at the pot again. You nod. You're now somehow in charge of dinner.",
-    "You say 'water.' {first} hears something else entirely and brings you a stick. A nice stick. You accept the stick.",
-    "{first} mimes sleeping, then mimes running, then points at you. You decide this means 'rest up.' It might not.",
-    "A long explanation in {lang} ends with {first} patting your shoulder like you've agreed. You have not agreed. You have no idea.",
-    "You draw a map. {first} studies it upside down, nods solemnly, and adds a detail that is definitely wrong."
+    "{first} draws a picture in the dirt. It's either a plant or a warning. You choose to believe plant."
   ],
   "occupations": [
     {
@@ -2591,22 +2538,17 @@
       "alabama",
       "southeast",
       "temperate",
-      "woodlands",
-      "north_america",
-      "deep_south_bayou"
+      "woodlands"
     ],
     "alaska": [
       "alaska",
       "arctic",
-      "wilderness",
-      "north_america"
+      "wilderness"
     ],
     "albuquerque": [
       "new mexico",
       "desert",
-      "city",
-      "north_america",
-      "southwest_desert"
+      "city"
     ],
     "arctic": [
       "arctic"
@@ -2614,16 +2556,12 @@
     "arizona": [
       "arizona",
       "southwest",
-      "desert",
-      "north_america",
-      "southwest_desert"
+      "desert"
     ],
     "atlanta": [
       "georgia",
       "southeast",
-      "city",
-      "north_america",
-      "deep_south_bayou"
+      "city"
     ],
     "australia": [
       "australia",
@@ -2636,39 +2574,30 @@
     ],
     "brooklyn": [
       "new york",
-      "city",
-      "north_america",
-      "northeast"
+      "city"
     ],
     "california": [
       "california",
       "west",
       "coast",
-      "mediterranean",
-      "north_america",
-      "southwest_desert"
+      "mediterranean"
     ],
     "canada": [
       "canada",
       "temperate",
-      "woodlands",
-      "north_america"
+      "woodlands"
     ],
     "carolina": [
       "carolina",
       "southeast",
       "temperate",
       "woodlands",
-      "coast",
-      "north_america",
-      "appalachian"
+      "coast"
     ],
     "chicago": [
       "illinois",
       "midwest",
-      "city",
-      "north_america",
-      "middle_america"
+      "city"
     ],
     "china": [
       "china",
@@ -2683,34 +2612,25 @@
     "colorado": [
       "colorado",
       "mountains",
-      "west",
-      "north_america",
-      "southwest_desert"
+      "west"
     ],
     "columbus": [
       "ohio",
       "midwest",
-      "city",
-      "columbus",
-      "north_america",
-      "middle_america"
+      "city"
     ],
     "dakota": [
       "dakota",
       "plains",
-      "temperate",
-      "north_america",
-      "great_plains"
+      "temperate"
     ],
     "denver": [
       "colorado",
       "mountains",
-      "city",
-      "north_america"
+      "city"
     ],
     "desert": [
-      "desert",
-      "southwest_desert"
+      "desert"
     ],
     "egypt": [
       "egypt",
@@ -2722,15 +2642,13 @@
     ],
     "farm": [
       "rural",
-      "plains",
-      "middle_america"
+      "plains"
     ],
     "florida": [
       "florida",
       "southeast",
       "subtropics",
-      "coast",
-      "north_america"
+      "coast"
     ],
     "france": [
       "france",
@@ -2740,9 +2658,7 @@
       "georgia",
       "southeast",
       "temperate",
-      "woodlands",
-      "north_america",
-      "deep_south_bayou"
+      "woodlands"
     ],
     "germany": [
       "germany",
@@ -2752,29 +2668,22 @@
     "hawaii": [
       "hawaii",
       "tropics",
-      "coast",
-      "north_america"
+      "coast"
     ],
     "houston": [
       "texas",
       "city",
-      "coast",
-      "north_america",
-      "deep_south_bayou"
+      "coast"
     ],
     "idaho": [
       "idaho",
       "mountains",
-      "pacific_nw",
-      "north_america",
-      "pacific_northwest"
+      "pacific_nw"
     ],
     "illinois": [
       "illinois",
       "midwest",
-      "plains",
-      "north_america",
-      "middle_america"
+      "plains"
     ],
     "india": [
       "india",
@@ -2793,18 +2702,13 @@
     "kansas": [
       "kansas",
       "plains",
-      "midwest",
-      "north_america",
-      "great_plains"
+      "midwest"
     ],
     "kentucky": [
       "kentucky",
       "southeast",
       "temperate",
-      "woodlands",
-      "north_america",
-      "middle_america",
-      "appalachian"
+      "woodlands"
     ],
     "kenya": [
       "kenya",
@@ -2819,103 +2723,80 @@
       "louisiana",
       "southeast",
       "subtropics",
-      "wetland",
-      "north_america",
-      "deep_south_bayou"
+      "wetland"
     ],
     "maine": [
       "maine",
       "northeast",
       "temperate",
       "woodlands",
-      "coast",
-      "north_america"
+      "coast"
     ],
     "mexico": [
       "mexico",
       "desert",
-      "mountains",
-      "north_america"
+      "mountains"
     ],
     "miami": [
       "florida",
       "southeast",
       "city",
-      "coast",
-      "north_america"
+      "coast"
     ],
     "minnesota": [
       "minnesota",
       "midwest",
       "temperate",
-      "woodlands",
-      "north_america",
-      "northeast"
+      "woodlands"
     ],
     "mississippi": [
       "mississippi",
       "southeast",
-      "temperate",
-      "north_america",
-      "deep_south_bayou"
+      "temperate"
     ],
     "montana": [
       "montana",
       "mountains",
-      "west",
-      "north_america",
-      "great_plains"
+      "west"
     ],
     "mountains": [
-      "mountains",
-      "appalachian"
+      "mountains"
     ],
     "nashville": [
       "tennessee",
       "southeast",
-      "city",
-      "north_america",
-      "middle_america"
+      "city"
     ],
     "nebraska": [
       "nebraska",
       "plains",
-      "midwest",
-      "north_america",
-      "great_plains"
+      "midwest"
     ],
     "nevada": [
       "nevada",
       "desert",
-      "west",
-      "north_america",
-      "southwest_desert"
+      "west"
     ],
     "new england": [
       "northeast",
       "temperate",
-      "woodlands",
-      "north_america"
+      "woodlands"
     ],
     "new mexico": [
       "new mexico",
       "southwest",
       "desert",
-      "mountains",
-      "southwest_desert"
+      "mountains"
     ],
     "new orleans": [
       "louisiana",
       "southeast",
-      "city",
-      "north_america",
-      "deep_south_bayou"
+      "city"
     ],
     "new york": [
       "new york",
       "northeast",
-      "city",
-      "north_america"
+      "city"
     ],
     "nigeria": [
       "nigeria",
@@ -2925,33 +2806,25 @@
       "ohio",
       "midwest",
       "temperate",
-      "woodlands",
-      "north_america",
-      "middle_america"
+      "woodlands"
     ],
     "oklahoma": [
       "oklahoma",
       "plains",
-      "south",
-      "north_america",
-      "great_plains"
+      "south"
     ],
     "oregon": [
       "oregon",
       "pacific_nw",
       "temperate",
       "woodlands",
-      "coast",
-      "north_america",
-      "pacific_northwest"
+      "coast"
     ],
     "pennsylvania": [
       "pennsylvania",
       "northeast",
       "temperate",
-      "woodlands",
-      "north_america",
-      "appalachian"
+      "woodlands"
     ],
     "philippines": [
       "philippines",
@@ -2961,20 +2834,15 @@
     "phoenix": [
       "arizona",
       "desert",
-      "city",
-      "north_america",
-      "southwest_desert"
+      "city"
     ],
     "plains": [
-      "plains",
-      "great_plains"
+      "plains"
     ],
     "portland": [
       "oregon",
       "pacific_nw",
-      "city",
-      "north_america",
-      "pacific_northwest"
+      "city"
     ],
     "rural": [
       "rural"
@@ -2983,9 +2851,7 @@
       "washington",
       "pacific_nw",
       "city",
-      "coast",
-      "north_america",
-      "pacific_northwest"
+      "coast"
     ],
     "spain": [
       "spain",
@@ -2999,45 +2865,34 @@
       "southeast",
       "temperate",
       "woodlands",
-      "mountains",
-      "north_america",
-      "middle_america",
-      "appalachian"
+      "mountains"
     ],
     "texas": [
       "texas",
       "south",
       "plains",
-      "desert",
-      "north_america",
-      "southwest_desert"
+      "desert"
     ],
     "tropics": [
-      "tropics",
-      "florida"
+      "tropics"
     ],
     "tucson": [
       "arizona",
       "desert",
-      "city",
-      "north_america",
-      "southwest_desert"
+      "city"
     ],
     "utah": [
       "utah",
       "desert",
       "mountains",
-      "west",
-      "north_america",
-      "southwest_desert"
+      "west"
     ],
     "vermont": [
       "vermont",
       "northeast",
       "temperate",
       "woodlands",
-      "mountains",
-      "north_america"
+      "mountains"
     ],
     "vietnam": [
       "vietnam",
@@ -3047,18 +2902,14 @@
       "virginia",
       "southeast",
       "temperate",
-      "woodlands",
-      "north_america",
-      "appalachian"
+      "woodlands"
     ],
     "washington": [
       "washington",
       "pacific_nw",
       "temperate",
       "woodlands",
-      "coast",
-      "north_america",
-      "pacific_northwest"
+      "coast"
     ],
     "london": [
       "england",
@@ -3261,8 +3112,7 @@
       "mexico",
       "highlands",
       "urban",
-      "north america",
-      "north_america"
+      "north america"
     ],
     "sao paulo": [
       "brazil",
@@ -3340,59 +3190,48 @@
   "questTemplates": [
     "You're awake. Don't sit up fast — you were out a full day.",
     "I woke up in a clearing with eleven strangers. I don't know any of them. One of them is you, I guess.",
-    "We have to decide: do we do this together, or do we all starve separately? I'm {an_occ}, not a leader. But someone has to say it.",
-    "I'm {first}. I keep the fire lit and the arguments short. Both are full-time jobs.",
-    "Nobody here chose this. But everybody here chose to stay past the first night. That counts for something.",
-    "We found you on the {origin} side of the clearing. Someone carried you in — I won't say who, they'd deny it."
+    "We have to decide: do we do this together, or do we all starve separately? I'm {an_occ}, not a leader. But someone has to say it."
   ],
   "wakeUpSpeeches": {
     "warm": [
       "Hey. Hey, you're awake. Don't sit up fast — you were out cold when we found you.",
       "I'm {first}. I was a {occ}, back in {origin}. Whatever's going on, none of us understand it either.",
-      "There's food by the fire and water in the clay pots. Eat first, questions later. You're safe here — well. Safer than out there.",
-      "Rest as long as you need. Nobody here is keeping score — we just got you back, and that's enough for today."
+      "There's food by the fire and water in the clay pots. Eat first, questions later. You're safe here — well. Safer than out there."
     ],
     "debt": [
       "Up. Good. I dragged your useless ass out of a creek bed half a mile that way, so listen.",
       "Name's {first}. Was a {occ} in {origin}. Now I'm in the rescue business, which is a terrible career change.",
-      "You owe me. When you can walk: bring me three handfuls of dandelion greens from outside. For the pot. Then we're square.",
-      "And don't die on me before you pay up. I hate chasing debts into the afterlife."
+      "You owe me. When you can walk: bring me three handfuls of dandelion greens from outside. For the pot. Then we're square."
     ],
     "suspicious": [
       "Don't move. ...Okay. You're awake, you're breathing, you're not bleeding on my floor. Good enough.",
       "I'm {first}. I don't know you, I don't know where 'here' is, and I don't know why we all woke up in the same building.",
-      "Nobody touches my pack. Nobody goes through my things. We clear? ...There's stew by the fire. But we clear?",
-      "I'll be watching. Nothing personal — I watch everyone. ...Stew's by the fire. Eat."
+      "Nobody touches my pack. Nobody goes through my things. We clear? ...There's stew by the fire. But we clear?"
     ],
     "scared": [
       "Oh— oh god, you're awake. Okay. Okay, that's good, that's— hi.",
       "I'm {first}, I was a {occ} in {origin}, I don't— I don't know what's happening. None of us do. We all just woke up here.",
-      "Please don't be weird. Please just be normal. There's water by the door if you need it. Just— be normal, okay?",
-      "Sorry, I'm — I'm not usually like this. It's just a lot. You're okay, though. You're okay."
+      "Please don't be weird. Please just be normal. There's water by the door if you need it. Just— be normal, okay?"
     ],
     "practical": [
       "You're awake. Sit up slow. You've been out about a day.",
       "{first}. {occ}, {origin}. Here's what matters: water's in the clay pots by the door, food's by the fire, don't drink from the creek without boiling it.",
-      "Eat, drink, rest. We'll figure out the rest when you can stand. One thing at a time.",
-      "Questions later. Your body needs fuel and water before your brain gets a vote."
+      "Eat, drink, rest. We'll figure out the rest when you can stand. One thing at a time."
     ],
     "curious": [
       "You're awake! Finally. I've been waiting to ask — where are you from? I'm {first}, I was a {occ} in {origin}.",
       "Did you see anything before you blacked out? Lights? Sounds? Nobody here remembers anything useful and it's driving me insane.",
-      "Sorry. Rude. Food's by the fire, water's by the door. But later — I want to hear everything you remember.",
-      "Oh! And if you remember any numbers — times, counts, anything — tell me first. Data is precious."
+      "Sorry. Rude. Food's by the fire, water's by the door. But later — I want to hear everything you remember."
     ],
     "gruff": [
       "Up. Good. Less dead weight.",
       "{first}. Don't care what you were before. Here you're hands. We eat because people work.",
-      "Fire's there. Food's there when you've earned it. Sleep when it's dark. That's the whole orientation.",
-      "And if you can't work yet, stay out of the way. That's also a job."
+      "Fire's there. Food's there when you've earned it. Sleep when it's dark. That's the whole orientation."
     ],
     "overwhelmed": [
       "You're— okay, you're awake, that's one more, that's— hi. I'm {first}.",
       "I was a {occ}. In {origin}. I think. That was... yesterday? Last week? I don't know anything anymore.",
-      "Someone put food by the fire. Someone put water by the door. I don't know who. Just take what you need. We're all just... taking what we need.",
-      "I'm sorry, I don't — just take what you need. We'll figure out names and everything later."
+      "Someone put food by the fire. Someone put water by the door. I don't know who. Just take what you need. We're all just... taking what we need."
     ]
   },
   "sampleOrigins": [
@@ -3440,12 +3279,7 @@
     "selfish",
     "transactional",
     "secretive",
-    "hoarder",
-    "open-handed",
-    "stingy",
-    "strategic",
-    "communal",
-    "grudging"
+    "hoarder"
   ],
   "talkTemplates": [
     "\"I don't know you. But you're here, so... we figure it out.\"",
@@ -3491,23 +3325,7 @@
     "\"Some days I'm {an_occ} who survived. Some days I'm just... surviving. Both count.\"",
     "\"Don't mind me. I'm having a whole argument in my head and losing.\"",
     "\"I wonder if {origin} misses me. Stupid. Places don't miss people. ...Do they?\"",
-    "\"My {occ} instincts keep firing at the wrong things. Old wiring, new world.\"",
-    "\"I used to complain about {origin} traffic. I'd kill for traffic. Orderly, honking traffic.\"",
-    "\"{first} says I talk too much. {first} is right. I'm still going to finish this story.\"",
-    "\"Being {an_occ} taught me one useful thing: how to look busy while thinking.\"",
-    "\"I've started rating sunsets. Tonight's a seven. Yesterday was a nine, no notes.\"",
-    "\"The System gave me {skill}. I asked for a sandwich. We don't always get what we ask for.\"",
-    "\"Do you ever wonder what the aliens eat? Like, do they have potlucks?\"",
-    "\"I keep my pack ready. Old {occ} habit — always be ready to leave the office.\"",
-    "\"Someone told me {origin} is gone. Someone else told me it's fine. I believe neither.\"",
-    "\"I've decided the monsters are just wildlife with better PR. Don't quote me.\"",
-    "\"My {occ} training covered a lot. 'Post-apocalyptic foraging' was not on the syllabus.\"",
-    "\"Sleep's the real currency now. I'm rich in dreams and broke in rest.\"",
-    "\"We should name this place. 'Camp' is what you call somewhere you're leaving.\"",
-    "\"I found a gray hair today. I'm choosing to call it wisdom frost.\"",
-    "\"The trick to {skill} is confidence. The trick to confidence is {skill}. Circular, but it works.\"",
-    "\"Does {origin} ever cross your mind at the wrong moment? Mine picks dinnertime.\"",
-    "\"New rule: whoever complains about the food cooks tomorrow. Watch the complaints vanish.\""
+    "\"My {occ} instincts keep firing at the wrong things. Old wiring, new world.\""
   ],
   "temperaments": [
     "steady",
@@ -3520,12 +3338,7 @@
     "gentle",
     "intense",
     "withdrawn",
-    "anxious",
-    "sardonic",
-    "earnest",
-    "fidgety",
-    "stoic",
-    "mischievous"
+    "anxious"
   ],
   "heritageMap": [
     [
@@ -3571,26 +3384,6 @@
     [
       "rural",
       "the farm belts"
-    ],
-    [
-      "savanna",
-      "the savanna herders"
-    ],
-    [
-      "boreal",
-      "the boreal trappers"
-    ],
-    [
-      "mediterranean",
-      "the terraced coast villages"
-    ],
-    [
-      "urban",
-      "the tower-block estates"
-    ],
-    [
-      "tropical",
-      "the river-delta towns"
     ]
   ],
   "grievances": [
@@ -3599,13 +3392,7 @@
     "a harvest that was never shared",
     "a fire nobody claims",
     "a road that cut a village in two",
-    "a well that went dry the year after the treaty",
-    "a wedding that ended one feud and started another",
-    "a fishing spot claimed by two towns at once",
-    "a bridge toll nobody remembers agreeing to",
-    "a schoolhouse burned in a dry year",
-    "a herd that strayed across the line and was never returned",
-    "a promise made at a funeral, broken by spring"
+    "a well that went dry the year after the treaty"
   ],
   "quirks": [
     "counts things when nervous",
@@ -3627,15 +3414,7 @@
     "polishes the same spot on their knife",
     "never walks in a straight line",
     "keeps a pebble in their pocket to fidget with",
-    "arranges gear by size every night",
-    "salutes the sun at dawn, ironically (probably)",
-    "gives the fire a goodnight",
-    "can tell which bird a feather came from",
-    "does an elaborate stretch routine before sitting down",
-    "refuses to step on cracks in packed earth",
-    "narrates their own actions under their breath",
-    "keeps a lucky twig behind one ear",
-    "bows to the cook before every meal"
+    "arranges gear by size every night"
   ],
   "habits": [
     "does push-ups at dawn",
@@ -3652,14 +3431,7 @@
     "greets everyone by name each morning",
     "cleans up other people's messes quietly",
     "checks everyone's shoes for wear",
-    "sleeps in short shifts",
-    "sharpens sticks into nothing, then starts over",
-    "counts their portions out loud before eating",
-    "sleeps with one ear uncovered, always",
-    "braids grass while listening to plans",
-    "tastes the water before the others drink",
-    "re-ties every knot they walk past",
-    "hums one note, over and over, when the dark comes"
+    "sleeps in short shifts"
   ],
   "hopes": [
     "to see the ocean again",
@@ -3676,14 +3448,7 @@
     "to taste bread again",
     "to be forgiven for something",
     "to make someone laugh on purpose",
-    "to die of old age",
-    "to hear rain on a real roof again",
-    "to grow something from seed to harvest",
-    "to stop flinching at sudden sounds",
-    "to find a book worth reading twice",
-    "to be warm all the way through, just once",
-    "to sing with other people again",
-    "to watch a sunrise without keeping watch"
+    "to die of old age"
   ],
   "fears": [
     "being forgotten",
@@ -3705,15 +3470,7 @@
     "the river changing course",
     "being buried somewhere unnamed",
     "their hands shaking at the wrong moment",
-    "the laughter that sounds almost human",
-    "the sound of their own name in the dark",
-    "still water that should be moving",
-    "forgetting faces",
-    "the second winter",
-    "being the last one awake",
-    "footsteps that stop",
-    "the person they become when angry",
-    "a sky that goes quiet"
+    "the laughter that sounds almost human"
   ],
   "goals": [
     {
@@ -3883,90 +3640,6 @@
         "I can't fix the world. But I can fix this cut, this fever, this fear.",
         "Someone has to believe people get better. Might as well be the person with the bandages."
       ]
-    },
-    {
-      "id": "home",
-      "want": "to find a place that feels like home",
-      "lines": [
-        "Home wasn't a building. It was a feeling. I'm chasing the feeling.",
-        "Every camp we make, I rearrange it until it feels right. It never quite does. Yet.",
-        "I want a door I can close. Not to keep people out — to know I could.",
-        "Someday I'll walk into a place and my shoulders will drop. That's the place.",
-        "I've lived in five places since the sky changed. None of them were home.",
-        "Home is where someone saves you a seat without thinking. I'm collecting seats.",
-        "Give me four walls and a roof and I'll make it a home in a week. Watch me.",
-        "I'm not running from anything. I'm running toward the feeling of arriving."
-      ]
-    },
-    {
-      "id": "record",
-      "want": "to keep a record of everything",
-      "lines": [
-        "If we don't write it down, it didn't happen. I'm writing it all down.",
-        "Someone has to be the memory of this place. I've volunteered.",
-        "Paper's scarce, so I write small. History doesn't need big letters.",
-        "A hundred years from now someone should know we were here and what it cost.",
-        "I record the arguments too. Especially the arguments. That's the real history.",
-        "Every name, every day, every meal. The boring stuff is the important stuff.",
-        "My notes are a mess. Future scholars will hate me. They'll still read them.",
-        "When it's all over, I'll have the whole story. Somebody should."
-      ]
-    },
-    {
-      "id": "answers",
-      "want": "to make the System explain itself",
-      "lines": [
-        "It owes us an explanation. I'm going to collect.",
-        "Every strange thing that happens, I write down and ask why. Sooner or later the whys run out.",
-        "I'm not angry. I'm curious with teeth.",
-        "You don't get to rearrange the sky and then go quiet. That's not how this works.",
-        "I want to look it in the eye — whatever it uses for eyes — and get one straight answer.",
-        "The System is a locked door. I'm collecting keys.",
-        "Some people pray to it. I interrogate it. Different strategy, same silence.",
-        "When I understand what it wants, I'll decide what I want. Not before."
-      ]
-    },
-    {
-      "id": "legacy",
-      "want": "to be remembered",
-      "lines": [
-        "When I'm gone, I want the story to keep my name in it.",
-        "Everyone gets forgotten eventually. I'm negotiating for later rather than sooner.",
-        "Do something worth retelling. That's the whole plan.",
-        "I don't need a statue. I need one good story that outlives me.",
-        "Remember me kindly, or remember me loudly. Either works.",
-        "The people who mattered are the ones still talked about. I'm working on it.",
-        "Someday kids will sit by a fire and hear what I did. I want it to be a good one.",
-        "Fame is just being remembered by strangers. I'll take it."
-      ]
-    },
-    {
-      "id": "joy",
-      "want": "to laugh again, properly",
-      "lines": [
-        "I want one day where I laugh until it hurts and it's not from nerves.",
-        "Surviving isn't enough. I want to remember what fun felt like.",
-        "I'm collecting jokes like firewood. We'll need them when it's dark.",
-        "Someday this will be a story we tell laughing. I'm fast-forwarding to that part.",
-        "Watch — I'll get a real laugh out of this camp before the week is out.",
-        "The System took a lot. It's not getting my sense of humor.",
-        "I miss laughing without checking over my shoulder first.",
-        "Joy is a resource. I'm foraging for it."
-      ]
-    },
-    {
-      "id": "peace",
-      "want": "to keep the peace",
-      "lines": [
-        "Somebody has to be the calm one. I've taken the job.",
-        "Arguments cost calories. I do the math out loud until people stop.",
-        "I don't pick sides. I pick the group. Every time.",
-        "You two sort it out, or I will, and nobody likes my version.",
-        "Peace isn't the absence of fighting. It's the presence of dinner.",
-        "I've talked down three fights this month. It's a skill. A tiring one.",
-        "Everyone's allowed a bad day. Nobody's allowed two in a row. My rule.",
-        "Hold it together. That's my whole philosophy. Hold it together."
-      ]
     }
   ],
   "temperamentTalk": {
@@ -4069,56 +3742,6 @@
       "\"I don't mind you. Don't make a big deal out of it.\"",
       "\"I had a whole conversation in my head just now. It went well. Your turn.\"",
       "\"...Mm. Sorry. Say that again? I was somewhere better.\""
-    ],
-    "sardonic": [
-      "\"Oh good, another meeting by the fire. My favorite kind of governance.\"",
-      "\"Sure, let's vote. Democracy always works great with no food.\"",
-      "\"I'd offer a plan, but watching is so much more entertaining.\"",
-      "\"Relax. If the System wanted us dead we'd be decorative by now.\"",
-      "\"Another motivational speech? I was just getting comfortable with despair.\"",
-      "\"Great news, everyone: I found a second use for sarcasm. Surviving.\"",
-      "\"I trust the plan. I just also trust gravity, and one of them's winning.\"",
-      "\"Don't mind me. I'm the morale. You're welcome.\""
-    ],
-    "earnest": [
-      "\"I really think we can do this. I mean it. All of us.\"",
-      "\"Thank you for listening. That sounds small, but it isn't.\"",
-      "\"I wrote down what everyone did today. So nobody's work gets forgotten.\"",
-      "\"It's okay to be scared. I'm scared. We're doing it anyway.\"",
-      "\"I believe in this group. Even on the days I don't believe in much else.\"",
-      "\"Can I help? I mean it — give me the worst job, I'll do it.\"",
-      "\"I don't know how this ends, but I know we get there together.\"",
-      "\"You matter here. I need you to know that, because it's true.\""
-    ],
-    "fidgety": [
-      "\"Sitting still is — anyway. What are we doing? I'm ready.\"",
-      "\"I checked the snares. Then I checked them again. Then once more.\"",
-      "\"My hands need a job. Give me a job before my hands find one.\"",
-      "\"Sorry, what? I was — the treeline moved. Probably wind. Probably.\"",
-      "\"I can't sleep unless I'm tired, and I can't get tired sitting here.\"",
-      "\"Walking helps me think. Thinking helps me walk. It's a system.\"",
-      "\"I already packed. Unpacked. Repacked better. We're ready whenever.\"",
-      "\"Stillness makes my skin itch. Don't take it personally if I pace.\""
-    ],
-    "stoic": [
-      "\"It is what it is. We deal with what's in front of us.\"",
-      "\"Complaining doesn't fill the pot. Work does.\"",
-      "\"I've seen worse. Not much worse. But worse.\"",
-      "\"Feelings are weather. They pass. The work stays.\"",
-      "\"No. I'm not upset. This is my face. It does this.\"",
-      "\"We endure. That's the whole strategy, and it works.\"",
-      "\"Save your energy for the things you can change.\"",
-      "\"Tomorrow we try again. That's not optimism. That's scheduling.\""
-    ],
-    "mischievous": [
-      "\"I may have moved your boots. They looked lonely over there.\"",
-      "\"Relax — the soup is fine. Mostly fine. Try it and find out.\"",
-      "\"I started a rumor that the System has a favorite. It's me. Pass it on.\"",
-      "\"Rules are just suggestions with better posture.\"",
-      "\"I hid a pebble in the grain jar. First one to find it wins nothing.\"",
-      "\"Boredom is the real predator out here. I'm fighting it daily.\"",
-      "\"I taught the new kid a greeting in my language. Rough translation: 'your cooking smells interesting.'\"",
-      "\"Smile. The aliens are watching, and I refuse to be boring footage.\""
     ]
   },
   "moodTalk": {
@@ -4128,9 +3751,7 @@
       "\"I keep setting out an extra portion. Then I remember. Then I eat it anyway.\"",
       "\"Someone laughed at dinner. I almost got angry. Then I almost laughed. Grief is weird.\"",
       "\"Don't ask me to be okay. Just... sit. That's enough.\"",
-      "\"I dream about them. In the dream everything's normal. Waking up is the hard part.\"",
-      "\"I found one of their things today. I put it back exactly where it was. Like a museum.\"",
-      "\"Grief's quieter now. That's worse, somehow. Loud grief you can point at.\""
+      "\"I dream about them. In the dream everything's normal. Waking up is the hard part.\""
     ],
     "scared": [
       "\"Did you hear that? Don't tell me you didn't hear that.\"",
@@ -4138,9 +3759,7 @@
       "\"If something happens — you run first. Don't argue. Just run.\"",
       "\"I checked the perimeter three times. I'm going to check it again. Don't judge me.\"",
       "\"Stay where I can see you? Please. I need one thing to not worry about.\"",
-      "\"My hands won't stop shaking. It's embarrassing. Ignore it.\"",
-      "\"Every shadow's got a shape and every shape's got teeth. I know. I know how it sounds.\"",
-      "\"I'm not brave. I'm just too tired to run far. Don't mistake it.\""
+      "\"My hands won't stop shaking. It's embarrassing. Ignore it.\""
     ],
     "cheerful": [
       "\"Okay, but — good news: the soup's actually edible today. Progress!\"",
@@ -4148,9 +3767,7 @@
       "\"I found berries! Actual berries! I'm basically a farmer now.\"",
       "\"Okay, today was GOOD. I'm writing it down so future-me remembers good exists.\"",
       "\"I laughed so hard I forgot to be afraid for a whole minute. New record.\"",
-      "\"The fire's warm, the food's decent, you're here. I'm counting my wins.\"",
-      "\"You know what? I slept through the whole night. The WHOLE night. Luxury!\"",
-      "\"I made extra. I don't know why. It just felt like an extra kind of day.\""
+      "\"The fire's warm, the food's decent, you're here. I'm counting my wins.\""
     ],
     "lonely": [
       "\"It's strange. Twelve people, and I've never felt so... separate.\"",
@@ -4158,9 +3775,7 @@
       "\"Everyone's paired off talking and I'm just... here. With my thoughts. They're bad company.\"",
       "\"I miss being known. Really known. Not 'fellow survivor' known.\"",
       "\"Do you think they talk about me when I'm not there? Don't answer that.\"",
-      "\"I keep almost calling out to people, then stopping. Like my voice forgot how.\"",
-      "\"I talk to the fire now. It listens better than most people.\"",
-      "\"Being lonely in a crowd is a special skill. I've mastered it.\""
+      "\"I keep almost calling out to people, then stopping. Like my voice forgot how.\""
     ],
     "weary": [
       "\"I'm running on fumes and spite at this point. Mostly spite.\"",
@@ -4168,9 +3783,7 @@
       "\"If I sit down I'm not getting up. So I'm not sitting down. That's the plan.\"",
       "\"Everything hurts. Even my hair hurts. Don't ask how. It just does.\"",
       "\"I used to run marathons. Now walking to the creek is a quest.\"",
-      "\"Just... give me a minute. My body filed a complaint and I'm reading it.\"",
-      "\"My bones have started making decisions without me. They vote for sitting.\"",
-      "\"Tired is my baseline now. I've redecorated around it.\""
+      "\"Just... give me a minute. My body filed a complaint and I'm reading it.\""
     ]
   },
   "convo": {
@@ -6044,77 +5657,59 @@
     "\"I've got a theory. It's half-baked. Want to help me bake it?\"",
     "\"Talk me through what you think is happening. Out loud. It helps.\"",
     "\"Am I crazy, or is there a pattern here? Be honest.\"",
-    "\"I need a second brain on this. You're the second brain.\"",
-    "\"Okay, new angle — what if we're asking the wrong question entirely?\"",
-    "\"Rank my theories: alien zoo, broken experiment, or elaborate prank? Go.\"",
-    "\"You ever get the feeling it's listening harder when we figure things out?\"",
-    "\"Hypothetically — if you were running this show, what would you do next?\"",
-    "\"I wrote down everything weird from this week. Want the tour?\"",
-    "\"Serious question: does it bother you how normal this is starting to feel?\""
+    "\"I need a second brain on this. You're the second brain.\""
   ],
   "overheard": {
     "openers": {
       "analytical": [
         "\"The pattern in the attacks — has anyone else noticed it repeats?\"",
-        "\"If the System wanted us dead we'd be dead. So what does it want instead?\"",
-        "\"The third incident followed the same interval as the first two. That's not weather.\""
+        "\"If the System wanted us dead we'd be dead. So what does it want instead?\""
       ],
       "practical": [
         "\"We need more firewood before dark. Who's with me?\"",
-        "\"That snare line needs checking. Talk later, work now.\"",
-        "\"If we rotate the watch, nobody pulls two nights running. Fair's fair.\""
+        "\"That snare line needs checking. Talk later, work now.\""
       ],
       "social": [
         "\"Have you noticed how quiet it's gotten? People are scared to say it out loud.\"",
-        "\"We should eat together tonight. All of us. It matters.\"",
-        "\"Someone's been crying at night. Not naming names — just be kind today.\""
+        "\"We should eat together tonight. All of us. It matters.\""
       ],
       "observant": [
         "\"The creek's lower than yesterday. Markedly.\"",
-        "\"Something's been at the pantry. Not an animal — the jars were moved, not broken.\"",
-        "\"The birds went quiet an hour before the last one came. Remember that.\""
+        "\"Something's been at the pantry. Not an animal — the jars were moved, not broken.\""
       ],
       "creative": [
         "\"What if we built a signal fire? Not for rescue — for each other.\"",
-        "\"I say we name the monsters. Everything's less scary with a name.\"",
-        "\"We should paint the warning markers. Red means run, yellow means look.\""
+        "\"I say we name the monsters. Everything's less scary with a name.\""
       ],
       "steady": [
         "\"One day at a time. We're still here — that counts.\"",
-        "\"Breathe. We've handled worse mornings than this.\"",
-        "\"We've made it this far. That's not luck, that's us.\""
+        "\"Breathe. We've handled worse mornings than this.\""
       ]
     },
     "replies": {
       "analytical": [
         "\"Hmm. That fits what I've been seeing. Let me think about the mechanism...\"",
-        "\"Interesting. But what's the underlying pattern?\"",
-        "\"Correlation isn't cause, but three data points is a pattern. Noted.\""
+        "\"Interesting. But what's the underlying pattern?\""
       ],
       "practical": [
         "\"Right. Let's do it, then. Talking doesn't chop wood.\"",
-        "\"Okay — what's the first step?\"",
-        "\"Good. I'll take the first rotation. Somebody has to.\""
+        "\"Okay — what's the first step?\""
       ],
       "social": [
         "\"I was thinking the same thing. People need to hear that.\"",
-        "\"You're right. I'll talk to the others.\"",
-        "\"Thanks for saying it. I'll check on people. Quietly.\""
+        "\"You're right. I'll talk to the others.\""
       ],
       "observant": [
         "\"I noticed that too. There's more — look closer next time.\"",
-        "\"Good eyes. Keep watching.\"",
-        "\"Quiet birds. I'll add it to the list of things that mean something.\""
+        "\"Good eyes. Keep watching.\""
       ],
       "creative": [
         "\"Ooh — and what if we also...? No, hear me out...\"",
-        "\"I love that. It's crazy enough to work.\"",
-        "\"Paint! Yes. And maybe a song for 'all clear' — something catchy.\""
+        "\"I love that. It's crazy enough to work.\""
       ],
       "steady": [
         "\"Yeah. Yeah, okay. That's solid.\"",
-        "\"Steady on. We'll get there.\"",
-        "\"Us. Yeah. I'll drink to that — water, but still.\""
+        "\"Steady on. We'll get there.\""
       ]
     }
   },
@@ -6457,112 +6052,94 @@
       "lately": [
         "\"Anything on your mind lately?\"",
         "\"How are you holding up — really?\"",
-        "\"What's weighing on you right now?\"",
-        "\"What's new with you? Anything good, bad, or weird?\""
+        "\"What's weighing on you right now?\""
       ],
       "you": [
         "\"What do you think of me — honestly?\"",
         "\"How am I doing, by your lights?\"",
-        "\"Be straight with me. What am I to you?\"",
-        "\"What do you want me to know about you?\""
+        "\"Be straight with me. What am I to you?\""
       ],
       "fears": [
         "\"What scares you?\"",
         "\"What keeps you up at night?\"",
-        "\"What are you afraid of?\"",
-        "\"What's the thing you don't say out loud?\""
+        "\"What are you afraid of?\""
       ],
       "oldworld": [
         "\"What do you miss about before?\"",
         "\"What was the old world like?\"",
-        "\"Tell me something good about the world before.\"",
-        "\"What small thing do you miss most?\""
+        "\"Tell me something good about the world before.\""
       ],
       "skills": [
         "\"What are you good at?\"",
         "\"What did you do best, before?\"",
-        "\"What's your thing — what are you for?\"",
-        "\"What should I ask you for help with?\""
+        "\"What's your thing — what are you for?\""
       ],
       "others": [
         "\"Who's on your mind around here?\"",
         "\"What do you make of the others?\"",
-        "\"Anyone here I should understand better?\"",
-        "\"Who here surprised you lately?\""
+        "\"Anyone here I should understand better?\""
       ],
       "systemtake": [
         "\"What do you make of the System?\"",
         "\"How do you feel about the System?\"",
-        "\"The System — friend or leash?\"",
-        "\"If you could ask the System one question, what?\""
+        "\"The System — friend or leash?\""
       ],
       "advice": [
         "\"What should I know?\"",
         "\"Got any advice for me?\"",
-        "\"What would you tell someone trying to survive this?\"",
-        "\"What's the one rule you'd give a newcomer?\""
+        "\"What would you tell someone trying to survive this?\""
       ],
       "loved": [
         "\"Is there someone you're hoping to find?\"",
         "\"Anyone waiting for you out there?\"",
-        "\"Who did you leave behind?\"",
-        "\"What would you tell them, if you could?\""
+        "\"Who did you leave behind?\""
       ]
     },
     "moreLabels": {
       "lately": [
         "\"And then?\"",
         "\"What happened next?\"",
-        "\"Go on.\"",
-        "\"Keep going.\""
+        "\"Go on.\""
       ],
       "you": [
         "\"Say more.\"",
         "\"What else?\"",
-        "\"Go on — I can take it.\"",
-        "\"I want to understand.\""
+        "\"Go on — I can take it.\""
       ],
       "fears": [
         "\"And?\"",
         "\"What else scares you?\"",
-        "\"Go on.\"",
-        "\"That's real.\""
+        "\"Go on.\""
       ],
       "oldworld": [
         "\"What else do you remember?\"",
         "\"Tell me another.\"",
-        "\"Go on.\"",
-        "\"Paint me the picture.\""
+        "\"Go on.\""
       ],
       "skills": [
         "\"How'd you learn that?\"",
         "\"What else are you good at?\"",
-        "\"Go on.\"",
-        "\"Show me sometime?\""
+        "\"Go on.\""
       ],
       "others": [
         "\"Tell me more about them.\"",
         "\"What else?\"",
-        "\"Go on.\"",
-        "\"Interesting — why them?\""
+        "\"Go on.\""
       ],
       "systemtake": [
         "\"Say more.\"",
         "\"What else about it?\"",
-        "\"Go on.\"",
-        "\"Tell me the rest.\""
+        "\"Go on.\""
       ],
       "advice": [
         "\"What else?\"",
         "\"And?\"",
-        "\"Go on.\"",
-        "\"Useful. Continue.\""
+        "\"Go on.\""
       ],
       "loved": [
         "\"Tell me about them.\"",
         "\"What were they like?\"",
-        "\"Go on.\"",
-        "\"They sound wonderful.\""
+        "\"Go on.\""
       ]
     }
   },
@@ -6578,10 +6155,7 @@
       ],
       "clothing": [
         "outdoor",
-        "casual",
-        "flannel over rain shell",
-        "patched hiking pants",
-        "thrift-store windbreaker"
+        "casual"
       ]
     },
     "Miami, Florida": {
@@ -6596,10 +6170,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "linen guayabera",
-        "sun-bleached tank top",
-        "tourist tee, threadbare"
+        "casual"
       ]
     },
     "Chicago, Illinois": {
@@ -6614,10 +6185,7 @@
       ],
       "clothing": [
         "casual",
-        "workwear",
-        "union jacket, oil-stained",
-        "puffer vest, patched",
-        "ball cap, sweat-stained"
+        "workwear"
       ]
     },
     "rural Vermont": {
@@ -6631,10 +6199,7 @@
       ],
       "clothing": [
         "outdoor",
-        "workwear",
-        "plaid wool overshirt",
-        "barn coat, mended",
-        "mud-caked work boots"
+        "workwear"
       ]
     },
     "Houston, Texas": {
@@ -6649,10 +6214,7 @@
       ],
       "clothing": [
         "casual",
-        "workwear",
-        "oilfield coveralls",
-        "rodeo buckle and jeans",
-        "faded sports tee"
+        "workwear"
       ]
     },
     "New Orleans, Louisiana": {
@@ -6666,10 +6228,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "second-line sash",
-        "mardi gras beads still on",
-        "linen shirt, sweat-ringed"
+        "casual"
       ]
     },
     "Brooklyn, New York": {
@@ -6683,10 +6242,7 @@
       ],
       "clothing": [
         "casual",
-        "bright",
-        "vintage band tee",
-        "work beanie, pilled",
-        "scuffed leather jacket"
+        "bright"
       ]
     },
     "Tucson, Arizona": {
@@ -6699,10 +6255,7 @@
       ],
       "clothing": [
         "outdoor",
-        "casual",
-        "desert-dust boots",
-        "bolo tie",
-        "sun-faded work shirt"
+        "casual"
       ]
     },
     "Tokyo, Japan": {
@@ -6713,11 +6266,7 @@
         "tan"
       ],
       "clothing": [
-        "casual",
-        "layered streetwear",
-        "salaryman suit, rumpled",
-        "travel-worn yukata",
-        "techwear shell"
+        "casual"
       ]
     },
     "Lagos, Nigeria": {
@@ -6730,10 +6279,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "ankara print wrapper",
-        "agbada, dust-hemmed",
-        "market-stall jeans"
+        "casual"
       ]
     },
     "São Paulo, Brazil": {
@@ -6746,10 +6292,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "faded football jersey",
-        "barbecue-stained apron",
-        "mismatched sandals"
+        "casual"
       ]
     },
     "Cairo, Egypt": {
@@ -6761,11 +6304,7 @@
         "light"
       ],
       "clothing": [
-        "casual",
-        "galabeya, dust-grey",
-        "cap, sweat-stained",
-        "tour-guide polo, frayed",
-        "scavenged military jacket"
+        "casual"
       ]
     },
     "Mumbai, India": {
@@ -6778,10 +6317,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "kurta, sweat-patched",
-        "sari, travel-folded",
-        "railway-uniform trousers"
+        "casual"
       ]
     },
     "Berlin, Germany": {
@@ -6793,11 +6329,7 @@
         "tan"
       ],
       "clothing": [
-        "casual",
-        "black techwear layers",
-        "squat-party jacket",
-        "surplus army coat",
-        "club-stamp wristband"
+        "casual"
       ]
     },
     "Seoul, South Korea": {
@@ -6808,11 +6340,7 @@
         "tan"
       ],
       "clothing": [
-        "casual",
-        "oversized streetwear set",
-        "office shirt, sleeves rolled",
-        "trail-worn hiking vest",
-        "delivery-rider windbreaker"
+        "casual"
       ]
     },
     "Mexico City, Mexico": {
@@ -6826,10 +6354,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "embroidered blouse",
-        "wrestling-mask tee",
-        "market apron, flour-dusted"
+        "casual"
       ]
     },
     "Jakarta, Indonesia": {
@@ -6840,11 +6365,7 @@
         "brown"
       ],
       "clothing": [
-        "casual",
-        "batik shirt, faded",
-        "motorbike-taxi windbreaker",
-        "sarong, travel-worn",
-        "monsoon poncho, taped"
+        "casual"
       ]
     },
     "Nairobi, Kenya": {
@@ -6857,10 +6378,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "kikoy wrap",
-        "red-checked shuka",
-        "minibus-crew jacket"
+        "casual"
       ]
     },
     "Buenos Aires, Argentina": {
@@ -6872,11 +6390,7 @@
         "brown"
       ],
       "clothing": [
-        "casual",
-        "bombacha trousers",
-        "dance-hall shirt",
-        "football scarf, knotted",
-        "leather jacket, porteño cut"
+        "casual"
       ]
     },
     "Istanbul, Turkey": {
@@ -6888,11 +6402,7 @@
         "fair"
       ],
       "clothing": [
-        "casual",
-        "bazaar apron",
-        "ferry-commuter coat",
-        "kilim-patterned scarf",
-        "tea-house vest"
+        "casual"
       ]
     },
     "Bangkok, Thailand": {
@@ -6904,10 +6414,7 @@
       ],
       "clothing": [
         "casual",
-        "bright",
-        "old boxing shorts",
-        "tuk-tuk driver vest",
-        "temple-visit sarong"
+        "bright"
       ]
     },
     "Manila, Philippines": {
@@ -6919,10 +6426,7 @@
       ],
       "clothing": [
         "casual",
-        "bright",
-        "barong, travel-creased",
-        "jeepney-barker tee",
-        "rain poncho, patched"
+        "bright"
       ]
     },
     "Lima, Peru": {
@@ -6933,11 +6437,7 @@
         "light"
       ],
       "clothing": [
-        "casual",
-        "andean-weave poncho",
-        "net-mended jacket",
-        "chullo, earflaps down",
-        "fishing slicker, cracked"
+        "casual"
       ]
     },
     "Warsaw, Poland": {
@@ -6950,10 +6450,7 @@
       ],
       "clothing": [
         "casual",
-        "outdoor",
-        "knotted folk scarf",
-        "milk-bar cook whites",
-        "old tracksuit"
+        "outdoor"
       ]
     },
     "Accra, Ghana": {
@@ -6966,10 +6463,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "kente-cloth sash",
-        "bus-mate vest",
-        "wax-print dress, hemmed"
+        "casual"
       ]
     },
     "Hanoi, Vietnam": {
@@ -6980,11 +6474,7 @@
         "fair"
       ],
       "clothing": [
-        "casual",
-        "travel-worn ao dai",
-        "street-vendor conical hat",
-        "army-surplus field coat",
-        "noodle-stall apron"
+        "casual"
       ]
     },
     "Bogotá, Colombia": {
@@ -6995,11 +6485,7 @@
         "light"
       ],
       "clothing": [
-        "casual",
-        "highland wool ruana",
-        "cycling windbreaker",
-        "coffee-picker apron",
-        "bus-terminal jacket"
+        "casual"
       ]
     },
     "Kyiv, Ukraine": {
@@ -7012,10 +6498,7 @@
       ],
       "clothing": [
         "casual",
-        "outdoor",
-        "embroidered shirt, travel-creased",
-        "volunteer-issue fleece",
-        "metro-worker jacket"
+        "outdoor"
       ]
     },
     "Addis Ababa, Ethiopia": {
@@ -7027,10 +6510,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "netela shawl",
-        "coffee-ceremony dress",
-        "minibus-tout jacket"
+        "casual"
       ]
     },
     "Dhaka, Bangladesh": {
@@ -7042,10 +6522,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "lungi, travel-worn",
-        "rickshaw-puller vest",
-        "monsoon poncho, taped"
+        "casual"
       ]
     },
     "Caracas, Venezuela": {
@@ -7058,10 +6535,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "liquiliqui, rumpled",
-        "arepa-stall apron",
-        "bus-driver cap"
+        "casual"
       ]
     },
     "rural Ireland": {
@@ -7074,10 +6548,7 @@
       ],
       "clothing": [
         "outdoor",
-        "workwear",
-        "aran sweater, mended",
-        "flat cap, rain-darkened",
-        "wellies, muck-caked"
+        "workwear"
       ]
     },
     "Oslo, Norway": {
@@ -7090,10 +6561,7 @@
       ],
       "clothing": [
         "outdoor",
-        "casual",
-        "patterned wool sweater",
-        "fjord-ferry deck coat",
-        "thermal base layers"
+        "casual"
       ]
     },
     "Marrakech, Morocco": {
@@ -7106,10 +6574,7 @@
       ],
       "clothing": [
         "bright",
-        "casual",
-        "djellaba, dust-hemmed",
-        "souk-trader vest",
-        "worn leather slippers"
+        "casual"
       ]
     },
     "Auckland, New Zealand": {
@@ -7121,10 +6586,7 @@
       ],
       "clothing": [
         "outdoor",
-        "casual",
-        "bush shirt, oilskin",
-        "rugby jersey, stretched",
-        "tramping boots, re-soled"
+        "casual"
       ]
     },
     "Rome, Italy": {
@@ -7137,11 +6599,7 @@
         "brown"
       ],
       "clothing": [
-        "casual",
-        "linen suit, rumpled",
-        "scooter-rider jacket",
-        "flour-dusted apron",
-        "scarf, knotted loose"
+        "casual"
       ]
     },
     "default": {
@@ -7156,9 +6614,7 @@
       "clothing": [
         "casual",
         "workwear",
-        "outdoor",
-        "scavenged layers",
-        "pre-Scattering uniform, nameless"
+        "outdoor"
       ]
     }
   }

@@ -81,7 +81,7 @@ function ok(name, cond, note) {
 
   const bad = said.filter(s => /This (a|an) (tree|bush|plant|water)\b/i.test(s) && !/This (is|was)/i.test(s));
   ok('no "This a/an tree" style copy when species unknown', bad.length === 0, bad.slice(0, 2).join(' | '));
-  const treeLines = said.filter(s => /^This (tree you don't recognize|[a-z]+), /.test(s));
+  const treeLines = said.filter(s => /^This (tree|[a-z]+), /.test(s));
   ok('examine produces a tree description line', treeLines.length > 0, said.slice(0, 3).join(' | '));
 
   // known species branch still reads right ("This oak, ...")

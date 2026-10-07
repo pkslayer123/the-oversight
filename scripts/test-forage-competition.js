@@ -43,7 +43,7 @@ function freshGame() {
   // current); generated=true alone no longer suppresses the sim, because
   // every approach re-syncs a village you've walked away from (2026-10-05).
   for (const ov of (Game.state.otherVillages || [])) { ov.generated = true; ov.day = Game.state.scholar.day; }
-  return { s, v, hx: v.px ?? 4, hy: v.py ?? 4 };
+  return { s, v, hx: v.px ?? 3, hy: v.py ?? 3 };
 }
 const sayText = () => said.join(' | ');
 const FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };

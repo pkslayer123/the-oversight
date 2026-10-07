@@ -647,57 +647,5 @@
    },
    "startMod": "object?"
   }
- },
- "alienPlayer": {
-  "required": [
-   "id",
-   "name",
-   "title",
-   "species",
-   "disposition",
-   "wealth",
-   "experience",
-   "combat",
-   "voice",
-   "backstory",
-   "motivation",
-   "signature",
-   "rivalry",
-   "introLines",
-   "defeatLines",
-   "abilityKit",
-   "alienTech"
-  ],
-  "types": {
-   "id": "string",
-   "name": "string",
-   "title": "string",
-   "species": "string",
-   "disposition": ["sadistic", "neutral", "benevolent"],
-   "wealth": ["rich", "comfortable", "broke"],
-   "experience": ["veteran", "rookie"],
-   "combat": "boolean",
-   "voice": "string",
-   "backstory": "string",
-   "motivation": "string",
-   "signature": "string",
-   "rivalry": "string",
-   "introLines": "string[]",
-   "taunts": "string[]",
-   "victoryLines": "string[]",
-   "defeatLines": "string[]",
-   "escalationLines": "string[]",
-   "combatLines": {
-    "onHit": "string[3..3]",
-    "onHurt": "string[3..3]",
-    "onWinning": "string[3..3]",
-    "onLosing": "string[3..3]",
-    "unhinged": "string[3..3]"
-   },
-   "helpLines": "string[]",
-   "tradeLines": "string[]",
-   "abilityKit": "string[]",
-   "alienTech": [{"id": "string", "name": "string", "desc": "string"}]
-  }
  }
 }

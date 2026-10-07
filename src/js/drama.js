@@ -2,8 +2,6 @@
 // system: drama
 // description: Drama overlay — loosely-bound animation layer for emphasis.
 // provides:
-//   - abilitySignature: per-ability signature visuals — 10 unique + pool-styled fallbacks (Steve 2026-10-07, Drama D1)
-//   - poolSignature: pool-styled fallback visuals (combat/social/exploration/investigation/system/care/fieldcraft/craft)
 //   - ensureOverlay: creates the .drama-overlay div over the grid
 //   - hit: impact starburst — L1 standard, L2 larger+secondary, L3 massive+shockwave (Steve 2026-10-07, Drama C3)
 //   - floatText: damage numbers / labels that drift up and fade
@@ -41,18 +39,13 @@
 //   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
 //   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
 //   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
-//   - playerDeath: slow fade to black + soul wisp + "THE STORY CONTINUES" (Steve 2026-10-07, Drama C2)
-//   - newLife: bright emergence — "A NEW SCHOLAR AWAKENS" (Steve 2026-10-07, Drama C2)
-//   - abilityLevelUp: golden burst + LEVEL UP + ability name (Steve 2026-10-07, Drama C2)
-//   - synergyShimmer: pre-reveal shimmer — "something is happening" (Steve 2026-10-07, Drama C2)
-//   - villageBirth: soft pink glow + baby (Steve 2026-10-07, Drama C2)
-//   - villageDeath: gray wisp + bell toll (Steve 2026-10-07, Drama C2)
-//   - plantIdentified: leaf unfurl + name reveal (Steve 2026-10-07, Drama D2)
-//   - techniqueLearned: scroll unroll + golden name (Steve 2026-10-07, Drama D2)
-//   - codexLinked: book-open card + page-flip shimmer (Steve 2026-10-07, Drama D2)
-//   - skillGained: rising light beam + skill name (Steve 2026-10-07, Drama D2)
-//   - teaseFaint: 1st-tease whisper shimmer (Steve 2026-10-07, Drama D2)
-//   - ahaMoment: lightbulb + radiating lines on knowledge unlocks (Steve 2026-10-07, Drama D2)
+//   - socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1)
+//   - mootGather: village gathers — fire pulse + banner (Steve 2026-10-07, Drama C1)
+//   - mootVote: vote tally bar with visual weight (Steve 2026-10-07, Drama C1)
+//   - exileMoment: dark vignette + EXILED banner (Steve 2026-10-07, Drama C1)
+//   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
+//   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
+//   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
 //   - All animations use transform/opacity only — GPU-composited, no layout/paint (code: drama.js).
@@ -64,7 +57,6 @@
   const S = global.Scattering = global.Scattering || {};
 
   const Drama = {
-    effectRegistry: null, // Scaffold #4 (Steve 2026-10-07): data-driven effect definitions from src/data/dramaEffects.json. Set by game.js after data load.
     overlay: null,
 
     // ensure the overlay exists, positioned over the grid
@@ -115,94 +107,6 @@
     //   L1 LINKED:    standard starburst. The System observes.
     //   L2 ATTUNED:   larger starburst + secondary smaller burst. The System participates.
     //   L3 INTEGRATED: massive starburst + expanding shockwave ring. The System celebrates.
-    // renderEffect(id, args): generic data-driven renderer (Steve 2026-10-07, Scaffold #4).
-    // Reads src/data/dramaEffects.json instead of bespoke methods. Visual output
-    // is IDENTICAL — the JSON contains the same expressions, evaluated in the
-    // same scope. Migrated incrementally; unmigrated methods stay hand-written.
-    renderEffect(id, args) {
-      args = args || {};
-      const def = (this.effectRegistry || {})[id];
-      if (!def) return null;
-      const scope = Object.assign({}, args);
-      // computed expressions, in definition order (can reference params + earlier computed)
-      if (def.computed) {
-        for (const key of Object.keys(def.computed)) {
-          scope[key] = this._evalExpr(def.computed[key], scope);
-        }
-      }
-      // anchor coords: tile -> cx/cy from tileCenter
-      if (def.anchor === 'tile' && typeof args.x === 'number' && typeof args.y === 'number') {
-        const c = this.tileCenter(args.x, args.y);
-        scope.cx = c.x; scope.cy = c.y;
-      }
-      for (const step of (def.steps || [])) {
-        if (step.when && !this._evalExpr(step.when, scope)) continue;
-        if (step.do === 'spawn') {
-          this.spawn(
-            this._evalTemplate(step.html || '', scope),
-            this._evalTemplate(step.css || '', scope),
-            step.animClass,
-            this._evalField(step.duration, scope)
-          );
-        } else if (step.do === 'particles') {
-          const count = this._evalField(step.count, scope);
-          const stagger = step.stagger || 0;
-          for (let i = 0; i < count; i++) {
-            const pscope = Object.assign({ i: i }, scope);
-            if (step.vary) {
-              for (const vk of Object.keys(step.vary)) {
-                const v = step.vary[vk];
-                pscope[vk] = Array.isArray(v) ? v[i % v.length] : this._evalExpr(v, pscope);
-              }
-            }
-            // Capture synchronously (matches original: values computed before setTimeout)
-            const html = this._evalTemplate(step.html || '', pscope);
-            const css = this._evalTemplate(step.css || '', pscope);
-            const duration = this._evalField(step.duration, pscope);
-            const animClass = step.animClass;
-            setTimeout(() => { this.spawn(html, css, animClass, duration); }, i * stagger);
-          }
-        } else if (step.do === 'call') {
-          const callArgs = (step.args || []).map(a => this._evalField(a, scope));
-          if (typeof this[step.method] === 'function') this[step.method].apply(this, callArgs);
-        }
-      }
-      return true;
-    },
-
-    // _evalExpr: evaluate a JS expression with scope vars + Math available.
-    // Expressions come from our own dramaEffects.json — not user input.
-    _evalExpr(expr, scope) {
-      const keys = Object.keys(scope);
-      const fn = new Function(...keys, 'Math', '"use strict"; return (' + expr + ');');
-      return fn.apply(null, keys.map(k => scope[k]).concat([Math]));
-    },
-
-    // _evalTemplate: substitute {expression} placeholders in a string.
-    _evalTemplate(tpl, scope) {
-      return tpl.replace(/\{([^{}]+)\}/g, (m, expr) => {
-        try {
-          const v = this._evalExpr(expr, scope);
-          return (v === undefined || v === null) ? '' : String(v);
-        } catch (e) { return ''; }
-      });
-    },
-
-    // _evalField: if the whole field is a single {expr}, return the raw value
-    // (preserves numbers for duration/count). Otherwise template-substitute.
-    // Numeric strings are returned as numbers (matches original number args).
-    _evalField(field, scope) {
-      if (typeof field !== 'string') return field;
-      const m = /^\{([^{}]+)\}$/.exec(field.trim());
-      if (m) {
-        try { return this._evalExpr(m[1], scope); }
-        catch (e) { return field; }
-      }
-      const sub = this._evalTemplate(field, scope);
-      if (/^-?\d+(\.\d+)?$/.test(sub.trim())) return Number(sub);
-      return sub;
-    },
-
     hit(x, y, opts) {
       opts = opts || {};
       const c = this.tileCenter(x, y);
@@ -258,25 +162,12 @@
     // floating text (damage, labels)
     floatText(x, y, text, opts) {
       opts = opts || {};
+      const c = this.tileCenter(x, y);
       const color = opts.color || '#fff';
       const size = opts.size || 18;
-      const dx = opts.dx || 0;
-      const dy = opts.dy || 0;
-      let left, top;
-      // PERCENTAGE STRINGS (Steve 2026-10-07): if x/y are '50%' style strings,
-      // use them directly as CSS. Passing them through tileCenter coerces to
-      // invalid '50%0px' which browsers drop (text renders top-left).
-      if (typeof x === 'string' && x.includes('%')) {
-        left = `left:${x};`;
-        top = `top:${y};`;
-      } else {
-        const c = this.tileCenter(x, y);
-        left = `left:${c.x + dx}px;`;
-        top = `top:${c.y + dy}px;`;
-      }
       this.spawn(
         text,
-        `position:absolute;${left}${top}transform:translate(-50%,-50%);color:${color};font-size:${size}px;font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.8);white-space:nowrap;`,
+        `position:absolute;left:${c.x}px;top:${c.y}px;transform:translate(-50%,-50%);color:${color};font-size:${size}px;font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.8);white-space:nowrap;`,
         'drama-float',
         800
       );
@@ -609,7 +500,7 @@
       );
       if (integration >= 1) {
         const label = { windup: '⚡ WINDUP', strike: '💥 STRIKE', recovery: '🌿 RECOVERY' }[phaseLabel] || String(phaseLabel).toUpperCase();
-        this.floatText(x, y, label, { color: color, size: 14 + integration * 2, dy: -30 });
+        this.floatText(c.x, c.y - 30, label, { color: color, size: 14 + integration * 2 });
       }
     },
 
@@ -624,9 +515,9 @@
         'drama-enrage',
         1000 + integration * 200
       );
-      this.floatText(x, y, '💢', { color: '#ff5252', size: 28 + integration * 6, dy: -35 });
+      this.floatText(c.x, c.y - 35, '💢', { color: '#ff5252', size: 28 + integration * 6 });
       const tname = { enraged: 'ENRAGED', cunning: 'CUNNING', desperate: 'DESPERATE' }[temper] || 'ENRAGED';
-      this.floatText(x, y, tname, { color: '#ff6b6b', size: 13 + integration * 2, dy: 30 });
+      this.floatText(c.x, c.y + 30, tname, { color: '#ff6b6b', size: 13 + integration * 2 });
       this.shake(6 + integration * 3);
     },
 
@@ -657,8 +548,9 @@
       integration = integration || 0;
       const size = 90 + integration * 25; // 90 → 165
       this.hit(x, y, { color: '#ffeb3b', size: size, integration: 0 });
-      this.floatText(x, y, 'CRIT!', { color: '#ffeb3b', size: 24 + integration * 6, dy: -25 });
-      this.floatText(x, y, String(dmg), { color: '#ffffff', size: 18 + integration * 4, dy: 20 });
+      const c = this.tileCenter(x, y);
+      this.floatText(c.x, c.y - 25, 'CRIT!', { color: '#ffeb3b', size: 24 + integration * 6 });
+      this.floatText(c.x, c.y + 20, String(dmg), { color: '#ffffff', size: 18 + integration * 4 });
       if (integration >= 2) this.shake(4 + integration * 2);
       if (integration >= 3) this.flash('rgba(255,235,59,0.18)', 400);
     },
@@ -680,7 +572,7 @@
     dodgeMiss(x, y, integration) {
       integration = integration || 0;
       const c = this.tileCenter(x, y);
-      this.floatText(x, y, 'MISS', { color: '#b0c4de', size: 16 + integration * 2, dy: -20 });
+      this.floatText(c.x, c.y - 20, 'MISS', { color: '#b0c4de', size: 16 + integration * 2 });
       // afterimage: fading silhouette ghost
       this.spawn(
         `<div style="font-size:32px;opacity:0.5;filter:blur(1px);">👤</div>`,
@@ -994,667 +886,165 @@
       this.flash('rgba(192,57,43,0.25)', 500);
       this.shake(8 + (integration * 2));
     },
-    // playerDeath: the bearer falls. Slow fade to black, soul wisp rises.
-    // The Oversight's tone is NOT Dark Souls bleak — the mantle passes, the
-    // story continues. "THE STORY CONTINUES" lands as the black lifts.
-    // Steve 2026-10-07: transitions drama (Round C2).
-    playerDeath(x, y, name, cause, integration) {
-      integration = integration || 0;
-      // slow fade to black: in 1.5s, hold, out 1.5s — the game continues after
-      this.spawn(
-        '',
-        'position:absolute;inset:0;background:#000;',
-        'drama-deathfade',
-        4200
-      );
-      // soul wisp rises from where they fell
-      setTimeout(() => { this.soulWisp(x, y); }, 800);
-      // the Oversight's epitaph — not bleak, the story continues
-      setTimeout(() => {
-        this.spawn(
-          `<div style="text-align:center;">
-             <div style="font-size:15px;color:#8a8a9a;letter-spacing:3px;margin-bottom:8px;">${(name || 'THE SCHOLAR').toUpperCase()} IS GONE</div>
-             <div style="font-size:22px;font-weight:bold;color:#e8e8f0;letter-spacing:1px;">THE STORY CONTINUES</div>
-             ${integration >= 2 ? '<div style="font-size:13px;color:#4df3ff;margin-top:10px;font-style:italic;">"Oh no. OH NO. The audience is standing. Somebody get the next one ready — the show goes ON."</div>' : ''}
-           </div>`,
-          'position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);',
-          'drama-deathtext',
-          2600
-        );
-      }, 1400);
-    },
 
-    // newLife: the mantle passes — bright emergence. A new scholar awakens.
-    // Brighter and longer with integration: the System makes a show of it.
-    // Steve 2026-10-07: transitions drama (Round C2).
-    newLife(name, integration) {
-      integration = integration || 0;
-      // bright bloom: white-gold flash that settles
-      this.flash('rgba(255,250,230,0.55)', 900 + (integration * 300));
-      setTimeout(() => {
-        this.spawn(
-          `<div style="text-align:center;padding:22px 26px;background:rgba(12,14,10,0.94);border:2px solid #ffd54a;border-radius:12px;max-width:290px;">
-             <div style="font-size:44px;margin-bottom:6px;">🌅</div>
-             <div style="font-size:19px;font-weight:bold;color:#ffd54a;margin-bottom:4px;letter-spacing:2px;">A NEW SCHOLAR AWAKENS</div>
-             <div style="font-size:15px;color:#e8e8f0;">${name || 'Someone'}</div>
-             <div style="font-size:13px;color:#9a9aa8;margin-top:6px;font-style:italic;">The Codex turns a page. The mantle passes.</div>
-             ${integration >= 3 ? '<div style="font-size:13px;color:#4df3ff;margin-top:8px;">⬢ "New face! Same job! We hardly noticed. (We noticed.)"</div>' : ''}
-           </div>`,
-          'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(0.85);',
-          'drama-rebirth',
-          2800 + (integration * 300)
-        );
-      }, 500);
-    },
-
-    // abilityLevelUp: golden burst + LEVEL UP + ability name at the player.
-    // Steve 2026-10-07: transitions drama (Round C2).
-    abilityLevelUp(x, y, abilityName, level, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 90 + (integration * 25);
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 80 80"><circle cx="40" cy="40" r="36" fill="none" stroke="#ffd54a" stroke-width="4" opacity="0.9"/><circle cx="40" cy="40" r="26" fill="none" stroke="#fff2b0" stroke-width="2" opacity="0.6"/></svg>`,
-        `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
-        'drama-levelup-ring',
-        900 + (integration * 150)
-      );
-      this.spawn(
-        `<div style="text-align:center;">
-           <div style="font-size:20px;font-weight:bold;color:#ffd54a;letter-spacing:3px;text-shadow:0 2px 6px rgba(0,0,0,0.9);">LEVEL UP</div>
-           <div style="font-size:15px;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,0.9);">${abilityName || ''} → L${level || ''}</div>
-         </div>`,
-        `position:absolute;left:${c.x}px;top:${c.y - 44}px;transform:translate(-50%,-100%);`,
-        'drama-levelup-text',
-        1600 + (integration * 200)
-      );
-      if (integration >= 3) {
-        this.flash('rgba(255,213,74,0.12)', 400);
+    // socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1).
+    // Game.drama('social', spec) routes here. spec.type:
+    // 'moot' | 'vote' | 'exile' | 'liar' | 'reconcile' | 'betray'
+    socialFlash(spec) {
+      if (!spec || typeof spec !== 'object' || !spec.type) return;
+      const integ = spec.integration || 0;
+      switch (spec.type) {
+        case 'moot': return this.mootGather(spec.caller || 'Someone', integ);
+        case 'vote': return this.mootVote(spec.guilty || 0, spec.total || 0, integ);
+        case 'exile': return this.exileMoment(spec.name || 'The accused', integ);
+        case 'liar': return this.liarExposed(spec.name || 'The liar', integ);
+        case 'reconcile': return this.reconcileGlow(spec.name || '', integ);
+        case 'betray': return this.betraySlash(spec.name || 'The betrayer', integ);
+        default: return;
       }
     },
 
-    // synergyShimmer: the pre-reveal — "something is happening." Fires on the
-    // 2nd tease, before the hero card at unlock. Iridescent, brief, unmissable.
-    // Steve 2026-10-07: transitions drama (Round C2).
-    synergyShimmer(integration) {
+    // mootGather: the village gathers — warm fire pulse, crowd converges
+    mootGather(caller, integration) {
       integration = integration || 0;
-      const alpha = 0.10 + (integration * 0.05);
+      // fire glow: warm radial pulse from center
       this.spawn(
         '',
-        `position:absolute;inset:0;background:linear-gradient(115deg, transparent 20%, rgba(199,146,234,${alpha}) 40%, rgba(77,243,255,${alpha}) 60%, transparent 80%);`,
-        'drama-synshimmer',
-        1200 + (integration * 200)
-      );
-      this.floatText('50%', '30%', 'something is happening…', { color: '#c792ea', size: 15 + integration });
-    },
-
-    // villageBirth: rare and soft — pink glow, a baby emoji, the System coos at L2+.
-    // Steve 2026-10-07: transitions drama (Round C2). Births are gated to 270+ days.
-    villageBirth(babyName, parentName, integration) {
-      integration = integration || 0;
-      this.spawn(
-        '',
-        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,182,213,0.22) 0%, transparent 60%);',
-        'drama-birthglow',
-        2200 + (integration * 300)
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,150,50,0.25) 0%, transparent 60%);',
+        'drama-moot-glow',
+        2000 + (integration * 400)
       );
       this.spawn(
-        `<div style="text-align:center;">
-           <div style="font-size:42px;">👶</div>
-           <div style="font-size:16px;font-weight:bold;color:#ffc4dd;text-shadow:0 2px 6px rgba(0,0,0,0.9);">${babyName || 'A child'}</div>
-           <div style="font-size:13px;color:#d8d8e2;">born to ${parentName || 'the village'}</div>
-           ${integration >= 2 ? '<div style="font-size:13px;color:#4df3ff;margin-top:8px;font-style:italic;">⬢ "A NEW VIEWER! ...a new person! We mean person! Welcome, tiny human!"</div>' : ''}
-         </div>`,
-        'position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(0.9);',
-        'drama-birthcard',
-        2600 + (integration * 300)
+        `<div style="font-size:22px;font-weight:bold;color:#ffb347;text-shadow:0 2px 8px rgba(0,0,0,0.9);letter-spacing:1px;">🔥 MOOT CALLED<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${caller} summons the village</span></div>`,
+        'position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-moot-banner',
+        2500
       );
+      if (integration >= 2) {
+        this.floatText('50%', '45%', '📺 The System tunes in — the galaxy watches', { color: '#ff6b9d', size: 13 });
+      }
     },
 
-    // villageDeath: gray wisp rises, a bell tolls (visual pulse). Muted, respectful.
-    // Steve 2026-10-07: transitions drama (Round C2).
-    villageDeath(name, cause, integration) {
+    // mootVote: vote tally with visual weight — guilty votes stack red, innocent green
+    mootVote(guilty, total, integration) {
       integration = integration || 0;
-      // gray wisp — the village dead are off-screen, this is memorial
+      const innocent = total - guilty;
+      const guiltyPct = total > 0 ? Math.round((guilty / total) * 100) : 0;
+      const barW = 200 + (integration * 20);
       this.spawn(
-        `<svg width="36" height="48" viewBox="0 0 30 40"><ellipse cx="15" cy="20" rx="10" ry="15" fill="rgba(160,160,175,0.6)"/></svg>`,
-        'position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);',
-        'drama-villagerwisp',
-        1800 + (integration * 200)
+        `<div style="text-align:center;background:rgba(10,10,10,0.9);padding:16px;border-radius:8px;border:1px solid #666;">
+          <div style="font-size:16px;font-weight:bold;color:#fff;margin-bottom:8px;">THE COUNT</div>
+          <div style="display:flex;width:${barW}px;height:24px;border-radius:4px;overflow:hidden;margin:0 auto;">
+            <div style="width:${guiltyPct}%;background:#c0392b;"></div>
+            <div style="width:${100 - guiltyPct}%;background:#27ae60;"></div>
+          </div>
+          <div style="font-size:13px;color:#ccc;margin-top:6px;"><span style="color:#ff6b6b;">${guilty} guilty</span> · <span style="color:#7cfc9a;">${innocent} innocent</span></div>
+        </div>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);',
+        'drama-vote',
+        3000
       );
-      this.spawn(
-        `<div style="text-align:center;">
-           <div style="font-size:34px;">🔔</div>
-           <div style="font-size:15px;color:#b8b8c4;">${name || 'Someone'} — ${cause || 'gone'}</div>
-           <div style="font-size:13px;color:#8a8a96;font-style:italic;">the village mourns</div>
-         </div>`,
-        'position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);',
-        'drama-belltoll',
-        2400 + (integration * 200)
-      );
-    },
-
-    // _sigXY: resolve a tile center to pixel numbers for signature math.
-    // tileCenter can return '50%' strings when the tile isn't in the DOM —
-    // fall back to the overlay center so signature geometry never NaNs.
-    _sigXY(x, y) {
-      const c = this.tileCenter(x, y);
-      const ov = this.ensureOverlay();
-      const cx = (typeof c.x === 'number' && isFinite(c.x)) ? c.x : (ov.clientWidth || 390) / 2;
-      const cy = (typeof c.y === 'number' && isFinite(c.y)) ? c.y : (ov.clientHeight || 400) / 2;
-      return { cx, cy };
-    },
-
-    // abilitySignature: per-ability SIGNATURE visuals (Steve 2026-10-07, Drama D1).
-    // The 10 most-used abilities get unique signatures; everything else gets a
-    // pool-styled visual. All scale with integration:
-    //   L1: minimal — one clean element. The System observes.
-    //   L2: richer — extra elements, accents. The System participates.
-    //   L3: spectacular — flash, sparkles, System eye. The System celebrates.
-    abilitySignature(abilityId, x, y, color, pool, integration) {
-      integration = integration || 0;
-      color = color || '#4df3ff';
-      const MAP = {
-        triage: 'sigTriage',
-        forage_identification: 'sigForageId',
-        brawler_instinct: 'sigBrawler',
-        patient_aim: 'sigPatientAim',
-        silver_tongue: 'sigSilverTongue',
-        diplomat: 'sigDiplomat',
-        pathfinder: 'sigPathfinder',
-        eagle_eye: 'sigEagleEye',
-        lie_detector: 'sigLieDetector',
-        game_sense: 'sigGameSense',
-      };
-      const m = MAP[abilityId];
-      if (m && typeof this[m] === 'function') return this[m](x, y, color, integration);
-      return this.poolSignature(pool, x, y, color, integration);
-    },
-
-    // poolSignature: pool-styled fallback for abilities without a unique signature.
-    // Brawler: cracks + shockwave. Social: warm waves + bubble. Exploration:
-    // compass ticks + trail sparkles. Investigation: magnifier pulse + clue
-    // sparkles. System: rotating geometry + eye. Care/fieldcraft/craft: themed
-    // bursts. Unknown: the standard abilityBurst.
-    poolSignature(pool, x, y, color, integration) {
-      integration = integration || 0;
-      color = color || '#4df3ff';
-      const { cx, cy } = this._sigXY(x, y);
-      const n2 = integration >= 2, n3 = integration >= 3;
-      if (pool === 'combat') {
-        // ground cracks + shockwave
-        for (let i = 0; i < (n3 ? 7 : 5); i++) {
-          const ang = (i / (n3 ? 7 : 5)) * 360 + 12;
-          this.spawn(
-            `<div style="width:34px;height:3px;background:${color};border-radius:2px;box-shadow:0 0 6px ${color};"></div>`,
-            `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) rotate(${ang}deg) translateX(26px);`,
-            'drama-sig-pop', 550
-          );
-        }
-        this.spawn(
-          `<div style="width:90px;height:90px;border:3px solid ${color};border-radius:50%;"></div>`,
-          `position:absolute;left:${cx}px;top:${cy}px;`,
-          'drama-shockwave', 700
-        );
-        if (n2) this.shake(6);
-      } else if (pool === 'social') {
-        // warm radiating waves + speech bubble
-        const waves = n3 ? 4 : 3;
-        for (let i = 0; i < waves; i++) {
-          this.spawn(
-            `<div style="width:${50 + i * 26}px;height:${50 + i * 26}px;border:2px solid ${color};border-radius:50%;opacity:0.7;"></div>`,
-            `position:absolute;left:${cx}px;top:${cy}px;`,
-            'drama-sig-expand', 800 + i * 150
-          );
-        }
-        this.spawn(
-          `<div style="font-size:26px;">\uD83D\uDCAC</div>`,
-          `position:absolute;left:${cx}px;top:${cy - 34}px;`,
-          'drama-sig-pop', 900
-        );
-      } else if (pool === 'exploration') {
-        // compass ticks + trail sparkles
-        const dirs = ['N', 'E', 'S', 'W'];
-        dirs.forEach((d, i) => {
-          const ang = i * 90;
-          this.spawn(
-            `<div style="font-size:13px;font-weight:bold;color:${color};text-shadow:0 1px 4px rgba(0,0,0,0.8);">${d}</div>`,
-            `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) rotate(${ang}deg) translateY(-30px) rotate(${-ang}deg);`,
-            'drama-sig-pop', 800
-          );
-        });
-        for (let i = 0; i < (n2 ? 4 : 2); i++) {
-          this.spawn(
-            `<div style="width:7px;height:7px;background:${color};border-radius:50%;box-shadow:0 0 6px ${color};"></div>`,
-            `position:absolute;left:${cx - 24 + i * 14}px;top:${cy + 26}px;`,
-            'drama-sparkle', 700 + i * 120
-          );
-        }
-      } else if (pool === 'investigation') {
-        // magnifier pulse + clue sparkles
-        this.spawn(
-          `<div style="width:64px;height:64px;border:3px solid ${color};border-radius:50%;"></div>`,
-          `position:absolute;left:${cx}px;top:${cy}px;`,
-          'drama-sig-expand', 750
-        );
-        this.spawn(
-          `<div style="font-size:24px;">\uD83D\uDD0D</div>`,
-          `position:absolute;left:${cx + 22}px;top:${cy - 22}px;`,
-          'drama-sig-pop', 850
-        );
-        const clues = n2 ? 4 : 2;
-        for (let i = 0; i < clues; i++) {
-          const ang = (i / clues) * Math.PI * 2;
-          this.spawn(
-            `<div style="font-size:15px;color:${color};">\u2726</div>`,
-            `position:absolute;left:${cx + Math.cos(ang) * 44}px;top:${cy + Math.sin(ang) * 44}px;`,
-            'drama-sparkle', 700 + i * 100
-          );
-        }
-      } else if (pool === 'system') {
-        // rotating geometry + eye
-        this.spawn(
-          `<svg width="72" height="72" viewBox="0 0 72 72"><polygon points="36,6 66,60 6,60" fill="none" stroke="${color}" stroke-width="2.5" opacity="0.9"/><circle cx="36" cy="42" r="8" fill="none" stroke="${color}" stroke-width="2" opacity="0.7"/></svg>`,
-          `position:absolute;left:${cx}px;top:${cy}px;`,
-          'drama-sig-spin', n3 ? 1600 : 1100
-        );
-        if (n3) this.spawn(
-          `<div style="font-size:22px;">\uD83D\uDC41\uFE0F</div>`,
-          `position:absolute;left:${cx}px;top:${cy - 52}px;`,
-          'drama-sig-pop', 1200
-        );
-      } else if (pool === 'care') {
-        // soft cross + healing wash
-        this.spawn(
-          `<div style="width:40px;height:12px;background:${color};border-radius:6px;box-shadow:0 0 12px ${color};"></div>`,
-          `position:absolute;left:${cx}px;top:${cy}px;`,
-          'drama-sig-bar', 800
-        );
-        this.spawn(
-          `<div style="width:12px;height:40px;background:${color};border-radius:6px;box-shadow:0 0 12px ${color};"></div>`,
-          `position:absolute;left:${cx}px;top:${cy}px;`,
-          'drama-sig-bar', 950
-        );
-      } else if (pool === 'fieldcraft') {
-        // leaf-ish sparkles
-        for (let i = 0; i < (n2 ? 5 : 3); i++) {
-          const ang = (i / (n2 ? 5 : 3)) * Math.PI * 2;
-          this.spawn(
-            `<div style="width:9px;height:9px;background:${color};border-radius:50% 0;box-shadow:0 0 6px ${color};"></div>`,
-            `position:absolute;left:${cx + Math.cos(ang) * 30}px;top:${cy + Math.sin(ang) * 30}px;`,
-            'drama-sparkle', 700 + i * 100
-          );
-        }
-      } else if (pool === 'craft') {
-        // hammer sparks
-        for (let i = 0; i < (n2 ? 6 : 4); i++) {
-          const ang = (i / (n2 ? 6 : 4)) * Math.PI * 2 + 0.4;
-          this.spawn(
-            `<div style="width:6px;height:6px;background:${color};box-shadow:0 0 8px ${color};"></div>`,
-            `position:absolute;left:${cx + Math.cos(ang) * 34}px;top:${cy + Math.sin(ang) * 34}px;`,
-            'drama-sparkle', 650 + i * 90
-          );
-        }
+      // verdict flash: red for guilty, green for not
+      if (guilty > innocent) {
+        this.flash('rgba(192,57,43,0.2)', 600);
       } else {
-        return this.abilityBurst(x, y, color, integration);
-      }
-      if (n3) this.flash('rgba(255,255,255,0.08)', 250);
-    },
-
-    // sigTriage: the healer's cross assembles — two green bars snap together,
-    // then a soft healing wash. L2+: pulsing halo. L3: white flash.
-    sigTriage(x, y, color, integration) {
-      integration = integration || 0;
-      color = '#7cfc9a';
-      const { cx, cy } = this._sigXY(x, y);
-      this.spawn(
-        `<div style="width:52px;height:14px;background:${color};border-radius:7px;box-shadow:0 0 14px ${color};"></div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-bar', 850
-      );
-      this.spawn(
-        `<div style="width:14px;height:52px;background:${color};border-radius:7px;box-shadow:0 0 14px ${color};"></div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-bar', 1000
-      );
-      this.spawn(
-        `<div style="width:110px;height:110px;background:radial-gradient(circle, rgba(124,252,154,0.35) 0%, rgba(124,252,154,0) 70%);border-radius:50%;"></div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-expand', 1100
-      );
-      if (integration >= 2) this.spawn(
-        `<div style="width:70px;height:70px;border:2px solid ${color};border-radius:50%;"></div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-expand', 1300
-      );
-      if (integration >= 3) this.flash('rgba(124,252,154,0.15)', 350);
-    },
-
-    // sigForageId: a leaf unfurls — rotating in with green-gold sparkles.
-    // L2+: a second leaf. L3: golden flash.
-    sigForageId(x, y, color, integration) {
-      integration = integration || 0;
-      color = '#7cfc9a';
-      const { cx, cy } = this._sigXY(x, y);
-      this.spawn(
-        `<svg width="56" height="56" viewBox="0 0 56 56"><path d="M28 4 C44 16 46 36 28 52 C10 36 12 16 28 4 Z" fill="rgba(124,252,154,0.85)" stroke="#2d7a3f" stroke-width="2"/><line x1="28" y1="8" x2="28" y2="48" stroke="#2d7a3f" stroke-width="1.5"/></svg>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-pop', 900
-      );
-      for (let i = 0; i < (integration >= 2 ? 5 : 3); i++) {
-        const ang = (i / (integration >= 2 ? 5 : 3)) * Math.PI * 2 + 0.5;
-        this.spawn(
-          `<div style="width:8px;height:8px;background:${i % 2 ? '#ffd54a' : color};border-radius:50% 0;box-shadow:0 0 6px ${color};"></div>`,
-          `position:absolute;left:${cx + Math.cos(ang) * 36}px;top:${cy + Math.sin(ang) * 36}px;`,
-          'drama-sparkle', 750 + i * 100
-        );
-      }
-      if (integration >= 3) this.flash('rgba(255,213,74,0.12)', 300);
-    },
-
-    // sigBrawler: impact — ground cracks radiate from the fist point.
-    // L2+: screen shake. L3: bigger shake + flash.
-    sigBrawler(x, y, color, integration) {
-      integration = integration || 0;
-      color = '#ff5252';
-      const { cx, cy } = this._sigXY(x, y);
-      this.spawn(
-        `<div style="font-size:34px;">\uD83D\uDCAA</div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-pop', 700
-      );
-      const cracks = integration >= 3 ? 8 : 6;
-      for (let i = 0; i < cracks; i++) {
-        const ang = (i / cracks) * 360 + 8;
-        this.spawn(
-          `<div style="width:30px;height:3px;background:${color};border-radius:2px;box-shadow:0 0 8px ${color};"></div>`,
-          `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) rotate(${ang}deg) translateX(30px);`,
-          'drama-sig-pop', 650 + (i % 3) * 80
-        );
-      }
-      this.spawn(
-        `<div style="width:100px;height:100px;border:3px solid ${color};border-radius:50%;"></div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-shockwave', 700
-      );
-      if (integration >= 2) this.shake(integration >= 3 ? 10 : 6);
-      if (integration >= 3) this.flash('rgba(255,82,82,0.12)', 300);
-    },
-
-    // sigPatientAim: crosshair ticks converge on the point — the shot is lined up.
-    // L3: gold ticks.
-    sigPatientAim(x, y, color, integration) {
-      integration = integration || 0;
-      color = integration >= 3 ? '#ffd54a' : '#ff5252';
-      const { cx, cy } = this._sigXY(x, y);
-      const far = 46, near = 18;
-      const ticks = [
-        { x0: 0, y0: -far, x1: 0, y1: -near, w: '3px', h: '14px' },
-        { x0: 0, y0: far, x1: 0, y1: near, w: '3px', h: '14px' },
-        { x0: -far, y0: 0, x1: -near, y1: 0, w: '14px', h: '3px' },
-        { x0: far, y0: 0, x1: near, y1: 0, w: '14px', h: '3px' },
-      ];
-      ticks.forEach((t, i) => {
-        this.spawn(
-          `<div style="width:${t.w};height:${t.h};background:${color};border-radius:2px;box-shadow:0 0 8px ${color};--tx0:${t.x0}px;--ty0:${t.y0}px;--tx1:${t.x1}px;--ty1:${t.y1}px;"></div>`,
-          `position:absolute;left:${cx}px;top:${cy}px;`,
-          'drama-sig-tick', 800 + i * 60
-        );
-      });
-      this.spawn(
-        `<div style="width:8px;height:8px;background:${color};border-radius:50%;box-shadow:0 0 10px ${color};"></div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-pop', 950
-      );
-    },
-
-    // sigSilverTongue: golden speech waves radiate outward + a speech bubble pops.
-    sigSilverTongue(x, y, color, integration) {
-      integration = integration || 0;
-      color = '#ffd54a';
-      const { cx, cy } = this._sigXY(x, y);
-      const waves = integration >= 2 ? 4 : 3;
-      for (let i = 0; i < waves; i++) {
-        this.spawn(
-          `<div style="width:${56 + i * 30}px;height:${56 + i * 30}px;border:2px solid ${color};border-radius:50%;opacity:0.75;"></div>`,
-          `position:absolute;left:${cx}px;top:${cy}px;`,
-          'drama-sig-expand', 850 + i * 160
-        );
-      }
-      this.spawn(
-        `<div style="font-size:28px;">\uD83D\uDCAC</div>`,
-        `position:absolute;left:${cx}px;top:${cy - 40}px;`,
-        'drama-sig-pop', 1000
-      );
-      if (integration >= 3) this.flash('rgba(255,213,74,0.1)', 300);
-    },
-
-    // sigDiplomat: two arcs sweep in from the sides and meet — the bridge is built.
-    sigDiplomat(x, y, color, integration) {
-      integration = integration || 0;
-      color = '#ff6b9d';
-      const { cx, cy } = this._sigXY(x, y);
-      this.spawn(
-        `<div style="width:44px;height:44px;border:3px solid ${color};border-right-color:transparent;border-bottom-color:transparent;border-radius:50%;"></div>`,
-        `position:absolute;left:${cx - 30}px;top:${cy}px;`,
-        'drama-sig-pop', 800
-      );
-      this.spawn(
-        `<div style="width:44px;height:44px;border:3px solid ${color};border-left-color:transparent;border-top-color:transparent;border-radius:50%;"></div>`,
-        `position:absolute;left:${cx + 30}px;top:${cy}px;`,
-        'drama-sig-pop', 900
-      );
-      this.spawn(
-        `<div style="font-size:26px;">\uD83E\uDD1D</div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-pop', 1050
-      );
-      if (integration >= 2) this.flash('rgba(255,107,157,0.1)', 350);
-    },
-
-    // sigPathfinder: a compass rose spins in — N/E/S/W lock on, then a sparkle
-    // trail marks the way forward.
-    sigPathfinder(x, y, color, integration) {
-      integration = integration || 0;
-      color = '#4df3ff';
-      const { cx, cy } = this._sigXY(x, y);
-      this.spawn(
-        `<svg width="84" height="84" viewBox="0 0 84 84"><g stroke="${color}" stroke-width="2.5" opacity="0.9"><line x1="42" y1="6" x2="42" y2="20"/><line x1="42" y1="64" x2="42" y2="78"/><line x1="6" y1="42" x2="20" y2="42"/><line x1="64" y1="42" x2="78" y2="42"/></g><circle cx="42" cy="42" r="26" fill="none" stroke="${color}" stroke-width="2" opacity="0.7"/><polygon points="42,22 47,42 42,62 37,42" fill="${color}" opacity="0.85"/></svg>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-spin', integration >= 3 ? 1800 : 1200
-      );
-      const trail = integration >= 2 ? 4 : 3;
-      for (let i = 0; i < trail; i++) {
-        this.spawn(
-          `<div style="width:7px;height:7px;background:${color};border-radius:50%;box-shadow:0 0 6px ${color};"></div>`,
-          `position:absolute;left:${cx - 30 + i * 18}px;top:${cy + 34}px;`,
-          'drama-sparkle', 700 + i * 130
-        );
+        this.flash('rgba(39,174,96,0.15)', 600);
       }
     },
 
-    // sigEagleEye: the eye opens — ellipse + pupil scale in, then sight rays
-    // extend to the horizon.
-    sigEagleEye(x, y, color, integration) {
+    // exileMoment: dark dramatic — red-black vignette, EXILED banner, crowd turns away
+    exileMoment(name, integration) {
       integration = integration || 0;
-      color = '#4df3ff';
-      const { cx, cy } = this._sigXY(x, y);
-      this.spawn(
-        `<svg width="76" height="44" viewBox="0 0 76 44"><ellipse cx="38" cy="22" rx="34" ry="18" fill="rgba(77,243,255,0.15)" stroke="${color}" stroke-width="2.5"/><circle cx="38" cy="22" r="10" fill="${color}" opacity="0.9"/><circle cx="38" cy="22" r="4" fill="#0a0f0a"/></svg>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-pop', 950
-      );
-      const rays = integration >= 2 ? 6 : 4;
-      for (let i = 0; i < rays; i++) {
-        const ang = (i / rays) * 360;
-        this.spawn(
-          `<div style="width:26px;height:2px;background:${color};box-shadow:0 0 8px ${color};"></div>`,
-          `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) rotate(${ang}deg) translateX(48px);`,
-          'drama-sig-pop', 750 + (i % 3) * 90
-        );
-      }
-      if (integration >= 3) this.flash('rgba(77,243,255,0.1)', 300);
-    },
-
-    // sigLieDetector: the magnifier sweeps — a ring pulses out while "?" clue
-    // marks pop around the point. L2+: extra clue sparkles.
-    sigLieDetector(x, y, color, integration) {
-      integration = integration || 0;
-      color = '#c792ea';
-      const { cx, cy } = this._sigXY(x, y);
-      this.spawn(
-        `<div style="width:60px;height:60px;border:3px solid ${color};border-radius:50%;"></div>`,
-        `position:absolute;left:${cx}px;top:${cy}px;`,
-        'drama-sig-expand', 800
-      );
-      this.spawn(
-        `<div style="font-size:26px;">\uD83D\uDD0D</div>`,
-        `position:absolute;left:${cx + 24}px;top:${cy - 24}px;`,
-        'drama-sig-pop', 900
-      );
-      const clues = integration >= 2 ? 4 : 3;
-      for (let i = 0; i < clues; i++) {
-        const ang = (i / clues) * Math.PI * 2 + 0.7;
-        this.spawn(
-          `<div style="font-size:17px;font-weight:bold;color:${color};text-shadow:0 1px 4px rgba(0,0,0,0.8);">?</div>`,
-          `position:absolute;left:${cx + Math.cos(ang) * 46}px;top:${cy + Math.sin(ang) * 46}px;`,
-          'drama-sig-pop', 700 + i * 110
-        );
-      }
-    },
-
-    // sigGameSense: paw prints appear in a trail — something was here, and now
-    // you know what and how long ago.
-    sigGameSense(x, y, color, integration) {
-      integration = integration || 0;
-      color = '#7cfc9a';
-      const { cx, cy } = this._sigXY(x, y);
-      const prints = integration >= 2 ? 4 : 3;
-      for (let i = 0; i < prints; i++) {
-        this.spawn(
-          `<div style="font-size:${20 - i * 2}px;opacity:${1 - i * 0.2};">\uD83D\uDC3E</div>`,
-          `position:absolute;left:${cx - 28 + i * 22}px;top:${cy + 18 - i * 8}px;`,
-          'drama-sig-pop', 700 + i * 160
-        );
-      }
-      if (integration >= 3) this.spawn(
-        `<div style="font-size:15px;color:${color};font-style:italic;text-shadow:0 1px 4px rgba(0,0,0,0.8);">sign read</div>`,
-        `position:absolute;left:${cx}px;top:${cy + 44}px;`,
-        'drama-float', 1100
-      );
-    },
-
-    // plantIdentified: a leaf unfurls, the name blooms. Learning you can see.
-    // Steve 2026-10-07: knowledge drama (Round D2). Green is the color of knowing what's edible.
-    plantIdentified(x, y, plantName, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 54 + (integration * 12);
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 50 50"><path d="M25 45 C25 30 25 20 25 8 M25 30 C15 28 8 20 6 10 C18 12 24 18 25 30 Z M25 30 C35 28 42 20 44 10 C32 12 26 18 25 30 Z" fill="rgba(124,252,154,0.9)" stroke="#2d7a3f" stroke-width="1.5"/></svg>`,
-        `position:absolute;left:${c.x - size / 2}px;top:${c.y - size / 2}px;`,
-        'drama-leafunfurl',
-        1400 + (integration * 200)
-      );
-      this.floatText(x, y, `\u{1F33F} ${plantName || 'identified'}`, { color: '#7cfc9a', size: 16 + (integration * 2) });
-      // L3: the System celebrates your learning.
-      if (integration >= 3) this.flash('rgba(124,252,154,0.12)', 400);
-    },
-
-    // techniqueLearned: a scroll unrolls, the name lands in gold.
-    // Steve 2026-10-07: knowledge drama (Round D2).
-    techniqueLearned(x, y, techName, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 40 + (integration * 8);
-      this.spawn(
-        `<div style="font-size:${size}px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8));">\u{1F4DC}</div>`,
-        `position:absolute;left:${c.x}px;top:${c.y - 10}px;transform:translate(-50%,-50%);`,
-        'drama-scroll',
-        1500 + (integration * 200)
-      );
-      this.floatText(x, y, `\u26A1 ${(techName || 'technique').replace(/_/g, ' ')}`, { color: '#ffd54a', size: 16 + (integration * 2) });
-      if (integration >= 2) this.systemCommentary(`"${(techName || 'technique').replace(/_/g, ' ')} — filed under things that keep you alive."`, { integration });
-    },
-
-    // codexLinked: the book opens. Pages flip. A village's knowledge is yours now.
-    // Steve 2026-10-07: knowledge drama (Round D2). This is the big one — linking a codex.
-    codexLinked(villageName, integration) {
-      integration = integration || 0;
-      this.spawn(
-        `<div style="text-align:center;padding:22px;background:rgba(12,14,8,0.94);border:2px solid #d4a017;border-radius:10px;max-width:280px;">
-           <div style="font-size:44px;margin-bottom:6px;">\u{1F4D6}</div>
-           <div style="font-size:18px;font-weight:bold;color:#ffd54a;margin-bottom:4px;">CODEX LINKED</div>
-           <div style="font-size:14px;color:#ccc;line-height:1.4;">${villageName || 'A village'} shares its knowledge.</div>
-           ${integration >= 3 ? '<div style="font-size:13px;color:#4df3ff;margin-top:8px;font-style:italic;">\u2B22 "Another shelf in the library of staying alive."</div>' : ''}
-         </div>`,
-        'position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(0.85);',
-        'drama-codexcard',
-        2400 + (integration * 300)
-      );
-      // page-flip shimmer across the screen
+      // dark vignette closing in
       this.spawn(
         '',
-        'position:absolute;inset:0;background:linear-gradient(100deg, transparent 30%, rgba(212,160,23,0.18) 45%, rgba(212,160,23,0.18) 55%, transparent 70%);',
-        'drama-pageflip',
-        1200 + (integration * 200)
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 20%, rgba(20,0,0,0.85) 100%);',
+        'drama-exile-vignette',
+        3000 + (integration * 500)
       );
-      this.flash('rgba(212,160,23,0.10)', 500);
-    },
-
-    // skillGained: a shaft of rising light, the skill's name ascending.
-    // Steve 2026-10-07: knowledge drama (Round D2).
-    skillGained(x, y, skillName, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const w = 44 + (integration * 10);
-      const h = 110 + (integration * 20);
       this.spawn(
-        `<svg width="${w}" height="${h}" viewBox="0 0 44 110"><rect x="14" y="0" width="16" height="110" fill="url(#skillgrad)" opacity="0.85"/><defs><linearGradient id="skillgrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#4df3ff" stop-opacity="0.1"/><stop offset="100%" stop-color="#4df3ff" stop-opacity="0.9"/></linearGradient></defs></svg>`,
-        `position:absolute;left:${c.x - w / 2}px;top:${c.y - h + 20}px;`,
-        'drama-skillbeam',
-        1300 + (integration * 200)
+        `<div style="font-size:36px;font-weight:bold;color:#c0392b;text-shadow:0 3px 12px rgba(0,0,0,1);letter-spacing:4px;">EXILED<br><span style="font-size:16px;font-weight:normal;color:#999;letter-spacing:1px;">${name} walks until the trees close</span></div>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-exile-banner',
+        3500
       );
-      this.floatText(x, y, `\u{1F4D6} ${(skillName || 'skill').replace(/_/g, ' ')}`, { color: '#4df3ff', size: 15 + (integration * 2) });
-      if (integration >= 3) this.flash('rgba(77,243,255,0.10)', 400);
+      this.shake(6 + (integration * 2));
+      if (integration >= 2) {
+        this.floatText('50%', '60%', '📺 The galaxy watches them go', { color: '#666', size: 13 });
+      }
     },
 
-    // teaseFaint: the 1st synergy tease — barely there. A whisper, not a shimmer.
-    // Steve 2026-10-07: knowledge drama (Round D2). Round C2 added the 2nd-tease shimmer;
-    // the 1st tease gets something fainter so the escalation reads: whisper -> shimmer -> hero card.
-    teaseFaint(integration) {
+    // liarExposed: tension — spotlight narrows, ⚡ crackle when the lie breaks
+    liarExposed(name, integration) {
+      integration = integration || 0;
+      // narrowing spotlight: dark edges closing in
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 10%, rgba(0,0,0,0.9) 70%);',
+        'drama-liar-spot',
+        2000
+      );
+      // crackle burst
+      const c = { x: '50%', y: '40%' };
+      this.spawn(
+        `<div style="font-size:48px;text-shadow:0 0 20px #ffd54a;">⚡</div>`,
+        'position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);',
+        'drama-liar-crack',
+        1200
+      );
+      this.spawn(
+        `<div style="font-size:20px;font-weight:bold;color:#ffd54a;text-shadow:0 2px 8px rgba(0,0,0,0.9);">THE LIE BREAKS<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${name} is exposed</span></div>`,
+        'position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-liar-text',
+        2500
+      );
+      this.flash('rgba(255,213,74,0.15)', 400);
+    },
+
+    // reconcileGlow: warm healing — golden glow, hearts rise
+    reconcileGlow(name, integration) {
       integration = integration || 0;
       this.spawn(
         '',
-        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(199,146,234,0.07) 0%, transparent 55%);',
-        'drama-faintshimmer',
-        900 + (integration * 150)
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,200,100,0.2) 0%, transparent 70%);',
+        'drama-reconcile-glow',
+        2500 + (integration * 300)
       );
+      const hearts = 3 + integration; // 3 → 6 hearts
+      for (let i = 0; i < hearts; i++) {
+        const dx = (i - (hearts - 1) / 2) * 40;
+        setTimeout(() => {
+          this.spawn(
+            `<div style="font-size:24px;">❤️</div>`,
+            `position:absolute;left:calc(50% + ${dx}px);top:45%;transform:translate(-50%,-50%);`,
+            'drama-heart-rise',
+            1500
+          );
+        }, i * 200);
+      }
+      if (name) {
+        this.floatText('50%', '35%', `${name} — forgiven`, { color: '#ff6b9d', size: 16 });
+      }
     },
 
-    // ahaMoment: the lightbulb. Radiating lines. The click of understanding.
-    // Steve 2026-10-07: knowledge drama (Round D2). Fires on knowledge->ability unlocks.
-    ahaMoment(x, y, integration) {
+    // betraySlash: sharp red slash across the screen + gasp
+    betraySlash(name, integration) {
       integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 64 + (integration * 14);
+      // diagonal red slash
       this.spawn(
-        `<div style="position:relative;width:${size}px;height:${size}px;">
-           <svg width="${size}" height="${size}" viewBox="0 0 64 64">
-             <g stroke="#ffd54a" stroke-width="2.5" opacity="0.9">
-               <line x1="32" y1="2" x2="32" y2="10"/><line x1="32" y1="54" x2="32" y2="62"/>
-               <line x1="2" y1="32" x2="10" y2="32"/><line x1="54" y1="32" x2="62" y2="32"/>
-               <line x1="11" y1="11" x2="16" y2="16"/><line x1="48" y1="48" x2="53" y2="53"/>
-               <line x1="53" y1="11" x2="48" y2="16"/><line x1="16" y1="48" x2="11" y2="53"/>
-             </g>
-           </svg>
-           <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:${28 + integration * 4}px;">\u{1F4A1}</div>
-         </div>`,
-        `position:absolute;left:${c.x - size / 2}px;top:${c.y - size / 2 - 14}px;`,
-        'drama-aha',
-        1600 + (integration * 200)
+        `<svg width="400" height="100" viewBox="0 0 400 100"><line x1="20" y1="90" x2="380" y2="10" stroke="#c0392b" stroke-width="${6 + integration * 2}" stroke-linecap="round"/></svg>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-5deg);',
+        'drama-betray-slash',
+        800
       );
-      if (integration >= 2) this.systemCommentary('"Oh. OH. That\'s how it works."', { integration });
+      this.spawn(
+        `<div style="font-size:22px;font-weight:bold;color:#ff5252;text-shadow:0 2px 8px rgba(0,0,0,0.9);">BETRAYED<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${name}</span></div>`,
+        'position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-betray-text',
+        2500
+      );
+      this.flash('rgba(192,57,43,0.25)', 500);
+      this.shake(8 + (integration * 2));
     },
   };
 
@@ -1779,57 +1169,6 @@
     .drama-shockwave.drama-shockwave { opacity: 0.9; transform: scale(1.35); }
     .drama-commentary { opacity: 0; transition: all 1.4s ease-out; }
     .drama-commentary.drama-commentary { opacity: 1; transform: translate(-50%, -130%); }
-    .drama-deathfade { opacity: 0; animation: drama-deathfade-anim 4.2s ease-in-out forwards; }
-    @keyframes drama-deathfade-anim { 0% { opacity: 0; } 35% { opacity: 0.92; } 70% { opacity: 0.92; } 100% { opacity: 0; } }
-    .drama-deathtext { opacity: 0; transition: opacity 1.2s ease-out; }
-    .drama-deathtext.drama-deathtext { opacity: 1; }
-    .drama-rebirth { opacity: 0; transform: translate(-50%, -50%) scale(0.85); transition: all 0.7s cubic-bezier(0.2, 1.2, 0.4, 1); }
-    .drama-rebirth.drama-rebirth { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    .drama-levelup-ring { opacity: 0; transform: scale(0.4); transition: all 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); }
-    .drama-levelup-ring.drama-levelup-ring { opacity: 1; transform: scale(1.25); }
-    .drama-levelup-text { opacity: 0; transition: all 1.2s ease-out; }
-    .drama-levelup-text.drama-levelup-text { opacity: 1; transform: translate(-50%, -130%); }
-    .drama-synshimmer { opacity: 0; transition: opacity 0.4s ease-out; }
-    .drama-synshimmer.drama-synshimmer { opacity: 1; animation: drama-shimmer-sweep 1.2s ease-in-out infinite; }
-    @keyframes drama-shimmer-sweep { 0%, 100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(40deg); } }
-    .drama-birthglow { opacity: 0; transition: opacity 1s ease-out; }
-    .drama-birthglow.drama-birthglow { opacity: 1; animation: drama-birth-pulse 2s ease-in-out infinite; }
-    @keyframes drama-birth-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
-    .drama-birthcard { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
-    .drama-birthcard.drama-birthcard { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    .drama-villagerwisp { opacity: 0; transition: all 1.8s ease-out; }
-    .drama-villagerwisp.drama-villagerwisp { opacity: 1; transform: translate(-50%, -120%); }
-    .drama-belltoll { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: all 0.8s ease-out; }
-    .drama-belltoll.drama-belltoll { opacity: 1; transform: translate(-50%, -50%) scale(1); animation: drama-bell-sway 1.6s ease-in-out infinite; }
-    @keyframes drama-bell-sway { 0%, 100% { margin-left: 0; } 25% { margin-left: -4px; } 75% { margin-left: 4px; } }
-    .drama-sig-pop { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: all 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); }
-    .drama-sig-pop.drama-sig-pop { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
-    .drama-sig-expand { opacity: 0; transform: translate(-50%, -50%) scale(0.5); transition: all 0.9s ease-out; }
-    .drama-sig-expand.drama-sig-expand { opacity: 0.8; transform: translate(-50%, -50%) scale(1.7); }
-    .drama-sig-spin { opacity: 0; transition: opacity 0.4s ease-out; }
-    .drama-sig-spin.drama-sig-spin { opacity: 1; animation: drama-sig-rotate 2.2s linear infinite; }
-    @keyframes drama-sig-rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-    .drama-sig-tick { opacity: 0; transform: translate(var(--tx0, 0px), var(--ty0, 0px)); transition: all 0.55s cubic-bezier(0.2, 1.2, 0.4, 1); }
-    .drama-sig-tick.drama-sig-tick { opacity: 1; transform: translate(var(--tx1, 0px), var(--ty1, 0px)); }
-    .drama-sig-bar { opacity: 0; transform: translate(-50%, -50%) scale(0.2); transition: all 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); }
-    .drama-sig-bar.drama-sig-bar { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    /* Knowledge drama (Steve 2026-10-07, Drama D2) — all GPU transform/opacity */
-    .drama-leafunfurl { opacity: 0; transform: scale(0.3) rotate(-30deg); transition: all 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); }
-    .drama-leafunfurl.drama-leafunfurl { opacity: 1; transform: scale(1.15) rotate(8deg); }
-    .drama-scroll { opacity: 0; transform: translate(-50%,-50%) scaleX(0.2); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
-    .drama-scroll.drama-scroll { opacity: 1; transform: translate(-50%,-50%) scaleX(1); }
-    .drama-codexcard { opacity: 0; transform: translate(-50%,-50%) scale(0.85); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
-    .drama-codexcard.drama-codexcard { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-    .drama-pageflip { opacity: 0; transition: opacity 0.5s ease-out; }
-    .drama-pageflip.drama-pageflip { opacity: 1; animation: drama-pageflip-sweep 1.2s ease-in-out infinite; }
-    @keyframes drama-pageflip-sweep { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
-    .drama-skillbeam { opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; }
-    .drama-skillbeam.drama-skillbeam { opacity: 1; transform: translateY(-30px); }
-    .drama-faintshimmer { opacity: 0; transition: opacity 0.6s ease-out; }
-    .drama-faintshimmer.drama-faintshimmer { opacity: 1; }
-    .drama-aha { opacity: 0; transform: scale(0.4); transition: all 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
-    .drama-aha.drama-aha { opacity: 1; transform: scale(1.1); animation: drama-aha-glow 0.8s ease-in-out infinite; }
-    @keyframes drama-aha-glow { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
     .drama-shake { animation: drama-shake-anim 0.4s ease-out; }
     @keyframes drama-shake-anim {
       0%, 100% { transform: translate(0, 0); }

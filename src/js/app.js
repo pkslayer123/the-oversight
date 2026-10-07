@@ -1083,11 +1083,11 @@
       const outTile = !inside;
       if (exit && outTile) {
         const nx = Game.map.px + exit.dx, ny = Game.map.py + exit.dy;
-        const nt = (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) ? Game.tileAt(nx, ny) : null;
+        const nt = (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) ? Game.tileAt(nx, ny) : null;
         const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the edge of the known world';
         const block = nt ? Game.travelBlockage(nx, ny) : null;
         // WORLD EDGE (explorer loop 2026-10-06): no travel button into the
-        // void — the 9x9 map is the whole known world. The old button called
+        // void — the 7x7 map is the whole known world. The old button called
         // Game.travelTo with out-of-bounds coords and crashed the tap.
         if (nt) {
           const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;
@@ -1379,75 +1379,17 @@
   // bars — never scroll to read what just happened. The engine marks the log
   // at action start (Game.feedbackMark); every say() after the mark lands in
   // the feedback card. Wrap every action invocation with actAndRefresh.
-  //
-  // APP-SIDE FALLBACK (Steve 2026-10-07): the engine currently exposes no
-  // feedbackMark/feedbackLines, which silently no-ops the feedback card and
-  // every actAndRefresh call. The mark is purely presentation — a bookmark
-  // into Game.log, which the engine still maintains via say() — so app.js
-  // keeps its own. If the engine ever defines these, the engine wins: no
-  // clobber, no logic change, presentation only.
-  let _fbMarkIdx = 0;
-  if (typeof Game !== 'undefined' && Game) {
-    if (typeof Game.feedbackMark !== 'function') {
-      Game.feedbackMark = function() { try { _fbMarkIdx = (Game.log || []).length; } catch (e) {} };
-    }
-    if (typeof Game.feedbackLines !== 'function') {
-      Game.feedbackLines = function() { try { return (Game.log || []).slice(_fbMarkIdx); } catch (e) { return []; } };
-    }
-  }
   function actAndRefresh(fn) {
     try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
     try { fn(); } catch (e) { console.error(e); }
     refresh();
   }
 
-  // SYNERGY TEASE STRINGS currently alive: tease1 (attempt 1) / tease2
-  // (attempt 2) for undiscovered synergies with 1-2 attempts whose
-  // requirements are held. Used to style their moment-of-use log lines as a
-  // distinct block — a tease must land, not drown in log noise.
-  function _synTeaseSet() {
-    const set = new Set();
-    try {
-      const sch = Game.state.scholar;
-      const syns = Game.data.synergies || [];
-      const attempts = sch.synergyAttempts || {};
-      const discovered = sch.synergies || [];
-      for (const syn of syns) {
-        if (discovered.includes(syn.id)) continue;
-        const dm = syn.discovery_method || {};
-        const key = syn.id + (dm.type === 'sustained' ? '_days' : '');
-        const n = attempts[key] || 0;
-        if (n !== 1 && n !== 2) continue;
-        const minLvl = syn.minLevel || 1;
-        const held = (syn.requires || []).every(rid => { try { return Game.abilityLevel(rid) >= minLvl; } catch (e) { return false; } });
-        if (!held) continue;
-        if (n === 1 && dm.tease1) set.add(dm.tease1);
-        if (n === 2 && dm.tease2) set.add(dm.tease2);
-      }
-    } catch (e) {}
-    return set;
-  }
-
-  function _isSynTeaseLine(l, teases) {
-    if (teases.has(l)) return true;
-    // game.js's attempt-2 nudge ("Something wants to happen when you do...
-    // whatever you just did. (2/3)") is part of the tease beat.
-    return /^Something wants to happen when you do/.test(l);
-  }
-
   function feedbackInner() {
     let lines = [];
     try { lines = (Game.feedbackLines && Game.feedbackLines()) || []; } catch (e) {}
     if (!lines.length) return '';
-    const teases = _synTeaseSet();
-    return lines.map(l => {
-      if (_isSynTeaseLine(l, teases)) {
-        // IN-THE-MOMENT TEASE: distinct styled block, right under the action
-        // bars — the shiver you felt using those two abilities together.
-        return `<p class="fb-line fb-syntease" style="border-left:3px solid #b48cff;padding:6px 8px;background:rgba(150,100,255,.09);border-radius:6px;font-style:italic;margin:6px 0">🌀 ${esc(l)}</p>`;
-      }
-      return `<p class="fb-line">${esc(l)}</p>`;
-    }).join('');
+    return lines.map(l => `<p class="fb-line">${esc(l)}</p>`).join('');
   }
   function feedbackHTML() {
     const inner = feedbackInner();
@@ -1757,16 +1699,11 @@
   //   rushHit() diveImpact() ambushSnap()
   //   WAVE-2 BESPOKE (Steve 2026-10-06): staticScream() (voice_mimic reveal —
   //   wired: game.js fires it at the reveal-scream declare), serviceRush()
-  //   (service_mimic resolve — wired: game.js rush-resolve),
+  //   (service_mimic resolve — wired: game.js rush-resolve), contractBind()
+  //   (contract_golem strike — wired: monsters.json encounter.resolveAudio),
   //   monsterDown() (wired: game.js death fallthrough for monsters with no
   //   deathAudio) / monsterHurt() (wired: game.js tbDamage, solid hits,
-  //   once per round), delegateDebrief() (wired: game.js:19032 manager
-  //   death-line). contractBind() REMOVED 2026-10-07: dead synth (no
-  //   contract_golem in monsters.json) — design preserved in
-  //   evidence/2026-10-07/audio-hook-map-20261007.md.
-  //   WOUND TEMPERAMENTS (Steve 2026-10-07): woundEnraged()/woundCunning()/
-  //   woundDesperate() — wired: encounters.js fires on wound-state shifts
-  //   (were mute; registry entries added here, no emitter change needed).
+  //   once per round), delegateDebrief() (was fired by tbFifoBreather, silent).
   //   projectorFire() (memory_projector resolve: whine swelling into the cold
   //   pull tone, hard cut — the light has edges).
   //   WAVE-2 FLYER VOICES (Steve 2026-10-06): nevermoreCroak/nevermoreStrafe/
@@ -3141,6 +3078,71 @@
       w.connect(wg); wg.connect(sfxBus);
       w.start(t); w.stop(t + 1.35); lfo.start(t); lfo.stop(t + 1.35);
     }
+    function managerAnnounce() {
+      // MEETING CALLED TO ORDER: intercom crackle first — then the horn,
+      // DOUBLED a minor second apart so it beats against itself, under a
+      // fluorescent buzz that's slightly out of tune with the room. Three
+      // paper slaps: the agenda, the minutes, the action items. Attendance
+      // mandatory. There is no excuse form.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.85;
+      // intercom crackle: the PA clearing its throat
+      const cnb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.18), ctx.sampleRate);
+      const cch = cnb.getChannelData(0);
+      for (let i = 0; i < cch.length; i++) cch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (cch.length * 0.25));
+      const csrc = ctx.createBufferSource(); csrc.buffer = cnb;
+      const cbp = ctx.createBiquadFilter(); cbp.type = 'bandpass'; cbp.frequency.value = 1800; cbp.Q.value = 1.2;
+      const cg = ctx.createGain(); cg.gain.value = 0.16;
+      csrc.connect(cbp); cbp.connect(cg); cg.connect(sfxBus); csrc.start(t);
+      // the horn, doubled at a minor 2nd: G3 + G#3 — it disagrees with itself
+      for (const [f0, drop] of [[196, 147], [207.65, 155.56]]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.setValueAtTime(f0, t + 0.35);
+        o.frequency.setValueAtTime(drop, t + 0.36); // the final word
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+        g.gain.setValueAtTime(0.0001, t + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.15, t + 0.16);
+        g.gain.setValueAtTime(0.15, t + 0.55);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(lp); lp.connect(g); g.connect(sfxBus);
+        o.start(t + 0.1); o.stop(t + dur);
+      }
+      // fluorescent buzz: 120Hz + 118Hz, thin, sour — the room is wrong
+      for (const f of [120, 118]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.028, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(lp); lp.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur);
+      }
+      // the paperwork: three slaps, escalating
+      for (let i = 0; i < 3; i++) {
+        const dt = t + 0.45 + i * 0.07;
+        const nb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.12), ctx.sampleRate);
+        const ch = nb.getChannelData(0);
+        for (let j = 0; j < ch.length; j++) ch[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ch.length * 0.15));
+        const src = ctx.createBufferSource(); src.buffer = nb;
+        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2000;
+        const g2 = ctx.createGain(); g2.gain.value = 0.1 + i * 0.04;
+        src.connect(hp); hp.connect(g2); g2.connect(sfxBus); src.start(dt);
+      }
+      // intercom squelch tail: the PA hangs up on you. Chirps down and dies.
+      const q = ctx.createOscillator(), qg = ctx.createGain();
+      q.type = 'sawtooth';
+      q.frequency.setValueAtTime(1200, t + dur - 0.18);
+      q.frequency.exponentialRampToValueAtTime(300, t + dur);
+      const qbp = ctx.createBiquadFilter(); qbp.type = 'bandpass'; qbp.frequency.value = 900; qbp.Q.value = 2;
+      qg.gain.setValueAtTime(0.0001, t + dur - 0.18);
+      qg.gain.exponentialRampToValueAtTime(0.07, t + dur - 0.12);
+      qg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      q.connect(qbp); qbp.connect(qg); qg.connect(sfxBus);
+      q.start(t + dur - 0.18); q.stop(t + dur + 0.02);
+    }
     function managerCharge() {
       // THE CHARGE: thundering hooves, low and inevitable — plus the tie
       // flapping like a flag. It delegated the violence to itself.
@@ -3708,6 +3710,34 @@
       }
     }
     // WAVE-2 REDESIGN (Steve 2026-10-06): five new monsters, five new voices.
+    function understudyLearn() {
+      // LEARNING (deepened 2026-10-06): an echo that corrects itself — the
+      // first tone lands alone and sure. The second arrives as two throats
+      // nearly in unison, beating against each other, wobbling as they
+      // search. The third locks: one exact tone with a high shimmer. You
+      // can HEAR it figure you out.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const voice = (fq, dt, dur, peak, wobble) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq;
+        if (wobble) { // searching: the pitch hunts
+          const lfo = ctx.createOscillator(), lg = ctx.createGain();
+          lfo.type = 'sine'; lfo.frequency.value = 6; lg.gain.value = wobble;
+          lfo.connect(lg); lg.connect(o.frequency);
+          lfo.start(dt); lfo.stop(dt + dur);
+        }
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(peak, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + dur);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + dur + 0.02);
+      };
+      voice(440, t, 0.2, 0.12);                    // sure
+      voice(445, t + 0.24, 0.24, 0.1, 14);          // searching, low
+      voice(447.8, t + 0.24, 0.24, 0.1, 14);        // searching, high: beats
+      voice(440, t + 0.5, 0.26, 0.12);              // locked
+      voice(880, t + 0.5, 0.3, 0.04);               // the shimmer of certainty
+    }
     function understudyCopy() {
       // THE COPY (deepened 2026-10-06): your move, played back at you — a
       // perfect mirror, then a semitone off AND sour: a third voice beating
@@ -3737,6 +3767,42 @@
       shg.gain.exponentialRampToValueAtTime(0.0001, dt2 + 0.25);
       sh.connect(shg); shg.connect(sfxBus);
       sh.start(dt2); sh.stop(dt2 + 0.27); am.start(dt2); am.stop(dt2 + 0.27);
+    }
+    function landlordStamp() {
+      // THE STAMP: a heavy official thud — wood on paper, final. Then the
+      // paper slides. Bureaucracy as percussion.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+      g.gain.setValueAtTime(0.3, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.16);
+      // paper slide
+      const nz = noise(0.3), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 4000;
+        ng.gain.setValueAtTime(0.06, t + 0.15);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.15); nz.stop(t + 0.5);
+      }
+      // the rubber squeak: the stamp gripping the paper, two detuned
+      // sawtooths beating through a bandpass — officialdom has a sound,
+      // and it is unpleasant
+      [1350, 1358].forEach((fq) => {
+        const sq = ctx.createOscillator(), sqf = ctx.createBiquadFilter(), sqg = ctx.createGain();
+        sq.type = 'sawtooth';
+        sq.frequency.setValueAtTime(fq, t + 0.05);
+        sq.frequency.exponentialRampToValueAtTime(fq * 1.35, t + 0.23);
+        sqf.type = 'bandpass'; sqf.frequency.value = 1500; sqf.Q.value = 4;
+        sqg.gain.setValueAtTime(0.0001, t + 0.05);
+        sqg.gain.exponentialRampToValueAtTime(0.045, t + 0.12);
+        sqg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        sq.connect(sqf); sqf.connect(sqg); sqg.connect(sfxBus);
+        sq.start(t + 0.05); sq.stop(t + 0.32);
+      });
     }
     function landlordClaim() {
       // JURISDICTION SPREADING (deepened 2026-10-06): a low brass note that
@@ -3896,6 +3962,98 @@
       g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
       o2.connect(g2); g2.connect(sfxBus);
       o2.start(t); o2.stop(t + 0.36); lfo.start(t); lfo.stop(t + 0.36);
+    }
+    function paparazzoFlash() {
+      // THE FLASH (deepened 2026-10-06): white burst, but personal — aimed
+      // at YOU, not a crowd. After it dies, an afterimage whine hangs in
+      // the air: two thin tones beating against each other, slowly fading,
+      // with a slow flutter. Underneath, a low thump: you have been seen.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.25;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4000;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.35, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(hp); hp.connect(g); g.connect(sfxBus);
+      src.start(t); src.stop(t + dur);
+      // afterimage: two thin tones, beating, with a slow flutter
+      [3520, 3531].forEach((fq) => {
+        const w = ctx.createOscillator(), wg = ctx.createGain();
+        w.type = 'sine'; w.frequency.value = fq;
+        const fl = ctx.createOscillator(), flg = ctx.createGain();
+        fl.type = 'sine'; fl.frequency.value = 4.5; flg.gain.value = 0.015;
+        fl.connect(flg); flg.connect(wg.gain);
+        wg.gain.setValueAtTime(0.0001, t + 0.05);
+        wg.gain.exponentialRampToValueAtTime(0.035, t + 0.2);
+        wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+        w.connect(wg); wg.connect(sfxBus);
+        w.start(t + 0.05); w.stop(t + 1.25); fl.start(t + 0.05); fl.stop(t + 1.25);
+      });
+      // you're exposed: a low thump under the whine
+      const th = ctx.createOscillator(), thg = ctx.createGain();
+      th.type = 'sine'; th.frequency.setValueAtTime(70, t + 0.1);
+      th.frequency.exponentialRampToValueAtTime(40, t + 0.35);
+      thg.gain.setValueAtTime(0.0001, t + 0.1);
+      thg.gain.exponentialRampToValueAtTime(0.18, t + 0.14);
+      thg.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      th.connect(thg); thg.connect(sfxBus); th.start(t + 0.1); th.stop(t + 0.45);
+    }
+    function unionRepChant() {
+      // THE CHANT (deepened 2026-10-06): a picket line finding its beat —
+      // not one voice but a crowd. Each pulse is three detuned throats
+      // (beating against each other) over a sub stomp that drops in pitch
+      // like a boot hitting dirt, with breath noise between the pulses.
+      // The fourth pulse lands harder: the crowd swells in behind it.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.26, 0.52, 0.78].forEach((dt, i) => {
+        const hard = i === 3;
+        // the throats: detuned, beating
+        [110, 111.5, 107].forEach((fq) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'triangle'; o.frequency.value = fq;
+          const peak = hard ? 0.11 : 0.07;
+          g.gain.setValueAtTime(0.0001, t + dt);
+          g.gain.exponentialRampToValueAtTime(peak, t + dt + 0.04);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dt + (hard ? 0.3 : 0.2));
+          o.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + 0.32);
+        });
+        // the floor: a sub stomp that drops like a boot in dirt
+        const s = ctx.createOscillator(), sg = ctx.createGain();
+        s.type = 'sine';
+        s.frequency.setValueAtTime(60, t + dt);
+        s.frequency.exponentialRampToValueAtTime(36, t + dt + 0.22);
+        sg.gain.setValueAtTime(0.0001, t + dt);
+        sg.gain.exponentialRampToValueAtTime(hard ? 0.25 : 0.15, t + dt + 0.03);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.28);
+        s.connect(sg); sg.connect(sfxBus); s.start(t + dt); s.stop(t + dt + 0.3);
+        if (hard) {
+          // the swell: the crowd comes in behind the fourth pulse
+          const nz = noise(1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+          if (nz) {
+            nf.type = 'lowpass'; nf.frequency.value = 900;
+            ng.gain.setValueAtTime(0.0001, t + dt);
+            ng.gain.exponentialRampToValueAtTime(0.14, t + dt + 0.2);
+            ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.7);
+            nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+            nz.start(t + dt); nz.stop(t + dt + 0.75);
+          }
+        }
+      });
+      // breath between the pulses: the line is alive
+      const br = noise(1), bf = ctx.createBiquadFilter(), bg = ctx.createGain();
+      if (br) {
+        bf.type = 'bandpass'; bf.frequency.value = 700; bf.Q.value = 0.8;
+        bg.gain.setValueAtTime(0.0001, t + 0.1);
+        bg.gain.linearRampToValueAtTime(0.05, t + 0.4);
+        bg.gain.linearRampToValueAtTime(0.0001, t + 1.0);
+        br.connect(bf); bf.connect(bg); bg.connect(sfxBus);
+        br.start(t); br.stop(t + 1.05);
+      }
     }
     function unionRepWhistle() {
       // THE WHISTLE (deepened 2026-10-06): a pea-whistle blast — the line
@@ -4461,47 +4619,25 @@
       }
     }
     function modViolation(d) {
-      // THE FLAG, ANGRIER (Steve 2026-10-07): bitcrushed buzzes, a detuned
-      // fifth sliding up a semitone between buzzes (the second buzz knows
-      // more about you), a 31Hz AM stutter — prime, alien throat-clearing —
-      // and a paper-tear static sweep down before the stamp lands.
+      // THE FLAG (Steve 2026-10-06): you used a muted verb. Two harsh buzzes
+      // — the second angrier, pitched up by how many violations you've stacked
+      // — then the stamp comes down on the paperwork. With your name on it.
       if (!ensure()) return;
       const t = ctx.currentTime;
       const v = Math.min(8, Math.max(0, (d && d.violations) || 1));
-      const curve = new Float32Array(256);
-      for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(3 * x); }
       [0, 0.28].forEach((dt, i) => {
-        const bb = ctx.createGain(); bb.connect(sfxBus);
-        const f0 = 110 + v * 14 + i * 22;
-        [[f0, 1], [f0 * 1.5, 1.0595]].forEach(([fq, slide]) => {
-          const o = ctx.createOscillator(), g = ctx.createGain(), ws = ctx.createWaveShaper();
-          ws.curve = curve; ws.oversample = '2x';
-          o.type = 'sawtooth';
-          o.frequency.setValueAtTime(fq, t + dt);
-          o.frequency.exponentialRampToValueAtTime(fq * slide, t + dt + 0.22);
-          o.connect(ws); ws.connect(g); g.connect(bb);
-          g.gain.setValueAtTime(0.0001, t + dt);
-          g.gain.exponentialRampToValueAtTime(0.08, t + dt + 0.03);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.24);
-          o.start(t + dt); o.stop(t + dt + 0.28);
-        });
-        const am = ctx.createOscillator(), amg = ctx.createGain();
-        am.type = 'square'; am.frequency.value = 31; amg.gain.value = 0.6;
-        am.connect(amg); amg.connect(bb.gain);
-        am.start(t + dt); am.stop(t + dt + 0.28);
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = 110 + v * 14 + i * 22;
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 28; lg.gain.value = 0.5;
+        lfo.connect(lg); lg.connect(g.gain);
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.11, t + dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.24);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + dt); o.stop(t + dt + 0.28); lfo.start(t + dt); lfo.stop(t + dt + 0.28);
       });
-      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'highpass';
-        nf.frequency.setValueAtTime(6000, t + 0.5);
-        nf.frequency.exponentialRampToValueAtTime(800, t + 0.75);
-        ng.gain.setValueAtTime(0.0001, t + 0.5);
-        ng.gain.exponentialRampToValueAtTime(0.1, t + 0.58);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t + 0.5); nz.stop(t + 0.85);
-      }
-      thump(t + 0.8, 0.5);
+      thump(t + 0.55, 0.5);
     }
     function modRemoval(d) {
       // THE NOTICE (Steve 2026-10-06): "REMOVAL IMMINENT." A send-whoosh —
@@ -6235,6 +6371,25 @@
       o.connect(f); f.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + dur + 0.05); v.start(t); v.stop(t + dur + 0.05);
     }
+    function ducksRejoin() {
+      // REJOIN: the tail thrashes back into line — three relieved hisses
+      // falling into rhythm, then the lockstep resumes. The line is whole.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      duckHissAt(t, 0.3, 0.11);
+      duckHissAt(t + 0.3, 0.3, 0.12);
+      duckHissAt(t + 0.58, 0.3, 0.13);
+      duckHissAt(t + 0.82, 0.4, 0.16);
+      // formation click: the line snapping straight
+      const nz = noise(0.1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 3000;
+        ng.gain.setValueAtTime(0.12, t + 0.9);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.9); nz.stop(t + 1.02);
+      }
+    }
     function heronStatic() {
       // WHITE NOISE HERON: the air goes staticky — crackling wrongness.
       if (!ensure()) return;
@@ -6976,67 +7131,33 @@
       });
     }
     function exileWalk() {
-      // THE WALK, LONELIER (Steve 2026-10-07): each hum voice goes flat as it
-      // drops — the village forgets the note. A limping gait with gravel
-      // under every step. A lone wandering wind arrives after the voices are
-      // gone. One distant bell partial rings once and never resolves.
+      // THE WALK: footsteps receding, and the village hum dropping one voice
+      // at a time. Nobody follows. The hum thins until it's one voice, then
+      // none — then just the footsteps, then not even those.
       if (!ensure()) return;
       const t = ctx.currentTime;
+      // village hum: 4 detuned voices, dropping out one by one
       [130, 131.2, 138.5, 140].forEach((fq, i) => {
         const v = ctx.createOscillator(), vg = ctx.createGain();
-        v.type = 'triangle';
+        v.type = 'triangle'; v.frequency.value = fq;
         const stopAt = t + 0.6 + i * 0.7;
-        v.frequency.setValueAtTime(fq, t);
-        v.frequency.exponentialRampToValueAtTime(fq * 0.94, stopAt);
         vg.gain.setValueAtTime(0.0001, t);
         vg.gain.exponentialRampToValueAtTime(0.07, t + 0.4);
         vg.gain.setValueAtTime(0.07, stopAt - 0.15);
-        vg.gain.exponentialRampToValueAtTime(0.0001, stopAt);
+        vg.gain.exponentialRampToValueAtTime(0.0001, stopAt); // each voice drops
         v.connect(vg); vg.connect(sfxBus); v.start(t); v.stop(stopAt + 0.05);
       });
-      const gait = [0.55, 0.62, 0.51, 0.58, 0.66, 0.55];
-      let dt = t + 0.3;
-      gait.forEach((step, i) => {
+      // footsteps: 6 steps, getting quieter and further (lowpass closes)
+      for (let i = 0; i < 6; i++) {
+        const dt = t + 0.3 + i * 0.55;
         const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
-        o.type = 'sine';
-        o.frequency.setValueAtTime(120, dt);
+        o.type = 'sine'; o.frequency.setValueAtTime(120, dt);
         o.frequency.exponentialRampToValueAtTime(55, dt + 0.12);
-        f.type = 'lowpass'; f.frequency.value = 900 - i * 120;
-        g.gain.setValueAtTime(0.2 - i * 0.028, dt);
+        f.type = 'lowpass'; f.frequency.value = 900 - i * 120; // receding
+        g.gain.setValueAtTime(0.22 - i * 0.03, dt);
         g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
         o.connect(f); f.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.2);
-        const nz2 = noise(0.08), nf2 = ctx.createBiquadFilter(), ng2 = ctx.createGain();
-        if (nz2) {
-          nf2.type = 'highpass'; nf2.frequency.value = 2500;
-          ng2.gain.setValueAtTime(Math.max(0.012, 0.05 - i * 0.006), dt);
-          ng2.gain.exponentialRampToValueAtTime(0.0001, dt + 0.07);
-          nz2.connect(nf2); nf2.connect(ng2); ng2.connect(sfxBus);
-          nz2.start(dt); nz2.stop(dt + 0.1);
-        }
-        dt += step;
-      });
-      [196, 196.9].forEach(fq => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.value = fq;
-        const lfo = ctx.createOscillator(), lg = ctx.createGain();
-        lfo.type = 'sine'; lfo.frequency.value = 0.07; lg.gain.value = 1.2;
-        lfo.connect(lg); lg.connect(o.frequency);
-        g.gain.setValueAtTime(0.0001, t + 1.5);
-        g.gain.exponentialRampToValueAtTime(0.035, t + 2.5);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 5.5);
-        o.connect(g); g.connect(sfxBus);
-        o.start(t + 1.5); o.stop(t + 5.6); lfo.start(t + 1.5); lfo.stop(t + 5.6);
-      });
-      const lastDrop = t + 0.6 + 3 * 0.7;
-      [[660, 0.05], [1320, 0.018]].forEach(([fq, peak]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.value = fq;
-        g.gain.setValueAtTime(0.0001, lastDrop);
-        g.gain.exponentialRampToValueAtTime(peak, lastDrop + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, lastDrop + 2.6);
-        o.connect(g); g.connect(sfxBus);
-        o.start(lastDrop); o.stop(lastDrop + 2.7);
-      });
+      }
     }
     // ---- HAVEN ARC (Steve 2026-10-06): a sibling's exile/betrayal system
     // fired joinVillage/claimSite/chopWood/buildShelter/foundHaven with no
@@ -7477,105 +7598,6 @@
       h1.connect(hg); h2.connect(hg); hg.connect(sfxBus);
       h1.start(t + 0.08); h2.start(t + 0.08);
       h1.stop(t + 1.35); h2.stop(t + 1.35);
-    }
-    // ---- KNOWLEDGE REVEAL (Steve 2026-10-07): the "aha!" — you learned
-    // something. Bright ascending arpeggio (the lightbulb), but the System
-    // is alien: the top note arrives slightly sharp and keeps climbing past
-    // where it should resolve, like the universe just leaned in to whisper.
-    // A shimmer underneath that doesn't quite settle — curiosity, not closure.
-    function knowledgeReveal(d) {
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      const peak = 0.16;
-      // the aha: quick ascending arpeggio, C-E-G, each note brighter
-      const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-      notes.forEach((f, i) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'triangle';
-        o.frequency.setValueAtTime(f, t + i * 0.09);
-        g.gain.setValueAtTime(0.0001, t + i * 0.09);
-        g.gain.exponentialRampToValueAtTime(peak * (0.7 + i * 0.2), t + i * 0.09 + 0.04);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.09 + 0.35);
-        o.connect(g); g.connect(sfxBus);
-        o.start(t + i * 0.09); o.stop(t + i * 0.09 + 0.4);
-      });
-      // the top note overshoots: G5 climbing sharp past resolution
-      const top = ctx.createOscillator(), tg = ctx.createGain();
-      top.type = 'sine';
-      top.frequency.setValueAtTime(783.99, t + 0.27);
-      top.frequency.exponentialRampToValueAtTime(830, t + 0.7); // drifts sharp, never lands
-      tg.gain.setValueAtTime(0.0001, t + 0.27);
-      tg.gain.exponentialRampToValueAtTime(peak * 0.6, t + 0.35);
-      tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-      top.connect(tg); tg.connect(sfxBus);
-      top.start(t + 0.27); top.stop(t + 0.95);
-      // the shimmer: high harmonic that won't settle — detuned pair beating
-      [2093, 2105].forEach((f) => {
-        const s = ctx.createOscillator(), sg = ctx.createGain();
-        s.type = 'sine'; s.frequency.value = f;
-        sg.gain.setValueAtTime(0.0001, t + 0.2);
-        sg.gain.exponentialRampToValueAtTime(peak * 0.25, t + 0.5);
-        sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
-        s.connect(sg); sg.connect(sfxBus);
-        s.start(t + 0.2); s.stop(t + 1.25);
-      });
-    }
-    // ---- SYNERGY DISCOVERED (Steve 2026-10-07): the hero fanfare — two
-    // things just became more than the sum. Triumphant layered ascending
-    // chords, but this is the Oversight: the fanfare has one note slightly
-    // flat, beating against the triumph. The alien audience is cheering,
-    // and they're cheering WRONG. That's what makes it yours.
-    function synergyDiscovered(d) {
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      const peak = 0.20;
-      // the fanfare: two ascending chords, C major then F major, layered
-      const chords = [
-        [261.63, 329.63, 392.00], // C4, E4, G4
-        [349.23, 440.00, 523.25], // F4, A4, C5
-      ];
-      chords.forEach((chord, ci) => {
-        const ct = t + ci * 0.35;
-        chord.forEach((f, i) => {
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.type = 'sawtooth';
-          o.frequency.value = f;
-          const fl = ctx.createBiquadFilter();
-          fl.type = 'lowpass'; fl.frequency.value = 1800;
-          g.gain.setValueAtTime(0.0001, ct + i * 0.03);
-          g.gain.exponentialRampToValueAtTime(peak * 0.5, ct + i * 0.03 + 0.08);
-          g.gain.exponentialRampToValueAtTime(0.0001, ct + 0.6);
-          o.connect(fl); fl.connect(g); g.connect(sfxBus);
-          o.start(ct + i * 0.03); o.stop(ct + 0.65);
-        });
-      });
-      // the wrong note: one flat fifth beating against the triumph
-      const w = ctx.createOscillator(), wg = ctx.createGain();
-      w.type = 'triangle';
-      w.frequency.value = 369.5; // F#4, slightly flat — the tritone against C
-      wg.gain.setValueAtTime(0.0001, t + 0.15);
-      wg.gain.exponentialRampToValueAtTime(peak * 0.7, t + 0.3);
-      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
-      w.connect(wg); wg.connect(sfxBus);
-      w.start(t + 0.15); w.stop(t + 1.15);
-      // the cheer: noise swell like a crowd, filtered bright then gone
-      const nz = noise(0.8), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.frequency.value = 1200; nf.Q.value = 0.8;
-        ng.gain.setValueAtTime(0.0001, t + 0.2);
-        ng.gain.exponentialRampToValueAtTime(peak * 0.4, t + 0.5);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t + 0.2); nz.stop(t + 1.05);
-      }
-      // the landing: deep root note, the earth under the fanfare
-      const r = ctx.createOscillator(), rg = ctx.createGain();
-      r.type = 'sine'; r.frequency.value = 65.41; // C2
-      rg.gain.setValueAtTime(0.0001, t + 0.7);
-      rg.gain.exponentialRampToValueAtTime(peak * 0.8, t + 0.75);
-      rg.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
-      r.connect(rg); rg.connect(sfxBus);
-      r.start(t + 0.7); r.stop(t + 1.45);
     }
     // ---- ROUND: the alien metronome. ROUND N! gets a tick — flat, clinical,
     // the System counting. Each round it gets a little heavier and a little
@@ -8216,6 +8238,35 @@
       wg.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.2);
       w.connect(wg); wg.connect(sfxBus); w.start(t + dur * 0.6); w.stop(t + dur + 0.25);
     }
+    function contractBind() {
+      // BINDING AGREEMENT: fine print crawling, accelerating into a heavy
+      // STAMP. Paper becomes law becomes weight. (contract_golem strike)
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      // paper rattle accelerating: 8 hits, interval shrinking
+      let dt = t;
+      for (let i = 0; i < 8; i++) {
+        const nz = noise(0.09), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (nz) {
+          nf.type = 'highpass'; nf.frequency.value = 4500;
+          ng.gain.setValueAtTime(0.16, dt);
+          ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.07);
+          nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+          nz.start(dt); nz.stop(dt + 0.09);
+        }
+        dt += 0.16 - i * 0.016;
+      }
+      // the STAMP: low, official, final
+      const st = t + 0.85;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(95, st);
+      o.frequency.exponentialRampToValueAtTime(28, st + 0.4);
+      g.gain.setValueAtTime(0.6, st);
+      g.gain.exponentialRampToValueAtTime(0.0001, st + 0.55);
+      o.connect(g); g.connect(sfxBus); o.start(st); o.stop(st + 0.6);
+    }
     function monsterDown() {
       // GENERIC DEATH (wave-2 siblings): a small collapse, a breath out,
       // and one wrong note hanging in the air after it.
@@ -8546,59 +8597,25 @@
     }
     // ============ AMBIENT STING (Steve 2026-10-06) ============
     function horrorSting() {
-      // THE STING THAT NOTICES YOU NOTICING (Steve 2026-10-07): tritone pair
-      // rising, never arriving — under it, three sines spiral DOWN an octave
-      // (your ear can't tell which way is up). Static gated at 17.3Hz — the
-      // System doesn't keep time like you do — then a sub drop: the flinch.
+      // THE MISSING STING: referenced by the UI dread-beat (app.js top),
+      // never defined until now. A detuned swell that never resolves —
+      // something noticed you noticing it.
       if (!ensure()) return;
       const t = ctx.currentTime, dur = 1.8;
-      [[110, 165], [155.56, 233]].forEach(([f0, f1]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+      [110, 116.5].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
         o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f0, t);
-        o.frequency.exponentialRampToValueAtTime(f1, t + dur);
-        f.type = 'lowpass';
-        f.frequency.setValueAtTime(320, t);
-        f.frequency.exponentialRampToValueAtTime(750, t + dur);
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 1.5, t + dur); // rising, never arriving
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+        f.frequency.setValueAtTime(400, t);
+        f.frequency.exponentialRampToValueAtTime(900, t + dur);
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.09, t + dur * 0.6);
+        g.gain.exponentialRampToValueAtTime(0.1, t + dur * 0.6);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         o.connect(f); f.connect(g); g.connect(sfxBus);
         o.start(t); o.stop(t + dur);
       });
-      [220, 440, 880].forEach((f0, i) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine';
-        o.frequency.setValueAtTime(f0, t);
-        o.frequency.exponentialRampToValueAtTime(f0 / 2, t + dur);
-        const a0 = t + i * 0.25;
-        g.gain.setValueAtTime(0.0001, a0);
-        g.gain.exponentialRampToValueAtTime(0.06, a0 + 0.3);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        o.connect(g); g.connect(sfxBus);
-        o.start(a0); o.stop(t + dur);
-      });
-      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 2;
-        const gate = ctx.createOscillator(), gg = ctx.createGain();
-        gate.type = 'square'; gate.frequency.value = 17.3; gg.gain.value = 0.5;
-        gate.connect(gg); gg.connect(ng.gain);
-        ng.gain.setValueAtTime(0.0001, t);
-        ng.gain.exponentialRampToValueAtTime(0.12, t + 0.5);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t); nz.stop(t + 1.6); gate.start(t); gate.stop(t + 1.6);
-      }
-      const s = ctx.createOscillator(), sg = ctx.createGain();
-      s.type = 'sine';
-      s.frequency.setValueAtTime(64, t + 1.3);
-      s.frequency.exponentialRampToValueAtTime(27, t + 1.8);
-      sg.gain.setValueAtTime(0.0001, t + 1.3);
-      sg.gain.exponentialRampToValueAtTime(0.22, t + 1.42);
-      sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
-      s.connect(sg); sg.connect(sfxBus);
-      s.start(t + 1.3); s.stop(t + 1.95);
     }
 
     // on beam fire — brief, violent, unmistakable. The phone screen itself
@@ -9004,121 +9021,6 @@
       c.start(t + 0.4); c.stop(t + 0.85);
     }
 
-    // WOUND TEMPERAMENTS (Steve 2026-10-07): encounters.js fires these when a
-    // monster's wound-state changes the fight's personality — the registry
-    // entries never existed, so every temperament shift played mute. Three
-    // voices, three psychologies. All synthesis, bounded node counts.
-    function woundEnraged() {
-      // ENRAGED: BLEEDING — and it likes it. Louder, faster, no more feints.
-      // A low pounding that accelerates into a detuned saw-stack scream, a
-      // tritone apart and climbing, with a wet tearing noise underneath.
-      // The telegraphs get bigger because the rage is.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      // the pounding: thumps accelerating, 0.3s apart closing to 0.12
-      let dt = t, gap = 0.3;
-      while (dt < t + 1.1) {
-        thump(dt, 0.26);
-        dt += gap; gap = Math.max(0.12, gap * 0.82);
-      }
-      // the scream: two saws a tritone apart, climbing together
-      [[220, 330], [311.1, 466.2]].forEach(([f0, f1]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f0, t);
-        o.frequency.exponentialRampToValueAtTime(f1, t + 1.0);
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.1, t + 0.15);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
-        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 1.22);
-      });
-      // the tear: wet noise ripping upward through a bandpass
-      const nz = noise(0.9), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.Q.value = 3;
-        nf.frequency.setValueAtTime(300, t);
-        nf.frequency.exponentialRampToValueAtTime(2800, t + 0.8);
-        ng.gain.setValueAtTime(0.0001, t);
-        ng.gain.exponentialRampToValueAtTime(0.08, t + 0.2);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t); nz.stop(t + 1.0);
-      }
-    }
-    function woundCunning() {
-      // CUNNING: hurt — and it goes quiet and clever. It stops rushing. It
-      // starts CHOOSING. Near-silence first (the hush IS the cue), then
-      // careful deliberate ticks at even intervals — something counting —
-      // under a low watchful tone whose slow LFO scans the room.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      // the counting: six dry ticks, perfectly even — deliberate
-      for (let i = 0; i < 6; i++) {
-        const dt = t + 0.25 + i * 0.28;
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square'; o.frequency.value = 1900;
-        const f = ctx.createBiquadFilter();
-        f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = 9;
-        g.gain.setValueAtTime(0.0001, dt);
-        g.gain.exponentialRampToValueAtTime(0.055, dt + 0.008);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.05);
-        o.connect(f); f.connect(g); g.connect(sfxBus);
-        o.start(dt); o.stop(dt + 0.07);
-      }
-      // the watcher: low tone scanning slowly, never settling
-      const w = ctx.createOscillator(), wg = ctx.createGain();
-      w.type = 'sine'; w.frequency.value = 82;
-      const lfo = ctx.createOscillator(), lg = ctx.createGain();
-      lfo.type = 'sine'; lfo.frequency.value = 0.5; lg.gain.value = 22;
-      lfo.connect(lg); lg.connect(w.frequency);
-      wg.gain.setValueAtTime(0.0001, t + 0.2);
-      wg.gain.exponentialRampToValueAtTime(0.11, t + 0.6);
-      wg.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
-      w.connect(wg); wg.connect(sfxBus);
-      w.start(t + 0.2); w.stop(t + 2.25); lfo.start(t + 0.2); lfo.stop(t + 2.25);
-    }
-    function woundDesperate() {
-      // DESPERATE: hurt bad — and it knows it. Wild swings, everything
-      // committed, nothing held back. Erratic flailing: detuned stabs at
-      // irregular intervals over a failing-engine sputter (a low saw
-      // choking on a prime-rate AM stutter), ending ragged, mid-gasp.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      // the flailing: five stabs, irregular gaps, climbing sharper
-      const gaps = [0, 0.19, 0.47, 0.66, 1.02];
-      gaps.forEach((off, i) => {
-        const dt = t + off;
-        const base = 340 + i * 45;
-        [0, 7].forEach(det => {
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.type = 'sawtooth'; o.frequency.value = base + det;
-          g.gain.setValueAtTime(0.0001, dt);
-          g.gain.exponentialRampToValueAtTime(0.11, dt + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
-          o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.18);
-        });
-      });
-      // the failing engine: low saw choking on 29Hz AM — prime, arrhythmic
-      const e = ctx.createOscillator(), eg = ctx.createGain();
-      e.type = 'sawtooth'; e.frequency.value = 65;
-      const am = ctx.createOscillator(), amg = ctx.createGain();
-      am.type = 'square'; am.frequency.value = 29; amg.gain.value = 0.05;
-      am.connect(amg); amg.connect(eg.gain);
-      eg.gain.setValueAtTime(0.08, t);
-      eg.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
-      e.connect(eg); eg.connect(sfxBus);
-      e.start(t); e.stop(t + 1.35); am.start(t); am.stop(t + 1.35);
-      // the gasp: one breath that doesn't finish
-      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 2;
-        ng.gain.setValueAtTime(0.0001, t + 1.1);
-        ng.gain.exponentialRampToValueAtTime(0.09, t + 1.25);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.45); // cut off — never finishes
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t + 1.1); nz.stop(t + 1.5);
-      }
-    }
     return {
       ensureAudio() { return ensure(); },
       combatStart() { combatStartHit(); heartbeat(72); }, // (Steve 2026-10-06): the opening now lands its own wrong-horn sting, then the heartbeat takes over
@@ -9193,7 +9095,9 @@
       swarmFilm() { swarmFilm(); },
       swarmBuild() { swarmBuild(); },
       swarmFlash() { swarmFlash(); },
+      understudyLearn() { understudyLearn(); },
       understudyCopy() { understudyCopy(); },
+      landlordStamp() { landlordStamp(); },
       landlordClaim() { landlordClaim(); },
       hecklerTaunt(d) { hecklerTaunt(d); },
       hecklerPileOn() { hecklerPileOn(); },
@@ -9202,6 +9106,8 @@
       // deepened taunt (closest existing voice).
       hecklerLaugh(d) { hecklerTaunt(d); },
       paparazzoShutter() { paparazzoShutter(); },
+      paparazzoFlash() { paparazzoFlash(); },
+      unionRepChant() { unionRepChant(); },
       unionRepWhistle() { unionRepWhistle(); },
       unionBullhorn() { unionBullhorn(); }, // (Steve 2026-10-06): solidarity — the bullhorn
       unionWalkout() { unionWalkout(); },   // (Steve 2026-10-06): the walkout — stomp + wail
@@ -9253,6 +9159,7 @@
       projectorPull() { projectorPull(); },
       projectorFire() { projectorFire(); },
       managerCircle() { managerCircle(); },
+      managerAnnounce() { managerAnnounce(); },
       managerCharge() { managerCharge(); },
       managerDebrief() { managerDebrief(); },
       managerFear() { managerFear(); },
@@ -9312,6 +9219,7 @@
       duckNip() { duckNip(); },
       duckRegroup() { duckRegroup(); },
       duckScreech() { duckScreech(); },
+      ducksRejoin() { ducksRejoin(); },
       stagConfused() { stagConfused(); },
       turtleBunker() { turtleBunker(); },
       wolfBreak() { wolfBreak(); },
@@ -9321,8 +9229,9 @@
       swarmEscalate() { swarmEscalate(); },
       swarmScatter() { swarmScatter(); },
       swarmShutters(d) { swarmShutters(d); }, // (Steve 2026-10-06): urgency now heard
-      // delegateCircle: the one delegate* name game.js actually fires (game.js:19087).
-      // delegateAnnounce/delegateCharge shims removed 2026-10-07 — never fired.
+      // Middle Manager fires delegate* names; the synths are the manager* set
+      delegateAnnounce() { managerAnnounce(); },
+      delegateCharge() { managerCharge(); },
       delegateCircle() { managerCircle(); },
       // System events
       confront() { confront(); },
@@ -9350,10 +9259,6 @@
       crash(d) { crash(d); },
       levelup(d) { levelup(d); },
       passiveUnlock(d) { passiveUnlock(d); },
-      // KNOWLEDGE + SYNERGY (Steve 2026-10-07): were orphaned hooks — 7
-      // knowledgeReveal sites and 1 synergyDiscovered site fired silence.
-      knowledgeReveal(d) { knowledgeReveal(d); },
-      synergyDiscovered(d) { synergyDiscovered(d); },
       // PATTERN SYNTHS (Steve 2026-10-06): generic-per-pattern beats for the
       // wave-2 flesh-out siblings — call directly, or let telegraph()/impact()
       // dispatch them by pattern. Patterns: beam, burst, charge, direct,
@@ -9393,14 +9298,10 @@
       // WAVE-2 BESPOKE BEATS (Steve 2026-10-06): missing resolves for siblings
       staticScream() { staticScream(); }, // voice_mimic_radio reveal: the radio SCREAMS
       serviceRush() { serviceRush(); },   // service_mimic: hold music slammed into motion
+      contractBind() { contractBind(); }, // contract_golem: paper becomes law becomes weight
       monsterDown() { monsterDown(); },   // generic death — collapse, breath out, wrong note
       monsterHurt() { monsterHurt(); },   // generic wound — a flinch, cut off
       delegateDebrief() { delegateDebrief(); }, // (Steve 2026-10-06): was a pure alias of managerDebrief — now its own dictating-into-nothing synth
-      // WOUND TEMPERAMENTS (Steve 2026-10-07): encounters.js fires these on
-      // wound-state shifts — they were mute (no registry entries) until now.
-      woundEnraged() { woundEnraged(); },     // BLEEDING — and it likes it: accelerating pounding + tritone scream
-      woundCunning() { woundCunning(); },     // goes quiet and clever: hush, counting ticks, watcher tone
-      woundDesperate() { woundDesperate(); }, // hurt bad, knows it: erratic stabs + failing-engine sputter
       // WAVE-1 CONTRACT HOOKS (Steve 2026-10-06): promised in the HOOK
       // CONTRACT above, never defined until now
       boarNotice() { boarNotice(); },
@@ -10688,280 +10589,6 @@
     return html;
   }
 
-  // BUILD ARCHETYPE INDICATOR (Steve 2026-10-07): specialist/generalist are
-  // real bonuses (Game.buildBonus) but invisible. One compact line in the
-  // pack, next to the ability list — a badge you EARNED, not a label.
-  function renderBuildIndicator() {
-    try {
-      if (!Game.buildArchetype || !Game.buildBonus) return '';
-      const arch = Game.buildArchetype();
-      if (!arch) return '';
-      const bonus = Game.buildBonus();
-      const title = bonus ? esc(bonus.desc) : '';
-      if (arch.type === 'specialist') {
-        const icons = { combat: '\u2694\uFE0F', care: '\u{1F49A}', fieldcraft: '\u{1F33F}', craft: '\u{1F528}', social: '\u{1F4AC}', exploration: '\u{1F9ED}', investigation: '\u{1F50E}' };
-        const verbs = { combat: 'strikes hit harder', care: 'healing flows stronger', fieldcraft: 'the land yields more', craft: 'your craft holds true', social: 'your words carry weight', exploration: 'you cover ground faster', investigation: "the truth can't hide" };
-        const poolName = arch.pool.charAt(0).toUpperCase() + arch.pool.slice(1);
-        return `<p class="small buildbadge" title="${title}">${icons[arch.pool] || '\u{1F3AF}'} <b>${esc(poolName)} Specialist</b> <span style="color:#ffd166">+25%</span> <span style="opacity:.75">\u2014 ${esc(verbs[arch.pool] || 'your mastery deepens')}. Mastery has its rewards.</span></p>`;
-      }
-      return `<p class="small buildbadge" title="${title}">\u{1F310} <b>Versatile Generalist</b> <span style="color:#ffd166">+10%</span> <span style="opacity:.75">to everything \u2014 no lock you can't work around.</span></p>`;
-    } catch (e) { return ''; }
-  }
-
-  // SYNERGY STIRRINGS (Steve 2026-10-07): an undiscovered synergy with 1-2
-  // attempts whose requirements you hold is ALIVE — surface its tease in the
-  // pack so the thread stays warm between visits. The full hint is earned at
-  // attempt 2 (mirrors game.js: tease1 -> tease2 + hint) — showing it at
-  // attempt 1 would short-circuit the discovery loop. Knowledge gating holds.
-  function renderSynergyStirrings() {
-    try {
-      const sch = Game.state.scholar;
-      const syns = Game.data.synergies || [];
-      const attempts = sch.synergyAttempts || {};
-      const discovered = sch.synergies || [];
-      const rows = [];
-      for (const syn of syns) {
-        if (discovered.includes(syn.id)) continue;
-        const dm = syn.discovery_method || {};
-        const n = attempts[syn.id + (dm.type === 'sustained' ? '_days' : '')] || 0;
-        if (n < 1 || n > 2) continue;
-        // requirements held? same check game.js uses for activation.
-        const minLvl = syn.minLevel || 1;
-        const held = (syn.requires || []).every(rid => {
-          try { return Game.abilityLevel(rid) >= minLvl; } catch (e) { return false; }
-        });
-        if (!held) continue;
-        const tease = n === 1 ? dm.tease1 : dm.tease2;
-        const pips = '\u25CF'.repeat(n) + '\u25CB'.repeat(3 - n);
-        let line = `<b>\u{1F300} ${esc(syn.name)}</b> <span style="opacity:.7">${pips}</span>`;
-        if (tease) line += ` \u2014 <i>${esc(tease)}</i>`;
-        // attempt 2: the game itself nudges toward the hint — the HUD may
-        // name it outright. Attempt 1 keeps only the tease.
-        if (n === 2 && dm.hint) line += ` <span style="opacity:.85">\u{1F4A1} ${esc(dm.hint)}</span>`;
-        rows.push(`<p class="small">${line}</p>`);
-      }
-      return rows.join('');
-    } catch (e) { return ''; }
-  }
-
-  // SYSTEM INTEGRATION LEVEL (Steve 2026-10-07): game.js tracks linkedCodices
-  // -> systemIntegrationLevel 0-3. One compact line: pips, what the System
-  // sees at this level, and the next step. The level-up itself announces in
-  // the moment (feedback card) — this is the standing readout.
-  function renderIntegrationLevel() {
-    try {
-      if (!Game.systemIntegrationLevel) return '';
-      const sch = Game.state.scholar;
-      const linked = (sch.linkedCodices || []).length;
-      const lvl = Game.systemIntegrationLevel();
-      if (!Game.state.systemArrived && lvl === 0) return '';
-      const pips = '\u25CF'.repeat(lvl) + '\u25CB'.repeat(Math.max(0, 3 - lvl));
-      const sees = ['the System barely knows you', 'village power on the map', 'wildlife + travelers tracked', 'full rosters, codex summaries, strategy intel'];
-      const prog = lvl >= 3
-        ? 'fully integrated'
-        : `study 1 more village codex \u2192 L${lvl + 1}`;
-      return `<p class="small" title="Study village codices to link them. The System integrates — and the HUD literally gets smarter."><b>\u2B22 Integration</b> <span style="color:#b48cff">${pips}</span> <span style="opacity:.75">${esc(sees[Math.min(lvl, 3)] || sees[0])}</span> <span style="opacity:.6">\u00B7 ${esc(prog)}</span></p>`;
-    } catch (e) { return ''; }
-  }
-
-
-  // ABILITIES MENU (Steve 2026-10-07): full loadout below Equipment.
-  // 6 slots, each with name, active/passive badge, level/xp, path tags.
-  // Tap for detail. Swap only at camp (not in combat).
-  function renderAbilitiesSection() {
-    try {
-      const sch = Game.state.scholar;
-      const equipped = sch.abilities || [];
-      const bg = sch.backgroundAbilities || [];
-      const maxSlots = Game.abilitySlots ? Game.abilitySlots() : 6;
-      const defs = Game.data.abilities || [];
-
-      const pathColors = {
-        hunter: '#7cfc9a', brawler: '#ff6b6b', forager: '#ffd166',
-        survivalist: '#4df3ff', detective: '#c792ea', socialite: '#ff9ff3',
-        miser: '#feca57', explorer: '#54a0ff', drifter: '#a4b0be', caregiver: '#ff7979'
-      };
-
-      const renderSlot = (ab, idx, isBg) => {
-        if (!ab) {
-          return `<div style="border:1px dashed #444;border-radius:6px;padding:8px;margin:4px 0;opacity:.5">
-            <p class="small" style="margin:0"><b>Empty slot ${idx + 1}</b> — learn abilities through trials, mentors, or the System.</p>
-          </div>`;
-        }
-        const def = defs.find(d => d.id === (ab.id || ab)) || {};
-        const name = ab.name || def.name || ab.id || 'Unknown';
-        const level = ab.level || 1;
-        const xp = ab.xp || 0;
-        const xpNeed = level * 100; // rough
-        const xpPct = Math.min(100, Math.round((xp / xpNeed) * 100));
-        const isActive = !!(def.actions && def.actions.length);
-        const badge = isActive
-          ? `<span style="background:#4df3ff22;border:1px solid #4df3ff;border-radius:3px;padding:1px 5px;font-size:10px;color:#4df3ff">ACTIVE</span>`
-          : `<span style="background:#8882;border:1px solid #888;border-radius:3px;padding:1px 5px;font-size:10px;color:#aaa">PASSIVE</span>`;
-        const paths = (def.paths || []).map(p => {
-          const c = pathColors[p] || '#aaa';
-          return `<span style="color:${c};font-size:11px">● ${esc(p)}</span>`;
-        }).join(' ');
-        const canSwap = !Game.inCombat || !Game.inCombat();
-        // Detail: description, actions, modifiers
-        let detail = `<p class="small" style="opacity:.8">${esc(ab.desc || def.description || '')}</p>`;
-        if (def.actions && def.actions.length) {
-          detail += `<p class="small"><b>Actions:</b></p>` + def.actions.map(a => {
-            const cost = a.cost ? Object.entries(a.cost).map(([k, v]) => `${k}: ${v}`).join(', ') : '—';
-            return `<p class="small" style="margin-left:12px">⚡ <b>${esc(a.name)}</b> <span style="opacity:.6">(${esc(a.context)})</span><br><span style="opacity:.75">${esc(a.effect || '')}</span><br><span style="opacity:.5">Cost: ${esc(cost)}</span></p>`;
-          }).join('');
-        }
-        if (def.modifiers && def.modifiers.length) {
-          detail += `<p class="small" style="opacity:.6"><b>Passive:</b> ${def.modifiers.map(m => `${esc(m.target)} ${esc(m.op)} ${esc(m.value)}`).join('; ')}</p>`;
-        }
-        const swapBtn = (!isBg && canSwap)
-          ? ` <button class="btn ghost sm" data-ability-swap="${ab.id || ab}">Swap</button>`
-          : (!isBg ? ` <span class="small" style="opacity:.5">(swap at camp)</span>` : '');
-        return `<details style="border:1px solid #333;border-radius:6px;padding:6px 8px;margin:4px 0">
-          <summary style="cursor:pointer;list-style:none">
-            <b>${esc(name)}</b> ${badge} <span style="opacity:.7">L${level}</span>
-            <div style="background:#222;border-radius:3px;height:4px;margin:4px 0"><div style="background:#4df3ff;height:4px;border-radius:3px;width:${xpPct}%"></div></div>
-            ${paths ? `<div>${paths}</div>` : ''}
-          </summary>
-          <div style="margin-top:6px">${detail}${swapBtn}</div>
-        </details>`;
-      };
-
-      let html = `<details open style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
-        <summary style="cursor:pointer;font-size:15px;font-weight:bold">🎒 Abilities <span style="opacity:.6;font-weight:normal">(${equipped.length}/${maxSlots})</span></summary>
-        <div style="margin-top:6px">`;
-
-      // System abilities (the 6 slots)
-      for (let i = 0; i < maxSlots; i++) {
-        html += renderSlot(equipped[i] || null, i, false);
-      }
-      // Background abilities (separate, not in slots)
-      if (bg.length) {
-        html += `<p class="small" style="margin-top:8px;opacity:.7"><b>Background</b> (yours — not slotted):</p>`;
-        bg.forEach((ab, i) => { html += renderSlot(ab, i, true); });
-      }
-      html += `</div></details>`;
-      return html;
-    } catch (e) { return `<p class="small" style="opacity:.5">Abilities unavailable.</p>`; }
-  }
-
-  // SKILLS MENU (Steve 2026-10-07): Codex browser below Abilities.
-  // Grouped by domain. Knowledge-gated: unknown shows as ???.
-  function renderSkillsSection() {
-    try {
-      const codexSkills = (Game.state.codex || {}).skills || {};
-      const defs = Game.data.knowledge || [];
-      if (!defs.length) return '';
-
-      // Group by domain
-      const byDomain = {};
-      for (const def of defs) {
-        const d = def.domain || 'general';
-        if (!byDomain[d]) byDomain[d] = [];
-        byDomain[d].push(def);
-      }
-
-      let html = `<details style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
-        <summary style="cursor:pointer;font-size:15px;font-weight:bold">📖 Skills <span style="opacity:.6;font-weight:normal">(Codex)</span></summary>
-        <div style="margin-top:6px">`;
-
-      for (const [domain, skills] of Object.entries(byDomain)) {
-        const known = skills.filter(s => {
-          try { return Game.canShow('skill', s.id, 'name'); } catch (e) { return !!codexSkills[s.id]; }
-        });
-        html += `<details style="margin:6px 0">
-          <summary style="cursor:pointer"><b style="text-transform:capitalize">${esc(domain)}</b> <span style="opacity:.6">(${known.length}/${skills.length})</span></summary>
-          <div style="margin:4px 0 4px 8px">`;
-        for (const sk of skills) {
-          let showName = true;
-          try { showName = Game.canShow('skill', sk.id, 'name'); } catch (e) { showName = !!codexSkills[sk.id]; }
-          if (!showName) {
-            html += `<p class="small" style="opacity:.4">??? <span style="opacity:.6">(undiscovered)</span></p>`;
-            continue;
-          }
-          const entry = codexSkills[sk.id] || {};
-          const lvl = entry.level || 0;
-          const pips = '\u25CF'.repeat(lvl) + '\u25CB'.repeat(Math.max(0, 4 - lvl));
-          const levels = sk.levels || {};
-          let levelDetail = '';
-          for (let l = 1; l <= 4; l++) {
-            if (levels[String(l)]) {
-              const unlocked = lvl >= l;
-              levelDetail += `<p class="small" style="margin:2px 0 2px 12px;${unlocked ? '' : 'opacity:.4'}"><b>L${l}:</b> ${unlocked ? esc(levels[String(l)]) : '???'}</p>`;
-            }
-          }
-          // Techniques from abilitySynergies
-          let techHtml = '';
-          const syns = sk.abilitySynergies || [];
-          if (syns.length) {
-            techHtml = `<p class="small" style="margin-top:4px"><b>Techniques:</b></p>` + syns.map(t => {
-              const tKnown = lvl >= (t.minLevel || 1);
-              return `<p class="small" style="margin-left:12px;${tKnown ? '' : 'opacity:.4'}">🔧 <b>${tKnown ? esc(t.technique || t.ability) : '???'}</b>${tKnown && t.effect ? ` — ${esc(t.effect)}` : ''}</p>`;
-            }).join('');
-          }
-          html += `<details style="margin:4px 0">
-            <summary style="cursor:pointer"><b>${esc(sk.name)}</b> <span style="color:#ffd166">${pips}</span></summary>
-            <div style="margin-top:4px">${levelDetail}${techHtml}</div>
-          </details>`;
-        }
-        html += `</div></details>`;
-      }
-      html += `</div></details>`;
-      return html;
-    } catch (e) { return `<p class="small" style="opacity:.5">Skills unavailable.</p>`; }
-  }
-
-  // SYNERGIES MENU (Steve 2026-10-07): Discoveries below Skills.
-  // Three states: Active (firing), Near (1 away), Discovered (known, inactive).
-  function renderSynergiesSection() {
-    try {
-      const active = Game.getActiveSynergies ? Game.getActiveSynergies() : [];
-      const near = Game.getNearSynergies ? Game.getNearSynergies() : [];
-      const discovered = Game.getDiscoveredSynergies ? Game.getDiscoveredSynergies() : [];
-
-      let html = `<details style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
-        <summary style="cursor:pointer;font-size:15px;font-weight:bold">✦ Synergies <span style="opacity:.6;font-weight:normal">(${active.length} active)</span></summary>
-        <div style="margin-top:6px">`;
-
-      // ACTIVE
-      if (active.length) {
-        html += `<p class="small" style="color:#7cfc9a"><b>● Active</b></p>`;
-        for (const s of active) {
-          const triggers = (s.triggers || []).map(t => esc(t.name || t.id)).join(' + ');
-          html += `<details style="margin:4px 0;border:1px solid #2a4d2a;border-radius:6px;padding:6px 8px">
-            <summary style="cursor:pointer"><b>${esc(s.name)}</b> ${triggers ? `<span style="opacity:.6;font-size:11px">${triggers}</span>` : ''}</summary>
-            <p class="small" style="opacity:.8;margin-top:4px">${esc(s.flavor)}</p>
-          </details>`;
-        }
-      }
-
-      // NEAR (1 away)
-      if (near.length) {
-        html += `<p class="small" style="color:#ffd166;margin-top:8px"><b>◐ Near</b> <span style="opacity:.6">(one piece away)</span></p>`;
-        for (const s of near) {
-          html += `<p class="small" style="margin:4px 0">🔶 <b>${esc(s.name)}</b> <span style="opacity:.7">${s.have}/${s.total}</span> — need <b>${esc(s.needName)}</b></p>`;
-        }
-      }
-
-      // DISCOVERED (known, inactive)
-      if (discovered.length) {
-        html += `<p class="small" style="opacity:.6;margin-top:8px"><b>○ Discovered</b> <span style="opacity:.6">(dormant)</span></p>`;
-        for (const s of discovered) {
-          html += `<details style="margin:4px 0;opacity:.7">
-            <summary style="cursor:pointer">${esc(s.name)}</summary>
-            <p class="small" style="opacity:.7;margin-top:4px">${esc(s.flavor)}</p>
-          </details>`;
-        }
-      }
-
-      if (!active.length && !near.length && !discovered.length) {
-        html += `<p class="small" style="opacity:.5">No synergies yet. Combine abilities and skills — the resonances will find you.</p>`;
-      }
-      html += `</div></details>`;
-      return html;
-    } catch (e) { return `<p class="small" style="opacity:.5">Synergies unavailable.</p>`; }
-  }
-
   // inventory: your pack. Inline — one screen, no overlay hopping.
   function renderInvInline(slot, view) {
     const st = Game.status();
@@ -10970,35 +10597,10 @@
     const recipes = Game.data.recipes || [];
     const knownRecipes = recipes.filter(r => (Game.state.codex.recipes || {})[r.id] && Game.state.codex.recipes[r.id].level >= 3);
     const bodyHtml = `
-        ${(() => {
-          // GEAR SLOTS (Steve 2026-10-07): full slot display with blocked-slot grey-out.
-          try {
-            const eq = Game.state.scholar.equipped || {};
-            const S = window.S || {};
-            const E = S.equipment || {};
-            const slots = ['melee', 'ranged', 'head', 'torso', 'legs', 'hands', 'shoes', 'acc1', 'acc2', 'acc3', 'acc4'];
-            const blocked = E.blockedSlots ? E.blockedSlots(eq) : [];
-            const label = E.slotLabel ? E.slotLabel.bind(E) : (s => s);
-            const rows = slots.map(slot => {
-              const isBlocked = blocked.indexOf(slot) !== -1;
-              const item = eq[slot];
-              const lbl = label(slot);
-              if (isBlocked) {
-                return `<p class="small" style="opacity:.35"><b>${lbl}:</b> <span style="text-decoration:line-through">blocked</span> <span style="opacity:.7">(covered by ${esc((eq.torso||{}).name||'full-body gear')})</span></p>`;
-              }
-              if (!item) return `<p class="small" style="opacity:.5"><b>${lbl}:</b> —</p>`;
-              const bond = item.bonded ? ` <span class="small" style="opacity:.75">bond ${item.bond||0}${item.heirloom ? ' \u00B7 heirloom' : ''}</span>` : '';
-              return `<p class="small"><b>${lbl}:</b> ${itemSpriteHtml(item)}${esc(item.name)}${bond} <button class="btn ghost sm" data-unequip-slot="${slot}">Take off</button></p>`;
-            }).join('');
-            return `<div style="margin:8px 0"><b>Equipped</b>${rows}</div>`;
-          } catch (e) { return ''; }
-        })()}
-        ${renderAbilitiesSection()}
-        ${renderSkillsSection()}
-        ${renderSynergiesSection()}
-${renderBuildIndicator()}
-        ${renderSynergyStirrings()}
-        ${renderIntegrationLevel()}
+        ${(() => { const eq = Game.state.scholar.equipped || {}; const parts = []; if (eq.weapon) parts.push(`${itemSpriteHtml(eq.weapon)}${eq.weapon.name}`); if (eq.armor) parts.push(`${itemSpriteHtml(eq.armor)}${eq.armor.name}`); return parts.length ? `<p class="small"><b>Equipped:</b> ${parts.join(' \u00B7 ')}</p>` : ''; })()}
+        ${(() => { const bg = Game.state.scholar.backgroundAbilities || []; if (!bg.length) return ''; return `<p class="small"><b>Background:</b> ${bg.map(a => `${a.name} L${a.level}`).join(', ')}</p>`; })()}
+        ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; let cc = ''; try { const t = Game.challengeCountdownText ? Game.challengeCountdownText() : ''; if (t) cc = ` · <b style="color:#ff5d5d">${t}</b>`; } catch (e) {} return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)${Game.integrationStageName ? ` · ${Game.integrationStageName()}` : ''}${Game.arcName ? ` · ${Game.arcName()}` : ''}${cc}</p>`; })()}
+        ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''}</p>`; })()}
         ${inv.length ? inv.map((i, idx) => {
           // FOOD REALITY: per-item processing buttons + state markers.
@@ -11046,16 +10648,7 @@ ${renderBuildIndicator()}
             // note: data-cook below covers cookable via the extended condition
             i._cookable = cookable;
           } catch (e) {}
-          return `<p class="small">${itemSpriteHtml(i)}${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(() => { try {
-            // KNOWLEDGE GATE (Steve 2026-10-07): kcal hidden for unknown plants.
-            // "If you don't know it's food, you don't know its calories."
-            if (i.foodKind === "meat" && i.edible === false) return "?";
-            if (i.plantId && !String(i.plantId).startsWith('meat_')) {
-              const isPlant = (Game.data.plants || []).some(x => x.id === i.plantId);
-              if (isPlant && !Game.canShow('plant', i.plantId, 'kcal')) return "?";
-            }
-            return (i.kcalEach || 0) * i.units;
-          } catch (e) { return (i.kcalEach || 0) * i.units; } })()} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
+          return `<p class="small">${itemSpriteHtml(i)}${(Game.isKeepsake && Game.isKeepsake(i)) ? '💛 ' : ''}${i.bonded ? '\u2756 ' : ''}<b>${Game.itemDisplayName(i)}</b> x${i.units} (${(i.foodKind === "meat" && i.edible === false) ? "?" : (i.kcalEach || 0) * i.units} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
         ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
@@ -11109,30 +10702,8 @@ ${renderBuildIndicator()}
     slot.querySelectorAll('[data-stash-askcook]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAskcook, stashOf(), 'cook'), 'A specialist handles it.'));
     slot.querySelectorAll('[data-stash-smoke]').forEach(b => b.onclick = rewire(() => Game.preserveFood(+b.dataset.stashSmoke, stashOf()), 'Smoked.'));
     slot.querySelectorAll('[data-stash-asksmoke]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAsksmoke, stashOf(), 'preserver'), 'A specialist handles it.'));
-    slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => {
-      // GEAR SLOTS (Steve 2026-10-07): route to melee or ranged by item type.
-      const it = Game.state.scholar.inventory[+b.dataset.equipW];
-      let tgt = 'melee';
-      try {
-        const def = (Game.data.items||[]).find(i => i.id === (it.itemId || it.id));
-        if (def && window.S && window.S.equipment && window.S.equipment.isRangedWeapon(def)) tgt = 'ranged';
-      } catch (e) {}
-      Game.equip(+b.dataset.equipW, tgt);
-    }, 'Equipped.'));
-    slot.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => {
-      // GEAR SLOTS (Steve 2026-10-07): route armor to its assigned slot.
-      const it = Game.state.scholar.inventory[+b.dataset.equipA];
-      let tgt = 'armor';
-      try {
-        const def = (Game.data.items||[]).find(i => i.id === (it.itemId || it.id));
-        if (def && window.S && window.S.equipment) {
-          const want = window.S.equipment.slotForItem(def);
-          if (want) tgt = want;
-        }
-      } catch (e) {}
-      Game.equip(+b.dataset.equipA, tgt);
-    }, 'Worn.'));
-    slot.querySelectorAll('[data-unequip-slot]').forEach(b => b.onclick = rewire(() => Game.unequip(b.dataset.unequipSlot), 'Taken off.'));
+    slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipW, 'weapon'), 'Equipped.'));
+    slot.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipA, 'armor'), 'Worn.'));
     slot.querySelectorAll('[data-donate]').forEach(b => b.onclick = rewire(() => Game.donateToPantry(+b.dataset.donate), 'Donated to the pantry.'));
     // FORAGER LOOP: "leave it for the woods" — the pack-full message promises
     // this, so it exists. Anything not bonded or keepsake can be left behind.
@@ -11173,15 +10744,7 @@ ${renderBuildIndicator()}
       // WEIGHT IS ALWAYS KNOWN (Steve): physical, even when identity isn't.
       const kg = (((it.kg || 0.1)) * units).toFixed(1);
       // kcal gated: unknown meat shows "?", like the pack.
-      // KNOWLEDGE GATE (Steve 2026-10-07): kcal hidden for unknown plants, like the pack.
-      const kcalStr = (() => { try {
-        if (it.foodKind === 'meat' && it.edible === false) return '?';
-        if (it.plantId && !String(it.plantId).startsWith('meat_')) {
-          const isPlant = (Game.data.plants || []).some(x => x.id === it.plantId);
-          if (isPlant && !Game.canShow('plant', it.plantId, 'kcal')) return '?';
-        }
-        return ((it.kcalEach || 0) * units);
-      } catch (e) { return ((it.kcalEach || 0) * units); } })();
+      const kcalStr = (it.foodKind === 'meat' && it.edible === false) ? '?' : ((it.kcalEach || 0) * units);
       let spoilMark = '';
       try {
         if (it.spoilDay !== undefined && it.spoilDay !== null) {
@@ -11318,18 +10881,6 @@ ${renderBuildIndicator()}
       tbm: Game.inCombat() && Game.tbFighter('p') ? Game.tbFighter('p').moveLeft : -1,
     };
   }
-  // DPAD PERF (Steve 2026-10-07): syncAfterMove runs after EVERY step during
-  // fast movement. Rebuilding + re-wiring the action bars each step is the
-  // heaviest main-thread cost in the walk loop. The bars usually render
-  // identical HTML between adjacent tiles — skip the DOM write (and the
-  // re-wire) when nothing actually changed. Visual output is identical.
-  function setHTMLCached(el, html) {
-    if (!el) return false;
-    if (el._cachedHTML === html) return false;
-    el._cachedHTML = html;
-    el.innerHTML = html;
-    return true;
-  }
   function syncAfterMove(step, res) {
     // The player moved: any open tile panel is now about somewhere else.
     const info = document.getElementById('inlineslot');
@@ -11344,32 +10895,29 @@ ${renderBuildIndicator()}
     if (big) { expeditionScreen(); return; }
     // Light sync: the clock visibly advances EVERY step — the day-tick bar
     // drains and the dial turns. That's the time cost, made visible.
-    // Cached writes: identical HTML between steps skips the DOM churn.
     const st = Game.status();
-    setHTMLCached(document.getElementById('exphead'), expHeadHTML(st));
-    setHTMLCached(document.getElementById('daytickwrap'), dayTickBar(st));
-    setHTMLCached(document.querySelector('.ord-status'), statusBars(st));
+    const hw = document.getElementById('exphead');
+    if (hw) hw.innerHTML = expHeadHTML(st);
+    const dw = document.getElementById('daytickwrap');
+    if (dw) dw.innerHTML = dayTickBar(st);
+    const sb = document.querySelector('.ord-status');
+    if (sb) sb.innerHTML = statusBars(st);
     // ACTIONS (Steve 2026-10-05): buttons must refresh EVERY step. The old
     // code only updated them on "big" changes, so they'd disappear or appear
     // late as the player moved. Contextual actions depend on position.
     const actWrap = document.querySelector('.ord-actions');
     if (actWrap) {
       const inCombat = Game.inCombat();
-      const html = `
+      actWrap.innerHTML = `
         <div class="ord-self">${inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
         <div class="ord-ctx">${inCombat ? '' : contextBarHTML()}</div>
         <div class="ord-target">${targetBarHTML()}</div>
         <div class="ord-danger">${dangerBarHTML()}</div>
-        <div class="ord-ability">${abilityBarHTML()}</div>
-        ${feedbackHTML()}`;
-      // Re-wire the new buttons (each bar has its own wirer) — but only
-      // when the HTML actually changed; re-wiring identical buttons is
-      // pure main-thread cost during fast movement.
-      if (setHTMLCached(actWrap, html)) {
-        try { wireSelfBar(); } catch (e) {}
-        try { wireContextBar(); } catch (e) {}
-        try { wireAbilityBar(); } catch (e) {}
-      }
+        <div class="ord-ability">${abilityBarHTML()}</div>`;
+      // Re-wire the new buttons (each bar has its own wirer)
+      try { wireSelfBar(); } catch (e) {}
+      try { wireContextBar(); } catch (e) {}
+      try { wireAbilityBar(); } catch (e) {}
     }
   }
   MoveAnim.hooks.step = moveStepHook;
@@ -11419,7 +10967,7 @@ ${renderBuildIndicator()}
           b.classList.add('held');
           dpadPress(+b.dataset.dx, +b.dataset.dy);
         });
-        const release = () => { b.classList.remove('held'); MoveAnim.clearHold(); MoveAnim.purgeHold(); };
+        const release = () => { b.classList.remove('held'); MoveAnim.clearHold(); };
         b.addEventListener('pointerup', release);
         b.addEventListener('pointercancel', release);
         b.addEventListener('lostpointercapture', release);
@@ -11451,8 +10999,8 @@ ${renderBuildIndicator()}
   }
   // Global: releasing the pointer ANYWHERE stops hold-to-walk. (The pad can
   // be re-rendered mid-hold — the stop must not depend on the button living.)
-  window.addEventListener('pointerup', () => { MoveAnim.clearHold(); MoveAnim.purgeHold(); });
-  window.addEventListener('pointercancel', () => { MoveAnim.clearHold(); MoveAnim.purgeHold(); });
+  window.addEventListener('pointerup', () => MoveAnim.clearHold());
+  window.addEventListener('pointercancel', () => MoveAnim.clearHold());
   // COMBAT CADENCE (Steve 2026-10-06): highlight the acting monster during
   // async stepped turns. Each monster gets a visible beat — no more
   // instantaneous grid jumps.
@@ -11560,7 +11108,6 @@ ${renderBuildIndicator()}
               <div class="ord-target">${targetBarHTML()}</div>
               <div class="ord-danger">${dangerBarHTML()}</div>
               <div class="ord-ability">${abilityBarHTML()}</div>
-              ${feedbackHTML()}
             </div>
           </div>
           <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
@@ -11934,15 +11481,7 @@ ${renderBuildIndicator()}
           return `<div class="card" style="margin:6px 0;padding:8px 10px">
           <p class="small">${itemSpriteHtml(p)}<b>${dname}</b> \u00D7${p.units} ${unit}s
           ${p.safe ? '' : ' \u26A0 UNSAFE'}${p.spoilDay <= st.day ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \uD83C\uDF73 needs cooking' : ''}${(() => { try { const fm = Game.foodMarker ? Game.foodMarker(p) : ''; return fm ? ' \u00B7 ' + fm : ''; } catch (e) { return ''; } })()}<br>
-          <span style="opacity:.7">${(() => { try {
-            // KNOWLEDGE GATE (Steve 2026-10-07): pantry shows kcal only if YOU
-            // know it's food. Name-known (L1) isn't enough.
-            if (p.plantId && !String(p.plantId).startsWith('meat_')) {
-              const isPlant = (Game.data.plants || []).some(x => x.id === p.plantId);
-              if (isPlant && !Game.canShow('plant', p.plantId, 'kcal')) return '?';
-            }
-            return p.kcalEach;
-          } catch (e) { return p.kcalEach; } })()} kcal/${unit} \u00B7 ${p.kg} kg/${unit} \u00B7 <b>${density} kcal/kg</b></span></p>
+          <span style="opacity:.7">${p.kcalEach} kcal/${unit} \u00B7 ${p.kg} kg/${unit} \u00B7 <b>${density} kcal/kg</b></span></p>
           <div style="display:flex;align-items:center;gap:8px">
             <input type="range" min="0" max="${p.units}" value="0" data-pack="${idx}" style="flex:1">
             <span class="small" id="packq-${idx}" style="min-width:44px;text-align:right">0</span>
@@ -12586,9 +12125,8 @@ ${renderBuildIndicator()}
           const _alert = tgPlayerAlertClasses(_tg, _gwDive, pmx, pmy).join(' ');
           const meVp = Game.data.villagers.find(v => v.id === Game.villagerId) || (Game.data.background_survivors || []).find(v => v.id === Game.villagerId);
           const _mspr = villagerSpriteHtml(meVp);
-          // Steve 2026-10-07: player name ALWAYS shows above sprite. No flicker.
-          // Fall back to 'You' if villager record not found.
-          const meName = meVp ? meVp.name.split(' ')[0] : 'You';
+          const meKnown = true; // you know your own name
+          const meName = meKnown && meVp ? meVp.name.split(' ')[0] : '';
           g = `<span class="vent${_alert ? ' ' + _alert : ''}" data-ent="me"><span class="vtoken">${_mspr || '🧍'}</span>` + (meName ? `<span class="vname">${esc(meName)}</span>` : '') + `</span>`;
           cls += ' me';
           entityHere = true;
@@ -12694,7 +12232,7 @@ ${renderBuildIndicator()}
           const _alert2 = tgPlayerAlertClasses(_tg, _gwDive, pmx, pmy).join(' ');
           const meVp2 = Game.data.villagers.find(v => v.id === Game.villagerId) || (Game.data.background_survivors || []).find(v => v.id === Game.villagerId);
           const _mspr2 = villagerSpriteHtml(meVp2);
-          const meName2 = meVp2 ? meVp2.name.split(' ')[0] : 'You';
+          const meName2 = meVp2 ? meVp2.name.split(' ')[0] : '';
           g = `<span class="vent${_alert2 ? ' ' + _alert2 : ''}" data-ent="me"><span class="vtoken">${_mspr2 || '🧍'}</span>` + (meName2 ? `<span class="vname">${esc(meName2)}</span>` : '') + `</span>`;
         } else {
           // turn-based combat: fighters render from the fight, not scholar.monster
@@ -13110,9 +12648,9 @@ ${renderBuildIndicator()}
     // SVG TILE SCENES (Steve 2026-10-06): tiles render as miniature scenes
     // when the module is loaded; glyph fallback otherwise.
     const TS = (typeof Scattering !== 'undefined' && Scattering.TileScenes) || null;
-    for (let y = 0; y < 9; y++) {
+    for (let y = 0; y < 7; y++) {
       html += '<div class="mrow">';
-      for (let x = 0; x < 9; x++) {
+      for (let x = 0; x < 7; x++) {
         // FOG OF WAR (Steve 2026-10-06): only tiles you've WALKED IN reveal.
         // Check seenTiles for visited status. No hardcoded visibility.
         let _seenSimple = false;
@@ -13130,8 +12668,8 @@ ${renderBuildIndicator()}
               if (_tl.type) _ttype = _tl.type;
             }
           } catch (e) {}
-          // Haven always shows 🏘️ (Steve 2026-10-06) — center of 9x9
-          if (x === 4 && y === 4) {
+          // Haven always shows 🏘️ (Steve 2026-10-06)
+          if (x === 3 && y === 3) {
             html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:#7cbd6b;width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">🏘️</div></div>`;
             continue;
           }
@@ -13178,24 +12716,16 @@ ${renderBuildIndicator()}
         // VISIBILITY - ROOT CAUSE FIX (Steve 2026-10-06):
         // The seenTiles lookup was unreliable in the render context (tiles
         // showed as unseen despite the counter saying "3 seen").
-        // VISIBILITY (Steve 2026-10-07):
-        // - ONLY seenTiles grants visibility. No proximity reveal.
-        // - 'visited' (player walked there): full SVG detail node
-        // - 'shared' (villager/codex shared): biome tile color only, NOT detailed SVG
-        // - null: fog of war. You haven't earned it.
+        // New rule: tiles within Chebyshev distance 1 of the player (3x3)
+        // are visible. Simple, robust, no fragile data dependency.
+        // This is the PRIMARY visibility logic.
+        // HARDCODED VISIBILITY (Steve 2026-10-06): 3x3 center is always visible.
+        // No variables, no Game.map, nothing to fail.
         let seen = null;
         let diagColor = null;
-        try {
-          const st = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
-          const entry = st[x + ',' + y];
-          if (entry) {
-            seen = entry.k === 'v' ? 'visited' : 'shared';
-          }
-          // Player's current tile is always 'visited' (you're standing there)
-          const px = (Game.map && Game.map.px);
-          const py = (Game.map && Game.map.py);
-          if (px !== undefined && x === px && y === py) seen = 'visited';
-        } catch (e) {}
+        if (x >= 2 && x <= 4 && y >= 2 && y <= 4) {
+          seen = (x === 3 && y === 3) ? 'visited' : 'shared';
+        }
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
         const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
@@ -13215,23 +12745,12 @@ ${renderBuildIndicator()}
         } else if (isW && seen) {
           g = '🐗';
         } else if (otherV) {
-          // SYSTEM INTEGRATION (Steve 2026-10-07): L1+ shows village power.
-          // The System sees more as you link codices. Your HUD sharpens.
-          let vInfo = '';
-          try {
-            const integ = Game.systemIntegrationLevel ? Game.systemIntegrationLevel() : 0;
-            if (integ >= 1 && Game.villagePower) {
-              const pw = Game.villagePower(otherV);
-              const focus = (otherV.knowledgeProfile || {}).focus || 'survivors';
-              vInfo = ` title="${otherV.name} (Pwr ${pw}, ${focus})"`;
-            }
-          } catch (e) {}
-          g = `<span${vInfo}>🏘️</span>`;
+          g = '🏘️';
         } else {
           // HAVEN/VILLAGE ICON (Steve 2026-10-06): havens and villages ALWAYS
           // show the 🏘️ icon, not terrain. You need to see where people are.
           // Haven is always at (3,3); check coords directly (tile data may be null).
-          const isHavenTile = (x === 4 && y === 4) || (tl && (tl.type === 'haven' || tl.village));
+          const isHavenTile = (x === 3 && y === 3) || (tl && (tl.type === 'haven' || tl.village));
           if (isHavenTile) {
             g = '🏘️';
           } else if (diagColor) {
@@ -13240,17 +12759,6 @@ ${renderBuildIndicator()}
         } else if (!seen) {
             g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
               `<rect x="2" y="2" width="60" height="60" rx="8" fill="#0d120d" stroke="#1a2a1a" stroke-width="1"/></svg>`;
-          } else if (seen === 'shared') {
-            // Steve 2026-10-07: shared tiles show as BIOME COLOR ONLY,
-            // not detailed SVG. Fog of war for detail until visited personally
-            // or via codex connection.
-            const biomeColors = {
-              haven: '#7cbd6b', meadow: '#7cbd6b', forest: '#2d6a2d', grove: '#3a7d3a',
-              wetland: '#4a8a8a', creek: '#5a9aba', thicket: '#2d5a2d', trail_edge: '#8a7a5a',
-              forest_floor: '#3a5a3a'
-            };
-            const bg = biomeColors[(tl && tl.type) || 'meadow'] || '#7cbd6b';
-            g = `<div style="background:${bg};width:100%;height:100%;min-height:40px;border-radius:4px;opacity:0.7"></div>`;
           } else {
             try {
               if (TS && TS.svgFor && tl) {
@@ -13390,9 +12898,9 @@ ${renderBuildIndicator()}
       const n = Object.keys(seen).length;
       if (!n) return '';
       let cells = '';
-      for (let y = 0; y < 9; y++) {
+      for (let y = 0; y < 7; y++) {
         cells += '<div class="mrow">';
-        for (let x = 0; x < 9; x++) {
+        for (let x = 0; x < 7; x++) {
           const k = x + ',' + y;
           const tl = Game.tileAt(x, y);
           const mine = st.seenTiles && st.seenTiles[k];
@@ -13642,8 +13150,8 @@ ${renderBuildIndicator()}
       refresh();
     };
     q('#dbg-haven').onclick = () => {
-      Game.map.px = Game.state.village.px ?? 4;
-      Game.map.py = Game.state.village.py ?? 4;
+      Game.map.px = Game.state.village.px ?? 3;
+      Game.map.py = Game.state.village.py ?? 3;
       Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
       Game.say('🐞 DEBUG: teleported to haven.');
       refresh();

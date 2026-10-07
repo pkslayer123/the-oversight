@@ -44,7 +44,7 @@ function rosterNPCs() {
 }
 function havenXY() {
   const v = Game.state.village;
-  return { hx: v.px ?? 4, hy: v.py ?? 4 };
+  return { hx: v.px ?? 3, hy: v.py ?? 3 };
 }
 
 (async () => {

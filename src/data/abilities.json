@@ -54,32 +54,7 @@
     ],
     "unlock": {
       "type": "granted"
-    },
-    "actions": [
-      {
-        "id": "read_sign",
-        "context": "explore",
-        "name": "Read Sign",
-        "cost": {
-          "time_min": 15
-        },
-        "effect": "Study tracks, scat, browse lines. Learn what's been here, how long ago, which direction."
-      },
-      {
-        "id": "read_stance",
-        "context": "combat",
-        "name": "Read Stance",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Once per fight: study the monster's stance. Reveals its likely next move (knowledge-gated)."
-      }
-    ],
-    "paths": [
-      "hunter",
-      "explorer",
-      "survivalist"
-    ]
+    }
   },
   {
     "description": "One shot. You don't take the shot unless it's the shot.",
@@ -96,32 +71,7 @@
     "pool": "combat",
     "unlock": {
       "type": "granted"
-    },
-    "actions": [
-      {
-        "id": "take_aim",
-        "context": "combat",
-        "name": "Take Aim",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Spend turn aiming. Next shot is 2.5x damage and cannot miss. You are exposed (enemies get +hit)."
-      },
-      {
-        "id": "clean_shot",
-        "context": "explore",
-        "name": "Line Up Clean Shot",
-        "cost": {
-          "time_min": 20,
-          "kcal": 15
-        },
-        "effect": "Take extra time on a hunting shot. Clean kill: full meat yield, animal doesn't suffer."
-      }
-    ],
-    "paths": [
-      "hunter",
-      "brawler"
-    ]
+    }
   },
   {
     "description": "Break down game fast and clean. Less waste, more meat, usable parts.",
@@ -141,23 +91,7 @@
     ],
     "unlock": {
       "type": "granted"
-    },
-    "actions": [
-      {
-        "id": "dress_game",
-        "context": "camp",
-        "name": "Field Dress",
-        "cost": {
-          "time_min": 30,
-          "kcal": 40
-        },
-        "effect": "Break down a carcass into usable meat plus hide, sinew, bone. Your Field Dressing skill already kept more meat at the kill \u2014 this is the deliberate work of breaking it down."
-      }
-    ],
-    "paths": [
-      "hunter",
-      "survivalist"
-    ]
+    }
   },
   {
     "description": "You think in shelf life. Smoking, drying, salting \u2014 food that lasts is food that saves.",
@@ -174,6 +108,23 @@
     "pool": "craft",
     "unlock": {
       "type": "granted"
+    }
+  },
+  {
+    "description": "Tell dandelion from disaster at a glance. The woods start talking.",
+    "id": "forage_identification",
+    "modifiers": [
+      {
+        "target": "forage.learn_threshold",
+        "op": "add",
+        "value": -1
+      }
+    ],
+    "name": "Forage Identification",
+    "pool": "fieldcraft",
+    "unlock": {
+      "detail": "Identify 5 plants correctly",
+      "type": "discovery"
     }
   },
   {
@@ -213,8 +164,44 @@
     }
   },
   {
+    "description": "Someone taught you this over a long winter. Knowledge is the only inheritance.",
+    "id": "taught_hands",
+    "modifiers": [
+      {
+        "target": "craft.success",
+        "op": "add",
+        "value": 0.1,
+        "scale": "level"
+      }
+    ],
+    "name": "Taught Hands",
+    "pool": "craft",
+    "unlock": {
+      "detail": "Learn from a village elder",
+      "type": "mentorship"
+    }
+  },
+  {
+    "description": "The System noticed you noticing patterns. It approves, in its way.",
+    "id": "pattern_recognition",
+    "modifiers": [
+      {
+        "target": "forage.rare_find_chance",
+        "op": "add",
+        "value": 0.1,
+        "scale": "level"
+      }
+    ],
+    "name": "Pattern Recognition",
+    "pool": "system",
+    "unlock": {
+      "detail": "Offered after 3 novel discoveries",
+      "type": "trial"
+    }
+  },
+  {
     "description": "Burn bright, pay later. Once per expedition, act twice.",
-    "id": "adrenaline_surge",
+    "id": "adrenaline_control",
     "modifiers": [
       {
         "target": "combat.dodge_chance",
@@ -223,7 +210,7 @@
         "scale": "level"
       }
     ],
-    "name": "Adrenaline Surge",
+    "name": "Adrenaline Control",
     "pool": "combat",
     "synergyHints": [
       "Triage: stabilize then fight on"
@@ -261,22 +248,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 50
-    },
-    "actions": [
-      {
-        "id": "track",
-        "context": "explore",
-        "name": "Track",
-        "cost": {
-          "time_min": 15
-        },
-        "effect": "Follow tracks. Find where an animal went, how many, how long ago."
-      }
-    ],
-    "paths": [
-      "hunter",
-      "explorer"
-    ]
+    }
   },
   {
     "id": "diplomat",
@@ -435,22 +407,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 75
-    },
-    "actions": [
-      {
-        "id": "steal_pantry",
-        "context": "camp",
-        "name": "Light Fingers",
-        "cost": {
-          "time_min": 10
-        },
-        "effect": "Steal from the pantry. 50% chance of no trust loss. If caught: -20 trust."
-      }
-    ],
-    "paths": [
-      "drifter",
-      "miser"
-    ]
+    }
   },
   {
     "id": "photosynthesis",
@@ -620,22 +577,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 150
-    },
-    "actions": [
-      {
-        "id": "shed_skin",
-        "context": "camp",
-        "name": "Molt",
-        "cost": {
-          "time_min": 60,
-          "kcal": 100
-        },
-        "effect": "Shed your skin. Heal to full HP. Lose all equipped gear (stuck in old skin). Once per week."
-      }
-    ],
-    "paths": [
-      "survivalist"
-    ]
+    }
   },
   {
     "id": "blood_magic",
@@ -650,22 +592,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 100
-    },
-    "actions": [
-      {
-        "id": "blood_price",
-        "context": "camp",
-        "name": "Blood Price",
-        "cost": {
-          "hp": 10
-        },
-        "effect": "Spend 10 HP to gain 500 kcal. Your body eats itself. Reduced to 7 HP with crimson_circuit synergy."
-      }
-    ],
-    "paths": [
-      "survivalist",
-      "brawler"
-    ]
+    }
   },
   {
     "id": "rage",
@@ -695,20 +622,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 100
-    },
-    "actions": [
-      {
-        "id": "feed_hunger",
-        "context": "camp",
-        "name": "Feed the Red Hunger",
-        "cost": {},
-        "effect": "+1000 kcal from anything (even people). -30 trust, permanently. Only when starving (<500 kcal)."
-      }
-    ],
-    "paths": [
-      "survivalist",
-      "brawler"
-    ]
+    }
   },
   {
     "id": "pact",
@@ -738,23 +652,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 50
-    },
-    "actions": [
-      {
-        "id": "scream",
-        "context": "combat",
-        "name": "Scream",
-        "cost": {
-          "turn": true,
-          "kcal": 20
-        },
-        "effect": "Scream so loud it curdles milk. Stuns all monsters for 1 round. Once per day."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "socialite"
-    ]
+    }
   },
   {
     "id": "pocket_sand",
@@ -769,22 +667,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 25
-    },
-    "actions": [
-      {
-        "id": "throw_sand",
-        "context": "combat",
-        "name": "Pocket Sand",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Throw sand in eyes. Blinds target for 2 rounds (attacks have disadvantage). You always have sand."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "drifter"
-    ]
+    }
   },
   {
     "id": "taste_vision",
@@ -863,22 +746,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 75
-    },
-    "actions": [
-      {
-        "id": "rob_grave",
-        "context": "explore",
-        "name": "Rob the Dead",
-        "cost": {
-          "time_min": 20
-        },
-        "effect": "Loot a corpse thoroughly. Better gear than normal looting. -15 trust if seen doing it."
-      }
-    ],
-    "paths": [
-      "drifter",
-      "miser"
-    ]
+    }
   },
   {
     "id": "time_skip",
@@ -893,22 +761,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 250
-    },
-    "actions": [
-      {
-        "id": "skip_time",
-        "context": "camp",
-        "name": "Time Skip",
-        "cost": {
-          "age_days": 1
-        },
-        "effect": "Skip to the next day part instantly. Ages you 1 day. The time has to come from somewhere."
-      }
-    ],
-    "paths": [
-      "drifter",
-      "explorer"
-    ]
+    }
   },
   {
     "id": "hive_mind",
@@ -923,6 +776,21 @@
     "modifiers": [],
     "metabolic": {
       "daily": 200
+    }
+  },
+  {
+    "id": "ant_trail",
+    "name": "Ant Trail",
+    "description": "You can follow ant trails to water and sugar. Ants know things.",
+    "flavor": "The tiny marchers! They never get lost! Follow them! (Watch where you step!)",
+    "pool": "system",
+    "tier": "utility",
+    "unlock": {
+      "type": "system_offer"
+    },
+    "modifiers": [],
+    "metabolic": {
+      "daily": 25
     }
   },
   {
@@ -953,22 +821,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 50
-    },
-    "actions": [
-      {
-        "id": "echo_locate",
-        "context": "explore",
-        "name": "Echo-locate",
-        "cost": {
-          "kcal": 10
-        },
-        "effect": "Clap once: sense the layout of the 9x9 around you (reveals blocked cells). Once per day. Works in combat too."
-      }
-    ],
-    "paths": [
-      "explorer",
-      "hunter"
-    ]
+    }
   },
   {
     "id": "compost_king",
@@ -1043,22 +896,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 75
-    },
-    "actions": [
-      {
-        "id": "dead_aim_shot",
-        "context": "combat",
-        "name": "Dead Aim",
-        "cost": {
-          "turn": true,
-          "kcal": 50
-        },
-        "effect": "One perfect shot. 3x damage, ignores armor. You cannot move this turn."
-      }
-    ],
-    "paths": [
-      "hunter"
-    ]
+    }
   },
   {
     "id": "second_skin",
@@ -1116,22 +954,7 @@
     ],
     "metabolic": {
       "daily": 50
-    },
-    "actions": [
-      {
-        "id": "mediate_dispute",
-        "context": "social",
-        "name": "Mediate",
-        "cost": {
-          "time_min": 30
-        },
-        "effect": "Resolve a villager dispute with a talk check. Peace is a skill. Bonus from drama.resolve_bonus."
-      }
-    ],
-    "paths": [
-      "socialite",
-      "caregiver"
-    ]
+    }
   },
   {
     "id": "leech",
@@ -1146,22 +969,7 @@
     "modifiers": [],
     "metabolic": {
       "daily": 100
-    },
-    "actions": [
-      {
-        "id": "leech_stance",
-        "context": "combat",
-        "name": "Leech Stance",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Enter leech stance: when an ally takes damage near you this round, you take half of it. They owe you. (They know it.)"
-      }
-    ],
-    "paths": [
-      "caregiver",
-      "brawler"
-    ]
+    }
   },
   {
     "id": "scarecrow",
@@ -1182,22 +990,7 @@
     ],
     "metabolic": {
       "daily": 75
-    },
-    "actions": [
-      {
-        "id": "stage_injury",
-        "context": "explore",
-        "name": "Stage Injury",
-        "cost": {
-          "time_min": 30,
-          "kcal": 20
-        },
-        "effect": "Stage a fake injury to lure monsters into your traps. They fall for it. Every time. Next trap is guaranteed to trigger."
-      }
-    ],
-    "paths": [
-      "hunter"
-    ]
+    }
   },
   {
     "id": "hollow_bones",
@@ -1259,7 +1052,7 @@
   {
     "id": "symbiote",
     "name": "Symbiote",
-    "description": "A small alien organism lives in your gut. It eats 200 kcal/day. Passively: warns you of poisoned food before you eat, purifies 1L of risky water per day on its own.",
+    "description": "A small alien organism lives in your gut. It eats 200 kcal/day but warns you of poisoned food and purifies risky water slowly (1L/day).",
     "flavor": "You have a FRIEND inside! It eats your food! It cleans your water! It's... rent! Symbiosis! (Don't think about what happens if you starve it!)",
     "pool": "system",
     "tier": "risky",
@@ -1346,7 +1139,7 @@
   {
     "id": "translator",
     "name": "Translator",
-    "description": "The System logs every foreign word you hear and replays them on demand \u2014 a memory aid, not a shortcut. Novel speech stays novel until YOU learn it. (Deep integration may wake it up further.)",
+    "description": "The System logs every foreign word you hear and replays them on demand — a memory aid, not a shortcut. Novel speech stays novel until YOU learn it. (Deep integration may wake it up further.)",
     "flavor": "OH WE LOVE THIS ONE! Every word! Logged! Replayable! Like a little notebook! In your HEAD! The full translating part comes later. Probably. We're working on it!",
     "pool": "system",
     "tier": "utility",
@@ -1397,636 +1190,6 @@
     "active": {
       "type": "cure_poison",
       "cooldown": "day"
-    },
-    "actions": [
-      {
-        "id": "purify_poison",
-        "context": "camp",
-        "name": "Purify",
-        "cost": {
-          "time_min": 30
-        },
-        "effect": "Neutralize poison using charcoal and clean water. Once per day. Knowledge of plants helps."
-      }
-    ],
-    "paths": [
-      "caregiver",
-      "forager"
-    ]
-  },
-  {
-    "id": "brawler_instinct",
-    "name": "Brawler's Instinct",
-    "pool": "combat",
-    "description": "You read a fight before it starts. The body tells you what the mouth won't.",
-    "modifiers": [
-      {
-        "target": "combat.initiative",
-        "op": "add",
-        "value": 2,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "granted"
-    },
-    "synergyHints": [
-      "With Adrenaline Control: act first, hit hard"
-    ]
-  },
-  {
-    "id": "adrenaline_control",
-    "name": "Adrenaline Control",
-    "pool": "combat",
-    "description": "Your hands don't shake. Your heart hammers, but your hands don't shake.",
-    "modifiers": [
-      {
-        "target": "combat.strike_damage",
-        "op": "multiply",
-        "value": 1.3,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "trial",
-      "trial": "win_a_fight"
-    },
-    "synergyHints": [
-      "Triage + Adrenaline: stabilize then fight on"
-    ]
-  },
-  {
-    "id": "intimidating_presence",
-    "name": "Intimidating Presence",
-    "pool": "combat",
-    "description": "You don't have to fight. Most people decide not to, just looking at you.",
-    "modifiers": [
-      {
-        "target": "social.intimidate",
-        "op": "add",
-        "value": 0.25,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "trial",
-      "trial": "intimidate_someone"
     }
-  },
-  {
-    "id": "silver_tongue",
-    "name": "Silver Tongue",
-    "pool": "social",
-    "description": "Words are tools. You've got a whole workshop.",
-    "modifiers": [
-      {
-        "target": "social.persuade",
-        "op": "add",
-        "value": 0.2,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "granted"
-    }
-  },
-  {
-    "id": "gossip_network",
-    "name": "Gossip Network",
-    "pool": "social",
-    "description": "You hear things. People tell you things. You remember who told you what.",
-    "modifiers": [
-      {
-        "target": "social.gossip_chance",
-        "op": "add",
-        "value": 0.3,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "trial",
-      "trial": "hear_10_rumors"
-    }
-  },
-  {
-    "id": "peacemaker",
-    "name": "Peacemaker",
-    "pool": "social",
-    "description": "You can walk into a fight and walk out with friends. It's a gift.",
-    "modifiers": [
-      {
-        "target": "social.deescalate",
-        "op": "add",
-        "value": 0.35,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "trial",
-      "trial": "stop_a_fight"
-    },
-    "actions": [
-      {
-        "id": "walk_in",
-        "context": "combat",
-        "name": "Walk In",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Walk into a fight and attempt to end it peacefully. Talk check with deescalate bonus. If it fails, you are exposed."
-      },
-      {
-        "id": "make_friends",
-        "context": "social",
-        "name": "Make Friends",
-        "cost": {
-          "time_min": 30
-        },
-        "effect": "Turn a tense social situation friendly. You walk in, you walk out with friends. It is a gift."
-      }
-    ],
-    "paths": [
-      "socialite",
-      "caregiver"
-    ]
-  },
-  {
-    "id": "pathfinder",
-    "name": "Pathfinder",
-    "pool": "exploration",
-    "description": "You don't get lost. The land tells you where you are.",
-    "modifiers": [
-      {
-        "target": "travel.speed",
-        "op": "multiply",
-        "value": 1.2,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "granted"
-    }
-  },
-  {
-    "id": "eagle_eye",
-    "name": "Eagle Eye",
-    "pool": "exploration",
-    "description": "You see the ruin on the horizon. The smoke. The movement. Before anyone else.",
-    "modifiers": [
-      {
-        "target": "explore.spot_chance",
-        "op": "add",
-        "value": 0.25,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "trial",
-      "trial": "discover_5_locations"
-    }
-  },
-  {
-    "id": "lie_detector",
-    "name": "Lie Detector",
-    "pool": "investigation",
-    "description": "The mouth says one thing. The hands say another. You watch the hands.",
-    "modifiers": [
-      {
-        "target": "truth.detect_chance",
-        "op": "add",
-        "value": 0.2,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "granted"
-    },
-    "synergyHints": [
-      "With read_people skill: no one fools you"
-    ]
-  },
-  {
-    "id": "evidence_board",
-    "name": "Evidence Board",
-    "pool": "investigation",
-    "description": "You keep track. Who said what, when. The contradictions surface.",
-    "modifiers": [
-      {
-        "target": "truth.contradiction_spot",
-        "op": "add",
-        "value": 0.3,
-        "scale": "level"
-      }
-    ],
-    "unlock": {
-      "type": "trial",
-      "trial": "catch_3_lies"
-    }
-  },
-  {
-    "id": "pyrokinesis",
-    "name": "Pyrokinesis",
-    "description": "You coax flame from stubborn fuel. Fires you tend burn hotter and catch easier.",
-    "flavor": "The System filed this under 'thermodynamic enthusiasm.' You just call it warm hands.",
-    "pool": "system",
-    "tier": "rare",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "fire.success",
-        "op": "add",
-        "value": 0.25
-      },
-      {
-        "target": "fire.heat",
-        "op": "add",
-        "value": 1
-      }
-    ],
-    "metabolic": {
-      "daily": 40
-    }
-  },
-  {
-    "id": "stormcall",
-    "name": "Stormcall",
-    "description": "You feel storms coming half a day out, and you can nudge them. Rain answers when you ask.",
-    "flavor": "Not weather control \u2014 weather negotiation. The sky drives a hard bargain.",
-    "pool": "system",
-    "tier": "rare",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "weather.prediction_hours",
-        "op": "add",
-        "value": 12
-      },
-      {
-        "target": "weather.rain_chance",
-        "op": "add",
-        "value": 0.15
-      }
-    ],
-    "metabolic": {
-      "daily": 40
-    }
-  },
-  {
-    "id": "stalk",
-    "name": "Stalk",
-    "description": "Move unseen. Close distance without being noticed.",
-    "flavor": "You're not invisible. You're just not interesting enough to look at twice.",
-    "pool": "fieldcraft",
-    "tier": "common",
-    "unlock": {
-      "type": "practice"
-    },
-    "modifiers": [
-      {
-        "target": "stealth.move_silent",
-        "op": "add",
-        "value": 0.3
-      }
-    ],
-    "actions": [
-      {
-        "id": "stalk_prey",
-        "context": "explore",
-        "name": "Stalk",
-        "cost": {
-          "time_min": 15,
-          "kcal": 30
-        },
-        "effect": "Move to adjacent tile unseen. Animals don't flee. Once per approach."
-      }
-    ],
-    "paths": [
-      "hunter",
-      "drifter",
-      "explorer"
-    ]
-  },
-  {
-    "id": "blood_trail",
-    "name": "Blood Trail",
-    "description": "You can follow a wounded animal through anything. It doesn't get away.",
-    "flavor": "The blood tells you everything: how deep, how fast, how long it has.",
-    "pool": "fieldcraft",
-    "tier": "uncommon",
-    "unlock": {
-      "type": "practice"
-    },
-    "modifiers": [
-      {
-        "target": "hunt.track_wounded",
-        "op": "add",
-        "value": 0.5
-      }
-    ],
-    "actions": [
-      {
-        "id": "follow_blood",
-        "context": "explore",
-        "name": "Follow Blood Trail",
-        "cost": {
-          "time_min": 20,
-          "kcal": 25
-        },
-        "effect": "Track a wounded animal to its location. Reveals direction and distance."
-      }
-    ],
-    "paths": [
-      "hunter",
-      "survivalist"
-    ]
-  },
-  {
-    "id": "ambush",
-    "name": "Ambush",
-    "description": "Pick your ground. Wait. Strike when it's too late for them.",
-    "flavor": "Patience is a weapon. The best trap is the one they walk into.",
-    "pool": "combat",
-    "tier": "uncommon",
-    "unlock": {
-      "type": "practice"
-    },
-    "modifiers": [
-      {
-        "target": "combat.first_strike_damage",
-        "op": "multiply",
-        "value": 1.5
-      }
-    ],
-    "actions": [
-      {
-        "id": "set_ambush",
-        "context": "combat",
-        "name": "Ambush",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Spend turn preparing. Next attack is 2x damage and target can't dodge."
-      },
-      {
-        "id": "lay_wait",
-        "context": "explore",
-        "name": "Lay in Wait",
-        "cost": {
-          "time_min": 30,
-          "kcal": 20
-        },
-        "effect": "Set an ambush at your location. Next animal encounter starts with you hidden."
-      }
-    ],
-    "paths": [
-      "hunter",
-      "brawler"
-    ]
-  },
-  {
-    "id": "animal_ken",
-    "name": "Animal Ken",
-    "description": "You understand animals. Not talk to them \u2014 understand them.",
-    "flavor": "It's not magic. It's just paying attention for ten thousand hours.",
-    "pool": "fieldcraft",
-    "tier": "rare",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "animal.behavior_read",
-        "op": "add",
-        "value": 0.4
-      }
-    ],
-    "actions": [
-      {
-        "id": "read_beast",
-        "context": "explore",
-        "name": "Read the Beast",
-        "cost": {
-          "time_min": 10
-        },
-        "effect": "Study an animal. Learn if it's hungry, afraid, aggressive, or sick."
-      },
-      {
-        "id": "calm_beast",
-        "context": "combat",
-        "name": "Calm",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Attempt to calm a non-predatory animal. May end the fight peacefully."
-      }
-    ],
-    "paths": [
-      "hunter",
-      "caregiver",
-      "drifter"
-    ]
-  },
-  {
-    "id": "water_breathing",
-    "name": "Water Breathing",
-    "description": "You can breathe underwater. Gills, magic, or just really good lungs \u2014 the System doesn't explain.",
-    "flavor": "The System filed this under 'respiratory flexibility.' You just call it not drowning.",
-    "pool": "system",
-    "tier": "rare",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "water.breath_time",
-        "op": "add",
-        "value": 999
-      }
-    ],
-    "actions": [
-      {
-        "id": "dive_deep",
-        "context": "explore",
-        "name": "Dive Deep",
-        "cost": {
-          "time_min": 30
-        },
-        "effect": "Explore underwater areas. Find things others can't reach."
-      }
-    ],
-    "paths": [
-      "explorer",
-      "survivalist"
-    ]
-  },
-  {
-    "id": "trade_of_blows",
-    "name": "Trade of Blows",
-    "description": "Trade damage like currency. You can afford the exchange rate.",
-    "flavor": "Every hit you take is a hit you're about to give back with interest.",
-    "pool": "combat",
-    "tier": "uncommon",
-    "unlock": {
-      "type": "trial",
-      "trial": "take_50_damage_in_one_fight"
-    },
-    "modifiers": [
-      {
-        "target": "combat.trade_window",
-        "op": "add",
-        "value": 1
-      }
-    ],
-    "actions": [
-      {
-        "id": "open_trade",
-        "context": "combat",
-        "name": "Open the Trade",
-        "cost": {
-          "turn": true,
-          "hp": 10
-        },
-        "effect": "Take 10 damage voluntarily. Your next 3 attacks deal +50% damage. The pain focuses you."
-      },
-      {
-        "id": "settle_debt",
-        "context": "combat",
-        "name": "Settle the Debt",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Cash in: deal bonus damage equal to 50% of damage taken this fight. Once per fight."
-      }
-    ],
-    "paths": [
-      "brawler"
-    ]
-  },
-  {
-    "id": "unbreakable",
-    "name": "Unbreakable",
-    "description": "You don't go down. Not today. Not ever, if you have anything to say about it.",
-    "flavor": "The System filed a complaint about your pain receptors. You filed it under 'suggestions.'",
-    "pool": "combat",
-    "tier": "rare",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "combat.knockdown_resist",
-        "op": "add",
-        "value": 0.4
-      },
-      {
-        "target": "combat.stun_duration",
-        "op": "multiply",
-        "value": 0.5
-      }
-    ],
-    "actions": [
-      {
-        "id": "brace",
-        "context": "combat",
-        "name": "Brace",
-        "cost": {
-          "turn": true
-        },
-        "effect": "Plant your feet. Reduce next incoming damage by 60%. You cannot be knocked down this turn."
-      },
-      {
-        "id": "shake_off",
-        "context": "combat",
-        "name": "Shake It Off",
-        "cost": {
-          "kcal": 50
-        },
-        "effect": "Clear stun, slow, and bleed. Once per fight. Costs 50 kcal \u2014 your body burns fuel to keep going."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "survivalist"
-    ]
-  },
-  {
-    "id": "war_cry",
-    "name": "War Cry",
-    "description": "A sound from somewhere older than language. Things that hear it reconsider.",
-    "flavor": "It's not the volume. It's the promise.",
-    "pool": "combat",
-    "tier": "uncommon",
-    "unlock": {
-      "type": "practice"
-    },
-    "modifiers": [
-      {
-        "target": "social.intimidate",
-        "op": "add",
-        "value": 0.2
-      }
-    ],
-    "actions": [
-      {
-        "id": "bellow",
-        "context": "combat",
-        "name": "War Cry",
-        "cost": {
-          "turn": true,
-          "kcal": 30
-        },
-        "effect": "All enemies must pass a courage check or lose their next turn. Beasts may flee outright."
-      },
-      {
-        "id": "challenge",
-        "context": "social",
-        "name": "Issue Challenge",
-        "cost": {
-          "time_min": 5
-        },
-        "effect": "Challenge a villager to a non-lethal bout. Winner gains respect. Loser gains humility."
-      }
-    ],
-    "paths": [
-      "brawler",
-      "socialite"
-    ]
-  },
-  {
-    "id": "haymaker",
-    "name": "Haymaker",
-    "description": "One big swing. Everything you have, all at once. Subtlety is for people with time.",
-    "flavor": "The windup is the telegraph. The landing is the punctuation.",
-    "pool": "combat",
-    "tier": "common",
-    "unlock": {
-      "type": "practice"
-    },
-    "modifiers": [
-      {
-        "target": "combat.heavy_damage",
-        "op": "multiply",
-        "value": 1.2
-      }
-    ],
-    "actions": [
-      {
-        "id": "throw_haymaker",
-        "context": "combat",
-        "name": "Haymaker",
-        "cost": {
-          "turn": true,
-          "kcal": 40
-        },
-        "effect": "A massive swing: 2.5x damage, but -30% accuracy. If it misses, you're off-balance (enemies get +hit next turn)."
-      }
-    ],
-    "paths": [
-      "brawler"
-    ]
   }
 ]

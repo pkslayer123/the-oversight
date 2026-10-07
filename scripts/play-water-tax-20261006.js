@@ -41,7 +41,7 @@ function drainTail(n) {
   for (const l of lines.slice(-(n || 3))) log.push('    [game] ' + l.slice(0, 150));
 }
 function goHome() {
-  const hx = v().px ?? 4, hy = v().py ?? 4;
+  const hx = v().px ?? 3, hy = v().py ?? 3;
   Game.travelTo(hx, hy);
   return Game.playerTile() && Game.playerTile().type === 'haven';
 }

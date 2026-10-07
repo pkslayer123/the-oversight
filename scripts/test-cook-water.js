@@ -36,7 +36,7 @@ function beans(units) {
   return { name: 'Raw beans', kcalEach: 0, units, kg: 0.1, unit: 'handful', rawKcal: 300, cookedKcal: 600, needsCooking: true, safe: false, spoilDay: 30 };
 }
 function goHaven() {
-  Game.travelTo(Game.state.village.px ?? 4, Game.state.village.py ?? 4);
+  Game.travelTo(Game.state.village.px ?? 3, Game.state.village.py ?? 3);
   return Game.playerTile().type === 'haven';
 }
 function goField() {

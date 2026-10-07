@@ -28,8 +28,7 @@ const wellClean = () => Math.floor((v().water || {}).clean || 0);
 const bottles = () => (s().water || []).length;
 function goHome() {
   // walk home tile-by-tile; single travel is range-3
-  // (9x9: haven sits at the 4,4 center — ?? 4, not the old ?? 3)
-  const hx = v().px ?? 4, hy = v().py ?? 4;
+  const hx = v().px ?? 3, hy = v().py ?? 3;
   for (let hop = 0; hop < 10; hop++) {
     Game.travelTo(hx, hy);
     if (Game.playerTile().type === 'haven') return true;

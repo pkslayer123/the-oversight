@@ -36,35 +36,23 @@ function freshGame() {
   ok('monotonic decrease', Game.cacheTheftChance(0) > Game.cacheTheftChance(4) &&
     Game.cacheTheftChance(4) > Game.cacheTheftChance(8) && Game.cacheTheftChance(8) >= Game.cacheTheftChance(20));
 
-  // 2. Integration: bury near and far, run the daily roll, far survives more.
-  // (Steve 2026-10-07: theft is one roll per cache per DAY via dailyCacheCheck,
-  // called from endDay. Drive that exact unit; a spy check proves the wiring.)
+  // 2. Integration: bury near and far, run batches, far survives more often.
   freshGame();
   const v = Game.state.village;
-  const hx = v.px ?? 4, hy = v.py ?? 4;
+  const hx = v.px ?? 3, hy = v.py ?? 3;
   Game.playerCaches().push({ id: 'near', node: { x: hx, y: hy }, desc: '', label: 'near', items: [{ name: 'x' }], found: false, day: 0 });
   Game.playerCaches().push({ id: 'far', node: { x: hx + 10, y: hy + 10 }, desc: '', label: 'far', items: [{ name: 'x' }], found: false, day: 0 });
   let nearFound = 0, farFound = 0;
-  const TRIALS = 40, DAYS = 60;
+  const TRIALS = 40, BATCHES = 60;
   for (let t = 0; t < TRIALS; t++) {
-    for (const c of Game.playerCaches()) { c.found = false; c.items = [{ name: 'x' }]; }
-    for (let d = 0; d < DAYS; d++) Game.dailyCacheCheck();
+    for (const c of Game.playerCaches()) { c.found = false; }
+    for (let b = 0; b < BATCHES; b++) Game.npcBatchTurn();
     if (Game.playerCaches().find(c => c.id === 'near').found) nearFound++;
     if (Game.playerCaches().find(c => c.id === 'far').found) farFound++;
   }
   console.log(`near found ${nearFound}/${TRIALS}, far found ${farFound}/${TRIALS}`);
   ok('near cache gets hit more than far cache', nearFound > farFound);
   ok('near cache gets hit sometimes (mechanic live)', nearFound > 0);
-
-  // 3. Wiring: a real endDay actually performs the daily cache roll.
-  freshGame();
-  Game.playerCaches().push({ id: 'w', node: { x: hx, y: hy }, desc: '', label: 'w', items: [{ name: 'x' }], found: false, day: 0 });
-  let rolled = false;
-  const orig = Game.dailyCacheCheck.bind(Game);
-  Game.dailyCacheCheck = function () { rolled = true; return orig(); };
-  try { Game.endDay(); } catch (e) {}
-  Game.dailyCacheCheck = orig;
-  ok('endDay performs the daily cache roll', rolled);
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

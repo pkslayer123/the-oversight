@@ -33,7 +33,7 @@ function freshGame() {
   Game.state.village.water = { clean: 20, dirty: 0 };
 }
 function goHaven() {
-  Game.travelTo(Game.state.village.px ?? 4, Game.state.village.py ?? 4);
+  Game.travelTo(Game.state.village.px ?? 3, Game.state.village.py ?? 3);
   return Game.playerTile().type === 'haven';
 }
 function heavyPack() {

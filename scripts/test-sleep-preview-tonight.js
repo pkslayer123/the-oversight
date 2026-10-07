@@ -33,7 +33,7 @@ const check = (name, cond, detail) => {
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
   Game.log.length = 0;
-  Game.travelTo(Game.state.village.px ?? 4, Game.state.village.py ?? 4);
+  Game.travelTo(Game.state.village.px ?? 3, Game.state.village.py ?? 3);
   Game.state.weather = 'clear'; // no cold-snap warning to confound the metabolic one
   s().trauma = 0;
 

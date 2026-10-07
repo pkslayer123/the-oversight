@@ -17,7 +17,6 @@
 //   - verbal_slips_require_shared_language: true (code: endDay slip loop)
 //   - observation_doubt_one_per_field: true (code: addDoubt)
 //   - gossip_intel_forms_lead_without_claim: true (code: checkGossipClaim)
-//   - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 //   - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 // consumes:
 //   - village.gossip
@@ -1080,15 +1079,7 @@
       // live, the cover is what they told you — the claim baseline must
       // match what the player heard, or a later contradiction beat would
       // name a truth the player never heard (knowledge leak).
-      // GOSSIP EXEMPTION (detective playtest 2026-10-07): gossip lines are
-      // ABOUT other villagers — the target's truth appears in them verbatim
-      // (that IS the intel). Scrubbing the teller's cover over it corrupts
-      // the evidence: a teller really from X gossips "they're from X" about
-      // a target really from X, and the scrub rewrote X to the teller's
-      // cover — the player heard the wrong intel while the journal doubt
-      // recorded the right one. The speaker's own lines still scrub on
-      // every other topic.
-      const line = topic === 'gossip' ? raw : this.scrubLiesFromLine(vid, raw);
+      const line = this.scrubLiesFromLine(vid, raw);
       // track truthful claims too (baseline for future contradictions)
       try {
         const occHeard = (lies0.occupation && !lies0.occupation.confessed) ? lies0.occupation.told : vp.formerOccupation;

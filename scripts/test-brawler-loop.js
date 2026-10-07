@@ -163,10 +163,7 @@ function setTemp(vid, t) {
   ok('cold shoulder line was spoken', said.some(s => s.includes('has shifted')));
   Game.justiceTick();
   ok('stage 2: someone confronts you', Game.justiceStage() === 2 && !!Game.justiceState().confrontedBy);
-  // The murder-confrontation voice pool has 3 identity-generated lines; any of
-  // them counts (the pool is picked by unseeded Math.random — do NOT assert
-  // on just one). The crime is witnessed murder, so the line names it.
-  ok('confrontation line was spoken', said.some(s => s.startsWith('⚖ ') && (/steps in front|raise their voice|wasn't you/.test(s))));
+  ok('confrontation line was spoken', said.some(s => s.includes('blocks your path') || s.includes('steps in front')));
   const rr2 = Game.justiceRespond('refuse');
   ok('refusing the confrontation', rr2 && rr2.refused === true);
   Game.justiceTick();

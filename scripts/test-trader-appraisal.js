@@ -11,20 +11,6 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
-
-// Seeded RNG BEFORE the evals (PROOF-TEST RNG STABILITY lesson, AGENTS.md):
-// betrayal.js captures `const R = Math.random` at load, so the patch must
-// land first. SEED env override for exploration.
-{
-  const SEED = parseInt(process.env.SEED || '20261007', 10);
-  let a = SEED;
-  Math.random = function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
  'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js', 'src/js/party.js', 'src/js/justice.js',
@@ -32,7 +18,6 @@ global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(f
  'src/js/journal.js', 'src/js/storage.js', 'src/js/perceive.js'
 ].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 const Game = globalThis.Scattering.Game;
-
 
 let pass = 0, fail = 0;
 function ok(name, cond) { if (cond) pass++; else { fail++; console.log(`FAIL ${name}`); } }
@@ -56,11 +41,6 @@ function forceTrader() {
   // deterministic brain for the test: knows dandelion + dried beans, specialty in pemmican
   vis.traderKnows = ['dandelion', 'dried beans'];
   vis.traderSpecialties = ['pemmican'];
-  // honest trader for the price-math sections: the under-appraisal scam is a
-  // real mechanic but would randomly discount fair goods and break the tab
-  // arithmetic below. (Scam behavior is covered by the betrayal suites.)
-  vis.shady = false;
-  vis.desperate = false;
   return vis;
 }
 const item = (o) => Object.assign({ units: 1 }, o);
@@ -148,7 +128,8 @@ const item = (o) => Object.assign({ units: 1 }, o);
   said = [];
   const soldOk = Game.traderSell(vis.id, 0); // 5x dandelion @45 = 225
   ok('sell fair stack works', soldOk === true);
-  ok('tab credited 225', vis.credit === 225);  ok('sold stack leaves pack', s().inventory.length === 2);
+  ok('tab credited 225', vis.credit === 225);
+  ok('sold stack leaves pack', s().inventory.length === 2);
   ok('sale voiced', said.join(' ').length > 20);
 
   said = [];
@@ -164,11 +145,8 @@ const item = (o) => Object.assign({ units: 1 }, o);
   ok('no credit for refusal', vis.credit === 317);
 
   // ---- buy flow: tab spends first ----
-  // 3 guaranteed wares (alien/tool/news) + sometimes trail rations (R()<0.5 coin
-  // flip in visitorWares) — the count is chance, the guaranteed kinds are not.
   const wares = Game.visitorWares(vis);
-  ok('wares generated', wares.length >= 3 && wares.length <= 4);
-  ok('guaranteed kinds present', ['alien', 'tool', 'news'].every(k => wares.some(w => w.kind === k)));
+  ok('wares generated', wares.length === 3);
   // give the player pack food to cover a ware after tab
   s().inventory = [{ name: 'Smoked venison', kcalEach: 120, units: 20, spoilDay: d + 30, foodKind: 'meat', prep: 'Smoked.', edible: true }];
   const cheapIdx = wares.findIndex(w => !w.sold);

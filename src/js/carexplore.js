@@ -289,9 +289,7 @@
   // unobtrusive. Halved: ~5 per tile, roughly one whisper every other stop.
   Game.tileFeature = function (nx, ny, cx, cy, cell) {
     const h = hashStr(`${nx},${ny},${cx},${cy}`) % 100;
-    // HAVEN COORD (fix 2026-10-07): tile type, not coordinates.
-    let isHaven = false;
-    try { const t = Game.tileAt(nx, ny); isHaven = !!(t && (t.type === 'haven' || t.isHaven)); } catch (e) {}
+    const isHaven = (nx === 3 && ny === 3);
     if (cell === 'dirt' || cell === 'grass') {
       if (h < 6) return 'tracks';
       if (h < 9 && !isHaven) return 'oldcamp';

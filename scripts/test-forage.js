@@ -100,7 +100,7 @@ function wildTile() {
     // put a lump with wood_sorrel in the stash, go to camp, sort alone
     const plant = Game.data.plants.find(p => p.id === pid);
     Game.addUnknownToLump(plant, 6, Game.state.scholar.day, Game.state.scholar.prepStash = []);
-    Game.travelTo(4, 4); // camp = haven tile (9x9 center)
+    Game.travelTo(3, 3);
     Game.state.scholar.insideHaven = true;
     const idx = (Game.state.scholar.prepStash || []).findIndex(i => i.lump);
     ok('lump staged', idx >= 0);

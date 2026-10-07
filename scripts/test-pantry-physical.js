@@ -32,7 +32,7 @@ function freshGame() {
 function saidHas(sub) { return said.some(t => t.indexOf(sub) !== -1); }
 function goHaven() {
   const v = Game.state.village;
-  Game.travelTo(v.px ?? 4, v.py ?? 4);
+  Game.travelTo(v.px ?? 3, v.py ?? 3);
   return Game.pantryInReach();
 }
 function goWild() {

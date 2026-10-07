@@ -26,17 +26,7 @@
    "yarrow": 2,
    "jewelweed": 2,
    "goldenrod": 2,
-   "mayapple": 2,
-   "spicebush": 3,
-   "american_hazelnut": 2,
-   "sunchoke": 3,
-   "stinging_nettle": 2,
-   "greenbrier": 3,
-   "pokeweed": 2,
-   "maypop": 3,
-   "wild_cherry": 3,
-   "serviceberry": 2,
-   "groundnut": 2
+   "mayapple": 2
   },
   "hazards": [
    "ticks (spring/summer)",

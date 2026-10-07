@@ -21,14 +21,6 @@
     "kw": {},
     "t": "اتفقنا."
    }
-  ,
-   {
-    "en": "Spot on, your words are true.",
-    "kw": {
-     "مضبوط": "spot-on"
-    },
-    "t": "مضبوط، كلامك صحيح."
-   }
   ],
   "confused": [
    {
@@ -292,14 +284,6 @@
     "kw": {},
     "t": "لن أنسى هذا."
    }
-  ,
-   {
-    "en": "You've done plenty — God keep you.",
-    "kw": {
-     "ما قصرت": "much obliged"
-    },
-    "t": "ما قصرت، الله يخليك."
-   }
   ]
  },
  "french": {
@@ -322,14 +306,6 @@
     "en": "Agreed.",
     "kw": {},
     "t": "D'accord."
-   }
-  ,
-   {
-    "en": "Exactly. You've got it all.",
-    "kw": {
-     "tout compris": "got it all"
-    },
-    "t": "Exactement. T'as tout compris."
    }
   ],
   "confused": [
@@ -600,14 +576,6 @@
     "kw": {},
     "t": "Je n'oublierai pas."
    }
-  ,
-   {
-    "en": "You're a darling, thanks.",
-    "kw": {
-     "amour": "darling"
-    },
-    "t": "T'es un amour, merci."
-   }
   ]
  },
  "hindi": {
@@ -632,14 +600,6 @@
      "ठीक": "okay"
     },
     "t": "ठीक है।"
-   }
-  ,
-   {
-    "en": "Said absolutely right.",
-    "kw": {
-     "सही": "right"
-    },
-    "t": "बिल्कुल सही कहा।"
    }
   ],
   "confused": [
@@ -905,14 +865,6 @@
     "kw": {},
     "t": "मैं नहीं भूलूँगा।"
    }
-  ,
-   {
-    "en": "Many, many thanks to you.",
-    "kw": {
-     "शुक्रिया": "thanks"
-    },
-    "t": "तुम्हारा बहुत-बहुत शुक्रिया।"
-   }
   ]
  },
  "italian": {
@@ -935,14 +887,6 @@
     "en": "Agreed.",
     "kw": {},
     "t": "D'accordo."
-   }
-  ,
-   {
-    "en": "Just so, my word on it.",
-    "kw": {
-     "parola": "word"
-    },
-    "t": "Proprio così, parola mia."
    }
   ],
   "confused": [
@@ -1218,15 +1162,6 @@
     "kw": {},
     "t": "Non dimenticherò questo."
    }
-  ,
-   {
-    "en": "You're a treasure, thanks from the heart.",
-    "kw": {
-     "tesoro": "treasure",
-     "cuore": "heart"
-    },
-    "t": "Sei un tesoro, grazie di cuore."
-   }
   ]
  },
  "mandarin": {
@@ -1249,14 +1184,6 @@
      "好的": "okay"
     },
     "t": "好的。"
-   }
-  ,
-   {
-    "en": "Right, you're correct.",
-    "kw": {
-     "没错": "right"
-    },
-    "t": "没错，你说得对。"
    }
   ],
   "confused": [
@@ -1523,14 +1450,6 @@
     "kw": {},
     "t": "我不会忘记的。"
    }
-  ,
-   {
-    "en": "You're really too kind, thank you.",
-    "kw": {
-     "太好了": "too kind"
-    },
-    "t": "你真是太好了，谢谢你。"
-   }
   ]
  },
  "portuguese": {
@@ -1553,14 +1472,6 @@
     "en": "Agreed.",
     "kw": {},
     "t": "Combinado."
-   }
-  ,
-   {
-    "en": "That's it, you hit it right on.",
-    "kw": {
-     "em cheio": "right on"
-    },
-    "t": "Isso mesmo, você acertou em cheio."
    }
   ],
   "confused": [
@@ -1833,15 +1744,6 @@
     "kw": {},
     "t": "Não vou esquecer."
    }
-  ,
-   {
-    "en": "You're an angel, thanks from the heart.",
-    "kw": {
-     "anjo": "angel",
-     "coração": "heart"
-    },
-    "t": "Você é um anjo, obrigado de coração."
-   }
   ]
  },
  "russian": {
@@ -1864,15 +1766,6 @@
     "en": "Agreed.",
     "kw": {},
     "t": "Договорились."
-   }
-  ,
-   {
-    "en": "Exactly so. You're right.",
-    "kw": {
-     "Именно": "exactly",
-     "прав": "right"
-    },
-    "t": "Именно так. Ты прав."
    }
   ],
   "confused": [
@@ -2137,15 +2030,6 @@
     "kw": {},
     "t": "Я не забуду."
    }
-  ,
-   {
-    "en": "You're gold. Thanks from the soul.",
-    "kw": {
-     "золото": "gold",
-     "души": "soul"
-    },
-    "t": "Ты золото. Спасибо от души."
-   }
   ]
  },
  "spanish": {
@@ -2168,14 +2052,6 @@
     "en": "Agreed.",
     "kw": {},
     "t": "De acuerdo."
-   }
-  ,
-   {
-    "en": "That's it. You hit the nail on the head.",
-    "kw": {
-     "clavo": "nail"
-    },
-    "t": "Eso mismo. Diste en el clavo."
    }
   ],
   "confused": [
@@ -2451,15 +2327,6 @@
     "kw": {},
     "t": "No lo olvidaré."
    }
-  ,
-   {
-    "en": "You're a sun, thanks from the heart.",
-    "kw": {
-     "sol": "sun",
-     "corazón": "heart"
-    },
-    "t": "Eres un sol, gracias de corazón."
-   }
   ]
  },
  "german": {
@@ -2502,21 +2369,6 @@
      "Verstehst": "understand"
     }
    }
-  ,
-   {
-    "t": "Wo schlaft man hier? Ist es sicher?",
-    "en": "Where does one sleep here? Is it safe?",
-    "kw": {
-     "sicher": "safe"
-    }
-   },
-   {
-    "t": "Bist du... der Anführer hier?",
-    "en": "Are you... the leader here?",
-    "kw": {
-     "Anführer": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -2533,22 +2385,6 @@
      "Stimmt": "correct"
     }
    }
-  ,
-   {
-    "t": "Richtig, du hast recht.",
-    "en": "You're right.",
-    "kw": {
-     "Richtig": "right",
-     "recht": "right"
-    }
-   },
-   {
-    "t": "So ist es. Genau so.",
-    "en": "That's how it is. Exactly like that.",
-    "kw": {
-     "Genau": "exactly"
-    }
-   }
   ],
   "warm": [
    {
@@ -2563,22 +2399,6 @@
     "en": "Nice that you exist.",
     "kw": {
      "Schön": "nice"
-    }
-   }
-  ,
-   {
-    "t": "Du bist ein guter Mensch.",
-    "en": "You're a good person.",
-    "kw": {
-     "guter Mensch": "good person"
-    }
-   },
-   {
-    "t": "Das werde ich dir nie vergessen.",
-    "en": "I'll never forget you for this.",
-    "kw": {
-     "nie": "never",
-     "vergessen": "forget"
     }
    }
   ],
@@ -2598,23 +2418,6 @@
      "Hunger": "hunger"
     }
    }
-  ,
-   {
-    "t": "Ich sterbe vor Hunger. Bitte, was zu essen.",
-    "en": "I'm dying of hunger. Please, something to eat.",
-    "kw": {
-     "sterbe": "dying",
-     "Hunger": "hunger"
-    }
-   },
-   {
-    "t": "Nur ein Bissen. Irgendwas Essbares.",
-    "en": "Just one bite. Anything edible.",
-    "kw": {
-     "Bissen": "bite",
-     "Essbares": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -2630,22 +2433,6 @@
     "en": "We have to go. Right now!",
     "kw": {
      "gehen": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Nicht da lang! Es lebt dort etwas.",
-    "en": "Not that way! Something lives there.",
-    "kw": {
-     "lebt": "lives"
-    }
-   },
-   {
-    "t": "Lauf! Nicht stehen bleiben!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "Lauf": "run",
-     "bleiben": "stay"
     }
    }
   ],
@@ -2745,9 +2532,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Thank you?",
-   "No!"
   ]
  },
  "japanese": {
@@ -2789,21 +2573,6 @@
      "わかる": "understand"
     }
    }
-  ,
-   {
-    "t": "ここでどこで寝るの？安全？",
-    "en": "Where do people sleep here? Safe?",
-    "kw": {
-     "安全": "safe"
-    }
-   },
-   {
-    "t": "あなた…この辺のリーダー？",
-    "en": "Are you... the leader around here?",
-    "kw": {
-     "リーダー": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -2820,21 +2589,6 @@
      "そう": "that's right"
     }
    }
-  ,
-   {
-    "t": "うん、そうだよ。その通り。",
-    "en": "Yeah, that's right. Exactly.",
-    "kw": {
-     "その通り": "exactly"
-    }
-   },
-   {
-    "t": "まさにそう。",
-    "en": "Precisely so.",
-    "kw": {
-     "まさに": "precisely"
-    }
-   }
   ],
   "warm": [
    {
@@ -2849,22 +2603,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "ありがとう": "thanks"
-    }
-   }
-  ,
-   {
-    "t": "君はいい人だね。",
-    "en": "You're a good person.",
-    "kw": {
-     "いい人": "good person"
-    }
-   },
-   {
-    "t": "この恩は忘れない。",
-    "en": "I won't forget this debt.",
-    "kw": {
-     "恩": "debt of gratitude",
-     "忘れない": "won't forget"
     }
    }
   ],
@@ -2884,23 +2622,6 @@
      "お腹": "stomach"
     }
    }
-  ,
-   {
-    "t": "腹ぺこだ。頼む、何か食べ物を。",
-    "en": "I'm starving. Please, some food.",
-    "kw": {
-     "腹ぺこ": "starving",
-     "頼む": "I beg you"
-    }
-   },
-   {
-    "t": "一口でいい。何か食べられるものを。",
-    "en": "One bite is enough. Anything edible.",
-    "kw": {
-     "一口": "one bite",
-     "食べられる": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -2916,22 +2637,6 @@
     "en": "We have to go. Right now!",
     "kw": {
      "行く": "to go"
-    }
-   }
-  ,
-   {
-    "t": "そっち行くな！何かいるぞ。",
-    "en": "Don't go that way! Something's there.",
-    "kw": {
-     "行くな": "don't go"
-    }
-   },
-   {
-    "t": "逃げろ！止まるな！",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "逃げろ": "run",
-     "止まるな": "don't stop"
     }
    }
   ],
@@ -3031,9 +2736,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Thank you?",
-   "Water?"
   ]
  },
  "korean": {
@@ -3075,21 +2777,6 @@
      "이해해요": "understand"
     }
    }
-  ,
-   {
-    "t": "여기서 어디서 자요? 안전해요?",
-    "en": "Where do people sleep here? Is it safe?",
-    "kw": {
-     "안전해요": "safe"
-    }
-   },
-   {
-    "t": "혹시... 여기의 리더예요?",
-    "en": "Could you be... the leader here?",
-    "kw": {
-     "리더": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -3106,22 +2793,6 @@
      "그렇죠": "that's right"
     }
    }
-  ,
-   {
-    "t": "응, 맞아요. 정확히 그래요.",
-    "en": "Yeah, that's right. Exactly so.",
-    "kw": {
-     "맞아요": "that's right",
-     "정확히": "exactly"
-    }
-   },
-   {
-    "t": "그 말씀 맞아요.",
-    "en": "Those words are right.",
-    "kw": {
-     "말씀": "words"
-    }
-   }
   ],
   "warm": [
    {
@@ -3136,22 +2807,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "고마워요": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "참 좋은 분이세요.",
-    "en": "You're a really good person.",
-    "kw": {
-     "좋은 분": "good person"
-    }
-   },
-   {
-    "t": "이 은혜 잊지 않을게요.",
-    "en": "I won't forget this kindness.",
-    "kw": {
-     "은혜": "kindness",
-     "잊지": "won't forget"
     }
    }
   ],
@@ -3171,22 +2826,6 @@
      "배고파": "hungry"
     }
    }
-  ,
-   {
-    "t": "배고파 죽겠어요. 제발 먹을 것 좀.",
-    "en": "I'm dying of hunger. Please, something to eat.",
-    "kw": {
-     "배고파": "hungry",
-     "죽겠어요": "dying"
-    }
-   },
-   {
-    "t": "한 입만요. 먹을 수 있는 거면 돼요.",
-    "en": "Just one bite. Anything edible will do.",
-    "kw": {
-     "한 입": "one bite"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -3202,22 +2841,6 @@
     "en": "We have to go. Right now!",
     "kw": {
      "가야 해요": "must go"
-    }
-   }
-  ,
-   {
-    "t": "거긴 가지 마세요! 뭔가 있어요.",
-    "en": "Don't go there! Something's there.",
-    "kw": {
-     "가지 마세요": "don't go"
-    }
-   },
-   {
-    "t": "뛰어요! 멈추지 마세요!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "뛰어요": "run",
-     "멈추지": "don't stop"
     }
    }
   ],
@@ -3317,9 +2940,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Thank you?",
-   "Help!"
   ]
  },
  "vietnamese": {
@@ -3361,21 +2981,6 @@
      "hiểu": "understand"
     }
    }
-  ,
-   {
-    "t": "Ở đây ngủ chỗ nào? Có an toàn không?",
-    "en": "Where do people sleep here? Is it safe?",
-    "kw": {
-     "an toàn": "safe"
-    }
-   },
-   {
-    "t": "Bạn là... người đứng đầu ở đây?",
-    "en": "Are you... the head person here?",
-    "kw": {
-     "đứng đầu": "head/leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -3392,21 +2997,6 @@
      "Đúng": "right"
     }
    }
-  ,
-   {
-    "t": "Ừ đúng rồi. Chuẩn luôn.",
-    "en": "Yeah, right. Spot on.",
-    "kw": {
-     "Chuẩn": "spot-on"
-    }
-   },
-   {
-    "t": "Đúng ý tôi rồi.",
-    "en": "That's exactly what I meant.",
-    "kw": {
-     "Đúng ý": "exactly as meant"
-    }
-   }
   ],
   "warm": [
    {
@@ -3421,22 +3011,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "Cảm ơn": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "Bạn là người tốt.",
-    "en": "You're a good person.",
-    "kw": {
-     "người tốt": "good person"
-    }
-   },
-   {
-    "t": "Tôi sẽ không quên ơn này.",
-    "en": "I won't forget this favor.",
-    "kw": {
-     "ơn": "favor",
-     "quên": "forget"
     }
    }
   ],
@@ -3456,22 +3030,6 @@
      "đói": "hungry"
     }
    }
-  ,
-   {
-    "t": "Tôi đói chết mất. Làm ơn cho miếng ăn.",
-    "en": "I'm dying of hunger. Please, give me a bite to eat.",
-    "kw": {
-     "đói": "hungry",
-     "miếng ăn": "bite to eat"
-    }
-   },
-   {
-    "t": "Một miếng thôi. Thứ gì ăn được là được.",
-    "en": "One bite is enough. Anything edible.",
-    "kw": {
-     "Một miếng": "one bite"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -3487,22 +3045,6 @@
     "en": "We have to go. Right now!",
     "kw": {
      "đi": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Đừng đi đường đó! Có thứ gì đó ở đó.",
-    "en": "Don't go that way! Something's there.",
-    "kw": {
-     "Đừng": "don't"
-    }
-   },
-   {
-    "t": "Chạy đi! Đừng dừng lại!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "Chạy": "run",
-     "dừng": "stop"
     }
    }
   ],
@@ -3602,9 +3144,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "No?",
-   "Thank you?"
   ]
  },
  "tagalog": {
@@ -3646,21 +3185,6 @@
      "Naiintindihan": "understand"
     }
    }
-  ,
-   {
-    "t": "Saan natutulog dito? Ligtas ba?",
-    "en": "Where do people sleep here? Safe?",
-    "kw": {
-     "Ligtas": "safe"
-    }
-   },
-   {
-    "t": "Ikaw ba... ang lider dito?",
-    "en": "Are you... the leader here?",
-    "kw": {
-     "lider": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -3677,21 +3201,6 @@
      "Tama": "correct"
     }
    }
-  ,
-   {
-    "t": "Oo nga. Tama ka diyan.",
-    "en": "Yes indeed. You're right about that.",
-    "kw": {
-     "Tama": "right"
-    }
-   },
-   {
-    "t": "Sakto. Gano'n nga.",
-    "en": "Exactly. That's just how it is.",
-    "kw": {
-     "Sakto": "exactly"
-    }
-   }
   ],
   "warm": [
    {
@@ -3706,21 +3215,6 @@
     "en": "Thanks that you're here.",
     "kw": {
      "Salamat": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "Mabuti kang tao.",
-    "en": "You're a good person.",
-    "kw": {
-     "Mabuti": "good"
-    }
-   },
-   {
-    "t": "Hindi ko makakalimutan ang ginawa mo.",
-    "en": "I won't forget what you did.",
-    "kw": {
-     "makakalimutan": "will forget"
     }
    }
   ],
@@ -3740,23 +3234,6 @@
      "Gutom": "hunger"
     }
    }
-  ,
-   {
-    "t": "Mamamatay na ako sa gutom. Maawa ka, pagkain.",
-    "en": "I'm dying of hunger. Have mercy, food.",
-    "kw": {
-     "gutom": "hunger",
-     "Maawa": "have mercy"
-    }
-   },
-   {
-    "t": "Kahit isang kagat lang. Kahit ano'ng makakain.",
-    "en": "Even just one bite. Anything edible.",
-    "kw": {
-     "kagat": "bite",
-     "makakain": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -3772,23 +3249,6 @@
     "en": "We need to leave. Right now!",
     "kw": {
      "umalis": "to leave"
-    }
-   }
-  ,
-   {
-    "t": "Huwag diyan! May nakatira doon.",
-    "en": "Don't go there! Something lives there.",
-    "kw": {
-     "Huwag": "don't",
-     "nakatira": "lives"
-    }
-   },
-   {
-    "t": "Takbo! Huwag kang hihinto!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "Takbo": "run",
-     "hihinto": "will stop"
     }
    }
   ],
@@ -3888,9 +3348,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Please?",
-   "Water?"
   ]
  },
  "haitian_creole": {
@@ -3932,21 +3389,6 @@
      "konprann": "understand"
     }
    }
-  ,
-   {
-    "t": "Kote moun dòmi isit? Èske se san danje?",
-    "en": "Where do people sleep here? Is it without danger?",
-    "kw": {
-     "san danje": "without danger"
-    }
-   },
-   {
-    "t": "Èske se ou... chèf isit la?",
-    "en": "Is it you... the boss here?",
-    "kw": {
-     "chèf": "boss"
-    }
-   }
   ],
   "agree": [
    {
@@ -3963,21 +3405,6 @@
      "vre": "true"
     }
    }
-  ,
-   {
-    "t": "Wi, ou gen rezon.",
-    "en": "Yes, you're right.",
-    "kw": {
-     "rezon": "reason/right"
-    }
-   },
-   {
-    "t": "Se sa menm. Egzak.",
-    "en": "That's it exactly.",
-    "kw": {
-     "Egzak": "exact"
-    }
-   }
   ],
   "warm": [
    {
@@ -3992,21 +3419,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "Mèsi": "thanks"
-    }
-   }
-  ,
-   {
-    "t": "Ou se yon bon moun.",
-    "en": "You're a good person.",
-    "kw": {
-     "bon moun": "good person"
-    }
-   },
-   {
-    "t": "M p ap janm bliye sa ou fè a.",
-    "en": "I'll never forget what you did.",
-    "kw": {
-     "bliye": "forget"
     }
    }
   ],
@@ -4026,23 +3438,6 @@
      "grangou": "hungry"
     }
    }
-  ,
-   {
-    "t": "Mwen prèt mouri grangou. Tanpri, manje.",
-    "en": "I'm about to die of hunger. Please, food.",
-    "kw": {
-     "grangou": "hunger",
-     "mouri": "die"
-    }
-   },
-   {
-    "t": "Yon ti mòso sèlman. Nenpòt ki manjab.",
-    "en": "Just a little piece. Anything edible.",
-    "kw": {
-     "mòso": "piece",
-     "manjab": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -4058,23 +3453,6 @@
     "en": "We have to go. Right now!",
     "kw": {
      "ale": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Pa ale la! Gen yon bagay ki rete la.",
-    "en": "Don't go there! Something stays there.",
-    "kw": {
-     "Pa": "don't",
-     "rete": "stays"
-    }
-   },
-   {
-    "t": "Kouri! Pa rete kanpe!",
-    "en": "Run! Don't stand still!",
-    "kw": {
-     "Kouri": "run",
-     "kanpe": "stand"
     }
    }
   ],
@@ -4174,9 +3552,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Sorry?",
-   "Help!"
   ]
  },
  "thai": {
@@ -4218,21 +3593,6 @@
      "เข้าใจ": "understand"
     }
    }
-  ,
-   {
-    "t": "แถวนี้เขานอนกันที่ไหน? ปลอดภัยไหม?",
-    "en": "Around here where do they sleep? Safe?",
-    "kw": {
-     "ปลอดภัย": "safe"
-    }
-   },
-   {
-    "t": "เธอคือ...หัวหน้าที่นี่เหรอ?",
-    "en": "Are you... the boss here?",
-    "kw": {
-     "หัวหน้า": "boss"
-    }
-   }
   ],
   "agree": [
    {
@@ -4249,21 +3609,6 @@
      "จริง": "true"
     }
    }
-  ,
-   {
-    "t": "ใช่ๆ เธอพูดถูก.",
-    "en": "Yes yes, you're right.",
-    "kw": {
-     "พูดถูก": "spoke right"
-    }
-   },
-   {
-    "t": "นั่นแหละ ตรงเป๊ะ.",
-    "en": "That's it, spot on.",
-    "kw": {
-     "ตรงเป๊ะ": "spot on"
-    }
-   }
   ],
   "warm": [
    {
@@ -4278,22 +3623,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "ขอบคุณ": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "เธอเป็นคนดีจริงๆ.",
-    "en": "You're truly a good person.",
-    "kw": {
-     "คนดี": "good person"
-    }
-   },
-   {
-    "t": "บุญคุณครั้งนี้ไม่ลืม.",
-    "en": "This favor won't be forgotten.",
-    "kw": {
-     "บุญคุณ": "favor",
-     "ไม่ลืม": "not forgotten"
     }
    }
   ],
@@ -4313,23 +3642,6 @@
      "หิว": "hungry"
     }
    }
-  ,
-   {
-    "t": "หิวจะตายแล้ว ขอข้าวกินหน่อย.",
-    "en": "I'm dying of hunger, give me some rice to eat.",
-    "kw": {
-     "หิว": "hungry",
-     "ข้าว": "rice/food"
-    }
-   },
-   {
-    "t": "คำเดียวก็ได้ อะไรกินได้ก็เอา.",
-    "en": "One bite is enough, anything edible.",
-    "kw": {
-     "คำเดียว": "one bite",
-     "กินได้": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -4345,22 +3657,6 @@
     "en": "Have to go. Right now!",
     "kw": {
      "ไป": "to go"
-    }
-   }
-  ,
-   {
-    "t": "อย่าไปทางนั้น! มีอะไรอยู่ตรงนั้น.",
-    "en": "Don't go that way! Something's over there.",
-    "kw": {
-     "อย่า": "don't"
-    }
-   },
-   {
-    "t": "วิ่ง! อย่าหยุด!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "วิ่ง": "run",
-     "หยุด": "stop"
     }
    }
   ],
@@ -4460,9 +3756,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Thank you?",
-   "No?"
   ]
  },
  "turkish": {
@@ -4504,21 +3797,6 @@
      "Anlıyor": "understand"
     }
    }
-  ,
-   {
-    "t": "Burada nerede uyunur? Güvenli mi?",
-    "en": "Where does one sleep here? Safe?",
-    "kw": {
-     "Güvenli": "safe"
-    }
-   },
-   {
-    "t": "Sen... buranın lideri misin?",
-    "en": "Are you... the leader here?",
-    "kw": {
-     "lideri": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -4535,21 +3813,6 @@
      "Doğru": "correct"
     }
    }
-  ,
-   {
-    "t": "Evet, haklısın.",
-    "en": "Yes, you're right.",
-    "kw": {
-     "haklısın": "you're right"
-    }
-   },
-   {
-    "t": "Aynen öyle. Nokta atışı.",
-    "en": "Exactly so. Bullseye.",
-    "kw": {
-     "Nokta atışı": "bullseye"
-    }
-   }
   ],
   "warm": [
    {
@@ -4564,22 +3827,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "teşekkürler": "thanks"
-    }
-   }
-  ,
-   {
-    "t": "Sen gerçekten iyi birisin.",
-    "en": "You're truly a good person.",
-    "kw": {
-     "iyi": "good"
-    }
-   },
-   {
-    "t": "Bu iyiliği unutmayacağım.",
-    "en": "I won't forget this kindness.",
-    "kw": {
-     "iyiliği": "kindness",
-     "unutmayacağım": "I won't forget"
     }
    }
   ],
@@ -4599,23 +3846,6 @@
      "Açlık": "hunger"
     }
    }
-  ,
-   {
-    "t": "Açlıktan ölüyorum. Ne olur, yemek.",
-    "en": "I'm dying of hunger. Please, food.",
-    "kw": {
-     "Açlıktan": "of hunger",
-     "ölüyorum": "I'm dying"
-    }
-   },
-   {
-    "t": "Bir lokma yeter. Yenebilir bir şey olsun.",
-    "en": "One morsel is enough. Let it be something edible.",
-    "kw": {
-     "lokma": "morsel",
-     "Yenebilir": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -4631,23 +3861,6 @@
     "en": "We must go. Immediately!",
     "kw": {
      "Gitmeliyiz": "we must go"
-    }
-   }
-  ,
-   {
-    "t": "Oraya gitme! Orada bir şey yaşıyor.",
-    "en": "Don't go there! Something lives there.",
-    "kw": {
-     "gitme": "don't go",
-     "yaşıyor": "lives"
-    }
-   },
-   {
-    "t": "Koş! Durma!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "Koş": "run",
-     "Durma": "don't stop"
     }
    }
   ],
@@ -4747,9 +3960,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Yes?",
-   "Help!"
   ]
  },
  "polish": {
@@ -4791,21 +4001,6 @@
      "Rozumiesz": "understand"
     }
    }
-  ,
-   {
-    "t": "Gdzie się tu śpi? Bezpiecznie?",
-    "en": "Where does one sleep here? Safe?",
-    "kw": {
-     "Bezpiecznie": "safe"
-    }
-   },
-   {
-    "t": "To ty... jesteś tu szefem?",
-    "en": "Is it you... you're the boss here?",
-    "kw": {
-     "szefem": "boss"
-    }
-   }
   ],
   "agree": [
    {
@@ -4822,21 +4017,6 @@
      "Zgadza się": "that's right"
     }
    }
-  ,
-   {
-    "t": "Tak, masz rację.",
-    "en": "Yes, you're right.",
-    "kw": {
-     "rację": "right"
-    }
-   },
-   {
-    "t": "Dokładnie tak. W punkt.",
-    "en": "Exactly so. Right on point.",
-    "kw": {
-     "Dokładnie": "exactly"
-    }
-   }
   ],
   "warm": [
    {
@@ -4851,21 +4031,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "Dzięki": "thanks"
-    }
-   }
-  ,
-   {
-    "t": "Jesteś dobrym człowiekiem.",
-    "en": "You're a good person.",
-    "kw": {
-     "dobrym": "good"
-    }
-   },
-   {
-    "t": "Tego ci nigdy nie zapomnę.",
-    "en": "I'll never forget you for this.",
-    "kw": {
-     "zapomnę": "forget"
     }
    }
   ],
@@ -4885,23 +4050,6 @@
      "Głód": "hunger"
     }
    }
-  ,
-   {
-    "t": "Umieram z głodu. Błagam, jedzenie.",
-    "en": "I'm dying of hunger. I beg, food.",
-    "kw": {
-     "głodu": "hunger",
-     "Umieram": "I'm dying"
-    }
-   },
-   {
-    "t": "Choćby kęs. Cokolwiek jadalnego.",
-    "en": "Even a bite. Anything edible.",
-    "kw": {
-     "kęs": "bite",
-     "jadalnego": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -4917,23 +4065,6 @@
     "en": "We must go. Immediately!",
     "kw": {
      "iść": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Nie idź tam! Coś tam żyje.",
-    "en": "Don't go there! Something lives there.",
-    "kw": {
-     "Nie idź": "don't go",
-     "żyje": "lives"
-    }
-   },
-   {
-    "t": "Uciekaj! Nie zatrzymuj się!",
-    "en": "Run away! Don't stop!",
-    "kw": {
-     "Uciekaj": "run away",
-     "zatrzymuj": "stop"
     }
    }
   ],
@@ -5033,9 +4164,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Water?",
-   "No?"
   ]
  },
  "ukrainian": {
@@ -5077,21 +4205,6 @@
      "розумієш": "understand"
     }
    }
-  ,
-   {
-    "t": "Де тут сплять? Безпечно?",
-    "en": "Where do they sleep here? Safe?",
-    "kw": {
-     "Безпечно": "safe"
-    }
-   },
-   {
-    "t": "Це ти... тут головний?",
-    "en": "Is it you... the head one here?",
-    "kw": {
-     "головний": "head/main"
-    }
-   }
   ],
   "agree": [
    {
@@ -5108,21 +4221,6 @@
      "Правильно": "correct"
     }
    }
-  ,
-   {
-    "t": "Так, ти правий.",
-    "en": "Yes, you're right.",
-    "kw": {
-     "правий": "right"
-    }
-   },
-   {
-    "t": "Саме так. В точку.",
-    "en": "Just so. Right on point.",
-    "kw": {
-     "точку": "point"
-    }
-   }
   ],
   "warm": [
    {
@@ -5137,21 +4235,6 @@
     "en": "Thanks that you're here.",
     "kw": {
      "Дякую": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "Ти справді добра людина.",
-    "en": "You're truly a good person.",
-    "kw": {
-     "добра": "good"
-    }
-   },
-   {
-    "t": "Я цього тобі ніколи не забуду.",
-    "en": "I'll never forget you for this.",
-    "kw": {
-     "забуду": "forget"
     }
    }
   ],
@@ -5171,23 +4254,6 @@
      "Голод": "hunger"
     }
    }
-  ,
-   {
-    "t": "Я помираю з голоду. Благаю, їжі.",
-    "en": "I'm dying of hunger. I beg, food.",
-    "kw": {
-     "голоду": "hunger",
-     "помираю": "I'm dying"
-    }
-   },
-   {
-    "t": "Хоч шматочок. Щось їстівне.",
-    "en": "Even a scrap. Something edible.",
-    "kw": {
-     "шматочок": "scrap",
-     "їстівне": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -5203,23 +4269,6 @@
     "en": "Need to go. Immediately!",
     "kw": {
      "йти": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Не йди туди! Там щось живе.",
-    "en": "Don't go there! Something lives there.",
-    "kw": {
-     "Не йди": "don't go",
-     "живе": "lives"
-    }
-   },
-   {
-    "t": "Біжи! Не зупиняйся!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "Біжи": "run",
-     "зупиняйся": "stop"
     }
    }
   ],
@@ -5319,9 +4368,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Thank you?",
-   "Please?"
   ]
  },
  "bengali": {
@@ -5363,21 +4409,6 @@
      "বুঝতে": "understand"
     }
    }
-  ,
-   {
-    "t": "এখানে কোথায় ঘুমায়? নিরাপদ?",
-    "en": "Where do they sleep here? Safe?",
-    "kw": {
-     "নিরাপদ": "safe"
-    }
-   },
-   {
-    "t": "তুমি কি... এখানকার প্রধান?",
-    "en": "Are you... the chief here?",
-    "kw": {
-     "প্রধান": "chief"
-    }
-   }
   ],
   "agree": [
    {
@@ -5394,21 +4425,6 @@
      "ঠিক": "right"
     }
    }
-  ,
-   {
-    "t": "হ্যাঁ, তুমি ঠিক বলেছো।",
-    "en": "Yes, you said it right.",
-    "kw": {
-     "ঠিক": "right"
-    }
-   },
-   {
-    "t": "একদম ঠিক। সেটাই।",
-    "en": "Absolutely right. That's it.",
-    "kw": {
-     "একদম": "absolutely"
-    }
-   }
   ],
   "warm": [
    {
@@ -5423,22 +4439,6 @@
     "en": "Thanks for staying here.",
     "kw": {
      "ধন্যবাদ": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "তুমি সত্যিই ভালো মানুষ।",
-    "en": "You're truly a good person.",
-    "kw": {
-     "ভালো": "good"
-    }
-   },
-   {
-    "t": "এই উপকার আমি ভুলবো না।",
-    "en": "I won't forget this favor.",
-    "kw": {
-     "উপকার": "favor",
-     "ভুলবো": "will forget"
     }
    }
   ],
@@ -5458,22 +4458,6 @@
      "ক্ষুধা": "hunger"
     }
    }
-  ,
-   {
-    "t": "ক্ষুধায় মরে যাচ্ছি। দয়া করে, খাবার।",
-    "en": "I'm dying of hunger. Please, food.",
-    "kw": {
-     "ক্ষুধায়": "of hunger",
-     "মরে": "dying"
-    }
-   },
-   {
-    "t": "একটা কামড় হলেই চলবে। খাওয়া যায় এমন কিছু।",
-    "en": "One bite will do. Something one can eat.",
-    "kw": {
-     "কামড়": "bite"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -5489,23 +4473,6 @@
     "en": "We have to go. Right now!",
     "kw": {
      "যেতে": "to go"
-    }
-   }
-  ,
-   {
-    "t": "ওদিকে যেও না! ওখানে কিছু থাকে।",
-    "en": "Don't go that way! Something stays there.",
-    "kw": {
-     "যেও না": "don't go",
-     "থাকে": "stays"
-    }
-   },
-   {
-    "t": "দৌড়াও! থেমো না!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "দৌড়াও": "run",
-     "থেমো": "stop"
     }
    }
   ],
@@ -5605,9 +4572,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Help!",
-   "Water?"
   ]
  },
  "amharic": {
@@ -5649,21 +4613,6 @@
      "ተረድተሃል": "understood"
     }
    }
-  ,
-   {
-    "t": "እዚህ ሰዎች የት ይተኛሉ? ደህንነቱ የተጠበቀ ነው?",
-    "en": "Where do people sleep here? Is it safe?",
-    "kw": {
-     "ደህንነቱ": "its safety"
-    }
-   },
-   {
-    "t": "አንተ... እዚህ አለቃ ነህ?",
-    "en": "Are you... the boss here?",
-    "kw": {
-     "አለቃ": "boss"
-    }
-   }
   ],
   "agree": [
    {
@@ -5680,21 +4629,6 @@
      "ትክክል": "correct"
     }
    }
-  ,
-   {
-    "t": "አዎን፣ ትክክል ነህ።",
-    "en": "Yes, you are right.",
-    "kw": {
-     "ትክክል": "correct"
-    }
-   },
-   {
-    "t": "አዎ፣ ልክ እንደዛ ነው።",
-    "en": "Yes, it's exactly like that.",
-    "kw": {
-     "እንደዛ": "like that"
-    }
-   }
   ],
   "warm": [
    {
@@ -5709,22 +4643,6 @@
     "en": "Thank you for being here.",
     "kw": {
      "አመሰግናለሁ": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "በጣም ጥሩ ሰው ነዎት።",
-    "en": "You are a very good person.",
-    "kw": {
-     "ጥሩ": "good"
-    }
-   },
-   {
-    "t": "ይህንን ውለታ አልረሳም።",
-    "en": "I won't forget this favor.",
-    "kw": {
-     "ውለታ": "favor",
-     "አልረሳም": "won't forget"
     }
    }
   ],
@@ -5744,23 +4662,6 @@
      "ረሃብ": "hunger"
     }
    }
-  ,
-   {
-    "t": "በረሃብ እሞታለሁ። እባክህ፣ ምግብ።",
-    "en": "I'm dying of hunger. Please, food.",
-    "kw": {
-     "ረሃብ": "hunger",
-     "እሞታለሁ": "I'm dying"
-    }
-   },
-   {
-    "t": "ትንሽ ቁራሽ ብቻ። የሚበላ ነገር።",
-    "en": "Just a small piece. Something edible.",
-    "kw": {
-     "ቁራሽ": "piece",
-     "የሚበላ": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -5776,22 +4677,6 @@
     "en": "We must go now!",
     "kw": {
      "መሄድ": "to go"
-    }
-   }
-  ,
-   {
-    "t": "ወደዚያ አትሂድ! እዚያ አንድ ነገር አለ።",
-    "en": "Don't go there! Something's over there.",
-    "kw": {
-     "አትሂድ": "don't go"
-    }
-   },
-   {
-    "t": "ሩጥ! አትቁም!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "ሩጥ": "run",
-     "አትቁም": "don't stop"
     }
    }
   ],
@@ -5891,9 +4776,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Thank you?",
-   "No?"
   ]
  },
  "indonesian": {
@@ -5935,21 +4817,6 @@
      "mengerti": "understand"
     }
    }
-  ,
-   {
-    "t": "Di sini tidur di mana? Aman?",
-    "en": "Where do people sleep here? Safe?",
-    "kw": {
-     "Aman": "safe"
-    }
-   },
-   {
-    "t": "Kamu... pemimpin di sini?",
-    "en": "Are you... the leader here?",
-    "kw": {
-     "pemimpin": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -5966,21 +4833,6 @@
      "Benar": "correct"
     }
    }
-  ,
-   {
-    "t": "Iya, kamu benar.",
-    "en": "Yes, you're right.",
-    "kw": {
-     "benar": "right"
-    }
-   },
-   {
-    "t": "Persis begitu. Tepat sekali.",
-    "en": "Exactly like that. Spot on.",
-    "kw": {
-     "Tepat": "spot-on"
-    }
-   }
   ],
   "warm": [
    {
@@ -5995,22 +4847,6 @@
     "en": "Thank you for being here.",
     "kw": {
      "Terima kasih": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "Kamu orang baik.",
-    "en": "You're a good person.",
-    "kw": {
-     "baik": "good"
-    }
-   },
-   {
-    "t": "Kebaikan ini takkan kulupakan.",
-    "en": "This kindness I'll never forget.",
-    "kw": {
-     "Kebaikan": "kindness",
-     "kulupakan": "forget"
     }
    }
   ],
@@ -6030,23 +4866,6 @@
      "lapar": "hungry"
     }
    }
-  ,
-   {
-    "t": "Aku mati kelaparan. Tolong, makanan.",
-    "en": "I'm dying of hunger. Please, food.",
-    "kw": {
-     "kelaparan": "hunger",
-     "mati": "dying"
-    }
-   },
-   {
-    "t": "Segigit saja. Apa pun yang bisa dimakan.",
-    "en": "Just one bite. Whatever can be eaten.",
-    "kw": {
-     "Segigit": "one bite",
-     "dimakan": "eaten"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -6062,23 +4881,6 @@
     "en": "We have to go. Now!",
     "kw": {
      "pergi": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Jangan ke sana! Ada sesuatu yang tinggal di sana.",
-    "en": "Don't go there! Something lives there.",
-    "kw": {
-     "Jangan": "don't",
-     "tinggal": "lives"
-    }
-   },
-   {
-    "t": "Lari! Jangan berhenti!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "Lari": "run",
-     "berhenti": "stop"
     }
    }
   ],
@@ -6178,9 +4980,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Please?",
-   "Sorry?"
   ]
  },
  "norwegian": {
@@ -6222,21 +5021,6 @@
      "Forstår": "understand"
     }
    }
-  ,
-   {
-    "t": "Hvor sover man her? Er det trygt?",
-    "en": "Where does one sleep here? Is it safe?",
-    "kw": {
-     "trygt": "safe"
-    }
-   },
-   {
-    "t": "Er du... lederen her?",
-    "en": "Are you... the leader here?",
-    "kw": {
-     "lederen": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -6253,21 +5037,6 @@
      "Stemmer": "correct"
     }
    }
-  ,
-   {
-    "t": "Ja, du har rett.",
-    "en": "Yes, you're right.",
-    "kw": {
-     "rett": "right"
-    }
-   },
-   {
-    "t": "Akkurat sånn. Helt riktig.",
-    "en": "Exactly like that. Completely right.",
-    "kw": {
-     "Akkurat": "exactly"
-    }
-   }
   ],
   "warm": [
    {
@@ -6282,22 +5051,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "Takk": "thanks"
-    }
-   }
-  ,
-   {
-    "t": "Du er et godt menneske.",
-    "en": "You're a good person.",
-    "kw": {
-     "godt": "good"
-    }
-   },
-   {
-    "t": "Dette glemmer jeg deg aldri.",
-    "en": "This I'll never forget you for.",
-    "kw": {
-     "glemmer": "forget",
-     "aldri": "never"
     }
    }
   ],
@@ -6317,23 +5070,6 @@
      "Sult": "hunger"
     }
    }
-  ,
-   {
-    "t": "Jeg dør av sult. Vær så snill, mat.",
-    "en": "I'm dying of hunger. Please, food.",
-    "kw": {
-     "sult": "hunger",
-     "dør": "dying"
-    }
-   },
-   {
-    "t": "Bare én bit. Noe spiselig.",
-    "en": "Just one bite. Something edible.",
-    "kw": {
-     "bit": "bite",
-     "spiselig": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -6349,23 +5085,6 @@
     "en": "We must go. Now!",
     "kw": {
      "gå": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Ikke gå dit! Det bor noe der.",
-    "en": "Don't go there! Something lives there.",
-    "kw": {
-     "Ikke gå": "don't go",
-     "bor": "lives"
-    }
-   },
-   {
-    "t": "Løp! Ikke stopp!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "Løp": "run",
-     "stopp": "stop"
     }
    }
   ],
@@ -6465,9 +5184,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Yes?",
-   "Water?"
   ]
  },
  "yoruba": {
@@ -6509,21 +5225,6 @@
      "lóye": "understand"
     }
    }
-  ,
-   {
-    "t": "Níbo ni wọ́n ń sùn níbí? Ṣé ó léwu?",
-    "en": "Where do they sleep here? Is it dangerous?",
-    "kw": {
-     "léwu": "dangerous"
-    }
-   },
-   {
-    "t": "Ṣé ìwọ ni... olórí níbí?",
-    "en": "Is it you... the leader here?",
-    "kw": {
-     "olórí": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -6540,21 +5241,6 @@
      "tọ́": "correct"
     }
    }
-  ,
-   {
-    "t": "Bẹ́ẹ̀ ni, o tọ́.",
-    "en": "Yes, you're right.",
-    "kw": {
-     "tọ́": "right"
-    }
-   },
-   {
-    "t": "Gẹ́gẹ́ bí o ṣe sọ.",
-    "en": "Just as you said.",
-    "kw": {
-     "sọ": "said"
-    }
-   }
   ],
   "warm": [
    {
@@ -6569,22 +5255,6 @@
     "en": "Thank you for being here.",
     "kw": {
      "Ẹ ṣeun": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "Ẹni rere ni ọ́.",
-    "en": "You are a good person.",
-    "kw": {
-     "rere": "good"
-    }
-   },
-   {
-    "t": "N kò ní gbàgbé oore yìí.",
-    "en": "I will not forget this kindness.",
-    "kw": {
-     "oore": "kindness",
-     "gbàgbé": "forget"
     }
    }
   ],
@@ -6604,23 +5274,6 @@
      "Ebi": "hunger"
     }
    }
-  ,
-   {
-    "t": "Ebi fẹ́ pa mí. Ẹ jọ̀wọ́, oúnjẹ.",
-    "en": "Hunger wants to kill me. Please, food.",
-    "kw": {
-     "Ebi": "hunger",
-     "pa": "kill"
-    }
-   },
-   {
-    "t": "Jẹ́ kí ó jẹ́ ìjẹun kan péré. Ohunkóhun tí a lè jẹ.",
-    "en": "Let it be just one meal. Anything one can eat.",
-    "kw": {
-     "ìjẹun": "meal",
-     "jẹ": "eat"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -6636,23 +5289,6 @@
     "en": "We have to go. Right now!",
     "kw": {
      "lọ": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Má lọ síbẹ̀! Nǹkan kan ń gbé níbẹ̀.",
-    "en": "Don't go there! Something lives there.",
-    "kw": {
-     "Má lọ": "don't go",
-     "gbé": "lives"
-    }
-   },
-   {
-    "t": "Sá! Má dúró!",
-    "en": "Run! Don't stop!",
-    "kw": {
-     "Sá": "run",
-     "dúró": "stop"
     }
    }
   ],
@@ -6752,9 +5388,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Thank you?",
-   "Please?"
   ]
  },
  "twi": {
@@ -6796,21 +5429,6 @@
      "aseɛ": "understanding"
     }
    }
-  ,
-   {
-    "t": "Wɔda ha? Ɛyɛ ahobammɔ?",
-    "en": "Do they sleep here? Is it safe?",
-    "kw": {
-     "ahobammɔ": "safety"
-    }
-   },
-   {
-    "t": "Wo na... wo yɛ panyin wɔ ha?",
-    "en": "Is it you... you're the elder here?",
-    "kw": {
-     "panyin": "elder"
-    }
-   }
   ],
   "agree": [
    {
@@ -6827,22 +5445,6 @@
      "nokorɛ": "truth"
     }
    }
-  ,
-   {
-    "t": "Yiw, woyɛ nokorɛ.",
-    "en": "Yes, you're right.",
-    "kw": {
-     "nokorɛ": "truth"
-    }
-   },
-   {
-    "t": "Sɛdeɛ wokaaɛ no pɛpɛɛpɛ.",
-    "en": "Exactly as you said.",
-    "kw": {
-     "kaaɛ": "said",
-     "pɛpɛɛpɛ": "exactly"
-    }
-   }
   ],
   "warm": [
    {
@@ -6857,22 +5459,6 @@
     "en": "Thank you for being here.",
     "kw": {
      "Medaase": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "Woyɛ onipa pa.",
-    "en": "You're a good person.",
-    "kw": {
-     "pa": "good"
-    }
-   },
-   {
-    "t": "Mɛnwerɛ mfi saa adom yi da.",
-    "en": "I will never forget this favor.",
-    "kw": {
-     "adom": "favor",
-     "Mɛnwerɛ mfi": "I won't forget"
     }
    }
   ],
@@ -6892,23 +5478,6 @@
      "Ɛkɔm": "hunger"
     }
    }
-  ,
-   {
-    "t": "Ɛkɔm bɛkum me. Mesrɛ wo, aduane.",
-    "en": "Hunger will kill me. I beg you, food.",
-    "kw": {
-     "Ɛkɔm": "hunger",
-     "kum": "kill"
-    }
-   },
-   {
-    "t": "Kakraa bi pɛ. Biribiara a wobetumi adi.",
-    "en": "Just a little. Anything you can eat.",
-    "kw": {
-     "Kakraa": "a little",
-     "adi": "eat"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -6924,23 +5493,6 @@
     "en": "We must go. Quick!",
     "kw": {
      "kɔ": "to go"
-    }
-   }
-  ,
-   {
-    "t": "Nkɔ hɔ! Biribi te hɔ.",
-    "en": "Don't go there! Something sits there.",
-    "kw": {
-     "Nkɔ": "don't go",
-     "te": "sits"
-    }
-   },
-   {
-    "t": "Dwane! Nnyina!",
-    "en": "Run! Don't stand!",
-    "kw": {
-     "Dwane": "run",
-     "Nnyina": "don't stand"
     }
    }
   ],
@@ -7040,9 +5592,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "No?",
-   "Help!"
   ]
  },
  "swahili": {
@@ -7084,21 +5633,6 @@
      "Unaelewa": "understand"
     }
    }
-  ,
-   {
-    "t": "Huku watu hulala wapi? Ni salama?",
-    "en": "Here where do people sleep? Is it safe?",
-    "kw": {
-     "salama": "safe"
-    }
-   },
-   {
-    "t": "Wewe ndiye... kiongozi hapa?",
-    "en": "Are you... the leader here?",
-    "kw": {
-     "kiongozi": "leader"
-    }
-   }
   ],
   "agree": [
    {
@@ -7115,21 +5649,6 @@
      "Sahihi": "correct"
     }
    }
-  ,
-   {
-    "t": "Ndiyo, uko sahihi.",
-    "en": "Yes, you're correct.",
-    "kw": {
-     "sahihi": "correct"
-    }
-   },
-   {
-    "t": "Hasa hivyo. Kama ulivyosema.",
-    "en": "Exactly so. As you said.",
-    "kw": {
-     "Hasa": "exactly"
-    }
-   }
   ],
   "warm": [
    {
@@ -7144,21 +5663,6 @@
     "en": "Thanks for being here.",
     "kw": {
      "Asante": "thank you"
-    }
-   }
-  ,
-   {
-    "t": "Wewe ni mtu mwema.",
-    "en": "You are a good person.",
-    "kw": {
-     "mwema": "good"
-    }
-   },
-   {
-    "t": "Sitaisahau wema huu.",
-    "en": "I will not forget this kindness.",
-    "kw": {
-     "wema": "kindness"
     }
    }
   ],
@@ -7178,23 +5682,6 @@
      "njaa": "hunger"
     }
    }
-  ,
-   {
-    "t": "Ninakufa njaa. Tafadhali, chakula.",
-    "en": "I'm dying of hunger. Please, food.",
-    "kw": {
-     "njaa": "hunger",
-     "Ninakufa": "I'm dying"
-    }
-   },
-   {
-    "t": "Kipande kimoja tu. Chochote kinacholiwa.",
-    "en": "Just one piece. Anything edible.",
-    "kw": {
-     "Kipande": "piece",
-     "kinacholiwa": "edible"
-    }
-   }
   ],
   "need_danger": [
    {
@@ -7210,23 +5697,6 @@
     "en": "We must leave. Right now!",
     "kw": {
      "tuondoke": "we leave"
-    }
-   }
-  ,
-   {
-    "t": "Usiende huko! Kuna kitu kinaishi huko.",
-    "en": "Don't go there! Something lives there.",
-    "kw": {
-     "Usiende": "don't go",
-     "kinaishi": "lives"
-    }
-   },
-   {
-    "t": "Kimbia! Usisimame!",
-    "en": "Run! Don't stand!",
-    "kw": {
-     "Kimbia": "run",
-     "Usisimame": "don't stand"
     }
    }
   ],
@@ -7326,9 +5796,6 @@
    "Hello?",
    "Food?",
    "Okay?"
-  ,
-   "Sorry?",
-   "Thank you?"
   ]
  }
 }

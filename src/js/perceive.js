@@ -101,11 +101,8 @@
     } catch (e) {}
 
     // ---- STASH: the village pile, at Haven ----
-    // HAVEN COORD (fix 2026-10-07): tile type, not coordinates.
     try {
-      let atHavenStash = false;
-      try { const t = this.playerTile(); atHavenStash = !!(t && (t.type === 'haven' || t.isHaven)); } catch (e) {}
-      if (atHavenStash && typeof this.stashState === 'function') {
+      if (this.map.px === 3 && this.map.py === 3 && typeof this.stashState === 'function') {
         const st = this.stashState();
         const mats = st.materials || {};
         const parts = [];

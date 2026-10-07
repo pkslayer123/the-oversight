@@ -7,13 +7,11 @@
 //   - purgeKind(kind)
 //   - setHold(id)
 //   - clearHold(id)
-//   - purgeHold()
 //   - stopAll()
 //   - capture()
 //   - flip()
-//   - now()
 // rules:
-//   - TAP-vs-HOLD (Steve 2026-10-07): hold-to-walk chains only when the hold began at or before the landing step started (holdSince <= step._startT). A tap's brief finger-down straddling a step boundary must not spawn a phantom hold-step — that was the dpad overshoot bug. purgeHold() drops hold-generated queue on release (code: move-anim.js).
+//   - (none documented)
 // consumes:
 //   - (none documented)
 /* The Oversight — movement animator.
@@ -36,7 +34,6 @@
     queue: [],          // pending step descriptors, FIFO
     active: false,      // a step is currently animating
     holdDir: null,      // {dx,dy} while a d-pad direction is held down
-    holdSince: null,    // timestamp (now()) of the current hold's press
     stepMs: 220,        // one d-pad step = one visible beat (~4.5 steps/sec)
     pathMs: 140,        // committed tap-to-move path steps move brisker
     blockedMs: 160,     // bumping into a wall still takes a beat, not a snap
@@ -47,14 +44,6 @@
     //   sync(step, res) -> chrome update / full re-render after the animation
     //   gridEl()    -> the .detail element whose entities get FLIP-animated
     hooks: {},
-
-    // Monotonic clock for hold-vs-tap disambiguation. Overridable in tests.
-    now() {
-      try {
-        if (typeof performance !== 'undefined' && performance.now) return performance.now();
-      } catch (e) {}
-      return Date.now();
-    },
 
     // enqueue a step: {dx, dy, kind:'step'|'path', walkId?, ms?}.
     // dx/dy are resolved against the CURRENT position at execution time,
@@ -76,7 +65,6 @@
       const step = this.queue.shift();
       if (!step) return;
       this.active = true;
-      step._startT = this.now();
       const H = this.hooks;
       const grid = H.gridEl ? H.gridEl() : null;
       const before = grid ? this.capture(grid) : null;
@@ -96,15 +84,8 @@
         try { step.resolve(!!(res && res.moved)); } catch (e) {}
         // HOLD-TO-WALK: while a direction is held, the next step queues the
         // moment the current one lands — continuous, gapless walking.
-        // TAP-vs-HOLD (Steve 2026-10-07): a tap's brief finger-down can
-        // straddle a step boundary — without the holdSince check that tap
-        // would spawn a phantom hold-step the player never asked for
-        // (the dpad overshoot bug). Only chain when the hold began at or
-        // before the landing step started: a genuine hold, not a tap that
-        // happened to be down when the beat landed.
-        if (this.holdDir && this.holdSince != null && this.holdSince <= step._startT &&
-            this.queue.length < this.maxQueue) {
-          this.enqueue({ dx: this.holdDir.dx, dy: this.holdDir.dy, kind: 'step', ms: this.stepMs, hold: true });
+        if (this.holdDir && this.queue.length < this.maxQueue) {
+          this.enqueue({ dx: this.holdDir.dx, dy: this.holdDir.dy, kind: 'step', ms: this.stepMs });
         }
         this.pump();
       }, ms);
@@ -120,21 +101,8 @@
     purgeWalk(walkId) { return this._drop((s) => s.walkId === walkId); },
     purgeKind(kind) { return this._drop((s) => s.kind === kind); },
 
-    setHold(dir) {
-      if (dir) {
-        this.holdDir = { dx: dir.dx, dy: dir.dy };
-        // Only stamp the press time on a fresh hold — repeat pointerdowns
-        // for the same direction (multi-touch / re-press) must not move it.
-        if (this.holdSince == null) this.holdSince = this.now();
-      } else {
-        this.holdDir = null;
-        this.holdSince = null;
-      }
-    },
-    clearHold() { this.holdDir = null; this.holdSince = null; },
-    // Drop hold-generated steps still waiting in the queue (finger lifted:
-    // stop after the in-flight step lands — no phantom drain).
-    purgeHold() { return this._drop((s) => !!s.hold); },
+    setHold(dir) { this.holdDir = dir ? { dx: dir.dx, dy: dir.dy } : null; },
+    clearHold() { this.holdDir = null; },
     // The ■ button: stop everything, right now.
     stopAll() { this.clearHold(); this._drop(() => true); },
     get walking() { return this.active || this.queue.length > 0 || !!this.holdDir; },

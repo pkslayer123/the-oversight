@@ -50,7 +50,7 @@ const codexRobbed = () => (Game.state.codex.places || []).some(p => /Cache robbe
 
   // ---------- A. no-trace robbery: total silence until the hole ----------
   freshGame();
-  const haven = { x: Game.state.village.px ?? 4, y: Game.state.village.py ?? 4 };
+  const haven = { x: Game.state.village.px ?? 3, y: Game.state.village.py ?? 3 };
   const far = { x: Math.min(6, haven.x + 3), y: Math.min(6, haven.y + 3) };
   const c = buryAt(far, 'venison');
   Game.map.px = haven.x; Game.map.py = haven.y; // player sits in the hall
