@@ -14744,6 +14744,10 @@
       }
       const res = S.calories.resolveDay(scholar, this.state.village);
       res.warnings.forEach(w => this.say('⚠ ' + w));
+      // HONEST MIDNIGHT (survivalist loop 2026-10-07): the basal burn is the
+      // single biggest daily number — it must not vanish silently. (Steve's
+      // no-silent-actions rule: expensive things name their cost.)
+      if (res.burned > 0) this.say(`Overnight your body burned ${res.burned} kcal just staying alive.`);
       // RELIC BOND: the game notices what you carried and used.
       this.accrueRelicBond();
       // RELIC — resolve: once per day, ignore the spiral's health damage.
