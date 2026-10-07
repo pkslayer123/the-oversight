@@ -7158,6 +7158,9 @@
       // the stance machine runs on steps, not just on interacts. (It didn't.
       // Walking up to a deer did nothing until you touched something.)
       this.monsterTurn(); this.animalTurn();
+      // EVERYONE ACTS (Steve 2026-10-07): your step is your turn — each NPC
+      // on this node then takes one action, in roster order.
+      try { this.villagerTurn(); } catch (e) {}
       // ACTION CLOCK: a step is 1 tick. Strolling is time-only — no effort cost.
       // Monsters, animals, and villagers move on their own schedule (or when you ACT).
       // But steps ACCUMULATE: every TICKS_PER_BATCH ticks, NPCs take a batch turn.
@@ -11646,38 +11649,212 @@
     },
     clearDialGlitch() { this.state.dialGlitch = false; },
 
+    // EVERYONE ACTS (Steve 2026-10-07): every living person gets 1 action per
+    // turn. The player acts, then each NPC on the player's node acts in roster
+    // order. No coin flips — they ACT, even if the action is rest or watch.
+    // Actions are needs-driven (hunger/fear/social/energy) and cost the same
+    // as the player's: movement burns energy, work burns energy, food restores.
+    // Works on ANY node you're on — positions are per-node (ensureVillagerPositions).
     villagerTurn() {
       const v = this.state.village;
-      if (this.map.px !== 4 || this.map.py !== 4) return;
       if (!v.positions) return;
-      const detail = this.genDetail(4, 4);
-      for (const rid of Object.keys(v.positions)) {
-        const pos = v.positions[rid];
-        // 50% chance to move (downtime), else stay
-        if (Math.random() > 0.5) continue;
-        // FLEE: trust < 20 and you're close? They move AWAY. Strangers are scary.
-        const trust = (v.trust && v.trust[rid]) || 0;
-        const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
-        const dist = Math.abs(pos.mx - px) + Math.abs(pos.my - py);
-        let dx, dy;
-        if (trust < 20 && dist <= 3 && Math.random() < 0.6) {
-          // run from you
-          dx = Math.sign(pos.mx - px); dy = Math.sign(pos.my - py);
-          if (dx === 0 && dy === 0) { dx = 1; }
-        } else {
-          dx = Math.floor(Math.random() * 3) - 1;
-          dy = Math.floor(Math.random() * 3) - 1;
+      if (this._npcActing) return; // re-entrancy guard
+      this._npcActing = true;
+      try {
+        const detail = this.genDetail(this.map.px, this.map.py);
+        const ctx = { night: this.isNight(), announced: 0 };
+        // roster order: stable, fair turn order. Skip the player, the dead,
+        // the engaged (mid-conversation with you), and anyone off-grid.
+        const order = (v.roster || []).filter(rid =>
+          rid !== this.villagerId && v.positions[rid] && !this.isEngaged(rid) &&
+          !(this.vpOf(rid) || {}).dead);
+        for (const rid of order) {
+          if (this.over) break;
+          try { this.npcTakeAction(rid, detail, ctx); } catch (e) {}
         }
+        // ALIVE: they come to you. wants with legs.
+        try { this.villagerInitiative(); } catch (e) {}
+      } finally {
+        this._npcActing = false;
+      }
+    },
+
+    // npcTakeAction: one NPC's turn. Needs-driven, O(81) worst case per scan.
+    // Priority: fear > hunger > energy > social > purposeful idle.
+    // Every action is visible: movement shows on the grid; forage/rest/talk
+    // deplete the shared world (same cells you use) and announce when you're
+    // close enough to plausibly notice (chatter budget: 1 per turn).
+    npcTakeAction(rid, detail, ctx) {
+      const v = this.state.village;
+      const pos = v.positions[rid];
+      if (!pos) return;
+      const n = this.npcNeeds(rid);
+      const name = this.displayName(rid);
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      const near = Math.max(Math.abs(pos.mx - px), Math.abs(pos.my - py)) <= 5;
+      const t = this.playerTile();
+
+      // chatter budget: at most one NPC announcement per turn — the log
+      // doesn't flood while a dozen people live their lives around you.
+      const announce = (msg) => {
+        if (ctx.announced > 0 || !near || Math.random() > 0.4) return;
+        ctx.announced++;
+        this.say(msg);
+      };
+
+      // one step toward (tx,ty) if the square is walkable. Costs energy,
+      // like your 2 kcal/step — movement is never free.
+      const stepToward = (tx, ty) => {
+        const dx = Math.sign(tx - pos.mx), dy = Math.sign(ty - pos.my);
+        if (!dx && !dy) return false;
         const nx = Math.max(0, Math.min(8, pos.mx + dx));
         const ny = Math.max(0, Math.min(8, pos.my + dy));
         const cell = detail[ny] && detail[ny][nx];
-        // wander only onto walkable cells — never into walls, fire, tents.
         if (cell && !this.cellProps(cell).blocks) {
           pos.mx = nx; pos.my = ny;
+          n.energy = Math.max(0, (n.energy || 0) - 1);
+          n.hunger = Math.min(100, (n.hunger || 0) + 0.5);
+          return true;
+        }
+        return false;
+      };
+
+      // nearest cell on the 9x9 matching pred. Cheap: 81 cells max.
+      const nearestCell = (pred) => {
+        let best = null, bd = 99;
+        for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
+          const cell = detail[cy] && detail[cy][cx];
+          if (!pred(cell, cx, cy)) continue;
+          const d = Math.max(Math.abs(cx - pos.mx), Math.abs(cy - pos.my));
+          if (d < bd) { bd = d; best = { cx, cy, cell, d }; }
+        }
+        return best;
+      };
+
+      const depleted = (cx, cy) => !!(t.detailRegrow && t.detailRegrow[cx + ',' + cy]);
+      const FORAGEABLE = (cell, cx, cy) =>
+        (cell === 'plant' || cell === 'bush' || cell === 'tree' || cell === 'bigtree') && !depleted(cx, cy);
+      const RESTFUL = (cell) => cell === 'tent' || cell === 'bunk' || cell === 'fire';
+      const greenName = (cell) => cell === 'plant' ? 'greens' : cell === 'bush' ? 'the bushes' : 'the trees';
+
+      // 1. FEAR: run from danger. Low trust + you're close = you're the scary thing.
+      if ((n.fear || 0) > 70) {
+        const trust = (v.trust && v.trust[rid]) || 0;
+        const dist = Math.abs(pos.mx - px) + Math.abs(pos.my - py);
+        if (trust < 20 && dist <= 3) {
+          const dx = Math.sign(pos.mx - px) || 1, dy = Math.sign(pos.my - py);
+          const nx = Math.max(0, Math.min(8, pos.mx + dx));
+          const ny = Math.max(0, Math.min(8, pos.my + dy));
+          const cell = detail[ny] && detail[ny][nx];
+          if (cell && !this.cellProps(cell).blocks) {
+            pos.mx = nx; pos.my = ny;
+            n.energy = Math.max(0, (n.energy || 0) - 1);
+          }
+          n.fear = Math.max(0, n.fear - 5);
+          announce(`${name} edges away from you, wary.`);
+          return;
+        }
+        // otherwise: safety in numbers — drift to the fire
+        const fire = nearestCell((c) => c === 'fire');
+        if (fire) {
+          stepToward(fire.cx, fire.cy);
+          n.fear = Math.max(0, n.fear - 3);
+          return;
         }
       }
-      // ALIVE: they come to you. wants with legs.
-      try { this.villagerInitiative(); } catch (e) {}
+
+      // 2. HUNGER: forage an adjacent green, else step toward one.
+      // Same world as you: the cell depletes for everyone (detailRegrow).
+      if ((n.hunger || 0) > 60) {
+        const adj = nearestCell((c, cx, cy) =>
+          FORAGEABLE(c, cx, cy) && Math.max(Math.abs(cx - pos.mx), Math.abs(cy - pos.my)) <= 1);
+        if (adj) {
+          t.detailRegrow = t.detailRegrow || {};
+          t.detailRegrow[adj.cx + ',' + adj.cy] = { day: this.state.scholar.day + 2, was: adj.cell };
+          if (adj.cell === 'plant') detail[adj.cy][adj.cx] = 'dirt'; // picked clean, like yours
+          n.hunger = Math.max(0, n.hunger - 25);
+          n.energy = Math.max(0, (n.energy || 0) - 3);
+          // they eat some, bring some home for the village
+          if (Math.random() < 0.4) this.stockPantry(80 + Math.floor(Math.random() * 120), 'Foraged food');
+          announce(`${name} forages ${greenName(adj.cell)}.`);
+          return;
+        }
+        // pantry: eat from the common store if there's food
+        const pantryKcal = (v.pantry || []).reduce((s, i) => s + (i.kcalEach || 0) * (i.units || 1), 0);
+        if (pantryKcal > 200) {
+          const item = v.pantry.find(i => (i.kcalEach || 0) > 0 && (i.units || 1) > 0);
+          if (item) {
+            item.units = (item.units || 1) - 1;
+            if (item.units <= 0) v.pantry.splice(v.pantry.indexOf(item), 1);
+            v.pantryKcal = (v.pantry || []).reduce((s, i) => s + (i.kcalEach || 0) * (i.units || 1), 0);
+            n.hunger = Math.max(0, n.hunger - 30);
+            announce(`${name} eats from the pantry.`);
+            return;
+          }
+        }
+        const green = nearestCell(FORAGEABLE);
+        if (green) { stepToward(green.cx, green.cy); return; }
+      }
+
+      // 3. ENERGY: rest at a rest spot, else drift toward one, else sit.
+      if ((n.energy || 0) < 30) {
+        const spot = nearestCell((c, cx, cy) =>
+          RESTFUL(c) && Math.max(Math.abs(cx - pos.mx), Math.abs(cy - pos.my)) <= 1);
+        if (spot) {
+          n.energy = Math.min(100, n.energy + 8);
+          announce(`${name} rests by the ${spot.cell === 'fire' ? 'fire' : spot.cell}.`);
+          return;
+        }
+        const rs = nearestCell(RESTFUL);
+        if (rs) { stepToward(rs.cx, rs.cy); return; }
+        n.energy = Math.min(100, n.energy + 3); // sit where you are
+        return;
+      }
+
+      // 4. SOCIAL: drift toward people; talk if adjacent. Real mechanics:
+      // both calm down, a little trust grows.
+      if ((n.social || 0) > 70) {
+        let best = null, bd = 99;
+        for (const oid of Object.keys(v.positions)) {
+          if (oid === rid) continue;
+          const op = v.positions[oid];
+          const d = Math.max(Math.abs(op.mx - pos.mx), Math.abs(op.my - pos.my));
+          if (d < bd) { bd = d; best = oid; }
+        }
+        if (best && bd <= 1) {
+          const on = this.npcNeeds(best);
+          n.social = Math.max(0, n.social - 20);
+          on.social = Math.max(0, (on.social || 0) - 10);
+          try { this.bumpTrust(rid, 1); } catch (e) {}
+          announce(`${name} talks with ${this.displayName(best)}.`);
+          return;
+        }
+        if (best) { stepToward(v.positions[best].mx, v.positions[best].my); return; }
+      }
+
+      // 5. PURPOSEFUL IDLE: night → drift to the fire's warmth; day → drift
+      // to the green (work); else meander a step. Never marching, never frozen.
+      if (ctx.night) {
+        const fire = nearestCell((c) => c === 'fire');
+        if (fire && Math.max(Math.abs(fire.cx - pos.mx), Math.abs(fire.cy - pos.my)) > 2) {
+          stepToward(fire.cx, fire.cy);
+          return;
+        }
+      } else if (Math.random() < 0.5) {
+        const work = nearestCell((c, cx, cy) =>
+          (c === 'plant' || c === 'bush') && !depleted(cx, cy));
+        if (work) { stepToward(work.cx, work.cy); return; }
+      }
+      const dx = Math.floor(Math.random() * 3) - 1, dy = Math.floor(Math.random() * 3) - 1;
+      if (dx || dy) {
+        const nx = Math.max(0, Math.min(8, pos.mx + dx));
+        const ny = Math.max(0, Math.min(8, pos.my + dy));
+        const cell = detail[ny] && detail[ny][nx];
+        if (cell && !this.cellProps(cell).blocks) {
+          pos.mx = nx; pos.my = ny;
+          n.energy = Math.max(0, (n.energy || 0) - 1);
+        }
+      }
     },
 
     // searchRoom: examine + loot in ONE action. You look, you take what's there.
@@ -14436,6 +14613,9 @@
         // a silent time-burn landmine. Unknown = 1 tick + warned, never taxed.
         try { console.warn('[doAction] unknown kind:', kind); } catch (e) {}
       }
+      // EVERYONE ACTS (Steve 2026-10-07): your action is your turn —
+      // each NPC on this node then takes one action, in roster order.
+      try { this.villagerTurn(); } catch (e) {}
       return this.tickAction(ticks) || this.status();
     },
 
