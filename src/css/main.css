@@ -399,7 +399,7 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
 }
 .cell.creature .csprite { display: inline-block; width: 2.2em; height: 2.2em; vertical-align: middle; }
 .cell.creature .csprite svg.sprite { width: 100%; height: 100%; display: block; }
-.cell .msprite { display: inline-block; width: 2.2em; height: 2.2em; vertical-align: middle; }
+.cell .msprite { display: inline-block; width: 3.2em; height: 3.2em; vertical-align: middle; } /* Steve 2026-10-07: player sprite bigger, not tiny */
 .cell .msprite svg.sprite { width: 100%; height: 100%; display: block; }
 .cell .plantsprite { display: inline-block; width: 2em; height: 2em; vertical-align: middle; }
 .cell .plantsprite svg.sprite { width: 100%; height: 100%; display: block; }
