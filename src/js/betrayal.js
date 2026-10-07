@@ -993,6 +993,11 @@
       const n = (() => { try { return this.whoTag(caller); } catch (e) { return 'Someone'; } })();
       this.say(`${this.capFirst(n)} calls the moot. The fire gets built up — word travels fast, and everyone comes.`);
     }
+    // DRAMA (Steve 2026-10-07, C1): the moot is a spectacle — fire pulse + banner
+    try {
+      const callerName = this.isPlayer(caller) ? 'You' : (() => { try { return this.whoTag(caller); } catch (e) { return 'Someone'; } })();
+      this.drama('social', { type: 'moot', caller: callerName });
+    } catch (e) {}
     try { this.tickAction(48); } catch (e) {}
     return this.conductTrial(c);
   },
@@ -1073,6 +1078,11 @@
     c.exposedBribes.push(voterId);
     // the swing: the village hates being bought
     this.say(`At the moot, you lay it out: who paid whom, what changed hands. The fire goes very quiet. Nobody likes being bought — least of all the ones who weren't.`);
+    // DRAMA (Steve 2026-10-07, C1): the lie breaks — spotlight narrows, ⚡ crackle
+    try {
+      const liarName = (() => { try { return this.displayName(b.by); } catch (e) { return 'The briber'; } })();
+      this.drama('social', { type: 'liar', name: liarName });
+    } catch (e) {}
     this.moveBelief(c, b.by === c.accused[0] || c.accused.includes(b.by) ? -30 : 25, 'bribery exposed');
     this.notePlayerEvidence(c, `Exposed: ${this.displayName(b.by)} bought ${this.displayName(b.voter)} (${b.amount} kcal).`);
     // detonates on the briber too
@@ -1209,6 +1219,8 @@
     })();
     this.say(`The fire is built high. Nobody speaks while the count is taken — you can hear the wind past the edge of the light.`);
     this.say(`${this.capFirst(counter)} counts on their fingers, twice, like they don't trust the first number. Then, to the fire: "${guilty} for guilty. ${total - guilty} against."`);
+    // DRAMA (Steve 2026-10-07, C1): the vote tally has visual weight
+    try { this.drama('social', { type: 'vote', guilty, total }); } catch (e) {}
     if (convicted) {
       this.say(`A pause long enough to live in. Someone's breath catches. Then: "Guilty." Nobody looks at anybody.`);
     } else {
@@ -1306,6 +1318,8 @@
       for (const vid of exiled) {
         if (this.isPlayer(vid)) { this.exilePlayer('moot'); continue; }
         this.say(`${this.displayName(vid)} is exiled. "Take what you can carry and go." The village watches them walk until the trees close.`);
+      // DRAMA (Steve 2026-10-07, C1): exile is the darkest social moment
+      try { this.drama('social', { type: 'exile', name: this.displayName(vid) }); } catch (e) {}
         this.removeVillager(vid, 'exiled');
         try { this.recordTrauma('exile'); } catch (e) {}
         try { if (this.createCorpse) { /* not dead — no corpse */ } } catch (e) {}

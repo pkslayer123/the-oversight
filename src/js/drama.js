@@ -39,6 +39,13 @@
 //   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
 //   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
 //   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
+//   - socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1)
+//   - mootGather: village gathers — fire pulse + banner (Steve 2026-10-07, Drama C1)
+//   - mootVote: vote tally bar with visual weight (Steve 2026-10-07, Drama C1)
+//   - exileMoment: dark vignette + EXILED banner (Steve 2026-10-07, Drama C1)
+//   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
+//   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
+//   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
 //   - All animations use transform/opacity only — GPU-composited, no layout/paint (code: drama.js).
@@ -879,6 +886,166 @@
       this.flash('rgba(192,57,43,0.25)', 500);
       this.shake(8 + (integration * 2));
     },
+
+    // socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1).
+    // Game.drama('social', spec) routes here. spec.type:
+    // 'moot' | 'vote' | 'exile' | 'liar' | 'reconcile' | 'betray'
+    socialFlash(spec) {
+      if (!spec || typeof spec !== 'object' || !spec.type) return;
+      const integ = spec.integration || 0;
+      switch (spec.type) {
+        case 'moot': return this.mootGather(spec.caller || 'Someone', integ);
+        case 'vote': return this.mootVote(spec.guilty || 0, spec.total || 0, integ);
+        case 'exile': return this.exileMoment(spec.name || 'The accused', integ);
+        case 'liar': return this.liarExposed(spec.name || 'The liar', integ);
+        case 'reconcile': return this.reconcileGlow(spec.name || '', integ);
+        case 'betray': return this.betraySlash(spec.name || 'The betrayer', integ);
+        default: return;
+      }
+    },
+
+    // mootGather: the village gathers — warm fire pulse, crowd converges
+    mootGather(caller, integration) {
+      integration = integration || 0;
+      // fire glow: warm radial pulse from center
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,150,50,0.25) 0%, transparent 60%);',
+        'drama-moot-glow',
+        2000 + (integration * 400)
+      );
+      this.spawn(
+        `<div style="font-size:22px;font-weight:bold;color:#ffb347;text-shadow:0 2px 8px rgba(0,0,0,0.9);letter-spacing:1px;">🔥 MOOT CALLED<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${caller} summons the village</span></div>`,
+        'position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-moot-banner',
+        2500
+      );
+      if (integration >= 2) {
+        this.floatText('50%', '45%', '📺 The System tunes in — the galaxy watches', { color: '#ff6b9d', size: 13 });
+      }
+    },
+
+    // mootVote: vote tally with visual weight — guilty votes stack red, innocent green
+    mootVote(guilty, total, integration) {
+      integration = integration || 0;
+      const innocent = total - guilty;
+      const guiltyPct = total > 0 ? Math.round((guilty / total) * 100) : 0;
+      const barW = 200 + (integration * 20);
+      this.spawn(
+        `<div style="text-align:center;background:rgba(10,10,10,0.9);padding:16px;border-radius:8px;border:1px solid #666;">
+          <div style="font-size:16px;font-weight:bold;color:#fff;margin-bottom:8px;">THE COUNT</div>
+          <div style="display:flex;width:${barW}px;height:24px;border-radius:4px;overflow:hidden;margin:0 auto;">
+            <div style="width:${guiltyPct}%;background:#c0392b;"></div>
+            <div style="width:${100 - guiltyPct}%;background:#27ae60;"></div>
+          </div>
+          <div style="font-size:13px;color:#ccc;margin-top:6px;"><span style="color:#ff6b6b;">${guilty} guilty</span> · <span style="color:#7cfc9a;">${innocent} innocent</span></div>
+        </div>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);',
+        'drama-vote',
+        3000
+      );
+      // verdict flash: red for guilty, green for not
+      if (guilty > innocent) {
+        this.flash('rgba(192,57,43,0.2)', 600);
+      } else {
+        this.flash('rgba(39,174,96,0.15)', 600);
+      }
+    },
+
+    // exileMoment: dark dramatic — red-black vignette, EXILED banner, crowd turns away
+    exileMoment(name, integration) {
+      integration = integration || 0;
+      // dark vignette closing in
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 20%, rgba(20,0,0,0.85) 100%);',
+        'drama-exile-vignette',
+        3000 + (integration * 500)
+      );
+      this.spawn(
+        `<div style="font-size:36px;font-weight:bold;color:#c0392b;text-shadow:0 3px 12px rgba(0,0,0,1);letter-spacing:4px;">EXILED<br><span style="font-size:16px;font-weight:normal;color:#999;letter-spacing:1px;">${name} walks until the trees close</span></div>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-exile-banner',
+        3500
+      );
+      this.shake(6 + (integration * 2));
+      if (integration >= 2) {
+        this.floatText('50%', '60%', '📺 The galaxy watches them go', { color: '#666', size: 13 });
+      }
+    },
+
+    // liarExposed: tension — spotlight narrows, ⚡ crackle when the lie breaks
+    liarExposed(name, integration) {
+      integration = integration || 0;
+      // narrowing spotlight: dark edges closing in
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 10%, rgba(0,0,0,0.9) 70%);',
+        'drama-liar-spot',
+        2000
+      );
+      // crackle burst
+      const c = { x: '50%', y: '40%' };
+      this.spawn(
+        `<div style="font-size:48px;text-shadow:0 0 20px #ffd54a;">⚡</div>`,
+        'position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);',
+        'drama-liar-crack',
+        1200
+      );
+      this.spawn(
+        `<div style="font-size:20px;font-weight:bold;color:#ffd54a;text-shadow:0 2px 8px rgba(0,0,0,0.9);">THE LIE BREAKS<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${name} is exposed</span></div>`,
+        'position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-liar-text',
+        2500
+      );
+      this.flash('rgba(255,213,74,0.15)', 400);
+    },
+
+    // reconcileGlow: warm healing — golden glow, hearts rise
+    reconcileGlow(name, integration) {
+      integration = integration || 0;
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,200,100,0.2) 0%, transparent 70%);',
+        'drama-reconcile-glow',
+        2500 + (integration * 300)
+      );
+      const hearts = 3 + integration; // 3 → 6 hearts
+      for (let i = 0; i < hearts; i++) {
+        const dx = (i - (hearts - 1) / 2) * 40;
+        setTimeout(() => {
+          this.spawn(
+            `<div style="font-size:24px;">❤️</div>`,
+            `position:absolute;left:calc(50% + ${dx}px);top:45%;transform:translate(-50%,-50%);`,
+            'drama-heart-rise',
+            1500
+          );
+        }, i * 200);
+      }
+      if (name) {
+        this.floatText('50%', '35%', `${name} — forgiven`, { color: '#ff6b9d', size: 16 });
+      }
+    },
+
+    // betraySlash: sharp red slash across the screen + gasp
+    betraySlash(name, integration) {
+      integration = integration || 0;
+      // diagonal red slash
+      this.spawn(
+        `<svg width="400" height="100" viewBox="0 0 400 100"><line x1="20" y1="90" x2="380" y2="10" stroke="#c0392b" stroke-width="${6 + integration * 2}" stroke-linecap="round"/></svg>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-5deg);',
+        'drama-betray-slash',
+        800
+      );
+      this.spawn(
+        `<div style="font-size:22px;font-weight:bold;color:#ff5252;text-shadow:0 2px 8px rgba(0,0,0,0.9);">BETRAYED<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${name}</span></div>`,
+        'position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-betray-text',
+        2500
+      );
+      this.flash('rgba(192,57,43,0.25)', 500);
+      this.shake(8 + (integration * 2));
+    },
   };
 
   S.Drama = Drama;
@@ -933,6 +1100,32 @@
     .drama-confetti.drama-confetti { opacity: 0.3; transform: translateY(400px) rotate(720deg); }
     .drama-loser-dim { opacity: 0; transition: opacity 0.8s ease-out; }
     .drama-loser-dim.drama-loser-dim { opacity: 1; }
+    /* Social scenario spectacle (Steve 2026-10-07, Drama C1) — all GPU transform/opacity */
+    .drama-moot-glow { opacity: 0; transition: opacity 1s ease-out; }
+    .drama-moot-glow.drama-moot-glow { opacity: 1; animation: drama-fireflicker 0.8s ease-in-out infinite; }
+    @keyframes drama-fireflicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+    .drama-moot-banner { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
+    .drama-moot-banner.drama-moot-banner { opacity: 1; transform: translate(-50%, -50%); }
+    .drama-vote { opacity: 0; transform: translate(-50%, -40%) scale(0.9); transition: all 0.5s ease-out; }
+    .drama-vote.drama-vote { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .drama-exile-vignette { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-exile-vignette.drama-exile-vignette { opacity: 1; }
+    .drama-exile-banner { opacity: 0; transform: translate(-50%, -50%) scale(0.8); transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1); }
+    .drama-exile-banner.drama-exile-banner { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .drama-liar-spot { opacity: 0; transition: opacity 0.8s ease-out; }
+    .drama-liar-spot.drama-liar-spot { opacity: 1; }
+    .drama-liar-crack { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: all 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); }
+    .drama-liar-crack.drama-liar-crack { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+    .drama-liar-text { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s ease-out; }
+    .drama-liar-text.drama-liar-text { opacity: 1; transform: translate(-50%, -50%); }
+    .drama-reconcile-glow { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-reconcile-glow.drama-reconcile-glow { opacity: 1; }
+    .drama-heart-rise { opacity: 0; transform: translate(-50%, -30%); transition: all 1.5s ease-out; }
+    .drama-heart-rise.drama-heart-rise { opacity: 1; transform: translate(-50%, -150%); }
+    .drama-betray-slash { opacity: 0; transform: translate(-50%, -50%) rotate(-5deg) scaleX(0); transition: all 0.4s cubic-bezier(0.3, 1.4, 0.4, 1); }
+    .drama-betray-slash.drama-betray-slash { opacity: 1; transform: translate(-50%, -50%) rotate(-5deg) scaleX(1); }
+    .drama-betray-text { opacity: 0; transform: translate(-50%, -30%); transition: all 0.5s ease-out; }
+    .drama-betray-text.drama-betray-text { opacity: 1; transform: translate(-50%, -50%); }
     /* Social scenario spectacle (Steve 2026-10-07, Drama C1) — all GPU transform/opacity */
     .drama-moot-glow { opacity: 0; transition: opacity 1s ease-out; }
     .drama-moot-glow.drama-moot-glow { opacity: 1; animation: drama-fireflicker 0.8s ease-in-out infinite; }

@@ -13846,6 +13846,13 @@
         else if (kind === 'critHit') D.critHit(...args);
         else if (kind === 'playerHurt') D.playerHurt(...args);
         else if (kind === 'dodgeMiss') D.dodgeMiss(...args);
+        // SOCIAL SPECTACLE (Steve 2026-10-07, Drama C1): spec object carries
+        // type + integration — inject integration like other object forms.
+        else if (kind === 'social') {
+          const spec = args[0];
+          if (spec && typeof spec === 'object') { spec.integration = spec.integration || integ; }
+          D.socialFlash(...args);
+        }
         else if (kind === 'commentary') D.systemCommentary(...args);
       } catch (e) {}
     },
