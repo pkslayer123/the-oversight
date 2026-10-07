@@ -12651,10 +12651,17 @@
         } catch (e) { tl = null; }
         const mpp = Game.map || {};
         const isP = (x === mpp.px && y === mpp.py);
-        // Steve 2026-10-06: FOG DISABLED until it works. Show all geography.
-        // The fog logic was broken (header said 9 seen, render showed 0).
-        // Map must reflect geography first; fog can be re-added when reliable.
-        let seen = 'visited';
+        // Steve 2026-10-06: Fog of war via seenTiles (fixed).
+        // For fresh games with proper tile data, this works correctly.
+        // Old saves missing map.tiles will show unknown tiles (not black).
+        let seen = null;
+        try {
+          const seenTiles = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
+          const se = seenTiles[x + ',' + y];
+          if (se) seen = (se.k === 'v' ? 'visited' : 'shared');
+          const mp = Game.map || {};
+          if (x === mp.px && y === mp.py) seen = 'visited';
+        } catch (err) { seen = null; }
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
         const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
