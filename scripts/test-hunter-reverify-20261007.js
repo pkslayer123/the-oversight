@@ -151,8 +151,46 @@ function awaitPlayerTurn(max = 12) {
   clearSays();
   Game.useAbility('stalk', 'stalk_prey');
   check('stalk settles active animal (aware 0.8 -> <=0.2)', (s.animal.aware || 1) <= 0.2, `aware=${s.animal.aware}`);
-  check('stalk flag armed for the strike', s.stalkActive === true);
   s.animal = null;
+  // The old 'stalk flag armed for the strike' pin (s.stalkActive === true) is
+  // RETIRED: stalkActive was REMOVED in cf3049d — it was set-and-never-read
+  // (the comment claiming preyReaction read it was aspirational). Pinning it
+  // would assert on a corpse. The stalk promise ("animals won't flee your
+  // approach") rides the REAL pipeline:
+  //   - stalk ACTION: aware 0.8 -> <=0.2 (asserted above; feeds preyReaction)
+  //   - stalk PASSIVE: stealth.move_silent (-0.3 flee, wired into the real
+  //     preyReaction roll — hunter wiring, cf3049d)
+  //   - clean_shot ACTION: arms cleanShotReady (consumed by huntAnimal +0.25)
+  // Seeded A/B over the real preyReaction roll with identical random streams.
+  function stalkedBolts(withStalk, trials) {
+    const had = (s.abilities || []).find(a => a.id === 'stalk');
+    if (!withStalk) s.abilities = (s.abilities || []).filter(a => a.id !== 'stalk');
+    else if (!had) grant('stalk', 2);
+    let bolts = 0;
+    for (let i = 0; i < trials; i++) {
+      // armed arm mirrors the post-stalk_prey animal (aware 0.2, stalk held);
+      // unarmed arm is the same wary animal (aware 0.8) with no stalk.
+      const a = { id: 'wild_turkey', mx: 5, my: 5, aware: withStalk ? 0.2 : 0.8, stamina: 3, pstate: 'wary', edgeTurns: 0 };
+      if (Game.preyReaction(a)) bolts++;
+    }
+    if (!withStalk && had) s.abilities = (s.abilities || []).concat([had]);
+    else if (withStalk && !had) s.abilities = (s.abilities || []).filter(a => a.id !== 'stalk');
+    return bolts;
+  }
+  // The real roll charges the real costs (each bolt is a 50 kcal lunge) —
+  // restore scholar state after the trials so downstream sections are unaffected.
+  const kSave = s.kcal, eSave = s.energy;
+  Math.random = mulberry32(SEED);
+  const boltsUnarmed = stalkedBolts(false, 200);
+  Math.random = mulberry32(SEED); // identical stream: only the stalk pipeline differs
+  const boltsArmed = stalkedBolts(true, 200);
+  s.kcal = kSave; s.energy = eSave;
+  note(`   prey bolts unarmed: ${boltsUnarmed}/200, stalked: ${boltsArmed}/200`);
+  check('preyReaction roll is live (unarmed wary animal still bolts)', boltsUnarmed > 20, `${boltsUnarmed}/200`);
+  check('stalk pipeline nearly bolt-proof (aware-drop + flee -0.3)', boltsArmed <= 3 && boltsArmed < boltsUnarmed, `${boltsArmed} vs ${boltsUnarmed}/200`);
+  check('stalk passive pipeline value: stealth.move_silent = 0.3', Math.abs(Game.modTarget('stealth.move_silent', 0, {}) - 0.3) < 1e-9, `${Game.modTarget('stealth.move_silent', 0, {})}`);
+  check('stalkActive flag is GONE (honest removal, cf3049d)', s.stalkActive === undefined);
+  check('clean_shot armed cleanShotReady (consumed by huntAnimal +0.25 strike)', s.cleanShotReady === true);
   // lay_wait arms the flag consumed by checkAnimals on the next tile entry
   check('lay_wait armed (consumed by next animal encounter)', s.layWaitActive === true);
   // dress_game: no double-dip, names the bonus
