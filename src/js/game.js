@@ -6723,7 +6723,7 @@
           // If not known, uncertain description — not the species name.
           const speciesKnown = mod && mod.speciesKnown;
           const speciesName = (mod && speciesKnown) ? this.treeName(mod.species) : null;
-          const desc = mod ? `${speciesName || 'a tree you don\'t recognize'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'a tree';
+          const desc = mod ? `${speciesName || 'tree you don\'t recognize'}, ${mod.health}${mod.ivy ? ', ivy-covered' : ''}` : 'tree';
           if (secret.yield === 0) {
             this.say(`This ${desc}. Nothing to take. You note it — you won\'t waste time here again.`);
             return true;
@@ -6811,13 +6811,19 @@
         // The NAME is knowledge-gated: you recognize the patch only if you
         // know the species. Otherwise it's berries of unknown kind.
         const species = this.revealBush(cx, cy);
-        if (this.plantKnown(species)) {
-          const sp = this.data.plants.find(pp => pp.id === species);
-          this.say(`It's a ${sp ? sp.name.toLowerCase() : species}. You'll recognize the patch now.`);
-        } else {
-          this.say(`A berry bush — berries, certainly, but you don't know which kind. (The harvest sorts at camp, with someone who knows.)`);
+        const wantNote = this.plantKnown(species) ? species : 'unknown';
+        t.bushNotes = t.bushNotes || {};
+        if (t.bushNotes[key] !== wantNote) {
+          if (this.plantKnown(species)) {
+            const sp = this.data.plants.find(pp => pp.id === species);
+            this.say(`That's ${(sp ? sp.name : species).toLowerCase()} — you'll recognize the patch now.`);
+          } else {
+            this.say(`A berry bush — berries, certainly, but you don't know which kind. (The harvest sorts at camp, with someone who knows.)`);
+          }
+          t.bushNotes[key] = wantNote;
         }
-        if (secret && secret.thorns) {
+        const pickedClean = t.detailRegrow && t.detailRegrow[key];
+        if (!pickedClean && secret && secret.thorns) {
           this.state.scholar.kcal -= 20; // thorns scratch
           this.say('Thorns. You get the berries, but they take a little blood. (-20 kcal)');
         }
