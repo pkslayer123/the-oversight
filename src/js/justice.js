@@ -163,7 +163,14 @@
       }
       // STAGE 3 -> 4: exiled but still here (moot exile defied), or unforgivable
       // heat with no trial pending -> the village comes at you with numbers.
-      const atHaven = this.map && this.map.px === 3 && this.map.py === 3;
+      // HAVEN COORDS (Steve 2026-10-07): the village node is (v.px ?? 4, v.py
+      // ?? 4) everywhere else in the codebase (food.js isAtHaven, game.js
+      // havenNode) — this was hardcoded 3,3, so the defied-exile uprising
+      // NEVER fired: the player stood at Haven (4,4) and the village just
+      // ... let them stay. Caught by the brawler playtest loop.
+      const vNode = this.state.village || {};
+      const hx = vNode.px ?? 4, hy = vNode.py ?? 4;
+      const atHaven = this.map && this.map.px === hx && this.map.py === hy;
       if (j.stage === 3 && j.exiled && atHaven) {
         j.stage = 4;
         this.startVillageUprising('defied exile');
