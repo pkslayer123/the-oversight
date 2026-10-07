@@ -12727,10 +12727,10 @@
                 forest: '#6b4a2a', field: '#7aaa4a', swamp: '#4a7a8a',
                 river: '#3a7aaa', path: '#8a7a4a'
               };
-              // If no tile data (old save), show as unexplored terrain
-              // (better than black - indicates map data issue, not empty world)
+              // If no tile data, use bright meadow default (Steve 2026-10-06).
+              // Explored tiles must NEVER be dark.
               const isUnknown = !tl || ttype === 'unknown';
-              const base = isUnknown ? '#1a2a1a' : (colors[ttype] || '#2a3a2a');
+              const base = isUnknown ? '#7aaa4a' : (colors[ttype] || '#7aaa4a');
               const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
               g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
                 `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}" stroke="#2a4a2a" stroke-width="1"/>` +
