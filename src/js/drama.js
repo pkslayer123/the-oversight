@@ -847,42 +847,16 @@
     // abilityLevelUp: golden burst + LEVEL UP + ability name at the player.
     // Steve 2026-10-07: transitions drama (Round C2).
     abilityLevelUp(x, y, abilityName, level, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 90 + (integration * 25);
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 80 80"><circle cx="40" cy="40" r="36" fill="none" stroke="#ffd54a" stroke-width="4" opacity="0.9"/><circle cx="40" cy="40" r="26" fill="none" stroke="#fff2b0" stroke-width="2" opacity="0.6"/></svg>`,
-        `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
-        'drama-levelup-ring',
-        900 + (integration * 150)
-      );
-      this.spawn(
-        `<div style="text-align:center;">
-           <div style="font-size:20px;font-weight:bold;color:#ffd54a;letter-spacing:3px;text-shadow:0 2px 6px rgba(0,0,0,0.9);">LEVEL UP</div>
-           <div style="font-size:15px;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,0.9);">${abilityName || ''} → L${level || ''}</div>
-         </div>`,
-        `position:absolute;left:${c.x}px;top:${c.y - 44}px;transform:translate(-50%,-100%);`,
-        'drama-levelup-text',
-        1600 + (integration * 200)
-      );
-      if (integration >= 3) {
-        this.flash('rgba(255,213,74,0.12)', 400);
-      }
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('abilityLevelUp', {x: x, y: y, abilityName: abilityName, level: level, integration: integration});
     },
 
     // synergyShimmer: the pre-reveal — "something is happening." Fires on the
     // 2nd tease, before the hero card at unlock. Iridescent, brief, unmissable.
     // Steve 2026-10-07: transitions drama (Round C2).
     synergyShimmer(integration) {
-      integration = integration || 0;
-      const alpha = 0.10 + (integration * 0.05);
-      this.spawn(
-        '',
-        `position:absolute;inset:0;background:linear-gradient(115deg, transparent 20%, rgba(199,146,234,${alpha}) 40%, rgba(77,243,255,${alpha}) 60%, transparent 80%);`,
-        'drama-synshimmer',
-        1200 + (integration * 200)
-      );
-      this.floatText('50%', '30%', 'something is happening…', { color: '#c792ea', size: 15 + integration });
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('synergyShimmer', {integration: integration});
     },
 
     // villageBirth: rare and soft — pink glow, a baby emoji, the System coos at L2+.
@@ -1344,34 +1318,15 @@
     // plantIdentified: a leaf unfurls, the name blooms. Learning you can see.
     // Steve 2026-10-07: knowledge drama (Round D2). Green is the color of knowing what's edible.
     plantIdentified(x, y, plantName, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 54 + (integration * 12);
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 50 50"><path d="M25 45 C25 30 25 20 25 8 M25 30 C15 28 8 20 6 10 C18 12 24 18 25 30 Z M25 30 C35 28 42 20 44 10 C32 12 26 18 25 30 Z" fill="rgba(124,252,154,0.9)" stroke="#2d7a3f" stroke-width="1.5"/></svg>`,
-        `position:absolute;left:${c.x - size / 2}px;top:${c.y - size / 2}px;`,
-        'drama-leafunfurl',
-        1400 + (integration * 200)
-      );
-      this.floatText(x, y, `\u{1F33F} ${plantName || 'identified'}`, { color: '#7cfc9a', size: 16 + (integration * 2) });
-      // L3: the System celebrates your learning.
-      if (integration >= 3) this.flash('rgba(124,252,154,0.12)', 400);
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('plantIdentified', {x: x, y: y, plantName: plantName, integration: integration});
     },
 
     // techniqueLearned: a scroll unrolls, the name lands in gold.
     // Steve 2026-10-07: knowledge drama (Round D2).
     techniqueLearned(x, y, techName, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 40 + (integration * 8);
-      this.spawn(
-        `<div style="font-size:${size}px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8));">\u{1F4DC}</div>`,
-        `position:absolute;left:${c.x}px;top:${c.y - 10}px;transform:translate(-50%,-50%);`,
-        'drama-scroll',
-        1500 + (integration * 200)
-      );
-      this.floatText(x, y, `\u26A1 ${(techName || 'technique').replace(/_/g, ' ')}`, { color: '#ffd54a', size: 16 + (integration * 2) });
-      if (integration >= 2) this.systemCommentary(`"${(techName || 'technique').replace(/_/g, ' ')} — filed under things that keep you alive."`, { integration });
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('techniqueLearned', {x: x, y: y, techName: techName, integration: integration});
     },
 
     // codexLinked: the book opens. Pages flip. A village's knowledge is yours now.
@@ -1402,56 +1357,23 @@
     // skillGained: a shaft of rising light, the skill's name ascending.
     // Steve 2026-10-07: knowledge drama (Round D2).
     skillGained(x, y, skillName, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const w = 44 + (integration * 10);
-      const h = 110 + (integration * 20);
-      this.spawn(
-        `<svg width="${w}" height="${h}" viewBox="0 0 44 110"><rect x="14" y="0" width="16" height="110" fill="url(#skillgrad)" opacity="0.85"/><defs><linearGradient id="skillgrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#4df3ff" stop-opacity="0.1"/><stop offset="100%" stop-color="#4df3ff" stop-opacity="0.9"/></linearGradient></defs></svg>`,
-        `position:absolute;left:${c.x - w / 2}px;top:${c.y - h + 20}px;`,
-        'drama-skillbeam',
-        1300 + (integration * 200)
-      );
-      this.floatText(x, y, `\u{1F4D6} ${(skillName || 'skill').replace(/_/g, ' ')}`, { color: '#4df3ff', size: 15 + (integration * 2) });
-      if (integration >= 3) this.flash('rgba(77,243,255,0.10)', 400);
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('skillGained', {x: x, y: y, skillName: skillName, integration: integration});
     },
 
     // teaseFaint: the 1st synergy tease — barely there. A whisper, not a shimmer.
     // Steve 2026-10-07: knowledge drama (Round D2). Round C2 added the 2nd-tease shimmer;
     // the 1st tease gets something fainter so the escalation reads: whisper -> shimmer -> hero card.
     teaseFaint(integration) {
-      integration = integration || 0;
-      this.spawn(
-        '',
-        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(199,146,234,0.07) 0%, transparent 55%);',
-        'drama-faintshimmer',
-        900 + (integration * 150)
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('teaseFaint', {integration: integration});
     },
 
     // ahaMoment: the lightbulb. Radiating lines. The click of understanding.
     // Steve 2026-10-07: knowledge drama (Round D2). Fires on knowledge->ability unlocks.
     ahaMoment(x, y, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 64 + (integration * 14);
-      this.spawn(
-        `<div style="position:relative;width:${size}px;height:${size}px;">
-           <svg width="${size}" height="${size}" viewBox="0 0 64 64">
-             <g stroke="#ffd54a" stroke-width="2.5" opacity="0.9">
-               <line x1="32" y1="2" x2="32" y2="10"/><line x1="32" y1="54" x2="32" y2="62"/>
-               <line x1="2" y1="32" x2="10" y2="32"/><line x1="54" y1="32" x2="62" y2="32"/>
-               <line x1="11" y1="11" x2="16" y2="16"/><line x1="48" y1="48" x2="53" y2="53"/>
-               <line x1="53" y1="11" x2="48" y2="16"/><line x1="16" y1="48" x2="11" y2="53"/>
-             </g>
-           </svg>
-           <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:${28 + integration * 4}px;">\u{1F4A1}</div>
-         </div>`,
-        `position:absolute;left:${c.x - size / 2}px;top:${c.y - size / 2 - 14}px;`,
-        'drama-aha',
-        1600 + (integration * 200)
-      );
-      if (integration >= 2) this.systemCommentary('"Oh. OH. That\'s how it works."', { integration });
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('ahaMoment', {x: x, y: y, integration: integration});
     },
 
     // villageFlash: dispatcher for village-life rhythm ambience (Steve 2026-10-07, Drama D3).
