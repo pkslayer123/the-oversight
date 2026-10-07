@@ -2670,7 +2670,8 @@
     "columbus": [
       "ohio",
       "midwest",
-      "city"
+      "city",
+      "columbus"
     ],
     "dakota": [
       "dakota",
@@ -6481,7 +6482,10 @@
       ],
       "clothing": [
         "outdoor",
-        "casual"
+        "casual",
+        "flannel over rain shell",
+        "patched hiking pants",
+        "thrift-store windbreaker"
       ]
     },
     "Miami, Florida": {
@@ -6496,7 +6500,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "linen guayabera",
+        "sun-bleached tank top",
+        "tourist tee, threadbare"
       ]
     },
     "Chicago, Illinois": {
@@ -6511,7 +6518,10 @@
       ],
       "clothing": [
         "casual",
-        "workwear"
+        "workwear",
+        "union jacket, oil-stained",
+        "puffer vest, patched",
+        "ball cap, sweat-stained"
       ]
     },
     "rural Vermont": {
@@ -6525,7 +6535,10 @@
       ],
       "clothing": [
         "outdoor",
-        "workwear"
+        "workwear",
+        "plaid wool overshirt",
+        "barn coat, mended",
+        "mud-caked work boots"
       ]
     },
     "Houston, Texas": {
@@ -6540,7 +6553,10 @@
       ],
       "clothing": [
         "casual",
-        "workwear"
+        "workwear",
+        "oilfield coveralls",
+        "rodeo buckle and jeans",
+        "faded sports tee"
       ]
     },
     "New Orleans, Louisiana": {
@@ -6554,7 +6570,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "second-line sash",
+        "mardi gras beads still on",
+        "linen shirt, sweat-ringed"
       ]
     },
     "Brooklyn, New York": {
@@ -6568,7 +6587,10 @@
       ],
       "clothing": [
         "casual",
-        "bright"
+        "bright",
+        "vintage band tee",
+        "work beanie, pilled",
+        "scuffed leather jacket"
       ]
     },
     "Tucson, Arizona": {
@@ -6581,7 +6603,10 @@
       ],
       "clothing": [
         "outdoor",
-        "casual"
+        "casual",
+        "desert-dust boots",
+        "bolo tie",
+        "sun-faded work shirt"
       ]
     },
     "Tokyo, Japan": {
@@ -6592,7 +6617,11 @@
         "tan"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "layered streetwear",
+        "salaryman suit, rumpled",
+        "travel-worn yukata",
+        "techwear shell"
       ]
     },
     "Lagos, Nigeria": {
@@ -6605,7 +6634,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "ankara print wrapper",
+        "agbada, dust-hemmed",
+        "market-stall jeans"
       ]
     },
     "São Paulo, Brazil": {
@@ -6618,7 +6650,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "faded football jersey",
+        "barbecue-stained apron",
+        "mismatched sandals"
       ]
     },
     "Cairo, Egypt": {
@@ -6630,7 +6665,11 @@
         "light"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "galabeya, dust-grey",
+        "cap, sweat-stained",
+        "tour-guide polo, frayed",
+        "scavenged military jacket"
       ]
     },
     "Mumbai, India": {
@@ -6643,7 +6682,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "kurta, sweat-patched",
+        "sari, travel-folded",
+        "railway-uniform trousers"
       ]
     },
     "Berlin, Germany": {
@@ -6655,7 +6697,11 @@
         "tan"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "black techwear layers",
+        "squat-party jacket",
+        "surplus army coat",
+        "club-stamp wristband"
       ]
     },
     "Seoul, South Korea": {
@@ -6666,7 +6712,11 @@
         "tan"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "oversized streetwear set",
+        "office shirt, sleeves rolled",
+        "trail-worn hiking vest",
+        "delivery-rider windbreaker"
       ]
     },
     "Mexico City, Mexico": {
@@ -6680,7 +6730,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "embroidered blouse",
+        "wrestling-mask tee",
+        "market apron, flour-dusted"
       ]
     },
     "Jakarta, Indonesia": {
@@ -6691,7 +6744,11 @@
         "brown"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "batik shirt, faded",
+        "motorbike-taxi windbreaker",
+        "sarong, travel-worn",
+        "monsoon poncho, taped"
       ]
     },
     "Nairobi, Kenya": {
@@ -6704,7 +6761,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "kikoy wrap",
+        "red-checked shuka",
+        "minibus-crew jacket"
       ]
     },
     "Buenos Aires, Argentina": {
@@ -6716,7 +6776,11 @@
         "brown"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "bombacha trousers",
+        "dance-hall shirt",
+        "football scarf, knotted",
+        "leather jacket, porteño cut"
       ]
     },
     "Istanbul, Turkey": {
@@ -6728,7 +6792,11 @@
         "fair"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "bazaar apron",
+        "ferry-commuter coat",
+        "kilim-patterned scarf",
+        "tea-house vest"
       ]
     },
     "Bangkok, Thailand": {
@@ -6740,7 +6808,10 @@
       ],
       "clothing": [
         "casual",
-        "bright"
+        "bright",
+        "old boxing shorts",
+        "tuk-tuk driver vest",
+        "temple-visit sarong"
       ]
     },
     "Manila, Philippines": {
@@ -6752,7 +6823,10 @@
       ],
       "clothing": [
         "casual",
-        "bright"
+        "bright",
+        "barong, travel-creased",
+        "jeepney-barker tee",
+        "rain poncho, patched"
       ]
     },
     "Lima, Peru": {
@@ -6763,7 +6837,11 @@
         "light"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "andean-weave poncho",
+        "net-mended jacket",
+        "chullo, earflaps down",
+        "fishing slicker, cracked"
       ]
     },
     "Warsaw, Poland": {
@@ -6776,7 +6854,10 @@
       ],
       "clothing": [
         "casual",
-        "outdoor"
+        "outdoor",
+        "knotted folk scarf",
+        "milk-bar cook whites",
+        "old tracksuit"
       ]
     },
     "Accra, Ghana": {
@@ -6789,7 +6870,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "kente-cloth sash",
+        "bus-mate vest",
+        "wax-print dress, hemmed"
       ]
     },
     "Hanoi, Vietnam": {
@@ -6800,7 +6884,11 @@
         "fair"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "travel-worn ao dai",
+        "street-vendor conical hat",
+        "army-surplus field coat",
+        "noodle-stall apron"
       ]
     },
     "Bogotá, Colombia": {
@@ -6811,7 +6899,11 @@
         "light"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "highland wool ruana",
+        "cycling windbreaker",
+        "coffee-picker apron",
+        "bus-terminal jacket"
       ]
     },
     "Kyiv, Ukraine": {
@@ -6824,7 +6916,10 @@
       ],
       "clothing": [
         "casual",
-        "outdoor"
+        "outdoor",
+        "embroidered shirt, travel-creased",
+        "volunteer-issue fleece",
+        "metro-worker jacket"
       ]
     },
     "Addis Ababa, Ethiopia": {
@@ -6836,7 +6931,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "netela shawl",
+        "coffee-ceremony dress",
+        "minibus-tout jacket"
       ]
     },
     "Dhaka, Bangladesh": {
@@ -6848,7 +6946,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "lungi, travel-worn",
+        "rickshaw-puller vest",
+        "monsoon poncho, taped"
       ]
     },
     "Caracas, Venezuela": {
@@ -6861,7 +6962,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "liquiliqui, rumpled",
+        "arepa-stall apron",
+        "bus-driver cap"
       ]
     },
     "rural Ireland": {
@@ -6874,7 +6978,10 @@
       ],
       "clothing": [
         "outdoor",
-        "workwear"
+        "workwear",
+        "aran sweater, mended",
+        "flat cap, rain-darkened",
+        "wellies, muck-caked"
       ]
     },
     "Oslo, Norway": {
@@ -6887,7 +6994,10 @@
       ],
       "clothing": [
         "outdoor",
-        "casual"
+        "casual",
+        "patterned wool sweater",
+        "fjord-ferry deck coat",
+        "thermal base layers"
       ]
     },
     "Marrakech, Morocco": {
@@ -6900,7 +7010,10 @@
       ],
       "clothing": [
         "bright",
-        "casual"
+        "casual",
+        "djellaba, dust-hemmed",
+        "souk-trader vest",
+        "worn leather slippers"
       ]
     },
     "Auckland, New Zealand": {
@@ -6912,7 +7025,10 @@
       ],
       "clothing": [
         "outdoor",
-        "casual"
+        "casual",
+        "bush shirt, oilskin",
+        "rugby jersey, stretched",
+        "tramping boots, re-soled"
       ]
     },
     "Rome, Italy": {
@@ -6925,7 +7041,11 @@
         "brown"
       ],
       "clothing": [
-        "casual"
+        "casual",
+        "linen suit, rumpled",
+        "scooter-rider jacket",
+        "flour-dusted apron",
+        "scarf, knotted loose"
       ]
     },
     "default": {
@@ -6940,7 +7060,9 @@
       "clothing": [
         "casual",
         "workwear",
-        "outdoor"
+        "outdoor",
+        "scavenged layers",
+        "pre-Scattering uniform, nameless"
       ]
     }
   }
