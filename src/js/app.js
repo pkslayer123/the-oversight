@@ -12650,9 +12650,13 @@
     for (let y = 0; y < 7; y++) {
       html += '<div class="mrow">';
       for (let x = 0; x < 7; x++) {
-        // FULL TERRAIN SVG (Steve 2026-10-06): try TileScenes, fall back to DIV.
-        // 3x3 center is visible. Working structure.
-        let _seenSimple = (x >= 2 && x <= 4 && y >= 2 && y <= 4);
+        // FOG OF WAR (Steve 2026-10-06): only tiles you've WALKED IN reveal.
+        // Check seenTiles for visited status. No hardcoded visibility.
+        let _seenSimple = false;
+        try {
+          const _st = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
+          if (_st[x + ',' + y]) _seenSimple = true;
+        } catch (e) {}
         if (_seenSimple) {
           // Get tile data
           let _tl = null, _ttype = 'meadow';
@@ -12699,11 +12703,11 @@
           }
           const _svgValid = _svgOut && _svgOut.length > 100 && _svgOut.indexOf('#0d120d') === -1;
           if (_svgValid) {
-            // Use the SVG!
+            // Use the SVG terrain!
             html += `<div class="tile" data-x="${x}" data-y="${y}">${_svgOut}</div>`;
           } else {
-            // Fallback DIV with status (diagnostic)
-            html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000">${_ttype}<br>${_tsStatus}<br>svg:${_svgOut ? _svgOut.length : 'null'}</div></div>`;
+            // Fallback: bright DIV with biome emoji
+            html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">${_t[1]}</div></div>`;
           }
           continue;
         }
