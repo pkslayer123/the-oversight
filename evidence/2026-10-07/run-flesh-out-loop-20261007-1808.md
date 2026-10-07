@@ -28,4 +28,16 @@
 - Gaps (recorded, not fixed): unknown cue says "ground lights up in a grid" but UI shows zero cells — design call for Steve; doc roster drift (Influencer/Motivational Speaker/Customer Service/Terms & Conditions/Middle Manager are unimplemented concepts); tg-middlemanager-* proofs stale (removed id).
 
 ## Coordinator completion flow
-(pending: verify commits linear, re-run proofs, push origin/master + main mirror, bump version on pristine worktree, verify live version.json on GitHub raw master+main and vercel.app)
+1. Commits linear, verified: f21d9bf → 7ad831d → 4d9ee9a → ca0ed87 (run note). New-files-only commits; shared index / sibling cleanup never touched.
+2. Proofs re-run at committed state: audit script exit 0 / valid JSON on 4d9ee9a extract; telegraph proof spot-checks recorded by worker (6 SVG parse, 6 PNG magic, 81 cells / 9 highlights).
+3. Ontology gate: 46/46 validated at bump base, release permitted.
+4. Pushed origin/master (f21d9bf..bf37b00) + main mirror (`git branch -f main master && git push origin main --force`).
+5. Version bump `ca0ed87-20261007-232832` stamped on pristine detached worktree (/tmp/w-bump1808, removed after); committed bf37b00 via private index (exactly 4 files: index.html 47/47, build.js/sw.js/version.json 1/1).
+6. **LIVE VERIFIED**: GitHub raw serves `ca0ed87-20261007-232832` on master AND main; https://the-oversight.vercel.app/version.json serves `ca0ed87-20261007-232832`.
+
+## Queue status after this run
+- DONE this run: wave-2 escalation audit (13 monsters, 3 PASS / 10 NEEDS-WORK, 10 data patches staged in hidden_files/wave2-escalation-patches-20261007/ — apply when tree cools, re-run audit first); Static Kite telegraph proof (last missing wave-2 proof — 12/13 already had pairs).
+- Carried forward: wave2c engine backlog items 2-6 (burst re-center, unreachable knownCues, hummice bellow, antlerThrash double-run, data hygiene) — still blocked on sibling's structural migration; Alien Players pool integration — blocked (alienPlayers.js staged-deleted by sibling); wave-2 patch application — blocked on tree cooling.
+- Drift to fix when tree cools: docs/MONSTER-WAVES.md table (11 rows vs 13, stale concept names); scripts/test-wave2.js retired ids; app.js W2A_IDS camera_swarm; tg-middlemanager-* stale proofs.
+- Standing hazards (unchanged): shared index still armed with sibling's staged cleanup (~63 staged deletions); sibling's uncommitted worktree game.js/drama.js diverge from committed fixes.
+- Flagged for Steve: unknown-cue/visual friction on Static Kite ("ground lights up in a grid" but knowledge gate shows zero highlighted cells) — design call; wave-2 escalation gaps are concrete and patchable but need his feel pass on whether the missing knownTactics/audio wirings are the right fixes.
