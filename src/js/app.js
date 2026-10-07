@@ -12679,8 +12679,13 @@
         const pathCls = (tl.wornPath && seen) ? 'worn-path' : '';
         const shrCls = seen === 'shared' ? ' shared' : '';
         const cls = 'tile' + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '') + shrCls;
-        // other villages: show 🏘️ if generated (you've been near)
-        const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
+        // other villages: show 🏘️ ONLY if the tile is seen (Steve 2026-10-06:
+        // "another village I never visited" = fog leak. generated != discovered)
+        const otherV = (Game.state.otherVillages || []).find(v => {
+          if (v.x !== x || v.y !== y || !v.generated) return false;
+          const st2 = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
+          return !!st2[x + ',' + y];
+        });
         let g;
         if (isP) {
           g = meSpr ? `<span class="mface msprite">${meSpr}</span>` : '🧍';
@@ -12714,10 +12719,13 @@
             const isBlank = !g || g.length < 100 || g.indexOf('#0d120d') !== -1;
             if (isBlank) {
               const ttype = tl ? tl.type : 'unknown';
+              // MINECRAFT STYLE (Steve 2026-10-06): bright, saturated, readable.
               const colors = {
-                forest_floor: '#3a5f3a', grove: '#2d5a2d', meadow: '#5a6b3a',
-                thicket: '#1e4a2e', wetland: '#3a5a6b', creek: '#2a6b8a',
-                trail_edge: '#6b5a3a', ruin: '#5a5a5a', haven: '#4a6b4a'
+                forest_floor: '#6b4a2a', grove: '#3d7a3d', meadow: '#7aaa4a',
+                thicket: '#2d5a2d', wetland: '#4a7a8a', creek: '#3a7aaa',
+                trail_edge: '#8a7a4a', ruin: '#7a7a7a', haven: '#5a8a4a',
+                forest: '#6b4a2a', field: '#7aaa4a', swamp: '#4a7a8a',
+                river: '#3a7aaa', path: '#8a7a4a'
               };
               // If no tile data (old save), show as unexplored terrain
               // (better than black - indicates map data issue, not empty world)
