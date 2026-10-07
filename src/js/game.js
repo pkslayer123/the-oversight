@@ -11657,6 +11657,7 @@
     // Works on ANY node you're on — positions are per-node (ensureVillagerPositions).
     villagerTurn() {
       const v = this.state.village;
+      this.ensureVillagerPositions(); // FIRST-IMPRESSION FIX (Steve 2026-10-07): villagers appear/act from game start, not just after first step.
       if (!v.positions) return;
       if (this._npcActing) return; // re-entrancy guard
       this._npcActing = true;
