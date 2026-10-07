@@ -28,7 +28,7 @@
     },
     "weaknesses": [
       "soft flanks (HARRY then STRIKE)",
-      "it never goes around — position accordingly"
+      "it never goes around \u2014 position accordingly"
     ],
     "edible": {
       "calories": 3200,
@@ -42,18 +42,17 @@
     "behavior": "territorial",
     "codexStages": {
       "unknown": "Something heavy moved in the thicket. Then a tree fell over for no reason.",
-      "observed": "Feral hog. The System observed 'bull in a china shop' and concluded destruction is the point. It charges through obstacles — trees, fences, you. It cannot be deterred, only redirected.",
-      "slain": "Moves: China-Shop Charge (heavy, telegraphed, destroys cover), Trample (close range after a missed charge), Retreat (below 25% hp, may return). It will not go around. Use that. Flanks are soft — harry it, then strike. Meat: excellent. The quills make fine awls."
+      "observed": "Feral hog. The System observed 'bull in a china shop' and concluded destruction is the point. It charges through obstacles \u2014 trees, fences, you. It cannot be deterred, only redirected.",
+      "slain": "Moves: China-Shop Charge (heavy, telegraphed, destroys cover), Trample (close range after a missed charge), Retreat (below 25% hp, may return). It will not go around. Use that. Flanks are soft \u2014 harry it, then strike. Meat: excellent. The quills make fine awls."
     },
     "systemDesignation": "Sus scrofa (standard)",
     "aggression": "territorial",
     "follows": true,
     "fear": "fire",
     "speed": 3,
-    "size": 2,
-    "emoji": "🐗",
+    "emoji": "\ud83d\udc17",
     "unknown": "something huge, rooting in the underbrush",
-    "vibe": "a living bulldozer — territorial, impatient, unimpressed by you",
+    "vibe": "a living bulldozer \u2014 territorial, impatient, unimpressed by you",
     "cues": {
       "curious": [
         "It snorts, considering you. Deciding if you're worth the effort."
@@ -62,7 +61,7 @@
         "It lowers its head. Paws the earth. This is the warning. There won't be another."
       ],
       "fearful": [
-        "It backs off, snorting — firelight in its eyes. It doesn't like this."
+        "It backs off, snorting \u2014 firelight in its eyes. It doesn't like this."
       ]
     },
     "wave": 1,
@@ -77,11 +76,11 @@
         "spent"
       ],
       "phaseBadges": {
-        "root": " 🌱 ROOTING",
-        "paw": " 🐗 PAWING",
-        "charge": " 💥 CHARGING",
-        "trample": " 🦶 TRAMPLE",
-        "spent": " 😮‍\u0001F4A8 WINDED"
+        "root": " \ud83c\udf31 ROOTING",
+        "paw": " \ud83d\udc17 PAWING",
+        "charge": " \ud83d\udca5 CHARGING",
+        "trample": " \ud83e\uddb6 TRAMPLE",
+        "spent": " \ud83d\ude2e\u200d\u0001F4A8 WINDED"
       },
       "phaseMap": {
         "declare": "paw",
@@ -98,9 +97,9 @@
       "noticeAudio": "boarNotice",
       "aggroAudio": "boarSnort",
       "resolveAudio": "boarCharge",
-      "knownTactics": "Sidestep the lane — never try to outrun it. It never goes around.",
+      "knownTactics": "Sidestep the lane \u2014 never try to outrun it. It never goes around.",
       "comment": "Bulldozer: root->paw->charge. Charge line LOCKED at declare (commitCharge), shreds everything but real walls (bulldoze). Missed charge -> winded (soft flanks: +50% damage taken, 2 turns) + trample next turn.",
-      "knownCue": "It never turns. When it lowers its head, it's committed — sidestep, don't backpedal."
+      "knownCue": "It never turns. When it lowers its head, it's committed \u2014 sidestep, don't backpedal."
     },
     "loot": {
       "chance": 0.1,
@@ -112,7 +111,8 @@
       "fire": 0.25
     },
     "terraform": "trample",
-    "terraformDesc": "Smashes through trees and walls. Leaves a trail of wreckage."
+    "terraformDesc": "Smashes through trees and walls. Leaves a trail of wreckage.",
+    "size": 2
   },
   {
     "id": "hushwolf",
@@ -131,7 +131,7 @@
         12,
         18
       ],
-      "telegraph": "No telegraph you can hear. Watch the birds — when they go quiet, the pack is already moving.",
+      "telegraph": "No telegraph you can hear. Watch the birds \u2014 when they go quiet, the pack is already moving.",
       "pattern": {
         "type": "rush"
       },
@@ -151,25 +151,25 @@
     ],
     "behavior": "pack",
     "codexStages": {
-      "unknown": "The woods went silent all at once. Not quiet — silent. Like the world holding its breath.",
-      "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound — watch the lead animal's ears. They are still loyal. Just not to you.",
-      "slain": "Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire — they remember being dogs. Wound the lead and the pack breaks."
+      "unknown": "The woods went silent all at once. Not quiet \u2014 silent. Like the world holding its breath.",
+      "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you.",
+      "slain": "Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
     },
     "systemDesignation": "Canis familiaris (standard)",
     "aggression": "hungry",
     "follows": true,
     "fear": "numbers",
     "speed": 5,
-    "emoji": "🐕",
+    "emoji": "\ud83d\udc15",
     "pack": 3,
     "unknown": "a dog-shaped silence at the treeline",
-    "vibe": "pack hunter — silent until it isn't, and then it's too late",
+    "vibe": "pack hunter \u2014 silent until it isn't, and then it's too late",
     "cues": {
       "curious": [
         "It sits. Just... sits. Watching. The others are out there too, you can feel them."
       ],
       "warn": [
-        "A low sound — not quite a growl. The pack is deciding."
+        "A low sound \u2014 not quite a growl. The pack is deciding."
       ],
       "fearful": [
         "It melts back between the trees. The silence goes with it."
@@ -186,10 +186,10 @@
         "withdraw"
       ],
       "phaseBadges": {
-        "silence": " 🤫 SILENCE",
-        "circle": " 🐕 CIRCLING",
-        "rush": " 💨 RUSH",
-        "withdraw": " 🏃 WITHDRAW"
+        "silence": " \ud83e\udd2b SILENCE",
+        "circle": " \ud83d\udc15 CIRCLING",
+        "rush": " \ud83d\udca8 RUSH",
+        "withdraw": " \ud83c\udfc3 WITHDRAW"
       },
       "phaseMap": {
         "declare": "circle",
@@ -203,7 +203,7 @@
       "shortName": "wolf",
       "noticeAudio": "wolfSilence",
       "aggroAudio": "wolfSnarl",
-      "knownTactics": "Wound the lead and the pack breaks. They fear fire — they remember being dogs.",
+      "knownTactics": "Wound the lead and the pack breaks. They fear fire \u2014 they remember being dogs.",
       "comment": "Pack hunter: birds go quiet at combat start; first-spawned is the lead. Wounding the lead below half breaks coordination (pack hesitates, stops focusing); killing the lead usually routs the rest.",
       "knownCue": "They go quiet before the rush. If the birds stop, they're already moving."
     },
@@ -240,14 +240,14 @@
         "windup": 1,
         "sweep": true,
         "fireTurns": 6,
-        "sweepRate": 0.28,
+        "sweepRate": 0.18,
         "cooldownTurns": 2
       },
       "damageType": "psychic"
     },
     "weaknesses": [
       "interrupt the freeze (HARRY)",
-      "unaware while grazing — strike before it notices you"
+      "unaware while grazing \u2014 strike before it notices you"
     ],
     "edible": {
       "calories": 2800,
@@ -260,14 +260,14 @@
     "behavior": "territorial",
     "codexStages": {
       "unknown": "It froze like headlights on a highway. The light did not stop gathering.",
-      "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' — and right that you should move. When it freezes, it is aiming. The beam does not just fire — it SWEEPS after you while it burns. Antlers never shed: the System classified them as permanent equipment.",
-      "slain": "Moves: Ocular Discharge (telegraphed by the freeze — MOVE), Antler Sweep (close range). It does not run. It does not bluff. When it freezes, it is aiming — and the beam tracks you while it fires. Break the lane behind a wall, outrun it sideways (never down the lane), or close in and break its aim — mind the antlers. Caught under the full beam with nowhere to run, you die. The meat is worth the sorrow. Thank it."
+      "observed": "Whitetail. The System observed the freeze response and classified it as ocular beam charging. It was wrong about the 'beam' \u2014 and right that you should move. When it freezes, it is aiming. The beam does not just fire \u2014 it SWEEPS after you while it burns. Antlers never shed: the System classified them as permanent equipment.",
+      "slain": "Moves: Ocular Discharge (telegraphed by the freeze \u2014 MOVE), Antler Sweep (close range). It does not run. It does not bluff. When it freezes, it is aiming \u2014 and the beam tracks you while it fires. Break the lane behind a wall, outrun it sideways (never down the lane), or close in and break its aim \u2014 mind the antlers. Caught under the full beam with nowhere to run, you die. The meat is worth the sorrow. Thank it."
     },
     "systemDesignation": "Odocoileus virginianus (standard)",
     "aggression": "territorial",
     "follows": false,
     "speed": 4,
-    "emoji": "🦌",
+    "emoji": "\ud83e\udd8c",
     "unknown": "the thing with headlights for eyes, standing too still",
     "villageNames": [
       "Headlight Harry",
@@ -277,7 +277,7 @@
       "Old Stare",
       "The Glow Stag"
     ],
-    "vibe": "skittish until it isn't — when it freezes, it's aiming",
+    "vibe": "skittish until it isn't \u2014 when it freezes, it's aiming",
     "cues": {
       "curious": [
         "It watches you with one dark eye. Ears swiveling. Not afraid yet."
@@ -286,7 +286,7 @@
         "It freezes. Like a deer in headlights. Light gathers behind its eyes. It is not frozen. It is aiming."
       ],
       "fearful": [
-        "It startles — white tail flashing — and it's gone. Just gone."
+        "It startles \u2014 white tail flashing \u2014 and it's gone. Just gone."
       ]
     },
     "wave": 1,
@@ -306,10 +306,10 @@
       "relentless": true,
       "shortName": "deer",
       "comment": "Encounter framework client: FIFO threat queue, turn phases, codex-gated telegraph. Highbeam-specific: sweep budget, anchored ray, recharge paw, deer audio.",
-      "knownCue": "The freeze is the tell. When it goes still, the beam is coming — MOVE, don't stare."
+      "knownCue": "The freeze is the tell. When it goes still, the beam is coming \u2014 MOVE, don't stare."
     },
     "loot": {
-      "chance": 0.22,
+      "chance": 0.12,
       "tier": 4,
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     },
@@ -327,8 +327,8 @@
       "se_woodlands"
     ],
     "hp": [
-      15,
-      22
+      35,
+      45
     ],
     "attack": {
       "name": "Wing Flash",
@@ -341,7 +341,7 @@
         "type": "burst",
         "radius": 2,
         "burstStyle": "flash",
-        "burstDesc": "Blinding flash. Closes your eyes — you fight blind for a turn."
+        "burstDesc": "Blinding flash. Closes your eyes \u2014 you fight blind for a turn."
       },
       "damageType": "psychic"
     },
@@ -359,7 +359,7 @@
     "behavior": "drifter",
     "codexStages": {
       "unknown": "A light in the trees that wasn't the sun. Then spots in your vision.",
-      "observed": "Luna moth. The System classified its wings as 'under-visible' and coated them in retroreflectors. It flashes to stun — not to hunt, just because it can. It doesn't want you. It wants to be SEEN.",
+      "observed": "Luna moth. The System classified its wings as 'under-visible' and coated them in retroreflectors. It flashes to stun \u2014 not to hunt, just because it can. It doesn't want you. It wants to be SEEN.",
       "slain": "Moves: Wing Flash (blinds 1 round, must be facing you), Drift (moves randomly, hard to predict). Kill it from behind or on cloudy days. The wing scales make excellent signal mirrors."
     },
     "systemDesignation": "Actias luna (enhanced visibility)",
@@ -367,9 +367,9 @@
     "follows": false,
     "fear": "darkness",
     "speed": 4,
-    "emoji": "🦋",
+    "emoji": "\ud83e\udd8b",
     "unknown": "a moth the size of a dinner plate, catching light wrong",
-    "vibe": "drifter — curious about light, including the light in you",
+    "vibe": "drifter \u2014 curious about light, including the light in you",
     "cues": {
       "curious": [
         "It spirals closer, wings catching light that isn't there. It's interested in you. Specifically you."
@@ -397,17 +397,17 @@
       "adjacencyOverride": 1,
       "shortName": "moth",
       "phaseBadges": {
-        "stalk": " 🦋 DRIFTING",
-        "land": " 🛬 LANDED",
-        "fold": " 🦋 FOLDING",
-        "flash": " ✨ FLASH!",
-        "recover": " 😮‍\u0001F4A8 SPENT"
+        "stalk": " \ud83e\udd8b DRIFTING",
+        "land": " \ud83d\udeec LANDED",
+        "fold": " \ud83e\udd8b FOLDING",
+        "flash": " \u2728 FLASH!",
+        "recover": " \ud83d\ude2e\u200d\u0001F4A8 SPENT"
       },
-      "knownCue": "Wing Flash only fires FORWARD — it must face you. Circle behind it before the wings open.",
+      "knownCue": "Wing Flash only fires FORWARD \u2014 it must face you. Circle behind it before the wings open.",
       "threatLines": {
-        "notice": "The moth's wings tilt toward {who} — catching light that isn't there. You're interesting now.",
-        "pain": "It flutters — wing-scales scattering like sparks — and its light fixes on {who}. Pain gets noticed.",
-        "snap": "Too close. The moth spirals straight at {who} — curiosity overrules caution."
+        "notice": "The moth's wings tilt toward {who} \u2014 catching light that isn't there. You're interesting now.",
+        "pain": "It flutters \u2014 wing-scales scattering like sparks \u2014 and its light fixes on {who}. Pain gets noticed.",
+        "snap": "Too close. The moth spirals straight at {who} \u2014 curiosity overrules caution."
       },
       "comment": "Encounter framework client. Bespoke: erratic drift approach, facing-locked frontal flash (flank it), blinds 1 round, 1-turn recover."
     },
@@ -428,7 +428,6 @@
     "biomes": [
       "se_woodlands"
     ],
-    "waterAffinity": "near",
     "hp": [
       20,
       30
@@ -444,7 +443,7 @@
         "type": "burst",
         "radius": 2,
         "burstStyle": "resonant",
-        "burstDesc": "Sound wave. The croak harmonizes with itself, building — cover your ears or get out."
+        "burstDesc": "Sound wave. The croak harmonizes with itself, building \u2014 cover your ears or get out."
       },
       "damageType": "sonic"
     },
@@ -463,18 +462,18 @@
     "behavior": "pack",
     "codexStages": {
       "unknown": "Frogs. Too many frogs. All croaking the same note, like a rehearsal.",
-      "observed": "Bullfrog. The System classified croaking as 'inefficient communication' and amplified it into resonance. They croak in chorus now — one croak, and the pack knows where you are. The sound carries for miles.",
-      "slain": "Moves: Resonant Croak (sonic, calls the pack), Lunge (short range, clumsy). They hunt by sound — stay quiet or stay loud enough to break the chorus. The throat sac makes a fine waterskin."
+      "observed": "Bullfrog. The System classified croaking as 'inefficient communication' and amplified it into resonance. They croak in chorus now \u2014 one croak, and the pack knows where you are. The sound carries for miles.",
+      "slain": "Moves: Resonant Croak (sonic, calls the pack), Lunge (short range, clumsy). They hunt by sound \u2014 stay quiet or stay loud enough to break the chorus. The throat sac makes a fine waterskin."
     },
     "systemDesignation": "Lithobates catesbeianus (amplified)",
     "aggression": "hungry",
     "follows": true,
     "fear": "loud noise",
     "speed": 2,
-    "emoji": "🐸",
+    "emoji": "\ud83d\udc38",
     "pack": 4,
     "unknown": "a toad like a war drum, throat swelling",
-    "vibe": "pack singer — the croak is the warning, the chorus is the attack",
+    "vibe": "pack singer \u2014 the croak is the warning, the chorus is the attack",
     "cues": {
       "curious": [
         "Its throat pulses. A low note you feel in your teeth. It's tasting the air."
@@ -502,16 +501,16 @@
       "shortName": "toad",
       "aggroAudio": "belltoadCroak",
       "phaseBadges": {
-        "stalk": " 🐸 LURKING",
-        "swell": " 🐸 SWELLING",
-        "chorus": " 🔊 CHORUS!",
-        "quiet": " 😶‍\u0001F32B️ SPENT"
+        "stalk": " \ud83d\udc38 LURKING",
+        "swell": " \ud83d\udc38 SWELLING",
+        "chorus": " \ud83d\udd0a CHORUS!",
+        "quiet": " \ud83d\ude36\u200d\u0001F32B\ufe0f SPENT"
       },
-      "knownCue": "The pack croaks as one — every throat in range joins. Break the chorus: kill one, split them up, or make NOISE.",
+      "knownCue": "The pack croaks as one \u2014 every throat in range joins. Break the chorus: kill one, split them up, or make NOISE.",
       "threatLines": {
         "notice": "The toad's throat pulses toward {who}. The chorus has a new verse.",
-        "pain": "It CROAKS — offended — and its throat swells toward {who}. Pain gets noticed.",
-        "snap": "Too close. The toad's throat SNAPS wide toward {who} — proximity overrules patience."
+        "pain": "It CROAKS \u2014 offended \u2014 and its throat swells toward {who}. Pain gets noticed.",
+        "snap": "Too close. The toad's throat SNAPS wide toward {who} \u2014 proximity overrules patience."
       },
       "comment": "Encounter framework client. Bespoke: pack chorus (nearby toads join the croak, then all go throat-spent); scattered by loud noise (SHOUT)."
     },
@@ -551,11 +550,11 @@
     },
     "weaknesses": [
       "distract with food (it cannot resist)",
-      "it steals before it fights — guard your pack"
+      "it steals before it fights \u2014 guard your pack"
     ],
     "edible": {
       "calories": 900,
-      "note": "Greasy. Fine in a stew. Wash your hands after handling — it touched everything you own."
+      "note": "Greasy. Fine in a stew. Wash your hands after handling \u2014 it touched everything you own."
     },
     "parts": [
       "dexterous paws (trade)",
@@ -565,22 +564,22 @@
     "codexStages": {
       "unknown": "Your pack was open. You didn't open it. Something small is holding your knife.",
       "observed": "Raccoon. The System observed tool use and concluded the hands were 'under-articulated.' It gave them more joints. It can now pick locks, untie knots, and disassemble a snare in seconds. It doesn't want to hurt you. It wants your stuff.",
-      "slain": "Moves: Disassemble (steals an item, may disarm traps), Bite (only if cornered). It steals FIRST and fights second — secure your pack. Distract it with food; it cannot resist food."
+      "slain": "Moves: Disassemble (steals an item, may disarm traps), Bite (only if cornered). It steals FIRST and fights second \u2014 secure your pack. Distract it with food; it cannot resist food."
     },
     "systemDesignation": "Procyon lotor (enhanced articulation)",
     "aggression": "curious",
     "follows": true,
     "fear": "dogs",
     "speed": 5,
-    "emoji": "🦝",
+    "emoji": "\ud83e\udd9d",
     "unknown": "a raccoon with too many fingers, working at something",
-    "vibe": "curious thief — it wants your stuff, not your life. Probably.",
+    "vibe": "curious thief \u2014 it wants your stuff, not your life. Probably.",
     "cues": {
       "curious": [
         "It sits up on its hind legs, hands moving too fast to follow. It's trying to figure out your pack."
       ],
       "warn": [
-        "It chitters — offended. Those clever hands curl into fists."
+        "It chitters \u2014 offended. Those clever hands curl into fists."
       ],
       "fearful": [
         "It stuffs something into its cheeks and bolts. Your something, probably."
@@ -601,16 +600,16 @@
       "adjacencyOverride": 1,
       "shortName": "raccoon",
       "phaseBadges": {
-        "case": " 👀 CASING",
-        "grab": " 🖐️ GRABBING",
-        "bolt": " 💨 BOLTING",
-        "cornered": " 🦝 CORNERED"
+        "case": " \ud83d\udc40 CASING",
+        "grab": " \ud83d\udd90\ufe0f GRABBING",
+        "bolt": " \ud83d\udca8 BOLTING",
+        "cornered": " \ud83e\udd9d CORNERED"
       },
-      "knownCue": "It steals FIRST and fights second. Hit it while it runs and it drops your things — or buy it off with food.",
+      "knownCue": "It steals FIRST and fights second. Hit it while it runs and it drops your things \u2014 or buy it off with food.",
       "threatLines": {
-        "notice": "The raccoon's clever hands pause mid-fiddle — and its eyes find {who}. New mark.",
-        "pain": "It chitters — furious — and too many fingers point at {who}. Pain gets noticed.",
-        "snap": "Too close. The raccoon is on {who} in a blink — clever hands everywhere."
+        "notice": "The raccoon's clever hands pause mid-fiddle \u2014 and its eyes find {who}. New mark.",
+        "pain": "It chitters \u2014 furious \u2014 and too many fingers point at {who}. Pain gets noticed.",
+        "snap": "Too close. The raccoon is on {who} in a blink \u2014 clever hands everywhere."
       },
       "comment": "Encounter framework client. Bespoke: steal-first turn loop (case -> grab -> bolt with loot -> cornered if hurt). Distract with food; hitting it while bolting makes it drop the loot."
     },
@@ -629,10 +628,9 @@
     "biomes": [
       "se_woodlands"
     ],
-    "waterAffinity": "near",
     "hp": [
-      30,
-      40
+      60,
+      80
     ],
     "attack": {
       "name": "Spearfish Strike",
@@ -640,7 +638,7 @@
         16,
         24
       ],
-      "telegraph": "The heron is gone. No — it's there. It was always there. You just couldn't see it until it moved.",
+      "telegraph": "The heron is gone. No \u2014 it's there. It was always there. You just couldn't see it until it moved.",
       "pattern": {
         "type": "line",
         "length": 4,
@@ -650,7 +648,7 @@
       "damageType": "psychic"
     },
     "weaknesses": [
-      "it casts no shadow — watch the water, not the bird",
+      "it casts no shadow \u2014 watch the water, not the bird",
       "it commits to the strike (dodge sideways)"
     ],
     "edible": {
@@ -664,20 +662,20 @@
     "behavior": "territorial",
     "codexStages": {
       "unknown": "A heron-shaped absence by the creek. Then a beak where your hand was.",
-      "observed": "Great blue heron. The System classified shadows as 'visual noise' and removed the bird's. It is hardest to see when it is stillest — which is always. It strikes like a spear. It was always there. You just couldn't see it.",
-      "slain": "Moves: Spearfish Strike (devastating lunge, telegraphed by stillness), Stalk (repositions unseen). Watch the water's surface, not the bird. When it commits, move sideways — it can't correct mid-strike."
+      "observed": "Great blue heron. The System classified shadows as 'visual noise' and removed the bird's. It is hardest to see when it is stillest \u2014 which is always. It strikes like a spear. It was always there. You just couldn't see it.",
+      "slain": "Moves: Spearfish Strike (devastating lunge, telegraphed by stillness), Stalk (repositions unseen). Watch the water's surface, not the bird. When it commits, move sideways \u2014 it can't correct mid-strike."
     },
     "systemDesignation": "Ardea herodias (shadow removed)",
     "aggression": "territorial",
     "follows": false,
     "fear": "fire",
     "speed": 3,
-    "emoji": "🐦",
+    "emoji": "\ud83d\udc26",
     "unknown": "a heron that isn't quite there when you look at it",
-    "vibe": "territorial fisher — you are standing in its creek",
+    "vibe": "territorial fisher \u2014 you are standing in its creek",
     "cues": {
       "curious": [
-        "The heron is gone. No — it's there. It was always there. Watching."
+        "The heron is gone. No \u2014 it's there. It was always there. Watching."
       ],
       "warn": [
         "It unfolds to its full height. The air goes staticky. Leave the creek."
@@ -696,9 +694,9 @@
         "strike"
       ],
       "phaseBadges": {
-        "still": " 🗿 STILL",
-        "unfold": " 📶 UNFOLDING",
-        "strike": " 🗡 STRIKE"
+        "still": " \ud83d\uddff STILL",
+        "unfold": " \ud83d\udcf6 UNFOLDING",
+        "strike": " \ud83d\udde1 STRIKE"
       },
       "phaseMap": {
         "declare": "unfold",
@@ -715,7 +713,7 @@
       "declareAudio": "heronStatic",
       "aggroAudio": "heronUnfold",
       "resolveAudio": "heronStrike",
-      "knownTactics": "When it unfolds, sidestep — it commits to the line and can't correct. Watch the water, not the bird.",
+      "knownTactics": "When it unfolds, sidestep \u2014 it commits to the line and can't correct. Watch the water, not the bird.",
       "comment": "Statue predator: never advances (statue); strikes when a foe is within 4. Ranged attacks at a still heron often hit empty air. After a strike it may reposition unseen.",
       "knownCue": "It strikes where you were, not where you are. Keep moving after it unfolds."
     },
@@ -757,7 +755,7 @@
       "damageType": "sonic"
     },
     "weaknesses": [
-      "the hum needs the swarm — scatter them",
+      "the hum needs the swarm \u2014 scatter them",
       "cats (ordinary cats terrify them)"
     ],
     "edible": {
@@ -770,18 +768,18 @@
     "behavior": "swarm",
     "codexStages": {
       "unknown": "The grass hummed. Like a refrigerator. Like a choir warming up underground.",
-      "observed": "Field mice. The System networked them — a hive hum for coordination. Individually harmless. Together they vibrate at a frequency that loosens teeth and resolve. They don't bite so much as... overwhelm.",
-      "slain": "Moves: Swarm Hum (stacking damage, worse the longer you stand in it), Nibble Tide (many small bites). Don't stand still. Scatter them — the hum needs the swarm. A cat would end this in minutes."
+      "observed": "Field mice. The System networked them \u2014 a hive hum for coordination. Individually harmless. Together they vibrate at a frequency that loosens teeth and resolve. They don't bite so much as... overwhelm.",
+      "slain": "Moves: Swarm Hum (stacking damage, worse the longer you stand in it), Nibble Tide (many small bites). Don't stand still. Scatter them \u2014 the hum needs the swarm. A cat would end this in minutes."
     },
     "systemDesignation": "Peromyscus spp. (networked)",
     "aggression": "hungry",
     "follows": true,
     "fear": "cats",
     "speed": 6,
-    "emoji": "🐭",
+    "emoji": "\ud83d\udc2d",
     "pack": 4,
     "unknown": "the humming in the grass",
-    "vibe": "swarm — playful until it's hungry, and it's often hungry",
+    "vibe": "swarm \u2014 playful until it's hungry, and it's often hungry",
     "cues": {
       "curious": [
         "A low hum rises from the grass. It harmonizes with itself. They're circling. Playfully. Probably playfully."
@@ -808,16 +806,16 @@
       "adjacencyOverride": 1,
       "shortName": "hum-mouse",
       "phaseBadges": {
-        "stalk": " 🐭 CIRCLING",
-        "hum": " 〰️ HUMMING",
-        "tide": " 🌊 TIDE!",
-        "scatter": " 💨 SCATTERED"
+        "stalk": " \ud83d\udc2d CIRCLING",
+        "hum": " \u3030\ufe0f HUMMING",
+        "tide": " \ud83c\udf0a TIDE!",
+        "scatter": " \ud83d\udca8 SCATTERED"
       },
-      "knownCue": "The hum STACKS while you stand in it. Break the swarm — every dead mouse drops the pitch, and stepping out thins it.",
+      "knownCue": "The hum STACKS while you stand in it. Break the swarm \u2014 every dead mouse drops the pitch, and stepping out thins it.",
       "threatLines": {
         "notice": "The hum shifts pitch toward {who}. The swarm has noticed you.",
-        "pain": "The hum spikes — angry static — and the grass leans toward {who}. Pain gets noticed.",
-        "snap": "Too close. The hum converges on {who} — the swarm overrules everything."
+        "pain": "The hum spikes \u2014 angry static \u2014 and the grass leans toward {who}. Pain gets noticed.",
+        "snap": "Too close. The hum converges on {who} \u2014 the swarm overrules everything."
       },
       "comment": "Encounter framework client. Bespoke: fight-level hum stacks (damage scales while you stand in it); killing mice drops stacks and scatters the swarm; stepping out decays."
     },
@@ -839,7 +837,6 @@
     "biomes": [
       "se_woodlands"
     ],
-    "waterAffinity": "near",
     "hp": [
       50,
       70
@@ -873,7 +870,7 @@
     "behavior": "territorial",
     "codexStages": {
       "unknown": "A rock by the trail. The rock had opinions about your ankle.",
-      "observed": "Snapping turtle. The System classified its shell as 'inadequate coverage' and plated the gaps. It is now functionally a bunker with a bad attitude. It cannot chase you. It doesn't need to — you walked to it.",
+      "observed": "Snapping turtle. The System classified its shell as 'inadequate coverage' and plated the gaps. It is now functionally a bunker with a bad attitude. It cannot chase you. It doesn't need to \u2014 you walked to it.",
       "slain": "Moves: Snap Decision (blinding fast head strike, short range), Bunker (withdraws, nearly invulnerable). It can't follow. Walk around it. If you must fight: flip it, or don't. The soup is worth it."
     },
     "systemDesignation": "Chelydra serpentina (up-armored)",
@@ -881,9 +878,9 @@
     "follows": false,
     "fear": "being flipped",
     "speed": 1,
-    "emoji": "🐢",
+    "emoji": "\ud83d\udc22",
     "unknown": "a boulder with opinions about where you're walking",
-    "vibe": "territorial rock — doesn't move, doesn't need to, you come to it",
+    "vibe": "territorial rock \u2014 doesn't move, doesn't need to, you come to it",
     "cues": {
       "curious": [
         "It doesn't move. It hasn't moved in an hour. That's the concerning part."
@@ -905,9 +902,9 @@
         "bunker"
       ],
       "phaseBadges": {
-        "rock": " 🪨 ROCK",
-        "snap": " ⚡ SNAP",
-        "bunker": " 🛡 BUNKER"
+        "rock": " \ud83e\udea8 ROCK",
+        "snap": " \u26a1 SNAP",
+        "bunker": " \ud83d\udee1 BUNKER"
       },
       "phaseMap": {
         "declare": "snap",
@@ -921,14 +918,14 @@
       "shortName": "turtle",
       "quiet": true,
       "resolveAudio": "turtleSnap",
-      "knownTactics": "Don't step next to it. It can't chase — just walk around. When it seals up, wait it out.",
-      "comment": "A rock with opinions: never moves, snaps anything adjacent with no warning. Below half HP it bunkers (2 turns, ~invulnerable). The queue stays silent — it's a rock.",
+      "knownTactics": "Don't step next to it. It can't chase \u2014 just walk around. When it seals up, wait it out.",
+      "comment": "A rock with opinions: never moves, snaps anything adjacent with no warning. Below half HP it bunkers (2 turns, ~invulnerable). The queue stays silent \u2014 it's a rock.",
       "knownCue": "It's slow but the snap is fast. Don't stand in front of it."
     },
     "loot": {
       "chance": 0.1,
       "tier": 2,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Tier 2 — solid tool, matches this monster's challenge level (Steve 2026-10-06)."
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Downgraded to tier 2 \u2014 wave-1 base (Steve 2026-10-06)."
     },
     "armor": 15,
     "resistances": {
@@ -942,7 +939,6 @@
     "biomes": [
       "se_woodlands"
     ],
-    "waterAffinity": "in",
     "hp": [
       22,
       32
@@ -953,7 +949,7 @@
         12,
         20
       ],
-      "telegraph": "A soft green glow under the water. Pretty. That's the problem — it's pretty.",
+      "telegraph": "A soft green glow under the water. Pretty. That's the problem \u2014 it's pretty.",
       "pattern": {
         "type": "direct",
         "range": 3
@@ -975,17 +971,17 @@
     "behavior": "ambush",
     "codexStages": {
       "unknown": "Something glowed in the creek at dusk. You reached for it. That was the idea.",
-      "observed": "Channel catfish. The System classified its lure as 'under-visible' and made it bioluminescent. It glows to attract — curious hands, small fish, you. The glow is beautiful. The teeth are not.",
-      "slain": "Moves: Lure and Grasp (ambush from dark water), Barb Lash (close range). Don't wade at night. If you must: the glow betrays it — strike where the light is, not where you think the fish is."
+      "observed": "Channel catfish. The System classified its lure as 'under-visible' and made it bioluminescent. It glows to attract \u2014 curious hands, small fish, you. The glow is beautiful. The teeth are not.",
+      "slain": "Moves: Lure and Grasp (ambush from dark water), Barb Lash (close range). Don't wade at night. If you must: the glow betrays it \u2014 strike where the light is, not where you think the fish is."
     },
     "systemDesignation": "Ictalurus punctatus (illuminated)",
     "aggression": "hungry",
     "follows": false,
     "fear": "daylight",
     "speed": 2,
-    "emoji": "💡",
+    "emoji": "\ud83d\udca1",
     "unknown": "a soft green glow under the water",
-    "vibe": "ambush predator — the light is the lure, and you're curious, aren't you",
+    "vibe": "ambush predator \u2014 the light is the lure, and you're curious, aren't you",
     "cues": {
       "curious": [
         "The glow pulses, gentle. Pretty. You want to look closer. That's the idea."
@@ -1012,16 +1008,16 @@
       "adjacencyOverride": 1,
       "shortName": "catfish",
       "phaseBadges": {
-        "lure": " 💡 LURING",
-        "still": " 🪷 TOO STILL",
-        "grasp": " 🐟 GRASP!",
-        "dark": " 🌑 DARK"
+        "lure": " \ud83d\udca1 LURING",
+        "still": " \ud83e\udeb7 TOO STILL",
+        "grasp": " \ud83d\udc1f GRASP!",
+        "dark": " \ud83c\udf11 DARK"
       },
-      "knownCue": "The glow is a mouth. It won't chase you — it waits for you to come close. Strike the light from range. Never wade in.",
+      "knownCue": "The glow is a mouth. It won't chase you \u2014 it waits for you to come close. Strike the light from range. Never wade in.",
       "threatLines": {
         "notice": "The glow pulses toward {who}. Pretty. That's the idea.",
-        "pain": "The glow flares white — and the water goes dead still around {who}. Pain gets noticed.",
-        "snap": "Too close. The water goes dead still around {who} — and the glow rises to meet you."
+        "pain": "The glow flares white \u2014 and the water goes dead still around {who}. Pain gets noticed.",
+        "snap": "Too close. The water goes dead still around {who} \u2014 and the glow rises to meet you."
       },
       "comment": "Encounter framework client. Bespoke: full lure turn (lure -> still -> grasp -> dark); never chases, never warns beyond the stillness; re-lures after each grasp."
     },
@@ -1065,11 +1061,11 @@
     "follows": true,
     "fear": "fire",
     "speed": 3,
-    "emoji": "📻",
-    "unknown": "crying in the dark — a voice you almost recognize",
+    "emoji": "\ud83d\udcfb",
+    "unknown": "crying in the dark \u2014 a voice you almost recognize",
     "vibe": "a dead radio that learned to cry like people",
     "weaknesses": [
-      "it broadcasts — follow the signal back",
+      "it broadcasts \u2014 follow the signal back",
       "fire scrambles it",
       "don't go toward the crying"
     ],
@@ -1096,7 +1092,7 @@
     "codexStages": {
       "unknown": "Someone was crying in the woods last night. Everyone was accounted for in the morning.",
       "observed": "Voice-mimic predator. The System watched humans run toward crying and concluded distress is bait. It plays the voices of people you know. The voices are always crying. It never learned any other emotion.",
-      "slain": "Moves: Distress Call (locks on — moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations — be careful what you say near it. Fire scrambles the signal. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours. Break the act — don't go to the crying, twice — and it drops the voice and RUSHES, no telegraph at all. Back off then; don't stand in reach of the replay."
+      "slain": "Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Fire scrambles the signal. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours. Break the act \u2014 don't go to the crying, twice \u2014 and it drops the voice and RUSHES, no telegraph at all. Back off then; don't stand in reach of the replay."
     },
     "systemDesignation": "Acoustic lure unit (audience-tested)",
     "encounter": {
@@ -1112,16 +1108,16 @@
       "painSwitch": true,
       "adjacencyOverride": 1,
       "shortName": "radio",
-      "noticeText": "The static sharpens toward {who} — another voice for the collection. You're all on the list now.",
-      "adjText": "Too close. The crying STOPS — it has {who}'s voice now.",
-      "painText": "It crackles — and the crying fixes on {who}, furious. Pain gets noticed.",
+      "noticeText": "The static sharpens toward {who} \u2014 another voice for the collection. You're all on the list now.",
+      "adjText": "Too close. The crying STOPS \u2014 it has {who}'s voice now.",
+      "painText": "It crackles \u2014 and the crying fixes on {who}, furious. Pain gets noticed.",
       "phaseBadges": {
-        "call": " 📻 CALLING",
-        "approach": " 📻 CLOSING IN",
-        "reveal": " 📻 REVEALED"
+        "call": " \ud83d\udcfb CALLING",
+        "approach": " \ud83d\udcfb CLOSING IN",
+        "reveal": " \ud83d\udcfb REVEALED"
       },
-      "comment": "Encounter framework client. THE LURE: call (holds its ground, cries in a voice you know — walking toward it feeds the lure and it creeps to meet you) → approach (voice sharpens, commits) → reveal (resist 2 turns: the act breaks, honest fight, exposed, takes hits badly). Distress Call is direct/range 3, undodgeable once declared.",
-      "knownCue": "The voice is bait. It wants you to come closer — don't."
+      "comment": "Encounter framework client. THE LURE: call (holds its ground, cries in a voice you know \u2014 walking toward it feeds the lure and it creeps to meet you) \u2192 approach (voice sharpens, commits) \u2192 reveal (resist 2 turns: the act breaks, honest fight, exposed, takes hits badly). Distress Call is direct/range 3, undodgeable once declared.",
+      "knownCue": "The voice is bait. It wants you to come closer \u2014 don't."
     },
     "loot": {
       "chance": 0.15,
@@ -1152,14 +1148,14 @@
         20,
         30
       ],
-      "telegraph": "It turns its face toward you. The face is a mirror. You see yourself — tired, dirty, afraid. It starts walking. Not running. Walking. That's worse.",
+      "telegraph": "It turns its face toward you. The face is a mirror. You see yourself \u2014 tired, dirty, afraid. It starts walking. Not running. Walking. That's worse.",
       "pattern": {
         "type": "charge",
         "length": 6,
         "width": 1,
         "windup": 2,
         "chargeStyle": "mirror",
-        "chargeDesc": "Psychological charge. The mirror face locks you in — if you meet its gaze, you freeze."
+        "chargeDesc": "Psychological charge. The mirror face locks you in \u2014 if you meet its gaze, you freeze."
       },
       "damageType": "psychic"
     },
@@ -1168,11 +1164,11 @@
     "follows": true,
     "fear": "fire",
     "speed": 4,
-    "emoji": "🪞",
-    "unknown": "something tall, flashing in the treeline — like sunlight on glass",
-    "vibe": "the System's most successful design, iterated. the deer worked — so they built it again, and taught it grief.",
+    "emoji": "\ud83e\ude9e",
+    "unknown": "something tall, flashing in the treeline \u2014 like sunlight on glass",
+    "vibe": "the System's most successful design, iterated. the deer worked \u2014 so they built it again, and taught it grief.",
     "weaknesses": [
-      "it telegraphs long — use the 6-tile charge line",
+      "it telegraphs long \u2014 use the 6-tile charge line",
       "never goes around, like its cousin",
       "break line of sight and it loses you"
     ],
@@ -1198,8 +1194,8 @@
     },
     "codexStages": {
       "unknown": "Something in the woods has your face. You told no one. They wouldn't believe you.",
-      "observed": "Deliberate evolution of the Highbeam Deer. The System iterates on what works: same chassis, but the beam is gone — replaced by THE WHEEL (a missed charge wheels back with no windup, aimed at where you are NOW) and a grief-mirror that shows you yourself before it charges. It learned from every deer that died. Mirror-faced deer. The System noticed humans stare at their reflections in water and concluded self-image is a vulnerability. It shows you yourself, then charges through the moment of recognition. The charge is long — 6 tiles, telegraphed, destroys cover.",
-      "slain": "Moves: Confrontation (6-tile charge, heavy, telegraphed — it shows your face first). Like the Bulldozer, it never goes around. Unlike the Bulldozer, it wants you to SEE it coming. That's the point. Flanks are soft. Meat: good. The mirror shards make excellent signal mirrors. Dodge the charge and it WHEELS — a second charge with no windup, aimed at where you are now. Respect the wheel; punish after."
+      "observed": "Deliberate evolution of the Highbeam Deer. The System iterates on what works: same chassis, but the beam is gone \u2014 replaced by THE WHEEL (a missed charge wheels back with no windup, aimed at where you are NOW) and a grief-mirror that shows you yourself before it charges. It learned from every deer that died. Mirror-faced deer. The System noticed humans stare at their reflections in water and concluded self-image is a vulnerability. It shows you yourself, then charges through the moment of recognition. The charge is long \u2014 6 tiles, telegraphed, destroys cover.",
+      "slain": "Moves: Confrontation (6-tile charge, heavy, telegraphed \u2014 it shows your face first). Like the Bulldozer, it never goes around. Unlike the Bulldozer, it wants you to SEE it coming. That's the point. Flanks are soft. Meat: good. The mirror shards make excellent signal mirrors. Dodge the charge and it WHEELS \u2014 a second charge with no windup, aimed at where you are now. Respect the wheel; punish after."
     },
     "systemDesignation": "Reflective ungulate (therapeutic model)",
     "encounter": {
@@ -1211,9 +1207,9 @@
         "charge"
       ],
       "phaseBadges": {
-        "mirror": " 🪞 MIRROR",
-        "confront": " 👁 CONFRONT",
-        "charge": " 💥 CHARGE"
+        "mirror": " \ud83e\ude9e MIRROR",
+        "confront": " \ud83d\udc41 CONFRONT",
+        "charge": " \ud83d\udca5 CHARGE"
       },
       "phaseMap": {
         "declare": "mirror",
@@ -1231,9 +1227,9 @@
       "declareAudio": "stagMirror",
       "aggroAudio": "stagSnort",
       "resolveAudio": "stagCharge",
-      "knownTactics": "Break line of sight during the mirror beat and the charge dies unspent. Or sidestep — it can't turn mid-charge.",
+      "knownTactics": "Break line of sight during the mirror beat and the charge dies unspent. Or sidestep \u2014 it can't turn mid-charge.",
       "comment": "Grief Counselor: mirror->confront->charge. Shows you your face first (it wants you to SEE it coming). 6-tile charge locked at declare; shreds cover; never goes around. Break LOS and it loses you.",
-      "knownCue": "Don't look at the reflection. Look at its feet — they tell you where it's going."
+      "knownCue": "Don't look at the reflection. Look at its feet \u2014 they tell you where it's going."
     },
     "loot": {
       "chance": 0.15,
@@ -1277,13 +1273,13 @@
     "follows": false,
     "fear": "numbers",
     "speed": 3,
-    "emoji": "📊",
+    "emoji": "\ud83d\udcca",
     "unknown": "a hovering clipboard, projecting light onto the ground",
     "vibe": "it is grading you. you are failing",
     "weaknesses": [
-      "long windup (3) — move off the projected line",
+      "long windup (3) \u2014 move off the projected line",
       "it announces everything it does",
-      "bring friends — it can't grade a crowd"
+      "bring friends \u2014 it can't grade a crowd"
     ],
     "edible": {
       "calories": 0,
@@ -1307,8 +1303,8 @@
     },
     "codexStages": {
       "unknown": "There's a thing in the clearing with a clipboard. It watched me forage for an hour. I felt judged.",
-      "observed": "Floating assessment drone. The System loves metrics and assumed you do too. It grades your survival in real time, announces the scores, and fires 'corrective beams' along projected lines. The windup is long — 3 beats — and the line is drawn on the ground before it fires.",
-      "slain": "Moves: Scored Assessment (6-tile beam, 3-beat windup, line pre-drawn on ground — just don't be on it). It fears crowds (numbers) — it can't evaluate more than two subjects at once. Bring friends. Parts: lens (starts fires), projector bulb, and a printed performance review of YOU. Frame it. It learns your dodge — same sidestep twice and the next line leads you by a tile. Vary it."
+      "observed": "Floating assessment drone. The System loves metrics and assumed you do too. It grades your survival in real time, announces the scores, and fires 'corrective beams' along projected lines. The windup is long \u2014 3 beats \u2014 and the line is drawn on the ground before it fires.",
+      "slain": "Moves: Scored Assessment (6-tile beam, 3-beat windup, line pre-drawn on ground \u2014 just don't be on it). It fears crowds (numbers) \u2014 it can't evaluate more than two subjects at once. Bring friends. Parts: lens (starts fires), projector bulb, and a printed performance review of YOU. Frame it. It learns your dodge \u2014 same sidestep twice and the next line leads you by a tile. Vary it."
     },
     "systemDesignation": "Metrics enforcement unit",
     "encounter": {
@@ -1323,19 +1319,19 @@
         "recalc"
       ],
       "phaseBadges": {
-        "project": " 📊 EVALUATING",
-        "countdown": " ⏳ CORRECTING IN…",
-        "correct": " 🎯 CORRECTING",
-        "recalc": " 🌀 RECALIBRATING"
+        "project": " \ud83d\udcca EVALUATING",
+        "countdown": " \u23f3 CORRECTING IN\u2026",
+        "correct": " \ud83c\udfaf CORRECTING",
+        "recalc": " \ud83c\udf00 RECALIBRATING"
       },
       "telegraphGate": "pattern",
       "painSwitch": true,
       "adjacencyOverride": 1,
       "crowdLimit": 2,
       "noticeText": "The drone's lens swivels to {who}. \"SUBJECT ADDED TO EVALUATION QUEUE.\" You're all being graded now.",
-      "painText": "It wobbles — then the lens LOCKS onto {who}. \"PAIN RESPONSE LOGGED. PRIORITY ESCALATED.\" Pain gets graded first.",
-      "proximityText": "\"PROXIMITY VIOLATION.\" The projector snaps to {who} — closeness overrules the queue.",
-      "comment": "Encounter framework client: FIFO evaluation queue, announced 3-count beam (the line is projected on the dirt — believe it), dodge-efficiency grading, crowd overload. The counterplay is moving off the line.",
+      "painText": "It wobbles \u2014 then the lens LOCKS onto {who}. \"PAIN RESPONSE LOGGED. PRIORITY ESCALATED.\" Pain gets graded first.",
+      "proximityText": "\"PROXIMITY VIOLATION.\" The projector snaps to {who} \u2014 closeness overrules the queue.",
+      "comment": "Encounter framework client: FIFO evaluation queue, announced 3-count beam (the line is projected on the dirt \u2014 believe it), dodge-efficiency grading, crowd overload. The counterplay is moving off the line.",
       "knownCue": "It scores your dodges. Unpredictable movement breaks its lock."
     },
     "loot": {
@@ -1381,14 +1377,14 @@
     "follows": false,
     "fear": "daylight",
     "speed": 2,
-    "emoji": "🔆",
+    "emoji": "\ud83d\udd06",
     "unknown": "a light in the dark that wasn't there yesterday",
-    "vibe": "the nightlight worked — so the System made it brighter. it seemed like a good idea at the time.",
+    "vibe": "the nightlight worked \u2014 so the System made it brighter. it seemed like a good idea at the time.",
     "weaknesses": [
-      "it glows — you can see it coming",
-      "burst radius 2 — back off when it brightens",
+      "it glows \u2014 you can see it coming",
+      "burst radius 2 \u2014 back off when it brightens",
       "daylight disperses it (fears daylight)",
-      "never moves once set — just don't approach"
+      "never moves once set \u2014 just don't approach"
     ],
     "edible": {
       "calories": 0,
@@ -1412,8 +1408,8 @@
     },
     "codexStages": {
       "unknown": "There was a light in the woods last night. Beautiful. I didn't go toward it. Good.",
-      "observed": "Deliberate evolution of the Nightlight Catfish. The lure worked, so the System iterated: brighter bloom, and REKINDLE — the ember safe-window shrinks every cycle (2 turns, then 1, then 0) — plus DAZZLE, which blinds for 2 rounds. The idea gets worse the longer you entertain it. Detonation predator. Like the Speedbump it sits perfectly still — but where the Speedbump snaps, this DETONATES. Burst radius 2, the hardest-hitting burst in either wave. The tell is the brightening: 2 beats from glow to boom. It fears daylight — it only sets its ambush at night.",
-      "slain": "Moves: Eureka (burst radius 2, 22-34 damage — the biggest burst so far, telegraphed by brightening). It never moves once placed. The counterplay is simple: see the glow, don't approach, wait for dawn. It seemed like a good idea at the time. Parts: filament (excellent fire-starter), glass, and the lingering feeling you almost did something stupid. Each detonation teaches it to rekindle faster — the ember shrinks from 2 turns to none. And the bloom dazzles (blinded 2 rounds) if it catches you."
+      "observed": "Deliberate evolution of the Nightlight Catfish. The lure worked, so the System iterated: brighter bloom, and REKINDLE \u2014 the ember safe-window shrinks every cycle (2 turns, then 1, then 0) \u2014 plus DAZZLE, which blinds for 2 rounds. The idea gets worse the longer you entertain it. Detonation predator. Like the Speedbump it sits perfectly still \u2014 but where the Speedbump snaps, this DETONATES. Burst radius 2, the hardest-hitting burst in either wave. The tell is the brightening: 2 beats from glow to boom. It fears daylight \u2014 it only sets its ambush at night.",
+      "slain": "Moves: Eureka (burst radius 2, 22-34 damage \u2014 the biggest burst so far, telegraphed by brightening). It never moves once placed. The counterplay is simple: see the glow, don't approach, wait for dawn. It seemed like a good idea at the time. Parts: filament (excellent fire-starter), glass, and the lingering feeling you almost did something stupid. Each detonation teaches it to rekindle faster \u2014 the ember shrinks from 2 turns to none. And the bloom dazzles (blinded 2 rounds) if it catches you."
     },
     "systemDesignation": "Illumination event (contained)",
     "encounter": {
@@ -1431,15 +1427,15 @@
       "adjacencyOverride": 1,
       "shortName": "idea",
       "noticeText": "The light swivels toward {who}. It likes being looked at.",
-      "adjText": "Too close. The glow flares around {who} — it's been noticed.",
-      "painText": "It flickers — and the light fixes on {who}, hardening. Pain gets noticed.",
+      "adjText": "Too close. The glow flares around {who} \u2014 it's been noticed.",
+      "painText": "It flickers \u2014 and the light fixes on {who}, hardening. Pain gets noticed.",
       "phaseBadges": {
-        "settle": " 💡 SETTLED",
-        "brighten": " 💡 BRIGHTENING",
-        "bloom": " 💡 EUREKA",
-        "ember": " 💡 EMBER"
+        "settle": " \ud83d\udca1 SETTLED",
+        "brighten": " \ud83d\udca1 BRIGHTENING",
+        "bloom": " \ud83d\udca1 EUREKA",
+        "ember": " \ud83d\udca1 EMBER"
       },
-      "comment": "Encounter framework client. THE BRIGHTENING: settle (drifts until a foe is within 4, then SETS — never moves once set) → brighten (2 beats, escalating, holds position) → bloom (burst radius 2, 22-34) → ember (2 turns spent, harmless). Daylight disperses it.",
+      "comment": "Encounter framework client. THE BRIGHTENING: settle (drifts until a foe is within 4, then SETS \u2014 never moves once set) \u2192 brighten (2 beats, escalating, holds position) \u2192 bloom (burst radius 2, 22-34) \u2192 ember (2 turns spent, harmless). Daylight disperses it.",
       "knownCue": "It glows brighter before detonation. When it flares, RUN."
     },
     "loot": {
@@ -1472,7 +1468,7 @@
         16,
         26
       ],
-      "telegraph": "It unfolds a screen of light between the trees. And there — impossibly — is home. Your street. Your kitchen. Someone you miss, laughing. You take a step closer without deciding to. The light has edges. The edges are sharp.",
+      "telegraph": "It unfolds a screen of light between the trees. And there \u2014 impossibly \u2014 is home. Your street. Your kitchen. Someone you miss, laughing. You take a step closer without deciding to. The light has edges. The edges are sharp.",
       "pattern": {
         "type": "beam",
         "length": 5,
@@ -1486,13 +1482,13 @@
     "follows": false,
     "fear": "movement",
     "speed": 3,
-    "emoji": "📼",
+    "emoji": "\ud83d\udcfc",
     "unknown": "a flickering light at dusk, showing... something. you couldn't look away",
     "vibe": "it shows you what you miss. the missing is the trap",
     "weaknesses": [
-      "the beam is a straight line — sidestep",
-      "it fears movement — keep moving, break the spell",
-      "it watches first — leave during the curious phase"
+      "the beam is a straight line \u2014 sidestep",
+      "it fears movement \u2014 keep moving, break the spell",
+      "it watches first \u2014 leave during the curious phase"
     ],
     "edible": {
       "calories": 0,
@@ -1516,8 +1512,8 @@
     },
     "codexStages": {
       "unknown": "At dusk I saw my street. My actual street. I stood there for I don't know how long.",
-      "observed": "Memory lure. The System mined your homesickness and built a projector for it. It shows you home — real footage, somehow — and while you stand there aching, it fires a beam along the line of your gaze. Windup 2. The cruelty is the point. The audience wept. (The audience loved it.)",
-      "slain": "Moves: Home Movies (beam length 5, windup 2 — the line follows your gaze, so MOVE). It fears movement: keep walking and the image can't hold. It spends turns watching (curious) — that's your window to leave. The reels it drops show your memories. Don't watch them. Or do. The System already did. Stand still through a spell and the next watch barely happens — it knows you'll stand still."
+      "observed": "Memory lure. The System mined your homesickness and built a projector for it. It shows you home \u2014 real footage, somehow \u2014 and while you stand there aching, it fires a beam along the line of your gaze. Windup 2. The cruelty is the point. The audience wept. (The audience loved it.)",
+      "slain": "Moves: Home Movies (beam length 5, windup 2 \u2014 the line follows your gaze, so MOVE). It fears movement: keep walking and the image can't hold. It spends turns watching (curious) \u2014 that's your window to leave. The reels it drops show your memories. Don't watch them. Or do. The System already did. Stand still through a spell and the next watch barely happens \u2014 it knows you'll stand still."
     },
     "systemDesignation": "Affective recall projector",
     "encounter": {
@@ -1534,14 +1530,14 @@
       "adjacencyOverride": 1,
       "shortName": "projector",
       "noticeText": "The light finds {who}. Shapes resolve. Is that... home?",
-      "adjText": "Too close. The screen swings toward {who} — the picture sharpens.",
-      "painText": "The image tears — and the projector swings to {who}. Pain gets noticed.",
+      "adjText": "Too close. The screen swings toward {who} \u2014 the picture sharpens.",
+      "painText": "The image tears \u2014 and the projector swings to {who}. Pain gets noticed.",
       "phaseBadges": {
-        "watch": " 📼 WATCHING",
-        "spell": " 📼 SPELLBOUND",
-        "static": " 📼 STATIC"
+        "watch": " \ud83d\udcfc WATCHING",
+        "spell": " \ud83d\udcfc SPELLBOUND",
+        "static": " \ud83d\udcfc STATIC"
       },
-      "comment": "Encounter framework client. THE SPELL: watch (2 turns, curious — leave now) → spell (Home Movies declared: beam length 5, windup 2, aim locked; the light PULLS a still target 1 tile/turn toward it; moving 2+ tiles breaks the spell) → static (1 turn, confused). It fears movement.",
+      "comment": "Encounter framework client. THE SPELL: watch (2 turns, curious \u2014 leave now) \u2192 spell (Home Movies declared: beam length 5, windup 2, aim locked; the light PULLS a still target 1 tile/turn toward it; moving 2+ tiles breaks the spell) \u2192 static (1 turn, confused). It fears movement.",
       "knownCue": "The picture holds you still. Keep moving and it can't lock on."
     },
     "loot": {
@@ -1572,7 +1568,7 @@
         14,
         22
       ],
-      "telegraph": "No telegraph. That's the point. A phone is ringing in the trees — for you, specifically. Then the ringing STOPS. It's already moving.",
+      "telegraph": "No telegraph. That's the point. A phone is ringing in the trees \u2014 for you, specifically. Then the ringing STOPS. It's already moving.",
       "pattern": {
         "type": "rush"
       },
@@ -1582,13 +1578,13 @@
     "aggression": "hungry",
     "follows": true,
     "speed": 4,
-    "emoji": "📱",
+    "emoji": "\ud83d\udcf1",
     "unknown": "a phone ringing in the trees, and no phone anywhere",
     "vibe": "it has decided you are the car. the warranty has expired",
     "weaknesses": [
-      "it can only dial a stationary target — keep moving and the call drops",
-      "hurting it gives it a bad connection — it hangs up and redials",
-      "it always rings first — the ring is the tell"
+      "it can only dial a stationary target \u2014 keep moving and the call drops",
+      "hurting it gives it a bad connection \u2014 it hangs up and redials",
+      "it always rings first \u2014 the ring is the tell"
     ],
     "edible": {
       "calories": 0,
@@ -1607,13 +1603,13 @@
         "The ringing stops. That's worse than the ringing."
       ],
       "fearful": [
-        "\"—bad connection—\" The voice fragments. \"—can you hear—\" It hates being hit mid-call."
+        "\"\u2014bad connection\u2014\" The voice fragments. \"\u2014can you hear\u2014\" It hates being hit mid-call."
       ]
     },
     "codexStages": {
       "unknown": "A phone rang in the woods last night. Three times. Nobody has a phone anymore.",
-      "observed": "Robocall predator. The System found twenty-first-century telemarketing and was DELIGHTED — humans who answer unknown calls! It dials stationary targets: the ring is the tell, and if you move 2+ tiles the call DROPS. It redials. It always redials. Hurting it mid-call gives it a bad connection — it hangs up, furious, and starts over.",
-      "slain": "Moves: The Pitch (rush — NO grid telegraph, the RING is the tell). dial (picks its target) → ring (1 turn — MOVE, 2+ tiles drops the call) → pitch (it rushes, the words hit) → redial (2 turns). Pain = bad connection = it hangs up and redials. It never stops calling. Parts: a phone that only calls you. Don't answer. The redials come FASTER each cycle (2 turns, then 1). It doesn't always call you: it dials friends too, and they're on the line until you hurt the caller and hang it up for them."
+      "observed": "Robocall predator. The System found twenty-first-century telemarketing and was DELIGHTED \u2014 humans who answer unknown calls! It dials stationary targets: the ring is the tell, and if you move 2+ tiles the call DROPS. It redials. It always redials. Hurting it mid-call gives it a bad connection \u2014 it hangs up, furious, and starts over.",
+      "slain": "Moves: The Pitch (rush \u2014 NO grid telegraph, the RING is the tell). dial (picks its target) \u2192 ring (1 turn \u2014 MOVE, 2+ tiles drops the call) \u2192 pitch (it rushes, the words hit) \u2192 redial (2 turns). Pain = bad connection = it hangs up and redials. It never stops calling. Parts: a phone that only calls you. Don't answer. The redials come FASTER each cycle (2 turns, then 1). It doesn't always call you: it dials friends too, and they're on the line until you hurt the caller and hang it up for them."
     },
     "systemDesignation": "Automotive protection plan (predatory)",
     "encounter": {
@@ -1627,19 +1623,19 @@
         "redial"
       ],
       "phaseBadges": {
-        "dial": " 📱 DIALING",
-        "ring": " 📱 RINGING",
-        "pitch": " 📱 CONNECTED",
-        "redial": " 📱 REDIALING"
+        "dial": " \ud83d\udcf1 DIALING",
+        "ring": " \ud83d\udcf1 RINGING",
+        "pitch": " \ud83d\udcf1 CONNECTED",
+        "redial": " \ud83d\udcf1 REDIALING"
       },
       "telegraphGate": "pattern",
       "painSwitch": true,
       "adjacencyOverride": 1,
       "shortName": "warranty",
       "noticeText": "Ring-ring. \"We've been trying to reach you about your car's extended warranty.\" It's calling {who}.",
-      "painText": "\"—BAD CONNECTION—\" The voice fragments, furious. It hangs up on {who} and redials.",
-      "proximityText": "Too close. It stops ringing — it doesn't need the phone anymore. It's right there.",
-      "comment": "Encounter framework client. THE CALL: dial (1 turn, locks the target's position — the number it dialed) → ring (1 turn, the tell: audio + dread line; moving 2+ tiles from the dialed position DROPS the call) → pitch (rush, speed 4, no grid telegraph — the ring was the warning) → redial (2 turns). Pain = bad connection = hang up + redial. Relentless: no fear, it always calls back. Distinct from the mimic (patient watcher, one rush per approach, fire counter): impatient, rushes every cycle, needs you still.",
+      "painText": "\"\u2014BAD CONNECTION\u2014\" The voice fragments, furious. It hangs up on {who} and redials.",
+      "proximityText": "Too close. It stops ringing \u2014 it doesn't need the phone anymore. It's right there.",
+      "comment": "Encounter framework client. THE CALL: dial (1 turn, locks the target's position \u2014 the number it dialed) \u2192 ring (1 turn, the tell: audio + dread line; moving 2+ tiles from the dialed position DROPS the call) \u2192 pitch (rush, speed 4, no grid telegraph \u2014 the ring was the warning) \u2192 redial (2 turns). Pain = bad connection = hang up + redial. Relentless: no fear, it always calls back. Distinct from the mimic (patient watcher, one rush per approach, fire counter): impatient, rushes every cycle, needs you still.",
       "knownCue": "It can only dial a stationary target. Keep moving and it can't place the call."
     },
     "loot": {
@@ -1656,10 +1652,11 @@
     "id": "ducks_in_a_row",
     "activity": "diurnal",
     "name": "ducks in a row",
-    "emoji": "🦆",
+    "unknown": "a line of ducks, walking in perfect formation. In the dark. That is not normal duck behavior.",
+    "emoji": "\ud83e\udd86",
     "hp": [
-      8,
-      12
+      12,
+      18
     ],
     "speed": 7,
     "wave": 1,
@@ -1679,8 +1676,8 @@
     "systemDesignation": "Anas platyrhynchos domesticus (serial coordination)",
     "codexStages": {
       "unknown": "A line of waterfowl moving as one. Too precise. Too quiet. You counted fourteen heads and they all turned at the same time.",
-      "observed": "Ducks in a row. The System took a farm animal and taught it the snake game: the line moves as one animal, head driving, and every segment is a mouth. It lines up (the tell), marches, nips as one, then regroups. Break the middle and it splits — but the tail half tries to REJOIN. Kill the tail half before it gets back in line, or you're back to fourteen.",
-      "slain": "Moves: Line Up (the tell — hissing stops, aim lane), March (the line advances, contact burns), Nip (one coordinated bite from every adjacent beak), Regroup (recovery — the window). Break the line from the tail forward to avoid splits. A split tail half regroups toward the head half — kill it before it rejoins. Down to two ducks the head goes enraged: faster, screeching, nipping the instant it reaches you. Meat: duck. Feathers good for fletching."
+      "observed": "Ducks in a row. The System took a farm animal and taught it the snake game: the line moves as one animal, head driving, and every segment is a mouth. It lines up (the tell), marches, nips as one, then regroups. Break the middle and it splits \u2014 but the tail half tries to REJOIN. Kill the tail half before it gets back in line, or you're back to fourteen.",
+      "slain": "Moves: Line Up (the tell \u2014 hissing stops, aim lane), March (the line advances, contact burns), Nip (one coordinated bite from every adjacent beak), Regroup (recovery \u2014 the window). Break the line from the tail forward to avoid splits. A split tail half regroups toward the head half \u2014 kill it before it rejoins. Down to two ducks the head goes enraged: faster, screeching, nipping the instant it reaches you. Meat: duck. Feathers good for fletching."
     },
     "cues": {
       "curious": [
@@ -1690,12 +1687,12 @@
         "The hissing stopped. All heads turned toward you at once."
       ],
       "fearful": [
-        "The line breaks apart — ducks scattering, hissing over each other. For a moment it's just ducks."
+        "The line breaks apart \u2014 ducks scattering, hissing over each other. For a moment it's just ducks."
       ]
     },
     "weaknesses": [
-      "kill from the tail forward — breaking the middle splits it in two",
-      "a split tail half tries to rejoin the head half — kill it before it does",
+      "kill from the tail forward \u2014 breaking the middle splits it in two",
+      "a split tail half tries to rejoin the head half \u2014 kill it before it does",
       "the regroup beat is the window: it doesn't attack while reforming"
     ],
     "parts": [
@@ -1719,7 +1716,7 @@
       "pattern": {
         "type": "direct"
       },
-      "telegraph": "The line reaches you — beaks up, all down the row.",
+      "telegraph": "The line reaches you \u2014 beaks up, all down the row.",
       "damageType": "physical"
     },
     "armor": 1,
@@ -1745,21 +1742,21 @@
       "adjacencyOverride": 1,
       "shortName": "duck",
       "phaseBadges": {
-        "line_up": " 🦆 LINING UP",
-        "march": " 🦆 MARCHING",
-        "nip": " 🦆 NIPPING",
-        "regroup": " 🦆 REGROUPING"
+        "line_up": " \ud83e\udd86 LINING UP",
+        "march": " \ud83e\udd86 MARCHING",
+        "nip": " \ud83e\udd86 NIPPING",
+        "regroup": " \ud83e\udd86 REGROUPING"
       },
       "noticeAudio": "ducksQuack",
       "aggroAudio": "ducksQuackCut",
-      "knownCue": "They're organized. Break the formation — isolate one.",
-      "knownTactics": "Break the line and both halves hunt on their own — every fragment is its own snake. Thin them fast or get surrounded. The regroup beat is your window: it can't nip while reforming.",
+      "knownCue": "They're organized. Break the formation \u2014 isolate one.",
+      "knownTactics": "Break the line and both halves hunt on their own \u2014 every fragment is its own snake. Thin them fast or get surrounded. The regroup beat is your window: it can't nip while reforming.",
       "threatLines": {
         "notice": "Quacking, closer than it should be. Six heads, one line. It's noticed {who}.",
-        "pain": "The line wobbles — a gap where a duck was. The rest close ranks without breaking step.",
+        "pain": "The line wobbles \u2014 a gap where a duck was. The rest close ranks without breaking step.",
         "snap": "The hissing stops dead. Every head turns at once. It has picked its line."
       },
-      "comment": "Encounter framework client. SNAKE FORMATION: the head drives line_up (tell, aim lane) -> march (advance, contact damage) -> nip (one coordinated bite beat) -> regroup (recovery). Segments never declare. Split tail half regroups toward the head half and REJOINS if it reaches it — kill it first. At 2 segments the head enrages: faster, screeching, nips on contact. Kill the head and the next duck takes the lead (tbSnakeSplit)."
+      "comment": "Encounter framework client. SNAKE FORMATION: the head drives line_up (tell, aim lane) -> march (advance, contact damage) -> nip (one coordinated bite beat) -> regroup (recovery). Segments never declare. Split tail half regroups toward the head half and REJOINS if it reaches it \u2014 kill it first. At 2 segments the head enrages: faster, screeching, nips on contact. Kill the head and the next duck takes the lead (tbSnakeSplit)."
     }
   },
   {
@@ -1780,7 +1777,7 @@
         10,
         16
       ],
-      "telegraph": "A shadow crosses the ground — growing fast. Something is falling out of the sky, straight at you.",
+      "telegraph": "A shadow crosses the ground \u2014 growing fast. Something is falling out of the sky, straight at you.",
       "pattern": {
         "type": "single",
         "range": 3
@@ -1788,7 +1785,7 @@
       "damageType": "physical"
     },
     "weaknesses": [
-      "move when the shadow comes — it can't turn mid-dive",
+      "move when the shadow comes \u2014 it can't turn mid-dive",
       "after a miss it lands, vulnerable for a turn"
     ],
     "edible": {
@@ -1796,12 +1793,12 @@
       "note": "Dragonfly the size of a hawk. Gamey. The wings are like cellophane."
     },
     "parts": [
-      "glasswing membrane (light, strong — good for patching)"
+      "glasswing membrane (light, strong \u2014 good for patching)"
     ],
     "behavior": "territorial",
     "codexStages": {
       "unknown": "A shadow that wasn't a cloud. Then the air screamed.",
-      "observed": "Glasswing darter. The System gave a dragonfly hawk eyes and no fear of heights. It circles high, picks a target, and falls like a thrown knife. The shadow is the warning — move.",
+      "observed": "Glasswing darter. The System gave a dragonfly hawk eyes and no fear of heights. It circles high, picks a target, and falls like a thrown knife. The shadow is the warning \u2014 move.",
       "slain": "Moves: Skyfall Dive (telegraphed by shadow, dodge by moving, big damage if it connects), Grounded (after a miss, it's vulnerable 1 turn). Kill it when it lands. The membranes make excellent patches."
     },
     "systemDesignation": "Anax junius (kinetic enhancement)",
@@ -1809,9 +1806,9 @@
     "follows": false,
     "fear": "",
     "speed": 5,
-    "emoji": "🪰",
+    "emoji": "\ud83e\udeb0",
     "unknown": "a shadow moving wrong against the sun",
-    "vibe": "territorial — the sky is its, and you're under it",
+    "vibe": "territorial \u2014 the sky is its, and you're under it",
     "cues": {
       "curious": [
         "A high whine, circling. It's looking down at you."
@@ -1829,9 +1826,9 @@
       "noticeRange": 6,
       "painSwitch": true,
       "phaseBadges": {
-        "circle": " 🌀 CIRCLING",
-        "dive": " ⬇️ DIVING!",
-        "grounded": " 🪰 GROUNDED"
+        "circle": " \ud83c\udf00 CIRCLING",
+        "dive": " \u2b07\ufe0f DIVING!",
+        "grounded": " \ud83e\udeb0 GROUNDED"
       },
       "phases": [
         "circle",
@@ -1842,7 +1839,7 @@
       "telegraphGate": "pattern",
       "threatLines": {
         "notice": "A whine from overhead. The glasswing is circling {who}.",
-        "pain": "It shrieks — wings buzzing angry — and climbs higher. It's not done.",
+        "pain": "It shrieks \u2014 wings buzzing angry \u2014 and climbs higher. It's not done.",
         "snap": "The shadow detaches. It's coming straight down at {who}."
       }
     },
@@ -1863,8 +1860,8 @@
       "se_woodlands"
     ],
     "hp": [
-      20,
-      28
+      45,
+      60
     ],
     "attack": {
       "name": "Sun-Charged Bite",
@@ -1880,7 +1877,7 @@
       "damageType": "fire"
     },
     "weaknesses": [
-      "attack it while it basks — it loses the charge",
+      "attack it while it basks \u2014 it loses the charge",
       "it won't fight in shade or at dusk"
     ],
     "edible": {
@@ -1888,12 +1885,12 @@
       "note": "Lizard the size of a dog. Tastes like chicken, if chicken sunbathed."
     },
     "parts": [
-      "sunbasker scales (retain heat — good for cold nights)"
+      "sunbasker scales (retain heat \u2014 good for cold nights)"
     ],
     "behavior": "territorial",
     "codexStages": {
       "unknown": "Something gold in the grass. It wasn't there, then it was.",
-      "observed": "Sunbasker. The System took a collared lizard and made it solar-powered. It basks to charge — each turn in sunlight makes the next bite worse. Break the bask (hit it, shade it) and it's just a lizard.",
+      "observed": "Sunbasker. The System took a collared lizard and made it solar-powered. It basks to charge \u2014 each turn in sunlight makes the next bite worse. Break the bask (hit it, shade it) and it's just a lizard.",
       "slain": "Moves: Bask (charges in sunlight, +damage per turn), Sun-Charged Bite (damage scales with charge). Interrupt the bask. Fight it in shade. The scales hold heat for hours."
     },
     "systemDesignation": "Crotaphytus collaris (photovoltaic dermis)",
@@ -1901,9 +1898,9 @@
     "follows": false,
     "fear": "darkness",
     "speed": 3,
-    "emoji": "🦎",
+    "emoji": "\ud83e\udd8e",
     "unknown": "a gold flash in the grass, gone when you look",
-    "vibe": "territorial — it was here first, and the sun is its",
+    "vibe": "territorial \u2014 it was here first, and the sun is its",
     "cues": {
       "curious": [
         "A rustle in the grass. Something gold catches the light."
@@ -1923,8 +1920,8 @@
       "noticeRange": 4,
       "painSwitch": true,
       "phaseBadges": {
-        "bask": " ☀️ BASKING",
-        "charged": " 🔥 CHARGED"
+        "bask": " \u2600\ufe0f BASKING",
+        "charged": " \ud83d\udd25 CHARGED"
       },
       "phases": [
         "bask",
@@ -1934,7 +1931,7 @@
       "telegraphGate": "pattern",
       "threatLines": {
         "notice": "Gold in the grass. The sunbasker is watching {who}.",
-        "pain": "It hisses — gold flaking to brown — and scrambles for the sunlight.",
+        "pain": "It hisses \u2014 gold flaking to brown \u2014 and scrambles for the sunlight.",
         "snap": "Fully gold now. It's coming at {who}, molten and furious."
       }
     },
@@ -1977,11 +1974,11 @@
     "follows": false,
     "fear": "fire",
     "speed": 4,
-    "emoji": "🎭",
+    "emoji": "\ud83c\udfad",
     "unknown": "a blank shape at the tree line, watching. learning.",
     "vibe": "it has no tricks of its own. so it steals yours.",
     "weaknesses": [
-      "kill it fast — every round it watches is a round it learns",
+      "kill it fast \u2014 every round it watches is a round it learns",
       "unpredictability: it can only copy what it has seen",
       "fire breaks its concentration"
     ],
@@ -1995,19 +1992,19 @@
     ],
     "cues": {
       "curious": [
-        "Something at the tree line is watching you. Not hunting — studying. The way it tilts its head is wrong, like it's taking notes."
+        "Something at the tree line is watching you. Not hunting \u2014 studying. The way it tilts its head is wrong, like it's taking notes."
       ],
       "warn": [
-        "It's closer now. And it's moving like you move — your walk, your rhythm. That's not mimicry. That's rehearsal."
+        "It's closer now. And it's moving like you move \u2014 your walk, your rhythm. That's not mimicry. That's rehearsal."
       ],
       "fearful": [
-        "It stumbles, the copy breaking. The borrowed moves don't fit anymore — it's improvising, and it knows it."
+        "It stumbles, the copy breaking. The borrowed moves don't fit anymore \u2014 it's improvising, and it knows it."
       ]
     },
     "codexStages": {
-      "unknown": "A blank shape at the tree line, watching. Learning. It has no face yet — it's waiting to borrow yours.",
-      "observed": "The System's understudy. It watches you fight and learns your moves — your weapon, your rhythm, your favorite opening. The longer you show off, the better its copy gets. Change weapons. Change tempo. Don't give it a clean read.",
-      "slain": "Moves: Mirror Strike (copies your best-seen weapon's damage at 50→65→80% fidelity), Opening Steal (the moment it starts performing, your most-used move is anticipated once — halved and answered), Desperate Improv (below 30% HP, chains your two best-learned moves, badly, frantically). No armor while watching — a blank shape has nothing to hide behind; when performing it wears YOUR guard (your equipped armor protects it). Switch weapons mid-fight and the copy falls apart."
+      "unknown": "A blank shape at the tree line, watching. Learning. It has no face yet \u2014 it's waiting to borrow yours.",
+      "observed": "The System's understudy. It watches you fight and learns your moves \u2014 your weapon, your rhythm, your favorite opening. The longer you show off, the better its copy gets. Change weapons. Change tempo. Don't give it a clean read.",
+      "slain": "Moves: Mirror Strike (copies your best-seen weapon's damage at 50\u219265\u219280% fidelity), Opening Steal (the moment it starts performing, your most-used move is anticipated once \u2014 halved and answered), Desperate Improv (below 30% HP, chains your two best-learned moves, badly, frantically). No armor while watching \u2014 a blank shape has nothing to hide behind; when performing it wears YOUR guard (your equipped armor protects it). Switch weapons mid-fight and the copy falls apart."
     },
     "systemDesignation": "Behavioral acquisition unit (field model)",
     "encounter": {
@@ -2023,13 +2020,13 @@
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "understudy",
-      "knownCue": "It only knows what you've SHOWN it. Switch weapons and the copy falls apart — the familiar is what kills you. Never let it get a clean read on your favorite move.",
+      "knownCue": "It only knows what you've SHOWN it. Switch weapons and the copy falls apart \u2014 the familiar is what kills you. Never let it get a clean read on your favorite move.",
       "noticeText": "A blank shape at the tree line. It is watching {who} fight. Learning.",
       "phaseBadges": {
-        "watching": "👁 WATCHING",
-        "rehearsing": "📝 REHEARSING",
-        "performing": "🎭 PERFORMING",
-        "improv": "🎲 IMPROVISING"
+        "watching": "\ud83d\udc41 WATCHING",
+        "rehearsing": "\ud83d\udcdd REHEARSING",
+        "performing": "\ud83c\udfad PERFORMING",
+        "improv": "\ud83c\udfb2 IMPROVISING"
       }
     },
     "armor": 0,
@@ -2066,14 +2063,14 @@
     "follows": false,
     "fear": null,
     "speed": 3,
-    "emoji": "🏚️",
+    "emoji": "\ud83c\udfda\ufe0f",
     "unknown": "a figure in a high-visibility vest, hammering signs into the dirt.",
     "vibe": "it doesn't chase you. it buys the ground under you.",
     "weaknesses": [
-      "keep moving — claimed ground is the weapon, not the landlord",
+      "keep moving \u2014 claimed ground is the weapon, not the landlord",
       "it is slow; the signs are the fast part",
-      "rent comes due every round you end on leased ground — never stand still on claimed tiles",
-      "each Addendum raises the rent and its healing — kill it before foreclosure"
+      "rent comes due every round you end on leased ground \u2014 never stand still on claimed tiles",
+      "each Addendum raises the rent and its healing \u2014 kill it before foreclosure"
     ],
     "edible": {
       "calories": 0,
@@ -2097,8 +2094,8 @@
     },
     "codexStages": {
       "unknown": "A clipboard. A stamp. A property line that wasn't there yesterday. Something is claiming the ground you stand on.",
-      "observed": "The System's landlord. It doesn't fight you — it EVICTS you. It claims tiles, charges rent (in blood or calories), and the ground itself starts obeying the lease. You can fight on claimed ground, but it hurts. Break the claim or pay up.",
-      "slain": "Moves: Serve Notice (claims the ground around you — stand still and it serves notice on YOUR position), Collect Rent (damages you every round you end on claimed ground — the rent rises with each Addendum), Jurisdiction Spread (the claim grows in repeated waves). The longer the fight runs, the more Addenda: kill it before foreclosure."
+      "observed": "The System's landlord. It doesn't fight you \u2014 it EVICTS you. It claims tiles, charges rent (in blood or calories), and the ground itself starts obeying the lease. You can fight on claimed ground, but it hurts. Break the claim or pay up.",
+      "slain": "Moves: Serve Notice (claims the ground around you \u2014 stand still and it serves notice on YOUR position), Collect Rent (damages you every round you end on claimed ground \u2014 the rent rises with each Addendum), Jurisdiction Spread (the claim grows in repeated waves). The longer the fight runs, the more Addenda: kill it before foreclosure."
     },
     "systemDesignation": "Parcel acquisition unit (field model)",
     "encounter": {
@@ -2114,19 +2111,19 @@
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "landlord",
-      "knownCue": "The ground is the weapon, not the landlord. Rent comes due every round you end on leased ground — and every Addendum raises it. Keep moving; never let it serve notice on your position.",
+      "knownCue": "The ground is the weapon, not the landlord. Rent comes due every round you end on leased ground \u2014 and every Addendum raises it. Keep moving; never let it serve notice on your position.",
       "noticeText": "\"THIS PARCEL IS NOW LEASED.\" {who} is standing on it.",
       "phaseBadges": {
-        "surveying": "📋 SURVEYING",
-        "claiming": "📌 CLAIMING",
-        "collecting": "💰 COLLECTING",
-        "foreclosing": "📜 FORECLOSURE"
+        "surveying": "\ud83d\udccb SURVEYING",
+        "claiming": "\ud83d\udccc CLAIMING",
+        "collecting": "\ud83d\udcb0 COLLECTING",
+        "foreclosing": "\ud83d\udcdc FORECLOSURE"
       }
     },
     "loot": {
-      "chance": 0.2,
+      "chance": 0.12,
       "tier": 3,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Demoted from apex — strong, not the apex (Steve 2026-10-06)."
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Demoted from apex \u2014 strong, not the apex (Steve 2026-10-06)."
     },
     "armor": 3,
     "resistances": {
@@ -2163,11 +2160,11 @@
     "follows": false,
     "fear": "fire",
     "speed": 5,
-    "emoji": "🗣️",
+    "emoji": "\ud83d\udde3\ufe0f",
     "unknown": "something in the dark, laughing at you specifically.",
     "vibe": "it doesn't want to kill you. it wants you to quit.",
     "weaknesses": [
-      "it is fragile — the mouth is the whole monster",
+      "it is fragile \u2014 the mouth is the whole monster",
       "landing hits despite the shame (the words lie about your arms)",
       "silence it: stuns interrupt the narration"
     ],
@@ -2191,8 +2188,8 @@
       ]
     },
     "codexStages": {
-      "unknown": "Laughter from the dark. Not joy — the other kind. The kind that knows exactly what you're insecure about.",
-      "observed": "The System's heckler. It doesn't want your blood — it wants your confidence. Its taunts stack SHAME, and shame makes your hands shake (reduced damage). Answer back (wait a turn) to clear the shame, or kill it before the words stick.",
+      "unknown": "Laughter from the dark. Not joy \u2014 the other kind. The kind that knows exactly what you're insecure about.",
+      "observed": "The System's heckler. It doesn't want your blood \u2014 it wants your confidence. Its taunts stack SHAME, and shame makes your hands shake (reduced damage). Answer back (wait a turn) to clear the shame, or kill it before the words stick.",
       "slain": "Moves: Vicious Mockery (stacks SHAME, -1 damage per stack; the words CUT once it's headlining), Pile-On (double shame when you're already ashamed), Compulsion (answer back or act and take +2 shame). The counter is dignity: wait, answer back, clear the shame. Or end it fast before it finds your weak spot."
     },
     "systemDesignation": "Morale suppression unit (field model)",
@@ -2208,12 +2205,12 @@
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "heckler",
-      "knownCue": "Its words are the weapon — SHAME is what hurts, not the swing. Answer back (WAIT) to clear it before the HEADLINER compulsion lands, or end it fast: it's all mouth, no armor.",
-      "noticeText": "Laughter in the dark — aimed at {who}, specifically.",
+      "knownCue": "Its words are the weapon \u2014 SHAME is what hurts, not the swing. Answer back (WAIT) to clear it before the HEADLINER compulsion lands, or end it fast: it's all mouth, no armor.",
+      "noticeText": "Laughter in the dark \u2014 aimed at {who}, specifically.",
       "phaseBadges": {
-        "warming_up": "🎤 WARMING UP",
-        "heckling": "🗣️ HECKLING",
-        "headliner": "⭐ HEADLINER"
+        "warming_up": "\ud83c\udfa4 WARMING UP",
+        "heckling": "\ud83d\udde3\ufe0f HECKLING",
+        "headliner": "\u2b50 HEADLINER"
       }
     },
     "loot": {
@@ -2248,11 +2245,11 @@
     "follows": true,
     "fear": "fire",
     "speed": 5,
-    "emoji": "📷",
+    "emoji": "\ud83d\udcf7",
     "unknown": "a single eye in the dark. it has been watching for a while.",
     "vibe": "it doesn't want content. it wants YOU, specifically, understood.",
     "weaknesses": [
-      "break line of sight — it cannot photograph what it cannot see",
+      "break line of sight \u2014 it cannot photograph what it cannot see",
       "it follows; lead it somewhere bad",
       "the flash has a tell (the shutter sound) until it knows you too well"
     ],
@@ -2270,7 +2267,7 @@
         "A shutter clicks. Somewhere, a lens is pointed at you. You feel... framed."
       ],
       "warn": [
-        "\"Hold that pose.\" The lens is tracking you, and it's not guessing anymore — it KNOWS where you'll move."
+        "\"Hold that pose.\" The lens is tracking you, and it's not guessing anymore \u2014 it KNOWS where you'll move."
       ],
       "fearful": [
         "The shutter is clicking wildly, desperately. It's lost the shot."
@@ -2278,8 +2275,8 @@
     },
     "codexStages": {
       "unknown": "A lens flare where no lens should be. A shutter click. You're being watched by something that wants a photo, not a fight.",
-      "observed": "The System's paparazzo. It doesn't chase — it FRAMES. Every shot refines its model of your dodge (PREDICTION stacks, hit or miss), the burst WIDENS as it learns, and at full prediction the money shot can't be dodged at all. Kill it before the fourth frame.",
-      "slain": "Moves: Flash Photography (telegraphed burst, freezes you in place), Prediction (every shot refines its model, hit or miss — at 4 the money shot is unavoidable), Widening Shot (at high prediction, the burst grows). No armor — it's glass and light, not hide; every hit lands clean. But it stares into light for a living: energy washes off the lens. The counter is speed: dodge the telegraphed flashes, kill it before the fourth frame."
+      "observed": "The System's paparazzo. It doesn't chase \u2014 it FRAMES. Every shot refines its model of your dodge (PREDICTION stacks, hit or miss), the burst WIDENS as it learns, and at full prediction the money shot can't be dodged at all. Kill it before the fourth frame.",
+      "slain": "Moves: Flash Photography (telegraphed burst, freezes you in place), Prediction (every shot refines its model, hit or miss \u2014 at 4 the money shot is unavoidable), Widening Shot (at high prediction, the burst grows). No armor \u2014 it's glass and light, not hide; every hit lands clean. But it stares into light for a living: energy washes off the lens. The counter is speed: dodge the telegraphed flashes, kill it before the fourth frame."
     },
     "systemDesignation": "Subject documentation unit (field model)",
     "encounter": {
@@ -2296,11 +2293,11 @@
       "shortName": "paparazzo",
       "noticeText": "A shutter clicks somewhere near {who}. Just one. For now.",
       "phaseBadges": {
-        "candid": "📷 CANDID",
-        "tracking": "🎯 TRACKING",
-        "exclusive": "⭐ EXCLUSIVE"
+        "candid": "\ud83d\udcf7 CANDID",
+        "tracking": "\ud83c\udfaf TRACKING",
+        "exclusive": "\u2b50 EXCLUSIVE"
       },
-      "knownCue": "Every shot refines its model — dodging the flash won't slow it down. Four shots is all it needs: the money shot can't be dodged. End it fast, or be in reach when it comes."
+      "knownCue": "Every shot refines its model \u2014 dodging the flash won't slow it down. Four shots is all it needs: the money shot can't be dodged. End it fast, or be in reach when it comes."
     },
     "armor": 0,
     "resistances": {
@@ -2338,11 +2335,11 @@
     "follows": false,
     "fear": null,
     "speed": 4,
-    "emoji": "📋",
+    "emoji": "\ud83d\udccb",
     "unknown": "a clipboard. a bullhorn. a sense of grievance.",
     "vibe": "it doesn't fight. it organizes.",
     "weaknesses": [
-      "kill it first — without the rep the picket line dissolves",
+      "kill it first \u2014 without the rep the picket line dissolves",
       "it barely attacks itself; the danger is what it makes others do",
       "isolate it from other monsters"
     ],
@@ -2353,7 +2350,7 @@
     "parts": [
       "a bullhorn (still charged)",
       "a grievance form with your name already filled in",
-      "a union card — local 404"
+      "a union card \u2014 local 404"
     ],
     "cues": {
       "curious": [
@@ -2368,7 +2365,7 @@
     },
     "codexStages": {
       "unknown": "Chanting. Rhythmic, organized, getting closer. Something is unionizing the monsters.",
-      "observed": "The System's union rep. It doesn't fight — it ORGANIZES. It buffs other monsters (solidarity: +damage), calls for backup, and if you ignore it, it goes on WALKOUT (full buff mode, untargetable). Kill it early or break the picket line.",
+      "observed": "The System's union rep. It doesn't fight \u2014 it ORGANIZES. It buffs other monsters (solidarity: +damage), calls for backup, and if you ignore it, it goes on WALKOUT (full buff mode, untargetable). Kill it early or break the picket line.",
       "slain": "Moves: Solidarity Speech (allied monsters +damage), Call to Action (summons help), WALKOUT (untargetable, massive buffs to allies). The counter is union-busting: focus the rep before it organizes, or scatter the monsters it's trying to rally."
     },
     "systemDesignation": "Collective action coordinator (field model)",
@@ -2384,13 +2381,13 @@
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "rep",
-      "noticeText": "\"Brothers, sisters, monsters — GATHER ROUND.\" {who} is the agenda.",
+      "noticeText": "\"Brothers, sisters, monsters \u2014 GATHER ROUND.\" {who} is the agenda.",
       "phaseBadges": {
-        "organizing": "📋 ORGANIZING",
-        "picketing": "✊ PICKETING",
-        "walkout": "🚨 WALKOUT"
+        "organizing": "\ud83d\udccb ORGANIZING",
+        "picketing": "\u270a PICKETING",
+        "walkout": "\ud83d\udea8 WALKOUT"
       },
-      "knownCue": "Kill the rep before it organizes. Every ally it rallies hits +3 harder — and at WALKOUT they hit +8 while the rep goes UNTARGETABLE behind the picket line. Scatter the line or union-bust it early: once it climbs on the bullhorn, the fight is uphill."
+      "knownCue": "Kill the rep before it organizes. Every ally it rallies hits +3 harder \u2014 and at WALKOUT they hit +8 while the rep goes UNTARGETABLE behind the picket line. Scatter the line or union-bust it early: once it climbs on the bullhorn, the fight is uphill."
     },
     "loot": {
       "chance": 0.15,
@@ -2432,15 +2429,14 @@
     "follows": false,
     "fear": "darkness",
     "speed": 3,
-    "size": 2,
-    "emoji": "🔨",
+    "emoji": "\ud83d\udd28",
     "unknown": "a hovering shape with a hammer, drawing a circle on the ground around itself",
     "vibe": "it stopped watching content and started removing it. you are the content",
     "weaknesses": [
-      "vary your verbs — it mutes what you lean on",
-      "step OUT of the suppression field — the mute only holds inside it",
+      "vary your verbs \u2014 it mutes what you lean on",
+      "step OUT of the suppression field \u2014 the mute only holds inside it",
       "violations feed it: never swing at a muted verb, the +3 stacks",
-      "darkness — it cannot moderate what it cannot see"
+      "darkness \u2014 it cannot moderate what it cannot see"
     ],
     "edible": {
       "calories": 0,
@@ -2456,16 +2452,16 @@
         "\"CONTENT UNDER REVIEW.\" It is not looking at you. It is looking at everything you have ever done, the way a teacher looks at a margin note."
       ],
       "warn": [
-        "\"REPEATED BEHAVIOR DETECTED.\" The hammer comes up. The circle on the ground brightens — purple, the color of a bruise."
+        "\"REPEATED BEHAVIOR DETECTED.\" The hammer comes up. The circle on the ground brightens \u2014 purple, the color of a bruise."
       ],
       "fearful": [
-        "The lens flickers. In the dark it cannot see the field it drew — it swings the hammer at nothing, moderating the night."
+        "The lens flickers. In the dark it cannot see the field it drew \u2014 it swings the hammer at nothing, moderating the night."
       ]
     },
     "codexStages": {
       "unknown": "There's a thing in the clearing with a hammer, drawing a circle on the dirt. The circle is purple. It feels like being watched by a rule.",
-      "observed": "The System's escalation arm: a content enforcement unit. It stopped grading and started removing. It draws a suppression field (radius 2) and MUTES the verb you use most — strike or move — inside that field. The mute is real: try the verb and your turn is spent, flagged as a violation.",
-      "slain": "Moves: Content Noted (weak ranging chip, 6-10, while it reviews you), Removal Notice (12-18 defiant, 8-12 if you comply with the mute, once it starts muting), Deplatform (20-28 defiant, 14-18 compliant, at half HP: the hammer RISES a full round before it falls — use the windup — the mute keeps chasing your most-used verb, field widens to radius 3, and the shadowed ground itself rejects you for 2). Every violation — every muted verb you attempt — makes its strikes hit +3 harder AND voids the compliance graze. The counterplay is the field and your habits: step OUT of it and muted verbs work again, vary your verbs so the mute keeps chasing the wrong one, and obey the mute to make its Notices graze. Parts: banhammer head, your printed violations, its mute button (trophy)."
+      "observed": "The System's escalation arm: a content enforcement unit. It stopped grading and started removing. It draws a suppression field (radius 2) and MUTES the verb you use most \u2014 strike or move \u2014 inside that field. The mute is real: try the verb and your turn is spent, flagged as a violation.",
+      "slain": "Moves: Content Noted (weak ranging chip, 6-10, while it reviews you), Removal Notice (12-18 defiant, 8-12 if you comply with the mute, once it starts muting), Deplatform (20-28 defiant, 14-18 compliant, at half HP: the hammer RISES a full round before it falls \u2014 use the windup \u2014 the mute keeps chasing your most-used verb, field widens to radius 3, and the shadowed ground itself rejects you for 2). Every violation \u2014 every muted verb you attempt \u2014 makes its strikes hit +3 harder AND voids the compliance graze. The counterplay is the field and your habits: step OUT of it and muted verbs work again, vary your verbs so the mute keeps chasing the wrong one, and obey the mute to make its Notices graze. Parts: banhammer head, your printed violations, its mute button (trophy)."
     },
     "systemDesignation": "Content enforcement unit (field model)",
     "encounter": {
@@ -2480,349 +2476,29 @@
         "shadowban"
       ],
       "phaseBadges": {
-        "observing": " 👁 CONTENT UNDER REVIEW",
-        "muting": " 🔇 MUTING",
-        "shadowban": " ⬛ SHADOWBAN"
+        "observing": " \ud83d\udc41 CONTENT UNDER REVIEW",
+        "muting": " \ud83d\udd07 MUTING",
+        "shadowban": " \u2b1b SHADOWBAN"
       },
       "telegraphGate": "pattern",
       "painSwitch": true,
       "shortName": "moderator",
       "noticeText": "A shape detaches from the dark, hammer first. \"SUBJECT FLAGGED. CONTENT UNDER REVIEW.\" {who} is the content now.",
-      "painText": "The hammer dips — then rises higher. \"ESCALATION AUTHORIZED. PRIORITY: MAXIMUM.\" Hurting it only hurries the paperwork.",
-      "proximityText": "\"PROXIMITY FLAGGED.\" The circle redraws itself around {who} — the field follows.",
+      "painText": "The hammer dips \u2014 then rises higher. \"ESCALATION AUTHORIZED. PRIORITY: MAXIMUM.\" Hurting it only hurries the paperwork.",
+      "proximityText": "\"PROXIMITY FLAGGED.\" The circle redraws itself around {who} \u2014 the field follows.",
       "comment": "Wave-2 apex encounter. FIFO enforcement unit: suppression field (grid-visible), verb muting (strike/move, most-used first), violation escalation (+3/strike per violation). Counterplay is positional (leave the field) and behavioral (vary verbs).",
-      "knownCue": "It mutes the verb you lean on — strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one. Comply with the mute — don't touch the muted verb at all — and its Notices GRAZE (Removal Notice 8-12, Deplatform 14-18). Defy it and they hit full, +3 harder per violation."
+      "knownCue": "It mutes the verb you lean on \u2014 strike or move, whichever you use more. Inside the purple field the mute HOLDS: swing or step and your turn is spent, flagged, +3 to its strikes. Step OUT of the field and the verb works again. Vary your verbs to keep the mute chasing the wrong one. Comply with the mute \u2014 don't touch the muted verb at all \u2014 and its Notices GRAZE (Removal Notice 8-12, Deplatform 14-18). Defy it and they hit full, +3 harder per violation."
     },
     "loot": {
-      "chance": 0.2,
+      "chance": 0.12,
       "tier": 4,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Tier 4 — game-changing loot for one of the toughest challenges (Steve 2026-10-06)."
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Wave-2 apex slot: tier 4 (Steve 2026-10-06)."
     },
     "armor": 4,
     "resistances": {
       "psychic": 0.5
     },
-    "apex": true
-  },
-  {
-    "id": "nevermore",
-    "activity": "crepuscular",
-    "name": "Nevermore",
-    "biomes": [
-      "se_woodlands",
-      "grassland"
-    ],
-    "hp": [
-      45,
-      60
-    ],
-    "attack": {
-      "name": "The Unkind Cut",
-      "damage": [
-        14,
-        22
-      ],
-      "telegraph": "Its shadow detaches from the branch-shadow and slides across the ground toward you \u2014 a straight black lane, growing. The bird hasn't moved. The shadow has.",
-      "pattern": {
-        "type": "line",
-        "length": 3,
-        "width": 1,
-        "windup": 1
-      },
-      "damageType": "physical"
-    },
-    "weaknesses": [
-      "the lane is the tell \u2014 step OFF it, not along it",
-      "it always lands after a strafing run \u2014 that's the window",
-      "fire scatters it"
-    ],
-    "edible": {
-      "calories": 350,
-      "note": "Crow. Tastes like a bad decision. The feathers are too black to pluck cleanly."
-    },
-    "parts": [
-      "crow feathers (fletching)",
-      "a beak that won't stay shut (trade)"
-    ],
-    "behavior": "territorial",
-    "codexStages": {
-      "unknown": "A crow watched me from the treeline all day. At dusk it was still there. It had not blinked. I do not think crows do that.",
-      "observed": "Common crow. The System filed grief under 'vocalization' and gave it back the voices of everything it ever watched die. It strafes low along a straight lane \u2014 talons out, beak split four ways. The shadow moves first: step OFF the lane, not along it. It always lands after a run. That's when it's yours.",
-      "slain": "Moves: The Unkind Cut (3-lane strafing dive, telegraphed by the detached shadow \u2014 sidestep the lane), the Perch (circles high, out of melee/spear reach \u2014 sling or bow can touch it, or wait for it to come down). It speaks with the voices of your dead. Don't answer. Feathers fletch true."
-    },
-    "systemDesignation": "Corvus brachyrhynchos (vocal archive)",
-    "aggression": "hungry",
-    "follows": false,
-    "fear": "fire",
-    "speed": 5,
-    "flight": true,
-    "emoji": "\ud83d\udc26\u200d\u2b1b",
-    "unknown": "a crow that watches too long and blinks too little",
-    "villageNames": [
-      "Old Croaker",
-      "The Reverend",
-      "Mister Never"
-    ],
-    "vibe": "it knows your name. it knows everyone's name. it says them wrong on purpose",
-    "cues": {
-      "curious": [
-        "A crow on the branch. Watching. It has been watching for some time."
-      ],
-      "warn": [
-        "Its shadow slides off the branch without it. Then, in a voice you buried: \u2014told you the creek was\u2014"
-      ],
-      "fearful": [
-        "It folds wrong \u2014 too many joints \u2014 and climbs, still talking, into the dark."
-      ]
-    },
-    "wave": 1,
-    "encounter": {
-      "fifo": true,
-      "noticeRange": 6,
-      "phases": [
-        "perch",
-        "strafe",
-        "grounded"
-      ],
-      "phaseBadges": {
-        "perch": " \ud83d\udc26\u200d\u2b1b PERCHED",
-        "strafe": " \u2b07 STRAFING",
-        "grounded": " \ud83e\udeb6 GROUNDED"
-      },
-      "phaseMap": {
-        "declare": "strafe",
-        "windup": "strafe",
-        "resolve": "strafe",
-        "idle": "perch"
-      },
-      "telegraphGate": "pattern",
-      "painSwitch": true,
-      "shortName": "crow",
-      "noticeAudio": "nevermoreCroak",
-      "declareAudio": "nevermoreStrafe",
-      "aggroAudio": "nevermoreUnfold",
-      "resolveAudio": "nevermoreLand",
-      "knownTactics": "Step OFF the strafing lane, not along it \u2014 it can't turn mid-run. It always lands after a run, hit or miss. Punish the landing.",
-      "comment": "Wave-1 flyer: perch (high, untargetable by melee/spear) \u2192 strafe (3-lane dive, shadow telegraph) \u2192 grounded (vulnerable 1-2 turns). Speaks with the voices of the run's dead.",
-      "knownCue": "The shadow moves first. When it detaches, the lane is already chosen \u2014 MOVE OFF IT."
-    },
-    "loot": {
-      "chance": 0.1,
-      "tier": 2,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
-    },
-    "armor": 0,
-    "resistances": {}
-  },
-  {
-    "id": "nightcourt",
-    "activity": "nocturnal",
-    "name": "Night Court",
-    "biomes": [
-      "se_woodlands"
-    ],
-    "hp": [
-      55,
-      70
-    ],
-    "attack": {
-      "name": "Adjournment",
-      "damage": [
-        12,
-        18
-      ],
-      "telegraph": "No sound. That is the warning. The moon-shadow on the ground is growing \u2014 and there is no sound at all. Owls don't make sound when they hunt.",
-      "pattern": {
-        "type": "single",
-        "range": 4
-      },
-      "damageType": "physical"
-    },
-    "weaknesses": [
-      "the shadow is the only warning \u2014 watch the ground, not the sky",
-      "it dives twice \u2014 dodge the second one too",
-      "after the second dive it's spent \u2014 that's the window"
-    ],
-    "edible": {
-      "calories": 900,
-      "note": "Owl. Tastes like chicken that judged you first."
-    },
-    "parts": [
-      "gavel talons (tools)",
-      "silent feathers (trade)"
-    ],
-    "behavior": "territorial",
-    "codexStages": {
-      "unknown": "Something passed over the fire last night. No wingsound. The flames leaned away from it, politely.",
-      "observed": "Great horned owl. The System classified silence as a hunting strategy and removed the last of the sound. It dives at your shadow \u2014 the moon-shadow on the ground is the only warning, because there is no sound. Dodge it once and it comes again IMMEDIATELY, aimed at where you moved. Dodge twice and it's spent, grounded, yours.",
-      "slain": "Moves: Adjournment (silent dive, shadow telegraph \u2014 dodge), the Second Hearing (a missed dive is re-aimed at your new position with no extra windup \u2014 dodge AGAIN), Spent (grounded 2 turns after the second dive). It never makes a sound. Watch the ground. The talons make fine tools."
-    },
-    "systemDesignation": "Bubo virginianus (acoustic null)",
-    "aggression": "hungry",
-    "follows": false,
-    "fear": "fire",
-    "speed": 4,
-    "flight": true,
-    "emoji": "\ud83e\udd89",
-    "unknown": "the absence of sound, shaped like wings",
-    "villageNames": [
-      "Judge Hoot",
-      "The Bailiff",
-      "Old Gavel"
-    ],
-    "vibe": "court is in session. you are the docket",
-    "cues": {
-      "curious": [
-        "Two eyes, forward-facing, unblinking. Owls shouldn't look at you like that. Like a judge."
-      ],
-      "warn": [
-        "Its head rotates \u2014 too far \u2014 and stops facing you. Still no sound."
-      ],
-      "fearful": [
-        "It blinks, once, slowly, and the night takes it back."
-      ]
-    },
-    "wave": 1,
-    "encounter": {
-      "fifo": true,
-      "noticeRange": 5,
-      "phases": [
-        "roost",
-        "dive",
-        "redive",
-        "grounded"
-      ],
-      "phaseBadges": {
-        "roost": " \ud83e\udd89 ROOSTING",
-        "dive": " \u2b07 DIVING",
-        "redive": " \u2b07\u2b07 SECOND HEARING",
-        "grounded": " \ud83e\udeb6 SPENT"
-      },
-      "telegraphGate": "pattern",
-      "painSwitch": true,
-      "shortName": "owl",
-      "noticeAudio": "nightcourtSilence",
-      "declareAudio": "nightcourtDive",
-      "aggroAudio": "nightcourtTurn",
-      "resolveAudio": "nightcourtLand",
-      "knownTactics": "Watch the ground-shadow, not the sky \u2014 the dive is silent. A missed dive comes again instantly at your new position: dodge TWICE. Then it's spent.",
-      "comment": "Wave-1 flyer: roost (high, silent) \u2192 dive (single-tile shadow) \u2192 redive (immediate re-aim on miss) \u2192 grounded 2 turns. The double-dive is the signature \u2014 the punish window only opens after the second.",
-      "knownCue": "No sound is the tell. When the shadow grows, MOVE \u2014 and move again, because it's already re-aiming."
-    },
-    "loot": {
-      "chance": 0.1,
-      "tier": 2,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
-    },
-    "armor": 0,
-    "resistances": {
-      "sonic": 0.5
-    }
-  },  {
-    "id": "statickite",
-    "activity": "both",
-    "name": "The Static Kite",
-    "biomes": [
-      "se_woodlands",
-      "grassland"
-    ],
-    "hp": [
-      80,
-      100
-    ],
-    "attack": {
-      "name": "The Broadcast",
-      "damage": [
-        10,
-        16
-      ],
-      "telegraph": "The kite stops dead in the sky. Below it, the ground lights up in a grid \u2014 a square of your life, outlined in scan-light. It's framing the shot.",
-      "pattern": {
-        "type": "burst",
-        "radius": 1,
-        "windup": 2
-      },
-      "damageType": "sonic"
-    },
-    "weaknesses": [
-      "the mark is the mercy \u2014 two beats to move",
-      "it dips to transmit \u2014 that's when it's yours",
-      "it never lands \u2014 don't wait for it to"
-    ],
-    "edible": {
-      "calories": 0,
-      "note": "It is a kite. Do not eat the kite."
-    },
-    "parts": [
-      "static-glass shard (trade)",
-      "ticker ribbon (long, with your name on it)"
-    ],
-    "behavior": "curious",
-    "codexStages": {
-      "unknown": "There's a kite over the treeline. Nobody is holding the string. It has been there three days.",
-      "observed": "Not an animal. The System built its own bird: a kite of dead television, and it watches. It frames a square of ground in scan-light \u2014 two beats \u2014 then the square SCREAMS. It dips low to transmit. That's when it's yours: melee, or anything, while it dips. It never lands. Don't wait for it to.",
-      "slain": "Moves: The Broadcast (3x3 scan-mark, 2-beat windup \u2014 the mark is the mercy, MOVE), the Dip (it descends to transmit, melee-vulnerable, +50% damage \u2014 the only window). On its screen: footage of you, from angles that don't exist. It has been watching since before you arrived. Parts: static-glass, and a ticker ribbon with your name on it."
-    },
-    "systemDesignation": "Surveillance artifact (audience model)",
-    "aggression": "hungry",
-    "follows": true,
-    "fear": "",
-    "speed": 3,
-    "flight": true,
-    "emoji": "\ud83e\ude81",
-    "unknown": "a kite with no string, holding station over the trees",
-    "vibe": "it is not hunting you. it is COVERING you",
-    "cues": {
-      "curious": [
-        "The kite tilts. On its screen, for a frame: you, from above. It is filming."
-      ],
-      "warn": [
-        "The screen goes white. Below it, the ground lights up in a grid. It's framing the shot."
-      ],
-      "fearful": []
-    },
-    "wave": 2,
-    "encounter": {
-      "fifo": true,
-      "noticeRange": 6,
-      "phases": [
-        "rise",
-        "mark",
-        "transmit",
-        "recover"
-      ],
-      "phaseBadges": {
-        "rise": " \ud83e\ude81 RISING",
-        "mark": " \ud83d\udce1 MARKING",
-        "transmit": " \ud83d\udcfa TRANSMITTING",
-        "recover": " \ud83e\ude81 RECOVERING"
-      },
-      "phaseMap": {
-        "declare": "mark",
-        "windup": "mark",
-        "resolve": "transmit",
-        "idle": "rise"
-      },
-      "telegraphGate": "pattern",
-      "painSwitch": true,
-      "shortName": "kite",
-      "noticeAudio": "kiteHum",
-      "declareAudio": "kiteMark",
-      "aggroAudio": "kiteUnfold",
-      "resolveAudio": "kiteBroadcast",
-      "knownTactics": "The mark is generous \u2014 two full beats to leave the square. When it dips to transmit it's at melee height and takes +50%: that's the only window. Sling/bow can touch it while high.",
-      "comment": "Wave-2 flyer (System artifact, not animal): rise (high, drifts at range) \u2192 mark (3x3 zone, 2-beat windup) \u2192 transmit (zone damage + dips to low, vulnerable) \u2192 recover (climbs). The wave-2 step up: zone control, never lands, demands positioning.",
-      "knownCue": "When the ground lights up, you're already framed \u2014 MOVE. When it dips, it's yours."
-    },
-    "loot": {
-      "chance": 0.15,
-      "tier": 3,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
-    },
-    "armor": 0,
-    "resistances": {
-      "psychic": 0.5,
-      "sonic": 0.5
-    }
+    "apex": true,
+    "size": 2
   }
 ]
