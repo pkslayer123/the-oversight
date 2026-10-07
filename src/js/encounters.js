@@ -506,7 +506,9 @@
     return true;
   };
   G.encMethodToolName = function (m) {
-    return { snare: 'snare wire', trap: 'the trapping skill or a cage', line: 'a fishing line', bow: 'a bow or sling', hands: 'your hands', chase: 'running it down', stick: 'a forked stick' }[m] || m;
+    // ARTICLE-LESS (Steve 2026-10-06): the caller prefixes "no ", so these
+    // must not carry articles ("no a fishing line" was ungrammatical).
+    return { snare: 'snare wire', trap: 'trapping skill or cage', line: 'fishing line', bow: 'bow or sling', hands: 'your hands', chase: 'running it down', stick: 'forked stick' }[m] || m;
   };
   // The flop. Shared by the strike path and the awareness path — one text,
   // one fiction. Pre-knowledge the player sees a dead opossum; post, they
@@ -1747,7 +1749,7 @@
     // teeth — not a fight, just the price of grabbing. Traps avoid this.
     // (Porcupines don't bite — the quills already answered. Bluegill don't
     // bite either — reaching into the bed is the whole point.)
-    if (dist <= 1 && hBeh !== 'quilled' && hBeh !== 'bedding') {
+    if (dist <= 1 && hBeh !== 'quilled' && hBeh !== 'bedding' && String(animal.behavior || '').indexOf('aquatic') !== 0) {
       var bBeh = animal.behavior || '';
       var biteP = bBeh === 'aggressive' ? 0.6 : bBeh === 'defensive' ? 0.6 : bBeh === 'constrictor' ? 0.5 : bBeh === 'plays_dead' ? 0.3 : 0.2;
       if (Math.random() < biteP) {
@@ -1762,6 +1764,8 @@
           ? 'It catches you with a tusk — ' + biteDmg + ' damage. Boars don\'t bite, they slash.'
           : bBeh === 'constrictor'
           ? 'It whips around and bites — ' + biteDmg + ' damage. Teeth, no venom. The insult is worse than the wound.'
+          : (animal.id === 'snapping_turtle')
+          ? 'It snaps — the beak closes on your hand, ' + biteDmg + ' damage. That beak can take a finger.'
           : 'It bites! Teeth in your hand — ' + biteDmg + ' damage. Wild things have teeth.');
         if (bBeh === 'defensive') {
           // RATTLESNAKE: fangs, not teeth. The venom is in.
@@ -1805,7 +1809,7 @@
       if ((animal.behavior || '') === 'aquatic_defensive' && !charsMeat && Math.random() < 0.3) {
         var pinchDmg = 2 + Math.floor(Math.random() * 3);
         try { s.health = Math.max(0, (s.health || 100) - pinchDmg); } catch (e) {}
-        this.feedback('Got it — but the tiny boxer gets a pinch in first. (-' + pinchDmg + ' HP) Grab it right behind the claws next time.');
+        this.feedback('But the tiny boxer gets a pinch in first. (-' + pinchDmg + ' HP) Grab it right behind the claws next time.');
         try { this.audioEvent('animalPinch'); } catch (e) {}
       }
       try {
@@ -1832,10 +1836,27 @@
     var missVerb = this.encNeverBolt(mBeh) ? ' doesn\'t even flinch. (-100 kcal)'
       : (mBeh === 'aquatic' || mBeh === 'aquatic_ambush' || mBeh === 'aquatic_defensive')
       ? ' vanishes under the water — still in there, not gone. (-100 kcal)'
+      : (mBeh === 'plays_dead')
+      ? ' goes still. (-100 kcal)'
       : ' bolts. (-100 kcal)';
     this.feedback('Missed! ' + this.encCap(label) + missVerb);
     try { this.audioEvent('animalBolt'); } catch (e) {}
     this.encHuntPracticed('strike'); // a clean miss still teaches
+    // FUTILE GRIND (Steve 2026-10-06): never-bolting animals (snapping
+    // turtle) with the wrong tool are an HP/kcal grind with no exit. After
+    // 3 futile strikes, name the exit explicitly — once.
+    try {
+      a._futile = (a._futile || 0) + 1;
+      if (!a._futileTold && a._futile >= 3 && this.encNeverBolt(mBeh)) {
+        a._futileTold = true;
+        var _mm = animal.method || [];
+        var _mw = [];
+        for (var _mi = 0; _mi < _mm.length; _mi++) _mw.push(this.encMethodToolName(_mm[_mi]));
+        this.feedback('This isn\'t working — ' + label + ' isn\'t going anywhere and your ' + wname +
+          ' can\'t finish it. Come back with ' + (_mw.join(' or ') || 'the right tool') +
+          '. Walking away is free; bleeding out here isn\'t.');
+      }
+    } catch (e) {}
     var mEnded = this.encMissReact(a, animal);
     if (!mEnded) this.animalTurn();
     return true;

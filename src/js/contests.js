@@ -2233,7 +2233,9 @@
       if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'lost'); } catch (e) {} }
       if (isWatch) {
         this.sysSay(`📺 ${contest.name} — over. ${pname} survived. The audience is polite.`);
-        this.sysSay(`📺 You go to ${pname}. They're quiet. They'll talk about it later. Or never.`);
+        // WATCH-COMFORT (Steve 2026-10-06): "Give them space" must be honored.
+        if (ac.comfort) this.sysSay(`📺 You go to ${pname}. They're quiet. They'll talk about it later. Or never.`);
+        else this.sysSay(`📺 You give ${pname} space. The cameras move on. You don't.`);
       } else {
         this.sysSay(`📺 ${contest.name} — over. You survived. The audience is polite.`);
         try { this.leadShift('showmanship', 1); } catch (e) {}
@@ -2350,6 +2352,7 @@
     try { this.contestLearn(ac.contestId, 'refused'); } catch (e) {}
     // MULTI-TAKE (Steve 2026-10-06): the others were taken anyway —
     // refusal is yours alone.
+    ac._refused = true;
     if (ac.others && ac.others.length) {
       this.sysSay(`📺 You said no. They didn't get asked.`);
       try { this._contestResolveOthers(ac); } catch (e) {}
@@ -2769,7 +2772,11 @@
     const winOdds = { low: 0.70, medium: 0.55, high: 0.40, extreme: 0.25 }[contest.risk] || 0.5;
     const s = this.state.scholar;
     this.sysSay(`📺 ───`);
-    this.sysSay(`📺 While you fought your fight, they fought theirs.`);
+    // REFUSAL-HONEST (Steve 2026-10-06): if the player refused, they fought
+    // no fight — say so.
+    this.sysSay(ac._refused
+      ? `📺 While you stood your ground and said no, they fought theirs.`
+      : `📺 While you fought your fight, they fought theirs.`);
     for (const pid of others) {
       const pname = this.displayName(pid);
       if (dieOdds > 0 && Math.random() < dieOdds) {

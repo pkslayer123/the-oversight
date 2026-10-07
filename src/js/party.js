@@ -875,10 +875,10 @@
           `{n} catches {t} with a wild backhand and looks horrified at their own arm.`,
           `{n} barrels into {t} shoulder-first, the way you'd shove a door that's stuck.`,
           `{n} swings at {t} and keeps swinging after it lands, like stopping would be worse.`,
-          `{n} grabs for {t}'s weapon hand and they go down together, scrabbling.`,
+          `{n} grabs for {t} weapon hand and they go down together, scrabbling.`,
           `{n} strikes at {t} with a sound caught between a sob and a snarl.`,
         ];
-        this.say(`🔪 ${this.pickFresh(verbs, 'humanRetaliate').replace('{n}', () => h.name).replace('{t}', () => tgt)}`);
+        this.say(`🔪 ${this.pickFresh(verbs, 'humanRetaliate').replace('{n}', () => h.name).replace('{t} weapon hand', () => tgt === 'you' ? 'your weapon hand' : tgt + "'s weapon hand")}`);
         this.tbDamage(foe.key, dmg, h.name);
         // Hurting someone costs the hurter too. Even them.
       } else {
@@ -1087,6 +1087,13 @@
       if (p) s.health = Math.max(0, p.hp);
       for (const v of f.fighters) {
         if (v.kind === 'villager' && v.alive && !v.fled) this.tbVillagerSyncPos(v);
+      }
+      // UPRISING YIELD (Steve 2026-10-06): a mob yield belongs to
+      // uprisingAftermath() (justice.js: stage→3, fear for the living).
+      // The inline branch below is for a single betrayer only.
+      if (result === 'betrayal_yielded' && this._lastBetrayal && this._lastBetrayal.uprising) {
+        try { this.uprisingAftermath(); } catch (e) {}
+        return;
       }
       // The one who yielded: alive, broken, in the village. Everyone knows.
       const yielder = f.fighters.find(x => x.kind === 'hostile' && x.yielded && x.alive);

@@ -327,8 +327,8 @@
       "se_woodlands"
     ],
     "hp": [
-      15,
-      22
+      35,
+      45
     ],
     "attack": {
       "name": "Wing Flash",
@@ -631,8 +631,8 @@
     ],
     "waterAffinity": "near",
     "hp": [
-      30,
-      40
+      60,
+      80
     ],
     "attack": {
       "name": "Spearfish Strike",
@@ -1863,8 +1863,8 @@
       "se_woodlands"
     ],
     "hp": [
-      20,
-      28
+      45,
+      60
     ],
     "attack": {
       "name": "Sun-Charged Bite",

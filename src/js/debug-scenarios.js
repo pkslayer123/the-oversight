@@ -319,6 +319,13 @@
       roster.forEach((rid, i) => {
         const t = tongues[i % tongues.length];
         v.bgLangs[rid] = { native: t, levels: { [t]: 3 } }; // fluent native, zero English
+        // LANGS OVERRIDE (Steve 2026-10-06): npcLangs() prefers person.languages
+        // on hydrated villagers — bgLangs alone is silently ignored and the
+        // cast speaks fluent English. Set both.
+        try {
+          const p = Game.getPerson(rid);
+          if (p) p.languages = { native: t, levels: { [t]: 3 } };
+        } catch (e) {}
       });
       v.knownNames = {}; // strangers — descriptors, not names
       Game.say('🐞 SCENARIO: language barrier. Nobody here speaks English.');
@@ -489,6 +496,35 @@
       Game.dayPart = 3; // night — it only hunts at night, near water
       s.mx = 2; s.my = 4;
       s.monster = { id: 'nightlight_catfish', mx: 5, my: 4 };
+      // WATER GUARANTEE (Steve 2026-10-06): the catfish only hunts near
+      // water at night (game.js nightlightActive) — without water within 3
+      // tiles the scenario is a coin flip. Relocate near water if needed,
+      // mirroring sunbasker's SUN GUARANTEE.
+      try {
+        if (!Game.monsterNearCell(s.monster, 'water', 3)) {
+          const detail = Game.genDetail(Game.map.px, Game.map.py);
+          let bw = null, bd = 1e9;
+          for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+            if (detail[y] && detail[y][x] === 'water') {
+              const d = Math.abs(x - 5) + Math.abs(y - 4);
+              if (d < bd) { bd = d; bw = { x, y }; }
+            }
+          }
+          if (bw) {
+            const spotOK = (x, y) => {
+              const c = detail[y] && detail[y][x];
+              return x >= 1 && x <= 7 && y >= 1 && y <= 7 && c && !Game.cellProps(c).blocks;
+            };
+            for (let y = 0; y < 9 && !Game.monsterNearCell(s.monster, 'water', 3); y++)
+              for (let x = 3; x < 9; x++) {
+                if (!spotOK(x, y) || Math.max(Math.abs(x - bw.x), Math.abs(y - bw.y)) > 3) continue;
+                s.monster.mx = x; s.monster.my = y;
+                s.mx = Math.max(1, x - 3); s.my = y;
+                break;
+              }
+          }
+        }
+      } catch (e) {}
       Game.say('🐞 SCENARIO: nightlight catfish. A soft green glow under the water, three tiles east. Pretty.');
     },
 

@@ -472,7 +472,7 @@
       const groups = Object.values(byId);
       const gnames = groups.map(g => (g.length > 1 ? `${g[0].name} (\u00d7${g.length})` : g[0].name));
       const n = groups.length;
-      const threatWord = n === 2 ? 'Two threats' : n === 3 ? 'Three threats' : `${n} threats`;
+      const threatWord = n === 1 ? 'One threat' : n === 2 ? 'Two threats' : n === 3 ? 'Three threats' : `${n} threats`;
       const members = this.partyMembers().map(id => this.displayName(id)).join(', ');
       const text = `\u26a0\ufe0f ${threatWord}: ${gnames.join(' and ')} \u2014 all here, all now.\n` +
         `Your party: ${members || 'just you'}. You are outnumbered \u2014 fight like it.`;

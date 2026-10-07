@@ -8012,8 +8012,12 @@
       const wit = (this.witnesses && this.witnesses(6)) || [];
       const present = wit.filter(id => id !== this.villagerId && (v.roster || []).includes(id));
       if (!present.length) return; // no one saw. the gossip may still find you.
-      // fair share norm: ~2000 kcal/day. Blatant theft = 2x+ in one take.
-      if (totalKcal < 4000) return;
+      // fair share norm: ~2000 kcal/day. Blatant theft = 2x+ in one take,
+      // OR half the pantry at once — whichever is smaller, so a near-empty
+      // pantry still notices being emptied (Steve 2026-10-06).
+      let pantryKcal = 8000;
+      try { pantryKcal = Math.max(1000, this.pantryKcalLive(this.state.village)); } catch (e) {}
+      if (totalKcal < Math.min(4000, pantryKcal / 2)) return;
       // once per day — they said their piece, they won't nag
       const dayKey = 'theftConf' + this.state.scholar.day;
       v[dayKey] = v[dayKey] || {};
@@ -8141,7 +8145,9 @@
       const vid = this.state.scholar.villagerId;
       v.takes[vid] = (v.takes[vid] || 0) + totalKcal;
       const net = (v.gives[vid] || 0) - (v.takes[vid] || 0);
-      if (net < -5000) {
+      let _pk = 8000;
+      try { _pk = Math.max(1000, this.pantryKcalLive(v)); } catch (e) {}
+      if (net < -Math.min(5000, _pk)) {
         v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 2);
         if (Math.random() < 0.3) this.say('Someone watches you load up. They say nothing.');
         this.observe('hoard');
@@ -16460,7 +16466,17 @@
           if (absorbed > 0) this.say(`(${tName}'s hide absorbs ${absorbed}.)`);
         }
         // Resistances: percentage reduction per type (negative = vulnerability)
-        const res = (mdef.resistances || {})[wType] || 0;
+        let res = (mdef.resistances || {})[wType] || 0;
+        // EMBER PUNISH (Steve 2026-10-06): a guttering bright_idea is just
+        // cooling light — the physical resist doesn't apply while it's an
+        // ember. The ember is the kill window; without this the coaching
+        // (BACK OFF, punish the ember) can never kill it with a spear.
+        try {
+          if (wType === 'physical' && this.biIs && this.biIs(t) && t.beamPhase === 'ember') {
+            res = 0;
+            if (!t._emberVulnTold) { t._emberVulnTold = true; this.say(`(${tName} is guttering — your ${w.name || 'weapon'} meets no resistance in the dying light.)`); }
+          }
+        } catch (e) {}
         if (res !== 0) {
           const oldD = d;
           d = Math.round(d * (1 - res));
@@ -16573,7 +16589,7 @@
             const cpy = S.combat.roll([Math.max(1, Math.round(srec.dmg * 0.8)), Math.max(2, Math.round(srec.dmg * 0.8 * 1.2))]);
             this.say(`It answers with YOUR ${wname}.`);
             try { this.audioEvent('understudyCopy', { fidelity: 0.8 }); } catch (e) {}
-            this.tbDamage('p', cpy, (this.encShortLabel(t) || this.encTheName(t)) + "'s stolen " + wname, t.key);
+            this.tbDamage('p', cpy, String(this.encShortLabel(t) || this.encTheName(t)).replace(/[.?!]+$/, '') + "'s stolen " + wname, t.key);
           }
         }
       } catch (e) {}
