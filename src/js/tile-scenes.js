@@ -441,7 +441,7 @@
 
   function safeTile(g, x, y) {
     if (!g || !g.map || !g.map.tiles) return null;
-    if (typeof x !== 'number' || typeof y !== 'number' || x < 0 || y < 0 || x > 6 || y > 6) return null;
+    if (typeof x !== 'number' || typeof y !== 'number' || x < 0 || y < 0 || x > 8 || y > 8) return null; // 9x9 world (2026-10-07)
     const row = g.map.tiles[y];
     return row ? row[x] || null : null;
   }

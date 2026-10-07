@@ -1087,7 +1087,7 @@
         const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the edge of the known world';
         const block = nt ? Game.travelBlockage(nx, ny) : null;
         // WORLD EDGE (explorer loop 2026-10-06): no travel button into the
-        // void — the 7x7 map is the whole known world. The old button called
+        // void — the 9x9 map is the whole known world. The old button called
         // Game.travelTo with out-of-bounds coords and crashed the tap.
         if (nt) {
           const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;

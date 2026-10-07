@@ -5381,6 +5381,16 @@
       village.generated = true;
     },
 
+    // directionTo: compass direction from (fx,fy) to (tx,ty), for rumor text.
+    // (Traveler rumors 2026-10-07 called this but it was never defined —
+    // the rumor roll threw TypeError instead of queuing the rumor.)
+    directionTo(fx, fy, tx, ty) {
+      const dx = (tx || 0) - (fx || 0), dy = (ty || 0) - (fy || 0);
+      const vert = dy < 0 ? 'north' : dy > 0 ? 'south' : '';
+      const horiz = dx > 0 ? 'east' : dx < 0 ? 'west' : '';
+      return (vert + horiz) || 'nearby';
+    },
+
     // simVillageDay: ONE lived day for a distant village — extracted from
     // catchUpSim so the village you JOINED can live day-by-day while you're
     // at their fire (see tickJoinedVillage). Same watermark (village.day),
@@ -5406,7 +5416,9 @@
       // check if their turf matches their strategy
       const tileTypes = {};
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-        const t = this.tileAt(village.x + dx, village.y + dy);
+        const tx = village.x + dx, ty = village.y + dy;
+        if (tx < 0 || tx > 8 || ty < 0 || ty > 8) continue; // 9x9 world: edge villages (2026-10-07)
+        const t = this.tileAt(tx, ty);
         if (t) tileTypes[t.type] = (tileTypes[t.type] || 0) + 1;
       }
       if (focus === 'fisher' && ((tileTypes['creek'] || 0) + (tileTypes['wetland'] || 0) >= 2)) strategyBonus = 1.3;

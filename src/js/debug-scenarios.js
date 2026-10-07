@@ -108,10 +108,10 @@
     try {
       const tiles = Game.map.tiles;
       let best = null;
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) { // 9x9 world (2026-10-07)
         const t = tiles[y][x];
         if (!t || t.type === 'haven' || t.type === 'ruin') continue;
-        const d = Math.abs(x - 3) + Math.abs(y - 3);
+        const d = Math.abs(x - 4) + Math.abs(y - 4); // haven at 4,4
         if (d < 2) continue; // not the doorstep — actually out
         if (!best || d > best.d) best = { x, y, d };
       }
