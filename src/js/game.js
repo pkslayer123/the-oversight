@@ -1508,6 +1508,7 @@
         || {};
       this.state = S.state.newState();
       this.state.startLocation = loc.id || null;
+      this.state.region = 'middle_america'; // REGION: default until region selection UI exists (Steve 2026-10-07)
       this.state.startLocationName = loc.name || null;
       this.state.spawnType = loc.spawnType || 'countryside';
       this.state.runName = (runName && String(runName).trim()) || null;
@@ -2016,6 +2017,11 @@
     // --- village: people to talk to, things to do ---
     talkTo(vid) {
       // Legacy entry: now opens a real conversation, returns the opening line.
+      // TALK TRACKING (Steve 2026-10-07): increment talkIdx for conflict discovery.
+      try {
+        this.state.talkIdx = this.state.talkIdx || {};
+        this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
+      } catch (e) {}
       const st = this.startConvo(vid);
       return st ? st.line : null;
     },
@@ -15288,7 +15294,7 @@
         } // end else (plant track) — meat took the animal branch above
       }
       // COMBAT: eating from pack costs an action (Steve 2026-10-05)
-      if (this.playerMonster() || this.state.inCombat) {
+      if (this.playerMonster() || this.inCombat()) { // FIX: use inCombat() method, not dead state field (Steve 2026-10-07)
         this.spendCombatAction('eat');
       } else {
         this.tickAction(1);
@@ -16390,7 +16396,7 @@
       const stability = starving > 0 ? 0.5 : 1;
       score += Math.round(popScore * stability * 25);
       // Integration: 25 pts (system level)
-      const sysLevel = this.state.systemIntegration || 0; // 0-3
+      const sysLevel = Math.min(3, Math.floor(((this.state.scholar || {}).integration || 0) / 27)); // 0-3, derived from neural depth (Steve 2026-10-07)
       score += Math.round((sysLevel / 3) * 25);
       return { score, max, ready: score >= 80 };
     },
@@ -16414,7 +16420,7 @@
         if (v > 5) rating += (v - 5) * 2;
       }
       // Party: each villager = 10
-      const party = (this.state.party || []).length;
+      const party = ((this.state.village || {}).party || []).length; // FIX: party lives on village, not state (Steve 2026-10-07)
       rating += party * 10;
       // Performance: win streak bonus (up to +20)
       const wins = (this.state.combatWins || 0);
