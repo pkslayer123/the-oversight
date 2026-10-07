@@ -15560,7 +15560,7 @@
     // should feel like an achievement, not a grind.
     trustGainProgressive(vid, baseAmount) {
       const v = this.state.village;
-      const cur = (v.trust || {})[vid] === undefined ? 15 : v.trust[vid];
+      const cur = (v.trust || {})[vid] === undefined ? this.trustStartingValue(vid) : v.trust[vid];
       let scaled = baseAmount;
       if (cur >= 90) {
         // 90-100: only extraordinary acts move the needle, one point at a time
@@ -15570,6 +15570,8 @@
       } else if (cur >= 50) {
         scaled = Math.max(1, Math.floor(baseAmount * 0.5));
       }
+      // Individual disposition: some people just don't warm up fast
+      scaled = Math.round(scaled * this.trustDispositionMult(vid));
       return this.trustGainMult(scaled);
     },
 
@@ -15598,6 +15600,57 @@
         devoted: "Would die for you. This is rare and precious."
       };
       return descs[band] || descs.wary;
+    },
+
+    // TRUST NUANCE (Steve 2026-10-07): not everyone trusts equally.
+    // Each villager has a trust disposition from temperament + lived experience.
+    // This affects BOTH starting trust AND how quickly they warm up.
+    trustDisposition(vid) {
+      const v = this.state.village;
+      const villager = (v.roster || []).find(r => (r.id || r) === vid);
+      const temp = (villager && villager.personality && villager.personality.temperament) || this.npcTemper(vid);
+      
+      // Map temperament to trust disposition
+      const tempMap = {
+        'bold': 'open', 'warm': 'open', 'generous': 'open',
+        'cautious': 'guarded', 'withdrawn': 'guarded', 'suspicious': 'cynical',
+        'intense': 'passionate', 'steady': 'measured', 'practical': 'measured'
+      };
+      let disp = tempMap[temp] || 'measured';
+      
+      // Lived experience modifies it: betrayed villagers trust less
+      const mem = (v.memory || {})[vid] || {};
+      if (mem.betrayed) disp = 'cynical';
+      if (mem.savedLife) disp = 'open'; // you saved them, they're grateful
+      
+      return disp;
+    },
+
+    // Starting trust varies by disposition, not flat 15
+    trustStartingValue(vid) {
+      const disp = this.trustDisposition(vid);
+      const ranges = {
+        'open': [20, 35],      // warm people give you a chance
+        'measured': [10, 25],  // normal villagers, cautious but fair
+        'guarded': [5, 15],    // takes time to warm up
+        'passionate': [15, 30], // intense either way, starts hopeful
+        'cynical': [0, 10]      // been burned before, prove yourself
+      };
+      const [min, max] = ranges[disp] || ranges.measured;
+      return min + Math.floor(Math.random() * (max - min + 1));
+    },
+
+    // Trust gain multiplier by disposition: some people just don't warm up fast
+    trustDispositionMult(vid) {
+      const disp = this.trustDisposition(vid);
+      const mults = {
+        'open': 1.3,       // easy to win over
+        'measured': 1.0,   // normal rate
+        'passionate': 1.1, // feels strongly, moves fast both ways
+        'guarded': 0.7,    // slow to trust
+        'cynical': 0.5     // really hard to win over
+      };
+      return mults[disp] || 1.0;
     },
 
     // allModifiers: abilities + relics + KNOWLEDGE. One pipeline.
