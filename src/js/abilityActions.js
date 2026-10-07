@@ -599,10 +599,12 @@
     },
 
     'patient_aim.clean_shot': function (game, target) {
-      // Hunting: clean kill, full meat yield.
+      // Hunting: line up the shot. The flag steadies the next hunting strike
+      // (+0.25 chance, consumed in huntAnimal); a lined-up kill is narrated
+      // clean. Cleared by startCombat — the moment doesn't survive a fight.
       var s = game.state.scholar;
       s.cleanShotReady = true;
-      game.say('You settle in, waiting for the perfect angle. Your next hunting shot will be clean — full yield, no suffering. (Line Up Clean Shot)');
+      game.say('You settle in, waiting for the perfect angle. Your next hunting strike lands more reliably — and when it lands, it lands clean: no suffering. (Line Up Clean Shot)');
       return true;
     },
 
@@ -644,11 +646,13 @@
 
     'stalk.stalk_prey': function (game, target) {
       var s = game.state.scholar;
-      s.stalkActive = true;
       // STALK CALMS (hunter loop 2026-10-07): the promise is "animals won't
       // flee your approach" — if an animal encounter is active, the slow
-      // approach settles it. Its awareness drops; the flag still covers the
-      // next strike (preyReaction consumes it there).
+      // approach settles it. Its awareness drops, which flows straight into
+      // the preyReaction flee roll. (The old stalkActive flag was set and
+      // read by nothing — removed 2026-10-07; the awareness drop IS the
+      // mechanism. The stalk passive stealth.move_silent now feeds the same
+      // flee roll for quiet movement in general.)
       try {
         var a = s.animal;
         if (a) a.aware = Math.min(a.aware == null ? 0.6 : a.aware, 0.2);

@@ -14405,8 +14405,7 @@
         // last parameter of every B1 combat method — append unconditionally.
         // (Extra args are ignored if a caller passed it explicitly.)
         if ((kind === 'phaseShift' || kind === 'enrage' || kind === 'lootSparkle' ||
-             kind === 'critHit' || kind === 'playerHurt' || kind === 'dodgeMiss' ||
-             kind === 'beamHorror')) {
+             kind === 'critHit' || kind === 'playerHurt' || kind === 'dodgeMiss')) {
           args.push(integ);
         }
         // TRANSITIONS (Steve 2026-10-07, Drama C2): life/death moments — integration
@@ -14469,10 +14468,6 @@
         }
         if (kind === 'signature') D.abilitySignature(...args);
         else if (kind === 'commentary') D.systemCommentary(...args);
-        // ALIEN BEAM HORROR (Steve 2026-10-07): fired by alienPlayers.js when
-        // the beam goes through your armor — previously no dispatch branch,
-        // so the beat fired silently. Now a real horror moment.
-        else if (kind === 'beamHorror') D.beamHorror(...args);
         // AUDIO-VISUAL SYNC (Steve 2026-10-07, Drama E1; wired 2026-10-07):
         // the visual's audio mate fires here — one central place, so call
         // sites never double-fire. D.audioFor (drama.js) maps the drama kind
@@ -14486,7 +14481,7 @@
         // playerDeath->defeat on combat loss; plus pure-visual primitives
         // (text/flash/shake/hero/exclaim/abilityBurst/signature/social/
         // commentary/weather/trail/teaseFaint/villageBirth/villageDeath/
-        // newLife/systemCommentary/beamHorror). Voiced: secret->knowledgeReveal,
+        // newLife/systemCommentary). Voiced: secret->knowledgeReveal,
         // ambush->ambushSnap (arming beat; the FIRE beat snaps on its own),
         // wild->animalRustle, levelUp(ability)->levelup,
         // synergyShimmer->synergyDiscovered, phaseShift->patternWindup,
@@ -16969,6 +16964,17 @@
       delete s.braceActive;
       delete s.shakeOffUsed;
       delete s.haymakerReady;
+      // HUNTER FLAG HYGIENE (wired 2026-10-07): per-strike flags armed by
+      // useAbility() actions must not leak into the next fight. (layWaitActive
+      // is intentionally NOT cleared — it holds for the next animal encounter,
+      // consumed by checkAnimals, not by fights. cleanShotReady is cleared
+      // too — a lined-up hunting shot doesn't survive a monster fight.)
+      delete s.aimBonus;
+      delete s.deadAimShot;
+      delete s.ambushReady;
+      delete s.ignoreArmorNext;
+      delete s.noDodgeNext;
+      delete s.cleanShotReady;
       this.syncMonsterAlias();
       const px = s.mx ?? 4, py = s.my ?? 4;
       // WANDERER CONTACT (forager loop 2026-10-05): the "Face it" button calls
@@ -18513,6 +18519,13 @@
           // strikes hit harder. Declared in data, previously never consumed.
           const amMult = this.modTarget('combat.first_strike_damage', 1, { round: 1 });
           if (amMult > 1) { d = Math.round(d * amMult); this.say(`AMBUSH: first blood. ×${amMult}.`); }
+          // CLEAN KILL (hunter wiring 2026-10-07): the clean_kill synergy —
+          // one shot, the animal never knew. Declared in data, previously
+          // never consumed. The round-1 hook is the engine's "first shot":
+          // sibling hunter verbs (dead aim, take aim) already use "shot" for
+          // any strike, so no ranged gate — the opening strike is the shot.
+          const ckMult = this.modTarget('hunt.first_shot_damage', 1, { round: 1 });
+          if (ckMult > 1) { d = Math.round(d * ckMult); this.say(`CLEAN KILL: one shot, and it never knew. ×${ckMult}.`); }
         }
       } catch (e) {}
       // THE RESERVE: food is humanity's superpower. A full furnace hits harder —

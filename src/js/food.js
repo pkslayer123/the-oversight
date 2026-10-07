@@ -1207,6 +1207,11 @@
       let trackLvl = 0;
       try { trackLvl = this.abilityLevel ? this.abilityLevel('tracker') : 0; } catch (e) {}
       fleeP -= trackLvl * 0.12; // stalking skill matters
+      // STALK (hunter wiring 2026-10-07): stealth.move_silent — the stalk
+      // passive. Quiet movement keeps prey calmer at the strike moment;
+      // wired through the same flee roll the tracker level already feeds.
+      // Declared in data, previously never consumed.
+      try { fleeP -= this.modTarget('stealth.move_silent', 0, {}); } catch (e) {}
       const villager = (this.data.villagers || []).find(v => v.id === this.villagerId);
       if (villager && String(villager.formerOccupation || '').toLowerCase().includes('hunter')) fleeP -= 0.10;
       if (this.isNight && this.isNight()) fleeP -= 0.08; // dark hides you

@@ -1279,18 +1279,7 @@
       ]
     ],
     "minLevel": 2,
-    "modifiers": [
-      {
-        "target": "hunt.wounded_find",
-        "op": "add",
-        "value": 0.8
-      },
-      {
-        "target": "hunt.wounded_time",
-        "op": "multiply",
-        "value": 0.5
-      }
-    ],
+    "modifiers": [],
     "discovery": "The blood tells you where it's going. You just have to listen.",
     "discovery_method": {
       "type": "simultaneous",
@@ -1324,11 +1313,6 @@
     ],
     "minLevel": 3,
     "modifiers": [
-      {
-        "target": "hunt.intimidate",
-        "op": "add",
-        "value": 0.5
-      },
       {
         "target": "combat.vs_beast_damage",
         "op": "multiply",

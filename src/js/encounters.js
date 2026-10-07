@@ -452,7 +452,16 @@
       }
     } catch (e) {}
     if (!core) core = 'About ' + kcal + ' kcal of meat on the bone.';
-    return core + ' ' + this.encButcherHonesty(kcal, animal);
+    // FIELD-DRESSING BONUS (hunter wiring 2026-10-07): the kill's kcal
+    // already carries hunt.meat_yield — the caller applied it just above.
+    // Name the skill here, at the kill, the way dress_game names it at the
+    // carcass. Same phrasing both places, one fiction.
+    var dressTxt = '';
+    try {
+      var dm = this.modTarget('hunt.meat_yield', 100) / 100;
+      if (dm > 1.01) dressTxt = ' (Field Dressing ×' + (Math.round(dm * 100) / 100) + ' — your skill kept more of the carcass.)';
+    } catch (e) {}
+    return core + dressTxt + ' ' + this.encButcherHonesty(kcal, animal);
   };
   // BUTCHER HONESTY (Steve 2026-10-06): yield honesty — what the player
   // actually gets vs what the kill promises. The {kcal} above is the gross
@@ -1787,7 +1796,14 @@
     var awarePen = 1 - Math.min(0.5, (a.aware || 0) * 0.5);
     // winded prey barely dodges.
     if (a.pstate === 'winded') awarePen = 1.25;
-    var chance = Math.min(0.95, (base + practiceBonus + wbonus + trackBonus + relicHunt + nightHuntBonus) * luck * awarePen);
+    // CLEAN SHOT (hunter wiring 2026-10-07): patient_aim's "Line Up Clean Shot"
+    // armed a flag nothing consumed — you paid 20 min + 15 kcal for nothing.
+    // Now it steadies this strike: +0.25, in the same family as the tracker
+    // bonus, consumed here, once. A lined-up shot that lands is narrated
+    // clean at the kill below.
+    var cleanShotLined = false;
+    try { if (s.cleanShotReady) { cleanShotLined = true; s.cleanShotReady = false; } } catch (e) {}
+    var chance = Math.min(0.95, (base + practiceBonus + wbonus + trackBonus + relicHunt + nightHuntBonus + (cleanShotLined ? 0.25 : 0)) * luck * awarePen);
     try { if (this.noteToolUse) this.noteToolUse(); } catch (e) {}
     s.kcal = Math.max(0, s.kcal - 100);
     // HANDS VS BIG GAME (Steve 2026-10-05): one-shot at range with appropriate
@@ -1940,6 +1956,10 @@
       } else {
         try { s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted')); } catch (e) {}
         this.feedback('Got it — ' + animal.name + '! ' + this.encKillLine(animal, kcal));
+        // CLEAN SHOT (hunter wiring 2026-10-07): the lined-up shot landed —
+        // say so. No suffering was the promise; the kill line above already
+        // named the yield honestly.
+        if (cleanShotLined) this.feedback('One shot — it never knew. No suffering. (Clean Shot — the lined-up shot.)');
         // the kill thud — NOT for beam-kills above (the beam unmakes, no thud)
         try { this.audioEvent('animalKill'); } catch (e) {}
       }

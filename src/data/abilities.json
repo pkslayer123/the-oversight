@@ -115,7 +115,7 @@
           "time_min": 20,
           "kcal": 15
         },
-        "effect": "Take extra time on a hunting shot. Clean kill: full meat yield, animal doesn't suffer."
+        "effect": "Take extra time lining up the shot. Your next hunting strike lands more reliably — and when it lands, it's clean: the animal doesn't suffer."
       }
     ],
     "paths": [
@@ -1796,13 +1796,7 @@
     "unlock": {
       "type": "practice"
     },
-    "modifiers": [
-      {
-        "target": "hunt.track_wounded",
-        "op": "add",
-        "value": 0.5
-      }
-    ],
+    "modifiers": [],
     "actions": [
       {
         "id": "follow_blood",
@@ -1873,13 +1867,7 @@
     "unlock": {
       "type": "system_offer"
     },
-    "modifiers": [
-      {
-        "target": "animal.behavior_read",
-        "op": "add",
-        "value": 0.4
-      }
-    ],
+    "modifiers": [],
     "actions": [
       {
         "id": "read_beast",
