@@ -11582,17 +11582,6 @@
       inlineView = { kind: 'caches', result: 'Dug up.', mapKey: inlineMapKey() };
       refresh();
     });
-    // RATION DRAWER: take some from a cache without digging it all up.
-    // Only show the confirmation when the engine actually handed something
-    // over — a refused take (wrong node, too heavy) already explains itself.
-    slot.querySelectorAll('[data-cache-take]').forEach(b => b.onclick = () => {
-      const parts = (b.dataset.cacheTake || '').split(':');
-      const qEl = slot.querySelector('#take-qty-' + parts[0]);
-      const qty = Math.max(1, (qEl && +qEl.value) || 1);
-      const res = Game.takeFromCache(parts[0], +(parts[1] || 0), qty);
-      inlineView = { kind: 'caches', result: res ? 'Drew from the cache.' : null, mapKey: inlineMapKey() };
-      refresh();
-    });
     const buryGo = slot.querySelector('#bury-go');
     if (buryGo) buryGo.onclick = () => {
       const sel = slot.querySelector('#bury-what').value; // "material:branch" | "food:3"

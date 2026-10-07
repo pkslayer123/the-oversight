@@ -149,14 +149,18 @@
     },
     materialCount(mat) {
       const inv = (this.state.scholar.inventory || []);
-      return inv.filter(i => i.material === mat).reduce((t, i) => t + (i.units || 0), 0);
+      // Steve 2026-10-06: old saves have wood without material field.
+      // Check id/itemId as fallback for backward compatibility.
+      return inv.filter(i => i.material === mat || i.id === mat || i.itemId === mat).reduce((t, i) => t + (i.units || 0), 0);
     },
     spendMaterial(mat, n) {
       let left = Math.floor(n || 0);
       if (left <= 0) return true;
       const inv = this.state.scholar.inventory || [];
       for (const item of inv) {
-        if (item.material !== mat || left <= 0) continue;
+        // Steve 2026-10-06: backward compat for old saves (wood without material field)
+        const isMat = item.material === mat || item.id === mat || item.itemId === mat;
+        if (!isMat || left <= 0) continue;
         const take = Math.min(item.units || 0, left);
         item.units -= take; left -= take;
       }
