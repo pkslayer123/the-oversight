@@ -344,55 +344,16 @@
     //   L2 ATTUNED:   icon + subtle colored glow. The System participates.
     //   L3 INTEGRATED: icon + glow + tiny System eye 👁️ beneath. The System celebrates.
     exclaim(x, y, icon, opts) {
-      opts = opts || {};
-      const integ = opts.integration || 0;
-      const c = this.tileCenter(x, y);
-      const color = icon === '!' ? '#ff5252' : icon === '?' ? '#ffd54a' : '#4df3ff';
-      let html;
-      if (integ >= 3) {
-        html = `<div style="text-align:center;font-size:30px;line-height:1.1;font-weight:bold;color:${color};text-shadow:0 0 14px ${color},0 2px 6px rgba(0,0,0,0.9);">${icon}<div style="font-size:12px;">👁️</div></div>`;
-      } else if (integ >= 2) {
-        html = `<div style="font-size:28px;font-weight:bold;color:${color};text-shadow:0 0 12px ${color},0 2px 6px rgba(0,0,0,0.9);">${icon}</div>`;
-      } else {
-        html = `<div style="font-size:28px;font-weight:bold;color:${color};text-shadow:0 2px 6px rgba(0,0,0,0.9);">${icon}</div>`;
-      }
-      this.spawn(
-        html,
-        `position:absolute;left:${c.x}px;top:${c.y - 30}px;transform:translate(-50%,-100%);`,
-        'drama-exclaim',
-        opts.duration || 1500
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('exclaim', {x: x, y: y, icon: icon, opts: opts});
     },
 
     // npcAlert: semantic NPC attention marker (Steve 2026-10-07, Drama Round A1).
     // kind: 'talk'(!) 'curious'(?) 'dialogue'(💬) 'warn'(⚠️) 'heart'(❤️) 'break'(💔)
     // Scales with integration: bigger icon at higher levels. Hearts linger longer.
     npcAlert(x, y, kind, opts) {
-      opts = opts || {};
-      const kinds = {
-        talk:     { icon: '!',  color: '#ff5252' },
-        curious:  { icon: '?',  color: '#ffd54a' },
-        dialogue: { icon: '💬', color: '#4df3ff' },
-        warn:     { icon: '⚠️', color: '#ff9d45' },
-        heart:    { icon: '❤️', color: '#ff6b9d' },
-        break:    { icon: '💔', color: '#9e9e9e' },
-      };
-      const k = kinds[kind] || kinds.talk;
-      const integ = opts.integration || 0;
-      const size = 28 + integ * 4; // 28 → 40px across L0–L3
-      const c = this.tileCenter(x, y);
-      // INTEGRATION VISUAL LANGUAGES (Steve 2026-10-07, Drama C3):
-      //   L1: flat icon. L2: colored glow — the System participates. L3: glow + tiny 👁️.
-      let shadow = 'text-shadow:0 2px 6px rgba(0,0,0,0.9);';
-      if (integ >= 3) shadow = `text-shadow:0 0 14px ${k.color},0 2px 6px rgba(0,0,0,0.9);`;
-      else if (integ >= 2) shadow = `text-shadow:0 0 10px ${k.color},0 2px 6px rgba(0,0,0,0.9);`;
-      const eye = integ >= 3 ? '<div style="font-size:12px;">👁️</div>' : '';
-      this.spawn(
-        `<div style="text-align:center;font-size:${size}px;line-height:1.1;font-weight:bold;color:${k.color};${shadow}">${k.icon}${eye}</div>`,
-        `position:absolute;left:${c.x}px;top:${c.y - 30}px;transform:translate(-50%,-100%);`,
-        'drama-exclaim',
-        opts.duration || ((kind === 'heart' || kind === 'break') ? 2000 : 1500)
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('npcAlert', {x: x, y: y, kind: kind, opts: opts});
     },
 
     // abilityBurst: radial pulse when an ability fires (color by pool)
@@ -608,14 +569,9 @@
 
     // critHit: player crit — oversized starburst + CRIT! + damage number.
     critHit(x, y, dmg, integration) {
-      integration = integration || 0;
-      const size = 90 + integration * 25; // 90 → 165
-      this.hit(x, y, { color: '#ffeb3b', size: size, integration: 0 });
-      const c = this.tileCenter(x, y);
-      this.floatText(c.x, c.y - 25, 'CRIT!', { color: '#ffeb3b', size: 24 + integration * 6 });
-      this.floatText(c.x, c.y + 20, String(dmg), { color: '#ffffff', size: 18 + integration * 4 });
-      if (integration >= 2) this.shake(4 + integration * 2);
-      if (integration >= 3) this.flash('rgba(255,235,59,0.18)', 400);
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      // NOTE: reproduces the double-tileCenter bug (CRIT text at 50%/50%).
+      return this.renderEffect('critHit', {x: x, y: y, dmg: dmg, integration: integration});
     },
 
     // playerHurt: monster lands on you — red vignette + shake.
@@ -659,20 +615,8 @@
 
     // Loser: sympathetic dim + floating broken heart
     contestLoser(name, integration) {
-      integration = integration || 0;
-      this.spawn(
-        '',
-        `position:absolute;inset:0;background:rgba(0,0,20,0.35);`,
-        'drama-loser-dim',
-        2000
-      );
-      this.spawn(
-        `<div style="font-size:40px;filter:grayscale(0.3);">💔</div>`,
-        `position:absolute;left:50%;top:35%;transform:translate(-50%,-50%);`,
-        'drama-loser-heart',
-        2000 + (integration * 200)
-      );
-      this.floatText('50%', '50%', name, { color: '#a0a0c0', size: 16 + integration * 2 });
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('contestLoser', {name: name, integration: integration});
     },
 
     // secretShimmer: hidden cache/ruin/secret found — full-screen shimmer + hero card.

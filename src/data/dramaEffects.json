@@ -465,5 +465,187 @@
       }
     ],
     "audio": null
+  },
+  "exclaim": {
+    "anchor": "tile",
+    "params": [
+      "x",
+      "y",
+      "icon",
+      "opts"
+    ],
+    "computed": {
+      "integration": "(opts && opts.integration) || 0",
+      "color": "icon === '!' ? '#ff5252' : icon === '?' ? '#ffd54a' : '#4df3ff'",
+      "duration": "(opts && opts.duration) || 1500",
+      "htmlL3": "'<div style=\"text-align:center;font-size:30px;line-height:1.1;font-weight:bold;color:' + color + ';text-shadow:0 0 14px ' + color + ',0 2px 6px rgba(0,0,0,0.9);\">' + icon + '<div style=\"font-size:12px;\">👁️</div></div>'",
+      "htmlL2": "'<div style=\"font-size:28px;font-weight:bold;color:' + color + ';text-shadow:0 0 12px ' + color + ',0 2px 6px rgba(0,0,0,0.9);\">' + icon + '</div>'",
+      "htmlL1": "'<div style=\"font-size:28px;font-weight:bold;color:' + color + ';text-shadow:0 2px 6px rgba(0,0,0,0.9);\">' + icon + '</div>'"
+    },
+    "steps": [
+      {
+        "do": "spawn",
+        "when": "integration >= 3",
+        "html": "{htmlL3}",
+        "css": "position:absolute;left:{cx}px;top:{cy - 30}px;transform:translate(-50%,-100%);",
+        "animClass": "drama-exclaim",
+        "duration": "{duration}"
+      },
+      {
+        "do": "spawn",
+        "when": "integration === 2",
+        "html": "{htmlL2}",
+        "css": "position:absolute;left:{cx}px;top:{cy - 30}px;transform:translate(-50%,-100%);",
+        "animClass": "drama-exclaim",
+        "duration": "{duration}"
+      },
+      {
+        "do": "spawn",
+        "when": "integration < 2",
+        "html": "{htmlL1}",
+        "css": "position:absolute;left:{cx}px;top:{cy - 30}px;transform:translate(-50%,-100%);",
+        "animClass": "drama-exclaim",
+        "duration": "{duration}"
+      }
+    ],
+    "audio": null
+  },
+  "npcAlert": {
+    "anchor": "tile",
+    "params": [
+      "x",
+      "y",
+      "kind",
+      "opts"
+    ],
+    "computed": {
+      "integration": "(opts && opts.integration) || 0",
+      "kinds": "{talk: {icon: '!', color: '#ff5252'}, curious: {icon: '?', color: '#ffd54a'}, dialogue: {icon: '💬', color: '#4df3ff'}, warn: {icon: '⚠️', color: '#ff9d45'}, heart: {icon: '❤️', color: '#ff6b9d'}, break: {icon: '💔', color: '#9e9e9e'}}",
+      "k": "kinds[kind] || kinds.talk",
+      "icon": "k.icon",
+      "color": "k.color",
+      "size": "28 + integration * 4",
+      "shadow": "integration >= 3 ? 'text-shadow:0 0 14px ' + color + ',0 2px 6px rgba(0,0,0,0.9);' : integration >= 2 ? 'text-shadow:0 0 10px ' + color + ',0 2px 6px rgba(0,0,0,0.9);' : 'text-shadow:0 2px 6px rgba(0,0,0,0.9);'",
+      "eye": "integration >= 3 ? '<div style=\"font-size:12px;\">👁️</div>' : ''",
+      "duration": "(opts && opts.duration) || ((kind === 'heart' || kind === 'break') ? 2000 : 1500)",
+      "html": "'<div style=\"text-align:center;font-size:' + size + 'px;line-height:1.1;font-weight:bold;color:' + color + ';' + shadow + '\">' + icon + eye + '</div>'"
+    },
+    "steps": [
+      {
+        "do": "spawn",
+        "html": "{html}",
+        "css": "position:absolute;left:{cx}px;top:{cy - 30}px;transform:translate(-50%,-100%);",
+        "animClass": "drama-exclaim",
+        "duration": "{duration}"
+      }
+    ],
+    "audio": null
+  },
+  "critHit": {
+    "anchor": "tile",
+    "params": [
+      "x",
+      "y",
+      "dmg",
+      "integration"
+    ],
+    "computed": {
+      "integration": "integration || 0",
+      "hitSize": "90 + integration * 25",
+      "critSize": "24 + integration * 6",
+      "dmgSize": "18 + integration * 4",
+      "shakeAmt": "4 + integration * 2",
+      "hitOpts": "({color: '#ffeb3b', size: hitSize, integration: 0})"
+    },
+    "steps": [
+      {
+        "do": "call",
+        "method": "hit",
+        "args": [
+          "{x}",
+          "{y}",
+          "{hitOpts}"
+        ]
+      },
+      {
+        "do": "call",
+        "method": "floatText",
+        "args": [
+          "{cx}",
+          "{cy - 25}",
+          "{'CRIT!'}",
+          "{color: '#ffeb3b', size: critSize}"
+        ]
+      },
+      {
+        "do": "call",
+        "method": "floatText",
+        "args": [
+          "{cx}",
+          "{cy + 20}",
+          "{String(dmg)}",
+          "{color: '#ffffff', size: dmgSize}"
+        ]
+      },
+      {
+        "do": "call",
+        "when": "integration >= 2",
+        "method": "shake",
+        "args": [
+          "{shakeAmt}"
+        ]
+      },
+      {
+        "do": "call",
+        "when": "integration >= 3",
+        "method": "flash",
+        "args": [
+          "rgba(255,235,59,0.18)",
+          "400"
+        ]
+      }
+    ],
+    "audio": null,
+    "_bug": "BUG REPRODUCED: floatText receives pixel coords, places at 50%/50%."
+  },
+  "contestLoser": {
+    "anchor": "screen",
+    "params": [
+      "name",
+      "integration"
+    ],
+    "computed": {
+      "integration": "integration || 0",
+      "heartDur": "2000 + (integration * 200)",
+      "nameSize": "16 + integration * 2"
+    },
+    "steps": [
+      {
+        "do": "spawn",
+        "html": "",
+        "css": "position:absolute;inset:0;background:rgba(0,0,20,0.35);",
+        "animClass": "drama-loser-dim",
+        "duration": 2000
+      },
+      {
+        "do": "spawn",
+        "html": "<div style=\"font-size:40px;filter:grayscale(0.3);\">💔</div>",
+        "css": "position:absolute;left:50%;top:35%;transform:translate(-50%,-50%);",
+        "animClass": "drama-loser-heart",
+        "duration": "{heartDur}"
+      },
+      {
+        "do": "call",
+        "method": "floatText",
+        "args": [
+          "{'50%'}",
+          "{'50%'}",
+          "{name}",
+          "{color: '#a0a0c0', size: nameSize}"
+        ]
+      }
+    ],
+    "audio": null,
+    "_note": "floatText('50%','50%') -> tileCenter returns 50%/50% (NaN index). Name at screen center."
   }
 }
