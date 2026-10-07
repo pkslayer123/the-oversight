@@ -12656,13 +12656,21 @@
         if (_seenSimple) {
           // Get tile data
           let _tl = null, _ttype = 'meadow';
+          let _tsStatus = 'ok';
           try {
             const _tiles = Game.map && Game.map.tiles;
             if (_tiles && _tiles[y] && _tiles[y][x]) {
               _tl = _tiles[y][x];
               if (_tl.type) _ttype = _tl.type;
             }
-          } catch (e) {}
+          } catch (e) { _tsStatus = 'tile-err'; }
+          // Check TS availability
+          try {
+            if (typeof Scattering === 'undefined') _tsStatus = 'no-Scattering';
+            else if (!Scattering.TileScenes) _tsStatus = 'no-TileScenes';
+            else if (!Scattering.TileScenes.svgFor) _tsStatus = 'no-svgFor';
+            else if (!_tl) _tsStatus = 'no-tl';
+          } catch (e) { _tsStatus = 'ts-err'; }
           // Haven always shows icon (Steve 2026-10-06)
           const _isHaven = (x === 3 && y === 3);
           if (_isHaven) {
@@ -12682,8 +12690,8 @@
             ruin: ['#9a9a9a', '🏚️'],
           };
           const _t = _terrain[_ttype] || _terrain['meadow'];
-          // Show type as text (diagnostic - Steve 2026-10-06)
-          html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#000">${_ttype}</div></div>`;
+          // Show type + TS status (diagnostic - Steve 2026-10-06)
+          html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000">${_ttype}<br>${_tsStatus}</div></div>`;
           continue;
         }
         let tl = null;
